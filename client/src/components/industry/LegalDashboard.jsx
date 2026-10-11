@@ -1,6 +1,6 @@
 /**
  * WILSY OS — ROLE-SCOPED LEGAL OPERATIONS COCKPIT
- * VERSION: v12.4.0-L10-P2C7V-ADAPTIVE-LEGAL-RUNWAY
+ * VERSION: v12.5.0-D4B-MATTER-DEADLINE-WORK-QUEUE
  * AUTHORITY: Presentation of authenticated Python-EOS Legal Operations truth.
  * EPITOME: One role-aware WILSY Legal OS surface for legal-practice operators,
  *          finance, sheriff, deputy and client personas. Law-firm roles receive
@@ -19,7 +19,8 @@
  *                            validation. This component owns responsive
  *                            presentation and deputy observation capture only.
  * CERTIFICATION / UPDATE DATE: 2026-09-28
- * CHANGELOG: 2026-09-29 v12.4.0-L10-P2C7V-ADAPTIVE-LEGAL-RUNWAY removes the Legal Practice zero-card strip, presents a canonical empty-workspace operating runway, and renders nonzero signals as a compact adaptive ribbon. It preserves attention-first ordering, role-scoped actions, authenticated tenant-branding presentation and all Python EOS authority boundaries.
+ * CHANGELOG: 2026-10-11 v12.5.0-D4B-MATTER-DEADLINE-WORK-QUEUE adds an on-demand practice deadline work queue backed only by the certified D4A/D3B1 transport, permission-gated to the frozen deadline-read role envelope, with exact matter correlation and no browser legal-period or overdue inference.
+ *            2026-09-29 v12.5.0-D4B-MATTER-DEADLINE-WORK-QUEUE removes the Legal Practice zero-card strip, presents a canonical empty-workspace operating runway, and renders nonzero signals as a compact adaptive ribbon. It preserves attention-first ordering, role-scoped actions, authenticated tenant-branding presentation and all Python EOS authority boundaries.
  *            2026-09-28 v12.3.0-L10-P2B-ACCOUNT-CENTER-INTEGRATION wires the existing governed WilsyAccountCommandCenter into Legal Practice and Legal Finance shared chrome with authenticated-user and logout continuity. Tenant branding writes remain blocked behind a separate D21B management-authority gate; no Legal authority, Court, finance, or storage truth is introduced.
  *            2026-09-28 v12.2.0-L10-P2A-ADAPTIVE-TRUST-CENTER makes the shared Trust Center adaptive across closed, sheet and expanded states with focus trapping, keyboard/touch parity, resilient authority/profile grids and narrow-viewport overflow protection. No Legal authority, Court, finance, or storage truth is introduced.
  *            2026-09-28 v12.1.0-L10-P2-TRUST-CENTER consolidates descriptive authority posture and practice profile into the shared Legal Chrome Trust Center drawer, preserving server-derived presentation and role boundaries while removing repeated full-width shell cards. No Legal authority, Court, finance, or storage truth is introduced.
@@ -146,12 +147,13 @@ import {
   registerLegalIntake,
   transitionDeputyFieldAttempt,
 } from '../../services/legalOperationsService.js';
+import { getLegalMatterDeadlines } from '../../services/legalMatterDeadlineService.js';
 import WilsyOSDashboardChrome from '../os/WilsyOSDashboardChrome.jsx';
 import WilsyAccountCommandCenter from '../account/WilsyAccountCommandCenter.jsx';
 import { useAuth } from '../../contexts/authContext.jsx';
 import { useAuthenticatedTenantBrandingAsset } from '../../hooks/useAuthenticatedTenantBrandingAsset.js';
 
-const DASHBOARD_VERSION = 'v12.4.0-L10-P2C7V-ADAPTIVE-LEGAL-RUNWAY';
+const DASHBOARD_VERSION = 'v12.5.0-D4B-MATTER-DEADLINE-WORK-QUEUE';
 
 const EMPTY_QUEUES = Object.freeze({
   tenantId: '',
@@ -264,6 +266,7 @@ const PRESENTATION_PERMISSIONS = Object.freeze({
   RETURN_WRITE: 'legal_operations:return:write',
   BILLING_READ: 'legal_operations:billing:read',
   INVOICE_READ: 'legal_operations:invoice:read',
+  DEADLINE_READ: 'legal_operations:matter_deadline:read',
 });
 
 const ROLE_PRESENTATION_PERMISSION_ENVELOPE = Object.freeze({
@@ -272,21 +275,25 @@ const ROLE_PRESENTATION_PERMISSION_ENVELOPE = Object.freeze({
     PRESENTATION_PERMISSIONS.RETURN_WRITE,
     PRESENTATION_PERMISSIONS.BILLING_READ,
     PRESENTATION_PERMISSIONS.INVOICE_READ,
+    PRESENTATION_PERMISSIONS.DEADLINE_READ,
   ]),
   LEGAL_ATTORNEY: Object.freeze([
     PRESENTATION_PERMISSIONS.INSTRUCTION_WRITE,
     PRESENTATION_PERMISSIONS.RETURN_WRITE,
     PRESENTATION_PERMISSIONS.BILLING_READ,
     PRESENTATION_PERMISSIONS.INVOICE_READ,
+    PRESENTATION_PERMISSIONS.DEADLINE_READ,
   ]),
   LEGAL_PARALEGAL: Object.freeze([
     PRESENTATION_PERMISSIONS.INSTRUCTION_WRITE,
     PRESENTATION_PERMISSIONS.RETURN_WRITE,
     PRESENTATION_PERMISSIONS.INVOICE_READ,
+    PRESENTATION_PERMISSIONS.DEADLINE_READ,
   ]),
   LEGAL_SECRETARY: Object.freeze([
     PRESENTATION_PERMISSIONS.RETURN_WRITE,
     PRESENTATION_PERMISSIONS.INVOICE_READ,
+    PRESENTATION_PERMISSIONS.DEADLINE_READ,
   ]),
   LEGAL_FINANCE: Object.freeze([
     PRESENTATION_PERMISSIONS.BILLING_READ,
@@ -301,6 +308,7 @@ const PRACTICE_WORKSPACE_VIEWS = Object.freeze({
   DOCUMENTS: 'DOCUMENTS',
   SERVICE: 'SERVICE',
   RETURNS: 'RETURNS',
+  DEADLINES: 'DEADLINES',
   FINANCE: 'FINANCE',
   INTAKE: 'INTAKE',
 });
@@ -407,6 +415,11 @@ function LegalPresentationAuthorityPosture({ roleToken, user }) {
       user,
       permission: PRESENTATION_PERMISSIONS.INVOICE_READ,
     }) ? 'Invoice evidence' : null,
+    presentationAllowsPermission({
+      roleToken,
+      user,
+      permission: PRESENTATION_PERMISSIONS.DEADLINE_READ,
+    }) ? 'Matter deadlines' : null,
   ].filter(Boolean);
 
   return (
@@ -2013,6 +2026,11 @@ function LegalFinanceLookup({ roleToken, user }) {
     user,
     permission: PRESENTATION_PERMISSIONS.INVOICE_READ,
   });
+  const canReadDeadline = presentationAllowsPermission({
+    roleToken,
+    user,
+    permission: PRESENTATION_PERMISSIONS.DEADLINE_READ,
+  });
   const allowedKinds = useMemo(() => [
     ...(canReadBilling ? ['TARIFF_ASSESSMENT', 'BILLING_ELIGIBILITY'] : []),
     ...(canReadInvoice ? ['INVOICE'] : []),
@@ -2345,6 +2363,112 @@ function LegalIntakePanel({ onRefresh, onRegistered, roleToken, user }) {
   );
 }
 
+
+function DeadlineQueueRow({ item, matterReference }) {
+  return (
+    <div className="grid gap-4 px-5 py-4 lg:grid-cols-[1.2fr_1fr_1fr_auto] lg:items-center">
+      <div className="min-w-0">
+        <p className="truncate text-sm font-black text-white">{item.title}</p>
+        <p className="mt-1 truncate text-[11px] text-stone-500">
+          {matterReference || item.caseMatterId} · {item.deadlineKind}
+        </p>
+      </div>
+      <div>
+        <p className="text-[9px] font-black uppercase tracking-wider text-stone-600">Recorded due at</p>
+        <p className="mt-1 text-xs font-semibold text-stone-300">{formatTimestamp(item.dueAt)}</p>
+      </div>
+      <div>
+        <p className="text-[9px] font-black uppercase tracking-wider text-stone-600">Source / jurisdiction</p>
+        <p className="mt-1 text-xs font-semibold text-stone-300">{item.sourceType}</p>
+        <p className="mt-1 truncate text-[10px] text-stone-600">{item.jurisdictionReference}</p>
+      </div>
+      <StatePill state={item.status} />
+    </div>
+  );
+}
+
+function LegalDeadlineWorkQueue({ workspace }) {
+  const [deadlines, setDeadlines] = useState([]);
+  const [status, setStatus] = useState({ kind: 'loading', message: '' });
+
+  const load = useCallback(async () => {
+    const matters = Array.isArray(workspace?.matters) ? workspace.matters : [];
+    setStatus({ kind: 'loading', message: '' });
+    try {
+      const packets = await Promise.all(
+        matters.map((matter) => getLegalMatterDeadlines(matter.case_matter_id)),
+      );
+      setDeadlines(packets.flat());
+      setStatus({ kind: 'ready', message: '' });
+    } catch (caught) {
+      setDeadlines([]);
+      setStatus({
+        kind: 'error',
+        message: commandErrorMessage(caught),
+      });
+    }
+  }, [workspace]);
+
+  useEffect(() => {
+    load();
+  }, [load]);
+
+  const matterReferences = useMemo(
+    () => new Map(
+      (workspace?.matters || []).map((matter) => [
+        matter.case_matter_id,
+        matter.matter_reference,
+      ]),
+    ),
+    [workspace],
+  );
+
+  if (status.kind === 'loading') {
+    return (
+      <section aria-label="Matter deadline work queue" className="rounded-2xl border border-stone-800 bg-stone-950/75 p-5">
+        <div className="flex items-center gap-3 text-sm text-stone-300">
+          <Loader2 className="animate-spin text-amber-400" size={18} />
+          Loading certified matter deadlines…
+        </div>
+      </section>
+    );
+  }
+
+  return (
+    <div className="space-y-4">
+      {status.kind === 'error' && (
+        <section className="rounded-2xl border border-red-900/40 bg-red-950/15 p-4 text-xs text-red-300">
+          Deadline evidence is unavailable. {status.message}
+        </section>
+      )}
+      <QueuePanel
+        title="Matter deadlines"
+        subtitle="Recorded deadline facts only · no browser legal-period or overdue calculation"
+        icon={Clock3}
+        rows={deadlines}
+        emptyMessage="No certified deadlines are recorded for the current matter workspace."
+        renderRow={(item) => (
+          <DeadlineQueueRow
+            key={item.deadlineId}
+            item={item}
+            matterReference={matterReferences.get(item.caseMatterId)}
+          />
+        )}
+      />
+      <div className="flex justify-end">
+        <button
+          type="button"
+          onClick={load}
+          className="inline-flex min-h-[40px] items-center gap-2 rounded-lg border border-stone-800 bg-stone-950 px-3 text-[11px] font-black text-stone-300 hover:text-white"
+        >
+          <RefreshCw size={14} />
+          Refresh deadlines
+        </button>
+      </div>
+    </div>
+  );
+}
+
 function LegalPracticeWorkspace({
   conflictScreenings,
   error,
@@ -2466,6 +2590,7 @@ function LegalPracticeWorkspace({
     { id: PRACTICE_WORKSPACE_VIEWS.DOCUMENTS, label: 'Process Documents', icon: FileText },
     { id: PRACTICE_WORKSPACE_VIEWS.SERVICE, label: 'Service Operations', icon: Clock3 },
     { id: PRACTICE_WORKSPACE_VIEWS.RETURNS, label: 'Returns of Service', icon: FileCheck2 },
+    ...(canReadDeadline ? [{ id: PRACTICE_WORKSPACE_VIEWS.DEADLINES, label: 'Deadlines', icon: Clock3 }] : []),
     ...(canOpenFinance ? [{ id: PRACTICE_WORKSPACE_VIEWS.FINANCE, label: 'Finance Evidence', icon: Landmark }] : []),
     ...(canIntake ? [{ id: PRACTICE_WORKSPACE_VIEWS.INTAKE, label: 'New Instruction', icon: FilePlus2 }] : []),
   ];
@@ -2675,6 +2800,8 @@ function LegalPracticeWorkspace({
         renderRow={(item) => <PracticeLifecycleRow key={item.return_id} item={item} kind="return" />}
       />
     );
+  } else if (!error && activeView === PRACTICE_WORKSPACE_VIEWS.DEADLINES) {
+    content = <LegalDeadlineWorkQueue workspace={workspace} />;
   } else if (!error && activeView === PRACTICE_WORKSPACE_VIEWS.FINANCE) {
     content = <LegalFinanceLookup roleToken={roleToken} user={user} />;
   } else if (!error && activeView === PRACTICE_WORKSPACE_VIEWS.INTAKE) {
@@ -3958,7 +4085,7 @@ export default function LegalDashboard({
 
 /**
  * ARTIFACT: LegalDashboard.jsx
- * VERSION: v12.4.0-L10-P2C7V-ADAPTIVE-LEGAL-RUNWAY
+ * VERSION: v12.5.0-D4B-MATTER-DEADLINE-WORK-QUEUE
  * AUTHORITY BOUNDARY: governed Legal Practice/Finance/SHERIFF/DEPUTY/LEGAL_CLIENT presentation plus already-authorized intake, ReturnOfService, bounded human conflict-review command initiation and bound-Deputy command initiation only; D24C authenticated person names and L8-8M conflict-review controls are descriptive/wiring projections that create no identity, membership, role, permission, tenant, operating-model, conflict clearance, waiver or financial authority; Python EOS owns authorization and legal truth
  * TENANT POSTURE: every data surface remains server-authorized and tenant-scoped; practice workspace is D15 snapshot truth with first-class CaseMatter evidence, client matters are D5/D7 visibility-bound, deputy commands require exact capability parity
  * FAIL-CLOSED POSTURE: unresolved role, malformed/absent person-name text, explicit or server-authoritative legal-permission narrowing, denied/unavailable workspace/client/specialist read, malformed finance/intake/return/field evidence, command failure or failed refresh never invents names or truth, widens role scope, fabricates operating-model authority or cross-role fallback
