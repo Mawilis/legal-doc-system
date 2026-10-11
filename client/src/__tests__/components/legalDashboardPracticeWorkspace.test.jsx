@@ -596,7 +596,7 @@ describe('D15 first-class Legal Matter Operating Room', () => {
     expect(within(posture).getByText('Role baseline compatibility')).toBeInTheDocument();
     expect(within(posture).getByText('LEGAL_PARTNER')).toBeInTheDocument();
     expect(within(posture).getByText(
-      'Intake · Return generation · Billing evidence · Invoice evidence · Matter deadlines',
+      'Intake · Return generation · Billing evidence · Invoice evidence · Matter deadlines · Deadline creation',
     )).toBeInTheDocument();
     expect(within(posture).getByText(/Python EOS re-authorizes every Legal Operations request/i)).toBeInTheDocument();
   });
