@@ -162,14 +162,14 @@ def _project(value: LegalMatterDeadline) -> dict[str, Any]:
     return {
         "deadline_id": value.deadline_id,
         "case_matter_id": value.case_matter_id,
-        "deadline_kind": value.deadline_kind.value,
+        "deadline_kind": str(value.deadline_kind),
         "title": value.title,
         "due_at": value.due_at.isoformat(),
-        "source_type": value.source_type.value,
+        "source_type": str(value.source_type),
         "jurisdiction_reference": value.jurisdiction_reference,
         "created_at": value.created_at.isoformat(),
         "supersedes_deadline_id": value.supersedes_deadline_id,
-        "status": value.status.value,
+        "status": str(value.status),
     }
 
 
