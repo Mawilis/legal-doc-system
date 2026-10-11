@@ -38,9 +38,13 @@ def _effective_routes() -> list[tuple[str, tuple[str, ...]]]:
             continue
         if "/deadlines" not in path:
             continue
-        if not isinstance(methods, set):
+        if methods is None:
             continue
-        result.append((path, tuple(sorted(methods))))
+        try:
+            normalized_methods = tuple(sorted(str(method) for method in methods))
+        except TypeError:
+            continue
+        result.append((path, normalized_methods))
     return sorted(result)
 
 
