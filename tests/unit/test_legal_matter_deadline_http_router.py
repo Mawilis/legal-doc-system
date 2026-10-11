@@ -345,8 +345,8 @@ def test_router_source_has_no_direct_collection_write_or_financial_ai_surface() 
         "update_one(",
         "replace_one(",
         "delete_one(",
-        "payment",
-        "settlement",
+        "payment_state",
+        "settlement_state",
         "ai_generated",
         "ai_inferred_due_at",
     ):
