@@ -161,7 +161,13 @@ def test_router_topology_and_authorization_bindings_are_exact() -> None:
     assert deadline_api._WRITE.operation == "legal_matter_deadline_write"
     assert deadline_api._READ.permission_id == "legal_operations:matter_deadline:read"
     assert deadline_api._READ.operation == "legal_matter_deadline_read"
-    routes = {(route.path, tuple(sorted(route.methods or ()))) for route in deadline_api.router.routes}
+    routes = {
+        (
+            getattr(route, "path", ""),
+            tuple(sorted(getattr(route, "methods", set()) or set())),
+        )
+        for route in deadline_api.router.routes
+    }
     assert routes == {
         ("/legal-operations/matters/{case_matter_id}/deadlines", ("GET",)),
         ("/legal-operations/matters/{case_matter_id}/deadlines", ("POST",)),
