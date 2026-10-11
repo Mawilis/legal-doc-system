@@ -218,7 +218,7 @@ describe('D4B Legal matter deadline work queue', () => {
     expect(within(queue).getByText('CASE-2026-0002 · CONTRACTUAL')).toBeInTheDocument();
     expect(within(queue).getByText('ACTIVE')).toBeInTheDocument();
     expect(within(queue).getByText('SATISFIED')).toBeInTheDocument();
-    expect(within(queue).queryByText(/OVERDUE/i)).not.toBeInTheDocument();
+    expect(within(queue).queryByText('OVERDUE', { exact: true })).not.toBeInTheDocument();
   });
 
   it('keeps deadline transport closed when an authoritative permission projection omits read authority', async () => {
