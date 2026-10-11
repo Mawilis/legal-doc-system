@@ -195,10 +195,26 @@ def restore_registry() -> Any:
     original_context = orchestrator.context_registry.get_valid_context
     original_revalidate = orchestrator._revalidate_dependencies
     original_matter = orchestrator._matter
+    original_get_acceptance = (
+        orchestrator.LegalClientAcceptanceRegistry.__dict__["get_acceptance"]
+    )
+    original_persist_acceptance = (
+        orchestrator.LegalClientAcceptanceRegistry.__dict__["persist_acceptance"]
+    )
     yield
     orchestrator.context_registry.get_valid_context = original_context
     orchestrator._revalidate_dependencies = original_revalidate
     orchestrator._matter = original_matter
+    setattr(
+        orchestrator.LegalClientAcceptanceRegistry,
+        "get_acceptance",
+        original_get_acceptance,
+    )
+    setattr(
+        orchestrator.LegalClientAcceptanceRegistry,
+        "persist_acceptance",
+        original_persist_acceptance,
+    )
 
 
 def test_request_surface_is_minimal_and_old_authority_fields_are_removed() -> None:

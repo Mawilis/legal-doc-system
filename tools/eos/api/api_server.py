@@ -12,7 +12,7 @@ FILE:
     tools/eos/api/api_server.py
 
 VERSION:
-    v1.9.0-D3B2B-MATTER-DEADLINE-ROUTER-MOUNT
+    v1.10.0-LEGAL-CLIENT-ACCEPTANCE-ROUTER-MOUNT
 
 AUTHORITY:
     Wilsy OS Core Governance.
@@ -35,6 +35,11 @@ CERTIFICATION / UPDATE DATE:
     2026-10-11
 
 CHANGELOG:
+    v1.10.0-LEGAL-CLIENT-ACCEPTANCE-ROUTER-MOUNT
+        - Mounts the directly certified Legal Client Acceptance HTTP router
+          exactly once under /api/legal-operations/client while preserving
+          router-owned tenant, IAM, transaction, acceptance, engagement,
+          representation, Court, billing, settlement and Kennel boundaries.
     v1.9.0-D3B2B-MATTER-DEADLINE-ROUTER-MOUNT
         - Mounts the certified Legal Matter Deadline router exactly once under
           /api/legal-operations without creating tenant, deadline, AI, billing,
@@ -131,12 +136,13 @@ from tools.eos.api.legal_operations_router import router as legal_operations_rou
 from tools.eos.api.legal_operations_command_router import router as legal_operations_command_router
 from tools.eos.api.legal_operations_billing_read_router import router as legal_operations_billing_read_router
 from tools.eos.api.legal_matter_deadline_router import router as legal_matter_deadline_router
+from tools.eos.api.legal_client_acceptance_router import router as legal_client_acceptance_router
 from tools.eos.api.wilsy_ai_legal_gateway_router import router as wilsy_ai_legal_gateway_router
 from tools.eos.api.legal_acceptance_router import router as legal_acceptance_router
 from tools.eos.api.tenant_branding_router import router as tenant_branding_router
 
 
-VERSION = "v1.9.0-D3B2B-MATTER-DEADLINE-ROUTER-MOUNT"
+VERSION = "v1.10.0-LEGAL-CLIENT-ACCEPTANCE-ROUTER-MOUNT"
 
 _PRODUCTION_MODE = os.getenv("WILSY_ENV", os.getenv("ENV", "")).strip().lower() == "production"
 _DOCS_ENABLED = not _PRODUCTION_MODE or os.getenv("WILSY_API_DOCS_ENABLED", "").strip().lower() in {"1", "true", "yes", "on"}
@@ -179,6 +185,7 @@ app.include_router(legal_operations_router, prefix="/api")
 app.include_router(legal_operations_command_router, prefix="/api")
 app.include_router(legal_operations_billing_read_router, prefix="/api")
 app.include_router(legal_matter_deadline_router, prefix="/api")
+app.include_router(legal_client_acceptance_router, prefix="/api")
 app.include_router(wilsy_ai_legal_gateway_router, prefix="/api")
 app.include_router(legal_acceptance_router, prefix="/api")
 app.include_router(tenant_branding_router, prefix="/api")
@@ -255,7 +262,7 @@ async def root(request: Request) -> Any:
 # WILSY OS SOVEREIGN ARTIFACT CERTIFICATION SEAL
 # =============================================================================
 # ARTIFACT: api_server.py
-# VERSION: v1.9.0-D3B2B-MATTER-DEADLINE-ROUTER-MOUNT
+# VERSION: v1.10.0-LEGAL-CLIENT-ACCEPTANCE-ROUTER-MOUNT
 # AUTHORITY BOUNDARY: canonical ASGI composition and router registration only; authentication, membership, business-role, permission, authorization, and persistence authority remain outside this artifact
 # TENANT POSTURE: tenant and deadline routers are mounted exactly once; their own durable authorization and exact scope rules remain authoritative; composition creates no cross-tenant authority
 # FAIL-CLOSED POSTURE: application registration never grants authority; tenant and deadline persistence remain reachable only through their certified dependencies, exact scope checks, and bounded contracts
