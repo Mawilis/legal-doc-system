@@ -1,5 +1,5 @@
 """TITLE: WILSY OS Tenant Authorization Composition.
-VERSION: v1.36.0-CLIENT-ACCEPTANCE-INSTRUMENT-PROVISIONING-BINDING
+VERSION: v1.37.0-LEGAL-NOTIFICATION-RECIPIENT-BINDING-AUTHORIZATION
 AUTHORITY: Read-only composition of current principal, membership, role and permission truth.
 EPITOME: Produces deterministic fail-closed tenant authorization decisions,
 including the own-tenant WILSY AI usage-capacity and billing-intelligence
@@ -9,7 +9,7 @@ provisioning binding, and the explicit LEGAL_CLIENT matter-projection read
 binding; it does not mutate or transport.
 ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/tools/eos/auth/tenant_authorization.py
 COLLABORATION / OWNERSHIP: Wilson Khanyezi / Wilsy Core Engineering.
-CERTIFICATION/UPDATE DATE: 2026-10-11.
+CERTIFICATION / UPDATE DATE: 2026-10-12
 CHANGELOG:
     2026-10-11 v1.36.0 binds legal_matter_acceptance_instrument_write exactly
     to legal_operations:matter_acceptance_instrument:write.
@@ -152,7 +152,7 @@ v1.4.0-M11-R8-R3B-P6A binds the provider-neutral
 inbound_collection_authorization_create operation to its exact tenant
 privilege; no typed authorization or durable evidence is created here.
 COMPLIANCE: POPIA section 19; GDPR Article 32; SOC 2 CC7.2; ISO 27001.
-SECURITY/PRIVACY POSTURE: Exact scope, active-state, canonical permission, and fail-closed checks; no JWT/header trust.
+SECURITY / PRIVACY POSTURE: Exact scope, active-state, canonical permission, and fail-closed checks; no JWT/header trust.
 TENANT BOUNDARY: Requires exact principal and tenant membership; WILSY AI
 capacity and billing-intelligence evidence reads remain own-tenant scoped and
 cross-tenant requests deny.
@@ -178,7 +178,7 @@ from tools.eos.auth.tenant_authority_policy import ELIGIBLE, tenant_role_operati
 from tools.eos.auth.permission_namespace import PermissionDisposition, permission_metadata
 from tools.eos.auth.roles import get_roles_granting_permission
 
-VERSION = "v1.36.0-CLIENT-ACCEPTANCE-INSTRUMENT-PROVISIONING-BINDING"
+VERSION = "v1.37.0-LEGAL-NOTIFICATION-RECIPIENT-BINDING-AUTHORIZATION"
 class TenantAuthorizationReason(StrEnum):
     AUTHORIZED="AUTHORIZED"; INVALID_INPUT="INVALID_INPUT"; PRINCIPAL_NOT_FOUND="PRINCIPAL_NOT_FOUND"; PRINCIPAL_INACTIVE="PRINCIPAL_INACTIVE"; PRINCIPAL_AUTHORITY_UNAVAILABLE="PRINCIPAL_AUTHORITY_UNAVAILABLE"; MEMBERSHIP_NOT_FOUND="MEMBERSHIP_NOT_FOUND"; MEMBERSHIP_INACTIVE="MEMBERSHIP_INACTIVE"; MEMBERSHIP_AUTHORITY_UNAVAILABLE="MEMBERSHIP_AUTHORITY_UNAVAILABLE"; NO_ACTIVE_TENANT_BUSINESS_ROLE="NO_ACTIVE_TENANT_BUSINESS_ROLE"; MULTIPLE_ACTIVE_TENANT_BUSINESS_ROLES="MULTIPLE_ACTIVE_TENANT_BUSINESS_ROLES"; TENANT_BUSINESS_ROLE_AUTHORITY_UNAVAILABLE="TENANT_BUSINESS_ROLE_AUTHORITY_UNAVAILABLE"; PERMISSION_UNKNOWN="PERMISSION_UNKNOWN"; PERMISSION_NOT_CANONICAL="PERMISSION_NOT_CANONICAL"; PERMISSION_NAMESPACE_MISMATCH="PERMISSION_NAMESPACE_MISMATCH"; PERMISSION_OPERATION_MISMATCH="PERMISSION_OPERATION_MISMATCH"; PERMISSION_NOT_GRANTED="PERMISSION_NOT_GRANTED"; ROLE_ASSIGNMENT_INACTIVE="ROLE_ASSIGNMENT_INACTIVE"; BUSINESS_ROLE_INELIGIBLE="BUSINESS_ROLE_INELIGIBLE"; SYSTEM_AUTHORITY_REQUIRED="SYSTEM_AUTHORITY_REQUIRED"; FINANCIAL_EXECUTION_PROHIBITED="FINANCIAL_EXECUTION_PROHIBITED"; ROLE_ASSIGNMENT_AUTHORITY_UNAVAILABLE="ROLE_ASSIGNMENT_AUTHORITY_UNAVAILABLE"
 @dataclass(frozen=True, slots=True)
@@ -201,6 +201,7 @@ _BINDINGS = MappingProxyType({**_BINDINGS, "legal_matter_representation_firm_dec
 _BINDINGS = MappingProxyType({**_BINDINGS, "tenant_branding_read": "tenant_branding:read", "tenant_branding_profile_manage": "tenant_branding:profile:manage", "tenant_branding_asset_manage": "tenant_branding:asset:manage"})
 _BINDINGS = MappingProxyType({**_BINDINGS, "legal_evidence_write": "legal_operations:evidence:write"})
 _BINDINGS = MappingProxyType({**_BINDINGS, "legal_evidence_cleanup_authorize": "legal_operations:evidence_cleanup:authorize"})
+_BINDINGS = MappingProxyType({**_BINDINGS, "legal_notification_recipient_binding_write": "legal_operations:notification_recipient_binding:write"})
 
 _BINDINGS = MappingProxyType({
     "crm_lead_create": "crm:lead:create",
@@ -303,7 +304,7 @@ def authorize_tenant_operation(*, principal_id: object, tenant_id: object, permi
 
 __all__ = ["VERSION", "TenantAuthorizationReason", "TenantAuthorizationDecision", "authorize_tenant_operation"]
 # ARTIFACT: tenant_authorization.py
-# VERSION: v1.36.0-CLIENT-ACCEPTANCE-INSTRUMENT-PROVISIONING-BINDING
+# VERSION: v1.37.0-LEGAL-NOTIFICATION-RECIPIENT-BINDING-AUTHORIZATION
 # AUTHORITY BOUNDARY: current-truth composition only; no mutation or transport
 # TENANT POSTURE: exact active principal, membership, eligible business role, exact own-tenant permission-operation pair, and active granting role are required; conflict review is partner/attorney-only and client matter access still requires ACTIVE visibility
 # FAIL-CLOSED POSTURE: unknown, inactive, missing, ambiguous, unavailable, mismatched, or financial requests deny

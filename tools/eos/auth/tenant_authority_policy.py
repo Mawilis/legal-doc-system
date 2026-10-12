@@ -1,5 +1,5 @@
 """TITLE: WILSY OS Tenant Business Authority Policy Canon.
-VERSION: v1.39.0-CLIENT-ACCEPTANCE-INSTRUMENT-PROVISIONING-ELIGIBILITY
+VERSION: v1.40.0-LEGAL-NOTIFICATION-RECIPIENT-BINDING-ELIGIBILITY
 AUTHORITY: Canonical business eligibility facts only; this module does not authorize.
 EPITOME: Defines bounded tenant-role eligibility and field boundaries, including
 own-tenant WILSY AI usage-capacity and billing-intelligence evidence read eligibility and dedicated
@@ -10,7 +10,7 @@ tenant_legal_client-only client-matter projection read eligibility, plus the
 exact Partner/Attorney-only firm-decision operation eligibility.
 ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/tools/eos/auth/tenant_authority_policy.py
 COLLABORATION / OWNERSHIP: Wilson Khanyezi / Wilsy Core Engineering.
-CERTIFICATION/UPDATE DATE: 2026-10-11.
+CERTIFICATION / UPDATE DATE: 2026-10-12
 CHANGELOG:
     2026-10-11 v1.39.0 adds legal_matter_acceptance_instrument_write eligibility
     exactly for tenant_legal_partner and tenant_legal_attorney.
@@ -169,7 +169,7 @@ tenant commercial-liability operation eligible only to tenant_owner; tenant_admi
 tenant_manager, and tenant_auditor remain ineligible, financial_execution remains
 explicitly denied, and no financial or Kennel authority is created.
 COMPLIANCE: POPIA section 19; GDPR Article 32; SOC 2 CC7.2; ISO 27001.
-SECURITY/PRIVACY POSTURE: Pure deterministic metadata; no persistence,
+SECURITY / PRIVACY POSTURE: Pure deterministic metadata; no persistence,
 credentials, network, or implicit authority.
 TENANT BOUNDARY: Eligibility is own-tenant only; WILSY AI capacity-read and
 billing-intelligence evidence-read eligibility, membership, and target scope
@@ -186,7 +186,7 @@ from types import MappingProxyType
 from typing import Final, FrozenSet
 from tools.eos.auth.hr_business_role_catalog import ALL_HR_BUSINESS_ROLES
 
-VERSION = "v1.39.0-CLIENT-ACCEPTANCE-INSTRUMENT-PROVISIONING-ELIGIBILITY"
+VERSION = "v1.40.0-LEGAL-NOTIFICATION-RECIPIENT-BINDING-ELIGIBILITY"
 class SystemAuthorityClassification(StrEnum):
     SYSTEM_REQUIRED = "SYSTEM_REQUIRED"
     SYSTEM_NOT_INHERENTLY_REQUIRED = "SYSTEM_NOT_INHERENTLY_REQUIRED"
@@ -208,6 +208,7 @@ BUSINESS_ROLE_OPERATION_PERMISSIONS: Final = MappingProxyType({
     "crm_email_template_share": "crm:email_template:share",
     "legal_evidence_write": "legal_operations:evidence:write",
     "legal_evidence_cleanup_authorize": "legal_operations:evidence_cleanup:authorize",
+    "legal_notification_recipient_binding_write": "legal_operations:notification_recipient_binding:write",
     "hr_employee_relation_write": "hr:employee_relation:write",
     "hr_document_standard_employment_write": "hr:document:standard_employment:write",
     "hr_document_standard_employment_read": "hr:document:standard_employment:read",
@@ -330,6 +331,15 @@ _cleanup_authority_updates["tenant_legal_partner"] = MappingProxyType(
     _partner_cleanup_authority
 )
 ELIGIBILITY = MappingProxyType(_cleanup_authority_updates)
+
+# L8-8H5 freezes recipient-binding administration to Partner and Attorney only.
+OPERATIONS: FrozenSet[str] = frozenset((*OPERATIONS, "legal_notification_recipient_binding_write"))
+_recipient_binding_updates = dict(ELIGIBILITY)
+for _role in ("tenant_legal_partner", "tenant_legal_attorney"):
+    _recipient_binding_role = dict(_recipient_binding_updates[_role])
+    _recipient_binding_role["legal_notification_recipient_binding_write"] = ELIGIBLE
+    _recipient_binding_updates[_role] = MappingProxyType(_recipient_binding_role)
+ELIGIBILITY = MappingProxyType(_recipient_binding_updates)
 
 
 # P0-C12E4B3B: all 101 frozen HR roles enter the canonical
@@ -707,7 +717,7 @@ def requires_system_authority(operation: object) -> SystemAuthorityClassificatio
 __all__ = ["VERSION", "ELIGIBLE", "DENY", "SystemAuthorityClassification", "TENANT_ROLES", "OPERATIONS", "ELIGIBILITY", "BUSINESS_ROLE_OPERATION_PERMISSIONS", "PROFILE_READABLE_FIELDS", "PROFILE_MUTABLE_FIELDS_V1", "LIFECYCLE_FIELDS", "VERIFICATION_FIELDS", "BILLING_METADATA_FIELDS", "EVIDENCE_FIELDS", "SECURITY_SENSITIVE_FIELDS", "SYSTEM_MANAGED_FIELDS", "FUTURE_PERMISSION_CANDIDATES", "normalize_tenant_business_role", "tenant_role_operation_eligibility", "permission_for_business_role_operation", "allowed_profile_mutation_fields", "is_hard_delete_allowed", "requires_system_authority"]
 
 # ARTIFACT: tenant_authority_policy.py
-# VERSION: v1.39.0-CLIENT-ACCEPTANCE-INSTRUMENT-PROVISIONING-ELIGIBILITY
+# VERSION: v1.40.0-LEGAL-NOTIFICATION-RECIPIENT-BINDING-ELIGIBILITY
 # AUTHORITY BOUNDARY: business eligibility facts only; no authorization or mutation
 # TENANT POSTURE: own-tenant conflict-review, client-matter and client-visibility eligibility require separate ACTIVE membership, assignment and exact permission binding; client visibility remains separately scope-bound
 # FAIL-CLOSED POSTURE: unknown roles and operations deny; ELIGIBLE never grants access

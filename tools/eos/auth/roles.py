@@ -1,5 +1,5 @@
 """TITLE: WILSY OS Role Definition Policy.
-VERSION: v1.39.0-CLIENT-ACCEPTANCE-INSTRUMENT-PROVISIONING-GRANTS
+VERSION: v1.40.0-LEGAL-NOTIFICATION-RECIPIENT-BINDING-GRANTS
 AUTHORITY: Canonical Python role identifiers and explicit permission grants.
 EPITOME: Defines current tenant-scoped authorization roles, including
 least-privilege subscription/plan-catalogue grants, read-only WILSY AI
@@ -13,7 +13,7 @@ firm-decision grant without creating tenant-wide matter reads, deputy
 possession, service, or financial authority.
 ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/tools/eos/auth/roles.py
 COLLABORATION / OWNERSHIP: Wilson Khanyezi / Wilsy Core Engineering.
-CERTIFICATION/UPDATE DATE: 2026-10-11.
+CERTIFICATION / UPDATE DATE: 2026-10-12
 CHANGELOG:
     2026-10-11 v1.39.0 grants dedicated acceptance-instrument provisioning
     exactly to LEGAL_PARTNER and LEGAL_ATTORNEY; approval remains separate.
@@ -195,7 +195,7 @@ from __future__ import annotations
 from collections.abc import Iterable
 
 
-VERSION = "v1.39.0-CLIENT-ACCEPTANCE-INSTRUMENT-PROVISIONING-GRANTS"
+VERSION = "v1.40.0-LEGAL-NOTIFICATION-RECIPIENT-BINDING-GRANTS"
 
 
 ROLE_PERMISSIONS_MAP: dict[str, list[str]] = {
@@ -261,6 +261,7 @@ ROLE_PERMISSIONS_MAP: dict[str, list[str]] = {
         "legal_operations:matter_deadline:write",
         "legal_operations:evidence:write",
         "legal_operations:evidence_cleanup:authorize",
+        "legal_operations:notification_recipient_binding:write",
         "legal_operations:client_visibility:write",
         "legal_operations:conflict_review:write",
         "legal_operations:matter_acceptance_instrument_approval:write",
@@ -276,6 +277,7 @@ ROLE_PERMISSIONS_MAP: dict[str, list[str]] = {
         "legal_operations:invoice:read",
     ],
     "LEGAL_ATTORNEY": [
+        "legal_operations:notification_recipient_binding:write",
         "legal_operations:instruction:read",
         "legal_operations:instruction:write",
         "legal_operations:matter_deadline:read",
@@ -501,7 +503,7 @@ __all__ = [
 ]
 
 # ARTIFACT: tools/eos/auth/roles.py
-# VERSION: v1.39.0-CLIENT-ACCEPTANCE-INSTRUMENT-PROVISIONING-GRANTS
+# VERSION: v1.40.0-LEGAL-NOTIFICATION-RECIPIENT-BINDING-GRANTS
 # AUTHORITY BOUNDARY: role identifiers and deterministic permission definitions only; current assignment is separate authority
 # TENANT POSTURE: role definitions never establish tenant membership or role possession; conflict-review write is partner/attorney-only policy and client-matter read remains visibility-bound
 # FAIL-CLOSED POSTURE: unknown roles and permissions never manufacture grants

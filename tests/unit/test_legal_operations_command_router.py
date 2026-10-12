@@ -1,7 +1,7 @@
 """
 TITLE: Wilsy OS Legal Operations Command API Certificate
-VERSION: v1.7.1-L8-8K-CONFLICT-REVIEW-COMMAND-API-CERT
-AUTHORITY: Transport/transaction composition only; P1/P4/P5 and L8-8J remain canonical.
+VERSION: v1.8.0-L8-8H6-NOTIFICATION-RECIPIENT-BINDING-COMMAND-API-CERT
+AUTHORITY: Transport/transaction composition only; P1/P4/P5, L8-8J and L8-8H recipient authority remain canonical.
 EPITOME: Proves authenticated intake/acceptance-receipt/directory/field-service and bounded
          human conflict-review command input boundaries, bound-Deputy field evidence
          composition, transaction ownership, path binding, tenant derivation, and
@@ -12,8 +12,14 @@ COLLABORATION / OWNERSHIP: L8-3/L8-6/L8-8K command certificate; canonical intake
                             acceptance/receipt, directory, lifecycle, persistence, field-service,
                             conflict-review domain/orchestration/registry and authorization remain
                             read-only authorities under test.
-CERTIFICATION DATE: 2026-10-01
-CHANGELOG: 2026-10-01 v1.7.1-L8-8K-CONFLICT-REVIEW-COMMAND-API-CERT
+CERTIFICATION DATE: 2026-10-12
+CHANGELOG: 2026-10-12 v1.8.0-L8-8H6-NOTIFICATION-RECIPIENT-BINDING-COMMAND-API-CERT
+           adds the three exact recipient-binding command routes to the frozen
+           route inventory while preserving caller-authority-field rejection and
+           all prior command regressions. Dedicated recipient create/revoke/
+           supersede behavior is certified separately by the L8-8H6 recipient
+           command certificate.
+           2026-10-01 v1.7.1-L8-8K-CONFLICT-REVIEW-COMMAND-API-CERT
            aligns the direct command-router certificate with the already-certified
            L8-8K bounded human conflict-review command route, while preserving
            server-owned authorization, transaction, evidence and financial boundaries.
@@ -66,9 +72,11 @@ TENANT BOUNDARY: X-Tenant-ID is supplied only by the authorization dependency;
 AUTHORITY BOUNDARY: Ordinary commands dispatch one canonical orchestrator;
                     L8-6E/L8-6G field commands certify only the bounded P5M ->
                     P5D/P5E chain with server-owned sequence lineage; L8-8K
-                    conflict review delegates exclusively to certified L8-8J and
-                    transport never constructs lifecycle, clearance, waiver,
-                    representation, authorization, or financial truth.
+                    conflict review delegates exclusively to certified L8-8J;
+                    recipient-binding routes compose only certified L8-8H
+                    immutable binding/lifecycle authority with server-owned IAM
+                    chronology; transport never constructs clearance, contact,
+                    delivery, representation, or financial truth.
 FINANCIAL AUTHORITY BOUNDARY: No invoice, payment, settlement, or financial
                               execution authority; Kennel EOS remains exclusive.
 FAIL-CLOSED DECLARATION: Extra authority fields, path divergence, invalid state,
@@ -246,6 +254,9 @@ def test_routes_are_explicit_and_command_models_forbid_authority_fields() -> Non
         "/legal-operations/deputy/attempts/{attempt_id}/transition",
         "/legal-operations/deputy/attempts/{attempt_id}/outcome",
         "/legal-operations/conflict-reviews",
+        "/legal-operations/notification-recipient-bindings",
+        "/legal-operations/notification-recipient-bindings/revocations",
+        "/legal-operations/notification-recipient-bindings/supersessions",
         "/legal-operations/executions/{execution_id}/return",
     }
     with pytest.raises(ValidationError):
@@ -1162,11 +1173,11 @@ def test_allocation_dispatches_only_p4a_and_never_accepts_caller_state(monkeypat
 def test_command_module_has_no_financial_or_client_ownership_surface() -> None:
     names = set(vars(command_api))
     assert not any(token in names for token in {"Invoice", "Payment", "Settlement", "MongoClient", "mongo_client", "_client"})
-    assert command_api.VERSION == "v1.7.1-L8-8K-CONFLICT-REVIEW-COMMAND-API"
+    assert command_api.VERSION == "v1.8.0-L8-8H6-NOTIFICATION-RECIPIENT-BINDING-COMMAND-API"
 
 
 # ARTIFACT: test_legal_operations_command_router.py
-# VERSION: v1.7.1-L8-8K-CONFLICT-REVIEW-COMMAND-API-CERT
+# VERSION: v1.8.0-L8-8H6-NOTIFICATION-RECIPIENT-BINDING-COMMAND-API-CERT
 # AUTHORITY BOUNDARY: direct intake/receipt/directory/deputy-binding/field-service plus bounded human conflict-review command composition certificate only
 # TENANT POSTURE: explicit authorized context; bodies cannot establish scope
 # FAIL-CLOSED POSTURE: invalid, divergent, and failed transactions reject
