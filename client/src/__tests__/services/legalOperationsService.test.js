@@ -1,14 +1,15 @@
 /**
  * WILSY OS — ROLE-SCOPED LEGAL OPERATIONS CLIENT CERTIFICATE
- * VERSION: v2.4.0-LEGAL-CLIENT-ACCEPTANCE-BROWSER-TRANSPORT-CERT
+ * VERSION: v2.5.0-LEGAL-EVIDENCE-UPLOAD-BROWSER-TRANSPORT-CERT
  * AUTHORITY: Client transport-adapter contract certification only.
  * EPITOME: Certifies the canonical Legal Operations browser adapter across
  *          sheriff/deputy/client reads, D11 law-firm workspace, exact finance
  *          evidence lookup, governed initial intake, ReturnOfService generation
  *          and bound-Deputy field commands without browser-owned authority.
  * ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/client/src/__tests__/services/legalOperationsService.test.js
- * CERTIFICATION / UPDATE DATE: 2026-09-25
- * CHANGELOG: 2026-09-25 v2.3.0-L8-8N-CONFLICT-SCREENING-READ-CLIENT-CERT binds the authenticated screening review-queue read adapter to the canonical /api/legal-operations/conflict-screenings path, proves exact data-minimized rows, server-owned tenant/order/status and privileged-field rejection.
+ * CERTIFICATION / UPDATE DATE: 2026-10-12
+ * CHANGELOG: 2026-10-12 v2.5.0-LEGAL-EVIDENCE-UPLOAD-BROWSER-TRANSPORT-CERT proves unchanged FormData, no manual multipart boundary, exact document endpoint/idempotency header, no browser authority fields, and strict canonical response validation.
+ *            2026-09-25 v2.3.0-L8-8N-CONFLICT-SCREENING-READ-CLIENT-CERT binds the authenticated screening review-queue read adapter to the canonical /api/legal-operations/conflict-screenings path, proves exact data-minimized rows, server-owned tenant/order/status and privileged-field rejection.
  *            2026-09-25 v2.2.0-L8-8L-CONFLICT-REVIEW-COMMAND-CLIENT-CERT binds the authenticated four-field conflict-review adapter to the canonical /api/legal-operations/conflict-reviews path, proves server-owned authority exclusion, bounded receipt validation and unchanged 401/403/404/409/transport failures.
  *            2026-09-24 v2.1.0-L8-7D15-MATTER-WORKSPACE-COMPATIBILITY-CERT binds production v1.6.0-L8-7D15-MATTER-WORKSPACE-COMPATIBILITY and proves V1 remains unchanged while V2 requires exact first-class CaseMatter rows, matter counts, deterministic order, valid states and SHA3-512 evidence locators; mixed or malformed contracts reject fail-closed.
  *            2026-09-24 v2.0.1-L8-7D14-WORKSPACE-SUMMARY-VALIDATION-CERT binds production v1.5.1-L8-7D14-WORKSPACE-SUMMARY-VALIDATION and proves
@@ -76,6 +77,7 @@ import {
   recordDeputyFieldOutcome,
   registerLegalIntake,
   transitionDeputyFieldAttempt,
+  uploadLegalEvidence,
 } from '../../services/legalOperationsService.js';
 
 const payload = () => ({
@@ -1546,14 +1548,45 @@ describe('L8-7D7 role-scoped Legal Operations client adapter', () => {
     }
 
     expect(LEGAL_OPERATIONS_CLIENT_VERSION).toBe(
-      'v1.9.0-LEGAL-CLIENT-ACCEPTANCE-BROWSER-TRANSPORT',
+      'v2.0.0-LEGAL-EVIDENCE-UPLOAD-BROWSER-TRANSPORT',
     );
+  });
+
+  it('uploads unchanged FormData without browser authority or multipart headers', async () => {
+    const file = new File(['%PDF-proof'], 'proof.pdf', { type: 'application/pdf' });
+    mockPost.mockResolvedValueOnce({
+      data: {
+        schema: 'WILSY-LEGAL-EVIDENCE-UPLOAD-RESULT/V1',
+        version: 'v1.0.0-L10A4-LEGAL-EVIDENCE-UPLOAD-HTTP',
+        ingestion_reference: 'legal-evidence-ingestion:abc',
+        document_id: 'document-1',
+        case_matter_id: 'matter-1',
+        state: 'COMMITTED',
+        content_reference: 'legal-evidence-content:abc',
+        content_fingerprint: 'a'.repeat(128),
+        content_length: file.size,
+        uncertainty_id: null,
+      },
+    });
+
+    const result = await uploadLegalEvidence({
+      documentId: 'document-1', file, idempotencyKey: 'upload-command-1',
+    });
+
+    const [path, body, config] = mockPost.mock.calls[0];
+    expect(path).toBe('/legal-operations/evidence/documents/document-1');
+    expect(body).toBeInstanceOf(FormData);
+    expect([...body.keys()]).toEqual(['file']);
+    expect(config).toEqual({ headers: { 'Idempotency-Key': 'upload-command-1' } });
+    expect(config.headers).not.toHaveProperty('Content-Type');
+    expect(result.state).toBe('COMMITTED');
+    expect(Object.isFrozen(result)).toBe(true);
   });
 });
 
 /**
  * ARTIFACT: legalOperationsService.test.js
- * VERSION: v2.3.0-L8-8N-CONFLICT-SCREENING-READ-CLIENT-CERT
+ * VERSION: v2.5.0-LEGAL-EVIDENCE-UPLOAD-BROWSER-TRANSPORT-CERT
  * AUTHORITY BOUNDARY: Legal Operations read/intake/return/deputy-command/conflict-review browser adapter certificate only
  * TENANT POSTURE: server tenant/principal/role/client/deputy scope remains authoritative; browser cannot create authorization scope
  * FAIL-CLOSED POSTURE: malformed/extra/missing/schema/version/order/scope/state/command-response drift rejects before presentation or transport success

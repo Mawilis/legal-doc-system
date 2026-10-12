@@ -1,6 +1,6 @@
 /**
  * WILSY OS — ROLE-SCOPED LEGAL OPERATIONS COCKPIT
- * VERSION: v12.7.0-LEGAL-CLIENT-ACCEPTANCE-REVIEW
+ * VERSION: v12.8.0-LEGAL-EVIDENCE-UPLOAD-WORKSPACE
  * AUTHORITY: Presentation of authenticated Python-EOS Legal Operations truth.
  * EPITOME: One role-aware WILSY Legal OS surface for legal-practice operators,
  *          finance, sheriff, deputy and client personas. Law-firm roles receive
@@ -19,8 +19,9 @@
  *                            authenticated snapshot transport; D7 owns browser
  *                            validation. This component owns responsive
  *                            presentation and deputy observation capture only.
- * CERTIFICATION / UPDATE DATE: 2026-10-11
- * CHANGELOG: 2026-10-11 v12.7.0-LEGAL-CLIENT-ACCEPTANCE-REVIEW adds a write-gated evidenced deadline form for Partner/Attorney/Paralegal only, dispatches the strict D4A ACTIVE create contract, requires canonical refresh before success, and keeps Secretary read-only without browser lifecycle, tenant, AI or financial authority.
+ * CERTIFICATION / UPDATE DATE: 2026-10-12
+ * CHANGELOG: 2026-10-12 v12.8.0-LEGAL-EVIDENCE-UPLOAD-WORKSPACE adds a Partner-only, permission-narrowed upload control for already-visible canonical ProcessDocuments, with pending/failure/reconciliation states and mandatory canonical refresh after committed success.
+ *            2026-10-11 v12.7.0-LEGAL-CLIENT-ACCEPTANCE-REVIEW adds a write-gated evidenced deadline form for Partner/Attorney/Paralegal only, dispatches the strict D4A ACTIVE create contract, requires canonical refresh before success, and keeps Secretary read-only without browser lifecycle, tenant, AI or financial authority.
  *            2026-10-11 v12.5.0-D4B-MATTER-DEADLINE-WORK-QUEUE adds an on-demand practice deadline work queue backed only by the certified D4A/D3B1 transport, permission-gated to the frozen deadline-read role envelope, with exact matter correlation and no browser legal-period or overdue inference.
  *            2026-09-29 v12.4.0-L10-P2C7V-ADAPTIVE-LEGAL-RUNWAY removes the Legal Practice zero-card strip, presents a canonical empty-workspace operating runway, and renders nonzero signals as a compact adaptive ribbon. It preserves attention-first ordering, role-scoped actions, authenticated tenant-branding presentation and all Python EOS authority boundaries.
  *            2026-09-28 v12.3.0-L10-P2B-ACCOUNT-CENTER-INTEGRATION wires the existing governed WilsyAccountCommandCenter into Legal Practice and Legal Finance shared chrome with authenticated-user and logout continuity. Tenant branding writes remain blocked behind a separate D21B management-authority gate; no Legal authority, Court, finance, or storage truth is introduced.
@@ -152,6 +153,7 @@ import {
   recordDeputyFieldOutcome,
   registerLegalIntake,
   transitionDeputyFieldAttempt,
+  uploadLegalEvidence,
 } from '../../services/legalOperationsService.js';
 import {
   createLegalMatterDeadline,
@@ -162,7 +164,7 @@ import WilsyAccountCommandCenter from '../account/WilsyAccountCommandCenter.jsx'
 import { useAuth } from '../../contexts/authContext.jsx';
 import { useAuthenticatedTenantBrandingAsset } from '../../hooks/useAuthenticatedTenantBrandingAsset.js';
 
-const DASHBOARD_VERSION = 'v12.7.0-LEGAL-CLIENT-ACCEPTANCE-REVIEW';
+const DASHBOARD_VERSION = 'v12.8.0-LEGAL-EVIDENCE-UPLOAD-WORKSPACE';
 
 const EMPTY_QUEUES = Object.freeze({
   tenantId: '',
@@ -277,6 +279,7 @@ const PRESENTATION_PERMISSIONS = Object.freeze({
   INVOICE_READ: 'legal_operations:invoice:read',
   DEADLINE_READ: 'legal_operations:matter_deadline:read',
   DEADLINE_WRITE: 'legal_operations:matter_deadline:write',
+  EVIDENCE_WRITE: 'legal_operations:evidence:write',
 });
 
 const ROLE_PRESENTATION_PERMISSION_ENVELOPE = Object.freeze({
@@ -287,6 +290,7 @@ const ROLE_PRESENTATION_PERMISSION_ENVELOPE = Object.freeze({
     PRESENTATION_PERMISSIONS.INVOICE_READ,
     PRESENTATION_PERMISSIONS.DEADLINE_READ,
     PRESENTATION_PERMISSIONS.DEADLINE_WRITE,
+    PRESENTATION_PERMISSIONS.EVIDENCE_WRITE,
   ]),
   LEGAL_ATTORNEY: Object.freeze([
     PRESENTATION_PERMISSIONS.INSTRUCTION_WRITE,
@@ -2939,6 +2943,81 @@ function LegalDeadlineWorkQueue({ canWrite, workspace }) {
   );
 }
 
+function LegalEvidenceUploadWorkspace({ documents, onCanonicalRefresh }) {
+  const [documentId, setDocumentId] = useState('');
+  const [file, setFile] = useState(null);
+  const [status, setStatus] = useState(null);
+
+  const submit = async (event) => {
+    event.preventDefault();
+    if (!documentId || !(file instanceof File) || status?.kind === 'pending') return;
+    setStatus({ kind: 'pending', message: 'Uploading through governed Legal Evidence admission…' });
+    try {
+      const result = await uploadLegalEvidence({
+        documentId,
+        file,
+        idempotencyKey: `legal-evidence-upload:${crypto.randomUUID()}`,
+      });
+      if (result.state === 'RECONCILIATION_REQUIRED') {
+        setStatus({
+          kind: 'warning',
+          message: 'Provider evidence is durable; canonical commit remains reconciliation-required.',
+        });
+        return;
+      }
+      await onCanonicalRefresh();
+      setStatus({ kind: 'success', message: 'Canonical Legal Evidence commit confirmed and workspace refreshed.' });
+      setFile(null);
+    } catch (error) {
+      setStatus({ kind: 'error', message: error?.message || 'Legal Evidence upload failed.' });
+    }
+  };
+
+  return (
+    <section className="rounded-2xl border border-amber-800/30 bg-stone-950/75 p-5" aria-label="Legal Evidence upload">
+      <div className="flex items-start gap-3">
+        <ShieldCheck className="mt-0.5 text-amber-400" size={20} />
+        <div>
+          <h2 className="text-sm font-black uppercase tracking-[0.12em] text-white">Governed evidence upload</h2>
+          <p className="mt-1 text-xs leading-5 text-stone-500">Select an existing ProcessDocument. Tenant, matter, hashes, capacity and provider coordinates remain server-owned.</p>
+        </div>
+      </div>
+      <form onSubmit={submit} className="mt-4 grid gap-3 lg:grid-cols-[1fr_1fr_auto]">
+        <select
+          aria-label="Evidence ProcessDocument"
+          required
+          value={documentId}
+          onChange={(event) => setDocumentId(event.target.value)}
+          className="min-h-[48px] rounded-xl border border-stone-800 bg-black px-4 text-sm text-white"
+        >
+          <option value="">Select canonical document</option>
+          {documents.map((item) => (
+            <option key={item.document_id} value={item.document_id}>{item.document_id} · {item.state}</option>
+          ))}
+        </select>
+        <input
+          aria-label="Legal Evidence file"
+          type="file"
+          accept="application/pdf,image/jpeg,image/png,image/tiff,text/plain"
+          onChange={(event) => setFile(event.target.files?.[0] || null)}
+          className="min-h-[48px] rounded-xl border border-stone-800 bg-black px-3 py-2 text-xs text-stone-300"
+        />
+        <button
+          type="submit"
+          disabled={!documentId || !file || status?.kind === 'pending'}
+          className="inline-flex min-h-[48px] items-center justify-center gap-2 rounded-xl border border-amber-700/40 bg-amber-500/15 px-5 text-sm font-black text-amber-200 disabled:opacity-40"
+        >
+          {status?.kind === 'pending' ? <Loader2 className="animate-spin" size={16} /> : <FilePlus2 size={16} />}
+          Upload evidence
+        </button>
+      </form>
+      {status && (
+        <p role={status.kind === 'error' ? 'alert' : 'status'} className="mt-3 text-xs text-stone-300">{status.message}</p>
+      )}
+    </section>
+  );
+}
+
 function LegalPracticeWorkspace({
   conflictScreenings,
   error,
@@ -2981,6 +3060,11 @@ function LegalPracticeWorkspace({
     roleToken,
     user,
     permission: PRESENTATION_PERMISSIONS.DEADLINE_WRITE,
+  });
+  const canUploadEvidence = presentationAllowsPermission({
+    roleToken,
+    user,
+    permission: PRESENTATION_PERMISSIONS.EVIDENCE_WRITE,
   });
   const canOpenFinance = canReadBilling || canReadInvoice;
   const [activeView, setActiveView] = useState(PRACTICE_WORKSPACE_VIEWS.COMMAND);
@@ -3232,14 +3316,19 @@ function LegalPracticeWorkspace({
     );
   } else if (!error && activeView === PRACTICE_WORKSPACE_VIEWS.DOCUMENTS) {
     content = (
-      <QueuePanel
-        title="Process documents"
-        subtitle="Current document state · custody and service remain separate evidence"
-        icon={FileText}
-        rows={documents}
-        emptyMessage="No current process documents match this view."
-        renderRow={(item) => <PracticeLifecycleRow key={item.document_id} item={item} kind="document" />}
-      />
+      <div className="space-y-6">
+        {canUploadEvidence && (
+          <LegalEvidenceUploadWorkspace documents={documents} onCanonicalRefresh={onRefresh} />
+        )}
+        <QueuePanel
+          title="Process documents"
+          subtitle="Current document state · custody and service remain separate evidence"
+          icon={FileText}
+          rows={documents}
+          emptyMessage="No current process documents match this view."
+          renderRow={(item) => <PracticeLifecycleRow key={item.document_id} item={item} kind="document" />}
+        />
+      </div>
     );
   } else if (!error && activeView === PRACTICE_WORKSPACE_VIEWS.SERVICE) {
     content = (
@@ -4570,7 +4659,7 @@ export default function LegalDashboard({
 
 /**
  * ARTIFACT: LegalDashboard.jsx
- * VERSION: v12.7.0-LEGAL-CLIENT-ACCEPTANCE-REVIEW
+ * VERSION: v12.8.0-LEGAL-EVIDENCE-UPLOAD-WORKSPACE
  * AUTHORITY BOUNDARY: governed Legal Practice/Finance/SHERIFF/DEPUTY/LEGAL_CLIENT presentation plus already-authorized intake, ReturnOfService, bounded human conflict-review command initiation and bound-Deputy command initiation only; D24C authenticated person names and L8-8M conflict-review controls are descriptive/wiring projections that create no identity, membership, role, permission, tenant, operating-model, conflict clearance, waiver or financial authority; Python EOS owns authorization and legal truth
  * TENANT POSTURE: every data surface remains server-authorized and tenant-scoped; practice workspace is D15 snapshot truth with first-class CaseMatter evidence, client matters are D5/D7 visibility-bound, deputy commands require exact capability parity
  * FAIL-CLOSED POSTURE: unresolved role, malformed/absent person-name text, explicit or server-authoritative legal-permission narrowing, denied/unavailable workspace/client/specialist read, malformed finance/intake/return/field evidence, command failure or failed refresh never invents names or truth, widens role scope, fabricates operating-model authority or cross-role fallback
