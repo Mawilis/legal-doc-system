@@ -324,7 +324,7 @@ def create_return_ready_notification(
     if type(return_of_service) is not ReturnOfService:
         _fail("L8_8E_RETURN_OF_SERVICE_REQUIRED")
     try:
-        return_of_service.__post_init__()
+        return_of_service._validate()  # noqa: SLF001 - canonical source validation boundary.
     except Exception as error:
         raise LegalReturnReadyNotificationError(
             "L8_8E_RETURN_OF_SERVICE_INVALID"
