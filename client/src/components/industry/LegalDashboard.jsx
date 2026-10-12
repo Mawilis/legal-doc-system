@@ -948,19 +948,7 @@ function DocumentQueueRow({ item, mode }) {
       <div className="text-xs text-stone-400">
         {mode === 'receipt' ? 'Awaiting office receipt' : 'Awaiting deputy allocation'}
       </div>
-      <div className="flex flex-wrap items-center justify-end gap-2">
-        <StatePill state={item.state} />
-        {item.state === 'OPEN' && typeof onReviewAcceptance === 'function' && (
-          <button
-            type="button"
-            onClick={() => onReviewAcceptance(item)}
-            className="rounded-lg border border-amber-700/40 bg-amber-500/10 px-3 py-2 text-[10px] font-black uppercase tracking-wider text-amber-300 hover:bg-amber-500/15"
-            aria-label={`Review acceptance for ${item.matterReference}`}
-          >
-            Review acceptance
-          </button>
-        )}
-      </div>
+      <StatePill state={item.state} />
     </div>
   );
 }
@@ -1015,7 +1003,19 @@ function ClientMatterRow({ item, onReviewAcceptance = null }) {
       <div className="text-xs leading-5 text-stone-500">
         Explicitly visible to this authenticated legal client.
       </div>
-      <StatePill state={item.state} />
+      <div className="flex flex-wrap items-center justify-end gap-2">
+        <StatePill state={item.state} />
+        {item.state === 'OPEN' && typeof onReviewAcceptance === 'function' && (
+          <button
+            type="button"
+            onClick={() => onReviewAcceptance(item)}
+            className="rounded-lg border border-amber-700/40 bg-amber-500/10 px-3 py-2 text-[10px] font-black uppercase tracking-wider text-amber-300 hover:bg-amber-500/15"
+            aria-label={`Review acceptance for ${item.matterReference}`}
+          >
+            Review acceptance
+          </button>
+        )}
+      </div>
     </div>
   );
 }
