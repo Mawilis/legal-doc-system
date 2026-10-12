@@ -3,9 +3,10 @@
 TITLE: Wilsy OS Legal Client Acceptance HTTP Router Certificate
 VERSION: v1.1.0-LEGAL-CLIENT-ACTIONABLE-INSTRUMENT-READ-HTTP-CERT
 AUTHORITY: Wilsy OS Core Governance / authenticated HTTP certification.
-EPITOME: Prove the two client-acceptance POST boundaries preserve canonical IAM,
-         server-derived legal truth, transaction ownership, idempotency,
-         explicit confirmation, and fail-closed HTTP translation.
+EPITOME: Prove the actionable-instrument GET plus client-acceptance POST
+         boundaries preserve canonical IAM, server-derived legal truth,
+         transaction ownership, idempotency, explicit confirmation, and
+         fail-closed HTTP translation.
 ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/tests/unit/test_legal_client_acceptance_http_router.py
 CERTIFICATION / UPDATE DATE: 2026-10-11
 TENANT BOUNDARY: Tenant/principal derive only from TenantAuthorizationContext.
