@@ -95,7 +95,7 @@ def mongo_context() -> Iterator[tuple[MongoClient[Any], Any, Any]]:
     assert hello.get("isWritablePrimary", hello.get("ismaster")) is True
 
     database = client[
-        f"wilsy_l8_8b_courier_observation_cert_{uuid4().hex}"
+        f"wilsy_l8_8b_courier_{uuid4().hex}"
     ]
     collection = database.get_collection(
         COLLECTION,
