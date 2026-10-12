@@ -1,7 +1,7 @@
 """Authenticated HTTP boundary for canonical Legal Client Acceptance.
 
 TITLE: WILSY OS Legal Client Acceptance HTTP Router
-VERSION: v1.1.0-LEGAL-CLIENT-ACCEPTANCE-PROVISIONING-CONTENT-HTTP
+VERSION: v1.2.0-LEGAL-CLIENT-ACTIONABLE-INSTRUMENT-READ-HTTP
 AUTHORITY: Existing Wilsy OS Legal Operations client-acceptance authorities only.
 EPITOME: Projects certified server-composed acceptance-context creation and
          immutable client-acceptance issuance without creating new authority.
@@ -46,6 +46,10 @@ from tools.eos.legal_operations.orchestration.legal_client_acceptance_orchestrat
     LegalClientAcceptanceOrchestrationRetryRequiredError,
     issue_legal_client_acceptance,
 )
+from tools.eos.legal_operations.orchestration.legal_client_acceptance_instrument_projection_orchestrator import (
+    LegalClientAcceptanceInstrumentProjectionError,
+    project_legal_client_acceptance_instruments,
+)
 from tools.eos.legal_operations.orchestration.legal_client_matter_acceptance_instrument_provisioning_orchestrator import (
     LegalClientMatterAcceptanceInstrumentProvisioningError,
     LegalClientMatterAcceptanceInstrumentProvisioningRetryRequiredError,
@@ -86,7 +90,7 @@ from tools.eos.legal_operations.registry.legal_operations_lifecycle_registry imp
 )
 
 
-VERSION: Final[str] = "v1.1.0-LEGAL-CLIENT-ACCEPTANCE-PROVISIONING-CONTENT-HTTP"
+VERSION: Final[str] = "v1.2.0-LEGAL-CLIENT-ACTIONABLE-INSTRUMENT-READ-HTTP"
 
 router = APIRouter(
     prefix="/legal-operations/client",
@@ -326,6 +330,50 @@ def _authorization_registry(
         role_assignment_repository=role_assignment_repository,
         business_role_repository=role_assignment_repository,
     )
+
+
+@router.get("/matters/{case_matter_id}/acceptance-instruments")
+async def read_client_actionable_acceptance_instruments(
+    case_matter_id: str,
+    context: TenantAuthorizationContext = Depends(_READ),
+    principal_repository: Any = Depends(get_principal_authority_repository),
+    membership_repository: Any = Depends(get_tenant_membership_repository),
+    role_assignment_repository: Any = Depends(get_role_assignment_repository),
+) -> dict[str, Any]:
+    """Project currently actionable client-review instruments for one visible matter."""
+
+    def run(session: Any, database: Any) -> Any:
+        return project_legal_client_acceptance_instruments(
+            identity=context.identity,
+            case_matter_id=case_matter_id,
+            matter_lifecycle_collection=_collection(database, MATTER_LIFECYCLE_COLLECTION),
+            visibility_collection=_collection(database, VISIBILITY_COLLECTION),
+            party_collection=_collection(database, PARTY_COLLECTION),
+            capacity_collection=_collection(database, CAPACITY_COLLECTION),
+            instrument_collection=_collection(database, INSTRUMENT_COLLECTION),
+            instrument_lifecycle_collection=_collection(
+                database, INSTRUMENT_LIFECYCLE_COLLECTION
+            ),
+            approval_collection=_collection(database, APPROVAL_COLLECTION),
+            principal_repository=principal_repository,
+            membership_repository=membership_repository,
+            business_role_repository=role_assignment_repository,
+            role_assignment_repository=role_assignment_repository,
+            session=session,
+        )
+
+    try:
+        value = _transaction(run)
+    except LegalClientAcceptanceInstrumentProjectionError as error:
+        raise _http_error(error) from error
+    except HTTPException:
+        raise
+    except Exception as error:
+        raise HTTPException(
+            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+            detail="LEGAL_CLIENT_ACCEPTANCE_INSTRUMENT_PROJECTION_UNAVAILABLE",
+        ) from error
+    return {"data": value.to_dict()}
 
 
 @router.post(
@@ -593,7 +641,7 @@ __all__ = [
 ]
 
 # ARTIFACT: legal_client_acceptance_router.py
-# VERSION: v1.1.0-LEGAL-CLIENT-ACCEPTANCE-PROVISIONING-CONTENT-HTTP
+# VERSION: v1.2.0-LEGAL-CLIENT-ACTIONABLE-INSTRUMENT-READ-HTTP
 # AUTHORITY BOUNDARY: authenticated transport only over certified client-acceptance truth
 # TENANT POSTURE: authenticated TenantAuthorizationContext only; no caller tenant authority
 # FAIL-CLOSED POSTURE: malformed, unauthorized, stale, divergent and unavailable truth rejects
