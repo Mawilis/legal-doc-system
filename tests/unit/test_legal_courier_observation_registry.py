@@ -372,7 +372,7 @@ def test_document_history_overflow_rejects() -> None:
         row["observation_id"] = f"obs-{index}"
         row["provider_event_reference"] = f"event-{index}"
         row["fingerprint"] = ""
-        rebuilt = LegalCourierObservation(**row)  # type: ignore[arg-type]
+        rebuilt = LegalCourierObservation.from_dict(row)
         collection.rows.append(rebuilt.to_dict())
 
     with pytest.raises(
