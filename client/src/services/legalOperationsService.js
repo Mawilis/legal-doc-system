@@ -1,6 +1,6 @@
 /**
  * WILSY OS — ROLE-SCOPED LEGAL OPERATIONS CLIENT ADAPTER
- * VERSION: v1.8.0-L8-8N-CONFLICT-SCREENING-READ-CLIENT
+ * VERSION: v1.9.0-LEGAL-CLIENT-ACCEPTANCE-BROWSER-TRANSPORT
  * AUTHORITY: Browser transport validation and presentation adaptation only.
  * EPITOME: Authenticated browser adapter for certified Legal Operations reads,
  *          practice-workspace projection, exact finance evidence lookups,
@@ -18,7 +18,7 @@
  *                            authority. This adapter owns strict browser transport
  *                            validation and immutable presentation adaptation only.
  * CERTIFICATION / UPDATE DATE: 2026-09-25
- * CHANGELOG: 2026-09-25 v1.8.0-L8-8N-CONFLICT-SCREENING-READ-CLIENT adds the authenticated bounded conflict-screening review-queue read adapter. It accepts no tenant input, validates exact server-owned screening identity/status/matter/timestamp rows, preserves deterministic order and excludes screening evidence, party data, review/IAM and financial authority.
+ * CHANGELOG: 2026-09-25 v1.9.0-LEGAL-CLIENT-ACCEPTANCE-BROWSER-TRANSPORT adds the authenticated bounded conflict-screening review-queue read adapter. It accepts no tenant input, validates exact server-owned screening identity/status/matter/timestamp rows, preserves deterministic order and excludes screening evidence, party data, review/IAM and financial authority.
  *            2026-09-25 v1.7.0-L8-8L-CONFLICT-REVIEW-COMMAND-CLIENT adds the single authenticated conflict-review command adapter. It sends only the four human-choice fields through sovereignClient so the legacy api.js body-timestamp interceptor cannot mutate the strict command contract. Server-owned tenant, reviewer, chronology, screening, authorization, party and financial authority remain excluded.
  *            2026-09-24 v1.6.0-L8-7D15-MATTER-WORKSPACE-COMPATIBILITY adds a zero-break dual-contract bridge: the existing D11 V1 workspace remains exact and unchanged, while D15 V2 is admitted only when canonical CaseMatter rows and matter summary counts are present, sorted, exact-keyed, evidence-bound and internally consistent. No browser tenant, matter, lifecycle or financial authority is added.
  *            2026-09-24 v1.5.1-L8-7D14-WORKSPACE-SUMMARY-VALIDATION recomputes every D11 workspace state/outcome
@@ -79,7 +79,7 @@ import api from './api.js';
 import sovereignClient from '../utils/sovereignClient.js';
 
 export const LEGAL_OPERATIONS_CLIENT_VERSION =
-  'v1.8.0-L8-8N-CONFLICT-SCREENING-READ-CLIENT';
+  'v1.9.0-LEGAL-CLIENT-ACCEPTANCE-BROWSER-TRANSPORT';
 
 const CONFLICT_REVIEW_INPUT_KEYS = Object.freeze([
   'screeningId',
@@ -146,6 +146,59 @@ const CLIENT_MATTER_KEYS = Object.freeze([
 const CLIENT_MATTER_STATES = Object.freeze([
   'OPEN',
   'CLOSED',
+]);
+
+const CLIENT_ACCEPTANCE_INSTRUMENT_SCHEMA =
+  'WILSY-LEGAL-CLIENT-ACCEPTANCE-INSTRUMENT-PROJECTION/V1';
+const CLIENT_ACCEPTANCE_INSTRUMENT_VERSION =
+  'v1.0.0-L9A4-P2E-CLIENT-ACCEPTANCE-INSTRUMENT-PROJECTION';
+const CLIENT_ACCEPTANCE_INSTRUMENT_VISIBILITY =
+  'LEGAL_CLIENT_ACTIONABLE_ACCEPTANCE_INSTRUMENTS';
+const CLIENT_ACCEPTANCE_INSTRUMENT_RESPONSE_KEYS = Object.freeze([
+  'schema',
+  'version',
+  'tenant_id',
+  'case_matter_id',
+  'visibility',
+  'instruments',
+]);
+const CLIENT_ACCEPTANCE_INSTRUMENT_KEYS = Object.freeze([
+  'instrument_id',
+  'version',
+  'instrument_kind',
+  'title',
+  'review_scope',
+  'effective_from',
+  'instrument_fingerprint',
+  'content_fingerprint',
+]);
+const CLIENT_ACCEPTANCE_CONTEXT_SCHEMA =
+  'WILSY-LEGAL-CLIENT-ACCEPTANCE-CONTEXT/V1';
+const CLIENT_ACCEPTANCE_CONTEXT_VERSION =
+  'v1.0.0-L9A4-P2C1-CLIENT-ACCEPTANCE-CONTEXT';
+const CLIENT_ACCEPTANCE_CONTEXT_KEYS = Object.freeze([
+  'schema', 'context_version', 'acceptance_context_id', 'tenant_id',
+  'actor_principal_id', 'case_matter_id', 'matter_reference',
+  'matter_fingerprint', 'party_id', 'subject_reference',
+  'subject_identity_fingerprint', 'capacity_id', 'capacity_type',
+  'capacity_fingerprint', 'capacity_effective_from',
+  'capacity_effective_until', 'instrument_id', 'instrument_version',
+  'instrument_fingerprint', 'content_fingerprint', 'content_reference',
+  'title', 'review_scope', 'instrument_effective_from',
+  'lifecycle_status', 'lifecycle_fingerprint',
+  'lifecycle_evidence_fingerprint', 'approval_id', 'approval_decision',
+  'approval_fingerprint', 'approval_effective_from',
+  'issuer_evidence_reference', 'issuer_evidence_fingerprint',
+  'issued_at', 'expires_at', 'replay_key', 'fingerprint',
+]);
+const CLIENT_ACCEPTANCE_SCHEMA = 'WILSY-LEGAL-CLIENT-ACCEPTANCE/V1';
+const CLIENT_ACCEPTANCE_VERSION = 'v1.0.0-L9A-CLIENT-ACCEPTANCE';
+const CLIENT_ACCEPTANCE_KEYS = Object.freeze([
+  'schema', 'acceptance_version', 'tenant_id', 'case_matter_id',
+  'matter_fingerprint', 'acceptance_id', 'party_id', 'subject_reference',
+  'subject_identity_fingerprint', 'acceptance_scope', 'actor_principal_id',
+  'accepted_at', 'source_evidence_reference', 'source_evidence_fingerprint',
+  'fingerprint',
 ]);
 
 const LEGAL_WORKSPACE_SCHEMA =
@@ -647,6 +700,158 @@ function assertCanonicalClientMatterPayload(value) {
     visibility: value.visibility,
     matters: Object.freeze(matters),
   });
+}
+
+
+function assertCanonicalClientAcceptanceInstrumentPayload(value, expectedMatterId) {
+  const errorCode = 'LEGAL_OPERATIONS_CLIENT_ACCEPTANCE_INSTRUMENT_RESPONSE_INVALID';
+  assertExactKeys(value, CLIENT_ACCEPTANCE_INSTRUMENT_RESPONSE_KEYS, errorCode);
+  if (
+    value.schema !== CLIENT_ACCEPTANCE_INSTRUMENT_SCHEMA
+    || value.version !== CLIENT_ACCEPTANCE_INSTRUMENT_VERSION
+    || !isCanonicalText(value.tenant_id)
+    || value.case_matter_id !== expectedMatterId
+    || value.visibility !== CLIENT_ACCEPTANCE_INSTRUMENT_VISIBILITY
+    || !Array.isArray(value.instruments)
+  ) {
+    throw new Error(errorCode);
+  }
+
+  let priorKey = null;
+  const seen = new Set();
+  const instruments = value.instruments.map((entry) => {
+    assertExactKeys(entry, CLIENT_ACCEPTANCE_INSTRUMENT_KEYS, errorCode);
+    if (
+      !isCanonicalText(entry.instrument_id)
+      || !isCanonicalText(entry.version)
+      || !isCanonicalText(entry.instrument_kind)
+      || !isCanonicalText(entry.title)
+      || !isCanonicalText(entry.review_scope)
+      || !isCanonicalTimestamp(entry.effective_from)
+      || !SHA3_512_PATTERN.test(entry.instrument_fingerprint)
+      || !SHA3_512_PATTERN.test(entry.content_fingerprint)
+    ) {
+      throw new Error(errorCode);
+    }
+    const identity = `${entry.instrument_id}\u0000${entry.version}`;
+    if (seen.has(identity)) throw new Error(errorCode);
+    const orderKey = `${entry.effective_from}\u0000${entry.instrument_id}\u0000${entry.version}`;
+    if (priorKey !== null && orderKey > priorKey) throw new Error(errorCode);
+    priorKey = orderKey;
+    seen.add(identity);
+    return Object.freeze({
+      instrumentId: entry.instrument_id,
+      version: entry.version,
+      instrumentKind: entry.instrument_kind,
+      title: entry.title,
+      reviewScope: entry.review_scope,
+      effectiveFrom: entry.effective_from,
+      instrumentFingerprint: entry.instrument_fingerprint,
+      contentFingerprint: entry.content_fingerprint,
+    });
+  });
+
+  return Object.freeze({
+    schema: value.schema,
+    version: value.version,
+    tenantId: value.tenant_id,
+    caseMatterId: value.case_matter_id,
+    visibility: value.visibility,
+    instruments: Object.freeze(instruments),
+  });
+}
+
+function assertCanonicalClientAcceptanceContext(value, expected) {
+  const errorCode = 'LEGAL_OPERATIONS_CLIENT_ACCEPTANCE_CONTEXT_RESPONSE_INVALID';
+  assertExactKeys(value, CLIENT_ACCEPTANCE_CONTEXT_KEYS, errorCode);
+  if (
+    value.schema !== CLIENT_ACCEPTANCE_CONTEXT_SCHEMA
+    || value.context_version !== CLIENT_ACCEPTANCE_CONTEXT_VERSION
+    || value.case_matter_id !== expected.caseMatterId
+    || value.acceptance_context_id !== expected.acceptanceContextId
+    || value.instrument_id !== expected.instrumentId
+    || value.replay_key !== expected.replayKey
+    || !isCanonicalText(value.tenant_id)
+    || !isCanonicalText(value.actor_principal_id)
+    || !isCanonicalText(value.title)
+    || !isCanonicalText(value.review_scope)
+    || !isCanonicalTimestamp(value.issued_at)
+    || !isCanonicalTimestamp(value.expires_at)
+    || !SHA3_512_PATTERN.test(value.matter_fingerprint)
+    || !SHA3_512_PATTERN.test(value.instrument_fingerprint)
+    || !SHA3_512_PATTERN.test(value.content_fingerprint)
+    || !SHA3_512_PATTERN.test(value.fingerprint)
+  ) {
+    throw new Error(errorCode);
+  }
+  return Object.freeze({
+    acceptanceContextId: value.acceptance_context_id,
+    caseMatterId: value.case_matter_id,
+    instrumentId: value.instrument_id,
+    instrumentVersion: value.instrument_version,
+    title: value.title,
+    reviewScope: value.review_scope,
+    issuedAt: value.issued_at,
+    expiresAt: value.expires_at,
+    contentFingerprint: value.content_fingerprint,
+  });
+}
+
+function assertCanonicalClientAcceptance(value, expectedContextId) {
+  const errorCode = 'LEGAL_OPERATIONS_CLIENT_ACCEPTANCE_RESPONSE_INVALID';
+  assertExactKeys(value, CLIENT_ACCEPTANCE_KEYS, errorCode);
+  if (
+    value.schema !== CLIENT_ACCEPTANCE_SCHEMA
+    || value.acceptance_version !== CLIENT_ACCEPTANCE_VERSION
+    || !isCanonicalText(value.tenant_id)
+    || !isCanonicalText(value.case_matter_id)
+    || !isCanonicalText(value.acceptance_id)
+    || !isCanonicalText(value.acceptance_scope)
+    || !isCanonicalTimestamp(value.accepted_at)
+    || !SHA3_512_PATTERN.test(value.matter_fingerprint)
+    || !SHA3_512_PATTERN.test(value.source_evidence_fingerprint)
+    || !SHA3_512_PATTERN.test(value.fingerprint)
+    || !String(value.source_evidence_reference || '').includes(expectedContextId)
+  ) {
+    throw new Error(errorCode);
+  }
+  return Object.freeze({
+    acceptanceId: value.acceptance_id,
+    caseMatterId: value.case_matter_id,
+    acceptanceScope: value.acceptance_scope,
+    acceptedAt: value.accepted_at,
+    fingerprint: value.fingerprint,
+  });
+}
+
+function assertClientAcceptanceContextInput(value) {
+  const errorCode = 'LEGAL_OPERATIONS_CLIENT_ACCEPTANCE_CONTEXT_INPUT_INVALID';
+  assertExactKeys(
+    value,
+    ['caseMatterId', 'acceptanceContextId', 'replayKey', 'instrumentId'],
+    errorCode,
+  );
+  for (const key of ['caseMatterId', 'acceptanceContextId', 'replayKey', 'instrumentId']) {
+    if (!isCanonicalText(value[key])) throw new Error(errorCode);
+  }
+  return Object.freeze({ ...value });
+}
+
+function assertClientAcceptanceConfirmationInput(value) {
+  const errorCode = 'LEGAL_OPERATIONS_CLIENT_ACCEPTANCE_CONFIRMATION_INPUT_INVALID';
+  assertExactKeys(
+    value,
+    ['acceptanceContextId', 'idempotencyKey', 'confirmed'],
+    errorCode,
+  );
+  if (
+    !isCanonicalText(value.acceptanceContextId)
+    || !isCanonicalText(value.idempotencyKey)
+    || value.confirmed !== true
+  ) {
+    throw new Error(errorCode);
+  }
+  return Object.freeze({ ...value });
 }
 
 
@@ -1470,6 +1675,81 @@ export async function getLegalClientMatters() {
   return assertCanonicalClientMatterPayload(response?.data);
 }
 
+
+export async function getLegalClientAcceptanceInstruments(caseMatterId) {
+  if (!isCanonicalText(caseMatterId)) {
+    throw new Error('LEGAL_OPERATIONS_CLIENT_ACCEPTANCE_INSTRUMENT_INPUT_INVALID');
+  }
+  const response = await api.get(
+    `/legal-operations/client/matters/${encodeURIComponent(caseMatterId)}/acceptance-instruments`,
+  );
+  return assertCanonicalClientAcceptanceInstrumentPayload(
+    response?.data?.data ?? response?.data,
+    caseMatterId,
+  );
+}
+
+export async function createLegalClientAcceptanceContext(value) {
+  const input = assertClientAcceptanceContextInput(value);
+  const response = await sovereignClient.post(
+    `/legal-operations/client/matters/${encodeURIComponent(input.caseMatterId)}/acceptance-contexts`,
+    {
+      acceptance_context_id: input.acceptanceContextId,
+      replay_key: input.replayKey,
+      instrument_id: input.instrumentId,
+    },
+  );
+  return assertCanonicalClientAcceptanceContext(response?.data?.data, input);
+}
+
+export async function getLegalClientAcceptanceContent(acceptanceContextId) {
+  if (!isCanonicalText(acceptanceContextId)) {
+    throw new Error('LEGAL_OPERATIONS_CLIENT_ACCEPTANCE_CONTENT_INPUT_INVALID');
+  }
+  const response = await api.get(
+    `/legal-operations/client/acceptance-contexts/${encodeURIComponent(acceptanceContextId)}/content`,
+    { responseType: 'text', transformResponse: [(data) => data] },
+  );
+  const headers = response?.headers || {};
+  const contextId = headers['x-wilsy-acceptance-context-id'];
+  const instrumentId = headers['x-wilsy-instrument-id'];
+  const instrumentVersion = headers['x-wilsy-instrument-version'];
+  const contentFingerprint = headers['x-wilsy-content-fingerprint'];
+  const mediaType = String(headers['content-type'] || '').split(';')[0];
+  if (
+    contextId !== acceptanceContextId
+    || !isCanonicalText(instrumentId)
+    || !isCanonicalText(instrumentVersion)
+    || !SHA3_512_PATTERN.test(contentFingerprint)
+    || !isCanonicalText(mediaType)
+    || typeof response?.data !== 'string'
+    || response.data.length === 0
+  ) {
+    throw new Error('LEGAL_OPERATIONS_CLIENT_ACCEPTANCE_CONTENT_RESPONSE_INVALID');
+  }
+  return Object.freeze({
+    acceptanceContextId: contextId,
+    instrumentId,
+    instrumentVersion,
+    contentFingerprint,
+    mediaType,
+    content: response.data,
+  });
+}
+
+export async function confirmLegalClientAcceptance(value) {
+  const input = assertClientAcceptanceConfirmationInput(value);
+  const response = await sovereignClient.post(
+    `/legal-operations/client/acceptance-contexts/${encodeURIComponent(input.acceptanceContextId)}/acceptances`,
+    { confirmed: true },
+    { headers: { 'Idempotency-Key': input.idempotencyKey } },
+  );
+  return assertCanonicalClientAcceptance(
+    response?.data?.data,
+    input.acceptanceContextId,
+  );
+}
+
 export async function transitionDeputyFieldAttempt(value) {
   const input = assertFieldObservationInput(value);
   const response = await api.post(
@@ -1497,6 +1777,11 @@ export const __legalOperationsServiceInternals = Object.freeze({
   assertCanonicalDeputyActiveWorkPayload,
   assertCanonicalDeputyFieldCapabilitiesPayload,
   assertCanonicalClientMatterPayload,
+  assertCanonicalClientAcceptanceInstrumentPayload,
+  assertCanonicalClientAcceptanceContext,
+  assertCanonicalClientAcceptance,
+  assertClientAcceptanceContextInput,
+  assertClientAcceptanceConfirmationInput,
   assertCanonicalConflictScreeningPayload,
   assertFieldObservationInput,
   assertCanonicalFieldCommandResponse,
@@ -1511,6 +1796,17 @@ export const __legalOperationsServiceInternals = Object.freeze({
   CLIENT_MATTER_RESPONSE_KEYS,
   CLIENT_MATTER_KEYS,
   CLIENT_MATTER_STATES,
+  CLIENT_ACCEPTANCE_INSTRUMENT_SCHEMA,
+  CLIENT_ACCEPTANCE_INSTRUMENT_VERSION,
+  CLIENT_ACCEPTANCE_INSTRUMENT_VISIBILITY,
+  CLIENT_ACCEPTANCE_INSTRUMENT_RESPONSE_KEYS,
+  CLIENT_ACCEPTANCE_INSTRUMENT_KEYS,
+  CLIENT_ACCEPTANCE_CONTEXT_SCHEMA,
+  CLIENT_ACCEPTANCE_CONTEXT_VERSION,
+  CLIENT_ACCEPTANCE_CONTEXT_KEYS,
+  CLIENT_ACCEPTANCE_SCHEMA,
+  CLIENT_ACCEPTANCE_VERSION,
+  CLIENT_ACCEPTANCE_KEYS,
   assertLegalIntakeInput,
   assertCanonicalLegalIntakeResponse,
   assertConflictReviewInput,
@@ -1553,7 +1849,7 @@ export const __legalOperationsServiceInternals = Object.freeze({
 
 /**
  * ARTIFACT: legalOperationsService.js
- * VERSION: v1.8.0-L8-8N-CONFLICT-SCREENING-READ-CLIENT
+ * VERSION: v1.9.0-LEGAL-CLIENT-ACCEPTANCE-BROWSER-TRANSPORT
  * AUTHORITY BOUNDARY: role-scoped Legal Operations read/intake/return/deputy-command/conflict-review browser transport validation only
  * TENANT POSTURE: server tenant/principal/role/client/deputy scope remains authoritative across practice, finance, client and field surfaces; browser cannot establish authorization scope
  * FAIL-CLOSED POSTURE: malformed/extra/missing/scope/state/schema/version/order/command-response drift rejects without fallback
