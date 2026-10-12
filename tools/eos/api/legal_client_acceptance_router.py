@@ -3,7 +3,8 @@
 TITLE: WILSY OS Legal Client Acceptance HTTP Router
 VERSION: v1.2.0-LEGAL-CLIENT-ACTIONABLE-INSTRUMENT-READ-HTTP
 AUTHORITY: Existing Wilsy OS Legal Operations client-acceptance authorities only.
-EPITOME: Projects certified server-composed acceptance-context creation and
+EPITOME: Projects certified actionable acceptance-instrument reads,
+         server-composed acceptance-context creation, content delivery and
          immutable client-acceptance issuance without creating new authority.
 COLLABORATION / OWNERSHIP: HTTP owns request validation, API transaction
                             lifecycle, dependency wiring and error translation.
