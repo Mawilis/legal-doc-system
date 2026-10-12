@@ -1,6 +1,6 @@
 /**
  * WILSY OS — ROLE-SCOPED LEGAL OPERATIONS COCKPIT
- * VERSION: v12.6.0-D4C-MATTER-DEADLINE-CREATE-COMMAND
+ * VERSION: v12.7.0-LEGAL-CLIENT-ACCEPTANCE-REVIEW
  * AUTHORITY: Presentation of authenticated Python-EOS Legal Operations truth.
  * EPITOME: One role-aware WILSY Legal OS surface for legal-practice operators,
  *          finance, sheriff, deputy and client personas. Law-firm roles receive
@@ -20,7 +20,7 @@
  *                            validation. This component owns responsive
  *                            presentation and deputy observation capture only.
  * CERTIFICATION / UPDATE DATE: 2026-10-11
- * CHANGELOG: 2026-10-11 v12.6.0-D4C-MATTER-DEADLINE-CREATE-COMMAND adds a write-gated evidenced deadline form for Partner/Attorney/Paralegal only, dispatches the strict D4A ACTIVE create contract, requires canonical refresh before success, and keeps Secretary read-only without browser lifecycle, tenant, AI or financial authority.
+ * CHANGELOG: 2026-10-11 v12.7.0-LEGAL-CLIENT-ACCEPTANCE-REVIEW adds a write-gated evidenced deadline form for Partner/Attorney/Paralegal only, dispatches the strict D4A ACTIVE create contract, requires canonical refresh before success, and keeps Secretary read-only without browser lifecycle, tenant, AI or financial authority.
  *            2026-10-11 v12.5.0-D4B-MATTER-DEADLINE-WORK-QUEUE adds an on-demand practice deadline work queue backed only by the certified D4A/D3B1 transport, permission-gated to the frozen deadline-read role envelope, with exact matter correlation and no browser legal-period or overdue inference.
  *            2026-09-29 v12.4.0-L10-P2C7V-ADAPTIVE-LEGAL-RUNWAY removes the Legal Practice zero-card strip, presents a canonical empty-workspace operating runway, and renders nonzero signals as a compact adaptive ribbon. It preserves attention-first ordering, role-scoped actions, authenticated tenant-branding presentation and all Python EOS authority boundaries.
  *            2026-09-28 v12.3.0-L10-P2B-ACCOUNT-CENTER-INTEGRATION wires the existing governed WilsyAccountCommandCenter into Legal Practice and Legal Finance shared chrome with authenticated-user and logout continuity. Tenant branding writes remain blocked behind a separate D21B management-authority gate; no Legal authority, Court, finance, or storage truth is introduced.
@@ -140,6 +140,10 @@ import {
   getDeputyFieldCapabilities,
   getDeputyPersonalActiveWork,
   getLegalClientMatters,
+  getLegalClientAcceptanceInstruments,
+  createLegalClientAcceptanceContext,
+  getLegalClientAcceptanceContent,
+  confirmLegalClientAcceptance,
   getLegalConflictScreenings,
   getLegalFinanceEvidence,
   getLegalPracticeWorkspace,
@@ -158,7 +162,7 @@ import WilsyAccountCommandCenter from '../account/WilsyAccountCommandCenter.jsx'
 import { useAuth } from '../../contexts/authContext.jsx';
 import { useAuthenticatedTenantBrandingAsset } from '../../hooks/useAuthenticatedTenantBrandingAsset.js';
 
-const DASHBOARD_VERSION = 'v12.6.0-D4C-MATTER-DEADLINE-CREATE-COMMAND';
+const DASHBOARD_VERSION = 'v12.7.0-LEGAL-CLIENT-ACCEPTANCE-REVIEW';
 
 const EMPTY_QUEUES = Object.freeze({
   tenantId: '',
@@ -325,6 +329,7 @@ const PRACTICE_WORKSPACE_VIEWS = Object.freeze({
 const CLIENT_WORKSPACE_VIEWS = Object.freeze({
   OVERVIEW: 'OVERVIEW',
   MATTERS: 'MATTERS',
+  ACCEPTANCE: 'ACCEPTANCE',
   ACCESS: 'ACCESS',
 });
 
@@ -978,7 +983,7 @@ function AttemptQueueRow({ item }) {
   );
 }
 
-function ClientMatterRow({ item }) {
+function ClientMatterRow({ item, onReviewAcceptance = null }) {
   return (
     <div className="grid gap-4 px-5 py-4 md:grid-cols-[1.2fr_1fr_0.8fr_auto] md:items-center">
       <div>
@@ -998,7 +1003,19 @@ function ClientMatterRow({ item }) {
       <div className="text-xs leading-5 text-stone-500">
         Explicitly visible to this authenticated legal client.
       </div>
-      <StatePill state={item.state} />
+      <div className="flex flex-wrap items-center justify-end gap-2">
+        <StatePill state={item.state} />
+        {item.state === 'OPEN' && typeof onReviewAcceptance === 'function' && (
+          <button
+            type="button"
+            onClick={() => onReviewAcceptance(item)}
+            className="rounded-lg border border-amber-700/40 bg-amber-500/10 px-3 py-2 text-[10px] font-black uppercase tracking-wider text-amber-300 hover:bg-amber-500/15"
+            aria-label={`Review acceptance for ${item.matterReference}`}
+          >
+            Review acceptance
+          </button>
+        )}
+      </div>
     </div>
   );
 }
@@ -1016,6 +1033,16 @@ function LegalClientWorkspace({
 }) {
   const [activeView, setActiveView] = useState(CLIENT_WORKSPACE_VIEWS.OVERVIEW);
   const [searchQuery, setSearchQuery] = useState('');
+  const [acceptanceState, setAcceptanceState] = useState({
+    matter: null,
+    instruments: [],
+    instrument: null,
+    context: null,
+    content: null,
+    acceptance: null,
+    status: 'idle',
+    error: '',
+  });
 
   const normalizedQuery = searchQuery.trim().toLowerCase();
   const filteredMatters = useMemo(
@@ -1063,11 +1090,124 @@ function LegalClientWorkspace({
       icon: FileText,
     },
     {
+      id: CLIENT_WORKSPACE_VIEWS.ACCEPTANCE,
+      label: 'Acceptance Review',
+      icon: UserCheck,
+    },
+    {
       id: CLIENT_WORKSPACE_VIEWS.ACCESS,
       label: 'Access & Privacy',
       icon: ShieldCheck,
     },
   ];
+
+  const openAcceptanceReview = async (matter) => {
+    if (matter?.state !== 'OPEN') return;
+    setActiveView(CLIENT_WORKSPACE_VIEWS.ACCEPTANCE);
+    setAcceptanceState({
+      matter,
+      instruments: [],
+      instrument: null,
+      context: null,
+      content: null,
+      acceptance: null,
+      status: 'loading-instruments',
+      error: '',
+    });
+    try {
+      const projection = await getLegalClientAcceptanceInstruments(
+        matter.caseMatterId,
+      );
+      setAcceptanceState((current) => ({
+        ...current,
+        instruments: projection.instruments,
+        status: 'ready',
+      }));
+    } catch (caught) {
+      setAcceptanceState((current) => ({
+        ...current,
+        status: 'error',
+        error:
+          caught?.response?.data?.detail
+          || caught?.message
+          || 'Certified acceptance instruments could not be loaded.',
+      }));
+    }
+  };
+
+  const openAcceptanceInstrument = async (instrument) => {
+    const matter = acceptanceState.matter;
+    if (!matter || matter.state !== 'OPEN') return;
+    const acceptanceContextId =
+      `acceptance-context:${createOpaqueBrowserToken()}`;
+    const replayKey = `acceptance-replay:${createOpaqueBrowserToken()}`;
+    setAcceptanceState((current) => ({
+      ...current,
+      instrument,
+      context: null,
+      content: null,
+      acceptance: null,
+      status: 'loading-content',
+      error: '',
+    }));
+    try {
+      const context = await createLegalClientAcceptanceContext({
+        caseMatterId: matter.caseMatterId,
+        acceptanceContextId,
+        replayKey,
+        instrumentId: instrument.instrumentId,
+      });
+      const content = await getLegalClientAcceptanceContent(
+        context.acceptanceContextId,
+      );
+      setAcceptanceState((current) => ({
+        ...current,
+        context,
+        content,
+        status: 'review',
+      }));
+    } catch (caught) {
+      setAcceptanceState((current) => ({
+        ...current,
+        status: 'error',
+        error:
+          caught?.response?.data?.detail
+          || caught?.message
+          || 'Certified acceptance content could not be loaded.',
+      }));
+    }
+  };
+
+  const confirmAcceptance = async () => {
+    const contextId = acceptanceState.context?.acceptanceContextId;
+    if (!contextId || acceptanceState.status !== 'review') return;
+    setAcceptanceState((current) => ({
+      ...current,
+      status: 'confirming',
+      error: '',
+    }));
+    try {
+      const acceptance = await confirmLegalClientAcceptance({
+        acceptanceContextId: contextId,
+        idempotencyKey: `acceptance-intent:${createOpaqueBrowserToken()}`,
+        confirmed: true,
+      });
+      setAcceptanceState((current) => ({
+        ...current,
+        acceptance,
+        status: 'accepted',
+      }));
+    } catch (caught) {
+      setAcceptanceState((current) => ({
+        ...current,
+        status: 'error',
+        error:
+          caught?.response?.data?.detail
+          || caught?.message
+          || 'Acceptance confirmation could not be recorded.',
+      }));
+    }
+  };
 
   const tenant = {
     ...(tenantConfig || {}),
@@ -1170,7 +1310,11 @@ function LegalClientWorkspace({
               : 'No matters are currently visible to this authenticated legal client.'
           }
           renderRow={(item) => (
-            <ClientMatterRow key={item.caseMatterId} item={item} />
+            <ClientMatterRow
+              key={item.caseMatterId}
+              item={item}
+              onReviewAcceptance={openAcceptanceReview}
+            />
           )}
         />
       </div>
@@ -1188,9 +1332,102 @@ function LegalClientWorkspace({
             : 'No matters are currently visible to this authenticated legal client.'
         }
         renderRow={(item) => (
-          <ClientMatterRow key={item.caseMatterId} item={item} />
+          <ClientMatterRow
+            key={item.caseMatterId}
+            item={item}
+            onReviewAcceptance={openAcceptanceReview}
+          />
         )}
       />
+    );
+  } else if (!error && activeView === CLIENT_WORKSPACE_VIEWS.ACCEPTANCE) {
+    const { matter, instruments, instrument, context, content, acceptance, status: acceptanceStatus, error: acceptanceError } = acceptanceState;
+    workspaceContent = (
+      <div className="space-y-5">
+        <section className="rounded-2xl border border-amber-900/30 bg-amber-950/10 p-5">
+          <p className="text-[10px] font-black uppercase tracking-[0.18em] text-amber-400">
+            Client acceptance review
+          </p>
+          <h2 className="mt-2 text-lg font-black text-white">
+            {matter ? matter.matterReference : 'Choose an OPEN visible matter'}
+          </h2>
+          <p className="mt-2 max-w-3xl text-sm leading-6 text-stone-400">
+            Only server-projected ACTIVE and APPROVED review instruments can appear here. Opening content does not itself record acceptance.
+          </p>
+        </section>
+
+        {acceptanceError && (
+          <section role="alert" className="rounded-2xl border border-red-900/40 bg-red-950/15 p-4 text-sm text-red-300">
+            {acceptanceError}
+          </section>
+        )}
+
+        {acceptanceStatus === 'loading-instruments' && (
+          <p className="text-sm text-stone-400">Loading certified review instruments…</p>
+        )}
+
+        {matter && acceptanceStatus === 'ready' && instruments.length === 0 && (
+          <section className="rounded-2xl border border-stone-800 bg-stone-950 p-5 text-sm text-stone-400">
+            No currently actionable acceptance instrument is available for this matter.
+          </section>
+        )}
+
+        {instruments.length > 0 && !content && (
+          <section className="overflow-hidden rounded-2xl border border-stone-800 bg-stone-950">
+            <div className="border-b border-stone-800 px-5 py-4">
+              <h3 className="text-sm font-black text-white">Available certified reviews</h3>
+            </div>
+            {instruments.map((item) => (
+              <div key={`${item.instrumentId}:${item.version}`} className="flex flex-col gap-3 border-b border-stone-900 px-5 py-4 last:border-b-0 md:flex-row md:items-center md:justify-between">
+                <div>
+                  <p className="text-sm font-black text-white">{item.title}</p>
+                  <p className="mt-1 text-xs text-stone-500">{item.reviewScope}</p>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => openAcceptanceInstrument(item)}
+                  disabled={acceptanceStatus === 'loading-content'}
+                  className="rounded-lg border border-amber-700/40 bg-amber-500/10 px-4 py-2 text-xs font-black text-amber-300 disabled:opacity-50"
+                >
+                  {acceptanceStatus === 'loading-content' && instrument?.instrumentId === item.instrumentId
+                    ? 'Opening…'
+                    : 'Open certified review'}
+                </button>
+              </div>
+            ))}
+          </section>
+        )}
+
+        {content && context && (
+          <section className="rounded-2xl border border-emerald-900/30 bg-emerald-950/10 p-5">
+            <p className="text-[10px] font-black uppercase tracking-[0.18em] text-emerald-400">
+              Integrity-verified review content
+            </p>
+            <h3 className="mt-2 text-lg font-black text-white">{context.title}</h3>
+            <p className="mt-1 text-xs text-stone-500">{context.reviewScope}</p>
+            <div className="mt-4 whitespace-pre-wrap rounded-xl border border-stone-800 bg-black/30 p-4 text-sm leading-6 text-stone-200">
+              {content.content}
+            </div>
+            <p className="mt-3 break-all text-[10px] text-stone-600">
+              Content fingerprint {content.contentFingerprint}
+            </p>
+            {acceptanceStatus === 'accepted' && acceptance ? (
+              <div role="status" className="mt-4 rounded-xl border border-emerald-700/40 bg-emerald-500/10 p-4 text-sm text-emerald-300">
+                Acceptance recorded at {formatTimestamp(acceptance.acceptedAt)}.
+              </div>
+            ) : (
+              <button
+                type="button"
+                onClick={confirmAcceptance}
+                disabled={acceptanceStatus === 'confirming'}
+                className="mt-5 rounded-lg border border-emerald-700/40 bg-emerald-500/10 px-4 py-2 text-xs font-black text-emerald-300 disabled:opacity-50"
+              >
+                {acceptanceStatus === 'confirming' ? 'Recording…' : 'Confirm acceptance'}
+              </button>
+            )}
+          </section>
+        )}
+      </div>
     );
   } else if (!error && activeView === CLIENT_WORKSPACE_VIEWS.ACCESS) {
     workspaceContent = (
@@ -1271,7 +1508,7 @@ function LegalClientWorkspace({
             roleToken="LEGAL_CLIENT"
             user={user}
             authoritySource="Server client visibility projection"
-            activities={['Visible matter read', 'Matter search', 'Canonical refresh']}
+            activities={['Visible matter read', 'Matter search', 'Acceptance review', 'Explicit confirmation', 'Canonical refresh']}
             boundary="Client presentation cannot open internal instructions, documents, service evidence, finance execution or settlement truth."
           />
         )}
@@ -4333,7 +4570,7 @@ export default function LegalDashboard({
 
 /**
  * ARTIFACT: LegalDashboard.jsx
- * VERSION: v12.6.0-D4C-MATTER-DEADLINE-CREATE-COMMAND
+ * VERSION: v12.7.0-LEGAL-CLIENT-ACCEPTANCE-REVIEW
  * AUTHORITY BOUNDARY: governed Legal Practice/Finance/SHERIFF/DEPUTY/LEGAL_CLIENT presentation plus already-authorized intake, ReturnOfService, bounded human conflict-review command initiation and bound-Deputy command initiation only; D24C authenticated person names and L8-8M conflict-review controls are descriptive/wiring projections that create no identity, membership, role, permission, tenant, operating-model, conflict clearance, waiver or financial authority; Python EOS owns authorization and legal truth
  * TENANT POSTURE: every data surface remains server-authorized and tenant-scoped; practice workspace is D15 snapshot truth with first-class CaseMatter evidence, client matters are D5/D7 visibility-bound, deputy commands require exact capability parity
  * FAIL-CLOSED POSTURE: unresolved role, malformed/absent person-name text, explicit or server-authoritative legal-permission narrowing, denied/unavailable workspace/client/specialist read, malformed finance/intake/return/field evidence, command failure or failed refresh never invents names or truth, widens role scope, fabricates operating-model authority or cross-role fallback

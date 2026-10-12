@@ -1,7 +1,7 @@
 """WILSY OS durable matter-specific client-review instrument registry.
 
 TITLE: Legal Client Matter Acceptance Instrument Registry
-VERSION: v1.0.0-L9A4-P1B2-CLIENT-MATTER-ACCEPTANCE-INSTRUMENT-REGISTRY
+VERSION: v1.1.0-L9A4-P1B2-MATTER-INSTRUMENT-LIST-READ
 AUTHORITY: Wilsy OS Core Governance / Python EOS Legal Operations
 EPITOME: Persist immutable tenant- and CaseMatter-scoped client-reviewable
          instrument versions with exact replay, strict corruption rejection,
@@ -14,8 +14,12 @@ COLLABORATION / OWNERSHIP: L9A4-P1B owns the pure instrument value; this
                             instrument/version truth and bounded reads. Future
                             acceptance context owns visibility, party,
                             acting-capacity and current approval composition.
-CERTIFICATION / UPDATE DATE: 2026-09-26
-CHANGELOG: v1.0.0-L9A4-P1B2-CLIENT-MATTER-ACCEPTANCE-INSTRUMENT-REGISTRY
+CERTIFICATION / UPDATE DATE: 2026-10-12
+CHANGELOG: v1.1.0-L9A4-P1B2-MATTER-INSTRUMENT-LIST-READ
+           adds a bounded exact tenant/matter instrument-version listing read
+           over the existing matter-effective index without creating approval,
+           lifecycle, visibility, presentation or currentness authority.
+           2026-09-26 v1.0.0-L9A4-P1B2-CLIENT-MATTER-ACCEPTANCE-INSTRUMENT-REGISTRY
            establishes a dedicated append-only collection, tenant-scoped
            identity/fingerprint uniqueness, exact replay/divergent collision
            handling, existing-chain supersession validation, strict hydration,
@@ -61,7 +65,7 @@ from tools.eos.legal_operations.domain.legal_client_matter_acceptance_instrument
 
 
 VERSION: Final[str] = (
-    "v1.0.0-L9A4-P1B2-CLIENT-MATTER-ACCEPTANCE-INSTRUMENT-REGISTRY"
+    "v1.1.0-L9A4-P1B2-MATTER-INSTRUMENT-LIST-READ"
 )
 RECORD_SCHEMA: Final[str] = (
     "WILSY-LEGAL-CLIENT-MATTER-ACCEPTANCE-INSTRUMENT/V1"
@@ -498,6 +502,54 @@ def list_instrument_versions(
     )
 
 
+
+def list_matter_instruments(
+    tenant_id: str,
+    case_matter_id: str,
+    collection: Any,
+    *,
+    session: Any,
+) -> tuple[LegalClientMatterAcceptanceInstrument, ...]:
+    """List bounded immutable instrument versions for one exact tenant/matter.
+
+    This read deliberately does not select a current, approved or client-visible
+    instrument. It exposes only canonical persisted instrument-version truth so
+    an orchestration layer can compose lifecycle, approval and visibility
+    evidence without bypassing those authorities.
+    """
+    tx = _active_transaction(session)
+    tenant = _text("tenant_id", tenant_id)
+    matter = _text("case_matter_id", case_matter_id)
+    rows = _rows(
+        collection,
+        {"tenant_id": tenant, "case_matter_id": matter},
+        session=tx,
+        limit=MAX_VERSIONS + 1,
+        sort=[
+            ("effective_from", DESCENDING),
+            ("instrument_id", ASCENDING),
+            ("version", DESCENDING),
+        ],
+    )
+    if len(rows) > MAX_VERSIONS:
+        _raise(
+            LegalClientMatterAcceptanceInstrumentRegistryPersistedRecordInvalidError,
+            "L9A4_P1B2_MATTER_LIMIT_EXCEEDED",
+        )
+    values = _scope_values(rows, tenant_id=tenant, case_matter_id=matter)
+    return tuple(
+        sorted(
+            values,
+            key=lambda item: (
+                item.effective_from,
+                item.instrument_id,
+                item.version,
+            ),
+            reverse=True,
+        )
+    )
+
+
 def list_matter_instruments_by_kind(
     tenant_id: str,
     case_matter_id: str,
@@ -717,6 +769,7 @@ class LegalClientMatterAcceptanceInstrumentRegistry:
     get_instrument_by_fingerprint = staticmethod(get_instrument_by_fingerprint)
     get_latest_effective_version = staticmethod(get_latest_effective_version)
     list_instrument_versions = staticmethod(list_instrument_versions)
+    list_matter_instruments = staticmethod(list_matter_instruments)
     list_matter_instruments_by_kind = staticmethod(list_matter_instruments_by_kind)
     persist_instrument = staticmethod(persist_instrument)
 
@@ -747,13 +800,14 @@ __all__ = [
     "get_instrument_by_fingerprint",
     "get_latest_effective_version",
     "list_instrument_versions",
+    "list_matter_instruments",
     "list_matter_instruments_by_kind",
     "persist_instrument",
 ]
 
 
 # ARTIFACT: legal_client_matter_acceptance_instrument_registry.py
-# VERSION: v1.0.0-L9A4-P1B2-CLIENT-MATTER-ACCEPTANCE-INSTRUMENT-REGISTRY
+# VERSION: v1.1.0-L9A4-P1B2-MATTER-INSTRUMENT-LIST-READ
 # AUTHORITY BOUNDARY: immutable matter-scoped instrument persistence/read evidence only
 # TENANT POSTURE: every operational predicate begins with exact tenant_id and matter scope
 # FAIL-CLOSED POSTURE: transaction/corruption/divergence/supersession/race/outage rejects; no TTL/update/delete

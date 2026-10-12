@@ -1,6 +1,6 @@
 /**
  * WILSY OS — LEGAL ROLE EXPERIENCE MATRIX CERTIFICATE
- * VERSION: v1.2.0-L8-8M-R2-CONFLICT-REVIEW-READ-COMPAT-CERT
+ * VERSION: v1.3.0-LEGAL-CLIENT-ACCEPTANCE-REVIEW-CERT
  * AUTHORITY: Browser presentation/wiring evidence only.
  * EPITOME: Certifies that every published Legal persona renders from authenticated
  *          identity plus server-derived authority/capability projections, exposes
@@ -8,7 +8,7 @@
  *          endpoint family.
  * ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/client/src/__tests__/components/legalDashboardRoleExperienceMatrix.test.jsx
  * CERTIFICATION / UPDATE DATE: 2026-09-25
- * CHANGELOG: 2026-09-25 v1.2.0-L8-8M-R2-CONFLICT-REVIEW-READ-COMPAT-CERT updates Legal Practice fixtures with the certified conflict-screening read projection; role identity/activity and permission posture assertions remain unchanged.
+ * CHANGELOG: 2026-09-25 v1.3.0-LEGAL-CLIENT-ACCEPTANCE-REVIEW-CERT updates Legal Practice fixtures with the certified conflict-screening read projection; role identity/activity and permission posture assertions remain unchanged.
  *            v1.1.0-D24C-AUTHENTICATED-PERSON-NAME-PRESENTATION-CERT proves exact authenticated firstName/lastName presentation across Legal practice, finance, client, sheriff and deputy postures; email remains separately visible when distinct, while malformed names and forged legacy displayName/name fields cannot override the bounded fallback. Identity presentation creates no tenant, membership, role, permission, capability, legal lifecycle, billing, payment, execution or settlement authority.
  *            v1.0.0-L8-7D20-MULTI-ROLE-IDENTITY-ACTIVITY-POSTURE-CERT established the multi-role Legal identity/activity and permission-posture matrix.
  * TENANT BOUNDARY: Every fixture is tenant-scoped and synthetic.
@@ -19,7 +19,7 @@
  */
 
 import React from 'react';
-import { render, screen, waitFor, within } from '@testing-library/react';
+import { fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 const {
@@ -27,6 +27,10 @@ const {
   getDeputyFieldCapabilities,
   getDeputyPersonalActiveWork,
   getLegalClientMatters,
+  getLegalClientAcceptanceInstruments,
+  createLegalClientAcceptanceContext,
+  getLegalClientAcceptanceContent,
+  confirmLegalClientAcceptance,
   getLegalConflictScreenings,
   getLegalFinanceEvidence,
   getLegalPracticeWorkspace,
@@ -39,6 +43,10 @@ const {
   getDeputyFieldCapabilities: vi.fn(),
   getDeputyPersonalActiveWork: vi.fn(),
   getLegalClientMatters: vi.fn(),
+  getLegalClientAcceptanceInstruments: vi.fn(),
+  createLegalClientAcceptanceContext: vi.fn(),
+  getLegalClientAcceptanceContent: vi.fn(),
+  confirmLegalClientAcceptance: vi.fn(),
   getLegalConflictScreenings: vi.fn(),
   getLegalFinanceEvidence: vi.fn(),
   getLegalPracticeWorkspace: vi.fn(),
@@ -54,6 +62,10 @@ vi.mock('../../services/legalOperationsService.js', () => ({
   getDeputyFieldCapabilities,
   getDeputyPersonalActiveWork,
   getLegalClientMatters,
+  getLegalClientAcceptanceInstruments,
+  createLegalClientAcceptanceContext,
+  getLegalClientAcceptanceContent,
+  confirmLegalClientAcceptance,
   getLegalConflictScreenings,
   getLegalFinanceEvidence,
   getLegalPracticeWorkspace,
@@ -143,6 +155,73 @@ const clientMatters = () => ({
   tenantId: 'tenant-client',
   visibility: 'LEGAL_CLIENT_EXPLICIT_MATTERS',
   matters: [],
+});
+
+const clientMatterReviewSet = () => ({
+  ...clientMatters(),
+  matters: [
+    {
+      caseMatterId: 'matter-open',
+      matterReference: 'CLIENT-OPEN',
+      openedAt: '2026-10-01T08:00:00+00:00',
+      state: 'OPEN',
+    },
+    {
+      caseMatterId: 'matter-closed',
+      matterReference: 'CLIENT-CLOSED',
+      openedAt: '2026-09-01T08:00:00+00:00',
+      state: 'CLOSED',
+    },
+  ],
+});
+
+const acceptanceInstrumentProjection = () => ({
+  schema: 'WILSY-LEGAL-CLIENT-ACCEPTANCE-INSTRUMENT-PROJECTION/V1',
+  version: 'v1.0.0-L9A4-P2E-CLIENT-ACCEPTANCE-INSTRUMENT-PROJECTION',
+  tenantId: 'tenant-client',
+  caseMatterId: 'matter-open',
+  visibility: 'LEGAL_CLIENT_ACTIONABLE_ACCEPTANCE_INSTRUMENTS',
+  instruments: [
+    {
+      instrumentId: 'terms-1',
+      version: '1.0.0',
+      instrumentKind: 'CLIENT_REVIEW_TERMS',
+      title: 'Client review terms',
+      reviewScope: 'client-information-review:v1',
+      effectiveFrom: '2026-10-10T08:00:00+00:00',
+      instrumentFingerprint: 'a'.repeat(128),
+      contentFingerprint: 'b'.repeat(128),
+    },
+  ],
+});
+
+const acceptanceContext = () => ({
+  acceptanceContextId: 'context-1',
+  caseMatterId: 'matter-open',
+  instrumentId: 'terms-1',
+  instrumentVersion: '1.0.0',
+  title: 'Client review terms',
+  reviewScope: 'client-information-review:v1',
+  issuedAt: '2026-10-12T05:00:00+00:00',
+  expiresAt: '2026-10-12T05:10:00+00:00',
+  contentFingerprint: 'b'.repeat(128),
+});
+
+const acceptanceContent = () => ({
+  acceptanceContextId: 'context-1',
+  instrumentId: 'terms-1',
+  instrumentVersion: '1.0.0',
+  contentFingerprint: 'b'.repeat(128),
+  mediaType: 'text/plain',
+  content: 'Certified client review content.',
+});
+
+const acceptanceReceipt = () => ({
+  acceptanceId: 'LEGAL-CLIENT-ACCEPT:context-1',
+  caseMatterId: 'matter-open',
+  acceptanceScope: 'client-information-review:v1',
+  acceptedAt: '2026-10-12T05:05:00+00:00',
+  fingerprint: 'c'.repeat(128),
 });
 
 const sheriffQueues = () => ({
@@ -347,11 +426,77 @@ describe('D20 Legal role experience matrix', () => {
     expect(within(posture).getByText('client@example.test')).toBeInTheDocument();
     expect(within(posture).getByText('LEGAL_CLIENT')).toBeInTheDocument();
     expect(within(posture).getByText('Server client visibility projection')).toBeInTheDocument();
-    expect(within(posture).getByText('Visible matter read · Matter search · Canonical refresh')).toBeInTheDocument();
+    expect(within(posture).getByText('Visible matter read · Matter search · Acceptance review · Explicit confirmation · Canonical refresh')).toBeInTheDocument();
     expect(getLegalClientMatters).toHaveBeenCalledTimes(1);
     expect(getLegalPracticeWorkspace).not.toHaveBeenCalled();
     expect(getSheriffOperationalQueues).not.toHaveBeenCalled();
     expect(getDeputyPersonalActiveWork).not.toHaveBeenCalled();
+  });
+
+  it('allows acceptance review only from an OPEN visible matter and records only explicit confirmation', async () => {
+    getLegalClientMatters.mockResolvedValueOnce(clientMatterReviewSet());
+    getLegalClientAcceptanceInstruments.mockResolvedValueOnce(
+      acceptanceInstrumentProjection(),
+    );
+    createLegalClientAcceptanceContext.mockResolvedValueOnce(
+      acceptanceContext(),
+    );
+    getLegalClientAcceptanceContent.mockResolvedValueOnce(
+      acceptanceContent(),
+    );
+    confirmLegalClientAcceptance.mockResolvedValueOnce(
+      acceptanceReceipt(),
+    );
+
+    render(
+      <LegalDashboard
+        roleView="LEGAL_CLIENT"
+        user={{
+          id: 'principal-client',
+          email: 'client@example.test',
+          firstName: 'Casey',
+          lastName: 'Client',
+        }}
+        tenantConfig={{ tenantId: 'tenant-client' }}
+      />,
+    );
+
+    await screen.findByText('CLIENT-OPEN');
+    expect(
+      screen.getByRole('button', { name: 'Review acceptance for CLIENT-OPEN' }),
+    ).toBeInTheDocument();
+    expect(
+      screen.queryByRole('button', { name: 'Review acceptance for CLIENT-CLOSED' }),
+    ).not.toBeInTheDocument();
+
+    fireEvent.click(
+      screen.getByRole('button', { name: 'Review acceptance for CLIENT-OPEN' }),
+    );
+    await screen.findByText('Available certified reviews');
+    expect(getLegalClientAcceptanceInstruments).toHaveBeenCalledTimes(1);
+    expect(getLegalClientAcceptanceInstruments).toHaveBeenCalledWith('matter-open');
+    expect(createLegalClientAcceptanceContext).not.toHaveBeenCalled();
+    expect(confirmLegalClientAcceptance).not.toHaveBeenCalled();
+
+    fireEvent.click(
+      screen.getByRole('button', { name: 'Open certified review' }),
+    );
+    await screen.findByText('Certified client review content.');
+    expect(createLegalClientAcceptanceContext).toHaveBeenCalledTimes(1);
+    expect(getLegalClientAcceptanceContent).toHaveBeenCalledTimes(1);
+    expect(confirmLegalClientAcceptance).not.toHaveBeenCalled();
+
+    fireEvent.click(
+      screen.getByRole('button', { name: 'Confirm acceptance' }),
+    );
+    await screen.findByText(/Acceptance recorded at/);
+    expect(confirmLegalClientAcceptance).toHaveBeenCalledTimes(1);
+    expect(confirmLegalClientAcceptance).toHaveBeenCalledWith(
+      expect.objectContaining({
+        acceptanceContextId: 'context-1',
+        confirmed: true,
+      }),
+    );
   });
 
   it('binds SHERIFF to tenant operational queues without Deputy or practice fallback', async () => {
@@ -460,7 +605,7 @@ describe('D20 Legal role experience matrix', () => {
 
 /**
  * ARTIFACT: legalDashboardRoleExperienceMatrix.test.jsx
- * VERSION: v1.2.0-L8-8M-R2-CONFLICT-REVIEW-READ-COMPAT-CERT
+ * VERSION: v1.3.0-LEGAL-CLIENT-ACCEPTANCE-REVIEW-CERT
  * AUTHORITY BOUNDARY: browser presentation evidence only; D24C person-name rendering is descriptive AuthContext projection and Python EOS owns authentication/authorization
  * TENANT POSTURE: synthetic exact tenant scopes only; no cross-tenant fallback
  * FAIL-CLOSED POSTURE: malformed/absent person names are never normalized or inferred, forged legacy name fields do not override bounded identity, permissions/capabilities narrow controls, and unresolved role is network-silent

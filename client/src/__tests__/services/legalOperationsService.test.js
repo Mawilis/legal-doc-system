@@ -1,6 +1,6 @@
 /**
  * WILSY OS — ROLE-SCOPED LEGAL OPERATIONS CLIENT CERTIFICATE
- * VERSION: v2.3.0-L8-8N-CONFLICT-SCREENING-READ-CLIENT-CERT
+ * VERSION: v2.4.0-LEGAL-CLIENT-ACCEPTANCE-BROWSER-TRANSPORT-CERT
  * AUTHORITY: Client transport-adapter contract certification only.
  * EPITOME: Certifies the canonical Legal Operations browser adapter across
  *          sheriff/deputy/client reads, D11 law-firm workspace, exact finance
@@ -64,6 +64,10 @@ import {
   getDeputyFieldCapabilities,
   getDeputyPersonalActiveWork,
   getLegalClientMatters,
+  getLegalClientAcceptanceInstruments,
+  createLegalClientAcceptanceContext,
+  getLegalClientAcceptanceContent,
+  confirmLegalClientAcceptance,
   getLegalConflictScreenings,
   getLegalFinanceEvidence,
   getLegalPracticeWorkspace,
@@ -120,6 +124,85 @@ const clientMatterPayload = () => ({
       state: 'CLOSED',
     },
   ],
+});
+
+
+const acceptanceInstrumentPayload = () => ({
+  schema: 'WILSY-LEGAL-CLIENT-ACCEPTANCE-INSTRUMENT-PROJECTION/V1',
+  version: 'v1.0.0-L9A4-P2E-CLIENT-ACCEPTANCE-INSTRUMENT-PROJECTION',
+  tenant_id: 'tenant-client',
+  case_matter_id: 'matter-a',
+  visibility: 'LEGAL_CLIENT_ACTIONABLE_ACCEPTANCE_INSTRUMENTS',
+  instruments: [
+    {
+      instrument_id: 'terms-1',
+      version: '1.0.0',
+      instrument_kind: 'CLIENT_REVIEW_TERMS',
+      title: 'Client review terms',
+      review_scope: 'client-information-review:v1',
+      effective_from: '2026-10-01T08:00:00+00:00',
+      instrument_fingerprint: 'a'.repeat(128),
+      content_fingerprint: 'b'.repeat(128),
+    },
+  ],
+});
+
+const acceptanceContextPayload = () => ({
+  schema: 'WILSY-LEGAL-CLIENT-ACCEPTANCE-CONTEXT/V1',
+  context_version: 'v1.0.0-L9A4-P2C1-CLIENT-ACCEPTANCE-CONTEXT',
+  acceptance_context_id: 'context-1',
+  tenant_id: 'tenant-client',
+  actor_principal_id: 'principal-client',
+  case_matter_id: 'matter-a',
+  matter_reference: 'CLIENT-001',
+  matter_fingerprint: '1'.repeat(128),
+  party_id: 'party-1',
+  subject_reference: 'client:subject-1',
+  subject_identity_fingerprint: '2'.repeat(128),
+  capacity_id: 'capacity-1',
+  capacity_type: 'REPRESENTATIVE',
+  capacity_fingerprint: '3'.repeat(128),
+  capacity_effective_from: '2026-09-01T08:00:00+00:00',
+  capacity_effective_until: null,
+  instrument_id: 'terms-1',
+  instrument_version: '1.0.0',
+  instrument_fingerprint: 'a'.repeat(128),
+  content_fingerprint: 'b'.repeat(128),
+  content_reference: 'legal-client-acceptance-instrument:opaque:content',
+  title: 'Client review terms',
+  review_scope: 'client-information-review:v1',
+  instrument_effective_from: '2026-10-01T08:00:00+00:00',
+  lifecycle_status: 'ACTIVE',
+  lifecycle_fingerprint: '4'.repeat(128),
+  lifecycle_evidence_fingerprint: '5'.repeat(128),
+  approval_id: 'approval-1',
+  approval_decision: 'APPROVED',
+  approval_fingerprint: '6'.repeat(128),
+  approval_effective_from: '2026-10-01T09:00:00+00:00',
+  issuer_evidence_reference: 'authorization-evidence:context-1',
+  issuer_evidence_fingerprint: '7'.repeat(128),
+  issued_at: '2026-10-12T05:00:00+00:00',
+  expires_at: '2026-10-12T05:10:00+00:00',
+  replay_key: 'replay-1',
+  fingerprint: '8'.repeat(128),
+});
+
+const acceptancePayload = () => ({
+  schema: 'WILSY-LEGAL-CLIENT-ACCEPTANCE/V1',
+  acceptance_version: 'v1.0.0-L9A-CLIENT-ACCEPTANCE',
+  tenant_id: 'tenant-client',
+  case_matter_id: 'matter-a',
+  matter_fingerprint: '1'.repeat(128),
+  acceptance_id: 'LEGAL-CLIENT-ACCEPT:context-1',
+  party_id: 'party-1',
+  subject_reference: 'client:subject-1',
+  subject_identity_fingerprint: '2'.repeat(128),
+  acceptance_scope: 'client-information-review:v1',
+  actor_principal_id: 'principal-client',
+  accepted_at: '2026-10-12T05:05:00+00:00',
+  source_evidence_reference: 'legal-client-acceptance-context:context-1:instrument:terms-1',
+  source_evidence_fingerprint: 'b'.repeat(128),
+  fingerprint: '9'.repeat(128),
 });
 
 
@@ -793,6 +876,165 @@ describe('L8-7D7 role-scoped Legal Operations client adapter', () => {
     expect(Object.isFrozen(result.matters[1])).toBe(true);
   });
 
+  it('reads exact actionable acceptance instruments for one matter', async () => {
+    mockGet.mockResolvedValueOnce({ data: { data: acceptanceInstrumentPayload() } });
+
+    const result = await getLegalClientAcceptanceInstruments('matter-a');
+
+    expect(mockGet).toHaveBeenCalledWith(
+      '/legal-operations/client/matters/matter-a/acceptance-instruments',
+    );
+    expect(result.caseMatterId).toBe('matter-a');
+    expect(result.visibility).toBe('LEGAL_CLIENT_ACTIONABLE_ACCEPTANCE_INSTRUMENTS');
+    expect(result.instruments).toHaveLength(1);
+    expect(result.instruments[0]).toEqual({
+      instrumentId: 'terms-1',
+      version: '1.0.0',
+      instrumentKind: 'CLIENT_REVIEW_TERMS',
+      title: 'Client review terms',
+      reviewScope: 'client-information-review:v1',
+      effectiveFrom: '2026-10-01T08:00:00+00:00',
+      instrumentFingerprint: 'a'.repeat(128),
+      contentFingerprint: 'b'.repeat(128),
+    });
+    expect(Object.isFrozen(result)).toBe(true);
+    expect(Object.isFrozen(result.instruments)).toBe(true);
+    expect(Object.isFrozen(result.instruments[0])).toBe(true);
+  });
+
+  it('rejects actionable instrument matter scope, fingerprint, order, and extra-field drift', () => {
+    const validate =
+      __legalOperationsServiceInternals.assertCanonicalClientAcceptanceInstrumentPayload;
+
+    const crossMatter = acceptanceInstrumentPayload();
+    crossMatter.case_matter_id = 'matter-other';
+    expect(() => validate(crossMatter, 'matter-a')).toThrow(
+      'LEGAL_OPERATIONS_CLIENT_ACCEPTANCE_INSTRUMENT_RESPONSE_INVALID',
+    );
+
+    const malformed = acceptanceInstrumentPayload();
+    malformed.instruments[0].content_fingerprint = 'not-a-fingerprint';
+    expect(() => validate(malformed, 'matter-a')).toThrow(
+      'LEGAL_OPERATIONS_CLIENT_ACCEPTANCE_INSTRUMENT_RESPONSE_INVALID',
+    );
+
+    const extra = acceptanceInstrumentPayload();
+    extra.instruments[0].approval_id = 'approval-leak';
+    expect(() => validate(extra, 'matter-a')).toThrow(
+      'LEGAL_OPERATIONS_CLIENT_ACCEPTANCE_INSTRUMENT_RESPONSE_INVALID',
+    );
+  });
+
+  it('creates client acceptance context through strict sovereign transport only', async () => {
+    mockConflictReviewPost.mockResolvedValueOnce({
+      data: { data: acceptanceContextPayload() },
+    });
+
+    const result = await createLegalClientAcceptanceContext({
+      caseMatterId: 'matter-a',
+      acceptanceContextId: 'context-1',
+      replayKey: 'replay-1',
+      instrumentId: 'terms-1',
+    });
+
+    expect(mockConflictReviewPost).toHaveBeenCalledWith(
+      '/legal-operations/client/matters/matter-a/acceptance-contexts',
+      {
+        acceptance_context_id: 'context-1',
+        replay_key: 'replay-1',
+        instrument_id: 'terms-1',
+      },
+    );
+    expect(result).toEqual({
+      acceptanceContextId: 'context-1',
+      caseMatterId: 'matter-a',
+      instrumentId: 'terms-1',
+      instrumentVersion: '1.0.0',
+      title: 'Client review terms',
+      reviewScope: 'client-information-review:v1',
+      issuedAt: '2026-10-12T05:00:00+00:00',
+      expiresAt: '2026-10-12T05:10:00+00:00',
+      contentFingerprint: 'b'.repeat(128),
+    });
+  });
+
+  it('rejects caller authority in context input before transport', async () => {
+    await expect(createLegalClientAcceptanceContext({
+      caseMatterId: 'matter-a',
+      acceptanceContextId: 'context-1',
+      replayKey: 'replay-1',
+      instrumentId: 'terms-1',
+      tenantId: 'attacker',
+    })).rejects.toThrow('LEGAL_OPERATIONS_CLIENT_ACCEPTANCE_CONTEXT_INPUT_INVALID');
+    expect(mockConflictReviewPost).not.toHaveBeenCalled();
+  });
+
+  it('reads exact integrity headers and review content without JSON coercion', async () => {
+    mockGet.mockResolvedValueOnce({
+      data: 'Certified review content',
+      headers: {
+        'content-type': 'text/plain; charset=utf-8',
+        'x-wilsy-acceptance-context-id': 'context-1',
+        'x-wilsy-instrument-id': 'terms-1',
+        'x-wilsy-instrument-version': '1.0.0',
+        'x-wilsy-content-fingerprint': 'b'.repeat(128),
+      },
+    });
+
+    const result = await getLegalClientAcceptanceContent('context-1');
+
+    expect(mockGet).toHaveBeenCalledWith(
+      '/legal-operations/client/acceptance-contexts/context-1/content',
+      { responseType: 'text', transformResponse: [expect.any(Function)] },
+    );
+    expect(result).toEqual({
+      acceptanceContextId: 'context-1',
+      instrumentId: 'terms-1',
+      instrumentVersion: '1.0.0',
+      contentFingerprint: 'b'.repeat(128),
+      mediaType: 'text/plain',
+      content: 'Certified review content',
+    });
+    expect(Object.isFrozen(result)).toBe(true);
+  });
+
+  it('confirms acceptance with explicit true and exact idempotency header', async () => {
+    mockConflictReviewPost.mockResolvedValueOnce({
+      data: { data: acceptancePayload() },
+    });
+
+    const result = await confirmLegalClientAcceptance({
+      acceptanceContextId: 'context-1',
+      idempotencyKey: 'acceptance-intent-1',
+      confirmed: true,
+    });
+
+    expect(mockConflictReviewPost).toHaveBeenCalledWith(
+      '/legal-operations/client/acceptance-contexts/context-1/acceptances',
+      { confirmed: true },
+      { headers: { 'Idempotency-Key': 'acceptance-intent-1' } },
+    );
+    expect(result.acceptanceId).toBe('LEGAL-CLIENT-ACCEPT:context-1');
+    expect(result.acceptanceScope).toBe('client-information-review:v1');
+    expect(Object.isFrozen(result)).toBe(true);
+  });
+
+  it('rejects false confirmation and extra authority before transport', async () => {
+    await expect(confirmLegalClientAcceptance({
+      acceptanceContextId: 'context-1',
+      idempotencyKey: 'acceptance-intent-1',
+      confirmed: false,
+    })).rejects.toThrow('LEGAL_OPERATIONS_CLIENT_ACCEPTANCE_CONFIRMATION_INPUT_INVALID');
+
+    await expect(confirmLegalClientAcceptance({
+      acceptanceContextId: 'context-1',
+      idempotencyKey: 'acceptance-intent-1',
+      confirmed: true,
+      acceptedAt: '2035-01-01T00:00:00Z',
+    })).rejects.toThrow('LEGAL_OPERATIONS_CLIENT_ACCEPTANCE_CONFIRMATION_INPUT_INVALID');
+    expect(mockConflictReviewPost).not.toHaveBeenCalled();
+  });
+
   it('rejects client schema, version, visibility, state, timestamp, and extra-field drift', () => {
     const validate =
       __legalOperationsServiceInternals.assertCanonicalClientMatterPayload;
@@ -1304,7 +1546,7 @@ describe('L8-7D7 role-scoped Legal Operations client adapter', () => {
     }
 
     expect(LEGAL_OPERATIONS_CLIENT_VERSION).toBe(
-      'v1.8.0-L8-8N-CONFLICT-SCREENING-READ-CLIENT',
+      'v1.9.0-LEGAL-CLIENT-ACCEPTANCE-BROWSER-TRANSPORT',
     );
   });
 });

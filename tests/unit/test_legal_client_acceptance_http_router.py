@@ -1,11 +1,12 @@
 """Direct unit certificate for Legal Client Acceptance HTTP parity.
 
 TITLE: Wilsy OS Legal Client Acceptance HTTP Router Certificate
-VERSION: v1.0.0-LEGAL-CLIENT-ACCEPTANCE-HTTP-ROUTER-CERT
+VERSION: v1.1.0-LEGAL-CLIENT-ACTIONABLE-INSTRUMENT-READ-HTTP-CERT
 AUTHORITY: Wilsy OS Core Governance / authenticated HTTP certification.
-EPITOME: Prove the two client-acceptance POST boundaries preserve canonical IAM,
-         server-derived legal truth, transaction ownership, idempotency,
-         explicit confirmation, and fail-closed HTTP translation.
+EPITOME: Prove the actionable-instrument GET plus client-acceptance POST
+         boundaries preserve canonical IAM, server-derived legal truth,
+         transaction ownership, idempotency, explicit confirmation, and
+         fail-closed HTTP translation.
 ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/tests/unit/test_legal_client_acceptance_http_router.py
 CERTIFICATION / UPDATE DATE: 2026-10-11
 TENANT BOUNDARY: Tenant/principal derive only from TenantAuthorizationContext.
@@ -117,6 +118,11 @@ def test_exact_router_and_request_authority_surface() -> None:
             (
                 "/legal-operations/client/"
                 "matters/{case_matter_id}/acceptance-instruments",
+                ("GET",),
+            ),
+            (
+                "/legal-operations/client/"
+                "matters/{case_matter_id}/acceptance-instruments",
                 ("POST",),
             ),
             (
@@ -185,6 +191,43 @@ def test_acceptance_rejects_caller_asserted_tenant() -> None:
         headers={"Idempotency-Key": "intent-1"},
     )
     assert response.status_code == 422
+
+
+def test_actionable_instrument_get_forwards_only_authenticated_matter_scope(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    captured: dict[str, Any] = {}
+    monkeypatch.setattr(
+        http,
+        "_transaction",
+        lambda callback: callback(object(), _Database()),
+    )
+
+    def project(**kwargs: Any) -> Any:
+        captured.update(kwargs)
+        return _Value("actionable")
+
+    monkeypatch.setattr(
+        http,
+        "project_legal_client_acceptance_instruments",
+        project,
+    )
+    response = _client().get(
+        "/legal-operations/client/matters/matter-1/acceptance-instruments"
+    )
+    assert response.status_code == 200
+    assert response.json() == {"data": {"marker": "actionable"}}
+    assert captured["identity"].tenant_id == TENANT
+    assert captured["identity"].identity_id == PRINCIPAL
+    assert captured["case_matter_id"] == "matter-1"
+    for forbidden in (
+        "tenant_id",
+        "principal_id",
+        "instrument_id",
+        "approval_id",
+        "content_reference",
+    ):
+        assert forbidden not in captured
 
 
 def test_provisioning_rejects_server_owned_fields() -> None:
@@ -487,7 +530,7 @@ def test_iam_denial_blocks_both_routes() -> None:
 
 
 # ARTIFACT: test_legal_client_acceptance_http_router.py
-# VERSION: v1.0.0-LEGAL-CLIENT-ACCEPTANCE-HTTP-ROUTER-CERT
+# VERSION: v1.1.0-LEGAL-CLIENT-ACTIONABLE-INSTRUMENT-READ-HTTP-CERT
 # AUTHORITY BOUNDARY: authenticated transport certification only
 # TENANT POSTURE: no caller tenant/principal authority
 # FINANCIAL EXECUTION AUTHORITY: none; Kennel EOS remains exclusive

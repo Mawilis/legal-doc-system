@@ -1,15 +1,18 @@
 """Direct certificate for the L9A4-P1B2 matter-instrument registry.
 
 TITLE: WILSY OS Legal Client Matter Acceptance Instrument Registry Certificate
-VERSION: v1.0.0-L9A4-P1B2-CLIENT-MATTER-ACCEPTANCE-INSTRUMENT-REGISTRY-CERT
+VERSION: v1.1.0-L9A4-P1B2-MATTER-INSTRUMENT-LIST-READ-CERT
 AUTHORITY: Wilsy OS Core Governance
 EPITOME: Certify exact indexes, caller-owned transactions, replay, collision,
          tenant/matter isolation, supersession, effective selection,
          corruption rejection and authority exclusions.
 ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/tests/unit/test_legal_client_matter_acceptance_instrument_registry.py
 COLLABORATION / OWNERSHIP: Registry-only certificate with synthetic opaque fixtures.
-CERTIFICATION / UPDATE DATE: 2026-09-26
-CHANGELOG: v1.0.0-L9A4-P1B2-CLIENT-MATTER-ACCEPTANCE-INSTRUMENT-REGISTRY-CERT
+CERTIFICATION / UPDATE DATE: 2026-10-12
+CHANGELOG: v1.1.0-L9A4-P1B2-MATTER-INSTRUMENT-LIST-READ-CERT
+           certifies bounded exact tenant/matter instrument-version listing,
+           deterministic ordering and cross-tenant/matter exclusion.
+           2026-09-26 v1.0.0-L9A4-P1B2-CLIENT-MATTER-ACCEPTANCE-INSTRUMENT-REGISTRY-CERT
            proves immutable append-only instrument persistence and safe reads.
 COMPLIANCE: POPIA section 19; GDPR Article 32; SOC 2 CC7.2; ISO 27001.
 SECURITY / PRIVACY POSTURE: No live database, network, credentials, tokens or PII.
@@ -206,6 +209,33 @@ def test_exact_tenant_matter_version_fingerprint_and_kind_reads() -> None:
         registry.get_instrument("tenant-other", "matter-1", "instrument-1", "1.0.0", collection, session=session)
 
 
+
+def test_matter_instrument_listing_is_bounded_and_tenant_scoped() -> None:
+    collection = Collection()
+    values = (
+        instrument(instrument_id="instrument-a"),
+        instrument(instrument_id="instrument-b", content=b"content-b"),
+        instrument(matter_id="matter-2", instrument_id="matter-2-instrument"),
+        instrument(tenant="tenant-other", instrument_id="foreign-instrument"),
+    )
+    for value in values:
+        persist(value, collection)
+    listed = registry.list_matter_instruments(
+        "tenant-law",
+        "matter-1",
+        collection,
+        session=Session(),
+    )
+    assert {value.instrument_id for value in listed} == {
+        "instrument-a",
+        "instrument-b",
+    }
+    assert all(
+        value.tenant_id == "tenant-law" and value.case_matter_id == "matter-1"
+        for value in listed
+    )
+
+
 def test_supersession_requires_existing_same_tenant_matter_instrument_chain() -> None:
     collection = Collection()
     first = instrument()
@@ -272,7 +302,7 @@ def test_session_is_propagated_and_transaction_lifecycle_is_not_owned() -> None:
 
 
 # ARTIFACT: test_legal_client_matter_acceptance_instrument_registry.py
-# VERSION: v1.0.0-L9A4-P1B2-CLIENT-MATTER-ACCEPTANCE-INSTRUMENT-REGISTRY-CERT
+# VERSION: v1.1.0-L9A4-P1B2-MATTER-INSTRUMENT-LIST-READ-CERT
 # AUTHORITY BOUNDARY: direct immutable instrument persistence/read certificate only
 # TENANT POSTURE: exact tenant/matter fake-query assertions
 # FAIL-CLOSED POSTURE: transaction/corruption/divergence/supersession authority rejects
