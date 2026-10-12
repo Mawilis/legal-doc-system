@@ -1,7 +1,7 @@
 """WILSY OS immutable Legal recipient-binding lifecycle evidence.
 
 TITLE: Legal Notification Recipient Binding Lifecycle
-VERSION: v1.0.0-L8-8H-RECIPIENT-BINDING-LIFECYCLE
+VERSION: v1.1.0-L8-8H-RECIPIENT-BINDING-LIFECYCLE
 AUTHORITY: Wilsy OS Core Governance / Python EOS Legal Operations
 EPITOME: Records append-only revocation or exact successor supersession of one
          immutable Legal notification recipient binding.
@@ -9,7 +9,11 @@ ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/tools/eos/legal_
 COLLABORATION / OWNERSHIP: Binding domain owns selections; lifecycle registry
                             persists these events; resolver derives currentness.
 CERTIFICATION / UPDATE DATE: 2026-10-12
-CHANGELOG: v1.0.0 establishes immutable revocation and supersession evidence.
+CHANGELOG: 2026-10-12 v1.1.0 canonicalizes lifecycle UTC instants to BSON
+           millisecond precision before deterministic fingerprint formation,
+           preserving exact durable replay without weakening chronology,
+           lineage, tenant, or fingerprint verification.
+           v1.0.0 establishes immutable revocation and supersession evidence.
 COMPLIANCE: POPIA section 19; GDPR Article 32; SOC 2 CC7.2; SHA3-512.
 SECURITY / PRIVACY POSTURE: Opaque identifiers and fingerprints only.
 TENANT BOUNDARY: Event and target/successor must share exact tenant scope.
@@ -32,7 +36,7 @@ from typing import Final, Mapping, NoReturn, cast
 from tools.eos.legal_operations.domain.legal_notification_recipient_binding import LegalNotificationEvent, LegalNotificationRecipientBinding
 
 SCHEMA: Final[str] = "WILSY-LEGAL-NOTIFICATION-RECIPIENT-BINDING-LIFECYCLE/V1"
-VERSION: Final[str] = "v1.0.0-L8-8H-RECIPIENT-BINDING-LIFECYCLE"
+VERSION: Final[str] = "v1.1.0-L8-8H-RECIPIENT-BINDING-LIFECYCLE"
 _ID: Final[re.Pattern[str]] = re.compile(r"^[A-Za-z0-9][A-Za-z0-9._:-]{0,159}$")
 _FP: Final[re.Pattern[str]] = re.compile(r"^[0-9a-f]{128}$")
 _FORBIDDEN: Final[frozenset[str]] = frozenset({"default", "global", "global_root", "root", "master", "*"})
@@ -66,8 +70,11 @@ def _fp(name: str, value: object) -> str:
 def _utc(name: str, value: object) -> datetime:
     if not isinstance(value, datetime) or value.tzinfo is None or value.utcoffset() is None: _fail(f"L8_8H_LIFECYCLE_{name.upper()}_INVALID")
     result = value.astimezone(timezone.utc)
-    if result != value or result.tzinfo != timezone.utc: _fail(f"L8_8H_LIFECYCLE_{name.upper()}_INVALID")
-    return result
+    if result != value or result.tzinfo != timezone.utc:
+        _fail(f"L8_8H_LIFECYCLE_{name.upper()}_INVALID")
+    return result.replace(
+        microsecond=(result.microsecond // 1000) * 1000
+    )
 
 
 def _time(value: datetime) -> str: return value.isoformat(timespec="microseconds").replace("+00:00", "Z")
@@ -147,7 +154,7 @@ def supersede_binding(*, lifecycle_event_id: str, target: LegalNotificationRecip
 __all__ = ["SCHEMA", "VERSION", "LegalNotificationRecipientBindingLifecycle", "LegalNotificationRecipientBindingLifecycleAction", "LegalNotificationRecipientBindingLifecycleError", "revoke_binding", "supersede_binding"]
 
 # ARTIFACT: legal_notification_recipient_binding_lifecycle.py
-# VERSION: v1.0.0-L8-8H-RECIPIENT-BINDING-LIFECYCLE
+# VERSION: v1.1.0-L8-8H-RECIPIENT-BINDING-LIFECYCLE
 # AUTHORITY BOUNDARY: immutable binding revocation/supersession evidence only
 # TENANT POSTURE: target and successor remain exact same tenant/matter/event scope
 # FAIL-CLOSED POSTURE: lineage, chronology, scope, schema and digest divergence reject

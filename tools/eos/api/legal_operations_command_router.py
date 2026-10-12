@@ -1,7 +1,7 @@
 """WILSY OS Legal Operations command boundary.
 
 TITLE: Legal Operations Command API
-VERSION: v1.7.1-L8-8K-CONFLICT-REVIEW-COMMAND-API
+VERSION: v1.8.0-L8-8H6-NOTIFICATION-RECIPIENT-BINDING-COMMAND-API
 AUTHORITY: HTTP command composition only; P1/P2/L8-1/L8-2/L8-3/L8-6B/P4/P5 remain canonical authorities.
 EPITOME: Translate authenticated tenant-scoped Legal Operations commands,
          including authorized human conflict review, into bounded canonical
@@ -12,8 +12,9 @@ ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/tools/eos/api/le
 COLLABORATION / OWNERSHIP: API composition owns transport and transaction
                            mechanics; domain/registry/orchestrator modules own
                            lifecycle, evidence, and persistence truth.
-CERTIFICATION / UPDATE DATE: 2026-09-23
-CHANGELOG: 2026-09-25 v1.7.1-L8-8K-CONFLICT-REVIEW-COMMAND-API removes transport ownership of reviewed_at. L8-8J now derives immutable review chronology from the durable tenant-authorization evidence authorized_at instant, preserving exact review_id replay across HTTP retries.
+CERTIFICATION / UPDATE DATE: 2026-10-12
+CHANGELOG: 2026-10-12 v1.8.0-L8-8H6-NOTIFICATION-RECIPIENT-BINDING-COMMAND-API adds Partner/Attorney-only explicit recipient-binding create/revoke/supersede admission. Tenant and actor are server-derived; durable authorization evidence re-proves actor authority inside the API-owned transaction and its authorized_at instant exclusively owns immutable binding/lifecycle creation chronology. Target recipient current principal and own-tenant membership are revalidated for create/supersede. Original bindings remain immutable; contact address, transport, delivery, Court, AI and financial authority remain absent.
+           2026-09-25 v1.7.1-L8-8K-CONFLICT-REVIEW-COMMAND-API removes transport ownership of reviewed_at. L8-8J now derives immutable review chronology from the durable tenant-authorization evidence authorized_at instant, preserving exact review_id replay across HTTP retries.
            2026-09-25 v1.7.0-L8-8K-CONFLICT-REVIEW-COMMAND-API
            adds one partner/attorney-only conflict-review POST command guarded by
            legal_operations:conflict_review:write / legal_conflict_review_write.
@@ -122,10 +123,19 @@ from tools.eos.api.tenant_authorization_http import (
 )
 from tools.eos.auth.principal_authority_repository import (
     COLLECTION as PRINCIPAL_AUTHORITY_COLLECTION,
+    PrincipalAuthorityNotFoundError,
+    PrincipalAuthorityRepositoryError,
 )
+from tools.eos.auth.principal_status import PrincipalStatus
+from tools.eos.auth.tenant_membership import TenantMembershipStatus
 from tools.eos.auth.tenant_authorization_decision_evidence_registry import (
     COLLECTION as TENANT_AUTHORIZATION_EVIDENCE_COLLECTION,
+    TenantAuthorizationDecisionEvidenceAuthorizationDeniedError,
+    TenantAuthorizationDecisionEvidenceConflictError,
+    TenantAuthorizationDecisionEvidencePersistenceError,
     TenantAuthorizationDecisionEvidenceRegistry,
+    TenantAuthorizationDecisionEvidenceRegistryError,
+    TenantAuthorizationDecisionEvidenceTransactionRequiredError,
 )
 from tools.eos.auth.role_assignment_repository import (
     COLLECTION as ROLE_ASSIGNMENT_COLLECTION,
@@ -135,6 +145,8 @@ from tools.eos.auth.tenant_business_role_repository import (
 )
 from tools.eos.auth.tenant_membership_repository import (
     COLLECTION as TENANT_MEMBERSHIP_COLLECTION,
+    TenantMembershipNotFoundError,
+    TenantMembershipRepositoryError,
 )
 from tools.eos.legal_operations.domain.process_service_field_evidence_authority import ProcessServiceFieldEvidenceAuthorityError
 from tools.eos.legal_operations.domain.legal_conflict_review import (
@@ -208,9 +220,31 @@ from tools.eos.legal_operations.registry.process_service_field_evidence_registry
     ProcessServiceFieldEvidenceRegistryError,
 )
 from tools.eos.legal_operations.registry.process_service_return_registry import COLLECTION as RETURN_COLLECTION
+from tools.eos.legal_operations.domain.legal_notification_recipient_binding import (
+    LegalNotificationEvent,
+    LegalNotificationRecipientBinding,
+    LegalNotificationRecipientBindingError,
+)
+from tools.eos.legal_operations.domain.legal_notification_recipient_binding_lifecycle import (
+    LegalNotificationRecipientBindingLifecycleError,
+    revoke_binding,
+    supersede_binding,
+)
+from tools.eos.legal_operations.domain.legal_operations_current_projection import resolve_current_lifecycle_snapshot
+from tools.eos.legal_operations.domain.legal_operations_lifecycle import CaseMatter
+from tools.eos.legal_operations.registry.legal_notification_recipient_binding_registry import (
+    COLLECTION as RECIPIENT_BINDING_COLLECTION,
+    LegalNotificationRecipientBindingRegistry,
+    LegalNotificationRecipientBindingRegistryError,
+)
+from tools.eos.legal_operations.registry.legal_notification_recipient_binding_lifecycle_registry import (
+    COLLECTION as RECIPIENT_BINDING_LIFECYCLE_COLLECTION,
+    LegalNotificationRecipientBindingLifecycleRegistry,
+    LegalNotificationRecipientBindingLifecycleRegistryError,
+)
 
 
-VERSION: Final[str] = "v1.7.1-L8-8K-CONFLICT-REVIEW-COMMAND-API"
+VERSION: Final[str] = "v1.8.0-L8-8H6-NOTIFICATION-RECIPIENT-BINDING-COMMAND-API"
 router = APIRouter(prefix="/legal-operations", tags=["Legal Operations Commands"])
 _T = TypeVar("_T")
 _DEPUTY_BUSINESS_ROLE: Final[str] = "tenant_deputy"
@@ -397,6 +431,29 @@ class ConflictReviewCommand(_CommandModel):
     review_id: str = Field(min_length=1)
     outcome: LegalConflictReviewOutcome
     review_reason_reference: str = Field(min_length=1, max_length=512)
+
+
+class RecipientBindingCreateCommand(_CommandModel):
+    """Explicit same-tenant recipient selection; actor and tenant are excluded."""
+    binding_id: str = Field(min_length=1, max_length=160)
+    case_matter_id: str = Field(min_length=1, max_length=160)
+    recipient_principal_id: str = Field(min_length=1, max_length=160)
+    effective_from: datetime
+    effective_until: datetime | None = None
+
+
+class RecipientBindingRevokeCommand(_CommandModel):
+    """Exact immutable target revocation command."""
+    lifecycle_event_id: str = Field(min_length=1, max_length=160)
+    case_matter_id: str = Field(min_length=1, max_length=160)
+    target_binding_id: str = Field(min_length=1, max_length=160)
+    effective_at: datetime
+
+
+class RecipientBindingSupersedeCommand(RecipientBindingCreateCommand):
+    """Exact predecessor plus explicit successor selection command."""
+    lifecycle_event_id: str = Field(min_length=1, max_length=160)
+    target_binding_id: str = Field(min_length=1, max_length=160)
 
 
 class CommandError(RuntimeError):
@@ -686,6 +743,10 @@ def _transaction(callback: Callable[[Any, Any], _T]) -> _T:
         ProcessServiceFieldEvidenceOrchestratorError,
         ProcessServiceFieldEvidenceRegistryError,
         LegalConflictReviewOrchestrationError,
+        LegalNotificationRecipientBindingError,
+        LegalNotificationRecipientBindingLifecycleError,
+        LegalNotificationRecipientBindingRegistryError,
+        LegalNotificationRecipientBindingLifecycleRegistryError,
     ):
         raise
     except Exception as error:
@@ -699,7 +760,7 @@ def _http_error(error: BaseException) -> HTTPException:
         code = getattr(error, "code", "LEGAL_OPERATIONS_COMMAND_FAILED")
     if not isinstance(code, str):
         code = "LEGAL_OPERATIONS_COMMAND_FAILED"
-    if code in {"M2_RETRY_TRANSACTION_REQUIRED", "P4_WHOLE_TRANSACTION_RETRY_REQUIRED", "P5B_RETRY_REQUIRED", "P5M_RETRY_TRANSACTION_REQUIRED", "L8_8J_WHOLE_TRANSACTION_RETRY_REQUIRED"}:
+    if code in {"M2_RETRY_TRANSACTION_REQUIRED", "P4_WHOLE_TRANSACTION_RETRY_REQUIRED", "P5B_RETRY_REQUIRED", "P5M_RETRY_TRANSACTION_REQUIRED", "L8_8J_WHOLE_TRANSACTION_RETRY_REQUIRED", "L8_8H6_WHOLE_TRANSACTION_RETRY_REQUIRED", "L8_8H_REGISTRY_RETRY_TRANSACTION_REQUIRED", "L8_8H_LIFECYCLE_REGISTRY_RETRY_TRANSACTION_REQUIRED"}:
         return HTTPException(status_code=status.HTTP_409_CONFLICT, detail="LEGAL_OPERATIONS_RETRY_REQUIRED")
     if code == "P5M_REPLAY_CONFLICT":
         return HTTPException(status_code=status.HTTP_409_CONFLICT, detail="LEGAL_OPERATIONS_FIELD_EVIDENCE_CONFLICT")
@@ -707,10 +768,29 @@ def _http_error(error: BaseException) -> HTTPException:
         return HTTPException(status_code=status.HTTP_409_CONFLICT, detail="LEGAL_OPERATIONS_DEPUTY_BINDING_CONFLICT")
     if code == "L8_8J_REVIEW_CONFLICT":
         return HTTPException(status_code=status.HTTP_409_CONFLICT, detail="LEGAL_CONFLICT_REVIEW_CONFLICT")
+    if code in {
+        "L8_8H_REGISTRY_REPLAY_CONFLICT",
+        "L8_8H_LIFECYCLE_REGISTRY_REPLAY_CONFLICT",
+        "LEGAL_NOTIFICATION_RECIPIENT_BINDING_AMBIGUOUS",
+    }:
+        return HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail="LEGAL_NOTIFICATION_RECIPIENT_BINDING_CONFLICT",
+        )
     if code in {"L8_6B_BINDING_NOT_FOUND", "LEGAL_OPERATIONS_DEPUTY_COMMAND_REQUIRED"}:
         return HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="DEPUTY_IDENTITY_BINDING_REQUIRED")
     if code == "L8_8J_REVIEWER_AUTHORIZATION_REQUIRED":
         return HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="LEGAL_CONFLICT_REVIEW_AUTHORIZATION_REQUIRED")
+    if code == "LEGAL_NOTIFICATION_RECIPIENT_ADMIN_AUTHORIZATION_REQUIRED":
+        return HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="LEGAL_NOTIFICATION_RECIPIENT_AUTHORIZATION_REQUIRED",
+        )
+    if code == "LEGAL_NOTIFICATION_RECIPIENT_NOT_CURRENT":
+        return HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="LEGAL_OPERATION_NOT_FOUND",
+        )
     if code.endswith("NOT_FOUND") or code in {"P5B_RECEIPT_NOT_FOUND", "P4_RECEIPT_NOT_FOUND", "P4_CURRENT_POINTER_MISSING"}:
         return HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="LEGAL_OPERATION_NOT_FOUND")
     if (
@@ -722,6 +802,7 @@ def _http_error(error: BaseException) -> HTTPException:
             "L8_8J_SCREENING_AUTHORITY_UNAVAILABLE",
             "L8_8J_AUTHORIZATION_EVIDENCE_UNAVAILABLE",
             "L8_8J_REVIEW_PERSISTENCE_UNAVAILABLE",
+            "LEGAL_NOTIFICATION_RECIPIENT_AUTHORITY_UNAVAILABLE",
         }
     ):
         return HTTPException(status_code=status.HTTP_503_SERVICE_UNAVAILABLE, detail="LEGAL_OPERATIONS_UNAVAILABLE")
@@ -742,6 +823,16 @@ _RETURN = _ctx("legal_operations:return:write", "legal_return_write")
 _CONFLICT_REVIEW = _ctx(
     "legal_operations:conflict_review:write",
     "legal_conflict_review_write",
+)
+_RECIPIENT_BINDING_PERMISSION: Final[str] = (
+    "legal_operations:notification_recipient_binding:write"
+)
+_RECIPIENT_BINDING_OPERATION: Final[str] = (
+    "legal_notification_recipient_binding_write"
+)
+_RECIPIENT_BINDING = _ctx(
+    _RECIPIENT_BINDING_PERMISSION,
+    _RECIPIENT_BINDING_OPERATION,
 )
 
 
@@ -1247,6 +1338,368 @@ async def record_legal_conflict_review_command(
     }
 
 
+def _recipient_command_sources(
+    command: Any,
+    context: TenantAuthorizationContext,
+    session: Any,
+    db: Any,
+    principal_repository: Any,
+    membership_repository: Any,
+) -> tuple[
+    CaseMatter,
+    LegalNotificationRecipientBindingRegistry,
+    LegalNotificationRecipientBindingLifecycleRegistry,
+]:
+    """Revalidate canonical matter and target recipient currentness in-transaction."""
+    try:
+        history = LegalOperationsLifecycleRegistry.get_entity_history(
+            context.tenant_id,
+            "CaseMatter",
+            command.case_matter_id,
+            _collection(db, LIFECYCLE_COLLECTION),
+            session=session,
+        )
+    except Exception as error:
+        raise CommandError(
+            "LEGAL_NOTIFICATION_RECIPIENT_AUTHORITY_UNAVAILABLE",
+            error,
+        ) from error
+
+    if not history:
+        raise CommandError("LEGAL_OPERATION_NOT_FOUND")
+
+    try:
+        matter = cast(
+            CaseMatter,
+            resolve_current_lifecycle_snapshot(
+                history,
+                expected_type=CaseMatter,
+            ),
+        )
+    except Exception as error:
+        raise CommandError(
+            "LEGAL_NOTIFICATION_RECIPIENT_AUTHORITY_UNAVAILABLE",
+            error,
+        ) from error
+
+    try:
+        principal = principal_repository.resolve(
+            command.recipient_principal_id,
+            session=session,
+        )
+    except PrincipalAuthorityNotFoundError as error:
+        raise CommandError(
+            "LEGAL_NOTIFICATION_RECIPIENT_NOT_CURRENT",
+            error,
+        ) from error
+    except PrincipalAuthorityRepositoryError as error:
+        raise CommandError(
+            "LEGAL_NOTIFICATION_RECIPIENT_AUTHORITY_UNAVAILABLE",
+            error,
+        ) from error
+
+    try:
+        membership = membership_repository.resolve(
+            command.recipient_principal_id,
+            context.tenant_id,
+            session=session,
+        )
+    except TenantMembershipNotFoundError as error:
+        raise CommandError(
+            "LEGAL_NOTIFICATION_RECIPIENT_NOT_CURRENT",
+            error,
+        ) from error
+    except TenantMembershipRepositoryError as error:
+        raise CommandError(
+            "LEGAL_NOTIFICATION_RECIPIENT_AUTHORITY_UNAVAILABLE",
+            error,
+        ) from error
+
+    if (
+        getattr(principal, "status", None) is not PrincipalStatus.ACTIVE
+        or getattr(membership, "status", None)
+        is not TenantMembershipStatus.ACTIVE
+    ):
+        raise CommandError("LEGAL_NOTIFICATION_RECIPIENT_NOT_CURRENT")
+
+    return (
+        matter,
+        LegalNotificationRecipientBindingRegistry(
+            _collection(db, RECIPIENT_BINDING_COLLECTION)
+        ),
+        LegalNotificationRecipientBindingLifecycleRegistry(
+            _collection(db, RECIPIENT_BINDING_LIFECYCLE_COLLECTION)
+        ),
+    )
+
+
+def _binding_by_id(
+    registry: LegalNotificationRecipientBindingRegistry,
+    tenant: str,
+    matter: str,
+    binding_id: str,
+    session: Any,
+) -> LegalNotificationRecipientBinding:
+    values = tuple(
+        value
+        for value in registry.list_scope(
+            tenant,
+            matter,
+            LegalNotificationEvent.RETURN_READY,
+            session=session,
+        )
+        if value.binding_id == binding_id
+    )
+    if len(values) != 1:
+        raise CommandError(
+            "LEGAL_NOTIFICATION_RECIPIENT_BINDING_NOT_FOUND"
+            if not values
+            else "LEGAL_NOTIFICATION_RECIPIENT_BINDING_AMBIGUOUS"
+        )
+    return values[0]
+
+
+def _recipient_authorization_evidence(
+    *,
+    context: TenantAuthorizationContext,
+    subject_reference: str,
+    subject_fingerprint: str,
+    idempotency_key: str,
+    session: Any,
+    db: Any,
+    principal_repository: Any,
+    membership_repository: Any,
+    role_assignment_repository: Any,
+) -> Any:
+    """Issue/replay current actor authorization and own immutable chronology."""
+    registry = TenantAuthorizationDecisionEvidenceRegistry(
+        _collection(db, TENANT_AUTHORIZATION_EVIDENCE_COLLECTION),
+        principal_repository=principal_repository,
+        membership_repository=membership_repository,
+        role_assignment_repository=role_assignment_repository,
+        business_role_repository=role_assignment_repository,
+    )
+    try:
+        return registry.issue(
+            tenant_id=context.tenant_id,
+            principal_id=context.identity.identity_id,
+            operation=_RECIPIENT_BINDING_OPERATION,
+            permission=_RECIPIENT_BINDING_PERMISSION,
+            subject_reference=subject_reference,
+            subject_evidence_fingerprint=subject_fingerprint,
+            idempotency_key=idempotency_key,
+            session=session,
+        )
+    except TenantAuthorizationDecisionEvidenceAuthorizationDeniedError as error:
+        raise CommandError(
+            "LEGAL_NOTIFICATION_RECIPIENT_ADMIN_AUTHORIZATION_REQUIRED",
+            error,
+        ) from error
+    except TenantAuthorizationDecisionEvidenceTransactionRequiredError as error:
+        raise CommandError(
+            "L8_8H6_ACTIVE_TRANSACTION_REQUIRED",
+            error,
+        ) from error
+    except TenantAuthorizationDecisionEvidenceConflictError as error:
+        raise CommandError(
+            "L8_8H6_WHOLE_TRANSACTION_RETRY_REQUIRED",
+            error,
+        ) from error
+    except (
+        TenantAuthorizationDecisionEvidencePersistenceError,
+        TenantAuthorizationDecisionEvidenceRegistryError,
+    ) as error:
+        raise CommandError(
+            "LEGAL_NOTIFICATION_RECIPIENT_AUTHORITY_UNAVAILABLE",
+            error,
+        ) from error
+
+
+@router.post("/notification-recipient-bindings")
+async def create_notification_recipient_binding(
+    command: RecipientBindingCreateCommand,
+    context: TenantAuthorizationContext = Depends(_RECIPIENT_BINDING),
+    principal_repository: Any = Depends(get_principal_authority_repository),
+    membership_repository: Any = Depends(get_tenant_membership_repository),
+    role_assignment_repository: Any = Depends(get_role_assignment_repository),
+) -> dict[str, Any]:
+    """Create or exactly replay one explicit recipient binding."""
+    def run(session: Any, db: Any) -> Any:
+        matter, registry, _ = _recipient_command_sources(
+            command,
+            context,
+            session,
+            db,
+            principal_repository,
+            membership_repository,
+        )
+        authorization = _recipient_authorization_evidence(
+            context=context,
+            subject_reference=f"legal-case-matter:{matter.case_matter_id}",
+            subject_fingerprint=matter.fingerprint,
+            idempotency_key=(
+                "legal-notification-recipient-binding:create:"
+                f"{command.binding_id}"
+            ),
+            session=session,
+            db=db,
+            principal_repository=principal_repository,
+            membership_repository=membership_repository,
+            role_assignment_repository=role_assignment_repository,
+        )
+        value = LegalNotificationRecipientBinding(
+            tenant_id=context.tenant_id,
+            binding_id=command.binding_id,
+            case_matter_id=command.case_matter_id,
+            event=LegalNotificationEvent.RETURN_READY,
+            recipient_principal_id=command.recipient_principal_id,
+            effective_from=command.effective_from,
+            effective_until=command.effective_until,
+            created_by_principal_id=context.identity.identity_id,
+            created_at=authorization.authorized_at,
+        )
+        return registry.create_or_replay(value, session=session)
+
+    try:
+        value = _transaction(run)
+    except Exception as error:
+        raise _http_error(error) from error
+    return {"data": value.to_dict()}
+
+
+@router.post("/notification-recipient-bindings/revocations")
+async def revoke_notification_recipient_binding(
+    command: RecipientBindingRevokeCommand,
+    context: TenantAuthorizationContext = Depends(_RECIPIENT_BINDING),
+    principal_repository: Any = Depends(get_principal_authority_repository),
+    membership_repository: Any = Depends(get_tenant_membership_repository),
+    role_assignment_repository: Any = Depends(get_role_assignment_repository),
+) -> dict[str, Any]:
+    """Append exact revocation evidence without mutating its target."""
+    def run(session: Any, db: Any) -> Any:
+        registry = LegalNotificationRecipientBindingRegistry(
+            _collection(db, RECIPIENT_BINDING_COLLECTION)
+        )
+        lifecycle = LegalNotificationRecipientBindingLifecycleRegistry(
+            _collection(db, RECIPIENT_BINDING_LIFECYCLE_COLLECTION)
+        )
+        target = _binding_by_id(
+            registry,
+            context.tenant_id,
+            command.case_matter_id,
+            command.target_binding_id,
+            session,
+        )
+        authorization = _recipient_authorization_evidence(
+            context=context,
+            subject_reference=(
+                f"legal-notification-recipient-binding:{target.binding_id}"
+            ),
+            subject_fingerprint=target.fingerprint,
+            idempotency_key=(
+                "legal-notification-recipient-binding:revoke:"
+                f"{command.lifecycle_event_id}"
+            ),
+            session=session,
+            db=db,
+            principal_repository=principal_repository,
+            membership_repository=membership_repository,
+            role_assignment_repository=role_assignment_repository,
+        )
+        value = revoke_binding(
+            lifecycle_event_id=command.lifecycle_event_id,
+            target=target,
+            effective_at=command.effective_at,
+            created_by_principal_id=context.identity.identity_id,
+            created_at=authorization.authorized_at,
+        )
+        return lifecycle.create_or_replay(value, session=session)
+
+    try:
+        value = _transaction(run)
+    except Exception as error:
+        raise _http_error(error) from error
+    return {"data": value.to_dict()}
+
+
+@router.post("/notification-recipient-bindings/supersessions")
+async def supersede_notification_recipient_binding(
+    command: RecipientBindingSupersedeCommand,
+    context: TenantAuthorizationContext = Depends(_RECIPIENT_BINDING),
+    principal_repository: Any = Depends(get_principal_authority_repository),
+    membership_repository: Any = Depends(get_tenant_membership_repository),
+    role_assignment_repository: Any = Depends(get_role_assignment_repository),
+) -> dict[str, Any]:
+    """Persist an exact successor and immutable predecessor linkage atomically."""
+    def run(session: Any, db: Any) -> Any:
+        _, registry, lifecycle = _recipient_command_sources(
+            command,
+            context,
+            session,
+            db,
+            principal_repository,
+            membership_repository,
+        )
+        target = _binding_by_id(
+            registry,
+            context.tenant_id,
+            command.case_matter_id,
+            command.target_binding_id,
+            session,
+        )
+        authorization = _recipient_authorization_evidence(
+            context=context,
+            subject_reference=(
+                f"legal-notification-recipient-binding:{target.binding_id}"
+            ),
+            subject_fingerprint=target.fingerprint,
+            idempotency_key=(
+                "legal-notification-recipient-binding:supersede:"
+                f"{command.lifecycle_event_id}"
+            ),
+            session=session,
+            db=db,
+            principal_repository=principal_repository,
+            membership_repository=membership_repository,
+            role_assignment_repository=role_assignment_repository,
+        )
+        successor = LegalNotificationRecipientBinding(
+            tenant_id=context.tenant_id,
+            binding_id=command.binding_id,
+            case_matter_id=command.case_matter_id,
+            event=LegalNotificationEvent.RETURN_READY,
+            recipient_principal_id=command.recipient_principal_id,
+            effective_from=command.effective_from,
+            effective_until=command.effective_until,
+            created_by_principal_id=context.identity.identity_id,
+            created_at=authorization.authorized_at,
+        )
+        successor = registry.create_or_replay(
+            successor,
+            session=session,
+        )
+        change = supersede_binding(
+            lifecycle_event_id=command.lifecycle_event_id,
+            target=target,
+            successor=successor,
+            created_by_principal_id=context.identity.identity_id,
+            created_at=authorization.authorized_at,
+        )
+        return successor, lifecycle.create_or_replay(
+            change,
+            session=session,
+        )
+
+    try:
+        successor, change = _transaction(run)
+    except Exception as error:
+        raise _http_error(error) from error
+    return {
+        "data": successor.to_dict(),
+        "lifecycle": change.to_dict(),
+    }
+
+
 @router.post("/executions/{execution_id}/return")
 async def generate_return_of_service_command(execution_id: str, command: ReturnCommand, context: TenantAuthorizationContext = Depends(_RETURN)) -> dict[str, Any]:
     """Generate one P5F ReturnOfService from canonical ServiceExecution."""
@@ -1274,9 +1727,9 @@ async def generate_return_of_service_command(execution_id: str, command: ReturnC
 __all__ = ["VERSION", "router", "CommandError"]
 
 # ARTIFACT: legal_operations_command_router.py
-# VERSION: v1.7.1-L8-8K-CONFLICT-REVIEW-COMMAND-API
-# AUTHORITY BOUNDARY: authenticated command composition including L8-8K human conflict review; conflict review delegates to L8-8J while P1/P2/L8-1/L8-2/L8-3/L8-6B/P4/P5 and L8-8D/E/G/H/I/J remain canonical
+# VERSION: v1.8.0-L8-8H6-NOTIFICATION-RECIPIENT-BINDING-COMMAND-API
+# AUTHORITY BOUNDARY: authenticated command composition including L8-8K human conflict review and L8-8H6 explicit recipient-binding administration; canonical domain, registry, orchestration and IAM authorities remain separate
 # TENANT POSTURE: explicit authorized tenant scope on every source and write
-# FAIL-CLOSED POSTURE: malformed, unauthorized, stale, divergent, and ambiguous commands reject; conflict review exposes no caller IAM or clearance authority
+# FAIL-CLOSED POSTURE: malformed, unauthorized, stale, divergent, ambiguous or unavailable commands reject; recipient-binding commands expose no caller IAM, contact, transport, delivery or financial authority
 # FINANCIAL EXECUTION AUTHORITY: Kennel EOS exclusively owns financial execution and settlement
 # END OF WILSY OS SOVEREIGN ARTIFACT

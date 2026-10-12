@@ -1,5 +1,5 @@
 """TITLE: WILSY OS Permission Namespace Semantic Canon.
-VERSION: v1.39.0-CLIENT-ACCEPTANCE-INSTRUMENT-PROVISIONING-PERMISSION
+VERSION: v1.40.0-LEGAL-NOTIFICATION-RECIPIENT-BINDING-PERMISSION
 AUTHORITY: Immutable permission vocabulary and scope metadata only.
 EPITOME: Extends the canonical TENANT permission vocabulary with dedicated
 inbound-collection, merchant-configuration, provider-policy, WILSY AI,
@@ -11,7 +11,7 @@ waiver, engagement,
 representation, cross-tenant authority, or financial execution.
 ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/tools/eos/auth/permission_namespace.py
 COLLABORATION / OWNERSHIP: Wilson Khanyezi / Wilsy Core Engineering.
-CERTIFICATION/UPDATE DATE: 2026-10-11.
+CERTIFICATION / UPDATE DATE: 2026-10-12
 CHANGELOG:
     2026-10-11 v1.39.0 adds the dedicated own-tenant
     legal_operations:matter_acceptance_instrument:write provisioning vocabulary.
@@ -186,7 +186,7 @@ from types import MappingProxyType
 from typing import Final
 
 
-VERSION = "v1.39.0-CLIENT-ACCEPTANCE-INSTRUMENT-PROVISIONING-PERMISSION"
+VERSION = "v1.40.0-LEGAL-NOTIFICATION-RECIPIENT-BINDING-PERMISSION"
 
 
 class PermissionDisposition(StrEnum):
@@ -629,6 +629,12 @@ _PERMISSIONS: Final = MappingProxyType(
             "ingest own-tenant legal evidence content",
             tenant=True,
         ),
+        "legal_operations:notification_recipient_binding:write": _meta(
+            "legal_operations:notification_recipient_binding:write",
+            "TENANT", "TENANT",
+            "administer own-tenant Legal notification recipient bindings",
+            tenant=True,
+        ),
         "legal_operations:evidence_cleanup:authorize": _meta(
             "legal_operations:evidence_cleanup:authorize",
             "TENANT",
@@ -957,7 +963,7 @@ __all__ = [
 ]
 
 # ARTIFACT: tools/eos/auth/permission_namespace.py
-# VERSION: v1.39.0-CLIENT-ACCEPTANCE-INSTRUMENT-PROVISIONING-PERMISSION
+# VERSION: v1.40.0-LEGAL-NOTIFICATION-RECIPIENT-BINDING-PERMISSION
 # AUTHORITY BOUNDARY: canonical permission vocabulary semantics only; no possession or authorization authority
 # TENANT POSTURE: conflict-review, client-matter, client-visibility and other tenant permissions require separately proven exact ACTIVE tenant membership
 # FAIL-CLOSED POSTURE: unknown, malformed, ambiguous and legacy values never manufacture authority

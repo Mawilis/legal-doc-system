@@ -1,7 +1,7 @@
 """WILSY OS Legal notification recipient binding authority.
 
 TITLE: Legal Notification Recipient Binding
-VERSION: v1.1.0-L8-8H-RECIPIENT-BINDING
+VERSION: v1.2.0-L8-8H-RECIPIENT-BINDING
 AUTHORITY: Wilsy OS Core Governance / Python EOS Legal Operations
 EPITOME: Records an explicit immutable decision that one opaque principal is an
          authorized recipient for one Legal matter and notification event.
@@ -9,7 +9,11 @@ ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/tools/eos/legal_
 COLLABORATION / OWNERSHIP: RETURN_READY intent is upstream; the L8-8H registry
                             persists bindings and the resolver revalidates them.
 CERTIFICATION / UPDATE DATE: 2026-10-12
-CHANGELOG: 2026-10-12 v1.1.0 removes unverifiable source-authority reference
+CHANGELOG: 2026-10-12 v1.2.0 canonicalizes persisted UTC instants to BSON
+           millisecond precision before deterministic fingerprint formation,
+           preserving exact registry round-trip integrity without weakening
+           timestamp, fingerprint, tenant, or authority validation.
+           2026-10-12 v1.1.0 removes unverifiable source-authority reference
            and fingerprint fields; canonical scope and explicit selection are
            fully covered by this artifact's own deterministic fingerprint.
            2026-10-12 v1.0.0 establishes strict immutable recipient-binding
@@ -37,7 +41,7 @@ from enum import StrEnum
 from typing import Final, Mapping, NoReturn, cast
 
 SCHEMA: Final[str] = "WILSY-LEGAL-NOTIFICATION-RECIPIENT-BINDING/V1"
-VERSION: Final[str] = "v1.1.0-L8-8H-RECIPIENT-BINDING"
+VERSION: Final[str] = "v1.2.0-L8-8H-RECIPIENT-BINDING"
 _IDENTITY: Final[re.Pattern[str]] = re.compile(r"^[A-Za-z0-9][A-Za-z0-9._:-]{0,159}$")
 _SHA3: Final[re.Pattern[str]] = re.compile(r"^[0-9a-f]{128}$")
 _FORBIDDEN_TENANTS: Final[frozenset[str]] = frozenset({"default", "global", "global_root", "root", "master", "*"})
@@ -80,7 +84,9 @@ def _utc(name: str, value: object) -> datetime:
     canonical = value.astimezone(timezone.utc)
     if canonical != value or canonical.tzinfo != timezone.utc:
         _fail(f"L8_8H_{name.upper()}_INVALID")
-    return canonical
+    return canonical.replace(
+        microsecond=(canonical.microsecond // 1000) * 1000
+    )
 
 
 def _json_time(value: datetime) -> str:
@@ -188,7 +194,7 @@ class LegalNotificationRecipientBinding:
 __all__ = ["SCHEMA", "VERSION", "LegalNotificationEvent", "LegalNotificationRecipientBinding", "LegalNotificationRecipientBindingError"]
 
 # ARTIFACT: legal_notification_recipient_binding.py
-# VERSION: v1.1.0-L8-8H-RECIPIENT-BINDING
+# VERSION: v1.2.0-L8-8H-RECIPIENT-BINDING
 # AUTHORITY BOUNDARY: explicit opaque principal selection for one Legal matter/event only
 # TENANT POSTURE: exact non-pseudo tenant scope; no cross-tenant widening
 # FAIL-CLOSED POSTURE: malformed schema, time, identity, interval or fingerprint rejects
