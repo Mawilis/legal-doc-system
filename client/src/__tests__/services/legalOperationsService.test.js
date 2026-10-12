@@ -1,6 +1,6 @@
 /**
  * WILSY OS — ROLE-SCOPED LEGAL OPERATIONS CLIENT CERTIFICATE
- * VERSION: v2.3.0-L8-8N-CONFLICT-SCREENING-READ-CLIENT-CERT
+ * VERSION: v2.4.0-LEGAL-CLIENT-ACCEPTANCE-BROWSER-TRANSPORT-CERT
  * AUTHORITY: Client transport-adapter contract certification only.
  * EPITOME: Certifies the canonical Legal Operations browser adapter across
  *          sheriff/deputy/client reads, D11 law-firm workspace, exact finance
@@ -1546,7 +1546,7 @@ describe('L8-7D7 role-scoped Legal Operations client adapter', () => {
     }
 
     expect(LEGAL_OPERATIONS_CLIENT_VERSION).toBe(
-      'v1.8.0-L8-8N-CONFLICT-SCREENING-READ-CLIENT',
+      'v1.9.0-LEGAL-CLIENT-ACCEPTANCE-BROWSER-TRANSPORT',
     );
   });
 });
