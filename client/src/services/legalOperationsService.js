@@ -1,6 +1,6 @@
 /**
  * WILSY OS — ROLE-SCOPED LEGAL OPERATIONS CLIENT ADAPTER
- * VERSION: v1.9.0-LEGAL-CLIENT-ACCEPTANCE-BROWSER-TRANSPORT
+ * VERSION: v2.0.0-LEGAL-EVIDENCE-UPLOAD-BROWSER-TRANSPORT
  * AUTHORITY: Browser transport validation and presentation adaptation only.
  * EPITOME: Authenticated browser adapter for certified Legal Operations reads,
  *          practice-workspace projection, exact finance evidence lookups,
@@ -17,8 +17,9 @@
  *                            invoice evidence, intake and ReturnOfService HTTP
  *                            authority. This adapter owns strict browser transport
  *                            validation and immutable presentation adaptation only.
- * CERTIFICATION / UPDATE DATE: 2026-09-25
- * CHANGELOG: 2026-09-25 v1.9.0-LEGAL-CLIENT-ACCEPTANCE-BROWSER-TRANSPORT adds the authenticated bounded conflict-screening review-queue read adapter. It accepts no tenant input, validates exact server-owned screening identity/status/matter/timestamp rows, preserves deterministic order and excludes screening evidence, party data, review/IAM and financial authority.
+ * CERTIFICATION / UPDATE DATE: 2026-10-12
+ * CHANGELOG: 2026-10-12 v2.0.0-LEGAL-EVIDENCE-UPLOAD-BROWSER-TRANSPORT adds one governed FormData upload command carrying only the selected file, document path identity, and idempotency header; it sets no multipart boundary and validates bounded canonical commit/reconciliation evidence.
+ *            2026-09-25 v1.9.0-LEGAL-CLIENT-ACCEPTANCE-BROWSER-TRANSPORT adds the authenticated bounded conflict-screening review-queue read adapter. It accepts no tenant input, validates exact server-owned screening identity/status/matter/timestamp rows, preserves deterministic order and excludes screening evidence, party data, review/IAM and financial authority.
  *            2026-09-25 v1.7.0-L8-8L-CONFLICT-REVIEW-COMMAND-CLIENT adds the single authenticated conflict-review command adapter. It sends only the four human-choice fields through sovereignClient so the legacy api.js body-timestamp interceptor cannot mutate the strict command contract. Server-owned tenant, reviewer, chronology, screening, authorization, party and financial authority remain excluded.
  *            2026-09-24 v1.6.0-L8-7D15-MATTER-WORKSPACE-COMPATIBILITY adds a zero-break dual-contract bridge: the existing D11 V1 workspace remains exact and unchanged, while D15 V2 is admitted only when canonical CaseMatter rows and matter summary counts are present, sorted, exact-keyed, evidence-bound and internally consistent. No browser tenant, matter, lifecycle or financial authority is added.
  *            2026-09-24 v1.5.1-L8-7D14-WORKSPACE-SUMMARY-VALIDATION recomputes every D11 workspace state/outcome
@@ -79,7 +80,7 @@ import api from './api.js';
 import sovereignClient from '../utils/sovereignClient.js';
 
 export const LEGAL_OPERATIONS_CLIENT_VERSION =
-  'v1.9.0-LEGAL-CLIENT-ACCEPTANCE-BROWSER-TRANSPORT';
+  'v2.0.0-LEGAL-EVIDENCE-UPLOAD-BROWSER-TRANSPORT';
 
 const CONFLICT_REVIEW_INPUT_KEYS = Object.freeze([
   'screeningId',
@@ -1772,6 +1773,63 @@ export async function recordDeputyFieldOutcome(value) {
   );
 }
 
+/**
+ * Upload one file for an already-visible canonical ProcessDocument.
+ * The browser supplies no tenant, principal, matter, fingerprint, capacity,
+ * provider or storage authority and leaves multipart boundary construction to
+ * the browser transport.
+ */
+export async function uploadLegalEvidence({ documentId, file, idempotencyKey }) {
+  const errorCode = 'LEGAL_EVIDENCE_UPLOAD_INPUT_INVALID';
+  if (
+    !isCanonicalText(documentId)
+    || !(file instanceof File)
+    || file.size < 1
+    || !isCanonicalText(idempotencyKey)
+  ) {
+    throw new Error(errorCode);
+  }
+  const form = new FormData();
+  form.append('file', file);
+  const response = await api.post(
+    `/legal-operations/evidence/documents/${encodeURIComponent(documentId)}`,
+    form,
+    { headers: { 'Idempotency-Key': idempotencyKey } },
+  );
+  const value = response?.data;
+  const keys = [
+    'schema', 'version', 'ingestion_reference', 'document_id',
+    'case_matter_id', 'state', 'content_reference', 'content_fingerprint',
+    'content_length', 'uncertainty_id',
+  ];
+  assertExactKeys(value, keys, 'LEGAL_EVIDENCE_UPLOAD_RESPONSE_INVALID');
+  if (
+    value.schema !== 'WILSY-LEGAL-EVIDENCE-UPLOAD-RESULT/V1'
+    || value.version !== 'v1.0.0-L10A4-LEGAL-EVIDENCE-UPLOAD-HTTP'
+    || value.document_id !== documentId
+    || !isCanonicalText(value.ingestion_reference)
+    || !isCanonicalText(value.case_matter_id)
+    || !['COMMITTED', 'RECONCILIATION_REQUIRED'].includes(value.state)
+    || !SHA3_512_PATTERN.test(value.content_fingerprint)
+    || !Number.isSafeInteger(value.content_length)
+    || value.content_length !== file.size
+    || (value.state === 'COMMITTED' && (!isCanonicalText(value.content_reference) || value.uncertainty_id !== null))
+    || (value.state === 'RECONCILIATION_REQUIRED' && (value.content_reference !== null || !isCanonicalText(value.uncertainty_id)))
+  ) {
+    throw new Error('LEGAL_EVIDENCE_UPLOAD_RESPONSE_INVALID');
+  }
+  return Object.freeze({
+    ingestionReference: value.ingestion_reference,
+    documentId: value.document_id,
+    caseMatterId: value.case_matter_id,
+    state: value.state,
+    contentReference: value.content_reference,
+    contentFingerprint: value.content_fingerprint,
+    contentLength: value.content_length,
+    uncertaintyId: value.uncertainty_id,
+  });
+}
+
 export const __legalOperationsServiceInternals = Object.freeze({
   assertCanonicalQueuePayload,
   assertCanonicalDeputyActiveWorkPayload,
@@ -1849,7 +1907,7 @@ export const __legalOperationsServiceInternals = Object.freeze({
 
 /**
  * ARTIFACT: legalOperationsService.js
- * VERSION: v1.9.0-LEGAL-CLIENT-ACCEPTANCE-BROWSER-TRANSPORT
+ * VERSION: v2.0.0-LEGAL-EVIDENCE-UPLOAD-BROWSER-TRANSPORT
  * AUTHORITY BOUNDARY: role-scoped Legal Operations read/intake/return/deputy-command/conflict-review browser transport validation only
  * TENANT POSTURE: server tenant/principal/role/client/deputy scope remains authoritative across practice, finance, client and field surfaces; browser cannot establish authorization scope
  * FAIL-CLOSED POSTURE: malformed/extra/missing/scope/state/schema/version/order/command-response drift rejects without fallback

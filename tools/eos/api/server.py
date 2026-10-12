@@ -1,7 +1,7 @@
 """WILSY OS sovereign Python API server composition root.
 
 TITLE: WILSY OS EOS Kernel API Server Factory
-VERSION: v1.22.0-LEGAL-CLIENT-ACCEPTANCE-ROUTER-MOUNT
+VERSION: v1.23.0-LEGAL-EVIDENCE-UPLOAD-ROUTER-MOUNT
 AUTHORITY: Wilsy OS Core Governance
 EPITOME: Mount sovereign Python API authorities, including the certified Legal
          Matter Deadline transport under /api/legal-operations, and explicitly
@@ -9,8 +9,9 @@ EPITOME: Mount sovereign Python API authorities, including the certified Legal
          without creating identity, deadline, IAM, or financial authority.
 ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/tools/eos/api/server.py
 COLLABORATION / OWNERSHIP: Wilson Khanyezi / Wilsy OS Core Engineering
-CERTIFICATION / UPDATE DATE: 2026-10-11
-CHANGELOG: 2026-10-11 v1.22.0-LEGAL-CLIENT-ACCEPTANCE-ROUTER-MOUNT mounts the directly certified Legal Client Acceptance HTTP router exactly once under /api/legal-operations/client, preserving router-owned authenticated tenant admission, transaction lifecycle, server-derived client-acceptance context/issuance authority, and all engagement, representation, Court, AI, billing, payment, settlement, and Kennel boundaries.
+CERTIFICATION / UPDATE DATE: 2026-10-12
+CHANGELOG: 2026-10-12 v1.23.0-LEGAL-EVIDENCE-UPLOAD-ROUTER-MOUNT mounts the authenticated Legal Evidence multipart router exactly once under /api/legal-operations/evidence while preserving router-owned Partner IAM, canonical ProcessDocument scope, two-plane storage/commit, uncertainty, and financial boundaries.
+2026-10-11 v1.22.0-LEGAL-CLIENT-ACCEPTANCE-ROUTER-MOUNT mounts the directly certified Legal Client Acceptance HTTP router exactly once under /api/legal-operations/client, preserving router-owned authenticated tenant admission, transaction lifecycle, server-derived client-acceptance context/issuance authority, and all engagement, representation, Court, AI, billing, payment, settlement, and Kennel boundaries.
 2026-10-11 v1.21.0-D3B2A-MATTER-DEADLINE-ROUTER-MOUNT mounts the certified Legal Matter Deadline HTTP router exactly once under /api, preserving router-owned durable IAM, transaction, D3A service, tenant, AI, and Kennel boundaries; no deadline truth is created by application composition.
 2026-10-05 v1.20.0-P0-C12F7C-HR-DOCUMENT-ROUTER-MOUNT composes the governed HR document router at /api/hr/documents; preserves Python EOS business authority, F6F ingestion ownership, persisted-sensitivity read authorization, tenant isolation, reconciliation-required 202 semantics, and no delete or financial execution authority.
 2026-09-23 v1.18.0-L8-6B-DEPUTY-BINDING-INDEX-BOOTSTRAP bootstraps the
@@ -85,6 +86,7 @@ from .legal_operations_command_router import router as legal_operations_command_
 from .legal_operations_billing_read_router import router as legal_operations_billing_read_router
 from .legal_matter_deadline_router import router as legal_matter_deadline_router
 from .legal_client_acceptance_router import router as legal_client_acceptance_router
+from .legal_evidence_upload_router import router as legal_evidence_upload_router
 from .wilsy_ai_legal_gateway_router import router as wilsy_ai_legal_gateway_router
 from .wilsy_ai_reasoning_router import router as wilsy_ai_reasoning_router
 from .wilsy_ai_legal_services_router import router as wilsy_ai_legal_services_router
@@ -399,6 +401,7 @@ class WilsyAPIServer:
         app.include_router(legal_operations_billing_read_router, prefix="/api")
         app.include_router(legal_matter_deadline_router, prefix="/api")
         app.include_router(legal_client_acceptance_router, prefix="/api")
+        app.include_router(legal_evidence_upload_router, prefix="/api")
         app.include_router(wilsy_ai_legal_gateway_router, prefix="/api")
         app.include_router(wilsy_ai_reasoning_router, prefix="/api")
         app.include_router(wilsy_ai_legal_services_router, prefix="/api")
@@ -422,7 +425,7 @@ class WilsyAPIServer:
 
         logger.info(
             "WilsyAPIServer [%s v%s] initialized with sovereign routers "
-            "(kernel, auth, billing, employees, internal authority, PayShap evidence, legal acceptance, tenant branding, legal matter deadlines).",
+            "(kernel, auth, billing, employees, internal authority, PayShap evidence, legal acceptance, Legal Evidence upload, tenant branding, legal matter deadlines).",
             self.title,
             self.version,
         )
@@ -436,7 +439,7 @@ class WilsyAPIServer:
 app = WilsyAPIServer().get_app()
 
 # ARTIFACT: server.py
-# VERSION: v1.22.0-LEGAL-CLIENT-ACCEPTANCE-ROUTER-MOUNT
+# VERSION: v1.23.0-LEGAL-EVIDENCE-UPLOAD-ROUTER-MOUNT
 # AUTHORITY BOUNDARY: HTTP application composition only; domain authorities remain separate.
 # TENANT POSTURE: Mounted routers retain their canonical tenant isolation and admission rules.
 # FAIL-CLOSED POSTURE: Unmounted or failed router composition is never represented as operational authority.
