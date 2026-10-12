@@ -1,16 +1,18 @@
 """WILSY OS sovereign Python API server composition root.
 
 TITLE: WILSY OS EOS Kernel API Server Factory
-VERSION: v1.23.0-LEGAL-EVIDENCE-UPLOAD-ROUTER-MOUNT
+VERSION: v1.24.0-L8-9C-LEGAL-STOREFRONT-PUBLIC-INTENT-ROUTER-MOUNT
 AUTHORITY: Wilsy OS Core Governance
-EPITOME: Mount sovereign Python API authorities, including the certified Legal
-         Matter Deadline transport under /api/legal-operations, and explicitly
-         bootstrap durable L8-6B deputy-principal binding uniqueness indexes
-         without creating identity, deadline, IAM, or financial authority.
+EPITOME: Mount sovereign Python API authorities, including the certified
+         pre-tenant Legal Storefront public-intent admission transport under
+         /api/legal-storefront/public-intents, and bootstrap its durable intent
+         and ephemeral abuse-control indexes without creating identity, tenant,
+         Legal lifecycle, AI, commercial, payment, or settlement authority.
 ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/tools/eos/api/server.py
 COLLABORATION / OWNERSHIP: Wilson Khanyezi / Wilsy OS Core Engineering
 CERTIFICATION / UPDATE DATE: 2026-10-12
-CHANGELOG: 2026-10-12 v1.23.0-LEGAL-EVIDENCE-UPLOAD-ROUTER-MOUNT mounts the authenticated Legal Evidence multipart router exactly once under /api/legal-operations/evidence while preserving router-owned Partner IAM, canonical ProcessDocument scope, two-plane storage/commit, uncertainty, and financial boundaries.
+CHANGELOG: 2026-10-12 v1.24.0-L8-9C-LEGAL-STOREFRONT-PUBLIC-INTENT-ROUTER-MOUNT mounts the certified anonymous Legal Storefront public-intent router exactly once under /api/legal-storefront/public-intents and bootstraps the L8-9B durable intent indexes plus L8-9C0 ephemeral rate-limit indexes after successful database connection, without creating identity, tenant, Legal lifecycle, AI, subscription, entitlement, billing, payment, or settlement authority.
+2026-10-12 v1.23.0-LEGAL-EVIDENCE-UPLOAD-ROUTER-MOUNT mounts the authenticated Legal Evidence multipart router exactly once under /api/legal-operations/evidence while preserving router-owned Partner IAM, canonical ProcessDocument scope, two-plane storage/commit, uncertainty, and financial boundaries.
 2026-10-11 v1.22.0-LEGAL-CLIENT-ACCEPTANCE-ROUTER-MOUNT mounts the directly certified Legal Client Acceptance HTTP router exactly once under /api/legal-operations/client, preserving router-owned authenticated tenant admission, transaction lifecycle, server-derived client-acceptance context/issuance authority, and all engagement, representation, Court, AI, billing, payment, settlement, and Kennel boundaries.
 2026-10-11 v1.21.0-D3B2A-MATTER-DEADLINE-ROUTER-MOUNT mounts the certified Legal Matter Deadline HTTP router exactly once under /api, preserving router-owned durable IAM, transaction, D3A service, tenant, AI, and Kennel boundaries; no deadline truth is created by application composition.
 2026-10-05 v1.20.0-P0-C12F7C-HR-DOCUMENT-ROUTER-MOUNT composes the governed HR document router at /api/hr/documents; preserves Python EOS business authority, F6F ingestion ownership, persisted-sensitivity read authorization, tenant isolation, reconciliation-required 202 semantics, and no delete or financial execution authority.
@@ -87,6 +89,9 @@ from .legal_operations_billing_read_router import router as legal_operations_bil
 from .legal_matter_deadline_router import router as legal_matter_deadline_router
 from .legal_client_acceptance_router import router as legal_client_acceptance_router
 from .legal_evidence_upload_router import router as legal_evidence_upload_router
+from .legal_storefront_public_intent_router import (
+    router as legal_storefront_public_intent_router,
+)
 from .wilsy_ai_legal_gateway_router import router as wilsy_ai_legal_gateway_router
 from .wilsy_ai_reasoning_router import router as wilsy_ai_reasoning_router
 from .wilsy_ai_legal_services_router import router as wilsy_ai_legal_services_router
@@ -117,9 +122,16 @@ from tools.eos.legal_operations.registry.deputy_principal_binding_registry impor
     COLLECTION as DEPUTY_PRINCIPAL_BINDING_COLLECTION,
     DeputyPrincipalBindingRegistry,
 )
-from .hr_document_router import router as hr_document_router
+from tools.eos.legal_operations.registry.legal_storefront_public_intent_registry import (
+    COLLECTION as LEGAL_STOREFRONT_PUBLIC_INTENT_COLLECTION,
+    LegalStorefrontPublicIntentRegistry,
+)
+from tools.eos.legal_operations.service.legal_storefront_public_intent_rate_limit import (
+    COLLECTION as LEGAL_STOREFRONT_PUBLIC_INTENT_RATE_LIMIT_COLLECTION,
+    LegalStorefrontPublicIntentRateLimit,
+)
 
-VERSION = "v1.22.0-LEGAL-CLIENT-ACCEPTANCE-ROUTER-MOUNT"
+VERSION = "v1.24.0-L8-9C-LEGAL-STOREFRONT-PUBLIC-INTENT-ROUTER-MOUNT"
 logger = logging.getLogger("WilsyOS.API.Server")
 
 
@@ -335,6 +347,14 @@ class WilsyAPIServer:
                 DeputyPrincipalBindingRegistry.ensure_indexes(
                     database[DEPUTY_PRINCIPAL_BINDING_COLLECTION]
                 )
+                LegalStorefrontPublicIntentRegistry.ensure_indexes(
+                    database[LEGAL_STOREFRONT_PUBLIC_INTENT_COLLECTION]
+                )
+                LegalStorefrontPublicIntentRateLimit.ensure_indexes(
+                    database[
+                        LEGAL_STOREFRONT_PUBLIC_INTENT_RATE_LIMIT_COLLECTION
+                    ]
+                )
             if provider is not None and database is not None and client is not None:
                 ensure_c1c_indexes(database[C1C_ORCHESTRATION_COLLECTION])
                 app.state.wilsy_ai_legal_services_orchestrator = WilsyAIToolOrchestrator(
@@ -402,6 +422,10 @@ class WilsyAPIServer:
         app.include_router(legal_matter_deadline_router, prefix="/api")
         app.include_router(legal_client_acceptance_router, prefix="/api")
         app.include_router(legal_evidence_upload_router, prefix="/api")
+        app.include_router(
+            legal_storefront_public_intent_router,
+            prefix="/api",
+        )
         app.include_router(wilsy_ai_legal_gateway_router, prefix="/api")
         app.include_router(wilsy_ai_reasoning_router, prefix="/api")
         app.include_router(wilsy_ai_legal_services_router, prefix="/api")
@@ -425,7 +449,7 @@ class WilsyAPIServer:
 
         logger.info(
             "WilsyAPIServer [%s v%s] initialized with sovereign routers "
-            "(kernel, auth, billing, employees, internal authority, PayShap evidence, legal acceptance, Legal Evidence upload, tenant branding, legal matter deadlines).",
+            "(kernel, auth, billing, employees, internal authority, PayShap evidence, legal acceptance, Legal Evidence upload, Legal Storefront public intent, tenant branding, legal matter deadlines).",
             self.title,
             self.version,
         )
@@ -439,7 +463,7 @@ class WilsyAPIServer:
 app = WilsyAPIServer().get_app()
 
 # ARTIFACT: server.py
-# VERSION: v1.23.0-LEGAL-EVIDENCE-UPLOAD-ROUTER-MOUNT
+# VERSION: v1.24.0-L8-9C-LEGAL-STOREFRONT-PUBLIC-INTENT-ROUTER-MOUNT
 # AUTHORITY BOUNDARY: HTTP application composition only; domain authorities remain separate.
 # TENANT POSTURE: Mounted routers retain their canonical tenant isolation and admission rules.
 # FAIL-CLOSED POSTURE: Unmounted or failed router composition is never represented as operational authority.
