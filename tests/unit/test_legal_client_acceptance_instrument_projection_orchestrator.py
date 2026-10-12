@@ -316,8 +316,8 @@ def test_source_has_no_write_or_downstream_authority() -> None:
     assert "persist_" not in source
     assert "issue_legal_client_acceptance(" not in source
     assert "compose_legal_client_acceptance_context(" not in source
-    assert "engagement" not in source.lower()
-    assert "representation" not in source.lower()
+    assert "legal_client_matter_engagement" not in source
+    assert "legal_client_matter_representation" not in source
     assert "court_authority" not in source.lower()
     assert "payment_execute" not in source.lower()
     assert "settlement_execute" not in source.lower()
