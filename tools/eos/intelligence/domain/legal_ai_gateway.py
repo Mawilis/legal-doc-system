@@ -1,21 +1,33 @@
 """WILSY OS AI Legal Tool Gateway contract.
 
-VERSION: v1.2.0-D57C-R1-WILSY-AI-LEGAL-RUNTIME-ADMISSION
-AUTHORITY: Read-only composition of existing IAM, entitlement, capacity and legal evidence.
-EPITOME: Defines exactly seven tenant-scoped legal read tools and immutable,
-         bounded invocation evidence without becoming a legal or financial authority.
+TITLE: WILSY OS AI Legal Tool Pre-Read Admission and Invocation Evidence
+VERSION: v1.3.0-CX18-PRE-READ-ADMISSION
+AUTHORITY: Pure composition of current IAM, entitlement, capacity, tool, and input evidence.
+EPITOME: Separates non-persistent pre-read admission from immutable post-read
+         invocation evidence for seven tenant-scoped legal read tools.
 ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/tools/eos/intelligence/domain/legal_ai_gateway.py
-TENANT BOUNDARY: Explicit non-pseudo tenant and authenticated own-tenant context only.
-AUTHORITY BOUNDARY: Gateway access and evidence composition; no lifecycle mutation.
-FINANCIAL AUTHORITY BOUNDARY: Kennel EOS exclusively owns financial execution and settlement.
-FAIL-CLOSED DECLARATION: Unknown tools, mismatched context, inactive entitlement,
-                         missing capability/permission/capacity, malformed input or evidence reject.
-CHANGELOG: v1.2.0-D57C-R1 consumes the D57B reasoning entitlement and its
-           canonical VAS capability independently from per-tool Legal IAM,
-           removes caller entitlement identity from invocation input, and
-           exposes one pure shared runtime commercial-admission assertion.
-           v1.1.0 binds capacity to the canonical entitlement fingerprint while
-           preserving independent policy-fingerprint evidence and all gates.
+COLLABORATION / OWNERSHIP: The HTTP gateway supplies current canonical IAM and
+                            commercial evidence; domain adapters own reads; the
+                            invocation registry owns immutable evidence persistence.
+CERTIFICATION / UPDATE DATE: 2026-10-13
+CHANGELOG: v1.3.0-CX18 extracts require_legal_ai_tool_admission as the sole
+           decision-bearing pre-read gate and build_legal_ai_tool_invocation_evidence
+           as post-read construction, while retaining authorize_legal_ai_tool
+           compatibility and the existing persisted evidence schema.
+           v1.2.0-D57C-R1 established canonical reasoning entitlement and VAS
+           capability admission independently from per-tool Legal IAM.
+COMPLIANCE: POPIA section 19; GDPR Article 32; SOC 2 CC7.2.
+SECURITY / PRIVACY POSTURE: No prompt, reasoning, secret, provider payload, or
+                             caller-asserted tenant/role/permission is accepted.
+TENANT BOUNDARY: Exact non-pseudo tenant agreement across current gateway IAM,
+                 underlying-domain IAM, entitlement, and capacity evidence.
+AUTHORITY BOUNDARY: Admission and evidence composition only; no durable IAM,
+                    legal lifecycle, entitlement, usage, or transaction authority.
+FINANCIAL AUTHORITY BOUNDARY: Kennel EOS exclusively owns financial execution
+                              and settlement.
+FAIL-CLOSED DECLARATION: Unknown tools, stale/denied IAM, tenant divergence,
+                         inactive commercial evidence, exhausted capacity,
+                         malformed input, and invalid result evidence reject.
 """
 from __future__ import annotations
 
@@ -32,11 +44,14 @@ from tools.eos.api.tenant_authorization_http import TenantAuthorizationContext
 from tools.eos.saas.billing.subscription_wilsy_ai_entitlement_composition_service import CANONICAL_CAPABILITY_GRANTS
 from tools.eos.saas.billing.wilsy_ai_commercial_policy import get_wilsy_ai_commercial_policy
 from tools.eos.saas.billing.wilsy_ai_entitlement_provisioning import MODULE_ID as REASONING_MODULE_ID
-from tools.eos.saas.domain.wilsy_ai_entitlement import WilsyAIEntitlement, WilsyAIEntitlementState
 from tools.eos.saas.billing.wilsy_ai_usage_capacity import WilsyAIUsageCapacity
+from tools.eos.saas.domain.wilsy_ai_entitlement import WilsyAIEntitlement, WilsyAIEntitlementState
 
-VERSION: Final[str] = "v1.2.0-D57C-R1-WILSY-AI-LEGAL-RUNTIME-ADMISSION"
+VERSION: Final[str] = "v1.3.0-CX18-PRE-READ-ADMISSION"
 SCHEMA: Final[str] = "WILSY-AI-LEGAL-TOOL-GATEWAY/V1"
+# Frozen because it participates in the persisted V1 fingerprint. Changing it
+# would turn exact pre-CX18 replays into false divergence conflicts.
+EVIDENCE_GATEWAY_VERSION: Final[str] = "v1.2.0-D57C-R1-WILSY-AI-LEGAL-RUNTIME-ADMISSION"
 GATEWAY_PERMISSION: Final[str] = "wilsy_ai:legal_tool:read"
 _HEX = re.compile(r"^[0-9a-f]{128}$")
 _IDENTITY = re.compile(r"^[A-Za-z0-9][A-Za-z0-9._:-]{0,127}$")
@@ -55,12 +70,12 @@ TOOL_IDENTITIES: Final[tuple[str, ...]] = (
 
 
 class LegalAIToolGatewayError(ValueError):
-    """Raised when a gateway contract cannot be established fail closed."""
+    """Fail-closed admission or immutable-evidence contract fracture."""
 
 
 @dataclass(frozen=True, slots=True)
 class LegalAIToolContract:
-    """Immutable allowlisted read-tool projection; it grants no authority."""
+    """Immutable allowlisted read-tool projection that grants no authority."""
 
     identity: str
     version: str
@@ -96,6 +111,13 @@ def _text(value: object, code: str) -> str:
     return value
 
 
+def _bounded_identity(value: object, code: str) -> str:
+    text = _text(value, code)
+    if _IDENTITY.fullmatch(text) is None:
+        raise LegalAIToolGatewayError(code)
+    return text
+
+
 def _aware(value: object) -> datetime:
     if not isinstance(value, datetime) or value.tzinfo is None or value.utcoffset() is None:
         raise LegalAIToolGatewayError("L7B_OCCURRED_AT_INVALID")
@@ -117,8 +139,32 @@ def _json(value: object) -> object:
 
 
 @dataclass(frozen=True, slots=True)
+class LegalAIToolAdmission:
+    """Pure bounded pre-read result; neither durable evidence nor authority."""
+
+    tenant_id: str
+    principal_id: str
+    tool_identity: str
+    tool_version: str
+    gateway_permission: str
+    underlying_permission: str
+    capability: str
+    business_role: str
+    entitlement_id: str
+    entitlement_revision: int
+    entitlement_fingerprint: str
+    tier: str
+    policy_fingerprint: str
+    capacity_evidence_reference: str
+    capacity_evidence_fingerprint: str
+    resource_identity: str
+    correlation_id: str
+    input_fingerprint: str
+
+
+@dataclass(frozen=True, slots=True)
 class LegalAIToolInvocationEvidence:
-    """Bounded immutable invocation fact; excludes prompts, reasoning, tokens and secrets."""
+    """Bounded immutable post-read fact; excludes prompts, reasoning, and secrets."""
 
     invocation_id: str
     tenant_id: str
@@ -143,7 +189,7 @@ class LegalAIToolInvocationEvidence:
     result_fingerprint: str
     occurred_at: datetime
     schema: str = SCHEMA
-    gateway_version: str = VERSION
+    gateway_version: str = EVIDENCE_GATEWAY_VERSION
     fingerprint: str = ""
 
     def __post_init__(self) -> None:
@@ -155,8 +201,7 @@ class LegalAIToolInvocationEvidence:
             raise LegalAIToolGatewayError("L7B_EVIDENCE_REVISION_INVALID")
         for value in (self.entitlement_fingerprint, self.policy_fingerprint, self.capacity_evidence_fingerprint, self.input_fingerprint, self.result_fingerprint):
             _digest(value, "L7B_EVIDENCE_FINGERPRINT_INVALID")
-        when = _aware(self.occurred_at)
-        object.__setattr__(self, "occurred_at", when)
+        object.__setattr__(self, "occurred_at", _aware(self.occurred_at))
         payload = {name: _json(getattr(self, name)) for name in _EVIDENCE_FIELDS[:-1]}
         digest = hashlib.sha3_512(json.dumps(payload, ensure_ascii=False, sort_keys=False, separators=(",", ":")).encode()).hexdigest()
         if self.fingerprint and not hmac.compare_digest(self.fingerprint, digest):
@@ -172,37 +217,39 @@ class LegalAIToolInvocationEvidence:
         """Hydrate strict evidence and verify its deterministic fingerprint."""
         if not isinstance(payload, Mapping) or set(payload) != set(_EVIDENCE_FIELDS):
             raise LegalAIToolGatewayError("L7B_EVIDENCE_SCHEMA_INVALID")
-        values = dict(payload); stored = values.pop("fingerprint")
+        values = dict(payload)
+        stored = values.pop("fingerprint")
         occurred = values.get("occurred_at")
         if isinstance(occurred, str):
-            try: values["occurred_at"] = datetime.fromisoformat(occurred.replace("Z", "+00:00"))
-            except ValueError as error: raise LegalAIToolGatewayError("L7B_OCCURRED_AT_INVALID") from error
+            try:
+                values["occurred_at"] = datetime.fromisoformat(occurred.replace("Z", "+00:00"))
+            except ValueError as error:
+                raise LegalAIToolGatewayError("L7B_OCCURRED_AT_INVALID") from error
         item = cls(**cast(Any, values))
         if not isinstance(stored, str) or not hmac.compare_digest(stored, item.fingerprint):
             raise LegalAIToolGatewayError("L7B_EVIDENCE_FINGERPRINT_MISMATCH")
         return item
 
 
-_EVIDENCE_FIELDS: Final[tuple[str, ...]] = tuple(LegalAIToolInvocationEvidence.__dataclass_fields__) if False else (
-    "invocation_id", "tenant_id", "principal_id", "tool_identity", "tool_version", "gateway_permission", "underlying_permission", "capability", "business_role", "entitlement_id", "entitlement_revision", "entitlement_fingerprint", "tier", "policy_fingerprint", "capacity_evidence_reference", "capacity_evidence_fingerprint", "correlation_id", "input_fingerprint", "result_classification", "result_reference", "result_fingerprint", "occurred_at", "schema", "gateway_version", "fingerprint"
+_EVIDENCE_FIELDS: Final[tuple[str, ...]] = (
+    "invocation_id", "tenant_id", "principal_id", "tool_identity", "tool_version",
+    "gateway_permission", "underlying_permission", "capability", "business_role",
+    "entitlement_id", "entitlement_revision", "entitlement_fingerprint", "tier",
+    "policy_fingerprint", "capacity_evidence_reference", "capacity_evidence_fingerprint",
+    "correlation_id", "input_fingerprint", "result_classification", "result_reference",
+    "result_fingerprint", "occurred_at", "schema", "gateway_version", "fingerprint",
 )
 
 
 def require_legal_ai_commercial_admission(*, tenant_id: str, entitlement: WilsyAIEntitlement, capacity: WilsyAIUsageCapacity) -> None:
-    """Require canonical D57B entitlement and current tier-derived capacity.
-
-    This pure assertion creates no entitlement, capacity, IAM, subscription or
-    financial truth. The entitlement proves only WILSY AI VAS ownership; Legal
-    permission remains an independent condition of ``authorize_legal_ai_tool``.
-    """
+    """Require current entitlement and capacity without creating authority or truth."""
     tenant = _text(tenant_id, "L7B_TENANT_REQUIRED")
     if not isinstance(entitlement, WilsyAIEntitlement) or not isinstance(capacity, WilsyAIUsageCapacity):
         raise LegalAIToolGatewayError("L7B_COMMERCIAL_EVIDENCE_INVALID")
     policy = get_wilsy_ai_commercial_policy(entitlement.tier)
     if (
         tenant.lower() in _TENANT_FORBIDDEN
-        or entitlement.tenant_id != tenant
-        or capacity.tenant_id != tenant
+        or entitlement.tenant_id != tenant or capacity.tenant_id != tenant
         or entitlement.module_id != REASONING_MODULE_ID
         or entitlement.lifecycle_state is not WilsyAIEntitlementState.ACTIVE
         or entitlement.policy_fingerprint != policy.policy_fingerprint
@@ -217,42 +264,132 @@ def require_legal_ai_commercial_admission(*, tenant_id: str, entitlement: WilsyA
         raise LegalAIToolGatewayError("L7B_CAPACITY_EXHAUSTED")
 
 
-def authorize_legal_ai_tool(*, gateway_context: TenantAuthorizationContext, underlying_context: TenantAuthorizationContext, entitlement: WilsyAIEntitlement, capacity: WilsyAIUsageCapacity, tool_identity: str, input_payload: Mapping[str, object], occurred_at: datetime, result_classification: str = "READ", result_reference: str = "") -> LegalAIToolInvocationEvidence:
-    """Apply gateway, IAM, entitlement, capability, capacity and input gates."""
+def require_legal_ai_tool_admission(
+    *, gateway_context: TenantAuthorizationContext,
+    underlying_context: TenantAuthorizationContext,
+    entitlement: WilsyAIEntitlement,
+    capacity: WilsyAIUsageCapacity,
+    tool_identity: str,
+    input_payload: Mapping[str, object],
+) -> LegalAIToolAdmission:
+    """Perform every final decision-bearing gate before domain materialization.
+
+    The operation is pure, non-persistent, and transaction-agnostic. Success is
+    an ephemeral admission result, not invocation evidence or durable authority.
+    """
     if not isinstance(gateway_context, TenantAuthorizationContext) or not isinstance(underlying_context, TenantAuthorizationContext):
         raise LegalAIToolGatewayError("L7B_CONTEXT_INVALID")
     contract = TOOL_CONTRACTS.get(tool_identity)
-    if contract is None: raise LegalAIToolGatewayError("L7B_TOOL_UNKNOWN")
+    if contract is None:
+        raise LegalAIToolGatewayError("L7B_TOOL_UNKNOWN")
     tenant = _text(gateway_context.tenant_id, "L7B_TENANT_REQUIRED")
-    if tenant.lower() in _TENANT_FORBIDDEN or underlying_context.tenant_id != tenant:
+    if (
+        tenant.lower() in _TENANT_FORBIDDEN
+        or getattr(gateway_context.identity, "tenant_id", tenant) != tenant
+        or underlying_context.tenant_id != tenant
+        or getattr(underlying_context.identity, "tenant_id", tenant) != tenant
+    ):
         raise LegalAIToolGatewayError("L7B_TENANT_MISMATCH")
-    if not gateway_context.decision.authorized or gateway_context.decision.reason.value != "AUTHORIZED" or not underlying_context.decision.authorized or underlying_context.decision.reason.value != "AUTHORIZED":
+    if (
+        not gateway_context.decision.authorized
+        or gateway_context.decision.reason.value != "AUTHORIZED"
+        or not underlying_context.decision.authorized
+        or underlying_context.decision.reason.value != "AUTHORIZED"
+    ):
         raise LegalAIToolGatewayError("L7B_PERMISSION_DENIED")
     require_legal_ai_commercial_admission(tenant_id=tenant, entitlement=entitlement, capacity=capacity)
-    if not isinstance(input_payload, Mapping) or set(input_payload) != {"resource_identity", "correlation_id"} or any(not isinstance(value, str) or not value.strip() for value in input_payload.values()) or _IDENTITY.fullmatch(str(input_payload["resource_identity"])) is None:
+    if not isinstance(input_payload, Mapping) or set(input_payload) != {"resource_identity", "correlation_id"}:
         raise LegalAIToolGatewayError("L7B_INPUT_INVALID")
-    raw = json.dumps(dict(input_payload), sort_keys=True, separators=(",", ":")).encode()
-    input_fp = hashlib.sha3_512(raw).hexdigest()
-    return LegalAIToolInvocationEvidence(
-        invocation_id=str(input_payload["correlation_id"]), tenant_id=tenant,
-        principal_id=gateway_context.identity.identity_id, tool_identity=tool_identity,
-        tool_version=contract.version, gateway_permission=GATEWAY_PERMISSION,
-        underlying_permission=contract.underlying_permission, capability=contract.capability,
-        business_role=underlying_context.decision.business_role or "", entitlement_id=entitlement.entitlement_id,
-        entitlement_revision=entitlement.lifecycle_revision, entitlement_fingerprint=entitlement.fingerprint,
-        tier=str(getattr(entitlement.tier, "value", entitlement.tier)), policy_fingerprint=entitlement.policy_fingerprint,
-        capacity_evidence_reference=f"capacity:{capacity.fingerprint}", capacity_evidence_fingerprint=capacity.fingerprint,
-        correlation_id=str(input_payload["correlation_id"]), input_fingerprint=input_fp,
-        result_classification=result_classification, result_reference=result_reference or str(input_payload["resource_identity"]),
-        result_fingerprint=hashlib.sha3_512(str(result_reference or input_payload["resource_identity"]).encode()).hexdigest(), occurred_at=occurred_at,
+    resource_identity = _bounded_identity(input_payload["resource_identity"], "L7B_INPUT_INVALID")
+    correlation_id = _bounded_identity(input_payload["correlation_id"], "L7B_INPUT_INVALID")
+    canonical_input = {"correlation_id": correlation_id, "resource_identity": resource_identity}
+    input_fingerprint = hashlib.sha3_512(json.dumps(canonical_input, sort_keys=True, separators=(",", ":")).encode()).hexdigest()
+    return LegalAIToolAdmission(
+        tenant_id=tenant,
+        principal_id=_text(gateway_context.identity.identity_id, "L7B_PRINCIPAL_REQUIRED"),
+        tool_identity=tool_identity,
+        tool_version=contract.version,
+        gateway_permission=GATEWAY_PERMISSION,
+        underlying_permission=contract.underlying_permission,
+        capability=contract.capability,
+        business_role=_text(underlying_context.decision.business_role, "L7B_BUSINESS_ROLE_REQUIRED"),
+        entitlement_id=entitlement.entitlement_id,
+        entitlement_revision=entitlement.lifecycle_revision,
+        entitlement_fingerprint=entitlement.fingerprint,
+        tier=str(getattr(entitlement.tier, "value", entitlement.tier)),
+        policy_fingerprint=entitlement.policy_fingerprint,
+        capacity_evidence_reference=f"capacity:{capacity.fingerprint}",
+        capacity_evidence_fingerprint=capacity.fingerprint,
+        resource_identity=resource_identity,
+        correlation_id=correlation_id,
+        input_fingerprint=input_fingerprint,
     )
 
 
-__all__ = ["VERSION", "SCHEMA", "GATEWAY_PERMISSION", "AI_VAS_CAPABILITY", "CAPABILITIES", "TOOL_IDENTITIES", "TOOL_CONTRACTS", "LegalAIToolGatewayError", "LegalAIToolContract", "LegalAIToolInvocationEvidence", "require_legal_ai_commercial_admission", "authorize_legal_ai_tool"]
+def build_legal_ai_tool_invocation_evidence(
+    *, admission: LegalAIToolAdmission,
+    occurred_at: datetime,
+    result_classification: str = "READ",
+    result_reference: str = "",
+) -> LegalAIToolInvocationEvidence:
+    """Construct immutable evidence after read success without persisting it."""
+    if not isinstance(admission, LegalAIToolAdmission):
+        raise LegalAIToolGatewayError("L7B_ADMISSION_INVALID")
+    classification = _text(result_classification, "L7B_RESULT_INVALID")
+    reference = _text(result_reference or admission.resource_identity, "L7B_RESULT_INVALID")
+    return LegalAIToolInvocationEvidence(
+        invocation_id=admission.correlation_id, tenant_id=admission.tenant_id,
+        principal_id=admission.principal_id, tool_identity=admission.tool_identity,
+        tool_version=admission.tool_version, gateway_permission=admission.gateway_permission,
+        underlying_permission=admission.underlying_permission, capability=admission.capability,
+        business_role=admission.business_role, entitlement_id=admission.entitlement_id,
+        entitlement_revision=admission.entitlement_revision,
+        entitlement_fingerprint=admission.entitlement_fingerprint, tier=admission.tier,
+        policy_fingerprint=admission.policy_fingerprint,
+        capacity_evidence_reference=admission.capacity_evidence_reference,
+        capacity_evidence_fingerprint=admission.capacity_evidence_fingerprint,
+        correlation_id=admission.correlation_id, input_fingerprint=admission.input_fingerprint,
+        result_classification=classification, result_reference=reference,
+        result_fingerprint=hashlib.sha3_512(reference.encode()).hexdigest(),
+        occurred_at=occurred_at,
+    )
+
+
+def authorize_legal_ai_tool(
+    *, gateway_context: TenantAuthorizationContext,
+    underlying_context: TenantAuthorizationContext,
+    entitlement: WilsyAIEntitlement,
+    capacity: WilsyAIUsageCapacity,
+    tool_identity: str,
+    input_payload: Mapping[str, object],
+    occurred_at: datetime,
+    result_classification: str = "READ",
+    result_reference: str = "",
+) -> LegalAIToolInvocationEvidence:
+    """Compatibility composition of canonical admission plus evidence build."""
+    admission = require_legal_ai_tool_admission(
+        gateway_context=gateway_context, underlying_context=underlying_context,
+        entitlement=entitlement, capacity=capacity, tool_identity=tool_identity,
+        input_payload=input_payload,
+    )
+    return build_legal_ai_tool_invocation_evidence(
+        admission=admission, occurred_at=occurred_at,
+        result_classification=result_classification, result_reference=result_reference,
+    )
+
+
+__all__ = [
+    "VERSION", "SCHEMA", "EVIDENCE_GATEWAY_VERSION", "GATEWAY_PERMISSION", "AI_VAS_CAPABILITY", "CAPABILITIES",
+    "TOOL_IDENTITIES", "TOOL_CONTRACTS", "LegalAIToolGatewayError",
+    "LegalAIToolContract", "LegalAIToolAdmission", "LegalAIToolInvocationEvidence",
+    "require_legal_ai_commercial_admission", "require_legal_ai_tool_admission",
+    "build_legal_ai_tool_invocation_evidence", "authorize_legal_ai_tool",
+]
+
 # ARTIFACT: legal_ai_gateway.py
-# VERSION: v1.2.0-D57C-R1-WILSY-AI-LEGAL-RUNTIME-ADMISSION
-# AUTHORITY BOUNDARY: allowlisted read composition and bounded evidence only
-# TENANT POSTURE: exact active own-tenant IAM/entitlement/capacity gates
-# FAIL-CLOSED POSTURE: malformed, missing, divergent or exhausted inputs reject
+# VERSION: v1.3.0-CX18-PRE-READ-ADMISSION
+# AUTHORITY BOUNDARY: pure pre-read admission and bounded post-read evidence only
+# TENANT POSTURE: exact current own-tenant IAM, entitlement, and capacity gates
+# FAIL-CLOSED POSTURE: malformed, denied, divergent, stale, or exhausted inputs reject
 # FINANCIAL EXECUTION AUTHORITY: Kennel EOS exclusively
 # END OF WILSY OS SOVEREIGN ARTIFACT

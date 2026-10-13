@@ -1,14 +1,17 @@
 """Direct certificate for the Phase B WILSY AI Legal Tool Gateway.
 
 TITLE: WILSY AI Legal Tool Gateway Direct Certificate
-VERSION: v1.2.0-L7B-WILSY-AI-LEGAL-TOOL-GATEWAY-CERT
-CERTIFICATION DATE: 2026-09-15
+VERSION: v1.3.0-CX18-PRE-READ-ADMISSION-CERT
+CERTIFICATION DATE: 2026-10-13
 AUTHORITY: Direct unit proof of bounded read-only gateway contracts.
 TENANT BOUNDARY: Exact own-tenant contexts only; pseudo/global tenants reject.
 AUTHORITY BOUNDARY: IAM, entitlement, capacity and legal evidence remain canonical.
 FAIL-CLOSED: Unknown tools, commands, malformed input and exhausted capacity reject.
 FINANCIAL AUTHORITY: Kennel EOS exclusively owns execution and settlement.
-CHANGELOG: v1.2.0 adds direct Mongo transport hydration, replay, divergence,
+CHANGELOG: v1.3.0-CX18 directly distinguishes ephemeral admission success from
+           post-read evidence construction and proves admission denial prevents
+           both domain reads and invocation writes.
+           v1.2.0 adds direct Mongo transport hydration, replay, divergence,
            unknown-field, corruption, and caller-session regression proofs.
            v1.1.0 established the gateway direct certificate.
 """
@@ -22,6 +25,7 @@ from typing import Any, cast
 import pytest
 from pydantic import ValidationError
 
+from tools.eos.api import wilsy_ai_legal_gateway_router as router_module
 from tools.eos.api.tenant_authorization_http import TenantAuthorizationContext
 from tools.eos.api.wilsy_ai_legal_gateway_router import LegalToolInvokeRequest, router
 from tools.eos.auth.identity import SovereignIdentity
@@ -32,7 +36,8 @@ from tools.eos.auth.tenant_authorization import TenantAuthorizationDecision, Ten
 from tools.eos.intelligence.domain.legal_ai_gateway import (
     AI_VAS_CAPABILITY, CAPABILITIES, GATEWAY_PERMISSION, TOOL_CONTRACTS,
     TOOL_IDENTITIES, LegalAIToolContract, LegalAIToolGatewayError,
-    authorize_legal_ai_tool,
+    LegalAIToolAdmission, authorize_legal_ai_tool,
+    build_legal_ai_tool_invocation_evidence, require_legal_ai_tool_admission,
 )
 from tools.eos.saas.billing.subscription_wilsy_ai_entitlement_composition_service import (
     CANONICAL_CAPABILITY_GRANTS,
@@ -465,8 +470,140 @@ def test_invocation_registry_rejects_tampered_fingerprint_with_mongo_id() -> Non
         LegalAIToolInvocationRegistry(Collection()).get(tenant_id="tenant-a", invocation_id="tampered", session=object())
 
 
+def _admit(**overrides: Any) -> LegalAIToolAdmission:
+    """Return direct admission success without creating invocation evidence."""
+    entitlement, capacity = _facts()
+    values: dict[str, Any] = {
+        "gateway_context": _context(),
+        "underlying_context": _context(),
+        "entitlement": entitlement,
+        "capacity": capacity,
+        "tool_identity": TOOL_IDENTITIES[0],
+        "input_payload": {"resource_identity": "resource-1", "correlation_id": "cx18-1"},
+    }
+    values.update(overrides)
+    return require_legal_ai_tool_admission(**values)
+
+
+def test_cx18_direct_admission_success_is_not_invocation_evidence() -> None:
+    """ADMISSION SUCCESS remains non-persistent and semantically pre-read."""
+    admission = _admit()
+    assert isinstance(admission, LegalAIToolAdmission)
+    assert not hasattr(admission, "result_reference")
+    assert not hasattr(admission, "occurred_at")
+    assert not hasattr(admission, "to_dict")
+
+
+@pytest.mark.parametrize(
+    ("overrides", "code"),
+    [
+        ({"tool_identity": "legal.unknown.read.v1"}, "L7B_TOOL_UNKNOWN"),
+        ({"gateway_context": object()}, "L7B_CONTEXT_INVALID"),
+        ({"gateway_context": _context(allowed=False)}, "L7B_PERMISSION_DENIED"),
+        ({"underlying_context": _context(allowed=False)}, "L7B_PERMISSION_DENIED"),
+        ({"underlying_context": _context("tenant-b")}, "L7B_TENANT_MISMATCH"),
+        ({"input_payload": {"resource_identity": "bad value", "correlation_id": "cx18"}}, "L7B_INPUT_INVALID"),
+        ({"input_payload": {"resource_identity": "resource-1", "correlation_id": ""}}, "L7B_INPUT_INVALID"),
+        ({"input_payload": {"resource_identity": "resource-1", "correlation_id": "cx18", "extra": "deny"}}, "L7B_INPUT_INVALID"),
+    ],
+)
+def test_cx18_direct_admission_failures_precede_evidence(
+    overrides: dict[str, Any],
+    code: str,
+) -> None:
+    """Every structural/IAM denial occurs before post-read evidence exists."""
+    with pytest.raises(LegalAIToolGatewayError, match=code):
+        _admit(**overrides)
+
+
+def test_cx18_direct_admission_rejects_capacity_and_capability() -> None:
+    """Current commercial denial is a pure pre-read failure."""
+    entitlement, exhausted = _facts(remaining=0)
+    with pytest.raises(LegalAIToolGatewayError, match="L7B_CAPACITY_EXHAUSTED"):
+        _admit(entitlement=entitlement, capacity=exhausted)
+    entitlement, capacity = _facts()
+    invalid = replace(entitlement, capability_grants=("legal.read.invoice",), fingerprint="")
+    with pytest.raises(LegalAIToolGatewayError, match="L7B_ENTITLEMENT_DENIED"):
+        _admit(entitlement=invalid, capacity=capacity)
+
+
+def test_cx18_post_read_evidence_matches_compatibility_helper() -> None:
+    """INVOCATION EVIDENCE CONSTRUCTED retains deterministic compatibility."""
+    entitlement, capacity = _facts()
+    payload = {"resource_identity": "resource-1", "correlation_id": "cx18-evidence"}
+    occurred_at = datetime(2026, 10, 13, 8, 0, tzinfo=timezone.utc)
+    admission = require_legal_ai_tool_admission(
+        gateway_context=_context(), underlying_context=_context(),
+        entitlement=entitlement, capacity=capacity,
+        tool_identity=TOOL_IDENTITIES[0], input_payload=payload,
+    )
+    explicit = build_legal_ai_tool_invocation_evidence(
+        admission=admission, occurred_at=occurred_at,
+        result_reference="LegalInstruction:resource-1",
+    )
+    compatible = authorize_legal_ai_tool(
+        gateway_context=_context(), underlying_context=_context(),
+        entitlement=entitlement, capacity=capacity,
+        tool_identity=TOOL_IDENTITIES[0], input_payload=payload,
+        occurred_at=occurred_at, result_reference="LegalInstruction:resource-1",
+    )
+    assert explicit.to_dict() == compatible.to_dict()
+    assert explicit.fingerprint == compatible.fingerprint
+
+
+def test_cx18_ai_capacity_denial_causes_zero_read_and_zero_write(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """Behaviorally prove final AI admission precedes resource materialization."""
+    entitlement, capacity = _facts(remaining=0)
+    events: list[str] = []
+
+    class Session:
+        def start_transaction(self) -> None: pass
+        def commit_transaction(self) -> None: events.append("commit")
+        def abort_transaction(self) -> None: events.append("abort")
+        def end_session(self) -> None: events.append("end")
+
+    class Entitlements:
+        def __init__(self, collection: Any) -> None: pass
+        def get_by_module(self, **kwargs: Any) -> Any: return entitlement
+
+    class Capacity:
+        @classmethod
+        def from_collections(cls, **kwargs: Any) -> "Capacity": return cls()
+        def derive_capacity(self, **kwargs: Any) -> Any: return capacity
+
+    class Adapter:
+        async def read(self, **kwargs: Any) -> dict[str, object]:
+            events.append("read")
+            return {}
+
+    class Invocations:
+        def __init__(self, collection: Any) -> None: pass
+        def create_or_replay(self, evidence: Any, **kwargs: Any) -> Any:
+            events.append("write")
+            return evidence
+
+    monkeypatch.setattr(router_module, "_begin_transaction", lambda: (object(), Session()))
+    monkeypatch.setattr(router_module, "_collections", lambda: {"entitlement": object(), "observation": object(), "invocation": object()})
+    monkeypatch.setattr(router_module, "WilsyAIEntitlementRegistry", Entitlements)
+    monkeypatch.setattr(router_module, "WilsyAIUsageCapacityOrchestrator", Capacity)
+    monkeypatch.setattr(router_module, "_canonical_underlying_context", lambda *args: _context())
+    monkeypatch.setattr(router_module, "LegalAIReadAdapter", Adapter)
+    monkeypatch.setattr(router_module, "LegalAIToolInvocationRegistry", Invocations)
+    with pytest.raises(Exception) as raised:
+        asyncio.run(router_module.invoke_legal_tool(
+            TOOL_IDENTITIES[0],
+            LegalToolInvokeRequest(resource_identity="resource-1", correlation_id="cx18-denied"),
+            context=_context(), principal_repository=object(),
+            membership_repository=object(), role_assignment_repository=object(),
+        ))
+    assert getattr(raised.value, "status_code", None) == 403
+    assert events == ["abort", "end"]
+
+
 # ARTIFACT: test_wilsy_ai_legal_gateway.py
-# VERSION: v1.2.0-L7B-WILSY-AI-LEGAL-TOOL-GATEWAY-CERT
+# VERSION: v1.3.0-CX18-PRE-READ-ADMISSION-CERT
 # AUTHORITY BOUNDARY: direct regression proof for canonical read authorization
 # TENANT POSTURE: exact own-tenant IAM, entitlement and capacity binding
 # FAIL-CLOSED POSTURE: identity, capability, IAM and capacity mismatches reject
