@@ -244,27 +244,35 @@ def decision(
     )
 
 
-def test_permission_registry_expands_exactly_one_canonical_row() -> None:
+def test_permission_registry_contains_exactly_one_canonical_hr_row() -> None:
+    """Certify this HR permission without freezing global registry size."""
     rows = json.loads(
         canonical_permissions()
     )
 
-    assert len(
-        [
-            row
-            for row in rows
-            if row["disposition"]
-            == "CANONICAL"
-        ]
-    ) == 87
-
-    assert len(rows) == 90
-
-    assert sum(
-        row["permission_id"]
-        == PERMISSION
+    matching = [
+        row
         for row in rows
-    ) == 1
+        if row["permission_id"]
+        == PERMISSION
+    ]
+
+    assert len(matching) == 1
+
+    row = matching[0]
+
+    assert (
+        row["disposition"]
+        == "CANONICAL"
+    )
+    assert (
+        row["namespace"]
+        == "TENANT"
+    )
+    assert (
+        row["scope_kind"]
+        == "TENANT"
+    )
 
 
 def test_permission_metadata_is_exact_tenant_non_financial() -> None:
