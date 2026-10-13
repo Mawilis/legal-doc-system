@@ -34,10 +34,13 @@ from tools.eos.auth.tenant_business_role_repository import (
 from tools.eos.auth.identity import SovereignIdentity
 from tools.eos.auth.tenant_access import get_tenant_membership_repository
 from tools.eos.auth.tenant_authorization import TenantAuthorizationDecision, TenantAuthorizationReason, authorize_tenant_operation
+from tools.eos.auth.permission_namespace import permission_metadata
+from tools.eos.kernel.db import get_client, get_database
+from tools.eos.workforce.registry.workforce_relationship_registry import COLLECTION_NAME as WORKFORCE_RELATIONSHIP_COLLECTION
 
 VERSION = "v1.1.0-TENANT-BUSINESS-ROLE-STORE-WIRING"
-_UNAVAILABLE = frozenset({TenantAuthorizationReason.PRINCIPAL_AUTHORITY_UNAVAILABLE, TenantAuthorizationReason.MEMBERSHIP_AUTHORITY_UNAVAILABLE, TenantAuthorizationReason.TENANT_BUSINESS_ROLE_AUTHORITY_UNAVAILABLE, TenantAuthorizationReason.ROLE_ASSIGNMENT_AUTHORITY_UNAVAILABLE})
-_DENIED = frozenset({TenantAuthorizationReason.INVALID_INPUT, TenantAuthorizationReason.PRINCIPAL_NOT_FOUND, TenantAuthorizationReason.PRINCIPAL_INACTIVE, TenantAuthorizationReason.MEMBERSHIP_NOT_FOUND, TenantAuthorizationReason.MEMBERSHIP_INACTIVE, TenantAuthorizationReason.NO_ACTIVE_TENANT_BUSINESS_ROLE, TenantAuthorizationReason.MULTIPLE_ACTIVE_TENANT_BUSINESS_ROLES, TenantAuthorizationReason.PERMISSION_UNKNOWN, TenantAuthorizationReason.PERMISSION_NOT_CANONICAL, TenantAuthorizationReason.PERMISSION_NAMESPACE_MISMATCH, TenantAuthorizationReason.PERMISSION_OPERATION_MISMATCH, TenantAuthorizationReason.PERMISSION_NOT_GRANTED, TenantAuthorizationReason.ROLE_ASSIGNMENT_INACTIVE, TenantAuthorizationReason.BUSINESS_ROLE_INELIGIBLE, TenantAuthorizationReason.SYSTEM_AUTHORITY_REQUIRED, TenantAuthorizationReason.FINANCIAL_EXECUTION_PROHIBITED})
+_UNAVAILABLE = frozenset({TenantAuthorizationReason.PRINCIPAL_AUTHORITY_UNAVAILABLE, TenantAuthorizationReason.MEMBERSHIP_AUTHORITY_UNAVAILABLE, TenantAuthorizationReason.TENANT_BUSINESS_ROLE_AUTHORITY_UNAVAILABLE, TenantAuthorizationReason.ROLE_ASSIGNMENT_AUTHORITY_UNAVAILABLE, TenantAuthorizationReason.WORKFORCE_AUTHORITY_UNAVAILABLE})
+_DENIED = frozenset({TenantAuthorizationReason.INVALID_INPUT, TenantAuthorizationReason.PRINCIPAL_NOT_FOUND, TenantAuthorizationReason.PRINCIPAL_INACTIVE, TenantAuthorizationReason.MEMBERSHIP_NOT_FOUND, TenantAuthorizationReason.MEMBERSHIP_INACTIVE, TenantAuthorizationReason.NO_ACTIVE_TENANT_BUSINESS_ROLE, TenantAuthorizationReason.MULTIPLE_ACTIVE_TENANT_BUSINESS_ROLES, TenantAuthorizationReason.PERMISSION_UNKNOWN, TenantAuthorizationReason.PERMISSION_NOT_CANONICAL, TenantAuthorizationReason.PERMISSION_NAMESPACE_MISMATCH, TenantAuthorizationReason.PERMISSION_OPERATION_MISMATCH, TenantAuthorizationReason.PERMISSION_NOT_GRANTED, TenantAuthorizationReason.ROLE_ASSIGNMENT_INACTIVE, TenantAuthorizationReason.BUSINESS_ROLE_INELIGIBLE, TenantAuthorizationReason.SYSTEM_AUTHORITY_REQUIRED, TenantAuthorizationReason.FINANCIAL_EXECUTION_PROHIBITED, TenantAuthorizationReason.WORKFORCE_NOT_CURRENT})
 
 @dataclass(frozen=True, slots=True)
 class TenantAuthorizationContext:
@@ -130,7 +133,77 @@ class RequireTenantAuthorization:
     async def __call__(self, identity: SovereignIdentity = Depends(get_current_identity), tenant_id: str | None = Header(default=None, alias="X-Tenant-ID"), principal_repository: Any = Depends(get_principal_authority_repository), membership_repository: Any = Depends(get_tenant_membership_repository), role_assignment_repository: Any = Depends(get_role_assignment_repository)) -> TenantAuthorizationContext:
         if not isinstance(tenant_id, str) or not tenant_id or tenant_id != tenant_id.strip():
             raise ForbiddenOperationException("Tenant scope is required.")
-        decision = authorize_tenant_operation(principal_id=identity.identity_id, tenant_id=tenant_id, permission_id=self.permission_id, operation=self.operation, principal_repository=principal_repository, membership_repository=membership_repository, business_role_repository=role_assignment_repository, role_assignment_repository=role_assignment_repository)
+
+        workforce_required = False
+        try:
+            workforce_required = (
+                permission_metadata(
+                    self.permission_id
+                ).workforce_currentness_required
+                is True
+            )
+        except ValueError:
+            # Preserve the existing composer as the authority for
+            # malformed/unknown permission denial semantics.
+            workforce_required = False
+
+        if workforce_required:
+            client = get_client()
+            database = get_database()
+
+            if client is None or database is None:
+                raise WilsyAPIException(
+                    "Authorization authority unavailable.",
+                    status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+                )
+
+            try:
+                workforce_collection = database[
+                    WORKFORCE_RELATIONSHIP_COLLECTION
+                ]
+
+                with client.start_session() as session:
+                    with session.start_transaction():
+                        decision = authorize_tenant_operation(
+                            principal_id=identity.identity_id,
+                            tenant_id=tenant_id,
+                            permission_id=self.permission_id,
+                            operation=self.operation,
+                            principal_repository=principal_repository,
+                            membership_repository=membership_repository,
+                            business_role_repository=role_assignment_repository,
+                            role_assignment_repository=role_assignment_repository,
+                            session=session,
+                            workforce_relationship_collection=(
+                                workforce_collection
+                            ),
+                        )
+            except Exception as error:
+                if isinstance(
+                    error,
+                    (
+                        ForbiddenOperationException,
+                        WilsyAPIException,
+                    ),
+                ):
+                    raise
+
+                raise WilsyAPIException(
+                    "Authorization authority unavailable.",
+                    status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+                ) from error
+        else:
+            decision = authorize_tenant_operation(
+                principal_id=identity.identity_id,
+                tenant_id=tenant_id,
+                permission_id=self.permission_id,
+                operation=self.operation,
+                principal_repository=principal_repository,
+                membership_repository=membership_repository,
+                business_role_repository=role_assignment_repository,
+                role_assignment_repository=role_assignment_repository,
+            )
+
         if decision.authorized is True and decision.reason is TenantAuthorizationReason.AUTHORIZED:
             return TenantAuthorizationContext(identity=identity, tenant_id=tenant_id, decision=decision)
         if decision.authorized is True or decision.reason is TenantAuthorizationReason.AUTHORIZED:

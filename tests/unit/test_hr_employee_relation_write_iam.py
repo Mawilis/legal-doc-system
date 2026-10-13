@@ -33,6 +33,16 @@ Kennel EOS remains exclusive.
 
 from __future__ import annotations
 
+from datetime import datetime, timezone
+from typing import Any
+
+from tools.eos.workforce.domain.workforce_relationship import (
+    WorkforceRelationship,
+    WorkforceRelationshipStatus,
+    WorkforceRelationshipType,
+    WorkforceScopeKind,
+)
+
 import json
 from dataclasses import dataclass
 from typing import Any
@@ -113,6 +123,102 @@ PAIRS = tuple(
 
 PID = "principal-hr-iam-cert"
 TENANT = "tenant-hr-iam-cert"
+
+
+class _W3DActiveTransaction:
+    in_transaction = True
+
+
+class _W3DWorkforceCursor:
+    def __init__(
+        self,
+        rows: tuple[dict[str, object], ...],
+    ) -> None:
+        self._rows = rows
+
+    def sort(
+        self,
+        *_args: object,
+        **_kwargs: object,
+    ) -> "_W3DWorkforceCursor":
+        return self
+
+    def __iter__(self):
+        return iter(self._rows)
+
+
+class _W3DWorkforceCollection:
+    def __init__(
+        self,
+        *,
+        tenant_id: str,
+        principal_id: str,
+    ) -> None:
+        relationship = WorkforceRelationship(
+            relationship_id=(
+                "w3d-test-workforce-relationship"
+            ),
+            revision=1,
+            scope_kind=WorkforceScopeKind.TENANT,
+            scope_id=tenant_id,
+            principal_id=principal_id,
+            relationship_type=(
+                WorkforceRelationshipType.EMPLOYEE
+            ),
+            status=WorkforceRelationshipStatus.ACTIVE,
+            effective_from=datetime(
+                2026,
+                1,
+                1,
+                tzinfo=timezone.utc,
+            ),
+            effective_until=None,
+            status_effective_at=datetime(
+                2026,
+                1,
+                1,
+                tzinfo=timezone.utc,
+            ),
+            reason_reference=(
+                "w3d-r8b-legacy-hr-test-migration"
+            ),
+            supersedes_fingerprint=None,
+        )
+
+        self._rows = (
+            relationship.to_dict(),
+        )
+
+    def find(
+        self,
+        query: dict[str, object],
+        *,
+        session: object,
+    ) -> _W3DWorkforceCursor:
+        if session is None:
+            raise AssertionError(
+                "W3D active transaction required"
+            )
+
+        return _W3DWorkforceCursor(
+            self._rows
+        )
+
+
+def _w3d_workforce_authorization_inputs(
+    *,
+    tenant_id: str,
+    principal_id: str,
+) -> dict[str, Any]:
+    return {
+        "session": _W3DActiveTransaction(),
+        "workforce_relationship_collection": (
+            _W3DWorkforceCollection(
+                tenant_id=tenant_id,
+                principal_id=principal_id,
+            )
+        ),
+    }
 
 
 @dataclass(frozen=True, slots=True)
@@ -240,6 +346,10 @@ def decision(
         ),
         role_assignment_repository=AuthorizationRoleRepository(
             *auth_roles
+        ),
+        **_w3d_workforce_authorization_inputs(
+            tenant_id=TENANT,
+            principal_id=PID,
         ),
     )
 

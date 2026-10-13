@@ -162,6 +162,8 @@ capacity and billing-intelligence evidence reads are non-financial; Kennel EOS
 remains exclusive.
 """
 from __future__ import annotations
+
+from datetime import datetime, timezone
 from dataclasses import dataclass
 from enum import StrEnum
 from types import MappingProxyType
@@ -175,12 +177,26 @@ from tools.eos.auth.tenant_membership_repository import TenantMembershipNotFound
 from tools.eos.auth.role_assignment_repository import RoleAssignmentNotFoundError, RoleAssignmentRepositoryError
 from tools.eos.auth.tenant_business_role_authority import BusinessRoleResolution, resolve_current_tenant_business_role
 from tools.eos.auth.tenant_authority_policy import ELIGIBLE, tenant_role_operation_eligibility, requires_system_authority, SystemAuthorityClassification
+
+from tools.eos.auth.workforce_admission_policy import (
+    WorkforceAdmissionDisposition,
+    WorkforceAdmissionPolicyError,
+    evaluate_workforce_admission,
+)
+from tools.eos.auth.workforce_authorization_currentness import (
+    WorkforceAuthorizationCurrentnessError,
+    derive_tenant_principal_workforce_currentness,
+)
+from tools.eos.workforce.registry.workforce_relationship_registry import (
+    WorkforceRelationshipRegistryError,
+    list_principal_relationships,
+)
 from tools.eos.auth.permission_namespace import PermissionDisposition, permission_metadata
 from tools.eos.auth.roles import get_roles_granting_permission
 
 VERSION = "v1.37.0-LEGAL-NOTIFICATION-RECIPIENT-BINDING-AUTHORIZATION"
 class TenantAuthorizationReason(StrEnum):
-    AUTHORIZED="AUTHORIZED"; INVALID_INPUT="INVALID_INPUT"; PRINCIPAL_NOT_FOUND="PRINCIPAL_NOT_FOUND"; PRINCIPAL_INACTIVE="PRINCIPAL_INACTIVE"; PRINCIPAL_AUTHORITY_UNAVAILABLE="PRINCIPAL_AUTHORITY_UNAVAILABLE"; MEMBERSHIP_NOT_FOUND="MEMBERSHIP_NOT_FOUND"; MEMBERSHIP_INACTIVE="MEMBERSHIP_INACTIVE"; MEMBERSHIP_AUTHORITY_UNAVAILABLE="MEMBERSHIP_AUTHORITY_UNAVAILABLE"; NO_ACTIVE_TENANT_BUSINESS_ROLE="NO_ACTIVE_TENANT_BUSINESS_ROLE"; MULTIPLE_ACTIVE_TENANT_BUSINESS_ROLES="MULTIPLE_ACTIVE_TENANT_BUSINESS_ROLES"; TENANT_BUSINESS_ROLE_AUTHORITY_UNAVAILABLE="TENANT_BUSINESS_ROLE_AUTHORITY_UNAVAILABLE"; PERMISSION_UNKNOWN="PERMISSION_UNKNOWN"; PERMISSION_NOT_CANONICAL="PERMISSION_NOT_CANONICAL"; PERMISSION_NAMESPACE_MISMATCH="PERMISSION_NAMESPACE_MISMATCH"; PERMISSION_OPERATION_MISMATCH="PERMISSION_OPERATION_MISMATCH"; PERMISSION_NOT_GRANTED="PERMISSION_NOT_GRANTED"; ROLE_ASSIGNMENT_INACTIVE="ROLE_ASSIGNMENT_INACTIVE"; BUSINESS_ROLE_INELIGIBLE="BUSINESS_ROLE_INELIGIBLE"; SYSTEM_AUTHORITY_REQUIRED="SYSTEM_AUTHORITY_REQUIRED"; FINANCIAL_EXECUTION_PROHIBITED="FINANCIAL_EXECUTION_PROHIBITED"; ROLE_ASSIGNMENT_AUTHORITY_UNAVAILABLE="ROLE_ASSIGNMENT_AUTHORITY_UNAVAILABLE"
+    AUTHORIZED="AUTHORIZED"; INVALID_INPUT="INVALID_INPUT"; PRINCIPAL_NOT_FOUND="PRINCIPAL_NOT_FOUND"; PRINCIPAL_INACTIVE="PRINCIPAL_INACTIVE"; PRINCIPAL_AUTHORITY_UNAVAILABLE="PRINCIPAL_AUTHORITY_UNAVAILABLE"; MEMBERSHIP_NOT_FOUND="MEMBERSHIP_NOT_FOUND"; MEMBERSHIP_INACTIVE="MEMBERSHIP_INACTIVE"; MEMBERSHIP_AUTHORITY_UNAVAILABLE="MEMBERSHIP_AUTHORITY_UNAVAILABLE"; NO_ACTIVE_TENANT_BUSINESS_ROLE="NO_ACTIVE_TENANT_BUSINESS_ROLE"; MULTIPLE_ACTIVE_TENANT_BUSINESS_ROLES="MULTIPLE_ACTIVE_TENANT_BUSINESS_ROLES"; TENANT_BUSINESS_ROLE_AUTHORITY_UNAVAILABLE="TENANT_BUSINESS_ROLE_AUTHORITY_UNAVAILABLE"; PERMISSION_UNKNOWN="PERMISSION_UNKNOWN"; PERMISSION_NOT_CANONICAL="PERMISSION_NOT_CANONICAL"; PERMISSION_NAMESPACE_MISMATCH="PERMISSION_NAMESPACE_MISMATCH"; PERMISSION_OPERATION_MISMATCH="PERMISSION_OPERATION_MISMATCH"; PERMISSION_NOT_GRANTED="PERMISSION_NOT_GRANTED"; ROLE_ASSIGNMENT_INACTIVE="ROLE_ASSIGNMENT_INACTIVE"; BUSINESS_ROLE_INELIGIBLE="BUSINESS_ROLE_INELIGIBLE"; SYSTEM_AUTHORITY_REQUIRED="SYSTEM_AUTHORITY_REQUIRED"; FINANCIAL_EXECUTION_PROHIBITED="FINANCIAL_EXECUTION_PROHIBITED"; ROLE_ASSIGNMENT_AUTHORITY_UNAVAILABLE="ROLE_ASSIGNMENT_AUTHORITY_UNAVAILABLE"; WORKFORCE_NOT_CURRENT="WORKFORCE_NOT_CURRENT"; WORKFORCE_AUTHORITY_UNAVAILABLE="WORKFORCE_AUTHORITY_UNAVAILABLE"
 @dataclass(frozen=True, slots=True)
 class TenantAuthorizationDecision:
     authorized: bool
@@ -263,7 +279,7 @@ _BINDINGS = MappingProxyType({
         "legal_operations:matter_deadline:write",
 })
 
-def authorize_tenant_operation(*, principal_id: object, tenant_id: object, permission_id: object, operation: object, principal_repository: Any, membership_repository: Any, role_assignment_repository: Any, business_role_repository: Any, session: Any = None) -> TenantAuthorizationDecision:
+def authorize_tenant_operation(*, principal_id: object, tenant_id: object, permission_id: object, operation: object, principal_repository: Any, membership_repository: Any, role_assignment_repository: Any, business_role_repository: Any, session: Any = None, workforce_relationship_collection: Any = None) -> TenantAuthorizationDecision:
     """Compose current truth; ELIGIBLE is only one conjunct and never authorization alone."""
     if not all(isinstance(v, str) and v and v == v.strip() for v in (principal_id, tenant_id, permission_id, operation)):
         return TenantAuthorizationDecision(False, TenantAuthorizationReason.INVALID_INPUT)
@@ -288,6 +304,85 @@ def authorize_tenant_operation(*, principal_id: object, tenant_id: object, permi
     if metadata.namespace != "TENANT" or not metadata.tenant_membership_required or metadata.cross_tenant_capable or metadata.financial_execution_capable: return TenantAuthorizationDecision(False, TenantAuthorizationReason.PERMISSION_NAMESPACE_MISMATCH, role_result.role)
     if _BINDINGS.get(op) != perm: return TenantAuthorizationDecision(False, TenantAuthorizationReason.PERMISSION_OPERATION_MISMATCH, role_result.role)
     if tenant_role_operation_eligibility(role_result.role, op) != ELIGIBLE: return TenantAuthorizationDecision(False, TenantAuthorizationReason.BUSINESS_ROLE_INELIGIBLE, role_result.role)
+    if metadata.workforce_currentness_required:
+        marker = None
+        if session is not None:
+            try:
+                marker = getattr(
+                    session,
+                    "in_transaction",
+                )
+            except Exception:
+                marker = None
+
+        active_transaction = (
+            marker()
+            if callable(marker)
+            else marker
+        )
+
+        if (
+            active_transaction is not True
+            or workforce_relationship_collection
+            is None
+        ):
+            return TenantAuthorizationDecision(
+                False,
+                TenantAuthorizationReason.WORKFORCE_AUTHORITY_UNAVAILABLE,
+                role_result.role,
+            )
+
+        try:
+            relationships = list_principal_relationships(
+                "TENANT",
+                tid,
+                pid,
+                collection=workforce_relationship_collection,
+                session=session,
+            )
+
+            currentness = (
+                derive_tenant_principal_workforce_currentness(
+                    relationships,
+                    tenant_id=tid,
+                    principal_id=pid,
+                    observed_at=datetime.now(
+                        timezone.utc
+                    ),
+                )
+            )
+
+            admission = evaluate_workforce_admission(
+                metadata,
+                currentness,
+            )
+        except (
+            WorkforceRelationshipRegistryError,
+            WorkforceAuthorizationCurrentnessError,
+            WorkforceAdmissionPolicyError,
+        ):
+            return TenantAuthorizationDecision(
+                False,
+                TenantAuthorizationReason.WORKFORCE_AUTHORITY_UNAVAILABLE,
+                role_result.role,
+            )
+        except Exception:
+            return TenantAuthorizationDecision(
+                False,
+                TenantAuthorizationReason.WORKFORCE_AUTHORITY_UNAVAILABLE,
+                role_result.role,
+            )
+
+        if (
+            admission
+            is not WorkforceAdmissionDisposition.SATISFIED
+        ):
+            return TenantAuthorizationDecision(
+                False,
+                TenantAuthorizationReason.WORKFORCE_NOT_CURRENT,
+                role_result.role,
+            )
+
     inactive_seen = False
     active_role: str | None = None
     for auth_role in get_roles_granting_permission(perm):
