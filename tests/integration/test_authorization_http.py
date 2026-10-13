@@ -1,11 +1,11 @@
 """TITLE: WILSY OS FastAPI Current Authorization HTTP Integration Certification
-VERSION: v1.0.1-WILSY-CURRENT-AUTHORIZATION-HTTP-INTEGRATION
+VERSION: v1.0.2-WILSY-CURRENT-AUTHORIZATION-HTTP-INTEGRATION
 AUTHORITY: Real FastAPI composition over current principal, tenant membership, and role-assignment authority.
 EPITOME: Proves bearer authentication, explicit tenant admission, and current role/permission enforcement at an HTTP boundary.
 ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/tests/integration/test_authorization_http.py
 COLLABORATION / OWNERSHIP: Wilson Khanyezi / Wilsy Core Engineering.
 CERTIFICATION/UPDATE DATE: 2026-08-30
-CHANGELOG: v1.0.1-WILSY-CURRENT-AUTHORIZATION-HTTP-INTEGRATION corrects the stale SERVICE_WORKER/execution:trigger allow assertion to the canonical fail-closed denial contract and strengthens the certificate against JWT role/permission projections. v1.0.0-WILSY-CURRENT-AUTHORIZATION-HTTP-INTEGRATION established the test-local FastAPI certification surface without production startup.
+CHANGELOG: v1.0.2-WILSY-CURRENT-AUTHORIZATION-HTTP-INTEGRATION migrates synthetic bearer credentials to the current explicit ACCESS purpose + durable credential-revision authentication contract, binds AuthRegistry and canonical TenantRegistry to the UUID-isolated real-Mongo certificate database, and constructs expired-token adversarial evidence without weakening the positive-duration production issuer. v1.0.1-WILSY-CURRENT-AUTHORIZATION-HTTP-INTEGRATION corrects the stale SERVICE_WORKER/execution:trigger allow assertion to the canonical fail-closed denial contract and strengthens the certificate against JWT role/permission projections. v1.0.0-WILSY-CURRENT-AUTHORIZATION-HTTP-INTEGRATION established the test-local FastAPI certification surface without production startup.
 COMPLIANCE: POPIA section 19; GDPR Article 32; SOC 2 CC7.2; ISO 27001.
 SECURITY/PRIVACY POSTURE: Synthetic identities, deterministic test secret, UUID-isolated Mongo, bounded responses, and no credential logging.
 TENANT BOUNDARY: X-Tenant-ID and every persistence lookup are explicit and tenant-scoped; no default or global tenant exists.
@@ -14,7 +14,12 @@ FINANCIAL AUTHORITY BOUNDARY: None. Kennel EOS remains exclusive.
 """
 from __future__ import annotations
 
+import base64
+import hashlib
+import hmac
+import json
 import os
+import time
 import uuid
 from collections.abc import Iterator
 from typing import Any, cast
@@ -30,7 +35,10 @@ from tools.eos.api.errors import register_error_handlers
 from tools.eos.auth.authentication import get_current_identity, get_principal_authority_repository
 from tools.eos.auth.authorization import RequirePermission, RequireRole, get_role_assignment_repository
 from tools.eos.auth.identity import SovereignIdentity
-from tools.eos.auth.jwt_provider import create_access_token
+from tools.eos.auth.jwt_provider import TokenPurpose, create_access_token
+import tools.eos.saas.auth.auth_registry as auth_registry_module
+import tools.eos.saas.tenancy.tenant_registry as tenant_registry_module
+from tools.eos.saas.tenancy.tenant_registry import TenantRegistry
 from tools.eos.auth.principal_authority import PrincipalAuthority
 from tools.eos.auth.principal_authority_repository import PrincipalAuthorityRepository, PrincipalAuthorityRepositoryError
 from tools.eos.auth.principal_status import PrincipalStatus
@@ -40,7 +48,7 @@ from tools.eos.auth.tenant_access import get_current_tenant_identity, get_tenant
 from tools.eos.auth.tenant_membership import TenantMembershipAuthority, TenantMembershipStatus
 from tools.eos.auth.tenant_membership_repository import TenantMembershipRepository, TenantMembershipRepositoryError
 
-VERSION = "v1.0.1-WILSY-CURRENT-AUTHORIZATION-HTTP-INTEGRATION"
+VERSION = "v1.0.2-WILSY-CURRENT-AUTHORIZATION-HTTP-INTEGRATION"
 URI = os.getenv("TEST_VENDOR_MONGO_URI")
 
 
@@ -66,16 +74,132 @@ class RoleFacade:
 
 
 @pytest.fixture()
-def context() -> Iterator[tuple[Any, Any, Any, Any, Any]]:
-    """Yield isolated collections, app, and client; drop only the UUID database."""
-    if not URI: pytest.fail("TEST_VENDOR_MONGO_URI is required")
-    mongo = MongoClient(URI, serverSelectionTimeoutMS=5000)
-    if mongo.admin.command("hello").get("setName") != "wilsyVendorCertRS":
-        mongo.close(); pytest.fail("wrong certification replica set")
-    database = mongo[f"authorization_http_cert_{uuid.uuid4().hex}"]
-    principals, memberships, roles = database["principal_authorities"], database["tenant_memberships"], database["role_assignments"]
-    PrincipalAuthorityRepository.ensure_indexes(principals); TenantMembershipRepository.ensure_indexes(memberships); RoleAssignmentRepository.ensure_indexes(roles)
-    app = FastAPI(); register_error_handlers(app, debug=False)
+def context(
+    monkeypatch: pytest.MonkeyPatch,
+) -> Iterator[tuple[Any, Any, Any, Any, Any]]:
+    """Yield isolated durable authentication + authorization truth."""
+    if not URI:
+        pytest.fail("TEST_VENDOR_MONGO_URI is required")
+
+    mongo = MongoClient(
+        URI,
+        serverSelectionTimeoutMS=5000,
+    )
+
+    if (
+        mongo.admin.command("hello").get("setName")
+        != "wilsyVendorCertRS"
+    ):
+        mongo.close()
+        pytest.fail("wrong certification replica set")
+
+    database = mongo[
+        f"authorization_http_cert_{uuid.uuid4().hex}"
+    ]
+
+    principals = database["principal_authorities"]
+    memberships = database["tenant_memberships"]
+    roles = database["role_assignments"]
+    users = database["users"]
+
+    PrincipalAuthorityRepository.ensure_indexes(
+        principals
+    )
+    TenantMembershipRepository.ensure_indexes(
+        memberships
+    )
+    RoleAssignmentRepository.ensure_indexes(
+        roles
+    )
+
+    # Bind the production AuthRegistry's kernel database lookup to this
+    # certificate's UUID-isolated real-Mongo database. Authentication remains
+    # real; get_current_identity is not overridden.
+    monkeypatch.setattr(
+        auth_registry_module.kernel_db,
+        "get_database",
+        lambda: database,
+    )
+
+    # Bind canonical TenantRegistry resolution to this same isolated database.
+    monkeypatch.setattr(
+        tenant_registry_module,
+        "tenants_collection",
+        database["tenants"],
+    )
+
+    for tenant_id in (
+        "tenant-t",
+        "tenant-other",
+    ):
+        result = TenantRegistry.create(
+            {
+                "name": (
+                    "Authorization HTTP "
+                    f"Certificate {tenant_id}"
+                ),
+                "tenant_id": tenant_id,
+            }
+        )
+
+        if result.get("success") is not True:
+            pytest.fail(
+                "canonical tenant fixture creation failed"
+            )
+
+    # Durable authentication rows are distinct from PrincipalAuthority,
+    # TenantMembership and RoleAssignment. Their sole purpose here is to
+    # provide the exact credential-revision authority demanded by the real
+    # authentication dependency.
+    users.insert_many(
+        [
+            {
+                "user_id": "principal-p",
+                "email": "principal-p@wilsyos.org",
+                "firstName": "Principal",
+                "lastName": "P",
+                "role": "USER",
+                "permissions": [],
+                "tenantId": "tenant-t",
+                "passwordHash": "bcrypt-test-only",
+                "credential_revision": 0,
+                "mfaRegistered": False,
+                "hasSignedCovenant": False,
+            },
+            {
+                "user_id": "principal-p",
+                "email": "principal-p-other@wilsyos.org",
+                "firstName": "Principal",
+                "lastName": "P",
+                "role": "USER",
+                "permissions": [],
+                "tenantId": "tenant-other",
+                "passwordHash": "bcrypt-test-only",
+                "credential_revision": 0,
+                "mfaRegistered": False,
+                "hasSignedCovenant": False,
+            },
+            {
+                "user_id": "principal-other",
+                "email": "principal-other@wilsyos.org",
+                "firstName": "Principal",
+                "lastName": "Other",
+                "role": "USER",
+                "permissions": [],
+                "tenantId": "tenant-t",
+                "passwordHash": "bcrypt-test-only",
+                "credential_revision": 0,
+                "mfaRegistered": False,
+                "hasSignedCovenant": False,
+            },
+        ]
+    )
+
+    app = FastAPI()
+    register_error_handlers(
+        app,
+        debug=False,
+    )
     app.dependency_overrides[get_principal_authority_repository] = lambda: PrincipalFacade(principals)
     app.dependency_overrides[get_tenant_membership_repository] = lambda: MembershipFacade(memberships)
     app.dependency_overrides[get_role_assignment_repository] = lambda: RoleFacade(roles)
@@ -99,9 +223,118 @@ def seed(context: tuple[Any, Any, Any, Any, Any], principal: str = "principal-p"
     RoleAssignmentRepository.insert(RoleAssignmentAuthority(principal, tenant, role, role_status, 0), roles)
 
 
-def token(principal: str = "principal-p", tenant: str = "tenant-t", projected: bool = False, expires: int = 3600) -> str:
-    """Create a deterministic synthetic JWT without production secrets."""
-    return create_access_token({"identity_id": principal, "tenant_id": tenant, "roles": ["ENTERPRISE_ADMIN"] if projected else [], "permissions": ["execution:trigger"] if projected else []}, expires_in_seconds=expires)
+def _base64url(value: bytes) -> str:
+    """Encode deterministic JWT material for adversarial expiry evidence."""
+    return (
+        base64.urlsafe_b64encode(value)
+        .rstrip(b"=")
+        .decode("ascii")
+    )
+
+
+def _expired_access_token(
+    *,
+    principal: str,
+    tenant: str,
+    projected: bool,
+) -> str:
+    """Create an already-expired test JWT without weakening the issuer."""
+    now = int(time.time())
+
+    payload = {
+        "identity_id": principal,
+        "tenant_id": tenant,
+        "roles": (
+            ["ENTERPRISE_ADMIN"]
+            if projected
+            else []
+        ),
+        "permissions": (
+            ["execution:trigger"]
+            if projected
+            else []
+        ),
+        "token_purpose": TokenPurpose.ACCESS.value,
+        "credential_revision": 0,
+        "iat": now - 60,
+        "exp": now - 1,
+    }
+
+    header = {
+        "alg": "HS256",
+        "typ": "JWT",
+    }
+
+    encoded_header = _base64url(
+        json.dumps(
+            header,
+            separators=(",", ":"),
+            sort_keys=True,
+        ).encode("utf-8")
+    )
+
+    encoded_payload = _base64url(
+        json.dumps(
+            payload,
+            separators=(",", ":"),
+            sort_keys=True,
+        ).encode("utf-8")
+    )
+
+    signing_input = (
+        f"{encoded_header}.{encoded_payload}"
+    )
+
+    secret = os.environ[
+        "WILSY_JWT_SECRET"
+    ]
+
+    signature = _base64url(
+        hmac.new(
+            secret.encode("utf-8"),
+            signing_input.encode("utf-8"),
+            hashlib.sha256,
+        ).digest()
+    )
+
+    return (
+        f"{signing_input}.{signature}"
+    )
+
+
+def token(
+    principal: str = "principal-p",
+    tenant: str = "tenant-t",
+    projected: bool = False,
+    expires: int = 3600,
+) -> str:
+    """Create one current ACCESS JWT bound to durable revision zero."""
+    if expires <= 0:
+        return _expired_access_token(
+            principal=principal,
+            tenant=tenant,
+            projected=projected,
+        )
+
+    return create_access_token(
+        {
+            "identity_id": principal,
+            "tenant_id": tenant,
+            "roles": (
+                ["ENTERPRISE_ADMIN"]
+                if projected
+                else []
+            ),
+            "permissions": (
+                ["execution:trigger"]
+                if projected
+                else []
+            ),
+        },
+        expires_in_seconds=expires,
+        token_purpose=TokenPurpose.ACCESS,
+        credential_revision=0,
+    )
 
 
 def client(app: FastAPI) -> TestClient: return TestClient(app, raise_server_exceptions=False)

@@ -208,6 +208,7 @@ class PermissionMetadata:
     business_capability: str
     tenant_membership_required: bool
     system_assignment_required: bool
+    workforce_currentness_required: bool
     cross_tenant_capable: bool
     financial_execution_capable: bool
     deprecated_or_legacy: bool
@@ -223,6 +224,7 @@ def _meta(
     *,
     tenant: bool = False,
     system: bool = False,
+    workforce: bool = False,
     disposition: PermissionDisposition = PermissionDisposition.CANONICAL,
 ) -> PermissionMetadata:
     """Construct immutable metadata without creating authority."""
@@ -233,6 +235,7 @@ def _meta(
         business_capability=capability,
         tenant_membership_required=tenant,
         system_assignment_required=system,
+        workforce_currentness_required=workforce,
         cross_tenant_capable=False,
         financial_execution_capable=False,
         deprecated_or_legacy=(
@@ -520,91 +523,91 @@ _PERMISSIONS: Final = MappingProxyType(
             "TENANT",
             "TENANT",
             "record own-tenant employee relations evidence",
-            tenant=True,
+            tenant=True, workforce=True,
         ),
         "hr:document:standard_employment:write": _meta(
             "hr:document:standard_employment:write",
             "TENANT", "TENANT",
             "write own-tenant standard employment HR documents",
-            tenant=True,
+            tenant=True, workforce=True,
         ),
         "hr:document:standard_employment:read": _meta(
             "hr:document:standard_employment:read",
             "TENANT", "TENANT",
             "read own-tenant standard employment HR documents",
-            tenant=True,
+            tenant=True, workforce=True,
         ),
         "hr:document:employee_relations_restricted:write": _meta(
             "hr:document:employee_relations_restricted:write",
             "TENANT", "TENANT",
             "write own-tenant employee-relations restricted HR documents",
-            tenant=True,
+            tenant=True, workforce=True,
         ),
         "hr:document:employee_relations_restricted:read": _meta(
             "hr:document:employee_relations_restricted:read",
             "TENANT", "TENANT",
             "read own-tenant employee-relations restricted HR documents",
-            tenant=True,
+            tenant=True, workforce=True,
         ),
         "hr:document:performance_restricted:write": _meta(
             "hr:document:performance_restricted:write",
             "TENANT", "TENANT",
             "write own-tenant performance restricted HR documents",
-            tenant=True,
+            tenant=True, workforce=True,
         ),
         "hr:document:performance_restricted:read": _meta(
             "hr:document:performance_restricted:read",
             "TENANT", "TENANT",
             "read own-tenant performance restricted HR documents",
-            tenant=True,
+            tenant=True, workforce=True,
         ),
         "hr:document:highly_sensitive_health:write": _meta(
             "hr:document:highly_sensitive_health:write",
             "TENANT", "TENANT",
             "write own-tenant highly sensitive health HR documents",
-            tenant=True,
+            tenant=True, workforce=True,
         ),
         "hr:document:highly_sensitive_health:read": _meta(
             "hr:document:highly_sensitive_health:read",
             "TENANT", "TENANT",
             "read own-tenant highly sensitive health HR documents",
-            tenant=True,
+            tenant=True, workforce=True,
         ),
         "hr:document:highly_sensitive_identity:write": _meta(
             "hr:document:highly_sensitive_identity:write",
             "TENANT", "TENANT",
             "write own-tenant highly sensitive identity HR documents",
-            tenant=True,
+            tenant=True, workforce=True,
         ),
         "hr:document:highly_sensitive_identity:read": _meta(
             "hr:document:highly_sensitive_identity:read",
             "TENANT", "TENANT",
             "read own-tenant highly sensitive identity HR documents",
-            tenant=True,
+            tenant=True, workforce=True,
         ),
         "hr:document:separation_restricted:write": _meta(
             "hr:document:separation_restricted:write",
             "TENANT", "TENANT",
             "write own-tenant separation restricted HR documents",
-            tenant=True,
+            tenant=True, workforce=True,
         ),
         "hr:document:separation_restricted:read": _meta(
             "hr:document:separation_restricted:read",
             "TENANT", "TENANT",
             "read own-tenant separation restricted HR documents",
-            tenant=True,
+            tenant=True, workforce=True,
         ),
         "hr:document:general:write": _meta(
             "hr:document:general:write",
             "TENANT", "TENANT",
             "write own-tenant general HR documents",
-            tenant=True,
+            tenant=True, workforce=True,
         ),
         "hr:document:general:read": _meta(
             "hr:document:general:read",
             "TENANT", "TENANT",
             "read own-tenant general HR documents",
-            tenant=True,
+            tenant=True, workforce=True,
         ),
         "legal_operations:instruction:read": _meta(
             "legal_operations:instruction:read", "TENANT", "TENANT",
@@ -913,6 +916,8 @@ def canonical_permissions() -> bytes:
                 value.tenant_membership_required,
             "system_assignment_required":
                 value.system_assignment_required,
+            "workforce_currentness_required":
+                value.workforce_currentness_required,
             "cross_tenant_capable":
                 value.cross_tenant_capable,
             "financial_execution_capable":
