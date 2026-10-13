@@ -1,7 +1,7 @@
 """WILSY AI Legal Tool Gateway official real-Mongo certificate.
 
 TITLE: WILSY AI Legal Tool Gateway Runtime Certificate
-VERSION: v1.3.1-L7B-WILSY-AI-LEGAL-TOOL-REAL-MONGO-CERT
+VERSION: v1.4.0-CX18-PRE-READ-REVOCATION-CERT
 AUTHORITY: Host-backed evidence that the production gateway composes its
            canonical IAM, entitlement, capacity, legal-read and invocation
            evidence authorities.
@@ -11,8 +11,12 @@ ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/tests/integratio
 COLLABORATION / OWNERSHIP: The gateway router composes L7A/L7C reads, P4/P6B/
                             P6C commercial capacity and the L7B evidence
                             registry; Kennel EOS remains financial authority.
-CERTIFICATION / UPDATE DATE: 2026-09-23
-CHANGELOG: v1.3.1 aligns real-Mongo IAM seeding with the canonical dedicated
+CERTIFICATION / UPDATE DATE: 2026-10-13
+CHANGELOG: v1.4.0-CX18 proves principal suspension, membership suspension and
+           revocation, business-role revocation, and granting-role revocation
+           disappear on the next authenticated AI use with zero domain read
+           and zero invocation-evidence write.
+           v1.3.1 aligns real-Mongo IAM seeding with the canonical dedicated
            tenant_business_roles store used by tenant_authorization_http v1.1.0,
            preserving separate business-role eligibility and uppercase granting
            role authority while keeping the production gateway unchanged.
@@ -47,6 +51,8 @@ from uuid import uuid4
 import pytest
 from fastapi import FastAPI
 from fastapi.testclient import TestClient
+from starlette.requests import Request
+from starlette.responses import JSONResponse
 from pymongo import MongoClient
 from pymongo.errors import AutoReconnect, ConnectionFailure, ServerSelectionTimeoutError
 
@@ -64,6 +70,7 @@ from tools.eos.auth.tenant_business_role import (
 from tools.eos.auth.tenant_business_role_repository import TenantBusinessRoleRepository
 from tools.eos.auth.tenant_membership import TenantMembershipAuthority, TenantMembershipStatus
 from tools.eos.auth.tenant_membership_repository import TenantMembershipRepository
+from tools.eos.api.exceptions import ForbiddenOperationException
 from tools.eos.intelligence.domain.legal_ai_gateway import (
     CAPABILITIES,
     LegalAIToolInvocationEvidence,
@@ -114,6 +121,7 @@ EXPECTED_SET_NAME = "wilsyVendorCertRS"
 TENANT_A = "tenant-b4-real-a"
 TENANT_B = "tenant-b4-real-b"
 TENANT_C = "tenant-b4-real-c"
+TENANT_D = "tenant-b4-real-d"
 MODULE_ID = "WILSY_AI_REASONING"
 BASE_TIME = datetime(2026, 9, 15, 12, 0, tzinfo=timezone.utc)
 READINESS_FP = "a" * 128
@@ -351,6 +359,12 @@ def test_real_mongo_production_gateway_composition_and_fail_closed_boundaries(
         business_role_id="tenant_legal_finance",
         authorization_role_id="LEGAL_FINANCE",
     )
+    _seed_auth(
+        database,
+        TENANT_D,
+        business_role_id="tenant_legal_attorney",
+        authorization_role_id="LEGAL_ATTORNEY",
+    )
     assert "tenant_legal_attorney" != "LEGAL_ATTORNEY"
     assert database["tenant_business_roles"].find_one(
         {
@@ -364,15 +378,17 @@ def test_real_mongo_production_gateway_composition_and_fail_closed_boundaries(
     entitlement_a = _seed_entitlement(database, TENANT_A)
     entitlement_b = _seed_entitlement(database, TENANT_B)
     entitlement_c = _seed_entitlement(database, TENANT_C)
+    entitlement_d = _seed_entitlement(database, TENANT_D)
     instruction = _seed_instruction(database)
     ensure_observation_indexes(database[OBSERVATION_COLLECTION])
     observation_a = _seed_observation(
         database, entitlement_a, "usage-b4-real-a", request_units=1
     )
     observation_b = _seed_observation(
-        database, entitlement_b, "usage-b4-real-b", request_units=35
+        database, entitlement_b, "usage-b4-real-b", request_units=1
     )
     _seed_observation(database, entitlement_c, "usage-b4-real-c", request_units=1)
+    _seed_observation(database, entitlement_d, "usage-b4-real-d", request_units=35)
     capacity_orchestrator = WilsyAIUsageCapacityOrchestrator.from_collections(
         entitlement_collection=database[ENTITLEMENT_COLLECTION],
         observation_collection=database[OBSERVATION_COLLECTION],
@@ -395,8 +411,8 @@ def test_real_mongo_production_gateway_composition_and_fail_closed_boundaries(
         assert capacity_a.daily_remaining_request_units > 0
         assert capacity_a.entitlement_fingerprint == entitlement_a.fingerprint
         assert capacity_a.entitlement_fingerprint != entitlement_a.policy_fingerprint
-        assert capacity_b.daily_exhausted is True
-        assert capacity_b.daily_remaining_request_units == 0
+        assert capacity_b.daily_exhausted is False
+        assert capacity_b.daily_remaining_request_units > 0
         capacity_session.abort_transaction()
 
     entitlement_registry = WilsyAIEntitlementRegistry(
@@ -453,6 +469,18 @@ def test_real_mongo_production_gateway_composition_and_fail_closed_boundaries(
         return current_identity
 
     app = FastAPI()
+
+    @app.exception_handler(ForbiddenOperationException)
+    async def forbidden_handler(
+        _request: Request,
+        _error: ForbiddenOperationException,
+    ) -> JSONResponse:
+        """Mirror production's bounded 403 transport for dependency denials."""
+        return JSONResponse(
+            status_code=403,
+            content={"error": "FORBIDDEN", "message": "Operation denied"},
+        )
+
     app.include_router(production_gateway.router, prefix="/api")
     app.dependency_overrides[get_current_identity] = authenticated_identity
     assert (
@@ -466,6 +494,16 @@ def test_real_mongo_production_gateway_composition_and_fail_closed_boundaries(
         "resource_identity": instruction.instruction_id,
         "correlation_id": "correlation-b4-real",
     }
+    read_count = 0
+    original_read = production_gateway.LegalAIReadAdapter.read
+
+    async def counted_read(adapter: Any, **kwargs: Any) -> dict[str, object]:
+        """Observe materialization without replacing the real domain read path."""
+        nonlocal read_count
+        read_count += 1
+        return cast(dict[str, object], await original_read(adapter, **kwargs))
+
+    monkeypatch.setattr(production_gateway.LegalAIReadAdapter, "read", counted_read)
 
     with TestClient(app) as http:
         listed = http.get(path, headers={"X-Tenant-ID": TENANT_A})
@@ -516,6 +554,98 @@ def test_real_mongo_production_gateway_composition_and_fail_closed_boundaries(
         assert replay.status_code == 200, replay.text
         assert replay.json() == first_payload
         assert invocation_collection.count_documents({"tenant_id": TENANT_A}) == 1
+
+        def assert_next_use_denied(
+            collection_name: str,
+            query: dict[str, object],
+            denied_values: dict[str, object],
+            restored_values: dict[str, object],
+            correlation_id: str,
+        ) -> None:
+            """Mutate one canonical owner and prove next-use read/write absence."""
+            nonlocal read_count
+            collection = database[collection_name]
+            before_reads = read_count
+            before_writes = invocation_collection.count_documents({})
+            changed = collection.update_one(query, {"$set": denied_values})
+            assert changed.matched_count == 1 and changed.modified_count == 1
+            denied = http.post(
+                invoke_path,
+                headers={"X-Tenant-ID": TENANT_A},
+                json={
+                    "resource_identity": instruction.instruction_id,
+                    "correlation_id": correlation_id,
+                },
+            )
+            assert denied.status_code == 403, denied.text
+            assert instruction.instruction_id not in denied.text
+            assert TENANT_B not in denied.text
+            assert read_count == before_reads
+            assert invocation_collection.count_documents({}) == before_writes
+            assert invocation_collection.count_documents(
+                {"tenant_id": TENANT_A, "invocation_id": correlation_id}
+            ) == 0
+            restored = collection.update_one(query, {"$set": restored_values})
+            assert restored.matched_count == 1 and restored.modified_count == 1
+
+        principal_query = {"principal_id": f"principal-{TENANT_A}"}
+        membership_query = {
+            "principal_id": f"principal-{TENANT_A}",
+            "tenant_id": TENANT_A,
+        }
+        assert_next_use_denied(
+            "principal_authorities", principal_query,
+            {"status": "SUSPENDED", "revision": 1},
+            {"status": "ACTIVE", "revision": 0},
+            "cx18-principal-suspended",
+        )
+        assert_next_use_denied(
+            "tenant_memberships", membership_query,
+            {"status": "SUSPENDED", "revision": 1},
+            {"status": "ACTIVE", "revision": 0},
+            "cx18-membership-suspended",
+        )
+        assert_next_use_denied(
+            "tenant_memberships", membership_query,
+            {"status": "REVOKED", "revision": 1},
+            {"status": "ACTIVE", "revision": 0},
+            "cx18-membership-revoked",
+        )
+        assert_next_use_denied(
+            "tenant_business_roles", membership_query,
+            {"status": "REVOKED", "revision": 1, "revoked_at": BASE_TIME},
+            {"status": "ACTIVE", "revision": 0, "revoked_at": None},
+            "cx18-business-role-revoked",
+        )
+        assert_next_use_denied(
+            "role_assignments",
+            {**membership_query, "role_id": "LEGAL_ATTORNEY"},
+            {"status": "REVOKED", "revision": 1},
+            {"status": "ACTIVE", "revision": 0},
+            "cx18-role-assignment-revoked",
+        )
+
+        current_identity = _identity(TENANT_D)
+        capacity_reads_before = read_count
+        capacity_writes_before = invocation_collection.count_documents({})
+        capacity_denied = http.post(
+            invoke_path,
+            headers={"X-Tenant-ID": TENANT_D},
+            json={
+                "resource_identity": instruction.instruction_id,
+                "correlation_id": "cx18-capacity-denied",
+            },
+        )
+        assert capacity_denied.status_code == 403, capacity_denied.text
+        assert instruction.instruction_id not in capacity_denied.text
+        assert TENANT_A not in capacity_denied.text
+        assert read_count == capacity_reads_before
+        assert invocation_collection.count_documents({}) == capacity_writes_before
+        assert invocation_collection.count_documents(
+            {"tenant_id": TENANT_D, "invocation_id": "cx18-capacity-denied"}
+        ) == 0
+
+        current_identity = _identity(TENANT_A)
 
         unknown = http.post(
             f"{path}/legal.unknown.v1/invoke",
@@ -612,7 +742,7 @@ def test_real_mongo_production_gateway_composition_and_fail_closed_boundaries(
 
 
 # ARTIFACT: test_wilsy_ai_legal_gateway_real_mongo.py
-# VERSION: v1.3.1-L7B-WILSY-AI-LEGAL-TOOL-REAL-MONGO-CERT
+# VERSION: v1.4.0-CX18-PRE-READ-REVOCATION-CERT
 # AUTHORITY BOUNDARY: production gateway host-composition evidence only
 # TENANT POSTURE: UUID-isolated exact-tenant auth, entitlement and projection reads
 # FAIL-CLOSED POSTURE: only hello preflight availability may skip; later failures fail
