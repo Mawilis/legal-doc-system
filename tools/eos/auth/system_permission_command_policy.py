@@ -1,11 +1,12 @@
 """TITLE: WILSY OS System Permission Command Policy.
-VERSION: v1.0.0-D12-COMMAND-POLICY
+VERSION: v1.1.0-D12-P7-BREAK-GLASS-DELEGATION-POLICY
 AUTHORITY: Immutable source-governed bootstrap and ongoing delegation policy.
 EPITOME: Prevents bootstrap mismatch, recursion, wildcard, and arbitrary SYSTEM delegation.
 ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/tools/eos/auth/system_permission_command_policy.py
 COLLABORATION: Bootstrap seed, assignment command, and revocation command services.
-CERTIFICATION DATE: 2026-10-14
-CHANGELOG: v1.0.0 freezes two seed mappings and one ongoing delegable permission.
+CERTIFICATION DATE: 2026-10-15
+CHANGELOG: v1.1.0 preserves two seed mappings and explicitly permits only normal
+    activation issuance plus P7 break-glass assignment/revocation commands.
 COMPLIANCE / SECURITY: Deterministic immutable policy; no environment or database expansion.
 TENANT BOUNDARY: SYSTEM only; tenant permissions are denied.
 AUTHORITY BOUNDARY: Policy constrains commands and grants no permission by itself.
@@ -16,10 +17,11 @@ from __future__ import annotations
 from types import MappingProxyType
 from typing import Final
 
-VERSION: Final[str] = "v1.0.0-D12-COMMAND-POLICY"
+VERSION: Final[str] = "v1.1.0-D12-P7-BREAK-GLASS-DELEGATION-POLICY"
 ASSIGN_COMMAND_PERMISSION: Final[str] = "system_permission_assignment:write"
 REVOKE_COMMAND_PERMISSION: Final[str] = "system_permission_assignment:revoke"
 PRIVILEGED_ACTIVATION_ISSUE_PERMISSION: Final[str] = "privileged_activation:issue"
+PRIVILEGED_ACTIVATION_BREAK_GLASS_PERMISSION: Final[str] = "privileged_activation:break_glass"
 ASSIGN_BOOTSTRAP_PURPOSE: Final[str] = "SEED_SYSTEM_PERMISSION_ASSIGNMENT_COMMAND_AUTHORITY"
 REVOKE_BOOTSTRAP_PURPOSE: Final[str] = "SEED_SYSTEM_PERMISSION_REVOCATION_COMMAND_AUTHORITY"
 
@@ -27,8 +29,8 @@ BOOTSTRAP_PERMISSION_BY_PURPOSE: Final = MappingProxyType({
     ASSIGN_BOOTSTRAP_PURPOSE: ASSIGN_COMMAND_PERMISSION,
     REVOKE_BOOTSTRAP_PURPOSE: REVOKE_COMMAND_PERMISSION,
 })
-ONGOING_ASSIGNABLE_PERMISSIONS: Final = frozenset({PRIVILEGED_ACTIVATION_ISSUE_PERMISSION})
-ONGOING_REVOCABLE_PERMISSIONS: Final = frozenset({PRIVILEGED_ACTIVATION_ISSUE_PERMISSION})
+ONGOING_ASSIGNABLE_PERMISSIONS: Final = frozenset({PRIVILEGED_ACTIVATION_ISSUE_PERMISSION, PRIVILEGED_ACTIVATION_BREAK_GLASS_PERMISSION})
+ONGOING_REVOCABLE_PERMISSIONS: Final = frozenset({PRIVILEGED_ACTIVATION_ISSUE_PERMISSION, PRIVILEGED_ACTIVATION_BREAK_GLASS_PERMISSION})
 
 
 class SystemPermissionCommandPolicyError(ValueError):
@@ -57,21 +59,21 @@ def require_bootstrap_seed(purpose: str, permission_id: str) -> None:
 
 
 def require_ongoing_assignment(permission_id: str) -> None:
-    """Allow ongoing assignment of only privileged activation issuance."""
+    """Allow only normal issuance and P7 break-glass assignment."""
     if _exact("PERMISSION_ID", permission_id) not in ONGOING_ASSIGNABLE_PERMISSIONS:
         raise SystemPermissionCommandPolicyError("PERMISSION_NOT_ASSIGNABLE")
 
 
 def require_ongoing_revocation(permission_id: str) -> None:
-    """Allow ongoing revocation of only privileged activation issuance."""
+    """Allow only normal issuance and P7 break-glass revocation."""
     if _exact("PERMISSION_ID", permission_id) not in ONGOING_REVOCABLE_PERMISSIONS:
         raise SystemPermissionCommandPolicyError("PERMISSION_NOT_REVOCABLE")
 
 
-__all__ = ["VERSION", "ASSIGN_COMMAND_PERMISSION", "REVOKE_COMMAND_PERMISSION", "PRIVILEGED_ACTIVATION_ISSUE_PERMISSION", "ASSIGN_BOOTSTRAP_PURPOSE", "REVOKE_BOOTSTRAP_PURPOSE", "BOOTSTRAP_PERMISSION_BY_PURPOSE", "ONGOING_ASSIGNABLE_PERMISSIONS", "ONGOING_REVOCABLE_PERMISSIONS", "SystemPermissionCommandPolicyError", "bootstrap_seed_permission", "require_bootstrap_seed", "require_ongoing_assignment", "require_ongoing_revocation"]
+__all__ = ["VERSION", "ASSIGN_COMMAND_PERMISSION", "REVOKE_COMMAND_PERMISSION", "PRIVILEGED_ACTIVATION_ISSUE_PERMISSION", "PRIVILEGED_ACTIVATION_BREAK_GLASS_PERMISSION", "ASSIGN_BOOTSTRAP_PURPOSE", "REVOKE_BOOTSTRAP_PURPOSE", "BOOTSTRAP_PERMISSION_BY_PURPOSE", "ONGOING_ASSIGNABLE_PERMISSIONS", "ONGOING_REVOCABLE_PERMISSIONS", "SystemPermissionCommandPolicyError", "bootstrap_seed_permission", "require_bootstrap_seed", "require_ongoing_assignment", "require_ongoing_revocation"]
 # WILSY OS SOVEREIGN ARTIFACT SEAL
 # ARTIFACT: system_permission_command_policy.py
-# VERSION: v1.0.0-D12-COMMAND-POLICY
+# VERSION: v1.1.0-D12-P7-BREAK-GLASS-DELEGATION-POLICY
 # AUTHORITY BOUNDARY: CLOSED COMMAND POLICY ONLY; NO GRANT AUTHORITY
 # TENANT POSTURE: SYSTEM ONLY
 # FAIL-CLOSED POSTURE: NO RECURSION, WILDCARD, ARBITRARY, OR FINANCIAL AUTHORITY

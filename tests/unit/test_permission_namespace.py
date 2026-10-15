@@ -1,5 +1,5 @@
 """TITLE: WILSY OS Permission Namespace Canon Certification.
-VERSION: v1.8.0-P6-PRIVILEGED-ACTIVATION-REVOCATION-PERMISSION-CERT
+VERSION: v1.9.0-P7-PRIVILEGED-BREAK-GLASS-PERMISSION-CERT
 AUTHORITY: Certification of immutable permission vocabulary semantics only.
 EPITOME: Proves bounded namespaces, fail-closed metadata, deterministic policy
 bytes, and exact own-tenant subscription/plan/WILSY AI capacity,
@@ -9,6 +9,7 @@ ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/tests/unit/test_
 COLLABORATION / OWNERSHIP: Wilson Khanyezi / Wilsy Core Engineering.
 CERTIFICATION/UPDATE DATE: 2026-10-15.
 CHANGELOG:
+2026-10-15 v1.9.0-P7-PRIVILEGED-BREAK-GLASS-PERMISSION-CERT certifies the exact assignment-required, non-self-authorizing SYSTEM vocabulary and updates the closed canon to 107 canonical permissions and 110 total rows without any role grant.
 2026-10-15 v1.8.0-P6-PRIVILEGED-ACTIVATION-REVOCATION-PERMISSION-CERT certifies the exact privileged_activation:revoke canonical SYSTEM permission as assignment-required, non-self-authorizing, non-cross-tenant and non-financial. It updates the closed canon from 105 to 106 canonical permissions and 108 to 109 total rows without creating a role grant, static role authority or permission assignment.
 2026-10-14 v1.6.0-P4-R0A certifies the exact SYSTEM-scoped,
 non-self-authorizing privileged_activation:issue vocabulary, wildcard and
@@ -143,7 +144,7 @@ from pathlib import Path
 
 import pytest
 
-VERSION = "v1.8.0-P6-PRIVILEGED-ACTIVATION-REVOCATION-PERMISSION-CERT"
+VERSION = "v1.9.0-P7-PRIVILEGED-BREAK-GLASS-PERMISSION-CERT"
 
 from tools.eos.auth.permission_namespace import PermissionDisposition, VERSION as POLICY_VERSION, canonical_permissions, classify_legacy_permission, permission_metadata
 
@@ -181,11 +182,27 @@ def test_p4_r0a_privileged_activation_issuance_permission_is_exact() -> None:
     for forbidden in (
         "privileged_activation:*",
         "privileged_activation:activate_other",
-        "privileged_activation:break_glass",
         "privileged_activation:execute_financial",
     ):
         with pytest.raises(ValueError, match="UNKNOWN_PERMISSION"):
             permission_metadata(forbidden)
+
+
+def test_p7_break_glass_permission_is_exact_non_authorizing_system_metadata() -> None:
+    """P7 vocabulary is assignment-required and never authority by itself."""
+    metadata = permission_metadata("privileged_activation:break_glass")
+    assert metadata.permission_id == "privileged_activation:break_glass"
+    assert metadata.namespace == "SYSTEM"
+    assert metadata.scope_kind == "SYSTEM"
+    assert metadata.system_assignment_required is True
+    assert metadata.tenant_membership_required is False
+    assert metadata.cross_tenant_capable is False
+    assert metadata.financial_execution_capable is False
+    assert metadata.authorizes_by_itself is False
+    assert metadata.disposition is PermissionDisposition.CANONICAL
+    for invalid in ("privileged_activation:break_glass:*", "privileged_activation:BREAK_GLASS", " privileged_activation:break_glass", "privileged_activation:break_glass "):
+        with pytest.raises(ValueError, match="UNKNOWN_PERMISSION"):
+            permission_metadata(invalid)
 
 
 def test_p6_privileged_activation_revocation_permission_is_exact() -> None:
@@ -244,7 +261,7 @@ def test_d12_system_command_permissions_are_exact_non_authorizing_metadata(permi
 
 
 def test_runtime_version_source_is_canonical() -> None:
-    assert POLICY_VERSION == "v1.44.0-P6-PRIVILEGED-ACTIVATION-REVOCATION-PERMISSION"
+    assert POLICY_VERSION == "v1.45.0-P7-PRIVILEGED-BREAK-GLASS-PERMISSION"
 
 
 def test_permission_canon_properties() -> None:
@@ -332,9 +349,9 @@ def test_permission_canon_properties() -> None:
             for row in rows
             if row["disposition"] == "CANONICAL"
         ]
-    ) == 106
+    ) == 107
 
-    assert len(rows) == 109
+    assert len(rows) == 110
 
     for permission_id in tenant:
         metadata = permission_metadata(
@@ -928,7 +945,7 @@ def test_deadline_namespace_owns_vocabulary_but_creates_no_role_grant() -> None:
 
 
 # ARTIFACT: test_permission_namespace.py
-# VERSION: v1.8.0-P6-PRIVILEGED-ACTIVATION-REVOCATION-PERMISSION-CERT
+# VERSION: v1.9.0-P7-PRIVILEGED-BREAK-GLASS-PERMISSION-CERT
 # AUTHORITY BOUNDARY: permission semantic certification only
 # TENANT POSTURE: conflict-review, client-matter, client-visibility and other tenant permissions remain policy; exact ACTIVE membership remains separately governed
 # FAIL-CLOSED POSTURE: unknown and malformed values deny
