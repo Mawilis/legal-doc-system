@@ -1,5 +1,5 @@
 """TITLE: WILSY OS Role Definition Policy.
-VERSION: v1.40.0-LEGAL-NOTIFICATION-RECIPIENT-BINDING-GRANTS
+VERSION: v1.41.0-CX26-R3-LEGAL-OPERATING-MODEL-MANAGE-GRANT
 AUTHORITY: Canonical Python role identifiers and explicit permission grants.
 EPITOME: Defines current tenant-scoped authorization roles, including
 least-privilege subscription/plan-catalogue grants, read-only WILSY AI
@@ -15,6 +15,11 @@ ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/tools/eos/auth/r
 COLLABORATION / OWNERSHIP: Wilson Khanyezi / Wilsy Core Engineering.
 CERTIFICATION / UPDATE DATE: 2026-10-12
 CHANGELOG:
+    2026-10-13 v1.41.0-CX26-R3 grants
+    legal_operations:operating_model:manage only to ENTERPRISE_ADMIN. Static
+    grant remains non-possessory and does not prove ACTIVE membership,
+    tenant_admin business eligibility, assignment, command admission,
+    workflow, entitlement, cross-tenant, legal-act, or financial authority.
     2026-10-11 v1.39.0 grants dedicated acceptance-instrument provisioning
     exactly to LEGAL_PARTNER and LEGAL_ATTORNEY; approval remains separate.
     2026-10-11 v1.38.0-D3B-AUTH3-MATTER-DEADLINE-ROLE-GRANTS grants exact
@@ -195,7 +200,7 @@ from __future__ import annotations
 from collections.abc import Iterable
 
 
-VERSION = "v1.40.0-LEGAL-NOTIFICATION-RECIPIENT-BINDING-GRANTS"
+VERSION = "v1.41.0-CX26-R3-LEGAL-OPERATING-MODEL-MANAGE-GRANT"
 
 
 ROLE_PERMISSIONS_MAP: dict[str, list[str]] = {
@@ -228,6 +233,7 @@ ROLE_PERMISSIONS_MAP: dict[str, list[str]] = {
         "tenant_branding:read",
         "tenant_branding:profile:manage",
         "tenant_branding:asset:manage",
+        "legal_operations:operating_model:manage",
         "crm:lead:create",
         "crm:lead:read",
         "crm:email_template:create",
@@ -503,7 +509,7 @@ __all__ = [
 ]
 
 # ARTIFACT: tools/eos/auth/roles.py
-# VERSION: v1.40.0-LEGAL-NOTIFICATION-RECIPIENT-BINDING-GRANTS
+# VERSION: v1.41.0-CX26-R3-LEGAL-OPERATING-MODEL-MANAGE-GRANT
 # AUTHORITY BOUNDARY: role identifiers and deterministic permission definitions only; current assignment is separate authority
 # TENANT POSTURE: role definitions never establish tenant membership or role possession; conflict-review write is partner/attorney-only policy and client-matter read remains visibility-bound
 # FAIL-CLOSED POSTURE: unknown roles and permissions never manufacture grants
