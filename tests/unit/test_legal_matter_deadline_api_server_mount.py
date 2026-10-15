@@ -1,14 +1,16 @@
 """Direct mount certificate for the canonical api_server deadline router.
 
 TITLE: Wilsy OS Legal Matter Deadline API Server Mount Certificate
-VERSION: v1.0.0-LEGAL-OPS-COMPLETION-D3B2B-DEADLINE-API-SERVER-MOUNT-CERT
+VERSION: v1.0.2-LEGAL-OPS-COMPLETION-D3B2B-DEADLINE-API-SERVER-MOUNT-CERT
 AUTHORITY: Wilsy OS Core Governance / application-composition certification.
 EPITOME: Prove api_server.py mounts the certified D3B1 deadline router exactly
          once under /api without changing router-owned authority or truth.
 ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/tests/unit/test_legal_matter_deadline_api_server_mount.py
 COLLABORATION / OWNERSHIP: Certificate owns only effective-route composition observations.
-CERTIFICATION / UPDATE DATE: 2026-10-11
-CHANGELOG: 2026-10-11 v1.0.0-LEGAL-OPS-COMPLETION-D3B2B-DEADLINE-API-SERVER-MOUNT-CERT establishes exact POST/list/detail mount evidence.
+CERTIFICATION / UPDATE DATE: 2026-10-15
+CHANGELOG: 2026-10-15 v1.0.2-LEGAL-OPS-COMPLETION-D3B2B-DEADLINE-API-SERVER-MOUNT-CERT removes one accidental duplicate historical-lineage assertion without changing the certified api_server composition contract.
+PREVIOUS CHANGELOG: 2026-10-15 v1.0.1-LEGAL-OPS-COMPLETION-D3B2B-DEADLINE-API-SERVER-MOUNT-CERT removes the obsolete requirement that the shared api_server composition root remain permanently frozen at its historical v1.9.0-D3B2B-MATTER-DEADLINE-ROUTER-MOUNT; current runtime/header/seal alignment and historical deadline lineage are certified independently.
+2026-10-11 v1.0.0-LEGAL-OPS-COMPLETION-D3B2B-DEADLINE-API-SERVER-MOUNT-CERT establishes exact POST/list/detail mount evidence.
 COMPLIANCE: POPIA section 19; GDPR Article 32; SOC 2 CC7.2; ISO 27001.
 SECURITY / PRIVACY POSTURE: No request execution, customer data, credentials, or secrets.
 TENANT BOUNDARY: Mounting grants no scope; D3B1 durable tenant authorization remains mandatory.
@@ -24,8 +26,8 @@ import tools.eos.api.api_server as api_server
 from tools.eos.api.legal_matter_deadline_router import router as deadline_router
 
 
-VERSION = "v1.0.0-LEGAL-OPS-COMPLETION-D3B2B-DEADLINE-API-SERVER-MOUNT-CERT"
-EXPECTED_VERSION = "v1.9.0-D3B2B-MATTER-DEADLINE-ROUTER-MOUNT"
+VERSION = "v1.0.2-LEGAL-OPS-COMPLETION-D3B2B-DEADLINE-API-SERVER-MOUNT-CERT"
+HISTORICAL_VERSION = "v1.9.0-D3B2B-MATTER-DEADLINE-ROUTER-MOUNT"
 
 
 def _effective_routes() -> list[tuple[str, tuple[str, ...]]]:
@@ -76,17 +78,31 @@ def test_api_server_source_has_exact_import_mount_and_no_authority_copy() -> Non
 
 
 def test_api_server_version_surfaces_are_aligned() -> None:
-    assert api_server.VERSION == EXPECTED_VERSION
+    """Certify current api_server alignment and preserved deadline lineage."""
+    historical = HISTORICAL_VERSION
+    current = api_server.VERSION
+
+    assert isinstance(current, str)
+    assert current
+    assert current.strip() == current
+
     path = api_server.__file__
     assert path is not None
-    source = open(path, encoding="utf-8").read()
-    assert f"    {EXPECTED_VERSION}" in source
-    assert f'# VERSION: {EXPECTED_VERSION}' in source
-    assert "2026-10-11" in source
+
+    source = open(
+        path,
+        encoding="utf-8",
+    ).read()
+
+    assert f"    {current}" in source
+    assert f'VERSION = "{current}"' in source
+    assert f"# VERSION: {current}" in source
+
+    assert historical in source
 
 
 # ARTIFACT: test_legal_matter_deadline_api_server_mount.py
-# VERSION: v1.0.0-LEGAL-OPS-COMPLETION-D3B2B-DEADLINE-API-SERVER-MOUNT-CERT
+# VERSION: v1.0.2-LEGAL-OPS-COMPLETION-D3B2B-DEADLINE-API-SERVER-MOUNT-CERT
 # AUTHORITY BOUNDARY: api_server.py composition evidence only
 # TENANT POSTURE: mount-only evidence; D3B1 durable authorization remains authoritative
 # FAIL-CLOSED POSTURE: missing, duplicate, widened, or double-/api routes fail
