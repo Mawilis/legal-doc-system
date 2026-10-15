@@ -1,7 +1,7 @@
 """TITLE: WILSY OS Permission Namespace Semantic Canon.
-VERSION: v1.43.0-D12-SYSTEM-PERMISSION-COMMAND-PLANE
+VERSION: v1.44.0-P6-PRIVILEGED-ACTIVATION-REVOCATION-PERMISSION
 AUTHORITY: Immutable permission vocabulary and scope metadata only.
-EPITOME: Extends the canonical TENANT permission vocabulary with dedicated
+EPITOME: Extends the canonical TENANT and SYSTEM permission vocabulary with dedicated
 inbound-collection, merchant-configuration, provider-policy, WILSY AI,
 billing-intelligence, Legal Operations lifecycle/client visibility, matter
 deadline read/write vocabulary, and explicit
@@ -11,8 +11,15 @@ waiver, engagement,
 representation, cross-tenant authority, or financial execution.
 ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/tools/eos/auth/permission_namespace.py
 COLLABORATION / OWNERSHIP: Wilson Khanyezi / Wilsy Core Engineering.
-CERTIFICATION / UPDATE DATE: 2026-10-12
+CERTIFICATION / UPDATE DATE: 2026-10-15
 CHANGELOG:
+    2026-10-15 v1.44.0-P6-PRIVILEGED-ACTIVATION-REVOCATION-PERMISSION
+    adds the exact privileged_activation:revoke canonical SYSTEM permission
+    vocabulary for the separately certified P6 supervisory command service.
+    It requires separately proven current SYSTEM assignment and does not by
+    itself revoke an activation, assign permissions or roles, create
+    eligibility or assurance, issue activations, grant break-glass authority,
+    create HTTP authority, cross tenant boundaries, or execute finance.
     2026-10-14 v1.43.0-D12 adds the exact SYSTEM command permissions
     system_permission_assignment:write and system_permission_assignment:revoke.
     Both require separately proven current SYSTEM assignment and grant no
@@ -199,7 +206,7 @@ from types import MappingProxyType
 from typing import Final
 
 
-VERSION = "v1.43.0-D12-SYSTEM-PERMISSION-COMMAND-PLANE"
+VERSION = "v1.44.0-P6-PRIVILEGED-ACTIVATION-REVOCATION-PERMISSION"
 
 
 class PermissionDisposition(StrEnum):
@@ -294,6 +301,13 @@ _PERMISSIONS: Final = MappingProxyType(
             "SYSTEM",
             "SYSTEM",
             "issue one normal self-only privileged activation",
+            system=True,
+        ),
+        "privileged_activation:revoke": _meta(
+            "privileged_activation:revoke",
+            "SYSTEM",
+            "SYSTEM",
+            "revoke one exact privileged activation through explicit supervisory command authority",
             system=True,
         ),
         "system_permission_assignment:write": _meta(
@@ -1018,7 +1032,7 @@ __all__ = [
 ]
 
 # ARTIFACT: tools/eos/auth/permission_namespace.py
-# VERSION: v1.43.0-D12-SYSTEM-PERMISSION-COMMAND-PLANE
+# VERSION: v1.44.0-P6-PRIVILEGED-ACTIVATION-REVOCATION-PERMISSION
 # AUTHORITY BOUNDARY: canonical permission vocabulary semantics only; no possession or authorization authority
 # TENANT POSTURE: conflict-review, client-matter, client-visibility and other tenant permissions require separately proven exact ACTIVE tenant membership
 # FAIL-CLOSED POSTURE: unknown, malformed, ambiguous and legacy values never manufacture authority
