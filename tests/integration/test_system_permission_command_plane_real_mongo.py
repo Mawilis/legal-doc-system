@@ -219,34 +219,111 @@ def test_real_inactive_actor_target_missing_command_and_closed_policy_denials(co
     assert context["assignments"].count_documents({}) == baseline
 
 
-def test_real_concurrent_competing_bootstrap_seed_is_one_durable_assignment(context: Any) -> None:
+def test_real_concurrent_exact_bootstrap_seed_replay_has_one_durable_assignment(context: Any) -> None:
+    """Concurrent exact replay may succeed twice but persists one immutable assignment."""
     _install_base(context)
-    evidence = _seed_evidence(ASSIGN_BOOTSTRAP_PURPOSE, ASSIGN_COMMAND_PERMISSION, "assign")
+    evidence = _seed_evidence(
+        ASSIGN_BOOTSTRAP_PURPOSE,
+        ASSIGN_COMMAND_PERMISSION,
+        "assign",
+    )
     barrier = Barrier(2)
 
-    def worker() -> str:
+    def worker() -> tuple[str, str | None]:
         with context["client"].start_session() as session:
             session.start_transaction()
             barrier.wait(timeout=5)
+
             try:
-                context["seed"].seed(evidence, session=session)
+                assignment = context["seed"].seed(
+                    evidence,
+                    session=session,
+                )
                 session.commit_transaction()
-                return "COMMITTED"
-            except (PyMongoError, SystemPermissionAssignmentConflictError):
+
+                return (
+                    "COMMITTED",
+                    assignment.assignment_fingerprint,
+                )
+
+            except (
+                PyMongoError,
+                SystemPermissionAssignmentConflictError,
+            ):
                 if session.in_transaction:
                     session.abort_transaction()
-                return "DENIED"
+
+                return (
+                    "DENIED",
+                    None,
+                )
 
     with ThreadPoolExecutor(max_workers=2) as pool:
-        results = tuple(pool.map(lambda _: worker(), range(2)))
-    assert results.count("COMMITTED") == 1
-    assert results.count("DENIED") == 1
-    assert context["assignments"].count_documents({"principal_id": "actor-a", "permission_id": ASSIGN_COMMAND_PERMISSION}) == 1
+        results = tuple(
+            pool.map(
+                lambda _: worker(),
+                range(2),
+            )
+        )
+
+    statuses = tuple(
+        status
+        for status, _ in results
+    )
+
+    committed_fingerprints = tuple(
+        fingerprint
+        for status, fingerprint in results
+        if status == "COMMITTED"
+    )
+
+    # The registry explicitly permits an exact replay to return the existing
+    # immutable assignment. Depending on transaction interleaving, the second
+    # caller may therefore either observe that exact replay and commit, or lose
+    # the concurrent unique-key race and deny. Both outcomes are fail-closed
+    # provided there is exactly one durable assignment.
+    assert statuses.count("COMMITTED") in {1, 2}
+    assert statuses.count("DENIED") == (
+        2 - statuses.count("COMMITTED")
+    )
+    assert set(statuses) <= {
+        "COMMITTED",
+        "DENIED",
+    }
+
+    durable = tuple(
+        context["assignments"].find(
+            {
+                "principal_id": "actor-a",
+                "permission_id":
+                    ASSIGN_COMMAND_PERMISSION,
+            }
+        )
+    )
+
+    assert len(durable) == 1
+
+    assert durable[0][
+        "assignment_id"
+    ] == evidence.derived_assignment_id()
+
+    assert durable[0][
+        "_operation_idempotency_key"
+    ] == evidence.idempotency_key
+
+    if committed_fingerprints:
+        assert len(
+            set(committed_fingerprints)
+        ) == 1
+
+        assert durable[0][
+            "assignment_fingerprint"
+        ] == committed_fingerprints[0]
 
 
 # WILSY OS SOVEREIGN ARTIFACT SEAL
 # ARTIFACT: test_system_permission_command_plane_real_mongo.py
-# VERSION: v1.1.0-D12-P7-BREAK-GLASS-COMMAND-PLANE-REAL-MONGO
+# VERSION: v1.2.0-D12-P8-EXACT-REPLAY-CONCURRENCY-REAL-MONGO
 # AUTHORITY BOUNDARY: CLOSED SEED, ASSIGNMENT, AND REVOCATION CERTIFICATE
 # TENANT POSTURE: UUID-ISOLATED SYSTEM ONLY
 # FAIL-CLOSED POSTURE: NO TTL, DELETE, RECURSION, WILDCARD, OR ARBITRARY AUTHORITY
