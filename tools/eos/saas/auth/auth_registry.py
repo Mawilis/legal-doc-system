@@ -1,15 +1,16 @@
 """Wilsy OS canonical authentication registry.
 
 TITLE: WILSY OS Authentication Registry
-VERSION: v1.11.0-D15G-DEV-TRANSACTIONAL-TENANT-RESOLUTION
+VERSION: v1.12.0-P3-R3G-C6-SESSION-BSON-UTC-HYDRATION
 AUTHORITY: Wilsy OS Core Governance
 EPITOME: Owns password, JWT, OTP, session, and refresh-token business semantics
          while consuming the caller-established canonical Kernel database.
 ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/tools/eos/saas/auth/auth_registry.py
 COLLABORATION / OWNERSHIP: Auth router delegates here; tools.eos.kernel.db owns
                            the sole Mongo lifecycle and connection recovery.
-CERTIFICATION / UPDATE DATE: 2026-09-24
+CERTIFICATION / UPDATE DATE: 2026-10-14
 CHANGELOG:
+  v1.12.0-P3-R3G-C6-SESSION-BSON-UTC-HYDRATION — Normalizes only valid Mongo-hydrated session expiry datetimes and observation datetimes to aware UTC before currentness comparison, preserving exact tenant/principal/reference binding, caller-owned session propagation, and fail-closed non-datetime handling.
   v1.11.0-D15G-DEV-TRANSACTIONAL-TENANT-RESOLUTION — Extends the D15G developer-persona transaction seam so canonical
     tenant validation for register_user participates in the exact caller-owned
     ClientSession before the credential insert. No-session behavior remains
@@ -70,7 +71,7 @@ FINANCIAL AUTHORITY BOUNDARY: None; Kennel EOS exclusively owns financial execut
 
 import bcrypt
 import pyotp
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from typing import Optional, Dict, List, Any
 import uuid
 import logging
@@ -90,7 +91,7 @@ from tools.eos.auth.principal_authority_repository import (
 )
 from tools.eos.auth.principal_status import PrincipalStatus
 
-VERSION = "v1.11.0-D15G-DEV-TRANSACTIONAL-TENANT-RESOLUTION"
+VERSION = "v1.12.0-P3-R3G-C6-SESSION-BSON-UTC-HYDRATION"
 
 # Configuration
 JWT_EXPIRY_HOURS = 24
@@ -614,13 +615,15 @@ class AuthRegistry:
             user.permissions,
             session=session,
         )
+        session_reference = f"WILSYSESSION-{uuid.uuid4()}"
         created_session = Session(
             userId=user.id,
             token=token,
             expiresAt=datetime.utcnow() + timedelta(hours=JWT_EXPIRY_HOURS),
             tenantId=canonical_tenant_id,
             role=user.role,
-            permissions=user.permissions
+            permissions=user.permissions,
+            sessionReference=session_reference,
         )
         # Store session in MongoDB (optional)
         self._call_collection(
@@ -628,6 +631,7 @@ class AuthRegistry:
             "insert_one",
             {
                 "user_id": user.id,
+                "session_reference": session_reference,
                 "token": token,
                 "expires_at": created_session.expiresAt,
                 "tenant_id": canonical_tenant_id,
@@ -641,6 +645,84 @@ class AuthRegistry:
         # rejected tenant can therefore never leave an orphan refresh token.
         self.generate_refresh_token(user.id, canonical_tenant_id, session=session)
         return created_session
+
+    def is_session_current(
+        self,
+        tenant_id: str,
+        user_id: str,
+        session_reference: str,
+        *,
+        at: datetime | None = None,
+        session: Any = None,
+    ) -> bool:
+        """Resolve currentness for one exact non-secret session reference.
+
+        Raw bearer material is never queried or exposed. Missing, malformed,
+        expired, revoked/deleted, tenant-mismatched, principal-mismatched, or
+        reference-mismatched state fails closed.
+        """
+        if (
+            not isinstance(session_reference, str)
+            or not session_reference.strip()
+        ):
+            return False
+
+        reference = session_reference.strip()
+        canonical = self._require_canonical_tenant(tenant_id)
+
+        (
+            _document,
+            _identity_filter,
+            user,
+            _revision,
+        ) = self._resolve_exact_credential_identity(
+            tenant_id,
+            user_id,
+            session=session,
+        )
+
+        row = self._call_collection(
+            self._collection("sessions"),
+            "find_one",
+            {
+                "tenant_id": canonical.tenant_id,
+                "user_id": user.id,
+                "session_reference": reference,
+            },
+            session=session,
+        )
+
+        if not isinstance(row, dict):
+            return False
+
+        if (
+            row.get("tenant_id") != canonical.tenant_id
+            or row.get("user_id") != user.id
+            or row.get("session_reference") != reference
+        ):
+            return False
+
+        expires_at = row.get("expires_at")
+
+        if not isinstance(expires_at, datetime):
+            return False
+
+        if expires_at.tzinfo is None:
+            expires_at = expires_at.replace(tzinfo=timezone.utc)
+        else:
+            expires_at = expires_at.astimezone(timezone.utc)
+
+        observed_at = datetime.utcnow() if at is None else at
+
+        if not isinstance(observed_at, datetime):
+            return False
+
+        if observed_at.tzinfo is None:
+            observed_at = observed_at.replace(tzinfo=timezone.utc)
+        else:
+            observed_at = observed_at.astimezone(timezone.utc)
+
+        return expires_at > observed_at
 
     def register_user(
         self,
@@ -944,7 +1026,7 @@ __all__ = ["AuthRegistry", "AuthRegistryTenantError", "get_auth_registry"]
 
 """
 ARTIFACT: tools/eos/saas/auth/auth_registry.py
-VERSION: v1.11.0-D15G-DEV-TRANSACTIONAL-TENANT-RESOLUTION
+VERSION: v1.12.0-P3-R3G-C6-SESSION-BSON-UTC-HYDRATION
 AUTHORITY BOUNDARY: authentication business semantics; TenantRegistry owns canonical tenant validation; registration and its tenant validation may participate in but never own a caller transaction
 TENANT POSTURE: users, JWTs, sessions, credential reads/CAS, and refresh validation require one ACTIVE canonical tenant_id; revocations are tenant_id + user_id scoped
 FAIL-CLOSED POSTURE: unavailable, missing, duplicate, inactive, or pseudo tenant references, malformed credential revisions, corrupt-present refresh tenant fields, and missing/inactive durable principal authority issue no final auth material
