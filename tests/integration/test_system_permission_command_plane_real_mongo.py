@@ -1,14 +1,14 @@
 """TITLE: D12 SYSTEM permission command plane real-Mongo certificate.
-VERSION: v1.0.0-D12-COMMAND-PLANE-REAL-MONGO
+VERSION: v1.1.0-D12-P7-BREAK-GLASS-COMMAND-PLANE-REAL-MONGO
 AUTHORITY: End-to-end bootstrap seed, assignment, and revocation certification.
 EPITOME: Proves the closed command plane in caller-owned transactions on an isolated replica set database.
-ABSOLUTE PATH: /Users/wilsonkhanyezi/legal-doc-system/tests/integration/test_system_permission_command_plane_real_mongo.py
-COLLABORATION: Principal, bootstrap, assignment registries and D12 command services.
-CERTIFICATION DATE: 2026-10-14
-CHANGELOG: v1.0.0 establishes the D12 real-Mongo vertical certificate.
+ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/tests/integration/test_system_permission_command_plane_real_mongo.py
+COLLABORATION / OWNERSHIP: Principal, bootstrap, assignment registries and D12 command services.
+CERTIFICATION DATE: 2026-10-15
+CHANGELOG: v1.1.0 adds exact P7 assignment/revocation, replay and rollback proof.
 COMPLIANCE / SECURITY: UUID isolation; canonical wilsy read-only; no TTL/delete/wildcard/recursion.
 TENANT BOUNDARY: SYSTEM only.
-AUTHORITY BOUNDARY: Delegates and revokes only privileged_activation:issue after exact bootstrap seeding.
+AUTHORITY BOUNDARY: Delegates and revokes only privileged_activation:issue and privileged_activation:break_glass after exact bootstrap seeding.
 FINANCIAL AUTHORITY BOUNDARY: None.
 """
 from __future__ import annotations
@@ -32,7 +32,7 @@ from tools.eos.auth.system_permission_bootstrap_authority import SystemPermissio
 from tools.eos.auth.system_permission_bootstrap_authority_registry import SystemPermissionBootstrapAuthorityRegistry
 from tools.eos.auth.system_permission_bootstrap_seed_service import SystemPermissionBootstrapSeedService
 from tools.eos.auth.system_permission_command_evidence import SystemPermissionCommandEvidence, SystemPermissionCommandOperation
-from tools.eos.auth.system_permission_command_policy import ASSIGN_BOOTSTRAP_PURPOSE, ASSIGN_COMMAND_PERMISSION, PRIVILEGED_ACTIVATION_ISSUE_PERMISSION, REVOKE_BOOTSTRAP_PURPOSE, REVOKE_COMMAND_PERMISSION
+from tools.eos.auth.system_permission_command_policy import ASSIGN_BOOTSTRAP_PURPOSE, ASSIGN_COMMAND_PERMISSION, PRIVILEGED_ACTIVATION_BREAK_GLASS_PERMISSION, PRIVILEGED_ACTIVATION_ISSUE_PERMISSION, REVOKE_BOOTSTRAP_PURPOSE, REVOKE_COMMAND_PERMISSION
 from tools.eos.auth.system_permission_revocation_command_service import SystemPermissionRevocationCommandService
 
 URI = os.environ.get("TEST_VENDOR_MONGO_URI", "mongodb://127.0.0.1:27027/?replicaSet=wilsyVendorCertRS")
@@ -114,6 +114,33 @@ def test_real_command_plane_seed_assign_revoke_replay_and_boundaries(context: An
     for collection in (context["bootstraps"], context["assignments"]):
         assert all("expireAfterSeconds" not in index for index in collection.list_indexes())
     assert not hasattr(context["assignment_registry"], "delete")
+
+
+def test_real_p7_permission_assign_revoke_replay_and_abort(context: Any) -> None:
+    _install_base(context)
+    _commit_seed_commands(context)
+    command = _assignment_evidence(evidence="p7-assign", idempotency="p7-assign-idem", permission=PRIVILEGED_ACTIVATION_BREAK_GLASS_PERMISSION)
+    with context["client"].start_session() as session:
+        session.start_transaction()
+        pending = context["assign"].assign(command, session=session)
+        assert context["possession"].resolve(principal_id="target-a", permission_id=PRIVILEGED_ACTIVATION_BREAK_GLASS_PERMISSION, session=session) == pending
+        session.abort_transaction()
+    assert context["possession"].resolve(principal_id="target-a", permission_id=PRIVILEGED_ACTIVATION_BREAK_GLASS_PERMISSION) is None
+    with context["client"].start_session() as session:
+        session.start_transaction(); assigned = context["assign"].assign(command, session=session); session.commit_transaction()
+    with context["client"].start_session() as session:
+        session.start_transaction(); assert context["assign"].assign(command, session=session) == assigned; session.commit_transaction()
+    revoke = SystemPermissionCommandEvidence(SystemPermissionCommandOperation.REVOKE, "actor-a", "target-a", PRIVILEGED_ACTIVATION_BREAK_GLASS_PERMISSION, "p7-revoke", NOW + timedelta(minutes=2), "p7-revoke-idem", assignment_id=assigned.assignment_id)
+    with context["client"].start_session() as session:
+        session.start_transaction(); pending_revoke = context["revoke"].revoke(revoke, session=session); session.abort_transaction()
+    assert context["possession"].resolve(principal_id="target-a", permission_id=PRIVILEGED_ACTIVATION_BREAK_GLASS_PERMISSION) == assigned
+    with context["client"].start_session() as session:
+        session.start_transaction(); revoked = context["revoke"].revoke(revoke, session=session); session.commit_transaction()
+    assert revoked == pending_revoke
+    assert context["possession"].resolve(principal_id="target-a", permission_id=PRIVILEGED_ACTIVATION_BREAK_GLASS_PERMISSION) is None
+    with context["client"].start_session() as session:
+        session.start_transaction(); assert context["revoke"].revoke(revoke, session=session) == revoked; session.commit_transaction()
+    assert not ({"privileged_activations", "privileged_break_glass_command_evidence", "payments", "settlements"} & set(context["db"].list_collection_names()))
 
 
 def test_real_abort_zero_inactive_target_and_recursive_policy(context: Any) -> None:
@@ -219,7 +246,7 @@ def test_real_concurrent_competing_bootstrap_seed_is_one_durable_assignment(cont
 
 # WILSY OS SOVEREIGN ARTIFACT SEAL
 # ARTIFACT: test_system_permission_command_plane_real_mongo.py
-# VERSION: v1.0.0-D12-COMMAND-PLANE-REAL-MONGO
+# VERSION: v1.1.0-D12-P7-BREAK-GLASS-COMMAND-PLANE-REAL-MONGO
 # AUTHORITY BOUNDARY: CLOSED SEED, ASSIGNMENT, AND REVOCATION CERTIFICATE
 # TENANT POSTURE: UUID-ISOLATED SYSTEM ONLY
 # FAIL-CLOSED POSTURE: NO TTL, DELETE, RECURSION, WILDCARD, OR ARBITRARY AUTHORITY

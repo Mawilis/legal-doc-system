@@ -1,14 +1,22 @@
 """TITLE: D12 system permission command policy certificate.
-VERSION: v1.0.0-D12-COMMAND-POLICY-CERT
+VERSION: v1.1.0-D12-P7-BREAK-GLASS-DELEGATION-CERT
 AUTHORITY: Direct closed-policy proof.
-ABSOLUTE PATH: /Users/wilsonkhanyezi/legal-doc-system/tests/unit/test_system_permission_command_policy.py
-CERTIFICATION DATE: 2026-10-14
-CHANGELOG: v1.0.0 certifies exact seed and ongoing sets.
-BOUNDARY: No authority grant, wildcard, recursion, tenant, or finance.
+EPITOME: Prove the complete explicit D12 bootstrap and ongoing delegation allowlists.
+ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/tests/unit/test_system_permission_command_policy.py
+COLLABORATION / OWNERSHIP: D12 command services and P7 lawful assignment prerequisite.
+CERTIFICATION DATE: 2026-10-15
+CHANGELOG: v1.1.0 certifies the exact two-permission ongoing delegation set.
+COMPLIANCE: POPIA section 19; GDPR Article 32; SOC 2 CC7.2.
+SECURITY / PRIVACY POSTURE: Pure immutable policy assertions; no identity data.
+TENANT BOUNDARY: SYSTEM only; tenant permissions reject.
+AUTHORITY BOUNDARY: No authority grant, wildcard, recursion, tenant, or finance.
+FINANCIAL AUTHORITY BOUNDARY: None; Kennel EOS exclusively executes finance.
 """
 from types import MappingProxyType
+from json import loads
 import pytest
 from tools.eos.auth.system_permission_command_policy import *
+from tools.eos.auth.permission_namespace import canonical_permissions
 
 
 def test_exact_bootstrap_mappings_and_immutable_policy() -> None:
@@ -20,11 +28,15 @@ def test_exact_bootstrap_mappings_and_immutable_policy() -> None:
 
 
 def test_exact_ongoing_sets_exclude_recursive_command_authority() -> None:
-    assert ONGOING_ASSIGNABLE_PERMISSIONS == frozenset({PRIVILEGED_ACTIVATION_ISSUE_PERMISSION})
-    assert ONGOING_REVOCABLE_PERMISSIONS == frozenset({PRIVILEGED_ACTIVATION_ISSUE_PERMISSION})
-    require_ongoing_assignment(PRIVILEGED_ACTIVATION_ISSUE_PERMISSION)
-    require_ongoing_revocation(PRIVILEGED_ACTIVATION_ISSUE_PERMISSION)
-    for denied in (ASSIGN_COMMAND_PERMISSION, REVOKE_COMMAND_PERMISSION):
+    exact = frozenset({PRIVILEGED_ACTIVATION_ISSUE_PERMISSION, "privileged_activation:break_glass"})
+    assert ONGOING_ASSIGNABLE_PERMISSIONS == exact
+    assert ONGOING_REVOCABLE_PERMISSIONS == exact
+    for permission in exact:
+        require_ongoing_assignment(permission)
+        require_ongoing_revocation(permission)
+    system_permissions = {row["permission_id"] for row in loads(canonical_permissions()) if row["scope_kind"] == "SYSTEM"}
+    assert exact < system_permissions
+    for denied in system_permissions - exact:
         with pytest.raises(SystemPermissionCommandPolicyError):
             require_ongoing_assignment(denied)
         with pytest.raises(SystemPermissionCommandPolicyError):
@@ -46,6 +58,9 @@ def test_bootstrap_mismatch_denied() -> None:
 
 # WILSY OS SOVEREIGN ARTIFACT SEAL
 # ARTIFACT: test_system_permission_command_policy.py
-# VERSION: v1.0.0-D12-COMMAND-POLICY-CERT
+# VERSION: v1.1.0-D12-P7-BREAK-GLASS-DELEGATION-CERT
 # AUTHORITY BOUNDARY: POLICY CERTIFICATE ONLY
+# TENANT POSTURE: SYSTEM ONLY; TENANT PERMISSIONS REJECT
+# FAIL-CLOSED POSTURE: EXACT TWO-PERMISSION ALLOWLIST; NO WILDCARD OR RECURSION
+# FINANCIAL EXECUTION AUTHORITY: KENNEL EOS EXCLUSIVELY
 # END OF WILSY OS SOVEREIGN ARTIFACT
