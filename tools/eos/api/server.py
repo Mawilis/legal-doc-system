@@ -1,7 +1,7 @@
 """WILSY OS sovereign Python API server composition root.
 
 TITLE: WILSY OS EOS Kernel API Server Factory
-VERSION: v1.24.0-L8-9C-LEGAL-STOREFRONT-PUBLIC-INTENT-ROUTER-MOUNT
+VERSION: v1.25.0-CX26-R3-LEGAL-OPERATING-MODEL-ROUTER-MOUNT
 AUTHORITY: Wilsy OS Core Governance
 EPITOME: Mount sovereign Python API authorities, including the certified
          pre-tenant Legal Storefront public-intent admission transport under
@@ -10,8 +10,9 @@ EPITOME: Mount sovereign Python API authorities, including the certified
          Legal lifecycle, AI, commercial, payment, or settlement authority.
 ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/tools/eos/api/server.py
 COLLABORATION / OWNERSHIP: Wilson Khanyezi / Wilsy OS Core Engineering
-CERTIFICATION / UPDATE DATE: 2026-10-12
-CHANGELOG: 2026-10-12 v1.24.0-L8-9C-LEGAL-STOREFRONT-PUBLIC-INTENT-ROUTER-MOUNT mounts the certified anonymous Legal Storefront public-intent router exactly once under /api/legal-storefront/public-intents and bootstraps the L8-9B durable intent indexes plus L8-9C0 ephemeral rate-limit indexes after successful database connection, without creating identity, tenant, Legal lifecycle, AI, subscription, entitlement, billing, payment, or settlement authority.
+CERTIFICATION / UPDATE DATE: 2026-10-15
+CHANGELOG: 2026-10-15 v1.25.0-CX26-R3-LEGAL-OPERATING-MODEL-ROUTER-MOUNT mounts the directly certified authenticated Tenant Legal Operating Model HTTP router exactly once under /api/legal/operating-model while preserving router-owned tenant correlation, IAM, transaction, persistence, workflow, legal-act, entitlement, billing, payment, settlement and financial boundaries.
+2026-10-12 v1.24.0-L8-9C-LEGAL-STOREFRONT-PUBLIC-INTENT-ROUTER-MOUNT mounts the certified anonymous Legal Storefront public-intent router exactly once under /api/legal-storefront/public-intents and bootstraps the L8-9B durable intent indexes plus L8-9C0 ephemeral rate-limit indexes after successful database connection, without creating identity, tenant, Legal lifecycle, AI, subscription, entitlement, billing, payment, or settlement authority.
 2026-10-12 v1.23.0-LEGAL-EVIDENCE-UPLOAD-ROUTER-MOUNT mounts the authenticated Legal Evidence multipart router exactly once under /api/legal-operations/evidence while preserving router-owned Partner IAM, canonical ProcessDocument scope, two-plane storage/commit, uncertainty, and financial boundaries.
 2026-10-11 v1.22.0-LEGAL-CLIENT-ACCEPTANCE-ROUTER-MOUNT mounts the directly certified Legal Client Acceptance HTTP router exactly once under /api/legal-operations/client, preserving router-owned authenticated tenant admission, transaction lifecycle, server-derived client-acceptance context/issuance authority, and all engagement, representation, Court, AI, billing, payment, settlement, and Kennel boundaries.
 2026-10-11 v1.21.0-D3B2A-MATTER-DEADLINE-ROUTER-MOUNT mounts the certified Legal Matter Deadline HTTP router exactly once under /api, preserving router-owned durable IAM, transaction, D3A service, tenant, AI, and Kennel boundaries; no deadline truth is created by application composition.
@@ -89,6 +90,7 @@ from .legal_operations_billing_read_router import router as legal_operations_bil
 from .legal_matter_deadline_router import router as legal_matter_deadline_router
 from .legal_client_acceptance_router import router as legal_client_acceptance_router
 from .legal_evidence_upload_router import router as legal_evidence_upload_router
+from .tenant_legal_operating_model_router import router as tenant_legal_operating_model_router
 from .legal_storefront_public_intent_router import (
     router as legal_storefront_public_intent_router,
 )
@@ -131,7 +133,7 @@ from tools.eos.legal_operations.service.legal_storefront_public_intent_rate_limi
     LegalStorefrontPublicIntentRateLimit,
 )
 
-VERSION = "v1.24.0-L8-9C-LEGAL-STOREFRONT-PUBLIC-INTENT-ROUTER-MOUNT"
+VERSION = "v1.25.0-CX26-R3-LEGAL-OPERATING-MODEL-ROUTER-MOUNT"
 logger = logging.getLogger("WilsyOS.API.Server")
 
 
@@ -422,6 +424,7 @@ class WilsyAPIServer:
         app.include_router(legal_matter_deadline_router, prefix="/api")
         app.include_router(legal_client_acceptance_router, prefix="/api")
         app.include_router(legal_evidence_upload_router, prefix="/api")
+        app.include_router(tenant_legal_operating_model_router, prefix="/api")
         app.include_router(
             legal_storefront_public_intent_router,
             prefix="/api",
@@ -463,7 +466,7 @@ class WilsyAPIServer:
 app = WilsyAPIServer().get_app()
 
 # ARTIFACT: server.py
-# VERSION: v1.24.0-L8-9C-LEGAL-STOREFRONT-PUBLIC-INTENT-ROUTER-MOUNT
+# VERSION: v1.25.0-CX26-R3-LEGAL-OPERATING-MODEL-ROUTER-MOUNT
 # AUTHORITY BOUNDARY: HTTP application composition only; domain authorities remain separate.
 # TENANT POSTURE: Mounted routers retain their canonical tenant isolation and admission rules.
 # FAIL-CLOSED POSTURE: Unmounted or failed router composition is never represented as operational authority.

@@ -1,7 +1,7 @@
 """Direct mount certificate for api_server Legal Client Acceptance routing.
 
 TITLE: Wilsy OS Legal Client Acceptance API Server Mount Certificate
-VERSION: v1.0.0-LEGAL-CLIENT-ACCEPTANCE-API-SERVER-MOUNT-CERT
+VERSION: v1.0.1-LEGAL-CLIENT-ACCEPTANCE-API-SERVER-MOUNT-CERT
 AUTHORITY: Wilsy OS Core Governance / application-composition certification.
 EPITOME: Prove api_server.py mounts the directly certified Legal Client
          Acceptance router exactly once under /api without copying IAM,
@@ -9,8 +9,10 @@ EPITOME: Prove api_server.py mounts the directly certified Legal Client
          billing, settlement, or Kennel authority.
 ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/tests/unit/test_legal_client_acceptance_api_server_mount.py
 COLLABORATION / OWNERSHIP: Certificate owns route-composition observations only.
-CERTIFICATION / UPDATE DATE: 2026-10-11
-CHANGELOG: 2026-10-11 v1.0.0-LEGAL-CLIENT-ACCEPTANCE-API-SERVER-MOUNT-CERT
+CERTIFICATION / UPDATE DATE: 2026-10-15
+CHANGELOG: 2026-10-15 v1.0.1-LEGAL-CLIENT-ACCEPTANCE-API-SERVER-MOUNT-CERT
+           removes the obsolete requirement that the shared api_server composition root remain permanently frozen at its historical v1.10.0-LEGAL-CLIENT-ACCEPTANCE-ROUTER-MOUNT; current runtime/header/seal alignment and historical client-acceptance lineage are certified independently.
+2026-10-11 v1.0.0-LEGAL-CLIENT-ACCEPTANCE-API-SERVER-MOUNT-CERT
            establishes exact api_server.py route and source mount evidence.
 COMPLIANCE: POPIA section 19; GDPR Article 32; SOC 2 CC7.2; ISO 27001.
 SECURITY / PRIVACY POSTURE: No request execution, customer data, secrets, or PII.
@@ -30,8 +32,8 @@ from tools.eos.api.legal_client_acceptance_router import (
 )
 
 
-VERSION = "v1.0.0-LEGAL-CLIENT-ACCEPTANCE-API-SERVER-MOUNT-CERT"
-EXPECTED_API_SERVER_VERSION = "v1.10.0-LEGAL-CLIENT-ACCEPTANCE-ROUTER-MOUNT"
+VERSION = "v1.0.1-LEGAL-CLIENT-ACCEPTANCE-API-SERVER-MOUNT-CERT"
+HISTORICAL_API_SERVER_VERSION = "v1.10.0-LEGAL-CLIENT-ACCEPTANCE-ROUTER-MOUNT"
 
 
 def _effective_routes() -> list[tuple[str, tuple[str, ...]]]:
@@ -118,18 +120,26 @@ def test_api_server_source_has_exact_import_mount_and_no_authority_copy() -> Non
 
 
 def test_api_server_version_surfaces_are_aligned() -> None:
-    """Certify api_server composition version and source surfaces."""
+    """Certify current api_server alignment and preserved client lineage."""
+    historical = HISTORICAL_API_SERVER_VERSION
+    current = api_server.VERSION
 
-    assert api_server.VERSION == EXPECTED_API_SERVER_VERSION
+    assert isinstance(current, str)
+    assert current
+    assert current.strip() == current
 
     path = api_server.__file__
     assert path is not None
 
-    source = open(path, encoding="utf-8").read()
+    source = open(
+        path,
+        encoding="utf-8",
+    ).read()
 
-    assert EXPECTED_API_SERVER_VERSION in source
-    assert f'VERSION = "{EXPECTED_API_SERVER_VERSION}"' in source
-    assert "2026-10-11" in source
+    assert f"    {current}" in source
+    assert f'VERSION = "{current}"' in source
+    assert f"# VERSION: {current}" in source
+    assert historical in source
 
 
 def test_api_server_mount_does_not_widen_router_contract() -> None:
@@ -146,7 +156,7 @@ def test_api_server_mount_does_not_widen_router_contract() -> None:
 
 
 # ARTIFACT: test_legal_client_acceptance_api_server_mount.py
-# VERSION: v1.0.0-LEGAL-CLIENT-ACCEPTANCE-API-SERVER-MOUNT-CERT
+# VERSION: v1.0.1-LEGAL-CLIENT-ACCEPTANCE-API-SERVER-MOUNT-CERT
 # AUTHORITY BOUNDARY: api_server.py route-composition evidence only
 # TENANT POSTURE: mount-only evidence; router-owned authorization remains authoritative
 # FAIL-CLOSED POSTURE: absent, duplicate, widened, malformed, or double-/api routes fail
