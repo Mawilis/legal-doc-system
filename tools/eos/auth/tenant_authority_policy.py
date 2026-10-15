@@ -191,7 +191,7 @@ from types import MappingProxyType
 from typing import Final, FrozenSet
 from tools.eos.auth.hr_business_role_catalog import ALL_HR_BUSINESS_ROLES
 
-VERSION = "v1.41.0-CX26-R3-LEGAL-OPERATING-MODEL-MANAGE-ELIGIBILITY"
+VERSION = "v1.42.0-PW-P10A-WORKFLOW-IAM-ELIGIBILITY"
 class SystemAuthorityClassification(StrEnum):
     SYSTEM_REQUIRED = "SYSTEM_REQUIRED"
     SYSTEM_NOT_INHERENTLY_REQUIRED = "SYSTEM_NOT_INHERENTLY_REQUIRED"
@@ -239,6 +239,12 @@ BUSINESS_ROLE_OPERATION_PERMISSIONS: Final = MappingProxyType({
     "tenant_branding_profile_manage": "tenant_branding:profile:manage",
     "tenant_branding_asset_manage": "tenant_branding:asset:manage",
     "legal_operating_model_manage": "legal_operations:operating_model:manage",
+    "legal_workflow_activation_manage": "legal_operations:workflow_activation:manage",
+    "legal_matter_workflow_read": "legal_operations:matter_workflow:read",
+    "legal_matter_workflow_instantiate": "legal_operations:matter_workflow:instantiate",
+    "legal_matter_workflow_transition": "legal_operations:matter_workflow:transition",
+    "legal_work_item_read": "legal_operations:work_item:read",
+    "legal_work_item_write": "legal_operations:work_item:write",
 })
 TENANT_ROLES: Final[FrozenSet[str]] = frozenset({"tenant_owner", "tenant_admin", "tenant_manager", "tenant_auditor", "tenant_platform_billing_provider_policy_admin", "tenant_inbound_collection_authorization_admin", "tenant_inbound_merchant_configuration_admin", "tenant_inbound_provider_security_admin", "tenant_inbound_provider_policy_admin", "tenant_inbound_provider_policy_activation_admin", "tenant_legal_partner", "tenant_legal_attorney", "tenant_legal_paralegal", "tenant_legal_secretary", "tenant_legal_finance", "tenant_sheriff", "tenant_deputy", "tenant_legal_client"}) | ALL_HR_BUSINESS_ROLES
 OPERATIONS: FrozenSet[str] = frozenset({"profile_read", "profile_update", "lifecycle_create", "lifecycle_archive", "membership_read", "membership_invite", "membership_deactivate", "role_assignment_read", "role_grant", "role_revoke", "business_role_read", "business_role_assign", "business_role_change", "business_role_revoke", "platform_billing_provider_policy_create", "platform_billing_provider_policy_revise", "platform_billing_provider_policy_activate", "platform_billing_provider_policy_revoke", "inbound_collection_authorization_create", "tenant_inbound_merchant_configuration_register", "tenant_inbound_merchant_configuration_lifecycle_transition", "tenant_inbound_merchant_configuration_compromise", "tenant_inbound_merchant_configuration_remediate", "tenant_inbound_provider_policy_create", "tenant_inbound_provider_policy_revise", "tenant_inbound_provider_policy_activate", "tenant_inbound_provider_policy_deactivate", "tenant_inbound_provider_policy_emergency_disable", "tenant_inbound_provider_credential_security_eligibility_issue", "tenant_inbound_provider_credential_security_revoke", "tenant_inbound_provider_credential_security_compromise", "tenant_inbound_provider_credential_security_rotate", "wilsy_ai_usage_capacity_read", "wilsy_ai_reasoning_execute", "wilsy_ai_legal_services_execute", "billing_intelligence_evidence_read", "legal_instruction_read", "legal_instruction_write", "legal_allocation_read", "legal_allocation_write", "legal_attempt_read", "legal_attempt_write", "legal_return_read", "legal_billing_read", "legal_invoice_read", "audit_read", "artifact_read", "platform_billing_release", "plan_read", "plan_create", "plan_update", "plan_archive", "subscription_read", "subscription_audit_read", "subscription_metrics_read", "subscription_create", "subscription_update", "subscription_archive", "subscription_pause", "subscription_resume", "subscription_cancel", "subscription_upgrade", "subscription_downgrade", "subscription_reactivate", "cross_tenant", "financial_execution"})
@@ -690,6 +696,77 @@ for _matter_deadline_role in (
 ELIGIBILITY = MappingProxyType(_matter_deadline_eligibility)
 
 
+# PW-P10A — exact Legal workflow/work-item business eligibility only.
+# Eligibility never authorizes by itself; permission possession, ACTIVE tenant
+# membership, matter/work scope and caller-owned transaction remain separate.
+_WORKFLOW_OPERATIONS: Final = (
+    "legal_workflow_activation_manage",
+    "legal_matter_workflow_read",
+    "legal_matter_workflow_instantiate",
+    "legal_matter_workflow_transition",
+    "legal_work_item_read",
+    "legal_work_item_write",
+)
+OPERATIONS = frozenset((*OPERATIONS, *_WORKFLOW_OPERATIONS))
+
+_workflow_eligibility = dict(ELIGIBILITY)
+
+_admin_workflow = dict(
+    _workflow_eligibility["tenant_admin"]
+)
+_admin_workflow[
+    "legal_workflow_activation_manage"
+] = ELIGIBLE
+_workflow_eligibility[
+    "tenant_admin"
+] = MappingProxyType(
+    _admin_workflow
+)
+
+for _workflow_role in (
+    "tenant_legal_partner",
+    "tenant_legal_attorney",
+    "tenant_legal_paralegal",
+    "tenant_legal_secretary",
+):
+    _workflow_role_policy = dict(
+        _workflow_eligibility[
+            _workflow_role
+        ]
+    )
+
+    _workflow_role_policy[
+        "legal_matter_workflow_read"
+    ] = ELIGIBLE
+
+    _workflow_role_policy[
+        "legal_work_item_read"
+    ] = ELIGIBLE
+
+    if _workflow_role in {
+        "tenant_legal_partner",
+        "tenant_legal_attorney",
+    }:
+        _workflow_role_policy[
+            "legal_matter_workflow_instantiate"
+        ] = ELIGIBLE
+        _workflow_role_policy[
+            "legal_matter_workflow_transition"
+        ] = ELIGIBLE
+        _workflow_role_policy[
+            "legal_work_item_write"
+        ] = ELIGIBLE
+
+    _workflow_eligibility[
+        _workflow_role
+    ] = MappingProxyType(
+        _workflow_role_policy
+    )
+
+ELIGIBILITY = MappingProxyType(
+    _workflow_eligibility
+)
+
 
 def normalize_tenant_business_role(role: object) -> str | None:
     """Return an exact canonical tenant role, otherwise fail closed."""
@@ -728,7 +805,7 @@ def requires_system_authority(operation: object) -> SystemAuthorityClassificatio
 __all__ = ["VERSION", "ELIGIBLE", "DENY", "SystemAuthorityClassification", "TENANT_ROLES", "OPERATIONS", "ELIGIBILITY", "BUSINESS_ROLE_OPERATION_PERMISSIONS", "PROFILE_READABLE_FIELDS", "PROFILE_MUTABLE_FIELDS_V1", "LIFECYCLE_FIELDS", "VERIFICATION_FIELDS", "BILLING_METADATA_FIELDS", "EVIDENCE_FIELDS", "SECURITY_SENSITIVE_FIELDS", "SYSTEM_MANAGED_FIELDS", "FUTURE_PERMISSION_CANDIDATES", "normalize_tenant_business_role", "tenant_role_operation_eligibility", "permission_for_business_role_operation", "allowed_profile_mutation_fields", "is_hard_delete_allowed", "requires_system_authority"]
 
 # ARTIFACT: tenant_authority_policy.py
-# VERSION: v1.41.0-CX26-R3-LEGAL-OPERATING-MODEL-MANAGE-ELIGIBILITY
+# VERSION: v1.42.0-PW-P10A-WORKFLOW-IAM-ELIGIBILITY
 # AUTHORITY BOUNDARY: business eligibility facts only; no authorization or mutation
 # TENANT POSTURE: own-tenant conflict-review, client-matter and client-visibility eligibility require separate ACTIVE membership, assignment and exact permission binding; client visibility remains separately scope-bound
 # FAIL-CLOSED POSTURE: unknown roles and operations deny; ELIGIBLE never grants access

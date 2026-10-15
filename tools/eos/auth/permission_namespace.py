@@ -210,7 +210,7 @@ from types import MappingProxyType
 from typing import Final
 
 
-VERSION = "v1.45.0-P7-PRIVILEGED-BREAK-GLASS-PERMISSION"
+VERSION = "v1.46.0-PW-P10A-WORKFLOW-IAM-PERMISSIONS"
 
 
 class PermissionDisposition(StrEnum):
@@ -710,6 +710,48 @@ _PERMISSIONS: Final = MappingProxyType(
             "TENANT",
             "TENANT",
             "manage own-tenant Legal operating-model configuration",
+            tenant=True,
+        ),
+        "legal_operations:workflow_activation:manage": _meta(
+            "legal_operations:workflow_activation:manage",
+            "TENANT",
+            "TENANT",
+            "manage own-tenant Legal workflow activation",
+            tenant=True,
+        ),
+        "legal_operations:matter_workflow:read": _meta(
+            "legal_operations:matter_workflow:read",
+            "TENANT",
+            "TENANT",
+            "read own-tenant Legal matter workflow state",
+            tenant=True,
+        ),
+        "legal_operations:matter_workflow:instantiate": _meta(
+            "legal_operations:matter_workflow:instantiate",
+            "TENANT",
+            "TENANT",
+            "instantiate own-tenant Legal matter workflow",
+            tenant=True,
+        ),
+        "legal_operations:matter_workflow:transition": _meta(
+            "legal_operations:matter_workflow:transition",
+            "TENANT",
+            "TENANT",
+            "transition own-tenant Legal matter workflow",
+            tenant=True,
+        ),
+        "legal_operations:work_item:read": _meta(
+            "legal_operations:work_item:read",
+            "TENANT",
+            "TENANT",
+            "read own-tenant Legal work items",
+            tenant=True,
+        ),
+        "legal_operations:work_item:write": _meta(
+            "legal_operations:work_item:write",
+            "TENANT",
+            "TENANT",
+            "write own-tenant Legal work items",
             tenant=True,
         ),
 
