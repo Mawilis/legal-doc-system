@@ -1,5 +1,5 @@
 """TITLE: WILSY OS Permission Namespace Canon Certification.
-VERSION: v1.5.2-D3B-AUTH3-R1-MATTER-DEADLINE-PERMISSION-CERT
+VERSION: v1.6.0-P4-R0A-PRIVILEGED-ACTIVATION-PERMISSION-CERT
 AUTHORITY: Certification of immutable permission vocabulary semantics only.
 EPITOME: Proves bounded namespaces, fail-closed metadata, deterministic policy
 bytes, and exact own-tenant subscription/plan/WILSY AI capacity,
@@ -9,6 +9,10 @@ ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/tests/unit/test_
 COLLABORATION / OWNERSHIP: Wilson Khanyezi / Wilsy Core Engineering.
 CERTIFICATION/UPDATE DATE: 2026-10-11.
 CHANGELOG:
+2026-10-14 v1.6.0-P4-R0A certifies the exact SYSTEM-scoped,
+non-self-authorizing privileged_activation:issue vocabulary, wildcard and
+neighbor rejection, no cross-tenant or financial capability, and the updated
+closed-canon cardinality while preserving all prior permission certificates.
 2026-10-11 v1.5.2-D3B-AUTH3-R1-MATTER-DEADLINE-PERMISSION-CERT removes the
 stale pre-AUTH3 assertion that canonical deadline permissions remain absent
 from the separate durable role layer. It directly preserves namespace-only
@@ -138,12 +142,66 @@ from pathlib import Path
 
 import pytest
 
-VERSION = "v1.5.2-D3B-AUTH3-R1-MATTER-DEADLINE-PERMISSION-CERT"
+VERSION = "v1.7.0-D12-SYSTEM-PERMISSION-COMMAND-CERT"
 
 from tools.eos.auth.permission_namespace import PermissionDisposition, VERSION as POLICY_VERSION, canonical_permissions, classify_legacy_permission, permission_metadata
 
+
+
+def test_h7f_notification_contact_verification_permission_is_exact_workforce_tenant_metadata() -> None:
+    """H7F permission is explicit metadata, never role-name-derived authority."""
+    metadata = permission_metadata("legal_operations:notification_contact_verification:write")
+
+    assert metadata.permission_id == "legal_operations:notification_contact_verification:write"
+    assert metadata.namespace == "TENANT"
+    assert metadata.scope_kind == "TENANT"
+    assert metadata.tenant_membership_required is True
+    assert metadata.system_assignment_required is False
+    assert metadata.cross_tenant_capable is False
+    assert metadata.financial_execution_capable is False
+    assert metadata.authorizes_by_itself is False
+    assert metadata.workforce_currentness_required is True
+
+def test_p4_r0a_privileged_activation_issuance_permission_is_exact() -> None:
+    """P4 issuance vocabulary creates no activation or target authority."""
+    metadata = permission_metadata("privileged_activation:issue")
+
+    assert metadata.permission_id == "privileged_activation:issue"
+    assert metadata.namespace == "SYSTEM"
+    assert metadata.scope_kind == "SYSTEM"
+    assert metadata.tenant_membership_required is False
+    assert metadata.system_assignment_required is True
+    assert metadata.workforce_currentness_required is False
+    assert metadata.cross_tenant_capable is False
+    assert metadata.financial_execution_capable is False
+    assert metadata.authorizes_by_itself is False
+    assert metadata.disposition is PermissionDisposition.CANONICAL
+
+    for forbidden in (
+        "privileged_activation:*",
+        "privileged_activation:activate_other",
+        "privileged_activation:break_glass",
+        "privileged_activation:execute_financial",
+    ):
+        with pytest.raises(ValueError, match="UNKNOWN_PERMISSION"):
+            permission_metadata(forbidden)
+
+
+@pytest.mark.parametrize("permission", ["system_permission_assignment:write", "system_permission_assignment:revoke"])
+def test_d12_system_command_permissions_are_exact_non_authorizing_metadata(permission: str) -> None:
+    metadata = permission_metadata(permission)
+    assert metadata.permission_id == permission
+    assert metadata.namespace == "SYSTEM"
+    assert metadata.scope_kind == "SYSTEM"
+    assert metadata.system_assignment_required is True
+    assert metadata.tenant_membership_required is False
+    assert metadata.authorizes_by_itself is False
+    assert metadata.financial_execution_capable is False
+    assert metadata.disposition is PermissionDisposition.CANONICAL
+
+
 def test_runtime_version_source_is_canonical() -> None:
-    assert POLICY_VERSION == "v1.40.0-LEGAL-NOTIFICATION-RECIPIENT-BINDING-PERMISSION"
+    assert POLICY_VERSION == "v1.43.0-D12-SYSTEM-PERMISSION-COMMAND-PLANE"
 
 
 def test_permission_canon_properties() -> None:
@@ -231,9 +289,9 @@ def test_permission_canon_properties() -> None:
             for row in rows
             if row["disposition"] == "CANONICAL"
         ]
-    ) == 100
+    ) == 105
 
-    assert len(rows) == 103
+    assert len(rows) == 108
 
     for permission_id in tenant:
         metadata = permission_metadata(
@@ -827,7 +885,7 @@ def test_deadline_namespace_owns_vocabulary_but_creates_no_role_grant() -> None:
 
 
 # ARTIFACT: test_permission_namespace.py
-# VERSION: v1.5.2-D3B-AUTH3-R1-MATTER-DEADLINE-PERMISSION-CERT
+# VERSION: v1.6.0-P4-R0A-PRIVILEGED-ACTIVATION-PERMISSION-CERT
 # AUTHORITY BOUNDARY: permission semantic certification only
 # TENANT POSTURE: conflict-review, client-matter, client-visibility and other tenant permissions remain policy; exact ACTIVE membership remains separately governed
 # FAIL-CLOSED POSTURE: unknown and malformed values deny

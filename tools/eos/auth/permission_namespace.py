@@ -1,5 +1,5 @@
 """TITLE: WILSY OS Permission Namespace Semantic Canon.
-VERSION: v1.40.0-LEGAL-NOTIFICATION-RECIPIENT-BINDING-PERMISSION
+VERSION: v1.43.0-D12-SYSTEM-PERMISSION-COMMAND-PLANE
 AUTHORITY: Immutable permission vocabulary and scope metadata only.
 EPITOME: Extends the canonical TENANT permission vocabulary with dedicated
 inbound-collection, merchant-configuration, provider-policy, WILSY AI,
@@ -13,6 +13,19 @@ ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/tools/eos/auth/p
 COLLABORATION / OWNERSHIP: Wilson Khanyezi / Wilsy Core Engineering.
 CERTIFICATION / UPDATE DATE: 2026-10-12
 CHANGELOG:
+    2026-10-14 v1.43.0-D12 adds the exact SYSTEM command permissions
+    system_permission_assignment:write and system_permission_assignment:revoke.
+    Both require separately proven current SYSTEM assignment and grant no
+    static-role, wildcard, recursive, arbitrary, tenant, or financial authority.
+    2026-10-14 v1.42.0-P4-R0A adds the dedicated
+    privileged_activation:issue SYSTEM permission vocabulary for normal,
+    self-only privileged-activation issuance. It requires separately proven
+    current system assignment and does not itself grant target privilege,
+    activation, break-glass, cross-tenant, or financial authority.
+    2026-10-13 v1.41.0-CX26-R3 adds the dedicated own-tenant
+    legal_operations:operating_model:manage permission. It is membership-gated,
+    non-cross-tenant, non-financial, and non-self-authorizing; it grants no
+    entitlement, personnel assignment, workflow, legal act, or financial power.
     2026-10-11 v1.39.0 adds the dedicated own-tenant
     legal_operations:matter_acceptance_instrument:write provisioning vocabulary.
     It is distinct from approval and grants no lifecycle, acceptance or finance.
@@ -186,7 +199,7 @@ from types import MappingProxyType
 from typing import Final
 
 
-VERSION = "v1.40.0-LEGAL-NOTIFICATION-RECIPIENT-BINDING-PERMISSION"
+VERSION = "v1.43.0-D12-SYSTEM-PERMISSION-COMMAND-PLANE"
 
 
 class PermissionDisposition(StrEnum):
@@ -274,6 +287,27 @@ _PERMISSIONS: Final = MappingProxyType(
             "SYSTEM",
             "SYSTEM",
             "read governance evidence",
+            system=True,
+        ),
+        "privileged_activation:issue": _meta(
+            "privileged_activation:issue",
+            "SYSTEM",
+            "SYSTEM",
+            "issue one normal self-only privileged activation",
+            system=True,
+        ),
+        "system_permission_assignment:write": _meta(
+            "system_permission_assignment:write",
+            "SYSTEM",
+            "SYSTEM",
+            "assign only source-policy-delegable SYSTEM permissions",
+            system=True,
+        ),
+        "system_permission_assignment:revoke": _meta(
+            "system_permission_assignment:revoke",
+            "SYSTEM",
+            "SYSTEM",
+            "revoke only source-policy-revocable SYSTEM permissions",
             system=True,
         ),
         "artifacts:read": _meta(
@@ -638,6 +672,22 @@ _PERMISSIONS: Final = MappingProxyType(
             "administer own-tenant Legal notification recipient bindings",
             tenant=True,
         ),
+        "legal_operations:notification_contact_verification:write": _meta(
+            "legal_operations:notification_contact_verification:write",
+            "TENANT",
+            "TENANT",
+            "administer own-tenant Legal notification contact verification",
+            tenant=True,
+            workforce=True,
+        ),
+        "legal_operations:operating_model:manage": _meta(
+            "legal_operations:operating_model:manage",
+            "TENANT",
+            "TENANT",
+            "manage own-tenant Legal operating-model configuration",
+            tenant=True,
+        ),
+
         "legal_operations:evidence_cleanup:authorize": _meta(
             "legal_operations:evidence_cleanup:authorize",
             "TENANT",
@@ -968,7 +1018,7 @@ __all__ = [
 ]
 
 # ARTIFACT: tools/eos/auth/permission_namespace.py
-# VERSION: v1.40.0-LEGAL-NOTIFICATION-RECIPIENT-BINDING-PERMISSION
+# VERSION: v1.43.0-D12-SYSTEM-PERMISSION-COMMAND-PLANE
 # AUTHORITY BOUNDARY: canonical permission vocabulary semantics only; no possession or authorization authority
 # TENANT POSTURE: conflict-review, client-matter, client-visibility and other tenant permissions require separately proven exact ACTIVE tenant membership
 # FAIL-CLOSED POSTURE: unknown, malformed, ambiguous and legacy values never manufacture authority
