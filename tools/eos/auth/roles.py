@@ -200,7 +200,7 @@ from __future__ import annotations
 from collections.abc import Iterable
 
 
-VERSION = "v1.41.0-CX26-R3-LEGAL-OPERATING-MODEL-MANAGE-GRANT"
+VERSION = "v1.42.0-PW-P10A-WORKFLOW-IAM-GRANTS"
 
 
 ROLE_PERMISSIONS_MAP: dict[str, list[str]] = {
@@ -242,6 +242,7 @@ ROLE_PERMISSIONS_MAP: dict[str, list[str]] = {
         "crm:email_template:archive",
         "crm:email_template:copy",
         "crm:email_template:share",
+        "legal_operations:workflow_activation:manage",
     ],
     "AUDITOR": [
         "kernel:read",
@@ -281,6 +282,11 @@ ROLE_PERMISSIONS_MAP: dict[str, list[str]] = {
         "legal_operations:return:read",
         "legal_operations:billing:read",
         "legal_operations:invoice:read",
+        "legal_operations:matter_workflow:read",
+        "legal_operations:matter_workflow:instantiate",
+        "legal_operations:matter_workflow:transition",
+        "legal_operations:work_item:read",
+        "legal_operations:work_item:write",
     ],
     "LEGAL_ATTORNEY": [
         "legal_operations:notification_recipient_binding:write",
@@ -301,6 +307,11 @@ ROLE_PERMISSIONS_MAP: dict[str, list[str]] = {
         "legal_operations:return:read",
         "legal_operations:billing:read",
         "legal_operations:invoice:read",
+        "legal_operations:matter_workflow:read",
+        "legal_operations:matter_workflow:instantiate",
+        "legal_operations:matter_workflow:transition",
+        "legal_operations:work_item:read",
+        "legal_operations:work_item:write",
     ],
     "LEGAL_PARALEGAL": [
         "legal_operations:instruction:read",
@@ -313,6 +324,8 @@ ROLE_PERMISSIONS_MAP: dict[str, list[str]] = {
         "legal_operations:attempt:read",
         "legal_operations:return:read",
         "legal_operations:invoice:read",
+        "legal_operations:matter_workflow:read",
+        "legal_operations:work_item:read",
     ],
     "LEGAL_SECRETARY": [
         "legal_operations:instruction:read",
@@ -321,6 +334,8 @@ ROLE_PERMISSIONS_MAP: dict[str, list[str]] = {
         "legal_operations:attempt:read",
         "legal_operations:return:read",
         "legal_operations:invoice:read",
+        "legal_operations:matter_workflow:read",
+        "legal_operations:work_item:read",
     ],
     "LEGAL_FINANCE": [
         "legal_operations:billing:read",
