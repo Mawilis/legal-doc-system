@@ -257,6 +257,7 @@ describe('authoritative authentication state machine', () => {
         'legal_operations:return:write',
         'legal_operations:matter_deadline:read',
         'legal_operations:matter_deadline:write',
+        'legal_operations:productive_work:read',
       ],
     }));
 
@@ -297,6 +298,7 @@ describe('authoritative authentication state machine', () => {
       'legal_operations:return:write',
       'legal_operations:matter_deadline:read',
       'legal_operations:matter_deadline:write',
+      'legal_operations:productive_work:read',
     ]);
     expect(persistedUser.legalPermissionsAuthoritative).toBe(true);
   });

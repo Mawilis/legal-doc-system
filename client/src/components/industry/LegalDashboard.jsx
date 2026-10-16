@@ -148,6 +148,7 @@ import {
   getLegalConflictScreenings,
   getLegalFinanceEvidence,
   getLegalPracticeWorkspace,
+  getLegalProductiveWork,
   getSheriffOperationalQueues,
   issueLegalConflictReview,
   recordDeputyFieldOutcome,
@@ -280,6 +281,7 @@ const PRESENTATION_PERMISSIONS = Object.freeze({
   DEADLINE_READ: 'legal_operations:matter_deadline:read',
   DEADLINE_WRITE: 'legal_operations:matter_deadline:write',
   EVIDENCE_WRITE: 'legal_operations:evidence:write',
+  PRODUCTIVE_WORK_READ: 'legal_operations:productive_work:read',
 });
 
 const ROLE_PRESENTATION_PERMISSION_ENVELOPE = Object.freeze({
@@ -291,6 +293,7 @@ const ROLE_PRESENTATION_PERMISSION_ENVELOPE = Object.freeze({
     PRESENTATION_PERMISSIONS.DEADLINE_READ,
     PRESENTATION_PERMISSIONS.DEADLINE_WRITE,
     PRESENTATION_PERMISSIONS.EVIDENCE_WRITE,
+    PRESENTATION_PERMISSIONS.PRODUCTIVE_WORK_READ,
   ]),
   LEGAL_ATTORNEY: Object.freeze([
     PRESENTATION_PERMISSIONS.INSTRUCTION_WRITE,
@@ -299,6 +302,7 @@ const ROLE_PRESENTATION_PERMISSION_ENVELOPE = Object.freeze({
     PRESENTATION_PERMISSIONS.INVOICE_READ,
     PRESENTATION_PERMISSIONS.DEADLINE_READ,
     PRESENTATION_PERMISSIONS.DEADLINE_WRITE,
+    PRESENTATION_PERMISSIONS.PRODUCTIVE_WORK_READ,
   ]),
   LEGAL_PARALEGAL: Object.freeze([
     PRESENTATION_PERMISSIONS.INSTRUCTION_WRITE,
@@ -306,11 +310,13 @@ const ROLE_PRESENTATION_PERMISSION_ENVELOPE = Object.freeze({
     PRESENTATION_PERMISSIONS.INVOICE_READ,
     PRESENTATION_PERMISSIONS.DEADLINE_READ,
     PRESENTATION_PERMISSIONS.DEADLINE_WRITE,
+    PRESENTATION_PERMISSIONS.PRODUCTIVE_WORK_READ,
   ]),
   LEGAL_SECRETARY: Object.freeze([
     PRESENTATION_PERMISSIONS.RETURN_WRITE,
     PRESENTATION_PERMISSIONS.INVOICE_READ,
     PRESENTATION_PERMISSIONS.DEADLINE_READ,
+    PRESENTATION_PERMISSIONS.PRODUCTIVE_WORK_READ,
   ]),
   LEGAL_FINANCE: Object.freeze([
     PRESENTATION_PERMISSIONS.BILLING_READ,
@@ -2050,6 +2056,245 @@ const CONFLICT_REVIEW_OUTCOMES = Object.freeze([
   'ESCALATION_REQUIRED',
 ]);
 
+function ProductiveWorkPanel() {
+  const [state, setState] = useState({
+    kind: 'loading',
+    data: null,
+    message: '',
+  });
+
+  const load = useCallback(async () => {
+    setState({
+      kind: 'loading',
+      data: null,
+      message: '',
+    });
+
+    try {
+      const data = await getLegalProductiveWork();
+
+      setState({
+        kind: 'ready',
+        data,
+        message: '',
+      });
+    } catch (error) {
+      const status = error?.response?.status;
+
+      setState({
+        kind: 'error',
+        data: null,
+        message:
+          status === 403
+            ? 'Current tenant authority does not permit productive-work access.'
+            : 'Productive-work evidence is unavailable; no work was inferred.',
+      });
+    }
+  }, []);
+
+  useEffect(() => {
+    load();
+  }, [load]);
+
+  if (state.kind === 'loading') {
+    return (
+      <section
+        aria-label="My productive work"
+        className="rounded-2xl border border-stone-800 bg-stone-950/75 p-6"
+      >
+        <div className="flex min-h-[120px] items-center justify-center">
+          <Loader2 className="animate-spin text-amber-400" size={24} />
+          <span className="ml-3 text-xs font-black uppercase tracking-wider text-stone-400">
+            Loading current productive work
+          </span>
+        </div>
+      </section>
+    );
+  }
+
+  if (state.kind === 'error') {
+    return (
+      <section
+        aria-label="My productive work"
+        className="rounded-2xl border border-red-900/40 bg-red-950/15 p-5"
+      >
+        <p role="alert" className="text-sm text-red-300">
+          {state.message}
+        </p>
+      </section>
+    );
+  }
+
+  const data = state.data;
+
+  const groups = [
+    {
+      id: 'assigned',
+      title: 'Assigned to me',
+      rows: data.assignedWorkItems,
+      empty: 'No active work is currently assigned to this principal.',
+    },
+    {
+      id: 'supervised',
+      title: 'Supervised work',
+      rows: data.supervisedWorkItems,
+      empty: 'No active work is currently supervised by this principal.',
+    },
+    {
+      id: 'overdue',
+      title: 'Overdue work',
+      rows: data.overdueWorkItems,
+      empty: 'No server-classified overdue work is currently projected.',
+    },
+    {
+      id: 'due-soon',
+      title: 'Due soon',
+      rows: data.dueSoonWorkItems,
+      empty: 'No server-classified due-soon work is currently projected.',
+    },
+  ];
+
+  return (
+    <div
+      className="space-y-5"
+      data-legal-productive-work="true"
+    >
+      <section className="rounded-2xl border border-amber-800/30 bg-stone-950/75 p-5">
+        <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
+          <div>
+            <p className="text-[10px] font-black uppercase tracking-[0.18em] text-amber-400">
+              Authenticated daily-work projection
+            </p>
+            <h2 className="mt-2 text-xl font-black text-white">
+              My productive work
+            </h2>
+            <p className="mt-2 max-w-3xl text-xs leading-6 text-stone-400">
+              Python EOS owns assignment, supervision, due posture and tenant scope.
+              Browser presentation cannot create work or authority.
+            </p>
+          </div>
+
+          <button
+            type="button"
+            onClick={load}
+            className="inline-flex min-h-[44px] items-center justify-center gap-2 rounded-xl border border-amber-700/40 bg-amber-500/10 px-4 text-xs font-black text-amber-200"
+          >
+            <RefreshCw size={15} />
+            Refresh my work
+          </button>
+        </div>
+
+        <div className="mt-5 grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
+          <QueueMetric
+            icon={ClipboardList}
+            label="Assigned"
+            value={data.assignedWorkItems.length}
+            description="Current server-owned assignments"
+          />
+          <QueueMetric
+            icon={UserCheck}
+            label="Supervised"
+            value={data.supervisedWorkItems.length}
+            description="Current effective supervision"
+          />
+          <QueueMetric
+            icon={AlertTriangle}
+            label="Overdue"
+            value={data.overdueWorkItems.length}
+            description="Server-derived due posture"
+          />
+          <QueueMetric
+            icon={Clock3}
+            label="Due soon"
+            value={data.dueSoonWorkItems.length}
+            description="Server-derived 24-hour posture"
+          />
+        </div>
+
+        {data.operatingContexts.length > 0 && (
+          <div className="mt-5 grid gap-3 md:grid-cols-2">
+            {data.operatingContexts.map((context) => (
+              <div
+                key={`${context.operatingRoleId}:${context.operatingRoleRevision}`}
+                className="min-w-0 rounded-xl border border-stone-800 bg-black/30 p-4"
+              >
+                <p className="truncate text-sm font-black text-white">
+                  {context.displayName}
+                </p>
+                <p className="mt-1 truncate font-mono text-[10px] text-stone-600">
+                  {context.operatingRoleId} · revision {context.operatingRoleRevision}
+                </p>
+                <p className="mt-2 break-words text-[10px] leading-5 text-stone-500">
+                  {context.capabilityIds.length
+                    ? context.capabilityIds.join(' · ')
+                    : 'No descriptive capability metadata projected'}
+                </p>
+              </div>
+            ))}
+          </div>
+        )}
+      </section>
+
+      <div className="grid min-w-0 gap-5 xl:grid-cols-2">
+        {groups.map((group) => (
+          <section
+            key={group.id}
+            aria-label={group.title}
+            className="min-w-0 overflow-hidden rounded-2xl border border-stone-800 bg-stone-950/75"
+          >
+            <header className="border-b border-stone-800 px-5 py-4">
+              <h3 className="text-sm font-black uppercase tracking-[0.12em] text-white">
+                {group.title}
+              </h3>
+            </header>
+
+            {group.rows.length === 0 ? (
+              <p className="p-5 text-xs leading-6 text-stone-500">
+                {group.empty}
+              </p>
+            ) : (
+              <div className="divide-y divide-stone-900">
+                {group.rows.map((item) => (
+                  <article
+                    key={item.workItemId}
+                    className="min-w-0 p-5"
+                  >
+                    <div className="flex min-w-0 flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+                      <div className="min-w-0">
+                        <p className="break-words text-sm font-black text-white">
+                          {item.title}
+                        </p>
+                        <p className="mt-1 break-all font-mono text-[10px] text-stone-600">
+                          {item.workItemId}
+                        </p>
+                        <p className="mt-1 break-all font-mono text-[10px] text-stone-600">
+                          Matter: {item.caseMatterId}
+                        </p>
+                      </div>
+
+                      <StatePill state={item.status} />
+                    </div>
+
+                    <div className="mt-3 grid gap-2 text-[11px] text-stone-500 sm:grid-cols-2">
+                      <span className="break-words">
+                        Source: {item.sourceKind}
+                      </span>
+                      <span className="break-words sm:text-right">
+                        Due: {item.dueAt ? formatTimestamp(item.dueAt) : 'No operational due time'}
+                      </span>
+                    </div>
+                  </article>
+                ))}
+              </div>
+            )}
+          </section>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+
 function ConflictReviewQueue({ screenings, onRefresh }) {
   const [drafts, setDrafts] = useState({});
   const [reviewStates, setReviewStates] = useState({});
@@ -3154,6 +3399,13 @@ function LegalPracticeWorkspace({
     { id: PRACTICE_WORKSPACE_VIEWS.DOCUMENTS, label: 'Process Documents', icon: FileText },
     { id: PRACTICE_WORKSPACE_VIEWS.SERVICE, label: 'Service Operations', icon: Clock3 },
     { id: PRACTICE_WORKSPACE_VIEWS.RETURNS, label: 'Returns of Service', icon: FileCheck2 },
+    ...(presentationAllowsPermission({
+      roleToken,
+      user,
+      permission: PRESENTATION_PERMISSIONS.PRODUCTIVE_WORK_READ,
+    })
+      ? [{ id: 'PRODUCTIVE_WORK', label: 'My Work', icon: ClipboardList }]
+      : []),
     ...(canReadDeadline ? [{ id: PRACTICE_WORKSPACE_VIEWS.DEADLINES, label: 'Deadlines', icon: Clock3 }] : []),
     ...(canOpenFinance ? [{ id: PRACTICE_WORKSPACE_VIEWS.FINANCE, label: 'Finance Evidence', icon: Landmark }] : []),
     ...(canIntake ? [{ id: PRACTICE_WORKSPACE_VIEWS.INTAKE, label: 'New Instruction', icon: FilePlus2 }] : []),
@@ -3294,6 +3546,8 @@ function LegalPracticeWorkspace({
         />
       </div>
     );
+  } else if (!error && activeView === 'PRODUCTIVE_WORK') {
+    content = <ProductiveWorkPanel />;
   } else if (!error && activeView === PRACTICE_WORKSPACE_VIEWS.MATTERS) {
     content = (
       <MatterOperationsPanel
