@@ -1350,11 +1350,16 @@ async def discover(request: DiscoverRequest):
             detail="Database error during tenant discovery. Please try again later.",
         )
     except TenantRegistryError as e:
+        if str(e) == "TENANT_REGISTRY_CANONICAL_NOT_FOUND":
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="Tenant not found",
+            ) from e
         _log_error(e, "DISCOVER_DB_ERROR")
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail="Database error during tenant discovery. Please try again later.",
-        )
+        ) from e
     except HTTPException:
         raise
     except Exception as e:
