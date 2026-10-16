@@ -1,14 +1,15 @@
 /**
  * WILSY OS — PRODUCTION LEGAL OPERATIONS WORKSPACE CERTIFICATE
- * VERSION: v1.9.0-LEGAL-EVIDENCE-UPLOAD-WORKSPACE-CERT
+ * VERSION: v1.10.0-PRACTICE-CONFLICT-REVIEW-PRESENTATION-PARITY-CERT
  * AUTHORITY: Browser presentation/wiring certificate only.
  * EPITOME: Proves law-firm and finance roles resolve to real WILSY Legal OS
  *          workspaces backed by the D15 V2 first-class matter contract, with
  *          functional lifecycle navigation, governed intake, ReturnOfService generation, exact
  *          finance lookup and no cross-role endpoint fallback.
  * ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/client/src/__tests__/components/legalDashboardPracticeWorkspace.test.jsx
- * CERTIFICATION / UPDATE DATE: 2026-10-12
- * CHANGELOG: 2026-10-12 v1.9.0-LEGAL-EVIDENCE-UPLOAD-WORKSPACE-CERT proves the governed upload workspace appears only for the Partner presentation envelope and remains absent for Attorney without initiating transport.
+ * CERTIFICATION / UPDATE DATE: 2026-10-16
+ * CHANGELOG: 2026-10-16 v1.10.0-PRACTICE-CONFLICT-REVIEW-PRESENTATION-PARITY-CERT proves Paralegal and Secretary retain the readable review queue without a mutation affordance and proves authoritative permission projection can further narrow Partner presentation.
+ *            2026-10-12 v1.9.0-LEGAL-EVIDENCE-UPLOAD-WORKSPACE-CERT proves the governed upload workspace appears only for the Partner presentation envelope and remains absent for Attorney without initiating transport.
  *            2026-09-29 v1.8.0-L10-P2C7V-ADAPTIVE-LEGAL-RUNWAY-CERT proves canonical zero-state runway, permission-scoped intake, compact nonzero signals and absence of the zero KPI strip while preserving attention and operating-room behavior.
  *            2026-09-28 v1.7.0-L10-P2A-ADAPTIVE-TRUST-CENTER-CERT certifies Trust Center closed/sheet/expanded transitions, hover-only trigger feedback, touch and keyboard parity, Escape hierarchy, focus restoration, resilient grids and permission/profile preservation. No browser authority is widened.
  *            2026-09-25 v1.5.0-L8-8M-R2-CONFLICT-REVIEW-COCKPIT-CERT certifies canonical conflict-screening queue loading, REVIEW_REQUIRED-only presentation, bounded four-field human review submission, stable browser review identity, in-flight duplicate blocking, canonical refresh and bounded HTTP failure preservation. No browser authority is widened.
@@ -962,6 +963,44 @@ describe('D15 first-class Legal Matter Operating Room', () => {
     }
   });
 
+  it.each(['LEGAL_PARALEGAL', 'LEGAL_SECRETARY'])(
+    'keeps the conflict queue readable but removes review mutation for %s',
+    async (roleView) => {
+      getLegalPracticeWorkspace.mockResolvedValueOnce(practiceWorkspace());
+      getLegalConflictScreenings.mockResolvedValueOnce(conflictScreeningQueue());
+
+      render(<LegalDashboard roleView={roleView} />);
+
+      expect(await screen.findByText('Conflict review queue')).toBeInTheDocument();
+      expect(screen.getAllByText('CASE-2026-0001').length).toBeGreaterThan(0);
+      expect(
+        screen.queryByRole('button', { name: 'Review Conflict' }),
+      ).not.toBeInTheDocument();
+      expect(issueLegalConflictReview).not.toHaveBeenCalled();
+    },
+  );
+
+  it('lets an authoritative permission projection narrow Partner conflict review', async () => {
+    getLegalPracticeWorkspace.mockResolvedValueOnce(practiceWorkspace());
+    getLegalConflictScreenings.mockResolvedValueOnce(conflictScreeningQueue());
+
+    render(
+      <LegalDashboard
+        roleView="LEGAL_PARTNER"
+        user={{
+          legalPermissionsAuthoritative: true,
+          permissions: ['legal_operations:instruction:read'],
+        }}
+      />,
+    );
+
+    expect(await screen.findByText('Conflict review queue')).toBeInTheDocument();
+    expect(
+      screen.queryByRole('button', { name: 'Review Conflict' }),
+    ).not.toBeInTheDocument();
+    expect(issueLegalConflictReview).not.toHaveBeenCalled();
+  });
+
   it('keeps one review identity and blocks duplicate dispatch while the command is pending', async () => {
     getLegalPracticeWorkspace.mockResolvedValue(practiceWorkspace());
     getLegalConflictScreenings.mockResolvedValue(conflictScreeningQueue());
@@ -1123,8 +1162,9 @@ describe('D15 first-class Legal Matter Operating Room', () => {
 
 /**
  * ARTIFACT: legalDashboardPracticeWorkspace.test.jsx
- * VERSION: v1.9.0-LEGAL-EVIDENCE-UPLOAD-WORKSPACE-CERT
- * CHANGELOG: 2026-10-12 v1.9.0-LEGAL-EVIDENCE-UPLOAD-WORKSPACE-CERT proves Partner-only presentation without browser authority expansion.
+ * VERSION: v1.10.0-PRACTICE-CONFLICT-REVIEW-PRESENTATION-PARITY-CERT
+ * CHANGELOG: 2026-10-16 v1.10.0-PRACTICE-CONFLICT-REVIEW-PRESENTATION-PARITY-CERT proves exact role-envelope and authoritative-permission narrowing for conflict-review mutation without removing readable screening truth.
+ *            2026-10-12 v1.9.0-LEGAL-EVIDENCE-UPLOAD-WORKSPACE-CERT proves Partner-only presentation without browser authority expansion.
  *            2026-09-28 v1.6.0-L10-P1-LEGAL-COMMAND-CENTER-CERT adds behavioral proof for the compact canonical attention queue, loaded-workspace matter quick view, Matter Operating Room handoff, zero-state truthfulness and Ctrl+K/Escape search behavior without widening browser authority or transport scope.
  * AUTHORITY BOUNDARY: law-firm/finance presentation and governed command wiring certificate only; D18 posture text reports provenance/effective lanes but neither it nor D17/browser permission hints can widen the canonical role envelope or prove authorization
  * TENANT POSTURE: server-authorized adapter packets only; no browser authority scope

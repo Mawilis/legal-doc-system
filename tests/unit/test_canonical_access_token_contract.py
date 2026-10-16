@@ -1,15 +1,16 @@
 """WILSY OS canonical access-token issuance and verification certificate.
 
 TITLE: Canonical Access-Token Contract Certificate
-VERSION: v1.4.0-D21B7-TENANT-BRANDING-WORKSPACE-HTTP-PROJECTION-CERT
+VERSION: v1.5.0-LEGAL-CONFLICT-REVIEW-PRESENTATION-PROJECTION-CERT
 AUTHORITY: Deterministic token interoperability evidence only.
 EPITOME: Proves MFA/login issuance and EOS protected-route verification share
          one cryptographic owner, one secret authority, and one claim contract.
 ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/tests/unit/test_canonical_access_token_contract.py
 COLLABORATION / OWNERSHIP: Exercises AuthRegistry, jwt_provider,
                            get_current_identity, and workspace-bootstrap transport.
-CERTIFICATION / UPDATE DATE: 2026-09-24
-CHANGELOG: v1.4.0-D21B7-TENANT-BRANDING-WORKSPACE-HTTP-PROJECTION-CERT reconciles workspace-bootstrap transport with D21B7 by requiring an explicit server-owned workspace.branding field, using null as authoritative lawful no-branding in legacy authority fixtures, and preventing the compatibility certificate from invoking live branding persistence. D21B7's dedicated certificate separately proves configured-branding transport, transaction retry and bounded outage semantics.
+CERTIFICATION / UPDATE DATE: 2026-10-16
+CHANGELOG: v1.5.0-LEGAL-CONFLICT-REVIEW-PRESENTATION-PROJECTION-CERT proves workspace bootstrap projects the existing conflict-review write authority only after the canonical tenant authorization compositor grants it, without trusting JWT or browser claims.
+           v1.4.0-D21B7-TENANT-BRANDING-WORKSPACE-HTTP-PROJECTION-CERT reconciles workspace-bootstrap transport with D21B7 by requiring an explicit server-owned workspace.branding field, using null as authoritative lawful no-branding in legacy authority fixtures, and preventing the compatibility certificate from invoking live branding persistence. D21B7's dedicated certificate separately proves configured-branding transport, transaction retry and bounded outage semantics.
            v1.3.0-D24A-DURABLE-PRINCIPAL-NAME-PROJECTION-CERT certifies exact durable AuthRegistry firstName/lastName projection after workspace authority revalidation, excludes forged transport identity text, proves malformed optional names are omitted rather than inferred, and proves durable principal outage/mismatch fail closed without adding role, permission, entitlement, legal-command, billing, payment, execution, or settlement authority.
            v1.2.0-D19-CANONICAL-TENANT-PRACTICE-PROFILE-PROJECTION-CERT certifies that workspace-bootstrap projects canonical
            tenant alias, industry, region and sector as descriptive practice
@@ -743,6 +744,7 @@ def test_workspace_bootstrap_projects_exact_authorized_legal_permissions(
     assert payload["workspace"]["businessRole"] == "tenant_legal_partner"
     assert payload["workspace"]["legalPermissions"] == [
         "legal_operations:billing:read",
+        "legal_operations:conflict_review:write",
         "legal_operations:instruction:write",
         "legal_operations:invoice:read",
         "legal_operations:matter_deadline:read",
@@ -887,7 +889,7 @@ def test_workspace_bootstrap_permission_authority_outage_is_bounded_503(
 
 
 # ARTIFACT: test_canonical_access_token_contract.py
-# VERSION: v1.4.0-D21B7-TENANT-BRANDING-WORKSPACE-HTTP-PROJECTION-CERT
+# VERSION: v1.5.0-LEGAL-CONFLICT-REVIEW-PRESENTATION-PROJECTION-CERT
 # AUTHORITY BOUNDARY: deterministic token interoperability plus bounded server-owned workspace Legal permission, D21B7 branding presence/absence transport, durable descriptive principal-name, and canonical tenant practice-profile projection evidence only
 # TENANT POSTURE: exact tenant claim is preserved; durable membership remains downstream
 # FAIL-CLOSED POSTURE: missing configuration, malformed claims, expiry, signatures, inactive principals, workspace authority drift, permission/profile/branding-authority outage or mismatch, malformed optional name text, or attempts to infer names/plan/subscription/operating-model/branding authority deny or remain excluded

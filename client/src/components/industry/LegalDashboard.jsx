@@ -1,6 +1,6 @@
 /**
  * WILSY OS — ROLE-SCOPED LEGAL OPERATIONS COCKPIT
- * VERSION: v12.8.0-LEGAL-EVIDENCE-UPLOAD-WORKSPACE
+ * VERSION: v12.9.0-PRACTICE-CONFLICT-REVIEW-PRESENTATION-PARITY
  * AUTHORITY: Presentation of authenticated Python-EOS Legal Operations truth.
  * EPITOME: One role-aware WILSY Legal OS surface for legal-practice operators,
  *          finance, sheriff, deputy and client personas. Law-firm roles receive
@@ -19,8 +19,9 @@
  *                            authenticated snapshot transport; D7 owns browser
  *                            validation. This component owns responsive
  *                            presentation and deputy observation capture only.
- * CERTIFICATION / UPDATE DATE: 2026-10-12
- * CHANGELOG: 2026-10-12 v12.8.0-LEGAL-EVIDENCE-UPLOAD-WORKSPACE adds a Partner-only, permission-narrowed upload control for already-visible canonical ProcessDocuments, with pending/failure/reconciliation states and mandatory canonical refresh after committed success.
+ * CERTIFICATION / UPDATE DATE: 2026-10-16
+ * CHANGELOG: 2026-10-16 v12.9.0-PRACTICE-CONFLICT-REVIEW-PRESENTATION-PARITY preserves the readable conflict-screening queue for every certified Practice persona while exposing the human review mutation only inside the canonical Partner/Attorney role envelope and allowing authoritative server permission projection to narrow it further. Python EOS remains the sole authorization authority.
+ *            2026-10-12 v12.8.0-LEGAL-EVIDENCE-UPLOAD-WORKSPACE adds a Partner-only, permission-narrowed upload control for already-visible canonical ProcessDocuments, with pending/failure/reconciliation states and mandatory canonical refresh after committed success.
  *            2026-10-11 v12.7.0-LEGAL-CLIENT-ACCEPTANCE-REVIEW adds a write-gated evidenced deadline form for Partner/Attorney/Paralegal only, dispatches the strict D4A ACTIVE create contract, requires canonical refresh before success, and keeps Secretary read-only without browser lifecycle, tenant, AI or financial authority.
  *            2026-10-11 v12.5.0-D4B-MATTER-DEADLINE-WORK-QUEUE adds an on-demand practice deadline work queue backed only by the certified D4A/D3B1 transport, permission-gated to the frozen deadline-read role envelope, with exact matter correlation and no browser legal-period or overdue inference.
  *            2026-09-29 v12.4.0-L10-P2C7V-ADAPTIVE-LEGAL-RUNWAY removes the Legal Practice zero-card strip, presents a canonical empty-workspace operating runway, and renders nonzero signals as a compact adaptive ribbon. It preserves attention-first ordering, role-scoped actions, authenticated tenant-branding presentation and all Python EOS authority boundaries.
@@ -165,7 +166,7 @@ import WilsyAccountCommandCenter from '../account/WilsyAccountCommandCenter.jsx'
 import { useAuth } from '../../contexts/authContext.jsx';
 import { useAuthenticatedTenantBrandingAsset } from '../../hooks/useAuthenticatedTenantBrandingAsset.js';
 
-const DASHBOARD_VERSION = 'v12.8.0-LEGAL-EVIDENCE-UPLOAD-WORKSPACE';
+const DASHBOARD_VERSION = 'v12.9.0-PRACTICE-CONFLICT-REVIEW-PRESENTATION-PARITY';
 
 const EMPTY_QUEUES = Object.freeze({
   tenantId: '',
@@ -282,6 +283,7 @@ const PRESENTATION_PERMISSIONS = Object.freeze({
   DEADLINE_WRITE: 'legal_operations:matter_deadline:write',
   EVIDENCE_WRITE: 'legal_operations:evidence:write',
   PRODUCTIVE_WORK_READ: 'legal_operations:productive_work:read',
+  CONFLICT_REVIEW_WRITE: 'legal_operations:conflict_review:write',
 });
 
 const ROLE_PRESENTATION_PERMISSION_ENVELOPE = Object.freeze({
@@ -294,6 +296,7 @@ const ROLE_PRESENTATION_PERMISSION_ENVELOPE = Object.freeze({
     PRESENTATION_PERMISSIONS.DEADLINE_WRITE,
     PRESENTATION_PERMISSIONS.EVIDENCE_WRITE,
     PRESENTATION_PERMISSIONS.PRODUCTIVE_WORK_READ,
+    PRESENTATION_PERMISSIONS.CONFLICT_REVIEW_WRITE,
   ]),
   LEGAL_ATTORNEY: Object.freeze([
     PRESENTATION_PERMISSIONS.INSTRUCTION_WRITE,
@@ -303,6 +306,7 @@ const ROLE_PRESENTATION_PERMISSION_ENVELOPE = Object.freeze({
     PRESENTATION_PERMISSIONS.DEADLINE_READ,
     PRESENTATION_PERMISSIONS.DEADLINE_WRITE,
     PRESENTATION_PERMISSIONS.PRODUCTIVE_WORK_READ,
+    PRESENTATION_PERMISSIONS.CONFLICT_REVIEW_WRITE,
   ]),
   LEGAL_PARALEGAL: Object.freeze([
     PRESENTATION_PERMISSIONS.INSTRUCTION_WRITE,
@@ -2295,7 +2299,7 @@ function ProductiveWorkPanel() {
 }
 
 
-function ConflictReviewQueue({ screenings, onRefresh }) {
+function ConflictReviewQueue({ canReview, screenings, onRefresh }) {
   const [drafts, setDrafts] = useState({});
   const [reviewStates, setReviewStates] = useState({});
   const pendingIds = useRef(new Set());
@@ -2427,15 +2431,17 @@ function ConflictReviewQueue({ screenings, onRefresh }) {
                 </p>
               </div>
               <StatePill state={screening.status} />
-              <button
-                type="button"
-                aria-expanded={Boolean(draft)}
-                onClick={() => openReview(screening.screeningId)}
-                className="inline-flex min-h-[42px] items-center justify-center gap-2 rounded-lg border border-amber-700/40 bg-amber-500/10 px-4 text-[11px] font-black text-amber-200 transition hover:bg-amber-500/20"
-              >
-                <ShieldCheck size={15} />
-                Review Conflict
-              </button>
+              {canReview && (
+                <button
+                  type="button"
+                  aria-expanded={Boolean(draft)}
+                  onClick={() => openReview(screening.screeningId)}
+                  className="inline-flex min-h-[42px] items-center justify-center gap-2 rounded-lg border border-amber-700/40 bg-amber-500/10 px-4 text-[11px] font-black text-amber-200 transition hover:bg-amber-500/20"
+                >
+                  <ShieldCheck size={15} />
+                  Review Conflict
+                </button>
+              )}
             </div>
 
             {draft && (
@@ -3311,6 +3317,11 @@ function LegalPracticeWorkspace({
     user,
     permission: PRESENTATION_PERMISSIONS.EVIDENCE_WRITE,
   });
+  const canReviewConflict = presentationAllowsPermission({
+    roleToken,
+    user,
+    permission: PRESENTATION_PERMISSIONS.CONFLICT_REVIEW_WRITE,
+  });
   const canOpenFinance = canReadBilling || canReadInvoice;
   const [activeView, setActiveView] = useState(PRACTICE_WORKSPACE_VIEWS.COMMAND);
   const [searchQuery, setSearchQuery] = useState('');
@@ -3533,6 +3544,7 @@ function LegalPracticeWorkspace({
           </>
         )}
         <ConflictReviewQueue
+          canReview={canReviewConflict}
           screenings={conflictScreenings}
           onRefresh={onRefresh}
         />
@@ -4913,7 +4925,7 @@ export default function LegalDashboard({
 
 /**
  * ARTIFACT: LegalDashboard.jsx
- * VERSION: v12.8.0-LEGAL-EVIDENCE-UPLOAD-WORKSPACE
+ * VERSION: v12.9.0-PRACTICE-CONFLICT-REVIEW-PRESENTATION-PARITY
  * AUTHORITY BOUNDARY: governed Legal Practice/Finance/SHERIFF/DEPUTY/LEGAL_CLIENT presentation plus already-authorized intake, ReturnOfService, bounded human conflict-review command initiation and bound-Deputy command initiation only; D24C authenticated person names and L8-8M conflict-review controls are descriptive/wiring projections that create no identity, membership, role, permission, tenant, operating-model, conflict clearance, waiver or financial authority; Python EOS owns authorization and legal truth
  * TENANT POSTURE: every data surface remains server-authorized and tenant-scoped; practice workspace is D15 snapshot truth with first-class CaseMatter evidence, client matters are D5/D7 visibility-bound, deputy commands require exact capability parity
  * FAIL-CLOSED POSTURE: unresolved role, malformed/absent person-name text, explicit or server-authoritative legal-permission narrowing, denied/unavailable workspace/client/specialist read, malformed finance/intake/return/field evidence, command failure or failed refresh never invents names or truth, widens role scope, fabricates operating-model authority or cross-role fallback

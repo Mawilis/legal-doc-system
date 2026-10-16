@@ -1,14 +1,15 @@
 /**
  * TITLE: WILSY OS Authoritative Browser Authentication Context
- * VERSION: v56.0.0-L10-P2C6-BRANDING-AUTHORITY-REFRESH
+ * VERSION: v57.0.0-LEGAL-CONFLICT-REVIEW-PRESENTATION-PROJECTION
  * AUTHORITY: Wilsy OS Core Governance
  * EPITOME: Represents server-issued authentication and MFA challenge state
  *          without fabricating tenant, role, permission, or enrollment truth.
  * ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/client/src/contexts/authContext.jsx
  * COLLABORATION / OWNERSHIP: Python EOS auth_router owns credential/MFA truth;
  *                            this context owns browser projection and navigation state.
- * CERTIFICATION / UPDATE DATE: 2026-09-24
- * CHANGELOG: v56.0.0-L10-P2C6-BRANDING-AUTHORITY-REFRESH — Exposes a
+ * CERTIFICATION / UPDATE DATE: 2026-10-16
+ * CHANGELOG: v57.0.0-LEGAL-CONFLICT-REVIEW-PRESENTATION-PROJECTION — Accepts the canonical conflict-review write permission in the closed workspace Legal presentation set. The permission remains server-derived, exact, and non-authorizing in the browser; unknown, duplicate, or malformed values still fail closed.
+ *            v56.0.0-L10-P2C6-BRANDING-AUTHORITY-REFRESH — Exposes a
  *            server-revalidated workspace refresh seam for branding-management
  *            mutations; management responses never become AuthContext authority.
  *            v55.0.0-D21B8-TENANT-BRANDING-AUTHCONTEXT-PROJECTION — Accepts tenant branding only from the explicit READY workspace.branding projection produced by D21B7. The field is mandatory: null is authoritative lawful no-branding; configured branding must match the exact D21B6 browser-safe schema, exact tenant, closed tier/media/kind sets, canonical fingerprints/colours, and mandatory WILSY trust mark. Legacy tenant branding aliases are removed before authenticated tenant state is persisted, so discovery/login/MFA/local-storage/JWT branding cannot override Python EOS authority.
@@ -51,6 +52,7 @@ import React, { createContext, useCallback, useContext, useEffect, useMemo, useS
 import api from '@/services/api';
 
 const LEGAL_PRESENTATION_PERMISSION_SET = new Set([
+  'legal_operations:conflict_review:write',
   'legal_operations:instruction:write',
   'legal_operations:return:write',
   'legal_operations:billing:read',
@@ -874,12 +876,13 @@ export default AuthContext;
 
 /**
  * ARTIFACT: client/src/contexts/authContext.jsx
- * VERSION: v56.0.0-L10-P2C6-BRANDING-AUTHORITY-REFRESH
+ * VERSION: v57.0.0-LEGAL-CONFLICT-REVIEW-PRESENTATION-PROJECTION
  * AUTHORITY BOUNDARY: browser projection only; workspace branding is exact D21B7 presentation provenance, workspace firstName/lastName are descriptive authenticated-person projection, and workspace legalPermissions are presentation provenance from Python EOS; none is browser authorization authority and Python EOS owns authentication/authorization/branding truth
  * TENANT POSTURE: authenticated tenant must match the discovered server-issued tenant and any non-null D21B7 branding tenant must match that exact workspace tenant
  * FAIL-CLOSED POSTURE: unrecognized/incomplete workspace responses, absent/malformed/foreign branding, malformed principal names, and malformed/duplicate/unknown legalPermissions fail closed; explicit branding null is authoritative no-branding, legacy branding aliases are removed, optional names are never inferred, and absent legalPermissions retains legacy role-baseline presentation only
  * FINANCIAL EXECUTION AUTHORITY: none; Kennel EOS remains exclusive
- * CHANGELOG: v56.0.0-L10-P2C6-BRANDING-AUTHORITY-REFRESH — Refreshes exact READY workspace authority after a certified branding mutation request; management response fields never become AuthContext authority.
+ * CHANGELOG: v57.0.0-LEGAL-CONFLICT-REVIEW-PRESENTATION-PROJECTION — Admits only the canonical server-projected conflict-review write permission into the closed Legal presentation set; browser state remains non-authorizing and malformed projections fail closed.
+ *            v56.0.0-L10-P2C6-BRANDING-AUTHORITY-REFRESH — Refreshes exact READY workspace authority after a certified branding mutation request; management response fields never become AuthContext authority.
  *            v55.0.0-D21B8-TENANT-BRANDING-AUTHCONTEXT-PROJECTION — Carries only exact READY workspace.branding into authenticated tenant state, requires explicit null/configured branding provenance, strictly validates the D21B6 schema, strips legacy branding aliases, and prevents discovery/login/MFA/persisted/JWT branding from becoming authenticated authority.
  *            v54.0.0-D24B-AUTHENTICATED-PRINCIPAL-NAME-PROJECTION — Carries only READY workspace-bootstrap firstName/lastName into authenticated browser state; login/MFA/persisted names are never promoted and malformed server name values fail closed.
  *            v53.0.0-D17-SERVER-LEGAL-PERMISSION-PROJECTION — Preserves the bounded server-owned Legal permission

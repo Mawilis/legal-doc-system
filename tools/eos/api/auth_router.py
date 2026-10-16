@@ -1,5 +1,5 @@
 """TITLE: Wilsy OS Authentication Router.
-VERSION: v1.13.0-D21B11-TENANT-BRANDING-ASSET-HTTP
+VERSION: v1.14.0-LEGAL-CONFLICT-REVIEW-PRESENTATION-PROJECTION
 AUTHORITY: Wilsy OS Core Governance.
 EPITOME: Canonical authentication HTTP endpoints, including bounded token verification,
 MFA setup and verification, password-recovery request and reset completion, login,
@@ -7,8 +7,9 @@ discovery, and logout.
 ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/tools/eos/api/auth_router.py
 COLLABORATION / OWNERSHIP: Authentication service and FastAPI server consume this router;
 credential and identity authorities remain in tools.eos.auth.
-CERTIFICATION/UPDATE DATE: 2026-09-24.
+CERTIFICATION/UPDATE DATE: 2026-10-16.
 CHANGELOG:
+  v1.14.0-LEGAL-CONFLICT-REVIEW-PRESENTATION-PROJECTION: Adds the existing legal_operations:conflict_review:write authority to the bounded workspace presentation projection. Every projection remains independently re-evaluated by the canonical tenant authorization compositor, so only currently authorized Partner and Attorney principals receive the browser presentation capability; Paralegal and Secretary remain excluded. This creates no IAM, role, command, conflict decision, billing, payment, execution, or settlement authority.
   v1.13.0-D21B11-TENANT-BRANDING-ASSET-HTTP: Adds authenticated current-branding asset delivery at /auth/workspace-branding/{logo|favicon}. The browser may select only the closed asset kind; tenant, reference, fingerprint and media identity are server-derived from the revalidated workspace and D21B10 current-branding delivery chain. Each bounded attempt owns a fresh read transaction, retries only governed whole-transaction races, and returns exact immutable D21B5B bytes with private/no-store, nosniff and same-origin response headers. Missing current branding/asset returns bounded 404; authority outage/corruption returns 503. No public URL, filesystem path, base64, upload, IAM, legal-command or financial authority is created.
   v1.12.0-D21B7-TENANT-BRANDING-WORKSPACE-HTTP-PROJECTION: Adds the D21B6 current-branding composer to authenticated workspace-bootstrap under a fresh caller-owned Mongo read transaction. Lawful absence is projected explicitly as workspace.branding=null; configured branding is emitted only after current ACTIVE D21B2B entitlement, exact D21B4B current profile/selection, and D21B5B asset correlation. Governed whole-transaction retry is bounded to three fresh sessions; authority outage/corruption fails bounded 503. No raw asset bytes, public URL, browser/JWT/local-storage branding, IAM, legal-command, billing, payment, execution, or settlement authority is created.
   v1.11.0-D24A-DURABLE-PRINCIPAL-NAME-PROJECTION: Re-reads the exact durable AuthRegistry user after workspace-bootstrap has revalidated principal, membership, dedicated business role, and tenant truth, then projects only firstName/lastName as descriptive authenticated-person identity. Missing or tenant/principal-mismatched durable user state fails closed; malformed optional name text is omitted rather than inferred. Names create no membership, role, permission, entitlement, legal-command, billing, payment, execution, or settlement authority.
@@ -88,7 +89,7 @@ FINANCIAL AUTHORITY BOUNDARY: Kennel EOS exclusively owns financial execution.
 
 from __future__ import annotations
 
-VERSION = "v1.13.0-D21B11-TENANT-BRANDING-ASSET-HTTP"
+VERSION = "v1.14.0-LEGAL-CONFLICT-REVIEW-PRESENTATION-PROJECTION"
 
 from fastapi import APIRouter, Depends, HTTPException, Response, status
 from datetime import datetime, timezone
@@ -212,6 +213,7 @@ def _tenant_id_from_user(user: Any) -> str:
 router = APIRouter(prefix="/auth", tags=["Authentication"])
 
 _LEGAL_PRESENTATION_PERMISSION_BINDINGS = (
+    ("legal_operations:conflict_review:write", "legal_conflict_review_write"),
     ("legal_operations:instruction:write", "legal_instruction_write"),
     ("legal_operations:return:write", "legal_return_write"),
     ("legal_operations:billing:read", "legal_billing_read"),
@@ -1378,7 +1380,7 @@ async def logout():
 
 
 # ARTIFACT: auth_router.py
-# VERSION: v1.13.0-D21B11-TENANT-BRANDING-ASSET-HTTP
+# VERSION: v1.14.0-LEGAL-CONFLICT-REVIEW-PRESENTATION-PROJECTION
 # AUTHORITY BOUNDARY: Authentication/recovery/contact-verification HTTP routing and bounded projections only; D21B11 serves only exact current logo/favicon bytes after workspace revalidation plus D21B10/D21B6/D21B5B proof, D21B7 workspace branding is a read-only D21B6 projection after current durable entitlement/profile/asset correlation, D24A names are descriptive durable rereads, workspace legalPermissions remain authorization-compositor presentation outputs, and D19 practice fields remain descriptive; none creates credential, membership, role, permission, entitlement, asset-upload, legal-command, operating-model, billing, payment, execution, settlement, or financial authority.
 # TENANT POSTURE: workspace branding and D21B11 asset bytes are resolved only for the exact server-revalidated tenant under tenant-scoped D21B2B/D21B4B/D21B5B reads; recovery tenant remains lookup scope only and no caller tenant authority is created.
 # FAIL-CLOSED POSTURE: auth fails closed; D21B11 invalid/missing asset returns bounded absence while current-branding outage/corruption fails closed; workspace permission, durable-principal-profile, or configured-branding authority outage/inconsistency fails closed; lawful no-branding is explicit null, never legacy/browser fallback; D24A never infers person names from email/browser state; D19 never infers missing tenant profile values or operating-model authority; recovery initiation is enumeration-safe generic acceptance.
