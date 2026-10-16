@@ -128,7 +128,7 @@ from tools.eos.auth.roles import (
 )
 
 def test_runtime_version_source_is_canonical() -> None:
-    assert POLICY_VERSION == "v1.40.0-LEGAL-NOTIFICATION-RECIPIENT-BINDING-GRANTS"
+    assert POLICY_VERSION == "v1.43.0-PW-P11A-PRODUCTIVE-WORK-READ-GRANTS"
 
 VERSION = "v1.5.0-D3B-AUTH3-MATTER-DEADLINE-ROLE-GRANTS-CERT"
 
@@ -218,7 +218,7 @@ TENANT_PERMISSIONS = {
 
 def test_exact_role_vocabulary_and_grant_matrix() -> None:
     """The closed role map grants only the explicitly approved capabilities."""
-    assert ROLE_PERMISSIONS_MAP["ENTERPRISE_ADMIN"] == EXPECTED_ROLE_PERMISSIONS["ENTERPRISE_ADMIN"] + ["subscription:read", "subscription:manage", "plan:read", "plan:manage", "wilsy_ai:usage_capacity:read", "billing_intelligence:evidence:read", "platform_billing:release", "tenant:business_role:read", "tenant:business_role:write", "tenant_branding:read", "tenant_branding:profile:manage", "tenant_branding:asset:manage", "crm:lead:create", "crm:lead:read", "crm:email_template:create", "crm:email_template:read", "crm:email_template:revise", "crm:email_template:archive", "crm:email_template:copy", "crm:email_template:share", "wilsy_ai:reasoning:execute", "tenant_product_entitlement:issue", "wilsy_ai:legal_services:execute"]
+    assert ROLE_PERMISSIONS_MAP["ENTERPRISE_ADMIN"] == EXPECTED_ROLE_PERMISSIONS["ENTERPRISE_ADMIN"] + ["subscription:read", "subscription:manage", "plan:read", "plan:manage", "wilsy_ai:usage_capacity:read", "billing_intelligence:evidence:read", "platform_billing:release", "tenant:business_role:read", "tenant:business_role:write", "tenant_branding:read", "tenant_branding:profile:manage", "tenant_branding:asset:manage", "legal_operations:operating_model:manage", "crm:lead:create", "crm:lead:read", "crm:email_template:create", "crm:email_template:read", "crm:email_template:revise", "crm:email_template:archive", "crm:email_template:copy", "crm:email_template:share", "legal_operations:workflow_activation:manage", "wilsy_ai:reasoning:execute", "tenant_product_entitlement:issue", "wilsy_ai:legal_services:execute"]
     assert ROLE_PERMISSIONS_MAP["AUDITOR"] == EXPECTED_ROLE_PERMISSIONS["AUDITOR"] + ["subscription:read", "plan:read", "wilsy_ai:usage_capacity:read", "billing_intelligence:evidence:read", "tenant:business_role:read", "tenant_branding:read", "crm:lead:read", "crm:email_template:read"]
 
 
@@ -240,6 +240,12 @@ def test_legal_role_grants_are_explicit_and_least_authority() -> None:
         "legal_operations:allocation:read", "legal_operations:allocation:write",
         "legal_operations:attempt:read", "legal_operations:return:read",
         "legal_operations:billing:read", "legal_operations:invoice:read",
+        "legal_operations:matter_workflow:read",
+        "legal_operations:matter_workflow:instantiate",
+        "legal_operations:matter_workflow:transition",
+        "legal_operations:work_item:read",
+        "legal_operations:work_item:write",
+        "legal_operations:productive_work:read",
         "legal_operations:return:write",
         "wilsy_ai:legal_tool:read",
         "wilsy_ai:legal_services:execute",
