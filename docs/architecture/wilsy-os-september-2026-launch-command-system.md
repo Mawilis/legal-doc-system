@@ -1,9 +1,10 @@
 # WILSY OS — SEPTEMBER 2026 LAUNCH COMMAND SYSTEM
 
-Version: v1.0.2-SEPTEMBER-2026-LAUNCH-COMMAND
+Version: v1.0.3-SEPTEMBER-2026-LAUNCH-COMMAND
 Authority: Wilsy OS Core Governance
 Target: online by 2026-09-30
 Status: executable program command; implementation gaps remain explicit
+Changelog: v1.0.3 separates the WILSY OS Product Storefront from the WILSY Corporate Public Surface, records the certified Legal Storefront public-intent backend/client gap, and preserves commercial, tenant and financial authority boundaries.
 
 ## Launch constitution
 
@@ -29,7 +30,8 @@ Wilsy OS all-or-nothing means no orphaned architecture, not unsafe big-bang comm
 | Legal/documents | server/client legal and document surfaces | EMERGING CANONICAL | map persistence and evidence owners |
 | Client dashboards | `client/src` | PROJECTION / CLIENT SURFACE | wire to canonical APIs, never local truth |
 | Intelligence/AI/knowledge/search | `tools/eos/intelligence`, `tools/eos/knowledge`, executive engines | EMERGING CANONICAL / PROJECTION | operate Intelligence Dock in parallel |
-| Public website/storefront | client public surfaces and marketing assets | PROJECTION | publish acquisition routes without owning pricing or billing truth |
+| WILSY OS Product Storefront | certified Python EOS Legal public-intent backend; browser storefront client projection still pending | PROJECTION / PARTIAL IMPLEMENTATION | publish bounded acquisition intent without owning pricing, subscription, tenant-genesis, billing or financial truth |
+| WILSY Corporate Public Surface | corporate identity evidence exists; dedicated public corporate site/storefront not yet implemented | PUBLIC CORPORATE PROJECTION / ROADMAP | present corporate identity, ownership/IP, governance and public engagement without inheriting WILSY OS tenant or product authority |
 | Identity/tenant/subscription | server auth, tenant, subscription services | CANONICAL / EMERGING CANONICAL | make genesis path idempotent and auditable |
 | Notifications/integrations/payments | server adapters and provider seams | ADAPTER / EXTERNAL CAPABILITY | return evidence, never canonical settlement |
 | CI/CD/deployment/observability | `.github/workflows`, Docker, `infra`, `k8s` | CANONICAL CONTROL PLANE | gate zero-skip certification and health |
@@ -45,6 +47,25 @@ persona, canonical source, CTA/conversion event, backend and tenant dependency,
 Intelligence Dock relationship, SEO/structured-data, WCAG, performance, trust,
 and legal/privacy requirements. The storefront is a public projection, never
 canonical pricing, subscription, tenant, or financial truth.
+
+## WILSY Corporate public-surface command
+
+WILSY Corporate and the WILSY OS Product Storefront are separate public-surface
+programs.
+
+- WILSY Corporate owns public company presentation: corporate identity,
+  ownership/IP portfolio, governance, public contact and future investor,
+  partner, careers and separately governed corporate commerce/enquiry surfaces.
+- The WILSY OS Product Storefront owns public product presentation and bounded
+  acquisition intent into WILSY OS.
+- Corporate presentation creates no tenant, IAM, subscription, Legal lifecycle,
+  billing, payment, settlement or product-execution authority.
+- Product Storefront presentation creates no pricing, plan, subscription,
+  tenant-genesis, payment or settlement truth.
+- Until production domains are registered and authoritative DNS is certified,
+  `wilsy.invalid`, `store.wilsy.invalid`, `wilsyos.invalid`,
+  `store.wilsyos.invalid`, `app.wilsyos.invalid` and `api.wilsyos.invalid`
+  are development/certification placeholders only.
 
 ## Tenant genesis command
 
@@ -110,7 +131,7 @@ NO-GO until resolved.
 ## Sovereign EOF seal
 
 Artifact: `wilsy-os-september-2026-launch-command-system.md`
-Version: `v1.0.2-SEPTEMBER-2026-LAUNCH-COMMAND`
+Version: `v1.0.3-SEPTEMBER-2026-LAUNCH-COMMAND`
 Authority: Wilsy OS Core Governance
 Runtime posture: implementation-aware; no runtime mutation
 Financial authority: Kennel EOS exclusively
