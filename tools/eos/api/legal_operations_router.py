@@ -123,6 +123,7 @@ FAIL-CLOSED DECLARATION: Missing or mismatched practice authority, unavailable
 from __future__ import annotations
 
 import re
+from datetime import UTC, datetime
 from typing import Any, Callable, Final, TypeVar
 
 from fastapi import APIRouter, Depends, HTTPException, Query, status
@@ -162,6 +163,43 @@ from tools.eos.legal_operations.registry.legal_client_matter_visibility_registry
 from tools.eos.legal_operations.registry.legal_operations_lifecycle_registry import (
     COLLECTION as LIFECYCLE_COLLECTION,
     LegalOperationsLifecycleRegistry,
+)
+
+from tools.eos.legal_operations.registry.legal_work_item_registry import (
+    COLLECTION_NAME as LEGAL_WORK_ITEM_COLLECTION,
+    LegalWorkItemRegistry,
+)
+from tools.eos.legal_operations.registry.legal_work_assignment_registry import (
+    COLLECTION_NAME as LEGAL_WORK_ASSIGNMENT_COLLECTION,
+    LegalWorkAssignmentRegistry,
+)
+from tools.eos.legal_operations.registry.legal_work_supervision_binding_registry import (
+    COLLECTION_NAME as LEGAL_WORK_SUPERVISION_COLLECTION,
+    LegalWorkSupervisionBindingRegistry,
+)
+from tools.eos.legal_operations.registry.legal_operating_role_definition_registry import (
+    COLLECTION_NAME as LEGAL_OPERATING_ROLE_DEFINITION_COLLECTION,
+    LegalOperatingRoleDefinitionRegistry,
+)
+from tools.eos.legal_operations.registry.legal_operating_role_capability_binding_registry import (
+    COLLECTION_NAME as LEGAL_OPERATING_ROLE_CAPABILITY_COLLECTION,
+    LegalOperatingRoleCapabilityBindingRegistry,
+)
+from tools.eos.legal_operations.registry.legal_operating_role_scope_binding_registry import (
+    COLLECTION_NAME as LEGAL_OPERATING_ROLE_SCOPE_COLLECTION,
+    LegalOperatingRoleScopeBindingRegistry,
+)
+from tools.eos.legal_operations.registry.legal_principal_operating_role_binding_registry import (
+    COLLECTION_NAME as LEGAL_PRINCIPAL_OPERATING_ROLE_COLLECTION,
+    LegalPrincipalOperatingRoleBindingRegistry,
+)
+from tools.eos.legal_operations.service.legal_productive_work_operating_context_hydrator import (
+    LegalProductiveWorkOperatingContextHydrator,
+    LegalProductiveWorkOperatingContextHydratorError,
+)
+from tools.eos.legal_operations.service.legal_profile_productive_work_read_service import (
+    LegalProductiveWorkReadService,
+    LegalProductiveWorkReadServiceError,
 )
 from tools.eos.legal_operations.registry.legal_conflict_screening_registry import (
     COLLECTION as LEGAL_CONFLICT_SCREENING_COLLECTION,
@@ -557,6 +595,179 @@ def _resource(
         "history": [_project(value) for value in model.history],
     }
 
+
+_PRODUCTIVE_WORK_READ = RequireTenantAuthorization(
+    "legal_operations:productive_work:read",
+    "legal_productive_work_read",
+)
+
+_PRODUCTIVE_WORK_HTTP_VERSION: Final[str] = (
+    "v1.0.0-PW-P11B-AUTHENTICATED-PRODUCTIVE-WORK-READ-API"
+)
+
+
+def _productive_work_service(
+    database: Any,
+) -> LegalProductiveWorkReadService:
+    """Compose existing durable PW-P4/P7B readers for one request database."""
+
+    context_hydrator = LegalProductiveWorkOperatingContextHydrator(
+        principal_operating_role_registry=(
+            LegalPrincipalOperatingRoleBindingRegistry(
+                database.get_collection(
+                    LEGAL_PRINCIPAL_OPERATING_ROLE_COLLECTION
+                )
+            )
+        ),
+        operating_role_definition_registry=(
+            LegalOperatingRoleDefinitionRegistry(
+                database.get_collection(
+                    LEGAL_OPERATING_ROLE_DEFINITION_COLLECTION
+                )
+            )
+        ),
+        operating_role_capability_registry=(
+            LegalOperatingRoleCapabilityBindingRegistry(
+                database.get_collection(
+                    LEGAL_OPERATING_ROLE_CAPABILITY_COLLECTION
+                )
+            )
+        ),
+        operating_role_scope_registry=(
+            LegalOperatingRoleScopeBindingRegistry(
+                database.get_collection(
+                    LEGAL_OPERATING_ROLE_SCOPE_COLLECTION
+                )
+            )
+        ),
+    )
+
+    return LegalProductiveWorkReadService(
+        work_item_registry=LegalWorkItemRegistry(
+            database.get_collection(
+                LEGAL_WORK_ITEM_COLLECTION
+            )
+        ),
+        assignment_registry=LegalWorkAssignmentRegistry(
+            database.get_collection(
+                LEGAL_WORK_ASSIGNMENT_COLLECTION
+            )
+        ),
+        supervision_registry=LegalWorkSupervisionBindingRegistry(
+            database.get_collection(
+                LEGAL_WORK_SUPERVISION_COLLECTION
+            )
+        ),
+        operating_context_hydrator=context_hydrator,
+    )
+
+
+def _productive_work_projection_transaction(
+    callback: Callable[[Any, Any], _T],
+) -> _T:
+    """Run productive-work reconstruction in one API-owned snapshot transaction."""
+
+    client, database = _db_handles()
+
+    if client is None or database is None:
+        raise HTTPException(
+            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+            detail="LEGAL_OPERATIONS_PERSISTENCE_UNAVAILABLE",
+        )
+
+    try:
+        with client.start_session() as session:
+            session.start_transaction(
+                read_concern=ReadConcern("snapshot")
+            )
+
+            try:
+                result = callback(
+                    session,
+                    database,
+                )
+                session.commit_transaction()
+                return result
+            except Exception:
+                if bool(
+                    getattr(
+                        session,
+                        "in_transaction",
+                        False,
+                    )
+                ):
+                    session.abort_transaction()
+                raise
+    except (
+        HTTPException,
+        LegalProductiveWorkReadServiceError,
+        LegalProductiveWorkOperatingContextHydratorError,
+    ):
+        raise
+    except Exception as error:
+        raise HTTPException(
+            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+            detail="LEGAL_OPERATIONS_PERSISTENCE_UNAVAILABLE",
+        ) from error
+
+
+def _productive_work_payload(
+    projection: Any,
+) -> dict[str, object]:
+    """Project only the certified daily-work read model; create no authority."""
+
+    return {
+        "schema": projection.schema,
+        "version": projection.version,
+        "http_version": _PRODUCTIVE_WORK_HTTP_VERSION,
+        "tenant_id": projection.tenant_id,
+        "principal_id": projection.principal_id,
+        "as_of": projection.as_of.isoformat(),
+        "operating_contexts": [
+            {
+                "operating_role_id": value.operating_role_id,
+                "operating_role_revision": value.operating_role_revision,
+                "display_name": value.display_name,
+                "capability_ids": list(
+                    value.capability_ids
+                ),
+                "office_references": list(
+                    value.office_references
+                ),
+                "practice_references": list(
+                    value.practice_references
+                ),
+                "business_unit_references": list(
+                    value.business_unit_references
+                ),
+                "jurisdiction_references": list(
+                    value.jurisdiction_references
+                ),
+            }
+            for value in projection.operating_contexts
+        ],
+        "capability_ids": list(
+            projection.capability_ids
+        ),
+        "assigned_work_items": [
+            value.to_dict()
+            for value in projection.assigned_work_items
+        ],
+        "supervised_work_items": [
+            value.to_dict()
+            for value in projection.supervised_work_items
+        ],
+        "overdue_work_items": [
+            value.to_dict()
+            for value in projection.overdue_work_items
+        ],
+        "due_soon_work_items": [
+            value.to_dict()
+            for value in projection.due_soon_work_items
+        ],
+    }
+
+
 _INSTRUCTION_READ = RequireTenantAuthorization(
     "legal_operations:instruction:read",
     "legal_instruction_read",
@@ -587,6 +798,57 @@ _CLIENT_MATTER_READ = RequireTenantAuthorization(
 )
 
 router = APIRouter(prefix="/legal-operations", tags=["Legal Operations"])
+
+
+@router.get("/productive-work")
+async def get_legal_productive_work_projection(
+    context: TenantAuthorizationContext = Depends(
+        _PRODUCTIVE_WORK_READ
+    ),
+) -> dict[str, object]:
+    """Return the authenticated principal's durable own-tenant productive work.
+
+    Admission is the exact PW-P11A permission/operation conjunction. Tenant and
+    principal scope come only from the authenticated TenantAuthorizationContext;
+    the route accepts no alternate principal, tenant, role, assignment,
+    supervision, workflow, approval, billing, payment, execution or settlement
+    authority.
+
+    One API-owned snapshot transaction is propagated unchanged through the
+    canonical PW-P4 read service and PW-P7B CX27 operating-context hydrator.
+    Operating-role, capability and scope metadata remain descriptive and
+    non-authorizing. Sheriff and Deputy specialized queue surfaces are separate.
+    """
+
+    def run(
+        session: Any,
+        database: Any,
+    ) -> dict[str, object]:
+        projection = _productive_work_service(
+            database
+        ).project(
+            tenant_id=context.tenant_id,
+            principal_id=context.identity.identity_id,
+            as_of=datetime.now(UTC),
+            session=session,
+        )
+
+        return _productive_work_payload(
+            projection
+        )
+
+    try:
+        return _productive_work_projection_transaction(
+            run
+        )
+    except (
+        LegalProductiveWorkReadServiceError,
+        LegalProductiveWorkOperatingContextHydratorError,
+    ) as error:
+        raise HTTPException(
+            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+            detail="LEGAL_OPERATIONS_PRODUCTIVE_WORK_EVIDENCE_UNAVAILABLE",
+        ) from error
 
 
 @router.get("/workspace")
@@ -1018,6 +1280,7 @@ __all__ = [
     "get_legal_client_matter_projection_route",
     "get_legal_conflict_screening_review_queue",
     "get_legal_practice_workspace_projection",
+    "get_legal_productive_work_projection",
     "router",
 ]
 

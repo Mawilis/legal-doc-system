@@ -392,7 +392,7 @@ def test_route_permission_and_router_version_are_exact() -> None:
     )
     assert legal_router._DEPUTY_QUEUE_READ.operation == "legal_deputy_queue_read"
     assert legal_router.VERSION == (
-        "v1.5.0-L8-6D-DEPUTY-FIELD-CAPABILITY-READ-API"
+        "v1.10.0-D22B5-R21-LEGAL-PRODUCT-AVAILABILITY-CONJUNCTION"
     )
     assert VERSION == "v1.1.0-L8-6D-DEPUTY-FIELD-CAPABILITY-HTTP-CERT"
 
