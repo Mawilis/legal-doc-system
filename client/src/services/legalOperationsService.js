@@ -213,6 +213,66 @@ const LEGAL_WORKSPACE_V2_VERSION =
 const LEGAL_WORKSPACE_VISIBILITY =
   'LEGAL_PRACTICE_WORKSPACE';
 
+const PRODUCTIVE_WORK_SCHEMA =
+  'WILSY-LEGAL-PROFILE-PRODUCTIVE-WORK/V1';
+const PRODUCTIVE_WORK_VERSION =
+  'v1.0.1-PW-P2-PROFILE-PRODUCTIVE-WORK-COMPOSITION';
+const PRODUCTIVE_WORK_HTTP_VERSION =
+  'v1.0.0-PW-P11B-AUTHENTICATED-PRODUCTIVE-WORK-READ-API';
+
+const PRODUCTIVE_WORK_RESPONSE_KEYS = Object.freeze([
+  'schema',
+  'version',
+  'http_version',
+  'tenant_id',
+  'principal_id',
+  'as_of',
+  'operating_contexts',
+  'capability_ids',
+  'assigned_work_items',
+  'supervised_work_items',
+  'overdue_work_items',
+  'due_soon_work_items',
+]);
+
+const PRODUCTIVE_WORK_CONTEXT_KEYS = Object.freeze([
+  'operating_role_id',
+  'operating_role_revision',
+  'display_name',
+  'capability_ids',
+  'office_references',
+  'practice_references',
+  'business_unit_references',
+  'jurisdiction_references',
+]);
+
+const PRODUCTIVE_WORK_ITEM_KEYS = Object.freeze([
+  'schema',
+  'work_item_version',
+  'work_item_id',
+  'tenant_id',
+  'case_matter_id',
+  'title',
+  'source_kind',
+  'source_reference',
+  'source_evidence_fingerprint',
+  'status',
+  'created_at',
+  'due_at',
+  'completion_evidence_reference',
+  'completion_evidence_fingerprint',
+  'completed_at',
+  'cancellation_reason_reference',
+  'cancelled_at',
+  'fingerprint',
+]);
+
+const PRODUCTIVE_WORK_OPEN_STATES = Object.freeze([
+  'OPEN',
+  'IN_PROGRESS',
+  'BLOCKED',
+]);
+
 const CONFLICT_SCREENING_SCHEMA =
   'WILSY-LEGAL-CONFLICT-SCREENING-PRESENTATION/V1';
 const CONFLICT_SCREENING_VERSION =
@@ -932,6 +992,143 @@ function assertSortedRows(rows, identityKey, errorCode) {
   }
 }
 
+function assertCanonicalProductiveWorkPayload(value) {
+  const errorCode = 'LEGAL_OPERATIONS_PRODUCTIVE_WORK_RESPONSE_INVALID';
+
+  assertExactKeys(
+    value,
+    PRODUCTIVE_WORK_RESPONSE_KEYS,
+    errorCode,
+  );
+
+  if (
+    value.schema !== PRODUCTIVE_WORK_SCHEMA
+    || value.version !== PRODUCTIVE_WORK_VERSION
+    || value.http_version !== PRODUCTIVE_WORK_HTTP_VERSION
+    || !isCanonicalText(value.tenant_id)
+    || !isCanonicalText(value.principal_id)
+    || !isCanonicalTimestamp(value.as_of)
+    || !Array.isArray(value.operating_contexts)
+    || !Array.isArray(value.capability_ids)
+  ) {
+    throw new Error(errorCode);
+  }
+
+  const contexts = value.operating_contexts.map((entry) => {
+    assertExactKeys(
+      entry,
+      PRODUCTIVE_WORK_CONTEXT_KEYS,
+      errorCode,
+    );
+
+    if (
+      !isCanonicalText(entry.operating_role_id)
+      || !Number.isInteger(entry.operating_role_revision)
+      || entry.operating_role_revision < 1
+      || !isCanonicalText(entry.display_name)
+    ) {
+      throw new Error(errorCode);
+    }
+
+    for (const key of [
+      'capability_ids',
+      'office_references',
+      'practice_references',
+      'business_unit_references',
+      'jurisdiction_references',
+    ]) {
+      if (
+        !Array.isArray(entry[key])
+        || entry[key].some((token) => !isCanonicalText(token))
+      ) {
+        throw new Error(errorCode);
+      }
+    }
+
+    return Object.freeze({
+      operatingRoleId: entry.operating_role_id,
+      operatingRoleRevision: entry.operating_role_revision,
+      displayName: entry.display_name,
+      capabilityIds: Object.freeze([...entry.capability_ids]),
+      officeReferences: Object.freeze([...entry.office_references]),
+      practiceReferences: Object.freeze([...entry.practice_references]),
+      businessUnitReferences: Object.freeze([...entry.business_unit_references]),
+      jurisdictionReferences: Object.freeze([...entry.jurisdiction_references]),
+    });
+  });
+
+  const adaptItems = (rows) => {
+    if (!Array.isArray(rows)) {
+      throw new Error(errorCode);
+    }
+
+    return Object.freeze(rows.map((entry) => {
+      assertExactKeys(
+        entry,
+        PRODUCTIVE_WORK_ITEM_KEYS,
+        errorCode,
+      );
+
+      if (
+        entry.schema !== 'WILSY-LEGAL-WORK-ITEM/V1'
+        || entry.work_item_version !== 'v1.0.1-G7E-LEGAL-WORK-ITEM'
+        || entry.tenant_id !== value.tenant_id
+        || !isCanonicalText(entry.work_item_id)
+        || !isCanonicalText(entry.case_matter_id)
+        || !isCanonicalText(entry.title)
+        || !isCanonicalText(entry.source_kind)
+        || !isCanonicalText(entry.source_reference)
+        || !SHA3_512_PATTERN.test(entry.source_evidence_fingerprint)
+        || !PRODUCTIVE_WORK_OPEN_STATES.includes(entry.status)
+        || !isCanonicalTimestamp(entry.created_at)
+        || (
+          entry.due_at !== null
+          && !isCanonicalTimestamp(entry.due_at)
+        )
+        || !SHA3_512_PATTERN.test(entry.fingerprint)
+      ) {
+        throw new Error(errorCode);
+      }
+
+      return Object.freeze({
+        workItemId: entry.work_item_id,
+        caseMatterId: entry.case_matter_id,
+        title: entry.title,
+        sourceKind: entry.source_kind,
+        sourceReference: entry.source_reference,
+        status: entry.status,
+        createdAt: entry.created_at,
+        dueAt: entry.due_at,
+      });
+    }));
+  };
+
+  const capabilityIds = Object.freeze(
+    value.capability_ids.map((token) => {
+      if (!isCanonicalText(token)) {
+        throw new Error(errorCode);
+      }
+      return token;
+    }),
+  );
+
+  return Object.freeze({
+    schema: value.schema,
+    version: value.version,
+    httpVersion: value.http_version,
+    tenantId: value.tenant_id,
+    principalId: value.principal_id,
+    asOf: value.as_of,
+    operatingContexts: Object.freeze(contexts),
+    capabilityIds,
+    assignedWorkItems: adaptItems(value.assigned_work_items),
+    supervisedWorkItems: adaptItems(value.supervised_work_items),
+    overdueWorkItems: adaptItems(value.overdue_work_items),
+    dueSoonWorkItems: adaptItems(value.due_soon_work_items),
+  });
+}
+
+
 function assertCanonicalLegalWorkspacePayload(value) {
   const errorCode = 'LEGAL_OPERATIONS_WORKSPACE_RESPONSE_INVALID';
   if (!isPlainObject(value)) throw new Error(errorCode);
@@ -1609,6 +1806,32 @@ export async function issueLegalConflictReview(value) {
 export async function getLegalPracticeWorkspace() {
   const response = await api.get('/legal-operations/workspace');
   return assertCanonicalLegalWorkspacePayload(response?.data);
+}
+
+let legalProductiveWorkInFlight = null;
+
+export async function getLegalProductiveWork() {
+  if (legalProductiveWorkInFlight) {
+    return legalProductiveWorkInFlight;
+  }
+
+  const request = api
+    .get('/legal-operations/productive-work')
+    .then((response) => (
+      assertCanonicalProductiveWorkPayload(
+        response?.data,
+      )
+    ));
+
+  legalProductiveWorkInFlight = request;
+
+  try {
+    return await request;
+  } finally {
+    if (legalProductiveWorkInFlight === request) {
+      legalProductiveWorkInFlight = null;
+    }
+  }
 }
 
 /**

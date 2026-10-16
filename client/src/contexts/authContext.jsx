@@ -57,6 +57,7 @@ const LEGAL_PRESENTATION_PERMISSION_SET = new Set([
   'legal_operations:invoice:read',
   'legal_operations:matter_deadline:read',
   'legal_operations:matter_deadline:write',
+  'legal_operations:productive_work:read',
 ]);
 
 const BRANDING_TIER_SET = new Set([
