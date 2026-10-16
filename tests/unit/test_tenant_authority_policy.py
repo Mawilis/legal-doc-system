@@ -104,7 +104,7 @@ from tools.eos.auth.hr_business_role_catalog import ALL_HR_BUSINESS_ROLES
 import pytest
 
 def test_runtime_version_source_is_canonical() -> None:
-    assert VERSION == "v1.40.0-LEGAL-NOTIFICATION-RECIPIENT-BINDING-ELIGIBILITY"
+    assert VERSION == "v1.43.0-PW-P11A-PRODUCTIVE-WORK-READ-ELIGIBILITY"
 
 LEGACY = ("AUDITOR", "SOVEREIGN_ARCHITECT", "ENTERPRISE_ADMIN", "FOUNDER", "SUPER_ADMIN", "ADMIN", "admin", "GLOBAL_ROOT", "WILSY_ROOT", "MASTER", "unknown")
 
@@ -149,6 +149,27 @@ def test_legal_business_role_matrix_is_explicit_and_least_authority() -> None:
     }
     expected["tenant_legal_partner"].add("legal_notification_recipient_binding_write")
     expected["tenant_legal_attorney"].add("legal_notification_recipient_binding_write")
+    for role in (
+        "tenant_legal_partner",
+        "tenant_legal_attorney",
+        "tenant_legal_paralegal",
+        "tenant_legal_secretary",
+    ):
+        expected[role].update(
+            {
+                "legal_matter_workflow_read",
+                "legal_work_item_read",
+                "legal_productive_work_read",
+            }
+        )
+    for role in ("tenant_legal_partner", "tenant_legal_attorney"):
+        expected[role].update(
+            {
+                "legal_matter_workflow_instantiate",
+                "legal_matter_workflow_transition",
+                "legal_work_item_write",
+            }
+        )
     assert set(expected) <= TENANT_ROLES
     for role, allowed in expected.items():
         assert {operation for operation in OPERATIONS if tenant_role_operation_eligibility(role, operation) == ELIGIBLE} == allowed

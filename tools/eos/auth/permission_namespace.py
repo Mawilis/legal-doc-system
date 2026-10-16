@@ -1,5 +1,5 @@
 """TITLE: WILSY OS Permission Namespace Semantic Canon.
-VERSION: v1.45.0-P7-PRIVILEGED-BREAK-GLASS-PERMISSION
+VERSION: v1.47.0-PW-P11A-PRODUCTIVE-WORK-READ-PERMISSION
 AUTHORITY: Immutable permission vocabulary and scope metadata only.
 EPITOME: Extends the canonical TENANT and SYSTEM permission vocabulary with dedicated
 inbound-collection, merchant-configuration, provider-policy, WILSY AI,
@@ -11,8 +11,14 @@ waiver, engagement,
 representation, cross-tenant authority, or financial execution.
 ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/tools/eos/auth/permission_namespace.py
 COLLABORATION / OWNERSHIP: Wilson Khanyezi / Wilsy Core Engineering.
-CERTIFICATION / UPDATE DATE: 2026-10-15
+CERTIFICATION / UPDATE DATE: 2026-10-16
 CHANGELOG:
+    2026-10-16 v1.47.0-PW-P11A-PRODUCTIVE-WORK-READ-PERMISSION adds the exact
+    own-tenant legal_operations:productive_work:read permission for an
+    authenticated principal's productive-work projection. The vocabulary is
+    membership-gated, non-cross-tenant, non-financial and non-self-authorizing;
+    it grants no record enumeration, workflow mutation, assignment,
+    supervision, legal act, HTTP, payment, execution, or settlement authority.
     2026-10-15 v1.45.0-P7-PRIVILEGED-BREAK-GLASS-PERMISSION adds the exact
     privileged_activation:break_glass SYSTEM vocabulary for a separately
     certified dual-control P7 command. Metadata alone grants no authority and
@@ -210,7 +216,7 @@ from types import MappingProxyType
 from typing import Final
 
 
-VERSION = "v1.46.0-PW-P10A-WORKFLOW-IAM-PERMISSIONS"
+VERSION = "v1.47.0-PW-P11A-PRODUCTIVE-WORK-READ-PERMISSION"
 
 
 class PermissionDisposition(StrEnum):
@@ -754,6 +760,13 @@ _PERMISSIONS: Final = MappingProxyType(
             "write own-tenant Legal work items",
             tenant=True,
         ),
+        "legal_operations:productive_work:read": _meta(
+            "legal_operations:productive_work:read",
+            "TENANT",
+            "TENANT",
+            "read own authenticated principal Legal productive-work projection",
+            tenant=True,
+        ),
 
         "legal_operations:evidence_cleanup:authorize": _meta(
             "legal_operations:evidence_cleanup:authorize",
@@ -1085,7 +1098,7 @@ __all__ = [
 ]
 
 # ARTIFACT: tools/eos/auth/permission_namespace.py
-# VERSION: v1.45.0-P7-PRIVILEGED-BREAK-GLASS-PERMISSION
+# VERSION: v1.47.0-PW-P11A-PRODUCTIVE-WORK-READ-PERMISSION
 # AUTHORITY BOUNDARY: canonical permission vocabulary semantics only; no possession or authorization authority
 # TENANT POSTURE: conflict-review, client-matter, client-visibility and other tenant permissions require separately proven exact ACTIVE tenant membership
 # FAIL-CLOSED POSTURE: unknown, malformed, ambiguous and legacy values never manufacture authority

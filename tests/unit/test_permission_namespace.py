@@ -261,7 +261,7 @@ def test_d12_system_command_permissions_are_exact_non_authorizing_metadata(permi
 
 
 def test_runtime_version_source_is_canonical() -> None:
-    assert POLICY_VERSION == "v1.45.0-P7-PRIVILEGED-BREAK-GLASS-PERMISSION"
+    assert POLICY_VERSION == "v1.47.0-PW-P11A-PRODUCTIVE-WORK-READ-PERMISSION"
 
 
 def test_permission_canon_properties() -> None:
@@ -321,6 +321,13 @@ def test_permission_canon_properties() -> None:
         "legal_operations:return:write",
         "legal_operations:billing:read",
         "legal_operations:invoice:read",
+        "legal_operations:workflow_activation:manage",
+        "legal_operations:matter_workflow:read",
+        "legal_operations:matter_workflow:instantiate",
+        "legal_operations:matter_workflow:transition",
+        "legal_operations:work_item:read",
+        "legal_operations:work_item:write",
+        "legal_operations:productive_work:read",
         "hr:employee_relation:write",
         "platform_billing:release",
         "inbound_collection:authorization:create",
@@ -349,9 +356,9 @@ def test_permission_canon_properties() -> None:
             for row in rows
             if row["disposition"] == "CANONICAL"
         ]
-    ) == 107
+    ) == 114
 
-    assert len(rows) == 110
+    assert len(rows) == 117
 
     for permission_id in tenant:
         metadata = permission_metadata(

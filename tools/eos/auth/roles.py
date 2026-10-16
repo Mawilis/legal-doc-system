@@ -1,5 +1,5 @@
 """TITLE: WILSY OS Role Definition Policy.
-VERSION: v1.41.0-CX26-R3-LEGAL-OPERATING-MODEL-MANAGE-GRANT
+VERSION: v1.43.0-PW-P11A-PRODUCTIVE-WORK-READ-GRANTS
 AUTHORITY: Canonical Python role identifiers and explicit permission grants.
 EPITOME: Defines current tenant-scoped authorization roles, including
 least-privilege subscription/plan-catalogue grants, read-only WILSY AI
@@ -13,8 +13,13 @@ firm-decision grant without creating tenant-wide matter reads, deputy
 possession, service, or financial authority.
 ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/tools/eos/auth/roles.py
 COLLABORATION / OWNERSHIP: Wilson Khanyezi / Wilsy Core Engineering.
-CERTIFICATION / UPDATE DATE: 2026-10-12
+CERTIFICATION / UPDATE DATE: 2026-10-16
 CHANGELOG:
+    2026-10-16 v1.43.0-PW-P11A-PRODUCTIVE-WORK-READ-GRANTS grants
+    legal_operations:productive_work:read exactly to LEGAL_PARTNER,
+    LEGAL_ATTORNEY, LEGAL_PARALEGAL and LEGAL_SECRETARY. Static policy proves
+    neither current assignment nor tenant membership and creates no broader
+    record, workflow, supervisory, financial, execution or settlement power.
     2026-10-13 v1.41.0-CX26-R3 grants
     legal_operations:operating_model:manage only to ENTERPRISE_ADMIN. Static
     grant remains non-possessory and does not prove ACTIVE membership,
@@ -200,7 +205,7 @@ from __future__ import annotations
 from collections.abc import Iterable
 
 
-VERSION = "v1.42.0-PW-P10A-WORKFLOW-IAM-GRANTS"
+VERSION = "v1.43.0-PW-P11A-PRODUCTIVE-WORK-READ-GRANTS"
 
 
 ROLE_PERMISSIONS_MAP: dict[str, list[str]] = {
@@ -287,6 +292,7 @@ ROLE_PERMISSIONS_MAP: dict[str, list[str]] = {
         "legal_operations:matter_workflow:transition",
         "legal_operations:work_item:read",
         "legal_operations:work_item:write",
+        "legal_operations:productive_work:read",
     ],
     "LEGAL_ATTORNEY": [
         "legal_operations:notification_recipient_binding:write",
@@ -312,6 +318,7 @@ ROLE_PERMISSIONS_MAP: dict[str, list[str]] = {
         "legal_operations:matter_workflow:transition",
         "legal_operations:work_item:read",
         "legal_operations:work_item:write",
+        "legal_operations:productive_work:read",
     ],
     "LEGAL_PARALEGAL": [
         "legal_operations:instruction:read",
@@ -326,6 +333,7 @@ ROLE_PERMISSIONS_MAP: dict[str, list[str]] = {
         "legal_operations:invoice:read",
         "legal_operations:matter_workflow:read",
         "legal_operations:work_item:read",
+        "legal_operations:productive_work:read",
     ],
     "LEGAL_SECRETARY": [
         "legal_operations:instruction:read",
@@ -336,6 +344,7 @@ ROLE_PERMISSIONS_MAP: dict[str, list[str]] = {
         "legal_operations:invoice:read",
         "legal_operations:matter_workflow:read",
         "legal_operations:work_item:read",
+        "legal_operations:productive_work:read",
     ],
     "LEGAL_FINANCE": [
         "legal_operations:billing:read",
@@ -524,7 +533,7 @@ __all__ = [
 ]
 
 # ARTIFACT: tools/eos/auth/roles.py
-# VERSION: v1.41.0-CX26-R3-LEGAL-OPERATING-MODEL-MANAGE-GRANT
+# VERSION: v1.43.0-PW-P11A-PRODUCTIVE-WORK-READ-GRANTS
 # AUTHORITY BOUNDARY: role identifiers and deterministic permission definitions only; current assignment is separate authority
 # TENANT POSTURE: role definitions never establish tenant membership or role possession; conflict-review write is partner/attorney-only policy and client-matter read remains visibility-bound
 # FAIL-CLOSED POSTURE: unknown roles and permissions never manufacture grants

@@ -1,5 +1,5 @@
 """TITLE: WILSY OS Tenant Authorization Composition.
-VERSION: v1.38.0-CX26-R3-LEGAL-OPERATING-MODEL-MANAGE-AUTHORIZATION
+VERSION: v1.39.0-PW-P11A-PRODUCTIVE-WORK-READ-AUTHORIZATION
 AUTHORITY: Read-only composition of current principal, membership, role and permission truth.
 EPITOME: Produces deterministic fail-closed tenant authorization decisions,
 including the own-tenant WILSY AI usage-capacity and billing-intelligence
@@ -9,8 +9,13 @@ provisioning binding, and the explicit LEGAL_CLIENT matter-projection read
 binding; it does not mutate or transport.
 ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/tools/eos/auth/tenant_authorization.py
 COLLABORATION / OWNERSHIP: Wilson Khanyezi / Wilsy Core Engineering.
-CERTIFICATION / UPDATE DATE: 2026-10-12
+CERTIFICATION / UPDATE DATE: 2026-10-16
 CHANGELOG:
+    2026-10-16 v1.39.0-PW-P11A-PRODUCTIVE-WORK-READ-AUTHORIZATION binds
+    legal_productive_work_read exactly to
+    legal_operations:productive_work:read. Authorization remains conjunctive
+    across canonical metadata, ACTIVE principal, ACTIVE own-tenant membership,
+    exact business-role eligibility and ACTIVE granting-role possession.
     2026-10-13 v1.38.0-CX26-R3 binds legal_operating_model_manage exactly
     to legal_operations:operating_model:manage while preserving conjunctive
     current principal, membership, tenant_admin eligibility, and active
@@ -198,7 +203,7 @@ from tools.eos.workforce.registry.workforce_relationship_registry import (
 from tools.eos.auth.permission_namespace import PermissionDisposition, permission_metadata
 from tools.eos.auth.roles import get_roles_granting_permission
 
-VERSION = "v1.38.0-CX26-R3-LEGAL-OPERATING-MODEL-MANAGE-AUTHORIZATION"
+VERSION = "v1.39.0-PW-P11A-PRODUCTIVE-WORK-READ-AUTHORIZATION"
 class TenantAuthorizationReason(StrEnum):
     AUTHORIZED="AUTHORIZED"; INVALID_INPUT="INVALID_INPUT"; PRINCIPAL_NOT_FOUND="PRINCIPAL_NOT_FOUND"; PRINCIPAL_INACTIVE="PRINCIPAL_INACTIVE"; PRINCIPAL_AUTHORITY_UNAVAILABLE="PRINCIPAL_AUTHORITY_UNAVAILABLE"; MEMBERSHIP_NOT_FOUND="MEMBERSHIP_NOT_FOUND"; MEMBERSHIP_INACTIVE="MEMBERSHIP_INACTIVE"; MEMBERSHIP_AUTHORITY_UNAVAILABLE="MEMBERSHIP_AUTHORITY_UNAVAILABLE"; NO_ACTIVE_TENANT_BUSINESS_ROLE="NO_ACTIVE_TENANT_BUSINESS_ROLE"; MULTIPLE_ACTIVE_TENANT_BUSINESS_ROLES="MULTIPLE_ACTIVE_TENANT_BUSINESS_ROLES"; TENANT_BUSINESS_ROLE_AUTHORITY_UNAVAILABLE="TENANT_BUSINESS_ROLE_AUTHORITY_UNAVAILABLE"; PERMISSION_UNKNOWN="PERMISSION_UNKNOWN"; PERMISSION_NOT_CANONICAL="PERMISSION_NOT_CANONICAL"; PERMISSION_NAMESPACE_MISMATCH="PERMISSION_NAMESPACE_MISMATCH"; PERMISSION_OPERATION_MISMATCH="PERMISSION_OPERATION_MISMATCH"; PERMISSION_NOT_GRANTED="PERMISSION_NOT_GRANTED"; ROLE_ASSIGNMENT_INACTIVE="ROLE_ASSIGNMENT_INACTIVE"; BUSINESS_ROLE_INELIGIBLE="BUSINESS_ROLE_INELIGIBLE"; SYSTEM_AUTHORITY_REQUIRED="SYSTEM_AUTHORITY_REQUIRED"; FINANCIAL_EXECUTION_PROHIBITED="FINANCIAL_EXECUTION_PROHIBITED"; ROLE_ASSIGNMENT_AUTHORITY_UNAVAILABLE="ROLE_ASSIGNMENT_AUTHORITY_UNAVAILABLE"; WORKFORCE_NOT_CURRENT="WORKFORCE_NOT_CURRENT"; WORKFORCE_AUTHORITY_UNAVAILABLE="WORKFORCE_AUTHORITY_UNAVAILABLE"
 @dataclass(frozen=True, slots=True)
@@ -282,6 +287,12 @@ _BINDINGS = MappingProxyType({
         "legal_operations:matter_deadline:read",
     "legal_matter_deadline_write":
         "legal_operations:matter_deadline:write",
+})
+
+_BINDINGS = MappingProxyType({
+    **_BINDINGS,
+    "legal_productive_work_read":
+        "legal_operations:productive_work:read",
 })
 
 def authorize_tenant_operation(*, principal_id: object, tenant_id: object, permission_id: object, operation: object, principal_repository: Any, membership_repository: Any, role_assignment_repository: Any, business_role_repository: Any, session: Any = None, workforce_relationship_collection: Any = None) -> TenantAuthorizationDecision:
@@ -404,7 +415,7 @@ def authorize_tenant_operation(*, principal_id: object, tenant_id: object, permi
 
 __all__ = ["VERSION", "TenantAuthorizationReason", "TenantAuthorizationDecision", "authorize_tenant_operation"]
 # ARTIFACT: tenant_authorization.py
-# VERSION: v1.38.0-CX26-R3-LEGAL-OPERATING-MODEL-MANAGE-AUTHORIZATION
+# VERSION: v1.39.0-PW-P11A-PRODUCTIVE-WORK-READ-AUTHORIZATION
 # AUTHORITY BOUNDARY: current-truth composition only; no mutation or transport
 # TENANT POSTURE: exact active principal, membership, eligible business role, exact own-tenant permission-operation pair, and active granting role are required; conflict review is partner/attorney-only and client matter access still requires ACTIVE visibility
 # FAIL-CLOSED POSTURE: unknown, inactive, missing, ambiguous, unavailable, mismatched, or financial requests deny
