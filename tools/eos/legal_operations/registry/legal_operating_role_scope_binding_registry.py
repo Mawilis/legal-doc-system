@@ -613,6 +613,134 @@ class LegalOperatingRoleScopeBindingRegistry:
             session=tx,
         )
 
+    def list_current_for_operating_role_revision(
+        self,
+        tenant_id: str,
+        operating_role_id: str,
+        operating_role_revision: int,
+        at: datetime,
+        *,
+        session: Any,
+    ) -> tuple[
+        LegalOperatingRoleScopeBinding,
+        ...
+    ]:
+        """Return effective current scope leaves for one exact role revision.
+
+        This is a read-only currentness projection over existing immutable
+        scope-binding histories. Scope metadata never establishes record,
+        client, matter, IAM, assignment, supervision, workflow, or execution
+        authority.
+        """
+        tx = _transaction(session)
+
+        tenant = _text(
+            "tenant_id",
+            tenant_id,
+        )
+
+        role_id = _text(
+            "operating_role_id",
+            operating_role_id,
+        )
+
+        role_revision = _revision(
+            "operating_role_revision",
+            operating_role_revision,
+        )
+
+        moment = _moment(
+            at
+        )
+
+        rows = tuple(
+            self._collection.find(
+                {
+                    "tenant_id": tenant,
+                    "operating_role_id": role_id,
+                    "operating_role_revision":
+                        role_revision,
+                },
+                session=tx,
+            ).sort(
+                [
+                    (
+                        "scope_binding_id",
+                        ASCENDING,
+                    ),
+                    (
+                        "scope_binding_revision",
+                        ASCENDING,
+                    ),
+                ]
+            )
+        )
+
+        values = tuple(
+            self._hydrate(
+                raw
+            )
+            for raw in rows
+        )
+
+        histories: dict[
+            str,
+            list[
+                LegalOperatingRoleScopeBinding
+            ],
+        ] = {}
+
+        for value in values:
+            if (
+                value.tenant_id != tenant
+                or value.operating_role_id
+                != role_id
+                or value.operating_role_revision
+                != role_revision
+            ):
+                _fail(
+                    RegistryPersistedRecordInvalidError,
+                    "CX27_R5A_R2_PERSISTED_SCOPE_MISMATCH",
+                )
+
+            histories.setdefault(
+                value.scope_binding_id,
+                [],
+            ).append(
+                value
+            )
+
+        current: list[
+            LegalOperatingRoleScopeBinding
+        ] = []
+
+        for binding_id in sorted(
+            histories
+        ):
+            history = self._validate_history(
+                tuple(
+                    histories[
+                        binding_id
+                    ]
+                )
+            )
+
+            applicable = tuple(
+                value
+                for value in history
+                if value.effective_from
+                <= moment
+            )
+
+            if applicable:
+                current.append(
+                    applicable[-1]
+                )
+
+        return tuple(
+            current
+        )
+
     def resolve_current(
         self,
         tenant_id: str,
