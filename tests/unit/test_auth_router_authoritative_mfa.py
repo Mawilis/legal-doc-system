@@ -247,6 +247,61 @@ def test_discovery_has_no_unknown_alias_fallback(monkeypatch: pytest.MonkeyPatch
     assert error.value.status_code == 404
 
 
+def test_discovery_canonical_not_found_is_bounded_404(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    class _TenantRegistry:
+        @staticmethod
+        def resolve_canonical_tenant(
+            _reference: str,
+            *,
+            allow_alias: bool = False,
+        ) -> None:
+            assert allow_alias is True
+            raise auth_router.TenantRegistryError(
+                "TENANT_REGISTRY_CANONICAL_NOT_FOUND"
+            )
+
+    monkeypatch.setattr(auth_router, "TenantRegistry", _TenantRegistry)
+
+    with pytest.raises(HTTPException) as error:
+        _run(
+            auth_router.discover(
+                DiscoverRequest(alias="unknown-workspace")
+            )
+        )
+
+    assert error.value.status_code == 404
+    assert error.value.detail == "Tenant not found"
+
+
+def test_discovery_canonical_registry_fault_remains_500(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    class _TenantRegistry:
+        @staticmethod
+        def resolve_canonical_tenant(
+            _reference: str,
+            *,
+            allow_alias: bool = False,
+        ) -> None:
+            assert allow_alias is True
+            raise auth_router.TenantRegistryError(
+                "TENANT_REGISTRY_CANONICAL_CORRUPT"
+            )
+
+    monkeypatch.setattr(auth_router, "TenantRegistry", _TenantRegistry)
+
+    with pytest.raises(HTTPException) as error:
+        _run(
+            auth_router.discover(
+                DiscoverRequest(alias="corrupt-workspace")
+            )
+        )
+
+    assert error.value.status_code == 500
+
+
 def test_discovery_projects_only_server_issued_tenant_identity_fields(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
