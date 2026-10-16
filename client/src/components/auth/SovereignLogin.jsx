@@ -66,7 +66,7 @@
  */
 
 import React, { useState } from 'react';
-import { AlertCircle, ArrowLeft, Loader2 } from 'lucide-react';
+import { AlertCircle, ArrowLeft, Eye, EyeOff, Loader2 } from 'lucide-react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { AUTH_STATES, useAuth } from '../../contexts/authContext.jsx';
 import TenantIdentityCard from './TenantIdentityCard.jsx';
@@ -78,6 +78,7 @@ export default function SovereignLogin({ onLoginSuccess }) {
   const { login, loading, error: authError, tenant } = useAuth();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState('');
 
   const resolvedTenant = location.state?.tenant || tenant;
@@ -134,7 +135,29 @@ export default function SovereignLogin({ onLoginSuccess }) {
                   Forgot password?
                 </button>
               </div>
-              <input id="work-password" type="password" autoComplete="current-password" value={password} onChange={(event) => setPassword(event.target.value)} style={inputStyle} required />
+              <div style={passwordInputWrapStyle}>
+                <input
+                  id="work-password"
+                  type={showPassword ? 'text' : 'password'}
+                  autoComplete="current-password"
+                  value={password}
+                  onChange={(event) => setPassword(event.target.value)}
+                  style={passwordInputStyle}
+                  required
+                />
+                <button
+                  type="button"
+                  aria-label={showPassword ? 'Hide password' : 'Show password'}
+                  aria-pressed={showPassword}
+                  aria-controls="work-password"
+                  onClick={() => setShowPassword((visible) => !visible)}
+                  style={passwordVisibilityButtonStyle}
+                >
+                  {showPassword
+                    ? <EyeOff size={18} aria-hidden="true" />
+                    : <Eye size={18} aria-hidden="true" />}
+                </button>
+              </div>
               {(error || authError) && <div role="alert" style={errorStyle}><AlertCircle size={16} /><span>{error || authError}</span></div>}
               <button type="submit" disabled={loading || !email.trim() || !password} style={buttonStyle}>
                 {loading ? <Loader2 size={18} className="animate-spin" /> : null}<span>Continue securely</span>
@@ -165,6 +188,9 @@ const labelStyle = { marginTop: '7px', color: '#d8d4c9', fontSize: '14px', fontW
 const passwordLabelRowStyle = { display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '14px', minHeight: '44px' };
 const passwordLabelStyle = { ...labelStyle, marginTop: 0 };
 const inputStyle = { width: '100%', boxSizing: 'border-box', padding: '14px 15px', borderRadius: '7px', border: '1px solid #4d4f51', background: '#0f1011', color: '#fff', fontSize: '16px', outlineColor: '#d5b04f' };
+const passwordInputWrapStyle = { position: 'relative', width: '100%' };
+const passwordInputStyle = { ...inputStyle, paddingRight: '52px' };
+const passwordVisibilityButtonStyle = { position: 'absolute', top: '50%', right: '8px', transform: 'translateY(-50%)', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', width: '40px', height: '40px', padding: 0, border: 0, borderRadius: '6px', background: 'transparent', color: '#bbb8ae', cursor: 'pointer' };
 const buttonStyle = { display: 'inline-flex', justifyContent: 'center', alignItems: 'center', gap: '9px', marginTop: '14px', padding: '14px 18px', border: 0, borderRadius: '7px', background: '#d5b04f', color: '#141414', fontWeight: 700, fontSize: '15px', cursor: 'pointer' };
 const forgotPasswordButtonStyle = { display: 'inline-flex', alignItems: 'center', justifyContent: 'center', minHeight: '44px', margin: 0, padding: '10px 0', border: 0, background: 'none', color: '#d5b04f', fontSize: '13px', fontWeight: 650, textDecoration: 'underline', textUnderlineOffset: '3px', cursor: 'pointer' };
 const backButtonStyle = { display: 'inline-flex', alignItems: 'center', gap: '7px', marginTop: '18px', padding: 0, border: 0, background: 'none', color: '#bbb8ae', cursor: 'pointer' };
