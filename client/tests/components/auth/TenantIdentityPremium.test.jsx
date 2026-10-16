@@ -189,6 +189,26 @@ describe('premium tenant identity projection', () => {
     expect(screen.getByTestId('login-content-grid').getAttribute('style')).toContain('min(100%, 320px)');
     expect(screen.getByTestId('login-content-grid').getAttribute('style')).toContain('align-items: start');
     expect(screen.queryByText('Workspace identity')).not.toBeInTheDocument();
+
+    const passwordInput = screen.getByLabelText('Password');
+    const showPasswordButton = screen.getByRole('button', { name: 'Show password' });
+
+    expect(passwordInput).toHaveAttribute('type', 'password');
+    expect(showPasswordButton).toHaveAttribute('aria-pressed', 'false');
+    expect(showPasswordButton).toHaveAttribute('aria-controls', 'work-password');
+
+    fireEvent.change(passwordInput, { target: { value: 'bounded-login-secret' } });
+    fireEvent.click(showPasswordButton);
+
+    expect(passwordInput).toHaveAttribute('type', 'text');
+    expect(passwordInput).toHaveValue('bounded-login-secret');
+    expect(screen.getByRole('button', { name: 'Hide password' })).toHaveAttribute('aria-pressed', 'true');
+
+    fireEvent.click(screen.getByRole('button', { name: 'Hide password' }));
+
+    expect(passwordInput).toHaveAttribute('type', 'password');
+    expect(passwordInput).toHaveValue('bounded-login-secret');
+    expect(screen.getByRole('button', { name: 'Show password' })).toHaveAttribute('aria-pressed', 'false');
   });
 });
 
