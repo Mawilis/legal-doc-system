@@ -1,6 +1,6 @@
 # WILSY OS — LEGAL OPERATIONS COMPLETION CAPABILITY MATRIX
 
-VERSION: v1.0.0-LEGAL-OPERATIONS-COMPLETION-MATRIX
+VERSION: v1.1.0-LEGAL-OPERATIONS-COMPLETION-MATRIX
 AUTHORITY: Wilsy OS Core Governance
 EPITOME: Repository-grounded completion map for the Legal Operations & Process
 Service Plane, distinguishing current canonical truth, legacy/projection seams,
@@ -11,10 +11,14 @@ COLLABORATION / OWNERSHIP: Legal Operations owns process-service operational
 truth; SaaS Billing owns invoice truth; Kennel EOS exclusively owns financial
 execution; Settlement owns settlement allocation; Ledger owns accounting truth;
 client, Storefront, providers, mobile and WILSY AI are projections/capabilities.
-CERTIFICATION / UPDATE DATE: 2026-09-23
-CHANGELOG: v1.0.0 establishes the post-L7/C1 repository map, names concrete
-canonical surfaces, records unresolved authority gaps, and freezes the completion
-sequence before further Legal Operations mutation.
+CERTIFICATION / UPDATE DATE: 2026-10-16
+CHANGELOG: v1.1.0 reconciles Storefront/legal acquisition with the certified
+pre-tenant public-intent domain, registry, rate limit, HTTP admission and EOS
+server mount; records the remaining browser/Vite projection gap; and separates
+the WILSY Corporate Public Surface roadmap from WILSY OS product authority.
+v1.0.0 established the post-L7/C1 repository map, named concrete canonical
+surfaces, recorded unresolved authority gaps, and froze the completion sequence
+before further Legal Operations mutation.
 COMPLIANCE: POPIA section 19; GDPR Article 32; SOC 2 CC7.2 technical controls.
 SECURITY / PRIVACY POSTURE: Architecture evidence only. No customer data,
 provider credentials, secrets, payment details, or production legal payloads.
@@ -79,7 +83,7 @@ Additional immutable separations:
 | Node sheriff controller/routes | `server/controllers/sheriffController.js`, `server/routes/sheriffRoutes.js` | LEGACY / REQUIRES FORENSICS | Exists outside Python EOS sovereign process-service authorities; must not become duplicate lifecycle truth. |
 | Courier integration | no production Legal Operations implementation found | UNKNOWN / GAP | Constitution names courier as external evidence/capability; no canonical adapter/evidence path was found. |
 | Notifications | no production Legal Operations notification implementation found | UNKNOWN / GAP | Return-ready/invoice/custody notifications remain unwired. |
-| Storefront Legal Operations | no Legal Operations Storefront implementation found | UNKNOWN / GAP | Storefront is required as a public projection only; it must not own instruction/billing truth. |
+| Storefront Legal Operations | certified pre-tenant Python EOS public-intent domain, durable registry, rate gate, HTTP admission and server mount; browser storefront/Vite projection absent | PARTIAL / CANONICAL BACKEND + CLIENT GAP | A 202 admission proves durable public acquisition intent only; Storefront owns no instruction, tenant, pricing, subscription, billing, payment or settlement truth. |
 | Search/indexing | no canonical case/client/process-service search authority found | UNKNOWN / GAP | Current constitution requires case/client search; query/index ownership remains to be created or mapped. |
 | Files/uploads | no canonical Legal Operations file/evidence attachment authority mapped in this campaign | UNKNOWN / GAP | Uploaded process documents and annexures need explicit provenance and tenant-safe file authority. |
 | District/office/deputy provisioning | no production constructors/writers found outside P1 domain/registry | GAP | Allocation consumes these canonical identities, but no production provisioning command/authority was found. |
@@ -166,9 +170,14 @@ and annexure/file provenance are constitutionally required but not yet mapped
 to certified production adapters.
 
 ### G7 — Storefront/legal acquisition
-The Storefront has no mapped Legal Operations acquisition/intake projection.
-Public submission must remain intent until canonical tenant/identity and Legal
-Operations admission gates succeed.
+The canonical pre-tenant Legal Storefront acquisition backend is mapped and
+certified through immutable public-intent semantics, durable persistence,
+request-density limiting, bounded anonymous HTTP admission and the EOS server
+mount. The remaining gap is the public browser projection and its explicit
+Python-EOS transport route, followed by any separately governed bridge from
+public intent to authenticated tenant/Legal admission. Public submission remains
+intent and is not identity verification, tenant genesis, Legal instruction,
+pricing, subscription, billing, payment or settlement truth.
 
 ### G8 — Search and operational queues
 Case/client search, office receipt queue, deputy queue, urgent/same-day queue,
@@ -247,7 +256,7 @@ proves the dependency graph different.
 | L8-6 | Sheriff/deputy client migration | Wires the active Legal dashboard to canonical APIs and removes client-local truth. |
 | L8-7 | Law-firm/client bounded projection policy | Exposes only authorized client-visible evidence. |
 | L8-8 | Files, courier and notification adapters | Adds external capability as evidence/projection only. |
-| L8-9 | Storefront legal-intake projection | Connects public intent to authenticated tenant/legal admission without becoming authority. |
+| L8-9 | Storefront legal-intake projection | Backend public-intent admission is certified; complete the browser/Vite projection and any separately governed authenticated admission bridge without allowing Storefront to become tenant, Legal, commercial or financial authority. |
 | L8-10 | Intelligence/observability expansion | Adds queue analytics, SLA signals and advisory provenance from canonical reads. |
 | L8-11 | Whole-path real-Mongo + HTTP + client certification | Proves the complete vertical with no skipped launch-critical gates. |
 | L8-12 | Legacy cleanup | Retires/quarantines Node sheriff and overlapping client legal paths only after replacement proof. |
@@ -336,7 +345,7 @@ one certified delivery.
 # SOVEREIGN ARTIFACT SEAL
 
 ARTIFACT: wilsy-legal-operations-capability-matrix.md
-VERSION: v1.0.0-LEGAL-OPERATIONS-COMPLETION-MATRIX
+VERSION: v1.1.0-LEGAL-OPERATIONS-COMPLETION-MATRIX
 AUTHORITY BOUNDARY: architecture discovery/map only; no runtime authority
 TENANT POSTURE: all target capabilities remain exact-tenant scoped
 FAIL-CLOSED POSTURE: unknown ownership, ambiguous current truth and unexecuted
