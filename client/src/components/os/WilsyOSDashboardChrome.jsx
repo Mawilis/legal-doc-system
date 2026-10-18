@@ -299,7 +299,14 @@ const WilsyOSDashboardChrome = ({
       <header className="wilsyOsChromeTopRail">
         <div className="wilsyOsChromeTitleBlock">
           <span className="wilsyOsChromeEyebrow">
-            <Briefcase size={14} /> {commandLabel}
+            <Briefcase
+              size={14}
+              aria-label={
+                String(dashboardKey || '').startsWith('legal-')
+                  ? 'WILSY Legal OS platform mark'
+                  : undefined
+              }
+            /> {commandLabel}
           </span>
           <h1>{title}</h1>
           <div className="wilsyOsChromeStoryRail" aria-label="Operating story">
@@ -324,6 +331,7 @@ const WilsyOSDashboardChrome = ({
               ref={searchRef}
               value={search.value || ''}
               onChange={search.onChange}
+              readOnly={typeof search.onChange !== 'function'}
               placeholder={searchPlaceholder}
               onFocus={search.onFocus}
               onKeyDown={search.onKeyDown}
@@ -379,7 +387,14 @@ const WilsyOSDashboardChrome = ({
         </section>
 
         <section className="wilsyOsChromeTenantPlate" aria-label="Tenant identity">
-          <div className="wilsyOsChromeTenantMark">
+          <div
+            className="wilsyOsChromeTenantMark"
+            data-wilsy-legal-tenant-logo={
+              String(dashboardKey || '').startsWith('legal-')
+                ? tenantLogoStatus.toLowerCase()
+                : undefined
+            }
+          >
             {tenantLogoObjectUrl ? (
               <>
                 <img

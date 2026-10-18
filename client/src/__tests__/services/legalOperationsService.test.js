@@ -1,6 +1,6 @@
 /**
  * WILSY OS — ROLE-SCOPED LEGAL OPERATIONS CLIENT CERTIFICATE
- * VERSION: v2.5.0-LEGAL-EVIDENCE-UPLOAD-BROWSER-TRANSPORT-CERT
+ * VERSION: v2.6.0-LEGAL-COMMERCIAL-CONTEXT-BROWSER-TRANSPORT-CERT
  * AUTHORITY: Client transport-adapter contract certification only.
  * EPITOME: Certifies the canonical Legal Operations browser adapter across
  *          sheriff/deputy/client reads, D11 law-firm workspace, exact finance
@@ -8,7 +8,8 @@
  *          and bound-Deputy field commands without browser-owned authority.
  * ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/client/src/__tests__/services/legalOperationsService.test.js
  * CERTIFICATION / UPDATE DATE: 2026-10-12
- * CHANGELOG: 2026-10-12 v2.5.0-LEGAL-EVIDENCE-UPLOAD-BROWSER-TRANSPORT-CERT proves unchanged FormData, no manual multipart boundary, exact document endpoint/idempotency header, no browser authority fields, and strict canonical response validation.
+ * CHANGELOG: 2026-10-16 v2.6.0-LEGAL-COMMERCIAL-CONTEXT-BROWSER-TRANSPORT-CERT certifies the strict GET /legal-operations/commercial-context browser adapter, exact LEGAL_DASHBOARD product identity, canonical plan/subscription/commercial projection, 401/403 access-denied classification, malformed-response rejection, no tenant/plan/price selector, and no financial execution authority.
+ *            2026-10-12 v2.5.0-LEGAL-EVIDENCE-UPLOAD-BROWSER-TRANSPORT-CERT proves unchanged FormData, no manual multipart boundary, exact document endpoint/idempotency header, no browser authority fields, and strict canonical response validation.
  *            2026-09-25 v2.3.0-L8-8N-CONFLICT-SCREENING-READ-CLIENT-CERT binds the authenticated screening review-queue read adapter to the canonical /api/legal-operations/conflict-screenings path, proves exact data-minimized rows, server-owned tenant/order/status and privileged-field rejection.
  *            2026-09-25 v2.2.0-L8-8L-CONFLICT-REVIEW-COMMAND-CLIENT-CERT binds the authenticated four-field conflict-review adapter to the canonical /api/legal-operations/conflict-reviews path, proves server-owned authority exclusion, bounded receipt validation and unchanged 401/403/404/409/transport failures.
  *            2026-09-24 v2.1.0-L8-7D15-MATTER-WORKSPACE-COMPATIBILITY-CERT binds production v1.6.0-L8-7D15-MATTER-WORKSPACE-COMPATIBILITY and proves V1 remains unchanged while V2 requires exact first-class CaseMatter rows, matter counts, deterministic order, valid states and SHA3-512 evidence locators; mixed or malformed contracts reject fail-closed.
@@ -71,6 +72,7 @@ import {
   confirmLegalClientAcceptance,
   getLegalConflictScreenings,
   getLegalFinanceEvidence,
+  getLegalCommercialContext,
   getLegalPracticeWorkspace,
   getSheriffOperationalQueues,
   issueLegalConflictReview,
@@ -105,6 +107,38 @@ const payload = () => ({
       state: 'ALLOCATED',
     },
   ],
+});
+
+const commercialContextPayload = () => ({
+  schema: 'WILSY-LEGAL-OPERATIONS-COMMERCIAL-CONTEXT/V1',
+  version: 'v1.0.0-LEGAL-COMMERCIAL-CONTEXT-HTTP',
+  tenant_id: 'tenant-law',
+  visibility: 'LEGAL_COMMERCIAL_CONTEXT_SUBSCRIPTION_READ',
+  product: {
+    product_id: 'LEGAL_OPERATIONS',
+    workspace_key: 'LEGAL_DASHBOARD',
+    available: true,
+    entitlement_state: 'ACTIVE',
+  },
+  subscription: {
+    subscription_id: 'WILSYSUB-LEGAL-1',
+    status: 'active',
+    current_period_end: '2026-11-16T09:00:00+00:00',
+  },
+  plan: {
+    plan_id: 'WILSYPLAN-LEGAL-ENTERPRISE',
+    tier: 'ENTERPRISE',
+    name: 'WILSY Legal Enterprise',
+    features: ['legal.core'],
+    catalogue_version: 7,
+  },
+  commercial: {
+    amount: 14400,
+    currency: 'ZAR',
+    billing_frequency: 'annual',
+    monthly_equivalent_amount: 1200,
+    financial_execution_authority: false,
+  },
 });
 
 const clientMatterPayload = () => ({
@@ -1513,6 +1547,106 @@ describe('L8-7D7 role-scoped Legal Operations client adapter', () => {
     expect(Object.isFrozen(result)).toBe(true);
   });
 
+  it('reads exact authorized Legal commercial context without browser selectors', async () => {
+    mockGet.mockResolvedValueOnce({
+      data: commercialContextPayload(),
+    });
+
+    const result = await getLegalCommercialContext();
+
+    expect(mockGet).toHaveBeenCalledWith(
+      '/legal-operations/commercial-context',
+    );
+    expect(mockGet.mock.calls[0]).toHaveLength(1);
+
+    expect(result.access).toBe('AUTHORIZED');
+    expect(result.context.tenantId).toBe('tenant-law');
+    expect(result.context.product).toEqual({
+      productId: 'LEGAL_OPERATIONS',
+      workspaceKey: 'LEGAL_DASHBOARD',
+      available: true,
+      entitlementState: 'ACTIVE',
+    });
+    expect(result.context.subscription.subscriptionId)
+      .toBe('WILSYSUB-LEGAL-1');
+    expect(result.context.plan).toEqual({
+      planId: 'WILSYPLAN-LEGAL-ENTERPRISE',
+      tier: 'ENTERPRISE',
+      name: 'WILSY Legal Enterprise',
+      features: ['legal.core'],
+      catalogueVersion: 7,
+    });
+    expect(result.context.commercial).toEqual({
+      amount: 14400,
+      currency: 'ZAR',
+      billingFrequency: 'annual',
+      monthlyEquivalentAmount: 1200,
+      financialExecutionAuthority: false,
+    });
+
+    expect(Object.isFrozen(result)).toBe(true);
+    expect(Object.isFrozen(result.context)).toBe(true);
+    expect(Object.isFrozen(result.context.product)).toBe(true);
+    expect(Object.isFrozen(result.context.subscription)).toBe(true);
+    expect(Object.isFrozen(result.context.plan)).toBe(true);
+    expect(Object.isFrozen(result.context.plan.features)).toBe(true);
+    expect(Object.isFrozen(result.context.commercial)).toBe(true);
+  });
+
+  it.each([401, 403])(
+    'classifies commercial-context HTTP %i as denied without local fallback',
+    async (status) => {
+      mockGet.mockRejectedValueOnce({
+        response: { status },
+      });
+
+      const result = await getLegalCommercialContext();
+
+      expect(result).toEqual({
+        access: 'DENIED',
+        context: null,
+      });
+      expect(Object.isFrozen(result)).toBe(true);
+      expect(mockGet).toHaveBeenCalledTimes(1);
+    },
+  );
+
+  it('rejects malformed or privileged commercial context rather than presenting it', async () => {
+    const malformed = commercialContextPayload();
+    malformed.commercial = {
+      ...malformed.commercial,
+      financial_execution_authority: true,
+    };
+
+    mockGet.mockResolvedValueOnce({
+      data: malformed,
+    });
+
+    await expect(
+      getLegalCommercialContext(),
+    ).rejects.toThrow(
+      'LEGAL_COMMERCIAL_CONTEXT_FINANCIAL_AUTHORITY_INVALID',
+    );
+  });
+
+  it('rejects commercial response shape drift and extra authority fields', async () => {
+    const malformed = commercialContextPayload();
+    malformed.plan = {
+      ...malformed.plan,
+      permission: 'subscription:read',
+    };
+
+    mockGet.mockResolvedValueOnce({
+      data: malformed,
+    });
+
+    await expect(
+      getLegalCommercialContext(),
+    ).rejects.toThrow(
+      'LEGAL_COMMERCIAL_CONTEXT_INVALID_PLAN_KEYS',
+    );
+  });
+
   it('keeps sheriff and deputy adapters distinct and non-financial', () => {
     const sheriff =
       __legalOperationsServiceInternals.assertCanonicalQueuePayload(payload());
@@ -1548,7 +1682,7 @@ describe('L8-7D7 role-scoped Legal Operations client adapter', () => {
     }
 
     expect(LEGAL_OPERATIONS_CLIENT_VERSION).toBe(
-      'v2.0.0-LEGAL-EVIDENCE-UPLOAD-BROWSER-TRANSPORT',
+      'v2.1.0-LEGAL-COMMERCIAL-CONTEXT-BROWSER-TRANSPORT',
     );
   });
 
@@ -1586,10 +1720,10 @@ describe('L8-7D7 role-scoped Legal Operations client adapter', () => {
 
 /**
  * ARTIFACT: legalOperationsService.test.js
- * VERSION: v2.5.0-LEGAL-EVIDENCE-UPLOAD-BROWSER-TRANSPORT-CERT
- * AUTHORITY BOUNDARY: Legal Operations read/intake/return/deputy-command/conflict-review browser adapter certificate only
+ * VERSION: v2.6.0-LEGAL-COMMERCIAL-CONTEXT-BROWSER-TRANSPORT-CERT
+ * AUTHORITY BOUNDARY: Legal Operations read/intake/return/deputy-command/conflict-review/commercial-context browser adapter certificate only
  * TENANT POSTURE: server tenant/principal/role/client/deputy scope remains authoritative; browser cannot create authorization scope
- * FAIL-CLOSED POSTURE: malformed/extra/missing/schema/version/order/scope/state/command-response drift rejects before presentation or transport success
+ * FAIL-CLOSED POSTURE: malformed/extra/missing/schema/version/order/scope/state/command/commercial-response drift rejects before presentation or transport success
  * FINANCIAL EXECUTION AUTHORITY: none; Kennel EOS remains exclusive
  * END OF WILSY OS SOVEREIGN ARTIFACT
  */
