@@ -29,7 +29,8 @@ def assert_static_composition_invariants() -> None:
     route = next(n for n in ast.walk(tree) if isinstance(n, (ast.FunctionDef, ast.AsyncFunctionDef)) and n.name == "authorize")
     decorators = [ast.unparse(d) for d in route.decorator_list]
     assert any("router.post(ROUTE_PATH)" in d for d in decorators)
-    assert "return await authorize_request" in ast.unparse(route)
+    assert "return await _authorize_production_request" in ast.unparse(route)
+    assert "return await authorize_request" not in ast.unparse(route)
     orchestration = next(n for n in ast.walk(tree) if isinstance(n, ast.AsyncFunctionDef) and n.name == "authorize_request")
     calls = [ast.unparse(n) for n in ast.walk(orchestration) if isinstance(n, ast.Call)]
     assert any("trust_verifier" in call for call in calls)
