@@ -151,6 +151,7 @@ import {
   getLegalFinanceEvidence,
   getLegalPracticeWorkspace,
   getLegalProductiveWork,
+  getLegalSpecialistWorkflow,
   getSheriffOperationalQueues,
   issueLegalConflictReview,
   recordDeputyFieldOutcome,
@@ -2069,9 +2070,21 @@ function ProductiveWorkPanel() {
     message: '',
   });
 
+  const [workflowState, setWorkflowState] = useState({
+    kind: 'idle',
+    data: null,
+    message: '',
+  });
+
   const load = useCallback(async () => {
     setState({
       kind: 'loading',
+      data: null,
+      message: '',
+    });
+
+    setWorkflowState({
+      kind: 'idle',
       data: null,
       message: '',
     });
@@ -2084,6 +2097,39 @@ function ProductiveWorkPanel() {
         data,
         message: '',
       });
+
+      setWorkflowState({
+        kind: 'loading',
+        data: null,
+        message: '',
+      });
+
+      try {
+        const workflow = await getLegalSpecialistWorkflow();
+
+        if (
+          workflow.tenantId !== data.tenantId
+          || workflow.principalId !== data.principalId
+        ) {
+          throw new Error(
+            'LEGAL_OPERATIONS_SPECIALIST_WORKFLOW_SCOPE_MISMATCH',
+          );
+        }
+
+        setWorkflowState({
+          kind: 'ready',
+          data: workflow,
+          message: '',
+        });
+      } catch {
+        setWorkflowState({
+          kind: 'error',
+          data: null,
+          message:
+            'Productive work remains available; '
+            + 'workflow enrichment is unavailable.',
+        });
+      }
     } catch (error) {
       const status = error?.response?.status;
 
@@ -2094,6 +2140,12 @@ function ProductiveWorkPanel() {
           status === 403
             ? 'Current tenant authority does not permit productive-work access.'
             : 'Productive-work evidence is unavailable; no work was inferred.',
+      });
+
+      setWorkflowState({
+        kind: 'idle',
+        data: null,
+        message: '',
       });
     }
   }, []);
@@ -2106,10 +2158,13 @@ function ProductiveWorkPanel() {
     return (
       <section
         aria-label="My productive work"
-        className="rounded-2xl border border-stone-800 bg-stone-950/75 p-6"
+        className="min-w-0 rounded-2xl border border-stone-800 bg-stone-950/75 p-4 sm:p-6"
       >
         <div className="flex min-h-[120px] items-center justify-center">
-          <Loader2 className="animate-spin text-amber-400" size={24} />
+          <Loader2
+            className="animate-spin text-amber-400"
+            size={24}
+          />
           <span className="ml-3 text-xs font-black uppercase tracking-wider text-stone-400">
             Loading current productive work
           </span>
@@ -2122,9 +2177,12 @@ function ProductiveWorkPanel() {
     return (
       <section
         aria-label="My productive work"
-        className="rounded-2xl border border-red-900/40 bg-red-950/15 p-5"
+        className="min-w-0 rounded-2xl border border-red-900/40 bg-red-950/15 p-4 sm:p-5"
       >
-        <p role="alert" className="text-sm text-red-300">
+        <p
+          role="alert"
+          className="break-words text-sm text-red-300"
+        >
           {state.message}
         </p>
       </section>
@@ -2133,64 +2191,114 @@ function ProductiveWorkPanel() {
 
   const data = state.data;
 
+  const workflowByWorkItemId = new Map(
+    workflowState.kind === 'ready'
+      ? workflowState.data.rows.map((row) => [
+        row.workItemId,
+        row,
+      ])
+      : [],
+  );
+
+  const workflowLabel = (readiness) => {
+    switch (readiness) {
+      case 'ACTIONABLE':
+        return 'Workflow ready';
+      case 'BLOCKED_DEPENDENCY':
+        return 'Blocked by dependency';
+      case 'BLOCKED_GATE':
+        return 'Blocked by gate';
+      case 'BLOCKED_DEPENDENCY_AND_GATE':
+        return 'Blocked by dependency and gate';
+      default:
+        return '';
+    }
+  };
+
   const groups = [
     {
       id: 'assigned',
       title: 'Assigned to me',
       rows: data.assignedWorkItems,
-      empty: 'No active work is currently assigned to this principal.',
+      empty:
+        'No active work is currently assigned to this principal.',
     },
     {
       id: 'supervised',
       title: 'Supervised work',
       rows: data.supervisedWorkItems,
-      empty: 'No active work is currently supervised by this principal.',
+      empty:
+        'No active work is currently supervised by this principal.',
     },
     {
       id: 'overdue',
       title: 'Overdue work',
       rows: data.overdueWorkItems,
-      empty: 'No server-classified overdue work is currently projected.',
+      empty:
+        'No server-classified overdue work is currently projected.',
     },
     {
       id: 'due-soon',
       title: 'Due soon',
       rows: data.dueSoonWorkItems,
-      empty: 'No server-classified due-soon work is currently projected.',
+      empty:
+        'No server-classified due-soon work is currently projected.',
     },
   ];
 
   return (
     <div
-      className="space-y-5"
+      className="min-w-0 space-y-5"
       data-legal-productive-work="true"
+      data-legal-specialist-workflow="practice-my-work"
     >
-      <section className="rounded-2xl border border-amber-800/30 bg-stone-950/75 p-5">
-        <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
-          <div>
-            <p className="text-[10px] font-black uppercase tracking-[0.18em] text-amber-400">
+      <section className="min-w-0 rounded-2xl border border-amber-800/30 bg-stone-950/75 p-4 sm:p-5">
+        <div className="flex min-w-0 flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
+          <div className="min-w-0">
+            <p className="break-words text-[10px] font-black uppercase tracking-[0.18em] text-amber-400">
               Authenticated daily-work projection
             </p>
-            <h2 className="mt-2 text-xl font-black text-white">
+            <h2 className="mt-2 break-words text-xl font-black text-white">
               My productive work
             </h2>
-            <p className="mt-2 max-w-3xl text-xs leading-6 text-stone-400">
-              Python EOS owns assignment, supervision, due posture and tenant scope.
-              Browser presentation cannot create work or authority.
+            <p className="mt-2 max-w-3xl break-words text-xs leading-6 text-stone-400">
+              Python EOS owns assignment, supervision, due posture
+              and tenant scope. Browser presentation cannot create
+              work or authority.
             </p>
           </div>
 
           <button
             type="button"
             onClick={load}
-            className="inline-flex min-h-[44px] items-center justify-center gap-2 rounded-xl border border-amber-700/40 bg-amber-500/10 px-4 text-xs font-black text-amber-200"
+            className="inline-flex min-h-[44px] w-full items-center justify-center gap-2 rounded-xl border border-amber-700/40 bg-amber-500/10 px-4 text-xs font-black text-amber-200 sm:w-auto"
           >
             <RefreshCw size={15} />
             Refresh my work
           </button>
         </div>
 
-        <div className="mt-5 grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
+        {workflowState.kind === 'loading' && (
+          <div
+            role="status"
+            aria-label="Workflow enrichment loading"
+            className="mt-4 min-w-0 rounded-xl border border-stone-800 bg-black/25 px-4 py-3 text-xs text-stone-400"
+          >
+            Productive work is available while workflow enrichment loads.
+          </div>
+        )}
+
+        {workflowState.kind === 'error' && (
+          <div
+            role="status"
+            aria-label="Workflow enrichment unavailable"
+            className="mt-4 min-w-0 rounded-xl border border-amber-900/40 bg-amber-950/10 px-4 py-3 text-xs leading-5 text-amber-200"
+          >
+            {workflowState.message}
+          </div>
+        )}
+
+        <div className="mt-5 grid min-w-0 gap-3 sm:grid-cols-2 xl:grid-cols-4">
           <QueueMetric
             icon={ClipboardList}
             label="Assigned"
@@ -2218,17 +2326,19 @@ function ProductiveWorkPanel() {
         </div>
 
         {data.operatingContexts.length > 0 && (
-          <div className="mt-5 grid gap-3 md:grid-cols-2">
+          <div className="mt-5 grid min-w-0 gap-3 md:grid-cols-2">
             {data.operatingContexts.map((context) => (
               <div
                 key={`${context.operatingRoleId}:${context.operatingRoleRevision}`}
                 className="min-w-0 rounded-xl border border-stone-800 bg-black/30 p-4"
               >
-                <p className="truncate text-sm font-black text-white">
+                <p className="break-words text-sm font-black text-white">
                   {context.displayName}
                 </p>
-                <p className="mt-1 truncate font-mono text-[10px] text-stone-600">
-                  {context.operatingRoleId} · revision {context.operatingRoleRevision}
+                <p className="mt-1 break-all font-mono text-[10px] text-stone-600">
+                  {context.operatingRoleId}
+                  {' · revision '}
+                  {context.operatingRoleRevision}
                 </p>
                 <p className="mt-2 break-words text-[10px] leading-5 text-stone-500">
                   {context.capabilityIds.length
@@ -2248,49 +2358,96 @@ function ProductiveWorkPanel() {
             aria-label={group.title}
             className="min-w-0 overflow-hidden rounded-2xl border border-stone-800 bg-stone-950/75"
           >
-            <header className="border-b border-stone-800 px-5 py-4">
-              <h3 className="text-sm font-black uppercase tracking-[0.12em] text-white">
+            <header className="border-b border-stone-800 px-4 py-4 sm:px-5">
+              <h3 className="break-words text-sm font-black uppercase tracking-[0.12em] text-white">
                 {group.title}
               </h3>
             </header>
 
             {group.rows.length === 0 ? (
-              <p className="p-5 text-xs leading-6 text-stone-500">
+              <p className="p-4 text-xs leading-6 text-stone-500 sm:p-5">
                 {group.empty}
               </p>
             ) : (
               <div className="divide-y divide-stone-900">
-                {group.rows.map((item) => (
-                  <article
-                    key={item.workItemId}
-                    className="min-w-0 p-5"
-                  >
-                    <div className="flex min-w-0 flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
-                      <div className="min-w-0">
-                        <p className="break-words text-sm font-black text-white">
-                          {item.title}
-                        </p>
-                        <p className="mt-1 break-all font-mono text-[10px] text-stone-600">
-                          {item.workItemId}
-                        </p>
-                        <p className="mt-1 break-all font-mono text-[10px] text-stone-600">
-                          Matter: {item.caseMatterId}
-                        </p>
+                {group.rows.map((item) => {
+                  const workflow = workflowByWorkItemId.get(
+                    item.workItemId,
+                  );
+
+                  return (
+                    <article
+                      key={item.workItemId}
+                      className="min-w-0 p-4 sm:p-5"
+                    >
+                      <div className="flex min-w-0 flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+                        <div className="min-w-0">
+                          <p className="break-words text-sm font-black text-white">
+                            {item.title}
+                          </p>
+                          <p className="mt-1 break-all font-mono text-[10px] text-stone-600">
+                            {item.workItemId}
+                          </p>
+                          <p className="mt-1 break-all font-mono text-[10px] text-stone-600">
+                            Matter: {item.caseMatterId}
+                          </p>
+                        </div>
+
+                        <StatePill state={item.status} />
                       </div>
 
-                      <StatePill state={item.status} />
-                    </div>
+                      <div className="mt-3 grid min-w-0 gap-2 text-[11px] text-stone-500 sm:grid-cols-2">
+                        <span className="break-words">
+                          Source: {item.sourceKind}
+                        </span>
+                        <span className="break-words sm:text-right">
+                          Due: {item.dueAt
+                            ? formatTimestamp(item.dueAt)
+                            : 'No operational due time'}
+                        </span>
+                      </div>
 
-                    <div className="mt-3 grid gap-2 text-[11px] text-stone-500 sm:grid-cols-2">
-                      <span className="break-words">
-                        Source: {item.sourceKind}
-                      </span>
-                      <span className="break-words sm:text-right">
-                        Due: {item.dueAt ? formatTimestamp(item.dueAt) : 'No operational due time'}
-                      </span>
-                    </div>
-                  </article>
-                ))}
+                      {workflowState.kind === 'ready' && (
+                        <div className="mt-4 min-w-0 rounded-xl border border-stone-800 bg-black/25 p-3">
+                          {workflow ? (
+                            <>
+                              <p className="break-words text-xs font-black text-amber-200">
+                                Workflow: {workflow.stageDefinitionId}
+                              </p>
+                              <p className="mt-2 break-words text-xs font-semibold text-stone-300">
+                                {workflowLabel(workflow.readiness)}
+                              </p>
+
+                              {workflow.blockingDependencyWorkItemIds.length > 0 && (
+                                <p className="mt-2 break-words text-[11px] leading-5 text-stone-500">
+                                  Dependencies:{' '}
+                                  {workflow.blockingDependencyWorkItemIds.join(', ')}
+                                </p>
+                              )}
+
+                              {workflow.unsatisfiedGateReferences.length > 0 && (
+                                <p className="mt-1 break-words text-[11px] leading-5 text-stone-500">
+                                  Unsatisfied gates:{' '}
+                                  {workflow.unsatisfiedGateReferences.join(', ')}
+                                </p>
+                              )}
+
+                              <p className="mt-2 break-words text-[10px] leading-5 text-stone-600">
+                                Explanatory readiness only; this creates
+                                no legal or execution authority.
+                              </p>
+                            </>
+                          ) : (
+                            <p className="break-words text-[11px] leading-5 text-stone-500">
+                              No certified workflow context is projected
+                              for this visible work item.
+                            </p>
+                          )}
+                        </div>
+                      )}
+                    </article>
+                  );
+                })}
               </div>
             )}
           </section>
@@ -2299,7 +2456,6 @@ function ProductiveWorkPanel() {
     </div>
   );
 }
-
 
 function ConflictReviewQueue({ canReview, screenings, onRefresh }) {
   const [drafts, setDrafts] = useState({});

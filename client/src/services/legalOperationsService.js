@@ -334,6 +334,44 @@ const PRODUCTIVE_WORK_OPEN_STATES = Object.freeze([
   'BLOCKED',
 ]);
 
+
+const SPECIALIST_WORKFLOW_SCHEMA =
+  'WILSY-LEGAL-SPECIALIST-WORKFLOW-PROJECTION/V1';
+const SPECIALIST_WORKFLOW_VERSION =
+  'v1.0.0-P0-LEGAL-SPECIALIST-WORKFLOW-PROJECTION';
+const SPECIALIST_WORKFLOW_HTTP_VERSION =
+  'v1.0.0-P2-LEGAL-SPECIALIST-WORKFLOW-HTTP';
+
+const SPECIALIST_WORKFLOW_RESPONSE_KEYS = Object.freeze([
+  'schema',
+  'version',
+  'http_version',
+  'tenant_id',
+  'principal_id',
+  'as_of',
+  'rows',
+]);
+
+const SPECIALIST_WORKFLOW_ROW_KEYS = Object.freeze([
+  'work_item_id',
+  'case_matter_id',
+  'workflow_instance_id',
+  'workflow_definition_id',
+  'stage_definition_id',
+  'readiness',
+  'blocking_dependency_work_item_ids',
+  'unsatisfied_gate_references',
+  'materialization_transition_id',
+  'materialization_receipt_id',
+]);
+
+const SPECIALIST_WORKFLOW_READINESS = Object.freeze([
+  'ACTIONABLE',
+  'BLOCKED_DEPENDENCY',
+  'BLOCKED_GATE',
+  'BLOCKED_DEPENDENCY_AND_GATE',
+]);
+
 const CONFLICT_SCREENING_SCHEMA =
   'WILSY-LEGAL-CONFLICT-SCREENING-PRESENTATION/V1';
 const CONFLICT_SCREENING_VERSION =
@@ -1052,6 +1090,165 @@ function assertSortedRows(rows, identityKey, errorCode) {
     prior = current;
   }
 }
+
+
+function assertCanonicalSpecialistWorkflowPayload(value) {
+  const errorCode =
+    'LEGAL_OPERATIONS_SPECIALIST_WORKFLOW_RESPONSE_INVALID';
+
+  assertExactKeys(
+    value,
+    SPECIALIST_WORKFLOW_RESPONSE_KEYS,
+    errorCode,
+  );
+
+  if (
+    value.schema !== SPECIALIST_WORKFLOW_SCHEMA
+    || value.version !== SPECIALIST_WORKFLOW_VERSION
+    || value.http_version !== SPECIALIST_WORKFLOW_HTTP_VERSION
+    || !isCanonicalText(value.tenant_id)
+    || !isCanonicalText(value.principal_id)
+    || !isCanonicalTimestamp(value.as_of)
+    || !Array.isArray(value.rows)
+  ) {
+    throw new Error(errorCode);
+  }
+
+  let previousWorkItemId = null;
+
+  const rows = value.rows.map((entry) => {
+    assertExactKeys(
+      entry,
+      SPECIALIST_WORKFLOW_ROW_KEYS,
+      errorCode,
+    );
+
+    if (
+      !isCanonicalText(entry.work_item_id)
+      || !isCanonicalText(entry.case_matter_id)
+      || !isCanonicalText(entry.workflow_instance_id)
+      || !isCanonicalText(entry.workflow_definition_id)
+      || !isCanonicalText(entry.stage_definition_id)
+      || !SPECIALIST_WORKFLOW_READINESS.includes(
+        entry.readiness,
+      )
+      || !Array.isArray(
+        entry.blocking_dependency_work_item_ids,
+      )
+      || !Array.isArray(
+        entry.unsatisfied_gate_references,
+      )
+      || (
+        entry.materialization_transition_id !== null
+        && !isCanonicalText(
+          entry.materialization_transition_id,
+        )
+      )
+      || (
+        entry.materialization_receipt_id !== null
+        && !isCanonicalText(
+          entry.materialization_receipt_id,
+        )
+      )
+    ) {
+      throw new Error(errorCode);
+    }
+
+    if (
+      previousWorkItemId !== null
+      && entry.work_item_id <= previousWorkItemId
+    ) {
+      throw new Error(errorCode);
+    }
+
+    previousWorkItemId = entry.work_item_id;
+
+    const validateTokens = (tokens) => {
+      let previous = null;
+      const observed = new Set();
+
+      for (const token of tokens) {
+        if (
+          !isCanonicalText(token)
+          || observed.has(token)
+          || (
+            previous !== null
+            && token < previous
+          )
+        ) {
+          throw new Error(errorCode);
+        }
+
+        observed.add(token);
+        previous = token;
+      }
+
+      return Object.freeze([...tokens]);
+    };
+
+    const dependencies = validateTokens(
+      entry.blocking_dependency_work_item_ids,
+    );
+
+    const gates = validateTokens(
+      entry.unsatisfied_gate_references,
+    );
+
+    const semanticStateValid = (
+      (
+        entry.readiness === 'ACTIONABLE'
+        && dependencies.length === 0
+        && gates.length === 0
+      )
+      || (
+        entry.readiness === 'BLOCKED_DEPENDENCY'
+        && dependencies.length > 0
+        && gates.length === 0
+      )
+      || (
+        entry.readiness === 'BLOCKED_GATE'
+        && dependencies.length === 0
+        && gates.length > 0
+      )
+      || (
+        entry.readiness
+          === 'BLOCKED_DEPENDENCY_AND_GATE'
+        && dependencies.length > 0
+        && gates.length > 0
+      )
+    );
+
+    if (!semanticStateValid) {
+      throw new Error(errorCode);
+    }
+
+    return Object.freeze({
+      workItemId: entry.work_item_id,
+      caseMatterId: entry.case_matter_id,
+      workflowInstanceId: entry.workflow_instance_id,
+      workflowDefinitionId: entry.workflow_definition_id,
+      stageDefinitionId: entry.stage_definition_id,
+      readiness: entry.readiness,
+      blockingDependencyWorkItemIds: dependencies,
+      unsatisfiedGateReferences: gates,
+      materializationTransitionId:
+        entry.materialization_transition_id,
+      materializationReceiptId:
+        entry.materialization_receipt_id,
+    });
+  });
+
+  return Object.freeze({
+    schema: value.schema,
+    version: value.version,
+    httpVersion: value.http_version,
+    tenantId: value.tenant_id,
+    principalId: value.principal_id,
+    asOf: value.as_of,
+    rows: Object.freeze(rows),
+  });
+}
+
 
 function assertCanonicalProductiveWorkPayload(value) {
   const errorCode = 'LEGAL_OPERATIONS_PRODUCTIVE_WORK_RESPONSE_INVALID';
@@ -2206,6 +2403,34 @@ export async function getLegalProductiveWork() {
   } finally {
     if (legalProductiveWorkInFlight === request) {
       legalProductiveWorkInFlight = null;
+    }
+  }
+}
+
+let legalSpecialistWorkflowInFlight = null;
+
+export async function getLegalSpecialistWorkflow() {
+  if (legalSpecialistWorkflowInFlight) {
+    return legalSpecialistWorkflowInFlight;
+  }
+
+  const request = api
+    .get('/legal-operations/specialist-workflow')
+    .then((response) => (
+      assertCanonicalSpecialistWorkflowPayload(
+        response?.data,
+      )
+    ));
+
+  legalSpecialistWorkflowInFlight = request;
+
+  try {
+    return await request;
+  } finally {
+    if (
+      legalSpecialistWorkflowInFlight === request
+    ) {
+      legalSpecialistWorkflowInFlight = null;
     }
   }
 }

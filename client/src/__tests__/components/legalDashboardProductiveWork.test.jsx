@@ -25,6 +25,7 @@ const mocks = vi.hoisted(() => ({
   getLegalPracticeWorkspace: vi.fn(),
   getLegalConflictScreenings: vi.fn(),
   getLegalProductiveWork: vi.fn(),
+  getLegalSpecialistWorkflow: vi.fn(),
 }));
 
 vi.mock('../../services/legalMatterDeadlineService.js', () => ({
@@ -47,6 +48,7 @@ vi.mock('../../services/legalOperationsService.js', () => ({
   getLegalFinanceEvidence: vi.fn(),
   getLegalPracticeWorkspace: mocks.getLegalPracticeWorkspace,
   getLegalProductiveWork: mocks.getLegalProductiveWork,
+  getLegalSpecialistWorkflow: mocks.getLegalSpecialistWorkflow,
   getSheriffOperationalQueues: vi.fn(),
   issueLegalConflictReview: vi.fn(),
   recordDeputyFieldOutcome: vi.fn(),
@@ -179,6 +181,23 @@ describe('PW-P11C canonical Legal dashboard productive work', () => {
     mocks.getLegalProductiveWork.mockResolvedValue(
       productiveWork(),
     );
+    mocks.getLegalSpecialistWorkflow.mockResolvedValue({
+      tenantId: 'tenant-law',
+      principalId: 'principal-law',
+      asOf: '2026-10-18T10:00:00+00:00',
+      rows: [{
+        workItemId: 'work-1',
+        caseMatterId: 'matter-1',
+        workflowInstanceId: 'workflow-1',
+        workflowDefinitionId: 'definition-1',
+        stageDefinitionId: 'stage-review',
+        readiness: 'BLOCKED_DEPENDENCY_AND_GATE',
+        blockingDependencyWorkItemIds: ['work-0'],
+        unsatisfiedGateReferences: ['PARTNER_REVIEW'],
+        materializationTransitionId: 'transition-1',
+        materializationReceiptId: 'receipt-1',
+      }],
+    });
   });
 
   it('keeps productive-work transport closed until My Work is opened', async () => {
@@ -265,6 +284,50 @@ describe('PW-P11C canonical Legal dashboard productive work', () => {
         '.min-w-0',
       ),
     ).not.toBeNull();
+  });
+
+  it('enriches only an already-visible productive-work row', async () => {
+    render(<LegalDashboard roleView="LEGAL_PARTNER" />);
+    fireEvent.click(await screen.findByRole('button', { name: 'My Work' }));
+
+    expect(await screen.findByText('Workflow: stage-review')).toBeInTheDocument();
+    expect(screen.getByText('Blocked by dependency and gate')).toBeInTheDocument();
+    expect(screen.getByText(/Dependencies: work-0/)).toBeInTheDocument();
+    expect(screen.getByText(/Unsatisfied gates: PARTNER_REVIEW/)).toBeInTheDocument();
+    expect(screen.getByText(/explanatory readiness/i)).toBeInTheDocument();
+  });
+
+  it('does not manufacture a row from unmatched specialist evidence', async () => {
+    mocks.getLegalSpecialistWorkflow.mockResolvedValueOnce({
+      tenantId: 'tenant-law',
+      principalId: 'principal-law',
+      asOf: '2026-10-18T10:00:00+00:00',
+      rows: [{
+        workItemId: 'invisible-work',
+        caseMatterId: 'matter-hidden',
+        readiness: 'ACTIONABLE',
+        blockingDependencyWorkItemIds: [],
+        unsatisfiedGateReferences: [],
+      }],
+    });
+
+    render(<LegalDashboard roleView="LEGAL_PARTNER" />);
+    fireEvent.click(await screen.findByRole('button', { name: 'My Work' }));
+
+    expect(await screen.findByText('Prepare governed filing')).toBeInTheDocument();
+    expect(screen.queryByText('invisible-work')).not.toBeInTheDocument();
+    expect(screen.queryByText('matter-hidden')).not.toBeInTheDocument();
+  });
+
+  it('keeps productive work visible when specialist enrichment is unavailable', async () => {
+    mocks.getLegalSpecialistWorkflow.mockRejectedValueOnce(new Error('offline'));
+
+    render(<LegalDashboard roleView="LEGAL_PARTNER" />);
+    fireEvent.click(await screen.findByRole('button', { name: 'My Work' }));
+
+    expect(await screen.findByText('Prepare governed filing')).toBeInTheDocument();
+    expect(screen.getByRole('status', { name: 'Workflow enrichment unavailable' }))
+      .toHaveTextContent('Productive work remains available');
   });
 
   it('does not expose My Work when authoritative permissions omit productive-work read', async () => {
