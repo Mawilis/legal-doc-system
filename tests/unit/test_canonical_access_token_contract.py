@@ -1,16 +1,15 @@
 """WILSY OS canonical access-token issuance and verification certificate.
 
 TITLE: Canonical Access-Token Contract Certificate
-VERSION: v1.5.0-LEGAL-CONFLICT-REVIEW-PRESENTATION-PROJECTION-CERT
+VERSION: v1.4.0-D21B7-TENANT-BRANDING-WORKSPACE-HTTP-PROJECTION-CERT
 AUTHORITY: Deterministic token interoperability evidence only.
 EPITOME: Proves MFA/login issuance and EOS protected-route verification share
          one cryptographic owner, one secret authority, and one claim contract.
 ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/tests/unit/test_canonical_access_token_contract.py
 COLLABORATION / OWNERSHIP: Exercises AuthRegistry, jwt_provider,
                            get_current_identity, and workspace-bootstrap transport.
-CERTIFICATION / UPDATE DATE: 2026-10-16
-CHANGELOG: v1.5.0-LEGAL-CONFLICT-REVIEW-PRESENTATION-PROJECTION-CERT proves workspace bootstrap projects the existing conflict-review write authority only after the canonical tenant authorization compositor grants it, without trusting JWT or browser claims.
-           v1.4.0-D21B7-TENANT-BRANDING-WORKSPACE-HTTP-PROJECTION-CERT reconciles workspace-bootstrap transport with D21B7 by requiring an explicit server-owned workspace.branding field, using null as authoritative lawful no-branding in legacy authority fixtures, and preventing the compatibility certificate from invoking live branding persistence. D21B7's dedicated certificate separately proves configured-branding transport, transaction retry and bounded outage semantics.
+CERTIFICATION / UPDATE DATE: 2026-09-24
+CHANGELOG: v1.4.0-D21B7-TENANT-BRANDING-WORKSPACE-HTTP-PROJECTION-CERT reconciles workspace-bootstrap transport with D21B7 by requiring an explicit server-owned workspace.branding field, using null as authoritative lawful no-branding in legacy authority fixtures, and preventing the compatibility certificate from invoking live branding persistence. D21B7's dedicated certificate separately proves configured-branding transport, transaction retry and bounded outage semantics.
            v1.3.0-D24A-DURABLE-PRINCIPAL-NAME-PROJECTION-CERT certifies exact durable AuthRegistry firstName/lastName projection after workspace authority revalidation, excludes forged transport identity text, proves malformed optional names are omitted rather than inferred, and proves durable principal outage/mismatch fail closed without adding role, permission, entitlement, legal-command, billing, payment, execution, or settlement authority.
            v1.2.0-D19-CANONICAL-TENANT-PRACTICE-PROFILE-PROJECTION-CERT certifies that workspace-bootstrap projects canonical
            tenant alias, industry, region and sector as descriptive practice
@@ -70,6 +69,125 @@ from tools.eos.auth.tenant_business_role import TenantBusinessRoleStatus
 from tools.eos.auth.tenant_membership import TenantMembershipStatus
 from tools.eos.saas.auth.auth_registry import AuthRegistry
 from tools.eos.saas.domain.auth import VerifyOTPRequest
+
+
+class _FactorInsertResult:
+    inserted_id = "factor"
+
+
+class _FactorCollection:
+    def __init__(self) -> None:
+        self.rows: list[dict[str, Any]] = []
+
+    def create_index(
+        self,
+        _keys: object,
+        **_kwargs: object,
+    ) -> str:
+        return "factor-index"
+
+    def find_one(
+        self,
+        query: dict[str, object],
+        *,
+        session: object = None,
+    ) -> dict[str, object] | None:
+        del session
+
+        for row in self.rows:
+            if all(
+                row.get(key) == value
+                for key, value in query.items()
+            ):
+                return dict(row)
+
+        return None
+
+    def insert_one(
+        self,
+        row: dict[str, object],
+        *,
+        session: object = None,
+    ) -> _FactorInsertResult:
+        assert session is not None
+        self.rows.append(dict(row))
+        return _FactorInsertResult()
+
+
+class _FactorDatabase:
+    def __init__(self) -> None:
+        self.collections: dict[
+            str,
+            _FactorCollection,
+        ] = {}
+
+    def __getitem__(
+        self,
+        name: str,
+    ) -> _FactorCollection:
+        return self.collections.setdefault(
+            name,
+            _FactorCollection(),
+        )
+
+
+class _FactorMongoSession:
+    def __init__(self) -> None:
+        self.in_transaction = False
+
+    def start_transaction(self) -> None:
+        self.in_transaction = True
+
+    def commit_transaction(self) -> None:
+        self.in_transaction = False
+
+    def abort_transaction(self) -> None:
+        self.in_transaction = False
+
+    def end_session(self) -> None:
+        self.in_transaction = False
+
+
+class _FactorClient:
+    def __init__(self) -> None:
+        self.sessions: list[
+            _FactorMongoSession
+        ] = []
+
+    def start_session(
+        self,
+    ) -> _FactorMongoSession:
+        session = _FactorMongoSession()
+        self.sessions.append(session)
+        return session
+
+
+def _install_factor_kernel_harness(
+    monkeypatch: pytest.MonkeyPatch,
+) -> tuple[
+    _FactorDatabase,
+    _FactorClient,
+]:
+    from tools.eos.kernel import db as kernel_db
+
+    database = _FactorDatabase()
+    client = _FactorClient()
+
+    monkeypatch.setattr(
+        kernel_db,
+        "get_database",
+        lambda: database,
+    )
+
+    monkeypatch.setattr(
+        kernel_db,
+        "get_client",
+        lambda: client,
+    )
+
+    return database, client
+
+
 
 
 SECRET = "canonical-token-contract-unit-secret"
@@ -325,6 +443,7 @@ def test_canonical_token_round_trips_through_current_identity(monkeypatch: pytes
 def test_mfa_response_token_is_immediately_accepted_by_canonical_verifier(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
+    _install_factor_kernel_harness(monkeypatch)
     monkeypatch.setenv("WILSY_JWT_SECRET", SECRET)
     issuer = AuthRegistry(cast(Any, _TenantRegistry()))
     durable_calls: list[tuple[str, str]] = []
@@ -358,11 +477,38 @@ def test_mfa_response_token_is_immediately_accepted_by_canonical_verifier(
         def verify_otp(self, _user_id: str, _code: str) -> bool:
             return True
 
-        def create_session(self, _user: SimpleNamespace) -> SimpleNamespace:
+        def create_session(
+            self,
+            _user: SimpleNamespace,
+            *,
+            session: object = None,
+        ) -> SimpleNamespace:
+            assert session is not None
             return SimpleNamespace(
                 token=issuer.generate_access_jwt(
-                    user.id, user.tenantId, user.role, user.permissions
-                )
+                    user.id,
+                    user.tenantId,
+                    user.role,
+                    user.permissions,
+                    session=session,
+                ),
+                sessionReference="WILSYSESSION-test",
+            )
+
+        def get_credential_revision(
+            self,
+            tenant_id: str,
+            principal_id: str,
+            *,
+            session: object = None,
+        ) -> int:
+            assert tenant_id == TENANT
+            assert principal_id == PRINCIPAL
+            assert session is not None
+            return issuer.get_credential_revision(
+                tenant_id,
+                principal_id,
+                session=session,
             )
 
     monkeypatch.setattr(auth_router, "get_auth_registry", lambda _tenant: _MfaRegistry())
@@ -375,7 +521,10 @@ def test_mfa_response_token_is_immediately_accepted_by_canonical_verifier(
     assert payload["token_purpose"] == "ACCESS"
     assert payload["credential_revision"] == 0
     assert _run_identity(response.token, _PrincipalRepository(), monkeypatch).identity_id == PRINCIPAL
-    assert durable_calls == [(TENANT, PRINCIPAL)]
+    assert durable_calls == [
+        (TENANT, PRINCIPAL),
+        (TENANT, PRINCIPAL),
+    ]
 
 
 def test_missing_secret_fails_closed_for_issue_and_verify(monkeypatch: pytest.MonkeyPatch) -> None:
@@ -743,14 +892,14 @@ def test_workspace_bootstrap_projects_exact_authorized_legal_permissions(
     payload = response.json()
     assert payload["workspace"]["businessRole"] == "tenant_legal_partner"
     assert payload["workspace"]["legalPermissions"] == [
-        "legal_operations:billing:read",
-        "legal_operations:conflict_review:write",
-        "legal_operations:instruction:write",
-        "legal_operations:invoice:read",
-        "legal_operations:matter_deadline:read",
-        "legal_operations:matter_deadline:write",
-        "legal_operations:productive_work:read",
-        "legal_operations:return:write",
+        'legal_operations:billing:read',
+        'legal_operations:conflict_review:write',
+        'legal_operations:instruction:write',
+        'legal_operations:invoice:read',
+        'legal_operations:matter_deadline:read',
+        'legal_operations:matter_deadline:write',
+        'legal_operations:productive_work:read',
+        'legal_operations:return:write',
     ]
     assert "permissions" not in payload["user"]
     assert "roles" not in payload["user"]
@@ -889,7 +1038,7 @@ def test_workspace_bootstrap_permission_authority_outage_is_bounded_503(
 
 
 # ARTIFACT: test_canonical_access_token_contract.py
-# VERSION: v1.5.0-LEGAL-CONFLICT-REVIEW-PRESENTATION-PROJECTION-CERT
+# VERSION: v1.4.0-D21B7-TENANT-BRANDING-WORKSPACE-HTTP-PROJECTION-CERT
 # AUTHORITY BOUNDARY: deterministic token interoperability plus bounded server-owned workspace Legal permission, D21B7 branding presence/absence transport, durable descriptive principal-name, and canonical tenant practice-profile projection evidence only
 # TENANT POSTURE: exact tenant claim is preserved; durable membership remains downstream
 # FAIL-CLOSED POSTURE: missing configuration, malformed claims, expiry, signatures, inactive principals, workspace authority drift, permission/profile/branding-authority outage or mismatch, malformed optional name text, or attempts to infer names/plan/subscription/operating-model/branding authority deny or remain excluded
