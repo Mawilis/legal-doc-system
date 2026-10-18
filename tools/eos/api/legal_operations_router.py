@@ -1,7 +1,7 @@
 """Authenticated deterministic read projections for Legal Operations.
 
 TITLE: WILSY OS Legal Operations Read Projection Router
-VERSION: v1.10.0-D22B5-R21-LEGAL-PRODUCT-AVAILABILITY-CONJUNCTION
+VERSION: v1.11.0-LEGAL-COMMERCIAL-CONTEXT-HTTP
 AUTHORITY: Authenticated, tenant-scoped projection of canonical Legal Operations evidence only.
 EPITOME: Preserve exact authorized internal/sheriff/deputy/client reads while
          exposing one snapshot-consistent legal-practice workspace projection and
@@ -21,7 +21,8 @@ COLLABORATION / OWNERSHIP: Python EOS API composition. P1 owns lifecycle truth,
                             L8-8E owns immutable conflict-screening persistence;
                             tenant authorization owns access authority.
 CERTIFICATION / UPDATE DATE: 2026-10-10
-CHANGELOG: 2026-10-10 v1.10.0-D22B5-R21-LEGAL-PRODUCT-AVAILABILITY-CONJUNCTION adds the canonical D22B5 Legal Operations product-availability read as the first durable operation inside the existing workspace snapshot transaction. Unavailability denies with one non-disclosing 403; product-authority failure denies with a distinct 503; the four D15 authorities, workspace evidence reads and response contract remain unchanged.
+CHANGELOG: 2026-10-16 v1.11.0-LEGAL-COMMERCIAL-CONTEXT-HTTP adds authenticated GET /commercial-context using the already-canonical subscription:read permission. The route derives tenant scope only from current Python membership/permission authority, owns one read-only Mongo snapshot transaction, composes exact current Legal product entitlement with canonical subscription evidence, and exposes bounded commercial context only to commercial-read principals. It adds no Legal-role grant, subscription mutation, plan mutation, IAM assignment, payment, execution or settlement authority.
+           2026-10-10 v1.10.0-D22B5-R21-LEGAL-PRODUCT-AVAILABILITY-CONJUNCTION adds the canonical D22B5 Legal Operations product-availability read as the first durable operation inside the existing workspace snapshot transaction. Unavailability denies with one non-disclosing 403; product-authority failure denies with a distinct 503; the four D15 authorities, workspace evidence reads and response contract remain unchanged.
            2026-09-25 v1.9.0-L8-8N-CONFLICT-SCREENING-READ-API adds an authenticated exact-tenant GET /conflict-screenings review queue backed by the canonical immutable screening registry. It exposes only screening_id, source_case_matter_id, REVIEW_REQUIRED status and screened_at in a bounded deterministic projection; no review state, evidence, party identity, clearance, IAM or financial authority is created.
            2026-09-24 v1.8.0-L8-7D15-FIRST-CLASS-MATTER-WORKSPACE-API adds canonical CaseMatter rows and matter counts to the existing practice workspace so a durably registered matter is directly discoverable after intake. CaseMatter is read from the same exact-tenant snapshot as the existing lifecycle families, exposes only case_matter_id, matter_reference, opened_at, state and opaque evidence_identity, and creates no new lifecycle, IAM, client, billing, payment, AI or settlement authority.
            2026-09-23 v1.7.0-L8-7D11-LEGAL-PRACTICE-WORKSPACE-API adds GET /workspace for the exact current
@@ -135,6 +136,8 @@ from tools.eos.api.tenant_authorization_http import (
     get_role_assignment_repository,
 )
 from tools.eos.auth.authentication import get_principal_authority_repository
+from tools.eos.auth.authorization import RequirePermission
+from tools.eos.auth.identity import SovereignIdentity
 from tools.eos.auth.tenant_access import get_tenant_membership_repository
 from tools.eos.legal_operations.domain.deputy_personal_active_work import (
     DeputyPersonalActiveWorkError,
@@ -211,13 +214,19 @@ from tools.eos.saas.entitlement.legal_product_availability_projection import (
     LegalProductAvailabilityProjectionError,
     resolve_legal_product_availability,
 )
+from tools.eos.saas.entitlement.legal_commercial_context_projection import (
+    LegalCommercialContextProjection,
+    LegalCommercialContextProjectionError,
+    resolve_legal_commercial_context,
+)
+import tools.eos.saas.billing.subscription_registry as subscription_registry_module
 from tools.eos.saas.entitlement.tenant_product_entitlement_registry import (
     CURRENT_COLLECTION as TENANT_PRODUCT_ENTITLEMENT_CURRENT_COLLECTION,
     HISTORY_COLLECTION as TENANT_PRODUCT_ENTITLEMENT_HISTORY_COLLECTION,
 )
 
 
-VERSION: Final[str] = "v1.10.0-D22B5-R21-LEGAL-PRODUCT-AVAILABILITY-CONJUNCTION"
+VERSION: Final[str] = "v1.11.0-LEGAL-COMMERCIAL-CONTEXT-HTTP"
 _IDENTITY = re.compile(r"^[A-Za-z0-9][A-Za-z0-9._:-]{0,127}$")
 _CLIENT_ROLE = "tenant_legal_client"
 _LEGAL_PRACTICE_ROLES: Final[frozenset[str]] = frozenset(
@@ -236,12 +245,164 @@ _SCREENING_VERSION: Final[str] = "v1.9.0-L8-8N-CONFLICT-SCREENING-READ-API"
 _SCREENING_VISIBILITY: Final[str] = "LEGAL_CONFLICT_SCREENING_REVIEW_QUEUE"
 _T = TypeVar("_T")
 
+_COMMERCIAL_CONTEXT_SCHEMA: Final[str] = (
+    "WILSY-LEGAL-OPERATIONS-COMMERCIAL-CONTEXT/V1"
+)
+_COMMERCIAL_CONTEXT_HTTP_VERSION: Final[str] = (
+    "v1.0.0-LEGAL-COMMERCIAL-CONTEXT-HTTP"
+)
+_COMMERCIAL_CONTEXT_VISIBILITY: Final[str] = (
+    "LEGAL_COMMERCIAL_CONTEXT_SUBSCRIPTION_READ"
+)
+_SUBSCRIPTION_READ_AUTHORITY = RequirePermission(
+    "subscription:read"
+)
+
 
 def _db_handles() -> tuple[Any, Any]:
     """Resolve configured kernel client/database only when the client route runs."""
     from tools.eos.kernel.db import get_client, get_database
 
     return get_client(), get_database()
+
+
+def _commercial_tenant_id(
+    identity: SovereignIdentity,
+) -> str:
+    """Return only the tenant admitted by current subscription-read authority.
+
+    ``RequirePermission("subscription:read")`` performs authentication,
+    ACTIVE membership and current permission admission before this helper runs.
+    Raw request headers, browser plan selectors and Legal role labels are not
+    tenant or commercial authority.
+    """
+    tenant_id = identity.tenant_id
+    if (
+        not isinstance(tenant_id, str)
+        or not tenant_id
+        or tenant_id != tenant_id.strip()
+    ):
+        raise HTTPException(
+            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+            detail="LEGAL_OPERATIONS_COMMERCIAL_AUTHORITY_UNAVAILABLE",
+        )
+    return tenant_id
+
+
+def _commercial_projection_transaction(
+    callback: Callable[[Any, Any], _T],
+) -> _T:
+    """Run commercial projection inside one API-owned snapshot transaction.
+
+    The router owns session lifecycle only. It performs no write, retry,
+    subscription mutation, entitlement mutation, payment execution or
+    settlement operation. The exact session is propagated through subscription
+    and product-entitlement reads.
+    """
+    client, database = _db_handles()
+    if client is None or database is None:
+        raise HTTPException(
+            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+            detail="LEGAL_OPERATIONS_COMMERCIAL_CONTEXT_UNAVAILABLE",
+        )
+
+    try:
+        with client.start_session() as session:
+            session.start_transaction(
+                read_concern=ReadConcern("snapshot")
+            )
+            try:
+                result = callback(
+                    session,
+                    database,
+                )
+                session.commit_transaction()
+                return result
+            except Exception:
+                if bool(
+                    getattr(
+                        session,
+                        "in_transaction",
+                        False,
+                    )
+                ):
+                    session.abort_transaction()
+                raise
+    except (
+        HTTPException,
+        LegalCommercialContextProjectionError,
+    ):
+        raise
+    except Exception as error:
+        raise HTTPException(
+            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+            detail="LEGAL_OPERATIONS_COMMERCIAL_CONTEXT_UNAVAILABLE",
+        ) from error
+
+
+def _commercial_context_payload(
+    projection: LegalCommercialContextProjection,
+) -> dict[str, object]:
+    """Serialize only bounded commercial evidence for authorized readers.
+
+    Amounts are descriptive subscription evidence, never invoice, amount-due,
+    collection, payment execution or settlement truth.
+    """
+    return {
+        "schema": _COMMERCIAL_CONTEXT_SCHEMA,
+        "version": _COMMERCIAL_CONTEXT_HTTP_VERSION,
+        "tenant_id": projection.tenant_id,
+        "visibility": _COMMERCIAL_CONTEXT_VISIBILITY,
+        "product": {
+            "product_id": projection.product_id.value,
+            "workspace_key": projection.workspace_key,
+            "available": projection.product_available,
+            "entitlement_state": (
+                projection.entitlement_state.value
+                if projection.entitlement_state is not None
+                else None
+            ),
+        },
+        "subscription": {
+            "subscription_id": projection.subscription_id,
+            "status": (
+                projection.subscription_status.value
+                if projection.subscription_status is not None
+                else None
+            ),
+            "current_period_end": (
+                projection.current_period_end.isoformat()
+                if projection.current_period_end is not None
+                else None
+            ),
+        },
+        "plan": {
+            "plan_id": projection.plan_id,
+            "tier": (
+                projection.plan_tier.value
+                if projection.plan_tier is not None
+                else None
+            ),
+            "name": projection.plan_name,
+            "features": list(
+                projection.plan_features
+            ),
+            "catalogue_version":
+                projection.plan_catalogue_version,
+        },
+        "commercial": {
+            "amount": projection.amount,
+            "currency": projection.currency,
+            "billing_frequency": (
+                projection.billing_frequency.value
+                if projection.billing_frequency is not None
+                else None
+            ),
+            "monthly_equivalent_amount":
+                projection.monthly_equivalent_amount,
+            "financial_execution_authority": False,
+        },
+    }
 
 
 def _client_projection_transaction(callback: Callable[[Any, Any], _T]) -> _T:
@@ -800,6 +961,67 @@ _CLIENT_MATTER_READ = RequireTenantAuthorization(
 router = APIRouter(prefix="/legal-operations", tags=["Legal Operations"])
 
 
+@router.get("/commercial-context")
+async def get_legal_commercial_context_projection(
+    identity: SovereignIdentity = Depends(
+        _SUBSCRIPTION_READ_AUTHORITY
+    ),
+) -> dict[str, object]:
+    """Return exact tenant Legal product/subscription commercial context.
+
+    Admission reuses the existing canonical ``subscription:read`` authority.
+    The authenticated identity's membership-admitted tenant is the only tenant
+    selector. Legal role labels, browser state, product selectors, plan
+    selectors, subscription identifiers, prices, currencies and billing
+    frequencies are not accepted from the request.
+
+    One API-owned Mongo snapshot transaction joins the exact current
+    LEGAL_OPERATIONS product entitlement with canonical ACTIVE subscription
+    evidence. Entitlement/subscription disagreement fails closed.
+
+    The response is descriptive commercial truth only. It grants no Legal
+    lifecycle mutation, business role, IAM assignment, plan/subscription
+    mutation, invoice, collection, payment execution or settlement authority.
+    Kennel EOS remains exclusive financial execution authority.
+    """
+    tenant_id = _commercial_tenant_id(
+        identity
+    )
+
+    def run(
+        session: Any,
+        database: Any,
+    ) -> dict[str, object]:
+        projection = resolve_legal_commercial_context(
+            tenant_id,
+            database.get_collection(
+                subscription_registry_module
+                .subscriptions_collection.name
+            ),
+            database.get_collection(
+                TENANT_PRODUCT_ENTITLEMENT_HISTORY_COLLECTION
+            ),
+            database.get_collection(
+                TENANT_PRODUCT_ENTITLEMENT_CURRENT_COLLECTION
+            ),
+            session=session,
+        )
+
+        return _commercial_context_payload(
+            projection
+        )
+
+    try:
+        return _commercial_projection_transaction(
+            run
+        )
+    except LegalCommercialContextProjectionError as error:
+        raise HTTPException(
+            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+            detail="LEGAL_OPERATIONS_COMMERCIAL_CONTEXT_UNAVAILABLE",
+        ) from error
+
+
 @router.get("/productive-work")
 async def get_legal_productive_work_projection(
     context: TenantAuthorizationContext = Depends(
@@ -1278,6 +1500,7 @@ __all__ = [
     "get_deputy_principal_binding_collection",
     "get_lifecycle_collection",
     "get_legal_client_matter_projection_route",
+    "get_legal_commercial_context_projection",
     "get_legal_conflict_screening_review_queue",
     "get_legal_practice_workspace_projection",
     "get_legal_productive_work_projection",
@@ -1286,9 +1509,9 @@ __all__ = [
 
 
 # ARTIFACT: legal_operations_router.py
-# VERSION: v1.10.0-D22B5-R21-LEGAL-PRODUCT-AVAILABILITY-CONJUNCTION
-# AUTHORITY BOUNDARY: authenticated internal/sheriff/deputy/client reads plus D15 IAM-and-product-conjunctive workspace and bounded conflict-screening presentation; mutation IAM/commands remain separate
-# TENANT POSTURE: every projection uses exact authenticated tenant context; foreign lifecycle or screening evidence is bounded and never disclosed
-# FAIL-CLOSED POSTURE: authority/scope mismatch, unavailable product, product-authority failure, snapshot failure, screening corruption/overflow, visibility/matter/workspace corruption, absent history/locator, divergence and outages deny
+# VERSION: v1.11.0-LEGAL-COMMERCIAL-CONTEXT-HTTP
+# AUTHORITY BOUNDARY: authenticated Legal reads plus subscription:read-gated commercial context; commercial evidence grants no Legal command, IAM assignment, plan/subscription mutation, payment execution or settlement authority
+# TENANT POSTURE: every projection uses exact authenticated/current-authorized tenant context; foreign lifecycle, screening, subscription and entitlement evidence is never disclosed
+# FAIL-CLOSED POSTURE: authority/scope mismatch, entitlement/subscription disagreement, unavailable product/commercial authority, snapshot failure, corruption, divergence and persistence outages deny
 # FINANCIAL EXECUTION AUTHORITY: Kennel EOS exclusively
 # END OF WILSY OS SOVEREIGN ARTIFACT

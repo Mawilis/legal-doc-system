@@ -1,7 +1,7 @@
 """L7B host-backed live HTTP, IAM, and P4A-to-P5F certificate.
 
 TITLE: Wilsy OS Legal Operations Command API Real-Mongo Certificate
-VERSION: v1.4.0-L8-6G-SERVER-OWNED-FIELD-SEQUENCE-RM-CERT
+VERSION: v1.5.0-CROSS-ROLE-SHERIFF-COMMAND-RM-CERT
 AUTHORITY: Host-backed certificate for authenticated command composition.
 EPITOME: Prove actual FastAPI POST dispatch, durable IAM resolution, live P4A
          allocation, canonical P5A/P5B bridging, the P5C-P5F command chain, and
@@ -9,8 +9,9 @@ EPITOME: Prove actual FastAPI POST dispatch, durable IAM resolution, live P4A
 ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/tests/integration/test_legal_operations_command_router_real_mongo.py
 COLLABORATION / OWNERSHIP: The certificate owns only fixtures and observations;
                             P1/P2/P4/P5 remain canonical authorities.
-CERTIFICATION / UPDATE DATE: 2026-09-23
-CHANGELOG: 2026-09-23 v1.4.0-L8-6G-SERVER-OWNED-FIELD-SEQUENCE-RM-CERT proves live deputy HTTP bodies omit P5M
+CERTIFICATION / UPDATE DATE: 2026-10-16
+CHANGELOG: 2026-10-16 v1.5.0-CROSS-ROLE-SHERIFF-COMMAND-RM-CERT removes the protected vendor-certificate fallback, requires an explicitly injected disposable replica-set URI/name, and certifies the current Sheriff allocation-capability plus P4-to-P5A/P5B attempt-authority bridge without weakening prior HTTP/IAM/rollback coverage.
+           2026-09-23 v1.4.0-L8-6G-SERVER-OWNED-FIELD-SEQUENCE-RM-CERT proves live deputy HTTP bodies omit P5M
            sequence lineage while the server derives durable sequence 1 then 2
            and preserves immutable prior-event chaining for the same device.
            2026-09-23 v1.3.0-L8-6E-DEPUTY-FIELD-COMMAND-BRIDGE-RM-CERT adds live tenant_deputy IAM, immutable L8-6B
@@ -36,9 +37,10 @@ TRANSACTION BOUNDARY: The API owns command session/transaction mechanics;
                       P1/P2/P4/P5 orchestrators and registries never do.
 FINANCIAL AUTHORITY BOUNDARY: No invoice, payment, settlement, or financial
                               execution is created; Kennel EOS remains exclusive.
-FAIL-CLOSED DECLARATION: Only pre-yield hello/setName/writable-primary absence
-                         may skip. Index, persistence, IAM, transport, lineage,
-                         rollback, and product failures fail this certificate.
+FAIL-CLOSED DECLARATION: Explicit disposable Mongo configuration, hello,
+                         setName, writable-primary, indexes, persistence, IAM,
+                         transport, lineage, rollback, and product failures all
+                         fail this certificate. No protected fallback exists.
 """
 from __future__ import annotations
 
@@ -94,7 +96,19 @@ from tools.eos.legal_operations.domain.legal_operations_lifecycle import (
     ServiceAttemptState,
     SheriffOffice,
 )
-from tools.eos.legal_operations.domain.process_service_attempt_authority import authorize_process_service_attempt
+from tests.unit.test_legal_matter_workflow_transition import context as workflow_context
+from tests.unit.test_legal_matter_workflow_transition_command_service import definition as workflow_definition
+from tools.eos.legal_operations.domain.legal_matter_workflow_instance import LegalMatterWorkflowInstance
+from tools.eos.legal_operations.domain.legal_workflow_gate_satisfaction import LegalWorkflowGateEvidence, LegalWorkflowGateSatisfaction
+from tools.eos.legal_operations.domain.tenant_legal_operating_model import TenantLegalOperatingModel
+from tools.eos.legal_operations.domain.tenant_legal_workflow_activation import TenantLegalWorkflowActivation
+from tools.eos.legal_operations.domain.legal_operating_catalogue import CATALOGUE_FINGERPRINT
+from tools.eos.legal_operations.registry.legal_matter_workflow_instance_registry import COLLECTION_NAME as WORKFLOW_INSTANCE_COLLECTION, LegalMatterWorkflowInstanceRegistry
+from tools.eos.legal_operations.registry.legal_matter_workflow_transition_registry import COLLECTION_NAME as WORKFLOW_TRANSITION_COLLECTION, LegalMatterWorkflowTransitionRegistry
+from tools.eos.legal_operations.registry.legal_workflow_definition_registry import COLLECTION_NAME as WORKFLOW_DEFINITION_COLLECTION, LegalWorkflowDefinitionRegistry
+from tools.eos.legal_operations.registry.legal_workflow_gate_satisfaction_registry import COLLECTION_NAME as WORKFLOW_GATE_COLLECTION, LegalWorkflowGateSatisfactionRegistry
+from tools.eos.legal_operations.registry.legal_workflow_stage_registry import COLLECTION_NAME as WORKFLOW_STAGE_COLLECTION, LegalWorkflowStageRegistry
+from tools.eos.legal_operations.registry.legal_workflow_topology_registry import COLLECTION_NAME as WORKFLOW_TOPOLOGY_COLLECTION, LegalWorkflowTopologyRegistry
 from tools.eos.legal_operations.orchestration.deputy_principal_binding_orchestrator import bind_deputy_principal_identity
 from tools.eos.legal_operations.registry import legal_operations_lifecycle_registry as p2
 from tools.eos.legal_operations.registry import process_service_attempt_authority_registry as p5b
@@ -120,9 +134,11 @@ from tools.eos.legal_operations.registry.process_service_allocation_registry imp
 )
 
 
-VERSION = "v1.3.0-L8-6E-DEPUTY-FIELD-COMMAND-BRIDGE-RM-CERT"
-DEFAULT_URI = "mongodb://127.0.0.1:27027/?replicaSet=wilsyVendorCertRS"
-EXPECTED_REPLICA_SET = "wilsyVendorCertRS"
+VERSION = "v1.5.0-CROSS-ROLE-SHERIFF-COMMAND-RM-CERT"
+MONGO_URI = os.environ["TEST_LEGAL_OPERATIONS_COMMAND_ROUTER_MONGO_URI"]
+EXPECTED_REPLICA_SET = os.environ[
+    "TEST_LEGAL_OPERATIONS_COMMAND_ROUTER_REPLICA_SET"
+]
 BASE = datetime(2026, 9, 15, 8, 0, tzinfo=timezone.utc)
 HEX_A = "a" * 128
 HEX_B = "b" * 128
@@ -218,7 +234,7 @@ class _RoleReader:
 def mongo_context() -> Iterator[dict[str, Any]]:
     """Yield an isolated majority/journaled database after live host gating."""
     client = MongoClient(
-        os.getenv("TEST_VENDOR_MONGO_URI", DEFAULT_URI),
+        MONGO_URI,
         serverSelectionTimeoutMS=3000,
         connectTimeoutMS=3000,
         retryWrites=True,
@@ -227,14 +243,9 @@ def mongo_context() -> Iterator[dict[str, Any]]:
     active_error = False
     cleanup_error: BaseException | None = None
     try:
-        try:
-            hello = client.admin.command("hello")
-        except PyMongoError as error:
-            pytest.skip(f"host Mongo unavailable during hello: {type(error).__name__}")
-        if hello.get("setName") != EXPECTED_REPLICA_SET:
-            pytest.skip(f"wrong replica set: {hello.get('setName')!r}")
-        if hello.get("isWritablePrimary", hello.get("ismaster")) is not True:
-            pytest.skip("replica set has no writable primary")
+        hello = client.admin.command("hello")
+        assert hello.get("setName") == EXPECTED_REPLICA_SET
+        assert hello.get("isWritablePrimary", hello.get("ismaster")) is True
         database = client.get_database(
             f"l7b_live_{uuid4().hex}",
             read_concern=ReadConcern("majority"),
@@ -470,19 +481,299 @@ def _post(context: dict[str, Any], fixture: _Fixture, path: str, payload: dict[s
         return client.post(path, json=body, headers={"X-Tenant-ID": tenant or fixture.tenant})
 
 
+def _seed_workflow_stack(context: dict[str, Any], tenant_id: str) -> None:
+    """Persist one exact workflow transition authority stack for an IAM tenant."""
+    client, database = context["client"], context["database"]
+    _, topology, source, target, _, _ = workflow_context()
+    definition = workflow_definition()
+    model = TenantLegalOperatingModel(
+        tenant_id=tenant_id,
+        operating_model_id="model-http-1",
+        revision=1,
+        activated_item_ids=("PRACTICE_DISPUTES",),
+        effective_from=BASE,
+        supersedes_operating_model_id=None,
+        catalogue_fingerprint=CATALOGUE_FINGERPRINT,
+    )
+    activation = TenantLegalWorkflowActivation.from_authorities(
+        activation_id="activation-http-1",
+        activation_revision=1,
+        operating_model=model,
+        workflow_definition=definition,
+        workflow_topology=topology,
+        commercial_eligibility_evidence_reference="commercial:http",
+        activation_reason_reference="activation:http",
+        effective_from=BASE,
+    )
+    instance = LegalMatterWorkflowInstance.from_authorities(
+        workflow_instance_id="instance-http-1",
+        case_matter_id="matter-http-1",
+        activation=activation,
+        workflow_definition=definition,
+        workflow_topology=topology,
+        started_at=BASE,
+        started_by_principal_id="principal-starter",
+        start_authorization_evidence_reference="start-auth:http",
+    )
+    gate = LegalWorkflowGateSatisfaction.from_authorities(
+        gate_satisfaction_id="gate-http-1",
+        workflow_instance=instance,
+        workflow_topology=topology,
+        source_stage=source,
+        gate_reference="gate:source-complete",
+        canonical_evidence=(
+            LegalWorkflowGateEvidence(
+                evidence_kind="CANONICAL_FACT",
+                evidence_reference="canonical:http",
+                evidence_fingerprint=HEX_A,
+            ),
+        ),
+        evaluated_at=BASE,
+        evaluated_by_principal_id="principal-evaluator",
+        evaluation_authorization_evidence_reference="gate-auth:http",
+    )
+    definitions = LegalWorkflowDefinitionRegistry(database[WORKFLOW_DEFINITION_COLLECTION])
+    topologies = LegalWorkflowTopologyRegistry(database[WORKFLOW_TOPOLOGY_COLLECTION], definition_registry=definitions)
+    stages = LegalWorkflowStageRegistry(database[WORKFLOW_STAGE_COLLECTION], definition_registry=definitions, topology_registry=topologies)
+    instances = LegalMatterWorkflowInstanceRegistry(database[WORKFLOW_INSTANCE_COLLECTION])
+    gates = LegalWorkflowGateSatisfactionRegistry(database[WORKFLOW_GATE_COLLECTION], instance_registry=instances, topology_registry=topologies, stage_registry=stages)
+    transitions = LegalMatterWorkflowTransitionRegistry(database[WORKFLOW_TRANSITION_COLLECTION])
+    for registry in (definitions, topologies, stages, instances, gates, transitions):
+        registry.ensure_indexes()
+    with client.start_session() as session:
+        with session.start_transaction():
+            definitions.create_or_replay(definition, session=session)
+            topologies.create_or_replay(topology, owner="PLATFORM", owner_tenant_id=None, session=session)
+            for stage in (source, target):
+                stages.create_or_replay(stage, owner="PLATFORM", owner_tenant_id=None, session=session)
+            instances.create_or_replay(instance, session=session)
+            gates.create_or_replay(gate, session=session)
+
+
+
+def _get(
+    context: dict[str, Any],
+    fixture: _Fixture,
+    path: str,
+    *,
+    tenant: str | None = None,
+    principal_id: str | None = None,
+) -> Any:
+    """Issue one authenticated GET through production IAM dependencies."""
+    with TestClient(
+        _app(context, fixture, principal_id=principal_id)
+    ) as client:
+        return client.get(
+            path,
+            headers={"X-Tenant-ID": tenant or fixture.tenant},
+        )
+
+
 def _bridge_actual_p4(context: dict[str, Any], fixture: _Fixture) -> Any:
-    """Hydrate actual P4A output and persist the canonical P5A/P5B bridge."""
+    """Create P5A/P5B authority only through the authenticated HTTP bridge."""
+    authority_id = f"attempt-authority-{fixture.document.document_id}"
+    attempt_id = f"attempt-{fixture.document.document_id}"
+
+    response = _post(
+        context,
+        fixture,
+        "/api/legal-operations/attempt-authorities",
+        {
+            "document_id": fixture.document.document_id,
+            "allocation_idempotency_key": fixture.command["idempotency_key"],
+            "attempt_authority_id": authority_id,
+            "attempt_id": attempt_id,
+            "authorized_at": BASE + timedelta(minutes=4),
+        },
+    )
+    assert response.status_code == 200, response.text
+
+    payload = response.json()["data"]
+    assert payload["attempt_authority_id"] == authority_id
+    assert payload["attempt_id"] == attempt_id
+
     collections = context["collections"]
     with context["client"].start_session() as session:
-        session.start_transaction(read_concern=ReadConcern("snapshot"), write_concern=WriteConcern(w="majority", j=True))
-        receipt = get_receipt_by_idempotency_key(fixture.tenant, fixture.document.document_id, fixture.command["idempotency_key"], collections["allocation_receipts"], session=session)
-        current = get_current(fixture.tenant, fixture.document.document_id, collections["allocation_current"], session=session)
-        assert receipt is not None
-        decision = authorize_process_service_attempt(allocation_receipt=receipt, allocation_current=current, attempt_authority_id=f"attempt-authority-{fixture.document.document_id}", attempt_id=f"attempt-{fixture.document.document_id}", authorized_at=BASE + timedelta(minutes=4))
-        persisted = p5b.ProcessServiceAttemptAuthorityRegistry.persist(decision, collections["attempt_authority"], session=session)
+        session.start_transaction(
+            read_concern=ReadConcern("snapshot"),
+            write_concern=WriteConcern(w="majority", j=True),
+        )
+        persisted = (
+            p5b.ProcessServiceAttemptAuthorityRegistry.get_by_attempt_authority_id(
+                fixture.tenant,
+                authority_id,
+                collections["attempt_authority"],
+                session=session,
+            )
+        )
+        allocation_receipt = get_receipt_by_idempotency_key(
+            fixture.tenant,
+            fixture.document.document_id,
+            fixture.command["idempotency_key"],
+            collections["allocation_receipts"],
+            session=session,
+        )
+        assert allocation_receipt is not None
+        assert (
+            persisted.allocation_receipt_fingerprint
+            == allocation_receipt.fingerprint
+        )
         session.commit_transaction()
-    assert persisted.receipt.allocation_receipt_fingerprint == receipt.fingerprint
-    return persisted.receipt
+
+    return persisted
+
+
+
+def test_real_mongo_sheriff_allocation_capabilities_use_current_p2_locators(
+    mongo_context: dict[str, Any],
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """Certify capability values are resolved only from current durable truth."""
+    monkeypatch.setattr(
+        command_api,
+        "_db_handles",
+        lambda: (
+            mongo_context["client"],
+            mongo_context["database"],
+        ),
+    )
+    fixture = _seed_fixture(mongo_context["collections"])
+
+    response = _get(
+        mongo_context,
+        fixture,
+        "/api/legal-operations/sheriff/allocation-capabilities",
+    )
+    assert response.status_code == 200, response.text
+
+    packet = response.json()["data"]
+    assert packet["tenant_id"] == fixture.tenant
+    assert (
+        packet["visibility"]
+        == "SHERIFF_ALLOCATION_COMMAND_CAPABILITIES"
+    )
+    assert len(packet["allocation_capabilities"]) == 1
+
+    capability = packet["allocation_capabilities"][0]
+    assert capability["document_id"] == fixture.document.document_id
+    assert capability["instruction_id"] == fixture.instruction.instruction_id
+    assert (
+        capability["instruction_evidence_identity"]
+        == fixture.source_identities["instruction"]
+    )
+    assert (
+        capability["document_evidence_identity"]
+        == fixture.source_identities["document"]
+    )
+    assert capability["district_id"] == fixture.district.district_id
+    assert (
+        capability["district_evidence_identity"]
+        == fixture.source_identities["district"]
+    )
+    assert capability["sheriff_office_id"] == fixture.office.sheriff_office_id
+    assert (
+        capability["sheriff_office_evidence_identity"]
+        == fixture.source_identities["office"]
+    )
+    assert capability["deputies"] == [
+        {
+            "deputy_id": fixture.deputy.deputy_id,
+            "display_name": fixture.deputy.display_name,
+            "deputy_evidence_identity":
+                fixture.source_identities["deputy"],
+        }
+    ]
+
+    serialized = str(packet)
+    for forbidden in (
+        "assignment_decision_id",
+        "assignment_evidence_reference",
+        "allocation_command_id",
+        "idempotency_key",
+        "allocation_custody_event_id",
+        "attempt_authority_id",
+        "attempt_id",
+    ):
+        assert forbidden not in serialized
+
+
+def test_real_mongo_sheriff_allocation_capabilities_reject_non_sheriff(
+    mongo_context: dict[str, Any],
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """Prove generic allocation-write eligibility cannot impersonate Sheriff."""
+    monkeypatch.setattr(
+        command_api,
+        "_db_handles",
+        lambda: (
+            mongo_context["client"],
+            mongo_context["database"],
+        ),
+    )
+    fixture = _seed_fixture(
+        mongo_context["collections"],
+        business_role="tenant_legal_partner",
+        grant_role="LEGAL_PARTNER",
+    )
+
+    response = _get(
+        mongo_context,
+        fixture,
+        "/api/legal-operations/sheriff/allocation-capabilities",
+    )
+    assert response.status_code == 403
+    assert (
+        response.json()["detail"]
+        == "LEGAL_OPERATIONS_SHERIFF_AUTHORITY_REQUIRED"
+    )
+
+
+@pytest.mark.parametrize(
+    ("business_role", "grant_role", "expected_status"),
+    (
+        ("tenant_legal_partner", "LEGAL_PARTNER", 200),
+        ("tenant_legal_attorney", "LEGAL_ATTORNEY", 200),
+        ("tenant_legal_paralegal", "LEGAL_PARALEGAL", 403),
+        ("tenant_legal_secretary", "LEGAL_SECRETARY", 403),
+    ),
+)
+def test_real_mongo_workflow_transition_role_matrix_and_atomic_append(
+    mongo_context: dict[str, Any],
+    monkeypatch: pytest.MonkeyPatch,
+    business_role: str,
+    grant_role: str,
+    expected_status: int,
+) -> None:
+    """Certify live IAM role admission and real transition-stack atomicity."""
+    fixture = _seed_fixture(
+        mongo_context["collections"],
+        business_role=business_role,
+        grant_role=grant_role,
+    )
+    _seed_workflow_stack(mongo_context, fixture.tenant)
+    monkeypatch.setattr(
+        command_api,
+        "_db_handles",
+        lambda: (mongo_context["client"], mongo_context["database"]),
+    )
+    response = _post(
+        mongo_context,
+        fixture,
+        "/api/legal-operations/matter-workflow-transitions",
+        {
+            "transition_id": "transition-http-1",
+            "workflow_instance_id": "instance-http-1",
+            "target_stage_definition_id": "s2",
+            "gate_satisfaction_ids": ["gate-http-1"],
+        },
+    )
+    assert response.status_code == expected_status, response.text
+    count = mongo_context["database"][WORKFLOW_TRANSITION_COLLECTION].count_documents(
+        {"tenant_id": fixture.tenant}
+    )
+    assert count == (1 if expected_status == 200 else 0)
+    if expected_status == 200:
+        assert response.json()["data"]["transition_id"] == "transition-http-1"
 
 
 def test_real_mongo_full_http_chain_uses_live_iam_and_actual_p4a(mongo_context: dict[str, Any], monkeypatch: pytest.MonkeyPatch) -> None:
@@ -729,9 +1020,9 @@ def test_real_mongo_live_iam_denials_and_p4_rollback(mongo_context: dict[str, An
 
 
 # ARTIFACT: test_legal_operations_command_router_real_mongo.py
-# VERSION: v1.4.0-L8-6G-SERVER-OWNED-FIELD-SEQUENCE-RM-CERT
+# VERSION: v1.5.0-CROSS-ROLE-SHERIFF-COMMAND-RM-CERT
 # AUTHORITY BOUNDARY: host-backed actual HTTP/IAM/composition certificate only
 # TENANT POSTURE: UUID-isolated database, split durable IAM stores, and explicit tenant predicates
-# FAIL-CLOSED POSTURE: only pre-yield host absence may skip
+# FAIL-CLOSED POSTURE: explicit disposable topology required; no skips or fallback
 # FINANCIAL EXECUTION AUTHORITY: Kennel EOS exclusively
 # END OF WILSY OS SOVEREIGN ARTIFACT

@@ -1,7 +1,7 @@
 """WILSY OS Legal Operations command boundary.
 
 TITLE: Legal Operations Command API
-VERSION: v1.8.0-L8-8H6-NOTIFICATION-RECIPIENT-BINDING-COMMAND-API
+VERSION: v1.11.0-P13R4-WORKFLOW-TRANSITION-COMMAND-API
 AUTHORITY: HTTP command composition only; P1/P2/L8-1/L8-2/L8-3/L8-6B/P4/P5 remain canonical authorities.
 EPITOME: Translate authenticated tenant-scoped Legal Operations commands,
          including authorized human conflict review, into bounded canonical
@@ -12,8 +12,11 @@ ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/tools/eos/api/le
 COLLABORATION / OWNERSHIP: API composition owns transport and transaction
                            mechanics; domain/registry/orchestrator modules own
                            lifecycle, evidence, and persistence truth.
-CERTIFICATION / UPDATE DATE: 2026-10-12
-CHANGELOG: 2026-10-12 v1.8.0-L8-8H6-NOTIFICATION-RECIPIENT-BINDING-COMMAND-API adds Partner/Attorney-only explicit recipient-binding create/revoke/supersede admission. Tenant and actor are server-derived; durable authorization evidence re-proves actor authority inside the API-owned transaction and its authorized_at instant exclusively owns immutable binding/lifecycle creation chronology. Target recipient current principal and own-tenant membership are revalidated for create/supersede. Original bindings remain immutable; contact address, transport, delivery, Court, AI and financial authority remain absent.
+CERTIFICATION / UPDATE DATE: 2026-10-16
+CHANGELOG: 2026-10-16 v1.11.0-P13R4-WORKFLOW-TRANSITION-COMMAND-API adds Partner/Attorney-authorized POST /matter-workflow-transitions. The body carries only transition, workflow-instance, target-stage, gate-satisfaction and optional branch intent references. One API-owned transaction issues durable current authorization evidence and delegates all definition/topology/current-source/target/gate resolution plus immutable append to the P13R3 service. No authority object or authority fingerprint is accepted.
+           2026-10-16 v1.10.0-SHERIFF-ALLOCATION-COMMAND-CAPABILITIES adds the exact Sheriff allocation-capability read while preserving P4 mutation separation.
+           2026-10-16 v1.9.0-CROSS-ROLE-ATTEMPT-AUTHORITY-BRIDGE adds the missing Sheriff-authorized HTTP bridge from exact durable P4 allocation receipt/current evidence to separately persisted P5A/P5B attempt authority. The route accepts only document/idempotency locators plus new opaque attempt identities and chronology; tenant, instruction, deputy, custody and allocation evidence remain server-derived. Allocation remains distinct from attempt creation.
+           2026-10-12 v1.8.0-L8-8H6-NOTIFICATION-RECIPIENT-BINDING-COMMAND-API adds Partner/Attorney-only explicit recipient-binding create/revoke/supersede admission. Tenant and actor are server-derived; durable authorization evidence re-proves actor authority inside the API-owned transaction and its authorized_at instant exclusively owns immutable binding/lifecycle creation chronology. Target recipient current principal and own-tenant membership are revalidated for create/supersede. Original bindings remain immutable; contact address, transport, delivery, Court, AI and financial authority remain absent.
            2026-09-25 v1.7.1-L8-8K-CONFLICT-REVIEW-COMMAND-API removes transport ownership of reviewed_at. L8-8J now derives immutable review chronology from the durable tenant-authorization evidence authorized_at instant, preserving exact review_id replay across HTTP retries.
            2026-09-25 v1.7.0-L8-8K-CONFLICT-REVIEW-COMMAND-API
            adds one partner/attorney-only conflict-review POST command guarded by
@@ -161,8 +164,16 @@ from tools.eos.legal_operations.domain.legal_operations_lifecycle import (
     ServiceAttemptState,
     ServiceExecution,
     SheriffOffice,
+    DocumentCustodyEventType,
+    LegalInstructionState,
+    ProcessDocumentState,
+    validate_custody_event_chain,
+)
+from tools.eos.legal_operations.domain.legal_operations_read_model import (
+    list_entity_read_models,
 )
 from tools.eos.legal_operations.domain.process_service_assignment_authority import authorize_process_service_assignment
+from tools.eos.legal_operations.domain.process_service_attempt_authority import authorize_process_service_attempt
 from tools.eos.legal_operations.orchestration.deputy_principal_binding_orchestrator import (
     DeputyPrincipalBindingOrchestrationError,
     bind_deputy_principal_identity,
@@ -206,12 +217,44 @@ from tools.eos.legal_operations.registry.legal_conflict_screening_registry impor
 from tools.eos.legal_operations.registry.legal_conflict_review_registry import (
     COLLECTION as LEGAL_CONFLICT_REVIEW_COLLECTION,
 )
+from tools.eos.legal_operations.registry.legal_matter_workflow_instance_registry import (
+    COLLECTION_NAME as WORKFLOW_INSTANCE_COLLECTION,
+    LegalMatterWorkflowInstanceRegistry,
+)
+from tools.eos.legal_operations.registry.legal_matter_workflow_transition_registry import (
+    COLLECTION_NAME as WORKFLOW_TRANSITION_COLLECTION,
+    LegalMatterWorkflowTransitionRegistry,
+)
+from tools.eos.legal_operations.registry.legal_workflow_definition_registry import (
+    COLLECTION_NAME as WORKFLOW_DEFINITION_COLLECTION,
+    LegalWorkflowDefinitionRegistry,
+)
+from tools.eos.legal_operations.registry.legal_workflow_gate_satisfaction_registry import (
+    COLLECTION_NAME as WORKFLOW_GATE_SATISFACTION_COLLECTION,
+    LegalWorkflowGateSatisfactionRegistry,
+)
+from tools.eos.legal_operations.registry.legal_workflow_stage_registry import (
+    COLLECTION_NAME as WORKFLOW_STAGE_COLLECTION,
+    LegalWorkflowStageRegistry,
+)
+from tools.eos.legal_operations.registry.legal_workflow_topology_registry import (
+    COLLECTION_NAME as WORKFLOW_TOPOLOGY_COLLECTION,
+    LegalWorkflowTopologyRegistry,
+)
+from tools.eos.legal_operations.service.legal_matter_workflow_transition_command_service import (
+    LegalMatterWorkflowTransitionCommandService,
+)
 from tools.eos.legal_operations.registry.process_service_allocation_registry import (
     ALLOCATION_CURRENT_COLLECTION,
     ALLOCATION_RECEIPT_COLLECTION,
     ProcessServiceAllocationRegistry,
+    get_current as get_allocation_current,
+    get_receipt_by_idempotency_key,
 )
-from tools.eos.legal_operations.registry.process_service_attempt_authority_registry import RECEIPT_COLLECTION as ATTEMPT_AUTHORITY_COLLECTION
+from tools.eos.legal_operations.registry.process_service_attempt_authority_registry import (
+    RECEIPT_COLLECTION as ATTEMPT_AUTHORITY_COLLECTION,
+    ProcessServiceAttemptAuthorityRegistry,
+)
 from tools.eos.legal_operations.registry.process_service_attempt_outcome_registry import COLLECTION as OUTCOME_COLLECTION
 from tools.eos.legal_operations.registry.process_service_attempt_transition_registry import COLLECTION as TRANSITION_COLLECTION
 from tools.eos.legal_operations.registry.process_service_field_evidence_registry import (
@@ -243,10 +286,27 @@ from tools.eos.legal_operations.registry.legal_notification_recipient_binding_li
     LegalNotificationRecipientBindingLifecycleRegistryError,
 )
 
+from tools.eos.legal_operations.orchestration.legal_work_completion_persistence_orchestrator import (
+    record_legal_work_completion,
+)
+from tools.eos.legal_operations.registry.legal_work_assignment_registry import (
+    COLLECTION_NAME as LEGAL_WORK_ASSIGNMENT_COLLECTION,
+    LegalWorkAssignmentRegistry,
+)
+from tools.eos.legal_operations.registry.legal_work_completion_event_registry import (
+    COLLECTION_NAME as LEGAL_WORK_COMPLETION_EVENT_COLLECTION,
+    LegalWorkCompletionEventRegistry,
+)
+from tools.eos.legal_operations.registry.legal_work_item_registry import (
+    COLLECTION_NAME as LEGAL_WORK_ITEM_COLLECTION,
+    LegalWorkItemRegistry,
+)
 
-VERSION: Final[str] = "v1.8.0-L8-8H6-NOTIFICATION-RECIPIENT-BINDING-COMMAND-API"
+
+VERSION: Final[str] = "v1.12.0-P14-R20R27-WORK-COMPLETION-COMMAND-API"
 router = APIRouter(prefix="/legal-operations", tags=["Legal Operations Commands"])
 _T = TypeVar("_T")
+_SHERIFF_BUSINESS_ROLE: Final[str] = "tenant_sheriff"
 _DEPUTY_BUSINESS_ROLE: Final[str] = "tenant_deputy"
 _FIELD_OBSERVATION_SCHEMA: Final[str] = "WILSY-LEGAL-OPERATIONS-DEPUTY-FIELD-OBSERVATION/V1"
 _FIELD_RECEIPT_SCHEMA: Final[str] = "WILSY-LEGAL-OPERATIONS-DEPUTY-FIELD-RECEIPT-ID/V1"
@@ -255,6 +315,23 @@ _FIELD_EXECUTION_SCHEMA: Final[str] = "WILSY-LEGAL-OPERATIONS-DEPUTY-SERVICE-EXE
 
 class _CommandModel(BaseModel):
     model_config = ConfigDict(extra="forbid", frozen=True)
+
+
+class LegalWorkCompletionCommand(_CommandModel):
+    """Authority-free intent to complete one server-selected Legal work item.
+
+    Tenant, acting principal, work-item fingerprint, assignment lineage, IAM
+    evidence, completion-authority evidence and trusted evaluation time are
+    exclusively server-derived. The browser supplies only opaque completion
+    outcome evidence.
+    """
+
+    completion_evidence_reference: str = Field(min_length=1)
+    completion_evidence_fingerprint: str = Field(
+        min_length=128,
+        max_length=128,
+        pattern=r"^[0-9a-f]{128}$",
+    )
 
 
 class IntakeRegistrationCommand(_CommandModel):
@@ -368,6 +445,26 @@ class AttemptCommand(_CommandModel):
     """Opaque P5B authority locator for creating an initial ALLOCATED attempt."""
 
     attempt_authority_id: str = Field(min_length=1)
+
+
+class AttemptAuthorityCommand(_CommandModel):
+    """Bounded P5A locator/new-identity facts; allocation truth is server-loaded."""
+
+    document_id: str = Field(min_length=1)
+    allocation_idempotency_key: str = Field(min_length=1)
+    attempt_authority_id: str = Field(min_length=1)
+    attempt_id: str = Field(min_length=1)
+    authorized_at: datetime
+
+
+class MatterWorkflowTransitionCommand(_CommandModel):
+    """Authority-free workflow transition intent resolved entirely by server."""
+
+    transition_id: str = Field(min_length=1)
+    workflow_instance_id: str = Field(min_length=1)
+    target_stage_definition_id: str = Field(min_length=1)
+    gate_satisfaction_ids: tuple[str, ...] = ()
+    branch_selection_evidence_reference: str | None = None
 
 
 class AttemptTransitionCommand(_CommandModel):
@@ -834,6 +931,28 @@ _RECIPIENT_BINDING = _ctx(
     _RECIPIENT_BINDING_PERMISSION,
     _RECIPIENT_BINDING_OPERATION,
 )
+_MATTER_WORKFLOW_TRANSITION_PERMISSION: Final[str] = (
+    "legal_operations:matter_workflow:transition"
+)
+_MATTER_WORKFLOW_TRANSITION_OPERATION: Final[str] = (
+    "legal_matter_workflow_transition"
+)
+_MATTER_WORKFLOW_TRANSITION = _ctx(
+    _MATTER_WORKFLOW_TRANSITION_PERMISSION,
+    _MATTER_WORKFLOW_TRANSITION_OPERATION,
+)
+
+
+_WORK_COMPLETION_PERMISSION: Final[str] = (
+    "legal_operations:work_item:complete"
+)
+_WORK_COMPLETION_OPERATION: Final[str] = (
+    "legal_work_item_complete"
+)
+_WORK_COMPLETION = _ctx(
+    _WORK_COMPLETION_PERMISSION,
+    _WORK_COMPLETION_OPERATION,
+)
 
 
 @router.post("/intake/registrations")
@@ -1038,6 +1157,207 @@ async def bind_deputy_principal_command(
     return value.to_dict()
 
 
+
+@router.get("/sheriff/allocation-capabilities")
+async def get_sheriff_allocation_command_capabilities(
+    context: TenantAuthorizationContext = Depends(_ALLOCATE),
+) -> dict[str, Any]:
+    """Return server-derived P4 allocation choices for the current Sheriff.
+
+    This read requires the existing allocation-write authority plus exact
+    tenant_sheriff business-role admission. The browser supplies no tenant,
+    lifecycle state, custody fact, P2 evidence locator, office, district,
+    Deputy identity, fingerprint or legal authority.
+
+    The packet is capability evidence only. It performs no allocation and
+    creates no assignment decision, P5A authority or ServiceAttempt.
+    """
+    if context.decision.business_role != _SHERIFF_BUSINESS_ROLE:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="LEGAL_OPERATIONS_SHERIFF_AUTHORITY_REQUIRED",
+        )
+
+    def run(session: Any, db: Any) -> dict[str, Any]:
+        lifecycle = _collection(db, LIFECYCLE_COLLECTION)
+
+        documents = list_entity_read_models(
+            tenant_id=context.tenant_id,
+            entity_type="ProcessDocument",
+            lifecycle_collection=lifecycle,
+            session=session,
+        )
+        instructions = list_entity_read_models(
+            tenant_id=context.tenant_id,
+            entity_type="LegalInstruction",
+            lifecycle_collection=lifecycle,
+            session=session,
+        )
+        districts = list_entity_read_models(
+            tenant_id=context.tenant_id,
+            entity_type="District",
+            lifecycle_collection=lifecycle,
+            session=session,
+        )
+        offices = list_entity_read_models(
+            tenant_id=context.tenant_id,
+            entity_type="SheriffOffice",
+            lifecycle_collection=lifecycle,
+            session=session,
+        )
+        deputies = list_entity_read_models(
+            tenant_id=context.tenant_id,
+            entity_type="Deputy",
+            lifecycle_collection=lifecycle,
+            session=session,
+        )
+
+        current_instructions = tuple(
+            model.current
+            for model in instructions
+            if type(model.current) is LegalInstruction
+        )
+        current_districts = {
+            model.current.district_id: model.current
+            for model in districts
+            if type(model.current) is District
+        }
+        current_offices = {
+            model.current.sheriff_office_id: model.current
+            for model in offices
+            if type(model.current) is SheriffOffice
+        }
+        current_deputies = tuple(
+            model.current
+            for model in deputies
+            if type(model.current) is Deputy
+        )
+
+        capabilities: list[dict[str, Any]] = []
+
+        received_documents = sorted(
+            (
+                model.current
+                for model in documents
+                if type(model.current) is ProcessDocument
+                and model.current.state is ProcessDocumentState.RECEIVED
+            ),
+            key=lambda value: value.document_id,
+        )
+
+        for document in received_documents:
+            matching = tuple(
+                instruction
+                for instruction in current_instructions
+                if instruction.document_id == document.document_id
+                and instruction.state is LegalInstructionState.ACCEPTED
+            )
+            if len(matching) != 1:
+                raise CommandError("LEGAL_OPERATIONS_COMMAND_FAILED")
+            instruction = matching[0]
+
+            custody = validate_custody_event_chain(
+                _prior_custody(
+                    lifecycle,
+                    context.tenant_id,
+                    document.document_id,
+                    session,
+                )
+            )
+            if not custody:
+                raise CommandError("LEGAL_OPERATIONS_COMMAND_FAILED")
+
+            head = custody[-1]
+            if (
+                head.event_type
+                is not DocumentCustodyEventType.RECEIVED_IN_OFFICE
+                or head.to_holder_reference is None
+            ):
+                raise CommandError("LEGAL_OPERATIONS_COMMAND_FAILED")
+
+            office = current_offices.get(head.to_holder_reference)
+            if office is None:
+                raise CommandError("LEGAL_OPERATIONS_COMMAND_FAILED")
+
+            district = current_districts.get(office.district_id)
+            if district is None:
+                raise CommandError("LEGAL_OPERATIONS_COMMAND_FAILED")
+
+            eligible_deputies = sorted(
+                (
+                    deputy
+                    for deputy in current_deputies
+                    if deputy.sheriff_office_id
+                    == office.sheriff_office_id
+                ),
+                key=lambda value: value.deputy_id,
+            )
+
+            capabilities.append(
+                {
+                    "document_id": document.document_id,
+                    "instruction_id": instruction.instruction_id,
+                    "instruction_evidence_identity":
+                        LegalOperationsLifecycleRegistry
+                        .get_snapshot_evidence_identity(
+                            instruction,
+                            lifecycle,
+                            session=session,
+                        ),
+                    "document_evidence_identity":
+                        LegalOperationsLifecycleRegistry
+                        .get_snapshot_evidence_identity(
+                            document,
+                            lifecycle,
+                            session=session,
+                        ),
+                    "district_id": district.district_id,
+                    "district_evidence_identity":
+                        LegalOperationsLifecycleRegistry
+                        .get_snapshot_evidence_identity(
+                            district,
+                            lifecycle,
+                            session=session,
+                        ),
+                    "sheriff_office_id": office.sheriff_office_id,
+                    "sheriff_office_evidence_identity":
+                        LegalOperationsLifecycleRegistry
+                        .get_snapshot_evidence_identity(
+                            office,
+                            lifecycle,
+                            session=session,
+                        ),
+                    "deputies": [
+                        {
+                            "deputy_id": deputy.deputy_id,
+                            "display_name": deputy.display_name,
+                            "deputy_evidence_identity":
+                                LegalOperationsLifecycleRegistry
+                                .get_snapshot_evidence_identity(
+                                    deputy,
+                                    lifecycle,
+                                    session=session,
+                                ),
+                        }
+                        for deputy in eligible_deputies
+                    ],
+                }
+            )
+
+        return {
+            "tenant_id": context.tenant_id,
+            "visibility":
+                "SHERIFF_ALLOCATION_COMMAND_CAPABILITIES",
+            "allocation_capabilities": capabilities,
+        }
+
+    try:
+        value = _transaction(run)
+    except Exception as error:
+        raise _http_error(error) from error
+    return {"data": value}
+
+
 @router.post("/allocations")
 async def allocate_process_service(command: AllocationCommand, context: TenantAuthorizationContext = Depends(_ALLOCATE)) -> dict[str, Any]:
     """Authorize and execute exactly one P4A allocation command."""
@@ -1052,6 +1372,158 @@ async def allocate_process_service(command: AllocationCommand, context: TenantAu
         current = ProcessServiceAllocationRegistry.get_current(context.tenant_id, document.document_id, _collection(db, ALLOCATION_CURRENT_COLLECTION), session=session)
         result = orchestrate_process_service_allocation(instruction=instruction, document=document, district=district, sheriff_office=office, deputy=deputy, assignment_decision=assignment, prior_custody_events=_prior_custody(lifecycle, context.tenant_id, document.document_id, session), expected_prior_current=current, allocation_command_id=command.allocation_command_id, idempotency_key=command.idempotency_key, allocation_custody_event_id=command.allocation_custody_event_id, allocation_evidence_reference=command.allocation_evidence_reference, allocated_at=command.allocated_at, lifecycle_collection=lifecycle, allocation_receipt_collection=_collection(db, ALLOCATION_RECEIPT_COLLECTION), allocation_current_collection=_collection(db, ALLOCATION_CURRENT_COLLECTION), session=session)
         return result.allocated_document
+    try:
+        value = _transaction(run)
+    except Exception as error:
+        raise _http_error(error) from error
+    return {"data": value.to_dict()}
+
+
+@router.post("/attempt-authorities")
+async def authorize_process_service_attempt_command(
+    command: AttemptAuthorityCommand,
+    context: TenantAuthorizationContext = Depends(_ATTEMPT),
+) -> dict[str, Any]:
+    """Persist P5A/P5B authority from exact current P4 allocation evidence.
+
+    Tenant, instruction, deputy, custody, allocation fingerprints and state are
+    server-loaded. This route creates authority evidence only; ``/attempts``
+    remains the separate canonical attempt-creation boundary.
+    """
+    if context.decision.business_role != _SHERIFF_BUSINESS_ROLE:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="LEGAL_OPERATIONS_SHERIFF_AUTHORITY_REQUIRED",
+        )
+
+    def run(session: Any, db: Any) -> Any:
+        receipt = get_receipt_by_idempotency_key(
+            context.tenant_id,
+            command.document_id,
+            command.allocation_idempotency_key,
+            _collection(db, ALLOCATION_RECEIPT_COLLECTION),
+            session=session,
+        )
+        current = get_allocation_current(
+            context.tenant_id,
+            command.document_id,
+            _collection(db, ALLOCATION_CURRENT_COLLECTION),
+            session=session,
+        )
+        if receipt is None or current is None:
+            raise CommandError("LEGAL_OPERATION_NOT_FOUND")
+        decision = authorize_process_service_attempt(
+            allocation_receipt=receipt,
+            allocation_current=current,
+            attempt_authority_id=command.attempt_authority_id,
+            attempt_id=command.attempt_id,
+            authorized_at=command.authorized_at,
+        )
+        return ProcessServiceAttemptAuthorityRegistry.persist(
+            decision,
+            _collection(db, ATTEMPT_AUTHORITY_COLLECTION),
+            session=session,
+        )
+
+    try:
+        value = _transaction(run)
+    except Exception as error:
+        raise _http_error(error) from error
+    return {"data": value.receipt.to_dict()}
+
+
+@router.post("/matter-workflow-transitions")
+async def transition_legal_matter_workflow_command(
+    command: MatterWorkflowTransitionCommand,
+    context: TenantAuthorizationContext = Depends(_MATTER_WORKFLOW_TRANSITION),
+    principal_repository: Any = Depends(get_principal_authority_repository),
+    membership_repository: Any = Depends(get_tenant_membership_repository),
+    role_assignment_repository: Any = Depends(get_role_assignment_repository),
+) -> dict[str, Any]:
+    """Append one server-resolved workflow transition from authority-free intent.
+
+    Tenant/principal scope comes only from authenticated current IAM. The body
+    cannot submit definition, topology, source/target stage, gate, IAM or tenant
+    authority objects or fingerprints. One API-owned transaction resolves the
+    exact durable instance first, issues current authorization evidence, then
+    delegates immutable authority resolution and append to P13R3.
+    """
+
+    def run(session: Any, db: Any) -> Any:
+        definition_registry = LegalWorkflowDefinitionRegistry(
+            _collection(db, WORKFLOW_DEFINITION_COLLECTION)
+        )
+        topology_registry = LegalWorkflowTopologyRegistry(
+            _collection(db, WORKFLOW_TOPOLOGY_COLLECTION),
+            definition_registry=definition_registry,
+        )
+        stage_registry = LegalWorkflowStageRegistry(
+            _collection(db, WORKFLOW_STAGE_COLLECTION),
+            definition_registry=definition_registry,
+            topology_registry=topology_registry,
+        )
+        instance_registry = LegalMatterWorkflowInstanceRegistry(
+            _collection(db, WORKFLOW_INSTANCE_COLLECTION)
+        )
+        gate_registry = LegalWorkflowGateSatisfactionRegistry(
+            _collection(db, WORKFLOW_GATE_SATISFACTION_COLLECTION),
+            instance_registry=instance_registry,
+            topology_registry=topology_registry,
+            stage_registry=stage_registry,
+        )
+        transition_registry = LegalMatterWorkflowTransitionRegistry(
+            _collection(db, WORKFLOW_TRANSITION_COLLECTION)
+        )
+        instance = instance_registry.get_by_id(
+            context.tenant_id,
+            command.workflow_instance_id,
+            session=session,
+        )
+        authorization_registry = TenantAuthorizationDecisionEvidenceRegistry(
+            _collection(db, TENANT_AUTHORIZATION_EVIDENCE_COLLECTION),
+            principal_repository=principal_repository,
+            membership_repository=membership_repository,
+            role_assignment_repository=role_assignment_repository,
+            business_role_repository=role_assignment_repository,
+        )
+        authorization = authorization_registry.issue(
+            tenant_id=context.tenant_id,
+            principal_id=context.identity.identity_id,
+            operation=_MATTER_WORKFLOW_TRANSITION_OPERATION,
+            permission=_MATTER_WORKFLOW_TRANSITION_PERMISSION,
+            subject_reference=(
+                "legal-matter-workflow-transition:"
+                f"{command.workflow_instance_id}:{command.target_stage_definition_id}"
+            ),
+            subject_evidence_fingerprint=instance.fingerprint,
+            idempotency_key=f"legal-matter-workflow-transition:{command.transition_id}",
+            session=session,
+        )
+        service = LegalMatterWorkflowTransitionCommandService(
+            definition_registry=definition_registry,
+            instance_registry=instance_registry,
+            topology_registry=topology_registry,
+            stage_registry=stage_registry,
+            gate_registry=gate_registry,
+            transition_registry=transition_registry,
+        )
+        return service.execute(
+            tenant_id=context.tenant_id,
+            transitioned_by_principal_id=context.identity.identity_id,
+            transition_id=command.transition_id,
+            workflow_instance_id=command.workflow_instance_id,
+            target_stage_definition_id=command.target_stage_definition_id,
+            gate_satisfaction_ids=command.gate_satisfaction_ids,
+            branch_selection_evidence_reference=(
+                command.branch_selection_evidence_reference
+            ),
+            transitioned_at=authorization.authorized_at,
+            transition_authorization_evidence_reference=(
+                authorization.authorization_evidence_reference
+            ),
+            session=session,
+        )
+
     try:
         value = _transaction(run)
     except Exception as error:
@@ -1724,10 +2196,103 @@ async def generate_return_of_service_command(execution_id: str, command: ReturnC
     return {"data": value.to_dict()}
 
 
+@router.post("/work-items/{work_item_id}/completion")
+async def complete_legal_work_item_command(
+    work_item_id: str,
+    command: LegalWorkCompletionCommand,
+    context: TenantAuthorizationContext = Depends(_WORK_COMPLETION),
+    principal_repository: Any = Depends(get_principal_authority_repository),
+    membership_repository: Any = Depends(get_tenant_membership_repository),
+    role_assignment_repository: Any = Depends(get_role_assignment_repository),
+) -> dict[str, Any]:
+    """Persist one authorized Legal work completion from authority-free intent.
+
+    The target work item and complete immutable assignment lineage are loaded
+    server-side under the same API-owned transaction. Tenant and acting
+    principal come only from authenticated IAM. The browser cannot supply work,
+    assignment, IAM, completion-authority, timestamp, workflow-release,
+    dependency-release or financial authority.
+    """
+    if not work_item_id.strip():
+        raise HTTPException(
+            status_code=status.HTTP_422_UNPROCESSABLE_CONTENT,
+            detail="LEGAL_OPERATIONS_COMMAND_INVALID",
+        )
+
+    def run(session: Any, db: Any) -> Any:
+        evaluated_at = datetime.now(timezone.utc)
+
+        work_registry = LegalWorkItemRegistry(
+            _collection(
+                db,
+                LEGAL_WORK_ITEM_COLLECTION,
+            )
+        )
+        assignment_registry = LegalWorkAssignmentRegistry(
+            _collection(
+                db,
+                LEGAL_WORK_ASSIGNMENT_COLLECTION,
+            )
+        )
+        completion_registry = LegalWorkCompletionEventRegistry(
+            _collection(
+                db,
+                LEGAL_WORK_COMPLETION_EVENT_COLLECTION,
+            )
+        )
+
+        work_item = work_registry.get_by_id(
+            context.tenant_id,
+            work_item_id,
+            session=session,
+        )
+
+        assignments = assignment_registry.get_history(
+            context.tenant_id,
+            work_item_id,
+            session=session,
+        )
+
+        authorization_registry = TenantAuthorizationDecisionEvidenceRegistry(
+            _collection(
+                db,
+                TENANT_AUTHORIZATION_EVIDENCE_COLLECTION,
+            ),
+            principal_repository=principal_repository,
+            membership_repository=membership_repository,
+            role_assignment_repository=role_assignment_repository,
+            business_role_repository=role_assignment_repository,
+        )
+
+        return record_legal_work_completion(
+            tenant_id=context.tenant_id,
+            principal_id=context.identity.identity_id,
+            work_item=work_item,
+            assignments=assignments,
+            completion_evidence_reference=(
+                command.completion_evidence_reference
+            ),
+            completion_evidence_fingerprint=(
+                command.completion_evidence_fingerprint
+            ),
+            evaluated_at=evaluated_at,
+            authorization_evidence_issuer=authorization_registry,
+            completion_registry=completion_registry,
+            session=session,
+        )
+
+    try:
+        value = _transaction(run)
+    except Exception as error:
+        raise _http_error(error) from error
+
+    return {"data": value.to_dict()}
+
+
 __all__ = ["VERSION", "router", "CommandError"]
 
 # ARTIFACT: legal_operations_command_router.py
-# VERSION: v1.8.0-L8-8H6-NOTIFICATION-RECIPIENT-BINDING-COMMAND-API
+# VERSION: v1.12.0-P14-R20R27-WORK-COMPLETION-COMMAND-API
 # AUTHORITY BOUNDARY: authenticated command composition including L8-8K human conflict review and L8-8H6 explicit recipient-binding administration; canonical domain, registry, orchestration and IAM authorities remain separate
 # TENANT POSTURE: explicit authorized tenant scope on every source and write
 # FAIL-CLOSED POSTURE: malformed, unauthorized, stale, divergent, ambiguous or unavailable commands reject; recipient-binding commands expose no caller IAM, contact, transport, delivery or financial authority

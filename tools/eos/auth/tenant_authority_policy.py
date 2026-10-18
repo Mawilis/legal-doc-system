@@ -1,5 +1,5 @@
 """TITLE: WILSY OS Tenant Business Authority Policy Canon.
-VERSION: v1.43.0-PW-P11A-PRODUCTIVE-WORK-READ-ELIGIBILITY
+VERSION: v1.45.0-P14-R20R14-WORK-COMPLETION-PERMISSION-BINDING
 AUTHORITY: Canonical business eligibility facts only; this module does not authorize.
 EPITOME: Defines bounded tenant-role eligibility and field boundaries, including
 own-tenant WILSY AI usage-capacity and billing-intelligence evidence read eligibility and dedicated
@@ -10,8 +10,17 @@ tenant_legal_client-only client-matter projection read eligibility, plus the
 exact Partner/Attorney-only firm-decision operation eligibility.
 ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/tools/eos/auth/tenant_authority_policy.py
 COLLABORATION / OWNERSHIP: Wilson Khanyezi / Wilsy Core Engineering.
-CERTIFICATION / UPDATE DATE: 2026-10-12
+CERTIFICATION / UPDATE DATE: 2026-10-17
 CHANGELOG:
+2026-10-17 v1.45.0-P14-R20R14-WORK-COMPLETION-PERMISSION-BINDING binds legal_work_item_complete exactly to
+legal_operations:work_item:complete in the canonical business-operation permission map.
+The mapping remains non-authorizing; IAM current truth and exact work assignment stay separate.
+2026-10-17 v1.44.0-P14-R20R13-WORK-COMPLETION-ELIGIBILITY adds legal_work_item_complete as one exact own-tenant
+business operation eligible only to tenant_legal_partner, tenant_legal_attorney,
+tenant_legal_paralegal and tenant_legal_secretary. Eligibility remains
+non-authorizing and establishes no permission possession, current role assignment,
+work assignment, completion authority, workflow progression, legal-event truth,
+billing, payment, execution or settlement authority.
 2026-10-16 v1.43.0-PW-P11A-PRODUCTIVE-WORK-READ-ELIGIBILITY binds the exact
 legal_productive_work_read operation to its dedicated permission and makes
 only tenant_legal_partner, tenant_legal_attorney, tenant_legal_paralegal and
@@ -196,7 +205,7 @@ from types import MappingProxyType
 from typing import Final, FrozenSet
 from tools.eos.auth.hr_business_role_catalog import ALL_HR_BUSINESS_ROLES
 
-VERSION = "v1.43.0-PW-P11A-PRODUCTIVE-WORK-READ-ELIGIBILITY"
+VERSION = "v1.45.0-P14-R20R14-WORK-COMPLETION-PERMISSION-BINDING"
 class SystemAuthorityClassification(StrEnum):
     SYSTEM_REQUIRED = "SYSTEM_REQUIRED"
     SYSTEM_NOT_INHERENTLY_REQUIRED = "SYSTEM_NOT_INHERENTLY_REQUIRED"
@@ -250,6 +259,7 @@ BUSINESS_ROLE_OPERATION_PERMISSIONS: Final = MappingProxyType({
     "legal_matter_workflow_transition": "legal_operations:matter_workflow:transition",
     "legal_work_item_read": "legal_operations:work_item:read",
     "legal_work_item_write": "legal_operations:work_item:write",
+    "legal_work_item_complete": "legal_operations:work_item:complete",
     "legal_productive_work_read": "legal_operations:productive_work:read",
 })
 TENANT_ROLES: Final[FrozenSet[str]] = frozenset({"tenant_owner", "tenant_admin", "tenant_manager", "tenant_auditor", "tenant_platform_billing_provider_policy_admin", "tenant_inbound_collection_authorization_admin", "tenant_inbound_merchant_configuration_admin", "tenant_inbound_provider_security_admin", "tenant_inbound_provider_policy_admin", "tenant_inbound_provider_policy_activation_admin", "tenant_legal_partner", "tenant_legal_attorney", "tenant_legal_paralegal", "tenant_legal_secretary", "tenant_legal_finance", "tenant_sheriff", "tenant_deputy", "tenant_legal_client"}) | ALL_HR_BUSINESS_ROLES
@@ -798,6 +808,36 @@ def normalize_tenant_business_role(role: object) -> str | None:
     """Return an exact canonical tenant role, otherwise fail closed."""
     return role if isinstance(role, str) and role in TENANT_ROLES else None
 
+# P14-R20R13 — exact Legal work-item completion business eligibility only.
+# Eligibility remains one non-authorizing IAM conjunct. It does not prove
+# permission possession, current role assignment, work assignment, completion,
+# workflow progression, legal-event truth, billing, payment or settlement.
+OPERATIONS = frozenset((*OPERATIONS, "legal_work_item_complete"))
+
+_completion_eligibility = dict(ELIGIBILITY)
+for _completion_role in (
+    "tenant_legal_partner",
+    "tenant_legal_attorney",
+    "tenant_legal_paralegal",
+    "tenant_legal_secretary",
+):
+    _completion_role_policy = dict(
+        _completion_eligibility[_completion_role]
+    )
+    _completion_role_policy[
+        "legal_work_item_complete"
+    ] = ELIGIBLE
+    _completion_eligibility[
+        _completion_role
+    ] = MappingProxyType(
+        _completion_role_policy
+    )
+
+ELIGIBILITY = MappingProxyType(
+    _completion_eligibility
+)
+
+
 def tenant_role_operation_eligibility(role: object, operation: object) -> str:
     """Return business eligibility only; ELIGIBLE is never an authorization grant."""
     if not isinstance(role, str) or not isinstance(operation, str): return DENY
@@ -831,7 +871,7 @@ def requires_system_authority(operation: object) -> SystemAuthorityClassificatio
 __all__ = ["VERSION", "ELIGIBLE", "DENY", "SystemAuthorityClassification", "TENANT_ROLES", "OPERATIONS", "ELIGIBILITY", "BUSINESS_ROLE_OPERATION_PERMISSIONS", "PROFILE_READABLE_FIELDS", "PROFILE_MUTABLE_FIELDS_V1", "LIFECYCLE_FIELDS", "VERIFICATION_FIELDS", "BILLING_METADATA_FIELDS", "EVIDENCE_FIELDS", "SECURITY_SENSITIVE_FIELDS", "SYSTEM_MANAGED_FIELDS", "FUTURE_PERMISSION_CANDIDATES", "normalize_tenant_business_role", "tenant_role_operation_eligibility", "permission_for_business_role_operation", "allowed_profile_mutation_fields", "is_hard_delete_allowed", "requires_system_authority"]
 
 # ARTIFACT: tenant_authority_policy.py
-# VERSION: v1.43.0-PW-P11A-PRODUCTIVE-WORK-READ-ELIGIBILITY
+# VERSION: v1.45.0-P14-R20R14-WORK-COMPLETION-PERMISSION-BINDING
 # AUTHORITY BOUNDARY: business eligibility facts only; no authorization or mutation
 # TENANT POSTURE: own-tenant conflict-review, client-matter and client-visibility eligibility require separate ACTIVE membership, assignment and exact permission binding; client visibility remains separately scope-bound
 # FAIL-CLOSED POSTURE: unknown roles and operations deny; ELIGIBLE never grants access
