@@ -1,7 +1,7 @@
 """WILSY OS sovereign Python API server composition root.
 
 TITLE: WILSY OS EOS Kernel API Server Factory
-VERSION: v1.26.0-P1-R3E-AUTHORIZATION-ROLE-REVOCATION-RUNTIME-MOUNT
+VERSION: v1.27.0-P3-R3G-S5-A2-IAM-SECURITY-EVIDENCE-FACTOR-INDEX-BOOTSTRAP
 AUTHORITY: Wilsy OS Core Governance
 EPITOME: Mount sovereign Python API authorities, including the certified
          pre-tenant Legal Storefront public-intent admission transport under
@@ -11,7 +11,8 @@ EPITOME: Mount sovereign Python API authorities, including the certified
 ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/tools/eos/api/server.py
 COLLABORATION / OWNERSHIP: Wilson Khanyezi / Wilsy OS Core Engineering
 CERTIFICATION / UPDATE DATE: 2026-10-18
-CHANGELOG: 2026-10-18 v1.26.0-P1-R3E-AUTHORIZATION-ROLE-REVOCATION-RUNTIME-MOUNT mounts the certified ordinary authorization-role revocation router exactly once under /api while preserving router-owned authentication, tenant authorization, command, transaction, persistence, replay, root-lifecycle and financial boundaries; no privileged-security startup indexes are introduced.
+CHANGELOG: 2026-10-18 v1.27.0-P3-R3G-S5-A2-IAM-SECURITY-EVIDENCE-FACTOR-INDEX-BOOTSTRAP moves the already-certified tenant-authorization decision-evidence, authorization-role-revocation evidence, and privileged factor-currentness registry index DDL into canonical connected application startup while preserving all current-main router composition, request-path semantics, tenant boundaries, caller-owned transaction authority, and Kennel EOS financial execution exclusivity.
+2026-10-18 v1.26.0-P1-R3E-AUTHORIZATION-ROLE-REVOCATION-RUNTIME-MOUNT mounts the certified ordinary authorization-role revocation router exactly once under /api while preserving router-owned authentication, tenant authorization, command, transaction, persistence, replay, root-lifecycle and financial boundaries; no privileged-security startup indexes are introduced.
 2026-10-15 v1.25.0-CX26-R3-LEGAL-OPERATING-MODEL-ROUTER-MOUNT mounts the directly certified authenticated Tenant Legal Operating Model HTTP router exactly once under /api/legal/operating-model while preserving router-owned tenant correlation, IAM, transaction, persistence, workflow, legal-act, entitlement, billing, payment, settlement and financial boundaries.
 2026-10-12 v1.24.0-L8-9C-LEGAL-STOREFRONT-PUBLIC-INTENT-ROUTER-MOUNT mounts the certified anonymous Legal Storefront public-intent router exactly once under /api/legal-storefront/public-intents and bootstraps the L8-9B durable intent indexes plus L8-9C0 ephemeral rate-limit indexes after successful database connection, without creating identity, tenant, Legal lifecycle, AI, subscription, entitlement, billing, payment, or settlement authority.
 2026-10-12 v1.23.0-LEGAL-EVIDENCE-UPLOAD-ROUTER-MOUNT mounts the authenticated Legal Evidence multipart router exactly once under /api/legal-operations/evidence while preserving router-owned Partner IAM, canonical ProcessDocument scope, two-plane storage/commit, uncertainty, and financial boundaries.
@@ -108,6 +109,18 @@ from .hr_document_router import router as hr_document_router
 from tools.eos.auth.authentication import get_principal_authority_repository
 from tools.eos.auth.authorization import get_role_assignment_repository
 from tools.eos.auth.tenant_access import get_tenant_membership_repository
+from tools.eos.auth.tenant_authorization_decision_evidence_registry import (
+    COLLECTION as TENANT_AUTHORIZATION_DECISION_EVIDENCE_COLLECTION,
+    TenantAuthorizationDecisionEvidenceRegistry,
+)
+from tools.eos.auth.authorization_role_revocation_evidence_registry import (
+    COLLECTION as AUTHORIZATION_ROLE_REVOCATION_EVIDENCE_COLLECTION,
+    AuthorizationRoleRevocationEvidenceRegistry,
+)
+from tools.eos.auth.privileged_factor_verification_currentness_registry import (
+    COLLECTION as PRIVILEGED_FACTOR_CURRENTNESS_COLLECTION,
+    PrivilegedFactorVerificationCurrentnessRegistry,
+)
 from tools.eos.intelligence.providers.reasoning_provider_runtime import (
     build_reasoning_provider_binding_from_environment,
 )
@@ -135,7 +148,7 @@ from tools.eos.legal_operations.service.legal_storefront_public_intent_rate_limi
     LegalStorefrontPublicIntentRateLimit,
 )
 
-VERSION = "v1.26.0-P1-R3E-AUTHORIZATION-ROLE-REVOCATION-RUNTIME-MOUNT"
+VERSION = "v1.27.0-P3-R3G-S5-A2-IAM-SECURITY-EVIDENCE-FACTOR-INDEX-BOOTSTRAP"
 logger = logging.getLogger("WilsyOS.API.Server")
 
 
@@ -348,6 +361,24 @@ class WilsyAPIServer:
             provider = self.reasoning_provider_binding
             database, client = get_database(), get_client()
             if database is not None:
+                TenantAuthorizationDecisionEvidenceRegistry(
+                    database[
+                        TENANT_AUTHORIZATION_DECISION_EVIDENCE_COLLECTION
+                    ],
+                    principal_repository=(
+                        get_principal_authority_repository()
+                    ),
+                ).ensure_indexes()
+                AuthorizationRoleRevocationEvidenceRegistry(
+                    database[
+                        AUTHORIZATION_ROLE_REVOCATION_EVIDENCE_COLLECTION
+                    ]
+                ).ensure_indexes()
+                PrivilegedFactorVerificationCurrentnessRegistry(
+                    database[
+                        PRIVILEGED_FACTOR_CURRENTNESS_COLLECTION
+                    ]
+                ).ensure_indexes()
                 DeputyPrincipalBindingRegistry.ensure_indexes(
                     database[DEPUTY_PRINCIPAL_BINDING_COLLECTION]
                 )
@@ -469,7 +500,7 @@ class WilsyAPIServer:
 app = WilsyAPIServer().get_app()
 
 # ARTIFACT: server.py
-# VERSION: v1.26.0-P1-R3E-AUTHORIZATION-ROLE-REVOCATION-RUNTIME-MOUNT
+# VERSION: v1.27.0-P3-R3G-S5-A2-IAM-SECURITY-EVIDENCE-FACTOR-INDEX-BOOTSTRAP
 # AUTHORITY BOUNDARY: HTTP application composition only; domain authorities remain separate.
 # TENANT POSTURE: Mounted routers retain their canonical tenant isolation and admission rules.
 # FAIL-CLOSED POSTURE: Unmounted or failed router composition is never represented as operational authority.
