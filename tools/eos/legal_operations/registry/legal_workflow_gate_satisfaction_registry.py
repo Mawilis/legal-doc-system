@@ -494,6 +494,74 @@ class LegalWorkflowGateSatisfactionRegistry:
         self._reprove(value, session=tx)
         return value
 
+    def list_workflow_stage(
+        self,
+        tenant_id: str,
+        workflow_instance_id: str,
+        source_stage_definition_id: str,
+        *,
+        session: object,
+    ) -> tuple[LegalWorkflowGateSatisfaction, ...]:
+        """List positive gate facts for one exact tenant/instance/source stage."""
+        tenant = _tenant(tenant_id)
+        instance_id = _text(
+            "workflow_instance_id",
+            workflow_instance_id,
+        )
+        source_stage_id = _text(
+            "source_stage_definition_id",
+            source_stage_definition_id,
+        )
+        tx = _transaction(session)
+
+        try:
+            cursor = self._collection.find(
+                {
+                    "tenant_id": tenant,
+                    "workflow_instance_id": instance_id,
+                    "source_stage_definition_id": source_stage_id,
+                },
+                session=tx,
+            ).sort(
+                [
+                    ("gate_reference", ASCENDING),
+                    ("evaluated_at", ASCENDING),
+                    ("gate_satisfaction_id", ASCENDING),
+                ]
+            )
+            raw_values = tuple(cursor)
+        except (AttributeError, TypeError) as error:
+            _raise(
+                LegalWorkflowGateSatisfactionRegistryPersistenceError,
+                "P12B_PERSISTENCE_UNAVAILABLE",
+                error,
+            )
+        except PyMongoError as error:
+            _mongo_failure(error)
+
+        values: list[LegalWorkflowGateSatisfaction] = []
+
+        for raw in raw_values:
+            value = _hydrate(raw)
+
+            if (
+                value.tenant_id != tenant
+                or value.workflow_instance_id != instance_id
+                or value.source_stage_definition_id != source_stage_id
+            ):
+                _raise(
+                    LegalWorkflowGateSatisfactionRegistryPersistedRecordInvalidError,
+                    "P12B_PERSISTED_SCOPE_MISMATCH",
+                )
+
+            self._reprove(
+                value,
+                session=tx,
+            )
+            values.append(value)
+
+        return tuple(values)
+
     def create_or_replay(
         self,
         value: LegalWorkflowGateSatisfaction,
