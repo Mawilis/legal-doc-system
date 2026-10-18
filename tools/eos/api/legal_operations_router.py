@@ -1,7 +1,7 @@
 """Authenticated deterministic read projections for Legal Operations.
 
 TITLE: WILSY OS Legal Operations Read Projection Router
-VERSION: v1.12.0-LEGAL-SPECIALIST-WORKFLOW-HTTP
+VERSION: v1.13.0-LEGAL-TEMPORAL-OPERATIONS-HTTP
 AUTHORITY: Authenticated, tenant-scoped projection of canonical Legal Operations evidence only.
 EPITOME: Preserve exact authorized internal/sheriff/deputy/client reads while
          exposing one snapshot-consistent legal-practice workspace projection and
@@ -21,7 +21,8 @@ COLLABORATION / OWNERSHIP: Python EOS API composition. P1 owns lifecycle truth,
                             L8-8E owns immutable conflict-screening persistence;
                             tenant authorization owns access authority.
 CERTIFICATION / UPDATE DATE: 2026-10-18
-CHANGELOG: 2026-10-18 v1.12.0-LEGAL-SPECIALIST-WORKFLOW-HTTP adds authenticated GET /specialist-workflow under the existing productive-work read authority. One existing API-owned snapshot transaction composes canonical productive-work visibility first, then enriches only visible rows through LegalSpecialistWorkflowReadService. It adds no permission, collection, index, mutable current pointer, write route, workflow mutation, IAM or financial authority.
+CHANGELOG: 2026-10-18 v1.13.0-LEGAL-TEMPORAL-OPERATIONS-HTTP records authenticated GET /temporal-operations under the existing productive-work read authority. One API-owned snapshot transaction composes canonical productive-work visibility and canonical Legal Matter Deadline evidence with shared session/snapshot scope. It adds no permission, collection, index, write route, deadline arithmetic, lifecycle mutation, IAM or financial authority.
+           2026-10-18 v1.12.0-LEGAL-SPECIALIST-WORKFLOW-HTTP adds authenticated GET /specialist-workflow under the existing productive-work read authority. One existing API-owned snapshot transaction composes canonical productive-work visibility first, then enriches only visible rows through LegalSpecialistWorkflowReadService. It adds no permission, collection, index, mutable current pointer, write route, workflow mutation, IAM or financial authority.
            2026-10-16 v1.11.0-LEGAL-COMMERCIAL-CONTEXT-HTTP adds authenticated GET /commercial-context using the already-canonical subscription:read permission. The route derives tenant scope only from current Python membership/permission authority, owns one read-only Mongo snapshot transaction, composes exact current Legal product entitlement with canonical subscription evidence, and exposes bounded commercial context only to commercial-read principals. It adds no Legal-role grant, subscription mutation, plan mutation, IAM assignment, payment, execution or settlement authority.
            2026-10-10 v1.10.0-D22B5-R21-LEGAL-PRODUCT-AVAILABILITY-CONJUNCTION adds the canonical D22B5 Legal Operations product-availability read as the first durable operation inside the existing workspace snapshot transaction. Unavailability denies with one non-disclosing 403; product-authority failure denies with a distinct 503; the four D15 authorities, workspace evidence reads and response contract remain unchanged.
            2026-09-25 v1.9.0-L8-8N-CONFLICT-SCREENING-READ-API adds an authenticated exact-tenant GET /conflict-screenings review queue backed by the canonical immutable screening registry. It exposes only screening_id, source_case_matter_id, REVIEW_REQUIRED status and screened_at in a bounded deterministic projection; no review state, evidence, party identity, clearance, IAM or financial authority is created.
@@ -267,7 +268,7 @@ from tools.eos.saas.entitlement.tenant_product_entitlement_registry import (
 )
 
 
-VERSION: Final[str] = "v1.12.0-LEGAL-SPECIALIST-WORKFLOW-HTTP"
+VERSION: Final[str] = "v1.13.0-LEGAL-TEMPORAL-OPERATIONS-HTTP"
 _IDENTITY = re.compile(r"^[A-Za-z0-9][A-Za-z0-9._:-]{0,127}$")
 _CLIENT_ROLE = "tenant_legal_client"
 _LEGAL_PRACTICE_ROLES: Final[frozenset[str]] = frozenset(
@@ -814,6 +815,16 @@ _SPECIALIST_WORKFLOW_HTTP_VERSION: Final[str] = (
 )
 
 
+
+from tools.eos.legal_operations.registry import (
+    legal_matter_deadline_registry as _temporal_deadline_registry,
+)
+from tools.eos.legal_operations.service.legal_temporal_operations_read_service import (
+    LegalTemporalOperationsReadService,
+    LegalTemporalOperationsReadServiceError,
+)
+
+
 def _productive_work_service(
     database: Any,
 ) -> LegalProductiveWorkReadService:
@@ -1240,6 +1251,107 @@ async def get_legal_productive_work_projection(
             status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
             detail="LEGAL_OPERATIONS_PRODUCTIVE_WORK_EVIDENCE_UNAVAILABLE",
         ) from error
+
+
+
+def _temporal_operations_services(
+    database: Any,
+) -> tuple[
+    LegalProductiveWorkReadService,
+    LegalTemporalOperationsReadService,
+]:
+    """Reuse certified productive visibility and canonical deadline storage."""
+    return (
+        _productive_work_service(database),
+        LegalTemporalOperationsReadService(
+            deadline_collection=database.get_collection(
+                _temporal_deadline_registry.COLLECTION
+            )
+        ),
+    )
+
+
+def _temporal_operations_payload(
+    projection: Any,
+) -> dict[str, object]:
+    """Serialize evidenced temporal facts without deriving new authority."""
+    return {
+        "schema": projection.schema,
+        "version": projection.version,
+        "tenant_id": projection.tenant_id,
+        "principal_id": projection.principal_id,
+        "as_of": projection.as_of.isoformat(),
+        "visible_matter_ids": list(projection.visible_matter_ids),
+        "rows": [
+            {
+                "case_matter_id": row.case_matter_id,
+                "deadline_id": row.deadline_id,
+                "deadline_kind": getattr(
+                    row.deadline_kind, "value", row.deadline_kind
+                ),
+                "title": row.title,
+                "due_at": row.due_at.isoformat(),
+                "source_type": getattr(
+                    row.source_type, "value", row.source_type
+                ),
+                "source_reference": row.source_reference,
+                "source_evidence_fingerprint": (
+                    row.source_evidence_fingerprint
+                ),
+                "jurisdiction_reference": row.jurisdiction_reference,
+                "status": getattr(row.status, "value", row.status),
+            }
+            for row in projection.rows
+        ],
+    }
+
+
+@router.get("/temporal-operations")
+async def get_legal_temporal_operations_projection(
+    context: TenantAuthorizationContext = Depends(
+        _PRODUCTIVE_WORK_READ
+    ),
+) -> dict[str, object]:
+    """Read canonical temporal facts for authenticated productive visibility.
+
+    Tenant and principal are obtained exclusively from authorization context.
+    One API-owned snapshot session covers productive and deadline reads.
+    This endpoint grants no separate calendar, matter or execution authority.
+    """
+    def run(
+        session: Any,
+        database: Any,
+    ) -> dict[str, object]:
+        productive_service, temporal_service = (
+            _temporal_operations_services(database)
+        )
+        as_of = datetime.now(UTC)
+
+        try:
+            productive_work = productive_service.project(
+                tenant_id=context.tenant_id,
+                principal_id=context.identity.identity_id,
+                as_of=as_of,
+                session=session,
+            )
+            temporal_projection = temporal_service.project(
+                productive_work=productive_work,
+                session=session,
+            )
+            return _temporal_operations_payload(
+                temporal_projection
+            )
+        except (
+            LegalProductiveWorkReadServiceError,
+            LegalProductiveWorkOperatingContextHydratorError,
+            LegalTemporalOperationsReadServiceError,
+        ) as error:
+            raise HTTPException(
+                status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+                detail="LEGAL_OPERATIONS_TEMPORAL_EVIDENCE_UNAVAILABLE",
+            ) from error
+
+    return _productive_work_projection_transaction(run)
 
 
 @router.get("/specialist-workflow")
@@ -1739,14 +1851,15 @@ __all__ = [
     "get_legal_practice_workspace_projection",
     "get_legal_productive_work_projection",
     "get_legal_specialist_workflow_projection",
+    "get_legal_temporal_operations_projection",
     "router",
 ]
 
 
 # ARTIFACT: legal_operations_router.py
-# VERSION: v1.12.0-LEGAL-SPECIALIST-WORKFLOW-HTTP
-# AUTHORITY BOUNDARY: authenticated Legal reads only; specialist workflow explanation is bounded by productive-work visibility and grants no command, IAM assignment, plan/subscription mutation, payment execution or settlement authority
-# TENANT POSTURE: every projection uses exact authenticated/current-authorized tenant context; foreign lifecycle, workflow, screening, subscription and entitlement evidence is never disclosed
-# FAIL-CLOSED POSTURE: authority/scope mismatch, entitlement/subscription disagreement, unavailable product/commercial/workflow authority, snapshot failure, corruption, divergence and persistence outages deny
+# VERSION: v1.13.0-LEGAL-TEMPORAL-OPERATIONS-HTTP
+# AUTHORITY BOUNDARY: authenticated Legal reads only; temporal and specialist workflow projections are bounded by productive-work visibility and grant no command, IAM assignment, plan/subscription mutation, payment execution or settlement authority
+# TENANT POSTURE: every projection uses exact authenticated/current-authorized tenant context; foreign lifecycle, deadline, workflow, screening, subscription and entitlement evidence is never disclosed
+# FAIL-CLOSED POSTURE: authority/scope mismatch, entitlement/subscription disagreement, unavailable product/commercial/deadline/workflow authority, snapshot failure, corruption, divergence and persistence outages deny
 # FINANCIAL EXECUTION AUTHORITY: Kennel EOS exclusively
 # END OF WILSY OS SOVEREIGN ARTIFACT
