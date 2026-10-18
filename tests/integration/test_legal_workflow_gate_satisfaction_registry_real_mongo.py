@@ -20,13 +20,14 @@ from __future__ import annotations
 
 import os
 import uuid
+from datetime import timedelta
 from typing import Any, Iterator
 
 import pytest
 from pymongo import MongoClient
 from pymongo.errors import DuplicateKeyError
 
-from tests.unit.test_legal_workflow_gate_satisfaction import authorities, satisfaction
+from tests.unit.test_legal_workflow_gate_satisfaction import authorities, evidence, satisfaction
 from tools.eos.legal_operations.domain.legal_operating_catalogue import (
     CATALOGUE_FINGERPRINT,
 )
@@ -261,6 +262,243 @@ def test_real_duplicate_race_requires_whole_transaction_retry(
             gate_registry.create_or_replay(value, session=session)
         session.abort_transaction()
 
+
+
+
+def _real_stage_satisfaction(
+    *,
+    gate_satisfaction_id: str,
+    evaluated_offset_seconds: int,
+    evidence_reference: str,
+    evidence_fingerprint: str,
+):
+    """Build one exact positive gate fact in the certified source-stage scope."""
+    instance, topology, source_stage = authorities()
+    baseline = satisfaction()
+    return type(baseline).from_authorities(
+        gate_satisfaction_id=gate_satisfaction_id,
+        workflow_instance=instance,
+        workflow_topology=topology,
+        source_stage=source_stage,
+        gate_reference="gate:conflict-current",
+        canonical_evidence=(
+            evidence(
+                reference=evidence_reference,
+                fingerprint=evidence_fingerprint,
+            ),
+        ),
+        evaluated_at=(
+            baseline.evaluated_at
+            + timedelta(
+                seconds=evaluated_offset_seconds
+            )
+        ),
+        evaluated_by_principal_id="principal-2",
+        evaluation_authorization_evidence_reference=(
+            "gate-eval-auth-proof"
+        ),
+    )
+
+
+def test_real_instance_history_index_exact_shape_is_unchanged(
+    mongo_context,
+) -> None:
+    """Prove enumeration uses the existing six-field non-TTL index."""
+    _, _, collection, _ = mongo_context
+
+    indexes = {
+        row["name"]: row
+        for row in collection.list_indexes()
+    }
+
+    history = indexes[
+        INSTANCE_HISTORY_INDEX_NAME
+    ]
+
+    assert list(history["key"].items()) == [
+        ("tenant_id", 1),
+        ("workflow_instance_id", 1),
+        ("source_stage_definition_id", 1),
+        ("gate_reference", 1),
+        ("evaluated_at", 1),
+        ("gate_satisfaction_id", 1),
+    ]
+    assert history.get("unique", False) is False
+    assert "expireAfterSeconds" not in history
+
+
+def test_real_list_workflow_stage_is_deterministic_and_exact(
+    mongo_context,
+) -> None:
+    """Prove real Mongo returns every positive fact in deterministic order."""
+    client, database, collection, gate_registry = mongo_context
+
+    baseline, _ = persist_authorities(
+        client,
+        database,
+        gate_registry,
+    )
+
+    middle = _real_stage_satisfaction(
+        gate_satisfaction_id="gate-satisfaction-2",
+        evaluated_offset_seconds=20,
+        evidence_reference="conflict-currentness:2",
+        evidence_fingerprint="b" * 128,
+    )
+    later = _real_stage_satisfaction(
+        gate_satisfaction_id="gate-satisfaction-3",
+        evaluated_offset_seconds=30,
+        evidence_reference="conflict-currentness:3",
+        evidence_fingerprint="c" * 128,
+    )
+
+    with client.start_session() as session:
+        with session.start_transaction():
+            # Insert in an order different from the required read order.
+            gate_registry.create_or_replay(
+                later,
+                session=session,
+            )
+            gate_registry.create_or_replay(
+                middle,
+                session=session,
+            )
+
+    assert collection.count_documents({}) == 3
+
+    with client.start_session() as session:
+        with session.start_transaction():
+            result = gate_registry.list_workflow_stage(
+                baseline.tenant_id,
+                baseline.workflow_instance_id,
+                baseline.source_stage_definition_id,
+                session=session,
+            )
+
+    assert isinstance(result, tuple)
+    assert result == (
+        baseline,
+        middle,
+        later,
+    )
+
+
+def test_real_list_workflow_stage_empty_and_cross_tenant_scopes_are_non_disclosing(
+    mongo_context,
+) -> None:
+    """Prove absence and foreign-tenant reads return no positive facts."""
+    client, database, _, gate_registry = mongo_context
+
+    value, _ = persist_authorities(
+        client,
+        database,
+        gate_registry,
+    )
+
+    with client.start_session() as session:
+        with session.start_transaction():
+            missing_stage = (
+                gate_registry.list_workflow_stage(
+                    value.tenant_id,
+                    value.workflow_instance_id,
+                    "stage-not-present",
+                    session=session,
+                )
+            )
+            foreign_tenant = (
+                gate_registry.list_workflow_stage(
+                    "tenant-foreign",
+                    value.workflow_instance_id,
+                    value.source_stage_definition_id,
+                    session=session,
+                )
+            )
+
+    assert missing_stage == ()
+    assert foreign_tenant == ()
+
+
+def test_real_list_workflow_stage_corrupt_row_fails_closed(
+    mongo_context,
+) -> None:
+    """Prove every enumerated real-Mongo row is strictly hydrated."""
+    client, database, collection, gate_registry = mongo_context
+
+    value, _ = persist_authorities(
+        client,
+        database,
+        gate_registry,
+    )
+
+    collection.update_one(
+        {
+            "tenant_id": value.tenant_id,
+            "gate_satisfaction_id":
+                value.gate_satisfaction_id,
+        },
+        {
+            "$set": {
+                "fingerprint": "f" * 128,
+            }
+        },
+    )
+
+    with client.start_session() as session:
+        with session.start_transaction():
+            with pytest.raises(
+                LegalWorkflowGateSatisfactionRegistryPersistedRecordInvalidError,
+                match="P12B_PERSISTED_RECORD_INVALID",
+            ):
+                gate_registry.list_workflow_stage(
+                    value.tenant_id,
+                    value.workflow_instance_id,
+                    value.source_stage_definition_id,
+                    session=session,
+                )
+
+
+def test_real_list_workflow_stage_requires_active_caller_transaction(
+    mongo_context,
+) -> None:
+    """Prove enumeration cannot run outside the existing transaction contract."""
+    _, _, _, gate_registry = mongo_context
+
+    with pytest.raises(
+        Exception,
+        match="P12B_ACTIVE_TRANSACTION_REQUIRED",
+    ):
+        gate_registry.list_workflow_stage(
+            "tenant-1",
+            "instance-1",
+            "stage-1",
+            session=object(),
+        )
+
+
+def test_real_list_workflow_stage_creates_no_new_authority_surface(
+    mongo_context,
+) -> None:
+    """Prove the new real-Mongo surface remains positive-evidence read-only."""
+    _, _, _, gate_registry = mongo_context
+
+    for name in (
+        "mark_unsatisfied",
+        "set_unsatisfied",
+        "set_current",
+        "transition",
+        "authorize",
+        "assign",
+        "complete",
+        "approve",
+        "grant",
+        "revoke",
+        "pay",
+        "settle",
+    ):
+        assert not hasattr(
+            gate_registry,
+            name,
+        )
 
 # ==============================================================================
 # WILSY OS SOVEREIGN ARTIFACT SEAL

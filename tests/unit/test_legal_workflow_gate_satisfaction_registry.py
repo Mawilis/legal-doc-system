@@ -19,7 +19,8 @@ FINANCIAL AUTHORITY BOUNDARY: NONE.
 from __future__ import annotations
 
 from copy import deepcopy
-from typing import Any
+from datetime import timedelta
+from typing import Any, cast
 
 import pytest
 from pymongo.errors import DuplicateKeyError
@@ -85,6 +86,36 @@ class Collection:
             raise DuplicateKeyError("synthetic duplicate race")
         self.rows.append(deepcopy(document))
         return object()
+
+    def find(self, query, *, session):
+        assert session.in_transaction is True
+        rows = [
+            deepcopy(row)
+            for row in self.rows
+            if all(
+                row.get(key) == value
+                for key, value in query.items()
+            )
+        ]
+        return Cursor(rows)
+
+
+class Cursor:
+    """Minimal deterministic Mongo cursor surface for scoped list reads."""
+
+    def __init__(self, rows: list[dict[str, object]]) -> None:
+        self.rows = rows
+
+    def sort(self, keys):
+        for key, direction in reversed(list(keys)):
+            assert direction == 1
+            self.rows.sort(
+                key=lambda row: cast(Any, row.get(key))
+            )
+        return self
+
+    def __iter__(self):
+        return iter(self.rows)
 
 
 class InstanceRegistry(LegalMatterWorkflowInstanceRegistry):
@@ -276,6 +307,193 @@ def test_duplicate_insert_requires_whole_transaction_retry() -> None:
     ):
         subject.create_or_replay(satisfaction(), session=Session())
 
+
+
+
+def _stage_satisfaction(
+    *,
+    gate_satisfaction_id: str,
+    evaluated_offset_seconds: int,
+    evidence_reference: str,
+    evidence_fingerprint: str,
+):
+    """Build one valid positive fact in the frozen workflow/source-stage scope."""
+    instance, topology, stage = authorities()
+    baseline = satisfaction()
+    return type(baseline).from_authorities(
+        gate_satisfaction_id=gate_satisfaction_id,
+        workflow_instance=instance,
+        workflow_topology=topology,
+        source_stage=stage,
+        gate_reference="gate:conflict-current",
+        canonical_evidence=(
+            evidence(
+                reference=evidence_reference,
+                fingerprint=evidence_fingerprint,
+            ),
+        ),
+        evaluated_at=(
+            baseline.evaluated_at
+            + timedelta(
+                seconds=evaluated_offset_seconds
+            )
+        ),
+        evaluated_by_principal_id="principal-2",
+        evaluation_authorization_evidence_reference=(
+            "gate-eval-auth-proof"
+        ),
+    )
+
+
+def test_list_workflow_stage_is_exact_deterministic_tenant_scoped_and_non_authorizing() -> None:
+    subject, _ = registry()
+
+    later = _stage_satisfaction(
+        gate_satisfaction_id="gate-satisfaction-3",
+        evaluated_offset_seconds=30,
+        evidence_reference="conflict-currentness:3",
+        evidence_fingerprint="c" * 128,
+    )
+    earliest = _stage_satisfaction(
+        gate_satisfaction_id="gate-satisfaction-1",
+        evaluated_offset_seconds=10,
+        evidence_reference="conflict-currentness:1",
+        evidence_fingerprint="a" * 128,
+    )
+    middle = _stage_satisfaction(
+        gate_satisfaction_id="gate-satisfaction-2",
+        evaluated_offset_seconds=20,
+        evidence_reference="conflict-currentness:2",
+        evidence_fingerprint="b" * 128,
+    )
+
+    # Persist deliberately out of deterministic result order.
+    subject.create_or_replay(
+        later,
+        session=Session(),
+    )
+    subject.create_or_replay(
+        earliest,
+        session=Session(),
+    )
+    subject.create_or_replay(
+        middle,
+        session=Session(),
+    )
+
+    result = subject.list_workflow_stage(
+        earliest.tenant_id,
+        earliest.workflow_instance_id,
+        earliest.source_stage_definition_id,
+        session=Session(),
+    )
+
+    assert isinstance(result, tuple)
+    assert result == (
+        earliest,
+        middle,
+        later,
+    )
+
+    # This read projects existing immutable positive evidence only.
+    forbidden = (
+        "mark_unsatisfied",
+        "set_unsatisfied",
+        "set_current",
+        "transition",
+        "authorize",
+        "assign",
+        "complete",
+        "approve",
+        "grant",
+        "revoke",
+        "pay",
+        "settle",
+    )
+    for name in forbidden:
+        assert not hasattr(subject, name)
+
+
+def test_list_workflow_stage_empty_scope_returns_empty_tuple_without_inventing_unsatisfied_truth() -> None:
+    subject, _ = registry()
+
+    result = subject.list_workflow_stage(
+        "tenant-1",
+        "instance-1",
+        "stage-missing",
+        session=Session(),
+    )
+
+    assert result == ()
+    assert isinstance(result, tuple)
+
+
+def test_list_workflow_stage_requires_caller_owned_active_transaction() -> None:
+    subject, _ = registry()
+
+    with pytest.raises(
+        LegalWorkflowGateSatisfactionRegistryTransactionRequiredError,
+        match="P12B_ACTIVE_TRANSACTION_REQUIRED",
+    ):
+        subject.list_workflow_stage(
+            "tenant-1",
+            "instance-1",
+            "stage-1",
+            session=object(),
+        )
+
+
+def test_list_workflow_stage_is_exactly_tenant_scoped() -> None:
+    subject, _ = registry()
+
+    value = _stage_satisfaction(
+        gate_satisfaction_id="gate-satisfaction-tenant",
+        evaluated_offset_seconds=10,
+        evidence_reference="conflict-currentness:tenant",
+        evidence_fingerprint="d" * 128,
+    )
+    subject.create_or_replay(
+        value,
+        session=Session(),
+    )
+
+    assert (
+        subject.list_workflow_stage(
+            "tenant-other",
+            value.workflow_instance_id,
+            value.source_stage_definition_id,
+            session=Session(),
+        )
+        == ()
+    )
+
+
+def test_list_workflow_stage_strictly_hydrates_every_returned_fact() -> None:
+    subject, collection = registry()
+
+    value = _stage_satisfaction(
+        gate_satisfaction_id="gate-satisfaction-corrupt",
+        evaluated_offset_seconds=10,
+        evidence_reference="conflict-currentness:corrupt",
+        evidence_fingerprint="e" * 128,
+    )
+    subject.create_or_replay(
+        value,
+        session=Session(),
+    )
+
+    collection.rows[0]["fingerprint"] = "f" * 128
+
+    with pytest.raises(
+        LegalWorkflowGateSatisfactionRegistryPersistedRecordInvalidError,
+        match="P12B_PERSISTED_RECORD_INVALID",
+    ):
+        subject.list_workflow_stage(
+            value.tenant_id,
+            value.workflow_instance_id,
+            value.source_stage_definition_id,
+            session=Session(),
+        )
 
 # ==============================================================================
 # WILSY OS SOVEREIGN ARTIFACT SEAL
