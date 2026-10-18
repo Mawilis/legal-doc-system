@@ -1,7 +1,7 @@
 """WILSY OS sovereign Python API server composition root.
 
 TITLE: WILSY OS EOS Kernel API Server Factory
-VERSION: v1.27.0-P3-R3G-S5-A2-IAM-SECURITY-EVIDENCE-FACTOR-INDEX-BOOTSTRAP
+VERSION: v1.28.0-P3-R3G-S6-A2-IAM-SECURITY-STARTUP-INDEX-BOOTSTRAP
 AUTHORITY: Wilsy OS Core Governance
 EPITOME: Mount sovereign Python API authorities, including the certified
          pre-tenant Legal Storefront public-intent admission transport under
@@ -11,7 +11,8 @@ EPITOME: Mount sovereign Python API authorities, including the certified
 ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/tools/eos/api/server.py
 COLLABORATION / OWNERSHIP: Wilson Khanyezi / Wilsy OS Core Engineering
 CERTIFICATION / UPDATE DATE: 2026-10-18
-CHANGELOG: 2026-10-18 v1.27.0-P3-R3G-S5-A2-IAM-SECURITY-EVIDENCE-FACTOR-INDEX-BOOTSTRAP moves the already-certified tenant-authorization decision-evidence, authorization-role-revocation evidence, and privileged factor-currentness registry index DDL into canonical connected application startup while preserving all current-main router composition, request-path semantics, tenant boundaries, caller-owned transaction authority, and Kennel EOS financial execution exclusivity.
+CHANGELOG: 2026-10-18 v1.28.0-P3-R3G-S6-A2-IAM-SECURITY-STARTUP-INDEX-BOOTSTRAP adds canonical connected-startup index ownership for the existing internal-service replay, workload-credential, workload-trust currentness, noninteractive security-proof and privileged assurance-evidence registries; startup creates indexes only and preserves request, identity, credential, tenant, role, activation, Legal, billing, settlement and Kennel EOS financial-execution boundaries.
+2026-10-18 v1.27.0-P3-R3G-S5-A2-IAM-SECURITY-EVIDENCE-FACTOR-INDEX-BOOTSTRAP moves the already-certified tenant-authorization decision-evidence, authorization-role-revocation evidence, and privileged factor-currentness registry index DDL into canonical connected application startup while preserving all current-main router composition, request-path semantics, tenant boundaries, caller-owned transaction authority, and Kennel EOS financial execution exclusivity.
 2026-10-18 v1.26.0-P1-R3E-AUTHORIZATION-ROLE-REVOCATION-RUNTIME-MOUNT mounts the certified ordinary authorization-role revocation router exactly once under /api while preserving router-owned authentication, tenant authorization, command, transaction, persistence, replay, root-lifecycle and financial boundaries; no privileged-security startup indexes are introduced.
 2026-10-15 v1.25.0-CX26-R3-LEGAL-OPERATING-MODEL-ROUTER-MOUNT mounts the directly certified authenticated Tenant Legal Operating Model HTTP router exactly once under /api/legal/operating-model while preserving router-owned tenant correlation, IAM, transaction, persistence, workflow, legal-act, entitlement, billing, payment, settlement and financial boundaries.
 2026-10-12 v1.24.0-L8-9C-LEGAL-STOREFRONT-PUBLIC-INTENT-ROUTER-MOUNT mounts the certified anonymous Legal Storefront public-intent router exactly once under /api/legal-storefront/public-intents and bootstraps the L8-9B durable intent indexes plus L8-9C0 ephemeral rate-limit indexes after successful database connection, without creating identity, tenant, Legal lifecycle, AI, subscription, entitlement, billing, payment, or settlement authority.
@@ -121,6 +122,27 @@ from tools.eos.auth.privileged_factor_verification_currentness_registry import (
     COLLECTION as PRIVILEGED_FACTOR_CURRENTNESS_COLLECTION,
     PrivilegedFactorVerificationCurrentnessRegistry,
 )
+from tools.eos.auth.internal_service_replay_registry import (
+    COLLECTION as INTERNAL_SERVICE_REPLAY_COLLECTION,
+    InternalServiceReplayRegistry,
+)
+from tools.eos.auth.internal_service_workload_credential_registry import (
+    COLLECTION as INTERNAL_SERVICE_WORKLOAD_CREDENTIAL_COLLECTION,
+    POINTER_COLLECTION as INTERNAL_SERVICE_WORKLOAD_CREDENTIAL_POINTER_COLLECTION,
+    InternalServiceWorkloadCredentialRegistry,
+)
+from tools.eos.auth.privileged_workload_trust_currentness_registry import (
+    COLLECTION as PRIVILEGED_WORKLOAD_TRUST_CURRENTNESS_COLLECTION,
+    PrivilegedWorkloadTrustCurrentnessRegistry,
+)
+from tools.eos.auth.privileged_noninteractive_security_proof_registry import (
+    COLLECTION as PRIVILEGED_NONINTERACTIVE_SECURITY_PROOF_COLLECTION,
+    PrivilegedNoninteractiveSecurityProofRegistry,
+)
+from tools.eos.auth.privileged_security_assurance_evidence_registry import (
+    COLLECTION as PRIVILEGED_SECURITY_ASSURANCE_EVIDENCE_COLLECTION,
+    PrivilegedSecurityAssuranceEvidenceRegistry,
+)
 from tools.eos.intelligence.providers.reasoning_provider_runtime import (
     build_reasoning_provider_binding_from_environment,
 )
@@ -148,7 +170,7 @@ from tools.eos.legal_operations.service.legal_storefront_public_intent_rate_limi
     LegalStorefrontPublicIntentRateLimit,
 )
 
-VERSION = "v1.27.0-P3-R3G-S5-A2-IAM-SECURITY-EVIDENCE-FACTOR-INDEX-BOOTSTRAP"
+VERSION = "v1.28.0-P3-R3G-S6-A2-IAM-SECURITY-STARTUP-INDEX-BOOTSTRAP"
 logger = logging.getLogger("WilsyOS.API.Server")
 
 
@@ -379,6 +401,34 @@ class WilsyAPIServer:
                         PRIVILEGED_FACTOR_CURRENTNESS_COLLECTION
                     ]
                 ).ensure_indexes()
+                InternalServiceReplayRegistry.ensure_indexes(
+                    database[
+                        INTERNAL_SERVICE_REPLAY_COLLECTION
+                    ]
+                )
+                InternalServiceWorkloadCredentialRegistry(
+                    database[
+                        INTERNAL_SERVICE_WORKLOAD_CREDENTIAL_COLLECTION
+                    ],
+                    database[
+                        INTERNAL_SERVICE_WORKLOAD_CREDENTIAL_POINTER_COLLECTION
+                    ],
+                ).ensure_indexes()
+                PrivilegedWorkloadTrustCurrentnessRegistry(
+                    database[
+                        PRIVILEGED_WORKLOAD_TRUST_CURRENTNESS_COLLECTION
+                    ]
+                ).ensure_indexes()
+                PrivilegedNoninteractiveSecurityProofRegistry(
+                    database[
+                        PRIVILEGED_NONINTERACTIVE_SECURITY_PROOF_COLLECTION
+                    ]
+                ).ensure_indexes()
+                PrivilegedSecurityAssuranceEvidenceRegistry(
+                    database[
+                        PRIVILEGED_SECURITY_ASSURANCE_EVIDENCE_COLLECTION
+                    ]
+                ).ensure_indexes()
                 DeputyPrincipalBindingRegistry.ensure_indexes(
                     database[DEPUTY_PRINCIPAL_BINDING_COLLECTION]
                 )
@@ -500,7 +550,7 @@ class WilsyAPIServer:
 app = WilsyAPIServer().get_app()
 
 # ARTIFACT: server.py
-# VERSION: v1.27.0-P3-R3G-S5-A2-IAM-SECURITY-EVIDENCE-FACTOR-INDEX-BOOTSTRAP
+# VERSION: v1.28.0-P3-R3G-S6-A2-IAM-SECURITY-STARTUP-INDEX-BOOTSTRAP
 # AUTHORITY BOUNDARY: HTTP application composition only; domain authorities remain separate.
 # TENANT POSTURE: Mounted routers retain their canonical tenant isolation and admission rules.
 # FAIL-CLOSED POSTURE: Unmounted or failed router composition is never represented as operational authority.
