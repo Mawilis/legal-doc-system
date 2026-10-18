@@ -261,7 +261,7 @@ def test_d12_system_command_permissions_are_exact_non_authorizing_metadata(permi
 
 
 def test_runtime_version_source_is_canonical() -> None:
-    assert POLICY_VERSION == "v1.47.0-PW-P11A-PRODUCTIVE-WORK-READ-PERMISSION"
+    assert POLICY_VERSION == "v1.48.0-P14-R20R11-WORK-COMPLETION-PERMISSION"
 
 
 def test_permission_canon_properties() -> None:
@@ -356,9 +356,9 @@ def test_permission_canon_properties() -> None:
             for row in rows
             if row["disposition"] == "CANONICAL"
         ]
-    ) == 114
+    ) == 115
 
-    assert len(rows) == 117
+    assert len(rows) == 118
 
     for permission_id in tenant:
         metadata = permission_metadata(

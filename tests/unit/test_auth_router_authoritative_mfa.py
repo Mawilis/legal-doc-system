@@ -158,10 +158,24 @@ def test_login_exposes_exact_authoritative_mfa_state(
     assert registry.session_calls == 0
 
 
+
+def _http_state_factor_session_adapter(
+    registry: Any,
+    user: Any,
+) -> Any:
+    """Test-only seam for separately certified factor-currentness composition."""
+    return registry.create_session(user)
+
+
 def test_legacy_otp_verification_persists_and_rereads_before_session(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
     registry = _Registry(_user(enrolled=False), "SECRET")
+    monkeypatch.setattr(
+        auth_router,
+        "_create_factor_current_session",
+        _http_state_factor_session_adapter,
+    )
     events: list[str] = []
     original_update = registry.update_user
     original_reread = registry.get_user_by_id
@@ -195,6 +209,11 @@ def test_reconciled_user_returns_normal_mfa_challenge_on_next_login(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
     registry = _Registry(_user(enrolled=False), "SECRET")
+    monkeypatch.setattr(
+        auth_router,
+        "_create_factor_current_session",
+        _http_state_factor_session_adapter,
+    )
     monkeypatch.setattr(auth_router, "get_auth_registry", lambda _tenant: registry)
 
     _run(auth_router.verify_otp(VerifyOTPRequest(email="person@example.com", code="123456")))
