@@ -1,7 +1,7 @@
 """Authenticated deterministic read projections for Legal Operations.
 
 TITLE: WILSY OS Legal Operations Read Projection Router
-VERSION: v1.11.0-LEGAL-COMMERCIAL-CONTEXT-HTTP
+VERSION: v1.12.0-LEGAL-SPECIALIST-WORKFLOW-HTTP
 AUTHORITY: Authenticated, tenant-scoped projection of canonical Legal Operations evidence only.
 EPITOME: Preserve exact authorized internal/sheriff/deputy/client reads while
          exposing one snapshot-consistent legal-practice workspace projection and
@@ -20,8 +20,9 @@ COLLABORATION / OWNERSHIP: Python EOS API composition. P1 owns lifecycle truth,
                             L8-7D5 owns sanitized client matter projection, and
                             L8-8E owns immutable conflict-screening persistence;
                             tenant authorization owns access authority.
-CERTIFICATION / UPDATE DATE: 2026-10-10
-CHANGELOG: 2026-10-16 v1.11.0-LEGAL-COMMERCIAL-CONTEXT-HTTP adds authenticated GET /commercial-context using the already-canonical subscription:read permission. The route derives tenant scope only from current Python membership/permission authority, owns one read-only Mongo snapshot transaction, composes exact current Legal product entitlement with canonical subscription evidence, and exposes bounded commercial context only to commercial-read principals. It adds no Legal-role grant, subscription mutation, plan mutation, IAM assignment, payment, execution or settlement authority.
+CERTIFICATION / UPDATE DATE: 2026-10-18
+CHANGELOG: 2026-10-18 v1.12.0-LEGAL-SPECIALIST-WORKFLOW-HTTP adds authenticated GET /specialist-workflow under the existing productive-work read authority. One existing API-owned snapshot transaction composes canonical productive-work visibility first, then enriches only visible rows through LegalSpecialistWorkflowReadService. It adds no permission, collection, index, mutable current pointer, write route, workflow mutation, IAM or financial authority.
+           2026-10-16 v1.11.0-LEGAL-COMMERCIAL-CONTEXT-HTTP adds authenticated GET /commercial-context using the already-canonical subscription:read permission. The route derives tenant scope only from current Python membership/permission authority, owns one read-only Mongo snapshot transaction, composes exact current Legal product entitlement with canonical subscription evidence, and exposes bounded commercial context only to commercial-read principals. It adds no Legal-role grant, subscription mutation, plan mutation, IAM assignment, payment, execution or settlement authority.
            2026-10-10 v1.10.0-D22B5-R21-LEGAL-PRODUCT-AVAILABILITY-CONJUNCTION adds the canonical D22B5 Legal Operations product-availability read as the first durable operation inside the existing workspace snapshot transaction. Unavailability denies with one non-disclosing 403; product-authority failure denies with a distinct 503; the four D15 authorities, workspace evidence reads and response contract remain unchanged.
            2026-09-25 v1.9.0-L8-8N-CONFLICT-SCREENING-READ-API adds an authenticated exact-tenant GET /conflict-screenings review queue backed by the canonical immutable screening registry. It exposes only screening_id, source_case_matter_id, REVIEW_REQUIRED status and screened_at in a bounded deterministic projection; no review state, evidence, party identity, clearance, IAM or financial authority is created.
            2026-09-24 v1.8.0-L8-7D15-FIRST-CLASS-MATTER-WORKSPACE-API adds canonical CaseMatter rows and matter counts to the existing practice workspace so a durably registered matter is directly discoverable after intake. CaseMatter is read from the same exact-tenant snapshot as the existing lifecycle families, exposes only case_matter_id, matter_reference, opened_at, state and opaque evidence_identity, and creates no new lifecycle, IAM, client, billing, payment, AI or settlement authority.
@@ -172,6 +173,42 @@ from tools.eos.legal_operations.registry.legal_work_item_registry import (
     COLLECTION_NAME as LEGAL_WORK_ITEM_COLLECTION,
     LegalWorkItemRegistry,
 )
+from tools.eos.legal_operations.registry.legal_matter_workflow_instance_registry import (
+    COLLECTION_NAME as LEGAL_WORKFLOW_INSTANCE_COLLECTION,
+    LegalMatterWorkflowInstanceRegistry,
+)
+from tools.eos.legal_operations.registry.legal_matter_workflow_transition_registry import (
+    COLLECTION_NAME as LEGAL_WORKFLOW_TRANSITION_COLLECTION,
+    LegalMatterWorkflowTransitionRegistry,
+)
+from tools.eos.legal_operations.registry.legal_transition_work_materialization_receipt_registry import (
+    COLLECTION_NAME as LEGAL_WORK_MATERIALIZATION_RECEIPT_COLLECTION,
+    LegalTransitionWorkMaterializationReceiptRegistry,
+)
+from tools.eos.legal_operations.registry.legal_work_completion_event_registry import (
+    COLLECTION_NAME as LEGAL_WORK_COMPLETION_EVENT_COLLECTION,
+    LegalWorkCompletionEventRegistry,
+)
+from tools.eos.legal_operations.registry.legal_work_dependency_edge_registry import (
+    COLLECTION_NAME as LEGAL_WORK_DEPENDENCY_EDGE_COLLECTION,
+    LegalWorkDependencyEdgeRegistry,
+)
+from tools.eos.legal_operations.registry.legal_workflow_definition_registry import (
+    COLLECTION_NAME as LEGAL_WORKFLOW_DEFINITION_COLLECTION,
+    LegalWorkflowDefinitionRegistry,
+)
+from tools.eos.legal_operations.registry.legal_workflow_gate_satisfaction_registry import (
+    COLLECTION_NAME as LEGAL_WORKFLOW_GATE_SATISFACTION_COLLECTION,
+    LegalWorkflowGateSatisfactionRegistry,
+)
+from tools.eos.legal_operations.registry.legal_workflow_stage_registry import (
+    COLLECTION_NAME as LEGAL_WORKFLOW_STAGE_COLLECTION,
+    LegalWorkflowStageRegistry,
+)
+from tools.eos.legal_operations.registry.legal_workflow_topology_registry import (
+    COLLECTION_NAME as LEGAL_WORKFLOW_TOPOLOGY_COLLECTION,
+    LegalWorkflowTopologyRegistry,
+)
 from tools.eos.legal_operations.registry.legal_work_assignment_registry import (
     COLLECTION_NAME as LEGAL_WORK_ASSIGNMENT_COLLECTION,
     LegalWorkAssignmentRegistry,
@@ -204,6 +241,10 @@ from tools.eos.legal_operations.service.legal_profile_productive_work_read_servi
     LegalProductiveWorkReadService,
     LegalProductiveWorkReadServiceError,
 )
+from tools.eos.legal_operations.service.legal_specialist_workflow_read_service import (
+    LegalSpecialistWorkflowReadService,
+    LegalSpecialistWorkflowReadServiceError,
+)
 from tools.eos.legal_operations.registry.legal_conflict_screening_registry import (
     COLLECTION as LEGAL_CONFLICT_SCREENING_COLLECTION,
     MAX_REVIEW_QUEUE,
@@ -226,7 +267,7 @@ from tools.eos.saas.entitlement.tenant_product_entitlement_registry import (
 )
 
 
-VERSION: Final[str] = "v1.11.0-LEGAL-COMMERCIAL-CONTEXT-HTTP"
+VERSION: Final[str] = "v1.12.0-LEGAL-SPECIALIST-WORKFLOW-HTTP"
 _IDENTITY = re.compile(r"^[A-Za-z0-9][A-Za-z0-9._:-]{0,127}$")
 _CLIENT_ROLE = "tenant_legal_client"
 _LEGAL_PRACTICE_ROLES: Final[frozenset[str]] = frozenset(
@@ -766,6 +807,12 @@ _PRODUCTIVE_WORK_HTTP_VERSION: Final[str] = (
     "v1.0.0-PW-P11B-AUTHENTICATED-PRODUCTIVE-WORK-READ-API"
 )
 
+_SPECIALIST_WORKFLOW_READ = _PRODUCTIVE_WORK_READ
+
+_SPECIALIST_WORKFLOW_HTTP_VERSION: Final[str] = (
+    "v1.0.0-P2-LEGAL-SPECIALIST-WORKFLOW-HTTP"
+)
+
 
 def _productive_work_service(
     database: Any,
@@ -823,6 +870,90 @@ def _productive_work_service(
     )
 
 
+def _specialist_workflow_services(
+    database: Any,
+) -> tuple[
+    LegalProductiveWorkReadService,
+    LegalSpecialistWorkflowReadService,
+]:
+    """Compose canonical productive-work and specialist readers for one request.
+
+    Registry objects are request-local facades over the existing canonical
+    collections. This factory creates no collection or index and grants no
+    authority. The route propagates one caller-owned active snapshot session
+    through both services.
+    """
+    definitions = LegalWorkflowDefinitionRegistry(
+        database.get_collection(
+            LEGAL_WORKFLOW_DEFINITION_COLLECTION
+        )
+    )
+    topologies = LegalWorkflowTopologyRegistry(
+        database.get_collection(
+            LEGAL_WORKFLOW_TOPOLOGY_COLLECTION
+        ),
+        definition_registry=definitions,
+    )
+    stages = LegalWorkflowStageRegistry(
+        database.get_collection(
+            LEGAL_WORKFLOW_STAGE_COLLECTION
+        ),
+        definition_registry=definitions,
+        topology_registry=topologies,
+    )
+    instances = LegalMatterWorkflowInstanceRegistry(
+        database.get_collection(
+            LEGAL_WORKFLOW_INSTANCE_COLLECTION
+        )
+    )
+
+    specialist = LegalSpecialistWorkflowReadService(
+        work_item_registry=LegalWorkItemRegistry(
+            database.get_collection(
+                LEGAL_WORK_ITEM_COLLECTION
+            )
+        ),
+        receipt_registry=(
+            LegalTransitionWorkMaterializationReceiptRegistry(
+                database.get_collection(
+                    LEGAL_WORK_MATERIALIZATION_RECEIPT_COLLECTION
+                )
+            )
+        ),
+        workflow_instance_registry=instances,
+        workflow_transition_registry=(
+            LegalMatterWorkflowTransitionRegistry(
+                database.get_collection(
+                    LEGAL_WORKFLOW_TRANSITION_COLLECTION
+                )
+            )
+        ),
+        workflow_stage_registry=stages,
+        dependency_registry=LegalWorkDependencyEdgeRegistry(
+            database.get_collection(
+                LEGAL_WORK_DEPENDENCY_EDGE_COLLECTION
+            )
+        ),
+        completion_registry=LegalWorkCompletionEventRegistry(
+            database.get_collection(
+                LEGAL_WORK_COMPLETION_EVENT_COLLECTION
+            )
+        ),
+        gate_satisfaction_registry=(
+            LegalWorkflowGateSatisfactionRegistry(
+                database.get_collection(
+                    LEGAL_WORKFLOW_GATE_SATISFACTION_COLLECTION
+                ),
+                instance_registry=instances,
+                topology_registry=topologies,
+                stage_registry=stages,
+            )
+        ),
+    )
+
+    return _productive_work_service(database), specialist
+
+
 def _productive_work_projection_transaction(
     callback: Callable[[Any, Any], _T],
 ) -> _T:
@@ -863,6 +994,7 @@ def _productive_work_projection_transaction(
         HTTPException,
         LegalProductiveWorkReadServiceError,
         LegalProductiveWorkOperatingContextHydratorError,
+        LegalSpecialistWorkflowReadServiceError,
     ):
         raise
     except Exception as error:
@@ -925,6 +1057,43 @@ def _productive_work_payload(
         "due_soon_work_items": [
             value.to_dict()
             for value in projection.due_soon_work_items
+        ],
+    }
+
+
+def _specialist_workflow_payload(
+    projection: Any,
+) -> dict[str, object]:
+    """Serialize bounded deterministic workflow explanation only."""
+    return {
+        "schema": projection.schema,
+        "version": projection.version,
+        "http_version": _SPECIALIST_WORKFLOW_HTTP_VERSION,
+        "tenant_id": projection.tenant_id,
+        "principal_id": projection.principal_id,
+        "as_of": projection.as_of.isoformat(),
+        "rows": [
+            {
+                "work_item_id": row.work_item_id,
+                "case_matter_id": row.case_matter_id,
+                "workflow_instance_id": row.workflow_instance_id,
+                "workflow_definition_id": row.workflow_definition_id,
+                "stage_definition_id": row.stage_definition_id,
+                "readiness": row.readiness,
+                "blocking_dependency_work_item_ids": list(
+                    row.blocking_dependency_work_item_ids
+                ),
+                "unsatisfied_gate_references": list(
+                    row.unsatisfied_gate_references
+                ),
+                "materialization_transition_id": (
+                    row.materialization_transition_id
+                ),
+                "materialization_receipt_id": (
+                    row.materialization_receipt_id
+                ),
+            }
+            for row in projection.rows
         ],
     }
 
@@ -1070,6 +1239,71 @@ async def get_legal_productive_work_projection(
         raise HTTPException(
             status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
             detail="LEGAL_OPERATIONS_PRODUCTIVE_WORK_EVIDENCE_UNAVAILABLE",
+        ) from error
+
+
+@router.get("/specialist-workflow")
+async def get_legal_specialist_workflow_projection(
+    context: TenantAuthorizationContext = Depends(
+        _SPECIALIST_WORKFLOW_READ
+    ),
+) -> dict[str, object]:
+    """Return workflow explanation for authenticated visible productive work.
+
+    The existing productive-work permission and operation remain the sole HTTP
+    admission authority. Tenant and principal come only from the authenticated
+    authorization context. Within one API-owned snapshot transaction, the
+    productive-work projection is composed first and becomes the absolute
+    visibility ceiling for the P1 specialist read service.
+
+    This endpoint exposes no create, assign, supervise, complete, transition,
+    gate-satisfaction, IAM, billing, payment, execution or settlement command.
+    Absence of materialization evidence yields no row; malformed, divergent or
+    corrupt durable evidence fails closed as an unavailable projection.
+    """
+
+    def run(
+        session: Any,
+        database: Any,
+    ) -> dict[str, object]:
+        productive_service, specialist_service = (
+            _specialist_workflow_services(
+                database
+            )
+        )
+        as_of = datetime.now(UTC)
+        productive_work = productive_service.project(
+            tenant_id=context.tenant_id,
+            principal_id=context.identity.identity_id,
+            as_of=as_of,
+            session=session,
+        )
+        projection = specialist_service.project(
+            tenant_id=context.tenant_id,
+            principal_id=context.identity.identity_id,
+            as_of=as_of,
+            productive_work=productive_work,
+            session=session,
+        )
+        return _specialist_workflow_payload(
+            projection
+        )
+
+    try:
+        return _productive_work_projection_transaction(
+            run
+        )
+    except (
+        LegalProductiveWorkReadServiceError,
+        LegalProductiveWorkOperatingContextHydratorError,
+        LegalSpecialistWorkflowReadServiceError,
+    ) as error:
+        raise HTTPException(
+            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+            detail=(
+                "LEGAL_OPERATIONS_SPECIALIST_WORKFLOW_"
+                "EVIDENCE_UNAVAILABLE"
+            ),
         ) from error
 
 
@@ -1504,14 +1738,15 @@ __all__ = [
     "get_legal_conflict_screening_review_queue",
     "get_legal_practice_workspace_projection",
     "get_legal_productive_work_projection",
+    "get_legal_specialist_workflow_projection",
     "router",
 ]
 
 
 # ARTIFACT: legal_operations_router.py
-# VERSION: v1.11.0-LEGAL-COMMERCIAL-CONTEXT-HTTP
-# AUTHORITY BOUNDARY: authenticated Legal reads plus subscription:read-gated commercial context; commercial evidence grants no Legal command, IAM assignment, plan/subscription mutation, payment execution or settlement authority
-# TENANT POSTURE: every projection uses exact authenticated/current-authorized tenant context; foreign lifecycle, screening, subscription and entitlement evidence is never disclosed
-# FAIL-CLOSED POSTURE: authority/scope mismatch, entitlement/subscription disagreement, unavailable product/commercial authority, snapshot failure, corruption, divergence and persistence outages deny
+# VERSION: v1.12.0-LEGAL-SPECIALIST-WORKFLOW-HTTP
+# AUTHORITY BOUNDARY: authenticated Legal reads only; specialist workflow explanation is bounded by productive-work visibility and grants no command, IAM assignment, plan/subscription mutation, payment execution or settlement authority
+# TENANT POSTURE: every projection uses exact authenticated/current-authorized tenant context; foreign lifecycle, workflow, screening, subscription and entitlement evidence is never disclosed
+# FAIL-CLOSED POSTURE: authority/scope mismatch, entitlement/subscription disagreement, unavailable product/commercial/workflow authority, snapshot failure, corruption, divergence and persistence outages deny
 # FINANCIAL EXECUTION AUTHORITY: Kennel EOS exclusively
 # END OF WILSY OS SOVEREIGN ARTIFACT
