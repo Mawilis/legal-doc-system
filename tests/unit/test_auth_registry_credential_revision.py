@@ -234,7 +234,7 @@ def _user_calls(collection: _RecordingCollection, operation: str) -> list[dict[s
 
 
 def test_public_api_signatures_and_certificate_version() -> None:
-    assert auth_registry_module.VERSION == "v1.11.0-D15G-DEV-TRANSACTIONAL-TENANT-RESOLUTION"
+    assert auth_registry_module.VERSION == 'v1.12.0-P3-R3G-C6-SESSION-BSON-UTC-HYDRATION'
     assert list(inspect.signature(AuthRegistry.register_user).parameters) == [
         "self", "email", "password", "firstName", "lastName", "role", "tenantId", "session"
     ]

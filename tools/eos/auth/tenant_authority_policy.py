@@ -1,5 +1,5 @@
 """TITLE: WILSY OS Tenant Business Authority Policy Canon.
-VERSION: v1.45.0-P14-R20R14-WORK-COMPLETION-PERMISSION-BINDING
+VERSION: v1.46.0-H7F-NOTIFICATION-CONTACT-VERIFICATION-ELIGIBILITY
 AUTHORITY: Canonical business eligibility facts only; this module does not authorize.
 EPITOME: Defines bounded tenant-role eligibility and field boundaries, including
 own-tenant WILSY AI usage-capacity and billing-intelligence evidence read eligibility and dedicated
@@ -10,8 +10,9 @@ tenant_legal_client-only client-matter projection read eligibility, plus the
 exact Partner/Attorney-only firm-decision operation eligibility.
 ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/tools/eos/auth/tenant_authority_policy.py
 COLLABORATION / OWNERSHIP: Wilson Khanyezi / Wilsy Core Engineering.
-CERTIFICATION / UPDATE DATE: 2026-10-17
+CERTIFICATION / UPDATE DATE: 2026-10-18
 CHANGELOG:
+2026-10-18 v1.46.0-H7F-NOTIFICATION-CONTACT-VERIFICATION-ELIGIBILITY adds legal_notification_contact_verification_write as one exact own-tenant business operation eligible only to tenant_legal_partner and tenant_legal_attorney. Eligibility remains non-authorizing and creates no permission possession, dispatch, delivery, legal-effect, cross-tenant or financial execution authority.
 2026-10-17 v1.45.0-P14-R20R14-WORK-COMPLETION-PERMISSION-BINDING binds legal_work_item_complete exactly to
 legal_operations:work_item:complete in the canonical business-operation permission map.
 The mapping remains non-authorizing; IAM current truth and exact work assignment stay separate.
@@ -205,7 +206,7 @@ from types import MappingProxyType
 from typing import Final, FrozenSet
 from tools.eos.auth.hr_business_role_catalog import ALL_HR_BUSINESS_ROLES
 
-VERSION = "v1.45.0-P14-R20R14-WORK-COMPLETION-PERMISSION-BINDING"
+VERSION = "v1.46.0-H7F-NOTIFICATION-CONTACT-VERIFICATION-ELIGIBILITY"
 class SystemAuthorityClassification(StrEnum):
     SYSTEM_REQUIRED = "SYSTEM_REQUIRED"
     SYSTEM_NOT_INHERENTLY_REQUIRED = "SYSTEM_NOT_INHERENTLY_REQUIRED"
@@ -373,6 +374,30 @@ for _role in ("tenant_legal_partner", "tenant_legal_attorney"):
     _recipient_binding_role["legal_notification_recipient_binding_write"] = ELIGIBLE
     _recipient_binding_updates[_role] = MappingProxyType(_recipient_binding_role)
 ELIGIBILITY = MappingProxyType(_recipient_binding_updates)
+
+# H7F freezes Legal notification-contact verification business eligibility to
+# Partner and Attorney only. Eligibility is non-authorizing: final authority
+# remains conjunctive across canonical permission metadata, current principal,
+# ACTIVE own-tenant membership, exact business-role eligibility and current
+# granting-role possession. No transport, dispatch, legal-effect, financial,
+# AI, Court or Kennel execution authority is introduced.
+OPERATIONS: FrozenSet[str] = frozenset(
+    (*OPERATIONS, "legal_notification_contact_verification_write")
+)
+_notification_contact_verification_updates = dict(ELIGIBILITY)
+for _role in ("tenant_legal_partner", "tenant_legal_attorney"):
+    _notification_contact_verification_role = dict(
+        _notification_contact_verification_updates[_role]
+    )
+    _notification_contact_verification_role[
+        "legal_notification_contact_verification_write"
+    ] = ELIGIBLE
+    _notification_contact_verification_updates[_role] = MappingProxyType(
+        _notification_contact_verification_role
+    )
+ELIGIBILITY = MappingProxyType(
+    _notification_contact_verification_updates
+)
 
 
 # P0-C12E4B3B: all 101 frozen HR roles enter the canonical
