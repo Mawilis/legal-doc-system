@@ -1,6 +1,6 @@
 /**
  * WILSY OS — ROLE-SCOPED LEGAL OPERATIONS COCKPIT
- * VERSION: v12.9.0-PRACTICE-CONFLICT-REVIEW-PRESENTATION-PARITY
+ * VERSION: v13.0.0-LEGAL-COMMERCIAL-CONTEXT-PRESENTATION
  * AUTHORITY: Presentation of authenticated Python-EOS Legal Operations truth.
  * EPITOME: One role-aware WILSY Legal OS surface for legal-practice operators,
  *          finance, sheriff, deputy and client personas. Law-firm roles receive
@@ -20,7 +20,8 @@
  *                            validation. This component owns responsive
  *                            presentation and deputy observation capture only.
  * CERTIFICATION / UPDATE DATE: 2026-10-16
- * CHANGELOG: 2026-10-16 v12.9.0-PRACTICE-CONFLICT-REVIEW-PRESENTATION-PARITY preserves the readable conflict-screening queue for every certified Practice persona while exposing the human review mutation only inside the canonical Partner/Attorney role envelope and allowing authoritative server permission projection to narrow it further. Python EOS remains the sole authorization authority.
+ * CHANGELOG: 2026-10-16 v13.0.0-LEGAL-COMMERCIAL-CONTEXT-PRESENTATION adds one server-authorized commercial-context presentation plate. It consumes only the certified Legal commercial-context browser adapter; renders canonical plan, subscription and monthly-equivalent evidence only after HTTP authorization; renders denied commercial detail as visibly locked; preserves source failure as unavailable; performs no role/JWT/permission inference; and leaves authenticated tenant branding under the existing shared chrome.
+ *            2026-10-16 v12.9.0-PRACTICE-CONFLICT-REVIEW-PRESENTATION-PARITY preserves the readable conflict-screening queue for every certified Practice persona while exposing the human review mutation only inside the canonical Partner/Attorney role envelope and allowing authoritative server permission projection to narrow it further. Python EOS remains the sole authorization authority.
  *            2026-10-12 v12.8.0-LEGAL-EVIDENCE-UPLOAD-WORKSPACE adds a Partner-only, permission-narrowed upload control for already-visible canonical ProcessDocuments, with pending/failure/reconciliation states and mandatory canonical refresh after committed success.
  *            2026-10-11 v12.7.0-LEGAL-CLIENT-ACCEPTANCE-REVIEW adds a write-gated evidenced deadline form for Partner/Attorney/Paralegal only, dispatches the strict D4A ACTIVE create contract, requires canonical refresh before success, and keeps Secretary read-only without browser lifecycle, tenant, AI or financial authority.
  *            2026-10-11 v12.5.0-D4B-MATTER-DEADLINE-WORK-QUEUE adds an on-demand practice deadline work queue backed only by the certified D4A/D3B1 transport, permission-gated to the frozen deadline-read role envelope, with exact matter correlation and no browser legal-period or overdue inference.
@@ -156,6 +157,7 @@ import {
   registerLegalIntake,
   transitionDeputyFieldAttempt,
   uploadLegalEvidence,
+  getLegalCommercialContext,
 } from '../../services/legalOperationsService.js';
 import {
   createLegalMatterDeadline,
@@ -166,7 +168,7 @@ import WilsyAccountCommandCenter from '../account/WilsyAccountCommandCenter.jsx'
 import { useAuth } from '../../contexts/authContext.jsx';
 import { useAuthenticatedTenantBrandingAsset } from '../../hooks/useAuthenticatedTenantBrandingAsset.js';
 
-const DASHBOARD_VERSION = 'v12.9.0-PRACTICE-CONFLICT-REVIEW-PRESENTATION-PARITY';
+const DASHBOARD_VERSION = 'v13.0.0-LEGAL-COMMERCIAL-CONTEXT-PRESENTATION';
 
 const EMPTY_QUEUES = Object.freeze({
   tenantId: '',
@@ -3980,6 +3982,217 @@ function DeputyAttemptRow({
   );
 }
 
+function LegalCommercialContextPlate() {
+  const [commercialState, setCommercialState] = useState(() => ({
+    status: 'LOADING',
+    context: null,
+  }));
+
+  useEffect(() => {
+    let active = true;
+
+    const loadCommercialContext = async () => {
+      try {
+        const result = await getLegalCommercialContext();
+
+        if (!active) return;
+
+        if (result?.access === 'AUTHORIZED' && result?.context) {
+          setCommercialState({
+            status: 'AUTHORIZED',
+            context: result.context,
+          });
+          return;
+        }
+
+        if (result?.access === 'DENIED') {
+          setCommercialState({
+            status: 'DENIED',
+            context: null,
+          });
+          return;
+        }
+
+        setCommercialState({
+          status: 'UNAVAILABLE',
+          context: null,
+        });
+      } catch {
+        if (!active) return;
+
+        setCommercialState({
+          status: 'UNAVAILABLE',
+          context: null,
+        });
+      }
+    };
+
+    loadCommercialContext();
+
+    return () => {
+      active = false;
+    };
+  }, []);
+
+  if (commercialState.status === 'LOADING') {
+    return (
+      <section
+        aria-label="Commercial context"
+        data-commercial-context-state="LOADING"
+        className="rounded-2xl border border-stone-800 bg-stone-950/70 p-5"
+      >
+        <div className="flex items-center gap-3 text-stone-400">
+          <Loader2 className="animate-spin" size={17} />
+          <div>
+            <p className="text-xs font-black uppercase tracking-[0.14em]">
+              Commercial context
+            </p>
+            <p className="mt-1 text-xs text-stone-500">
+              Resolving server-authorized subscription evidence.
+            </p>
+          </div>
+        </div>
+      </section>
+    );
+  }
+
+  if (commercialState.status === 'DENIED') {
+    return (
+      <section
+        aria-label="Commercial context"
+        data-commercial-context-state="DENIED"
+        className="rounded-2xl border border-stone-800 bg-stone-950/70 p-5"
+      >
+        <div className="flex items-start gap-3">
+          <div className="rounded-xl border border-stone-800 bg-stone-900 p-2.5 text-stone-500">
+            <LockKeyhole size={18} />
+          </div>
+          <div>
+            <p className="text-xs font-black uppercase tracking-[0.14em] text-stone-300">
+              Commercial details locked
+            </p>
+            <p className="mt-2 max-w-3xl text-xs leading-6 text-stone-500">
+              Your authenticated Legal workspace remains available according to
+              its own Legal authority. Plan, subscription and monthly-value
+              details require separate server-authorized commercial read access.
+            </p>
+            <p className="mt-2 text-[10px] uppercase tracking-[0.14em] text-stone-600">
+              Legal role does not grant subscription authority.
+            </p>
+          </div>
+        </div>
+      </section>
+    );
+  }
+
+  if (
+    commercialState.status !== 'AUTHORIZED'
+    || !commercialState.context
+  ) {
+    return (
+      <section
+        aria-label="Commercial context"
+        data-commercial-context-state="UNAVAILABLE"
+        className="rounded-2xl border border-amber-900/30 bg-amber-950/10 p-5"
+      >
+        <div className="flex items-start gap-3">
+          <ShieldCheck className="mt-0.5 text-amber-400" size={18} />
+          <div>
+            <p className="text-xs font-black uppercase tracking-[0.14em] text-amber-300">
+              Commercial context unavailable
+            </p>
+            <p className="mt-2 max-w-3xl text-xs leading-6 text-stone-500">
+              WILSY Legal OS will not infer plan, subscription or price evidence
+              when the canonical commercial source cannot be established.
+            </p>
+          </div>
+        </div>
+      </section>
+    );
+  }
+
+  const { product, subscription, plan, commercial } =
+    commercialState.context;
+
+  const monthlyValue = Number(
+    commercial?.monthlyEquivalentAmount,
+  );
+
+  const monthlyDisplay = Number.isFinite(monthlyValue)
+    ? `${commercial.currency} ${monthlyValue.toLocaleString()}`
+    : 'Unavailable';
+
+  return (
+    <section
+      aria-label="Commercial context"
+      data-commercial-context-state="AUTHORIZED"
+      className="rounded-2xl border border-emerald-900/30 bg-emerald-950/10 p-5"
+    >
+      <div className="flex flex-col gap-4 xl:flex-row xl:items-start xl:justify-between">
+        <div>
+          <div className="flex items-center gap-2">
+            <ShieldCheck size={18} className="text-emerald-400" />
+            <p className="text-xs font-black uppercase tracking-[0.14em] text-emerald-300">
+              Licensed Legal workspace
+            </p>
+          </div>
+          <h2 className="mt-2 text-lg font-black text-white">
+            {plan.name}
+          </h2>
+          <p className="mt-1 text-xs text-stone-500">
+            {plan.tier} · {subscription.status} · {commercial.billingFrequency}
+          </p>
+        </div>
+
+        <div className="grid min-w-0 gap-3 sm:grid-cols-2 xl:grid-cols-3">
+          <div className="rounded-xl border border-stone-800 bg-black/20 px-4 py-3">
+            <p className="text-[10px] font-black uppercase tracking-[0.14em] text-stone-600">
+              Product
+            </p>
+            <p className="mt-1 text-sm font-bold text-stone-200">
+              {product.productId}
+            </p>
+            <p className="mt-1 text-[10px] text-stone-600">
+              {product.entitlementState}
+            </p>
+          </div>
+
+          <div className="rounded-xl border border-stone-800 bg-black/20 px-4 py-3">
+            <p className="text-[10px] font-black uppercase tracking-[0.14em] text-stone-600">
+              Billing cadence
+            </p>
+            <p className="mt-1 text-sm font-bold text-stone-200">
+              {commercial.currency} {commercial.amount.toLocaleString()}
+            </p>
+            <p className="mt-1 text-[10px] text-stone-600">
+              {commercial.billingFrequency}
+            </p>
+          </div>
+
+          <div className="rounded-xl border border-emerald-900/30 bg-emerald-950/20 px-4 py-3">
+            <p className="text-[10px] font-black uppercase tracking-[0.14em] text-emerald-500">
+              Monthly equivalent
+            </p>
+            <p className="mt-1 text-sm font-black text-emerald-200">
+              {monthlyDisplay}
+            </p>
+            <p className="mt-1 text-[10px] text-stone-600">
+              Descriptive commercial value only
+            </p>
+          </div>
+        </div>
+      </div>
+
+      <div className="mt-4 flex flex-wrap gap-x-5 gap-y-2 border-t border-stone-900 pt-3 text-[10px] uppercase tracking-[0.12em] text-stone-600">
+        <span>Plan catalogue v{plan.catalogueVersion}</span>
+        <span>Subscription {subscription.subscriptionId}</span>
+        <span>Financial execution authority: none</span>
+      </div>
+    </section>
+  );
+}
+
+
 function CapabilityBoundary() {
   return (
     <section className="rounded-2xl border border-stone-800 bg-stone-950/75 p-5">
@@ -4015,6 +4228,221 @@ function CapabilityBoundary() {
   );
 }
 
+
+const SPECIALIST_WORKSPACE_VIEWS = Object.freeze({
+  MY_WORK: 'MY_WORK',
+  PROCESS_SERVICE: 'PROCESS_SERVICE',
+});
+
+const SPECIALIST_ACCESS_STATES = Object.freeze({
+  AVAILABLE: 'AVAILABLE',
+  DENIED: 'DENIED',
+  UNAVAILABLE: 'UNAVAILABLE',
+});
+
+const specialistWorkspaceNavigation = (roleMode) => {
+  const sheriff = roleMode === ROLE_MODES.SHERIFF;
+  const deputy = roleMode === ROLE_MODES.DEPUTY;
+
+  const item = (
+    id,
+    label,
+    icon,
+    state,
+    reason = '',
+  ) => ({ id, label, icon, state, reason });
+
+  return [
+    item(
+      SPECIALIST_WORKSPACE_VIEWS.MY_WORK,
+      'My Work',
+      ClipboardList,
+      SPECIALIST_ACCESS_STATES.AVAILABLE,
+    ),
+    item(
+      SPECIALIST_WORKSPACE_VIEWS.PROCESS_SERVICE,
+      'Process Service',
+      Scale,
+      SPECIALIST_ACCESS_STATES.AVAILABLE,
+    ),
+    item(
+      'MATTERS',
+      'Matters',
+      FileText,
+      SPECIALIST_ACCESS_STATES.DENIED,
+      sheriff
+        ? 'Matter-practice workspace is not part of the current Sheriff authority projection.'
+        : 'Matter-practice workspace is not part of the current bound-Deputy authority projection.',
+    ),
+    item(
+      'CALENDAR',
+      'Calendar',
+      Clock3,
+      SPECIALIST_ACCESS_STATES.UNAVAILABLE,
+      'A certified specialist calendar source has not yet been wired to this Legal OS workspace.',
+    ),
+    item(
+      'TASKS',
+      'Tasks & Workflow',
+      ClipboardList,
+      SPECIALIST_ACCESS_STATES.UNAVAILABLE,
+      'A certified specialist task/workflow source has not yet been wired to this Legal OS workspace.',
+    ),
+    item(
+      'DOCUMENTS',
+      'Documents',
+      FileText,
+      SPECIALIST_ACCESS_STATES.DENIED,
+      'The general Legal document workspace is outside this specialist presentation scope.',
+    ),
+    item(
+      'DEADLINES',
+      'Deadlines & Docket',
+      Clock3,
+      SPECIALIST_ACCESS_STATES.DENIED,
+      'Practice deadline authority is not projected into this specialist workspace.',
+    ),
+    item(
+      'CLIENTS',
+      'Clients & Contacts',
+      UserCheck,
+      SPECIALIST_ACCESS_STATES.DENIED,
+      'Client/contact workspace authority is not projected into this specialist workspace.',
+    ),
+    item(
+      'REPORTS',
+      'Reports / Operations',
+      Landmark,
+      SPECIALIST_ACCESS_STATES.UNAVAILABLE,
+      'Certified specialist reporting sources have not yet been wired to this workspace.',
+    ),
+    item(
+      'WILSY_AI',
+      'WILSY AI',
+      Bot,
+      SPECIALIST_ACCESS_STATES.UNAVAILABLE,
+      'Governed WILSY AI specialist actions require a separately certified tool-authority source.',
+    ),
+    item(
+      'ADMINISTRATION',
+      'Administration',
+      ShieldCheck,
+      sheriff
+        ? SPECIALIST_ACCESS_STATES.UNAVAILABLE
+        : SPECIALIST_ACCESS_STATES.DENIED,
+      sheriff
+        ? 'Sheriff administration controls require a certified administration capability source.'
+        : 'Administration is outside the bound-Deputy presentation scope.',
+    ),
+  ];
+};
+
+function LegalSpecialistWorkspaceRail({
+  activeView,
+  onDenied,
+  onSelect,
+  roleMode,
+}) {
+  const entries = specialistWorkspaceNavigation(roleMode);
+
+  return (
+    <nav aria-label="WILSY Legal OS workspace navigation">
+      {entries.map((entry) => {
+        const Icon = entry.icon;
+        const available =
+          entry.state === SPECIALIST_ACCESS_STATES.AVAILABLE;
+        const active = available && activeView === entry.id;
+
+        return (
+          <button
+            key={entry.id}
+            type="button"
+            data-active={active ? 'true' : 'false'}
+            data-access-state={entry.state}
+            data-legal-workspace-section={entry.id}
+            aria-current={active ? 'page' : undefined}
+            aria-disabled={!available}
+            title={available ? entry.label : entry.reason}
+            style={
+              available
+                ? undefined
+                : {
+                    cursor: 'not-allowed',
+                    opacity: 0.45,
+                  }
+            }
+            onClick={() => {
+              if (available) {
+                onDenied(null);
+                onSelect(entry.id);
+                return;
+              }
+              onDenied({
+                label: entry.label,
+                state: entry.state,
+                reason: entry.reason,
+              });
+            }}
+          >
+            <Icon size={16} aria-hidden="true" />
+            <span>{entry.label}</span>
+            {!available ? (
+              <LockKeyhole
+                size={13}
+                aria-label={`${entry.label} restricted`}
+              />
+            ) : null}
+          </button>
+        );
+      })}
+    </nav>
+  );
+}
+
+function LegalWorkspaceAccessNotice({ notice, onDismiss }) {
+  if (!notice) return null;
+
+  return (
+    <section
+      role="status"
+      aria-label="Workspace access notice"
+      className="rounded-xl border border-amber-900/40 bg-amber-950/15 p-4"
+    >
+      <div className="flex items-start gap-3">
+        <LockKeyhole
+          className="mt-0.5 shrink-0 text-amber-400"
+          size={18}
+        />
+        <div className="min-w-0 flex-1">
+          <p className="text-[10px] font-black uppercase tracking-[0.16em] text-amber-400">
+            {notice.state === SPECIALIST_ACCESS_STATES.DENIED
+              ? 'Access not permitted'
+              : 'Workspace source not available'}
+          </p>
+          <p className="mt-1 text-sm font-black text-white">
+            {notice.label}
+          </p>
+          <p className="mt-2 text-xs leading-5 text-stone-400">
+            {notice.reason}
+          </p>
+          <p className="mt-2 text-[10px] leading-5 text-stone-600">
+            This navigation state is explanatory presentation only. Python EOS
+            independently authorizes every server request and remains the final
+            authority.
+          </p>
+        </div>
+        <button
+          type="button"
+          onClick={onDismiss}
+          className="rounded-lg border border-stone-800 px-2 py-1 text-[10px] font-bold text-stone-400 hover:text-white"
+        >
+          Dismiss
+        </button>
+      </div>
+    </section>
+  );
+}
+
 export default function LegalDashboard({
   onLogout,
   tenantConfig,
@@ -4027,6 +4455,11 @@ export default function LegalDashboard({
   } = useAuth() || {};
   const currentUser = user || authenticatedUser || null;
   const roleMode = useMemo(() => resolveRoleMode(roleView), [roleView]);
+  const [specialistWorkspaceView, setSpecialistWorkspaceView] = useState(
+    SPECIALIST_WORKSPACE_VIEWS.MY_WORK,
+  );
+  const [specialistAccessNotice, setSpecialistAccessNotice] = useState(null);
+  const [specialistAccountCenterOpen, setSpecialistAccountCenterOpen] = useState(false);
   const [queues, setQueues] = useState(EMPTY_QUEUES);
   const [deputyWork, setDeputyWork] = useState(EMPTY_DEPUTY_WORK);
   const [clientMatters, setClientMatters] = useState(EMPTY_CLIENT_MATTERS);
@@ -4543,104 +4976,143 @@ export default function LegalDashboard({
     );
   }
 
+  const specialistOperatorIdentity = legalAuthenticatedIdentity(
+    currentUser,
+    isDeputyMode
+      ? 'Authenticated deputy'
+      : 'Authenticated sheriff operator',
+  );
+  const specialistOperator = {
+    ...(currentUser || {}),
+    displayName: specialistOperatorIdentity.displayName,
+    role: roleView || roleMode,
+  };
+  const specialistTenant = {
+    ...(authenticatedTenant || tenantConfig || {}),
+    tenantId:
+      tenantLabel
+      || authenticatedTenant?.tenantId
+      || tenantConfig?.tenantId
+      || tenantConfig?.id
+      || '',
+  };
+
   return (
-    <div className="min-h-screen bg-[#080706] text-white">
-      <div className="border-b border-amber-900/25 bg-gradient-to-r from-black via-stone-950 to-black">
-        <div className="mx-auto max-w-[1600px] px-5 py-5 lg:px-8">
-          <div className="flex flex-col justify-between gap-5 xl:flex-row xl:items-center">
-            <div className="flex items-start gap-4">
-              <div className="rounded-2xl border border-amber-700/30 bg-amber-500/10 p-3 text-amber-400">
-                <Scale size={27} aria-label="WILSY Legal OS platform mark" />
-              </div>
-              <div
-                className="flex h-[54px] w-[54px] shrink-0 items-center justify-center overflow-hidden rounded-2xl border border-stone-700 bg-black text-xs font-black tracking-[0.12em] text-stone-300"
-                data-wilsy-legal-tenant-logo={legalTenantLogoStatus.toLowerCase()}
-                aria-label="Authenticated tenant identity mark"
-              >
-                {legalTenantLogoObjectUrl ? (
-                  <>
-                    <img
-                      src={legalTenantLogoObjectUrl}
-                      alt={`${authenticatedTenant?.name || authenticatedTenant?.legalName || tenantLabel} tenant mark`}
-                      className="h-full w-full object-contain"
-                      onError={(event) => {
-                        event.currentTarget.hidden = true;
-                        const fallback = event.currentTarget.nextElementSibling;
-                        if (fallback instanceof HTMLElement) fallback.hidden = false;
-                      }}
-                    />
-                    <span hidden>{legalTenantInitials}</span>
-                  </>
-                ) : (
-                  <span>{legalTenantInitials}</span>
-                )}
-              </div>
-              <div>
-                <div className="flex flex-wrap items-center gap-2">
-                  <h1 className="text-xl font-black tracking-tight text-white lg:text-2xl">
-                    WILSY Legal OS
-                  </h1>
-                  <span className="rounded-full border border-emerald-800/40 bg-emerald-500/10 px-2.5 py-1 text-[9px] font-black uppercase tracking-[0.18em] text-emerald-400">
-                    {isDeputyMode
-                      ? 'Bound deputy cockpit'
-                      : isSheriffMode
-                        ? 'Certified sheriff cockpit'
-                        : isClientMode
-                          ? 'Client matter cockpit'
-                          : 'Role scope unresolved'}
-                  </span>
-                </div>
-                <p className="mt-1 text-sm text-stone-400">
-                  {isDeputyMode
-                    ? 'Binding-scoped field work with server-authorized commands. No tenant-wide queue leakage.'
-                    : isSheriffMode
-                      ? 'Evidence-backed operational queues. No mock legal truth.'
-                      : isClientMode
-                        ? 'Explicitly visible current matters only. Internal Legal Operations evidence remains closed.'
-                        : 'Privileged Legal Operations surfaces remain closed until role scope resolves.'}
-                </p>
-                <div className="mt-2 flex flex-wrap gap-x-4 gap-y-1 text-[10px] uppercase tracking-wider text-stone-600">
-                  <span>Tenant: {tenantLabel}</span>
-                  <span>Role view: {roleMode}</span>
-                  <span>API: {LEGAL_OPERATIONS_CLIENT_VERSION}</span>
-                </div>
-              </div>
-            </div>
-
-            <div className="flex flex-wrap items-center gap-3">
-              <div className="rounded-xl border border-stone-800 bg-black/40 px-3 py-2">
-                <p className="text-[9px] font-black uppercase tracking-wider text-stone-600">
-                  Evidence refresh
-                </p>
-                <p className="mt-0.5 text-xs font-semibold text-stone-300">
-                  {lastUpdated ? lastUpdated.toLocaleTimeString() : 'Not available'}
-                </p>
-              </div>
-              <button
-                type="button"
-                onClick={() => loadOperationalTruth({ refresh: true })}
-                disabled={refreshing}
-                className="inline-flex items-center gap-2 rounded-xl border border-amber-700/35 bg-amber-500/10 px-4 py-3 text-xs font-black text-amber-300 transition hover:bg-amber-500/15 disabled:cursor-not-allowed disabled:opacity-50"
-              >
-                <RefreshCw size={15} className={refreshing ? 'animate-spin' : ''} />
-                Refresh truth
-              </button>
-              {typeof onLogout === 'function' && (
-                <button
-                  type="button"
-                  onClick={onLogout}
-                  className="inline-flex items-center gap-2 rounded-xl border border-stone-800 bg-black/40 px-4 py-3 text-xs font-bold text-stone-400 hover:text-white"
-                >
-                  <LogOut size={15} />
-                  Sign out
-                </button>
-              )}
-            </div>
-          </div>
+    <WilsyOSDashboardChrome
+      dashboardKey={isDeputyMode ? 'legal-deputy' : 'legal-sheriff'}
+      commandLabel="WILSY Legal OS"
+      title={isDeputyMode ? 'Deputy Field Workspace' : 'Sheriff Operations Workspace'}
+      role={roleView || roleMode}
+      posture={error ? 'SOURCE_GAPS' : 'LIVE'}
+      tenant={specialistTenant}
+      operator={specialistOperator}
+      storyMessages={[
+        isDeputyMode
+          ? 'Bound work only · server-issued field capabilities · canonical refresh'
+          : 'Office receipt · governed allocation · active process-service work · No mock legal truth',
+      ]}
+      search={{
+        placeholder: isDeputyMode
+          ? 'Search my assigned service work'
+          : 'Search Sheriff operational work',
+        shortcutLabel: '⌘K',
+      }}
+      actions={{
+        liveSyncLabel: 'Refresh truth',
+        onLiveSync: () => loadOperationalTruth({ refresh: true }),
+        isRefreshing: refreshing,
+        primaryActionLabel: isSheriffMode ? 'Allocate work' : 'Field action',
+        primaryDisabled: true,
+      }}
+      account={{
+        isOpen: specialistAccountCenterOpen,
+        onOpen: () => setSpecialistAccountCenterOpen(true),
+        onClose: () => setSpecialistAccountCenterOpen(false),
+        onSignOut: onLogout,
+        user: currentUser || {},
+        label: 'ACCOUNT',
+        CommandCenterComponent: WilsyAccountCommandCenter,
+      }}
+      trustCenter={{
+        label: 'Trust & Authority',
+        content: !error ? (
+          <section
+            aria-label="Specialist trust and authority summary"
+            className="space-y-3"
+          >
+            <p className="text-[10px] font-black uppercase tracking-[0.16em] text-amber-400">
+              Server authority boundary
+            </p>
+            <p className="text-sm leading-6 text-stone-300">
+              {isDeputyMode
+                ? 'Deputy work is limited to the immutable principal binding and current server-issued field capabilities.'
+                : 'Sheriff work is limited to current tenant-scoped operational queues and separately authorized command boundaries.'}
+            </p>
+            <p className="text-[10px] leading-5 text-stone-600">
+              Browser navigation, role labels and menu state never grant Legal Operations authority.
+              Python EOS independently authorizes every server request.
+            </p>
+          </section>
+        ) : null,
+      }}
+      metrics={[]}
+      leftRail={(
+        <div className="space-y-3">
+          <LegalSpecialistWorkspaceRail
+            activeView={specialistWorkspaceView}
+            onDenied={setSpecialistAccessNotice}
+            onSelect={setSpecialistWorkspaceView}
+            roleMode={roleMode}
+          />
+          {typeof onLogout === 'function' ? (
+            <button
+              type="button"
+              onClick={onLogout}
+              title="Sign out"
+              className="mt-3 flex w-full items-center gap-2 rounded-lg border border-stone-800 px-3 py-2 text-xs font-bold text-stone-500"
+            >
+              <LogOut size={15} />
+              <span>Sign out</span>
+            </button>
+          ) : null}
         </div>
-      </div>
+      )}
+      className="legal-enterprise-specialist-shell"
+    >
+      <div
+        className="space-y-6"
+        data-legal-workspace-viewport={specialistWorkspaceView}
+      >
+        <LegalWorkspaceAccessNotice
+          notice={specialistAccessNotice}
+          onDismiss={() => setSpecialistAccessNotice(null)}
+        />
+        <section className="flex flex-col gap-3 border-b border-stone-800 pb-4 md:flex-row md:items-end md:justify-between">
+          <div>
+            <p className="text-[10px] font-black uppercase tracking-[0.18em] text-stone-500">
+              {isDeputyMode ? 'Deputy workspace' : 'Sheriff workspace'}
+            </p>
+            <h2 className="mt-1 text-xl font-black text-white">
+              {specialistWorkspaceView === SPECIALIST_WORKSPACE_VIEWS.MY_WORK
+                ? 'My Work'
+                : 'Process Service'}
+            </h2>
+            <p className="mt-1 text-xs leading-5 text-stone-500">
+              {specialistWorkspaceView === SPECIALIST_WORKSPACE_VIEWS.MY_WORK
+                ? 'Current work requiring attention from certified server projections.'
+                : 'Canonical process-service lifecycle work and field execution evidence.'}
+            </p>
+          </div>
+          <div
+            className="flex flex-wrap items-center gap-3 rounded-lg border border-stone-800 bg-black/30 px-3 py-2 text-[10px] font-black uppercase tracking-[0.12em] text-stone-500"
+            aria-label="Current Legal workspace context"
+          >
+            <span>Tenant: {tenantLabel}</span>
+            <span>Role: {roleMode}</span>
+          </div>
+        </section>
+        <LegalCommercialContextPlate />
 
-      <main className="mx-auto max-w-[1600px] space-y-6 px-5 py-6 lg:px-8">
         {!error && isSheriffMode && (
           <LegalRoleActivityPosture
             roleToken={roleView}
@@ -4918,14 +5390,14 @@ export default function LegalDashboard({
           <span>{DASHBOARD_VERSION}</span>
           <span>Presentation only · Python EOS remains sovereign legal truth</span>
         </footer>
-      </main>
-    </div>
+      </div>
+    </WilsyOSDashboardChrome>
   );
 }
 
 /**
  * ARTIFACT: LegalDashboard.jsx
- * VERSION: v12.9.0-PRACTICE-CONFLICT-REVIEW-PRESENTATION-PARITY
+ * VERSION: v13.0.0-LEGAL-COMMERCIAL-CONTEXT-PRESENTATION
  * AUTHORITY BOUNDARY: governed Legal Practice/Finance/SHERIFF/DEPUTY/LEGAL_CLIENT presentation plus already-authorized intake, ReturnOfService, bounded human conflict-review command initiation and bound-Deputy command initiation only; D24C authenticated person names and L8-8M conflict-review controls are descriptive/wiring projections that create no identity, membership, role, permission, tenant, operating-model, conflict clearance, waiver or financial authority; Python EOS owns authorization and legal truth
  * TENANT POSTURE: every data surface remains server-authorized and tenant-scoped; practice workspace is D15 snapshot truth with first-class CaseMatter evidence, client matters are D5/D7 visibility-bound, deputy commands require exact capability parity
  * FAIL-CLOSED POSTURE: unresolved role, malformed/absent person-name text, explicit or server-authoritative legal-permission narrowing, denied/unavailable workspace/client/specialist read, malformed finance/intake/return/field evidence, command failure or failed refresh never invents names or truth, widens role scope, fabricates operating-model authority or cross-role fallback

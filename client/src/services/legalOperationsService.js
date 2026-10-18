@@ -1,6 +1,6 @@
 /**
  * WILSY OS — ROLE-SCOPED LEGAL OPERATIONS CLIENT ADAPTER
- * VERSION: v2.0.0-LEGAL-EVIDENCE-UPLOAD-BROWSER-TRANSPORT
+ * VERSION: v2.1.0-LEGAL-COMMERCIAL-CONTEXT-BROWSER-TRANSPORT
  * AUTHORITY: Browser transport validation and presentation adaptation only.
  * EPITOME: Authenticated browser adapter for certified Legal Operations reads,
  *          practice-workspace projection, exact finance evidence lookups,
@@ -18,7 +18,8 @@
  *                            authority. This adapter owns strict browser transport
  *                            validation and immutable presentation adaptation only.
  * CERTIFICATION / UPDATE DATE: 2026-10-12
- * CHANGELOG: 2026-10-12 v2.0.0-LEGAL-EVIDENCE-UPLOAD-BROWSER-TRANSPORT adds one governed FormData upload command carrying only the selected file, document path identity, and idempotency header; it sets no multipart boundary and validates bounded canonical commit/reconciliation evidence.
+ * CHANGELOG: 2026-10-16 v2.1.0-LEGAL-COMMERCIAL-CONTEXT-BROWSER-TRANSPORT adds one strict authenticated GET /legal-operations/commercial-context adapter. It validates the exact server-owned product/subscription/plan/commercial contract, preserves 401/403 as access denial, rejects malformed or extra commercial fields, accepts no tenant/plan/subscription/price selector, and creates no IAM, Legal, payment or settlement authority.
+ *            2026-10-12 v2.0.0-LEGAL-EVIDENCE-UPLOAD-BROWSER-TRANSPORT adds one governed FormData upload command carrying only the selected file, document path identity, and idempotency header; it sets no multipart boundary and validates bounded canonical commit/reconciliation evidence.
  *            2026-09-25 v1.9.0-LEGAL-CLIENT-ACCEPTANCE-BROWSER-TRANSPORT adds the authenticated bounded conflict-screening review-queue read adapter. It accepts no tenant input, validates exact server-owned screening identity/status/matter/timestamp rows, preserves deterministic order and excludes screening evidence, party data, review/IAM and financial authority.
  *            2026-09-25 v1.7.0-L8-8L-CONFLICT-REVIEW-COMMAND-CLIENT adds the single authenticated conflict-review command adapter. It sends only the four human-choice fields through sovereignClient so the legacy api.js body-timestamp interceptor cannot mutate the strict command contract. Server-owned tenant, reviewer, chronology, screening, authorization, party and financial authority remain excluded.
  *            2026-09-24 v1.6.0-L8-7D15-MATTER-WORKSPACE-COMPATIBILITY adds a zero-break dual-contract bridge: the existing D11 V1 workspace remains exact and unchanged, while D15 V2 is admitted only when canonical CaseMatter rows and matter summary counts are present, sorted, exact-keyed, evidence-bound and internally consistent. No browser tenant, matter, lifecycle or financial authority is added.
@@ -80,7 +81,7 @@ import api from './api.js';
 import sovereignClient from '../utils/sovereignClient.js';
 
 export const LEGAL_OPERATIONS_CLIENT_VERSION =
-  'v2.0.0-LEGAL-EVIDENCE-UPLOAD-BROWSER-TRANSPORT';
+  'v2.1.0-LEGAL-COMMERCIAL-CONTEXT-BROWSER-TRANSPORT';
 
 const CONFLICT_REVIEW_INPUT_KEYS = Object.freeze([
   'screeningId',
@@ -99,6 +100,66 @@ const CONFLICT_REVIEW_OUTCOMES = Object.freeze([
   'CONFLICT_IDENTIFIED',
   'NO_CONFLICT_IDENTIFIED',
   'ESCALATION_REQUIRED',
+]);
+
+const LEGAL_COMMERCIAL_CONTEXT_SCHEMA =
+  'WILSY-LEGAL-OPERATIONS-COMMERCIAL-CONTEXT/V1';
+const LEGAL_COMMERCIAL_CONTEXT_VERSION =
+  'v1.0.0-LEGAL-COMMERCIAL-CONTEXT-HTTP';
+const LEGAL_COMMERCIAL_CONTEXT_VISIBILITY =
+  'LEGAL_COMMERCIAL_CONTEXT_SUBSCRIPTION_READ';
+
+const LEGAL_COMMERCIAL_CONTEXT_KEYS = Object.freeze([
+  'schema',
+  'version',
+  'tenant_id',
+  'visibility',
+  'product',
+  'subscription',
+  'plan',
+  'commercial',
+]);
+
+const LEGAL_COMMERCIAL_PRODUCT_KEYS = Object.freeze([
+  'product_id',
+  'workspace_key',
+  'available',
+  'entitlement_state',
+]);
+
+const LEGAL_COMMERCIAL_SUBSCRIPTION_KEYS = Object.freeze([
+  'subscription_id',
+  'status',
+  'current_period_end',
+]);
+
+const LEGAL_COMMERCIAL_PLAN_KEYS = Object.freeze([
+  'plan_id',
+  'tier',
+  'name',
+  'features',
+  'catalogue_version',
+]);
+
+const LEGAL_COMMERCIAL_VALUE_KEYS = Object.freeze([
+  'amount',
+  'currency',
+  'billing_frequency',
+  'monthly_equivalent_amount',
+  'financial_execution_authority',
+]);
+
+const LEGAL_COMMERCIAL_ALLOWED_FREQUENCIES = Object.freeze([
+  'monthly',
+  'quarterly',
+  'annual',
+]);
+
+const LEGAL_COMMERCIAL_ALLOWED_ENTITLEMENT_STATES = Object.freeze([
+  'ACTIVE',
+  'PENDING_SOURCE',
+  'SUSPENDED',
+  'REVOKED',
 ]);
 
 const QUEUE_KEYS = Object.freeze([
@@ -1755,6 +1816,321 @@ function toFieldCommandBody(input, { terminal = false } = {}) {
   return Object.freeze(body);
 }
 
+
+const exactCommercialObject = (value, keys, label) => {
+  if (!value || typeof value !== 'object' || Array.isArray(value)) {
+    throw new Error(`LEGAL_COMMERCIAL_CONTEXT_INVALID_${label}`);
+  }
+
+  const actual = Object.keys(value).sort();
+  const expected = [...keys].sort();
+
+  if (
+    actual.length !== expected.length
+    || actual.some((key, index) => key !== expected[index])
+  ) {
+    throw new Error(`LEGAL_COMMERCIAL_CONTEXT_INVALID_${label}_KEYS`);
+  }
+
+  return value;
+};
+
+const exactCommercialText = (value, label, { nullable = false } = {}) => {
+  if (nullable && value === null) return null;
+
+  if (
+    typeof value !== 'string'
+    || !value
+    || value !== value.trim()
+  ) {
+    throw new Error(`LEGAL_COMMERCIAL_CONTEXT_INVALID_${label}`);
+  }
+
+  return value;
+};
+
+const exactCommercialNumber = (
+  value,
+  label,
+  { nullable = false } = {},
+) => {
+  if (nullable && value === null) return null;
+
+  if (
+    typeof value !== 'number'
+    || !Number.isFinite(value)
+    || value < 0
+  ) {
+    throw new Error(`LEGAL_COMMERCIAL_CONTEXT_INVALID_${label}`);
+  }
+
+  return value;
+};
+
+const validateLegalCommercialContext = (payload) => {
+  const root = exactCommercialObject(
+    payload,
+    LEGAL_COMMERCIAL_CONTEXT_KEYS,
+    'ROOT',
+  );
+
+  if (
+    root.schema !== LEGAL_COMMERCIAL_CONTEXT_SCHEMA
+    || root.version !== LEGAL_COMMERCIAL_CONTEXT_VERSION
+    || root.visibility !== LEGAL_COMMERCIAL_CONTEXT_VISIBILITY
+  ) {
+    throw new Error('LEGAL_COMMERCIAL_CONTEXT_INVALID_ENVELOPE');
+  }
+
+  const tenantId = exactCommercialText(
+    root.tenant_id,
+    'TENANT',
+  );
+
+  const product = exactCommercialObject(
+    root.product,
+    LEGAL_COMMERCIAL_PRODUCT_KEYS,
+    'PRODUCT',
+  );
+
+  if (
+    product.product_id !== 'LEGAL_OPERATIONS'
+    || product.workspace_key !== 'LEGAL_DASHBOARD'
+    || typeof product.available !== 'boolean'
+  ) {
+    throw new Error('LEGAL_COMMERCIAL_CONTEXT_INVALID_PRODUCT');
+  }
+
+  if (
+    product.entitlement_state !== null
+    && !LEGAL_COMMERCIAL_ALLOWED_ENTITLEMENT_STATES.includes(
+      product.entitlement_state,
+    )
+  ) {
+    throw new Error(
+      'LEGAL_COMMERCIAL_CONTEXT_INVALID_ENTITLEMENT_STATE',
+    );
+  }
+
+  const subscription = exactCommercialObject(
+    root.subscription,
+    LEGAL_COMMERCIAL_SUBSCRIPTION_KEYS,
+    'SUBSCRIPTION',
+  );
+
+  const plan = exactCommercialObject(
+    root.plan,
+    LEGAL_COMMERCIAL_PLAN_KEYS,
+    'PLAN',
+  );
+
+  const commercial = exactCommercialObject(
+    root.commercial,
+    LEGAL_COMMERCIAL_VALUE_KEYS,
+    'COMMERCIAL',
+  );
+
+  if (commercial.financial_execution_authority !== false) {
+    throw new Error(
+      'LEGAL_COMMERCIAL_CONTEXT_FINANCIAL_AUTHORITY_INVALID',
+    );
+  }
+
+  if (!Array.isArray(plan.features)) {
+    throw new Error('LEGAL_COMMERCIAL_CONTEXT_INVALID_PLAN_FEATURES');
+  }
+
+  const features = plan.features.map((value) =>
+    exactCommercialText(value, 'PLAN_FEATURE')
+  );
+
+  if (new Set(features).size !== features.length) {
+    throw new Error(
+      'LEGAL_COMMERCIAL_CONTEXT_DUPLICATE_PLAN_FEATURE',
+    );
+  }
+
+  if (product.available === true) {
+    exactCommercialText(
+      product.entitlement_state,
+      'ENTITLEMENT_STATE',
+    );
+
+    if (product.entitlement_state !== 'ACTIVE') {
+      throw new Error(
+        'LEGAL_COMMERCIAL_CONTEXT_ACTIVE_PRODUCT_STATE_MISMATCH',
+      );
+    }
+
+    const subscriptionId = exactCommercialText(
+      subscription.subscription_id,
+      'SUBSCRIPTION_ID',
+    );
+    const status = exactCommercialText(
+      subscription.status,
+      'SUBSCRIPTION_STATUS',
+    );
+    const currentPeriodEnd = exactCommercialText(
+      subscription.current_period_end,
+      'CURRENT_PERIOD_END',
+    );
+    const planId = exactCommercialText(
+      plan.plan_id,
+      'PLAN_ID',
+    );
+    const tier = exactCommercialText(
+      plan.tier,
+      'PLAN_TIER',
+    );
+    const name = exactCommercialText(
+      plan.name,
+      'PLAN_NAME',
+    );
+
+    if (status !== 'active') {
+      throw new Error(
+        'LEGAL_COMMERCIAL_CONTEXT_SUBSCRIPTION_NOT_ACTIVE',
+      );
+    }
+
+    if (!features.includes('legal.core')) {
+      throw new Error(
+        'LEGAL_COMMERCIAL_CONTEXT_LEGAL_FEATURE_REQUIRED',
+      );
+    }
+
+    if (
+      !Number.isInteger(plan.catalogue_version)
+      || plan.catalogue_version < 0
+    ) {
+      throw new Error(
+        'LEGAL_COMMERCIAL_CONTEXT_INVALID_CATALOGUE_VERSION',
+      );
+    }
+
+    const amount = exactCommercialNumber(
+      commercial.amount,
+      'AMOUNT',
+    );
+    const currency = exactCommercialText(
+      commercial.currency,
+      'CURRENCY',
+    );
+    const billingFrequency = exactCommercialText(
+      commercial.billing_frequency,
+      'BILLING_FREQUENCY',
+    );
+    const monthlyEquivalentAmount = exactCommercialNumber(
+      commercial.monthly_equivalent_amount,
+      'MONTHLY_EQUIVALENT',
+    );
+
+    if (
+      !LEGAL_COMMERCIAL_ALLOWED_FREQUENCIES.includes(
+        billingFrequency,
+      )
+    ) {
+      throw new Error(
+        'LEGAL_COMMERCIAL_CONTEXT_INVALID_BILLING_FREQUENCY',
+      );
+    }
+
+    return Object.freeze({
+      tenantId,
+      product: Object.freeze({
+        productId: product.product_id,
+        workspaceKey: product.workspace_key,
+        available: true,
+        entitlementState: product.entitlement_state,
+      }),
+      subscription: Object.freeze({
+        subscriptionId,
+        status,
+        currentPeriodEnd,
+      }),
+      plan: Object.freeze({
+        planId,
+        tier,
+        name,
+        features: Object.freeze([...features]),
+        catalogueVersion: plan.catalogue_version,
+      }),
+      commercial: Object.freeze({
+        amount,
+        currency,
+        billingFrequency,
+        monthlyEquivalentAmount,
+        financialExecutionAuthority: false,
+      }),
+    });
+  }
+
+  const absenceFields = [
+    subscription.subscription_id,
+    subscription.status,
+    subscription.current_period_end,
+    plan.plan_id,
+    plan.tier,
+    plan.name,
+    plan.catalogue_version,
+    commercial.amount,
+    commercial.currency,
+    commercial.billing_frequency,
+    commercial.monthly_equivalent_amount,
+  ];
+
+  if (
+    product.entitlement_state !== null
+    || features.length !== 0
+    || absenceFields.some((value) => value !== null)
+  ) {
+    throw new Error(
+      'LEGAL_COMMERCIAL_CONTEXT_INVALID_ABSENT_PRODUCT_CONTRACT',
+    );
+  }
+
+  return Object.freeze({
+    tenantId,
+    product: Object.freeze({
+      productId: product.product_id,
+      workspaceKey: product.workspace_key,
+      available: false,
+      entitlementState: null,
+    }),
+    subscription: null,
+    plan: null,
+    commercial: null,
+  });
+};
+
+export const getLegalCommercialContext = async () => {
+  try {
+    const response = await api.get(
+      '/legal-operations/commercial-context',
+    );
+
+    return Object.freeze({
+      access: 'AUTHORIZED',
+      context: validateLegalCommercialContext(
+        response?.data,
+      ),
+    });
+  } catch (error) {
+    const status = Number(
+      error?.response?.status,
+    );
+
+    if (status === 401 || status === 403) {
+      return Object.freeze({
+        access: 'DENIED',
+        context: null,
+      });
+    }
+
+    throw error;
+  }
+};
+
 export async function registerLegalIntake(value) {
   const input = assertLegalIntakeInput(value);
   const response = await api.post('/legal-operations/intake/registrations', {
@@ -2130,7 +2506,7 @@ export const __legalOperationsServiceInternals = Object.freeze({
 
 /**
  * ARTIFACT: legalOperationsService.js
- * VERSION: v2.0.0-LEGAL-EVIDENCE-UPLOAD-BROWSER-TRANSPORT
+ * VERSION: v2.1.0-LEGAL-COMMERCIAL-CONTEXT-BROWSER-TRANSPORT
  * AUTHORITY BOUNDARY: role-scoped Legal Operations read/intake/return/deputy-command/conflict-review browser transport validation only
  * TENANT POSTURE: server tenant/principal/role/client/deputy scope remains authoritative across practice, finance, client and field surfaces; browser cannot establish authorization scope
  * FAIL-CLOSED POSTURE: malformed/extra/missing/scope/state/schema/version/order/command-response drift rejects without fallback
