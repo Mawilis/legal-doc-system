@@ -1,5 +1,5 @@
 """TITLE: WILSY OS Permission Namespace Semantic Canon.
-VERSION: v1.47.0-PW-P11A-PRODUCTIVE-WORK-READ-PERMISSION
+VERSION: v1.48.0-P14-R20R11-WORK-COMPLETION-PERMISSION
 AUTHORITY: Immutable permission vocabulary and scope metadata only.
 EPITOME: Extends the canonical TENANT and SYSTEM permission vocabulary with dedicated
 inbound-collection, merchant-configuration, provider-policy, WILSY AI,
@@ -11,8 +11,15 @@ waiver, engagement,
 representation, cross-tenant authority, or financial execution.
 ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/tools/eos/auth/permission_namespace.py
 COLLABORATION / OWNERSHIP: Wilson Khanyezi / Wilsy Core Engineering.
-CERTIFICATION / UPDATE DATE: 2026-10-16
+CERTIFICATION / UPDATE DATE: 2026-10-17
 CHANGELOG:
+    2026-10-17 v1.48.0-P14-R20R11-WORK-COMPLETION-PERMISSION adds the exact own-tenant
+    legal_operations:work_item:complete permission vocabulary for bounded
+    Legal work-item completion admission. It remains membership-gated,
+    non-cross-tenant, non-financial and non-self-authorizing; it grants no
+    role possession, business-role eligibility, assignment, supervision,
+    workflow release, completion event, payment, execution or settlement
+    authority.
     2026-10-16 v1.47.0-PW-P11A-PRODUCTIVE-WORK-READ-PERMISSION adds the exact
     own-tenant legal_operations:productive_work:read permission for an
     authenticated principal's productive-work projection. The vocabulary is
@@ -216,7 +223,7 @@ from types import MappingProxyType
 from typing import Final
 
 
-VERSION = "v1.47.0-PW-P11A-PRODUCTIVE-WORK-READ-PERMISSION"
+VERSION = "v1.48.0-P14-R20R11-WORK-COMPLETION-PERMISSION"
 
 
 class PermissionDisposition(StrEnum):
@@ -760,6 +767,13 @@ _PERMISSIONS: Final = MappingProxyType(
             "write own-tenant Legal work items",
             tenant=True,
         ),
+        "legal_operations:work_item:complete": _meta(
+            "legal_operations:work_item:complete",
+            "TENANT",
+            "TENANT",
+            "request bounded own-tenant Legal work-item completion admission",
+            tenant=True,
+        ),
         "legal_operations:productive_work:read": _meta(
             "legal_operations:productive_work:read",
             "TENANT",
@@ -1098,7 +1112,7 @@ __all__ = [
 ]
 
 # ARTIFACT: tools/eos/auth/permission_namespace.py
-# VERSION: v1.47.0-PW-P11A-PRODUCTIVE-WORK-READ-PERMISSION
+# VERSION: v1.48.0-P14-R20R11-WORK-COMPLETION-PERMISSION
 # AUTHORITY BOUNDARY: canonical permission vocabulary semantics only; no possession or authorization authority
 # TENANT POSTURE: conflict-review, client-matter, client-visibility and other tenant permissions require separately proven exact ACTIVE tenant membership
 # FAIL-CLOSED POSTURE: unknown, malformed, ambiguous and legacy values never manufacture authority

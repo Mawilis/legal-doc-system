@@ -1,5 +1,5 @@
 """TITLE: Tenant Authorization Composition Certification.
-VERSION: v1.5.1-D3B-AUTH3-R1-MATTER-DEADLINE-AUTHORIZATION-CERT
+VERSION: v1.6.0-P13-R11-MATTER-WORKFLOW-TRANSITION-AUTHORIZATION-CERT
 AUTHORITY: Certification of read-only current-truth tenant authorization composition.
 EPITOME: Proves migrated tenant permission grants, including WILSY AI
 capacity and billing-intelligence evidence reads, remain conjunctive with
@@ -7,8 +7,8 @@ principal, membership, business-role, and durable final-role truth.
 ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/tests/unit/test_tenant_authorization.py
 COLLABORATION / OWNERSHIP: Wilson Khanyezi / Wilsy Core Engineering.
 CERTIFICATION/UPDATE DATE: 2026-10-11.
-CHANGELOG:
-2026-10-11 v1.5.1-D3B-AUTH3-R1-MATTER-DEADLINE-AUTHORIZATION-CERT replaces
+CHANGELOG: v1.6.0-P13-R11-MATTER-WORKFLOW-TRANSITION-AUTHORIZATION-CERT adds the exact matter-workflow transition operation-permission binding certificate with Partner/Attorney authorization, Paralegal/Secretary denial, and crossed-pair fail-closed proof;
+2026-10-11 v1.6.0-P13-R11-MATTER-WORKFLOW-TRANSITION-AUTHORIZATION-CERT replaces
 pre-AUTH3 simulated permission possession with the final durable role grants.
 It certifies real Partner, Attorney, Paralegal read/write authorization and
 Secretary read-only authorization while preserving every denial boundary.
@@ -154,7 +154,7 @@ from tools.eos.auth.tenant_membership_repository import (
     TenantMembershipRepositoryError,
 )
 
-VERSION = "v1.5.1-D3B-AUTH3-R1-MATTER-DEADLINE-AUTHORIZATION-CERT"
+VERSION = "v1.6.0-P13-R11-MATTER-WORKFLOW-TRANSITION-AUTHORIZATION-CERT"
 
 _PID = "p"
 _TENANT = "t"
@@ -1418,7 +1418,7 @@ def test_l8_6a_queue_read_binding_is_exact_and_sheriff_only() -> None:
 def test_m14_evidence_bindings_are_exact_and_unique() -> None:
     """Both evidence operations resolve only through their immutable exact pairs."""
 
-    assert ta.VERSION == "v1.39.0-PW-P11A-PRODUCTIVE-WORK-READ-AUTHORIZATION"
+    assert ta.VERSION == "v1.41.0-P14-R20R14-WORK-COMPLETION-AUTHORIZATION-BINDING"
     assert ta._BINDINGS["wilsy_ai_usage_capacity_read"] == (
         "wilsy_ai:usage_capacity:read"
     )
@@ -1432,7 +1432,7 @@ def test_m14_evidence_bindings_are_exact_and_unique() -> None:
 def test_wilsy_ai_legal_tool_binding_is_exact_tenant_and_fail_closed() -> None:
     """Gateway reads require canonical own-tenant IAM and never create authority."""
 
-    assert ta.VERSION == "v1.39.0-PW-P11A-PRODUCTIVE-WORK-READ-AUTHORIZATION"
+    assert ta.VERSION == "v1.41.0-P14-R20R14-WORK-COMPLETION-AUTHORIZATION-BINDING"
     assert ta._BINDINGS["wilsy_ai_legal_tool_read"] == "wilsy_ai:legal_tool:read"
     assert list(ta._BINDINGS).count("wilsy_ai_legal_tool_read") == 1
 
@@ -2291,6 +2291,61 @@ def test_c1e_advisory_operation_crossing_fails_closed() -> None:
 # 51 caller/JWT/header non-authority: test_transport_or_caller_projection_cannot_enter_composition
 # 52-54 read-only success/denial/financial paths: test_authorization_is_read_only_across_success_denial_and_financial_paths
 
+def test_p13_r11_matter_workflow_transition_binding_is_exact_and_conjunctive() -> None:
+    """P13-R11 binds transition intent to exact Partner/Attorney current authority."""
+    operation = "legal_matter_workflow_transition"
+    permission = "legal_operations:matter_workflow:transition"
+
+    assert ta._BINDINGS[operation] == permission
+    assert list(ta._BINDINGS).count(operation) == 1
+
+    assert ta.get_roles_granting_permission(permission) == (
+        "LEGAL_ATTORNEY",
+        "LEGAL_PARTNER",
+    )
+
+    for business_role, authorization_role in (
+        ("tenant_legal_partner", "LEGAL_PARTNER"),
+        ("tenant_legal_attorney", "LEGAL_ATTORNEY"),
+    ):
+        result = _decision(
+            permission_id=permission,
+            operation=operation,
+            business_repository=_business(business_role),
+            assignment_repository=_assignments(authorization_role),
+        )
+        assert result == TenantAuthorizationDecision(
+            True,
+            TenantAuthorizationReason.AUTHORIZED,
+            business_role,
+            authorization_role,
+        )
+
+    for business_role, authorization_role in (
+        ("tenant_legal_paralegal", "LEGAL_PARALEGAL"),
+        ("tenant_legal_secretary", "LEGAL_SECRETARY"),
+    ):
+        assignments = _assignments(authorization_role)
+        result = _decision(
+            permission_id=permission,
+            operation=operation,
+            business_repository=_business(business_role),
+            assignment_repository=assignments,
+        )
+        assert result.authorized is False
+        assert result.reason is TenantAuthorizationReason.BUSINESS_ROLE_INELIGIBLE
+        assert assignments.calls == []
+
+    crossed = _decision(
+        permission_id=permission,
+        operation="legal_matter_deadline_write",
+        business_repository=_business("tenant_legal_partner"),
+        assignment_repository=_assignments("LEGAL_PARTNER"),
+    )
+    assert crossed.authorized is False
+    assert crossed.reason is TenantAuthorizationReason.PERMISSION_OPERATION_MISMATCH
+
+
 def test_matter_deadline_bindings_are_exact_and_fail_closed() -> None:
     """AUTH2 binds only the two canonical deadline operation-permission pairs."""
     read_operation = "legal_matter_deadline_read"
@@ -2538,7 +2593,7 @@ def test_caller_owned_session_is_forwarded_to_authority_reads() -> None:
     assert seen and all(item is session for item in seen)
 
 # ARTIFACT: test_tenant_authorization.py
-# VERSION: v1.5.1-D3B-AUTH3-R1-MATTER-DEADLINE-AUTHORIZATION-CERT
+# VERSION: v1.6.0-P13-R11-MATTER-WORKFLOW-TRANSITION-AUTHORIZATION-CERT
 # AUTHORITY BOUNDARY: frozen current-truth composition certification only; role grants remain policy, not assignment truth
 # TENANT POSTURE: exact active principal, membership, tenant_legal_client eligibility, exact client-matter permission-operation binding, and ACTIVE LEGAL_CLIENT assignment are conjunctively required; ACTIVE visibility remains separate
 # FAIL-CLOSED POSTURE: missing, inactive, ambiguous, unavailable, mismatched, projected, cross-tenant, system, and financial paths deny

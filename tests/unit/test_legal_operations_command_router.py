@@ -1,6 +1,6 @@
 """
 TITLE: Wilsy OS Legal Operations Command API Certificate
-VERSION: v1.8.0-L8-8H6-NOTIFICATION-RECIPIENT-BINDING-COMMAND-API-CERT
+VERSION: v1.9.0-P13R5-WORKFLOW-TRANSITION-COMMAND-API-CERT
 AUTHORITY: Transport/transaction composition only; P1/P4/P5, L8-8J and L8-8H recipient authority remain canonical.
 EPITOME: Proves authenticated intake/acceptance-receipt/directory/field-service and bounded
          human conflict-review command input boundaries, bound-Deputy field evidence
@@ -12,8 +12,9 @@ COLLABORATION / OWNERSHIP: L8-3/L8-6/L8-8K command certificate; canonical intake
                             acceptance/receipt, directory, lifecycle, persistence, field-service,
                             conflict-review domain/orchestration/registry and authorization remain
                             read-only authorities under test.
-CERTIFICATION DATE: 2026-10-12
-CHANGELOG: 2026-10-12 v1.8.0-L8-8H6-NOTIFICATION-RECIPIENT-BINDING-COMMAND-API-CERT
+CERTIFICATION DATE: 2026-10-16
+CHANGELOG: 2026-10-16 v1.9.0-P13R5-WORKFLOW-TRANSITION-COMMAND-API-CERT adds the exact workflow-transition route, authority-free request model and one-transaction service delegation while preserving Sheriff allocation-capability and attempt-authority tests.
+           2026-10-12 v1.8.0-L8-8H6-NOTIFICATION-RECIPIENT-BINDING-COMMAND-API-CERT
            adds the three exact recipient-binding command routes to the frozen
            route inventory while preserving caller-authority-field rejection and
            all prior command regressions. Dedicated recipient create/revoke/
@@ -247,7 +248,10 @@ def test_routes_are_explicit_and_command_models_forbid_authority_fields() -> Non
         "/legal-operations/directory/sheriff-offices",
         "/legal-operations/directory/deputies",
         "/legal-operations/directory/deputy-principal-bindings",
+        "/legal-operations/sheriff/allocation-capabilities",
         "/legal-operations/allocations",
+        "/legal-operations/attempt-authorities",
+        "/legal-operations/matter-workflow-transitions",
         "/legal-operations/attempts",
         "/legal-operations/attempts/{attempt_id}/transition",
         "/legal-operations/attempts/{attempt_id}/outcome",
@@ -258,6 +262,7 @@ def test_routes_are_explicit_and_command_models_forbid_authority_fields() -> Non
         "/legal-operations/notification-recipient-bindings/revocations",
         "/legal-operations/notification-recipient-bindings/supersessions",
         "/legal-operations/executions/{execution_id}/return",
+    "/legal-operations/work-items/{work_item_id}/completion",
     }
     with pytest.raises(ValidationError):
         command_api.AttemptCommand(**{"attempt_authority_id": "authority", "state": "COMPLETED"})
@@ -328,6 +333,30 @@ def test_routes_are_explicit_and_command_models_forbid_authority_fields() -> Non
         with pytest.raises(ValidationError):
             command_api.DeputyFieldTransitionCommand.model_validate(
                 {**base_field, **forbidden}
+            )
+
+    transition_intent = {
+        "transition_id": "transition-1",
+        "workflow_instance_id": "instance-1",
+        "target_stage_definition_id": "stage-2",
+        "gate_satisfaction_ids": ["gate-1"],
+    }
+    for forbidden in (
+        {"tenant_id": TENANT},
+        {"workflow_definition": {}},
+        {"workflow_topology": {}},
+        {"source_stage": {}},
+        {"target_stage": {}},
+        {"gate_satisfactions": []},
+        {"iam_assignment": {}},
+        {"workflow_instance_fingerprint": HEX},
+        {"workflow_topology_fingerprint": HEX},
+        {"source_stage_fingerprint": HEX},
+        {"target_stage_fingerprint": HEX},
+    ):
+        with pytest.raises(ValidationError):
+            command_api.MatterWorkflowTransitionCommand.model_validate(
+                {**transition_intent, **forbidden}
             )
 
 
@@ -707,6 +736,273 @@ def test_directory_parent_absence_survives_transaction_and_maps_to_404(
     assert error.value.status_code == 404
     assert error.value.detail == "LEGAL_OPERATION_NOT_FOUND"
     assert client.session.events == ["start", "abort", "end"]
+
+
+
+
+
+def test_sheriff_allocation_capabilities_require_exact_sheriff_role() -> None:
+    legal_partner_context: Any = SimpleNamespace(
+        tenant_id=TENANT,
+        decision=SimpleNamespace(
+            business_role="tenant_legal_partner",
+        ),
+    )
+    with pytest.raises(command_api.HTTPException) as error:
+        asyncio.run(
+            command_api.get_sheriff_allocation_command_capabilities(
+                legal_partner_context,
+            )
+        )
+    assert error.value.status_code == 403
+    assert (
+        error.value.detail
+        == "LEGAL_OPERATIONS_SHERIFF_AUTHORITY_REQUIRED"
+    )
+
+
+def test_attempt_authority_bridge_requires_exact_sheriff_business_role() -> None:
+    """DEPUTY attempt-write cannot mint Sheriff-owned P5A authority."""
+    command = command_api.AttemptAuthorityCommand(
+        document_id="document-1",
+        allocation_idempotency_key="allocation-key-1",
+        attempt_authority_id="authority-1",
+        attempt_id="attempt-1",
+        authorized_at=BASE + timedelta(minutes=4),
+    )
+    deputy_context: Any = SimpleNamespace(
+        tenant_id=TENANT,
+        decision=SimpleNamespace(business_role="tenant_deputy"),
+    )
+
+    with pytest.raises(command_api.HTTPException) as error:
+        asyncio.run(
+            command_api.authorize_process_service_attempt_command(
+                command,
+                deputy_context,
+            )
+        )
+
+    assert error.value.status_code == 403
+    assert error.value.detail == "LEGAL_OPERATIONS_SHERIFF_AUTHORITY_REQUIRED"
+
+
+def test_attempt_authority_bridge_dispatches_canonical_p5a_for_sheriff(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """Sheriff bridge loads P4 evidence and persists canonical P5A in one transaction."""
+    client, database = Client(), Database()
+    monkeypatch.setattr(command_api, "_db_handles", lambda: (client, database))
+
+    command = command_api.AttemptAuthorityCommand(
+        document_id="document-1",
+        allocation_idempotency_key="allocation-key-1",
+        attempt_authority_id="authority-1",
+        attempt_id="attempt-1",
+        authorized_at=BASE + timedelta(minutes=4),
+    )
+    sheriff_context: Any = SimpleNamespace(
+        tenant_id=TENANT,
+        decision=SimpleNamespace(business_role="tenant_sheriff"),
+    )
+
+    receipt = SimpleNamespace(
+        document_id="document-1",
+        idempotency_key="allocation-key-1",
+    )
+    current = SimpleNamespace(document_id="document-1")
+    decision = object()
+    persisted = SimpleNamespace(
+        receipt=SimpleNamespace(
+            to_dict=lambda: {
+                "attempt_authority_id": "authority-1",
+                "attempt_id": "attempt-1",
+            }
+        )
+    )
+
+    seen_reads: list[tuple[str, str, str, object]] = []
+    seen_authorize: list[dict[str, object]] = []
+    seen_persist: list[tuple[object, object]] = []
+
+    def fake_receipt(
+        tenant_id: str,
+        document_id: str,
+        idempotency_key: str,
+        collection: object,
+        *,
+        session: object = None,
+    ) -> object:
+        assert session is client.session
+        assert client.session.in_transaction is True
+        seen_reads.append(
+            (tenant_id, document_id, idempotency_key, session)
+        )
+        return receipt
+
+    def fake_current(
+        tenant_id: str,
+        document_id: str,
+        collection: object,
+        *,
+        session: object = None,
+    ) -> object:
+        assert session is client.session
+        assert client.session.in_transaction is True
+        assert tenant_id == TENANT
+        assert document_id == "document-1"
+        return current
+
+    def fake_authorize(**kwargs: object) -> object:
+        seen_authorize.append(dict(kwargs))
+        return decision
+
+    def fake_persist(
+        value: object,
+        collection: object,
+        *,
+        session: object = None,
+    ) -> object:
+        assert session is client.session
+        assert client.session.in_transaction is True
+        seen_persist.append((value, session))
+        return persisted
+
+    monkeypatch.setattr(
+        command_api,
+        "get_receipt_by_idempotency_key",
+        fake_receipt,
+    )
+    monkeypatch.setattr(
+        command_api,
+        "get_allocation_current",
+        fake_current,
+    )
+    monkeypatch.setattr(
+        command_api,
+        "authorize_process_service_attempt",
+        fake_authorize,
+    )
+    monkeypatch.setattr(
+        command_api.ProcessServiceAttemptAuthorityRegistry,
+        "persist",
+        staticmethod(fake_persist),
+    )
+
+    result = asyncio.run(
+        command_api.authorize_process_service_attempt_command(
+            command,
+            sheriff_context,
+        )
+    )
+
+    assert result["data"] == {
+        "attempt_authority_id": "authority-1",
+        "attempt_id": "attempt-1",
+    }
+    assert seen_reads == [
+        (
+            TENANT,
+            "document-1",
+            "allocation-key-1",
+            client.session,
+        )
+    ]
+    assert len(seen_authorize) == 1
+    assert seen_authorize[0]["allocation_receipt"] is receipt
+    assert seen_authorize[0]["allocation_current"] is current
+    assert seen_authorize[0]["attempt_authority_id"] == "authority-1"
+    assert seen_authorize[0]["attempt_id"] == "attempt-1"
+    assert seen_authorize[0]["authorized_at"] == BASE + timedelta(minutes=4)
+    assert seen_persist == [(decision, client.session)]
+
+
+def test_workflow_transition_route_delegates_server_resolved_authority_atomically(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """The route issues server IAM evidence then delegates intent in one transaction."""
+    client, database = Client(), Database()
+    monkeypatch.setattr(command_api, "_db_handles", lambda: (client, database))
+    instance = SimpleNamespace(fingerprint=HEX)
+    authorization = SimpleNamespace(
+        authorized_at=BASE + timedelta(minutes=8),
+        authorization_evidence_reference="tenant-authorization-decision:1",
+    )
+    persisted = SimpleNamespace(to_dict=lambda: {"transition_id": "transition-1"})
+    issued: list[dict[str, object]] = []
+    executed: list[dict[str, object]] = []
+
+    class InstanceRegistry:
+        def __init__(self, _collection: object) -> None:
+            pass
+
+        def get_by_id(self, tenant_id, instance_id, *, session):
+            assert tenant_id == TENANT
+            assert instance_id == "instance-1"
+            assert session is client.session
+            return instance
+
+    class AuthorizationRegistry:
+        def __init__(self, *_args, **_kwargs) -> None:
+            pass
+
+        def issue(self, **kwargs):
+            issued.append(kwargs)
+            return authorization
+
+    class TransitionService:
+        def __init__(self, **_kwargs) -> None:
+            pass
+
+        def execute(self, **kwargs):
+            executed.append(kwargs)
+            return persisted
+
+    for name in (
+        "LegalWorkflowDefinitionRegistry",
+        "LegalWorkflowTopologyRegistry",
+        "LegalWorkflowStageRegistry",
+        "LegalWorkflowGateSatisfactionRegistry",
+        "LegalMatterWorkflowTransitionRegistry",
+    ):
+        monkeypatch.setattr(command_api, name, lambda *_args, **_kwargs: object())
+    monkeypatch.setattr(command_api, "LegalMatterWorkflowInstanceRegistry", InstanceRegistry)
+    monkeypatch.setattr(
+        command_api,
+        "TenantAuthorizationDecisionEvidenceRegistry",
+        AuthorizationRegistry,
+    )
+    monkeypatch.setattr(
+        command_api,
+        "LegalMatterWorkflowTransitionCommandService",
+        TransitionService,
+    )
+    command = command_api.MatterWorkflowTransitionCommand(
+        transition_id="transition-1",
+        workflow_instance_id="instance-1",
+        target_stage_definition_id="stage-2",
+        gate_satisfaction_ids=("gate-1",),
+    )
+    result = asyncio.run(
+        command_api.transition_legal_matter_workflow_command(
+            command,
+            intake_context(),
+            object(),
+            object(),
+            object(),
+        )
+    )
+    assert result == {"data": {"transition_id": "transition-1"}}
+    assert issued[0]["permission"] == "legal_operations:matter_workflow:transition"
+    assert issued[0]["operation"] == "legal_matter_workflow_transition"
+    assert issued[0]["subject_evidence_fingerprint"] == HEX
+    assert executed[0]["tenant_id"] == TENANT
+    assert executed[0]["target_stage_definition_id"] == "stage-2"
+    assert executed[0]["gate_satisfaction_ids"] == ("gate-1",)
+    assert executed[0]["session"] is client.session
+    assert client.session.events == ["start", "commit", "end"]
+    assert client.session.events == ["start", "commit", "end"]
+
 
 
 def test_attempt_create_uses_one_orchestrator_and_commits(monkeypatch: pytest.MonkeyPatch) -> None:
@@ -1173,11 +1469,11 @@ def test_allocation_dispatches_only_p4a_and_never_accepts_caller_state(monkeypat
 def test_command_module_has_no_financial_or_client_ownership_surface() -> None:
     names = set(vars(command_api))
     assert not any(token in names for token in {"Invoice", "Payment", "Settlement", "MongoClient", "mongo_client", "_client"})
-    assert command_api.VERSION == "v1.8.0-L8-8H6-NOTIFICATION-RECIPIENT-BINDING-COMMAND-API"
+    assert command_api.VERSION == "v1.12.0-P14-R20R27-WORK-COMPLETION-COMMAND-API"
 
 
 # ARTIFACT: test_legal_operations_command_router.py
-# VERSION: v1.8.0-L8-8H6-NOTIFICATION-RECIPIENT-BINDING-COMMAND-API-CERT
+# VERSION: v1.9.0-P13R5-WORKFLOW-TRANSITION-COMMAND-API-CERT
 # AUTHORITY BOUNDARY: direct intake/receipt/directory/deputy-binding/field-service plus bounded human conflict-review command composition certificate only
 # TENANT POSTURE: explicit authorized context; bodies cannot establish scope
 # FAIL-CLOSED POSTURE: invalid, divergent, and failed transactions reject
