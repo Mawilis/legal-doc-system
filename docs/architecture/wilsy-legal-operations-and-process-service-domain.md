@@ -1,9 +1,10 @@
 # WILSY OS — LEGAL OPERATIONS & PROCESS SERVICE DOMAIN
 
-Version: v1.0.0-LEGAL-OPERATIONS-PROCESS-SERVICE-CONSTITUTION
+Version: v1.1.0-LEGAL-OPERATIONS-PROCESS-SERVICE-CONSTITUTION
 Authority: Wilsy OS Core Governance
 Source: `Software Notes.docx` (authoritative discovery input)
 Status: domain constitution; implementation remains staged
+Changelog: v1.1.0 defines Legal Work completion and cancellation as mutually exclusive terminal operational outcomes; freezes one immutable completion event per exact tenant/work item; forbids reopen, uncomplete, completion revocation and cancel-after-completion; and preserves assignment, supervision, IAM, dependency, workflow, return, billing and financial authority separation.
 
 ## Sovereign plane
 
@@ -54,6 +55,36 @@ Multiple `ServiceAttempt` records precede one service execution or final
 non-service result. A `ReturnOfService` is generated only from certified facts
 and remains legal/process evidence, not an invoice or payment.
 
+## Legal Work terminal lifecycle contract
+
+`LegalWorkItem` completion and cancellation are mutually exclusive terminal
+operational outcomes for one exact work item.
+
+Completion is terminal for that work-item identity:
+
+- one exact work item may acquire at most one immutable completion event;
+- exact replay of the same completion evidence is permitted;
+- a divergent second completion fails closed;
+- a completed work item is not reopened, uncompleted, or completion-revoked;
+- cancellation after completion is not permitted;
+- completion after cancellation is not permitted;
+- cancellation is a pre-completion terminal alternative, not a reversal of
+  completion.
+
+Completion evidence does not mutate the original `LegalWorkItem`. Current
+completion posture is derived from immutable completion evidence under exact
+tenant and work-item lineage.
+
+Work-item completion is operational truth only. It does not by itself prove
+completion of the source legal event, satisfy dependencies, release workflow
+gates, generate a return, issue an invoice, execute payment, allocate
+settlement, grant assignment, grant supervision, grant IAM authority, or grant
+financial authority.
+
+Assignment, supervision, IAM admission, dependency satisfaction, workflow
+release, return generation, billing, financial execution, and settlement remain
+separately governed authorities.
+
 ## Billing, tariffs and quotations
 
 Only completed, return-eligible work enters billing. Registered or unserved work
@@ -102,7 +133,7 @@ rules, and lawful geospatial retention.
 ## Sovereign EOF seal
 
 Artifact: `wilsy-legal-operations-and-process-service-domain.md`
-Version: `v1.0.0-LEGAL-OPERATIONS-PROCESS-SERVICE-CONSTITUTION`
+Version: `v1.1.0-LEGAL-OPERATIONS-PROCESS-SERVICE-CONSTITUTION`
 Authority: Wilsy OS Core Governance
 Financial authority: Kennel EOS exclusively
 Compliance posture: technical-control-only; no independent legal-compliance claim
