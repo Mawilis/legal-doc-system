@@ -1,7 +1,7 @@
 """Authenticated deterministic read projections for Legal Operations.
 
 TITLE: WILSY OS Legal Operations Read Projection Router
-VERSION: v1.13.0-LEGAL-TEMPORAL-OPERATIONS-HTTP
+VERSION: v1.14.0-LEGAL-TEMPORAL-OPERATIONS-OBSERVABILITY
 AUTHORITY: Authenticated, tenant-scoped projection of canonical Legal Operations evidence only.
 EPITOME: Preserve exact authorized internal/sheriff/deputy/client reads while
          exposing one snapshot-consistent legal-practice workspace projection and
@@ -20,8 +20,9 @@ COLLABORATION / OWNERSHIP: Python EOS API composition. P1 owns lifecycle truth,
                             L8-7D5 owns sanitized client matter projection, and
                             L8-8E owns immutable conflict-screening persistence;
                             tenant authorization owns access authority.
-CERTIFICATION / UPDATE DATE: 2026-10-18
-CHANGELOG: 2026-10-18 v1.13.0-LEGAL-TEMPORAL-OPERATIONS-HTTP records authenticated GET /temporal-operations under the existing productive-work read authority. One API-owned snapshot transaction composes canonical productive-work visibility and canonical Legal Matter Deadline evidence with shared session/snapshot scope. It adds no permission, collection, index, write route, deadline arithmetic, lifecycle mutation, IAM or financial authority.
+CERTIFICATION / UPDATE DATE: 2026-10-19
+CHANGELOG: 2026-10-19 v1.14.0-LEGAL-TEMPORAL-OPERATIONS-OBSERVABILITY adds one post-authorization terminal structured observation for each admitted temporal read, generated server correlation, bounded latency classification, pseudonymous tenant/principal references, and committed/aborted/unavailable transaction outcome reporting. Telemetry failure remains quiet and cannot change canonical HTTP or transaction outcomes; no evidence content, permission, persistence, workflow, AI or financial authority is added. P5-R4 aligns the sovereign end seal after real-Mongo commit/abort ordering proof.
+           2026-10-18 v1.13.0-LEGAL-TEMPORAL-OPERATIONS-HTTP records authenticated GET /temporal-operations under the existing productive-work read authority. One API-owned snapshot transaction composes canonical productive-work visibility and canonical Legal Matter Deadline evidence with shared session/snapshot scope. It adds no permission, collection, index, write route, deadline arithmetic, lifecycle mutation, IAM or financial authority.
            2026-10-18 v1.12.0-LEGAL-SPECIALIST-WORKFLOW-HTTP adds authenticated GET /specialist-workflow under the existing productive-work read authority. One existing API-owned snapshot transaction composes canonical productive-work visibility first, then enriches only visible rows through LegalSpecialistWorkflowReadService. It adds no permission, collection, index, mutable current pointer, write route, workflow mutation, IAM or financial authority.
            2026-10-16 v1.11.0-LEGAL-COMMERCIAL-CONTEXT-HTTP adds authenticated GET /commercial-context using the already-canonical subscription:read permission. The route derives tenant scope only from current Python membership/permission authority, owns one read-only Mongo snapshot transaction, composes exact current Legal product entitlement with canonical subscription evidence, and exposes bounded commercial context only to commercial-read principals. It adds no Legal-role grant, subscription mutation, plan mutation, IAM assignment, payment, execution or settlement authority.
            2026-10-10 v1.10.0-D22B5-R21-LEGAL-PRODUCT-AVAILABILITY-CONJUNCTION adds the canonical D22B5 Legal Operations product-availability read as the first durable operation inside the existing workspace snapshot transaction. Unavailability denies with one non-disclosing 403; product-authority failure denies with a distinct 503; the four D15 authorities, workspace evidence reads and response contract remain unchanged.
@@ -125,11 +126,15 @@ FAIL-CLOSED DECLARATION: Missing or mismatched practice authority, unavailable
 """
 from __future__ import annotations
 
+import hashlib
+import logging
 import re
+import time
+import uuid
 from datetime import UTC, datetime
 from typing import Any, Callable, Final, TypeVar
 
-from fastapi import APIRouter, Depends, HTTPException, Query, status
+from fastapi import APIRouter, Depends, HTTPException, Query, Response, status
 from pymongo.read_concern import ReadConcern
 
 from tools.eos.api.tenant_authorization_http import (
@@ -268,7 +273,8 @@ from tools.eos.saas.entitlement.tenant_product_entitlement_registry import (
 )
 
 
-VERSION: Final[str] = "v1.13.0-LEGAL-TEMPORAL-OPERATIONS-HTTP"
+VERSION: Final[str] = "v1.14.0-LEGAL-TEMPORAL-OPERATIONS-OBSERVABILITY"
+logger = logging.getLogger("WilsyOS.API.LegalOperationsRouter")
 _IDENTITY = re.compile(r"^[A-Za-z0-9][A-Za-z0-9._:-]{0,127}$")
 _CLIENT_ROLE = "tenant_legal_client"
 _LEGAL_PRACTICE_ROLES: Final[frozenset[str]] = frozenset(
@@ -1252,6 +1258,87 @@ async def get_legal_productive_work_projection(
             detail="LEGAL_OPERATIONS_PRODUCTIVE_WORK_EVIDENCE_UNAVAILABLE",
         ) from error
 
+_TEMPORAL_OBSERVATION_SCHEMA: Final[str] = (
+    "WILSY-LEGAL-TEMPORAL-OPERATIONS-OBSERVATION/V1"
+)
+_TEMPORAL_OBSERVATION_VERSION: Final[str] = (
+    "v1.0.0-P5-A-TEMPORAL-OPERATIONS-OBSERVABILITY"
+)
+
+
+def _new_temporal_correlation_id() -> str:
+    """Generate one server-owned correlation identifier for an admitted read."""
+    return f"temporal-{uuid.uuid4().hex}"
+
+
+def _temporal_observation_ref(value: str) -> str:
+    """Pseudonymize an already-authorized identifier for diagnostics only."""
+    return hashlib.sha3_512(value.encode("utf-8")).hexdigest()
+
+
+def _temporal_latency_bucket(started_ns: int) -> str:
+    """Return one bounded latency class without high-cardinality measurements."""
+    elapsed_ms = max(0, time.perf_counter_ns() - started_ns) / 1_000_000
+    if elapsed_ms < 10:
+        return "LT_10_MS"
+    if elapsed_ms < 50:
+        return "LT_50_MS"
+    if elapsed_ms < 250:
+        return "LT_250_MS"
+    if elapsed_ms < 1000:
+        return "LT_1000_MS"
+    return "GTE_1000_MS"
+
+
+def _observe_temporal_operations(
+    *,
+    outcome: str,
+    transaction_outcome: str,
+    dependency_class: str,
+    tenant_id: str,
+    principal_id: str,
+    correlation_id: str,
+    http_status: int,
+    started_ns: int,
+    visible_matter_count: int | None = None,
+    deadline_count: int | None = None,
+    error_code: str | None = None,
+) -> None:
+    """Emit one bounded terminal event after the canonical transaction outcome.
+
+    Identifiers are SHA3-512 pseudonyms and never metric labels. Legal evidence,
+    headers, query values, role names, exception text and credentials are
+    intentionally excluded. Logging failure cannot alter the HTTP result.
+    """
+    payload: dict[str, object] = {
+        "schema": _TEMPORAL_OBSERVATION_SCHEMA,
+        "version": _TEMPORAL_OBSERVATION_VERSION,
+        "event": "LEGAL_TEMPORAL_OPERATIONS_HTTP",
+        "operation": "READ",
+        "outcome": outcome,
+        "transaction_outcome": transaction_outcome,
+        "dependency_class": dependency_class,
+        "tenant_ref": _temporal_observation_ref(tenant_id),
+        "principal_ref": _temporal_observation_ref(principal_id),
+        "correlation_ref": _temporal_observation_ref(correlation_id),
+        "http_status": http_status,
+        "latency_bucket": _temporal_latency_bucket(started_ns),
+    }
+    if visible_matter_count is not None:
+        payload["visible_matter_count"] = max(0, visible_matter_count)
+    if deadline_count is not None:
+        payload["deadline_count"] = max(0, deadline_count)
+    if error_code is not None:
+        payload["error_code"] = error_code
+
+    try:
+        logger.log(
+            logging.INFO if outcome == "SUCCESS" else logging.WARNING,
+            "LEGAL_TEMPORAL_OPERATIONS_HTTP",
+            extra={"wilsy_observation": payload},
+        )
+    except Exception:
+        return
 
 
 def _temporal_operations_services(
@@ -1308,6 +1395,7 @@ def _temporal_operations_payload(
 
 @router.get("/temporal-operations")
 async def get_legal_temporal_operations_projection(
+    response: Response,
     context: TenantAuthorizationContext = Depends(
         _PRODUCTIVE_WORK_READ
     ),
@@ -1318,6 +1406,9 @@ async def get_legal_temporal_operations_projection(
     One API-owned snapshot session covers productive and deadline reads.
     This endpoint grants no separate calendar, matter or execution authority.
     """
+    correlation_id = _new_temporal_correlation_id()
+    started_ns = time.perf_counter_ns()
+
     def run(
         session: Any,
         database: Any,
@@ -1351,7 +1442,57 @@ async def get_legal_temporal_operations_projection(
                 detail="LEGAL_OPERATIONS_TEMPORAL_EVIDENCE_UNAVAILABLE",
             ) from error
 
-    return _productive_work_projection_transaction(run)
+    try:
+        payload = _productive_work_projection_transaction(run)
+        response.headers["X-Correlation-ID"] = correlation_id
+        _observe_temporal_operations(
+            outcome="SUCCESS",
+            transaction_outcome="COMMITTED",
+            dependency_class="NONE",
+            tenant_id=context.tenant_id,
+            principal_id=context.identity.identity_id,
+            correlation_id=correlation_id,
+            http_status=status.HTTP_200_OK,
+            started_ns=started_ns,
+            visible_matter_count=len(
+                payload["visible_matter_ids"]  # type: ignore[arg-type]
+            ),
+            deadline_count=len(
+                payload["rows"]  # type: ignore[arg-type]
+            ),
+        )
+        return payload
+    except HTTPException as error:
+        detail = str(error.detail)
+        temporal_failure = (
+            detail
+            == "LEGAL_OPERATIONS_TEMPORAL_EVIDENCE_UNAVAILABLE"
+        )
+        headers = dict(error.headers or {})
+        headers["X-Correlation-ID"] = correlation_id
+        error.headers = headers
+        _observe_temporal_operations(
+            outcome="ERROR",
+            transaction_outcome=(
+                "ABORTED" if temporal_failure else "UNAVAILABLE"
+            ),
+            dependency_class=(
+                "TEMPORAL_EVIDENCE"
+                if temporal_failure
+                else "PERSISTENCE"
+            ),
+            tenant_id=context.tenant_id,
+            principal_id=context.identity.identity_id,
+            correlation_id=correlation_id,
+            http_status=error.status_code,
+            started_ns=started_ns,
+            error_code=(
+                "TEMPORAL_EVIDENCE_UNAVAILABLE"
+                if temporal_failure
+                else "PERSISTENCE_UNAVAILABLE"
+            ),
+        )
+        raise
 
 
 @router.get("/specialist-workflow")
@@ -1857,8 +1998,8 @@ __all__ = [
 
 
 # ARTIFACT: legal_operations_router.py
-# VERSION: v1.13.0-LEGAL-TEMPORAL-OPERATIONS-HTTP
-# AUTHORITY BOUNDARY: authenticated Legal reads only; temporal and specialist workflow projections are bounded by productive-work visibility and grant no command, IAM assignment, plan/subscription mutation, payment execution or settlement authority
+# VERSION: v1.14.0-LEGAL-TEMPORAL-OPERATIONS-OBSERVABILITY
+# AUTHORITY BOUNDARY: authenticated Legal reads and bounded post-authorization temporal observation only; temporal and specialist workflow projections remain bounded by productive-work visibility and grant no command, IAM assignment, plan/subscription mutation, payment execution or settlement authority
 # TENANT POSTURE: every projection uses exact authenticated/current-authorized tenant context; foreign lifecycle, deadline, workflow, screening, subscription and entitlement evidence is never disclosed
 # FAIL-CLOSED POSTURE: authority/scope mismatch, entitlement/subscription disagreement, unavailable product/commercial/deadline/workflow authority, snapshot failure, corruption, divergence and persistence outages deny
 # FINANCIAL EXECUTION AUTHORITY: Kennel EOS exclusively
