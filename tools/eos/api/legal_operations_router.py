@@ -1,7 +1,7 @@
 """Authenticated deterministic read projections for Legal Operations.
 
 TITLE: WILSY OS Legal Operations Read Projection Router
-VERSION: v1.14.0-LEGAL-TEMPORAL-OPERATIONS-OBSERVABILITY
+VERSION: v1.15.0-P7-COMPLETION-AWARE-PRODUCTIVE-WORK-HTTP
 AUTHORITY: Authenticated, tenant-scoped projection of canonical Legal Operations evidence only.
 EPITOME: Preserve exact authorized internal/sheriff/deputy/client reads while
          exposing one snapshot-consistent legal-practice workspace projection and
@@ -21,7 +21,12 @@ COLLABORATION / OWNERSHIP: Python EOS API composition. P1 owns lifecycle truth,
                             L8-8E owns immutable conflict-screening persistence;
                             tenant authorization owns access authority.
 CERTIFICATION / UPDATE DATE: 2026-10-19
-CHANGELOG: 2026-10-19 v1.14.0-LEGAL-TEMPORAL-OPERATIONS-OBSERVABILITY adds one post-authorization terminal structured observation for each admitted temporal read, generated server correlation, bounded latency classification, pseudonymous tenant/principal references, and committed/aborted/unavailable transaction outcome reporting. Telemetry failure remains quiet and cannot change canonical HTTP or transaction outcomes; no evidence content, permission, persistence, workflow, AI or financial authority is added. P5-R4 aligns the sovereign end seal after real-Mongo commit/abort ordering proof.
+CHANGELOG: 2026-10-19 v1.15.0-P7-COMPLETION-AWARE-PRODUCTIVE-WORK-HTTP composes canonical immutable
+           completion history into the authenticated productive-work
+           read. Completed work leaves active lists within the same
+           tenant-scoped snapshot. No new permissions, collections,
+           commands, IAM, workflow or financial authority are added.
+           2026-10-19 v1.14.0-LEGAL-TEMPORAL-OPERATIONS-OBSERVABILITY adds one post-authorization terminal structured observation for each admitted temporal read, generated server correlation, bounded latency classification, pseudonymous tenant/principal references, and committed/aborted/unavailable transaction outcome reporting. Telemetry failure remains quiet and cannot change canonical HTTP or transaction outcomes; no evidence content, permission, persistence, workflow, AI or financial authority is added. P5-R4 aligns the sovereign end seal after real-Mongo commit/abort ordering proof.
            2026-10-18 v1.13.0-LEGAL-TEMPORAL-OPERATIONS-HTTP records authenticated GET /temporal-operations under the existing productive-work read authority. One API-owned snapshot transaction composes canonical productive-work visibility and canonical Legal Matter Deadline evidence with shared session/snapshot scope. It adds no permission, collection, index, write route, deadline arithmetic, lifecycle mutation, IAM or financial authority.
            2026-10-18 v1.12.0-LEGAL-SPECIALIST-WORKFLOW-HTTP adds authenticated GET /specialist-workflow under the existing productive-work read authority. One existing API-owned snapshot transaction composes canonical productive-work visibility first, then enriches only visible rows through LegalSpecialistWorkflowReadService. It adds no permission, collection, index, mutable current pointer, write route, workflow mutation, IAM or financial authority.
            2026-10-16 v1.11.0-LEGAL-COMMERCIAL-CONTEXT-HTTP adds authenticated GET /commercial-context using the already-canonical subscription:read permission. The route derives tenant scope only from current Python membership/permission authority, owns one read-only Mongo snapshot transaction, composes exact current Legal product entitlement with canonical subscription evidence, and exposes bounded commercial context only to commercial-read principals. It adds no Legal-role grant, subscription mutation, plan mutation, IAM assignment, payment, execution or settlement authority.
@@ -273,7 +278,7 @@ from tools.eos.saas.entitlement.tenant_product_entitlement_registry import (
 )
 
 
-VERSION: Final[str] = "v1.14.0-LEGAL-TEMPORAL-OPERATIONS-OBSERVABILITY"
+VERSION: Final[str] = "v1.15.0-P7-COMPLETION-AWARE-PRODUCTIVE-WORK-HTTP"
 logger = logging.getLogger("WilsyOS.API.LegalOperationsRouter")
 _IDENTITY = re.compile(r"^[A-Za-z0-9][A-Za-z0-9._:-]{0,127}$")
 _CLIENT_ROLE = "tenant_legal_client"
@@ -884,6 +889,11 @@ def _productive_work_service(
             )
         ),
         operating_context_hydrator=context_hydrator,
+        completion_registry=LegalWorkCompletionEventRegistry(
+            database.get_collection(
+                LEGAL_WORK_COMPLETION_EVENT_COLLECTION
+            )
+        ),
     )
 
 
@@ -1998,9 +2008,11 @@ __all__ = [
 
 
 # ARTIFACT: legal_operations_router.py
-# VERSION: v1.14.0-LEGAL-TEMPORAL-OPERATIONS-OBSERVABILITY
+# VERSION: v1.15.0-P7-COMPLETION-AWARE-PRODUCTIVE-WORK-HTTP
 # AUTHORITY BOUNDARY: authenticated Legal reads and bounded post-authorization temporal observation only; temporal and specialist workflow projections remain bounded by productive-work visibility and grant no command, IAM assignment, plan/subscription mutation, payment execution or settlement authority
 # TENANT POSTURE: every projection uses exact authenticated/current-authorized tenant context; foreign lifecycle, deadline, workflow, screening, subscription and entitlement evidence is never disclosed
+# COMPLETION PROVENANCE: Canonical immutable completion history
+# ACTIVE WORK: Derived from completion currentness
 # FAIL-CLOSED POSTURE: authority/scope mismatch, entitlement/subscription disagreement, unavailable product/commercial/deadline/workflow authority, snapshot failure, corruption, divergence and persistence outages deny
 # FINANCIAL EXECUTION AUTHORITY: Kennel EOS exclusively
 # END OF WILSY OS SOVEREIGN ARTIFACT
