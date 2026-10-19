@@ -111,7 +111,8 @@ def ensure_indexes(collection: Any) -> None:
     collection.create_index(
         [("tenant_id", ASCENDING), ("case_matter_id", ASCENDING),
          ("practitioner_principal_id", ASCENDING)],
-        name=SCOPE_INDEX, unique=False,
+        name=SCOPE_INDEX, unique=True,
+        partialFilterExpression={"status": "ACTIVE"},
     )
 
 
@@ -180,6 +181,44 @@ def append_binding(
     )
 
     if binding.status is Status.ACTIVE:
+        # The historical ACTIVE row is never deleted after revocation.
+        # Consequently this version rejects a new binding identity for
+        # the same scope, even after an earlier binding is revoked.
+        # Regrant requires a separately certified successor protocol.
+        scope_query = {
+            "tenant_id": binding.tenant_id,
+            "case_matter_id": binding.case_matter_id,
+            "practitioner_principal_id": binding.practitioner_principal_id,
+            "status": "ACTIVE",
+        }
+        try:
+            scope_rows = tuple(
+                collection.find(scope_query, session=session).limit(3)
+            )
+        except Exception as exc:
+            raise BindingPersistenceUnavailable(
+                "P9_BINDING_SCOPE_READ_UNAVAILABLE"
+            ) from exc
+        if len(scope_rows) > 1:
+            raise BindingPersistedInvalid(
+                "P9_BINDING_COMPETING_SCOPE_HISTORY"
+            )
+        for row in scope_rows:
+            existing = _hydrate(row)
+            if (
+                existing.tenant_id != binding.tenant_id
+                or existing.case_matter_id != binding.case_matter_id
+                or existing.practitioner_principal_id
+                != binding.practitioner_principal_id
+                or existing.status is not Status.ACTIVE
+            ):
+                raise BindingPersistedInvalid(
+                    "P9_BINDING_SCOPE_HISTORY_CORRUPT"
+                )
+            if existing.binding_id != binding.binding_id:
+                raise BindingConflict(
+                    "P9_BINDING_SCOPE_ALREADY_RESERVED"
+                )
         if history:
             if len(history) == 1 and history[0] == binding:
                 return history[0]

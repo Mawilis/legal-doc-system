@@ -65,7 +65,10 @@ def test_exact_non_ttl_indexes():
     col = Collection()
     reg.ensure_indexes(col)
     assert len(col.indexes) == 3
-    assert sum(x["unique"] for _, x in col.indexes) == 2
+    assert sum(x["unique"] for _, x in col.indexes) == 3
+    assert col.indexes[2][1]["partialFilterExpression"] == {
+        "status": "ACTIVE"
+    }
     assert all("expireAfterSeconds" not in x for _, x in col.indexes)
 
 
@@ -195,3 +198,22 @@ def test_no_content_authorization_or_wall_waiver():
 # WILSY OS SOVEREIGN ARTIFACT SEAL
 # VERSION: v1.0.0-P9-R105-P4G-P6-R7B-P2-R1
 # END OF WILSY OS SOVEREIGN ARTIFACT
+
+
+def test_revocation_does_not_enable_unlinked_regrant():
+    col, tx = Collection(), Session()
+    first = make(binding_id="original")
+    reg.append_binding(binding=first, collection=col, session=tx)
+    revoked = first.revoke(
+        revoked_by_principal_id="partner-2",
+        revoked_at=AT + timedelta(hours=1),
+        evidence_reference="revocation-evidence",
+    )
+    reg.append_binding(binding=revoked, collection=col, session=tx)
+    with pytest.raises(reg.BindingConflict):
+        reg.append_binding(
+            binding=make(binding_id="unlinked-regrant"),
+            collection=col,
+            session=tx,
+        )
+    assert len(col.rows) == 2
