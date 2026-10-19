@@ -11,6 +11,7 @@ No matter-access grant, reassignment, financial or transport authority.
 from __future__ import annotations
 
 from dataclasses import fields
+from datetime import datetime
 from typing import Any, Final
 
 from tools.eos.auth.tenant_authorization import (
@@ -25,7 +26,12 @@ from tools.eos.legal_operations.registry.legal_practitioner_matter_access_regist
     append_evidence,
 )
 
-VERSION: Final[str] = "v1.0.0-P9-R105-P3R2-FIRST-REVISION-ISSUER"
+from tools.eos.legal_operations.service.legal_practitioner_matter_access_conflict_provenance import (
+    PractitionerMatterAccessConflictProvenanceDenied,
+    verify_current_conflict_provenance,
+)
+
+VERSION: Final[str] = "v1.1.0-P9-R105-P4D-PROVENANCE-GATED-ISSUER"
 PERMISSION: Final[str] = "legal_operations:practitioner_matter_access_policy:issue"
 OPERATION: Final[str] = "legal_practitioner_matter_access_policy_issue"
 
@@ -62,6 +68,11 @@ def issue_first_revision_evidence(
     business_role_repository: Any,
     collection: Any,
     session: Any,
+    matter_fingerprint: str | None = None,
+    client_party_id: str | None = None,
+    subject_identity_fingerprint: str | None = None,
+    evaluation_time: datetime | None = None,
+    disposition_collection: Any = None,
 ) -> LegalPractitionerMatterAccessEvidence:
     """Issue first-revision documentary evidence in the caller's transaction."""
     if (
@@ -106,6 +117,37 @@ def issue_first_revision_evidence(
         raise PractitionerMatterAccessIssuerDenied(
             "P9_ISSUER_CURRENT_AUTHORITY_DENIED"
         )
+
+    # An authorized partner without current canonical conflict provenance
+    # cannot append a practitioner access policy document.
+    if (
+        not isinstance(matter_fingerprint, str)
+        or not matter_fingerprint
+        or not isinstance(client_party_id, str)
+        or not client_party_id
+        or not isinstance(subject_identity_fingerprint, str)
+        or not subject_identity_fingerprint
+        or not isinstance(evaluation_time, datetime)
+        or disposition_collection is None
+    ):
+        raise PractitionerMatterAccessIssuerDenied(
+            "P9_ISSUER_PROVENANCE_INPUT_REQUIRED"
+        )
+
+    try:
+        verify_current_conflict_provenance(
+            evidence=evidence,
+            matter_fingerprint=matter_fingerprint,
+            client_party_id=client_party_id,
+            subject_identity_fingerprint=subject_identity_fingerprint,
+            evaluation_time=evaluation_time,
+            disposition_collection=disposition_collection,
+            session=session,
+        )
+    except PractitionerMatterAccessConflictProvenanceDenied as exc:
+        raise PractitionerMatterAccessIssuerDenied(
+            "P9_ISSUER_CONFLICT_PROVENANCE_DENIED"
+        ) from exc
 
     return append_evidence(
         evidence=evidence, collection=collection, session=session
