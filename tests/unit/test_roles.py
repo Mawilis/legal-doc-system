@@ -128,7 +128,7 @@ from tools.eos.auth.roles import (
 )
 
 def test_runtime_version_source_is_canonical() -> None:
-    assert POLICY_VERSION == "v1.43.0-PW-P11A-PRODUCTIVE-WORK-READ-GRANTS"
+    assert POLICY_VERSION == "v1.44.0-P14-R20R12-WORK-COMPLETION-STATIC-GRANTS"
 
 VERSION = "v1.5.0-D3B-AUTH3-MATTER-DEADLINE-ROLE-GRANTS-CERT"
 
@@ -246,6 +246,7 @@ def test_legal_role_grants_are_explicit_and_least_authority() -> None:
         "legal_operations:work_item:read",
         "legal_operations:work_item:write",
         "legal_operations:productive_work:read",
+        "legal_operations:work_item:complete",
         "legal_operations:return:write",
         "wilsy_ai:legal_tool:read",
         "wilsy_ai:legal_services:execute",

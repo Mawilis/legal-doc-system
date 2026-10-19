@@ -104,7 +104,7 @@ from tools.eos.auth.hr_business_role_catalog import ALL_HR_BUSINESS_ROLES
 import pytest
 
 def test_runtime_version_source_is_canonical() -> None:
-    assert VERSION == "v1.43.0-PW-P11A-PRODUCTIVE-WORK-READ-ELIGIBILITY"
+    assert VERSION == "v1.46.0-H7F-NOTIFICATION-CONTACT-VERIFICATION-ELIGIBILITY"
 
 LEGACY = ("AUDITOR", "SOVEREIGN_ARCHITECT", "ENTERPRISE_ADMIN", "FOUNDER", "SUPER_ADMIN", "ADMIN", "admin", "GLOBAL_ROOT", "WILSY_ROOT", "MASTER", "unknown")
 
@@ -170,6 +170,21 @@ def test_legal_business_role_matrix_is_explicit_and_least_authority() -> None:
                 "legal_work_item_write",
             }
         )
+    # Certified P14 completion business eligibility.
+    for role in (
+        "tenant_legal_partner",
+        "tenant_legal_attorney",
+        "tenant_legal_paralegal",
+        "tenant_legal_secretary",
+    ):
+        expected[role].add("legal_work_item_complete")
+
+    # Certified H7F verification eligibility remains Partner/Attorney only.
+    for role in ("tenant_legal_partner", "tenant_legal_attorney"):
+        expected[role].add(
+            "legal_notification_contact_verification_write"
+        )
+
     assert set(expected) <= TENANT_ROLES
     for role, allowed in expected.items():
         assert {operation for operation in OPERATIONS if tenant_role_operation_eligibility(role, operation) == ELIGIBLE} == allowed
