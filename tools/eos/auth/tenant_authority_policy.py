@@ -903,6 +903,20 @@ _issuer_partner["legal_practitioner_matter_access_policy_issue"] = ELIGIBLE
 _issuer_roles["tenant_legal_partner"] = MappingProxyType(_issuer_partner)
 ELIGIBILITY = MappingProxyType(_issuer_roles)
 
+# P9-R105-P4G-P6-R7B: partner-only provisioning eligibility.
+# Eligibility alone never authorizes binding creation or content access.
+OPERATIONS = frozenset(
+    (*OPERATIONS, "legal_practitioner_matter_binding_provision")
+)
+_binding_roles = dict(ELIGIBILITY)
+_binding_partner = dict(_binding_roles["tenant_legal_partner"])
+_binding_partner[
+    "legal_practitioner_matter_binding_provision"
+] = ELIGIBLE
+_binding_roles["tenant_legal_partner"] = MappingProxyType(_binding_partner)
+ELIGIBILITY = MappingProxyType(_binding_roles)
+
+
 def tenant_role_operation_eligibility(role: object, operation: object) -> str:
     """Return business eligibility only; ELIGIBLE is never an authorization grant."""
     if not isinstance(role, str) or not isinstance(operation, str): return DENY

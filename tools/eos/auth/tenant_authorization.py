@@ -332,6 +332,14 @@ _BINDINGS = MappingProxyType({
     "legal_practitioner_matter_access_policy_issue": "legal_operations:practitioner_matter_access_policy:issue",
 })
 
+# P9-R105-P4G-P6-R7B: exact documentary binding provisioning authority.
+_BINDINGS = MappingProxyType({
+    **_BINDINGS,
+    "legal_practitioner_matter_binding_provision":
+        "legal_operations:practitioner_matter_binding:provision",
+})
+
+
 def authorize_tenant_operation(*, principal_id: object, tenant_id: object, permission_id: object, operation: object, principal_repository: Any, membership_repository: Any, role_assignment_repository: Any, business_role_repository: Any, session: Any = None, workforce_relationship_collection: Any = None) -> TenantAuthorizationDecision:
     """Compose current truth; ELIGIBLE is only one conjunct and never authorization alone."""
     if not all(isinstance(v, str) and v and v == v.strip() for v in (principal_id, tenant_id, permission_id, operation)):

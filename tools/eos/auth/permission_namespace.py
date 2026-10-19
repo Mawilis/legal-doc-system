@@ -782,6 +782,13 @@ _PERMISSIONS: Final = MappingProxyType(
             "request bounded own-tenant Legal work-item completion admission",
             tenant=True,
         ),
+        "legal_operations:practitioner_matter_binding:provision": _meta(
+            "legal_operations:practitioner_matter_binding:provision",
+            "TENANT",
+            "TENANT",
+            "request own-tenant partner-controlled practitioner matter binding provisioning without content access or ethical-wall clearance",
+            tenant=True,
+        ),
         "legal_operations:practitioner_matter_access_policy:issue": _meta(
             "legal_operations:practitioner_matter_access_policy:issue", "TENANT", "TENANT",
             "request bounded own-tenant partner-issued practitioner matter-access documentary policy",
