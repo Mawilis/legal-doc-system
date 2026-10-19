@@ -116,7 +116,7 @@ from tools.eos.auth.hr_business_role_catalog import ALL_HR_BUSINESS_ROLES
 import pytest
 
 def test_runtime_version_source_is_canonical() -> None:
-    assert VERSION == "v1.48.0-P9-R40-WORK-REASSIGNMENT-PERMISSION-LOOKUP"
+    assert VERSION == "v1.49.0-P9-R103-PRACTITIONER-POLICY-ISSUER-ELIGIBILITY"
 
 LEGACY = ("AUDITOR", "SOVEREIGN_ARCHITECT", "ENTERPRISE_ADMIN", "FOUNDER", "SUPER_ADMIN", "ADMIN", "admin", "GLOBAL_ROOT", "WILSY_ROOT", "MASTER", "unknown")
 
@@ -201,6 +201,7 @@ def test_legal_business_role_matrix_is_explicit_and_least_authority() -> None:
     for role in ("tenant_legal_partner", "tenant_legal_attorney"):
         expected[role].add("legal_work_item_reassign")
 
+    expected["tenant_legal_partner"].add("legal_practitioner_matter_access_policy_issue")
     assert set(expected) <= TENANT_ROLES
     for role, allowed in expected.items():
         assert {operation for operation in OPERATIONS if tenant_role_operation_eligibility(role, operation) == ELIGIBLE} == allowed

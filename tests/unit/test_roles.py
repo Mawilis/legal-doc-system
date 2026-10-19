@@ -133,7 +133,7 @@ from tools.eos.auth.roles import (
 )
 
 def test_runtime_version_source_is_canonical() -> None:
-    assert POLICY_VERSION == "v1.45.0-P9-R25-WORK-REASSIGNMENT-STATIC-GRANTS"
+    assert POLICY_VERSION == "v1.46.0-P9-R103-PRACTITIONER-POLICY-PARTNER-GRANT"
 
 VERSION = "v1.6.0-P9-R24-REASSIGNMENT-STATIC-GRANTS-CERT"
 
@@ -253,6 +253,7 @@ def test_legal_role_grants_are_explicit_and_least_authority() -> None:
         "legal_operations:productive_work:read",
         "legal_operations:work_item:complete",
         "legal_operations:work_item:reassign",
+        "legal_operations:practitioner_matter_access_policy:issue",
         "legal_operations:return:write",
         "wilsy_ai:legal_tool:read",
         "wilsy_ai:legal_services:execute",

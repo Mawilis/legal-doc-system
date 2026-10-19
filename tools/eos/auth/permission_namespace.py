@@ -1,5 +1,5 @@
 """TITLE: WILSY OS Permission Namespace Semantic Canon.
-VERSION: v1.49.0-P9-R17-WORK-REASSIGNMENT-PERMISSION
+VERSION: v1.50.0-P9-R103-PRACTITIONER-POLICY-ISSUER-PERMISSION
 AUTHORITY: Immutable permission vocabulary and scope metadata only.
 EPITOME: Extends the canonical TENANT and SYSTEM permission vocabulary with dedicated
 inbound-collection, merchant-configuration, provider-policy, WILSY AI,
@@ -13,6 +13,8 @@ ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/tools/eos/auth/p
 COLLABORATION / OWNERSHIP: Wilson Khanyezi / Wilsy Core Engineering.
 CERTIFICATION / UPDATE DATE: 2026-10-19
 CHANGELOG:
+    2026-10-19 v1.50.0-P9-R103-PRACTITIONER-POLICY-ISSUER-PERMISSION
+    Partner-only practitioner policy issuer IAM.
     2026-10-19 v1.49.0-P9-R17-WORK-REASSIGNMENT-PERMISSION adds exact own-tenant
     legal_operations:work_item:reassign permission vocabulary for bounded
     reassignment admission. It requires tenant membership, is non-cross-
@@ -229,7 +231,7 @@ from types import MappingProxyType
 from typing import Final
 
 
-VERSION = "v1.49.0-P9-R17-WORK-REASSIGNMENT-PERMISSION"
+VERSION = "v1.50.0-P9-R103-PRACTITIONER-POLICY-ISSUER-PERMISSION"
 
 
 class PermissionDisposition(StrEnum):
@@ -778,6 +780,11 @@ _PERMISSIONS: Final = MappingProxyType(
             "TENANT",
             "TENANT",
             "request bounded own-tenant Legal work-item completion admission",
+            tenant=True,
+        ),
+        "legal_operations:practitioner_matter_access_policy:issue": _meta(
+            "legal_operations:practitioner_matter_access_policy:issue", "TENANT", "TENANT",
+            "request bounded own-tenant partner-issued practitioner matter-access documentary policy",
             tenant=True,
         ),
         "legal_operations:work_item:reassign": _meta(

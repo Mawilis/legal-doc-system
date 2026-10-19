@@ -1,5 +1,5 @@
 """TITLE: WILSY OS Tenant Business Authority Policy Canon.
-VERSION: v1.48.0-P9-R40-WORK-REASSIGNMENT-PERMISSION-LOOKUP
+VERSION: v1.49.0-P9-R103-PRACTITIONER-POLICY-ISSUER-ELIGIBILITY
 AUTHORITY: Canonical business eligibility facts only; this module does not authorize.
 EPITOME: Defines bounded tenant-role eligibility and field boundaries, including
 own-tenant WILSY AI usage-capacity and billing-intelligence evidence read eligibility and dedicated
@@ -12,6 +12,8 @@ ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/tools/eos/auth/t
 COLLABORATION / OWNERSHIP: Wilson Khanyezi / Wilsy Core Engineering.
 CERTIFICATION / UPDATE DATE: 2026-10-19
 CHANGELOG:
+    2026-10-19 v1.49.0-P9-R103-PRACTITIONER-POLICY-ISSUER-ELIGIBILITY
+    Partner-only practitioner policy issuer IAM.
 2026-10-19 v1.48.0-P9-R40-WORK-REASSIGNMENT-PERMISSION-LOOKUP binds
 legal_work_item_reassign exactly to legal_operations:work_item:reassign in the
 immutable business-operation permission lookup. This mapping
@@ -220,7 +222,7 @@ from types import MappingProxyType
 from typing import Final, FrozenSet
 from tools.eos.auth.hr_business_role_catalog import ALL_HR_BUSINESS_ROLES
 
-VERSION = "v1.48.0-P9-R40-WORK-REASSIGNMENT-PERMISSION-LOOKUP"
+VERSION = "v1.49.0-P9-R103-PRACTITIONER-POLICY-ISSUER-ELIGIBILITY"
 class SystemAuthorityClassification(StrEnum):
     SYSTEM_REQUIRED = "SYSTEM_REQUIRED"
     SYSTEM_NOT_INHERENTLY_REQUIRED = "SYSTEM_NOT_INHERENTLY_REQUIRED"
@@ -276,6 +278,7 @@ BUSINESS_ROLE_OPERATION_PERMISSIONS: Final = MappingProxyType({
     "legal_work_item_write": "legal_operations:work_item:write",
     "legal_work_item_complete": "legal_operations:work_item:complete",
     "legal_work_item_reassign": "legal_operations:work_item:reassign",
+    "legal_practitioner_matter_access_policy_issue": "legal_operations:practitioner_matter_access_policy:issue",
     "legal_productive_work_read": "legal_operations:productive_work:read",
 })
 TENANT_ROLES: Final[FrozenSet[str]] = frozenset({"tenant_owner", "tenant_admin", "tenant_manager", "tenant_auditor", "tenant_platform_billing_provider_policy_admin", "tenant_inbound_collection_authorization_admin", "tenant_inbound_merchant_configuration_admin", "tenant_inbound_provider_security_admin", "tenant_inbound_provider_policy_admin", "tenant_inbound_provider_policy_activation_admin", "tenant_legal_partner", "tenant_legal_attorney", "tenant_legal_paralegal", "tenant_legal_secretary", "tenant_legal_finance", "tenant_sheriff", "tenant_deputy", "tenant_legal_client"}) | ALL_HR_BUSINESS_ROLES
@@ -891,6 +894,14 @@ for _reassignment_role in ("tenant_legal_partner", "tenant_legal_attorney"):
         _reassignment_role_policy
     )
 ELIGIBILITY = MappingProxyType(_reassignment_eligibility)
+
+# P9-R103R8: partner-only issuer eligibility, no authority grant.
+OPERATIONS = frozenset((*OPERATIONS, "legal_practitioner_matter_access_policy_issue"))
+_issuer_roles = dict(ELIGIBILITY)
+_issuer_partner = dict(_issuer_roles["tenant_legal_partner"])
+_issuer_partner["legal_practitioner_matter_access_policy_issue"] = ELIGIBLE
+_issuer_roles["tenant_legal_partner"] = MappingProxyType(_issuer_partner)
+ELIGIBILITY = MappingProxyType(_issuer_roles)
 
 def tenant_role_operation_eligibility(role: object, operation: object) -> str:
     """Return business eligibility only; ELIGIBLE is never an authorization grant."""

@@ -1,5 +1,5 @@
 """TITLE: WILSY OS Role Definition Policy.
-VERSION: v1.45.0-P9-R25-WORK-REASSIGNMENT-STATIC-GRANTS
+VERSION: v1.46.0-P9-R103-PRACTITIONER-POLICY-PARTNER-GRANT
 AUTHORITY: Canonical Python role identifiers and explicit permission grants.
 EPITOME: Defines current tenant-scoped authorization roles, including
 least-privilege subscription/plan-catalogue grants, read-only WILSY AI
@@ -15,6 +15,8 @@ ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/tools/eos/auth/r
 COLLABORATION / OWNERSHIP: Wilson Khanyezi / Wilsy Core Engineering.
 CERTIFICATION / UPDATE DATE: 2026-10-19
 CHANGELOG:
+    2026-10-19 v1.46.0-P9-R103-PRACTITIONER-POLICY-PARTNER-GRANT
+    Partner-only practitioner policy issuer IAM.
     2026-10-19 v1.45.0-P9-R25-WORK-REASSIGNMENT-STATIC-GRANTS adds the exact
     legal_operations:work_item:reassign permission to LEGAL_PARTNER
     and LEGAL_ATTORNEY only. Static policy remains non-possessory;
@@ -218,7 +220,7 @@ from __future__ import annotations
 from collections.abc import Iterable
 
 
-VERSION = "v1.45.0-P9-R25-WORK-REASSIGNMENT-STATIC-GRANTS"
+VERSION = "v1.46.0-P9-R103-PRACTITIONER-POLICY-PARTNER-GRANT"
 
 
 ROLE_PERMISSIONS_MAP: dict[str, list[str]] = {
@@ -484,6 +486,7 @@ for _role_name in ("LEGAL_PARTNER", "LEGAL_ATTORNEY", "LEGAL_PARALEGAL", "LEGAL_
     ROLE_PERMISSIONS_MAP[_role_name].append("legal_operations:work_item:complete")
 for _role_name in ("LEGAL_PARTNER", "LEGAL_ATTORNEY"):
     ROLE_PERMISSIONS_MAP[_role_name].append("legal_operations:work_item:reassign")
+ROLE_PERMISSIONS_MAP["LEGAL_PARTNER"].append("legal_operations:practitioner_matter_access_policy:issue")
 for _role_name in ("LEGAL_PARTNER", "LEGAL_ATTORNEY", "LEGAL_PARALEGAL", "LEGAL_SECRETARY", "SHERIFF", "DEPUTY"):
     ROLE_PERMISSIONS_MAP[_role_name].append("legal_operations:return:write")
 for _role_name in ("SHERIFF", "DEPUTY"):
