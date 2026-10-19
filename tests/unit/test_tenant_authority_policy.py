@@ -1,12 +1,18 @@
 """TITLE: Tenant Authority Policy Certification.
-VERSION: v1.5.0-D3B-AUTH2A-MATTER-DEADLINE-OPERATION-ELIGIBILITY-CERT
+VERSION: v1.6.0-P9-R32-WORK-REASSIGNMENT-ELIGIBILITY-CERT
 AUTHORITY: Pure policy-canon certification only.
 EPITOME: Proves immutable tenant eligibility, WILSY AI usage-capacity and
 billing-intelligence evidence-read eligibility, and non-authority boundaries.
 ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/tests/unit/test_tenant_authority_policy.py
 COLLABORATION / OWNERSHIP: Wilson Khanyezi / Wilsy Core Engineering.
-CERTIFICATION/UPDATE DATE: 2026-10-11.
+CERTIFICATION/UPDATE DATE: 2026-10-19.
 CHANGELOG:
+2026-10-19 v1.6.0-P9-R32-WORK-REASSIGNMENT-ELIGIBILITY-CERT certifies exact
+Partner/Attorney-only work reassignment eligibility and preserves
+the closed legal business-role matrix, completion eligibility,
+deny-by-default semantics and all historical certifications.
+Eligibility does not establish current permission possession,
+operation binding, supervision, matter scope or execution.
 2026-10-11 v1.5.0-D3B-AUTH2A-MATTER-DEADLINE-OPERATION-ELIGIBILITY-CERT
 certifies exact deadline read/write recognition, the frozen Legal role matrix,
 malformed and wildcard fail-closed behavior, unchanged adjacent Legal policy,
@@ -104,7 +110,7 @@ from tools.eos.auth.hr_business_role_catalog import ALL_HR_BUSINESS_ROLES
 import pytest
 
 def test_runtime_version_source_is_canonical() -> None:
-    assert VERSION == "v1.46.0-H7F-NOTIFICATION-CONTACT-VERIFICATION-ELIGIBILITY"
+    assert VERSION == "v1.47.0-P9-R33-WORK-REASSIGNMENT-ELIGIBILITY"
 
 LEGACY = ("AUDITOR", "SOVEREIGN_ARCHITECT", "ENTERPRISE_ADMIN", "FOUNDER", "SUPER_ADMIN", "ADMIN", "admin", "GLOBAL_ROOT", "WILSY_ROOT", "MASTER", "unknown")
 
@@ -184,6 +190,10 @@ def test_legal_business_role_matrix_is_explicit_and_least_authority() -> None:
         expected[role].add(
             "legal_notification_contact_verification_write"
         )
+
+    # P9-R32: reassignment is narrower than work completion.
+    for role in ("tenant_legal_partner", "tenant_legal_attorney"):
+        expected[role].add("legal_work_item_reassign")
 
     assert set(expected) <= TENANT_ROLES
     for role, allowed in expected.items():
@@ -896,7 +906,7 @@ def test_legal_evidence_write_eligibility_is_partner_only() -> None:
 
 
 # ARTIFACT: test_tenant_authority_policy.py
-# VERSION: v1.5.0-D3B-AUTH2A-MATTER-DEADLINE-OPERATION-ELIGIBILITY-CERT
+# VERSION: v1.6.0-P9-R32-WORK-REASSIGNMENT-ELIGIBILITY-CERT
 # AUTHORITY BOUNDARY: certification of policy facts only
 # TENANT POSTURE: client-matter and client-visibility eligibility remain policy-only; membership, assignment, permission binding and ACTIVE visibility stay separate
 # FAIL-CLOSED POSTURE: unknown values deny

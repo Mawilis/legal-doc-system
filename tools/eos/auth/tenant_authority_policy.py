@@ -1,5 +1,5 @@
 """TITLE: WILSY OS Tenant Business Authority Policy Canon.
-VERSION: v1.46.0-H7F-NOTIFICATION-CONTACT-VERIFICATION-ELIGIBILITY
+VERSION: v1.47.0-P9-R33-WORK-REASSIGNMENT-ELIGIBILITY
 AUTHORITY: Canonical business eligibility facts only; this module does not authorize.
 EPITOME: Defines bounded tenant-role eligibility and field boundaries, including
 own-tenant WILSY AI usage-capacity and billing-intelligence evidence read eligibility and dedicated
@@ -10,8 +10,16 @@ tenant_legal_client-only client-matter projection read eligibility, plus the
 exact Partner/Attorney-only firm-decision operation eligibility.
 ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/tools/eos/auth/tenant_authority_policy.py
 COLLABORATION / OWNERSHIP: Wilson Khanyezi / Wilsy Core Engineering.
-CERTIFICATION / UPDATE DATE: 2026-10-18
+CERTIFICATION / UPDATE DATE: 2026-10-19
 CHANGELOG:
+2026-10-19 v1.47.0-P9-R33-WORK-REASSIGNMENT-ELIGIBILITY introduces the exact own-tenant
+legal_work_item_reassign business operation. Only
+tenant_legal_partner and tenant_legal_attorney are ELIGIBLE;
+all other business roles DENY. Eligibility grants no ACTIVE
+membership, authorization-role possession, permission binding,
+target-assignee validation, matter scope, supervision, command,
+execution, workflow mutation or financial authority. This revision
+also aligns the previously stale artifact end-seal version.
 2026-10-18 v1.46.0-H7F-NOTIFICATION-CONTACT-VERIFICATION-ELIGIBILITY adds legal_notification_contact_verification_write as one exact own-tenant business operation eligible only to tenant_legal_partner and tenant_legal_attorney. Eligibility remains non-authorizing and creates no permission possession, dispatch, delivery, legal-effect, cross-tenant or financial execution authority.
 2026-10-17 v1.45.0-P14-R20R14-WORK-COMPLETION-PERMISSION-BINDING binds legal_work_item_complete exactly to
 legal_operations:work_item:complete in the canonical business-operation permission map.
@@ -206,7 +214,7 @@ from types import MappingProxyType
 from typing import Final, FrozenSet
 from tools.eos.auth.hr_business_role_catalog import ALL_HR_BUSINESS_ROLES
 
-VERSION = "v1.46.0-H7F-NOTIFICATION-CONTACT-VERIFICATION-ELIGIBILITY"
+VERSION = "v1.47.0-P9-R33-WORK-REASSIGNMENT-ELIGIBILITY"
 class SystemAuthorityClassification(StrEnum):
     SYSTEM_REQUIRED = "SYSTEM_REQUIRED"
     SYSTEM_NOT_INHERENTLY_REQUIRED = "SYSTEM_NOT_INHERENTLY_REQUIRED"
@@ -863,6 +871,20 @@ ELIGIBILITY = MappingProxyType(
 )
 
 
+# P9-R33 — business eligibility for Legal work reassignment only.
+# This is not an authorization grant or reassignment command.
+OPERATIONS = frozenset((*OPERATIONS, "legal_work_item_reassign"))
+_reassignment_eligibility = dict(ELIGIBILITY)
+for _reassignment_role in ("tenant_legal_partner", "tenant_legal_attorney"):
+    _reassignment_role_policy = dict(
+        _reassignment_eligibility[_reassignment_role]
+    )
+    _reassignment_role_policy["legal_work_item_reassign"] = ELIGIBLE
+    _reassignment_eligibility[_reassignment_role] = MappingProxyType(
+        _reassignment_role_policy
+    )
+ELIGIBILITY = MappingProxyType(_reassignment_eligibility)
+
 def tenant_role_operation_eligibility(role: object, operation: object) -> str:
     """Return business eligibility only; ELIGIBLE is never an authorization grant."""
     if not isinstance(role, str) or not isinstance(operation, str): return DENY
@@ -896,7 +918,7 @@ def requires_system_authority(operation: object) -> SystemAuthorityClassificatio
 __all__ = ["VERSION", "ELIGIBLE", "DENY", "SystemAuthorityClassification", "TENANT_ROLES", "OPERATIONS", "ELIGIBILITY", "BUSINESS_ROLE_OPERATION_PERMISSIONS", "PROFILE_READABLE_FIELDS", "PROFILE_MUTABLE_FIELDS_V1", "LIFECYCLE_FIELDS", "VERIFICATION_FIELDS", "BILLING_METADATA_FIELDS", "EVIDENCE_FIELDS", "SECURITY_SENSITIVE_FIELDS", "SYSTEM_MANAGED_FIELDS", "FUTURE_PERMISSION_CANDIDATES", "normalize_tenant_business_role", "tenant_role_operation_eligibility", "permission_for_business_role_operation", "allowed_profile_mutation_fields", "is_hard_delete_allowed", "requires_system_authority"]
 
 # ARTIFACT: tenant_authority_policy.py
-# VERSION: v1.45.0-P14-R20R14-WORK-COMPLETION-PERMISSION-BINDING
+# VERSION: v1.47.0-P9-R33-WORK-REASSIGNMENT-ELIGIBILITY
 # AUTHORITY BOUNDARY: business eligibility facts only; no authorization or mutation
 # TENANT POSTURE: own-tenant conflict-review, client-matter and client-visibility eligibility require separate ACTIVE membership, assignment and exact permission binding; client visibility remains separately scope-bound
 # FAIL-CLOSED POSTURE: unknown roles and operations deny; ELIGIBLE never grants access
