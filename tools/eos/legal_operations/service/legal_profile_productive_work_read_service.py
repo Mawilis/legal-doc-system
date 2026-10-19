@@ -1,7 +1,7 @@
 """
 TITLE: WILSY OS Legal Profile Productive Work Read Service
 
-VERSION: v1.0.1-PW-P4-DURABLE-PRODUCTIVE-WORK-READ-SERVICE
+VERSION: v1.1.0-P7-COMPLETION-AWARE-PRODUCTIVE-WORK-READ-SERVICE
 
 AUTHORITY:
     Wilsy OS Core Governance / Python EOS Legal Operations.
@@ -16,7 +16,15 @@ COLLABORATION / OWNERSHIP:
 CERTIFICATION / UPDATE DATE: 2026-10-16
 
 CHANGELOG:
-    2026-10-16 v1.0.1-PW-P4-DURABLE-PRODUCTIVE-WORK-READ-SERVICE
+    2026-10-19 v1.1.0-P7-COMPLETION-AWARE-PRODUCTIVE-WORK-READ-SERVICE
+    derives active-work visibility from canonical immutable completion
+    evidence and pure currentness under the caller-owned snapshot.
+    Production HTTP injects completion history; legacy direct callers
+    retain optional construction compatibility. Ambiguous or corrupt
+    completion evidence blocks the complete projection. No new IAM,
+    completion mutation, workflow or financial authority is created.
+
+    2026-10-16 v1.1.0-P7-COMPLETION-AWARE-PRODUCTIVE-WORK-READ-SERVICE
     completes the sovereign header and versioned end seal without changing
     read orchestration, transaction, tenant or authority behavior.
 
@@ -63,6 +71,13 @@ from tools.eos.legal_operations.domain.legal_profile_productive_work import (
     LegalProductiveWorkProjection,
     compose_legal_productive_work,
 )
+from tools.eos.legal_operations.domain.legal_work_completion_currentness import (
+    LegalWorkCompletionCurrentnessState,
+    project_legal_work_completion_currentness,
+)
+from tools.eos.legal_operations.domain.legal_work_completion_event import (
+    LegalWorkCompletionEvent,
+)
 from tools.eos.legal_operations.domain.legal_work_assignment import (
     LegalWorkAssignment,
 )
@@ -76,7 +91,7 @@ from tools.eos.legal_operations.domain.legal_work_supervision_binding import (
 
 
 VERSION: Final[str] = (
-    "v1.0.1-PW-P4-DURABLE-PRODUCTIVE-WORK-READ-SERVICE"
+    "v1.1.0-P7-COMPLETION-AWARE-PRODUCTIVE-WORK-READ-SERVICE"
 )
 
 
@@ -209,8 +224,26 @@ class _OperatingContextHydrator(Protocol):
         ...
 
 
+class _CompletionReader(Protocol):
+    def list_work_history(
+        self,
+        tenant_id: str,
+        work_item_id: str,
+        *,
+        session: Any,
+    ) -> tuple[LegalWorkCompletionEvent, ...]:
+        ...
+
+
 class LegalProductiveWorkReadService:
-    """Compose durable principal work without creating authority."""
+    """Project exact-tenant active work without granting authority.
+
+    The completion reader derives active visibility using immutable
+    evidence in the existing caller-owned snapshot transaction.
+    Production HTTP supplies that reader; optional construction
+    preserves legacy direct callers. This service never writes
+    completion events, assignments, IAM or financial facts.
+    """
 
     def __init__(
         self,
@@ -219,11 +252,13 @@ class LegalProductiveWorkReadService:
         assignment_registry: _AssignmentReader,
         supervision_registry: _SupervisionReader,
         operating_context_hydrator: _OperatingContextHydrator,
+        completion_registry: _CompletionReader | None = None,
     ) -> None:
         self._work_item_registry = work_item_registry
         self._assignment_registry = assignment_registry
         self._supervision_registry = supervision_registry
         self._operating_context_hydrator = operating_context_hydrator
+        self._completion_registry = completion_registry
 
     @staticmethod
     def _add_work_item(
@@ -460,6 +495,47 @@ class LegalProductiveWorkReadService:
             )
         )
 
+        if self._completion_registry is not None:
+            active_work: dict[str, LegalWorkItem] = {}
+            for item in work_items:
+                history = self._completion_registry.list_work_history(
+                    tenant,
+                    item.work_item_id,
+                    session=tx,
+                )
+                currentness = project_legal_work_completion_currentness(
+                    work_item=item,
+                    completion_events=tuple(history),
+                    evaluated_at=moment,
+                )
+                state = LegalWorkCompletionCurrentnessState(
+                    currentness.state
+                )
+                if state is LegalWorkCompletionCurrentnessState.COMPLETED:
+                    continue
+                if state is not LegalWorkCompletionCurrentnessState.NOT_COMPLETED:
+                    _fail(
+                        LegalProductiveWorkReadServiceError,
+                        "P7_COMPLETION_CURRENTNESS_BLOCKED",
+                    )
+                active_work[item.work_item_id] = item
+
+            # Preserve complete assignment lineage while only
+            # exposing active work to the pure composer.
+            active_ids = set(active_work)
+            work_items = tuple(active_work.values())
+            assignments = tuple(
+                value for value in assignments
+                if value.work_item_id in active_ids
+            )
+            supervision = tuple(
+                value for value in supervision
+                if (
+                    value.work_item_id is None
+                    or value.work_item_id in active_ids
+                )
+            )
+
         return compose_legal_productive_work(
             tenant_id=tenant,
             principal_id=principal,
@@ -489,12 +565,17 @@ __all__ = [
 # WILSY OS SOVEREIGN ARTIFACT SEAL
 # ==============================================================================
 # ARTIFACT: legal_profile_productive_work_read_service.py
-# VERSION: v1.0.1-PW-P4-DURABLE-PRODUCTIVE-WORK-READ-SERVICE
+# VERSION: v1.1.0-P7-COMPLETION-AWARE-PRODUCTIVE-WORK-READ-SERVICE
 # READ-ONLY DURABLE ORCHESTRATION: YES
 # CALLER-OWNED ACTIVE TRANSACTION REQUIRED: YES
 # CURRENT ASSIGNMENT SOURCE: LegalWorkAssignmentRegistry
 # CURRENT SUPERVISION SOURCE: LegalWorkSupervisionBindingRegistry
 # WORK TRUTH SOURCE: LegalWorkItemRegistry
+# COMPLETION SOURCE: Canonical immutable event registry
+# COMPLETION CURRENTNESS: Existing pure evaluator
+# TENANT POSTURE: Exact tenant and caller-owned snapshot
+# AUTHORITY BOUNDARY: Read-only, no completion/IAM mutation
+# DIRECT CALLER COMPATIBILITY: Optional completion reader
 # PURE COMPOSER REUSED: YES
 # OPERATING CONTEXT AUTHORITY: NONE
 # IAM AUTHORITY: NONE
