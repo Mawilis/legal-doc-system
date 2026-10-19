@@ -1,5 +1,5 @@
 """TITLE: Tenant Authority Policy Certification.
-VERSION: v1.6.0-P9-R32-WORK-REASSIGNMENT-ELIGIBILITY-CERT
+VERSION: v1.7.0-P9-R42-REASSIGNMENT-POLICY-BINDING-CERT
 AUTHORITY: Pure policy-canon certification only.
 EPITOME: Proves immutable tenant eligibility, WILSY AI usage-capacity and
 billing-intelligence evidence-read eligibility, and non-authority boundaries.
@@ -7,6 +7,12 @@ ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/tests/unit/test_
 COLLABORATION / OWNERSHIP: Wilson Khanyezi / Wilsy Core Engineering.
 CERTIFICATION/UPDATE DATE: 2026-10-19.
 CHANGELOG:
+2026-10-19 v1.7.0-P9-R42-REASSIGNMENT-POLICY-BINDING-CERT certifies
+the exact canonical reassignment operation-permission lookup
+source version while preserving the previously closed tenant
+business-role eligibility matrix and all fail-closed assertions.
+Permission lookup alone grants no ACTIVE role possession, matter
+scope, target eligibility, supervision, command or financial authority.
 2026-10-19 v1.6.0-P9-R32-WORK-REASSIGNMENT-ELIGIBILITY-CERT certifies exact
 Partner/Attorney-only work reassignment eligibility and preserves
 the closed legal business-role matrix, completion eligibility,
@@ -110,7 +116,7 @@ from tools.eos.auth.hr_business_role_catalog import ALL_HR_BUSINESS_ROLES
 import pytest
 
 def test_runtime_version_source_is_canonical() -> None:
-    assert VERSION == "v1.47.0-P9-R33-WORK-REASSIGNMENT-ELIGIBILITY"
+    assert VERSION == "v1.48.0-P9-R40-WORK-REASSIGNMENT-PERMISSION-LOOKUP"
 
 LEGACY = ("AUDITOR", "SOVEREIGN_ARCHITECT", "ENTERPRISE_ADMIN", "FOUNDER", "SUPER_ADMIN", "ADMIN", "admin", "GLOBAL_ROOT", "WILSY_ROOT", "MASTER", "unknown")
 
@@ -906,7 +912,7 @@ def test_legal_evidence_write_eligibility_is_partner_only() -> None:
 
 
 # ARTIFACT: test_tenant_authority_policy.py
-# VERSION: v1.6.0-P9-R32-WORK-REASSIGNMENT-ELIGIBILITY-CERT
+# VERSION: v1.7.0-P9-R42-REASSIGNMENT-POLICY-BINDING-CERT
 # AUTHORITY BOUNDARY: certification of policy facts only
 # TENANT POSTURE: client-matter and client-visibility eligibility remain policy-only; membership, assignment, permission binding and ACTIVE visibility stay separate
 # FAIL-CLOSED POSTURE: unknown values deny

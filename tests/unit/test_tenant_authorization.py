@@ -1,13 +1,19 @@
 """TITLE: Tenant Authorization Composition Certification.
-VERSION: v1.5.1-D3B-AUTH3-R1-MATTER-DEADLINE-AUTHORIZATION-CERT
+VERSION: v1.6.0-P9-R41R2-REASSIGNMENT-AUTHORIZATION-VERSION-CERT
 AUTHORITY: Certification of read-only current-truth tenant authorization composition.
 EPITOME: Proves migrated tenant permission grants, including WILSY AI
 capacity and billing-intelligence evidence reads, remain conjunctive with
 principal, membership, business-role, and durable final-role truth.
 ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/tests/unit/test_tenant_authorization.py
 COLLABORATION / OWNERSHIP: Wilson Khanyezi / Wilsy Core Engineering.
-CERTIFICATION/UPDATE DATE: 2026-10-11.
+CERTIFICATION/UPDATE DATE: 2026-10-19.
 CHANGELOG:
+2026-10-19 v1.6.0-P9-R41R2-REASSIGNMENT-AUTHORIZATION-VERSION-CERT certifies
+the P9-R41 authorization-composition version in existing evidence
+and Legal AI gateway tests without changing their behavioral checks.
+ACTIVE own-tenant principal and membership, exact business role,
+canonical permission and ACTIVE granting-role possession remain
+conjunctive; financial execution and command authority stay excluded.
 2026-10-11 v1.5.1-D3B-AUTH3-R1-MATTER-DEADLINE-AUTHORIZATION-CERT replaces
 pre-AUTH3 simulated permission possession with the final durable role grants.
 It certifies real Partner, Attorney, Paralegal read/write authorization and
@@ -1418,7 +1424,7 @@ def test_l8_6a_queue_read_binding_is_exact_and_sheriff_only() -> None:
 def test_m14_evidence_bindings_are_exact_and_unique() -> None:
     """Both evidence operations resolve only through their immutable exact pairs."""
 
-    assert ta.VERSION == "v1.42.0-H7F-NOTIFICATION-CONTACT-VERIFICATION-AUTHORIZATION"
+    assert ta.VERSION == "v1.43.0-P9-R41-WORK-REASSIGNMENT-AUTHORIZATION-BINDING"
     assert ta._BINDINGS["wilsy_ai_usage_capacity_read"] == (
         "wilsy_ai:usage_capacity:read"
     )
@@ -1432,7 +1438,7 @@ def test_m14_evidence_bindings_are_exact_and_unique() -> None:
 def test_wilsy_ai_legal_tool_binding_is_exact_tenant_and_fail_closed() -> None:
     """Gateway reads require canonical own-tenant IAM and never create authority."""
 
-    assert ta.VERSION == "v1.42.0-H7F-NOTIFICATION-CONTACT-VERIFICATION-AUTHORIZATION"
+    assert ta.VERSION == "v1.43.0-P9-R41-WORK-REASSIGNMENT-AUTHORIZATION-BINDING"
     assert ta._BINDINGS["wilsy_ai_legal_tool_read"] == "wilsy_ai:legal_tool:read"
     assert list(ta._BINDINGS).count("wilsy_ai_legal_tool_read") == 1
 
@@ -2538,7 +2544,7 @@ def test_caller_owned_session_is_forwarded_to_authority_reads() -> None:
     assert seen and all(item is session for item in seen)
 
 # ARTIFACT: test_tenant_authorization.py
-# VERSION: v1.5.1-D3B-AUTH3-R1-MATTER-DEADLINE-AUTHORIZATION-CERT
+# VERSION: v1.6.0-P9-R41R2-REASSIGNMENT-AUTHORIZATION-VERSION-CERT
 # AUTHORITY BOUNDARY: frozen current-truth composition certification only; role grants remain policy, not assignment truth
 # TENANT POSTURE: exact active principal, membership, tenant_legal_client eligibility, exact client-matter permission-operation binding, and ACTIVE LEGAL_CLIENT assignment are conjunctively required; ACTIVE visibility remains separate
 # FAIL-CLOSED POSTURE: missing, inactive, ambiguous, unavailable, mismatched, projected, cross-tenant, system, and financial paths deny
