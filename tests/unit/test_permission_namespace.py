@@ -1,5 +1,5 @@
 """TITLE: WILSY OS Permission Namespace Canon Certification.
-VERSION: v1.9.0-P7-PRIVILEGED-BREAK-GLASS-PERMISSION-CERT
+VERSION: v1.10.0-P9-R17R5-REASSIGNMENT-PERMISSION-CANON-CERT
 AUTHORITY: Certification of immutable permission vocabulary semantics only.
 EPITOME: Proves bounded namespaces, fail-closed metadata, deterministic policy
 bytes, and exact own-tenant subscription/plan/WILSY AI capacity,
@@ -9,6 +9,12 @@ ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/tests/unit/test_
 COLLABORATION / OWNERSHIP: Wilson Khanyezi / Wilsy Core Engineering.
 CERTIFICATION/UPDATE DATE: 2026-10-15.
 CHANGELOG:
+    2026-10-19 v1.10.0-P9-R17R5-REASSIGNMENT-PERMISSION-CANON-CERT freezes the next exact permission
+    namespace version, 116 canonical permissions and 119 total rows
+    for the separately test-first Legal work reassignment vocabulary.
+    It preserves exact cardinality, tenant-scope checks, nonfinancial
+    boundaries, wildcard denial and legacy permission classifications.
+    No source permission, role grant or command authority is created.
 2026-10-15 v1.9.0-P7-PRIVILEGED-BREAK-GLASS-PERMISSION-CERT certifies the exact assignment-required, non-self-authorizing SYSTEM vocabulary and updates the closed canon to 107 canonical permissions and 110 total rows without any role grant.
 2026-10-15 v1.8.0-P6-PRIVILEGED-ACTIVATION-REVOCATION-PERMISSION-CERT certifies the exact privileged_activation:revoke canonical SYSTEM permission as assignment-required, non-self-authorizing, non-cross-tenant and non-financial. It updates the closed canon from 105 to 106 canonical permissions and 108 to 109 total rows without creating a role grant, static role authority or permission assignment.
 2026-10-14 v1.6.0-P4-R0A certifies the exact SYSTEM-scoped,
@@ -261,7 +267,7 @@ def test_d12_system_command_permissions_are_exact_non_authorizing_metadata(permi
 
 
 def test_runtime_version_source_is_canonical() -> None:
-    assert POLICY_VERSION == "v1.48.0-P14-R20R11-WORK-COMPLETION-PERMISSION"
+    assert POLICY_VERSION == "v1.49.0-P9-R17-WORK-REASSIGNMENT-PERMISSION"
 
 
 def test_permission_canon_properties() -> None:
@@ -356,9 +362,9 @@ def test_permission_canon_properties() -> None:
             for row in rows
             if row["disposition"] == "CANONICAL"
         ]
-    ) == 115
+    ) == 116
 
-    assert len(rows) == 118
+    assert len(rows) == 119
 
     for permission_id in tenant:
         metadata = permission_metadata(
@@ -952,7 +958,7 @@ def test_deadline_namespace_owns_vocabulary_but_creates_no_role_grant() -> None:
 
 
 # ARTIFACT: test_permission_namespace.py
-# VERSION: v1.9.0-P7-PRIVILEGED-BREAK-GLASS-PERMISSION-CERT
+# VERSION: v1.10.0-P9-R17R5-REASSIGNMENT-PERMISSION-CANON-CERT
 # AUTHORITY BOUNDARY: permission semantic certification only
 # TENANT POSTURE: conflict-review, client-matter, client-visibility and other tenant permissions remain policy; exact ACTIVE membership remains separately governed
 # FAIL-CLOSED POSTURE: unknown and malformed values deny
