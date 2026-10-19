@@ -1,6 +1,6 @@
 /**
  * WILSY OS — ROLE-SCOPED LEGAL OPERATIONS COCKPIT
- * VERSION: v13.0.0-LEGAL-COMMERCIAL-CONTEXT-PRESENTATION
+ * VERSION: v13.1.0-P8-LEGAL-DAILY-WORKSTATION-PRESENTATION
  * AUTHORITY: Presentation of authenticated Python-EOS Legal Operations truth.
  * EPITOME: One role-aware WILSY Legal OS surface for legal-practice operators,
  *          finance, sheriff, deputy and client personas. Law-firm roles receive
@@ -19,8 +19,9 @@
  *                            authenticated snapshot transport; D7 owns browser
  *                            validation. This component owns responsive
  *                            presentation and deputy observation capture only.
- * CERTIFICATION / UPDATE DATE: 2026-10-16
- * CHANGELOG: 2026-10-16 v13.0.0-LEGAL-COMMERCIAL-CONTEXT-PRESENTATION adds one server-authorized commercial-context presentation plate. It consumes only the certified Legal commercial-context browser adapter; renders canonical plan, subscription and monthly-equivalent evidence only after HTTP authorization; renders denied commercial detail as visibly locked; preserves source failure as unavailable; performs no role/JWT/permission inference; and leaves authenticated tenant branding under the existing shared chrome.
+ * CERTIFICATION / UPDATE DATE: 2026-10-19
+ * CHANGELOG: 2026-10-19 v13.1.0-P8-LEGAL-DAILY-WORKSTATION-PRESENTATION introduces a compact searchable Legal daily-work queue, server-projected workload filters, task-selected completion evidence inspector, strict browser completion command, authoritative EOS readback and persistent confirmation. Browser presentation creates no IAM, tenant, workflow-release, legal-outcome or financial authority.
+ *            2026-10-16 v13.0.0-LEGAL-COMMERCIAL-CONTEXT-PRESENTATION adds one server-authorized commercial-context presentation plate. It consumes only the certified Legal commercial-context browser adapter; renders canonical plan, subscription and monthly-equivalent evidence only after HTTP authorization; renders denied commercial detail as visibly locked; preserves source failure as unavailable; performs no role/JWT/permission inference; and leaves authenticated tenant branding under the existing shared chrome.
  *            2026-10-16 v12.9.0-PRACTICE-CONFLICT-REVIEW-PRESENTATION-PARITY preserves the readable conflict-screening queue for every certified Practice persona while exposing the human review mutation only inside the canonical Partner/Attorney role envelope and allowing authoritative server permission projection to narrow it further. Python EOS remains the sole authorization authority.
  *            2026-10-12 v12.8.0-LEGAL-EVIDENCE-UPLOAD-WORKSPACE adds a Partner-only, permission-narrowed upload control for already-visible canonical ProcessDocuments, with pending/failure/reconciliation states and mandatory canonical refresh after committed success.
  *            2026-10-11 v12.7.0-LEGAL-CLIENT-ACCEPTANCE-REVIEW adds a write-gated evidenced deadline form for Partner/Attorney/Paralegal only, dispatches the strict D4A ACTIVE create contract, requires canonical refresh before success, and keeps Secretary read-only without browser lifecycle, tenant, AI or financial authority.
@@ -151,6 +152,7 @@ import {
   getLegalFinanceEvidence,
   getLegalPracticeWorkspace,
   getLegalProductiveWork,
+  completeLegalWorkItem,
   getLegalSpecialistWorkflow,
   getSheriffOperationalQueues,
   issueLegalConflictReview,
@@ -169,7 +171,7 @@ import WilsyAccountCommandCenter from '../account/WilsyAccountCommandCenter.jsx'
 import { useAuth } from '../../contexts/authContext.jsx';
 import { useAuthenticatedTenantBrandingAsset } from '../../hooks/useAuthenticatedTenantBrandingAsset.js';
 
-const DASHBOARD_VERSION = 'v13.0.0-LEGAL-COMMERCIAL-CONTEXT-PRESENTATION';
+const DASHBOARD_VERSION = 'v13.1.0-P8-LEGAL-DAILY-WORKSTATION-PRESENTATION';
 
 const EMPTY_QUEUES = Object.freeze({
   tenantId: '',
@@ -2064,6 +2066,19 @@ const CONFLICT_REVIEW_OUTCOMES = Object.freeze([
 ]);
 
 function ProductiveWorkPanel() {
+  const [completionInspectorOpen, setCompletionInspectorOpen] = useState(false);
+  const [workSearch, setWorkSearch] = useState('');
+  const [workGroup, setWorkGroup] = useState('assigned');
+  const [completionInput, setCompletionInput] = useState({
+    workItemId: '',
+    completionEvidenceReference: '',
+    completionEvidenceFingerprint: '',
+  });
+  const [completionAction, setCompletionAction] = useState({
+    kind: 'idle',
+    message: '',
+  });
+
   const [state, setState] = useState({
     kind: 'loading',
     data: null,
@@ -2130,6 +2145,7 @@ function ProductiveWorkPanel() {
             + 'workflow enrichment is unavailable.',
         });
       }
+      return data;
     } catch (error) {
       const status = error?.response?.status;
 
@@ -2147,8 +2163,60 @@ function ProductiveWorkPanel() {
         data: null,
         message: '',
       });
+      return null;
     }
   }, []);
+
+  const submitCompletion = async (event) => {
+    event.preventDefault();
+    if (completionAction.kind === 'submitting') return;
+
+    const submitted = { ...completionInput };
+
+    if (!state.data?.assignedWorkItems.some(
+      (item) => item.workItemId === submitted.workItemId,
+    )) {
+      setCompletionAction({
+        kind: 'error',
+        message: 'Select an assigned work item.',
+      });
+      return;
+    }
+
+    setCompletionAction({ kind: 'submitting', message: '' });
+
+    try {
+      await completeLegalWorkItem(submitted);
+      const readback = await load();
+
+      if (
+        !readback
+        || readback.assignedWorkItems.some(
+          (item) => item.workItemId === submitted.workItemId,
+        )
+      ) {
+        throw new Error('LEGAL_WORK_COMPLETION_READBACK_UNCONFIRMED');
+      }
+
+      setCompletionInput({
+        workItemId: '',
+        completionEvidenceReference: '',
+        completionEvidenceFingerprint: '',
+      });
+      setCompletionAction({
+        kind: 'success',
+        message: 'Completion confirmed by EOS and active work refreshed.',
+      });
+      setCompletionInspectorOpen(false);
+    } catch (error) {
+      setCompletionAction({
+        kind: 'error',
+        message: error?.response?.status === 403
+          ? 'Current tenant authority does not permit this completion.'
+          : 'Completion or authoritative readback could not be confirmed.',
+      });
+    }
+  };
 
   useEffect(() => {
     load();
@@ -2246,6 +2314,14 @@ function ProductiveWorkPanel() {
     },
   ];
 
+  const activeGroup = groups.find((group) => group.id === workGroup)
+    || groups[0];
+  const query = workSearch.trim().toLowerCase();
+  const visibleRows = activeGroup.rows.filter((item) => (
+    !query || [item.title, item.workItemId, item.caseMatterId]
+      .some((value) => String(value).toLowerCase().includes(query))
+  ));
+
   return (
     <div
       className="min-w-0 space-y-5"
@@ -2325,6 +2401,9 @@ function ProductiveWorkPanel() {
           />
         </div>
 
+
+
+
         {data.operatingContexts.length > 0 && (
           <div className="mt-5 grid min-w-0 gap-3 md:grid-cols-2">
             {data.operatingContexts.map((context) => (
@@ -2351,108 +2430,233 @@ function ProductiveWorkPanel() {
         )}
       </section>
 
-      <div className="grid min-w-0 gap-5 xl:grid-cols-2">
-        {groups.map((group) => (
-          <section
-            key={group.id}
-            aria-label={group.title}
-            className="min-w-0 overflow-hidden rounded-2xl border border-stone-800 bg-stone-950/75"
+      <section
+        aria-label="Compact legal work queue"
+        data-legal-workstation="compact"
+        className="min-w-0 overflow-hidden rounded-xl border border-stone-800 bg-stone-950/75"
+      >
+        <div className="flex flex-wrap items-center gap-2 border-b border-stone-800 p-3">
+          <input
+            type="search"
+            aria-label="Search legal work"
+            value={workSearch}
+            placeholder="Search task or matter"
+            onChange={(event) => setWorkSearch(event.target.value)}
+            className="min-w-0 flex-1 rounded-lg border border-stone-700 bg-black/40 p-2 text-xs text-white"
+          />
+          <select
+            aria-label="Work queue category"
+            value={workGroup}
+            onChange={(event) => setWorkGroup(event.target.value)}
+            className="rounded-lg border border-stone-700 bg-black p-2 text-xs text-white"
           >
-            <header className="border-b border-stone-800 px-4 py-4 sm:px-5">
-              <h3 className="break-words text-sm font-black uppercase tracking-[0.12em] text-white">
-                {group.title}
-              </h3>
-            </header>
-
-            {group.rows.length === 0 ? (
-              <p className="p-4 text-xs leading-6 text-stone-500 sm:p-5">
-                {group.empty}
-              </p>
-            ) : (
-              <div className="divide-y divide-stone-900">
-                {group.rows.map((item) => {
-                  const workflow = workflowByWorkItemId.get(
-                    item.workItemId,
-                  );
-
-                  return (
-                    <article
-                      key={item.workItemId}
-                      className="min-w-0 p-4 sm:p-5"
+            {groups.map((group) => (
+              <option key={group.id} value={group.id}>
+                {group.title} ({group.rows.length})
+              </option>
+            ))}
+          </select>
+          <span aria-label="Visible work count" className="text-xs text-stone-400">
+            {visibleRows.length} visible
+          </span>
+        </div>
+        <div className="grid grid-cols-[minmax(0,1fr)_auto] gap-2 border-b border-stone-800 px-3 py-2 text-[10px] uppercase text-stone-500 sm:grid-cols-[minmax(0,2fr)_minmax(0,1fr)_auto]">
+          <span>Task / Matter</span>
+          <span className="hidden sm:block">Due</span>
+          <span>Status</span>
+        </div>
+        {visibleRows.length === 0 ? (
+          <p className="p-3 text-xs text-stone-400">
+            {query ? 'No matching work in this category.' : activeGroup.empty}
+          </p>
+        ) : (
+          <div className="divide-y divide-stone-800/70">
+            {visibleRows.map((item) => {
+              const workflow = workflowByWorkItemId.get(item.workItemId);
+              return (
+                <article key={item.workItemId} className="min-w-0 px-3 py-2.5">
+                  <div className="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-2 sm:grid-cols-[minmax(0,2fr)_minmax(0,1fr)_auto]">
+                    <div className="min-w-0">
+                      <p className="truncate text-xs font-bold text-white" title={item.title}>
+                        {item.title}
+                      </p>
+                      <p className="truncate font-mono text-[10px] text-stone-500">
+                        {item.workItemId} · Matter: {item.caseMatterId}
+                      </p>
+                    </div>
+                    <span className="hidden truncate text-[11px] text-stone-400 sm:block">
+                      {item.dueAt
+                        ? formatTimestamp(item.dueAt)
+                        : 'No operational due time'}
+                    </span>
+                    <StatePill state={item.status} />
+                  </div>
+                  {activeGroup.id === 'assigned' && (
+                    <button
+                      type="button"
+                      aria-label={`Open completion for ${item.workItemId}`}
+                      disabled={completionAction.kind === 'submitting'}
+                      onClick={() => {
+                        setCompletionInput((current) => ({
+                          ...current,
+                          workItemId: item.workItemId,
+                        }));
+                        setCompletionAction({ kind: 'idle', message: '' });
+                        setCompletionInspectorOpen(true);
+                      }}
+                      className="mt-1 rounded-md border border-amber-700/40 px-2 py-1 text-[11px] font-semibold text-amber-200"
                     >
-                      <div className="flex min-w-0 flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
-                        <div className="min-w-0">
-                          <p className="break-words text-sm font-black text-white">
-                            {item.title}
-                          </p>
-                          <p className="mt-1 break-all font-mono text-[10px] text-stone-600">
-                            {item.workItemId}
-                          </p>
-                          <p className="mt-1 break-all font-mono text-[10px] text-stone-600">
-                            Matter: {item.caseMatterId}
-                          </p>
-                        </div>
-
-                        <StatePill state={item.status} />
+                      Complete
+                    </button>
+                  )}
+                  {workflowState.kind === 'ready' && (
+                    <details className="mt-1 text-[11px] text-stone-400">
+                      <summary className="w-fit cursor-pointer text-amber-200">
+                        Workflow context
+                      </summary>
+                      <div className="mt-2 space-y-1 rounded-lg bg-black/30 p-2">
+                        {workflow ? (
+                          <>
+                            <p>Workflow: {workflow.stageDefinitionId}</p>
+                            <p>{workflowLabel(workflow.readiness)}</p>
+                            {workflow.blockingDependencyWorkItemIds.length > 0 && (
+                              <p>
+                                Dependencies: {workflow.blockingDependencyWorkItemIds.join(', ')}
+                              </p>
+                            )}
+                            {workflow.unsatisfiedGateReferences.length > 0 && (
+                              <p>
+                                Unsatisfied gates: {workflow.unsatisfiedGateReferences.join(', ')}
+                              </p>
+                            )}
+                            <p>Explanatory readiness only; this creates no legal or execution authority.</p>
+                          </>
+                        ) : (
+                          <p>No certified workflow context is projected for this visible work item.</p>
+                        )}
                       </div>
+                    </details>
+                  )}
+                </article>
+              );
+            })}
+          </div>
+        )}
+      </section>
 
-                      <div className="mt-3 grid min-w-0 gap-2 text-[11px] text-stone-500 sm:grid-cols-2">
-                        <span className="break-words">
-                          Source: {item.sourceKind}
-                        </span>
-                        <span className="break-words sm:text-right">
-                          Due: {item.dueAt
-                            ? formatTimestamp(item.dueAt)
-                            : 'No operational due time'}
-                        </span>
-                      </div>
+      {completionAction.kind === 'success' && (
+        <p role="status" className="rounded-lg border border-emerald-900/40 bg-emerald-950/10 p-3 text-xs text-emerald-300">
+          {completionAction.message}
+        </p>
+      )}
+      {completionInspectorOpen && (
+        <section
+          aria-label="Selected work completion inspector"
+          className="min-w-0 rounded-xl border border-amber-800/40 bg-stone-950/90 p-3"
+        >
+          <div className="mb-2 flex items-center justify-between gap-3">
+            <h3 className="text-xs font-black uppercase text-amber-200">
+              Completion inspector
+            </h3>
+            <button
+              type="button"
+              aria-label="Close completion inspector"
+              disabled={completionAction.kind === 'submitting'}
+              onClick={() => setCompletionInspectorOpen(false)}
+              className="text-xs text-stone-300"
+            >
+              Close
+            </button>
+          </div>
+        <form
+          aria-label="Complete assigned legal work"
+          onSubmit={submitCompletion}
+          className="mt-5 space-y-3 rounded-xl border border-amber-800/30 bg-black/30 p-4"
+        >
+          <p className="text-xs font-black uppercase tracking-wider text-amber-200">
+            Complete assigned work
+          </p>
+          <p className="text-xs leading-5 text-stone-400">
+            Provide a genuine completion evidence reference and its
+            independently established SHA3-512 fingerprint.
+            EOS verifies authority and records immutable completion evidence.
+          </p>
 
-                      {workflowState.kind === 'ready' && (
-                        <div className="mt-4 min-w-0 rounded-xl border border-stone-800 bg-black/25 p-3">
-                          {workflow ? (
-                            <>
-                              <p className="break-words text-xs font-black text-amber-200">
-                                Workflow: {workflow.stageDefinitionId}
-                              </p>
-                              <p className="mt-2 break-words text-xs font-semibold text-stone-300">
-                                {workflowLabel(workflow.readiness)}
-                              </p>
+          <label className="block text-xs text-stone-300">
+            Assigned work item
+            <select
+              aria-label="Assigned work to complete"
+              required
+              value={completionInput.workItemId}
+              disabled={completionAction.kind === 'submitting'}
+              onChange={(event) => setCompletionInput((current) => ({
+                ...current,
+                workItemId: event.target.value,
+              }))}
+              className="mt-1 w-full rounded-lg border border-stone-700 bg-stone-950 p-2 text-white"
+            >
+              <option value="">Select assigned work</option>
+              {data.assignedWorkItems.map((item) => (
+                <option key={item.workItemId} value={item.workItemId}>
+                  {item.title} — {item.workItemId}
+                </option>
+              ))}
+            </select>
+          </label>
 
-                              {workflow.blockingDependencyWorkItemIds.length > 0 && (
-                                <p className="mt-2 break-words text-[11px] leading-5 text-stone-500">
-                                  Dependencies:{' '}
-                                  {workflow.blockingDependencyWorkItemIds.join(', ')}
-                                </p>
-                              )}
+          <label className="block text-xs text-stone-300">
+            Completion evidence reference
+            <input
+              aria-label="Completion evidence reference"
+              required
+              value={completionInput.completionEvidenceReference}
+              disabled={completionAction.kind === 'submitting'}
+              onChange={(event) => setCompletionInput((current) => ({
+                ...current,
+                completionEvidenceReference: event.target.value,
+              }))}
+              className="mt-1 w-full rounded-lg border border-stone-700 bg-stone-950 p-2 text-white"
+            />
+          </label>
 
-                              {workflow.unsatisfiedGateReferences.length > 0 && (
-                                <p className="mt-1 break-words text-[11px] leading-5 text-stone-500">
-                                  Unsatisfied gates:{' '}
-                                  {workflow.unsatisfiedGateReferences.join(', ')}
-                                </p>
-                              )}
+          <label className="block text-xs text-stone-300">
+            Evidence SHA3-512 fingerprint
+            <input
+              aria-label="Completion evidence fingerprint"
+              required
+              pattern="[0-9a-f]{128}"
+              maxLength={128}
+              value={completionInput.completionEvidenceFingerprint}
+              disabled={completionAction.kind === 'submitting'}
+              onChange={(event) => setCompletionInput((current) => ({
+                ...current,
+                completionEvidenceFingerprint: event.target.value,
+              }))}
+              className="mt-1 w-full rounded-lg border border-stone-700 bg-stone-950 p-2 font-mono text-xs text-white"
+            />
+          </label>
 
-                              <p className="mt-2 break-words text-[10px] leading-5 text-stone-600">
-                                Explanatory readiness only; this creates
-                                no legal or execution authority.
-                              </p>
-                            </>
-                          ) : (
-                            <p className="break-words text-[11px] leading-5 text-stone-500">
-                              No certified workflow context is projected
-                              for this visible work item.
-                            </p>
-                          )}
-                        </div>
-                      )}
-                    </article>
-                  );
-                })}
-              </div>
-            )}
-          </section>
-        ))}
-      </div>
+          <button
+            type="submit"
+            disabled={
+              completionAction.kind === 'submitting'
+              || data.assignedWorkItems.length === 0
+            }
+            className="rounded-lg bg-amber-500 px-4 py-2 text-xs font-black text-stone-950 disabled:opacity-50"
+          >
+            {completionAction.kind === 'submitting'
+              ? 'Confirming with EOS…'
+              : 'Confirm legal work completion'}
+          </button>
+
+          {completionAction.kind === 'error' && (
+            <p role="alert" className="text-xs text-red-300">
+              {completionAction.message}
+            </p>
+          )}
+        </form>
+        </section>
+      )}
     </div>
   );
 }
@@ -5553,7 +5757,7 @@ export default function LegalDashboard({
 
 /**
  * ARTIFACT: LegalDashboard.jsx
- * VERSION: v13.0.0-LEGAL-COMMERCIAL-CONTEXT-PRESENTATION
+ * VERSION: v13.1.0-P8-LEGAL-DAILY-WORKSTATION-PRESENTATION
  * AUTHORITY BOUNDARY: governed Legal Practice/Finance/SHERIFF/DEPUTY/LEGAL_CLIENT presentation plus already-authorized intake, ReturnOfService, bounded human conflict-review command initiation and bound-Deputy command initiation only; D24C authenticated person names and L8-8M conflict-review controls are descriptive/wiring projections that create no identity, membership, role, permission, tenant, operating-model, conflict clearance, waiver or financial authority; Python EOS owns authorization and legal truth
  * TENANT POSTURE: every data surface remains server-authorized and tenant-scoped; practice workspace is D15 snapshot truth with first-class CaseMatter evidence, client matters are D5/D7 visibility-bound, deputy commands require exact capability parity
  * FAIL-CLOSED POSTURE: unresolved role, malformed/absent person-name text, explicit or server-authoritative legal-permission narrowing, denied/unavailable workspace/client/specialist read, malformed finance/intake/return/field evidence, command failure or failed refresh never invents names or truth, widens role scope, fabricates operating-model authority or cross-role fallback

@@ -1,19 +1,37 @@
 /**
  * WILSY OS — PW-P11C LEGAL DASHBOARD PRODUCTIVE-WORK CERTIFICATE
- * VERSION: v1.0.0-PW-P11C-LEGAL-DASHBOARD-PRODUCTIVE-WORK-CERT
+ * VERSION: v1.1.0-P8-LEGAL-DASHBOARD-WORK-COMPLETION-CERT
  * AUTHORITY: Presentation/wiring only.
+ * EPITOME: Prove compact daily-work search, server-owned category projection,
+ * selected completion intent, EOS readback, and fail-closed presentation.
+ * ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/client/src/__tests__/components/legalDashboardProductiveWork.test.jsx
+ * COLLABORATION / OWNERSHIP: LegalDashboard presents Python EOS truth; this
+ * certificate owns component-level rendering and interaction evidence only.
+ * CERTIFICATION / UPDATE DATE: 2026-10-19
+ * CHANGELOG: v1.1.0 adds P8 compact queue, filtering, completion submission,
+ * denial, authoritative readback, and duplicate-submit prevention evidence.
+ * COMPLIANCE: POPIA section 19; GDPR Article 32; SOC 2 CC7.2 controls.
+ * SECURITY / PRIVACY POSTURE: Synthetic fixtures only; no credentials or
+ * production legal payloads are present.
  * TENANT BOUNDARY: Productive-work transport accepts no tenant/principal input.
+ * AUTHORITY BOUNDARY: Presentation evidence only; no IAM, assignment,
+ * completion, workflow, legal-event, billing, payment, or settlement truth.
  * FINANCIAL AUTHORITY BOUNDARY: None.
+ * FAIL-CLOSED POSTURE: Denial, transport failure, retained active work, and
+ * malformed projection never produce a completion-success claim.
  */
 
 import React from 'react';
+import '@testing-library/jest-dom/vitest';
 import {
+  cleanup,
   fireEvent,
   render,
   screen,
   waitFor,
 } from '@testing-library/react';
 import {
+  afterEach,
   beforeEach,
   describe,
   expect,
@@ -25,6 +43,7 @@ const mocks = vi.hoisted(() => ({
   getLegalPracticeWorkspace: vi.fn(),
   getLegalConflictScreenings: vi.fn(),
   getLegalProductiveWork: vi.fn(),
+  completeLegalWorkItem: vi.fn(),
   getLegalSpecialistWorkflow: vi.fn(),
 }));
 
@@ -48,6 +67,7 @@ vi.mock('../../services/legalOperationsService.js', () => ({
   getLegalFinanceEvidence: vi.fn(),
   getLegalPracticeWorkspace: mocks.getLegalPracticeWorkspace,
   getLegalProductiveWork: mocks.getLegalProductiveWork,
+  completeLegalWorkItem: mocks.completeLegalWorkItem,
   getLegalSpecialistWorkflow: mocks.getLegalSpecialistWorkflow,
   getSheriffOperationalQueues: vi.fn(),
   issueLegalConflictReview: vi.fn(),
@@ -163,6 +183,10 @@ const productiveWork = () => ({
 });
 
 describe('PW-P11C canonical Legal dashboard productive work', () => {
+  afterEach(() => {
+    cleanup();
+  });
+
   beforeEach(() => {
     vi.clearAllMocks();
 
@@ -199,6 +223,162 @@ describe('PW-P11C canonical Legal dashboard productive work', () => {
       }],
     });
   });
+
+
+  const openCompactWork = async () => {
+    render(<LegalDashboard roleView="LEGAL_PARTNER" />);
+    fireEvent.click(await screen.findByRole('button', { name: 'My Work' }));
+    await screen.findByText('Prepare governed filing');
+    expect(screen.getByRole('region', {
+      name: 'Compact legal work queue',
+    })).toBeInTheDocument();
+  };
+
+  const submitEvidence = async () => {
+    fireEvent.click(
+      screen.getByRole('button', {
+        name: 'Open completion for work-1',
+      }),
+    );
+    expect(screen.getByRole('region', {
+      name: 'Selected work completion inspector',
+    })).toBeInTheDocument();
+    fireEvent.change(
+      screen.getByRole('combobox', { name: 'Assigned work to complete' }),
+      { target: { value: 'work-1' } },
+    );
+    fireEvent.change(
+      screen.getByRole('textbox', { name: 'Completion evidence reference' }),
+      { target: { value: 'evidence:filing-record' } },
+    );
+    fireEvent.change(
+      screen.getByRole('textbox', { name: 'Completion evidence fingerprint' }),
+      { target: { value: 'a'.repeat(128) } },
+    );
+    fireEvent.click(
+      screen.getByRole('button', {
+        name: 'Confirm legal work completion',
+      }),
+    );
+  };
+
+  it('searches the compact queue without changing authoritative work', async () => {
+    await openCompactWork();
+    const search = screen.getByRole('searchbox', {
+      name: 'Search legal work',
+    });
+    fireEvent.change(search, { target: { value: 'absent-matter' } });
+    expect(screen.getByText('No matching work in this category.'))
+      .toBeInTheDocument();
+    fireEvent.change(search, { target: { value: 'matter-1' } });
+    expect(screen.getByText('Prepare governed filing'))
+      .toBeInTheDocument();
+    expect(mocks.getLegalProductiveWork).toHaveBeenCalledTimes(1);
+  });
+
+  it('switches workload categories without manufacturing assignments', async () => {
+    await openCompactWork();
+    const category = screen.getByRole('combobox', {
+      name: 'Work queue category',
+    });
+    fireEvent.change(category, { target: { value: 'overdue' } });
+    expect(screen.getByText(
+      'No server-classified overdue work is currently projected.',
+    )).toBeInTheDocument();
+    expect(screen.queryByText('Prepare governed filing'))
+      .not.toBeInTheDocument();
+    fireEvent.change(category, { target: { value: 'assigned' } });
+    expect(screen.getByText('Prepare governed filing'))
+      .toBeInTheDocument();
+    expect(mocks.getLegalProductiveWork).toHaveBeenCalledTimes(1);
+  });
+
+  it('confirms completion only after successful EOS readback', async () => {
+    mocks.completeLegalWorkItem.mockResolvedValue({
+      work_item_id: 'work-1',
+    });
+    mocks.getLegalProductiveWork
+      .mockResolvedValueOnce(productiveWork())
+      .mockResolvedValueOnce({
+        ...productiveWork(),
+        assignedWorkItems: [],
+        dueSoonWorkItems: [],
+      });
+
+    await openCompactWork();
+    await submitEvidence();
+
+    await waitFor(() => {
+      expect(mocks.completeLegalWorkItem).toHaveBeenCalledWith({
+        workItemId: 'work-1',
+        completionEvidenceReference: 'evidence:filing-record',
+        completionEvidenceFingerprint: 'a'.repeat(128),
+      });
+    });
+
+    expect(await screen.findByText(
+      'Completion confirmed by EOS and active work refreshed.',
+    )).toBeInTheDocument();
+    expect(mocks.getLegalProductiveWork).toHaveBeenCalledTimes(2);
+    expect(screen.queryByText('Prepare governed filing'))
+      .not.toBeInTheDocument();
+  });
+
+  it('preserves 403 denial without a false completion claim', async () => {
+    mocks.completeLegalWorkItem.mockRejectedValue({
+      response: { status: 403 },
+    });
+    await openCompactWork();
+    await submitEvidence();
+
+    expect(await screen.findByText(
+      'Current tenant authority does not permit this completion.',
+    )).toBeInTheDocument();
+    expect(mocks.getLegalProductiveWork).toHaveBeenCalledTimes(1);
+    expect(screen.getByText('Prepare governed filing'))
+      .toBeInTheDocument();
+  });
+
+  it('fails closed when authoritative readback retains the work', async () => {
+    mocks.completeLegalWorkItem.mockResolvedValue({
+      work_item_id: 'work-1',
+    });
+    await openCompactWork();
+    await submitEvidence();
+
+    expect(await screen.findByText(
+      'Completion or authoritative readback could not be confirmed.',
+    )).toBeInTheDocument();
+    expect(mocks.getLegalProductiveWork).toHaveBeenCalledTimes(2);
+    expect(screen.getByText('Prepare governed filing'))
+      .toBeInTheDocument();
+    expect(screen.queryByText(
+      'Completion confirmed by EOS and active work refreshed.',
+    )).not.toBeInTheDocument();
+  });
+
+  it('prevents a second submission while EOS completion is pending', async () => {
+    let release;
+    mocks.completeLegalWorkItem.mockImplementation(() => new Promise(
+      (resolve) => { release = resolve; },
+    ));
+    await openCompactWork();
+    await submitEvidence();
+
+    await waitFor(() => {
+      expect(mocks.completeLegalWorkItem).toHaveBeenCalledTimes(1);
+    });
+    expect(screen.getByRole('button', {
+      name: 'Confirming with EOS…',
+    })).toBeDisabled();
+
+    release({ work_item_id: 'work-1' });
+    expect(await screen.findByText(
+      'Completion or authoritative readback could not be confirmed.',
+    )).toBeInTheDocument();
+    expect(mocks.completeLegalWorkItem).toHaveBeenCalledTimes(1);
+  });
+
 
   it('keeps productive-work transport closed until My Work is opened', async () => {
     render(
@@ -275,7 +455,7 @@ describe('PW-P11C canonical Legal dashboard productive work', () => {
 
     expect(
       container.querySelector(
-        '.xl\\:grid-cols-2',
+        '[data-legal-workstation="compact"]',
       ),
     ).not.toBeNull();
 
@@ -370,7 +550,7 @@ describe('PW-P11C canonical Legal dashboard productive work', () => {
 
 /**
  * ARTIFACT: legalDashboardProductiveWork.test.jsx
- * VERSION: v1.0.0-PW-P11C-LEGAL-DASHBOARD-PRODUCTIVE-WORK-CERT
+ * VERSION: v1.1.0-P8-LEGAL-DASHBOARD-WORK-COMPLETION-CERT
  * AUTHORITY BOUNDARY: presentation only; Python EOS remains sovereign
  * MOBILE POSTURE: adaptive grid/min-width certificate only; live browser follows
  * FINANCIAL EXECUTION AUTHORITY: none; Kennel EOS exclusively

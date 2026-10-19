@@ -1,6 +1,6 @@
 /**
  * WILSY OS — ROLE-SCOPED LEGAL OPERATIONS CLIENT ADAPTER
- * VERSION: v2.1.0-LEGAL-COMMERCIAL-CONTEXT-BROWSER-TRANSPORT
+ * VERSION: v2.2.0-P8-LEGAL-WORK-COMPLETION-BROWSER-TRANSPORT
  * AUTHORITY: Browser transport validation and presentation adaptation only.
  * EPITOME: Authenticated browser adapter for certified Legal Operations reads,
  *          practice-workspace projection, exact finance evidence lookups,
@@ -17,8 +17,9 @@
  *                            invoice evidence, intake and ReturnOfService HTTP
  *                            authority. This adapter owns strict browser transport
  *                            validation and immutable presentation adaptation only.
- * CERTIFICATION / UPDATE DATE: 2026-10-12
- * CHANGELOG: 2026-10-16 v2.1.0-LEGAL-COMMERCIAL-CONTEXT-BROWSER-TRANSPORT adds one strict authenticated GET /legal-operations/commercial-context adapter. It validates the exact server-owned product/subscription/plan/commercial contract, preserves 401/403 as access denial, rejects malformed or extra commercial fields, accepts no tenant/plan/subscription/price selector, and creates no IAM, Legal, payment or settlement authority.
+ * CERTIFICATION / UPDATE DATE: 2026-10-19
+ * CHANGELOG: 2026-10-19 v2.2.0-P8-LEGAL-WORK-COMPLETION-BROWSER-TRANSPORT adds one authenticated authority-free work-completion browser command, strict three-field input whitelist, exact canonical server endpoint, opaque evidence only, and response work-item binding. Server retains tenant, principal, authorization, assignment, transaction, timestamp and durable completion truth.
+ *            2026-10-16 v2.1.0-LEGAL-COMMERCIAL-CONTEXT-BROWSER-TRANSPORT adds one strict authenticated GET /legal-operations/commercial-context adapter. It validates the exact server-owned product/subscription/plan/commercial contract, preserves 401/403 as access denial, rejects malformed or extra commercial fields, accepts no tenant/plan/subscription/price selector, and creates no IAM, Legal, payment or settlement authority.
  *            2026-10-12 v2.0.0-LEGAL-EVIDENCE-UPLOAD-BROWSER-TRANSPORT adds one governed FormData upload command carrying only the selected file, document path identity, and idempotency header; it sets no multipart boundary and validates bounded canonical commit/reconciliation evidence.
  *            2026-09-25 v1.9.0-LEGAL-CLIENT-ACCEPTANCE-BROWSER-TRANSPORT adds the authenticated bounded conflict-screening review-queue read adapter. It accepts no tenant input, validates exact server-owned screening identity/status/matter/timestamp rows, preserves deterministic order and excludes screening evidence, party data, review/IAM and financial authority.
  *            2026-09-25 v1.7.0-L8-8L-CONFLICT-REVIEW-COMMAND-CLIENT adds the single authenticated conflict-review command adapter. It sends only the four human-choice fields through sovereignClient so the legacy api.js body-timestamp interceptor cannot mutate the strict command contract. Server-owned tenant, reviewer, chronology, screening, authorization, party and financial authority remain excluded.
@@ -81,7 +82,7 @@ import api from './api.js';
 import sovereignClient from '../utils/sovereignClient.js';
 
 export const LEGAL_OPERATIONS_CLIENT_VERSION =
-  'v2.1.0-LEGAL-COMMERCIAL-CONTEXT-BROWSER-TRANSPORT';
+  'v2.2.0-P8-LEGAL-WORK-COMPLETION-BROWSER-TRANSPORT';
 
 const CONFLICT_REVIEW_INPUT_KEYS = Object.freeze([
   'screeningId',
@@ -2381,6 +2382,74 @@ export async function getLegalPracticeWorkspace() {
   return assertCanonicalLegalWorkspacePayload(response?.data);
 }
 
+
+const COMPLETION_INPUT_KEYS = Object.freeze([
+  'workItemId',
+  'completionEvidenceReference',
+  'completionEvidenceFingerprint',
+]);
+
+/**
+ * Submit one authority-free completion intent for an assigned work item.
+ * Python EOS exclusively owns IAM, tenant, assignment, provenance, time,
+ * transaction and completion persistence. No browser-owned identity or
+ * authorization fields are accepted.
+ */
+export async function completeLegalWorkItem(value) {
+  if (
+    value === null
+    || typeof value !== 'object'
+    || Array.isArray(value)
+    || Object.getPrototypeOf(value) !== Object.prototype
+    || Object.keys(value).length !== COMPLETION_INPUT_KEYS.length
+    || COMPLETION_INPUT_KEYS.some(
+      (key) => !Object.prototype.hasOwnProperty.call(value, key),
+    )
+  ) {
+    throw new Error('LEGAL_WORK_COMPLETION_INPUT_INVALID');
+  }
+
+  const {
+    workItemId,
+    completionEvidenceReference,
+    completionEvidenceFingerprint,
+  } = value;
+
+  if (
+    typeof workItemId !== 'string'
+    || !/^[A-Za-z0-9][A-Za-z0-9._:-]*$/.test(workItemId)
+    || typeof completionEvidenceReference !== 'string'
+    || !completionEvidenceReference.trim()
+    || completionEvidenceReference !== completionEvidenceReference.trim()
+    || typeof completionEvidenceFingerprint !== 'string'
+    || !/^[a-f0-9]{128}$/.test(completionEvidenceFingerprint)
+  ) {
+    throw new Error('LEGAL_WORK_COMPLETION_INPUT_INVALID');
+  }
+
+  // sovereignClient avoids the legacy api.js command-body timestamp
+  // interceptor; it must not add fields to this exact server contract.
+  const response = await sovereignClient.post(
+    `/legal-operations/work-items/${encodeURIComponent(workItemId)}/completion`,
+    {
+      completion_evidence_reference: completionEvidenceReference,
+      completion_evidence_fingerprint: completionEvidenceFingerprint,
+    },
+  );
+
+  const receipt = response?.data?.data;
+  if (
+    receipt === null
+    || typeof receipt !== 'object'
+    || Array.isArray(receipt)
+    || receipt.work_item_id !== workItemId
+  ) {
+    throw new Error('LEGAL_WORK_COMPLETION_RECEIPT_INVALID');
+  }
+
+  return Object.freeze({ ...receipt });
+}
+
 let legalProductiveWorkInFlight = null;
 
 export async function getLegalProductiveWork() {
@@ -2731,7 +2800,7 @@ export const __legalOperationsServiceInternals = Object.freeze({
 
 /**
  * ARTIFACT: legalOperationsService.js
- * VERSION: v2.1.0-LEGAL-COMMERCIAL-CONTEXT-BROWSER-TRANSPORT
+ * VERSION: v2.2.0-P8-LEGAL-WORK-COMPLETION-BROWSER-TRANSPORT
  * AUTHORITY BOUNDARY: role-scoped Legal Operations read/intake/return/deputy-command/conflict-review browser transport validation only
  * TENANT POSTURE: server tenant/principal/role/client/deputy scope remains authoritative across practice, finance, client and field surfaces; browser cannot establish authorization scope
  * FAIL-CLOSED POSTURE: malformed/extra/missing/scope/state/schema/version/order/command-response drift rejects without fallback
