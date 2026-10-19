@@ -1,11 +1,11 @@
 """TITLE: WILSY OS Tenant Authorization HTTP Certification.
-VERSION: v1.1.0-TENANT-BUSINESS-ROLE-STORE-WIRING-CERT
+VERSION: v1.2.0-P6-IAM-DENIAL-OBSERVABILITY-CERT
 AUTHORITY: Test-local ASGI certification of the reusable tenant dependency.
 EPITOME: Proves HTTP translation without production route wiring or persistence.
 ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/tests/integration/test_tenant_authorization_http.py
 COLLABORATION / OWNERSHIP: Wilson Khanyezi / Wilsy Core Engineering.
 CERTIFICATION/UPDATE DATE: 2026-09-21.
-CHANGELOG: v1.1.0 directly certifies separate durable business-role and authorization-role store routing; v1.0.0 certified positive, denied, unavailable, scope, and transport boundaries.
+CHANGELOG: 2026-10-19 v1.2.0 aligns the shared-boundary certificate with bounded denial/outage observability and the existing workforce-unavailable classification; v1.1.0 directly certified separate durable business-role and authorization-role store routing; v1.0.0 certified positive, denied, unavailable, scope, and transport boundaries.
 COMPLIANCE: POPIA section 19; GDPR Article 32; SOC 2 CC7.2.
 SECURITY/PRIVACY POSTURE: Test-local identities only; projected roles and tenants never grant authority.
 TENANT BOUNDARY: X-Tenant-ID is explicit scope and durable membership remains authoritative.
@@ -57,8 +57,8 @@ from tools.eos.auth.tenant_membership_repository import (
     TenantMembershipRepositoryError,
 )
 
-VERSION = "v1.1.0-TENANT-BUSINESS-ROLE-STORE-WIRING-CERT"
-EXPECTED_PRIMARY_BLOB = "11f4033f16b3bffd08a3b2e0789a7fa326fba942"
+VERSION = "v1.2.0-P6-IAM-DENIAL-OBSERVABILITY-CERT"
+EXPECTED_PRIMARY_BLOB = "5439fde9e0bb7f98dff517bbff995770695e4d35"
 _PID = "p"
 _TENANT = "tenant-a"
 _AUDIT_PERMISSION = "audit:read"
@@ -853,6 +853,7 @@ def test_reason_sets_are_exact_and_explicit() -> None:
             TenantAuthorizationReason.MEMBERSHIP_AUTHORITY_UNAVAILABLE,
             TenantAuthorizationReason.TENANT_BUSINESS_ROLE_AUTHORITY_UNAVAILABLE,
             TenantAuthorizationReason.ROLE_ASSIGNMENT_AUTHORITY_UNAVAILABLE,
+            TenantAuthorizationReason.WORKFORCE_AUTHORITY_UNAVAILABLE,
         }
     )
     expected_denied = frozenset(
@@ -873,6 +874,7 @@ def test_reason_sets_are_exact_and_explicit() -> None:
             TenantAuthorizationReason.BUSINESS_ROLE_INELIGIBLE,
             TenantAuthorizationReason.SYSTEM_AUTHORITY_REQUIRED,
             TenantAuthorizationReason.FINANCIAL_EXECUTION_PROHIBITED,
+            TenantAuthorizationReason.WORKFORCE_NOT_CURRENT,
         }
     )
     assert boundary._UNAVAILABLE == expected_unavailable
@@ -931,13 +933,13 @@ def test_authorization_is_read_only_for_success_denial_and_financial() -> None:
 
 
 def test_primary_contract_version_and_expected_blob_constant() -> None:
-    assert VERSION == "v1.1.0-TENANT-BUSINESS-ROLE-STORE-WIRING-CERT"
-    assert EXPECTED_PRIMARY_BLOB == "11f4033f16b3bffd08a3b2e0789a7fa326fba942"
-    assert boundary.VERSION == "v1.1.0-TENANT-BUSINESS-ROLE-STORE-WIRING"
+    assert VERSION == "v1.2.0-P6-IAM-DENIAL-OBSERVABILITY-CERT"
+    assert EXPECTED_PRIMARY_BLOB == "5439fde9e0bb7f98dff517bbff995770695e4d35"
+    assert boundary.VERSION == "v1.2.0-P6-IAM-DENIAL-OBSERVABILITY"
 
 
 # ARTIFACT: test_tenant_authorization_http.py
-# VERSION: v1.0.0-TENANT-AUTHORIZATION-HTTP-CERT
+# VERSION: v1.2.0-P6-IAM-DENIAL-OBSERVABILITY-CERT
 # AUTHORITY BOUNDARY: test-local HTTP dependency translation only
 # TENANT POSTURE: explicit X-Tenant-ID scope; no projection authority
 # FAIL-CLOSED POSTURE: only AUTHORIZED succeeds; unavailable maps to 503
