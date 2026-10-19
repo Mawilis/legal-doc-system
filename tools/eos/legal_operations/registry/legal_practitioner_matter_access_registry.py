@@ -1,6 +1,6 @@
 """WILSY Legal Operations practitioner matter-access evidence registry.
 
-VERSION: v1.0.0-P9-R105-P1-PRACTITIONER-ACCESS-EVIDENCE-REGISTRY
+VERSION: v1.1.0-P9-R105-P4B-FIRST-REVISION-LINEAGE-GATE
 ABSOLUTE CANONICAL PATH:
     tools/eos/legal_operations/registry/legal_practitioner_matter_access_registry.py
 AUTHORITY: Immutable, own-tenant documentary ALLOW/DENY evidence persistence.
@@ -24,7 +24,7 @@ from tools.eos.legal_operations.domain.legal_practitioner_matter_access import (
 )
 
 VERSION: Final[str] = (
-    "v1.0.0-P9-R105-P1-PRACTITIONER-ACCESS-EVIDENCE-REGISTRY"
+    "v1.1.0-P9-R105-P4B-FIRST-REVISION-LINEAGE-GATE"
 )
 
 IDENTITY_INDEX: Final[str] = "p9_access_evidence_tenant_identity_unique"
@@ -194,6 +194,44 @@ def append_evidence(
             "P9_R105_DIVERGENT_IDENTITY"
         )
 
+    # P9-R105-P4B: no successor is accepted until immutable lineage,
+    # provenance and race certification are separately completed.
+    if item.revision != 1 or item.supersedes_fingerprint is not None:
+        raise PractitionerMatterAccessConflict(
+            "P9_R105_SUCCESSOR_LINEAGE_NOT_CERTIFIED"
+        )
+
+    # Exact scope check is complementary to Mongo unique indexes.
+    # An adapter without enforced indexes must not create a second root.
+    scope = {
+        "tenant_id": item.tenant_id,
+        "case_matter_id": item.case_matter_id,
+        "practitioner_principal_id": item.practitioner_principal_id,
+        "revision": 1,
+    }
+    try:
+        scope_record = collection.find_one(scope, session=session)
+    except Exception as exc:
+        raise PractitionerMatterAccessPersistenceUnavailable(
+            "P9_R105_SCOPE_READ_UNAVAILABLE"
+        ) from exc
+
+    if scope_record is not None:
+        prior = _hydrate(scope_record)
+        if (
+            prior.tenant_id != item.tenant_id
+            or prior.case_matter_id != item.case_matter_id
+            or prior.practitioner_principal_id
+                != item.practitioner_principal_id
+            or prior.revision != 1
+        ):
+            raise PractitionerMatterAccessPersistedInvalid(
+                "P9_R105_SCOPE_RECORD_DIVERGENT"
+            )
+        raise PractitionerMatterAccessConflict(
+            "P9_R105_FIRST_REVISION_ALREADY_EXISTS"
+        )
+
     try:
         collection.insert_one(dict(canonical), session=session)
     except DuplicateKeyError as exc:
@@ -226,7 +264,7 @@ __all__ = [
 
 # WILSY OS SOVEREIGN ARTIFACT SEAL
 # ARTIFACT: legal_practitioner_matter_access_registry.py
-# VERSION: v1.0.0-P9-R105-P1-PRACTITIONER-ACCESS-EVIDENCE-REGISTRY
+# VERSION: v1.1.0-P9-R105-P4B-FIRST-REVISION-LINEAGE-GATE
 # AUTHORITY: APPEND-ONLY DOCUMENTARY EVIDENCE
 # ACCESS GRANT / POLICY ISSUER / REASSIGNMENT AUTHORITY: NONE
 # FINANCIAL EXECUTION AUTHORITY: Kennel EOS exclusively
