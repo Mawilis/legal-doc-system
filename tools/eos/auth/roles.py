@@ -1,5 +1,5 @@
 """TITLE: WILSY OS Role Definition Policy.
-VERSION: v1.45.0-P47-R9-PARTNER-BINDING-PROVISION-GRANT
+VERSION: v1.46.0-P47-R87-ISSUER-PARTNER-GRANT
 AUTHORITY: Canonical Python role identifiers and explicit permission grants.
 EPITOME: Defines current tenant-scoped authorization roles, including
 least-privilege subscription/plan-catalogue grants, read-only WILSY AI
@@ -15,6 +15,8 @@ ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/tools/eos/auth/r
 COLLABORATION / OWNERSHIP: Wilson Khanyezi / Wilsy Core Engineering.
 CERTIFICATION / UPDATE DATE: 2026-10-20
 CHANGELOG:
+    2026-10-21 v1.46.0-P47-R87-ISSUER-PARTNER-GRANT
+    Integrates verified P9-R103 Partner-only issuer IAM semantics.
     2026-10-20 v1.45.0-P47-R9-PARTNER-BINDING-PROVISION-GRANT
     Adds only own-tenant Partner-only practitioner matter-binding
     provisioning IAM. Active current-truth checks remain mandatory;
@@ -215,7 +217,7 @@ from __future__ import annotations
 from collections.abc import Iterable
 
 
-VERSION = "v1.45.0-P47-R9-PARTNER-BINDING-PROVISION-GRANT"
+VERSION = "v1.46.0-P47-R87-ISSUER-PARTNER-GRANT"
 
 
 ROLE_PERMISSIONS_MAP: dict[str, list[str]] = {
@@ -554,3 +556,6 @@ __all__ = [
 # FAIL-CLOSED POSTURE: unknown roles and permissions never manufacture grants
 # FINANCIAL EXECUTION AUTHORITY: Kennel EOS exclusively
 # END OF WILSY OS SOVEREIGN ARTIFACT
+
+# P47-R87: committed P9-R103 Partner-only static issuer grant.
+ROLE_PERMISSIONS_MAP["LEGAL_PARTNER"].append("legal_operations:practitioner_matter_access_policy:issue")
