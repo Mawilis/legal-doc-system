@@ -1,5 +1,5 @@
 """TITLE: WILSY OS Tenant Business Authority Policy Canon.
-VERSION: v1.47.0-P47-R9-PARTNER-BINDING-ELIGIBILITY
+VERSION: v1.48.0-P47-R87-ISSUER-ELIGIBILITY
 AUTHORITY: Canonical business eligibility facts only; this module does not authorize.
 EPITOME: Defines bounded tenant-role eligibility and field boundaries, including
 own-tenant WILSY AI usage-capacity and billing-intelligence evidence read eligibility and dedicated
@@ -12,6 +12,8 @@ ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/tools/eos/auth/t
 COLLABORATION / OWNERSHIP: Wilson Khanyezi / Wilsy Core Engineering.
 CERTIFICATION / UPDATE DATE: 2026-10-20
 CHANGELOG:
+    2026-10-21 v1.48.0-P47-R87-ISSUER-ELIGIBILITY
+    Integrates verified P9-R103 Partner-only issuer IAM semantics.
     2026-10-20 v1.47.0-P47-R9-PARTNER-BINDING-ELIGIBILITY
     Adds only own-tenant Partner-only practitioner matter-binding
     provisioning IAM. Active current-truth checks remain mandatory;
@@ -210,7 +212,7 @@ from types import MappingProxyType
 from typing import Final, FrozenSet
 from tools.eos.auth.hr_business_role_catalog import ALL_HR_BUSINESS_ROLES
 
-VERSION = "v1.47.0-P47-R9-PARTNER-BINDING-ELIGIBILITY"
+VERSION = "v1.48.0-P47-R87-ISSUER-ELIGIBILITY"
 class SystemAuthorityClassification(StrEnum):
     SYSTEM_REQUIRED = "SYSTEM_REQUIRED"
     SYSTEM_NOT_INHERENTLY_REQUIRED = "SYSTEM_NOT_INHERENTLY_REQUIRED"
@@ -915,3 +917,15 @@ __all__ = ["VERSION", "ELIGIBLE", "DENY", "SystemAuthorityClassification", "TENA
 # FAIL-CLOSED POSTURE: unknown roles and operations deny; ELIGIBLE never grants access
 # FINANCIAL EXECUTION AUTHORITY: Kennel EOS remains exclusive.
 # END OF WILSY OS SOVEREIGN ARTIFACT
+
+# P47-R87: Partner-only business eligibility; not an IAM decision.
+BUSINESS_ROLE_OPERATION_PERMISSIONS = MappingProxyType({
+    **BUSINESS_ROLE_OPERATION_PERMISSIONS,
+    "legal_practitioner_matter_access_policy_issue": "legal_operations:practitioner_matter_access_policy:issue",
+})
+OPERATIONS = frozenset((*OPERATIONS, "legal_practitioner_matter_access_policy_issue"))
+_issuer_roles = dict(ELIGIBILITY)
+_issuer_partner = dict(_issuer_roles["tenant_legal_partner"])
+_issuer_partner["legal_practitioner_matter_access_policy_issue"] = ELIGIBLE
+_issuer_roles["tenant_legal_partner"] = MappingProxyType(_issuer_partner)
+ELIGIBILITY = MappingProxyType(_issuer_roles)
