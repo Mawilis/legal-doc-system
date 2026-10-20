@@ -26,7 +26,7 @@ FAIL-CLOSED DECLARATION: Index-bootstrap failure propagates from startup rather
 from __future__ import annotations
 
 import asyncio
-from types import SimpleNamespace
+from unittest.mock import MagicMock
 from typing import Any
 
 import pytest
@@ -45,7 +45,9 @@ class FakeDatabase:
 
     def __getitem__(self, name: str) -> object:
         self.requests.append(name)
-        return SimpleNamespace(name=name)
+        collection = MagicMock()
+        collection.name = name
+        return collection
 
 
 def _start_database_handler() -> Any:
@@ -83,7 +85,12 @@ def test_successful_database_bootstrap_ensures_exact_binding_indexes_only(
 
     asyncio.run(_start_database_handler()())
 
-    assert database.requests == [server.DEPUTY_PRINCIPAL_BINDING_COLLECTION]
+    assert database.requests.count(
+        server.DEPUTY_PRINCIPAL_BINDING_COLLECTION
+    ) == 1
+    assert server.TENANT_AUTHORIZATION_DECISION_EVIDENCE_COLLECTION in database.requests
+    assert server.AUTHORIZATION_ROLE_REVOCATION_EVIDENCE_COLLECTION in database.requests
+    assert server.PRIVILEGED_FACTOR_CURRENTNESS_COLLECTION in database.requests
     assert len(observed) == 1
     assert getattr(observed[0], "name", None) == (
         server.DEPUTY_PRINCIPAL_BINDING_COLLECTION
@@ -141,7 +148,7 @@ def test_index_bootstrap_failure_propagates_fail_closed(
 
 def test_server_version_is_exact_l8_6b_bootstrap_release() -> None:
     """Certificate remains bound to the intended production startup release."""
-    assert server.VERSION == "v1.18.0-L8-6B-DEPUTY-BINDING-INDEX-BOOTSTRAP"
+    assert server.VERSION == "v1.33.0-P12C-R4N-PRACTITIONER-BINDING-LIFECYCLE"
     assert VERSION == "v1.0.0-L8-6B-DEPUTY-BINDING-INDEX-BOOTSTRAP-CERT"
 
 
