@@ -1,5 +1,5 @@
 """TITLE: WILSY OS Role Definition Policy.
-VERSION: v1.44.0-P14-R20R12-WORK-COMPLETION-STATIC-GRANTS
+VERSION: v1.45.0-P47-R9-PARTNER-BINDING-PROVISION-GRANT
 AUTHORITY: Canonical Python role identifiers and explicit permission grants.
 EPITOME: Defines current tenant-scoped authorization roles, including
 least-privilege subscription/plan-catalogue grants, read-only WILSY AI
@@ -13,8 +13,12 @@ firm-decision grant without creating tenant-wide matter reads, deputy
 possession, service, or financial authority.
 ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/tools/eos/auth/roles.py
 COLLABORATION / OWNERSHIP: Wilson Khanyezi / Wilsy Core Engineering.
-CERTIFICATION / UPDATE DATE: 2026-10-17
+CERTIFICATION / UPDATE DATE: 2026-10-20
 CHANGELOG:
+    2026-10-20 v1.45.0-P47-R9-PARTNER-BINDING-PROVISION-GRANT
+    Adds only own-tenant Partner-only practitioner matter-binding
+    provisioning IAM. Active current-truth checks remain mandatory;
+    no content, ethical-wall, read or financial authority is granted.
     2026-10-17 v1.44.0-P14-R20R12-WORK-COMPLETION-STATIC-GRANTS grants the exact
     legal_operations:work_item:complete permission exactly to LEGAL_PARTNER,
     LEGAL_ATTORNEY, LEGAL_PARALEGAL and LEGAL_SECRETARY. Static possession
@@ -211,7 +215,7 @@ from __future__ import annotations
 from collections.abc import Iterable
 
 
-VERSION = "v1.44.0-P14-R20R12-WORK-COMPLETION-STATIC-GRANTS"
+VERSION = "v1.45.0-P47-R9-PARTNER-BINDING-PROVISION-GRANT"
 
 
 ROLE_PERMISSIONS_MAP: dict[str, list[str]] = {
@@ -475,6 +479,9 @@ for (
 
 for _role_name in ("LEGAL_PARTNER", "LEGAL_ATTORNEY", "LEGAL_PARALEGAL", "LEGAL_SECRETARY"):
     ROLE_PERMISSIONS_MAP[_role_name].append("legal_operations:work_item:complete")
+ROLE_PERMISSIONS_MAP["LEGAL_PARTNER"].append(
+    "legal_operations:practitioner_matter_binding:provision"
+)
 for _role_name in ("LEGAL_PARTNER", "LEGAL_ATTORNEY", "LEGAL_PARALEGAL", "LEGAL_SECRETARY", "SHERIFF", "DEPUTY"):
     ROLE_PERMISSIONS_MAP[_role_name].append("legal_operations:return:write")
 for _role_name in ("SHERIFF", "DEPUTY"):
@@ -541,7 +548,7 @@ __all__ = [
 ]
 
 # ARTIFACT: tools/eos/auth/roles.py
-# VERSION: v1.44.0-P14-R20R12-WORK-COMPLETION-STATIC-GRANTS
+# VERSION: v1.45.0-P47-R9-PARTNER-BINDING-PROVISION-GRANT
 # AUTHORITY BOUNDARY: role identifiers and deterministic permission definitions only; current assignment is separate authority
 # TENANT POSTURE: role definitions never establish tenant membership or role possession; conflict-review write is partner/attorney-only policy and client-matter read remains visibility-bound
 # FAIL-CLOSED POSTURE: unknown roles and permissions never manufacture grants
