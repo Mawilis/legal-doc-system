@@ -697,7 +697,7 @@ def test_real_response_excludes_sheriff_invented_and_financial_truth(
         assert forbidden not in serialized
 
     assert legal_router.VERSION == (
-        "v1.10.0-D22B5-R21-LEGAL-PRODUCT-AVAILABILITY-CONJUNCTION"
+        "v1.15.0-P7-COMPLETION-AWARE-PRODUCTIVE-WORK-HTTP"
     )
     assert VERSION == (
         "v1.1.0-L8-6D-DEPUTY-FIELD-CAPABILITY-LIVE-IAM-RM-CERT"
