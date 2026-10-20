@@ -71,7 +71,7 @@ def test_canonical_mount_source_occurs_once() -> None:
 def test_canonical_server_version_and_financial_boundary() -> None:
     assert (
         server_api.VERSION
-        == "v1.25.0-CX26-R3-LEGAL-OPERATING-MODEL-ROUTER-MOUNT"
+        == "v1.33.0-P12C-R4N-PRACTITIONER-BINDING-LIFECYCLE"
     )
 
     source = Path(
