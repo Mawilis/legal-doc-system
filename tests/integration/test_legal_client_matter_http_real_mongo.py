@@ -530,7 +530,7 @@ def test_real_http_revoked_legal_client_role_denies_before_snapshot(
     assert response.status_code == 403
     assert snapshots == []
     assert VERSION == "v1.0.0-L8-7D6-CLIENT-MATTER-READ-API-RM-CERT"
-    assert legal_router.VERSION == "v1.10.0-D22B5-R21-LEGAL-PRODUCT-AVAILABILITY-CONJUNCTION"
+    assert legal_router.VERSION == "v1.15.0-P7-COMPLETION-AWARE-PRODUCTIVE-WORK-HTTP"
 
 
 # SOVEREIGN ARTIFACT SEAL
