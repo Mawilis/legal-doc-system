@@ -1,5 +1,5 @@
 """TITLE: WILSY OS Immutable Practitioner Matter Access Evidence Contract.
-VERSION: v2.0.0-P47-R33-PRACTITIONER-ACCESS-DOMAIN-SEPARATION
+VERSION: v2.0.1-P47-R33-PRACTITIONER-ACCESS-DOMAIN-CONSTRUCTION-GATE
 AUTHORITY: Python EOS Legal Operations immutable documentary state only.
 EPITOME: Defines the exact frozen practitioner/matter access evidence shape
     while delegating construction, validation, hashing, serialization and
@@ -10,6 +10,8 @@ COLLABORATION / OWNERSHIP: Wilsy OS Core Engineering; the practitioner-access
     codec is the exclusive supported construction and integrity boundary.
 CERTIFICATION / UPDATE DATE: 2026-10-20
 CHANGELOG:
+    2026-10-20 v2.0.1-P47-R33-PRACTITIONER-ACCESS-DOMAIN-CONSTRUCTION-GATE
+    Reject direct empty construction; only the verified codec may materialize.
     2026-10-20 v2.0.0-P47-R33-PRACTITIONER-ACCESS-DOMAIN-SEPARATION
     Remove parsing, normalization, serialization and cryptographic behavior
     from the immutable domain while preserving the frozen V1 evidence schema.
@@ -33,7 +35,7 @@ from typing import Final
 
 
 MODULE_VERSION: Final[str] = (
-    "v2.0.0-P47-R33-PRACTITIONER-ACCESS-DOMAIN-SEPARATION"
+    "v2.0.1-P47-R33-PRACTITIONER-ACCESS-DOMAIN-CONSTRUCTION-GATE"
 )
 EVIDENCE_VERSION: Final[str] = (
     "v1.0.1-P9-R85R1-PRACTITIONER-MATTER-ACCESS-HYDRATION"
@@ -88,6 +90,10 @@ class LegalPractitionerMatterAccessEvidence:
     evidence_version: str
     fingerprint: str
 
+    def __new__(cls) -> LegalPractitionerMatterAccessEvidence:
+        """Reject unverified construction; the codec uses a verified raw allocation."""
+        raise TypeError("P9_R84_CODEC_FACTORY_REQUIRED")
+
 
 __all__ = [
     "MODULE_VERSION",
@@ -102,7 +108,7 @@ __all__ = [
 
 # WILSY OS SOVEREIGN ARTIFACT SEAL
 # ARTIFACT: legal_practitioner_matter_access.py
-# VERSION: v2.0.0-P47-R33-PRACTITIONER-ACCESS-DOMAIN-SEPARATION
+# VERSION: v2.0.1-P47-R33-PRACTITIONER-ACCESS-DOMAIN-CONSTRUCTION-GATE
 # AUTHORITY BOUNDARY: IMMUTABLE DOCUMENTARY STATE CONTRACT ONLY
 # TENANT POSTURE: EXACT CODEC-VERIFIED IDENTITY; NO DEFAULT OR INFERENCE
 # FAIL-CLOSED POSTURE: NO PUBLIC DOMAIN CONSTRUCTION OR OPERATIONAL BEHAVIOR
