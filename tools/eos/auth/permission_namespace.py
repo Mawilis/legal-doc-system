@@ -1,5 +1,5 @@
 """TITLE: WILSY OS Permission Namespace Semantic Canon.
-VERSION: v1.49.0-P47-R9-BINDING-PROVISION-PERMISSION
+VERSION: v1.51.0-P12C-R4N-P4C9-PRACTITIONER-BINDING-READ-PERMISSION
 AUTHORITY: Immutable permission vocabulary and scope metadata only.
 EPITOME: Extends the canonical TENANT and SYSTEM permission vocabulary with dedicated
 inbound-collection, merchant-configuration, provider-policy, WILSY AI,
@@ -13,6 +13,10 @@ ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/tools/eos/auth/p
 COLLABORATION / OWNERSHIP: Wilson Khanyezi / Wilsy Core Engineering.
 CERTIFICATION / UPDATE DATE: 2026-10-20
 CHANGELOG:
+    2026-10-20 v1.51.0-P12C-R4N-P4C9-PRACTITIONER-BINDING-READ-PERMISSION
+    Registers separate, non-authorizing practitioner-binding read vocabulary.
+    2026-10-19 v1.50.0-P9-R103-PRACTITIONER-POLICY-ISSUER-PERMISSION
+    Integrates verified committed practitioner-policy issuer permission.
     2026-10-20 v1.49.0-P47-R9-BINDING-PROVISION-PERMISSION
     Adds only own-tenant Partner-only practitioner matter-binding
     provisioning IAM. Active current-truth checks remain mandatory;
@@ -227,7 +231,7 @@ from types import MappingProxyType
 from typing import Final
 
 
-VERSION = "v1.49.0-P47-R9-BINDING-PROVISION-PERMISSION"
+VERSION = "v1.51.0-P12C-R4N-P4C9-PRACTITIONER-BINDING-READ-PERMISSION"
 
 
 class PermissionDisposition(StrEnum):
@@ -776,6 +780,16 @@ _PERMISSIONS: Final = MappingProxyType(
             "TENANT",
             "TENANT",
             "request bounded own-tenant Legal work-item completion admission",
+            tenant=True,
+        ),
+        "legal_operations:practitioner_matter_access_policy:issue": _meta(
+            "legal_operations:practitioner_matter_access_policy:issue", "TENANT", "TENANT",
+            "request bounded own-tenant partner-issued practitioner matter-access documentary policy",
+            tenant=True,
+        ),
+        "legal_operations:practitioner_matter_binding:read": _meta(
+            "legal_operations:practitioner_matter_binding:read", "TENANT", "TENANT",
+            "read exact own-tenant practitioner matter binding current state and immutable history without matter content access, provisioning, ethical-wall clearance or financial authority",
             tenant=True,
         ),
         "legal_operations:practitioner_matter_binding:provision": _meta(
