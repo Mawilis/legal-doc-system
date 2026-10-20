@@ -96,21 +96,47 @@ def test_mount_preserves_composition_and_excludes_privileged_bootstrap() -> None
         "PrivilegedWorkloadTrustCurrentnessRegistry",
         "PrivilegedNoninteractiveSecurityProofRegistry",
         "PrivilegedSecurityAssuranceEvidenceRegistry",
+    )
+    revocation_source = Path(
+        "tools/eos/api/authorization_role_revocation_router.py"
+    ).read_text(encoding="utf-8")
+    assert all(item not in revocation_source for item in forbidden)
+    # This is the router's own authorized revocation-evidence
+    # dependency, not a privileged security-index bootstrap.
+    assert revocation_source.count(
+        "AuthorizationRoleRevocationEvidenceRegistry("
+    ) == 1
+    assert "AuthorizationRoleRevocationEvidenceRegistry.ensure_indexes(" not in revocation_source
+    # These are independently governed server-startup protections,
+    # not authority delegated to the revocation HTTP router.
+    required_startup_indexes = (
+        "PrivilegedFactorVerificationCurrentnessRegistry(",
+        "InternalServiceReplayRegistry.ensure_indexes(",
+        "InternalServiceWorkloadCredentialRegistry(",
+        "PrivilegedWorkloadTrustCurrentnessRegistry(",
+        "PrivilegedNoninteractiveSecurityProofRegistry(",
+        "PrivilegedSecurityAssuranceEvidenceRegistry(",
         "AuthorizationRoleRevocationEvidenceRegistry(",
     )
-    assert all(item not in source for item in forbidden)
+    for index_owner in required_startup_indexes:
+        assert source.count(index_owner) == 1
+    assert source.index(
+        "AuthorizationRoleRevocationEvidenceRegistry("
+    ) < source.index("DeputyPrincipalBindingRegistry.ensure_indexes(")
 
 
 def test_server_version_and_authority_surfaces_are_aligned() -> None:
     """Certify one current version across header, runtime, changelog, and seal."""
     source = SERVER.read_text(encoding="utf-8")
     current = server_api.VERSION
-    assert current == "v1.26.0-P1-R3E-AUTHORIZATION-ROLE-REVOCATION-RUNTIME-MOUNT"
+    assert current == "v1.33.0-P12C-R4N-PRACTITIONER-BINDING-LIFECYCLE"
     assert f"VERSION: {current}" in source
     assert f'VERSION = "{current}"' in source
     assert f"# VERSION: {current}" in source
-    assert "no privileged-security startup indexes are introduced" in source
     assert "FINANCIAL EXECUTION AUTHORITY: Kennel EOS exclusively" in source
+    assert source.count(
+        'app.include_router(authorization_role_revocation_router, prefix="/api")'
+    ) == 1
 
 
 # ARTIFACT: test_authorization_role_revocation_server_mount.py
