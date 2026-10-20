@@ -8,6 +8,10 @@ ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/tests/unit/test_
 COLLABORATION / OWNERSHIP: Wilson Khanyezi / Wilsy Core Engineering.
 CERTIFICATION/UPDATE DATE: 2026-10-11.
 CHANGELOG:
+    2026-10-20 P47-R61-R4: Certifies the Partner-only
+    provisioning authorization composer version in two existing
+    tests, without modifying other assertions. Relocates the
+    existing sovereign end seal after the H7F test appendix.
 2026-10-11 v1.5.1-D3B-AUTH3-R1-MATTER-DEADLINE-AUTHORIZATION-CERT replaces
 pre-AUTH3 simulated permission possession with the final durable role grants.
 It certifies real Partner, Attorney, Paralegal read/write authorization and
@@ -1418,7 +1422,7 @@ def test_l8_6a_queue_read_binding_is_exact_and_sheriff_only() -> None:
 def test_m14_evidence_bindings_are_exact_and_unique() -> None:
     """Both evidence operations resolve only through their immutable exact pairs."""
 
-    assert ta.VERSION == "v1.42.0-H7F-NOTIFICATION-CONTACT-VERIFICATION-AUTHORIZATION"
+    assert ta.VERSION == "v1.43.0-P47-R9-BINDING-PROVISION-COMPOSITION"
     assert ta._BINDINGS["wilsy_ai_usage_capacity_read"] == (
         "wilsy_ai:usage_capacity:read"
     )
@@ -1432,7 +1436,7 @@ def test_m14_evidence_bindings_are_exact_and_unique() -> None:
 def test_wilsy_ai_legal_tool_binding_is_exact_tenant_and_fail_closed() -> None:
     """Gateway reads require canonical own-tenant IAM and never create authority."""
 
-    assert ta.VERSION == "v1.42.0-H7F-NOTIFICATION-CONTACT-VERIFICATION-AUTHORIZATION"
+    assert ta.VERSION == "v1.43.0-P47-R9-BINDING-PROVISION-COMPOSITION"
     assert ta._BINDINGS["wilsy_ai_legal_tool_read"] == "wilsy_ai:legal_tool:read"
     assert list(ta._BINDINGS).count("wilsy_ai_legal_tool_read") == 1
 
@@ -2543,7 +2547,6 @@ def test_caller_owned_session_is_forwarded_to_authority_reads() -> None:
 # TENANT POSTURE: exact active principal, membership, tenant_legal_client eligibility, exact client-matter permission-operation binding, and ACTIVE LEGAL_CLIENT assignment are conjunctively required; ACTIVE visibility remains separate
 # FAIL-CLOSED POSTURE: missing, inactive, ambiguous, unavailable, mismatched, projected, cross-tenant, system, and financial paths deny
 # FINANCIAL EXECUTION AUTHORITY: Kennel EOS remains exclusive
-# END OF WILSY OS SOVEREIGN ARTIFACT
 
 def test_h7f_notification_contact_verification_operation_binding_is_exact() -> None:
     """H7F operation is paired only with its dedicated canonical permission."""
@@ -2629,3 +2632,5 @@ def test_h7f_notification_contact_verification_business_eligibility_is_exactly_p
         "tenant_admin",
         operation,
     ) == DENY
+
+# END OF WILSY OS SOVEREIGN ARTIFACT
