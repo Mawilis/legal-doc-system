@@ -1,5 +1,5 @@
 """TITLE: WILSY OS Tenant Authorization Composition.
-VERSION: v1.43.0-P47-R9-BINDING-PROVISION-COMPOSITION
+VERSION: v1.44.0-P47-R87-ISSUER-IAM-BINDING
 AUTHORITY: Read-only composition of current principal, membership, role and permission truth.
 EPITOME: Produces deterministic fail-closed tenant authorization decisions,
 including the own-tenant WILSY AI usage-capacity and billing-intelligence
@@ -11,6 +11,8 @@ ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/tools/eos/auth/t
 COLLABORATION / OWNERSHIP: Wilson Khanyezi / Wilsy Core Engineering.
 CERTIFICATION / UPDATE DATE: 2026-10-20
 CHANGELOG:
+    2026-10-21 v1.44.0-P47-R87-ISSUER-IAM-BINDING
+    Integrates verified P9-R103 Partner-only issuer IAM semantics.
     2026-10-20 v1.43.0-P47-R9-BINDING-PROVISION-COMPOSITION
     Adds only own-tenant Partner-only practitioner matter-binding
     provisioning IAM. Active current-truth checks remain mandatory;
@@ -212,7 +214,7 @@ from tools.eos.workforce.registry.workforce_relationship_registry import (
 from tools.eos.auth.permission_namespace import PermissionDisposition, permission_metadata
 from tools.eos.auth.roles import get_roles_granting_permission
 
-VERSION = "v1.43.0-P47-R9-BINDING-PROVISION-COMPOSITION"
+VERSION = "v1.44.0-P47-R87-ISSUER-IAM-BINDING"
 class TenantAuthorizationReason(StrEnum):
     AUTHORIZED="AUTHORIZED"; INVALID_INPUT="INVALID_INPUT"; PRINCIPAL_NOT_FOUND="PRINCIPAL_NOT_FOUND"; PRINCIPAL_INACTIVE="PRINCIPAL_INACTIVE"; PRINCIPAL_AUTHORITY_UNAVAILABLE="PRINCIPAL_AUTHORITY_UNAVAILABLE"; MEMBERSHIP_NOT_FOUND="MEMBERSHIP_NOT_FOUND"; MEMBERSHIP_INACTIVE="MEMBERSHIP_INACTIVE"; MEMBERSHIP_AUTHORITY_UNAVAILABLE="MEMBERSHIP_AUTHORITY_UNAVAILABLE"; NO_ACTIVE_TENANT_BUSINESS_ROLE="NO_ACTIVE_TENANT_BUSINESS_ROLE"; MULTIPLE_ACTIVE_TENANT_BUSINESS_ROLES="MULTIPLE_ACTIVE_TENANT_BUSINESS_ROLES"; TENANT_BUSINESS_ROLE_AUTHORITY_UNAVAILABLE="TENANT_BUSINESS_ROLE_AUTHORITY_UNAVAILABLE"; PERMISSION_UNKNOWN="PERMISSION_UNKNOWN"; PERMISSION_NOT_CANONICAL="PERMISSION_NOT_CANONICAL"; PERMISSION_NAMESPACE_MISMATCH="PERMISSION_NAMESPACE_MISMATCH"; PERMISSION_OPERATION_MISMATCH="PERMISSION_OPERATION_MISMATCH"; PERMISSION_NOT_GRANTED="PERMISSION_NOT_GRANTED"; ROLE_ASSIGNMENT_INACTIVE="ROLE_ASSIGNMENT_INACTIVE"; BUSINESS_ROLE_INELIGIBLE="BUSINESS_ROLE_INELIGIBLE"; SYSTEM_AUTHORITY_REQUIRED="SYSTEM_AUTHORITY_REQUIRED"; FINANCIAL_EXECUTION_PROHIBITED="FINANCIAL_EXECUTION_PROHIBITED"; ROLE_ASSIGNMENT_AUTHORITY_UNAVAILABLE="ROLE_ASSIGNMENT_AUTHORITY_UNAVAILABLE"; WORKFORCE_NOT_CURRENT="WORKFORCE_NOT_CURRENT"; WORKFORCE_AUTHORITY_UNAVAILABLE="WORKFORCE_AUTHORITY_UNAVAILABLE"
 @dataclass(frozen=True, slots=True)
@@ -445,3 +447,9 @@ __all__ = ["VERSION", "TenantAuthorizationReason", "TenantAuthorizationDecision"
 # FAIL-CLOSED POSTURE: unknown, inactive, missing, ambiguous, unavailable, mismatched, or financial requests deny
 # FINANCIAL EXECUTION AUTHORITY: Kennel EOS remains exclusive
 # END OF WILSY OS SOVEREIGN ARTIFACT
+
+# P47-R87: exact Partner issuer operation-permission binding.
+_BINDINGS = MappingProxyType({
+    **_BINDINGS,
+    "legal_practitioner_matter_access_policy_issue": "legal_operations:practitioner_matter_access_policy:issue",
+})
