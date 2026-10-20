@@ -1,14 +1,18 @@
 """TITLE: WILSY OS Role Definition Policy Unit Contract.
-VERSION: v1.5.0-D3B-AUTH3-MATTER-DEADLINE-ROLE-GRANTS-CERT
+VERSION: v1.6.0-P47-R46-BASELINE-ROLE-CONTRACT-CERT
 AUTHORITY: Deterministic unit verification of canonical Python role-definition policy only.
 EPITOME: Proves the exact closed role vocabulary, tenant/subscription/plan and
 WILSY AI usage-capacity and billing-intelligence evidence read permission grants, deterministic expansion,
 reverse lookup, and fail-closed non-bypass behavior.
 ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/tests/unit/test_roles.py
 COLLABORATION / OWNERSHIP: Wilson Khanyezi / Wilsy Core Engineering.
-CERTIFICATION/UPDATE DATE: 2026-10-11.
+CERTIFICATION/UPDATE DATE: 2026-10-20.
 CHANGELOG:
-2026-10-11 v1.5.0-D3B-AUTH3-MATTER-DEADLINE-ROLE-GRANTS-CERT certifies
+    2026-10-20 v1.6.0-P47-R46-BASELINE-ROLE-CONTRACT-CERT
+    Aligns the pre-existing v1.44.0 completion-role test
+    with the already-defined static grants. No new permissions,
+    role grants, tenant authority or financial execution.
+2026-10-11 v1.6.0-P47-R46-BASELINE-ROLE-CONTRACT-CERT certifies
 Partner/Attorney/Paralegal read-write and Secretary read-only deadline grants,
 deny-by-absence for Finance/Sheriff/Deputy/Legal Client and all unrelated
 roles, exact reverse lookup, wildcard rejection, and unchanged neighboring
@@ -128,9 +132,9 @@ from tools.eos.auth.roles import (
 )
 
 def test_runtime_version_source_is_canonical() -> None:
-    assert POLICY_VERSION == "v1.43.0-PW-P11A-PRODUCTIVE-WORK-READ-GRANTS"
+    assert POLICY_VERSION == "v1.44.0-P14-R20R12-WORK-COMPLETION-STATIC-GRANTS"
 
-VERSION = "v1.5.0-D3B-AUTH3-MATTER-DEADLINE-ROLE-GRANTS-CERT"
+VERSION = "v1.6.0-P47-R46-BASELINE-ROLE-CONTRACT-CERT"
 
 EXPECTED_ROLE_PERMISSIONS: dict[str, list[str]] = {
     "SOVEREIGN_ARCHITECT": [
@@ -246,6 +250,7 @@ def test_legal_role_grants_are_explicit_and_least_authority() -> None:
         "legal_operations:work_item:read",
         "legal_operations:work_item:write",
         "legal_operations:productive_work:read",
+        "legal_operations:work_item:complete",
         "legal_operations:return:write",
         "wilsy_ai:legal_tool:read",
         "wilsy_ai:legal_services:execute",
@@ -848,7 +853,7 @@ def test_legal_evidence_write_is_granted_only_to_partner() -> None:
 
 
 # ARTIFACT: test_roles.py
-# VERSION: v1.5.0-D3B-AUTH3-MATTER-DEADLINE-ROLE-GRANTS-CERT
+# VERSION: v1.6.0-P47-R46-BASELINE-ROLE-CONTRACT-CERT
 # AUTHORITY BOUNDARY: deterministic unit verification of explicit role-definition policy only
 # TENANT POSTURE: conflict-review write is statically granted only to LEGAL_PARTNER/LEGAL_ATTORNEY; current tenant membership, business-role eligibility and assignment remain separate authorities
 # FAIL-CLOSED POSTURE: unknown, malformed, implicit, wildcard, legacy, and ambiguous inputs never manufacture grants
