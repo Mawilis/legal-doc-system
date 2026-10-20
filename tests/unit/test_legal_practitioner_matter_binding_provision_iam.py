@@ -31,11 +31,10 @@ def test_business_eligibility_partner_only():
 
 def test_exact_operation_permission_composition():
     assert composer._BINDINGS.get(O) == P
-    # Issuer authority belongs to a separately governed delivery.
-    # This candidate must not manufacture that binding.
-    assert composer._BINDINGS.get(
-        "legal_practitioner_matter_access_policy_issue"
-    ) is None
+    # Issuer IAM is a separately certified, exact authority boundary.
+    # Provisioning and issuer operations must remain distinct.
+    assert composer._BINDINGS.get("legal_practitioner_matter_access_policy_issue") == "legal_operations:practitioner_matter_access_policy:issue"
+    assert composer._BINDINGS[O] != composer._BINDINGS["legal_practitioner_matter_access_policy_issue"]
 
 def test_aliases_not_authorized():
     for alias in (
