@@ -112,7 +112,7 @@ from tools.eos.auth.hr_business_role_catalog import ALL_HR_BUSINESS_ROLES
 import pytest
 
 def test_runtime_version_source_is_canonical() -> None:
-    assert VERSION == "v1.47.0-P47-R9-PARTNER-BINDING-ELIGIBILITY"
+    assert VERSION == "v1.48.0-P47-R87-ISSUER-ELIGIBILITY"
 
 LEGACY = ("AUDITOR", "SOVEREIGN_ARCHITECT", "ENTERPRISE_ADMIN", "FOUNDER", "SUPER_ADMIN", "ADMIN", "admin", "GLOBAL_ROOT", "WILSY_ROOT", "MASTER", "unknown")
 
@@ -186,6 +186,7 @@ def test_legal_business_role_matrix_is_explicit_and_least_authority() -> None:
         expected[role].add("legal_notification_contact_verification_write")
     # P47: the new operation remains eligible only for the Partner.
     expected["tenant_legal_partner"].add("legal_practitioner_matter_binding_provision")
+    expected["tenant_legal_partner"].add("legal_practitioner_matter_access_policy_issue")
     assert set(expected) <= TENANT_ROLES
     for role, allowed in expected.items():
         assert {operation for operation in OPERATIONS if tenant_role_operation_eligibility(role, operation) == ELIGIBLE} == allowed
