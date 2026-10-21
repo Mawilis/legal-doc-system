@@ -320,7 +320,7 @@ def test_real_mongo_intake_case_matter_is_first_class_workspace_truth(
     mongo_context: dict[str, Any],
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
-    """Durable L8-2 intake is directly discoverable as one D15 matter row."""
+    """Durable first-class matter exists, but tenancy alone cannot disclose it."""
     tenant = f"tenant-{uuid.uuid4().hex}"
     result = _register_intake(
         tenant_id=tenant,
@@ -328,68 +328,41 @@ def test_real_mongo_intake_case_matter_is_first_class_workspace_truth(
         lifecycle=mongo_context["lifecycle"],
         suffix="d15b-001",
     )
-    _persist_product(tenant_id=tenant, mongo_context=mongo_context, activate=True)
+    _persist_product(
+        tenant_id=tenant,
+        mongo_context=mongo_context,
+        activate=True,
+    )
     locator = LegalOperationsLifecycleRegistry.get_snapshot_evidence_identity(
         result.case_matter,
         mongo_context["lifecycle"],
     )
+    assert len(locator) == 128
+    assert set(locator) <= set("0123456789abcdef")
 
     response = _workspace(
         tenant_id=tenant,
         mongo_context=mongo_context,
         monkeypatch=monkeypatch,
     )
-
-    assert response.status_code == 200
-    body = response.json()
-    assert body["schema"] == "WILSY-LEGAL-OPERATIONS-PRACTICE-WORKSPACE/V2"
-    assert body["version"] == "v1.8.0-L8-7D15-FIRST-CLASS-MATTER-WORKSPACE-API"
-    assert body["tenant_id"] == tenant
-    assert body["visibility"] == "LEGAL_PRACTICE_WORKSPACE"
-    assert body["summary"]["matters_total"] == 1
-    assert body["summary"]["matters_open"] == 1
-    assert body["summary"]["matters_closed"] == 0
-    assert body["summary"]["instructions_total"] == 1
-    assert body["summary"]["documents_total"] == 1
-    assert body["summary"]["attempts_total"] == 0
-    assert body["summary"]["executions_total"] == 0
-    assert body["summary"]["returns_total"] == 0
-    assert body["matters"] == [
-        {
-            "case_matter_id": "matter-d15b-001",
-            "matter_reference": "CASE-d15b-001",
-            "opened_at": BASE.isoformat(),
-            "state": "OPEN",
-            "evidence_identity": locator,
-        }
-    ]
-    assert body["instructions"][0]["case_matter_id"] == "matter-d15b-001"
-    assert body["documents"][0]["case_matter_id"] == "matter-d15b-001"
-    assert len(locator) == 128
-    assert set(locator) <= set("0123456789abcdef")
-    assert "product" not in body
-    assert "available" not in body
-    assert "lifecycle_state" not in body
-
-    serialized = str(body).lower()
+    assert response.status_code == 503
+    assert response.json() == {
+        "detail": "LEGAL_OPERATIONS_WORKSPACE_MATTER_CLEARANCE_UNAVAILABLE"
+    }
     for forbidden in (
-        "matter-proof-d15b-001",
-        "instruction-proof-d15b-001",
-        "document-proof-d15b-001",
-        "evidence_reference",
-        "transition_history",
-        "payment",
-        "settlement",
-        "paid_state",
+        tenant, "matter-d15b-001", "CASE-d15b-001",
+        "instruction-d15b-001", "document-d15b-001",
+        locator, "evidence_identity", "matters_total",
+        "instructions_total", "documents_total",
     ):
-        assert forbidden not in serialized
+        assert forbidden not in response.text
 
 
 def test_real_mongo_workspace_excludes_foreign_case_matter(
     mongo_context: dict[str, Any],
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
-    """One tenant workspace never includes another tenant's durable matter."""
+    """Neither own nor foreign restricted matter can leave the workspace."""
     tenant = f"tenant-{uuid.uuid4().hex}"
     foreign = f"tenant-{uuid.uuid4().hex}"
     _register_intake(
@@ -405,20 +378,26 @@ def test_real_mongo_workspace_excludes_foreign_case_matter(
         suffix="foreign",
         opened_at=BASE + timedelta(hours=1),
     )
-    _persist_product(tenant_id=tenant, mongo_context=mongo_context, activate=True)
-
+    _persist_product(
+        tenant_id=tenant,
+        mongo_context=mongo_context,
+        activate=True,
+    )
     response = _workspace(
         tenant_id=tenant,
         mongo_context=mongo_context,
         monkeypatch=monkeypatch,
     )
-
-    assert response.status_code == 200
-    body = response.json()
-    assert body["summary"]["matters_total"] == 1
-    assert [item["case_matter_id"] for item in body["matters"]] == ["matter-own"]
-    assert "matter-foreign" not in str(body)
-    assert foreign not in str(body)
+    assert response.status_code == 503
+    assert response.json() == {
+        "detail": "LEGAL_OPERATIONS_WORKSPACE_MATTER_CLEARANCE_UNAVAILABLE"
+    }
+    for forbidden in (
+        tenant, foreign, "matter-own", "matter-foreign",
+        "CASE-own", "CASE-foreign", "evidence_identity",
+        "matters_total", "instructions_total",
+    ):
+        assert forbidden not in response.text
 
 
 def test_real_mongo_corrupt_case_matter_rejects_workspace_without_fallback(
@@ -571,12 +550,14 @@ def test_real_mongo_active_product_read_performs_zero_writes(
 
 
 def test_d15b_certificate_surface_is_frozen() -> None:
-    """Certificate remains bound to the intended production D15 contract."""
+    """Preserve D15 provenance and prohibit router write-authority expansion."""
     assert VERSION == "v1.1.0-D22B5-R21-LEGAL-PRODUCT-CONJUNCTION-RM-CERT"
-    assert legal_router.VERSION == "v1.10.0-D22B5-R21-LEGAL-PRODUCT-AVAILABILITY-CONJUNCTION"
+    assert legal_router.VERSION == "v1.15.0-P7-COMPLETION-AWARE-PRODUCTIVE-WORK-HTTP"
     assert not hasattr(legal_router, "insert_one")
     assert not hasattr(legal_router, "update_one")
     assert not hasattr(legal_router, "delete_one")
+    assert hasattr(legal_router, "_require_workspace_disclosure_clearance")
+    assert hasattr(legal_router, "resolve_workspace_canonical_parents")
 
 
 # ARTIFACT: test_legal_operations_practice_workspace_real_mongo.py
