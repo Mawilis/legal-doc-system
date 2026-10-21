@@ -18,6 +18,7 @@ FINANCIAL EXECUTION AUTHORITY: None; Kennel EOS exclusively.
 from __future__ import annotations
 
 from importlib import import_module
+from typing import cast
 
 import pytest
 
@@ -82,10 +83,10 @@ def test_matching_active_snapshots_preserve_both_facts(
 ) -> None:
     principal = _principal(revision=revision)
     membership = _membership(revision=revision)
-    result = _check(
+    result = cast(tuple[PrincipalAuthority, TenantMembershipAuthority], _check(
         principal_authority=principal,
         membership_authority=membership,
-    )
+    ))
     assert result[0] is principal
     assert result[1] is membership
 

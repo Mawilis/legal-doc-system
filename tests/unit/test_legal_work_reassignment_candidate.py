@@ -18,6 +18,7 @@ from __future__ import annotations
 
 from datetime import datetime, timedelta, timezone
 from importlib import import_module
+from typing import Any
 
 import pytest
 
@@ -33,7 +34,7 @@ BASE = datetime(2026, 10, 19, 8, tzinfo=timezone.utc)
 
 
 def _work(**overrides: object) -> LegalWorkItem:
-    values = dict(
+    values: dict[str, Any] = dict(
         work_item_id="work-1",
         tenant_id="tenant-1",
         case_matter_id="matter-1",
@@ -49,7 +50,7 @@ def _work(**overrides: object) -> LegalWorkItem:
 
 
 def _assignment(**overrides: object) -> LegalWorkAssignment:
-    values = dict(
+    values: dict[str, Any] = dict(
         assignment_id="assignment-1",
         tenant_id="tenant-1",
         case_matter_id="matter-1",
@@ -66,7 +67,7 @@ def _assignment(**overrides: object) -> LegalWorkAssignment:
 
 
 def _successor(**overrides: object) -> LegalWorkAssignment:
-    values = dict(
+    values: dict[str, Any] = dict(
         assignment_id="assignment-2",
         assignee_principal_id="principal-recipient",
         assigned_at=BASE + timedelta(minutes=1),

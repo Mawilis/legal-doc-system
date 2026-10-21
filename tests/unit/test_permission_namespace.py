@@ -266,7 +266,7 @@ def test_d12_system_command_permissions_are_exact_non_authorizing_metadata(permi
 
 
 def test_runtime_version_source_is_canonical() -> None:
-    assert POLICY_VERSION == "v1.52.0-P47-R92-WORK-ASSIGNMENT-PERMISSION"
+    assert POLICY_VERSION == "v1.53.0-P47-R95-G32-OPERATIONAL-ACCESS-ISSUER-PERMISSION"
 
 
 def test_practitioner_binding_provision_permission_is_exact_and_bounded() -> None:
@@ -386,9 +386,9 @@ def test_permission_canon_properties() -> None:
             for row in rows
             if row["disposition"] == "CANONICAL"
         ]
-    ) == 119
+    ) == 120
 
-    assert len(rows) == 122
+    assert len(rows) == 123
 
     for permission_id in tenant:
         metadata = permission_metadata(
