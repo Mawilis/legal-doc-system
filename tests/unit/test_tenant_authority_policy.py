@@ -115,7 +115,7 @@ from tools.eos.auth.hr_business_role_catalog import ALL_HR_BUSINESS_ROLES
 import pytest
 
 def test_runtime_version_source_is_canonical() -> None:
-    assert VERSION == "v1.49.0-P47-R93-WORK-ASSIGNMENT-ELIGIBILITY"
+    assert VERSION == "v1.50.0-P47-R95-G32-OPERATIONAL-ACCESS-ISSUER-ELIGIBILITY"
 
 LEGACY = ("AUDITOR", "SOVEREIGN_ARCHITECT", "ENTERPRISE_ADMIN", "FOUNDER", "SUPER_ADMIN", "ADMIN", "admin", "GLOBAL_ROOT", "WILSY_ROOT", "MASTER", "unknown")
 
@@ -181,6 +181,8 @@ def test_legal_business_role_matrix_is_explicit_and_least_authority() -> None:
                 "legal_work_item_write",
             }
         )
+    # G32 issuer eligibility is Partner-only, not operational access.
+    expected["tenant_legal_partner"].add("legal_work_operational_matter_access_issue")
     # Previously certified v1.46.0 tenant eligibility only.
     for role in ("tenant_legal_partner", "tenant_legal_attorney",
                  "tenant_legal_paralegal", "tenant_legal_secretary"):
