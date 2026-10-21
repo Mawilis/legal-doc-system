@@ -1,5 +1,5 @@
 """TITLE: WILSY OS Role Definition Policy.
-VERSION: v1.46.0-P47-R87-ISSUER-PARTNER-GRANT
+VERSION: v1.47.0-P47-R94-WORK-ASSIGNMENT-GRANTS
 AUTHORITY: Canonical Python role identifiers and explicit permission grants.
 EPITOME: Defines current tenant-scoped authorization roles, including
 least-privilege subscription/plan-catalogue grants, read-only WILSY AI
@@ -15,6 +15,11 @@ ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/tools/eos/auth/r
 COLLABORATION / OWNERSHIP: Wilson Khanyezi / Wilsy Core Engineering.
 CERTIFICATION / UPDATE DATE: 2026-10-20
 CHANGELOG:
+    2026-10-21 v1.47.0-P47-R94-WORK-ASSIGNMENT-GRANTS
+    Grants legal_operations:work_assignment:write exactly once to
+    LEGAL_PARTNER and LEGAL_ATTORNEY. The static grant proves no current
+    possession, tenant membership, assignment scope, work-item mutation,
+    completion, persistence, HTTP, or financial authority.
     2026-10-21 v1.46.0-P47-R87-ISSUER-PARTNER-GRANT
     Integrates verified P9-R103 Partner-only issuer IAM semantics.
     2026-10-20 v1.45.0-P47-R9-PARTNER-BINDING-PROVISION-GRANT
@@ -217,7 +222,7 @@ from __future__ import annotations
 from collections.abc import Iterable
 
 
-VERSION = "v1.46.0-P47-R87-ISSUER-PARTNER-GRANT"
+VERSION = "v1.47.0-P47-R94-WORK-ASSIGNMENT-GRANTS"
 
 
 ROLE_PERMISSIONS_MAP: dict[str, list[str]] = {
@@ -549,13 +554,19 @@ __all__ = [
     "get_roles_granting_permission",
 ]
 
+# P47-R87: committed P9-R103 Partner-only static issuer grant.
+ROLE_PERMISSIONS_MAP["LEGAL_PARTNER"].append("legal_operations:practitioner_matter_access_policy:issue")
+
+# P47-R94: assignment mutation is a distinct Partner/Attorney authority.
+for _role_name in ("LEGAL_PARTNER", "LEGAL_ATTORNEY"):
+    ROLE_PERMISSIONS_MAP[_role_name].append(
+        "legal_operations:work_assignment:write"
+    )
+
 # ARTIFACT: tools/eos/auth/roles.py
-# VERSION: v1.45.0-P47-R9-PARTNER-BINDING-PROVISION-GRANT
+# VERSION: v1.47.0-P47-R94-WORK-ASSIGNMENT-GRANTS
 # AUTHORITY BOUNDARY: role identifiers and deterministic permission definitions only; current assignment is separate authority
-# TENANT POSTURE: role definitions never establish tenant membership or role possession; conflict-review write is partner/attorney-only policy and client-matter read remains visibility-bound
+# TENANT POSTURE: role definitions never establish tenant membership or role possession; assignment write is Partner/Attorney-only static policy
 # FAIL-CLOSED POSTURE: unknown roles and permissions never manufacture grants
 # FINANCIAL EXECUTION AUTHORITY: Kennel EOS exclusively
 # END OF WILSY OS SOVEREIGN ARTIFACT
-
-# P47-R87: committed P9-R103 Partner-only static issuer grant.
-ROLE_PERMISSIONS_MAP["LEGAL_PARTNER"].append("legal_operations:practitioner_matter_access_policy:issue")
