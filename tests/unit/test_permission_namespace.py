@@ -1,5 +1,5 @@
 """TITLE: WILSY OS Permission Namespace Canon Certification.
-VERSION: v1.9.0-P7-PRIVILEGED-BREAK-GLASS-PERMISSION-CERT
+VERSION: v1.10.0-P47-R76-BINDING-PROVISION-PERMISSION-CERT
 AUTHORITY: Certification of immutable permission vocabulary semantics only.
 EPITOME: Proves bounded namespaces, fail-closed metadata, deterministic policy
 bytes, and exact own-tenant subscription/plan/WILSY AI capacity,
@@ -9,6 +9,11 @@ ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/tests/unit/test_
 COLLABORATION / OWNERSHIP: Wilson Khanyezi / Wilsy Core Engineering.
 CERTIFICATION/UPDATE DATE: 2026-10-15.
 CHANGELOG:
+2026-10-20 v1.10.0-P47-R76-BINDING-PROVISION-PERMISSION-CERT certifies the
+exact own-tenant practitioner matter-binding provisioning permission, its
+non-self-authorizing and non-financial metadata, fail-closed aliases, and the
+closed-canon increase from 115 to 116 canonical permissions and 118 to 119
+total rows without creating matter-content access or ethical-wall authority.
 2026-10-15 v1.9.0-P7-PRIVILEGED-BREAK-GLASS-PERMISSION-CERT certifies the exact assignment-required, non-self-authorizing SYSTEM vocabulary and updates the closed canon to 107 canonical permissions and 110 total rows without any role grant.
 2026-10-15 v1.8.0-P6-PRIVILEGED-ACTIVATION-REVOCATION-PERMISSION-CERT certifies the exact privileged_activation:revoke canonical SYSTEM permission as assignment-required, non-self-authorizing, non-cross-tenant and non-financial. It updates the closed canon from 105 to 106 canonical permissions and 108 to 109 total rows without creating a role grant, static role authority or permission assignment.
 2026-10-14 v1.6.0-P4-R0A certifies the exact SYSTEM-scoped,
@@ -144,7 +149,7 @@ from pathlib import Path
 
 import pytest
 
-VERSION = "v1.9.0-P7-PRIVILEGED-BREAK-GLASS-PERMISSION-CERT"
+VERSION = "v1.10.0-P47-R76-BINDING-PROVISION-PERMISSION-CERT"
 
 from tools.eos.auth.permission_namespace import PermissionDisposition, VERSION as POLICY_VERSION, canonical_permissions, classify_legacy_permission, permission_metadata
 
@@ -261,7 +266,31 @@ def test_d12_system_command_permissions_are_exact_non_authorizing_metadata(permi
 
 
 def test_runtime_version_source_is_canonical() -> None:
-    assert POLICY_VERSION == "v1.48.0-P14-R20R11-WORK-COMPLETION-PERMISSION"
+    assert POLICY_VERSION == "v1.53.0-P47-R95-G32-OPERATIONAL-ACCESS-ISSUER-PERMISSION"
+
+
+def test_practitioner_binding_provision_permission_is_exact_and_bounded() -> None:
+    """Provisioning vocabulary grants no access, wall, or execution authority."""
+    permission = "legal_operations:practitioner_matter_binding:provision"
+    metadata = permission_metadata(permission)
+
+    assert metadata.permission_id == permission
+    assert metadata.namespace == "TENANT"
+    assert metadata.scope_kind == "TENANT"
+    assert metadata.tenant_membership_required is True
+    assert metadata.system_assignment_required is False
+    assert metadata.cross_tenant_capable is False
+    assert metadata.financial_execution_capable is False
+    assert metadata.authorizes_by_itself is False
+    assert metadata.disposition is PermissionDisposition.CANONICAL
+
+    for invalid in (
+        "legal_operations:practitioner_matter_binding:*",
+        "legal_operations:practitioner_matter_binding:override",
+        "legal_operations:practitioner_matter_binding:provision ",
+    ):
+        with pytest.raises(ValueError, match="UNKNOWN_PERMISSION"):
+            permission_metadata(invalid)
 
 
 def test_permission_canon_properties() -> None:
@@ -327,6 +356,7 @@ def test_permission_canon_properties() -> None:
         "legal_operations:matter_workflow:transition",
         "legal_operations:work_item:read",
         "legal_operations:work_item:write",
+        "legal_operations:practitioner_matter_binding:provision",
         "legal_operations:productive_work:read",
         "hr:employee_relation:write",
         "platform_billing:release",
@@ -356,9 +386,9 @@ def test_permission_canon_properties() -> None:
             for row in rows
             if row["disposition"] == "CANONICAL"
         ]
-    ) == 115
+    ) == 120
 
-    assert len(rows) == 118
+    assert len(rows) == 123
 
     for permission_id in tenant:
         metadata = permission_metadata(
@@ -952,7 +982,7 @@ def test_deadline_namespace_owns_vocabulary_but_creates_no_role_grant() -> None:
 
 
 # ARTIFACT: test_permission_namespace.py
-# VERSION: v1.9.0-P7-PRIVILEGED-BREAK-GLASS-PERMISSION-CERT
+# VERSION: v1.10.0-P47-R76-BINDING-PROVISION-PERMISSION-CERT
 # AUTHORITY BOUNDARY: permission semantic certification only
 # TENANT POSTURE: conflict-review, client-matter, client-visibility and other tenant permissions remain policy; exact ACTIVE membership remains separately governed
 # FAIL-CLOSED POSTURE: unknown and malformed values deny

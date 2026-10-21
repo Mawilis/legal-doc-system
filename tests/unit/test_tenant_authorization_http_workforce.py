@@ -7,6 +7,7 @@ from types import SimpleNamespace
 from typing import Any, cast
 
 import pytest
+from starlette.requests import Request
 
 from tools.eos.api import tenant_authorization_http as subject
 from tools.eos.api.exceptions import (
@@ -178,6 +179,7 @@ async def test_non_workforce_permission_opens_no_database_or_session(
     )
 
     result = await dependency(
+        request=Request({"type": "http"}),
         identity=_identity(),
         tenant_id="tenant-r8c",
         principal_repository=principal,
@@ -275,6 +277,7 @@ async def test_workforce_permission_uses_one_session_one_transaction_and_same_se
     )
 
     result = await dependency(
+        request=Request({"type": "http"}),
         identity=_identity(),
         tenant_id="tenant-r8c",
         principal_repository=principal,
@@ -347,6 +350,7 @@ async def test_workforce_not_current_maps_to_forbidden(
         ForbiddenOperationException
     ):
         await dependency(
+            request=Request({"type": "http"}),
             identity=_identity(),
             tenant_id="tenant-r8c",
             principal_repository=principal,
@@ -403,6 +407,7 @@ async def test_workforce_authority_unavailable_maps_to_503(
         WilsyAPIException
     ) as captured:
         await dependency(
+            request=Request({"type": "http"}),
             identity=_identity(),
             tenant_id="tenant-r8c",
             principal_repository=principal,
@@ -453,6 +458,7 @@ async def test_missing_kernel_database_fails_workforce_path_closed(
         WilsyAPIException
     ) as captured:
         await dependency(
+            request=Request({"type": "http"}),
             identity=_identity(),
             tenant_id="tenant-r8c",
             principal_repository=principal,
@@ -509,6 +515,7 @@ async def test_unknown_permission_preserves_existing_composer_semantics(
         ForbiddenOperationException
     ):
         await dependency(
+            request=Request({"type": "http"}),
             identity=_identity(),
             tenant_id="tenant-r8c",
             principal_repository=principal,

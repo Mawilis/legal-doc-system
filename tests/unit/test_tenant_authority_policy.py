@@ -1,13 +1,24 @@
 """TITLE: Tenant Authority Policy Certification.
-VERSION: v1.5.0-D3B-AUTH2A-MATTER-DEADLINE-OPERATION-ELIGIBILITY-CERT
+VERSION: v1.8.0-P47-R93-WORK-ASSIGNMENT-ELIGIBILITY-CERT
 AUTHORITY: Pure policy-canon certification only.
 EPITOME: Proves immutable tenant eligibility, WILSY AI usage-capacity and
 billing-intelligence evidence-read eligibility, and non-authority boundaries.
 ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/tests/unit/test_tenant_authority_policy.py
 COLLABORATION / OWNERSHIP: Wilson Khanyezi / Wilsy Core Engineering.
-CERTIFICATION/UPDATE DATE: 2026-10-11.
+CERTIFICATION/UPDATE DATE: 2026-10-21.
 CHANGELOG:
-2026-10-11 v1.5.0-D3B-AUTH2A-MATTER-DEADLINE-OPERATION-ELIGIBILITY-CERT
+    2026-10-21 v1.8.0-P47-R93-WORK-ASSIGNMENT-ELIGIBILITY-CERT
+    Adds the exact Partner/Attorney work-assignment eligibility facts to the
+    frozen Legal role matrix while preserving non-authority boundaries.
+    2026-10-20 v1.7.0-P47-R58-PARTNER-BINDING-ELIGIBILITY-CERT
+    Certifies exactly one new Partner-only practitioner-binding
+    provisioning eligibility operation. Every other business role
+    remains denied; current IAM and matter access remain separate.
+    2026-10-20 v1.7.0-P47-R58-PARTNER-BINDING-ELIGIBILITY-CERT
+    Aligns exact closed tenant business eligibility assertions
+    with already-existing work-completion and notification-contact
+    verification policy. No new access or provisioning authority.
+2026-10-11 v1.7.0-P47-R58-PARTNER-BINDING-ELIGIBILITY-CERT
 certifies exact deadline read/write recognition, the frozen Legal role matrix,
 malformed and wildcard fail-closed behavior, unchanged adjacent Legal policy,
 and the absence of permission binding, cross-tenant, financial, or Kennel authority.
@@ -104,7 +115,7 @@ from tools.eos.auth.hr_business_role_catalog import ALL_HR_BUSINESS_ROLES
 import pytest
 
 def test_runtime_version_source_is_canonical() -> None:
-    assert VERSION == "v1.43.0-PW-P11A-PRODUCTIVE-WORK-READ-ELIGIBILITY"
+    assert VERSION == "v1.50.0-P47-R95-G32-OPERATIONAL-ACCESS-ISSUER-ELIGIBILITY"
 
 LEGACY = ("AUDITOR", "SOVEREIGN_ARCHITECT", "ENTERPRISE_ADMIN", "FOUNDER", "SUPER_ADMIN", "ADMIN", "admin", "GLOBAL_ROOT", "WILSY_ROOT", "MASTER", "unknown")
 
@@ -170,6 +181,19 @@ def test_legal_business_role_matrix_is_explicit_and_least_authority() -> None:
                 "legal_work_item_write",
             }
         )
+    # G32 issuer eligibility is Partner-only, not operational access.
+    expected["tenant_legal_partner"].add("legal_work_operational_matter_access_issue")
+    # Previously certified v1.46.0 tenant eligibility only.
+    for role in ("tenant_legal_partner", "tenant_legal_attorney",
+                 "tenant_legal_paralegal", "tenant_legal_secretary"):
+        expected[role].add("legal_work_item_complete")
+    for role in ("tenant_legal_partner", "tenant_legal_attorney"):
+        expected[role].add("legal_notification_contact_verification_write")
+    # P47: the new operation remains eligible only for the Partner.
+    expected["tenant_legal_partner"].add("legal_practitioner_matter_binding_provision")
+    expected["tenant_legal_partner"].add("legal_practitioner_matter_access_policy_issue")
+    expected["tenant_legal_partner"].add("legal_work_assignment_write")
+    expected["tenant_legal_attorney"].add("legal_work_assignment_write")
     assert set(expected) <= TENANT_ROLES
     for role, allowed in expected.items():
         assert {operation for operation in OPERATIONS if tenant_role_operation_eligibility(role, operation) == ELIGIBLE} == allowed
@@ -881,7 +905,7 @@ def test_legal_evidence_write_eligibility_is_partner_only() -> None:
 
 
 # ARTIFACT: test_tenant_authority_policy.py
-# VERSION: v1.5.0-D3B-AUTH2A-MATTER-DEADLINE-OPERATION-ELIGIBILITY-CERT
+# VERSION: v1.8.0-P47-R93-WORK-ASSIGNMENT-ELIGIBILITY-CERT
 # AUTHORITY BOUNDARY: certification of policy facts only
 # TENANT POSTURE: client-matter and client-visibility eligibility remain policy-only; membership, assignment, permission binding and ACTIVE visibility stay separate
 # FAIL-CLOSED POSTURE: unknown values deny

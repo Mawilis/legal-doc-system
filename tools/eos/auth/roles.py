@@ -1,5 +1,5 @@
 """TITLE: WILSY OS Role Definition Policy.
-VERSION: v1.44.0-P14-R20R12-WORK-COMPLETION-STATIC-GRANTS
+VERSION: v1.48.0-P47-R95-G32-OPERATIONAL-ACCESS-ISSUER-GRANT
 AUTHORITY: Canonical Python role identifiers and explicit permission grants.
 EPITOME: Defines current tenant-scoped authorization roles, including
 least-privilege subscription/plan-catalogue grants, read-only WILSY AI
@@ -13,8 +13,21 @@ firm-decision grant without creating tenant-wide matter reads, deputy
 possession, service, or financial authority.
 ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/tools/eos/auth/roles.py
 COLLABORATION / OWNERSHIP: Wilson Khanyezi / Wilsy Core Engineering.
-CERTIFICATION / UPDATE DATE: 2026-10-17
+CERTIFICATION / UPDATE DATE: 2026-10-20
 CHANGELOG:
+    2026-10-21 v1.48.0-P47-R95-G32-OPERATIONAL-ACCESS-ISSUER-GRANT
+    Partner-only static issuer permission; current role assignment and matter clearance remain separate.
+    2026-10-21 v1.47.0-P47-R94-WORK-ASSIGNMENT-GRANTS
+    Grants legal_operations:work_assignment:write exactly once to
+    LEGAL_PARTNER and LEGAL_ATTORNEY. The static grant proves no current
+    possession, tenant membership, assignment scope, work-item mutation,
+    completion, persistence, HTTP, or financial authority.
+    2026-10-21 v1.46.0-P47-R87-ISSUER-PARTNER-GRANT
+    Integrates verified P9-R103 Partner-only issuer IAM semantics.
+    2026-10-20 v1.45.0-P47-R9-PARTNER-BINDING-PROVISION-GRANT
+    Adds only own-tenant Partner-only practitioner matter-binding
+    provisioning IAM. Active current-truth checks remain mandatory;
+    no content, ethical-wall, read or financial authority is granted.
     2026-10-17 v1.44.0-P14-R20R12-WORK-COMPLETION-STATIC-GRANTS grants the exact
     legal_operations:work_item:complete permission exactly to LEGAL_PARTNER,
     LEGAL_ATTORNEY, LEGAL_PARALEGAL and LEGAL_SECRETARY. Static possession
@@ -211,7 +224,7 @@ from __future__ import annotations
 from collections.abc import Iterable
 
 
-VERSION = "v1.44.0-P14-R20R12-WORK-COMPLETION-STATIC-GRANTS"
+VERSION = "v1.48.0-P47-R95-G32-OPERATIONAL-ACCESS-ISSUER-GRANT"
 
 
 ROLE_PERMISSIONS_MAP: dict[str, list[str]] = {
@@ -475,6 +488,9 @@ for (
 
 for _role_name in ("LEGAL_PARTNER", "LEGAL_ATTORNEY", "LEGAL_PARALEGAL", "LEGAL_SECRETARY"):
     ROLE_PERMISSIONS_MAP[_role_name].append("legal_operations:work_item:complete")
+ROLE_PERMISSIONS_MAP["LEGAL_PARTNER"].append(
+    "legal_operations:practitioner_matter_binding:provision"
+)
 for _role_name in ("LEGAL_PARTNER", "LEGAL_ATTORNEY", "LEGAL_PARALEGAL", "LEGAL_SECRETARY", "SHERIFF", "DEPUTY"):
     ROLE_PERMISSIONS_MAP[_role_name].append("legal_operations:return:write")
 for _role_name in ("SHERIFF", "DEPUTY"):
@@ -540,10 +556,24 @@ __all__ = [
     "get_roles_granting_permission",
 ]
 
+# P47-R87: committed P9-R103 Partner-only static issuer grant.
+ROLE_PERMISSIONS_MAP["LEGAL_PARTNER"].append("legal_operations:practitioner_matter_access_policy:issue")
+
+# P47-R94: assignment mutation is a distinct Partner/Attorney authority.
+for _role_name in ("LEGAL_PARTNER", "LEGAL_ATTORNEY"):
+    ROLE_PERMISSIONS_MAP[_role_name].append(
+        "legal_operations:work_assignment:write"
+    )
+
+# P47-R95-G30 — static Partner grant only, not current possession.
+ROLE_PERMISSIONS_MAP["LEGAL_PARTNER"].append(
+    "legal_operations:operational_matter_access:issue"
+)
+
 # ARTIFACT: tools/eos/auth/roles.py
-# VERSION: v1.44.0-P14-R20R12-WORK-COMPLETION-STATIC-GRANTS
+# VERSION: v1.48.0-P47-R95-G32-OPERATIONAL-ACCESS-ISSUER-GRANT
 # AUTHORITY BOUNDARY: role identifiers and deterministic permission definitions only; current assignment is separate authority
-# TENANT POSTURE: role definitions never establish tenant membership or role possession; conflict-review write is partner/attorney-only policy and client-matter read remains visibility-bound
+# TENANT POSTURE: role definitions never establish tenant membership or role possession; assignment write is Partner/Attorney-only static policy
 # FAIL-CLOSED POSTURE: unknown roles and permissions never manufacture grants
 # FINANCIAL EXECUTION AUTHORITY: Kennel EOS exclusively
 # END OF WILSY OS SOVEREIGN ARTIFACT

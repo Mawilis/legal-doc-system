@@ -639,6 +639,32 @@ def _workspace_rows(
     return rows
 
 
+
+def _require_workspace_disclosure_clearance(
+    *,
+    matters: list[dict[str, Any]],
+    instructions: list[dict[str, Any]],
+    documents: list[dict[str, Any]],
+    attempts: list[dict[str, Any]],
+    executions: list[dict[str, Any]],
+    returns: list[dict[str, Any]],
+) -> None:
+    """Deny unverified matter-dependent workspace disclosure.
+
+    This is an interim fail-closed boundary, NOT a positive wall grant.
+    Remove the restriction only when current transaction-bound
+    matter-by-matter admission is independently certified.
+    """
+    if any((
+        matters, instructions, documents,
+        attempts, executions, returns,
+    )):
+        raise HTTPException(
+            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+            detail="LEGAL_OPERATIONS_WORKSPACE_MATTER_CLEARANCE_UNAVAILABLE",
+        )
+
+
 def _workspace_summary(
     *,
     matters: list[dict[str, Any]],
@@ -834,6 +860,7 @@ from tools.eos.legal_operations.service.legal_temporal_operations_read_service i
     LegalTemporalOperationsReadService,
     LegalTemporalOperationsReadServiceError,
 )
+from tools.eos.legal_operations.service.legal_practice_workspace_matter_lineage import MatterLineageError, resolve_workspace_canonical_parents
 
 
 def _productive_work_service(
@@ -1655,6 +1682,22 @@ async def get_legal_practice_workspace_projection(
             collection=collection,
             session=session,
         )
+        resolve_workspace_canonical_parents(
+            matters=matters,
+            instructions=instructions,
+            documents=documents,
+            attempts=attempts,
+            executions=executions,
+            returns=returns,
+        )
+        _require_workspace_disclosure_clearance(
+            matters=matters,
+            instructions=instructions,
+            documents=documents,
+            attempts=attempts,
+            executions=executions,
+            returns=returns,
+        )
         return {
             "schema": _WORKSPACE_SCHEMA,
             "version": _WORKSPACE_VERSION,
@@ -1678,6 +1721,11 @@ async def get_legal_practice_workspace_projection(
 
     try:
         return _workspace_projection_transaction(run)
+    except MatterLineageError as error:
+        raise HTTPException(
+            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+            detail="LEGAL_OPERATIONS_WORKSPACE_PARENT_LINEAGE_INVALID",
+        ) from error
     except LegalOperationsReadModelError as error:
         raise HTTPException(
             status_code=status.HTTP_503_SERVICE_UNAVAILABLE,

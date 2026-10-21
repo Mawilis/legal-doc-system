@@ -1,5 +1,5 @@
 """TITLE: WILSY OS Permission Namespace Semantic Canon.
-VERSION: v1.48.0-P14-R20R11-WORK-COMPLETION-PERMISSION
+VERSION: v1.53.0-P47-R95-G32-OPERATIONAL-ACCESS-ISSUER-PERMISSION
 AUTHORITY: Immutable permission vocabulary and scope metadata only.
 EPITOME: Extends the canonical TENANT and SYSTEM permission vocabulary with dedicated
 inbound-collection, merchant-configuration, provider-policy, WILSY AI,
@@ -11,8 +11,23 @@ waiver, engagement,
 representation, cross-tenant authority, or financial execution.
 ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/tools/eos/auth/permission_namespace.py
 COLLABORATION / OWNERSHIP: Wilson Khanyezi / Wilsy Core Engineering.
-CERTIFICATION / UPDATE DATE: 2026-10-17
+CERTIFICATION / UPDATE DATE: 2026-10-21
 CHANGELOG:
+    2026-10-21 v1.53.0-P47-R95-G32-OPERATIONAL-ACCESS-ISSUER-PERMISSION
+    Canonical own-tenant operational issuer permission metadata; not possession or matter access.
+    2026-10-21 v1.52.0-P47-R92-WORK-ASSIGNMENT-PERMISSION
+    Introduces dedicated own-tenant Legal work-assignment permission
+    metadata only. No static role grants, business eligibility,
+    actor authorization, assignment persistence, HTTP command,
+    supervision, workflow, completion or financial authority.
+    2026-10-20 v1.51.0-P12C-R4N-P4C9-PRACTITIONER-BINDING-READ-PERMISSION
+    Registers separate, non-authorizing practitioner-binding read vocabulary.
+    2026-10-19 v1.50.0-P9-R103-PRACTITIONER-POLICY-ISSUER-PERMISSION
+    Integrates verified committed practitioner-policy issuer permission.
+    2026-10-20 v1.49.0-P47-R9-BINDING-PROVISION-PERMISSION
+    Adds only own-tenant Partner-only practitioner matter-binding
+    provisioning IAM. Active current-truth checks remain mandatory;
+    no content, ethical-wall, read or financial authority is granted.
     2026-10-17 v1.48.0-P14-R20R11-WORK-COMPLETION-PERMISSION adds the exact own-tenant
     legal_operations:work_item:complete permission vocabulary for bounded
     Legal work-item completion admission. It remains membership-gated,
@@ -223,7 +238,7 @@ from types import MappingProxyType
 from typing import Final
 
 
-VERSION = "v1.48.0-P14-R20R11-WORK-COMPLETION-PERMISSION"
+VERSION = "v1.53.0-P47-R95-G32-OPERATIONAL-ACCESS-ISSUER-PERMISSION"
 
 
 class PermissionDisposition(StrEnum):
@@ -767,11 +782,43 @@ _PERMISSIONS: Final = MappingProxyType(
             "write own-tenant Legal work items",
             tenant=True,
         ),
+        "legal_operations:work_assignment:write": _meta(
+            "legal_operations:work_assignment:write",
+            "TENANT",
+            "TENANT",
+            "request bounded own-tenant Legal work-assignment command admission; metadata alone grants no role, assignee eligibility, matter access, supervision, persistence, workflow, completion or financial authority",
+            tenant=True,
+        ),
         "legal_operations:work_item:complete": _meta(
             "legal_operations:work_item:complete",
             "TENANT",
             "TENANT",
             "request bounded own-tenant Legal work-item completion admission",
+            tenant=True,
+        ),
+        "legal_operations:practitioner_matter_access_policy:issue": _meta(
+            "legal_operations:practitioner_matter_access_policy:issue", "TENANT", "TENANT",
+            "request bounded own-tenant partner-issued practitioner matter-access documentary policy",
+            tenant=True,
+        ),
+        "legal_operations:practitioner_matter_binding:read": _meta(
+            "legal_operations:practitioner_matter_binding:read", "TENANT", "TENANT",
+            "read exact own-tenant practitioner matter binding current state and immutable history without matter content access, provisioning, ethical-wall clearance or financial authority",
+            tenant=True,
+        ),
+        # P47-R95-G30 — permission metadata is not matter access.
+        "legal_operations:operational_matter_access:issue": _meta(
+            "legal_operations:operational_matter_access:issue",
+            "TENANT",
+            "TENANT",
+            "request own-tenant Partner-only operational matter-access issuance; no self-authorizing matter read, ethical-wall clearance, or financial execution",
+            tenant=True,
+        ),
+        "legal_operations:practitioner_matter_binding:provision": _meta(
+            "legal_operations:practitioner_matter_binding:provision",
+            "TENANT",
+            "TENANT",
+            "request own-tenant Partner-controlled practitioner matter-binding provisioning; no matter content, ethical-wall clearance or financial execution",
             tenant=True,
         ),
         "legal_operations:productive_work:read": _meta(
@@ -1112,7 +1159,7 @@ __all__ = [
 ]
 
 # ARTIFACT: tools/eos/auth/permission_namespace.py
-# VERSION: v1.48.0-P14-R20R11-WORK-COMPLETION-PERMISSION
+# VERSION: v1.53.0-P47-R95-G32-OPERATIONAL-ACCESS-ISSUER-PERMISSION
 # AUTHORITY BOUNDARY: canonical permission vocabulary semantics only; no possession or authorization authority
 # TENANT POSTURE: conflict-review, client-matter, client-visibility and other tenant permissions require separately proven exact ACTIVE tenant membership
 # FAIL-CLOSED POSTURE: unknown, malformed, ambiguous and legacy values never manufacture authority
