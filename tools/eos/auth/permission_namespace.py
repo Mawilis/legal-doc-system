@@ -1,5 +1,5 @@
 """TITLE: WILSY OS Permission Namespace Semantic Canon.
-VERSION: v1.48.0-P14-R20R11-WORK-COMPLETION-PERMISSION
+VERSION: v1.50.0-P9-R103-PRACTITIONER-POLICY-ISSUER-PERMISSION
 AUTHORITY: Immutable permission vocabulary and scope metadata only.
 EPITOME: Extends the canonical TENANT and SYSTEM permission vocabulary with dedicated
 inbound-collection, merchant-configuration, provider-policy, WILSY AI,
@@ -11,8 +11,16 @@ waiver, engagement,
 representation, cross-tenant authority, or financial execution.
 ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/tools/eos/auth/permission_namespace.py
 COLLABORATION / OWNERSHIP: Wilson Khanyezi / Wilsy Core Engineering.
-CERTIFICATION / UPDATE DATE: 2026-10-17
+CERTIFICATION / UPDATE DATE: 2026-10-19
 CHANGELOG:
+    2026-10-19 v1.50.0-P9-R103-PRACTITIONER-POLICY-ISSUER-PERMISSION
+    Partner-only practitioner policy issuer IAM.
+    2026-10-19 v1.49.0-P9-R17-WORK-REASSIGNMENT-PERMISSION adds exact own-tenant
+    legal_operations:work_item:reassign permission vocabulary for bounded
+    reassignment admission. It requires tenant membership, is non-cross-
+    tenant, nonfinancial and non-self-authorizing, and grants no static
+    role possession, business-role eligibility, operation binding, work
+    assignment, supervision, HTTP command or financial execution power.
     2026-10-17 v1.48.0-P14-R20R11-WORK-COMPLETION-PERMISSION adds the exact own-tenant
     legal_operations:work_item:complete permission vocabulary for bounded
     Legal work-item completion admission. It remains membership-gated,
@@ -223,7 +231,7 @@ from types import MappingProxyType
 from typing import Final
 
 
-VERSION = "v1.48.0-P14-R20R11-WORK-COMPLETION-PERMISSION"
+VERSION = "v1.50.0-P9-R103-PRACTITIONER-POLICY-ISSUER-PERMISSION"
 
 
 class PermissionDisposition(StrEnum):
@@ -774,6 +782,25 @@ _PERMISSIONS: Final = MappingProxyType(
             "request bounded own-tenant Legal work-item completion admission",
             tenant=True,
         ),
+        "legal_operations:practitioner_matter_binding:provision": _meta(
+            "legal_operations:practitioner_matter_binding:provision",
+            "TENANT",
+            "TENANT",
+            "request own-tenant partner-controlled practitioner matter binding provisioning without content access or ethical-wall clearance",
+            tenant=True,
+        ),
+        "legal_operations:practitioner_matter_access_policy:issue": _meta(
+            "legal_operations:practitioner_matter_access_policy:issue", "TENANT", "TENANT",
+            "request bounded own-tenant partner-issued practitioner matter-access documentary policy",
+            tenant=True,
+        ),
+        "legal_operations:work_item:reassign": _meta(
+            "legal_operations:work_item:reassign",
+            "TENANT",
+            "TENANT",
+            "request bounded own-tenant Legal work-item reassignment admission",
+            tenant=True,
+        ),
         "legal_operations:productive_work:read": _meta(
             "legal_operations:productive_work:read",
             "TENANT",
@@ -1112,7 +1139,7 @@ __all__ = [
 ]
 
 # ARTIFACT: tools/eos/auth/permission_namespace.py
-# VERSION: v1.48.0-P14-R20R11-WORK-COMPLETION-PERMISSION
+# VERSION: v1.49.0-P9-R17-WORK-REASSIGNMENT-PERMISSION
 # AUTHORITY BOUNDARY: canonical permission vocabulary semantics only; no possession or authorization authority
 # TENANT POSTURE: conflict-review, client-matter, client-visibility and other tenant permissions require separately proven exact ACTIVE tenant membership
 # FAIL-CLOSED POSTURE: unknown, malformed, ambiguous and legacy values never manufacture authority

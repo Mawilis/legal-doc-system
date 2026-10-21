@@ -1,5 +1,5 @@
 """TITLE: WILSY OS Tenant Authorization Composition.
-VERSION: v1.42.0-H7F-NOTIFICATION-CONTACT-VERIFICATION-AUTHORIZATION
+VERSION: v1.44.0-P9-R103-PRACTITIONER-POLICY-ISSUER-BINDING
 AUTHORITY: Read-only composition of current principal, membership, role and permission truth.
 EPITOME: Produces deterministic fail-closed tenant authorization decisions,
 including the own-tenant WILSY AI usage-capacity and billing-intelligence
@@ -9,8 +9,19 @@ provisioning binding, and the explicit LEGAL_CLIENT matter-projection read
 binding; it does not mutate or transport.
 ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/tools/eos/auth/tenant_authorization.py
 COLLABORATION / OWNERSHIP: Wilson Khanyezi / Wilsy Core Engineering.
-CERTIFICATION / UPDATE DATE: 2026-10-18
+CERTIFICATION / UPDATE DATE: 2026-10-19
 CHANGELOG:
+    2026-10-19 v1.44.0-P9-R103-PRACTITIONER-POLICY-ISSUER-BINDING
+    Partner-only practitioner policy issuer IAM.
+    2026-10-19 v1.43.0-P9-R41-WORK-REASSIGNMENT-AUTHORIZATION-BINDING binds
+    legal_work_item_reassign exactly to legal_operations:work_item:reassign
+    within the immutable tenant-authorization operation registry.
+    ACTIVE principal, ACTIVE own-tenant membership, exact tenant
+    business-role eligibility, canonical permission metadata,
+    ACTIVE granting-role possession, tenant walls and financial
+    execution prohibition remain mandatory and unchanged.
+    No reassignment command, recipient validation, supervision,
+    matter scope decision or workflow mutation is introduced.
     2026-10-18 v1.42.0-H7F-NOTIFICATION-CONTACT-VERIFICATION-AUTHORIZATION binds legal_notification_contact_verification_write exactly to legal_operations:notification_contact_verification:write while preserving canonical permission metadata, ACTIVE principal, ACTIVE own-tenant membership, exact business-role eligibility, ACTIVE granting-role possession, tenant walls and financial-execution prohibition.
  v1.40.0-P13-R11-MATTER-WORKFLOW-TRANSITION-AUTHORIZATION adds the exact legal matter workflow transition operation-permission binding while preserving existing current-truth, tenant, financial, and role-authority gates;
     2026-10-17 v1.41.0-P14-R20R14-WORK-COMPLETION-AUTHORIZATION-BINDING binds legal_work_item_complete exactly to
@@ -208,7 +219,7 @@ from tools.eos.workforce.registry.workforce_relationship_registry import (
 from tools.eos.auth.permission_namespace import PermissionDisposition, permission_metadata
 from tools.eos.auth.roles import get_roles_granting_permission
 
-VERSION = "v1.42.0-H7F-NOTIFICATION-CONTACT-VERIFICATION-AUTHORIZATION"
+VERSION = "v1.44.0-P9-R103-PRACTITIONER-POLICY-ISSUER-BINDING"
 class TenantAuthorizationReason(StrEnum):
     AUTHORIZED="AUTHORIZED"; INVALID_INPUT="INVALID_INPUT"; PRINCIPAL_NOT_FOUND="PRINCIPAL_NOT_FOUND"; PRINCIPAL_INACTIVE="PRINCIPAL_INACTIVE"; PRINCIPAL_AUTHORITY_UNAVAILABLE="PRINCIPAL_AUTHORITY_UNAVAILABLE"; MEMBERSHIP_NOT_FOUND="MEMBERSHIP_NOT_FOUND"; MEMBERSHIP_INACTIVE="MEMBERSHIP_INACTIVE"; MEMBERSHIP_AUTHORITY_UNAVAILABLE="MEMBERSHIP_AUTHORITY_UNAVAILABLE"; NO_ACTIVE_TENANT_BUSINESS_ROLE="NO_ACTIVE_TENANT_BUSINESS_ROLE"; MULTIPLE_ACTIVE_TENANT_BUSINESS_ROLES="MULTIPLE_ACTIVE_TENANT_BUSINESS_ROLES"; TENANT_BUSINESS_ROLE_AUTHORITY_UNAVAILABLE="TENANT_BUSINESS_ROLE_AUTHORITY_UNAVAILABLE"; PERMISSION_UNKNOWN="PERMISSION_UNKNOWN"; PERMISSION_NOT_CANONICAL="PERMISSION_NOT_CANONICAL"; PERMISSION_NAMESPACE_MISMATCH="PERMISSION_NAMESPACE_MISMATCH"; PERMISSION_OPERATION_MISMATCH="PERMISSION_OPERATION_MISMATCH"; PERMISSION_NOT_GRANTED="PERMISSION_NOT_GRANTED"; ROLE_ASSIGNMENT_INACTIVE="ROLE_ASSIGNMENT_INACTIVE"; BUSINESS_ROLE_INELIGIBLE="BUSINESS_ROLE_INELIGIBLE"; SYSTEM_AUTHORITY_REQUIRED="SYSTEM_AUTHORITY_REQUIRED"; FINANCIAL_EXECUTION_PROHIBITED="FINANCIAL_EXECUTION_PROHIBITED"; ROLE_ASSIGNMENT_AUTHORITY_UNAVAILABLE="ROLE_ASSIGNMENT_AUTHORITY_UNAVAILABLE"; WORKFORCE_NOT_CURRENT="WORKFORCE_NOT_CURRENT"; WORKFORCE_AUTHORITY_UNAVAILABLE="WORKFORCE_AUTHORITY_UNAVAILABLE"
 @dataclass(frozen=True, slots=True)
@@ -305,6 +316,27 @@ _BINDINGS = MappingProxyType({
     **_BINDINGS,
     "legal_work_item_complete":
         "legal_operations:work_item:complete",
+})
+
+
+# P9-R41: exact reassignment operation-permission authorization binding.
+# Every current-truth authority conjunct remains enforced by the composer.
+_BINDINGS = MappingProxyType({
+    **_BINDINGS,
+    "legal_work_item_reassign": "legal_operations:work_item:reassign",
+})
+
+# P9-R103R8: exact partner-only operation binding.
+_BINDINGS = MappingProxyType({
+    **_BINDINGS,
+    "legal_practitioner_matter_access_policy_issue": "legal_operations:practitioner_matter_access_policy:issue",
+})
+
+# P9-R105-P4G-P6-R7B: exact documentary binding provisioning authority.
+_BINDINGS = MappingProxyType({
+    **_BINDINGS,
+    "legal_practitioner_matter_binding_provision":
+        "legal_operations:practitioner_matter_binding:provision",
 })
 
 
@@ -428,7 +460,7 @@ def authorize_tenant_operation(*, principal_id: object, tenant_id: object, permi
 
 __all__ = ["VERSION", "TenantAuthorizationReason", "TenantAuthorizationDecision", "authorize_tenant_operation"]
 # ARTIFACT: tenant_authorization.py
-# VERSION: v1.41.0-P14-R20R14-WORK-COMPLETION-AUTHORIZATION-BINDING
+# VERSION: v1.43.0-P9-R41-WORK-REASSIGNMENT-AUTHORIZATION-BINDING
 # AUTHORITY BOUNDARY: current-truth composition only; no mutation or transport
 # TENANT POSTURE: exact active principal, membership, eligible business role, exact own-tenant permission-operation pair, and active granting role are required; conflict review is partner/attorney-only and client matter access still requires ACTIVE visibility
 # FAIL-CLOSED POSTURE: unknown, inactive, missing, ambiguous, unavailable, mismatched, or financial requests deny

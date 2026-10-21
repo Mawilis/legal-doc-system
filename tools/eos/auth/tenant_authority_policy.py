@@ -1,5 +1,5 @@
 """TITLE: WILSY OS Tenant Business Authority Policy Canon.
-VERSION: v1.46.0-H7F-NOTIFICATION-CONTACT-VERIFICATION-ELIGIBILITY
+VERSION: v1.49.0-P9-R103-PRACTITIONER-POLICY-ISSUER-ELIGIBILITY
 AUTHORITY: Canonical business eligibility facts only; this module does not authorize.
 EPITOME: Defines bounded tenant-role eligibility and field boundaries, including
 own-tenant WILSY AI usage-capacity and billing-intelligence evidence read eligibility and dedicated
@@ -10,8 +10,24 @@ tenant_legal_client-only client-matter projection read eligibility, plus the
 exact Partner/Attorney-only firm-decision operation eligibility.
 ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/tools/eos/auth/tenant_authority_policy.py
 COLLABORATION / OWNERSHIP: Wilson Khanyezi / Wilsy Core Engineering.
-CERTIFICATION / UPDATE DATE: 2026-10-18
+CERTIFICATION / UPDATE DATE: 2026-10-19
 CHANGELOG:
+    2026-10-19 v1.49.0-P9-R103-PRACTITIONER-POLICY-ISSUER-ELIGIBILITY
+    Partner-only practitioner policy issuer IAM.
+2026-10-19 v1.48.0-P9-R40-WORK-REASSIGNMENT-PERMISSION-LOOKUP binds
+legal_work_item_reassign exactly to legal_operations:work_item:reassign in the
+immutable business-operation permission lookup. This mapping
+does not establish tenant authorization composition, ACTIVE role
+possession, recipient or matter eligibility, supervision, work-item
+mutation, reassignment execution, billing or financial authority.
+2026-10-19 v1.47.0-P9-R33-WORK-REASSIGNMENT-ELIGIBILITY introduces the exact own-tenant
+legal_work_item_reassign business operation. Only
+tenant_legal_partner and tenant_legal_attorney are ELIGIBLE;
+all other business roles DENY. Eligibility grants no ACTIVE
+membership, authorization-role possession, permission binding,
+target-assignee validation, matter scope, supervision, command,
+execution, workflow mutation or financial authority. This revision
+also aligns the previously stale artifact end-seal version.
 2026-10-18 v1.46.0-H7F-NOTIFICATION-CONTACT-VERIFICATION-ELIGIBILITY adds legal_notification_contact_verification_write as one exact own-tenant business operation eligible only to tenant_legal_partner and tenant_legal_attorney. Eligibility remains non-authorizing and creates no permission possession, dispatch, delivery, legal-effect, cross-tenant or financial execution authority.
 2026-10-17 v1.45.0-P14-R20R14-WORK-COMPLETION-PERMISSION-BINDING binds legal_work_item_complete exactly to
 legal_operations:work_item:complete in the canonical business-operation permission map.
@@ -206,7 +222,7 @@ from types import MappingProxyType
 from typing import Final, FrozenSet
 from tools.eos.auth.hr_business_role_catalog import ALL_HR_BUSINESS_ROLES
 
-VERSION = "v1.46.0-H7F-NOTIFICATION-CONTACT-VERIFICATION-ELIGIBILITY"
+VERSION = "v1.49.0-P9-R103-PRACTITIONER-POLICY-ISSUER-ELIGIBILITY"
 class SystemAuthorityClassification(StrEnum):
     SYSTEM_REQUIRED = "SYSTEM_REQUIRED"
     SYSTEM_NOT_INHERENTLY_REQUIRED = "SYSTEM_NOT_INHERENTLY_REQUIRED"
@@ -261,6 +277,8 @@ BUSINESS_ROLE_OPERATION_PERMISSIONS: Final = MappingProxyType({
     "legal_work_item_read": "legal_operations:work_item:read",
     "legal_work_item_write": "legal_operations:work_item:write",
     "legal_work_item_complete": "legal_operations:work_item:complete",
+    "legal_work_item_reassign": "legal_operations:work_item:reassign",
+    "legal_practitioner_matter_access_policy_issue": "legal_operations:practitioner_matter_access_policy:issue",
     "legal_productive_work_read": "legal_operations:productive_work:read",
 })
 TENANT_ROLES: Final[FrozenSet[str]] = frozenset({"tenant_owner", "tenant_admin", "tenant_manager", "tenant_auditor", "tenant_platform_billing_provider_policy_admin", "tenant_inbound_collection_authorization_admin", "tenant_inbound_merchant_configuration_admin", "tenant_inbound_provider_security_admin", "tenant_inbound_provider_policy_admin", "tenant_inbound_provider_policy_activation_admin", "tenant_legal_partner", "tenant_legal_attorney", "tenant_legal_paralegal", "tenant_legal_secretary", "tenant_legal_finance", "tenant_sheriff", "tenant_deputy", "tenant_legal_client"}) | ALL_HR_BUSINESS_ROLES
@@ -863,6 +881,42 @@ ELIGIBILITY = MappingProxyType(
 )
 
 
+# P9-R33 — business eligibility for Legal work reassignment only.
+# This is not an authorization grant or reassignment command.
+OPERATIONS = frozenset((*OPERATIONS, "legal_work_item_reassign"))
+_reassignment_eligibility = dict(ELIGIBILITY)
+for _reassignment_role in ("tenant_legal_partner", "tenant_legal_attorney"):
+    _reassignment_role_policy = dict(
+        _reassignment_eligibility[_reassignment_role]
+    )
+    _reassignment_role_policy["legal_work_item_reassign"] = ELIGIBLE
+    _reassignment_eligibility[_reassignment_role] = MappingProxyType(
+        _reassignment_role_policy
+    )
+ELIGIBILITY = MappingProxyType(_reassignment_eligibility)
+
+# P9-R103R8: partner-only issuer eligibility, no authority grant.
+OPERATIONS = frozenset((*OPERATIONS, "legal_practitioner_matter_access_policy_issue"))
+_issuer_roles = dict(ELIGIBILITY)
+_issuer_partner = dict(_issuer_roles["tenant_legal_partner"])
+_issuer_partner["legal_practitioner_matter_access_policy_issue"] = ELIGIBLE
+_issuer_roles["tenant_legal_partner"] = MappingProxyType(_issuer_partner)
+ELIGIBILITY = MappingProxyType(_issuer_roles)
+
+# P9-R105-P4G-P6-R7B: partner-only provisioning eligibility.
+# Eligibility alone never authorizes binding creation or content access.
+OPERATIONS = frozenset(
+    (*OPERATIONS, "legal_practitioner_matter_binding_provision")
+)
+_binding_roles = dict(ELIGIBILITY)
+_binding_partner = dict(_binding_roles["tenant_legal_partner"])
+_binding_partner[
+    "legal_practitioner_matter_binding_provision"
+] = ELIGIBLE
+_binding_roles["tenant_legal_partner"] = MappingProxyType(_binding_partner)
+ELIGIBILITY = MappingProxyType(_binding_roles)
+
+
 def tenant_role_operation_eligibility(role: object, operation: object) -> str:
     """Return business eligibility only; ELIGIBLE is never an authorization grant."""
     if not isinstance(role, str) or not isinstance(operation, str): return DENY
@@ -896,7 +950,7 @@ def requires_system_authority(operation: object) -> SystemAuthorityClassificatio
 __all__ = ["VERSION", "ELIGIBLE", "DENY", "SystemAuthorityClassification", "TENANT_ROLES", "OPERATIONS", "ELIGIBILITY", "BUSINESS_ROLE_OPERATION_PERMISSIONS", "PROFILE_READABLE_FIELDS", "PROFILE_MUTABLE_FIELDS_V1", "LIFECYCLE_FIELDS", "VERIFICATION_FIELDS", "BILLING_METADATA_FIELDS", "EVIDENCE_FIELDS", "SECURITY_SENSITIVE_FIELDS", "SYSTEM_MANAGED_FIELDS", "FUTURE_PERMISSION_CANDIDATES", "normalize_tenant_business_role", "tenant_role_operation_eligibility", "permission_for_business_role_operation", "allowed_profile_mutation_fields", "is_hard_delete_allowed", "requires_system_authority"]
 
 # ARTIFACT: tenant_authority_policy.py
-# VERSION: v1.45.0-P14-R20R14-WORK-COMPLETION-PERMISSION-BINDING
+# VERSION: v1.48.0-P9-R40-WORK-REASSIGNMENT-PERMISSION-LOOKUP
 # AUTHORITY BOUNDARY: business eligibility facts only; no authorization or mutation
 # TENANT POSTURE: own-tenant conflict-review, client-matter and client-visibility eligibility require separate ACTIVE membership, assignment and exact permission binding; client visibility remains separately scope-bound
 # FAIL-CLOSED POSTURE: unknown roles and operations deny; ELIGIBLE never grants access
