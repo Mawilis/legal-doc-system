@@ -1,5 +1,5 @@
 """TITLE: WILSY OS Role Definition Policy.
-VERSION: v1.48.0-P47-R95-G32-OPERATIONAL-ACCESS-ISSUER-GRANT
+VERSION: v1.49.0-R59-P9-REASSIGNMENT-IAM-INTEGRATION
 AUTHORITY: Canonical Python role identifiers and explicit permission grants.
 EPITOME: Defines current tenant-scoped authorization roles, including
 least-privilege subscription/plan-catalogue grants, read-only WILSY AI
@@ -15,7 +15,7 @@ ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/tools/eos/auth/r
 COLLABORATION / OWNERSHIP: Wilson Khanyezi / Wilsy Core Engineering.
 CERTIFICATION / UPDATE DATE: 2026-10-20
 CHANGELOG:
-    2026-10-21 v1.48.0-P47-R95-G32-OPERATIONAL-ACCESS-ISSUER-GRANT
+    2026-10-21 v1.49.0-R59-P9-REASSIGNMENT-IAM-INTEGRATION
     Partner-only static issuer permission; current role assignment and matter clearance remain separate.
     2026-10-21 v1.47.0-P47-R94-WORK-ASSIGNMENT-GRANTS
     Grants legal_operations:work_assignment:write exactly once to
@@ -224,7 +224,7 @@ from __future__ import annotations
 from collections.abc import Iterable
 
 
-VERSION = "v1.48.0-P47-R95-G32-OPERATIONAL-ACCESS-ISSUER-GRANT"
+VERSION = "v1.49.0-R59-P9-REASSIGNMENT-IAM-INTEGRATION"
 
 
 ROLE_PERMISSIONS_MAP: dict[str, list[str]] = {
@@ -508,6 +508,10 @@ for _role_name in ("LEGAL_PARTNER", "LEGAL_ATTORNEY", "LEGAL_PARALEGAL", "LEGAL_
     ROLE_PERMISSIONS_MAP[_role_name].extend(("wilsy_ai:legal_advisory:generate", "wilsy_ai:legal_advisory:read"))
 
 
+# R59: bounded reassignment permission possession only.
+for _reassign_auth_role in ("LEGAL_PARTNER", "LEGAL_ATTORNEY"):
+    ROLE_PERMISSIONS_MAP[_reassign_auth_role].append("legal_operations:work_item:reassign")
+
 def get_permissions_for_roles(
     roles: Iterable[str],
 ) -> list[str]:
@@ -571,7 +575,7 @@ ROLE_PERMISSIONS_MAP["LEGAL_PARTNER"].append(
 )
 
 # ARTIFACT: tools/eos/auth/roles.py
-# VERSION: v1.48.0-P47-R95-G32-OPERATIONAL-ACCESS-ISSUER-GRANT
+# VERSION: v1.49.0-R59-P9-REASSIGNMENT-IAM-INTEGRATION
 # AUTHORITY BOUNDARY: role identifiers and deterministic permission definitions only; current assignment is separate authority
 # TENANT POSTURE: role definitions never establish tenant membership or role possession; assignment write is Partner/Attorney-only static policy
 # FAIL-CLOSED POSTURE: unknown roles and permissions never manufacture grants

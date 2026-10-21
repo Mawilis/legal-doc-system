@@ -1,5 +1,5 @@
 """TITLE: WILSY OS Permission Namespace Semantic Canon.
-VERSION: v1.53.0-P47-R95-G32-OPERATIONAL-ACCESS-ISSUER-PERMISSION
+VERSION: v1.54.0-R59-P9-REASSIGNMENT-IAM-INTEGRATION
 AUTHORITY: Immutable permission vocabulary and scope metadata only.
 EPITOME: Extends the canonical TENANT and SYSTEM permission vocabulary with dedicated
 inbound-collection, merchant-configuration, provider-policy, WILSY AI,
@@ -13,7 +13,7 @@ ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/tools/eos/auth/p
 COLLABORATION / OWNERSHIP: Wilson Khanyezi / Wilsy Core Engineering.
 CERTIFICATION / UPDATE DATE: 2026-10-21
 CHANGELOG:
-    2026-10-21 v1.53.0-P47-R95-G32-OPERATIONAL-ACCESS-ISSUER-PERMISSION
+    2026-10-21 v1.54.0-R59-P9-REASSIGNMENT-IAM-INTEGRATION
     Canonical own-tenant operational issuer permission metadata; not possession or matter access.
     2026-10-21 v1.52.0-P47-R92-WORK-ASSIGNMENT-PERMISSION
     Introduces dedicated own-tenant Legal work-assignment permission
@@ -238,7 +238,7 @@ from types import MappingProxyType
 from typing import Final
 
 
-VERSION = "v1.53.0-P47-R95-G32-OPERATIONAL-ACCESS-ISSUER-PERMISSION"
+VERSION = "v1.54.0-R59-P9-REASSIGNMENT-IAM-INTEGRATION"
 
 
 class PermissionDisposition(StrEnum):
@@ -901,6 +901,11 @@ _PERMISSIONS: Final = MappingProxyType(
             "issue authorized own-tenant firm Representation decisions",
             tenant=True,
         ),
+        "legal_operations:work_item:reassign": _meta(
+            "legal_operations:work_item:reassign", "TENANT", "TENANT",
+            "request bounded own-tenant Legal work-item reassignment admission",
+            tenant=True,
+        ),
         "legal_operations:allocation:read": _meta(
             "legal_operations:allocation:read", "TENANT", "TENANT",
             "read own-tenant process allocations", tenant=True,
@@ -1159,7 +1164,7 @@ __all__ = [
 ]
 
 # ARTIFACT: tools/eos/auth/permission_namespace.py
-# VERSION: v1.53.0-P47-R95-G32-OPERATIONAL-ACCESS-ISSUER-PERMISSION
+# VERSION: v1.54.0-R59-P9-REASSIGNMENT-IAM-INTEGRATION
 # AUTHORITY BOUNDARY: canonical permission vocabulary semantics only; no possession or authorization authority
 # TENANT POSTURE: conflict-review, client-matter, client-visibility and other tenant permissions require separately proven exact ACTIVE tenant membership
 # FAIL-CLOSED POSTURE: unknown, malformed, ambiguous and legacy values never manufacture authority

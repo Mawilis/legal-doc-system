@@ -39,7 +39,7 @@ PREVIOUS_VERSION = (
 def test_exact_canonical_read_permission() -> None:
     metadata = permission_metadata(READ)
 
-    assert VERSION == "v1.53.0-P47-R95-G32-OPERATIONAL-ACCESS-ISSUER-PERMISSION"
+    assert VERSION == "v1.54.0-R59-P9-REASSIGNMENT-IAM-INTEGRATION"
     assert metadata.permission_id == READ
     assert metadata.disposition is PermissionDisposition.CANONICAL
     assert metadata.namespace == "TENANT"

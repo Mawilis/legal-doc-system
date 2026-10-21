@@ -266,7 +266,7 @@ def test_d12_system_command_permissions_are_exact_non_authorizing_metadata(permi
 
 
 def test_runtime_version_source_is_canonical() -> None:
-    assert POLICY_VERSION == "v1.53.0-P47-R95-G32-OPERATIONAL-ACCESS-ISSUER-PERMISSION"
+    assert POLICY_VERSION == "v1.54.0-R59-P9-REASSIGNMENT-IAM-INTEGRATION"
 
 
 def test_practitioner_binding_provision_permission_is_exact_and_bounded() -> None:
@@ -356,6 +356,7 @@ def test_permission_canon_properties() -> None:
         "legal_operations:matter_workflow:transition",
         "legal_operations:work_item:read",
         "legal_operations:work_item:write",
+        "legal_operations:work_item:reassign",
         "legal_operations:practitioner_matter_binding:provision",
         "legal_operations:productive_work:read",
         "hr:employee_relation:write",
@@ -386,9 +387,9 @@ def test_permission_canon_properties() -> None:
             for row in rows
             if row["disposition"] == "CANONICAL"
         ]
-    ) == 120
+    ) == 121
 
-    assert len(rows) == 123
+    assert len(rows) == 124
 
     for permission_id in tenant:
         metadata = permission_metadata(

@@ -115,7 +115,7 @@ from tools.eos.auth.hr_business_role_catalog import ALL_HR_BUSINESS_ROLES
 import pytest
 
 def test_runtime_version_source_is_canonical() -> None:
-    assert VERSION == "v1.50.0-P47-R95-G32-OPERATIONAL-ACCESS-ISSUER-ELIGIBILITY"
+    assert VERSION == "v1.51.0-R59-P9-REASSIGNMENT-IAM-INTEGRATION"
 
 LEGACY = ("AUDITOR", "SOVEREIGN_ARCHITECT", "ENTERPRISE_ADMIN", "FOUNDER", "SUPER_ADMIN", "ADMIN", "admin", "GLOBAL_ROOT", "WILSY_ROOT", "MASTER", "unknown")
 
@@ -160,6 +160,9 @@ def test_legal_business_role_matrix_is_explicit_and_least_authority() -> None:
     }
     expected["tenant_legal_partner"].add("legal_notification_recipient_binding_write")
     expected["tenant_legal_attorney"].add("legal_notification_recipient_binding_write")
+    # R59: two eligible business roles only; no command authority.
+    expected["tenant_legal_partner"].add("legal_work_item_reassign")
+    expected["tenant_legal_attorney"].add("legal_work_item_reassign")
     for role in (
         "tenant_legal_partner",
         "tenant_legal_attorney",

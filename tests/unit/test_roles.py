@@ -140,7 +140,7 @@ from tools.eos.auth.roles import (
 )
 
 def test_runtime_version_source_is_canonical() -> None:
-    assert POLICY_VERSION == "v1.48.0-P47-R95-G32-OPERATIONAL-ACCESS-ISSUER-GRANT"
+    assert POLICY_VERSION == "v1.49.0-R59-P9-REASSIGNMENT-IAM-INTEGRATION"
 
 VERSION = "v1.8.0-P47-R94-WORK-ASSIGNMENT-GRANTS-CERT"
 
@@ -264,6 +264,7 @@ def test_legal_role_grants_are_explicit_and_least_authority() -> None:
         "wilsy_ai:legal_tool:read",
         "wilsy_ai:legal_services:execute",
         "wilsy_ai:legal_advisory:generate", "wilsy_ai:legal_advisory:read",
+        "legal_operations:work_item:reassign",
         "legal_operations:practitioner_matter_access_policy:issue",
         "legal_operations:work_assignment:write",
         "legal_operations:operational_matter_access:issue",
