@@ -1,5 +1,5 @@
 """TITLE: WILSY OS Tenant Authorization Composition.
-VERSION: v1.46.0-P47-R95-G32-OPERATIONAL-ACCESS-ISSUER-BINDING
+VERSION: v1.47.0-R59-P9-REASSIGNMENT-IAM-INTEGRATION
 AUTHORITY: Read-only composition of current principal, membership, role and permission truth.
 EPITOME: Produces deterministic fail-closed tenant authorization decisions,
 including the own-tenant WILSY AI usage-capacity and billing-intelligence
@@ -11,7 +11,7 @@ ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/tools/eos/auth/t
 COLLABORATION / OWNERSHIP: Wilson Khanyezi / Wilsy Core Engineering.
 CERTIFICATION / UPDATE DATE: 2026-10-20
 CHANGELOG:
-    2026-10-21 v1.46.0-P47-R95-G32-OPERATIONAL-ACCESS-ISSUER-BINDING
+    2026-10-21 v1.47.0-R59-P9-REASSIGNMENT-IAM-INTEGRATION
     Exact issuer operation-permission binding; no access read or financial execution.
 2026-10-21 v1.45.0-P47-R94-WORK-ASSIGNMENT-IAM-BINDING binds the exact
 legal_work_assignment_write operation to legal_operations:work_assignment:write.
@@ -221,7 +221,7 @@ from tools.eos.workforce.registry.workforce_relationship_registry import (
 from tools.eos.auth.permission_namespace import PermissionDisposition, permission_metadata
 from tools.eos.auth.roles import get_roles_granting_permission
 
-VERSION = "v1.46.0-P47-R95-G32-OPERATIONAL-ACCESS-ISSUER-BINDING"
+VERSION = "v1.47.0-R59-P9-REASSIGNMENT-IAM-INTEGRATION"
 class TenantAuthorizationReason(StrEnum):
     AUTHORIZED="AUTHORIZED"; INVALID_INPUT="INVALID_INPUT"; PRINCIPAL_NOT_FOUND="PRINCIPAL_NOT_FOUND"; PRINCIPAL_INACTIVE="PRINCIPAL_INACTIVE"; PRINCIPAL_AUTHORITY_UNAVAILABLE="PRINCIPAL_AUTHORITY_UNAVAILABLE"; MEMBERSHIP_NOT_FOUND="MEMBERSHIP_NOT_FOUND"; MEMBERSHIP_INACTIVE="MEMBERSHIP_INACTIVE"; MEMBERSHIP_AUTHORITY_UNAVAILABLE="MEMBERSHIP_AUTHORITY_UNAVAILABLE"; NO_ACTIVE_TENANT_BUSINESS_ROLE="NO_ACTIVE_TENANT_BUSINESS_ROLE"; MULTIPLE_ACTIVE_TENANT_BUSINESS_ROLES="MULTIPLE_ACTIVE_TENANT_BUSINESS_ROLES"; TENANT_BUSINESS_ROLE_AUTHORITY_UNAVAILABLE="TENANT_BUSINESS_ROLE_AUTHORITY_UNAVAILABLE"; PERMISSION_UNKNOWN="PERMISSION_UNKNOWN"; PERMISSION_NOT_CANONICAL="PERMISSION_NOT_CANONICAL"; PERMISSION_NAMESPACE_MISMATCH="PERMISSION_NAMESPACE_MISMATCH"; PERMISSION_OPERATION_MISMATCH="PERMISSION_OPERATION_MISMATCH"; PERMISSION_NOT_GRANTED="PERMISSION_NOT_GRANTED"; ROLE_ASSIGNMENT_INACTIVE="ROLE_ASSIGNMENT_INACTIVE"; BUSINESS_ROLE_INELIGIBLE="BUSINESS_ROLE_INELIGIBLE"; SYSTEM_AUTHORITY_REQUIRED="SYSTEM_AUTHORITY_REQUIRED"; FINANCIAL_EXECUTION_PROHIBITED="FINANCIAL_EXECUTION_PROHIBITED"; ROLE_ASSIGNMENT_AUTHORITY_UNAVAILABLE="ROLE_ASSIGNMENT_AUTHORITY_UNAVAILABLE"; WORKFORCE_NOT_CURRENT="WORKFORCE_NOT_CURRENT"; WORKFORCE_AUTHORITY_UNAVAILABLE="WORKFORCE_AUTHORITY_UNAVAILABLE"
 @dataclass(frozen=True, slots=True)
@@ -327,6 +327,13 @@ _BINDINGS = MappingProxyType({
     "legal_practitioner_matter_binding_provision": "legal_operations:practitioner_matter_binding:provision",
 })
 
+
+# R59: exact reassignment operation-permission binding.
+# No workflow mutation, recipient admission or matter clearance.
+_BINDINGS = MappingProxyType({
+    **_BINDINGS,
+    "legal_work_item_reassign": "legal_operations:work_item:reassign",
+})
 
 def authorize_tenant_operation(*, principal_id: object, tenant_id: object, permission_id: object, operation: object, principal_repository: Any, membership_repository: Any, role_assignment_repository: Any, business_role_repository: Any, session: Any = None, workforce_relationship_collection: Any = None) -> TenantAuthorizationDecision:
     """Compose current truth; ELIGIBLE is only one conjunct and never authorization alone."""
@@ -466,7 +473,7 @@ _BINDINGS = MappingProxyType({
 })
 
 # ARTIFACT: tenant_authorization.py
-# VERSION: v1.46.0-P47-R95-G32-OPERATIONAL-ACCESS-ISSUER-BINDING
+# VERSION: v1.47.0-R59-P9-REASSIGNMENT-IAM-INTEGRATION
 # AUTHORITY BOUNDARY: current-truth composition only; no mutation or transport
 # TENANT POSTURE: exact active principal, membership, eligible business role, exact own-tenant permission-operation pair, and active granting role are required
 # FAIL-CLOSED POSTURE: unknown, inactive, missing, ambiguous, unavailable, mismatched, or financial requests deny
