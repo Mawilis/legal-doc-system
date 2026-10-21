@@ -1,5 +1,5 @@
 """TITLE: WILSY OS Permission Namespace Semantic Canon.
-VERSION: v1.51.0-P12C-R4N-P4C9-PRACTITIONER-BINDING-READ-PERMISSION
+VERSION: v1.52.0-P47-R92-WORK-ASSIGNMENT-PERMISSION
 AUTHORITY: Immutable permission vocabulary and scope metadata only.
 EPITOME: Extends the canonical TENANT and SYSTEM permission vocabulary with dedicated
 inbound-collection, merchant-configuration, provider-policy, WILSY AI,
@@ -11,8 +11,13 @@ waiver, engagement,
 representation, cross-tenant authority, or financial execution.
 ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/tools/eos/auth/permission_namespace.py
 COLLABORATION / OWNERSHIP: Wilson Khanyezi / Wilsy Core Engineering.
-CERTIFICATION / UPDATE DATE: 2026-10-20
+CERTIFICATION / UPDATE DATE: 2026-10-21
 CHANGELOG:
+    2026-10-21 v1.52.0-P47-R92-WORK-ASSIGNMENT-PERMISSION
+    Introduces dedicated own-tenant Legal work-assignment permission
+    metadata only. No static role grants, business eligibility,
+    actor authorization, assignment persistence, HTTP command,
+    supervision, workflow, completion or financial authority.
     2026-10-20 v1.51.0-P12C-R4N-P4C9-PRACTITIONER-BINDING-READ-PERMISSION
     Registers separate, non-authorizing practitioner-binding read vocabulary.
     2026-10-19 v1.50.0-P9-R103-PRACTITIONER-POLICY-ISSUER-PERMISSION
@@ -231,7 +236,7 @@ from types import MappingProxyType
 from typing import Final
 
 
-VERSION = "v1.51.0-P12C-R4N-P4C9-PRACTITIONER-BINDING-READ-PERMISSION"
+VERSION = "v1.52.0-P47-R92-WORK-ASSIGNMENT-PERMISSION"
 
 
 class PermissionDisposition(StrEnum):
@@ -773,6 +778,13 @@ _PERMISSIONS: Final = MappingProxyType(
             "TENANT",
             "TENANT",
             "write own-tenant Legal work items",
+            tenant=True,
+        ),
+        "legal_operations:work_assignment:write": _meta(
+            "legal_operations:work_assignment:write",
+            "TENANT",
+            "TENANT",
+            "request bounded own-tenant Legal work-assignment command admission; metadata alone grants no role, assignee eligibility, matter access, supervision, persistence, workflow, completion or financial authority",
             tenant=True,
         ),
         "legal_operations:work_item:complete": _meta(
