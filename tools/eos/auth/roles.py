@@ -1,5 +1,5 @@
 """TITLE: WILSY OS Role Definition Policy.
-VERSION: v1.47.0-P47-R94-WORK-ASSIGNMENT-GRANTS
+VERSION: v1.48.0-P47-R95-G32-OPERATIONAL-ACCESS-ISSUER-GRANT
 AUTHORITY: Canonical Python role identifiers and explicit permission grants.
 EPITOME: Defines current tenant-scoped authorization roles, including
 least-privilege subscription/plan-catalogue grants, read-only WILSY AI
@@ -15,6 +15,8 @@ ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/tools/eos/auth/r
 COLLABORATION / OWNERSHIP: Wilson Khanyezi / Wilsy Core Engineering.
 CERTIFICATION / UPDATE DATE: 2026-10-20
 CHANGELOG:
+    2026-10-21 v1.48.0-P47-R95-G32-OPERATIONAL-ACCESS-ISSUER-GRANT
+    Partner-only static issuer permission; current role assignment and matter clearance remain separate.
     2026-10-21 v1.47.0-P47-R94-WORK-ASSIGNMENT-GRANTS
     Grants legal_operations:work_assignment:write exactly once to
     LEGAL_PARTNER and LEGAL_ATTORNEY. The static grant proves no current
@@ -222,7 +224,7 @@ from __future__ import annotations
 from collections.abc import Iterable
 
 
-VERSION = "v1.47.0-P47-R94-WORK-ASSIGNMENT-GRANTS"
+VERSION = "v1.48.0-P47-R95-G32-OPERATIONAL-ACCESS-ISSUER-GRANT"
 
 
 ROLE_PERMISSIONS_MAP: dict[str, list[str]] = {
@@ -563,8 +565,13 @@ for _role_name in ("LEGAL_PARTNER", "LEGAL_ATTORNEY"):
         "legal_operations:work_assignment:write"
     )
 
+# P47-R95-G30 — static Partner grant only, not current possession.
+ROLE_PERMISSIONS_MAP["LEGAL_PARTNER"].append(
+    "legal_operations:operational_matter_access:issue"
+)
+
 # ARTIFACT: tools/eos/auth/roles.py
-# VERSION: v1.47.0-P47-R94-WORK-ASSIGNMENT-GRANTS
+# VERSION: v1.48.0-P47-R95-G32-OPERATIONAL-ACCESS-ISSUER-GRANT
 # AUTHORITY BOUNDARY: role identifiers and deterministic permission definitions only; current assignment is separate authority
 # TENANT POSTURE: role definitions never establish tenant membership or role possession; assignment write is Partner/Attorney-only static policy
 # FAIL-CLOSED POSTURE: unknown roles and permissions never manufacture grants

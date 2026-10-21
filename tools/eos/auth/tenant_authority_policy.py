@@ -1,5 +1,5 @@
 """TITLE: WILSY OS Tenant Business Authority Policy Canon.
-VERSION: v1.49.0-P47-R93-WORK-ASSIGNMENT-ELIGIBILITY
+VERSION: v1.50.0-P47-R95-G32-OPERATIONAL-ACCESS-ISSUER-ELIGIBILITY
 AUTHORITY: Canonical business eligibility facts only; this module does not authorize.
 EPITOME: Defines bounded tenant-role eligibility and field boundaries, including
 own-tenant WILSY AI usage-capacity and billing-intelligence evidence read eligibility and dedicated
@@ -12,6 +12,8 @@ ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/tools/eos/auth/t
 COLLABORATION / OWNERSHIP: Wilson Khanyezi / Wilsy Core Engineering.
 CERTIFICATION / UPDATE DATE: 2026-10-20
 CHANGELOG:
+    2026-10-21 v1.50.0-P47-R95-G32-OPERATIONAL-ACCESS-ISSUER-ELIGIBILITY
+    Partner-only operational issuer eligibility; active IAM and confidentiality clearance remain separate.
     2026-10-21 v1.49.0-P47-R93-WORK-ASSIGNMENT-ELIGIBILITY
     Adds exact non-authorizing work-assignment eligibility for Partner and
     Attorney business roles only, preserves separate IAM, matter scope,
@@ -217,7 +219,7 @@ from types import MappingProxyType
 from typing import Final, FrozenSet
 from tools.eos.auth.hr_business_role_catalog import ALL_HR_BUSINESS_ROLES
 
-VERSION = "v1.49.0-P47-R93-WORK-ASSIGNMENT-ELIGIBILITY"
+VERSION = "v1.50.0-P47-R95-G32-OPERATIONAL-ACCESS-ISSUER-ELIGIBILITY"
 class SystemAuthorityClassification(StrEnum):
     SYSTEM_REQUIRED = "SYSTEM_REQUIRED"
     SYSTEM_NOT_INHERENTLY_REQUIRED = "SYSTEM_NOT_INHERENTLY_REQUIRED"
@@ -884,6 +886,20 @@ _binding_roles["tenant_legal_partner"] = MappingProxyType(_binding_partner)
 ELIGIBILITY = MappingProxyType(_binding_roles)
 
 
+# P47-R95-G30 — Partner-only issuer business eligibility.
+# Eligibility is not current IAM possession and does not clear an ethical wall.
+OPERATIONS = frozenset((*OPERATIONS, "legal_work_operational_matter_access_issue"))
+_operational_issue_roles = dict(ELIGIBILITY)
+_operational_issue_partner = dict(
+    _operational_issue_roles["tenant_legal_partner"]
+)
+_operational_issue_partner["legal_work_operational_matter_access_issue"] = ELIGIBLE
+_operational_issue_roles["tenant_legal_partner"] = MappingProxyType(
+    _operational_issue_partner
+)
+ELIGIBILITY = MappingProxyType(_operational_issue_roles)
+
+
 def tenant_role_operation_eligibility(role: object, operation: object) -> str:
     """Return business eligibility only; ELIGIBLE is never an authorization grant."""
     if not isinstance(role, str) or not isinstance(operation, str): return DENY
@@ -944,7 +960,7 @@ ELIGIBILITY = MappingProxyType(_assignment_roles)
 
 
 # ARTIFACT: tenant_authority_policy.py
-# VERSION: v1.49.0-P47-R93-WORK-ASSIGNMENT-ELIGIBILITY
+# VERSION: v1.50.0-P47-R95-G32-OPERATIONAL-ACCESS-ISSUER-ELIGIBILITY
 # AUTHORITY BOUNDARY: business eligibility facts only; no authorization or mutation
 # TENANT POSTURE: own-tenant eligibility requires separate ACTIVE membership, current role assignment, matter scope and exact permission binding
 # FAIL-CLOSED POSTURE: unknown roles and operations deny; ELIGIBLE never grants access
