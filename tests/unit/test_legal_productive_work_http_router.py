@@ -1,7 +1,16 @@
 """
 TITLE: WILSY OS Productive-Work Authenticated HTTP Read Certificate
-VERSION: v1.0.0-PW-P11B-AUTHENTICATED-PRODUCTIVE-WORK-HTTP-CERT
+VERSION: v1.1.0-R67-ENTERPRISE-DAILY-WORK-HTTP-CERT
 AUTHORITY: Focused transport certificate for the existing PW-P11A/PW-P4/PW-P7B chain.
+EPITOME: Certify authenticated exact-scope productive-work transport and the
+          additive deterministic R67 daily execution queue response contract.
+ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/tests/unit/test_legal_productive_work_http_router.py
+COLLABORATION / OWNERSHIP: Python EOS Legal Operations API and productive-work service.
+CERTIFICATION / UPDATE DATE: 2026-10-22
+CHANGELOG: 2026-10-22 v1.1.0 updates the certified HTTP contract version for
+           the additive R67 daily execution queue without changing authority.
+COMPLIANCE: POPIA section 19; GDPR Article 32; SOC 2 CC7.2.
+SECURITY / PRIVACY POSTURE: Synthetic opaque identifiers; no matter content.
 TENANT BOUNDARY: Tenant and principal are derived only from authorized context.
 AUTHORITY BOUNDARY: Read projection only; no assignment, supervision, workflow,
                     legal act, Sheriff, Deputy, billing or financial authority.
@@ -24,7 +33,7 @@ from tools.eos.legal_operations.service.legal_profile_productive_work_read_servi
 
 
 VERSION = (
-    "v1.0.0-PW-P11B-AUTHENTICATED-PRODUCTIVE-WORK-HTTP-CERT"
+    "v1.1.0-R67-ENTERPRISE-DAILY-WORK-HTTP-CERT"
 )
 
 
@@ -207,7 +216,7 @@ def test_route_uses_only_authenticated_context_scope(
     assert body["tenant_id"] == "tenant-a"
     assert body["principal_id"] == "principal-a"
     assert body["http_version"] == (
-        "v1.0.0-PW-P11B-AUTHENTICATED-PRODUCTIVE-WORK-READ-API"
+        "v1.1.0-R67-ENTERPRISE-DAILY-WORK-EXECUTION-READ-API"
     )
 
     assert body["capability_ids"] == [
@@ -327,7 +336,7 @@ def test_existing_sheriff_and_deputy_dependencies_remain_distinct() -> None:
 
 
 # ARTIFACT: test_legal_productive_work_http_router.py
-# VERSION: v1.0.0-PW-P11B-AUTHENTICATED-PRODUCTIVE-WORK-HTTP-CERT
+# VERSION: v1.1.0-R67-ENTERPRISE-DAILY-WORK-HTTP-CERT
 # AUTHORITY BOUNDARY: authenticated own-principal productive-work read transport only
 # SHERIFF / DEPUTY: existing specialized authorities remain distinct and unchanged
 # FINANCIAL EXECUTION AUTHORITY: Kennel EOS exclusively

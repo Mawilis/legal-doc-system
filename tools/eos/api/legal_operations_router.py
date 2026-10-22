@@ -1,7 +1,7 @@
 """Authenticated deterministic read projections for Legal Operations.
 
 TITLE: WILSY OS Legal Operations Read Projection Router
-VERSION: v1.15.0-P7-COMPLETION-AWARE-PRODUCTIVE-WORK-HTTP
+VERSION: v1.16.0-R67-ENTERPRISE-DAILY-WORK-EXECUTION-READ
 AUTHORITY: Authenticated, tenant-scoped projection of canonical Legal Operations evidence only.
 EPITOME: Preserve exact authorized internal/sheriff/deputy/client reads while
          exposing one snapshot-consistent legal-practice workspace projection and
@@ -20,8 +20,14 @@ COLLABORATION / OWNERSHIP: Python EOS API composition. P1 owns lifecycle truth,
                             L8-7D5 owns sanitized client matter projection, and
                             L8-8E owns immutable conflict-screening persistence;
                             tenant authorization owns access authority.
-CERTIFICATION / UPDATE DATE: 2026-10-19
-CHANGELOG: 2026-10-19 v1.15.0-P7-COMPLETION-AWARE-PRODUCTIVE-WORK-HTTP composes canonical immutable
+CERTIFICATION / UPDATE DATE: 2026-10-22
+CHANGELOG: 2026-10-22 v1.16.0-R67-ENTERPRISE-DAILY-WORK-EXECUTION-READ adds
+           one deterministic, deduplicated and urgency-ordered daily execution
+           queue to the existing authenticated productive-work response. Queue
+           rows retain assignment/supervision visibility provenance and a
+           SHA3-512 projection fingerprint while explicitly granting no matter
+           access, assignment mutation, completion or execution authority.
+           2026-10-19 v1.15.0-P7-COMPLETION-AWARE-PRODUCTIVE-WORK-HTTP composes canonical immutable
            completion history into the authenticated productive-work
            read. Completed work leaves active lists within the same
            tenant-scoped snapshot. No new permissions, collections,
@@ -132,6 +138,7 @@ FAIL-CLOSED DECLARATION: Missing or mismatched practice authority, unavailable
 from __future__ import annotations
 
 import hashlib
+import json
 import logging
 import re
 import time
@@ -278,7 +285,7 @@ from tools.eos.saas.entitlement.tenant_product_entitlement_registry import (
 )
 
 
-VERSION: Final[str] = "v1.15.0-P7-COMPLETION-AWARE-PRODUCTIVE-WORK-HTTP"
+VERSION: Final[str] = "v1.16.0-R67-ENTERPRISE-DAILY-WORK-EXECUTION-READ"
 logger = logging.getLogger("WilsyOS.API.LegalOperationsRouter")
 _IDENTITY = re.compile(r"^[A-Za-z0-9][A-Za-z0-9._:-]{0,127}$")
 _CLIENT_ROLE = "tenant_legal_client"
@@ -842,7 +849,7 @@ _PRODUCTIVE_WORK_READ = RequireTenantAuthorization(
 )
 
 _PRODUCTIVE_WORK_HTTP_VERSION: Final[str] = (
-    "v1.0.0-PW-P11B-AUTHENTICATED-PRODUCTIVE-WORK-READ-API"
+    "v1.1.0-R67-ENTERPRISE-DAILY-WORK-EXECUTION-READ-API"
 )
 
 _SPECIALIST_WORKFLOW_READ = _PRODUCTIVE_WORK_READ
@@ -1058,6 +1065,163 @@ def _productive_work_projection_transaction(
         ) from error
 
 
+def _daily_execution_queue(
+    projection: Any,
+) -> dict[str, object]:
+    """Derive one deterministic non-authorizing daily execution queue.
+
+    Assignment and supervision remain visibility provenance only. The queue
+    never decides confidential matter access or command authority. Its ordering
+    is operational: overdue, due soon, blocked, scheduled, then unscheduled,
+    with due instant and opaque work identity providing deterministic ties.
+
+    Args:
+        projection: Existing exact-tenant productive-work projection composed
+            inside the API-owned snapshot transaction.
+
+    Returns:
+        A bounded derived projection with unique rows and SHA3-512 identity.
+
+    Raises:
+        LegalProductiveWorkReadServiceError: If visible lists contain malformed
+            or divergent representations of the same work-item identity.
+    """
+    by_id: dict[str, dict[str, object]] = {}
+    visibility: dict[str, set[str]] = {}
+
+    for source, values in (
+        ("ASSIGNMENT", projection.assigned_work_items),
+        ("SUPERVISION", projection.supervised_work_items),
+    ):
+        for value in values:
+            projected = value.to_dict()
+            if not isinstance(projected, dict):
+                raise LegalProductiveWorkReadServiceError(
+                    "R67_WORK_ITEM_PROJECTION_INVALID"
+                )
+            work_item_id = projected.get("work_item_id")
+            if not isinstance(work_item_id, str) or not work_item_id:
+                raise LegalProductiveWorkReadServiceError(
+                    "R67_WORK_ITEM_ID_INVALID"
+                )
+            existing = by_id.get(work_item_id)
+            if existing is not None and existing != projected:
+                raise LegalProductiveWorkReadServiceError(
+                    "R67_WORK_ITEM_PROJECTION_DIVERGENT"
+                )
+            by_id[work_item_id] = projected
+            visibility.setdefault(work_item_id, set()).add(source)
+
+    priority_ids: dict[str, set[str]] = {
+        "OVERDUE": set(),
+        "DUE_SOON": set(),
+    }
+    for priority, values in (
+        ("OVERDUE", projection.overdue_work_items),
+        ("DUE_SOON", projection.due_soon_work_items),
+    ):
+        for value in values:
+            projected = value.to_dict()
+            if not isinstance(projected, dict):
+                raise LegalProductiveWorkReadServiceError(
+                    "R67_PRIORITY_WORK_PROJECTION_INVALID"
+                )
+            work_item_id = projected.get("work_item_id")
+            if not isinstance(work_item_id, str) or not work_item_id:
+                raise LegalProductiveWorkReadServiceError(
+                    "R67_PRIORITY_WORK_ITEM_ID_INVALID"
+                )
+            existing = by_id.get(work_item_id)
+            if existing is not None and existing != projected:
+                raise LegalProductiveWorkReadServiceError(
+                    "R67_WORK_ITEM_PROJECTION_DIVERGENT"
+                )
+            if existing is None:
+                by_id[work_item_id] = projected
+                visibility[work_item_id] = {"PRODUCTIVE_WORK_PRIORITY"}
+            priority_ids[priority].add(work_item_id)
+
+    overdue_ids = priority_ids["OVERDUE"]
+    due_soon_ids = priority_ids["DUE_SOON"]
+
+    urgency_order = {
+        "OVERDUE": 0,
+        "DUE_SOON": 1,
+        "BLOCKED": 2,
+        "SCHEDULED": 3,
+        "UNSCHEDULED": 4,
+    }
+    rows: list[dict[str, object]] = []
+    for work_item_id, value in by_id.items():
+        status_value = value.get("status")
+        status_token = getattr(status_value, "value", status_value)
+        due_at = value.get("due_at")
+        if work_item_id in overdue_ids:
+            urgency = "OVERDUE"
+        elif work_item_id in due_soon_ids:
+            urgency = "DUE_SOON"
+        elif status_token == "BLOCKED":
+            urgency = "BLOCKED"
+        elif due_at is not None:
+            urgency = "SCHEDULED"
+        else:
+            urgency = "UNSCHEDULED"
+
+        rows.append(
+            {
+                "work_item_id": work_item_id,
+                "case_matter_id": value.get("case_matter_id"),
+                "status": status_token,
+                "due_at": due_at,
+                "urgency": urgency,
+                "visibility_sources": sorted(visibility[work_item_id]),
+                "work_evidence_fingerprint": value.get("fingerprint"),
+            }
+        )
+
+    rows.sort(
+        key=lambda row: (
+            urgency_order[str(row["urgency"])],
+            row["due_at"] is None,
+            str(row["due_at"] or ""),
+            str(row["work_item_id"]),
+        )
+    )
+    positioned = [
+        {"queue_position": index, **row}
+        for index, row in enumerate(rows, start=1)
+    ]
+    semantic = {
+        "tenant_id": projection.tenant_id,
+        "principal_id": projection.principal_id,
+        "as_of": projection.as_of.isoformat(),
+        "items": positioned,
+    }
+    fingerprint = hashlib.sha3_512(
+        json.dumps(
+            semantic,
+            sort_keys=True,
+            separators=(",", ":"),
+            ensure_ascii=True,
+        ).encode("utf-8")
+    ).hexdigest()
+
+    return {
+        "fact_classification": "DERIVED_OPERATIONAL_PROJECTION",
+        "as_of": projection.as_of.isoformat(),
+        "unique_active_count": len(positioned),
+        "assignment_supervision_overlap_count": sum(
+            1 for sources in visibility.values() if len(sources) == 2
+        ),
+        "items": positioned,
+        "projection_fingerprint": fingerprint,
+        "execution_authority": "NOT_EVALUATED",
+        "permits_execution": False,
+        "permits_assignment_mutation": False,
+        "permits_confidential_matter_access": False,
+    }
+
+
 def _productive_work_payload(
     projection: Any,
 ) -> dict[str, object]:
@@ -1076,6 +1240,7 @@ def _productive_work_payload(
             "permits_execution": False,
             "permits_confidential_matter_access": False,
         },
+        "daily_execution_queue": _daily_execution_queue(projection),
         "tenant_id": projection.tenant_id,
         "principal_id": projection.principal_id,
         "as_of": projection.as_of.isoformat(),
@@ -2065,10 +2230,11 @@ __all__ = [
 
 
 # ARTIFACT: legal_operations_router.py
-# VERSION: v1.15.0-P7-COMPLETION-AWARE-PRODUCTIVE-WORK-HTTP
+# VERSION: v1.16.0-R67-ENTERPRISE-DAILY-WORK-EXECUTION-READ
 # AUTHORITY BOUNDARY: authenticated Legal reads and bounded post-authorization temporal observation only; temporal and specialist workflow projections remain bounded by productive-work visibility and grant no command, IAM assignment, plan/subscription mutation, payment execution or settlement authority
 # TENANT POSTURE: every projection uses exact authenticated/current-authorized tenant context; foreign lifecycle, deadline, workflow, screening, subscription and entitlement evidence is never disclosed
 # COMPLETION PROVENANCE: Canonical immutable completion history
+# DAILY EXECUTION QUEUE: deterministic derived projection; no command authority
 # ACTIVE WORK: Derived from completion currentness
 # FAIL-CLOSED POSTURE: authority/scope mismatch, entitlement/subscription disagreement, unavailable product/commercial/deadline/workflow authority, snapshot failure, corruption, divergence and persistence outages deny
 # FINANCIAL EXECUTION AUTHORITY: Kennel EOS exclusively
