@@ -424,7 +424,7 @@ def test_projection_excludes_transport_and_secret_fields() -> None:
 
 def test_l8_5_read_contract_remains_bound_under_l8_7d6_router_release() -> None:
     """L8-5 internal read semantics remain sealed under additive D6."""
-    assert legal_router.VERSION == "v1.10.0-D22B5-R21-LEGAL-PRODUCT-AVAILABILITY-CONJUNCTION"
+    assert legal_router.VERSION == "v1.16.0-R67-ENTERPRISE-DAILY-WORK-EXECUTION-READ"
 
 
 # ---------------------------------------------------------------------------
