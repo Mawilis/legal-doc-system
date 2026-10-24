@@ -1,4 +1,23 @@
-name: L8-8M Authenticated Browser Certification
+# TITLE: L8-8M and D21B13 authenticated browser/branding certification
+# VERSION: v1.0.1-D21B13-DISPOSABLE-BRANDING-MONGO-CERT
+# AUTHORITY: Disposable certification orchestration only.
+# EPITOME: Run the authenticated Legal browser suite and the independent real-Mongo
+#          branding delivery integration certificate against isolated replica sets.
+# ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/.github/workflows/l8-8m-authenticated-browser-certification.yml
+# COLLABORATION / OWNERSHIP: EOS owns auth, tenant and asset truth; CI owns only
+#                            disposable setup, test orchestration and teardown.
+# CERTIFICATION / UPDATE DATE: 2026-10-24
+# CHANGELOG: v1.0.1 runs focused D21B12 client regressions, adds an isolated
+#            branding Mongo replica set, uses a fresh UUID browser database,
+#            rejects skipped real-Mongo tests, and retains unconditional cleanup.
+# TENANT BOUNDARY: Synthetic fixture tenants and per-run disposable databases only.
+# AUTHORITY BOUNDARY: Certification orchestration; no production authority.
+# FINANCIAL AUTHORITY BOUNDARY: Kennel EOS remains exclusive.
+# COMPLIANCE: POPIA section 19; GDPR Article 32; SOC 2 CC7.2.
+# SECURITY / PRIVACY POSTURE: Disposable synthetic fixtures only; no production
+#                             database or real-user credentials are configured.
+
+name: L8-8M Authenticated Browser and D21B13 Branding Certification
 
 on:
   push:
@@ -7,6 +26,21 @@ on:
     paths:
       - "tests/e2e/playwright.config.js"
       - "tests/e2e/**"
+      - "tests/integration/test_tenant_branding_workspace_asset_delivery_real_mongo.py"
+      - "client/src/components/industry/LegalDashboard.jsx"
+      - "client/src/components/os/WilsyOSDashboardChrome.jsx"
+      - "client/src/components/os/wilsyDashboardChromeConfig.js"
+      - "client/src/hooks/useAuthenticatedTenantBrandingAsset.js"
+      - "client/src/services/tenantBrandingAssetClient.js"
+      - "client/src/__tests__/components/legalDashboardBrandingPresentation.test.jsx"
+      - "client/tests/hooks/useAuthenticatedTenantBrandingAsset.test.jsx"
+      - "client/tests/services/tenantBrandingAssetClient.test.js"
+      - "tools/eos/api/auth_router.py"
+      - "tools/eos/auth/workspace_bootstrap_projection.py"
+      - "tools/eos/auth/tenant_branding_workspace_asset_delivery.py"
+      - "tools/eos/auth/tenant_branding_workspace_projection.py"
+      - "tools/eos/saas/billing/tenant_branding_*.py"
+      - "tools/eos/saas/domain/tenant_branding_*.py"
       - "package.json"
       - "package-lock.json"
       - ".github/workflows/l8-8m-authenticated-browser-certification.yml"
@@ -17,11 +51,10 @@ permissions:
 
 jobs:
   l8-8m-browser:
-    name: L8-8M authenticated Legal OS browser certificate
+    name: Authenticated Legal browser and D21B13 branding certificate
     runs-on: ubuntu-latest
     timeout-minutes: 30
     env:
-      BROWSER_CERT_MONGO_URI: mongodb://127.0.0.1:27017/wilsy_l8_8m_ci?replicaSet=wilsyVendorCertRS
       PIP_DISABLE_PIP_VERSION_CHECK: "1"
     steps:
       - name: Checkout exact commit
@@ -52,7 +85,7 @@ jobs:
       - name: Install Chromium for Playwright
         run: npx playwright install --with-deps chromium
 
-      - name: Start disposable Mongo replica set
+      - name: Start disposable browser-cert Mongo replica set
         run: |
           docker run --detach \
             --name wilsy-l8-8m-browser-mongo \
@@ -60,7 +93,7 @@ jobs:
             mongo:7.0.37 \
             mongod --replSet wilsyVendorCertRS --bind_ip_all
 
-      - name: Initialize Mongo replica set
+      - name: Initialize browser-cert Mongo replica set
         run: |
           python - <<'PY'
           import time
@@ -99,21 +132,116 @@ jobs:
           client.close()
           PY
 
-      - name: Compile browser fixture
+      - name: Start isolated D21B13 real-Mongo replica set
         run: |
-          python -m py_compile tests/e2e/browser_cert_fixture.py
+          docker run --detach \
+            --name wilsy-d21b13-branding-mongo \
+            --publish 27018:27017 \
+            mongo:7.0.37 \
+            mongod --port 27017 --replSet wilsyVendorCertRS --bind_ip_all
+
+      - name: Initialize D21B13 real-Mongo replica set
+        run: |
+          python - <<'PY'
+          import time
+          from pymongo import MongoClient
+
+          client = MongoClient(
+              "mongodb://127.0.0.1:27018",
+              directConnection=True,
+              serverSelectionTimeoutMS=2_000,
+          )
+          deadline = time.monotonic() + 60
+          initiated = False
+          while True:
+              try:
+                  hello = client.admin.command("hello")
+                  if not initiated and not hello.get("setName"):
+                      client.admin.command({
+                          "replSetInitiate": {
+                              "_id": "wilsyVendorCertRS",
+                              "members": [{"_id": 0, "host": "127.0.0.1:27018"}],
+                          }
+                      })
+                      initiated = True
+                  hello = client.admin.command("hello")
+                  if (
+                      hello.get("setName") == "wilsyVendorCertRS"
+                      and hello.get("isWritablePrimary") is True
+                      and hello.get("logicalSessionTimeoutMinutes") is not None
+                  ):
+                      break
+              except Exception:
+                  pass
+              if time.monotonic() >= deadline:
+                  raise RuntimeError("D21B13_BRANDING_MONGO_UNAVAILABLE")
+              time.sleep(1)
+          client.close()
+          PY
+
+      - name: Compile browser fixture
+        run: python -m py_compile tests/e2e/browser_cert_fixture.py
+
+      - name: Run focused D21B12 client lifecycle regressions
+        run: >-
+          npm --prefix client run test:run --
+          src/__tests__/components/legalDashboardBrandingPresentation.test.jsx
+          tests/services/tenantBrandingAssetClient.test.js
+          tests/hooks/useAuthenticatedTenantBrandingAsset.test.jsx
+
+      - name: Run D21B10 real-Mongo branding delivery certificate
+        env:
+          TEST_VENDOR_MONGO_URI: mongodb://127.0.0.1:27018/?replicaSet=wilsyVendorCertRS
+        run: |
+          set +e
+          python -m pytest -q -rs \
+            --junitxml=/tmp/d21b13-branding-real-mongo.xml \
+            tests/integration/test_tenant_branding_workspace_asset_delivery_real_mongo.py
+          pytest_status=$?
+          set -e
+          if [ "$pytest_status" -ne 0 ]; then
+            exit "$pytest_status"
+          fi
+          python - <<'PY'
+          import xml.etree.ElementTree as ET
+
+          root = ET.parse("/tmp/d21b13-branding-real-mongo.xml").getroot()
+          skipped = sum(
+              int(suite.attrib.get("skipped", "0"))
+              for suite in root.iter("testsuite")
+          )
+          tests = sum(
+              int(suite.attrib.get("tests", "0"))
+              for suite in root.iter("testsuite")
+          )
+          if tests < 1 or skipped:
+              raise SystemExit(
+                  f"D21B13_REAL_MONGO_CERTIFICATE_INVALID: tests={tests}, skipped={skipped}"
+              )
+          print(f"D21B13 real-Mongo branding tests executed: {tests}; skipped: 0")
+          PY
 
       - name: Run authenticated browser certificate
-        run: node tests/e2e/run-browser-cert.mjs
+        run: |
+          browser_cert_database_suffix="$(python -c 'import uuid; print(uuid.uuid4().hex)')"
+          BROWSER_CERT_MONGO_URI="mongodb://127.0.0.1:27017/wilsy_l8_8m_r3_${browser_cert_database_suffix}?replicaSet=wilsyVendorCertRS" \
+            node tests/e2e/run-browser-cert.mjs
 
-      - name: Stop disposable Mongo
+      - name: Stop disposable Mongo replica sets
         if: always()
-        run: docker rm --force wilsy-l8-8m-browser-mongo
+        run: |
+          docker info >/dev/null
+          for name in wilsy-l8-8m-browser-mongo wilsy-d21b13-branding-mongo; do
+            container_id="$(docker ps --all --quiet --filter "name=^/${name}$")"
+            if [ -n "$container_id" ]; then
+              docker rm --force "$container_id"
+            fi
+          done
 
 # ARTIFACT: l8-8m-authenticated-browser-certification.yml
-# VERSION: v1.0.0-L8-8M-R3-BROWSER-CERT-WORKFLOW
-# AUTHORITY BOUNDARY: disposable CI browser certification only
-# TENANT POSTURE: UUID-isolated fixture database; no production URI
-# FAIL-CLOSED POSTURE: browser, service, fixture, and Mongo failures fail the job
+# VERSION: v1.0.1-D21B13-DISPOSABLE-BRANDING-MONGO-CERT
+# AUTHORITY BOUNDARY: disposable CI certification orchestration only
+# TENANT POSTURE: synthetic tenants and runner-owned disposable databases
+# FAIL-CLOSED POSTURE: browser, HTTP, Mongo, or skipped integration tests fail the job
 # FINANCIAL EXECUTION AUTHORITY: Kennel EOS remains exclusive
 # END OF WILSY OS SOVEREIGN ARTIFACT
