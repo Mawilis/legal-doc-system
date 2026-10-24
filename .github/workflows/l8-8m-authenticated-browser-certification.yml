@@ -1,5 +1,5 @@
 # TITLE: L8-8M and D21B13 authenticated browser/branding certification
-# VERSION: v1.0.1-D21B13-DISPOSABLE-BRANDING-MONGO-CERT
+# VERSION: v1.0.2-D21B13-BRANDING-MONGO-PORT-ALIGNMENT
 # AUTHORITY: Disposable certification orchestration only.
 # EPITOME: Run the authenticated Legal browser suite and the independent real-Mongo
 #          branding delivery integration certificate against isolated replica sets.
@@ -7,9 +7,10 @@
 # COLLABORATION / OWNERSHIP: EOS owns auth, tenant and asset truth; CI owns only
 #                            disposable setup, test orchestration and teardown.
 # CERTIFICATION / UPDATE DATE: 2026-10-24
-# CHANGELOG: v1.0.1 runs focused D21B12 client regressions, adds an isolated
-#            branding Mongo replica set, uses a fresh UUID browser database,
-#            rejects skipped real-Mongo tests, and retains unconditional cleanup.
+# CHANGELOG: v1.0.2 aligns the branding Mongo listener with its advertised replica-set
+#            member port after CI showed the disposable node could not become primary.
+#            v1.0.1 runs focused D21B12 client regressions, adds isolated branding Mongo,
+#            uses a fresh UUID browser database, rejects skips, and cleans unconditionally.
 # TENANT BOUNDARY: Synthetic fixture tenants and per-run disposable databases only.
 # AUTHORITY BOUNDARY: Certification orchestration; no production authority.
 # FINANCIAL AUTHORITY BOUNDARY: Kennel EOS remains exclusive.
@@ -136,9 +137,9 @@ jobs:
         run: |
           docker run --detach \
             --name wilsy-d21b13-branding-mongo \
-            --publish 27018:27017 \
+            --publish 27018:27018 \
             mongo:7.0.37 \
-            mongod --port 27017 --replSet wilsyVendorCertRS --bind_ip_all
+            mongod --port 27018 --replSet wilsyVendorCertRS --bind_ip_all
 
       - name: Initialize D21B13 real-Mongo replica set
         run: |
@@ -239,7 +240,7 @@ jobs:
           done
 
 # ARTIFACT: l8-8m-authenticated-browser-certification.yml
-# VERSION: v1.0.1-D21B13-DISPOSABLE-BRANDING-MONGO-CERT
+# VERSION: v1.0.2-D21B13-BRANDING-MONGO-PORT-ALIGNMENT
 # AUTHORITY BOUNDARY: disposable CI certification orchestration only
 # TENANT POSTURE: synthetic tenants and runner-owned disposable databases
 # FAIL-CLOSED POSTURE: browser, HTTP, Mongo, or skipped integration tests fail the job
