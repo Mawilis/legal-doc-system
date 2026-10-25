@@ -175,10 +175,10 @@ def test_production_manifest_binds_all_required_reconciliation_secret_inputs() -
     }
     for variable, config_key in config_bindings.items():
         binding = re.compile(
-            rf"- name: {re.escape(variable)}\\s+"
-            rf"valueFrom:\\s+configMapKeyRef:\\s+"
-            rf"name: wilsy-eos-runtime\\s+"
-            rf"key: {re.escape(config_key)}(?:\\s|$)"
+            rf"- name: {re.escape(variable)}\s+"
+            rf"valueFrom:\s+configMapKeyRef:\s+"
+            rf"name: wilsy-eos-runtime\s+"
+            rf"key: {re.escape(config_key)}(?:\s|$)"
         )
         assert binding.search(manifest), f"missing exact ConfigMap binding for {variable}"
 
