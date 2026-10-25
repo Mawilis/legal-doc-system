@@ -1,5 +1,5 @@
 """TITLE: WILSY OS Permission Namespace Semantic Canon.
-VERSION: v1.54.0-R59-P9-REASSIGNMENT-IAM-INTEGRATION
+VERSION: v1.55.0-L10A2R-C4D7-RECONCILIATION-READ-PERMISSION
 AUTHORITY: Immutable permission vocabulary and scope metadata only.
 EPITOME: Extends the canonical TENANT and SYSTEM permission vocabulary with dedicated
 inbound-collection, merchant-configuration, provider-policy, WILSY AI,
@@ -13,6 +13,11 @@ ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/tools/eos/auth/p
 COLLABORATION / OWNERSHIP: Wilson Khanyezi / Wilsy Core Engineering.
 CERTIFICATION / UPDATE DATE: 2026-10-21
 CHANGELOG:
+    2026-10-25 v1.55.0-L10A2R-C4D7-RECONCILIATION-READ-PERMISSION
+    Adds one dedicated SYSTEM-scoped reconciliation-read permission vocabulary
+    only. This metadata grants no possession, assignment, operator activation,
+    tenant/provider scope, runtime invocation, orphan proof, cleanup, deletion,
+    retention/legal-hold, or financial authority.
     2026-10-21 v1.54.0-R59-P9-REASSIGNMENT-IAM-INTEGRATION
     Canonical own-tenant operational issuer permission metadata; not possession or matter access.
     2026-10-21 v1.52.0-P47-R92-WORK-ASSIGNMENT-PERMISSION
@@ -238,7 +243,7 @@ from types import MappingProxyType
 from typing import Final
 
 
-VERSION = "v1.54.0-R59-P9-REASSIGNMENT-IAM-INTEGRATION"
+VERSION = "v1.55.0-L10A2R-C4D7-RECONCILIATION-READ-PERMISSION"
 
 
 class PermissionDisposition(StrEnum):
@@ -361,6 +366,13 @@ _PERMISSIONS: Final = MappingProxyType(
             "SYSTEM",
             "SYSTEM",
             "revoke only source-policy-revocable SYSTEM permissions",
+            system=True,
+        ),
+        "legal_operations:evidence_provider_reconciliation:read": _meta(
+            "legal_operations:evidence_provider_reconciliation:read",
+            "legal_operations",
+            "SYSTEM",
+            "read one trusted tenant/provider-scoped evidence reconciliation projection",
             system=True,
         ),
         "artifacts:read": _meta(
@@ -1164,7 +1176,7 @@ __all__ = [
 ]
 
 # ARTIFACT: tools/eos/auth/permission_namespace.py
-# VERSION: v1.54.0-R59-P9-REASSIGNMENT-IAM-INTEGRATION
+# VERSION: v1.55.0-L10A2R-C4D7-RECONCILIATION-READ-PERMISSION
 # AUTHORITY BOUNDARY: canonical permission vocabulary semantics only; no possession or authorization authority
 # TENANT POSTURE: conflict-review, client-matter, client-visibility and other tenant permissions require separately proven exact ACTIVE tenant membership
 # FAIL-CLOSED POSTURE: unknown, malformed, ambiguous and legacy values never manufacture authority
