@@ -6,7 +6,6 @@ import asyncio
 from datetime import datetime, timezone
 
 import pytest
-from starlette.requests import Request
 
 from tools.eos.legal_operations.service.legal_evidence_provider_readonly_reconciliation_transport_adapter import (
     LegalEvidenceProviderReadOnlyReconciliationTransportError,
@@ -28,17 +27,17 @@ HEADERS = [
 ]
 
 
+class _FakeASGIRequest:
+    def __init__(self, scope, body: bytes) -> None:
+        self.scope = scope
+        self._body = body
+
+    async def body(self) -> bytes:
+        return self._body
+
+
 def _request(*, headers=None, body: bytes = BODY, method: str = "POST",
-             raw_path: bytes = b"/internal/reconciliation", query: bytes = b"batch=1") -> Request:
-    sent = False
-
-    async def receive():
-        nonlocal sent
-        if sent:
-            return {"type": "http.request", "body": b"", "more_body": False}
-        sent = True
-        return {"type": "http.request", "body": body, "more_body": False}
-
+             raw_path: bytes = b"/internal/reconciliation", query: bytes = b"batch=1"):
     scope = {
         "type": "http",
         "asgi": {"version": "3.0"},
@@ -53,10 +52,10 @@ def _request(*, headers=None, body: bytes = BODY, method: str = "POST",
         "client": ("127.0.0.1", 12345),
         "server": ("testserver", 80),
     }
-    return Request(scope, receive)
+    return _FakeASGIRequest(scope, body)
 
 
-def _extract(request: Request):
+def _extract(request):
     fixed = datetime(2026, 10, 25, 9, 30, tzinfo=timezone.utc)
     return asyncio.run(extract_signed_workload_request(request, clock=lambda: fixed))
 
