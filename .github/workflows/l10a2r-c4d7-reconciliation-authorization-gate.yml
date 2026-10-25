@@ -53,7 +53,7 @@ jobs:
             pydantic_core==2.46.4 \
             python-dotenv==1.2.3 \
             boto3 \
-            bcrypt==5.0.0
+            bcrypt==5.0.0 \
             pyotp==2.9.0
 
       - name: Start isolated MongoDB replica-set certification
