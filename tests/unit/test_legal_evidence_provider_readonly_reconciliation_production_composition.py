@@ -52,6 +52,24 @@ class _Coordinator:
         return "reconciled"
 
 
+class _OperationIdempotencyRegistry:
+    def __init__(self) -> None:
+        self.calls = []
+        self.cached = None
+
+    def lookup(self, **kwargs):
+        self.calls.append(("lookup", kwargs))
+        if self.cached is None:
+            return None
+        if self.cached[0] != kwargs["request_fingerprint"]:
+            raise RuntimeError("idempotency conflict")
+        return dict(self.cached[1])
+
+    def record(self, **kwargs):
+        self.calls.append(("record", kwargs))
+        self.cached = (kwargs["request_fingerprint"], dict(kwargs["response"]))
+
+
 def _composition(registry=None, gate=None, coordinator=None):
     registry = registry or _Registry()
     gate = gate or _Gate()
@@ -125,6 +143,72 @@ def test_authorized_composition_passes_only_gate_derived_scope_to_coordinator():
         }
     ]
     assert coordinator.calls[0]["scope"] is gate.scope
+
+
+def test_idempotent_invocation_replays_exact_result_after_reauthorization():
+    registry = _Registry()
+    gate = _Gate()
+    gate.authorize = lambda **kwargs: SimpleNamespace(
+        scope=SimpleNamespace(
+            tenant_id="tenant-1",
+            tenant_scope_fingerprint="scope-fingerprint-1",
+        ),
+        provider_name="aws_s3",
+    )
+    coordinator = _Coordinator()
+    coordinator.reconcile = lambda **kwargs: SimpleNamespace(
+        tenant_id="tenant-1",
+        tenant_scope_fingerprint="scope-fingerprint-1",
+        provider_name="aws_s3",
+        observed_at=kwargs["observed_at"],
+        coverage_verification_fingerprint="coverage-fingerprint-1",
+        incomplete_observation_count=0,
+        completed_observation_count=2,
+        classifications=(object(),),
+        write_intent_correlations=(),
+        coverage_complete=True,
+        orphan_proven=False,
+        provider_delete_authorized=False,
+        cleanup_authorized=False,
+    )
+    operation_registry = _OperationIdempotencyRegistry()
+    composition = LegalEvidenceProviderReadOnlyReconciliationProductionComposition(
+        target=object(),
+        business_client=SimpleNamespace(start_session=lambda: None),
+        registry=registry,
+        gate=gate,
+        dependencies=SimpleNamespace(coordinator=coordinator),
+        idempotency_registry=operation_registry,
+    )
+    base_fields = {
+        "service_id": "trusted-service",
+        "key_id": "key-1",
+        "audience": "legal-evidence-reconciliation",
+        "method": "POST",
+        "path": "/api/legal-operations/evidence-provider/reconciliation",
+        "body_sha3_512": "body-fingerprint",
+        "nonce": "nonce-1",
+    }
+    first = composition.authorize_and_reconcile_idempotently(
+        signed_workload_fields=base_fields,
+        body=b'{"idempotency_key":"operation-1"}',
+        idempotency_key="operation-1",
+        at=datetime(2026, 10, 25, tzinfo=timezone.utc),
+        session=object(),
+    )
+    second_fields = {**base_fields, "nonce": "nonce-2"}
+    second = composition.authorize_and_reconcile_idempotently(
+        signed_workload_fields=second_fields,
+        body=b'{"idempotency_key":"operation-1"}',
+        idempotency_key="operation-1",
+        at=datetime(2026, 10, 25, 1, tzinfo=timezone.utc),
+        session=object(),
+    )
+    assert first == second
+    assert first["classification_count"] == 1
+    assert first["coverage_verification_fingerprint"] == "coverage-fingerprint-1"
+    assert len(operation_registry.calls) == 3
+    assert [call[0] for call in operation_registry.calls] == ["lookup", "record", "lookup"]
 
 
 def test_production_builder_rejects_shared_business_and_audit_mongo_client():
