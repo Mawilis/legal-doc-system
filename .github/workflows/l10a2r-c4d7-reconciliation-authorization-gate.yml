@@ -19,6 +19,7 @@ on:
       - "tools/eos/legal_operations/service/legal_evidence_provider_readonly_reconciliation_runtime.py"
       - "tools/eos/legal_operations/service/legal_evidence_provider_readonly_reconciliation_audit_provisioner.py"
       - "k8s/eos-api-production.yaml"
+      - "k8s/eos-api-runtime-authority.example.yaml"
       - "k8s/eos-api-atlas-production-provisioning-plan.md"
       - "tests/unit/test_legal_evidence_provider_readonly_reconciliation_runtime.py"
       - "tests/integration/test_internal_service_workload_credential_authority_real_mongo.py"
