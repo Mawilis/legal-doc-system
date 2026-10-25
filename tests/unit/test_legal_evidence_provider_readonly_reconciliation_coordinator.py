@@ -94,6 +94,9 @@ class _Provider:
 
     def __init__(self, observation: LegalEvidenceCompletedObjectObservation) -> None:
         self.observation = observation
+        # Coverage pages must themselves be valid for the requested scope/time;
+        # discovery can deliberately drift independently in adversarial tests.
+        self.coverage_observation = _completed()
         self.calls: list[tuple[str, str | None, datetime]] = []
 
     def list_incomplete_write_session_page(
@@ -113,7 +116,7 @@ class _Provider:
         self.calls.append(("coverage-completed", page_reference, observed_at))
         return _page(
             kind=LegalEvidenceProviderEnumerationKind.COMPLETED_OBJECT_VERSIONS,
-            observations=(self.observation,),
+            observations=(self.coverage_observation,),
         )
 
     def list_incomplete_write_sessions(
