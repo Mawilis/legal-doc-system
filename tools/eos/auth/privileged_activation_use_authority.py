@@ -3,7 +3,7 @@ TITLE:
     WILSY OS Privileged Activation Current-Use Authority
 
 VERSION:
-    v1.1.1-P5-CURRENT-WORKLOAD-PRINCIPAL-DERIVATION
+    v1.1.2-P5-ASSURANCE-IDENTITY-BEFORE-ACTIVATION
 
 AUTHORITY:
     Wilsy OS Sovereign IAM
@@ -26,10 +26,11 @@ CERTIFICATION / UPDATE DATE:
     2026-10-15
 
 CHANGELOG:
-    v1.1.1-P5-CURRENT-WORKLOAD-PRINCIPAL-DERIVATION
-        Requires the returned canonical WorkloadTrustFact to be CURRENT before
-        its principal can drive P4/P2 lookup. A stale workload fact now fails
-        closed before activation or eligibility resolution.
+    v1.1.2-P5-ASSURANCE-IDENTITY-BEFORE-ACTIVATION
+        Validates P3 assurance evidence against the principal derived from the
+        current WorkloadTrustFact before any P4/P2 lookup. Identity mismatch now
+        fails before activation/eligibility resolution, preventing cross-principal
+        lookup under an inconsistent assurance result.
 
 COMPLIANCE:
     Fail-closed. No invented permission, role, activation, persistence, HTTP,
@@ -395,6 +396,10 @@ class PrivilegedActivationUseAuthority:
                 "VERIFIED_WORKLOAD_PRINCIPAL_INVALID"
             )
 
+        self._validate_assurance_result(
+            result,
+            principal_id=principal_id,
+        )
         activation = self._current_activation_and_eligibility(
             tenant_id=activation_tenant_id,
             principal_id=principal_id,
@@ -402,10 +407,6 @@ class PrivilegedActivationUseAuthority:
             target_class=target_class,
             at=at,
             session=session,
-        )
-        self._validate_assurance_result(
-            result,
-            principal_id=principal_id,
         )
         return PrivilegedActivationUseResult(
             activation=activation,
@@ -618,7 +619,7 @@ class PrivilegedActivationUseAuthority:
 # =============================================================================
 # WILSY OS SOVEREIGN ARTIFACT SEAL
 # ARTIFACT: privileged_activation_use_authority.py
-# VERSION: v1.1.1-P5-CURRENT-WORKLOAD-PRINCIPAL-DERIVATION
+# VERSION: v1.1.2-P5-ASSURANCE-IDENTITY-BEFORE-ACTIVATION
 # AUTHORITY BOUNDARY:
 #   Current privileged-use composition only. No activation issuance, role or
 #   permission creation, transaction ownership, HTTP, or break-glass authority.
