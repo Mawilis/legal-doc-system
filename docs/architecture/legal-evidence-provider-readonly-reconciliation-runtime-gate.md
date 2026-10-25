@@ -26,7 +26,7 @@ The previously observed local focused test runs reported:
 
 These are focused unit tests only. They do not certify a production invocation path, live provider configuration, real-Mongo end-to-end reconciliation, CI, or deployment.
 
-The canonical permission vocabulary now includes `legal_operations:evidence_provider_reconciliation:read`, registered as `SYSTEM)-scoped metadata with `system_assignment_required=True`, `authorizes_by_itself=False`, no tenant-membership requirement, no cross-tenant capability, and no financial capability. The namespace and its focused certification test were committed separately:
+The canonical permission vocabulary now includes `legal_operations:evidence_provider_reconciliation:read`, registered as `SYSTEM`-scoped metadata with `system_assignment_required=True`, `authorizes_by_itself=False`, no tenant-membership requirement, no cross-tenant capability, and no financial capability. The namespace and its focused certification test were committed separately:
 - Permission vocabulary: commit `2e609788b55db3f9c4c41dac500fb26f2db5a73e`.
 - Namespace certification update: commit `c4c132a6fe8f0c3317e1d4066a817ec74b2301e3`.
 
