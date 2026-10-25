@@ -42,6 +42,15 @@ from tools.eos.legal_operations.service.legal_evidence_provider_readonly_reconci
 
 
 NOW = datetime(2026, 10, 25, 7, 0, tzinfo=timezone.utc)
+
+class DecisionEvidenceRegistry:
+    def __init__(self):
+        self.records = []
+
+    def record(self, evidence):
+        self.records.append(evidence)
+        return evidence
+
 SESSION = type("ActiveSession", (), {"in_transaction": True})()
 ELIGIBILITY_FP = hashlib.sha3_512(b"eligibility-platform").hexdigest()
 ASSURANCE_FP = hashlib.sha3_512(b"assurance-platform").hexdigest()
@@ -247,6 +256,7 @@ def build(
         workload_keys={"key-a": ("internal-legal-ops", "secret-a")},
         expected_audience="wilsy-eos-reconciliation",
         provider_name="aws_s3",
+        decision_evidence_registry=DecisionEvidenceRegistry(),
     )
     return gate, assurance, selected_scope
 
@@ -343,6 +353,7 @@ def test_rejects_scope_resolver_bound_to_another_provider(
             workload_keys={"key-a": ("internal-legal-ops", "secret-a")},
             expected_audience="wilsy-eos-reconciliation",
             provider_name="aws_s3",
+            decision_evidence_registry=gate._decision_evidence_registry,
         )
 
 
