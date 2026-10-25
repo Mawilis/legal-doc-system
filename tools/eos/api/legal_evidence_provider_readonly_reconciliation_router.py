@@ -8,7 +8,6 @@ from typing import Any
 from fastapi import APIRouter, Request
 from fastapi.responses import JSONResponse
 
-from tools.eos.kernel.db import get_client, get_database
 from tools.eos.legal_operations.service.legal_evidence_provider_readonly_reconciliation_production_composition import (
     LegalEvidenceProviderReadOnlyReconciliationProductionComposition,
 )
@@ -62,8 +61,8 @@ async def reconcile_legal_evidence_provider(request: Request) -> JSONResponse:
     except ValueError as error:
         return _failure(400, str(error))
 
-    database, client = get_database(), get_client()
-    if database is None or client is None or getattr(database, "client", None) is not client:
+    client = composition.business_client
+    if client is None or not callable(getattr(client, "start_session", None)):
         return _failure(503, "CANONICAL_BUSINESS_DATABASE_UNAVAILABLE")
 
     session = None
@@ -103,6 +102,8 @@ async def reconcile_legal_evidence_provider(request: Request) -> JSONResponse:
         "coverage_verification_fingerprint": result.coverage_verification_fingerprint,
         "incomplete_observation_count": result.incomplete_observation_count,
         "completed_observation_count": result.completed_observation_count,
+        "classification_count": len(result.classifications),
+        "write_intent_correlation_count": len(result.write_intent_correlations),
         "coverage_complete": result.coverage_complete,
         "orphan_proven": result.orphan_proven,
         "provider_delete_authorized": result.provider_delete_authorized,
