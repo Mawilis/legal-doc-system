@@ -176,10 +176,23 @@ No approved AWS workload-role ARN or proven web-identity binding for the
 `wilsy-eos-api` ServiceAccount was found in the repository. Do not copy the
 unrelated example role from `server/k8s/deployment.yaml`, use a node role by
 assumption, or add static AWS keys. Before production readiness can pass, the
-platform owner must bind an approved least-privilege workload role scoped to
-the actual configured legal-evidence bucket and the read-only enumeration
-operations used by the adapter. The role ARN and bucket policy must be reviewed
-against the concrete production account/bucket; neither is invented here.
+platform owner must bind an approved source workload identity and the dedicated
+read-only target role scoped to the actual configured legal-evidence bucket.
+The role ARN and bucket policy must be reviewed against the concrete production
+account/bucket; neither is invented here.
+
+The reconciliation-only assumed role must be limited to the operations actually
+used by the provider facade: `s3:ListBucketMultipartUploads` and
+`s3:ListBucketVersions` on the approved bucket, plus `s3:GetObjectVersion`
+on the exact object-resource scope required for version HEAD observations.
+Apply an `s3:prefix` condition derived from the approved tenant scope where
+the S3 API supports it. Do not grant `s3:PutObject`, multipart completion,
+abort, delete, bucket administration, or IAM administration to this assumed
+role. The existing upload endpoint has its separately governed provider client;
+the reconciliation facade receives only temporary credentials for this
+read-only role. The source workload identity must have only the exact
+`sts:AssumeRole` permission for the approved target role in addition to its
+separately governed existing workload needs.
 
 ### Audit target provisioning and identity proof
 
