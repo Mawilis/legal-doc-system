@@ -63,9 +63,11 @@ FINANCIAL AUTHORITY BOUNDARY:
 from __future__ import annotations
 
 from dataclasses import dataclass
-from datetime import datetime
+from datetime import datetime, timezone
 from hashlib import sha3_512
 import os
+import re
+import uuid
 from typing import Any, Mapping, Protocol
 
 from tools.eos.auth.current_system_permission_possession import (
@@ -74,6 +76,12 @@ from tools.eos.auth.current_system_permission_possession import (
 )
 from tools.eos.auth.system_permission_assignment import (
     SystemPermissionAssignment,
+)
+from tools.eos.auth.system_permission_command_policy import VERSION as SYSTEM_PERMISSION_POLICY_VERSION
+from tools.eos.auth.platform_authorization_decision_evidence import (
+    PlatformAuthorizationDecision,
+    PlatformAuthorizationDecisionEvidence,
+    PlatformAuthorizationIdentityTrust,
 )
 from tools.eos.saas.tenancy.tenant_registry import (
     TenantRegistry,
@@ -402,7 +410,13 @@ class LegalEvidenceProviderReadOnlyReconciliationAuthorizationGate:
         workload_keys: Mapping[str, tuple[str, str]],
         expected_audience: str,
         provider_name: str,
+        decision_evidence_registry: Any,
     ) -> None:
+        if not callable(getattr(decision_evidence_registry, "record", None)):
+            raise LegalEvidenceProviderReadOnlyReconciliationAuthorizationError(
+                "PLATFORM_DECISION_EVIDENCE_REGISTRY_REQUIRED"
+            )
+        self._decision_evidence_registry = decision_evidence_registry
         if type(use_authority) is not PrivilegedActivationUseAuthority:
             raise LegalEvidenceProviderReadOnlyReconciliationAuthorizationError(
                 "P5_USE_AUTHORITY_REQUIRED"
@@ -466,7 +480,141 @@ class LegalEvidenceProviderReadOnlyReconciliationAuthorizationGate:
         self._expected_audience = expected_audience
         self._provider_name = provider_name
 
+    @staticmethod
+    def _audit_token(value: object, *, fallback_prefix: str) -> str:
+        if isinstance(value, str) and re.fullmatch(
+            r"[A-Za-z0-9][A-Za-z0-9._:/-]{0,255}", value
+        ):
+            return value
+        digest = sha3_512(repr(value).encode("utf-8", errors="replace")).hexdigest()
+        return fallback_prefix + digest[:32]
+
+    def _record_decision(self, evidence: PlatformAuthorizationDecisionEvidence) -> None:
+        try:
+            self._decision_evidence_registry.record(evidence)
+        except Exception as error:
+            raise LegalEvidenceProviderReadOnlyReconciliationAuthorizationError(
+                "AUTHORIZATION_AUDIT_DURABILITY_UNAVAILABLE"
+            ) from error
+
+    def _denial_evidence(
+        self,
+        *,
+        request: object,
+        idempotency_key: object,
+        at: object,
+        reason_code: str,
+    ) -> PlatformAuthorizationDecisionEvidence:
+        safe_key = self._audit_token(idempotency_key, fallback_prefix="invalid-request-")
+        correlation = request.get("correlation_id") if isinstance(request, Mapping) else None
+        safe_correlation = self._audit_token(
+            correlation, fallback_prefix="unresolved-correlation-"
+        )
+        evaluated_at = (
+            at.astimezone(timezone.utc)
+            if isinstance(at, datetime) and at.tzinfo is not None and at.utcoffset() is not None
+            else datetime.now(timezone.utc)
+        )
+        reason = (
+            reason_code
+            if re.fullmatch(r"[A-Z][A-Z0-9_]{0,127}", reason_code)
+            else "AUTHORIZATION_EVALUATION_FAILED"
+        )
+        return PlatformAuthorizationDecisionEvidence(
+            decision_id=uuid.uuid4().hex,
+            idempotency_key=safe_key,
+            correlation_id=safe_correlation,
+            decision=PlatformAuthorizationDecision.DENY,
+            reason_code=reason,
+            evaluated_at=evaluated_at,
+            identity_trust=PlatformAuthorizationIdentityTrust.UNVERIFIED,
+            principal_id=None,
+            workload_service_id=None,
+            workload_key_id=None,
+            activation_id=None,
+            permission_assignment_id=None,
+            permission_assignment_fingerprint=None,
+            target_tenant_id=None,
+            provider_name=None,
+            target_scope_fingerprint=None,
+            authorization_policy_version=SYSTEM_PERMISSION_POLICY_VERSION,
+            authorization_gate_version=VERSION,
+        )
+
     def authorize(
+        self,
+        *,
+        request: Mapping[str, str],
+        body: bytes,
+        idempotency_key: str,
+        at: datetime,
+        session: object,
+    ) -> LegalEvidenceProviderReadOnlyReconciliationAuthorization:
+        """Persist allow/deny evidence independently before authorization returns."""
+        try:
+            result = self._authorize_core(
+                request=request,
+                body=body,
+                idempotency_key=idempotency_key,
+                at=at,
+                session=session,
+            )
+        except LegalEvidenceProviderReadOnlyReconciliationAuthorizationError as error:
+            self._record_decision(
+                self._denial_evidence(
+                    request=request,
+                    idempotency_key=idempotency_key,
+                    at=at,
+                    reason_code=error.code,
+                )
+            )
+            raise
+        except Exception as error:
+            self._record_decision(
+                self._denial_evidence(
+                    request=request,
+                    idempotency_key=idempotency_key,
+                    at=at,
+                    reason_code="AUTHORIZATION_EVALUATION_FAILED",
+                )
+            )
+            raise LegalEvidenceProviderReadOnlyReconciliationAuthorizationError(
+                "AUTHORIZATION_EVALUATION_FAILED"
+            ) from error
+
+        try:
+            evidence = PlatformAuthorizationDecisionEvidence(
+                decision_id=uuid.uuid4().hex,
+                idempotency_key=self._audit_token(
+                    idempotency_key, fallback_prefix="invalid-request-"
+                ),
+                correlation_id=self._audit_token(
+                    request.get("correlation_id"), fallback_prefix="unresolved-correlation-"
+                ),
+                decision=PlatformAuthorizationDecision.ALLOW,
+                reason_code="AUTHORIZED",
+                evaluated_at=result.authorized_at,
+                identity_trust=PlatformAuthorizationIdentityTrust.VERIFIED,
+                principal_id=result.principal_id,
+                workload_service_id=request["service_id"],
+                workload_key_id=request["key_id"],
+                activation_id=result.activation_id,
+                permission_assignment_id=result.permission_assignment_id,
+                permission_assignment_fingerprint=result.permission_assignment_fingerprint,
+                target_tenant_id=result.scope.tenant_id,
+                provider_name=result.provider_name,
+                target_scope_fingerprint=result.scope.tenant_scope_fingerprint,
+                authorization_policy_version=SYSTEM_PERMISSION_POLICY_VERSION,
+                authorization_gate_version=VERSION,
+            )
+        except Exception as error:
+            raise LegalEvidenceProviderReadOnlyReconciliationAuthorizationError(
+                "AUTHORIZATION_AUDIT_EVIDENCE_INVALID"
+            ) from error
+        self._record_decision(evidence)
+        return result
+
+    def _authorize_core(
         self,
         *,
         request: Mapping[str, str],
