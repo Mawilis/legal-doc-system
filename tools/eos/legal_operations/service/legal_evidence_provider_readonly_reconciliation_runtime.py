@@ -61,7 +61,7 @@ from tools.eos.legal_operations.service.legal_evidence_provider_readonly_reconci
 
 AUDIT_URI_ENV = "WILSY_LEGAL_EVIDENCE_RECONCILIATION_AUDIT_MONGODB_URI"
 AWS_ROLE_ARN_ENV = "WILSY_LEGAL_EVIDENCE_RECONCILIATION_AWS_ROLE_ARN"
-_AWS_ROLE_ARN = re.compile(r"arn:[a-z0-9-]+:iam::[0-9]{12}:role/[A-Za-z0-9+=,.@_/-]{1,512}\\Z")
+_AWS_ROLE_ARN = re.compile(r"arn:[a-z0-9-]+:iam::[0-9]{12}:role/[A-Za-z0-9+=,.@_/-]{1,512}\Z")
 _ALLOWED_SOURCE_CREDENTIAL_METHODS = frozenset({"assume-role-with-web-identity", "container-role"})
 logger = logging.getLogger(__name__)
 
