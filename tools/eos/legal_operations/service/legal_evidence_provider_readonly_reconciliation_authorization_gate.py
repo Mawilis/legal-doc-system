@@ -3,7 +3,7 @@ TITLE:
     WILSY OS Legal Evidence Provider Read-Only Reconciliation Authorization Gate
 
 VERSION:
-    v1.0.1-L10A2R-C4D7C-RECONCILIATION-AUTHORIZATION-GATE
+    v1.0.2-L10A2R-C4D7C-RECONCILIATION-AUTHORIZATION-GATE
 
 AUTHORITY:
     Wilsy OS Sovereign IAM and Legal Operations
@@ -27,11 +27,10 @@ CERTIFICATION / UPDATE DATE:
     2026-10-25
 
 CHANGELOG:
-    v1.0.1-L10A2R-C4D7C-RECONCILIATION-AUTHORIZATION-GATE
-        Tightens the scope resolver to an exact provider binding, validates the
-        transport-header schema, and maps only canonical P5, permission-currentness,
-        and scope-resolution failures. Unexpected implementation exceptions are
-        not swallowed. No concrete scope registry or runtime invocation is added.
+    v1.0.2-L10A2R-C4D7C-RECONCILIATION-AUTHORIZATION-GATE
+        Verifies the tenant-scope fingerprint against the canonical tenant
+        identifier before returning authorization evidence. The configured
+        provider binding and exact transport-header set remain mandatory.
 
 COMPLIANCE:
     Fail-closed. No caller-selected tenant/provider scope, no tenant permission
@@ -65,13 +64,12 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 from datetime import datetime
+from hashlib import sha3_512
 from typing import Mapping, Protocol
 
 from tools.eos.auth.current_system_permission_possession import (
-    CurrentSystemPermissionPossessionResolver,
-)
-from tools.eos.auth.current_system_permission_possession import (
     CurrentSystemPermissionPossessionError,
+    CurrentSystemPermissionPossessionResolver,
 )
 from tools.eos.auth.system_permission_assignment import (
     SystemPermissionAssignment,
@@ -93,7 +91,7 @@ from tools.eos.legal_operations.service.legal_evidence_provider_cleanup_discover
 )
 
 
-VERSION = "v1.0.1-L10A2R-C4D7C-RECONCILIATION-AUTHORIZATION-GATE"
+VERSION = "v1.0.2-L10A2R-C4D7C-RECONCILIATION-AUTHORIZATION-GATE"
 RECONCILIATION_READ_PERMISSION = (
     "legal_operations:evidence_provider_reconciliation:read"
 )
@@ -307,7 +305,10 @@ class LegalEvidenceProviderReadOnlyReconciliationAuthorizationGate:
         if (
             not isinstance(request, Mapping)
             or set(request) != _TRUSTED_REQUEST_FIELDS
-            or any(not isinstance(key, str) or not isinstance(value, str) for key, value in request.items())
+            or any(
+                not isinstance(key, str) or not isinstance(value, str)
+                for key, value in request.items()
+            )
             or not isinstance(body, bytes)
         ):
             raise LegalEvidenceProviderReadOnlyReconciliationAuthorizationError(
@@ -394,6 +395,13 @@ class LegalEvidenceProviderReadOnlyReconciliationAuthorizationGate:
             raise LegalEvidenceProviderReadOnlyReconciliationAuthorizationError(
                 "SERVER_OWNED_RECONCILIATION_SCOPE_INVALID"
             )
+        expected_scope_fingerprint = sha3_512(
+            scope.tenant_id.encode("utf-8")
+        ).hexdigest()
+        if scope.tenant_scope_fingerprint != expected_scope_fingerprint:
+            raise LegalEvidenceProviderReadOnlyReconciliationAuthorizationError(
+                "SERVER_OWNED_RECONCILIATION_SCOPE_FINGERPRINT_INVALID"
+            )
 
         assignment_id = getattr(assignment, "assignment_id", None)
         assignment_fingerprint = getattr(
@@ -436,7 +444,7 @@ __all__ = [
 # =============================================================================
 # WILSY OS SOVEREIGN ARTIFACT SEAL
 # ARTIFACT: legal_evidence_provider_readonly_reconciliation_authorization_gate.py
-# VERSION: v1.0.1-L10A2R-C4D7C-RECONCILIATION-AUTHORIZATION-GATE
+# VERSION: v1.0.2-L10A2R-C4D7C-RECONCILIATION-AUTHORIZATION-GATE
 # AUTHORITY BOUNDARY:
 #   Current platform-root P5 use plus exact current SYSTEM permission possession
 #   and server-owned tenant scope resolution. No invocation or mutation authority.
