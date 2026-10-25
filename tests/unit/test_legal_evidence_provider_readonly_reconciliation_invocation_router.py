@@ -174,3 +174,35 @@ def test_route_aborts_business_transaction_on_composition_failure(monkeypatch) -
     response = asyncio.run(module.reconcile_legal_evidence_provider(_request_for_route(app)))
     assert response.status_code == 409
     assert composition.business_client.session.events == ["start", "abort", "end"]
+
+
+def test_route_surfaces_authorization_audit_outage_as_503(monkeypatch) -> None:
+    from tools.eos.api import legal_evidence_provider_readonly_reconciliation_router as module
+    from tools.eos.legal_operations.service.legal_evidence_provider_readonly_reconciliation_authorization_gate import (
+        LegalEvidenceProviderReadOnlyReconciliationAuthorizationError,
+    )
+
+    class _AuditUnavailableComposition(_Composition):
+        def authorize_and_reconcile_idempotently(self, **kwargs):
+            raise LegalEvidenceProviderReadOnlyReconciliationAuthorizationError(
+                "AUTHORIZATION_AUDIT_DURABILITY_UNAVAILABLE"
+            )
+
+    app = FastAPI()
+    composition = _AuditUnavailableComposition()
+    app.state.legal_evidence_provider_readonly_reconciliation_composition = composition
+    envelope = SimpleNamespace(
+        request={"service_id": "trusted-service"},
+        body=b'{"idempotency_key":"operation-1"}',
+        observed_at=datetime(2026, 10, 25, tzinfo=timezone.utc),
+    )
+
+    async def extract(_request):
+        return envelope
+
+    monkeypatch.setattr(module, "LegalEvidenceProviderReadOnlyReconciliationProductionComposition", _AuditUnavailableComposition)
+    monkeypatch.setattr(module, "extract_signed_workload_request", extract)
+    response = asyncio.run(module.reconcile_legal_evidence_provider(_request_for_route(app)))
+    assert response.status_code == 503
+    assert json.loads(response.body)["code"] == "RECONCILIATION_AUTHORIZATION_AUDIT_UNAVAILABLE"
+    assert composition.business_client.session.events == ["start", "abort", "end"]
