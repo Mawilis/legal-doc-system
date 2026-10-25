@@ -327,3 +327,130 @@ def test_full_gate_abort_rolls_back_p3_evidence_and_replay_claim(
     assert setup["proof_registry"]._collection.count_documents({}) == 0
     assert setup["assurance_collection"].count_documents({}) == assurance_before
     assert context["database"][WORKLOAD_CURRENTNESS_COLLECTION].count_documents({}) == 0
+
+
+class _ReadOnlyRecordingS3Client:
+    """S3 capability double: record reads and make any mutation fatal."""
+
+    def __init__(self) -> None:
+        self.calls: list[str] = []
+
+    def list_multipart_uploads(self, **kwargs: Any) -> dict[str, Any]:
+        self.calls.append("list_multipart_uploads")
+        return {"Uploads": [], "IsTruncated": False}
+
+    def list_object_versions(self, **kwargs: Any) -> dict[str, Any]:
+        self.calls.append("list_object_versions")
+        return {"Versions": [], "DeleteMarkers": [], "IsTruncated": False}
+
+    def head_object(self, **kwargs: Any) -> dict[str, Any]:
+        self.calls.append("head_object")
+        raise AssertionError("empty enumeration must not trigger object HEAD")
+
+    def create_multipart_upload(self, **kwargs: Any) -> dict[str, Any]:
+        raise AssertionError("mutation API must never be invoked")
+
+    def upload_part(self, **kwargs: Any) -> dict[str, Any]:
+        raise AssertionError("mutation API must never be invoked")
+
+    def complete_multipart_upload(self, **kwargs: Any) -> dict[str, Any]:
+        raise AssertionError("mutation API must never be invoked")
+
+    def abort_multipart_upload(self, **kwargs: Any) -> dict[str, Any]:
+        raise AssertionError("mutation API must never be invoked")
+
+
+def _actual_readonly_composition(context_value: dict[str, Any], setup: dict[str, Any], s3_client: Any):
+    from typing import cast
+    from botocore.client import BaseClient
+    from tools.eos.legal_operations.service.legal_evidence_s3_storage_adapter import (
+        LegalEvidenceS3StorageAdapter,
+    )
+    from tools.eos.legal_operations.service.legal_evidence_provider_readonly_reconciliation_provider import (
+        LegalEvidenceProviderReadOnlyReconciliationProvider,
+    )
+    from tools.eos.legal_operations.service.legal_evidence_provider_readonly_reconciliation_factory import (
+        build_legal_evidence_provider_readonly_reconciliation_dependencies,
+    )
+
+    adapter = LegalEvidenceS3StorageAdapter(
+        setup["target"].storage_configuration,
+        client=cast(BaseClient, s3_client),
+    )
+    facade = LegalEvidenceProviderReadOnlyReconciliationProvider(adapter)
+    dependencies = build_legal_evidence_provider_readonly_reconciliation_dependencies(
+        provider=facade,
+        mongo_database=context_value["database"],
+    )
+    assert not hasattr(facade, "begin")
+    assert not hasattr(facade, "write_chunk")
+    assert not hasattr(facade, "complete")
+    assert not hasattr(facade, "abort")
+    return dependencies
+
+
+def test_authorization_failure_calls_zero_real_adapter_provider_operations(
+    context: dict[str, Any],
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    gate, setup = _build_full_gate(context, monkeypatch)
+    s3_client = _ReadOnlyRecordingS3Client()
+    _actual_readonly_composition(context, setup, s3_client)
+    body = b"{}"
+    request = _signed_request(body=body)
+    request["signature"] = "invalid-signature"
+
+    with context["client"].start_session() as session:
+        session.start_transaction()
+        with pytest.raises(Exception):
+            gate.authorize(
+                request=request,
+                body=body,
+                idempotency_key="reconciliation-provider-deny-" + uuid4().hex,
+                at=setup["now"] + timedelta(seconds=1),
+                session=session,
+            )
+        session.abort_transaction()
+
+    assert s3_client.calls == []
+
+
+def test_authorized_composition_uses_actual_s3_adapter_read_only(
+    context: dict[str, Any],
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    gate, setup = _build_full_gate(context, monkeypatch)
+    s3_client = _ReadOnlyRecordingS3Client()
+    dependencies = _actual_readonly_composition(context, setup, s3_client)
+    body = b"{}"
+    request = _signed_request(body=body)
+    at = setup["now"] + timedelta(seconds=1)
+
+    with context["client"].start_session() as session:
+        session.start_transaction()
+        authorized = gate.authorize(
+            request=request,
+            body=body,
+            idempotency_key="reconciliation-provider-allow-" + uuid4().hex,
+            at=at,
+            session=session,
+        )
+        result = dependencies.coordinator.reconcile(
+            scope=authorized.scope,
+            provider_name=authorized.provider_name,
+            observed_at=at,
+            session=session,
+        )
+        assert session.in_transaction is True
+        assert result.coverage_complete is True
+        assert result.orphan_proven is False
+        assert result.provider_delete_authorized is False
+        assert result.cleanup_authorized is False
+        session.abort_transaction()
+
+    assert s3_client.calls
+    assert set(s3_client.calls) <= {"list_multipart_uploads", "list_object_versions"}
+    assert "create_multipart_upload" not in s3_client.calls
+    assert "upload_part" not in s3_client.calls
+    assert "complete_multipart_upload" not in s3_client.calls
+    assert "abort_multipart_upload" not in s3_client.calls
