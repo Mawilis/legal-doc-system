@@ -59,6 +59,7 @@ from __future__ import annotations
 from collections.abc import Mapping
 from dataclasses import dataclass
 from datetime import datetime, timezone
+from types import MappingProxyType
 from typing import Callable, Protocol
 
 
@@ -226,14 +227,24 @@ async def extract_signed_workload_request(
             "ACTUAL_HTTP_BODY_UNAVAILABLE"
         ) from error
 
-    observed_at = (clock or (lambda: datetime.now(timezone.utc)))()
+    if not isinstance(body, bytes):
+        raise LegalEvidenceProviderReadOnlyReconciliationTransportError(
+            "ACTUAL_HTTP_BODY_INVALID"
+        )
+
+    try:
+        observed_at = (clock or (lambda: datetime.now(timezone.utc)))()
+    except Exception as error:
+        raise LegalEvidenceProviderReadOnlyReconciliationTransportError(
+            "SERVER_CLOCK_UNAVAILABLE"
+        ) from error
     if not isinstance(observed_at, datetime) or observed_at.tzinfo is None:
         raise LegalEvidenceProviderReadOnlyReconciliationTransportError(
             "SERVER_CLOCK_INVALID"
         )
 
     return SignedWorkloadRequestEnvelope(
-        request=mapped,
+        request=MappingProxyType(mapped),
         body=body,
         idempotency_key=correlation_id,
         observed_at=observed_at.astimezone(timezone.utc),
