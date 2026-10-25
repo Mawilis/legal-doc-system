@@ -10,7 +10,6 @@ from __future__ import annotations
 import os
 
 from pymongo import MongoClient
-from pymongo.uri_parser import parse_uri
 
 from tools.eos.legal_operations.service.legal_evidence_provider_readonly_reconciliation_production_composition import (
     PlatformAuthorizationDecisionEvidenceIndexProvisioner,
