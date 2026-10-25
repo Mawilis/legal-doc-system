@@ -1,9 +1,15 @@
 # WILSY OS — Python EOS / MongoDB Atlas Production Provisioning Plan
 
-**Version:** `v1.1.0-L10A2R-C4D7-RECONCILIATION-RUNTIME-INPUTS`
+**Version:** `v1.2.0-L10A2R-C4D7-LEGAL-EVIDENCE-CONFIG-BINDINGS`
 **Authority:** Wilsy OS Core Governance
-**Date:** 2026-10-06
+**Date:** 2026-10-25
 **Artifact:** `k8s/eos-api-atlas-production-provisioning-plan.md`
+
+## Changelog
+
+- `v1.2.0-L10A2R-C4D7-LEGAL-EVIDENCE-CONFIG-BINDINGS` binds the server-owned
+  reconciliation tenant and canonical Legal Evidence S3 bucket/region/KMS
+  settings through explicit Kubernetes Secret/ConfigMap references.
 
 ## Purpose
 
