@@ -2,7 +2,7 @@
 # WILSY OS — DEDICATED PYTHON EOS KUBERNETES PRODUCTION WORKLOAD
 #
 # TITLE: Dedicated Python EOS Production Kubernetes Runtime
-# VERSION: v1.1.0-L10A2R-C4D7-RECONCILIATION-RUNTIME-CONFIG
+# VERSION: v1.2.0-L10A2R-C4D7-LEGAL-EVIDENCE-CONFIG-BINDINGS
 # AUTHORITY: Wilsy OS Core Governance
 # EPITOME: Run the certified sovereign Python EOS API as a dedicated,
 #          digest-pinned, non-root Kubernetes workload on port 9095.
@@ -13,7 +13,10 @@
 #   Kubernetes owns workload scheduling only.
 # CERTIFICATION / UPDATE DATE: 2026-10-06
 # CHANGELOG:
-#   v1.1.0-L10A2R-C4D7-RECONCILIATION-RUNTIME-CONFIG
+#   v1.2.0-L10A2R-C4D7-LEGAL-EVIDENCE-CONFIG-BINDINGS
+#     - Bind the fixed reconciliation tenant and the canonical Legal Evidence
+#       S3 bucket/region/KMS settings consumed by the production composition.
+#   v1.2.0-L10A2R-C4D7-LEGAL-EVIDENCE-CONFIG-BINDINGS
 #     - Bind canonical internal-workload trust settings and a distinct audit
 #       MongoDB URI through deployment-owned Secret keys; no secret values are
 #       authored here. The runtime route remains fail-closed until provisioned.
@@ -223,7 +226,7 @@ spec:
 # WILSY OS SOVEREIGN ARTIFACT SEAL
 #
 # ARTIFACT: k8s/eos-api-production.yaml
-# VERSION: v1.1.0-L10A2R-C4D7-RECONCILIATION-RUNTIME-CONFIG
+# VERSION: v1.2.0-L10A2R-C4D7-LEGAL-EVIDENCE-CONFIG-BINDINGS
 # IMAGE AUTHORITY:
 #   Immutable EOS digest only; no mutable latest tag is admitted.
 # WORKLOAD IDENTITY:
