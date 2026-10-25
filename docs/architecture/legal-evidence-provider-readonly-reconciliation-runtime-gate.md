@@ -1,15 +1,15 @@
 # Legal Evidence Provider Read-Only Reconciliation — Runtime Gate
 
-**Status:** RUNTIME WIRING BLOCKED — durable platform allow/deny evidence is integrated; focused real-Mongo audit and actual-adapter read-only composition tests pass; no production invocation is approved or wired  
-**Version:** v1.2.3-L10A2R-C4D7C-MAJORITY-DURABLE-AUDIT-CERTIFIED  
+**Status:** RUNTIME WIRING BLOCKED — durable platform allow/deny evidence and provider-boundary certification pass; the existing generic runtime API is not a safe reconciliation invocation surface  
+**Version:** v1.2.4-L10A2R-C4D7C-UNSAFE-GENERIC-RUNTIME-SURFACE-IDENTIFIED  
 **Date:** 2026-10-25  
-**Implementation state reviewed:** `2a0652ead7e48fb6db63586ba3a0ee8cf05cde1f`
+**Implementation state reviewed:** `b72ff289f4cffae1e20e3d5b03d9d971252e7e7f`
 
 ## Decision
 
 The first runtime invocation is intended for privileged internal operators only. It must be bound to one exact server-configured tenant and provider, remain read-only at the provider boundary, and preserve the caller-owned active Mongo transaction required by the reconciliation coordinator.
 
-The reconciliation-specific authorization gate now persists a canonical platform-scoped ALLOW/DENY decision through an independently transactional Mongo audit registry before returning an authorization result or surfacing a denial. Audit persistence failure rejects authorization fail-closed. Focused real-Mongo tests and the actual S3 adapter through the authorized read-only composition have passed. No route, CLI command, scheduler, or production service entry point is connected. Runtime wiring remains blocked until the launch-governed invocation owner, deployment-owned audit-client/collection configuration, and final operational review are approved.
+The reconciliation-specific authorization gate now persists a canonical platform-scoped ALLOW/DENY decision through an independently transactional Mongo audit registry before returning an authorization result or surfacing a denial. Audit persistence failure rejects authorization fail-closed. Focused real-Mongo tests and the actual S3 adapter through the authorized read-only composition have passed. A generic runtime API exists, but source inspection found it is not an approved or safe invocation surface for this privileged operation. Runtime wiring remains blocked until the invocation owner, deployment-owned audit-client/collection configuration, and final operational review are approved.
 
 ## Implemented authorization contract
 
@@ -49,9 +49,20 @@ At commit `2a0652ead7e48fb6db63586ba3a0ee8cf05cde1f`, the focused GitHub Actions
 - Provider-boundary tests use the actual `LegalEvidenceS3StorageAdapter` behind the four-operation facade and authorized coordinator composition. Successful reconciliation invokes only provider enumeration reads; authorization failure causes zero provider calls; upload/complete/abort methods are not exposed through the facade.
 - Twenty warnings remain; this run is not warning-free. The broader unified pipeline has a separate security-audit failure and is not fully green.
 
+## Existing runtime surface assessment (read-only repository inspection)
+
+The current Python runtime has `tools/eos/runtime/app.py` mounting `tools/eos/runtime/router.py` under `/runtime`. That is a real existing API surface, but it is **not suitable for reconciliation wiring as currently implemented**:
+
+- `POST /runtime/execute` accepts generic caller-provided `input_data` and optional `context`; the handler does not declare an authorization dependency or invoke the reconciliation-specific signed-workload authorization gate.
+- The handler dynamically selects a kernel method from `boot_and_execute`, `execute`, `run`, `process`, `start`, or `bootstrap` using `find_execution_method`. This generic execution contract is not a bounded reconciliation command contract.
+- The inspected application factory installs request-ID/logging middleware and CORS, but no authentication/authorization middleware is wired there. It configures `allow_origins=["*"]` together with `allow_credentials=True`; this is not evidence of an internal-only privileged boundary.
+- Neither inspected file constructs the canonical platform decision-evidence registry, the reconciliation authorization gate, the server-configured tenant/provider resolver, or the caller-owned active Mongo session required by reconciliation.
+
+These observations do not establish that every other WILSY route is unsafe; they establish that this existing generic route cannot be treated as the approved reconciliation invocation. Do not attach privileged reconciliation to `/runtime/execute` or rely on request-provided `context`, tenant, provider, or identity fields. A dedicated governed composition must obtain the signed workload context from a trusted transport boundary, inject deployment-owned audit and provider dependencies, and preserve the active caller-owned transaction.
+
 ## Launch-governance decision
 
-The launch command system requires an authenticated, observable API and treats the launch date as a target, not permission to bypass certification. The current runtime gate documentation and repository surface do **not** identify an already-approved route, CLI command, scheduler, or production service entry point for this reconciliation operation. Therefore no production invocation path can be honestly called approved today, and none is being wired in this delivery.
+The launch command system requires an authenticated, observable API and treats the launch date as a target, not permission to bypass certification. Repository inspection found a generic runtime API but no already-approved, reconciliation-specific route, CLI command, scheduler, or production service entry point. The generic `/runtime/execute` route is explicitly unsuitable under its current authorization and execution contract. Therefore no production invocation path can honestly be called approved today, and none is being wired in this delivery.
 
 Before runtime wiring, the owner must approve and document:
 1. The exact internal invocation surface and transport-derived signed workload request boundary.
@@ -68,6 +79,6 @@ This gate does not authorize provider deletion, retention modification, legal-ho
 
 ## Exit criteria
 
-Runtime wiring remains blocked pending explicit approval of the invocation surface and its production composition root. The focused platform-audit and actual-provider-boundary tests pass, but they do not authorize a route, CLI command, scheduler, or production service entry point.
+Runtime wiring remains blocked pending explicit approval of a dedicated invocation surface and its production composition root. The focused platform-audit and actual-provider-boundary tests pass, but they do not authorize attaching this operation to the generic runtime endpoint or otherwise create production invocation authority.
 
 ---
