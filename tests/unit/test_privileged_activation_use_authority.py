@@ -664,7 +664,7 @@ def test_noninteractive_workload_path_rejects_assurance_principal_mismatch() -> 
         )
 
     assert len(noninteractive.calls) == 1
-    assert registry.calls[0]["principal_id"] == "principal-b"
+    assert registry.calls[0]["principal_id"] == "principal-a"
 
 
 def test_no_privileged_use_permission_or_break_glass_surface() -> None:
