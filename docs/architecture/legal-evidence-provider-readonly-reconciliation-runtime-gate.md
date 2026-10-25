@@ -1,9 +1,9 @@
 # Legal Evidence Provider Read-Only Reconciliation — Runtime Gate
 
 **Status:** RUNTIME WIRING BLOCKED — durable platform allow/deny evidence and provider-boundary certification pass; the existing generic runtime API is not a safe reconciliation invocation surface  
-**Version:** v1.3.0-L10A2R-C4D7C-147-PASS-UNIFIED-SECURITY-GATE-FAILED  
+**Version:** v1.4.0-L10A2R-C4D7C-TRANSPORT-ADAPTER-ADDED-CERTIFICATION-PENDING  
 **Date:** 2026-10-25  
-**Implementation state reviewed:** `b72ff289f4cffae1e20e3d5b03d9d971252e7e7f`
+**Implementation state reviewed:** `74bb1bc91832f68ae653e0b640e81e4af0fa2df3`
 
 ## Decision
 
@@ -103,12 +103,42 @@ Focused unit coverage and the Python certification workflow were extended for th
 
 The runtime composition verifies the two required unique audit indexes read-only during construction. The deployment-only index provisioner is separate and is not retained by the runtime composition, so the runtime audit client does not need index-management authority. This verifies index shape/existence, not that a deployment provisioner has been configured against the correct production cluster; that remains a deployment-owned configuration and release-governance obligation.
 
+## Signed-workload transport extraction (not mounted)
+
+The Python/EOS transport adapter now exists at
+`tools/eos/legal_operations/service/legal_evidence_provider_readonly_reconciliation_transport_adapter.py`.
+It maps the already-existing signed internal-service header contract
+(`X-Wilsy-Auth-Version`, `X-Wilsy-Service-ID`, `X-Wilsy-Audience`,
+`X-Wilsy-Key-ID`, `X-Wilsy-Timestamp`, `X-Wilsy-Nonce`,
+`X-Wilsy-Body-SHA3-512`, `X-Wilsy-Correlation-ID`,
+`X-Wilsy-Signature`) into the canonical P3 request mapping. It derives the
+HTTP method and raw origin-form path/query from the ASGI scope, reads the exact
+body bytes, rejects missing/duplicate required headers, rejects malformed path
+and header encoding, and does not accept identity, tenant, provider, or scope
+from the request body or context. The signed correlation ID is used as the
+operation idempotency key, so an unsigned auxiliary header cannot substitute a
+decision key.
+
+The adapter only normalizes transport input. It does not verify the signature,
+authorize the operation, create a Mongo session, start/commit/abort a
+transaction, or mount a route. The canonical P3/P5/gate chain remains the sole
+authorization path. Its focused adversarial tests are now included in the
+reconciliation workflow's explicit compile and pytest command; certification
+for the new adapter is pending the current-head workflow result.
+
+This reduces the transport-mapping implementation gap but does not resolve
+operational approval: the actual internal caller must still approve the exact
+route/path and signed header contract, and the deployment composition owner
+must supply the production dependencies and caller-owned transaction lifecycle.
+Do not mount this adapter on the generic runtime endpoint or expose a route
+until that approval and production wiring are independently evidenced.
+
 ## Launch-governance decision
 
 The launch command system requires an authenticated, observable API and treats the launch date as a target, not permission to bypass certification. Repository inspection found a generic runtime API but no already-approved, reconciliation-specific route, CLI command, scheduler, or production service entry point. The generic `/runtime/execute` route is explicitly unsuitable under its current authorization and execution contract. Therefore no production invocation path can honestly be called approved today, and none is being wired in this delivery.
 
 Before runtime wiring, the owner must approve and document:
-1. The exact internal invocation surface and transport-derived signed workload request boundary.
+1. The exact internal invocation surface and route/path agreement with the existing signed workload transport contract. A Python extraction adapter now exists, but no route is mounted and the actual internal caller has not yet been approved against it.
 2. Deployment-owned configuration for the audit Mongo client, collection, credentials/permissions, index provisioning, retention and operational monitoring.
 3. The composition root that constructs the real audit registry and gate; the caller must not be able to substitute a no-op or alternate audit writer.
 4. The invocation's active caller-owned transaction lifecycle, rollback behavior, idempotency handling, and observable audit-store outage response.
