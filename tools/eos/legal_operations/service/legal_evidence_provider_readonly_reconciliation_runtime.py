@@ -10,6 +10,9 @@ import hashlib
 import json
 import logging
 import os
+import re
+
+import boto3
 from collections.abc import Mapping
 from typing import Any
 
@@ -47,12 +50,19 @@ from tools.eos.legal_operations.service.legal_evidence_provider_readonly_reconci
     LegalEvidenceProviderReadOnlyReconciliationProductionComposition,
     build_legal_evidence_provider_readonly_reconciliation_production_composition,
 )
+from tools.eos.legal_operations.service.legal_evidence_s3_storage_adapter import (
+    DEFAULT_REGION,
+    LegalEvidenceS3Configuration,
+)
 from tools.eos.legal_operations.service.legal_evidence_provider_readonly_reconciliation_idempotency_registry import (
     COLLECTION as OPERATION_IDEMPOTENCY_COLLECTION,
     LegalEvidenceReconciliationOperationIdempotencyRegistry,
 )
 
 AUDIT_URI_ENV = "WILSY_LEGAL_EVIDENCE_RECONCILIATION_AUDIT_MONGODB_URI"
+AWS_ROLE_ARN_ENV = "WILSY_LEGAL_EVIDENCE_RECONCILIATION_AWS_ROLE_ARN"
+_AWS_ROLE_ARN = re.compile(r"arn:[a-z0-9-]+:iam::[0-9]{12}:role/[A-Za-z0-9+=,.@_/-]{1,512}\\Z")
+_ALLOWED_SOURCE_CREDENTIAL_METHODS = frozenset({"assume-role-with-web-identity", "container-role"})
 logger = logging.getLogger(__name__)
 
 
@@ -81,6 +91,66 @@ def audit_target_fingerprint(uri: str) -> str:
             "RECONCILIATION_MONGODB_TARGET_INVALID"
         ) from error
     return hashlib.sha3_512(encoded).hexdigest()
+
+
+def build_reconciliation_readonly_s3_client(
+    *,
+    env: Mapping[str, str],
+    region: str,
+) -> Any:
+    """Assume the dedicated read-only provider role using approved pod identity.
+
+    Ambient node credentials, static environment keys, and local credential
+    profiles are deliberately rejected. The assumed credentials are supplied
+    only to the reconciliation S3 client; the existing upload route keeps its
+    separately governed client and permissions.
+    """
+    role_arn = env.get(AWS_ROLE_ARN_ENV, "")
+    if not isinstance(role_arn, str) or not _AWS_ROLE_ARN.fullmatch(role_arn.strip()):
+        raise LegalEvidenceProviderReadOnlyReconciliationRuntimeBootstrapError(
+            "RECONCILIATION_AWS_ROLE_ARN_REQUIRED"
+        )
+    try:
+        session = boto3.session.Session()
+        source_credentials = session.get_credentials()
+        if (
+            source_credentials is None
+            or getattr(source_credentials, "method", None) not in _ALLOWED_SOURCE_CREDENTIAL_METHODS
+        ):
+            raise LegalEvidenceProviderReadOnlyReconciliationRuntimeBootstrapError(
+                "RECONCILIATION_AWS_WORKLOAD_IDENTITY_UNAVAILABLE"
+            )
+        sts = session.client("sts", region_name=region)
+        assumed = sts.assume_role(
+            RoleArn=role_arn.strip(),
+            RoleSessionName="wilsy-legal-evidence-reconciliation",
+            DurationSeconds=900,
+        )
+        credentials = assumed.get("Credentials") if isinstance(assumed, dict) else None
+        if not isinstance(credentials, dict):
+            raise LegalEvidenceProviderReadOnlyReconciliationRuntimeBootstrapError(
+                "RECONCILIATION_AWS_ROLE_ASSUMPTION_FAILED"
+            )
+        access_key = credentials.get("AccessKeyId")
+        secret_key = credentials.get("SecretAccessKey")
+        session_token = credentials.get("SessionToken")
+        if not all(isinstance(value, str) and value.strip() for value in (access_key, secret_key, session_token)):
+            raise LegalEvidenceProviderReadOnlyReconciliationRuntimeBootstrapError(
+                "RECONCILIATION_AWS_ROLE_ASSUMPTION_FAILED"
+            )
+        return session.client(
+            "s3",
+            region_name=region,
+            aws_access_key_id=access_key,
+            aws_secret_access_key=secret_key,
+            aws_session_token=session_token,
+        )
+    except LegalEvidenceProviderReadOnlyReconciliationRuntimeBootstrapError:
+        raise
+    except Exception as error:
+        raise LegalEvidenceProviderReadOnlyReconciliationRuntimeBootstrapError(
+            "RECONCILIATION_AWS_ROLE_ASSUMPTION_FAILED"
+        ) from error
 
 
 class LegalEvidenceProviderReadOnlyReconciliationRuntimeBootstrapError(RuntimeError):
@@ -191,6 +261,15 @@ def build_legal_evidence_provider_readonly_reconciliation_runtime(
             database[OPERATION_IDEMPOTENCY_COLLECTION]
         )
         operation_idempotency_registry.ensure_indexes()
+        storage_configuration = LegalEvidenceS3Configuration(
+            bucket=values.get("WILSY_LEGAL_EVIDENCE_S3_BUCKET", ""),
+            region=values.get("WILSY_LEGAL_EVIDENCE_S3_REGION", DEFAULT_REGION),
+            kms_key_id=values.get("WILSY_LEGAL_EVIDENCE_S3_KMS_KEY_ID", "") or None,
+        )
+        reconciliation_s3_client = build_reconciliation_readonly_s3_client(
+            env=values,
+            region=storage_configuration.region,
+        )
         composition = build_legal_evidence_provider_readonly_reconciliation_production_composition(
             mongo_database=database,
             audit_database=audit_database,
@@ -200,6 +279,7 @@ def build_legal_evidence_provider_readonly_reconciliation_runtime(
             workload_keys=workload_keys,
             expected_audience=expected_audience,
             env=values,
+            s3_client=reconciliation_s3_client,
             idempotency_registry=operation_idempotency_registry,
         )
         logger.info(
@@ -224,6 +304,8 @@ def build_legal_evidence_provider_readonly_reconciliation_runtime(
 
 __all__ = [
     "AUDIT_URI_ENV",
+    "AWS_ROLE_ARN_ENV",
+    "build_reconciliation_readonly_s3_client",
     "audit_target_fingerprint",
     "LegalEvidenceProviderReadOnlyReconciliationRuntimeBootstrapError",
     "build_legal_evidence_provider_readonly_reconciliation_runtime",
