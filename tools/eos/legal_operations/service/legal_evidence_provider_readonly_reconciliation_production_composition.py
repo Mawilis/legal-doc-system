@@ -66,6 +66,8 @@ FINANCIAL AUTHORITY BOUNDARY:
 from __future__ import annotations
 
 from datetime import datetime
+from hashlib import sha3_512
+import json
 from typing import Any, Mapping
 
 from tools.eos.auth.current_system_permission_possession import (
@@ -97,6 +99,9 @@ from tools.eos.legal_operations.service.legal_evidence_s3_storage_adapter import
 )
 from tools.eos.legal_operations.service.legal_evidence_provider_readonly_reconciliation_coordinator import (
     LegalEvidenceProviderReadOnlyReconciliationResult,
+)
+from tools.eos.legal_operations.service.legal_evidence_provider_readonly_reconciliation_idempotency_registry import (
+    LegalEvidenceReconciliationOperationIdempotencyRegistry,
 )
 
 
@@ -165,6 +170,7 @@ class LegalEvidenceProviderReadOnlyReconciliationProductionComposition:
         "_registry",
         "_gate",
         "_dependencies",
+        "_idempotency_registry",
         "_audit_indexes_provisioned",
     )
 
@@ -176,6 +182,7 @@ class LegalEvidenceProviderReadOnlyReconciliationProductionComposition:
         registry: PlatformAuthorizationDecisionEvidenceRegistry,
         gate: LegalEvidenceProviderReadOnlyReconciliationAuthorizationGate,
         dependencies: LegalEvidenceProviderReadOnlyReconciliationDependencies,
+        idempotency_registry: LegalEvidenceReconciliationOperationIdempotencyRegistry | None = None,
     ) -> None:
         if business_client is None or not callable(getattr(business_client, "start_session", None)):
             raise LegalEvidenceProviderReadOnlyReconciliationCompositionError(
@@ -186,6 +193,7 @@ class LegalEvidenceProviderReadOnlyReconciliationProductionComposition:
         self._registry = registry
         self._gate = gate
         self._dependencies = dependencies
+        self._idempotency_registry = idempotency_registry
         try:
             self._audit_indexes_provisioned = registry.verify_indexes() is True
         except Exception as error:
@@ -206,6 +214,108 @@ class LegalEvidenceProviderReadOnlyReconciliationProductionComposition:
     def business_client(self) -> Any:
         """The exact deployment-owned business client used to build this graph."""
         return self._business_client
+
+    def authorize_and_reconcile_idempotently(
+        self,
+        *,
+        signed_workload_fields: Mapping[str, str],
+        body: bytes,
+        idempotency_key: str,
+        at: datetime,
+        session: object,
+    ) -> dict[str, Any]:
+        """Authorize every request and replay the exact durable operation result.
+
+        The operation result is stored in the canonical business transaction.
+        Correlation and nonce are deliberately not operation keys. Every retry
+        must carry a fresh signed nonce; it receives the same cached response
+        when service, operation key, exact signed body, and server-owned scope
+        match. A changed request or scope conflicts rather than overwriting.
+        """
+        registry = self._idempotency_registry
+        if registry is None:
+            raise LegalEvidenceProviderReadOnlyReconciliationCompositionError(
+                "RECONCILIATION_OPERATION_IDEMPOTENCY_UNAVAILABLE"
+            )
+        service_id = signed_workload_fields.get("service_id", "")
+        nonce = signed_workload_fields.get("nonce", "")
+        key_id = signed_workload_fields.get("key_id", "")
+        if not all(isinstance(value, str) and value for value in (service_id, nonce, key_id)):
+            raise LegalEvidenceProviderReadOnlyReconciliationCompositionError(
+                "RECONCILIATION_SIGNED_WORKLOAD_CONTEXT_INVALID"
+            )
+        audit_key_material = "\\0".join(
+            ("legal-evidence-provider-reconciliation", service_id, key_id, nonce, idempotency_key)
+        ).encode("utf-8")
+        authorization_audit_key = (
+            "legal-evidence-provider-reconciliation:"
+            + sha3_512(audit_key_material).hexdigest()
+        )
+        authorization = self._gate.authorize(
+            request=signed_workload_fields,
+            body=body,
+            idempotency_key=authorization_audit_key,
+            at=at,
+            session=session,
+        )
+        fingerprint_material = {
+            "operation": "L10A2R_C4D7_RECONCILIATION",
+            "service_id": service_id,
+            "idempotency_key": idempotency_key,
+            "body_sha3_512": signed_workload_fields.get("body_sha3_512", ""),
+            "method": signed_workload_fields.get("method", ""),
+            "path": signed_workload_fields.get("path", ""),
+            "audience": signed_workload_fields.get("audience", ""),
+            "tenant_id": authorization.scope.tenant_id,
+            "tenant_scope_fingerprint": authorization.scope.tenant_scope_fingerprint,
+            "provider_name": authorization.provider_name,
+        }
+        request_fingerprint = sha3_512(
+            json.dumps(
+                fingerprint_material,
+                sort_keys=True,
+                separators=(",", ":"),
+                ensure_ascii=False,
+            ).encode("utf-8")
+        ).hexdigest()
+        cached = registry.lookup(
+            service_id=service_id,
+            idempotency_key=idempotency_key,
+            request_fingerprint=request_fingerprint,
+            session=session,
+        )
+        if cached is not None:
+            return cached
+
+        result = self._dependencies.coordinator.reconcile(
+            scope=authorization.scope,
+            provider_name=authorization.provider_name,
+            observed_at=at,
+            session=session,
+        )
+        response: dict[str, Any] = {
+            "tenant_id": result.tenant_id,
+            "tenant_scope_fingerprint": result.tenant_scope_fingerprint,
+            "provider_name": result.provider_name,
+            "observed_at": result.observed_at.isoformat(),
+            "coverage_verification_fingerprint": result.coverage_verification_fingerprint,
+            "incomplete_observation_count": result.incomplete_observation_count,
+            "completed_observation_count": result.completed_observation_count,
+            "classification_count": len(result.classifications),
+            "write_intent_correlation_count": len(result.write_intent_correlations),
+            "coverage_complete": result.coverage_complete,
+            "orphan_proven": result.orphan_proven,
+            "provider_delete_authorized": result.provider_delete_authorized,
+            "cleanup_authorized": result.cleanup_authorized,
+        }
+        registry.record(
+            service_id=service_id,
+            idempotency_key=idempotency_key,
+            request_fingerprint=request_fingerprint,
+            response=response,
+            session=session,
+        )
+        return response
 
     def authorize_and_reconcile(
         self,
@@ -257,6 +367,7 @@ def build_legal_evidence_provider_readonly_reconciliation_production_composition
     expected_audience: str,
     env: Mapping[str, str] | None = None,
     s3_client: Any | None = None,
+    idempotency_registry: LegalEvidenceReconciliationOperationIdempotencyRegistry | None = None,
 ) -> LegalEvidenceProviderReadOnlyReconciliationProductionComposition:
     """Compose deployment-owned dependencies without mounting an entry point.
 
@@ -330,6 +441,7 @@ def build_legal_evidence_provider_readonly_reconciliation_production_composition
         registry=registry,
         gate=gate,
         dependencies=dependencies,
+        idempotency_registry=idempotency_registry,
     )
 
 
