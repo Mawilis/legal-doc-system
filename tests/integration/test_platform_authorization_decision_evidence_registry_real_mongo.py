@@ -82,6 +82,7 @@ def audit_context():
         audit_db[COLLECTION], audit_client=audit_client
     )
     registry.ensure_indexes()
+    assert registry.verify_indexes() is True
     try:
         yield caller_client, caller_db, audit_client, audit_db, registry
     finally:
@@ -158,6 +159,12 @@ def test_real_mongo_unique_indexes_are_enforced(audit_context):
         item.get("unique") and item.get("key") == [("decision_id", 1)]
         for item in indexes.values()
     )
+
+
+def test_index_verification_rejects_missing_required_unique_index(audit_context):
+    _, _, _, audit_db, registry = audit_context
+    audit_db[COLLECTION].drop_index("platform_auth_decision_identity_unique")
+    assert registry.verify_indexes() is False
 
 
 def test_registry_has_no_caller_session_parameter():
