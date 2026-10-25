@@ -10,6 +10,7 @@ from tools.eos.legal_operations.service.legal_evidence_provider_readonly_reconci
     AUDIT_URI_ENV,
     LegalEvidenceProviderReadOnlyReconciliationRuntimeBootstrapError,
     audit_target_fingerprint,
+    audit_target_fingerprint,
     build_legal_evidence_provider_readonly_reconciliation_runtime,
 )
 
@@ -165,3 +166,12 @@ def test_production_manifest_binds_all_required_reconciliation_secret_inputs() -
             rf"key: {re.escape(secret_key)}(?:\s|$)"
         )
         assert binding.search(manifest), f"missing exact Secret binding for {variable}"
+
+
+def test_audit_target_fingerprint_ignores_credentials_but_binds_target() -> None:
+    first = audit_target_fingerprint("mongodb://user-one:secret-one@audit.example:27017/audit")
+    rotated = audit_target_fingerprint("mongodb://user-two:secret-two@audit.example:27017/audit")
+    other_database = audit_target_fingerprint("mongodb://user-two:secret-two@audit.example:27017/audit_other")
+    assert first == rotated
+    assert first != other_database
+    assert "secret" not in first
