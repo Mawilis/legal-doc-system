@@ -156,6 +156,7 @@ def test_production_manifest_binds_all_required_reconciliation_secret_inputs() -
         "WILSY_INTERNAL_AUTH_KEY_ID": "internal-auth-key-id",
         "WILSY_INTERNAL_AUTH_SECRET": "internal-auth-secret",
         AUDIT_URI_ENV: "legal-evidence-reconciliation-audit-mongodb-uri",
+        "WILSY_LEGAL_EVIDENCE_RECONCILIATION_TENANT_ID": "legal-evidence-reconciliation-tenant-id",
     }
     assert "path: /api/legal-operations/evidence-provider/reconciliation/health" in manifest
     for variable, secret_key in expected.items():
@@ -167,8 +168,22 @@ def test_production_manifest_binds_all_required_reconciliation_secret_inputs() -
         )
         assert binding.search(manifest), f"missing exact Secret binding for {variable}"
 
+    config_bindings = {
+        "WILSY_LEGAL_EVIDENCE_S3_BUCKET": "legal-evidence-s3-bucket",
+        "WILSY_LEGAL_EVIDENCE_S3_REGION": "legal-evidence-s3-region",
+        "WILSY_LEGAL_EVIDENCE_S3_KMS_KEY_ID": "legal-evidence-s3-kms-key-id",
+    }
+    for variable, config_key in config_bindings.items():
+        binding = re.compile(
+            rf"- name: {re.escape(variable)}\\s+"
+            rf"valueFrom:\\s+configMapKeyRef:\\s+"
+            rf"name: wilsy-eos-runtime\\s+"
+            rf"key: {re.escape(config_key)}(?:\\s|$)"
+        )
+        assert binding.search(manifest), f"missing exact ConfigMap binding for {variable}"
 
-def test_audit_target_fingerprint_ignores_credentials_but_binds_target() -> None:
+
+def test_audit_target_fingerprint_ignores_credentials_but_binds_target() -> None
     first = audit_target_fingerprint("mongodb://user-one:secret-one@audit.example:27017/audit")
     rotated = audit_target_fingerprint("mongodb://user-two:secret-two@audit.example:27017/audit")
     other_database = audit_target_fingerprint("mongodb://user-two:secret-two@audit.example:27017/audit_other")
