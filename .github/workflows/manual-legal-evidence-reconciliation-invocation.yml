@@ -1,0 +1,104 @@
+name: WILSY Legal Evidence Reconciliation Invocation
+
+on:
+  workflow_dispatch:
+    inputs:
+      idempotency_key:
+        description: Stable operation key. Reuse this exact value only when reconciling an ambiguous prior attempt.
+        required: true
+        type: string
+      confirm_production_invocation:
+        description: Confirm that this is an approved read-only provider reconciliation operation.
+        required: true
+        type: boolean
+
+permissions:
+  contents: read
+
+concurrency:
+  group: wilsy-legal-evidence-reconciliation-production
+  cancel-in-progress: false
+
+jobs:
+  invoke:
+    name: Invoke governed Python EOS reconciliation caller
+    if: ${{ inputs.confirm_production_invocation }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 2
+    environment: production
+    env:
+      WILSY_RECONCILIATION_ENDPOINT: ${{ secrets.WILSY_RECONCILIATION_ENDPOINT }}
+      WILSY_RECONCILIATION_SERVICE_ID: ${{ secrets.WILSY_RECONCILIATION_SERVICE_ID }}
+      WILSY_RECONCILIATION_AUDIENCE: ${{ secrets.WILSY_RECONCILIATION_AUDIENCE }}
+      WILSY_RECONCILIATION_KEY_ID: ${{ secrets.WILSY_RECONCILIATION_KEY_ID }}
+      WILSY_RECONCILIATION_SECRET: ${{ secrets.WILSY_RECONCILIATION_SECRET }}
+      WILSY_RECONCILIATION_IDEMPOTENCY_KEY: ${{ inputs.idempotency_key }}
+    steps:
+      - name: Checkout approved caller code
+        uses: actions/checkout@v4
+
+      - name: Validate deployment-owned caller configuration
+        shell: bash
+        run: |
+          set -euo pipefail
+          for name in \
+            WILSY_RECONCILIATION_ENDPOINT \
+            WILSY_RECONCILIATION_SERVICE_ID \
+            WILSY_RECONCILIATION_AUDIENCE \
+            WILSY_RECONCILIATION_KEY_ID \
+            WILSY_RECONCILIATION_SECRET \
+            WILSY_RECONCILIATION_IDEMPOTENCY_KEY; do
+            if [[ -z "${${!name:-}" ]]; then
+              printf 'Required deployment-owned value is missing: %s\n' "$name" >&2
+              exit 1
+            fi
+          done
+          if [[ "${WILSY_RECONCILIATION_ENDPOINT}" != https://* ]]; then
+            echo "RECONCILIATION_ENDPOINT_MUST_USE_HTTPS" >&2
+            exit 1
+          fi
+
+      - name: Invoke once and emit sanitized outcome
+        shell: bash
+        run: |
+          set -euo pipefail
+          python - <<'PY'
+          import json
+          import os
+          import sys
+
+          from tools.eos.legal_operations.service.legal_evidence_provider_readonly_reconciliation_invocation_client import (
+              ReconciliationInvocationClientError,
+              invoke_legal_evidence_reconciliation,
+          )
+
+          try:
+              result = invoke_legal_evidence_reconciliation(
+                  endpoint=os.environ["WILSY_RECONCILIATION_ENDPOINT"],
+                  service_id=os.environ["WILSY_RECONCILIATION_SERVICE_ID"],
+                  audience=os.environ["WILSY_RECONCILIATION_AUDIENCE"],
+                  key_id=os.environ["WILSY_RECONCILIATION_KEY_ID"],
+                  secret=os.environ["WILSY_RECONCILIATION_SECRET"],
+                  idempotency_key=os.environ["WILSY_RECONCILIATION_IDEMPOTENCY_KEY"],
+              )
+          except ReconciliationInvocationClientError as error:
+              print(f"RECONCILIATION_CALLER_FAILURE={error}", file=sys.stderr)
+              raise SystemExit(1) from None
+
+          try:
+              payload = json.loads(result.body.decode("utf-8", "strict"))
+          except (UnicodeDecodeError, json.JSONDecodeError):
+              print("RECONCILIATION_RESPONSE_INVALID")
+              raise SystemExit(1) from None
+
+          success = payload.get("success") is True
+          safe_code = payload.get("code")
+          if not isinstance(safe_code, str) or not safe_code.isascii() or not safe_code.replace("_", "").isalnum():
+              safe_code = "UNCLASSIFIED_RESPONSE"
+          print(f"HTTP_STATUS={result.status_code}")
+          print(f"CORRELATION_ID={result.correlation_id}")
+          print(f"RECONCILIATION_RESULT={'SUCCESS' if success and 200 <= result.status_code < 300 else 'NOT_SUCCESS'}")
+          print(f"SAFE_CODE={safe_code}")
+          if not (success and 200 <= result.status_code < 300):
+              raise SystemExit(1)
+          PY
