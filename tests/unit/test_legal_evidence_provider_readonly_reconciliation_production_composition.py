@@ -26,11 +26,12 @@ class _Registry:
 class _Gate:
     def __init__(self) -> None:
         self.calls = []
+        self.scope = object()
 
     def authorize(self, **kwargs):
         self.calls.append(kwargs)
         return SimpleNamespace(
-            scope=object(),
+            scope=self.scope,
             provider_name="aws_s3",
         )
 
@@ -122,10 +123,10 @@ def test_authorized_composition_passes_only_gate_derived_scope_to_coordinator():
     ]
     assert coordinator.calls == [
         {
-            "scope": gate.authorize.__self__ and coordinator.calls[0]["scope"],
+            "scope": gate.scope,
             "provider_name": "aws_s3",
             "observed_at": at,
             "session": session,
         }
     ]
-    assert coordinator.calls[0]["scope"] is not None
+    assert coordinator.calls[0]["scope"] is gate.scope
