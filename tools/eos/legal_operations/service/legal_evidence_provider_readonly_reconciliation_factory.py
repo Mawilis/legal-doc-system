@@ -1,7 +1,7 @@
 """WILSY OS Legal Evidence read-only reconciliation dependency factory.
 
 TITLE: Legal Evidence Read-Only Reconciliation Dependency Factory
-VERSION: v1.0.0-L10A2R-C4D7B-DEPENDENCY-SEAM
+VERSION: v1.1.0-L10A2R-C4D7B-READONLY-FACADE-REQUIRED
 AUTHORITY: WILSY OS Core Governance / Python EOS Legal Operations
 EPITOME: Construct the existing certified read-only reconciliation services
          from an explicitly configured provider and caller-owned Mongo database.
@@ -13,8 +13,10 @@ COLLABORATION / OWNERSHIP:
     transaction lifecycle, cleanup authorization, or provider mutation.
 CERTIFICATION / UPDATE DATE: 2026-10-25
 CHANGELOG:
-    v1.0.0 creates one fail-closed construction seam; performs no network
-    requests, index creation, persistence writes, or transaction lifecycle.
+    v1.1.0-L10A2R-C4D7B-READONLY-FACADE-REQUIRED requires the explicit read-only provider facade so a broader
+    upload adapter's mutation methods are not exposed through reconciliation.
+    Construction still performs no provider I/O, index creation, persistence
+    writes, or transaction lifecycle.
 COMPLIANCE:
     Implements engineering boundaries only; makes no independent compliance claim.
 SECURITY / PRIVACY POSTURE:
@@ -62,12 +64,15 @@ from tools.eos.legal_operations.service.legal_evidence_provider_coverage_enumera
 from tools.eos.legal_operations.service.legal_evidence_provider_coverage_verification_service import (
     LegalEvidenceProviderCoverageVerificationService,
 )
+from tools.eos.legal_operations.service.legal_evidence_provider_readonly_reconciliation_provider import (
+    LegalEvidenceProviderReadOnlyReconciliationProvider,
+)
 from tools.eos.legal_operations.service.legal_evidence_provider_readonly_reconciliation_coordinator import (
     LegalEvidenceProviderReadOnlyReconciliationCoordinator,
 )
 
 
-VERSION: Final[str] = "v1.0.0-L10A2R-C4D7B-DEPENDENCY-SEAM"
+VERSION: Final[str] = "v1.1.0-L10A2R-C4D7B-READONLY-FACADE-REQUIRED"
 
 
 class LegalEvidenceProviderReadOnlyReconciliationFactoryError(RuntimeError):
@@ -79,7 +84,7 @@ class LegalEvidenceProviderReadOnlyReconciliationDependencies:
     """Explicitly assembled services; no lifecycle or mutation methods."""
 
     coordinator: LegalEvidenceProviderReadOnlyReconciliationCoordinator
-    discovery: Any
+    discovery: LegalEvidenceProviderReadOnlyReconciliationProvider
     coverage_service: LegalEvidenceProviderCoverageVerificationService
     classification_service: LegalEvidenceProviderCleanupClassificationService
 
@@ -106,16 +111,21 @@ def build_legal_evidence_provider_readonly_reconciliation_dependencies(
 ) -> LegalEvidenceProviderReadOnlyReconciliationDependencies:
     """Build the certified read-only service graph from explicit dependencies.
 
-    The caller must supply the already configured provider adapter implementing
-    both discovery and coverage-page enumeration, plus the intended Mongo
-    database handle. This function does not create clients, read environment
+    The caller must supply a `LegalEvidenceProviderReadOnlyReconciliationProvider`
+    facade around the already configured adapter, plus the intended Mongo
+    database handle. The facade exposes only discovery and coverage-page
+    enumeration; arbitrary adapter attributes and upload/mutation methods are
+    not forwarded. This function does not create clients, read environment
     variables, start transactions, create indexes, perform provider calls, or
-    write persistence. The exact same provider instance is passed to discovery,
-    coverage verification, classification, and the coordinator.
+    write persistence. The exact same facade instance is passed to all services.
     """
     if provider is None:
         raise LegalEvidenceProviderReadOnlyReconciliationFactoryError(
             "L10A2R_C4D7B_PROVIDER_REQUIRED"
+        )
+    if type(provider) is not LegalEvidenceProviderReadOnlyReconciliationProvider:
+        raise LegalEvidenceProviderReadOnlyReconciliationFactoryError(
+            "L10A2R_C4D7B_READ_ONLY_PROVIDER_FACADE_REQUIRED"
         )
     if not isinstance(provider, LegalEvidenceProviderCoverageEnumerationPort):
         raise LegalEvidenceProviderReadOnlyReconciliationFactoryError(
@@ -170,7 +180,7 @@ __all__ = [
 
 
 # ARTIFACT: legal_evidence_provider_readonly_reconciliation_factory.py
-# VERSION: v1.0.0-L10A2R-C4D7B-DEPENDENCY-SEAM
+# VERSION: v1.1.0-L10A2R-C4D7B-READONLY-FACADE-REQUIRED
 # AUTHORITY BOUNDARY: explicit dependency construction only; read-only coordinator
 # TENANT POSTURE: scope remains caller-supplied and server-authorized
 # FAIL-CLOSED POSTURE: missing dependencies reject; no defaults or side effects
