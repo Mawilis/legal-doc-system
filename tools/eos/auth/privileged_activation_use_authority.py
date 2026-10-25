@@ -3,7 +3,7 @@ TITLE:
     WILSY OS Privileged Activation Current-Use Authority
 
 VERSION:
-    v1.1.0-P5-TRUSTED-WORKLOAD-PRINCIPAL-DERIVATION
+    v1.1.1-P5-CURRENT-WORKLOAD-PRINCIPAL-DERIVATION
 
 AUTHORITY:
     Wilsy OS Sovereign IAM
@@ -26,12 +26,10 @@ CERTIFICATION / UPDATE DATE:
     2026-10-15
 
 CHANGELOG:
-    v1.1.0-P5-TRUSTED-WORKLOAD-PRINCIPAL-DERIVATION
-        Adds a single-verification noninteractive path that derives the operator
-        principal from the exact verified WorkloadTrustFact before checking
-        current P4/P2 authority. It never replays the same one-use request to
-        derive identity and then authorize it. Existing explicit-principal paths
-        retain their prior contract.
+    v1.1.1-P5-CURRENT-WORKLOAD-PRINCIPAL-DERIVATION
+        Requires the returned canonical WorkloadTrustFact to be CURRENT before
+        its principal can drive P4/P2 lookup. A stale workload fact now fails
+        closed before activation or eligibility resolution.
 
 COMPLIANCE:
     Fail-closed. No invented permission, role, activation, persistence, HTTP,
@@ -74,6 +72,7 @@ from tools.eos.auth.privileged_security_assurance import (
 )
 from tools.eos.auth.privileged_channel_currentness import (
     WorkloadTrustFact,
+    WorkloadTrustStatus,
 )
 
 
@@ -380,6 +379,10 @@ class PrivilegedActivationUseAuthority:
             raise PrivilegedActivationUseError(
                 "VERIFIED_WORKLOAD_FACT_REQUIRED"
             )
+        if workload_fact.status is not WorkloadTrustStatus.CURRENT:
+            raise PrivilegedActivationUseError(
+                "WORKLOAD_PROOF_NOT_CURRENT"
+            )
 
         principal_id = workload_fact.principal_id
         if (
@@ -615,7 +618,7 @@ class PrivilegedActivationUseAuthority:
 # =============================================================================
 # WILSY OS SOVEREIGN ARTIFACT SEAL
 # ARTIFACT: privileged_activation_use_authority.py
-# VERSION: v1.1.0-P5-TRUSTED-WORKLOAD-PRINCIPAL-DERIVATION
+# VERSION: v1.1.1-P5-CURRENT-WORKLOAD-PRINCIPAL-DERIVATION
 # AUTHORITY BOUNDARY:
 #   Current privileged-use composition only. No activation issuance, role or
 #   permission creation, transaction ownership, HTTP, or break-glass authority.
