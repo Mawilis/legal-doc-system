@@ -26,15 +26,14 @@ import urllib.error
 import urllib.parse
 import urllib.request
 from dataclasses import dataclass
-from typing import Mapping
 from uuid import uuid4
 
 VERSION = "v1.0.0-L10A2R-C4D7-PYTHON-CALLER"
 RECONCILIATION_PATH = "/api/legal-operations/evidence-provider/reconciliation"
 PROTOCOL_VERSION = "v1"
 MAX_RESPONSE_BYTES = 1_048_576
-_KEY = re.compile(r"[A-Za-z0-9][A-Za-z0-9._:/-]{0,159}\\Z")
-_TEXT = re.compile(r"[^\\r\\n]{1,256}\\Z")
+_KEY = re.compile(r"[A-Za-z0-9][A-Za-z0-9._:/-]{0,159}\Z")
+_TEXT = re.compile(r"[^\r\n]{1,256}\Z")
 
 
 class ReconciliationInvocationClientError(RuntimeError):
@@ -64,9 +63,9 @@ def _canonical_request(
         PROTOCOL_VERSION, service_id, audience, method, path, timestamp, nonce,
         body_digest, correlation_id,
     )
-    if any(not isinstance(value, str) or not value or "\\r" in value or "\\n" in value for value in fields):
+    if any(not isinstance(value, str) or not value or "\r" in value or "\n" in value for value in fields):
         raise ReconciliationInvocationClientError("SIGNED_REQUEST_FIELDS_INVALID")
-    return "\\n".join(fields).encode("utf-8")
+    return "\n".join(fields).encode("utf-8")
 
 
 def build_signed_invocation(
@@ -90,7 +89,7 @@ def build_signed_invocation(
     service_id = _required_text(service_id, "WORKLOAD_SERVICE_ID_REQUIRED")
     audience = _required_text(audience, "WORKLOAD_AUDIENCE_REQUIRED")
     key_id = _required_text(key_id, "WORKLOAD_KEY_ID_REQUIRED")
-    if not isinstance(secret, str) or not secret or "\\r" in secret or "\\n" in secret:
+    if not isinstance(secret, str) or not secret or "\r" in secret or "\n" in secret:
         raise ReconciliationInvocationClientError("WORKLOAD_SECRET_REQUIRED")
     if not isinstance(idempotency_key, str) or not _KEY.fullmatch(idempotency_key) or "*" in idempotency_key:
         raise ReconciliationInvocationClientError("OPERATION_IDEMPOTENCY_KEY_INVALID")
@@ -197,7 +196,7 @@ def invoke_legal_evidence_reconciliation(
         return ReconciliationInvocationResult(int(error.code), response_body, correlation_id)
     except ReconciliationInvocationClientError:
         raise
-    except (urllib.error.URLError, TimeoutError, OSError) as error:
+    except (urllib.error.URLError, TimeoutError, OSError):
         # Do not retry automatically: the server may have committed before the
         # connection failed. A caller must retry with the same idempotency key.
         raise ReconciliationInvocationClientError(
