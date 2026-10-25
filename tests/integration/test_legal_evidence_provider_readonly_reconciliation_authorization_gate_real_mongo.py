@@ -257,6 +257,7 @@ def _build_full_gate(
         "tenant_id": tenant_id,
         "target": target,
         "workload_registry": workload_registry,
+        "workload_collection": database[WORKLOAD_CURRENTNESS_COLLECTION],
         "proof_registry": proof_registry,
         "replay_collection": replay_collection,
         "assurance_collection": database[ASSURANCE_COLLECTION],
@@ -293,14 +294,7 @@ def test_full_gate_uses_actual_signed_workload_and_current_mongo_authorities(
         session.commit_transaction()
 
     assert setup["replay_collection"].count_documents({}) == 1
-    assert setup["workload_registry"].get_by_proof_reference(
-        proof_reference=(
-            setup["workload_registry"]
-            .get_by_proof_reference.__self__  # type: ignore[attr-defined]
-            and "not-a-real-reference"
-        ),
-        session=object(),
-    ) is None if False else True
+    assert setup["workload_collection"].count_documents({}) == 1
     assert setup["proof_registry"]._collection.count_documents({}) == 1
     assert setup["assurance_collection"].count_documents({}) == assurance_before + 1
 
