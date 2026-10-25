@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from pathlib import Path
 from types import SimpleNamespace
 
 import pytest
@@ -7,6 +8,7 @@ import pytest
 from tools.eos.legal_operations.service.legal_evidence_provider_readonly_reconciliation_runtime import (
     AUDIT_URI_ENV,
     LegalEvidenceProviderReadOnlyReconciliationRuntimeBootstrapError,
+    audit_target_fingerprint,
     build_legal_evidence_provider_readonly_reconciliation_runtime,
 )
 
@@ -128,3 +130,28 @@ def test_runtime_bootstrap_builds_and_returns_canonical_graph_and_retained_audit
     assert built["idempotency_registry"].__class__.__name__ == (
         "LegalEvidenceReconciliationOperationIdempotencyRegistry"
     )
+
+
+
+def test_audit_target_fingerprint_is_stable_and_excludes_credentials() -> None:
+    first = "mongodb://user-one:secret-one@audit.example:27017/audit?tls=true&authSource=admin"
+    second = "mongodb://user-two:secret-two@audit.example:27017/audit?tls=true&authSource=admin"
+    assert audit_target_fingerprint(first) == audit_target_fingerprint(second)
+    assert audit_target_fingerprint(first) != audit_target_fingerprint(
+        "mongodb://audit-other.example:27017/audit?tls=true&authSource=admin"
+    )
+
+
+def test_production_manifest_binds_all_required_reconciliation_secret_inputs() -> None:
+    manifest = Path("k8s/eos-api-production.yaml").read_text(encoding="utf-8")
+    expected = {
+        "WILSY_INTERNAL_AUTH_SERVICE_ID": "internal-auth-service-id",
+        "WILSY_INTERNAL_AUTH_AUDIENCE": "internal-auth-audience",
+        "WILSY_INTERNAL_AUTH_KEY_ID": "internal-auth-key-id",
+        "WILSY_INTERNAL_AUTH_SECRET": "internal-auth-secret",
+        AUDIT_URI_ENV: "legal-evidence-reconciliation-audit-mongodb-uri",
+    }
+    for variable, secret_key in expected.items():
+        assert f"name: {variable}" in manifest
+        assert f"key: {secret_key}" in manifest
+        assert "name: wilsy-eos-runtime-secrets" in manifest
