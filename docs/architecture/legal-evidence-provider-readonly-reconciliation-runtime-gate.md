@@ -194,18 +194,18 @@ caller change is included, consistent with the Python/EOS-only implementation
 boundary. Until the service owner approves and wires the actual caller to this
 exact path and body contract, caller approval remains an explicit release gate.
 
-Exact-head certification at `5d467bfa5de1b04d2b3760a708094252958ec9a5`:
+Last code-changing head `0ef827e0bf7f6e8acfb355e92f12058bb69ea0c8`:
 the focused Python + isolated real-Mongo workflow
-[40188948766](https://github.com/Mawilis/legal-doc-system/actions/runs/40188948766)
-passed **196 tests, 31 warnings, zero skipped**. Repository integrity
-[40188948780](https://github.com/Mawilis/legal-doc-system/actions/runs/40188948780)
+[40189216504](https://github.com/Mawilis/legal-doc-system/actions/runs/40189216504)
+passed **197 tests, 31 warnings, zero skipped**. Repository integrity
+[40189216469](https://github.com/Mawilis/legal-doc-system/actions/runs/40189216469)
 passed, and the EOS image build
-[40188948744](https://github.com/Mawilis/legal-doc-system/actions/runs/40188948744)
+[40189216468](https://github.com/Mawilis/legal-doc-system/actions/runs/40189216468)
 passed. The unified production pipeline
-[40188948776](https://github.com/Mawilis/legal-doc-system/actions/runs/40188948776)
-still failed at the existing production dependency audit; retained production
-gates failed and downstream R2A/R2B real-Mongo jobs were skipped. Focused
-success is not broader production release certification.
+[40189216505](https://github.com/Mawilis/legal-doc-system/actions/runs/40189216505)
+failed at the existing production dependency audit; retained production gates
+failed and downstream R2A/R2B real-Mongo jobs were skipped. The follow-up to
+this evidence is documentation-only; no production launch is certified.
 
 ## Non-goals
 
