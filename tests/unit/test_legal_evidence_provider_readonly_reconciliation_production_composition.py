@@ -59,6 +59,7 @@ def _composition(registry=None, gate=None, coordinator=None):
     return (
         LegalEvidenceProviderReadOnlyReconciliationProductionComposition(
             target=object(),
+            business_client=SimpleNamespace(start_session=lambda: None),
             registry=registry,
             gate=gate,
             dependencies=SimpleNamespace(coordinator=coordinator),
@@ -105,6 +106,7 @@ def test_authorized_composition_passes_only_gate_derived_scope_to_coordinator():
 
     assert result == "reconciled"
     assert registry.calls == 1
+    assert callable(composition.business_client.start_session)
     assert gate.calls == [
         {
             "request": fields,
