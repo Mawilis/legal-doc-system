@@ -1,6 +1,6 @@
 # WILSY OS — Python EOS / MongoDB Atlas Production Provisioning Plan
 
-**Version:** `v1.0.0-P0-C12F7C-EOS-ATLAS-PRODUCTION-PLAN`
+**Version:** `v1.1.0-L10A2R-C4D7-RECONCILIATION-RUNTIME-INPUTS`
 **Authority:** Wilsy OS Core Governance
 **Date:** 2026-10-06
 **Artifact:** `k8s/eos-api-atlas-production-provisioning-plan.md`
@@ -85,6 +85,73 @@ approved TLS production connection string must be injected as:
 - process variable: `MONGODB_URI`
 
 The actual URI must never appear in this repository.
+
+## Governed Legal-Evidence Reconciliation Runtime Inputs
+
+The Python EOS production deployment now declares these additional required
+keys in the existing `wilsy-eos-runtime-secrets` Kubernetes Secret:
+
+| Secret key | Process variable | Purpose |
+| --- | --- | --- |
+| `internal-auth-service-id` | `WILSY_INTERNAL_AUTH_SERVICE_ID` | Exact registered internal caller identity |
+| `internal-auth-audience` | `WILSY_INTERNAL_AUTH_AUDIENCE` | Signed workload audience accepted by EOS |
+| `internal-auth-key-id` | `WILSY_INTERNAL_AUTH_KEY_ID` | Active signed-workload key identifier |
+| `internal-auth-secret` | `WILSY_INTERNAL_AUTH_SECRET` | Secret used by the existing signed-workload protocol |
+| `legal-evidence-reconciliation-audit-mongodb-uri` | `WILSY_LEGAL_EVIDENCE_RECONCILIATION_AUDIT_MONGODB_URI` | Separate MongoDB audit deployment URI |
+
+These key names are deployment contracts, not populated credentials. Do not
+create placeholder or synthetic production values. The internal service ID,
+audience, key ID, and secret must be provisioned from the actual approved caller
+and existing internal-service trust authority. **No caller implementation or
+caller-side signature change is certified by this repository change alone.**
+
+The exact mounted endpoint is:
+
+`POST /api/legal-operations/evidence-provider/reconciliation`
+
+The caller must sign the actual origin-form path including `/api`, the HTTP
+method, exact body bytes, body SHA3-512 digest, timestamp, nonce, service ID,
+audience, key ID, correlation ID, and signature using the existing
+`X-Wilsy-*` contract. The UTF-8 JSON body schema is exactly
+`{"idempotency_key":"<caller-generated-stable-operation-key>"}`; duplicate
+JSON properties and additional fields are rejected. Retries must use a fresh
+signed nonce while preserving the same operation idempotency key and exact
+operation body. Correlation ID is not an idempotency key.
+
+Before enabling the endpoint, identify and certify the actual caller, verify
+that it signs the exact path above, and run adversarial HTTP tests for bad
+signatures, replayed nonce, changed body/key conflict, scope/permission denial,
+audit outage, and transaction abort. Until the secret values come from that
+approved caller and deployment, the reconciliation composition intentionally
+remains unavailable and the route returns a bounded 503.
+
+### Audit target provisioning and identity proof
+
+1. Select the approved audit MongoDB deployment and a dedicated runtime database
+   principal. Do not reuse the business Mongo URI or credentials unless a
+   separately governed design explicitly approves it.
+2. Populate the Secret key
+   `legal-evidence-reconciliation-audit-mongodb-uri` with the exact approved
+   TLS URI, and use that same secret key/value for the deployment-only
+   `tools.eos.legal_operations.service.legal_evidence_provider_readonly_reconciliation_audit_provisioner`
+   invocation.
+3. Supply the canonical business `MONGODB_URI` and the audit URI to the
+   provisioner. It rejects a matching host/database target, provisions the
+   two required unique platform decision-evidence indexes, and verifies them.
+4. The EOS startup runtime independently reads the same named audit URI
+   variable, creates and pings its own retained client, checks it is distinct
+   from the business client, and the composition verifies the provisioned audit
+   index shape read-only. Never substitute the business database, a CI URI, or
+   an implicit default database.
+5. Capture the provisioner's success output and the runtime startup/readiness
+   evidence without printing either URI. Compare the sanitized deployment
+   target identity and database name in the deployment record. Do not claim
+   production audit-target certification until these observations exist.
+
+The provisioner is a deployment-only command and must never be invoked from a
+request handler. The production Kubernetes manifest references these keys but
+does not create the Secret or assert that a production caller, cluster, or
+audit deployment already exists.
 
 ## HR Upload Policy
 
