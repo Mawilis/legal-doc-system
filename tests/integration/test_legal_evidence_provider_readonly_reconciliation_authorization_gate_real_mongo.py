@@ -424,6 +424,7 @@ def test_authorization_failure_calls_zero_real_adapter_provider_operations(
     body = b"{}"
     request = _signed_request(body=body)
     request["signature"] = "invalid-signature"
+    decision_key = "reconciliation-provider-deny-" + uuid4().hex
 
     with context["client"].start_session() as session:
         session.start_transaction()
@@ -434,13 +435,19 @@ def test_authorization_failure_calls_zero_real_adapter_provider_operations(
             gate.authorize(
                 request=request,
                 body=body,
-                idempotency_key="reconciliation-provider-deny-" + uuid4().hex,
+                idempotency_key=decision_key,
                 at=setup["now"] + timedelta(seconds=1),
                 session=session,
             )
         session.abort_transaction()
 
     assert s3_client.calls == []
+    audit_row = setup["decision_audit_collection"].find_one({"idempotency_key": decision_key})
+    assert audit_row is not None
+    assert audit_row["decision"] == "DENY"
+    assert audit_row["reason_code"] == "CURRENT_PLATFORM_OPERATOR_USE_DENIED"
+    assert audit_row["principal_id"] is None
+    assert audit_row["identity_trust"] == "UNVERIFIED"
 
 
 def test_authorized_composition_uses_actual_s3_adapter_read_only(
