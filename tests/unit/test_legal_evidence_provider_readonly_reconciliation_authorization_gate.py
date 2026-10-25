@@ -24,6 +24,10 @@ from tools.eos.auth.system_permission_assignment import (
     SystemPermissionAssignment,
     SystemPermissionAssignmentStatus,
 )
+from tools.eos.saas.tenancy.tenant_registry import (
+    TenantRegistry,
+    TenantRegistryError,
+)
 from tools.eos.legal_operations.service.legal_evidence_provider_cleanup_discovery_port import (
     LegalEvidenceProviderDiscoveryScope,
 )
@@ -31,6 +35,7 @@ from tools.eos.legal_operations.service.legal_evidence_provider_readonly_reconci
     RECONCILIATION_READ_PERMISSION,
     LegalEvidenceProviderReadOnlyReconciliationAuthorizationError,
     LegalEvidenceProviderReadOnlyReconciliationAuthorizationGate,
+    ServerConfiguredReconciliationScopeResolver,
     ServerOwnedReconciliationScopeResolutionError,
 )
 
@@ -370,6 +375,115 @@ def test_rejects_scope_fingerprint_not_derived_from_tenant(
     ):
         authorize(gate)
 
+
+
+def test_server_configured_scope_uses_canonical_tenant_registry_and_session(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    calls: list[dict[str, object]] = []
+
+    class TenantCollection:
+        def find_one(self, *args: object, **kwargs: object) -> None:
+            return None
+
+    @dataclass(frozen=True)
+    class Tenant:
+        tenant_id: str
+        status: str
+
+    def get_tenant(
+        tenant_id: str,
+        *,
+        collection: object,
+        session: object,
+    ) -> Tenant:
+        calls.append({
+            "tenant_id": tenant_id,
+            "collection": collection,
+            "session": session,
+        })
+        return Tenant(tenant_id=tenant_id, status="ACTIVE")
+
+    monkeypatch.setattr(TenantRegistry, "get", staticmethod(get_tenant))
+    collection = TenantCollection()
+    resolver = ServerConfiguredReconciliationScopeResolver(
+        tenant_id="tenant-configured-a",
+        provider_name="aws_s3",
+        tenant_collection=collection,
+    )
+
+    scope = resolver.resolve_scope(
+        principal_id="operator-a",
+        activation_id="activation-a",
+        at=NOW,
+        session=SESSION,
+    )
+
+    assert resolver.provider_name == "aws_s3"
+    assert scope.tenant_id == "tenant-configured-a"
+    assert scope.tenant_scope_fingerprint == hashlib.sha3_512(
+        b"tenant-configured-a"
+    ).hexdigest()
+    assert calls == [{
+        "tenant_id": "tenant-configured-a",
+        "collection": collection,
+        "session": SESSION,
+    }]
+
+
+def test_server_configured_scope_denies_missing_tenant(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    class TenantCollection:
+        def find_one(self, *args: object, **kwargs: object) -> None:
+            return None
+
+    monkeypatch.setattr(TenantRegistry, "get", staticmethod(lambda *args, **kwargs: None))
+    resolver = ServerConfiguredReconciliationScopeResolver(
+        tenant_id="tenant-configured-a",
+        provider_name="aws_s3",
+        tenant_collection=TenantCollection(),
+    )
+
+    with pytest.raises(
+        ServerOwnedReconciliationScopeResolutionError,
+        match="CANONICAL_TENANT_SCOPE_NOT_ACTIVE",
+    ):
+        resolver.resolve_scope(
+            principal_id="operator-a",
+            activation_id="activation-a",
+            at=NOW,
+            session=SESSION,
+        )
+
+
+def test_server_configured_scope_denies_inactive_tenant(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    class TenantCollection:
+        def find_one(self, *args: object, **kwargs: object) -> None:
+            return None
+
+    def inactive(*args: object, **kwargs: object) -> None:
+        raise TenantRegistryError("TENANT_REGISTRY_CANONICAL_INACTIVE")
+
+    monkeypatch.setattr(TenantRegistry, "get", staticmethod(inactive))
+    resolver = ServerConfiguredReconciliationScopeResolver(
+        tenant_id="tenant-configured-a",
+        provider_name="aws_s3",
+        tenant_collection=TenantCollection(),
+    )
+
+    with pytest.raises(
+        ServerOwnedReconciliationScopeResolutionError,
+        match="CANONICAL_TENANT_SCOPE_NOT_ACTIVE",
+    ):
+        resolver.resolve_scope(
+            principal_id="operator-a",
+            activation_id="activation-a",
+            at=NOW,
+            session=SESSION,
+        )
 
 def test_requires_caller_owned_active_transaction(
     monkeypatch: pytest.MonkeyPatch,
