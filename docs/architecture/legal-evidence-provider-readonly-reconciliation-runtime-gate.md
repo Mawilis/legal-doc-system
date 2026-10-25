@@ -1,7 +1,7 @@
 # Legal Evidence Provider Read-Only Reconciliation — Runtime Gate
 
 **Status:** RUNTIME WIRING BLOCKED — durable platform allow/deny evidence and provider-boundary certification pass; the existing generic runtime API is not a safe reconciliation invocation surface  
-**Version:** v1.2.4-L10A2R-C4D7C-UNSAFE-GENERIC-RUNTIME-SURFACE-IDENTIFIED  
+**Version:** v1.2.5-L10A2R-C4D7C-CURRENT-HEAD-CERTIFIED-INVOCATION-STILL-BLOCKED  
 **Date:** 2026-10-25  
 **Implementation state reviewed:** `b72ff289f4cffae1e20e3d5b03d9d971252e7e7f`
 
@@ -69,6 +69,17 @@ At commit `b38adc8b085593bde9fbf63062e9f7c1b17499e3`, GitHub Actions completed:
 - Unified pipeline: [run 40179900706](https://github.com/Mawilis/legal-doc-system/actions/runs/40179900706) — failed at the security audit. The observed audit reported **24 production dependency vulnerabilities (2 moderate, 22 high)**; the pipeline's retained production-gates step consequently failed and downstream R2A/R2B real-Mongo jobs were skipped. This is a separate existing dependency/security gate, not a failure in the focused Python reconciliation tests. No Node.js or dependency changes were made as part of this Python/EOS task.
 
 This improves the evidence for the current branch head but does not clear the launch blocker: the focused suite certifies the authorization/evidence components and provider-boundary tests, not a production invocation route.
+
+## Certification on commit `5ce69c633c4a875c94c9d6d88906e52429f038cc`
+
+The latest branch-head CI results have now completed:
+
+- Focused Python / isolated real-Mongo authorization gate: [run 40180120093](https://github.com/Mawilis/legal-doc-system/actions/runs/40180120093) — **142 passed, 20 warnings in 6.75 seconds**. Python compilation, replica-set initialization and cleanup, and zero-skip enforcement all passed.
+- Repository integrity: [run 40180120082](https://github.com/Mawilis/legal-doc-system/actions/runs/40180120082) — passed.
+- Unified pipeline: [run 40180120085](https://github.com/Mawilis/legal-doc-system/actions/runs/40180120085) — failed at the security audit; the retained production-gates step failed and downstream R2A/R2B real-Mongo certification was skipped. This is not a focused reconciliation-suite failure and remains a separate production release blocker.
+- EOS image publication: [run 40180120137](https://github.com/Mawilis/legal-doc-system/actions/runs/40180120137) — completed successfully.
+
+The focused tests exercise the real signed workload verifier and current P5/P2/SYSTEM permission authorities against isolated MongoDB, verify the caller-owned transaction rollback boundary, and test the actual S3 adapter through the read-only facade. The focused suite is now confirmed green on the current commit, not inferred from a prior code commit. It does not certify a production HTTP/service invocation or deployment-owned audit-client composition.
 
 ## Launch-governance decision
 
