@@ -124,6 +124,11 @@ spec:
                   name: wilsy-eos-runtime
                   key: legal-evidence-s3-kms-key-id
                   optional: true
+            - name: WILSY_LEGAL_EVIDENCE_RECONCILIATION_AWS_ROLE_ARN
+              valueFrom:
+                configMapKeyRef:
+                  name: wilsy-eos-runtime
+                  key: legal-evidence-reconciliation-aws-role-arn
             - name: WILSY_LEGAL_EVIDENCE_RECONCILIATION_TENANT_ID
               valueFrom:
                 secretKeyRef:
