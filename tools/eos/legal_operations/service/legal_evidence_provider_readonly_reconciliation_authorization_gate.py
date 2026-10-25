@@ -3,7 +3,7 @@ TITLE:
     WILSY OS Legal Evidence Provider Read-Only Reconciliation Authorization Gate
 
 VERSION:
-    v1.0.3-L10A2R-C4D7C-SERVER-CONFIGURED-SCOPE
+    v1.0.4-L10A2R-C4D7C-ENV-BOUND-SCOPE-TARGET
 
 AUTHORITY:
     Wilsy OS Sovereign IAM and Legal Operations
@@ -27,12 +27,12 @@ CERTIFICATION / UPDATE DATE:
     2026-10-25
 
 CHANGELOG:
-    v1.0.3-L10A2R-C4D7C-SERVER-CONFIGURED-SCOPE
-        Adds a concrete server-configured scope resolver that revalidates one
-        deployment-configured tenant through the canonical TenantRegistry in
-        the caller transaction and derives the scope fingerprint itself. The
-        target tenant remains absent from request inputs; provider binding is
-        fixed by server configuration. No runtime invocation is wired.
+    v1.0.4-L10A2R-C4D7C-ENV-BOUND-SCOPE-TARGET
+        Adds an explicit server-configuration builder binding the deployment
+        tenant ID, canonical tenants collection, and validated existing S3
+        configuration. The fixed provider and tenant are never request inputs;
+        canonical tenant currentness is reread in the caller transaction. No
+        runtime invocation is wired.
 
 COMPLIANCE:
     Fail-closed. No caller-selected tenant/provider scope, no tenant permission
@@ -67,6 +67,7 @@ from __future__ import annotations
 from dataclasses import dataclass
 from datetime import datetime
 from hashlib import sha3_512
+import os
 from typing import Any, Mapping, Protocol
 
 from tools.eos.auth.current_system_permission_possession import (
@@ -79,6 +80,12 @@ from tools.eos.auth.system_permission_assignment import (
 from tools.eos.saas.tenancy.tenant_registry import (
     TenantRegistry,
     TenantRegistryError,
+)
+from tools.eos.legal_operations.service.legal_evidence_s3_storage_adapter import (
+    DEFAULT_REGION,
+    PROVIDER_NAME,
+    LegalEvidenceS3Configuration,
+    LegalEvidenceS3StorageAdapterError,
 )
 from tools.eos.auth.privileged_activation import (
     PrivilegedActivation,
@@ -97,7 +104,7 @@ from tools.eos.legal_operations.service.legal_evidence_provider_cleanup_discover
 )
 
 
-VERSION = "v1.0.3-L10A2R-C4D7C-SERVER-CONFIGURED-SCOPE"
+VERSION = "v1.0.4-L10A2R-C4D7C-ENV-BOUND-SCOPE-TARGET"
 RECONCILIATION_READ_PERMISSION = (
     "legal_operations:evidence_provider_reconciliation:read"
 )
@@ -257,6 +264,99 @@ class ServerConfiguredReconciliationScopeResolver:
             tenant_id=self._tenant_id,
             tenant_scope_fingerprint=fingerprint,
         )
+
+
+@dataclass(frozen=True, slots=True)
+class ServerConfiguredReconciliationTarget:
+    """One immutable deployment-configured tenant/provider target.
+
+    The S3 configuration is the same validated configuration object that the
+    runtime must use to construct its provider adapter. It is not caller input.
+    """
+
+    tenant_id: str
+    provider_name: str
+    storage_configuration: LegalEvidenceS3Configuration
+    scope_resolver: ServerConfiguredReconciliationScopeResolver
+
+
+def build_server_configured_reconciliation_target(
+    *,
+    mongo_database: Any,
+    env: Mapping[str, str] | None = None,
+) -> ServerConfiguredReconciliationTarget:
+    """Resolve one server-configured tenant and existing S3 provider config.
+
+    Required deployment variables:
+        WILSY_LEGAL_EVIDENCE_RECONCILIATION_TENANT_ID
+        WILSY_LEGAL_EVIDENCE_S3_BUCKET
+
+    The region and KMS key follow the existing Legal Evidence S3 adapter
+    configuration contract. The function performs no network calls, index
+    creation, database writes, or provider operations.
+    """
+    values = os.environ if env is None else env
+    tenant_id = values.get(
+        "WILSY_LEGAL_EVIDENCE_RECONCILIATION_TENANT_ID",
+        "",
+    )
+    bucket = values.get("WILSY_LEGAL_EVIDENCE_S3_BUCKET", "")
+    region = values.get("WILSY_LEGAL_EVIDENCE_S3_REGION", DEFAULT_REGION)
+    kms_key = values.get("WILSY_LEGAL_EVIDENCE_S3_KMS_KEY_ID", "") or None
+
+    if (
+        not isinstance(tenant_id, str)
+        or not tenant_id
+        or tenant_id != tenant_id.strip()
+        or "*" in tenant_id
+    ):
+        raise ServerOwnedReconciliationScopeResolutionError(
+            "SERVER_CONFIGURED_TENANT_ID_REQUIRED"
+        )
+    if (
+        not isinstance(bucket, str)
+        or not bucket
+        or bucket != bucket.strip()
+    ):
+        raise ServerOwnedReconciliationScopeResolutionError(
+            "SERVER_S3_BUCKET_CONFIGURATION_REQUIRED"
+        )
+    if mongo_database is None or not callable(
+        getattr(mongo_database, "__getitem__", None)
+    ):
+        raise ServerOwnedReconciliationScopeResolutionError(
+            "CANONICAL_TENANT_DATABASE_REQUIRED"
+        )
+
+    try:
+        storage_configuration = LegalEvidenceS3Configuration(
+            bucket=bucket,
+            region=region,
+            kms_key_id=kms_key,
+        )
+    except LegalEvidenceS3StorageAdapterError as error:
+        raise ServerOwnedReconciliationScopeResolutionError(
+            "SERVER_S3_CONFIGURATION_INVALID"
+        ) from error
+
+    try:
+        tenant_collection = mongo_database["tenants"]
+    except (KeyError, TypeError) as error:
+        raise ServerOwnedReconciliationScopeResolutionError(
+            "CANONICAL_TENANT_COLLECTION_REQUIRED"
+        ) from error
+
+    resolver = ServerConfiguredReconciliationScopeResolver(
+        tenant_id=tenant_id,
+        provider_name=PROVIDER_NAME,
+        tenant_collection=tenant_collection,
+    )
+    return ServerConfiguredReconciliationTarget(
+        tenant_id=tenant_id,
+        provider_name=PROVIDER_NAME,
+        storage_configuration=storage_configuration,
+        scope_resolver=resolver,
+    )
 
 
 @dataclass(frozen=True, slots=True)
@@ -542,6 +642,8 @@ __all__ = [
     "ServerOwnedReconciliationScopeResolutionError",
     "ServerOwnedReconciliationScopeResolver",
     "ServerConfiguredReconciliationScopeResolver",
+    "ServerConfiguredReconciliationTarget",
+    "build_server_configured_reconciliation_target",
     "LegalEvidenceProviderReadOnlyReconciliationAuthorization",
     "LegalEvidenceProviderReadOnlyReconciliationAuthorizationGate",
 ]
@@ -550,7 +652,7 @@ __all__ = [
 # =============================================================================
 # WILSY OS SOVEREIGN ARTIFACT SEAL
 # ARTIFACT: legal_evidence_provider_readonly_reconciliation_authorization_gate.py
-# VERSION: v1.0.3-L10A2R-C4D7C-SERVER-CONFIGURED-SCOPE
+# VERSION: v1.0.4-L10A2R-C4D7C-ENV-BOUND-SCOPE-TARGET
 # AUTHORITY BOUNDARY:
 #   Current platform-root P5 use plus exact current SYSTEM permission possession
 #   and server-owned tenant scope resolution. No invocation or mutation authority.
