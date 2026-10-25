@@ -78,6 +78,9 @@ jobs:
           python -m pytest -q \
             tests/unit/test_privileged_activation_use_authority.py \
             tests/unit/test_current_system_permission_possession.py \
+            tests/unit/test_system_permission_command_policy.py \
+            tests/unit/test_system_permission_assignment_command_service.py \
+            tests/unit/test_system_permission_revocation_command_service.py \
             tests/unit/test_legal_evidence_provider_readonly_reconciliation_authorization_gate.py \
             tests/unit/test_legal_evidence_provider_readonly_reconciliation_factory.py \
             tests/unit/test_legal_evidence_provider_readonly_reconciliation_coordinator.py \
