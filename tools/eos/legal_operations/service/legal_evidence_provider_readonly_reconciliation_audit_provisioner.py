@@ -10,6 +10,7 @@ from __future__ import annotations
 import os
 
 from pymongo import MongoClient
+from pymongo.uri_parser import parse_uri
 
 from tools.eos.legal_operations.service.legal_evidence_provider_readonly_reconciliation_production_composition import (
     PlatformAuthorizationDecisionEvidenceIndexProvisioner,
@@ -26,8 +27,16 @@ def main() -> int:
     business_uri = os.environ.get("MONGODB_URI", "").strip()
     if not business_uri:
         raise SystemExit("CANONICAL_BUSINESS_URI_REQUIRED")
-    if uri == business_uri:
-        raise SystemExit("AUDIT_AND_BUSINESS_URI_MUST_DIFFER")
+    try:
+        audit_target = parse_uri(uri)
+        business_target = parse_uri(business_uri)
+    except Exception as error:
+        raise SystemExit("MONGODB_TARGET_CONFIGURATION_INVALID") from error
+    if (
+        audit_target.get("nodelist") == business_target.get("nodelist")
+        and audit_target.get("database") == business_target.get("database")
+    ):
+        raise SystemExit("AUDIT_AND_BUSINESS_TARGET_MUST_DIFFER")
 
     client = MongoClient(
         uri,
@@ -43,7 +52,7 @@ def main() -> int:
             audit_client=client,
         )
         provisioner.provision()
-        if not provisioner._registry.verify_indexes():
+        if not provisioner.verify():
             raise SystemExit("RECONCILIATION_AUDIT_INDEX_VERIFICATION_FAILED")
         print("RECONCILIATION_AUDIT_INDEXES_PROVISIONED_AND_VERIFIED")
         print(f"AUDIT_DATABASE_NAME={provisioner.database_name}")
