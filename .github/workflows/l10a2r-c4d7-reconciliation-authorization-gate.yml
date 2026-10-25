@@ -69,8 +69,9 @@ jobs:
             tests/unit/test_legal_evidence_provider_readonly_reconciliation_authorization_gate.py \
             tests/unit/test_legal_evidence_provider_readonly_reconciliation_factory.py \
             tests/unit/test_legal_evidence_provider_readonly_reconciliation_coordinator.py \
-            2>&1 | tee /tmp/focused-pytest-output.txt
-          pytest_status=\${PIPESTATUS[0]}
+            > /tmp/focused-pytest-output.txt 2>&1
+          pytest_status=$?
+          cat /tmp/focused-pytest-output.txt
           set -e
           if [ "$pytest_status" -ne 0 ]; then
             exit "$pytest_status"
