@@ -1,7 +1,7 @@
 # Legal Evidence Provider Read-Only Reconciliation — Runtime Gate
 
 **Status:** RUNTIME WIRING BLOCKED — durable platform allow/deny evidence and provider-boundary certification pass; the existing generic runtime API is not a safe reconciliation invocation surface  
-**Version:** v1.2.8-L10A2R-C4D7C-146-PASS-COMPOSITION-CERTIFIED  
+**Version:** v1.2.9-L10A2R-C4D7C-147-PASS-INDEX-VERIFICATION-CERTIFIED  
 **Date:** 2026-10-25  
 **Implementation state reviewed:** `b72ff289f4cffae1e20e3d5b03d9d971252e7e7f`
 
@@ -94,13 +94,14 @@ Fail-closed composition rules:
 
 Focused unit coverage and the Python certification workflow were extended for the composition's not-ready guard, index-provisioning failure, and gate-derived scope propagation. This is a composition seam, not yet a production invocation path: the approved transport adapter, deployment identity/configuration, index-provisioning procedure and operational ownership still must be selected and wired before invocation can be enabled.
 
-## Composition-focused certification on code commit `1afbcb0a3e2d300b73855bfc463ac37a388ecc59`
+## Composition-focused certification on code commit `4b7919a4d5c05ca08bd5b6a44e0808664d209a2f`
 
-- Focused Python / isolated real-Mongo workflow: [run 40180845108](https://github.com/Mawilis/legal-doc-system/actions/runs/40180845108) — **146 passed, 20 warnings in 7.59 seconds**. Python compilation, isolated replica-set setup/cleanup and zero-skip enforcement passed. This run includes the four production-composition tests and the registry index-verification addition.
-- Repository integrity: [run 40180845153](https://github.com/Mawilis/legal-doc-system/actions/runs/40180845153) — passed.
-- The unified production pipeline for this code commit was still in progress at the time of this documentation update; do not interpret the focused success as broader release certification.
+- Focused Python / isolated real-Mongo workflow: [run 40180958680](https://github.com/Mawilis/legal-doc-system/actions/runs/40180958680) — **147 passed, 20 warnings in 7.48 seconds**. Python compilation, isolated replica-set setup/cleanup and zero-skip enforcement passed. Coverage includes the composition readiness/fail-closed tests and real-Mongo proof that runtime index verification accepts both required unique indexes and rejects a missing index.
+- Repository integrity: [run 40180958779](https://github.com/Mawilis/legal-doc-system/actions/runs/40180958779) — passed.
+- EOS image publication: [run 40180958710](https://github.com/Mawilis/legal-doc-system/actions/runs/40180958710) — passed.
+- The unified production pipeline was still in progress at this documentation update; focused success is not broader release certification.
 
-The new runtime composition now verifies the two required unique audit indexes read-only during construction. The deployment-only index provisioner is separate and is not retained by the runtime composition, so the runtime audit client does not need index-management authority. This verifies index shape/existence, not that a deployment provisioner has been configured against the correct production cluster; that remains a deployment-owned configuration and release-governance obligation.
+The runtime composition verifies the two required unique audit indexes read-only during construction. The deployment-only index provisioner is separate and is not retained by the runtime composition, so the runtime audit client does not need index-management authority. This verifies index shape/existence, not that a deployment provisioner has been configured against the correct production cluster; that remains a deployment-owned configuration and release-governance obligation.
 
 ## Launch-governance decision
 
