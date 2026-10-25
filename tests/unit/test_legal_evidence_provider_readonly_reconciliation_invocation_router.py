@@ -39,6 +39,22 @@ def test_operation_key_rejects_ambiguous_or_invalid_signed_body(body: bytes) -> 
         _operation_key(body)
 
 
+def test_reconciliation_readiness_fails_closed_without_verified_composition() -> None:
+    from tools.eos.api.legal_evidence_provider_readonly_reconciliation_router import (
+        reconciliation_readiness,
+    )
+
+    app = FastAPI()
+    app.state.legal_evidence_provider_readonly_reconciliation_composition = None
+    app.state.legal_evidence_provider_readonly_reconciliation_audit_client = None
+    response = asyncio.run(reconciliation_readiness(_request_for_route(app)))
+    assert response.status_code == 503
+    assert json.loads(response.body) == {
+        "success": False,
+        "code": "RECONCILIATION_COMPOSITION_UNAVAILABLE",
+    }
+
+
 def test_route_fails_closed_when_deployment_composition_is_not_injected() -> None:
     app = FastAPI()
     app.include_router(router, prefix="/api")
