@@ -192,8 +192,12 @@ def _build_full_gate(
         session.commit_transaction()
 
     database = context_value["database"]
-    audit_database = decision_audit_database or database
-    audit_client = decision_audit_client or context_value["client"]
+    audit_database = (
+        decision_audit_database if decision_audit_database is not None else database
+    )
+    audit_client = (
+        decision_audit_client if decision_audit_client is not None else context_value["client"]
+    )
     decision_audit_collection = audit_database[PLATFORM_DECISION_COLLECTION]
     decision_evidence_registry = PlatformAuthorizationDecisionEvidenceRegistry(
         decision_audit_collection,
