@@ -74,6 +74,8 @@ def test_adapter_binds_signed_fields_to_actual_method_path_and_exact_body():
     assert "tenant_id" not in envelope.request
     assert "provider_name" not in envelope.request
     assert "principal_id" not in envelope.request
+    with pytest.raises(TypeError):
+        envelope.request["tenant_id"] = "caller-selected"  # type: ignore[index]
 
 
 def test_adapter_preserves_empty_body_and_path_without_query():
@@ -140,3 +142,11 @@ def test_adapter_rejects_untrusted_request_object_and_naive_clock():
                 clock=lambda: datetime(2026, 10, 25, 9, 30),
             )
         )
+
+
+def test_adapter_rejects_non_byte_body_from_request_contract():
+    with pytest.raises(
+        LegalEvidenceProviderReadOnlyReconciliationTransportError,
+        match="ACTUAL_HTTP_BODY_INVALID",
+    ):
+        _extract(_request(body="not bytes"))  # type: ignore[arg-type]
