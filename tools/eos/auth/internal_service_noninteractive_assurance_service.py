@@ -3,7 +3,7 @@ TITLE:
     WILSY OS Internal-Service Noninteractive Security Assurance Composition
 
 VERSION:
-    v1.0.1-P3-R3G-S6-A2-SOVEREIGN-ARTIFACT-CERTIFIED
+    v1.0.2-P3-R3G-S6-A2-IDEMPOTENT-ASSURANCE-REPLAY
 
 AUTHORITY:
     Wilsy OS Sovereign IAM / P3 Security Assurance
@@ -24,7 +24,7 @@ COLLABORATION / OWNERSHIP:
     and historic security-assurance evidence.
 
 CERTIFICATION / UPDATE DATE:
-    2026-10-14
+    2026-10-25
 
 CHANGELOG:
     v1.0.2-P3-R3G-S6-A2-IDEMPOTENT-ASSURANCE-REPLAY
