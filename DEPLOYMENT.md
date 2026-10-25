@@ -68,10 +68,17 @@ URIs):
   `WILSY_INTERNAL_AUTH_AUDIENCE`,
   `WILSY_INTERNAL_AUTH_KEY_ID`, and
   `WILSY_INTERNAL_AUTH_SECRET`.
-- Server-owned reconciliation scope/provider settings required by the
-  canonical target builder, including
-  `WILSY_LEGAL_EVIDENCE_RECONCILIATION_TENANT_ID` and
-  `WILSY_LEGAL_EVIDENCE_S3_BUCKET`.
+- `WILSY_LEGAL_EVIDENCE_RECONCILIATION_TENANT_ID`: fixed server-owned
+  tenant identifier, sourced from the approved reconciliation deployment scope.
+- `WILSY_LEGAL_EVIDENCE_S3_BUCKET` and
+  `WILSY_LEGAL_EVIDENCE_S3_REGION`: the existing Legal Evidence provider's
+  bucket and region, not the separate HR-document bucket. The production
+  Kubernetes manifest binds these through the `wilsy-eos-runtime` ConfigMap
+  keys `legal-evidence-s3-bucket` and `legal-evidence-s3-region`.
+  `WILSY_LEGAL_EVIDENCE_S3_KMS_KEY_ID` is optional only if the approved
+  storage policy does not require a customer-managed KMS key.
+- The tenant identifier is bound from Secret key
+  `legal-evidence-reconciliation-tenant-id`; do not infer it from a request.
 
 An authorized deployment operator must run the audit-index provisioner with
 the exact same two URI variables that the application will use:
