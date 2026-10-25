@@ -11,6 +11,11 @@ import pytest
 from tools.eos.auth.privileged_activation import (
     PrivilegedActivation,
 )
+
+from tools.eos.auth.privileged_channel_currentness import (
+    WorkloadTrustFact,
+    WorkloadTrustStatus,
+)
 from tools.eos.auth.privileged_activation_use_authority import (
     PrivilegedActivationUseAuthority,
     PrivilegedActivationUseError,
@@ -94,6 +99,13 @@ class Evidence:
 class AssuranceResult:
     decision: Decision = Decision()
     evidence: Evidence = Evidence()
+    workload_fact: WorkloadTrustFact | None = WorkloadTrustFact(
+        proof_reference="workload-proof-a",
+        principal_id="principal-a",
+        credential_or_attestation_reference="workload-credential-a",
+        observed_at=NOW,
+        status=WorkloadTrustStatus.CURRENT,
+    )
 
 
 class Registry:
@@ -525,6 +537,134 @@ def test_platform_activation_scope_and_proof_tenant_are_distinct() -> None:
         interactive.calls[0]["tenant_id"]
         == "tenant-proof-a"
     )
+
+
+
+def test_noninteractive_workload_path_derives_principal_once_and_checks_platform_scope() -> None:
+    platform = PrivilegedActivation.issue(
+        activation_id="activation-platform-workload-a",
+        tenant_id=None,
+        principal_id="principal-a",
+        actor_principal_id="principal-a",
+        privileged_role_id="SOVEREIGN_ARCHITECT",
+        target_class=PrivilegedTargetClass.PLATFORM_SYSTEM_ROOT,
+        eligibility_evidence_id="eligibility-a",
+        eligibility_evidence_fingerprint=ELIGIBILITY_FP,
+        assurance_evidence_id="create-assurance-platform-a",
+        assurance_evidence_fingerprint=ASSURANCE_FP,
+        creation_assurance_purpose=PrivilegedAssurancePurpose.PRIVILEGED_ELIGIBILITY_TO_ACTIVATION,
+        activated_at=NOW,
+        effective_until=NOW + timedelta(minutes=15),
+        issuance_idempotency_key="issue-platform-workload-a",
+    )
+    platform_eligibility = Eligibility(
+        tenant_id=None,
+        privileged_role_id="SOVEREIGN_ARCHITECT",
+        target_class=PrivilegedTargetClass.PLATFORM_SYSTEM_ROOT,
+    )
+    registry = Registry(platform)
+    resolver = EligibilityResolver(platform_eligibility)
+    noninteractive = NoninteractiveService()
+    authority = PrivilegedActivationUseAuthority(
+        activation_registry=registry,
+        eligibility_resolver=resolver,
+        noninteractive_assurance_service=noninteractive,
+    )
+
+    result = authority.authorize_noninteractive_workload(
+        activation_tenant_id=None,
+        privileged_role_id="SOVEREIGN_ARCHITECT",
+        target_class=PrivilegedTargetClass.PLATFORM_SYSTEM_ROOT,
+        at=NOW + timedelta(minutes=1),
+        request={"service_id": "trusted"},
+        body=b"{}",
+        keys={"key-a": ("secret", "algorithm")},
+        expected_audience="wilsy-eos-reconciliation",
+        idempotency_key="use-platform-workload-a",
+        session=SESSION,
+    )
+
+    assert result.activation.activation_id == "activation-platform-workload-a"
+    assert result.principal_id == "principal-a"
+    assert len(noninteractive.calls) == 1
+    assert noninteractive.calls[0]["session"] is SESSION
+    assert registry.calls[0]["principal_id"] == "principal-a"
+    assert registry.calls[0]["tenant_id"] is None
+    assert registry.calls[0]["target_class"] is PrivilegedTargetClass.PLATFORM_SYSTEM_ROOT
+
+
+def test_noninteractive_workload_path_rejects_missing_verified_workload_fact() -> None:
+    registry = Registry(None)
+    resolver = EligibilityResolver(None)
+    noninteractive = NoninteractiveService(
+        AssuranceResult(workload_fact=None)
+    )
+    authority = PrivilegedActivationUseAuthority(
+        activation_registry=registry,
+        eligibility_resolver=resolver,
+        noninteractive_assurance_service=noninteractive,
+    )
+
+    with pytest.raises(
+        PrivilegedActivationUseError,
+        match="VERIFIED_WORKLOAD_FACT_REQUIRED",
+    ):
+        authority.authorize_noninteractive_workload(
+            activation_tenant_id=None,
+            privileged_role_id="SOVEREIGN_ARCHITECT",
+            target_class=PrivilegedTargetClass.PLATFORM_SYSTEM_ROOT,
+            at=NOW + timedelta(minutes=1),
+            request={"service_id": "untrusted"},
+            body=b"{}",
+            keys={"key-a": ("secret", "algorithm")},
+            expected_audience="wilsy-eos-reconciliation",
+            idempotency_key="use-platform-workload-missing-fact",
+            session=SESSION,
+        )
+
+    assert not registry.calls
+    assert len(noninteractive.calls) == 1
+
+
+def test_noninteractive_workload_path_rejects_assurance_principal_mismatch() -> None:
+    wrong_fact = WorkloadTrustFact(
+        proof_reference="workload-proof-wrong",
+        principal_id="principal-b",
+        credential_or_attestation_reference="workload-credential-b",
+        observed_at=NOW,
+        status=WorkloadTrustStatus.CURRENT,
+    )
+    wrong_result = AssuranceResult(
+        evidence=Evidence(principal_id="principal-a"),
+        workload_fact=wrong_fact,
+    )
+    authority, registry, resolver, _ = build()
+    noninteractive = NoninteractiveService(wrong_result)
+    authority = PrivilegedActivationUseAuthority(
+        activation_registry=registry,
+        eligibility_resolver=resolver,
+        noninteractive_assurance_service=noninteractive,
+    )
+
+    with pytest.raises(
+        PrivilegedActivationUseError,
+        match="PRIVILEGED_USE_ASSURANCE_PRINCIPAL_MISMATCH",
+    ):
+        authority.authorize_noninteractive_workload(
+            activation_tenant_id="tenant-a",
+            privileged_role_id="ENTERPRISE_ADMIN",
+            target_class=PrivilegedTargetClass.TENANT_PRIVILEGED,
+            at=NOW + timedelta(minutes=1),
+            request={"service_id": "trusted"},
+            body=b"{}",
+            keys={"key-a": ("secret", "algorithm")},
+            expected_audience="wilsy-eos",
+            idempotency_key="use-principal-mismatch",
+            session=SESSION,
+        )
+
+    assert len(noninteractive.calls) == 1
+    assert registry.calls[0]["principal_id"] == "principal-b"
 
 
 def test_no_privileged_use_permission_or_break_glass_surface() -> None:
