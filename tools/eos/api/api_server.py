@@ -35,8 +35,6 @@ CERTIFICATION / UPDATE DATE:
     2026-10-15
 
 CHANGELOG:
-    v1.12.0-L10A2R-C4D7-RECONCILIATION-ROUTE-MOUNT
-        - Registers the dedicated signed-workload reconciliation router; startup authority composition remains owned by the canonical EOS server.
     v1.11.0-CX26-R3-LEGAL-OPERATING-MODEL-ROUTER-MOUNT
         - Mounts the directly certified authenticated Tenant Legal Operating Model HTTP router exactly once under /api/legal/operating-model while preserving router-owned tenant correlation, IAM, transaction, persistence, workflow, legal-act, entitlement and financial boundaries.
     v1.10.0-LEGAL-CLIENT-ACCEPTANCE-ROUTER-MOUNT
@@ -145,10 +143,9 @@ from tools.eos.api.tenant_legal_operating_model_router import router as tenant_l
 from tools.eos.api.wilsy_ai_legal_gateway_router import router as wilsy_ai_legal_gateway_router
 from tools.eos.api.legal_acceptance_router import router as legal_acceptance_router
 from tools.eos.api.tenant_branding_router import router as tenant_branding_router
-from tools.eos.api.legal_evidence_provider_readonly_reconciliation_router import router as legal_evidence_provider_readonly_reconciliation_router
 
 
-VERSION = "v1.12.0-L10A2R-C4D7-RECONCILIATION-ROUTE-MOUNT"
+VERSION = "v1.11.0-CX26-R3-LEGAL-OPERATING-MODEL-ROUTER-MOUNT"
 
 _PRODUCTION_MODE = os.getenv("WILSY_ENV", os.getenv("ENV", "")).strip().lower() == "production"
 _DOCS_ENABLED = not _PRODUCTION_MODE or os.getenv("WILSY_API_DOCS_ENABLED", "").strip().lower() in {"1", "true", "yes", "on"}
@@ -196,9 +193,6 @@ app.include_router(tenant_legal_operating_model_router, prefix="/api")
 app.include_router(wilsy_ai_legal_gateway_router, prefix="/api")
 app.include_router(legal_acceptance_router, prefix="/api")
 app.include_router(tenant_branding_router, prefix="/api")
-# The route fails closed unless deployment bootstrap injects the approved
-# production composition into app.state; mounting alone grants no authority.
-app.include_router(legal_evidence_provider_readonly_reconciliation_router, prefix="/api")
 
 
 @app.exception_handler(WilsyAPIException)
@@ -272,7 +266,7 @@ async def root(request: Request) -> Any:
 # WILSY OS SOVEREIGN ARTIFACT CERTIFICATION SEAL
 # =============================================================================
 # ARTIFACT: api_server.py
-# VERSION: v1.12.0-L10A2R-C4D7-RECONCILIATION-ROUTE-MOUNT
+# VERSION: v1.11.0-CX26-R3-LEGAL-OPERATING-MODEL-ROUTER-MOUNT
 # AUTHORITY BOUNDARY: canonical ASGI composition and router registration only; authentication, membership, business-role, permission, authorization, and persistence authority remain outside this artifact
 # TENANT POSTURE: tenant and deadline routers are mounted exactly once; their own durable authorization and exact scope rules remain authoritative; composition creates no cross-tenant authority
 # FAIL-CLOSED POSTURE: application registration never grants authority; tenant and deadline persistence remain reachable only through their certified dependencies, exact scope checks, and bounded contracts
