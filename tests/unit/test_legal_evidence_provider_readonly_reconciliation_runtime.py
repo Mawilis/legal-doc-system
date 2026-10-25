@@ -10,7 +10,6 @@ from tools.eos.legal_operations.service.legal_evidence_provider_readonly_reconci
     AUDIT_URI_ENV,
     LegalEvidenceProviderReadOnlyReconciliationRuntimeBootstrapError,
     audit_target_fingerprint,
-    audit_target_fingerprint,
     build_legal_evidence_provider_readonly_reconciliation_runtime,
 )
 
