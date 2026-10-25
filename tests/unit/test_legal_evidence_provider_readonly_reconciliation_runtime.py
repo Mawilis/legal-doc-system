@@ -157,6 +157,7 @@ def test_production_manifest_binds_all_required_reconciliation_secret_inputs() -
         "WILSY_INTERNAL_AUTH_SECRET": "internal-auth-secret",
         AUDIT_URI_ENV: "legal-evidence-reconciliation-audit-mongodb-uri",
     }
+    assert "path: /api/legal-operations/evidence-provider/reconciliation/health" in manifest
     for variable, secret_key in expected.items():
         binding = re.compile(
             rf"- name: {re.escape(variable)}\s+"
