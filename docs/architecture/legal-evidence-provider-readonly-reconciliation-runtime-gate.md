@@ -1,9 +1,9 @@
 # Legal Evidence Provider Read-Only Reconciliation — Runtime Gate
 
 **Status:** RUNTIME WIRING BLOCKED — durable platform allow/deny evidence is integrated; focused real-Mongo audit and actual-adapter read-only composition tests pass; no production invocation is approved or wired  
-**Version:** v1.2.2-L10A2R-C4D7C-PLATFORM-AUDIT-CERTIFIED  
+**Version:** v1.2.3-L10A2R-C4D7C-MAJORITY-DURABLE-AUDIT-CERTIFIED  
 **Date:** 2026-10-25  
-**Implementation state reviewed:** `f74a9341083a8f910173c0302fb46f635cfbdf34`
+**Implementation state reviewed:** `2a0652ead7e48fb6db63586ba3a0ee8cf05cde1f`
 
 ## Decision
 
@@ -14,7 +14,7 @@ The reconciliation-specific authorization gate now persists a canonical platform
 ## Implemented authorization contract
 
 - `tools/eos/auth/privileged_activation_use_authority.py` exposes `authorize_noninteractive_workload`. It composes the signed workload request once, requires the canonical `WorkloadTrustFact` to be current, validates P3 assurance identity before P4/P2 lookup, then checks current activation and exact P2 eligibility lineage in the caller-owned transaction.
-- `tools/eos/legal_operations/service/legal_evidence_provider_readonly_reconciliation_authorization_gate.py` requires the exact `SOVEREIGN_ARCHITECT` / `PLATFORM_SYSTEM_ROOT` activation with activation `tenant_id=None`, current possession of `legal_operations:evidence_provider_reconciliation:read`, and a provider-bound server-owned scope resolver. Request header fields are exact-allowlisted; request-selected tenant/provider fields are rejected.
+- `tools/eos/legal_operations/service/legal_evidence_provider_readonly_reconciliation_authorization_gate.py` (v1.0.7) requires the exact `SOVEREIGN_ARCHITECT` / `PLATFORM_SYSTEM_ROOT` activation with activation `tenant_id=None`, current possession of `legal_operations:evidence_provider_reconciliation:read`, and a provider-bound server-owned scope resolver. Request header fields are exact-allowlisted; request-selected tenant/provider fields are rejected.
 - `build_server_configured_reconciliation_target` binds the deployment tenant from `WILSY_LEGAL_EVIDENCE_RECONCILIATION_TENANT_ID` to the existing validated S3 configuration. It uses `WILSY_LEGAL_EVIDENCE_S3_BUCKET`, the existing region default/override, and optional `WILSY_LEGAL_EVIDENCE_S3_KMS_KEY_ID`. The resulting resolver rereads the fixed tenant through canonical `TenantRegistry.get` with the same session and derives the SHA3-512 tenant-scope fingerprint itself.
 - This configuration supports **one server-configured tenant/provider target per resolver instance**. Multi-tenant batch selection is not implemented and must not be added as caller-supplied scope.
 - `tools/eos/auth/system_permission_command_policy.py` permits exactly three ongoing non-command SYSTEM permissions: `privileged_activation:issue`, `privileged_activation:break_glass`, and `legal_operations:evidence_provider_reconciliation:read`. Assignment and revocation remain subject to the existing command-possession, ACTIVE-target, evidence, lineage, and caller-transaction contracts. Assignment of the read permission alone does not authorize use; the reconciliation gate independently requires P5 platform-root use.
@@ -39,11 +39,12 @@ This is focused certification, not full production certification. It does not in
 
 ## Current certification and launch-governance reassessment
 
-At commit `f74a9341083a8f910173c0302fb46f635cfbdf34`, the focused GitHub Actions run completed successfully:
+At commit `2a0652ead7e48fb6db63586ba3a0ee8cf05cde1f`, the focused GitHub Actions run completed successfully:
 
-- Run: [40179284634](https://github.com/Mawilis/legal-doc-system/actions/runs/40179284634).
-- Python compilation and the focused Python/real-Mongo suite passed: **142 passed, 20 warnings in 7.10 seconds**; the zero-skip enforcement step passed.
+- Run: [40179540830](https://github.com/Mawilis/legal-doc-system/actions/runs/40179540830).
+- Python compilation and the focused Python/real-Mongo suite passed: **142 passed, 20 warnings in 6.93 seconds**; the zero-skip enforcement step passed.
 - Real-Mongo audit tests proved denial evidence survives caller transaction abort, allow/deny evidence uses an independently owned audit transaction, replay returns the original evidence, conflicting idempotency/decision identities reject, unique indexes are present, and audit-store failure fails closed.
+- The audit registry commits its independent transaction with MongoDB `writeConcern=majority`; the gate records only verified actor/authority facts established before a downstream denial, while pre-verification failures remain explicitly unverified.
 - The full authorization gate now writes ALLOW/DENY evidence before returning/raising. An allow record is not operation-completion evidence.
 - Provider-boundary tests use the actual `LegalEvidenceS3StorageAdapter` behind the four-operation facade and authorized coordinator composition. Successful reconciliation invokes only provider enumeration reads; authorization failure causes zero provider calls; upload/complete/abort methods are not exposed through the facade.
 - Twenty warnings remain; this run is not warning-free. The broader unified pipeline has a separate security-audit failure and is not fully green.
