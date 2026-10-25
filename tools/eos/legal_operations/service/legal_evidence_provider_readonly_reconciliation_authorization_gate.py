@@ -3,7 +3,7 @@ TITLE:
     WILSY OS Legal Evidence Provider Read-Only Reconciliation Authorization Gate
 
 VERSION:
-    v1.0.8-L10A2R-C4D7C-STABLE-WORKLOAD-ASSURANCE-KEY
+    v1.0.9-L10A2R-C4D7C-STABLE-FAILURE-PROVENANCE
 
 AUTHORITY:
     Wilsy OS Sovereign IAM and Legal Operations
@@ -27,6 +27,10 @@ CERTIFICATION / UPDATE DATE:
     2026-10-25
 
 CHANGELOG:
+    v1.0.9-L10A2R-C4D7C-STABLE-FAILURE-PROVENANCE
+        Retains safe, machine-readable canonical exception codes in DENY evidence
+        while keeping arbitrary exception text and backend details out of responses.
+
     v1.0.8-L10A2R-C4D7C-STABLE-WORKLOAD-ASSURANCE-KEY
         Separates stable credential-generation P3 assurance replay from the
         per-request durable decision-evidence idempotency key.
@@ -588,17 +592,26 @@ class LegalEvidenceProviderReadOnlyReconciliationAuthorizationGate:
             )
             raise
         except Exception as error:
+            candidate = getattr(error, "code", None)
+            if not isinstance(candidate, str) and error.args:
+                candidate = error.args[0]
+            reason_code = (
+                candidate
+                if isinstance(candidate, str)
+                and re.fullmatch(r"[A-Z][A-Z0-9_]{0,127}", candidate)
+                else "AUTHORIZATION_EVALUATION_FAILED"
+            )
             self._record_decision(
                 self._denial_evidence(
                     request=request,
                     idempotency_key=idempotency_key,
                     at=at,
-                    reason_code="AUTHORIZATION_EVALUATION_FAILED",
+                    reason_code=reason_code,
                     audit_context=audit_context,
                 )
             )
             raise LegalEvidenceProviderReadOnlyReconciliationAuthorizationError(
-                "AUTHORIZATION_EVALUATION_FAILED"
+                reason_code
             ) from error
 
         try:
@@ -851,7 +864,7 @@ __all__ = [
 # =============================================================================
 # WILSY OS SOVEREIGN ARTIFACT SEAL
 # ARTIFACT: legal_evidence_provider_readonly_reconciliation_authorization_gate.py
-# VERSION: v1.0.8-L10A2R-C4D7C-STABLE-WORKLOAD-ASSURANCE-KEY
+# VERSION: v1.0.9-L10A2R-C4D7C-STABLE-FAILURE-PROVENANCE
 # AUTHORITY BOUNDARY:
 #   Current platform-root P5 use plus exact current SYSTEM permission possession
 #   and server-owned tenant scope resolution. No invocation or mutation authority.
