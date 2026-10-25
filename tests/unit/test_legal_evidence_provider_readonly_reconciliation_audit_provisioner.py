@@ -8,7 +8,6 @@ from tools.eos.legal_operations.service import legal_evidence_provider_readonly_
 from tools.eos.legal_operations.service.legal_evidence_provider_readonly_reconciliation_runtime import (
     audit_target_fingerprint,
 )
-from tools.eos.legal_operations.service.legal_evidence_provider_readonly_reconciliation_runtime import audit_target_fingerprint
 
 
 class _Client:
