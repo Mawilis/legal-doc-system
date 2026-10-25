@@ -3,7 +3,7 @@ TITLE:
     WILSY OS Legal Evidence Provider Read-Only Reconciliation Authorization Gate
 
 VERSION:
-    v1.0.7-L10A2R-C4D7C-VERIFIED-DENIAL-PROVENANCE
+    v1.0.8-L10A2R-C4D7C-STABLE-WORKLOAD-ASSURANCE-KEY
 
 AUTHORITY:
     Wilsy OS Sovereign IAM and Legal Operations
@@ -27,6 +27,10 @@ CERTIFICATION / UPDATE DATE:
     2026-10-25
 
 CHANGELOG:
+    v1.0.8-L10A2R-C4D7C-STABLE-WORKLOAD-ASSURANCE-KEY
+        Separates stable credential-generation P3 assurance replay from the
+        per-request durable decision-evidence idempotency key.
+
     v1.0.7-L10A2R-C4D7C-VERIFIED-DENIAL-PROVENANCE
         Persists immutable platform-scoped ALLOW/DENY evidence through the
         independently transactional decision registry before returning an
