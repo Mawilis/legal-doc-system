@@ -50,8 +50,7 @@ def test_successful_revocation_and_exact_lineage(monkeypatch: pytest.MonkeyPatch
     assert value.principal_id == "target-a" and value.permission_id == PRIVILEGED_ACTIVATION_ISSUE_PERMISSION
 
 
-@pytest.mark.parametrize("denied", ["legal_operations:evidence_provider_reconciliation:read"])
-@pytest.mark.parametrize("denied", [ASSIGN_COMMAND_PERMISSION, REVOKE_COMMAND_PERMISSION, "kernel:write", "*"])
+@pytest.mark.parametrize("denied", [ASSIGN_COMMAND_PERMISSION, REVOKE_COMMAND_PERMISSION, "legal_operations:evidence_provider_reconciliation:read", "kernel:write", "*"])
 def test_recursive_and_arbitrary_revocation_denied(denied: str) -> None:
     service, _, _ = _parts()
     with pytest.raises(Exception):
