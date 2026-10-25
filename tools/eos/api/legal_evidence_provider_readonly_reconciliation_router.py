@@ -86,6 +86,28 @@ def _failure(status: int, code: str) -> JSONResponse:
     return JSONResponse(status_code=status, content={"success": False, "code": code})
 
 
+@router.get("/health", include_in_schema=False)
+async def reconciliation_readiness(request: Request) -> JSONResponse:
+    """Expose only whether the governed reconciliation composition is ready."""
+    composition = getattr(
+        request.app.state,
+        "legal_evidence_provider_readonly_reconciliation_composition",
+        None,
+    )
+    audit_client = getattr(
+        request.app.state,
+        "legal_evidence_provider_readonly_reconciliation_audit_client",
+        None,
+    )
+    if (
+        type(composition) is not LegalEvidenceProviderReadOnlyReconciliationProductionComposition
+        or getattr(composition, "audit_indexes_provisioned", False) is not True
+        or audit_client is None
+    ):
+        return _failure(503, "RECONCILIATION_COMPOSITION_UNAVAILABLE")
+    return JSONResponse(status_code=200, content={"success": True, "status": "ready"})
+
+
 @router.post("", include_in_schema=False)
 async def reconcile_legal_evidence_provider(request: Request) -> JSONResponse:
     """Authenticate, authorize, and reconcile within one caller-owned transaction."""
