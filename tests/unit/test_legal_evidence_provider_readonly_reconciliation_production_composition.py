@@ -130,3 +130,21 @@ def test_authorized_composition_passes_only_gate_derived_scope_to_coordinator():
         }
     ]
     assert coordinator.calls[0]["scope"] is gate.scope
+
+
+def test_production_builder_rejects_shared_business_and_audit_mongo_client():
+    shared_client = object()
+    with pytest.raises(
+        LegalEvidenceProviderReadOnlyReconciliationCompositionError,
+        match="DISTINCT_SERVER_OWNED_AUDIT_CLIENT_REQUIRED",
+    ):
+        build_legal_evidence_provider_readonly_reconciliation_production_composition(
+            mongo_database=SimpleNamespace(client=shared_client),
+            audit_database=SimpleNamespace(client=shared_client),
+            audit_client=shared_client,
+            use_authority=object(),
+            permission_possession_resolver=object(),
+            workload_keys={},
+            expected_audience="internal-reconciliation",
+            env={},
+        )
