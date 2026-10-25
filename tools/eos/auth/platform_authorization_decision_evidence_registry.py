@@ -1,7 +1,7 @@
 """WILSY OS — Platform Authorization Decision Evidence Registry.
 
 TITLE: Platform Authorization Decision Evidence Registry
-VERSION: v1.0.0-PLATFORM-AUTHORIZATION-DECISION-EVIDENCE-REGISTRY
+VERSION: v1.1.0-PLATFORM-AUTHORIZATION-DECISION-EVIDENCE-MAJORITY-DURABILITY
 AUTHORITY: Wilsy OS Sovereign IAM / Core Governance
 EPITOME: Persist immutable platform-scoped allow/deny decisions independently of
     the caller's business transaction.
@@ -11,8 +11,9 @@ COLLABORATION / OWNERSHIP:
     Owns only the audit collection's append-only insert/read contract and its
     independent audit-client session/transaction. The gate owns authorization.
 CERTIFICATION / UPDATE DATE: 2026-10-25
-CHANGELOG: v1.0.0 defines unique decision/idempotency identities, strict
-    hydration, replay/conflict semantics and fail-closed independent durability.
+CHANGELOG: v1.1.0 requires majority-acknowledged audit transaction commits.
+    v1.0.0 defines unique decision/idempotency identities, strict hydration,
+    replay/conflict semantics and fail-closed independent durability.
 COMPLIANCE: Evidence integrity control alignment only; no independent compliance claim.
 SECURITY / PRIVACY POSTURE: No credentials, request bodies, signatures or secrets.
 TENANT BOUNDARY: Decision scope is PLATFORM; target tenant is descriptive only.
@@ -29,13 +30,14 @@ from typing import Any
 from pymongo import ASCENDING
 from pymongo.collection import Collection
 from pymongo.errors import DuplicateKeyError, PyMongoError
+from pymongo.write_concern import WriteConcern
 
 from tools.eos.auth.platform_authorization_decision_evidence import (
     PlatformAuthorizationDecisionEvidence,
     PlatformAuthorizationDecisionEvidenceError,
 )
 
-VERSION = "v1.0.0-PLATFORM-AUTHORIZATION-DECISION-EVIDENCE-REGISTRY"
+VERSION = "v1.1.0-PLATFORM-AUTHORIZATION-DECISION-EVIDENCE-MAJORITY-DURABILITY"
 COLLECTION = "platform_authorization_decision_evidence"
 
 
@@ -127,7 +129,7 @@ class PlatformAuthorizationDecisionEvidenceRegistry:
         document = evidence.to_persisted()
         try:
             with self._audit_client.start_session() as audit_session:
-                with audit_session.start_transaction():
+                with audit_session.start_transaction(write_concern=WriteConcern("majority")):
                     existing = self._collection.find_one(
                         {"idempotency_key": evidence.idempotency_key},
                         session=audit_session,
@@ -223,7 +225,7 @@ __all__ = [
 ]
 
 # ARTIFACT: platform_authorization_decision_evidence_registry.py
-# VERSION: v1.0.0-PLATFORM-AUTHORIZATION-DECISION-EVIDENCE-REGISTRY
+# VERSION: v1.1.0-PLATFORM-AUTHORIZATION-DECISION-EVIDENCE-MAJORITY-DURABILITY
 # AUTHORITY BOUNDARY: append-only platform decision persistence; no authorization grant
 # TENANT POSTURE: PLATFORM scope; target tenant is descriptive, not authority
 # FAIL-CLOSED POSTURE: no successful return without independent durable evidence
