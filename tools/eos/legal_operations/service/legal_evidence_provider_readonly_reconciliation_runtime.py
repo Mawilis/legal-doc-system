@@ -11,6 +11,7 @@ from collections.abc import Mapping
 from typing import Any
 
 from pymongo import MongoClient
+from pymongo.uri_parser import parse_uri
 
 from tools.eos.api.authority_bridge_router import (
     _production_noninteractive_assurance_service,
@@ -68,6 +69,25 @@ def build_legal_evidence_provider_readonly_reconciliation_runtime(
     if not isinstance(audit_uri, str) or not audit_uri.strip():
         raise LegalEvidenceProviderReadOnlyReconciliationRuntimeBootstrapError(
             "RECONCILIATION_AUDIT_URI_REQUIRED"
+        )
+    business_uri = values.get("MONGODB_URI", "")
+    if not isinstance(business_uri, str) or not business_uri.strip():
+        raise LegalEvidenceProviderReadOnlyReconciliationRuntimeBootstrapError(
+            "CANONICAL_BUSINESS_URI_REQUIRED"
+        )
+    try:
+        audit_target = parse_uri(audit_uri.strip())
+        business_target = parse_uri(business_uri.strip())
+    except Exception as error:
+        raise LegalEvidenceProviderReadOnlyReconciliationRuntimeBootstrapError(
+            "RECONCILIATION_MONGODB_TARGET_INVALID"
+        ) from error
+    if (
+        audit_target.get("nodelist") == business_target.get("nodelist")
+        and audit_target.get("database") == business_target.get("database")
+    ):
+        raise LegalEvidenceProviderReadOnlyReconciliationRuntimeBootstrapError(
+            "RECONCILIATION_AUDIT_TARGET_NOT_SEPARATE"
         )
     if mongo_database is None or getattr(mongo_database, "client", None) is None:
         raise LegalEvidenceProviderReadOnlyReconciliationRuntimeBootstrapError(
