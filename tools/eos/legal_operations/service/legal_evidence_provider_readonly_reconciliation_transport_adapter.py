@@ -105,14 +105,15 @@ class SignedWorkloadRequestEnvelope:
     workload-currentness verification; callers must not treat it as trusted
     identity or authorization evidence.
 
-    The signed correlation identifier is used as the operation idempotency key
-    so an unsigned auxiliary header cannot select a different decision key.
-    The invocation owner still owns the active database transaction.
+    The signed correlation identifier is preserved for audit correlation only.
+    It is not treated as an operation idempotency key; that semantic contract
+    must be supplied by the approved invocation owner. The invocation owner
+    still owns the active database transaction.
     """
 
     request: Mapping[str, str]
     body: bytes
-    idempotency_key: str
+    correlation_id: str
     observed_at: datetime
 
 
@@ -246,7 +247,7 @@ async def extract_signed_workload_request(
     return SignedWorkloadRequestEnvelope(
         request=MappingProxyType(mapped),
         body=body,
-        idempotency_key=correlation_id,
+        correlation_id=correlation_id,
         observed_at=observed_at.astimezone(timezone.utc),
     )
 
