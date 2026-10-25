@@ -251,6 +251,7 @@ def test_canonical_eos_server_mounts_exact_reconciliation_path_once() -> None:
     from fastapi.routing import APIRoute, _iter_routes_with_context
 
     routes = []
+    readiness_routes = []
     for route, context in _iter_routes_with_context(canonical_app.routes):
         if not isinstance(route, APIRoute):
             continue
@@ -258,7 +259,13 @@ def test_canonical_eos_server_mounts_exact_reconciliation_path_once() -> None:
         methods = context.methods if context is not None else (route.methods or set())
         if path == "/api/legal-operations/evidence-provider/reconciliation" and "POST" in methods:
             routes.append(route)
+        if path == "/api/legal-operations/evidence-provider/reconciliation/health" and "GET" in methods:
+            readiness_routes.append(route)
     assert len(routes) == 1
+    assert len(readiness_routes) == 1
     assert routes[0].endpoint.__module__ == (
+        "tools.eos.api.legal_evidence_provider_readonly_reconciliation_router"
+    )
+    assert readiness_routes[0].endpoint.__module__ == (
         "tools.eos.api.legal_evidence_provider_readonly_reconciliation_router"
     )
