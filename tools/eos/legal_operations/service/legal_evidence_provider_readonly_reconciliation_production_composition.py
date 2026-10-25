@@ -283,6 +283,7 @@ def build_legal_evidence_provider_readonly_reconciliation_production_composition
     return LegalEvidenceProviderReadOnlyReconciliationProductionComposition(
         target=target,
         registry=registry,
+        index_provisioner=audit_index_provisioner,
         gate=gate,
         dependencies=dependencies,
     )
