@@ -624,7 +624,7 @@ def test_mounted_route_uses_real_signed_gate_and_replays_result_in_real_mongo(
         )
         assert second.status_code == 200, (
             f"second_response={second.body!r}; audit_decisions="
-            f"{[(row.get("decision"), row.get("reason_code")) for row in setup["decision_audit_collection"].find({})]}"
+            f"{[(row.get('decision'), row.get('reason_code')) for row in setup['decision_audit_collection'].find({})]}"
         )
         first_payload = json.loads(first.body)["data"]
         second_payload = json.loads(second.body)["data"]
