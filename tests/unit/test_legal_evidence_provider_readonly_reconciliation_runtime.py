@@ -136,7 +136,7 @@ def test_runtime_bootstrap_builds_and_returns_canonical_graph_and_retained_audit
     assert built["idempotency_registry"].__class__.__name__ == (
         "LegalEvidenceReconciliationOperationIdempotencyRegistry"
     )
-    assert f"target_fingerprint={audit_target_fingerprint(audit_uri)}" in caplog.text
+    assert f"AUDIT_TARGET_FINGERPRINT={audit_target_fingerprint(audit_uri)}" in caplog.text
 
 
 
