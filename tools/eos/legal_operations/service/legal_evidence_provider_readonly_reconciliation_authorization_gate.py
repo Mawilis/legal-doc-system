@@ -123,7 +123,7 @@ from tools.eos.legal_operations.service.legal_evidence_provider_cleanup_discover
 )
 
 
-VERSION = "v1.0.8-L10A2R-C4D7C-STABLE-WORKLOAD-ASSURANCE-KEY"
+VERSION = "v1.0.9-L10A2R-C4D7C-STABLE-FAILURE-PROVENANCE"
 RECONCILIATION_READ_PERMISSION = (
     "legal_operations:evidence_provider_reconciliation:read"
 )
