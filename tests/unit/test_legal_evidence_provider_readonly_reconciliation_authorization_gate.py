@@ -317,6 +317,38 @@ def test_authorizes_exact_platform_operator_and_server_owned_scope(
     }]
 
 
+def test_p3_assurance_replay_key_is_stable_but_audit_keys_remain_per_request(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    gate, assurance, _ = build(monkeypatch)
+    first_request = dict(TRUSTED_REQUEST)
+    second_request = dict(TRUSTED_REQUEST)
+    second_request["nonce"] = "fresh-nonce-for-retry"
+    second_request["correlation_id"] = "fresh-correlation-for-retry"
+
+    gate.authorize(
+        request=first_request,
+        body=b'{"idempotency_key":"operation-1"}',
+        idempotency_key="decision-a",
+        at=NOW + timedelta(minutes=1),
+        session=SESSION,
+    )
+    gate.authorize(
+        request=second_request,
+        body=b'{"idempotency_key":"operation-1"}',
+        idempotency_key="decision-b",
+        at=NOW + timedelta(minutes=1),
+        session=SESSION,
+    )
+
+    assert assurance.calls[0]["idempotency_key"] == assurance.calls[1]["idempotency_key"]
+    records = gate._decision_evidence_registry.records
+    assert [record.idempotency_key for record in records if record.decision.value == "ALLOW"] == [
+        "decision-a",
+        "decision-b",
+    ]
+
+
 def test_denies_without_current_reconciliation_permission(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
