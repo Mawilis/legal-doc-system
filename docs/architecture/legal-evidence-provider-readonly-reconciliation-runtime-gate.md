@@ -1,9 +1,9 @@
 # Legal Evidence Provider Read-Only Reconciliation — Runtime Gate
 
 **Status:** BLOCKED — authorization contract required before runtime wiring  
-**Version:** v1.0.0-L10A2R-C4D7B-RUNTIME-GATE  
+**Version:** v1.0.1-L10A2R-C4D7B-RECONCILIATION-READ-PERMISSION  
 **Date:** 2026-10-25  
-**Branch baseline inspected:** `feat/legal-evidence-provider-readonly-reconciliation` at `6aa40d7347f943b29a39e90fe8f805a5b3a6cf04`
+**Branch baseline inspected:** `feat/legal-evidence-provider-readonly-reconciliation` at `c4c132a6fe8f0c3317e1d4066a817ec74b2301e3`
 
 ## Decision
 
@@ -26,12 +26,16 @@ The previously observed local focused test runs reported:
 
 These are focused unit tests only. They do not certify a production invocation path, live provider configuration, real-Mongo end-to-end reconciliation, CI, or deployment.
 
-Repository inspection found canonical tenant IAM patterns and canonical SYSTEM permission vocabulary, but did not establish a dedicated reconciliation-read permission together with an approved internal-operator grant, exact operation binding, and tenant-scope derivation. The existing tenant authorization composition requires tenant membership/business-role/role-grant semantics and is not by itself an internal-operator policy.
+The canonical permission vocabulary now includes `legal_operations:evidence_provider_reconciliation:read`, registered as `SYSTEM)-scoped metadata with `system_assignment_required=True`, `authorizes_by_itself=False`, no tenant-membership requirement, no cross-tenant capability, and no financial capability. The namespace and its focused certification test were committed separately:
+- Permission vocabulary: commit `2e609788b55db3f9c4c41dac500fb26f2db5a73e`.
+- Namespace certification update: commit `c4c132a6fe8f0c3317e1d4066a817ec74b2301e3`.
+
+This is a vocabulary-only milestone, not an authorization grant. The current `tools/eos/auth/system_permission_command_policy.py` ongoing allowlists still permit only `privileged_activation:issue` and `privileged_activation:break_glass`; the new permission is not assignable through that command policy. No dedicated operator eligibility/current-activation binding, exact runtime operation binding, or trusted tenant/provider scope derivation has been established. The existing tenant authorization composition requires tenant membership/business-role/role-grant semantics and is not by itself an internal-operator policy.
 
 ## Required contract before wiring
 
 1. **Operator principal:** derive from a canonical authenticated server-side authority; reject caller-supplied identity or role claims.
-2. **Dedicated permission:** add a narrowly scoped canonical reconciliation-read permission and exact operation binding through the repository's approved IAM lifecycle. Do not reuse evidence-write or cleanup-authorization permissions.
+2. **Dedicated permission:** the narrowly scoped canonical SYSTEM permission vocabulary is registered. The approved operation binding and governed assignment path remain outstanding; do not bypass the closed SYSTEM assignment allowlist or reuse evidence-write/cleanup-authorization permissions.
 3. **Grant policy:** identify the approved internal-operator authorization role or SYSTEM assignment authority and prove current possession, revocation state, and any required privileged activation. Do not infer authority from static role definitions alone.
 4. **Tenant/provider scope:** derive tenant identity and the canonical scope fingerprint from trusted server-side authority and provider configuration. Reject default/global tenants and caller-selected unbound provider coordinates.
 5. **Runtime configuration:** resolve the certified provider adapter and database through canonical application configuration; fail closed if either is unavailable. Do not create a second provider/configuration authority.
