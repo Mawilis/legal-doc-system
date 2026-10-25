@@ -37,6 +37,7 @@ from tools.eos.legal_operations.service.legal_evidence_provider_readonly_reconci
     LegalEvidenceProviderReadOnlyReconciliationAuthorizationGate,
     ServerConfiguredReconciliationScopeResolver,
     ServerOwnedReconciliationScopeResolutionError,
+    build_server_configured_reconciliation_target,
 )
 
 
@@ -376,6 +377,54 @@ def test_rejects_scope_fingerprint_not_derived_from_tenant(
         authorize(gate)
 
 
+
+
+def test_target_builder_uses_server_tenant_and_existing_s3_configuration() -> None:
+    class TenantCollection:
+        def find_one(self, *args: object, **kwargs: object) -> None:
+            return None
+
+    class Database:
+        def __init__(self) -> None:
+            self.tenants = TenantCollection()
+
+        def __getitem__(self, name: str) -> object:
+            if name != "tenants":
+                raise KeyError(name)
+            return self.tenants
+
+    database = Database()
+    target = build_server_configured_reconciliation_target(
+        mongo_database=database,
+        env={
+            "WILSY_LEGAL_EVIDENCE_RECONCILIATION_TENANT_ID": "tenant-configured-a",
+            "WILSY_LEGAL_EVIDENCE_S3_BUCKET": "wilsy-legal-evidence-test",
+            "WILSY_LEGAL_EVIDENCE_S3_REGION": "af-south-1",
+        },
+    )
+
+    assert target.tenant_id == "tenant-configured-a"
+    assert target.provider_name == "aws_s3"
+    assert target.storage_configuration.bucket == "wilsy-legal-evidence-test"
+    assert target.storage_configuration.region == "af-south-1"
+    assert target.scope_resolver.provider_name == target.provider_name
+    assert target.scope_resolver._tenant_id == target.tenant_id
+    assert target.scope_resolver._tenant_collection is database.tenants
+
+
+def test_target_builder_fails_closed_without_server_tenant_configuration() -> None:
+    class Database:
+        def __getitem__(self, name: str) -> object:
+            raise AssertionError("database must not be touched before config validation")
+
+    with pytest.raises(
+        ServerOwnedReconciliationScopeResolutionError,
+        match="SERVER_CONFIGURED_TENANT_ID_REQUIRED",
+    ):
+        build_server_configured_reconciliation_target(
+            mongo_database=Database(),
+            env={"WILSY_LEGAL_EVIDENCE_S3_BUCKET": "wilsy-legal-evidence-test"},
+        )
 
 def test_server_configured_scope_uses_canonical_tenant_registry_and_session(
     monkeypatch: pytest.MonkeyPatch,
