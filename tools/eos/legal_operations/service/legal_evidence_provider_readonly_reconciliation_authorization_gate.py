@@ -3,7 +3,7 @@ TITLE:
     WILSY OS Legal Evidence Provider Read-Only Reconciliation Authorization Gate
 
 VERSION:
-    v1.0.5-L10A2R-C4D7C-STRICT-TENANT-STATUS
+    v1.0.6-L10A2R-C4D7C-PLATFORM-AUDIT-EVIDENCE
 
 AUTHORITY:
     Wilsy OS Sovereign IAM and Legal Operations
@@ -27,7 +27,12 @@ CERTIFICATION / UPDATE DATE:
     2026-10-25
 
 CHANGELOG:
-    v1.0.5-L10A2R-C4D7C-STRICT-TENANT-STATUS
+    v1.0.6-L10A2R-C4D7C-PLATFORM-AUDIT-EVIDENCE
+        Persists immutable platform-scoped ALLOW/DENY evidence through the
+        independently transactional decision registry before returning an
+        authorization result; audit failure rejects the operation fail-closed.
+
+    v1.0.6-L10A2R-C4D7C-PLATFORM-AUDIT-EVIDENCE
         Separates canonical tenant identity mismatch from a non-ACTIVE tenant
         status. Archived/inactive tenants now fail with the explicit
         CANONICAL_TENANT_SCOPE_NOT_ACTIVE denial code.
@@ -110,7 +115,7 @@ from tools.eos.legal_operations.service.legal_evidence_provider_cleanup_discover
 )
 
 
-VERSION = "v1.0.5-L10A2R-C4D7C-STRICT-TENANT-STATUS"
+VERSION = "v1.0.6-L10A2R-C4D7C-PLATFORM-AUDIT-EVIDENCE"
 RECONCILIATION_READ_PERMISSION = (
     "legal_operations:evidence_provider_reconciliation:read"
 )
@@ -799,7 +804,7 @@ __all__ = [
 # =============================================================================
 # WILSY OS SOVEREIGN ARTIFACT SEAL
 # ARTIFACT: legal_evidence_provider_readonly_reconciliation_authorization_gate.py
-# VERSION: v1.0.5-L10A2R-C4D7C-STRICT-TENANT-STATUS
+# VERSION: v1.0.6-L10A2R-C4D7C-PLATFORM-AUDIT-EVIDENCE
 # AUTHORITY BOUNDARY:
 #   Current platform-root P5 use plus exact current SYSTEM permission possession
 #   and server-owned tenant scope resolution. No invocation or mutation authority.
