@@ -593,7 +593,11 @@ class LegalEvidenceProviderReadOnlyReconciliationAuthorizationGate:
             raise
         except Exception as error:
             candidate = getattr(error, "code", None)
-            if not isinstance(candidate, str) and error.args:
+            if (
+                not isinstance(candidate, str)
+                and error.args
+                and type(error).__module__.startswith("tools.eos.auth.")
+            ):
                 candidate = error.args[0]
             reason_code = (
                 candidate
