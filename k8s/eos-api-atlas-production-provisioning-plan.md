@@ -282,7 +282,7 @@ Those claims require separate runtime evidence.
 ### WILSY OS Sovereign Artifact Seal
 
 **Artifact:** `k8s/eos-api-atlas-production-provisioning-plan.md`
-**Version:** `v1.0.0-P0-C12F7C-EOS-ATLAS-PRODUCTION-PLAN`
+**Version:** `v1.1.0-L10A2R-C4D7-RECONCILIATION-RUNTIME-INPUTS`
 **Mongo Strategy:** MongoDB Atlas
 **HR Upload Policy:** 25 MiB / 26,214,400 bytes
 **Secret Posture:** no production secret committed
