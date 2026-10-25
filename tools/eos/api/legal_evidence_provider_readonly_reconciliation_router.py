@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 import json
+import logging
 import re
 from typing import Any
 
@@ -27,6 +28,7 @@ from tools.eos.legal_operations.service.legal_evidence_provider_readonly_reconci
 )
 
 VERSION = "v1.0.0-L10A2R-C4D7-TRANSACTION-OWNED-INVOCATION"
+logger = logging.getLogger(__name__)
 router = APIRouter(prefix="/legal-operations/evidence-provider/reconciliation", tags=["Internal Legal Evidence Reconciliation"])
 _KEY = re.compile(r"[A-Za-z0-9][A-Za-z0-9._:/-]{0,159}\Z")
 
@@ -103,6 +105,12 @@ async def reconcile_legal_evidence_provider(request: Request) -> JSONResponse:
         if isinstance(error, LegalEvidenceProviderReadOnlyReconciliationCompositionError):
             return _failure(503, "RECONCILIATION_COMPOSITION_UNAVAILABLE")
         if isinstance(error, LegalEvidenceProviderReadOnlyReconciliationAuthorizationError):
+            cause_code = getattr(error.__cause__, "code", None)
+            logger.warning(
+                "LEGAL_EVIDENCE_RECONCILIATION_AUTHORIZATION_DENIED code=%s cause_code=%s",
+                error.code,
+                cause_code if isinstance(cause_code, str) else type(error.__cause__).__name__,
+            )
             if error.code == "AUTHORIZATION_AUDIT_DURABILITY_UNAVAILABLE":
                 return _failure(503, "RECONCILIATION_AUTHORIZATION_AUDIT_UNAVAILABLE")
             return _failure(403, "RECONCILIATION_AUTHORIZATION_DENIED")
