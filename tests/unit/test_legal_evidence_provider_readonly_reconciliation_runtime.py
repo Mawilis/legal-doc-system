@@ -49,6 +49,7 @@ def test_runtime_bootstrap_rejects_same_business_and_audit_target_before_connect
 
 
 def test_runtime_bootstrap_builds_and_returns_canonical_graph_and_retained_audit_client(monkeypatch, caplog) -> None:
+    audit_uri = "mongodb://audit.example:27017/audit"
     from tools.eos.legal_operations.service import legal_evidence_provider_readonly_reconciliation_runtime as runtime
 
     import logging
@@ -122,7 +123,7 @@ def test_runtime_bootstrap_builds_and_returns_canonical_graph_and_retained_audit
         mongo_database=business_database,
         env={
             "MONGODB_URI": "mongodb://business.example:27017/business",
-            runtime.AUDIT_URI_ENV: "mongodb://audit.example:27017/audit",
+            runtime.AUDIT_URI_ENV: audit_uri,
         },
     )
     assert composition.business_client is business_client
@@ -134,7 +135,7 @@ def test_runtime_bootstrap_builds_and_returns_canonical_graph_and_retained_audit
     assert built["idempotency_registry"].__class__.__name__ == (
         "LegalEvidenceReconciliationOperationIdempotencyRegistry"
     )
-    assert f"target_fingerprint={audit_target_fingerprint(env_audit_uri := \"mongodb://audit.example:27017/audit\")}" in caplog.text
+    assert f"target_fingerprint={audit_target_fingerprint(audit_uri)}" in caplog.text
 
 
 
