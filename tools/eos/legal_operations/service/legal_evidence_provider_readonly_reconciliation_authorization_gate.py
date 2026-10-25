@@ -509,6 +509,7 @@ class LegalEvidenceProviderReadOnlyReconciliationAuthorizationGate:
         idempotency_key: object,
         at: object,
         reason_code: str,
+        audit_context: Mapping[str, Any],
     ) -> PlatformAuthorizationDecisionEvidence:
         safe_key = self._audit_token(idempotency_key, fallback_prefix="invalid-request-")
         correlation = request.get("correlation_id") if isinstance(request, Mapping) else None
@@ -525,6 +526,9 @@ class LegalEvidenceProviderReadOnlyReconciliationAuthorizationGate:
             if re.fullmatch(r"[A-Z][A-Z0-9_]{0,127}", reason_code)
             else "AUTHORIZATION_EVALUATION_FAILED"
         )
+        trust = audit_context.get(
+            "identity_trust", PlatformAuthorizationIdentityTrust.UNVERIFIED
+        )
         return PlatformAuthorizationDecisionEvidence(
             decision_id=uuid.uuid4().hex,
             idempotency_key=safe_key,
@@ -532,16 +536,18 @@ class LegalEvidenceProviderReadOnlyReconciliationAuthorizationGate:
             decision=PlatformAuthorizationDecision.DENY,
             reason_code=reason,
             evaluated_at=evaluated_at,
-            identity_trust=PlatformAuthorizationIdentityTrust.UNVERIFIED,
-            principal_id=None,
-            workload_service_id=None,
-            workload_key_id=None,
-            activation_id=None,
-            permission_assignment_id=None,
-            permission_assignment_fingerprint=None,
-            target_tenant_id=None,
-            provider_name=None,
-            target_scope_fingerprint=None,
+            identity_trust=trust,
+            principal_id=audit_context.get("principal_id"),
+            workload_service_id=audit_context.get("workload_service_id"),
+            workload_key_id=audit_context.get("workload_key_id"),
+            activation_id=audit_context.get("activation_id"),
+            permission_assignment_id=audit_context.get("permission_assignment_id"),
+            permission_assignment_fingerprint=audit_context.get(
+                "permission_assignment_fingerprint"
+            ),
+            target_tenant_id=audit_context.get("target_tenant_id"),
+            provider_name=audit_context.get("provider_name"),
+            target_scope_fingerprint=audit_context.get("target_scope_fingerprint"),
             authorization_policy_version=SYSTEM_PERMISSION_POLICY_VERSION,
             authorization_gate_version=VERSION,
         )
@@ -556,6 +562,7 @@ class LegalEvidenceProviderReadOnlyReconciliationAuthorizationGate:
         session: object,
     ) -> LegalEvidenceProviderReadOnlyReconciliationAuthorization:
         """Persist allow/deny evidence independently before authorization returns."""
+        audit_context: dict[str, Any] = {}
         try:
             result = self._authorize_core(
                 request=request,
@@ -563,6 +570,7 @@ class LegalEvidenceProviderReadOnlyReconciliationAuthorizationGate:
                 idempotency_key=idempotency_key,
                 at=at,
                 session=session,
+                audit_context=audit_context,
             )
         except LegalEvidenceProviderReadOnlyReconciliationAuthorizationError as error:
             self._record_decision(
@@ -571,6 +579,7 @@ class LegalEvidenceProviderReadOnlyReconciliationAuthorizationGate:
                     idempotency_key=idempotency_key,
                     at=at,
                     reason_code=error.code,
+                    audit_context=audit_context,
                 )
             )
             raise
@@ -581,6 +590,7 @@ class LegalEvidenceProviderReadOnlyReconciliationAuthorizationGate:
                     idempotency_key=idempotency_key,
                     at=at,
                     reason_code="AUTHORIZATION_EVALUATION_FAILED",
+                    audit_context=audit_context,
                 )
             )
             raise LegalEvidenceProviderReadOnlyReconciliationAuthorizationError(
@@ -627,6 +637,7 @@ class LegalEvidenceProviderReadOnlyReconciliationAuthorizationGate:
         idempotency_key: str,
         at: datetime,
         session: object,
+        audit_context: dict[str, Any],
     ) -> LegalEvidenceProviderReadOnlyReconciliationAuthorization:
         """Authorize one workload request and resolve a server-owned scope.
 
@@ -694,6 +705,15 @@ class LegalEvidenceProviderReadOnlyReconciliationAuthorizationGate:
             raise LegalEvidenceProviderReadOnlyReconciliationAuthorizationError(
                 "CURRENT_PLATFORM_OPERATOR_USE_INVALID"
             )
+        if isinstance(use.principal_id, str) and re.fullmatch(
+            r"[A-Za-z0-9][A-Za-z0-9._:/-]{0,255}", use.principal_id
+        ):
+            audit_context.update(
+                identity_trust=PlatformAuthorizationIdentityTrust.VERIFIED,
+                principal_id=use.principal_id,
+                workload_service_id=request["service_id"],
+                workload_key_id=request["key_id"],
+            )
         activation = use.activation
         if (
             type(activation) is not PrivilegedActivation
@@ -714,6 +734,7 @@ class LegalEvidenceProviderReadOnlyReconciliationAuthorizationGate:
                 "PLATFORM_OPERATOR_ACTIVATION_BINDING_INVALID"
             )
 
+        audit_context["activation_id"] = activation.activation_id
         try:
             assignment = self._permission_possession_resolver.resolve(
                 principal_id=use.principal_id,
@@ -737,6 +758,10 @@ class LegalEvidenceProviderReadOnlyReconciliationAuthorizationGate:
                 "RECONCILIATION_PERMISSION_BINDING_INVALID"
             )
 
+        audit_context.update(
+            permission_assignment_id=assignment.assignment_id,
+            permission_assignment_fingerprint=assignment.assignment_fingerprint,
+        )
         try:
             scope = self._scope_resolver.resolve_scope(
                 principal_id=use.principal_id,
@@ -776,6 +801,11 @@ class LegalEvidenceProviderReadOnlyReconciliationAuthorizationGate:
                 "RECONCILIATION_PERMISSION_EVIDENCE_INVALID"
             )
 
+        audit_context.update(
+            target_tenant_id=scope.tenant_id,
+            provider_name=self._provider_name,
+            target_scope_fingerprint=scope.tenant_scope_fingerprint,
+        )
         return LegalEvidenceProviderReadOnlyReconciliationAuthorization(
             principal_id=use.principal_id,
             activation_id=activation.activation_id,
