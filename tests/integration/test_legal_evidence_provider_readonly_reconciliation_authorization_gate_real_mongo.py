@@ -1,6 +1,7 @@
 """Full-gate real-Mongo certification using the actual signed workload verifier.
 
-VERSION: v1.0.0-L10A2R-C4D7-RECONCILIATION-FULL-GATE-REAL-MONGO
+CHANGELOG: v1.0.1 rounds test clock to MongoDB millisecond precision before persistence.
+VERSION: v1.0.1-L10A2R-C4D7-RECONCILIATION-FULL-GATE-REAL-MONGO
 AUTHORITY: Evidence-only certification; no production invocation.
 AUTHORITY BOUNDARY: Current P3/P5, SYSTEM permission possession, and tenant scope only.
 """
@@ -147,7 +148,7 @@ def _build_full_gate(
     context_value: dict[str, Any],
     monkeypatch: pytest.MonkeyPatch,
 ) -> tuple[LegalEvidenceProviderReadOnlyReconciliationAuthorizationGate, dict[str, Any]]:
-    now = datetime.now(timezone.utc)
+    now = datetime.now(timezone.utc).replace(microsecond=0)
     monkeypatch.setattr(p4_module, "NOW", now)
 
     _seed(context_value)
