@@ -183,6 +183,22 @@ def test_production_manifest_binds_all_required_reconciliation_secret_inputs() -
         assert binding.search(manifest), f"missing exact ConfigMap binding for {variable}"
 
 
+def test_runtime_authority_example_declares_fail_closed_provider_and_reconciliation_inputs() -> None:
+    example = Path("k8s/eos-api-runtime-authority.example.yaml").read_text(encoding="utf-8")
+    for key in (
+        "legal-evidence-s3-bucket",
+        "legal-evidence-s3-region",
+        "legal-evidence-s3-kms-key-id",
+        "internal-auth-service-id",
+        "internal-auth-audience",
+        "internal-auth-key-id",
+        "internal-auth-secret",
+        "legal-evidence-reconciliation-tenant-id",
+        "legal-evidence-reconciliation-audit-mongodb-uri",
+    ):
+        assert f"{key}: \"\"" in example
+
+
 def test_audit_target_fingerprint_ignores_credentials_but_binds_target() -> None
     first = audit_target_fingerprint("mongodb://user-one:secret-one@audit.example:27017/audit")
     rotated = audit_target_fingerprint("mongodb://user-two:secret-two@audit.example:27017/audit")
