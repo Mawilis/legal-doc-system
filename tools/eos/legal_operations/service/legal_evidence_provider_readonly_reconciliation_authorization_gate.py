@@ -115,7 +115,7 @@ from tools.eos.legal_operations.service.legal_evidence_provider_cleanup_discover
 )
 
 
-VERSION = "v1.0.7-L10A2R-C4D7C-VERIFIED-DENIAL-PROVENANCE"
+VERSION = "v1.0.8-L10A2R-C4D7C-STABLE-WORKLOAD-ASSURANCE-KEY"
 RECONCILIATION_READ_PERMISSION = (
     "legal_operations:evidence_provider_reconciliation:read"
 )
@@ -693,7 +693,20 @@ class LegalEvidenceProviderReadOnlyReconciliationAuthorizationGate:
                 body=body,
                 keys=self._workload_keys,
                 expected_audience=self._expected_audience,
-                idempotency_key=idempotency_key,
+                # P3 workload assurance is currentness for this credential
+                # generation, not a per-request audit event. Keep its replay
+                # key stable across fresh signed nonces; the independent
+                # decision-evidence registry below retains the per-request key.
+                idempotency_key=sha3_512(
+                    "\\0".join(
+                        (
+                            "L10A2R_C4D7_NONINTERACTIVE_ASSURANCE",
+                            request["service_id"],
+                            request["key_id"],
+                            request["audience"],
+                        )
+                    ).encode("utf-8")
+                ).hexdigest(),
                 session=session,
             )
         except PrivilegedActivationUseError as error:
@@ -834,7 +847,7 @@ __all__ = [
 # =============================================================================
 # WILSY OS SOVEREIGN ARTIFACT SEAL
 # ARTIFACT: legal_evidence_provider_readonly_reconciliation_authorization_gate.py
-# VERSION: v1.0.7-L10A2R-C4D7C-VERIFIED-DENIAL-PROVENANCE
+# VERSION: v1.0.8-L10A2R-C4D7C-STABLE-WORKLOAD-ASSURANCE-KEY
 # AUTHORITY BOUNDARY:
 #   Current platform-root P5 use plus exact current SYSTEM permission possession
 #   and server-owned tenant scope resolution. No invocation or mutation authority.
