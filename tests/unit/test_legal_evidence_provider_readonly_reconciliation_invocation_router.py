@@ -206,3 +206,19 @@ def test_route_surfaces_authorization_audit_outage_as_503(monkeypatch) -> None:
     assert response.status_code == 503
     assert json.loads(response.body)["code"] == "RECONCILIATION_AUTHORIZATION_AUDIT_UNAVAILABLE"
     assert composition.business_client.session.events == ["start", "abort", "end"]
+
+
+def test_canonical_eos_server_mounts_exact_reconciliation_path_once() -> None:
+    from tools.eos.api.server import app as canonical_app
+
+    routes = [
+        route
+        for route in canonical_app.routes
+        if getattr(route, "path", None)
+        == "/api/legal-operations/evidence-provider/reconciliation"
+        and "POST" in getattr(route, "methods", set())
+    ]
+    assert len(routes) == 1
+    assert routes[0].endpoint.__module__ == (
+        "tools.eos.api.legal_evidence_provider_readonly_reconciliation_router"
+    )
