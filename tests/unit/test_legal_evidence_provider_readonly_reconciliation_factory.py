@@ -10,8 +10,6 @@ AUTHORITY BOUNDARY: Test-only; no provider mutation or cleanup authority.
 
 from __future__ import annotations
 
-from unittest.mock import Mock
-
 import pytest
 
 from tools.eos.legal_operations.registry.legal_evidence_binary_write_intent_registry import (
@@ -49,6 +47,16 @@ class _Provider:
 
     def list_completed_object_versions(self, *args, **kwargs):
         self.calls.append("discovery-completed")
+        raise AssertionError("provider I/O must not occur during construction")
+
+
+class _CoverageOnlyProvider:
+    """Valid coverage port that deliberately lacks discovery operations."""
+
+    def list_incomplete_write_session_page(self, *args, **kwargs):
+        raise AssertionError("provider I/O must not occur during construction")
+
+    def list_completed_object_version_page(self, *args, **kwargs):
         raise AssertionError("provider I/O must not occur during construction")
 
 
@@ -100,14 +108,7 @@ def test_invalid_provider_interface_fails_closed() -> None:
 
 
 def test_coverage_provider_without_discovery_interface_fails_closed() -> None:
-    provider = Mock()
-    provider.list_incomplete_write_session_page.return_value = None
-    provider.list_completed_object_version_page.return_value = None
-    # Mock's dynamic attributes satisfy runtime Protocol checks; explicitly
-    # remove the discovery methods to prove the second seam is independently
-    # required.
-    del provider.list_incomplete_write_sessions
-    del provider.list_completed_object_versions
+    provider = _CoverageOnlyProvider()
     with pytest.raises(
         LegalEvidenceProviderReadOnlyReconciliationFactoryError,
         match="DISCOVERY_PROVIDER_INVALID",
