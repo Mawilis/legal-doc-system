@@ -12,7 +12,6 @@ on:
       - "tools/eos/auth/system_permission_assignment_command_service.py"
       - "tools/eos/auth/system_permission_revocation_command_service.py"
       - "tools/eos/legal_operations/service/legal_evidence_provider_readonly_reconciliation_*.py"
-      - "tools/eos/api/api_server.py"
       - "tools/eos/api/server.py"
       - "tools/eos/api/legal_evidence_provider_readonly_reconciliation_router.py"
       - "tools/eos/legal_operations/service/legal_evidence_provider_readonly_reconciliation_runtime.py"
@@ -137,7 +136,6 @@ jobs:
             tools/eos/legal_operations/service/legal_evidence_provider_readonly_reconciliation_audit_provisioner.py \
             tools/eos/legal_operations/service/legal_evidence_provider_readonly_reconciliation_idempotency_registry.py \
             tools/eos/legal_operations/service/legal_evidence_provider_readonly_reconciliation_transport_adapter.py \
-            tools/eos/api/api_server.py \
             tools/eos/api/server.py \
             tools/eos/api/legal_evidence_provider_readonly_reconciliation_router.py \
             tests/unit/test_legal_evidence_provider_readonly_reconciliation_production_composition.py \
