@@ -1,11 +1,26 @@
-"""Durable platform authorization decision evidence registry.
+"""WILSY OS — Platform Authorization Decision Evidence Registry.
 
+TITLE: Platform Authorization Decision Evidence Registry
 VERSION: v1.0.0-PLATFORM-AUTHORIZATION-DECISION-EVIDENCE-REGISTRY
-AUTHORITY: Sovereign IAM audit persistence only; not a decision evaluator.
-TENANT BOUNDARY: Every record is PLATFORM scoped; target tenant is descriptive.
-TRANSACTION BOUNDARY: Registry owns a separate audit-client session and transaction.
-CALLER TRANSACTION: Never accepted, joined, committed, or aborted by this registry.
-FAILURE POSTURE: Audit persistence failure raises; caller must fail closed.
+AUTHORITY: Wilsy OS Sovereign IAM / Core Governance
+EPITOME: Persist immutable platform-scoped allow/deny decisions independently of
+    the caller's business transaction.
+ABSOLUTE CANONICAL PATH:
+    tools/eos/auth/platform_authorization_decision_evidence_registry.py
+COLLABORATION / OWNERSHIP:
+    Owns only the audit collection's append-only insert/read contract and its
+    independent audit-client session/transaction. The gate owns authorization.
+CERTIFICATION / UPDATE DATE: 2026-10-25
+CHANGELOG: v1.0.0 defines unique decision/idempotency identities, strict
+    hydration, replay/conflict semantics and fail-closed independent durability.
+COMPLIANCE: Evidence integrity control alignment only; no independent compliance claim.
+SECURITY / PRIVACY POSTURE: No credentials, request bodies, signatures or secrets.
+TENANT BOUNDARY: Decision scope is PLATFORM; target tenant is descriptive only.
+AUTHORITY BOUNDARY: Persistence only; registry never grants or evaluates access.
+FINANCIAL AUTHORITY BOUNDARY: No financial execution or settlement authority.
+TRANSACTION BOUNDARY: The registry owns a separate audit session/transaction and
+    never accepts, joins, commits or aborts the caller's business transaction.
+FAIL-CLOSED POSTURE: Audit write, replay verification or index failures reject.
 """
 from __future__ import annotations
 
@@ -206,3 +221,11 @@ __all__ = [
     "PlatformAuthorizationDecisionEvidenceRegistryConflictError",
     "PlatformAuthorizationDecisionEvidenceRegistryPersistenceError",
 ]
+
+# ARTIFACT: platform_authorization_decision_evidence_registry.py
+# VERSION: v1.0.0-PLATFORM-AUTHORIZATION-DECISION-EVIDENCE-REGISTRY
+# AUTHORITY BOUNDARY: append-only platform decision persistence; no authorization grant
+# TENANT POSTURE: PLATFORM scope; target tenant is descriptive, not authority
+# FAIL-CLOSED POSTURE: no successful return without independent durable evidence
+# FINANCIAL EXECUTION AUTHORITY: Kennel EOS exclusively
+# END OF WILSY OS SOVEREIGN ARTIFACT
