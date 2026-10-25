@@ -3,7 +3,7 @@ TITLE:
     WILSY OS Legal Evidence Provider Read-Only Reconciliation Authorization Gate
 
 VERSION:
-    v1.0.0-L10A2R-C4D7C-RECONCILIATION-AUTHORIZATION-GATE
+    v1.0.1-L10A2R-C4D7C-RECONCILIATION-AUTHORIZATION-GATE
 
 AUTHORITY:
     Wilsy OS Sovereign IAM and Legal Operations
@@ -27,13 +27,11 @@ CERTIFICATION / UPDATE DATE:
     2026-10-25
 
 CHANGELOG:
-    v1.0.0-L10A2R-C4D7C-RECONCILIATION-AUTHORIZATION-GATE
-        Adds an internal-operator-only authorization gate. It derives principal
-        identity from one verified WorkloadTrustFact, requires current
-        SOVEREIGN_ARCHITECT / PLATFORM_SYSTEM_ROOT activation with no tenant,
-        checks the exact current reconciliation-read SYSTEM assignment, and
-        asks a server-owned resolver for tenant scope. No HTTP/CLI/scheduler
-        invocation or concrete scope registry is introduced.
+    v1.0.1-L10A2R-C4D7C-RECONCILIATION-AUTHORIZATION-GATE
+        Tightens the scope resolver to an exact provider binding, validates the
+        transport-header schema, and maps only canonical P5, permission-currentness,
+        and scope-resolution failures. Unexpected implementation exceptions are
+        not swallowed. No concrete scope registry or runtime invocation is added.
 
 COMPLIANCE:
     Fail-closed. No caller-selected tenant/provider scope, no tenant permission
@@ -72,6 +70,12 @@ from typing import Mapping, Protocol
 from tools.eos.auth.current_system_permission_possession import (
     CurrentSystemPermissionPossessionResolver,
 )
+from tools.eos.auth.current_system_permission_possession import (
+    CurrentSystemPermissionPossessionError,
+)
+from tools.eos.auth.system_permission_assignment import (
+    SystemPermissionAssignment,
+)
 from tools.eos.auth.privileged_activation import (
     PrivilegedActivation,
 )
@@ -89,10 +93,23 @@ from tools.eos.legal_operations.service.legal_evidence_provider_cleanup_discover
 )
 
 
-VERSION = "v1.0.0-L10A2R-C4D7C-RECONCILIATION-AUTHORIZATION-GATE"
+VERSION = "v1.0.1-L10A2R-C4D7C-RECONCILIATION-AUTHORIZATION-GATE"
 RECONCILIATION_READ_PERMISSION = (
     "legal_operations:evidence_provider_reconciliation:read"
 )
+_TRUSTED_REQUEST_FIELDS = frozenset({
+    "version",
+    "service_id",
+    "audience",
+    "key_id",
+    "timestamp",
+    "nonce",
+    "body_sha3_512",
+    "correlation_id",
+    "signature",
+    "method",
+    "path",
+})
 
 
 class LegalEvidenceProviderReadOnlyReconciliationAuthorizationError(
@@ -105,13 +122,27 @@ class LegalEvidenceProviderReadOnlyReconciliationAuthorizationError(
         super().__init__(code)
 
 
+class ServerOwnedReconciliationScopeResolutionError(RuntimeError):
+    """Canonical fail-closed scope-resolution error with a stable code."""
+
+    def __init__(self, code: str) -> None:
+        self.code = code
+        super().__init__(code)
+
+
 class ServerOwnedReconciliationScopeResolver(Protocol):
     """Server-owned, provider-bound target-scope resolution contract.
 
     Implementations must select scope from canonical server configuration or
-    governed work state. The contract intentionally accepts no request tenant,
-    provider name, bucket, prefix, or object identifier.
+    governed work state. The resolver is bound to one provider at construction.
+    The contract intentionally accepts no request tenant, provider name, bucket,
+    prefix, or object identifier.
     """
+
+    @property
+    def provider_name(self) -> str:
+        """Return the server-configured provider identity bound to this resolver."""
+        ...
 
     def resolve_scope(
         self,
@@ -185,6 +216,10 @@ class LegalEvidenceProviderReadOnlyReconciliationAuthorizationGate:
             raise LegalEvidenceProviderReadOnlyReconciliationAuthorizationError(
                 "SERVER_OWNED_SCOPE_RESOLVER_REQUIRED"
             )
+        if not isinstance(getattr(scope_resolver, "provider_name", None), str):
+            raise LegalEvidenceProviderReadOnlyReconciliationAuthorizationError(
+                "SERVER_OWNED_SCOPE_PROVIDER_BINDING_REQUIRED"
+            )
         if not isinstance(workload_keys, Mapping) or not workload_keys:
             raise LegalEvidenceProviderReadOnlyReconciliationAuthorizationError(
                 "SERVER_WORKLOAD_KEYS_REQUIRED"
@@ -220,6 +255,10 @@ class LegalEvidenceProviderReadOnlyReconciliationAuthorizationGate:
 
         self._use_authority = use_authority
         self._permission_possession_resolver = permission_possession_resolver
+        if scope_resolver.provider_name != provider_name:
+            raise LegalEvidenceProviderReadOnlyReconciliationAuthorizationError(
+                "SERVER_OWNED_SCOPE_PROVIDER_MISMATCH"
+            )
         self._scope_resolver = scope_resolver
         self._workload_keys = dict(workload_keys)
         self._expected_audience = expected_audience
@@ -265,7 +304,12 @@ class LegalEvidenceProviderReadOnlyReconciliationAuthorizationGate:
             raise LegalEvidenceProviderReadOnlyReconciliationAuthorizationError(
                 "IDEMPOTENCY_KEY_INVALID"
             )
-        if not isinstance(request, Mapping) or not isinstance(body, bytes):
+        if (
+            not isinstance(request, Mapping)
+            or set(request) != _TRUSTED_REQUEST_FIELDS
+            or any(not isinstance(key, str) or not isinstance(value, str) for key, value in request.items())
+            or not isinstance(body, bytes)
+        ):
             raise LegalEvidenceProviderReadOnlyReconciliationAuthorizationError(
                 "TRUSTED_WORKLOAD_REQUEST_INVALID"
             )
@@ -318,7 +362,7 @@ class LegalEvidenceProviderReadOnlyReconciliationAuthorizationGate:
                 permission_id=RECONCILIATION_READ_PERMISSION,
                 session=session,
             )
-        except Exception as error:
+        except CurrentSystemPermissionPossessionError as error:
             raise LegalEvidenceProviderReadOnlyReconciliationAuthorizationError(
                 "RECONCILIATION_PERMISSION_CURRENTNESS_UNAVAILABLE"
             ) from error
@@ -327,9 +371,9 @@ class LegalEvidenceProviderReadOnlyReconciliationAuthorizationGate:
                 "RECONCILIATION_READ_PERMISSION_REQUIRED"
             )
         if (
-            getattr(assignment, "principal_id", None) != use.principal_id
-            or getattr(assignment, "permission_id", None)
-            != RECONCILIATION_READ_PERMISSION
+            type(assignment) is not SystemPermissionAssignment
+            or assignment.principal_id != use.principal_id
+            or assignment.permission_id != RECONCILIATION_READ_PERMISSION
         ):
             raise LegalEvidenceProviderReadOnlyReconciliationAuthorizationError(
                 "RECONCILIATION_PERMISSION_BINDING_INVALID"
@@ -342,7 +386,7 @@ class LegalEvidenceProviderReadOnlyReconciliationAuthorizationGate:
                 at=at,
                 session=session,
             )
-        except Exception as error:
+        except ServerOwnedReconciliationScopeResolutionError as error:
             raise LegalEvidenceProviderReadOnlyReconciliationAuthorizationError(
                 "SERVER_OWNED_RECONCILIATION_SCOPE_UNAVAILABLE"
             ) from error
@@ -382,6 +426,7 @@ __all__ = [
     "VERSION",
     "RECONCILIATION_READ_PERMISSION",
     "LegalEvidenceProviderReadOnlyReconciliationAuthorizationError",
+    "ServerOwnedReconciliationScopeResolutionError",
     "ServerOwnedReconciliationScopeResolver",
     "LegalEvidenceProviderReadOnlyReconciliationAuthorization",
     "LegalEvidenceProviderReadOnlyReconciliationAuthorizationGate",
@@ -391,7 +436,7 @@ __all__ = [
 # =============================================================================
 # WILSY OS SOVEREIGN ARTIFACT SEAL
 # ARTIFACT: legal_evidence_provider_readonly_reconciliation_authorization_gate.py
-# VERSION: v1.0.0-L10A2R-C4D7C-RECONCILIATION-AUTHORIZATION-GATE
+# VERSION: v1.0.1-L10A2R-C4D7C-RECONCILIATION-AUTHORIZATION-GATE
 # AUTHORITY BOUNDARY:
 #   Current platform-root P5 use plus exact current SYSTEM permission possession
 #   and server-owned tenant scope resolution. No invocation or mutation authority.
