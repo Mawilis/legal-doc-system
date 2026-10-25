@@ -62,15 +62,20 @@ jobs:
       - name: Run focused unit certification with zero-skip enforcement
         shell: bash
         run: |
-          set -o pipefail
-          output="$(python -m pytest -q \
+          set +e
+          python -m pytest -q \
             tests/unit/test_privileged_activation_use_authority.py \
             tests/unit/test_current_system_permission_possession.py \
             tests/unit/test_legal_evidence_provider_readonly_reconciliation_authorization_gate.py \
             tests/unit/test_legal_evidence_provider_readonly_reconciliation_factory.py \
-            tests/unit/test_legal_evidence_provider_readonly_reconciliation_coordinator.py)"
-          printf '%s\n' "$output"
-          if printf '%s\n' "$output" | grep -Eiq '(^|[ ,])[0-9]+ skipped|\bskipped\b'; then
+            tests/unit/test_legal_evidence_provider_readonly_reconciliation_coordinator.py \
+            2>&1 | tee /tmp/focused-pytest-output.txt
+          pytest_status=\${PIPESTATUS[0]}
+          set -e
+          if [ "$pytest_status" -ne 0 ]; then
+            exit "$pytest_status"
+          fi
+          if grep -Eiq '(^|[ ,])[0-9]+ skipped|\bskipped\b' /tmp/focused-pytest-output.txt; then
             echo "Focused certification invalid: skipped tests detected."
             exit 1
           fi
