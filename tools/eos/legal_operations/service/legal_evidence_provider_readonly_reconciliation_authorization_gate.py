@@ -3,7 +3,7 @@ TITLE:
     WILSY OS Legal Evidence Provider Read-Only Reconciliation Authorization Gate
 
 VERSION:
-    v1.0.4-L10A2R-C4D7C-ENV-BOUND-SCOPE-TARGET
+    v1.0.5-L10A2R-C4D7C-STRICT-TENANT-STATUS
 
 AUTHORITY:
     Wilsy OS Sovereign IAM and Legal Operations
@@ -27,12 +27,10 @@ CERTIFICATION / UPDATE DATE:
     2026-10-25
 
 CHANGELOG:
-    v1.0.4-L10A2R-C4D7C-ENV-BOUND-SCOPE-TARGET
-        Adds an explicit server-configuration builder binding the deployment
-        tenant ID, canonical tenants collection, and validated existing S3
-        configuration. The fixed provider and tenant are never request inputs;
-        canonical tenant currentness is reread in the caller transaction. No
-        runtime invocation is wired.
+    v1.0.5-L10A2R-C4D7C-STRICT-TENANT-STATUS
+        Separates canonical tenant identity mismatch from a non-ACTIVE tenant
+        status. Archived/inactive tenants now fail with the explicit
+        CANONICAL_TENANT_SCOPE_NOT_ACTIVE denial code.
 
 COMPLIANCE:
     Fail-closed. No caller-selected tenant/provider scope, no tenant permission
@@ -104,7 +102,7 @@ from tools.eos.legal_operations.service.legal_evidence_provider_cleanup_discover
 )
 
 
-VERSION = "v1.0.4-L10A2R-C4D7C-ENV-BOUND-SCOPE-TARGET"
+VERSION = "v1.0.5-L10A2R-C4D7C-STRICT-TENANT-STATUS"
 RECONCILIATION_READ_PERMISSION = (
     "legal_operations:evidence_provider_reconciliation:read"
 )
@@ -249,12 +247,13 @@ class ServerConfiguredReconciliationScopeResolver:
             raise ServerOwnedReconciliationScopeResolutionError(
                 "CANONICAL_TENANT_SCOPE_NOT_ACTIVE"
             )
-        if (
-            getattr(tenant, "tenant_id", None) != self._tenant_id
-            or str(getattr(tenant, "status", "")).upper() != "ACTIVE"
-        ):
+        if getattr(tenant, "tenant_id", None) != self._tenant_id:
             raise ServerOwnedReconciliationScopeResolutionError(
                 "CANONICAL_TENANT_SCOPE_BINDING_INVALID"
+            )
+        if str(getattr(tenant, "status", "")).upper() != "ACTIVE":
+            raise ServerOwnedReconciliationScopeResolutionError(
+                "CANONICAL_TENANT_SCOPE_NOT_ACTIVE"
             )
 
         fingerprint = sha3_512(
@@ -652,7 +651,7 @@ __all__ = [
 # =============================================================================
 # WILSY OS SOVEREIGN ARTIFACT SEAL
 # ARTIFACT: legal_evidence_provider_readonly_reconciliation_authorization_gate.py
-# VERSION: v1.0.4-L10A2R-C4D7C-ENV-BOUND-SCOPE-TARGET
+# VERSION: v1.0.5-L10A2R-C4D7C-STRICT-TENANT-STATUS
 # AUTHORITY BOUNDARY:
 #   Current platform-root P5 use plus exact current SYSTEM permission possession
 #   and server-owned tenant scope resolution. No invocation or mutation authority.
