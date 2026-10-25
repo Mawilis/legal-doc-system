@@ -8,6 +8,7 @@ import pytest
 
 from tools.eos.legal_operations.service.legal_evidence_provider_readonly_reconciliation_runtime import (
     AUDIT_URI_ENV,
+    AWS_ROLE_ARN_ENV,
     LegalEvidenceProviderReadOnlyReconciliationRuntimeBootstrapError,
     audit_target_fingerprint,
     build_legal_evidence_provider_readonly_reconciliation_runtime,
@@ -99,6 +100,8 @@ def test_runtime_bootstrap_builds_and_returns_canonical_graph_and_retained_audit
             self.indexes_ready = True
 
     monkeypatch.setattr(runtime, "MongoClient", lambda *args, **kwargs: audit_client)
+    s3_client = object()
+    monkeypatch.setattr(runtime, "build_reconciliation_readonly_s3_client", lambda **kwargs: s3_client)
     monkeypatch.setattr(runtime, "_service_config", lambda env: ({"key-1": ("secret", "principal")}, "service-1", "audience-1"))
     monkeypatch.setattr(runtime, "_production_noninteractive_assurance_service", lambda database: object())
     monkeypatch.setattr(runtime, "PlatformPrivilegedEligibilityPrerequisiteRegistry", _Registry)
@@ -124,6 +127,9 @@ def test_runtime_bootstrap_builds_and_returns_canonical_graph_and_retained_audit
         env={
             "MONGODB_URI": "mongodb://business.example:27017/business",
             runtime.AUDIT_URI_ENV: audit_uri,
+            "WILSY_LEGAL_EVIDENCE_S3_BUCKET": "wilsy-legal-evidence-test-bucket",
+            "WILSY_LEGAL_EVIDENCE_S3_REGION": "af-south-1",
+            runtime.AWS_ROLE_ARN_ENV: "arn:aws:iam::111111111111:role/test-reconciliation-readonly",
         },
     )
     assert composition.business_client is business_client
@@ -131,12 +137,88 @@ def test_runtime_bootstrap_builds_and_returns_canonical_graph_and_retained_audit
     assert retained_audit_client.closed is False
     assert built["audit_database"] is audit_database
     assert built["audit_client"] is audit_client
+    assert built["s3_client"] is s3_client
     assert built["expected_audience"] == "audience-1"
     assert built["idempotency_registry"].__class__.__name__ == (
         "LegalEvidenceReconciliationOperationIdempotencyRegistry"
     )
     assert f"AUDIT_TARGET_FINGERPRINT={audit_target_fingerprint(audit_uri)}" in caplog.text
 
+
+
+def test_readonly_s3_client_rejects_missing_role_arn() -> None:
+    from tools.eos.legal_operations.service.legal_evidence_provider_readonly_reconciliation_runtime import (
+        build_reconciliation_readonly_s3_client,
+    )
+
+    with pytest.raises(
+        LegalEvidenceProviderReadOnlyReconciliationRuntimeBootstrapError,
+        match="RECONCILIATION_AWS_ROLE_ARN_REQUIRED",
+    ):
+        build_reconciliation_readonly_s3_client(env={}, region="af-south-1")
+
+
+def test_readonly_s3_client_rejects_ambient_or_static_credentials(monkeypatch) -> None:
+    from tools.eos.legal_operations.service import legal_evidence_provider_readonly_reconciliation_runtime as runtime
+
+    class _Credentials:
+        method = "env"
+
+    class _Session:
+        def get_credentials(self):
+            return _Credentials()
+
+    monkeypatch.setattr(runtime.boto3.session, "Session", lambda: _Session())
+    with pytest.raises(
+        LegalEvidenceProviderReadOnlyReconciliationRuntimeBootstrapError,
+        match="RECONCILIATION_AWS_WORKLOAD_IDENTITY_UNAVAILABLE",
+    ):
+        runtime.build_reconciliation_readonly_s3_client(
+            env={runtime.AWS_ROLE_ARN_ENV: "arn:aws:iam::111111111111:role/test-readonly"},
+            region="af-south-1",
+        )
+
+
+def test_readonly_s3_client_uses_only_temporary_credentials_from_assumed_role(monkeypatch) -> None:
+    from tools.eos.legal_operations.service import legal_evidence_provider_readonly_reconciliation_runtime as runtime
+
+    calls = []
+    s3_client = object()
+
+    class _Credentials:
+        method = "assume-role-with-web-identity"
+
+    class _Sts:
+        def assume_role(self, **kwargs):
+            calls.append(("assume_role", kwargs))
+            return {"Credentials": {
+                "AccessKeyId": "temporary-access",
+                "SecretAccessKey": "temporary-secret",
+                "SessionToken": "temporary-token",
+            }}
+
+    class _Session:
+        def get_credentials(self):
+            return _Credentials()
+
+        def client(self, service, **kwargs):
+            calls.append((service, kwargs))
+            return _Sts() if service == "sts" else s3_client
+
+    monkeypatch.setattr(runtime.boto3.session, "Session", lambda: _Session())
+    result = runtime.build_reconciliation_readonly_s3_client(
+        env={runtime.AWS_ROLE_ARN_ENV: "arn:aws:iam::111111111111:role/test-readonly"},
+        region="af-south-1",
+    )
+    assert result is s3_client
+    assume = next(kwargs for name, kwargs in calls if name == "assume_role")
+    assert assume["DurationSeconds"] == 900
+    assert assume["RoleSessionName"] == "wilsy-legal-evidence-reconciliation"
+    s3 = next(kwargs for name, kwargs in calls if name == "s3")
+    assert s3["aws_access_key_id"] == "temporary-access"
+    assert s3["aws_secret_access_key"] == "temporary-secret"
+    assert s3["aws_session_token"] == "temporary-token"
+    assert s3["region_name"] == "af-south-1"
 
 
 def test_audit_target_fingerprint_is_stable_and_excludes_credentials() -> None:
@@ -172,6 +254,7 @@ def test_production_manifest_binds_all_required_reconciliation_secret_inputs() -
         "WILSY_LEGAL_EVIDENCE_S3_BUCKET": "legal-evidence-s3-bucket",
         "WILSY_LEGAL_EVIDENCE_S3_REGION": "legal-evidence-s3-region",
         "WILSY_LEGAL_EVIDENCE_S3_KMS_KEY_ID": "legal-evidence-s3-kms-key-id",
+        AWS_ROLE_ARN_ENV: "legal-evidence-reconciliation-aws-role-arn",
     }
     for variable, config_key in config_bindings.items():
         binding = re.compile(
@@ -189,6 +272,7 @@ def test_runtime_authority_example_declares_fail_closed_provider_and_reconciliat
         "legal-evidence-s3-bucket",
         "legal-evidence-s3-region",
         "legal-evidence-s3-kms-key-id",
+        "legal-evidence-reconciliation-aws-role-arn",
         "internal-auth-service-id",
         "internal-auth-audience",
         "internal-auth-key-id",
