@@ -115,9 +115,11 @@ It maps the already-existing signed internal-service header contract
 HTTP method and raw origin-form path/query from the ASGI scope, reads the exact
 body bytes, rejects missing/duplicate required headers, rejects malformed path
 and header encoding, and does not accept identity, tenant, provider, or scope
-from the request body or context. The signed correlation ID is used as the
-operation idempotency key, so an unsigned auxiliary header cannot substitute a
-decision key.
+from the request body or context. The signed correlation ID is preserved for audit correlation only. It is not
+an operation idempotency key. The existing signed protocol has no dedicated
+operation-idempotency field, so the invocation owner must approve a
+protocol-compatible idempotency contract before runtime wiring; an unsigned
+auxiliary header must not substitute for that contract.
 
 The adapter only normalizes transport input. It does not verify the signature,
 authorize the operation, create a Mongo session, start/commit/abort a
