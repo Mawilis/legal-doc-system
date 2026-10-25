@@ -19,7 +19,7 @@ from tools.eos.legal_operations.service.legal_evidence_provider_readonly_reconci
 
 VERSION = "v1.0.0-L10A2R-C4D7-TRANSACTION-OWNED-INVOCATION"
 router = APIRouter(prefix="/legal-operations/evidence-provider/reconciliation", tags=["Internal Legal Evidence Reconciliation"])
-_KEY = re.compile(r"[A-Za-z0-9][A-Za-z0-9._:/-]{0,159}\\Z")
+_KEY = re.compile(r"[A-Za-z0-9][A-Za-z0-9._:/-]{0,159}\Z")
 
 
 def _unique_pairs(pairs: list[tuple[str, Any]]) -> dict[str, Any]:
