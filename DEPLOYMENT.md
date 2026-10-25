@@ -79,6 +79,17 @@ URIs):
   storage policy does not require a customer-managed KMS key.
 - The tenant identifier is bound from Secret key
   `legal-evidence-reconciliation-tenant-id`; do not infer it from a request.
+- `WILSY_LEGAL_EVIDENCE_RECONCILIATION_AWS_ROLE_ARN`: exact approved
+  reconciliation-only read-only role ARN, from ConfigMap key
+  `legal-evidence-reconciliation-aws-role-arn`. The pod must separately have a
+  verified EKS workload-identity binding. Runtime rejects static environment
+  credentials and ambient node credentials; the source credential method must
+  be EKS web identity or an approved container workload identity.
+- The assumed role may only enumerate multipart uploads and object versions and
+  read the exact object version needed for HEAD observations. It must not have
+  object write, abort, delete, bucket administration, or IAM administration
+  permissions. The source workload role may assume only this approved target
+  role in addition to its separately governed existing needs.
 
 An authorized deployment operator must run the audit-index provisioner with
 the exact same two URI variables that the application will use:
