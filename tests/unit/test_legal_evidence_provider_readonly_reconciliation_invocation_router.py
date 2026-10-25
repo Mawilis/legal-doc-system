@@ -1,11 +1,15 @@
 from __future__ import annotations
 
+import asyncio
+import json
+
 from fastapi import FastAPI
-from fastapi.testclient import TestClient
+from starlette.requests import Request
 import pytest
 
 from tools.eos.api.legal_evidence_provider_readonly_reconciliation_router import (
     _operation_key,
+    reconcile_legal_evidence_provider,
     router,
 )
 
@@ -36,12 +40,25 @@ def test_operation_key_rejects_ambiguous_or_invalid_signed_body(body: bytes) -> 
 def test_route_fails_closed_when_deployment_composition_is_not_injected() -> None:
     app = FastAPI()
     app.include_router(router, prefix="/api")
-    response = TestClient(app).post(
-        "/api/legal-operations/evidence-provider/reconciliation",
-        content=b'{"idempotency_key":"reconcile-a"}',
-    )
+    scope = {
+        "type": "http",
+        "asgi": {"version": "3.0"},
+        "http_version": "1.1",
+        "method": "POST",
+        "scheme": "http",
+        "path": "/api/legal-operations/evidence-provider/reconciliation",
+        "raw_path": b"/api/legal-operations/evidence-provider/reconciliation",
+        "query_string": b"",
+        "root_path": "",
+        "headers": [],
+        "client": ("127.0.0.1", 12345),
+        "server": ("testserver", 80),
+        "app": app,
+    }
+    request = Request(scope, receive=lambda: None)
+    response = asyncio.run(reconcile_legal_evidence_provider(request))
     assert response.status_code == 503
-    assert response.json() == {
+    assert json.loads(response.body) == {
         "success": False,
         "code": "RECONCILIATION_COMPOSITION_UNAVAILABLE",
     }
