@@ -55,6 +55,27 @@ def test_reconciliation_readiness_fails_closed_without_verified_composition() ->
     }
 
 
+def test_reconciliation_readiness_reports_ready_only_with_verified_composition_and_audit_client(
+    monkeypatch,
+) -> None:
+    from tools.eos.api import legal_evidence_provider_readonly_reconciliation_router as module
+
+    class _ReadyComposition:
+        audit_indexes_provisioned = True
+
+    monkeypatch.setattr(
+        module,
+        "LegalEvidenceProviderReadOnlyReconciliationProductionComposition",
+        _ReadyComposition,
+    )
+    app = FastAPI()
+    app.state.legal_evidence_provider_readonly_reconciliation_composition = _ReadyComposition()
+    app.state.legal_evidence_provider_readonly_reconciliation_audit_client = object()
+    response = asyncio.run(module.reconciliation_readiness(_request_for_route(app)))
+    assert response.status_code == 200
+    assert json.loads(response.body) == {"success": True, "status": "ready"}
+
+
 def test_route_fails_closed_when_deployment_composition_is_not_injected() -> None:
     app = FastAPI()
     app.include_router(router, prefix="/api")
