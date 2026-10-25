@@ -167,41 +167,53 @@ Before runtime wiring, the owner must approve and document:
 
 The current constructor requires a decision-evidence registry dependency and the gate persists a decision before returning. This does not by itself establish that a production composition root supplies the canonical registry; that binding must be proved when the governed invocation surface is selected.
 
-## Dedicated HTTP invocation implementation — draft, not production-enabled
+## Dedicated HTTP invocation and deployment bootstrap — implemented, not launch-certified
 
-A dedicated Python router has been added at
-`tools/eos/api/legal_evidence_provider_readonly_reconciliation_router.py`
-and registered by `tools/eos/api/api_server.py` at
-`POST /api/legal-operations/evidence-provider/reconciliation`. The handler
-extracts the signed transport envelope from the actual ASGI request and takes
-the operation idempotency key only from the exact request body whose digest is
-covered by the existing signed workload protocol. It rejects duplicate JSON
-properties and bodies with extra fields; correlation IDs remain audit
-correlation only. The handler starts one business transaction, passes the active
-session through the existing composition/gate/coordinator chain, commits only
-after successful reconciliation, and aborts on failure. It never mounts on the
-generic `/runtime/execute` endpoint.
+The Python route is mounted by the canonical `WilsyAPIServer` in
+`tools/eos/api/server.py` and by the secondary `api_server.py` application
+at `POST /api/legal-operations/evidence-provider/reconciliation`. The canonical
+server startup now builds the composition from existing P2/P4/P5/SYSTEM
+authorities, the canonical business Mongo database, the existing internal
+workload trust configuration, and a separately configured audit Mongo client.
+It retains and closes the audit client with the application lifecycle. If
+configuration or composition fails, the application logs only a stable error
+code and the route remains fail-closed with 503.
 
-The route is deliberately fail-closed: it returns
-`RECONCILIATION_COMPOSITION_UNAVAILABLE` until the application state contains
-an instance of the canonical production composition. No startup code in this
-change invents privileged authorities, workload secrets, audit credentials, or
-deployment target values. Consequently, route registration is not evidence that
-the production invocation is enabled. The production composition still must be
-created by an approved deployment bootstrap with canonical P5/P2 authorities,
-the trusted workload key configuration, a distinct runtime audit client, and
-the approved audit database. Deployment must also prove that the deployment
-index provisioner and runtime audit client address the same approved audit
-target.
+The runtime requires `WILSY_LEGAL_EVIDENCE_RECONCILIATION_AUDIT_MONGODB_URI`.
+That URI must resolve to a different Mongo target (host/database) from
+`MONGODB_URI`. Runtime startup never provisions platform decision-audit
+indexes; it verifies them read-only. An authorized deployment operator must run
+`python -m tools.eos.legal_operations.service.legal_evidence_provider_readonly_reconciliation_audit_provisioner`
+with both URIs set to provision and verify the required unique indexes. The
+provisioner and runtime share the exact audit-URI environment contract and both
+reject a target identical to the business host/database. No URI or credential
+is logged.
 
-The focused workflow now explicitly compiles the router and API server and
-includes the router's adversarial unit tests. Required further certification is
-an actual approved-caller HTTP test against isolated replica-set MongoDB that
-proves signed-body digest validation, replay rejection, current permission and
-scope denial, audit durability, and business-transaction commit/abort semantics
-through the mounted app. This stacked draft change has not yet produced a CI
-result; no production readiness claim is made. The existing unified production
-dependency audit failure remains an independent release blocker.
+The operation body is strict UTF-8 JSON with exactly one property:
+`{"idempotency_key":"<1-160 permitted characters>"}`. Duplicate properties,
+additional fields, wildcard characters, invalid encoding, and invalid keys are
+rejected. The exact body bytes are bound by the existing signed
+`X-Wilsy-Body-SHA3-512` protocol. Each attempt must have a fresh signed nonce;
+correlation remains audit correlation, never operation idempotency. The
+idempotency ledger uses authenticated service ID plus operation key, stores a
+bounded summary in the same caller-owned business transaction, replays the
+exact prior response for matching signed body and server-resolved scope, and
+rejects key reuse with different request/scope material. Authorization is
+re-evaluated on every retry before the stored result can be replayed.
+
+The actual route/path is therefore fixed and code-mounted. Repository discovery
+found the existing generic internal transport signer in
+`server/services/pythonAuthorityTransport.js`, but did not establish a
+reconciliation-specific caller invocation against this path. No Node/JavaScript
+caller change is included, consistent with the Python/EOS-only implementation
+boundary. Until the service owner approves and wires the actual caller to this
+exact path and body contract, caller approval remains an explicit release gate.
+
+The focused workflow now compiles the canonical `server.py`, the secondary
+`api_server.py`, the runtime bootstrap, the audit provisioner, and the
+idempotency registry, and includes the corresponding unit tests. No current-head
+workflow result has yet been observed. The previously observed unified
+production dependency audit failure remains an independent release blocker.
 
 ## Non-goals
 
@@ -209,6 +221,6 @@ This gate does not authorize provider deletion, retention modification, legal-ho
 
 ## Exit criteria
 
-Runtime wiring remains blocked pending explicit approval of a dedicated invocation surface and its production composition root. The focused platform-audit and actual-provider-boundary tests pass, but they do not authorize attaching this operation to the generic runtime endpoint or otherwise create production invocation authority.
+Production launch remains blocked pending (a) an approved actual caller invocation of the exact mounted route/body contract, (b) deployment execution of the audit provisioner against the approved target and verification of runtime target parity, (c) current-head focused and real-Mongo certification, and (d) clearance of the unified production dependency audit. The generic runtime endpoint remains prohibited.
 
 ---
