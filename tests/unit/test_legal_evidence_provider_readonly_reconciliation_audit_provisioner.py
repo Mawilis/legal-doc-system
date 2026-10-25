@@ -5,6 +5,9 @@ from types import SimpleNamespace
 import pytest
 
 from tools.eos.legal_operations.service import legal_evidence_provider_readonly_reconciliation_audit_provisioner as provisioner
+from tools.eos.legal_operations.service.legal_evidence_provider_readonly_reconciliation_runtime import (
+    audit_target_fingerprint,
+)
 from tools.eos.legal_operations.service.legal_evidence_provider_readonly_reconciliation_runtime import audit_target_fingerprint
 
 
