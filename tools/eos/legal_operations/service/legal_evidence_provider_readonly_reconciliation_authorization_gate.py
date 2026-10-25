@@ -698,7 +698,7 @@ class LegalEvidenceProviderReadOnlyReconciliationAuthorizationGate:
                 # key stable across fresh signed nonces; the independent
                 # decision-evidence registry below retains the per-request key.
                 idempotency_key=sha3_512(
-                    "\\0".join(
+                    chr(0).join(
                         (
                             "L10A2R_C4D7_NONINTERACTIVE_ASSURANCE",
                             request["service_id"],
