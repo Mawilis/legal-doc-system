@@ -1,12 +1,14 @@
 # WILSY OS — Python EOS / MongoDB Atlas Production Provisioning Plan
 
-**Version:** `v1.2.0-L10A2R-C4D7-LEGAL-EVIDENCE-CONFIG-BINDINGS`
+**Version:** `v1.3.0-L10A2R-C4D7-RECONCILIATION-AWS-ROLE-INPUTS`
 **Authority:** Wilsy OS Core Governance
 **Date:** 2026-10-25
 **Artifact:** `k8s/eos-api-atlas-production-provisioning-plan.md`
 
 ## Changelog
 
+- `v1.3.0-L10A2R-C4D7-RECONCILIATION-AWS-ROLE-INPUTS` requires an approved
+  read-only AWS role ARN and EKS workload identity before reconciliation S3 use.
 - `v1.2.0-L10A2R-C4D7-LEGAL-EVIDENCE-CONFIG-BINDINGS` binds the server-owned
   reconciliation tenant and canonical Legal Evidence S3 bucket/region/KMS
   settings through explicit Kubernetes Secret/ConfigMap references.
@@ -34,6 +36,17 @@ The certified EOS Kubernetes workload consumes:
 - `WILSY_HR_DOCUMENT_MAX_UPLOAD_BYTES=26214400`
 - optional `WILSY_HR_DOCUMENT_S3_KMS_KEY_ID`
 - required secret `MONGODB_URI`
+- required ConfigMap `WILSY_LEGAL_EVIDENCE_S3_BUCKET` and
+  `WILSY_LEGAL_EVIDENCE_S3_REGION`; optional approved
+  `WILSY_LEGAL_EVIDENCE_S3_KMS_KEY_ID`
+- required server-owned tenant `WILSY_LEGAL_EVIDENCE_RECONCILIATION_TENANT_ID`
+- required internal workload trust values `WILSY_INTERNAL_AUTH_SERVICE_ID`,
+  `WILSY_INTERNAL_AUTH_AUDIENCE`, `WILSY_INTERNAL_AUTH_KEY_ID`, and
+  `WILSY_INTERNAL_AUTH_SECRET`
+- required distinct audit target
+  `WILSY_LEGAL_EVIDENCE_RECONCILIATION_AUDIT_MONGODB_URI`
+- required dedicated assumed read-only S3 role
+  `WILSY_LEGAL_EVIDENCE_RECONCILIATION_AWS_ROLE_ARN`
 
 The EOS image remains bound by immutable digest in
 `k8s/eos-api-production.yaml`.
@@ -325,7 +338,7 @@ Those claims require separate runtime evidence.
 ### WILSY OS Sovereign Artifact Seal
 
 **Artifact:** `k8s/eos-api-atlas-production-provisioning-plan.md`
-**Version:** `v1.2.0-L10A2R-C4D7-RECONCILIATION-AWS-ROLE-INPUTS`
+**Version:** `v1.3.0-L10A2R-C4D7-RECONCILIATION-AWS-ROLE-INPUTS`
 **Mongo Strategy:** MongoDB Atlas
 **HR Upload Policy:** 25 MiB / 26,214,400 bytes
 **Secret Posture:** no production secret committed
