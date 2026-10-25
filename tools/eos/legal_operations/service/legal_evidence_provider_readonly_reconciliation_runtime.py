@@ -35,7 +35,7 @@ from tools.eos.auth.privileged_eligibility_evidence_registry import (
     PrivilegedEligibilityEvidenceRegistry,
     COLLECTION as ELIGIBILITY_EVIDENCE_COLLECTION,
 )
-from tools.eos.auth.principal_authority_repository import PRINCIPAL_AUTHORITY_COLLECTION
+from tools.eos.auth.principal_authority_repository import COLLECTION as PRINCIPAL_AUTHORITY_COLLECTION
 from tools.eos.auth.system_permission_assignment_registry import (
     SystemPermissionAssignmentRegistry,
     COLLECTION as SYSTEM_PERMISSION_ASSIGNMENT_COLLECTION,
