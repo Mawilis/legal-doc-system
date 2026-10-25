@@ -29,6 +29,33 @@ from tools.eos.legal_operations.service.legal_evidence_provider_readonly_reconci
 
 VERSION = "v1.0.0-L10A2R-C4D7-TRANSACTION-OWNED-INVOCATION"
 logger = logging.getLogger(__name__)
+
+_SAFE_ERROR_CODE = re.compile(r"[A-Z][A-Z0-9_]{0,95}\Z")
+
+
+def _safe_cause_chain(error: BaseException | None) -> str:
+    """Return only stable uppercase codes from an exception chain."""
+    codes: list[str] = []
+    current = error
+    for _ in range(4):
+        if current is None:
+            break
+        candidates = [getattr(current, "code", None)]
+        if current.args:
+            candidates.append(current.args[0])
+        found = next(
+            (
+                value
+                for value in candidates
+                if isinstance(value, str) and _SAFE_ERROR_CODE.fullmatch(value)
+            ),
+            None,
+        )
+        if found is not None:
+            codes.append(found)
+        current = current.__cause__
+    return ">".join(codes) if codes else type(error).__name__ if error is not None else "NONE"
+
 router = APIRouter(prefix="/legal-operations/evidence-provider/reconciliation", tags=["Internal Legal Evidence Reconciliation"])
 _KEY = re.compile(r"[A-Za-z0-9][A-Za-z0-9._:/-]{0,159}\Z")
 
@@ -105,11 +132,10 @@ async def reconcile_legal_evidence_provider(request: Request) -> JSONResponse:
         if isinstance(error, LegalEvidenceProviderReadOnlyReconciliationCompositionError):
             return _failure(503, "RECONCILIATION_COMPOSITION_UNAVAILABLE")
         if isinstance(error, LegalEvidenceProviderReadOnlyReconciliationAuthorizationError):
-            cause_code = getattr(error.__cause__, "code", None)
             logger.warning(
-                "LEGAL_EVIDENCE_RECONCILIATION_AUTHORIZATION_DENIED code=%s cause_code=%s",
+                "LEGAL_EVIDENCE_RECONCILIATION_AUTHORIZATION_DENIED code=%s cause_chain=%s",
                 error.code,
-                cause_code if isinstance(cause_code, str) else type(error.__cause__).__name__,
+                _safe_cause_chain(error.__cause__),
             )
             if error.code == "AUTHORIZATION_AUDIT_DURABILITY_UNAVAILABLE":
                 return _failure(503, "RECONCILIATION_AUTHORIZATION_AUDIT_UNAVAILABLE")
