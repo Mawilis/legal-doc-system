@@ -110,8 +110,10 @@ reconciliation runtime.
 These key names are deployment contracts, not populated credentials. Do not
 create placeholder or synthetic production values. The internal service ID,
 audience, key ID, and secret must be provisioned from the actual approved caller
-and existing internal-service trust authority. **No caller implementation or
-caller-side signature change is certified by this repository change alone.**
+and existing internal-service trust authority. **A repository search found the generic signing helper but no callsite that
+invokes this reconciliation route; no actual caller is certified here. No
+caller-side signature change is made in this Python/EOS work. The registered
+service ID must not be guessed or populated until the real caller is approved.**
 
 The exact mounted endpoint is:
 
