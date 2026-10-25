@@ -17,6 +17,7 @@ from tools.eos.legal_operations.service.legal_evidence_provider_readonly_reconci
 )
 from tools.eos.legal_operations.service.legal_evidence_provider_readonly_reconciliation_runtime import (
     AUDIT_URI_ENV,
+    audit_target_fingerprint,
 )
 
 
@@ -57,6 +58,7 @@ def main() -> int:
             raise SystemExit("RECONCILIATION_AUDIT_INDEX_VERIFICATION_FAILED")
         print("RECONCILIATION_AUDIT_INDEXES_PROVISIONED_AND_VERIFIED")
         print(f"AUDIT_DATABASE_NAME={provisioner.database_name}")
+        print(f"AUDIT_TARGET_FINGERPRINT={audit_target_fingerprint(uri)}")
         print("AUDIT_URI_VALUE=REDACTED")
         return 0
     except SystemExit:
