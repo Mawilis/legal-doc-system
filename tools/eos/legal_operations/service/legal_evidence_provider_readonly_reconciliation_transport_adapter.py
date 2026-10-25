@@ -3,7 +3,7 @@ TITLE:
     WILSY OS Signed Internal Workload HTTP Request Adapter
 
 VERSION:
-    v1.0.0-L10A2R-C4D7C-RAW-ASGI-REQUEST-BOUNDARY
+    v1.0.1-L10A2R-C4D7C-CORRELATION-NOT-IDEMPOTENCY
 
 AUTHORITY:
     Wilsy OS Core Governance / Python EOS Legal Operations
@@ -27,10 +27,15 @@ CERTIFICATION OR UPDATE DATE:
     2026-10-25
 
 CHANGELOG:
+    v1.0.1-L10A2R-C4D7C-CORRELATION-NOT-IDEMPOTENCY
+        Separates the signed correlation identifier from operation idempotency;
+        the adapter exposes no idempotency claim without an approved operation
+        contract. Extracted request facts are immutable and boundary failures
+        are normalized to stable fail-closed error codes.
+
     v1.0.0-L10A2R-C4D7C-RAW-ASGI-REQUEST-BOUNDARY
         Adds strict raw-ASGI header extraction, actual method/path binding,
-        exact body-byte preservation, duplicate-header rejection, and a signed
-        correlation identifier as the operation idempotency key.
+        exact body-byte preservation, and duplicate-header rejection.
 
 COMPLIANCE:
     Fail-closed transport normalization. The adapter establishes no identity,
@@ -63,7 +68,7 @@ from types import MappingProxyType
 from typing import Callable, Protocol
 
 
-VERSION = "v1.0.0-L10A2R-C4D7C-RAW-ASGI-REQUEST-BOUNDARY"
+VERSION = "v1.0.1-L10A2R-C4D7C-CORRELATION-NOT-IDEMPOTENCY"
 
 _HEADER_FIELDS: tuple[tuple[bytes, str], ...] = (
     (b"x-wilsy-auth-version", "version"),
@@ -260,7 +265,7 @@ __all__ = [
 ]
 
 # ARTIFACT: legal_evidence_provider_readonly_reconciliation_transport_adapter.py
-# VERSION: v1.0.0-L10A2R-C4D7C-RAW-ASGI-REQUEST-BOUNDARY
+# VERSION: v1.0.1-L10A2R-C4D7C-CORRELATION-NOT-IDEMPOTENCY
 # AUTHORITY BOUNDARY: Request normalization only; P3/P5 and the reconciliation gate decide trust.
 # TENANT POSTURE: No caller-selected tenant or provider scope.
 # FAIL-CLOSED POSTURE: Missing/duplicate/malformed signed headers, body, method, or path reject.
