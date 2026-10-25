@@ -66,7 +66,7 @@ def _mongo_state() -> Iterator[tuple[Any, Any, str]]:
         socketTimeoutMS=5000,
         retryWrites=True,
     )
-    database_name = "legal_evidence_reconciliation_scope_" + uuid4().hex
+    database_name = "le_recon_scope_" + uuid4().hex
     database = client[database_name]
     collection = database["tenants"]
     try:
