@@ -194,18 +194,22 @@ caller change is included, consistent with the Python/EOS-only implementation
 boundary. Until the service owner approves and wires the actual caller to this
 exact path and body contract, caller approval remains an explicit release gate.
 
-Last code-changing head `0ef827e0bf7f6e8acfb355e92f12058bb69ea0c8`:
+Last code-changing head `d15248fe473be437001a18df7831062f34ffc1a3`:
 the focused Python + isolated real-Mongo workflow
-[40189216504](https://github.com/Mawilis/legal-doc-system/actions/runs/40189216504)
-passed **197 tests, 31 warnings, zero skipped**. Repository integrity
-[40189216469](https://github.com/Mawilis/legal-doc-system/actions/runs/40189216469)
+[40190487223](https://github.com/Mawilis/legal-doc-system/actions/runs/40190487223)
+passed **205 tests, 35 warnings, zero skipped**. This includes the signed ASGI
+route exercised against the real P5 authority gate, separate audit Mongo
+client, durable decision evidence, transaction-bound operation ledger, and
+fresh-nonce exact-result replay. Repository integrity
+[40190487211](https://github.com/Mawilis/legal-doc-system/actions/runs/40190487211)
 passed, and the EOS image build
-[40189216468](https://github.com/Mawilis/legal-doc-system/actions/runs/40189216468)
+[40190487237](https://github.com/Mawilis/legal-doc-system/actions/runs/40190487237)
 passed. The unified production pipeline
-[40189216505](https://github.com/Mawilis/legal-doc-system/actions/runs/40189216505)
-failed at the existing production dependency audit; retained production gates
-failed and downstream R2A/R2B real-Mongo jobs were skipped. The follow-up to
-this evidence is documentation-only; no production launch is certified.
+[40190487227](https://github.com/Mawilis/legal-doc-system/actions/runs/40190487227)
+failed at `npm audit --omit=dev --audit-level=high` with **24 production
+vulnerabilities (2 moderate, 22 high)**; retained production gates failed and
+downstream R2A/R2B real-Mongo jobs were skipped. The follow-up to this evidence
+is documentation-only; no production launch is certified.
 
 ## Non-goals
 
