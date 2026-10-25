@@ -194,11 +194,18 @@ caller change is included, consistent with the Python/EOS-only implementation
 boundary. Until the service owner approves and wires the actual caller to this
 exact path and body contract, caller approval remains an explicit release gate.
 
-The focused workflow now compiles the canonical `server.py`, the secondary
-`api_server.py`, the runtime bootstrap, the audit provisioner, and the
-idempotency registry, and includes the corresponding unit tests. No current-head
-workflow result has yet been observed. The previously observed unified
-production dependency audit failure remains an independent release blocker.
+Exact-head certification at `5d467bfa5de1b04d2b3760a708094252958ec9a5`:
+the focused Python + isolated real-Mongo workflow
+[40188948766](https://github.com/Mawilis/legal-doc-system/actions/runs/40188948766)
+passed **196 tests, 31 warnings, zero skipped**. Repository integrity
+[40188948780](https://github.com/Mawilis/legal-doc-system/actions/runs/40188948780)
+passed, and the EOS image build
+[40188948744](https://github.com/Mawilis/legal-doc-system/actions/runs/40188948744)
+passed. The unified production pipeline
+[40188948776](https://github.com/Mawilis/legal-doc-system/actions/runs/40188948776)
+still failed at the existing production dependency audit; retained production
+gates failed and downstream R2A/R2B real-Mongo jobs were skipped. Focused
+success is not broader production release certification.
 
 ## Non-goals
 
