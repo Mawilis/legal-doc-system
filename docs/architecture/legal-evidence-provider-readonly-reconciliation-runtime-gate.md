@@ -1,9 +1,9 @@
 # Legal Evidence Provider Read-Only Reconciliation — Runtime Gate
 
 **Status:** RUNTIME WIRING BLOCKED — durable platform allow/deny evidence and provider-boundary certification pass; the existing generic runtime API is not a safe reconciliation invocation surface  
-**Version:** v1.4.0-L10A2R-C4D7C-TRANSPORT-ADAPTER-ADDED-CERTIFICATION-PENDING  
+**Version:** v1.4.1-L10A2R-C4D7C-155-PASS-TRANSPORT-ADAPTER-UNIFIED-GATE-FAILED  
 **Date:** 2026-10-25  
-**Implementation state reviewed:** `74bb1bc91832f68ae653e0b640e81e4af0fa2df3`
+**Implementation state reviewed:** `8fc814436648ddb5cd6e8d2510961712f73b2a9c`
 
 ## Decision
 
