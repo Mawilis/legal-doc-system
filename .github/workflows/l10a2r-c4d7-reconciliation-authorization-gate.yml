@@ -4,6 +4,7 @@ on:
   pull_request:
     branches: [main]
     paths:
+      - "tools/eos/auth/internal_service_workload_proof_service.py"
       - "tools/eos/auth/privileged_activation_use_authority.py"
       - "tools/eos/auth/platform_authorization_decision_evidence.py"
       - "tools/eos/auth/platform_authorization_decision_evidence_registry.py"
@@ -19,6 +20,7 @@ on:
       - "k8s/eos-api-production.yaml"
       - "k8s/eos-api-atlas-production-provisioning-plan.md"
       - "tests/unit/test_legal_evidence_provider_readonly_reconciliation_runtime.py"
+      - "tests/integration/test_internal_service_workload_credential_authority_real_mongo.py"
       - "tests/unit/test_privileged_activation_use_authority.py"
       - "tests/unit/test_legal_evidence_provider_readonly_reconciliation_platform_decision_evidence.py"
       - "tests/integration/test_platform_authorization_decision_evidence_registry_real_mongo.py"
@@ -125,6 +127,7 @@ jobs:
       - name: Compile focused Python artifacts
         run: |
           python -m py_compile \
+            tools/eos/auth/internal_service_workload_proof_service.py \
             tools/eos/auth/privileged_activation_use_authority.py \
             tools/eos/auth/platform_authorization_decision_evidence.py \
             tools/eos/auth/platform_authorization_decision_evidence_registry.py \
@@ -145,6 +148,7 @@ jobs:
             tests/unit/test_legal_evidence_provider_readonly_reconciliation_audit_provisioner.py \
             tests/unit/test_legal_evidence_provider_readonly_reconciliation_transport_adapter.py \
             tools/eos/legal_operations/service/legal_evidence_provider_readonly_reconciliation_coordinator.py \
+            tests/integration/test_internal_service_workload_credential_authority_real_mongo.py \
             tests/unit/test_privileged_activation_use_authority.py \
             tests/unit/test_legal_evidence_provider_readonly_reconciliation_platform_decision_evidence.py \
             tests/integration/test_platform_authorization_decision_evidence_registry_real_mongo.py \
