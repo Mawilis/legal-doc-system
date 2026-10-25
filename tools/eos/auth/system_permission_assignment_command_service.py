@@ -1,14 +1,15 @@
 """TITLE: WILSY OS System Permission Assignment Command Service.
-VERSION: v1.1.1-L10A2R-C4D7-RECONCILIATION-DELEGATION-HELD
+VERSION: v1.2.0-L10A2R-C4D7-RECONCILIATION-READ-DELEGATION
 AUTHORITY: Ongoing bounded SYSTEM permission assignment command composition.
-EPITOME: Requires current write-command possession and delegates only the exact closed SYSTEM assignment allowlist.
+EPITOME: Requires current write-command possession and delegates only the exact source-governed SYSTEM assignment allowlist.
 ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/tools/eos/auth/system_permission_assignment_command_service.py
 COLLABORATION: Current possession resolver, principal repository, D12 policy/evidence, assignment registry.
 CERTIFICATION DATE: 2026-10-14
-CHANGELOG: v1.1.1-L10A2R-C4D7-RECONCILIATION-DELEGATION-HELD preserves the closed source policy: only
-    privileged_activation:issue and privileged_activation:break_glass are
-    ongoing delegable permissions. Reconciliation-read remains denied until
-    operator grant and current-use contracts are separately certified.
+CHANGELOG: v1.2.0-L10A2R-C4D7-RECONCILIATION-READ-DELEGATION aligns the command-service certificate with the exact
+    source-policy allowlist, including the dedicated reconciliation-read
+    permission. Assignment still requires current assignment-command possession,
+    an ACTIVE target principal, exact evidence, and the caller-owned transaction;
+    use still requires the separate P5 reconciliation gate.
 COMPLIANCE / SECURITY: Current actor and target; exact policy; immutable evidence.
 TENANT BOUNDARY: SYSTEM only.
 AUTHORITY BOUNDARY: Cannot assign command permissions or arbitrary permissions.
@@ -26,7 +27,7 @@ from tools.eos.auth.system_permission_assignment_registry import SystemPermissio
 from tools.eos.auth.system_permission_command_evidence import SystemPermissionCommandEvidence, SystemPermissionCommandOperation
 from tools.eos.auth.system_permission_command_policy import ASSIGN_COMMAND_PERMISSION, require_ongoing_assignment
 
-VERSION: Final[str] = "v1.1.1-L10A2R-C4D7-RECONCILIATION-DELEGATION-HELD"
+VERSION: Final[str] = "v1.2.0-L10A2R-C4D7-RECONCILIATION-READ-DELEGATION"
 
 
 class SystemPermissionAssignmentCommandError(RuntimeError):
@@ -69,7 +70,7 @@ class SystemPermissionAssignmentCommandService:
 __all__ = ["VERSION", "SystemPermissionAssignmentCommandError", "SystemPermissionAssignmentCommandService"]
 # WILSY OS SOVEREIGN ARTIFACT SEAL
 # ARTIFACT: system_permission_assignment_command_service.py
-# VERSION: v1.1.1-L10A2R-C4D7-RECONCILIATION-DELEGATION-HELD
+# VERSION: v1.2.0-L10A2R-C4D7-RECONCILIATION-READ-DELEGATION
 # AUTHORITY BOUNDARY: PRIVILEGED ACTIVATION ISSUE ASSIGNMENT ONLY
 # TENANT POSTURE: SYSTEM ONLY
 # FAIL-CLOSED POSTURE: CURRENT ACTOR COMMAND + CURRENT TARGET + CLOSED POLICY
