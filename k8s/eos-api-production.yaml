@@ -11,7 +11,7 @@
 # COLLABORATION / OWNERSHIP:
 #   Python EOS owns sovereign business, authority, lifecycle, and evidence truth.
 #   Kubernetes owns workload scheduling only.
-# CERTIFICATION / UPDATE DATE: 2026-10-06
+# CERTIFICATION / UPDATE DATE: 2026-10-25
 # CHANGELOG:
 #   v1.3.0-L10A2R-C4D7-READONLY-AWS-ROLE-CONFIG
 #     - Require an approved dedicated read-only reconciliation role ARN and
