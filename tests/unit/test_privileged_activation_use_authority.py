@@ -588,7 +588,8 @@ def test_noninteractive_workload_path_derives_principal_once_and_checks_platform
     assert result.principal_id == "principal-a"
     assert len(noninteractive.calls) == 1
     assert noninteractive.calls[0]["session"] is SESSION
-    assert registry.calls[0]["principal_id"] == "principal-a"
+    assert not registry.calls
+    assert not resolver.calls
     assert registry.calls[0]["tenant_id"] is None
     assert registry.calls[0]["target_class"] is PrivilegedTargetClass.PLATFORM_SYSTEM_ROOT
 
