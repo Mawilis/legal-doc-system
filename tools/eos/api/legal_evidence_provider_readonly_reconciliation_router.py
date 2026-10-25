@@ -71,7 +71,7 @@ async def reconcile_legal_evidence_provider(request: Request) -> JSONResponse:
         session = client.start_session()
         session.start_transaction()
         transaction_started = True
-        result = composition.authorize_and_reconcile(
+        result = composition.authorize_and_reconcile_idempotently(
             signed_workload_fields=envelope.request,
             body=envelope.body,
             idempotency_key=operation_key,
@@ -94,21 +94,7 @@ async def reconcile_legal_evidence_provider(request: Request) -> JSONResponse:
             except Exception:
                 pass
 
-    return JSONResponse(status_code=200, content={"success": True, "data": {
-        "tenant_id": result.tenant_id,
-        "tenant_scope_fingerprint": result.tenant_scope_fingerprint,
-        "provider_name": result.provider_name,
-        "observed_at": result.observed_at.isoformat(),
-        "coverage_verification_fingerprint": result.coverage_verification_fingerprint,
-        "incomplete_observation_count": result.incomplete_observation_count,
-        "completed_observation_count": result.completed_observation_count,
-        "classification_count": len(result.classifications),
-        "write_intent_correlation_count": len(result.write_intent_correlations),
-        "coverage_complete": result.coverage_complete,
-        "orphan_proven": result.orphan_proven,
-        "provider_delete_authorized": result.provider_delete_authorized,
-        "cleanup_authorized": result.cleanup_authorized,
-    }})
+    return JSONResponse(status_code=200, content={"success": True, "data": result})
 
 
 __all__ = ["VERSION", "router"]
