@@ -51,7 +51,7 @@ def test_runtime_bootstrap_rejects_same_business_and_audit_target_before_connect
 
 
 def test_runtime_bootstrap_builds_and_returns_canonical_graph_and_retained_audit_client(monkeypatch, caplog) -> None:
-    audit_uri = "mongodb://audit.example:27017/audit"
+    audit_uri = "mongodb://audit.example:27017/audit?tls=true"
     from tools.eos.legal_operations.service import legal_evidence_provider_readonly_reconciliation_runtime as runtime
 
     import logging
@@ -246,6 +246,34 @@ def test_readonly_s3_client_uses_refreshable_temporary_assumed_role_credentials(
     s3 = next(kwargs for name, kwargs in calls if name == "s3")
     assert s3 == {"region_name": "af-south-1"}
     assert ("region", "af-south-1") in calls
+
+
+def test_audit_deployment_separation_rejects_same_cluster_with_different_database() -> None:
+    from tools.eos.legal_operations.service.legal_evidence_provider_readonly_reconciliation_runtime import (
+        require_distinct_mongo_deployments,
+    )
+
+    with pytest.raises(
+        LegalEvidenceProviderReadOnlyReconciliationRuntimeBootstrapError,
+        match="RECONCILIATION_AUDIT_TARGET_NOT_SEPARATE",
+    ):
+        require_distinct_mongo_deployments(
+            "mongodb://business-user:business-pass@localhost:27017/wilsy",
+            "mongodb://audit-user:audit-pass@localhost:27017/audit",
+        )
+
+
+def test_audit_mongodb_uri_requires_tls() -> None:
+    from tools.eos.legal_operations.service.legal_evidence_provider_readonly_reconciliation_runtime import (
+        require_tls_mongodb_uri,
+    )
+
+    with pytest.raises(
+        LegalEvidenceProviderReadOnlyReconciliationRuntimeBootstrapError,
+        match="RECONCILIATION_AUDIT_TLS_REQUIRED",
+    ):
+        require_tls_mongodb_uri("mongodb://audit.example:27017/audit")
+    require_tls_mongodb_uri("mongodb://audit.example:27017/audit?tls=true")
 
 
 def test_audit_target_fingerprint_is_stable_and_excludes_credentials() -> None:
