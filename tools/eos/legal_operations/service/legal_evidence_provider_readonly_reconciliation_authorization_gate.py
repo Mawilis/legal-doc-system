@@ -3,7 +3,7 @@ TITLE:
     WILSY OS Legal Evidence Provider Read-Only Reconciliation Authorization Gate
 
 VERSION:
-    v1.0.2-L10A2R-C4D7C-RECONCILIATION-AUTHORIZATION-GATE
+    v1.0.3-L10A2R-C4D7C-SERVER-CONFIGURED-SCOPE
 
 AUTHORITY:
     Wilsy OS Sovereign IAM and Legal Operations
@@ -27,10 +27,12 @@ CERTIFICATION / UPDATE DATE:
     2026-10-25
 
 CHANGELOG:
-    v1.0.2-L10A2R-C4D7C-RECONCILIATION-AUTHORIZATION-GATE
-        Verifies the tenant-scope fingerprint against the canonical tenant
-        identifier before returning authorization evidence. The configured
-        provider binding and exact transport-header set remain mandatory.
+    v1.0.3-L10A2R-C4D7C-SERVER-CONFIGURED-SCOPE
+        Adds a concrete server-configured scope resolver that revalidates one
+        deployment-configured tenant through the canonical TenantRegistry in
+        the caller transaction and derives the scope fingerprint itself. The
+        target tenant remains absent from request inputs; provider binding is
+        fixed by server configuration. No runtime invocation is wired.
 
 COMPLIANCE:
     Fail-closed. No caller-selected tenant/provider scope, no tenant permission
@@ -65,7 +67,7 @@ from __future__ import annotations
 from dataclasses import dataclass
 from datetime import datetime
 from hashlib import sha3_512
-from typing import Mapping, Protocol
+from typing import Any, Mapping, Protocol
 
 from tools.eos.auth.current_system_permission_possession import (
     CurrentSystemPermissionPossessionError,
@@ -73,6 +75,10 @@ from tools.eos.auth.current_system_permission_possession import (
 )
 from tools.eos.auth.system_permission_assignment import (
     SystemPermissionAssignment,
+)
+from tools.eos.saas.tenancy.tenant_registry import (
+    TenantRegistry,
+    TenantRegistryError,
 )
 from tools.eos.auth.privileged_activation import (
     PrivilegedActivation,
@@ -91,7 +97,7 @@ from tools.eos.legal_operations.service.legal_evidence_provider_cleanup_discover
 )
 
 
-VERSION = "v1.0.2-L10A2R-C4D7C-RECONCILIATION-AUTHORIZATION-GATE"
+VERSION = "v1.0.3-L10A2R-C4D7C-SERVER-CONFIGURED-SCOPE"
 RECONCILIATION_READ_PERMISSION = (
     "legal_operations:evidence_provider_reconciliation:read"
 )
@@ -152,6 +158,105 @@ class ServerOwnedReconciliationScopeResolver(Protocol):
     ) -> LegalEvidenceProviderDiscoveryScope:
         """Return one exact tenant scope from server-owned authority."""
         ...
+
+
+class ServerConfiguredReconciliationScopeResolver:
+    """Resolve one server-configured tenant through canonical TenantRegistry.
+
+    The tenant identifier and provider name are deployment-owned constructor
+    values, never request parameters. Tenant currentness is reread through the
+    canonical registry using the exact caller-owned transaction. One resolver
+    instance is intentionally bound to one tenant/provider pair.
+    """
+
+    def __init__(
+        self,
+        *,
+        tenant_id: str,
+        provider_name: str,
+        tenant_collection: Any,
+    ) -> None:
+        if (
+            not isinstance(tenant_id, str)
+            or not tenant_id
+            or tenant_id != tenant_id.strip()
+            or "*" in tenant_id
+        ):
+            raise ServerOwnedReconciliationScopeResolutionError(
+                "SERVER_CONFIGURED_TENANT_ID_INVALID"
+            )
+        if (
+            not isinstance(provider_name, str)
+            or not provider_name
+            or provider_name != provider_name.strip()
+            or "*" in provider_name
+        ):
+            raise ServerOwnedReconciliationScopeResolutionError(
+                "SERVER_CONFIGURED_PROVIDER_NAME_INVALID"
+            )
+        if not callable(getattr(tenant_collection, "find_one", None)):
+            raise ServerOwnedReconciliationScopeResolutionError(
+                "CANONICAL_TENANT_COLLECTION_REQUIRED"
+            )
+        self._tenant_id = tenant_id
+        self._provider_name = provider_name
+        self._tenant_collection = tenant_collection
+
+    @property
+    def provider_name(self) -> str:
+        """Return the fixed server-configured provider binding."""
+        return self._provider_name
+
+    def resolve_scope(
+        self,
+        *,
+        principal_id: str,
+        activation_id: str,
+        at: datetime,
+        session: object,
+    ) -> LegalEvidenceProviderDiscoveryScope:
+        """Reread the fixed canonical tenant and derive its exact scope.
+
+        \`principal_id\` and \`activation_id\` correlate the caller's already
+        authorized platform operation. They cannot select or change the target
+        tenant/provider pair.
+        """
+        del principal_id, activation_id, at
+        try:
+            tenant = TenantRegistry.get(
+                self._tenant_id,
+                collection=self._tenant_collection,
+                session=session,
+            )
+        except TenantRegistryError as error:
+            code = str(error)
+            if "INACTIVE" in code or "ARCHIVED" in code:
+                raise ServerOwnedReconciliationScopeResolutionError(
+                    "CANONICAL_TENANT_SCOPE_NOT_ACTIVE"
+                ) from error
+            raise ServerOwnedReconciliationScopeResolutionError(
+                "CANONICAL_TENANT_CURRENTNESS_UNAVAILABLE"
+            ) from error
+
+        if tenant is None:
+            raise ServerOwnedReconciliationScopeResolutionError(
+                "CANONICAL_TENANT_SCOPE_NOT_ACTIVE"
+            )
+        if (
+            getattr(tenant, "tenant_id", None) != self._tenant_id
+            or str(getattr(tenant, "status", "")).upper() != "ACTIVE"
+        ):
+            raise ServerOwnedReconciliationScopeResolutionError(
+                "CANONICAL_TENANT_SCOPE_BINDING_INVALID"
+            )
+
+        fingerprint = sha3_512(
+            self._tenant_id.encode("utf-8")
+        ).hexdigest()
+        return LegalEvidenceProviderDiscoveryScope(
+            tenant_id=self._tenant_id,
+            tenant_scope_fingerprint=fingerprint,
+        )
 
 
 @dataclass(frozen=True, slots=True)
@@ -436,6 +541,7 @@ __all__ = [
     "LegalEvidenceProviderReadOnlyReconciliationAuthorizationError",
     "ServerOwnedReconciliationScopeResolutionError",
     "ServerOwnedReconciliationScopeResolver",
+    "ServerConfiguredReconciliationScopeResolver",
     "LegalEvidenceProviderReadOnlyReconciliationAuthorization",
     "LegalEvidenceProviderReadOnlyReconciliationAuthorizationGate",
 ]
@@ -444,7 +550,7 @@ __all__ = [
 # =============================================================================
 # WILSY OS SOVEREIGN ARTIFACT SEAL
 # ARTIFACT: legal_evidence_provider_readonly_reconciliation_authorization_gate.py
-# VERSION: v1.0.2-L10A2R-C4D7C-RECONCILIATION-AUTHORIZATION-GATE
+# VERSION: v1.0.3-L10A2R-C4D7C-SERVER-CONFIGURED-SCOPE
 # AUTHORITY BOUNDARY:
 #   Current platform-root P5 use plus exact current SYSTEM permission possession
 #   and server-owned tenant scope resolution. No invocation or mutation authority.
