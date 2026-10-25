@@ -183,6 +183,19 @@ def test_replay_denies_second_proof(mongo_context) -> None:
     assert database[REPLAY_COLLECTION].count_documents({}) == 1
 
 
+def test_fresh_signed_nonce_reuses_current_fact_for_same_credential_generation(mongo_context) -> None:
+    client, database, credentials, workloads = mongo_context
+    _provision(client, database, credentials)
+    service = _service(database, credentials, workloads)
+
+    first = _record(client, service, _signed())
+    second = _record(client, service, _signed())
+
+    assert second == first
+    assert database[WORKLOAD_COLLECTION].count_documents({}) == 1
+    assert database[REPLAY_COLLECTION].count_documents({}) == 2
+
+
 def test_rotation_rejects_old_key_and_admits_new_generation(mongo_context) -> None:
     client, database, credentials, workloads = mongo_context
     _provision(client, database, credentials)
