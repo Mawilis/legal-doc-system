@@ -111,6 +111,11 @@ from .wilsy_ai_legal_services_router import router as wilsy_ai_legal_services_ro
 from .wilsy_ai_advisory_router import router as wilsy_ai_advisory_router
 from .legal_acceptance_router import router as legal_acceptance_router
 from .tenant_branding_router import router as tenant_branding_router
+from .legal_evidence_provider_readonly_reconciliation_router import router as legal_evidence_provider_readonly_reconciliation_router
+from tools.eos.legal_operations.service.legal_evidence_provider_readonly_reconciliation_runtime import (
+    LegalEvidenceProviderReadOnlyReconciliationRuntimeBootstrapError,
+    build_legal_evidence_provider_readonly_reconciliation_runtime,
+)
 from .wilsy_ai_legal_gateway_router import MODULE_ID as WILSY_AI_LEGAL_MODULE_ID, _canonical_underlying_context
 from .tenant_authorization_http import TenantAuthorizationContext
 from .hr_document_router import router as hr_document_router
@@ -232,6 +237,8 @@ class WilsyAPIServer:
         app.state.wilsy_ai_legal_services_orchestrator = None
         # No binding command is ready before certified index startup.
         app.state.p12c_binding_indexes_ready = False
+        app.state.legal_evidence_provider_readonly_reconciliation_composition = None
+        app.state.legal_evidence_provider_readonly_reconciliation_audit_client = None
         # C1E service is constructed lazily or by deployment composition; it
         # owns its caller-session transaction and never creates a second client.
         app.state.wilsy_ai_advisory_service = None
@@ -390,6 +397,8 @@ class WilsyAPIServer:
             if not connected:
                 logger.error("[KENNEL_DB] Explicit startup bootstrap unavailable: %s", detail)
                 return
+            app.state.legal_evidence_provider_readonly_reconciliation_composition = None
+            app.state.legal_evidence_provider_readonly_reconciliation_audit_client = None
             provider = self.reasoning_provider_binding
             database, client = get_database(), get_client()
             if database is None:
@@ -473,6 +482,32 @@ class WilsyAPIServer:
                     tool_accounting_writer=persist_c1c_tool_accounting,
                     production=True,
                 )
+            # Build the governed reconciliation graph only from canonical
+            # business authorities and an explicitly separate deployment audit URI.
+            if database is not None:
+                try:
+                    reconciliation_composition, reconciliation_audit_client = (
+                        build_legal_evidence_provider_readonly_reconciliation_runtime(
+                            mongo_database=database,
+                        )
+                    )
+                    if reconciliation_composition.business_client is not client:
+                        reconciliation_audit_client.close()
+                        raise LegalEvidenceProviderReadOnlyReconciliationRuntimeBootstrapError(
+                            "RECONCILIATION_BUSINESS_CLIENT_BINDING_MISMATCH"
+                        )
+                    app.state.legal_evidence_provider_readonly_reconciliation_composition = (
+                        reconciliation_composition
+                    )
+                    app.state.legal_evidence_provider_readonly_reconciliation_audit_client = (
+                        reconciliation_audit_client
+                    )
+                except Exception as error:
+                    code = getattr(error, "args", ["RECONCILIATION_RUNTIME_COMPOSITION_UNAVAILABLE"])[0]
+                    logger.error(
+                        "[LEGAL_EVIDENCE_RECONCILIATION] Runtime composition unavailable: %s",
+                        str(code) if isinstance(code, str) else "RECONCILIATION_RUNTIME_COMPOSITION_UNAVAILABLE",
+                    )
             # Only completed startup establishes binding readiness.
             app.state.p12c_binding_indexes_ready = client is not None
 
@@ -480,6 +515,16 @@ class WilsyAPIServer:
         async def stop_database() -> None:
             """Release the kernel database during controlled application shutdown."""
             app.state.p12c_binding_indexes_ready = False
+            audit_client = getattr(
+                app.state,
+                "legal_evidence_provider_readonly_reconciliation_audit_client",
+                None,
+            )
+            app.state.legal_evidence_provider_readonly_reconciliation_composition = None
+            app.state.legal_evidence_provider_readonly_reconciliation_audit_client = None
+            if audit_client is not None:
+                with suppress(Exception):
+                    audit_client.close()
             disconnect_db()
 
         @app.on_event("startup")
@@ -534,6 +579,7 @@ class WilsyAPIServer:
         app.include_router(legal_matter_deadline_router, prefix="/api")
         app.include_router(legal_client_acceptance_router, prefix="/api")
         app.include_router(legal_evidence_upload_router, prefix="/api")
+        app.include_router(legal_evidence_provider_readonly_reconciliation_router, prefix="/api")
         app.include_router(tenant_legal_operating_model_router, prefix="/api")
         # P12C readiness is server-owned, never supplied by request callers.
         # It precedes command transactions and adds no IAM authority.
