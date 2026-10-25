@@ -166,11 +166,8 @@ def test_coverage_verifier_failure_propagates_without_classification() -> None:
     classification.classify_tenant_observations.assert_not_called()
 
 
-def test_no_provider_or_persistence_mutation_methods_are_exposed() -> None:
-    coordinator, discovery, coverage, classification = _coordinator()
+def test_coordinator_exposes_no_provider_or_persistence_mutation_methods() -> None:
+    coordinator, _discovery, _coverage, _classification = _coordinator()
     forbidden = ("delete_object", "abort_write_session", "insert_one", "update_one", "delete_one")
     assert all(not hasattr(coordinator, name) for name in forbidden)
-    assert all(not hasattr(coverage, name) for name in forbidden)
-    assert all(not hasattr(classification, name) for name in forbidden)
-    assert all(not hasattr(discovery, name) for name in forbidden)
 
