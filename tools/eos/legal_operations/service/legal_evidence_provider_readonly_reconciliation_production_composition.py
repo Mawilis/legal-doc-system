@@ -109,7 +109,6 @@ class LegalEvidenceProviderReadOnlyReconciliationProductionComposition:
     __slots__ = (
         "_target",
         "_registry",
-        "_index_provisioner",
         "_gate",
         "_dependencies",
         "_audit_indexes_provisioned",
@@ -120,36 +119,28 @@ class LegalEvidenceProviderReadOnlyReconciliationProductionComposition:
         *,
         target: ServerConfiguredReconciliationTarget,
         registry: PlatformAuthorizationDecisionEvidenceRegistry,
-        index_provisioner: "PlatformAuthorizationDecisionEvidenceIndexProvisioner",
         gate: LegalEvidenceProviderReadOnlyReconciliationAuthorizationGate,
         dependencies: LegalEvidenceProviderReadOnlyReconciliationDependencies,
     ) -> None:
         self._target = target
         self._registry = registry
-        self._index_provisioner = index_provisioner
         self._gate = gate
         self._dependencies = dependencies
-        self._audit_indexes_provisioned = False
+        try:
+            self._audit_indexes_provisioned = registry.verify_indexes() is True
+        except Exception as error:
+            raise LegalEvidenceProviderReadOnlyReconciliationCompositionError(
+                "PLATFORM_DECISION_AUDIT_INDEX_VERIFICATION_FAILED"
+            ) from error
+        if not self._audit_indexes_provisioned:
+            raise LegalEvidenceProviderReadOnlyReconciliationCompositionError(
+                "PLATFORM_DECISION_AUDIT_INDEXES_NOT_PROVISIONED"
+            )
 
     @property
     def audit_indexes_provisioned(self) -> bool:
         """Whether this instance successfully completed explicit index setup."""
         return self._audit_indexes_provisioned
-
-    def provision_audit_indexes(self) -> None:
-        """Provision audit uniqueness indexes during governed deployment setup.
-
-        Do not call this from a request handler. Deployment identity must have
-        index-management permission; the runtime identity should not need it.
-        """
-        try:
-            self._index_provisioner.provision()
-        except Exception as error:
-            self._audit_indexes_provisioned = False
-            raise LegalEvidenceProviderReadOnlyReconciliationCompositionError(
-                "PLATFORM_DECISION_AUDIT_INDEX_PROVISIONING_FAILED"
-            ) from error
-        self._audit_indexes_provisioned = True
 
     def authorize_and_reconcile(
         self,
@@ -195,7 +186,6 @@ def build_legal_evidence_provider_readonly_reconciliation_production_composition
     mongo_database: Any,
     audit_database: Any,
     audit_client: Any,
-    audit_index_provisioner: "PlatformAuthorizationDecisionEvidenceIndexProvisioner",
     use_authority: PrivilegedActivationUseAuthority,
     permission_possession_resolver: CurrentSystemPermissionPossessionResolver,
     workload_keys: Mapping[str, tuple[str, str]],
@@ -207,7 +197,7 @@ def build_legal_evidence_provider_readonly_reconciliation_production_composition
 
     The canonical business database and audit database must be attached to
     distinct MongoClient instances. Index provisioning is a separate explicit
-    deployment step. No S3 network operation, Mongo write, transaction start,
+    deployment step; the runtime composition verifies indexes read-only. No S3 network operation, Mongo write, transaction start,
     or runtime route registration occurs during composition.
     """
     if mongo_database is None or audit_database is None:
@@ -224,17 +214,6 @@ def build_legal_evidence_provider_readonly_reconciliation_production_composition
     ):
         raise LegalEvidenceProviderReadOnlyReconciliationCompositionError(
             "DISTINCT_SERVER_OWNED_AUDIT_CLIENT_REQUIRED"
-        )
-    if type(audit_index_provisioner) is not PlatformAuthorizationDecisionEvidenceIndexProvisioner:
-        raise LegalEvidenceProviderReadOnlyReconciliationCompositionError(
-            "DEPLOYMENT_OWNED_AUDIT_INDEX_PROVISIONER_REQUIRED"
-        )
-    if (
-        audit_index_provisioner.audit_client is audit_client
-        or audit_index_provisioner.database_name != getattr(audit_database, "name", None)
-    ):
-        raise LegalEvidenceProviderReadOnlyReconciliationCompositionError(
-            "DISTINCT_DEPLOYMENT_AUDIT_INDEX_CLIENT_REQUIRED"
         )
     if type(use_authority) is not PrivilegedActivationUseAuthority:
         raise LegalEvidenceProviderReadOnlyReconciliationCompositionError(
@@ -283,7 +262,6 @@ def build_legal_evidence_provider_readonly_reconciliation_production_composition
     return LegalEvidenceProviderReadOnlyReconciliationProductionComposition(
         target=target,
         registry=registry,
-        index_provisioner=audit_index_provisioner,
         gate=gate,
         dependencies=dependencies,
     )
