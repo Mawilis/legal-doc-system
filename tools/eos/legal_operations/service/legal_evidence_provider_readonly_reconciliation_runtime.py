@@ -12,6 +12,8 @@ import logging
 import os
 import re
 
+from datetime import datetime
+
 import boto3
 import botocore.session
 from botocore.credentials import RefreshableCredentials
@@ -158,12 +160,15 @@ def build_reconciliation_readonly_s3_client(
 
         metadata = refresh_assumed_credentials()
         target_botocore_session = botocore.session.get_session()
-        target_botocore_session._credentials = RefreshableCredentials.create_from_metadata(
-            metadata=metadata,
+        target_botocore_session._credentials = RefreshableCredentials(
+            access_key=metadata["access_key"],
+            secret_key=metadata["secret_key"],
+            token=metadata["token"],
+            expiry_time=datetime.fromisoformat(metadata["expiry_time"]),
             refresh_using=refresh_assumed_credentials,
             method="assume-role",
-            advisory_refresh_timeout=60,
-            mandatory_refresh_timeout=30,
+            advisory_timeout=60,
+            mandatory_timeout=30,
         )
         target_botocore_session.set_config_variable("region", region)
         target_session = boto3.session.Session(botocore_session=target_botocore_session)
