@@ -1,19 +1,68 @@
-"""Governed production composition for Legal Evidence read-only reconciliation.
-
-VERSION: v1.0.0-L10A2R-C4D7C-EXPLICIT-PRODUCTION-COMPOSITION
-AUTHORITY: WILSY OS Core Governance / Python EOS Legal Operations
-
-This module composes already-governed IAM authorities with server-owned tenant
-and provider configuration, the read-only S3 facade, and a platform-scoped
-independent audit registry. It deliberately does not mount an HTTP route, start
-a Mongo transaction, or invent a transport trust boundary. An approved transport
-adapter must pass the canonical signed-workload fields extracted from its actual
-request and own the business transaction lifecycle.
-
-Audit uniqueness indexes must be provisioned explicitly before invocation is
-enabled. A composition is unusable until that step succeeds.
 """
+TITLE:
+    WILSY OS Legal Evidence Read-Only Reconciliation Production Composition
 
+VERSION:
+    v1.0.1-L10A2R-C4D7C-SOVEREIGN-COMPOSITION-SEAL
+
+AUTHORITY:
+    WILSY OS Core Governance / Python EOS Legal Operations
+
+EPITOME:
+    Compose canonical P5 privileged-use authority, current SYSTEM permission
+    possession, server-configured tenant/provider scope, a strictly read-only
+    provider facade, caller-owned business transaction semantics, and an
+    independently durable platform authorization decision-evidence registry.
+
+ABSOLUTE CANONICAL PATH:
+    /Users/wilsonkhanyezi/legal-doc-system/tools/eos/legal_operations/service/legal_evidence_provider_readonly_reconciliation_production_composition.py
+
+COLLABORATION / OWNERSHIP:
+    This composition binds existing governed authorities and does not mint
+    authority. The approved invocation owner supplies the actual signed ASGI
+    request, idempotency contract, active business session, and commit/abort
+    lifecycle. Deployment operations own the distinct audit client and explicit
+    index provisioning. This module does not mount a route.
+
+CERTIFICATION OR UPDATE DATE:
+    2026-10-25
+
+CHANGELOG:
+    v1.0.1-L10A2R-C4D7C-SOVEREIGN-COMPOSITION-SEAL
+        Adds the mandatory institutional source header and matching sovereign
+        end seal. Runtime behavior is unchanged.
+
+    v1.0.0-L10A2R-C4D7C-EXPLICIT-PRODUCTION-COMPOSITION
+        Composes canonical authorization, server-owned target, strict read-only
+        S3 provider facade, caller-owned business session, and independent
+        platform authorization decision evidence. Runtime verifies audit index
+        shape and availability; deployment provisions indexes separately.
+
+COMPLIANCE:
+    Fail-closed authority composition; tenant isolation; independent durable
+    authorization evidence; caller-owned transaction boundaries; no inference
+    of provider deletion, orphan proof, retention clearance, or financial truth.
+
+SECURITY / PRIVACY POSTURE:
+    Business and audit Mongo clients must be distinct. Audit index verification
+    is read-only during runtime composition. No provider network call, business
+    write, audit write, session creation, transaction start, or route mount is
+    performed by construction. Authorization/audit failures reject closed.
+
+TENANT BOUNDARY:
+    Tenant/provider target comes only from validated server configuration and
+    canonical tenant registry resolution in the caller's active session.
+    Request-supplied tenant, provider, or identity values are not authority.
+
+AUTHORITY BOUNDARY:
+    Composition only. P5 current use, exact SYSTEM permission possession,
+    signed workload verification, scope resolution, and durable ALLOW/DENY
+    evidence remain delegated to canonical authorities. This module does not
+    issue privileges or authorize production deployment by its existence.
+
+FINANCIAL AUTHORITY BOUNDARY:
+    NONE. Kennel EOS remains the exclusive financial execution authority.
+"""
 from __future__ import annotations
 
 from datetime import datetime
@@ -51,7 +100,7 @@ from tools.eos.legal_operations.service.legal_evidence_provider_readonly_reconci
 )
 
 
-VERSION = "v1.0.0-L10A2R-C4D7C-EXPLICIT-PRODUCTION-COMPOSITION"
+VERSION = "v1.0.1-L10A2R-C4D7C-SOVEREIGN-COMPOSITION-SEAL"
 
 
 class LegalEvidenceProviderReadOnlyReconciliationCompositionError(RuntimeError):
@@ -274,3 +323,11 @@ __all__ = [
     "LegalEvidenceProviderReadOnlyReconciliationProductionComposition",
     "build_legal_evidence_provider_readonly_reconciliation_production_composition",
 ]
+
+# ARTIFACT: legal_evidence_provider_readonly_reconciliation_production_composition.py
+# VERSION: v1.0.1-L10A2R-C4D7C-SOVEREIGN-COMPOSITION-SEAL
+# AUTHORITY BOUNDARY: Governed composition only; no route or privilege issuance.
+# TENANT POSTURE: Fixed server-owned tenant/provider target; no request-selected scope.
+# FAIL-CLOSED POSTURE: Invalid authority, audit client, or audit indexes reject composition.
+# FINANCIAL EXECUTION AUTHORITY: Kennel EOS remains exclusive.
+# END OF WILSY OS SOVEREIGN ARTIFACT
