@@ -21,6 +21,10 @@ from tools.eos.legal_operations.registry.legal_evidence_commit_uncertainty_regis
 from tools.eos.legal_operations.registry.legal_evidence_object_metadata_registry import (
     COLLECTION as METADATA_COLLECTION,
 )
+from tools.eos.legal_operations.service.legal_evidence_provider_readonly_reconciliation_provider import (
+    LegalEvidenceProviderReadOnlyReconciliationProvider,
+    LegalEvidenceProviderReadOnlyReconciliationProviderError,
+)
 from tools.eos.legal_operations.service.legal_evidence_provider_readonly_reconciliation_factory import (
     LegalEvidenceProviderReadOnlyReconciliationFactoryError,
     build_legal_evidence_provider_readonly_reconciliation_dependencies,
@@ -60,6 +64,13 @@ class _CoverageOnlyProvider:
         raise AssertionError("provider I/O must not occur during construction")
 
 
+def _readonly_provider(adapter: object | None = None) -> LegalEvidenceProviderReadOnlyReconciliationProvider:
+    """Build the exact mutation-hiding facade required by the factory."""
+    return LegalEvidenceProviderReadOnlyReconciliationProvider(
+        _Provider() if adapter is None else adapter
+    )
+
+
 class _Database:
     def __init__(self, *, missing: str | None = None) -> None:
         self.missing = missing
@@ -93,28 +104,29 @@ def test_missing_provider_fails_closed_before_database_access() -> None:
 def test_missing_or_invalid_database_fails_closed(database: object) -> None:
     with pytest.raises(LegalEvidenceProviderReadOnlyReconciliationFactoryError):
         build_legal_evidence_provider_readonly_reconciliation_dependencies(
-            provider=_Provider(), mongo_database=database
+            provider=_readonly_provider(), mongo_database=database
         )
 
 
-def test_invalid_provider_interface_fails_closed() -> None:
+def test_non_facade_provider_fails_closed_before_database_access() -> None:
+    database = _Database()
     with pytest.raises(
         LegalEvidenceProviderReadOnlyReconciliationFactoryError,
-        match="COVERAGE_PROVIDER_INVALID",
+        match="READ_ONLY_PROVIDER_FACADE_REQUIRED",
     ):
         build_legal_evidence_provider_readonly_reconciliation_dependencies(
-            provider=object(), mongo_database=_Database()
+            provider=object(), mongo_database=database
         )
+    assert database.lookups == []
 
 
-def test_coverage_provider_without_discovery_interface_fails_closed() -> None:
-    provider = _CoverageOnlyProvider()
+def test_facade_rejects_coverage_provider_without_discovery_interface() -> None:
     with pytest.raises(
-        LegalEvidenceProviderReadOnlyReconciliationFactoryError,
-        match="DISCOVERY_PROVIDER_INVALID",
+        LegalEvidenceProviderReadOnlyReconciliationProviderError,
+        match="DISCOVERY_PORT_REQUIRED",
     ):
-        build_legal_evidence_provider_readonly_reconciliation_dependencies(
-            provider=provider, mongo_database=_Database()
+        LegalEvidenceProviderReadOnlyReconciliationProvider(
+            _CoverageOnlyProvider()
         )
 
 
@@ -129,13 +141,14 @@ def test_each_required_mongo_collection_fails_closed_when_missing(missing: str) 
         match="MONGO_COLLECTION_UNAVAILABLE",
     ):
         build_legal_evidence_provider_readonly_reconciliation_dependencies(
-            provider=_Provider(), mongo_database=database
+            provider=_readonly_provider(), mongo_database=database
         )
     assert missing in database.lookups
 
 
-def test_factory_wires_exact_same_provider_into_all_services() -> None:
-    provider = _Provider()
+def test_factory_wires_exact_same_read_only_facade_into_all_services() -> None:
+    adapter = _Provider()
+    provider = LegalEvidenceProviderReadOnlyReconciliationProvider(adapter)
     database = _Database()
     dependencies = build_legal_evidence_provider_readonly_reconciliation_dependencies(
         provider=provider, mongo_database=database
@@ -147,19 +160,24 @@ def test_factory_wires_exact_same_provider_into_all_services() -> None:
     assert dependencies.coordinator._discovery is provider
     assert dependencies.coordinator._coverage is dependencies.coverage_service
     assert dependencies.coordinator._classification is dependencies.classification_service
+    assert not hasattr(dependencies.discovery, "upload")
+    assert not hasattr(dependencies.discovery, "delete")
     assert set(database.lookups) == {
         METADATA_COLLECTION, UNCERTAINTY_COLLECTION, WRITE_INTENT_COLLECTION
     }
 
 
 def test_construction_has_no_provider_calls_index_creation_or_transaction_lifecycle() -> None:
-    provider = _Provider()
+    adapter = _Provider()
+    provider = LegalEvidenceProviderReadOnlyReconciliationProvider(adapter)
     database = _Database()
     dependencies = build_legal_evidence_provider_readonly_reconciliation_dependencies(
         provider=provider, mongo_database=database
     )
 
-    assert provider.calls == []
+    assert adapter.calls == []
+    assert not hasattr(dependencies.discovery, "upload")
+    assert not hasattr(dependencies.discovery, "delete")
     # Collection doubles intentionally expose no create_index/session methods;
     # successful construction proves the factory does not invoke either.
     assert all(
