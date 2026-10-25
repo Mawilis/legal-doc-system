@@ -30,21 +30,22 @@ def main() -> int:
     try:
         audit_target = parse_uri(uri)
         business_target = parse_uri(business_uri)
-    except Exception as error:
-        raise SystemExit("MONGODB_TARGET_CONFIGURATION_INVALID") from error
+    except Exception:
+        raise SystemExit("MONGODB_TARGET_CONFIGURATION_INVALID") from None
     if (
         audit_target.get("nodelist") == business_target.get("nodelist")
         and audit_target.get("database") == business_target.get("database")
     ):
         raise SystemExit("AUDIT_AND_BUSINESS_TARGET_MUST_DIFFER")
 
-    client = MongoClient(
-        uri,
-        tz_aware=True,
-        serverSelectionTimeoutMS=5000,
-        connectTimeoutMS=5000,
-    )
+    client = None
     try:
+        client = MongoClient(
+            uri,
+            tz_aware=True,
+            serverSelectionTimeoutMS=5000,
+            connectTimeoutMS=5000,
+        )
         client.admin.command("ping")
         database = client.get_database()
         provisioner = PlatformAuthorizationDecisionEvidenceIndexProvisioner(
@@ -58,8 +59,13 @@ def main() -> int:
         print(f"AUDIT_DATABASE_NAME={provisioner.database_name}")
         print("AUDIT_URI_VALUE=REDACTED")
         return 0
+    except SystemExit:
+        raise
+    except Exception:
+        raise SystemExit("RECONCILIATION_AUDIT_PROVISIONING_FAILED") from None
     finally:
-        client.close()
+        if client is not None:
+            client.close()
 
 
 if __name__ == "__main__":
