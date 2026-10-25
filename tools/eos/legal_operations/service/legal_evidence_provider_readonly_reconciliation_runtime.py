@@ -13,6 +13,8 @@ import os
 import re
 
 import boto3
+import botocore.session
+from botocore.credentials import RefreshableCredentials
 from collections.abc import Mapping
 from typing import Any
 
@@ -121,30 +123,51 @@ def build_reconciliation_readonly_s3_client(
                 "RECONCILIATION_AWS_WORKLOAD_IDENTITY_UNAVAILABLE"
             )
         sts = session.client("sts", region_name=region)
-        assumed = sts.assume_role(
-            RoleArn=role_arn.strip(),
-            RoleSessionName="wilsy-legal-evidence-reconciliation",
-            DurationSeconds=900,
-        )
-        credentials = assumed.get("Credentials") if isinstance(assumed, dict) else None
-        if not isinstance(credentials, dict):
-            raise LegalEvidenceProviderReadOnlyReconciliationRuntimeBootstrapError(
-                "RECONCILIATION_AWS_ROLE_ASSUMPTION_FAILED"
+
+        def refresh_assumed_credentials() -> dict[str, str]:
+            assumed = sts.assume_role(
+                RoleArn=role_arn.strip(),
+                RoleSessionName="wilsy-legal-evidence-reconciliation",
+                DurationSeconds=900,
             )
-        access_key = credentials.get("AccessKeyId")
-        secret_key = credentials.get("SecretAccessKey")
-        session_token = credentials.get("SessionToken")
-        if not all(isinstance(value, str) and value.strip() for value in (access_key, secret_key, session_token)):
-            raise LegalEvidenceProviderReadOnlyReconciliationRuntimeBootstrapError(
-                "RECONCILIATION_AWS_ROLE_ASSUMPTION_FAILED"
-            )
-        return session.client(
-            "s3",
-            region_name=region,
-            aws_access_key_id=access_key,
-            aws_secret_access_key=secret_key,
-            aws_session_token=session_token,
+            credentials = assumed.get("Credentials") if isinstance(assumed, dict) else None
+            if not isinstance(credentials, dict):
+                raise LegalEvidenceProviderReadOnlyReconciliationRuntimeBootstrapError(
+                    "RECONCILIATION_AWS_ROLE_ASSUMPTION_FAILED"
+                )
+            access_key = credentials.get("AccessKeyId")
+            secret_key = credentials.get("SecretAccessKey")
+            session_token = credentials.get("SessionToken")
+            expiration = credentials.get("Expiration")
+            if (
+                not all(
+                    isinstance(value, str) and value.strip()
+                    for value in (access_key, secret_key, session_token)
+                )
+                or not callable(getattr(expiration, "isoformat", None))
+            ):
+                raise LegalEvidenceProviderReadOnlyReconciliationRuntimeBootstrapError(
+                    "RECONCILIATION_AWS_ROLE_ASSUMPTION_FAILED"
+                )
+            return {
+                "access_key": access_key,
+                "secret_key": secret_key,
+                "token": session_token,
+                "expiry_time": expiration.isoformat(),
+            }
+
+        metadata = refresh_assumed_credentials()
+        target_botocore_session = botocore.session.get_session()
+        target_botocore_session._credentials = RefreshableCredentials.create_from_metadata(
+            metadata=metadata,
+            refresh_using=refresh_assumed_credentials,
+            method="assume-role",
+            advisory_refresh_timeout=60,
+            mandatory_refresh_timeout=30,
         )
+        target_botocore_session.set_config_variable("region", region)
+        target_session = boto3.session.Session(botocore_session=target_botocore_session)
+        return target_session.client("s3", region_name=region)
     except LegalEvidenceProviderReadOnlyReconciliationRuntimeBootstrapError:
         raise
     except Exception as error:
