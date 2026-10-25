@@ -69,7 +69,8 @@ def test_adapter_binds_signed_fields_to_actual_method_path_and_exact_body():
     assert envelope.request["service_id"] == "internal-eos"
     assert envelope.request["audience"] == "legal-reconciliation"
     assert envelope.request["correlation_id"] == "corr-20261025-001"
-    assert envelope.idempotency_key == "corr-20261025-001"
+    assert envelope.correlation_id == "corr-20261025-001"
+    assert not hasattr(envelope, "idempotency_key")
     assert envelope.observed_at == datetime(2026, 10, 25, 9, 30, tzinfo=timezone.utc)
     assert "tenant_id" not in envelope.request
     assert "provider_name" not in envelope.request
