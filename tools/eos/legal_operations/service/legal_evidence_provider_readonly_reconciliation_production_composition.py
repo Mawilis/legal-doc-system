@@ -247,10 +247,7 @@ class LegalEvidenceProviderReadOnlyReconciliationProductionComposition:
         audit_key_material = "\\0".join(
             ("legal-evidence-provider-reconciliation", service_id, key_id, nonce, idempotency_key)
         ).encode("utf-8")
-        authorization_audit_key = (
-            "legal-evidence-provider-reconciliation:"
-            + sha3_512(audit_key_material).hexdigest()
-        )
+        authorization_audit_key = sha3_512(audit_key_material).hexdigest()
         authorization = self._gate.authorize(
             request=signed_workload_fields,
             body=body,
