@@ -143,6 +143,7 @@ from tools.eos.api.tenant_legal_operating_model_router import router as tenant_l
 from tools.eos.api.wilsy_ai_legal_gateway_router import router as wilsy_ai_legal_gateway_router
 from tools.eos.api.legal_acceptance_router import router as legal_acceptance_router
 from tools.eos.api.tenant_branding_router import router as tenant_branding_router
+from tools.eos.api.legal_evidence_provider_readonly_reconciliation_router import router as legal_evidence_provider_readonly_reconciliation_router
 
 
 VERSION = "v1.11.0-CX26-R3-LEGAL-OPERATING-MODEL-ROUTER-MOUNT"
@@ -193,6 +194,9 @@ app.include_router(tenant_legal_operating_model_router, prefix="/api")
 app.include_router(wilsy_ai_legal_gateway_router, prefix="/api")
 app.include_router(legal_acceptance_router, prefix="/api")
 app.include_router(tenant_branding_router, prefix="/api")
+# The route fails closed unless deployment bootstrap injects the approved
+# production composition into app.state; mounting alone grants no authority.
+app.include_router(legal_evidence_provider_readonly_reconciliation_router, prefix="/api")
 
 
 @app.exception_handler(WilsyAPIException)
