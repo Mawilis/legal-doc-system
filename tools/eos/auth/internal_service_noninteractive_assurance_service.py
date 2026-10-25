@@ -27,6 +27,11 @@ CERTIFICATION / UPDATE DATE:
     2026-10-14
 
 CHANGELOG:
+    v1.0.2-P3-R3G-S6-A2-IDEMPOTENT-ASSURANCE-REPLAY
+        Uses deterministic proof/evidence identities and the canonical workload
+        observation time so a stable credential-generation assurance key replays
+        the exact P3 records after each fresh signed nonce.
+
     v1.0.1-P3-R3G-S6-A2-SOVEREIGN-ARTIFACT-CERTIFIED
         Sovereign artifact certification repair only. Adds the mandatory
         institutional header, aligned semantic version/changelog/end seal, and
@@ -71,6 +76,7 @@ from __future__ import annotations
 from collections.abc import Callable, Mapping
 from dataclasses import dataclass
 from datetime import datetime, timezone
+from hashlib import sha3_512
 import uuid
 
 from tools.eos.auth.internal_service_workload_proof_service import (
@@ -105,7 +111,7 @@ from tools.eos.auth.privileged_security_assurance_evidence_registry import (
 )
 
 VERSION = (
-    "v1.0.1-P3-R3G-S6-A2-SOVEREIGN-ARTIFACT-CERTIFIED"
+    "v1.0.2-P3-R3G-S6-A2-IDEMPOTENT-ASSURANCE-REPLAY"
 )
 
 
@@ -251,14 +257,8 @@ class InternalServiceNoninteractiveAssuranceService:
                     )
             )
         )
-        self._proof_id_factory = (
-            proof_id_factory
-            or _proof_id
-        )
-        self._evidence_id_factory = (
-            evidence_id_factory
-            or _evidence_id
-        )
+        self._proof_id_factory = proof_id_factory
+        self._evidence_id_factory = evidence_id_factory
 
     def compose(
         self,
@@ -375,10 +375,31 @@ class InternalServiceNoninteractiveAssuranceService:
                 )
             )
 
+        stable_identity_material = chr(0).join(
+            (
+                "P3_NONINTERACTIVE_ASSURANCE",
+                idempotency_key,
+                workload_fact.proof_reference,
+                workload_fact.principal_id,
+                assurance_purpose.value,
+            )
+        ).encode("utf-8")
+        stable_identity = sha3_512(stable_identity_material).hexdigest()
+        proof_id = (
+            self._proof_id_factory()
+            if self._proof_id_factory is not None
+            else "WILSY-NONINTERACTIVE-PROOF-" + stable_identity
+        )
+        evidence_id = (
+            self._evidence_id_factory()
+            if self._evidence_id_factory is not None
+            else "WILSY-ASSURANCE-EVIDENCE-" + stable_identity
+        )
+
         proof = (
             PrivilegedNoninteractiveSecurityProof(
                 proof_id=
-                    self._proof_id_factory(),
+                    proof_id,
                 principal_id=
                     workload_fact
                     .principal_id,
@@ -509,8 +530,7 @@ class InternalServiceNoninteractiveAssuranceService:
             PrivilegedSecurityAssuranceEvidence
             .from_decision(
                 assurance_evidence_id=
-                    self
-                    ._evidence_id_factory(),
+                    evidence_id,
                 decision=decision,
                 principal_current=
                     principal_current,
@@ -529,7 +549,7 @@ class InternalServiceNoninteractiveAssuranceService:
                     workload_fact
                     .proof_reference,
                 evaluated_at=
-                    self._clock(),
+                    workload_fact.observed_at,
                 idempotency_key=(
                     idempotency_key
                     + ":evidence"
@@ -569,7 +589,7 @@ __all__ = [
 # =============================================================================
 # WILSY OS SOVEREIGN ARTIFACT SEAL
 # ARTIFACT: internal_service_noninteractive_assurance_service.py
-# VERSION: v1.0.1-P3-R3G-S6-A2-SOVEREIGN-ARTIFACT-CERTIFIED
+# VERSION: v1.0.2-P3-R3G-S6-A2-IDEMPOTENT-ASSURANCE-REPLAY
 # AUTHORITY BOUNDARY:
 #   Security assurance only; no tenant role, permission, privileged activation,
 #   session issuance, break-glass, or execution authority.
