@@ -1,15 +1,15 @@
 # Legal Evidence Provider Read-Only Reconciliation — Runtime Gate
 
-**Status:** RUNTIME WIRING BLOCKED — full authorization gate and real-Mongo transaction certification pass; platform audit and provider-boundary gates remain outstanding  
-**Version:** v1.2.1-L10A2R-C4D7C-READONLY-FACADE-CERTIFIED  
+**Status:** RUNTIME WIRING BLOCKED — durable platform allow/deny evidence is integrated; focused real-Mongo audit and actual-adapter read-only composition tests pass; no production invocation is approved or wired  
+**Version:** v1.2.2-L10A2R-C4D7C-PLATFORM-AUDIT-CERTIFIED  
 **Date:** 2026-10-25  
-**Implementation state reviewed:** `ff74b295906d0d68612d180e6b8defb699107a3c`
+**Implementation state reviewed:** `f74a9341083a8f910173c0302fb46f635cfbdf34`
 
 ## Decision
 
 The first runtime invocation is intended for privileged internal operators only. It must be bound to one exact server-configured tenant and provider, remain read-only at the provider boundary, and preserve the caller-owned active Mongo transaction required by the reconciliation coordinator.
 
-The reconciliation-specific authorization gate and full real-Mongo composition now exist and pass focused certification. No route, CLI command, scheduler, or production service entry point is connected. Runtime wiring remains blocked until a canonical platform-scoped durable authorization allow/deny audit path and end-to-end provider read-only certification are established.
+The reconciliation-specific authorization gate now persists a canonical platform-scoped ALLOW/DENY decision through an independently transactional Mongo audit registry before returning an authorization result or surfacing a denial. Audit persistence failure rejects authorization fail-closed. Focused real-Mongo tests and the actual S3 adapter through the authorized read-only composition have passed. No route, CLI command, scheduler, or production service entry point is connected. Runtime wiring remains blocked until the launch-governed invocation owner, deployment-owned audit-client/collection configuration, and final operational review are approved.
 
 ## Implemented authorization contract
 
@@ -37,11 +37,29 @@ At commit `204e516364fec72f3cc08ce3660ba3ff134c9da0`, the focused GitHub Actions
 
 This is focused certification, not full production certification. It does not invoke a production route or the provider adapter through the gate.
 
-## Remaining blockers before runtime wiring
+## Current certification and launch-governance reassessment
 
-1. **Platform authorization audit/denial evidence:** no canonical platform-scoped durable authorization-decision/denial registry has been established for this internal operation. The tenant authorization decision registry is tenant-scoped and is not interchangeable with platform-root authority. Structured application logging alone is not durable authorization audit. Define/approve this contract before exposing the operation.
-2. **Provider-boundary certification:** exercise the actual supported S3 adapter through the read-only coordinator under the authorized tenant/provider scope. Prove exhaustive coverage handling and that no provider mutation, cleanup, deletion, retention, or legal-hold authority is exposed. No provider I/O has been performed by the gate tests.
-3. **Runtime composition root and invocation surface:** bind workload keys/audience, configured S3 target, canonical tenant collection, P5 authority, current permission resolver, scope resolver, and approved audit writer from trusted server configuration. Only after blockers 1–2 pass should the governed launch/system-command documentation select and authorize a specific internal invocation path. No route, CLI command, or scheduler is presently wired.
+At commit `f74a9341083a8f910173c0302fb46f635cfbdf34`, the focused GitHub Actions run completed successfully:
+
+- Run: [40179284634](https://github.com/Mawilis/legal-doc-system/actions/runs/40179284634).
+- Python compilation and the focused Python/real-Mongo suite passed: **142 passed, 20 warnings in 7.10 seconds**; the zero-skip enforcement step passed.
+- Real-Mongo audit tests proved denial evidence survives caller transaction abort, allow/deny evidence uses an independently owned audit transaction, replay returns the original evidence, conflicting idempotency/decision identities reject, unique indexes are present, and audit-store failure fails closed.
+- The full authorization gate now writes ALLOW/DENY evidence before returning/raising. An allow record is not operation-completion evidence.
+- Provider-boundary tests use the actual `LegalEvidenceS3StorageAdapter` behind the four-operation facade and authorized coordinator composition. Successful reconciliation invokes only provider enumeration reads; authorization failure causes zero provider calls; upload/complete/abort methods are not exposed through the facade.
+- Twenty warnings remain; this run is not warning-free. The broader unified pipeline has a separate security-audit failure and is not fully green.
+
+## Launch-governance decision
+
+The launch command system requires an authenticated, observable API and treats the launch date as a target, not permission to bypass certification. The current runtime gate documentation and repository surface do **not** identify an already-approved route, CLI command, scheduler, or production service entry point for this reconciliation operation. Therefore no production invocation path can be honestly called approved today, and none is being wired in this delivery.
+
+Before runtime wiring, the owner must approve and document:
+1. The exact internal invocation surface and transport-derived signed workload request boundary.
+2. Deployment-owned configuration for the audit Mongo client, collection, credentials/permissions, index provisioning, retention and operational monitoring.
+3. The composition root that constructs the real audit registry and gate; the caller must not be able to substitute a no-op or alternate audit writer.
+4. The invocation's active caller-owned transaction lifecycle, rollback behavior, idempotency handling, and observable audit-store outage response.
+5. A final focused and broader certification against that exact invocation composition.
+
+The current constructor requires a decision-evidence registry dependency and the gate persists a decision before returning. This does not by itself establish that a production composition root supplies the canonical registry; that binding must be proved when the governed invocation surface is selected.
 
 ## Non-goals
 
@@ -49,6 +67,6 @@ This gate does not authorize provider deletion, retention modification, legal-ho
 
 ## Exit criteria
 
-Runtime wiring remains blocked until the platform audit/denial contract and provider read-only certification pass. The full-gate real-Mongo authorization and transaction boundary is now certified; missing audit/provider evidence is still a blocker, not a pass.
+Runtime wiring remains blocked pending explicit approval of the invocation surface and its production composition root. The focused platform-audit and actual-provider-boundary tests pass, but they do not authorize a route, CLI command, scheduler, or production service entry point.
 
 ---
