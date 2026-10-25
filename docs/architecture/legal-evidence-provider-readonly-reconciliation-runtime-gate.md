@@ -1,9 +1,9 @@
 # Legal Evidence Provider Read-Only Reconciliation — Runtime Gate
 
 **Status:** RUNTIME WIRING BLOCKED — durable platform allow/deny evidence and provider-boundary certification pass; the existing generic runtime API is not a safe reconciliation invocation surface  
-**Version:** v1.4.1-L10A2R-C4D7C-155-PASS-TRANSPORT-ADAPTER-UNIFIED-GATE-FAILED  
+**Version:** v1.4.2-L10A2R-C4D7C-155-PASS-IDEMPOTENCY-OPEN-UNIFIED-GATE-FAILED  
 **Date:** 2026-10-25  
-**Implementation state reviewed:** `8fc814436648ddb5cd6e8d2510961712f73b2a9c`
+**Implementation state reviewed:** `6dfb97b3e70205bc98a06463a1e8210c30313f7d`
 
 ## Decision
 
@@ -138,7 +138,7 @@ until that approval and production wiring are independently evidenced.
 The launch command system requires an authenticated, observable API and treats the launch date as a target, not permission to bypass certification. Repository inspection found a generic runtime API but no already-approved, reconciliation-specific route, CLI command, scheduler, or production service entry point. The generic `/runtime/execute` route is explicitly unsuitable under its current authorization and execution contract. Therefore no production invocation path can honestly be called approved today, and none is being wired in this delivery.
 
 Before runtime wiring, the owner must approve and document:
-1. The exact internal invocation surface and route/path agreement with the existing signed workload transport contract. A Python extraction adapter now exists, but no route is mounted and the actual internal caller has not yet been approved against it.
+1. The exact internal invocation surface and route/path agreement with the existing signed workload transport contract. A Python extraction adapter now exists, but no route is mounted and the actual internal caller has not yet been approved against it. The operation-idempotency contract must also be established; correlation IDs are not silently promoted to idempotency keys.
 2. Deployment-owned configuration for the audit Mongo client, collection, credentials/permissions, index provisioning, retention and operational monitoring.
 3. The composition root that constructs the real audit registry and gate; the caller must not be able to substitute a no-op or alternate audit writer.
 4. The invocation's active caller-owned transaction lifecycle, rollback behavior, idempotency handling, and observable audit-store outage response.
