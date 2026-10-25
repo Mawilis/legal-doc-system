@@ -128,6 +128,7 @@ def test_runtime_bootstrap_builds_and_returns_canonical_graph_and_retained_audit
         env={
             "MONGODB_URI": "mongodb://business.example:27017/business",
             runtime.AUDIT_URI_ENV: audit_uri,
+            "WILSY_LEGAL_EVIDENCE_RECONCILIATION_TENANT_ID": "tenant-test",
             "WILSY_LEGAL_EVIDENCE_S3_BUCKET": "wilsy-legal-evidence-test-bucket",
             "WILSY_LEGAL_EVIDENCE_S3_REGION": "af-south-1",
             runtime.AWS_ROLE_ARN_ENV: "arn:aws:iam::111111111111:role/test-reconciliation-readonly",
