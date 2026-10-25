@@ -29,6 +29,7 @@ jobs:
     env:
       PIP_DISABLE_PIP_VERSION_CHECK: "1"
       PYTHONDONTWRITEBYTECODE: "1"
+      TEST_VENDOR_MONGO_URI: mongodb://localhost:27017/?replicaSet=wilsyVendorCertRS
     steps:
       - name: Checkout governed branch
         uses: actions/checkout@v4
@@ -51,6 +52,54 @@ jobs:
             python-dotenv==1.2.3 \
             boto3
 
+      - name: Start isolated MongoDB replica-set certification
+        run: |
+          docker run \
+            --detach \
+            --name wilsy-reconciliation-cert-mongo \
+            --publish 27017:27017 \
+            mongo:7.0.37 \
+            mongod \
+            --replSet wilsyVendorCertRS \
+            --bind_ip_all
+
+      - name: Initialize MongoDB replica set
+        run: |
+          python - <<'PY'
+          import time
+          from pymongo import MongoClient
+
+          client = MongoClient(
+              "mongodb://localhost:27017",
+              directConnection=True,
+              serverSelectionTimeoutMS=2_000,
+          )
+          deadline = time.monotonic() + 60
+          initiated = False
+          last_error = None
+          while True:
+              try:
+                  hello = client.admin.command("hello")
+                  if not initiated and not hello.get("setName"):
+                      client.admin.command({
+                          "replSetInitiate": {
+                              "_id": "wilsyVendorCertRS",
+                              "members": [{"_id": 0, "host": "localhost:27017"}],
+                          }
+                      })
+                      initiated = True
+                  if client.admin.command("hello").get("isWritablePrimary"):
+                      break
+              except Exception as error:
+                  last_error = error
+              if time.monotonic() >= deadline:
+                  raise RuntimeError(
+                      f"RECONCILIATION_CERT_MONGO_UNAVAILABLE: {last_error!r}"
+                  ) from last_error
+              time.sleep(1)
+          client.close()
+          PY
+
       - name: Compile focused Python artifacts
         run: |
           python -m py_compile \
@@ -69,7 +118,9 @@ jobs:
             tests/unit/test_system_permission_revocation_command_service.py \
             tests/unit/test_legal_evidence_provider_readonly_reconciliation_authorization_gate.py \
             tests/unit/test_legal_evidence_provider_readonly_reconciliation_factory.py \
-            tests/unit/test_legal_evidence_provider_readonly_reconciliation_coordinator.py
+            tests/unit/test_legal_evidence_provider_readonly_reconciliation_coordinator.py \
+            tests/integration/test_current_system_permission_possession_real_mongo.py \
+            tests/integration/test_legal_evidence_provider_readonly_reconciliation_scope_real_mongo.py
 
       - name: Run focused unit certification with zero-skip enforcement
         shell: bash
@@ -84,6 +135,8 @@ jobs:
             tests/unit/test_legal_evidence_provider_readonly_reconciliation_authorization_gate.py \
             tests/unit/test_legal_evidence_provider_readonly_reconciliation_factory.py \
             tests/unit/test_legal_evidence_provider_readonly_reconciliation_coordinator.py \
+            tests/integration/test_current_system_permission_possession_real_mongo.py \
+            tests/integration/test_legal_evidence_provider_readonly_reconciliation_scope_real_mongo.py \
             > /tmp/focused-pytest-output.txt 2>&1
           pytest_status=$?
           cat /tmp/focused-pytest-output.txt
@@ -95,3 +148,7 @@ jobs:
             echo "Focused certification invalid: skipped tests detected."
             exit 1
           fi
+
+      - name: Stop MongoDB certification container
+        if: always()
+        run: docker rm -f wilsy-reconciliation-cert-mongo 2>/dev/null || true
