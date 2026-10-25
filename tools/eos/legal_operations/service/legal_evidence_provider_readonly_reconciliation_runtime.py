@@ -1,8 +1,34 @@
-"""Deployment bootstrap for the governed legal-evidence reconciliation route.
+"""WILSY OS Legal Evidence Reconciliation Runtime Bootstrap.
 
-This module binds only canonical Python EOS authorities. It never provisions
-platform decision-audit indexes at request time; deployment must run the
-separate provisioner against the same explicit audit URI before startup.
+TITLE: Legal Evidence Provider Read-Only Reconciliation Runtime
+VERSION: v1.0.2-L10A2R-C4D7-RUNTIME-URI-PARSER-FIX
+AUTHORITY: WILSY OS Core Governance / Python EOS Legal Operations
+EPITOME: Bind the governed reconciliation composition only after explicit
+         workload trust, separate TLS audit MongoDB, audit indexes, canonical
+         business database, and read-only provider-role requirements validate.
+ABSOLUTE CANONICAL PATH:
+    /Users/wilsonkhanyezi/legal-doc-system/tools/eos/legal_operations/service/legal_evidence_provider_readonly_reconciliation_runtime.py
+COLLABORATION / OWNERSHIP:
+    Python EOS Legal Operations owns runtime composition; deployment authority
+    owns production secrets, workload identity, MongoDB targets, and role ARN.
+CERTIFICATION / UPDATE DATE: 2026-10-25
+CHANGELOG:
+    v1.0.2-L10A2R-C4D7-RUNTIME-URI-PARSER-FIX adds the missing standard-library
+    URL parser import required by TLS enforcement and credential-free target
+    identity validation; no authority or configuration fallback is introduced.
+COMPLIANCE: AGENTS.md v1.2.0; ENGINEERING_CONSTITUTION.md v1.1.0.
+SECURITY / PRIVACY POSTURE:
+    Audit URI TLS is mandatory; fingerprints exclude URI credentials. Missing
+    deployment authority fails closed; no secrets or raw URIs are logged.
+TENANT BOUNDARY:
+    Tenant/provider scope is server-configured and resolved by canonical EOS.
+AUTHORITY BOUNDARY:
+    Bootstrap/composition only; does not create identity, permission, provider
+    mutation, orphan, retention, legal-hold, or deletion authority.
+FINANCIAL AUTHORITY BOUNDARY:
+    Kennel EOS remains the exclusive financial execution authority.
+FAIL-CLOSED POSTURE:
+    Missing or invalid runtime dependencies prevent composition readiness.
 """
 from __future__ import annotations
 
@@ -13,6 +39,7 @@ import os
 import re
 
 from datetime import datetime
+from urllib.parse import urlsplit
 
 import boto3
 import botocore.session
@@ -62,6 +89,8 @@ from tools.eos.legal_operations.service.legal_evidence_provider_readonly_reconci
     COLLECTION as OPERATION_IDEMPOTENCY_COLLECTION,
     LegalEvidenceReconciliationOperationIdempotencyRegistry,
 )
+
+VERSION = "v1.0.2-L10A2R-C4D7-RUNTIME-URI-PARSER-FIX"
 
 AUDIT_URI_ENV = "WILSY_LEGAL_EVIDENCE_RECONCILIATION_AUDIT_MONGODB_URI"
 AWS_ROLE_ARN_ENV = "WILSY_LEGAL_EVIDENCE_RECONCILIATION_AWS_ROLE_ARN"
@@ -394,3 +423,15 @@ __all__ = [
     "LegalEvidenceProviderReadOnlyReconciliationRuntimeBootstrapError",
     "build_legal_evidence_provider_readonly_reconciliation_runtime",
 ]
+
+# ==============================================================================
+# WILSY OS SOVEREIGN ARTIFACT SEAL
+#
+# ARTIFACT: legal_evidence_provider_readonly_reconciliation_runtime.py
+# VERSION: v1.0.2-L10A2R-C4D7-RUNTIME-URI-PARSER-FIX
+# AUTHORITY BOUNDARY: Runtime bootstrap and canonical composition only.
+# TENANT POSTURE: Server-owned scope; request input cannot select tenant/provider.
+# FAIL-CLOSED POSTURE: Invalid trust, TLS, audit target, indexes, or role blocks readiness.
+# FINANCIAL EXECUTION AUTHORITY: Kennel EOS exclusively.
+# END OF WILSY OS SOVEREIGN ARTIFACT
+# ==============================================================================
