@@ -203,7 +203,7 @@ def build_legal_evidence_provider_readonly_reconciliation_runtime(
             idempotency_registry=operation_idempotency_registry,
         )
         logger.info(
-            "LEGAL_EVIDENCE_RECONCILIATION_AUDIT_TARGET_VERIFIED database=%s target_fingerprint=%s",
+            "LEGAL_EVIDENCE_RECONCILIATION_AUDIT_TARGET_VERIFIED database=%s AUDIT_TARGET_FINGERPRINT=%s",
             audit_database.name,
             target_fingerprint,
         )
