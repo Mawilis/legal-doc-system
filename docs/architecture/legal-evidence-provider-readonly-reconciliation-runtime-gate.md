@@ -1,7 +1,7 @@
 # Legal Evidence Provider Read-Only Reconciliation — Runtime Gate
 
 **Status:** RUNTIME WIRING BLOCKED — durable platform allow/deny evidence and provider-boundary certification pass; the existing generic runtime API is not a safe reconciliation invocation surface  
-**Version:** v1.2.5-L10A2R-C4D7C-CURRENT-HEAD-CERTIFIED-INVOCATION-STILL-BLOCKED  
+**Version:** v1.2.6-L10A2R-C4D7C-PRODUCTION-COMPOSITION-ADDED-TRANSPORT-BLOCKED  
 **Date:** 2026-10-25  
 **Implementation state reviewed:** `b72ff289f4cffae1e20e3d5b03d9d971252e7e7f`
 
@@ -80,6 +80,19 @@ The latest branch-head CI results have now completed:
 - EOS image publication: [run 40180120137](https://github.com/Mawilis/legal-doc-system/actions/runs/40180120137) — completed successfully.
 
 The focused tests exercise the real signed workload verifier and current P5/P2/SYSTEM permission authorities against isolated MongoDB, verify the caller-owned transaction rollback boundary, and test the actual S3 adapter through the read-only facade. The focused suite is now confirmed green on the current commit, not inferred from a prior code commit. It does not certify a production HTTP/service invocation or deployment-owned audit-client composition.
+
+## Dedicated production composition (implementation added; not runtime-enabled)
+
+The branch now contains `tools/eos/legal_operations/service/legal_evidence_provider_readonly_reconciliation_production_composition.py` (v1.0.0). It composes the already-verified P5 use authority, current SYSTEM permission resolver, server-configured canonical tenant/provider target, validated S3 adapter behind the strict four-operation facade, coordinator, and platform decision-evidence registry.
+
+Fail-closed composition rules:
+- The business database and platform-audit database must be attached to distinct MongoClient instances; the supplied audit client must be the audit database's actual client.
+- The composition does not silently create indexes or become ready at construction. A deployment setup step must explicitly provision audit uniqueness indexes; failed provisioning leaves the composition unusable.
+- Authorization and reconciliation share the caller-owned active business session; the independent audit registry owns its separate client/session. The caller remains responsible for aborting the business transaction on failure.
+- The signed workload fields must be extracted by an approved transport adapter from the actual incoming request. The composition does not register a route, trust caller-selected tenant/provider fields, or infer transport trust from a generic mapping.
+- No S3 provider operation is performed during construction. Provider enumeration is reachable only through the read-only facade.
+
+Focused unit coverage and the Python certification workflow were extended for the composition's not-ready guard, index-provisioning failure, and gate-derived scope propagation. This is a composition seam, not yet a production invocation path: the approved transport adapter, deployment identity/configuration, index-provisioning procedure and operational ownership still must be selected and wired before invocation can be enabled.
 
 ## Launch-governance decision
 
