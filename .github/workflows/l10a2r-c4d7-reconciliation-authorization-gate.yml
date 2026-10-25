@@ -6,9 +6,15 @@ on:
     paths:
       - "tools/eos/auth/privileged_activation_use_authority.py"
       - "tools/eos/auth/current_system_permission_possession.py"
+      - "tools/eos/auth/system_permission_command_policy.py"
+      - "tools/eos/auth/system_permission_assignment_command_service.py"
+      - "tools/eos/auth/system_permission_revocation_command_service.py"
       - "tools/eos/legal_operations/service/legal_evidence_provider_readonly_reconciliation_*.py"
       - "tests/unit/test_privileged_activation_use_authority.py"
       - "tests/unit/test_current_system_permission_possession.py"
+      - "tests/unit/test_system_permission_command_policy.py"
+      - "tests/unit/test_system_permission_assignment_command_service.py"
+      - "tests/unit/test_system_permission_revocation_command_service.py"
       - "tests/unit/test_legal_evidence_provider_readonly_reconciliation_*.py"
       - ".github/workflows/l10a2r-c4d7-reconciliation-authorization-gate.yml"
 
@@ -50,11 +56,17 @@ jobs:
           python -m py_compile \
             tools/eos/auth/privileged_activation_use_authority.py \
             tools/eos/auth/current_system_permission_possession.py \
+            tools/eos/auth/system_permission_command_policy.py \
+            tools/eos/auth/system_permission_assignment_command_service.py \
+            tools/eos/auth/system_permission_revocation_command_service.py \
             tools/eos/legal_operations/service/legal_evidence_provider_readonly_reconciliation_authorization_gate.py \
             tools/eos/legal_operations/service/legal_evidence_provider_readonly_reconciliation_factory.py \
             tools/eos/legal_operations/service/legal_evidence_provider_readonly_reconciliation_coordinator.py \
             tests/unit/test_privileged_activation_use_authority.py \
             tests/unit/test_current_system_permission_possession.py \
+            tests/unit/test_system_permission_command_policy.py \
+            tests/unit/test_system_permission_assignment_command_service.py \
+            tests/unit/test_system_permission_revocation_command_service.py \
             tests/unit/test_legal_evidence_provider_readonly_reconciliation_authorization_gate.py \
             tests/unit/test_legal_evidence_provider_readonly_reconciliation_factory.py \
             tests/unit/test_legal_evidence_provider_readonly_reconciliation_coordinator.py
