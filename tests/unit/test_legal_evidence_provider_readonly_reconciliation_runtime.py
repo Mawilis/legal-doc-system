@@ -48,8 +48,11 @@ def test_runtime_bootstrap_rejects_same_business_and_audit_target_before_connect
         )
 
 
-def test_runtime_bootstrap_builds_and_returns_canonical_graph_and_retained_audit_client(monkeypatch) -> None:
+def test_runtime_bootstrap_builds_and_returns_canonical_graph_and_retained_audit_client(monkeypatch, caplog) -> None:
     from tools.eos.legal_operations.service import legal_evidence_provider_readonly_reconciliation_runtime as runtime
+
+    import logging
+    caplog.set_level(logging.INFO, logger=runtime.__name__)
 
     class _Collection:
         def create_index(self, keys, *, unique, name):
@@ -131,6 +134,7 @@ def test_runtime_bootstrap_builds_and_returns_canonical_graph_and_retained_audit
     assert built["idempotency_registry"].__class__.__name__ == (
         "LegalEvidenceReconciliationOperationIdempotencyRegistry"
     )
+    assert f"target_fingerprint={audit_target_fingerprint(env_audit_uri := \"mongodb://audit.example:27017/audit\")}" in caplog.text
 
 
 
