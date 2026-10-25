@@ -52,6 +52,9 @@ def test_runtime_bootstrap_builds_and_returns_canonical_graph_and_retained_audit
         def create_index(self, keys, *, unique, name):
             return name
 
+        def find_one(self, query, *, session=None):
+            return None
+
     class _Database:
         def __init__(self, name, client):
             self.name = name
