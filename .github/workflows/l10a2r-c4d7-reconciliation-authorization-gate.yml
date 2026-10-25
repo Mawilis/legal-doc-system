@@ -1,0 +1,76 @@
+name: L10A2R C4D7 Reconciliation Authorization Gate
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - "tools/eos/auth/privileged_activation_use_authority.py"
+      - "tools/eos/auth/current_system_permission_possession.py"
+      - "tools/eos/legal_operations/service/legal_evidence_provider_readonly_reconciliation_*.py"
+      - "tests/unit/test_privileged_activation_use_authority.py"
+      - "tests/unit/test_current_system_permission_possession.py"
+      - "tests/unit/test_legal_evidence_provider_readonly_reconciliation_*.py"
+      - ".github/workflows/l10a2r-c4d7-reconciliation-authorization-gate.yml"
+
+permissions:
+  contents: read
+
+jobs:
+  focused-python-certification:
+    name: Focused Python unit certification
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    env:
+      PIP_DISABLE_PIP_VERSION_CHECK: "1"
+      PYTHONDONTWRITEBYTECODE: "1"
+    steps:
+      - name: Checkout governed branch
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+
+      - name: Install pinned Python certification dependencies
+        run: |
+          python -m pip install --upgrade pip==25.3
+          python -m pip install \
+            pymongo==4.18.2 \
+            pytest==9.1.1 \
+            cryptography==50.0.1 \
+            pydantic==2.13.4 \
+            pydantic_core==2.46.4 \
+            python-dotenv==1.2.3 \
+            boto3
+
+      - name: Compile focused Python artifacts
+        run: |
+          python -m py_compile \
+            tools/eos/auth/privileged_activation_use_authority.py \
+            tools/eos/auth/current_system_permission_possession.py \
+            tools/eos/legal_operations/service/legal_evidence_provider_readonly_reconciliation_authorization_gate.py \
+            tools/eos/legal_operations/service/legal_evidence_provider_readonly_reconciliation_factory.py \
+            tools/eos/legal_operations/service/legal_evidence_provider_readonly_reconciliation_coordinator.py \
+            tests/unit/test_privileged_activation_use_authority.py \
+            tests/unit/test_current_system_permission_possession.py \
+            tests/unit/test_legal_evidence_provider_readonly_reconciliation_authorization_gate.py \
+            tests/unit/test_legal_evidence_provider_readonly_reconciliation_factory.py \
+            tests/unit/test_legal_evidence_provider_readonly_reconciliation_coordinator.py
+
+      - name: Run focused unit certification with zero-skip enforcement
+        shell: bash
+        run: |
+          set -o pipefail
+          output="$(python -m pytest -q \
+            tests/unit/test_privileged_activation_use_authority.py \
+            tests/unit/test_current_system_permission_possession.py \
+            tests/unit/test_legal_evidence_provider_readonly_reconciliation_authorization_gate.py \
+            tests/unit/test_legal_evidence_provider_readonly_reconciliation_factory.py \
+            tests/unit/test_legal_evidence_provider_readonly_reconciliation_coordinator.py)"
+          printf '%s\n' "$output"
+          if printf '%s\n' "$output" | grep -Eiq '(^|[ ,])[0-9]+ skipped|\bskipped\b'; then
+            echo "Focused certification invalid: skipped tests detected."
+            exit 1
+          fi
