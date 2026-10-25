@@ -13,7 +13,11 @@ on:
       - "tools/eos/auth/system_permission_revocation_command_service.py"
       - "tools/eos/legal_operations/service/legal_evidence_provider_readonly_reconciliation_*.py"
       - "tools/eos/api/api_server.py"
+      - "tools/eos/api/server.py"
       - "tools/eos/api/legal_evidence_provider_readonly_reconciliation_router.py"
+      - "tools/eos/legal_operations/service/legal_evidence_provider_readonly_reconciliation_runtime.py"
+      - "tools/eos/legal_operations/service/legal_evidence_provider_readonly_reconciliation_audit_provisioner.py"
+      - "tests/unit/test_legal_evidence_provider_readonly_reconciliation_runtime.py"
       - "tests/unit/test_privileged_activation_use_authority.py"
       - "tests/unit/test_legal_evidence_provider_readonly_reconciliation_platform_decision_evidence.py"
       - "tests/integration/test_platform_authorization_decision_evidence_registry_real_mongo.py"
@@ -131,7 +135,11 @@ jobs:
             tools/eos/legal_operations/service/legal_evidence_provider_readonly_reconciliation_production_composition.py \
             tools/eos/legal_operations/service/legal_evidence_provider_readonly_reconciliation_transport_adapter.py \
             tools/eos/api/api_server.py \
+            tools/eos/api/server.py \
             tools/eos/api/legal_evidence_provider_readonly_reconciliation_router.py \
+            tools/eos/legal_operations/service/legal_evidence_provider_readonly_reconciliation_runtime.py \
+            tools/eos/legal_operations/service/legal_evidence_provider_readonly_reconciliation_audit_provisioner.py \
+            tests/unit/test_legal_evidence_provider_readonly_reconciliation_runtime.py \
             tests/unit/test_legal_evidence_provider_readonly_reconciliation_invocation_router.py \
             tests/unit/test_legal_evidence_provider_readonly_reconciliation_production_composition.py \
             tests/unit/test_legal_evidence_provider_readonly_reconciliation_transport_adapter.py \
@@ -149,6 +157,7 @@ jobs:
             tests/unit/test_legal_evidence_provider_readonly_reconciliation_coordinator.py \
             tests/unit/test_legal_evidence_provider_readonly_reconciliation_transport_adapter.py \
             tests/unit/test_legal_evidence_provider_readonly_reconciliation_invocation_router.py \
+            tests/unit/test_legal_evidence_provider_readonly_reconciliation_runtime.py \
             tests/integration/test_current_system_permission_possession_real_mongo.py \
             tests/integration/test_legal_evidence_provider_readonly_reconciliation_scope_real_mongo.py \
             tests/integration/test_legal_evidence_provider_readonly_reconciliation_authorization_gate_real_mongo.py
