@@ -2,6 +2,8 @@ from __future__ import annotations
 
 import asyncio
 import json
+from datetime import datetime, timezone
+from types import SimpleNamespace
 
 from fastapi import FastAPI
 from starlette.requests import Request
@@ -62,3 +64,113 @@ def test_route_fails_closed_when_deployment_composition_is_not_injected() -> Non
         "success": False,
         "code": "RECONCILIATION_COMPOSITION_UNAVAILABLE",
     }
+
+
+class _Session:
+    def __init__(self) -> None:
+        self.in_transaction = False
+        self.events: list[str] = []
+
+    def start_transaction(self) -> None:
+        self.in_transaction = True
+        self.events.append("start")
+
+    def commit_transaction(self) -> None:
+        self.events.append("commit")
+        self.in_transaction = False
+
+    def abort_transaction(self) -> None:
+        self.events.append("abort")
+        self.in_transaction = False
+
+    def end_session(self) -> None:
+        self.events.append("end")
+
+
+class _Client:
+    def __init__(self) -> None:
+        self.session = _Session()
+
+    def start_session(self) -> _Session:
+        return self.session
+
+
+class _Composition:
+    def __init__(self, *, fail: bool = False) -> None:
+        self.business_client = _Client()
+        self.fail = fail
+        self.calls = []
+
+    def authorize_and_reconcile_idempotently(self, **kwargs):
+        self.calls.append(kwargs)
+        if self.fail:
+            raise RuntimeError("test-only failure")
+        return {
+            "tenant_id": "tenant-1",
+            "coverage_verification_fingerprint": "coverage-fp",
+            "completed_observation_count": 2,
+        }
+
+
+def _request_for_route(app: FastAPI) -> Request:
+    scope = {
+        "type": "http",
+        "asgi": {"version": "3.0"},
+        "http_version": "1.1",
+        "method": "POST",
+        "scheme": "http",
+        "path": "/api/legal-operations/evidence-provider/reconciliation",
+        "raw_path": b"/api/legal-operations/evidence-provider/reconciliation",
+        "query_string": b"",
+        "root_path": "",
+        "headers": [],
+        "client": ("127.0.0.1", 12345),
+        "server": ("testserver", 80),
+        "app": app,
+    }
+    return Request(scope, receive=lambda: None)
+
+
+def test_route_commits_only_after_composition_returns(monkeypatch) -> None:
+    from tools.eos.api import legal_evidence_provider_readonly_reconciliation_router as module
+
+    app = FastAPI()
+    composition = _Composition()
+    app.state.legal_evidence_provider_readonly_reconciliation_composition = composition
+    envelope = SimpleNamespace(
+        request={"service_id": "trusted-service"},
+        body=b'{"idempotency_key":"operation-1"}',
+        observed_at=datetime(2026, 10, 25, tzinfo=timezone.utc),
+    )
+
+    async def extract(_request):
+        return envelope
+
+    monkeypatch.setattr(module, "LegalEvidenceProviderReadOnlyReconciliationProductionComposition", _Composition)
+    monkeypatch.setattr(module, "extract_signed_workload_request", extract)
+    response = asyncio.run(module.reconcile_legal_evidence_provider(_request_for_route(app)))
+    assert response.status_code == 200
+    assert json.loads(response.body)["data"]["coverage_verification_fingerprint"] == "coverage-fp"
+    assert composition.business_client.session.events == ["start", "commit", "end"]
+
+
+def test_route_aborts_business_transaction_on_composition_failure(monkeypatch) -> None:
+    from tools.eos.api import legal_evidence_provider_readonly_reconciliation_router as module
+
+    app = FastAPI()
+    composition = _Composition(fail=True)
+    app.state.legal_evidence_provider_readonly_reconciliation_composition = composition
+    envelope = SimpleNamespace(
+        request={"service_id": "trusted-service"},
+        body=b'{"idempotency_key":"operation-1"}',
+        observed_at=datetime(2026, 10, 25, tzinfo=timezone.utc),
+    )
+
+    async def extract(_request):
+        return envelope
+
+    monkeypatch.setattr(module, "LegalEvidenceProviderReadOnlyReconciliationProductionComposition", _Composition)
+    monkeypatch.setattr(module, "extract_signed_workload_request", extract)
+    response = asyncio.run(module.reconcile_legal_evidence_provider(_request_for_route(app)))
+    assert response.status_code == 409
+    assert composition.business_client.session.events == ["start", "abort", "end"]
