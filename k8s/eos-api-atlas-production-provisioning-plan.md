@@ -150,6 +150,24 @@ audit outage, and transaction abort. Until the secret values come from that
 approved caller and deployment, the reconciliation composition intentionally
 remains unavailable and the route returns a bounded 503.
 
+### Legal-evidence provider and AWS workload identity
+
+The provider composition also requires the deployment-owned
+`WILSY_LEGAL_EVIDENCE_S3_BUCKET` and `WILSY_LEGAL_EVIDENCE_S3_REGION`
+ConfigMap values. The optional KMS key must match the approved storage policy.
+The example runtime authority file now declares these keys with empty
+fail-closed values so applying it unchanged cannot masquerade as a configured
+provider.
+
+No approved AWS workload-role ARN or proven web-identity binding for the
+`wilsy-eos-api` ServiceAccount was found in the repository. Do not copy the
+unrelated example role from `server/k8s/deployment.yaml`, use a node role by
+assumption, or add static AWS keys. Before production readiness can pass, the
+platform owner must bind an approved least-privilege workload role scoped to
+the actual configured legal-evidence bucket and the read-only enumeration
+operations used by the adapter. The role ARN and bucket policy must be reviewed
+against the concrete production account/bucket; neither is invented here.
+
 ### Audit target provisioning and identity proof
 
 1. Select the approved audit MongoDB deployment and a dedicated runtime database
