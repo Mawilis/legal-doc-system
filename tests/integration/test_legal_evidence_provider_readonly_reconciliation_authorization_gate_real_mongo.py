@@ -618,10 +618,12 @@ def test_mounted_route_uses_real_signed_gate_and_replays_result_in_real_mongo(
 
         first = invoke()
         second = invoke()
-        assert first.status_code == 200, (
-            f"response={first.body!r}; audit_decisions="
-            f"{[(row.get('decision'), row.get('reason_code')) for row in setup['decision_audit_collection'].find({})]}"
-        )
+        if first.status_code != 200:
+            decisions = [
+                (row.get("decision"), row.get("reason_code"))
+                for row in setup["decision_audit_collection"].find({})
+            ]
+            pytest.fail(f"response={first.body!r}; audit_decisions={decisions!r}")
         assert second.status_code == 200, (
             f"second_response={second.body!r}; audit_decisions="
             f"{[(row.get('decision'), row.get('reason_code')) for row in setup['decision_audit_collection'].find({})]}"
