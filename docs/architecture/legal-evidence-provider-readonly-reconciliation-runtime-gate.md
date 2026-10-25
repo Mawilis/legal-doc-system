@@ -169,9 +169,8 @@ The current constructor requires a decision-evidence registry dependency and the
 
 ## Dedicated HTTP invocation and deployment bootstrap — implemented, not launch-certified
 
-The Python route is mounted by the canonical `WilsyAPIServer` in
-`tools/eos/api/server.py` and by the secondary `api_server.py` application
-at `POST /api/legal-operations/evidence-provider/reconciliation`. The canonical
+The Python route is mounted only by the canonical `WilsyAPIServer` in
+`tools/eos/api/server.py` at `POST /api/legal-operations/evidence-provider/reconciliation`. The canonical
 server startup now builds the composition from existing P2/P4/P5/SYSTEM
 authorities, the canonical business Mongo database, the existing internal
 workload trust configuration, and a separately configured audit Mongo client.
