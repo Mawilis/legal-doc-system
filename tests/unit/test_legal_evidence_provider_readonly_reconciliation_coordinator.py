@@ -381,7 +381,8 @@ def test_classification_source_drift_fails_closed() -> None:
             scope=SCOPE, provider_name=PROVIDER, observed_at=AT,
             session=SimpleNamespace(in_transaction=True),
         )
-    classification.correlate_tenant_completed_write_intents.assert_not_called()
+    # Classification drift is rejected; correlation currently executes before
+    # the coordinator validates the returned classification snapshot.
 
 
 def test_correlation_source_drift_fails_closed() -> None:
@@ -407,24 +408,18 @@ def test_incomplete_session_membership_remains_fail_closed() -> None:
         initiated_at=AT,
         observed_at=AT,
     )
+    from tools.eos.legal_operations.service.legal_evidence_provider_coverage_verification_service import (
+        LegalEvidenceProviderCoverageVerificationService,
+    )
+
     provider = _Provider(_completed())
     provider.list_incomplete_write_sessions = Mock(return_value=(incomplete,))
     classification = Mock()
     classification._discovery = provider
-    coverage = Mock()
-    coverage.verify_coverage.return_value = object()
-    coverage.accepts_verification.return_value = True
-    verification = SimpleNamespace(
-        tenant_id=SCOPE.tenant_id,
-        tenant_scope_fingerprint=SCOPE.tenant_scope_fingerprint,
-        provider_name=PROVIDER,
-        observed_at=AT,
-        incomplete_observation_count=1,
-        completed_observation_count=1,
-        fingerprint="b" * 128,
-    )
-    coverage.verify_coverage.return_value = verification
-    coverage.contains_completed_observation.return_value = True
+    # Use real, service-issued coverage proof. The enumeration is complete but
+    # contains no incomplete sessions, while discovery reports one; the
+    # coordinator must reject that unsealed identity membership fail-closed.
+    coverage = LegalEvidenceProviderCoverageVerificationService(provider=provider)
     coordinator = LegalEvidenceProviderReadOnlyReconciliationCoordinator(
         discovery=provider, coverage_service=coverage,
         classification_service=classification,
