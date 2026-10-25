@@ -1,9 +1,9 @@
 # Legal Evidence Provider Read-Only Reconciliation — Runtime Gate
 
 **Status:** RUNTIME WIRING BLOCKED — full authorization gate and real-Mongo transaction certification pass; platform audit and provider-boundary gates remain outstanding  
-**Version:** v1.2.0-L10A2R-C4D7C-FULL-GATE-MONGO-CERTIFIED  
+**Version:** v1.2.1-L10A2R-C4D7C-READONLY-FACADE-CERTIFIED  
 **Date:** 2026-10-25  
-**Implementation state reviewed:** `204e516364fec72f3cc08ce3660ba3ff134c9da0`
+**Implementation state reviewed:** `ff74b295906d0d68612d180e6b8defb699107a3c`
 
 ## Decision
 
@@ -21,7 +21,7 @@ The reconciliation-specific authorization gate and full real-Mongo composition n
 
 ## Existing reconciliation boundaries retained
 
-- `tools/eos/legal_operations/service/legal_evidence_provider_readonly_reconciliation_factory.py` assembles read-only dependencies from an explicitly supplied provider and Mongo database; it does not establish identity or authorization.
+- `tools/eos/legal_operations/service/legal_evidence_provider_readonly_reconciliation_provider.py` is a strict four-operation facade around the configured adapter and does not dynamically forward adapter attributes. `tools/eos/legal_operations/service/legal_evidence_provider_readonly_reconciliation_factory.py` requires the exact facade type before assembling services; construction does not establish identity or authorization.
 - `tools/eos/legal_operations/service/legal_evidence_provider_readonly_reconciliation_coordinator.py` requires an already-active caller-owned transaction and rejects missing/incomplete coverage, source drift, and invalid evidence. It does not start, commit, abort, or retry transactions.
 - `tools/eos/legal_operations/service/legal_evidence_provider_coverage_verification_service.py` verifies exhaustive provider coverage; it does not establish orphan status or deletion authority.
 - `tools/eos/legal_operations/orchestration/legal_evidence_provider_object_orphan_proof_orchestrator.py` remains a separate downstream authority boundary. Reconciliation output is not orphan proof, cleanup authorization, retention clearance, legal-hold clearance, or deletion authorization.
@@ -31,9 +31,9 @@ The reconciliation-specific authorization gate and full real-Mongo composition n
 At commit `204e516364fec72f3cc08ce3660ba3ff134c9da0`, the focused GitHub Actions workflow completed:
 
 - Python compilation: passed.
-- Focused unit and real-Mongo tests: **116 passed in 5.10 seconds; zero skipped** (12 warnings were reported).
+- Focused unit and real-Mongo tests: **116 passed in 5.46 seconds; zero skipped** (12 warnings were reported).
 - The suite includes adversarial P5 workload-principal derivation, closed-world SYSTEM delegation policy, assignment/revocation command services, scope substitution and transaction failures, real-Mongo current permission possession, real-Mongo server-configured tenant currentness, and the **full gate** using the actual signed workload verifier, current P4/P2 authorities, current SYSTEM permission assignment, canonical tenant registry, and one caller-owned Mongo transaction.
-- The full-gate real-Mongo success test commits the caller transaction and verifies P3 proof/currentness/replay/assurance evidence. A companion abort test proves those P3 writes and replay claims roll back when the caller aborts; the gate does not commit or abort.
+- The full-gate real-Mongo success test commits the caller transaction and verifies P3 proof/currentness/replay/assurance evidence. A companion abort test proves those P3 writes and replay claims roll back when the caller aborts; the gate does not commit or abort. Factory tests now require the explicit mutation-hiding facade and assert no adapter upload/delete methods are exposed and construction performs no provider calls.
 
 This is focused certification, not full production certification. It does not invoke a production route or the provider adapter through the gate.
 
