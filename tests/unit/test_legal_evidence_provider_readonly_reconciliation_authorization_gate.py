@@ -336,6 +336,12 @@ def test_denies_without_current_reconciliation_permission(
     ):
         authorize(gate)
     assert not scope_resolver.calls
+    decision = gate._decision_evidence_registry.records[-1]
+    assert decision.decision.value == "DENY"
+    assert decision.identity_trust.value == "VERIFIED"
+    assert decision.principal_id == "operator-a"
+    assert decision.activation_id == "activation-a"
+    assert decision.permission_assignment_id is None
 
 
 def test_rejects_request_selected_tenant_or_provider(
