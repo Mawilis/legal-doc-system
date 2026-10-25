@@ -39,7 +39,7 @@ NOW = datetime(2026, 10, 25, 7, 0, tzinfo=timezone.utc)
 SESSION = type("ActiveSession", (), {"in_transaction": True})()
 ELIGIBILITY_FP = hashlib.sha3_512(b"eligibility-platform").hexdigest()
 ASSURANCE_FP = hashlib.sha3_512(b"assurance-platform").hexdigest()
-SCOPE_FP = hashlib.sha3_512(b"tenant-a".encode("utf-8")).hexdigest()
+SCOPE_FP = hashlib.sha3_512("tenant-a".encode("utf-8")).hexdigest()
 TRUSTED_REQUEST = {
     "version": "v1",
     "service_id": "internal-legal-ops",
