@@ -29,14 +29,11 @@ def main() -> int:
     if not business_uri:
         raise SystemExit("CANONICAL_BUSINESS_URI_REQUIRED")
     try:
-        audit_target = parse_uri(uri)
-        business_target = parse_uri(business_uri)
+        audit_fingerprint = audit_target_fingerprint(uri)
+        business_fingerprint = audit_target_fingerprint(business_uri)
     except Exception:
         raise SystemExit("MONGODB_TARGET_CONFIGURATION_INVALID") from None
-    if (
-        audit_target.get("nodelist") == business_target.get("nodelist")
-        and audit_target.get("database") == business_target.get("database")
-    ):
+    if audit_fingerprint == business_fingerprint:
         raise SystemExit("AUDIT_AND_BUSINESS_TARGET_MUST_DIFFER")
 
     client = None
