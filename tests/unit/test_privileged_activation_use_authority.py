@@ -667,6 +667,47 @@ def test_noninteractive_workload_path_rejects_assurance_principal_mismatch() -> 
     assert registry.calls[0]["principal_id"] == "principal-a"
 
 
+
+def test_noninteractive_workload_path_rejects_stale_workload_fact_before_p4_lookup() -> None:
+    stale_fact = WorkloadTrustFact(
+        proof_reference="workload-proof-stale",
+        principal_id="principal-a",
+        credential_or_attestation_reference="workload-credential-a",
+        observed_at=NOW,
+        status=WorkloadTrustStatus.REVOKED,
+    )
+    registry = Registry(activation())
+    resolver = EligibilityResolver(Eligibility())
+    noninteractive = NoninteractiveService(
+        AssuranceResult(workload_fact=stale_fact)
+    )
+    authority = PrivilegedActivationUseAuthority(
+        activation_registry=registry,
+        eligibility_resolver=resolver,
+        noninteractive_assurance_service=noninteractive,
+    )
+
+    with pytest.raises(
+        PrivilegedActivationUseError,
+        match="WORKLOAD_PROOF_NOT_CURRENT",
+    ):
+        authority.authorize_noninteractive_workload(
+            activation_tenant_id="tenant-a",
+            privileged_role_id="ENTERPRISE_ADMIN",
+            target_class=PrivilegedTargetClass.TENANT_PRIVILEGED,
+            at=NOW + timedelta(minutes=1),
+            request={"service_id": "trusted"},
+            body=b"{}",
+            keys={"key-a": ("secret", "algorithm")},
+            expected_audience="wilsy-eos",
+            idempotency_key="use-stale-workload-a",
+            session=SESSION,
+        )
+
+    assert len(noninteractive.calls) == 1
+    assert not registry.calls
+    assert not resolver.calls
+
 def test_no_privileged_use_permission_or_break_glass_surface() -> None:
     source = Path(
         "tools/eos/auth/privileged_activation_use_authority.py"
