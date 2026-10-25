@@ -124,7 +124,9 @@ jobs:
             tools/eos/legal_operations/service/legal_evidence_provider_readonly_reconciliation_authorization_gate.py \
             tools/eos/legal_operations/service/legal_evidence_provider_readonly_reconciliation_factory.py \
             tools/eos/legal_operations/service/legal_evidence_provider_readonly_reconciliation_production_composition.py \
+            tools/eos/legal_operations/service/legal_evidence_provider_readonly_reconciliation_transport_adapter.py \
             tests/unit/test_legal_evidence_provider_readonly_reconciliation_production_composition.py \
+            tests/unit/test_legal_evidence_provider_readonly_reconciliation_transport_adapter.py \
             tools/eos/legal_operations/service/legal_evidence_provider_readonly_reconciliation_coordinator.py \
             tests/unit/test_privileged_activation_use_authority.py \
             tests/unit/test_legal_evidence_provider_readonly_reconciliation_platform_decision_evidence.py \
@@ -137,6 +139,7 @@ jobs:
             tests/unit/test_legal_evidence_provider_readonly_reconciliation_factory.py \
             tests/unit/test_legal_evidence_provider_readonly_reconciliation_production_composition.py \
             tests/unit/test_legal_evidence_provider_readonly_reconciliation_coordinator.py \
+            tests/unit/test_legal_evidence_provider_readonly_reconciliation_transport_adapter.py \
             tests/integration/test_current_system_permission_possession_real_mongo.py \
             tests/integration/test_legal_evidence_provider_readonly_reconciliation_scope_real_mongo.py \
             tests/integration/test_legal_evidence_provider_readonly_reconciliation_authorization_gate_real_mongo.py
