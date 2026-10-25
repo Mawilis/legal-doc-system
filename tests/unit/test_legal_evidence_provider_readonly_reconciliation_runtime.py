@@ -154,9 +154,9 @@ def test_production_manifest_binds_all_required_reconciliation_secret_inputs() -
     }
     for variable, secret_key in expected.items():
         binding = re.compile(
-            rf"- name: {re.escape(variable)}\\s+"
-            rf"valueFrom:\\s+secretKeyRef:\\s+"
-            rf"name: wilsy-eos-runtime-secrets\\s+"
-            rf"key: {re.escape(secret_key)}(?:\\s|$)"
+            rf"- name: {re.escape(variable)}\s+"
+            rf"valueFrom:\s+secretKeyRef:\s+"
+            rf"name: wilsy-eos-runtime-secrets\s+"
+            rf"key: {re.escape(secret_key)}(?:\s|$)"
         )
         assert binding.search(manifest), f"missing exact Secret binding for {variable}"
