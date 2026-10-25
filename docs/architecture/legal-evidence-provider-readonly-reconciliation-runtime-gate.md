@@ -60,6 +60,16 @@ The current Python runtime has `tools/eos/runtime/app.py` mounting `tools/eos/ru
 
 These observations do not establish that every other WILSY route is unsafe; they establish that this existing generic route cannot be treated as the approved reconciliation invocation. Do not attach privileged reconciliation to `/runtime/execute` or rely on request-provided `context`, tenant, provider, or identity fields. A dedicated governed composition must obtain the signed workload context from a trusted transport boundary, inject deployment-owned audit and provider dependencies, and preserve the active caller-owned transaction.
 
+## Certification on the current documentation commit
+
+At commit `b38adc8b085593bde9fbf63062e9f7c1b17499e3`, GitHub Actions completed:
+
+- Focused Python / isolated real-Mongo workflow: [run 40179900787](https://github.com/Mawilis/legal-doc-system/actions/runs/40179900787) — **142 passed, 20 warnings in 6.83 seconds**; Python compilation, Mongo replica-set initialization/cleanup, and zero-skip enforcement passed.
+- Repository integrity: [run 40179900856](https://github.com/Mawilis/legal-doc-system/actions/runs/40179900856) — passed.
+- Unified pipeline: [run 40179900706](https://github.com/Mawilis/legal-doc-system/actions/runs/40179900706) — failed at the security audit. The observed audit reported **24 production dependency vulnerabilities (2 moderate, 22 high)**; the pipeline's retained production-gates step consequently failed and downstream R2A/R2B real-Mongo jobs were skipped. This is a separate existing dependency/security gate, not a failure in the focused Python reconciliation tests. No Node.js or dependency changes were made as part of this Python/EOS task.
+
+This improves the evidence for the current branch head but does not clear the launch blocker: the focused suite certifies the authorization/evidence components and provider-boundary tests, not a production invocation route.
+
 ## Launch-governance decision
 
 The launch command system requires an authenticated, observable API and treats the launch date as a target, not permission to bypass certification. Repository inspection found a generic runtime API but no already-approved, reconciliation-specific route, CLI command, scheduler, or production service entry point. The generic `/runtime/execute` route is explicitly unsuitable under its current authorization and execution contract. Therefore no production invocation path can honestly be called approved today, and none is being wired in this delivery.
