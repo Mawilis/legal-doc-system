@@ -1,0 +1,131 @@
+from __future__ import annotations
+
+from datetime import datetime, timezone
+from types import SimpleNamespace
+
+import pytest
+
+from tools.eos.legal_operations.service.legal_evidence_provider_readonly_reconciliation_production_composition import (
+    LegalEvidenceProviderReadOnlyReconciliationCompositionError,
+    LegalEvidenceProviderReadOnlyReconciliationProductionComposition,
+    build_legal_evidence_provider_readonly_reconciliation_production_composition,
+)
+
+
+class _Registry:
+    def __init__(self, error: Exception | None = None) -> None:
+        self.error = error
+        self.calls = 0
+
+    def ensure_indexes(self) -> None:
+        self.calls += 1
+        if self.error:
+            raise self.error
+
+
+class _Gate:
+    def __init__(self) -> None:
+        self.calls = []
+
+    def authorize(self, **kwargs):
+        self.calls.append(kwargs)
+        return SimpleNamespace(
+            scope=object(),
+            provider_name="aws_s3",
+        )
+
+
+class _Coordinator:
+    def __init__(self) -> None:
+        self.calls = []
+
+    def reconcile(self, **kwargs):
+        self.calls.append(kwargs)
+        return "reconciled"
+
+
+def _composition(registry=None, gate=None, coordinator=None):
+    registry = registry or _Registry()
+    gate = gate or _Gate()
+    coordinator = coordinator or _Coordinator()
+    return (
+        LegalEvidenceProviderReadOnlyReconciliationProductionComposition(
+            target=object(),
+            registry=registry,
+            gate=gate,
+            dependencies=SimpleNamespace(coordinator=coordinator),
+        ),
+        registry,
+        gate,
+        coordinator,
+    )
+
+
+def test_composition_fails_closed_until_audit_indexes_are_explicitly_provisioned():
+    composition, registry, gate, coordinator = _composition()
+    with pytest.raises(
+        LegalEvidenceProviderReadOnlyReconciliationCompositionError,
+        match="PLATFORM_DECISION_AUDIT_INDEXES_NOT_PROVISIONED",
+    ):
+        composition.authorize_and_reconcile(
+            signed_workload_fields={},
+            body=b"",
+            idempotency_key="reconcile-1",
+            at=datetime.now(timezone.utc),
+            session=object(),
+        )
+    assert composition.audit_indexes_provisioned is False
+    assert registry.calls == 0
+    assert gate.calls == []
+    assert coordinator.calls == []
+
+
+def test_index_provisioning_failure_never_marks_composition_ready():
+    registry = _Registry(RuntimeError("index setup unavailable"))
+    composition, _, gate, coordinator = _composition(registry=registry)
+    with pytest.raises(
+        LegalEvidenceProviderReadOnlyReconciliationCompositionError,
+        match="PLATFORM_DECISION_AUDIT_INDEX_PROVISIONING_FAILED",
+    ):
+        composition.provision_audit_indexes()
+    assert composition.audit_indexes_provisioned is False
+    assert registry.calls == 1
+    assert gate.calls == []
+    assert coordinator.calls == []
+
+
+def test_authorized_composition_passes_only_gate_derived_scope_to_coordinator():
+    composition, registry, gate, coordinator = _composition()
+    composition.provision_audit_indexes()
+    at = datetime.now(timezone.utc)
+    session = object()
+    fields = {"service_id": "signed-service"}
+
+    result = composition.authorize_and_reconcile(
+        signed_workload_fields=fields,
+        body=b"signed body",
+        idempotency_key="reconcile-2",
+        at=at,
+        session=session,
+    )
+
+    assert result == "reconciled"
+    assert registry.calls == 1
+    assert gate.calls == [
+        {
+            "request": fields,
+            "body": b"signed body",
+            "idempotency_key": "reconcile-2",
+            "at": at,
+            "session": session,
+        }
+    ]
+    assert coordinator.calls == [
+        {
+            "scope": gate.authorize.__self__ and coordinator.calls[0]["scope"],
+            "provider_name": "aws_s3",
+            "observed_at": at,
+            "session": session,
+        }
+    ]
+    assert coordinator.calls[0]["scope"] is not None
