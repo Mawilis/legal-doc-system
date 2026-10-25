@@ -1,7 +1,7 @@
 # Legal Evidence Provider Read-Only Reconciliation — Runtime Gate
 
 **Status:** RUNTIME WIRING BLOCKED — durable platform allow/deny evidence and provider-boundary certification pass; the existing generic runtime API is not a safe reconciliation invocation surface  
-**Version:** v1.2.9-L10A2R-C4D7C-147-PASS-INDEX-VERIFICATION-CERTIFIED  
+**Version:** v1.3.0-L10A2R-C4D7C-147-PASS-UNIFIED-SECURITY-GATE-FAILED  
 **Date:** 2026-10-25  
 **Implementation state reviewed:** `b72ff289f4cffae1e20e3d5b03d9d971252e7e7f`
 
@@ -99,7 +99,7 @@ Focused unit coverage and the Python certification workflow were extended for th
 - Focused Python / isolated real-Mongo workflow: [run 40180958680](https://github.com/Mawilis/legal-doc-system/actions/runs/40180958680) — **147 passed, 20 warnings in 7.48 seconds**. Python compilation, isolated replica-set setup/cleanup and zero-skip enforcement passed. Coverage includes the composition readiness/fail-closed tests and real-Mongo proof that runtime index verification accepts both required unique indexes and rejects a missing index.
 - Repository integrity: [run 40180958779](https://github.com/Mawilis/legal-doc-system/actions/runs/40180958779) — passed.
 - EOS image publication: [run 40180958710](https://github.com/Mawilis/legal-doc-system/actions/runs/40180958710) — passed.
-- The unified production pipeline was still in progress at this documentation update; focused success is not broader release certification.
+- Unified production pipeline: [run 40180958700](https://github.com/Mawilis/legal-doc-system/actions/runs/40180958700) — failed at the existing production dependency security audit, reporting **24 vulnerabilities (2 moderate, 22 high)**. Retained production gates failed and downstream R2A/R2B real-Mongo jobs were skipped. No Node.js or dependency changes were made in this Python/EOS task. Focused success is not broader release certification.
 
 The runtime composition verifies the two required unique audit indexes read-only during construction. The deployment-only index provisioner is separate and is not retained by the runtime composition, so the runtime audit client does not need index-management authority. This verifies index shape/existence, not that a deployment provisioner has been configured against the correct production cluster; that remains a deployment-owned configuration and release-governance obligation.
 
