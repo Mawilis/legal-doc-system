@@ -2,7 +2,7 @@
 # WILSY OS — DEDICATED PYTHON EOS KUBERNETES PRODUCTION WORKLOAD
 #
 # TITLE: Dedicated Python EOS Production Kubernetes Runtime
-# VERSION: v1.0.0-P0-C12F7C-EOS-K8S-PRODUCTION
+# VERSION: v1.1.0-L10A2R-C4D7-RECONCILIATION-RUNTIME-CONFIG
 # AUTHORITY: Wilsy OS Core Governance
 # EPITOME: Run the certified sovereign Python EOS API as a dedicated,
 #          digest-pinned, non-root Kubernetes workload on port 9095.
@@ -13,6 +13,10 @@
 #   Kubernetes owns workload scheduling only.
 # CERTIFICATION / UPDATE DATE: 2026-10-06
 # CHANGELOG:
+#   v1.1.0-L10A2R-C4D7-RECONCILIATION-RUNTIME-CONFIG
+#     - Bind canonical internal-workload trust settings and a distinct audit
+#       MongoDB URI through deployment-owned Secret keys; no secret values are
+#       authored here. The runtime route remains fail-closed until provisioned.
 #   v1.0.0-P0-C12F7C-EOS-K8S-PRODUCTION
 #     - Establish the first dedicated Python EOS Kubernetes workload.
 #     - Bind the certified immutable EOS image digest from main head
@@ -115,6 +119,34 @@ spec:
                 secretKeyRef:
                   name: wilsy-eos-runtime-secrets
                   key: mongodb-uri
+            # The reconciliation route is enabled only when every canonical
+            # workload-trust and distinct audit-target input is provisioned.
+            # These are secret references, never repository-held credentials.
+            - name: WILSY_INTERNAL_AUTH_SERVICE_ID
+              valueFrom:
+                secretKeyRef:
+                  name: wilsy-eos-runtime-secrets
+                  key: internal-auth-service-id
+            - name: WILSY_INTERNAL_AUTH_AUDIENCE
+              valueFrom:
+                secretKeyRef:
+                  name: wilsy-eos-runtime-secrets
+                  key: internal-auth-audience
+            - name: WILSY_INTERNAL_AUTH_KEY_ID
+              valueFrom:
+                secretKeyRef:
+                  name: wilsy-eos-runtime-secrets
+                  key: internal-auth-key-id
+            - name: WILSY_INTERNAL_AUTH_SECRET
+              valueFrom:
+                secretKeyRef:
+                  name: wilsy-eos-runtime-secrets
+                  key: internal-auth-secret
+            - name: WILSY_LEGAL_EVIDENCE_RECONCILIATION_AUDIT_MONGODB_URI
+              valueFrom:
+                secretKeyRef:
+                  name: wilsy-eos-runtime-secrets
+                  key: legal-evidence-reconciliation-audit-mongodb-uri
           resources:
             requests:
               cpu: "250m"
@@ -175,8 +207,9 @@ spec:
 #   Dedicated Kubernetes ServiceAccount exists, but no AWS role annotation is
 #   authored until the concrete cluster/provider identity mechanism is proven.
 # RUNTIME CONFIGURATION:
-#   Required upload policy is ConfigMap-owned; MongoDB is Secret-owned; optional
-#   KMS configuration remains absent unless deployment authority supplies it.
+#   Business MongoDB, signed internal-workload trust, and the separate legal-
+#   evidence reconciliation audit target are Secret-owned; no values are
+#   embedded. Missing bindings prevent trusted reconciliation startup.
 # NETWORK EXPOSURE:
 #   ClusterIP only. Public ingress/load-balancer authority is not fabricated.
 # FAIL-CLOSED POSTURE:
