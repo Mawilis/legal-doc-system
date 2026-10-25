@@ -1,48 +1,48 @@
 # Legal Evidence Provider Read-Only Reconciliation — Runtime Gate
 
-**Status:** BLOCKED — authorization contract required before runtime wiring  
-**Version:** v1.0.1-L10A2R-C4D7B-RECONCILIATION-READ-PERMISSION  
+**Status:** RUNTIME WIRING BLOCKED — governed authorization gate and focused certification exist; platform audit and full-gate integration remain outstanding  
+**Version:** v1.1.0-L10A2R-C4D7C-SERVER-OWNED-AUTHORIZATION-GATE  
 **Date:** 2026-10-25  
-**Branch baseline inspected:** `feat/legal-evidence-provider-readonly-reconciliation` at `c4c132a6fe8f0c3317e1d4066a817ec74b2301e3`
+**Implementation state reviewed:** `093e198f395bc8441d5fc721d042246d18918185`
 
 ## Decision
 
-The first runtime invocation is intended for privileged internal operators only. It must be bound to one exact tenant and provider scope, remain read-only at the provider boundary, and preserve the caller-owned active Mongo transaction required by the coordinator.
+The first runtime invocation is intended for privileged internal operators only. It must be bound to one exact server-configured tenant and provider, remain read-only at the provider boundary, and preserve the caller-owned active Mongo transaction required by the reconciliation coordinator.
 
-No route, CLI command, scheduler, or service entry point may be added until the repository has a canonical, enforceable source for internal-operator identity and current authorization. A role string, caller-selected tenant, tenant Legal Partner grant, evidence-write permission, or cleanup-authorization permission is not a substitute.
+The authorization layer now exists as a separately testable gate. No route, CLI command, scheduler, or production service entry point is connected. Do not connect one until the full P5/P3/permission/scope composition has real-Mongo certification and the canonical platform-scoped authorization audit/denial path is established.
 
-## Verified existing components
+## Implemented authorization contract
 
-- `tools/eos/legal_operations/service/legal_evidence_provider_readonly_reconciliation_factory.py` assembles existing read-only dependencies from an explicitly supplied provider and Mongo database. It does not establish identity, authorization, tenant scope, provider configuration, or transaction lifecycle.
+- `tools/eos/auth/privileged_activation_use_authority.py` exposes `authorize_noninteractive_workload`. It composes the signed workload request once, requires the canonical `WorkloadTrustFact` to be current, validates P3 assurance identity before P4/P2 lookup, then checks current activation and exact P2 eligibility lineage in the caller-owned transaction.
+- `tools/eos/legal_operations/service/legal_evidence_provider_readonly_reconciliation_authorization_gate.py` requires the exact `SOVEREIGN_ARCHITECT` / `PLATFORM_SYSTEM_ROOT` activation with activation `tenant_id=None`, current possession of `legal_operations:evidence_provider_reconciliation:read`, and a provider-bound server-owned scope resolver. Request header fields are exact-allowlisted; request-selected tenant/provider fields are rejected.
+- `build_server_configured_reconciliation_target` binds the deployment tenant from `WILSY_LEGAL_EVIDENCE_RECONCILIATION_TENANT_ID` to the existing validated S3 configuration. It uses `WILSY_LEGAL_EVIDENCE_S3_BUCKET`, the existing region default/override, and optional `WILSY_LEGAL_EVIDENCE_S3_KMS_KEY_ID`. The resulting resolver rereads the fixed tenant through canonical `TenantRegistry.get` with the same session and derives the SHA3-512 tenant-scope fingerprint itself.
+- This configuration supports **one server-configured tenant/provider target per resolver instance**. Multi-tenant batch selection is not implemented and must not be added as caller-supplied scope.
+- `tools/eos/auth/system_permission_command_policy.py` now permits exactly three ongoing non-command SYSTEM permissions: `privileged_activation:issue`, `privileged_activation:break_glass`, and `legal_operations:evidence_provider_reconciliation:read`. Assignment and revocation remain subject to the existing command-possession, ACTIVE-target, evidence, lineage, and caller-transaction contracts. Assignment of the read permission alone does not authorize use; the reconciliation gate independently requires P5 platform-root use.
+
+## Existing reconciliation boundaries retained
+
+- `tools/eos/legal_operations/service/legal_evidence_provider_readonly_reconciliation_factory.py` assembles read-only dependencies from an explicitly supplied provider and Mongo database; it does not establish identity or authorization.
 - `tools/eos/legal_operations/service/legal_evidence_provider_readonly_reconciliation_coordinator.py` requires an already-active caller-owned transaction and rejects missing/incomplete coverage, source drift, and invalid evidence. It does not start, commit, abort, or retry transactions.
 - `tools/eos/legal_operations/service/legal_evidence_provider_coverage_verification_service.py` verifies exhaustive provider coverage; it does not establish orphan status or deletion authority.
-- `tools/eos/legal_operations/orchestration/legal_evidence_provider_object_orphan_proof_orchestrator.py` is a separate downstream authority boundary. Reconciliation output is not an orphan proof, cleanup authorization, retention clearance, legal-hold clearance, or deletion authorization.
+- `tools/eos/legal_operations/orchestration/legal_evidence_provider_object_orphan_proof_orchestrator.py` remains a separate downstream authority boundary. Reconciliation output is not orphan proof, cleanup authorization, retention clearance, legal-hold clearance, or deletion authorization.
 
-## Current evidence and limits
+## Observed certification evidence
 
-The previously observed local focused test runs reported:
-- Factory tests: 11 passed.
-- Coordinator tests: 22 passed.
+At commit `093e198f395bc8441d5fc721d042246d18918185`, the focused GitHub Actions workflow completed:
 
-These are focused unit tests only. They do not certify a production invocation path, live provider configuration, real-Mongo end-to-end reconciliation, CI, or deployment.
+- Python compilation: passed.
+- Focused unit and real-Mongo tests: **114 passed in 4.43 seconds; zero skipped**.
+- The run includes adversarial tests for the P5 workload-principal derivation, closed-world SYSTEM delegation policy, assignment/revocation command services, gate scope substitution and transaction failures, current SYSTEM permission possession against real Mongo, and server-configured tenant currentness/transaction visibility against a real Mongo replica set.
 
-The canonical permission vocabulary now includes `legal_operations:evidence_provider_reconciliation:read`, registered as `SYSTEM`-scoped metadata with `system_assignment_required=True`, `authorizes_by_itself=False`, no tenant-membership requirement, no cross-tenant capability, and no financial capability. The namespace and its focused certification test were committed separately:
-- Permission vocabulary: commit `2e609788b55db3f9c4c41dac500fb26f2db5a73e`.
-- Namespace certification update: commit `c4c132a6fe8f0c3317e1d4066a817ec74b2301e3`.
+This evidence is not a full production certification. The real-Mongo tests exercise permission possession and scope resolution as components; they do **not** yet exercise the entire P3 → P5 → current permission → scope gate with the actual signed workload verifier and all persisted authorities in one transaction. They do not execute the provider adapter through a production entry point.
 
-This is a vocabulary-only milestone, not an authorization grant. The current `tools/eos/auth/system_permission_command_policy.py` ongoing allowlists still permit only `privileged_activation:issue` and `privileged_activation:break_glass`; the new permission is not assignable through that command policy. No dedicated operator eligibility/current-activation binding, exact runtime operation binding, or trusted tenant/provider scope derivation has been established. The existing tenant authorization composition requires tenant membership/business-role/role-grant semantics and is not by itself an internal-operator policy.
+## Remaining blockers before runtime wiring
 
-## Required contract before wiring
-
-1. **Operator principal:** derive from a canonical authenticated server-side authority; reject caller-supplied identity or role claims.
-2. **Dedicated permission:** the narrowly scoped canonical SYSTEM permission vocabulary is registered. The approved operation binding and governed assignment path remain outstanding; do not bypass the closed SYSTEM assignment allowlist or reuse evidence-write/cleanup-authorization permissions.
-3. **Grant policy:** identify the approved internal-operator authorization role or SYSTEM assignment authority and prove current possession, revocation state, and any required privileged activation. Do not infer authority from static role definitions alone.
-4. **Tenant/provider scope:** derive tenant identity and the canonical scope fingerprint from trusted server-side authority and provider configuration. Reject default/global tenants and caller-selected unbound provider coordinates.
-5. **Runtime configuration:** resolve the certified provider adapter and database through canonical application configuration; fail closed if either is unavailable. Do not create a second provider/configuration authority.
-6. **Transaction ownership:** the invoking layer owns the active Mongo session/transaction. The coordinator and downstream orphan-proof orchestrator must not create, commit, abort, or retry it.
-7. **Audit and denial:** use existing canonical audit/denial evidence facilities without logging credentials, raw legal evidence, or provider secrets.
-8. **Adversarial certification:** test unauthorized/missing/revoked operator grants, tenant/provider scope substitution, absent configuration, inactive transactions, incomplete coverage, incomplete write-session membership, provider read-only behavior, and proof that reconciliation cannot directly issue orphan proof or deletion authority.
-9. **Integration certification:** exercise the actual approved entry point with real Mongo transaction semantics and the supported provider adapter. Report unavailable infrastructure as blocked, never passed.
+1. **Full-gate real-Mongo integration:** construct the actual noninteractive workload trust verifier, proof/evidence registries, P4/P2 authorities, SYSTEM permission registry, canonical tenant registry, and gate in one caller-owned transaction. Prove identity mismatch, stale/revoked activation, missing/revoked permission, inactive tenant, transaction abort, and no gate-owned commit/retry.
+2. **Platform authorization audit/denial evidence:** no canonical platform-scoped durable authorization-decision/denial registry has been established for this internal operation. The tenant authorization decision registry is tenant-scoped and is not interchangeable with platform-root authority. Structured application logging alone is not a durable authorization audit.
+3. **Runtime composition root:** bind the server workload keys/audience, configured S3 target, canonical tenant collection, P5 authority, permission resolver, and scope resolver from trusted server configuration. Do not accept tenant/provider coordinates from a request.
+4. **Provider-boundary certification:** exercise the actual supported adapter through the read-only coordinator and prove no provider mutation, cleanup, deletion, retention, or legal-hold authority is exposed.
+5. **Invocation surface:** only after items 1–4 pass should the governed launch/system-command documentation select and authorize a specific internal invocation path. No route, CLI command, or scheduler is presently wired.
 
 ## Non-goals
 
@@ -50,6 +50,6 @@ This gate does not authorize provider deletion, retention modification, legal-ho
 
 ## Exit criteria
 
-Runtime wiring may proceed only after the canonical operator grant, permission-operation binding, trusted tenant/provider scope, provider configuration, transaction owner, and audit path are each located in repository evidence and covered by adversarial tests. If any authority is absent, the correct outcome is a stable fail-closed denial—not a fallback path.
+Runtime wiring remains blocked until full-gate real-Mongo evidence, the platform audit/denial contract, server-owned provider/tenant configuration, and provider read-only certification are observed passing. Missing evidence is a blocker, not a pass.
 
 ---
