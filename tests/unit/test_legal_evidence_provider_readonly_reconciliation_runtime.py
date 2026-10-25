@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from pathlib import Path
+import re
 from types import SimpleNamespace
 
 import pytest
@@ -152,6 +153,10 @@ def test_production_manifest_binds_all_required_reconciliation_secret_inputs() -
         AUDIT_URI_ENV: "legal-evidence-reconciliation-audit-mongodb-uri",
     }
     for variable, secret_key in expected.items():
-        assert f"name: {variable}" in manifest
-        assert f"key: {secret_key}" in manifest
-        assert "name: wilsy-eos-runtime-secrets" in manifest
+        binding = re.compile(
+            rf"- name: {re.escape(variable)}\\s+"
+            rf"valueFrom:\\s+secretKeyRef:\\s+"
+            rf"name: wilsy-eos-runtime-secrets\\s+"
+            rf"key: {re.escape(secret_key)}(?:\\s|$)"
+        )
+        assert binding.search(manifest), f"missing exact Secret binding for {variable}"
