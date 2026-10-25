@@ -151,6 +151,10 @@ class PlatformAuthorizationDecisionEvidenceIndexProvisioner:
     def provision(self) -> None:
         self._registry.ensure_indexes()
 
+    def verify(self) -> bool:
+        """Read-only verification of the deployment-provisioned index contract."""
+        return self._registry.verify_indexes()
+
 
 class LegalEvidenceProviderReadOnlyReconciliationProductionComposition:
     """Explicit composition root; does not own request or transaction lifecycle."""
