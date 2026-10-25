@@ -9,6 +9,7 @@ from __future__ import annotations
 
 import hashlib
 import os
+from datetime import datetime, timezone
 from contextlib import contextmanager
 from typing import Any, Iterator
 from uuid import uuid4
@@ -16,9 +17,6 @@ from uuid import uuid4
 import pytest
 from pymongo import MongoClient
 
-from tools.eos.auth.privileged_channel_currentness import (
-    WorkloadTrustStatus,
-)
 from tools.eos.legal_operations.service.legal_evidence_provider_cleanup_discovery_port import (
     LegalEvidenceProviderDiscoveryScope,
 )
@@ -105,10 +103,7 @@ def test_configured_scope_reads_uncommitted_tenant_through_same_session() -> Non
             scope = target.scope_resolver.resolve_scope(
                 principal_id="platform-operator-a",
                 activation_id="platform-activation-a",
-                at=__import__("datetime").datetime(
-                    2026, 10, 25, 7, 0,
-                    tzinfo=__import__("datetime").timezone.utc,
-                ),
+                at=datetime(2026, 10, 25, 7, 0, tzinfo=timezone.utc),
                 session=session,
             )
             assert scope == LegalEvidenceProviderDiscoveryScope(
@@ -145,10 +140,7 @@ def test_configured_scope_denies_inactive_persisted_tenant() -> None:
                 resolver.resolve_scope(
                     principal_id="platform-operator-a",
                     activation_id="platform-activation-a",
-                    at=__import__("datetime").datetime(
-                        2026, 10, 25, 7, 0,
-                        tzinfo=__import__("datetime").timezone.utc,
-                    ),
+                    at=datetime(2026, 10, 25, 7, 0, tzinfo=timezone.utc),
                     session=session,
                 )
             session.abort_transaction()
@@ -173,10 +165,7 @@ def test_configured_scope_does_not_fall_back_to_another_tenant() -> None:
                 resolver.resolve_scope(
                     principal_id="platform-operator-a",
                     activation_id="platform-activation-a",
-                    at=__import__("datetime").datetime(
-                        2026, 10, 25, 7, 0,
-                        tzinfo=__import__("datetime").timezone.utc,
-                    ),
+                    at=datetime(2026, 10, 25, 7, 0, tzinfo=timezone.utc),
                     session=session,
                 )
             session.abort_transaction()
