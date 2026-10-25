@@ -13,8 +13,9 @@ from tools.eos.legal_operations.service.legal_evidence_provider_readonly_reconci
 
 
 class _Registry:
-    def __init__(self, error: Exception | None = None) -> None:
+    def __init__(self, error: Exception | None = None, *, ready: bool = True) -> None:
         self.error = error
+        self.ready = ready
         self.calls = 0
 
     def ensure_indexes(self) -> None:
@@ -22,8 +23,11 @@ class _Registry:
         if self.error:
             raise self.error
 
-    def provision(self) -> None:
-        self.ensure_indexes()
+    def verify_indexes(self) -> bool:
+        self.calls += 1
+        if self.error:
+            raise self.error
+        return self.ready
 
 
 class _Gate:
@@ -56,7 +60,6 @@ def _composition(registry=None, gate=None, coordinator=None):
         LegalEvidenceProviderReadOnlyReconciliationProductionComposition(
             target=object(),
             registry=registry,
-            index_provisioner=registry,
             gate=gate,
             dependencies=SimpleNamespace(coordinator=coordinator),
         ),
@@ -66,42 +69,28 @@ def _composition(registry=None, gate=None, coordinator=None):
     )
 
 
-def test_composition_fails_closed_until_audit_indexes_are_explicitly_provisioned():
-    composition, registry, gate, coordinator = _composition()
+def test_composition_fails_closed_when_deployment_has_not_provisioned_audit_indexes():
+    registry = _Registry(ready=False)
     with pytest.raises(
         LegalEvidenceProviderReadOnlyReconciliationCompositionError,
         match="PLATFORM_DECISION_AUDIT_INDEXES_NOT_PROVISIONED",
     ):
-        composition.authorize_and_reconcile(
-            signed_workload_fields={},
-            body=b"",
-            idempotency_key="reconcile-1",
-            at=datetime.now(timezone.utc),
-            session=object(),
-        )
-    assert composition.audit_indexes_provisioned is False
-    assert registry.calls == 0
-    assert gate.calls == []
-    assert coordinator.calls == []
+        _composition(registry=registry)
+    assert registry.calls == 1
 
 
-def test_index_provisioning_failure_never_marks_composition_ready():
-    registry = _Registry(RuntimeError("index setup unavailable"))
-    composition, _, gate, coordinator = _composition(registry=registry)
+def test_composition_fails_closed_when_read_only_index_verification_fails():
+    registry = _Registry(RuntimeError("index verification unavailable"))
     with pytest.raises(
         LegalEvidenceProviderReadOnlyReconciliationCompositionError,
-        match="PLATFORM_DECISION_AUDIT_INDEX_PROVISIONING_FAILED",
+        match="PLATFORM_DECISION_AUDIT_INDEX_VERIFICATION_FAILED",
     ):
-        composition.provision_audit_indexes()
-    assert composition.audit_indexes_provisioned is False
+        _composition(registry=registry)
     assert registry.calls == 1
-    assert gate.calls == []
-    assert coordinator.calls == []
 
 
 def test_authorized_composition_passes_only_gate_derived_scope_to_coordinator():
     composition, registry, gate, coordinator = _composition()
-    composition.provision_audit_indexes()
     at = datetime.now(timezone.utc)
     session = object()
     fields = {"service_id": "signed-service"}
