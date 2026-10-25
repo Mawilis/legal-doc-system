@@ -36,9 +36,9 @@ from typing import Any, Mapping
 VERSION = "v1.0.0-PLATFORM-AUTHORIZATION-DECISION-EVIDENCE"
 SCHEMA = "WILSY-PLATFORM-AUTHORIZATION-DECISION-EVIDENCE/V1"
 PLATFORM_SCOPE = "PLATFORM"
-_HEX_SHA3_512 = re.compile(r"[0-9a-f]{128}\\Z")
-_TOKEN = re.compile(r"[A-Za-z0-9][A-Za-z0-9._:/-]{0,255}\\Z")
-_REASON = re.compile(r"[A-Z][A-Z0-9_]{0,127}\\Z")
+_HEX_SHA3_512 = re.compile(r"[0-9a-f]{128}\Z")
+_TOKEN = re.compile(r"[A-Za-z0-9][A-Za-z0-9._:/-]{0,255}\Z")
+_REASON = re.compile(r"[A-Z][A-Z0-9_]{0,127}\Z")
 
 
 class PlatformAuthorizationDecisionEvidenceError(ValueError):
