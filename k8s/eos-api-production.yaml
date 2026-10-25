@@ -103,6 +103,29 @@ spec:
               value: wilsy-hr-documents-af-south-1-4a5acd714dc2
             - name: WILSY_HR_DOCUMENT_S3_REGION
               value: af-south-1
+            # Legal Evidence storage settings are shared by the existing
+            # upload authority and the read-only reconciliation provider.
+            - name: WILSY_LEGAL_EVIDENCE_S3_BUCKET
+              valueFrom:
+                configMapKeyRef:
+                  name: wilsy-eos-runtime
+                  key: legal-evidence-s3-bucket
+            - name: WILSY_LEGAL_EVIDENCE_S3_REGION
+              valueFrom:
+                configMapKeyRef:
+                  name: wilsy-eos-runtime
+                  key: legal-evidence-s3-region
+            - name: WILSY_LEGAL_EVIDENCE_S3_KMS_KEY_ID
+              valueFrom:
+                configMapKeyRef:
+                  name: wilsy-eos-runtime
+                  key: legal-evidence-s3-kms-key-id
+                  optional: true
+            - name: WILSY_LEGAL_EVIDENCE_RECONCILIATION_TENANT_ID
+              valueFrom:
+                secretKeyRef:
+                  name: wilsy-eos-runtime-secrets
+                  key: legal-evidence-reconciliation-tenant-id
             - name: WILSY_HR_DOCUMENT_MAX_UPLOAD_BYTES
               valueFrom:
                 configMapKeyRef:
