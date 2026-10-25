@@ -628,14 +628,14 @@ def test_noninteractive_workload_path_rejects_missing_verified_workload_fact() -
 
 def test_noninteractive_workload_path_rejects_assurance_principal_mismatch() -> None:
     wrong_fact = WorkloadTrustFact(
-        proof_reference="workload-proof-wrong",
-        principal_id="principal-b",
-        credential_or_attestation_reference="workload-credential-b",
+        proof_reference="workload-proof-a",
+        principal_id="principal-a",
+        credential_or_attestation_reference="workload-credential-a",
         observed_at=NOW,
         status=WorkloadTrustStatus.CURRENT,
     )
     wrong_result = AssuranceResult(
-        evidence=Evidence(principal_id="principal-a"),
+        evidence=Evidence(principal_id="principal-b"),
         workload_fact=wrong_fact,
     )
     authority, registry, resolver, _ = build()
