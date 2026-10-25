@@ -1,9 +1,11 @@
 """TITLE: D12 revocation command service direct certificate.
-VERSION: v1.0.0-D12-REVOCATION-COMMAND-CERT
+VERSION: v1.1.1-L10A2R-C4D7-RECONCILIATION-DELEGATION-HELD-CERT
 AUTHORITY: Current-command, target, lineage, and closed-policy revocation proof.
 ABSOLUTE PATH: /Users/wilsonkhanyezi/legal-doc-system/tests/unit/test_system_permission_revocation_command_service.py
 CERTIFICATION DATE: 2026-10-14
-CHANGELOG: v1.0.0 certifies bounded terminal revocation.
+CHANGELOG: v1.1.1-L10A2R-C4D7-RECONCILIATION-DELEGATION-HELD-CERT preserves the closed SYSTEM revocation allowlist and
+    explicitly rejects reconciliation-read revocation until its governed
+    operator grant/use contract is certified.
 BOUNDARY: No recursive/arbitrary revocation, transaction lifecycle, tenant, or finance.
 """
 from datetime import datetime, timedelta, timezone
@@ -48,6 +50,7 @@ def test_successful_revocation_and_exact_lineage(monkeypatch: pytest.MonkeyPatch
     assert value.principal_id == "target-a" and value.permission_id == PRIVILEGED_ACTIVATION_ISSUE_PERMISSION
 
 
+@pytest.mark.parametrize("denied", ["legal_operations:evidence_provider_reconciliation:read"])
 @pytest.mark.parametrize("denied", [ASSIGN_COMMAND_PERMISSION, REVOKE_COMMAND_PERMISSION, "kernel:write", "*"])
 def test_recursive_and_arbitrary_revocation_denied(denied: str) -> None:
     service, _, _ = _parts()
@@ -78,6 +81,6 @@ def test_no_transaction_or_forbidden_authority_surface() -> None:
 
 # WILSY OS SOVEREIGN ARTIFACT SEAL
 # ARTIFACT: test_system_permission_revocation_command_service.py
-# VERSION: v1.0.0-D12-REVOCATION-COMMAND-CERT
+# VERSION: v1.1.1-L10A2R-C4D7-RECONCILIATION-DELEGATION-HELD-CERT
 # AUTHORITY BOUNDARY: PRIVILEGED ACTIVATION ISSUE REVOCATION CERTIFICATE
 # END OF WILSY OS SOVEREIGN ARTIFACT
