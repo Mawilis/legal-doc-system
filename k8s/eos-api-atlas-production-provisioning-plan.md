@@ -98,6 +98,15 @@ keys in the existing `wilsy-eos-runtime-secrets` Kubernetes Secret:
 | `internal-auth-key-id` | `WILSY_INTERNAL_AUTH_KEY_ID` | Active signed-workload key identifier |
 | `internal-auth-secret` | `WILSY_INTERNAL_AUTH_SECRET` | Secret used by the existing signed-workload protocol |
 | `legal-evidence-reconciliation-audit-mongodb-uri` | `WILSY_LEGAL_EVIDENCE_RECONCILIATION_AUDIT_MONGODB_URI` | Separate MongoDB audit deployment URI |
+| `legal-evidence-reconciliation-tenant-id` | `WILSY_LEGAL_EVIDENCE_RECONCILIATION_TENANT_ID` | Fixed server-owned reconciliation tenant scope |
+
+The existing `wilsy-eos-runtime` ConfigMap must also provide
+`legal-evidence-s3-bucket` and `legal-evidence-s3-region` for the shared
+Legal Evidence S3 provider configuration. `legal-evidence-s3-kms-key-id` is
+optional only when the existing Legal Evidence storage policy does not require
+a customer-managed KMS key. These are configuration references, not literal
+values in this manifest. Do not substitute the HR document bucket or infer a
+tenant identifier from a request.
 
 The production Kubernetes readiness probe now targets
 `/api/legal-operations/evidence-provider/reconciliation/health`, not the
