@@ -1,11 +1,11 @@
 """TITLE: D12 system permission command policy certificate.
-VERSION: v1.1.0-D12-P7-BREAK-GLASS-DELEGATION-CERT
+VERSION: v1.2.0-L10A2R-C4D7-RECONCILIATION-READ-DELEGATION-CERT
 AUTHORITY: Direct closed-policy proof.
 EPITOME: Prove the complete explicit D12 bootstrap and ongoing delegation allowlists.
 ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/tests/unit/test_system_permission_command_policy.py
 COLLABORATION / OWNERSHIP: D12 command services and P7 lawful assignment prerequisite.
 CERTIFICATION DATE: 2026-10-15
-CHANGELOG: v1.1.0 certifies the exact two-permission ongoing delegation set.
+CHANGELOG: v1.2.0-L10A2R-C4D7-RECONCILIATION-READ-DELEGATION-CERT certifies the exact three-permission ongoing delegation set, with reconciliation read as the only added non-command permission.
 COMPLIANCE: POPIA section 19; GDPR Article 32; SOC 2 CC7.2.
 SECURITY / PRIVACY POSTURE: Pure immutable policy assertions; no identity data.
 TENANT BOUNDARY: SYSTEM only; tenant permissions reject.
@@ -28,7 +28,7 @@ def test_exact_bootstrap_mappings_and_immutable_policy() -> None:
 
 
 def test_exact_ongoing_sets_exclude_recursive_command_authority() -> None:
-    exact = frozenset({PRIVILEGED_ACTIVATION_ISSUE_PERMISSION, "privileged_activation:break_glass"})
+    exact = frozenset({PRIVILEGED_ACTIVATION_ISSUE_PERMISSION, "privileged_activation:break_glass", "legal_operations:evidence_provider_reconciliation:read"})
     assert ONGOING_ASSIGNABLE_PERMISSIONS == exact
     assert ONGOING_REVOCABLE_PERMISSIONS == exact
     for permission in exact:
@@ -42,6 +42,16 @@ def test_exact_ongoing_sets_exclude_recursive_command_authority() -> None:
         with pytest.raises(SystemPermissionCommandPolicyError):
             require_ongoing_revocation(denied)
 
+
+
+def test_reconciliation_read_is_the_only_new_delegable_non_command_permission() -> None:
+    permission = "legal_operations:evidence_provider_reconciliation:read"
+    assert permission in ONGOING_ASSIGNABLE_PERMISSIONS
+    assert permission in ONGOING_REVOCABLE_PERMISSIONS
+    assert ASSIGN_COMMAND_PERMISSION not in ONGOING_ASSIGNABLE_PERMISSIONS
+    assert REVOKE_COMMAND_PERMISSION not in ONGOING_ASSIGNABLE_PERMISSIONS
+    assert ASSIGN_COMMAND_PERMISSION not in ONGOING_REVOCABLE_PERMISSIONS
+    assert REVOKE_COMMAND_PERMISSION not in ONGOING_REVOCABLE_PERMISSIONS
 
 @pytest.mark.parametrize("denied", ["unknown", "*", "privileged_activation:*", " privileged_activation:issue", "Privileged_activation:issue", "tenant:profile:write", "financial:execute", "governance:evaluate", "kernel:write"])
 def test_arbitrary_alias_wildcard_tenant_financial_governance_kernel_denied(denied: str) -> None:
@@ -58,7 +68,7 @@ def test_bootstrap_mismatch_denied() -> None:
 
 # WILSY OS SOVEREIGN ARTIFACT SEAL
 # ARTIFACT: test_system_permission_command_policy.py
-# VERSION: v1.1.0-D12-P7-BREAK-GLASS-DELEGATION-CERT
+# VERSION: v1.2.0-L10A2R-C4D7-RECONCILIATION-READ-DELEGATION-CERT
 # AUTHORITY BOUNDARY: POLICY CERTIFICATE ONLY
 # TENANT POSTURE: SYSTEM ONLY; TENANT PERMISSIONS REJECT
 # FAIL-CLOSED POSTURE: EXACT TWO-PERMISSION ALLOWLIST; NO WILDCARD OR RECURSION
