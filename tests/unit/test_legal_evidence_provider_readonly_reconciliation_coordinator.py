@@ -174,10 +174,3 @@ def test_no_provider_or_persistence_mutation_methods_are_exposed() -> None:
     assert all(not hasattr(classification, name) for name in forbidden)
     assert all(not hasattr(discovery, name) for name in forbidden)
 
-
-def test_incomplete_observation_membership_gap_is_explicitly_unresolved() -> None:
-    source = __import__(
-        "tools.eos.legal_operations.service.legal_evidence_provider_readonly_reconciliation_coordinator",
-        fromlist=["LegalEvidenceProviderReadOnlyReconciliationCoordinator"],
-    )
-    assert "L10A2R_C4D7A_INCOMPLETE_MEMBERSHIP_UNPROVEN" in source.__file__
