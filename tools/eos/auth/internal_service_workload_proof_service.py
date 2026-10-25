@@ -6,8 +6,8 @@ AUTHORITY: Wilsy OS Core Governance
 EPITOME: Compose existing HMAC verification with durable credential and principal currentness into one server-issued workload fact.
 ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/tools/eos/auth/internal_service_workload_proof_service.py
 COLLABORATION / OWNERSHIP: Internal-service verifier, replay registry, credential registry, PrincipalAuthority, and workload-currentness registry.
-CERTIFICATION / UPDATE DATE: 2026-10-14
-CHANGELOG: v1.0.0-P3-R3G-S6-A1 establishes the caller-transaction verified-source composition.
+CERTIFICATION / UPDATE DATE: 2026-10-25
+CHANGELOG: v1.1.0-P3-R3G-S6-A1-CURRENT-CREDENTIAL-REPLAY reuses the single current workload fact for each fresh signed nonce within the same credential generation, avoiding a false unique-reference collision while preserving replay denial and invalidation; v1.0.0 established the caller-transaction verified-source composition.
 COMPLIANCE: POPIA section 19; GDPR Article 32; SOC 2 CC7.2.
 SECURITY / PRIVACY POSTURE: Proof references are server-generated; raw HMAC material is never persisted or returned.
 TENANT BOUNDARY: Workload proof grants no tenant authority and consumes no caller tenant assertion.
