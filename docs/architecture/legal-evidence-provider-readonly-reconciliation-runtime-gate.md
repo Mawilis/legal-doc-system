@@ -167,6 +167,42 @@ Before runtime wiring, the owner must approve and document:
 
 The current constructor requires a decision-evidence registry dependency and the gate persists a decision before returning. This does not by itself establish that a production composition root supplies the canonical registry; that binding must be proved when the governed invocation surface is selected.
 
+## Dedicated HTTP invocation implementation — draft, not production-enabled
+
+A dedicated Python router has been added at
+`tools/eos/api/legal_evidence_provider_readonly_reconciliation_router.py`
+and registered by `tools/eos/api/api_server.py` at
+`POST /api/legal-operations/evidence-provider/reconciliation`. The handler
+extracts the signed transport envelope from the actual ASGI request and takes
+the operation idempotency key only from the exact request body whose digest is
+covered by the existing signed workload protocol. It rejects duplicate JSON
+properties and bodies with extra fields; correlation IDs remain audit
+correlation only. The handler starts one business transaction, passes the active
+session through the existing composition/gate/coordinator chain, commits only
+after successful reconciliation, and aborts on failure. It never mounts on the
+generic `/runtime/execute` endpoint.
+
+The route is deliberately fail-closed: it returns
+`RECONCILIATION_COMPOSITION_UNAVAILABLE` until the application state contains
+an instance of the canonical production composition. No startup code in this
+change invents privileged authorities, workload secrets, audit credentials, or
+deployment target values. Consequently, route registration is not evidence that
+the production invocation is enabled. The production composition still must be
+created by an approved deployment bootstrap with canonical P5/P2 authorities,
+the trusted workload key configuration, a distinct runtime audit client, and
+the approved audit database. Deployment must also prove that the deployment
+index provisioner and runtime audit client address the same approved audit
+target.
+
+The focused workflow now explicitly compiles the router and API server and
+includes the router's adversarial unit tests. Required further certification is
+an actual approved-caller HTTP test against isolated replica-set MongoDB that
+proves signed-body digest validation, replay rejection, current permission and
+scope denial, audit durability, and business-transaction commit/abort semantics
+through the mounted app. This stacked draft change has not yet produced a CI
+result; no production readiness claim is made. The existing unified production
+dependency audit failure remains an independent release blocker.
+
 ## Non-goals
 
 This gate does not authorize provider deletion, retention modification, legal-hold release, automatic retries, orphan-proof issuance, or financial execution. Provider mutation remains outside the reconciliation capability.
