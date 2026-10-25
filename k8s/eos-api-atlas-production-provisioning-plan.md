@@ -143,10 +143,13 @@ remains unavailable and the route returns a bounded 503.
    from the business client, and the composition verifies the provisioned audit
    index shape read-only. Never substitute the business database, a CI URI, or
    an implicit default database.
-5. Capture the provisioner's success output and the runtime startup/readiness
-   evidence without printing either URI. Compare the sanitized deployment
-   target identity and database name in the deployment record. Do not claim
-   production audit-target certification until these observations exist.
+5. Capture the provisioner's success output and runtime startup logs without
+   printing either URI. Both now emit the same credential-free
+   `AUDIT_TARGET_FINGERPRINT` derived from the parsed host list, database,
+   replica-set, auth-source, TLS, and direct-connection settings. Compare that
+   fingerprint and database name across both records. Do not claim production
+   audit-target certification until the fingerprints match and both index
+   verification observations exist.
 
 The provisioner is a deployment-only command and must never be invoked from a
 request handler. The production Kubernetes manifest references these keys but
