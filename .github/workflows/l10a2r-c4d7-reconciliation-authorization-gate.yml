@@ -123,7 +123,6 @@ jobs:
             tools/eos/legal_operations/service/legal_evidence_provider_readonly_reconciliation_coordinator.py \
             tests/unit/test_privileged_activation_use_authority.py \
             tests/unit/test_legal_evidence_provider_readonly_reconciliation_platform_decision_evidence.py \
-            tests/unit/test_legal_evidence_provider_readonly_reconciliation_platform_decision_evidence.py \
             tests/unit/test_current_system_permission_possession.py \
             tests/unit/test_system_permission_command_policy.py \
             tests/unit/test_system_permission_assignment_command_service.py \
@@ -140,6 +139,7 @@ jobs:
         run: |
           set +e
           python -m pytest -q \
+            tests/unit/test_legal_evidence_provider_readonly_reconciliation_platform_decision_evidence.py \
             tests/unit/test_privileged_activation_use_authority.py \
             tests/unit/test_current_system_permission_possession.py \
             tests/unit/test_system_permission_command_policy.py \
