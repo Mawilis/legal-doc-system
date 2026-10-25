@@ -63,6 +63,7 @@ jobs:
             pydantic_core==2.46.4 \
             fastapi==0.141.1 \
             starlette==1.6.0 \
+            python-multipart==0.0.31 \
             python-dotenv==1.2.3 \
             boto3 \
             bcrypt==5.0.0 \
@@ -183,6 +184,11 @@ jobs:
             tests/integration/test_legal_evidence_provider_readonly_reconciliation_scope_real_mongo.py \
             tests/integration/test_legal_evidence_provider_readonly_reconciliation_authorization_gate_real_mongo.py \
             tests/integration/test_platform_authorization_decision_evidence_registry_real_mongo.py \
+            tests/unit/test_iam_security_tranche_b_startup_indexes.py \
+            tests/unit/test_tenant_legal_operating_model_server_mount.py \
+            tests/unit/test_deputy_principal_binding_server_bootstrap.py \
+            tests/unit/test_authorization_role_revocation_server_mount.py \
+            tests/unit/test_legal_storefront_public_intent_server_mount.py \
             > /tmp/focused-pytest-output.txt 2>&1
           pytest_status=$?
           cat /tmp/focused-pytest-output.txt
