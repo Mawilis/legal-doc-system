@@ -3,7 +3,6 @@
 from __future__ import annotations
 
 import hashlib
-import hmac
 import json
 
 import pytest
@@ -119,7 +118,7 @@ def test_caller_rejects_invalid_operation_idempotency_keys(value: object) -> Non
 def test_caller_rejects_newlines_and_invalid_nonce() -> None:
     with pytest.raises(ReconciliationInvocationClientError, match="WORKLOAD_SERVICE_ID_REQUIRED"):
         build_signed_invocation(
-            service_id="service\\nforged",
+            service_id="service\nforged",
             audience=AUDIENCE,
             key_id=KEY_ID,
             secret=SECRET,
