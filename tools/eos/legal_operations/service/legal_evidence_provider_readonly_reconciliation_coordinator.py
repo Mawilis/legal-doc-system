@@ -341,6 +341,14 @@ class LegalEvidenceProviderReadOnlyReconciliationCoordinator:
                     "L10A2R_C4D7A_COMPLETED_OBSERVATION_NOT_COVERED"
                 )
 
+        # The current trusted verifier seals exact completed-object membership,
+        # but only page-level fingerprints (not individual membership digests) for
+        # incomplete sessions. Count equality alone cannot prove identity. Refuse
+        # to report a complete reconciliation while any incomplete session exists.
+        if incomplete:
+            raise LegalEvidenceProviderReadOnlyReconciliationError(
+                "L10A2R_C4D7A_INCOMPLETE_MEMBERSHIP_UNPROVEN"
+            )
         if (
             len(incomplete) != verification.incomplete_observation_count
             or len(completed) != verification.completed_observation_count
