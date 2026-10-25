@@ -12,7 +12,7 @@
 #   v1.2.0-L10A2R-C4D7-LEGAL-EVIDENCE-CONFIG-CONTRACT
 #     - Declares the exact legal-evidence S3 and fixed reconciliation tenant
 #       configuration consumed by the production startup composition.
-#   v1.1.0-L10A2R-C4D7-RECONCILIATION-SECRET-CONTRACT
+#   v1.2.0-L10A2R-C4D7-READONLY-AWS-ROLE-CONTRACT
 #     - Declares internal workload trust and the separate audit URI Secret keys.
 #
 # IMPORTANT:
@@ -48,6 +48,8 @@ data:
   legal-evidence-s3-region: ""
   # OPTIONAL only if the approved legal-evidence design uses S3-managed SSE-S3.
   legal-evidence-s3-kms-key-id: ""
+  # REQUIRED; exact approved dedicated read-only role ARN for reconciliation.
+  legal-evidence-reconciliation-aws-role-arn: ""
 
 ---
 apiVersion: v1
