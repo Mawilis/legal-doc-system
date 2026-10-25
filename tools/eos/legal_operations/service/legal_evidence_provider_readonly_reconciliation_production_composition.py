@@ -157,6 +157,7 @@ class LegalEvidenceProviderReadOnlyReconciliationProductionComposition:
 
     __slots__ = (
         "_target",
+        "_business_client",
         "_registry",
         "_gate",
         "_dependencies",
@@ -167,11 +168,17 @@ class LegalEvidenceProviderReadOnlyReconciliationProductionComposition:
         self,
         *,
         target: ServerConfiguredReconciliationTarget,
+        business_client: Any,
         registry: PlatformAuthorizationDecisionEvidenceRegistry,
         gate: LegalEvidenceProviderReadOnlyReconciliationAuthorizationGate,
         dependencies: LegalEvidenceProviderReadOnlyReconciliationDependencies,
     ) -> None:
+        if business_client is None or not callable(getattr(business_client, "start_session", None)):
+            raise LegalEvidenceProviderReadOnlyReconciliationCompositionError(
+                "CANONICAL_BUSINESS_CLIENT_REQUIRED"
+            )
         self._target = target
+        self._business_client = business_client
         self._registry = registry
         self._gate = gate
         self._dependencies = dependencies
@@ -190,6 +197,11 @@ class LegalEvidenceProviderReadOnlyReconciliationProductionComposition:
     def audit_indexes_provisioned(self) -> bool:
         """Whether this instance successfully completed explicit index setup."""
         return self._audit_indexes_provisioned
+
+    @property
+    def business_client(self) -> Any:
+        """The exact deployment-owned business client used to build this graph."""
+        return self._business_client
 
     def authorize_and_reconcile(
         self,
@@ -310,6 +322,7 @@ def build_legal_evidence_provider_readonly_reconciliation_production_composition
 
     return LegalEvidenceProviderReadOnlyReconciliationProductionComposition(
         target=target,
+        business_client=business_client,
         registry=registry,
         gate=gate,
         dependencies=dependencies,
