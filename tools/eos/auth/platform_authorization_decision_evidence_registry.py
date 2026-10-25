@@ -98,6 +98,28 @@ class PlatformAuthorizationDecisionEvidenceRegistry:
                 "AUDIT_INDEX_SETUP_FAILED"
             ) from error
 
+    def verify_indexes(self) -> bool:
+        """Read-only check that deployment provisioned both required unique indexes."""
+        try:
+            information = self._collection.index_information()
+        except (AttributeError, PyMongoError) as error:
+            raise PlatformAuthorizationDecisionEvidenceRegistryPersistenceError(
+                "AUDIT_INDEX_VERIFICATION_FAILED"
+            ) from error
+        required = {
+            "platform_auth_decision_idempotency_unique": [("idempotency_key", ASCENDING)],
+            "platform_auth_decision_identity_unique": [("decision_id", ASCENDING)],
+        }
+        for name, keys in required.items():
+            actual = information.get(name)
+            if (
+                not isinstance(actual, dict)
+                or actual.get("unique") is not True
+                or actual.get("key") != keys
+            ):
+                return False
+        return True
+
     @staticmethod
     def _replay_material(row: dict[str, Any]) -> dict[str, Any]:
         """Compare request disposition/provenance, not generated ID or clock."""
