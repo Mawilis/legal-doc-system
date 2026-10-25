@@ -136,3 +136,48 @@ def test_provider_name_must_be_explicit_and_nonblank() -> None:
         )
     coverage.verify_coverage.assert_not_called()
     discovery.list_incomplete_write_sessions.assert_not_called()
+
+def test_rejects_missing_or_fabricated_coverage_proof_before_classification() -> None:
+    coordinator, discovery, coverage, classification = _coordinator()
+    coverage.verify_coverage.return_value = object()
+    coverage.accepts_verification.return_value = False
+    with pytest.raises(LegalEvidenceProviderReadOnlyReconciliationError, match="COVERAGE_SCOPE_MISMATCH"):
+        coordinator.reconcile(
+            scope=SCOPE,
+            provider_name="s3-certified",
+            observed_at=AT,
+            session=SimpleNamespace(in_transaction=True),
+        )
+    discovery.list_incomplete_write_sessions.assert_not_called()
+    classification.classify_tenant_observations.assert_not_called()
+
+
+def test_coverage_verifier_failure_propagates_without_classification() -> None:
+    coordinator, discovery, coverage, classification = _coordinator()
+    coverage.verify_coverage.side_effect = RuntimeError("provider pagination failed")
+    with pytest.raises(RuntimeError, match="provider pagination failed"):
+        coordinator.reconcile(
+            scope=SCOPE,
+            provider_name="s3-certified",
+            observed_at=AT,
+            session=SimpleNamespace(in_transaction=True),
+        )
+    discovery.list_incomplete_write_sessions.assert_not_called()
+    classification.classify_tenant_observations.assert_not_called()
+
+
+def test_no_provider_or_persistence_mutation_methods_are_exposed() -> None:
+    coordinator, discovery, coverage, classification = _coordinator()
+    forbidden = ("delete_object", "abort_write_session", "insert_one", "update_one", "delete_one")
+    assert all(not hasattr(coordinator, name) for name in forbidden)
+    assert all(not hasattr(coverage, name) for name in forbidden)
+    assert all(not hasattr(classification, name) for name in forbidden)
+    assert all(not hasattr(discovery, name) for name in forbidden)
+
+
+def test_incomplete_observation_membership_gap_is_explicitly_unresolved() -> None:
+    source = __import__(
+        "tools.eos.legal_operations.service.legal_evidence_provider_readonly_reconciliation_coordinator",
+        fromlist=["LegalEvidenceProviderReadOnlyReconciliationCoordinator"],
+    )
+    assert "L10A2R_C4D7A_INCOMPLETE_MEMBERSHIP_UNPROVEN" in source.__file__
