@@ -103,37 +103,31 @@ Focused unit coverage and the Python certification workflow were extended for th
 
 The runtime composition verifies the two required unique audit indexes read-only during construction. The deployment-only index provisioner is separate and is not retained by the runtime composition, so the runtime audit client does not need index-management authority. This verifies index shape/existence, not that a deployment provisioner has been configured against the correct production cluster; that remains a deployment-owned configuration and release-governance obligation.
 
-## Signed-workload transport extraction (not mounted)
+## Signed-workload transport and canonical invocation
 
-The Python/EOS transport adapter now exists at
-`tools/eos/legal_operations/service/legal_evidence_provider_readonly_reconciliation_transport_adapter.py`.
-It maps the already-existing signed internal-service header contract
-(`X-Wilsy-Auth-Version`, `X-Wilsy-Service-ID`, `X-Wilsy-Audience`,
-`X-Wilsy-Key-ID`, `X-Wilsy-Timestamp`, `X-Wilsy-Nonce`,
-`X-Wilsy-Body-SHA3-512`, `X-Wilsy-Correlation-ID`,
-`X-Wilsy-Signature`) into the canonical P3 request mapping. It derives the
-HTTP method and raw origin-form path/query from the ASGI scope, reads the exact
-body bytes, rejects missing/duplicate required headers, rejects malformed path
-and header encoding, and does not accept identity, tenant, provider, or scope
-from the request body or context. The signed correlation ID is preserved for audit correlation only. It is not
-an operation idempotency key. The existing signed protocol has no dedicated
-operation-idempotency field, so the invocation owner must approve a
-protocol-compatible idempotency contract before runtime wiring; an unsigned
-auxiliary header must not substitute for that contract.
+The Python/EOS transport adapter extracts the existing signed internal-service
+header contract from the actual ASGI scope, preserves exact body bytes, binds
+method and raw path/query, and rejects missing/duplicate required headers or
+malformed encoding. It accepts no caller-selected identity, tenant, provider,
+or scope. Signature verification, current workload proof, P5 activation,
+SYSTEM permission possession, server-owned scope, and durable authorization
+evidence remain in the canonical authority chain.
 
-The adapter only normalizes transport input. It does not verify the signature,
-authorize the operation, create a Mongo session, start/commit/abort a
-transaction, or mount a route. The canonical P3/P5/gate chain remains the sole
-authorization path. Its focused adversarial tests are now included in the
-reconciliation workflow's explicit compile and pytest command; certification
-for the new adapter is pending the current-head workflow result.
+The canonical EOS server mounts the dedicated route at
+`POST /api/legal-operations/evidence-provider/reconciliation`. The route's
+strict body contract is a UTF-8 JSON object containing exactly
+`idempotency_key`. The key is not taken from an unsigned header, and signed
+correlation remains correlation only. The composition requires a fresh signed
+nonce per attempt, reauthorizes every attempt, and stores/replays the exact
+bounded result under authenticated service ID plus operation key in the same
+caller-owned business transaction. Changed body or server-resolved scope under
+the same key conflicts rather than overwriting the cached result.
 
-This reduces the transport-mapping implementation gap but does not resolve
-operational approval: the actual internal caller must still approve the exact
-route/path and signed header contract, and the deployment composition owner
-must supply the production dependencies and caller-owned transaction lifecycle.
-Do not mount this adapter on the generic runtime endpoint or expose a route
-until that approval and production wiring are independently evidenced.
+The existing generic signer in `server/services/pythonAuthorityTransport.js`
+can sign an exact path/body, but repository search has not identified a
+reconciliation-specific caller invocation. No Node/JavaScript change is made
+under the Python/EOS-only boundary. The service owner must approve and wire the
+actual caller to this exact route and body contract before production launch.
 
 ## Latest governed state — 2026-10-25
 
@@ -148,24 +142,16 @@ At code head `323c6189ec21799bf4227bdefbe757db8bccaea0`:
 
 ### Production closure remains blocked
 
-1. The actual internal caller/invocation owner has not evidenced approval of the dedicated reconciliation route/path or the stable operation-idempotency contract. Signed correlation is preserved for correlation only and is not silently promoted to idempotency.
-2. Deployment must configure the separate runtime audit Mongo client/database against the approved production audit target, provision unique indexes through the deployment-only provisioner, and demonstrate the provisioner and runtime resolve to that same approved target. Current source-level index verification alone cannot prove this deployment fact.
-3. An approved invocation owner must connect the canonical composition to the actual incoming signed request and own the active business transaction lifecycle. Do not mount this on generic `POST /runtime/execute`.
-4. The unified production security gate must pass. Its current 24 production vulnerabilities cannot be dismissed or bypassed. Dependency remediation is outside this Python/EOS change boundary and requires the dependency/security owner; this branch has not altered Node/JavaScript dependencies.
-5. After the above, certify the actual mounted route with adversarial HTTP + isolated real-Mongo tests, rerun all production gates, and obtain operational sign-off.
+1. **Actual caller approval:** the signed path and operation-key protocol are implemented, but no reconciliation-specific call site was found in the repository. The owning service must approve and connect its actual caller to the exact route; do not infer that generic signer availability proves a caller is wired.
+2. **Deployment audit target:** deployment must set `WILSY_LEGAL_EVIDENCE_RECONCILIATION_AUDIT_MONGODB_URI` to the approved separate audit target and run the deployment-only provisioner using that same environment variable. Runtime verifies the unique audit indexes read-only and rejects a business target that resolves to the same host/database. No production target/secret is available to this code-edit session, so target provisioning and parity remain unobserved.
+3. **Current-head certification:** the focused workflow now includes the route, canonical server bootstrap, audit provisioner, idempotency registry and adversarial unit tests. The older 155-test result does not certify these new changes. The latest exact-head focused + isolated real-Mongo run must pass with zero skips.
+4. **Unified security release gate:** the previously observed production dependency audit reported 24 vulnerabilities (2 moderate, 22 high). This Python/EOS task does not change Node/JavaScript dependencies; the owning dependency/security workflow must remediate and rerun that gate. No bypass is acceptable.
+5. **Operational launch sign-off:** after the above, certify the actual caller over HTTP against isolated real Mongo, verify commit/abort/replay and audit durability, rerun the unified production gate, and obtain operational approval.
 
-## Launch-governance decision
-
-The launch command system requires an authenticated, observable API and treats the launch date as a target, not permission to bypass certification. Repository inspection found a generic runtime API but no already-approved, reconciliation-specific route, CLI command, scheduler, or production service entry point. The generic `/runtime/execute` route is explicitly unsuitable under its current authorization and execution contract. Therefore no production invocation path can honestly be called approved today, and none is being wired in this delivery.
-
-Before runtime wiring, the owner must approve and document:
-1. The exact internal invocation surface and route/path agreement with the existing signed workload transport contract. A Python extraction adapter now exists, but no route is mounted and the actual internal caller has not yet been approved against it. The operation-idempotency contract must also be established; correlation IDs are not silently promoted to idempotency keys.
-2. Deployment-owned configuration for the audit Mongo client, collection, credentials/permissions, index provisioning, retention and operational monitoring.
-3. The composition root that constructs the real audit registry and gate; the caller must not be able to substitute a no-op or alternate audit writer.
-4. The invocation's active caller-owned transaction lifecycle, rollback behavior, idempotency handling, and observable audit-store outage response.
-5. A final focused and broader certification against that exact invocation composition.
-
-The current constructor requires a decision-evidence registry dependency and the gate persists a decision before returning. This does not by itself establish that a production composition root supplies the canonical registry; that binding must be proved when the governed invocation surface is selected.
+The canonical EOS startup now constructs and injects the real composition only
+when all required authority and deployment configuration is present. Missing
+configuration leaves the route at a fail-closed 503. This is a deliberate
+safety posture, not evidence that production configuration has been supplied.
 
 ## Dedicated HTTP invocation and deployment bootstrap — implemented, not launch-certified
 
