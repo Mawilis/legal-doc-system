@@ -5,6 +5,7 @@ from types import SimpleNamespace
 import pytest
 
 from tools.eos.legal_operations.service import legal_evidence_provider_readonly_reconciliation_audit_provisioner as provisioner
+from tools.eos.legal_operations.service.legal_evidence_provider_readonly_reconciliation_runtime import audit_target_fingerprint
 
 
 class _Client:
@@ -67,6 +68,7 @@ def test_provisioner_uses_explicit_separate_target_and_closes_client(monkeypatch
     assert provisioner.main() == 0
     output = capsys.readouterr().out
     assert "RECONCILIATION_AUDIT_INDEXES_PROVISIONED_AND_VERIFIED" in output
+    assert f"AUDIT_TARGET_FINGERPRINT={audit_target_fingerprint(audit_uri)}" in output
     assert audit_uri not in output
     assert business_uri not in output
     assert captured["uri"] == audit_uri
