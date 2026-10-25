@@ -114,6 +114,7 @@ jobs:
           python -m py_compile \
             tools/eos/auth/privileged_activation_use_authority.py \
             tools/eos/auth/platform_authorization_decision_evidence.py \
+            tools/eos/auth/platform_authorization_decision_evidence_registry.py \
             tools/eos/auth/current_system_permission_possession.py \
             tools/eos/auth/system_permission_command_policy.py \
             tools/eos/auth/system_permission_assignment_command_service.py \
@@ -123,6 +124,7 @@ jobs:
             tools/eos/legal_operations/service/legal_evidence_provider_readonly_reconciliation_coordinator.py \
             tests/unit/test_privileged_activation_use_authority.py \
             tests/unit/test_legal_evidence_provider_readonly_reconciliation_platform_decision_evidence.py \
+            tests/integration/test_platform_authorization_decision_evidence_registry_real_mongo.py \
             tests/unit/test_current_system_permission_possession.py \
             tests/unit/test_system_permission_command_policy.py \
             tests/unit/test_system_permission_assignment_command_service.py \
@@ -151,6 +153,7 @@ jobs:
             tests/integration/test_current_system_permission_possession_real_mongo.py \
             tests/integration/test_legal_evidence_provider_readonly_reconciliation_scope_real_mongo.py \
             tests/integration/test_legal_evidence_provider_readonly_reconciliation_authorization_gate_real_mongo.py \
+            tests/integration/test_platform_authorization_decision_evidence_registry_real_mongo.py \
             > /tmp/focused-pytest-output.txt 2>&1
           pytest_status=$?
           cat /tmp/focused-pytest-output.txt
