@@ -70,6 +70,10 @@ from tools.eos.auth.privileged_workload_trust_currentness_registry import (
     PrivilegedWorkloadTrustCurrentnessRegistry,
 )
 from tools.eos.auth.system_permission_assignment import SystemPermissionAssignment
+from tools.eos.auth.platform_authorization_decision_evidence_registry import (
+    COLLECTION as PLATFORM_DECISION_COLLECTION,
+    PlatformAuthorizationDecisionEvidenceRegistry,
+)
 from tools.eos.legal_operations.service.legal_evidence_provider_readonly_reconciliation_authorization_gate import (
     RECONCILIATION_READ_PERMISSION,
     LegalEvidenceProviderReadOnlyReconciliationAuthorizationError,
@@ -163,6 +167,12 @@ def _build_full_gate(
         session.commit_transaction()
 
     database = context_value["database"]
+    decision_audit_collection = database[PLATFORM_DECISION_COLLECTION]
+    decision_evidence_registry = PlatformAuthorizationDecisionEvidenceRegistry(
+        decision_audit_collection,
+        audit_client=context_value["client"],
+    )
+    decision_evidence_registry.ensure_indexes()
     tenant_id = "tenant-reconciliation-" + uuid4().hex
     database["tenants"].insert_one(_tenant_doc(tenant_id, created_at=now))
 
@@ -253,6 +263,7 @@ def _build_full_gate(
         workload_keys={KEY_ID: (SERVICE_ID, SECRET)},
         expected_audience=AUDIENCE,
         provider_name=target.provider_name,
+        decision_evidence_registry=decision_evidence_registry,
     )
     return gate, {
         "activation": activation,
@@ -265,6 +276,8 @@ def _build_full_gate(
         "assurance_collection": database[ASSURANCE_COLLECTION],
         "read_assignment": read_assignment,
         "now": now,
+        "decision_audit_collection": decision_audit_collection,
+        "decision_evidence_registry": decision_evidence_registry,
     }
 
 
