@@ -44,6 +44,10 @@ from tools.eos.legal_operations.service.legal_evidence_provider_readonly_reconci
     LegalEvidenceProviderReadOnlyReconciliationProductionComposition,
     build_legal_evidence_provider_readonly_reconciliation_production_composition,
 )
+from tools.eos.legal_operations.service.legal_evidence_provider_readonly_reconciliation_idempotency_registry import (
+    COLLECTION as OPERATION_IDEMPOTENCY_COLLECTION,
+    LegalEvidenceReconciliationOperationIdempotencyRegistry,
+)
 
 AUDIT_URI_ENV = "WILSY_LEGAL_EVIDENCE_RECONCILIATION_AUDIT_MONGODB_URI"
 
@@ -155,6 +159,10 @@ def build_legal_evidence_provider_readonly_reconciliation_runtime(
                 database=database
             ),
         )
+        operation_idempotency_registry = LegalEvidenceReconciliationOperationIdempotencyRegistry(
+            database[OPERATION_IDEMPOTENCY_COLLECTION]
+        )
+        operation_idempotency_registry.ensure_indexes()
         composition = build_legal_evidence_provider_readonly_reconciliation_production_composition(
             mongo_database=database,
             audit_database=audit_database,
@@ -164,6 +172,7 @@ def build_legal_evidence_provider_readonly_reconciliation_runtime(
             workload_keys=workload_keys,
             expected_audience=expected_audience,
             env=values,
+            idempotency_registry=operation_idempotency_registry,
         )
         if composition.business_client is not database.client:
             raise LegalEvidenceProviderReadOnlyReconciliationRuntimeBootstrapError(
