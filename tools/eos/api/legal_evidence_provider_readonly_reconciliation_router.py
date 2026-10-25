@@ -27,7 +27,7 @@ from tools.eos.legal_operations.service.legal_evidence_provider_readonly_reconci
     extract_signed_workload_request,
 )
 
-VERSION = "v1.0.0-L10A2R-C4D7-TRANSACTION-OWNED-INVOCATION"
+VERSION = "v1.0.1-L10A2R-C4D7-READINESS-AND-REPLAY"
 logger = logging.getLogger(__name__)
 
 _SAFE_ERROR_CODE = re.compile(r"[A-Z][A-Z0-9_]{0,95}\Z")
