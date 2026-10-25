@@ -199,7 +199,7 @@ def test_runtime_authority_example_declares_fail_closed_provider_and_reconciliat
         assert f"{key}: \"\"" in example
 
 
-def test_audit_target_fingerprint_ignores_credentials_but_binds_target() -> None
+def test_audit_target_fingerprint_ignores_credentials_but_binds_target() -> None:
     first = audit_target_fingerprint("mongodb://user-one:secret-one@audit.example:27017/audit")
     rotated = audit_target_fingerprint("mongodb://user-two:secret-two@audit.example:27017/audit")
     other_database = audit_target_fingerprint("mongodb://user-two:secret-two@audit.example:27017/audit_other")
