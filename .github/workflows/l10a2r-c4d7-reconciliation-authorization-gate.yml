@@ -17,6 +17,7 @@ on:
       - "tests/unit/test_system_permission_revocation_command_service.py"
       - "tests/unit/test_legal_evidence_provider_readonly_reconciliation_*.py"
       - "tests/integration/test_legal_evidence_provider_readonly_reconciliation_scope_real_mongo.py"
+      - "tests/integration/test_legal_evidence_provider_readonly_reconciliation_authorization_gate_real_mongo.py"
       - ".github/workflows/l10a2r-c4d7-reconciliation-authorization-gate.yml"
 
 permissions:
@@ -121,7 +122,8 @@ jobs:
             tests/unit/test_legal_evidence_provider_readonly_reconciliation_factory.py \
             tests/unit/test_legal_evidence_provider_readonly_reconciliation_coordinator.py \
             tests/integration/test_current_system_permission_possession_real_mongo.py \
-            tests/integration/test_legal_evidence_provider_readonly_reconciliation_scope_real_mongo.py
+            tests/integration/test_legal_evidence_provider_readonly_reconciliation_scope_real_mongo.py \
+            tests/integration/test_legal_evidence_provider_readonly_reconciliation_authorization_gate_real_mongo.py
 
       - name: Run focused unit certification with zero-skip enforcement
         shell: bash
@@ -138,6 +140,7 @@ jobs:
             tests/unit/test_legal_evidence_provider_readonly_reconciliation_coordinator.py \
             tests/integration/test_current_system_permission_possession_real_mongo.py \
             tests/integration/test_legal_evidence_provider_readonly_reconciliation_scope_real_mongo.py \
+            tests/integration/test_legal_evidence_provider_readonly_reconciliation_authorization_gate_real_mongo.py \
             > /tmp/focused-pytest-output.txt 2>&1
           pytest_status=$?
           cat /tmp/focused-pytest-output.txt
