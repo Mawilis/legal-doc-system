@@ -1,9 +1,9 @@
 """TITLE: D12 assignment command service direct certificate.
-VERSION: v1.0.0-D12-ASSIGNMENT-COMMAND-CERT
+VERSION: v1.1.1-L10A2R-C4D7-RECONCILIATION-DELEGATION-HELD-CERT
 AUTHORITY: Current-command, current-target, closed-policy assignment proof.
 ABSOLUTE PATH: /Users/wilsonkhanyezi/legal-doc-system/tests/unit/test_system_permission_assignment_command_service.py
 CERTIFICATION DATE: 2026-10-14
-CHANGELOG: v1.0.0 certifies bounded ongoing assignment.
+CHANGELOG: v1.1.1-L10A2R-C4D7-RECONCILIATION-DELEGATION-HELD-CERT preserves the closed allowlist and explicitly rejects legal_operations:evidence_provider_reconciliation:read until governed operator binding is certified.
 BOUNDARY: No recursion, arbitrary grant, transaction lifecycle, tenant, or finance.
 """
 from datetime import datetime, timezone
@@ -42,7 +42,7 @@ def test_current_actor_command_and_target_assign_exact_permission(monkeypatch: p
     assert value.principal_id == "target-a" and value.assigned_by_principal_id == "actor-a"
 
 
-@pytest.mark.parametrize("denied", [ASSIGN_COMMAND_PERMISSION, REVOKE_COMMAND_PERMISSION, "kernel:write", "tenant:profile:write", "*"])
+@pytest.mark.parametrize("denied", [ASSIGN_COMMAND_PERMISSION, REVOKE_COMMAND_PERMISSION, "legal_operations:evidence_provider_reconciliation:read", "kernel:write", "tenant:profile:write", "*"])
 def test_recursive_and_arbitrary_assignment_denied(denied: str) -> None:
     service, _, _ = _parts()
     with pytest.raises(Exception):
@@ -71,6 +71,6 @@ def test_no_transaction_or_forbidden_authority_surface() -> None:
 
 # WILSY OS SOVEREIGN ARTIFACT SEAL
 # ARTIFACT: test_system_permission_assignment_command_service.py
-# VERSION: v1.0.0-D12-ASSIGNMENT-COMMAND-CERT
+# VERSION: v1.1.1-L10A2R-C4D7-RECONCILIATION-DELEGATION-HELD-CERT
 # AUTHORITY BOUNDARY: PRIVILEGED ACTIVATION ISSUE ASSIGNMENT CERTIFICATE
 # END OF WILSY OS SOVEREIGN ARTIFACT
