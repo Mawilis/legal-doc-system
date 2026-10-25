@@ -618,7 +618,10 @@ def test_mounted_route_uses_real_signed_gate_and_replays_result_in_real_mongo(
 
         first = invoke()
         second = invoke()
-        assert first.status_code == 200
+        assert first.status_code == 200, (
+            f"response={first.body!r}; audit_decisions="
+            f"{[(row.get('decision'), row.get('reason_code')) for row in setup['decision_audit_collection'].find({})]}"
+        )
         assert second.status_code == 200
         first_payload = json.loads(first.body)["data"]
         second_payload = json.loads(second.body)["data"]
