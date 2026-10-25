@@ -459,7 +459,7 @@ def test_authorization_failure_calls_zero_real_adapter_provider_operations(
         session.start_transaction()
         with pytest.raises(
             LegalEvidenceProviderReadOnlyReconciliationAuthorizationError,
-            match="^AUTHORIZATION_EVALUATION_FAILED$",
+            match="^WORKLOAD_PROOF_DENIED$",
         ):
             gate.authorize(
                 request=request,
@@ -474,7 +474,7 @@ def test_authorization_failure_calls_zero_real_adapter_provider_operations(
     audit_row = setup["decision_audit_collection"].find_one({"idempotency_key": decision_key})
     assert audit_row is not None
     assert audit_row["decision"] == "DENY"
-    assert audit_row["reason_code"] == "AUTHORIZATION_EVALUATION_FAILED"
+    assert audit_row["reason_code"] == "WORKLOAD_PROOF_DENIED"
     assert audit_row["principal_id"] is None
     assert audit_row["identity_trust"] == "UNVERIFIED"
 
