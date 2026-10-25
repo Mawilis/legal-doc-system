@@ -71,11 +71,9 @@ def audit_target_fingerprint(uri: str) -> str:
         options = parsed.get("options") or {}
         identity = {
             "hosts": hosts,
+            "srv_fqdn": str(parsed.get("fqdn") or "").lower(),
             "database": parsed.get("database"),
             "replica_set": options.get("replicaSet"),
-            "auth_source": options.get("authSource"),
-            "tls": options.get("tls", options.get("ssl")),
-            "direct_connection": options.get("directConnection"),
         }
         encoded = json.dumps(identity, sort_keys=True, separators=(",", ":")).encode("utf-8")
     except Exception as error:
@@ -113,17 +111,13 @@ def build_legal_evidence_provider_readonly_reconciliation_runtime(
             "CANONICAL_BUSINESS_URI_REQUIRED"
         )
     try:
-        audit_target = parse_uri(audit_uri.strip())
-        business_target = parse_uri(business_uri.strip())
         target_fingerprint = audit_target_fingerprint(audit_uri)
+        business_target_fingerprint = audit_target_fingerprint(business_uri)
     except Exception as error:
         raise LegalEvidenceProviderReadOnlyReconciliationRuntimeBootstrapError(
             "RECONCILIATION_MONGODB_TARGET_INVALID"
         ) from error
-    if (
-        audit_target.get("nodelist") == business_target.get("nodelist")
-        and audit_target.get("database") == business_target.get("database")
-    ):
+    if target_fingerprint == business_target_fingerprint:
         raise LegalEvidenceProviderReadOnlyReconciliationRuntimeBootstrapError(
             "RECONCILIATION_AUDIT_TARGET_NOT_SEPARATE"
         )
