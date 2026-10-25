@@ -1,7 +1,7 @@
 """WILSY OS verified internal-service workload-proof orchestration.
 
 TITLE: Internal-Service Workload Proof Service
-VERSION: v1.0.0-P3-R3G-S6-A1
+VERSION: v1.1.0-P3-R3G-S6-A1-CURRENT-CREDENTIAL-REPLAY
 AUTHORITY: Wilsy OS Core Governance
 EPITOME: Compose existing HMAC verification with durable credential and principal currentness into one server-issued workload fact.
 ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/tools/eos/auth/internal_service_workload_proof_service.py
@@ -31,7 +31,7 @@ from tools.eos.auth.principal_status import PrincipalStatus
 from tools.eos.auth.privileged_channel_currentness import WorkloadTrustFact, WorkloadTrustStatus
 from tools.eos.auth.privileged_workload_trust_currentness_registry import PrivilegedWorkloadTrustCurrentnessRegistry
 
-VERSION: Final[str] = "v1.0.0-P3-R3G-S6-A1"
+VERSION: Final[str] = "v1.1.0-P3-R3G-S6-A1-CURRENT-CREDENTIAL-REPLAY"
 PROOF_REFERENCE_PREFIX: Final[str] = "WILSYWORKLOAD-"
 
 
@@ -62,8 +62,10 @@ class InternalServiceWorkloadProofService:
     """Issue workload currentness only from verified server-observed facts.
 
     The public method intentionally accepts neither principal_id nor a workload
-    proof reference. Credential binding determines the principal and this
-    service generates the proof reference after all currentness checks.
+    proof reference. Credential binding determines the principal. One durable
+    currentness fact is retained per credential generation; each fresh signed
+    request still consumes its own nonce but reuses that fact while it remains
+    CURRENT, rather than colliding against the unique credential-reference index.
     """
 
     def __init__(
@@ -107,6 +109,30 @@ class InternalServiceWorkloadProofService:
             )
             if principal.status is not PrincipalStatus.ACTIVE:
                 raise InternalServiceWorkloadProofDeniedError("WORKLOAD_PRINCIPAL_NOT_CURRENT")
+            credential_reference = authority.authority_fingerprint
+            if not isinstance(credential_reference, str) or not credential_reference:
+                raise InternalServiceWorkloadProofPersistenceError(
+                    "WORKLOAD_CREDENTIAL_REFERENCE_INVALID"
+                )
+            existing = self._workloads.get_by_credential_reference(
+                credential_or_attestation_reference=credential_reference,
+                session=tx,
+            )
+            if existing is not None:
+                if (
+                    type(existing) is not WorkloadTrustFact
+                    or existing.principal_id != authority.principal_id
+                    or existing.credential_or_attestation_reference != credential_reference
+                ):
+                    raise InternalServiceWorkloadProofDeniedError(
+                        "WORKLOAD_CURRENTNESS_BINDING_INVALID"
+                    )
+                if existing.status is not WorkloadTrustStatus.CURRENT:
+                    raise InternalServiceWorkloadProofDeniedError(
+                        "WORKLOAD_CURRENTNESS_NOT_CURRENT"
+                    )
+                return existing
+
             observed_at = self._clock().astimezone(timezone.utc)
             reference = self._proof_reference_factory()
             if not isinstance(reference, str) or not reference.startswith(PROOF_REFERENCE_PREFIX) or len(reference) != len(PROOF_REFERENCE_PREFIX) + 64:
@@ -114,7 +140,7 @@ class InternalServiceWorkloadProofService:
             fact = WorkloadTrustFact(
                 proof_reference=reference,
                 principal_id=authority.principal_id,
-                credential_or_attestation_reference=authority.authority_fingerprint or "",
+                credential_or_attestation_reference=credential_reference,
                 observed_at=observed_at,
                 status=WorkloadTrustStatus.CURRENT,
             )
@@ -132,7 +158,7 @@ __all__ = [
 ]
 
 # ARTIFACT: internal_service_workload_proof_service.py
-# VERSION: v1.0.0-P3-R3G-S6-A1
+# VERSION: v1.1.0-P3-R3G-S6-A1-CURRENT-CREDENTIAL-REPLAY
 # AUTHORITY BOUNDARY: Verified workload currentness issuance only; no downstream authorization.
 # TENANT POSTURE: No tenant assertion is accepted or created.
 # FAIL-CLOSED POSTURE: HMAC, replay, binding, scope, principal, reference, and persistence must all succeed.
