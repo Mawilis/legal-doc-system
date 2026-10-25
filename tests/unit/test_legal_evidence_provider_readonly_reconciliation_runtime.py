@@ -192,13 +192,18 @@ def test_readonly_s3_client_uses_refreshable_temporary_assumed_role_credentials(
         method = "assume-role-with-web-identity"
 
     class _Sts:
+        def __init__(self):
+            self.calls = 0
+
         def assume_role(self, **kwargs):
+            self.calls += 1
             calls.append(("assume_role", kwargs))
+            lifetime = timedelta(seconds=10) if self.calls == 1 else timedelta(minutes=15)
             return {"Credentials": {
-                "AccessKeyId": "temporary-access",
-                "SecretAccessKey": "temporary-secret",
-                "SessionToken": "temporary-token",
-                "Expiration": datetime.now(timezone.utc) + timedelta(minutes=15),
+                "AccessKeyId": f"temporary-access-{self.calls}",
+                "SecretAccessKey": f"temporary-secret-{self.calls}",
+                "SessionToken": f"temporary-token-{self.calls}",
+                "Expiration": datetime.now(timezone.utc) + lifetime,
             }}
 
     class _SourceSession:
@@ -236,7 +241,8 @@ def test_readonly_s3_client_uses_refreshable_temporary_assumed_role_credentials(
     assert isinstance(target_botocore_session._credentials, runtime.RefreshableCredentials)
     assert target_botocore_session._credentials.method == "assume-role"
     frozen = target_botocore_session._credentials.get_frozen_credentials()
-    assert frozen.access_key == "temporary-access"
+    assert frozen.access_key == "temporary-access-2"
+    assert len([name for name, _ in calls if name == "assume_role"]) == 2
     s3 = next(kwargs for name, kwargs in calls if name == "s3")
     assert s3 == {"region_name": "af-south-1"}
     assert ("region", "af-south-1") in calls
