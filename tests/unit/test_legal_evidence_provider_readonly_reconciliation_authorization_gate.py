@@ -276,6 +276,24 @@ def authorize(
     )
 
 
+
+def test_audit_store_failure_blocks_an_otherwise_authorized_result(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    gate, _, _ = build(monkeypatch)
+
+    class UnavailableRegistry:
+        def record(self, evidence):
+            raise RuntimeError("private audit backend detail")
+
+    gate._decision_evidence_registry = UnavailableRegistry()
+    with pytest.raises(
+        LegalEvidenceProviderReadOnlyReconciliationAuthorizationError,
+        match="AUTHORIZATION_AUDIT_DURABILITY_UNAVAILABLE",
+    ):
+        authorize(gate)
+
+
 def test_authorizes_exact_platform_operator_and_server_owned_scope(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
