@@ -290,13 +290,14 @@ def test_full_gate_uses_actual_signed_workload_and_current_mongo_authorities(
     request = _signed_request(body=body)
     at = setup["now"] + timedelta(seconds=1)
     assurance_before = setup["assurance_collection"].count_documents({})
+    decision_key = "reconciliation-full-gate-use-" + uuid4().hex
 
     with context["client"].start_session() as session:
         session.start_transaction()
         result = gate.authorize(
             request=request,
             body=body,
-            idempotency_key="reconciliation-full-gate-use-" + uuid4().hex,
+            idempotency_key=decision_key,
             at=at,
             session=session,
         )
@@ -312,6 +313,11 @@ def test_full_gate_uses_actual_signed_workload_and_current_mongo_authorities(
     assert setup["workload_collection"].count_documents({}) == 1
     assert setup["proof_registry"]._collection.count_documents({}) == 1
     assert setup["assurance_collection"].count_documents({}) == assurance_before + 1
+    audit_row = setup["decision_audit_collection"].find_one({"idempotency_key": decision_key})
+    assert audit_row is not None
+    assert audit_row["decision"] == "ALLOW"
+    assert audit_row["principal_id"] == PRINCIPAL
+    assert audit_row["target_tenant_id"] == setup["tenant_id"]
 
 
 def test_full_gate_abort_rolls_back_p3_evidence_and_replay_claim(
@@ -323,13 +329,14 @@ def test_full_gate_abort_rolls_back_p3_evidence_and_replay_claim(
     request = _signed_request(body=body)
     at = setup["now"] + timedelta(seconds=1)
     assurance_before = setup["assurance_collection"].count_documents({})
+    decision_key = "reconciliation-full-gate-abort-" + uuid4().hex
 
     with context["client"].start_session() as session:
         session.start_transaction()
         result = gate.authorize(
             request=request,
             body=body,
-            idempotency_key="reconciliation-full-gate-abort-" + uuid4().hex,
+            idempotency_key=decision_key,
             at=at,
             session=session,
         )
@@ -341,6 +348,10 @@ def test_full_gate_abort_rolls_back_p3_evidence_and_replay_claim(
     assert setup["proof_registry"]._collection.count_documents({}) == 0
     assert setup["assurance_collection"].count_documents({}) == assurance_before
     assert context["database"][WORKLOAD_CURRENTNESS_COLLECTION].count_documents({}) == 0
+    audit_row = setup["decision_audit_collection"].find_one({"idempotency_key": decision_key})
+    assert audit_row is not None
+    assert audit_row["decision"] == "ALLOW"
+    assert audit_row["principal_id"] == PRINCIPAL
 
 
 class _ReadOnlyRecordingS3Client:
