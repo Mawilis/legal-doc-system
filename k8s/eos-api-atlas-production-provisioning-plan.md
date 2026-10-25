@@ -145,8 +145,8 @@ remains unavailable and the route returns a bounded 503.
    an implicit default database.
 5. Capture the provisioner's success output and runtime startup logs without
    printing either URI. Both now emit the same credential-free
-   `AUDIT_TARGET_FINGERPRINT` derived from the parsed host list, database,
-   replica-set, auth-source, TLS, and direct-connection settings. Compare that
+   `AUDIT_TARGET_FINGERPRINT` derived from the parsed host list or SRV FQDN,
+   database, and replica-set identity (never username, password, or query credentials). Compare that
    fingerprint and database name across both records. Do not claim production
    audit-target certification until the fingerprints match and both index
    verification observations exist.
