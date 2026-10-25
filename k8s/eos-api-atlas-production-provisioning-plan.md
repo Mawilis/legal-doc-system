@@ -99,6 +99,14 @@ keys in the existing `wilsy-eos-runtime-secrets` Kubernetes Secret:
 | `internal-auth-secret` | `WILSY_INTERNAL_AUTH_SECRET` | Secret used by the existing signed-workload protocol |
 | `legal-evidence-reconciliation-audit-mongodb-uri` | `WILSY_LEGAL_EVIDENCE_RECONCILIATION_AUDIT_MONGODB_URI` | Separate MongoDB audit deployment URI |
 
+The production Kubernetes readiness probe now targets
+`/api/legal-operations/evidence-provider/reconciliation/health`, not the
+generic root-health endpoint. The pod becomes ready only when startup has
+injected the canonical composition, the distinct audit client is retained, and
+the platform decision-audit indexes have been verified. A missing or invalid
+configuration keeps the pod unready; it is not represented as a healthy
+reconciliation runtime.
+
 These key names are deployment contracts, not populated credentials. Do not
 create placeholder or synthetic production values. The internal service ID,
 audience, key ID, and secret must be provisioned from the actual approved caller
