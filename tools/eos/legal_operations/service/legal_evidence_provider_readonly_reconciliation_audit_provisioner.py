@@ -16,7 +16,10 @@ from tools.eos.legal_operations.service.legal_evidence_provider_readonly_reconci
 )
 from tools.eos.legal_operations.service.legal_evidence_provider_readonly_reconciliation_runtime import (
     AUDIT_URI_ENV,
+    LegalEvidenceProviderReadOnlyReconciliationRuntimeBootstrapError,
     audit_target_fingerprint,
+    require_distinct_mongo_deployments,
+    require_tls_mongodb_uri,
 )
 
 
@@ -28,12 +31,13 @@ def main() -> int:
     if not business_uri:
         raise SystemExit("CANONICAL_BUSINESS_URI_REQUIRED")
     try:
+        require_distinct_mongo_deployments(business_uri, uri)
+        require_tls_mongodb_uri(uri)
         audit_fingerprint = audit_target_fingerprint(uri)
-        business_fingerprint = audit_target_fingerprint(business_uri)
+    except LegalEvidenceProviderReadOnlyReconciliationRuntimeBootstrapError as error:
+        raise SystemExit(str(error)) from None
     except Exception:
         raise SystemExit("MONGODB_TARGET_CONFIGURATION_INVALID") from None
-    if audit_fingerprint == business_fingerprint:
-        raise SystemExit("AUDIT_AND_BUSINESS_TARGET_MUST_DIFFER")
 
     client = None
     try:
