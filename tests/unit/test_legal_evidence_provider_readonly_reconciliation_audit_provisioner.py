@@ -44,7 +44,7 @@ class _Provisioner:
 
 def test_provisioner_uses_explicit_separate_target_and_closes_client(monkeypatch, capsys) -> None:
     business_uri = "mongodb://business.example:27017/business"
-    audit_uri = "mongodb://audit.example:27017/audit"
+    audit_uri = "mongodb://audit.example:27017/audit?tls=true"
     client = _Client(None)
     database = _Database("audit", client)
     client.database = database
@@ -87,5 +87,5 @@ def test_provisioner_rejects_same_business_and_audit_target_before_connecting(mo
         "MongoClient",
         lambda *args, **kwargs: pytest.fail("client must not be created for shared target"),
     )
-    with pytest.raises(SystemExit, match="AUDIT_AND_BUSINESS_TARGET_MUST_DIFFER"):
+    with pytest.raises(SystemExit, match="RECONCILIATION_AUDIT_TARGET_NOT_SEPARATE"):
         provisioner.main()
