@@ -211,13 +211,16 @@ def test_route_surfaces_authorization_audit_outage_as_503(monkeypatch) -> None:
 def test_canonical_eos_server_mounts_exact_reconciliation_path_once() -> None:
     from tools.eos.api.server import app as canonical_app
 
-    routes = [
-        route
-        for route in canonical_app.routes
-        if getattr(route, "path", None)
-        == "/api/legal-operations/evidence-provider/reconciliation"
-        and "POST" in getattr(route, "methods", set())
-    ]
+    from fastapi.routing import APIRoute, _iter_routes_with_context
+
+    routes = []
+    for route, context in _iter_routes_with_context(canonical_app.routes):
+        if not isinstance(route, APIRoute):
+            continue
+        path = context.path if context is not None else route.path
+        methods = context.methods if context is not None else (route.methods or set())
+        if path == "/api/legal-operations/evidence-provider/reconciliation" and "POST" in methods:
+            routes.append(route)
     assert len(routes) == 1
     assert routes[0].endpoint.__module__ == (
         "tools.eos.api.legal_evidence_provider_readonly_reconciliation_router"
