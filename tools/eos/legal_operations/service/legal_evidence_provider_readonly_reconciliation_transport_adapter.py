@@ -56,11 +56,10 @@ FINANCIAL AUTHORITY BOUNDARY:
 
 from __future__ import annotations
 
+from collections.abc import Mapping
 from dataclasses import dataclass
 from datetime import datetime, timezone
-from typing import Callable, Mapping
-
-from starlette.requests import Request
+from typing import Callable, Protocol
 
 
 VERSION = "v1.0.0-L10A2R-C4D7C-RAW-ASGI-REQUEST-BOUNDARY"
@@ -76,6 +75,16 @@ _HEADER_FIELDS: tuple[tuple[bytes, str], ...] = (
     (b"x-wilsy-correlation-id", "correlation_id"),
     (b"x-wilsy-signature", "signature"),
 )
+
+
+class _ASGIRequest(Protocol):
+    """Minimal ASGI request contract implemented by the existing Python web stack."""
+
+    scope: Mapping[str, object]
+
+    async def body(self) -> bytes:
+        """Return the exact request body bytes without re-serialization."""
+        ...
 
 
 class LegalEvidenceProviderReadOnlyReconciliationTransportError(RuntimeError):
@@ -107,7 +116,7 @@ class SignedWorkloadRequestEnvelope:
 
 
 async def extract_signed_workload_request(
-    request: Request,
+    request: _ASGIRequest,
     *,
     clock: Callable[[], datetime] | None = None,
 ) -> SignedWorkloadRequestEnvelope:
@@ -120,12 +129,14 @@ async def extract_signed_workload_request(
     parsing, tenant/provider selection, transaction operation, or authority
     decision occurs here.
     """
-    if not isinstance(request, Request):
+    scope = getattr(request, "scope", None)
+    body_reader = getattr(request, "body", None)
+    if not isinstance(scope, Mapping) or not callable(body_reader):
         raise LegalEvidenceProviderReadOnlyReconciliationTransportError(
             "ACTUAL_ASGI_REQUEST_REQUIRED"
         )
 
-    raw_headers = request.scope.get("headers")
+    raw_headers = scope.get("headers")
     if not isinstance(raw_headers, list):
         raise LegalEvidenceProviderReadOnlyReconciliationTransportError(
             "ASGI_RAW_HEADERS_REQUIRED"
@@ -167,9 +178,9 @@ async def extract_signed_workload_request(
                 "SIGNED_WORKLOAD_HEADER_ENCODING_INVALID"
             ) from error
 
-    method = request.scope.get("method")
-    raw_path = request.scope.get("raw_path")
-    query_string = request.scope.get("query_string", b"")
+    method = scope.get("method")
+    raw_path = scope.get("raw_path")
+    query_string = scope.get("query_string", b"")
     if (
         not isinstance(method, str)
         or not method
@@ -209,7 +220,7 @@ async def extract_signed_workload_request(
         )
 
     try:
-        body = await request.body()
+        body = await body_reader()
     except Exception as error:
         raise LegalEvidenceProviderReadOnlyReconciliationTransportError(
             "ACTUAL_HTTP_BODY_UNAVAILABLE"
