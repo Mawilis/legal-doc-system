@@ -22,6 +22,9 @@ class _Registry:
         if self.error:
             raise self.error
 
+    def provision(self) -> None:
+        self.ensure_indexes()
+
 
 class _Gate:
     def __init__(self) -> None:
@@ -53,6 +56,7 @@ def _composition(registry=None, gate=None, coordinator=None):
         LegalEvidenceProviderReadOnlyReconciliationProductionComposition(
             target=object(),
             registry=registry,
+            index_provisioner=registry,
             gate=gate,
             dependencies=SimpleNamespace(coordinator=coordinator),
         ),
