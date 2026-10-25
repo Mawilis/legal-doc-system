@@ -8,15 +8,22 @@ AUTHORITY BOUNDARY: Current P3/P5, SYSTEM permission possession, and tenant scop
 
 from __future__ import annotations
 
+import asyncio
 import hashlib
+import json
+import os
 import hmac
 import secrets
 import time
 from datetime import datetime, timedelta, timezone
+from types import SimpleNamespace
 from typing import Any
 from uuid import uuid4
 
 import pytest
+from fastapi import FastAPI
+from starlette.requests import Request
+from pymongo import MongoClient
 
 import tests.integration.test_privileged_activation_issuance_service_real_mongo as p4_module
 from tests.integration.test_privileged_activation_issuance_service_real_mongo import (
@@ -80,6 +87,17 @@ from tools.eos.legal_operations.service.legal_evidence_provider_readonly_reconci
     LegalEvidenceProviderReadOnlyReconciliationAuthorizationGate,
     build_server_configured_reconciliation_target,
 )
+from tools.eos.api.legal_evidence_provider_readonly_reconciliation_router import (
+    router as reconciliation_router,
+    reconcile_legal_evidence_provider,
+)
+from tools.eos.legal_operations.service.legal_evidence_provider_readonly_reconciliation_production_composition import (
+    LegalEvidenceProviderReadOnlyReconciliationProductionComposition,
+)
+from tools.eos.legal_operations.service.legal_evidence_provider_readonly_reconciliation_idempotency_registry import (
+    COLLECTION as OPERATION_IDEMPOTENCY_COLLECTION,
+    LegalEvidenceReconciliationOperationIdempotencyRegistry,
+)
 
 SERVICE_ID = "legal-ops-reconciliation-service"
 KEY_ID = "reconciliation-key-a"
@@ -113,7 +131,11 @@ def _tenant_doc(tenant_id: str, *, created_at: datetime) -> dict[str, Any]:
     }
 
 
-def _signed_request(*, body: bytes) -> dict[str, str]:
+def _signed_request(
+    *,
+    body: bytes,
+    path: str = "/internal/reconciliation",
+) -> dict[str, str]:
     timestamp = str(int(time.time()))
     nonce = secrets.token_hex(16)
     correlation_id = "reconciliation-" + uuid4().hex
@@ -123,7 +145,7 @@ def _signed_request(*, body: bytes) -> dict[str, str]:
         service_id=SERVICE_ID,
         audience=AUDIENCE,
         method="POST",
-        path="/internal/reconciliation",
+        path=path,
         timestamp=timestamp,
         nonce=nonce,
         body_sha3_512_value=digest,
@@ -145,13 +167,16 @@ def _signed_request(*, body: bytes) -> dict[str, str]:
         "correlation_id": correlation_id,
         "signature": signature,
         "method": "POST",
-        "path": "/internal/reconciliation",
+        "path": path,
     }
 
 
 def _build_full_gate(
     context_value: dict[str, Any],
     monkeypatch: pytest.MonkeyPatch,
+    *,
+    decision_audit_database: Any | None = None,
+    decision_audit_client: Any | None = None,
 ) -> tuple[LegalEvidenceProviderReadOnlyReconciliationAuthorizationGate, dict[str, Any]]:
     now = datetime.now(timezone.utc).replace(microsecond=0)
     monkeypatch.setattr(p4_module, "NOW", now)
@@ -167,10 +192,12 @@ def _build_full_gate(
         session.commit_transaction()
 
     database = context_value["database"]
-    decision_audit_collection = database[PLATFORM_DECISION_COLLECTION]
+    audit_database = decision_audit_database or database
+    audit_client = decision_audit_client or context_value["client"]
+    decision_audit_collection = audit_database[PLATFORM_DECISION_COLLECTION]
     decision_evidence_registry = PlatformAuthorizationDecisionEvidenceRegistry(
         decision_audit_collection,
-        audit_client=context_value["client"],
+        audit_client=audit_client,
     )
     decision_evidence_registry.ensure_indexes()
     tenant_id = "tenant-reconciliation-" + uuid4().hex
@@ -489,3 +516,113 @@ def test_authorized_composition_uses_actual_s3_adapter_read_only(
     assert "upload_part" not in s3_client.calls
     assert "complete_multipart_upload" not in s3_client.calls
     assert "abort_multipart_upload" not in s3_client.calls
+
+
+def test_mounted_route_uses_real_signed_gate_and_replays_result_in_real_mongo(
+    context: dict[str, Any],
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """Exercise raw ASGI signature/path, real P5 authority, audit DB, and result replay."""
+    business_uri = os.environ["TEST_VENDOR_MONGO_URI"]
+    audit_client = MongoClient(business_uri, tz_aware=True)
+    audit_database_name = "reconciliation_audit_" + uuid4().hex
+    audit_database = audit_client[audit_database_name]
+    try:
+        gate, setup = _build_full_gate(
+            context,
+            monkeypatch,
+            decision_audit_database=audit_database,
+            decision_audit_client=audit_client,
+        )
+        coordinator_calls: list[dict[str, Any]] = []
+
+        def reconcile(**kwargs):
+            coordinator_calls.append(kwargs)
+            return SimpleNamespace(
+                tenant_id=setup["tenant_id"],
+                tenant_scope_fingerprint=kwargs["scope"].tenant_scope_fingerprint,
+                provider_name=kwargs["provider_name"],
+                observed_at=kwargs["observed_at"],
+                coverage_verification_fingerprint="route-coverage-" + uuid4().hex,
+                incomplete_observation_count=0,
+                completed_observation_count=2,
+                classifications=(),
+                write_intent_correlations=(),
+                coverage_complete=True,
+                orphan_proven=False,
+                provider_delete_authorized=False,
+                cleanup_authorized=False,
+            )
+
+        idempotency_registry = LegalEvidenceReconciliationOperationIdempotencyRegistry(
+            context["database"][OPERATION_IDEMPOTENCY_COLLECTION]
+        )
+        idempotency_registry.ensure_indexes()
+        composition = LegalEvidenceProviderReadOnlyReconciliationProductionComposition(
+            target=setup["target"],
+            business_client=context["client"],
+            registry=setup["decision_evidence_registry"],
+            gate=gate,
+            dependencies=SimpleNamespace(coordinator=SimpleNamespace(reconcile=reconcile)),
+            idempotency_registry=idempotency_registry,
+        )
+        app = FastAPI()
+        app.include_router(reconciliation_router, prefix="/api")
+        app.state.legal_evidence_provider_readonly_reconciliation_composition = composition
+
+        body = json.dumps(
+            {"idempotency_key": "real-http-operation-" + uuid4().hex},
+            separators=(",", ":"),
+        ).encode("utf-8")
+        path = "/api/legal-operations/evidence-provider/reconciliation"
+
+        def invoke() -> Any:
+            signed = _signed_request(body=body, path=path)
+            headers = [
+                (b"x-wilsy-auth-version", signed["version"].encode("ascii")),
+                (b"x-wilsy-service-id", signed["service_id"].encode("ascii")),
+                (b"x-wilsy-audience", signed["audience"].encode("ascii")),
+                (b"x-wilsy-key-id", signed["key_id"].encode("ascii")),
+                (b"x-wilsy-timestamp", signed["timestamp"].encode("ascii")),
+                (b"x-wilsy-nonce", signed["nonce"].encode("ascii")),
+                (b"x-wilsy-body-sha3-512", signed["body_sha3_512"].encode("ascii")),
+                (b"x-wilsy-correlation-id", signed["correlation_id"].encode("ascii")),
+                (b"x-wilsy-signature", signed["signature"].encode("ascii")),
+            ]
+            scope = {
+                "type": "http",
+                "asgi": {"version": "3.0"},
+                "http_version": "1.1",
+                "method": "POST",
+                "scheme": "http",
+                "path": path,
+                "raw_path": path.encode("ascii"),
+                "query_string": b"",
+                "root_path": "",
+                "headers": headers,
+                "client": ("127.0.0.1", 43210),
+                "server": ("testserver", 80),
+                "app": app,
+            }
+
+            async def receive():
+                return {"type": "http.request", "body": body, "more_body": False}
+
+            return asyncio.run(
+                reconcile_legal_evidence_provider(Request(scope, receive=receive))
+            )
+
+        first = invoke()
+        second = invoke()
+        assert first.status_code == 200
+        assert second.status_code == 200
+        first_payload = json.loads(first.body)["data"]
+        second_payload = json.loads(second.body)["data"]
+        assert first_payload == second_payload
+        assert first_payload["tenant_id"] == setup["tenant_id"]
+        assert len(coordinator_calls) == 1
+        assert context["database"][OPERATION_IDEMPOTENCY_COLLECTION].count_documents({}) == 1
+        assert setup["decision_audit_collection"].count_documents({}) >= 2
+    finally:
+        audit_client.drop_database(audit_database_name)
+        audit_client.close()
