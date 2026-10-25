@@ -70,6 +70,66 @@ _ALLOWED_SOURCE_CREDENTIAL_METHODS = frozenset({"assume-role-with-web-identity",
 logger = logging.getLogger(__name__)
 
 
+def _mongo_deployment_identity(uri: str) -> tuple[str, dict[str, Any]]:
+    parsed = parse_uri(uri.strip())
+    options = parsed.get("options") or {}
+    srv_fqdn = str(parsed.get("fqdn") or "").lower()
+    if srv_fqdn:
+        kind = "srv"
+    else:
+        kind = "direct"
+    hosts = sorted(
+        (str(host).lower(), int(port))
+        for host, port in (parsed.get("nodelist") or [])
+    )
+    if not srv_fqdn and not hosts:
+        raise LegalEvidenceProviderReadOnlyReconciliationRuntimeBootstrapError(
+            "MONGODB_DEPLOYMENT_IDENTITY_UNPROVEN"
+        )
+    return kind, {
+        "kind": kind,
+        "hosts": hosts,
+        "srv_fqdn": srv_fqdn,
+        "replica_set": options.get("replicaSet") or options.get("replica_set"),
+    }
+
+
+def mongo_deployment_fingerprint(uri: str) -> str:
+    """Fingerprint the cluster identity without database or credentials."""
+    _, identity = _mongo_deployment_identity(uri)
+    encoded = json.dumps(identity, sort_keys=True, separators=(",", ":")).encode("utf-8")
+    return hashlib.sha3_512(encoded).hexdigest()
+
+
+def require_distinct_mongo_deployments(business_uri: str, audit_uri: str) -> None:
+    business_kind, business_identity = _mongo_deployment_identity(business_uri)
+    audit_kind, audit_identity = _mongo_deployment_identity(audit_uri)
+    if business_kind != audit_kind:
+        raise LegalEvidenceProviderReadOnlyReconciliationRuntimeBootstrapError(
+            "BUSINESS_AUDIT_DEPLOYMENT_IDENTITY_UNPROVEN"
+        )
+    if business_identity == audit_identity:
+        raise LegalEvidenceProviderReadOnlyReconciliationRuntimeBootstrapError(
+            "RECONCILIATION_AUDIT_TARGET_NOT_SEPARATE"
+        )
+
+
+def require_tls_mongodb_uri(uri: str) -> None:
+    parsed = parse_uri(uri.strip())
+    scheme = urlsplit(uri.strip()).scheme.lower()
+    options = parsed.get("options") or {}
+    tls_value = options.get("tls", options.get("ssl"))
+    tls_enabled = (
+        scheme == "mongodb+srv"
+        if tls_value is None
+        else tls_value is True or str(tls_value).strip().lower() in {"true", "1"}
+    )
+    if not tls_enabled:
+        raise LegalEvidenceProviderReadOnlyReconciliationRuntimeBootstrapError(
+            "RECONCILIATION_AUDIT_TLS_REQUIRED"
+        )
+
+
 def audit_target_fingerprint(uri: str) -> str:
     """Return a credential-free fingerprint of the MongoDB target identity."""
     if not isinstance(uri, str) or not uri.strip():
@@ -78,16 +138,10 @@ def audit_target_fingerprint(uri: str) -> str:
         )
     try:
         parsed = parse_uri(uri.strip())
-        hosts = sorted(
-            (str(host).lower(), int(port))
-            for host, port in (parsed.get("nodelist") or [])
-        )
-        options = parsed.get("options") or {}
+        _, deployment_identity = _mongo_deployment_identity(uri)
         identity = {
-            "hosts": hosts,
-            "srv_fqdn": str(parsed.get("fqdn") or "").lower(),
+            "deployment": deployment_identity,
             "database": parsed.get("database"),
-            "replica_set": options.get("replicaSet"),
         }
         encoded = json.dumps(identity, sort_keys=True, separators=(",", ":")).encode("utf-8")
     except Exception as error:
@@ -209,16 +263,15 @@ def build_legal_evidence_provider_readonly_reconciliation_runtime(
             "CANONICAL_BUSINESS_URI_REQUIRED"
         )
     try:
+        require_distinct_mongo_deployments(business_uri, audit_uri)
+        require_tls_mongodb_uri(audit_uri)
         target_fingerprint = audit_target_fingerprint(audit_uri)
-        business_target_fingerprint = audit_target_fingerprint(business_uri)
+    except LegalEvidenceProviderReadOnlyReconciliationRuntimeBootstrapError:
+        raise
     except Exception as error:
         raise LegalEvidenceProviderReadOnlyReconciliationRuntimeBootstrapError(
             "RECONCILIATION_MONGODB_TARGET_INVALID"
         ) from error
-    if target_fingerprint == business_target_fingerprint:
-        raise LegalEvidenceProviderReadOnlyReconciliationRuntimeBootstrapError(
-            "RECONCILIATION_AUDIT_TARGET_NOT_SEPARATE"
-        )
     if mongo_database is None or getattr(mongo_database, "client", None) is None:
         raise LegalEvidenceProviderReadOnlyReconciliationRuntimeBootstrapError(
             "CANONICAL_BUSINESS_DATABASE_REQUIRED"
@@ -335,6 +388,9 @@ __all__ = [
     "AWS_ROLE_ARN_ENV",
     "build_reconciliation_readonly_s3_client",
     "audit_target_fingerprint",
+    "mongo_deployment_fingerprint",
+    "require_distinct_mongo_deployments",
+    "require_tls_mongodb_uri",
     "LegalEvidenceProviderReadOnlyReconciliationRuntimeBootstrapError",
     "build_legal_evidence_provider_readonly_reconciliation_runtime",
 ]
