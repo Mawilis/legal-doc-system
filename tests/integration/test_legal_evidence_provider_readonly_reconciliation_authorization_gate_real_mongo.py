@@ -72,6 +72,7 @@ from tools.eos.auth.privileged_workload_trust_currentness_registry import (
 from tools.eos.auth.system_permission_assignment import SystemPermissionAssignment
 from tools.eos.legal_operations.service.legal_evidence_provider_readonly_reconciliation_authorization_gate import (
     RECONCILIATION_READ_PERMISSION,
+    LegalEvidenceProviderReadOnlyReconciliationAuthorizationError,
     LegalEvidenceProviderReadOnlyReconciliationAuthorizationGate,
     build_server_configured_reconciliation_target,
 )
@@ -402,7 +403,10 @@ def test_authorization_failure_calls_zero_real_adapter_provider_operations(
 
     with context["client"].start_session() as session:
         session.start_transaction()
-        with pytest.raises(Exception):
+        with pytest.raises(
+            LegalEvidenceProviderReadOnlyReconciliationAuthorizationError,
+            match="^CURRENT_PLATFORM_OPERATOR_USE_DENIED$",
+        ):
             gate.authorize(
                 request=request,
                 body=body,
