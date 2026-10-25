@@ -1,7 +1,7 @@
 # Legal Evidence Provider Read-Only Reconciliation — Runtime Gate
 
 **Status:** RUNTIME WIRING BLOCKED — durable platform allow/deny evidence and provider-boundary certification pass; the existing generic runtime API is not a safe reconciliation invocation surface  
-**Version:** v1.2.6-L10A2R-C4D7C-PRODUCTION-COMPOSITION-ADDED-TRANSPORT-BLOCKED  
+**Version:** v1.2.7-L10A2R-C4D7C-DEPLOYMENT-INDEX-IDENTITY-SEPARATED  
 **Date:** 2026-10-25  
 **Implementation state reviewed:** `b72ff289f4cffae1e20e3d5b03d9d971252e7e7f`
 
@@ -87,7 +87,7 @@ The branch now contains `tools/eos/legal_operations/service/legal_evidence_provi
 
 Fail-closed composition rules:
 - The business database and platform-audit database must be attached to distinct MongoClient instances; the supplied audit client must be the audit database's actual client.
-- The composition does not silently create indexes or become ready at construction. A deployment setup step must explicitly provision audit uniqueness indexes; failed provisioning leaves the composition unusable.
+- The composition does not silently create indexes or become ready at construction. A distinct deployment-owned MongoClient, separate from the runtime audit client, is required for explicit audit uniqueness-index provisioning; the composition rejects reusing the runtime client for index management, and failed provisioning leaves it unusable. The deployment provisioner must be configured for the same approved audit deployment/database.
 - Authorization and reconciliation share the caller-owned active business session; the independent audit registry owns its separate client/session. The caller remains responsible for aborting the business transaction on failure.
 - The signed workload fields must be extracted by an approved transport adapter from the actual incoming request. The composition does not register a route, trust caller-selected tenant/provider fields, or infer transport trust from a generic mapping.
 - No S3 provider operation is performed during construction. Provider enumeration is reachable only through the read-only facade.
