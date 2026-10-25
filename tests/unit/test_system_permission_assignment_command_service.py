@@ -1,9 +1,9 @@
 """TITLE: D12 assignment command service direct certificate.
-VERSION: v1.1.1-L10A2R-C4D7-RECONCILIATION-DELEGATION-HELD-CERT
+VERSION: v1.2.0-L10A2R-C4D7-RECONCILIATION-READ-DELEGATION-CERT
 AUTHORITY: Current-command, current-target, closed-policy assignment proof.
 ABSOLUTE PATH: /Users/wilsonkhanyezi/legal-doc-system/tests/unit/test_system_permission_assignment_command_service.py
 CERTIFICATION DATE: 2026-10-14
-CHANGELOG: v1.1.1-L10A2R-C4D7-RECONCILIATION-DELEGATION-HELD-CERT preserves the closed allowlist and explicitly rejects legal_operations:evidence_provider_reconciliation:read until governed operator binding is certified.
+CHANGELOG: v1.2.0-L10A2R-C4D7-RECONCILIATION-READ-DELEGATION-CERT certifies policy-authorized assignment of the exact reconciliation-read SYSTEM permission while preserving current command possession, ACTIVE target, evidence, and caller-transaction requirements.
 BOUNDARY: No recursion, arbitrary grant, transaction lifecycle, tenant, or finance.
 """
 from datetime import datetime, timezone
@@ -16,7 +16,7 @@ from tools.eos.auth.principal_status import PrincipalStatus
 from tools.eos.auth.system_permission_assignment_command_service import SystemPermissionAssignmentCommandError, SystemPermissionAssignmentCommandService
 from tools.eos.auth.system_permission_assignment_registry import SystemPermissionAssignmentRegistry
 from tools.eos.auth.system_permission_command_evidence import SystemPermissionCommandEvidence, SystemPermissionCommandOperation
-from tools.eos.auth.system_permission_command_policy import ASSIGN_COMMAND_PERMISSION, PRIVILEGED_ACTIVATION_ISSUE_PERMISSION, REVOKE_COMMAND_PERMISSION
+from tools.eos.auth.system_permission_command_policy import ASSIGN_COMMAND_PERMISSION, LEGAL_EVIDENCE_PROVIDER_RECONCILIATION_READ_PERMISSION, PRIVILEGED_ACTIVATION_ISSUE_PERMISSION, REVOKE_COMMAND_PERMISSION
 
 NOW = datetime(2026, 10, 14, 14, 0, tzinfo=timezone.utc)
 class Session: in_transaction = True
@@ -42,12 +42,22 @@ def test_current_actor_command_and_target_assign_exact_permission(monkeypatch: p
     assert value.principal_id == "target-a" and value.assigned_by_principal_id == "actor-a"
 
 
-@pytest.mark.parametrize("denied", [ASSIGN_COMMAND_PERMISSION, REVOKE_COMMAND_PERMISSION, "legal_operations:evidence_provider_reconciliation:read", "kernel:write", "tenant:profile:write", "*"])
+@pytest.mark.parametrize("denied", [ASSIGN_COMMAND_PERMISSION, REVOKE_COMMAND_PERMISSION, "kernel:write", "tenant:profile:write", "*"])
 def test_recursive_and_arbitrary_assignment_denied(denied: str) -> None:
     service, _, _ = _parts()
     with pytest.raises(Exception):
         service.assign(_evidence(denied), session=Session())  # type: ignore[arg-type]
 
+
+
+def test_exact_reconciliation_read_permission_can_be_assigned(monkeypatch: pytest.MonkeyPatch) -> None:
+    service, resolver, registry = _parts()
+    monkeypatch.setattr(type(resolver), "resolve", lambda self, **kwargs: object())
+    monkeypatch.setattr(PrincipalAuthorityRepository, "get", lambda *args, **kwargs: PrincipalAuthority("target-a", PrincipalStatus.ACTIVE, 1))
+    monkeypatch.setattr(type(registry), "create_or_replay", lambda self, value, **kwargs: value)
+    value = service.assign(_evidence(LEGAL_EVIDENCE_PROVIDER_RECONCILIATION_READ_PERMISSION), session=Session())  # type: ignore[arg-type]
+    assert value.permission_id == LEGAL_EVIDENCE_PROVIDER_RECONCILIATION_READ_PERMISSION
+    assert value.principal_id == "target-a" and value.assigned_by_principal_id == "actor-a"
 
 def test_missing_command_missing_target_inactive_target_and_transaction_denied(monkeypatch: pytest.MonkeyPatch) -> None:
     service, resolver, _ = _parts()
@@ -71,6 +81,6 @@ def test_no_transaction_or_forbidden_authority_surface() -> None:
 
 # WILSY OS SOVEREIGN ARTIFACT SEAL
 # ARTIFACT: test_system_permission_assignment_command_service.py
-# VERSION: v1.1.1-L10A2R-C4D7-RECONCILIATION-DELEGATION-HELD-CERT
+# VERSION: v1.2.0-L10A2R-C4D7-RECONCILIATION-READ-DELEGATION-CERT
 # AUTHORITY BOUNDARY: PRIVILEGED ACTIVATION ISSUE ASSIGNMENT CERTIFICATE
 # END OF WILSY OS SOVEREIGN ARTIFACT
