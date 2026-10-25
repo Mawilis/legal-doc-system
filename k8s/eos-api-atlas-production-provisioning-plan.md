@@ -1,14 +1,15 @@
 # WILSY OS — Python EOS / MongoDB Atlas Production Provisioning Plan
 
-**Version:** `v1.3.0-L10A2R-C4D7-RECONCILIATION-AWS-ROLE-INPUTS`
+**Version:** `v1.4.0-L10A2R-C4D7-AUDIT-TLS-DEPLOYMENT-IDENTITY`
 **Authority:** Wilsy OS Core Governance
 **Date:** 2026-10-25
 **Artifact:** `k8s/eos-api-atlas-production-provisioning-plan.md`
 
 ## Changelog
 
-- `v1.3.0-L10A2R-C4D7-RECONCILIATION-AWS-ROLE-INPUTS` requires an approved
-  read-only AWS role ARN and EKS workload identity before reconciliation S3 use.
+- `v1.4.0-L10A2R-C4D7-AUDIT-TLS-DEPLOYMENT-IDENTITY` requires TLS for the
+  audit URI and rejects same-cluster/different-database configurations, in
+  addition to requiring the approved read-only AWS role and EKS identity.
 - `v1.2.0-L10A2R-C4D7-LEGAL-EVIDENCE-CONFIG-BINDINGS` binds the server-owned
   reconciliation tenant and canonical Legal Evidence S3 bucket/region/KMS
   settings through explicit Kubernetes Secret/ConfigMap references.
@@ -205,17 +206,20 @@ separately governed existing workload needs.
    `tools.eos.legal_operations.service.legal_evidence_provider_readonly_reconciliation_audit_provisioner`
    invocation.
 3. Supply the canonical business `MONGODB_URI` and the audit URI to the
-   provisioner. It rejects a matching host/database target, provisions the
-   two required unique platform decision-evidence indexes, and verifies them.
+   provisioner. It requires TLS and rejects the same Mongo deployment even if
+   the database names differ (and fails closed if direct/SRV identity forms
+   cannot be compared). It provisions the two required unique platform
+   decision-evidence indexes and verifies them.
 4. The EOS startup runtime independently reads the same named audit URI
-   variable, creates and pings its own retained client, checks it is distinct
-   from the business client, and the composition verifies the provisioned audit
+   variable, requires TLS and a deployment identity distinct from the business
+   Mongo deployment, creates and pings its own retained client, and the composition verifies the provisioned audit
    index shape read-only. Never substitute the business database, a CI URI, or
    an implicit default database.
 5. Capture the provisioner's success output and runtime startup logs without
    printing either URI. Both now emit the same credential-free
-   `AUDIT_TARGET_FINGERPRINT` derived from the parsed host list or SRV FQDN,
-   database, and replica-set identity (never username, password, or query credentials). Compare that
+   `AUDIT_TARGET_FINGERPRINT` derived from the connection target and deployment
+   identity (host list/SRV FQDN, replica set, and database; never username,
+   password, or query credentials). Compare that
    fingerprint and database name across both records. Do not claim production
    audit-target certification until the fingerprints match and both index
    verification observations exist.
@@ -351,7 +355,7 @@ Those claims require separate runtime evidence.
 ### WILSY OS Sovereign Artifact Seal
 
 **Artifact:** `k8s/eos-api-atlas-production-provisioning-plan.md`
-**Version:** `v1.3.0-L10A2R-C4D7-RECONCILIATION-AWS-ROLE-INPUTS`
+**Version:** `v1.4.0-L10A2R-C4D7-AUDIT-TLS-DEPLOYMENT-IDENTITY`
 **Mongo Strategy:** MongoDB Atlas
 **HR Upload Policy:** 25 MiB / 26,214,400 bytes
 **Secret Posture:** no production secret committed
