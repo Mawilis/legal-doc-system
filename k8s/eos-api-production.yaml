@@ -200,7 +200,7 @@ spec:
 # WILSY OS SOVEREIGN ARTIFACT SEAL
 #
 # ARTIFACT: k8s/eos-api-production.yaml
-# VERSION: v1.0.0-P0-C12F7C-EOS-K8S-PRODUCTION
+# VERSION: v1.1.0-L10A2R-C4D7-RECONCILIATION-RUNTIME-CONFIG
 # IMAGE AUTHORITY:
 #   Immutable EOS digest only; no mutable latest tag is admitted.
 # WORKLOAD IDENTITY:
