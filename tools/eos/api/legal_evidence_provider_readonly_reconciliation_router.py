@@ -11,6 +11,16 @@ from fastapi.responses import JSONResponse
 from tools.eos.legal_operations.service.legal_evidence_provider_readonly_reconciliation_production_composition import (
     LegalEvidenceProviderReadOnlyReconciliationProductionComposition,
 )
+from tools.eos.legal_operations.service.legal_evidence_provider_readonly_reconciliation_production_composition import (
+    LegalEvidenceProviderReadOnlyReconciliationCompositionError,
+)
+from tools.eos.legal_operations.service.legal_evidence_provider_readonly_reconciliation_authorization_gate import (
+    LegalEvidenceProviderReadOnlyReconciliationAuthorizationError,
+)
+from tools.eos.legal_operations.service.legal_evidence_provider_readonly_reconciliation_idempotency_registry import (
+    LegalEvidenceReconciliationOperationIdempotencyConflict,
+    LegalEvidenceReconciliationOperationIdempotencyError,
+)
 from tools.eos.legal_operations.service.legal_evidence_provider_readonly_reconciliation_transport_adapter import (
     LegalEvidenceProviderReadOnlyReconciliationTransportError,
     extract_signed_workload_request,
@@ -80,12 +90,22 @@ async def reconcile_legal_evidence_provider(request: Request) -> JSONResponse:
         )
         session.commit_transaction()
         transaction_started = False
-    except Exception:
+    except Exception as error:
         if session is not None and transaction_started:
             try:
                 session.abort_transaction()
             except Exception:
                 pass
+        if isinstance(error, LegalEvidenceReconciliationOperationIdempotencyConflict):
+            return _failure(409, "RECONCILIATION_OPERATION_IDEMPOTENCY_CONFLICT")
+        if isinstance(error, LegalEvidenceReconciliationOperationIdempotencyError):
+            return _failure(503, "RECONCILIATION_OPERATION_IDEMPOTENCY_UNAVAILABLE")
+        if isinstance(error, LegalEvidenceProviderReadOnlyReconciliationCompositionError):
+            return _failure(503, "RECONCILIATION_COMPOSITION_UNAVAILABLE")
+        if isinstance(error, LegalEvidenceProviderReadOnlyReconciliationAuthorizationError):
+            if error.code == "AUTHORIZATION_AUDIT_DURABILITY_UNAVAILABLE":
+                return _failure(503, "RECONCILIATION_AUTHORIZATION_AUDIT_UNAVAILABLE")
+            return _failure(403, "RECONCILIATION_AUTHORIZATION_DENIED")
         return _failure(409, "RECONCILIATION_REJECTED_OR_TRANSACTION_UNCERTAIN")
     finally:
         if session is not None:
