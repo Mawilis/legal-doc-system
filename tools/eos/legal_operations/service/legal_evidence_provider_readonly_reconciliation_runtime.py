@@ -6,6 +6,9 @@ separate provisioner against the same explicit audit URI before startup.
 """
 from __future__ import annotations
 
+import hashlib
+import json
+import logging
 import os
 from collections.abc import Mapping
 from typing import Any
@@ -50,6 +53,36 @@ from tools.eos.legal_operations.service.legal_evidence_provider_readonly_reconci
 )
 
 AUDIT_URI_ENV = "WILSY_LEGAL_EVIDENCE_RECONCILIATION_AUDIT_MONGODB_URI"
+logger = logging.getLogger(__name__)
+
+
+def audit_target_fingerprint(uri: str) -> str:
+    """Return a credential-free fingerprint of the MongoDB target identity."""
+    if not isinstance(uri, str) or not uri.strip():
+        raise LegalEvidenceProviderReadOnlyReconciliationRuntimeBootstrapError(
+            "RECONCILIATION_AUDIT_URI_REQUIRED"
+        )
+    try:
+        parsed = parse_uri(uri.strip())
+        hosts = sorted(
+            (str(host).lower(), int(port))
+            for host, port in (parsed.get("nodelist") or [])
+        )
+        options = parsed.get("options") or {}
+        identity = {
+            "hosts": hosts,
+            "database": parsed.get("database"),
+            "replica_set": options.get("replicaSet"),
+            "auth_source": options.get("authSource"),
+            "tls": options.get("tls", options.get("ssl")),
+            "direct_connection": options.get("directConnection"),
+        }
+        encoded = json.dumps(identity, sort_keys=True, separators=(",", ":")).encode("utf-8")
+    except Exception as error:
+        raise LegalEvidenceProviderReadOnlyReconciliationRuntimeBootstrapError(
+            "RECONCILIATION_MONGODB_TARGET_INVALID"
+        ) from error
+    return hashlib.sha3_512(encoded).hexdigest()
 
 
 class LegalEvidenceProviderReadOnlyReconciliationRuntimeBootstrapError(RuntimeError):
@@ -82,6 +115,7 @@ def build_legal_evidence_provider_readonly_reconciliation_runtime(
     try:
         audit_target = parse_uri(audit_uri.strip())
         business_target = parse_uri(business_uri.strip())
+        target_fingerprint = audit_target_fingerprint(audit_uri)
     except Exception as error:
         raise LegalEvidenceProviderReadOnlyReconciliationRuntimeBootstrapError(
             "RECONCILIATION_MONGODB_TARGET_INVALID"
@@ -174,6 +208,11 @@ def build_legal_evidence_provider_readonly_reconciliation_runtime(
             env=values,
             idempotency_registry=operation_idempotency_registry,
         )
+        logger.info(
+            "LEGAL_EVIDENCE_RECONCILIATION_AUDIT_TARGET_VERIFIED database=%s target_fingerprint=%s",
+            audit_database.name,
+            target_fingerprint,
+        )
         if composition.business_client is not database.client:
             raise LegalEvidenceProviderReadOnlyReconciliationRuntimeBootstrapError(
                 "RECONCILIATION_BUSINESS_CLIENT_BINDING_MISMATCH"
@@ -191,6 +230,7 @@ def build_legal_evidence_provider_readonly_reconciliation_runtime(
 
 __all__ = [
     "AUDIT_URI_ENV",
+    "audit_target_fingerprint",
     "LegalEvidenceProviderReadOnlyReconciliationRuntimeBootstrapError",
     "build_legal_evidence_provider_readonly_reconciliation_runtime",
 ]
