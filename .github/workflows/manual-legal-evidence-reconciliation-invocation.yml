@@ -48,7 +48,7 @@ jobs:
             WILSY_RECONCILIATION_KEY_ID \
             WILSY_RECONCILIATION_SECRET \
             WILSY_RECONCILIATION_IDEMPOTENCY_KEY; do
-            if [[ -z "${${!name:-}" ]]; then
+            if [[ -z "${!name:-}" ]]; then
               printf 'Required deployment-owned value is missing: %s\n' "$name" >&2
               exit 1
             fi
