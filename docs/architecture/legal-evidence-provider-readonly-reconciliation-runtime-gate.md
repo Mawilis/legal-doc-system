@@ -1,9 +1,9 @@
 # Legal Evidence Provider Read-Only Reconciliation — Runtime Gate
 
 **Status:** RUNTIME WIRING BLOCKED — durable platform allow/deny evidence and provider-boundary certification pass; the existing generic runtime API is not a safe reconciliation invocation surface  
-**Version:** v1.4.2-L10A2R-C4D7C-155-PASS-IDEMPOTENCY-OPEN-UNIFIED-GATE-FAILED  
+**Version:** v1.4.3-L10A2R-C4D7C-SOVEREIGN-COMPOSITION-155-PASS-UNIFIED-GATE-FAILED  
 **Date:** 2026-10-25  
-**Implementation state reviewed:** `6dfb97b3e70205bc98a06463a1e8210c30313f7d`
+**Implementation state reviewed:** `323c6189ec21799bf4227bdefbe757db8bccaea0`
 
 ## Decision
 
@@ -134,6 +134,25 @@ route/path and signed header contract, and the deployment composition owner
 must supply the production dependencies and caller-owned transaction lifecycle.
 Do not mount this adapter on the generic runtime endpoint or expose a route
 until that approval and production wiring are independently evidenced.
+
+## Latest governed state — 2026-10-25
+
+At code head `323c6189ec21799bf4227bdefbe757db8bccaea0`:
+
+- Focused Python and isolated real-Mongo certification [40186415809](https://github.com/Mawilis/legal-doc-system/actions/runs/40186415809): **155 passed, 20 warnings in 7.70 seconds; zero skipped**. Python compilation, replica-set initialization/cleanup, and zero-skip enforcement passed.
+- Repository integrity [40186415826](https://github.com/Mawilis/legal-doc-system/actions/runs/40186415826): passed.
+- EOS image publication [40186415805](https://github.com/Mawilis/legal-doc-system/actions/runs/40186415805): passed.
+- Unified production pipeline [40186416007](https://github.com/Mawilis/legal-doc-system/actions/runs/40186416007): failed at `npm audit --omit=dev --audit-level=high`. The observed production dependency report remains **24 vulnerabilities (2 moderate, 22 high)**. The broader install audit reported 26 total (1 low, 4 moderate, 21 high). Reported production packages include `body-parser` (high), `ip-address` (moderate), `multer` (high), `nodemailer` (moderate), `undici` (high), and `zod` (high, including a web3 dependency chain). The report identifies normal fixes for some packages and breaking-range fixes for others. No Node/JavaScript or dependency edits were made in this Python/EOS task. Retained production gates failed; downstream R2A/R2B real-Mongo jobs were skipped.
+- The production composition source now carries the mandatory sovereign header and matching end seal at version `v1.0.1-L10A2R-C4D7C-SOVEREIGN-COMPOSITION-SEAL`. This structural governance correction does not change runtime behavior and passed the current focused workflow.
+- The current focused run certifies the authorization/evidence/provider composition and adversarial transport adapter tests. It does **not** certify a mounted production route, an approved caller, or a production audit deployment.
+
+### Production closure remains blocked
+
+1. The actual internal caller/invocation owner has not evidenced approval of the dedicated reconciliation route/path or the stable operation-idempotency contract. Signed correlation is preserved for correlation only and is not silently promoted to idempotency.
+2. Deployment must configure the separate runtime audit Mongo client/database against the approved production audit target, provision unique indexes through the deployment-only provisioner, and demonstrate the provisioner and runtime resolve to that same approved target. Current source-level index verification alone cannot prove this deployment fact.
+3. An approved invocation owner must connect the canonical composition to the actual incoming signed request and own the active business transaction lifecycle. Do not mount this on generic `POST /runtime/execute`.
+4. The unified production security gate must pass. Its current 24 production vulnerabilities cannot be dismissed or bypassed. Dependency remediation is outside this Python/EOS change boundary and requires the dependency/security owner; this branch has not altered Node/JavaScript dependencies.
+5. After the above, certify the actual mounted route with adversarial HTTP + isolated real-Mongo tests, rerun all production gates, and obtain operational sign-off.
 
 ## Launch-governance decision
 
