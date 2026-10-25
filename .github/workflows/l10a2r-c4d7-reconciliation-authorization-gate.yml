@@ -140,6 +140,7 @@ jobs:
             tools/eos/api/server.py \
             tools/eos/api/legal_evidence_provider_readonly_reconciliation_router.py \
             tests/unit/test_legal_evidence_provider_readonly_reconciliation_production_composition.py \
+            tests/unit/test_legal_evidence_provider_readonly_reconciliation_audit_provisioner.py \
             tests/unit/test_legal_evidence_provider_readonly_reconciliation_transport_adapter.py \
             tools/eos/legal_operations/service/legal_evidence_provider_readonly_reconciliation_coordinator.py \
             tests/unit/test_privileged_activation_use_authority.py \
@@ -178,6 +179,7 @@ jobs:
             tests/unit/test_legal_evidence_provider_readonly_reconciliation_idempotency_registry.py \
             tests/unit/test_legal_evidence_provider_readonly_reconciliation_invocation_router.py \
             tests/unit/test_legal_evidence_provider_readonly_reconciliation_runtime.py \
+            tests/unit/test_legal_evidence_provider_readonly_reconciliation_audit_provisioner.py \
             tests/unit/test_legal_evidence_provider_readonly_reconciliation_coordinator.py \
             tests/unit/test_legal_evidence_provider_readonly_reconciliation_transport_adapter.py \
             tests/integration/test_current_system_permission_possession_real_mongo.py \
