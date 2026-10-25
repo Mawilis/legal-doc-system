@@ -267,8 +267,6 @@ def _build_full_gate(
         proof_registry=proof_registry,
         evidence_registry=context_value["assurance_registry"],
         clock=lambda: now,
-        proof_id_factory=lambda: "WILSY-NONINTERACTIVE-PROOF-" + uuid4().hex,
-        evidence_id_factory=lambda: "WILSY-ASSURANCE-EVIDENCE-" + uuid4().hex,
     )
     use_authority = PrivilegedActivationUseAuthority(
         activation_registry=context_value["activation_registry"],
