@@ -179,7 +179,11 @@ async def extract_signed_workload_request(
         raise LegalEvidenceProviderReadOnlyReconciliationTransportError(
             "ACTUAL_HTTP_METHOD_INVALID"
         )
-    if not isinstance(raw_path, bytes) or not raw_path.startswith(b"/"):
+    if (
+        not isinstance(raw_path, bytes)
+        or not raw_path.startswith(b"/")
+        or raw_path.startswith(b"//")
+    ):
         raise LegalEvidenceProviderReadOnlyReconciliationTransportError(
             "ACTUAL_HTTP_PATH_INVALID"
         )
