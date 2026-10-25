@@ -43,3 +43,85 @@ def test_runtime_bootstrap_rejects_same_business_and_audit_target_before_connect
                 "WILSY_INTERNAL_AUTH_SECRET": "synthetic-only",
             },
         )
+
+
+def test_runtime_bootstrap_builds_and_returns_canonical_graph_and_retained_audit_client(monkeypatch) -> None:
+    from tools.eos.legal_operations.service import legal_evidence_provider_readonly_reconciliation_runtime as runtime
+
+    class _Collection:
+        def create_index(self, keys, *, unique, name):
+            return name
+
+    class _Database:
+        def __init__(self, name, client):
+            self.name = name
+            self.client = client
+            self.collections = {}
+
+        def __getitem__(self, name):
+            return self.collections.setdefault(name, _Collection())
+
+    class _Client:
+        def __init__(self, database=None):
+            self.database = database
+            self.closed = False
+            self.admin = SimpleNamespace(command=lambda command: {"ok": 1})
+
+        def get_database(self):
+            return self.database
+
+        def close(self):
+            self.closed = True
+
+    business_client = _Client()
+    business_database = _Database("business", business_client)
+    audit_client = _Client()
+    audit_database = _Database("audit", audit_client)
+    audit_client.database = audit_database
+    built = {}
+
+    class _Registry:
+        def __init__(self, collection):
+            self.collection = collection
+            self.indexes_ready = False
+
+        def ensure_indexes(self):
+            self.indexes_ready = True
+
+    monkeypatch.setattr(runtime, "MongoClient", lambda *args, **kwargs: audit_client)
+    monkeypatch.setattr(runtime, "_service_config", lambda env: ({"key-1": ("secret", "principal")}, "service-1", "audience-1"))
+    monkeypatch.setattr(runtime, "_production_noninteractive_assurance_service", lambda database: object())
+    monkeypatch.setattr(runtime, "PlatformPrivilegedEligibilityPrerequisiteRegistry", _Registry)
+    monkeypatch.setattr(runtime, "PrivilegedEligibilityEvidenceRegistry", _Registry)
+    monkeypatch.setattr(runtime, "SystemPermissionAssignmentRegistry", _Registry)
+    monkeypatch.setattr(runtime, "PrivilegedActivationRegistry", _Registry)
+    monkeypatch.setattr(runtime, "CurrentPlatformPrivilegedEligibilityPrerequisiteResolver", lambda **kwargs: object())
+    monkeypatch.setattr(runtime, "CurrentPrivilegedEligibilityResolver", lambda **kwargs: object())
+    monkeypatch.setattr(runtime, "CurrentSystemPermissionPossessionResolver", lambda **kwargs: object())
+    monkeypatch.setattr(runtime, "PrivilegedActivationUseAuthority", lambda **kwargs: object())
+
+    def _build(**kwargs):
+        built.update(kwargs)
+        return SimpleNamespace(business_client=business_client)
+
+    monkeypatch.setattr(
+        runtime,
+        "build_legal_evidence_provider_readonly_reconciliation_production_composition",
+        _build,
+    )
+    composition, retained_audit_client = runtime.build_legal_evidence_provider_readonly_reconciliation_runtime(
+        mongo_database=business_database,
+        env={
+            "MONGODB_URI": "mongodb://business.example:27017/business",
+            runtime.AUDIT_URI_ENV: "mongodb://audit.example:27017/audit",
+        },
+    )
+    assert composition.business_client is business_client
+    assert retained_audit_client is audit_client
+    assert retained_audit_client.closed is False
+    assert built["audit_database"] is audit_database
+    assert built["audit_client"] is audit_client
+    assert built["expected_audience"] == "audience-1"
+    assert built["idempotency_registry"].__class__.__name__ == (
+        "LegalEvidenceReconciliationOperationIdempotencyRegistry"
+    )
