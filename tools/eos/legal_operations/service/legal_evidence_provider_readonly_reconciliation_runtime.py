@@ -235,6 +235,15 @@ def build_legal_evidence_provider_readonly_reconciliation_runtime(
             )
 
         workload_keys, _service_id, expected_audience = _service_config(values)
+        storage_configuration = LegalEvidenceS3Configuration(
+            bucket=values.get("WILSY_LEGAL_EVIDENCE_S3_BUCKET", ""),
+            region=values.get("WILSY_LEGAL_EVIDENCE_S3_REGION", DEFAULT_REGION),
+            kms_key_id=values.get("WILSY_LEGAL_EVIDENCE_S3_KMS_KEY_ID", "") or None,
+        )
+        reconciliation_s3_client = build_reconciliation_readonly_s3_client(
+            env=values,
+            region=storage_configuration.region,
+        )
         database = mongo_database
         principals = database[PRINCIPAL_AUTHORITY_COLLECTION]
 
@@ -284,15 +293,6 @@ def build_legal_evidence_provider_readonly_reconciliation_runtime(
             database[OPERATION_IDEMPOTENCY_COLLECTION]
         )
         operation_idempotency_registry.ensure_indexes()
-        storage_configuration = LegalEvidenceS3Configuration(
-            bucket=values.get("WILSY_LEGAL_EVIDENCE_S3_BUCKET", ""),
-            region=values.get("WILSY_LEGAL_EVIDENCE_S3_REGION", DEFAULT_REGION),
-            kms_key_id=values.get("WILSY_LEGAL_EVIDENCE_S3_KMS_KEY_ID", "") or None,
-        )
-        reconciliation_s3_client = build_reconciliation_readonly_s3_client(
-            env=values,
-            region=storage_configuration.region,
-        )
         composition = build_legal_evidence_provider_readonly_reconciliation_production_composition(
             mongo_database=database,
             audit_database=audit_database,
