@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from datetime import datetime, timedelta, timezone
 from pathlib import Path
 import re
 from types import SimpleNamespace
@@ -179,11 +180,12 @@ def test_readonly_s3_client_rejects_ambient_or_static_credentials(monkeypatch) -
         )
 
 
-def test_readonly_s3_client_uses_only_temporary_credentials_from_assumed_role(monkeypatch) -> None:
+def test_readonly_s3_client_uses_refreshable_temporary_assumed_role_credentials(monkeypatch) -> None:
     from tools.eos.legal_operations.service import legal_evidence_provider_readonly_reconciliation_runtime as runtime
 
     calls = []
     s3_client = object()
+    target_botocore_session = SimpleNamespace(_credentials=None, set_config_variable=lambda key, value: calls.append((key, value)))
 
     class _Credentials:
         method = "assume-role-with-web-identity"
@@ -195,17 +197,33 @@ def test_readonly_s3_client_uses_only_temporary_credentials_from_assumed_role(mo
                 "AccessKeyId": "temporary-access",
                 "SecretAccessKey": "temporary-secret",
                 "SessionToken": "temporary-token",
+                "Expiration": datetime.now(timezone.utc) + timedelta(minutes=15),
             }}
 
-    class _Session:
+    class _SourceSession:
         def get_credentials(self):
             return _Credentials()
 
         def client(self, service, **kwargs):
             calls.append((service, kwargs))
-            return _Sts() if service == "sts" else s3_client
+            return _Sts()
 
-    monkeypatch.setattr(runtime.boto3.session, "Session", lambda: _Session())
+    class _TargetSession:
+        def __init__(self, botocore_session):
+            self.botocore_session = botocore_session
+
+        def client(self, service, **kwargs):
+            calls.append((service, kwargs))
+            return s3_client
+
+    def _session_factory(*, botocore_session=None):
+        if botocore_session is None:
+            return _SourceSession()
+        assert botocore_session is target_botocore_session
+        return _TargetSession(botocore_session)
+
+    monkeypatch.setattr(runtime.boto3.session, "Session", _session_factory)
+    monkeypatch.setattr(runtime.botocore.session, "get_session", lambda: target_botocore_session)
     result = runtime.build_reconciliation_readonly_s3_client(
         env={runtime.AWS_ROLE_ARN_ENV: "arn:aws:iam::111111111111:role/test-readonly"},
         region="af-south-1",
@@ -214,11 +232,13 @@ def test_readonly_s3_client_uses_only_temporary_credentials_from_assumed_role(mo
     assume = next(kwargs for name, kwargs in calls if name == "assume_role")
     assert assume["DurationSeconds"] == 900
     assert assume["RoleSessionName"] == "wilsy-legal-evidence-reconciliation"
+    assert isinstance(target_botocore_session._credentials, runtime.RefreshableCredentials)
+    assert target_botocore_session._credentials.method == "assume-role"
+    frozen = target_botocore_session._credentials.get_frozen_credentials()
+    assert frozen.access_key == "temporary-access"
     s3 = next(kwargs for name, kwargs in calls if name == "s3")
-    assert s3["aws_access_key_id"] == "temporary-access"
-    assert s3["aws_secret_access_key"] == "temporary-secret"
-    assert s3["aws_session_token"] == "temporary-token"
-    assert s3["region_name"] == "af-south-1"
+    assert s3 == {"region_name": "af-south-1"}
+    assert ("region", "af-south-1") in calls
 
 
 def test_audit_target_fingerprint_is_stable_and_excludes_credentials() -> None:
