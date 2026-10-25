@@ -163,6 +163,12 @@ class PlatformAuthorizationDecisionEvidenceRegistry:
             raise PlatformAuthorizationDecisionEvidenceRegistryPersistenceError(
                 "AUDIT_DURABILITY_UNAVAILABLE"
             ) from error
+        except Exception as error:
+            # Driver/session/transaction adapters may raise non-PyMongo exceptions.
+            # Never leak database internals or return an unrecorded decision.
+            raise PlatformAuthorizationDecisionEvidenceRegistryPersistenceError(
+                "AUDIT_DURABILITY_UNAVAILABLE"
+            ) from error
 
     def get_by_idempotency_key(
         self, idempotency_key: str
