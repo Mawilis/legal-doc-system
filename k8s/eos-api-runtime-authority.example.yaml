@@ -2,11 +2,18 @@
 # WILSY OS — EOS RUNTIME AUTHORITY CONTRACT EXAMPLE
 #
 # TITLE: Python EOS Production Runtime Authority Contract
-# VERSION: v1.1.0-L10A2R-C4D7-RECONCILIATION-SECRET-CONTRACT
+# VERSION: v1.2.0-L10A2R-C4D7-LEGAL-EVIDENCE-CONFIG-CONTRACT
 # AUTHORITY: Wilsy OS Core Governance
 # PURPOSE:
 #   Declare the exact Kubernetes configuration objects required by the certified
 #   EOS deployment without embedding production secrets or fabricating values.
+#
+# CHANGELOG:
+#   v1.2.0-L10A2R-C4D7-LEGAL-EVIDENCE-CONFIG-CONTRACT
+#     - Declares the exact legal-evidence S3 and fixed reconciliation tenant
+#       configuration consumed by the production startup composition.
+#   v1.1.0-L10A2R-C4D7-RECONCILIATION-SECRET-CONTRACT
+#     - Declares internal workload trust and the separate audit URI Secret keys.
 #
 # IMPORTANT:
 #   This file is an example contract only and is deliberately unready until
@@ -94,6 +101,6 @@ stringData:
 #    - Do not add KMS IAM actions unless a certified KMS key is configured.
 #
 # ARTIFACT: k8s/eos-api-runtime-authority.example.yaml
-# VERSION: v1.1.0-L10A2R-C4D7-RECONCILIATION-SECRET-CONTRACT
+# VERSION: v1.2.0-L10A2R-C4D7-LEGAL-EVIDENCE-CONFIG-CONTRACT
 # END OF WILSY OS SOVEREIGN ARTIFACT
 # ==============================================================================
