@@ -1,6 +1,6 @@
 /**
  * TITLE: WILSY OS browser-certificate runner
- * VERSION: v1.1.2-D6B-ISOLATED-EOS-BROWSER-CERT-RUNNER
+ * VERSION: v1.2.0-PYTHON-EOS-ONLY-BROWSER-CERT-RUNNER
  * AUTHORITY: Test process lifecycle only.
  * EPITOME: Own the disposable seed, EOS process, Vite process, Playwright
  *          process, and cleanup without killing unrelated repository services.
@@ -8,7 +8,10 @@
  *   /Users/wilsonkhanyezi/legal-doc-system/tests/e2e/run-browser-cert.mjs
  * COLLABORATION / OWNERSHIP: L8-8M-R3 browser infrastructure.
  * CERTIFICATION / UPDATE DATE: 2026-09-26
- * CHANGELOG: v1.1.2 writes an owned temporary copy of the sanctioned Vite
+ * CHANGELOG: v1.2.0 requires an explicitly supplied loopback-only disposable
+ *             Mongo target, removes the unsafe 27027 fallback, and rewrites all
+ *             generated Vite API proxy targets to the owned Python EOS process.
+ *             v1.1.2 writes an owned temporary copy of the sanctioned Vite
  *             entry config inside client so its __dirname contract remains
  *             intact, then deletes that copy during unconditional cleanup.
  *             v1.1.1 exposes Vite lifecycle diagnostics while retaining secret
@@ -58,7 +61,7 @@ const mongoUri = (process.env.BROWSER_CERT_MONGO_URI || '').trim();
 if (!mongoUri) {
   throw new Error('BROWSER_CERT_MONGO_URI_REQUIRED_EXPLICIT_DISPOSABLE_TARGET');
 }
-if (!/^mongodb:\/\/(?:127\\.0\\.0\\.1|localhost):27017\/wilsy_l8_8m_r3_[A-Za-z0-9_-]+(?:\\?[^#]*)?$/.test(mongoUri)) {
+if (!/^mongodb:\/\/(?:127\.0\.0\.1|localhost):27017\/wilsy_l8_8m_r3_[A-Za-z0-9_-]+(?:\?[^#]*)?$/.test(mongoUri)) {
   throw new Error('BROWSER_CERT_DISPOSABLE_LOOPBACK_MONGO_URI_REQUIRED');
 }
 const secret = `browser-cert-${Date.now()}-${Math.random().toString(36)}`;
@@ -182,7 +185,7 @@ try {
 if (failed) process.exitCode = 1;
 
 // ARTIFACT: run-browser-cert.mjs
-// VERSION: v1.1.2-D6B-ISOLATED-EOS-BROWSER-CERT-RUNNER
+// VERSION: v1.2.0-PYTHON-EOS-ONLY-BROWSER-CERT-RUNNER
 // AUTHORITY BOUNDARY: owned test-process lifecycle only
 // TENANT POSTURE: UUID-isolated disposable database
 // FAIL-CLOSED POSTURE: service/process/fixture failures return non-zero
