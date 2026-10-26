@@ -96,8 +96,16 @@ Production readiness is not declared.
       "state": "CLOSED"
     },
     {
+      "candidate_certification_state": "PASS",
+      "candidate_evidence_commit": "54609a2fe30df96b8e0e21c0ef110349afa7a01b",
+      "candidate_evidence_url": "https://github.com/Mawilis/legal-doc-system/actions/runs/40304328501",
+      "candidate_gate_summary": "G63 fail-closed institutional policy boundary plus current-main P9 authority chain passed exact-head unit and disposable real-Mongo certification; Repository Integrity and unified pipeline also passed.",
+      "candidate_real_mongo_tests_passed": 29,
+      "candidate_real_mongo_tests_skipped": 0,
+      "candidate_unit_tests_passed": 390,
+      "candidate_unit_tests_skipped": 0,
       "evidence_url": "https://github.com/Mawilis/legal-doc-system/pull/229",
-      "limitation": "Full branch-to-main semantic adjudication, authority-chain proof and integrated certification remain open.",
+      "limitation": "Overall milestone remains IN_PROGRESS: PR #229 is semantically stale and not merge-ready; institutional ratification (G64), canonical authority wiring (G65), effective production wall enforcement (G66), cross-source point-of-read certification (G67), production workload identity, audit-target provisioning/fingerprint match, immutable image promotion and deployment approval remain open. No operational matter-content access or production deployment is declared.",
       "name": "P9 integrated Legal Ops mainline reconciliation",
       "result": null,
       "state": "IN_PROGRESS"
@@ -110,7 +118,7 @@ Production readiness is not declared.
     }
   ],
   "project": "WILSY OS",
-  "release_posture": "governed development; focused P9 index/transaction certification passed on candidate commit; integrated Legal Ops production release not declared",
+  "release_posture": "governed development; current-main P9/G63 candidate passed 390 unit and 29 disposable real-Mongo tests with zero skips and unified production gates; institutional ratification and production deployment not declared",
   "schema_version": 1,
   "status": "governed-development",
   "tenant_posture": "tenant scope is explicit and fail-closed",
