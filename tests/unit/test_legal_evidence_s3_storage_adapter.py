@@ -239,6 +239,48 @@ def test_verified_read_rejects_corrupt_body_without_returning_bytes() -> None:
         adapter(client).read_verified_content(value, evidence)
 
 
+def test_verified_read_rejects_wrong_provider_version_before_returning_bytes() -> None:
+    client = FakeS3Client()
+    value = intent(maximum=1024)
+    evidence = evidence_for(value)
+    client.head_response = {
+        "ContentLength": 3,
+        "Metadata": {"wilsy-intent-sha3-512": value.fingerprint},
+        "ETag": "object-etag",
+        "VersionId": "version-1",
+    }
+    client.get_response = {
+        "Body": BytesIO(b"abc"),
+        "ContentLength": 3,
+        "Metadata": {"wilsy-intent-sha3-512": value.fingerprint},
+        "VersionId": "different-version",
+    }
+
+    with pytest.raises(
+        LegalEvidenceS3StorageAdapterError,
+        match="^L10A2R_C4D7_PROVIDER_METADATA_MISMATCH$",
+    ):
+        adapter(client).read_verified_content(value, evidence)
+
+
+def test_verified_read_rejects_evidence_above_legal_content_ceiling() -> None:
+    client = FakeS3Client()
+    value = intent(maximum=30 * 1024 * 1024)
+    evidence = evidence_for(
+        value,
+        length=26 * 1024 * 1024,
+        fingerprint=sha3_512(b"placeholder").hexdigest(),
+    )
+
+    with pytest.raises(
+        LegalEvidenceS3StorageAdapterError,
+        match="^L10A2R_C4D7_CONTENT_EVIDENCE_INVALID$",
+    ):
+        adapter(client).read_verified_content(value, evidence)
+
+    assert client.calls == []
+
+
 def test_verified_read_rejects_cross_tenant_evidence_before_provider_call() -> None:
     client = FakeS3Client()
     tenant_a = intent(tenant="tenant-a")
