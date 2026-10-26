@@ -10,6 +10,7 @@ on:
       - "tests/integration/test_legal_work_ethical_wall_policy_registry_real_mongo.py"
       - "tests/integration/test_legal_work_ethical_wall_source_adapters_real_mongo.py"
       - "tests/unit/test_legal_practitioner_conjunctive_read_guard.py"
+      - "tests/unit/test_legal_practitioner_institutional_policy_evaluation.py"
       - "tests/unit/test_legal_practitioner_ethical_wall_*.py"
       - "tests/unit/test_legal_practitioner_matter_access*.py"
       - "tests/unit/test_legal_work_ethical_wall_*.py"
@@ -23,6 +24,7 @@ on:
       - "tools/eos/legal_operations/registry/legal_practitioner_matter_binding_registry.py"
       - "tools/eos/legal_operations/registry/legal_work_ethical_wall*.py"
       - "tools/eos/legal_operations/service/legal_practitioner_conjunctive_read_guard.py"
+      - "tools/eos/legal_operations/service/legal_practitioner_institutional_policy_evaluation.py"
       - "tools/eos/legal_operations/service/legal_practitioner_ethical_wall*.py"
       - "tools/eos/legal_operations/service/legal_practitioner_matter_access*.py"
       - "tools/eos/legal_operations/service/legal_practitioner_matter_binding_provisioning_service.py"
@@ -78,6 +80,7 @@ jobs:
             tests/integration/test_legal_work_ethical_wall_policy_registry_real_mongo.py \
             tests/integration/test_legal_work_ethical_wall_source_adapters_real_mongo.py \
             tests/unit/test_legal_practitioner_conjunctive_read_guard.py \
+            tests/unit/test_legal_practitioner_institutional_policy_evaluation.py \
             tests/unit/test_legal_practitioner_ethical_wall_currentness.py \
             tests/unit/test_legal_practitioner_ethical_wall_read_barrier.py \
             tests/unit/test_legal_practitioner_ethical_wall_restriction.py \
@@ -112,6 +115,7 @@ jobs:
           set +e
           python -m pytest -q -ra \
             tests/unit/test_legal_practitioner_conjunctive_read_guard.py \
+            tests/unit/test_legal_practitioner_institutional_policy_evaluation.py \
             tests/unit/test_legal_practitioner_ethical_wall_currentness.py \
             tests/unit/test_legal_practitioner_ethical_wall_read_barrier.py \
             tests/unit/test_legal_practitioner_ethical_wall_restriction.py \
