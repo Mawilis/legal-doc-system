@@ -959,9 +959,11 @@ def test_real_partner_grant_revoke_with_persisted_provenance(
         from tools.eos.api import legal_practitioner_matter_binding_router
 
         canonical_revoke = legal_practitioner_matter_binding_router.revoke_binding
+        completed_revocation_writes = []
 
         def fail_after_revocation_write(**kwargs):
             canonical_revoke(**kwargs)
+            completed_revocation_writes.append(True)
             raise RuntimeError("P9_CERTIFICATE_FAILURE_AFTER_REVOCATION_WRITE")
 
         monkeypatch.setattr(
@@ -979,6 +981,10 @@ def test_real_partner_grant_revoke_with_persisted_provenance(
         )
         assert failed_revoke.status_code == 503, (
             failed_revoke.status_code, failed_revoke.text,
+        )
+        assert completed_revocation_writes == [True], (
+            "FAILURE_DID_NOT_FOLLOW_SUCCESSFUL_REVOCATION_WRITE",
+            completed_revocation_writes,
         )
         with observer.start_session() as session:
             with session.start_transaction():
