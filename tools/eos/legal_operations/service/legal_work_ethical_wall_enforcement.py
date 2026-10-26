@@ -270,6 +270,12 @@ def require_source_verified_ethical_wall_access(
         or current.ratification_state is InstitutionalRatificationState.REVOKED
     ):
         _deny("G77_WALL_REVOKED_OR_SCOPE_INVALID")
+    # D02 negative control: a recorded wall administrator cannot review the
+    # same practitioner's confidentiality decision. This is a denial-only
+    # separation check, not evidence that either identity is institutionally
+    # authorized to hold the recorded role.
+    if review.reviewer_principal_id == current.administrator_principal_id:
+        _deny("G77_REVIEW_ADMIN_SEPARATION_INVALID")
     if (
         review.ethical_wall_policy_reference != current.policy_id
         or review.ethical_wall_policy_fingerprint != current.fingerprint
