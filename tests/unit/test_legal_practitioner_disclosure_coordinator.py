@@ -139,3 +139,54 @@ def test_coordinator_does_not_release_content_from_caller_supplied_approval_flag
     with pytest.raises(coordinator.PractitionerDisclosureDenied):
         coordinator.read_practitioner_document_content(**request(reader))
     assert reader.calls == []
+
+
+def test_denied_tenant_authorization_stops_before_source_chain_and_reader(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    reader = Reader()
+
+    def source_chain_must_not_run(**kwargs: object) -> None:
+        raise AssertionError("source chain must not run after tenant authorization denial")
+
+    monkeypatch.setattr(coordinator, "require_source_verified_ethical_wall_access", source_chain_must_not_run)
+    denied_context = TenantAuthorizationContext(
+        identity=SimpleNamespace(identity_id="principal-a", tenant_id="tenant-a"),  # type: ignore[arg-type]
+        tenant_id="tenant-a",
+        decision=TenantAuthorizationDecision(
+            authorized=False,
+            reason=TenantAuthorizationReason.BUSINESS_ROLE_INELIGIBLE,
+        ),
+    )
+    with pytest.raises(coordinator.PractitionerDisclosureDenied, match="TENANT_AUTHORIZATION_REQUIRED"):
+        coordinator.read_practitioner_document_content(**request(reader, ctx=denied_context))
+    assert reader.calls == []
+
+
+def test_malformed_evaluation_time_denies_before_content_reader() -> None:
+    reader = Reader()
+    with pytest.raises(
+        coordinator.PractitionerDisclosureDenied,
+        match="SOURCE_CHAIN_DENIED:G77_EVALUATION_TIME_INVALID",
+    ):
+        coordinator.read_practitioner_document_content(
+            **{**request(reader), "evaluation_time": "not-a-datetime"}
+        )
+    assert reader.calls == []
+
+
+def test_wall_source_failure_is_translated_to_content_free_denial(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    reader = Reader()
+
+    def unavailable(**kwargs: object) -> None:
+        raise EthicalWallEnforcementDenied("G77_WALL_SOURCE_UNAVAILABLE")
+
+    monkeypatch.setattr(coordinator, "require_source_verified_ethical_wall_access", unavailable)
+    with pytest.raises(
+        coordinator.PractitionerDisclosureDenied,
+        match="SOURCE_CHAIN_DENIED:G77_WALL_SOURCE_UNAVAILABLE",
+    ):
+        coordinator.read_practitioner_document_content(**request(reader))
+    assert reader.calls == []
