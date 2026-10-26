@@ -1,3 +1,21 @@
+"""TITLE: WILSY OS G63 Institutional Policy Boundary RED/Green Certificate
+VERSION: v1.0.0-G63-FAIL-CLOSED-INSTITUTIONAL-POLICY-TEST
+AUTHORITY: Pure unit certification of the non-authorizing G63 policy projection.
+EPITOME: Proves deterministic deny-only behavior, explicit-negative precedence,
+    immutable inputs/results and no operational admission.
+ABSOLUTE CANONICAL PATH:
+    /Users/wilsonkhanyezi/legal-doc-system/tests/unit/test_legal_practitioner_institutional_policy_evaluation.py
+COLLABORATION / OWNERSHIP: Wilsy OS Core Engineering.
+CERTIFICATION OR UPDATE DATE: 2026-10-26
+CHANGELOG:
+    2026-10-26 v1.0.0-G63-FAIL-CLOSED-INSTITUTIONAL-POLICY-TEST adds adversarial
+    coverage for every evidence-state label and all-APPROVED non-admission.
+TENANT BOUNDARY: Synthetic status labels only; no real tenant or matter data.
+AUTHORITY BOUNDARY: Tests do not issue IAM, institutional, ethical-wall, or
+    matter-content authority.
+FINANCIAL EXECUTION AUTHORITY: None; Kennel EOS exclusively.
+"""
+
 """G63 independent tests for the pure fail-closed institutional policy boundary."""
 from dataclasses import FrozenInstanceError, fields
 
@@ -107,3 +125,13 @@ def test_input_and_result_are_immutable_and_non_authorizing() -> None:
         result.operational_admission = True  # type: ignore[misc]
 
     assert not any(hasattr(result, name) for name in ("grant", "authorize", "read", "write"))
+
+
+# WILSY OS SOVEREIGN ARTIFACT SEAL
+# ARTIFACT: test_legal_practitioner_institutional_policy_evaluation.py
+# VERSION: v1.0.0-G63-FAIL-CLOSED-INSTITUTIONAL-POLICY-TEST
+# AUTHORITY BOUNDARY: certification only; no operational authority
+# TENANT POSTURE: synthetic inputs only
+# FAIL-CLOSED POSTURE: tests require DENY for every state and zero operational admission
+# FINANCIAL EXECUTION AUTHORITY: Kennel EOS exclusively
+# END OF WILSY OS SOVEREIGN ARTIFACT
