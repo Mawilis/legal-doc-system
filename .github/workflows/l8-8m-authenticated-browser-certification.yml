@@ -7,6 +7,7 @@ on:
     paths:
       - "tests/e2e/playwright.config.js"
       - "tests/e2e/**"
+      - "tests/unit/test_browser_cert_fixture_uri_guard.py"
       - "package.json"
       - "package-lock.json"
       - ".github/workflows/l8-8m-authenticated-browser-certification.yml"
