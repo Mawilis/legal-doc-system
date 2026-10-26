@@ -1,12 +1,12 @@
 """TITLE: WILSY OS G77 Source-Verified Ethical-Wall Enforcement Certificate.
-VERSION: v1.0.0-G77-SOURCE-VERIFIED-DENIAL-CERT
+VERSION: v1.0.1-G77-DENIAL-ADVERSARIAL-EXPANSION
 AUTHORITY: Negative enforcement and canonical-source validation only.
 EPITOME: Certifies transaction, IAM, binding, assignment, conflict, review and
 wall-source verification while institutional authority remains unavailable.
 ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/tests/unit/test_legal_work_ethical_wall_enforcement.py
 COLLABORATION / OWNERSHIP: Wilsy OS Core Engineering / Legal Operations.
 CERTIFICATION / UPDATE DATE: 2026-10-21.
-CHANGELOG: 2026-10-21 v1.0.0 introduces G77 denial-path certification.
+CHANGELOG: 2026-10-26 v1.0.1 expands expiry, separation-of-duties, cross-scope, revocation and history-pointer denial cases; no positive authorization.
 COMPLIANCE: POPIA section 19; GDPR Article 32; SOC 2 CC7.2.
 TENANT BOUNDARY: Exact tenant, matter and authenticated principal.
 AUTHORITY BOUNDARY: No positive content or operational access result exists.
@@ -254,8 +254,61 @@ def test_service_has_no_positive_or_content_delivery_surface() -> None:
     assert service.OPERATIONAL_ACCESS_ENABLED is False
 
 
+
+@pytest.mark.parametrize(
+    ("review_changes", "expected"),
+    [
+        ({"expires_at": NOW}, "REVIEW_EXPIRED"),
+        ({"reviewer_principal_id": "practitioner-a"}, "REVIEW_INVALID"),
+    ],
+)
+def test_expired_or_self_review_denies(review_changes: dict[str, object], expected: str) -> None:
+    wall = policy()
+    with pytest.raises(service.EthicalWallEnforcementDenied, match=expected):
+        enforce(review_source=Source(review(wall, **review_changes)))
+
+
+def test_cross_tenant_conflict_evidence_denies() -> None:
+    with pytest.raises(service.EthicalWallEnforcementDenied, match="CONFLICT_BLOCKED"):
+        enforce(conflict_source=Source(replace(conflict(), tenant_id="tenant-b")))
+
+
+def test_cross_tenant_binding_and_cross_matter_assignment_deny() -> None:
+    with pytest.raises(service.EthicalWallEnforcementDenied, match="BINDING_INVALID"):
+        enforce(binding_source=Source(replace(binding(), tenant_id="tenant-b")))
+    with pytest.raises(service.EthicalWallEnforcementDenied, match="ASSIGNMENT_SCOPE_INVALID"):
+        enforce(assignment_source=Source((replace(assignment(), case_matter_id="matter-b"),)))
+
+
+def test_revoked_wall_policy_denies_even_with_matching_review_fingerprint() -> None:
+    revoked = policy(status=EthicalWallPolicyStatus.REVOKED)
+    with pytest.raises(service.EthicalWallEnforcementDenied, match="WALL_REVOKED_OR_SCOPE_INVALID"):
+        enforce(wall_source=WallSource(revoked), review_source=Source(review(revoked)))
+
+
+def test_wall_current_pointer_must_match_history_tail() -> None:
+    current = policy()
+    previous = policy(revision=0, effective_until=NOW - timedelta(days=1))
+
+    class StaleHistorySource:
+        def get_current(self, tenant_id: str, case_matter_id: str, policy_id: str, *, session: object) -> EthicalWallPolicyRevision:
+            return current
+
+        def list_history(self, tenant_id: str, case_matter_id: str, policy_id: str, *, session: object) -> tuple[EthicalWallPolicyRevision, ...]:
+            return (previous,)
+
+    with pytest.raises(service.EthicalWallEnforcementDenied, match="WALL_POINTER_INVALID"):
+        enforce(wall_source=StaleHistorySource(), review_source=Source(review(current)))
+
+
+def test_foreign_wall_scope_denies_before_unratified_terminal_denial() -> None:
+    foreign = policy(tenant_id="tenant-b")
+    with pytest.raises(service.EthicalWallEnforcementDenied, match="WALL_REVOKED_OR_SCOPE_INVALID"):
+        enforce(wall_source=WallSource(foreign), review_source=Source(review(foreign)))
+
+
 # ARTIFACT: test_legal_work_ethical_wall_enforcement.py
-# VERSION: v1.0.0-G77-SOURCE-VERIFIED-DENIAL-CERT
+# VERSION: v1.0.1-G77-DENIAL-ADVERSARIAL-EXPANSION
 # AUTHORITY BOUNDARY: canonical negative verification only; no access grant
 # TENANT POSTURE: exact tenant/matter/principal, foreign scope denied
 # FAIL-CLOSED POSTURE: unavailable, malformed, revoked or unratified denies
