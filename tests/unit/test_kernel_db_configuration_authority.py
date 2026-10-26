@@ -117,6 +117,48 @@ def test_resolver_source_has_no_legacy_fallback_authorities() -> None:
     assert "localhost" not in source
 
 
+
+
+@pytest.mark.parametrize("environment", ["development", "production"])
+def test_tls_mongo_connection_never_disables_certificate_or_hostname_validation(
+    monkeypatch: pytest.MonkeyPatch, environment: str
+) -> None:
+    _disable_dotenv(monkeypatch)
+    monkeypatch.setenv("ENV", environment)
+    monkeypatch.setenv("MONGODB_URI", "mongodb+srv://example.invalid/wilsy")
+    monkeypatch.delenv("WILSY_KENNEL_DB_TLS", raising=False)
+    captured: dict[str, Any] = {}
+
+    class FakeAdmin:
+        def command(self, command: str) -> dict[str, int]:
+            assert command == "ping"
+            return {"ok": 1}
+
+    class FakeDatabase:
+        name = "wilsy"
+
+    class FakeClient:
+        def __init__(self, _uri: str, **options: Any) -> None:
+            captured.update(options)
+            self.admin = FakeAdmin()
+
+        def get_database(self) -> FakeDatabase:
+            return FakeDatabase()
+
+        def close(self) -> None:
+            return None
+
+    monkeypatch.setattr(kernel_db, "MongoClient", FakeClient)
+    kernel_db.disconnect_db()
+    connected, detail = kernel_db.connect_db(force_reconnect=True)
+    try:
+        assert connected is True, detail
+        assert captured["tls"] is True
+        assert captured["tlsAllowInvalidCertificates"] is False
+        assert captured["tlsAllowInvalidHostnames"] is False
+    finally:
+        kernel_db.disconnect_db()
+
 # ARTIFACT: test_kernel_db_configuration_authority.py
 # VERSION: v1.0.0-R1D-B0F-B3B-R0-CANONICAL-URI
 # AUTHORITY BOUNDARY: Kernel configuration certificate only.
