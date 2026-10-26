@@ -147,8 +147,11 @@ def connect_db(force_reconnect=False):
         'retryReads': True,
     }
     if options['tls']:
-        options['tlsAllowInvalidCertificates'] = is_dev
-        options['tlsAllowInvalidHostnames'] = is_dev
+        # TLS must authenticate both the certificate chain and the server name
+        # in every environment. Development convenience must never disable
+        # peer identity verification for Atlas or any other TLS Mongo endpoint.
+        options['tlsAllowInvalidCertificates'] = False
+        options['tlsAllowInvalidHostnames'] = False
 
     local_client = None
     try:
