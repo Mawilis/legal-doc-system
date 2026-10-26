@@ -40,6 +40,7 @@ import os
 from datetime import datetime, timezone
 from pathlib import Path
 from uuid import uuid4
+from urllib.parse import parse_qs, urlsplit
 
 from pymongo import MongoClient
 from pymongo.read_concern import ReadConcern
@@ -110,14 +111,31 @@ from tools.eos.saas.entitlement.tenant_product_entitlement_composer import (
 from tools.eos.saas.tenancy.tenant_registry import TenantRegistry
 
 
-DEFAULT_URI = "mongodb://127.0.0.1:27027/?replicaSet=wilsyVendorCertRS"
 STATE_VERSION = "v1.2.0-REAL-MFA-BROWSER-CERT-STATE"
 
 
 def _uri() -> str:
+    """Require the named disposable loopback replica set; never accept a remote DB."""
     value = os.getenv("BROWSER_CERT_MONGO_URI", "").strip()
-    if not value or "mongodb+srv://" in value:
-        raise RuntimeError("BROWSER_CERT_LOCAL_REPLICA_SET_URI_REQUIRED")
+    if not value:
+        raise RuntimeError("BROWSER_CERT_MONGO_URI_REQUIRED")
+    try:
+        parsed = urlsplit(value)
+        database_name = parsed.path.lstrip("/")
+        replica_set = parse_qs(parsed.query).get("replicaSet", [])
+        safe_target = (
+            parsed.scheme == "mongodb"
+            and parsed.hostname in {"127.0.0.1", "localhost"}
+            and parsed.port == 27017
+            and not parsed.username
+            and not parsed.password
+            and database_name.startswith("wilsy_l8_8m_r3_")
+            and replica_set == ["wilsyVendorCertRS"]
+        )
+    except ValueError:
+        safe_target = False
+    if not safe_target:
+        raise RuntimeError("BROWSER_CERT_DISPOSABLE_LOOPBACK_REPLICA_SET_REQUIRED")
     return value
 
 
