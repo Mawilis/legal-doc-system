@@ -11,7 +11,9 @@ on:
     branches: [main, master, develop, production, fg108o4b-knowledge-operating-room]
     tags: ["v*"]
   pull_request:
-    branches: [main, develop]
+    # Include the canonical Legal Evidence release branch so stacked PRs targeting
+    # it receive the same retained production and real-Mongo gates as main PRs.
+    branches: [main, develop, feat/python-eos-practitioner-content-release]
   workflow_dispatch:
 
 env:
