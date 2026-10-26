@@ -1,7 +1,7 @@
 """WILSY OS browser-certificate disposable authority fixture.
 
 TITLE: Authenticated browser certificate fixture
-VERSION: v1.1.1-D6B-DEADLINE-AUTHENTICATED-BROWSER-CERT-FIXTURE
+VERSION: v1.2.0-REAL-MFA-AUTHENTICATED-BROWSER-CERT-FIXTURE
 AUTHORITY: Test-owned disposable Mongo fixture only.
 EPITOME: Seed existing EOS repositories with disposable authenticated Legal
          operators across the certified deadline role envelope, one canonical
@@ -11,7 +11,10 @@ ABSOLUTE CANONICAL PATH:
     /Users/wilsonkhanyezi/legal-doc-system/tests/e2e/browser_cert_fixture.py
 COLLABORATION / OWNERSHIP: L8-8M-R3 browser certificate; no production authority.
 CERTIFICATION / UPDATE DATE: 2026-09-26
-CHANGELOG: v1.1.1 bounds disposable multi-role passwords below bcrypt's 72-byte
+CHANGELOG: v1.2.0 provisions canonical TOTP secrets for each synthetic user,
+           stores test credentials only in a mode-0600 temporary state file, and
+           enables the browser certificate to verify the real password/MFA flow.
+           v1.1.1 bounds disposable multi-role passwords below bcrypt's 72-byte
            limit without changing authenticated-session or IAM semantics.
            v1.1.0 adds Partner, Attorney, Paralegal, Secretary and Legal Finance
            authenticated sessions plus one canonical matter for the D6B deadline
@@ -108,7 +111,7 @@ from tools.eos.saas.tenancy.tenant_registry import TenantRegistry
 
 
 DEFAULT_URI = "mongodb://127.0.0.1:27027/?replicaSet=wilsyVendorCertRS"
-STATE_VERSION = "v1.1.0-D6B-DEADLINE-BROWSER-CERT-STATE"
+STATE_VERSION = "v1.2.0-REAL-MFA-BROWSER-CERT-STATE"
 
 
 def _uri() -> str:
