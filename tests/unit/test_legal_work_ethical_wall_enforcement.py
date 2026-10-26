@@ -335,6 +335,16 @@ def test_wall_administrator_cannot_review_practitioner_decision() -> None:
         enforce(wall_source=WallSource(wall), review_source=Source(conflicting_review))
 
 
+def test_review_conflicting_with_current_conflict_evidence_denies() -> None:
+    wall = policy()
+    contradictory = review(wall, conflict_disposition_fingerprint="f" * 128)
+    with pytest.raises(
+        service.EthicalWallEnforcementDenied,
+        match="G77_REVIEW_CONFLICT_MISMATCH",
+    ):
+        enforce(review_source=Source(contradictory))
+
+
 # ARTIFACT: test_legal_work_ethical_wall_enforcement.py
 # VERSION: v1.0.1-G77-DENIAL-ADVERSARIAL-EXPANSION
 # AUTHORITY BOUNDARY: canonical negative verification only; no access grant
