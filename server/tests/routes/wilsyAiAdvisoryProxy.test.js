@@ -238,6 +238,29 @@ describe('fixed proxy route, path, query, and method contract', () => {
   });
 });
 
+describe('optional telemetry acknowledgement contract', () => {
+  it('acknowledges telemetry without persistence or upstream forwarding', async () => {
+    const response = await request(app)
+      .post('/api/telemetry/event')
+      .send({ event: 'ui_observation', name: 'test-only' })
+      .expect(202);
+
+    assert.equal(response.headers['x-wilsy-quiet-surface'], '1');
+    assert.equal(response.body.success, true);
+    assert.equal(response.body.status, 'ACCEPTED');
+    assert.equal(response.body.surface, 'TELEMETRY_EVENT');
+    assert.equal(response.body.source, 'QUIET_ACK');
+    assert.match(response.body.note, /without persistence/i);
+    assert.equal(upstreamRequests.length, 0);
+  });
+
+  it('keeps unrelated unowned API paths fail-closed', async () => {
+    const response = await request(app).post('/api/telemetry/unknown').send({}).expect(404);
+    assert.equal(response.body.error, 'BFF_ROUTE_NOT_PROXIED');
+    assert.equal(upstreamRequests.length, 0);
+  });
+});
+
 describe('raw request and response stream contract', () => {
   it('forwards raw JSON bytes without reconstruction', async () => {
     const body = Buffer.from('{\n  "b": 2,\n  "a": 1\n}\n');
