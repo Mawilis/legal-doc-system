@@ -39,6 +39,7 @@ jobs:
       - name: Install disposable MongoDB server
         run: |
           brew tap mongodb/brew
+          brew trust mongodb/brew
           brew install mongodb-community@8.0
           sudo mkdir -p /opt/homebrew/bin
           sudo ln -sf "$(brew --prefix mongodb-community@8.0)/bin/mongod" /opt/homebrew/bin/mongod
