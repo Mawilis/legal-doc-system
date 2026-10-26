@@ -90,6 +90,10 @@ test('real browser login verifies password and TOTP before Legal Operations acce
     new URL(response.url()).pathname === '/api/auth/verify-otp'
     && response.request().method() === 'POST'
   ));
+  const bootstrapResponsePromise = page.waitForResponse((response) => (
+    new URL(response.url()).pathname === '/api/auth/workspace-bootstrap'
+    && response.request().method() === 'GET'
+  ));
   await page.locator('#mfa-code').fill(totp(actor.otp_secret));
   await page.getByRole('button', { name: 'Verify identity' }).click();
   const verifyResponse = await verifyResponsePromise;
@@ -99,10 +103,7 @@ test('real browser login verifies password and TOTP before Legal Operations acce
   expect(typeof authenticated.token).toBe('string');
   expect(authenticated.token.length).toBeGreaterThan(20);
 
-  const bootstrapResponse = await page.waitForResponse((response) => (
-    new URL(response.url()).pathname === '/api/auth/workspace-bootstrap'
-    && response.request().method() === 'GET'
-  ));
+  const bootstrapResponse = await bootstrapResponsePromise;
   expect(bootstrapResponse.status()).toBe(200);
 
   await page.goto('/legal/');
