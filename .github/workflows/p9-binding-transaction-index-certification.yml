@@ -1,4 +1,4 @@
-name: P9 Practitioner Binding Index and Transaction Certification
+name: P9 Integrated Practitioner Matter Authority Certification
 
 on:
   pull_request:
@@ -6,9 +6,28 @@ on:
     paths:
       - ".github/workflows/p9-binding-transaction-index-certification.yml"
       - "tests/integration/test_legal_practitioner_binding_authenticated_eos_lifespan_real_mongo.py"
+      - "tests/integration/test_legal_practitioner_matter_access_registry_real_mongo.py"
+      - "tests/integration/test_legal_work_ethical_wall_policy_registry_real_mongo.py"
+      - "tests/integration/test_legal_work_ethical_wall_source_adapters_real_mongo.py"
+      - "tests/unit/test_legal_practitioner_conjunctive_read_guard.py"
+      - "tests/unit/test_legal_practitioner_ethical_wall_*.py"
+      - "tests/unit/test_legal_practitioner_matter_access*.py"
+      - "tests/unit/test_legal_work_ethical_wall_*.py"
+      - "tests/unit/test_legal_work_reassignment_*.py"
       - "tools/eos/api/legal_practitioner_matter_binding_router.py"
+      - "tools/eos/api/server.py"
+      - "tools/eos/legal_operations/domain/legal_practitioner_matter_access*.py"
+      - "tools/eos/legal_operations/domain/legal_practitioner_matter_binding.py"
+      - "tools/eos/legal_operations/domain/legal_work_ethical_wall*.py"
+      - "tools/eos/legal_operations/registry/legal_practitioner_matter_access*.py"
       - "tools/eos/legal_operations/registry/legal_practitioner_matter_binding_registry.py"
+      - "tools/eos/legal_operations/registry/legal_work_ethical_wall*.py"
+      - "tools/eos/legal_operations/service/legal_practitioner_conjunctive_read_guard.py"
+      - "tools/eos/legal_operations/service/legal_practitioner_ethical_wall*.py"
+      - "tools/eos/legal_operations/service/legal_practitioner_matter_access*.py"
       - "tools/eos/legal_operations/service/legal_practitioner_matter_binding_provisioning_service.py"
+      - "tools/eos/legal_operations/service/legal_work_ethical_wall*.py"
+      - "tools/eos/legal_operations/service/legal_work_reassignment*.py"
   push:
     branches:
       - "cert/p9-binding-transaction-index-closure-20261026"
@@ -18,10 +37,10 @@ permissions:
   contents: read
 
 jobs:
-  p9-binding-real-mongo:
-    name: P9 disposable real-Mongo certification
+  p9-integrated-authority:
+    name: P9 current-main authority chain — zero-skip and disposable real-Mongo
     runs-on: macos-15
-    timeout-minutes: 35
+    timeout-minutes: 50
     env:
       PIP_DISABLE_PIP_VERSION_CHECK: "1"
       PYTHONUNBUFFERED: "1"
@@ -51,10 +70,161 @@ jobs:
           python -m pip install -r requirements.txt
           python -m pip install pytest==9.1.1
 
-      - name: Compile P9 authenticated EOS certificate
+      - name: Compile current-main P9 authority certificates
         run: |
-          python -m py_compile tests/integration/test_legal_practitioner_binding_authenticated_eos_lifespan_real_mongo.py
+          python -m py_compile \
+            tests/integration/test_legal_practitioner_binding_authenticated_eos_lifespan_real_mongo.py \
+            tests/integration/test_legal_practitioner_matter_access_registry_real_mongo.py \
+            tests/integration/test_legal_work_ethical_wall_policy_registry_real_mongo.py \
+            tests/integration/test_legal_work_ethical_wall_source_adapters_real_mongo.py \
+            tests/unit/test_legal_practitioner_conjunctive_read_guard.py \
+            tests/unit/test_legal_practitioner_ethical_wall_currentness.py \
+            tests/unit/test_legal_practitioner_ethical_wall_read_barrier.py \
+            tests/unit/test_legal_practitioner_ethical_wall_restriction.py \
+            tests/unit/test_legal_practitioner_ethical_wall_restriction_registry.py \
+            tests/unit/test_legal_practitioner_matter_access.py \
+            tests/unit/test_legal_practitioner_matter_access_canonical_issuer_path.py \
+            tests/unit/test_legal_practitioner_matter_access_codec.py \
+            tests/unit/test_legal_practitioner_matter_access_conflict_provenance.py \
+            tests/unit/test_legal_practitioner_matter_access_currentness.py \
+            tests/unit/test_legal_practitioner_matter_access_evaluation_service.py \
+            tests/unit/test_legal_practitioner_matter_access_history_reader.py \
+            tests/unit/test_legal_practitioner_matter_access_issuer_iam.py \
+            tests/unit/test_legal_practitioner_matter_access_issuer_service.py \
+            tests/unit/test_legal_practitioner_matter_access_migration.py \
+            tests/unit/test_legal_practitioner_matter_access_registry.py \
+            tests/unit/test_legal_practitioner_matter_access_registry_lineage.py \
+            tests/unit/test_legal_practitioner_matter_access_review_foundation.py \
+            tests/unit/test_legal_work_ethical_wall_enforcement.py \
+            tests/unit/test_legal_work_ethical_wall_policy.py \
+            tests/unit/test_legal_work_ethical_wall_policy_registry.py \
+            tests/unit/test_legal_work_ethical_wall_source_adapters.py \
+            tests/unit/test_legal_work_reassignment_candidate.py \
+            tests/unit/test_legal_work_reassignment_live_authorization.py \
+            tests/unit/test_legal_work_reassignment_recipient_currentness_composer.py \
+            tests/unit/test_legal_work_reassignment_recipient_currentness_composer_adversarial.py
 
-      - name: Run P9 authenticated disposable real-Mongo certificate
+      - name: Run P9 authority, provenance, currentness, wall and reassignment unit certificates
+        shell: bash
         run: |
-          python -m pytest -q -ra tests/integration/test_legal_practitioner_binding_authenticated_eos_lifespan_real_mongo.py
+          set -euo pipefail
+          log="$RUNNER_TEMP/p9-authority-unit.log"
+          set +e
+          python -m pytest -q -ra \
+            tests/unit/test_legal_practitioner_conjunctive_read_guard.py \
+            tests/unit/test_legal_practitioner_ethical_wall_currentness.py \
+            tests/unit/test_legal_practitioner_ethical_wall_read_barrier.py \
+            tests/unit/test_legal_practitioner_ethical_wall_restriction.py \
+            tests/unit/test_legal_practitioner_ethical_wall_restriction_registry.py \
+            tests/unit/test_legal_practitioner_matter_access.py \
+            tests/unit/test_legal_practitioner_matter_access_canonical_issuer_path.py \
+            tests/unit/test_legal_practitioner_matter_access_codec.py \
+            tests/unit/test_legal_practitioner_matter_access_conflict_provenance.py \
+            tests/unit/test_legal_practitioner_matter_access_currentness.py \
+            tests/unit/test_legal_practitioner_matter_access_evaluation_service.py \
+            tests/unit/test_legal_practitioner_matter_access_history_reader.py \
+            tests/unit/test_legal_practitioner_matter_access_issuer_iam.py \
+            tests/unit/test_legal_practitioner_matter_access_issuer_service.py \
+            tests/unit/test_legal_practitioner_matter_access_migration.py \
+            tests/unit/test_legal_practitioner_matter_access_registry.py \
+            tests/unit/test_legal_practitioner_matter_access_registry_lineage.py \
+            tests/unit/test_legal_practitioner_matter_access_review_foundation.py \
+            tests/unit/test_legal_work_ethical_wall_enforcement.py \
+            tests/unit/test_legal_work_ethical_wall_policy.py \
+            tests/unit/test_legal_work_ethical_wall_policy_registry.py \
+            tests/unit/test_legal_work_ethical_wall_source_adapters.py \
+            tests/unit/test_legal_work_reassignment_candidate.py \
+            tests/unit/test_legal_work_reassignment_live_authorization.py \
+            tests/unit/test_legal_work_reassignment_recipient_currentness_composer.py \
+            tests/unit/test_legal_work_reassignment_recipient_currentness_composer_adversarial.py \
+            2>&1 | tee "$log"
+          status=${PIPESTATUS[0]}
+          set -e
+          if [[ "$status" -ne 0 ]]; then exit "$status"; fi
+          if grep -Eq '(^|[[:space:]])[1-9][0-9]* skipped([,[:space:]]|$)' "$log"; then
+            echo "P9_ZERO_SKIP_CERTIFICATION_REQUIRED" >&2
+            exit 1
+          fi
+
+      - name: Start isolated disposable replica set for ethical-wall source certificates
+        shell: bash
+        run: |
+          set -euo pipefail
+          dbpath="$RUNNER_TEMP/wilsy-p9-integrated-mongo"
+          mkdir -p "$dbpath"
+          /opt/homebrew/bin/mongod \
+            --dbpath "$dbpath" \
+            --bind_ip 127.0.0.1 \
+            --port 27018 \
+            --replSet wilsyP9IntegratedRS \
+            --fork \
+            --logpath "$RUNNER_TEMP/wilsy-p9-integrated-mongo.log"
+          python - <<'PY'
+          import time
+          from pymongo import MongoClient
+          from pymongo.errors import PyMongoError
+
+          direct = MongoClient(
+              "mongodb://127.0.0.1:27018/admin?directConnection=true",
+              serverSelectionTimeoutMS=1000,
+          )
+          try:
+              direct.admin.command(
+                  "replSetInitiate",
+                  {
+                      "_id": "wilsyP9IntegratedRS",
+                      "members": [{"_id": 0, "host": "127.0.0.1:27018"}],
+                  },
+              )
+          except PyMongoError as error:
+              if "already initialized" not in str(error).lower():
+                  raise
+          finally:
+              direct.close()
+
+          replica = MongoClient(
+              "mongodb://127.0.0.1:27018/admin?replicaSet=wilsyP9IntegratedRS",
+              serverSelectionTimeoutMS=1000,
+          )
+          deadline = time.monotonic() + 45
+          while time.monotonic() < deadline:
+              try:
+                  hello = replica.admin.command("hello")
+                  if hello.get("setName") == "wilsyP9IntegratedRS" and hello.get("isWritablePrimary"):
+                      print("P9_DISPOSABLE_REPLICA_SET_READY")
+                      break
+              except PyMongoError:
+                  pass
+              time.sleep(0.5)
+          else:
+              raise SystemExit("P9_DISPOSABLE_REPLICA_SET_NOT_READY")
+          replica.close()
+          PY
+          echo "WILSY_G76_REAL_MONGO_URI=mongodb://127.0.0.1:27018/wilsy_p9_g76?replicaSet=wilsyP9IntegratedRS" >> "$GITHUB_ENV"
+          echo "WILSY_G78_REAL_MONGO_URI=mongodb://127.0.0.1:27018/wilsy_p9_g78?replicaSet=wilsyP9IntegratedRS" >> "$GITHUB_ENV"
+
+      - name: Run P9 binding, access-registry, ethical-wall registry and source-adapter real-Mongo certificates
+        shell: bash
+        run: |
+          set -euo pipefail
+          log="$RUNNER_TEMP/p9-authority-real-mongo.log"
+          set +e
+          python -m pytest -q -ra \
+            tests/integration/test_legal_practitioner_binding_authenticated_eos_lifespan_real_mongo.py \
+            tests/integration/test_legal_practitioner_matter_access_registry_real_mongo.py \
+            tests/integration/test_legal_work_ethical_wall_policy_registry_real_mongo.py \
+            tests/integration/test_legal_work_ethical_wall_source_adapters_real_mongo.py \
+            2>&1 | tee "$log"
+          status=${PIPESTATUS[0]}
+          set -e
+          if [[ "$status" -ne 0 ]]; then exit "$status"; fi
+          if grep -Eq '(^|[[:space:]])[1-9][0-9]* skipped([,[:space:]]|$)' "$log"; then
+            echo "P9_ZERO_SKIP_CERTIFICATION_REQUIRED" >&2
+            exit 1
+          fi
+
+      - name: Stop isolated disposable replica set
+        if: always()
+        shell: bash
+        run: |
+          /opt/homebrew/bin/mongod --shutdown --dbpath "$RUNNER_TEMP/wilsy-p9-integrated-mongo" || true
