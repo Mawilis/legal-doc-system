@@ -84,6 +84,9 @@ import boto3
 from botocore.client import BaseClient
 from botocore.exceptions import BotoCoreError, ClientError
 
+from tools.eos.legal_operations.domain.legal_evidence_content import (
+    MAX_CONTENT_BYTES,
+)
 from tools.eos.legal_operations.service.legal_evidence_binary_storage_port import (
     MAX_STREAM_CHUNK_BYTES,
     LegalEvidenceBinaryChunkEvidence,
@@ -743,8 +746,8 @@ class LegalEvidenceS3StorageAdapter:
         This is a storage primitive only. Callers must independently authorize
         disclosure and derive intent and evidence from canonical, tenant-scoped
         server-side records. No bytes are returned until exact version metadata,
-        byte length and WILSY SHA3-512 identity all match. The admitted 25 MiB
-        Legal Evidence ceiling bounds materialization.
+        byte length and WILSY SHA3-512 identity all match. The canonical Legal Evidence content ceiling
+        bounds materialization.
         """
         try:
             validate_object_evidence_for_intent(intent=intent, evidence=evidence)
@@ -755,7 +758,7 @@ class LegalEvidenceS3StorageAdapter:
             evidence.provider_name != PROVIDER_NAME
             or evidence.storage_reference != _storage_key(intent)
             or evidence.content_length > intent.admitted_max_content_length
-            or evidence.content_length > 25 * 1024 * 1024
+            or evidence.content_length > MAX_CONTENT_BYTES
         ):
             _fail("L10A2R_C4D7_CONTENT_EVIDENCE_INVALID")
 
@@ -809,7 +812,7 @@ class LegalEvidenceS3StorageAdapter:
                     len(chunk) > MAX_STREAM_CHUNK_BYTES
                     or observed_length > evidence.content_length
                     or observed_length > intent.admitted_max_content_length
-                    or observed_length > 25 * 1024 * 1024
+                    or observed_length > MAX_CONTENT_BYTES
                 ):
                     _fail("L10A2R_C4D7_CONTENT_LENGTH_MISMATCH")
                 hasher.update(chunk)
