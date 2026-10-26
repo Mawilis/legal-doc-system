@@ -3,13 +3,13 @@
   "authority": "Wilsy OS Core Governance",
   "canonical_truth": "Python EOS governs business, intelligence, tenant, and execution evidence.",
   "financial_execution_authority": "Kennel EOS exclusively",
-  "governance_version": "v1.0.0-public-status",
+  "governance_version": "v1.1.0-investor-evidence-ledger",
   "project": "WILSY OS",
-  "release_posture": "development; no production release tag issued by this campaign",
+  "release_posture": "governed development; focused P9 index/transaction certification passed on candidate commit; integrated Legal Ops production release not declared",
   "status": "governed-development",
   "tenant_posture": "tenant scope is explicit and fail-closed",
-  "updated": "2026-09-03",
-  "current_frontier": "WILSY_AI_GOVERNED_DEVELOPMENT",
+  "updated": "2026-10-26",
+  "current_frontier": "P9_INTEGRATED_LEGAL_OPS_RECONCILIATION",
   "milestones": [
     {
       "name": "Executive intelligence spine",
@@ -55,6 +55,28 @@
       "name": "Production release",
       "state": "NOT_DECLARED",
       "result": null
+    },
+    {
+      "name": "P9 focused binding index and transaction rollback certification",
+      "state": "CLOSED",
+      "result": "PASS",
+      "evidence_url": "https://github.com/Mawilis/legal-doc-system/pull/246",
+      "evidence_commit": "ae525b4d229e6eb6dcc0502ce630c7b9298dc973",
+      "scope": "Focused disposable real-Mongo index, replay, tenant-isolation and transaction-rollback certification; candidate workflow passed.",
+      "limitation": "Does not certify integrated P9 source, production index migration, ethical-wall enforcement, or matter-content authorization."
+    },
+    {
+      "name": "P9 integrated Legal Ops mainline reconciliation",
+      "state": "IN_PROGRESS",
+      "result": null,
+      "evidence_url": "https://github.com/Mawilis/legal-doc-system/pull/229",
+      "limitation": "Full branch-to-main semantic adjudication, authority-chain proof and integrated certification remain open."
+    },
+    {
+      "name": "Investor-facing governance ledger and release signals",
+      "state": "IN_PROGRESS",
+      "result": null,
+      "limitation": "Badge and release-policy changes are proposed on a review branch; public mainline changes only after governed review and merge."
     }
   ]
 }
