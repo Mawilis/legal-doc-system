@@ -104,7 +104,6 @@ import AuditLog from '../models/AuditLog.js';
 import SuperAdmin from '../models/SuperAdmin.js';
 import complianceUtils from '../utils/complianceUtils.js';
 import securityUtils from '../utils/securityUtils.js';
-import blockchainService from './blockchainService.js';
 import encryptionService from './encryptionService.js';
 
 dotenv.config();
@@ -846,7 +845,6 @@ class ThreatIntelligenceService {
     });
     await threatRecord.save();
     if (riskAssessment.threatLevel === 'CRITICAL' || riskAssessment.threatLevel === 'HIGH') {
-      await this.anchorThreatToBlockchain(threatRecord);
     }
     return threatRecord;
   }
@@ -898,30 +896,6 @@ class ThreatIntelligenceService {
       timestamp: new Date().toISOString(),
     };
     return crypto.createHash('sha512').update(JSON.stringify(evidenceData)).digest('hex');
-  }
-
-  async anchorThreatToBlockchain(threatRecord) {
-    try {
-      if (!blockchainService) {
-        console.warn('⚠️ Blockchain service not available, skipping threat anchoring');
-        return;
-      }
-      const blockchainData = {
-        threatId: threatRecord.threatId,
-        evidenceHash: threatRecord.integrity.evidenceHash,
-        threatType: threatRecord.threatType,
-        severity: threatRecord.impact.severity,
-        timestamp: threatRecord.timeline.firstDetected,
-        jurisdiction: 'ZA',
-      };
-      const txHash = await blockchainService.anchorEvidence(blockchainData);
-      threatRecord.integrity.blockchainAnchored = true;
-      threatRecord.integrity.blockchainTxHash = txHash;
-      await threatRecord.save();
-      console.log(`🔗 Threat ${threatRecord.threatId} anchored to blockchain: ${txHash}`);
-    } catch (error) {
-      console.error('❌ Failed to anchor threat to blockchain:', error);
-    }
   }
 
   async triggerAlerts(threatRecord, riskAssessment) {
