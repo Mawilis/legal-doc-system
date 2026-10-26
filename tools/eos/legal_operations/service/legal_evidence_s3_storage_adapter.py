@@ -3,10 +3,10 @@
 TITLE: Legal Evidence S3 Storage Adapter
 VERSION: v1.5.0-L10A2R-C4D7-EXACT-VERSION-VERIFIED-READ
 AUTHORITY: Wilsy OS Core Governance / Python EOS Legal Operations
-EPITOME: Implement the certified provider-neutral Legal Evidence binary-storage
-         port using AWS S3 multipart operations while preserving exact
-         tenant-scoped intent binding, opaque provider evidence and fail-closed
-         provider interaction.
+EPITOME: Implement the provider-neutral Legal Evidence binary-storage port,
+         including bounded exact-version content retrieval that validates
+         tenant-scoped intent, provider metadata, exact length and SHA3-512
+         before returning bytes, without granting disclosure authority.
 ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/tools/eos/legal_operations/service/legal_evidence_s3_storage_adapter.py
 COLLABORATION / OWNERSHIP: L10A2R-A4-R1 owns provider-neutral storage semantics
                             and tenant/intake scope guards. This adapter owns
@@ -14,9 +14,15 @@ COLLABORATION / OWNERSHIP: L10A2R-A4-R1 owns provider-neutral storage semantics
                             Legal Evidence content identity. L10A2Q owns
                             commercial capacity. Retention/legal-hold authority,
                             HTTP, IAM and Mongo reconciliation remain elsewhere.
-CERTIFICATION / UPDATE DATE: 2026-10-01
-CHANGELOG: v1.5.0-L10A2R-C4D7-EXACT-VERSION-VERIFIED-READ implements the separately certified C4D6B
-           page-enumeration seam using exact S3 continuation marker pairs,
+CERTIFICATION / UPDATE DATE: 2026-10-26
+CHANGELOG: 2026-10-26 v1.5.0-L10A2R-C4D7 adds bounded exact-version
+           S3 content retrieval. It validates sealed write intent, exact object
+           version and server-derived key, HEAD and GET metadata, admitted
+           length, and SHA3-512 of the complete returned body before exposing
+           bytes. This storage primitive grants no IAM, practitioner, matter
+           disclosure, lifecycle, client-visibility or AI authority.
+           v1.4.0-L10A2R-C4D6C-A-S3-COVERAGE-PAGE-ADAPTER adds read-only
+           page enumeration using exact S3 continuation marker pairs,
            tamper-evident opaque continuation references and exact-version
            HEAD recovery, without changing C4D2 discovery semantics or
            granting complete-coverage, orphan, abort or deletion authority.
