@@ -18,11 +18,6 @@ import mongoose from 'mongoose';
 import crypto from 'node:crypto';
 
 // 🛡️ ANCHORED: Sovereign ESM Service Imports
-import {
-  anchorToBlockchain,
-  createSmartContractCompliance,
-} from '../services/blockchainService.js';
-
 const { Schema } = mongoose;
 
 const complianceRecordSchema = new Schema(
@@ -93,18 +88,6 @@ const complianceRecordSchema = new Schema(
     toObject: { virtuals: true },
   }
 );
-
-// 🏛️ QUANTUM METHODS
-complianceRecordSchema.methods.sealAndAnchor = async function (userId) {
-  const result = await anchorToBlockchain(this.quantumId, {
-    documentId: this._id,
-    firmId: this.firmId,
-    userId: userId,
-  });
-
-  this.status = 'APPROVED';
-  return await this.save();
-};
 
 const ComplianceRecord = mongoose.models.ComplianceRecord || mongoose.model('ComplianceRecord', complianceRecordSchema);
 
