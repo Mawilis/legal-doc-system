@@ -418,40 +418,31 @@ async function main() {
     console.warn('[WILSY] ⚠️ No MongoDB URI provided – /health will report UNKNOWN.');
   }
 
-  const configuredPort = Number(process.env.PORT) || 4000;
-  let actualPort = configuredPort;
-  let serverStarted = false;
+  const actualPort = Number(process.env.PORT) || 4000;
 
-  console.log(`[WILSY] 🔒 Securing TCP Port (starting at ${configuredPort})...`);
-
-  while (!serverStarted) {
-    try {
-      await new Promise((resolve, reject) => {
-        httpServer.once('error', (err) => {
-          if (err.code === 'EADDRINUSE') {
-            console.warn(`[WILSY] ⚠️ Port ${actualPort} is occupied. Trying ${actualPort + 1}...`);
-            actualPort += 1;
-            try {
-              httpServer.close();
-            } catch (_) {
-              /* ignore */
-            }
-            reject(new Error('Port in use'));
-          } else {
-            reject(err);
-          }
-        });
-
-        httpServer.listen(actualPort, () => {
-          serverStarted = true;
-          resolve();
-        });
-      });
-    } catch (err) {
-      if (err.message === 'Port in use') continue;
-      throw err;
-    }
-  }
+  // Vite's /api proxy has a fixed BFF target (port 4000 by default).
+  // Never silently bind a different port: that can leave the browser talking
+  // to a stale process while this build reports itself as started.
+  console.log(`[WILSY] 🔒 Binding configured TCP Port ${actualPort}...`);
+  await new Promise((resolve, reject) => {
+    const onError = (err) => {
+      httpServer.off('listening', onListening);
+      if (err.code === 'EADDRINUSE') {
+        reject(new Error(
+          `BFF port ${actualPort} is already occupied; stop the stale process or configure Vite and BFF to use the same PORT.`
+        ));
+        return;
+      }
+      reject(err);
+    };
+    const onListening = () => {
+      httpServer.off('error', onError);
+      resolve();
+    };
+    httpServer.once('error', onError);
+    httpServer.once('listening', onListening);
+    httpServer.listen(actualPort);
+  });
 
   const dbStatus = mongoose.connection.readyState === 1 ? 'CONNECTED' : 'DEGRADED';
   console.log(`
