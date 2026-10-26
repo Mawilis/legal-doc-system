@@ -1,7 +1,7 @@
 """WILSY OS physical practitioner-binding EOS lifespan certificate.
 
 TITLE: P12C Practitioner Binding Canonical EOS Lifespan Certificate
-VERSION: v0.5.0-P12C-R4N-P10D2-P4C3B-POSITIVE-PROVENANCE
+VERSION: v0.6.0-P12C-P9-INDEX-ROLLBACK-REPLAY-CERT
 AUTHORITY: WILSY OS Sovereign Legal Operations
 EPITOME: Exercise real EOS startup and shutdown against an owned
     disposable MongoDB replica set with physical P12C indexes.
@@ -10,6 +10,9 @@ ABSOLUTE CANONICAL PATH:
 COLLABORATION / OWNERSHIP: WILSY OS sovereign engineering
 CERTIFICATION / UPDATE DATE: 2026-10-20
 CHANGELOG:
+    v0.6.0-P12C-P9-INDEX-ROLLBACK-REPLAY-CERT adds legacy-row
+    index compatibility/conflict certification, post-write HTTP transaction
+    rollback, exact replay, divergent replay rejection and tenant isolation.
     v0.5.0-P12C-R4N-P10D2-P4C3B-POSITIVE-PROVENANCE implements
     disposable replica startup, canonical EOS lifespan, index,
     anonymous-denial, shutdown and cleanup checks.
@@ -42,7 +45,7 @@ from pymongo.errors import PyMongoError
 from tools.eos.api import server
 from tools.eos.kernel import db as kernel_db
 
-VERSION = "v0.5.0-P12C-R4N-P10D2-P4C3B-POSITIVE-PROVENANCE"
+VERSION = "v0.6.0-P12C-P9-INDEX-ROLLBACK-REPLAY-CERT"
 
 MONGOD = Path("/opt/homebrew/bin/mongod")
 PROTECTED_PORTS = frozenset({27017, 27027, 61391})
@@ -1033,7 +1036,7 @@ def test_real_partner_grant_revoke_with_persisted_provenance(
     assert kernel_db.get_database() is None
 
 # ARTIFACT: test_legal_practitioner_binding_authenticated_eos_lifespan_real_mongo.py
-# VERSION: v0.5.0-P12C-R4N-P10D2-P4C3B-POSITIVE-PROVENANCE
+# VERSION: v0.6.0-P12C-P9-INDEX-ROLLBACK-REPLAY-CERT
 # AUTHORITY BOUNDARY: physical lifecycle and anonymous denial only
 # TENANT POSTURE: synthetic isolated database
 # FAIL-CLOSED POSTURE: unready and anonymous commands cannot succeed
@@ -1172,8 +1175,8 @@ def test_real_registry_replay_divergence_and_cross_tenant_absence(
     assert collection.count_documents({}) == 1
 
     divergent = make(
-        binding_id="replay-divergent-binding",
-        practitioner_principal_id=active.practitioner_principal_id,
+        binding_id=active.binding_id,
+        practitioner_principal_id="different-practitioner",
     )
     with observer.start_session() as session:
         with session.start_transaction():
