@@ -77,8 +77,18 @@ def test_inactive_transaction_denies_before_source_reads_or_content() -> None:
 
 def test_authenticated_identity_tenant_mismatch_denies_before_content() -> None:
     reader = Reader()
+    mismatched_context = TenantAuthorizationContext(
+        identity=SimpleNamespace(identity_id="principal-a", tenant_id="tenant-a"),  # type: ignore[arg-type]
+        tenant_id="tenant-b",
+        decision=TenantAuthorizationDecision(
+            authorized=True,
+            reason=TenantAuthorizationReason.AUTHORIZED,
+        ),
+    )
     with pytest.raises(coordinator.PractitionerDisclosureDenied, match="AUTHENTICATED_TENANT_MISMATCH"):
-        coordinator.read_practitioner_document_content(**request(reader, ctx=context(tenant_id="tenant-b")))
+        coordinator.read_practitioner_document_content(
+            **request(reader, ctx=mismatched_context)
+        )
     assert reader.calls == []
 
 
