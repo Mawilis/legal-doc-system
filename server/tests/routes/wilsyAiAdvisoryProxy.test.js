@@ -239,6 +239,21 @@ describe('fixed proxy route, path, query, and method contract', () => {
 });
 
 describe('optional telemetry acknowledgement contract', () => {
+  it('keeps the Vite /api proxy and BFF telemetry route wired to the same runtime', async () => {
+    const viteConfigUrl = new URL('../../../client/vite.config.js', import.meta.url);
+    const [viteSource, serverSource] = await Promise.all([
+      readFile(viteConfigUrl, 'utf8'),
+      readFile(SERVER_SOURCE_URL, 'utf8'),
+    ]);
+
+    assert.match(viteSource, /['"]\/api['"]\s*:\s*\{[\s\S]*?target:\s*['"]http:\/\/localhost:4000['"]/);
+    const telemetryRouteIndex = serverSource.indexOf("app.post('/api/telemetry/event'");
+    const catchAllIndex = serverSource.indexOf("app.use('/api', (req, res) =>");
+    assert.notEqual(telemetryRouteIndex, -1, 'exact telemetry acknowledgement route must be registered');
+    assert.notEqual(catchAllIndex, -1, 'unknown API paths must retain the fail-closed catch-all');
+    assert.ok(telemetryRouteIndex < catchAllIndex, 'telemetry route must precede the /api catch-all');
+  });
+
   it('acknowledges telemetry without persistence or upstream forwarding', async () => {
     const response = await request(app)
       .post('/api/telemetry/event')
