@@ -134,7 +134,7 @@ def evaluate_institutional_policy_boundary(
     return InstitutionalPolicyEvaluation(
         decision=InstitutionalPolicyDecision.DENY,
         reason_codes=tuple(reasons),
-        operational_admission=OPERATIONAL_ADMISSION_ENABLED,
+        operational_admission=False,
     )
 
 
