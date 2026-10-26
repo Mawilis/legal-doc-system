@@ -1,6 +1,5 @@
 """G63 independent tests for the pure fail-closed institutional policy boundary."""
 from dataclasses import FrozenInstanceError, fields
-from itertools import product
 
 import pytest
 
