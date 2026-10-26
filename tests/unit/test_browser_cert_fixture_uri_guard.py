@@ -17,9 +17,18 @@ AUTHORITY BOUNDARY: Test-only safety assertions.
 FINANCIAL AUTHORITY BOUNDARY: None; Kennel EOS remains exclusive.
 """
 
+import importlib.util
+from pathlib import Path
+
 import pytest
 
-from tests.e2e.browser_cert_fixture import _uri
+_fixture_path = Path(__file__).resolve().parents[1] / "e2e" / "browser_cert_fixture.py"
+_fixture_spec = importlib.util.spec_from_file_location("wilsy_browser_cert_fixture", _fixture_path)
+if _fixture_spec is None or _fixture_spec.loader is None:
+    raise RuntimeError("BROWSER_CERT_FIXTURE_MODULE_UNAVAILABLE")
+_fixture_module = importlib.util.module_from_spec(_fixture_spec)
+_fixture_spec.loader.exec_module(_fixture_module)
+_uri = _fixture_module._uri
 
 
 def test_accepts_only_named_loopback_disposable_replica_set(monkeypatch):
