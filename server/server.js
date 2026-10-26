@@ -354,6 +354,20 @@ function createApp() {
    */
   app.post('/api/generate/pdf', generateSovereignArtifactPdf);
 
+  // Optional browser telemetry is acknowledged explicitly but never persisted here.
+  // Keep this exact route local; unknown /api paths still fail closed below.
+  app.post('/api/telemetry/event', (req, res) => {
+    res.setHeader('X-Wilsy-Quiet-Surface', '1');
+    return res.status(202).json({
+      success: true,
+      status: 'ACCEPTED',
+      surface: 'TELEMETRY_EVENT',
+      source: 'QUIET_ACK',
+      note: 'Event acknowledged without persistence (quiet mode).',
+      timestamp: new Date().toISOString(),
+    });
+  });
+
   // ─── CATCH‑ALL FOR UNPROXIED /api ROUTES ──────────────────────────────
   app.use('/api', (req, res) => {
     res.status(404).json({
