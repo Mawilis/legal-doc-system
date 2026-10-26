@@ -75,6 +75,7 @@
     "httpxy": "0.5.5",
     "ical-generator": "10.1.0",
     "ioredis": "5.10.0",
+    "ip-address": "10.7.5",
     "joi": "^17.13.3",
     "js-sha3": "0.9.3",
     "js-yaml": "4.3.2",
@@ -94,11 +95,11 @@
     "mongoose-sequence": "6.0.1",
     "morgan": "1.12.1",
     "msgpack-lite": "0.1.26",
-    "multer": "2.4.0",
+    "multer": "2.5.0",
     "node-cache": "5.1.2",
     "node-cron": "4.6.0",
     "node-rsa": "2.0.0",
-    "nodemailer": "10.0.13",
+    "nodemailer": "10.2.1",
     "opossum": "9.0.0",
     "otplib": "13.4.0",
     "pdf-lib": "1.17.1",
@@ -129,7 +130,6 @@
     "ulid": "3.0.2",
     "uuid": "11.1.1",
     "validator": "13.15.26",
-    "web3": "4.16.0",
     "winston": "3.19.0",
     "winston-daily-rotate-file": "5.0.0",
     "winston-mongodb": "7.0.1",
@@ -137,6 +137,7 @@
     "xml2js": "0.6.2",
     "xss": "^1.0.15",
     "xss-clean": "0.1.4",
+    "zod": "4.6.7",
     "zxcvbn": "4.4.2"
   },
   "devDependencies": {
@@ -159,7 +160,7 @@
     "eslint-plugin-import": "^2.29.1",
     "eslint-plugin-prettier": "5.5.5",
     "geoip-lite": "1.4.10",
-    "glob": "13.0.6",
+    "glob": "11.1.0",
     "ioredis-mock": "8.13.1",
     "jest": "30.5.2",
     "mocha": "12.0.3",
@@ -171,46 +172,23 @@
     "nyc": "18.0.0",
     "prettier": "3.8.1",
     "redis-mock": "0.56.3",
-    "rimraf": "6.1.3",
+    "rimraf": "5.0.10",
     "sinon": "18.0.0",
     "supertest": "7.0.0"
   },
   "engines": {
-    "node": ">=20.0.0"
+    "node": ">=20.11.0 <27",
+    "npm": ">=10.2.0"
   },
   "author": "Wilson Khanyezi",
   "license": "UNLICENSED",
   "private": true,
   "overrides": {
-    "gl": "npm:empty-npm-package@1.0.0",
-    "axios": "^1.20.0",
-    "@remix-run/router": "^1.19.0",
-    "gpu.js": "^2.15.2",
-    "compromise": "^14.14.0",
-    "sharp": "0.35.5",
-    "minimatch@3.1.5": {
-      "brace-expansion": "1.1.21"
-    },
-    "minimatch@5.1.9": {
-      "brace-expansion": "2.1.7"
-    },
-    "exceljs": {
-      "uuid": "11.1.1"
-    },
-    "sequelize": {
-      "uuid": "11.1.1"
-    },
-    "tar": "7.5.22",
-    "fast-uri": "4.2.1",
-    "adm-zip": "0.6.1",
-    "geoip-lite": {
-      "ip-address": "10.7.3"
-    },
-    "nodemon": {
-      "chokidar": "4.0.3"
-    },
-    "@istanbuljs/load-nyc-config": {
-      "js-yaml": "3.15.2"
-    }
+    "glob@7.2.3": "^11.1.0",
+    "glob@10.5.0": "^11.1.0",
+    "glob@11.0.0": "^11.1.0",
+    "glob@11.0.3": "^11.1.0",
+    "tar@6.2.1": "^7.5.22",
+    "uuid@8.3.2": "^11.1.1"
   }
 }
