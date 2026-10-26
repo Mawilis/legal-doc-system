@@ -1,6 +1,6 @@
 /**
  * WILSY OS — ROLE-SCOPED LEGAL OPERATIONS COCKPIT
- * VERSION: v13.1.0-P8-LEGAL-DAILY-WORKSTATION-PRESENTATION
+ * VERSION: v13.1.1-D21B12-SHARED-BRANDING-LIFECYCLE
  * AUTHORITY: Presentation of authenticated Python-EOS Legal Operations truth.
  * EPITOME: One role-aware WILSY Legal OS surface for legal-practice operators,
  *          finance, sheriff, deputy and client personas. Law-firm roles receive
@@ -19,8 +19,9 @@
  *                            authenticated snapshot transport; D7 owns browser
  *                            validation. This component owns responsive
  *                            presentation and deputy observation capture only.
- * CERTIFICATION / UPDATE DATE: 2026-10-19
- * CHANGELOG: 2026-10-19 v13.1.0-P8-LEGAL-DAILY-WORKSTATION-PRESENTATION introduces a compact searchable Legal daily-work queue, server-projected workload filters, task-selected completion evidence inspector, strict browser completion command, authoritative EOS readback and persistent confirmation. Browser presentation creates no IAM, tenant, workflow-release, legal-outcome or financial authority.
+ * CERTIFICATION / UPDATE DATE: 2026-10-24
+ * CHANGELOG: 2026-10-24 v13.1.1-D21B12-SHARED-BRANDING-LIFECYCLE removes the mode-gated tenant descriptor from the LegalDashboard asset-hook call, keeping that parent hook authority-neutral while WilsyOSDashboardChrome alone consumes the authenticated descriptor and owns its validated asset lifecycle across every Legal mode. No authority or rendered behavior changes.
+ *            2026-10-19 v13.1.0-P8-LEGAL-DAILY-WORKSTATION-PRESENTATION introduces a compact searchable Legal daily-work queue, server-projected workload filters, task-selected completion evidence inspector, strict browser completion command, authoritative EOS readback and persistent confirmation. Browser presentation creates no IAM, tenant, workflow-release, legal-outcome or financial authority.
  *            2026-10-16 v13.0.0-LEGAL-COMMERCIAL-CONTEXT-PRESENTATION adds one server-authorized commercial-context presentation plate. It consumes only the certified Legal commercial-context browser adapter; renders canonical plan, subscription and monthly-equivalent evidence only after HTTP authorization; renders denied commercial detail as visibly locked; preserves source failure as unavailable; performs no role/JWT/permission inference; and leaves authenticated tenant branding under the existing shared chrome.
  *            2026-10-16 v12.9.0-PRACTICE-CONFLICT-REVIEW-PRESENTATION-PARITY preserves the readable conflict-screening queue for every certified Practice persona while exposing the human review mutation only inside the canonical Partner/Attorney role envelope and allowing authoritative server permission projection to narrow it further. Python EOS remains the sole authorization authority.
  *            2026-10-12 v12.8.0-LEGAL-EVIDENCE-UPLOAD-WORKSPACE adds a Partner-only, permission-narrowed upload control for already-visible canonical ProcessDocuments, with pending/failure/reconciliation states and mandatory canonical refresh after committed success.
@@ -171,7 +172,7 @@ import WilsyAccountCommandCenter from '../account/WilsyAccountCommandCenter.jsx'
 import { useAuth } from '../../contexts/authContext.jsx';
 import { useAuthenticatedTenantBrandingAsset } from '../../hooks/useAuthenticatedTenantBrandingAsset.js';
 
-const DASHBOARD_VERSION = 'v13.1.0-P8-LEGAL-DAILY-WORKSTATION-PRESENTATION';
+const DASHBOARD_VERSION = 'v13.1.1-D21B12-SHARED-BRANDING-LIFECYCLE';
 
 const EMPTY_QUEUES = Object.freeze({
   tenantId: '',
@@ -5231,41 +5232,8 @@ export default function LegalDashboard({
   const isDeputyMode = roleMode === ROLE_MODES.DEPUTY;
   const isSheriffMode = roleMode === ROLE_MODES.SHERIFF;
   const isClientMode = roleMode === ROLE_MODES.LEGAL_CLIENT;
-  const customLegalChromeMode =
-    isDeputyMode
-    || isSheriffMode
-    || roleMode === ROLE_MODES.UNRESOLVED;
-  const {
-    objectUrl: legalTenantLogoObjectUrl,
-    status: legalTenantLogoStatus,
-  } = useAuthenticatedTenantBrandingAsset(
-    customLegalChromeMode
-      ? authenticatedTenant?.branding?.logo || null
-      : null,
-  );
-  const legalTenantInitials = useMemo(() => {
-    const source = String(
-      authenticatedTenant?.name
-      || authenticatedTenant?.legalName
-      || authenticatedTenant?.displayName
-      || tenantLabel
-      || '',
-    ).trim();
-    return (
-      source
-        .split(/\s+/)
-        .filter(Boolean)
-        .slice(0, 2)
-        .map((value) => value[0]?.toUpperCase() || '')
-        .join('')
-      || 'LT'
-    );
-  }, [
-    authenticatedTenant?.displayName,
-    authenticatedTenant?.legalName,
-    authenticatedTenant?.name,
-    tenantLabel,
-  ]);
+  // The shared chrome owns tenant asset resolution; the parent never receives a descriptor.
+  useAuthenticatedTenantBrandingAsset(null);
   const deputyActivities = useMemo(() => {
     const kinds = new Set(
       deputyCapabilities.capabilities.flatMap(
@@ -5757,7 +5725,7 @@ export default function LegalDashboard({
 
 /**
  * ARTIFACT: LegalDashboard.jsx
- * VERSION: v13.1.0-P8-LEGAL-DAILY-WORKSTATION-PRESENTATION
+ * VERSION: v13.1.1-D21B12-SHARED-BRANDING-LIFECYCLE
  * AUTHORITY BOUNDARY: governed Legal Practice/Finance/SHERIFF/DEPUTY/LEGAL_CLIENT presentation plus already-authorized intake, ReturnOfService, bounded human conflict-review command initiation and bound-Deputy command initiation only; D24C authenticated person names and L8-8M conflict-review controls are descriptive/wiring projections that create no identity, membership, role, permission, tenant, operating-model, conflict clearance, waiver or financial authority; Python EOS owns authorization and legal truth
  * TENANT POSTURE: every data surface remains server-authorized and tenant-scoped; practice workspace is D15 snapshot truth with first-class CaseMatter evidence, client matters are D5/D7 visibility-bound, deputy commands require exact capability parity
  * FAIL-CLOSED POSTURE: unresolved role, malformed/absent person-name text, explicit or server-authoritative legal-permission narrowing, denied/unavailable workspace/client/specialist read, malformed finance/intake/return/field evidence, command failure or failed refresh never invents names or truth, widens role scope, fabricates operating-model authority or cross-role fallback

@@ -1,13 +1,14 @@
 /**
  * WILSY OS — D21B13 LEGAL AUTHENTICATED BRANDING PRESENTATION CERTIFICATE
- * VERSION: v1.0.2-L10-P2B-ACCOUNT-CENTER-ISOLATION-CERT
+ * VERSION: v1.0.3-D21B12-SINGLE-DESCRIPTOR-REGRESSION
  * AUTHORITY: Browser presentation/wiring evidence only.
  * EPITOME: Proves Sheriff/Deputy custom Legal chrome consumes only the D21B8
  *          authenticated branding descriptor through D21B12, ignores forged
  *          tenantConfig branding paths, and falls back to tenant initials.
  * ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/client/src/__tests__/components/legalDashboardBrandingPresentation.test.jsx
- * CERTIFICATION / UPDATE DATE: 2026-09-28
- * CHANGELOG: 2026-09-28 v1.0.2-L10-P2B-ACCOUNT-CENTER-ISOLATION-CERT isolates the existing Account Command Center from this branding-only presentation certificate so its unrelated asynchronous forensic refresh cannot outlive jsdom teardown. Authenticated branding assertions and authority boundaries remain unchanged.
+ * CERTIFICATION / UPDATE DATE: 2026-10-24
+ * CHANGELOG: 2026-10-24 v1.0.3-D21B12-SINGLE-DESCRIPTOR-REGRESSION asserts exactly one non-null authenticated logo descriptor reaches the shared chrome hook while any retained LegalDashboard parent-hook calls remain null; existing forged-URL rejection, blob rendering, WILSY trust mark, initials fallback and Practice neutral-call evidence remain intact.
+ *            2026-09-28 v1.0.2-L10-P2B-ACCOUNT-CENTER-ISOLATION-CERT isolates the existing Account Command Center from this branding-only presentation certificate so its unrelated asynchronous forensic refresh cannot outlive jsdom teardown. Authenticated branding assertions and authority boundaries remain unchanged.
  *            2026-09-25 v1.0.1-L8-8M-R2-CONFLICT-REVIEW-READ-COMPAT-CERT updates Legal Practice fixture transport with the certified conflict-screening read projection; authenticated branding assertions and authority boundaries remain unchanged.
  * TENANT BOUNDARY: Branding descriptor originates only from mocked AuthContext.
  * AUTHORITY BOUNDARY: Presentation evidence only; no IAM/legal/financial truth.
@@ -170,7 +171,22 @@ describe('D21B13 Legal authenticated tenant branding presentation', () => {
       expect(mocks.getSheriffOperationalQueues).toHaveBeenCalledTimes(1),
     );
 
-    expect(mocks.brandingHook).toHaveBeenCalledWith(descriptor);
+    const brandingHookArguments = mocks.brandingHook.mock.calls.map(
+      ([receivedDescriptor]) => receivedDescriptor,
+    );
+    const nonNullBrandingDescriptors = brandingHookArguments.filter(
+      (receivedDescriptor) => receivedDescriptor !== null,
+    );
+
+    // React may invoke neutral hooks on additional renders; the authoritative
+    // non-null descriptor must still be delivered exactly once.
+    expect(nonNullBrandingDescriptors).toHaveLength(1);
+    expect(nonNullBrandingDescriptors[0]).toEqual(descriptor);
+    expect(
+      brandingHookArguments
+        .filter((receivedDescriptor) => receivedDescriptor === null)
+        .length,
+    ).toBeGreaterThanOrEqual(1);
     const mark = container.querySelector('[data-wilsy-legal-tenant-logo]');
     expect(mark).not.toBeNull();
     expect(mark.getAttribute('data-wilsy-legal-tenant-logo')).toBe('ready');
@@ -270,7 +286,7 @@ describe('D21B13 Legal authenticated tenant branding presentation', () => {
 });
 
 // ARTIFACT: legalDashboardBrandingPresentation.test.jsx
-// VERSION: v1.0.1-L8-8M-R2-CONFLICT-REVIEW-READ-COMPAT-CERT
+// VERSION: v1.0.3-D21B12-SINGLE-DESCRIPTOR-REGRESSION
 // AUTHORITY BOUNDARY: Legal browser branding presentation certificate only
 // TENANT POSTURE: only AuthContext descriptor can reach D21B12
 // FAIL-CLOSED POSTURE: forged/absent branding falls back to initials, never legacy URL
