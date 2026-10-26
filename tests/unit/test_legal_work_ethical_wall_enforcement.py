@@ -275,7 +275,7 @@ def test_cross_tenant_conflict_evidence_denies() -> None:
 
 def test_cross_tenant_binding_and_cross_matter_assignment_deny() -> None:
     with pytest.raises(service.EthicalWallEnforcementDenied, match="BINDING_INVALID"):
-        enforce(binding_source=Source(replace(binding(), tenant_id="tenant-b")))
+        enforce(binding_source=Source(binding()), tenant_id="tenant-b")
     with pytest.raises(service.EthicalWallEnforcementDenied, match="ASSIGNMENT_SCOPE_INVALID"):
         enforce(assignment_source=Source((replace(assignment(), case_matter_id="matter-b"),)))
 
@@ -305,6 +305,24 @@ def test_foreign_wall_scope_denies_before_unratified_terminal_denial() -> None:
     foreign = policy(tenant_id="tenant-b")
     with pytest.raises(service.EthicalWallEnforcementDenied, match="WALL_REVOKED_OR_SCOPE_INVALID"):
         enforce(wall_source=WallSource(foreign), review_source=Source(review(foreign)))
+
+
+def test_expired_wall_policy_denies_at_exact_expiry_boundary() -> None:
+    expired = policy(effective_until=NOW)
+    with pytest.raises(service.EthicalWallEnforcementDenied, match="WALL_NOT_SATISFIED"):
+        enforce(wall_source=WallSource(expired), review_source=Source(review(expired)))
+
+
+def test_unavailable_wall_source_fails_closed() -> None:
+    class UnavailableWallSource:
+        def get_current(self, tenant_id: str, case_matter_id: str, policy_id: str, *, session: object) -> EthicalWallPolicyRevision:
+            raise RuntimeError("source unavailable")
+
+        def list_history(self, tenant_id: str, case_matter_id: str, policy_id: str, *, session: object) -> tuple[EthicalWallPolicyRevision, ...]:
+            raise AssertionError("history must not be read after current lookup fails")
+
+    with pytest.raises(service.EthicalWallEnforcementDenied, match="WALL_SOURCE_UNAVAILABLE"):
+        enforce(wall_source=UnavailableWallSource())
 
 
 # ARTIFACT: test_legal_work_ethical_wall_enforcement.py
