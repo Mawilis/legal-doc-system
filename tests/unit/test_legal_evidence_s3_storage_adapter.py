@@ -2,7 +2,7 @@
 
 VERSION: v1.2.0-L10A2R-C4D7-VERIFIED-READ-CERT
 AUTHORITY: Wilsy OS Core Governance
-CERTIFICATION / UPDATE DATE: 2026-10-01
+CERTIFICATION / UPDATE DATE: 2026-10-26
 CHANGELOG: 2026-10-26 v1.2.0-L10A2R-C4D7 certifies bounded exact-version
            content reads, metadata and SHA3-512 validation, and fail-closed
            rejection of content corruption before bytes are returned.
