@@ -110,9 +110,14 @@ jobs:
           client.close()
           PY
 
-      - name: Compile browser fixture
+      - name: Compile browser fixture and isolation guard
         run: |
-          python -m py_compile tests/e2e/browser_cert_fixture.py
+          python -m py_compile \
+            tests/e2e/browser_cert_fixture.py \
+            tests/unit/test_browser_cert_fixture_uri_guard.py
+
+      - name: Run disposable Mongo target guard tests
+        run: python -m pytest -q tests/unit/test_browser_cert_fixture_uri_guard.py
 
       - name: Run authenticated browser certificate
         run: node tests/e2e/run-browser-cert.mjs
