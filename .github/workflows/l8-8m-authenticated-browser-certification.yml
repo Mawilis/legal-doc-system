@@ -10,6 +10,15 @@ on:
       - "package.json"
       - "package-lock.json"
       - ".github/workflows/l8-8m-authenticated-browser-certification.yml"
+  pull_request:
+    branches:
+      - main
+    paths:
+      - "tests/e2e/playwright.config.js"
+      - "tests/e2e/**"
+      - "package.json"
+      - "package-lock.json"
+      - ".github/workflows/l8-8m-authenticated-browser-certification.yml"
   workflow_dispatch:
 
 permissions:
@@ -21,7 +30,7 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 30
     env:
-      BROWSER_CERT_MONGO_URI: mongodb://127.0.0.1:27017/wilsy_l8_8m_ci?replicaSet=wilsyVendorCertRS
+      BROWSER_CERT_MONGO_URI: mongodb://127.0.0.1:27017/wilsy_l8_8m_r3_ci?replicaSet=wilsyVendorCertRS
       PIP_DISABLE_PIP_VERSION_CHECK: "1"
     steps:
       - name: Checkout exact commit
