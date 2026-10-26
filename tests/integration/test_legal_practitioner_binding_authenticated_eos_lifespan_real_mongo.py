@@ -1,7 +1,7 @@
 """WILSY OS physical practitioner-binding EOS lifespan certificate.
 
 TITLE: P12C Practitioner Binding Canonical EOS Lifespan Certificate
-VERSION: v0.5.0-P12C-R4N-P10D2-P4C3B-POSITIVE-PROVENANCE
+VERSION: v0.6.0-P12C-P9-INDEX-ROLLBACK-REPLAY-CERT
 AUTHORITY: WILSY OS Sovereign Legal Operations
 EPITOME: Exercise real EOS startup and shutdown against an owned
     disposable MongoDB replica set with physical P12C indexes.
@@ -10,6 +10,9 @@ ABSOLUTE CANONICAL PATH:
 COLLABORATION / OWNERSHIP: WILSY OS sovereign engineering
 CERTIFICATION / UPDATE DATE: 2026-10-20
 CHANGELOG:
+    v0.6.0-P12C-P9-INDEX-ROLLBACK-REPLAY-CERT adds legacy-row
+    index compatibility/conflict certification, post-write HTTP transaction
+    rollback, exact replay, divergent replay rejection and tenant isolation.
     v0.5.0-P12C-R4N-P10D2-P4C3B-POSITIVE-PROVENANCE implements
     disposable replica startup, canonical EOS lifespan, index,
     anonymous-denial, shutdown and cleanup checks.
@@ -42,7 +45,7 @@ from pymongo.errors import PyMongoError
 from tools.eos.api import server
 from tools.eos.kernel import db as kernel_db
 
-VERSION = "v0.5.0-P12C-R4N-P10D2-P4C3B-POSITIVE-PROVENANCE"
+VERSION = "v0.6.0-P12C-P9-INDEX-ROLLBACK-REPLAY-CERT"
 
 MONGOD = Path("/opt/homebrew/bin/mongod")
 PROTECTED_PORTS = frozenset({27017, 27027, 61391})
@@ -617,7 +620,9 @@ def test_real_partner_reaches_missing_evidence_gate(isolated_eos_mongo):
     assert kernel_db.get_database() is None
 
 
-def test_real_partner_grant_revoke_with_persisted_provenance(isolated_eos_mongo):
+def test_real_partner_grant_revoke_with_persisted_provenance(
+    isolated_eos_mongo, monkeypatch,
+):
     """Commit grant and revoke through genuine EOS authority and provenance."""
     from datetime import datetime, timezone
 
@@ -948,6 +953,56 @@ def test_real_partner_grant_revoke_with_persisted_provenance(isolated_eos_mongo)
             "tenant_id": tenant_id
         }) == 1
 
+        # Prove the HTTP-owned transaction aborts a real revocation write.
+        # The injected failure happens only after the canonical service has
+        # appended the REVOKED snapshot inside the route's live transaction.
+        from tools.eos.api import legal_practitioner_matter_binding_router
+
+        canonical_revoke = legal_practitioner_matter_binding_router.revoke_binding
+        completed_revocation_writes = []
+
+        def fail_after_revocation_write(**kwargs):
+            canonical_revoke(**kwargs)
+            completed_revocation_writes.append(True)
+            raise RuntimeError("P9_CERTIFICATE_FAILURE_AFTER_REVOCATION_WRITE")
+
+        monkeypatch.setattr(
+            legal_practitioner_matter_binding_router,
+            "revoke_binding",
+            fail_after_revocation_write,
+        )
+        failed_revoke = client.post(
+            REVOKE_PATH,
+            headers=headers,
+            json={
+                "binding_id": binding_id,
+                "evidence_reference": "p12c-revocation-rollback-fixture",
+            },
+        )
+        assert failed_revoke.status_code == 503, (
+            failed_revoke.status_code, failed_revoke.text,
+        )
+        assert completed_revocation_writes == [True], (
+            "FAILURE_DID_NOT_FOLLOW_SUCCESSFUL_REVOCATION_WRITE",
+            completed_revocation_writes,
+        )
+        with observer.start_session() as session:
+            with session.start_transaction():
+                after_abort = binding_registry.read_binding_history(
+                    tenant_id=tenant_id,
+                    binding_id=binding_id,
+                    collection=bindings,
+                    session=session,
+                )
+        assert len(after_abort) == 1
+        assert [item.status.value for item in after_abort] == ["ACTIVE"]
+        assert bindings.count_documents({"tenant_id": tenant_id}) == 1
+
+        monkeypatch.setattr(
+            legal_practitioner_matter_binding_router,
+            "revoke_binding",
+            canonical_revoke,
+        )
         revoked = client.post(
             REVOKE_PATH,
             headers=headers,
@@ -987,12 +1042,173 @@ def test_real_partner_grant_revoke_with_persisted_provenance(isolated_eos_mongo)
     assert kernel_db.get_database() is None
 
 # ARTIFACT: test_legal_practitioner_binding_authenticated_eos_lifespan_real_mongo.py
-# VERSION: v0.5.0-P12C-R4N-P10D2-P4C3B-POSITIVE-PROVENANCE
+# VERSION: v0.6.0-P12C-P9-INDEX-ROLLBACK-REPLAY-CERT
 # AUTHORITY BOUNDARY: physical lifecycle and anonymous denial only
 # TENANT POSTURE: synthetic isolated database
 # FAIL-CLOSED POSTURE: unready and anonymous commands cannot succeed
 # FINANCIAL EXECUTION AUTHORITY: Kennel EOS exclusively
 # END OF WILSY OS SOVEREIGN ARTIFACT
+
+
+def test_preexisting_domain_valid_binding_history_accepts_indexes(
+    isolated_eos_mongo,
+):
+    """Indexes install over pre-existing valid ACTIVE/REVOKED history."""
+    from datetime import datetime, timedelta, timezone
+    import runpy
+
+    from tools.eos.legal_operations.registry import (
+        legal_practitioner_matter_binding_registry as registry,
+    )
+
+    observer, database_name, _, _ = isolated_eos_mongo
+    fixture = runpy.run_path(
+        str(Path(__file__).resolve().parents[1] / "unit"
+            / "test_legal_practitioner_matter_binding.py")
+    )
+    make = fixture["make"]
+    collection = observer[database_name]["p9_valid_preexisting_bindings"]
+
+    active = make(binding_id="preexisting-binding")
+    revoked = active.revoke(
+        revoked_by_principal_id="synthetic-partner",
+        revoked_at=datetime.now(timezone.utc) + timedelta(days=1),
+        evidence_reference="synthetic-revocation-evidence",
+    )
+    independent = make(
+        binding_id="preexisting-independent-binding",
+        practitioner_principal_id="synthetic-other-practitioner",
+    )
+    collection.insert_many([
+        active.to_dict(), revoked.to_dict(), independent.to_dict()
+    ])
+
+    registry.ensure_indexes(collection)
+    indexes = {
+        item["name"]: item for item in collection.list_indexes()
+        if item["name"] != "_id_"
+    }
+    assert set(indexes) == {
+        registry.SNAPSHOT_INDEX,
+        registry.FINGERPRINT_INDEX,
+        registry.SCOPE_INDEX,
+    }
+    assert all(item.get("unique") is True for item in indexes.values())
+    assert collection.count_documents({}) == 3
+
+
+def test_preexisting_duplicate_active_scope_fails_index_installation(
+    isolated_eos_mongo,
+):
+    """Conflicting legacy rows must stop startup index certification."""
+    from pymongo.errors import DuplicateKeyError
+    import runpy
+
+    from tools.eos.legal_operations.registry import (
+        legal_practitioner_matter_binding_registry as registry,
+    )
+
+    observer, database_name, _, _ = isolated_eos_mongo
+    fixture = runpy.run_path(
+        str(Path(__file__).resolve().parents[1] / "unit"
+            / "test_legal_practitioner_matter_binding.py")
+    )
+    make = fixture["make"]
+    collection = observer[database_name]["p9_conflicting_preexisting_bindings"]
+    first = make(binding_id="conflicting-binding-one")
+    second = make(binding_id="conflicting-binding-two")
+    assert (
+        first.tenant_id,
+        first.case_matter_id,
+        first.practitioner_principal_id,
+    ) == (
+        second.tenant_id,
+        second.case_matter_id,
+        second.practitioner_principal_id,
+    )
+    assert first.fingerprint != second.fingerprint
+    collection.insert_many([first.to_dict(), second.to_dict()])
+
+    with pytest.raises(DuplicateKeyError):
+        registry.ensure_indexes(collection)
+
+    installed = {
+        item["name"] for item in collection.list_indexes()
+        if item["name"] != "_id_"
+    }
+    assert registry.SCOPE_INDEX not in installed
+    assert collection.count_documents({}) == 2
+
+
+def test_real_registry_replay_divergence_and_cross_tenant_absence(
+    isolated_eos_mongo,
+):
+    """Real Mongo verifies idempotent exact replay and tenant-scoped reads."""
+    from datetime import datetime, timedelta, timezone
+    import runpy
+
+    from tools.eos.legal_operations.registry import (
+        legal_practitioner_matter_binding_registry as registry,
+    )
+
+    observer, database_name, _, _ = isolated_eos_mongo
+    fixture = runpy.run_path(
+        str(Path(__file__).resolve().parents[1] / "unit"
+            / "test_legal_practitioner_matter_binding.py")
+    )
+    make = fixture["make"]
+    collection = observer[database_name][
+        "p9_replay_isolation_bindings"
+    ]
+    registry.ensure_indexes(collection)
+    active = make(binding_id="replay-binding")
+    with observer.start_session() as session:
+        with session.start_transaction():
+            assert registry.append_binding(
+                binding=active, collection=collection, session=session
+            ) == active
+    with observer.start_session() as session:
+        with session.start_transaction():
+            assert registry.append_binding(
+                binding=active, collection=collection, session=session
+            ) == active
+            assert registry.read_binding_history(
+                tenant_id=active.tenant_id,
+                binding_id=active.binding_id,
+                collection=collection,
+                session=session,
+            ) == (active,)
+    assert collection.count_documents({}) == 1
+
+    divergent = make(
+        binding_id=active.binding_id,
+        practitioner_principal_id="different-practitioner",
+    )
+    with observer.start_session() as session:
+        with session.start_transaction():
+            with pytest.raises(registry.BindingConflict):
+                registry.append_binding(
+                    binding=divergent,
+                    collection=collection,
+                    session=session,
+                )
+    assert collection.count_documents({}) == 1
+
+    with observer.start_session() as session:
+        with session.start_transaction():
+            assert registry.read_binding_history(
+                tenant_id="different-tenant",
+                binding_id=active.binding_id,
+                collection=collection,
+                session=session,
+            ) == ()
+            assert registry.resolve_current_binding(
+                tenant_id="different-tenant",
+                binding_id=active.binding_id,
+                collection=collection,
+                session=session,
+            ) is None
+    assert collection.count_documents({}) == 1
 
 
 from tools.eos.legal_operations.service.legal_practitioner_matter_access_codec import (
