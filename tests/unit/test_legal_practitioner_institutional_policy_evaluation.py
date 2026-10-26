@@ -21,6 +21,7 @@ from dataclasses import FrozenInstanceError, fields
 
 import pytest
 
+from tools.eos.legal_operations.service import legal_practitioner_institutional_policy_evaluation as policy
 from tools.eos.legal_operations.service.legal_practitioner_institutional_policy_evaluation import (
     OPERATIONAL_ADMISSION_ENABLED,
     InstitutionalEvidenceState as State,
@@ -70,6 +71,19 @@ def test_every_single_dependency_state_remains_fail_closed(state: State) -> None
         assert "G63_REVIEWER_AUTHORITY_UNASSIGNED" in result.reason_codes
     else:
         assert f"G63_WALL_ENFORCEMENT_{state.value}" in result.reason_codes
+
+
+def test_mutating_exported_constant_cannot_enable_admission(monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.setattr(policy, "OPERATIONAL_ADMISSION_ENABLED", True)
+    inputs = InstitutionalPolicyInputs(
+        **{name: State.APPROVED for name in INPUT_FIELDS}
+    )
+
+    result = evaluate_institutional_policy_boundary(inputs)
+
+    assert result.decision is Decision.DENY
+    assert result.operational_admission is False
+    assert result.reason_codes == ("G63_OPERATIONAL_ADMISSION_DISABLED",)
 
 
 def test_explicit_negative_evidence_has_stable_precedence() -> None:
