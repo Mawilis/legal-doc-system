@@ -35,86 +35,86 @@ Production readiness is not declared.
 <!-- WILSY_PUBLIC_STATUS_START -->
 ```json
 {
-  "schema_version": 1,
   "authority": "Wilsy OS Core Governance",
   "canonical_truth": "Python EOS governs business, intelligence, tenant, and execution evidence.",
+  "current_frontier": "P9_INTEGRATED_LEGAL_OPS_RECONCILIATION",
   "financial_execution_authority": "Kennel EOS exclusively",
   "governance_version": "v1.1.0-investor-evidence-ledger",
-  "project": "WILSY OS",
-  "release_posture": "governed development; focused P9 index/transaction certification passed on candidate commit; integrated Legal Ops production release not declared",
-  "status": "governed-development",
-  "tenant_posture": "tenant scope is explicit and fail-closed",
-  "updated": "2026-10-26",
-  "current_frontier": "P9_INTEGRATED_LEGAL_OPS_RECONCILIATION",
   "milestones": [
     {
       "name": "Executive intelligence spine",
-      "state": "CLOSED",
-      "result": "FROZEN"
+      "result": "FROZEN",
+      "state": "CLOSED"
     },
     {
       "name": "M0 mainline divergence discovery",
-      "state": "CLOSED",
-      "result": "PASS"
+      "result": "PASS",
+      "state": "CLOSED"
     },
     {
       "name": "R1–R4 anomaly remediation",
-      "state": "CLOSED",
-      "result": "PASS"
+      "result": "PASS",
+      "state": "CLOSED"
     },
     {
       "name": "P0 repository integrity firewall",
-      "state": "CLOSED",
-      "result": "PASS"
+      "result": "PASS",
+      "state": "CLOSED"
     },
     {
       "name": "P1 production surface inventory",
-      "state": "CLOSED",
-      "result": "PASS"
+      "result": "PASS",
+      "state": "CLOSED"
     },
     {
       "name": "P2 dominant production-boundary decomposition",
-      "state": "CLOSED",
-      "result": "PASS"
+      "result": "PASS",
+      "state": "CLOSED"
     },
     {
       "name": "M4 controlled fast-forward promotion to main",
-      "state": "CLOSED",
-      "result": "PASS"
+      "result": "PASS",
+      "state": "CLOSED"
     },
     {
       "name": "M6 protected main / required checks",
-      "state": "CLOSED",
-      "result": "PASS"
+      "result": "PASS",
+      "state": "CLOSED"
     },
     {
       "name": "Production release",
-      "state": "NOT_DECLARED",
-      "result": null
+      "result": null,
+      "state": "NOT_DECLARED"
     },
     {
-      "name": "P9 focused binding index and transaction rollback certification",
-      "state": "CLOSED",
-      "result": "PASS",
-      "evidence_url": "https://github.com/Mawilis/legal-doc-system/pull/246",
       "evidence_commit": "ae525b4d229e6eb6dcc0502ce630c7b9298dc973",
+      "evidence_url": "https://github.com/Mawilis/legal-doc-system/pull/246",
+      "limitation": "Does not certify integrated P9 source, production index migration, ethical-wall enforcement, or matter-content authorization.",
+      "name": "P9 focused binding index and transaction rollback certification",
+      "result": "PASS",
       "scope": "Focused disposable real-Mongo index, replay, tenant-isolation and transaction-rollback certification; candidate workflow passed.",
-      "limitation": "Does not certify integrated P9 source, production index migration, ethical-wall enforcement, or matter-content authorization."
+      "state": "CLOSED"
     },
     {
-      "name": "P9 integrated Legal Ops mainline reconciliation",
-      "state": "IN_PROGRESS",
-      "result": null,
       "evidence_url": "https://github.com/Mawilis/legal-doc-system/pull/229",
-      "limitation": "Full branch-to-main semantic adjudication, authority-chain proof and integrated certification remain open."
+      "limitation": "Full branch-to-main semantic adjudication, authority-chain proof and integrated certification remain open.",
+      "name": "P9 integrated Legal Ops mainline reconciliation",
+      "result": null,
+      "state": "IN_PROGRESS"
     },
     {
+      "limitation": "Badge and release-policy changes are proposed on a review branch; public mainline changes only after governed review and merge.",
       "name": "Investor-facing governance ledger and release signals",
-      "state": "IN_PROGRESS",
       "result": null,
-      "limitation": "Badge and release-policy changes are proposed on a review branch; public mainline changes only after governed review and merge."
+      "state": "IN_PROGRESS"
     }
-  ]
+  ],
+  "project": "WILSY OS",
+  "release_posture": "governed development; focused P9 index/transaction certification passed on candidate commit; integrated Legal Ops production release not declared",
+  "schema_version": 1,
+  "status": "governed-development",
+  "tenant_posture": "tenant scope is explicit and fail-closed",
+  "updated": "2026-10-26"
 }
 ```
 <!-- WILSY_PUBLIC_STATUS_END -->
