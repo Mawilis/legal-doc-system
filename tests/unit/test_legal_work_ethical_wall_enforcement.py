@@ -325,6 +325,16 @@ def test_unavailable_wall_source_fails_closed() -> None:
         enforce(wall_source=UnavailableWallSource())
 
 
+def test_wall_administrator_cannot_review_practitioner_decision() -> None:
+    wall = policy(administrator_principal_id="reviewer-a")
+    conflicting_review = review(wall, reviewer_principal_id="reviewer-a")
+    with pytest.raises(
+        service.EthicalWallEnforcementDenied,
+        match="G77_REVIEW_ADMIN_SEPARATION_INVALID",
+    ):
+        enforce(wall_source=WallSource(wall), review_source=Source(conflicting_review))
+
+
 # ARTIFACT: test_legal_work_ethical_wall_enforcement.py
 # VERSION: v1.0.1-G77-DENIAL-ADVERSARIAL-EXPANSION
 # AUTHORITY BOUNDARY: canonical negative verification only; no access grant
