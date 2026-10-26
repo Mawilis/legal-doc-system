@@ -48,7 +48,8 @@ def test_every_single_dependency_state_remains_fail_closed(state: State) -> None
     assert result.decision is Decision.DENY
     assert result.operational_admission is False
     if state is State.APPROVED:
-        assert "G63_OPERATIONAL_ADMISSION_DISABLED" in result.reason_codes
+        assert "G63_WALL_ENFORCEMENT_APPROVED" not in result.reason_codes
+        assert "G63_REVIEWER_AUTHORITY_UNASSIGNED" in result.reason_codes
     else:
         assert f"G63_WALL_ENFORCEMENT_{state.value}" in result.reason_codes
 
