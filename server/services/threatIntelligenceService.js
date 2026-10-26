@@ -104,7 +104,6 @@ import AuditLog from '../models/AuditLog.js';
 import SuperAdmin from '../models/SuperAdmin.js';
 import complianceUtils from '../utils/complianceUtils.js';
 import securityUtils from '../utils/securityUtils.js';
-import blockchainService from './blockchainService.js';
 import encryptionService from './encryptionService.js';
 
 dotenv.config();
@@ -261,7 +260,10 @@ const threatIntelligenceSchema = new mongoose.Schema(
     },
     sources: [
       {
-        feed: { type: String, enum: ['SA_CERT', 'INTERPOL', 'AFRICA_CERT', 'COMMERCIAL', 'INTERNAL'] },
+        feed: {
+          type: String,
+          enum: ['SA_CERT', 'INTERPOL', 'AFRICA_CERT', 'COMMERCIAL', 'INTERNAL'],
+        },
         sourceId: String,
         confidence: Number,
         firstSeen: Date,
@@ -271,10 +273,16 @@ const threatIntelligenceSchema = new mongoose.Schema(
     ],
     affectedEntities: [
       {
-        entityType: { type: String, enum: ['USER', 'SUPER_ADMIN', 'TENANT', 'FIRM', 'DOCUMENT', 'SYSTEM'] },
+        entityType: {
+          type: String,
+          enum: ['USER', 'SUPER_ADMIN', 'TENANT', 'FIRM', 'DOCUMENT', 'SYSTEM'],
+        },
         entityId: mongoose.Schema.Types.ObjectId,
         impactLevel: { type: String, enum: ['NONE', 'LOW', 'MEDIUM', 'HIGH', 'CRITICAL'] },
-        remediationStatus: { type: String, enum: ['PENDING', 'IN_PROGRESS', 'COMPLETED', 'FAILED'] },
+        remediationStatus: {
+          type: String,
+          enum: ['PENDING', 'IN_PROGRESS', 'COMPLETED', 'FAILED'],
+        },
       },
     ],
     indicatorsOfCompromise: {
@@ -292,23 +300,48 @@ const threatIntelligenceSchema = new mongoose.Schema(
       durationMs: Number,
     },
     impact: {
-      severity: { type: String, required: true, enum: ['INFO', 'LOW', 'MEDIUM', 'HIGH', 'CRITICAL'], index: true },
-      businessImpact: { type: String, enum: ['MINIMAL', 'MODERATE', 'SIGNIFICANT', 'SEVERE', 'CATASTROPHIC'] },
+      severity: {
+        type: String,
+        required: true,
+        enum: ['INFO', 'LOW', 'MEDIUM', 'HIGH', 'CRITICAL'],
+        index: true,
+      },
+      businessImpact: {
+        type: String,
+        enum: ['MINIMAL', 'MODERATE', 'SIGNIFICANT', 'SEVERE', 'CATASTROPHIC'],
+      },
       dataBreach: Boolean,
       financialImpact: Number,
       reputationImpact: Number,
-      complianceImpact: { type: String, enum: ['NONE', 'POPIA_VIOLATION', 'CYBERCRIMES_ACT', 'GDPR', 'MULTIPLE'] },
+      complianceImpact: {
+        type: String,
+        enum: ['NONE', 'POPIA_VIOLATION', 'CYBERCRIMES_ACT', 'GDPR', 'MULTIPLE'],
+      },
     },
     response: {
-      status: { type: String, enum: ['DETECTED', 'ANALYZING', 'CONTAINED', 'ERADICATED', 'RECOVERED', 'CLOSED'], default: 'DETECTED', index: true },
+      status: {
+        type: String,
+        enum: ['DETECTED', 'ANALYZING', 'CONTAINED', 'ERADICATED', 'RECOVERED', 'CLOSED'],
+        default: 'DETECTED',
+        index: true,
+      },
       actionsTaken: [String],
       assignedTo: mongoose.Schema.Types.ObjectId,
       slaBreach: Boolean,
       resolutionTimeMs: Number,
     },
     compliance: {
-      cybercrimesAct: { reportable: Boolean, reported: Boolean, reportReference: String, reportDate: Date },
-      popia: { dataSubjectAffected: Boolean, informationOfficerNotified: Boolean, notificationDate: Date },
+      cybercrimesAct: {
+        reportable: Boolean,
+        reported: Boolean,
+        reportReference: String,
+        reportDate: Date,
+      },
+      popia: {
+        dataSubjectAffected: Boolean,
+        informationOfficerNotified: Boolean,
+        notificationDate: Date,
+      },
       international: { gdprReportable: Boolean, crossBorderImpact: Boolean },
     },
     integrity: {
@@ -332,7 +365,9 @@ threatIntelligenceSchema.index({ 'impact.severity': 1, 'timeline.firstDetected':
 threatIntelligenceSchema.index({ 'response.status': 1 });
 threatIntelligenceSchema.index({ 'compliance.cybercrimesAct.reportable': 1 });
 
-const ThreatIntelligence = mongoose.models.ThreatIntelligence || mongoose.model('ThreatIntelligence', threatIntelligenceSchema);
+const ThreatIntelligence =
+  mongoose.models.ThreatIntelligence ||
+  mongoose.model('ThreatIntelligence', threatIntelligenceSchema);
 
 // =============================================================================
 // QUANTUM ML ENGINE: THREAT DETECTION MODEL
@@ -377,18 +412,33 @@ class ThreatDetectionEngine {
   }
 
   async loadModel() {
-    this.model = await tf.loadLayersModel(`file://${THREAT_INTELLIGENCE_CONFIG.ML.MODEL_PATH}/model.json`);
+    this.model = await tf.loadLayersModel(
+      `file://${THREAT_INTELLIGENCE_CONFIG.ML.MODEL_PATH}/model.json`
+    );
     await this.warmUpModel();
   }
 
   async createModel() {
     this.model = tf.sequential({
       layers: [
-        tf.layers.dense({ inputShape: [50], units: 128, activation: 'relu', kernelRegularizer: tf.regularizers.l2({ l2: 0.01 }) }),
+        tf.layers.dense({
+          inputShape: [50],
+          units: 128,
+          activation: 'relu',
+          kernelRegularizer: tf.regularizers.l2({ l2: 0.01 }),
+        }),
         tf.layers.dropout({ rate: 0.2 }),
-        tf.layers.dense({ units: 64, activation: 'relu', kernelRegularizer: tf.regularizers.l2({ l2: 0.01 }) }),
+        tf.layers.dense({
+          units: 64,
+          activation: 'relu',
+          kernelRegularizer: tf.regularizers.l2({ l2: 0.01 }),
+        }),
         tf.layers.dropout({ rate: 0.2 }),
-        tf.layers.dense({ units: 32, activation: 'relu', kernelRegularizer: tf.regularizers.l2({ l2: 0.01 }) }),
+        tf.layers.dense({
+          units: 32,
+          activation: 'relu',
+          kernelRegularizer: tf.regularizers.l2({ l2: 0.01 }),
+        }),
         tf.layers.dense({ units: 1, activation: 'sigmoid' }),
       ],
     });
@@ -410,7 +460,9 @@ class ThreatDetectionEngine {
       callbacks: {
         onEpochEnd: (epoch, logs) => {
           if (epoch % 10 === 0) {
-            console.log(`Epoch ${epoch}: loss = ${logs.loss.toFixed(4)}, accuracy = ${logs.acc.toFixed(4)}`);
+            console.log(
+              `Epoch ${epoch}: loss = ${logs.loss.toFixed(4)}, accuracy = ${logs.acc.toFixed(4)}`
+            );
           }
         },
       },
@@ -459,7 +511,9 @@ class ThreatDetectionEngine {
     const xs = tf.tensor2d(features);
     const ys = tf.tensor2d(labels, [labels.length, 1]);
     const evaluation = this.model.evaluate(xs, ys);
-    const accuracy = Array.isArray(evaluation) ? evaluation[1].dataSync()[0] : evaluation.dataSync()[0];
+    const accuracy = Array.isArray(evaluation)
+      ? evaluation[1].dataSync()[0]
+      : evaluation.dataSync()[0];
     xs.dispose();
     ys.dispose();
     return accuracy;
@@ -472,13 +526,16 @@ class ThreatDetectionEngine {
   }
 
   startPeriodicRetraining() {
-    setInterval(async () => {
-      try {
-        await this.retrainModel();
-      } catch (error) {
-        console.error('❌ Periodic retraining failed:', error);
-      }
-    }, 24 * 60 * 60 * 1000);
+    setInterval(
+      async () => {
+        try {
+          await this.retrainModel();
+        } catch (error) {
+          console.error('❌ Periodic retraining failed:', error);
+        }
+      },
+      24 * 60 * 60 * 1000
+    );
   }
 
   async retrainModel() {
@@ -517,7 +574,9 @@ class ThreatDetectionEngine {
     threats.forEach((threat) => {
       if (threat.mlPrediction?.features) {
         features.push(threat.mlPrediction.features.slice(0, 50));
-        labels.push([threat.impact.severity === 'CRITICAL' || threat.impact.severity === 'HIGH' ? 1 : 0]);
+        labels.push([
+          threat.impact.severity === 'CRITICAL' || threat.impact.severity === 'HIGH' ? 1 : 0,
+        ]);
       }
     });
     return { features, labels };
@@ -540,7 +599,13 @@ class ThreatDetectionEngine {
       };
     } catch (error) {
       console.error('❌ Threat analysis failed:', error);
-      return { threatDetected: false, confidence: 0, riskScore: 0, error: error.message, timestamp: new Date() };
+      return {
+        threatDetected: false,
+        confidence: 0,
+        riskScore: 0,
+        error: error.message,
+        timestamp: new Date(),
+      };
     }
   }
 
@@ -552,17 +617,56 @@ class ThreatDetectionEngine {
     const isBusinessHours = hour >= 8 && hour <= 17;
     features.push(hour / 24, dayOfWeek / 7, isWeekend ? 1 : 0, isBusinessHours ? 0 : 1);
 
-    const roleWeights = { SUPREME_ADMIN: 0.1, ATTORNEY: 0.2, ADVOCATE: 0.3, PARTNER: 0.4, PARALEGAL: 0.5, CLIENT: 0.8, SYSTEM_ADMIN: 0.6, SYSTEM: 0.1 };
+    const roleWeights = {
+      SUPREME_ADMIN: 0.1,
+      ATTORNEY: 0.2,
+      ADVOCATE: 0.3,
+      PARTNER: 0.4,
+      PARALEGAL: 0.5,
+      CLIENT: 0.8,
+      SYSTEM_ADMIN: 0.6,
+      SYSTEM: 0.1,
+    };
     features.push(roleWeights[auditLog.actor?.role] || 0.5);
     features.push(auditLog.actor?.isSupremeAdmin ? 0 : 0.3);
 
-    const actionWeights = { SUPREME_CREATE: 0.3, SUPREME_UPDATE: 0.4, SUPREME_DELETE: 0.8, SUPREME_ACCESS: 0.5, SUPREME_SIGN: 0.2, SUPREME_SHARE: 0.6, SUPREME_APPROVE: 0.3, SUPREME_REJECT: 0.4, SUPREME_ESCALATE: 0.7, SUPREME_ARCHIVE: 0.4, SUPREME_OVERRIDE: 0.9 };
+    const actionWeights = {
+      SUPREME_CREATE: 0.3,
+      SUPREME_UPDATE: 0.4,
+      SUPREME_DELETE: 0.8,
+      SUPREME_ACCESS: 0.5,
+      SUPREME_SIGN: 0.2,
+      SUPREME_SHARE: 0.6,
+      SUPREME_APPROVE: 0.3,
+      SUPREME_REJECT: 0.4,
+      SUPREME_ESCALATE: 0.7,
+      SUPREME_ARCHIVE: 0.4,
+      SUPREME_OVERRIDE: 0.9,
+    };
     features.push(actionWeights[auditLog.event?.action] || 0.5);
 
-    const resourceWeights = { SUPREME_ADMIN: 0.9, DOCUMENT: 0.7, CASE_FILE: 0.8, CLIENT_RECORD: 0.6, INVOICE: 0.5, TRUST_TRANSACTION: 0.8, USER_ACCOUNT: 0.7, CONSENT_RECORD: 0.4, COMPLIANCE_REPORT: 0.9, AUDIT_LOG: 1.0 };
+    const resourceWeights = {
+      SUPREME_ADMIN: 0.9,
+      DOCUMENT: 0.7,
+      CASE_FILE: 0.8,
+      CLIENT_RECORD: 0.6,
+      INVOICE: 0.5,
+      TRUST_TRANSACTION: 0.8,
+      USER_ACCOUNT: 0.7,
+      CONSENT_RECORD: 0.4,
+      COMPLIANCE_REPORT: 0.9,
+      AUDIT_LOG: 1.0,
+    };
     features.push(resourceWeights[auditLog.event?.resourceType] || 0.5);
 
-    const outcomeWeights = { SUCCESS: 0.1, FAILED: 0.7, DENIED: 0.8, PARTIAL: 0.6, PENDING: 0.3, OVERRIDDEN: 0.9 };
+    const outcomeWeights = {
+      SUCCESS: 0.1,
+      FAILED: 0.7,
+      DENIED: 0.8,
+      PARTIAL: 0.6,
+      PENDING: 0.3,
+      OVERRIDDEN: 0.9,
+    };
     features.push(outcomeWeights[auditLog.event?.outcome] || 0.5);
 
     const severityWeights = { INFO: 0.1, LOW: 0.3, MEDIUM: 0.6, HIGH: 0.8, CRITICAL: 1.0 };
@@ -669,7 +773,12 @@ class ThreatIntelligenceService {
     threats.forEach((threat) => {
       const threatKey = this.generateThreatKey(threat);
       if (!this.threatFeeds.has(threatKey)) {
-        this.threatFeeds.set(threatKey, { ...threat, sources: [feedName], firstSeen: new Date(), lastSeen: new Date() });
+        this.threatFeeds.set(threatKey, {
+          ...threat,
+          sources: [feedName],
+          firstSeen: new Date(),
+          lastSeen: new Date(),
+        });
       } else {
         const existing = this.threatFeeds.get(threatKey);
         existing.sources.push(feedName);
@@ -681,8 +790,16 @@ class ThreatIntelligenceService {
   }
 
   generateThreatKey(threat) {
-    const keyData = { type: threat.type, indicators: threat.indicators?.join('|') || '', signature: threat.signature || '' };
-    return crypto.createHash('sha256').update(JSON.stringify(keyData)).digest('hex').substring(0, 32);
+    const keyData = {
+      type: threat.type,
+      indicators: threat.indicators?.join('|') || '',
+      signature: threat.signature || '',
+    };
+    return crypto
+      .createHash('sha256')
+      .update(JSON.stringify(keyData))
+      .digest('hex')
+      .substring(0, 32);
   }
 
   startThreatIntelligenceUpdates() {
@@ -729,7 +846,12 @@ class ThreatIntelligenceService {
       };
     } catch (error) {
       console.error('❌ Real-time threat analysis failed:', error);
-      return { auditLogId: auditLog.quantumId, timestamp: new Date(), error: error.message, threatDetected: false };
+      return {
+        auditLogId: auditLog.quantumId,
+        timestamp: new Date(),
+        error: error.message,
+        threatDetected: false,
+      };
     }
   }
 
@@ -739,13 +861,22 @@ class ThreatIntelligenceService {
       const matchScore = this.calculateThreatMatchScore(auditLog, threat);
       if (matchScore > 0.5) {
         correlations.push({
-          threatKey, threatType: threat.type, matchScore, sources: threat.sources,
-          indicators: threat.indicators, firstSeen: threat.firstSeen, lastSeen: threat.lastSeen,
+          threatKey,
+          threatType: threat.type,
+          matchScore,
+          sources: threat.sources,
+          indicators: threat.indicators,
+          firstSeen: threat.firstSeen,
+          lastSeen: threat.lastSeen,
         });
       }
     }
     correlations.sort((a, b) => b.matchScore - a.matchScore);
-    return { correlated: correlations.length > 0, correlations: correlations.slice(0, 5), totalThreats: this.threatFeeds.size };
+    return {
+      correlated: correlations.length > 0,
+      correlations: correlations.slice(0, 5),
+      totalThreats: this.threatFeeds.size,
+    };
   }
 
   calculateThreatMatchScore(auditLog, threat) {
@@ -756,59 +887,112 @@ class ThreatIntelligenceService {
     }
     if (threat.indicators?.patterns) {
       const logString = JSON.stringify(auditLog);
-      const patternMatch = threat.indicators.patterns.some((pattern) => logString.includes(pattern));
+      const patternMatch = threat.indicators.patterns.some((pattern) =>
+        logString.includes(pattern)
+      );
       if (patternMatch) score += 0.3;
     }
     if (threat.type === 'INSIDER_THREAT' && auditLog.actor?.isSupremeAdmin) score += 0.2;
-    if (threat.resourceTypes && threat.resourceTypes.includes(auditLog.event?.resourceType)) score += 0.1;
+    if (threat.resourceTypes && threat.resourceTypes.includes(auditLog.event?.resourceType))
+      score += 0.1;
     return Math.min(1, score);
   }
 
   assessRisk(mlAnalysis, threatIntelligence) {
     const mlScore = mlAnalysis.riskScore;
     const tiScore = threatIntelligence.correlated ? 30 : 0;
-    const correlationScore = threatIntelligence.correlations.length > 0 ? Math.max(...threatIntelligence.correlations.map((c) => c.matchScore)) * 20 : 0;
+    const correlationScore =
+      threatIntelligence.correlations.length > 0
+        ? Math.max(...threatIntelligence.correlations.map((c) => c.matchScore)) * 20
+        : 0;
     const totalRiskScore = mlScore + tiScore + correlationScore;
-    let threatLevel = 'NONE', threatDetected = false;
-    if (totalRiskScore >= 90) { threatLevel = 'CRITICAL'; threatDetected = true; }
-    else if (totalRiskScore >= 80) { threatLevel = 'HIGH'; threatDetected = true; }
-    else if (totalRiskScore >= 70) { threatLevel = 'MEDIUM'; threatDetected = true; }
-    else if (totalRiskScore >= 60) { threatLevel = 'LOW'; threatDetected = true; }
-    const recommendedActions = this.generateRecommendedActions(threatLevel, mlAnalysis.threatType, threatIntelligence);
+    let threatLevel = 'NONE',
+      threatDetected = false;
+    if (totalRiskScore >= 90) {
+      threatLevel = 'CRITICAL';
+      threatDetected = true;
+    } else if (totalRiskScore >= 80) {
+      threatLevel = 'HIGH';
+      threatDetected = true;
+    } else if (totalRiskScore >= 70) {
+      threatLevel = 'MEDIUM';
+      threatDetected = true;
+    } else if (totalRiskScore >= 60) {
+      threatLevel = 'LOW';
+      threatDetected = true;
+    }
+    const recommendedActions = this.generateRecommendedActions(
+      threatLevel,
+      mlAnalysis.threatType,
+      threatIntelligence
+    );
     return {
-      threatDetected, threatLevel, totalRiskScore, mlRiskScore: mlScore,
-      tiRiskScore: tiScore + correlationScore, confidence: mlAnalysis.confidence,
-      recommendedActions, requiresImmediateAction: threatLevel === 'CRITICAL' || threatLevel === 'HIGH',
+      threatDetected,
+      threatLevel,
+      totalRiskScore,
+      mlRiskScore: mlScore,
+      tiRiskScore: tiScore + correlationScore,
+      confidence: mlAnalysis.confidence,
+      recommendedActions,
+      requiresImmediateAction: threatLevel === 'CRITICAL' || threatLevel === 'HIGH',
     };
   }
 
   generateRecommendedActions(threatLevel, threatType, threatIntelligence) {
     const actions = [];
     if (threatLevel === 'CRITICAL') {
-      actions.push('IMMEDIATE_SYSTEM_ISOLATION', 'SUPREME_ADMIN_NOTIFICATION', 'SECURITY_TEAM_ESCALATION', 'INCIDENT_RESPONSE_ACTIVATION');
+      actions.push(
+        'IMMEDIATE_SYSTEM_ISOLATION',
+        'SUPREME_ADMIN_NOTIFICATION',
+        'SECURITY_TEAM_ESCALATION',
+        'INCIDENT_RESPONSE_ACTIVATION'
+      );
     } else if (threatLevel === 'HIGH') {
-      actions.push('SESSION_TERMINATION', 'ACCOUNT_LOCKDOWN', 'SECURITY_TEAM_NOTIFICATION', 'ENHANCED_MONITORING');
+      actions.push(
+        'SESSION_TERMINATION',
+        'ACCOUNT_LOCKDOWN',
+        'SECURITY_TEAM_NOTIFICATION',
+        'ENHANCED_MONITORING'
+      );
     } else if (threatLevel === 'MEDIUM') {
       actions.push('ACCOUNT_REVIEW', 'ADDITIONAL_AUTHENTICATION', 'BEHAVIOR_MONITORING');
     }
-    if (threatType === 'INSIDER_THREAT') actions.push('COMPLIANCE_OFFICER_NOTIFICATION', 'AUDIT_TRAIL_REVIEW', 'PRIVILEGE_REVIEW');
-    else if (threatType === 'DATA_EXFILTRATION') actions.push('DATA_LOSS_PREVENTION_ACTIVATION', 'NETWORK_TRAFFIC_ANALYSIS', 'ENCRYPTION_VERIFICATION');
-    else if (threatType === 'PRIVILEGE_ESCALATION') actions.push('ROLE_REVIEW', 'ACCESS_CONTROL_AUDIT', 'PRIVILEGE_REDUCTION');
+    if (threatType === 'INSIDER_THREAT')
+      actions.push('COMPLIANCE_OFFICER_NOTIFICATION', 'AUDIT_TRAIL_REVIEW', 'PRIVILEGE_REVIEW');
+    else if (threatType === 'DATA_EXFILTRATION')
+      actions.push(
+        'DATA_LOSS_PREVENTION_ACTIVATION',
+        'NETWORK_TRAFFIC_ANALYSIS',
+        'ENCRYPTION_VERIFICATION'
+      );
+    else if (threatType === 'PRIVILEGE_ESCALATION')
+      actions.push('ROLE_REVIEW', 'ACCESS_CONTROL_AUDIT', 'PRIVILEGE_REDUCTION');
     if (threatIntelligence.correlated) {
       actions.push('THREAT_INTELLIGENCE_UPDATE', 'INDICATOR_OF_COMPROMISE_SCANNING');
-      if (threatIntelligence.correlations.some((c) => c.sources.includes('INTERPOL'))) actions.push('INTERPOL_NOTIFICATION');
-      if (threatIntelligence.correlations.some((c) => c.sources.includes('SA_CERT'))) actions.push('SA_CERT_REPORTING');
+      if (threatIntelligence.correlations.some((c) => c.sources.includes('INTERPOL')))
+        actions.push('INTERPOL_NOTIFICATION');
+      if (threatIntelligence.correlations.some((c) => c.sources.includes('SA_CERT')))
+        actions.push('SA_CERT_REPORTING');
     }
     return actions;
   }
 
   async processDetectedThreat(auditLog, mlAnalysis, threatIntelligence, riskAssessment) {
     try {
-      const threatRecord = await this.createThreatRecord(auditLog, mlAnalysis, threatIntelligence, riskAssessment);
+      const threatRecord = await this.createThreatRecord(
+        auditLog,
+        mlAnalysis,
+        threatIntelligence,
+        riskAssessment
+      );
       await this.triggerAlerts(threatRecord, riskAssessment);
       await this.updateAuditLogWithThreat(auditLog, threatRecord);
-      if (riskAssessment.threatLevel === 'CRITICAL') await this.triggerCriticalResponse(threatRecord);
-      this.activeThreats.set(threatRecord.threatId, { ...threatRecord, responseInitiated: new Date() });
+      if (riskAssessment.threatLevel === 'CRITICAL')
+        await this.triggerCriticalResponse(threatRecord);
+      this.activeThreats.set(threatRecord.threatId, {
+        ...threatRecord,
+        responseInitiated: new Date(),
+      });
       console.log(`⚠️ Threat detected and processed: ${threatRecord.threatId}`);
     } catch (error) {
       console.error('❌ Failed to process detected threat:', error);
@@ -826,8 +1010,20 @@ class ThreatIntelligenceService {
         modelVersion: mlAnalysis.modelVersion,
         predictionTimestamp: mlAnalysis.timestamp,
       },
-      sources: threatIntelligence.correlations.map((c) => ({ feed: c.sources[0], sourceId: c.threatKey, confidence: c.matchScore, indicators: c.indicators })),
-      affectedEntities: [{ entityType: auditLog.actor?.role || 'USER', entityId: auditLog.actor?.userId || auditLog._id, impactLevel: riskAssessment.threatLevel, remediationStatus: 'PENDING' }],
+      sources: threatIntelligence.correlations.map((c) => ({
+        feed: c.sources[0],
+        sourceId: c.threatKey,
+        confidence: c.matchScore,
+        indicators: c.indicators,
+      })),
+      affectedEntities: [
+        {
+          entityType: auditLog.actor?.role || 'USER',
+          entityId: auditLog.actor?.userId || auditLog._id,
+          impactLevel: riskAssessment.threatLevel,
+          remediationStatus: 'PENDING',
+        },
+      ],
       indicatorsOfCompromise: this.extractIOCsFromAuditLog(auditLog),
       timeline: { firstDetected: new Date(), lastDetected: new Date() },
       impact: {
@@ -838,30 +1034,64 @@ class ThreatIntelligenceService {
       },
       response: { status: 'DETECTED', actionsTaken: riskAssessment.recommendedActions.slice(0, 3) },
       compliance: {
-        cybercrimesAct: { reportable: riskAssessment.threatLevel === 'CRITICAL' || riskAssessment.threatLevel === 'HIGH', reported: false },
-        popia: { dataSubjectAffected: this.isPIIAffected(auditLog), informationOfficerNotified: false },
+        cybercrimesAct: {
+          reportable:
+            riskAssessment.threatLevel === 'CRITICAL' || riskAssessment.threatLevel === 'HIGH',
+          reported: false,
+        },
+        popia: {
+          dataSubjectAffected: this.isPIIAffected(auditLog),
+          informationOfficerNotified: false,
+        },
       },
-      integrity: { evidenceHash: this.generateEvidenceHash(auditLog, mlAnalysis, threatIntelligence, riskAssessment) },
-      metadata: { expiresAt: new Date(Date.now() + THREAT_INTELLIGENCE_CONFIG.COMPLIANCE.DATA_RETENTION_DAYS * 24 * 60 * 60 * 1000) },
+      integrity: {
+        evidenceHash: this.generateEvidenceHash(
+          auditLog,
+          mlAnalysis,
+          threatIntelligence,
+          riskAssessment
+        ),
+      },
+      metadata: {
+        expiresAt: new Date(
+          Date.now() +
+            THREAT_INTELLIGENCE_CONFIG.COMPLIANCE.DATA_RETENTION_DAYS * 24 * 60 * 60 * 1000
+        ),
+      },
     });
     await threatRecord.save();
     if (riskAssessment.threatLevel === 'CRITICAL' || riskAssessment.threatLevel === 'HIGH') {
-      await this.anchorThreatToBlockchain(threatRecord);
     }
     return threatRecord;
   }
 
   extractIOCsFromAuditLog(auditLog) {
-    const iocs = { ipAddresses: [], domains: [], urls: [], fileHashes: [], signatures: [], patterns: [] };
+    const iocs = {
+      ipAddresses: [],
+      domains: [],
+      urls: [],
+      fileHashes: [],
+      signatures: [],
+      patterns: [],
+    };
     if (auditLog.actor?.ipAddress) iocs.ipAddresses.push(auditLog.actor.ipAddress);
-    if (auditLog.actor?.deviceFingerprint) iocs.signatures.push(`DEVICE_FINGERPRINT:${JSON.stringify(auditLog.actor.deviceFingerprint)}`);
+    if (auditLog.actor?.deviceFingerprint)
+      iocs.signatures.push(
+        `DEVICE_FINGERPRINT:${JSON.stringify(auditLog.actor.deviceFingerprint)}`
+      );
     if (auditLog.event?.action === 'SUPREME_OVERRIDE') iocs.patterns.push('SUPREME_ADMIN_OVERRIDE');
     if (auditLog.security?.severity === 'CRITICAL') iocs.patterns.push('CRITICAL_SECURITY_EVENT');
     return iocs;
   }
 
   assessBusinessImpact(threatLevel) {
-    const impactMap = { CRITICAL: 'CATASTROPHIC', HIGH: 'SEVERE', MEDIUM: 'SIGNIFICANT', LOW: 'MODERATE', NONE: 'MINIMAL' };
+    const impactMap = {
+      CRITICAL: 'CATASTROPHIC',
+      HIGH: 'SEVERE',
+      MEDIUM: 'SIGNIFICANT',
+      LOW: 'MODERATE',
+      NONE: 'MINIMAL',
+    };
     return impactMap[threatLevel] || 'MINIMAL';
   }
 
@@ -869,15 +1099,18 @@ class ThreatIntelligenceService {
     if (threatType === 'DATA_EXFILTRATION') return true;
     const piiResources = ['CLIENT_RECORD', 'USER_ACCOUNT', 'CONSENT_RECORD'];
     if (piiResources.includes(auditLog.event?.resourceType)) {
-      if (auditLog.event?.action === 'SUPREME_ACCESS' && !auditLog.actor?.isSupremeAdmin) return true;
+      if (auditLog.event?.action === 'SUPREME_ACCESS' && !auditLog.actor?.isSupremeAdmin)
+        return true;
     }
     return false;
   }
 
   assessComplianceImpact(auditLog) {
     const impacts = [];
-    if (auditLog.compliance?.popia && auditLog.event?.resourceType === 'CLIENT_RECORD') impacts.push('POPIA_VIOLATION');
-    if (auditLog.security?.severity === 'CRITICAL' || auditLog.security?.severity === 'HIGH') impacts.push('CYBERCRIMES_ACT');
+    if (auditLog.compliance?.popia && auditLog.event?.resourceType === 'CLIENT_RECORD')
+      impacts.push('POPIA_VIOLATION');
+    if (auditLog.security?.severity === 'CRITICAL' || auditLog.security?.severity === 'HIGH')
+      impacts.push('CYBERCRIMES_ACT');
     if (auditLog.jurisdiction !== 'ZA' && auditLog.compliance?.gdpr) impacts.push('GDPR');
     if (impacts.length > 1) return 'MULTIPLE';
     if (impacts.length === 1) return impacts[0];
@@ -892,36 +1125,22 @@ class ThreatIntelligenceService {
   generateEvidenceHash(auditLog, mlAnalysis, threatIntelligence, riskAssessment) {
     const evidenceData = {
       auditLogId: auditLog.quantumId,
-      mlAnalysis: { confidence: mlAnalysis.confidence, threatType: mlAnalysis.threatType, riskScore: mlAnalysis.riskScore },
-      threatIntelligence: { correlated: threatIntelligence.correlated, correlationCount: threatIntelligence.correlations.length },
-      riskAssessment: { threatLevel: riskAssessment.threatLevel, totalRiskScore: riskAssessment.totalRiskScore },
+      mlAnalysis: {
+        confidence: mlAnalysis.confidence,
+        threatType: mlAnalysis.threatType,
+        riskScore: mlAnalysis.riskScore,
+      },
+      threatIntelligence: {
+        correlated: threatIntelligence.correlated,
+        correlationCount: threatIntelligence.correlations.length,
+      },
+      riskAssessment: {
+        threatLevel: riskAssessment.threatLevel,
+        totalRiskScore: riskAssessment.totalRiskScore,
+      },
       timestamp: new Date().toISOString(),
     };
     return crypto.createHash('sha512').update(JSON.stringify(evidenceData)).digest('hex');
-  }
-
-  async anchorThreatToBlockchain(threatRecord) {
-    try {
-      if (!blockchainService) {
-        console.warn('⚠️ Blockchain service not available, skipping threat anchoring');
-        return;
-      }
-      const blockchainData = {
-        threatId: threatRecord.threatId,
-        evidenceHash: threatRecord.integrity.evidenceHash,
-        threatType: threatRecord.threatType,
-        severity: threatRecord.impact.severity,
-        timestamp: threatRecord.timeline.firstDetected,
-        jurisdiction: 'ZA',
-      };
-      const txHash = await blockchainService.anchorEvidence(blockchainData);
-      threatRecord.integrity.blockchainAnchored = true;
-      threatRecord.integrity.blockchainTxHash = txHash;
-      await threatRecord.save();
-      console.log(`🔗 Threat ${threatRecord.threatId} anchored to blockchain: ${txHash}`);
-    } catch (error) {
-      console.error('❌ Failed to anchor threat to blockchain:', error);
-    }
   }
 
   async triggerAlerts(threatRecord, riskAssessment) {
@@ -948,12 +1167,20 @@ class ThreatIntelligenceService {
       };
       console.log(`📧 Supreme Admin Alert: ${JSON.stringify(alertData, null, 2)}`);
       if (THREAT_INTELLIGENCE_CONFIG.ALERTING.SUPREME_ADMIN_PHONE) {
-        await this.sendSMSAlert(THREAT_INTELLIGENCE_CONFIG.ALERTING.SUPREME_ADMIN_PHONE, `Wilsy OS Threat Alert: ${threatRecord.threatType} - ${riskAssessment.threatLevel}`);
+        await this.sendSMSAlert(
+          THREAT_INTELLIGENCE_CONFIG.ALERTING.SUPREME_ADMIN_PHONE,
+          `Wilsy OS Threat Alert: ${threatRecord.threatType} - ${riskAssessment.threatLevel}`
+        );
       }
       return { type: 'SUPREME_ADMIN', status: 'SENT', timestamp: new Date(), data: alertData };
     } catch (error) {
       console.error('❌ Failed to send Supreme Admin alert:', error);
-      return { type: 'SUPREME_ADMIN', status: 'FAILED', error: error.message, timestamp: new Date() };
+      return {
+        type: 'SUPREME_ADMIN',
+        status: 'FAILED',
+        error: error.message,
+        timestamp: new Date(),
+      };
     }
   }
 
@@ -962,7 +1189,12 @@ class ThreatIntelligenceService {
       const alertData = {
         channel: 'security-incidents',
         text: this.generateSlackAlert(threatRecord, riskAssessment),
-        attachments: [{ color: this.getAlertColor(riskAssessment.threatLevel), fields: this.generateAlertFields(threatRecord, riskAssessment) }],
+        attachments: [
+          {
+            color: this.getAlertColor(riskAssessment.threatLevel),
+            fields: this.generateAlertFields(threatRecord, riskAssessment),
+          },
+        ],
       };
       if (THREAT_INTELLIGENCE_CONFIG.ALERTING.SECURITY_TEAM_SLACK) {
         console.log(`💬 Security Team Slack Alert: ${JSON.stringify(alertData, null, 2)}`);
@@ -970,14 +1202,24 @@ class ThreatIntelligenceService {
       return { type: 'SECURITY_TEAM', status: 'SENT', timestamp: new Date(), data: alertData };
     } catch (error) {
       console.error('❌ Failed to send security team alert:', error);
-      return { type: 'SECURITY_TEAM', status: 'FAILED', error: error.message, timestamp: new Date() };
+      return {
+        type: 'SECURITY_TEAM',
+        status: 'FAILED',
+        error: error.message,
+        timestamp: new Date(),
+      };
     }
   }
 
   async sendComplianceOfficerAlert(threatRecord, riskAssessment) {
     try {
       if (!THREAT_INTELLIGENCE_CONFIG.ALERTING.COMPLIANCE_OFFICER_EMAIL) {
-        return { type: 'COMPLIANCE_OFFICER', status: 'SKIPPED', reason: 'No compliance officer email configured', timestamp: new Date() };
+        return {
+          type: 'COMPLIANCE_OFFICER',
+          status: 'SKIPPED',
+          reason: 'No compliance officer email configured',
+          timestamp: new Date(),
+        };
       }
       const alertData = {
         to: THREAT_INTELLIGENCE_CONFIG.ALERTING.COMPLIANCE_OFFICER_EMAIL,
@@ -991,7 +1233,12 @@ class ThreatIntelligenceService {
       return { type: 'COMPLIANCE_OFFICER', status: 'SENT', timestamp: new Date(), data: alertData };
     } catch (error) {
       console.error('❌ Failed to send compliance officer alert:', error);
-      return { type: 'COMPLIANCE_OFFICER', status: 'FAILED', error: error.message, timestamp: new Date() };
+      return {
+        type: 'COMPLIANCE_OFFICER',
+        status: 'FAILED',
+        error: error.message,
+        timestamp: new Date(),
+      };
     }
   }
 
@@ -1013,7 +1260,13 @@ class ThreatIntelligenceService {
   }
 
   getAlertColor(threatLevel) {
-    const colors = { CRITICAL: '#FF0000', HIGH: '#FF4500', MEDIUM: '#FFA500', LOW: '#FFFF00', NONE: '#00FF00' };
+    const colors = {
+      CRITICAL: '#FF0000',
+      HIGH: '#FF4500',
+      MEDIUM: '#FFA500',
+      LOW: '#FFFF00',
+      NONE: '#00FF00',
+    };
     return colors[threatLevel] || '#808080';
   }
 
@@ -1021,9 +1274,17 @@ class ThreatIntelligenceService {
     return [
       { title: 'Threat ID', value: threatRecord.threatId, short: true },
       { title: 'Severity', value: riskAssessment.threatLevel, short: true },
-      { title: 'Confidence', value: `${(threatRecord.mlPrediction.confidence * 100).toFixed(1)}%`, short: true },
+      {
+        title: 'Confidence',
+        value: `${(threatRecord.mlPrediction.confidence * 100).toFixed(1)}%`,
+        short: true,
+      },
       { title: 'Risk Score', value: `${riskAssessment.totalRiskScore}/100`, short: true },
-      { title: 'Immediate Actions', value: riskAssessment.recommendedActions.slice(0, 3).join(', '), short: false },
+      {
+        title: 'Immediate Actions',
+        value: riskAssessment.recommendedActions.slice(0, 3).join(', '),
+        short: false,
+      },
     ];
   }
 
@@ -1046,7 +1307,11 @@ class ThreatIntelligenceService {
           description: `Threat alerts sent for ${threatRecord.threatType}`,
           outcome: 'SUCCESS',
         },
-        data: { threatId: threatRecord.threatId, alertsSent: alerts.length, alertTypes: alerts.map((a) => a.type) },
+        data: {
+          threatId: threatRecord.threatId,
+          alertsSent: alerts.length,
+          alertTypes: alerts.map((a) => a.type),
+        },
         security: { severity: threatRecord.impact.severity, legalHold: true },
       });
       await auditLog.save();
@@ -1074,7 +1339,12 @@ class ThreatIntelligenceService {
 
   async triggerCriticalResponse(threatRecord) {
     console.log(`🚨 CRITICAL RESPONSE TRIGGERED for threat: ${threatRecord.threatId}`);
-    const responseActions = ['ISOLATE_AFFECTED_SYSTEMS', 'ESCALATE_TO_SECURITY_OPS_CENTER', 'ACTIVATE_INCIDENT_RESPONSE_PLAN', 'NOTIFY_EXECUTIVE_LEADERSHIP'];
+    const responseActions = [
+      'ISOLATE_AFFECTED_SYSTEMS',
+      'ESCALATE_TO_SECURITY_OPS_CENTER',
+      'ACTIVATE_INCIDENT_RESPONSE_PLAN',
+      'NOTIFY_EXECUTIVE_LEADERSHIP',
+    ];
     await this.logCriticalResponse(threatRecord, responseActions);
   }
 
@@ -1094,7 +1364,11 @@ class ThreatIntelligenceService {
           description: 'Critical threat response activated',
           outcome: 'PENDING',
         },
-        data: { threatId: threatRecord.threatId, responseActions: actions, activationTime: new Date() },
+        data: {
+          threatId: threatRecord.threatId,
+          responseActions: actions,
+          activationTime: new Date(),
+        },
         security: { severity: 'CRITICAL', legalHold: true },
       });
       await responseLog.save();
@@ -1107,7 +1381,9 @@ class ThreatIntelligenceService {
     try {
       const thirtyDaysAgo = new Date();
       thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
-      const threats = await ThreatIntelligence.find({ 'timeline.firstDetected': { $gte: thirtyDaysAgo } });
+      const threats = await ThreatIntelligence.find({
+        'timeline.firstDetected': { $gte: thirtyDaysAgo },
+      });
       const report = {
         reportId: `COMPLIANCE-${Date.now()}-${crypto.randomBytes(4).toString('hex')}`,
         generated: new Date(),
@@ -1145,7 +1421,11 @@ class ThreatIntelligenceService {
     threats.forEach((threat) => {
       const type = threat.threatType;
       if (!groups[type]) groups[type] = [];
-      groups[type].push({ id: threat.threatId, severity: threat.impact.severity, detected: threat.timeline.firstDetected });
+      groups[type].push({
+        id: threat.threatId,
+        severity: threat.impact.severity,
+        detected: threat.timeline.firstDetected,
+      });
     });
     return groups;
   }
@@ -1157,7 +1437,8 @@ class ThreatIntelligenceService {
       compliant: notified.length === dataBreaches.length,
       dataBreaches: dataBreaches.length,
       notified: notified.length,
-      notificationRate: dataBreaches.length > 0 ? (notified.length / dataBreaches.length) * 100 : 100,
+      notificationRate:
+        dataBreaches.length > 0 ? (notified.length / dataBreaches.length) * 100 : 100,
       requirements: 'POPIA Section 22: Data breach notification within 72 hours',
     };
   }
@@ -1188,19 +1469,29 @@ class ThreatIntelligenceService {
     const recommendations = [];
     const popiaStatus = this.assessPOPIACompliance(threats);
     if (!popiaStatus.compliant) {
-      recommendations.push(`IMPROVE POPIA BREACH NOTIFICATION: Current rate ${popiaStatus.notificationRate.toFixed(1)}%, target 100%`);
+      recommendations.push(
+        `IMPROVE POPIA BREACH NOTIFICATION: Current rate ${popiaStatus.notificationRate.toFixed(1)}%, target 100%`
+      );
     }
     const cyberStatus = this.assessCybercrimesActCompliance(threats);
     if (!cyberStatus.compliant) {
-      recommendations.push(`ENHANCE CYBERCRIMES ACT REPORTING: Current rate ${cyberStatus.reportingRate.toFixed(1)}%, target 100%`);
+      recommendations.push(
+        `ENHANCE CYBERCRIMES ACT REPORTING: Current rate ${cyberStatus.reportingRate.toFixed(1)}%, target 100%`
+      );
     }
     const dataBreaches = threats.filter((t) => t.impact.dataBreach);
     if (dataBreaches.length > 0) {
-      recommendations.push(`IMPLEMENT DATA LOSS PREVENTION FOR ${dataBreaches.length} IDENTIFIED BREACH VECTORS`);
+      recommendations.push(
+        `IMPLEMENT DATA LOSS PREVENTION FOR ${dataBreaches.length} IDENTIFIED BREACH VECTORS`
+      );
     }
-    const highCriticalThreats = threats.filter((t) => t.impact.severity === 'HIGH' || t.impact.severity === 'CRITICAL');
+    const highCriticalThreats = threats.filter(
+      (t) => t.impact.severity === 'HIGH' || t.impact.severity === 'CRITICAL'
+    );
     if (highCriticalThreats.length > 5) {
-      recommendations.push(`REVIEW SECURITY CONTROLS: ${highCriticalThreats.length} high/critical threats detected`);
+      recommendations.push(
+        `REVIEW SECURITY CONTROLS: ${highCriticalThreats.length} high/critical threats detected`
+      );
     }
     return recommendations;
   }
@@ -1221,12 +1512,25 @@ class ThreatIntelligenceService {
         complianceStatus: report.complianceStatus,
         timestamp: new Date(),
       };
-      const encryptedReport = await encryptionService.encrypt(JSON.stringify(sacertReport), 'SA-CERT-REPORT');
-      const response = await fetch(`${THREAT_INTELLIGENCE_CONFIG.THREAT_FEEDS.SA_CERT.endpoint}/report`, {
-        method: 'POST',
-        headers: { Authorization: `Bearer ${THREAT_INTELLIGENCE_CONFIG.THREAT_FEEDS.SA_CERT.apiKey}`, 'Content-Type': 'application/json' },
-        body: JSON.stringify({ encryptedReport: encryptedReport.ciphertext, iv: encryptedReport.iv, tag: encryptedReport.tag }),
-      });
+      const encryptedReport = await encryptionService.encrypt(
+        JSON.stringify(sacertReport),
+        'SA-CERT-REPORT'
+      );
+      const response = await fetch(
+        `${THREAT_INTELLIGENCE_CONFIG.THREAT_FEEDS.SA_CERT.endpoint}/report`,
+        {
+          method: 'POST',
+          headers: {
+            Authorization: `Bearer ${THREAT_INTELLIGENCE_CONFIG.THREAT_FEEDS.SA_CERT.apiKey}`,
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            encryptedReport: encryptedReport.ciphertext,
+            iv: encryptedReport.iv,
+            tag: encryptedReport.tag,
+          }),
+        }
+      );
       if (response.ok) {
         console.log('✅ SA-CERT report submitted successfully');
       } else {
@@ -1238,39 +1542,137 @@ class ThreatIntelligenceService {
   }
 
   async getThreatStatistics() {
-    const twentyFourHoursAgo = new Date(); twentyFourHoursAgo.setHours(twentyFourHoursAgo.getHours() - 24);
-    const sevenDaysAgo = new Date(); sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
-    const thirtyDaysAgo = new Date(); thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
+    const twentyFourHoursAgo = new Date();
+    twentyFourHoursAgo.setHours(twentyFourHoursAgo.getHours() - 24);
+    const sevenDaysAgo = new Date();
+    sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
+    const thirtyDaysAgo = new Date();
+    thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
     const stats = await ThreatIntelligence.aggregate([
-      { $facet: {
-        last24Hours: [{ $match: { 'timeline.firstDetected': { $gte: twentyFourHoursAgo } } }, { $group: { _id: '$impact.severity', count: { $sum: 1 }, avgRiskScore: { $avg: '$mlPrediction.riskScore' } } }],
-        last7Days: [{ $match: { 'timeline.firstDetected': { $gte: sevenDaysAgo } } }, { $group: { _id: { $dateToString: { format: '%Y-%m-%d', date: '$timeline.firstDetected' } }, count: { $sum: 1 }, avgRiskScore: { $avg: '$mlPrediction.riskScore' } } }, { $sort: { _id: 1 } }],
-        byType: [{ $match: { 'timeline.firstDetected': { $gte: thirtyDaysAgo } } }, { $group: { _id: '$threatType', count: { $sum: 1 }, avgSeverity: { $avg: { $switch: { branches: [ { case: { $eq: ['$impact.severity', 'CRITICAL'] }, then: 5 }, { case: { $eq: ['$impact.severity', 'HIGH'] }, then: 4 }, { case: { $eq: ['$impact.severity', 'MEDIUM'] }, then: 3 }, { case: { $eq: ['$impact.severity', 'LOW'] }, then: 2 }, { case: { $eq: ['$impact.severity', 'INFO'] }, then: 1 } ], default: 0 } } } } }, { $sort: { count: -1 } }],
-        complianceStatus: [{ $match: { 'timeline.firstDetected': { $gte: thirtyDaysAgo } } }, { $group: { _id: null, total: { $sum: 1 }, dataBreaches: { $sum: { $cond: [{ $eq: ['$impact.dataBreach', true] }, 1, 0] } }, reportableIncidents: { $sum: { $cond: [{ $eq: ['$compliance.cybercrimesAct.reportable', true] }, 1, 0] } }, popiaNotified: { $sum: { $cond: [{ $eq: ['$compliance.popia.informationOfficerNotified', true] }, 1, 0] } } } }],
-      } },
+      {
+        $facet: {
+          last24Hours: [
+            { $match: { 'timeline.firstDetected': { $gte: twentyFourHoursAgo } } },
+            {
+              $group: {
+                _id: '$impact.severity',
+                count: { $sum: 1 },
+                avgRiskScore: { $avg: '$mlPrediction.riskScore' },
+              },
+            },
+          ],
+          last7Days: [
+            { $match: { 'timeline.firstDetected': { $gte: sevenDaysAgo } } },
+            {
+              $group: {
+                _id: { $dateToString: { format: '%Y-%m-%d', date: '$timeline.firstDetected' } },
+                count: { $sum: 1 },
+                avgRiskScore: { $avg: '$mlPrediction.riskScore' },
+              },
+            },
+            { $sort: { _id: 1 } },
+          ],
+          byType: [
+            { $match: { 'timeline.firstDetected': { $gte: thirtyDaysAgo } } },
+            {
+              $group: {
+                _id: '$threatType',
+                count: { $sum: 1 },
+                avgSeverity: {
+                  $avg: {
+                    $switch: {
+                      branches: [
+                        { case: { $eq: ['$impact.severity', 'CRITICAL'] }, then: 5 },
+                        { case: { $eq: ['$impact.severity', 'HIGH'] }, then: 4 },
+                        { case: { $eq: ['$impact.severity', 'MEDIUM'] }, then: 3 },
+                        { case: { $eq: ['$impact.severity', 'LOW'] }, then: 2 },
+                        { case: { $eq: ['$impact.severity', 'INFO'] }, then: 1 },
+                      ],
+                      default: 0,
+                    },
+                  },
+                },
+              },
+            },
+            { $sort: { count: -1 } },
+          ],
+          complianceStatus: [
+            { $match: { 'timeline.firstDetected': { $gte: thirtyDaysAgo } } },
+            {
+              $group: {
+                _id: null,
+                total: { $sum: 1 },
+                dataBreaches: { $sum: { $cond: [{ $eq: ['$impact.dataBreach', true] }, 1, 0] } },
+                reportableIncidents: {
+                  $sum: { $cond: [{ $eq: ['$compliance.cybercrimesAct.reportable', true] }, 1, 0] },
+                },
+                popiaNotified: {
+                  $sum: {
+                    $cond: [{ $eq: ['$compliance.popia.informationOfficerNotified', true] }, 1, 0],
+                  },
+                },
+              },
+            },
+          ],
+        },
+      },
     ]);
     return {
       timestamp: new Date(),
-      timeframes: { last24Hours: twentyFourHoursAgo, last7Days: sevenDaysAgo, last30Days: thirtyDaysAgo },
+      timeframes: {
+        last24Hours: twentyFourHoursAgo,
+        last7Days: sevenDaysAgo,
+        last30Days: thirtyDaysAgo,
+      },
       statistics: stats[0] || {},
-      mlEngine: { version: this.mlEngine.modelVersion, cacheSize: this.mlEngine.cache.size, isTraining: this.mlEngine.isTraining },
-      threatFeeds: { active: Object.values(THREAT_INTELLIGENCE_CONFIG.THREAT_FEEDS).filter((f) => f.enabled).length, totalThreats: this.threatFeeds.size },
+      mlEngine: {
+        version: this.mlEngine.modelVersion,
+        cacheSize: this.mlEngine.cache.size,
+        isTraining: this.mlEngine.isTraining,
+      },
+      threatFeeds: {
+        active: Object.values(THREAT_INTELLIGENCE_CONFIG.THREAT_FEEDS).filter((f) => f.enabled)
+          .length,
+        totalThreats: this.threatFeeds.size,
+      },
     };
   }
 
   async healthCheck() {
-    const health = { service: 'ThreatIntelligenceService', timestamp: new Date(), status: 'HEALTHY', components: {} };
+    const health = {
+      service: 'ThreatIntelligenceService',
+      timestamp: new Date(),
+      status: 'HEALTHY',
+      components: {},
+    };
     try {
-      health.components.mlEngine = { status: this.mlEngine.model ? 'HEALTHY' : 'UNHEALTHY', modelVersion: this.mlEngine.modelVersion, cacheSize: this.mlEngine.cache.size };
+      health.components.mlEngine = {
+        status: this.mlEngine.model ? 'HEALTHY' : 'UNHEALTHY',
+        modelVersion: this.mlEngine.modelVersion,
+        cacheSize: this.mlEngine.cache.size,
+      };
       const dbStatus = mongoose.connection.readyState;
-      health.components.database = { status: dbStatus === 1 ? 'HEALTHY' : 'UNHEALTHY', readyState: dbStatus };
+      health.components.database = {
+        status: dbStatus === 1 ? 'HEALTHY' : 'UNHEALTHY',
+        readyState: dbStatus,
+      };
       const feedStatus = {};
       for (const [feedName, config] of Object.entries(THREAT_INTELLIGENCE_CONFIG.THREAT_FEEDS)) {
-        feedStatus[feedName] = { enabled: config.enabled, lastUpdated: this.getLastFeedUpdate(feedName) };
+        feedStatus[feedName] = {
+          enabled: config.enabled,
+          lastUpdated: this.getLastFeedUpdate(feedName),
+        };
       }
       health.components.threatFeeds = feedStatus;
-      health.components.activeThreats = { count: this.activeThreats.size, critical: Array.from(this.activeThreats.values()).filter((t) => t.impact.severity === 'CRITICAL').length };
-      const unhealthyComponents = Object.values(health.components).filter((c) => c.status === 'UNHEALTHY').length;
+      health.components.activeThreats = {
+        count: this.activeThreats.size,
+        critical: Array.from(this.activeThreats.values()).filter(
+          (t) => t.impact.severity === 'CRITICAL'
+        ).length,
+      };
+      const unhealthyComponents = Object.values(health.components).filter(
+        (c) => c.status === 'UNHEALTHY'
+      ).length;
       health.status = unhealthyComponents === 0 ? 'HEALTHY' : 'DEGRADED';
     } catch (error) {
       health.status = 'UNHEALTHY';
@@ -1322,9 +1724,15 @@ if (process.env.NODE_ENV === 'test') {
       };
       const analysis = await service.analyzeRealTimeThreat(testAuditLog);
       console.assert(analysis !== null, 'Threat analysis failed');
-      console.assert(typeof analysis.threatDetected === 'boolean', 'Invalid threat detection result');
+      console.assert(
+        typeof analysis.threatDetected === 'boolean',
+        'Invalid threat detection result'
+      );
       const health = await service.healthCheck();
-      console.assert(health.status === 'HEALTHY' || health.status === 'DEGRADED', 'Invalid health status');
+      console.assert(
+        health.status === 'HEALTHY' || health.status === 'DEGRADED',
+        'Invalid health status'
+      );
       console.log('✅ ALL THREAT INTELLIGENCE SERVICE TESTS PASSED');
     } catch (error) {
       console.error('❌ Threat Intelligence Service tests failed:', error);

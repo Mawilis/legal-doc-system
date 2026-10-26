@@ -18,11 +18,6 @@ import mongoose from 'mongoose';
 import crypto from 'node:crypto';
 
 // 🛡️ ANCHORED: Sovereign ESM Service Imports
-import {
-  anchorToBlockchain,
-  createSmartContractCompliance,
-} from '../services/blockchainService.js';
-
 const { Schema } = mongoose;
 
 const complianceRecordSchema = new Schema(
@@ -68,13 +63,21 @@ const complianceRecordSchema = new Schema(
       index: true,
     },
     riskAssessment: {
-      inherentRisk: { type: String, enum: ['CRITICAL', 'HIGH', 'MEDIUM', 'LOW'], default: 'MEDIUM' },
+      inherentRisk: {
+        type: String,
+        enum: ['CRITICAL', 'HIGH', 'MEDIUM', 'LOW'],
+        default: 'MEDIUM',
+      },
       lastAssessed: Date,
       nextAssessment: Date,
     },
     complianceDocuments: [
       {
-        documentId: { type: String, required: true, default: () => `doc-${crypto.randomBytes(12).toString('hex')}` },
+        documentId: {
+          type: String,
+          required: true,
+          default: () => `doc-${crypto.randomBytes(12).toString('hex')}`,
+        },
         documentHash: { type: String, required: true },
         documentCategory: { type: String, required: true },
         effectiveDate: { type: Date, default: Date.now },
@@ -94,18 +97,7 @@ const complianceRecordSchema = new Schema(
   }
 );
 
-// 🏛️ QUANTUM METHODS
-complianceRecordSchema.methods.sealAndAnchor = async function (userId) {
-  const result = await anchorToBlockchain(this.quantumId, {
-    documentId: this._id,
-    firmId: this.firmId,
-    userId: userId,
-  });
-
-  this.status = 'APPROVED';
-  return await this.save();
-};
-
-const ComplianceRecord = mongoose.models.ComplianceRecord || mongoose.model('ComplianceRecord', complianceRecordSchema);
+const ComplianceRecord =
+  mongoose.models.ComplianceRecord || mongoose.model('ComplianceRecord', complianceRecordSchema);
 
 export default ComplianceRecord;
