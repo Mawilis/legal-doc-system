@@ -288,7 +288,7 @@ def test_revoked_wall_policy_denies_even_with_matching_review_fingerprint() -> N
 
 def test_wall_current_pointer_must_match_history_tail() -> None:
     current = policy()
-    previous = policy(revision=0, effective_until=NOW - timedelta(days=1))
+    previous = policy(effective_until=NOW - timedelta(seconds=1))
 
     class StaleHistorySource:
         def get_current(self, tenant_id: str, case_matter_id: str, policy_id: str, *, session: object) -> EthicalWallPolicyRevision:
