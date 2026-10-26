@@ -1,6 +1,6 @@
 /**
  * TITLE: WILSY OS browser-certificate runner
- * VERSION: v1.1.2-D6B-ISOLATED-EOS-BROWSER-CERT-RUNNER
+ * VERSION: v1.2.0-PYTHON-EOS-ONLY-BROWSER-CERT-RUNNER
  * AUTHORITY: Test process lifecycle only.
  * EPITOME: Own the disposable seed, EOS process, Vite process, Playwright
  *          process, and cleanup without killing unrelated repository services.
@@ -8,7 +8,10 @@
  *   /Users/wilsonkhanyezi/legal-doc-system/tests/e2e/run-browser-cert.mjs
  * COLLABORATION / OWNERSHIP: L8-8M-R3 browser infrastructure.
  * CERTIFICATION / UPDATE DATE: 2026-09-26
- * CHANGELOG: v1.1.2 writes an owned temporary copy of the sanctioned Vite
+ * CHANGELOG: v1.2.0 requires an explicitly supplied loopback-only disposable
+ *             Mongo target, removes the unsafe 27027 fallback, and rewrites all
+ *             generated Vite API proxy targets to the owned Python EOS process.
+ *             v1.1.2 writes an owned temporary copy of the sanctioned Vite
  *             entry config inside client so its __dirname contract remains
  *             intact, then deletes that copy during unconditional cleanup.
  *             v1.1.1 exposes Vite lifecycle diagnostics while retaining secret
@@ -54,9 +57,13 @@ const eosPort = Number.parseInt(process.env.BROWSER_CERT_EOS_PORT || '19095', 10
 if (!Number.isSafeInteger(eosPort) || eosPort < 1024 || eosPort > 65535) {
   throw new Error('BROWSER_CERT_EOS_PORT_INVALID');
 }
-const databaseName = `wilsy_l8_8m_r3_${Date.now().toString(36)}`;
-const mongoUri = process.env.BROWSER_CERT_MONGO_URI
-  || `mongodb://127.0.0.1:27027/${databaseName}?replicaSet=wilsyVendorCertRS`;
+const mongoUri = (process.env.BROWSER_CERT_MONGO_URI || '').trim();
+if (!mongoUri) {
+  throw new Error('BROWSER_CERT_MONGO_URI_REQUIRED_EXPLICIT_DISPOSABLE_TARGET');
+}
+if (!/^mongodb:\/\/(?:127\.0\.0\.1|localhost):27017\/wilsy_l8_8m_r3_[A-Za-z0-9_-]+(?:\?[^#]*)?$/.test(mongoUri)) {
+  throw new Error('BROWSER_CERT_DISPOSABLE_LOOPBACK_MONGO_URI_REQUIRED');
+}
 const secret = `browser-cert-${Date.now()}-${Math.random().toString(36)}`;
 const environment = {
   ...process.env,
@@ -128,9 +135,16 @@ try {
   }
   const baseViteConfigPath = join(repo, 'client', 'vite.config.js');
   const baseViteConfig = await readFile(baseViteConfigPath, 'utf-8');
+  const eosOrigin = `http://127.0.0.1:${eosPort}`;
+  const eosOnlyViteConfig = baseViteConfig
+    .replaceAll('http://localhost:9095', eosOrigin)
+    .replaceAll('http://localhost:4000', eosOrigin);
+  if (eosOnlyViteConfig.includes('http://localhost:4000')) {
+    throw new Error('BROWSER_CERT_NODE_BFF_PROXY_REMAINS');
+  }
   await writeFile(
     viteConfigPath,
-    baseViteConfig.replaceAll('http://localhost:9095', `http://127.0.0.1:${eosPort}`),
+    eosOnlyViteConfig,
     { encoding: 'utf-8', mode: 0o600 },
   );
   await runAndWait(python, [fixture, 'seed', '--state', statePath]);
@@ -171,7 +185,7 @@ try {
 if (failed) process.exitCode = 1;
 
 // ARTIFACT: run-browser-cert.mjs
-// VERSION: v1.1.2-D6B-ISOLATED-EOS-BROWSER-CERT-RUNNER
+// VERSION: v1.2.0-PYTHON-EOS-ONLY-BROWSER-CERT-RUNNER
 // AUTHORITY BOUNDARY: owned test-process lifecycle only
 // TENANT POSTURE: UUID-isolated disposable database
 // FAIL-CLOSED POSTURE: service/process/fixture failures return non-zero

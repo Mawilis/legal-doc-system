@@ -7,6 +7,17 @@ on:
     paths:
       - "tests/e2e/playwright.config.js"
       - "tests/e2e/**"
+      - "tests/unit/test_browser_cert_fixture_uri_guard.py"
+      - "package.json"
+      - "package-lock.json"
+      - ".github/workflows/l8-8m-authenticated-browser-certification.yml"
+  pull_request:
+    branches:
+      - main
+    paths:
+      - "tests/e2e/playwright.config.js"
+      - "tests/e2e/**"
+      - "tests/unit/test_browser_cert_fixture_uri_guard.py"
       - "package.json"
       - "package-lock.json"
       - ".github/workflows/l8-8m-authenticated-browser-certification.yml"
@@ -21,7 +32,7 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 30
     env:
-      BROWSER_CERT_MONGO_URI: mongodb://127.0.0.1:27017/wilsy_l8_8m_ci?replicaSet=wilsyVendorCertRS
+      BROWSER_CERT_MONGO_URI: mongodb://127.0.0.1:27017/wilsy_l8_8m_r3_ci?replicaSet=wilsyVendorCertRS
       PIP_DISABLE_PIP_VERSION_CHECK: "1"
     steps:
       - name: Checkout exact commit
@@ -42,7 +53,7 @@ jobs:
         run: |
           python -m pip install --upgrade pip==25.3
           python -m pip install -r requirements.txt
-          python -m pip install pyotp==2.9.0
+          python -m pip install pyotp==2.9.0 pytest==9.1.1
 
       - name: Install exact Node lockfiles
         run: |
@@ -99,9 +110,14 @@ jobs:
           client.close()
           PY
 
-      - name: Compile browser fixture
+      - name: Compile browser fixture and isolation guard
         run: |
-          python -m py_compile tests/e2e/browser_cert_fixture.py
+          python -m py_compile \
+            tests/e2e/browser_cert_fixture.py \
+            tests/unit/test_browser_cert_fixture_uri_guard.py
+
+      - name: Run disposable Mongo target guard tests
+        run: python -m pytest -q tests/unit/test_browser_cert_fixture_uri_guard.py
 
       - name: Run authenticated browser certificate
         run: node tests/e2e/run-browser-cert.mjs
@@ -111,9 +127,10 @@ jobs:
         run: docker rm --force wilsy-l8-8m-browser-mongo
 
 # ARTIFACT: l8-8m-authenticated-browser-certification.yml
-# VERSION: v1.0.0-L8-8M-R3-BROWSER-CERT-WORKFLOW
+# VERSION: v1.1.0-PYTHON-EOS-LOGIN-BROWSER-CERT-WORKFLOW
 # AUTHORITY BOUNDARY: disposable CI browser certification only
 # TENANT POSTURE: UUID-isolated fixture database; no production URI
 # FAIL-CLOSED POSTURE: browser, service, fixture, and Mongo failures fail the job
 # FINANCIAL EXECUTION AUTHORITY: Kennel EOS remains exclusive
+# CHANGELOG: v1.1.0 adds pull-request execution and confines the disposable database to the named loopback certification replica set.
 # END OF WILSY OS SOVEREIGN ARTIFACT
