@@ -225,14 +225,21 @@ def seed(state_path: Path) -> None:
         actors: dict[str, dict[str, str]] = {}
         for key, grant_role, business_role, last_name in actor_specs:
             email = f"browser-{key}-{suffix}@example.com"
+            password = f"Bcert-{key}-{suffix[:12]}!"
             user = registry.register_user(
                 email=email,
-                password=f"Bcert-{key}-{suffix[:12]}!",
+                password=password,
                 firstName="Synthetic",
                 lastName=last_name,
                 role=grant_role,
                 tenantId=tenant_id,
             )
+            # Create the real canonical TOTP secret before marking enrollment
+            # complete; the browser certificate will verify this exact secret.
+            registry.get_otp_uri(user.id, email)
+            otp_secret = registry.get_otp_secret(user.id)
+            if not isinstance(otp_secret, str) or not otp_secret:
+                raise RuntimeError("BROWSER_CERT_OTP_SECRET_READBACK_FAILED")
             database["users"].update_one(
                 {"user_id": user.id},
                 {"$set": {"mfaRegistered": True}},
@@ -240,6 +247,8 @@ def seed(state_path: Path) -> None:
             actors[key] = {
                 "principal_id": user.id,
                 "email": email,
+                "password": password,
+                "otp_secret": otp_secret,
                 "grant_role": grant_role,
                 "business_role": business_role,
             }
@@ -440,6 +449,7 @@ def seed(state_path: Path) -> None:
             ),
             encoding="utf-8",
         )
+        state_path.chmod(0o600)
     finally:
         client.close()
 
