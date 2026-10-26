@@ -1,7 +1,7 @@
 /* eslint-disable */
 /**
  * ╔════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════╗
- * ║ 🏛️ WILSY OS – SOVEREIGN RUNTIME BOOTSTRAPPER [v5.5.0-P0-C4E4]                                                                    ║
+ * ║ 🏛️ WILSY OS – SOVEREIGN RUNTIME BOOTSTRAPPER [v5.5.1-P0-C4E5]                                                                    ║
  * ║ TITLE: Selective legal-acceptance browser-to-Python BFF transport                                                                  ║
  * ║ AUTHORITY: Wilsy OS Core Governance; Node transport only                                                                           ║
  * ║ TENANT BOUNDARY: Forward authenticated tenant scope without deriving membership                                                   ║
@@ -12,10 +12,11 @@
  * ║          Raw request streams are forwarded – no body consumption issues.                                                            ║
  * ║ COMPLIANCE: POPIA §19 · GDPR §32 · SOC2 §CC7.2 · ISO 27001 · ECT Act §15                                                           ║
  * ╠════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════╣
- * ║ VERSION: v5.5.0-P0-C4E4 | PRODUCTION READY                                                                                        ║
+ * ║ VERSION: v5.5.1-P0-C4E5 | PRODUCTION READY                                                                                        ║
  * ║ ABSOLUTE PATH: /Users/wilsonkhanyezi/legal-doc-system/server/server.js                                                               ║
  * ╠════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════╣
- * ║ 🔧 CHANGE LOG (v5.5.0-P0-C4E4):                                                                                                     ║
+ * ║ 🔧 CHANGE LOG (v5.5.1-P0-C4E5):                                                                                                     ║
+ * ║   2026-10-26 – Registered non-persistent telemetry quiet acknowledgement before the BFF API catch-all; no event or authority is persisted.║
  * ║   2026-10-03 – Replaced http-proxy-middleware runtime transport with direct httpxy while preserving the certified proxy contract.     ║
  * ║   2026-10-03 – Redacted raw upstream connection exceptions from the public proxy-unavailable response.                             ║
  * ║   2026-09-17 – Added bounded legal-acceptance status/document/accept transport; Node remains transport-only.                         ║
@@ -23,7 +24,7 @@
  * ║   2026-09-17 – Added deterministic application-factory export and direct-execution bootstrap guard.                                 ║
  * ║   2026-08-24 – Preserved raw-stream proxy ordering before body parsers.                                                             ║
  * ╠════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════╣
- * ║ CERTIFICATION SEAL: PRODUCTION_READY_v5.5.0-P0-C4E4                                                                             ║
+ * ║ CERTIFICATION SEAL: PRODUCTION_READY_v5.5.1-P0-C4E5                                                                             ║
  * ╚════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════╝
  */
 
@@ -46,7 +47,7 @@ const KENNEL_TARGET = (
   'http://127.0.0.1:9095'
 ).replace(/\/$/, '');
 const PROXY_LOG_LEVEL = process.env.WILSY_PROXY_DEBUG === '1' ? 'debug' : 'info';
-const VERSION = 'v5.5.0-P0-C4E4';
+const VERSION = 'v5.5.1-P0-C4E5';
 const BUILD = VERSION;
 const BILLING_PROXY_TIMEOUT_MS = Number(process.env.KENNEL_BILLING_TIMEOUT_MS || 60000);
 const DEFAULT_PROXY_TIMEOUT_MS = Number(process.env.KENNEL_PROXY_TIMEOUT_MS || 30000);
@@ -354,6 +355,21 @@ function createApp() {
    */
   app.post('/api/generate/pdf', generateSovereignArtifactPdf);
 
+  // Optional client telemetry is explicitly acknowledged without persistence.
+  // This route creates no audit, authorization, tenant, or operational truth.
+  // It must remain before the generic /api catch-all and never masks other paths.
+  app.post('/api/telemetry/event', (req, res) => {
+    res.setHeader('X-Wilsy-Quiet-Surface', '1');
+    return res.status(202).json({
+      success: true,
+      status: 'ACCEPTED',
+      surface: 'TELEMETRY_EVENT',
+      source: 'QUIET_ACK',
+      note: 'Event acknowledged without persistence (quiet mode).',
+      timestamp: new Date().toISOString(),
+    });
+  });
+
   // ─── CATCH‑ALL FOR UNPROXIED /api ROUTES ──────────────────────────────
   app.use('/api', (req, res) => {
     res.status(404).json({
@@ -501,8 +517,9 @@ export default createApp;
  * 🏛️ INSTITUTIONAL CERTIFICATION SEAL — WILSY OS RUNTIME BOOTSTRAPPER
  * ═══════════════════════════════════════════════════════════════════════════════
  * Status:          CERTIFIED PRODUCTION ARTIFACT
- * Version:         v5.5.0-P0-C4E4
+ * Version:         v5.5.1-P0-C4E5
  * Fix:             Correct middleware order – proxies before body parsers.
+ *                  Registers non-persistent POST /api/telemetry/event before the API catch-all.
  *                  Added selective legal-acceptance and C1C/C1E browser-to-Python transport only.
  *                  Redacted raw upstream connection exceptions from public 503 responses.
  * Compliance:      POPIA §19 · GDPR §32 · SOC2 §CC7.2 · ISO 27001 · ECT Act §15
