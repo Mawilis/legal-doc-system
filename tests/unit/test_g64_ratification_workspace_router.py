@@ -422,6 +422,10 @@ def test_independent_verification_cannot_be_submitted_by_original_attester(monke
         json=request_body(),
     )
     record = created.json()["record"]
+    client.app.dependency_overrides[workspace_router._VERIFY_AUTHORITY] = lambda: TenantAuthorizationContext(
+        identity=SimpleNamespace(identity_id=record["ratifier_principal_id"]),
+        tenant_id="tenant-001", decision=None,
+    )
     evidence = {
         "locator": "evidence:independent-review-002",
         "sha3_512_fingerprint": "e" * 128,
