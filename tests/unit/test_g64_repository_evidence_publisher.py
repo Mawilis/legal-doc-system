@@ -62,3 +62,81 @@ def test_publisher_rejects_invalid_record_id_before_network(monkeypatch):
     with pytest.raises(G64RepositoryPublishError) as captured:
         publish_repository_evidence(record_id="../main", manifest_bytes=manifest())
     assert captured.value.code == "G64_REPOSITORY_RECORD_ID_INVALID"
+
+
+class Response:
+    def __init__(self, status, body=None):
+        import json
+
+        self.status = status
+        self.body = b"" if body is None else json.dumps(body).encode("utf-8")
+
+    def __enter__(self):
+        return self
+
+    def __exit__(self, *_args):
+        return False
+
+    def read(self):
+        return self.body
+
+
+def test_publisher_creates_dedicated_branch_and_immutable_manifest(monkeypatch):
+    import base64
+    import json
+
+    calls = []
+
+    def fake_urlopen(request, timeout):
+        calls.append((request.get_method(), request.full_url, request.data, timeout))
+        method, url = request.get_method(), request.full_url
+        if method == "GET" and url.endswith("/git/ref/heads/g64-evidence/test"):
+            return Response(404, {"message": "not found"})
+        if method == "GET" and url.endswith("/git/ref/heads/main"):
+            return Response(200, {"object": {"sha": "a" * 40}})
+        if method == "POST" and url.endswith("/git/refs"):
+            body = json.loads(request.data)
+            assert body["ref"] == "refs/heads/g64-evidence/test"
+            return Response(201, {"ref": body["ref"]})
+        if method == "GET" and "/contents/encryption-evidence/g64-ratification-workspaces/" in url:
+            return Response(404, {"message": "not found"})
+        if method == "PUT" and "/contents/encryption-evidence/g64-ratification-workspaces/" in url:
+            body = json.loads(request.data)
+            assert body["branch"] == "g64-evidence/test"
+            return Response(201, {"commit": {"sha": "c" * 40}})
+        raise AssertionError(f"Unexpected publisher request: {method} {url}")
+
+    monkeypatch.setenv("G64_REPOSITORY_EXPORT_TOKEN", "test-token")
+    monkeypatch.setenv("G64_REPOSITORY_EXPORT_REPOSITORY", "Mawilis/legal-doc-system")
+    monkeypatch.setenv("G64_REPOSITORY_EXPORT_BASE_BRANCH", "main")
+    monkeypatch.setenv("G64_REPOSITORY_EXPORT_BRANCH", "g64-evidence/test")
+    monkeypatch.setattr(
+        "tools.eos.legal_operations.service.g64_repository_evidence_publisher.urlopen",
+        fake_urlopen,
+    )
+    result = publish_repository_evidence(record_id=RECORD_ID, manifest_bytes=manifest())
+    assert result["status"] == "PUBLISHED"
+    assert result["branch"] == "g64-evidence/test"
+    assert result["commit_sha"] == "c" * 40
+    assert not any("/git/refs/heads/main" in url for _method, url, _body, _timeout in calls)
+    assert calls[-1][0] == "PUT"
+
+
+def test_publisher_rejects_tampered_manifest_fingerprint_before_network(monkeypatch):
+    import json
+
+    raw = json.loads(manifest())
+    raw["manifest_sha3_512"] = "0" * 128
+    monkeypatch.setenv("G64_REPOSITORY_EXPORT_TOKEN", "test-token")
+    monkeypatch.setenv("G64_REPOSITORY_EXPORT_REPOSITORY", "Mawilis/legal-doc-system")
+    monkeypatch.setenv("G64_REPOSITORY_EXPORT_BASE_BRANCH", "main")
+    monkeypatch.setenv("G64_REPOSITORY_EXPORT_BRANCH", "g64-evidence/test")
+    monkeypatch.setattr(
+        "tools.eos.legal_operations.service.g64_repository_evidence_publisher.urlopen",
+        lambda *_args, **_kwargs: (_ for _ in ()).throw(AssertionError("network must not be called")),
+    )
+    with pytest.raises(G64RepositoryPublishError, match="G64_REPOSITORY_MANIFEST_FINGERPRINT_INVALID"):
+        publish_repository_evidence(
+            record_id=RECORD_ID,
+            manifest_bytes=json.dumps(raw, sort_keys=True, separators=(",", ":")).encode("ascii"),
+        )
