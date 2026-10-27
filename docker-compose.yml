@@ -1,8 +1,8 @@
 # ============================================================================
-# WILSY OS 2050 - QUANTUM PRODUCTION DOCKER COMPOSE
-# 10TH GENERATION FORENSIC ENGINE | QUANTUM FORTRESS
+# LEGACY MULTI-SERVICE COMPOSE — MIGRATION_ONLY; NOT A PRODUCTION DEPLOYMENT TARGET
+# Canonical production target: docker-compose.prod.yml after reviewed configuration, or k8s/eos-api-production.yaml
 # VERSION: 42.0.2-PYTHON-EOS-ONLY
-# INVESTOR-GRADE | POPIA COMPLIANT | SOC2 READY
+# Do not use this legacy file for production: it contains legacy services and unsafe default credentials.
 # Canonical API runtime: Python EOS on port 9095; no Node BFF listener.
 # ============================================================================
 
