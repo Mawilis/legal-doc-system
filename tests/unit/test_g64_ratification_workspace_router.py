@@ -407,7 +407,7 @@ def test_independent_verification_and_second_approval_are_durable_and_non_author
     assert approval.status_code == 201, approval.text
     approval_event = approval.json()["review_event"]
     assert approval_event["approver_principal_id"] not in {
-        record["ratifier_principal_id"], verifier_event["reviewer_principal_id"]
+        record["ratifier_principal_id"], verifier_event["verifier_principal_id"]
     }
     assert approval.json()["ratification_complete"] is False
     assert approval.json()["permits_operational_access"] is False
@@ -480,10 +480,8 @@ def test_second_approval_is_denied_when_evidence_backed_policy_says_not_required
         json={
             "institution_id": record["institution_id"], "record_id": record["record_id"],
             "record_sha3_512_fingerprint": record["evidence_sha3_512"], "outcome": "PASS",
-            "institution_binding_verified": True, "ratifier_authority_verified": True,
-            "evidence_integrity_verified": True,
             "rationale": "Independent review checked source provenance and authority evidence.",
-            "evidence": [evidence],
+            "findings": verification_findings(evidence),
         },
     )
     assert verification.status_code == 201, verification.text
