@@ -10,6 +10,7 @@ from tools.eos.legal_operations.domain.g64_ratification_workspace_evidence impor
 from tools.eos.legal_operations.domain.g64_ratification_workspace_verification import (
     G64IndependentVerification,
     G64SecondApproval,
+    G64SecondApprovalPolicyDecision,
     G64VerificationCheck,
     G64VerificationFinding,
     G64VerificationOutcome,
@@ -169,3 +170,42 @@ def test_second_approval_evidence_is_non_authorizing():
     ).to_document()
     assert approval["permits_operational_access"] is False
     assert approval["constitutes_ratification"] is False
+
+
+def test_second_approval_policy_requires_independent_source_verification():
+    policy = G64SecondApprovalPolicyDecision(
+        policy_decision_id="policy-decision-001",
+        tenant_id="tenant-001",
+        institution_id="institution-001",
+        record_id="record-001",
+        record_sha3_512_fingerprint=RECORD_FINGERPRINT,
+        determined_by_principal_id="principal-policy-owner",
+        independently_verified_by_principal_id="principal-policy-verifier",
+        determined_at=NOW,
+        second_approval_required=False,
+        policy_source=EVIDENCE,
+        independent_verification_evidence=EVIDENCE,
+    ).to_document()
+    assert policy["second_approval_required"] is False
+    assert policy["permits_operational_access"] is False
+    assert policy["constitutes_ratification"] is False
+
+
+def test_second_approval_policy_cannot_be_self_verified():
+    with pytest.raises(
+        G64WorkspaceEvidenceError,
+        match="SECOND_APPROVAL_POLICY_VERIFIER_MUST_BE_INDEPENDENT",
+    ):
+        G64SecondApprovalPolicyDecision(
+            policy_decision_id="policy-decision-001",
+            tenant_id="tenant-001",
+            institution_id="institution-001",
+            record_id="record-001",
+            record_sha3_512_fingerprint=RECORD_FINGERPRINT,
+            determined_by_principal_id="same-principal",
+            independently_verified_by_principal_id="same-principal",
+            determined_at=NOW,
+            second_approval_required=True,
+            policy_source=EVIDENCE,
+            independent_verification_evidence=EVIDENCE,
+        )
