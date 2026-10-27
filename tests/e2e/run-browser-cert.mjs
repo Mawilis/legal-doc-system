@@ -1,6 +1,6 @@
 /**
  * TITLE: WILSY OS browser-certificate runner
- * VERSION: v1.5.1-L8-8M-EXPLICIT-DISPOSABLE-MONGO-TARGET
+ * VERSION: v1.6.0-PYTHON-EOS-GENERAL-API-ROUTING-CERT
  * AUTHORITY: Test process lifecycle only.
  * EPITOME: Own the synthetic fixture, disposable EOS, isolated Node BFF, Vite,
  *          browser suite, bounded diagnostics, and ordered cleanup.
@@ -8,8 +8,10 @@
  *   /Users/wilsonkhanyezi/legal-doc-system/tests/e2e/run-browser-cert.mjs
  * COLLABORATION / OWNERSHIP: L8-8M browser certification; EOS retains tenant,
  *                            Legal, and authorization authority.
- * CERTIFICATION / UPDATE DATE: 2026-10-24
- * CHANGELOG: v1.5.1 requires an explicit loopback disposable replica-set URI on port 27017; v1.5.0 sends the fixture's explicit tenant scope with authenticated
+ * CERTIFICATION / UPDATE DATE: 2026-10-27
+ * CHANGELOG: v1.6.0 certifies that general /api and /auth aliases route to Python EOS,
+ *            with /api/generate/pdf isolated as the only remaining Node BFF HTTP route.
+ *            v1.5.1 requires an explicit loopback disposable replica-set URI on port 27017; v1.5.0 sends the fixture's explicit tenant scope with authenticated
  *            EOS preflights so canonical tenant authorization evaluates the
  *            synthetic principal's durable authority instead of rejecting a
  *            missing X-Tenant-ID request context.
@@ -580,6 +582,23 @@ try {
   if (!baseViteConfig.includes('http://localhost:9095')
     || !baseViteConfig.includes('http://localhost:4000')) {
     throw new Error('BROWSER_CERT_VITE_PROXY_TARGETS_NOT_FOUND');
+  }
+  const pdfProxyIndex = baseViteConfig.indexOf("'/api/generate/pdf': {");
+  const generalApiProxyIndex = baseViteConfig.indexOf("'/api': {");
+  const authAliasContract = baseViteConfig.includes(
+    "'/auth': {\n        target: 'http://localhost:9095',\n        rewrite: (path) => path.replace(/^\/auth/, '/api/auth'),"
+  );
+  const pythonApiFallbackContract = baseViteConfig.includes(
+    "'/api': {\n        target: 'http://localhost:9095',"
+  );
+  const legacyNodeTargetCount = [...baseViteConfig.matchAll(/target:\s*'http:\/\/localhost:4000'/g)].length;
+  if (pdfProxyIndex < 0
+    || generalApiProxyIndex < 0
+    || pdfProxyIndex > generalApiProxyIndex
+    || !authAliasContract
+    || !pythonApiFallbackContract
+    || legacyNodeTargetCount !== 1) {
+    throw new Error('BROWSER_CERT_PYTHON_EOS_ROUTING_CONTRACT_FAILED');
   }
   const configuredVite = baseViteConfig
     .replaceAll('http://localhost:9095', eosBaseUrl)
