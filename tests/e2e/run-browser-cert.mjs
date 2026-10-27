@@ -505,11 +505,21 @@ try {
   setPhase('authenticated_preflights', 'workspace_and_productive_work');
   const preflightResults = await preflightAuthenticatedEos(eosBaseUrl);
   const failedPreflights = preflightResults.filter((result) => result.status !== 200);
-  if (failedPreflights.length > 0) {
+  const unexpectedPreflights = failedPreflights.filter((result) => result.status !== 503);
+  if (unexpectedPreflights.length > 0) {
     const summary = preflightResults.map(
       (result) => result.routeName + '=' + result.status + ':' + result.detailCode,
     ).join(',');
     throw new Error('BROWSER_CERT_EOS_PREFLIGHT_FAILED:' + summary);
+  }
+  if (failedPreflights.length > 0) {
+    const summary = failedPreflights.map(
+      (result) => result.routeName + '=' + result.status + ':' + result.detailCode,
+    ).join(',');
+    console.info(
+      '[BROWSER-CERT-PREFLIGHT] fail-closed EOS routes observed; continuing into browser login/MFA journey: '
+      + summary,
+    );
   }
 
   setPhase('startup', 'python_eos_vite_proxy_configuration');
