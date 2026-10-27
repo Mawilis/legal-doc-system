@@ -49,9 +49,10 @@ class Collection:
 
     def find_one(self, query, session=None):
         assert session is not None
-        return self.rows.get(
-            (query["tenant_id"], query["institution_id"], query["record_id"])
-        )
+        key = (query["tenant_id"], query["institution_id"], query["record_id"])
+        if "event_id" in query:
+            key = (*key, query["event_id"])
+        return self.rows.get(key)
 
     def insert_one(self, document, session=None):
         assert session is not None
@@ -60,6 +61,8 @@ class Collection:
             document["institution_id"],
             document["record_id"],
         )
+        if "event_id" in document:
+            key = (*key, document["event_id"])
         if key in self.rows:
             raise RuntimeError("duplicate record")
         self.rows[key] = document
@@ -67,8 +70,9 @@ class Collection:
     def find(self, query, session=None):
         assert session is not None
         return Cursor([
-            value for (tenant, institution, _), value in self.rows.items()
-            if tenant == query["tenant_id"] and institution == query["institution_id"]
+            value for key, value in self.rows.items()
+            if key[0] == query["tenant_id"] and key[1] == query["institution_id"]
+            and key[2] == query.get("record_id", key[2])
         ])
 
 
@@ -80,9 +84,12 @@ class Client:
 class Database:
     def __init__(self):
         self.collection = Collection()
+        self.collections = {}
 
-    def __getitem__(self, _name):
-        return self.collection
+    def __getitem__(self, name):
+        if name == workspace_router.COLLECTION:
+            return self.collection
+        return self.collections.setdefault(name, Collection())
 
 
 def request_body():
@@ -120,6 +127,16 @@ def make_client(monkeypatch):
     )
     app.dependency_overrides[workspace_router._WRITE_AUTHORITY] = lambda: context
     app.dependency_overrides[workspace_router._READ_AUTHORITY] = lambda: context
+    verifier_context = TenantAuthorizationContext(
+        identity=SimpleNamespace(identity_id="principal-independent-verifier"),
+        tenant_id="tenant-001", decision=None,
+    )
+    approver_context = TenantAuthorizationContext(
+        identity=SimpleNamespace(identity_id="principal-independent-second-approver"),
+        tenant_id="tenant-001", decision=None,
+    )
+    app.dependency_overrides[workspace_router._VERIFY_AUTHORITY] = lambda: verifier_context
+    app.dependency_overrides[workspace_router._SECOND_APPROVAL_AUTHORITY] = lambda: approver_context
     database = Database()
     monkeypatch.setattr(workspace_router, "_storage", lambda: (Client(), database))
     monkeypatch.setattr(
@@ -285,3 +302,90 @@ def test_interactive_workspace_route_is_protected_and_all_choices_start_blank():
     assert "Choose disposition" in ui_source
     assert "institution_binding_status" in ui_source
     assert "cryptographic signature" in ui_source
+
+
+def test_independent_verification_and_second_approval_are_durable_and_non_authorizing(monkeypatch):
+    client, database = make_client(monkeypatch)
+    created = client.post(
+        "/api/legal-operations/g64/ratification-workspace/records",
+        headers={"Idempotency-Key": "click-for-review-001"},
+        json=request_body(),
+    )
+    assert created.status_code == 201
+    record = created.json()["record"]
+    evidence = {
+        "locator": "evidence:independent-review-001",
+        "sha3_512_fingerprint": "d" * 128,
+    }
+    verification = client.post(
+        f"/api/legal-operations/g64/ratification-workspace/records/{record['record_id']}/independent-verification",
+        headers={"Idempotency-Key": "verification-event-001"},
+        json={
+            "institution_id": record["institution_id"],
+            "record_id": record["record_id"],
+            "record_sha3_512_fingerprint": record["evidence_sha3_512"],
+            "outcome": "PASS",
+            "institution_binding_verified": True,
+            "ratifier_authority_verified": True,
+            "evidence_integrity_verified": True,
+            "rationale": "Independent review checked source provenance and authority evidence.",
+            "evidence": [evidence],
+        },
+    )
+    assert verification.status_code == 201, verification.text
+    verifier_event = verification.json()["review_event"]
+    assert verifier_event["reviewer_principal_id"] != record["ratifier_principal_id"]
+    assert verifier_event["permits_operational_access"] is False
+
+    approval = client.post(
+        f"/api/legal-operations/g64/ratification-workspace/records/{record['record_id']}/second-approval",
+        headers={"Idempotency-Key": "second-approval-event-001"},
+        json={
+            "institution_id": record["institution_id"],
+            "record_id": record["record_id"],
+            "record_sha3_512_fingerprint": record["evidence_sha3_512"],
+            "verification_event_id": verifier_event["event_id"],
+            "outcome": "APPROVE",
+            "rationale": "Independent second approver reviewed the verifier evidence and scope.",
+            "evidence": [evidence],
+        },
+    )
+    assert approval.status_code == 201, approval.text
+    approval_event = approval.json()["review_event"]
+    assert approval_event["approver_principal_id"] not in {
+        record["ratifier_principal_id"], verifier_event["reviewer_principal_id"]
+    }
+    assert approval.json()["ratification_complete"] is False
+    assert approval.json()["permits_operational_access"] is False
+    assert len(database.collections[workspace_router.REVIEW_COLLECTION].rows) == 2
+
+
+def test_independent_verification_cannot_be_submitted_by_original_attester(monkeypatch):
+    client, _database = make_client(monkeypatch)
+    created = client.post(
+        "/api/legal-operations/g64/ratification-workspace/records",
+        headers={"Idempotency-Key": "click-for-review-002"},
+        json=request_body(),
+    )
+    record = created.json()["record"]
+    evidence = {
+        "locator": "evidence:independent-review-002",
+        "sha3_512_fingerprint": "e" * 128,
+    }
+    response = client.post(
+        f"/api/legal-operations/g64/ratification-workspace/records/{record['record_id']}/independent-verification",
+        headers={"Idempotency-Key": "verification-event-002"},
+        json={
+            "institution_id": record["institution_id"],
+            "record_id": record["record_id"],
+            "record_sha3_512_fingerprint": record["evidence_sha3_512"],
+            "outcome": "FAIL",
+            "institution_binding_verified": False,
+            "ratifier_authority_verified": False,
+            "evidence_integrity_verified": True,
+            "rationale": "The current authenticated principal is the original attester.",
+            "evidence": [evidence],
+        },
+    )
+    assert response.status_code == 403
+    assert response.json()["detail"] == "G64_VERIFIER_MUST_BE_INDEPENDENT"
