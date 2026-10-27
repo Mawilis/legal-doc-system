@@ -183,6 +183,7 @@ class G64SecondApprovalPolicyDecision:
 @dataclass(frozen=True, slots=True)
 class G64SecondApproval:
     approval_id: str
+    policy_decision_id: str
     tenant_id: str
     institution_id: str
     record_id: str
@@ -196,7 +197,7 @@ class G64SecondApproval:
     policy_requires_second_approval: bool
 
     def __post_init__(self) -> None:
-        for name in ("approval_id", "tenant_id", "institution_id", "record_id",
+        for name in ("approval_id", "policy_decision_id", "tenant_id", "institution_id", "record_id",
                      "ratifier_principal_id", "verifier_principal_id", "approver_principal_id"):
             _token(name, getattr(self, name))
         if type(self.approved) is not bool or type(self.policy_requires_second_approval) is not bool:
@@ -214,6 +215,7 @@ class G64SecondApproval:
         return {
             "schema": "WILSY-G64-SECOND-APPROVAL/V1",
             "approval_id": self.approval_id,
+            "policy_decision_id": self.policy_decision_id,
             "tenant_id": self.tenant_id,
             "institution_id": self.institution_id,
             "record_id": self.record_id,
