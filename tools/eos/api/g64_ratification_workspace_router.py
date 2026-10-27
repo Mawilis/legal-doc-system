@@ -27,7 +27,11 @@ from tools.eos.api.tenant_authorization_http import (
 )
 from tools.eos.kernel.db import get_client, get_database
 from tools.eos.legal_operations.domain.g64_ratification_workspace_verification import (
+    G64IndependentVerification,
     G64SecondApprovalPolicyDecision,
+    G64VerificationCheck,
+    G64VerificationFinding,
+    G64VerificationOutcome,
 )
 from tools.eos.legal_operations.domain.g64_ratification_workspace_evidence import (
     G64ClickAttestation,
@@ -112,17 +116,22 @@ class WorkspaceAttestationInput(BaseModel):
     decisions: list[DecisionInput] = Field(min_length=10, max_length=10)
     supporting_evidence: list[EvidenceReferenceInput] = Field(default_factory=list)
 
+class VerificationFindingInput(BaseModel):
+    model_config = ConfigDict(extra="forbid", frozen=True)
+    check: G64VerificationCheck
+    passed: bool
+    rationale: str = Field(min_length=20, max_length=2000)
+    evidence: list[EvidenceReferenceInput] = Field(min_length=1, max_length=20)
+
+
 class IndependentVerificationInput(BaseModel):
     model_config = ConfigDict(extra="forbid", frozen=True)
     institution_id: str
     record_id: str
     record_sha3_512_fingerprint: str
-    outcome: str
-    institution_binding_verified: bool
-    ratifier_authority_verified: bool
-    evidence_integrity_verified: bool
+    outcome: G64VerificationOutcome
     rationale: str = Field(min_length=20, max_length=4000)
-    evidence: list[EvidenceReferenceInput] = Field(min_length=1, max_length=20)
+    findings: list[VerificationFindingInput] = Field(min_length=8, max_length=8)
 
 
 class SecondApprovalPolicyInput(BaseModel):
@@ -546,10 +555,6 @@ def _review_event(*, kind: str, event_id: str, tenant_id: str, institution_id: s
 def record_independent_verification(record_id: str, body: IndependentVerificationInput, idempotency_key: str = Header(alias="Idempotency-Key"), context: TenantAuthorizationContext = Depends(_VERIFY_AUTHORITY)) -> dict[str, object]:
     if body.record_id != record_id or _IDEMPOTENCY_KEY.fullmatch(idempotency_key) is None:
         raise HTTPException(status_code=422, detail="G64_REVIEW_REQUEST_IDENTITY_INVALID")
-    if body.outcome not in {"PASS", "FAIL"}:
-        raise HTTPException(status_code=422, detail="G64_VERIFICATION_OUTCOME_INVALID")
-    if body.outcome == "PASS" and not (body.institution_binding_verified and body.ratifier_authority_verified and body.evidence_integrity_verified):
-        raise HTTPException(status_code=422, detail="G64_VERIFICATION_PASS_REQUIRES_ALL_CHECKS")
     client, database = _storage()
     event_id = _review_event_id("VERIFICATION", context.tenant_id, record_id, idempotency_key)
     now = datetime.now(timezone.utc).replace(microsecond=0)
@@ -561,7 +566,36 @@ def record_independent_verification(record_id: str, body: IndependentVerificatio
                     raise HTTPException(status_code=403, detail="G64_VERIFIER_MUST_BE_INDEPENDENT")
                 if target.get("evidence_sha3_512") != body.record_sha3_512_fingerprint:
                     raise HTTPException(status_code=409, detail="G64_REVIEW_RECORD_FINGERPRINT_MISMATCH")
-                event = _review_event(kind="INDEPENDENT_VERIFICATION", event_id=event_id, tenant_id=context.tenant_id, institution_id=body.institution_id, record_id=record_id, fingerprint=body.record_sha3_512_fingerprint, actor_field="reviewer_principal_id", actor=context.identity.identity_id, outcome=body.outcome, rationale=body.rationale, evidence=body.evidence, now=now, extra={"institution_binding_verified": body.institution_binding_verified, "ratifier_authority_verified": body.ratifier_authority_verified, "evidence_integrity_verified": body.evidence_integrity_verified})
+                findings = tuple(
+                    G64VerificationFinding(
+                        check=item.check,
+                        passed=item.passed,
+                        rationale=item.rationale,
+                        evidence=tuple(_reference(ref) for ref in item.evidence),
+                    )
+                    for item in body.findings
+                )
+                verification = G64IndependentVerification(
+                    verification_id=event_id,
+                    tenant_id=context.tenant_id,
+                    institution_id=body.institution_id,
+                    record_id=record_id,
+                    record_sha3_512_fingerprint=body.record_sha3_512_fingerprint,
+                    ratifier_principal_id=str(target.get("ratifier_principal_id")),
+                    verifier_principal_id=context.identity.identity_id,
+                    verified_at=now,
+                    outcome=body.outcome,
+                    findings=findings,
+                )
+                event = {
+                    **verification.to_document(),
+                    "event_id": event_id,
+                    "event_type": "INDEPENDENT_VERIFICATION",
+                    "rationale": body.rationale,
+                    "created_at": now.isoformat(),
+                    "authority_effect": "NONE",
+                    "ratification_complete": False,
+                }
                 saved = append_review_event(tenant_id=context.tenant_id, institution_id=body.institution_id, record_id=record_id, event_id=event_id, payload=event, collection=database[REVIEW_COLLECTION], session=session)
     except G64RegistryError as error:
         _raise_registry_http(error)
