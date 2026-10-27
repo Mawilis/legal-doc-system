@@ -264,6 +264,24 @@ jobs:
   # Broad client certification is excluded from production CI until
   # its runtime surface is separately classified RETAIN/SOVEREIGN.
 
+  g64-ratification-workspace-certification:
+    name: 🏛️ G64 Ratification Workspace Certification
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Install governed Python dependencies
+        run: |
+          python -m pip install --upgrade pip==25.3
+          python -m pip install -r requirements.txt pytest==9.1.1
+      - name: Compile G64 contracts and certification tests
+        run: python -m py_compile tools/eos/api/g64_ratification_workspace_router.py tools/eos/api/server.py tools/eos/auth/permission_namespace.py tools/eos/legal_operations/domain/g64_ratification_workspace_evidence.py tools/eos/legal_operations/domain/g64_ratification_workspace_export.py tools/eos/legal_operations/domain/g64_ratification_workspace_verification.py tools/eos/legal_operations/registry/g64_ratification_workspace_registry.py tools/eos/legal_operations/registry/g64_ratification_review_registry.py tools/eos/legal_operations/service/g64_repository_evidence_publisher.py tests/unit/test_g64_ratification_workspace_evidence.py tests/unit/test_g64_ratification_workspace_export.py tests/unit/test_g64_ratification_workspace_permission_namespace.py tests/unit/test_g64_ratification_workspace_registry.py tests/unit/test_g64_ratification_workspace_router.py tests/unit/test_g64_ratification_workspace_verification.py tests/unit/test_g64_ratification_review_registry.py tests/unit/test_g64_repository_evidence_publisher.py
+      - name: Run G64 evidence, persistence, authorization, and workflow tests
+        run: python -m pytest -q tests/unit/test_g64_ratification_workspace_evidence.py tests/unit/test_g64_ratification_workspace_export.py tests/unit/test_g64_ratification_workspace_permission_namespace.py tests/unit/test_g64_ratification_workspace_registry.py tests/unit/test_g64_ratification_workspace_router.py tests/unit/test_g64_ratification_workspace_verification.py tests/unit/test_g64_ratification_review_registry.py tests/unit/test_g64_repository_evidence_publisher.py
   # Final governed production gate
   final-verification:
     name: ✅ Retained Production Gates Passed
@@ -271,6 +289,7 @@ jobs:
     needs:
       [
         security-scan,
+        g64-ratification-workspace-certification,
         vendor-bill-r2a-certification,
         vendor-bill-r2b-release-certification,
       ]
@@ -280,6 +299,7 @@ jobs:
         run: |
           echo "Retained and sovereign production gates have completed."
           if [ "${{ needs.security-scan.result }}" != "success" ] || \
+             [ "${{ needs.g64-ratification-workspace-certification.result }}" != "success" ] || \
              [ "${{ needs.vendor-bill-r2a-certification.result }}" != "success" ] || \
              [ "${{ needs.vendor-bill-r2b-release-certification.result }}" != "success" ]; then
             echo "❌ A retained or sovereign production gate failed."
