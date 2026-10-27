@@ -38,7 +38,10 @@ def _configuration() -> tuple[str, str, str, str]:
     if not token or not re.fullmatch(r"[A-Za-z0-9_.-]+/[A-Za-z0-9_.-]+", repository):
         raise G64RepositoryPublishError("G64_REPOSITORY_PUBLISHER_NOT_CONFIGURED")
     if (
-        not base_branch
+        not re.fullmatch(r"[A-Za-z0-9._/-]{1,100}", base_branch)
+        or ".." in base_branch
+        or "//" in base_branch
+        or base_branch.endswith("/")
         or not re.fullmatch(r"g64-evidence/[A-Za-z0-9._/-]{1,100}", export_branch)
         or ".." in export_branch
         or "//" in export_branch
