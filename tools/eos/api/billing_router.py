@@ -4,13 +4,14 @@
 ║ WILSY OS – BILLING ROUTER (FASTAPI) – LAZY KERNEL DATABASE HANDLES                                      ║
 ╠══════════════════════════════════════════════════════════════════════════════════════════════════════════════════╣
 ║ FILE:           tools/eos/api/billing_router.py                                                                ║
-║ VERSION:        v1.11.0-L7D-B-LAZY-BILLING-HANDLES                                                                  ║
+║ VERSION:        v1.12.0-PYTHON-EOS-PDF-PRESENTATION-CONTRACT                                                                  ║
 ║ AUTHORITY:      Wilsy OS Core Governance                                                                       ║
 ║ EPITOME:        Uses global MongoDB client from billing_registry; composes certified billing intelligence and ║
 ║                 WILSY AI capacity evidence through caller-owned transactions.                                 ║
 ║ CLASSIFICATION: Production Artifact                                                                             ║
 ╠══════════════════════════════════════════════════════════════════════════════════════════════════════════════════╣
 ║ 🔧 CHANGE LOG:                                                                                                  ║
+║   2026-10-27 v1.12.0-PYTHON-EOS-PDF-PRESENTATION-CONTRACT – Updates invoice PDF guidance to the authenticated Python EOS presentation route; no source-verification or issuance authority is claimed. ║
 ║   2026-09-15 v1.11.0-L7D-B-LAZY-BILLING-HANDLES – Resolves active kernel database/client handles at request time; ║
 ║                imports no longer freeze unavailable Mongo snapshots.                                             ║
 ║   2026-09-13 v1.10.0-M14-P5-BILLING-INTELLIGENCE-EVIDENCE-HTTP – Binds the canonical billing-intelligence evidence route to      ║
@@ -114,7 +115,7 @@ from tools.eos.api.tenant_authorization_http import (
 )
 
 # ─── Logging ──────────────────────────────────────────────────────────────────
-VERSION = "v1.11.0-L7D-B-LAZY-BILLING-HANDLES"
+VERSION = "v1.12.0-PYTHON-EOS-PDF-PRESENTATION-CONTRACT"
 
 _BILLING_INTELLIGENCE_EVIDENCE_READ_AUTHORIZATION = RequireTenantAuthorization(
     "billing_intelligence:evidence:read",
@@ -1709,7 +1710,7 @@ async def invoice_pdf_manifest(
     return {
         "success": True,
         "format": "MANIFEST_JSON",
-        "message": "Use client print fallback or POST /generate/pdf on Node for binary PDF",
+        "message": "Use client print fallback or POST /api/generate/pdf for a source-unverified presentation PDF; this route does not establish invoice issuance or settlement truth.",
         "pipeline": kind,
         "invoice": doc,
         "print": {
@@ -1939,10 +1940,10 @@ async def billing_actions_surface():
 
 """
 ════════════════════════════════════════════════════════════════════════════════
-INSTITUTIONAL CERTIFICATION SEAL — WILSY OS BILLING ROUTER v1.11.0-L7D-B-LAZY-BILLING-HANDLES
+INSTITUTIONAL CERTIFICATION SEAL — WILSY OS BILLING ROUTER v1.12.0-PYTHON-EOS-PDF-PRESENTATION-CONTRACT
 ════════════════════════════════════════════════════════════════════════════════
 Status:          CERTIFIED PRODUCTION ARTIFACT
-Version:         v1.11.0-L7D-B-LAZY-BILLING-HANDLES
+Version:         v1.12.0-PYTHON-EOS-PDF-PRESENTATION-CONTRACT
 Fixes:           Financial-truth HTTP firewall; canonical billing-intelligence authorization seam and P4/P6B/P6A/P6C WILSY AI capacity seams preserved.
 Compliance:      POPIA §19 │ GDPR §32 │ SOC2 §CC7.2 │ ISO 27001
 Note:            Plan catalogue persistence/hydration authority is PlanRegistry; Kennel remains exclusive financial execution authority.
@@ -1953,7 +1954,7 @@ Note:            Plan catalogue persistence/hydration authority is PlanRegistry;
 # WILSY OS SOVEREIGN ARTIFACT SEAL
 # =============================================================================
 # ARTIFACT: tools/eos/api/billing_router.py
-# VERSION: v1.11.0-L7D-B-LAZY-BILLING-HANDLES
+# VERSION: v1.12.0-PYTHON-EOS-PDF-PRESENTATION-CONTRACT
 # AUTHORITY BOUNDARY:
 #   Python HTTP transport/composition only; no provider execution or settlement.
 # TENANT POSTURE:
