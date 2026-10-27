@@ -443,3 +443,57 @@ def test_review_routes_have_dedicated_permissions_and_startup_indexes():
     assert "G64ReviewWorkflow" in ui
     assert "second_approval_required" in router
     assert "second-approval-policy" in ui
+
+
+def test_second_approval_is_denied_when_evidence_backed_policy_says_not_required(monkeypatch):
+    client, _database = make_client(monkeypatch)
+    created = client.post(
+        "/api/legal-operations/g64/ratification-workspace/records",
+        headers={"Idempotency-Key": "click-policy-not-required"},
+        json=request_body(),
+    )
+    assert created.status_code == 201
+    record = created.json()["record"]
+    evidence = {"locator": "evidence:review-policy-negative", "sha3_512_fingerprint": "2" * 128}
+    verification = client.post(
+        f"/api/legal-operations/g64/ratification-workspace/records/{record['record_id']}/independent-verification",
+        headers={"Idempotency-Key": "verification-policy-negative"},
+        json={
+            "institution_id": record["institution_id"], "record_id": record["record_id"],
+            "record_sha3_512_fingerprint": record["evidence_sha3_512"], "outcome": "PASS",
+            "institution_binding_verified": True, "ratifier_authority_verified": True,
+            "evidence_integrity_verified": True,
+            "rationale": "Independent review checked source provenance and authority evidence.",
+            "evidence": [evidence],
+        },
+    )
+    assert verification.status_code == 201, verification.text
+    verifier_event = verification.json()["review_event"]
+    policy = client.post(
+        f"/api/legal-operations/g64/ratification-workspace/records/{record['record_id']}/second-approval-policy",
+        headers={"Idempotency-Key": "policy-not-required"},
+        json={
+            "institution_id": record["institution_id"], "record_id": record["record_id"],
+            "record_sha3_512_fingerprint": record["evidence_sha3_512"],
+            "verification_event_id": verifier_event["event_id"], "second_approval_required": False,
+            "rationale": "The authoritative policy source does not require a second approval.",
+            "policy_source": {"locator": "evidence:policy-no-second-approval", "sha3_512_fingerprint": "3" * 128},
+            "independent_verification_evidence": {"locator": "evidence:policy-check", "sha3_512_fingerprint": "4" * 128},
+        },
+    )
+    assert policy.status_code == 201, policy.text
+    response = client.post(
+        f"/api/legal-operations/g64/ratification-workspace/records/{record['record_id']}/second-approval",
+        headers={"Idempotency-Key": "approval-despite-policy"},
+        json={
+            "institution_id": record["institution_id"], "record_id": record["record_id"],
+            "record_sha3_512_fingerprint": record["evidence_sha3_512"],
+            "verification_event_id": verifier_event["event_id"],
+            "policy_decision_event_id": policy.json()["review_event"]["event_id"],
+            "outcome": "APPROVE",
+            "rationale": "Attempting approval despite policy evidence that says it is not required.",
+            "evidence": [evidence],
+        },
+    )
+    assert response.status_code == 409
+    assert response.json()["detail"] == "G64_SECOND_APPROVAL_NOT_REQUIRED_BY_POLICY"
