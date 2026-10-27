@@ -116,8 +116,10 @@ def test_review_history_recomputes_digest_and_is_scoped():
 def test_review_indexes_are_unique_and_scoped():
     collection = Collection()
     ensure_indexes(collection)
-    assert len(collection.indexes) == 2
+    assert len(collection.indexes) == 4
     assert collection.indexes[0][1]["unique"] is True
+    assert collection.indexes[2][1]["partialFilterExpression"]["payload.event_type"] == "SECOND_APPROVAL_POLICY"
+    assert collection.indexes[3][1]["partialFilterExpression"]["payload.event_type"] == "SECOND_APPROVAL"
 
 
 def test_exact_review_retry_ignores_only_server_generated_timestamp():
