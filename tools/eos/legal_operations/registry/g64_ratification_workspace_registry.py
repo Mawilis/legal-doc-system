@@ -120,6 +120,23 @@ _SEMANTIC_PAYLOAD_KEYS: Final[tuple[str, ...]] = (
 )
 
 
+def _verified_record_fingerprint(payload: Mapping[str, Any]) -> str:
+    """Recompute the attested content digest, excluding lifecycle state."""
+    if any(key not in payload for key in _SEMANTIC_PAYLOAD_KEYS):
+        raise G64RegistryCorruptRecordError()
+    semantic = {
+        key: payload[key] for key in _SEMANTIC_PAYLOAD_KEYS if key != "state"
+    }
+    try:
+        encoded = json.dumps(
+            semantic, sort_keys=True, separators=(",", ":"),
+            ensure_ascii=True, allow_nan=False,
+        ).encode("ascii")
+    except (TypeError, ValueError, UnicodeEncodeError) as error:
+        raise G64RegistryCorruptRecordError() from error
+    return hashlib.sha3_512(encoded).hexdigest()
+
+
 def _verified_payload_fingerprint(payload: Mapping[str, Any]) -> str:
     """Recompute the domain fingerprint from persisted semantic fields, never its claimed hash."""
     if any(key not in payload for key in _SEMANTIC_PAYLOAD_KEYS):
@@ -157,7 +174,7 @@ def _envelope(record: G64RatificationWorkspaceRecord) -> dict[str, Any]:
         "schema": RECORD_SCHEMA,
         "version": VERSION,
         **_key(record),
-        "evidence_sha3_512": record.evidence_fingerprint(),
+        "evidence_sha3_512": _verified_payload_fingerprint(payload),
         "payload": payload,
     }
 
@@ -244,11 +261,12 @@ def read_record(
     expected = envelope.get("evidence_sha3_512")
     claimed = payload.get("evidence_sha3_512")
     recomputed = _verified_payload_fingerprint(payload)
+    content_fingerprint = _verified_record_fingerprint(payload)
     if (
         not isinstance(expected, str)
         or len(expected) != 128
         or expected != recomputed
-        or claimed != recomputed
+        or claimed != content_fingerprint
         or envelope.get("tenant_scope_sha3_512") != _scope_fingerprint(
             tenant_id=tenant_id,
             institution_id=institution_id,
@@ -300,7 +318,7 @@ def list_history(
         recomputed = _verified_payload_fingerprint(payload)
         if (
             row.get("evidence_sha3_512") != recomputed
-            or payload.get("evidence_sha3_512") != recomputed
+            or payload.get("evidence_sha3_512") != _verified_record_fingerprint(payload)
             or row.get("tenant_scope_sha3_512") != _scope_fingerprint(
                 tenant_id=tenant_id,
                 institution_id=institution_id,
