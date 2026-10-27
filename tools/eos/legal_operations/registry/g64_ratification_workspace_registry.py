@@ -14,7 +14,7 @@ CHANGELOG: v1.0.0 adds append-only, tenant/institution-scoped evidence persisten
 COMPLIANCE: POPIA section 19; GDPR Article 32; SOC 2 CC7.2.
 SECURITY / PRIVACY POSTURE: Opaque references and fingerprints only; no credentials
                             or raw company documents are accepted by this registry.
-TENANT BOUNDARY: Every query includes exact tenant and institution identifiers.
+TENANT BOUNDARY: Every query and unique key includes exact tenant and institution identifiers.
 AUTHORITY BOUNDARY: Stored evidence is never interpreted as ratification or access.
 TRANSACTION BOUNDARY: Caller supplies and owns an already-active Mongo transaction.
 FAIL-CLOSED DECLARATION: Missing transactions, malformed records, divergent replay,
@@ -162,7 +162,7 @@ def ensure_indexes(collection: Any) -> None:
 def append_record(
     *, tenant_id: str, record: G64RatificationWorkspaceRecord, collection: Any, session: Any
 ) -> G64RatificationWorkspaceRecord:
-    """Append or exactly replay an immutable evidence record inside caller transaction."""
+    """Append or exactly replay one tenant/institution-scoped record inside caller transaction."""
     _active_transaction(session)
     if type(record) is not G64RatificationWorkspaceRecord:
         raise G64RegistryInputError("G64_REGISTRY_RECORD_INVALID")
@@ -190,7 +190,7 @@ def append_record(
 def read_record(
     *, tenant_id: str, institution_id: str, record_id: str, collection: Any, session: Any
 ) -> Mapping[str, Any]:
-    """Read one exact institution-scoped envelope inside caller transaction."""
+    """Read one exact tenant/institution-scoped envelope inside caller transaction."""
     _active_transaction(session)
     if not isinstance(tenant_id, str) or not tenant_id.strip() or tenant_id != tenant_id.strip():
         raise G64RegistryInputError("G64_REGISTRY_TENANT_ID_INVALID")
@@ -240,7 +240,7 @@ def read_record(
 def list_history(
     *, tenant_id: str, institution_id: str, collection: Any, session: Any, limit: int = 100
 ) -> tuple[Mapping[str, Any], ...]:
-    """Return bounded institution-scoped immutable history in deterministic order."""
+    """Return bounded tenant/institution-scoped immutable history in deterministic order."""
     _active_transaction(session)
     if not isinstance(tenant_id, str) or not tenant_id.strip() or tenant_id != tenant_id.strip():
         raise G64RegistryInputError("G64_REGISTRY_TENANT_ID_INVALID")
