@@ -19,7 +19,7 @@
     "install:all": "npm install && cd client && npm install",
     "docs:guard": "node scripts/wilsy-documentation-guard.js",
     "secrets:guard": "node scripts/wilsy-secret-guard.js",
-    "pm2:deploy": "cd server && pm2 start ecosystem.config.js",
+    "pm2:deploy": "test \"${WILSY_APPROVED_PRODUCTION_DEPLOY:-}\" = \"1\" && cd server && pm2 start ecosystem.config.js",
     "pm2:stop": "cd server && pm2 delete all && pm2 kill",
     "pm2:status": "pm2 status",
     "prepare": "husky",
