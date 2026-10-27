@@ -247,7 +247,7 @@ export default defineConfig({
         target: 'http://localhost:9095',
         changeOrigin: true,
         secure: false,
-        rewrite: (path) => path.replace(/^\\/api\\/business\\/tenants(?=\\/|$)/, '/api/tenants'),
+        rewrite: (path) => path.replace(/^\/api\/business\/tenants(?=\/|$)/, '/api/tenants'),
       },
       '/api/plans': {
         target: 'http://localhost:9095',
@@ -280,7 +280,7 @@ export default defineConfig({
         target: 'http://localhost:9095',
         changeOrigin: true,
         secure: false,
-        rewrite: (path) => path.replace(/^\\/api(?=\\/|$)/, ''),
+        rewrite: (path) => path.replace(/^\/api(?=\/|$)/, ''),
       },
       // Only explicitly unmigrated routes should remain on the Node BFF.
       // The default API path now terminates at Python EOS; unknown paths fail there.
