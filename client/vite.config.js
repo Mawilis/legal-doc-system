@@ -214,7 +214,7 @@ export default defineConfig({
         target: 'http://localhost:9095',
         changeOrigin: true,
         secure: false,
-        rewrite: (path) => path.replace(/^\\/api\\/business\\/tenants/, '/api/tenants'),
+        rewrite: (path) => path.replace(/^\/api\/business\/tenants/, '/api/tenants'),
       },
       // Kennel owns the tenant and employee directories used by BillingHUD typeaheads.
       '/api/tenants': {
