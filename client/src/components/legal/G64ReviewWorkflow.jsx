@@ -19,6 +19,8 @@ export default function G64ReviewWorkflow({ institutionId, recordId, recordFinge
   const [fingerprint, setFingerprint] = useState(recordFingerprint || '');
   const [evidenceLocator, setEvidenceLocator] = useState('');
   const [evidenceFingerprint, setEvidenceFingerprint] = useState('');
+  const [verificationSecondaryLocator, setVerificationSecondaryLocator] = useState('');
+  const [verificationSecondaryFingerprint, setVerificationSecondaryFingerprint] = useState('');
   const [rationale, setRationale] = useState('');
   const [verificationChecks, setVerificationChecks] = useState(() => VERIFICATION_CHECKS.map(([check]) => ({
     check, passed: false, rationale: '',
@@ -92,12 +94,19 @@ export default function G64ReviewWorkflow({ institutionId, recordId, recordFinge
             check: item.check,
             passed: item.passed,
             rationale: item.rationale.trim() || rationale.trim(),
-            evidence: [{ locator: evidenceLocator, sha3_512_fingerprint: evidenceFingerprint }],
+            evidence: [
+              { locator: evidenceLocator, sha3_512_fingerprint: evidenceFingerprint },
+              { locator: verificationSecondaryLocator, sha3_512_fingerprint: verificationSecondaryFingerprint },
+            ],
           })),
         },
         { headers: { 'Idempotency-Key': key } }
       );
       setVerificationIdempotencyKey('');
+      setPolicySourceLocator(evidenceLocator);
+      setPolicySourceFingerprint(evidenceFingerprint);
+      setPolicyVerificationLocator(verificationSecondaryLocator);
+      setPolicyVerificationFingerprint(verificationSecondaryFingerprint);
       setStatusText(`Verification event saved: ${data.review_event.event_id}. This is an evidence attestation, not external certification.`);
       await refreshEvents();
     } catch (cause) {
@@ -178,7 +187,9 @@ export default function G64ReviewWorkflow({ institutionId, recordId, recordFinge
 
   const valid = Boolean(
     institutionId && selectedRecord && FINGERPRINT.test(fingerprint) &&
-    evidenceLocator.trim() && FINGERPRINT.test(evidenceFingerprint.trim().toLowerCase())
+    evidenceLocator.trim() && FINGERPRINT.test(evidenceFingerprint.trim().toLowerCase()) &&
+    verificationSecondaryLocator.trim() &&
+    FINGERPRINT.test(verificationSecondaryFingerprint.trim().toLowerCase())
   );
   const passingVerifications = verificationEvents.filter(
     (item) => item.event_type === 'INDEPENDENT_VERIFICATION' && item.outcome === 'PASS'
@@ -242,11 +253,17 @@ export default function G64ReviewWorkflow({ institutionId, recordId, recordFinge
           <textarea value={rationale} onChange={(event) => setRationale(event.target.value)} minLength={20} maxLength={4000} required rows={3} className="mt-1 w-full rounded-lg border border-slate-600 bg-slate-950 px-3 py-2" />
         </label>
         <div className="grid gap-3 md:grid-cols-2">
-          <label className="block text-sm">Evidence locator
+          <label className="block text-sm">Primary evidence locator (include authoritative policy source where applicable)
             <input value={evidenceLocator} onChange={(event) => setEvidenceLocator(event.target.value)} required className="mt-1 w-full rounded-lg border border-slate-600 bg-slate-950 px-3 py-2" />
           </label>
-          <label className="block text-sm">Evidence SHA3-512
+          <label className="block text-sm">Primary evidence SHA3-512
             <input value={evidenceFingerprint} onChange={(event) => setEvidenceFingerprint(event.target.value.trim().toLowerCase())} required minLength={128} maxLength={128} className="mt-1 w-full rounded-lg border border-slate-600 bg-slate-950 px-3 py-2 font-mono text-xs" />
+          </label>
+          <label className="block text-sm">Independent corroborating evidence locator
+            <input value={verificationSecondaryLocator} onChange={(event) => setVerificationSecondaryLocator(event.target.value)} required className="mt-1 w-full rounded-lg border border-slate-600 bg-slate-950 px-3 py-2" />
+          </label>
+          <label className="block text-sm">Independent corroborating evidence SHA3-512
+            <input value={verificationSecondaryFingerprint} onChange={(event) => setVerificationSecondaryFingerprint(event.target.value.trim().toLowerCase())} required minLength={128} maxLength={128} className="mt-1 w-full rounded-lg border border-slate-600 bg-slate-950 px-3 py-2 font-mono text-xs" />
           </label>
         </div>
         <button type="submit" disabled={!valid || rationale.trim().length < 20 || verificationChecks.some((item) => item.rationale.trim().length < 20) || (verificationOutcome === 'PASS' && verificationChecks.some((item) => !item.passed)) || (verificationOutcome === 'FAIL' && verificationChecks.every((item) => item.passed)) || busy} className="rounded-lg bg-violet-300 px-4 py-2 font-semibold text-slate-950 disabled:opacity-40">
