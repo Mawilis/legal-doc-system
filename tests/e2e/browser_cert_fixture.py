@@ -137,7 +137,7 @@ from tools.eos.saas.domain.tenant_branding_profile_selection import (
 
 
 DEFAULT_URI = "mongodb://127.0.0.1:27027/?replicaSet=wilsyVendorCertRS"
-STATE_VERSION = "v1.2.0-D21B13-AUTHENTICATED-BRANDING-BROWSER-CERT-STATE"
+STATE_VERSION = "v1.3.0-PYTHON-EOS-LOGIN-MFA-BROWSER-CERT-STATE"
 BROWSER_CERT_DATABASE_PREFIX = "wilsy_l8_8m_r3_"
 BRANDING_EVIDENCE_FINGERPRINT = "f" * 128
 
