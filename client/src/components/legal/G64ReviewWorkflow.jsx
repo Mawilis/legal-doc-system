@@ -47,7 +47,10 @@ export default function G64ReviewWorkflow({ institutionId, recordId, recordFinge
   useEffect(() => {
     if (recordId) setSelectedRecord(recordId);
     if (recordFingerprint) setFingerprint(recordFingerprint);
-  }, [recordId, recordFingerprint]);
+    setVerificationEvents([]);
+    setSelectedVerification('');
+    setSelectedPolicyEvent('');
+  }, [institutionId, recordId, recordFingerprint]);
 
   const refreshEvents = useCallback(async () => {
     if (!institutionId || !selectedRecord) return;
@@ -195,7 +198,7 @@ export default function G64ReviewWorkflow({ institutionId, recordId, recordFinge
       <div className="grid gap-3 md:grid-cols-2">
         <label className="space-y-1 text-sm">
           <span className="block">Workspace record ID</span>
-          <input value={selectedRecord} onChange={(event) => setSelectedRecord(event.target.value)} required className="w-full rounded-lg border border-slate-600 bg-slate-950 px-3 py-2 font-mono text-xs" />
+          <input value={selectedRecord} onChange={(event) => { setSelectedRecord(event.target.value); setVerificationEvents([]); setSelectedVerification(''); setSelectedPolicyEvent(''); }} required className="w-full rounded-lg border border-slate-600 bg-slate-950 px-3 py-2 font-mono text-xs" />
         </label>
         <label className="space-y-1 text-sm">
           <span className="block">Workspace SHA3-512 fingerprint</span>
