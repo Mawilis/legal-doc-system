@@ -42,7 +42,10 @@ def build_repository_export_bytes(
     record_fingerprint = record.evidence_fingerprint()
     unresolved = list(record.unresolved_decision_ids)
     status = "DRAFT_NOT_ATTESTED"
-    if record.attestation is not None and record.state is G64RecordState.ATTESTED_PENDING_VERIFICATION:
+    if record.attestation is not None and record.state in (
+        G64RecordState.ATTESTED_PENDING_VERIFICATION,
+        G64RecordState.VERIFIED_NON_AUTHORIZING,
+    ):
         status = "INDEPENDENT_VERIFICATION_PENDING"
     if unresolved:
         status = "DECISIONS_UNRESOLVED"
