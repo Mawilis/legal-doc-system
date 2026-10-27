@@ -34,6 +34,7 @@ import binascii
 import hashlib
 import json
 import re
+import struct
 from datetime import datetime, timezone
 from io import BytesIO
 from typing import Any
@@ -251,7 +252,7 @@ def render_artifact_pdf(
                     detail="ARTIFACT_PDF_SIGNATURE_IMAGE_TOO_LARGE",
                 )
             match = re.fullmatch(
-                r"data:image/(png|jpeg|jpg);base64,([A-Za-z0-9+/=]+)",
+                r"data:image/png;base64,([A-Za-z0-9+/=]+)",
                 signature_value,
             )
             if not match:
@@ -260,19 +261,27 @@ def render_artifact_pdf(
                     detail="ARTIFACT_PDF_SIGNATURE_IMAGE_FORMAT_INVALID",
                 )
             try:
-                image_bytes = base64.b64decode(match.group(2), validate=True)
+                image_bytes = base64.b64decode(match.group(1), validate=True)
             except (binascii.Error, ValueError) as error:
                 raise HTTPException(
                     status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
                     detail="ARTIFACT_PDF_SIGNATURE_IMAGE_BASE64_INVALID",
                 ) from error
-            if len(image_bytes) > 1_000_000 or not (
-                image_bytes.startswith(b"\x89PNG\r\n\x1a\n")
-                or image_bytes.startswith(b"\xff\xd8\xff")
+            if (
+                len(image_bytes) > 1_000_000
+                or not image_bytes.startswith(b"\x89PNG\r\n\x1a\n")
+                or len(image_bytes) < 24
+                or image_bytes[12:16] != b"IHDR"
             ):
                 raise HTTPException(
                     status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
                     detail="ARTIFACT_PDF_SIGNATURE_IMAGE_BYTES_INVALID",
+                )
+            width_px, height_px = struct.unpack(">II", image_bytes[16:24])
+            if not (1 <= width_px <= 2048 and 1 <= height_px <= 1024):
+                raise HTTPException(
+                    status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+                    detail="ARTIFACT_PDF_SIGNATURE_IMAGE_DIMENSIONS_INVALID",
                 )
             story.append(Image(BytesIO(image_bytes), width=65 * mm, height=22 * mm, kind="proportional"))
         else:
@@ -321,12 +330,17 @@ async def generate_artifact_pdf(
     identity: SovereignIdentity = Depends(get_current_identity),
 ) -> Response:
     """Render a bounded PDF for the authenticated request without creating authority."""
-    raw_body = await request.body()
-    if len(raw_body) > MAX_REQUEST_BYTES:
-        raise HTTPException(
-            status_code=status.HTTP_413_REQUEST_ENTITY_TOO_LARGE,
-            detail="ARTIFACT_PDF_PAYLOAD_TOO_LARGE",
-        )
+    raw_chunks: list[bytes] = []
+    raw_size = 0
+    async for chunk in request.stream():
+        raw_size += len(chunk)
+        if raw_size > MAX_REQUEST_BYTES:
+            raise HTTPException(
+                status_code=status.HTTP_413_REQUEST_ENTITY_TOO_LARGE,
+                detail="ARTIFACT_PDF_PAYLOAD_TOO_LARGE",
+            )
+        raw_chunks.append(chunk)
+    raw_body = b"".join(raw_chunks)
     try:
         body = json.loads(raw_body)
     except (ValueError, UnicodeDecodeError) as error:
