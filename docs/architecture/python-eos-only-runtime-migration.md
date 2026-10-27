@@ -25,9 +25,11 @@ The current Vite configuration explicitly routes these surfaces to Python EOS at
 | `/api/legal-acceptance` | Python EOS | Prefix retained |
 | `/api/tenants`, `/api/employees` | Python EOS | Directory contracts |
 
-The general `/api` catch-all still targets Node on port 4000. Repository inspection identifies Node-owned contracts that are not yet certified as Python equivalents, including the sovereign PDF endpoint `POST /api/generate/pdf`, business/telemetry/v1 routes, treasury/subscription paths, partial-payment behavior, and audit-related surfaces. The local stack launcher still starts the Node API BFF; `orchestrator.js` still starts `server/server.js` and a Node worker. The production-surface policy still marks Node server/renderer/package paths `RETAIN`.
+The current branch routes the general `/api` catch-all directly to Python EOS and makes the Node-owned `POST /api/generate/pdf` route explicit. The observed `server/server.js` entrypoint proxies `/api/auth`, tenant/employee directories, kernel, plans, subscriptions, billing and two selective WILSY AI legal routes to Python EOS; the Vite configuration now routes those contracts directly to their Python targets. The billing alias preserves the existing `/api/billing/*` to `/billing/*` rewrite, and `/api/business/tenants` preserves its alias rewrite to `/api/tenants`.
 
-These remaining paths are intentionally not re-routed by this campaign until the route matrix and certifications below pass.
+The Node runtime is **not removable yet**: the PDF route still calls `businessArtifactPdfController.js` and `wilsyEnterprisePdfRenderer.js`, which perform authenticated identity resolution, billing/CRM proof enrichment, request/Merkle proof construction, renderer-specific response headers, and binary PDF streaming. Those semantics do not yet have a certified Python equivalent. The local stack launcher still starts the Node API for that explicit PDF route. The production-surface policy still marks Node server/renderer/package paths `RETAIN`. `orchestrator.js` also names the Node server and a Node worker, but its current reachability from active startup commands must be established before deleting it; `server/package.json` starts `server/server.js`, not `server/app.js`.
+
+The general catch-all is no longer routed to Node, but the BFF process remains temporarily for PDF. The next removal gate is a faithful Python PDF implementation plus caller, identity, tenant, artifact-seal, renderer, binary-response and regression certification.
 
 ## Required route parity matrix
 
