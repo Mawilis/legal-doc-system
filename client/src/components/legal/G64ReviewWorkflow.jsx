@@ -107,7 +107,7 @@ export default function G64ReviewWorkflow({ institutionId, recordId, recordFinge
       setPolicySourceFingerprint(evidenceFingerprint);
       setPolicyVerificationLocator(verificationSecondaryLocator);
       setPolicyVerificationFingerprint(verificationSecondaryFingerprint);
-      setStatusText(`Verification event saved: ${data.review_event.event_id}. This is an evidence attestation, not external certification.`);
+      setStatusText(`Verification event saved: ${data.review_event.event_id}. Repository persistence: ${data.repository_persistence_status || "NOT_CONFIRMED"}. This is an evidence attestation, not external certification.`);
       await refreshEvents();
     } catch (cause) {
       setError(cause?.response?.data?.detail || 'Independent verification was not confirmed by Python EOS.');
@@ -144,7 +144,7 @@ export default function G64ReviewWorkflow({ institutionId, recordId, recordFinge
       );
       setPolicyIdempotencyKey('');
       setSelectedPolicyEvent(data.review_event.event_id);
-      setStatusText(`Policy determination saved: ${data.review_event.event_id}. It does not authorize access.`);
+      setStatusText(`Policy determination saved: ${data.review_event.event_id}. Repository persistence: ${data.repository_persistence_status || "NOT_CONFIRMED"}. It does not authorize access.`);
       await refreshEvents();
     } catch (cause) {
       setError(cause?.response?.data?.detail || 'Second-approval policy determination was not confirmed by Python EOS.');
@@ -176,7 +176,7 @@ export default function G64ReviewWorkflow({ institutionId, recordId, recordFinge
         { headers: { 'Idempotency-Key': key } }
       );
       setApprovalIdempotencyKey('');
-      setStatusText(`Second-approval event saved: ${data.review_event.event_id}. Ratification remains incomplete.`);
+      setStatusText(`Second-approval event saved: ${data.review_event.event_id}. Repository persistence: ${data.repository_persistence_status || "NOT_CONFIRMED"}. Ratification remains incomplete.`);
       await refreshEvents();
     } catch (cause) {
       setError(cause?.response?.data?.detail || 'Second approval was not confirmed by Python EOS.');
