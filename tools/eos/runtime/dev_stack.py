@@ -139,6 +139,7 @@ def main() -> int:
             if code is not None:
                 print(f"[WILSY-DEV-STACK] child exited code={code}; stopping stack", file=sys.stderr)
                 _stop_children()
+                return int(code or 1)
         time.sleep(0.5)
 
 
