@@ -1,17 +1,20 @@
 /* eslint-disable */
 /**
  * ╔════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════╗
- * ║ WILSY OS - VITE CLIENT CONFIGURATION RUNTIME [V2.4.1-L10-P2C7B-TENANT-BRANDING-ROUTER]                                                            ║
+ * ║ WILSY OS - VITE CLIENT CONFIGURATION RUNTIME [V2.4.2-PYTHON-AUTH-ALIAS-MIGRATION]                                                            ║
  * ║ AUTHORITY: WILSY OS CORE INFRASTRUCTURE | TERMINAL WORKFLOW COMPLIANT                                                                ║
  * ╠════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════╣
- * ║ VERSION: 2.4.1-L10-P2C7B-TENANT-BRANDING-ROUTER | PRODUCTION READY                                                                               ║
+ * ║ VERSION: 2.4.2-PYTHON-AUTH-ALIAS-MIGRATION | MIGRATION IN PROGRESS                                                                               ║
  * ║ ABSOLUTE PATH: /Users/wilsonkhanyezi/legal-doc-system/client/vite.config.js                                                          ║
  * ╠════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════╣
  * ║ EPITOME:                                                                                                                             ║
- * ║ Routes Python-EOS-owned auth, legal-acceptance, Legal Operations, kernel, and governed billing paths to port 9095 while preserving   ║
- * ║ the Node BFF catch-all for Node-owned /api traffic.                                                                                  ║
+ * ║ Routes the legacy /auth alias and established Python-EOS surfaces to port 9095 while preserving the catch-all for not-yet-migrated ║
+ * ║ API contracts. The Node BFF remains required until parity certification is complete.                                                 ║
  * ╠════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════╣
- * ║ 🔧 CHANGE LOG (v2.4.1):
+ * ║ 🔧 CHANGE LOG (v2.4.2):
+ * ║   1. Routes the legacy /auth alias to canonical Python EOS /api/auth without relying on the Node BFF.                                  ║
+ * ║   2. Keeps the general /api catch-all unchanged until every remaining Node-owned contract has a tested Python equivalent.             ║
+ * ║ 🔧 PRIOR CHANGE LOG (v2.4.1):
  * ║   1. Routes Python-EOS-owned /api/legal-operations directly to port 9095 so L8-6A sheriff queue reads cannot fall through Node.      ║
  * ║   2. Preserves the /api prefix because the Legal Operations router is mounted under /api.                                             ║
  * ║   3. Routes Python-EOS-owned /api/tenant-branding directly to port 9095 so governed branding activation cannot fall through Node.     ║
@@ -69,14 +72,16 @@ export default defineConfig({
           });
         }
       },
-      // 👇 Fallback for /auth (without /api) – also to Node
+      // Legacy /auth callers are normalized to the canonical Python EOS auth router.
+      // The explicit /api/auth rule remains unchanged for canonical callers.
       '/auth': {
-        target: 'http://localhost:4000',
+        target: 'http://localhost:9095',
         changeOrigin: true,
         secure: false,
         configure: (proxy, options) => {
+          rewrite: (path) => path.replace(/^\/auth(?=\/|$)/, '/api/auth'),
           proxy.on('proxyReq', (proxyReq, req, res) => {
-            console.info(`[WILSY-PROXY-DISPATCH-AUTH] ${req.method} ${req.url}`);
+            console.info(`[WILSY-PROXY-DISPATCH-AUTH] ${req.method} ${req.url} -> ${proxyReq.path}`);
           });
           proxy.on('proxyRes', (proxyRes, req, res) => {
             console.info(`[WILSY-PROXY-RETURN-AUTH] ${proxyRes.statusCode} ${req.url}`);
@@ -87,7 +92,7 @@ export default defineConfig({
               res.writeHead(502, { 'Content-Type': 'application/json' });
               res.end(JSON.stringify({
                 success: false,
-                message: 'Auth backend unreachable – verify Node server on port 4000 is active.',
+                message: 'Auth backend unreachable – verify Python EOS on port 9095 is active.',
                 error: err.message
               }));
             }
@@ -244,13 +249,13 @@ export default defineConfig({
 
 /**
  * ═══════════════════════════════════════════════════════════════════════════════════
- * INSTITUTIONAL CERTIFICATION SEAL — WILSY OS VITE CONFIGURATION V2.4.1-L10-P2C7B-TENANT-BRANDING-ROUTER
+ * INSTITUTIONAL MIGRATION SEAL — WILSY OS VITE CONFIGURATION V2.4.2-PYTHON-AUTH-ALIAS-MIGRATION
  * ═══════════════════════════════════════════════════════════════════════════════════
- * Status: CERTIFIED PRODUCTION ARTIFACT
+ * Status: PYTHON EOS MIGRATION IN PROGRESS — GENERAL NODE BFF CATCH-ALL STILL RETAINED
  * Compliance: POPIA §19, GDPR §32, SOC2 §CC7.2
  * Proxy Rules:
  *   /api/auth → http://localhost:9095 (Kennel auth router) – no rewrite
- *   /auth      → http://localhost:4000 (Node backend)
+ *   /auth      → http://localhost:9095/api/auth (Python EOS, path rewrite)
  *   /api/billing/platform|client → http://localhost:9095/billing/platform|client
  *   /api/billing/plans|summary|analytics|credit-scores|forensic-status → http://localhost:9095/billing/*
  *   /api/kernel → http://localhost:9095/api/kernel
@@ -258,6 +263,6 @@ export default defineConfig({
  *   /api/legal-operations → http://localhost:9095/api/legal-operations
  *   /api/legal-acceptance → http://localhost:9095/api/legal-acceptance
  *   /api/tenants, /api/employees → http://localhost:9095
- *   /api       → http://localhost:4000 (Node BFF)
+ *   /api       → http://localhost:4000 (Node BFF; retained pending route parity)
  * ═══════════════════════════════════════════════════════════════════════════════════
  */
