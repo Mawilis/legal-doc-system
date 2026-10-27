@@ -726,6 +726,10 @@ _PERMISSIONS: Final = MappingProxyType(
             "legal_operations:g64_ratification_workspace:second_approve", "TENANT", "TENANT",
             "record independent second-approval evidence for G64 only", tenant=True,
         ),
+        "legal_operations:g64_ratification_workspace:policy": _meta(
+            "legal_operations:g64_ratification_workspace:policy", "TENANT", "TENANT",
+            "record evidence-backed G64 second-approval policy determination only", tenant=True,
+        ),
         "legal_operations:matter_deadline:read": _meta(
             "legal_operations:matter_deadline:read", "TENANT", "TENANT",
             "read own-tenant legal matter deadlines", tenant=True,
