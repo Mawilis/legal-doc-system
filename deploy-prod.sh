@@ -3,7 +3,12 @@
 # WILSY OS - PYTHON EOS PRODUCTION DEPLOYMENT SCRIPT
 # ============================================================================
 
-set -e
+set -euo pipefail
+
+if [[ "${WILSY_APPROVED_PRODUCTION_DEPLOY:-}" != "1" ]]; then
+    echo "PRODUCTION_DEPLOYMENT_REQUIRES_EXPLICIT_APPROVAL: set WILSY_APPROVED_PRODUCTION_DEPLOY=1 only after reviewing the exact image, configuration, and rollout plan." >&2
+    exit 2
+fi
 
 echo "🏛️ WILSY OS 2050 - Production Deployment"
 echo "=========================================="
