@@ -207,7 +207,10 @@ class G64RatificationWorkspaceRecord:
             raise G64WorkspaceEvidenceError("ATTESTATION_INVALID")
         if self.state is G64RecordState.DRAFT and self.attestation is not None:
             raise G64WorkspaceEvidenceError("DRAFT_MUST_NOT_HAVE_ATTESTATION")
-        if self.state is G64RecordState.ATTESTED_PENDING_VERIFICATION and self.attestation is None:
+        if self.state in (
+            G64RecordState.ATTESTED_PENDING_VERIFICATION,
+            G64RecordState.VERIFIED_NON_AUTHORIZING,
+        ) and self.attestation is None:
             raise G64WorkspaceEvidenceError("ATTESTATION_REQUIRED")
         if self.attestation is not None and self.attestation.record_sha3_512_fingerprint != self.evidence_fingerprint():
             raise G64WorkspaceEvidenceError("ATTESTATION_RECORD_FINGERPRINT_MISMATCH")
