@@ -587,6 +587,9 @@ def record_second_approval_policy(record_id: str, body: SecondApprovalPolicyInpu
                 if target.get("evidence_sha3_512") != body.record_sha3_512_fingerprint:
                     raise HTTPException(status_code=409, detail="G64_REVIEW_RECORD_FINGERPRINT_MISMATCH")
                 events = list_review_events(tenant_id=context.tenant_id, institution_id=body.institution_id, record_id=record_id, collection=database[REVIEW_COLLECTION], session=session, limit=100)
+                existing_policy = next((row for row in events if row.get("payload", {}).get("event_type") == "SECOND_APPROVAL_POLICY"), None)
+                if existing_policy is not None and existing_policy.get("event_id") != event_id:
+                    raise HTTPException(status_code=409, detail="G64_SECOND_APPROVAL_POLICY_ALREADY_RECORDED")
                 verifier = next((row.get("payload", {}) for row in events if row.get("event_id") == body.verification_event_id), None)
                 if not isinstance(verifier, dict) or verifier.get("event_type") != "INDEPENDENT_VERIFICATION" or verifier.get("outcome") != "PASS":
                     raise HTTPException(status_code=409, detail="G64_INDEPENDENT_VERIFICATION_PASS_REQUIRED")
@@ -648,10 +651,13 @@ def record_second_approval(record_id: str, body: SecondApprovalInput, idempotenc
                 if target.get("evidence_sha3_512") != body.record_sha3_512_fingerprint:
                     raise HTTPException(status_code=409, detail="G64_REVIEW_RECORD_FINGERPRINT_MISMATCH")
                 events = list_review_events(tenant_id=context.tenant_id, institution_id=body.institution_id, record_id=record_id, collection=database[REVIEW_COLLECTION], session=session, limit=100)
+                existing_approval = next((row for row in events if row.get("payload", {}).get("event_type") == "SECOND_APPROVAL"), None)
+                if existing_approval is not None and existing_approval.get("event_id") != event_id:
+                    raise HTTPException(status_code=409, detail="G64_SECOND_APPROVAL_ALREADY_RECORDED")
                 verifier = next((row.get("payload", {}) for row in events if row.get("event_id") == body.verification_event_id), None)
                 if not isinstance(verifier, dict) or verifier.get("event_type") != "INDEPENDENT_VERIFICATION" or verifier.get("outcome") != "PASS":
                     raise HTTPException(status_code=409, detail="G64_INDEPENDENT_VERIFICATION_PASS_REQUIRED")
-                if verifier.get("record_sha3_512_fingerprint") != body.record_sha3_512_fingerprint:
+                if verifier.get("record_sha3_512_fingerprint) != body.record_sha3_512_fingerprint:
                     raise HTTPException(status_code=409, detail="G64_REVIEW_RECORD_FINGERPRINT_MISMATCH")
                 verifier_id = verifier.get("reviewer_principal_id")
                 if verifier_id in {target.get("ratifier_principal_id"), context.identity.identity_id}:
