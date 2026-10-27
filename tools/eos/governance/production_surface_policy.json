@@ -307,6 +307,22 @@
     {
       "class": "MIGRATION_ONLY",
       "pattern": "server/package-lock.json"
+    },
+    {
+      "class": "MIGRATION_ONLY",
+      "pattern": "server/deploy-production.sh"
+    },
+    {
+      "class": "MIGRATION_ONLY",
+      "pattern": "server/test-components.sh"
+    },
+    {
+      "class": "MIGRATION_ONLY",
+      "pattern": "server/k8s/**"
+    },
+    {
+      "class": "MIGRATION_ONLY",
+      "pattern": "server/Dockerfile"
     }
   ],
   "version": 1
