@@ -83,8 +83,10 @@ def build_repository_export_bytes(
         ):
             raise G64WorkspaceEvidenceError("EXPORT_SECOND_APPROVAL_POLICY_SCOPE_MISMATCH")
         policy_document = second_approval_policy.to_document()
-        if verification is None or verification.outcome is not G64VerificationOutcome.PASS:
+        if verification is None:
             status = "INDEPENDENT_VERIFICATION_REQUIRED"
+        elif verification.outcome is G64VerificationOutcome.FAIL:
+            status = "INDEPENDENT_VERIFICATION_FAILED"
         elif second_approval_policy.second_approval_required:
             status = "SECOND_APPROVAL_PENDING"
         else:
@@ -109,8 +111,10 @@ def build_repository_export_bytes(
         ):
             raise G64WorkspaceEvidenceError("EXPORT_SECOND_APPROVAL_SCOPE_MISMATCH")
         approval_document = second_approval.to_document()
-        if verification is None or verification.outcome is not G64VerificationOutcome.PASS:
+        if verification is None:
             status = "INDEPENDENT_VERIFICATION_REQUIRED"
+        elif verification.outcome is G64VerificationOutcome.FAIL:
+            status = "INDEPENDENT_VERIFICATION_FAILED"
         elif not second_approval.approved:
             status = "SECOND_APPROVAL_REJECTED"
         else:
