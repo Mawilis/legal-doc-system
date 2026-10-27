@@ -239,7 +239,7 @@ from types import MappingProxyType
 from typing import Final
 
 
-VERSION = "v1.54.0-R59-P9-REASSIGNMENT-IAM-INTEGRATION"
+VERSION = "v1.55.0-G64-VERIFIER-POLICY-PERMISSIONS"
 
 
 class PermissionDisposition(StrEnum):
@@ -1191,7 +1191,7 @@ __all__ = [
 ]
 
 # ARTIFACT: tools/eos/auth/permission_namespace.py
-# VERSION: v1.54.0-R59-P9-REASSIGNMENT-IAM-INTEGRATION
+# VERSION: v1.55.0-G64-VERIFIER-POLICY-PERMISSIONS
 # AUTHORITY BOUNDARY: canonical permission vocabulary semantics only; no possession or authorization authority
 # TENANT POSTURE: conflict-review, client-matter, client-visibility and other tenant permissions require separately proven exact ACTIVE tenant membership
 # FAIL-CLOSED POSTURE: unknown, malformed, ambiguous and legacy values never manufacture authority
