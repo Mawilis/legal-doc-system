@@ -135,6 +135,22 @@ def _verified_payload_fingerprint(payload: Mapping[str, Any]) -> str:
     return hashlib.sha3_512(encoded).hexdigest()
 
 
+def _scope_fingerprint(
+    *, tenant_id: str, institution_id: str, record_id: str, evidence_fingerprint: str
+) -> str:
+    """Bind tenant and institution identity to the persisted semantic digest."""
+    encoded = json.dumps(
+        {
+            "tenant_id": tenant_id,
+            "institution_id": institution_id,
+            "record_id": record_id,
+            "evidence_sha3_512": evidence_fingerprint,
+        },
+        sort_keys=True, separators=(",", ":"), ensure_ascii=True, allow_nan=False,
+    ).encode("ascii")
+    return hashlib.sha3_512(encoded).hexdigest()
+
+
 def _envelope(record: G64RatificationWorkspaceRecord) -> dict[str, Any]:
     payload = record.to_document()
     return {
@@ -168,6 +184,12 @@ def append_record(
         raise G64RegistryInputError("G64_REGISTRY_RECORD_INVALID")
     target = _collection(collection)
     envelope = {"tenant_id": tenant_id, **_envelope(record)}
+    envelope["tenant_scope_sha3_512"] = _scope_fingerprint(
+        tenant_id=tenant_id,
+        institution_id=record.institution_id,
+        record_id=record.record_id,
+        evidence_fingerprint=envelope["evidence_sha3_512"],
+    )
     query = _key(tenant_id=tenant_id, record=record)
     try:
         existing = target.find_one(query, session=session)
@@ -227,6 +249,12 @@ def read_record(
         or len(expected) != 128
         or expected != recomputed
         or claimed != recomputed
+        or envelope.get("tenant_scope_sha3_512") != _scope_fingerprint(
+            tenant_id=tenant_id,
+            institution_id=institution_id,
+            record_id=record_id,
+            evidence_fingerprint=recomputed,
+        )
         or payload.get("record_id") != record_id
         or payload.get("institution_id") != institution_id
         or payload.get("permits_operational_access") is not False
@@ -273,6 +301,12 @@ def list_history(
         if (
             row.get("evidence_sha3_512") != recomputed
             or payload.get("evidence_sha3_512") != recomputed
+            or row.get("tenant_scope_sha3_512") != _scope_fingerprint(
+                tenant_id=tenant_id,
+                institution_id=institution_id,
+                record_id=row.get("record_id"),
+                evidence_fingerprint=recomputed,
+            )
             or payload.get("institution_id") != institution_id
             or payload.get("record_id") != row.get("record_id")
             or payload.get("permits_operational_access") is not False
