@@ -535,7 +535,7 @@ def _review_event(*, kind: str, event_id: str, tenant_id: str, institution_id: s
         "institution_id": institution_id, "record_id": record_id,
         "record_sha3_512_fingerprint": fingerprint, actor_field: actor,
         "outcome": outcome, "rationale": rationale,
-        "evidence": [item.model_dump() for item in evidence],
+        "evidence": [_reference(item).to_document() for item in evidence],
         "created_at": now.isoformat(), "authority_effect": "NONE",
         "ratification_complete": False, "permits_operational_access": False,
         **(extra or {}),
