@@ -704,6 +704,13 @@ _PERMISSIONS: Final = MappingProxyType(
             "legal_operations:instruction:write", "TENANT", "TENANT",
             "operate own-tenant legal instructions", tenant=True,
         ),
+        "legal_operations:g64_ratification_workspace:write": _meta(
+            "legal_operations:g64_ratification_workspace:write",
+            "TENANT",
+            "TENANT",
+            "record own-tenant G64 ratification workspace evidence only",
+            tenant=True,
+        ),
         "legal_operations:matter_deadline:read": _meta(
             "legal_operations:matter_deadline:read", "TENANT", "TENANT",
             "read own-tenant legal matter deadlines", tenant=True,
