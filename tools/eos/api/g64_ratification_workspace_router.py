@@ -17,7 +17,7 @@ from datetime import datetime, timezone
 from pathlib import Path
 from typing import Final
 
-from fastapi import APIRouter, Depends, Header, HTTPException, Query, status
+from fastapi import APIRouter, Depends, Header, HTTPException, Query, Response, status
 from pydantic import BaseModel, ConfigDict, Field
 from pymongo.errors import PyMongoError
 
@@ -37,6 +37,10 @@ from tools.eos.legal_operations.domain.g64_ratification_workspace_evidence impor
 )
 from tools.eos.legal_operations.domain.g64_ratification_workspace_export import (
     build_repository_export_bytes,
+)
+from tools.eos.legal_operations.service.g64_repository_evidence_publisher import (
+    G64RepositoryPublishError,
+    publish_repository_evidence,
 )
 from tools.eos.legal_operations.registry.g64_ratification_workspace_registry import (
     COLLECTION,
@@ -282,10 +286,11 @@ def read_canonical_contract(
 @router.post("/records", status_code=status.HTTP_201_CREATED)
 def submit_attested_record(
     body: WorkspaceAttestationInput,
+    response: Response,
     context: TenantAuthorizationContext = Depends(_WRITE_AUTHORITY),
     idempotency_key: str = Header(alias="Idempotency-Key"),
 ) -> dict[str, object]:
-    """Persist one authenticated click-to-attest record; this is not ratification."""
+    """Persist an authenticated click-to-attest record and publish its evidence export."""
     if _IDEMPOTENCY_KEY.fullmatch(idempotency_key) is None:
         raise HTTPException(
             status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
@@ -304,6 +309,7 @@ def submit_attested_record(
         supporting = tuple(_reference(item) for item in body.supporting_evidence)
         client, database = _storage()
         collection = database[COLLECTION]
+        record_document: dict[str, object]
         with client.start_session() as session:
             with session.start_transaction():
                 try:
@@ -317,6 +323,46 @@ def submit_attested_record(
                 except G64RegistryError as error:
                     if error.code != "G64_REGISTRY_RECORD_NOT_FOUND":
                         _raise_registry_http(error)
+                    draft = G64RatificationWorkspaceRecord(
+                        record_id=record_id,
+                        institution_id=body.institution_id,
+                        ratifier_principal_id=context.identity.identity_id,
+                        contract_version=contract_version,
+                        contract_sha3_512_fingerprint=contract_fingerprint,
+                        created_at=now,
+                        state=G64RecordState.DRAFT,
+                        decisions=decisions,
+                        supporting_evidence=supporting,
+                    )
+                    attestation = G64ClickAttestation(
+                        event_id=f"attestation-{record_id}",
+                        authenticated_principal_id=context.identity.identity_id,
+                        authenticated_request_reference=hashlib.sha3_512(
+                            f"{tenant_id}|{record_id}|{idempotency_key}".encode("utf-8")
+                        ).hexdigest(),
+                        attested_at=now,
+                        record_sha3_512_fingerprint=draft.evidence_fingerprint(),
+                        attestation_text_version="g64-attestation-copy-v1",
+                    )
+                    record = G64RatificationWorkspaceRecord(
+                        record_id=record_id,
+                        institution_id=body.institution_id,
+                        ratifier_principal_id=context.identity.identity_id,
+                        contract_version=contract_version,
+                        contract_sha3_512_fingerprint=contract_fingerprint,
+                        created_at=now,
+                        state=G64RecordState.ATTESTED_PENDING_VERIFICATION,
+                        decisions=decisions,
+                        supporting_evidence=supporting,
+                        attestation=attestation,
+                    )
+                    append_record(
+                        tenant_id=tenant_id,
+                        record=record,
+                        collection=collection,
+                        session=session,
+                    )
+                    record_document = record.to_document()
                 else:
                     payload = existing["payload"]
                     requested_decisions = [item.to_document() for item in decisions]
@@ -331,47 +377,33 @@ def submit_attested_record(
                             status_code=status.HTTP_409_CONFLICT,
                             detail="G64_IDEMPOTENCY_KEY_PAYLOAD_CONFLICT",
                         )
-                    return _response(payload, tenant_id)
-                draft = G64RatificationWorkspaceRecord(
-                    record_id=record_id,
-                    institution_id=body.institution_id,
-                    ratifier_principal_id=context.identity.identity_id,
-                    contract_version=contract_version,
-                    contract_sha3_512_fingerprint=contract_fingerprint,
-                    created_at=now,
-                    state=G64RecordState.DRAFT,
-                    decisions=decisions,
-                    supporting_evidence=supporting,
-                )
-                attestation = G64ClickAttestation(
-                    event_id=f"attestation-{record_id}",
-                    authenticated_principal_id=context.identity.identity_id,
-                    authenticated_request_reference=hashlib.sha3_512(
-                        f"{tenant_id}|{record_id}|{idempotency_key}".encode("utf-8")
-                    ).hexdigest(),
-                    attested_at=now,
-                    record_sha3_512_fingerprint=draft.evidence_fingerprint(),
-                    attestation_text_version="g64-attestation-copy-v1",
-                )
-                record = G64RatificationWorkspaceRecord(
-                    record_id=record_id,
-                    institution_id=body.institution_id,
-                    ratifier_principal_id=context.identity.identity_id,
-                    contract_version=contract_version,
-                    contract_sha3_512_fingerprint=contract_fingerprint,
-                    created_at=now,
-                    state=G64RecordState.ATTESTED_PENDING_VERIFICATION,
-                    decisions=decisions,
-                    supporting_evidence=supporting,
-                    attestation=attestation,
-                )
-                append_record(
-                    tenant_id=tenant_id,
-                    record=record,
-                    collection=collection,
-                    session=session,
-                )
-        return _response(record.to_document(), tenant_id)
+                    record_document = payload
+
+        result = _response(record_document, tenant_id)
+        manifest = result["repository_evidence_export"]
+        manifest_bytes = json.dumps(
+            manifest, sort_keys=True, separators=(",", ":"),
+            ensure_ascii=True, allow_nan=False,
+        ).encode("ascii")
+        try:
+            published = publish_repository_evidence(
+                record_id=record_id,
+                manifest_bytes=manifest_bytes,
+            )
+        except G64RepositoryPublishError as error:
+            result["application_persistence_status"] = "PERSISTED"
+            result["repository_persistence_status"] = (
+                "PENDING_CONFIGURATION"
+                if error.code == "G64_REPOSITORY_PUBLISHER_NOT_CONFIGURED"
+                else "PENDING_RETRY"
+            )
+            result["repository_persistence_error_code"] = error.code
+            response.status_code = status.HTTP_202_ACCEPTED
+        else:
+            result["application_persistence_status"] = "PERSISTED"
+            result["repository_persistence_status"] = published["status"]
+            result["repository_commit"] = published
+        return result
     except G64WorkspaceEvidenceError as error:
         raise HTTPException(
             status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
