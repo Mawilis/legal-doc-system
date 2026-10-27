@@ -42,7 +42,6 @@ from tools.eos.legal_operations.registry.g64_ratification_workspace_registry imp
     G64RegistryConflictError,
     G64RegistryError,
     G64RegistryInputError,
-    G64RegistryUnavailableError,
     append_record,
     ensure_indexes,
     list_history,
@@ -138,10 +137,16 @@ def _storage() -> tuple[object, object]:
 
 
 def _response(record_document: dict[str, object], tenant_id: str) -> dict[str, object]:
-    export_bytes = build_repository_export_bytes(
-        tenant_id=tenant_id,
-        record=_hydrate_record_for_export(record_document),
-    )
+    try:
+        export_bytes = build_repository_export_bytes(
+            tenant_id=tenant_id,
+            record=_hydrate_record_for_export(record_document),
+        )
+    except (KeyError, TypeError, ValueError) as error:
+        raise HTTPException(
+            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+            detail="G64_PERSISTED_RECORD_INVALID",
+        ) from error
     return {
         "version": VERSION,
         "record": record_document,
@@ -358,7 +363,7 @@ def read_workspace_history(
                     session=session,
                     limit=limit,
                 )
-        records = [row["payload"] for row in rows]
+        records = [_response(row["payload"], context.tenant_id) for row in rows]
         return {
             "version": VERSION,
             "records": records,
