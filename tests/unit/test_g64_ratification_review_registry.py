@@ -118,3 +118,18 @@ def test_review_indexes_are_unique_and_scoped():
     ensure_indexes(collection)
     assert len(collection.indexes) == 2
     assert collection.indexes[0][1]["unique"] is True
+
+
+def test_exact_review_retry_ignores_only_server_generated_timestamp():
+    collection = Collection()
+    first = event()
+    append_review_event(
+        tenant_id="t", institution_id="i", record_id="r", event_id=first["event_id"],
+        payload=first, collection=collection, session=Session(),
+    )
+    retry = {**first, "created_at": "2026-10-27T00:00:01+00:00"}
+    result = append_review_event(
+        tenant_id="t", institution_id="i", record_id="r", event_id=retry["event_id"],
+        payload=retry, collection=collection, session=Session(),
+    )
+    assert result["payload"]["created_at"] == first["created_at"]
