@@ -79,6 +79,9 @@ _VERIFY_AUTHORITY = RequireTenantAuthorization(
 _SECOND_APPROVAL_AUTHORITY = RequireTenantAuthorization(
     "legal_operations:g64_ratification_workspace:second_approve", "legal_operations:g64_ratification_workspace:second_approve"
 )
+_POLICY_AUTHORITY = RequireTenantAuthorization(
+    "legal_operations:g64_ratification_workspace:policy", "legal_operations:g64_ratification_workspace:policy"
+)
 _IDEMPOTENCY_KEY: Final[re.Pattern[str]] = re.compile(
     r"[A-Za-z0-9][A-Za-z0-9._:/-]{0,255}\Z"
 )
@@ -568,7 +571,7 @@ def record_independent_verification(record_id: str, body: IndependentVerificatio
 
 
 @router.post("/records/{record_id}/second-approval-policy", status_code=status.HTTP_201_CREATED)
-def record_second_approval_policy(record_id: str, body: SecondApprovalPolicyInput, idempotency_key: str = Header(alias="Idempotency-Key"), context: TenantAuthorizationContext = Depends(_VERIFY_AUTHORITY)) -> dict[str, object]:
+def record_second_approval_policy(record_id: str, body: SecondApprovalPolicyInput, idempotency_key: str = Header(alias="Idempotency-Key"), context: TenantAuthorizationContext = Depends(_POLICY_AUTHORITY)) -> dict[str, object]:
     """Persist an evidence-backed second-approval policy determination, never infer policy."""
     if body.record_id != record_id or _IDEMPOTENCY_KEY.fullmatch(idempotency_key) is None:
         raise HTTPException(status_code=422, detail="G64_REVIEW_REQUEST_IDENTITY_INVALID")
