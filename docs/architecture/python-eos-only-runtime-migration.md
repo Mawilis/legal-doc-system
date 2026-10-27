@@ -35,4 +35,5 @@ The Python PDF route requires the canonical authenticated identity dependency, c
 - Run client build/static checks and the authenticated browser certification.
 - Prove route parity against the prior BFF contract, especially billing PDF consumers and alias paths.
 - Verify deployment manifest, image digest, runtime configuration, workload identity, and live readiness.
+- The legacy Investor Portal hostname returns 503 until its own Python EOS route contract is implemented and certified; it is not proxied to the generic API.
 - Do not delete remaining Node migration/reference files until their non-runtime consumers and tests are proven absent.
