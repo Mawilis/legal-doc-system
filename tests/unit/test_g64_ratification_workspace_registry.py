@@ -54,11 +54,11 @@ class Collection:
 
     def find_one(self, query, session=None):
         assert session is not None
-        return self.rows.get((query["institution_id"], query["record_id"]))
+        return self.rows.get((query["tenant_id"], query["institution_id"], query["record_id"]))
 
     def insert_one(self, document, session=None):
         assert session is not None
-        key = (document["institution_id"], document["record_id"])
+        key = (document["tenant_id"], document["institution_id"], document["record_id"])
         if key in self.rows:
             raise RuntimeError("duplicate")
         self.rows[key] = document
@@ -66,8 +66,8 @@ class Collection:
     def find(self, query, session=None):
         assert session is not None
         return Cursor([
-            value for (institution, _), value in self.rows.items()
-            if institution == query["institution_id"]
+            value for (tenant, institution, _), value in self.rows.items()
+            if tenant == query["tenant_id"] and institution == query["institution_id"]
         ])
 
 
@@ -86,16 +86,17 @@ def record():
 
 def test_append_record_requires_caller_owned_active_transaction():
     with pytest.raises(G64RegistryTransactionRequiredError):
-        append_record(record=record(), collection=Collection(), session=None)
+        append_record(tenant_id="tenant-001", record=record(), collection=Collection(), session=None)
 
 
 def test_append_and_exact_replay_preserve_one_immutable_record():
     collection = Collection()
     first = record()
-    append_record(record=first, collection=collection, session=Session())
+    append_record(tenant_id="tenant-001", record=first, collection=collection, session=Session())
     append_record(record=first, collection=collection, session=Session())
     assert len(collection.rows) == 1
     assert read_record(
+        tenant_id="tenant-001",
         institution_id="wilsy-pty-ltd",
         record_id="g64-record-001",
         collection=collection,
@@ -120,9 +121,10 @@ def test_divergent_replay_of_same_identity_is_rejected():
     )
     changed_doc = changed.to_document()
     changed_doc["supporting_evidence"] = [{"locator": "different"}]
-    collection.rows[("wilsy-pty-ltd", "g64-record-001")] = {
+    collection.rows[("tenant-001", "wilsy-pty-ltd", "g64-record-001")] = {
         "schema": "WILSY-G64-RATIFICATION-WORKSPACE-REGISTRY/V1",
         "version": "v1.0.0-G64-IMMUTABLE-WORKSPACE-REGISTRY",
+        "tenant_id": "tenant-001",
         "institution_id": "wilsy-pty-ltd",
         "record_id": "g64-record-001",
         "evidence_sha3_512": changed.evidence_fingerprint(),
@@ -136,12 +138,14 @@ def test_history_is_institution_scoped_and_bounded():
     collection = Collection()
     append_record(record=record(), collection=collection, session=Session())
     assert len(list_history(
+        tenant_id="tenant-001",
         institution_id="wilsy-pty-ltd",
         collection=collection,
         session=Session(),
         limit=10,
     )) == 1
     assert list_history(
+        tenant_id="tenant-001",
         institution_id="another-institution",
         collection=collection,
         session=Session(),
@@ -161,6 +165,7 @@ def test_read_recomputes_fingerprint_instead_of_trusting_matching_claims():
     )
     with pytest.raises(G64RegistryCorruptRecordError):
         read_record(
+            tenant_id="tenant-001",
             institution_id="wilsy-pty-ltd",
             record_id="g64-record-001",
             collection=collection,
@@ -177,6 +182,7 @@ def test_history_recomputes_fingerprint_for_every_row():
     )
     with pytest.raises(G64RegistryCorruptRecordError):
         list_history(
+            tenant_id="tenant-001",
             institution_id="wilsy-pty-ltd",
             collection=collection,
             session=Session(),
