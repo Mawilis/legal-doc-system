@@ -53,3 +53,16 @@ def test_g64_permission_is_serialized_once_and_does_not_create_a_grant():
     assert metadata.authorizes_by_itself is False
     assert metadata.tenant_membership_required is True
     assert metadata.financial_execution_capable is False
+
+
+def test_g64_read_and_write_permissions_are_separate_non_self_authorizing_capabilities():
+    read = permission_metadata("legal_operations:g64_ratification_workspace:read")
+    write = permission_metadata(PERMISSION)
+    assert read.permission_id != write.permission_id
+    assert read.tenant_membership_required is True
+    assert write.tenant_membership_required is True
+    assert read.authorizes_by_itself is False
+    assert write.authorizes_by_itself is False
+    raw = canonical_permissions()
+    assert raw.count(b'"permission_id":"legal_operations:g64_ratification_workspace:read"') == 1
+    assert raw.count(b'"permission_id":"legal_operations:g64_ratification_workspace:write"') == 1
