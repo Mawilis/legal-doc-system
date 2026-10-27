@@ -567,6 +567,8 @@ def record_independent_verification(record_id: str, body: IndependentVerificatio
         _raise_registry_http(error)
     except G64ReviewRegistryError as error:
         raise HTTPException(status_code=503, detail=error.code) from error
+    except G64WorkspaceEvidenceError as error:
+        raise HTTPException(status_code=422, detail=str(error)) from error
     return {"review_event": saved["payload"], "second_approval_required": True, "authority_effect": "NONE", "ratification_complete": False, "permits_operational_access": False}
 
 
@@ -684,6 +686,8 @@ def record_second_approval(record_id: str, body: SecondApprovalInput, idempotenc
         _raise_registry_http(error)
     except G64ReviewRegistryError as error:
         raise HTTPException(status_code=503, detail=error.code) from error
+    except G64WorkspaceEvidenceError as error:
+        raise HTTPException(status_code=422, detail=str(error)) from error
     return {"review_event": saved["payload"], "second_approval_status": "RECORDED_NON_AUTHORIZING", "ratification_complete": False, "permits_operational_access": False}
 
 
