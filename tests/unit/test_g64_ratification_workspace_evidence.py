@@ -8,6 +8,7 @@ from datetime import datetime, timedelta, timezone
 import pytest
 
 from tools.eos.legal_operations.domain.g64_ratification_workspace_evidence import (
+    G64ClickAttestation,
     G64Disposition,
     G64EvidenceReference,
     G64RatificationWorkspaceRecord,
@@ -106,3 +107,23 @@ def test_review_time_must_follow_effective_time():
             expires_or_review_at=NOW,
             revocation_rule="No access while deferred; re-review before any change.",
         )
+
+
+def test_click_attestation_fingerprint_survives_lifecycle_transition_without_circularity():
+    initial = draft()
+    attestation = G64ClickAttestation(
+        event_id="attestation-event-001",
+        authenticated_principal_id="principal-pending-verification",
+        authenticated_session_reference="session-ref-001",
+        attested_at=NOW,
+        record_sha3_512_fingerprint=initial.evidence_fingerprint(),
+        attestation_text_version="g64-attestation-copy-v1",
+    )
+    attested = draft(
+        state=G64RecordState.ATTESTED_PENDING_VERIFICATION,
+        attestation=attestation,
+    )
+    assert attested.evidence_fingerprint() == initial.evidence_fingerprint()
+    assert attested.to_document()["attestation"]["signature_kind"] == (
+        "AUTHENTICATED_CLICK_TO_ATTEST_NOT_CRYPTOGRAPHIC_SIGNATURE"
+    )
