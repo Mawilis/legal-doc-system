@@ -144,3 +144,59 @@ def test_publisher_rejects_tampered_manifest_fingerprint_before_network(monkeypa
             record_id=RECORD_ID,
             manifest_bytes=json.dumps(raw, sort_keys=True, separators=(",", ":")).encode("ascii"),
         )
+
+
+def test_publisher_accepts_exact_existing_manifest_without_overwrite(monkeypatch):
+    import base64
+    import json
+
+    expected = manifest()
+    calls = []
+
+    def fake_urlopen(request, timeout):
+        calls.append((request.get_method(), request.full_url))
+        if request.get_method() == "GET" and request.full_url.endswith("/git/ref/heads/g64-evidence/test"):
+            return Response(200, {"object": {"sha": "a" * 40}})
+        if request.get_method() == "GET" and "/contents/encryption-evidence/g64-ratification-workspaces/" in request.full_url:
+            return Response(200, {
+                "content": base64.b64encode(expected).decode("ascii"),
+                "sha": "b" * 40,
+            })
+        raise AssertionError(f"Unexpected publisher request: {request.get_method()} {request.full_url}")
+
+    monkeypatch.setenv("G64_REPOSITORY_EXPORT_TOKEN", "test-token")
+    monkeypatch.setenv("G64_REPOSITORY_EXPORT_REPOSITORY", "Mawilis/legal-doc-system")
+    monkeypatch.setenv("G64_REPOSITORY_EXPORT_BASE_BRANCH", "main")
+    monkeypatch.setenv("G64_REPOSITORY_EXPORT_BRANCH", "g64-evidence/test")
+    monkeypatch.setattr(
+        "tools.eos.legal_operations.service.g64_repository_evidence_publisher.urlopen",
+        fake_urlopen,
+    )
+    result = publish_repository_evidence(record_id=RECORD_ID, manifest_bytes=expected)
+    assert result["status"] == "ALREADY_PUBLISHED"
+    assert result["blob_sha"] == "b" * 40
+    assert not any(method == "PUT" for method, _url in calls)
+
+
+def test_publisher_rejects_divergent_existing_manifest_without_overwrite(monkeypatch):
+    import base64
+
+    expected = manifest()
+    divergent = expected + b" "
+    def fake_urlopen(request, timeout):
+        if request.get_method() == "GET" and request.full_url.endswith("/git/ref/heads/g64-evidence/test"):
+            return Response(200, {"object": {"sha": "a" * 40}})
+        if request.get_method() == "GET" and "/contents/encryption-evidence/g64-ratification-workspaces/" in request.full_url:
+            return Response(200, {"content": base64.b64encode(divergent).decode("ascii"), "sha": "b" * 40})
+        raise AssertionError(f"Unexpected publisher request: {request.get_method()} {request.full_url}")
+
+    monkeypatch.setenv("G64_REPOSITORY_EXPORT_TOKEN", "test-token")
+    monkeypatch.setenv("G64_REPOSITORY_EXPORT_REPOSITORY", "Mawilis/legal-doc-system")
+    monkeypatch.setenv("G64_REPOSITORY_EXPORT_BASE_BRANCH", "main")
+    monkeypatch.setenv("G64_REPOSITORY_EXPORT_BRANCH", "g64-evidence/test")
+    monkeypatch.setattr(
+        "tools.eos.legal_operations.service.g64_repository_evidence_publisher.urlopen",
+        fake_urlopen,
+    )
+    with pytest.raises(G64RepositoryPublishError, match="G64_REPOSITORY_IMMUTABLE_ARTIFACT_CONFLICT"):
+        publish_repository_evidence(record_id=RECORD_ID, manifest_bytes=expected)
