@@ -128,6 +128,59 @@ class G64IndependentVerification:
 
 
 @dataclass(frozen=True, slots=True)
+class G64SecondApprovalPolicyDecision:
+    """Evidence-backed determination of whether a second approval is mandatory."""
+
+    policy_decision_id: str
+    tenant_id: str
+    institution_id: str
+    record_id: str
+    record_sha3_512_fingerprint: str
+    determined_by_principal_id: str
+    independently_verified_by_principal_id: str
+    determined_at: datetime
+    second_approval_required: bool
+    policy_source: G64EvidenceReference
+    independent_verification_evidence: G64EvidenceReference
+
+    def __post_init__(self) -> None:
+        for name in (
+            "policy_decision_id", "tenant_id", "institution_id", "record_id",
+            "determined_by_principal_id", "independently_verified_by_principal_id",
+        ):
+            _token(name, getattr(self, name))
+        if self.determined_by_principal_id == self.independently_verified_by_principal_id:
+            raise G64WorkspaceEvidenceError("SECOND_APPROVAL_POLICY_VERIFIER_MUST_BE_INDEPENDENT")
+        if type(self.second_approval_required) is not bool:
+            raise G64WorkspaceEvidenceError("SECOND_APPROVAL_POLICY_RESULT_INVALID")
+        _fingerprint("record_fingerprint", self.record_sha3_512_fingerprint)
+        _moment("determined_at", self.determined_at)
+        if type(self.policy_source) is not G64EvidenceReference:
+            raise G64WorkspaceEvidenceError("SECOND_APPROVAL_POLICY_SOURCE_REQUIRED")
+        if type(self.independent_verification_evidence) is not G64EvidenceReference:
+            raise G64WorkspaceEvidenceError("SECOND_APPROVAL_POLICY_VERIFICATION_REQUIRED")
+
+    def to_document(self) -> dict[str, object]:
+        return {
+            "schema": "WILSY-G64-SECOND-APPROVAL-POLICY/V1",
+            "version": VERSION,
+            "policy_decision_id": self.policy_decision_id,
+            "tenant_id": self.tenant_id,
+            "institution_id": self.institution_id,
+            "record_id": self.record_id,
+            "record_sha3_512_fingerprint": self.record_sha3_512_fingerprint,
+            "determined_by_principal_id": self.determined_by_principal_id,
+            "independently_verified_by_principal_id": self.independently_verified_by_principal_id,
+            "determined_at": _moment("determined_at", self.determined_at).isoformat().replace("+00:00", "Z"),
+            "second_approval_required": self.second_approval_required,
+            "policy_source": self.policy_source.to_document(),
+            "independent_verification_evidence": self.independent_verification_evidence.to_document(),
+            "permits_operational_access": False,
+            "constitutes_ratification": False,
+        }
+
+
+@dataclass(frozen=True, slots=True)
 class G64SecondApproval:
     approval_id: str
     tenant_id: str
