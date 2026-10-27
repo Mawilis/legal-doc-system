@@ -28,7 +28,6 @@ from tools.eos.api.tenant_authorization_http import (
 from tools.eos.kernel.db import get_client, get_database
 from tools.eos.legal_operations.domain.g64_ratification_workspace_verification import (
     G64SecondApprovalPolicyDecision,
-    G64VerificationOutcome,
 )
 from tools.eos.legal_operations.domain.g64_ratification_workspace_evidence import (
     G64ClickAttestation,
@@ -654,7 +653,23 @@ def record_second_approval(record_id: str, body: SecondApprovalInput, idempotenc
                 verifier_id = verifier.get("reviewer_principal_id")
                 if verifier_id in {target.get("ratifier_principal_id"), context.identity.identity_id}:
                     raise HTTPException(status_code=403, detail="G64_SEPARATION_OF_DUTIES_VIOLATION")
-                event = _review_event(kind="SECOND_APPROVAL", event_id=event_id, tenant_id=context.tenant_id, institution_id=body.institution_id, record_id=record_id, fingerprint=body.record_sha3_512_fingerprint, actor_field="approver_principal_id", actor=context.identity.identity_id, outcome=body.outcome, rationale=body.rationale, evidence=body.evidence, now=now, extra={"verification_event_id": body.verification_event_id})
+                policy = next(
+                    (row.get("payload", {}) for row in events
+                     if row.get("event_id") == body.policy_decision_event_id),
+                    None,
+                )
+                if (
+                    not isinstance(policy, dict)
+                    or policy.get("event_type") != "SECOND_APPROVAL_POLICY"
+                    or policy.get("verification_event_id") != body.verification_event_id
+                    or policy.get("record_sha3_512_fingerprint") != body.record_sha3_512_fingerprint
+                ):
+                    raise HTTPException(status_code=409, detail="G64_SECOND_APPROVAL_POLICY_REQUIRED")
+                if policy.get("second_approval_required") is not True:
+                    raise HTTPException(status_code=409, detail="G64_SECOND_APPROVAL_NOT_REQUIRED_BY_POLICY")
+                if context.identity.identity_id == policy.get("determined_by_principal_id"):
+                    raise HTTPException(status_code=403, detail="G64_POLICY_DECIDER_CANNOT_SECOND_APPROVE")
+                event = _review_event(kind="SECOND_APPROVAL", event_id=event_id, tenant_id=context.tenant_id, institution_id=body.institution_id, record_id=record_id, fingerprint=body.record_sha3_512_fingerprint, actor_field="approver_principal_id", actor=context.identity.identity_id, outcome=body.outcome, rationale=body.rationale, evidence=body.evidence, now=now, extra={"verification_event_id": body.verification_event_id, "policy_decision_event_id": body.policy_decision_event_id})
                 saved = append_review_event(tenant_id=context.tenant_id, institution_id=body.institution_id, record_id=record_id, event_id=event_id, payload=event, collection=database[REVIEW_COLLECTION], session=session)
     except G64ReviewRegistryError as error:
         raise HTTPException(status_code=503, detail=error.code) from error
