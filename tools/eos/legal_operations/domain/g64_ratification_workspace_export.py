@@ -52,7 +52,12 @@ def build_repository_export_bytes(
         if type(verification) is not G64IndependentVerification:
             raise G64WorkspaceEvidenceError("EXPORT_VERIFICATION_INVALID")
         if (
-            verification.tenant_id != tenant_id
+            record.attestation is None
+            or record.state not in (
+                G64RecordState.ATTESTED_PENDING_VERIFICATION,
+                G64RecordState.VERIFIED_NON_AUTHORIZING,
+            )
+            or verification.tenant_id != tenant_id
             or verification.institution_id != record.institution_id
             or verification.record_id != record.record_id
             or verification.record_sha3_512_fingerprint != record_fingerprint
@@ -94,6 +99,9 @@ def build_repository_export_bytes(
             or second_approval.institution_id != record.institution_id
             or second_approval.record_id != record.record_id
             or second_approval.record_sha3_512_fingerprint != record_fingerprint
+            or second_approval.ratifier_principal_id != record.ratifier_principal_id
+            or verification is None
+            or second_approval.verifier_principal_id != verification.verifier_principal_id
             or second_approval_policy is None
             or not second_approval_policy.second_approval_required
             or second_approval.policy_decision_id != second_approval_policy.policy_decision_id
