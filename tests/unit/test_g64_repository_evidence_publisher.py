@@ -82,16 +82,20 @@ class Response:
 
 
 def test_publisher_creates_dedicated_branch_and_immutable_manifest(monkeypatch):
-    import base64
     import json
 
     calls = []
+    export_ref_reads = 0
 
     def fake_urlopen(request, timeout):
+        nonlocal export_ref_reads
         calls.append((request.get_method(), request.full_url, request.data, timeout))
         method, url = request.get_method(), request.full_url
         if method == "GET" and url.endswith("/git/ref/heads/g64-evidence/test"):
-            return Response(404, {"message": "not found"})
+            export_ref_reads += 1
+            if export_ref_reads == 1:
+                return Response(404, {"message": "not found"})
+            return Response(200, {"object": {"sha": "a" * 40}})
         if method == "GET" and url.endswith("/git/ref/heads/main"):
             return Response(200, {"object": {"sha": "a" * 40}})
         if method == "POST" and url.endswith("/git/refs"):
