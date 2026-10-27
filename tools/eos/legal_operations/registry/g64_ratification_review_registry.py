@@ -65,6 +65,17 @@ def ensure_indexes(collection: Any) -> None:
         )
 
 
+def _payload_digest(payload: Mapping[str, Any]) -> str:
+    try:
+        encoded = json.dumps(
+            dict(payload), sort_keys=True, separators=(",", ":"),
+            ensure_ascii=True, allow_nan=False,
+        ).encode("ascii")
+    except (TypeError, ValueError, UnicodeEncodeError) as error:
+        raise G64ReviewRegistryError("G64_REVIEW_PERSISTED_EVENT_INVALID") from error
+    return hashlib.sha3_512(encoded).hexdigest()
+
+
 def _replay_projection(payload: Mapping[str, Any]) -> dict[str, Any]:
     """Exclude server-generated event time so a retry remains idempotent."""
     return {key: value for key, value in payload.items() if key != "created_at"}
@@ -89,14 +100,7 @@ def append_review_event(
         raise G64ReviewRegistryError("G64_REVIEW_IDENTITY_INVALID")
     if not isinstance(payload, Mapping) or payload.get("event_id") != event_id:
         raise G64ReviewRegistryError("G64_REVIEW_PAYLOAD_INVALID")
-    try:
-        canonical = json.dumps(
-            dict(payload), sort_keys=True, separators=(",", ":"),
-            ensure_ascii=True, allow_nan=False,
-        ).encode("ascii")
-    except (TypeError, ValueError, UnicodeEncodeError) as error:
-        raise G64ReviewRegistryError("G64_REVIEW_PAYLOAD_INVALID") from error
-    digest = hashlib.sha3_512(canonical).hexdigest()
+    digest = _payload_digest(payload)
     key = {
         "tenant_id": tenant_id,
         "institution_id": institution_id,
@@ -116,10 +120,7 @@ def append_review_event(
                 or existing.get("record_id") != record_id
                 or existing.get("event_id") != event_id
                 or not isinstance(previous, dict)
-                or existing.get("payload_sha3_512") != hashlib.sha3_512(
-                    json.dumps(previous, sort_keys=True, separators=(",", ":"),
-                               ensure_ascii=True, allow_nan=False).encode("ascii")
-                ).hexdigest()
+                or existing.get("payload_sha3_512") != _payload_digest(previous)
                 or _replay_projection(previous) != _replay_projection(payload)
             ):
                 raise G64ReviewRegistryError("G64_REVIEW_IMMUTABLE_EVENT_CONFLICT")
