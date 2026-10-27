@@ -121,19 +121,19 @@ def main() -> int:
     if _port_open(CLIENT_PORT):
         print(f"[WILSY-DEV-STACK] client port {CLIENT_PORT} is already occupied; not starting duplicate Vite", flush=True)
     else:
-        client = _start(
+        _start(
             ["npm", "run", "dev", "--prefix", "client", "--", "--host", HOST,
              "--port", str(CLIENT_PORT), "--strictPort"],
             "Vite client",
         )
-        while True:
-            for child in CHILDREN:
-                code = child.poll()
-                if code is not None:
-                    print(f"[WILSY-DEV-STACK] child exited code={code}; stopping stack", file=sys.stderr)
-                    _stop_children()
-            time.sleep(0.5)
-    return 0
+
+    while True:
+        for child in CHILDREN:
+            code = child.poll()
+            if code is not None:
+                print(f"[WILSY-DEV-STACK] child exited code={code}; stopping stack", file=sys.stderr)
+                _stop_children()
+        time.sleep(0.5)
 
 
 if __name__ == "__main__":
