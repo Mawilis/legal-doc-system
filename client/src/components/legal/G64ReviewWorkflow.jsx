@@ -22,6 +22,8 @@ export default function G64ReviewWorkflow({ institutionId, recordId, recordFinge
   const [statusText, setStatusText] = useState('');
   const [error, setError] = useState('');
   const [busy, setBusy] = useState(false);
+  const [verificationIdempotencyKey, setVerificationIdempotencyKey] = useState('');
+  const [approvalIdempotencyKey, setApprovalIdempotencyKey] = useState('');
 
   useEffect(() => {
     if (recordId) setSelectedRecord(recordId);
@@ -54,6 +56,8 @@ export default function G64ReviewWorkflow({ institutionId, recordId, recordFinge
     setError('');
     setStatusText('');
     try {
+      const key = verificationIdempotencyKey || `g64-verification-${window.crypto?.randomUUID?.() || Date.now().toString(36)}`;
+      setVerificationIdempotencyKey(key);
       const { data } = await api.post(
         `/legal-operations/g64/ratification-workspace/records/${encodeURIComponent(selectedRecord)}/independent-verification`,
         {
@@ -67,8 +71,9 @@ export default function G64ReviewWorkflow({ institutionId, recordId, recordFinge
           rationale,
           evidence: [{ locator: evidenceLocator, sha3_512_fingerprint: evidenceFingerprint }],
         },
-        { headers: { 'Idempotency-Key': `g64-verification-${window.crypto?.randomUUID?.() || Date.now().toString(36)}` } }
+        { headers: { 'Idempotency-Key': key } }
       );
+      setVerificationIdempotencyKey('');
       setStatusText(`Verification event saved: ${data.review_event.event_id}. This is an evidence attestation, not external certification.`);
       await refreshEvents();
     } catch (cause) {
@@ -84,6 +89,8 @@ export default function G64ReviewWorkflow({ institutionId, recordId, recordFinge
     setError('');
     setStatusText('');
     try {
+      const key = approvalIdempotencyKey || `g64-second-approval-${window.crypto?.randomUUID?.() || Date.now().toString(36)}`;
+      setApprovalIdempotencyKey(key);
       const { data } = await api.post(
         `/legal-operations/g64/ratification-workspace/records/${encodeURIComponent(selectedRecord)}/second-approval`,
         {
@@ -95,8 +102,9 @@ export default function G64ReviewWorkflow({ institutionId, recordId, recordFinge
           rationale: approvalRationale,
           evidence: [{ locator: approvalEvidenceLocator, sha3_512_fingerprint: approvalEvidenceFingerprint }],
         },
-        { headers: { 'Idempotency-Key': `g64-second-approval-${window.crypto?.randomUUID?.() || Date.now().toString(36)}` } }
+        { headers: { 'Idempotency-Key': key } }
       );
+      setApprovalIdempotencyKey('');
       setStatusText(`Second-approval event saved: ${data.review_event.event_id}. Ratification remains incomplete.`);
       await refreshEvents();
     } catch (cause) {
