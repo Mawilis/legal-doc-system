@@ -1,6 +1,6 @@
 #!/bin/bash
 # ============================================================================
-# WILSY OS 2050 - PRODUCTION DEPLOYMENT SCRIPT
+# WILSY OS - PYTHON EOS PRODUCTION DEPLOYMENT SCRIPT
 # ============================================================================
 
 set -e
@@ -33,10 +33,8 @@ check_status "Environment validation"
 
 # Step 2: Run tests
 echo -e "\n🧪 Step 2: Running test suite..."
-cd server
-npm test
-check_status "Test suite"
-cd ..
+./.venv/bin/python -m pytest -q tests/unit/test_artifact_pdf_router.py
+check_status "Python EOS PDF route certification"
 
 # Step 3: Build Docker images
 echo -e "\n🐳 Step 3: Building Docker images..."
@@ -60,7 +58,7 @@ check_status "Docker Compose deployment"
 # Step 6: Health check
 echo -e "\n🏥 Step 6: Running health checks..."
 sleep 10
-curl -f http://localhost:3000/health > /dev/null 2>&1
+curl -f http://localhost:9095/ > /dev/null 2>&1
 check_status "Health check"
 
 # Step 7: Verify metrics
@@ -81,7 +79,6 @@ echo "Build Version: ${BUILD_VERSION}"
 echo "Deployed at: $(date)"
 echo ""
 echo "Services:"
-echo "  - API: http://localhost:3000"
-echo "  - Metrics: http://localhost:9090"
-echo "  - Investor Portal: http://localhost:9096"
+echo "  - Python EOS API: http://localhost:9095"
+echo "  - Metrics and Investor Portal remain disabled until their Python EOS contracts are certified."
 echo ""
