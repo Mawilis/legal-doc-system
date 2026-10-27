@@ -29,7 +29,8 @@ def test_render_artifact_pdf_returns_pdf_and_hashes_without_claiming_source_veri
     assert pdf.startswith(b"%PDF-")
     assert b"%%EOF" in pdf
     assert len(evidence["request_digest"]) == 128
-    assert len(evidence["integrity_digest"]) == 128
+    assert len(evidence["render_context_digest"]) == 128
+    assert evidence["pdf_digest"] == __import__("hashlib").sha3_512(pdf).hexdigest()
     assert evidence["artifact_type"] == "generic-artifact"
 
 
@@ -47,7 +48,8 @@ def test_pdf_route_requires_authenticated_identity_and_returns_presentation_head
     assert response.headers["x-artifact-proof-status"] == "SOURCE_UNVERIFIED"
     assert response.headers["cache-control"] == "no-store"
     assert len(response.headers["x-request-proof"]) == 128
-    assert len(response.headers["x-wilsy-server-integrity-digest"]) == 128
+    assert len(response.headers["x-wilsy-render-context-digest"]) == 128
+    assert len(response.headers["x-wilsy-pdf-sha3-512"]) == 128
 
 
 def test_pdf_route_rejects_caller_selected_tenant_context() -> None:
