@@ -92,11 +92,15 @@ def _request(
 
 
 def publish_repository_evidence(
-    *, record_id: str, manifest_bytes: bytes
+    *, record_id: str, manifest_bytes: bytes, artifact_id: str | None = None
 ) -> dict[str, str]:
     """Create one immutable JSON artifact on a dedicated branch, never the base branch."""
     if not isinstance(record_id, str) or _ID.fullmatch(record_id) is None:
         raise G64RepositoryPublishError("G64_REPOSITORY_RECORD_ID_INVALID")
+    if artifact_id is not None and (
+        not isinstance(artifact_id, str) or _ARTIFACT_ID.fullmatch(artifact_id) is None
+    ):
+        raise G64RepositoryPublishError("G64_REPOSITORY_ARTIFACT_ID_INVALID")
     if not isinstance(manifest_bytes, bytes) or not manifest_bytes:
         raise G64RepositoryPublishError("G64_REPOSITORY_MANIFEST_INVALID")
     try:
@@ -160,7 +164,11 @@ def publish_repository_evidence(
     if status_code != 200 or not isinstance(ref, dict):
         raise G64RepositoryPublishError("G64_REPOSITORY_EXPORT_BRANCH_UNAVAILABLE")
 
-    path = f"encryption-evidence/g64-ratification-workspaces/{record_id}.json"
+    path = (
+        f"encryption-evidence/g64-ratification-workspaces/{record_id}/{artifact_id}.json"
+        if artifact_id is not None
+        else f"encryption-evidence/g64-ratification-workspaces/{record_id}.json"
+    )
     contents_url = f"{base_url}/contents/{quote(path, safe='/')}"
     branch_query = f"?ref={quote(export_branch, safe='')}"
     file_status, existing = _request(
