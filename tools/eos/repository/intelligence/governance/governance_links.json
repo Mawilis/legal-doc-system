@@ -7,7 +7,7 @@
       "compliance_tier": "SOVEREIGN_AUDIT",
       "requires_attestation": true,
       "security_boundary": "LEVEL_5_SOVEREIGN",
-      "created_at": "2026-07-26T21:03:50.039669+00:00"
+      "created_at": "2026-10-23T11:39:03.655538+00:00"
     },
     "CAP-KNOWLEDGE-SYNCHRONIZATION": {
       "capability_id": "CAP-KNOWLEDGE-SYNCHRONIZATION",
@@ -15,7 +15,7 @@
       "compliance_tier": "HIGH_SECURITY",
       "requires_attestation": true,
       "security_boundary": "LEVEL_4_ENTERPRISE",
-      "created_at": "2026-07-26T21:03:50.039672+00:00"
+      "created_at": "2026-10-23T11:39:03.655544+00:00"
     },
     "CAP-PREDICTION-RISK-ASSESSMENT": {
       "capability_id": "CAP-PREDICTION-RISK-ASSESSMENT",
@@ -23,7 +23,7 @@
       "compliance_tier": "HIGH_SECURITY",
       "requires_attestation": true,
       "security_boundary": "LEVEL_4_ENTERPRISE",
-      "created_at": "2026-07-26T21:03:50.039674+00:00"
+      "created_at": "2026-10-23T11:39:03.655546+00:00"
     },
     "CAP-GOVERNANCE-COMPLIANCE": {
       "capability_id": "CAP-GOVERNANCE-COMPLIANCE",
@@ -31,7 +31,7 @@
       "compliance_tier": "SOVEREIGN_AUDIT",
       "requires_attestation": true,
       "security_boundary": "LEVEL_5_SOVEREIGN",
-      "created_at": "2026-07-26T21:03:50.039676+00:00"
+      "created_at": "2026-10-23T11:39:03.655548+00:00"
     },
     "CAP-CONTROL-ROOM-DISPATCH": {
       "capability_id": "CAP-CONTROL-ROOM-DISPATCH",
@@ -39,7 +39,7 @@
       "compliance_tier": "SOVEREIGN_AUDIT",
       "requires_attestation": true,
       "security_boundary": "LEVEL_5_SOVEREIGN",
-      "created_at": "2026-07-26T21:03:50.039677+00:00"
+      "created_at": "2026-10-23T11:39:03.655549+00:00"
     }
   },
   "audit_summary": {

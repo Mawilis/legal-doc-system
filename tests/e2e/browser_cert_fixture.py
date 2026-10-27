@@ -170,7 +170,7 @@ def _uri() -> str:
     if (
         parsed.scheme != "mongodb"
         or parsed.hostname not in {"127.0.0.1", "localhost"}
-        or parsed.port not in {27017, 27027}
+        or parsed.port != 27017
         or parsed.username is not None
         or parsed.password is not None
         or query.get("replicaSet") != ["wilsyVendorCertRS"]
