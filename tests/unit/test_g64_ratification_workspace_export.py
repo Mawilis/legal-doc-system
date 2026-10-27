@@ -41,9 +41,7 @@ def test_export_is_deterministic_and_explicitly_non_authorizing():
     assert manifest["permits_operational_access"] is False
     assert manifest["constitutes_ratification"] is False
     assert manifest["repository_commit_is_signature"] is False
-    assert manifest["record"]["unresolved_decision_ids"] if "unresolved_decision_ids" in manifest["record"] else (
-        manifest["record"]["decisions"][0]["disposition"] is None
-    )
+    assert manifest["record"]["decisions"][0]["disposition"] is None
     digest = manifest.pop("manifest_sha3_512")
     canonical = json.dumps(
         manifest, sort_keys=True, separators=(",", ":"), ensure_ascii=True, allow_nan=False,
