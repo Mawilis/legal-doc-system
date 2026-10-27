@@ -11,10 +11,12 @@ FAIL-CLOSED POSTURE: Unmigrated PDF generation stays explicitly routed to its cu
 END OF WILSY OS SOVEREIGN ARTIFACT
 """
 
+import json
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
 VITE_CONFIG = ROOT / "client" / "vite.config.js"
+POLICY = ROOT / "tools" / "eos" / "governance" / "production_surface_policy.json"
 SOURCE = VITE_CONFIG.read_text(encoding="utf-8")
 
 
@@ -60,3 +62,17 @@ def test_only_uncertified_pdf_route_remains_on_node_and_api_fallback_is_eos() ->
     assert "target: 'http://localhost:9095'" in api_block
     assert "PYTHON_EOS_UNAVAILABLE" in api_block
     assert "target: 'http://localhost:4000'" not in api_block
+
+def test_obsolete_root_orchestrator_generators_are_removed_from_runtime_surface() -> None:
+    policy = json.loads(POLICY.read_text(encoding="utf-8"))
+
+    for path in ("orchestrator.js", "build_orchestrator.js", "update_orchestrator.js"):
+        assert not (ROOT / path).exists()
+        assert path not in policy["allowed_top_level"]
+
+    # The production Node server/renderer remains explicitly retained only
+    # because the enterprise PDF route has not yet passed Python parity.
+    retained = {rule["pattern"] for rule in policy["rules"] if rule["class"] == "RETAIN"}
+    assert "server/server.js" in retained
+    assert "server/controllers/businessArtifactPdfController.js" in retained
+    assert "server/services/artifacts/wilsyEnterprisePdfRenderer.js" in retained
