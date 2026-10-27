@@ -114,7 +114,7 @@ def test_click_attestation_fingerprint_survives_lifecycle_transition_without_cir
     attestation = G64ClickAttestation(
         event_id="attestation-event-001",
         authenticated_principal_id="principal-pending-verification",
-        authenticated_session_reference="session-ref-001",
+        authenticated_request_reference="session-ref-001",
         attested_at=NOW,
         record_sha3_512_fingerprint=initial.evidence_fingerprint(),
         attestation_text_version="g64-attestation-copy-v1",
