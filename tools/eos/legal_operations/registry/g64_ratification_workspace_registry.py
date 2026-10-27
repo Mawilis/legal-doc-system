@@ -38,7 +38,7 @@ from tools.eos.legal_operations.domain.g64_ratification_workspace_evidence impor
 VERSION: Final[str] = "v1.0.0-G64-IMMUTABLE-WORKSPACE-REGISTRY"
 COLLECTION: Final[str] = "g64_ratification_workspace_evidence"
 RECORD_SCHEMA: Final[str] = "WILSY-G64-RATIFICATION-WORKSPACE-REGISTRY/V1"
-RECORD_ID_INDEX: Final[str] = "g64_workspace_institution_record_unique"
+RECORD_ID_INDEX: Final[str] = "g64_workspace_tenant_institution_record_unique"
 MAX_HISTORY: Final[int] = 500
 WRITE_CONCERN: Final[WriteConcern] = WriteConcern(w="majority", j=True)
 READ_CONCERN: Final[ReadConcern] = ReadConcern("majority")
@@ -102,8 +102,11 @@ def _collection(collection: Any) -> Any:
         return collection
 
 
-def _key(record: G64RatificationWorkspaceRecord) -> dict[str, str]:
+def _key(*, tenant_id: str, record: G64RatificationWorkspaceRecord) -> dict[str, str]:
+    if not isinstance(tenant_id, str) or not tenant_id.strip() or tenant_id != tenant_id.strip():
+        raise G64RegistryInputError("G64_REGISTRY_TENANT_ID_INVALID")
     return {
+        "tenant_id": tenant_id,
         "institution_id": record.institution_id,
         "record_id": record.record_id,
     }
@@ -148,7 +151,7 @@ def ensure_indexes(collection: Any) -> None:
     target = _collection(collection)
     try:
         target.create_index(
-            [("institution_id", ASCENDING), ("record_id", ASCENDING)],
+            [("tenant_id", ASCENDING), ("institution_id", ASCENDING), ("record_id", ASCENDING)],
             unique=True,
             name=RECORD_ID_INDEX,
         )
@@ -157,15 +160,15 @@ def ensure_indexes(collection: Any) -> None:
 
 
 def append_record(
-    *, record: G64RatificationWorkspaceRecord, collection: Any, session: Any
+    *, tenant_id: str, record: G64RatificationWorkspaceRecord, collection: Any, session: Any
 ) -> G64RatificationWorkspaceRecord:
     """Append or exactly replay an immutable evidence record inside caller transaction."""
     _active_transaction(session)
     if type(record) is not G64RatificationWorkspaceRecord:
         raise G64RegistryInputError("G64_REGISTRY_RECORD_INVALID")
     target = _collection(collection)
-    envelope = _envelope(record)
-    query = _key(record)
+    envelope = {"tenant_id": tenant_id, **_envelope(record)}
+    query = _key(tenant_id=tenant_id, record=record)
     try:
         existing = target.find_one(query, session=session)
         if existing is not None:
@@ -185,18 +188,20 @@ def append_record(
 
 
 def read_record(
-    *, institution_id: str, record_id: str, collection: Any, session: Any
+    *, tenant_id: str, institution_id: str, record_id: str, collection: Any, session: Any
 ) -> Mapping[str, Any]:
     """Read one exact institution-scoped envelope inside caller transaction."""
     _active_transaction(session)
-    if not isinstance(institution_id, str) or not institution_id.strip():
+    if not isinstance(tenant_id, str) or not tenant_id.strip() or tenant_id != tenant_id.strip():
+        raise G64RegistryInputError("G64_REGISTRY_TENANT_ID_INVALID")
+    if not isinstance(institution_id, str) or not institution_id.strip() or institution_id != institution_id.strip():
         raise G64RegistryInputError("G64_REGISTRY_INSTITUTION_ID_INVALID")
     if not isinstance(record_id, str) or not record_id.strip():
         raise G64RegistryInputError("G64_REGISTRY_RECORD_ID_INVALID")
     target = _collection(collection)
     try:
         envelope = target.find_one(
-            {"institution_id": institution_id, "record_id": record_id},
+            {"tenant_id": tenant_id, "institution_id": institution_id, "record_id": record_id},
             session=session,
         )
     except PyMongoError as error:
@@ -208,6 +213,7 @@ def read_record(
         or envelope.get("schema") != RECORD_SCHEMA
         or envelope.get("version") != VERSION
         or not isinstance(envelope.get("payload"), dict)
+        or envelope.get("tenant_id") != tenant_id
         or envelope.get("institution_id") != institution_id
         or envelope.get("record_id") != record_id
     ):
@@ -232,7 +238,7 @@ def read_record(
 
 
 def list_history(
-    *, institution_id: str, collection: Any, session: Any, limit: int = 100
+    *, tenant_id: str, institution_id: str, collection: Any, session: Any, limit: int = 100
 ) -> tuple[Mapping[str, Any], ...]:
     """Return bounded institution-scoped immutable history in deterministic order."""
     _active_transaction(session)
@@ -243,7 +249,7 @@ def list_history(
     target = _collection(collection)
     try:
         cursor = target.find(
-            {"institution_id": institution_id}, session=session
+            {"tenant_id": tenant_id, "institution_id": institution_id}, session=session
         ).sort([("payload.created_at", ASCENDING), ("record_id", ASCENDING)]).limit(limit + 1)
         rows = tuple(cursor)
     except PyMongoError as error:
@@ -254,6 +260,7 @@ def list_history(
         if (
             not isinstance(row, dict)
             or row.get("schema") != RECORD_SCHEMA
+            or row.get("tenant_id") != tenant_id
             or row.get("institution_id") != institution_id
             or row.get("version") != VERSION
             or not isinstance(row.get("payload"), dict)
@@ -265,6 +272,7 @@ def list_history(
             row.get("evidence_sha3_512") != recomputed
             or payload.get("evidence_sha3_512") != recomputed
             or payload.get("institution_id") != institution_id
+            or row.get("tenant_id") != tenant_id
             or payload.get("record_id") != row.get("record_id")
             or payload.get("permits_operational_access") is not False
             or payload.get("permits_reviewer_authorization") is not False
