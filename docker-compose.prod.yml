@@ -19,15 +19,8 @@ services:
     environment:
       - PORT=9095
       - API_PORT=9095
-      - MONGODB_URI=${MONGODB_URI}
       - REDIS_HOST=redis
       - REDIS_PORT=6379
-      - REDIS_PASSWORD=${REDIS_PASSWORD}
-      - JWT_SECRET=${JWT_SECRET}
-      - JWT_REFRESH_SECRET=${JWT_REFRESH_SECRET}
-      - ADMIN_EMAIL=${ADMIN_EMAIL}
-      - ADMIN_PASSWORD=${ADMIN_PASSWORD}
-      - FORENSIC_HMAC_KEY=${FORENSIC_HMAC_KEY}
     env_file:
       - ./server/.env.production
     ports:
