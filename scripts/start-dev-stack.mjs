@@ -1,10 +1,10 @@
 /* eslint-disable */
 /**
  * ╔════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════╗
- * ║ WILSY OS - LOCAL SOVEREIGN RUNTIME ORCHESTRATOR [V1.0.0-LOGIN-AVAILABILITY]                                                           ║
- * ║ [NODE BFF | EOS KERNEL | VITE CLIENT | READINESS GATE | GRACEFUL SHUTDOWN]                                                           ║
+ * ║ WILSY OS - LOCAL SOVEREIGN RUNTIME ORCHESTRATOR [V1.1.0-PYTHON-EOS-ONLY]                                                           ║
+ * ║ [PYTHON EOS | VITE CLIENT | READINESS GATE | GRACEFUL SHUTDOWN]                                                           ║
  * ╠════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════╣
- * ║ VERSION: 1.0.0-LOGIN-AVAILABILITY | DEVELOPMENT RUNTIME CONTRACT                                                                      ║
+ * ║ VERSION: 1.1.0-PYTHON-EOS-ONLY | DEVELOPMENT RUNTIME CONTRACT                                                                      ║
  * ║ ABSOLUTE PATH: /Users/wilsonkhanyezi/legal-doc-system/scripts/start-dev-stack.mjs                                                     ║
  * ╠════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════╣
  * ║ EPITOME: Starts and verifies every local service required by Sovereign Login before exposing the Vite client.                          ║
@@ -12,7 +12,7 @@
  * ╠════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════╣
  * ║ 👥 COLLABORATION & SOVEREIGN SIGN-OFF:                                                                                                 ║
  * ║ • Wilson Khanyezi (Founder/CEO) – Mandated deterministic local login availability.                                                    ║
- * ║ • AI Engineering (Codex) – ARCHITECTED readiness-gated kernel, BFF, and client orchestration.                                         ║
+ * ║ • AI Engineering (Codex) – ARCHITECTED readiness-gated kernel, EOS API, and client orchestration.                                         ║
  * ╚════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════╝
  */
 
@@ -21,7 +21,6 @@ import { createConnection } from 'node:net';
 
 const LOOPBACK = '127.0.0.1';
 const KERNEL_URL = `http://${LOOPBACK}:9095/kernel`;
-const BFF_URL = `http://${LOOPBACK}:4000/api/kernel`;
 const CLIENT_URL = `http://${LOOPBACK}:5173`;
 const CLIENT_PORT = 5173;
 const READY_TIMEOUT_MS = 30_000;
@@ -33,7 +32,7 @@ const managedProcesses = [];
  * @description Pauses readiness polling without blocking child-process output.
  * @param {number} milliseconds - Delay duration.
  * @returns {Promise<void>} Resolution after the requested duration.
- * @collaboration Supports deterministic health verification for the EOS kernel and Node BFF.
+ * @collaboration Supports deterministic health verification for the EOS kernel and Node EOS API.
  */
 function sleep(milliseconds) {
   return new Promise((resolve) => setTimeout(resolve, milliseconds));
@@ -128,7 +127,7 @@ function startManagedProcess(command, args, label) {
  * @param {string[]} config.args - Start arguments.
  * @returns {Promise<void>} Resolves only after the health contract succeeds.
  * @throws {Error} When the service does not become healthy within the fixed readiness window.
- * @collaboration Enforces the Node BFF to EOS kernel dependency before the login screen is exposed.
+ * @collaboration Enforces the Node EOS API to EOS kernel dependency before the login screen is exposed.
  */
 async function ensureService({ name, url, command, args }) {
   if (await isOperational(url)) {
@@ -184,12 +183,7 @@ try {
     command: 'python3',
     args: ['-m', 'uvicorn', 'tools.eos.api.server:app', '--host', LOOPBACK, '--port', '9095'],
   });
-  await ensureService({
-    name: 'Node API BFF',
-    url: BFF_URL,
-    command: 'npm',
-    args: ['run', 'server:start'],
-  });
+
   if (await isPortListening(CLIENT_PORT)) {
     console.info(`[WILSY-DEV-STACK] Reusing healthy Vite client: ${CLIENT_URL}`);
     console.info('[WILSY-DEV-STACK] Stack attached to this terminal. Press Ctrl+C to stop only services launched by this command.');
