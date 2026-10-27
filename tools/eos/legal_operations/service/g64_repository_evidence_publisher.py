@@ -39,7 +39,10 @@ def _configuration() -> tuple[str, str, str, str]:
         raise G64RepositoryPublishError("G64_REPOSITORY_PUBLISHER_NOT_CONFIGURED")
     if (
         not base_branch
-        or not export_branch.startswith("g64-evidence/")
+        or not re.fullmatch(r"g64-evidence/[A-Za-z0-9._/-]{1,100}", export_branch)
+        or ".." in export_branch
+        or "//" in export_branch
+        or export_branch.endswith("/")
         or export_branch == base_branch
         or any(value.strip() != value or not value for value in (base_branch, export_branch))
     ):
@@ -96,6 +99,10 @@ def publish_repository_evidence(
         or manifest.get("ratification_complete") is not False
         or manifest.get("permits_operational_access") is not False
         or manifest.get("constitutes_ratification") is not False
+        or manifest.get("institution_binding_status")
+        != "UNVERIFIED_PENDING_INDEPENDENT_VERIFICATION"
+        or manifest.get("ratifier_authority_status")
+        != "UNVERIFIED_PENDING_INDEPENDENT_VERIFICATION"
     ):
         raise G64RepositoryPublishError("G64_REPOSITORY_MANIFEST_AUTHORITY_INVALID")
     claimed_digest = manifest.get("manifest_sha3_512")
@@ -160,7 +167,7 @@ def publish_repository_evidence(
                 "repository": repository,
                 "branch": export_branch,
                 "path": path,
-                "commit_sha": str(existing.get("sha", "")),
+                "blob_sha": str(existing.get("sha", "")),
             }
         raise G64RepositoryPublishError("G64_REPOSITORY_IMMUTABLE_ARTIFACT_CONFLICT")
     if file_status != 404:
