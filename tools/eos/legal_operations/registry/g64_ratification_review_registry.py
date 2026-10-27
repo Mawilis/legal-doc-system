@@ -109,7 +109,17 @@ def append_review_event(
         if existing is not None:
             previous = existing.get("payload")
             if (
-                not isinstance(previous, dict)
+                existing.get("schema") != SCHEMA
+                or existing.get("version") != VERSION
+                or existing.get("tenant_id") != tenant_id
+                or existing.get("institution_id") != institution_id
+                or existing.get("record_id") != record_id
+                or existing.get("event_id") != event_id
+                or not isinstance(previous, dict)
+                or existing.get("payload_sha3_512") != hashlib.sha3_512(
+                    json.dumps(previous, sort_keys=True, separators=(",", ":"),
+                               ensure_ascii=True, allow_nan=False).encode("ascii")
+                ).hexdigest()
                 or _replay_projection(previous) != _replay_projection(payload)
             ):
                 raise G64ReviewRegistryError("G64_REVIEW_IMMUTABLE_EVENT_CONFLICT")
@@ -148,7 +158,19 @@ def list_review_events(
     output = []
     for row in rows:
         payload = row.get("payload")
-        if not isinstance(payload, dict):
+        if (
+            row.get("schema") != SCHEMA
+            or row.get("version") != VERSION
+            or row.get("tenant_id") != tenant_id
+            or row.get("institution_id") != institution_id
+            or row.get("record_id") != record_id
+            or not isinstance(row.get("event_id"), str)
+            or not isinstance(payload, dict)
+            or payload.get("event_id") != row.get("event_id")
+            or payload.get("tenant_id") != tenant_id
+            or payload.get("institution_id") != institution_id
+            or payload.get("record_id") != record_id
+        ):
             raise G64ReviewRegistryError("G64_REVIEW_PERSISTED_EVENT_INVALID")
         try:
             canonical = json.dumps(
@@ -157,7 +179,8 @@ def list_review_events(
             ).encode("ascii")
         except (TypeError, ValueError, UnicodeEncodeError) as error:
             raise G64ReviewRegistryError("G64_REVIEW_PERSISTED_EVENT_INVALID") from error
-        if hashlib.sha3_512(canonical).hexdigest() != row.get("payload_sha3_512"):
+        digest = hashlib.sha3_512(canonical).hexdigest()
+        if digest != row.get("payload_sha3_512"):
             raise G64ReviewRegistryError("G64_REVIEW_PERSISTED_EVENT_INVALID")
         output.append(row)
     return tuple(output)
