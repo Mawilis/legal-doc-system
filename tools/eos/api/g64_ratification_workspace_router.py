@@ -680,6 +680,8 @@ def record_second_approval(record_id: str, body: SecondApprovalInput, idempotenc
                     raise HTTPException(status_code=403, detail="G64_POLICY_DECIDER_CANNOT_SECOND_APPROVE")
                 event = _review_event(kind="SECOND_APPROVAL", event_id=event_id, tenant_id=context.tenant_id, institution_id=body.institution_id, record_id=record_id, fingerprint=body.record_sha3_512_fingerprint, actor_field="approver_principal_id", actor=context.identity.identity_id, outcome=body.outcome, rationale=body.rationale, evidence=body.evidence, now=now, extra={"verification_event_id": body.verification_event_id, "policy_decision_event_id": body.policy_decision_event_id})
                 saved = append_review_event(tenant_id=context.tenant_id, institution_id=body.institution_id, record_id=record_id, event_id=event_id, payload=event, collection=database[REVIEW_COLLECTION], session=session)
+    except G64RegistryError as error:
+        _raise_registry_http(error)
     except G64ReviewRegistryError as error:
         raise HTTPException(status_code=503, detail=error.code) from error
     return {"review_event": saved["payload"], "second_approval_status": "RECORDED_NON_AUTHORIZING", "ratification_complete": False, "permits_operational_access": False}
@@ -693,6 +695,8 @@ def read_review_events(record_id: str, institution_id: str = Query(min_length=1,
             with session.start_transaction():
                 _review_target(tenant_id=context.tenant_id, institution_id=institution_id, record_id=record_id, session=session, collection=database[COLLECTION])
                 events = list_review_events(tenant_id=context.tenant_id, institution_id=institution_id, record_id=record_id, collection=database[REVIEW_COLLECTION], session=session, limit=limit)
+    except G64RegistryError as error:
+        _raise_registry_http(error)
     except G64ReviewRegistryError as error:
         raise HTTPException(status_code=503, detail=error.code) from error
     return {"review_events": [item["payload"] for item in events], "ratification_complete": False, "permits_operational_access": False}
