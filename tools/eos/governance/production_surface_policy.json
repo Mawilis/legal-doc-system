@@ -322,10 +322,6 @@
     },
     {
       "class": "MIGRATION_ONLY",
-      "pattern": "server/Dockerfile"
-    },
-    {
-      "class": "MIGRATION_ONLY",
       "pattern": "docker-compose.yml"
     },
     {
