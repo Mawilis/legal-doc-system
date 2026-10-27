@@ -15,6 +15,7 @@ from tools.eos.legal_operations.domain.g64_ratification_workspace_evidence impor
 from tools.eos.legal_operations.registry.g64_ratification_workspace_registry import (
     G64RegistryConflictError,
     G64RegistryCorruptRecordError,
+    G64RegistryError,
     G64RegistryTransactionRequiredError,
     append_record,
     ensure_indexes,
@@ -223,7 +224,7 @@ def test_read_cannot_cross_tenant_even_for_same_institution_and_record_id():
     collection = Collection()
     item = record()
     append_record(tenant_id="tenant-001", record=item, collection=collection, session=Session())
-    with pytest.raises(Exception) as captured:
+    with pytest.raises(G64RegistryError) as captured:
         read_record(
             tenant_id="tenant-002", institution_id="wilsy-pty-ltd",
             record_id="g64-record-001", collection=collection, session=Session(),
