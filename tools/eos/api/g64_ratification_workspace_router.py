@@ -42,6 +42,10 @@ from tools.eos.legal_operations.service.g64_repository_evidence_publisher import
     G64RepositoryPublishError,
     publish_repository_evidence,
 )
+from tools.eos.legal_operations.registry.g64_ratification_review_registry import (
+    COLLECTION as REVIEW_COLLECTION, G64ReviewRegistryError,
+    append_review_event, list_review_events,
+)
 from tools.eos.legal_operations.registry.g64_ratification_workspace_registry import (
     COLLECTION,
     G64RegistryConflictError,
@@ -65,6 +69,12 @@ _WRITE_AUTHORITY = RequireTenantAuthorization(
 )
 _READ_AUTHORITY = RequireTenantAuthorization(
     _READ_PERMISSION, "legal_operations:g64_ratification_workspace:read"
+)
+_VERIFY_AUTHORITY = RequireTenantAuthorization(
+    "legal_operations:g64_ratification_workspace:verify", "legal_operations:g64_ratification_workspace:verify"
+)
+_SECOND_APPROVAL_AUTHORITY = RequireTenantAuthorization(
+    "legal_operations:g64_ratification_workspace:second_approve", "legal_operations:g64_ratification_workspace:second_approve"
 )
 _IDEMPOTENCY_KEY: Final[re.Pattern[str]] = re.compile(
     r"[A-Za-z0-9][A-Za-z0-9._:/-]{0,255}\Z"
@@ -95,6 +105,30 @@ class WorkspaceAttestationInput(BaseModel):
     institution_id: str
     decisions: list[DecisionInput] = Field(min_length=10, max_length=10)
     supporting_evidence: list[EvidenceReferenceInput] = Field(default_factory=list)
+
+class IndependentVerificationInput(BaseModel):
+    model_config = ConfigDict(extra="forbid", frozen=True)
+    institution_id: str
+    record_id: str
+    record_sha3_512_fingerprint: str
+    outcome: str
+    institution_binding_verified: bool
+    ratifier_authority_verified: bool
+    evidence_integrity_verified: bool
+    rationale: str = Field(min_length=20, max_length=4000)
+    evidence: list[EvidenceReferenceInput] = Field(min_length=1, max_length=20)
+
+
+class SecondApprovalInput(BaseModel):
+    model_config = ConfigDict(extra="forbid", frozen=True)
+    institution_id: str
+    record_id: str
+    record_sha3_512_fingerprint: str
+    verification_event_id: str
+    outcome: str
+    rationale: str = Field(min_length=20, max_length=4000)
+    evidence: list[EvidenceReferenceInput] = Field(min_length=1, max_length=20)
+
 
 
 def _canonical_contract() -> tuple[str, str, str]:
@@ -456,3 +490,106 @@ def read_workspace_history(
 
 
 # END OF WILSY OS SOVEREIGN ARTIFACT
+
+def _review_target(*, tenant_id: str, institution_id: str, record_id: str, session: object, collection: object) -> dict[str, object]:
+    stored = read_record(tenant_id=tenant_id, institution_id=institution_id, record_id=record_id, collection=collection, session=session)
+    payload = stored.get("payload")
+    if not isinstance(payload, dict):
+        raise HTTPException(status_code=503, detail="G64_PERSISTED_RECORD_INVALID")
+    try:
+        record = _hydrate_record_for_export(payload)
+    except (KeyError, TypeError, ValueError) as error:
+        raise HTTPException(status_code=503, detail="G64_PERSISTED_RECORD_INVALID") from error
+    if record.evidence_fingerprint() != stored.get("evidence_sha3_512"):
+        raise HTTPException(status_code=503, detail="G64_PERSISTED_RECORD_INTEGRITY_FAILURE")
+    return payload
+
+
+def _review_event_id(kind: str, tenant_id: str, record_id: str, key: str) -> str:
+    digest = hashlib.sha3_512(f"{kind}|{tenant_id}|{record_id}|{key}".encode()).hexdigest()
+    return f"{kind.lower()}-{digest[:40]}"
+
+
+def _review_event(*, kind: str, event_id: str, tenant_id: str, institution_id: str, record_id: str, fingerprint: str, actor_field: str, actor: str, outcome: str, rationale: str, evidence: list[EvidenceReferenceInput], now: datetime, extra: dict[str, object] | None = None) -> dict[str, object]:
+    return {
+        "event_id": event_id, "event_type": kind, "tenant_id": tenant_id,
+        "institution_id": institution_id, "record_id": record_id,
+        "record_sha3_512_fingerprint": fingerprint, actor_field: actor,
+        "outcome": outcome, "rationale": rationale,
+        "evidence": [item.model_dump() for item in evidence],
+        "created_at": now.isoformat(), "authority_effect": "NONE",
+        "ratification_complete": False, "permits_operational_access": False,
+        **(extra or {}),
+    }
+
+
+@router.post("/records/{record_id}/independent-verification", status_code=status.HTTP_201_CREATED)
+def record_independent_verification(record_id: str, body: IndependentVerificationInput, idempotency_key: str = Header(alias="Idempotency-Key"), context: TenantAuthorizationContext = Depends(_VERIFY_AUTHORITY)) -> dict[str, object]:
+    if body.record_id != record_id or _IDEMPOTENCY_KEY.fullmatch(idempotency_key) is None:
+        raise HTTPException(status_code=422, detail="G64_REVIEW_REQUEST_IDENTITY_INVALID")
+    if body.outcome not in {"PASS", "FAIL"}:
+        raise HTTPException(status_code=422, detail="G64_VERIFICATION_OUTCOME_INVALID")
+    if body.outcome == "PASS" and not (body.institution_binding_verified and body.ratifier_authority_verified and body.evidence_integrity_verified):
+        raise HTTPException(status_code=422, detail="G64_VERIFICATION_PASS_REQUIRES_ALL_CHECKS")
+    client, database = _storage()
+    event_id = _review_event_id("VERIFICATION", context.tenant_id, record_id, idempotency_key)
+    now = datetime.now(timezone.utc).replace(microsecond=0)
+    try:
+        with client.start_session() as session:
+            with session.start_transaction():
+                target = _review_target(tenant_id=context.tenant_id, institution_id=body.institution_id, record_id=record_id, session=session, collection=database[COLLECTION])
+                if target.get("ratifier_principal_id") == context.identity.identity_id:
+                    raise HTTPException(status_code=403, detail="G64_VERIFIER_MUST_BE_INDEPENDENT")
+                if target.get("evidence_sha3_512") != body.record_sha3_512_fingerprint:
+                    raise HTTPException(status_code=409, detail="G64_REVIEW_RECORD_FINGERPRINT_MISMATCH")
+                event = _review_event(kind="INDEPENDENT_VERIFICATION", event_id=event_id, tenant_id=context.tenant_id, institution_id=body.institution_id, record_id=record_id, fingerprint=body.record_sha3_512_fingerprint, actor_field="reviewer_principal_id", actor=context.identity.identity_id, outcome=body.outcome, rationale=body.rationale, evidence=body.evidence, now=now, extra={"institution_binding_verified": body.institution_binding_verified, "ratifier_authority_verified": body.ratifier_authority_verified, "evidence_integrity_verified": body.evidence_integrity_verified})
+                saved = append_review_event(tenant_id=context.tenant_id, institution_id=body.institution_id, record_id=record_id, event_id=event_id, payload=event, collection=database[REVIEW_COLLECTION], session=session)
+    except G64ReviewRegistryError as error:
+        raise HTTPException(status_code=503, detail=error.code) from error
+    return {"review_event": saved["payload"], "second_approval_required": True, "authority_effect": "NONE", "ratification_complete": False, "permits_operational_access": False}
+
+
+@router.post("/records/{record_id}/second-approval", status_code=status.HTTP_201_CREATED)
+def record_second_approval(record_id: str, body: SecondApprovalInput, idempotency_key: str = Header(alias="Idempotency-Key"), context: TenantAuthorizationContext = Depends(_SECOND_APPROVAL_AUTHORITY)) -> dict[str, object]:
+    if body.record_id != record_id or _IDEMPOTENCY_KEY.fullmatch(idempotency_key) is None:
+        raise HTTPException(status_code=422, detail="G64_REVIEW_REQUEST_IDENTITY_INVALID")
+    if body.outcome not in {"APPROVE", "REJECT"}:
+        raise HTTPException(status_code=422, detail="G64_SECOND_APPROVAL_OUTCOME_INVALID")
+    client, database = _storage()
+    event_id = _review_event_id("SECOND-APPROVAL", context.tenant_id, record_id, idempotency_key)
+    now = datetime.now(timezone.utc).replace(microsecond=0)
+    try:
+        with client.start_session() as session:
+            with session.start_transaction():
+                target = _review_target(tenant_id=context.tenant_id, institution_id=body.institution_id, record_id=record_id, session=session, collection=database[COLLECTION])
+                if target.get("ratifier_principal_id") == context.identity.identity_id:
+                    raise HTTPException(status_code=403, detail="G64_SECOND_APPROVER_MUST_BE_INDEPENDENT")
+                if target.get("evidence_sha3_512") != body.record_sha3_512_fingerprint:
+                    raise HTTPException(status_code=409, detail="G64_REVIEW_RECORD_FINGERPRINT_MISMATCH")
+                events = list_review_events(tenant_id=context.tenant_id, institution_id=body.institution_id, record_id=record_id, collection=database[REVIEW_COLLECTION], session=session, limit=100)
+                verifier = next((row.get("payload", {}) for row in events if row.get("event_id") == body.verification_event_id), None)
+                if not isinstance(verifier, dict) or verifier.get("event_type") != "INDEPENDENT_VERIFICATION" or verifier.get("outcome") != "PASS":
+                    raise HTTPException(status_code=409, detail="G64_INDEPENDENT_VERIFICATION_PASS_REQUIRED")
+                if verifier.get("record_sha3_512_fingerprint") != body.record_sha3_512_fingerprint:
+                    raise HTTPException(status_code=409, detail="G64_REVIEW_RECORD_FINGERPRINT_MISMATCH")
+                verifier_id = verifier.get("reviewer_principal_id")
+                if verifier_id in {target.get("ratifier_principal_id"), context.identity.identity_id}:
+                    raise HTTPException(status_code=403, detail="G64_SEPARATION_OF_DUTIES_VIOLATION")
+                event = _review_event(kind="SECOND_APPROVAL", event_id=event_id, tenant_id=context.tenant_id, institution_id=body.institution_id, record_id=record_id, fingerprint=body.record_sha3_512_fingerprint, actor_field="approver_principal_id", actor=context.identity.identity_id, outcome=body.outcome, rationale=body.rationale, evidence=body.evidence, now=now, extra={"verification_event_id": body.verification_event_id})
+                saved = append_review_event(tenant_id=context.tenant_id, institution_id=body.institution_id, record_id=record_id, event_id=event_id, payload=event, collection=database[REVIEW_COLLECTION], session=session)
+    except G64ReviewRegistryError as error:
+        raise HTTPException(status_code=503, detail=error.code) from error
+    return {"review_event": saved["payload"], "second_approval_status": "RECORDED_NON_AUTHORIZING", "ratification_complete": False, "permits_operational_access": False}
+
+
+@router.get("/records/{record_id}/review-events")
+def read_review_events(record_id: str, institution_id: str = Query(min_length=1, max_length=256), limit: int = Query(default=50, ge=1, le=100), context: TenantAuthorizationContext = Depends(_READ_AUTHORITY)) -> dict[str, object]:
+    client, database = _storage()
+    try:
+        with client.start_session() as session:
+            with session.start_transaction():
+                _review_target(tenant_id=context.tenant_id, institution_id=institution_id, record_id=record_id, session=session, collection=database[COLLECTION])
+                events = list_review_events(tenant_id=context.tenant_id, institution_id=institution_id, record_id=record_id, collection=database[REVIEW_COLLECTION], session=session, limit=limit)
+    except G64ReviewRegistryError as error:
+        raise HTTPException(status_code=503, detail=error.code) from error
+    return {"review_events": [item["payload"] for item in events], "ratification_complete": False, "permits_operational_access": False}
