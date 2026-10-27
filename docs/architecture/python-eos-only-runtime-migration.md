@@ -36,4 +36,5 @@ The Python PDF route requires the canonical authenticated identity dependency, c
 - Prove route parity against the prior BFF contract, especially billing PDF consumers and alias paths.
 - Verify deployment manifest, image digest, runtime configuration, workload identity, and live readiness. Both production deployment entrypoints require `WILSY_APPROVED_PRODUCTION_DEPLOY=1`; this PR does not set it or execute deployment.
 - The legacy Investor Portal hostname returns 503 until its own Python EOS route contract is implemented and certified; it is not proxied to the generic API.
+- Root `docker-compose.yml` and `nginx.conf` are classified `MIGRATION_ONLY`; the old compose contains non-canonical services and unsafe default credentials. The active deployment path is `docker-compose.prod.yml` only after secret injection is reviewed, or the canonical Kubernetes EOS manifest.
 - Do not delete remaining Node migration/reference files until their non-runtime consumers and tests are proven absent.
