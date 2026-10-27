@@ -1,8 +1,12 @@
-896dd2992fb53bd77c511d0388a37436657dccda025c868e489b84508113c55f  server/assets/logo/wilsy.png
-314be7c8487d74bdab2d2bdf871f15357726a55ac28ed487764b184d058e4a14  server/assets/logo/wilsy.jpeg
-213be9a7f69b7dc79ff3b793642b13b5293859afbe46c02c0808531c5e456315  docs/verification/COR14.1.pdf
-daa78125e86b79e8fac9f00c009a7f6766b33a6ff66a6a46a60fbdd6210dbdd1  docs/verification/COR14.1A.pdf
-f6e1017d87fdd93349c0361ab56d8132a2cd2b078bda1192a24784a0744d081c  docs/verification/COR14.3 (1).pdf
+# WILSY OS G64 - Evidence Integrity Manifest
+# Generated: 2026-10-27T10:48:26Z
+# CIPC + Info Regulator + Professional Ratification + Logo
+003812621299f4d16f5f609609be58bcb299fb560334e0d566901b0556110fc3  docs/ratification/WILSY-OS-G64-Ratification-LETTERHEAD-PROFESSIONAL.pdf
 100116d88fa4f3a57234af553b9bc757815d69401890350bdc3c46ee24a8635d  docs/verification/COR14.3.pdf
+213be9a7f69b7dc79ff3b793642b13b5293859afbe46c02c0808531c5e456315  docs/verification/COR14.1.pdf
+896dd2992fb53bd77c511d0388a37436657dccda025c868e489b84508113c55f  server/assets/logo/wilsy.png
 b9451f1bc119445176a1d87065629fd55d40ee8e57fc9ef9a2a3574ab0851d40  docs/verification/Information.pdf
+ce6bae7d5cb0e5e31d943a465289477ed3dffb7e97fcf76d8b3c161cc0bb48b2  docs/ratification/WILSY-OS-G64-Dynamic-Ratification-Record-PROFESSIONAL.docx
+ce6bae7d5cb0e5e31d943a465289477ed3dffb7e97fcf76d8b3c161cc0bb48b2  docs/ratification/WILSY_OS_G64_Ratification.docx
+daa78125e86b79e8fac9f00c009a7f6766b33a6ff66a6a46a60fbdd6210dbdd1  docs/verification/COR14.1A.pdf
 fd5a49014904189bc0df7894035e12f765b2f2085ebad6f0e73d2fcfe767ecd1  docs/verification/WELCOME.pdf
