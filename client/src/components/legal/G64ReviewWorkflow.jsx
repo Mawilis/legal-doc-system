@@ -1,6 +1,17 @@
 import React, { useCallback, useEffect, useState } from 'react';
 import api from '../../services/api';
 
+const VERIFICATION_CHECKS = [
+  ['RATIFIER_AUTHORITY', 'Ratifier authority independently verified'],
+  ['CONTRACT_VERSION_AND_FINGERPRINT', 'Canonical contract version and fingerprint verified'],
+  ['DECISION_REGISTER_COMPLETENESS', 'D01-D10 decision register completeness verified'],
+  ['DECISION_EVIDENCE_AND_SCOPE', 'Decision evidence and explicit scope verified'],
+  ['EFFECTIVE_REVIEW_AND_REVOCATION', 'Effective time, review time, and revocation controls verified'],
+  ['INSTITUTION_BINDING', 'Institution binding independently verified'],
+  ['TENANT_BINDING', 'Authenticated tenant binding independently verified'],
+  ['SECOND_APPROVAL_POLICY', 'Second-approval policy source independently verified'],
+];
+
 const FINGERPRINT = /^[0-9a-f]{128}$/;
 
 export default function G64ReviewWorkflow({ institutionId, recordId, recordFingerprint }) {
@@ -9,9 +20,9 @@ export default function G64ReviewWorkflow({ institutionId, recordId, recordFinge
   const [evidenceLocator, setEvidenceLocator] = useState('');
   const [evidenceFingerprint, setEvidenceFingerprint] = useState('');
   const [rationale, setRationale] = useState('');
-  const [bindingVerified, setBindingVerified] = useState(false);
-  const [authorityVerified, setAuthorityVerified] = useState(false);
-  const [integrityVerified, setIntegrityVerified] = useState(false);
+  const [verificationChecks, setVerificationChecks] = useState(() => VERIFICATION_CHECKS.map(([check]) => ({
+    check, passed: false, rationale: '',
+  })));
   const [verificationOutcome, setVerificationOutcome] = useState('FAIL');
   const [verificationEvents, setVerificationEvents] = useState([]);
   const [approvalOutcome, setApprovalOutcome] = useState('REJECT');
@@ -73,11 +84,13 @@ export default function G64ReviewWorkflow({ institutionId, recordId, recordFinge
           record_id: selectedRecord,
           record_sha3_512_fingerprint: fingerprint,
           outcome: verificationOutcome,
-          institution_binding_verified: bindingVerified,
-          ratifier_authority_verified: authorityVerified,
-          evidence_integrity_verified: integrityVerified,
           rationale,
-          evidence: [{ locator: evidenceLocator, sha3_512_fingerprint: evidenceFingerprint }],
+          findings: verificationChecks.map((item) => ({
+            check: item.check,
+            passed: item.passed,
+            rationale: item.rationale.trim() || rationale.trim(),
+            evidence: [{ locator: evidenceLocator, sha3_512_fingerprint: evidenceFingerprint }],
+          })),
         },
         { headers: { 'Idempotency-Key': key } }
       );
@@ -198,10 +211,29 @@ export default function G64ReviewWorkflow({ institutionId, recordId, recordFinge
             <option value="PASS">PASS / all checks independently confirmed</option>
           </select>
         </label>
-        <div className="space-y-2 text-sm">
-          <label className="flex gap-2"><input type="checkbox" checked={bindingVerified} onChange={(event) => setBindingVerified(event.target.checked)} /> Institution binding independently verified</label>
-          <label className="flex gap-2"><input type="checkbox" checked={authorityVerified} onChange={(event) => setAuthorityVerified(event.target.checked)} /> Ratifier authority independently verified</label>
-          <label className="flex gap-2"><input type="checkbox" checked={integrityVerified} onChange={(event) => setIntegrityVerified(event.target.checked)} /> Source evidence integrity independently verified</label>
+        <div className="space-y-3">
+          <h4 className="text-sm font-medium">Complete all eight verification checks</h4>
+          {verificationChecks.map((item, index) => (
+            <div key={item.check} className="space-y-2 rounded-md border border-slate-700 p-3">
+              <label className="flex gap-2 text-sm">
+                <input
+                  type="checkbox"
+                  checked={item.passed}
+                  onChange={(event) => setVerificationChecks((current) => current.map((check, position) => position === index ? { ...check, passed: event.target.checked } : check))}
+                />
+                {VERIFICATION_CHECKS[index][1]}
+              </label>
+              <input
+                value={item.rationale}
+                onChange={(event) => setVerificationChecks((current) => current.map((check, position) => position === index ? { ...check, rationale: event.target.value } : check))}
+                minLength={20}
+                maxLength={2000}
+                required
+                placeholder="Rationale for this specific check"
+                className="w-full rounded-lg border border-slate-600 bg-slate-950 px-3 py-2 text-sm"
+              />
+            </div>
+          ))}
         </div>
         <label className="block text-sm">Verification rationale
           <textarea value={rationale} onChange={(event) => setRationale(event.target.value)} minLength={20} maxLength={4000} required rows={3} className="mt-1 w-full rounded-lg border border-slate-600 bg-slate-950 px-3 py-2" />
@@ -214,7 +246,7 @@ export default function G64ReviewWorkflow({ institutionId, recordId, recordFinge
             <input value={evidenceFingerprint} onChange={(event) => setEvidenceFingerprint(event.target.value.trim().toLowerCase())} required minLength={128} maxLength={128} className="mt-1 w-full rounded-lg border border-slate-600 bg-slate-950 px-3 py-2 font-mono text-xs" />
           </label>
         </div>
-        <button type="submit" disabled={!valid || rationale.trim().length < 20 || busy} className="rounded-lg bg-violet-300 px-4 py-2 font-semibold text-slate-950 disabled:opacity-40">
+        <button type="submit" disabled={!valid || rationale.trim().length < 20 || verificationChecks.some((item) => item.rationale.trim().length < 20) || (verificationOutcome === 'PASS' && verificationChecks.some((item) => !item.passed)) || (verificationOutcome === 'FAIL' && verificationChecks.every((item) => item.passed)) || busy} className="rounded-lg bg-violet-300 px-4 py-2 font-semibold text-slate-950 disabled:opacity-40">
           Save independent verification evidence
         </button>
       </form>
