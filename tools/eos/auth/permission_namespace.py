@@ -1,5 +1,5 @@
 """TITLE: WILSY OS Permission Namespace Semantic Canon.
-VERSION: v1.54.0-R59-P9-REASSIGNMENT-IAM-INTEGRATION
+VERSION: v1.55.0-G64-VERIFIER-POLICY-PERMISSIONS
 AUTHORITY: Immutable permission vocabulary and scope metadata only.
 EPITOME: Extends the canonical TENANT and SYSTEM permission vocabulary with dedicated
 inbound-collection, merchant-configuration, provider-policy, WILSY AI,
@@ -13,6 +13,7 @@ ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/tools/eos/auth/p
 COLLABORATION / OWNERSHIP: Wilson Khanyezi / Wilsy Core Engineering.
 CERTIFICATION / UPDATE DATE: 2026-10-21
 CHANGELOG:
+    2026-10-27 v1.55.0-G64-VERIFIER-POLICY-PERMISSIONS adds dedicated tenant permission vocabulary for G64 independent verification, evidence-backed second-approval policy determination, and second approval. No role assignments or ratification authority are created.
     2026-10-21 v1.54.0-R59-P9-REASSIGNMENT-IAM-INTEGRATION
     Canonical own-tenant operational issuer permission metadata; not possession or matter access.
     2026-10-21 v1.52.0-P47-R92-WORK-ASSIGNMENT-PERMISSION
@@ -238,7 +239,7 @@ from types import MappingProxyType
 from typing import Final
 
 
-VERSION = "v1.54.0-R59-P9-REASSIGNMENT-IAM-INTEGRATION"
+VERSION = "v1.55.0-G64-VERIFIER-POLICY-PERMISSIONS"
 
 
 class PermissionDisposition(StrEnum):
@@ -704,6 +705,32 @@ _PERMISSIONS: Final = MappingProxyType(
             "legal_operations:instruction:write", "TENANT", "TENANT",
             "operate own-tenant legal instructions", tenant=True,
         ),
+        "legal_operations:g64_ratification_workspace:read": _meta(
+            "legal_operations:g64_ratification_workspace:read",
+            "TENANT",
+            "TENANT",
+            "read own-tenant G64 ratification workspace evidence only",
+            tenant=True,
+        ),
+        "legal_operations:g64_ratification_workspace:write": _meta(
+            "legal_operations:g64_ratification_workspace:write",
+            "TENANT",
+            "TENANT",
+            "record own-tenant G64 ratification workspace evidence only",
+            tenant=True,
+        ),
+        "legal_operations:g64_ratification_workspace:verify": _meta(
+            "legal_operations:g64_ratification_workspace:verify", "TENANT", "TENANT",
+            "record independent G64 verification evidence only", tenant=True,
+        ),
+        "legal_operations:g64_ratification_workspace:second_approve": _meta(
+            "legal_operations:g64_ratification_workspace:second_approve", "TENANT", "TENANT",
+            "record independent second-approval evidence for G64 only", tenant=True,
+        ),
+        "legal_operations:g64_ratification_workspace:policy": _meta(
+            "legal_operations:g64_ratification_workspace:policy", "TENANT", "TENANT",
+            "record evidence-backed G64 second-approval policy determination only", tenant=True,
+        ),
         "legal_operations:matter_deadline:read": _meta(
             "legal_operations:matter_deadline:read", "TENANT", "TENANT",
             "read own-tenant legal matter deadlines", tenant=True,
@@ -1164,7 +1191,7 @@ __all__ = [
 ]
 
 # ARTIFACT: tools/eos/auth/permission_namespace.py
-# VERSION: v1.54.0-R59-P9-REASSIGNMENT-IAM-INTEGRATION
+# VERSION: v1.55.0-G64-VERIFIER-POLICY-PERMISSIONS
 # AUTHORITY BOUNDARY: canonical permission vocabulary semantics only; no possession or authorization authority
 # TENANT POSTURE: conflict-review, client-matter, client-visibility and other tenant permissions require separately proven exact ACTIVE tenant membership
 # FAIL-CLOSED POSTURE: unknown, malformed, ambiguous and legacy values never manufacture authority

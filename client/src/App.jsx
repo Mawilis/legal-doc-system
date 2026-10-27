@@ -56,6 +56,7 @@ import SovereignDashboardController from './components/sovereign/SovereignDashbo
 import SovereignMfaPortal from './components/auth/SovereignMfaPortal.jsx';
 import Sovereign_TenantManager from './components/sovereign/Sovereign_TenantManager.jsx';
 import LedgerExplorer from './components/billing/LedgerExplorer.jsx';
+import G64RatificationWorkspace from './components/legal/G64RatificationWorkspace.jsx';
 import api from './services/api';
 import WilsyOSIntelligenceDockRuntime from './components/intelligence/WilsyOSIntelligenceDockRuntime.jsx';
 
@@ -253,6 +254,13 @@ const SovereignRouter = () => {
               tenantId={currentTenant?.id || currentTenant?.tenantId || user?.tenantId || null}
               userRole={user?.role || user?.userRole || 'viewer'}
             />
+          </ErrorBoundary>
+        ) : <Navigate to={unauthenticatedEntryPath} replace />
+      } />
+      <Route path="/g64-ratification-workspace" element={
+        isAuthenticated && user ? (
+          <ErrorBoundary>
+            <LegalAcceptanceBoundary runtime={<G64RatificationWorkspace />} />
           </ErrorBoundary>
         ) : <Navigate to={unauthenticatedEntryPath} replace />
       } />

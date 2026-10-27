@@ -90,6 +90,15 @@ from .subscription_router import subscription_router
 from .tenant_router import tenant_router
 from .legal_operations_router import router as legal_operations_router
 from .legal_operations_command_router import router as legal_operations_command_router
+from .g64_ratification_workspace_router import router as g64_ratification_workspace_router
+from tools.eos.legal_operations.registry.g64_ratification_review_registry import (
+    COLLECTION as G64_REVIEW_EVIDENCE_COLLECTION,
+    ensure_indexes as ensure_g64_review_evidence_indexes,
+)
+from tools.eos.legal_operations.registry.g64_ratification_workspace_registry import (
+    COLLECTION as G64_WORKSPACE_EVIDENCE_COLLECTION,
+    ensure_indexes as ensure_g64_workspace_evidence_indexes,
+)
 from .authorization_role_revocation_router import router as authorization_role_revocation_router
 from .legal_operations_billing_read_router import router as legal_operations_billing_read_router
 from .legal_matter_deadline_router import router as legal_matter_deadline_router
@@ -395,6 +404,12 @@ class WilsyAPIServer:
             if database is None:
                 return
             if database is not None:
+                ensure_g64_workspace_evidence_indexes(
+                    database[G64_WORKSPACE_EVIDENCE_COLLECTION]
+                )
+                ensure_g64_review_evidence_indexes(
+                    database[G64_REVIEW_EVIDENCE_COLLECTION]
+                )
                 TenantAuthorizationDecisionEvidenceRegistry(
                     database[
                         TENANT_AUTHORIZATION_DECISION_EVIDENCE_COLLECTION
@@ -528,6 +543,7 @@ class WilsyAPIServer:
         app.include_router(router)
         app.include_router(tenant_router)
         app.include_router(legal_operations_router, prefix="/api")
+        app.include_router(g64_ratification_workspace_router, prefix="/api")
         app.include_router(legal_operations_command_router, prefix="/api")
         app.include_router(authorization_role_revocation_router, prefix="/api")
         app.include_router(legal_operations_billing_read_router, prefix="/api")
