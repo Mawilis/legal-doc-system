@@ -519,6 +519,42 @@ def read_workspace_history(
 
 # END OF WILSY OS SOVEREIGN ARTIFACT
 
+def _publish_review_evidence(*, tenant_id: str, event: dict[str, object]) -> dict[str, str]:
+    """Publish a separate immutable repository artifact for each review event."""
+    body: dict[str, object] = {
+        "schema": "WILSY-G64-REVIEW-REPOSITORY-EXPORT/V1",
+        "version": "v1.0.0-G64-REVIEW-REPOSITORY-EXPORT",
+        "tenant_id": tenant_id,
+        "institution_id": event["institution_id"],
+        "institution_binding_status": "UNVERIFIED_PENDING_INDEPENDENT_VERIFICATION",
+        "ratifier_authority_status": "UNVERIFIED_PENDING_INDEPENDENT_VERIFICATION",
+        "record_id": event["record_id"],
+        "record_sha3_512_fingerprint": event["record_sha3_512_fingerprint"],
+        "event_id": event["event_id"],
+        "event_type": event["event_type"],
+        "event": event,
+        "ratification_complete": False,
+        "permits_operational_access": False,
+        "constitutes_ratification": False,
+        "repository_commit_is_signature": False,
+        "authority_effect": "NONE",
+    }
+    encoded = json.dumps(body, sort_keys=True, separators=(",", ":"), ensure_ascii=True, allow_nan=False).encode("ascii")
+    manifest = {**body, "manifest_sha3_512": hashlib.sha3_512(encoded).hexdigest()}
+    manifest_bytes = json.dumps(manifest, sort_keys=True, separators=(",", ":"), ensure_ascii=True, allow_nan=False).encode("ascii")
+    try:
+        return publish_repository_evidence(
+            record_id=str(event["record_id"]),
+            artifact_id=str(event["event_id"]),
+            manifest_bytes=manifest_bytes,
+        )
+    except G64RepositoryPublishError as error:
+        return {
+            "status": "PENDING_CONFIGURATION" if error.code == "G64_REPOSITORY_PUBLISHER_NOT_CONFIGURED" else "PENDING_RETRY",
+            "error_code": error.code,
+        }
+
+
 def _review_target(*, tenant_id: str, institution_id: str, record_id: str, session: object, collection: object) -> dict[str, object]:
     stored = read_record(tenant_id=tenant_id, institution_id=institution_id, record_id=record_id, collection=collection, session=session)
     payload = stored.get("payload")
@@ -552,7 +588,7 @@ def _review_event(*, kind: str, event_id: str, tenant_id: str, institution_id: s
 
 
 @router.post("/records/{record_id}/independent-verification", status_code=status.HTTP_201_CREATED)
-def record_independent_verification(record_id: str, body: IndependentVerificationInput, idempotency_key: str = Header(alias="Idempotency-Key"), context: TenantAuthorizationContext = Depends(_VERIFY_AUTHORITY)) -> dict[str, object]:
+def record_independent_verification(record_id: str, body: IndependentVerificationInput, response: Response, idempotency_key: str = Header(alias="Idempotency-Key"), context: TenantAuthorizationContext = Depends(_VERIFY_AUTHORITY)) -> dict[str, object]:
     if body.record_id != record_id or _IDEMPOTENCY_KEY.fullmatch(idempotency_key) is None:
         raise HTTPException(status_code=422, detail="G64_REVIEW_REQUEST_IDENTITY_INVALID")
     client, database = _storage()
@@ -603,11 +639,21 @@ def record_independent_verification(record_id: str, body: IndependentVerificatio
         raise HTTPException(status_code=503, detail=error.code) from error
     except G64WorkspaceEvidenceError as error:
         raise HTTPException(status_code=422, detail=str(error)) from error
-    return {"review_event": saved["payload"], "second_approval_required": True, "authority_effect": "NONE", "ratification_complete": False, "permits_operational_access": False}
+    repository = _publish_review_evidence(tenant_id=context.tenant_id, event=saved["payload"])
+    if repository["status"].startswith("PENDING"):
+        response.status_code = status.HTTP_202_ACCEPTED
+    return {
+        "review_event": saved["payload"], "application_persistence_status": "PERSISTED",
+        "repository_persistence_status": repository["status"],
+        "repository_commit": repository if repository["status"] in {"PUBLISHED", "ALREADY_PUBLISHED"} else None,
+        "repository_persistence_error_code": repository.get("error_code"),
+        "second_approval_required": True, "authority_effect": "NONE",
+        "ratification_complete": False, "permits_operational_access": False,
+    }
 
 
 @router.post("/records/{record_id}/second-approval-policy", status_code=status.HTTP_201_CREATED)
-def record_second_approval_policy(record_id: str, body: SecondApprovalPolicyInput, idempotency_key: str = Header(alias="Idempotency-Key"), context: TenantAuthorizationContext = Depends(_POLICY_AUTHORITY)) -> dict[str, object]:
+def record_second_approval_policy(record_id: str, body: SecondApprovalPolicyInput, response: Response, idempotency_key: str = Header(alias="Idempotency-Key"), context: TenantAuthorizationContext = Depends(_POLICY_AUTHORITY)) -> dict[str, object]:
     """Persist an evidence-backed second-approval policy determination, never infer policy."""
     if body.record_id != record_id or _IDEMPOTENCY_KEY.fullmatch(idempotency_key) is None:
         raise HTTPException(status_code=422, detail="G64_REVIEW_REQUEST_IDENTITY_INVALID")
@@ -682,11 +728,21 @@ def record_second_approval_policy(record_id: str, body: SecondApprovalPolicyInpu
         raise HTTPException(status_code=503, detail=error.code) from error
     except G64WorkspaceEvidenceError as error:
         raise HTTPException(status_code=422, detail=str(error)) from error
-    return {"review_event": saved["payload"], "second_approval_required": body.second_approval_required, "ratification_complete": False, "permits_operational_access": False}
+    repository = _publish_review_evidence(tenant_id=context.tenant_id, event=saved["payload"])
+    if repository["status"].startswith("PENDING"):
+        response.status_code = status.HTTP_202_ACCEPTED
+    return {
+        "review_event": saved["payload"], "application_persistence_status": "PERSISTED",
+        "repository_persistence_status": repository["status"],
+        "repository_commit": repository if repository["status"] in {"PUBLISHED", "ALREADY_PUBLISHED"} else None,
+        "repository_persistence_error_code": repository.get("error_code"),
+        "second_approval_required": body.second_approval_required,
+        "ratification_complete": False, "permits_operational_access": False,
+    }
 
 
 @router.post("/records/{record_id}/second-approval", status_code=status.HTTP_201_CREATED)
-def record_second_approval(record_id: str, body: SecondApprovalInput, idempotency_key: str = Header(alias="Idempotency-Key"), context: TenantAuthorizationContext = Depends(_SECOND_APPROVAL_AUTHORITY)) -> dict[str, object]:
+def record_second_approval(record_id: str, body: SecondApprovalInput, response: Response, idempotency_key: str = Header(alias="Idempotency-Key"), context: TenantAuthorizationContext = Depends(_SECOND_APPROVAL_AUTHORITY)) -> dict[str, object]:
     if body.record_id != record_id or _IDEMPOTENCY_KEY.fullmatch(idempotency_key) is None:
         raise HTTPException(status_code=422, detail="G64_REVIEW_REQUEST_IDENTITY_INVALID")
     if body.outcome not in {"APPROVE", "REJECT"}:
@@ -738,7 +794,17 @@ def record_second_approval(record_id: str, body: SecondApprovalInput, idempotenc
         raise HTTPException(status_code=503, detail=error.code) from error
     except G64WorkspaceEvidenceError as error:
         raise HTTPException(status_code=422, detail=str(error)) from error
-    return {"review_event": saved["payload"], "second_approval_status": "RECORDED_NON_AUTHORIZING", "ratification_complete": False, "permits_operational_access": False}
+    repository = _publish_review_evidence(tenant_id=context.tenant_id, event=saved["payload"])
+    if repository["status"].startswith("PENDING"):
+        response.status_code = status.HTTP_202_ACCEPTED
+    return {
+        "review_event": saved["payload"], "application_persistence_status": "PERSISTED",
+        "repository_persistence_status": repository["status"],
+        "repository_commit": repository if repository["status"] in {"PUBLISHED", "ALREADY_PUBLISHED"} else None,
+        "repository_persistence_error_code": repository.get("error_code"),
+        "second_approval_status": "RECORDED_NON_AUTHORIZING",
+        "ratification_complete": False, "permits_operational_access": False,
+    }
 
 
 @router.get("/records/{record_id}/review-events")
