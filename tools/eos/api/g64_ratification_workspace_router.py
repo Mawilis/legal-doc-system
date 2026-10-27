@@ -528,7 +528,7 @@ def _review_target(*, tenant_id: str, institution_id: str, record_id: str, sessi
         record = _hydrate_record_for_export(payload)
     except (KeyError, TypeError, ValueError) as error:
         raise HTTPException(status_code=503, detail="G64_PERSISTED_RECORD_INVALID") from error
-    if record.evidence_fingerprint() != stored.get("evidence_sha3_512"):
+    if record.evidence_fingerprint() != payload.get("evidence_sha3_512"):
         raise HTTPException(status_code=503, detail="G64_PERSISTED_RECORD_INTEGRITY_FAILURE")
     return payload
 
