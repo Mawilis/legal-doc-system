@@ -160,7 +160,7 @@ function classifyStartupLine(label, line) {
     return null;
   }
   if (label === 'VITE') {
-    if (/Local:\s+http:\/\/127\.0\.0\.1:\d+/.test(text)) return 'LISTENING';
+    if (/Local:\s+https?:\/\/(?:127\.0\.0\.1|localhost|\[::1\]):\d+/.test(text)) return 'LISTENING';
     if (text.includes('ready in')) return 'READY';
     if (text.includes('failed to load config')) return 'CONFIG_LOAD_ERROR';
     if (text.includes('server restart failed')) return 'RESTART_ERROR';
@@ -266,10 +266,11 @@ function safeNetworkCode(error) {
   return SAFE_DIAGNOSTIC_CODE.test(candidate) ? candidate : 'NETWORK_ERROR';
 }
 
-async function waitFor(url, service, timeoutMs = 45_000) {
+async function waitFor(url, service, timeoutMs = 45_000, ownedProcess = null) {
   const deadline = Date.now() + timeoutMs;
   let lastStatus = 'UNREACHABLE';
   while (Date.now() < deadline) {
+    if (ownedProcess?.closed) throw new Error('BROWSER_CERT_' + service + '_PROCESS_EXITED_BEFORE_READY');
     try {
       const response = await fetch(url, { signal: AbortSignal.timeout(3_000) });
       if (response.ok) return response;
@@ -280,16 +281,6 @@ async function waitFor(url, service, timeoutMs = 45_000) {
     await delay(250);
   }
   throw new Error('BROWSER_CERT_SERVICE_TIMEOUT:' + service + ':' + lastStatus);
-}
-
-async function waitForOwnedPort(record, timeoutMs = 45_000) {
-  const deadline = Date.now() + timeoutMs;
-  while (Date.now() < deadline) {
-    if (record.closed) throw new Error('BROWSER_CERT_' + record.label + '_PROCESS_EXITED_BEFORE_LISTEN');
-    if (Number.isInteger(record.listeningPort)) return record.listeningPort;
-    await delay(100);
-  }
-  throw new Error('BROWSER_CERT_' + record.label + '_LISTEN_EVENT_TIMEOUT');
 }
 
 async function assertPortAvailable(port, service) {
@@ -544,11 +535,11 @@ try {
     { cwd: clientDirectory, stdio: ['ignore', 'pipe', 'pipe'] },
     'VITE',
   );
-  const viteListeningPort = await waitForOwnedPort(viteProcess);
+  await waitFor('http://127.0.0.1:' + vitePort + '/', 'VITE', 45_000, viteProcess);
+  const viteListeningPort = vitePort;
   if (viteListeningPort !== vitePort) {
     throw new Error('BROWSER_CERT_VITE_LISTEN_PORT_MISMATCH:' + viteListeningPort + ':' + vitePort);
   }
-  await waitFor('http://127.0.0.1:' + vitePort + '/', 'VITE');
   if (viteProcess.closed) throw new Error('BROWSER_CERT_VITE_EXITED_DURING_STARTUP');
 
   setPhase('browser_suite', 'playwright_authenticated_journeys');
