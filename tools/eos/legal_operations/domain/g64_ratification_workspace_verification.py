@@ -101,6 +101,8 @@ class G64IndependentVerification:
         if len(set(checks)) != len(checks):
             raise G64WorkspaceEvidenceError("VERIFICATION_CHECK_DUPLICATED")
         passed = all(item.passed for item in self.findings)
+        if self.outcome is G64VerificationOutcome.PASS and set(checks) != set(G64VerificationCheck):
+            raise G64WorkspaceEvidenceError("PASS_REQUIRES_COMPLETE_VERIFICATION_CHECKLIST")
         if self.outcome is G64VerificationOutcome.PASS and not passed:
             raise G64WorkspaceEvidenceError("PASS_REQUIRES_ALL_RECORDED_CHECKS_TO_PASS")
         if self.outcome is G64VerificationOutcome.FAIL and passed:
