@@ -8,6 +8,7 @@ FAIL-CLOSED: Requires an explicit token, repository, base branch and dedicated e
 from __future__ import annotations
 
 import base64
+import hashlib
 import json
 import os
 import re
@@ -97,6 +98,17 @@ def publish_repository_evidence(
         or manifest.get("constitutes_ratification") is not False
     ):
         raise G64RepositoryPublishError("G64_REPOSITORY_MANIFEST_AUTHORITY_INVALID")
+    claimed_digest = manifest.get("manifest_sha3_512")
+    unsigned = {key: value for key, value in manifest.items() if key != "manifest_sha3_512"}
+    canonical = json.dumps(
+        unsigned, sort_keys=True, separators=(",", ":"),
+        ensure_ascii=True, allow_nan=False,
+    ).encode("ascii")
+    if (
+        not isinstance(claimed_digest, str)
+        or claimed_digest != hashlib.sha3_512(canonical).hexdigest()
+    ):
+        raise G64RepositoryPublishError("G64_REPOSITORY_MANIFEST_FINGERPRINT_INVALID")
 
     token, repository, base_branch, export_branch = _configuration()
     encoded_repo = quote(repository, safe="/")
