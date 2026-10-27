@@ -243,3 +243,15 @@ def test_tenant_scope_tampering_invalidates_scope_bound_fingerprint():
             tenant_id="tenant-002", institution_id="wilsy-pty-ltd",
             record_id="g64-record-001", collection=collection, session=Session(),
         )
+
+
+def test_attestation_payload_tampering_invalidates_full_persistence_fingerprint():
+    collection = Collection()
+    append_record(tenant_id="tenant-001", record=record(), collection=collection, session=Session())
+    stored = collection.rows[("tenant-001", "wilsy-pty-ltd", "g64-record-001")]
+    stored["payload"]["attestation"] = {"event_id": "tampered-attestation"}
+    with pytest.raises(G64RegistryCorruptRecordError):
+        read_record(
+            tenant_id="tenant-001", institution_id="wilsy-pty-ltd",
+            record_id="g64-record-001", collection=collection, session=Session(),
+        )
