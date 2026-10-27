@@ -16,7 +16,7 @@ module.exports = {
   apps: [
     {
       name: 'wilsy-os-python-eos-api',
-      script: '../.venv/bin/python',
+      script: './.venv/bin/python',
       args: '-m uvicorn tools.eos.api.server:app --host 127.0.0.1 --port 9095',
       cwd: '..',
       interpreter: 'none',
@@ -33,7 +33,7 @@ module.exports = {
 
       // Environment Context
       env: {
-        PYTHONPATH: '..',
+        PYTHONPATH: '.',
         PYTHONUNBUFFERED: '1',
         WILSY_EOS_RUNTIME: 'python'
       },
