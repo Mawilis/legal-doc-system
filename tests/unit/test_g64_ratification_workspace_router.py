@@ -117,6 +117,29 @@ def request_body():
     }
 
 
+def verification_findings(evidence, failed=None):
+    checks = (
+        "RATIFIER_AUTHORITY",
+        "CONTRACT_VERSION_AND_FINGERPRINT",
+        "DECISION_REGISTER_COMPLETENESS",
+        "DECISION_EVIDENCE_AND_SCOPE",
+        "EFFECTIVE_REVIEW_AND_REVOCATION",
+        "INSTITUTION_BINDING",
+        "TENANT_BINDING",
+        "SECOND_APPROVAL_POLICY",
+    )
+    return [
+        {
+            "check": check,
+            "passed": check != failed,
+            "rationale": f"Independent check completed for {check.lower().replace('_', ' ')}.",
+            "evidence": [evidence],
+        }
+        for check in checks
+    ]
+
+
+
 def make_client(monkeypatch):
     app = FastAPI()
     app.include_router(workspace_router.router, prefix="/api")
@@ -330,16 +353,13 @@ def test_independent_verification_and_second_approval_are_durable_and_non_author
             "record_id": record["record_id"],
             "record_sha3_512_fingerprint": record["evidence_sha3_512"],
             "outcome": "PASS",
-            "institution_binding_verified": True,
-            "ratifier_authority_verified": True,
-            "evidence_integrity_verified": True,
             "rationale": "Independent review checked source provenance and authority evidence.",
-            "evidence": [evidence],
+            "findings": verification_findings(evidence),
         },
     )
     assert verification.status_code == 201, verification.text
     verifier_event = verification.json()["review_event"]
-    assert verifier_event["reviewer_principal_id"] != record["ratifier_principal_id"]
+    assert verifier_event["verifier_principal_id"] != record["ratifier_principal_id"]
     assert verifier_event["permits_operational_access"] is False
 
     policy_evidence = {
@@ -367,7 +387,7 @@ def test_independent_verification_and_second_approval_are_durable_and_non_author
     assert policy_response.status_code == 201, policy_response.text
     policy_event = policy_response.json()["review_event"]
     assert policy_event["determined_by_principal_id"] not in {
-        record["ratifier_principal_id"], verifier_event["reviewer_principal_id"]
+        record["ratifier_principal_id"], verifier_event["verifier_principal_id"]
     }
 
     approval = client.post(
@@ -414,11 +434,8 @@ def test_independent_verification_cannot_be_submitted_by_original_attester(monke
             "record_id": record["record_id"],
             "record_sha3_512_fingerprint": record["evidence_sha3_512"],
             "outcome": "FAIL",
-            "institution_binding_verified": False,
-            "ratifier_authority_verified": False,
-            "evidence_integrity_verified": True,
             "rationale": "The current authenticated principal is the original attester.",
-            "evidence": [evidence],
+            "findings": verification_findings(evidence, failed="INSTITUTION_BINDING"),
         },
     )
     assert response.status_code == 403
@@ -443,6 +460,8 @@ def test_review_routes_have_dedicated_permissions_and_startup_indexes():
     assert "G64ReviewWorkflow" in ui
     assert "second_approval_required" in router
     assert "second-approval-policy" in ui
+    assert "G64VerificationCheck" in router
+    assert "verification_findings(evidence)" in c
 
 
 def test_second_approval_is_denied_when_evidence_backed_policy_says_not_required(monkeypatch):
