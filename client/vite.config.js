@@ -78,8 +78,8 @@ export default defineConfig({
         target: 'http://localhost:9095',
         changeOrigin: true,
         secure: false,
+        rewrite: (path) => path.replace(/^\/auth(?=\/|$)/, '/api/auth'),
         configure: (proxy, options) => {
-          rewrite: (path) => path.replace(/^\/auth(?=\/|$)/, '/api/auth'),
           proxy.on('proxyReq', (proxyReq, req, res) => {
             console.info(`[WILSY-PROXY-DISPATCH-AUTH] ${req.method} ${req.url} -> ${proxyReq.path}`);
           });
