@@ -591,11 +591,11 @@ try {
   const pythonApiFallbackContract = baseViteConfig.includes(
     "'/api': {\n        target: 'http://localhost:9095',"
   );
-  const businessTenantAliasContract = baseViteConfig.includes(String.raw\`'/api/business/tenants': {
+  const businessTenantAliasContract = baseViteConfig.includes(String.raw`'/api/business/tenants': {
         target: 'http://localhost:9095',
         changeOrigin: true,
         secure: false,
-        rewrite: (path) => path.replace(/^\/api\/business\/tenants/, '/api/tenants'),\`);
+        rewrite: (path) => path.replace(/^\/api\/business\/tenants/, '/api/tenants'),`);
   const legacyNodeTargetCount = [...baseViteConfig.matchAll(/target:\s*'http:\/\/localhost:4000'/g)].length;
   if (pdfProxyIndex < 0
     || generalApiProxyIndex < 0
