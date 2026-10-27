@@ -1,5 +1,6 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import api from '../../services/api';
+import G64ReviewWorkflow from './G64ReviewWorkflow.jsx';
 
 const DECISIONS = [
   ['D01', 'Reviewer eligibility and granting authorization role'],
@@ -444,6 +445,12 @@ export default function G64RatificationWorkspace() {
             )}
           </section>
         )}
+
+        <G64ReviewWorkflow
+          institutionId={institutionId.trim()}
+          recordId={result?.record?.record_id || ''}
+          recordFingerprint={result?.record?.evidence_sha3_512 || ''}
+        />
 
         {historyError && (
           <div className="rounded-lg border border-amber-500/50 p-4 text-sm text-amber-100" role="alert">
