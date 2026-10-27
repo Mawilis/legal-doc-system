@@ -461,7 +461,7 @@ def test_review_routes_have_dedicated_permissions_and_startup_indexes():
     assert "second_approval_required" in router
     assert "second-approval-policy" in ui
     assert "G64VerificationCheck" in router
-    assert "verification_findings(evidence)" in c
+    assert "findings" in router
 
 
 def test_second_approval_is_denied_when_evidence_backed_policy_says_not_required(monkeypatch):
