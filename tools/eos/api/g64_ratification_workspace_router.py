@@ -629,7 +629,7 @@ def record_second_approval_policy(record_id: str, body: SecondApprovalPolicyInpu
                 verifier = next((row.get("payload", {}) for row in events if row.get("event_id") == body.verification_event_id), None)
                 if not isinstance(verifier, dict) or verifier.get("event_type") != "INDEPENDENT_VERIFICATION" or verifier.get("outcome") != "PASS":
                     raise HTTPException(status_code=409, detail="G64_INDEPENDENT_VERIFICATION_PASS_REQUIRED")
-                verifier_id = verifier.get("reviewer_principal_id")
+                verifier_id = verifier.get("verifier_principal_id")
                 if verifier_id in {target.get("ratifier_principal_id"), context.identity.identity_id}:
                     raise HTTPException(status_code=403, detail="G64_POLICY_VERIFIER_MUST_BE_INDEPENDENT")
                 source = _reference(body.policy_source)
