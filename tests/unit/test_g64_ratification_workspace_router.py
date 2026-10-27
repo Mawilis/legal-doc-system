@@ -389,3 +389,20 @@ def test_independent_verification_cannot_be_submitted_by_original_attester(monke
     )
     assert response.status_code == 403
     assert response.json()["detail"] == "G64_VERIFIER_MUST_BE_INDEPENDENT"
+
+
+def test_review_routes_have_dedicated_permissions_and_startup_indexes():
+    from pathlib import Path
+
+    root = Path(__file__).resolve().parents[2]
+    server = (root / "tools/eos/api/server.py").read_text(encoding="utf-8")
+    permissions = (root / "tools/eos/auth/permission_namespace.py").read_text(encoding="utf-8")
+    router = (root / "tools/eos/api/g64_ratification_workspace_router.py").read_text(encoding="utf-8")
+    ui = (root / "client/src/components/legal/G64ReviewWorkflow.jsx").read_text(encoding="utf-8")
+    assert "ensure_g64_review_evidence_indexes(" in server
+    assert '"legal_operations:g64_ratification_workspace:verify"' in permissions
+    assert '"legal_operations:g64_ratification_workspace:second_approve"' in permissions
+    assert '@router.post("/records/{record_id}/independent-verification"' in router
+    assert '@router.post("/records/{record_id}/second-approval"' in router
+    assert "G64ReviewWorkflow" in ui
+    assert "second_approval_required" in router
