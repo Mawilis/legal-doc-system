@@ -14,6 +14,7 @@ from tools.eos.legal_operations.domain.g64_ratification_workspace_evidence impor
 )
 from tools.eos.legal_operations.registry.g64_ratification_workspace_registry import (
     G64RegistryConflictError,
+    G64RegistryCorruptRecordError,
     G64RegistryTransactionRequiredError,
     append_record,
     list_history,
@@ -93,7 +94,7 @@ def test_append_and_exact_replay_preserve_one_immutable_record():
     collection = Collection()
     first = record()
     append_record(tenant_id="tenant-001", record=first, collection=collection, session=Session())
-    append_record(record=first, collection=collection, session=Session())
+    append_record(tenant_id="tenant-001", record=first, collection=collection, session=Session())
     assert len(collection.rows) == 1
     assert read_record(
         tenant_id="tenant-001",
@@ -136,7 +137,7 @@ def test_divergent_replay_of_same_identity_is_rejected():
 
 def test_history_is_institution_scoped_and_bounded():
     collection = Collection()
-    append_record(record=record(), collection=collection, session=Session())
+    append_record(tenant_id="tenant-001", record=record(), collection=collection, session=Session())
     assert len(list_history(
         tenant_id="tenant-001",
         institution_id="wilsy-pty-ltd",
@@ -156,13 +157,10 @@ def test_history_is_institution_scoped_and_bounded():
 def test_read_recomputes_fingerprint_instead_of_trusting_matching_claims():
     collection = Collection()
     append_record(record=record(), collection=collection, session=Session())
-    stored = collection.rows[("wilsy-pty-ltd", "g64-record-001")]
+    stored = collection.rows[("tenant-001", "wilsy-pty-ltd", "g64-record-001")]
     stored["payload"]["ratifier_principal_id"] = "tampered-principal"
     # The envelope and payload still repeat the original digest; integrity must
     # be recomputed from semantic fields, not inferred from those repeated claims.
-    from tools.eos.legal_operations.registry.g64_ratification_workspace_registry import (
-        G64RegistryCorruptRecordError,
-    )
     with pytest.raises(G64RegistryCorruptRecordError):
         read_record(
             tenant_id="tenant-001",
