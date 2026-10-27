@@ -219,10 +219,10 @@ export default defineConfig({
  * Status: CERTIFIED PRODUCTION ARTIFACT
  * Compliance: POPIA §19, GDPR §32, SOC2 §CC7.2
  * Proxy Rules:
- *   /api/auth → http://localhost:9095 (Kennel auth router) – no rewrite
- *   /auth      → http://localhost:9095 (Python EOS)
+ *   /api/auth → http://localhost:9095/api/auth (Python EOS; no rewrite)
+ *   /auth      → http://localhost:9095/api/auth (Python EOS compatibility rewrite)
  *   /api/billing/platform|client → http://localhost:9095/billing/platform|client
- *   /api/billing/plans|summary|analytics|credit-scores|forensic-status → http://localhost:9095/billing/*
+ *   /api/billing/** → Python EOS; platform/client legacy prefixes rewrite to /billing/**
  *   /api/kernel → http://localhost:9095/api/kernel
  *   /api/tenant-branding → http://localhost:9095/api/tenant-branding
  *   /api/legal-operations → http://localhost:9095/api/legal-operations
