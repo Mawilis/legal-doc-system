@@ -125,7 +125,15 @@ def main() -> int:
         print(f"[WILSY-DEV-STACK] Python EOS ready: {EOS_HEALTH_URL}", flush=True)
 
     if _port_open(CLIENT_PORT):
-        print(f"[WILSY-DEV-STACK] client port {CLIENT_PORT} is already occupied; not starting duplicate Vite", flush=True)
+        if not _healthy(CLIENT_URL):
+            print(
+                f"[WILSY-DEV-STACK] refusing unhealthy client listener on {CLIENT_PORT}",
+                file=sys.stderr,
+                flush=True,
+            )
+            _stop_children()
+            return 1
+        print(f"[WILSY-DEV-STACK] reusing healthy Vite client: {CLIENT_URL}", flush=True)
     else:
         _start(
             ["npm", "run", "dev", "--prefix", "client", "--", "--host", HOST,
