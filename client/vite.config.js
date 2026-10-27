@@ -6,6 +6,13 @@
  * ╠════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════╣
  * ║ VERSION: 2.5.0-PYTHON-EOS-API-ROUTING-BFF-ISOLATION | MIGRATION STAGE 1                                                                               ║
  * ║ ABSOLUTE PATH: /Users/wilsonkhanyezi/legal-doc-system/client/vite.config.js                                                          ║
+ * ║ COLLABORATION / OWNERSHIP: WILSY Core Engineering; routing migration maintains Python EOS as canonical authority.                    ║
+ * ║ CERTIFICATION / UPDATE DATE: 2026-10-27.                                                                                            ║
+ * ║ COMPLIANCE: POPIA §19; GDPR Article 32; SOC 2 CC7.2; ISO 27001.                                                                    ║
+ * ║ SECURITY / PRIVACY: Proxy failures fail closed; no bearer values or payloads are logged or synthesized.                           ║
+ * ║ TENANT BOUNDARY: Routing only; downstream EOS services retain tenant admission and isolation.                                       ║
+ * ║ AUTHORITY BOUNDARY: Transport dispatch only; no identity, authorization, document, or business truth is created.                    ║
+ * ║ FINANCIAL AUTHORITY: Kennel EOS exclusively owns financial execution and settlement truth.                                          ║
  * ╠════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════╣
  * ║ EPITOME:                                                                                                                             ║
  * ║ Routes Python-EOS-owned auth, legal-acceptance, Legal Operations, kernel, and governed billing paths to port 9095.                 ║
