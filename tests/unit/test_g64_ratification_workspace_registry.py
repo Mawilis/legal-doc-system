@@ -230,3 +230,16 @@ def test_read_cannot_cross_tenant_even_for_same_institution_and_record_id():
             record_id="g64-record-001", collection=collection, session=Session(),
         )
     assert getattr(captured.value, "code", None) == "G64_REGISTRY_RECORD_NOT_FOUND"
+
+
+def test_tenant_scope_tampering_invalidates_scope_bound_fingerprint():
+    collection = Collection()
+    append_record(tenant_id="tenant-001", record=record(), collection=collection, session=Session())
+    stored = collection.rows.pop(("tenant-001", "wilsy-pty-ltd", "g64-record-001"))
+    stored["tenant_id"] = "tenant-002"
+    collection.rows[("tenant-002", "wilsy-pty-ltd", "g64-record-001")] = stored
+    with pytest.raises(G64RegistryCorruptRecordError):
+        read_record(
+            tenant_id="tenant-002", institution_id="wilsy-pty-ltd",
+            record_id="g64-record-001", collection=collection, session=Session(),
+        )
