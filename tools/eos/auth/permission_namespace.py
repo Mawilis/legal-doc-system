@@ -1,5 +1,5 @@
 """TITLE: WILSY OS Permission Namespace Semantic Canon.
-VERSION: v1.54.0-R59-P9-REASSIGNMENT-IAM-INTEGRATION
+VERSION: v1.55.0-G64-VERIFIER-POLICY-PERMISSIONS
 AUTHORITY: Immutable permission vocabulary and scope metadata only.
 EPITOME: Extends the canonical TENANT and SYSTEM permission vocabulary with dedicated
 inbound-collection, merchant-configuration, provider-policy, WILSY AI,
@@ -13,6 +13,7 @@ ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/tools/eos/auth/p
 COLLABORATION / OWNERSHIP: Wilson Khanyezi / Wilsy Core Engineering.
 CERTIFICATION / UPDATE DATE: 2026-10-21
 CHANGELOG:
+    2026-10-27 v1.55.0-G64-VERIFIER-POLICY-PERMISSIONS adds dedicated tenant permission vocabulary for G64 independent verification, evidence-backed second-approval policy determination, and second approval. No role assignments or ratification authority are created.
     2026-10-21 v1.54.0-R59-P9-REASSIGNMENT-IAM-INTEGRATION
     Canonical own-tenant operational issuer permission metadata; not possession or matter access.
     2026-10-21 v1.52.0-P47-R92-WORK-ASSIGNMENT-PERMISSION
