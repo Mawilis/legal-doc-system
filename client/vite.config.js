@@ -209,6 +209,13 @@ export default defineConfig({
         },
       },
 
+      // Preserve the Node BFF's legacy business-tenant alias rewrite in direct Python routing.
+      '/api/business/tenants': {
+        target: 'http://localhost:9095',
+        changeOrigin: true,
+        secure: false,
+        rewrite: (path) => path.replace(/^\\/api\\/business\\/tenants/, '/api/tenants'),
+      },
       // Kennel owns the tenant and employee directories used by BillingHUD typeaheads.
       '/api/tenants': {
         target: 'http://localhost:9095',
