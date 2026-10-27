@@ -247,8 +247,13 @@ class G64RatificationWorkspaceRecord:
 
     def evidence_fingerprint(self) -> str:
         """Return SHA3-512 over canonical UTF-8 JSON semantics."""
+        # The attestation covers immutable decision content, not its own
+        # lifecycle transition. The persistence envelope separately fingerprints
+        # the full payload including state, avoiding a circular attestation hash.
+        payload = self.authority_payload()
+        payload.pop("state", None)
         encoded = json.dumps(
-            self.authority_payload(), sort_keys=True, separators=(",", ":"),
+            payload, sort_keys=True, separators=(",", ":"),
             ensure_ascii=True, allow_nan=False,
         ).encode("ascii")
         return sha3_512(encoded).hexdigest()
