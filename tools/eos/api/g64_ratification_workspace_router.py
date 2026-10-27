@@ -636,6 +636,22 @@ def record_second_approval_policy(record_id: str, body: SecondApprovalPolicyInpu
                 verification_evidence = _reference(body.independent_verification_evidence)
                 if source == verification_evidence:
                     raise HTTPException(status_code=422, detail="G64_POLICY_EVIDENCE_MUST_BE_DISTINCT")
+                findings = verifier.get("findings")
+                policy_finding = next(
+                    (item for item in findings if isinstance(item, dict)
+                     and item.get("check") == G64VerificationCheck.SECOND_APPROVAL_POLICY.value),
+                    None,
+                ) if isinstance(findings, list) else None
+                finding_evidence = policy_finding.get("evidence") if isinstance(policy_finding, dict) else None
+                if (
+                    not isinstance(finding_evidence, list)
+                    or source.to_document() not in finding_evidence
+                    or verification_evidence.to_document() not in finding_evidence
+                ):
+                    raise HTTPException(
+                        status_code=422,
+                        detail="G64_POLICY_AND_INDEPENDENT_EVIDENCE_MUST_MATCH_VERIFIER_FINDING",
+                    )
                 decision = G64SecondApprovalPolicyDecision(
                     policy_decision_id=event_id,
                     tenant_id=context.tenant_id,
