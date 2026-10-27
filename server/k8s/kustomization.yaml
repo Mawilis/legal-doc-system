@@ -1,35 +1,7 @@
+# RETIRED: Node BFF / predictive-engine manifests are not a production deployment target.
+# Canonical Python EOS production deployment: ../../k8s/eos-api-production.yaml
+# This empty Kustomization intentionally prevents `kubectl apply -k server/k8s`
+# from deploying the retired port-4000 Node API path.
 apiVersion: kustomize.config.k8s.io/v1beta1
 kind: Kustomization
-namespace: wilsy-os
-resources:
-  - namespace.yaml
-  - configmap.yaml
-  - secrets.yaml
-  - storage.yaml
-  - serviceaccount.yaml
-  - deployment.yaml
-  - service.yaml
-  - hpa.yaml
-  - pdb.yaml
-  - ingress.yaml
-  - network-policy.yaml
-commonLabels:
-  environment: production
-  managed-by: kustomize
-images:
-  - name: ghcr.io/wilsy-os/predictive-engine
-    newTag: latest
-patchesStrategicMerge:
-  - |-
-    apiVersion: apps/v1
-    kind: Deployment
-    metadata:
-      name: wilsy-os-predictive
-    spec:
-      template:
-        spec:
-          containers:
-          - name: predictive-engine
-            env:
-            - name: LOG_LEVEL
-              value: debug
+resources: []
