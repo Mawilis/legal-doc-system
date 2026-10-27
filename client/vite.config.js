@@ -108,8 +108,8 @@ export default defineConfig({
         }
       },
       // Kennel invoice lifecycle endpoints are mounted at /billing/*, not /api/billing/*.
-      // Keep these rules before the general /api BFF rule so compose/list reach EOS,
-      // while Node-owned actions (partial pay, PDF, audit) retain their correct owner.
+      // Keep these rules before the general /api rule so invoice compose/list paths
+      // retain the required /billing prefix rewrite; all other API traffic goes to EOS.
       '/api/billing/platform': {
         target: 'http://localhost:9095',
         changeOrigin: true,
