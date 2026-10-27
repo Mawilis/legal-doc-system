@@ -168,12 +168,14 @@ def _scope_fingerprint(
     return hashlib.sha3_512(encoded).hexdigest()
 
 
-def _envelope(record: G64RatificationWorkspaceRecord) -> dict[str, Any]:
+def _envelope(
+    *, tenant_id: str, record: G64RatificationWorkspaceRecord
+) -> dict[str, Any]:
     payload = record.to_document()
     return {
         "schema": RECORD_SCHEMA,
         "version": VERSION,
-        **_key(record),
+        **_key(tenant_id=tenant_id, record=record),
         "evidence_sha3_512": _verified_payload_fingerprint(payload),
         "payload": payload,
     }
@@ -200,7 +202,7 @@ def append_record(
     if type(record) is not G64RatificationWorkspaceRecord:
         raise G64RegistryInputError("G64_REGISTRY_RECORD_INVALID")
     target = _collection(collection)
-    envelope = {"tenant_id": tenant_id, **_envelope(record)}
+    envelope = _envelope(tenant_id=tenant_id, record=record)
     envelope["tenant_scope_sha3_512"] = _scope_fingerprint(
         tenant_id=tenant_id,
         institution_id=record.institution_id,
