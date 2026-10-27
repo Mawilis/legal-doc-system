@@ -20,6 +20,9 @@ NOW = datetime(2026, 10, 27, tzinfo=timezone.utc)
 FINGERPRINT = "a" * 128
 RECORD_FINGERPRINT = "b" * 128
 EVIDENCE = G64EvidenceReference("evidence:source-001", FINGERPRINT)
+POLICY_VERIFICATION_EVIDENCE = G64EvidenceReference(
+    "evidence:policy-verification-001", "c" * 128
+)
 
 
 def finding(check, passed=True):
@@ -187,7 +190,7 @@ def test_second_approval_policy_requires_independent_source_verification():
         determined_at=NOW,
         second_approval_required=False,
         policy_source=EVIDENCE,
-        independent_verification_evidence=EVIDENCE,
+        independent_verification_evidence=POLICY_VERIFICATION_EVIDENCE,
     ).to_document()
     assert policy["second_approval_required"] is False
     assert policy["permits_operational_access"] is False
@@ -210,5 +213,5 @@ def test_second_approval_policy_cannot_be_self_verified():
             determined_at=NOW,
             second_approval_required=True,
             policy_source=EVIDENCE,
-            independent_verification_evidence=EVIDENCE,
+            independent_verification_evidence=POLICY_VERIFICATION_EVIDENCE,
         )
