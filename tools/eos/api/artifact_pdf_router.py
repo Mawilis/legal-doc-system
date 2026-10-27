@@ -38,13 +38,6 @@ from typing import Any
 from xml.sax.saxutils import escape
 
 from fastapi import APIRouter, Depends, HTTPException, Request, Response, status
-from reportlab.lib import colors
-from reportlab.lib.enums import TA_LEFT
-from reportlab.lib.pagesizes import A4
-from reportlab.lib.styles import ParagraphStyle, getSampleStyleSheet
-from reportlab.lib.units import mm
-from reportlab.platypus import Paragraph, SimpleDocTemplate, Spacer, Table, TableStyle
-
 from tools.eos.auth.authentication import get_current_identity
 from tools.eos.auth.identity import SovereignIdentity
 
@@ -119,6 +112,10 @@ def _flatten(value: Any, prefix: str = "", depth: int = 0) -> list[tuple[str, st
 
 def _page_chrome(canvas: Any, document: Any) -> None:
     """Stamp neutral page chrome; it confers no legal status."""
+    from reportlab.lib import colors
+    from reportlab.lib.pagesizes import A4
+    from reportlab.lib.units import mm
+
     canvas.saveState()
     width, height = A4
     canvas.setStrokeColor(colors.HexColor("#1F4E79"))
@@ -145,6 +142,13 @@ def render_artifact_pdf(
     The function does not retrieve or verify an underlying invoice, legal document,
     matter, approval, signature, payment, or settlement record.
     """
+    from reportlab.lib import colors
+    from reportlab.lib.enums import TA_LEFT
+    from reportlab.lib.pagesizes import A4
+    from reportlab.lib.styles import ParagraphStyle, getSampleStyleSheet
+    from reportlab.lib.units import mm
+    from reportlab.platypus import Paragraph, SimpleDocTemplate, Spacer, Table, TableStyle
+
     canonical = _canonical_json(body)
     if len(canonical) > MAX_REQUEST_BYTES:
         raise HTTPException(
@@ -261,8 +265,14 @@ async def generate_artifact_pdf(
     identity: SovereignIdentity = Depends(get_current_identity),
 ) -> Response:
     """Render a bounded PDF for the authenticated request without creating authority."""
+    raw_body = await request.body()
+    if len(raw_body) > MAX_REQUEST_BYTES:
+        raise HTTPException(
+            status_code=status.HTTP_413_REQUEST_ENTITY_TOO_LARGE,
+            detail="ARTIFACT_PDF_PAYLOAD_TOO_LARGE",
+        )
     try:
-        body = await request.json()
+        body = json.loads(raw_body)
     except (ValueError, UnicodeDecodeError) as error:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST, detail="ARTIFACT_PDF_JSON_BODY_REQUIRED"
@@ -286,7 +296,9 @@ async def generate_artifact_pdf(
     response.headers["X-Artifact-Proof-Status"] = "SOURCE_UNVERIFIED"
     response.headers["X-Request-Proof"] = evidence["request_digest"]
     response.headers["X-Wilsy-Server-Integrity-Digest"] = evidence["integrity_digest"]
-    response.headers["X-Wilsy-Artifact-Type"] = evidence["artifact_type"]
+    response.headers["X-Wilsy-Artifact-Type"] = re.sub(
+        r"[^A-Za-z0-9._-]", "", evidence["artifact_type"]
+    )[:96] or "artifact"
     return response
 
 
