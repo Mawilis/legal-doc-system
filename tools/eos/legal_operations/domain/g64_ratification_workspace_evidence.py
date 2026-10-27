@@ -151,14 +151,14 @@ class G64ClickAttestation:
 
     event_id: str
     authenticated_principal_id: str
-    authenticated_session_reference: str
+    authenticated_request_reference: str
     attested_at: datetime
     record_sha3_512_fingerprint: str
     attestation_text_version: str
 
     def __post_init__(self) -> None:
         for name in ("event_id", "authenticated_principal_id",
-                     "authenticated_session_reference", "attestation_text_version"):
+                     "authenticated_request_reference", "attestation_text_version"):
             _token(name, getattr(self, name))
         _moment("attested_at", self.attested_at)
         _fingerprint("record_fingerprint", self.record_sha3_512_fingerprint)
@@ -167,7 +167,7 @@ class G64ClickAttestation:
         return {
             "event_id": self.event_id,
             "authenticated_principal_id": self.authenticated_principal_id,
-            "authenticated_session_reference": self.authenticated_session_reference,
+            "authenticated_request_reference": self.authenticated_request_reference,
             "attested_at": _iso(self.attested_at) or "",
             "record_sha3_512_fingerprint": self.record_sha3_512_fingerprint,
             "attestation_text_version": self.attestation_text_version,
