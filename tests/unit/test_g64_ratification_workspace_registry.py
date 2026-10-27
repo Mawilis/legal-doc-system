@@ -147,3 +147,38 @@ def test_history_is_institution_scoped_and_bounded():
         session=Session(),
         limit=10,
     ) == ()
+
+
+def test_read_recomputes_fingerprint_instead_of_trusting_matching_claims():
+    collection = Collection()
+    append_record(record=record(), collection=collection, session=Session())
+    stored = collection.rows[("wilsy-pty-ltd", "g64-record-001")]
+    stored["payload"]["ratifier_principal_id"] = "tampered-principal"
+    # The envelope and payload still repeat the original digest; integrity must
+    # be recomputed from semantic fields, not inferred from those repeated claims.
+    from tools.eos.legal_operations.registry.g64_ratification_workspace_registry import (
+        G64RegistryCorruptRecordError,
+    )
+    with pytest.raises(G64RegistryCorruptRecordError):
+        read_record(
+            institution_id="wilsy-pty-ltd",
+            record_id="g64-record-001",
+            collection=collection,
+            session=Session(),
+        )
+
+
+def test_history_recomputes_fingerprint_for_every_row():
+    collection = Collection()
+    append_record(record=record(), collection=collection, session=Session())
+    collection.rows[("wilsy-pty-ltd", "g64-record-001")]["payload"]["state"] = "RATIFIED"
+    from tools.eos.legal_operations.registry.g64_ratification_workspace_registry import (
+        G64RegistryCorruptRecordError,
+    )
+    with pytest.raises(G64RegistryCorruptRecordError):
+        list_history(
+            institution_id="wilsy-pty-ltd",
+            collection=collection,
+            session=Session(),
+            limit=10,
+        )
