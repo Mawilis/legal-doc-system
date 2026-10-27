@@ -66,3 +66,25 @@ def test_g64_read_and_write_permissions_are_separate_non_self_authorizing_capabi
     raw = canonical_permissions()
     assert raw.count(b'"permission_id":"legal_operations:g64_ratification_workspace:read"') == 1
     assert raw.count(b'"permission_id":"legal_operations:g64_ratification_workspace:write"') == 1
+
+
+@pytest.mark.parametrize(
+    "permission",
+    (
+        "legal_operations:g64_ratification_workspace:verify",
+        "legal_operations:g64_ratification_workspace:policy",
+        "legal_operations:g64_ratification_workspace:second_approve",
+    ),
+)
+def test_review_permissions_are_separate_canonical_non_authorizing_tenant_capabilities(permission):
+    metadata = permission_metadata(permission)
+    assert metadata.permission_id == permission
+    assert metadata.disposition is PermissionDisposition.CANONICAL
+    assert metadata.namespace == "TENANT"
+    assert metadata.scope_kind == "TENANT"
+    assert metadata.tenant_membership_required is True
+    assert metadata.cross_tenant_capable is False
+    assert metadata.financial_execution_capable is False
+    assert metadata.authorizes_by_itself is False
+    raw = canonical_permissions()
+    assert raw.count(b'"permission_id":"' + permission.encode("ascii") + b'"') == 1
