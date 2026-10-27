@@ -269,3 +269,19 @@ def test_g64_router_and_registry_index_are_wired_into_python_eos_startup():
     ) == 1
     assert "ensure_g64_workspace_evidence_indexes(" in server_source
     assert "database[G64_WORKSPACE_EVIDENCE_COLLECTION]" in server_source
+
+
+def test_interactive_workspace_route_is_protected_and_all_choices_start_blank():
+    from pathlib import Path
+
+    root = Path(__file__).resolve().parents[2]
+    app_source = (root / "client/src/App.jsx").read_text(encoding="utf-8")
+    ui_source = (
+        root / "client/src/components/legal/G64RatificationWorkspace.jsx"
+    ).read_text(encoding="utf-8")
+    assert 'path="/g64-ratification-workspace"' in app_source
+    assert "LegalAcceptanceBoundary runtime={<G64RatificationWorkspace />}" in app_source
+    assert "disposition: ''" in ui_source
+    assert "Choose disposition" in ui_source
+    assert "institution_binding_status" in ui_source
+    assert "cryptographic signature" in ui_source
