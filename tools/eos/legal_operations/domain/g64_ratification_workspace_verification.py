@@ -159,6 +159,8 @@ class G64SecondApprovalPolicyDecision:
             raise G64WorkspaceEvidenceError("SECOND_APPROVAL_POLICY_SOURCE_REQUIRED")
         if type(self.independent_verification_evidence) is not G64EvidenceReference:
             raise G64WorkspaceEvidenceError("SECOND_APPROVAL_POLICY_VERIFICATION_REQUIRED")
+        if self.independent_verification_evidence == self.policy_source:
+            raise G64WorkspaceEvidenceError("SECOND_APPROVAL_POLICY_VERIFICATION_MUST_BE_DISTINCT")
 
     def to_document(self) -> dict[str, object]:
         return {
