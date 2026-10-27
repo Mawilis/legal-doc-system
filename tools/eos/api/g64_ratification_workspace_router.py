@@ -26,6 +26,10 @@ from tools.eos.api.tenant_authorization_http import (
     TenantAuthorizationContext,
 )
 from tools.eos.kernel.db import get_client, get_database
+from tools.eos.legal_operations.domain.g64_ratification_workspace_verification import (
+    G64SecondApprovalPolicyDecision,
+    G64VerificationOutcome,
+)
 from tools.eos.legal_operations.domain.g64_ratification_workspace_evidence import (
     G64ClickAttestation,
     G64DecisionEntry,
@@ -119,12 +123,25 @@ class IndependentVerificationInput(BaseModel):
     evidence: list[EvidenceReferenceInput] = Field(min_length=1, max_length=20)
 
 
+class SecondApprovalPolicyInput(BaseModel):
+    model_config = ConfigDict(extra="forbid", frozen=True)
+    institution_id: str
+    record_id: str
+    record_sha3_512_fingerprint: str
+    verification_event_id: str
+    second_approval_required: bool
+    rationale: str = Field(min_length=20, max_length=4000)
+    policy_source: EvidenceReferenceInput
+    independent_verification_evidence: EvidenceReferenceInput
+
+
 class SecondApprovalInput(BaseModel):
     model_config = ConfigDict(extra="forbid", frozen=True)
     institution_id: str
     record_id: str
     record_sha3_512_fingerprint: str
     verification_event_id: str
+    policy_decision_event_id: str
     outcome: str
     rationale: str = Field(min_length=20, max_length=4000)
     evidence: list[EvidenceReferenceInput] = Field(min_length=1, max_length=20)
@@ -549,6 +566,66 @@ def record_independent_verification(record_id: str, body: IndependentVerificatio
     except G64ReviewRegistryError as error:
         raise HTTPException(status_code=503, detail=error.code) from error
     return {"review_event": saved["payload"], "second_approval_required": True, "authority_effect": "NONE", "ratification_complete": False, "permits_operational_access": False}
+
+
+@router.post("/records/{record_id}/second-approval-policy", status_code=status.HTTP_201_CREATED)
+def record_second_approval_policy(record_id: str, body: SecondApprovalPolicyInput, idempotency_key: str = Header(alias="Idempotency-Key"), context: TenantAuthorizationContext = Depends(_VERIFY_AUTHORITY)) -> dict[str, object]:
+    """Persist an evidence-backed second-approval policy determination, never infer policy."""
+    if body.record_id != record_id or _IDEMPOTENCY_KEY.fullmatch(idempotency_key) is None:
+        raise HTTPException(status_code=422, detail="G64_REVIEW_REQUEST_IDENTITY_INVALID")
+    client, database = _storage()
+    event_id = _review_event_id("SECOND-APPROVAL-POLICY", context.tenant_id, record_id, idempotency_key)
+    now = datetime.now(timezone.utc).replace(microsecond=0)
+    try:
+        with client.start_session() as session:
+            with session.start_transaction():
+                target = _review_target(tenant_id=context.tenant_id, institution_id=body.institution_id, record_id=record_id, session=session, collection=database[COLLECTION])
+                if target.get("ratifier_principal_id") == context.identity.identity_id:
+                    raise HTTPException(status_code=403, detail="G64_POLICY_DECIDER_MUST_BE_INDEPENDENT")
+                if target.get("evidence_sha3_512") != body.record_sha3_512_fingerprint:
+                    raise HTTPException(status_code=409, detail="G64_REVIEW_RECORD_FINGERPRINT_MISMATCH")
+                events = list_review_events(tenant_id=context.tenant_id, institution_id=body.institution_id, record_id=record_id, collection=database[REVIEW_COLLECTION], session=session, limit=100)
+                verifier = next((row.get("payload", {}) for row in events if row.get("event_id") == body.verification_event_id), None)
+                if not isinstance(verifier, dict) or verifier.get("event_type") != "INDEPENDENT_VERIFICATION" or verifier.get("outcome") != "PASS":
+                    raise HTTPException(status_code=409, detail="G64_INDEPENDENT_VERIFICATION_PASS_REQUIRED")
+                verifier_id = verifier.get("reviewer_principal_id")
+                if verifier_id in {target.get("ratifier_principal_id"), context.identity.identity_id}:
+                    raise HTTPException(status_code=403, detail="G64_POLICY_VERIFIER_MUST_BE_INDEPENDENT")
+                source = _reference(body.policy_source)
+                verification_evidence = _reference(body.independent_verification_evidence)
+                if source == verification_evidence:
+                    raise HTTPException(status_code=422, detail="G64_POLICY_EVIDENCE_MUST_BE_DISTINCT")
+                decision = G64SecondApprovalPolicyDecision(
+                    policy_decision_id=event_id,
+                    tenant_id=context.tenant_id,
+                    institution_id=body.institution_id,
+                    record_id=record_id,
+                    record_sha3_512_fingerprint=body.record_sha3_512_fingerprint,
+                    determined_by_principal_id=context.identity.identity_id,
+                    independently_verified_by_principal_id=verifier_id,
+                    determined_at=now,
+                    second_approval_required=body.second_approval_required,
+                    policy_source=source,
+                    independent_verification_evidence=verification_evidence,
+                )
+                event = {
+                    **decision.to_document(),
+                    "event_id": event_id,
+                    "event_type": "SECOND_APPROVAL_POLICY",
+                    "rationale": body.rationale,
+                    "verification_event_id": body.verification_event_id,
+                    "created_at": now.isoformat(),
+                    "authority_effect": "NONE",
+                    "ratification_complete": False,
+                }
+                saved = append_review_event(tenant_id=context.tenant_id, institution_id=body.institution_id, record_id=record_id, event_id=event_id, payload=event, collection=database[REVIEW_COLLECTION], session=session)
+    except G64RegistryError as error:
+        _raise_registry_http(error)
+    except G64ReviewRegistryError as error:
+        raise HTTPException(status_code=503, detail=error.code) from error
+    except G64WorkspaceEvidenceError as error:
+        raise HTTPException(status_code=422, detail=str(error)) from error
+    return {"review_event": saved["payload"], "second_approval_required": body.second_approval_required, "ratification_complete": False, "permits_operational_access": False}
 
 
 @router.post("/records/{record_id}/second-approval", status_code=status.HTTP_201_CREATED)
