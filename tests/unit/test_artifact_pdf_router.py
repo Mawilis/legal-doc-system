@@ -1,5 +1,8 @@
 """Tests for the Python EOS presentation-only PDF export boundary."""
 
+import base64
+import hashlib
+
 from fastapi import FastAPI
 from fastapi.testclient import TestClient
 
@@ -30,7 +33,7 @@ def test_render_artifact_pdf_returns_pdf_and_hashes_without_claiming_source_veri
     assert b"%%EOF" in pdf
     assert len(evidence["request_digest"]) == 128
     assert len(evidence["render_context_digest"]) == 128
-    assert evidence["pdf_digest"] == __import__("hashlib").sha3_512(pdf).hexdigest()
+    assert evidence["pdf_digest"] == hashlib.sha3_512(pdf).hexdigest()
     assert evidence["artifact_type"] == "generic-artifact"
 
 
@@ -62,6 +65,33 @@ def test_pdf_route_rejects_caller_selected_tenant_context() -> None:
     )
     assert response.status_code == 403
     assert response.json()["detail"] == "ARTIFACT_PDF_TENANT_CONTEXT_MISMATCH"
+
+
+def test_render_artifact_pdf_preserves_bounded_user_signature_image_as_presentation_only() -> None:
+    signature = (
+        "data:image/png;base64,"
+        "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAIAAACQd1PeAAAADUlEQVR4nGP4z8AAAAMBAQDJ/pLvAAAAAElFTkSuQmCC"
+    )
+    pdf, evidence = render_artifact_pdf(
+        {"type": "contract", "signature": signature, "metadata": {"jurisdiction": "ZA"}},
+        _identity(),
+        generated_at="2026-10-27T00:00:00+00:00",
+    )
+    assert pdf.startswith(b"%PDF-")
+    assert len(evidence["pdf_digest"]) == 128
+
+
+def test_render_artifact_pdf_rejects_untrusted_signature_image_format() -> None:
+    from fastapi import HTTPException
+    import pytest
+
+    with pytest.raises(HTTPException) as raised:
+        render_artifact_pdf(
+            {"type": "contract", "signature": "data:image/svg+xml;base64,PHN2Zy8+"},
+            _identity(),
+        )
+    assert raised.value.status_code == 422
+    assert raised.value.detail == "ARTIFACT_PDF_SIGNATURE_IMAGE_FORMAT_INVALID"
 
 
 def test_pdf_route_rejects_non_object_payload() -> None:
