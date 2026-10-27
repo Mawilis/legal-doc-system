@@ -469,6 +469,13 @@ export default function G64RatificationWorkspace() {
                   <p className="mt-1 text-xs text-slate-400">
                     {item.institution_binding_status} · {item.ratifier_authority_status}
                   </p>
+                  <button
+                    type="button"
+                    onClick={() => setResult(item)}
+                    className="mt-2 rounded-md border border-slate-600 px-3 py-1 text-xs"
+                  >
+                    Open review workflow for this record
+                  </button>
                 </li>
               ))}
             </ul>
