@@ -257,3 +257,15 @@ def test_repository_publisher_unavailable_returns_pending_after_app_persistence(
     assert body["application_persistence_status"] == "PERSISTED"
     assert body["repository_persistence_status"] == "PENDING_CONFIGURATION"
     assert body["ratification_complete"] is False
+
+
+def test_g64_router_and_registry_index_are_wired_into_python_eos_startup():
+    from pathlib import Path
+
+    root = Path(__file__).resolve().parents[2]
+    server_source = (root / "tools/eos/api/server.py").read_text(encoding="utf-8")
+    assert server_source.count(
+        'app.include_router(g64_ratification_workspace_router, prefix="/api")'
+    ) == 1
+    assert "ensure_g64_workspace_evidence_indexes(" in server_source
+    assert "database[G64_WORKSPACE_EVIDENCE_COLLECTION]" in server_source
