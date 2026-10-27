@@ -131,6 +131,7 @@ def build_repository_export_bytes(
         "tenant_id": tenant_id,
         "institution_id": record.institution_id,
         "institution_binding_status": "UNVERIFIED_PENDING_INDEPENDENT_VERIFICATION",
+        "ratifier_authority_status": "UNVERIFIED_PENDING_INDEPENDENT_VERIFICATION",
         "record_id": record.record_id,
         "record_sha3_512_fingerprint": record_fingerprint,
         "export_status": status,
