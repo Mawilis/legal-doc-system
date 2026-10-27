@@ -9,7 +9,7 @@
  * BIBLICAL STANDARDS:
  * - Worth: Billions (Investment-Grade Reliability).
  * - Integrity: Atomic process management; failures are auto-revived by the sentinel.
- * - Precision: Clustered for stability; bound to Sovereign Port 5050.
+ * - Precision: Clustered for stability; bound to Python EOS port 9095.
  */
 
 module.exports = {
