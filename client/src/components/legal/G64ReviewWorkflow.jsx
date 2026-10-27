@@ -329,7 +329,7 @@ export default function G64ReviewWorkflow({ institutionId, recordId, recordFinge
       {verificationEvents.length > 0 && <ul className="space-y-2">{verificationEvents.map((item) => (
         <li key={item.event_id} className="break-all rounded-lg border border-slate-700 p-3 text-xs">
           <strong>{item.event_type}</strong> · {item.outcome} · {item.event_id}
-          <p className="mt-1 text-slate-400">Actor: {item.reviewer_principal_id || item.approver_principal_id}</p>
+          <p className="mt-1 text-slate-400">Actor: {item.verifier_principal_id || item.reviewer_principal_id || item.determined_by_principal_id || item.approver_principal_id}</p>
         </li>
       ))}</ul>}
     </section>
