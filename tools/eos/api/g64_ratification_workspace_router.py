@@ -544,6 +544,8 @@ def record_independent_verification(record_id: str, body: IndependentVerificatio
                     raise HTTPException(status_code=409, detail="G64_REVIEW_RECORD_FINGERPRINT_MISMATCH")
                 event = _review_event(kind="INDEPENDENT_VERIFICATION", event_id=event_id, tenant_id=context.tenant_id, institution_id=body.institution_id, record_id=record_id, fingerprint=body.record_sha3_512_fingerprint, actor_field="reviewer_principal_id", actor=context.identity.identity_id, outcome=body.outcome, rationale=body.rationale, evidence=body.evidence, now=now, extra={"institution_binding_verified": body.institution_binding_verified, "ratifier_authority_verified": body.ratifier_authority_verified, "evidence_integrity_verified": body.evidence_integrity_verified})
                 saved = append_review_event(tenant_id=context.tenant_id, institution_id=body.institution_id, record_id=record_id, event_id=event_id, payload=event, collection=database[REVIEW_COLLECTION], session=session)
+    except G64RegistryError as error:
+        _raise_registry_http(error)
     except G64ReviewRegistryError as error:
         raise HTTPException(status_code=503, detail=error.code) from error
     return {"review_event": saved["payload"], "second_approval_required": True, "authority_effect": "NONE", "ratification_complete": False, "permits_operational_access": False}
