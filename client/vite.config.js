@@ -8,8 +8,8 @@
  * ║ ABSOLUTE PATH: /Users/wilsonkhanyezi/legal-doc-system/client/vite.config.js                                                          ║
  * ╠════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════╣
  * ║ EPITOME:                                                                                                                             ║
- * ║ Routes Python-EOS-owned auth, legal-acceptance, Legal Operations, kernel, and governed billing paths to port 9095 while preserving   ║
- * ║ routes all general /api and /auth traffic to Python EOS. The Node BFF remains only for /api/generate/pdf until its                 ║
+ * ║ Routes Python-EOS-owned auth, legal-acceptance, Legal Operations, kernel, and governed billing paths to port 9095.                 ║
+ * ║ General /api and legacy /auth traffic route directly to Python EOS. Node remains only for /api/generate/pdf until its              ║
  * ║ authenticated identity, tenant-bound proof, signed QR, and enterprise PDF behavior are ported and certified in Python.             ║
  * ╠════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════╣
  * ║ CHANGE LOG (v2.5.0-PYTHON-EOS-API-ROUTING-BFF-ISOLATION):
@@ -17,19 +17,19 @@
  * ║   2. Sends the legacy /auth alias to Python EOS /api/auth with an explicit prefix rewrite.
  * ║   3. Keeps /api/generate/pdf explicitly on Node as the sole verified application endpoint not yet ported.
  * ║   4. Leaves the BFF process running only until PDF parity is implemented and certified.
- * ║   2. Preserves the /api prefix because the Legal Operations router is mounted under /api.                                             ║
- * ║   3. Routes Python-EOS-owned /api/tenant-branding directly to port 9095 so governed branding activation cannot fall through Node.     ║
+ * ║ 🔧 PRIOR CHANGE LOG (v2.4.1-L10-P2C7B-TENANT-BRANDING-ROUTER):
+ * ║   1. Routes Python-EOS-owned /api/legal-operations and /api/tenant-branding directly to port 9095.
  * ║ 🔧 PRIOR CHANGE LOG (v2.3.9):
  * ║   1. Routes Python-EOS-owned /api/legal-acceptance directly to port 9095 so authenticated legal gating cannot fall through Node.
  * ║ 🔧 PRIOR CHANGE LOG (v2.3.8):                                                                                                               ║
  * ║   1. Routed /api/auth directly to the verified Kennel auth router; the live Node bootstrap was proxying it as /auth/login.         ║
  * ║ 🔧 PRIOR CHANGE LOG (v2.3.7):                                                                                                        ║
  * ║   1. Routed Kennel billing read models through /api/billing/* with the required /api removal only at the EOS boundary.             ║
- * ║   2. Preserved the /api catch-all for Node-owned auth, business, telemetry, v1, treasury, subscriptions and partial payments.     ║
+ * ║   2. Previously preserved the general /api catch-all for Node; v2.5.0 retires that general fallback.
  * ║ 🔧 PRIOR CHANGE LOG (v2.3.6):                                                                                                        ║
- * ║   1. Preserved /api/auth → Node without rewriting.                                                                                  ║
+ * ║   1. Previously preserved /api/auth → Node without rewriting; canonical auth now routes to Python EOS.
  * ║   2. Routed /api/billing/platform|client/invoices → Kennel /billing/* (Kennel has no /api prefix).                                 ║
- * ║   3. Routed all remaining /api calls → Node, including /api/billing/invoices/:id/partial-payment.                                  ║
+ * ║   3. Previously routed remaining /api calls → Node; v2.5.0 isolates only the PDF endpoint.
  * ╚════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════╝
  */
 
