@@ -108,7 +108,7 @@ def test_append_and_exact_replay_preserve_one_immutable_record():
 def test_divergent_replay_of_same_identity_is_rejected():
     collection = Collection()
     first = record()
-    append_record(record=first, collection=collection, session=Session())
+    append_record(tenant_id="tenant-001", record=first, collection=collection, session=Session())
     changed = G64RatificationWorkspaceRecord(
         record_id=first.record_id,
         institution_id=first.institution_id,
@@ -132,7 +132,7 @@ def test_divergent_replay_of_same_identity_is_rejected():
         "payload": changed_doc,
     }
     with pytest.raises(G64RegistryConflictError):
-        append_record(record=first, collection=collection, session=Session())
+        append_record(tenant_id="tenant-001", record=first, collection=collection, session=Session())
 
 
 def test_history_is_institution_scoped_and_bounded():
@@ -156,7 +156,7 @@ def test_history_is_institution_scoped_and_bounded():
 
 def test_read_recomputes_fingerprint_instead_of_trusting_matching_claims():
     collection = Collection()
-    append_record(record=record(), collection=collection, session=Session())
+    append_record(tenant_id="tenant-001", record=record(), collection=collection, session=Session())
     stored = collection.rows[("tenant-001", "wilsy-pty-ltd", "g64-record-001")]
     stored["payload"]["ratifier_principal_id"] = "tampered-principal"
     # The envelope and payload still repeat the original digest; integrity must
@@ -173,8 +173,8 @@ def test_read_recomputes_fingerprint_instead_of_trusting_matching_claims():
 
 def test_history_recomputes_fingerprint_for_every_row():
     collection = Collection()
-    append_record(record=record(), collection=collection, session=Session())
-    collection.rows[("wilsy-pty-ltd", "g64-record-001")]["payload"]["state"] = "RATIFIED"
+    append_record(tenant_id="tenant-001", record=record(), collection=collection, session=Session())
+    collection.rows[("tenant-001", "wilsy-pty-ltd", "g64-record-001")]["payload"]["state"] = "RATIFIED"
     from tools.eos.legal_operations.registry.g64_ratification_workspace_registry import (
         G64RegistryCorruptRecordError,
     )
