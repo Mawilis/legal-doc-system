@@ -11,7 +11,7 @@ AUTHORITY BOUNDARY: A passing verification is non-authorizing evidence only.
 from __future__ import annotations
 
 from dataclasses import dataclass
-from datetime import datetime, timezone
+from datetime import datetime
 from enum import StrEnum
 from typing import Final
 
