@@ -12,15 +12,17 @@
 
 'use strict';
 
-const { fork } = require('child_process');
+const { fork, spawn } = require('child_process');
 const path = require('path');
 
 // --- CONFIGURATION ---
 const RESTART_DELAY_MS = 3000;
 const SERVICES = [
     {
-        name: 'GATEWAY',
-        script: './server/server.js',
+        name: 'PYTHON_EOS_API',
+        runtime: 'python',
+        command: process.env.PYTHON || 'python3',
+        args: ['-m', 'uvicorn', 'tools.eos.api.server:app', '--host', '127.0.0.1', '--port', '9095'],
         color: '\x1b[36m', // Cyan
         instances: 1
     },
@@ -39,17 +41,24 @@ const processes = {};
  * Launches a child process with color-coded logging and crash recovery.
  */
 const spawnService = (service, index = 0) => {
-    const scriptPath = path.resolve(__dirname, service.script);
-    const processName = `${service.name}-${index}`;
-    const prefix = `${service.color}[${processName}]\x1b[0m`;
+    const scriptPath = service.script ? path.resolve(__dirname, service.script) : null;
+    const processName = \`${service.name}-${index}\`;
+    const prefix = \`${service.color}[${processName}]\x1b[0m\`;
 
-    console.log(`[Orchestrator] 🚀 Launching ${processName}...`);
+    console.log(\`[Orchestrator] 🚀 Launching ${processName}...\`);
 
-    // Fork allows Node-to-Node IPC (Inter-Process Communication)
-    const child = fork(scriptPath, [], {
-        env: { ...process.env, SERVICE_NAME: processName },
-        silent: true // Capture stdout/stderr manually for coloring
-    });
+    // Python EOS is a native Python process. The legacy job worker remains
+    // separate until its own migration is independently certified.
+    const child = service.runtime === 'python'
+        ? spawn(service.command, service.args, {
+            cwd: __dirname,
+            env: { ...process.env, SERVICE_NAME: processName },
+            stdio: ['ignore', 'pipe', 'pipe']
+          })
+        : fork(scriptPath, [], {
+            env: { ...process.env, SERVICE_NAME: processName },
+            silent: true
+          });
 
     processes[child.pid] = { service, index, name: processName };
 
