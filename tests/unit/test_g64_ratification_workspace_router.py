@@ -135,7 +135,12 @@ def make_client(monkeypatch):
         identity=SimpleNamespace(identity_id="principal-independent-second-approver"),
         tenant_id="tenant-001", decision=None,
     )
+    policy_context = TenantAuthorizationContext(
+        identity=SimpleNamespace(identity_id="principal-policy-decider"),
+        tenant_id="tenant-001", decision=None,
+    )
     app.dependency_overrides[workspace_router._VERIFY_AUTHORITY] = lambda: verifier_context
+    app.dependency_overrides[workspace_router._POLICY_AUTHORITY] = lambda: policy_context
     app.dependency_overrides[workspace_router._SECOND_APPROVAL_AUTHORITY] = lambda: approver_context
     database = Database()
     monkeypatch.setattr(workspace_router, "_storage", lambda: (Client(), database))
@@ -337,6 +342,34 @@ def test_independent_verification_and_second_approval_are_durable_and_non_author
     assert verifier_event["reviewer_principal_id"] != record["ratifier_principal_id"]
     assert verifier_event["permits_operational_access"] is False
 
+    policy_evidence = {
+        "locator": "evidence:governance-policy-001",
+        "sha3_512_fingerprint": "f" * 128,
+    }
+    independent_policy_evidence = {
+        "locator": "evidence:policy-independent-check-001",
+        "sha3_512_fingerprint": "1" * 128,
+    }
+    policy_response = client.post(
+        f"/api/legal-operations/g64/ratification-workspace/records/{record['record_id']}/second-approval-policy",
+        headers={"Idempotency-Key": "second-approval-policy-event-001"},
+        json={
+            "institution_id": record["institution_id"],
+            "record_id": record["record_id"],
+            "record_sha3_512_fingerprint": record["evidence_sha3_512"],
+            "verification_event_id": verifier_event["event_id"],
+            "second_approval_required": True,
+            "rationale": "Governing policy requires a distinct second approval for this action.",
+            "policy_source": policy_evidence,
+            "independent_verification_evidence": independent_policy_evidence,
+        },
+    )
+    assert policy_response.status_code == 201, policy_response.text
+    policy_event = policy_response.json()["review_event"]
+    assert policy_event["determined_by_principal_id"] not in {
+        record["ratifier_principal_id"], verifier_event["reviewer_principal_id"]
+    }
+
     approval = client.post(
         f"/api/legal-operations/g64/ratification-workspace/records/{record['record_id']}/second-approval",
         headers={"Idempotency-Key": "second-approval-event-001"},
@@ -345,6 +378,7 @@ def test_independent_verification_and_second_approval_are_durable_and_non_author
             "record_id": record["record_id"],
             "record_sha3_512_fingerprint": record["evidence_sha3_512"],
             "verification_event_id": verifier_event["event_id"],
+            "policy_decision_event_id": policy_event["event_id"],
             "outcome": "APPROVE",
             "rationale": "Independent second approver reviewed the verifier evidence and scope.",
             "evidence": [evidence],
@@ -357,7 +391,7 @@ def test_independent_verification_and_second_approval_are_durable_and_non_author
     }
     assert approval.json()["ratification_complete"] is False
     assert approval.json()["permits_operational_access"] is False
-    assert len(database.collections[workspace_router.REVIEW_COLLECTION].rows) == 2
+    assert len(database.collections[workspace_router.REVIEW_COLLECTION].rows) == 3
 
 
 def test_independent_verification_cannot_be_submitted_by_original_attester(monkeypatch):
@@ -403,6 +437,9 @@ def test_review_routes_have_dedicated_permissions_and_startup_indexes():
     assert '"legal_operations:g64_ratification_workspace:verify"' in permissions
     assert '"legal_operations:g64_ratification_workspace:second_approve"' in permissions
     assert '@router.post("/records/{record_id}/independent-verification"' in router
+    assert '@router.post("/records/{record_id}/second-approval-policy"' in router
     assert '@router.post("/records/{record_id}/second-approval"' in router
+    assert '"legal_operations:g64_ratification_workspace:policy"' in permissions
     assert "G64ReviewWorkflow" in ui
     assert "second_approval_required" in router
+    assert "second-approval-policy" in ui
