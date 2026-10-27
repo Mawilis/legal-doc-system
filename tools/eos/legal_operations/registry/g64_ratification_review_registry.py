@@ -48,6 +48,21 @@ def ensure_indexes(collection: Any) -> None:
         ],
         name="g64_review_record_history",
     )
+    for event_type, index_name in (
+        ("SECOND_APPROVAL_POLICY", "g64_one_second_approval_policy_per_record"),
+        ("SECOND_APPROVAL", "g64_one_second_approval_per_record"),
+    ):
+        collection.with_options(write_concern=WRITE_CONCERN).create_index(
+            [
+                ("tenant_id", ASCENDING),
+                ("institution_id", ASCENDING),
+                ("record_id", ASCENDING),
+                ("payload.event_type", ASCENDING),
+            ],
+            unique=True,
+            partialFilterExpression={"payload.event_type": event_type},
+            name=index_name,
+        )
 
 
 def _replay_projection(payload: Mapping[str, Any]) -> dict[str, Any]:
