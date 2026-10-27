@@ -251,7 +251,7 @@ def render_artifact_pdf(
                     detail="ARTIFACT_PDF_SIGNATURE_IMAGE_TOO_LARGE",
                 )
             match = re.fullmatch(
-                r"data:image/(png|jpeg|jpg);base64,([A-Za-z0-9+/=\\s]+)",
+                r"data:image/(png|jpeg|jpg);base64,([A-Za-z0-9+/=]+)",
                 signature_value,
             )
             if not match:
@@ -267,8 +267,8 @@ def render_artifact_pdf(
                     detail="ARTIFACT_PDF_SIGNATURE_IMAGE_BASE64_INVALID",
                 ) from error
             if len(image_bytes) > 1_000_000 or not (
-                image_bytes.startswith(b"\\x89PNG\\r\\n\\x1a\\n")
-                or image_bytes.startswith(b"\\xff\\xd8\\xff")
+                image_bytes.startswith(b"\x89PNG\r\n\x1a\n")
+                or image_bytes.startswith(b"\xff\xd8\xff")
             ):
                 raise HTTPException(
                     status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
