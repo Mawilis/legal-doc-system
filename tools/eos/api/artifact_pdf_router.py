@@ -29,6 +29,8 @@ FAIL-CLOSED POSTURE: Invalid or cross-context requests fail closed; integrity di
 
 from __future__ import annotations
 
+import base64
+import binascii
 import hashlib
 import json
 import re
@@ -147,7 +149,7 @@ def render_artifact_pdf(
     from reportlab.lib.pagesizes import A4
     from reportlab.lib.styles import ParagraphStyle, getSampleStyleSheet
     from reportlab.lib.units import mm
-    from reportlab.platypus import Paragraph, SimpleDocTemplate, Spacer, Table, TableStyle
+    from reportlab.platypus import Image, Paragraph, SimpleDocTemplate, Spacer, Table, TableStyle
 
     canonical = _canonical_json(body)
     if len(canonical) > MAX_REQUEST_BYTES:
@@ -156,9 +158,15 @@ def render_artifact_pdf(
             detail="ARTIFACT_PDF_PAYLOAD_TOO_LARGE",
         )
     now = generated_at or datetime.now(timezone.utc).isoformat()
-    payload = body.get("data") or body.get("payload") or body.get("artifact") or {}
+    payload = body.get("data") or body.get("payload") or body.get("artifact")
+    if payload is None:
+        payload = {key: value for key, value in body.items() if key not in {"tenantId", "signature"}}
     if not isinstance(payload, dict):
         payload = {"content": payload}
+    signature_value = body.get("signature")
+    if signature_value is None:
+        signature_value = payload.get("signature")
+    payload = {key: value for key, value in payload.items() if str(key).lower() != "signature"}
     metadata = body.get("metadata") if isinstance(body.get("metadata"), dict) else {}
     artifact_type = str(
         body.get("type") or body.get("artifactType") or body.get("templateType")
@@ -225,7 +233,51 @@ def render_artifact_pdf(
         ("LEFTPADDING", (0, 0), (-1, -1), 5), ("RIGHTPADDING", (0, 0), (-1, -1), 5),
         ("TOPPADDING", (0, 0), (-1, -1), 4), ("BOTTOMPADDING", (0, 0), (-1, -1), 4),
     ]))
-    story.extend([table, Spacer(1, 5 * mm), Paragraph("Integrity metadata", styles["Heading2"])])
+    story.append(table)
+    if signature_value is not None:
+        story.extend([
+            Spacer(1, 5 * mm),
+            Paragraph("Submitted signature", styles["Heading2"]),
+            Paragraph(
+                "User-supplied signature data. This endpoint does not verify signer identity, "
+                "intent, certificate, or legal effect.",
+                styles["WilsyWarning"],
+            ),
+        ])
+        if isinstance(signature_value, str) and signature_value.startswith("data:image/"):
+            if len(signature_value) > 1_500_000:
+                raise HTTPException(
+                    status_code=status.HTTP_413_REQUEST_ENTITY_TOO_LARGE,
+                    detail="ARTIFACT_PDF_SIGNATURE_IMAGE_TOO_LARGE",
+                )
+            match = re.fullmatch(
+                r"data:image/(png|jpeg|jpg);base64,([A-Za-z0-9+/=\\s]+)",
+                signature_value,
+            )
+            if not match:
+                raise HTTPException(
+                    status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+                    detail="ARTIFACT_PDF_SIGNATURE_IMAGE_FORMAT_INVALID",
+                )
+            try:
+                image_bytes = base64.b64decode(match.group(2), validate=True)
+            except (binascii.Error, ValueError) as error:
+                raise HTTPException(
+                    status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+                    detail="ARTIFACT_PDF_SIGNATURE_IMAGE_BASE64_INVALID",
+                ) from error
+            if len(image_bytes) > 1_000_000 or not (
+                image_bytes.startswith(b"\\x89PNG\\r\\n\\x1a\\n")
+                or image_bytes.startswith(b"\\xff\\xd8\\xff")
+            ):
+                raise HTTPException(
+                    status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+                    detail="ARTIFACT_PDF_SIGNATURE_IMAGE_BYTES_INVALID",
+                )
+            story.append(Image(BytesIO(image_bytes), width=65 * mm, height=22 * mm, kind="proportional"))
+        else:
+            story.append(Paragraph(_text(signature_value, limit=512), styles["WilsyCell"]))
+    story.extend([Spacer(1, 5 * mm), Paragraph("Integrity metadata", styles["Heading2"])])
     integrity_rows = [
         [Paragraph("<b>Measure</b>", styles["WilsyCell"]), Paragraph("<b>Value</b>", styles["WilsyCell"])],
         [Paragraph("Request SHA-512 digest (hash only)", styles["WilsyCell"]), Paragraph(request_digest, styles["WilsyCell"])],
