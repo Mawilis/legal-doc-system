@@ -807,6 +807,52 @@ def record_second_approval(record_id: str, body: SecondApprovalInput, response: 
     }
 
 
+@router.post("/records/{record_id}/review-events/{event_id}/publish")
+def retry_review_event_repository_persistence(
+    record_id: str,
+    event_id: str,
+    institution_id: str = Query(min_length=1, max_length=256),
+    context: TenantAuthorizationContext = Depends(_WRITE_AUTHORITY),
+) -> dict[str, object]:
+    """Idempotently retry immutable repository export for an already-persisted review event."""
+    if not isinstance(event_id, str) or not event_id.strip() or len(event_id) > 256:
+        raise HTTPException(status_code=422, detail="G64_REVIEW_EVENT_ID_INVALID")
+    client, database = _storage()
+    try:
+        with client.start_session() as session:
+            with session.start_transaction():
+                target = _review_target(
+                    tenant_id=context.tenant_id, institution_id=institution_id,
+                    record_id=record_id, session=session, collection=database[COLLECTION],
+                )
+                events = list_review_events(
+                    tenant_id=context.tenant_id, institution_id=institution_id,
+                    record_id=record_id, collection=database[REVIEW_COLLECTION],
+                    session=session, limit=100,
+                )
+    except G64RegistryError as error:
+        _raise_registry_http(error)
+    except G64ReviewRegistryError as error:
+        raise HTTPException(status_code=503, detail=error.code) from error
+    event = next((row.get("payload") for row in events if row.get("event_id") == event_id), None)
+    if not isinstance(event, dict):
+        raise HTTPException(status_code=404, detail="G64_REVIEW_EVENT_NOT_FOUND")
+    if event.get("record_sha3_512_fingerprint") != target.get("evidence_sha3_512"):
+        raise HTTPException(status_code=409, detail="G64_REVIEW_RECORD_FINGERPRINT_MISMATCH")
+    repository = _publish_review_evidence(tenant_id=context.tenant_id, event=event)
+    pending = repository["status"].startswith("PENDING")
+    return {
+        "event_id": event_id,
+        "application_persistence_status": "PERSISTED",
+        "repository_persistence_status": repository["status"],
+        "repository_commit": repository if repository["status"] in {"PUBLISHED", "ALREADY_PUBLISHED"} else None,
+        "repository_persistence_error_code": repository.get("error_code"),
+        "ratification_complete": False,
+        "permits_operational_access": False,
+        "retryable": pending,
+    }
+
+
 @router.get("/records/{record_id}/review-events")
 def read_review_events(record_id: str, institution_id: str = Query(min_length=1, max_length=256), limit: int = Query(default=50, ge=1, le=100), context: TenantAuthorizationContext = Depends(_READ_AUTHORITY)) -> dict[str, object]:
     client, database = _storage()
