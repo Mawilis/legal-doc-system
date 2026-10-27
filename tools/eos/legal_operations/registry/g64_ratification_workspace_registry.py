@@ -138,10 +138,11 @@ def _verified_record_fingerprint(payload: Mapping[str, Any]) -> str:
 
 
 def _verified_payload_fingerprint(payload: Mapping[str, Any]) -> str:
-    """Recompute the domain fingerprint from persisted semantic fields, never its claimed hash."""
-    if any(key not in payload for key in _SEMANTIC_PAYLOAD_KEYS):
+    """Recompute the full persisted fingerprint, including the attestation event."""
+    persisted_keys = (*_SEMANTIC_PAYLOAD_KEYS, "attestation")
+    if any(key not in payload for key in persisted_keys):
         raise G64RegistryCorruptRecordError()
-    semantic = {key: payload[key] for key in _SEMANTIC_PAYLOAD_KEYS}
+    semantic = {key: payload[key] for key in persisted_keys}
     try:
         encoded = json.dumps(
             semantic, sort_keys=True, separators=(",", ":"),
