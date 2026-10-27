@@ -657,7 +657,7 @@ def record_second_approval(record_id: str, body: SecondApprovalInput, idempotenc
                 verifier = next((row.get("payload", {}) for row in events if row.get("event_id") == body.verification_event_id), None)
                 if not isinstance(verifier, dict) or verifier.get("event_type") != "INDEPENDENT_VERIFICATION" or verifier.get("outcome") != "PASS":
                     raise HTTPException(status_code=409, detail="G64_INDEPENDENT_VERIFICATION_PASS_REQUIRED")
-                if verifier.get("record_sha3_512_fingerprint) != body.record_sha3_512_fingerprint:
+                if verifier.get("record_sha3_512_fingerprint") != body.record_sha3_512_fingerprint:
                     raise HTTPException(status_code=409, detail="G64_REVIEW_RECORD_FINGERPRINT_MISMATCH")
                 verifier_id = verifier.get("reviewer_principal_id")
                 if verifier_id in {target.get("ratifier_principal_id"), context.identity.identity_id}:
