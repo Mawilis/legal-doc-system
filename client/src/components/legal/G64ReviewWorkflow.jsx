@@ -74,6 +74,29 @@ export default function G64ReviewWorkflow({ institutionId, recordId, recordFinge
 
   useEffect(() => { refreshEvents(); }, [refreshEvents]);
 
+  const retryRepositoryPersistence = async (eventId) => {
+    if (!institutionId || !selectedRecord || !eventId) return;
+    setBusy(true);
+    setError('');
+    setStatusText('');
+    try {
+      const { data } = await api.post(
+        `/legal-operations/g64/ratification-workspace/records/${encodeURIComponent(selectedRecord)}/review-events/${encodeURIComponent(eventId)}/publish`,
+        null,
+        { params: { institution_id: institutionId } }
+      );
+      setStatusText(
+        `Repository persistence for ${eventId}: ${data.repository_persistence_status}. ` +
+        (data.repository_commit?.commit_sha || data.repository_commit?.blob_sha || data.repository_persistence_error_code || 'No repository commit was confirmed.')
+      );
+      await refreshEvents();
+    } catch (cause) {
+      setError(cause?.response?.data?.detail || 'Repository evidence retry was denied or unavailable.');
+    } finally {
+      setBusy(false);
+    }
+  };
+
   const submitVerification = async (event) => {
     event.preventDefault();
     setBusy(true);
@@ -350,6 +373,14 @@ export default function G64ReviewWorkflow({ institutionId, recordId, recordFinge
         <li key={item.event_id} className="break-all rounded-lg border border-slate-700 p-3 text-xs">
           <strong>{item.event_type}</strong> · {item.outcome} · {item.event_id}
           <p className="mt-1 text-slate-400">Actor: {item.verifier_principal_id || item.reviewer_principal_id || item.determined_by_principal_id || item.approver_principal_id}</p>
+          <button
+            type="button"
+            onClick={() => retryRepositoryPersistence(item.event_id)}
+            disabled={busy}
+            className="mt-2 rounded-md border border-slate-500 px-3 py-1.5 font-semibold disabled:opacity-40"
+          >
+            Retry / verify repository persistence
+          </button>
         </li>
       ))}</ul>}
     </section>
