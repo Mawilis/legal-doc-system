@@ -170,7 +170,7 @@ def render_artifact_pdf(
     if not trace_id:
         trace_id = f"ART-{hashlib.sha256(canonical).hexdigest()[:20].upper()}"
     request_digest = hashlib.sha512(canonical).hexdigest()
-    integrity_digest = hashlib.sha3_512(
+    render_context_digest = hashlib.sha3_512(
         b"WILSY-OS-PRESENTATION-PDF-v1\x00"
         + identity.identity_id.encode("utf-8")
         + b"\x00" + identity.tenant_id.encode("utf-8")
@@ -229,7 +229,7 @@ def render_artifact_pdf(
     integrity_rows = [
         [Paragraph("<b>Measure</b>", styles["WilsyCell"]), Paragraph("<b>Value</b>", styles["WilsyCell"])],
         [Paragraph("Request SHA-512 digest (hash only)", styles["WilsyCell"]), Paragraph(request_digest, styles["WilsyCell"])],
-        [Paragraph("Server artifact SHA3-512 digest (hash only)", styles["WilsyCell"]), Paragraph(integrity_digest, styles["WilsyCell"])],
+        [Paragraph("Render-context SHA3-512 digest (hash only)", styles["WilsyCell"]), Paragraph(render_context_digest, styles["WilsyCell"])],
         [Paragraph("Source verification", styles["WilsyCell"]), Paragraph("NOT PERFORMED", styles["WilsyCell"])],
     ]
     integrity_table = Table(integrity_rows, colWidths=[62 * mm, 112 * mm], repeatRows=1, hAlign="LEFT")
@@ -253,9 +253,13 @@ def render_artifact_pdf(
     pdf = output.getvalue()
     if not pdf.startswith(b"%PDF-"):
         raise RuntimeError("ARTIFACT_PDF_RENDERER_OUTPUT_INVALID")
+    pdf_digest = hashlib.sha3_512(pdf).hexdigest()
     return pdf, {
-        "trace_id": trace_id, "request_digest": request_digest,
-        "integrity_digest": integrity_digest, "artifact_type": artifact_type,
+        "trace_id": trace_id,
+        "request_digest": request_digest,
+        "render_context_digest": render_context_digest,
+        "pdf_digest": pdf_digest,
+        "artifact_type": artifact_type,
     }
 
 
@@ -295,7 +299,8 @@ async def generate_artifact_pdf(
     response.headers["X-Wilsy-Trace-ID"] = evidence["trace_id"]
     response.headers["X-Artifact-Proof-Status"] = "SOURCE_UNVERIFIED"
     response.headers["X-Request-Proof"] = evidence["request_digest"]
-    response.headers["X-Wilsy-Server-Integrity-Digest"] = evidence["integrity_digest"]
+    response.headers["X-Wilsy-Render-Context-Digest"] = evidence["render_context_digest"]
+    response.headers["X-Wilsy-Pdf-SHA3-512"] = evidence["pdf_digest"]
     response.headers["X-Wilsy-Artifact-Type"] = re.sub(
         r"[^A-Za-z0-9._-]", "", evidence["artifact_type"]
     )[:96] or "artifact"
