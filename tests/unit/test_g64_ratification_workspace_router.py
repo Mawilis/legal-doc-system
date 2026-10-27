@@ -425,6 +425,17 @@ def test_independent_verification_and_second_approval_are_durable_and_non_author
     }
     assert approval.json()["ratification_complete"] is False
     assert approval.json()["permits_operational_access"] is False
+    assert approval.json()["application_persistence_status"] == "PERSISTED"
+    assert approval.json()["repository_persistence_status"] == "PUBLISHED"
+    retry = client.post(
+        f"/api/legal-operations/g64/ratification-workspace/records/{record['record_id']}/review-events/{approval_event['event_id']}/publish",
+        params={"institution_id": record["institution_id"]},
+    )
+    assert retry.status_code == 200, retry.text
+    assert retry.json()["application_persistence_status"] == "PERSISTED"
+    assert retry.json()["repository_persistence_status"] == "PUBLISHED"
+    assert retry.json()["ratification_complete"] is False
+    assert retry.json()["permits_operational_access"] is False
     assert len(database.collections[workspace_router.REVIEW_COLLECTION].rows) == 3
 
 
@@ -533,3 +544,20 @@ def test_second_approval_is_denied_when_evidence_backed_policy_says_not_required
     )
     assert response.status_code == 409
     assert response.json()["detail"] == "G64_SECOND_APPROVAL_NOT_REQUIRED_BY_POLICY"
+
+
+
+def test_repository_retry_rejects_unknown_review_event(monkeypatch):
+    client, _database = make_client(monkeypatch)
+    created = client.post(
+        "/api/legal-operations/g64/ratification-workspace/records",
+        headers={"Idempotency-Key": "click-for-retry-unknown"},
+        json=request_body(),
+    )
+    record = created.json()["record"]
+    response = client.post(
+        f"/api/legal-operations/g64/ratification-workspace/records/{record['record_id']}/review-events/missing-event/publish",
+        params={"institution_id": record["institution_id"]},
+    )
+    assert response.status_code == 404
+    assert response.json()["detail"] == "G64_REVIEW_EVENT_NOT_FOUND"
