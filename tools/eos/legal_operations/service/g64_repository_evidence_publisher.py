@@ -19,6 +19,7 @@ from urllib.request import Request, urlopen
 
 VERSION: Final[str] = "v1.0.0-G64-DEDICATED-BRANCH-PUBLISHER"
 _ID: Final[re.Pattern[str]] = re.compile(r"g64-[0-9a-f]{40}\Z")
+_ARTIFACT_ID: Final[re.Pattern[str]] = re.compile(r"[a-z][a-z0-9-]{0,100}\Z")
 _API: Final[str] = "https://api.github.com"
 
 
