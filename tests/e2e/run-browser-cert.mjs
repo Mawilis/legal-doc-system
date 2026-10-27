@@ -175,10 +175,6 @@ function attachSafeDiagnostics(record) {
     const lines = createInterface({ input: stream, crlfDelay: Infinity });
     lines.on('line', (line) => {
       if (record.label.startsWith('FIXTURE_')) captureSafeChildException(record, line);
-      if (record.label === 'VITE') {
-        const match = line.match(/Local:\s+http:\/\/127\.0\.0\.1:(\d+)/);
-        if (match) record.listeningPort = Number(match[1]);
-      }
       const event = classifyStartupLine(record.label, line);
       if (event) {
         const fields = record.listeningPort ? 'port=' + record.listeningPort : '';
@@ -536,10 +532,6 @@ try {
     'VITE',
   );
   await waitFor('http://127.0.0.1:' + vitePort + '/', 'VITE', 45_000, viteProcess);
-  const viteListeningPort = vitePort;
-  if (viteListeningPort !== vitePort) {
-    throw new Error('BROWSER_CERT_VITE_LISTEN_PORT_MISMATCH:' + viteListeningPort + ':' + vitePort);
-  }
   if (viteProcess.closed) throw new Error('BROWSER_CERT_VITE_EXITED_DURING_STARTUP');
 
   setPhase('browser_suite', 'playwright_authenticated_journeys');
