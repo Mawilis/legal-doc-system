@@ -14,6 +14,7 @@ import hashlib
 import json
 import re
 from datetime import datetime, timezone
+from pathlib import Path
 from typing import Final
 
 from fastapi import APIRouter, Depends, Header, HTTPException, Query, status
@@ -88,10 +89,30 @@ class DecisionInput(BaseModel):
 class WorkspaceAttestationInput(BaseModel):
     model_config = ConfigDict(extra="forbid", frozen=True)
     institution_id: str
-    contract_version: str
-    contract_sha3_512_fingerprint: str
     decisions: list[DecisionInput] = Field(min_length=10, max_length=10)
     supporting_evidence: list[EvidenceReferenceInput] = Field(default_factory=list)
+
+
+def _canonical_contract() -> tuple[str, str, str]:
+    """Read and fingerprint the canonical repository contract, never caller input."""
+    path = Path(__file__).resolve().parents[3] / (
+        "docs/architecture/wilsy-practitioner-confidentiality-institutional-authority-contract.md"
+    )
+    try:
+        raw = path.read_bytes()
+        source = raw.decode("utf-8")
+    except (OSError, UnicodeDecodeError) as error:
+        raise HTTPException(
+            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+            detail="G64_CANONICAL_CONTRACT_UNAVAILABLE",
+        ) from error
+    match = re.search(r"^VERSION:\\s*(\\S+)\\s*$", source, re.MULTILINE)
+    if match is None:
+        raise HTTPException(
+            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+            detail="G64_CANONICAL_CONTRACT_VERSION_UNAVAILABLE",
+        )
+    return match.group(1), hashlib.sha3_512(raw).hexdigest(), source
 
 
 def _reference(item: EvidenceReferenceInput) -> G64EvidenceReference:
@@ -152,6 +173,7 @@ def _response(record_document: dict[str, object], tenant_id: str) -> dict[str, o
         "record": record_document,
         "repository_evidence_export": json.loads(export_bytes),
         "institution_binding_status": "UNVERIFIED_PENDING_INDEPENDENT_VERIFICATION",
+        "ratifier_authority_status": "UNVERIFIED_PENDING_INDEPENDENT_VERIFICATION",
         "ratification_complete": False,
         "permits_operational_access": False,
         "constitutes_ratification": False,
@@ -239,6 +261,24 @@ def _hydrate_record_for_export(
     )
 
 
+@router.get("/contract")
+def read_canonical_contract(
+    context: TenantAuthorizationContext = Depends(_READ_AUTHORITY),
+) -> dict[str, object]:
+    """Return the repository-owned contract version, fingerprint and text."""
+    del context
+    version, fingerprint, source = _canonical_contract()
+    return {
+        "version": VERSION,
+        "contract_version": version,
+        "contract_sha3_512_fingerprint": fingerprint,
+        "contract_status": "PROPOSED_NOT_INSTITUTIONALLY_APPROVED",
+        "contract_text": source,
+        "ratification_complete": False,
+        "permits_operational_access": False,
+    }
+
+
 @router.post("/records", status_code=status.HTTP_201_CREATED)
 def submit_attested_record(
     body: WorkspaceAttestationInput,
@@ -260,6 +300,7 @@ def submit_attested_record(
         record_id = "g64-" + hashlib.sha3_512(
             f"{tenant_id}|{body.institution_id}|{idempotency_key}".encode("utf-8")
         ).hexdigest()[:40]
+        contract_version, contract_fingerprint, _contract_text = _canonical_contract()
         supporting = tuple(_reference(item) for item in body.supporting_evidence)
         client, database = _storage()
         collection = database[COLLECTION]
@@ -281,8 +322,8 @@ def submit_attested_record(
                     requested_decisions = [item.to_document() for item in decisions]
                     if (
                         payload.get("ratifier_principal_id") != context.identity.identity_id
-                        or payload.get("contract_version") != body.contract_version
-                        or payload.get("contract_sha3_512_fingerprint") != body.contract_sha3_512_fingerprint
+                        or payload.get("contract_version") != contract_version
+                        or payload.get("contract_sha3_512_fingerprint") != contract_fingerprint
                         or payload.get("decisions") != requested_decisions
                         or payload.get("supporting_evidence") != [item.to_document() for item in supporting]
                     ):
@@ -295,8 +336,8 @@ def submit_attested_record(
                     record_id=record_id,
                     institution_id=body.institution_id,
                     ratifier_principal_id=context.identity.identity_id,
-                    contract_version=body.contract_version,
-                    contract_sha3_512_fingerprint=body.contract_sha3_512_fingerprint,
+                    contract_version=contract_version,
+                    contract_sha3_512_fingerprint=contract_fingerprint,
                     created_at=now,
                     state=G64RecordState.DRAFT,
                     decisions=decisions,
@@ -371,6 +412,7 @@ def read_workspace_history(
             "ratification_complete": False,
             "permits_operational_access": False,
             "constitutes_ratification": False,
+            "ratifier_authority_status": "UNVERIFIED_PENDING_INDEPENDENT_VERIFICATION",
         }
     except G64RegistryError as error:
         _raise_registry_http(error)
