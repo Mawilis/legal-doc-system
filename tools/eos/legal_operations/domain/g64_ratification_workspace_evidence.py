@@ -29,12 +29,12 @@ from enum import StrEnum
 from hashlib import sha3_512
 import json
 import re
-from typing import Final, Mapping
+from typing import Final
 
 VERSION: Final[str] = "v1.0.0-G64-CLICK-ATTESTATION-EVIDENCE"
 SCHEMA: Final[str] = "WILSY-G64-RATIFICATION-WORKSPACE/V1"
-_HEX_512: Final[re.Pattern[str]] = re.compile(r"[0-9a-f]{128}\\Z")
-_TOKEN: Final[re.Pattern[str]] = re.compile(r"[A-Za-z0-9][A-Za-z0-9._:/-]{0,255}\\Z")
+_HEX_512: Final[re.Pattern[str]] = re.compile(r"[0-9a-f]{128}\Z")
+_TOKEN: Final[re.Pattern[str]] = re.compile(r"[A-Za-z0-9][A-Za-z0-9._:/-]{0,255}\Z")
 _DECISIONS: Final[tuple[tuple[str, str], ...]] = (
     ("D01", "REVIEWER_ELIGIBILITY_AND_GRANTING_AUTHORIZATION_ROLE"),
     ("D02", "REVIEWER_TARGET_AND_ADMINISTRATOR_SEPARATION_OF_DUTIES"),
@@ -209,6 +209,8 @@ class G64RatificationWorkspaceRecord:
             raise G64WorkspaceEvidenceError("DRAFT_MUST_NOT_HAVE_ATTESTATION")
         if self.state is G64RecordState.ATTESTED_PENDING_VERIFICATION and self.attestation is None:
             raise G64WorkspaceEvidenceError("ATTESTATION_REQUIRED")
+        if self.attestation is not None and self.attestation.record_sha3_512_fingerprint != self.evidence_fingerprint():
+            raise G64WorkspaceEvidenceError("ATTESTATION_RECORD_FINGERPRINT_MISMATCH")
 
     @property
     def unresolved_decision_ids(self) -> tuple[str, ...]:
