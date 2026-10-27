@@ -13,8 +13,8 @@
 # CERTIFICATION OR UPDATE DATE: 2026-10-27
 # CHANGELOG:
 #   v1.1.0-PYTHON-EOS-PDF-ROUTE
-    - Include the authenticated presentation-only PDF route and pinned ReportLab dependency.
-  v1.0.0-P0-C12F7C-E1-R9-R5
+#     - Include the authenticated presentation-only PDF route and pinned ReportLab dependency.
+#   v1.0.0-P0-C12F7C-E1-R9-R5
 #     - Establish dedicated Python 3.12 production image.
 #     - Bind canonical tools.eos.api.server:app through Uvicorn on port 9095.
 #     - Run as a fixed non-root runtime principal.
