@@ -66,13 +66,8 @@ sleep 10
 curl -f http://localhost:9095/ > /dev/null 2>&1
 check_status "Health check"
 
-# Step 7: Verify metrics
-echo -e "\n📊 Step 7: Verifying metrics endpoint..."
-curl -f http://localhost:9090/metrics > /dev/null 2>&1
-check_status "Metrics endpoint"
-
-# Step 8: Cleanup old images
-echo -e "\n🧹 Step 8: Cleaning up old images..."
+# Step 7: Cleanup old images
+echo -e "\n🧹 Step 7: Cleaning up old images..."
 docker image prune -f
 check_status "Cleanup"
 
@@ -85,5 +80,5 @@ echo "Deployed at: $(date)"
 echo ""
 echo "Services:"
 echo "  - Python EOS API: http://localhost:9095"
-echo "  - Metrics and Investor Portal remain disabled until their Python EOS contracts are certified."
+echo "  - Investor Portal and application metrics integration remain uncertified; this deployment does not claim them ready."
 echo ""
