@@ -91,8 +91,6 @@ def request_body():
     }
     return {
         "institution_id": "institution-label-pending-verification",
-        "contract_version": "v1.0.0-P47-R95-G62-DRAFT",
-        "contract_sha3_512_fingerprint": "a" * 128,
         "decisions": [
             {
                 "decision_id": f"D{index:02}",
@@ -208,3 +206,16 @@ def test_history_is_tenant_scoped_and_returns_unverified_evidence(monkeypatch):
     assert history.json()["records"][0]["institution_binding_status"] == (
         "UNVERIFIED_PENDING_INDEPENDENT_VERIFICATION"
     )
+
+
+def test_contract_endpoint_uses_canonical_repository_source(monkeypatch):
+    client, _database = make_client(monkeypatch)
+    response = client.get(
+        "/api/legal-operations/g64/ratification-workspace/contract"
+    )
+    assert response.status_code == 200
+    body = response.json()
+    assert body["contract_version"] == "v1.0.0-P47-R95-G62-DRAFT"
+    assert len(body["contract_sha3_512_fingerprint"]) == 128
+    assert body["contract_status"] == "PROPOSED_NOT_INSTITUTIONALLY_APPROVED"
+    assert body["ratification_complete"] is False
