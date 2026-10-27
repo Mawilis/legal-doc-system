@@ -242,7 +242,9 @@ def list_history(
 ) -> tuple[Mapping[str, Any], ...]:
     """Return bounded institution-scoped immutable history in deterministic order."""
     _active_transaction(session)
-    if not isinstance(institution_id, str) or not institution_id.strip():
+    if not isinstance(tenant_id, str) or not tenant_id.strip() or tenant_id != tenant_id.strip():
+        raise G64RegistryInputError("G64_REGISTRY_TENANT_ID_INVALID")
+    if not isinstance(institution_id, str) or not institution_id.strip() or institution_id != institution_id.strip():
         raise G64RegistryInputError("G64_REGISTRY_INSTITUTION_ID_INVALID")
     if isinstance(limit, bool) or not isinstance(limit, int) or not 1 <= limit <= MAX_HISTORY:
         raise G64RegistryInputError("G64_REGISTRY_HISTORY_LIMIT_INVALID")
@@ -272,7 +274,6 @@ def list_history(
             row.get("evidence_sha3_512") != recomputed
             or payload.get("evidence_sha3_512") != recomputed
             or payload.get("institution_id") != institution_id
-            or row.get("tenant_id") != tenant_id
             or payload.get("record_id") != row.get("record_id")
             or payload.get("permits_operational_access") is not False
             or payload.get("permits_reviewer_authorization") is not False
