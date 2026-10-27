@@ -585,9 +585,9 @@ try {
   }
   const pdfProxyIndex = baseViteConfig.indexOf("'/api/generate/pdf': {");
   const generalApiProxyIndex = baseViteConfig.indexOf("'/api': {");
-  const authAliasContract = baseViteConfig.includes(
-    "'/auth': {\n        target: 'http://localhost:9095',\n        rewrite: (path) => path.replace(/^\/auth/, '/api/auth'),"
-  );
+  const authAliasContract = baseViteConfig.includes(String.raw\`'/auth': {
+        target: 'http://localhost:9095',
+        rewrite: (path) => path.replace(/^\/auth/, '/api/auth'),\`);
   const pythonApiFallbackContract = baseViteConfig.includes(
     "'/api': {\n        target: 'http://localhost:9095',"
   );
