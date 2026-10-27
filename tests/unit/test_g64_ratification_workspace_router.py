@@ -367,6 +367,23 @@ def test_independent_verification_and_second_approval_are_durable_and_non_author
     assert verifier_event["permits_operational_access"] is False
 
     policy_evidence = evidence
+    mismatch = client.post(
+        f"/api/legal-operations/g64/ratification-workspace/records/{record['record_id']}/second-approval-policy",
+        headers={"Idempotency-Key": "second-approval-policy-mismatch"},
+        json={
+            "institution_id": record["institution_id"],
+            "record_id": record["record_id"],
+            "record_sha3_512_fingerprint": record["evidence_sha3_512"],
+            "verification_event_id": verifier_event["event_id"],
+            "second_approval_required": True,
+            "rationale": "This source is deliberately absent from the verifier's policy finding.",
+            "policy_source": {"locator": "evidence:unverified-policy-source", "sha3_512_fingerprint": "f" * 128},
+            "independent_verification_evidence": independent_policy_evidence,
+        },
+    )
+    assert mismatch.status_code == 422
+    assert mismatch.json()["detail"] == "G64_POLICY_AND_INDEPENDENT_EVIDENCE_MUST_MATCH_VERIFIER_FINDING"
+
     policy_response = client.post(
         f"/api/legal-operations/g64/ratification-workspace/records/{record['record_id']}/second-approval-policy",
         headers={"Idempotency-Key": "second-approval-policy-event-001"},
