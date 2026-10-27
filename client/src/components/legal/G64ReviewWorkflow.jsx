@@ -19,6 +19,14 @@ export default function G64ReviewWorkflow({ institutionId, recordId, recordFinge
   const [approvalEvidenceLocator, setApprovalEvidenceLocator] = useState('');
   const [approvalEvidenceFingerprint, setApprovalEvidenceFingerprint] = useState('');
   const [selectedVerification, setSelectedVerification] = useState('');
+  const [secondApprovalRequired, setSecondApprovalRequired] = useState('UNDECIDED');
+  const [policyRationale, setPolicyRationale] = useState('');
+  const [policySourceLocator, setPolicySourceLocator] = useState('');
+  const [policySourceFingerprint, setPolicySourceFingerprint] = useState('');
+  const [policyVerificationLocator, setPolicyVerificationLocator] = useState('');
+  const [policyVerificationFingerprint, setPolicyVerificationFingerprint] = useState('');
+  const [selectedPolicyEvent, setSelectedPolicyEvent] = useState('');
+  const [policyIdempotencyKey, setPolicyIdempotencyKey] = useState('');
   const [statusText, setStatusText] = useState('');
   const [error, setError] = useState('');
   const [busy, setBusy] = useState(false);
@@ -83,6 +91,43 @@ export default function G64ReviewWorkflow({ institutionId, recordId, recordFinge
     }
   };
 
+  const submitPolicy = async (event) => {
+    event.preventDefault();
+    if (secondApprovalRequired === 'UNDECIDED') {
+      setError('Determine the second-approval requirement from an authoritative policy source.');
+      return;
+    }
+    setBusy(true);
+    setError('');
+    setStatusText('');
+    try {
+      const key = policyIdempotencyKey || `g64-policy-${window.crypto?.randomUUID?.() || Date.now().toString(36)}`;
+      setPolicyIdempotencyKey(key);
+      const { data } = await api.post(
+        `/legal-operations/g64/ratification-workspace/records/${encodeURIComponent(selectedRecord)}/second-approval-policy`,
+        {
+          institution_id: institutionId,
+          record_id: selectedRecord,
+          record_sha3_512_fingerprint: fingerprint,
+          verification_event_id: selectedVerification,
+          second_approval_required: secondApprovalRequired === 'REQUIRED',
+          rationale: policyRationale,
+          policy_source: { locator: policySourceLocator, sha3_512_fingerprint: policySourceFingerprint },
+          independent_verification_evidence: { locator: policyVerificationLocator, sha3_512_fingerprint: policyVerificationFingerprint },
+        },
+        { headers: { 'Idempotency-Key': key } }
+      );
+      setPolicyIdempotencyKey('');
+      setSelectedPolicyEvent(data.review_event.event_id);
+      setStatusText(`Policy determination saved: ${data.review_event.event_id}. It does not authorize access.`);
+      await refreshEvents();
+    } catch (cause) {
+      setError(cause?.response?.data?.detail || 'Second-approval policy determination was not confirmed by Python EOS.');
+    } finally {
+      setBusy(false);
+    }
+  };
+
   const submitApproval = async (event) => {
     event.preventDefault();
     setBusy(true);
@@ -98,6 +143,7 @@ export default function G64ReviewWorkflow({ institutionId, recordId, recordFinge
           record_id: selectedRecord,
           record_sha3_512_fingerprint: fingerprint,
           verification_event_id: selectedVerification,
+          policy_decision_event_id: selectedPolicyEvent,
           outcome: approvalOutcome,
           rationale: approvalRationale,
           evidence: [{ locator: approvalEvidenceLocator, sha3_512_fingerprint: approvalEvidenceFingerprint }],
@@ -173,8 +219,46 @@ export default function G64ReviewWorkflow({ institutionId, recordId, recordFinge
         </button>
       </form>
 
+      <form onSubmit={submitPolicy} className="space-y-3 rounded-lg border border-slate-700 p-3">
+        <h3 className="font-semibold">Determine whether second approval is mandatory</h3>
+        <p className="text-xs leading-5 text-slate-400">Do not guess. Use the governing policy source and a distinct independent verification reference. This decision is evidence only.</p>
+        <label className="block text-sm">Policy determination
+          <select value={secondApprovalRequired} onChange={(event) => setSecondApprovalRequired(event.target.value)} required className="mt-1 w-full rounded-lg border border-slate-600 bg-slate-950 px-3 py-2">
+            <option value="UNDECIDED">Undecided</option>
+            <option value="REQUIRED">Second approval required</option>
+            <option value="NOT_REQUIRED">Second approval not required by policy</option>
+          </select>
+        </label>
+        <label className="block text-sm">Policy rationale
+          <textarea value={policyRationale} onChange={(event) => setPolicyRationale(event.target.value)} minLength={20} maxLength={4000} required rows={2} className="mt-1 w-full rounded-lg border border-slate-600 bg-slate-950 px-3 py-2" />
+        </label>
+        <div className="grid gap-3 md:grid-cols-2">
+          <label className="block text-sm">Authoritative policy locator
+            <input value={policySourceLocator} onChange={(event) => setPolicySourceLocator(event.target.value)} required className="mt-1 w-full rounded-lg border border-slate-600 bg-slate-950 px-3 py-2" />
+          </label>
+          <label className="block text-sm">Policy SHA3-512
+            <input value={policySourceFingerprint} onChange={(event) => setPolicySourceFingerprint(event.target.value.trim().toLowerCase())} required minLength={128} maxLength={128} className="mt-1 w-full rounded-lg border border-slate-600 bg-slate-950 px-3 py-2 font-mono text-xs" />
+          </label>
+          <label className="block text-sm">Independent verification evidence locator
+            <input value={policyVerificationLocator} onChange={(event) => setPolicyVerificationLocator(event.target.value)} required className="mt-1 w-full rounded-lg border border-slate-600 bg-slate-950 px-3 py-2" />
+          </label>
+          <label className="block text-sm">Independent verification evidence SHA3-512
+            <input value={policyVerificationFingerprint} onChange={(event) => setPolicyVerificationFingerprint(event.target.value.trim().toLowerCase())} required minLength={128} maxLength={128} className="mt-1 w-full rounded-lg border border-slate-600 bg-slate-950 px-3 py-2 font-mono text-xs" />
+          </label>
+        </div>
+        <button type="submit" disabled={!valid || !selectedVerification || secondApprovalRequired === 'UNDECIDED' || policyRationale.trim().length < 20 || !policySourceLocator.trim() || !FINGERPRINT.test(policySourceFingerprint.trim().toLowerCase()) || !policyVerificationLocator.trim() || !FINGERPRINT.test(policyVerificationFingerprint.trim().toLowerCase()) || busy} className="rounded-lg border border-cyan-300 px-4 py-2 font-semibold disabled:opacity-40">
+          Save second-approval policy evidence
+        </button>
+      </form>
+
       <form onSubmit={submitApproval} className="space-y-3 rounded-lg border border-slate-700 p-3">
-        <h3 className="font-semibold">Mandatory second approval</h3>
+        <h3 className="font-semibold">Second approval (only when policy requires it)</h3>
+        <label className="block text-sm">Evidence-backed policy decision
+          <select value={selectedPolicyEvent} onChange={(event) => setSelectedPolicyEvent(event.target.value)} required className="mt-1 w-full rounded-lg border border-slate-600 bg-slate-950 px-3 py-2">
+            <option value="">Choose a policy decision requiring approval</option>
+            {verificationEvents.filter((item) => item.event_type === 'SECOND_APPROVAL_POLICY' && item.second_approval_required === true).map((item) => <option key={item.event_id} value={item.event_id}>{item.event_id}</option>)}
+          </select>
+        </label>
         <label className="block text-sm">Prior PASS verification event
           <select value={selectedVerification} onChange={(event) => setSelectedVerification(event.target.value)} required className="mt-1 w-full rounded-lg border border-slate-600 bg-slate-950 px-3 py-2">
             <option value="">Choose verified event</option>
@@ -198,7 +282,7 @@ export default function G64ReviewWorkflow({ institutionId, recordId, recordFinge
             <input value={approvalEvidenceFingerprint} onChange={(event) => setApprovalEvidenceFingerprint(event.target.value.trim().toLowerCase())} required minLength={128} maxLength={128} className="mt-1 w-full rounded-lg border border-slate-600 bg-slate-950 px-3 py-2 font-mono text-xs" />
           </label>
         </div>
-        <button type="submit" disabled={!valid || !selectedVerification || approvalRationale.trim().length < 20 || !approvalEvidenceLocator.trim() || !FINGERPRINT.test(approvalEvidenceFingerprint.trim().toLowerCase()) || busy} className="rounded-lg border border-violet-300 px-4 py-2 font-semibold disabled:opacity-40">
+        <button type="submit" disabled={!valid || !selectedVerification || !selectedPolicyEvent || approvalRationale.trim().length < 20 || !approvalEvidenceLocator.trim() || !FINGERPRINT.test(approvalEvidenceFingerprint.trim().toLowerCase()) || busy} className="rounded-lg border border-violet-300 px-4 py-2 font-semibold disabled:opacity-40">
           Save second-approval evidence
         </button>
       </form>
