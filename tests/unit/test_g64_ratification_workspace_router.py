@@ -117,7 +117,7 @@ def request_body():
     }
 
 
-def verification_findings(evidence, failed=None):
+def verification_findings(evidence, failed=None, additional_evidence=None):
     checks = (
         "RATIFIER_AUTHORITY",
         "CONTRACT_VERSION_AND_FINGERPRINT",
@@ -133,7 +133,7 @@ def verification_findings(evidence, failed=None):
             "check": check,
             "passed": check != failed,
             "rationale": f"Independent check completed for {check.lower().replace('_', ' ')}.",
-            "evidence": [evidence],
+            "evidence": [evidence] + ([additional_evidence] if additional_evidence else []),
         }
         for check in checks
     ]
@@ -345,6 +345,10 @@ def test_independent_verification_and_second_approval_are_durable_and_non_author
         "locator": "evidence:independent-review-001",
         "sha3_512_fingerprint": "d" * 128,
     }
+    independent_policy_evidence = {
+        "locator": "evidence:policy-independent-check-001",
+        "sha3_512_fingerprint": "1" * 128,
+    }
     verification = client.post(
         f"/api/legal-operations/g64/ratification-workspace/records/{record['record_id']}/independent-verification",
         headers={"Idempotency-Key": "verification-event-001"},
@@ -354,7 +358,7 @@ def test_independent_verification_and_second_approval_are_durable_and_non_author
             "record_sha3_512_fingerprint": record["evidence_sha3_512"],
             "outcome": "PASS",
             "rationale": "Independent review checked source provenance and authority evidence.",
-            "findings": verification_findings(evidence),
+            "findings": verification_findings(evidence, additional_evidence=independent_policy_evidence),
         },
     )
     assert verification.status_code == 201, verification.text
@@ -362,14 +366,7 @@ def test_independent_verification_and_second_approval_are_durable_and_non_author
     assert verifier_event["verifier_principal_id"] != record["ratifier_principal_id"]
     assert verifier_event["permits_operational_access"] is False
 
-    policy_evidence = {
-        "locator": "evidence:governance-policy-001",
-        "sha3_512_fingerprint": "f" * 128,
-    }
-    independent_policy_evidence = {
-        "locator": "evidence:policy-independent-check-001",
-        "sha3_512_fingerprint": "1" * 128,
-    }
+    policy_evidence = evidence
     policy_response = client.post(
         f"/api/legal-operations/g64/ratification-workspace/records/{record['record_id']}/second-approval-policy",
         headers={"Idempotency-Key": "second-approval-policy-event-001"},
@@ -478,6 +475,7 @@ def test_second_approval_is_denied_when_evidence_backed_policy_says_not_required
     assert created.status_code == 201
     record = created.json()["record"]
     evidence = {"locator": "evidence:review-policy-negative", "sha3_512_fingerprint": "2" * 128}
+    independent_policy_evidence = {"locator": "evidence:policy-negative-check", "sha3_512_fingerprint": "4" * 128}
     verification = client.post(
         f"/api/legal-operations/g64/ratification-workspace/records/{record['record_id']}/independent-verification",
         headers={"Idempotency-Key": "verification-policy-negative"},
@@ -485,7 +483,7 @@ def test_second_approval_is_denied_when_evidence_backed_policy_says_not_required
             "institution_id": record["institution_id"], "record_id": record["record_id"],
             "record_sha3_512_fingerprint": record["evidence_sha3_512"], "outcome": "PASS",
             "rationale": "Independent review checked source provenance and authority evidence.",
-            "findings": verification_findings(evidence),
+            "findings": verification_findings(evidence, additional_evidence=independent_policy_evidence),
         },
     )
     assert verification.status_code == 201, verification.text
@@ -498,8 +496,8 @@ def test_second_approval_is_denied_when_evidence_backed_policy_says_not_required
             "record_sha3_512_fingerprint": record["evidence_sha3_512"],
             "verification_event_id": verifier_event["event_id"], "second_approval_required": False,
             "rationale": "The authoritative policy source does not require a second approval.",
-            "policy_source": {"locator": "evidence:policy-no-second-approval", "sha3_512_fingerprint": "3" * 128},
-            "independent_verification_evidence": {"locator": "evidence:policy-check", "sha3_512_fingerprint": "4" * 128},
+            "policy_source": evidence,
+            "independent_verification_evidence": independent_policy_evidence,
         },
     )
     assert policy.status_code == 201, policy.text
