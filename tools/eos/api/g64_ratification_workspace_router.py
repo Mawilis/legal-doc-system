@@ -106,7 +106,7 @@ def _canonical_contract() -> tuple[str, str, str]:
             status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
             detail="G64_CANONICAL_CONTRACT_UNAVAILABLE",
         ) from error
-    match = re.search(r"^VERSION:\\s*(\\S+)\\s*$", source, re.MULTILINE)
+    match = re.search(r"^VERSION:\s*(\S+)\s*$", source, re.MULTILINE)
     if match is None:
         raise HTTPException(
             status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
@@ -357,8 +357,8 @@ def submit_attested_record(
                     record_id=record_id,
                     institution_id=body.institution_id,
                     ratifier_principal_id=context.identity.identity_id,
-                    contract_version=body.contract_version,
-                    contract_sha3_512_fingerprint=body.contract_sha3_512_fingerprint,
+                    contract_version=contract_version,
+                    contract_sha3_512_fingerprint=contract_fingerprint,
                     created_at=now,
                     state=G64RecordState.ATTESTED_PENDING_VERIFICATION,
                     decisions=decisions,
