@@ -17,6 +17,7 @@ from tools.eos.legal_operations.registry.g64_ratification_workspace_registry imp
     G64RegistryCorruptRecordError,
     G64RegistryTransactionRequiredError,
     append_record,
+    ensure_indexes,
     list_history,
     read_record,
 )
@@ -48,6 +49,11 @@ class Collection:
     def __init__(self):
         self.rows = {}
         self.options = {}
+        self.created_indexes = []
+
+    def create_index(self, keys, **kwargs):
+        self.created_indexes.append((keys, kwargs))
+        return kwargs.get("name")
 
     def with_options(self, **kwargs):
         self.options = kwargs
@@ -202,3 +208,24 @@ def test_same_institution_and_record_id_are_isolated_by_tenant():
         tenant_id="tenant-002", institution_id="wilsy-pty-ltd",
         collection=collection, session=Session(), limit=10,
     )) == 1
+
+
+def test_unique_registry_index_includes_tenant_and_institution_scope():
+    collection = Collection()
+    ensure_indexes(collection)
+    assert collection.created_indexes == [(
+        [("tenant_id", 1), ("institution_id", 1), ("record_id", 1)],
+        {"unique": True, "name": "g64_workspace_tenant_institution_record_unique"},
+    )]
+
+
+def test_read_cannot_cross_tenant_even_for_same_institution_and_record_id():
+    collection = Collection()
+    item = record()
+    append_record(tenant_id="tenant-001", record=item, collection=collection, session=Session())
+    with pytest.raises(Exception) as captured:
+        read_record(
+            tenant_id="tenant-002", institution_id="wilsy-pty-ltd",
+            record_id="g64-record-001", collection=collection, session=Session(),
+        )
+    assert getattr(captured.value, "code", None) == "G64_REGISTRY_RECORD_NOT_FOUND"
