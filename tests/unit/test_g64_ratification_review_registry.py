@@ -64,6 +64,9 @@ class Collection:
 def event():
     return {
         "event_id": "verification-001",
+        "tenant_id": "t",
+        "institution_id": "i",
+        "record_id": "r",
         "event_type": "INDEPENDENT_VERIFICATION",
         "reviewer_principal_id": "independent-principal",
         "outcome": "PASS",
