@@ -50,7 +50,7 @@ def _healthy(url: str) -> bool:
     """Check HTTP liveness without treating a failed business endpoint as authority."""
     try:
         with urlopen(url, timeout=1.0) as response:
-            return 200 <= response.status < 500
+            return 200 <= response.status < 300
     except (URLError, TimeoutError, OSError):
         return False
 
@@ -69,7 +69,7 @@ def _start(command: list[str], label: str) -> subprocess.Popen[bytes]:
     return process
 
 
-def _stop_children(*_args: object) -> None:
+def _stop_children() -> None:
     """Terminate managed child processes and wait briefly for graceful exit."""
     for child in reversed(CHILDREN):
         if child.poll() is None:
@@ -82,13 +82,18 @@ def _stop_children(*_args: object) -> None:
             except subprocess.TimeoutExpired:
                 child.kill()
                 child.wait(timeout=2)
+
+
+def _handle_signal(*_args: object) -> None:
+    """Exit cleanly after a signal while preserving a successful shutdown code."""
+    _stop_children()
     raise SystemExit(0)
 
 
 def main() -> int:
     """Start the Python EOS API and Vite client without starting a Node BFF."""
-    signal.signal(signal.SIGINT, _stop_children)
-    signal.signal(signal.SIGTERM, _stop_children)
+    signal.signal(signal.SIGINT, _handle_signal)
+    signal.signal(signal.SIGTERM, _handle_signal)
 
     if _port_open(EOS_PORT):
         if not _healthy(EOS_HEALTH_URL):
@@ -116,6 +121,7 @@ def main() -> int:
         else:
             print("[WILSY-DEV-STACK] Python EOS readiness timed out", file=sys.stderr)
             _stop_children()
+            return 1
         print(f"[WILSY-DEV-STACK] Python EOS ready: {EOS_HEALTH_URL}", flush=True)
 
     if _port_open(CLIENT_PORT):
