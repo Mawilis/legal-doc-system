@@ -72,7 +72,14 @@ def _request(
     try:
         with urlopen(request, timeout=15) as response:
             raw = response.read()
-            return response.status, json.loads(raw) if raw else None
+            if not raw:
+                return response.status, None
+            try:
+                return response.status, json.loads(raw)
+            except ValueError as error:
+                raise G64RepositoryPublishError(
+                    "G64_REPOSITORY_API_RESPONSE_INVALID"
+                ) from error
     except HTTPError as error:
         try:
             raw = error.read()
@@ -135,7 +142,8 @@ def publish_repository_evidence(
         )
         if base_status != 200 or not isinstance(base_ref, dict):
             raise G64RepositoryPublishError("G64_REPOSITORY_BASE_BRANCH_UNAVAILABLE")
-        base_sha = base_ref.get("object", {}).get("sha")
+        base_object = base_ref.get("object")
+        base_sha = base_object.get("sha") if isinstance(base_object, dict) else None
         if not isinstance(base_sha, str) or not base_sha:
             raise G64RepositoryPublishError("G64_REPOSITORY_BASE_REF_INVALID")
         create_status, created = _request(
