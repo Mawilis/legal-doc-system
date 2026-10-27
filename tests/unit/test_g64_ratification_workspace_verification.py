@@ -118,6 +118,7 @@ def test_second_approval_requires_explicit_evidenced_policy_requirement():
     ):
         G64SecondApproval(
             approval_id="approval-001",
+            policy_decision_id="policy-decision-001",
             tenant_id="tenant-001",
             institution_id="institution-001",
             record_id="record-001",
