@@ -22,6 +22,8 @@ FAIL-CLOSED DECLARATION: Missing transactions, malformed records, divergent repl
 """
 from __future__ import annotations
 
+import hashlib
+import json
 from typing import Any, Final, Mapping
 
 from pymongo import ASCENDING
@@ -107,6 +109,29 @@ def _key(record: G64RatificationWorkspaceRecord) -> dict[str, str]:
     }
 
 
+_SEMANTIC_PAYLOAD_KEYS: Final[tuple[str, ...]] = (
+    "schema", "version", "record_id", "institution_id",
+    "ratifier_principal_id", "contract_version",
+    "contract_sha3_512_fingerprint", "created_at", "state", "decisions",
+    "supporting_evidence", "authority_effect",
+)
+
+
+def _verified_payload_fingerprint(payload: Mapping[str, Any]) -> str:
+    """Recompute the domain fingerprint from persisted semantic fields, never its claimed hash."""
+    if any(key not in payload for key in _SEMANTIC_PAYLOAD_KEYS):
+        raise G64RegistryCorruptRecordError()
+    semantic = {key: payload[key] for key in _SEMANTIC_PAYLOAD_KEYS}
+    try:
+        encoded = json.dumps(
+            semantic, sort_keys=True, separators=(",", ":"),
+            ensure_ascii=True, allow_nan=False,
+        ).encode("ascii")
+    except (TypeError, ValueError, UnicodeEncodeError) as error:
+        raise G64RegistryCorruptRecordError() from error
+    return hashlib.sha3_512(encoded).hexdigest()
+
+
 def _envelope(record: G64RatificationWorkspaceRecord) -> dict[str, Any]:
     payload = record.to_document()
     return {
@@ -189,8 +214,19 @@ def read_record(
         raise G64RegistryCorruptRecordError()
     payload = envelope["payload"]
     expected = envelope.get("evidence_sha3_512")
-    actual = payload.get("evidence_sha3_512")
-    if expected != actual or not isinstance(expected, str) or len(expected) != 128:
+    claimed = payload.get("evidence_sha3_512")
+    recomputed = _verified_payload_fingerprint(payload)
+    if (
+        not isinstance(expected, str)
+        or len(expected) != 128
+        or expected != recomputed
+        or claimed != recomputed
+        or payload.get("record_id") != record_id
+        or payload.get("institution_id") != institution_id
+        or payload.get("permits_operational_access") is not False
+        or payload.get("permits_reviewer_authorization") is not False
+        or payload.get("claims_wall_enforcement") is not False
+    ):
         raise G64RegistryCorruptRecordError()
     return envelope
 
@@ -219,8 +255,20 @@ def list_history(
             not isinstance(row, dict)
             or row.get("schema") != RECORD_SCHEMA
             or row.get("institution_id") != institution_id
+            or row.get("version") != VERSION
             or not isinstance(row.get("payload"), dict)
-            or row.get("evidence_sha3_512") != row["payload"].get("evidence_sha3_512")
+        ):
+            raise G64RegistryCorruptRecordError()
+        payload = row["payload"]
+        recomputed = _verified_payload_fingerprint(payload)
+        if (
+            row.get("evidence_sha3_512") != recomputed
+            or payload.get("evidence_sha3_512") != recomputed
+            or payload.get("institution_id") != institution_id
+            or payload.get("record_id") != row.get("record_id")
+            or payload.get("permits_operational_access") is not False
+            or payload.get("permits_reviewer_authorization") is not False
+            or payload.get("claims_wall_enforcement") is not False
         ):
             raise G64RegistryCorruptRecordError()
     return rows
