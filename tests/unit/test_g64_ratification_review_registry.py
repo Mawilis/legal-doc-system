@@ -138,3 +138,18 @@ def test_exact_review_retry_ignores_only_server_generated_timestamp():
         payload=retry, collection=collection, session=Session(),
     )
     assert result["payload"]["created_at"] == first["created_at"]
+
+
+def test_review_history_rejects_tampered_scope_and_payload():
+    collection = Collection()
+    append_review_event(
+        tenant_id="t", institution_id="i", record_id="r", event_id="verification-001",
+        payload=event(), collection=collection, session=Session(),
+    )
+    stored = collection.rows[("t", "i", "r", "verification-001")]
+    stored["payload"]["reviewer_principal_id"] = "tampered-principal"
+    with pytest.raises(G64ReviewRegistryError, match="G64_REVIEW_PERSISTED_EVENT_INVALID"):
+        list_review_events(
+            tenant_id="t", institution_id="i", record_id="r",
+            collection=collection, session=Session(),
+        )
