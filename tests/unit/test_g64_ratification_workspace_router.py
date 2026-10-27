@@ -1,4 +1,5 @@
 """Authenticated G64 workspace command transport tests."""
+import hashlib
 from datetime import datetime, timezone
 from types import SimpleNamespace
 
@@ -229,6 +230,30 @@ def test_contract_endpoint_uses_canonical_repository_source(monkeypatch):
     assert response.status_code == 200
     body = response.json()
     assert body["contract_version"] == "v1.0.0-P47-R95-G62-DRAFT"
-    assert len(body["contract_sha3_512_fingerprint"]) == 128
+    assert body["contract_sha3_512_fingerprint"] == hashlib.sha3_512(
+        body["contract_text"].encode("utf-8")
+    ).hexdigest()
     assert body["contract_status"] == "PROPOSED_NOT_INSTITUTIONALLY_APPROVED"
+    assert body["ratification_complete"] is False
+
+
+def test_repository_publisher_unavailable_returns_pending_after_app_persistence(monkeypatch):
+    client, database = make_client(monkeypatch)
+
+    def unavailable(**_kwargs):
+        raise workspace_router.G64RepositoryPublishError(
+            "G64_REPOSITORY_PUBLISHER_NOT_CONFIGURED"
+        )
+
+    monkeypatch.setattr(workspace_router, "publish_repository_evidence", unavailable)
+    response = client.post(
+        "/api/legal-operations/g64/ratification-workspace/records",
+        headers={"Idempotency-Key": "click-event-pending-repository"},
+        json=request_body(),
+    )
+    assert response.status_code == 202
+    assert len(database.collection.rows) == 1
+    body = response.json()
+    assert body["application_persistence_status"] == "PERSISTED"
+    assert body["repository_persistence_status"] == "PENDING_CONFIGURATION"
     assert body["ratification_complete"] is False
