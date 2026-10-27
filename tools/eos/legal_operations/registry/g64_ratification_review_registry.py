@@ -50,6 +50,11 @@ def ensure_indexes(collection: Any) -> None:
     )
 
 
+def _replay_projection(payload: Mapping[str, Any]) -> dict[str, Any]:
+    """Exclude server-generated event time so a retry remains idempotent."""
+    return {key: value for key, value in payload.items() if key != "created_at"}
+
+
 def append_review_event(
     *,
     tenant_id: str,
@@ -87,7 +92,11 @@ def append_review_event(
     try:
         existing = target.find_one(key, session=session)
         if existing is not None:
-            if existing.get("payload_sha3_512") != digest or existing.get("payload") != dict(payload):
+            previous = existing.get("payload")
+            if (
+                not isinstance(previous, dict)
+                or _replay_projection(previous) != _replay_projection(payload)
+            ):
                 raise G64ReviewRegistryError("G64_REVIEW_IMMUTABLE_EVENT_CONFLICT")
             return existing
         document = {
