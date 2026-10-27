@@ -121,6 +121,17 @@ def make_client(monkeypatch):
     app.dependency_overrides[workspace_router._READ_AUTHORITY] = lambda: context
     database = Database()
     monkeypatch.setattr(workspace_router, "_storage", lambda: (Client(), database))
+    monkeypatch.setattr(
+        workspace_router,
+        "publish_repository_evidence",
+        lambda **_kwargs: {
+            "status": "PUBLISHED",
+            "repository": "Mawilis/legal-doc-system",
+            "branch": "g64-evidence/test",
+            "path": "encryption-evidence/g64-ratification-workspaces/test.json",
+            "commit_sha": "c" * 40,
+        },
+    )
     return TestClient(app), database
 
 
@@ -147,6 +158,8 @@ def test_authenticated_click_persists_non_authorizing_record_and_export(monkeypa
     assert body["repository_evidence_export"]["export_status"] == (
         "INDEPENDENT_VERIFICATION_PENDING"
     )
+    assert body["repository_persistence_status"] == "PUBLISHED"
+    assert body["repository_commit"]["commit_sha"] == "c" * 40
 
 
 def test_idempotent_retry_replays_same_record_without_duplicate(monkeypatch):
