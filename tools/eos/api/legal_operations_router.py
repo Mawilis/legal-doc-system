@@ -1,7 +1,7 @@
 """Authenticated deterministic read projections for Legal Operations.
 
 TITLE: WILSY OS Legal Operations Read Projection Router
-VERSION: v1.16.0-R67-ENTERPRISE-DAILY-WORK-EXECUTION-READ
+VERSION: v1.17.0-G68-P2-PRACTITIONER-CONFIDENTIALITY-CONTAINMENT
 AUTHORITY: Authenticated, tenant-scoped projection of canonical Legal Operations evidence only.
 EPITOME: Preserve exact authorized internal/sheriff/deputy/client reads while
          exposing one snapshot-consistent legal-practice workspace projection and
@@ -21,6 +21,7 @@ COLLABORATION / OWNERSHIP: Python EOS API composition. P1 owns lifecycle truth,
                             L8-8E owns immutable conflict-screening persistence;
                             tenant authorization owns access authority.
 CERTIFICATION / UPDATE DATE: 2026-10-22
+CHANGELOG: 2026-10-24 v1.17.0-G68-P2-PRACTITIONER-CONFIDENTIALITY-CONTAINMENT fails closed before any workspace collection access while certified positive practitioner confidentiality authority remains unavailable; returns a distinct non-disclosing 503 and grants no access.
 CHANGELOG: 2026-10-22 v1.16.0-R67-ENTERPRISE-DAILY-WORK-EXECUTION-READ adds
            one deterministic, deduplicated and urgency-ordered daily execution
            queue to the existing authenticated productive-work response. Queue
@@ -285,7 +286,7 @@ from tools.eos.saas.entitlement.tenant_product_entitlement_registry import (
 )
 
 
-VERSION: Final[str] = "v1.16.0-R67-ENTERPRISE-DAILY-WORK-EXECUTION-READ"
+VERSION: Final[str] = "v1.17.0-G68-P2-PRACTITIONER-CONFIDENTIALITY-CONTAINMENT"
 logger = logging.getLogger("WilsyOS.API.LegalOperationsRouter")
 _IDENTITY = re.compile(r"^[A-Za-z0-9][A-Za-z0-9._:-]{0,127}$")
 _CLIENT_ROLE = "tenant_legal_client"
@@ -1819,79 +1820,10 @@ async def get_legal_practice_workspace_projection(
                 detail="LEGAL_OPERATIONS_PRODUCT_UNAVAILABLE",
             )
 
-        collection = database.get_collection(LIFECYCLE_COLLECTION)
-        matters = _workspace_rows(
-            tenant_id=context.tenant_id,
-            entity_type="CaseMatter",
-            collection=collection,
-            session=session,
+        raise HTTPException(
+            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+            detail="LEGAL_OPERATIONS_WORKSPACE_CONFIDENTIALITY_AUTHORITY_UNAVAILABLE",
         )
-        instructions = _workspace_rows(
-            tenant_id=context.tenant_id,
-            entity_type="LegalInstruction",
-            collection=collection,
-            session=session,
-        )
-        documents = _workspace_rows(
-            tenant_id=context.tenant_id,
-            entity_type="ProcessDocument",
-            collection=collection,
-            session=session,
-        )
-        attempts = _workspace_rows(
-            tenant_id=context.tenant_id,
-            entity_type="ServiceAttempt",
-            collection=collection,
-            session=session,
-        )
-        executions = _workspace_rows(
-            tenant_id=context.tenant_id,
-            entity_type="ServiceExecution",
-            collection=collection,
-            session=session,
-        )
-        returns = _workspace_rows(
-            tenant_id=context.tenant_id,
-            entity_type="ReturnOfService",
-            collection=collection,
-            session=session,
-        )
-        resolve_workspace_canonical_parents(
-            matters=matters,
-            instructions=instructions,
-            documents=documents,
-            attempts=attempts,
-            executions=executions,
-            returns=returns,
-        )
-        _require_workspace_disclosure_clearance(
-            matters=matters,
-            instructions=instructions,
-            documents=documents,
-            attempts=attempts,
-            executions=executions,
-            returns=returns,
-        )
-        return {
-            "schema": _WORKSPACE_SCHEMA,
-            "version": _WORKSPACE_VERSION,
-            "tenant_id": context.tenant_id,
-            "visibility": _WORKSPACE_VISIBILITY,
-            "summary": _workspace_summary(
-                matters=matters,
-                instructions=instructions,
-                documents=documents,
-                attempts=attempts,
-                executions=executions,
-                returns=returns,
-            ),
-            "matters": matters,
-            "instructions": instructions,
-            "documents": documents,
-            "attempts": attempts,
-            "executions": executions,
-            "returns": returns,
-        }
 
     try:
         return _workspace_projection_transaction(run)
@@ -2230,7 +2162,7 @@ __all__ = [
 
 
 # ARTIFACT: legal_operations_router.py
-# VERSION: v1.16.0-R67-ENTERPRISE-DAILY-WORK-EXECUTION-READ
+# VERSION: v1.17.0-G68-P2-PRACTITIONER-CONFIDENTIALITY-CONTAINMENT
 # AUTHORITY BOUNDARY: authenticated Legal reads and bounded post-authorization temporal observation only; temporal and specialist workflow projections remain bounded by productive-work visibility and grant no command, IAM assignment, plan/subscription mutation, payment execution or settlement authority
 # TENANT POSTURE: every projection uses exact authenticated/current-authorized tenant context; foreign lifecycle, deadline, workflow, screening, subscription and entitlement evidence is never disclosed
 # COMPLETION PROVENANCE: Canonical immutable completion history

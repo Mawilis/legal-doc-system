@@ -63,13 +63,21 @@ const complianceRecordSchema = new Schema(
       index: true,
     },
     riskAssessment: {
-      inherentRisk: { type: String, enum: ['CRITICAL', 'HIGH', 'MEDIUM', 'LOW'], default: 'MEDIUM' },
+      inherentRisk: {
+        type: String,
+        enum: ['CRITICAL', 'HIGH', 'MEDIUM', 'LOW'],
+        default: 'MEDIUM',
+      },
       lastAssessed: Date,
       nextAssessment: Date,
     },
     complianceDocuments: [
       {
-        documentId: { type: String, required: true, default: () => `doc-${crypto.randomBytes(12).toString('hex')}` },
+        documentId: {
+          type: String,
+          required: true,
+          default: () => `doc-${crypto.randomBytes(12).toString('hex')}`,
+        },
         documentHash: { type: String, required: true },
         documentCategory: { type: String, required: true },
         effectiveDate: { type: Date, default: Date.now },
@@ -89,6 +97,7 @@ const complianceRecordSchema = new Schema(
   }
 );
 
-const ComplianceRecord = mongoose.models.ComplianceRecord || mongoose.model('ComplianceRecord', complianceRecordSchema);
+const ComplianceRecord =
+  mongoose.models.ComplianceRecord || mongoose.model('ComplianceRecord', complianceRecordSchema);
 
 export default ComplianceRecord;
