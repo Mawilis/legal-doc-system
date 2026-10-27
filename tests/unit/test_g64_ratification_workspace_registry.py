@@ -186,3 +186,19 @@ def test_history_recomputes_fingerprint_for_every_row():
             session=Session(),
             limit=10,
         )
+
+
+def test_same_institution_and_record_id_are_isolated_by_tenant():
+    collection = Collection()
+    item = record()
+    append_record(tenant_id="tenant-001", record=item, collection=collection, session=Session())
+    append_record(tenant_id="tenant-002", record=item, collection=collection, session=Session())
+    assert len(collection.rows) == 2
+    assert len(list_history(
+        tenant_id="tenant-001", institution_id="wilsy-pty-ltd",
+        collection=collection, session=Session(), limit=10,
+    )) == 1
+    assert len(list_history(
+        tenant_id="tenant-002", institution_id="wilsy-pty-ltd",
+        collection=collection, session=Session(), limit=10,
+    )) == 1
