@@ -695,7 +695,7 @@ def record_second_approval(record_id: str, body: SecondApprovalInput, idempotenc
                     raise HTTPException(status_code=409, detail="G64_INDEPENDENT_VERIFICATION_PASS_REQUIRED")
                 if verifier.get("record_sha3_512_fingerprint") != body.record_sha3_512_fingerprint:
                     raise HTTPException(status_code=409, detail="G64_REVIEW_RECORD_FINGERPRINT_MISMATCH")
-                verifier_id = verifier.get("reviewer_principal_id")
+                verifier_id = verifier.get("verifier_principal_id")
                 if verifier_id in {target.get("ratifier_principal_id"), context.identity.identity_id}:
                     raise HTTPException(status_code=403, detail="G64_SEPARATION_OF_DUTIES_VIOLATION")
                 policy = next(
