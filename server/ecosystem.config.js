@@ -1,10 +1,10 @@
 /* eslint-disable */
 /**
  * @file ecosystem.config.js
- * @version 1.0.2-FINAL-ANCHOR
+ * @version 2.0.0-PYTHON-EOS-API
  * @epitome Sovereign Process Management - Wilsy OS
- * @description PM2 configuration for R2.3T annual transaction routing.
- * ENSURES: Zero-downtime, Auto-healing, Forensic log integrity.
+ * @description PM2 configuration for the canonical Python EOS ASGI API.
+ * ENSURES: Python EOS process supervision and restart policy; no Node API BFF.
  *
  * BIBLICAL STANDARDS:
  * - Worth: Billions (Investment-Grade Reliability).
@@ -15,11 +15,13 @@
 module.exports = {
   apps: [
     {
-      name: 'wilsy-os-sovereign-nexus',
-      script: './server.js',
+      name: 'wilsy-os-python-eos-api',
+      script: '../.venv/bin/python',
+      args: '-m uvicorn tools.eos.api.server:app --host 127.0.0.1 --port 9095',
+      cwd: '..',
+      interpreter: 'none',
 
-      // CRITICAL: instances set to 1 to prevent Port Collision (EADDRINUSE).
-      // Scale to 'max' ONLY if implementing a Load Balancer / Proxy layer.
+      // CRITICAL: one Python EOS process owns port 9095.
       instances: 1,
       exec_mode: 'fork',
 
@@ -31,9 +33,9 @@ module.exports = {
 
       // Environment Context
       env: {
-        NODE_ENV: 'production',
-        PORT: 5050,
-        DEBUG: 'sovereign:*'
+        PYTHONPATH: '..',
+        PYTHONUNBUFFERED: '1',
+        WILSY_EOS_RUNTIME: 'python'
       },
 
       // Forensic Audit Trail: Centralized logging for R240M revenue monitoring
