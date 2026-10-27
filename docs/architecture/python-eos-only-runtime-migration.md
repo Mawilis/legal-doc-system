@@ -24,6 +24,12 @@ The current Vite configuration explicitly routes these surfaces to Python EOS at
 | `/api/legal-operations` | Python EOS | Prefix retained |
 | `/api/legal-acceptance` | Python EOS | Prefix retained |
 | `/api/tenants`, `/api/employees` | Python EOS | Directory contracts |
+| `/api/business/tenants` | Python EOS | Rewrites to `/api/tenants` |
+| `/api/plans`, `/api/subscriptions` | Python EOS | Previously forwarded unchanged by the BFF |
+| `/api/wilsy-ai/legal-services`, `/api/wilsy-ai/legal-next-actions` | Python EOS | Selective legal routes now use canonical EOS routers |
+| `/billing/*`, `/api/billing/*` | Python EOS | `/api/billing/*` rewrites to `/billing/*` |
+| `/api/*` general fallback | Python EOS | Unknown/unimplemented routes fail at EOS rather than being sent to Node |
+| `/api/generate/pdf` | Node temporarily | Preserves the existing authenticated enterprise PDF renderer until a certified Python equivalent exists |
 
 The current branch routes the general `/api` catch-all directly to Python EOS and makes the Node-owned `POST /api/generate/pdf` route explicit. The observed `server/server.js` entrypoint proxies `/api/auth`, tenant/employee directories, kernel, plans, subscriptions, billing and two selective WILSY AI legal routes to Python EOS; the Vite configuration now routes those contracts directly to their Python targets. The billing alias preserves the existing `/api/billing/*` to `/billing/*` rewrite, and `/api/business/tenants` preserves its alias rewrite to `/api/tenants`.
 
@@ -70,8 +76,8 @@ An endpoint is not considered migrated because a similarly named Python route ex
 
 Only after all route-matrix entries are certified:
 
-- Remove the Vite Node catch-all and obsolete Node auth aliases.
-- Change the local launcher to start and health-check Python EOS plus the client only.
+- After PDF parity is certified, remove the explicit Vite Node PDF route and the Node API process from the local launcher.
+- Remove obsolete Node auth aliases and any remaining Node proxy-only paths.
 - Replace or separately migrate any required worker functionality; do not silently discard the Node worker.
 - Remove the Node BFF from CI, image builds, deployment manifests and startup docs.
 - Reclassify production-surface policy entries only after corresponding runtime consumers are gone and repository guards prove the result.
