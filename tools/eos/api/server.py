@@ -91,6 +91,10 @@ from .tenant_router import tenant_router
 from .legal_operations_router import router as legal_operations_router
 from .legal_operations_command_router import router as legal_operations_command_router
 from .g64_ratification_workspace_router import router as g64_ratification_workspace_router
+from tools.eos.legal_operations.registry.g64_ratification_review_registry import (
+    COLLECTION as G64_REVIEW_EVIDENCE_COLLECTION,
+    ensure_indexes as ensure_g64_review_evidence_indexes,
+)
 from tools.eos.legal_operations.registry.g64_ratification_workspace_registry import (
     COLLECTION as G64_WORKSPACE_EVIDENCE_COLLECTION,
     ensure_indexes as ensure_g64_workspace_evidence_indexes,
@@ -402,6 +406,9 @@ class WilsyAPIServer:
             if database is not None:
                 ensure_g64_workspace_evidence_indexes(
                     database[G64_WORKSPACE_EVIDENCE_COLLECTION]
+                )
+                ensure_g64_review_evidence_indexes(
+                    database[G64_REVIEW_EVIDENCE_COLLECTION]
                 )
                 TenantAuthorizationDecisionEvidenceRegistry(
                     database[
