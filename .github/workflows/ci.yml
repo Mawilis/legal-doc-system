@@ -45,40 +45,37 @@ jobs:
         run: python -m pytest -q tests/unit/test_artifact_pdf_router.py
 
   security-scan:
-    name: 🕵️ Security & Quantum Audit
+    name: Python EOS Dependency & Integrity Audit
     runs-on: ubuntu-latest
-    defaults:
-      run:
-        working-directory: ./server
     steps:
       - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
       - uses: actions/setup-node@v4
         with:
           node-version: ${{ env.NODE_VERSION }}
-      - name: Install dependencies
-        run: npm ci --legacy-peer-deps
-      - name: Run security audit
-        run: npm audit --omit=dev --audit-level=high
-      - name: Run retained production lint
+      - name: Install canonical Python EOS runtime requirements
         run: |
-          ./node_modules/.bin/eslint \
-            server.js \
-            controllers/businessArtifactPdfController.js \
-            services/artifacts/wilsyEnterprisePdfRenderer.js \
-            services/qr/qrGenerator.js
-      - name: Run retained production secret guard
-        working-directory: .
+          python -m pip install --upgrade pip==25.3
+          python -m pip install --requirement requirements.txt pip-audit==2.9.0
+      - name: Audit Python EOS runtime dependencies
+        run: pip-audit --requirement requirements.txt
+      - name: Compile canonical Python EOS runtime
+        run: python -m py_compile tools/eos/api/server.py tools/eos/api/artifact_pdf_router.py
+      - name: Run secret guard on canonical Python EOS runtime and deployment files
         run: |
           node scripts/wilsy-secret-guard.js \
-            server/server.js \
-            server/controllers/businessArtifactPdfController.js \
-            server/services/artifacts/wilsyEnterprisePdfRenderer.js \
-            server/services/qr/qrGenerator.js \
+            tools/eos/api/server.py \
+            tools/eos/api/artifact_pdf_router.py \
+            tools/eos/runtime/dev_stack.py \
+            Dockerfile \
+            infra/docker/Dockerfile.eos \
             scripts/wilsy-secret-guard.js
 
-  # Legacy server enterprise matrix is intentionally excluded from
-  # production certification until separately classified RETAIN/SOVEREIGN.
-
+  # Legacy Node BFF source is migration-only and is not a production runtime gate.
+  # Its dependency tree is not the deployed Python EOS runtime.
+  
   # ─── R2A: Vendor Bill Real-Mongo Certification ─────────────────────────
   vendor-bill-r2a-certification:
     name: 🧾 R2A Vendor Bill Real-Mongo Certification
