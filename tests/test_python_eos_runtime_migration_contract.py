@@ -28,20 +28,20 @@ def test_legacy_auth_alias_targets_python_eos_and_preserves_canonical_prefix() -
     auth_block = proxy_block("'/auth': {", "// Kennel invoice lifecycle endpoints")
 
     assert "target: 'http://localhost:9095'" in auth_block
-    assert "rewrite: (path) => path.replace(/^\\/auth(?=\\/|$)/, '/api/auth')" in auth_block
+    assert r"rewrite: (path) => path.replace(/^\/auth(?=\/|$)/, '/api/auth')" in auth_block
     assert "Auth backend unreachable – verify Python EOS on port 9095 is active." in auth_block
     assert "target: 'http://localhost:4000'" not in auth_block
 
 
 def test_bff_forwarded_python_routes_are_directly_routed_to_eos() -> None:
     expected = (
-        ("'/api/business/tenants': {", "'/api/plans': {", "target: 'http://localhost:9095'", "rewrite: (path) => path.replace(/^\\/api\\/business\\/tenants(?=\\/|$)/, '/api/tenants')"),
+        ("'/api/business/tenants': {", "'/api/plans': {", "target: 'http://localhost:9095'", r"rewrite: (path) => path.replace(/^\/api\/business\/tenants(?=\/|$)/, '/api/tenants')"),
         ("'/api/plans': {", "'/api/subscriptions': {", "target: 'http://localhost:9095'", None),
         ("'/api/subscriptions': {", "'/api/wilsy-ai/legal-services': {", "target: 'http://localhost:9095'", None),
         ("'/api/wilsy-ai/legal-services': {", "'/api/wilsy-ai/legal-next-actions': {", "target: 'http://localhost:9095'", None),
         ("'/api/wilsy-ai/legal-next-actions': {", "'/billing': {", "target: 'http://localhost:9095'", None),
-        ("'/billing': {", "'api/billing'".replace("'", ""), "target: 'http://localhost:9095'", None),
-        ("'/api/billing': {", "// Node-owned binary PDF generation", "target: 'http://localhost:9095'", "rewrite: (path) => path.replace(/^\\/api(?=\\/|$)/, '')"),
+        ("'/billing': {", "// Node's BFF previously stripped", "target: 'http://localhost:9095'", None),
+        ("'/api/billing': {", "// Only explicitly unmigrated routes", "target: 'http://localhost:9095'", r"rewrite: (path) => path.replace(/^\/api(?=\/|$)/, '')"),
     )
     for start, end, target, rewrite in expected:
         block = proxy_block(start, end)
