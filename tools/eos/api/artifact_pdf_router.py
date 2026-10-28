@@ -81,10 +81,16 @@ def _enterprise_pdf_parity_required(value: Any, *, depth: int = 0) -> bool:
                 return True
             if normalized_key in {"type", "artifacttype", "templatetype", "servicetype", "documenttype", "artifactkind"} and isinstance(child, str):
                 discriminator = re.sub(r"[^a-z0-9]", "", child.lower())
-                if any(token in discriminator for token in (
-                    "invoice", "crmleadproofpack", "crmproofpack", "knowledgebase",
-                    "playbookfg108", "nondisclosureagreement", "nda",
-                )):
+                if (
+                    "invoice" in discriminator
+                    or "crmleadproofpack" in discriminator
+                    or "crmproofpack" in discriminator
+                    or "knowledgebase" in discriminator
+                    or "playbookfg108" in discriminator
+                    or "nondisclosureagreement" in discriminator
+                    or discriminator == "nda"
+                    or discriminator.startswith("ndatemplate")
+                ):
                     return True
             if _enterprise_pdf_parity_required(child, depth=depth + 1):
                 return True
