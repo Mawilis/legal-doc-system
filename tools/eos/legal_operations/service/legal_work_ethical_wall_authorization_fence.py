@@ -10,6 +10,8 @@ from dataclasses import dataclass
 import re
 from typing import Any, Final
 
+from pymongo import ASCENDING
+
 _SCOPE_ID: Final[re.Pattern[str]] = re.compile(r"[A-Za-z0-9][A-Za-z0-9._:-]{0,199}\Z")
 FENCE_COLLECTION: Final[str] = "legal_ethical_wall_authorization_fences"
 FENCE_INDEX_FIELDS: Final[tuple[tuple[str, int], ...]] = (
@@ -19,6 +21,17 @@ FENCE_INDEX_FIELDS: Final[tuple[tuple[str, int], ...]] = (
     ("policy_id", 1),
 )
 FENCE_INDEX_NAME: Final[str] = "uq_g65_wall_authorization_fence_scope"
+
+
+def ensure_fence_index(collection: Any) -> None:
+    """Provision the exact unique scope key through deployment-owned startup."""
+    if collection is None:
+        raise ValueError("G65_AUTHORIZATION_FENCE_COLLECTION_REQUIRED")
+    collection.create_index(
+        list(FENCE_INDEX_FIELDS),
+        name=FENCE_INDEX_NAME,
+        unique=True,
+    )
 
 
 class WallFenceUnavailable(PermissionError):
@@ -135,6 +148,6 @@ class CanonicalWallAuthorizationFence:
 
 
 __all__ = [
-    "FENCE_COLLECTION", "FENCE_INDEX_FIELDS", "FENCE_INDEX_NAME",
+    "FENCE_COLLECTION", "FENCE_INDEX_FIELDS", "FENCE_INDEX_NAME", "ensure_fence_index",
     "WallFenceUnavailable", "WallFenceToken", "CanonicalWallAuthorizationFence",
 ]
