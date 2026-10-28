@@ -264,6 +264,7 @@ BUSINESS_ROLE_OPERATION_PERMISSIONS: Final = MappingProxyType({
     "legal_matter_mandate_acknowledgment_write": "legal_operations:matter_mandate_acknowledgment:write",
     "legal_matter_representation_firm_decision_write": "legal_operations:matter_representation_firm_decision:write",
     "tenant_branding_read": "tenant_branding:read",
+    "telemetry_event_write": "telemetry:event:write",
     "tenant_branding_profile_manage": "tenant_branding:profile:manage",
     "tenant_branding_asset_manage": "tenant_branding:asset:manage",
     "legal_operating_model_manage": "legal_operations:operating_model:manage",
@@ -302,7 +303,7 @@ ELIGIBILITY = MappingProxyType({
     "tenant_legal_client": MappingProxyType({**{operation: DENY for operation in OPERATIONS}, "legal_invoice_read": ELIGIBLE}),
 })
 OPERATIONS: FrozenSet[str] = frozenset((*OPERATIONS, "legal_directory_write", "legal_receipt_write", "legal_queue_read", "legal_deputy_queue_read", "legal_client_visibility_write", "legal_client_matter_read", "legal_conflict_review_write", "legal_client_acceptance_write", "legal_matter_acceptance_instrument_write", "legal_matter_acceptance_instrument_approval_write", "legal_matter_mandate_acknowledgment_write", "legal_matter_engagement_firm_decision_write", "legal_matter_representation_firm_decision_write", "legal_attempt_outcome_write", "legal_return_write", "wilsy_ai_legal_tool_read", "wilsy_ai_legal_advisory_generate", "wilsy_ai_legal_advisory_read"))
-OPERATIONS: FrozenSet[str] = frozenset((*OPERATIONS, "tenant_branding_read", "tenant_branding_profile_manage", "tenant_branding_asset_manage", "legal_operating_model_manage"))
+OPERATIONS: FrozenSet[str] = frozenset((*OPERATIONS, "tenant_branding_read", "tenant_branding_profile_manage", "tenant_branding_asset_manage", "legal_operating_model_manage", "telemetry_event_write"))
 _eligibility_updates = dict(ELIGIBILITY)
 _client_existing = dict(ELIGIBILITY["tenant_legal_client"])
 _client_existing["legal_client_matter_read"] = ELIGIBLE
@@ -349,6 +350,12 @@ for _role in ("tenant_owner", "tenant_admin"):
     _branding_manage["tenant_branding_asset_manage"] = ELIGIBLE
     _branding_updates[_role] = MappingProxyType(_branding_manage)
 ELIGIBILITY = MappingProxyType(_branding_updates)
+_telemetry_updates = dict(ELIGIBILITY)
+for _role in ("tenant_owner", "tenant_admin", "tenant_manager"):
+    _telemetry_role = dict(_telemetry_updates[_role])
+    _telemetry_role["telemetry_event_write"] = ELIGIBLE
+    _telemetry_updates[_role] = MappingProxyType(_telemetry_role)
+ELIGIBILITY = MappingProxyType(_telemetry_updates)
 _operating_model_updates = dict(ELIGIBILITY)
 _tenant_admin_operating_model = dict(_operating_model_updates["tenant_admin"])
 _tenant_admin_operating_model["legal_operating_model_manage"] = ELIGIBLE

@@ -1,10 +1,11 @@
 """TITLE: WILSY OS Tenant Business Role Authority Resolver.
-VERSION: v1.0.0-TENANT-BUSINESS-ROLE-AUTHORITY
+VERSION: v1.1.0-TENANT-BUSINESS-ROLE-DIRECT-RESOLUTION
 AUTHORITY: Current durable tenant business-role evidence only; never authorization.
 EPITOME: Resolves exactly one ACTIVE canonical business role for an exact principal and tenant.
 ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/tools/eos/auth/tenant_business_role_authority.py
 COLLABORATION / OWNERSHIP: Wilson Khanyezi / Wilsy Core Engineering.
 CERTIFICATION/UPDATE DATE: 2026-08-30.
+CHANGELOG: v1.1.0 adds single-read resolution for canonical business-role adapters while preserving exact scope and active-only semantics.
 CHANGELOG: v1.0.0 establishes exact-scope, active-only, ambiguity-safe role evidence resolution.
 COMPLIANCE: POPIA section 19; GDPR Article 32; SOC 2 CC7.2; ISO 27001.
 SECURITY/PRIVACY POSTURE: No caller role, JWT, Node projection, persistence mutation, or financial authority is trusted.
@@ -21,7 +22,7 @@ from tools.eos.auth.role_assignment_repository import RoleAssignmentNotFoundErro
 from tools.eos.auth.tenant_authority_policy import TENANT_ROLES
 from tools.eos.auth.tenant_business_role import TenantBusinessRoleStatus
 
-VERSION = "v1.0.0-TENANT-BUSINESS-ROLE-AUTHORITY"
+VERSION = "v1.1.0-TENANT-BUSINESS-ROLE-DIRECT-RESOLUTION"
 
 class BusinessRoleResolution(StrEnum):
     RESOLVED = "RESOLVED"
@@ -42,6 +43,50 @@ def resolve_current_tenant_business_role(*, principal_id: object, tenant_id: obj
     """Return current durable business-role evidence; membership and authorization remain separate."""
     if not isinstance(principal_id, str) or not principal_id.strip() or principal_id != principal_id.strip() or not isinstance(tenant_id, str) or not tenant_id.strip() or tenant_id != tenant_id.strip():
         return TenantBusinessRoleResult(None, BusinessRoleResolution.INVALID_INPUT)
+    # The HTTP role reader can resolve the dedicated business-role record
+    # directly. Prefer that exact-scope, single-read contract when available;
+    # generic role-assignment readers retain the established exhaustive path.
+    direct_resolver = getattr(repository, "resolve_current_business_role", None)
+    if callable(direct_resolver):
+        try:
+            assignment = (
+                direct_resolver(principal_id, tenant_id)
+                if session is None
+                else direct_resolver(principal_id, tenant_id, session=session)
+            )
+        except RoleAssignmentNotFoundError:
+            return TenantBusinessRoleResult(
+                None, BusinessRoleResolution.NO_ACTIVE_TENANT_BUSINESS_ROLE
+            )
+        except (RoleAssignmentRepositoryError, AttributeError, TypeError):
+            return TenantBusinessRoleResult(
+                None,
+                BusinessRoleResolution.TENANT_BUSINESS_ROLE_AUTHORITY_UNAVAILABLE,
+            )
+
+        if (
+            getattr(assignment, "principal_id", None) != principal_id
+            or getattr(assignment, "tenant_id", None) != tenant_id
+        ):
+            return TenantBusinessRoleResult(
+                None,
+                BusinessRoleResolution.TENANT_BUSINESS_ROLE_AUTHORITY_UNAVAILABLE,
+            )
+
+        role = getattr(assignment, "business_role", None)
+        if role not in TENANT_ROLES:
+            return TenantBusinessRoleResult(
+                None, BusinessRoleResolution.NO_ACTIVE_TENANT_BUSINESS_ROLE
+            )
+        if (
+            getattr(getattr(assignment, "status", None), "value", None)
+            == TenantBusinessRoleStatus.ACTIVE.value
+        ):
+            return TenantBusinessRoleResult(role, BusinessRoleResolution.RESOLVED)
+        return TenantBusinessRoleResult(
+            None, BusinessRoleResolution.NO_ACTIVE_TENANT_BUSINESS_ROLE
+        )
+
     active: list[str] = []
     try:
         for role_id in TENANT_ROLES:
@@ -62,7 +107,7 @@ def resolve_current_tenant_business_role(*, principal_id: object, tenant_id: obj
 __all__ = ["VERSION", "TENANT_ROLES", "BusinessRoleResolution", "TenantBusinessRoleResult", "resolve_current_tenant_business_role"]
 
 # ARTIFACT: tenant_business_role_authority.py
-# VERSION: v1.0.0-TENANT-BUSINESS-ROLE-AUTHORITY
+# VERSION: v1.1.0-TENANT-BUSINESS-ROLE-DIRECT-RESOLUTION
 # AUTHORITY BOUNDARY: current business-role evidence only; no authorization or permission grant
 # TENANT POSTURE: exact principal/tenant/role lookup; membership remains separate
 # FAIL-CLOSED POSTURE: absent, revoked, ambiguous, malformed, and unavailable state denies

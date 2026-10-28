@@ -205,6 +205,29 @@ describe('api.js – Sovereign HTTP Client', () => {
       );
     });
 
+    it('preserves an explicitly supplied MFA candidate bearer over stale browser storage', async () => {
+      expect(requestInterceptorCapture.fulfilled).toEqual(expect.any(Function));
+
+      localStorageMock.setItem('wilsy_auth_token', 'stale-stored-token');
+      localStorageMock.setItem(
+        'wilsy_active_tenant',
+        JSON.stringify({ tenantId: 'TENANT-BOOTSTRAP-TEST' }),
+      );
+
+      const sealed = await requestInterceptorCapture.fulfilled({
+        url: '/auth/workspace-bootstrap',
+        method: 'get',
+        headers: {
+          Authorization: 'Bearer freshly-verified-candidate-token',
+        },
+      });
+
+      expect(sealed.headers.Authorization).toBe(
+        'Bearer freshly-verified-candidate-token',
+      );
+      expect(sealed.headers['X-Tenant-ID']).toBe('TENANT-BOOTSTRAP-TEST');
+    });
+
     it('preserves historical timestamp body injection for unrelated mutation routes', async () => {
       expect(requestInterceptorCapture.fulfilled).toEqual(expect.any(Function));
 

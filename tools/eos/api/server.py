@@ -111,6 +111,7 @@ from .wilsy_ai_legal_services_router import router as wilsy_ai_legal_services_ro
 from .wilsy_ai_advisory_router import router as wilsy_ai_advisory_router
 from .legal_acceptance_router import router as legal_acceptance_router
 from .tenant_branding_router import router as tenant_branding_router
+from .telemetry_ingestion_router import router as telemetry_ingestion_router
 from .wilsy_ai_legal_gateway_router import MODULE_ID as WILSY_AI_LEGAL_MODULE_ID, _canonical_underlying_context
 from .tenant_authorization_http import TenantAuthorizationContext
 from .hr_document_router import router as hr_document_router
@@ -386,6 +387,7 @@ class WilsyAPIServer:
         async def start_database() -> None:
             """Own explicit database bootstrap at application startup."""
             app.state.p12c_binding_indexes_ready = False
+            app.state.telemetry_indexes_ready = False
             connected, detail = connect_db()
             if not connected:
                 logger.error("[KENNEL_DB] Explicit startup bootstrap unavailable: %s", detail)
@@ -395,6 +397,9 @@ class WilsyAPIServer:
             if database is None:
                 return
             if database is not None:
+                database["wilsy_sovereign_telemetry"].create_index(
+                    "trace_id", unique=True, sparse=True, name="uq_telemetry_trace_id"
+                )
                 TenantAuthorizationDecisionEvidenceRegistry(
                     database[
                         TENANT_AUTHORIZATION_DECISION_EVIDENCE_COLLECTION
@@ -475,11 +480,13 @@ class WilsyAPIServer:
                 )
             # Only completed startup establishes binding readiness.
             app.state.p12c_binding_indexes_ready = client is not None
+            app.state.telemetry_indexes_ready = client is not None
 
         @app.on_event("shutdown")
         async def stop_database() -> None:
             """Release the kernel database during controlled application shutdown."""
             app.state.p12c_binding_indexes_ready = False
+            app.state.telemetry_indexes_ready = False
             disconnect_db()
 
         @app.on_event("startup")
@@ -566,6 +573,7 @@ class WilsyAPIServer:
         app.include_router(wilsy_ai_advisory_router, prefix="/api")
         app.include_router(legal_acceptance_router, prefix="/api")
         app.include_router(tenant_branding_router, prefix="/api")
+        app.include_router(telemetry_ingestion_router, prefix="/api")
         app.include_router(subscription_router)
         app.include_router(plan_router)
 
