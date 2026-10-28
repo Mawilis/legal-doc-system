@@ -110,6 +110,25 @@ def test_fence_rejects_missing_or_wildcard_scope() -> None:
     assert collection.updates == []
 
 
+def test_index_provisioner_creates_unique_compound_index() -> None:
+    class IndexCollection:
+        def __init__(self) -> None:
+            self.calls: list[tuple[list[tuple[str, int]], dict[str, object]]] = []
+
+        def create_index(self, fields, **options):
+            self.calls.append((fields, options))
+            return options["name"]
+
+    collection = IndexCollection()
+    from tools.eos.legal_operations.service.legal_work_ethical_wall_authorization_fence import ensure_fence_index
+
+    ensure_fence_index(collection)
+    assert collection.calls == [(
+        list(FENCE_INDEX_FIELDS),
+        {"name": FENCE_INDEX_NAME, "unique": True},
+    )]
+
+
 def test_index_contract_is_unique_and_scope_complete() -> None:
     assert FENCE_COLLECTION == "legal_ethical_wall_authorization_fences"
     assert FENCE_INDEX_NAME == "uq_g65_wall_authorization_fence_scope"
