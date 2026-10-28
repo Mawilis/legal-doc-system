@@ -1,0 +1,61 @@
+name: G65 Ethical-Wall Membership and Acknowledgement Certification
+
+on:
+  pull_request:
+    branches:
+      - main
+    paths:
+      - "tools/eos/legal_operations/service/legal_work_ethical_wall_membership_acknowledgement.py"
+      - "tools/eos/legal_operations/service/legal_work_ethical_wall_enforcement.py"
+      - "tools/eos/legal_operations/service/legal_work_ethical_wall_source_adapters.py"
+      - "tools/eos/legal_operations/service/legal_practitioner_disclosure_coordinator.py"
+      - "tests/unit/test_legal_work_ethical_wall_membership_acknowledgement.py"
+      - "tests/unit/test_legal_work_ethical_wall_enforcement.py"
+      - "tests/unit/test_legal_work_ethical_wall_source_adapters.py"
+      - "tests/unit/test_legal_practitioner_disclosure_coordinator.py"
+      - ".github/workflows/g65-ethical-wall-membership-acknowledgement-certification.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  g65-source-and-denial-certificate:
+    name: G65 source adapter and G77/G78/G79 denial regression
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - name: Checkout exact PR commit
+        uses: actions/checkout@v4
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Install bounded test dependencies
+        run: |
+          python -m pip install --upgrade pip==25.3
+          python -m pip install pytest==9.1.1 pymongo==4.18.2
+      - name: Compile exact ethical-wall surfaces
+        run: |
+          python -m py_compile \
+            tools/eos/legal_operations/service/legal_work_ethical_wall_membership_acknowledgement.py \
+            tools/eos/legal_operations/service/legal_work_ethical_wall_enforcement.py \
+            tools/eos/legal_operations/service/legal_work_ethical_wall_source_adapters.py \
+            tests/unit/test_legal_work_ethical_wall_membership_acknowledgement.py \
+            tests/unit/test_legal_work_ethical_wall_enforcement.py
+      - name: Run focused ethical-wall regression
+        shell: bash
+        run: |
+          set -uo pipefail
+          set +e
+          output="$(python -m pytest -q -rs \
+            tests/unit/test_legal_work_ethical_wall_membership_acknowledgement.py \
+            tests/unit/test_legal_work_ethical_wall_enforcement.py 2>&1)"
+          pytest_status=$?
+          set -e
+          printf '%s\\n' "$output"
+          if [ "$pytest_status" -ne 0 ]; then exit "$pytest_status"; fi
+          if printf '%s\\n' "$output" | grep -qi 'skipped'; then
+            echo "G65 certification invalid: skipped tests detected"
+            exit 1
+          fi
