@@ -24,6 +24,7 @@ on:
       - "tests/unit/test_legal_work_ethical_wall_policy_registry.py"
       - "tests/unit/test_legal_practitioner_disclosure_coordinator.py"
       - "tests/integration/test_legal_work_ethical_wall_authorization_fence_real_mongo.py"
+      - "tests/integration/test_legal_operations_practice_workspace_http.py"
       - ".github/workflows/g65-ethical-wall-membership-acknowledgement-certification.yml"
   workflow_dispatch:
 
@@ -106,6 +107,7 @@ jobs:
             tests/unit/test_legal_work_ethical_wall_policy_registry.py \
             tests/unit/test_legal_practitioner_disclosure_coordinator.py \
             tests/integration/test_legal_work_ethical_wall_authorization_fence_real_mongo.py
+            tests/integration/test_legal_operations_practice_workspace_http.py
       - name: Run focused ethical-wall regression
         shell: bash
         env:
@@ -123,7 +125,8 @@ jobs:
             tests/unit/test_legal_work_ethical_wall_authorization_fence.py \
             tests/unit/test_legal_work_ethical_wall_policy_registry.py \
             tests/unit/test_legal_practitioner_disclosure_coordinator.py \
-            tests/integration/test_legal_work_ethical_wall_authorization_fence_real_mongo.py 2>&1)"
+            tests/integration/test_legal_work_ethical_wall_authorization_fence_real_mongo.py \
+            tests/integration/test_legal_operations_practice_workspace_http.py 2>&1)"
           pytest_status=$?
           set -e
           printf '%s\\n' "$output"
