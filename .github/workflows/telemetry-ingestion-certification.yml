@@ -10,6 +10,11 @@ on:
       - "tools/eos/auth/tenant_authorization.py"
       - "tools/eos/auth/tenant_authority_policy.py"
       - "tests/unit/test_telemetry_ingestion_router.py"
+      - "tests/unit/test_permission_namespace.py"
+      - "tests/unit/test_roles.py"
+      - "tests/unit/test_tenant_authorization.py"
+      - "tests/unit/test_tenant_business_role_authority.py"
+      - "tests/unit/test_tenant_business_role_policy.py"
       - ".github/workflows/telemetry-ingestion-certification.yml"
   push:
     branches:
@@ -22,6 +27,11 @@ on:
       - "tools/eos/auth/tenant_authorization.py"
       - "tools/eos/auth/tenant_authority_policy.py"
       - "tests/unit/test_telemetry_ingestion_router.py"
+      - "tests/unit/test_permission_namespace.py"
+      - "tests/unit/test_roles.py"
+      - "tests/unit/test_tenant_authorization.py"
+      - "tests/unit/test_tenant_business_role_authority.py"
+      - "tests/unit/test_tenant_business_role_policy.py"
       - ".github/workflows/telemetry-ingestion-certification.yml"
 
 permissions:
@@ -54,4 +64,11 @@ jobs:
             tools/eos/auth/tenant_authority_policy.py \
             tests/unit/test_telemetry_ingestion_router.py
       - name: Run telemetry ingestion regression suite
-        run: python -m pytest -q tests/unit/test_telemetry_ingestion_router.py
+        run: >-
+          python -m pytest -q
+          tests/unit/test_telemetry_ingestion_router.py
+          tests/unit/test_permission_namespace.py
+          tests/unit/test_roles.py
+          tests/unit/test_tenant_authorization.py
+          tests/unit/test_tenant_business_role_authority.py
+          tests/unit/test_tenant_business_role_policy.py
