@@ -1,5 +1,5 @@
 # TITLE: L8-8M and D21B13 authenticated browser/branding certification
-# VERSION: v1.0.5-L8-8M-SERVER-PEER-LOCKFILE-CERT
+# VERSION: v1.0.6-L8-8M-ROUTE-COMPOSITION-CERT
 # AUTHORITY: Disposable certification orchestration only.
 # EPITOME: Run the authenticated Legal browser suite and the independent real-Mongo
 #          branding delivery integration certificate against isolated replica sets.
@@ -7,7 +7,8 @@
 # COLLABORATION / OWNERSHIP: EOS owns auth, tenant and asset truth; CI owns only
 #                            disposable setup, test orchestration and teardown.
 # CERTIFICATION / UPDATE DATE: 2026-10-24
-# CHANGELOG: v1.0.5 applies the repository's established legacy-peer-deps install mode to the server lockfile; the exact-revision browser workflow failed before certification because compromise-ngrams@0.0.6 declares compromise ^12 while the lockfile resolves compromise 14. The workflow also runs on the dedicated G65 revocation-fence branch so this certification can execute without a manual dispatch.
+# CHANGELOG: v1.0.6 runs the browser preflight on server app/router composition changes so route-mount regressions cannot bypass this certificate.
+#            v1.0.5 applies the repository's established legacy-peer-deps install mode to the server lockfile; the exact-revision browser workflow failed before certification because compromise-ngrams@0.0.6 declares compromise ^12 while the lockfile resolves compromise 14. The workflow also runs on the dedicated G65 revocation-fence branch so this certification can execute without a manual dispatch.
 #            v1.0.4 installs the server BFF lockfile before the browser runner starts its owned BFF.
 #            v1.0.3 installs the repository-pinned pytest runner required by the real-Mongo
 #            branding integration step after CI confirmed it was absent from runtime deps.
@@ -27,6 +28,7 @@ on:
     branches:
       - legal-ops-completion-map
       - feat/g65-revocation-fence-protocol
+      - fix/browser-cert-route-composition
     paths:
       - "tests/e2e/playwright.config.js"
       - "tests/e2e/**"
