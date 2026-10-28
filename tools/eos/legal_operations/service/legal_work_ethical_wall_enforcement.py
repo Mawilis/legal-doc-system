@@ -1,5 +1,5 @@
 """TITLE: WILSY OS Source-Verified Ethical-Wall Enforcement Boundary.
-VERSION: v1.0.0-G77-SOURCE-VERIFIED-NEGATIVE-ENFORCEMENT
+VERSION: v1.1.0-G77-G65-POINT-OF-READ-REVALIDATION
 AUTHORITY: Transaction-bound canonical source verification and denial only.
 EPITOME: Re-read current IAM, binding, assignment, conflict, review and wall
     sources in one caller-owned transaction, apply restriction/revocation
@@ -8,7 +8,7 @@ EPITOME: Re-read current IAM, binding, assignment, conflict, review and wall
 ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/tools/eos/legal_operations/service/legal_work_ethical_wall_enforcement.py
 COLLABORATION / OWNERSHIP: Wilsy OS Core Engineering / Legal Operations;
     canonical repositories own evidence and disclosure points own enforcement.
-CERTIFICATION / UPDATE DATE: 2026-10-21.
+CERTIFICATION / UPDATE DATE: 2026-10-28.
 CHANGELOG: 2026-10-21 v1.0.0 introduces ordered canonical source verification; 2026-10-28 v1.1.0 adds G65 membership/acknowledgement and final point-of-read revalidation.
 COMPLIANCE: POPIA section 19; GDPR Article 32; SOC 2 CC7.2.
 SECURITY / PRIVACY POSTURE: Stable content-free denials; no evidence identifiers logged.
