@@ -173,9 +173,12 @@ def test_real_competing_writers_leave_one_authoritative_successor(mongo_context:
         thread_client: MongoClient[Any] = MongoClient(
             URI, serverSelectionTimeoutMS=5000, tz_aware=True, tzinfo=UTC,
         )
+        thread_fence_collection = thread_client[database.name][FENCE_COLLECTION]
+        ensure_fence_index(thread_fence_collection)
         thread_registry = reg.EthicalWallPolicyRegistry(
             thread_client[database.name][reg.REVISION_COLLECTION],
             thread_client[database.name][reg.CURRENT_COLLECTION],
+            CanonicalWallAuthorizationFence(thread_fence_collection),
         )
         try:
             barrier.wait(timeout=5)
