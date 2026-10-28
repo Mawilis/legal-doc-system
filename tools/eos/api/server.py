@@ -97,6 +97,10 @@ from .legal_client_acceptance_router import router as legal_client_acceptance_ro
 from .legal_evidence_upload_router import router as legal_evidence_upload_router
 from .tenant_legal_operating_model_router import router as tenant_legal_operating_model_router
 from .legal_practitioner_matter_binding_router import router as legal_practitioner_matter_binding_router
+from tools.eos.legal_operations.service.legal_work_ethical_wall_authorization_fence import (
+    FENCE_COLLECTION as G65_WALL_FENCE_COLLECTION,
+    ensure_fence_index as ensure_g65_wall_fence_index,
+)
 from tools.eos.legal_operations.registry import (
     legal_practitioner_matter_access_registry as p12c_access_registry,
     legal_practitioner_matter_binding_registry as p12c_binding_registry,
@@ -395,6 +399,10 @@ class WilsyAPIServer:
             if database is None:
                 return
             if database is not None:
+                # G65 shared disclosure/revocation serialization index.
+                ensure_g65_wall_fence_index(
+                    database[G65_WALL_FENCE_COLLECTION]
+                )
                 TenantAuthorizationDecisionEvidenceRegistry(
                     database[
                         TENANT_AUTHORIZATION_DECISION_EVIDENCE_COLLECTION
