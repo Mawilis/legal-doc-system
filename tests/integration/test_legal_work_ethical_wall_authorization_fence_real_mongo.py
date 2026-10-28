@@ -70,7 +70,9 @@ def test_fence_writes_serialize_disclosure_and_revocation_transactions() -> None
                 last_error = error
                 if not error.retryable or attempt == 4:
                     raise
-                # Retry the complete transaction with a fresh session/snapshot.
+                # Keep the retry pending until the conflicting transaction has
+                # committed, then restart from a fresh session/snapshot.
+                assert allow_first_commit.wait(timeout=10), "first transaction did not release fence"
                 continue
         if last_error is not None:
             raise last_error
