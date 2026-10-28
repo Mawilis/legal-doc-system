@@ -200,7 +200,8 @@ def test_wall_source_failure_is_translated_to_content_free_denial(
     ):
         coordinator.read_practitioner_document_content(**request(reader))
     assert reader.calls == []
-\ndef test_policy_and_principal_fences_are_acquired_before_source_checks(monkeypatch: pytest.MonkeyPatch) -> None:
+
+def test_policy_and_principal_fences_are_acquired_before_source_checks(monkeypatch: pytest.MonkeyPatch) -> None:
     reader = Reader()
     values = request(reader)
     fence = values["authorization_fence"]
