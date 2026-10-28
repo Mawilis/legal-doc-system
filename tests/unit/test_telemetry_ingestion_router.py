@@ -152,3 +152,45 @@ def test_http_reports_database_unavailable_and_duplicate_trace(monkeypatch):
     client = _client(monkeypatch, Database())
     conflict = client.post("/telemetry/event", json={"eventType": "SYSTEM_EVENT"})
     assert conflict.status_code == 409
+
+
+
+def test_isolated_mongo_persistence_and_unique_trace_index(monkeypatch):
+    import os
+    from uuid import uuid4
+    from pymongo import MongoClient
+
+    uri = os.getenv("WILSY_TELEMETRY_TEST_MONGO_URI")
+    if not uri:
+        pytest.skip("isolated MongoDB certification service is not configured")
+    client = MongoClient(uri, serverSelectionTimeoutMS=3000)
+    database_name = f"telemetry_cert_{uuid4().hex}"
+    database = client[database_name]
+    try:
+        client.admin.command("ping")
+        database["wilsy_sovereign_telemetry"].create_index(
+            "trace_id", unique=True, sparse=True, name="uq_telemetry_trace_id"
+        )
+        event = TelemetryEventRequest.validate_event({
+            "eventType": "SYSTEM_EVENT", "metadata": {"certification": "isolated-mongo"}
+        })
+        result = _persist_telemetry_event(
+            tenant_id="tenant-certification",
+            principal_id="principal-certification",
+            event=event,
+            database=database,
+        )
+        stored = database["wilsy_sovereign_telemetry"].find_one({"trace_id": result["trace_id"]})
+        assert stored is not None
+        assert stored["tenant_id"] == "tenant-certification"
+        with pytest.raises(DuplicateKeyError):
+            _persist_telemetry_event(
+                tenant_id="tenant-certification",
+                principal_id="principal-certification",
+                event=event,
+                trace_id=result["trace_id"],
+                database=database,
+            )
+    finally:
+        client.drop_database(database_name)
+        client.close()
