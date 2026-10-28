@@ -16,6 +16,14 @@ on:
       - "tests/unit/test_legal_work_ethical_wall_source_adapters.py"
       - "tests/unit/test_legal_practitioner_ethical_wall_read_barrier.py"
       - "tests/unit/test_legal_practitioner_conjunctive_read_guard.py"
+      - "tools/eos/legal_operations/service/legal_work_ethical_wall_authorization_fence.py"
+      - "tools/eos/legal_operations/registry/legal_work_ethical_wall_policy_registry.py"
+      - "tools/eos/api/server.py"
+      - "tools/eos/legal_operations/service/legal_practitioner_disclosure_coordinator.py"
+      - "tests/unit/test_legal_work_ethical_wall_authorization_fence.py"
+      - "tests/unit/test_legal_work_ethical_wall_policy_registry.py"
+      - "tests/unit/test_legal_practitioner_disclosure_coordinator.py"
+      - "tests/integration/test_legal_work_ethical_wall_authorization_fence_real_mongo.py"
       - ".github/workflows/g65-ethical-wall-membership-acknowledgement-certification.yml"
   workflow_dispatch:
 
@@ -90,6 +98,14 @@ jobs:
             tests/unit/test_legal_work_ethical_wall_source_adapters.py \
             tests/unit/test_legal_practitioner_ethical_wall_read_barrier.py \
             tests/unit/test_legal_practitioner_conjunctive_read_guard.py
+            tools/eos/legal_operations/service/legal_work_ethical_wall_authorization_fence.py \
+            tools/eos/legal_operations/registry/legal_work_ethical_wall_policy_registry.py \
+            tools/eos/api/server.py \
+            tools/eos/legal_operations/service/legal_practitioner_disclosure_coordinator.py \
+            tests/unit/test_legal_work_ethical_wall_authorization_fence.py \
+            tests/unit/test_legal_work_ethical_wall_policy_registry.py \
+            tests/unit/test_legal_practitioner_disclosure_coordinator.py \
+            tests/integration/test_legal_work_ethical_wall_authorization_fence_real_mongo.py
       - name: Run focused ethical-wall regression
         shell: bash
         env:
@@ -103,7 +119,11 @@ jobs:
             tests/unit/test_legal_work_ethical_wall_enforcement.py \
             tests/unit/test_legal_work_ethical_wall_source_adapters.py \
             tests/unit/test_legal_practitioner_ethical_wall_read_barrier.py \
-            tests/unit/test_legal_practitioner_conjunctive_read_guard.py 2>&1)"
+            tests/unit/test_legal_practitioner_conjunctive_read_guard.py \
+            tests/unit/test_legal_work_ethical_wall_authorization_fence.py \
+            tests/unit/test_legal_work_ethical_wall_policy_registry.py \
+            tests/unit/test_legal_practitioner_disclosure_coordinator.py \
+            tests/integration/test_legal_work_ethical_wall_authorization_fence_real_mongo.py 2>&1)"
           pytest_status=$?
           set -e
           printf '%s\\n' "$output"
