@@ -65,6 +65,34 @@ def _canonical_json(value: Any) -> bytes:
         ) from error
 
 
+def _enterprise_pdf_parity_required(value: Any, *, depth: int = 0) -> bool:
+    """Identify source-backed artifact families that the generic renderer cannot replace.
+
+    This guard deliberately fails closed rather than presenting caller-supplied JSON as
+    a verified invoice, CRM proof pack, Knowledge Base export, NDA, or playbook artifact.
+    It is not an authorization decision and grants no source-read or issuance authority.
+    """
+    if depth > 8:
+        return False
+    if isinstance(value, dict):
+        for key, child in value.items():
+            normalized_key = re.sub(r"[^a-z0-9]", "", str(key).lower())
+            if normalized_key in {"crmproofpack", "knowledgebase", "playbook", "playbookpayload"}:
+                return True
+            if normalized_key in {"type", "artifacttype", "templatetype", "servicetype", "documenttype", "artifactkind"} and isinstance(child, str):
+                discriminator = re.sub(r"[^a-z0-9]", "", child.lower())
+                if any(token in discriminator for token in (
+                    "invoice", "crmleadproofpack", "crmproofpack", "knowledgebase",
+                    "playbookfg108", "nondisclosureagreement", "nda",
+                )):
+                    return True
+            if _enterprise_pdf_parity_required(child, depth=depth + 1):
+                return True
+    elif isinstance(value, list):
+        return any(_enterprise_pdf_parity_required(item, depth=depth + 1) for item in value[:200])
+    return False
+
+
 def _text(value: Any, *, limit: int = MAX_VALUE_CHARS) -> str:
     """Return bounded, escaped presentation text without executing markup."""
     if isinstance(value, (dict, list)):
@@ -355,6 +383,11 @@ async def generate_artifact_pdf(
     if caller_tenant is not None and str(caller_tenant) != identity.tenant_id:
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN, detail="ARTIFACT_PDF_TENANT_CONTEXT_MISMATCH"
+        )
+    if _enterprise_pdf_parity_required(body):
+        raise HTTPException(
+            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+            detail="ARTIFACT_PDF_ENTERPRISE_PARITY_UNAVAILABLE",
         )
     pdf, evidence = render_artifact_pdf(body, identity)
     safe_trace = re.sub(r"[^A-Za-z0-9._-]", "", evidence["trace_id"])[:96] or "artifact"
