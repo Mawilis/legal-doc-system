@@ -28,6 +28,11 @@ from tools.eos.legal_operations.domain.legal_work_practitioner_confidentiality_r
 from tools.eos.legal_operations.registry import legal_practitioner_matter_binding_registry as binding_registry
 from tools.eos.legal_operations.registry.legal_work_assignment_registry import LegalWorkAssignmentRegistry
 from tools.eos.legal_operations.registry.legal_work_ethical_wall_policy_registry import EthicalWallPolicyRegistry
+from tools.eos.legal_operations.service.legal_work_ethical_wall_authorization_fence import (
+    CanonicalWallAuthorizationFence,
+    FENCE_COLLECTION,
+    ensure_fence_index,
+)
 from tools.eos.legal_operations.service import legal_work_ethical_wall_source_adapters as adapters
 from tests.unit.test_legal_work_ethical_wall_policy_registry import revision as wall_revision
 from tests.unit.test_legal_work_ethical_wall_source_adapters import assignment, binding, review
@@ -49,10 +54,14 @@ def context() -> Any:
     reviews = database["legal_work_confidentiality_reviews"]
     revisions = database["legal_work_ethical_wall_policy_revisions"]
     pointers = database["legal_work_ethical_wall_policy_currentness"]
+    fence_collection = database[FENCE_COLLECTION]
+    ensure_fence_index(fence_collection)
     binding_registry.ensure_indexes(bindings)
     assignment_registry = LegalWorkAssignmentRegistry(assignments)
     assignment_registry.ensure_indexes()
-    wall_registry = EthicalWallPolicyRegistry(revisions, pointers)
+    wall_registry = EthicalWallPolicyRegistry(
+        revisions, pointers, CanonicalWallAuthorizationFence(fence_collection)
+    )
     wall_registry.ensure_indexes()
     try:
         yield client, database, bindings, assignment_registry, reviews, wall_registry
