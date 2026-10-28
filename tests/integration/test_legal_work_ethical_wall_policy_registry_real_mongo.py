@@ -33,6 +33,13 @@ from tools.eos.legal_operations.domain.legal_work_ethical_wall_policy import (
 from tools.eos.legal_operations.registry import (
     legal_work_ethical_wall_policy_registry as reg,
 )
+from tools.eos.legal_operations.service.legal_work_ethical_wall_authorization_fence import (
+    CanonicalWallAuthorizationFence,
+    FENCE_COLLECTION,
+    FENCE_INDEX_FIELDS,
+    FENCE_INDEX_NAME,
+    ensure_fence_index,
+)
 
 URI = os.environ["WILSY_G76_REAL_MONGO_URI"]
 NOW = datetime(2026, 10, 21, 14, 0, tzinfo=UTC)
@@ -82,13 +89,26 @@ def mongo_context() -> Any:
     database = client["wilsy_g76_" + uuid.uuid4().hex]
     revisions = database[reg.REVISION_COLLECTION]
     current = database[reg.CURRENT_COLLECTION]
-    registry = reg.EthicalWallPolicyRegistry(revisions, current)
+    fence_collection = database[FENCE_COLLECTION]
+    ensure_fence_index(fence_collection)
+    registry = reg.EthicalWallPolicyRegistry(
+        revisions, current, CanonicalWallAuthorizationFence(fence_collection)
+    )
     registry.ensure_indexes()
     try:
         yield client, database, revisions, current, registry
     finally:
         client.drop_database(database.name)
         client.close()
+
+
+def test_real_fence_index_is_unique_and_scope_complete(mongo_context: Any) -> None:
+    _, database, _, _, _ = mongo_context
+    indexes = list(database[FENCE_COLLECTION].list_indexes())
+    found = next(item for item in indexes if item["name"] == FENCE_INDEX_NAME)
+    assert found.get("unique") is True
+    assert tuple(tuple(item) for item in found["key"].items()) == FENCE_INDEX_FIELDS
+    assert "expireAfterSeconds" not in found
 
 
 def test_real_indexes_are_unique_and_never_ttl(mongo_context: Any) -> None:
