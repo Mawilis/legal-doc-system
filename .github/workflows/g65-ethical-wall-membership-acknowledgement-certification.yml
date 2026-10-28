@@ -106,7 +106,7 @@ jobs:
             tests/unit/test_legal_work_ethical_wall_authorization_fence.py \
             tests/unit/test_legal_work_ethical_wall_policy_registry.py \
             tests/unit/test_legal_practitioner_disclosure_coordinator.py \
-            tests/integration/test_legal_work_ethical_wall_authorization_fence_real_mongo.py
+            tests/integration/test_legal_work_ethical_wall_authorization_fence_real_mongo.py \
             tests/integration/test_legal_operations_practice_workspace_http.py
       - name: Run focused ethical-wall regression
         shell: bash
