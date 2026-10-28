@@ -6,7 +6,7 @@ This test proves fence write ordering, not institutional authority or route safe
 from __future__ import annotations
 
 from concurrent.futures import ThreadPoolExecutor
-from datetime import UTC, datetime
+from datetime import UTC
 import os
 import threading
 import uuid
@@ -55,11 +55,24 @@ def test_fence_writes_serialize_disclosure_and_revocation_transactions() -> None
 
     def revocation_transaction() -> None:
         assert first_has_fence.wait(timeout=10), "disclosure did not acquire fence"
-        second_started.set()
-        with client.start_session() as session:
-            with session.start_transaction():
-                token = fence.contend(**scope, session=session)
-                outcomes.append(("revocation", token.epoch))
+        last_error: BaseException | None = None
+        for attempt in range(5):
+            try:
+                with client.start_session() as session:
+                    with session.start_transaction():
+                        second_started.set()
+                        token = fence.contend(**scope, session=session)
+                    # Record only after commit; aborted attempts never count.
+                    outcomes.append(("revocation", token.epoch))
+                return
+            except WallFenceUnavailable as error:
+                last_error = error
+                if not error.retryable or attempt == 4:
+                    raise
+                # Retry the complete transaction with a fresh session/snapshot.
+                continue
+        if last_error is not None:
+            raise last_error
 
     try:
         with ThreadPoolExecutor(max_workers=2) as pool:
