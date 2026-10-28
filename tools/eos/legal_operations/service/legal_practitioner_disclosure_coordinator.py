@@ -124,6 +124,13 @@ def read_practitioner_document_content(
     if getattr(identity, "tenant_id", None) != tenant:
         _deny("G79_AUTHENTICATED_TENANT_MISMATCH")
 
+    if (
+        type(evaluation_time) is not datetime
+        or evaluation_time.tzinfo is None
+        or evaluation_time.utcoffset() is None
+    ):
+        _deny("G79_SOURCE_CHAIN_DENIED:G77_EVALUATION_TIME_INVALID")
+
     decision = authorization_context.decision
     if (
         type(decision) is not TenantAuthorizationDecision
