@@ -1,7 +1,7 @@
 /* eslint-disable */
 /**
  * ╔══════════════════════════════════════════════════════════════════════════════════════════════════════════╗
- * ║ WILSY OS – CORE APPLICATION NUCLEUS [V72.0.9‑OMEGA‑SYNC]                                                 ║
+ * ║ WILSY OS – CORE APPLICATION NUCLEUS [V72.1.0-FORENSIC-TELEMETRY-ROUTE-MOUNT]                                                 ║
  * ║ [LATENCY SNIPER | CIRCUIT BREAKER | BINARY STRIKE AUDIT | BOARDROOM KPIs | SOVEREIGN MONITORING]         ║
  * ╠══════════════════════════════════════════════════════════════════════════════════════════════════════════╣
  * ║ EPITOME: BIBLICAL WORTH BILLIONS | NO CHILD'S PLACE | INSTITUTIONAL AUTHORITY                            ║
@@ -17,7 +17,7 @@
  * ║                                                                                                          ║
  * ║ KENNEL EOS AWARENESS: Tenants, shards, and roles are enforced via middleware and routing.                ║
  * ╠══════════════════════════════════════════════════════════════════════════════════════════════════════════╣
- * ║ VERSION: 72.0.9‑OMEGA‑SYNC | PRODUCTION READY | FORTUNE 500 GRADE                                        ║
+ * ║ VERSION: 72.1.0-FORENSIC-TELEMETRY-ROUTE-MOUNT | ROUTE COMPOSITION CERTIFICATION | FORTUNE 500 GRADE                                        ║
  * ║ ABSOLUTE PATH: /Users/wilsonkhanyezi/legal-doc-system/server/app.js                                      ║
  * ╠══════════════════════════════════════════════════════════════════════════════════════════════════════════╣
  * ║ 👥 COLLABORATION & SOVEREIGN SIGN-OFF:                                                                   ║
@@ -594,7 +594,7 @@ export default app;
 
 /**
  * ═══════════════════════════════════════════════════════════════════════════════════════════════════════════
- * 🏛 INSTITUTIONAL CERTIFICATION SEAL — app.js V72.0.9‑OMEGA‑SYNC
+ * 🏛 INSTITUTIONAL CERTIFICATION SEAL — app.js V72.1.0-FORENSIC-TELEMETRY-ROUTE-MOUNT
  * ═══════════════════════════════════════════════════════════════════════════════════════════════════════════
  * Status: CERTIFIED PRODUCTION ARTIFACT — SOVEREIGN APP WITH VERIFICATION SYNC
  * Phase: Phase 6 — FULL SOVEREIGN FEATURE SET
@@ -607,7 +607,8 @@ export default app;
  * 3. Consolidated CORS handling into `corsMiddleware`.
  * 4. Integrated verification sync job scheduler (import and initialisation function).
  * 5. Added `initializeSovereignJobs()` export for starting background jobs.
- * 6. Bumped version to V72.0.9‑OMEGA‑SYNC for certification.
+ * 6. Historical: Bumped version to V72.0.9‑OMEGA‑SYNC for certification.
+ * 7. V72.1.0 mounts telemetry and forensic routes before the broad API router.
  * 7. Verified external compliance route mapping per api.js.pdf
  * ───────────────────────────────────────────────────────────────────────────────────────────────────────────
  * Next Steps: In the main server file (server.js or index.js), after establishing
