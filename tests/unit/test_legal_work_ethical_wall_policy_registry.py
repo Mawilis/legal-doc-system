@@ -32,6 +32,11 @@ from tools.eos.legal_operations.domain.legal_work_ethical_wall_policy import (
 from tools.eos.legal_operations.registry import (
     legal_work_ethical_wall_policy_registry as reg,
 )
+from tools.eos.legal_operations.service.legal_work_ethical_wall_authorization_fence import (
+    CanonicalWallAuthorizationFence,
+    FENCE_INDEX_FIELDS,
+    FENCE_INDEX_NAME,
+)
 
 NOW = datetime(2026, 10, 21, 12, 0, tzinfo=UTC)
 
@@ -101,6 +106,32 @@ class MemoryCollection:
         return SimpleNamespace(modified_count=0)
 
 
+class MemoryFenceCollection:
+    def __init__(self) -> None:
+        self.rows: dict[tuple[str, str, str, str], dict[str, object]] = {}
+        self.indexes: list[tuple[tuple[tuple[str, int], ...], dict[str, Any]]] = []
+
+    def create_index(self, keys: list[tuple[str, int]], **options: Any) -> str:
+        self.indexes.append((tuple(keys), options))
+        return str(options["name"])
+
+    def update_one(self, scope: dict[str, str], update: dict[str, Any], *, upsert: bool, session: Any) -> SimpleNamespace:
+        assert session.in_transaction is True
+        key = (scope["tenant_id"], scope["case_matter_id"], scope["practitioner_principal_id"], scope["policy_id"])
+        row = self.rows.get(key)
+        if row is None:
+            row = {**scope, "epoch": 0, "schema_version": 1}
+            self.rows[key] = row
+        row["epoch"] = int(row["epoch"]) + int(update["$inc"]["epoch"])
+        return SimpleNamespace(matched_count=1, upserted_id=None)
+
+    def find_one(self, scope: dict[str, str], *, session: Any) -> dict[str, object] | None:
+        assert session.in_transaction is True
+        key = (scope["tenant_id"], scope["case_matter_id"], scope["practitioner_principal_id"], scope["policy_id"])
+        row = self.rows.get(key)
+        return dict(row) if row is not None else None
+
+
 def revision(**changes: object) -> Revision:
     values: dict[str, object] = {
         "policy_id": "wall-1", "revision": 1, "predecessor_fingerprint": None,
@@ -135,7 +166,8 @@ def successor(root: Revision, **changes: object) -> Revision:
 
 def registry() -> tuple[Any, MemoryCollection, MemoryCollection]:
     revisions, current = MemoryCollection(), MemoryCollection()
-    return reg.EthicalWallPolicyRegistry(revisions, current), revisions, current
+    fence = CanonicalWallAuthorizationFence(MemoryFenceCollection())
+    return reg.EthicalWallPolicyRegistry(revisions, current, fence), revisions, current
 
 
 @pytest.mark.parametrize("session", [None, SimpleNamespace(in_transaction=False)])
