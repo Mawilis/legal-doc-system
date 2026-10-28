@@ -25,6 +25,11 @@ from typing import Any, Final
 from pymongo import ASCENDING
 from pymongo.errors import DuplicateKeyError, PyMongoError
 
+from tools.eos.legal_operations.service.legal_work_ethical_wall_authorization_fence import (
+    CanonicalWallAuthorizationFence,
+    WallFenceUnavailable,
+)
+
 from tools.eos.legal_operations.domain.legal_work_ethical_wall_policy import (
     EthicalWallPolicyRevision as Revision,
     EthicalWallPolicyStatus,
@@ -201,9 +206,15 @@ class EthicalWallPolicyRegistry:
     Authority: neither this registry nor its pointer grants content access.
     """
 
-    def __init__(self, revision_collection: Any, current_collection: Any) -> None:
+    def __init__(
+        self, revision_collection: Any, current_collection: Any,
+        authorization_fence: CanonicalWallAuthorizationFence,
+    ) -> None:
+        if authorization_fence is None:
+            raise ValueError("G76_WALL_AUTHORIZATION_FENCE_REQUIRED")
         self._revisions = revision_collection
         self._current = current_collection
+        self._authorization_fence = authorization_fence
 
     def ensure_indexes(self) -> None:
         """Install five uniqueness constraints and one non-TTL read index."""
@@ -303,6 +314,21 @@ class EthicalWallPolicyRegistry:
         active = _transaction(session)
         item = _valid_revision(value)
         scope = _scope(item.tenant_id, item.case_matter_id, item.policy_id)
+        # Policy-wide sentinel fence is acquired before any revision/currentness
+        # read. Every disclosure transaction contends on this same key, so a
+        # concurrent revocation cannot authorize content from an older snapshot.
+        try:
+            self._authorization_fence.contend(
+                tenant_id=item.tenant_id,
+                case_matter_id=item.case_matter_id,
+                practitioner_principal_id="policy",
+                policy_id=item.policy_id,
+                session=active,
+            )
+        except WallFenceUnavailable as error:
+            if error.retryable:
+                raise EthicalWallPolicyRetryTransaction("G76_WALL_RETRY_TRANSACTION") from error
+            raise EthicalWallPolicyPersistenceUnavailable("G76_WALL_AUTHORIZATION_FENCE_UNAVAILABLE") from error
         identity = {**scope, "revision": item.revision}
         try:
             same_identity = self._revisions.find_one(identity, session=active)
