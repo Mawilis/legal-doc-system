@@ -254,6 +254,7 @@ ROLE_PERMISSIONS_MAP: dict[str, list[str]] = {
         "platform_billing:release",
         "tenant:business_role:read",
         "tenant:business_role:write",
+        "telemetry:event:write",
         "tenant_branding:read",
         "tenant_branding:profile:manage",
         "tenant_branding:asset:manage",
