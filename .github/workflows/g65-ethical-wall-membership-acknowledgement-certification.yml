@@ -97,7 +97,7 @@ jobs:
             tests/unit/test_legal_work_ethical_wall_enforcement.py \
             tests/unit/test_legal_work_ethical_wall_source_adapters.py \
             tests/unit/test_legal_practitioner_ethical_wall_read_barrier.py \
-            tests/unit/test_legal_practitioner_conjunctive_read_guard.py
+            tests/unit/test_legal_practitioner_conjunctive_read_guard.py \
             tools/eos/legal_operations/service/legal_work_ethical_wall_authorization_fence.py \
             tools/eos/legal_operations/registry/legal_work_ethical_wall_policy_registry.py \
             tools/eos/api/server.py \
