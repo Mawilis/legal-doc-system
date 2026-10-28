@@ -53,6 +53,7 @@ import { register } from './utils/metricsCollector.js';
 import routes from './routes/api.js'; // Verified against api.js.pdf
 import wilsyAIRoutes from './routes/wilsyAiRoutes.js';
 import forensicRoutes from './routes/forensicRoutes.js';
+import telemetryRoutes from './routes/telemetryRoutes.js';
 import sovereignRoutes from './routes/sovereignRoutes.js';
 import auditLogger from './utils/auditLogger.js';
 import { broadcastTelemetry, getTelemetryState } from './utils/telemetryHelper.js';
@@ -516,9 +517,14 @@ app.use((req, res, next) => {
 app.use('/api/wilsy/ai', wilsyAIRoutes);
 app.use('/api/billing', billingRoutes);
 app.use('/api/qr', qrRoutes);
+
+// Canonical Node-owned telemetry and forensic handlers must precede the broad
+// /api router so any legacy catch-all cannot shadow their real contracts.
+app.use('/api/telemetry', telemetryRoutes);
+app.use('/api/forensics', forensicRoutes);
+
 // Verified against the external spec: api.js.pdf
 app.use('/api', routes);
-app.use('/api/forensics', forensicRoutes);
 app.use('/monitoring', sovereignRoutes);
 
 // ============================================================================
