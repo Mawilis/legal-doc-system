@@ -111,6 +111,7 @@ from .wilsy_ai_legal_services_router import router as wilsy_ai_legal_services_ro
 from .wilsy_ai_advisory_router import router as wilsy_ai_advisory_router
 from .legal_acceptance_router import router as legal_acceptance_router
 from .tenant_branding_router import router as tenant_branding_router
+from .telemetry_ingestion_router import router as telemetry_ingestion_router
 from .wilsy_ai_legal_gateway_router import MODULE_ID as WILSY_AI_LEGAL_MODULE_ID, _canonical_underlying_context
 from .tenant_authorization_http import TenantAuthorizationContext
 from .hr_document_router import router as hr_document_router
@@ -566,6 +567,7 @@ class WilsyAPIServer:
         app.include_router(wilsy_ai_advisory_router, prefix="/api")
         app.include_router(legal_acceptance_router, prefix="/api")
         app.include_router(tenant_branding_router, prefix="/api")
+        app.include_router(telemetry_ingestion_router, prefix="/api")
         app.include_router(subscription_router)
         app.include_router(plan_router)
 

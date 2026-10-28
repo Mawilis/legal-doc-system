@@ -531,6 +531,13 @@ _PERMISSIONS: Final = MappingProxyType(
             "share CRM email templates",
             tenant=True,
         ),
+        "telemetry:event:write": _meta(
+            "telemetry:event:write",
+            "TENANT",
+            "TENANT",
+            "append bounded own-tenant operational telemetry events",
+            tenant=True,
+        ),
         "tenant_branding:read": _meta(
             "tenant_branding:read",
             "TENANT",
