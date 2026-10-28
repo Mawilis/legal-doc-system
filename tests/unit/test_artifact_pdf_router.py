@@ -67,6 +67,38 @@ def test_pdf_route_rejects_caller_selected_tenant_context() -> None:
     assert response.json()["detail"] == "ARTIFACT_PDF_TENANT_CONTEXT_MISMATCH"
 
 
+def test_pdf_route_fails_closed_for_enterprise_artifact_families_without_parity() -> None:
+    import pytest
+
+    enterprise_payloads = [
+        {"type": "billing-invoice", "data": {"amount": 100}},
+        {"artifactType": "crm-lead-proof-pack", "data": {"rows": []}},
+        {"knowledgeBase": {"templateType": "PLAYBOOK_FG108"}},
+        {"templateType": "nda"},
+        {"payload": {"data": {"serviceType": "invoice"}}},
+    ]
+    app = FastAPI()
+    app.include_router(router, prefix="/api")
+    app.dependency_overrides[get_current_identity] = _identity
+
+    for payload in enterprise_payloads:
+        response = TestClient(app).post("/api/generate/pdf", json=payload)
+        assert response.status_code == 503
+        assert response.json()["detail"] == "ARTIFACT_PDF_ENTERPRISE_PARITY_UNAVAILABLE"
+
+
+def test_pdf_route_keeps_generic_standard_presentation_export_available() -> None:
+    app = FastAPI()
+    app.include_router(router, prefix="/api")
+    app.dependency_overrides[get_current_identity] = _identity
+    response = TestClient(app).post(
+        "/api/generate/pdf",
+        json={"type": "standard", "title": "Example", "data": {"value": "safe text"}},
+    )
+    assert response.status_code == 200
+    assert response.headers["x-artifact-proof-status"] == "SOURCE_UNVERIFIED"
+
+
 def test_render_artifact_pdf_preserves_bounded_user_signature_image_as_presentation_only() -> None:
     signature = (
         "data:image/png;base64,"
