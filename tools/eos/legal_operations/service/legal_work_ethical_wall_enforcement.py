@@ -1,5 +1,5 @@
 """TITLE: WILSY OS Source-Verified Ethical-Wall Enforcement Boundary.
-VERSION: v1.1.0-G77-G65-POINT-OF-READ-REVALIDATION
+VERSION: v1.2.0-G77-G65-MANDATORY-SOURCE-REVALIDATION
 AUTHORITY: Transaction-bound canonical source verification and denial only.
 EPITOME: Re-read current IAM, binding, assignment, conflict, review and wall
     sources in one caller-owned transaction, apply restriction/revocation
@@ -9,7 +9,7 @@ ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/tools/eos/legal_
 COLLABORATION / OWNERSHIP: Wilsy OS Core Engineering / Legal Operations;
     canonical repositories own evidence and disclosure points own enforcement.
 CERTIFICATION / UPDATE DATE: 2026-10-28.
-CHANGELOG: 2026-10-21 v1.0.0 introduces ordered canonical source verification; 2026-10-28 v1.1.0 adds G65 membership/acknowledgement and final point-of-read revalidation.
+CHANGELOG: 2026-10-21 v1.0.0 introduces ordered canonical source verification; 2026-10-28 v1.1.0 adds G65 membership/acknowledgement and final point-of-read revalidation; v1.2.0 makes the canonical G65 source a required dependency.
 COMPLIANCE: POPIA section 19; GDPR Article 32; SOC 2 CC7.2.
 SECURITY / PRIVACY POSTURE: Stable content-free denials; no evidence identifiers logged.
 TENANT BOUNDARY: Exact authenticated tenant, matter and principal on every source.
@@ -222,7 +222,7 @@ def require_source_verified_ethical_wall_access(
     policy_id: str, evaluation_time: datetime, iam_source: object,
     binding_source: object, assignment_source: object, conflict_source: object,
     review_source: object, wall_source: EthicalWallPolicySource, session: object,
-    membership_acknowledgement_source: CanonicalWallMembershipAcknowledgementSource | None = None,
+    membership_acknowledgement_source: CanonicalWallMembershipAcknowledgementSource,
 ) -> NoReturn:
     """Verify every currently available source and always end in bounded denial.
 
@@ -292,73 +292,72 @@ def require_source_verified_ethical_wall_access(
     if decision.permits_operational_access is not False:
         _deny("G77_WALL_SOURCE_INVALID")
 
-    # G65 evidence is checked when the deployment composition supplies the
-    # canonical source. Its presence cannot ratify issuer authority or grant access.
-    if membership_acknowledgement_source is not None:
-        try:
-            membership = membership_acknowledgement_source.resolve_membership(
-                tenant_id=tenant, case_matter_id=matter,
-                practitioner_principal_id=principal, evaluation_time=at, session=tx,
-            )
-            acknowledgement = membership_acknowledgement_source.resolve_acknowledgement(
-                tenant_id=tenant, case_matter_id=matter,
-                practitioner_principal_id=principal, policy_id=policy,
-                policy_revision_fingerprint=current.fingerprint, evaluation_time=at, session=tx,
-            )
-        except Exception:
-            _deny("G77_MEMBERSHIP_ACKNOWLEDGEMENT_UNAVAILABLE")
-        if (
-            type(membership) is not CanonicalWallMembershipEvidence
-            or membership.tenant_id != tenant
-            or membership.case_matter_id != matter
-            or membership.practitioner_principal_id != principal
-            or type(acknowledgement) is not CanonicalWallAcknowledgementEvidence
-            or acknowledgement.tenant_id != tenant
-            or acknowledgement.case_matter_id != matter
-            or acknowledgement.practitioner_principal_id != principal
-            or acknowledgement.policy_id != policy
-            or acknowledgement.policy_revision_fingerprint != current.fingerprint
-        ):
-            _deny("G77_MEMBERSHIP_ACKNOWLEDGEMENT_SCOPE_INVALID")
+    # G65 canonical source is mandatory at this enforcement boundary. Its
+    # evidence cannot ratify issuer authority or grant access.
+    try:
+        membership = membership_acknowledgement_source.resolve_membership(
+            tenant_id=tenant, case_matter_id=matter,
+            practitioner_principal_id=principal, evaluation_time=at, session=tx,
+        )
+        acknowledgement = membership_acknowledgement_source.resolve_acknowledgement(
+            tenant_id=tenant, case_matter_id=matter,
+            practitioner_principal_id=principal, policy_id=policy,
+            policy_revision_fingerprint=current.fingerprint, evaluation_time=at, session=tx,
+        )
+    except Exception:
+        _deny("G77_MEMBERSHIP_ACKNOWLEDGEMENT_UNAVAILABLE")
+    if (
+        type(membership) is not CanonicalWallMembershipEvidence
+        or membership.tenant_id != tenant
+        or membership.case_matter_id != matter
+        or membership.practitioner_principal_id != principal
+        or type(acknowledgement) is not CanonicalWallAcknowledgementEvidence
+        or acknowledgement.tenant_id != tenant
+        or acknowledgement.case_matter_id != matter
+        or acknowledgement.practitioner_principal_id != principal
+        or acknowledgement.policy_id != policy
+        or acknowledgement.policy_revision_fingerprint != current.fingerprint
+    ):
+        _deny("G77_MEMBERSHIP_ACKNOWLEDGEMENT_SCOPE_INVALID")
 
-        # Re-read both current pointers immediately before the terminal denial.
-        # The deployment must provide a source contract whose currentness/read
-        # consistency semantics are certified; a transaction snapshot alone
-        # cannot prove observation of a concurrently committed revocation.
-        try:
-            latest_membership = membership_acknowledgement_source.resolve_membership(
-                tenant_id=tenant, case_matter_id=matter,
-                practitioner_principal_id=principal, evaluation_time=at, session=tx,
-            )
-            latest_acknowledgement = membership_acknowledgement_source.resolve_acknowledgement(
-                tenant_id=tenant, case_matter_id=matter,
-                practitioner_principal_id=principal, policy_id=policy,
-                policy_revision_fingerprint=current.fingerprint, evaluation_time=at, session=tx,
-            )
-        except Exception:
-            _deny("G77_POINT_OF_READ_REVALIDATION_UNAVAILABLE")
-        if (
-            type(latest_membership) is not CanonicalWallMembershipEvidence
-            or type(latest_acknowledgement) is not CanonicalWallAcknowledgementEvidence
-            or latest_membership.tenant_id != tenant
-            or latest_membership.case_matter_id != matter
-            or latest_membership.practitioner_principal_id != principal
-            or latest_acknowledgement.tenant_id != tenant
-            or latest_acknowledgement.case_matter_id != matter
-            or latest_acknowledgement.practitioner_principal_id != principal
-            or latest_acknowledgement.policy_id != policy
-            or latest_acknowledgement.policy_revision_fingerprint != current.fingerprint
-        ):
-            _deny("G77_POINT_OF_READ_SCOPE_INVALID")
-        if (
-            latest_membership.membership_id != membership.membership_id
-            or latest_membership.revision != membership.revision
-            or latest_membership.fingerprint != membership.fingerprint
-            or latest_acknowledgement.acknowledgement_id != acknowledgement.acknowledgement_id
-            or latest_acknowledgement.revision != acknowledgement.revision
-            or latest_acknowledgement.fingerprint != acknowledgement.fingerprint
-        ):
-            _deny("G77_POINT_OF_READ_EVIDENCE_CHANGED")
+    # Re-read both current pointers immediately before the terminal denial.
+    # The deployment must provide a source contract whose currentness/read
+    # consistency semantics are certified; a transaction snapshot alone
+    # cannot prove observation of a concurrently committed revocation.
+    try:
+        latest_membership = membership_acknowledgement_source.resolve_membership(
+            tenant_id=tenant, case_matter_id=matter,
+            practitioner_principal_id=principal, evaluation_time=at, session=tx,
+        )
+        latest_acknowledgement = membership_acknowledgement_source.resolve_acknowledgement(
+            tenant_id=tenant, case_matter_id=matter,
+            practitioner_principal_id=principal, policy_id=policy,
+            policy_revision_fingerprint=current.fingerprint, evaluation_time=at, session=tx,
+        )
+    except Exception:
+        _deny("G77_POINT_OF_READ_REVALIDATION_UNAVAILABLE")
+    if (
+        type(latest_membership) is not CanonicalWallMembershipEvidence
+        or type(latest_acknowledgement) is not CanonicalWallAcknowledgementEvidence
+        or latest_membership.tenant_id != tenant
+        or latest_membership.case_matter_id != matter
+        or latest_membership.practitioner_principal_id != principal
+        or latest_acknowledgement.tenant_id != tenant
+        or latest_acknowledgement.case_matter_id != matter
+        or latest_acknowledgement.practitioner_principal_id != principal
+        or latest_acknowledgement.policy_id != policy
+        or latest_acknowledgement.policy_revision_fingerprint != current.fingerprint
+    ):
+        _deny("G77_POINT_OF_READ_SCOPE_INVALID")
+    if (
+        latest_membership.membership_id != membership.membership_id
+        or latest_membership.revision != membership.revision
+        or latest_membership.fingerprint != membership.fingerprint
+        or latest_acknowledgement.acknowledgement_id != acknowledgement.acknowledgement_id
+        or latest_acknowledgement.revision != acknowledgement.revision
+        or latest_acknowledgement.fingerprint != acknowledgement.fingerprint
+    ):
+        _deny("G77_POINT_OF_READ_EVIDENCE_CHANGED")
 
     # Reviewer/admin eligibility, issuer authority, exemption and emergency
     # authority remain unratified. A favorable documentary chain still denies.
