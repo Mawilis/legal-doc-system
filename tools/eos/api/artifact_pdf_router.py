@@ -73,7 +73,7 @@ def _enterprise_pdf_parity_required(value: Any, *, depth: int = 0) -> bool:
     It is not an authorization decision and grants no source-read or issuance authority.
     """
     if depth > 8:
-        return False
+        return isinstance(value, (dict, list))
     if isinstance(value, dict):
         for key, child in value.items():
             normalized_key = re.sub(r"[^a-z0-9]", "", str(key).lower())
@@ -95,7 +95,7 @@ def _enterprise_pdf_parity_required(value: Any, *, depth: int = 0) -> bool:
             if _enterprise_pdf_parity_required(child, depth=depth + 1):
                 return True
     elif isinstance(value, list):
-        return any(_enterprise_pdf_parity_required(item, depth=depth + 1) for item in value[:200])
+        return any(_enterprise_pdf_parity_required(item, depth=depth + 1) for item in value)
     return False
 
 
