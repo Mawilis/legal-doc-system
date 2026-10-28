@@ -1,10 +1,11 @@
 """TITLE: Tenant Business Role Authority Certification.
-VERSION: v1.0.1-TENANT-BUSINESS-ROLE-AUTHORITY-CERT
+VERSION: v1.1.0-TENANT-BUSINESS-ROLE-DIRECT-RESOLUTION-CERT
 AUTHORITY: Certification of durable business-role evidence resolver only.
 EPITOME: Proves exact scope, ACTIVE-only resolution, ambiguity denial, and non-authority boundaries.
 ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/tests/unit/test_tenant_business_role_authority.py
 COLLABORATION / OWNERSHIP: Wilson Khanyezi / Wilsy Core Engineering.
 CERTIFICATION/UPDATE DATE: 2026-08-30.
+CHANGELOG: v1.1.0 certifies single-read exact-scope business-role resolution and fail-closed outcomes.
 CHANGELOG: v1.0.1 certifies compound principal/tenant scope and malformed-input isolation.
 COMPLIANCE: POPIA section 19; GDPR Article 32; SOC 2 CC7.2.
 SECURITY/PRIVACY POSTURE: No network, persistence mutation, credentials, or financial execution.
@@ -13,10 +14,15 @@ AUTHORITY BOUNDARY: Evidence is not membership, permission, or authorization.
 FINANCIAL AUTHORITY BOUNDARY: Kennel EOS remains exclusive.
 """
 from dataclasses import dataclass
+from types import SimpleNamespace
 import pytest
 from tools.eos.auth.role_assignment import RoleAssignmentStatus
+from tools.eos.auth.tenant_business_role import TenantBusinessRoleStatus
 from tools.eos.auth.tenant_business_role_authority import *
-from tools.eos.auth.role_assignment_repository import RoleAssignmentRepositoryError
+from tools.eos.auth.role_assignment_repository import (
+    RoleAssignmentNotFoundError,
+    RoleAssignmentRepositoryError,
+)
 
 @dataclass
 class Assignment:
@@ -28,8 +34,66 @@ class Repo:
         self.calls.append((principal_id, tenant_id, role_id))
         if self.error: raise self.error
         value = self.values.get((principal_id, tenant_id, role_id))
-        if value is None: from tools.eos.auth.role_assignment_repository import RoleAssignmentNotFoundError; raise RoleAssignmentNotFoundError("missing")
+        if value is None: raise RoleAssignmentNotFoundError("missing")
         return value
+
+class DirectBusinessRoleRepo:
+    def __init__(self, value=None, error=None):
+        self.value, self.error, self.calls = value, error, []
+
+    def resolve_current_business_role(self, principal_id, tenant_id, *, session=None):
+        self.calls.append((principal_id, tenant_id, session))
+        if self.error:
+            raise self.error
+        if self.value is None:
+            raise RoleAssignmentNotFoundError("missing")
+        return self.value
+
+    def resolve(self, *_args, **_kwargs):
+        raise AssertionError("direct business-role resolution must not scan role IDs")
+
+def test_direct_business_role_reader_uses_one_exact_current_lookup():
+    authority = SimpleNamespace(
+        principal_id="p",
+        tenant_id="t",
+        business_role="tenant_owner",
+        status=TenantBusinessRoleStatus.ACTIVE,
+    )
+    repo = DirectBusinessRoleRepo(authority)
+    result = resolve_current_tenant_business_role(
+        principal_id="p", tenant_id="t", repository=repo
+    )
+    assert result.role == "tenant_owner"
+    assert result.resolution is BusinessRoleResolution.RESOLVED
+    assert repo.calls == [("p", "t", None)]
+
+def test_direct_business_role_reader_fails_closed():
+    inactive = SimpleNamespace(
+        principal_id="p",
+        tenant_id="t",
+        business_role="tenant_owner",
+        status=TenantBusinessRoleStatus.REVOKED,
+    )
+    assert resolve_current_tenant_business_role(
+        principal_id="p", tenant_id="t", repository=DirectBusinessRoleRepo(inactive)
+    ).resolution is BusinessRoleResolution.NO_ACTIVE_TENANT_BUSINESS_ROLE
+    mismatched = SimpleNamespace(
+        principal_id="p",
+        tenant_id="other",
+        business_role="tenant_owner",
+        status=TenantBusinessRoleStatus.ACTIVE,
+    )
+    assert resolve_current_tenant_business_role(
+        principal_id="p", tenant_id="t", repository=DirectBusinessRoleRepo(mismatched)
+    ).resolution is BusinessRoleResolution.TENANT_BUSINESS_ROLE_AUTHORITY_UNAVAILABLE
+    assert resolve_current_tenant_business_role(
+        principal_id="p",
+        tenant_id="t",
+        repository=DirectBusinessRoleRepo(error=RoleAssignmentRepositoryError("down")),
+    ).resolution is BusinessRoleResolution.TENANT_BUSINESS_ROLE_AUTHORITY_UNAVAILABLE
+    assert resolve_current_tenant_business_role(
+        principal_id="p", tenant_id="t", repository=DirectBusinessRoleRepo()
+    ).resolution is BusinessRoleResolution.NO_ACTIVE_TENANT_BUSINESS_ROLE
 
 @pytest.mark.parametrize("role", sorted(TENANT_ROLES))
 def test_each_active_canonical_role_resolves(role):
@@ -67,7 +131,7 @@ def test_compound_scope_and_invalid_inputs() -> None:
     assert len(repo.calls) == before
 
 # ARTIFACT: test_tenant_business_role_authority.py
-# VERSION: v1.0.1-TENANT-BUSINESS-ROLE-AUTHORITY-CERT
+# VERSION: v1.1.0-TENANT-BUSINESS-ROLE-DIRECT-RESOLUTION-CERT
 # AUTHORITY BOUNDARY: evidence resolver certification only
 # TENANT POSTURE: exact scope; no membership is fabricated
 # FAIL-CLOSED POSTURE: ambiguity and unavailable storage deny
