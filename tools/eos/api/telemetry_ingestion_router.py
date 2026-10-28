@@ -5,14 +5,17 @@ TENANT POSTURE: Tenant scope comes exclusively from TenantAuthorizationContext.
 FAIL-CLOSED POSTURE: No success response before the unique-indexed insert completes.
 """
 from __future__ import annotations
+
 import json
 import re
 from datetime import datetime, timezone
 from typing import Any
 from uuid import uuid4
-from fastapi import APIRouter, Depends, HTTPException, status
-from pydantic import BaseModel, ConfigDict, Field, StrictStr, ValidationError
+
+from fastapi import APIRouter, Depends, HTTPException, Request, status
+from pydantic import AliasChoices, BaseModel, ConfigDict, Field, StrictStr, ValidationError
 from pymongo.errors import DuplicateKeyError, PyMongoError
+
 from tools.eos.api.tenant_authorization_http import RequireTenantAuthorization, TenantAuthorizationContext
 from tools.eos.kernel.db import get_database
 
@@ -20,14 +23,31 @@ router = APIRouter(prefix="/telemetry", tags=["Telemetry Ingestion"])
 _authorize_telemetry_write = RequireTenantAuthorization("telemetry:event:write", "telemetry_event_write")
 _COLLECTION = "wilsy_sovereign_telemetry"
 _MAX_PAYLOAD_BYTES = 16_384
-_EVENT_TYPE = re.compile(r"^[A-Z][A-Z0-9_]{0,63}$")
 _CLIENT_TRACE = re.compile(r"^[A-Za-z0-9][A-Za-z0-9._:-]{0,127}$")
+_ALLOWED_EVENT_TYPES = frozenset({
+    "METRICS_FETCH_SUCCESS", "METRICS_FETCH_RETRY", "METRICS_FETCH_ERROR",
+    "POLLING_STARTED", "POLLING_STOPPED",
+    "PERMISSIONS_CACHE_HIT", "PERMISSIONS_FETCH_SUCCESS",
+    "PERMISSIONS_FETCH_RETRY", "PERMISSIONS_FETCH_ERROR",
+    "TENANT_SWITCHED", "TENANT_SWITCH_ERROR", "REFRESH_TENANTS",
+    "REFRESH_TENANTS_ERROR", "MANAGE_TENANTS_CLICKED",
+    "COVER_PAGE_ENTERED", "BOARDROOM_ENTERED", "SHARD_HEARTBEAT",
+    "BOARDROOM_TELEMETRY", "SYSTEM_EVENT", "NEURAL_PULSE", "GENESIS_FAILURE",
+    "eos.execution.started", "eos.execution.completed", "eos.execution.failed",
+    "eos.task.started", "eos.task.completed", "eos.task.failed",
+    "eos.repository.scanned", "eos.knowledge_graph.updated",
+    "eos.artifact.stored", "eos.artifact.published", "eos.decision.produced",
+    "eos.quality.passed", "eos.quality.failed", "eos.review.passed",
+    "eos.review.failed", "eos.release.published", "eos.sentinel.alert",
+    "eos.system.alert",
+})
+
 
 class TelemetryEventRequest(BaseModel):
     """Strict browser-compatible event envelope; caller tenant and authority are forbidden."""
     model_config = ConfigDict(extra="forbid", populate_by_name=True)
-    event_type: StrictStr = Field(alias="eventType", min_length=1, max_length=64)
-    metadata: dict[str, Any] = Field(default_factory=dict)
+    event_type: StrictStr = Field(validation_alias=AliasChoices("eventType", "event_type", "action"), min_length=1, max_length=64)
+    metadata: dict[str, Any] = Field(default_factory=dict, validation_alias=AliasChoices("metadata", "payload", "data"))
     client_trace_id: StrictStr | None = Field(default=None, alias="traceId", max_length=128)
     timestamp: StrictStr | None = Field(default=None, max_length=64)
     nonce: StrictStr | None = Field(default=None, max_length=128)
@@ -39,8 +59,8 @@ class TelemetryEventRequest(BaseModel):
     @classmethod
     def validate_event(cls, value: object) -> "TelemetryEventRequest":
         event = cls.model_validate(value)
-        if not _EVENT_TYPE.fullmatch(event.event_type):
-            raise ValueError("eventType must be a canonical uppercase event token")
+        if event.event_type not in _ALLOWED_EVENT_TYPES:
+            raise ValueError("eventType is not an allowed canonical telemetry event")
         if event.client_trace_id is not None and not _CLIENT_TRACE.fullmatch(event.client_trace_id):
             raise ValueError("traceId is malformed")
         encoded = json.dumps(event.metadata, separators=(",", ":"), ensure_ascii=False, allow_nan=False).encode("utf-8")
@@ -48,13 +68,16 @@ class TelemetryEventRequest(BaseModel):
             raise ValueError("metadata exceeds the 16384-byte limit")
         return event
 
-def _persist_telemetry_event(*, tenant_id: str, principal_id: str, event: TelemetryEventRequest, trace_id: str | None = None, database: Any = None) -> dict[str, Any]:
-    """Persist one bounded event with a server-generated, storage-unique trace."""
+
+def _persist_telemetry_event(
+    *, tenant_id: str, principal_id: str, event: TelemetryEventRequest,
+    trace_id: str | None = None, database: Any = None,
+) -> dict[str, Any]:
+    """Persist one bounded event; the production route never accepts a caller trace as authority."""
     db = database if database is not None else get_database()
     if db is None:
         raise RuntimeError("TELEMETRY_DATABASE_UNAVAILABLE")
     collection = db[_COLLECTION]
-    collection.create_index("trace_id", unique=True, name="uq_telemetry_trace_id")
     server_trace_id = trace_id or str(uuid4())
     collection.insert_one({
         "trace_id": server_trace_id,
@@ -68,19 +91,36 @@ def _persist_telemetry_event(*, tenant_id: str, principal_id: str, event: Teleme
     })
     return {"accepted": True, "trace_id": server_trace_id, "event_type": event.event_type}
 
+
 @router.post("/event", status_code=status.HTTP_201_CREATED)
-async def ingest_telemetry_event(payload: dict[str, Any], context: TenantAuthorizationContext = Depends(_authorize_telemetry_write)) -> dict[str, Any]:
-    """Authorize, validate, and durably append one tenant-scoped telemetry event."""
+async def ingest_telemetry_event(
+    request: Request,
+    context: TenantAuthorizationContext = Depends(_authorize_telemetry_write),
+) -> dict[str, Any]:
+    """Bound raw input, authorize, validate, and durably append one tenant-scoped event."""
+    if not getattr(request.app.state, "telemetry_indexes_ready", False):
+        raise HTTPException(status_code=503, detail="TELEMETRY_PERSISTENCE_UNAVAILABLE")
+    raw_body = await request.body()
+    if len(raw_body) > _MAX_PAYLOAD_BYTES:
+        raise HTTPException(status_code=413, detail="TELEMETRY_BODY_TOO_LARGE")
     try:
+        payload = json.loads(raw_body)
+        if not isinstance(payload, dict):
+            raise ValueError("event envelope must be an object")
         event = TelemetryEventRequest.validate_event(payload)
-    except (ValidationError, ValueError, TypeError) as exc:
+    except (json.JSONDecodeError, ValidationError, ValueError, TypeError) as exc:
         raise HTTPException(status_code=422, detail="INVALID_TELEMETRY_EVENT") from exc
     try:
-        return _persist_telemetry_event(tenant_id=context.tenant_id, principal_id=context.identity.identity_id, event=event)
+        return _persist_telemetry_event(
+            tenant_id=context.tenant_id,
+            principal_id=context.identity.identity_id,
+            event=event,
+        )
     except DuplicateKeyError as exc:
         raise HTTPException(status_code=409, detail="TELEMETRY_TRACE_CONFLICT") from exc
     except (PyMongoError, RuntimeError, OSError) as exc:
         raise HTTPException(status_code=503, detail="TELEMETRY_PERSISTENCE_UNAVAILABLE") from exc
+
 
 __all__ = ["router", "TelemetryEventRequest", "_persist_telemetry_event"]
 # END OF WILSY OS SOVEREIGN ARTIFACT
