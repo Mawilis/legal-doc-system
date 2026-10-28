@@ -10,7 +10,7 @@ from dataclasses import dataclass
 import re
 from typing import Any, Final
 
-_SCOPE_ID: Final[re.Pattern[str]] = re.compile(r"[A-Za-z0-9][A-Za-z0-9._:-]{0,199}\\Z")
+_SCOPE_ID: Final[re.Pattern[str]] = re.compile(r"[A-Za-z0-9][A-Za-z0-9._:-]{0,199}\Z")
 FENCE_COLLECTION: Final[str] = "legal_ethical_wall_authorization_fences"
 FENCE_INDEX_FIELDS: Final[tuple[tuple[str, int], ...]] = (
     ("tenant_id", 1),
@@ -24,7 +24,8 @@ FENCE_INDEX_NAME: Final[str] = "uq_g65_wall_authorization_fence_scope"
 class WallFenceUnavailable(PermissionError):
     """Content-free failure: no currentness proof was obtained."""
 
-    def __init__(self) -> None:
+    def __init__(self, *, retryable: bool = False) -> None:
+        self.retryable = retryable
         super().__init__("G65_AUTHORIZATION_FENCE_UNAVAILABLE")
 
 
@@ -119,9 +120,18 @@ class CanonicalWallAuthorizationFence:
         except WallFenceUnavailable:
             raise
         except Exception as exc:
-            # Includes write conflict, duplicate-key races and unavailable source.
-            # Caller must abort/retry the entire transaction on retryable errors.
-            raise WallFenceUnavailable from exc
+            # Preserve whether Mongo marks this as a transient transaction error.
+            # The caller must abort and retry the WHOLE transaction when true.
+            retryable = False
+            try:
+                retryable = bool(
+                    getattr(exc, "has_error_label", lambda _label: False)(
+                        "TransientTransactionError"
+                    )
+                ) or getattr(exc, "code", None) in {112, 251}
+            except Exception:
+                retryable = False
+            raise WallFenceUnavailable(retryable=retryable) from exc
 
 
 __all__ = [
