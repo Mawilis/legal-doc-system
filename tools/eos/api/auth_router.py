@@ -558,12 +558,33 @@ async def workspace_bootstrap(
         get_tenant_authority_role_repository
     ),
 ) -> dict[str, object]:
-    """Return one server-owned workspace projection after current authority checks."""
+    """Return one server-owned workspace projection after current authority checks.
+
+    Emit phase-only timings so a slow bootstrap can be localized without logging
+    credentials, principal/tenant identifiers, headers, or database payloads.
+    """
+    import time
+
+    def record_phase(phase: str, started: float, outcome: str) -> None:
+        logger.info(
+            "[WORKSPACE_BOOTSTRAP_PHASE] phase=%s outcome=%s elapsed_ms=%.1f",
+            phase,
+            outcome,
+            (time.perf_counter() - started) * 1000,
+        )
+
+    started = time.perf_counter()
     try:
         projection = build_workspace_bootstrap_projection(identity=identity)
     except WorkspaceBootstrapProjectionError as error:
+        record_phase("authority_projection", started, "failed")
         raise _workspace_bootstrap_http_error(error) from error
+    except Exception:
+        record_phase("authority_projection", started, "unexpected_failure")
+        raise
+    record_phase("authority_projection", started, "ok")
 
+    started = time.perf_counter()
     try:
         legal_permissions = _workspace_legal_presentation_permissions(
             projection=projection,
@@ -572,20 +593,37 @@ async def workspace_bootstrap(
             role_assignment_repository=role_assignment_repository,
         )
     except WorkspaceBootstrapProjectionError as error:
+        record_phase("legal_presentation_permissions", started, "failed")
         raise _workspace_bootstrap_http_error(error) from error
+    except Exception:
+        record_phase("legal_presentation_permissions", started, "unexpected_failure")
+        raise
+    record_phase("legal_presentation_permissions", started, "ok")
 
+    started = time.perf_counter()
     try:
         first_name, last_name = _workspace_principal_profile(projection)
     except WorkspaceBootstrapProjectionError as error:
+        record_phase("principal_profile", started, "failed")
         raise _workspace_bootstrap_http_error(error) from error
+    except Exception:
+        record_phase("principal_profile", started, "unexpected_failure")
+        raise
+    record_phase("principal_profile", started, "ok")
 
+    started = time.perf_counter()
     try:
         branding = _workspace_branding_projection(projection.tenant_id)
     except TenantBrandingWorkspaceProjectionError as error:
+        record_phase("branding_projection", started, "failed")
         raise HTTPException(
             status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
             detail="Workspace branding authority is unavailable.",
         ) from error
+    except Exception:
+        record_phase("branding_projection", started, "unexpected_failure")
+        raise
+    record_phase("branding_projection", started, "ok")
 
     tenant = projection.tenant
     organization = getattr(tenant, "organization", None)
