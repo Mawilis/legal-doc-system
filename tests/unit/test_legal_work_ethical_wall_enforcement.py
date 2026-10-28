@@ -1,12 +1,12 @@
 """TITLE: WILSY OS G77 Source-Verified Ethical-Wall Enforcement Certificate.
-VERSION: v1.0.3-G77-G65-DENY-PRECEDENCE-CERT
+VERSION: v1.0.4-G77-G65-REQUIRED-SOURCE-CERT
 AUTHORITY: Negative enforcement and canonical-source validation only.
 EPITOME: Certifies transaction, IAM, binding, assignment, conflict, review and
 wall-source verification while institutional authority remains unavailable.
 ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/tests/unit/test_legal_work_ethical_wall_enforcement.py
 COLLABORATION / OWNERSHIP: Wilsy OS Core Engineering / Legal Operations.
 CERTIFICATION / UPDATE DATE: 2026-10-21.
-CHANGELOG: 2026-10-21 v1.0.0 G77 denial certificate; 2026-10-28 v1.0.1 adds G65 source integration; v1.0.2 certifies changed-evidence denial at point of read; v1.0.3 certifies IAM deny precedence.
+CHANGELOG: 2026-10-21 v1.0.0 G77 denial certificate; 2026-10-28 v1.0.1 adds G65 source integration; v1.0.2 certifies changed-evidence denial at point of read; v1.0.3 certifies IAM deny precedence; v1.0.4 certifies mandatory G65 dependency injection.
 COMPLIANCE: POPIA section 19; GDPR Article 32; SOC 2 CC7.2.
 TENANT BOUNDARY: Exact tenant, matter and authenticated principal.
 AUTHORITY BOUNDARY: No positive content or operational access result exists.
@@ -182,6 +182,7 @@ def sources(**changes: object) -> dict[str, object]:
         "conflict_source": Source(conflict()),
         "review_source": Source(review(wall)),
         "wall_source": WallSource(wall),
+        "membership_acknowledgement_source": MembershipAcknowledgementSource(),
     }
     values.update(changes)
     return values
