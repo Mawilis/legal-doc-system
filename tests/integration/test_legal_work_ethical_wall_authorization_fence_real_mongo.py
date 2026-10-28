@@ -15,6 +15,16 @@ import uuid
 import pytest
 from pymongo import MongoClient
 
+from dataclasses import replace
+
+from tools.eos.legal_operations.domain.legal_work_ethical_wall_policy import (
+    EthicalWallPolicyStatus,
+    InstitutionalRatificationState,
+)
+from tools.eos.legal_operations.registry import legal_work_ethical_wall_policy_registry as policy_registry_module
+from tests.unit.test_legal_work_ethical_wall_policy_registry import revision as make_policy_revision
+from tests.unit.test_legal_work_ethical_wall_policy_registry import successor as make_policy_successor
+
 from tools.eos.legal_operations.service.legal_work_ethical_wall_authorization_fence import (
     CanonicalWallAuthorizationFence,
     FENCE_COLLECTION,
@@ -33,49 +43,77 @@ def test_fence_writes_serialize_disclosure_and_revocation_transactions() -> None
     assert hello.get("isWritablePrimary") is True and hello.get("setName")
     database = client["wilsy_g65_fence_" + uuid.uuid4().hex]
     collection = database[FENCE_COLLECTION]
-    collection.create_index(list(FENCE_INDEX_FIELDS), unique=True, name=FENCE_INDEX_NAME)
+    ensure_fence_index(collection)
     fence = CanonicalWallAuthorizationFence(collection)
-    scope = dict(
+    revisions = database[policy_registry_module.REVISION_COLLECTION]
+    current = database[policy_registry_module.CURRENT_COLLECTION]
+    registry = policy_registry_module.EthicalWallPolicyRegistry(
+        revisions, current, fence
+    )
+    registry.ensure_indexes()
+
+    root = make_policy_revision(
         tenant_id="tenant-fence-test",
         case_matter_id="matter-fence-test",
-        practitioner_principal_id="principal-fence-test",
         policy_id="policy-fence-test",
+    )
+    with client.start_session() as session:
+        with session.start_transaction():
+            registry.append(root, session=session)
+
+    scope = dict(
+        tenant_id=root.tenant_id,
+        case_matter_id=root.case_matter_id,
+        practitioner_principal_id="principal-fence-test",
+        policy_id=root.policy_id,
     )
     first_has_fence = threading.Event()
     allow_first_commit = threading.Event()
     second_started = threading.Event()
-    outcomes: list[tuple[str, int]] = []
+    outcomes: list[str] = []
 
     def disclosure_transaction() -> None:
         with client.start_session() as session:
             with session.start_transaction():
-                token = fence.contend(**scope, session=session)
-                outcomes.append(("disclosure", token.epoch))
+                # Exact same policy-wide sentinel used by the G79 coordinator.
+                fence.contend(
+                    tenant_id=scope["tenant_id"],
+                    case_matter_id=scope["case_matter_id"],
+                    practitioner_principal_id="policy",
+                    policy_id=scope["policy_id"],
+                    session=session,
+                )
+                fence.contend(**scope, session=session)
                 first_has_fence.set()
                 assert allow_first_commit.wait(timeout=10), "test coordination timed out"
+            outcomes.append("disclosure-transaction-committed")
+
+    revoked = make_policy_successor(
+        root,
+        status=EthicalWallPolicyStatus.REVOKED,
+        ratification_state=InstitutionalRatificationState.REVOKED,
+        ratification_reference="ratification-revoked",
+        ratification_fingerprint="e" * 128,
+    )
 
     def revocation_transaction() -> None:
         assert first_has_fence.wait(timeout=10), "disclosure did not acquire fence"
-        last_error: BaseException | None = None
         for attempt in range(5):
             try:
                 with client.start_session() as session:
                     with session.start_transaction():
                         second_started.set()
-                        token = fence.contend(**scope, session=session)
-                    # Record only after commit; aborted attempts never count.
-                    outcomes.append(("revocation", token.epoch))
+                        registry.append(revoked, session=session)
+                outcomes.append("policy-revocation-committed")
                 return
-            except WallFenceUnavailable as error:
-                last_error = error
-                if not error.retryable or attempt == 4:
+            except policy_registry_module.EthicalWallPolicyRetryTransaction:
+                if attempt == 4:
                     raise
-                # Keep the retry pending until the conflicting transaction has
-                # committed, then restart from a fresh session/snapshot.
-                assert allow_first_commit.wait(timeout=10), "first transaction did not release fence"
+                # The production contract is whole-transaction retry after the
+                # competing disclosure transaction releases the policy fence.
+                assert allow_first_commit.wait(timeout=10), "disclosure did not release fence"
                 continue
-        if last_error is not None:
-            raise last_error
+        raise AssertionError("policy revocation retry budget exhausted")
 
     try:
         with ThreadPoolExecutor(max_workers=2) as pool:
@@ -83,15 +121,22 @@ def test_fence_writes_serialize_disclosure_and_revocation_transactions() -> None
             assert first_has_fence.wait(timeout=10)
             second = pool.submit(revocation_transaction)
             assert second_started.wait(timeout=10)
-            # Let the second worker reach the blocking Mongo write while the
-            # first transaction still owns the document lock.
             time.sleep(0.25)
-            assert not second.done(), "second transaction bypassed the held fence"
+            assert not second.done(), "policy revocation bypassed the held disclosure fence"
             allow_first_commit.set()
             first.result(timeout=15)
             second.result(timeout=15)
-        assert [name for name, _ in outcomes] == ["disclosure", "revocation"]
-        assert outcomes[1][1] > outcomes[0][1]
+        assert outcomes == [
+            "disclosure-transaction-committed",
+            "policy-revocation-committed",
+        ]
+        with client.start_session() as session:
+            with session.start_transaction():
+                final = registry.get_current(
+                    root.tenant_id, root.case_matter_id, root.policy_id,
+                    session=session,
+                )
+        assert final.status is EthicalWallPolicyStatus.REVOKED
     finally:
         allow_first_commit.set()
         client.drop_database(database.name)
