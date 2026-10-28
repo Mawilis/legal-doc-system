@@ -403,6 +403,7 @@ app.use((req, res, next) => {
     req.path === '/api/auth/verify-otp' ||
     req.path === '/api/auth/refresh' ||
     req.path.startsWith('/api/test') ||
+    req.path === '/api/telemetry/event' ||
     req.path.startsWith('/api/treasury') ||
     req.path.startsWith('/api/dunning') ||
     req.path === '/api/kernel' ||
