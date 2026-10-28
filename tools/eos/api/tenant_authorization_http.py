@@ -514,7 +514,7 @@ __all__ = ["VERSION", "TenantAuthorizationContext", "RequireTenantAuthorization"
 
 
 # ARTIFACT: tenant_authorization_http.py
-# VERSION: v1.2.0-P6-IAM-DENIAL-OBSERVABILITY
+# VERSION: v1.3.0-P6-DIRECT-BUSINESS-ROLE-RESOLUTION
 # AUTHORITY BOUNDARY: existing HTTP IAM composition plus bounded post-decision observation only; no authentication, grant, deny, persistence, workflow, legal-decision, AI, notification, payment, execution, or settlement truth ownership
 # TENANT POSTURE: explicit X-Tenant-ID remains scope only; current durable membership and role evidence remain mandatory
 # FAIL-CLOSED POSTURE: only canonical AUTHORIZED succeeds; denied, unavailable, inconsistent, and unknown results remain bounded and telemetry failure cannot alter them
