@@ -49,6 +49,11 @@ from tools.eos.legal_operations.domain.legal_work_practitioner_confidentiality_r
     ConfidentialityReviewDecision,
     ConfidentialityReviewDecisionState,
 )
+from tools.eos.legal_operations.service.legal_work_ethical_wall_membership_acknowledgement import (
+    CanonicalWallAcknowledgementEvidence,
+    CanonicalWallMembershipAcknowledgementSource,
+    CanonicalWallMembershipEvidence,
+)
 
 VERSION: Final[str] = "v1.0.0-G77-SOURCE-VERIFIED-NEGATIVE-ENFORCEMENT"
 SOURCE_VERIFIED_CLEARANCE: Final[bool] = False
@@ -218,6 +223,7 @@ def require_source_verified_ethical_wall_access(
     policy_id: str, evaluation_time: datetime, iam_source: object,
     binding_source: object, assignment_source: object, conflict_source: object,
     review_source: object, wall_source: EthicalWallPolicySource, session: object,
+    membership_acknowledgement_source: CanonicalWallMembershipAcknowledgementSource | None = None,
 ) -> NoReturn:
     """Verify every currently available source and always end in bounded denial.
 
@@ -287,9 +293,37 @@ def require_source_verified_ethical_wall_access(
     if decision.permits_operational_access is not False:
         _deny("G77_WALL_SOURCE_INVALID")
 
-    # The repository contains no ratified canonical source for reviewer/admin
-    # eligibility or ethical-wall acknowledgment. Recorded fingerprints cannot
-    # fill that institutional gap, so a favorable documentary chain still denies.
+    # G65 evidence is checked when the deployment composition supplies the
+    # canonical source. Its presence cannot ratify issuer authority or grant access.
+    if membership_acknowledgement_source is not None:
+        try:
+            membership = membership_acknowledgement_source.resolve_membership(
+                tenant_id=tenant, case_matter_id=matter,
+                practitioner_principal_id=principal, evaluation_time=at, session=tx,
+            )
+            acknowledgement = membership_acknowledgement_source.resolve_acknowledgement(
+                tenant_id=tenant, case_matter_id=matter,
+                practitioner_principal_id=principal, policy_id=policy,
+                policy_revision_fingerprint=current.fingerprint, evaluation_time=at, session=tx,
+            )
+        except Exception:
+            _deny("G77_MEMBERSHIP_ACKNOWLEDGEMENT_UNAVAILABLE")
+        if (
+            type(membership) is not CanonicalWallMembershipEvidence
+            or membership.tenant_id != tenant
+            or membership.case_matter_id != matter
+            or membership.practitioner_principal_id != principal
+            or type(acknowledgement) is not CanonicalWallAcknowledgementEvidence
+            or acknowledgement.tenant_id != tenant
+            or acknowledgement.case_matter_id != matter
+            or acknowledgement.practitioner_principal_id != principal
+            or acknowledgement.policy_id != policy
+            or acknowledgement.policy_revision_fingerprint != current.fingerprint
+        ):
+            _deny("G77_MEMBERSHIP_ACKNOWLEDGEMENT_SCOPE_INVALID")
+
+    # Reviewer/admin eligibility, issuer authority, exemption and emergency
+    # authority remain unratified. A favorable documentary chain still denies.
     _deny("G77_INSTITUTIONAL_AUTHORITY_UNRATIFIED")
 
 
