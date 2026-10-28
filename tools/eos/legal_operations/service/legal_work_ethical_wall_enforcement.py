@@ -9,8 +9,7 @@ ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/tools/eos/legal_
 COLLABORATION / OWNERSHIP: Wilsy OS Core Engineering / Legal Operations;
     canonical repositories own evidence and disclosure points own enforcement.
 CERTIFICATION / UPDATE DATE: 2026-10-21.
-CHANGELOG: 2026-10-21 v1.0.0 introduces ordered canonical source verification
-    with no positive authorization or content-delivery return path.
+CHANGELOG: 2026-10-21 v1.0.0 introduces ordered canonical source verification; 2026-10-28 v1.1.0 adds G65 membership/acknowledgement and final point-of-read revalidation.
 COMPLIANCE: POPIA section 19; GDPR Article 32; SOC 2 CC7.2.
 SECURITY / PRIVACY POSTURE: Stable content-free denials; no evidence identifiers logged.
 TENANT BOUNDARY: Exact authenticated tenant, matter and principal on every source.
@@ -55,7 +54,7 @@ from tools.eos.legal_operations.service.legal_work_ethical_wall_membership_ackno
     CanonicalWallMembershipEvidence,
 )
 
-VERSION: Final[str] = "v1.0.0-G77-SOURCE-VERIFIED-NEGATIVE-ENFORCEMENT"
+VERSION: Final[str] = "v1.1.0-G77-G65-POINT-OF-READ-REVALIDATION"
 SOURCE_VERIFIED_CLEARANCE: Final[bool] = False
 OPERATIONAL_ACCESS_ENABLED: Final[bool] = False
 _ID: Final[re.Pattern[str]] = re.compile(r"[A-Za-z0-9][A-Za-z0-9._:-]{0,199}\Z")
@@ -322,6 +321,45 @@ def require_source_verified_ethical_wall_access(
         ):
             _deny("G77_MEMBERSHIP_ACKNOWLEDGEMENT_SCOPE_INVALID")
 
+        # Re-read both current pointers immediately before the terminal denial.
+        # The deployment must provide a source contract whose currentness/read
+        # consistency semantics are certified; a transaction snapshot alone
+        # cannot prove observation of a concurrently committed revocation.
+        try:
+            latest_membership = membership_acknowledgement_source.resolve_membership(
+                tenant_id=tenant, case_matter_id=matter,
+                practitioner_principal_id=principal, evaluation_time=at, session=tx,
+            )
+            latest_acknowledgement = membership_acknowledgement_source.resolve_acknowledgement(
+                tenant_id=tenant, case_matter_id=matter,
+                practitioner_principal_id=principal, policy_id=policy,
+                policy_revision_fingerprint=current.fingerprint, evaluation_time=at, session=tx,
+            )
+        except Exception:
+            _deny("G77_POINT_OF_READ_REVALIDATION_UNAVAILABLE")
+        if (
+            type(latest_membership) is not CanonicalWallMembershipEvidence
+            or type(latest_acknowledgement) is not CanonicalWallAcknowledgementEvidence
+            or latest_membership.tenant_id != tenant
+            or latest_membership.case_matter_id != matter
+            or latest_membership.practitioner_principal_id != principal
+            or latest_acknowledgement.tenant_id != tenant
+            or latest_acknowledgement.case_matter_id != matter
+            or latest_acknowledgement.practitioner_principal_id != principal
+            or latest_acknowledgement.policy_id != policy
+            or latest_acknowledgement.policy_revision_fingerprint != current.fingerprint
+        ):
+            _deny("G77_POINT_OF_READ_SCOPE_INVALID")
+        if (
+            latest_membership.membership_id != membership.membership_id
+            or latest_membership.revision != membership.revision
+            or latest_membership.fingerprint != membership.fingerprint
+            or latest_acknowledgement.acknowledgement_id != acknowledgement.acknowledgement_id
+            or latest_acknowledgement.revision != acknowledgement.revision
+            or latest_acknowledgement.fingerprint != acknowledgement.fingerprint
+        ):
+            _deny("G77_POINT_OF_READ_EVIDENCE_CHANGED")
+
     # Reviewer/admin eligibility, issuer authority, exemption and emergency
     # authority remain unratified. A favorable documentary chain still denies.
     _deny("G77_INSTITUTIONAL_AUTHORITY_UNRATIFIED")
@@ -334,7 +372,7 @@ __all__ = [
 ]
 
 # ARTIFACT: legal_work_ethical_wall_enforcement.py
-# VERSION: v1.0.0-G77-SOURCE-VERIFIED-NEGATIVE-ENFORCEMENT
+# VERSION: v1.1.0-G77-G65-POINT-OF-READ-REVALIDATION
 # AUTHORITY BOUNDARY: canonical negative verification only; no access grant
 # TENANT POSTURE: exact authenticated tenant/matter/principal on every source
 # FAIL-CLOSED POSTURE: absent, stale, revoked, corrupt or unratified always denies
