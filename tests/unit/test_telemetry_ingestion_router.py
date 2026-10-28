@@ -28,6 +28,11 @@ def test_event_rejects_unknown_fields_forged_tenant_and_malformed_trace() -> Non
         with pytest.raises(ValueError):
             TelemetryEventRequest.validate_event(payload)
 
+def test_event_accepts_existing_cover_page_action_payload_contract() -> None:
+    event = TelemetryEventRequest.validate_event({"action": "COVER_PAGE_ENTERED", "payload": {"anchorId": "A"}})
+    assert event.event_type == "COVER_PAGE_ENTERED"
+    assert event.metadata == {"anchorId": "A"}
+
 def test_event_rejects_oversized_metadata() -> None:
     with pytest.raises(ValueError):
         TelemetryEventRequest.validate_event({"eventType": "SYSTEM_EVENT", "metadata": {"body": "x" * 17000}})

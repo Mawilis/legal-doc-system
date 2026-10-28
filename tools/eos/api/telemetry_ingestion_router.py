@@ -11,7 +11,7 @@ from datetime import datetime, timezone
 from typing import Any
 from uuid import uuid4
 from fastapi import APIRouter, Depends, HTTPException, Request, status
-from pydantic import BaseModel, ConfigDict, Field, StrictStr, ValidationError
+from pydantic import AliasChoices, BaseModel, ConfigDict, Field, StrictStr, ValidationError
 from pymongo.errors import DuplicateKeyError, PyMongoError
 from tools.eos.api.tenant_authorization_http import RequireTenantAuthorization, TenantAuthorizationContext
 from tools.eos.kernel.db import get_database
@@ -26,8 +26,8 @@ _CLIENT_TRACE = re.compile(r"^[A-Za-z0-9][A-Za-z0-9._:-]{0,127}$")
 class TelemetryEventRequest(BaseModel):
     """Strict browser-compatible event envelope; caller tenant and authority are forbidden."""
     model_config = ConfigDict(extra="forbid", populate_by_name=True)
-    event_type: StrictStr = Field(alias="eventType", min_length=1, max_length=64)
-    metadata: dict[str, Any] = Field(default_factory=dict)
+    event_type: StrictStr = Field(validation_alias=AliasChoices("eventType", "event_type", "action"), min_length=1, max_length=64)
+    metadata: dict[str, Any] = Field(default_factory=dict, validation_alias=AliasChoices("metadata", "payload", "data"))
     client_trace_id: StrictStr | None = Field(default=None, alias="traceId", max_length=128)
     timestamp: StrictStr | None = Field(default=None, max_length=64)
     nonce: StrictStr | None = Field(default=None, max_length=128)
@@ -39,8 +39,8 @@ class TelemetryEventRequest(BaseModel):
     @classmethod
     def validate_event(cls, value: object) -> "TelemetryEventRequest":
         event = cls.model_validate(value)
-        if not _EVENT_TYPE.fullmatch(event.event_type):
-            raise ValueError("eventType must be a canonical uppercase event token")
+        if not _EVENT_TYPE.fullmatch(event.event_type) and not re.fullmatch(r"eos\\.[a-z][a-z0-9_.]{0,61}", event.event_type):
+            raise ValueError("eventType must be a canonical event token")
         if event.client_trace_id is not None and not _CLIENT_TRACE.fullmatch(event.client_trace_id):
             raise ValueError("traceId is malformed")
         encoded = json.dumps(event.metadata, separators=(",", ":"), ensure_ascii=False, allow_nan=False).encode("utf-8")
