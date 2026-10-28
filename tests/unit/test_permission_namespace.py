@@ -311,6 +311,7 @@ def test_permission_canon_properties() -> None:
         "subscription:read",
         "subscription:manage",
         "tenant_product_entitlement:issue",
+        "telemetry:event:write",
         "tenant_branding:read",
         "tenant_branding:profile:manage",
         "tenant_branding:asset:manage",
@@ -387,9 +388,9 @@ def test_permission_canon_properties() -> None:
             for row in rows
             if row["disposition"] == "CANONICAL"
         ]
-    ) == 121
+    ) == 122
 
-    assert len(rows) == 124
+    assert len(rows) == 125
 
     for permission_id in tenant:
         metadata = permission_metadata(

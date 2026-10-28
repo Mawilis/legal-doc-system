@@ -1,0 +1,86 @@
+name: Python Telemetry Ingestion Certification
+
+on:
+  pull_request:
+    paths:
+      - "tools/eos/api/telemetry_ingestion_router.py"
+      - "tools/eos/api/server.py"
+      - "tools/eos/auth/permission_namespace.py"
+      - "tools/eos/auth/roles.py"
+      - "tools/eos/auth/tenant_authorization.py"
+      - "tools/eos/auth/tenant_authority_policy.py"
+      - "tests/unit/test_telemetry_ingestion_router.py"
+      - "tests/unit/test_permission_namespace.py"
+      - "tests/unit/test_roles.py"
+      - "tests/unit/test_tenant_authorization.py"
+      - "tests/unit/test_tenant_business_role_authority.py"
+      - "tests/unit/test_tenant_business_role_policy.py"
+      - ".github/workflows/telemetry-ingestion-certification.yml"
+  push:
+    branches:
+      - "feat/python-telemetry-ingestion-20261028"
+    paths:
+      - "tools/eos/api/telemetry_ingestion_router.py"
+      - "tools/eos/api/server.py"
+      - "tools/eos/auth/permission_namespace.py"
+      - "tools/eos/auth/roles.py"
+      - "tools/eos/auth/tenant_authorization.py"
+      - "tools/eos/auth/tenant_authority_policy.py"
+      - "tests/unit/test_telemetry_ingestion_router.py"
+      - "tests/unit/test_permission_namespace.py"
+      - "tests/unit/test_roles.py"
+      - "tests/unit/test_tenant_authorization.py"
+      - "tests/unit/test_tenant_business_role_authority.py"
+      - "tests/unit/test_tenant_business_role_policy.py"
+      - ".github/workflows/telemetry-ingestion-certification.yml"
+
+permissions:
+  contents: read
+
+jobs:
+  telemetry-ingestion-unit:
+    name: Telemetry ingestion unit and syntax certification
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    services:
+      mongodb:
+        image: mongo:7.0.37
+        ports:
+          - 27017:27017
+        options: >-
+          --health-cmd "mongosh --eval 'db.runCommand({ ping: 1 })'"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+    env:
+      WILSY_TELEMETRY_TEST_MONGO_URI: mongodb://localhost:27017/?directConnection=true
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+          cache-dependency-path: requirements.txt
+      - name: Install governed Python dependencies
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install -r requirements.txt pytest==9.1.1
+      - name: Compile changed Python artifacts
+        run: |
+          python -m py_compile \
+            tools/eos/api/telemetry_ingestion_router.py \
+            tools/eos/api/server.py \
+            tools/eos/auth/permission_namespace.py \
+            tools/eos/auth/roles.py \
+            tools/eos/auth/tenant_authorization.py \
+            tools/eos/auth/tenant_authority_policy.py \
+            tests/unit/test_telemetry_ingestion_router.py
+      - name: Run telemetry ingestion regression suite
+        run: >-
+          python -m pytest -q
+          tests/unit/test_telemetry_ingestion_router.py
+          tests/unit/test_permission_namespace.py
+          tests/unit/test_roles.py
+          tests/unit/test_tenant_authorization.py
+          tests/unit/test_tenant_business_role_authority.py
+          tests/unit/test_tenant_business_role_policy.py
