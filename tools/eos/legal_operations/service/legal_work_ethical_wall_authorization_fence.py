@@ -137,11 +137,10 @@ class CanonicalWallAuthorizationFence:
             # The caller must abort and retry the WHOLE transaction when true.
             retryable = False
             try:
-                retryable = bool(
-                    getattr(exc, "has_error_label", lambda _label: False)(
-                        "TransientTransactionError"
-                    )
-                ) or getattr(exc, "code", None) in {112, 251}
+                has_label = getattr(exc, "has_error_label", lambda _label: False)
+                retryable = bool(has_label("TransientTransactionError")) or bool(
+                    has_label("UnknownTransactionCommitResult")
+                ) or getattr(exc, "code", None) in {112, 251, 11000}
             except Exception:
                 retryable = False
             raise WallFenceUnavailable(retryable=retryable) from exc
