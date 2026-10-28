@@ -1,6 +1,10 @@
 """Regression tests for canonical telemetry ingestion policy and durable-write contract."""
 from __future__ import annotations
+from types import SimpleNamespace
+
 import pytest
+from fastapi import FastAPI
+from fastapi.testclient import TestClient
 from pymongo.errors import DuplicateKeyError
 from tools.eos.api.telemetry_ingestion_router import TelemetryEventRequest, _persist_telemetry_event, router
 from tools.eos.auth.permission_namespace import permission_metadata
@@ -24,9 +28,15 @@ def test_event_rejects_unknown_fields_forged_tenant_and_malformed_trace() -> Non
         {"eventType": "SYSTEM_EVENT", "tenantId": "forged"},
         {"eventType": "SYSTEM_EVENT", "traceId": "bad trace"},
         {"eventType": "lowercase", "metadata": {}},
+        {"eventType": "MADE_UP_EVENT", "metadata": {}},
     ):
         with pytest.raises(ValueError):
             TelemetryEventRequest.validate_event(payload)
+
+def test_event_accepts_existing_action_payload_contract() -> None:
+    event = TelemetryEventRequest.validate_event({"action": "COVER_PAGE_ENTERED", "payload": {"anchorId": "A"}})
+    assert event.event_type == "COVER_PAGE_ENTERED"
+    assert event.metadata == {"anchorId": "A"}
 
 def test_event_rejects_oversized_metadata() -> None:
     with pytest.raises(ValueError):
@@ -44,10 +54,11 @@ def test_success_follows_insert_and_uses_server_trace() -> None:
             return self.collection
     db = Database()
     event = TelemetryEventRequest.validate_event({"eventType": "SYSTEM_EVENT", "metadata": {"source": "test"}})
-    result = _persist_telemetry_event(tenant_id="tenant-1", principal_id="principal-1", event=event, trace_id="trace-test", database=db)
+    result = _persist_telemetry_event(tenant_id="tenant-1", principal_id="principal-1", event=event, database=db)
     assert result["accepted"] is True
-    assert db.collection.records[0]["trace_id"] == "trace-test"
-    assert db.collection.indexes[0][1]["unique"] is True
+    assert result["trace_id"]
+    assert db.collection.records[0]["trace_id"] == result["trace_id"]
+    assert not db.collection.indexes  # Unique index is provisioned at EOS startup, not per request.
 
 def test_duplicate_trace_is_not_acknowledged() -> None:
     class Collection:
@@ -59,7 +70,9 @@ def test_duplicate_trace_is_not_acknowledged() -> None:
     with pytest.raises(DuplicateKeyError):
         _persist_telemetry_event(tenant_id="tenant-1", principal_id="principal-1", event=event, trace_id="duplicate", database=Database())
 
-def test_database_unavailable_fails_before_acceptance() -> None:
+def test_database_unavailable_fails_before_acceptance(monkeypatch) -> None:
+    import tools.eos.api.telemetry_ingestion_router as module
+    monkeypatch.setattr(module, "get_database", lambda: None)
     event = TelemetryEventRequest.validate_event({"eventType": "SYSTEM_EVENT"})
     with pytest.raises(RuntimeError, match="TELEMETRY_DATABASE_UNAVAILABLE"):
         _persist_telemetry_event(tenant_id="tenant-1", principal_id="principal-1", event=event, database=None)
