@@ -21,6 +21,23 @@ _authorize_telemetry_write = RequireTenantAuthorization("telemetry:event:write",
 _COLLECTION = "wilsy_sovereign_telemetry"
 _MAX_PAYLOAD_BYTES = 16_384
 _EVENT_TYPE = re.compile(r"^[A-Z][A-Z0-9_]{0,63}$")
+_ALLOWED_EVENT_TYPES = frozenset({
+    "METRICS_FETCH_SUCCESS", "METRICS_FETCH_RETRY", "METRICS_FETCH_ERROR",
+    "POLLING_STARTED", "POLLING_STOPPED",
+    "PERMISSIONS_CACHE_HIT", "PERMISSIONS_FETCH_SUCCESS",
+    "PERMISSIONS_FETCH_RETRY", "PERMISSIONS_FETCH_ERROR",
+    "TENANT_SWITCHED", "TENANT_SWITCH_ERROR", "REFRESH_TENANTS",
+    "REFRESH_TENANTS_ERROR", "MANAGE_TENANTS_CLICKED",
+    "COVER_PAGE_ENTERED", "BOARDROOM_ENTERED", "SHARD_HEARTBEAT",
+    "BOARDROOM_TELEMETRY", "SYSTEM_EVENT", "NEURAL_PULSE", "GENESIS_FAILURE",
+    "eos.execution.started", "eos.execution.completed", "eos.execution.failed",
+    "eos.task.started", "eos.task.completed", "eos.task.failed",
+    "eos.repository.scanned", "eos.knowledge_graph.updated",
+    "eos.artifact.stored", "eos.artifact.published", "eos.decision.produced",
+    "eos.quality.passed", "eos.quality.failed", "eos.review.passed",
+    "eos.review.failed", "eos.release.published", "eos.sentinel.alert",
+    "eos.system.alert",
+})
 _CLIENT_TRACE = re.compile(r"^[A-Za-z0-9][A-Za-z0-9._:-]{0,127}$")
 
 class TelemetryEventRequest(BaseModel):
@@ -39,7 +56,7 @@ class TelemetryEventRequest(BaseModel):
     @classmethod
     def validate_event(cls, value: object) -> "TelemetryEventRequest":
         event = cls.model_validate(value)
-        if not _EVENT_TYPE.fullmatch(event.event_type) and not re.fullmatch(r"eos\\.[a-z][a-z0-9_.]{0,61}", event.event_type):
+        if not _EVENT_TYPE.fullmatch(event.event_type) and event.event_type not in _ALLOWED_EVENT_TYPES:
             raise ValueError("eventType must be a canonical event token")
         if event.client_trace_id is not None and not _CLIENT_TRACE.fullmatch(event.client_trace_id):
             raise ValueError("traceId is malformed")
