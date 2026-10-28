@@ -56,7 +56,7 @@ class TelemetryEventRequest(BaseModel):
     @classmethod
     def validate_event(cls, value: object) -> "TelemetryEventRequest":
         event = cls.model_validate(value)
-        if not _EVENT_TYPE.fullmatch(event.event_type) and event.event_type not in _ALLOWED_EVENT_TYPES:
+        if event.event_type not in _ALLOWED_EVENT_TYPES:
             raise ValueError("eventType must be a canonical event token")
         if event.client_trace_id is not None and not _CLIENT_TRACE.fullmatch(event.client_trace_id):
             raise ValueError("traceId is malformed")
