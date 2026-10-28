@@ -10,7 +10,7 @@ import re
 from datetime import datetime, timezone
 from typing import Any
 from uuid import uuid4
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException, Request, status
 from pydantic import BaseModel, ConfigDict, Field, StrictStr, ValidationError
 from pymongo.errors import DuplicateKeyError, PyMongoError
 from tools.eos.api.tenant_authorization_http import RequireTenantAuthorization, TenantAuthorizationContext
@@ -54,7 +54,6 @@ def _persist_telemetry_event(*, tenant_id: str, principal_id: str, event: Teleme
     if db is None:
         raise RuntimeError("TELEMETRY_DATABASE_UNAVAILABLE")
     collection = db[_COLLECTION]
-    collection.create_index("trace_id", unique=True, name="uq_telemetry_trace_id")
     server_trace_id = trace_id or str(uuid4())
     collection.insert_one({
         "trace_id": server_trace_id,
@@ -69,11 +68,19 @@ def _persist_telemetry_event(*, tenant_id: str, principal_id: str, event: Teleme
     return {"accepted": True, "trace_id": server_trace_id, "event_type": event.event_type}
 
 @router.post("/event", status_code=status.HTTP_201_CREATED)
-async def ingest_telemetry_event(payload: dict[str, Any], context: TenantAuthorizationContext = Depends(_authorize_telemetry_write)) -> dict[str, Any]:
-    """Authorize, validate, and durably append one tenant-scoped telemetry event."""
+async def ingest_telemetry_event(request: Request, context: TenantAuthorizationContext = Depends(_authorize_telemetry_write)) -> dict[str, Any]:
+    """Bound raw input, authorize, validate, and durably append one tenant-scoped event."""
+    if not getattr(request.app.state, "telemetry_indexes_ready", False):
+        raise HTTPException(status_code=503, detail="TELEMETRY_PERSISTENCE_UNAVAILABLE")
+    raw_body = await request.body()
+    if len(raw_body) > _MAX_PAYLOAD_BYTES:
+        raise HTTPException(status_code=413, detail="TELEMETRY_BODY_TOO_LARGE")
     try:
+        payload = json.loads(raw_body)
+        if not isinstance(payload, dict):
+            raise ValueError("event envelope must be an object")
         event = TelemetryEventRequest.validate_event(payload)
-    except (ValidationError, ValueError, TypeError) as exc:
+    except (json.JSONDecodeError, ValidationError, ValueError, TypeError) as exc:
         raise HTTPException(status_code=422, detail="INVALID_TELEMETRY_EVENT") from exc
     try:
         return _persist_telemetry_event(tenant_id=context.tenant_id, principal_id=context.identity.identity_id, event=event)

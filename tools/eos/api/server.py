@@ -387,6 +387,7 @@ class WilsyAPIServer:
         async def start_database() -> None:
             """Own explicit database bootstrap at application startup."""
             app.state.p12c_binding_indexes_ready = False
+            app.state.telemetry_indexes_ready = False
             connected, detail = connect_db()
             if not connected:
                 logger.error("[KENNEL_DB] Explicit startup bootstrap unavailable: %s", detail)
@@ -396,6 +397,9 @@ class WilsyAPIServer:
             if database is None:
                 return
             if database is not None:
+                database["wilsy_sovereign_telemetry"].create_index(
+                    "trace_id", unique=True, name="uq_telemetry_trace_id"
+                )
                 TenantAuthorizationDecisionEvidenceRegistry(
                     database[
                         TENANT_AUTHORIZATION_DECISION_EVIDENCE_COLLECTION
@@ -476,11 +480,13 @@ class WilsyAPIServer:
                 )
             # Only completed startup establishes binding readiness.
             app.state.p12c_binding_indexes_ready = client is not None
+            app.state.telemetry_indexes_ready = client is not None
 
         @app.on_event("shutdown")
         async def stop_database() -> None:
             """Release the kernel database during controlled application shutdown."""
             app.state.p12c_binding_indexes_ready = False
+            app.state.telemetry_indexes_ready = False
             disconnect_db()
 
         @app.on_event("startup")

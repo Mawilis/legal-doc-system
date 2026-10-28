@@ -47,11 +47,10 @@ def test_success_follows_insert_and_uses_server_trace() -> None:
     result = _persist_telemetry_event(tenant_id="tenant-1", principal_id="principal-1", event=event, trace_id="trace-test", database=db)
     assert result["accepted"] is True
     assert db.collection.records[0]["trace_id"] == "trace-test"
-    assert db.collection.indexes[0][1]["unique"] is True
+    assert not db.collection.indexes  # Index lifecycle is owned by EOS startup, not each request.
 
 def test_duplicate_trace_is_not_acknowledged() -> None:
     class Collection:
-        def create_index(self, key, **kwargs): assert kwargs["unique"] is True
         def insert_one(self, record): raise DuplicateKeyError("duplicate")
     class Database:
         def __getitem__(self, name): return Collection()
