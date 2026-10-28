@@ -47,6 +47,10 @@ on:
       - "tools/eos/saas/domain/tenant_branding_*.py"
       - "package.json"
       - "package-lock.json"
+      - "server/app.js"
+      - "server/routes/telemetryRoutes.js"
+      - "server/routes/forensicRoutes.js"
+      - "tests/e2e/run-browser-cert.mjs"
       - ".github/workflows/l8-8m-authenticated-browser-certification.yml"
   workflow_dispatch:
 
