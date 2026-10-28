@@ -1,4 +1,4 @@
-name: G65 Ethical-Wall Membership and Acknowledgement Certification
+name: G65/G77 Ethical-Wall Membership, Acknowledgement and Denial Certification
 
 on:
   pull_request:
@@ -8,11 +8,13 @@ on:
       - "tools/eos/legal_operations/service/legal_work_ethical_wall_membership_acknowledgement.py"
       - "tools/eos/legal_operations/service/legal_work_ethical_wall_enforcement.py"
       - "tools/eos/legal_operations/service/legal_work_ethical_wall_source_adapters.py"
-      - "tools/eos/legal_operations/service/legal_practitioner_disclosure_coordinator.py"
+      - "tools/eos/legal_operations/service/legal_practitioner_ethical_wall_read_barrier.py"
+      - "tools/eos/legal_operations/service/legal_practitioner_conjunctive_read_guard.py"
       - "tests/unit/test_legal_work_ethical_wall_membership_acknowledgement.py"
       - "tests/unit/test_legal_work_ethical_wall_enforcement.py"
       - "tests/unit/test_legal_work_ethical_wall_source_adapters.py"
-      - "tests/unit/test_legal_practitioner_disclosure_coordinator.py"
+      - "tests/unit/test_legal_practitioner_ethical_wall_read_barrier.py"
+      - "tests/unit/test_legal_practitioner_conjunctive_read_guard.py"
       - ".github/workflows/g65-ethical-wall-membership-acknowledgement-certification.yml"
   workflow_dispatch:
 
@@ -21,7 +23,7 @@ permissions:
 
 jobs:
   g65-source-and-denial-certificate:
-    name: G65 source adapter and G77/G78/G79 denial regression
+    name: G65/G77/G78 and read-barrier denial regression
     runs-on: ubuntu-latest
     timeout-minutes: 20
     steps:
@@ -42,7 +44,10 @@ jobs:
             tools/eos/legal_operations/service/legal_work_ethical_wall_enforcement.py \
             tools/eos/legal_operations/service/legal_work_ethical_wall_source_adapters.py \
             tests/unit/test_legal_work_ethical_wall_membership_acknowledgement.py \
-            tests/unit/test_legal_work_ethical_wall_enforcement.py
+            tests/unit/test_legal_work_ethical_wall_enforcement.py \
+            tests/unit/test_legal_work_ethical_wall_source_adapters.py \
+            tests/unit/test_legal_practitioner_ethical_wall_read_barrier.py \
+            tests/unit/test_legal_practitioner_conjunctive_read_guard.py
       - name: Run focused ethical-wall regression
         shell: bash
         run: |
@@ -50,7 +55,10 @@ jobs:
           set +e
           output="$(python -m pytest -q -rs \
             tests/unit/test_legal_work_ethical_wall_membership_acknowledgement.py \
-            tests/unit/test_legal_work_ethical_wall_enforcement.py 2>&1)"
+            tests/unit/test_legal_work_ethical_wall_enforcement.py \
+            tests/unit/test_legal_work_ethical_wall_source_adapters.py \
+            tests/unit/test_legal_practitioner_ethical_wall_read_barrier.py \
+            tests/unit/test_legal_practitioner_conjunctive_read_guard.py 2>&1)"
           pytest_status=$?
           set -e
           printf '%s\\n' "$output"
