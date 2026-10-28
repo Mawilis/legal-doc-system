@@ -1,0 +1,119 @@
+name: G65/G77 Ethical-Wall Membership, Acknowledgement and Denial Certification
+
+on:
+  pull_request:
+    branches:
+      - main
+    paths:
+      - "tools/eos/legal_operations/service/legal_work_ethical_wall_membership_acknowledgement.py"
+      - "tools/eos/legal_operations/service/legal_work_ethical_wall_enforcement.py"
+      - "tools/eos/legal_operations/service/legal_work_ethical_wall_source_adapters.py"
+      - "tools/eos/legal_operations/service/legal_practitioner_ethical_wall_read_barrier.py"
+      - "tools/eos/legal_operations/service/legal_practitioner_conjunctive_read_guard.py"
+      - "tests/unit/test_legal_work_ethical_wall_membership_acknowledgement.py"
+      - "tests/integration/test_legal_work_ethical_wall_membership_acknowledgement_real_mongo.py"
+      - "tests/unit/test_legal_work_ethical_wall_enforcement.py"
+      - "tests/unit/test_legal_work_ethical_wall_source_adapters.py"
+      - "tests/unit/test_legal_practitioner_ethical_wall_read_barrier.py"
+      - "tests/unit/test_legal_practitioner_conjunctive_read_guard.py"
+      - ".github/workflows/g65-ethical-wall-membership-acknowledgement-certification.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  g65-source-and-denial-certificate:
+    name: G65/G77/G78 and read-barrier denial regression
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - name: Checkout exact PR commit
+        uses: actions/checkout@v4
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Install bounded test dependencies
+        run: |
+          python -m pip install --upgrade pip==25.3
+          python -m pip install pytest==9.1.1 pymongo==4.18.2
+      - name: Start disposable G65 MongoDB replica set
+        run: |
+          docker run --detach --name wilsy-g65-mongo --publish 27017:27017 \
+            mongo:7.0.37 mongod --replSet wilsyG65RS --bind_ip_all
+      - name: Initialize disposable G65 MongoDB replica set
+        run: |
+          python - <<'PY'
+          import time
+          from pymongo import MongoClient
+
+          client = MongoClient(
+              "mongodb://localhost:27017",
+              directConnection=True,
+              serverSelectionTimeoutMS=2_000,
+          )
+          deadline = time.monotonic() + 60
+          initiated = False
+          last_error = None
+          while True:
+              try:
+                  hello = client.admin.command("hello")
+                  if not initiated and not hello.get("setName"):
+                      client.admin.command({
+                          "replSetInitiate": {
+                              "_id": "wilsyG65RS",
+                              "members": [{"_id": 0, "host": "localhost:27017"}],
+                          }
+                      })
+                      initiated = True
+                  if client.admin.command("hello").get("isWritablePrimary"):
+                      break
+              except Exception as exc:
+                  last_error = exc
+              if time.monotonic() >= deadline:
+                  raise RuntimeError(
+                      f"G65_REAL_MONGO_UNAVAILABLE: {last_error!r}"
+                  ) from last_error
+              time.sleep(1)
+          client.close()
+          PY
+      - name: Compile exact ethical-wall surfaces
+        run: |
+          python -m py_compile \
+            tools/eos/legal_operations/service/legal_work_ethical_wall_membership_acknowledgement.py \
+            tools/eos/legal_operations/service/legal_work_ethical_wall_enforcement.py \
+            tools/eos/legal_operations/service/legal_work_ethical_wall_source_adapters.py \
+            tests/unit/test_legal_work_ethical_wall_membership_acknowledgement.py \
+            tests/integration/test_legal_work_ethical_wall_membership_acknowledgement_real_mongo.py \
+            tests/unit/test_legal_work_ethical_wall_enforcement.py \
+            tests/unit/test_legal_work_ethical_wall_source_adapters.py \
+            tests/unit/test_legal_practitioner_ethical_wall_read_barrier.py \
+            tests/unit/test_legal_practitioner_conjunctive_read_guard.py
+      - name: Run focused ethical-wall regression
+        shell: bash
+        env:
+          WILSY_G65_REAL_MONGO_URI: mongodb://localhost:27017/?replicaSet=wilsyG65RS
+        run: |
+          set -uo pipefail
+          set +e
+          output="$(python -m pytest -q -rs \
+            tests/unit/test_legal_work_ethical_wall_membership_acknowledgement.py \
+            tests/integration/test_legal_work_ethical_wall_membership_acknowledgement_real_mongo.py \
+            tests/unit/test_legal_work_ethical_wall_enforcement.py \
+            tests/unit/test_legal_work_ethical_wall_source_adapters.py \
+            tests/unit/test_legal_practitioner_ethical_wall_read_barrier.py \
+            tests/unit/test_legal_practitioner_conjunctive_read_guard.py 2>&1)"
+          pytest_status=$?
+          set -e
+          printf '%s\\n' "$output"
+          if [ "$pytest_status" -ne 0 ]; then exit "$pytest_status"; fi
+          if printf '%s\\n' "$output" | grep -qi 'skipped'; then
+            echo "G65 certification invalid: skipped tests detected"
+            exit 1
+          fi
+
+      - name: Stop disposable G65 MongoDB replica set
+        if: always()
+        run: docker rm -f wilsy-g65-mongo || true
+

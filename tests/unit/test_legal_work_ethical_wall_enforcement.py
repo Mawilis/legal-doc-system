@@ -1,12 +1,12 @@
 """TITLE: WILSY OS G77 Source-Verified Ethical-Wall Enforcement Certificate.
-VERSION: v1.0.0-G77-SOURCE-VERIFIED-DENIAL-CERT
+VERSION: v1.0.4-G77-G65-REQUIRED-SOURCE-CERT
 AUTHORITY: Negative enforcement and canonical-source validation only.
 EPITOME: Certifies transaction, IAM, binding, assignment, conflict, review and
 wall-source verification while institutional authority remains unavailable.
 ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/tests/unit/test_legal_work_ethical_wall_enforcement.py
 COLLABORATION / OWNERSHIP: Wilsy OS Core Engineering / Legal Operations.
 CERTIFICATION / UPDATE DATE: 2026-10-21.
-CHANGELOG: 2026-10-21 v1.0.0 introduces G77 denial-path certification.
+CHANGELOG: 2026-10-21 v1.0.0 G77 denial certificate; 2026-10-28 v1.0.1 adds G65 source integration; v1.0.2 certifies changed-evidence denial at point of read; v1.0.3 certifies IAM deny precedence; v1.0.4 certifies mandatory G65 dependency injection.
 COMPLIANCE: POPIA section 19; GDPR Article 32; SOC 2 CC7.2.
 TENANT BOUNDARY: Exact tenant, matter and authenticated principal.
 AUTHORITY BOUNDARY: No positive content or operational access result exists.
@@ -48,6 +48,10 @@ from tools.eos.legal_operations.domain.legal_work_practitioner_confidentiality_r
     EthicalWallRequirement,
 )
 from tools.eos.legal_operations.service import legal_work_ethical_wall_enforcement as service
+from tools.eos.legal_operations.service.legal_work_ethical_wall_membership_acknowledgement import (
+    CanonicalWallAcknowledgementEvidence,
+    CanonicalWallMembershipEvidence,
+)
 
 NOW = datetime(2026, 10, 21, 15, 0, tzinfo=UTC)
 
@@ -178,6 +182,7 @@ def sources(**changes: object) -> dict[str, object]:
         "conflict_source": Source(conflict()),
         "review_source": Source(review(wall)),
         "wall_source": WallSource(wall),
+        "membership_acknowledgement_source": MembershipAcknowledgementSource(),
     }
     values.update(changes)
     return values
@@ -212,6 +217,17 @@ def test_denied_iam_stops_before_binding() -> None:
     with pytest.raises(service.EthicalWallEnforcementDenied, match="IAM_DENIED"):
         enforce(iam_source=Source(denied), binding_source=binding_source)
     assert binding_source.calls == 0
+
+
+def test_explicit_iam_deny_precedes_membership_acknowledgement_reads() -> None:
+    evidence_source = MembershipAcknowledgementSource()
+    denied = TenantAuthorizationDecision(
+        False, TenantAuthorizationReason.BUSINESS_ROLE_INELIGIBLE
+    )
+    with pytest.raises(service.EthicalWallEnforcementDenied, match="IAM_DENIED"):
+        enforce(iam_source=Source(denied), membership_acknowledgement_source=evidence_source)
+    assert evidence_source.membership_calls == 0
+    assert evidence_source.acknowledgement_calls == 0
 
 
 def test_binding_and_assignment_must_be_exact_current_scope() -> None:
@@ -254,8 +270,89 @@ def test_service_has_no_positive_or_content_delivery_surface() -> None:
     assert service.OPERATIONAL_ACCESS_ENABLED is False
 
 
+class MembershipAcknowledgementSource:
+    def __init__(self) -> None:
+        self.membership_calls = 0
+        self.acknowledgement_calls = 0
+
+    def resolve_membership(self, **scope: object) -> CanonicalWallMembershipEvidence:
+        self.membership_calls += 1
+        return CanonicalWallMembershipEvidence(
+            tenant_id=str(scope["tenant_id"]),
+            case_matter_id=str(scope["case_matter_id"]),
+            practitioner_principal_id=str(scope["practitioner_principal_id"]),
+            membership_id="member-a", revision=1, fingerprint="a" * 64,
+            issuer_id="issuer-a", issuer_evidence_reference="membership-evidence-a",
+            effective_at=NOW - timedelta(days=1), expires_at=NOW + timedelta(days=1),
+        )
+
+    def resolve_acknowledgement(self, **scope: object) -> CanonicalWallAcknowledgementEvidence:
+        self.acknowledgement_calls += 1
+        return CanonicalWallAcknowledgementEvidence(
+            tenant_id=str(scope["tenant_id"]),
+            case_matter_id=str(scope["case_matter_id"]),
+            practitioner_principal_id=str(scope["practitioner_principal_id"]),
+            policy_id=str(scope["policy_id"]),
+            policy_revision_fingerprint=str(scope["policy_revision_fingerprint"]),
+            acknowledgement_id="ack-a", revision=1, fingerprint="b" * 64,
+            issuer_id="issuer-a", issuer_evidence_reference="ack-evidence-a",
+            acknowledged_at=NOW - timedelta(hours=1), expires_at=NOW + timedelta(days=1),
+        )
+
+
+def test_g77_revalidates_membership_and_exact_revision_ack_but_still_denies() -> None:
+    source = MembershipAcknowledgementSource()
+    with pytest.raises(service.EthicalWallEnforcementDenied, match="INSTITUTIONAL_AUTHORITY_UNRATIFIED"):
+        enforce(membership_acknowledgement_source=source)
+    assert source.membership_calls == 2
+    assert source.acknowledgement_calls == 2
+
+
+def test_g77_denies_if_membership_changes_during_point_of_read_revalidation() -> None:
+    class RevokingSource(MembershipAcknowledgementSource):
+        def resolve_membership(self, **scope: object) -> CanonicalWallMembershipEvidence:
+            evidence = super().resolve_membership(**scope)
+            if self.membership_calls == 2:
+                return replace(evidence, revision=2, fingerprint="c" * 64)
+            return evidence
+
+    source = RevokingSource()
+    with pytest.raises(service.EthicalWallEnforcementDenied, match="G77_POINT_OF_READ_EVIDENCE_CHANGED"):
+        enforce(membership_acknowledgement_source=source)
+    assert source.membership_calls == 2
+    assert source.acknowledgement_calls == 2
+
+
+def test_g77_denies_if_acknowledgement_changes_during_point_of_read_revalidation() -> None:
+    class RevokingAcknowledgementSource(MembershipAcknowledgementSource):
+        def resolve_acknowledgement(self, **scope: object) -> CanonicalWallAcknowledgementEvidence:
+            evidence = super().resolve_acknowledgement(**scope)
+            if self.acknowledgement_calls == 2:
+                return replace(evidence, revision=2, fingerprint="d" * 64)
+            return evidence
+
+    source = RevokingAcknowledgementSource()
+    with pytest.raises(service.EthicalWallEnforcementDenied, match="G77_POINT_OF_READ_EVIDENCE_CHANGED"):
+        enforce(membership_acknowledgement_source=source)
+    assert source.membership_calls == 2
+    assert source.acknowledgement_calls == 2
+
+
+def test_g77_membership_ack_source_failure_precedes_unratified_fallback() -> None:
+    class BrokenSource:
+        def resolve_membership(self, **scope: object) -> object:
+            raise RuntimeError("private persistence detail")
+
+        def resolve_acknowledgement(self, **scope: object) -> object:
+            raise AssertionError("acknowledgement must not be read after membership failure")
+
+    with pytest.raises(service.EthicalWallEnforcementDenied, match="G77_MEMBERSHIP_ACKNOWLEDGEMENT_UNAVAILABLE") as error:
+        enforce(membership_acknowledgement_source=BrokenSource())
+    assert "private persistence detail" not in str(error.value)
+
+
 # ARTIFACT: test_legal_work_ethical_wall_enforcement.py
-# VERSION: v1.0.0-G77-SOURCE-VERIFIED-DENIAL-CERT
+# VERSION: v1.0.3-G77-G65-DENY-PRECEDENCE-CERT
 # AUTHORITY BOUNDARY: canonical negative verification only; no access grant
 # TENANT POSTURE: exact tenant/matter/principal, foreign scope denied
 # FAIL-CLOSED POSTURE: unavailable, malformed, revoked or unratified denies
