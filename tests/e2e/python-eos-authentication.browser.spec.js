@@ -63,7 +63,7 @@ test('password + TOTP succeed through Python EOS; Legal workspace remains fail-c
 
   await page.goto('/login');
   await page.getByLabel('Work email').fill(actor.email);
-  await page.getByLabel('Password').fill(actor.password);
+  await page.getByRole('textbox', { name: 'Password', exact: true }).fill(actor.password);
 
   const loginResponsePromise = page.waitForResponse((response) => (
     new URL(response.url()).pathname === '/api/auth/login'
