@@ -9,6 +9,7 @@ from concurrent.futures import ThreadPoolExecutor
 from datetime import UTC
 import os
 import threading
+import time
 import uuid
 
 import pytest
@@ -80,8 +81,9 @@ def test_fence_writes_serialize_disclosure_and_revocation_transactions() -> None
             assert first_has_fence.wait(timeout=10)
             second = pool.submit(revocation_transaction)
             assert second_started.wait(timeout=10)
-            # Give the second transaction a bounded opportunity to contend while
-            # the first transaction owns the write. It must not complete first.
+            # Let the second worker reach the blocking Mongo write while the
+            # first transaction still owns the document lock.
+            time.sleep(0.25)
             assert not second.done(), "second transaction bypassed the held fence"
             allow_first_commit.set()
             first.result(timeout=15)
