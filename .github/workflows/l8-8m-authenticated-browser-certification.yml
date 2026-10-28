@@ -1,5 +1,5 @@
 # TITLE: L8-8M and D21B13 authenticated browser/branding certification
-# VERSION: v1.0.4-L8-8M-BFF-LOCKFILE-CERT
+# VERSION: v1.0.5-L8-8M-SERVER-PEER-LOCKFILE-CERT
 # AUTHORITY: Disposable certification orchestration only.
 # EPITOME: Run the authenticated Legal browser suite and the independent real-Mongo
 #          branding delivery integration certificate against isolated replica sets.
@@ -7,7 +7,8 @@
 # COLLABORATION / OWNERSHIP: EOS owns auth, tenant and asset truth; CI owns only
 #                            disposable setup, test orchestration and teardown.
 # CERTIFICATION / UPDATE DATE: 2026-10-24
-# CHANGELOG: v1.0.4 installs the server BFF lockfile before the browser runner starts its owned BFF.
+# CHANGELOG: v1.0.5 applies the repository's established legacy-peer-deps install mode to the server lockfile; the exact-revision browser workflow failed before certification because compromise-ngrams@0.0.6 declares compromise ^12 while the lockfile resolves compromise 14.
+#            v1.0.4 installs the server BFF lockfile before the browser runner starts its owned BFF.
 #            v1.0.3 installs the repository-pinned pytest runner required by the real-Mongo
 #            branding integration step after CI confirmed it was absent from runtime deps.
 #            v1.0.2 aligns branding Mongo listener/member ports; v1.0.1 adds isolated Mongo,
@@ -83,7 +84,7 @@ jobs:
         run: |
           npm ci --legacy-peer-deps
           npm --prefix client ci
-          npm --prefix server ci
+          npm --prefix server ci --legacy-peer-deps
 
       - name: Install Chromium for Playwright
         run: npx playwright install --with-deps chromium
@@ -242,7 +243,7 @@ jobs:
           done
 
 # ARTIFACT: l8-8m-authenticated-browser-certification.yml
-# VERSION: v1.0.4-L8-8M-BFF-LOCKFILE-CERT
+# VERSION: v1.0.5-L8-8M-SERVER-PEER-LOCKFILE-CERT
 # AUTHORITY BOUNDARY: disposable CI certification orchestration only
 # TENANT POSTURE: synthetic tenants and runner-owned disposable databases
 # FAIL-CLOSED POSTURE: browser, HTTP, Mongo, or skipped integration tests fail the job
