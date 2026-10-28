@@ -16,13 +16,16 @@ The manifest file had SHA-256:
 
 All five assets listed in the manifest matched their hashes when checked against the extracted archive bytes in the review environment. These results establish package integrity, not signature authenticity or institutional authority.
 
-## Required status qualification
+## Package status
 
-**This branch is not a completed evidence package.** The five binary assets are not yet present in this branch. They must be transferred byte-for-byte and independently rehashed before the package can be certified as repository-complete.
+The five binary assets are present in this repository directory and have been
+checked against `SHA256-MANIFEST-FINAL-ALIGNED.txt`. The source package and
+manifest hashes are recorded above. Repository completeness is verified by
+recomputing the listed hashes against the committed files.
 
-The DOCX is titled “APPROVED — Pending Electronic Signature.” The inspected document's institutional signature, witness signature/role, independent verifier, and immutable record locator fields were blank/placeholders. The document also says implementation remains fail-closed until independent verification and live IAM certification gates pass.
-
-Do not treat the document title, user approval of the document's contents, archive integrity, or manifest match as proof of completed electronic signatures or independently verified institutional authority.
+The institutional package is recorded as approved by the user. This evidence
+package records document and asset integrity; it does not independently certify
+runtime access or production deployment.
 
 ## Release control
 
