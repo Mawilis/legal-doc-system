@@ -63,3 +63,62 @@ def test_database_unavailable_fails_before_acceptance() -> None:
     event = TelemetryEventRequest.validate_event({"eventType": "SYSTEM_EVENT"})
     with pytest.raises(RuntimeError, match="TELEMETRY_DATABASE_UNAVAILABLE"):
         _persist_telemetry_event(tenant_id="tenant-1", principal_id="principal-1", event=event, database=None)
+
+
+def _client(monkeypatch, database):
+    import tools.eos.api.telemetry_ingestion_router as module
+    app = FastAPI()
+    app.include_router(router)
+    app.state.telemetry_indexes_ready = True
+    app.dependency_overrides[module._authorize_telemetry_write] = lambda: SimpleNamespace(
+        tenant_id="tenant-authorized", identity=SimpleNamespace(identity_id="principal-authenticated")
+    )
+    monkeypatch.setattr(module, "get_database", lambda: database)
+    return TestClient(app)
+
+
+def test_http_success_persists_under_authorized_tenant_with_server_trace(monkeypatch):
+    class Collection:
+        def __init__(self):
+            self.records = []
+        def insert_one(self, record):
+            self.records.append(record)
+    class Database:
+        def __init__(self):
+            self.collection = Collection()
+        def __getitem__(self, name):
+            assert name == "wilsy_sovereign_telemetry"
+            return self.collection
+    db = Database()
+    client = _client(monkeypatch, db)
+    response = client.post("/telemetry/event", json={
+        "eventType": "SYSTEM_EVENT", "traceId": "TRC-client-123", "metadata": {"ok": True}
+    })
+    assert response.status_code == 201
+    assert response.json()["trace_id"] != "TRC-client-123"
+    assert db.collection.records[0]["tenant_id"] == "tenant-authorized"
+    assert db.collection.records[0]["client_trace_id"] == "TRC-client-123"
+
+
+def test_http_rejects_forged_tenant_and_oversized_raw_body(monkeypatch):
+    client = _client(monkeypatch, object())
+    forged = client.post("/telemetry/event", json={"eventType": "SYSTEM_EVENT", "tenantId": "attacker"})
+    oversized = client.post("/telemetry/event", json={"eventType": "SYSTEM_EVENT", "metadata": {"blob": "x" * 17000}})
+    assert forged.status_code == 422
+    assert oversized.status_code == 413
+
+
+def test_http_reports_database_unavailable_and_duplicate_trace(monkeypatch):
+    client = _client(monkeypatch, None)
+    unavailable = client.post("/telemetry/event", json={"eventType": "SYSTEM_EVENT"})
+    assert unavailable.status_code == 503
+
+    class Collection:
+        def insert_one(self, record):
+            raise DuplicateKeyError("duplicate")
+    class Database:
+        def __getitem__(self, name):
+            return Collection()
+    client = _client(monkeypatch, Database())
+    conflict = client.post("/telemetry/event", json={"eventType": "SYSTEM_EVENT"})
+    assert conflict.status_code == 409
