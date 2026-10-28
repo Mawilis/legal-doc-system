@@ -1,7 +1,7 @@
 """Canonical tenant authorization HTTP composition and denial observation.
 
 TITLE: WILSY OS Tenant Authorization HTTP Boundary
-VERSION: v1.2.0-P6-IAM-DENIAL-OBSERVABILITY
+VERSION: v1.3.0-P6-DIRECT-BUSINESS-ROLE-RESOLUTION
 AUTHORITY: FastAPI dependency translation of frozen durable tenant authorization.
 EPITOME: Binds an authenticated identity and explicit tenant scope to current
          IAM truth, then emits one bounded terminal observation for admitted
@@ -11,6 +11,9 @@ ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/tools/eos/api/te
 COLLABORATION / OWNERSHIP: Wilson Khanyezi / Wilsy Core Engineering / Python EOS IAM.
 CERTIFICATION / UPDATE DATE: 2026-10-19
 CHANGELOG:
+    2026-10-28 v1.3.0-P6-DIRECT-BUSINESS-ROLE-RESOLUTION exposes one exact-scope,
+    single-read business-role lookup for the canonical resolver while preserving
+    separate authorization-role reads and existing denial/outage classification.
     2026-10-19 v1.2.0-P6-IAM-DENIAL-OBSERVABILITY adds one failure-safe,
     bounded, post-decision structured observation for authenticated tenant IAM
     denials and dependency unavailability. Server-generated correlation and
@@ -73,7 +76,7 @@ from tools.eos.workforce.registry.workforce_relationship_registry import (
 )
 
 
-VERSION: Final[str] = "v1.2.0-P6-IAM-DENIAL-OBSERVABILITY"
+VERSION: Final[str] = "v1.3.0-P6-DIRECT-BUSINESS-ROLE-RESOLUTION"
 logger = logging.getLogger("WilsyOS.API.TenantAuthorization")
 _OBSERVATION_SCHEMA: Final[str] = "WILSY-TENANT-AUTHORIZATION-OBSERVATION/V1"
 _OBSERVATION_VERSION: Final[str] = "v1.0.0-P6-IAM-DENIAL-OBSERVABILITY"
@@ -249,6 +252,32 @@ class _TenantAuthorityRoleReader:
     ) -> None:
         self._authorization_repository = authorization_repository
         self._business_repository = business_repository
+
+    def resolve_current_business_role(
+        self,
+        principal_id: str,
+        tenant_id: str,
+        *,
+        session: Any = None,
+    ) -> object:
+        """Resolve the single canonical business-role row without role fan-out."""
+
+        try:
+            return (
+                self._business_repository.resolve(principal_id, tenant_id)
+                if session is None
+                else self._business_repository.resolve(
+                    principal_id, tenant_id, session=session
+                )
+            )
+        except TenantBusinessRoleNotFoundError as exc:
+            raise RoleAssignmentNotFoundError(
+                "TENANT_BUSINESS_ROLE_NOT_FOUND"
+            ) from exc
+        except TenantBusinessRoleRepositoryError as exc:
+            raise RoleAssignmentRepositoryError(
+                "TENANT_BUSINESS_ROLE_AUTHORITY_UNAVAILABLE"
+            ) from exc
 
     def resolve(
         self,
