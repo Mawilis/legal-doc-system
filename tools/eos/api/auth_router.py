@@ -255,8 +255,15 @@ def _workspace_legal_presentation_permissions(
     membership, business-role, operation/permission binding, and active granting
     role. Browser/JWT/login permission projections never enter this composition.
     """
-    resolved: list[str] = []
-    for permission_id, operation in _LEGAL_PRESENTATION_PERMISSION_BINDINGS:
+    # Each permission is an independent, read-only canonical decision. Running
+    # the fixed, closed allowlist concurrently avoids multiplying MongoDB network
+    # latency by eight while retaining the same authority compositor and denial
+    # classification. executor.map preserves the declared binding order; the
+    # final projection is sorted below as before.
+    from concurrent.futures import ThreadPoolExecutor
+
+    def resolve_permission(binding: tuple[str, str]) -> tuple[str, Any]:
+        permission_id, operation = binding
         decision = authorize_tenant_operation(
             principal_id=projection.principal_id,
             tenant_id=projection.tenant_id,
@@ -267,7 +274,19 @@ def _workspace_legal_presentation_permissions(
             business_role_repository=role_assignment_repository,
             role_assignment_repository=role_assignment_repository,
         )
+        return permission_id, decision
 
+    with ThreadPoolExecutor(
+        max_workers=len(_LEGAL_PRESENTATION_PERMISSION_BINDINGS),
+        thread_name_prefix="workspace-permission",
+    ) as executor:
+        decisions = executor.map(
+            resolve_permission,
+            _LEGAL_PRESENTATION_PERMISSION_BINDINGS,
+        )
+
+    resolved: list[str] = []
+    for permission_id, decision in decisions:
         if decision.reason in _LEGAL_PRESENTATION_AUTHORITY_UNAVAILABLE:
             raise WorkspaceBootstrapProjectionError(
                 "WORKSPACE_BOOTSTRAP_PERMISSION_AUTHORITY_UNAVAILABLE"
