@@ -1,5 +1,5 @@
 # ============================================================================
-# WILSY OS 2050 - PRODUCTION DOCKER COMPOSE
+# WILSY OS - PYTHON EOS PRODUCTION DOCKER COMPOSE
 # 10TH GENERATION | QUANTUM FORTRESS | PRODUCTION READY
 # ============================================================================
 
@@ -17,27 +17,14 @@ services:
     container_name: wilsy-os-server
     restart: unless-stopped
     environment:
-      - NODE_ENV=production
-      - PORT=3000
+      - PORT=9095
       - API_PORT=9095
-      - INVESTOR_PORT=9096
-      - METRICS_PORT=9090
-      - MONGODB_URI=${MONGODB_URI}
       - REDIS_HOST=redis
       - REDIS_PORT=6379
-      - REDIS_PASSWORD=${REDIS_PASSWORD}
-      - JWT_SECRET=${JWT_SECRET}
-      - JWT_REFRESH_SECRET=${JWT_REFRESH_SECRET}
-      - ADMIN_EMAIL=${ADMIN_EMAIL}
-      - ADMIN_PASSWORD=${ADMIN_PASSWORD}
-      - FORENSIC_HMAC_KEY=${FORENSIC_HMAC_KEY}
     env_file:
       - ./server/.env.production
     ports:
-      - "3000:3000"
       - "9095:9095"
-      - "9096:9096"
-      - "9090:9090"
     volumes:
       - audit_logs:/var/log/wilsy-os
       - forensic_data:/app/data/forensic
@@ -50,7 +37,7 @@ services:
       redis:
         condition: service_healthy
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:3000/health"]
+      test: ["CMD", "curl", "-f", "http://localhost:9095/"]
       interval: 30s
       timeout: 10s
       retries: 3

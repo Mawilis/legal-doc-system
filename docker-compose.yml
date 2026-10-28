@@ -1,9 +1,9 @@
 # ============================================================================
-# WILSY OS 2050 - QUANTUM PRODUCTION DOCKER COMPOSE
-# 10TH GENERATION FORENSIC ENGINE | QUANTUM FORTRESS
-# VERSION: 42.0.1 | GENERATION: 10 | ATLAS-OPTIMIZED
-# INVESTOR-GRADE | POPIA COMPLIANT | SOC2 READY
-# [RECTIFIED: PORT 4000 ALIGNMENT FOR SHIELD INTEGRATION]
+# LEGACY MULTI-SERVICE COMPOSE — MIGRATION_ONLY; NOT A PRODUCTION DEPLOYMENT TARGET
+# Canonical production target: docker-compose.prod.yml after reviewed configuration, or k8s/eos-api-production.yaml
+# VERSION: 42.0.2-PYTHON-EOS-ONLY
+# Do not use this legacy file for production: it contains legacy services and unsafe default credentials.
+# Canonical API runtime: Python EOS on port 9095; no Node BFF listener.
 # ============================================================================
 
 version: '3.8'
@@ -22,14 +22,11 @@ services:
     restart: unless-stopped
     environment:
       # Application Core
-      NODE_ENV: "production"
       APP_NAME: "Wilsy OS"
-      APP_VERSION: "42.0.1"
+      APP_VERSION: "42.0.2-PYTHON-EOS-ONLY"
       API_VERSION: "v1"
-      PORT: "4000" # 🛡️ RECTIFIED
+      PORT: "9095"
       API_PORT: "9095"
-      INVESTOR_PORT: "9096"
-      METRICS_PORT: "9090"
       HOST: "0.0.0.0"
       INSTANCE_ID: "${HOSTNAME:-wilsy-prod-001}"
       REGION: "ZA"
@@ -208,10 +205,7 @@ services:
       PQC_ENABLED: "true"
 
     ports:
-      - "4000:4000" # 🛡️ RECTIFIED
       - "9095:9095"
-      - "9096:9096"
-      - "9090:9090"
     volumes:
       - audit_logs:/var/log/wilsy-os
       - forensic_data:/app/data/forensic
@@ -232,7 +226,7 @@ services:
           cpus: '2'
           memory: 4G
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:4000/health"] # 🛡️ RECTIFIED
+      test: ["CMD", "curl", "-f", "http://localhost:9095/"]
       interval: 30s
       timeout: 10s
       retries: 3

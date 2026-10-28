@@ -1,7 +1,7 @@
 """WILSY OS sovereign Python API server composition root.
 
 TITLE: WILSY OS EOS Kernel API Server Factory
-VERSION: v1.33.0-P12C-R4N-PRACTITIONER-BINDING-LIFECYCLE
+VERSION: v1.34.0-PDF-PRESENTATION-PYTHON-EOS
 AUTHORITY: Wilsy OS Core Governance
 EPITOME: Mount sovereign Python API authorities, including the authenticated
          practitioner-binding command transport, and hold that transport
@@ -11,8 +11,9 @@ EPITOME: Mount sovereign Python API authorities, including the authenticated
          authority.
 ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/tools/eos/api/server.py
 COLLABORATION / OWNERSHIP: Wilson Khanyezi / Wilsy OS Core Engineering
-CERTIFICATION / UPDATE DATE: 2026-10-20
-CHANGELOG: 2026-10-20 v1.33.0-P12C-R4N-PRACTITIONER-BINDING-LIFECYCLE mounts the authenticated practitioner-binding command router exactly once, installs its access, binding and conflict-disposition indexes during connected startup, and denies commands until startup readiness completes while preserving router-owned tenant admission, transaction, Legal, ethical-wall, billing, settlement and Kennel EOS financial-execution boundaries.
+CERTIFICATION / UPDATE DATE: 2026-10-27
+CHANGELOG: 2026-10-27 v1.34.0-PDF-PRESENTATION-PYTHON-EOS mounts authenticated presentation-only PDF export under /api, labels caller payload source as unverified, and removes the browser dependency on the Node BFF PDF endpoint. No issuance, source-verification, signature, payment, or settlement authority is created.
+2026-10-20 v1.33.0-P12C-R4N-PRACTITIONER-BINDING-LIFECYCLE mounts the authenticated practitioner-binding command router exactly once, installs its access, binding and conflict-disposition indexes during connected startup, and denies commands until startup readiness completes while preserving router-owned tenant admission, transaction, Legal, ethical-wall, billing, settlement and Kennel EOS financial-execution boundaries.
 2026-10-18 v1.27.0-P3-R3G-S5-A2-IAM-SECURITY-EVIDENCE-FACTOR-INDEX-BOOTSTRAP moves the already-certified tenant-authorization decision-evidence, authorization-role-revocation evidence, and privileged factor-currentness registry index DDL into canonical connected application startup while preserving all current-main router composition, request-path semantics, tenant boundaries, caller-owned transaction authority, and Kennel EOS financial execution exclusivity.
 2026-10-18 v1.26.0-P1-R3E-AUTHORIZATION-ROLE-REVOCATION-RUNTIME-MOUNT mounts the certified ordinary authorization-role revocation router exactly once under /api while preserving router-owned authentication, tenant authorization, command, transaction, persistence, replay, root-lifecycle and financial boundaries; no privileged-security startup indexes are introduced.
 2026-10-15 v1.25.0-CX26-R3-LEGAL-OPERATING-MODEL-ROUTER-MOUNT mounts the directly certified authenticated Tenant Legal Operating Model HTTP router exactly once under /api/legal/operating-model while preserving router-owned tenant correlation, IAM, transaction, persistence, workflow, legal-act, entitlement, billing, payment, settlement and financial boundaries.
@@ -77,6 +78,7 @@ from zoneinfo import ZoneInfo
 from fastapi import Depends, FastAPI, HTTPException, Request, Response
 from fastapi.middleware.cors import CORSMiddleware
 
+from .artifact_pdf_router import router as artifact_pdf_router
 from .auth_router import router as auth_router
 from .authority_bridge_router import router as authority_bridge_router
 from .billing_router import evaluate_all_tenant_dunning_lifecycles, router as billing_router
@@ -177,7 +179,7 @@ from tools.eos.legal_operations.service.legal_storefront_public_intent_rate_limi
     LegalStorefrontPublicIntentRateLimit,
 )
 
-VERSION = "v1.33.0-P12C-R4N-PRACTITIONER-BINDING-LIFECYCLE"
+VERSION = "v1.34.0-PDF-PRESENTATION-PYTHON-EOS"
 logger = logging.getLogger("WilsyOS.API.Server")
 
 
@@ -565,6 +567,7 @@ class WilsyAPIServer:
         app.include_router(wilsy_ai_legal_services_router, prefix="/api")
         app.include_router(wilsy_ai_advisory_router, prefix="/api")
         app.include_router(legal_acceptance_router, prefix="/api")
+        app.include_router(artifact_pdf_router, prefix="/api")
         app.include_router(tenant_branding_router, prefix="/api")
         app.include_router(subscription_router)
         app.include_router(plan_router)
@@ -597,7 +600,7 @@ class WilsyAPIServer:
 app = WilsyAPIServer().get_app()
 
 # ARTIFACT: server.py
-# VERSION: v1.33.0-P12C-R4N-PRACTITIONER-BINDING-LIFECYCLE
+# VERSION: v1.34.0-PDF-PRESENTATION-PYTHON-EOS
 # AUTHORITY BOUNDARY: HTTP application composition only; domain authorities remain separate.
 # TENANT POSTURE: Mounted routers retain their canonical tenant isolation and admission rules.
 # FAIL-CLOSED POSTURE: Unmounted or failed router composition is never represented as operational authority.

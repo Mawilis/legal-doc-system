@@ -1,9 +1,14 @@
 #!/bin/bash
 # ============================================================================
-# WILSY OS 2050 - PRODUCTION DEPLOYMENT SCRIPT
+# WILSY OS - PYTHON EOS PRODUCTION DEPLOYMENT SCRIPT
 # ============================================================================
 
-set -e
+set -euo pipefail
+
+if [[ "${WILSY_APPROVED_PRODUCTION_DEPLOY:-}" != "1" ]]; then
+    echo "PRODUCTION_DEPLOYMENT_REQUIRES_EXPLICIT_APPROVAL: set WILSY_APPROVED_PRODUCTION_DEPLOY=1 only after reviewing the exact image, configuration, and rollout plan." >&2
+    exit 2
+fi
 
 echo "🏛️ WILSY OS 2050 - Production Deployment"
 echo "=========================================="
@@ -33,10 +38,8 @@ check_status "Environment validation"
 
 # Step 2: Run tests
 echo -e "\n🧪 Step 2: Running test suite..."
-cd server
-npm test
-check_status "Test suite"
-cd ..
+./.venv/bin/python -m pytest -q tests/unit/test_artifact_pdf_router.py
+check_status "Python EOS PDF route certification"
 
 # Step 3: Build Docker images
 echo -e "\n🐳 Step 3: Building Docker images..."
@@ -60,16 +63,11 @@ check_status "Docker Compose deployment"
 # Step 6: Health check
 echo -e "\n🏥 Step 6: Running health checks..."
 sleep 10
-curl -f http://localhost:3000/health > /dev/null 2>&1
+curl -f http://localhost:9095/ > /dev/null 2>&1
 check_status "Health check"
 
-# Step 7: Verify metrics
-echo -e "\n📊 Step 7: Verifying metrics endpoint..."
-curl -f http://localhost:9090/metrics > /dev/null 2>&1
-check_status "Metrics endpoint"
-
-# Step 8: Cleanup old images
-echo -e "\n🧹 Step 8: Cleaning up old images..."
+# Step 7: Cleanup old images
+echo -e "\n🧹 Step 7: Cleaning up old images..."
 docker image prune -f
 check_status "Cleanup"
 
@@ -81,7 +79,6 @@ echo "Build Version: ${BUILD_VERSION}"
 echo "Deployed at: $(date)"
 echo ""
 echo "Services:"
-echo "  - API: http://localhost:3000"
-echo "  - Metrics: http://localhost:9090"
-echo "  - Investor Portal: http://localhost:9096"
+echo "  - Python EOS API: http://localhost:9095"
+echo "  - Investor Portal and application metrics integration remain uncertified; this deployment does not claim them ready."
 echo ""

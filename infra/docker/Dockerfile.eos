@@ -2,16 +2,18 @@
 # WILSY OS — DEDICATED PYTHON EOS PRODUCTION IMAGE
 #
 # TITLE: Dedicated Python EOS Production Runtime Image
-# VERSION: v1.0.0-P0-C12F7C-E1-R9-R5
+# VERSION: v1.1.0-PYTHON-EOS-PDF-ROUTE
 # AUTHORITY: Wilsy OS Core Governance
 # EPITOME: Minimal, non-root, fail-closed production image for the canonical
 #          Python EOS FastAPI authority on port 9095.
 # ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/infra/docker/Dockerfile.eos
 # COLLABORATION / OWNERSHIP:
 #   Python EOS owns sovereign business, authority, lifecycle, and evidence truth.
-#   Node remains a transport/BFF consumer and is not embedded into this image.
-# CERTIFICATION OR UPDATE DATE: 2026-10-05
+#   The Node API BFF is not part of the runtime; Vite is a separate client toolchain.
+# CERTIFICATION OR UPDATE DATE: 2026-10-27
 # CHANGELOG:
+#   v1.1.0-PYTHON-EOS-PDF-ROUTE
+#     - Include the authenticated presentation-only PDF route and pinned ReportLab dependency.
 #   v1.0.0-P0-C12F7C-E1-R9-R5
 #     - Establish dedicated Python 3.12 production image.
 #     - Bind canonical tools.eos.api.server:app through Uvicorn on port 9095.
@@ -76,7 +78,7 @@ CMD ["python", "-m", "uvicorn", "tools.eos.api.server:app", "--host", "0.0.0.0",
 # WILSY OS SOVEREIGN ARTIFACT SEAL
 #
 # ARTIFACT: infra/docker/Dockerfile.eos
-# VERSION: v1.0.0-P0-C12F7C-E1-R9-R5
+# VERSION: v1.1.0-PYTHON-EOS-PDF-ROUTE
 # AUTHORITY BOUNDARY:
 #   Dedicated container runtime for canonical Python EOS only; no IAM or
 #   infrastructure provisioning authority is conferred by this artifact.

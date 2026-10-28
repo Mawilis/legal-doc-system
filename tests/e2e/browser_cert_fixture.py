@@ -1,7 +1,7 @@
 """WILSY OS browser-certificate disposable authority fixture.
 
 TITLE: Authenticated browser certificate fixture
-VERSION: v1.2.0-D21B13-AUTHENTICATED-BRANDING-BROWSER-FIXTURE
+VERSION: v1.3.0-PYTHON-EOS-LOGIN-MFA-BROWSER-CERT
 AUTHORITY: Test-owned disposable Mongo fixture only.
 EPITOME: Seed existing EOS repositories with disposable authenticated Legal
          operators, canonical Legal evidence, and a fully correlated current
@@ -11,7 +11,10 @@ ABSOLUTE CANONICAL PATH:
     /Users/wilsonkhanyezi/legal-doc-system/tests/e2e/browser_cert_fixture.py
 COLLABORATION / OWNERSHIP: L8-8M-R3 browser certificate; no production authority.
 CERTIFICATION / UPDATE DATE: 2026-09-26
-CHANGELOG: v1.2.0 seeds active canonical branding entitlement/profile/selection
+CHANGELOG: v1.3.0 adds ephemeral synthetic password and TOTP secret material to the
+           private fixture state so Playwright can exercise the real Python EOS login/MFA
+           flow; the values remain runner-local and are never printed.
+           v1.2.0 seeds active canonical branding entitlement/profile/selection
            and PNG logo/favicon assets for the authenticated tenant-branding browser
            certificate, and limits seed/verify/cleanup to the runner-owned database.
            v1.1.1 bounds disposable multi-role passwords below bcrypt's 72-byte
@@ -134,7 +137,7 @@ from tools.eos.saas.domain.tenant_branding_profile_selection import (
 
 
 DEFAULT_URI = "mongodb://127.0.0.1:27027/?replicaSet=wilsyVendorCertRS"
-STATE_VERSION = "v1.2.0-D21B13-AUTHENTICATED-BRANDING-BROWSER-CERT-STATE"
+STATE_VERSION = "v1.3.0-PYTHON-EOS-LOGIN-MFA-BROWSER-CERT-STATE"
 BROWSER_CERT_DATABASE_PREFIX = "wilsy_l8_8m_r3_"
 BRANDING_EVIDENCE_FINGERPRINT = "f" * 128
 
@@ -410,14 +413,21 @@ def seed(state_path: Path) -> None:
         actors: dict[str, dict[str, str]] = {}
         for key, grant_role, business_role, last_name in actor_specs:
             email = f"browser-{key}-{suffix}@example.com"
+            password = f"Bcert-{key}-{suffix[:12]}!"
             user = registry.register_user(
                 email=email,
-                password=f"Bcert-{key}-{suffix[:12]}!",
+                password=password,
                 firstName="Synthetic",
                 lastName=last_name,
                 role=grant_role,
                 tenantId=tenant_id,
             )
+            # Enroll a real disposable TOTP secret before setting the enrollment
+            # flag so the browser can verify the actual password + MFA protocol.
+            registry.get_otp_uri(user.id, email)
+            otp_secret = registry.get_otp_secret(user.id)
+            if not otp_secret:
+                raise RuntimeError("BROWSER_CERT_OTP_SECRET_READBACK_FAILED")
             database["users"].update_one(
                 {"user_id": user.id},
                 {"$set": {"mfaRegistered": True}},
@@ -425,6 +435,8 @@ def seed(state_path: Path) -> None:
             actors[key] = {
                 "principal_id": user.id,
                 "email": email,
+                "password": password,
+                "otp_secret": otp_secret,
                 "grant_role": grant_role,
                 "business_role": business_role,
             }
@@ -714,7 +726,7 @@ if __name__ == "__main__":
 
 
 # ARTIFACT: browser_cert_fixture.py
-# VERSION: v1.2.0-D21B13-AUTHENTICATED-BRANDING-BROWSER-FIXTURE
+# VERSION: v1.3.0-PYTHON-EOS-LOGIN-MFA-BROWSER-CERT
 # AUTHORITY BOUNDARY: disposable synthetic browser-cert fixture only
 # TENANT POSTURE: authenticated tenant and unjoined foreign tenant in a runner-owned disposable database
 # FAIL-CLOSED POSTURE: wrong URI, unavailable replica set, and seed failures stop

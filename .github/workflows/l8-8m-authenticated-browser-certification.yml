@@ -1,5 +1,5 @@
 # TITLE: L8-8M and D21B13 authenticated browser/branding certification
-# VERSION: v1.0.4-L8-8M-BFF-LOCKFILE-CERT
+# VERSION: v1.1.0-PYTHON-EOS-ONLY-BROWSER-CERT
 # AUTHORITY: Disposable certification orchestration only.
 # EPITOME: Run the authenticated Legal browser suite and the independent real-Mongo
 #          branding delivery integration certificate against isolated replica sets.
@@ -7,7 +7,7 @@
 # COLLABORATION / OWNERSHIP: EOS owns auth, tenant and asset truth; CI owns only
 #                            disposable setup, test orchestration and teardown.
 # CERTIFICATION / UPDATE DATE: 2026-10-24
-# CHANGELOG: v1.0.4 installs the server BFF lockfile before the browser runner starts its owned BFF.
+# CHANGELOG: v1.1.0 runs the authenticated browser journey against an isolated Python EOS process only; no Node BFF dependencies or child process are started.
 #            v1.0.3 installs the repository-pinned pytest runner required by the real-Mongo
 #            branding integration step after CI confirmed it was absent from runtime deps.
 #            v1.0.2 aligns branding Mongo listener/member ports; v1.0.1 adds isolated Mongo,
@@ -45,6 +45,38 @@ on:
       - "tools/eos/saas/domain/tenant_branding_*.py"
       - "package.json"
       - "package-lock.json"
+      - "tests/e2e/run-browser-cert.mjs"
+      - "client/vite.config.js"
+      - "tools/eos/api/server.py"
+      - "tools/eos/api/artifact_pdf_router.py"
+      - ".github/workflows/l8-8m-authenticated-browser-certification.yml"
+  pull_request:
+    branches:
+      - main
+    paths:
+      - "tests/e2e/playwright.config.js"
+      - "tests/e2e/**"
+      - "tests/integration/test_tenant_branding_workspace_asset_delivery_real_mongo.py"
+      - "client/src/components/industry/LegalDashboard.jsx"
+      - "client/src/components/os/WilsyOSDashboardChrome.jsx"
+      - "client/src/components/os/wilsyDashboardChromeConfig.js"
+      - "client/src/hooks/useAuthenticatedTenantBrandingAsset.js"
+      - "client/src/services/tenantBrandingAssetClient.js"
+      - "client/src/__tests__/components/legalDashboardBrandingPresentation.test.jsx"
+      - "client/tests/hooks/useAuthenticatedTenantBrandingAsset.test.jsx"
+      - "client/tests/services/tenantBrandingAssetClient.test.js"
+      - "client/vite.config.js"
+      - "tools/eos/api/auth_router.py"
+      - "tools/eos/api/server.py"
+      - "tools/eos/api/artifact_pdf_router.py"
+      - "tools/eos/auth/workspace_bootstrap_projection.py"
+      - "tools/eos/auth/tenant_branding_workspace_asset_delivery.py"
+      - "tools/eos/auth/tenant_branding_workspace_projection.py"
+      - "tools/eos/saas/billing/tenant_branding_*.py"
+      - "tools/eos/saas/domain/tenant_branding_*.py"
+      - "tests/e2e/run-browser-cert.mjs"
+      - "package.json"
+      - "package-lock.json"
       - ".github/workflows/l8-8m-authenticated-browser-certification.yml"
   workflow_dispatch:
 
@@ -77,13 +109,12 @@ jobs:
         run: |
           python -m pip install --upgrade pip==25.3
           python -m pip install -r requirements.txt
-          python -m pip install pyotp==2.9.0 pytest==9.1.1
+          python -m pip install pytest==9.1.1
 
-      - name: Install exact Node lockfiles
+      - name: Install root and client test toolchains only
         run: |
           npm ci --legacy-peer-deps
           npm --prefix client ci
-          npm --prefix server ci
 
       - name: Install Chromium for Playwright
         run: npx playwright install --with-deps chromium
@@ -242,7 +273,7 @@ jobs:
           done
 
 # ARTIFACT: l8-8m-authenticated-browser-certification.yml
-# VERSION: v1.0.4-L8-8M-BFF-LOCKFILE-CERT
+# VERSION: v1.1.0-PYTHON-EOS-ONLY-BROWSER-CERT
 # AUTHORITY BOUNDARY: disposable CI certification orchestration only
 # TENANT POSTURE: synthetic tenants and runner-owned disposable databases
 # FAIL-CLOSED POSTURE: browser, HTTP, Mongo, or skipped integration tests fail the job

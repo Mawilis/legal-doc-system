@@ -285,28 +285,48 @@
       "pattern": "SECURITY.md"
     },
     {
-      "class": "RETAIN",
+      "class": "MIGRATION_ONLY",
       "pattern": "server/server.js"
     },
     {
-      "class": "RETAIN",
+      "class": "MIGRATION_ONLY",
       "pattern": "server/controllers/businessArtifactPdfController.js"
     },
     {
-      "class": "RETAIN",
+      "class": "MIGRATION_ONLY",
       "pattern": "server/services/artifacts/wilsyEnterprisePdfRenderer.js"
     },
     {
-      "class": "RETAIN",
+      "class": "MIGRATION_ONLY",
       "pattern": "server/services/qr/qrGenerator.js"
     },
     {
-      "class": "RETAIN",
+      "class": "MIGRATION_ONLY",
       "pattern": "server/package.json"
     },
     {
-      "class": "RETAIN",
+      "class": "MIGRATION_ONLY",
       "pattern": "server/package-lock.json"
+    },
+    {
+      "class": "MIGRATION_ONLY",
+      "pattern": "server/deploy-production.sh"
+    },
+    {
+      "class": "MIGRATION_ONLY",
+      "pattern": "server/test-components.sh"
+    },
+    {
+      "class": "MIGRATION_ONLY",
+      "pattern": "server/k8s/**"
+    },
+    {
+      "class": "MIGRATION_ONLY",
+      "pattern": "docker-compose.yml"
+    },
+    {
+      "class": "MIGRATION_ONLY",
+      "pattern": "nginx.conf"
     }
   ],
   "version": 1

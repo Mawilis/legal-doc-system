@@ -26,41 +26,139 @@ permissions:
   actions: read
 
 jobs:
-  security-scan:
-    name: 🕵️ Security & Quantum Audit
+  python-eos-pdf-certification:
+    name: Python EOS PDF route certification
     runs-on: ubuntu-latest
-    defaults:
-      run:
-        working-directory: ./server
     steps:
       - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Install Python EOS dependencies and test tools
+        run: |
+          python -m pip install --upgrade pip==25.3
+          python -m pip install --requirement requirements.txt pytest==9.1.1 httpx==0.28.1
+      - name: Compile the canonical EOS application and PDF router
+        run: |
+          python -m py_compile tools/eos/api/server.py tools/eos/api/artifact_pdf_router.py
+      - name: Run focused PDF security and output tests
+        run: python -m pytest -q tests/unit/test_artifact_pdf_router.py
+
+  python-eos-authenticated-browser-certification:
+    name: Authenticated browser certification (Python EOS only)
+    if: github.event_name == 'pull_request'
+    runs-on: ubuntu-latest
+    timeout-minutes: 35
+    env:
+      PIP_DISABLE_PIP_VERSION_CHECK: "1"
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
       - uses: actions/setup-node@v4
         with:
           node-version: ${{ env.NODE_VERSION }}
-      - name: Install dependencies
-        run: npm ci --legacy-peer-deps
-      - name: Run security audit
-        run: npm audit --omit=dev --audit-level=high
-      - name: Run retained production lint
+      - name: Install Python EOS runtime and browser fixture dependencies
         run: |
-          ./node_modules/.bin/eslint \
-            server.js \
-            controllers/businessArtifactPdfController.js \
-            services/artifacts/wilsyEnterprisePdfRenderer.js \
-            services/qr/qrGenerator.js
-      - name: Run retained production secret guard
-        working-directory: .
+          python -m pip install --upgrade pip==25.3
+          python -m pip install --requirement requirements.txt pytest==9.1.1
+      - name: Install root and client browser test toolchains (no Node BFF)
+        run: |
+          npm ci --legacy-peer-deps
+          npm --prefix client ci
+      - name: Install Chromium
+        run: npx playwright install --with-deps chromium
+      - name: Start disposable browser-cert Mongo replica set
+        run: |
+          docker run --detach \
+            --name wilsy-python-eos-browser-mongo \
+            --publish 27017:27017 \
+            mongo:7.0.37 \
+            mongod --replSet wilsyVendorCertRS --bind_ip_all
+      - name: Initialize disposable Mongo replica set
+        run: |
+          python - <<'PY'
+          import time
+          from pymongo import MongoClient
+
+          client = MongoClient(
+              "mongodb://127.0.0.1:27017",
+              directConnection=True,
+              serverSelectionTimeoutMS=2000,
+          )
+          deadline = time.monotonic() + 60
+          initiated = False
+          while True:
+              try:
+                  hello = client.admin.command("hello")
+                  if not initiated and not hello.get("setName"):
+                      client.admin.command({
+                          "replSetInitiate": {
+                              "_id": "wilsyVendorCertRS",
+                              "members": [{"_id": 0, "host": "127.0.0.1:27017"}],
+                          }
+                      })
+                      initiated = True
+                  hello = client.admin.command("hello")
+                  if (
+                      hello.get("setName") == "wilsyVendorCertRS"
+                      and hello.get("isWritablePrimary") is True
+                      and hello.get("logicalSessionTimeoutMinutes") is not None
+                  ):
+                      break
+              except Exception:
+                  pass
+              if time.monotonic() >= deadline:
+                  raise RuntimeError("PYTHON_EOS_BROWSER_MONGO_UNAVAILABLE")
+              time.sleep(1)
+          client.close()
+          PY
+      - name: Compile the Python browser fixture
+        run: python -m py_compile tests/e2e/browser_cert_fixture.py
+      - name: Run authenticated browser journey against Python EOS only
+        run: |
+          browser_cert_database_suffix="$(python -c 'import uuid; print(uuid.uuid4().hex)')"
+          BROWSER_CERT_MONGO_URI="mongodb://127.0.0.1:27017/wilsy_l8_8m_r3_${browser_cert_database_suffix}?replicaSet=wilsyVendorCertRS" \
+            node tests/e2e/run-browser-cert.mjs
+      - name: Stop disposable browser-cert Mongo
+        if: always()
+        run: |
+          container_id="$(docker ps --all --quiet --filter "name=^/wilsy-python-eos-browser-mongo$")"
+          if [ -n "$container_id" ]; then docker rm --force "$container_id"; fi
+
+  security-scan:
+    name: Python EOS Dependency & Integrity Audit
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+      - name: Install canonical Python EOS runtime requirements
+        run: |
+          python -m pip install --upgrade pip==25.3
+          python -m pip install --requirement requirements.txt pip-audit==2.9.0
+      - name: Audit Python EOS runtime dependencies
+        run: pip-audit --requirement requirements.txt
+      - name: Compile canonical Python EOS runtime
+        run: python -m py_compile tools/eos/api/server.py tools/eos/api/artifact_pdf_router.py
+      - name: Run secret guard on canonical Python EOS runtime and deployment files
         run: |
           node scripts/wilsy-secret-guard.js \
-            server/server.js \
-            server/controllers/businessArtifactPdfController.js \
-            server/services/artifacts/wilsyEnterprisePdfRenderer.js \
-            server/services/qr/qrGenerator.js \
+            tools/eos/api/server.py \
+            tools/eos/api/artifact_pdf_router.py \
+            tools/eos/runtime/dev_stack.py \
+            Dockerfile \
+            infra/docker/Dockerfile.eos \
             scripts/wilsy-secret-guard.js
 
-  # Legacy server enterprise matrix is intentionally excluded from
-  # production certification until separately classified RETAIN/SOVEREIGN.
-
+  # Legacy Node BFF source is migration-only and is not a production runtime gate.
+  # Its dependency tree is not the deployed Python EOS runtime.
+  
   # ─── R2A: Vendor Bill Real-Mongo Certification ─────────────────────────
   vendor-bill-r2a-certification:
     name: 🧾 R2A Vendor Bill Real-Mongo Certification
