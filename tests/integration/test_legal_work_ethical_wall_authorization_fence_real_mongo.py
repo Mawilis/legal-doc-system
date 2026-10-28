@@ -31,6 +31,7 @@ from tools.eos.legal_operations.service.legal_work_ethical_wall_authorization_fe
     FENCE_INDEX_FIELDS,
     FENCE_INDEX_NAME,
     WallFenceUnavailable,
+    ensure_fence_index,
 )
 
 URI = os.environ.get("WILSY_G65_REAL_MONGO_URI")
