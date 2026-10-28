@@ -37,6 +37,9 @@ class Cursor:
     def limit(self, count: int) -> "Cursor":
         return Cursor(self.rows[:count])
 
+    def __iter__(self):
+        return iter(self.rows)
+
 
 class Collection:
     def __init__(self, rows: tuple[dict[str, object], ...]) -> None:
