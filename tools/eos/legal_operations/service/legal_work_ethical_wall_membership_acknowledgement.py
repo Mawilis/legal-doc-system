@@ -25,7 +25,7 @@ from typing import Any, Final, NoReturn
 VERSION: Final[str] = "v1.0.0-G65-CANONICAL-MEMBERSHIP-ACKNOWLEDGEMENT"
 SOURCE_VERIFIED_CLEARANCE: Final[bool] = False
 OPERATIONAL_ACCESS_ENABLED: Final[bool] = False
-_ID: Final[re.Pattern[str]] = re.compile(r"[A-Za-z0-9][A-Za-z0-9._:-]{0,199}\\Z")
+_ID: Final[re.Pattern[str]] = re.compile(r"[A-Za-z0-9][A-Za-z0-9._:-]{0,199}\Z")
 _MEMBERSHIP_FIELDS: Final[frozenset[str]] = frozenset({
     "tenant_id", "case_matter_id", "practitioner_principal_id",
     "membership_id", "revision", "status", "effective_at", "expires_at",
