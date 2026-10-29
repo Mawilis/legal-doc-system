@@ -2,7 +2,7 @@
 # WILSY OS — MONGODB ATLAS CONTROL-PLANE DISCOVERY WORKFLOW
 #
 # TITLE: Read-Only MongoDB Atlas Production Control-Plane Discovery
-# VERSION: v1.0.2-P0-C12F7C-EOS-ATLAS-OAUTH-DISCOVERY
+# VERSION: v1.0.3-P0-C12F7C-EOS-ATLAS-DEDICATED-RUNNER
 # AUTHORITY: Wilsy OS Core Governance
 # EPITOME: Resolve production Atlas project and cluster metadata using the
 #          recommended OAuth 2.0 service-account flow while safely classifying
@@ -15,7 +15,7 @@
 #   Python EOS remains sovereign for runtime business and authority truth.
 # CERTIFICATION / UPDATE DATE: 2026-10-29
 # CHANGELOG:
-#   v1.0.2-P0-C12F7C-EOS-ATLAS-OAUTH-DISCOVERY
+#   v1.0.3-P0-C12F7C-EOS-ATLAS-DEDICATED-RUNNER
 #     - Replace legacy HTTP Digest API-key authentication with Atlas-recommended
 #       OAuth 2.0 client-credentials authentication for the service account.
 #     - Keep project and cluster discovery read-only and preserve sanitized
@@ -32,7 +32,7 @@
 #   AGENTS.md v1.2.0-SOVEREIGN-LEGAL-OPERATIONS-CONSTITUTION.
 # SECURITY / PRIVACY POSTURE:
 #   contents:read only; no checkout or repository write capability is required.
-#   Client credentials and bearer token remain within the GitHub-hosted runner
+#   Client credentials and bearer token remain within the dedicated runner
 #   and are never printed as workflow evidence.
 # TENANT BOUNDARY:
 #   No tenant data is read or mutated.
@@ -58,7 +58,7 @@ concurrency:
 jobs:
   discover-atlas-control-plane:
     name: Read-only Atlas metadata discovery
-    runs-on: ubuntu-latest
+    runs-on: atlas-control-plane
     timeout-minutes: 10
 
     env:
@@ -244,7 +244,7 @@ jobs:
 # WILSY OS SOVEREIGN ARTIFACT SEAL
 #
 # ARTIFACT: .github/workflows/eos-atlas-control-plane-discovery.yml
-# VERSION: v1.0.2-P0-C12F7C-EOS-ATLAS-OAUTH-DISCOVERY
+# VERSION: v1.0.3-P0-C12F7C-EOS-ATLAS-DEDICATED-RUNNER
 # AUTHORITY BOUNDARY:
 #   Read-only Atlas project/cluster discovery and sanitized error classification.
 # SECRET POSTURE:
