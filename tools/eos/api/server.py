@@ -395,6 +395,7 @@ class WilsyAPIServer:
         async def start_database() -> None:
             """Own explicit database bootstrap at application startup."""
             app.state.p12c_binding_indexes_ready = False
+            app.state.telemetry_indexes_ready = False
             connected, detail = connect_db()
             if not connected:
                 logger.error("[KENNEL_DB] Explicit startup bootstrap unavailable: %s", detail)
@@ -406,6 +407,9 @@ class WilsyAPIServer:
             if database is None:
                 return
             if database is not None:
+                database["wilsy_sovereign_telemetry"].create_index(
+                    "trace_id", unique=True, sparse=True, name="uq_telemetry_trace_id"
+                )
                 TenantAuthorizationDecisionEvidenceRegistry(
                     database[
                         TENANT_AUTHORIZATION_DECISION_EVIDENCE_COLLECTION
@@ -484,6 +488,7 @@ class WilsyAPIServer:
                     tool_accounting_writer=persist_c1c_tool_accounting,
                     production=True,
                 )
+            app.state.telemetry_indexes_ready = client is not None
             # Build the governed reconciliation graph only from canonical
             # business authorities and an explicitly separate deployment audit URI.
             if database is not None:
@@ -517,6 +522,7 @@ class WilsyAPIServer:
         async def stop_database() -> None:
             """Release the kernel database during controlled application shutdown."""
             app.state.p12c_binding_indexes_ready = False
+            app.state.telemetry_indexes_ready = False
             audit_client = getattr(
                 app.state,
                 "legal_evidence_provider_readonly_reconciliation_audit_client",
