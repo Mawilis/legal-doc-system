@@ -208,6 +208,30 @@ def test_authoritative_fact_composes_sufficient_noninteractive_assurance():
     )
 
 
+def test_stable_idempotency_key_replays_identical_p3_assurance_material():
+    selected = InternalServiceNoninteractiveAssuranceService(
+        workload_source=Source(),  # type: ignore[arg-type]
+        workload_registry=Workloads(),  # type: ignore[arg-type]
+        proof_registry=ExactProofRegistry(),  # type: ignore[arg-type]
+        evidence_registry=EvidenceRegistry(),  # type: ignore[arg-type]
+    )
+    arguments = {
+        "request": {},
+        "body": b"{}",
+        "keys": {},
+        "expected_audience": "internal",
+        "assurance_purpose": PrivilegedAssurancePurpose.PRIVILEGED_ELIGIBILITY_TO_ACTIVATION,
+        "idempotency_key": "stable-credential-generation-key",
+    }
+    first = selected.compose(**arguments, session=Session())
+    second = selected.compose(**arguments, session=Session())
+
+    assert first.proof_snapshot.proof.proof_id == second.proof_snapshot.proof.proof_id
+    assert first.evidence.assurance_evidence_id == second.evidence.assurance_evidence_id
+    assert first.evidence.evaluated_at == second.evidence.evaluated_at
+    assert first.proof_snapshot.idempotency_key == second.proof_snapshot.idempotency_key
+
+
 def test_missing_active_transaction_fails_before_source_use():
     with pytest.raises(
         InternalServiceNoninteractiveAssuranceError,

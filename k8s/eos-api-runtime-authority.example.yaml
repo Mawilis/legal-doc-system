@@ -2,14 +2,24 @@
 # WILSY OS — EOS RUNTIME AUTHORITY CONTRACT EXAMPLE
 #
 # TITLE: Python EOS Production Runtime Authority Contract
-# VERSION: v1.0.0-P0-C12F7C-EOS-RUNTIME-AUTHORITY
+# VERSION: v1.3.0-L10A2R-C4D7-READONLY-AWS-ROLE-CONTRACT
 # AUTHORITY: Wilsy OS Core Governance
 # PURPOSE:
 #   Declare the exact Kubernetes configuration objects required by the certified
 #   EOS deployment without embedding production secrets or fabricating values.
 #
+# CHANGELOG:
+#   v1.3.0-L10A2R-C4D7-READONLY-AWS-ROLE-CONTRACT
+#     - Declares the dedicated assumed read-only AWS role ARN input; no ARN or
+#       production credentials are fabricated.
+#   v1.2.0-L10A2R-C4D7-LEGAL-EVIDENCE-CONFIG-CONTRACT
+#     - Declares the legal-evidence S3 and fixed reconciliation tenant settings.
+#   v1.1.0-L10A2R-C4D7-RECONCILIATION-SECRET-CONTRACT
+#     - Declares internal workload trust and the separate audit URI Secret keys.
 # IMPORTANT:
-#   This file is an example contract only.
+#   This file is an example contract only and is deliberately unready until
+#   every blank required value is injected by the deployment secret/config path.
+#   Never apply this example as production values without completing the blanks.
 #   It MUST NOT contain production MONGODB_URI credentials.
 #   It MUST NOT invent a production upload ceiling.
 #   It MUST NOT grant AWS workload identity authority.
@@ -32,6 +42,16 @@ data:
   # certified. The HR S3 adapter defaults to S3-managed AES256 when omitted.
   hr-document-s3-kms-key-id: ""
 
+  # REQUIRED for the legal-evidence read-only provider composition. Empty values
+  # intentionally fail startup validation until the deployment owner selects
+  # the actual approved bucket and region. No bucket or IAM authority is guessed.
+  legal-evidence-s3-bucket: ""
+  legal-evidence-s3-region: ""
+  # OPTIONAL only if the approved legal-evidence design uses S3-managed SSE-S3.
+  legal-evidence-s3-kms-key-id: ""
+  # REQUIRED; exact approved dedicated read-only role ARN for reconciliation.
+  legal-evidence-reconciliation-aws-role-arn: ""
+
 ---
 apiVersion: v1
 kind: Secret
@@ -44,6 +64,18 @@ stringData:
   # Deployment owner must inject the canonical production MONGODB_URI here
   # through the deployment secret mechanism. Do not commit the real URI.
   mongodb-uri: "REQUIRED_PRODUCTION_SECRET"
+
+  # REQUIRED; values must be supplied by the approved internal caller/trust
+  # authority and production deployment, never by this example.
+  internal-auth-service-id: ""
+  internal-auth-audience: ""
+  internal-auth-key-id: ""
+  internal-auth-secret: ""
+  legal-evidence-reconciliation-tenant-id: ""
+
+  # REQUIRED; a separate approved audit deployment URI, with its unique indexes
+  # provisioned by the deployment-only audit provisioner before EOS becomes ready.
+  legal-evidence-reconciliation-audit-mongodb-uri: ""
 
 # ==============================================================================
 # EXTERNAL AUTHORITIES NOT REPRESENTED HERE
@@ -72,6 +104,6 @@ stringData:
 #    - Do not add KMS IAM actions unless a certified KMS key is configured.
 #
 # ARTIFACT: k8s/eos-api-runtime-authority.example.yaml
-# VERSION: v1.0.0-P0-C12F7C-EOS-RUNTIME-AUTHORITY
+# VERSION: v1.3.0-L10A2R-C4D7-READONLY-AWS-ROLE-CONTRACT
 # END OF WILSY OS SOVEREIGN ARTIFACT
 # ==============================================================================
