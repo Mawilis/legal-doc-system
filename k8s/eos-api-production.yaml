@@ -2,7 +2,7 @@
 # WILSY OS — DEDICATED PYTHON EOS KUBERNETES PRODUCTION WORKLOAD
 #
 # TITLE: Dedicated Python EOS Production Kubernetes Runtime
-# VERSION: v1.3.0-L10A2R-C4D7-READONLY-AWS-ROLE-CONFIG
+# VERSION: v1.3.1-L10A2R-C4D7-POSTMERGE-IMAGE-PIN
 # AUTHORITY: Wilsy OS Core Governance
 # EPITOME: Run the certified sovereign Python EOS API as a dedicated,
 #          digest-pinned, non-root Kubernetes workload on port 9095.
@@ -13,6 +13,11 @@
 #   Kubernetes owns workload scheduling only.
 # CERTIFICATION / UPDATE DATE: 2026-10-25
 # CHANGELOG:
+#   v1.3.1-L10A2R-C4D7-POSTMERGE-IMAGE-PIN
+#     - Pin the dedicated EOS workload to the immutable image published from
+#       merge commit 358823c0dd7bed1a9ade8f5180837c67494c18ec.
+#     - Preserve external provisioning requirements; this pin is not proof of
+#       deployment, secret provisioning, workload identity, or live readiness.
 #   v1.3.0-L10A2R-C4D7-READONLY-AWS-ROLE-CONFIG
 #     - Require an approved dedicated read-only reconciliation role ARN and
 #       bind it through the deployment-owned runtime ConfigMap.
@@ -95,7 +100,7 @@ spec:
           type: RuntimeDefault
       containers:
         - name: eos-api
-          image: ghcr.io/mawilis/legal-doc-system/eos-api@sha256:bee92d39ed1fc1a676fe3cebd132fb31c309e4125b04e24416d12787aef5b180
+          image: ghcr.io/mawilis/legal-doc-system/eos-api@sha256:8ff0617d919ddcb4ff6741ddccd892784e51c984f66f9affe0b951a564556d4d
           imagePullPolicy: IfNotPresent
           ports:
             - name: http
@@ -233,7 +238,7 @@ spec:
 # WILSY OS SOVEREIGN ARTIFACT SEAL
 #
 # ARTIFACT: k8s/eos-api-production.yaml
-# VERSION: v1.3.0-L10A2R-C4D7-READONLY-AWS-ROLE-CONFIG
+# VERSION: v1.3.1-L10A2R-C4D7-POSTMERGE-IMAGE-PIN
 # IMAGE AUTHORITY:
 #   Immutable EOS digest only; no mutable latest tag is admitted.
 # WORKLOAD IDENTITY:
