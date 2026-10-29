@@ -76,23 +76,23 @@ jobs:
           test -n "${ATLAS_CLIENT_ID:-}"
           test -n "${ATLAS_CLIENT_SECRET:-}"
 
-          printf '%s\\n' "::add-mask::${ATLAS_PROJECT_ID}"
-          printf '%s\\n' "::add-mask::${ATLAS_CLIENT_ID}"
-          printf '%s\\n' "::add-mask::${ATLAS_CLIENT_SECRET}"
+          printf '%s\n' "::add-mask::${ATLAS_PROJECT_ID}"
+          printf '%s\n' "::add-mask::${ATLAS_CLIENT_ID}"
+          printf '%s\n' "::add-mask::${ATLAS_CLIENT_SECRET}"
 
-          printf 'ATLAS_PROJECT_ID_PRESENT=YES\\n'
-          printf 'ATLAS_CLIENT_ID_PRESENT=YES\\n'
-          printf 'ATLAS_CLIENT_SECRET_PRESENT=YES\\n'
-          printf 'ATLAS_SECRET_VALUE_PRINTED=NO\\n'
+          printf 'ATLAS_PROJECT_ID_PRESENT=YES\n'
+          printf 'ATLAS_CLIENT_ID_PRESENT=YES\n'
+          printf 'ATLAS_CLIENT_SECRET_PRESENT=YES\n'
+          printf 'ATLAS_SECRET_VALUE_PRINTED=NO\n'
 
       - name: Discover Atlas project and cluster metadata with OAuth
         shell: bash
         run: |
           set -euo pipefail
 
-          printf '%s\\n' "::add-mask::${ATLAS_PROJECT_ID}"
-          printf '%s\\n' "::add-mask::${ATLAS_CLIENT_ID}"
-          printf '%s\\n' "::add-mask::${ATLAS_CLIENT_SECRET}"
+          printf '%s\n' "::add-mask::${ATLAS_PROJECT_ID}"
+          printf '%s\n' "::add-mask::${ATLAS_CLIENT_ID}"
+          printf '%s\n' "::add-mask::${ATLAS_CLIENT_SECRET}"
 
           work_dir="$(mktemp -d)"
           token_file="${work_dir}/token.json"
@@ -119,22 +119,22 @@ jobs:
               'https://cloud.mongodb.com/api/oauth/token'
           )"
 
-          printf 'ATLAS_OAUTH_TOKEN_HTTP_STATUS=%s\\n' "${token_status}"
+          printf 'ATLAS_OAUTH_TOKEN_HTTP_STATUS=%s\n' "${token_status}"
 
           if [ "${token_status}" != "200" ]; then
-            printf 'ATLAS_OAUTH_TOKEN_ISSUED=NO\\n'
-            printf 'ATLAS_OAUTH_RESPONSE_BODY_PRINTED=NO\\n'
+            printf 'ATLAS_OAUTH_TOKEN_ISSUED=NO\n'
+            printf 'ATLAS_OAUTH_RESPONSE_BODY_PRINTED=NO\n'
             exit 22
           fi
 
           access_token="$(jq -er '.access_token | strings | select(length > 0)' "${token_file}")"
-          printf '%s\\n' "::add-mask::${access_token}"
+          printf '%s\n' "::add-mask::${access_token}"
           printf '%s' "${access_token}" > "${auth_file}"
           chmod 600 "${auth_file}"
           unset access_token
 
-          printf 'ATLAS_OAUTH_TOKEN_ISSUED=YES\\n'
-          printf 'ATLAS_OAUTH_TOKEN_VALUE_PRINTED=NO\\n'
+          printf 'ATLAS_OAUTH_TOKEN_ISSUED=YES\n'
+          printf 'ATLAS_OAUTH_TOKEN_VALUE_PRINTED=NO\n'
 
           atlas_accept='application/vnd.atlas.2023-01-01+json'
 
@@ -156,7 +156,7 @@ jobs:
             )"
             unset bearer_token
 
-            printf '%s_HTTP_STATUS=%s\\n' "${label}" "${status}"
+            printf '%s_HTTP_STATUS=%s\n' "${label}" "${status}"
 
             if [ "${status}" != "200" ]; then
               jq -r --arg label "${label}" '
@@ -169,11 +169,11 @@ jobs:
                 | "\(.[0])=\(.[1])"
               ' "${output_file}"
 
-              printf '%s_METADATA_READ=FAIL\\n' "${label}"
+              printf '%s_METADATA_READ=FAIL\n' "${label}"
               return 22
             fi
 
-            printf '%s_METADATA_READ=PASS\\n' "${label}"
+            printf '%s_METADATA_READ=PASS\n' "${label}"
           }
 
           atlas_get \
@@ -186,8 +186,8 @@ jobs:
           test -n "${response_project_id}"
           test "${response_project_id}" = "${ATLAS_PROJECT_ID}"
 
-          printf 'ATLAS_AUTHENTICATION_AND_PROJECT_ACCESS=PASS\\n'
-          printf 'ATLAS_PROJECT_ID_MATCH=YES\\n'
+          printf 'ATLAS_AUTHENTICATION_AND_PROJECT_ACCESS=PASS\n'
+          printf 'ATLAS_PROJECT_ID_MATCH=YES\n'
 
           jq -r '"ATLAS_PROJECT_NAME=" + (.name // "")' "${project_file}"
 
@@ -205,7 +205,7 @@ jobs:
             ' "${cluster_file}"
           )"
 
-          printf 'ATLAS_CLUSTER_COUNT=%s\\n' "${cluster_count}"
+          printf 'ATLAS_CLUSTER_COUNT=%s\n' "${cluster_count}"
 
           jq -r '
             (.results // [])[]
@@ -221,10 +221,10 @@ jobs:
             | join("|")
           ' "${cluster_file}"
 
-          printf 'ATLAS_CONNECTION_STRING_PRINTED=NO\\n'
-          printf 'ATLAS_SECRET_VALUE_PRINTED=NO\\n'
-          printf 'ATLAS_RAW_RESPONSE_PRINTED=NO\\n'
-          printf 'ATLAS_MUTATION_PERFORMED=NO\\n'
+          printf 'ATLAS_CONNECTION_STRING_PRINTED=NO\n'
+          printf 'ATLAS_SECRET_VALUE_PRINTED=NO\n'
+          printf 'ATLAS_RAW_RESPONSE_PRINTED=NO\n'
+          printf 'ATLAS_MUTATION_PERFORMED=NO\n'
 
       - name: Assert read-only discovery boundary
         if: always()
@@ -232,13 +232,13 @@ jobs:
         run: |
           set -euo pipefail
 
-          printf 'ATLAS_PROJECT_MUTATION_AUTHORIZED=NO\\n'
-          printf 'ATLAS_CLUSTER_MUTATION_AUTHORIZED=NO\\n'
-          printf 'ATLAS_DATABASE_USER_MUTATION_AUTHORIZED=NO\\n'
-          printf 'ATLAS_NETWORK_MUTATION_AUTHORIZED=NO\\n'
-          printf 'MONGODB_URI_GENERATION_AUTHORIZED=NO\\n'
-          printf 'GITHUB_REPOSITORY_WRITE_AUTHORITY=NO\\n'
-          printf 'ATLAS_DISCOVERY_BOUNDARY=PASS\\n'
+          printf 'ATLAS_PROJECT_MUTATION_AUTHORIZED=NO\n'
+          printf 'ATLAS_CLUSTER_MUTATION_AUTHORIZED=NO\n'
+          printf 'ATLAS_DATABASE_USER_MUTATION_AUTHORIZED=NO\n'
+          printf 'ATLAS_NETWORK_MUTATION_AUTHORIZED=NO\n'
+          printf 'MONGODB_URI_GENERATION_AUTHORIZED=NO\n'
+          printf 'GITHUB_REPOSITORY_WRITE_AUTHORITY=NO\n'
+          printf 'ATLAS_DISCOVERY_BOUNDARY=PASS\n'
 
 # ==============================================================================
 # WILSY OS SOVEREIGN ARTIFACT SEAL
