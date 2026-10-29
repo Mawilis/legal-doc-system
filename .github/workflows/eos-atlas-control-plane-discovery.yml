@@ -16,6 +16,9 @@
 # CERTIFICATION / UPDATE DATE: 2026-10-29
 # CHANGELOG:
 #   v1.0.3-P0-C12F7C-EOS-ATLAS-DEDICATED-RUNNER
+#     - Require the dedicated atlas-control-plane runner label, preventing
+#       accidental scheduling on GitHub-hosted egress or unrelated runners.
+#   v1.0.2-P0-C12F7C-EOS-ATLAS-OAUTH-DISCOVERY
 #     - Replace legacy HTTP Digest API-key authentication with Atlas-recommended
 #       OAuth 2.0 client-credentials authentication for the service account.
 #     - Keep project and cluster discovery read-only and preserve sanitized
