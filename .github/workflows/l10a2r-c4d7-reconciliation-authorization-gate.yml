@@ -1,0 +1,220 @@
+name: L10A2R C4D7 Reconciliation Authorization Gate
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - "tools/eos/auth/internal_service_workload_proof_service.py"
+      - "tools/eos/auth/internal_service_noninteractive_assurance_service.py"
+      - "tools/eos/auth/privileged_activation_use_authority.py"
+      - "tools/eos/auth/platform_authorization_decision_evidence.py"
+      - "tools/eos/auth/platform_authorization_decision_evidence_registry.py"
+      - "tools/eos/auth/current_system_permission_possession.py"
+      - "tools/eos/auth/system_permission_command_policy.py"
+      - "tools/eos/auth/system_permission_assignment_command_service.py"
+      - "tools/eos/auth/system_permission_revocation_command_service.py"
+      - "tools/eos/legal_operations/service/legal_evidence_provider_readonly_reconciliation_*.py"
+      - "tools/eos/api/server.py"
+      - "tools/eos/api/legal_evidence_provider_readonly_reconciliation_router.py"
+      - "tools/eos/legal_operations/service/legal_evidence_provider_readonly_reconciliation_runtime.py"
+      - "tools/eos/legal_operations/service/legal_evidence_provider_readonly_reconciliation_audit_provisioner.py"
+      - "k8s/eos-api-production.yaml"
+      - "k8s/eos-api-runtime-authority.example.yaml"
+      - "k8s/eos-api-atlas-production-provisioning-plan.md"
+      - "tests/unit/test_legal_evidence_provider_readonly_reconciliation_runtime.py"
+      - "tests/integration/test_internal_service_workload_credential_authority_real_mongo.py"
+      - "tests/unit/test_internal_service_noninteractive_assurance_service.py"
+      - "tests/unit/test_privileged_activation_use_authority.py"
+      - "tests/unit/test_legal_evidence_provider_readonly_reconciliation_platform_decision_evidence.py"
+      - "tests/integration/test_platform_authorization_decision_evidence_registry_real_mongo.py"
+      - "tests/unit/test_current_system_permission_possession.py"
+      - "tests/unit/test_system_permission_command_policy.py"
+      - "tests/unit/test_system_permission_assignment_command_service.py"
+      - "tests/unit/test_system_permission_revocation_command_service.py"
+      - "tests/unit/test_legal_evidence_provider_readonly_reconciliation_*.py"
+      - "tests/unit/test_legal_evidence_provider_readonly_reconciliation_invocation_router.py"
+      - "tests/integration/test_legal_evidence_provider_readonly_reconciliation_scope_real_mongo.py"
+      - "tests/integration/test_legal_evidence_provider_readonly_reconciliation_authorization_gate_real_mongo.py"
+      - ".github/workflows/l10a2r-c4d7-reconciliation-authorization-gate.yml"
+
+permissions:
+  contents: read
+
+jobs:
+  focused-python-certification:
+    name: Focused Python unit certification
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    env:
+      PIP_DISABLE_PIP_VERSION_CHECK: "1"
+      PYTHONDONTWRITEBYTECODE: "1"
+      TEST_VENDOR_MONGO_URI: mongodb://localhost:27017/?replicaSet=wilsyVendorCertRS
+    steps:
+      - name: Checkout governed branch
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+
+      - name: Install pinned Python certification dependencies
+        run: |
+          python -m pip install --upgrade pip==25.3
+          python -m pip install \
+            pymongo==4.18.2 \
+            pytest==9.1.1 \
+            cryptography==50.0.1 \
+            pydantic==2.13.4 \
+            pydantic_core==2.46.4 \
+            fastapi==0.141.1 \
+            starlette==1.6.0 \
+            python-multipart==0.0.31 \
+            python-dotenv==1.2.3 \
+            boto3 \
+            bcrypt==5.0.0 \
+            pyotp==2.9.0 \
+            email-validator==2.3.0 \
+            dnspython==2.8.0 \
+            idna==3.19
+
+      - name: Start isolated MongoDB replica-set certification
+        run: |
+          docker run \
+            --detach \
+            --name wilsy-reconciliation-cert-mongo \
+            --publish 27017:27017 \
+            mongo:7.0.37 \
+            mongod \
+            --replSet wilsyVendorCertRS \
+            --bind_ip_all
+
+      - name: Initialize MongoDB replica set
+        run: |
+          python - <<'PY'
+          import time
+          from pymongo import MongoClient
+
+          client = MongoClient(
+              "mongodb://localhost:27017",
+              directConnection=True,
+              serverSelectionTimeoutMS=2_000,
+          )
+          deadline = time.monotonic() + 60
+          initiated = False
+          last_error = None
+          while True:
+              try:
+                  hello = client.admin.command("hello")
+                  if not initiated and not hello.get("setName"):
+                      client.admin.command({
+                          "replSetInitiate": {
+                              "_id": "wilsyVendorCertRS",
+                              "members": [{"_id": 0, "host": "localhost:27017"}],
+                          }
+                      })
+                      initiated = True
+                  if client.admin.command("hello").get("isWritablePrimary"):
+                      break
+              except Exception as error:
+                  last_error = error
+              if time.monotonic() >= deadline:
+                  raise RuntimeError(
+                      f"RECONCILIATION_CERT_MONGO_UNAVAILABLE: {last_error!r}"
+                  ) from last_error
+              time.sleep(1)
+          client.close()
+          PY
+
+      - name: Compile focused Python artifacts
+        run: |
+          python -m py_compile \
+            tools/eos/auth/internal_service_workload_proof_service.py \
+            tools/eos/auth/internal_service_noninteractive_assurance_service.py \
+            tools/eos/auth/privileged_activation_use_authority.py \
+            tools/eos/auth/platform_authorization_decision_evidence.py \
+            tools/eos/auth/platform_authorization_decision_evidence_registry.py \
+            tools/eos/auth/current_system_permission_possession.py \
+            tools/eos/auth/system_permission_command_policy.py \
+            tools/eos/auth/system_permission_assignment_command_service.py \
+            tools/eos/auth/system_permission_revocation_command_service.py \
+            tools/eos/legal_operations/service/legal_evidence_provider_readonly_reconciliation_authorization_gate.py \
+            tools/eos/legal_operations/service/legal_evidence_provider_readonly_reconciliation_factory.py \
+            tools/eos/legal_operations/service/legal_evidence_provider_readonly_reconciliation_production_composition.py \
+            tools/eos/legal_operations/service/legal_evidence_provider_readonly_reconciliation_runtime.py \
+            tools/eos/legal_operations/service/legal_evidence_provider_readonly_reconciliation_audit_provisioner.py \
+            tools/eos/legal_operations/service/legal_evidence_provider_readonly_reconciliation_idempotency_registry.py \
+            tools/eos/legal_operations/service/legal_evidence_provider_readonly_reconciliation_transport_adapter.py \
+            tools/eos/api/server.py \
+            tools/eos/api/legal_evidence_provider_readonly_reconciliation_router.py \
+            tests/unit/test_legal_evidence_provider_readonly_reconciliation_production_composition.py \
+            tests/unit/test_legal_evidence_provider_readonly_reconciliation_audit_provisioner.py \
+            tests/unit/test_legal_evidence_provider_readonly_reconciliation_transport_adapter.py \
+            tools/eos/legal_operations/service/legal_evidence_provider_readonly_reconciliation_coordinator.py \
+            tests/integration/test_internal_service_workload_credential_authority_real_mongo.py \
+            tests/unit/test_internal_service_noninteractive_assurance_service.py \
+            tests/unit/test_privileged_activation_use_authority.py \
+            tests/unit/test_legal_evidence_provider_readonly_reconciliation_platform_decision_evidence.py \
+            tests/integration/test_platform_authorization_decision_evidence_registry_real_mongo.py \
+            tests/unit/test_current_system_permission_possession.py \
+            tests/unit/test_system_permission_command_policy.py \
+            tests/unit/test_system_permission_assignment_command_service.py \
+            tests/unit/test_system_permission_revocation_command_service.py \
+            tests/unit/test_legal_evidence_provider_readonly_reconciliation_authorization_gate.py \
+            tests/unit/test_legal_evidence_provider_readonly_reconciliation_factory.py \
+            tests/unit/test_legal_evidence_provider_readonly_reconciliation_production_composition.py \
+            tests/unit/test_legal_evidence_provider_readonly_reconciliation_idempotency_registry.py \
+            tests/unit/test_legal_evidence_provider_readonly_reconciliation_coordinator.py \
+            tests/unit/test_legal_evidence_provider_readonly_reconciliation_transport_adapter.py \
+            tests/unit/test_legal_evidence_provider_readonly_reconciliation_invocation_router.py \
+            tests/unit/test_legal_evidence_provider_readonly_reconciliation_runtime.py \
+            tests/unit/test_legal_evidence_provider_readonly_reconciliation_audit_provisioner.py \
+            tests/integration/test_current_system_permission_possession_real_mongo.py \
+            tests/integration/test_legal_evidence_provider_readonly_reconciliation_scope_real_mongo.py \
+            tests/integration/test_legal_evidence_provider_readonly_reconciliation_authorization_gate_real_mongo.py
+
+      - name: Run focused unit certification with zero-skip enforcement
+        shell: bash
+        run: |
+          set +e
+          python -m pytest -q \
+            tests/unit/test_legal_evidence_provider_readonly_reconciliation_platform_decision_evidence.py \
+            tests/unit/test_privileged_activation_use_authority.py \
+            tests/unit/test_current_system_permission_possession.py \
+            tests/unit/test_system_permission_command_policy.py \
+            tests/unit/test_system_permission_assignment_command_service.py \
+            tests/unit/test_system_permission_revocation_command_service.py \
+            tests/unit/test_legal_evidence_provider_readonly_reconciliation_authorization_gate.py \
+            tests/unit/test_legal_evidence_provider_readonly_reconciliation_factory.py \
+            tests/unit/test_legal_evidence_provider_readonly_reconciliation_production_composition.py \
+            tests/unit/test_legal_evidence_provider_readonly_reconciliation_idempotency_registry.py \
+            tests/unit/test_legal_evidence_provider_readonly_reconciliation_invocation_router.py \
+            tests/unit/test_legal_evidence_provider_readonly_reconciliation_runtime.py \
+            tests/unit/test_legal_evidence_provider_readonly_reconciliation_audit_provisioner.py \
+            tests/unit/test_legal_evidence_provider_readonly_reconciliation_coordinator.py \
+            tests/unit/test_legal_evidence_provider_readonly_reconciliation_transport_adapter.py \
+            tests/integration/test_current_system_permission_possession_real_mongo.py \
+            tests/integration/test_legal_evidence_provider_readonly_reconciliation_scope_real_mongo.py \
+            tests/integration/test_legal_evidence_provider_readonly_reconciliation_authorization_gate_real_mongo.py \
+            tests/integration/test_platform_authorization_decision_evidence_registry_real_mongo.py \
+            tests/unit/test_iam_security_tranche_b_startup_indexes.py \
+            tests/unit/test_tenant_legal_operating_model_server_mount.py \
+            tests/unit/test_deputy_principal_binding_server_bootstrap.py \
+            tests/unit/test_authorization_role_revocation_server_mount.py \
+            tests/unit/test_legal_storefront_public_intent_server_mount.py \
+            > /tmp/focused-pytest-output.txt 2>&1
+          pytest_status=$?
+          cat /tmp/focused-pytest-output.txt
+          set -e
+          if [ "$pytest_status" -ne 0 ]; then
+            exit "$pytest_status"
+          fi
+          if grep -Eiq '(^|[ ,])[0-9]+ skipped|\bskipped\b' /tmp/focused-pytest-output.txt; then
+            echo "Focused certification invalid: skipped tests detected."
+            exit 1
+          fi
+
+      - name: Stop MongoDB certification container
+        if: always()
+        run: docker rm -f wilsy-reconciliation-cert-mongo 2>/dev/null || true

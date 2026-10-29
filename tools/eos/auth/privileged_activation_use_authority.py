@@ -3,7 +3,7 @@ TITLE:
     WILSY OS Privileged Activation Current-Use Authority
 
 VERSION:
-    v1.0.0-P5-PRIVILEGED-ACTIVATION-CURRENT-USE-AUTHORITY
+    v1.1.2-P5-ASSURANCE-IDENTITY-BEFORE-ACTIVATION
 
 AUTHORITY:
     Wilsy OS Sovereign IAM
@@ -26,11 +26,11 @@ CERTIFICATION / UPDATE DATE:
     2026-10-15
 
 CHANGELOG:
-    v1.0.0-P5-PRIVILEGED-ACTIVATION-CURRENT-USE-AUTHORITY
-        Initial sovereign P5 current-use authority. Separates activation tenant
-        scope from interactive proof tenant, preserves exact P2 lineage,
-        propagates caller session, and requires fresh P3 assurance for
-        PRIVILEGED_ACTIVATION_USE.
+    v1.1.2-P5-ASSURANCE-IDENTITY-BEFORE-ACTIVATION
+        Validates P3 assurance evidence against the principal derived from the
+        current WorkloadTrustFact before any P4/P2 lookup. Identity mismatch now
+        fails before activation/eligibility resolution, preventing cross-principal
+        lookup under an inconsistent assurance result.
 
 COMPLIANCE:
     Fail-closed. No invented permission, role, activation, persistence, HTTP,
@@ -58,6 +58,7 @@ FINANCIAL AUTHORITY BOUNDARY:
 
 from __future__ import annotations
 
+from dataclasses import dataclass
 from datetime import datetime
 from typing import Mapping, Protocol
 
@@ -70,10 +71,27 @@ from tools.eos.auth.privileged_eligibility import (
 from tools.eos.auth.privileged_security_assurance import (
     PrivilegedAssurancePurpose,
 )
+from tools.eos.auth.privileged_channel_currentness import (
+    WorkloadTrustFact,
+    WorkloadTrustStatus,
+)
 
 
 class PrivilegedActivationUseError(RuntimeError):
     """Raised when P5 current privileged use cannot be authorized."""
+
+
+@dataclass(frozen=True, slots=True)
+class PrivilegedActivationUseResult:
+    """Exact P5 result pairing current activation with its verified workload principal.
+
+    This result grants no permission possession, tenant/provider scope, or
+    reconciliation authority. Callers must independently check the exact
+    operation permission and resolve scope from a server-owned authority.
+    """
+
+    activation: PrivilegedActivation
+    principal_id: str
 
 
 class _ActivationRegistry(Protocol):
@@ -308,6 +326,93 @@ class PrivilegedActivationUseAuthority:
 
         return activation
 
+    def authorize_noninteractive_workload(
+        self,
+        *,
+        activation_tenant_id: str | None,
+        privileged_role_id: str,
+        target_class: PrivilegedTargetClass,
+        at: datetime,
+        request: Mapping[str, str],
+        body: bytes,
+        keys: Mapping[str, tuple[str, str]],
+        expected_audience: str,
+        idempotency_key: str,
+        session: object,
+    ) -> PrivilegedActivationUseResult:
+        """Derive principal from one verified workload request, then authorize P5.
+
+        The trusted workload proof is composed exactly once. The principal is
+        taken only from its canonical WorkloadTrustFact; no request field,
+        caller-supplied principal, tenant, or role string can substitute for it.
+        P5 then checks the exact current activation and matching current P2
+        lineage in the same caller-owned transaction.
+
+        Transaction ownership:
+            The caller must provide an active transaction and owns its commit
+            or abort. If any check fails after P3 composition, the caller must
+            abort the transaction; P5 never commits, aborts, or retries it.
+
+        Authority:
+            Current P4/P2/P3 privileged use only. This method does not prove
+            operation-specific permission possession or tenant/provider scope.
+        """
+        service = self._noninteractive_assurance_service
+        if service is None:
+            raise PrivilegedActivationUseError(
+                "NONINTERACTIVE_ASSURANCE_SERVICE_REQUIRED"
+            )
+
+        result = service.compose(
+            request=request,
+            body=body,
+            keys=keys,
+            expected_audience=expected_audience,
+            assurance_purpose=(
+                PrivilegedAssurancePurpose.PRIVILEGED_ACTIVATION_USE
+            ),
+            idempotency_key=idempotency_key,
+            session=session,
+        )
+
+        workload_fact = getattr(result, "workload_fact", None)
+        if type(workload_fact) is not WorkloadTrustFact:
+            raise PrivilegedActivationUseError(
+                "VERIFIED_WORKLOAD_FACT_REQUIRED"
+            )
+        if workload_fact.status is not WorkloadTrustStatus.CURRENT:
+            raise PrivilegedActivationUseError(
+                "WORKLOAD_PROOF_NOT_CURRENT"
+            )
+
+        principal_id = workload_fact.principal_id
+        if (
+            not isinstance(principal_id, str)
+            or not principal_id
+            or principal_id != principal_id.strip()
+            or "*" in principal_id
+        ):
+            raise PrivilegedActivationUseError(
+                "VERIFIED_WORKLOAD_PRINCIPAL_INVALID"
+            )
+
+        self._validate_assurance_result(
+            result,
+            principal_id=principal_id,
+        )
+        activation = self._current_activation_and_eligibility(
+            tenant_id=activation_tenant_id,
+            principal_id=principal_id,
+            privileged_role_id=privileged_role_id,
+            target_class=target_class,
+            at=at,
+            session=session,
+        )
+        return PrivilegedActivationUseResult(
+            activation=activation,
+            principal_id=principal_id,
+        )
+
     def authorize_noninteractive(
         self,
         *,
@@ -514,7 +619,7 @@ class PrivilegedActivationUseAuthority:
 # =============================================================================
 # WILSY OS SOVEREIGN ARTIFACT SEAL
 # ARTIFACT: privileged_activation_use_authority.py
-# VERSION: v1.0.0-P5-PRIVILEGED-ACTIVATION-CURRENT-USE-AUTHORITY
+# VERSION: v1.1.2-P5-ASSURANCE-IDENTITY-BEFORE-ACTIVATION
 # AUTHORITY BOUNDARY:
 #   Current privileged-use composition only. No activation issuance, role or
 #   permission creation, transaction ownership, HTTP, or break-glass authority.

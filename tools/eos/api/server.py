@@ -1,7 +1,7 @@
 """WILSY OS sovereign Python API server composition root.
 
 TITLE: WILSY OS EOS Kernel API Server Factory
-VERSION: v1.33.0-P12C-R4N-PRACTITIONER-BINDING-LIFECYCLE
+VERSION: v1.34.0-L10A2R-C4D7-RECONCILIATION-RUNTIME-BOOTSTRAP
 AUTHORITY: Wilsy OS Core Governance
 EPITOME: Mount sovereign Python API authorities, including the authenticated
          practitioner-binding command transport, and hold that transport
@@ -12,7 +12,8 @@ EPITOME: Mount sovereign Python API authorities, including the authenticated
 ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/tools/eos/api/server.py
 COLLABORATION / OWNERSHIP: Wilson Khanyezi / Wilsy OS Core Engineering
 CERTIFICATION / UPDATE DATE: 2026-10-20
-CHANGELOG: 2026-10-20 v1.33.0-P12C-R4N-PRACTITIONER-BINDING-LIFECYCLE mounts the authenticated practitioner-binding command router exactly once, installs its access, binding and conflict-disposition indexes during connected startup, and denies commands until startup readiness completes while preserving router-owned tenant admission, transaction, Legal, ethical-wall, billing, settlement and Kennel EOS financial-execution boundaries.
+CHANGELOG: 2026-10-25 v1.34.0-L10A2R-C4D7-RECONCILIATION-RUNTIME-BOOTSTRAP mounts the dedicated signed-workload reconciliation route and binds canonical P2/P4/P5 authorities, a distinct deployment audit target, and transaction-bound idempotent response replay during startup; missing configuration remains fail-closed.
+2026-10-20 v1.33.0-P12C-R4N-PRACTITIONER-BINDING-LIFECYCLE mounts the authenticated practitioner-binding command router exactly once, installs its access, binding and conflict-disposition indexes during connected startup, and denies commands until startup readiness completes while preserving router-owned tenant admission, transaction, Legal, ethical-wall, billing, settlement and Kennel EOS financial-execution boundaries.
 2026-10-18 v1.27.0-P3-R3G-S5-A2-IAM-SECURITY-EVIDENCE-FACTOR-INDEX-BOOTSTRAP moves the already-certified tenant-authorization decision-evidence, authorization-role-revocation evidence, and privileged factor-currentness registry index DDL into canonical connected application startup while preserving all current-main router composition, request-path semantics, tenant boundaries, caller-owned transaction authority, and Kennel EOS financial execution exclusivity.
 2026-10-18 v1.26.0-P1-R3E-AUTHORIZATION-ROLE-REVOCATION-RUNTIME-MOUNT mounts the certified ordinary authorization-role revocation router exactly once under /api while preserving router-owned authentication, tenant authorization, command, transaction, persistence, replay, root-lifecycle and financial boundaries; no privileged-security startup indexes are introduced.
 2026-10-15 v1.25.0-CX26-R3-LEGAL-OPERATING-MODEL-ROUTER-MOUNT mounts the directly certified authenticated Tenant Legal Operating Model HTTP router exactly once under /api/legal/operating-model while preserving router-owned tenant correlation, IAM, transaction, persistence, workflow, legal-act, entitlement, billing, payment, settlement and financial boundaries.
@@ -111,7 +112,11 @@ from .wilsy_ai_legal_services_router import router as wilsy_ai_legal_services_ro
 from .wilsy_ai_advisory_router import router as wilsy_ai_advisory_router
 from .legal_acceptance_router import router as legal_acceptance_router
 from .tenant_branding_router import router as tenant_branding_router
-from .telemetry_ingestion_router import router as telemetry_ingestion_router
+from .legal_evidence_provider_readonly_reconciliation_router import router as legal_evidence_provider_readonly_reconciliation_router
+from tools.eos.legal_operations.service.legal_evidence_provider_readonly_reconciliation_runtime import (
+    LegalEvidenceProviderReadOnlyReconciliationRuntimeBootstrapError,
+    build_legal_evidence_provider_readonly_reconciliation_runtime,
+)
 from .wilsy_ai_legal_gateway_router import MODULE_ID as WILSY_AI_LEGAL_MODULE_ID, _canonical_underlying_context
 from .tenant_authorization_http import TenantAuthorizationContext
 from .hr_document_router import router as hr_document_router
@@ -178,7 +183,7 @@ from tools.eos.legal_operations.service.legal_storefront_public_intent_rate_limi
     LegalStorefrontPublicIntentRateLimit,
 )
 
-VERSION = "v1.33.0-P12C-R4N-PRACTITIONER-BINDING-LIFECYCLE"
+VERSION = "v1.34.0-L10A2R-C4D7-RECONCILIATION-RUNTIME-BOOTSTRAP"
 logger = logging.getLogger("WilsyOS.API.Server")
 
 
@@ -233,6 +238,8 @@ class WilsyAPIServer:
         app.state.wilsy_ai_legal_services_orchestrator = None
         # No binding command is ready before certified index startup.
         app.state.p12c_binding_indexes_ready = False
+        app.state.legal_evidence_provider_readonly_reconciliation_composition = None
+        app.state.legal_evidence_provider_readonly_reconciliation_audit_client = None
         # C1E service is constructed lazily or by deployment composition; it
         # owns its caller-session transaction and never creates a second client.
         app.state.wilsy_ai_advisory_service = None
@@ -387,19 +394,17 @@ class WilsyAPIServer:
         async def start_database() -> None:
             """Own explicit database bootstrap at application startup."""
             app.state.p12c_binding_indexes_ready = False
-            app.state.telemetry_indexes_ready = False
             connected, detail = connect_db()
             if not connected:
                 logger.error("[KENNEL_DB] Explicit startup bootstrap unavailable: %s", detail)
                 return
+            app.state.legal_evidence_provider_readonly_reconciliation_composition = None
+            app.state.legal_evidence_provider_readonly_reconciliation_audit_client = None
             provider = self.reasoning_provider_binding
             database, client = get_database(), get_client()
             if database is None:
                 return
             if database is not None:
-                database["wilsy_sovereign_telemetry"].create_index(
-                    "trace_id", unique=True, sparse=True, name="uq_telemetry_trace_id"
-                )
                 TenantAuthorizationDecisionEvidenceRegistry(
                     database[
                         TENANT_AUTHORIZATION_DECISION_EVIDENCE_COLLECTION
@@ -478,15 +483,49 @@ class WilsyAPIServer:
                     tool_accounting_writer=persist_c1c_tool_accounting,
                     production=True,
                 )
+            # Build the governed reconciliation graph only from canonical
+            # business authorities and an explicitly separate deployment audit URI.
+            if database is not None:
+                try:
+                    reconciliation_composition, reconciliation_audit_client = (
+                        build_legal_evidence_provider_readonly_reconciliation_runtime(
+                            mongo_database=database,
+                        )
+                    )
+                    if reconciliation_composition.business_client is not client:
+                        reconciliation_audit_client.close()
+                        raise LegalEvidenceProviderReadOnlyReconciliationRuntimeBootstrapError(
+                            "RECONCILIATION_BUSINESS_CLIENT_BINDING_MISMATCH"
+                        )
+                    app.state.legal_evidence_provider_readonly_reconciliation_composition = (
+                        reconciliation_composition
+                    )
+                    app.state.legal_evidence_provider_readonly_reconciliation_audit_client = (
+                        reconciliation_audit_client
+                    )
+                except Exception as error:
+                    code = getattr(error, "args", ["RECONCILIATION_RUNTIME_COMPOSITION_UNAVAILABLE"])[0]
+                    logger.error(
+                        "[LEGAL_EVIDENCE_RECONCILIATION] Runtime composition unavailable: %s",
+                        str(code) if isinstance(code, str) else "RECONCILIATION_RUNTIME_COMPOSITION_UNAVAILABLE",
+                    )
             # Only completed startup establishes binding readiness.
             app.state.p12c_binding_indexes_ready = client is not None
-            app.state.telemetry_indexes_ready = client is not None
 
         @app.on_event("shutdown")
         async def stop_database() -> None:
             """Release the kernel database during controlled application shutdown."""
             app.state.p12c_binding_indexes_ready = False
-            app.state.telemetry_indexes_ready = False
+            audit_client = getattr(
+                app.state,
+                "legal_evidence_provider_readonly_reconciliation_audit_client",
+                None,
+            )
+            app.state.legal_evidence_provider_readonly_reconciliation_composition = None
+            app.state.legal_evidence_provider_readonly_reconciliation_audit_client = None
+            if audit_client is not None:
+                with suppress(Exception):
+                    audit_client.close()
             disconnect_db()
 
         @app.on_event("startup")
@@ -541,6 +580,7 @@ class WilsyAPIServer:
         app.include_router(legal_matter_deadline_router, prefix="/api")
         app.include_router(legal_client_acceptance_router, prefix="/api")
         app.include_router(legal_evidence_upload_router, prefix="/api")
+        app.include_router(legal_evidence_provider_readonly_reconciliation_router, prefix="/api")
         app.include_router(tenant_legal_operating_model_router, prefix="/api")
         # P12C readiness is server-owned, never supplied by request callers.
         # It precedes command transactions and adds no IAM authority.
@@ -573,7 +613,6 @@ class WilsyAPIServer:
         app.include_router(wilsy_ai_advisory_router, prefix="/api")
         app.include_router(legal_acceptance_router, prefix="/api")
         app.include_router(tenant_branding_router, prefix="/api")
-        app.include_router(telemetry_ingestion_router, prefix="/api")
         app.include_router(subscription_router)
         app.include_router(plan_router)
 
@@ -605,7 +644,7 @@ class WilsyAPIServer:
 app = WilsyAPIServer().get_app()
 
 # ARTIFACT: server.py
-# VERSION: v1.33.0-P12C-R4N-PRACTITIONER-BINDING-LIFECYCLE
+# VERSION: v1.34.0-L10A2R-C4D7-RECONCILIATION-RUNTIME-BOOTSTRAP
 # AUTHORITY BOUNDARY: HTTP application composition only; domain authorities remain separate.
 # TENANT POSTURE: Mounted routers retain their canonical tenant isolation and admission rules.
 # FAIL-CLOSED POSTURE: Unmounted or failed router composition is never represented as operational authority.

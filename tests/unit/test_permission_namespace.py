@@ -1,5 +1,5 @@
 """TITLE: WILSY OS Permission Namespace Canon Certification.
-VERSION: v1.10.0-P47-R76-BINDING-PROVISION-PERMISSION-CERT
+VERSION: v1.11.0-L10A2R-C4D7-RECONCILIATION-READ-PERMISSION-CERT
 AUTHORITY: Certification of immutable permission vocabulary semantics only.
 EPITOME: Proves bounded namespaces, fail-closed metadata, deterministic policy
 bytes, and exact own-tenant subscription/plan/WILSY AI capacity,
@@ -9,6 +9,7 @@ ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/tests/unit/test_
 COLLABORATION / OWNERSHIP: Wilson Khanyezi / Wilsy Core Engineering.
 CERTIFICATION/UPDATE DATE: 2026-10-15.
 CHANGELOG:
+2026-10-25 v1.11.0-L10A2R-C4D7-RECONCILIATION-READ-PERMISSION-CERT certifies the dedicated SYSTEM-scoped legal evidence provider reconciliation-read vocabulary, its non-self-authorizing metadata, and closed-canon cardinality of 122 canonical permissions / 125 total rows. It does not certify grants, runtime invocation, or provider access.
 2026-10-20 v1.10.0-P47-R76-BINDING-PROVISION-PERMISSION-CERT certifies the
 exact own-tenant practitioner matter-binding provisioning permission, its
 non-self-authorizing and non-financial metadata, fail-closed aliases, and the
@@ -149,7 +150,7 @@ from pathlib import Path
 
 import pytest
 
-VERSION = "v1.10.0-P47-R76-BINDING-PROVISION-PERMISSION-CERT"
+VERSION = "v1.11.0-L10A2R-C4D7-RECONCILIATION-READ-PERMISSION-CERT"
 
 from tools.eos.auth.permission_namespace import PermissionDisposition, VERSION as POLICY_VERSION, canonical_permissions, classify_legacy_permission, permission_metadata
 
@@ -265,8 +266,28 @@ def test_d12_system_command_permissions_are_exact_non_authorizing_metadata(permi
     assert metadata.disposition is PermissionDisposition.CANONICAL
 
 
+@pytest.mark.parametrize(
+    "permission",
+    ["legal_operations:evidence_provider_reconciliation:read"],
+)
+def test_provider_reconciliation_read_permission_is_system_scoped_and_non_authorizing(
+    permission: str,
+) -> None:
+    """Vocabulary permits no operator grant, scope selection, or provider mutation."""
+    metadata = permission_metadata(permission)
+    assert metadata.permission_id == permission
+    assert metadata.namespace == "legal_operations"
+    assert metadata.scope_kind == "SYSTEM"
+    assert metadata.system_assignment_required is True
+    assert metadata.tenant_membership_required is False
+    assert metadata.cross_tenant_capable is False
+    assert metadata.financial_execution_capable is False
+    assert metadata.authorizes_by_itself is False
+    assert metadata.disposition is PermissionDisposition.CANONICAL
+
+
 def test_runtime_version_source_is_canonical() -> None:
-    assert POLICY_VERSION == "v1.54.0-R59-P9-REASSIGNMENT-IAM-INTEGRATION"
+    assert POLICY_VERSION == "v1.55.0-L10A2R-C4D7-RECONCILIATION-READ-PERMISSION"
 
 
 def test_practitioner_binding_provision_permission_is_exact_and_bounded() -> None:
@@ -311,7 +332,6 @@ def test_permission_canon_properties() -> None:
         "subscription:read",
         "subscription:manage",
         "tenant_product_entitlement:issue",
-        "telemetry:event:write",
         "tenant_branding:read",
         "tenant_branding:profile:manage",
         "tenant_branding:asset:manage",
@@ -984,7 +1004,7 @@ def test_deadline_namespace_owns_vocabulary_but_creates_no_role_grant() -> None:
 
 
 # ARTIFACT: test_permission_namespace.py
-# VERSION: v1.10.0-P47-R76-BINDING-PROVISION-PERMISSION-CERT
+# VERSION: v1.11.0-L10A2R-C4D7-RECONCILIATION-READ-PERMISSION-CERT
 # AUTHORITY BOUNDARY: permission semantic certification only
 # TENANT POSTURE: conflict-review, client-matter, client-visibility and other tenant permissions remain policy; exact ACTIVE membership remains separately governed
 # FAIL-CLOSED POSTURE: unknown and malformed values deny
