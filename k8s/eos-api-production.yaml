@@ -2,7 +2,7 @@
 # WILSY OS — DEDICATED PYTHON EOS KUBERNETES PRODUCTION WORKLOAD
 #
 # TITLE: Dedicated Python EOS Production Kubernetes Runtime
-# VERSION: v1.3.0-L10A2R-C4D7-READONLY-AWS-ROLE-CONFIG
+# VERSION: v1.0.1-P0-C12F7C-EOS-K8S-PRODUCTION
 # AUTHORITY: Wilsy OS Core Governance
 # EPITOME: Run the certified sovereign Python EOS API as a dedicated,
 #          digest-pinned, non-root Kubernetes workload on port 9095.
@@ -11,17 +11,23 @@
 # COLLABORATION / OWNERSHIP:
 #   Python EOS owns sovereign business, authority, lifecycle, and evidence truth.
 #   Kubernetes owns workload scheduling only.
-# CERTIFICATION / UPDATE DATE: 2026-10-25
+# CERTIFICATION / UPDATE DATE: 2026-10-28
 # CHANGELOG:
+#   v1.0.1-P0-C12F7C-EOS-K8S-PRODUCTION
+#     - Bind the immutable EOS image published from main commit
+#       4cb3499382dea2657a75fa887ae38ce699f05c5e.
+#     - Image digest: sha256:4f839ac04913d2413362b3ad76f44a671573a7e0b2debddfb71fb3f2a2bd1250.
+#     - Preserve fail-closed runtime configuration and internal-only ClusterIP
+#       exposure; this merge does not perform a production deployment.
 #   v1.3.0-L10A2R-C4D7-READONLY-AWS-ROLE-CONFIG
-#     - Require an approved dedicated read-only reconciliation role ARN and
-#       bind it through the deployment-owned runtime ConfigMap.
+#     - Require the dedicated read-only reconciliation role ARN through the
+#       deployment-owned runtime ConfigMap.
 #   v1.2.0-L10A2R-C4D7-LEGAL-EVIDENCE-CONFIG-BINDINGS
-#     - Bind the fixed reconciliation tenant and canonical Legal Evidence
-#       S3 bucket/region/KMS settings consumed by production composition.
+#     - Bind the fixed reconciliation tenant and legal-evidence S3 bucket,
+#       region, and KMS settings consumed by production composition.
 #   v1.1.0-L10A2R-C4D7-RECONCILIATION-RUNTIME-CONFIG
-#     - Bind canonical internal-workload trust settings and a distinct audit
-#       MongoDB URI through deployment-owned Secret keys.
+#     - Bind internal-workload trust settings and a separate audit MongoDB URI
+#       through deployment-owned Secret keys.
 #   v1.0.0-P0-C12F7C-EOS-K8S-PRODUCTION
 #     - Establish the first dedicated Python EOS Kubernetes workload.
 #     - Bind the certified immutable EOS image digest from main head
@@ -95,7 +101,7 @@ spec:
           type: RuntimeDefault
       containers:
         - name: eos-api
-          image: ghcr.io/mawilis/legal-doc-system/eos-api@sha256:bee92d39ed1fc1a676fe3cebd132fb31c309e4125b04e24416d12787aef5b180
+          image: ghcr.io/mawilis/legal-doc-system/eos-api@sha256:4f839ac04913d2413362b3ad76f44a671573a7e0b2debddfb71fb3f2a2bd1250
           imagePullPolicy: IfNotPresent
           ports:
             - name: http
@@ -233,7 +239,7 @@ spec:
 # WILSY OS SOVEREIGN ARTIFACT SEAL
 #
 # ARTIFACT: k8s/eos-api-production.yaml
-# VERSION: v1.3.0-L10A2R-C4D7-READONLY-AWS-ROLE-CONFIG
+# VERSION: v1.0.1-P0-C12F7C-EOS-K8S-PRODUCTION
 # IMAGE AUTHORITY:
 #   Immutable EOS digest only; no mutable latest tag is admitted.
 # WORKLOAD IDENTITY:

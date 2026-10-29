@@ -112,6 +112,7 @@ from .wilsy_ai_legal_services_router import router as wilsy_ai_legal_services_ro
 from .wilsy_ai_advisory_router import router as wilsy_ai_advisory_router
 from .legal_acceptance_router import router as legal_acceptance_router
 from .tenant_branding_router import router as tenant_branding_router
+from .telemetry_ingestion_router import router as telemetry_ingestion_router
 from .legal_evidence_provider_readonly_reconciliation_router import router as legal_evidence_provider_readonly_reconciliation_router
 from tools.eos.legal_operations.service.legal_evidence_provider_readonly_reconciliation_runtime import (
     LegalEvidenceProviderReadOnlyReconciliationRuntimeBootstrapError,
@@ -394,6 +395,7 @@ class WilsyAPIServer:
         async def start_database() -> None:
             """Own explicit database bootstrap at application startup."""
             app.state.p12c_binding_indexes_ready = False
+            app.state.telemetry_indexes_ready = False
             connected, detail = connect_db()
             if not connected:
                 logger.error("[KENNEL_DB] Explicit startup bootstrap unavailable: %s", detail)
@@ -405,6 +407,9 @@ class WilsyAPIServer:
             if database is None:
                 return
             if database is not None:
+                database["wilsy_sovereign_telemetry"].create_index(
+                    "trace_id", unique=True, sparse=True, name="uq_telemetry_trace_id"
+                )
                 TenantAuthorizationDecisionEvidenceRegistry(
                     database[
                         TENANT_AUTHORIZATION_DECISION_EVIDENCE_COLLECTION
@@ -511,11 +516,13 @@ class WilsyAPIServer:
                     )
             # Only completed startup establishes binding readiness.
             app.state.p12c_binding_indexes_ready = client is not None
+            app.state.telemetry_indexes_ready = client is not None
 
         @app.on_event("shutdown")
         async def stop_database() -> None:
             """Release the kernel database during controlled application shutdown."""
             app.state.p12c_binding_indexes_ready = False
+            app.state.telemetry_indexes_ready = False
             audit_client = getattr(
                 app.state,
                 "legal_evidence_provider_readonly_reconciliation_audit_client",
@@ -613,6 +620,7 @@ class WilsyAPIServer:
         app.include_router(wilsy_ai_advisory_router, prefix="/api")
         app.include_router(legal_acceptance_router, prefix="/api")
         app.include_router(tenant_branding_router, prefix="/api")
+        app.include_router(telemetry_ingestion_router, prefix="/api")
         app.include_router(subscription_router)
         app.include_router(plan_router)
 

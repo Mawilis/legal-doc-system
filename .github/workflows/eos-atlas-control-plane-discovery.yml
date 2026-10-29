@@ -2,33 +2,41 @@
 # WILSY OS — MONGODB ATLAS CONTROL-PLANE DISCOVERY WORKFLOW
 #
 # TITLE: Read-Only MongoDB Atlas Production Control-Plane Discovery
-# VERSION: v1.0.1-P0-C12F7C-EOS-ATLAS-DISCOVERY-403-DIAGNOSTIC
+# VERSION: v1.0.3-P0-C12F7C-EOS-ATLAS-DEDICATED-RUNNER
 # AUTHORITY: Wilsy OS Core Governance
-# EPITOME: Resolve production Atlas project and cluster metadata while safely
-#          classifying Atlas HTTP failures without disclosing credentials,
-#          secret project identity, raw provider responses, or connection data.
+# EPITOME: Resolve production Atlas project and cluster metadata using the
+#          recommended OAuth 2.0 service-account flow while safely classifying
+#          Atlas HTTP failures without disclosing credentials or raw responses.
 # ABSOLUTE CANONICAL PATH:
 #   /Users/wilsonkhanyezi/legal-doc-system/.github/workflows/eos-atlas-control-plane-discovery.yml
 # COLLABORATION / OWNERSHIP:
 #   GitHub Actions supplies secure execution capability only.
 #   MongoDB Atlas owns provider control-plane state.
 #   Python EOS remains sovereign for runtime business and authority truth.
-# CERTIFICATION / UPDATE DATE: 2026-10-06
+# CERTIFICATION / UPDATE DATE: 2026-10-29
 # CHANGELOG:
+#   v1.0.3-P0-C12F7C-EOS-ATLAS-DEDICATED-RUNNER
+#     - Require the dedicated atlas-control-plane runner label, preventing
+#       accidental scheduling on GitHub-hosted egress or unrelated runners.
+#   v1.0.2-P0-C12F7C-EOS-ATLAS-OAUTH-DISCOVERY
+#     - Replace legacy HTTP Digest API-key authentication with Atlas-recommended
+#       OAuth 2.0 client-credentials authentication for the service account.
+#     - Keep project and cluster discovery read-only and preserve sanitized
+#       provider failure classification.
+#     - Mask the issued bearer token and keep token/provider response bodies in
+#       ephemeral permission-restricted files that are removed on exit.
+#     - Retain the existing project ID secret; do not expose secrets or raw
+#       provider responses in workflow output.
 #   v1.0.1-P0-C12F7C-EOS-ATLAS-DISCOVERY-403-DIAGNOSTIC
-#     - Preserve the v1.0.0 read-only Atlas GET boundary.
-#     - Capture HTTP status without curl --fail suppressing provider diagnostics.
-#     - Emit only allowlisted Atlas errorCode/reason/detail fields on failure.
-#     - Never emit raw Atlas response bodies, secret identifiers, credentials,
-#       or MongoDB connection-string fields.
+#     - Preserve read-only Atlas GET boundary and sanitized HTTP diagnostics.
 #   v1.0.0-P0-C12F7C-EOS-ATLAS-DISCOVERY
 #     - Established manual read-only Atlas project/cluster metadata discovery.
 # COMPLIANCE:
 #   AGENTS.md v1.2.0-SOVEREIGN-LEGAL-OPERATIONS-CONSTITUTION.
 # SECURITY / PRIVACY POSTURE:
 #   contents:read only; no checkout or repository write capability is required.
-#   Credentials exist only inside the GitHub-hosted runner and an ephemeral
-#   permission-0600 netrc file.
+#   Client credentials and bearer token remain within the dedicated runner
+#   and are never printed as workflow evidence.
 # TENANT BOUNDARY:
 #   No tenant data is read or mutated.
 # AUTHORITY BOUNDARY:
@@ -53,13 +61,13 @@ concurrency:
 jobs:
   discover-atlas-control-plane:
     name: Read-only Atlas metadata discovery
-    runs-on: ubuntu-latest
+    runs-on: atlas-control-plane
     timeout-minutes: 10
 
     env:
       ATLAS_PROJECT_ID: ${{ secrets.MONGODB_ATLAS_PROJECT_ID }}
-      ATLAS_PUBLIC_KEY: ${{ secrets.MONGODB_ATLAS_PUBLIC_KEY }}
-      ATLAS_PRIVATE_KEY: ${{ secrets.MONGODB_ATLAS_PRIVATE_KEY }}
+      ATLAS_CLIENT_ID: ${{ secrets.MONGODB_ATLAS_CLIENT_ID }}
+      ATLAS_CLIENT_SECRET: ${{ secrets.MONGODB_ATLAS_CLIENT_SECRET }}
 
     steps:
       - name: Validate secure Atlas authority inputs
@@ -68,29 +76,30 @@ jobs:
           set -euo pipefail
 
           test -n "${ATLAS_PROJECT_ID:-}"
-          test -n "${ATLAS_PUBLIC_KEY:-}"
-          test -n "${ATLAS_PRIVATE_KEY:-}"
+          test -n "${ATLAS_CLIENT_ID:-}"
+          test -n "${ATLAS_CLIENT_SECRET:-}"
 
           printf '%s\n' "::add-mask::${ATLAS_PROJECT_ID}"
-          printf '%s\n' "::add-mask::${ATLAS_PUBLIC_KEY}"
-          printf '%s\n' "::add-mask::${ATLAS_PRIVATE_KEY}"
+          printf '%s\n' "::add-mask::${ATLAS_CLIENT_ID}"
+          printf '%s\n' "::add-mask::${ATLAS_CLIENT_SECRET}"
 
           printf 'ATLAS_PROJECT_ID_PRESENT=YES\n'
-          printf 'ATLAS_PUBLIC_KEY_PRESENT=YES\n'
-          printf 'ATLAS_PRIVATE_KEY_PRESENT=YES\n'
+          printf 'ATLAS_CLIENT_ID_PRESENT=YES\n'
+          printf 'ATLAS_CLIENT_SECRET_PRESENT=YES\n'
           printf 'ATLAS_SECRET_VALUE_PRINTED=NO\n'
 
-      - name: Discover Atlas project and cluster metadata
+      - name: Discover Atlas project and cluster metadata with OAuth
         shell: bash
         run: |
           set -euo pipefail
 
           printf '%s\n' "::add-mask::${ATLAS_PROJECT_ID}"
-          printf '%s\n' "::add-mask::${ATLAS_PUBLIC_KEY}"
-          printf '%s\n' "::add-mask::${ATLAS_PRIVATE_KEY}"
+          printf '%s\n' "::add-mask::${ATLAS_CLIENT_ID}"
+          printf '%s\n' "::add-mask::${ATLAS_CLIENT_SECRET}"
 
           work_dir="$(mktemp -d)"
-          auth_file="${work_dir}/atlas.netrc"
+          token_file="${work_dir}/token.json"
+          auth_file="${work_dir}/atlas-bearer-token"
           project_file="${work_dir}/project.json"
           cluster_file="${work_dir}/clusters.json"
 
@@ -101,13 +110,34 @@ jobs:
           trap cleanup EXIT
           umask 077
 
-          {
-            printf 'machine cloud.mongodb.com\n'
-            printf 'login %s\n' "${ATLAS_PUBLIC_KEY}"
-            printf 'password %s\n' "${ATLAS_PRIVATE_KEY}"
-          } > "${auth_file}"
+          token_status="$(
+            curl \
+              --silent \
+              --show-error \
+              --user "${ATLAS_CLIENT_ID}:${ATLAS_CLIENT_SECRET}" \
+              --header 'Content-Type: application/x-www-form-urlencoded' \
+              --data-urlencode 'grant_type=client_credentials' \
+              --output "${token_file}" \
+              --write-out '%{http_code}' \
+              'https://cloud.mongodb.com/api/oauth/token'
+          )"
 
+          printf 'ATLAS_OAUTH_TOKEN_HTTP_STATUS=%s\n' "${token_status}"
+
+          if [ "${token_status}" != "200" ]; then
+            printf 'ATLAS_OAUTH_TOKEN_ISSUED=NO\n'
+            printf 'ATLAS_OAUTH_RESPONSE_BODY_PRINTED=NO\n'
+            exit 22
+          fi
+
+          access_token="$(jq -er '.access_token | strings | select(length > 0)' "${token_file}")"
+          printf '%s\n' "::add-mask::${access_token}"
+          printf '%s' "${access_token}" > "${auth_file}"
           chmod 600 "${auth_file}"
+          unset access_token
+
+          printf 'ATLAS_OAUTH_TOKEN_ISSUED=YES\n'
+          printf 'ATLAS_OAUTH_TOKEN_VALUE_PRINTED=NO\n'
 
           atlas_accept='application/vnd.atlas.2023-01-01+json'
 
@@ -116,17 +146,18 @@ jobs:
             output_file="$2"
             label="$3"
 
+            bearer_token="$(cat "${auth_file}")"
             status="$(
               curl \
-                --digest \
-                --netrc-file "${auth_file}" \
                 --silent \
                 --show-error \
+                --header "Authorization: Bearer ${bearer_token}" \
                 --header "Accept: ${atlas_accept}" \
                 --output "${output_file}" \
                 --write-out '%{http_code}' \
                 "${endpoint}"
             )"
+            unset bearer_token
 
             printf '%s_HTTP_STATUS=%s\n' "${label}" "${status}"
 
@@ -136,8 +167,7 @@ jobs:
                   [$label + "_ERROR_CODE", (.errorCode // "")],
                   [$label + "_ERROR_REASON", (.reason // "")],
                   [$label + "_ERROR_DETAIL", (.detail // "")]
-                ]
-                []
+                ][]
                 | select(.[1] != "")
                 | "\(.[0])=\(.[1])"
               ' "${output_file}"
@@ -154,9 +184,7 @@ jobs:
             "${project_file}" \
             "ATLAS_PROJECT"
 
-          response_project_id="$(
-            jq -r '.id // empty' "${project_file}"
-          )"
+          response_project_id="$(jq -r '.id // empty' "${project_file}")"
 
           test -n "${response_project_id}"
           test "${response_project_id}" = "${ATLAS_PROJECT_ID}"
@@ -164,9 +192,7 @@ jobs:
           printf 'ATLAS_AUTHENTICATION_AND_PROJECT_ACCESS=PASS\n'
           printf 'ATLAS_PROJECT_ID_MATCH=YES\n'
 
-          jq -r '
-            "ATLAS_PROJECT_NAME=" + (.name // "")
-          ' "${project_file}"
+          jq -r '"ATLAS_PROJECT_NAME=" + (.name // "")' "${project_file}"
 
           atlas_get \
             "https://cloud.mongodb.com/api/atlas/v2/groups/${ATLAS_PROJECT_ID}/clusters" \
@@ -221,16 +247,16 @@ jobs:
 # WILSY OS SOVEREIGN ARTIFACT SEAL
 #
 # ARTIFACT: .github/workflows/eos-atlas-control-plane-discovery.yml
-# VERSION: v1.0.1-P0-C12F7C-EOS-ATLAS-DISCOVERY-403-DIAGNOSTIC
+# VERSION: v1.0.3-P0-C12F7C-EOS-ATLAS-DEDICATED-RUNNER
 # AUTHORITY BOUNDARY:
 #   Read-only Atlas project/cluster discovery and sanitized error classification.
 # SECRET POSTURE:
-#   Existing GitHub Actions secrets remain within the runner and are never
-#   emitted as workflow evidence.
+#   OAuth client credentials and bearer token remain within the runner and are
+#   never emitted as workflow evidence.
 # OUTPUT POSTURE:
-#   Raw Atlas responses and connection-string fields are never printed/uploaded.
-#   Failure evidence is limited to HTTP status plus allowlisted provider fields:
-#   errorCode, reason, and detail.
+#   Raw token responses, raw Atlas responses, and connection-string fields are
+#   never printed or uploaded. Failure evidence is limited to HTTP status plus
+#   allowlisted Atlas errorCode, reason, and detail fields.
 # MUTATION POSTURE:
 #   No Atlas, GitHub repository, tenant, runtime, MongoDB, AWS, payment, or
 #   financial mutation is authorized.

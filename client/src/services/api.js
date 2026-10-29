@@ -2,7 +2,7 @@
 /**
  * WILSY OS — INSTITUTIONAL HTTP CLIENT
  * TITLE: Wilsy OS Diplomatic Bridge and Institutional HTTP Client
- * VERSION: V74.5.0-L10-P2C7-MULTIPART-PRESERVATION
+ * VERSION: V74.6.0-L10-P2C8-EXPLICIT-BEARER-PRESERVATION
  * AUTHORITY: Wilsy OS Core Governance
  * EPITOME: Provides the governed browser HTTP transport seam while preserving
  *          server-owned authentication, recovery, tenant, credential, and
@@ -11,8 +11,9 @@
  * COLLABORATION / OWNERSHIP: React client callers supply presentation inputs;
  *                            Python EOS owns auth/recovery business truth and
  *                            server contracts; external HTTP is transport only.
- * CERTIFICATION / UPDATE DATE: 2026-09-22
- * CHANGELOG: V74.5.0-L10-P2C7-MULTIPART-PRESERVATION — Preserves multipart
+ * CERTIFICATION / UPDATE DATE: 2026-10-28
+ * CHANGELOG: V74.6.0-L10-P2C8-EXPLICIT-BEARER-PRESERVATION — Preserves an explicitly supplied Authorization header so the server revalidates the exact post-MFA candidate token rather than silently substituting stale browser storage.
+ *            V74.5.0-L10-P2C7-MULTIPART-PRESERVATION — Preserves multipart
  *            upload bodies from JSON forensic-body mutation while retaining
  *            transport headers and request sealing.
  *            V74.4.0-R10E61-RECOVERY-PUBLIC-PATH-INTERLOCK — Adds public-path interlocks for password-recovery request
@@ -385,8 +386,21 @@ api.interceptors.request.use(
       }).then(() => config);
     }
 
+    // A caller may supply a freshly verified candidate bearer during MFA-to-session
+    // promotion. Preserve that explicit credential for server-side revalidation;
+    // never silently replace its identity with a possibly stale browser-stored token.
+    // This is transport preservation only: Python EOS remains the sole authority.
+    const suppliedAuthorization = typeof config.headers?.get === 'function'
+      ? config.headers.get('Authorization')
+      : config.headers?.Authorization || config.headers?.authorization;
+    const hasSuppliedAuthorization = (
+      typeof suppliedAuthorization === 'string'
+      && suppliedAuthorization.trim().length > 0
+    );
     const token = getStoredToken();
-    if (token && !config.skipAuth) config.headers.Authorization = `Bearer ${token}`;
+    if (!config.skipAuth && !hasSuppliedAuthorization && token) {
+      config.headers.Authorization = `Bearer ${token}`;
+    }
 
     // Force Tenant ID injection to prevent 403 authorization fractures
     config.headers['X-Tenant-ID'] = resolveRequestTenantId();
@@ -719,7 +733,7 @@ export {
 
 /**
  * ARTIFACT: client/src/services/api.js
- * VERSION: V74.5.0-L10-P2C7-MULTIPART-PRESERVATION
+ * VERSION: V74.6.0-L10-P2C8-EXPLICIT-BEARER-PRESERVATION
  * AUTHORITY BOUNDARY: browser HTTP transport and transport evidence only
  * TENANT POSTURE: client tenant values remain selectors/projections; server truth is sovereign
  * FAIL-CLOSED POSTURE: strict public recovery/reset bodies are never mutated by forensic metadata

@@ -116,4 +116,3 @@ Production remains NO-GO until the actual internal caller is approved and wired
 to this exact path/body contract, the deployment audit fingerprint parity is
 observed, the unified production security audit passes, and operational review
 accepts the end-to-end HTTP/real-Mongo certification.
-

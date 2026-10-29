@@ -9,7 +9,7 @@ ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/tests/unit/test_
 COLLABORATION / OWNERSHIP: Wilson Khanyezi / Wilsy Core Engineering.
 CERTIFICATION/UPDATE DATE: 2026-10-15.
 CHANGELOG:
-2026-10-25 v1.11.0-L10A2R-C4D7-RECONCILIATION-READ-PERMISSION-CERT certifies the dedicated SYSTEM-scoped legal evidence provider reconciliation-read vocabulary, its non-self-authorizing metadata, and closed-canon cardinality of 122 canonical permissions / 125 total rows. It does not certify grants, runtime invocation, or provider access.
+2026-10-25 v1.11.0-L10A2R-C4D7-RECONCILIATION-READ-PERMISSION-CERT certifies the dedicated SYSTEM-scoped legal evidence provider reconciliation-read vocabulary, its non-self-authorizing metadata, and closed-canon cardinality of 123 canonical permissions / 126 total rows. It does not certify grants, runtime invocation, or provider access.
 2026-10-20 v1.10.0-P47-R76-BINDING-PROVISION-PERMISSION-CERT certifies the
 exact own-tenant practitioner matter-binding provisioning permission, its
 non-self-authorizing and non-financial metadata, fail-closed aliases, and the
@@ -332,6 +332,7 @@ def test_permission_canon_properties() -> None:
         "subscription:read",
         "subscription:manage",
         "tenant_product_entitlement:issue",
+        "telemetry:event:write",
         "tenant_branding:read",
         "tenant_branding:profile:manage",
         "tenant_branding:asset:manage",
@@ -408,9 +409,9 @@ def test_permission_canon_properties() -> None:
             for row in rows
             if row["disposition"] == "CANONICAL"
         ]
-    ) == 122
+    ) == 123
 
-    assert len(rows) == 125
+    assert len(rows) == 126
 
     for permission_id in tenant:
         metadata = permission_metadata(
