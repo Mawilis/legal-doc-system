@@ -1,13 +1,14 @@
 /**
  * WILSY OS — PRODUCTION LEGAL OPERATIONS WORKSPACE CERTIFICATE
- * VERSION: v1.11.0-AUTHORITATIVE-CAPABILITY-NAVIGATION-CERT
+ * VERSION: v1.12.0-PARTNER-CONFLICT-AUTHORITY-AND-EMPTY-STATE-CERT
  * AUTHORITY: Browser presentation/wiring certificate only.
  * EPITOME: Proves law-firm and finance roles resolve to real WILSY Legal OS
  *          workspaces backed by the D15 V2 first-class matter contract, with
  *          functional lifecycle navigation, governed intake, ReturnOfService generation, exact
  *          finance lookup and no cross-role endpoint fallback.
  * ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/client/src/__tests__/components/legalDashboardPracticeWorkspace.test.jsx
- * CERTIFICATION / UPDATE DATE: 2026-10-16
+ * CERTIFICATION / UPDATE DATE: 2026-10-30
+ * CHANGELOG: 2026-10-30 v1.12.0-PARTNER-CONFLICT-AUTHORITY-AND-EMPTY-STATE-CERT supplies the exact authoritative conflict-review capability to the positive Partner failure-path fixture and verifies the empty runway does not advertise unsupported instruction creation. Negative permission-narrowing coverage remains intact; no production authority changes.
  * CHANGELOG: 2026-10-16 v1.10.0-PRACTICE-CONFLICT-REVIEW-PRESENTATION-PARITY-CERT proves Paralegal and Secretary retain the readable review queue without a mutation affordance and proves authoritative permission projection can further narrow Partner presentation.
  *            2026-10-12 v1.9.0-LEGAL-EVIDENCE-UPLOAD-WORKSPACE-CERT proves the governed upload workspace appears only for the Partner presentation envelope and remains absent for Attorney without initiating transport.
  *            2026-09-29 v1.8.0-L10-P2C7V-ADAPTIVE-LEGAL-RUNWAY-CERT proves canonical zero-state runway, permission-scoped intake, compact nonzero signals and absence of the zero KPI strip while preserving attention and operating-room behavior.
@@ -1074,7 +1075,15 @@ describe('D15 first-class Legal Matter Operating Room', () => {
       response: { status, data: { detail } },
     });
 
-    render(<LegalDashboard roleView="LEGAL_PARTNER" />);
+    render(
+      <LegalDashboard
+        roleView="LEGAL_PARTNER"
+        user={{
+          legalPermissionsAuthoritative: true,
+          permissions: ['legal_operations:conflict_review:write'],
+        }}
+      />,
+    );
     await screen.findByRole('heading', { name: 'Conflict review queue' });
     fireEvent.click(screen.getByRole('button', { name: 'Review Conflict' }));
     fireEvent.change(screen.getByRole('combobox', {
@@ -1124,7 +1133,7 @@ describe('D15 first-class Legal Matter Operating Room', () => {
     expect(screen.getByTestId('legal-practice-operating-runway')).toBeInTheDocument();
     expect(screen.getByText('Ready for the next legal instruction')).toBeInTheDocument();
     expect(screen.getByText('No current Legal Operations work is projected for this tenant.')).toBeInTheDocument();
-    expect(within(screen.getByTestId('legal-practice-operating-runway')).getByRole('button', { name: 'New instruction' })).toBeInTheDocument();
+    expect(within(screen.getByTestId('legal-practice-operating-runway')).queryByRole('button', { name: 'New instruction' })).not.toBeInTheDocument();
     expect(within(screen.getByTestId('legal-practice-operating-runway')).getByRole('button', { name: 'Matter register' })).toBeInTheDocument();
     expect(within(screen.getByTestId('legal-practice-operating-runway')).getByRole('button', { name: 'Refresh truth' })).toBeInTheDocument();
     expect(screen.queryByLabelText('Legal operations KPI strip')).not.toBeInTheDocument();
