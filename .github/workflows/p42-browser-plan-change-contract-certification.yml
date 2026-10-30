@@ -1,0 +1,36 @@
+name: P42 Browser Plan-Change Contract Certification
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - "client/src/hooks/useSubscriptions.js"
+      - "client/src/services/api/subscriptionApi.js"
+      - "tools/eos/saas/billing/subscription_registry.py"
+      - "tests/unit/test_p42_browser_plan_change_contract.py"
+      - ".github/workflows/p42-browser-plan-change-contract-certification.yml"
+  push:
+    branches: [main]
+    paths:
+      - "client/src/hooks/useSubscriptions.js"
+      - "client/src/services/api/subscriptionApi.js"
+      - "tools/eos/saas/billing/subscription_registry.py"
+      - "tests/unit/test_p42_browser_plan_change_contract.py"
+      - ".github/workflows/p42-browser-plan-change-contract-certification.yml"
+
+permissions:
+  contents: read
+
+jobs:
+  p42-browser-contract:
+    name: P42 Browser Request Contract
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Install test runner
+        run: python -m pip install pytest==9.1.1
+      - name: Certify browser and Python request contract
+        run: python -m pytest -q tests/unit/test_p42_browser_plan_change_contract.py
