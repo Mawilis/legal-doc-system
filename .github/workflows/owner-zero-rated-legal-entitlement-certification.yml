@@ -1,0 +1,156 @@
+# WILSY OS sovereign engineering artifact
+# TITLE: Owner zero-rated Legal entitlement composition certification
+# VERSION: v1.0.0-OWNER-ZERO-RATED-LEGAL-ENTITLEMENT-CERT
+# AUTHORITY: Python EOS engineering verification only; no production mutation
+# TENANT BOUNDARY: UUID-isolated local Mongo replica-set databases only
+# FINANCIAL AUTHORITY: Kennel EOS exclusively
+# CHANGELOG: Runs the focused subscription, PlanRegistry and Legal entitlement
+#            unit/real-Mongo certificates on pull requests without Node tooling.
+# END OF WILSY OS SOVEREIGN ARTIFACT
+
+name: Owner zero-rated Legal entitlement certification
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - "tools/eos/saas/billing/plan_registry.py"
+      - "tools/eos/saas/billing/subscription_registry.py"
+      - "tools/eos/saas/billing/subscription_active_entitlement_composition_service.py"
+      - "tools/eos/api/subscription_router.py"
+      - "tests/unit/test_subscription_active_entitlement_composition_service.py"
+      - "tests/unit/test_subscription_registry_transaction_injection.py"
+      - "tests/integration/test_plan_registry_real_mongo.py"
+      - "tests/integration/test_plan_registry_legacy_evidence_migration_real_mongo.py"
+      - "tests/integration/test_subscription_registry_real_mongo.py"
+      - "tests/integration/test_subscription_registry_transaction_injection_real_mongo.py"
+      - "tests/integration/test_subscription_active_entitlement_composition_service_real_mongo.py"
+      - "tests/integration/test_subscription_router_authority_real_mongo.py"
+      - "tests/integration/test_tenant_product_entitlement_composer_real_mongo.py"
+      - "tests/integration/test_tenant_product_entitlement_issuance_orchestrator_real_mongo.py"
+      - "tests/integration/test_subscription_wilsy_ai_entitlement_composition_service_real_mongo.py"
+      - "tests/integration/test_tenant_branding_subscription_entitlement_real_mongo.py"
+      - "tests/integration/test_tenant_branding_entitlement_reconciliation_real_mongo.py"
+      - "tests/integration/test_legal_commercial_context_http_real_mongo.py"
+      - "tests/integration/test_legal_commercial_context_projection_real_mongo.py"
+      - "tests/integration/test_legal_evidence_upload_http_real_mongo.py"
+      - "tests/integration/test_legal_evidence_capacity_tenant_profile_real_mongo.py"
+      - "tests/integration/test_crm_core_entitlement_resolver_real_mongo.py"
+      - "tests/integration/test_plan_router_authority_real_mongo.py"
+      - ".github/workflows/owner-zero-rated-legal-entitlement-certification.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: owner-zero-rated-legal-entitlement-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  legal-entitlement-certification:
+    name: Python EOS / PlanRegistry / Legal entitlement
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    env:
+      TEST_VENDOR_MONGO_URI: mongodb://127.0.0.1:27017/?replicaSet=wilsyVendorCertRS
+      PIP_DISABLE_PIP_VERSION_CHECK: "1"
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+          cache-dependency-path: requirements.txt
+
+      - name: Install Python dependencies
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install -r requirements.txt pytest==9.1.1
+
+      - name: Start isolated Mongo replica set
+        run: |
+          docker run --detach --name wilsy-owner-entitlement-cert-mongo \
+            --publish 27017:27017 mongo:7.0.37 \
+            mongod --replSet wilsyVendorCertRS --bind_ip_all
+
+      - name: Initialize Mongo replica set
+        run: |
+          python - <<'PY'
+          import time
+          from pymongo import MongoClient
+
+          client = MongoClient(
+              "mongodb://127.0.0.1:27017",
+              directConnection=True,
+              serverSelectionTimeoutMS=2_000,
+          )
+          deadline = time.monotonic() + 60
+          initiated = False
+          last_error = None
+          while True:
+              try:
+                  hello = client.admin.command("hello")
+                  if not initiated and not hello.get("setName"):
+                      client.admin.command({
+                          "replSetInitiate": {
+                              "_id": "wilsyVendorCertRS",
+                              "members": [{"_id": 0, "host": "127.0.0.1:27017"}],
+                          }
+                      })
+                      initiated = True
+                  if client.admin.command("hello").get("isWritablePrimary"):
+                      break
+              except Exception as error:
+                  last_error = error
+              if time.monotonic() >= deadline:
+                  raise RuntimeError(
+                      f"OWNER_ENTITLEMENT_MONGO_REPLICA_SET_UNAVAILABLE: {last_error!r}"
+                  ) from last_error
+              time.sleep(1)
+          client.close()
+          PY
+
+      - name: Compile changed Python contracts
+        run: |
+          python -m py_compile \
+            tools/eos/saas/billing/plan_registry.py \
+            tools/eos/saas/billing/subscription_registry.py \
+            tools/eos/saas/billing/subscription_active_entitlement_composition_service.py \
+            tools/eos/api/subscription_router.py \
+            tests/unit/test_subscription_active_entitlement_composition_service.py \
+            tests/unit/test_subscription_registry_transaction_injection.py \
+            tests/integration/test_plan_registry_real_mongo.py \
+            tests/integration/test_subscription_active_entitlement_composition_service_real_mongo.py \
+            tests/integration/test_subscription_router_authority_real_mongo.py
+
+      - name: Run focused Python unit and real-Mongo certificates
+        run: |
+          python -m pytest -q \
+            tests/unit/test_subscription_active_entitlement_composition_service.py \
+            tests/unit/test_subscription_registry_transaction_injection.py \
+            tests/integration/test_plan_registry_real_mongo.py \
+            tests/integration/test_plan_registry_legacy_evidence_migration_real_mongo.py \
+            tests/integration/test_subscription_registry_real_mongo.py \
+            tests/integration/test_subscription_registry_transaction_injection_real_mongo.py \
+            tests/integration/test_subscription_active_entitlement_composition_service_real_mongo.py \
+            tests/integration/test_subscription_router_authority_real_mongo.py \
+            tests/integration/test_tenant_product_entitlement_composer_real_mongo.py \
+            tests/integration/test_tenant_product_entitlement_issuance_orchestrator_real_mongo.py \
+            tests/integration/test_subscription_wilsy_ai_entitlement_composition_service_real_mongo.py \
+            tests/integration/test_tenant_branding_subscription_entitlement_real_mongo.py \
+            tests/integration/test_tenant_branding_entitlement_reconciliation_real_mongo.py \
+            tests/integration/test_legal_commercial_context_http_real_mongo.py \
+            tests/integration/test_legal_commercial_context_projection_real_mongo.py \
+            tests/integration/test_legal_evidence_upload_http_real_mongo.py \
+            tests/integration/test_legal_evidence_capacity_tenant_profile_real_mongo.py \
+            tests/integration/test_crm_core_entitlement_resolver_real_mongo.py \
+            tests/integration/test_plan_router_authority_real_mongo.py \
+            tests/integration/test_crm_core_entitlement_resolver_real_mongo.py
+
+      - name: Stop isolated Mongo replica set
+        if: always()
+        run: docker rm -f wilsy-owner-entitlement-cert-mongo 2>/dev/null || true
