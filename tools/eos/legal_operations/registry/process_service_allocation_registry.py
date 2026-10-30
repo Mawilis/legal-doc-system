@@ -801,6 +801,29 @@ def get_receipt_by_idempotency_key(
     return None if not rows else _hydrate_receipt(rows[0])
 
 
+def get_receipt_by_allocation_command_id(
+    tenant_id: str, document_id: str, allocation_command_id: str,
+    receipt_collection: Any, *, session: Any,
+) -> ProcessServiceAllocationReceipt | None:
+    """Read one exact tenant/document/allocation-command receipt in caller snapshot."""
+    tx = _active_transaction(session)
+    tenant = _tenant(tenant_id)
+    document = _identity("document_id", document_id)
+    command = _identity("allocation_command_id", allocation_command_id)
+    rows = _read_rows(receipt_collection, {
+        "tenant_id": tenant, "document_id": document,
+        "allocation_command_id": command,
+    }, tx)
+    if len(rows) > 1:
+        _raise(ProcessServiceAllocationRegistryPersistedRecordInvalidError, "P4_DUPLICATE_ALLOCATION_COMMAND")
+    if not rows:
+        return None
+    receipt = _hydrate_receipt(rows[0])
+    if (receipt.tenant_id != tenant or receipt.document_id != document
+            or receipt.allocation_command_id != command):
+        _raise(ProcessServiceAllocationRegistryPersistedRecordInvalidError, "P4_RECEIPT_COMMAND_SCOPE_MISMATCH")
+    return receipt
+
 def _get_current_rows(
     tenant_id: str,
     document_id: str,
@@ -914,6 +937,7 @@ class ProcessServiceAllocationRegistry:
     ensure_indexes = staticmethod(ensure_indexes)
     get_current = staticmethod(get_current)
     get_receipt_by_idempotency_key = staticmethod(get_receipt_by_idempotency_key)
+    get_receipt_by_allocation_command_id = staticmethod(get_receipt_by_allocation_command_id)
     persist_receipt_and_advance_current = staticmethod(persist_receipt_and_advance_current)
     persist_and_advance_current = staticmethod(persist_receipt_and_advance_current)
 
@@ -954,6 +978,7 @@ __all__ = [
     "ensure_indexes",
     "get_current",
     "get_receipt_by_idempotency_key",
+    "get_receipt_by_allocation_command_id",
     "persist_receipt_and_advance_current",
 ]
 
