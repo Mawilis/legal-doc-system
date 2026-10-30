@@ -412,12 +412,7 @@ class PlanRegistry:
         with read-only production Mongo credentials. Missing or mismatched
         indexes fail closed with an explicit provisioning requirement.
         """
-        try:
-            information = plans_collection.index_information()
-        except Exception as error:
-            raise RuntimeError(
-                "PLAN_REGISTRY_INDEX_METADATA_UNAVAILABLE"
-            ) from error
+        information = plans_collection.index_information()
 
         for (
             name,
