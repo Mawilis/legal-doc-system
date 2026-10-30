@@ -1,12 +1,12 @@
 """TITLE: WILSY OS G77 Source-Verified Ethical-Wall Enforcement Certificate.
-VERSION: v1.0.0-G77-SOURCE-VERIFIED-DENIAL-CERT
+VERSION: v1.0.1-G77-DENIAL-ADVERSARIAL-EXPANSION
 AUTHORITY: Negative enforcement and canonical-source validation only.
 EPITOME: Certifies transaction, IAM, binding, assignment, conflict, review and
 wall-source verification while institutional authority remains unavailable.
 ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/tests/unit/test_legal_work_ethical_wall_enforcement.py
 COLLABORATION / OWNERSHIP: Wilsy OS Core Engineering / Legal Operations.
 CERTIFICATION / UPDATE DATE: 2026-10-21.
-CHANGELOG: 2026-10-21 v1.0.0 introduces G77 denial-path certification.
+CHANGELOG: 2026-10-26 v1.0.1 expands expiry, separation-of-duties, cross-scope, revocation and history-pointer denial cases; no positive authorization.
 COMPLIANCE: POPIA section 19; GDPR Article 32; SOC 2 CC7.2.
 TENANT BOUNDARY: Exact tenant, matter and authenticated principal.
 AUTHORITY BOUNDARY: No positive content or operational access result exists.
@@ -47,6 +47,10 @@ from tools.eos.legal_operations.domain.legal_work_practitioner_confidentiality_r
     ConfidentialityReviewDecisionState,
     EthicalWallRequirement,
 )
+from tools.eos.legal_operations.domain.legal_work_ethical_wall_membership_acknowledgement import (
+    WallMembershipEvidence, WallAcknowledgementEvidence,
+    MembershipState, AcknowledgementState,
+)
 from tools.eos.legal_operations.service import legal_work_ethical_wall_enforcement as service
 
 NOW = datetime(2026, 10, 21, 15, 0, tzinfo=UTC)
@@ -67,9 +71,9 @@ class Source:
         return self.value
 
 
-def matter() -> CaseMatter:
+def matter(*, tenant_id: str = "tenant-a") -> CaseMatter:
     return CaseMatter(
-        case_matter_id="matter-a", tenant_id="tenant-a",
+        case_matter_id="matter-a", tenant_id=tenant_id,
         matter_reference="matter-ref-a", opened_at=NOW - timedelta(days=2),
         evidence_reference="matter-open-evidence-a", state=CaseMatterState.OPEN,
     )
@@ -84,20 +88,21 @@ def binding() -> LegalPractitionerMatterBinding:
     )
 
 
-def assignment() -> LegalWorkAssignment:
+def assignment(*, case_matter_id: str = "matter-a") -> LegalWorkAssignment:
     return LegalWorkAssignment(
         assignment_id="assignment-a", tenant_id="tenant-a",
-        case_matter_id="matter-a", work_item_id="work-a",
+        case_matter_id=case_matter_id, work_item_id="work-a",
         assignee_principal_id="practitioner-a", assigned_by_principal_id="partner-a",
         assigned_at=NOW - timedelta(hours=12), assignment_reason_reference="reason-a",
         authorization_evidence_reference="assignment-auth-a",
     )
 
 
-def conflict() -> LegalClientMatterConflictDispositionCurrentness:
+def conflict(*, tenant_id: str = "tenant-a") -> LegalClientMatterConflictDispositionCurrentness:
+    scoped_matter = matter(tenant_id=tenant_id)
     return LegalClientMatterConflictDispositionCurrentness(
-        currentness_id="conflict-current-a", tenant_id="tenant-a",
-        case_matter_id="matter-a", matter_fingerprint=matter().fingerprint,
+        currentness_id="conflict-current-a", tenant_id=tenant_id,
+        case_matter_id="matter-a", matter_fingerprint=scoped_matter.fingerprint,
         client_party_id="client-a", subject_identity_fingerprint="1" * 128,
         evaluation_time=NOW, decisive_effective_from=NOW - timedelta(days=1),
         decisive_disposition_ids=("disposition-a",),
@@ -171,6 +176,29 @@ class WallSource:
 
 def sources(**changes: object) -> dict[str, object]:
     wall = policy()
+    membership = WallMembershipEvidence(
+        membership_id="membership-a", revision=1, predecessor_fingerprint=None,
+        tenant_id="tenant-a", case_matter_id="matter-a", policy_id=wall.policy_id,
+        policy_fingerprint=wall.fingerprint, practitioner_principal_id="practitioner-a",
+        state=MembershipState.INCLUDED, effective_at=NOW - timedelta(hours=1),
+        expires_at=NOW + timedelta(days=10), issuer_principal_id="wall-admin-a",
+        issuer_authorization_reference="wall-issuer-auth-a",
+        issuer_authorization_fingerprint="a" * 128,
+        evidence_reference="membership-evidence-a", evidence_fingerprint="b" * 128,
+    )
+    acknowledgement = WallAcknowledgementEvidence(
+        acknowledgement_id="ack-a", revision=1, predecessor_fingerprint=None,
+        tenant_id="tenant-a", case_matter_id="matter-a", policy_id=wall.policy_id,
+        policy_fingerprint=wall.fingerprint, practitioner_principal_id="practitioner-a",
+        membership_fingerprint=membership.fingerprint,
+        state=AcknowledgementState.ACKNOWLEDGED,
+        acknowledged_by_principal_id="practitioner-a",
+        independently_verified_by_principal_id="independent-verifier-a",
+        verification_authorization_reference="ack-verifier-auth-a",
+        verification_authorization_fingerprint="c" * 128,
+        acknowledged_at=NOW - timedelta(minutes=30), expires_at=NOW + timedelta(days=2),
+        evidence_reference="ack-evidence-a", evidence_fingerprint="d" * 128,
+    )
     values: dict[str, object] = {
         "iam_source": Source(TenantAuthorizationDecision(True, TenantAuthorizationReason.AUTHORIZED, "tenant_legal_attorney", "LEGAL_ATTORNEY")),
         "binding_source": Source(binding()),
@@ -178,6 +206,8 @@ def sources(**changes: object) -> dict[str, object]:
         "conflict_source": Source(conflict()),
         "review_source": Source(review(wall)),
         "wall_source": WallSource(wall),
+        "membership_source": Source((membership,)),
+        "acknowledgement_source": Source((acknowledgement,)),
     }
     values.update(changes)
     return values
@@ -247,6 +277,49 @@ def test_recorded_approval_still_denies_unratified_institutional_authority() -> 
         enforce()
 
 
+
+def test_wall_membership_restriction_precedes_acknowledgement() -> None:
+    values = sources()
+    source = values["membership_source"]
+    acknowledgement_source = values["acknowledgement_source"]
+    member = source.value[0]  # type: ignore[union-attr]
+    restricted = replace(member, state="RESTRICTED")
+    values["membership_source"] = Source((restricted,))
+    with pytest.raises(service.EthicalWallEnforcementDenied, match="WALL_MEMBERSHIP_RESTRICTED"):
+        enforce(**values)
+    assert acknowledgement_source.calls == 0  # type: ignore[union-attr]
+
+
+def test_wall_acknowledgement_must_bind_current_membership() -> None:
+    values = sources()
+    ack_source = values["acknowledgement_source"]
+    acknowledgement = ack_source.value[0]  # type: ignore[union-attr]
+    mismatched = replace(acknowledgement, membership_fingerprint="f" * 128)
+    with pytest.raises(
+        service.EthicalWallEnforcementDenied,
+        match="WALL_ACKNOWLEDGEMENT_MEMBERSHIP_MISMATCH",
+    ):
+        enforce(acknowledgement_source=Source((mismatched,)))
+
+
+def test_missing_wall_acknowledgement_denies() -> None:
+    with pytest.raises(
+        service.EthicalWallEnforcementDenied,
+        match="WALL_ACKNOWLEDGEMENT_REQUIRED",
+    ):
+        enforce(acknowledgement_source=Source(()))
+
+
+def test_membership_source_unavailable_denies_before_acknowledgement_read() -> None:
+    acknowledgement_source = Source(())
+    with pytest.raises(
+        service.EthicalWallEnforcementDenied,
+        match="WALL_MEMBERSHIP_SOURCE_UNAVAILABLE",
+    ):
+        enforce(membership_source=object(), acknowledgement_source=acknowledgement_source)
+    assert acknowledgement_source.calls == 0
+
+
 def test_service_has_no_positive_or_content_delivery_surface() -> None:
     assert not hasattr(service, "authorize_content")
     assert not hasattr(service, "read_content")
@@ -254,8 +327,113 @@ def test_service_has_no_positive_or_content_delivery_surface() -> None:
     assert service.OPERATIONAL_ACCESS_ENABLED is False
 
 
+
+@pytest.mark.parametrize(
+    ("review_changes", "expected"),
+    [
+        ({"expires_at": NOW}, "REVIEW_EXPIRED"),
+        ({"reviewer_principal_id": "practitioner-a"}, "REVIEW_INVALID"),
+    ],
+)
+def test_expired_or_self_review_denies(review_changes: dict[str, object], expected: str) -> None:
+    wall = policy()
+    if review_changes.get("reviewer_principal_id") == "practitioner-a":
+        valid = review(wall)
+        forged = object.__new__(ConfidentialityReviewDecision)
+        for name in valid.__dataclass_fields__:
+            object.__setattr__(forged, name, getattr(valid, name))
+        object.__setattr__(forged, "reviewer_principal_id", "practitioner-a")
+        with pytest.raises(service.EthicalWallEnforcementDenied, match=expected):
+            enforce(review_source=Source(forged))
+    else:
+        with pytest.raises(service.EthicalWallEnforcementDenied, match=expected):
+            enforce(review_source=Source(review(wall, **review_changes)))
+
+
+def test_cross_tenant_conflict_evidence_denies() -> None:
+    with pytest.raises(service.EthicalWallEnforcementDenied, match="CONFLICT_BLOCKED"):
+        enforce(conflict_source=Source(conflict(tenant_id="tenant-b")))
+
+
+def test_cross_tenant_binding_and_cross_matter_assignment_deny() -> None:
+    with pytest.raises(service.EthicalWallEnforcementDenied, match="BINDING_INVALID"):
+        enforce(binding_source=Source(binding()), tenant_id="tenant-b")
+    with pytest.raises(service.EthicalWallEnforcementDenied, match="ASSIGNMENT_SCOPE_INVALID"):
+        enforce(assignment_source=Source((assignment(case_matter_id="matter-b"),)))
+
+
+def test_revoked_wall_policy_denies_even_with_matching_review_fingerprint() -> None:
+    revoked = policy(
+        status=EthicalWallPolicyStatus.REVOKED,
+        ratification_state=InstitutionalRatificationState.REVOKED,
+        ratification_reference="revocation-ratification-a",
+        ratification_fingerprint="e" * 128,
+    )
+    with pytest.raises(service.EthicalWallEnforcementDenied, match="WALL_REVOKED_OR_SCOPE_INVALID"):
+        enforce(wall_source=WallSource(revoked), review_source=Source(review(revoked)))
+
+
+def test_wall_current_pointer_must_match_history_tail() -> None:
+    current = policy()
+    previous = policy(effective_until=NOW - timedelta(seconds=1))
+
+    class StaleHistorySource:
+        def get_current(self, tenant_id: str, case_matter_id: str, policy_id: str, *, session: object) -> EthicalWallPolicyRevision:
+            return current
+
+        def list_history(self, tenant_id: str, case_matter_id: str, policy_id: str, *, session: object) -> tuple[EthicalWallPolicyRevision, ...]:
+            return (previous,)
+
+    with pytest.raises(service.EthicalWallEnforcementDenied, match="WALL_POINTER_INVALID"):
+        enforce(wall_source=StaleHistorySource(), review_source=Source(review(current)))
+
+
+def test_foreign_wall_scope_denies_before_unratified_terminal_denial() -> None:
+    foreign = policy(tenant_id="tenant-b")
+    with pytest.raises(service.EthicalWallEnforcementDenied, match="WALL_REVOKED_OR_SCOPE_INVALID"):
+        enforce(wall_source=WallSource(foreign), review_source=Source(review(foreign)))
+
+
+def test_expired_wall_policy_denies_at_exact_expiry_boundary() -> None:
+    expired = policy(effective_until=NOW)
+    with pytest.raises(service.EthicalWallEnforcementDenied, match="WALL_NOT_SATISFIED"):
+        enforce(wall_source=WallSource(expired), review_source=Source(review(expired)))
+
+
+def test_unavailable_wall_source_fails_closed() -> None:
+    class UnavailableWallSource:
+        def get_current(self, tenant_id: str, case_matter_id: str, policy_id: str, *, session: object) -> EthicalWallPolicyRevision:
+            raise RuntimeError("source unavailable")
+
+        def list_history(self, tenant_id: str, case_matter_id: str, policy_id: str, *, session: object) -> tuple[EthicalWallPolicyRevision, ...]:
+            raise AssertionError("history must not be read after current lookup fails")
+
+    with pytest.raises(service.EthicalWallEnforcementDenied, match="WALL_SOURCE_UNAVAILABLE"):
+        enforce(wall_source=UnavailableWallSource())
+
+
+def test_wall_administrator_cannot_review_practitioner_decision() -> None:
+    wall = policy(administrator_principal_id="reviewer-a")
+    conflicting_review = review(wall, reviewer_principal_id="reviewer-a")
+    with pytest.raises(
+        service.EthicalWallEnforcementDenied,
+        match="G77_REVIEW_ADMIN_SEPARATION_INVALID",
+    ):
+        enforce(wall_source=WallSource(wall), review_source=Source(conflicting_review))
+
+
+def test_review_conflicting_with_current_conflict_evidence_denies() -> None:
+    wall = policy()
+    contradictory = review(wall, conflict_disposition_fingerprint="f" * 128)
+    with pytest.raises(
+        service.EthicalWallEnforcementDenied,
+        match="G77_REVIEW_CONFLICT_MISMATCH",
+    ):
+        enforce(review_source=Source(contradictory))
+
+
 # ARTIFACT: test_legal_work_ethical_wall_enforcement.py
-# VERSION: v1.0.0-G77-SOURCE-VERIFIED-DENIAL-CERT
+# VERSION: v1.0.1-G77-DENIAL-ADVERSARIAL-EXPANSION
 # AUTHORITY BOUNDARY: canonical negative verification only; no access grant
 # TENANT POSTURE: exact tenant/matter/principal, foreign scope denied
 # FAIL-CLOSED POSTURE: unavailable, malformed, revoked or unratified denies

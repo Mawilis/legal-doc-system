@@ -1,5 +1,5 @@
 """TITLE: WILSY OS Canonical Ethical-Wall Source Adapters.
-VERSION: v1.0.0-G78-CANONICAL-TRANSACTIONAL-SOURCE-ADAPTERS
+VERSION: v1.1.0-G78-MEMBERSHIP-ACK-SOURCES
 AUTHORITY: Exact transaction-bound canonical evidence reads only.
 EPITOME: Adapt current IAM, binding, assignment, conflict, confidentiality
 review and G76-B policy sources to G77 without accepting caller approvals or
@@ -8,7 +8,7 @@ ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/tools/eos/legal_
 COLLABORATION / OWNERSHIP: Wilsy OS Core Engineering / Legal Operations;
 canonical registries retain persistence and currentness ownership.
 CERTIFICATION / UPDATE DATE: 2026-10-21.
-CHANGELOG: 2026-10-21 v1.0.0 introduces six bounded G78 source adapters.
+CHANGELOG: 2026-10-30 v1.1.0 adds canonical append-only wall membership and acknowledgement history adapters.
 COMPLIANCE: POPIA section 19; GDPR Article 32; SOC 2 CC7.2.
 SECURITY / PRIVACY POSTURE: Content-free stable failures and no logging.
 TENANT BOUNDARY: Every read uses exact tenant/matter/practitioner predicates.
@@ -35,11 +35,15 @@ from tools.eos.legal_operations.domain.legal_work_practitioner_confidentiality_r
     ConfidentialityReviewDecisionState,
     project_confidentiality_review_currentness,
 )
+from tools.eos.legal_operations.domain.legal_work_ethical_wall_membership_acknowledgement import (
+    WallMembershipEvidence,
+    WallAcknowledgementEvidence,
+)
 from tools.eos.legal_operations.orchestration.legal_client_matter_conflict_disposition_currentness_composer import (
     LegalClientMatterConflictDispositionCurrentnessComposer,
 )
 
-VERSION: Final[str] = "v1.0.0-G78-CANONICAL-TRANSACTIONAL-SOURCE-ADAPTERS"
+VERSION: Final[str] = "v1.1.0-G78-MEMBERSHIP-ACK-SOURCES"
 SOURCE_VERIFIED_CLEARANCE: Final[bool] = False
 OPERATIONAL_ACCESS_ENABLED: Final[bool] = False
 MAX_BINDING_ROWS: Final[int] = 4
@@ -328,6 +332,55 @@ class CanonicalConfidentialityReviewSource:
         return current
 
 
+
+class CanonicalWallMembershipSource:
+    """Read bounded immutable membership history from the G78 registry."""
+
+    def __init__(self, registry: Any, policy_id: str) -> None:
+        self._registry = registry
+        self._policy_id = _id(policy_id)
+
+    def resolve_current(
+        self, *, tenant_id: str, case_matter_id: str,
+        practitioner_principal_id: str, session: object,
+    ) -> tuple[WallMembershipEvidence, ...]:
+        tx = _tx(session)
+        try:
+            values = self._registry.list_membership_history(
+                _id(tenant_id), _id(case_matter_id), self._policy_id,
+                _id(practitioner_principal_id), session=tx,
+            )
+        except Exception as error:
+            _fail("G78_WALL_MEMBERSHIP_SOURCE_UNAVAILABLE", error)
+        if type(values) is not tuple or any(type(item) is not WallMembershipEvidence for item in values):
+            _fail("G78_WALL_MEMBERSHIP_SOURCE_INVALID")
+        return values
+
+
+class CanonicalWallAcknowledgementSource:
+    """Read bounded immutable acknowledgement history from the G78 registry."""
+
+    def __init__(self, registry: Any, policy_id: str) -> None:
+        self._registry = registry
+        self._policy_id = _id(policy_id)
+
+    def resolve_current(
+        self, *, tenant_id: str, case_matter_id: str,
+        practitioner_principal_id: str, session: object,
+    ) -> tuple[WallAcknowledgementEvidence, ...]:
+        tx = _tx(session)
+        try:
+            values = self._registry.list_acknowledgement_history(
+                _id(tenant_id), _id(case_matter_id), self._policy_id,
+                _id(practitioner_principal_id), session=tx,
+            )
+        except Exception as error:
+            _fail("G78_WALL_ACKNOWLEDGEMENT_SOURCE_UNAVAILABLE", error)
+        if type(values) is not tuple or any(type(item) is not WallAcknowledgementEvidence for item in values):
+            _fail("G78_WALL_ACKNOWLEDGEMENT_SOURCE_INVALID")
+        return values
+
+
 class CanonicalEthicalWallPolicySource:
     """Expose only G76-B currentness and immutable history reads."""
 
@@ -356,11 +409,12 @@ __all__ = [
     "EthicalWallSourceUnavailable", "CanonicalTenantIamSource",
     "CanonicalPractitionerBindingSource", "CanonicalMatterAssignmentSource",
     "CanonicalConflictDispositionSource", "CanonicalConfidentialityReviewSource",
-    "CanonicalEthicalWallPolicySource", "encode_confidentiality_review",
+    "CanonicalEthicalWallPolicySource", "CanonicalWallMembershipSource",
+    "CanonicalWallAcknowledgementSource", "encode_confidentiality_review",
 ]
 
 # ARTIFACT: legal_work_ethical_wall_source_adapters.py
-# VERSION: v1.0.0-G78-CANONICAL-TRANSACTIONAL-SOURCE-ADAPTERS
+# VERSION: v1.1.0-G78-MEMBERSHIP-ACK-SOURCES
 # AUTHORITY BOUNDARY: canonical evidence reads only; no content or access grant
 # TENANT POSTURE: exact tenant/matter/practitioner on every operation
 # FAIL-CLOSED POSTURE: missing, revoked, stale, corrupt or foreign source rejects

@@ -1,10 +1,10 @@
 """TITLE: WILSY OS Source-Verified Ethical-Wall Enforcement Boundary.
-VERSION: v1.0.0-G77-SOURCE-VERIFIED-NEGATIVE-ENFORCEMENT
+VERSION: v1.1.0-G77-G78-TRANSACTION-BOUND-WALL-EVIDENCE
 AUTHORITY: Transaction-bound canonical source verification and denial only.
-EPITOME: Re-read current IAM, binding, assignment, conflict, review and wall
-    sources in one caller-owned transaction, apply restriction/revocation
-    precedence, and deny until institutional reviewer/admin authority and
-    acknowledgment ownership are independently ratified.
+EPITOME: Re-read current IAM, binding, assignment, conflict, review, policy,
+    membership and acknowledgement sources in one caller-owned transaction.
+    Apply explicit-deny precedence and remain deny-only until institutional
+    issuer, reviewer, administrator and verifier authority are independently ratified.
 ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/tools/eos/legal_operations/service/legal_work_ethical_wall_enforcement.py
 COLLABORATION / OWNERSHIP: Wilsy OS Core Engineering / Legal Operations;
     canonical repositories own evidence and disclosure points own enforcement.
@@ -49,8 +49,14 @@ from tools.eos.legal_operations.domain.legal_work_practitioner_confidentiality_r
     ConfidentialityReviewDecision,
     ConfidentialityReviewDecisionState,
 )
+from tools.eos.legal_operations.domain.legal_work_ethical_wall_membership_acknowledgement import (
+    WallMembershipEvidence,
+    WallAcknowledgementEvidence,
+    WallEvidenceCurrentness,
+    project_wall_membership_and_acknowledgement,
+)
 
-VERSION: Final[str] = "v1.0.0-G77-SOURCE-VERIFIED-NEGATIVE-ENFORCEMENT"
+VERSION: Final[str] = "v1.1.0-G77-G78-TRANSACTION-BOUND-WALL-EVIDENCE"
 SOURCE_VERIFIED_CLEARANCE: Final[bool] = False
 OPERATIONAL_ACCESS_ENABLED: Final[bool] = False
 _ID: Final[re.Pattern[str]] = re.compile(r"[A-Za-z0-9][A-Za-z0-9._:-]{0,199}\Z")
@@ -213,11 +219,37 @@ def _verify_review(
     return value
 
 
+def _deny_wall_evidence_state(state: WallEvidenceCurrentness) -> None:
+    if state is WallEvidenceCurrentness.MEMBERSHIP_RESTRICTED:
+        _deny("G77_WALL_MEMBERSHIP_RESTRICTED")
+    if state is WallEvidenceCurrentness.MEMBERSHIP_REVOKED:
+        _deny("G77_WALL_MEMBERSHIP_REVOKED")
+    if state is WallEvidenceCurrentness.MEMBERSHIP_EXPIRED:
+        _deny("G77_WALL_MEMBERSHIP_EXPIRED")
+    if state is WallEvidenceCurrentness.MEMBERSHIP_POLICY_MISMATCH:
+        _deny("G77_WALL_MEMBERSHIP_POLICY_MISMATCH")
+    if state is WallEvidenceCurrentness.MEMBERSHIP_MISSING:
+        _deny("G77_WALL_MEMBERSHIP_REQUIRED")
+    if state is WallEvidenceCurrentness.ACKNOWLEDGEMENT_MISSING:
+        _deny("G77_WALL_ACKNOWLEDGEMENT_REQUIRED")
+    if state is WallEvidenceCurrentness.ACKNOWLEDGEMENT_REVOKED:
+        _deny("G77_WALL_ACKNOWLEDGEMENT_REVOKED")
+    if state is WallEvidenceCurrentness.ACKNOWLEDGEMENT_EXPIRED:
+        _deny("G77_WALL_ACKNOWLEDGEMENT_EXPIRED")
+    if state is WallEvidenceCurrentness.ACKNOWLEDGEMENT_POLICY_MISMATCH:
+        _deny("G77_WALL_ACKNOWLEDGEMENT_POLICY_MISMATCH")
+    if state is WallEvidenceCurrentness.ACKNOWLEDGEMENT_MEMBERSHIP_MISMATCH:
+        _deny("G77_WALL_ACKNOWLEDGEMENT_MEMBERSHIP_MISMATCH")
+    if state is not WallEvidenceCurrentness.RECORDED_COMPLETE_UNVERIFIED:
+        _deny("G77_WALL_MEMBERSHIP_ACKNOWLEDGEMENT_CORRUPT")
+
+
 def require_source_verified_ethical_wall_access(
     *, authenticated_principal_id: str, tenant_id: str, case_matter_id: str,
     policy_id: str, evaluation_time: datetime, iam_source: object,
     binding_source: object, assignment_source: object, conflict_source: object,
-    review_source: object, wall_source: EthicalWallPolicySource, session: object,
+    review_source: object, wall_source: EthicalWallPolicySource,
+    membership_source: object, acknowledgement_source: object, session: object,
 ) -> NoReturn:
     """Verify every currently available source and always end in bounded denial.
 
@@ -270,6 +302,12 @@ def require_source_verified_ethical_wall_access(
         or current.ratification_state is InstitutionalRatificationState.REVOKED
     ):
         _deny("G77_WALL_REVOKED_OR_SCOPE_INVALID")
+    # D02 negative control: a recorded wall administrator cannot review the
+    # same practitioner's confidentiality decision. This is a denial-only
+    # separation check, not evidence that either identity is institutionally
+    # authorized to hold the recorded role.
+    if review.reviewer_principal_id == current.administrator_principal_id:
+        _deny("G77_REVIEW_ADMIN_SEPARATION_INVALID")
     if (
         review.ethical_wall_policy_reference != current.policy_id
         or review.ethical_wall_policy_fingerprint != current.fingerprint
@@ -287,9 +325,42 @@ def require_source_verified_ethical_wall_access(
     if decision.permits_operational_access is not False:
         _deny("G77_WALL_SOURCE_INVALID")
 
-    # The repository contains no ratified canonical source for reviewer/admin
-    # eligibility or ethical-wall acknowledgment. Recorded fingerprints cannot
-    # fill that institutional gap, so a favorable documentary chain still denies.
+    # Resolve membership first. A current restriction, revocation, expiry or
+    # corrupt/mismatched membership short-circuits before acknowledgement reads.
+    memberships = _resolve(
+        membership_source, "G77_WALL_MEMBERSHIP_SOURCE_UNAVAILABLE", **scope,
+    )
+    if type(memberships) is not tuple or any(
+        type(item) is not WallMembershipEvidence for item in memberships
+    ):
+        _deny("G77_WALL_MEMBERSHIP_SOURCE_INVALID")
+    membership_projection = project_wall_membership_and_acknowledgement(
+        tenant_id=tenant, case_matter_id=matter, policy_id=policy,
+        practitioner_principal_id=principal, policy_fingerprint=current.fingerprint,
+        evaluation_time=at, memberships=memberships, acknowledgements=(),
+    )
+    if membership_projection.state is not WallEvidenceCurrentness.ACKNOWLEDGEMENT_MISSING:
+        _deny_wall_evidence_state(membership_projection.state)
+
+    # Acknowledgements are fetched only after current membership has passed all
+    # explicit-deny and scope checks. Both reads use the identical transaction.
+    acknowledgements = _resolve(
+        acknowledgement_source, "G77_WALL_ACKNOWLEDGEMENT_SOURCE_UNAVAILABLE", **scope,
+    )
+    if type(acknowledgements) is not tuple or any(
+        type(item) is not WallAcknowledgementEvidence for item in acknowledgements
+    ):
+        _deny("G77_WALL_ACKNOWLEDGEMENT_SOURCE_INVALID")
+    projection = project_wall_membership_and_acknowledgement(
+        tenant_id=tenant, case_matter_id=matter, policy_id=policy,
+        practitioner_principal_id=principal, policy_fingerprint=current.fingerprint,
+        evaluation_time=at, memberships=memberships, acknowledgements=acknowledgements,
+    )
+    _deny_wall_evidence_state(projection.state)
+
+    # A complete evidence chain remains non-authorizing until the institutional
+    # issuer, reviewer and independent acknowledgement-verifier authority are
+    # separately established and checked against current IAM.
     _deny("G77_INSTITUTIONAL_AUTHORITY_UNRATIFIED")
 
 
@@ -300,7 +371,7 @@ __all__ = [
 ]
 
 # ARTIFACT: legal_work_ethical_wall_enforcement.py
-# VERSION: v1.0.0-G77-SOURCE-VERIFIED-NEGATIVE-ENFORCEMENT
+# VERSION: v1.1.0-G77-G78-TRANSACTION-BOUND-WALL-EVIDENCE
 # AUTHORITY BOUNDARY: canonical negative verification only; no access grant
 # TENANT POSTURE: exact authenticated tenant/matter/principal on every source
 # FAIL-CLOSED POSTURE: absent, stale, revoked, corrupt or unratified always denies
