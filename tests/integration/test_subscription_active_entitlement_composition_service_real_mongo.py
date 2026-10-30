@@ -220,7 +220,12 @@ def _seed_authority(
         )
 
 
-def _plan(tenant_id: str, features: tuple[str, ...]) -> Any:
+def _plan(
+    tenant_id: str,
+    features: tuple[str, ...],
+    *,
+    key_suffix: str = "",
+) -> Any:
     """Create canonical immutable catalogue truth for one certificate tenant."""
     result = PlanRegistry.create(
         {
@@ -229,7 +234,7 @@ def _plan(tenant_id: str, features: tuple[str, ...]) -> Any:
             "currency": "ZAR",
             "billingFrequency": "monthly",
             "planType": "PROFESSIONAL",
-            "idempotencyKey": f"plan-{tenant_id}",
+            "idempotencyKey": f"plan-{tenant_id}{key_suffix}",
             "active": True,
             "features": list(features),
             "metadata": {"certificate": "D22B3-P43"},
@@ -345,7 +350,7 @@ def test_upgrade_to_legal_plan_commits_subscription_and_entitlement_atomically(
     tenant_id, principal_id = f"tenant-upgrade-{uuid4().hex}", f"principal-upgrade-{uuid4().hex}"
     _seed_authority(collections, tenant_id, principal_id)
     base_plan = _plan(tenant_id, ("crm.core",))
-    target_plan = _plan(tenant_id, ("legal.core", "crm.core"))
+    target_plan = _plan(tenant_id, ("legal.core", "crm.core"), key_suffix="-target")
     created = SubscriptionRegistry.create(
         _command(tenant_id, base_plan.plan_id, f"upgrade-base-{tenant_id}"),
         tenant_id_header=tenant_id,
