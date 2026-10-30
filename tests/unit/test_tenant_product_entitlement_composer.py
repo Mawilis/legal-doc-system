@@ -241,7 +241,22 @@ def test_invalid_commercial_cardinality_or_feature_causes_no_writes(
     assert raised.value.code == code
 
 
-def test_expired_active_commercial_subscription_rejects_before_entitlement_reads(\n    monkeypatch: pytest.MonkeyPatch,\n) -> None:\n    """ACTIVE status cannot extend ordinary commercial access past its term."""\n    Registry.items = (subscription(period_end=NOW - timedelta(seconds=1)),)\n    monkeypatch.setattr(\n        composer,\n        "get_current",\n        lambda *_args, **_kwargs: pytest.fail("entitlement read occurred"),\n    )\n    with pytest.raises(composer.TenantProductEntitlementComposerCommercialError) as raised:\n        invoke()\n    assert raised.value.code == "D22B3_SUBSCRIPTION_TERM_INELIGIBLE"\n\n\ndef test_invalid_canonical_subscription_proof_rejects_before_writes(
+def test_expired_active_commercial_subscription_rejects_before_entitlement_reads(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """ACTIVE status cannot extend ordinary commercial access past its term."""
+    Registry.items = (subscription(period_end=NOW - timedelta(seconds=1)),)
+    monkeypatch.setattr(
+        composer,
+        "get_current",
+        lambda *_args, **_kwargs: pytest.fail("entitlement read occurred"),
+    )
+    with pytest.raises(composer.TenantProductEntitlementComposerCommercialError) as raised:
+        invoke()
+    assert raised.value.code == "D22B3_SUBSCRIPTION_TERM_INELIGIBLE"
+
+
+def test_invalid_canonical_subscription_proof_rejects_before_writes(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
     """A SHA3-shaped but non-canonical proof cannot authorize composition."""
