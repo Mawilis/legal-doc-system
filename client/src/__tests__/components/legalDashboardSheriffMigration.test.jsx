@@ -329,6 +329,21 @@ describe('L8-7D8 governed Legal Operations cockpit', () => {
     expect(
       screen.getByText(/No mock legal truth/i),
     ).toBeInTheDocument();
+
+    const navigation = screen.getByRole('navigation', { name: 'WILSY Legal OS workspace navigation' });
+    expect(within(navigation).getByRole('button', { name: 'Process Service' })).toBeInTheDocument();
+    expect(within(navigation).queryByRole('button', { name: 'My Work' })).not.toBeInTheDocument();
+    for (const prototypeModule of ['Matters', 'Calendar', 'Tasks & Workflow', 'Documents', 'Deadlines & Docket', 'Clients & Contacts', 'Reports / Operations', 'WILSY AI', 'Administration']) {
+      expect(within(navigation).queryByRole('button', { name: prototypeModule })).not.toBeInTheDocument();
+    }
+    expect(screen.queryByText('WILSY AI readiness')).not.toBeInTheDocument();
+    expect(screen.queryByLabelText('Commercial context')).not.toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: 'Allocate work' })).not.toBeInTheDocument();
+
+    const search = screen.getByPlaceholderText('Search receipt, allocation or service work');
+    fireEvent.change(search, { target: { value: 'attempt-active' } });
+    expect(screen.getByText('attempt-active')).toBeInTheDocument();
+    expect(screen.queryByText('document-office')).not.toBeInTheDocument();
   });
 
   it('renders only correlated bound-deputy work and state-valid terminal controls', async () => {
@@ -362,6 +377,12 @@ describe('L8-7D8 governed Legal Operations cockpit', () => {
     expect(screen.queryByText('Office receipt')).not.toBeInTheDocument();
     expect(screen.queryByText('Deputy assignment')).not.toBeInTheDocument();
     expect(screen.queryByText('document-office')).not.toBeInTheDocument();
+
+    const navigation = screen.getByRole('navigation', { name: 'WILSY Legal OS workspace navigation' });
+    expect(within(navigation).getByRole('button', { name: 'My Work' })).toBeInTheDocument();
+    expect(within(navigation).queryByRole('button', { name: 'Process Service' })).not.toBeInTheDocument();
+    expect(within(navigation).queryByRole('button', { name: 'Calendar' })).not.toBeInTheDocument();
+    expect(screen.queryByText('WILSY AI readiness')).not.toBeInTheDocument();
   });
 
   it('renders the shared WILSY OS client workspace chrome with real menu lanes', async () => {
