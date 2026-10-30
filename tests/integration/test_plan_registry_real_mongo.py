@@ -478,7 +478,7 @@ def test_real_mongo_version_topology_health_and_index_contract(
 ) -> None:
     assert (
         PLAN_REGISTRY_VERSION
-        == "v1.2.0-EXACT-TENANT-SCOPE"
+        == "v1.3.0-READ-ONLY-INDEX-VALIDATION"
     )
 
     assert (
@@ -604,7 +604,7 @@ def test_catalogue_read_index_validation_never_performs_ddl(
             pytest.fail("catalogue read attempted createIndexes")
 
     monkeypatch.setattr(
-        plan_registry_module,
+        registry,
         "plans_collection",
         ReadOnlyCollection(),
     )
