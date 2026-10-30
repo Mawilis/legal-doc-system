@@ -1828,14 +1828,35 @@ def test_http_create_derives_calendar_period_and_denies_period_redirection(
 
         assert created.status_code == 201
 
-        assert (
-            "2026-09-01T00:00:00+00:00"
-            in created.text
+        subscription_body = created.json()["data"]["subscription"]
+        start_date = datetime.fromisoformat(subscription_body["start_date"])
+        expected_period_start = datetime(
+            start_date.year,
+            start_date.month,
+            1,
+            tzinfo=timezone.utc,
         )
-
+        if start_date.month == 12:
+            expected_period_end = datetime(
+                start_date.year + 1,
+                1,
+                1,
+                tzinfo=timezone.utc,
+            )
+        else:
+            expected_period_end = datetime(
+                start_date.year,
+                start_date.month + 1,
+                1,
+                tzinfo=timezone.utc,
+            )
         assert (
-            "2026-10-01T00:00:00+00:00"
-            in created.text
+            subscription_body["current_period_start"]
+            == expected_period_start.isoformat()
+        )
+        assert (
+            subscription_body["current_period_end"]
+            == expected_period_end.isoformat()
         )
 
         count_before = (
