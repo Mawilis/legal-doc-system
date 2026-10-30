@@ -10,6 +10,9 @@ ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/tests/integratio
 COLLABORATION / OWNERSHIP: Wilson Khanyezi / Wilsy Core Engineering.
 CERTIFICATION/UPDATE DATE: 2026-10-10.
 CHANGELOG:
+    v1.3.2-D22B5-CURRENT-BILLING-PERIOD-HTTP-CERT makes synthetic HTTP
+    subscription start dates relative to the certification clock so valid
+    commercial subscription tests remain inside their derived billing period.
     v1.3.1-D22B5-UPGRADE-ENTITLEMENT-ROUTER-HTTP-CERT additionally certifies
     upgrade routing through P42 with the unchanged subscription-manage
     dependency, canonical plan selection and shared Legal entitlement transaction.
@@ -55,6 +58,7 @@ from __future__ import annotations
 import hashlib
 import inspect
 import os
+from datetime import datetime, timedelta, timezone
 import uuid
 from collections.abc import Iterator
 from dataclasses import dataclass
@@ -381,7 +385,7 @@ def _command(
         "tenantId": tenant_id,
         "planId": plan_id,
         "startDate":
-            "2026-09-03T00:00:00+00:00",
+            (datetime.now(timezone.utc) - timedelta(days=1)).isoformat(),
         "idempotencyKey": key,
         "billingMode": "PLATFORM",
         "onboardingRef":
