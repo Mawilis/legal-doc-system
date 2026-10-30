@@ -1,7 +1,7 @@
 """Direct ASGI certificate for deputy personal active-work reads.
 
 TITLE: WILSY OS Deputy Personal Work and Field Capability HTTP Certificate
-VERSION: v1.1.0-L8-6D-DEPUTY-FIELD-CAPABILITY-HTTP-CERT
+VERSION: v1.2.0-L8-6D-G68-ROUTER-ALIGNMENT-HTTP-CERT
 AUTHORITY: Direct HTTP certification of L8-6C/L8-6D deputy-only read routes.
 EPITOME: Preserve personal active-work HTTP proof and certify the L8-6D field
          capability route derives tenant/principal scope from authenticated
@@ -12,12 +12,16 @@ COLLABORATION / OWNERSHIP: HTTP composition certificate only; IAM owns caller
                             admission, L8-6B owns identity binding, L8-6C owns
                             personal active work, and L8-6D owns field-capability
                             composition. Command IAM remains independently enforced.
-CERTIFICATION / UPDATE DATE: 2026-09-23
-CHANGELOG: 2026-09-23 v1.1.0-L8-6D-DEPUTY-FIELD-CAPABILITY-HTTP-CERT
+CERTIFICATION / UPDATE DATE: 2026-10-30
+CHANGELOG: 2026-10-30 v1.2.0-L8-6D-G68-ROUTER-ALIGNMENT-HTTP-CERT
+           aligns the exact router-version assertion with the current
+           v1.17.0-G68-P2-PRACTITIONER-CONFIDENTIALITY-CONTAINMENT router;
+           preserves deputy route, permission, binding, and fail-closed proofs.
+           2026-09-23  2026-09-23 v1.2.0-L8-6D-G68-ROUTER-ALIGNMENT-HTTP-CERT
            adds exact deputy field-capability dispatch/response proof, missing
            binding 403, bounded locator/capability 503, no caller scope input,
            and router v1.5.0 binding while preserving L8-6C active-work tests.
-           2026-09-23 v1.1.0-L8-6D-DEPUTY-FIELD-CAPABILITY-HTTP-CERT
+           2026-09-23 v1.2.0-L8-6D-G68-ROUTER-ALIGNMENT-HTTP-CERT
            establishes authentication denial, exact tenant/principal dispatch,
            bounded response shape, binding-required 403, evidence/persistence
            503 mapping, and production-version/permission binding.
@@ -62,7 +66,7 @@ from tools.eos.legal_operations.domain.legal_operations_lifecycle import (
 )
 
 
-VERSION = "v1.1.0-L8-6D-DEPUTY-FIELD-CAPABILITY-HTTP-CERT"
+VERSION = "v1.2.0-L8-6D-G68-ROUTER-ALIGNMENT-HTTP-CERT"
 TENANT = "tenant-deputy"
 PRINCIPAL = "principal-deputy"
 DEPUTY = "deputy-1"
@@ -392,13 +396,13 @@ def test_route_permission_and_router_version_are_exact() -> None:
     )
     assert legal_router._DEPUTY_QUEUE_READ.operation == "legal_deputy_queue_read"
     assert legal_router.VERSION == (
-        "v1.10.0-D22B5-R21-LEGAL-PRODUCT-AVAILABILITY-CONJUNCTION"
+        "v1.17.0-G68-P2-PRACTITIONER-CONFIDENTIALITY-CONTAINMENT"
     )
-    assert VERSION == "v1.1.0-L8-6D-DEPUTY-FIELD-CAPABILITY-HTTP-CERT"
+    assert VERSION == "v1.2.0-L8-6D-G68-ROUTER-ALIGNMENT-HTTP-CERT"
 
 
 # ARTIFACT: test_deputy_personal_active_work_http.py
-# VERSION: v1.1.0-L8-6D-DEPUTY-FIELD-CAPABILITY-HTTP-CERT
+# VERSION: v1.2.0-L8-6D-G68-ROUTER-ALIGNMENT-HTTP-CERT
 # AUTHORITY BOUNDARY: direct deputy-only personal active-work and field-capability HTTP certificate only
 # TENANT POSTURE: tenant/principal are server-derived from authorized identity context
 # FAIL-CLOSED POSTURE: missing IAM/binding/locator/capability/persistence denies without command or queue fallback
