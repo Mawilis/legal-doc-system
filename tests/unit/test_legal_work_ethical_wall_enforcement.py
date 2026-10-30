@@ -280,10 +280,13 @@ def test_recorded_approval_still_denies_unratified_institutional_authority() -> 
 def test_wall_membership_restriction_precedes_acknowledgement() -> None:
     values = sources()
     source = values["membership_source"]
+    acknowledgement_source = values["acknowledgement_source"]
     member = source.value[0]  # type: ignore[union-attr]
     restricted = replace(member, state="RESTRICTED")
+    values["membership_source"] = Source((restricted,))
     with pytest.raises(service.EthicalWallEnforcementDenied, match="WALL_MEMBERSHIP_RESTRICTED"):
-        enforce(membership_source=Source((restricted,)))
+        enforce(**values)
+    assert acknowledgement_source.calls == 0  # type: ignore[union-attr]
 
 
 def test_wall_acknowledgement_must_bind_current_membership() -> None:
