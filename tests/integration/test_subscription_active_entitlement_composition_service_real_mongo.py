@@ -247,7 +247,8 @@ def _plan(
             "metadata": {"certificate": "D22B3-P43"},
             "tags": ["d22b3-p43"],
             "user": "D22B3-P43-CERT",
-        }
+        },
+        tenant_id=tenant_id,
     )
     assert result["success"] is True
     return result["plan"]
