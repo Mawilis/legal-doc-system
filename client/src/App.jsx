@@ -11,13 +11,13 @@
  *                            TenantProvider owns bounded tenant projection;
  *                            Python EOS owns authentication, workspace and
  *                            legal-acceptance truth.
- * CERTIFICATION / UPDATE DATE: 2026-09-24
+ * CERTIFICATION / UPDATE DATE: 2026-10-30
  * CHANGELOG:
  *   v20.2.0-TENANT-SUBSCRIPTION-MANAGEMENT-ROUTE — Adds a protected /billing
  *     route for authenticated tenant owners, administrators and managers, plus
  *     existing finance and sovereign operators. Route eligibility is a client
  *     presentation filter only; Python EOS remains final subscription authority.
- *   v20.2.0-TENANT-SUBSCRIPTION-MANAGEMENT-ROUTE — Promotes the legal boundary
+ *   v20.1.1-ALL-PROTECTED-ROUTES-LOGOUT-PROPAGATION — Promotes the legal boundary
  *     from REQUIRED to COMPLETE only when LegalAcceptanceGate reports the
  *     server-confirmed COMPLETE state, so the protected runtime mounts in the
  *     same browser session. Protected-route fallback now preserves an already
