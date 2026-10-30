@@ -681,6 +681,7 @@ describe('D15 first-class Legal Matter Operating Room', () => {
         user={{
           id: 'principal-attorney-intake-only',
           permissions: ['legal_operations:instruction:write'],
+          legalPermissionsAuthoritative: true,
         }}
       />,
     );
@@ -802,6 +803,7 @@ describe('D15 first-class Legal Matter Operating Room', () => {
         user={{
           id: 'principal-finance-invoice-only',
           permissions: ['legal_operations:invoice:read'],
+          legalPermissionsAuthoritative: true,
         }}
         tenantConfig={{ tenantId: 'tenant-law' }}
       />,
