@@ -10,6 +10,8 @@ ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/tests/integratio
 COLLABORATION / OWNERSHIP: Wilson Khanyezi / Wilsy Core Engineering.
 CERTIFICATION/UPDATE DATE: 2026-10-10.
 CHANGELOG:
+    v1.3.3-D22B5-CURRENT-BILLING-PERIOD-HTTP-CERT asserts calendar period
+    bounds relative to the request start date rather than a stale fixed month.
     v1.3.2-D22B5-CURRENT-BILLING-PERIOD-HTTP-CERT makes synthetic HTTP
     subscription start dates relative to the certification clock so valid
     commercial subscription tests remain inside their derived billing period.
