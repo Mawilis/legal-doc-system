@@ -11,7 +11,9 @@ COLLABORATION / OWNERSHIP: SubscriptionRegistry owns commercial lifecycle;
                             issuance; this service alone owns their shared
                             Mongo transaction lifecycle.
 CERTIFICATION / UPDATE DATE: 2026-10-09
-CHANGELOG: v1.1.0-D22B3-P42-CATALOGUE-UPGRADE-COMPOSITION
+CHANGELOG: v1.2.0-P42-SUBSCRIPTION-TERM-ENFORCEMENT adds the shared
+           subscription term gate before Legal entitlement issuance.
+           v1.1.0-D22B3-P42-CATALOGUE-UPGRADE-COMPOSITION
            adds tenant-authorized catalogue upgrade to the shared transaction,
            validates the resulting UPGRADE audit proof, and derives distinct
            issuance replay coordinates from the resulting immutable subscription
