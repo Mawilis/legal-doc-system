@@ -4598,212 +4598,46 @@ const SPECIALIST_WORKSPACE_VIEWS = Object.freeze({
   PROCESS_SERVICE: 'PROCESS_SERVICE',
 });
 
-const SPECIALIST_ACCESS_STATES = Object.freeze({
-  AVAILABLE: 'AVAILABLE',
-  DENIED: 'DENIED',
-  UNAVAILABLE: 'UNAVAILABLE',
-});
-
-const specialistWorkspaceNavigation = (roleMode) => {
-  const sheriff = roleMode === ROLE_MODES.SHERIFF;
-  const deputy = roleMode === ROLE_MODES.DEPUTY;
-
-  const item = (
-    id,
-    label,
-    icon,
-    state,
-    reason = '',
-  ) => ({ id, label, icon, state, reason });
-
-  return [
-    item(
-      SPECIALIST_WORKSPACE_VIEWS.MY_WORK,
-      'My Work',
-      ClipboardList,
-      SPECIALIST_ACCESS_STATES.AVAILABLE,
-    ),
-    item(
-      SPECIALIST_WORKSPACE_VIEWS.PROCESS_SERVICE,
-      'Process Service',
-      Scale,
-      SPECIALIST_ACCESS_STATES.AVAILABLE,
-    ),
-    item(
-      'MATTERS',
-      'Matters',
-      FileText,
-      SPECIALIST_ACCESS_STATES.DENIED,
-      sheriff
-        ? 'Matter-practice workspace is not part of the current Sheriff authority projection.'
-        : 'Matter-practice workspace is not part of the current bound-Deputy authority projection.',
-    ),
-    item(
-      'CALENDAR',
-      'Calendar',
-      Clock3,
-      SPECIALIST_ACCESS_STATES.UNAVAILABLE,
-      'A certified specialist calendar source has not yet been wired to this Legal OS workspace.',
-    ),
-    item(
-      'TASKS',
-      'Tasks & Workflow',
-      ClipboardList,
-      SPECIALIST_ACCESS_STATES.UNAVAILABLE,
-      'A certified specialist task/workflow source has not yet been wired to this Legal OS workspace.',
-    ),
-    item(
-      'DOCUMENTS',
-      'Documents',
-      FileText,
-      SPECIALIST_ACCESS_STATES.DENIED,
-      'The general Legal document workspace is outside this specialist presentation scope.',
-    ),
-    item(
-      'DEADLINES',
-      'Deadlines & Docket',
-      Clock3,
-      SPECIALIST_ACCESS_STATES.DENIED,
-      'Practice deadline authority is not projected into this specialist workspace.',
-    ),
-    item(
-      'CLIENTS',
-      'Clients & Contacts',
-      UserCheck,
-      SPECIALIST_ACCESS_STATES.DENIED,
-      'Client/contact workspace authority is not projected into this specialist workspace.',
-    ),
-    item(
-      'REPORTS',
-      'Reports / Operations',
-      Landmark,
-      SPECIALIST_ACCESS_STATES.UNAVAILABLE,
-      'Certified specialist reporting sources have not yet been wired to this workspace.',
-    ),
-    item(
-      'WILSY_AI',
-      'WILSY AI',
-      Bot,
-      SPECIALIST_ACCESS_STATES.UNAVAILABLE,
-      'Governed WILSY AI specialist actions require a separately certified tool-authority source.',
-    ),
-    item(
-      'ADMINISTRATION',
-      'Administration',
-      ShieldCheck,
-      sheriff
-        ? SPECIALIST_ACCESS_STATES.UNAVAILABLE
-        : SPECIALIST_ACCESS_STATES.DENIED,
-      sheriff
-        ? 'Sheriff administration controls require a certified administration capability source.'
-        : 'Administration is outside the bound-Deputy presentation scope.',
-    ),
-  ];
-};
-
 function LegalSpecialistWorkspaceRail({
   activeView,
-  onDenied,
   onSelect,
   roleMode,
 }) {
-  const entries = specialistWorkspaceNavigation(roleMode);
+  const entries = roleMode === ROLE_MODES.SHERIFF
+    ? [{
+      id: SPECIALIST_WORKSPACE_VIEWS.PROCESS_SERVICE,
+      label: 'Process Service',
+      icon: Scale,
+    }]
+    : roleMode === ROLE_MODES.DEPUTY
+      ? [{
+        id: SPECIALIST_WORKSPACE_VIEWS.MY_WORK,
+        label: 'My Work',
+        icon: ClipboardList,
+      }]
+      : [];
 
   return (
     <nav aria-label="WILSY Legal OS workspace navigation">
       {entries.map((entry) => {
         const Icon = entry.icon;
-        const available =
-          entry.state === SPECIALIST_ACCESS_STATES.AVAILABLE;
-        const active = available && activeView === entry.id;
-
+        const active = activeView === entry.id;
         return (
           <button
             key={entry.id}
             type="button"
             data-active={active ? 'true' : 'false'}
-            data-access-state={entry.state}
-            data-legal-workspace-section={entry.id}
             aria-current={active ? 'page' : undefined}
-            aria-disabled={!available}
-            title={available ? entry.label : entry.reason}
-            style={
-              available
-                ? undefined
-                : {
-                    cursor: 'not-allowed',
-                    opacity: 0.45,
-                  }
-            }
-            onClick={() => {
-              if (available) {
-                onDenied(null);
-                onSelect(entry.id);
-                return;
-              }
-              onDenied({
-                label: entry.label,
-                state: entry.state,
-                reason: entry.reason,
-              });
-            }}
+            data-legal-workspace-section={entry.id}
+            onClick={() => onSelect(entry.id)}
+            title={entry.label}
           >
             <Icon size={16} aria-hidden="true" />
             <span>{entry.label}</span>
-            {!available ? (
-              <LockKeyhole
-                size={13}
-                aria-label={`${entry.label} restricted`}
-              />
-            ) : null}
           </button>
         );
       })}
     </nav>
-  );
-}
-
-function LegalWorkspaceAccessNotice({ notice, onDismiss }) {
-  if (!notice) return null;
-
-  return (
-    <section
-      role="status"
-      aria-label="Workspace access notice"
-      className="rounded-xl border border-amber-900/40 bg-amber-950/15 p-4"
-    >
-      <div className="flex items-start gap-3">
-        <LockKeyhole
-          className="mt-0.5 shrink-0 text-amber-400"
-          size={18}
-        />
-        <div className="min-w-0 flex-1">
-          <p className="text-[10px] font-black uppercase tracking-[0.16em] text-amber-400">
-            {notice.state === SPECIALIST_ACCESS_STATES.DENIED
-              ? 'Access not permitted'
-              : 'Workspace source not available'}
-          </p>
-          <p className="mt-1 text-sm font-black text-white">
-            {notice.label}
-          </p>
-          <p className="mt-2 text-xs leading-5 text-stone-400">
-            {notice.reason}
-          </p>
-          <p className="mt-2 text-[10px] leading-5 text-stone-600">
-            This navigation state is explanatory presentation only. Python EOS
-            independently authorizes every server request and remains the final
-            authority.
-          </p>
-        </div>
-        <button
-          type="button"
-          onClick={onDismiss}
-          className="rounded-lg border border-stone-800 px-2 py-1 text-[10px] font-bold text-stone-400 hover:text-white"
-        >
-          Dismiss
-        </button>
-      </div>
-    </section>
   );
 }
 
@@ -4819,10 +4653,11 @@ export default function LegalDashboard({
   } = useAuth() || {};
   const currentUser = user || authenticatedUser || null;
   const roleMode = useMemo(() => resolveRoleMode(roleView), [roleView]);
-  const [specialistWorkspaceView, setSpecialistWorkspaceView] = useState(
-    SPECIALIST_WORKSPACE_VIEWS.MY_WORK,
-  );
-  const [specialistAccessNotice, setSpecialistAccessNotice] = useState(null);
+  const [specialistWorkspaceView, setSpecialistWorkspaceView] = useState(() => (
+    roleMode === ROLE_MODES.SHERIFF
+      ? SPECIALIST_WORKSPACE_VIEWS.PROCESS_SERVICE
+      : SPECIALIST_WORKSPACE_VIEWS.MY_WORK
+  ));
   const [specialistAccountCenterOpen, setSpecialistAccountCenterOpen] = useState(false);
   const [queues, setQueues] = useState(EMPTY_QUEUES);
   const [deputyWork, setDeputyWork] = useState(EMPTY_DEPUTY_WORK);
@@ -5391,7 +5226,6 @@ export default function LegalDashboard({
         <div className="space-y-3">
           <LegalSpecialistWorkspaceRail
             activeView={specialistWorkspaceView}
-            onDenied={setSpecialistAccessNotice}
             onSelect={setSpecialistWorkspaceView}
             roleMode={roleMode}
           />
@@ -5414,24 +5248,18 @@ export default function LegalDashboard({
         className="space-y-6"
         data-legal-workspace-viewport={specialistWorkspaceView}
       >
-        <LegalWorkspaceAccessNotice
-          notice={specialistAccessNotice}
-          onDismiss={() => setSpecialistAccessNotice(null)}
-        />
         <section className="flex flex-col gap-3 border-b border-stone-800 pb-4 md:flex-row md:items-end md:justify-between">
           <div>
             <p className="text-[10px] font-black uppercase tracking-[0.18em] text-stone-500">
               {isDeputyMode ? 'Deputy workspace' : 'Sheriff workspace'}
             </p>
             <h2 className="mt-1 text-xl font-black text-white">
-              {specialistWorkspaceView === SPECIALIST_WORKSPACE_VIEWS.MY_WORK
-                ? 'My Work'
-                : 'Process Service'}
+              {isDeputyMode ? 'My Work' : 'Process Service'}
             </h2>
             <p className="mt-1 text-xs leading-5 text-stone-500">
-              {specialistWorkspaceView === SPECIALIST_WORKSPACE_VIEWS.MY_WORK
-                ? 'Current work requiring attention from certified server projections.'
-                : 'Canonical process-service lifecycle work and field execution evidence.'}
+              {isDeputyMode
+                ? 'Only this bound deputy’s current assigned service work and server-issued field actions.'
+                : 'Office receipt, deputy allocation and active service attempts from canonical Legal Operations queues.'}
             </p>
           </div>
           <div
@@ -5728,7 +5556,7 @@ export default function LegalDashboard({
 
 /**
  * ARTIFACT: LegalDashboard.jsx
- * VERSION: v13.1.1-D21B12-SHARED-BRANDING-LIFECYCLE
+ * VERSION: v13.3.0-SPECIALIST-OPERATING-NAVIGATION
  * AUTHORITY BOUNDARY: governed Legal Practice/Finance/SHERIFF/DEPUTY/LEGAL_CLIENT presentation plus already-authorized intake, ReturnOfService, bounded human conflict-review command initiation and bound-Deputy command initiation only; D24C authenticated person names and L8-8M conflict-review controls are descriptive/wiring projections that create no identity, membership, role, permission, tenant, operating-model, conflict clearance, waiver or financial authority; Python EOS owns authorization and legal truth
  * TENANT POSTURE: every data surface remains server-authorized and tenant-scoped; practice workspace is D15 snapshot truth with first-class CaseMatter evidence, client matters are D5/D7 visibility-bound, deputy commands require exact capability parity
  * FAIL-CLOSED POSTURE: unresolved role, malformed/absent person-name text, explicit or server-authoritative legal-permission narrowing, denied/unavailable workspace/client/specialist read, malformed finance/intake/return/field evidence, command failure or failed refresh never invents names or truth, widens role scope, fabricates operating-model authority or cross-role fallback
