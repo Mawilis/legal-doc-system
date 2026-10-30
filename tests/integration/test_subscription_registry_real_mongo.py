@@ -2803,7 +2803,7 @@ def test_real_mongo_legacy_reconcile_then_install_canonical_indexes(
             collection,
         )
 
-        registry.provision_indexes()
+        registry._ensure_indexes()
 
         indexes = {
             entry["name"]: entry
@@ -3067,7 +3067,7 @@ def test_real_mongo_legacy_idempotency_index_reconciliation_precedes_migration(
             collection,
         )
 
-        registry.provision_indexes()
+        registry._ensure_indexes()
 
         canonical_indexes = {
             entry["name"]: entry
