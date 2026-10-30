@@ -28,9 +28,17 @@ from tools.eos.legal_operations.domain.legal_work_practitioner_confidentiality_r
 from tools.eos.legal_operations.registry import legal_practitioner_matter_binding_registry as binding_registry
 from tools.eos.legal_operations.registry.legal_work_assignment_registry import LegalWorkAssignmentRegistry
 from tools.eos.legal_operations.registry.legal_work_ethical_wall_policy_registry import EthicalWallPolicyRegistry
+from tools.eos.legal_operations.registry.legal_work_ethical_wall_membership_acknowledgement_registry import (
+    WallMembershipAcknowledgementRegistry,
+    MEMBERSHIP_COLLECTION,
+    ACKNOWLEDGEMENT_COLLECTION,
+)
 from tools.eos.legal_operations.service import legal_work_ethical_wall_source_adapters as adapters
 from tests.unit.test_legal_work_ethical_wall_policy_registry import revision as wall_revision
 from tests.unit.test_legal_work_ethical_wall_source_adapters import assignment, binding, review
+from tests.unit.test_legal_work_ethical_wall_membership_acknowledgement import (
+    membership as wall_membership, acknowledgement as wall_acknowledgement,
+)
 
 URI = os.environ["WILSY_G78_REAL_MONGO_URI"]
 NOW = datetime(2026, 10, 21, 16, 0, tzinfo=UTC)
@@ -87,6 +95,36 @@ def test_real_multisource_current_reads(context: Any) -> None:
             source = adapters.CanonicalEthicalWallPolicySource(walls)
             assert source.get_current("tenant-a", "matter-a", "wall-1", session=session) == wall
             assert source.list_history("tenant-a", "matter-a", "wall-1", session=session) == (wall,)
+
+
+
+def test_real_mongo_membership_and_acknowledgement_are_policy_and_transaction_bound(context: Any) -> None:
+    client, database, *_ = context
+    registry = WallMembershipAcknowledgementRegistry(
+        database[MEMBERSHIP_COLLECTION], database[ACKNOWLEDGEMENT_COLLECTION],
+    )
+    registry.ensure_indexes()
+    member = wall_membership()
+    acknowledgement = wall_acknowledgement(member)
+    with client.start_session() as session:
+        with session.start_transaction():
+            registry.append_membership(member, session=session)
+            registry.append_acknowledgement(acknowledgement, session=session)
+    with client.start_session() as session:
+        with session.start_transaction():
+            membership_source = adapters.CanonicalWallMembershipSource(registry, "wall-a")
+            acknowledgement_source = adapters.CanonicalWallAcknowledgementSource(registry, "wall-a")
+            assert membership_source.resolve_current(
+                tenant_id="tenant-a", case_matter_id="matter-a",
+                practitioner_principal_id="practitioner-a", session=session,
+            ) == (member,)
+            assert acknowledgement_source.resolve_current(
+                tenant_id="tenant-a", case_matter_id="matter-a",
+                practitioner_principal_id="practitioner-a", session=session,
+            ) == (acknowledgement,)
+            assert registry.list_membership_history(
+                "tenant-b", "matter-a", "wall-a", "practitioner-a", session=session,
+            ) == ()
 
 
 def test_real_revocation_blocks_binding_currentness(context: Any) -> None:
