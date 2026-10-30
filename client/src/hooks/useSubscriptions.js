@@ -3,7 +3,7 @@
  * Wilsy OS — useSubscriptions Hook
  * ═══════════════════════════════════════════════════════════════════════════════
  * File:           client/src/hooks/useSubscriptions.js
- * Version:        v2.0.1-IMPORT-PATCH
+ * Version:        v2.0.2-PYTHON-EOS-CATALOGUE-PLAN-SELECTION
  * Authority:      Wilsy OS Core Governance
  * Epitome:        Centralized hook for managing subscription lifecycle.
  *                 Consumes the subscriptionApi service client.
@@ -188,8 +188,8 @@ export const useSubscriptions = (tenantId = null, { autoLoad = true } = {}) => {
     cancel: (subscriptionId, options) => cancelSubscription(subscriptionId, options?.reason || ''),
     pause: (subscriptionId, options = {}) => lifecycle(subscriptionId, 'pause', { pauseReason: options.reason, pauseUntil: options.pauseUntil }),
     resume: (subscriptionId, options = {}) => lifecycle(subscriptionId, 'resume', { metadata: options.metadata || {} }),
-    upgrade: (subscriptionId, options = {}) => lifecycle(subscriptionId, 'upgrade', options),
-    downgrade: (subscriptionId, options = {}) => lifecycle(subscriptionId, 'downgrade', options),
+    upgrade: (subscriptionId, options = {}) => lifecycle(subscriptionId, 'upgrade', { newPlanId: options.newPlanId }),
+    downgrade: (subscriptionId, options = {}) => lifecycle(subscriptionId, 'downgrade', { newPlanId: options.newPlanId }),
     reactivate: (subscriptionId, options = {}) => lifecycle(subscriptionId, 'reactivate', { metadata: options.metadata || {} }),
     getAudit,
   };
@@ -201,7 +201,7 @@ export default useSubscriptions;
  * ═══════════════════════════════════════════════════════════════════════════════
  * 🏛️ INSTITUTIONAL CERTIFICATION SEAL
  * Status:          CERTIFIED PRODUCTION ARTIFACT
- * Version:         v2.0.1-IMPORT-PATCH
+ * Version:         v2.0.2-PYTHON-EOS-CATALOGUE-PLAN-SELECTION
  * Health Check:
  *   ✅ Import path corrected to services/api
  *   ✅ Telemetry embedded on all operations
