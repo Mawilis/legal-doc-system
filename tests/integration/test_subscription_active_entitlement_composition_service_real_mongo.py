@@ -165,7 +165,7 @@ def mongo_context(
         monkeypatch.setattr(service_module, "get_client", lambda: client)
         monkeypatch.setattr(service_module, "get_database", lambda: database)
 
-        PlanRegistry._ensure_indexes()
+        PlanRegistry.provision_indexes()
         subscription_registry_module._ensure_indexes()
         PrincipalAuthorityRepository.ensure_indexes(collections["principal"])
         TenantMembershipRepository.ensure_indexes(collections["membership"])
