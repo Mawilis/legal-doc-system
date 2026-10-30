@@ -1,7 +1,7 @@
 """Direct certificate for bounded SubscriptionRegistry transaction injection.
 
 TITLE: SubscriptionRegistry Transaction Injection Direct Certificate
-VERSION: v1.0.0-D22B3-P34-SUBSCRIPTION-TRANSACTION-INJECTION-CERT
+VERSION: v1.1.0-D22B3-P34-CATALOGUE-CHANGE-TRANSACTION-CERT
 AUTHORITY: Wilsy OS Core Governance
 EPITOME: Prove exact optional collection/session forwarding while preserving
          legacy defaults, lifecycle delegation and caller transaction ownership.
@@ -9,9 +9,9 @@ ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/tests/unit/test_
 COLLABORATION / OWNERSHIP: SubscriptionRegistry owns subscription persistence;
                             callers retain Mongo transaction lifecycle authority.
 CERTIFICATION / UPDATE DATE: 2026-10-09
-CHANGELOG: v1.0.0-D22B3-P34-SUBSCRIPTION-TRANSACTION-INJECTION-CERT adds direct
-           evidence for create, duplicate replay, mutation CAS and lifecycle
-           collection/session propagation without authority-semantic changes.
+CHANGELOG: v1.1.0-D22B3-P34-CATALOGUE-CHANGE-TRANSACTION-CERT adds exact
+           caller collection/session forwarding evidence for upgrade and
+           downgrade catalogue transitions, including tenant-scoped read/CAS.
 COMPLIANCE: POPIA section 19; GDPR Article 32; SOC 2 CC7.2.
 SECURITY / PRIVACY POSTURE: Synthetic identifiers only; no credentials or PII.
 TENANT BOUNDARY: Every asserted read/write retains exact tenant scope.
@@ -220,7 +220,7 @@ def test_replace_preserves_exact_revision_cas_and_session(
     )]
 
 
-@pytest.mark.parametrize("method_name", ["resume", "reactivate"])
+@pytest.mark.parametrize("method_name", ["resume", "reactivate", "upgrade", "downgrade"])
 def test_lifecycle_methods_forward_exact_dependencies(
     monkeypatch: pytest.MonkeyPatch, method_name: str,
 ) -> None:
@@ -234,9 +234,15 @@ def test_lifecycle_methods_forward_exact_dependencies(
 
     monkeypatch.setattr(SubscriptionRegistry, "_mutate", classmethod(mutate))
     method = getattr(SubscriptionRegistry, method_name)
-    result = method(
-        "sub-p34", "tenant-p34", collection=collection, session=session
-    )
+    if method_name in {"upgrade", "downgrade"}:
+        result = method(
+            "sub-p34", "tenant-p34", {"newPlanId": "plan-p34"},
+            collection=collection, session=session,
+        )
+    else:
+        result = method(
+            "sub-p34", "tenant-p34", collection=collection, session=session
+        )
     assert result["success"] is True
     assert captured == {"collection": collection, "session": session}
 
@@ -259,7 +265,7 @@ def test_lifecycle_transition_laws_remain_exact() -> None:
     assert source.count('"status": SubscriptionStatus.ACTIVE.value') >= 2
 
 # ARTIFACT: test_subscription_registry_transaction_injection.py
-# VERSION: v1.0.0-D22B3-P34-SUBSCRIPTION-TRANSACTION-INJECTION-CERT
+# VERSION: v1.1.0-D22B3-P34-CATALOGUE-CHANGE-TRANSACTION-CERT
 # AUTHORITY BOUNDARY: direct dependency-injection certification only
 # TENANT POSTURE: exact tenant-filter and dependency-forwarding assertions
 # FAIL-CLOSED POSTURE: session loss, collection drift and CAS drift fail tests
