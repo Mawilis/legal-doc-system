@@ -5,7 +5,7 @@ TITLE:
     WILSY OS Subscription Registry — Real Mongo Persistence
 
 VERSION:
-    v1.4.0-CALLER-TRANSACTION-INJECTION
+    v1.5.0-CATALOGUE-CHANGE-TRANSACTION-INJECTION
 
 AUTHORITY:
     Wilsy OS Core Governance
@@ -28,6 +28,13 @@ CERTIFICATION / UPDATE DATE:
     2026-10-09
 
 CHANGELOG:
+    v1.5.0-CATALOGUE-CHANGE-TRANSACTION-INJECTION:
+        - Adds caller-owned collection/session propagation to catalogue
+          upgrade and downgrade transitions, including tenant-scoped read,
+          canonical plan resolution, proof generation and optimistic CAS write.
+        - Preserves the caller transaction boundary; no session lifecycle or
+          retry authority is introduced.
+
     v1.4.0-CALLER-TRANSACTION-INJECTION:
         - Adds optional collection and session injection to create, resume,
           reactivate and their bounded persistence helpers.
@@ -190,7 +197,7 @@ from ..domain.subscription import (
 )
 
 
-VERSION = "v1.4.0-CALLER-TRANSACTION-INJECTION"
+VERSION = "v1.5.0-CATALOGUE-CHANGE-TRANSACTION-INJECTION"
 
 _SCHEMA_VERSION = "WILSY-SUBSCRIPTION-REGISTRY/V1"
 
@@ -1097,8 +1104,16 @@ class SubscriptionRegistry:
         change_data: dict[str, Any] | None,
         *,
         action: AuditAction,
+        collection: Any = None,
+        session: Any = None,
     ) -> dict[str, Any]:
-        """Persist one PlanRegistry-derived subscription catalogue transition."""
+        """Persist one catalogue transition inside an optional caller transaction.
+
+        The caller retains transaction lifecycle. Exact collection/session
+        values flow through the tenant-scoped read and optimistic-CAS write.
+        Plan authority remains PlanRegistry; this method grants no payment,
+        entitlement, identity or settlement authority.
+        """
         data = change_data or {}
 
         if (
@@ -1211,6 +1226,8 @@ class SubscriptionRegistry:
             subscription_id,
             tenant_id,
             updater,
+            collection=collection,
+            session=session,
         )
 
     @classmethod
@@ -2278,13 +2295,22 @@ class SubscriptionRegistry:
         subscription_id: str,
         tenant_id_header: str | None = None,
         upgrade_data: dict[str, Any] | None = None,
+        *,
+        collection: Any = None,
+        session: Any = None,
     ) -> dict[str, Any]:
-        """Upgrade only to a canonical PlanRegistry-selected plan."""
+        """Upgrade to a canonical plan inside an optional caller transaction.
+
+        No identity, entitlement or payment authority is added; upstream
+        authorization and the caller-owned transaction remain mandatory.
+        """
         return cls._change_catalogue_plan(
             subscription_id,
             tenant_id_header,
             upgrade_data,
             action=AuditAction.UPGRADE,
+            collection=collection,
+            session=session,
         )
 
     @classmethod
@@ -2293,13 +2319,18 @@ class SubscriptionRegistry:
         subscription_id: str,
         tenant_id_header: str | None = None,
         downgrade_data: dict[str, Any] | None = None,
+        *,
+        collection: Any = None,
+        session: Any = None,
     ) -> dict[str, Any]:
-        """Downgrade only to a canonical PlanRegistry-selected plan."""
+        """Downgrade to a canonical plan inside an optional caller transaction."""
         return cls._change_catalogue_plan(
             subscription_id,
             tenant_id_header,
             downgrade_data,
             action=AuditAction.DOWNGRADE,
+            collection=collection,
+            session=session,
         )
 
     @classmethod
@@ -2809,7 +2840,7 @@ __all__ = [
 # WILSY OS SOVEREIGN ARTIFACT SEAL
 # =============================================================================
 # ARTIFACT: tools/eos/saas/billing/subscription_registry.py
-# VERSION: v1.4.0-CALLER-TRANSACTION-INJECTION
+# VERSION: v1.5.0-CATALOGUE-CHANGE-TRANSACTION-INJECTION
 # AUTHORITY BOUNDARY:
 #   Canonical tenant-scoped subscription persistence and lifecycle mutation
 #   only. Authentication, membership, permission, AI entitlement, AI metering,
