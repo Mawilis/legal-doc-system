@@ -91,6 +91,8 @@ def read_practitioner_document_content(
     conflict_source: object,
     review_source: object,
     wall_source: EthicalWallPolicySource,
+    membership_source: object,
+    acknowledgement_source: object,
     content_reader: PractitionerContentReader,
     session: object,
 ) -> bytes:
@@ -138,6 +140,8 @@ def read_practitioner_document_content(
             conflict_source=conflict_source,
             review_source=review_source,
             wall_source=wall_source,
+            membership_source=membership_source,
+            acknowledgement_source=acknowledgement_source,
             session=session,
         )
     except EthicalWallEnforcementDenied as error:
