@@ -89,6 +89,8 @@ def test_legacy_pro_evidence_remains_an_ordinary_separate_subscription() -> None
         billing_mode="PLATFORM",
         current_period_end=NOW - timedelta(seconds=1),
         legacy_evidence_status=marker,
+        legacy_proof_hash="a" * 128,
+        legacy_node_merkle_root="b" * 128,
     )
     result = evaluate_subscription_term(legacy, evaluated_at=NOW)
     assert result.kind is SubscriptionTermKind.EXPIRED_BILLING_PERIOD
