@@ -121,6 +121,12 @@ def test_client_metadata_and_tags_cannot_forge_founder_exception() -> None:
     assert result.eligible is False
 
 
+def test_corrupt_subscription_proof_fails_closed() -> None:
+    corrupted = replace(_founder(), proof_hash="f" * 128)
+    with pytest.raises(SubscriptionTermPolicyError, match="INTEGRITY"):
+        evaluate_subscription_term(corrupted, evaluated_at=NOW)
+
+
 def test_naive_evaluation_time_fails_closed() -> None:
     with pytest.raises(SubscriptionTermPolicyError):
         evaluate_subscription_term(_founder(), evaluated_at=NOW.replace(tzinfo=None))
