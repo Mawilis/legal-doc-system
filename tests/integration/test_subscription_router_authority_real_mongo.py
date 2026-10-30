@@ -523,7 +523,7 @@ def context(monkeypatch: pytest.MonkeyPatch) -> Iterator[Context]:
         plans
     )
 
-    PlanRegistry._ensure_indexes()
+    PlanRegistry.provision_indexes()
     service_module._authorization_registry(database).ensure_indexes()
     ensure_entitlement_indexes(
         database[ENTITLEMENT_HISTORY_COLLECTION],
