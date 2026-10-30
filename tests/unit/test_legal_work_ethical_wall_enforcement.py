@@ -47,6 +47,10 @@ from tools.eos.legal_operations.domain.legal_work_practitioner_confidentiality_r
     ConfidentialityReviewDecisionState,
     EthicalWallRequirement,
 )
+from tools.eos.legal_operations.domain.legal_work_ethical_wall_membership_acknowledgement import (
+    WallMembershipEvidence, WallAcknowledgementEvidence,
+    MembershipState, AcknowledgementState,
+)
 from tools.eos.legal_operations.service import legal_work_ethical_wall_enforcement as service
 
 NOW = datetime(2026, 10, 21, 15, 0, tzinfo=UTC)
@@ -171,6 +175,29 @@ class WallSource:
 
 def sources(**changes: object) -> dict[str, object]:
     wall = policy()
+    membership = WallMembershipEvidence(
+        membership_id="membership-a", revision=1, predecessor_fingerprint=None,
+        tenant_id="tenant-a", case_matter_id="matter-a", policy_id=wall.policy_id,
+        policy_fingerprint=wall.fingerprint, practitioner_principal_id="practitioner-a",
+        state=MembershipState.INCLUDED, effective_at=NOW - timedelta(hours=1),
+        expires_at=NOW + timedelta(days=10), issuer_principal_id="wall-admin-a",
+        issuer_authorization_reference="wall-issuer-auth-a",
+        issuer_authorization_fingerprint="a" * 128,
+        evidence_reference="membership-evidence-a", evidence_fingerprint="b" * 128,
+    )
+    acknowledgement = WallAcknowledgementEvidence(
+        acknowledgement_id="ack-a", revision=1, predecessor_fingerprint=None,
+        tenant_id="tenant-a", case_matter_id="matter-a", policy_id=wall.policy_id,
+        policy_fingerprint=wall.fingerprint, practitioner_principal_id="practitioner-a",
+        membership_fingerprint=membership.fingerprint,
+        state=AcknowledgementState.ACKNOWLEDGED,
+        acknowledged_by_principal_id="practitioner-a",
+        independently_verified_by_principal_id="independent-verifier-a",
+        verification_authorization_reference="ack-verifier-auth-a",
+        verification_authorization_fingerprint="c" * 128,
+        acknowledged_at=NOW - timedelta(minutes=30), expires_at=NOW + timedelta(days=2),
+        evidence_reference="ack-evidence-a", evidence_fingerprint="d" * 128,
+    )
     values: dict[str, object] = {
         "iam_source": Source(TenantAuthorizationDecision(True, TenantAuthorizationReason.AUTHORIZED, "tenant_legal_attorney", "LEGAL_ATTORNEY")),
         "binding_source": Source(binding()),
@@ -178,6 +205,8 @@ def sources(**changes: object) -> dict[str, object]:
         "conflict_source": Source(conflict()),
         "review_source": Source(review(wall)),
         "wall_source": WallSource(wall),
+        "membership_source": Source((membership,)),
+        "acknowledgement_source": Source((acknowledgement,)),
     }
     values.update(changes)
     return values
