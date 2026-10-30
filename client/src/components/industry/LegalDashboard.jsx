@@ -1,6 +1,6 @@
 /**
  * WILSY OS — ROLE-SCOPED LEGAL OPERATIONS COCKPIT
- * VERSION: v13.1.1-D21B12-SHARED-BRANDING-LIFECYCLE
+ * VERSION: v13.2.0-AUTHORITATIVE-CAPABILITY-NAVIGATION
  * AUTHORITY: Presentation of authenticated Python-EOS Legal Operations truth.
  * EPITOME: One role-aware WILSY Legal OS surface for legal-practice operators,
  *          finance, sheriff, deputy and client personas. Law-firm roles receive
@@ -346,6 +346,19 @@ const PRACTICE_WORKSPACE_VIEWS = Object.freeze({
   INTAKE: 'INTAKE',
 });
 
+const LEGAL_PRACTICE_MODULE_REGISTRY = Object.freeze([
+  { id: PRACTICE_WORKSPACE_VIEWS.COMMAND, label: 'Command Center', icon: ClipboardList, requiresWorkspace: true },
+  { id: PRACTICE_WORKSPACE_VIEWS.MATTERS, label: 'Matters', icon: Scale, requiresWorkspace: true },
+  { id: PRACTICE_WORKSPACE_VIEWS.INSTRUCTIONS, label: 'Instructions', icon: Inbox, requiresWorkspace: true },
+  { id: PRACTICE_WORKSPACE_VIEWS.DOCUMENTS, label: 'Process Documents', icon: FileText, requiresWorkspace: true },
+  { id: PRACTICE_WORKSPACE_VIEWS.SERVICE, label: 'Service Operations', icon: Clock3, requiresWorkspace: true },
+  { id: PRACTICE_WORKSPACE_VIEWS.RETURNS, label: 'Returns of Service', icon: FileCheck2, requiresWorkspace: true },
+  { id: 'PRODUCTIVE_WORK', label: 'My Work', icon: ClipboardList, permission: PRESENTATION_PERMISSIONS.PRODUCTIVE_WORK_READ },
+  { id: PRACTICE_WORKSPACE_VIEWS.DEADLINES, label: 'Deadlines', icon: Clock3, permission: PRESENTATION_PERMISSIONS.DEADLINE_READ },
+  { id: PRACTICE_WORKSPACE_VIEWS.FINANCE, label: 'Finance Evidence', icon: Landmark, anyPermissions: [PRESENTATION_PERMISSIONS.BILLING_READ, PRESENTATION_PERMISSIONS.INVOICE_READ] },
+  { id: PRACTICE_WORKSPACE_VIEWS.INTAKE, label: 'New Instruction', icon: FilePlus2, permission: PRESENTATION_PERMISSIONS.INSTRUCTION_WRITE },
+]);
+
 const CLIENT_WORKSPACE_VIEWS = Object.freeze({
   OVERVIEW: 'OVERVIEW',
   MATTERS: 'MATTERS',
@@ -407,14 +420,10 @@ function presentationAllowsPermission({ roleToken, user, permission }) {
   const roleEnvelope = ROLE_PRESENTATION_PERMISSION_ENVELOPE[role] || [];
   if (!roleEnvelope.includes(permission)) return false;
 
-  const explicitHints = explicitLegalPermissionHints(user);
-  const serverPermissionProjectionIsAuthoritative =
-    user?.legalPermissionsAuthoritative === true;
-
-  if (explicitHints.size === 0 && !serverPermissionProjectionIsAuthoritative) {
-    return true;
-  }
-  return explicitHints.has(permission);
+  // Browser role defaults and legacy permission hints are not a substitute
+  // for the canonical AuthContext projection returned by Python EOS.
+  if (user?.legalPermissionsAuthoritative !== true) return false;
+  return explicitLegalPermissionHints(user).has(permission);
 }
 
 function LegalPresentationAuthorityPosture({ roleToken, user }) {
@@ -424,9 +433,7 @@ function LegalPresentationAuthorityPosture({ roleToken, user }) {
   const authoritative = user?.legalPermissionsAuthoritative === true;
   const source = authoritative
     ? 'Server permission projection'
-    : explicitHints.size > 0
-      ? 'Legacy narrowing hints'
-      : 'Role baseline compatibility';
+    : 'Permission projection unavailable';
 
   const lanes = [
     presentationAllowsPermission({
@@ -3766,24 +3773,21 @@ function LegalPracticeWorkspace({
   ];
   const hasOperationalActivity = coreSignals.some((signal) => Number(signal.value) > 0);
 
-  const navItems = [
-    { id: PRACTICE_WORKSPACE_VIEWS.COMMAND, label: 'Command Center', icon: ClipboardList },
-    { id: PRACTICE_WORKSPACE_VIEWS.MATTERS, label: 'Matters', icon: Scale },
-    { id: PRACTICE_WORKSPACE_VIEWS.INSTRUCTIONS, label: 'Instructions', icon: Inbox },
-    { id: PRACTICE_WORKSPACE_VIEWS.DOCUMENTS, label: 'Process Documents', icon: FileText },
-    { id: PRACTICE_WORKSPACE_VIEWS.SERVICE, label: 'Service Operations', icon: Clock3 },
-    { id: PRACTICE_WORKSPACE_VIEWS.RETURNS, label: 'Returns of Service', icon: FileCheck2 },
-    ...(presentationAllowsPermission({
+  const navItems = LEGAL_PRACTICE_MODULE_REGISTRY.filter((module) => {
+    if (module.requiresWorkspace) return !error;
+    if (module.permission) {
+      return presentationAllowsPermission({
+        roleToken,
+        user,
+        permission: module.permission,
+      });
+    }
+    return (module.anyPermissions || []).some((permission) => presentationAllowsPermission({
       roleToken,
       user,
-      permission: PRESENTATION_PERMISSIONS.PRODUCTIVE_WORK_READ,
-    })
-      ? [{ id: 'PRODUCTIVE_WORK', label: 'My Work', icon: ClipboardList }]
-      : []),
-    ...(canReadDeadline ? [{ id: PRACTICE_WORKSPACE_VIEWS.DEADLINES, label: 'Deadlines', icon: Clock3 }] : []),
-    ...(canOpenFinance ? [{ id: PRACTICE_WORKSPACE_VIEWS.FINANCE, label: 'Finance Evidence', icon: Landmark }] : []),
-    ...(canIntake ? [{ id: PRACTICE_WORKSPACE_VIEWS.INTAKE, label: 'New Instruction', icon: FilePlus2 }] : []),
-  ];
+      permission,
+    }));
+  });
 
   const openMatter = (caseMatterId) => {
     setSelectedMatterId(caseMatterId);
