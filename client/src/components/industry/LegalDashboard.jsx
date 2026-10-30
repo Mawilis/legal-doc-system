@@ -169,7 +169,7 @@ import WilsyAccountCommandCenter from '../account/WilsyAccountCommandCenter.jsx'
 import { useAuth } from '../../contexts/authContext.jsx';
 import { useAuthenticatedTenantBrandingAsset } from '../../hooks/useAuthenticatedTenantBrandingAsset.js';
 
-const DASHBOARD_VERSION = 'v13.1.1-D21B12-SHARED-BRANDING-LIFECYCLE';
+const DASHBOARD_VERSION = 'v13.6.0-SPECIALIST-OPERATIONS-WORKBENCH';
 
 const EMPTY_QUEUES = Object.freeze({
   tenantId: '',
@@ -4587,6 +4587,14 @@ export default function LegalDashboard({
       setLoading(false);
       setRefreshing(false);
     }
+  }, [roleMode]);
+
+  useEffect(() => {
+    setSpecialistWorkspaceView(
+      roleMode === ROLE_MODES.SHERIFF
+        ? SPECIALIST_WORKSPACE_VIEWS.PROCESS_SERVICE
+        : SPECIALIST_WORKSPACE_VIEWS.MY_WORK,
+    );
   }, [roleMode]);
 
   useEffect(() => {
