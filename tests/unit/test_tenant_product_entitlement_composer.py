@@ -67,13 +67,15 @@ def subscription(
     plan_id: str = "plan-a",
     catalogue_version: int = 1,
     period_end: datetime | None = None,
+    amount: float = 100.0,
+    billing_mode: str = "PLATFORM",
 ) -> SubscriptionEntity:
     """Build canonical immutable subscription evidence."""
     return SubscriptionEntity(
         tenant_id=tenant_id,
         plan_id=plan_id,
         plan=PlanTiers.PROFESSIONAL,
-        amount=100.0,
+        amount=amount,
         currency="ZAR",
         billing_frequency=BillingFrequency.MONTHLY,
         start_date=NOW,
@@ -84,6 +86,7 @@ def subscription(
         plan_features=features,
         plan_catalogue_version=catalogue_version,
         status=status,
+        billing_mode=billing_mode,
         seal_nonce=f"seal-{subscription_id}",
     )
 
@@ -252,6 +255,8 @@ def test_founder_branding_only_plan_does_not_grant_legal_entitlement(
             plan_id="WILSYPLAN-37B8164F",
             features=("tenant.branding",),
             period_end=NOW - timedelta(days=29),
+            amount=0.0,
+            billing_mode="PLATFORM",
         ),
     )
     monkeypatch.setattr(
