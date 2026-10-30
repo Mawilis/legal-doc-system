@@ -1,5 +1,5 @@
 """TITLE: WILSY OS Subscription Router Authority Real-Mongo Certification.
-VERSION: v1.3.0-D22B4-ACTIVE-ENTITLEMENT-ROUTER-HTTP-CERT
+VERSION: v1.3.1-D22B5-UPGRADE-ENTITLEMENT-ROUTER-HTTP-CERT
 AUTHORITY: Actual-Mongo HTTP certification of subscription identity, tenant
 membership, permission and persistence composition.
 EPITOME: Executes the real FastAPI subscription router with current JWT
@@ -10,11 +10,9 @@ ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/tests/integratio
 COLLABORATION / OWNERSHIP: Wilson Khanyezi / Wilsy Core Engineering.
 CERTIFICATION/UPDATE DATE: 2026-10-10.
 CHANGELOG:
-    v1.3.0-D22B4-ACTIVE-ENTITLEMENT-ROUTER-HTTP-CERT certifies that create,
-    resume and reactivate retain current HTTP authority and envelopes while
-    delegating atomic subscription/Legal-entitlement composition to D22B3.
-    It proves non-Legal success, Legal atomicity, bounded service failures,
-    foreign-tenant denial and continued direct registry ownership elsewhere.
+    v1.3.1-D22B5-UPGRADE-ENTITLEMENT-ROUTER-HTTP-CERT additionally certifies
+    upgrade routing through P42 with the unchanged subscription-manage
+    dependency, canonical plan selection and shared Legal entitlement transaction.
 
     v1.2.1-SUBSCRIPTION-CALENDAR-BILLING-HTTP-CERT aligns the current
     SubscriptionRegistry production-version assertion with the bounded v1.3.1
@@ -141,7 +139,7 @@ from tools.eos.saas.entitlement.tenant_product_entitlement_registry import (
 
 
 VERSION = (
-    "v1.3.0-D22B4-ACTIVE-ENTITLEMENT-ROUTER-HTTP-CERT"
+    "v1.3.1-D22B5-UPGRADE-ENTITLEMENT-ROUTER-HTTP-CERT"
 )
 
 URI = os.getenv("TEST_VENDOR_MONGO_URI")
@@ -803,6 +801,7 @@ def test_permission_canon_role_grants_and_router_surface_are_fail_closed() -> No
         router_module.upgrade_subscription,
         router_module.downgrade_subscription,
         router_module.reactivate_subscription,
+        router_module.upgrade_subscription,
         router_module.get_subscription_audit,
         router_module.get_subscription_metrics,
     )
@@ -1386,11 +1385,11 @@ def test_catalogue_provenance_certificate_versions_are_exact() -> None:
     )
     assert (
         registry_module.VERSION
-        == "v1.4.0-CALLER-TRANSACTION-INJECTION"
+        == "v1.5.0-CATALOGUE-CHANGE-TRANSACTION-INJECTION"
     )
     assert (
         VERSION
-        == "v1.3.0-D22B4-ACTIVE-ENTITLEMENT-ROUTER-HTTP-CERT"
+        == "v1.3.1-D22B5-UPGRADE-ENTITLEMENT-ROUTER-HTTP-CERT"
     )
 
 
@@ -2055,7 +2054,7 @@ def test_http_naive_start_date_fails_closed_without_subscription_persistence(
 
 
 def test_d22b4_route_surface_and_non_migrated_registry_paths_are_exact() -> None:
-    """Only create, resume and reactivate delegate to the sealed service."""
+    """Create, resume, reactivate and upgrade delegate to the sealed service."""
     routes = {
         (str(getattr(route, "path", "")), method)
         for route in router_module.subscription_router.routes
@@ -2064,16 +2063,17 @@ def test_d22b4_route_surface_and_non_migrated_registry_paths_are_exact() -> None
     assert ("/api/subscriptions", "POST") in routes
     assert ("/api/subscriptions/{subscription_id}/resume", "POST") in routes
     assert ("/api/subscriptions/{subscription_id}/reactivate", "POST") in routes
+    assert ("/api/subscriptions/{subscription_id}/upgrade", "POST") in routes
     source = inspect.getsource(router_module)
     for call in (
         "SubscriptionActiveEntitlementCompositionService.create(",
         "SubscriptionActiveEntitlementCompositionService.resume(",
         "SubscriptionActiveEntitlementCompositionService.reactivate(",
+        "SubscriptionActiveEntitlementCompositionService.upgrade(",
     ):
         assert source.count(call) == 1
     for call in (
         "SubscriptionRegistry.cancel(",
-        "SubscriptionRegistry.upgrade(",
         "SubscriptionRegistry.downgrade(",
         "SubscriptionRegistry.pause(",
         "SubscriptionRegistry.update(",
@@ -2083,6 +2083,7 @@ def test_d22b4_route_surface_and_non_migrated_registry_paths_are_exact() -> None
     assert "SubscriptionRegistry.create(" not in source
     assert "SubscriptionRegistry.resume(" not in source
     assert "SubscriptionRegistry.reactivate(" not in source
+    assert "SubscriptionRegistry.upgrade(" not in source
     for token in (
         "start_session(", "start_transaction(", "commit_transaction(",
         "abort_transaction(", "with_transaction(", "TenantProductId",
@@ -2294,7 +2295,7 @@ def test_service_availability_failures_map_to_503_without_router_replay(
 # WILSY OS SOVEREIGN ARTIFACT SEAL
 # =============================================================================
 # ARTIFACT: tests/integration/test_subscription_router_authority_real_mongo.py
-# VERSION: v1.3.0-D22B4-ACTIVE-ENTITLEMENT-ROUTER-HTTP-CERT
+# VERSION: v1.3.1-D22B5-UPGRADE-ENTITLEMENT-ROUTER-HTTP-CERT
 # AUTHORITY BOUNDARY: real HTTP composition of current authority with sealed subscription/Legal-entitlement service and unchanged non-migrated registry paths
 # TENANT POSTURE: raw tenant context must survive ACTIVE persisted membership and current role-assignment permission authority
 # FAIL-CLOSED POSTURE: missing identity, wrong tenant, inactive membership, absent/revoked role, projected JWT grants and persistence outage never become subscription access
