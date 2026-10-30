@@ -116,7 +116,6 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
   AlertTriangle,
-  Bot,
   Briefcase,
   CheckCircle2,
   ClipboardList,
@@ -134,7 +133,6 @@ import {
   Scale,
   Search,
   ShieldCheck,
-  Sparkles,
   UserCheck,
   X,
 } from 'lucide-react';
@@ -4394,6 +4392,7 @@ export default function LegalDashboard({
       : SPECIALIST_WORKSPACE_VIEWS.MY_WORK
   ));
   const [specialistAccountCenterOpen, setSpecialistAccountCenterOpen] = useState(false);
+  const [specialistSearchQuery, setSpecialistSearchQuery] = useState('');
   const [queues, setQueues] = useState(EMPTY_QUEUES);
   const [deputyWork, setDeputyWork] = useState(EMPTY_DEPUTY_WORK);
   const [clientMatters, setClientMatters] = useState(EMPTY_CLIENT_MATTERS);
@@ -4751,6 +4750,14 @@ export default function LegalDashboard({
     observationDrafts,
   ]);
 
+  const specialistSearchMatches = useCallback((row) => {
+    const query = specialistSearchQuery.trim().toLowerCase();
+    if (!query) return true;
+    return Object.values(row || {}).some(
+      (value) => typeof value === 'string' && value.toLowerCase().includes(query),
+    );
+  }, [specialistSearchQuery]);
+
   const metrics = useMemo(() => {
     if (roleMode === ROLE_MODES.LEGAL_CLIENT) {
       const openMatters = clientMatters.matters.filter(
@@ -4913,17 +4920,17 @@ export default function LegalDashboard({
           : 'Office receipt · governed allocation · active process-service work · No mock legal truth',
       ]}
       search={{
+        value: specialistSearchQuery,
         placeholder: isDeputyMode
           ? 'Search my assigned service work'
-          : 'Search Sheriff operational work',
+          : 'Search receipt, allocation or service work',
         shortcutLabel: '⌘K',
+        onChange: (event) => setSpecialistSearchQuery(event.target.value),
       }}
       actions={{
         liveSyncLabel: 'Refresh truth',
         onLiveSync: () => loadOperationalTruth({ refresh: true }),
         isRefreshing: refreshing,
-        primaryActionLabel: isSheriffMode ? 'Allocate work' : 'Field action',
-        primaryDisabled: true,
       }}
       account={{
         isOpen: specialistAccountCenterOpen,
@@ -5079,7 +5086,7 @@ export default function LegalDashboard({
                 title="Office receipt"
                 subtitle="Canonical REGISTERED ProcessDocument current states"
                 icon={FileText}
-                rows={queues.officeReceipt}
+                rows={queues.officeReceipt.filter(specialistSearchMatches)}
                 emptyMessage="No documents are awaiting office receipt."
                 renderRow={(item) => (
                   <DocumentQueueRow
@@ -5093,7 +5100,7 @@ export default function LegalDashboard({
                 title="Deputy assignment"
                 subtitle="Canonical RECEIVED ProcessDocument current states"
                 icon={FileCheck2}
-                rows={queues.deputyAssignment}
+                rows={queues.deputyAssignment.filter(specialistSearchMatches)}
                 emptyMessage="No received documents are awaiting deputy allocation."
                 renderRow={(item) => (
                   <DocumentQueueRow
@@ -5109,7 +5116,7 @@ export default function LegalDashboard({
               title="Active service attempts"
               subtitle="Canonical ALLOCATED / ATTEMPTED ServiceAttempt current states"
               icon={Clock3}
-              rows={queues.activeAttempts}
+              rows={queues.activeAttempts.filter(specialistSearchMatches)}
               emptyMessage="No active service attempts are currently certified."
               renderRow={(item) => (
                 <AttemptQueueRow key={item.attempt_id} item={item} />
@@ -5226,7 +5233,7 @@ export default function LegalDashboard({
               title="My active service work"
               subtitle="Binding-scoped active attempts with exact server-derived field capabilities"
               icon={Clock3}
-              rows={deputyWork.activeAttempts}
+              rows={deputyWork.activeAttempts.filter(specialistSearchMatches)}
               emptyMessage="No active service attempts are assigned to this bound deputy."
               renderRow={(item) => (
                 <DeputyAttemptRow
@@ -5257,7 +5264,7 @@ export default function LegalDashboard({
 
 /**
  * ARTIFACT: LegalDashboard.jsx
- * VERSION: v13.4.0-SPECIALIST-DAILY-WORK-SHELL
+ * VERSION: v13.5.0-SPECIALIST-SEARCHABLE-OPERATIONS
  * AUTHORITY BOUNDARY: governed Legal Practice/Finance/SHERIFF/DEPUTY/LEGAL_CLIENT presentation plus already-authorized intake, ReturnOfService, bounded human conflict-review command initiation and bound-Deputy command initiation only; D24C authenticated person names and L8-8M conflict-review controls are descriptive/wiring projections that create no identity, membership, role, permission, tenant, operating-model, conflict clearance, waiver or financial authority; Python EOS owns authorization and legal truth
  * TENANT POSTURE: every data surface remains server-authorized and tenant-scoped; practice workspace is D15 snapshot truth with first-class CaseMatter evidence, client matters are D5/D7 visibility-bound, deputy commands require exact capability parity
  * FAIL-CLOSED POSTURE: unresolved role, malformed/absent person-name text, explicit or server-authoritative legal-permission narrowing, denied/unavailable workspace/client/specialist read, malformed finance/intake/return/field evidence, command failure or failed refresh never invents names or truth, widens role scope, fabricates operating-model authority or cross-role fallback
