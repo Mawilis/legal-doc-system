@@ -147,9 +147,19 @@ def test_invalid_location_and_scope_are_rejected(field: str, value: object) -> N
 def test_direct_construction_is_rejected_and_no_service_authority_is_exposed() -> None:
     value = observation()
     with pytest.raises(ProcessServiceLocationEvidenceAuthorityError):
-        ProcessServiceLocationObservation(**{
-            key: item for key, item in value.__dict__.items()
-        })
+        ProcessServiceLocationObservation(
+            tenant_id=value.tenant_id, observation_id=value.observation_id,
+            grant_id=value.grant_id, attempt_id=value.attempt_id,
+            deputy_id=value.deputy_id, device_id=value.device_id,
+            district_id=value.district_id, sheriff_office_id=value.sheriff_office_id,
+            source_attempt_fingerprint=value.source_attempt_fingerprint,
+            purpose=value.purpose, latitude=value.latitude, longitude=value.longitude,
+            horizontal_accuracy_m=value.horizontal_accuracy_m, captured_at=value.captured_at,
+            device_provenance_reference=value.device_provenance_reference,
+            device_provenance_fingerprint=value.device_provenance_fingerprint,
+            permission_grant_fingerprint=value.permission_grant_fingerprint,
+            evidence_reference=value.evidence_reference,
+        )
     with pytest.raises(ProcessServiceLocationEvidenceAuthorityError):
         ProcessServiceLocationPermissionGrant(
             tenant_id="tenant-a", grant_id="grant", attempt_id="attempt-1",
