@@ -23,6 +23,9 @@ from tools.eos.legal_operations.domain.legal_work_assignment import LegalWorkAss
 from tools.eos.legal_operations.domain.legal_work_practitioner_confidentiality_review_decision import (
     ConfidentialityReviewDecision, ConfidentialityReviewDecisionState, EthicalWallRequirement,
 )
+from tools.eos.legal_operations.domain.legal_work_ethical_wall_membership_acknowledgement import (
+    WallMembershipEvidence, WallAcknowledgementEvidence, MembershipState, AcknowledgementState,
+)
 from tools.eos.legal_operations.service import legal_work_ethical_wall_source_adapters as adapters
 
 NOW = datetime(2026, 10, 21, 16, 0, tzinfo=UTC)
@@ -153,6 +156,73 @@ def test_review_adapter_rejects_forgery_and_self_review() -> None:
             tenant_id="tenant-a", case_matter_id="matter-a",
             practitioner_principal_id="practitioner-a", session=Session(),
         )
+
+
+
+def test_wall_membership_and_acknowledgement_adapters_use_exact_policy_scope() -> None:
+    member = WallMembershipEvidence(
+        membership_id="membership-a", revision=1, predecessor_fingerprint=None,
+        tenant_id="tenant-a", case_matter_id="matter-a", policy_id="wall-a",
+        policy_fingerprint="1" * 128, practitioner_principal_id="practitioner-a",
+        state=MembershipState.INCLUDED, effective_at=NOW,
+        expires_at=NOW + timedelta(days=2), issuer_principal_id="issuer-a",
+        issuer_authorization_reference="issuer-auth-a",
+        issuer_authorization_fingerprint="2" * 128,
+        evidence_reference="membership-evidence-a", evidence_fingerprint="3" * 128,
+    )
+    acknowledgement = WallAcknowledgementEvidence(
+        acknowledgement_id="ack-a", revision=1, predecessor_fingerprint=None,
+        tenant_id="tenant-a", case_matter_id="matter-a", policy_id="wall-a",
+        policy_fingerprint="1" * 128, practitioner_principal_id="practitioner-a",
+        membership_fingerprint=member.fingerprint,
+        state=AcknowledgementState.ACKNOWLEDGED,
+        acknowledged_by_principal_id="practitioner-a",
+        independently_verified_by_principal_id="verifier-a",
+        verification_authorization_reference="verifier-auth-a",
+        verification_authorization_fingerprint="4" * 128,
+        acknowledged_at=NOW, expires_at=NOW + timedelta(days=1),
+        evidence_reference="ack-evidence-a", evidence_fingerprint="5" * 128,
+    )
+
+    class Registry:
+        def __init__(self) -> None:
+            self.calls: list[tuple[str, tuple[object, ...], object]] = []
+
+        def list_membership_history(self, *args: object, session: object) -> tuple[WallMembershipEvidence, ...]:
+            self.calls.append(("membership", args, session))
+            return (member,)
+
+        def list_acknowledgement_history(self, *args: object, session: object) -> tuple[WallAcknowledgementEvidence, ...]:
+            self.calls.append(("acknowledgement", args, session))
+            return (acknowledgement,)
+
+    registry = Registry()
+    membership_source = adapters.CanonicalWallMembershipSource(registry, "wall-a")
+    acknowledgement_source = adapters.CanonicalWallAcknowledgementSource(registry, "wall-a")
+    assert membership_source.resolve_current(
+        tenant_id="tenant-a", case_matter_id="matter-a",
+        practitioner_principal_id="practitioner-a", session=Session(),
+    ) == (member,)
+    assert acknowledgement_source.resolve_current(
+        tenant_id="tenant-a", case_matter_id="matter-a",
+        practitioner_principal_id="practitioner-a", session=Session(),
+    ) == (acknowledgement,)
+    assert [call[0] for call in registry.calls] == ["membership", "acknowledgement"]
+    assert all(call[1] == ("tenant-a", "matter-a", "wall-a", "practitioner-a") for call in registry.calls)
+    assert all(call[2].in_transaction is True for call in registry.calls)  # type: ignore[union-attr]
+
+
+def test_wall_evidence_adapters_reject_inactive_transaction() -> None:
+    registry = object()
+    membership_source = adapters.CanonicalWallMembershipSource(registry, "wall-a")
+    acknowledgement_source = adapters.CanonicalWallAcknowledgementSource(registry, "wall-a")
+    for source in (membership_source, acknowledgement_source):
+        with pytest.raises(adapters.EthicalWallSourceUnavailable, match="TRANSACTION_REQUIRED"):
+            source.resolve_current(
+                tenant_id="tenant-a", case_matter_id="matter-a",
+                practitioner_principal_id="practitioner-a",
+                session=SimpleNamespace(in_transaction=False),
+            )
 
 
 def test_adapters_expose_no_access_or_content_reader() -> None:
