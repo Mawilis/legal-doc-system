@@ -1,6 +1,6 @@
 /**
  * WILSY OS — PRODUCTION LEGAL OPERATIONS WORKSPACE CERTIFICATE
- * VERSION: v1.10.0-PRACTICE-CONFLICT-REVIEW-PRESENTATION-PARITY-CERT
+ * VERSION: v1.11.0-AUTHORITATIVE-CAPABILITY-NAVIGATION-CERT
  * AUTHORITY: Browser presentation/wiring certificate only.
  * EPITOME: Proves law-firm and finance roles resolve to real WILSY Legal OS
  *          workspaces backed by the D15 V2 first-class matter contract, with
@@ -602,27 +602,27 @@ describe('D15 first-class Legal Matter Operating Room', () => {
     expect(generateLegalReturnOfService.mock.calls[0][0]).not.toHaveProperty('tenantId');
   });
 
-  it('shows compatibility role-baseline provenance when no explicit Legal permissions exist', async () => {
+  it('fails closed when the authenticated Legal permission projection is absent', async () => {
     getLegalPracticeWorkspace.mockResolvedValueOnce(practiceWorkspace());
 
     render(
       <LegalDashboard
         roleView="LEGAL_PARTNER"
-        user={{ id: 'principal-partner-baseline' }}
+        user={{ id: 'principal-partner-no-projection' }}
       />,
     );
 
     await screen.findByText('Legal Operations Command Center');
     const posture = screen.getByLabelText('Legal presentation authority posture');
-    expect(within(posture).getByText('Role baseline compatibility')).toBeInTheDocument();
+    expect(within(posture).getByText('Permission projection unavailable')).toBeInTheDocument();
     expect(within(posture).getByText('LEGAL_PARTNER')).toBeInTheDocument();
-    expect(within(posture).getByText(
-      'Intake · Return generation · Billing evidence · Invoice evidence · Matter deadlines · Deadline creation',
-    )).toBeInTheDocument();
-    expect(within(posture).getByText(/Python EOS re-authorizes every Legal Operations request/i)).toBeInTheDocument();
+    expect(within(posture).getByText('Read-only')).toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: 'New Instruction' })).not.toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: 'Finance Evidence' })).not.toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: 'Deadlines' })).not.toBeInTheDocument();
   });
 
-  it('shows legacy narrowing provenance without presenting it as server authority', async () => {
+  it('does not treat legacy browser permission hints as an authoritative capability projection', async () => {
     getLegalPracticeWorkspace.mockResolvedValueOnce(practiceWorkspace());
 
     render(
@@ -631,16 +631,16 @@ describe('D15 first-class Legal Matter Operating Room', () => {
         user={{
           id: 'principal-attorney-legacy-narrow',
           permissions: ['legal_operations:instruction:write'],
+          legalPermissionsAuthoritative: true,
         }}
       />,
     );
 
     await screen.findByText('Legal Operations Command Center');
     const posture = screen.getByLabelText('Legal presentation authority posture');
-    expect(within(posture).getByText('Legacy narrowing hints')).toBeInTheDocument();
-    expect(within(posture).getByText('Intake')).toBeInTheDocument();
-    expect(within(posture).queryByText(/Return generation/)).not.toBeInTheDocument();
-    expect(within(posture).queryByText(/Billing evidence/)).not.toBeInTheDocument();
+    expect(within(posture).getByText('Permission projection unavailable')).toBeInTheDocument();
+    expect(within(posture).getByText('Read-only')).toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: 'New Instruction' })).not.toBeInTheDocument();
   });
 
   it('narrows a Partner to explicit invoice-read presentation without widening browser authority', async () => {
@@ -652,6 +652,7 @@ describe('D15 first-class Legal Matter Operating Room', () => {
         user={{
           id: 'principal-partner-narrow',
           permissions: ['legal_operations:invoice:read'],
+          legalPermissionsAuthoritative: true,
         }}
       />,
     );
@@ -765,6 +766,7 @@ describe('D15 first-class Legal Matter Operating Room', () => {
         roleView="LEGAL_SECRETARY"
         user={{
           id: 'principal-secretary-no-escalation',
+          legalPermissionsAuthoritative: true,
           permissions: [
             'legal_operations:instruction:write',
             'legal_operations:billing:read',
