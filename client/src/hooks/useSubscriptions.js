@@ -188,8 +188,8 @@ export const useSubscriptions = (tenantId = null, { autoLoad = true } = {}) => {
     cancel: (subscriptionId, options) => cancelSubscription(subscriptionId, options?.reason || ''),
     pause: (subscriptionId, options = {}) => lifecycle(subscriptionId, 'pause', { pauseReason: options.reason, pauseUntil: options.pauseUntil }),
     resume: (subscriptionId, options = {}) => lifecycle(subscriptionId, 'resume', { metadata: options.metadata || {} }),
-    upgrade: (subscriptionId, options = {}) => lifecycle(subscriptionId, 'upgrade', options),
-    downgrade: (subscriptionId, options = {}) => lifecycle(subscriptionId, 'downgrade', options),
+    upgrade: (subscriptionId, options = {}) => lifecycle(subscriptionId, 'upgrade', { newPlanId: options.newPlanId }),
+    downgrade: (subscriptionId, options = {}) => lifecycle(subscriptionId, 'downgrade', { newPlanId: options.newPlanId }),
     reactivate: (subscriptionId, options = {}) => lifecycle(subscriptionId, 'reactivate', { metadata: options.metadata || {} }),
     getAudit,
   };
