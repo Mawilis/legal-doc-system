@@ -11,7 +11,9 @@ COLLABORATION / OWNERSHIP: SubscriptionRegistry owns subscription truth; D22A
                             owns mapping metadata; D22B1 owns lifecycle; D22B2
                             owns persistence. This composer correlates them only.
 CERTIFICATION / UPDATE DATE: 2026-10-09
-CHANGELOG: v1.0.0-D22B3-TENANT-PRODUCT-ENTITLEMENT-COMPOSER establishes stable
+CHANGELOG: v1.1.0-D22B3-SUBSCRIPTION-TERM-ENFORCEMENT applies the shared
+           Founder-perpetual versus ordinary finite billing-period decision
+           before entitlement reads or writes. v1.0.0-D22B3 establishes stable
            tenant/product lineage IDs, server-derived source/activation evidence,
            exact ACTIVE subscription cardinality, positive Legal composition,
            pending/active replay and terminal-lifecycle rejection.
