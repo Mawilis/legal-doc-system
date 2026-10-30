@@ -354,7 +354,7 @@ def context(
             lambda: (client, database),
         )
 
-        PlanRegistry._ensure_indexes()
+        PlanRegistry.provision_indexes()
         registry_module._ensure_indexes()
         service_module._authorization_registry(database).ensure_indexes()
         ensure_entitlement_indexes(
