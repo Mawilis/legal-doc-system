@@ -17,11 +17,11 @@ CHANGELOG: 2026-10-30 v1.2.0-L8-6D-G68-ROUTER-ALIGNMENT-HTTP-CERT
            aligns the exact router-version assertion with the current
            v1.17.0-G68-P2-PRACTITIONER-CONFIDENTIALITY-CONTAINMENT router;
            preserves deputy route, permission, binding, and fail-closed proofs.
-           2026-09-23  2026-09-23 v1.2.0-L8-6D-G68-ROUTER-ALIGNMENT-HTTP-CERT
+           2026-09-23 v1.1.0-L8-6D-DEPUTY-FIELD-CAPABILITY-HTTP-CERT
            adds exact deputy field-capability dispatch/response proof, missing
            binding 403, bounded locator/capability 503, no caller scope input,
            and router v1.5.0 binding while preserving L8-6C active-work tests.
-           2026-09-23 v1.2.0-L8-6D-G68-ROUTER-ALIGNMENT-HTTP-CERT
+           2026-09-23 v1.1.0-L8-6D-DEPUTY-FIELD-CAPABILITY-HTTP-CERT
            establishes authentication denial, exact tenant/principal dispatch,
            bounded response shape, binding-required 403, evidence/persistence
            503 mapping, and production-version/permission binding.
