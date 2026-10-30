@@ -906,8 +906,10 @@ describe('D15 first-class Legal Matter Operating Room', () => {
     expect(
       await screen.findByText('LEGAL_PRACTICE_WORKSPACE_DENIED'),
     ).toBeInTheDocument();
-    expect(screen.getByRole('button', { name: 'Trust Center' })).toBeInTheDocument();
+    expect(screen.getByRole('region', { name: 'Command toolbar' })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Refresh truth' })).toBeInTheDocument();
     expect(screen.getByRole('button', { name: 'Open instructions' })).toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: 'Trust Center' })).not.toBeInTheDocument();
     expect(getSheriffOperationalQueues).not.toHaveBeenCalled();
     expect(getLegalClientMatters).not.toHaveBeenCalled();
     expect(getDeputyPersonalActiveWork).not.toHaveBeenCalled();
