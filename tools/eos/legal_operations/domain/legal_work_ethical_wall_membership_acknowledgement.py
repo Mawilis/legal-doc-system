@@ -232,16 +232,22 @@ def _linear(history: Iterable[object], expected_type: type, *, tenant: str,
         raise WallEvidenceError("EVIDENCE_CORRUPT")
     first = values[0]
     identity_fields = ("tenant_id", "case_matter_id", "policy_id", "practitioner_principal_id")
-    if any(getattr(first, name) != value for name, value in zip(identity_fields, (tenant, matter, policy, principal))):
+    expected_scope = (tenant, matter, policy, principal)
+    if any(
+        tuple(getattr(item, name) for name in identity_fields) != expected_scope
+        for item in values
+    ):
         raise WallEvidenceError("EVIDENCE_CORRUPT")
     identity_name = "membership_id" if expected_type is WallMembershipEvidence else "acknowledgement_id"
     for previous, current in zip(values, values[1:]):
         previous_time = previous.effective_at if expected_type is WallMembershipEvidence else previous.acknowledged_at
         current_time = current.effective_at if expected_type is WallMembershipEvidence else current.acknowledged_at
+        previous_state = getattr(previous.state, "value", previous.state)
         if (
             getattr(current, identity_name) != getattr(previous, identity_name)
             or current.predecessor_fingerprint != previous.fingerprint
             or current_time <= previous_time
+            or previous_state == "REVOKED"
         ):
             raise WallEvidenceError("EVIDENCE_CORRUPT")
     effective = tuple(item for item in values if (item.effective_at if hasattr(item, "effective_at") else item.acknowledged_at) <= at)
@@ -283,7 +289,7 @@ def project_wall_membership_and_acknowledgement(
         ack = ack_history[-1]
         if ack.policy_fingerprint != policy_fp:
             return WallMembershipAcknowledgementProjection(WallEvidenceCurrentness.ACKNOWLEDGEMENT_POLICY_MISMATCH, member.fingerprint, ack.fingerprint)
-        if ack.membership_fingerprint != member.fingerprint:
+        if ack.membership_fingerprint != member.fingerprint or ack.acknowledged_at < member.effective_at:
             return WallMembershipAcknowledgementProjection(WallEvidenceCurrentness.ACKNOWLEDGEMENT_MEMBERSHIP_MISMATCH, member.fingerprint, ack.fingerprint)
         if ack.state is AcknowledgementState.REVOKED:
             return WallMembershipAcknowledgementProjection(WallEvidenceCurrentness.ACKNOWLEDGEMENT_REVOKED, member.fingerprint, ack.fingerprint)
