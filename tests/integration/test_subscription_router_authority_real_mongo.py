@@ -10,6 +10,11 @@ ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/tests/integratio
 COLLABORATION / OWNERSHIP: Wilson Khanyezi / Wilsy Core Engineering.
 CERTIFICATION/UPDATE DATE: 2026-10-10.
 CHANGELOG:
+    v1.3.3-D22B5-CURRENT-BILLING-PERIOD-HTTP-CERT asserts calendar period
+    bounds relative to the request start date rather than a stale fixed month.
+    v1.3.2-D22B5-CURRENT-BILLING-PERIOD-HTTP-CERT makes synthetic HTTP
+    subscription start dates relative to the certification clock so valid
+    commercial subscription tests remain inside their derived billing period.
     v1.3.1-D22B5-UPGRADE-ENTITLEMENT-ROUTER-HTTP-CERT additionally certifies
     upgrade routing through P42 with the unchanged subscription-manage
     dependency, canonical plan selection and shared Legal entitlement transaction.
@@ -55,6 +60,7 @@ from __future__ import annotations
 import hashlib
 import inspect
 import os
+from datetime import datetime, timedelta, timezone
 import uuid
 from collections.abc import Iterator
 from dataclasses import dataclass
@@ -381,7 +387,7 @@ def _command(
         "tenantId": tenant_id,
         "planId": plan_id,
         "startDate":
-            "2026-09-03T00:00:00+00:00",
+            (datetime.now(timezone.utc) - timedelta(days=1)).isoformat(),
         "idempotencyKey": key,
         "billingMode": "PLATFORM",
         "onboardingRef":
@@ -1824,14 +1830,35 @@ def test_http_create_derives_calendar_period_and_denies_period_redirection(
 
         assert created.status_code == 201
 
-        assert (
-            "2026-09-01T00:00:00+00:00"
-            in created.text
+        subscription_body = created.json()["data"]["subscription"]
+        start_date = datetime.fromisoformat(subscription_body["start_date"])
+        expected_period_start = datetime(
+            start_date.year,
+            start_date.month,
+            1,
+            tzinfo=timezone.utc,
         )
-
+        if start_date.month == 12:
+            expected_period_end = datetime(
+                start_date.year + 1,
+                1,
+                1,
+                tzinfo=timezone.utc,
+            )
+        else:
+            expected_period_end = datetime(
+                start_date.year,
+                start_date.month + 1,
+                1,
+                tzinfo=timezone.utc,
+            )
         assert (
-            "2026-10-01T00:00:00+00:00"
-            in created.text
+            subscription_body["current_period_start"]
+            == expected_period_start.isoformat()
+        )
+        assert (
+            subscription_body["current_period_end"]
+            == expected_period_end.isoformat()
         )
 
         count_before = (

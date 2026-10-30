@@ -17,7 +17,7 @@ FINANCIAL AUTHORITY BOUNDARY: Kennel EOS exclusively owns execution/settlement.
 """
 from __future__ import annotations
 
-from datetime import datetime, timezone
+from datetime import datetime, timedelta, timezone
 import inspect
 from types import SimpleNamespace
 from typing import Any
@@ -214,6 +214,16 @@ def test_multiple_branding_identities_fail_closed() -> None:
 )
 def test_only_active_is_eligible(status: SubscriptionStatus) -> None:
     result = _eligible(_subscription(status=status))
+    assert result.state is TenantBrandingCommercialEligibilityState.INELIGIBLE
+
+
+def test_expired_active_subscription_is_ineligible() -> None:
+    """An ACTIVE flag cannot keep ordinary paid Branding eligible after period end."""
+    expired = _registry_subscription(
+        plan_features=(BRANDING_VAS_PROFESSIONAL_ID,),
+        current_period_end=STAMP - timedelta(seconds=1),
+    )
+    result = _eligible(expired)
     assert result.state is TenantBrandingCommercialEligibilityState.INELIGIBLE
 
 

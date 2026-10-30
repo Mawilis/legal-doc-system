@@ -66,23 +66,27 @@ def subscription(
     status: SubscriptionStatus = SubscriptionStatus.ACTIVE,
     plan_id: str = "plan-a",
     catalogue_version: int = 1,
+    period_end: datetime | None = None,
+    amount: float = 100.0,
+    billing_mode: str = "PLATFORM",
 ) -> SubscriptionEntity:
     """Build canonical immutable subscription evidence."""
     return SubscriptionEntity(
         tenant_id=tenant_id,
         plan_id=plan_id,
         plan=PlanTiers.PROFESSIONAL,
-        amount=100.0,
+        amount=amount,
         currency="ZAR",
         billing_frequency=BillingFrequency.MONTHLY,
         start_date=NOW,
         current_period_start=NOW,
-        current_period_end=NOW + timedelta(days=30),
+        current_period_end=period_end or NOW + timedelta(days=30),
         idempotency_key=f"idempotency-{subscription_id}",
         subscription_id=subscription_id,
         plan_features=features,
         plan_catalogue_version=catalogue_version,
         status=status,
+        billing_mode=billing_mode,
         seal_nonce=f"seal-{subscription_id}",
     )
 
@@ -238,6 +242,46 @@ def test_invalid_commercial_cardinality_or_feature_causes_no_writes(
     with pytest.raises(composer.TenantProductEntitlementComposerError) as raised:
         invoke()
     assert raised.value.code == code
+
+
+def test_founder_branding_only_plan_does_not_grant_legal_entitlement(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """Perpetual Founder term does not widen the persisted feature snapshot."""
+    Registry.items = (
+        subscription(
+            tenant_id="WILSYTENANT-4CD2FZ4O",
+            subscription_id="WILSYSUB-93455E4E",
+            plan_id="WILSYPLAN-37B8164F",
+            features=("tenant.branding",),
+            period_end=NOW - timedelta(days=29),
+            amount=0.0,
+            billing_mode="PLATFORM",
+        ),
+    )
+    monkeypatch.setattr(
+        composer,
+        "get_current",
+        lambda *_args, **_kwargs: pytest.fail("entitlement read occurred"),
+    )
+    with pytest.raises(composer.TenantProductEntitlementComposerCommercialError) as raised:
+        invoke(tenant_id="WILSYTENANT-4CD2FZ4O")
+    assert raised.value.code == "D22B3_COMMERCIAL_FEATURE_ABSENT"
+
+
+def test_expired_active_commercial_subscription_rejects_before_entitlement_reads(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """ACTIVE status cannot extend ordinary commercial access past its term."""
+    Registry.items = (subscription(period_end=NOW - timedelta(seconds=1)),)
+    monkeypatch.setattr(
+        composer,
+        "get_current",
+        lambda *_args, **_kwargs: pytest.fail("entitlement read occurred"),
+    )
+    with pytest.raises(composer.TenantProductEntitlementComposerCommercialError) as raised:
+        invoke()
+    assert raised.value.code == "D22B3_SUBSCRIPTION_TERM_INELIGIBLE"
 
 
 def test_invalid_canonical_subscription_proof_rejects_before_writes(

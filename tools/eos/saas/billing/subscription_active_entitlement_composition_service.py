@@ -1,7 +1,7 @@
 """WILSY OS subscription-active Legal entitlement composition service.
 
 TITLE: Subscription Active Entitlement Composition Service
-VERSION: v1.1.0-D22B3-P42-CATALOGUE-UPGRADE-COMPOSITION
+VERSION: v1.2.0-P42-SUBSCRIPTION-TERM-ENFORCEMENT
 AUTHORITY: Wilsy OS Core Governance
 EPITOME: Atomically compose canonical subscription lifecycle mutation with
          positive Legal Operations tenant-product entitlement issuance.
@@ -11,7 +11,9 @@ COLLABORATION / OWNERSHIP: SubscriptionRegistry owns commercial lifecycle;
                             issuance; this service alone owns their shared
                             Mongo transaction lifecycle.
 CERTIFICATION / UPDATE DATE: 2026-10-09
-CHANGELOG: v1.1.0-D22B3-P42-CATALOGUE-UPGRADE-COMPOSITION
+CHANGELOG: v1.2.0-P42-SUBSCRIPTION-TERM-ENFORCEMENT adds the shared
+           subscription term gate before Legal entitlement issuance.
+           v1.1.0-D22B3-P42-CATALOGUE-UPGRADE-COMPOSITION
            adds tenant-authorized catalogue upgrade to the shared transaction,
            validates the resulting UPGRADE audit proof, and derives distinct
            issuance replay coordinates from the resulting immutable subscription
@@ -54,6 +56,7 @@ from tools.eos.auth.tenant_authorization_decision_evidence_registry import (
 )
 from tools.eos.auth.tenant_membership_repository import TenantMembershipRepository
 from tools.eos.kernel.db import get_client, get_database
+from tools.eos.saas.billing.subscription_term_policy import evaluate_subscription_term
 from tools.eos.saas.billing.subscription_registry import (
     SubscriptionRegistry,
     SubscriptionRegistryError,
@@ -387,8 +390,13 @@ def _run(
                         session=session,
                     )
                 entity = _subscription(commercial)
+                term = evaluate_subscription_term(
+                    entity,
+                    evaluated_at=datetime.now(timezone.utc),
+                )
                 applicable = (
-                    entity.status is SubscriptionStatus.ACTIVE
+                    term.eligible
+                    and entity.status is SubscriptionStatus.ACTIVE
                     and LEGAL_FEATURE in entity.plan_features
                 )
                 issuance: TenantProductEntitlementIssuanceResult | None = None
@@ -527,7 +535,7 @@ __all__ = [
 
 # WILSY OS SOVEREIGN ARTIFACT SEAL
 # ARTIFACT: subscription_active_entitlement_composition_service.py
-# VERSION: v1.1.0-D22B3-P42-CATALOGUE-UPGRADE-COMPOSITION
+# VERSION: v1.2.0-P42-SUBSCRIPTION-TERM-ENFORCEMENT
 # AUTHORITY BOUNDARY: transaction composition of subscription lifecycle and positive Legal Operations entitlement only
 # TENANT POSTURE: exact SovereignIdentity tenant/principal scope and one active session
 # FAIL-CLOSED POSTURE: invalid input, dependency, lifecycle, issuance, retry exhaustion and uncertain commit reject
