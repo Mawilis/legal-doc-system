@@ -98,8 +98,9 @@ def read_practitioner_document_content(
 ) -> bytes:
     """Verify the complete scoped chain before attempting any content read.
 
-    The existing G77 source verifier is intentionally denial-only until
-    institutional reviewer/admin and acknowledgement authority are ratified.
+    G77 re-reads G78 membership and acknowledgement histories in the same
+    caller-owned transaction and preserves explicit-deny precedence. Those
+    records remain evidence, not institutional issuer or verifier authority.
     The G63 readiness check and G72 admission guard are independent fail-closed
     backstops. Therefore the reader is currently unreachable by design. This
     coordinator is not mounted to an HTTP route and cannot grant access.
