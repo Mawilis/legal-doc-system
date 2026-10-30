@@ -83,6 +83,17 @@ def test_missing_and_stale_acknowledgement_deny():
     assert project(member, stale).state is WallEvidenceCurrentness.ACKNOWLEDGEMENT_MEMBERSHIP_MISMATCH
 
 
+
+def test_acknowledgement_revocation_expiry_and_policy_mismatch_deny():
+    member = membership()
+    revoked = acknowledgement(member, state=AcknowledgementState.REVOKED)
+    expired = acknowledgement(member, expires_at=NOW)
+    wrong_policy = acknowledgement(member, policy_fingerprint="9" * 128)
+    assert project(member, revoked).state is WallEvidenceCurrentness.ACKNOWLEDGEMENT_REVOKED
+    assert project(member, expired).state is WallEvidenceCurrentness.ACKNOWLEDGEMENT_EXPIRED
+    assert project(member, wrong_policy).state is WallEvidenceCurrentness.ACKNOWLEDGEMENT_POLICY_MISMATCH
+
+
 def test_acknowledgement_must_be_self_signed_by_practitioner_and_independently_verified():
     member = membership()
     try:
