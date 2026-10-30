@@ -1,7 +1,7 @@
 /* eslint-disable */
 /**
  * TITLE: WILSY OS Sovereign Dashboard Controller
- * VERSION: v18.6.0-CANONICAL-KERNEL-HEALTH-TRANSPORT
+ * VERSION: v18.7.0-AUTHENTICATED-ROLE-LANDING
  * AUTHORITY: Authenticated client dashboard routing and presentation composition.
  * EPITOME: Resolves the existing WILSY OS dashboard shard from authenticated
  *          identity and tenant context. L8-7D10 converges every published Legal
@@ -244,7 +244,7 @@ const WILSY_OPERATING_SKINS = Object.freeze({
 });
 
 const KERNEL_PROBE_INTERVAL_MS = 60_000;
-const CONTROLLER_VERSION = 'v18.6.0-CANONICAL-KERNEL-HEALTH-TRANSPORT';
+const CONTROLLER_VERSION = 'v18.7.0-AUTHENTICATED-ROLE-LANDING';
 
 // ─── Theme helpers ───────────────────────────────────────────────────────────
 
@@ -437,20 +437,7 @@ export const hasFounderReturnAuthority = ({ user = {}, role = '' } = {}) => {
  * @function resolveDashboardKey
  * @description Resolves canonical dashboard key from override, intent, role and tenant.
  */
-export const resolveDashboardKey = ({
-  user = {},
-  activeTenant = {},
-  manualDashboardKey = '',
-  dashboardIntent = ''
-} = {}) => {
-  const manualTarget = mapDashboardAlias(manualDashboardKey);
-  if (manualTarget) return manualTarget;
-
-  const explicitTarget = collectDashboardSignals({ user, activeTenant, dashboardIntent })
-    .map(mapDashboardAlias)
-    .find(Boolean);
-  if (explicitTarget) return explicitTarget;
-
+export const resolveDashboardKey = ({ user = {} } = {}) => {
   const roleToken = normalizeDashboardToken(user.role || user.accountRole || user.tenantRole);
 
   if (
@@ -464,6 +451,9 @@ export const resolveDashboardKey = ({
     return DASHBOARD_KEYS.FOUNDER;
   }
 
+  // Landing surfaces are derived from the authenticated primary role only.
+  // Browser preferences, tenant metadata and route events are navigation hints,
+  // never authority to select a different role workspace.
   return ROLE_DASHBOARD_MAP[roleToken] || DASHBOARD_KEYS.GENERAL;
 };
 
@@ -670,19 +660,12 @@ const SovereignDashboardController = ({ user: propUser, onLogout }) => {
     return null;
   }, [propUser]);
 
-  const dashboardIntent = useMemo(() => (
-    localStorage.getItem('wilsy_dashboard_intent')
-    || localStorage.getItem('wilsy_default_dashboard')
-    || localStorage.getItem('wilsy_last_dashboard')
-    || ''
-  ), [user?.email, user?.id, user?._id]);
-
-  const role = normalizeDashboardToken(user?.role || user?.accountRole || user?.tenantRole);
+    const role = normalizeDashboardToken(user?.role || user?.accountRole || user?.tenantRole);
   const traceId = localStorage.getItem('traceId') || 'SYSTEM_CORE_INIT';
 
   const dashboardKey = useMemo(() => (
-    user ? resolveDashboardKey({ user, activeTenant, manualDashboardKey, dashboardIntent }) : ''
-  ), [activeTenant, dashboardIntent, manualDashboardKey, user]);
+    user ? resolveDashboardKey({ user }) : ''
+  ), [user]);
 
   const dashboardLabel = getDashboardDisplayName(dashboardKey);
   const canReturnToFounder = Boolean(
