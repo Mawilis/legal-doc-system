@@ -13,7 +13,8 @@ COLLABORATION / OWNERSHIP: HTTP composition certificate only; IAM owns caller
                             personal active work, and L8-6D owns field-capability
                             composition. Command IAM remains independently enforced.
 CERTIFICATION / UPDATE DATE: 2026-10-30
-CHANGELOG: 2026-10-30 v1.3.0-L8-6E-DEPUTY-SERVING-ASSIGNMENT-HTTP-CERT certifies snapshot transaction forwarding and exact pointer/receipt-backed Deputy, office, allocation-time and attempt-state projection.\n           2026-10-30 v1.2.0-L8-6D-G68-ROUTER-ALIGNMENT-HTTP-CERT
+CHANGELOG: 2026-10-30 v1.3.0-L8-6E-DEPUTY-SERVING-ASSIGNMENT-HTTP-CERT certifies snapshot transaction forwarding and exact pointer/receipt-backed Deputy, office, allocation-time and attempt-state projection.
+           2026-10-30 v1.2.0-L8-6D-G68-ROUTER-ALIGNMENT-HTTP-CERT
            aligns the exact router-version assertion with the current
            v1.17.0-G68-P2-PRACTITIONER-CONFIDENTIALITY-CONTAINMENT router;
            preserves deputy route, permission, binding, and fail-closed proofs.
