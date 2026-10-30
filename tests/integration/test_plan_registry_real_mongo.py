@@ -588,6 +588,26 @@ def test_real_mongo_version_topology_health_and_index_contract(
     )
 
 
+def test_catalogue_read_index_validation_never_performs_ddl(
+    mongo_context: _MongoContext,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """Read-time index validation works with a createIndexes-denied runtime."""
+    class ReadOnlyCollection:
+        def index_information(self) -> dict[str, Any]:
+            return mongo_context.collection.index_information()
+
+        def create_index(self, *_args: Any, **_kwargs: Any) -> None:
+            pytest.fail("catalogue read attempted createIndexes")
+
+    monkeypatch.setattr(
+        plan_registry_module,
+        "plans_collection",
+        ReadOnlyCollection(),
+    )
+    PlanRegistry._ensure_indexes()
+
+
 def test_real_mongo_create_persists_exact_canonical_plan_evidence(
     mongo_context: _MongoContext,
 ) -> None:
