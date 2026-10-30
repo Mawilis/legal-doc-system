@@ -46,7 +46,7 @@ CHANGELOG:
     2026-09-15 L7D import-safety hardening (compatibility version retained)
         - Defers Mongo topology discovery until a registry operation executes;
           importing the API no longer performs external DNS/network work.
-    2026-09-03 v1.3.0-READ-ONLY-INDEX-VALIDATION
+    2026-09-03 v1.2.0-EXACT-TENANT-SCOPE
         - Adds backwards-compatible keyword-only exact_tenant scope.
         - Default global-plus-tenant catalogue semantics remain unchanged.
         - Exact mode requires persisted Plan tenant ownership equality.
