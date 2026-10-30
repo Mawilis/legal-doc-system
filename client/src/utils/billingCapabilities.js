@@ -10,13 +10,16 @@
  * ║   ╚═════╝ ╚═╝╚══════╝╚══════╝╚═╝╚══════╝ ╚═════╝╚═╝  ╚═╝╚═╝  ╚═╝╚═╝  ╚═╝╚═╝  ╚═╝╚═╝╚══════╝╚══════╝╚══════╝                      ║
  * ║                                                                                                                                        ║
  * ╚════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════╝
- * 🏛️ WILSY OS - BILLING CAPABILITY MATRIX [V1.0.0‑INSTITUTIONAL]
+ * 🏛️ WILSY OS - BILLING CAPABILITY MATRIX [V1.1.0-TENANT-SUBSCRIPTION-MANAGEMENT]
  * ╠════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════╣
  * ║ EPITOME: Single source of truth for BillingHUD tab/action visibility based on user role.                                             ║
  * ║           Used to gate UI elements (tabs, buttons) without touching the API layer.                                                   ║
+ * ║ AUTHORITY: UI visibility only; Python EOS authorizes every subscription and entitlement operation.                                ║
+ * ║ TENANT BOUNDARY: Uses the authenticated workspace business-role projection; no tenant scope is inferred or widened.               ║
+ * ║ FINANCIAL BOUNDARY: No payment, execution or settlement authority; Kennel EOS remains exclusive.                                   ║
  * ║ COMPLIANCE: POPIA §19 · GDPR §32 · SOC2 §CC7.2 · ISO 27001                                                                          ║
  * ╠════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════╣
- * ║ VERSION: 1.0.0‑INSTITUTIONAL | PRODUCTION READY                                                                                     ║
+ * ║ VERSION: 1.1.0-TENANT-SUBSCRIPTION-MANAGEMENT | PRODUCTION READY                                                                                     ║
  * ║ ABSOLUTE PATH: /Users/wilsonkhanyezi/legal-doc-system/client/src/utils/billingCapabilities.js                                        ║
  * ╠════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════╣
  * ║ 👥 COLLABORATION & SOVEREIGN SIGN‑OFF:                                                                                                 ║
@@ -25,6 +28,7 @@
  * ║ • Compliance: POPIA §19, GDPR §32, SOC2 §CC7.2, ISO 27001                                                                            ║
  * ╠════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════╣
  * ║ 🔧 CHANGE LOG:                                                                                                                       ║
+ * ║   2026-10-30 v1.1.0-TENANT-SUBSCRIPTION-MANAGEMENT – Exposes subscription visibility to tenant owner/admin/manager projections.      ║
  * ║   2026-08-21 v1.0.0‑INSTITUTIONAL – Initial creation.                                                                                ║
  * ╚════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════╝
  */
@@ -60,6 +64,7 @@ export function buildBillingCapabilities(user = {}, opts = {}) {
   const isFinance = isSovereign || ['FINANCE', 'BILLING_ADMIN', 'CFO', 'ACCOUNTANT'].includes(role);
   const isOps = isSovereign || ['OPS', 'COLLECTIONS', 'LEGAL'].includes(role);
   const isInvestor = isSovereign || role === 'INVESTOR_READ' || role === 'INVESTOR';
+  const isTenantSubscriptionAdmin = ['TENANT_OWNER', 'TENANT_ADMIN', 'TENANT_MANAGER'].includes(role);
   const isTenantScoped = !isSovereign;
 
   return Object.freeze({
@@ -76,7 +81,7 @@ export function buildBillingCapabilities(user = {}, opts = {}) {
     viewPlatformLedger: isSovereign || isFinance,
     viewClientLedger: true,
     viewPayables: isFinance || isSovereign,
-    viewSubscriptions: isFinance || isSovereign,
+    viewSubscriptions: isFinance || isSovereign || isTenantSubscriptionAdmin,
     viewInvestor: isInvestor,
     viewAnomalies: isFinance || isSovereign,
     viewAutomation: isSovereign || isFinance,
@@ -121,10 +126,10 @@ export default buildBillingCapabilities;
 
 /**
  * ═══════════════════════════════════════════════════════════════════════════════
- * 🏛️ INSTITUTIONAL CERTIFICATION SEAL — billingCapabilities V1.0.0‑INSTITUTIONAL
+ * 🏛️ INSTITUTIONAL CERTIFICATION SEAL — billingCapabilities V1.1.0-TENANT-SUBSCRIPTION-MANAGEMENT
  * ═══════════════════════════════════════════════════════════════════════════════
  * Status:          CERTIFIED PRODUCTION ARTIFACT
- * Version:         v1.0.0‑INSTITUTIONAL
+ * Version:         v1.1.0-TENANT-SUBSCRIPTION-MANAGEMENT
  * Compliance:      POPIA §19 · GDPR §32 · SOC2 §CC7.2 · ISO 27001
  * Error Handling:  Safe fallback – missing roles default to empty string.
  * Pending Work:    None – ready for integration.
