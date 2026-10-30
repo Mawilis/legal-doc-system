@@ -56,6 +56,8 @@ def request(reader: Reader, *, ctx: object | None = None, session: object | None
         "conflict_source": object(),
         "review_source": object(),
         "wall_source": object(),
+        "membership_source": object(),
+        "acknowledgement_source": object(),
         "content_reader": reader,
         "session": Session() if session is None else session,
     }
