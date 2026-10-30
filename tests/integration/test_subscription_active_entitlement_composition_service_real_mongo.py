@@ -1,7 +1,7 @@
 """Real-Mongo certificate for subscription/Legal entitlement composition.
 
 TITLE: Subscription Active Entitlement Composition Service Real-Mongo Certificate
-VERSION: v1.0.2-D22B3-P43-REAL-MONGO-SERVICE-CERTIFICATE
+VERSION: v1.0.3-D22B3-P43-UPGRADE-REAL-MONGO-CERTIFICATE
 AUTHORITY: Wilsy OS Core Governance
 EPITOME: Certifies that the P42 service composes canonical subscription
          mutation, authorization evidence and Legal Operations entitlement
@@ -11,7 +11,10 @@ COLLABORATION / OWNERSHIP: P42 owns transaction lifecycle; SubscriptionRegistry,
                             IAM evidence and D22B2 entitlement registries retain
                             their distinct canonical truth boundaries.
 CERTIFICATION / UPDATE DATE: 2026-10-09
-CHANGELOG: v1.0.2-D22B3-P43-REAL-MONGO-SERVICE-CERTIFICATE corrects the positive
+CHANGELOG: v1.0.3-D22B3-P43-UPGRADE-REAL-MONGO-CERTIFICATE adds an actual
+           Mongo transaction proving canonical catalogue upgrade, UPGRADE audit
+           proof, authorization evidence and Legal entitlement commit atomically.
+           v1.0.2-D22B3-P43-REAL-MONGO-SERVICE-CERTIFICATE corrects the positive
            current-pointer/domain coordinate to canonical lifecycle_revision.
            v1.0.1-D22B3-P43-REAL-MONGO-SERVICE-CERTIFICATE repairs current-pointer
            revision correlation and permits only the typed bounded-retry loser
@@ -97,7 +100,7 @@ from tools.eos.saas.entitlement.tenant_product_entitlement_registry import (
 )
 
 
-VERSION = "v1.0.2-D22B3-P43-REAL-MONGO-SERVICE-CERTIFICATE"
+VERSION = "v1.0.3-D22B3-P43-UPGRADE-REAL-MONGO-CERTIFICATE"
 MONGO_URI = os.getenv(
     "TEST_VENDOR_MONGO_URI",
     "mongodb://127.0.0.1:27027/?replicaSet=wilsyVendorCertRS",
@@ -605,7 +608,7 @@ def test_transaction_ownership_and_authority_exclusions_are_exact() -> None:
 
 # WILSY OS SOVEREIGN ARTIFACT SEAL
 # ARTIFACT: test_subscription_active_entitlement_composition_service_real_mongo.py
-# VERSION: v1.0.2-D22B3-P43-REAL-MONGO-SERVICE-CERTIFICATE
+# VERSION: v1.0.3-D22B3-P43-UPGRADE-REAL-MONGO-CERTIFICATE
 # AUTHORITY BOUNDARY: operational real-Mongo evidence only; no route or product authority
 # TENANT POSTURE: UUID-isolated exact-tenant and exact-principal certification
 # FAIL-CLOSED POSTURE: topology, partial write, isolation, race and corruption failures reject
