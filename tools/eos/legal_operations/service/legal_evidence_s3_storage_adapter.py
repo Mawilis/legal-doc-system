@@ -1,12 +1,12 @@
 """WILSY OS AWS S3 adapter for streamed Legal Evidence binaries.
 
 TITLE: Legal Evidence S3 Storage Adapter
-VERSION: v1.4.0-L10A2R-C4D6C-A-S3-COVERAGE-PAGE-ADAPTER
+VERSION: v1.5.0-L10A2R-C4D7-EXACT-VERSION-VERIFIED-READ
 AUTHORITY: Wilsy OS Core Governance / Python EOS Legal Operations
-EPITOME: Implement the certified provider-neutral Legal Evidence binary-storage
-         port using AWS S3 multipart operations while preserving exact
-         tenant-scoped intent binding, opaque provider evidence and fail-closed
-         provider interaction.
+EPITOME: Implement the provider-neutral Legal Evidence binary-storage port,
+         including bounded exact-version content retrieval that validates
+         tenant-scoped intent, provider metadata, exact length and SHA3-512
+         before returning bytes, without granting disclosure authority.
 ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/tools/eos/legal_operations/service/legal_evidence_s3_storage_adapter.py
 COLLABORATION / OWNERSHIP: L10A2R-A4-R1 owns provider-neutral storage semantics
                             and tenant/intake scope guards. This adapter owns
@@ -14,9 +14,15 @@ COLLABORATION / OWNERSHIP: L10A2R-A4-R1 owns provider-neutral storage semantics
                             Legal Evidence content identity. L10A2Q owns
                             commercial capacity. Retention/legal-hold authority,
                             HTTP, IAM and Mongo reconciliation remain elsewhere.
-CERTIFICATION / UPDATE DATE: 2026-10-01
-CHANGELOG: v1.4.0-L10A2R-C4D6C-A-S3-COVERAGE-PAGE-ADAPTER implements the separately certified C4D6B
-           page-enumeration seam using exact S3 continuation marker pairs,
+CERTIFICATION / UPDATE DATE: 2026-10-26
+CHANGELOG: 2026-10-26 v1.5.0-L10A2R-C4D7 adds bounded exact-version
+           S3 content retrieval. It validates sealed write intent, exact object
+           version and server-derived key, HEAD and GET metadata, admitted
+           length, and SHA3-512 of the complete returned body before exposing
+           bytes. This storage primitive grants no IAM, practitioner, matter
+           disclosure, lifecycle, client-visibility or AI authority.
+           v1.4.0-L10A2R-C4D6C-A-S3-COVERAGE-PAGE-ADAPTER adds read-only
+           page enumeration using exact S3 continuation marker pairs,
            tamper-evident opaque continuation references and exact-version
            HEAD recovery, without changing C4D2 discovery semantics or
            granting complete-coverage, orphan, abort or deletion authority.
@@ -78,6 +84,9 @@ import boto3
 from botocore.client import BaseClient
 from botocore.exceptions import BotoCoreError, ClientError
 
+from tools.eos.legal_operations.domain.legal_evidence_content import (
+    MAX_CONTENT_BYTES,
+)
 from tools.eos.legal_operations.service.legal_evidence_binary_storage_port import (
     MAX_STREAM_CHUNK_BYTES,
     LegalEvidenceBinaryChunkEvidence,
@@ -102,7 +111,7 @@ from tools.eos.legal_operations.service.legal_evidence_provider_coverage_enumera
 )
 
 
-VERSION: Final[str] = "v1.4.0-L10A2R-C4D6C-A-S3-COVERAGE-PAGE-ADAPTER"
+VERSION: Final[str] = "v1.5.0-L10A2R-C4D7-EXACT-VERSION-VERIFIED-READ"
 PROVIDER_NAME: Final[str] = "aws_s3"
 DEFAULT_REGION: Final[str] = "af-south-1"
 MAX_S3_PARTS: Final[int] = 10_000
@@ -726,6 +735,106 @@ class LegalEvidenceS3StorageAdapter:
             content_length=length,
             content_fingerprint=evidence.content_fingerprint,
         )
+
+    def read_verified_content(
+        self,
+        intent: LegalEvidenceBinaryWriteIntent,
+        evidence: LegalEvidenceBinaryObjectEvidence,
+    ) -> bytes:
+        """Return one fully verified, bounded exact-version object.
+
+        This is a storage primitive only. Callers must independently authorize
+        disclosure and derive intent and evidence from canonical, tenant-scoped
+        server-side records. No bytes are returned until exact version metadata,
+        byte length and WILSY SHA3-512 identity all match. The canonical Legal Evidence content ceiling
+        bounds materialization.
+        """
+        try:
+            validate_object_evidence_for_intent(intent=intent, evidence=evidence)
+        except LegalEvidenceBinaryStoragePortError as error:
+            _fail("L10A2R_B2_SCOPE_MISMATCH", error)
+
+        if (
+            evidence.provider_name != PROVIDER_NAME
+            or evidence.storage_reference != _storage_key(intent)
+            or evidence.content_length > intent.admitted_max_content_length
+            or evidence.content_length > MAX_CONTENT_BYTES
+        ):
+            _fail("L10A2R_C4D7_CONTENT_EVIDENCE_INVALID")
+
+        verified = self.inspect(intent, evidence)
+        if (
+            verified.content_length != evidence.content_length
+            or verified.object_version_reference != evidence.object_version_reference
+            or not hmac.compare_digest(
+                verified.content_fingerprint,
+                evidence.content_fingerprint,
+            )
+        ):
+            _fail("L10A2R_C4D7_CONTENT_EVIDENCE_INVALID")
+
+        body: Any | None = None
+        try:
+            response = self._client.get_object(
+                Bucket=self._config.bucket,
+                Key=evidence.storage_reference,
+                VersionId=evidence.object_version_reference,
+            )
+            if not isinstance(response, Mapping):
+                _fail("L10A2R_C4D7_PROVIDER_RESPONSE_INVALID")
+            body = response.get("Body")
+            length = response.get("ContentLength")
+            metadata = response.get("Metadata")
+            version_id = response.get("VersionId")
+            if (
+                body is None
+                or isinstance(length, bool)
+                or not isinstance(length, int)
+                or length != evidence.content_length
+                or not isinstance(metadata, Mapping)
+                or metadata.get("wilsy-intent-sha3-512") != intent.fingerprint
+                or not isinstance(version_id, str)
+                or version_id != evidence.object_version_reference
+            ):
+                _fail("L10A2R_C4D7_PROVIDER_METADATA_MISMATCH")
+
+            chunks: list[bytes] = []
+            hasher = hashlib.sha3_512()
+            observed_length = 0
+            while True:
+                chunk = body.read(MAX_STREAM_CHUNK_BYTES)
+                if not isinstance(chunk, bytes):
+                    _fail("L10A2R_C4D7_PROVIDER_BODY_INVALID")
+                if not chunk:
+                    break
+                observed_length += len(chunk)
+                if (
+                    len(chunk) > MAX_STREAM_CHUNK_BYTES
+                    or observed_length > evidence.content_length
+                    or observed_length > intent.admitted_max_content_length
+                    or observed_length > MAX_CONTENT_BYTES
+                ):
+                    _fail("L10A2R_C4D7_CONTENT_LENGTH_MISMATCH")
+                hasher.update(chunk)
+                chunks.append(chunk)
+
+            fingerprint = hasher.hexdigest()
+            if (
+                observed_length != evidence.content_length
+                or not hmac.compare_digest(
+                    fingerprint,
+                    evidence.content_fingerprint,
+                )
+            ):
+                _fail("L10A2R_C4D7_CONTENT_INTEGRITY_MISMATCH")
+            return b"".join(chunks)
+        except (BotoCoreError, ClientError, OSError) as error:
+            _fail("L10A2R_C4D7_READ_FAILED", error)
+        finally:
+            if body is not None:
+                close = getattr(body, "close", None)
+                if callable(close):
+                    close()
 
     def list_incomplete_write_session_page(
         self,
@@ -1624,10 +1733,11 @@ __all__ = [
 ]
 
 # ARTIFACT: legal_evidence_s3_storage_adapter.py
-# VERSION: v1.4.0-L10A2R-C4D6C-A-S3-COVERAGE-PAGE-ADAPTER
+# VERSION: v1.5.0-L10A2R-C4D7-EXACT-VERSION-VERIFIED-READ
 # AUTHORITY BOUNDARY: AWS S3 capability execution only; WILSY retains canonical Legal Evidence truth
 # TENANT POSTURE: provider keys contain only opaque coordinate digests; every provider operation locally tenant/intake scope-guarded
-# FAIL-CLOSED POSTURE: scope/config/sequence/provider-response/provider-metadata divergence rejects before success
+# FAIL-CLOSED POSTURE: scope/config/sequence/provider-response/provider-metadata/content-integrity divergence rejects before success
+# CONTENT READ POSTURE: exact-version S3 bytes are returned only after complete length and SHA3-512 verification; no authorization is granted
 # CLEANUP METADATA POSTURE: exact object-version HEAD yields ABSENT or PRESENT evidence only
 # FINANCIAL EXECUTION AUTHORITY: none; Kennel EOS exclusively
 # C4D6C-A COVERAGE PAGE POSTURE: one provider page only; never complete coverage
