@@ -399,7 +399,7 @@ def mongo_context() -> Iterator[_MongoContext]:
         plans
     )
 
-    PlanRegistry._ensure_indexes()
+    PlanRegistry.provision_indexes()
 
     # Bootstrap indexes through the public create path, then clean.
     bootstrap_tenant = (
@@ -2803,7 +2803,7 @@ def test_real_mongo_legacy_reconcile_then_install_canonical_indexes(
             collection,
         )
 
-        registry._ensure_indexes()
+        registry.provision_indexes()
 
         indexes = {
             entry["name"]: entry
@@ -3067,7 +3067,7 @@ def test_real_mongo_legacy_idempotency_index_reconciliation_precedes_migration(
             collection,
         )
 
-        registry._ensure_indexes()
+        registry.provision_indexes()
 
         canonical_indexes = {
             entry["name"]: entry
