@@ -71,9 +71,9 @@ class Source:
         return self.value
 
 
-def matter() -> CaseMatter:
+def matter(*, tenant_id: str = "tenant-a") -> CaseMatter:
     return CaseMatter(
-        case_matter_id="matter-a", tenant_id="tenant-a",
+        case_matter_id="matter-a", tenant_id=tenant_id,
         matter_reference="matter-ref-a", opened_at=NOW - timedelta(days=2),
         evidence_reference="matter-open-evidence-a", state=CaseMatterState.OPEN,
     )
@@ -98,10 +98,11 @@ def assignment() -> LegalWorkAssignment:
     )
 
 
-def conflict() -> LegalClientMatterConflictDispositionCurrentness:
+def conflict(*, tenant_id: str = "tenant-a") -> LegalClientMatterConflictDispositionCurrentness:
+    scoped_matter = matter(tenant_id=tenant_id)
     return LegalClientMatterConflictDispositionCurrentness(
-        currentness_id="conflict-current-a", tenant_id="tenant-a",
-        case_matter_id="matter-a", matter_fingerprint=matter().fingerprint,
+        currentness_id="conflict-current-a", tenant_id=tenant_id,
+        case_matter_id="matter-a", matter_fingerprint=scoped_matter.fingerprint,
         client_party_id="client-a", subject_identity_fingerprint="1" * 128,
         evaluation_time=NOW, decisive_effective_from=NOW - timedelta(days=1),
         decisive_disposition_ids=("disposition-a",),
@@ -336,13 +337,22 @@ def test_service_has_no_positive_or_content_delivery_surface() -> None:
 )
 def test_expired_or_self_review_denies(review_changes: dict[str, object], expected: str) -> None:
     wall = policy()
-    with pytest.raises(service.EthicalWallEnforcementDenied, match=expected):
-        enforce(review_source=Source(review(wall, **review_changes)))
+    if review_changes.get("reviewer_principal_id") == "practitioner-a":
+        valid = review(wall)
+        forged = object.__new__(ConfidentialityReviewDecision)
+        for name in valid.__dataclass_fields__:
+            object.__setattr__(forged, name, getattr(valid, name))
+        object.__setattr__(forged, "reviewer_principal_id", "practitioner-a")
+        with pytest.raises(service.EthicalWallEnforcementDenied, match=expected):
+            enforce(review_source=Source(forged))
+    else:
+        with pytest.raises(service.EthicalWallEnforcementDenied, match=expected):
+            enforce(review_source=Source(review(wall, **review_changes)))
 
 
 def test_cross_tenant_conflict_evidence_denies() -> None:
     with pytest.raises(service.EthicalWallEnforcementDenied, match="CONFLICT_BLOCKED"):
-        enforce(conflict_source=Source(replace(conflict(), tenant_id="tenant-b")))
+        enforce(conflict_source=Source(conflict(tenant_id="tenant-b")))
 
 
 def test_cross_tenant_binding_and_cross_matter_assignment_deny() -> None:
@@ -353,7 +363,12 @@ def test_cross_tenant_binding_and_cross_matter_assignment_deny() -> None:
 
 
 def test_revoked_wall_policy_denies_even_with_matching_review_fingerprint() -> None:
-    revoked = policy(status=EthicalWallPolicyStatus.REVOKED)
+    revoked = policy(
+        status=EthicalWallPolicyStatus.REVOKED,
+        ratification_state=InstitutionalRatificationState.REVOKED,
+        ratification_reference="revocation-ratification-a",
+        ratification_fingerprint="e" * 128,
+    )
     with pytest.raises(service.EthicalWallEnforcementDenied, match="WALL_REVOKED_OR_SCOPE_INVALID"):
         enforce(wall_source=WallSource(revoked), review_source=Source(review(revoked)))
 
