@@ -33,6 +33,7 @@ from enum import Enum
 from tools.eos.saas.domain.subscription import (
     SubscriptionEntity,
     SubscriptionStatus,
+    verify_subscription_integrity,
 )
 
 
@@ -52,6 +53,7 @@ class SubscriptionTermKind(str, Enum):
     """Canonical subscription term classes; classification grants no access."""
 
     PERPETUAL_PLATFORM_OWNER = "PERPETUAL_PLATFORM_OWNER"
+    INACTIVE_LIFECYCLE = "INACTIVE_LIFECYCLE"
     BILLING_PERIOD = "BILLING_PERIOD"
     EXPIRED_BILLING_PERIOD = "EXPIRED_BILLING_PERIOD"
 
@@ -102,10 +104,12 @@ def evaluate_subscription_term(
         raise SubscriptionTermPolicyError("SUBSCRIPTION_TERM_ENTITY_REQUIRED")
 
     now = _aware_utc(evaluated_at, "EVALUATED_AT")
+    if not verify_subscription_integrity(subscription):
+        raise SubscriptionTermPolicyError("SUBSCRIPTION_TERM_INTEGRITY_INVALID")
     status = subscription.status
     if status is not SubscriptionStatus.ACTIVE:
         return SubscriptionTermDecision(
-            SubscriptionTermKind.EXPIRED_BILLING_PERIOD,
+            SubscriptionTermKind.INACTIVE_LIFECYCLE,
             False,
             now,
         )
