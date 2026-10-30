@@ -219,6 +219,31 @@ def _verify_review(
     return value
 
 
+def _deny_wall_evidence_state(state: WallEvidenceCurrentness) -> None:
+    if state is WallEvidenceCurrentness.MEMBERSHIP_RESTRICTED:
+        _deny("G77_WALL_MEMBERSHIP_RESTRICTED")
+    if state is WallEvidenceCurrentness.MEMBERSHIP_REVOKED:
+        _deny("G77_WALL_MEMBERSHIP_REVOKED")
+    if state is WallEvidenceCurrentness.MEMBERSHIP_EXPIRED:
+        _deny("G77_WALL_MEMBERSHIP_EXPIRED")
+    if state is WallEvidenceCurrentness.MEMBERSHIP_POLICY_MISMATCH:
+        _deny("G77_WALL_MEMBERSHIP_POLICY_MISMATCH")
+    if state is WallEvidenceCurrentness.MEMBERSHIP_MISSING:
+        _deny("G77_WALL_MEMBERSHIP_REQUIRED")
+    if state is WallEvidenceCurrentness.ACKNOWLEDGEMENT_MISSING:
+        _deny("G77_WALL_ACKNOWLEDGEMENT_REQUIRED")
+    if state is WallEvidenceCurrentness.ACKNOWLEDGEMENT_REVOKED:
+        _deny("G77_WALL_ACKNOWLEDGEMENT_REVOKED")
+    if state is WallEvidenceCurrentness.ACKNOWLEDGEMENT_EXPIRED:
+        _deny("G77_WALL_ACKNOWLEDGEMENT_EXPIRED")
+    if state is WallEvidenceCurrentness.ACKNOWLEDGEMENT_POLICY_MISMATCH:
+        _deny("G77_WALL_ACKNOWLEDGEMENT_POLICY_MISMATCH")
+    if state is WallEvidenceCurrentness.ACKNOWLEDGEMENT_MEMBERSHIP_MISMATCH:
+        _deny("G77_WALL_ACKNOWLEDGEMENT_MEMBERSHIP_MISMATCH")
+    if state is not WallEvidenceCurrentness.RECORDED_COMPLETE_UNVERIFIED:
+        _deny("G77_WALL_MEMBERSHIP_ACKNOWLEDGEMENT_CORRUPT")
+
+
 def require_source_verified_ethical_wall_access(
     *, authenticated_principal_id: str, tenant_id: str, case_matter_id: str,
     policy_id: str, evaluation_time: datetime, iam_source: object,
@@ -300,50 +325,38 @@ def require_source_verified_ethical_wall_access(
     if decision.permits_operational_access is not False:
         _deny("G77_WALL_SOURCE_INVALID")
 
-    # G78 re-reads membership and acknowledgement history in the identical
-    # caller-owned transaction. These records are evidence only: even a complete
-    # chain cannot satisfy institutional issuer/verification authority.
+    # Resolve membership first. A current restriction, revocation, expiry or
+    # corrupt/mismatched membership short-circuits before acknowledgement reads.
     memberships = _resolve(
         membership_source, "G77_WALL_MEMBERSHIP_SOURCE_UNAVAILABLE", **scope,
     )
+    if type(memberships) is not tuple or any(
+        type(item) is not WallMembershipEvidence for item in memberships
+    ):
+        _deny("G77_WALL_MEMBERSHIP_SOURCE_INVALID")
+    membership_projection = project_wall_membership_and_acknowledgement(
+        tenant_id=tenant, case_matter_id=matter, policy_id=policy,
+        practitioner_principal_id=principal, policy_fingerprint=current.fingerprint,
+        evaluation_time=at, memberships=memberships, acknowledgements=(),
+    )
+    if membership_projection.state is not WallEvidenceCurrentness.ACKNOWLEDGEMENT_MISSING:
+        _deny_wall_evidence_state(membership_projection.state)
+
+    # Acknowledgements are fetched only after current membership has passed all
+    # explicit-deny and scope checks. Both reads use the identical transaction.
     acknowledgements = _resolve(
         acknowledgement_source, "G77_WALL_ACKNOWLEDGEMENT_SOURCE_UNAVAILABLE", **scope,
     )
-    if (
-        type(memberships) is not tuple
-        or any(type(item) is not WallMembershipEvidence for item in memberships)
-        or type(acknowledgements) is not tuple
-        or any(type(item) is not WallAcknowledgementEvidence for item in acknowledgements)
+    if type(acknowledgements) is not tuple or any(
+        type(item) is not WallAcknowledgementEvidence for item in acknowledgements
     ):
-        _deny("G77_WALL_MEMBERSHIP_ACKNOWLEDGEMENT_INVALID")
+        _deny("G77_WALL_ACKNOWLEDGEMENT_SOURCE_INVALID")
     projection = project_wall_membership_and_acknowledgement(
         tenant_id=tenant, case_matter_id=matter, policy_id=policy,
         practitioner_principal_id=principal, policy_fingerprint=current.fingerprint,
         evaluation_time=at, memberships=memberships, acknowledgements=acknowledgements,
     )
-    state = projection.state
-    if state is WallEvidenceCurrentness.MEMBERSHIP_RESTRICTED:
-        _deny("G77_WALL_MEMBERSHIP_RESTRICTED")
-    if state is WallEvidenceCurrentness.MEMBERSHIP_REVOKED:
-        _deny("G77_WALL_MEMBERSHIP_REVOKED")
-    if state is WallEvidenceCurrentness.MEMBERSHIP_EXPIRED:
-        _deny("G77_WALL_MEMBERSHIP_EXPIRED")
-    if state is WallEvidenceCurrentness.MEMBERSHIP_POLICY_MISMATCH:
-        _deny("G77_WALL_MEMBERSHIP_POLICY_MISMATCH")
-    if state is WallEvidenceCurrentness.MEMBERSHIP_MISSING:
-        _deny("G77_WALL_MEMBERSHIP_REQUIRED")
-    if state is WallEvidenceCurrentness.ACKNOWLEDGEMENT_MISSING:
-        _deny("G77_WALL_ACKNOWLEDGEMENT_REQUIRED")
-    if state is WallEvidenceCurrentness.ACKNOWLEDGEMENT_REVOKED:
-        _deny("G77_WALL_ACKNOWLEDGEMENT_REVOKED")
-    if state is WallEvidenceCurrentness.ACKNOWLEDGEMENT_EXPIRED:
-        _deny("G77_WALL_ACKNOWLEDGEMENT_EXPIRED")
-    if state is WallEvidenceCurrentness.ACKNOWLEDGEMENT_POLICY_MISMATCH:
-        _deny("G77_WALL_ACKNOWLEDGEMENT_POLICY_MISMATCH")
-    if state is WallEvidenceCurrentness.ACKNOWLEDGEMENT_MEMBERSHIP_MISMATCH:
-        _deny("G77_WALL_ACKNOWLEDGEMENT_MEMBERSHIP_MISMATCH")
-    if state is not WallEvidenceCurrentness.RECORDED_COMPLETE_UNVERIFIED:
-        _deny("G77_WALL_MEMBERSHIP_ACKNOWLEDGEMENT_CORRUPT")
+    _deny_wall_evidence_state(projection.state)
 
     # A complete evidence chain remains non-authorizing until the institutional
     # issuer, reviewer and independent acknowledgement-verifier authority are
