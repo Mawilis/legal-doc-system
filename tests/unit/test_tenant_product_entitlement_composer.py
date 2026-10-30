@@ -66,6 +66,7 @@ def subscription(
     status: SubscriptionStatus = SubscriptionStatus.ACTIVE,
     plan_id: str = "plan-a",
     catalogue_version: int = 1,
+    period_end: datetime | None = None,
 ) -> SubscriptionEntity:
     """Build canonical immutable subscription evidence."""
     return SubscriptionEntity(
@@ -77,7 +78,7 @@ def subscription(
         billing_frequency=BillingFrequency.MONTHLY,
         start_date=NOW,
         current_period_start=NOW,
-        current_period_end=NOW + timedelta(days=30),
+        current_period_end=period_end or NOW + timedelta(days=30),
         idempotency_key=f"idempotency-{subscription_id}",
         subscription_id=subscription_id,
         plan_features=features,
@@ -240,7 +241,7 @@ def test_invalid_commercial_cardinality_or_feature_causes_no_writes(
     assert raised.value.code == code
 
 
-def test_invalid_canonical_subscription_proof_rejects_before_writes(
+def test_expired_active_commercial_subscription_rejects_before_entitlement_reads(\n    monkeypatch: pytest.MonkeyPatch,\n) -> None:\n    """ACTIVE status cannot extend ordinary commercial access past its term."""\n    Registry.items = (subscription(period_end=NOW - timedelta(seconds=1)),)\n    monkeypatch.setattr(\n        composer,\n        "get_current",\n        lambda *_args, **_kwargs: pytest.fail("entitlement read occurred"),\n    )\n    with pytest.raises(composer.TenantProductEntitlementComposerCommercialError) as raised:\n        invoke()\n    assert raised.value.code == "D22B3_SUBSCRIPTION_TERM_INELIGIBLE"\n\n\ndef test_invalid_canonical_subscription_proof_rejects_before_writes(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
     """A SHA3-shaped but non-canonical proof cannot authorize composition."""
