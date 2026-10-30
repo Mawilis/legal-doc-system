@@ -1,0 +1,107 @@
+name: G78 G77 G79 Wall Membership and Disclosure Certification
+
+on:
+  pull_request:
+    branches:
+      - feat/python-eos-practitioner-content-release
+    paths:
+      - "tools/eos/legal_operations/domain/legal_work_ethical_wall_membership_acknowledgement.py"
+      - "tools/eos/legal_operations/registry/legal_work_ethical_wall_membership_acknowledgement_registry.py"
+      - "tools/eos/legal_operations/service/legal_work_ethical_wall_source_adapters.py"
+      - "tools/eos/legal_operations/service/legal_work_ethical_wall_enforcement.py"
+      - "tools/eos/legal_operations/service/legal_practitioner_disclosure_coordinator.py"
+      - "tests/unit/test_legal_work_ethical_wall_membership_acknowledgement.py"
+      - "tests/unit/test_legal_work_ethical_wall_membership_acknowledgement_registry.py"
+      - "tests/unit/test_legal_work_ethical_wall_source_adapters.py"
+      - "tests/unit/test_legal_work_ethical_wall_enforcement.py"
+      - "tests/unit/test_legal_practitioner_disclosure_coordinator.py"
+      - "tests/integration/test_legal_work_ethical_wall_source_adapters_real_mongo.py"
+
+permissions:
+  contents: read
+
+jobs:
+  g78-g77-g79-certification:
+    name: G78 G77 G79 focused certification
+    runs-on: ubuntu-latest
+    env:
+      WILSY_G78_REAL_MONGO_URI: mongodb://localhost:27017/?replicaSet=g78WallCertRS
+      PIP_DISABLE_PIP_VERSION_CHECK: "1"
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+          cache-dependency-path: requirements.txt
+      - name: Install Python dependencies
+        run: |
+          python -m pip install --upgrade pip==25.3
+          python -m pip install -r requirements.txt pytest==9.1.1
+      - name: Start isolated MongoDB replica set
+        run: |
+          docker run --detach --name wilsy-g78-wall-cert-mongo \
+            --publish 27017:27017 mongo:7.0.37 \
+            mongod --replSet g78WallCertRS --bind_ip_all
+      - name: Initialize isolated MongoDB replica set
+        run: |
+          python - <<'PY'
+          import time
+          from pymongo import MongoClient
+
+          client = MongoClient(
+              "mongodb://localhost:27017",
+              directConnection=True,
+              serverSelectionTimeoutMS=2_000,
+          )
+          deadline = time.monotonic() + 60
+          initiated = False
+          last_error = None
+          while True:
+              try:
+                  hello = client.admin.command("hello")
+                  if not initiated and not hello.get("setName"):
+                      client.admin.command({
+                          "replSetInitiate": {
+                              "_id": "g78WallCertRS",
+                              "members": [{"_id": 0, "host": "localhost:27017"}],
+                          }
+                      })
+                      initiated = True
+                  if client.admin.command("hello").get("isWritablePrimary"):
+                      break
+              except Exception as error:
+                  last_error = error
+              if time.monotonic() >= deadline:
+                  raise RuntimeError(
+                      f"G78_MONGO_REPLICA_SET_UNAVAILABLE: {last_error!r}"
+                  ) from last_error
+              time.sleep(1)
+          client.close()
+          PY
+      - name: Compile G78 G77 G79 contracts
+        run: |
+          python -m py_compile \
+            tools/eos/legal_operations/domain/legal_work_ethical_wall_membership_acknowledgement.py \
+            tools/eos/legal_operations/registry/legal_work_ethical_wall_membership_acknowledgement_registry.py \
+            tools/eos/legal_operations/service/legal_work_ethical_wall_source_adapters.py \
+            tools/eos/legal_operations/service/legal_work_ethical_wall_enforcement.py \
+            tools/eos/legal_operations/service/legal_practitioner_disclosure_coordinator.py \
+            tests/unit/test_legal_work_ethical_wall_membership_acknowledgement.py \
+            tests/unit/test_legal_work_ethical_wall_membership_acknowledgement_registry.py \
+            tests/unit/test_legal_work_ethical_wall_source_adapters.py \
+            tests/unit/test_legal_work_ethical_wall_enforcement.py \
+            tests/unit/test_legal_practitioner_disclosure_coordinator.py \
+            tests/integration/test_legal_work_ethical_wall_source_adapters_real_mongo.py
+      - name: Run focused unit and disposable real-Mongo certificates
+        run: |
+          python -m pytest -q \
+            tests/unit/test_legal_work_ethical_wall_membership_acknowledgement.py \
+            tests/unit/test_legal_work_ethical_wall_membership_acknowledgement_registry.py \
+            tests/unit/test_legal_work_ethical_wall_source_adapters.py \
+            tests/unit/test_legal_work_ethical_wall_enforcement.py \
+            tests/unit/test_legal_practitioner_disclosure_coordinator.py \
+            tests/integration/test_legal_work_ethical_wall_source_adapters_real_mongo.py
+      - name: Stop isolated MongoDB replica set
+        if: always()
+        run: docker rm -f wilsy-g78-wall-cert-mongo 2>/dev/null || true
