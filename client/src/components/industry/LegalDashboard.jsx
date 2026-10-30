@@ -5054,31 +5054,13 @@ export default function LegalDashboard({
 
         {isSheriffMode && (
           <>
-            <section className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
-              <QueueMetric
-                icon={Inbox}
-                label="Office receipt"
-                value={metrics.officeReceipt}
-                description="REGISTERED process documents awaiting certified office receipt."
-              />
-              <QueueMetric
-                icon={UserCheck}
-                label="Deputy assignment"
-                value={metrics.deputyAssignment}
-                description="RECEIVED process documents awaiting canonical deputy allocation."
-              />
-              <QueueMetric
-                icon={Clock3}
-                label="Active attempts"
-                value={metrics.activeAttempts}
-                description="ALLOCATED or ATTEMPTED service attempts requiring operational attention."
-              />
-              <QueueMetric
-                icon={ClipboardList}
-                label="Current queue work"
-                value={metrics.totalCurrentWork}
-                description="Derived presentation count: the sum of the three certified queue families above."
-              />
+            <section aria-label="Process service workload summary" className="border-y border-stone-800 py-3">
+              <dl className="grid grid-cols-2 gap-x-6 gap-y-3 sm:grid-cols-4">
+                <div><dt className="text-[10px] font-semibold uppercase tracking-wider text-stone-500">Office receipt</dt><dd className="mt-1 text-xl font-bold tabular-nums text-white">{metrics.officeReceipt}</dd></div>
+                <div><dt className="text-[10px] font-semibold uppercase tracking-wider text-stone-500">Deputy assignment</dt><dd className="mt-1 text-xl font-bold tabular-nums text-white">{metrics.deputyAssignment}</dd></div>
+                <div><dt className="text-[10px] font-semibold uppercase tracking-wider text-stone-500">Active attempts</dt><dd className="mt-1 text-xl font-bold tabular-nums text-white">{metrics.activeAttempts}</dd></div>
+                <div><dt className="text-[10px] font-semibold uppercase tracking-wider text-stone-500">Total current work</dt><dd className="mt-1 text-xl font-bold tabular-nums text-white">{metrics.totalCurrentWork}</dd></div>
+              </dl>
             </section>
 
             <div className="grid gap-6 2xl:grid-cols-2">
@@ -5214,19 +5196,11 @@ export default function LegalDashboard({
               </section>
             )}
 
-            <section className="grid gap-4 md:grid-cols-2">
-              <QueueMetric
-                icon={UserCheck}
-                label="Bound deputy"
-                value={deputyWork.deputyId || '—'}
-                description="Canonical Deputy identity derived server-side from the immutable principal binding."
-              />
-              <QueueMetric
-                icon={Clock3}
-                label="My active attempts"
-                value={metrics.activeAttempts}
-                description="Only this bound deputy's current ALLOCATED or ATTEMPTED service attempts."
-              />
+            <section aria-label="My field-work summary" className="border-y border-stone-800 py-3">
+              <dl className="grid grid-cols-2 gap-6">
+                <div><dt className="text-[10px] font-semibold uppercase tracking-wider text-stone-500">Bound deputy</dt><dd className="mt-1 font-mono text-sm font-semibold text-white">{deputyWork.deputyId || '—'}</dd></div>
+                <div><dt className="text-[10px] font-semibold uppercase tracking-wider text-stone-500">My active attempts</dt><dd className="mt-1 text-xl font-bold tabular-nums text-white">{metrics.activeAttempts}</dd></div>
+              </dl>
             </section>
 
             <QueuePanel
@@ -5264,7 +5238,7 @@ export default function LegalDashboard({
 
 /**
  * ARTIFACT: LegalDashboard.jsx
- * VERSION: v13.5.0-SPECIALIST-SEARCHABLE-OPERATIONS
+ * VERSION: v13.6.0-SPECIALIST-OPERATIONS-WORKBENCH
  * AUTHORITY BOUNDARY: governed Legal Practice/Finance/SHERIFF/DEPUTY/LEGAL_CLIENT presentation plus already-authorized intake, ReturnOfService, bounded human conflict-review command initiation and bound-Deputy command initiation only; D24C authenticated person names and L8-8M conflict-review controls are descriptive/wiring projections that create no identity, membership, role, permission, tenant, operating-model, conflict clearance, waiver or financial authority; Python EOS owns authorization and legal truth
  * TENANT POSTURE: every data surface remains server-authorized and tenant-scoped; practice workspace is D15 snapshot truth with first-class CaseMatter evidence, client matters are D5/D7 visibility-bound, deputy commands require exact capability parity
  * FAIL-CLOSED POSTURE: unresolved role, malformed/absent person-name text, explicit or server-authoritative legal-permission narrowing, denied/unavailable workspace/client/specialist read, malformed finance/intake/return/field evidence, command failure or failed refresh never invents names or truth, widens role scope, fabricates operating-model authority or cross-role fallback
