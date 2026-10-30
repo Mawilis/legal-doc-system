@@ -13,7 +13,9 @@ COLLABORATION / OWNERSHIP: PlanRegistry owns plan catalogue truth;
                             truth; D21C1 catalogue owns exact Branding VAS
                             identities; D21B2B owns entitlement lifecycle.
 CERTIFICATION / UPDATE DATE: 2026-09-28
-CHANGELOG: v1.0.0-D21C1 binds tenant, subscription, plan, catalogue version,
+CHANGELOG: v1.1.0-D21C1-SUBSCRIPTION-TERM-ENFORCEMENT applies the shared
+           Founder-perpetual versus ordinary finite billing-period decision.
+           v1.0.0-D21C1 binds tenant, subscription, plan, catalogue version,
            exact Branding VAS identity, D21B tier, canonical subscription
            proof, lifecycle status, evaluated_at and deterministic SHA3-512
            evidence. Only ACTIVE subscriptions are eligible; all other states
