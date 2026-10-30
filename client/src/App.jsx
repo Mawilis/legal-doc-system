@@ -57,7 +57,6 @@ import PasswordResetPortal from './components/auth/PasswordResetPortal.jsx';
 import TenantDiscovery from './components/sovereign/TenantDiscovery.jsx';
 import LegalAcceptanceGate from './components/auth/LegalAcceptanceGate.jsx';
 import SovereignDashboardController from './components/sovereign/SovereignDashboardController.jsx';
-const BillingHUD = React.lazy(() => import('./components/billing/BillingHUD.jsx'));
 import SovereignMfaPortal from './components/auth/SovereignMfaPortal.jsx';
 import Sovereign_TenantManager from './components/sovereign/Sovereign_TenantManager.jsx';
 import LedgerExplorer from './components/billing/LedgerExplorer.jsx';
@@ -66,6 +65,8 @@ import WilsyOSIntelligenceDockRuntime from './components/intelligence/WilsyOSInt
 
 import { SovereignOrchestrator, useSovereignMesh } from './components/sovereign/SovereignOrchestrator.jsx';
 import { DataOrchestratorProvider, useSovereignData } from './components/sovereign/DataOrchestrator.jsx';
+
+const BillingHUD = React.lazy(() => import('./components/billing/BillingHUD.jsx'));
 
 // 🛡️ Global development telemetry suppression flag.
 const IS_DEV_MODE = import.meta.env.DEV;
