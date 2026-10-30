@@ -28,7 +28,8 @@
  * ║ • Compliance: POPIA §19, GDPR §32, SOC2 §CC7.2, ISO 27001                                                                            ║
  * ╠════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════╣
  * ║ 🔧 CHANGE LOG:                                                                                                                       ║
- * ║   2026-08-21 v1.1.0-TENANT-SUBSCRIPTION-MANAGEMENT – Initial creation.                                                                                ║
+ * ║   2026-10-30 v1.1.0-TENANT-SUBSCRIPTION-MANAGEMENT – Exposes subscription visibility to tenant owner/admin/manager projections.      ║
+ * ║   2026-08-21 v1.0.0‑INSTITUTIONAL – Initial creation.                                                                                ║
  * ╚════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════╝
  */
 
