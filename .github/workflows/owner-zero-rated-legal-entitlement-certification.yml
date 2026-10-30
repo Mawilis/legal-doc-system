@@ -148,8 +148,7 @@ jobs:
             tests/integration/test_legal_evidence_upload_http_real_mongo.py \
             tests/integration/test_legal_evidence_capacity_tenant_profile_real_mongo.py \
             tests/integration/test_crm_core_entitlement_resolver_real_mongo.py \
-            tests/integration/test_plan_router_authority_real_mongo.py \
-            tests/integration/test_crm_core_entitlement_resolver_real_mongo.py
+            tests/integration/test_plan_router_authority_real_mongo.py
 
       - name: Stop isolated Mongo replica set
         if: always()
