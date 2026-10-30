@@ -441,13 +441,13 @@ def test_route_permission_and_router_version_are_exact() -> None:
     )
     assert legal_router._DEPUTY_QUEUE_READ.operation == "legal_deputy_queue_read"
     assert legal_router.VERSION == (
-        "v1.17.0-G68-P2-PRACTITIONER-CONFIDENTIALITY-CONTAINMENT"
+        "v1.18.0-L8-6E-DEPUTY-CURRENT-SERVING-ASSIGNMENT"
     )
-    assert VERSION == "v1.2.0-L8-6D-G68-ROUTER-ALIGNMENT-HTTP-CERT"
+    assert VERSION == "v1.3.0-L8-6E-DEPUTY-SERVING-ASSIGNMENT-HTTP-CERT"
 
 
 # ARTIFACT: test_deputy_personal_active_work_http.py
-# VERSION: v1.2.0-L8-6D-G68-ROUTER-ALIGNMENT-HTTP-CERT
+# VERSION: v1.3.0-L8-6E-DEPUTY-SERVING-ASSIGNMENT-HTTP-CERT
 # AUTHORITY BOUNDARY: direct deputy-only personal active-work and field-capability HTTP certificate only
 # TENANT POSTURE: tenant/principal are server-derived from authorized identity context
 # FAIL-CLOSED POSTURE: missing IAM/binding/locator/capability/persistence denies without command or queue fallback
