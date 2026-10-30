@@ -1381,7 +1381,7 @@ def test_registry_network_failure_after_valid_authority_is_bounded_503(
 def test_catalogue_provenance_certificate_versions_are_exact() -> None:
     assert (
         router_module.VERSION
-        == "v1.3.0-D22B4-ACTIVE-ENTITLEMENT-COMPOSITION"
+        == "v1.3.1-D22B5-UPGRADE-ENTITLEMENT-COMPOSITION"
     )
     assert (
         registry_module.VERSION
