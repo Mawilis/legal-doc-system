@@ -559,3 +559,58 @@ def test_result_and_receipt_are_immutable_and_financially_neutral() -> None:
 # FAIL-CLOSED POSTURE: malformed evidence, replay divergence, races, and outages reject.
 # FINANCIAL EXECUTION AUTHORITY: Kennel EOS exclusively owns execution and settlement.
 # END OF WILSY OS SOVEREIGN ARTIFACT
+
+
+def test_allocation_command_lookup_is_exact_tenant_document_and_transaction_scoped() -> None:
+    receipt = _receipt()
+    collection = _FakeCollection([_record(receipt)])
+    session = _Session()
+    found = registry.get_receipt_by_allocation_command_id(
+        TENANT, receipt.document_id, receipt.allocation_command_id,
+        collection, session=session,
+    )
+    assert found == receipt
+    assert collection.find_calls == [(
+        {
+            "tenant_id": TENANT,
+            "document_id": receipt.document_id,
+            "allocation_command_id": receipt.allocation_command_id,
+        },
+        session,
+    )]
+    assert registry.get_receipt_by_allocation_command_id(
+        OTHER_TENANT, receipt.document_id, receipt.allocation_command_id,
+        collection, session=session,
+    ) is None
+    assert registry.get_receipt_by_allocation_command_id(
+        TENANT, "another-document", receipt.allocation_command_id,
+        collection, session=session,
+    ) is None
+
+
+def test_allocation_command_lookup_rejects_duplicates_corruption_and_missing_transaction() -> None:
+    receipt = _receipt()
+    with pytest.raises(registry.ProcessServiceAllocationRegistryPersistedRecordInvalidError):
+        registry.get_receipt_by_allocation_command_id(
+            TENANT, receipt.document_id, receipt.allocation_command_id,
+            _FakeCollection([_record(receipt), _record(receipt)]), session=_Session(),
+        )
+    corrupt = _record(receipt)
+    corrupt["receipt_fingerprint"] = HEX_F
+    with pytest.raises(registry.ProcessServiceAllocationRegistryPersistedRecordInvalidError):
+        registry.get_receipt_by_allocation_command_id(
+            TENANT, receipt.document_id, receipt.allocation_command_id,
+            _FakeCollection([corrupt]), session=_Session(),
+        )
+    with pytest.raises(registry.ProcessServiceAllocationRegistryTransactionRequiredError):
+        registry.get_receipt_by_allocation_command_id(
+            TENANT, receipt.document_id, receipt.allocation_command_id,
+            _FakeCollection([_record(receipt)]), session=_Session(False),
+        )
+    unavailable = _FakeCollection()
+    unavailable.find_error = AutoReconnect("read unavailable")
+    with pytest.raises(registry.ProcessServiceAllocationRegistryPersistenceUnavailableError):
+        registry.get_receipt_by_allocation_command_id(
+            TENANT, receipt.document_id, receipt.allocation_command_id,
+            unavailable, session=_Session(),
+        )
