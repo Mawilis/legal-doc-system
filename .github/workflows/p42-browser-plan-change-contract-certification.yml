@@ -2,7 +2,7 @@ name: P42 Browser Plan-Change Contract Certification
 
 on:
   pull_request:
-    branches: [main]
+    branches: [main, fix/p42-browser-upgrade-request-contract]
     paths:
       - "client/src/hooks/useSubscriptions.js"
       - "client/src/services/api/subscriptionApi.js"
