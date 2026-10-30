@@ -15,6 +15,7 @@ on:
       - "tests/unit/test_legal_work_ethical_wall_source_adapters.py"
       - "tests/unit/test_legal_work_ethical_wall_enforcement.py"
       - "tests/unit/test_legal_practitioner_disclosure_coordinator.py"
+      - "tests/unit/test_subscription_p42_browser_contract.py"
       - "tests/integration/test_legal_work_ethical_wall_source_adapters_real_mongo.py"
 
 permissions:
@@ -92,6 +93,7 @@ jobs:
             tests/unit/test_legal_work_ethical_wall_source_adapters.py \
             tests/unit/test_legal_work_ethical_wall_enforcement.py \
             tests/unit/test_legal_practitioner_disclosure_coordinator.py \
+            tests/unit/test_subscription_p42_browser_contract.py \
             tests/integration/test_legal_work_ethical_wall_source_adapters_real_mongo.py
       - name: Run focused unit and disposable real-Mongo certificates
         run: |
@@ -101,6 +103,7 @@ jobs:
             tests/unit/test_legal_work_ethical_wall_source_adapters.py \
             tests/unit/test_legal_work_ethical_wall_enforcement.py \
             tests/unit/test_legal_practitioner_disclosure_coordinator.py \
+            tests/unit/test_subscription_p42_browser_contract.py \
             tests/integration/test_legal_work_ethical_wall_source_adapters_real_mongo.py
       - name: Stop isolated MongoDB replica set
         if: always()
