@@ -1,7 +1,7 @@
 """WILSY OS subscription-derived Tenant Branding VAS eligibility evidence.
 
 TITLE: Tenant Branding Commercial Eligibility Domain
-VERSION: v1.0.1-D21C1-CANONICAL-SUBSCRIPTION-INTEGRITY
+VERSION: v1.1.0-D21C1-SUBSCRIPTION-TERM-ENFORCEMENT
 AUTHORITY: Wilsy OS Core Governance
 EPITOME: Project one canonical SubscriptionEntity snapshot into deterministic
          ELIGIBLE or INELIGIBLE Branding VAS evidence for D21B2B. This domain
@@ -55,9 +55,10 @@ from tools.eos.saas.domain.subscription import (
     verify_subscription_integrity,
 )
 from tools.eos.saas.billing.tenant_branding_vas_policy import TenantBrandingTier
+from tools.eos.saas.billing.subscription_term_policy import evaluate_subscription_term
 
 
-VERSION: Final[str] = "v1.0.1-D21C1-CANONICAL-SUBSCRIPTION-INTEGRITY"
+VERSION: Final[str] = "v1.1.0-D21C1-SUBSCRIPTION-TERM-ENFORCEMENT"
 SCHEMA: Final[str] = "WILSY-TENANT-BRANDING-COMMERCIAL-ELIGIBILITY/V1"
 
 
@@ -267,6 +268,8 @@ def derive_tenant_branding_commercial_eligibility(
             "D21C1_SUBSCRIPTION_INTEGRITY_INVALID"
         )
     status = _canonical_status(subscription.status)
+    evaluated = _when(evaluated_at)
+    term = evaluate_subscription_term(subscription, evaluated_at=evaluated)
     try:
         product: TenantBrandingVASCommercialProduct | None = resolve_branding_vas_identity(
             subscription.plan_features
@@ -278,6 +281,7 @@ def derive_tenant_branding_commercial_eligibility(
     eligible = (
         product is not None
         and status is SubscriptionStatus.ACTIVE
+        and term.eligible
         and subscription.plan_catalogue_version is not None
     )
     return TenantBrandingCommercialEligibility(
@@ -289,7 +293,7 @@ def derive_tenant_branding_commercial_eligibility(
         branding_tier=product.branding_tier if product else None,
         subscription_status=status,
         subscription_proof_hash=subscription.proof_hash,
-        evaluated_at=evaluated_at,
+        evaluated_at=evaluated,
         state=(
             TenantBrandingCommercialEligibilityState.ELIGIBLE
             if eligible
@@ -308,7 +312,7 @@ __all__ = [
 ]
 
 # ARTIFACT: tenant_branding_commercial_eligibility.py
-# VERSION: v1.0.1-D21C1-CANONICAL-SUBSCRIPTION-INTEGRITY
+# VERSION: v1.1.0-D21C1-SUBSCRIPTION-TERM-ENFORCEMENT
 # AUTHORITY BOUNDARY: subscription-derived eligibility evidence only; no D21B activation/profile/browser authority
 # TENANT POSTURE: exact tenant/subscription binding; mismatch rejects
 # FAIL-CLOSED POSTURE: unknown state, identity, provenance or fingerprint drift rejects
