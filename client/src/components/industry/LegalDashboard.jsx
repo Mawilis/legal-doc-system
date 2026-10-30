@@ -1,6 +1,6 @@
 /**
  * WILSY OS — ROLE-SCOPED LEGAL OPERATIONS COCKPIT
- * VERSION: v13.2.0-AUTHORITATIVE-CAPABILITY-NAVIGATION
+ * VERSION: v13.6.0-SPECIALIST-OPERATIONS-WORKBENCH
  * AUTHORITY: Presentation of authenticated Python-EOS Legal Operations truth.
  * EPITOME: One role-aware WILSY Legal OS surface for legal-practice operators,
  *          finance, sheriff, deputy and client personas. Law-firm roles receive
@@ -20,7 +20,7 @@
  *                            validation. This component owns responsive
  *                            presentation and deputy observation capture only.
  * CERTIFICATION / UPDATE DATE: 2026-10-24
- * CHANGELOG: 2026-10-24 v13.1.1-D21B12-SHARED-BRANDING-LIFECYCLE removes the mode-gated tenant descriptor from the LegalDashboard asset-hook call, keeping that parent hook authority-neutral while WilsyOSDashboardChrome alone consumes the authenticated descriptor and owns its validated asset lifecycle across every Legal mode. No authority or rendered behavior changes.
+ * CHANGELOG: 2026-10-30 v13.6.0-SPECIALIST-OPERATIONS-WORKBENCH removes placeholder specialist modules and presentation-only commercial/roadmap cards, gives Sheriff and Deputy only their current operational navigation, wires search across canonical queue rows, and replaces decorative metric cards with compact workload summaries. It preserves the existing tenant-queue and bound-principal data scopes and Python EOS command authority.\n *            2026-10-30 v13.2.0-AUTHORITATIVE-CAPABILITY-NAVIGATION removes role-baseline and legacy permission fallbacks and drives Legal Practice navigation from one module registry plus authoritative AuthContext permission projection.\n *            2026-10-24 v13.1.1-D21B12-SHARED-BRANDING-LIFECYCLE removes the mode-gated tenant descriptor from the LegalDashboard asset-hook call, keeping that parent hook authority-neutral while WilsyOSDashboardChrome alone consumes the authenticated descriptor and owns its validated asset lifecycle across every Legal mode. No authority or rendered behavior changes.
  *            2026-10-19 v13.1.0-P8-LEGAL-DAILY-WORKSTATION-PRESENTATION introduces a compact searchable Legal daily-work queue, server-projected workload filters, task-selected completion evidence inspector, strict browser completion command, authoritative EOS readback and persistent confirmation. Browser presentation creates no IAM, tenant, workflow-release, legal-outcome or financial authority.
  *            2026-10-16 v13.0.0-LEGAL-COMMERCIAL-CONTEXT-PRESENTATION adds one server-authorized commercial-context presentation plate. It consumes only the certified Legal commercial-context browser adapter; renders canonical plan, subscription and monthly-equivalent evidence only after HTTP authorization; renders denied commercial detail as visibly locked; preserves source failure as unavailable; performs no role/JWT/permission inference; and leaves authenticated tenant branding under the existing shared chrome.
  *            2026-10-16 v12.9.0-PRACTICE-CONFLICT-REVIEW-PRESENTATION-PARITY preserves the readable conflict-screening queue for every certified Practice persona while exposing the human review mutation only inside the canonical Partner/Attorney role envelope and allowing authoritative server permission projection to narrow it further. Python EOS remains the sole authorization authority.
