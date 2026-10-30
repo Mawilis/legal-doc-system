@@ -1,5 +1,5 @@
 """TITLE: WILSY OS Transaction-Bound Practitioner Disclosure Coordinator.
-VERSION: v1.0.0-G79-TRANSACTION-BOUND-DENY-ONLY-COORDINATOR
+VERSION: v1.1.0-G79-G78-EVIDENCE-SEAM
 AUTHORITY: Authenticated request projection + canonical source checks + denial only.
 EPITOME: Bind the authenticated tenant/principal, caller-owned active transaction,
 current ethical-wall source verification, institutional readiness and content
@@ -31,7 +31,7 @@ from tools.eos.legal_operations.service.legal_work_practitioner_content_admissio
     require_practitioner_content_admission,
 )
 
-VERSION = "v1.0.0-G79-TRANSACTION-BOUND-DENY-ONLY-COORDINATOR"
+VERSION = "v1.1.0-G79-G78-EVIDENCE-SEAM"
 
 
 class PractitionerDisclosureDenied(PermissionError):
