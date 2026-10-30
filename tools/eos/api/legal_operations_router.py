@@ -529,7 +529,12 @@ def _workspace_projection_transaction(callback: Callable[[Any, Any], _T]) -> _T:
                 if bool(getattr(session, "in_transaction", False)):
                     session.abort_transaction()
                 raise
-    except (HTTPException, LegalOperationsReadModelError):
+    except (
+        HTTPException,
+        LegalOperationsReadModelError,
+        DeputyPersonalActiveWorkError,
+        ProcessServiceAllocationRegistryError,
+    ):
         raise
     except Exception as error:
         raise HTTPException(
