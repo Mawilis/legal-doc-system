@@ -88,6 +88,18 @@ vi.mock('../../contexts/authContext', () => ({
       email: 'operator@example.test',
       role: 'tenant_legal_partner',
       tenantId: 'tenant-law',
+      legalPermissionsAuthoritative: true,
+      permissions: [
+        'legal_operations:instruction:write',
+        'legal_operations:return:write',
+        'legal_operations:billing:read',
+        'legal_operations:invoice:read',
+        'legal_operations:matter_deadline:read',
+        'legal_operations:matter_deadline:write',
+        'legal_operations:evidence:write',
+        'legal_operations:productive_work:read',
+        'legal_operations:conflict_review:write',
+      ],
     },
     tenant: {
       tenantId: 'tenant-law',
