@@ -111,12 +111,6 @@ class WallMembershipAcknowledgementRegistry:
                 [("tenant_id", ASCENDING), ("fingerprint", ASCENDING)],
                 name=prefix + "_fingerprint_unique", unique=True,
             )
-            collection.create_index(
-                [("tenant_id", ASCENDING), ("case_matter_id", ASCENDING),
-                 ("policy_id", ASCENDING), ("practitioner_principal_id", ASCENDING),
-                 ("revision", ASCENDING)],
-                name=prefix + "_history",
-            )
 
     def _history(self, collection: Any, scope: dict[str, str], cls: type, session: object) -> tuple[object, ...]:
         tx = _tx(session)
