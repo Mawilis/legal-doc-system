@@ -4,7 +4,7 @@ TITLE:
     WILSY OS — PlanRegistry Real-Mongo Certification
 
 VERSION:
-    v1.1.2-PLAN-REGISTRY-SELF-VERSION-ALIGNMENT-CERT
+    v1.2.0-PLAN-REGISTRY-READ-ONLY-INDEX-CERT
 
 AUTHORITY:
     Wilsy OS Core Governance
@@ -36,6 +36,9 @@ CERTIFICATION DATE:
     2026-09-03
 
 CHANGELOG:
+    2026-10-30 v1.2.0-PLAN-REGISTRY-READ-ONLY-INDEX-CERT
+        - Certifies catalogue reads validate the full index contract without
+          createIndexes and that the explicit provisioner remains separate.
     2026-09-03 v1.1.2-PLAN-REGISTRY-SELF-VERSION-ALIGNMENT-CERT
         - Aligns the topology certificate's TEST_VERSION assertion with its governed runtime identity.
         - PlanRegistry production bytes and exact-tenant semantics remain unchanged.
@@ -141,7 +144,7 @@ from tools.eos.saas.domain.plan import (
 )
 
 TEST_VERSION = (
-    "v1.1.2-PLAN-REGISTRY-SELF-VERSION-ALIGNMENT-CERT"
+    "v1.2.0-PLAN-REGISTRY-READ-ONLY-INDEX-CERT"
 )
 
 CERT_URI_ENV = (
@@ -480,7 +483,7 @@ def test_real_mongo_version_topology_health_and_index_contract(
 
     assert (
         TEST_VERSION
-        == "v1.1.2-PLAN-REGISTRY-SELF-VERSION-ALIGNMENT-CERT"
+        == "v1.2.0-PLAN-REGISTRY-READ-ONLY-INDEX-CERT"
     )
 
     hello = (
@@ -2523,7 +2526,7 @@ Status:
     DIRECT REAL-WORLD CERTIFICATE — ACTUAL MONGODB REQUIRED
 
 Version:
-    v1.1.2-PLAN-REGISTRY-SELF-VERSION-ALIGNMENT-CERT
+    v1.2.0-PLAN-REGISTRY-READ-ONLY-INDEX-CERT
 
 Production owner:
     tools/eos/saas/billing/plan_registry.py
