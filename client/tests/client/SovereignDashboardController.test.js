@@ -1,7 +1,7 @@
 /* eslint-disable */
 /**
  * TITLE: WILSY OS Sovereign Dashboard Controller Legal Role Routing Certificate
- * VERSION: v1.1.0-L8-7D10-LEGAL-ROLE-CONVERGENCE-CERT
+ * VERSION: v1.2.0-AUTHENTICATED-ROLE-LANDING-CERT
  * AUTHORITY: Client routing/resolver certification only.
  * EPITOME: Certifies SovereignDashboardController resolves every published Legal
  *          business role to the single canonical Legal OS shard, preserves
@@ -61,9 +61,30 @@ describe('SovereignDashboardController resolver', () => {
       defaultDashboard: 'EXECUTIVE_OVERSIGHT'
     };
 
-    expect(resolveDashboardKey({ user })).toBe(DASHBOARD_KEYS.EXECUTIVE);
+    expect(resolveDashboardKey({ user })).toBe(DASHBOARD_KEYS.FOUNDER);
     expect(hasFounderReturnAuthority({ user })).toBe(true);
     expect(getExecutiveRoleLabel(user)).toBe('CEO');
+  });
+
+  it('ignores stale browser and profile dashboard preferences when resolving the authenticated role', () => {
+    expect(resolveDashboardKey({
+      user: {
+        id: 'owner-1',
+        role: 'TENANT_OWNER',
+        dashboardKey: 'LEGAL_DASHBOARD',
+        defaultDashboard: 'FOUNDER_DASHBOARD',
+        preferences: { dashboard: 'SHERIFF' }
+      },
+      activeTenant: { dashboardKey: 'LEGAL_DASHBOARD', defaultDashboard: 'FOUNDER' },
+      manualDashboardKey: 'FOUNDER_DASHBOARD',
+      dashboardIntent: 'LEGAL_DASHBOARD'
+    })).toBe(DASHBOARD_KEYS.EXECUTIVE);
+
+    expect(resolveDashboardKey({
+      user: { id: 'partner-1', role: 'LEGAL_PARTNER' },
+      manualDashboardKey: 'FOUNDER_DASHBOARD',
+      dashboardIntent: 'EXECUTIVE_DASHBOARD'
+    })).toBe(DASHBOARD_KEYS.LEGAL);
   });
 
   it('routes executive and owner identities to the standalone executive surface', () => {
@@ -128,7 +149,7 @@ describe('SovereignDashboardController resolver', () => {
 
 /**
  * ARTIFACT: SovereignDashboardController.test.js
- * VERSION: v1.1.0-L8-7D10-LEGAL-ROLE-CONVERGENCE-CERT
+ * VERSION: v1.2.0-AUTHENTICATED-ROLE-LANDING-CERT
  * AUTHORITY BOUNDARY: client resolver and Legal OS routing certification only
  * TENANT POSTURE: routing evidence does not create or widen tenant authority
  * FAIL-CLOSED POSTURE: role routing never substitutes browser authority for Python EOS IAM
