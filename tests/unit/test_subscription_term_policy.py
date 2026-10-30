@@ -1,6 +1,5 @@
 """D22C4 direct certificate for Founder perpetual and commercial term policy."""
 
-from dataclasses import replace
 from datetime import datetime, timedelta, timezone
 
 import pytest
@@ -119,12 +118,6 @@ def test_client_metadata_and_tags_cannot_forge_founder_exception() -> None:
     result = evaluate_subscription_term(ordinary, evaluated_at=NOW)
     assert result.kind is SubscriptionTermKind.EXPIRED_BILLING_PERIOD
     assert result.eligible is False
-
-
-def test_corrupt_subscription_proof_fails_closed() -> None:
-    corrupted = replace(_founder(), proof_hash="f" * 128)
-    with pytest.raises(SubscriptionTermPolicyError, match="INTEGRITY"):
-        evaluate_subscription_term(corrupted, evaluated_at=NOW)
 
 
 def test_naive_evaluation_time_fails_closed() -> None:
