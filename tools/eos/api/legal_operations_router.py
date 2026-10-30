@@ -21,7 +21,8 @@ COLLABORATION / OWNERSHIP: Python EOS API composition. P1 owns lifecycle truth,
                             L8-8E owns immutable conflict-screening persistence;
                             tenant authorization owns access authority.
 CERTIFICATION / UPDATE DATE: 2026-10-22
-CHANGELOG: 2026-10-30 v1.18.0-L8-6E-DEPUTY-CURRENT-SERVING-ASSIGNMENT joins each active Deputy attempt to the exact current P4B pointer and fingerprint-verified receipt inside one snapshot; exposes Deputy, Sheriff office, allocation time and current attempt state. Missing or mismatched evidence fails closed. G68 confidentiality containment remains unchanged.\n            2026-10-24 v1.17.0-G68-P2-PRACTITIONER-CONFIDENTIALITY-CONTAINMENT fails closed before any workspace collection access while certified positive practitioner confidentiality authority remains unavailable; returns a distinct non-disclosing 503 and grants no access.
+CHANGELOG: 2026-10-30 v1.18.0-L8-6E-DEPUTY-CURRENT-SERVING-ASSIGNMENT joins each active Deputy attempt to the exact current P4B pointer and fingerprint-verified receipt inside one snapshot; exposes Deputy, Sheriff office, allocation time and current attempt state. Missing or mismatched evidence fails closed. G68 confidentiality containment remains unchanged.
+            2026-10-24 v1.17.0-G68-P2-PRACTITIONER-CONFIDENTIALITY-CONTAINMENT fails closed before any workspace collection access while certified positive practitioner confidentiality authority remains unavailable; returns a distinct non-disclosing 503 and grants no access.
 CHANGELOG: 2026-10-22 v1.16.0-R67-ENTERPRISE-DAILY-WORK-EXECUTION-READ adds
            one deterministic, deduplicated and urgency-ordered daily execution
            queue to the existing authenticated productive-work response. Queue
@@ -2224,7 +2225,7 @@ __all__ = [
 
 
 # ARTIFACT: legal_operations_router.py
-# VERSION: v1.17.0-G68-P2-PRACTITIONER-CONFIDENTIALITY-CONTAINMENT
+# VERSION: v1.18.0-L8-6E-DEPUTY-CURRENT-SERVING-ASSIGNMENT
 # AUTHORITY BOUNDARY: authenticated Legal reads and bounded post-authorization temporal observation only; temporal and specialist workflow projections remain bounded by productive-work visibility and grant no command, IAM assignment, plan/subscription mutation, payment execution or settlement authority
 # TENANT POSTURE: every projection uses exact authenticated/current-authorized tenant context; foreign lifecycle, deadline, workflow, screening, subscription and entitlement evidence is never disclosed
 # COMPLETION PROVENANCE: Canonical immutable completion history
