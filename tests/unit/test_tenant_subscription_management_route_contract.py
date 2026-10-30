@@ -19,7 +19,7 @@ def test_billing_route_is_protected_by_canonical_tenant_business_roles():
         assert role in guard
 
     assert "return <Navigate to=\"/\" replace />" in guard
-    assert "Python EOS" in guard
+    assert "Python-EOS" in guard
     assert 'path="/billing"' in source
     assert "<BillingHUD user={user} />" in source
 
