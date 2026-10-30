@@ -88,10 +88,10 @@ def binding() -> LegalPractitionerMatterBinding:
     )
 
 
-def assignment() -> LegalWorkAssignment:
+def assignment(*, case_matter_id: str = "matter-a") -> LegalWorkAssignment:
     return LegalWorkAssignment(
         assignment_id="assignment-a", tenant_id="tenant-a",
-        case_matter_id="matter-a", work_item_id="work-a",
+        case_matter_id=case_matter_id, work_item_id="work-a",
         assignee_principal_id="practitioner-a", assigned_by_principal_id="partner-a",
         assigned_at=NOW - timedelta(hours=12), assignment_reason_reference="reason-a",
         authorization_evidence_reference="assignment-auth-a",
@@ -359,7 +359,7 @@ def test_cross_tenant_binding_and_cross_matter_assignment_deny() -> None:
     with pytest.raises(service.EthicalWallEnforcementDenied, match="BINDING_INVALID"):
         enforce(binding_source=Source(binding()), tenant_id="tenant-b")
     with pytest.raises(service.EthicalWallEnforcementDenied, match="ASSIGNMENT_SCOPE_INVALID"):
-        enforce(assignment_source=Source((replace(assignment(), case_matter_id="matter-b"),)))
+        enforce(assignment_source=Source((assignment(case_matter_id="matter-b"),)))
 
 
 def test_revoked_wall_policy_denies_even_with_matching_review_fingerprint() -> None:
