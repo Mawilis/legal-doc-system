@@ -409,6 +409,57 @@ def test_downstream_failure_after_commercial_write_aborts_everything(
     assert _coordinates(collections, tenant_id) == (0, 0, 0, 0)
 
 
+def test_upgrade_entitlement_failure_rolls_back_catalogue_mutation(
+    mongo_context: tuple[MongoClient[Any], Any, dict[str, Any]],
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """A failed positive issuance aborts the upgrade and every evidence write."""
+    _client, _database, collections = mongo_context
+    tenant_id, principal_id = f"tenant-upgrade-abort-{uuid4().hex}", f"principal-upgrade-abort-{uuid4().hex}"
+    _seed_authority(collections, tenant_id, principal_id)
+    base_plan = _plan(tenant_id, ("crm.core",))
+    target_plan = _plan(tenant_id, ("legal.core",), key_suffix="-target")
+    created = SubscriptionRegistry.create(
+        _command(tenant_id, base_plan.plan_id, f"upgrade-abort-base-{tenant_id}"),
+        tenant_id_header=tenant_id,
+    )
+    assert created["success"] is True
+    subscription_id = created["subscription"].subscription_id
+
+    def fail_after_upgrade(**kwargs: Any) -> Any:
+        session = kwargs["session"]
+        in_transaction = collections["subscriptions"].find_one(
+            {"tenant_id": tenant_id, "subscription_id": subscription_id},
+            session=session,
+        )
+        assert in_transaction is not None
+        assert in_transaction["plan_id"] == target_plan.plan_id
+        raise service_module.TenantProductEntitlementIssuanceOrchestratorError(
+            "P43_FORCED_UPGRADE_ISSUANCE_FAILURE"
+        )
+
+    monkeypatch.setattr(
+        service_module,
+        "issue_tenant_product_entitlement",
+        fail_after_upgrade,
+    )
+    with pytest.raises(SubscriptionActiveEntitlementCompositionIssuanceError):
+        SubscriptionActiveEntitlementCompositionService.upgrade(
+            subscription_id,
+            {"newPlanId": target_plan.plan_id},
+            _identity(tenant_id, principal_id),
+        )
+
+    persisted = collections["subscriptions"].find_one(
+        {"tenant_id": tenant_id, "subscription_id": subscription_id}
+    )
+    assert persisted is not None
+    assert persisted["plan_id"] == base_plan.plan_id
+    assert collections["authorization"].count_documents({"tenant_id": tenant_id}) == 0
+    assert collections["history"].count_documents({"tenant_id": tenant_id}) == 0
+    assert collections["current"].count_documents({"tenant_id": tenant_id}) == 0
+
+
 def test_non_legal_plan_commits_only_commercial_truth(
     mongo_context: tuple[MongoClient[Any], Any, dict[str, Any]],
 ) -> None:
