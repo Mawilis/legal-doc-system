@@ -35,6 +35,10 @@ from tools.eos.legal_operations.domain.legal_work_practitioner_confidentiality_r
     ConfidentialityReviewDecisionState,
     project_confidentiality_review_currentness,
 )
+from tools.eos.legal_operations.domain.legal_work_ethical_wall_membership_acknowledgement import (
+    WallMembershipEvidence,
+    WallAcknowledgementEvidence,
+)
 from tools.eos.legal_operations.orchestration.legal_client_matter_conflict_disposition_currentness_composer import (
     LegalClientMatterConflictDispositionCurrentnessComposer,
 )
@@ -328,6 +332,55 @@ class CanonicalConfidentialityReviewSource:
         return current
 
 
+
+class CanonicalWallMembershipSource:
+    """Read bounded immutable membership history from the G78 registry."""
+
+    def __init__(self, registry: Any, policy_id: str) -> None:
+        self._registry = registry
+        self._policy_id = _id(policy_id)
+
+    def resolve_current(
+        self, *, tenant_id: str, case_matter_id: str,
+        practitioner_principal_id: str, session: object,
+    ) -> tuple[WallMembershipEvidence, ...]:
+        tx = _tx(session)
+        try:
+            values = self._registry.list_membership_history(
+                _id(tenant_id), _id(case_matter_id), self._policy_id,
+                _id(practitioner_principal_id), session=tx,
+            )
+        except Exception as error:
+            _fail("G78_WALL_MEMBERSHIP_SOURCE_UNAVAILABLE", error)
+        if type(values) is not tuple or any(type(item) is not WallMembershipEvidence for item in values):
+            _fail("G78_WALL_MEMBERSHIP_SOURCE_INVALID")
+        return values
+
+
+class CanonicalWallAcknowledgementSource:
+    """Read bounded immutable acknowledgement history from the G78 registry."""
+
+    def __init__(self, registry: Any, policy_id: str) -> None:
+        self._registry = registry
+        self._policy_id = _id(policy_id)
+
+    def resolve_current(
+        self, *, tenant_id: str, case_matter_id: str,
+        practitioner_principal_id: str, session: object,
+    ) -> tuple[WallAcknowledgementEvidence, ...]:
+        tx = _tx(session)
+        try:
+            values = self._registry.list_acknowledgement_history(
+                _id(tenant_id), _id(case_matter_id), self._policy_id,
+                _id(practitioner_principal_id), session=tx,
+            )
+        except Exception as error:
+            _fail("G78_WALL_ACKNOWLEDGEMENT_SOURCE_UNAVAILABLE", error)
+        if type(values) is not tuple or any(type(item) is not WallAcknowledgementEvidence for item in values):
+            _fail("G78_WALL_ACKNOWLEDGEMENT_SOURCE_INVALID")
+        return values
+
+
 class CanonicalEthicalWallPolicySource:
     """Expose only G76-B currentness and immutable history reads."""
 
@@ -356,7 +409,8 @@ __all__ = [
     "EthicalWallSourceUnavailable", "CanonicalTenantIamSource",
     "CanonicalPractitionerBindingSource", "CanonicalMatterAssignmentSource",
     "CanonicalConflictDispositionSource", "CanonicalConfidentialityReviewSource",
-    "CanonicalEthicalWallPolicySource", "encode_confidentiality_review",
+    "CanonicalEthicalWallPolicySource", "CanonicalWallMembershipSource",
+    "CanonicalWallAcknowledgementSource", "encode_confidentiality_review",
 ]
 
 # ARTIFACT: legal_work_ethical_wall_source_adapters.py
