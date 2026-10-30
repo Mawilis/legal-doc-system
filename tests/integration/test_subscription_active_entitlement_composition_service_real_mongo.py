@@ -1,7 +1,7 @@
 """Real-Mongo certificate for subscription/Legal entitlement composition.
 
 TITLE: Subscription Active Entitlement Composition Service Real-Mongo Certificate
-VERSION: v1.0.2-D22B3-P43-REAL-MONGO-SERVICE-CERTIFICATE
+VERSION: v1.0.4-D22B3-P43-FOUNDER-ZERO-RATED-CERTIFICATE
 AUTHORITY: Wilsy OS Core Governance
 EPITOME: Certifies that the P42 service composes canonical subscription
          mutation, authorization evidence and Legal Operations entitlement
@@ -11,7 +11,13 @@ COLLABORATION / OWNERSHIP: P42 owns transaction lifecycle; SubscriptionRegistry,
                             IAM evidence and D22B2 entitlement registries retain
                             their distinct canonical truth boundaries.
 CERTIFICATION / UPDATE DATE: 2026-10-09
-CHANGELOG: v1.0.2-D22B3-P43-REAL-MONGO-SERVICE-CERTIFICATE corrects the positive
+CHANGELOG: v1.0.4-D22B3-P43-FOUNDER-ZERO-RATED-CERTIFICATE proves the existing
+           tenant-scoped zero-price Founder plan can evolve its feature catalogue
+           and activate the same-plan subscription through P42 without payment,
+           while retaining atomic authorization evidence and Legal entitlement.
+           v1.0.3-D22B3-P43-UPGRADE-REAL-MONGO-CERTIFICATE adds the generic upgrade
+           transaction, rollback, UPGRADE audit and entitlement proofs.
+           v1.0.2-D22B3-P43-REAL-MONGO-SERVICE-CERTIFICATE corrects the positive
            current-pointer/domain coordinate to canonical lifecycle_revision.
            v1.0.1-D22B3-P43-REAL-MONGO-SERVICE-CERTIFICATE repairs current-pointer
            revision correlation and permits only the typed bounded-retry loser
@@ -97,7 +103,7 @@ from tools.eos.saas.entitlement.tenant_product_entitlement_registry import (
 )
 
 
-VERSION = "v1.0.2-D22B3-P43-REAL-MONGO-SERVICE-CERTIFICATE"
+VERSION = "v1.0.4-D22B3-P43-FOUNDER-ZERO-RATED-CERTIFICATE"
 MONGO_URI = os.getenv(
     "TEST_VENDOR_MONGO_URI",
     "mongodb://127.0.0.1:27027/?replicaSet=wilsyVendorCertRS",
@@ -165,7 +171,7 @@ def mongo_context(
         monkeypatch.setattr(service_module, "get_client", lambda: client)
         monkeypatch.setattr(service_module, "get_database", lambda: database)
 
-        PlanRegistry._ensure_indexes()
+        PlanRegistry.provision_indexes()
         subscription_registry_module._ensure_indexes()
         PrincipalAuthorityRepository.ensure_indexes(collections["principal"])
         TenantMembershipRepository.ensure_indexes(collections["membership"])
@@ -220,22 +226,29 @@ def _seed_authority(
         )
 
 
-def _plan(tenant_id: str, features: tuple[str, ...]) -> Any:
+def _plan(
+    tenant_id: str,
+    features: tuple[str, ...],
+    *,
+    key_suffix: str = "",
+    price: float = 100.0,
+) -> Any:
     """Create canonical immutable catalogue truth for one certificate tenant."""
     result = PlanRegistry.create(
         {
             "name": f"P43 {tenant_id}",
-            "price": 100.0,
+            "price": price,
             "currency": "ZAR",
             "billingFrequency": "monthly",
             "planType": "PROFESSIONAL",
-            "idempotencyKey": f"plan-{tenant_id}",
+            "idempotencyKey": f"plan-{tenant_id}{key_suffix}",
             "active": True,
             "features": list(features),
             "metadata": {"certificate": "D22B3-P43"},
             "tags": ["d22b3-p43"],
             "user": "D22B3-P43-CERT",
-        }
+        },
+        tenant_id=tenant_id,
     )
     assert result["success"] is True
     return result["plan"]
@@ -337,6 +350,37 @@ def test_runtime_indexes_positive_create_and_exact_replay(
     assert any(row.get("unique") for row in collections["current"].list_indexes())
 
 
+def test_upgrade_to_legal_plan_commits_subscription_and_entitlement_atomically(
+    mongo_context: tuple[MongoClient[Any], Any, dict[str, Any]],
+) -> None:
+    """An authorized P42 upgrade creates Legal entitlement in the same transaction."""
+    _client, _database, collections = mongo_context
+    tenant_id, principal_id = f"tenant-upgrade-{uuid4().hex}", f"principal-upgrade-{uuid4().hex}"
+    _seed_authority(collections, tenant_id, principal_id)
+    base_plan = _plan(tenant_id, ("crm.core",))
+    target_plan = _plan(tenant_id, ("legal.core", "crm.core"), key_suffix="-target")
+    created = SubscriptionRegistry.create(
+        _command(tenant_id, base_plan.plan_id, f"upgrade-base-{tenant_id}"),
+        tenant_id_header=tenant_id,
+    )
+    assert created["success"] is True
+    subscription_id = created["subscription"].subscription_id
+
+    result = SubscriptionActiveEntitlementCompositionService.upgrade(
+        subscription_id,
+        {"newPlanId": target_plan.plan_id},
+        _identity(tenant_id, principal_id),
+    )
+
+    _assert_positive(result, collections, tenant_id, principal_id)
+    assert result.subscription.plan_id == target_plan.plan_id
+    assert result.subscription.plan_features == ("legal.core", "crm.core")
+    assert result.subscription.audit_trail[-1].action.value == "upgrade"
+    assert collections["authorization"].count_documents({"tenant_id": tenant_id}) == 1
+    assert collections["history"].count_documents({"tenant_id": tenant_id}) == 2
+    assert collections["current"].count_documents({"tenant_id": tenant_id}) == 1
+
+
 def test_downstream_failure_after_commercial_write_aborts_everything(
     mongo_context: tuple[MongoClient[Any], Any, dict[str, Any]],
     monkeypatch: pytest.MonkeyPatch,
@@ -368,6 +412,108 @@ def test_downstream_failure_after_commercial_write_aborts_everything(
         )
     assert observed["commercial_visible_in_transaction"] is True
     assert _coordinates(collections, tenant_id) == (0, 0, 0, 0)
+
+
+def test_zero_rated_founder_plan_evolves_then_same_plan_upgrade_issues_legal(
+    mongo_context: tuple[MongoClient[Any], Any, dict[str, Any]],
+) -> None:
+    """Preserve owner zero-price/tenant scope while adding Legal via P42 upgrade."""
+    _client, _database, collections = mongo_context
+    tenant_id, principal_id = f"tenant-founder-{uuid4().hex}", f"principal-founder-{uuid4().hex}"
+    _seed_authority(collections, tenant_id, principal_id)
+    branding_feature = "wilsy.vas.tenant_branding.enterprise.v1"
+    founder_plan = _plan(
+        tenant_id,
+        (branding_feature,),
+        key_suffix="-founder",
+        price=0.0,
+    )
+    created = SubscriptionRegistry.create(
+        _command(tenant_id, founder_plan.plan_id, f"founder-subscription-{tenant_id}"),
+        tenant_id_header=tenant_id,
+    )
+    assert created["success"] is True
+    subscription_id = created["subscription"].subscription_id
+
+    evolved = PlanRegistry.update(
+        founder_plan.plan_id,
+        {
+            "features": [branding_feature, "legal.core"],
+            "user": "P43-FOUNDER-PLAN-CERTIFICATE",
+        },
+        tenant_id=tenant_id,
+        exact_tenant=True,
+    )
+    assert evolved["success"] is True
+    canonical_plan = evolved["plan"]
+    assert canonical_plan.plan_id == founder_plan.plan_id
+    assert canonical_plan.tenant_id == tenant_id
+    assert canonical_plan.price == 0.0
+    assert set(canonical_plan.features) == {branding_feature, "legal.core"}
+
+    result = SubscriptionActiveEntitlementCompositionService.upgrade(
+        subscription_id,
+        {"newPlanId": founder_plan.plan_id},
+        _identity(tenant_id, principal_id),
+    )
+
+    _assert_positive(result, collections, tenant_id, principal_id)
+    assert result.subscription.plan_id == founder_plan.plan_id
+    assert result.subscription.amount == 0.0
+    assert result.subscription.plan_features == tuple(canonical_plan.features)
+    assert result.subscription.audit_trail[-1].action.value == "upgrade"
+    assert collections["authorization"].count_documents({"tenant_id": tenant_id}) == 1
+
+
+def test_upgrade_entitlement_failure_rolls_back_catalogue_mutation(
+    mongo_context: tuple[MongoClient[Any], Any, dict[str, Any]],
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """A failed positive issuance aborts the upgrade and every evidence write."""
+    _client, _database, collections = mongo_context
+    tenant_id, principal_id = f"tenant-upgrade-abort-{uuid4().hex}", f"principal-upgrade-abort-{uuid4().hex}"
+    _seed_authority(collections, tenant_id, principal_id)
+    base_plan = _plan(tenant_id, ("crm.core",))
+    target_plan = _plan(tenant_id, ("legal.core",), key_suffix="-target")
+    created = SubscriptionRegistry.create(
+        _command(tenant_id, base_plan.plan_id, f"upgrade-abort-base-{tenant_id}"),
+        tenant_id_header=tenant_id,
+    )
+    assert created["success"] is True
+    subscription_id = created["subscription"].subscription_id
+
+    def fail_after_upgrade(**kwargs: Any) -> Any:
+        session = kwargs["session"]
+        in_transaction = collections["subscriptions"].find_one(
+            {"tenant_id": tenant_id, "subscription_id": subscription_id},
+            session=session,
+        )
+        assert in_transaction is not None
+        assert in_transaction["plan_id"] == target_plan.plan_id
+        raise service_module.TenantProductEntitlementIssuanceOrchestratorError(
+            "P43_FORCED_UPGRADE_ISSUANCE_FAILURE"
+        )
+
+    monkeypatch.setattr(
+        service_module,
+        "issue_tenant_product_entitlement",
+        fail_after_upgrade,
+    )
+    with pytest.raises(SubscriptionActiveEntitlementCompositionIssuanceError):
+        SubscriptionActiveEntitlementCompositionService.upgrade(
+            subscription_id,
+            {"newPlanId": target_plan.plan_id},
+            _identity(tenant_id, principal_id),
+        )
+
+    persisted = collections["subscriptions"].find_one(
+        {"tenant_id": tenant_id, "subscription_id": subscription_id}
+    )
+    assert persisted is not None
+    assert persisted["plan_id"] == base_plan.plan_id
+    assert collections["authorization"].count_documents({"tenant_id": tenant_id}) == 0
+    assert collections["history"].count_documents({"tenant_id": tenant_id}) == 0
+    assert collections["current"].count_documents({"tenant_id": tenant_id}) == 0
 
 
 def test_non_legal_plan_commits_only_commercial_truth(
@@ -569,7 +715,7 @@ def test_transaction_ownership_and_authority_exclusions_are_exact() -> None:
 
 # WILSY OS SOVEREIGN ARTIFACT SEAL
 # ARTIFACT: test_subscription_active_entitlement_composition_service_real_mongo.py
-# VERSION: v1.0.2-D22B3-P43-REAL-MONGO-SERVICE-CERTIFICATE
+# VERSION: v1.0.4-D22B3-P43-FOUNDER-ZERO-RATED-CERTIFICATE
 # AUTHORITY BOUNDARY: operational real-Mongo evidence only; no route or product authority
 # TENANT POSTURE: UUID-isolated exact-tenant and exact-principal certification
 # FAIL-CLOSED POSTURE: topology, partial write, isolation, race and corruption failures reject

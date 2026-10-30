@@ -1,7 +1,7 @@
 """D22B3 P42 subscription-active entitlement service direct certificate.
 
 TITLE: Subscription Active Entitlement Composition Service Direct Certificate
-VERSION: v1.0.0-D22B3-P42-SUBSCRIPTION-ACTIVE-ENTITLEMENT-COMPOSITION-SERVICE-CERT
+VERSION: v1.1.0-D22B3-P42-UPGRADE-COMPOSITION-CERT
 AUTHORITY: Wilsy OS Core Governance
 EPITOME: Directly certify exact Legal-only product authority, canonical runtime
          bindings, shared transaction ordering, deterministic lifecycle replay
@@ -11,8 +11,9 @@ COLLABORATION / OWNERSHIP: Deterministic doubles certify the P42 service while
                             SubscriptionRegistry and D22B3 P25 retain their own
                             sealed direct certificates.
 CERTIFICATION / UPDATE DATE: 2026-10-09
-CHANGELOG: v1.0.0-D22B3-P42-SUBSCRIPTION-ACTIVE-ENTITLEMENT-COMPOSITION-SERVICE-CERT
-           establishes the bounded 34-point direct unit certificate.
+CHANGELOG: v1.1.0-D22B3-P42-UPGRADE-COMPOSITION-CERT adds exact UPGRADE
+           audit validation, caller-transaction registry injection, positive
+           Legal issuance, deterministic replay-key and failure-path coverage.
 COMPLIANCE: POPIA section 19; GDPR Article 32; SOC 2 CC7.2.
 SECURITY / PRIVACY POSTURE: Synthetic opaque identities only; no credentials.
 TENANT BOUNDARY: Tests prove exact identity-derived tenant/principal propagation.
@@ -216,6 +217,10 @@ class Registry:
     def reactivate(cls, *args: object, **kwargs: object) -> object:
         return cls._call("reactivate", args, kwargs)
 
+    @classmethod
+    def upgrade(cls, *args: object, **kwargs: object) -> object:
+        return cls._call("upgrade", args, kwargs)
+
 
 def commercial(value: SubscriptionEntity) -> dict[str, object]:
     """Return one successful canonical registry result."""
@@ -267,13 +272,15 @@ def invoke(operation: str) -> Any:
             {"idempotencyKey": "commercial-create-key"}, identity()
         )
     method = getattr(service.SubscriptionActiveEntitlementCompositionService, operation)
+    if operation == "upgrade":
+        return method("subscription-p42", {"newPlanId": "plan-legal"}, identity())
     return method("subscription-p42", {"reason": "certificate"}, identity())
 
 
 def test_import_version_result_contract_and_immutable_result() -> None:
     """Certify version metadata and immutable typed minimum result contract."""
     assert service.VERSION == (
-        "v1.0.0-D22B3-P42-SUBSCRIPTION-ACTIVE-ENTITLEMENT-COMPOSITION-SERVICE"
+        "v1.1.0-D22B3-P42-CATALOGUE-UPGRADE-COMPOSITION"
     )
     value = service.SubscriptionActiveEntitlementCompositionResult(
         commercial_result={},
@@ -289,6 +296,9 @@ def test_public_api_exposes_no_product_session_transaction_or_runtime_authority(
     """Certify exact bounded caller surfaces for later router replacement."""
     cls = service.SubscriptionActiveEntitlementCompositionService
     assert list(inspect.signature(cls.create).parameters) == ["payload", "identity"]
+    assert list(inspect.signature(cls.upgrade).parameters) == [
+        "subscription_id", "payload", "identity"
+    ]
     assert list(inspect.signature(cls.resume).parameters) == [
         "subscription_id", "metadata", "identity"
     ]
@@ -298,7 +308,7 @@ def test_public_api_exposes_no_product_session_transaction_or_runtime_authority(
     forbidden = {"product_id", "session", "transaction", "database", "client"}
     assert all(
         forbidden.isdisjoint(inspect.signature(method).parameters)
-        for method in (cls.create, cls.resume, cls.reactivate)
+        for method in (cls.create, cls.upgrade, cls.resume, cls.reactivate)
     )
 
 
@@ -308,6 +318,7 @@ def test_public_api_exposes_no_product_session_transaction_or_runtime_authority(
         ("create", entity("create")),
         ("resume", entity("resume")),
         ("reactivate", entity("reactivate")),
+        ("upgrade", entity("upgrade")),
     ],
 )
 def test_active_legal_operations_issue_in_exact_shared_transaction(
@@ -315,7 +326,7 @@ def test_active_legal_operations_issue_in_exact_shared_transaction(
     operation: str,
     value: SubscriptionEntity,
 ) -> None:
-    """Certify create, PAUSED resume and CANCELLED reactivate positive flows."""
+    """Certify create, upgrade, PAUSED resume and CANCELLED reactivate positive flows."""
     events: list[str] = []
     session = Session(events)
     database, client, issue_calls, _ = install(
@@ -450,7 +461,7 @@ def test_unknown_commit_result_never_replays_operation_or_returns_success(
     assert events.count("commit") == 1
 
 
-@pytest.mark.parametrize("operation", ["create", "resume", "reactivate"])
+@pytest.mark.parametrize("operation", ["create", "resume", "reactivate", "upgrade"])
 def test_deterministic_operation_distinct_idempotency(
     operation: str,
 ) -> None:
@@ -581,7 +592,7 @@ def test_service_source_orders_issuance_before_commit_and_return() -> None:
 
 # WILSY OS SOVEREIGN ARTIFACT SEAL
 # ARTIFACT: test_subscription_active_entitlement_composition_service.py
-# VERSION: v1.0.0-D22B3-P42-SUBSCRIPTION-ACTIVE-ENTITLEMENT-COMPOSITION-SERVICE-CERT
+# VERSION: v1.1.0-D22B3-P42-UPGRADE-COMPOSITION-CERT
 # AUTHORITY BOUNDARY: deterministic direct unit certification only
 # TENANT POSTURE: synthetic exact SovereignIdentity tenant/principal evidence
 # FAIL-CLOSED POSTURE: every negative boundary asserts rejection or abort

@@ -304,7 +304,7 @@ def mongo_context() -> Iterator[_MongoContext]:
     registry_module.subscriptions_collection = subscriptions
     plan_registry_module.plans_collection = plans
 
-    PlanRegistry._ensure_indexes()
+    PlanRegistry.provision_indexes()
 
     bootstrap_tenant = (
         "tenant-bootstrap-"

@@ -4,7 +4,7 @@ TITLE:
     WILSY OS — PlanRegistry Real-Mongo Certification
 
 VERSION:
-    v1.1.2-PLAN-REGISTRY-SELF-VERSION-ALIGNMENT-CERT
+    v1.2.0-PLAN-REGISTRY-READ-ONLY-INDEX-CERT
 
 AUTHORITY:
     Wilsy OS Core Governance
@@ -36,6 +36,9 @@ CERTIFICATION DATE:
     2026-09-03
 
 CHANGELOG:
+    2026-10-30 v1.2.0-PLAN-REGISTRY-READ-ONLY-INDEX-CERT
+        - Certifies catalogue reads validate the full index contract without
+          createIndexes and that the explicit provisioner remains separate.
     2026-09-03 v1.1.2-PLAN-REGISTRY-SELF-VERSION-ALIGNMENT-CERT
         - Aligns the topology certificate's TEST_VERSION assertion with its governed runtime identity.
         - PlanRegistry production bytes and exact-tenant semantics remain unchanged.
@@ -141,7 +144,7 @@ from tools.eos.saas.domain.plan import (
 )
 
 TEST_VERSION = (
-    "v1.1.2-PLAN-REGISTRY-SELF-VERSION-ALIGNMENT-CERT"
+    "v1.2.0-PLAN-REGISTRY-READ-ONLY-INDEX-CERT"
 )
 
 CERT_URI_ENV = (
@@ -411,7 +414,7 @@ def mongo_context() -> Iterator[
         collection
     )
 
-    PlanRegistry._ensure_indexes()
+    PlanRegistry.provision_indexes()
 
     collection.delete_many(
         {}
@@ -475,12 +478,12 @@ def test_real_mongo_version_topology_health_and_index_contract(
 ) -> None:
     assert (
         PLAN_REGISTRY_VERSION
-        == "v1.2.0-EXACT-TENANT-SCOPE"
+        == "v1.3.0-READ-ONLY-INDEX-VALIDATION"
     )
 
     assert (
         TEST_VERSION
-        == "v1.1.2-PLAN-REGISTRY-SELF-VERSION-ALIGNMENT-CERT"
+        == "v1.2.0-PLAN-REGISTRY-READ-ONLY-INDEX-CERT"
     )
 
     hello = (
@@ -586,6 +589,26 @@ def test_real_mongo_version_topology_health_and_index_contract(
         ]
         is True
     )
+
+
+def test_catalogue_read_index_validation_never_performs_ddl(
+    mongo_context: _MongoContext,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """Read-time index validation works with a createIndexes-denied runtime."""
+    class ReadOnlyCollection:
+        def index_information(self) -> dict[str, Any]:
+            return mongo_context.collection.index_information()
+
+        def create_index(self, *_args: Any, **_kwargs: Any) -> None:
+            pytest.fail("catalogue read attempted createIndexes")
+
+    monkeypatch.setattr(
+        registry,
+        "plans_collection",
+        ReadOnlyCollection(),
+    )
+    PlanRegistry._ensure_indexes()
 
 
 def test_real_mongo_create_persists_exact_canonical_plan_evidence(
@@ -2503,7 +2526,7 @@ Status:
     DIRECT REAL-WORLD CERTIFICATE — ACTUAL MONGODB REQUIRED
 
 Version:
-    v1.1.2-PLAN-REGISTRY-SELF-VERSION-ALIGNMENT-CERT
+    v1.2.0-PLAN-REGISTRY-READ-ONLY-INDEX-CERT
 
 Production owner:
     tools/eos/saas/billing/plan_registry.py

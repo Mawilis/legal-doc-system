@@ -1,7 +1,7 @@
 """WILSY OS subscription-active Legal entitlement composition service.
 
 TITLE: Subscription Active Entitlement Composition Service
-VERSION: v1.0.0-D22B3-P42-SUBSCRIPTION-ACTIVE-ENTITLEMENT-COMPOSITION-SERVICE
+VERSION: v1.1.0-D22B3-P42-CATALOGUE-UPGRADE-COMPOSITION
 AUTHORITY: Wilsy OS Core Governance
 EPITOME: Atomically compose canonical subscription lifecycle mutation with
          positive Legal Operations tenant-product entitlement issuance.
@@ -11,10 +11,11 @@ COLLABORATION / OWNERSHIP: SubscriptionRegistry owns commercial lifecycle;
                             issuance; this service alone owns their shared
                             Mongo transaction lifecycle.
 CERTIFICATION / UPDATE DATE: 2026-10-09
-CHANGELOG: v1.0.0-D22B3-P42-SUBSCRIPTION-ACTIVE-ENTITLEMENT-COMPOSITION-SERVICE
-           establishes create, resume and reactivate composition, deterministic
-           lifecycle-derived issuance replay keys, bounded whole-transaction
-           retry and fail-closed unknown-commit classification.
+CHANGELOG: v1.1.0-D22B3-P42-CATALOGUE-UPGRADE-COMPOSITION
+           adds tenant-authorized catalogue upgrade to the shared transaction,
+           validates the resulting UPGRADE audit proof, and derives distinct
+           issuance replay coordinates from the resulting immutable subscription
+           evidence. Existing create/resume/reactivate composition is retained.
 COMPLIANCE: POPIA section 19; GDPR Article 32; SOC 2 CC7.2; ISO 27001.
 SECURITY / PRIVACY POSTURE: Tenant and principal scope derive solely from an
                              active SovereignIdentity; no credentials or PII
@@ -75,7 +76,7 @@ from tools.eos.saas.entitlement.tenant_product_entitlement_registry import (
 
 
 VERSION: Final[str] = (
-    "v1.0.0-D22B3-P42-SUBSCRIPTION-ACTIVE-ENTITLEMENT-COMPOSITION-SERVICE"
+    "v1.1.0-D22B3-P42-CATALOGUE-UPGRADE-COMPOSITION"
 )
 SUBSCRIPTION_COLLECTION: Final[str] = "subscriptions"
 LEGAL_FEATURE: Final[str] = "legal.core"
@@ -272,7 +273,13 @@ def _issuance_idempotency(operation: str, entity: SubscriptionEntity) -> str:
         "create": AuditAction.CREATE,
         "resume": AuditAction.RESUME,
         "reactivate": AuditAction.REACTIVATE,
-    }[operation]
+        "upgrade": AuditAction.UPGRADE,
+    }.get(operation)
+    if expected is None:
+        _raise(
+            SubscriptionActiveEntitlementCompositionLifecycleError,
+            "D22B3_P42_OPERATION_UNSUPPORTED",
+        )
     if latest.action is not expected or not latest.proof_hash or not entity.proof_hash:
         _raise(
             SubscriptionActiveEntitlementCompositionLifecycleError,
@@ -356,6 +363,16 @@ def _run(
                         subscription_id,
                         authority.tenant_id,
                         metadata,
+                        collection=subscriptions,
+                        session=session,
+                    )
+                elif operation == "upgrade":
+                    if subscription_id is None or payload is None:
+                        _raise(SubscriptionActiveEntitlementCompositionInputError)
+                    commercial = SubscriptionRegistry.upgrade(
+                        subscription_id,
+                        authority.tenant_id,
+                        payload,
                         collection=subscriptions,
                         session=session,
                     )
@@ -449,6 +466,23 @@ class SubscriptionActiveEntitlementCompositionService:
         return _run("create", identity, payload=dict(payload))
 
     @staticmethod
+    def upgrade(
+        subscription_id: str,
+        payload: dict[str, Any],
+        identity: SovereignIdentity,
+    ) -> SubscriptionActiveEntitlementCompositionResult:
+        """Upgrade canonical plan and issue Legal entitlement atomically.
+
+        The HTTP caller must already hold subscription-manage authority. Plan
+        selection remains canonical PlanRegistry truth; IAM evidence and the
+        entitlement composer remain independent issuance gates.
+        """
+        identifier = _text(subscription_id, "D22B3_P42_SUBSCRIPTION_ID_INVALID")
+        if not isinstance(payload, dict):
+            _raise(SubscriptionActiveEntitlementCompositionInputError)
+        return _run("upgrade", identity, payload=dict(payload), subscription_id=identifier)
+
+    @staticmethod
     def resume(
         subscription_id: str,
         metadata: dict[str, Any] | None,
@@ -493,7 +527,7 @@ __all__ = [
 
 # WILSY OS SOVEREIGN ARTIFACT SEAL
 # ARTIFACT: subscription_active_entitlement_composition_service.py
-# VERSION: v1.0.0-D22B3-P42-SUBSCRIPTION-ACTIVE-ENTITLEMENT-COMPOSITION-SERVICE
+# VERSION: v1.1.0-D22B3-P42-CATALOGUE-UPGRADE-COMPOSITION
 # AUTHORITY BOUNDARY: transaction composition of subscription lifecycle and positive Legal Operations entitlement only
 # TENANT POSTURE: exact SovereignIdentity tenant/principal scope and one active session
 # FAIL-CLOSED POSTURE: invalid input, dependency, lifecycle, issuance, retry exhaustion and uncertain commit reject

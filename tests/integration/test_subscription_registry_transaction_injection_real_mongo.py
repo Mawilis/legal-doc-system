@@ -84,7 +84,7 @@ def mongo_context() -> Iterator[
         )
         plan_registry_module.plans_collection = plans
         registry.subscriptions_collection = subscriptions
-        PlanRegistry._ensure_indexes()
+        PlanRegistry.provision_indexes()
         registry._ensure_indexes(subscriptions)
         yield client, plans, subscriptions
     finally:

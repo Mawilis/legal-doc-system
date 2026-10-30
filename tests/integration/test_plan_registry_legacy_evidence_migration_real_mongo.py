@@ -208,7 +208,7 @@ def mongo_context() -> Iterator[_MongoContext]:
     )
     original_collection = registry.plans_collection
     registry.plans_collection = collection
-    PlanRegistry._ensure_indexes()
+    PlanRegistry.provision_indexes()
     context = _MongoContext(client, collection, database_name)
     try:
         yield context

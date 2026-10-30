@@ -383,7 +383,7 @@ def context() -> Iterator[Context]:
                 plans
             )
 
-            PlanRegistry._ensure_indexes()
+            PlanRegistry.provision_indexes()
 
             app = FastAPI()
 
