@@ -297,8 +297,7 @@ const conflictReviewReceipt = (outcome = 'ESCALATION_REQUIRED') => ({
 
 describe('D15 first-class Legal Matter Operating Room', () => {
   beforeEach(() => {
-    vi.clearAllMocks();
-    getLegalConflictScreenings.mockResolvedValue({
+    vi.clearAllMocks();    getLegalConflictScreenings.mockResolvedValue({
       schema: 'WILSY-LEGAL-CONFLICT-SCREENING-PRESENTATION/V1',
       version: 'v1.9.0-L8-8N-CONFLICT-SCREENING-READ-API',
       tenantId: 'tenant-law',
@@ -597,8 +596,7 @@ describe('D15 first-class Legal Matter Operating Room', () => {
     expect(registerLegalIntake).not.toHaveBeenCalled();
   });
 
-  it('generates ReturnOfService from the exact certified execution locator then refreshes', async () => {
-    getLegalPracticeWorkspace
+  it('generates ReturnOfService from the exact certified execution locator then refreshes', async () => {    getLegalPracticeWorkspace
       .mockResolvedValueOnce(practiceWorkspace())
       .mockResolvedValueOnce(practiceWorkspace({ withReturn: true }));
     generateLegalReturnOfService.mockResolvedValueOnce({
@@ -897,8 +895,7 @@ describe('D15 first-class Legal Matter Operating Room', () => {
     getLegalPracticeWorkspace.mockRejectedValueOnce({
       response: {
         status: 403,
-        data: { detail: 'LEGAL_OPERATIONS_WORKSPACE_DENIED' },
-      },
+        data: { detail: 'LEGAL_OPERATIONS_WORKSPACE_DENIED' },      },
     });
 
     render(<LegalDashboard roleView="LEGAL_PARTNER" />);
@@ -908,7 +905,7 @@ describe('D15 first-class Legal Matter Operating Room', () => {
     ).toBeInTheDocument();
     expect(screen.getByRole('region', { name: 'Command toolbar' })).toBeInTheDocument();
     expect(screen.getByRole('button', { name: 'Refresh truth' })).toBeInTheDocument();
-    expect(screen.getByRole('button', { name: 'Open instructions' })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'New instruction' })).toBeInTheDocument();
     expect(screen.queryByRole('button', { name: 'Trust Center' })).not.toBeInTheDocument();
     expect(getSheriffOperationalQueues).not.toHaveBeenCalled();
     expect(getLegalClientMatters).not.toHaveBeenCalled();
@@ -1197,8 +1194,7 @@ describe('D15 first-class Legal Matter Operating Room', () => {
     expect(document.activeElement).toBe(search);
     fireEvent.change(search, { target: { value: 'CASE-2026-0001' } });
     expect(screen.getByRole('heading', { name: 'Matters' })).toBeInTheDocument();
-    fireEvent.keyDown(window, { key: 'Escape' });
-    expect(search).toHaveValue('');
+    fireEvent.keyDown(window, { key: 'Escape' });    expect(search).toHaveValue('');
   });
 });
 
