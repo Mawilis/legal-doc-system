@@ -78,6 +78,24 @@ def test_ordinary_active_commercial_subscription_expires_after_period_end() -> N
     assert result.eligible is False
 
 
+def test_legacy_pro_evidence_remains_an_ordinary_separate_subscription() -> None:
+    """Legacy Pro identity/evidence is not promoted into Founder classification."""
+    marker = "LEGACY_NODE_SUBSCRIPTION_STRUCTURALLY_CONSISTENT_CONTENT_UNVERIFIED"
+    legacy = _subscription(
+        tenant_id="WILSYTENANT-4CD2FZ4O",
+        plan_id="WILSYPLAN-37B8164F",
+        subscription_id="WILSYSUB-LEGACY-8A823D69D18B419DF4AE658C",
+        amount=299.0,
+        billing_mode="PLATFORM",
+        current_period_end=NOW - timedelta(seconds=1),
+        legacy_evidence_status=marker,
+    )
+    result = evaluate_subscription_term(legacy, evaluated_at=NOW)
+    assert result.kind is SubscriptionTermKind.EXPIRED_BILLING_PERIOD
+    assert result.eligible is False
+    assert legacy.legacy_evidence_status == marker
+
+
 def test_ordinary_active_commercial_subscription_is_eligible_within_period() -> None:
     result = evaluate_subscription_term(_subscription(), evaluated_at=NOW)
     assert result.kind is SubscriptionTermKind.BILLING_PERIOD
