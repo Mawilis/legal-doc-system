@@ -276,6 +276,46 @@ def test_recorded_approval_still_denies_unratified_institutional_authority() -> 
         enforce()
 
 
+
+def test_wall_membership_restriction_precedes_acknowledgement() -> None:
+    values = sources()
+    source = values["membership_source"]
+    member = source.value[0]  # type: ignore[union-attr]
+    restricted = replace(member, state="RESTRICTED")
+    with pytest.raises(service.EthicalWallEnforcementDenied, match="WALL_MEMBERSHIP_RESTRICTED"):
+        enforce(membership_source=Source((restricted,)))
+
+
+def test_wall_acknowledgement_must_bind_current_membership() -> None:
+    values = sources()
+    ack_source = values["acknowledgement_source"]
+    acknowledgement = ack_source.value[0]  # type: ignore[union-attr]
+    mismatched = replace(acknowledgement, membership_fingerprint="f" * 128)
+    with pytest.raises(
+        service.EthicalWallEnforcementDenied,
+        match="WALL_ACKNOWLEDGEMENT_MEMBERSHIP_MISMATCH",
+    ):
+        enforce(acknowledgement_source=Source((mismatched,)))
+
+
+def test_missing_wall_acknowledgement_denies() -> None:
+    with pytest.raises(
+        service.EthicalWallEnforcementDenied,
+        match="WALL_ACKNOWLEDGEMENT_REQUIRED",
+    ):
+        enforce(acknowledgement_source=Source(()))
+
+
+def test_membership_source_unavailable_denies_before_acknowledgement_read() -> None:
+    acknowledgement_source = Source(())
+    with pytest.raises(
+        service.EthicalWallEnforcementDenied,
+        match="WALL_MEMBERSHIP_SOURCE_UNAVAILABLE",
+    ):
+        enforce(membership_source=object(), acknowledgement_source=acknowledgement_source)
+    assert acknowledgement_source.calls == 0
+
+
 def test_service_has_no_positive_or_content_delivery_surface() -> None:
     assert not hasattr(service, "authorize_content")
     assert not hasattr(service, "read_content")
