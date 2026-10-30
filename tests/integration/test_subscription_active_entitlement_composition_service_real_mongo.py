@@ -337,6 +337,37 @@ def test_runtime_indexes_positive_create_and_exact_replay(
     assert any(row.get("unique") for row in collections["current"].list_indexes())
 
 
+def test_upgrade_to_legal_plan_commits_subscription_and_entitlement_atomically(
+    mongo_context: tuple[MongoClient[Any], Any, dict[str, Any]],
+) -> None:
+    """An authorized P42 upgrade creates Legal entitlement in the same transaction."""
+    _client, _database, collections = mongo_context
+    tenant_id, principal_id = f"tenant-upgrade-{uuid4().hex}", f"principal-upgrade-{uuid4().hex}"
+    _seed_authority(collections, tenant_id, principal_id)
+    base_plan = _plan(tenant_id, ("crm.core",))
+    target_plan = _plan(tenant_id, ("legal.core", "crm.core"))
+    created = SubscriptionRegistry.create(
+        _command(tenant_id, base_plan.plan_id, f"upgrade-base-{tenant_id}"),
+        tenant_id_header=tenant_id,
+    )
+    assert created["success"] is True
+    subscription_id = created["subscription"].subscription_id
+
+    result = SubscriptionActiveEntitlementCompositionService.upgrade(
+        subscription_id,
+        {"newPlanId": target_plan.plan_id},
+        _identity(tenant_id, principal_id),
+    )
+
+    _assert_positive(result, collections, tenant_id, principal_id)
+    assert result.subscription.plan_id == target_plan.plan_id
+    assert result.subscription.plan_features == ("legal.core", "crm.core")
+    assert result.subscription.audit_trail[-1].action.value == "upgrade"
+    assert collections["authorization"].count_documents({"tenant_id": tenant_id}) == 1
+    assert collections["history"].count_documents({"tenant_id": tenant_id}) == 2
+    assert collections["current"].count_documents({"tenant_id": tenant_id}) == 1
+
+
 def test_downstream_failure_after_commercial_write_aborts_everything(
     mongo_context: tuple[MongoClient[Any], Any, dict[str, Any]],
     monkeypatch: pytest.MonkeyPatch,
