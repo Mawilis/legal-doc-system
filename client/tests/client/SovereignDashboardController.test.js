@@ -87,6 +87,18 @@ describe('SovereignDashboardController resolver', () => {
     })).toBe(DASHBOARD_KEYS.LEGAL);
   });
 
+  it('allows the existing Founder return affordance only when its return signal is present', () => {
+    expect(resolveDashboardKey({
+      user: { id: 'tenant-owner-1', role: 'TENANT_OWNER' },
+      manualDashboardKey: 'FOUNDER_DASHBOARD'
+    })).toBe(DASHBOARD_KEYS.EXECUTIVE);
+
+    expect(resolveDashboardKey({
+      user: { id: 'founder-return-1', role: 'TENANT_OWNER', permissions: ['FOUNDER'] },
+      manualDashboardKey: 'FOUNDER_DASHBOARD'
+    })).toBe(DASHBOARD_KEYS.FOUNDER);
+  });
+
   it('routes executive and owner identities to the standalone executive surface', () => {
     expect(resolveDashboardKey({ user: { id: 'ceo-1', role: 'CEO' } })).toBe(DASHBOARD_KEYS.EXECUTIVE);
     expect(resolveDashboardKey({ user: { id: 'owner-1', role: 'TENANT_OWNER' } })).toBe(DASHBOARD_KEYS.EXECUTIVE);
