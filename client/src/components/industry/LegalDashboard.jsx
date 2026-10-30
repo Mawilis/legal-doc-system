@@ -429,7 +429,6 @@ function presentationAllowsPermission({ roleToken, user, permission }) {
 function LegalPresentationAuthorityPosture({ roleToken, user }) {
   const role = canonicalPresentationRole(roleToken);
   const identity = legalAuthenticatedIdentity(user, 'Not projected');
-  const explicitHints = explicitLegalPermissionHints(user);
   const authoritative = user?.legalPermissionsAuthoritative === true;
   const source = authoritative
     ? 'Server permission projection'
