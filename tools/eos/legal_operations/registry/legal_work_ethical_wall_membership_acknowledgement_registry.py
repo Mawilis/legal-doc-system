@@ -163,13 +163,13 @@ class WallMembershipAcknowledgementRegistry:
         )}
         identity = {**scope, "revision": document["revision"]}
         try:
+            history = self._history(collection, scope, cls, tx)
             existing = collection.find_one(identity, session=tx)
             if existing is not None:
                 prior = _decode(existing, cls)
                 if prior != value:
                     raise WallEvidenceConflict("G78_WALL_DIVERGENT_REPLAY")
                 return prior
-            history = self._history(collection, scope, cls, tx)
             if not history:
                 if document["revision"] != 1 or document["predecessor_fingerprint"] is not None:
                     raise WallEvidenceConflict("G78_WALL_ORPHAN_REVISION")
