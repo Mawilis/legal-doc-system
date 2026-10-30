@@ -81,6 +81,18 @@ def _ref(name: str, value: object) -> str:
         _fail(f"P5L_{name.upper()}_INVALID")
     return value
 
+def _coordinate(name: str, value: object, low: float, high: float) -> float:
+    if (isinstance(value, bool) or not isinstance(value, (int, float))
+        or not math.isfinite(value) or not low <= value <= high):
+        _fail(f"P5L_{name.upper()}_INVALID")
+    return float(value)
+
+def _accuracy(value: object) -> float:
+    if (isinstance(value, bool) or not isinstance(value, (int, float))
+        or not math.isfinite(value) or not 0 < value <= 10000):
+        _fail("P5L_HORIZONTAL_ACCURACY_INVALID")
+    return float(value)
+
 def _digest(value: object) -> str:
     raw = json.dumps(value, ensure_ascii=False, allow_nan=False, sort_keys=True, separators=(",", ":"))
     return hashlib.sha3_512(raw.encode("utf-8")).hexdigest()
@@ -230,8 +242,6 @@ class ProcessServiceLocationObservation:
             "evidence_reference": self.evidence_reference})
 
     def __post_init__(self) -> None:
-        if _read_proof(self._proof) != _digest(self.to_dict()):
-            _fail("P5L_OBSERVATION_FACTORY_REQUIRED")
         _tenant(self.tenant_id)
         for key in ("observation_id", "grant_id", "attempt_id", "deputy_id", "device_id", "district_id", "sheriff_office_id"):
             _id(key, getattr(self, key))
@@ -241,13 +251,12 @@ class ProcessServiceLocationObservation:
             _ref(key, getattr(self, key))
         if self.purpose != LOCATION_PURPOSE:
             _fail("P5L_OBSERVATION_PURPOSE_INVALID")
-        for key, value, low, high in (("latitude", self.latitude, -90, 90), ("longitude", self.longitude, -180, 180)):
-            if isinstance(value, bool) or not isinstance(value, (int, float)) or not math.isfinite(value) or not low <= value <= high:
-                _fail(f"P5L_{key.upper()}_INVALID")
-        accuracy = self.horizontal_accuracy_m
-        if isinstance(accuracy, bool) or not isinstance(accuracy, (int, float)) or not math.isfinite(accuracy) or not 0 < accuracy <= 10000:
-            _fail("P5L_HORIZONTAL_ACCURACY_INVALID")
+        _coordinate("latitude", self.latitude, -90, 90)
+        _coordinate("longitude", self.longitude, -180, 180)
+        _accuracy(self.horizontal_accuracy_m)
         _time("captured_at", self.captured_at)
+        if _read_proof(self._proof) != _digest(self.to_dict()):
+            _fail("P5L_OBSERVATION_FACTORY_REQUIRED")
 
     @property
     def fingerprint(self) -> str:
@@ -279,13 +288,19 @@ def create_process_service_location_observation(*, attempt: ServiceAttempt,
         or captured < permission_grant.granted_at or captured > permission_grant.expires_at
         or captured < attempt.allocated_at):
         _fail("P5L_PERMISSION_SCOPE_OR_WINDOW_INVALID")
+    # Validate untrusted numeric input before canonical JSON serialization.  The
+    # digest encoder intentionally rejects NaN/Infinity, but callers must receive
+    # the stable domain error rather than a raw json ValueError.
+    latitude_value = _coordinate("latitude", latitude, -90, 90)
+    longitude_value = _coordinate("longitude", longitude, -180, 180)
+    accuracy_value = _accuracy(horizontal_accuracy_m)
     values: dict[str, object] = {"tenant_id": attempt.tenant_id,
         "observation_id": _id("observation_id", observation_id), "grant_id": permission_grant.grant_id,
         "attempt_id": attempt.attempt_id, "deputy_id": attempt.deputy_id,
         "device_id": _id("device_id", device_id), "district_id": allocation_receipt.district_id,
         "sheriff_office_id": allocation_receipt.sheriff_office_id,
         "source_attempt_fingerprint": attempt.fingerprint, "purpose": LOCATION_PURPOSE,
-        "latitude": latitude, "longitude": longitude, "horizontal_accuracy_m": horizontal_accuracy_m,
+        "latitude": latitude_value, "longitude": longitude_value, "horizontal_accuracy_m": accuracy_value,
         "captured_at": captured, "device_provenance_reference": _ref("device_provenance_reference", device_provenance_reference),
         "device_provenance_fingerprint": _hash("device_provenance_fingerprint", device_provenance_fingerprint),
         "permission_grant_fingerprint": permission_grant.fingerprint,
