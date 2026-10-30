@@ -1648,6 +1648,7 @@ def test_http_upgrade_uses_newplanid_only_and_derives_snapshot(
         principal_id=principal,
         tenant_id=tenant,
     )
+    _seed_business_role(context, principal_id=principal, tenant_id=tenant)
 
     subscription = _persist_subscription(
         context,
@@ -1660,7 +1661,7 @@ def test_http_upgrade_uses_newplanid_only_and_derives_snapshot(
         amount=2500.0,
         features=(
             "crm.core",
-            "legal.documents",
+            "legal.core",
             "wilsy.ai",
         ),
     )
@@ -1699,6 +1700,10 @@ def test_http_upgrade_uses_newplanid_only_and_derives_snapshot(
         persisted["plan_catalogue_version"]
         == target.catalogue_version
     )
+    database = context.client[context.database_name]
+    assert database[AUTHORIZATION_COLLECTION].count_documents({"tenant_id": tenant}) == 1
+    assert database[ENTITLEMENT_CURRENT_COLLECTION].count_documents({"tenant_id": tenant}) == 1
+    assert database[ENTITLEMENT_HISTORY_COLLECTION].count_documents({"tenant_id": tenant}) == 2
 
     redirected = _client(context).post(
         (
@@ -1718,7 +1723,7 @@ def test_http_upgrade_uses_newplanid_only_and_derives_snapshot(
 
     assert redirected.status_code == 422
     assert (
-        "SUBSCRIPTION_PLAN_CHANGE_INVALID_FIELDS"
+        "SUBSCRIPTION_OPERATION_REJECTED"
         in redirected.text
     )
 
