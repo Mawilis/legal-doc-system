@@ -234,8 +234,15 @@ def _linear(history: Iterable[object], expected_type: type, *, tenant: str,
     identity_fields = ("tenant_id", "case_matter_id", "policy_id", "practitioner_principal_id")
     if any(getattr(first, name) != value for name, value in zip(identity_fields, (tenant, matter, policy, principal))):
         raise WallEvidenceError("EVIDENCE_CORRUPT")
+    identity_name = "membership_id" if expected_type is WallMembershipEvidence else "acknowledgement_id"
     for previous, current in zip(values, values[1:]):
-        if current.predecessor_fingerprint != previous.fingerprint or current.effective_at <= previous.effective_at if hasattr(current, "effective_at") else current.predecessor_fingerprint != previous.fingerprint or current.acknowledged_at <= previous.acknowledged_at:
+        previous_time = previous.effective_at if expected_type is WallMembershipEvidence else previous.acknowledged_at
+        current_time = current.effective_at if expected_type is WallMembershipEvidence else current.acknowledged_at
+        if (
+            getattr(current, identity_name) != getattr(previous, identity_name)
+            or current.predecessor_fingerprint != previous.fingerprint
+            or current_time <= previous_time
+        ):
             raise WallEvidenceError("EVIDENCE_CORRUPT")
     effective = tuple(item for item in values if (item.effective_at if hasattr(item, "effective_at") else item.acknowledged_at) <= at)
     return effective
