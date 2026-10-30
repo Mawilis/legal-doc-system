@@ -161,7 +161,6 @@ import {
   registerLegalIntake,
   transitionDeputyFieldAttempt,
   uploadLegalEvidence,
-  getLegalCommercialContext,
 } from '../../services/legalOperationsService.js';
 import {
   createLegalMatterDeadline,
@@ -798,24 +797,7 @@ function commandErrorMessage(caught) {
   );
 }
 
-const BLOCKED_CAPABILITIES = Object.freeze([
-  {
-    title: 'Same-day / urgent prioritisation',
-    reason: 'No canonical urgency field exists in the certified queue model.',
-  },
-  {
-    title: 'Distance / GPS routing',
-    reason: 'No certified geospatial source is connected to this cockpit.',
-  },
-  {
-    title: 'Billing readiness',
-    reason: 'Legal operational state is not invoice, payment or settlement truth.',
-  },
-  {
-    title: 'Return-generation queue',
-    reason: 'Requires snapshot-consistent cross-entity absence proof before exposure.',
-  },
-]);
+
 
 function formatTimestamp(value) {
   if (!value) return '—';
@@ -4346,253 +4328,6 @@ function DeputyAttemptRow({
   );
 }
 
-function LegalCommercialContextPlate() {
-  const [commercialState, setCommercialState] = useState(() => ({
-    status: 'LOADING',
-    context: null,
-  }));
-
-  useEffect(() => {
-    let active = true;
-
-    const loadCommercialContext = async () => {
-      try {
-        const result = await getLegalCommercialContext();
-
-        if (!active) return;
-
-        if (result?.access === 'AUTHORIZED' && result?.context) {
-          setCommercialState({
-            status: 'AUTHORIZED',
-            context: result.context,
-          });
-          return;
-        }
-
-        if (result?.access === 'DENIED') {
-          setCommercialState({
-            status: 'DENIED',
-            context: null,
-          });
-          return;
-        }
-
-        setCommercialState({
-          status: 'UNAVAILABLE',
-          context: null,
-        });
-      } catch {
-        if (!active) return;
-
-        setCommercialState({
-          status: 'UNAVAILABLE',
-          context: null,
-        });
-      }
-    };
-
-    loadCommercialContext();
-
-    return () => {
-      active = false;
-    };
-  }, []);
-
-  if (commercialState.status === 'LOADING') {
-    return (
-      <section
-        aria-label="Commercial context"
-        data-commercial-context-state="LOADING"
-        className="rounded-2xl border border-stone-800 bg-stone-950/70 p-5"
-      >
-        <div className="flex items-center gap-3 text-stone-400">
-          <Loader2 className="animate-spin" size={17} />
-          <div>
-            <p className="text-xs font-black uppercase tracking-[0.14em]">
-              Commercial context
-            </p>
-            <p className="mt-1 text-xs text-stone-500">
-              Resolving server-authorized subscription evidence.
-            </p>
-          </div>
-        </div>
-      </section>
-    );
-  }
-
-  if (commercialState.status === 'DENIED') {
-    return (
-      <section
-        aria-label="Commercial context"
-        data-commercial-context-state="DENIED"
-        className="rounded-2xl border border-stone-800 bg-stone-950/70 p-5"
-      >
-        <div className="flex items-start gap-3">
-          <div className="rounded-xl border border-stone-800 bg-stone-900 p-2.5 text-stone-500">
-            <LockKeyhole size={18} />
-          </div>
-          <div>
-            <p className="text-xs font-black uppercase tracking-[0.14em] text-stone-300">
-              Commercial details locked
-            </p>
-            <p className="mt-2 max-w-3xl text-xs leading-6 text-stone-500">
-              Your authenticated Legal workspace remains available according to
-              its own Legal authority. Plan, subscription and monthly-value
-              details require separate server-authorized commercial read access.
-            </p>
-            <p className="mt-2 text-[10px] uppercase tracking-[0.14em] text-stone-600">
-              Legal role does not grant subscription authority.
-            </p>
-          </div>
-        </div>
-      </section>
-    );
-  }
-
-  if (
-    commercialState.status !== 'AUTHORIZED'
-    || !commercialState.context
-  ) {
-    return (
-      <section
-        aria-label="Commercial context"
-        data-commercial-context-state="UNAVAILABLE"
-        className="rounded-2xl border border-amber-900/30 bg-amber-950/10 p-5"
-      >
-        <div className="flex items-start gap-3">
-          <ShieldCheck className="mt-0.5 text-amber-400" size={18} />
-          <div>
-            <p className="text-xs font-black uppercase tracking-[0.14em] text-amber-300">
-              Commercial context unavailable
-            </p>
-            <p className="mt-2 max-w-3xl text-xs leading-6 text-stone-500">
-              WILSY Legal OS will not infer plan, subscription or price evidence
-              when the canonical commercial source cannot be established.
-            </p>
-          </div>
-        </div>
-      </section>
-    );
-  }
-
-  const { product, subscription, plan, commercial } =
-    commercialState.context;
-
-  const monthlyValue = Number(
-    commercial?.monthlyEquivalentAmount,
-  );
-
-  const monthlyDisplay = Number.isFinite(monthlyValue)
-    ? `${commercial.currency} ${monthlyValue.toLocaleString()}`
-    : 'Unavailable';
-
-  return (
-    <section
-      aria-label="Commercial context"
-      data-commercial-context-state="AUTHORIZED"
-      className="rounded-2xl border border-emerald-900/30 bg-emerald-950/10 p-5"
-    >
-      <div className="flex flex-col gap-4 xl:flex-row xl:items-start xl:justify-between">
-        <div>
-          <div className="flex items-center gap-2">
-            <ShieldCheck size={18} className="text-emerald-400" />
-            <p className="text-xs font-black uppercase tracking-[0.14em] text-emerald-300">
-              Licensed Legal workspace
-            </p>
-          </div>
-          <h2 className="mt-2 text-lg font-black text-white">
-            {plan.name}
-          </h2>
-          <p className="mt-1 text-xs text-stone-500">
-            {plan.tier} · {subscription.status} · {commercial.billingFrequency}
-          </p>
-        </div>
-
-        <div className="grid min-w-0 gap-3 sm:grid-cols-2 xl:grid-cols-3">
-          <div className="rounded-xl border border-stone-800 bg-black/20 px-4 py-3">
-            <p className="text-[10px] font-black uppercase tracking-[0.14em] text-stone-600">
-              Product
-            </p>
-            <p className="mt-1 text-sm font-bold text-stone-200">
-              {product.productId}
-            </p>
-            <p className="mt-1 text-[10px] text-stone-600">
-              {product.entitlementState}
-            </p>
-          </div>
-
-          <div className="rounded-xl border border-stone-800 bg-black/20 px-4 py-3">
-            <p className="text-[10px] font-black uppercase tracking-[0.14em] text-stone-600">
-              Billing cadence
-            </p>
-            <p className="mt-1 text-sm font-bold text-stone-200">
-              {commercial.currency} {commercial.amount.toLocaleString()}
-            </p>
-            <p className="mt-1 text-[10px] text-stone-600">
-              {commercial.billingFrequency}
-            </p>
-          </div>
-
-          <div className="rounded-xl border border-emerald-900/30 bg-emerald-950/20 px-4 py-3">
-            <p className="text-[10px] font-black uppercase tracking-[0.14em] text-emerald-500">
-              Monthly equivalent
-            </p>
-            <p className="mt-1 text-sm font-black text-emerald-200">
-              {monthlyDisplay}
-            </p>
-            <p className="mt-1 text-[10px] text-stone-600">
-              Descriptive commercial value only
-            </p>
-          </div>
-        </div>
-      </div>
-
-      <div className="mt-4 flex flex-wrap gap-x-5 gap-y-2 border-t border-stone-900 pt-3 text-[10px] uppercase tracking-[0.12em] text-stone-600">
-        <span>Plan catalogue v{plan.catalogueVersion}</span>
-        <span>Subscription {subscription.subscriptionId}</span>
-        <span>Financial execution authority: none</span>
-      </div>
-    </section>
-  );
-}
-
-
-function CapabilityBoundary() {
-  return (
-    <section className="rounded-2xl border border-stone-800 bg-stone-950/75 p-5">
-      <div className="flex items-start gap-3">
-        <LockKeyhole className="mt-0.5 text-stone-500" size={19} />
-        <div>
-          <h2 className="text-sm font-black uppercase tracking-[0.12em] text-white">
-            Deliberate authority boundaries
-          </h2>
-          <p className="mt-1 max-w-3xl text-xs leading-5 text-stone-500">
-            These capabilities remain visible on the roadmap but cannot display
-            synthetic data. Each requires its own canonical authority and certificate.
-          </p>
-        </div>
-      </div>
-      <div className="mt-5 grid gap-3 lg:grid-cols-2">
-        {BLOCKED_CAPABILITIES.map((capability) => (
-          <div
-            key={capability.title}
-            className="rounded-xl border border-stone-800 bg-black/30 p-4"
-          >
-            <div className="flex items-center gap-2">
-              <AlertTriangle size={14} className="text-amber-500" />
-              <p className="text-xs font-black text-stone-300">{capability.title}</p>
-            </div>
-            <p className="mt-2 text-[11px] leading-5 text-stone-600">
-              {capability.reason}
-            </p>
-          </div>
-        ))}
-      </div>
-    </section>
-  );
-}
-
-
 const SPECIALIST_WORKSPACE_VIEWS = Object.freeze({
   MY_WORK: 'MY_WORK',
   PROCESS_SERVICE: 'PROCESS_SERVICE',
@@ -5270,7 +5005,6 @@ export default function LegalDashboard({
             <span>Role: {roleMode}</span>
           </div>
         </section>
-        <LegalCommercialContextPlate />
 
         {!error && isSheriffMode && (
           <LegalRoleActivityPosture
@@ -5510,40 +5244,7 @@ export default function LegalDashboard({
           </>
         )}
 
-        {!isClientMode && (
-          <section className="grid gap-4 xl:grid-cols-[1.2fr_0.8fr]">
-          <CapabilityBoundary />
 
-          <div className="rounded-2xl border border-violet-900/30 bg-gradient-to-br from-violet-950/20 via-stone-950 to-stone-950 p-5">
-            <div className="flex items-start gap-3">
-              <div className="rounded-xl border border-violet-800/30 bg-violet-500/10 p-2.5 text-violet-300">
-                <Bot size={19} />
-              </div>
-              <div>
-                <div className="flex items-center gap-2">
-                  <h2 className="text-sm font-black uppercase tracking-[0.12em] text-white">
-                    WILSY AI readiness
-                  </h2>
-                  <Sparkles size={14} className="text-violet-400" />
-                </div>
-                <p className="mt-2 text-xs leading-6 text-stone-400">
-                  WILSY AI will consume certified Legal OS evidence through its own
-                  governed tool and reasoning contracts. This cockpit does not let AI
-                  create legal facts, queue membership, deputy identity or financial truth.
-                </p>
-                <div className="mt-4 rounded-xl border border-violet-900/30 bg-black/30 p-4">
-                  <p className="text-[10px] font-black uppercase tracking-[0.18em] text-violet-400">
-                    Authority equation
-                  </p>
-                  <p className="mt-2 text-xs leading-6 text-stone-300">
-                    Observed fact ≠ derived signal ≠ AI inference ≠ recommendation ≠ authorization ≠ execution.
-                  </p>
-                </div>
-              </div>
-            </div>
-          </div>
-        </section>
-        )}
 
         <footer className="flex flex-col justify-between gap-3 border-t border-stone-900 py-5 text-[10px] uppercase tracking-[0.15em] text-stone-700 md:flex-row">
           <span>{DASHBOARD_VERSION}</span>
@@ -5556,7 +5257,7 @@ export default function LegalDashboard({
 
 /**
  * ARTIFACT: LegalDashboard.jsx
- * VERSION: v13.3.0-SPECIALIST-OPERATING-NAVIGATION
+ * VERSION: v13.4.0-SPECIALIST-DAILY-WORK-SHELL
  * AUTHORITY BOUNDARY: governed Legal Practice/Finance/SHERIFF/DEPUTY/LEGAL_CLIENT presentation plus already-authorized intake, ReturnOfService, bounded human conflict-review command initiation and bound-Deputy command initiation only; D24C authenticated person names and L8-8M conflict-review controls are descriptive/wiring projections that create no identity, membership, role, permission, tenant, operating-model, conflict clearance, waiver or financial authority; Python EOS owns authorization and legal truth
  * TENANT POSTURE: every data surface remains server-authorized and tenant-scoped; practice workspace is D15 snapshot truth with first-class CaseMatter evidence, client matters are D5/D7 visibility-bound, deputy commands require exact capability parity
  * FAIL-CLOSED POSTURE: unresolved role, malformed/absent person-name text, explicit or server-authoritative legal-permission narrowing, denied/unavailable workspace/client/specialist read, malformed finance/intake/return/field evidence, command failure or failed refresh never invents names or truth, widens role scope, fabricates operating-model authority or cross-role fallback
