@@ -1,13 +1,14 @@
 /**
  * WILSY OS — PRODUCTION LEGAL OPERATIONS WORKSPACE CERTIFICATE
- * VERSION: v1.10.0-PRACTICE-CONFLICT-REVIEW-PRESENTATION-PARITY-CERT
+ * VERSION: v1.12.0-PARTNER-CONFLICT-AUTHORITY-AND-EMPTY-STATE-CERT
  * AUTHORITY: Browser presentation/wiring certificate only.
  * EPITOME: Proves law-firm and finance roles resolve to real WILSY Legal OS
  *          workspaces backed by the D15 V2 first-class matter contract, with
  *          functional lifecycle navigation, governed intake, ReturnOfService generation, exact
  *          finance lookup and no cross-role endpoint fallback.
  * ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/client/src/__tests__/components/legalDashboardPracticeWorkspace.test.jsx
- * CERTIFICATION / UPDATE DATE: 2026-10-16
+ * CERTIFICATION / UPDATE DATE: 2026-10-30
+ * CHANGELOG: 2026-10-30 v1.12.0-PARTNER-CONFLICT-AUTHORITY-AND-EMPTY-STATE-CERT supplies the exact authoritative conflict-review capability to the positive Partner failure-path fixture and verifies the empty runway does not advertise unsupported instruction creation. Negative permission-narrowing coverage remains intact; no production authority changes.
  * CHANGELOG: 2026-10-16 v1.10.0-PRACTICE-CONFLICT-REVIEW-PRESENTATION-PARITY-CERT proves Paralegal and Secretary retain the readable review queue without a mutation affordance and proves authoritative permission projection can further narrow Partner presentation.
  *            2026-10-12 v1.9.0-LEGAL-EVIDENCE-UPLOAD-WORKSPACE-CERT proves the governed upload workspace appears only for the Partner presentation envelope and remains absent for Attorney without initiating transport.
  *            2026-09-29 v1.8.0-L10-P2C7V-ADAPTIVE-LEGAL-RUNWAY-CERT proves canonical zero-state runway, permission-scoped intake, compact nonzero signals and absence of the zero KPI strip while preserving attention and operating-room behavior.
@@ -87,6 +88,18 @@ vi.mock('../../contexts/authContext', () => ({
       email: 'operator@example.test',
       role: 'tenant_legal_partner',
       tenantId: 'tenant-law',
+      legalPermissionsAuthoritative: true,
+      permissions: [
+        'legal_operations:instruction:write',
+        'legal_operations:return:write',
+        'legal_operations:billing:read',
+        'legal_operations:invoice:read',
+        'legal_operations:matter_deadline:read',
+        'legal_operations:matter_deadline:write',
+        'legal_operations:evidence:write',
+        'legal_operations:productive_work:read',
+        'legal_operations:conflict_review:write',
+      ],
     },
     tenant: {
       tenantId: 'tenant-law',
@@ -284,8 +297,7 @@ const conflictReviewReceipt = (outcome = 'ESCALATION_REQUIRED') => ({
 
 describe('D15 first-class Legal Matter Operating Room', () => {
   beforeEach(() => {
-    vi.clearAllMocks();
-    getLegalConflictScreenings.mockResolvedValue({
+    vi.clearAllMocks();    getLegalConflictScreenings.mockResolvedValue({
       schema: 'WILSY-LEGAL-CONFLICT-SCREENING-PRESENTATION/V1',
       version: 'v1.9.0-L8-8N-CONFLICT-SCREENING-READ-API',
       tenantId: 'tenant-law',
@@ -300,7 +312,22 @@ describe('D15 first-class Legal Matter Operating Room', () => {
     const { container } = render(
       <LegalDashboard
         roleView="LEGAL_PARTNER"
-        user={{ id: 'principal-law', email: 'partner@example.test' }}
+        user={{
+          id: 'principal-law',
+          email: 'partner@example.test',
+          legalPermissionsAuthoritative: true,
+          permissions: [
+            'legal_operations:instruction:write',
+            'legal_operations:return:write',
+            'legal_operations:billing:read',
+            'legal_operations:invoice:read',
+            'legal_operations:matter_deadline:read',
+            'legal_operations:matter_deadline:write',
+            'legal_operations:evidence:write',
+            'legal_operations:productive_work:read',
+            'legal_operations:conflict_review:write',
+          ],
+        }}
         tenantConfig={{ tenantId: 'tenant-law', displayName: 'WILSY Legal Practice' }}
       />,
     );
@@ -569,8 +596,7 @@ describe('D15 first-class Legal Matter Operating Room', () => {
     expect(registerLegalIntake).not.toHaveBeenCalled();
   });
 
-  it('generates ReturnOfService from the exact certified execution locator then refreshes', async () => {
-    getLegalPracticeWorkspace
+  it('generates ReturnOfService from the exact certified execution locator then refreshes', async () => {    getLegalPracticeWorkspace
       .mockResolvedValueOnce(practiceWorkspace())
       .mockResolvedValueOnce(practiceWorkspace({ withReturn: true }));
     generateLegalReturnOfService.mockResolvedValueOnce({
@@ -602,27 +628,27 @@ describe('D15 first-class Legal Matter Operating Room', () => {
     expect(generateLegalReturnOfService.mock.calls[0][0]).not.toHaveProperty('tenantId');
   });
 
-  it('shows compatibility role-baseline provenance when no explicit Legal permissions exist', async () => {
+  it('fails closed when the authenticated Legal permission projection is absent', async () => {
     getLegalPracticeWorkspace.mockResolvedValueOnce(practiceWorkspace());
 
     render(
       <LegalDashboard
         roleView="LEGAL_PARTNER"
-        user={{ id: 'principal-partner-baseline' }}
+        user={{ id: 'principal-partner-no-projection' }}
       />,
     );
 
     await screen.findByText('Legal Operations Command Center');
     const posture = screen.getByLabelText('Legal presentation authority posture');
-    expect(within(posture).getByText('Role baseline compatibility')).toBeInTheDocument();
+    expect(within(posture).getByText('Permission projection unavailable')).toBeInTheDocument();
     expect(within(posture).getByText('LEGAL_PARTNER')).toBeInTheDocument();
-    expect(within(posture).getByText(
-      'Intake · Return generation · Billing evidence · Invoice evidence · Matter deadlines · Deadline creation',
-    )).toBeInTheDocument();
-    expect(within(posture).getByText(/Python EOS re-authorizes every Legal Operations request/i)).toBeInTheDocument();
+    expect(within(posture).getByText('Read-only')).toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: 'New Instruction' })).not.toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: 'Finance Evidence' })).not.toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: 'Deadlines' })).not.toBeInTheDocument();
   });
 
-  it('shows legacy narrowing provenance without presenting it as server authority', async () => {
+  it('does not treat legacy browser permission hints as an authoritative capability projection', async () => {
     getLegalPracticeWorkspace.mockResolvedValueOnce(practiceWorkspace());
 
     render(
@@ -637,10 +663,9 @@ describe('D15 first-class Legal Matter Operating Room', () => {
 
     await screen.findByText('Legal Operations Command Center');
     const posture = screen.getByLabelText('Legal presentation authority posture');
-    expect(within(posture).getByText('Legacy narrowing hints')).toBeInTheDocument();
-    expect(within(posture).getByText('Intake')).toBeInTheDocument();
-    expect(within(posture).queryByText(/Return generation/)).not.toBeInTheDocument();
-    expect(within(posture).queryByText(/Billing evidence/)).not.toBeInTheDocument();
+    expect(within(posture).getByText('Permission projection unavailable')).toBeInTheDocument();
+    expect(within(posture).getByText('Read-only')).toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: 'New Instruction' })).not.toBeInTheDocument();
   });
 
   it('narrows a Partner to explicit invoice-read presentation without widening browser authority', async () => {
@@ -652,6 +677,7 @@ describe('D15 first-class Legal Matter Operating Room', () => {
         user={{
           id: 'principal-partner-narrow',
           permissions: ['legal_operations:invoice:read'],
+          legalPermissionsAuthoritative: true,
         }}
       />,
     );
@@ -680,6 +706,7 @@ describe('D15 first-class Legal Matter Operating Room', () => {
         user={{
           id: 'principal-attorney-intake-only',
           permissions: ['legal_operations:instruction:write'],
+          legalPermissionsAuthoritative: true,
         }}
       />,
     );
@@ -765,6 +792,7 @@ describe('D15 first-class Legal Matter Operating Room', () => {
         roleView="LEGAL_SECRETARY"
         user={{
           id: 'principal-secretary-no-escalation',
+          legalPermissionsAuthoritative: true,
           permissions: [
             'legal_operations:instruction:write',
             'legal_operations:billing:read',
@@ -800,6 +828,7 @@ describe('D15 first-class Legal Matter Operating Room', () => {
         user={{
           id: 'principal-finance-invoice-only',
           permissions: ['legal_operations:invoice:read'],
+          legalPermissionsAuthoritative: true,
         }}
         tenantConfig={{ tenantId: 'tenant-law' }}
       />,
@@ -866,8 +895,7 @@ describe('D15 first-class Legal Matter Operating Room', () => {
     getLegalPracticeWorkspace.mockRejectedValueOnce({
       response: {
         status: 403,
-        data: { detail: 'LEGAL_OPERATIONS_WORKSPACE_DENIED' },
-      },
+        data: { detail: 'LEGAL_OPERATIONS_WORKSPACE_DENIED' },      },
     });
 
     render(<LegalDashboard roleView="LEGAL_PARTNER" />);
@@ -875,7 +903,10 @@ describe('D15 first-class Legal Matter Operating Room', () => {
     expect(
       await screen.findByText('LEGAL_PRACTICE_WORKSPACE_DENIED'),
     ).toBeInTheDocument();
-    expect(screen.getByRole('button', { name: 'Command Center' })).toBeInTheDocument();
+    expect(screen.getByRole('region', { name: 'Command toolbar' })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Refresh truth' })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'New instruction' })).toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: 'Trust Center' })).not.toBeInTheDocument();
     expect(getSheriffOperationalQueues).not.toHaveBeenCalled();
     expect(getLegalClientMatters).not.toHaveBeenCalled();
     expect(getDeputyPersonalActiveWork).not.toHaveBeenCalled();
@@ -1070,7 +1101,15 @@ describe('D15 first-class Legal Matter Operating Room', () => {
       response: { status, data: { detail } },
     });
 
-    render(<LegalDashboard roleView="LEGAL_PARTNER" />);
+    render(
+      <LegalDashboard
+        roleView="LEGAL_PARTNER"
+        user={{
+          legalPermissionsAuthoritative: true,
+          permissions: ['legal_operations:conflict_review:write'],
+        }}
+      />,
+    );
     await screen.findByRole('heading', { name: 'Conflict review queue' });
     fireEvent.click(screen.getByRole('button', { name: 'Review Conflict' }));
     fireEvent.change(screen.getByRole('combobox', {
@@ -1155,8 +1194,7 @@ describe('D15 first-class Legal Matter Operating Room', () => {
     expect(document.activeElement).toBe(search);
     fireEvent.change(search, { target: { value: 'CASE-2026-0001' } });
     expect(screen.getByRole('heading', { name: 'Matters' })).toBeInTheDocument();
-    fireEvent.keyDown(window, { key: 'Escape' });
-    expect(search).toHaveValue('');
+    fireEvent.keyDown(window, { key: 'Escape' });    expect(search).toHaveValue('');
   });
 });
 

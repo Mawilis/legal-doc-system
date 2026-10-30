@@ -1,6 +1,6 @@
 /**
  * WILSY OS — ROLE-SCOPED LEGAL OPERATIONS COCKPIT
- * VERSION: v13.1.1-D21B12-SHARED-BRANDING-LIFECYCLE
+ * VERSION: v13.6.0-SPECIALIST-OPERATIONS-WORKBENCH
  * AUTHORITY: Presentation of authenticated Python-EOS Legal Operations truth.
  * EPITOME: One role-aware WILSY Legal OS surface for legal-practice operators,
  *          finance, sheriff, deputy and client personas. Law-firm roles receive
@@ -20,7 +20,7 @@
  *                            validation. This component owns responsive
  *                            presentation and deputy observation capture only.
  * CERTIFICATION / UPDATE DATE: 2026-10-24
- * CHANGELOG: 2026-10-24 v13.1.1-D21B12-SHARED-BRANDING-LIFECYCLE removes the mode-gated tenant descriptor from the LegalDashboard asset-hook call, keeping that parent hook authority-neutral while WilsyOSDashboardChrome alone consumes the authenticated descriptor and owns its validated asset lifecycle across every Legal mode. No authority or rendered behavior changes.
+ * CHANGELOG: 2026-10-30 v13.6.0-SPECIALIST-OPERATIONS-WORKBENCH removes placeholder specialist modules and presentation-only commercial/roadmap cards, gives Sheriff and Deputy only their current operational navigation, wires search across canonical queue rows, and replaces decorative metric cards with compact workload summaries. It preserves the existing tenant-queue and bound-principal data scopes and Python EOS command authority.\n *            2026-10-30 v13.2.0-AUTHORITATIVE-CAPABILITY-NAVIGATION removes role-baseline and legacy permission fallbacks and drives Legal Practice navigation from one module registry plus authoritative AuthContext permission projection.\n *            2026-10-24 v13.1.1-D21B12-SHARED-BRANDING-LIFECYCLE removes the mode-gated tenant descriptor from the LegalDashboard asset-hook call, keeping that parent hook authority-neutral while WilsyOSDashboardChrome alone consumes the authenticated descriptor and owns its validated asset lifecycle across every Legal mode. No authority or rendered behavior changes.
  *            2026-10-19 v13.1.0-P8-LEGAL-DAILY-WORKSTATION-PRESENTATION introduces a compact searchable Legal daily-work queue, server-projected workload filters, task-selected completion evidence inspector, strict browser completion command, authoritative EOS readback and persistent confirmation. Browser presentation creates no IAM, tenant, workflow-release, legal-outcome or financial authority.
  *            2026-10-16 v13.0.0-LEGAL-COMMERCIAL-CONTEXT-PRESENTATION adds one server-authorized commercial-context presentation plate. It consumes only the certified Legal commercial-context browser adapter; renders canonical plan, subscription and monthly-equivalent evidence only after HTTP authorization; renders denied commercial detail as visibly locked; preserves source failure as unavailable; performs no role/JWT/permission inference; and leaves authenticated tenant branding under the existing shared chrome.
  *            2026-10-16 v12.9.0-PRACTICE-CONFLICT-REVIEW-PRESENTATION-PARITY preserves the readable conflict-screening queue for every certified Practice persona while exposing the human review mutation only inside the canonical Partner/Attorney role envelope and allowing authoritative server permission projection to narrow it further. Python EOS remains the sole authorization authority.
@@ -116,7 +116,6 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
   AlertTriangle,
-  Bot,
   Briefcase,
   CheckCircle2,
   ClipboardList,
@@ -134,7 +133,6 @@ import {
   Scale,
   Search,
   ShieldCheck,
-  Sparkles,
   UserCheck,
   X,
 } from 'lucide-react';
@@ -161,7 +159,6 @@ import {
   registerLegalIntake,
   transitionDeputyFieldAttempt,
   uploadLegalEvidence,
-  getLegalCommercialContext,
 } from '../../services/legalOperationsService.js';
 import {
   createLegalMatterDeadline,
@@ -172,7 +169,7 @@ import WilsyAccountCommandCenter from '../account/WilsyAccountCommandCenter.jsx'
 import { useAuth } from '../../contexts/authContext.jsx';
 import { useAuthenticatedTenantBrandingAsset } from '../../hooks/useAuthenticatedTenantBrandingAsset.js';
 
-const DASHBOARD_VERSION = 'v13.1.1-D21B12-SHARED-BRANDING-LIFECYCLE';
+const DASHBOARD_VERSION = 'v13.6.0-SPECIALIST-OPERATIONS-WORKBENCH';
 
 const EMPTY_QUEUES = Object.freeze({
   tenantId: '',
@@ -346,6 +343,19 @@ const PRACTICE_WORKSPACE_VIEWS = Object.freeze({
   INTAKE: 'INTAKE',
 });
 
+const LEGAL_PRACTICE_MODULE_REGISTRY = Object.freeze([
+  { id: PRACTICE_WORKSPACE_VIEWS.COMMAND, label: 'Command Center', icon: ClipboardList, requiresWorkspace: true },
+  { id: PRACTICE_WORKSPACE_VIEWS.MATTERS, label: 'Matters', icon: Scale, requiresWorkspace: true },
+  { id: PRACTICE_WORKSPACE_VIEWS.INSTRUCTIONS, label: 'Instructions', icon: Inbox, requiresWorkspace: true },
+  { id: PRACTICE_WORKSPACE_VIEWS.DOCUMENTS, label: 'Process Documents', icon: FileText, requiresWorkspace: true },
+  { id: PRACTICE_WORKSPACE_VIEWS.SERVICE, label: 'Service Operations', icon: Clock3, requiresWorkspace: true },
+  { id: PRACTICE_WORKSPACE_VIEWS.RETURNS, label: 'Returns of Service', icon: FileCheck2, requiresWorkspace: true },
+  { id: 'PRODUCTIVE_WORK', label: 'My Work', icon: ClipboardList, permission: PRESENTATION_PERMISSIONS.PRODUCTIVE_WORK_READ },
+  { id: PRACTICE_WORKSPACE_VIEWS.DEADLINES, label: 'Deadlines', icon: Clock3, permission: PRESENTATION_PERMISSIONS.DEADLINE_READ },
+  { id: PRACTICE_WORKSPACE_VIEWS.FINANCE, label: 'Finance Evidence', icon: Landmark, anyPermissions: [PRESENTATION_PERMISSIONS.BILLING_READ, PRESENTATION_PERMISSIONS.INVOICE_READ] },
+  { id: PRACTICE_WORKSPACE_VIEWS.INTAKE, label: 'New Instruction', icon: FilePlus2, permission: PRESENTATION_PERMISSIONS.INSTRUCTION_WRITE },
+]);
+
 const CLIENT_WORKSPACE_VIEWS = Object.freeze({
   OVERVIEW: 'OVERVIEW',
   MATTERS: 'MATTERS',
@@ -407,26 +417,19 @@ function presentationAllowsPermission({ roleToken, user, permission }) {
   const roleEnvelope = ROLE_PRESENTATION_PERMISSION_ENVELOPE[role] || [];
   if (!roleEnvelope.includes(permission)) return false;
 
-  const explicitHints = explicitLegalPermissionHints(user);
-  const serverPermissionProjectionIsAuthoritative =
-    user?.legalPermissionsAuthoritative === true;
-
-  if (explicitHints.size === 0 && !serverPermissionProjectionIsAuthoritative) {
-    return true;
-  }
-  return explicitHints.has(permission);
+  // Browser role defaults and legacy permission hints are not a substitute
+  // for the canonical AuthContext projection returned by Python EOS.
+  if (user?.legalPermissionsAuthoritative !== true) return false;
+  return explicitLegalPermissionHints(user).has(permission);
 }
 
 function LegalPresentationAuthorityPosture({ roleToken, user }) {
   const role = canonicalPresentationRole(roleToken);
   const identity = legalAuthenticatedIdentity(user, 'Not projected');
-  const explicitHints = explicitLegalPermissionHints(user);
   const authoritative = user?.legalPermissionsAuthoritative === true;
   const source = authoritative
     ? 'Server permission projection'
-    : explicitHints.size > 0
-      ? 'Legacy narrowing hints'
-      : 'Role baseline compatibility';
+    : 'Permission projection unavailable';
 
   const lanes = [
     presentationAllowsPermission({
@@ -792,24 +795,7 @@ function commandErrorMessage(caught) {
   );
 }
 
-const BLOCKED_CAPABILITIES = Object.freeze([
-  {
-    title: 'Same-day / urgent prioritisation',
-    reason: 'No canonical urgency field exists in the certified queue model.',
-  },
-  {
-    title: 'Distance / GPS routing',
-    reason: 'No certified geospatial source is connected to this cockpit.',
-  },
-  {
-    title: 'Billing readiness',
-    reason: 'Legal operational state is not invoice, payment or settlement truth.',
-  },
-  {
-    title: 'Return-generation queue',
-    reason: 'Requires snapshot-consistent cross-entity absence proof before exposure.',
-  },
-]);
+
 
 function formatTimestamp(value) {
   if (!value) return '—';
@@ -3766,24 +3752,21 @@ function LegalPracticeWorkspace({
   ];
   const hasOperationalActivity = coreSignals.some((signal) => Number(signal.value) > 0);
 
-  const navItems = [
-    { id: PRACTICE_WORKSPACE_VIEWS.COMMAND, label: 'Command Center', icon: ClipboardList },
-    { id: PRACTICE_WORKSPACE_VIEWS.MATTERS, label: 'Matters', icon: Scale },
-    { id: PRACTICE_WORKSPACE_VIEWS.INSTRUCTIONS, label: 'Instructions', icon: Inbox },
-    { id: PRACTICE_WORKSPACE_VIEWS.DOCUMENTS, label: 'Process Documents', icon: FileText },
-    { id: PRACTICE_WORKSPACE_VIEWS.SERVICE, label: 'Service Operations', icon: Clock3 },
-    { id: PRACTICE_WORKSPACE_VIEWS.RETURNS, label: 'Returns of Service', icon: FileCheck2 },
-    ...(presentationAllowsPermission({
+  const navItems = LEGAL_PRACTICE_MODULE_REGISTRY.filter((module) => {
+    if (module.requiresWorkspace) return !error;
+    if (module.permission) {
+      return presentationAllowsPermission({
+        roleToken,
+        user,
+        permission: module.permission,
+      });
+    }
+    return (module.anyPermissions || []).some((permission) => presentationAllowsPermission({
       roleToken,
       user,
-      permission: PRESENTATION_PERMISSIONS.PRODUCTIVE_WORK_READ,
-    })
-      ? [{ id: 'PRODUCTIVE_WORK', label: 'My Work', icon: ClipboardList }]
-      : []),
-    ...(canReadDeadline ? [{ id: PRACTICE_WORKSPACE_VIEWS.DEADLINES, label: 'Deadlines', icon: Clock3 }] : []),
-    ...(canOpenFinance ? [{ id: PRACTICE_WORKSPACE_VIEWS.FINANCE, label: 'Finance Evidence', icon: Landmark }] : []),
-    ...(canIntake ? [{ id: PRACTICE_WORKSPACE_VIEWS.INTAKE, label: 'New Instruction', icon: FilePlus2 }] : []),
-  ];
+      permission,
+    }));
+  });
 
   const openMatter = (caseMatterId) => {
     setSelectedMatterId(caseMatterId);
@@ -4343,464 +4326,51 @@ function DeputyAttemptRow({
   );
 }
 
-function LegalCommercialContextPlate() {
-  const [commercialState, setCommercialState] = useState(() => ({
-    status: 'LOADING',
-    context: null,
-  }));
-
-  useEffect(() => {
-    let active = true;
-
-    const loadCommercialContext = async () => {
-      try {
-        const result = await getLegalCommercialContext();
-
-        if (!active) return;
-
-        if (result?.access === 'AUTHORIZED' && result?.context) {
-          setCommercialState({
-            status: 'AUTHORIZED',
-            context: result.context,
-          });
-          return;
-        }
-
-        if (result?.access === 'DENIED') {
-          setCommercialState({
-            status: 'DENIED',
-            context: null,
-          });
-          return;
-        }
-
-        setCommercialState({
-          status: 'UNAVAILABLE',
-          context: null,
-        });
-      } catch {
-        if (!active) return;
-
-        setCommercialState({
-          status: 'UNAVAILABLE',
-          context: null,
-        });
-      }
-    };
-
-    loadCommercialContext();
-
-    return () => {
-      active = false;
-    };
-  }, []);
-
-  if (commercialState.status === 'LOADING') {
-    return (
-      <section
-        aria-label="Commercial context"
-        data-commercial-context-state="LOADING"
-        className="rounded-2xl border border-stone-800 bg-stone-950/70 p-5"
-      >
-        <div className="flex items-center gap-3 text-stone-400">
-          <Loader2 className="animate-spin" size={17} />
-          <div>
-            <p className="text-xs font-black uppercase tracking-[0.14em]">
-              Commercial context
-            </p>
-            <p className="mt-1 text-xs text-stone-500">
-              Resolving server-authorized subscription evidence.
-            </p>
-          </div>
-        </div>
-      </section>
-    );
-  }
-
-  if (commercialState.status === 'DENIED') {
-    return (
-      <section
-        aria-label="Commercial context"
-        data-commercial-context-state="DENIED"
-        className="rounded-2xl border border-stone-800 bg-stone-950/70 p-5"
-      >
-        <div className="flex items-start gap-3">
-          <div className="rounded-xl border border-stone-800 bg-stone-900 p-2.5 text-stone-500">
-            <LockKeyhole size={18} />
-          </div>
-          <div>
-            <p className="text-xs font-black uppercase tracking-[0.14em] text-stone-300">
-              Commercial details locked
-            </p>
-            <p className="mt-2 max-w-3xl text-xs leading-6 text-stone-500">
-              Your authenticated Legal workspace remains available according to
-              its own Legal authority. Plan, subscription and monthly-value
-              details require separate server-authorized commercial read access.
-            </p>
-            <p className="mt-2 text-[10px] uppercase tracking-[0.14em] text-stone-600">
-              Legal role does not grant subscription authority.
-            </p>
-          </div>
-        </div>
-      </section>
-    );
-  }
-
-  if (
-    commercialState.status !== 'AUTHORIZED'
-    || !commercialState.context
-  ) {
-    return (
-      <section
-        aria-label="Commercial context"
-        data-commercial-context-state="UNAVAILABLE"
-        className="rounded-2xl border border-amber-900/30 bg-amber-950/10 p-5"
-      >
-        <div className="flex items-start gap-3">
-          <ShieldCheck className="mt-0.5 text-amber-400" size={18} />
-          <div>
-            <p className="text-xs font-black uppercase tracking-[0.14em] text-amber-300">
-              Commercial context unavailable
-            </p>
-            <p className="mt-2 max-w-3xl text-xs leading-6 text-stone-500">
-              WILSY Legal OS will not infer plan, subscription or price evidence
-              when the canonical commercial source cannot be established.
-            </p>
-          </div>
-        </div>
-      </section>
-    );
-  }
-
-  const { product, subscription, plan, commercial } =
-    commercialState.context;
-
-  const monthlyValue = Number(
-    commercial?.monthlyEquivalentAmount,
-  );
-
-  const monthlyDisplay = Number.isFinite(monthlyValue)
-    ? `${commercial.currency} ${monthlyValue.toLocaleString()}`
-    : 'Unavailable';
-
-  return (
-    <section
-      aria-label="Commercial context"
-      data-commercial-context-state="AUTHORIZED"
-      className="rounded-2xl border border-emerald-900/30 bg-emerald-950/10 p-5"
-    >
-      <div className="flex flex-col gap-4 xl:flex-row xl:items-start xl:justify-between">
-        <div>
-          <div className="flex items-center gap-2">
-            <ShieldCheck size={18} className="text-emerald-400" />
-            <p className="text-xs font-black uppercase tracking-[0.14em] text-emerald-300">
-              Licensed Legal workspace
-            </p>
-          </div>
-          <h2 className="mt-2 text-lg font-black text-white">
-            {plan.name}
-          </h2>
-          <p className="mt-1 text-xs text-stone-500">
-            {plan.tier} · {subscription.status} · {commercial.billingFrequency}
-          </p>
-        </div>
-
-        <div className="grid min-w-0 gap-3 sm:grid-cols-2 xl:grid-cols-3">
-          <div className="rounded-xl border border-stone-800 bg-black/20 px-4 py-3">
-            <p className="text-[10px] font-black uppercase tracking-[0.14em] text-stone-600">
-              Product
-            </p>
-            <p className="mt-1 text-sm font-bold text-stone-200">
-              {product.productId}
-            </p>
-            <p className="mt-1 text-[10px] text-stone-600">
-              {product.entitlementState}
-            </p>
-          </div>
-
-          <div className="rounded-xl border border-stone-800 bg-black/20 px-4 py-3">
-            <p className="text-[10px] font-black uppercase tracking-[0.14em] text-stone-600">
-              Billing cadence
-            </p>
-            <p className="mt-1 text-sm font-bold text-stone-200">
-              {commercial.currency} {commercial.amount.toLocaleString()}
-            </p>
-            <p className="mt-1 text-[10px] text-stone-600">
-              {commercial.billingFrequency}
-            </p>
-          </div>
-
-          <div className="rounded-xl border border-emerald-900/30 bg-emerald-950/20 px-4 py-3">
-            <p className="text-[10px] font-black uppercase tracking-[0.14em] text-emerald-500">
-              Monthly equivalent
-            </p>
-            <p className="mt-1 text-sm font-black text-emerald-200">
-              {monthlyDisplay}
-            </p>
-            <p className="mt-1 text-[10px] text-stone-600">
-              Descriptive commercial value only
-            </p>
-          </div>
-        </div>
-      </div>
-
-      <div className="mt-4 flex flex-wrap gap-x-5 gap-y-2 border-t border-stone-900 pt-3 text-[10px] uppercase tracking-[0.12em] text-stone-600">
-        <span>Plan catalogue v{plan.catalogueVersion}</span>
-        <span>Subscription {subscription.subscriptionId}</span>
-        <span>Financial execution authority: none</span>
-      </div>
-    </section>
-  );
-}
-
-
-function CapabilityBoundary() {
-  return (
-    <section className="rounded-2xl border border-stone-800 bg-stone-950/75 p-5">
-      <div className="flex items-start gap-3">
-        <LockKeyhole className="mt-0.5 text-stone-500" size={19} />
-        <div>
-          <h2 className="text-sm font-black uppercase tracking-[0.12em] text-white">
-            Deliberate authority boundaries
-          </h2>
-          <p className="mt-1 max-w-3xl text-xs leading-5 text-stone-500">
-            These capabilities remain visible on the roadmap but cannot display
-            synthetic data. Each requires its own canonical authority and certificate.
-          </p>
-        </div>
-      </div>
-      <div className="mt-5 grid gap-3 lg:grid-cols-2">
-        {BLOCKED_CAPABILITIES.map((capability) => (
-          <div
-            key={capability.title}
-            className="rounded-xl border border-stone-800 bg-black/30 p-4"
-          >
-            <div className="flex items-center gap-2">
-              <AlertTriangle size={14} className="text-amber-500" />
-              <p className="text-xs font-black text-stone-300">{capability.title}</p>
-            </div>
-            <p className="mt-2 text-[11px] leading-5 text-stone-600">
-              {capability.reason}
-            </p>
-          </div>
-        ))}
-      </div>
-    </section>
-  );
-}
-
-
 const SPECIALIST_WORKSPACE_VIEWS = Object.freeze({
   MY_WORK: 'MY_WORK',
   PROCESS_SERVICE: 'PROCESS_SERVICE',
 });
 
-const SPECIALIST_ACCESS_STATES = Object.freeze({
-  AVAILABLE: 'AVAILABLE',
-  DENIED: 'DENIED',
-  UNAVAILABLE: 'UNAVAILABLE',
-});
-
-const specialistWorkspaceNavigation = (roleMode) => {
-  const sheriff = roleMode === ROLE_MODES.SHERIFF;
-  const deputy = roleMode === ROLE_MODES.DEPUTY;
-
-  const item = (
-    id,
-    label,
-    icon,
-    state,
-    reason = '',
-  ) => ({ id, label, icon, state, reason });
-
-  return [
-    item(
-      SPECIALIST_WORKSPACE_VIEWS.MY_WORK,
-      'My Work',
-      ClipboardList,
-      SPECIALIST_ACCESS_STATES.AVAILABLE,
-    ),
-    item(
-      SPECIALIST_WORKSPACE_VIEWS.PROCESS_SERVICE,
-      'Process Service',
-      Scale,
-      SPECIALIST_ACCESS_STATES.AVAILABLE,
-    ),
-    item(
-      'MATTERS',
-      'Matters',
-      FileText,
-      SPECIALIST_ACCESS_STATES.DENIED,
-      sheriff
-        ? 'Matter-practice workspace is not part of the current Sheriff authority projection.'
-        : 'Matter-practice workspace is not part of the current bound-Deputy authority projection.',
-    ),
-    item(
-      'CALENDAR',
-      'Calendar',
-      Clock3,
-      SPECIALIST_ACCESS_STATES.UNAVAILABLE,
-      'A certified specialist calendar source has not yet been wired to this Legal OS workspace.',
-    ),
-    item(
-      'TASKS',
-      'Tasks & Workflow',
-      ClipboardList,
-      SPECIALIST_ACCESS_STATES.UNAVAILABLE,
-      'A certified specialist task/workflow source has not yet been wired to this Legal OS workspace.',
-    ),
-    item(
-      'DOCUMENTS',
-      'Documents',
-      FileText,
-      SPECIALIST_ACCESS_STATES.DENIED,
-      'The general Legal document workspace is outside this specialist presentation scope.',
-    ),
-    item(
-      'DEADLINES',
-      'Deadlines & Docket',
-      Clock3,
-      SPECIALIST_ACCESS_STATES.DENIED,
-      'Practice deadline authority is not projected into this specialist workspace.',
-    ),
-    item(
-      'CLIENTS',
-      'Clients & Contacts',
-      UserCheck,
-      SPECIALIST_ACCESS_STATES.DENIED,
-      'Client/contact workspace authority is not projected into this specialist workspace.',
-    ),
-    item(
-      'REPORTS',
-      'Reports / Operations',
-      Landmark,
-      SPECIALIST_ACCESS_STATES.UNAVAILABLE,
-      'Certified specialist reporting sources have not yet been wired to this workspace.',
-    ),
-    item(
-      'WILSY_AI',
-      'WILSY AI',
-      Bot,
-      SPECIALIST_ACCESS_STATES.UNAVAILABLE,
-      'Governed WILSY AI specialist actions require a separately certified tool-authority source.',
-    ),
-    item(
-      'ADMINISTRATION',
-      'Administration',
-      ShieldCheck,
-      sheriff
-        ? SPECIALIST_ACCESS_STATES.UNAVAILABLE
-        : SPECIALIST_ACCESS_STATES.DENIED,
-      sheriff
-        ? 'Sheriff administration controls require a certified administration capability source.'
-        : 'Administration is outside the bound-Deputy presentation scope.',
-    ),
-  ];
-};
-
 function LegalSpecialistWorkspaceRail({
   activeView,
-  onDenied,
   onSelect,
   roleMode,
 }) {
-  const entries = specialistWorkspaceNavigation(roleMode);
+  const entries = roleMode === ROLE_MODES.SHERIFF
+    ? [{
+      id: SPECIALIST_WORKSPACE_VIEWS.PROCESS_SERVICE,
+      label: 'Process Service',
+      icon: Scale,
+    }]
+    : roleMode === ROLE_MODES.DEPUTY
+      ? [{
+        id: SPECIALIST_WORKSPACE_VIEWS.MY_WORK,
+        label: 'My Work',
+        icon: ClipboardList,
+      }]
+      : [];
 
   return (
     <nav aria-label="WILSY Legal OS workspace navigation">
       {entries.map((entry) => {
         const Icon = entry.icon;
-        const available =
-          entry.state === SPECIALIST_ACCESS_STATES.AVAILABLE;
-        const active = available && activeView === entry.id;
-
+        const active = activeView === entry.id;
         return (
           <button
             key={entry.id}
             type="button"
             data-active={active ? 'true' : 'false'}
-            data-access-state={entry.state}
-            data-legal-workspace-section={entry.id}
             aria-current={active ? 'page' : undefined}
-            aria-disabled={!available}
-            title={available ? entry.label : entry.reason}
-            style={
-              available
-                ? undefined
-                : {
-                    cursor: 'not-allowed',
-                    opacity: 0.45,
-                  }
-            }
-            onClick={() => {
-              if (available) {
-                onDenied(null);
-                onSelect(entry.id);
-                return;
-              }
-              onDenied({
-                label: entry.label,
-                state: entry.state,
-                reason: entry.reason,
-              });
-            }}
+            data-legal-workspace-section={entry.id}
+            onClick={() => onSelect(entry.id)}
+            title={entry.label}
           >
             <Icon size={16} aria-hidden="true" />
             <span>{entry.label}</span>
-            {!available ? (
-              <LockKeyhole
-                size={13}
-                aria-label={`${entry.label} restricted`}
-              />
-            ) : null}
           </button>
         );
       })}
     </nav>
-  );
-}
-
-function LegalWorkspaceAccessNotice({ notice, onDismiss }) {
-  if (!notice) return null;
-
-  return (
-    <section
-      role="status"
-      aria-label="Workspace access notice"
-      className="rounded-xl border border-amber-900/40 bg-amber-950/15 p-4"
-    >
-      <div className="flex items-start gap-3">
-        <LockKeyhole
-          className="mt-0.5 shrink-0 text-amber-400"
-          size={18}
-        />
-        <div className="min-w-0 flex-1">
-          <p className="text-[10px] font-black uppercase tracking-[0.16em] text-amber-400">
-            {notice.state === SPECIALIST_ACCESS_STATES.DENIED
-              ? 'Access not permitted'
-              : 'Workspace source not available'}
-          </p>
-          <p className="mt-1 text-sm font-black text-white">
-            {notice.label}
-          </p>
-          <p className="mt-2 text-xs leading-5 text-stone-400">
-            {notice.reason}
-          </p>
-          <p className="mt-2 text-[10px] leading-5 text-stone-600">
-            This navigation state is explanatory presentation only. Python EOS
-            independently authorizes every server request and remains the final
-            authority.
-          </p>
-        </div>
-        <button
-          type="button"
-          onClick={onDismiss}
-          className="rounded-lg border border-stone-800 px-2 py-1 text-[10px] font-bold text-stone-400 hover:text-white"
-        >
-          Dismiss
-        </button>
-      </div>
-    </section>
   );
 }
 
@@ -4816,11 +4386,13 @@ export default function LegalDashboard({
   } = useAuth() || {};
   const currentUser = user || authenticatedUser || null;
   const roleMode = useMemo(() => resolveRoleMode(roleView), [roleView]);
-  const [specialistWorkspaceView, setSpecialistWorkspaceView] = useState(
-    SPECIALIST_WORKSPACE_VIEWS.MY_WORK,
-  );
-  const [specialistAccessNotice, setSpecialistAccessNotice] = useState(null);
+  const [specialistWorkspaceView, setSpecialistWorkspaceView] = useState(() => (
+    roleMode === ROLE_MODES.SHERIFF
+      ? SPECIALIST_WORKSPACE_VIEWS.PROCESS_SERVICE
+      : SPECIALIST_WORKSPACE_VIEWS.MY_WORK
+  ));
   const [specialistAccountCenterOpen, setSpecialistAccountCenterOpen] = useState(false);
+  const [specialistSearchQuery, setSpecialistSearchQuery] = useState('');
   const [queues, setQueues] = useState(EMPTY_QUEUES);
   const [deputyWork, setDeputyWork] = useState(EMPTY_DEPUTY_WORK);
   const [clientMatters, setClientMatters] = useState(EMPTY_CLIENT_MATTERS);
@@ -5018,6 +4590,14 @@ export default function LegalDashboard({
   }, [roleMode]);
 
   useEffect(() => {
+    setSpecialistWorkspaceView(
+      roleMode === ROLE_MODES.SHERIFF
+        ? SPECIALIST_WORKSPACE_VIEWS.PROCESS_SERVICE
+        : SPECIALIST_WORKSPACE_VIEWS.MY_WORK,
+    );
+  }, [roleMode]);
+
+  useEffect(() => {
     if (roleMode === ROLE_MODES.DEPUTY && !fieldDeviceId) {
       setFieldDeviceId(resolveBrowserFieldDeviceId());
     }
@@ -5177,6 +4757,14 @@ export default function LegalDashboard({
     loadOperationalTruth,
     observationDrafts,
   ]);
+
+  const specialistSearchMatches = useCallback((row) => {
+    const query = specialistSearchQuery.trim().toLowerCase();
+    if (!query) return true;
+    return Object.values(row || {}).some(
+      (value) => typeof value === 'string' && value.toLowerCase().includes(query),
+    );
+  }, [specialistSearchQuery]);
 
   const metrics = useMemo(() => {
     if (roleMode === ROLE_MODES.LEGAL_CLIENT) {
@@ -5340,17 +4928,17 @@ export default function LegalDashboard({
           : 'Office receipt · governed allocation · active process-service work · No mock legal truth',
       ]}
       search={{
+        value: specialistSearchQuery,
         placeholder: isDeputyMode
           ? 'Search my assigned service work'
-          : 'Search Sheriff operational work',
+          : 'Search receipt, allocation or service work',
         shortcutLabel: '⌘K',
+        onChange: (event) => setSpecialistSearchQuery(event.target.value),
       }}
       actions={{
         liveSyncLabel: 'Refresh truth',
         onLiveSync: () => loadOperationalTruth({ refresh: true }),
         isRefreshing: refreshing,
-        primaryActionLabel: isSheriffMode ? 'Allocate work' : 'Field action',
-        primaryDisabled: true,
       }}
       account={{
         isOpen: specialistAccountCenterOpen,
@@ -5388,7 +4976,6 @@ export default function LegalDashboard({
         <div className="space-y-3">
           <LegalSpecialistWorkspaceRail
             activeView={specialistWorkspaceView}
-            onDenied={setSpecialistAccessNotice}
             onSelect={setSpecialistWorkspaceView}
             roleMode={roleMode}
           />
@@ -5411,24 +4998,18 @@ export default function LegalDashboard({
         className="space-y-6"
         data-legal-workspace-viewport={specialistWorkspaceView}
       >
-        <LegalWorkspaceAccessNotice
-          notice={specialistAccessNotice}
-          onDismiss={() => setSpecialistAccessNotice(null)}
-        />
         <section className="flex flex-col gap-3 border-b border-stone-800 pb-4 md:flex-row md:items-end md:justify-between">
           <div>
             <p className="text-[10px] font-black uppercase tracking-[0.18em] text-stone-500">
               {isDeputyMode ? 'Deputy workspace' : 'Sheriff workspace'}
             </p>
             <h2 className="mt-1 text-xl font-black text-white">
-              {specialistWorkspaceView === SPECIALIST_WORKSPACE_VIEWS.MY_WORK
-                ? 'My Work'
-                : 'Process Service'}
+              {isDeputyMode ? 'My Work' : 'Process Service'}
             </h2>
             <p className="mt-1 text-xs leading-5 text-stone-500">
-              {specialistWorkspaceView === SPECIALIST_WORKSPACE_VIEWS.MY_WORK
-                ? 'Current work requiring attention from certified server projections.'
-                : 'Canonical process-service lifecycle work and field execution evidence.'}
+              {isDeputyMode
+                ? 'Only this bound deputy’s current assigned service work and server-issued field actions.'
+                : 'Office receipt, deputy allocation and active service attempts from canonical Legal Operations queues.'}
             </p>
           </div>
           <div
@@ -5439,7 +5020,6 @@ export default function LegalDashboard({
             <span>Role: {roleMode}</span>
           </div>
         </section>
-        <LegalCommercialContextPlate />
 
         {!error && isSheriffMode && (
           <LegalRoleActivityPosture
@@ -5482,31 +5062,13 @@ export default function LegalDashboard({
 
         {isSheriffMode && (
           <>
-            <section className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
-              <QueueMetric
-                icon={Inbox}
-                label="Office receipt"
-                value={metrics.officeReceipt}
-                description="REGISTERED process documents awaiting certified office receipt."
-              />
-              <QueueMetric
-                icon={UserCheck}
-                label="Deputy assignment"
-                value={metrics.deputyAssignment}
-                description="RECEIVED process documents awaiting canonical deputy allocation."
-              />
-              <QueueMetric
-                icon={Clock3}
-                label="Active attempts"
-                value={metrics.activeAttempts}
-                description="ALLOCATED or ATTEMPTED service attempts requiring operational attention."
-              />
-              <QueueMetric
-                icon={ClipboardList}
-                label="Current queue work"
-                value={metrics.totalCurrentWork}
-                description="Derived presentation count: the sum of the three certified queue families above."
-              />
+            <section aria-label="Process service workload summary" className="border-y border-stone-800 py-3">
+              <dl className="grid grid-cols-2 gap-x-6 gap-y-3 sm:grid-cols-4">
+                <div><dt className="text-[10px] font-semibold uppercase tracking-wider text-stone-500">Office receipt</dt><dd className="mt-1 text-xl font-bold tabular-nums text-white">{metrics.officeReceipt}</dd></div>
+                <div><dt className="text-[10px] font-semibold uppercase tracking-wider text-stone-500">Deputy assignment</dt><dd className="mt-1 text-xl font-bold tabular-nums text-white">{metrics.deputyAssignment}</dd></div>
+                <div><dt className="text-[10px] font-semibold uppercase tracking-wider text-stone-500">Active attempts</dt><dd className="mt-1 text-xl font-bold tabular-nums text-white">{metrics.activeAttempts}</dd></div>
+                <div><dt className="text-[10px] font-semibold uppercase tracking-wider text-stone-500">Total current work</dt><dd className="mt-1 text-xl font-bold tabular-nums text-white">{metrics.totalCurrentWork}</dd></div>
+              </dl>
             </section>
 
             <div className="grid gap-6 2xl:grid-cols-2">
@@ -5514,7 +5076,7 @@ export default function LegalDashboard({
                 title="Office receipt"
                 subtitle="Canonical REGISTERED ProcessDocument current states"
                 icon={FileText}
-                rows={queues.officeReceipt}
+                rows={queues.officeReceipt.filter(specialistSearchMatches)}
                 emptyMessage="No documents are awaiting office receipt."
                 renderRow={(item) => (
                   <DocumentQueueRow
@@ -5528,7 +5090,7 @@ export default function LegalDashboard({
                 title="Deputy assignment"
                 subtitle="Canonical RECEIVED ProcessDocument current states"
                 icon={FileCheck2}
-                rows={queues.deputyAssignment}
+                rows={queues.deputyAssignment.filter(specialistSearchMatches)}
                 emptyMessage="No received documents are awaiting deputy allocation."
                 renderRow={(item) => (
                   <DocumentQueueRow
@@ -5544,7 +5106,7 @@ export default function LegalDashboard({
               title="Active service attempts"
               subtitle="Canonical ALLOCATED / ATTEMPTED ServiceAttempt current states"
               icon={Clock3}
-              rows={queues.activeAttempts}
+              rows={queues.activeAttempts.filter(specialistSearchMatches)}
               emptyMessage="No active service attempts are currently certified."
               renderRow={(item) => (
                 <AttemptQueueRow key={item.attempt_id} item={item} />
@@ -5642,26 +5204,18 @@ export default function LegalDashboard({
               </section>
             )}
 
-            <section className="grid gap-4 md:grid-cols-2">
-              <QueueMetric
-                icon={UserCheck}
-                label="Bound deputy"
-                value={deputyWork.deputyId || '—'}
-                description="Canonical Deputy identity derived server-side from the immutable principal binding."
-              />
-              <QueueMetric
-                icon={Clock3}
-                label="My active attempts"
-                value={metrics.activeAttempts}
-                description="Only this bound deputy's current ALLOCATED or ATTEMPTED service attempts."
-              />
+            <section aria-label="My field-work summary" className="border-y border-stone-800 py-3">
+              <dl className="grid grid-cols-2 gap-6">
+                <div><dt className="text-[10px] font-semibold uppercase tracking-wider text-stone-500">Bound deputy</dt><dd className="mt-1 font-mono text-sm font-semibold text-white">{deputyWork.deputyId || '—'}</dd></div>
+                <div><dt className="text-[10px] font-semibold uppercase tracking-wider text-stone-500">My active attempts</dt><dd className="mt-1 text-xl font-bold tabular-nums text-white">{metrics.activeAttempts}</dd></div>
+              </dl>
             </section>
 
             <QueuePanel
               title="My active service work"
               subtitle="Binding-scoped active attempts with exact server-derived field capabilities"
               icon={Clock3}
-              rows={deputyWork.activeAttempts}
+              rows={deputyWork.activeAttempts.filter(specialistSearchMatches)}
               emptyMessage="No active service attempts are assigned to this bound deputy."
               renderRow={(item) => (
                 <DeputyAttemptRow
@@ -5679,40 +5233,7 @@ export default function LegalDashboard({
           </>
         )}
 
-        {!isClientMode && (
-          <section className="grid gap-4 xl:grid-cols-[1.2fr_0.8fr]">
-          <CapabilityBoundary />
 
-          <div className="rounded-2xl border border-violet-900/30 bg-gradient-to-br from-violet-950/20 via-stone-950 to-stone-950 p-5">
-            <div className="flex items-start gap-3">
-              <div className="rounded-xl border border-violet-800/30 bg-violet-500/10 p-2.5 text-violet-300">
-                <Bot size={19} />
-              </div>
-              <div>
-                <div className="flex items-center gap-2">
-                  <h2 className="text-sm font-black uppercase tracking-[0.12em] text-white">
-                    WILSY AI readiness
-                  </h2>
-                  <Sparkles size={14} className="text-violet-400" />
-                </div>
-                <p className="mt-2 text-xs leading-6 text-stone-400">
-                  WILSY AI will consume certified Legal OS evidence through its own
-                  governed tool and reasoning contracts. This cockpit does not let AI
-                  create legal facts, queue membership, deputy identity or financial truth.
-                </p>
-                <div className="mt-4 rounded-xl border border-violet-900/30 bg-black/30 p-4">
-                  <p className="text-[10px] font-black uppercase tracking-[0.18em] text-violet-400">
-                    Authority equation
-                  </p>
-                  <p className="mt-2 text-xs leading-6 text-stone-300">
-                    Observed fact ≠ derived signal ≠ AI inference ≠ recommendation ≠ authorization ≠ execution.
-                  </p>
-                </div>
-              </div>
-            </div>
-          </div>
-        </section>
-        )}
 
         <footer className="flex flex-col justify-between gap-3 border-t border-stone-900 py-5 text-[10px] uppercase tracking-[0.15em] text-stone-700 md:flex-row">
           <span>{DASHBOARD_VERSION}</span>
@@ -5725,7 +5246,7 @@ export default function LegalDashboard({
 
 /**
  * ARTIFACT: LegalDashboard.jsx
- * VERSION: v13.1.1-D21B12-SHARED-BRANDING-LIFECYCLE
+ * VERSION: v13.6.0-SPECIALIST-OPERATIONS-WORKBENCH
  * AUTHORITY BOUNDARY: governed Legal Practice/Finance/SHERIFF/DEPUTY/LEGAL_CLIENT presentation plus already-authorized intake, ReturnOfService, bounded human conflict-review command initiation and bound-Deputy command initiation only; D24C authenticated person names and L8-8M conflict-review controls are descriptive/wiring projections that create no identity, membership, role, permission, tenant, operating-model, conflict clearance, waiver or financial authority; Python EOS owns authorization and legal truth
  * TENANT POSTURE: every data surface remains server-authorized and tenant-scoped; practice workspace is D15 snapshot truth with first-class CaseMatter evidence, client matters are D5/D7 visibility-bound, deputy commands require exact capability parity
  * FAIL-CLOSED POSTURE: unresolved role, malformed/absent person-name text, explicit or server-authoritative legal-permission narrowing, denied/unavailable workspace/client/specialist read, malformed finance/intake/return/field evidence, command failure or failed refresh never invents names or truth, widens role scope, fabricates operating-model authority or cross-role fallback

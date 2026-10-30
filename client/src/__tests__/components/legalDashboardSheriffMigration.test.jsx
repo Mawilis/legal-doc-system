@@ -1,13 +1,14 @@
 /**
  * WILSY OS — ROLE-SCOPED LEGAL COCKPIT MIGRATION CERTIFICATE
- * VERSION: v6.0.3-L10-P2B-ACCOUNT-CENTER-ASYNC-RENDER-CERT
+ * VERSION: v6.0.4-L10-P2C3-ROLE-QUEUE-TRUTH-CERT
  * AUTHORITY: Client presentation/wiring certification only.
  * EPITOME: Proves the canonical LegalDashboard preserves certified
  *          SHERIFF/DEPUTY/LEGAL_CLIENT behavior while adding role-resolved Legal
  *          Practice and Legal Finance workspaces backed only by certified
  *          workspace, finance, intake and ReturnOfService adapter contracts.
  * ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/client/src/__tests__/components/legalDashboardSheriffMigration.test.jsx
- * CERTIFICATION / UPDATE DATE: 2026-09-28
+ * CERTIFICATION / UPDATE DATE: 2026-10-30
+ * CHANGELOG: 2026-10-30 v6.0.4-L10-P2C3-ROLE-QUEUE-TRUTH-CERT imports the scoped Testing Library query helper and asserts unsupported future Sheriff capabilities remain absent rather than relying on removed roadmap-card copy. No production authority or queue behavior changes.
  * CHANGELOG: 2026-09-28 v6.0.3-L10-P2B-ACCOUNT-CENTER-ASYNC-RENDER-CERT waits for the client shared-chrome DOM contract before asserting its attributes, preventing CI timing from observing the transient loading branch after the canonical adapter resolves. Production role behavior is unchanged.
  *            2026-09-24 v6.0.2-L8-7D14-PRODUCTION-LEGAL-OPERATIONS-WORKSPACE-CERT aligns the LEGAL_CLIENT Open matters metric assertion with the shared chrome's semantic metric-label element; production role behavior is unchanged.
  *            2026-09-24 v6.0.1-L8-7D14-PRODUCTION-LEGAL-OPERATIONS-WORKSPACE-CERT rebinds preserved SHERIFF/DEPUTY/CLIENT
@@ -57,7 +58,7 @@
 import { readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 import React from 'react';
-import { fireEvent, render, screen, waitFor } from '@testing-library/react';
+import { fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 const {
@@ -329,6 +330,21 @@ describe('L8-7D8 governed Legal Operations cockpit', () => {
     expect(
       screen.getByText(/No mock legal truth/i),
     ).toBeInTheDocument();
+
+    const navigation = screen.getByRole('navigation', { name: 'WILSY Legal OS workspace navigation' });
+    expect(within(navigation).getByRole('button', { name: 'Process Service' })).toBeInTheDocument();
+    expect(within(navigation).queryByRole('button', { name: 'My Work' })).not.toBeInTheDocument();
+    for (const prototypeModule of ['Matters', 'Calendar', 'Tasks & Workflow', 'Documents', 'Deadlines & Docket', 'Clients & Contacts', 'Reports / Operations', 'WILSY AI', 'Administration']) {
+      expect(within(navigation).queryByRole('button', { name: prototypeModule })).not.toBeInTheDocument();
+    }
+    expect(screen.queryByText('WILSY AI readiness')).not.toBeInTheDocument();
+    expect(screen.queryByLabelText('Commercial context')).not.toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: 'Allocate work' })).not.toBeInTheDocument();
+
+    const search = screen.getByPlaceholderText('Search receipt, allocation or service work');
+    fireEvent.change(search, { target: { value: 'attempt-active' } });
+    expect(screen.getByText('attempt-active')).toBeInTheDocument();
+    expect(screen.queryByText('document-office')).not.toBeInTheDocument();
   });
 
   it('renders only correlated bound-deputy work and state-valid terminal controls', async () => {
@@ -362,6 +378,12 @@ describe('L8-7D8 governed Legal Operations cockpit', () => {
     expect(screen.queryByText('Office receipt')).not.toBeInTheDocument();
     expect(screen.queryByText('Deputy assignment')).not.toBeInTheDocument();
     expect(screen.queryByText('document-office')).not.toBeInTheDocument();
+
+    const navigation = screen.getByRole('navigation', { name: 'WILSY Legal OS workspace navigation' });
+    expect(within(navigation).getByRole('button', { name: 'My Work' })).toBeInTheDocument();
+    expect(within(navigation).queryByRole('button', { name: 'Process Service' })).not.toBeInTheDocument();
+    expect(within(navigation).queryByRole('button', { name: 'Calendar' })).not.toBeInTheDocument();
+    expect(screen.queryByText('WILSY AI readiness')).not.toBeInTheDocument();
   });
 
   it('renders the shared WILSY OS client workspace chrome with real menu lanes', async () => {
@@ -740,7 +762,7 @@ describe('L8-7D8 governed Legal Operations cockpit', () => {
     expect(getDeputyFieldCapabilities).toHaveBeenCalledTimes(1);
   });
 
-  it('keeps unsupported future capabilities explicit instead of synthetic', async () => {
+  it('does not render synthetic future capabilities when the Sheriff queue is empty', async () => {
     getSheriffOperationalQueues.mockResolvedValueOnce({
       ...liveQueues(),
       officeReceipt: [],
@@ -751,15 +773,18 @@ describe('L8-7D8 governed Legal Operations cockpit', () => {
     render(<LegalDashboard roleView="SHERIFF" />);
 
     expect(
-      await screen.findByText('Same-day / urgent prioritisation'),
+      await screen.findByRole('heading', { name: 'Sheriff Operations Workspace' }),
     ).toBeInTheDocument();
-    expect(screen.queryByText('Deputy personal queue')).not.toBeInTheDocument();
-    expect(screen.getByText('Distance / GPS routing')).toBeInTheDocument();
-    expect(screen.getByText('Billing readiness')).toBeInTheDocument();
-    expect(screen.getByText('Return-generation queue')).toBeInTheDocument();
-    expect(
-      screen.getByText(/Observed fact ≠ derived signal ≠ AI inference/i),
-    ).toBeInTheDocument();
+    expect(getSheriffOperationalQueues).toHaveBeenCalledTimes(1);
+    for (const unsupportedCapability of [
+      'Same-day / urgent prioritisation',
+      'Deputy personal queue',
+      'Distance / GPS routing',
+      'Billing readiness',
+      'Return-generation queue',
+    ]) {
+      expect(screen.queryByText(unsupportedCapability)).not.toBeInTheDocument();
+    }
   });
 
   it('contains no legacy hard-coded sheriff truth or direct fetch transport', () => {
