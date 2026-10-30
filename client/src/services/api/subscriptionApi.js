@@ -1,14 +1,14 @@
 /**
  * ╔════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════╗
- * ║ WILSY OS - SUBSCRIPTION API CLIENT [v55.2.1-BROWSER-SHA3]                                                                             ║
+ * ║ WILSY OS - SUBSCRIPTION API CLIENT [v55.3.0-PYTHON-EOS-CATALOGUE-PLAN-SELECTION]                                                                             ║
  * ║ [LATENCY TELEMETRY | SHA3-512 SEALS | COMPLIANCE HOOKS | CIRCUIT BREAKER]                                                            ║
  * ╠════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════╣
- * ║ VERSION: 55.2.1-BROWSER-SHA3 | PRODUCTION READY                                                                                      ║
+ * ║ VERSION: 55.3.0-PYTHON-EOS-CATALOGUE-PLAN-SELECTION | PRODUCTION READY                                                                                      ║
  * ║ EPITOME: Browser-compatible SHA3-512 sealing for subscription lifecycle.                                                             ║
  * ║ ABSOLUTE PATH: /Users/wilsonkhanyezi/legal-doc-system/client/src/services/api/subscriptionApi.js                                     ║
  * ╠════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════╣
  * ║ 🔧 CHANGE LOG:                                                                                                                       ║
- * ║   2026-08-20 v55.2.1-BROWSER-SHA3 – Created to mirror tenantApi institutional architecture.                                          ║
+ * ║   2026-10-30 v55.3.0-PYTHON-EOS-CATALOGUE-PLAN-SELECTION – Keep tenant scope in the authenticated header and send only server-admitted lifecycle fields.                                          ║
  * ╠════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════╣
  * ║ COMPLIANCE:    POPIA §19 │ GDPR §32 │ SOC2 §CC7.2 │ ISO 27001                                                                        ║
  * ║ DEPENDENCIES:  js-sha3, axios, telemetryHelper                                                                                       ║
@@ -190,11 +190,12 @@ class SubscriptionApiClient {
   }
 
   async lifecycle(subscriptionId, action, data = {}, requestId = null) {
-    const tenantId = data.tenantId || this.kennelTenantId;
-    const fn = () => this.client.post(`/subscriptions/${subscriptionId}/${action}`, data, {
+    const { tenantId: requestedTenantId, ...payload } = data;
+    const tenantId = requestedTenantId || this.kennelTenantId;
+    const fn = () => this.client.post(`/subscriptions/${subscriptionId}/${action}`, payload, {
       headers: this._tenantHeaders(tenantId, this._idempotencyKey()),
     });
-    return this._executeWithRetry(fn, `subscription:${action}`, { subscriptionId, ...data }, requestId);
+    return this._executeWithRetry(fn, `subscription:${action}`, { subscriptionId, ...payload }, requestId);
   }
 
   async getAudit(subscriptionId, tenantId, requestId = null) {
@@ -211,7 +212,7 @@ export default subscriptionApiClient;
 /**
  * ═══════════════════════════════════════════════════════════════════════════════
  * 🏛️ INSTITUTIONAL CERTIFICATION SEAL — subscriptionApi.js
- * Status:          CERTIFIED PRODUCTION ARTIFACT v55.2.1
+ * Status:          CERTIFIED PRODUCTION ARTIFACT v55.3.0
  * Health Check:
  *   ✅ SHA3-512 Sealing
  *   ✅ Circuit Breaker Pattern
