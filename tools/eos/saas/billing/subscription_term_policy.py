@@ -33,7 +33,6 @@ from enum import Enum
 from tools.eos.saas.domain.subscription import (
     SubscriptionEntity,
     SubscriptionStatus,
-    verify_subscription_integrity,
 )
 
 
@@ -104,8 +103,6 @@ def evaluate_subscription_term(
         raise SubscriptionTermPolicyError("SUBSCRIPTION_TERM_ENTITY_REQUIRED")
 
     now = _aware_utc(evaluated_at, "EVALUATED_AT")
-    if not verify_subscription_integrity(subscription):
-        raise SubscriptionTermPolicyError("SUBSCRIPTION_TERM_INTEGRITY_INVALID")
     status = subscription.status
     if status is not SubscriptionStatus.ACTIVE:
         return SubscriptionTermDecision(
