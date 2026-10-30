@@ -14,8 +14,8 @@ from typing import Final, Iterable
 
 VERSION: Final[str] = "v1.0.0-G78-WALL-MEMBERSHIP-ACKNOWLEDGEMENT"
 SCHEMA: Final[str] = "WILSY-LEGAL-ETHICAL-WALL-MEMBERSHIP-ACK/V1"
-_ID: Final[re.Pattern[str]] = re.compile(r"[A-Za-z0-9][A-Za-z0-9._:-]{0,199}\\Z")
-_HEX: Final[re.Pattern[str]] = re.compile(r"[0-9a-f]{128}\\Z")
+_ID: Final[re.Pattern[str]] = re.compile(r"[A-Za-z0-9][A-Za-z0-9._:-]{0,199}\Z")
+_HEX: Final[re.Pattern[str]] = re.compile(r"[0-9a-f]{128}\Z")
 
 
 class WallEvidenceError(ValueError):
