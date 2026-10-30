@@ -411,7 +411,7 @@ def mongo_context() -> Iterator[
         collection
     )
 
-    PlanRegistry._ensure_indexes()
+    PlanRegistry.provision_indexes()
 
     collection.delete_many(
         {}
