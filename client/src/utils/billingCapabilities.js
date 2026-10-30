@@ -60,6 +60,7 @@ export function buildBillingCapabilities(user = {}, opts = {}) {
   const isFinance = isSovereign || ['FINANCE', 'BILLING_ADMIN', 'CFO', 'ACCOUNTANT'].includes(role);
   const isOps = isSovereign || ['OPS', 'COLLECTIONS', 'LEGAL'].includes(role);
   const isInvestor = isSovereign || role === 'INVESTOR_READ' || role === 'INVESTOR';
+  const isTenantSubscriptionAdmin = ['TENANT_OWNER', 'TENANT_ADMIN', 'TENANT_MANAGER'].includes(role);
   const isTenantScoped = !isSovereign;
 
   return Object.freeze({
@@ -76,7 +77,7 @@ export function buildBillingCapabilities(user = {}, opts = {}) {
     viewPlatformLedger: isSovereign || isFinance,
     viewClientLedger: true,
     viewPayables: isFinance || isSovereign,
-    viewSubscriptions: isFinance || isSovereign,
+    viewSubscriptions: isFinance || isSovereign || isTenantSubscriptionAdmin,
     viewInvestor: isInvestor,
     viewAnomalies: isFinance || isSovereign,
     viewAutomation: isSovereign || isFinance,
