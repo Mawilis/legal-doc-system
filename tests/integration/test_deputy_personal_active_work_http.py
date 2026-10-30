@@ -125,6 +125,17 @@ def _capability() -> FieldCommandCapabilityEntry:
     )
 
 
+def _use_snapshot_transaction(monkeypatch: pytest.MonkeyPatch) -> None:
+    """Exercise route error mapping after entering its API-owned snapshot."""
+    session = SimpleNamespace(in_transaction=True)
+    database = SimpleNamespace(get_collection=lambda _name: _Collection())
+    monkeypatch.setattr(
+        legal_router,
+        "_workspace_projection_transaction",
+        lambda callback: callback(session, database),
+    )
+
+
 def _app(
     lifecycle: _Collection,
     binding: _Collection,
@@ -380,6 +391,8 @@ def test_field_capability_failures_are_bounded_without_command_fallback(
 def test_missing_binding_is_bounded_forbidden(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
+    _use_snapshot_transaction(monkeypatch)
+
     def reject(**_kwargs: Any) -> object:
         raise DeputyPersonalActiveWorkError("L8_6C_BINDING_REQUIRED")
 
@@ -404,6 +417,8 @@ def test_projection_failures_are_bounded_evidence_unavailable(
     monkeypatch: pytest.MonkeyPatch,
     code: str,
 ) -> None:
+    _use_snapshot_transaction(monkeypatch)
+
     def reject(**_kwargs: Any) -> object:
         raise DeputyPersonalActiveWorkError(code)
 
@@ -415,6 +430,82 @@ def test_projection_failures_are_bounded_evidence_unavailable(
     assert (
         response.json()["detail"]
         == "LEGAL_OPERATIONS_DEPUTY_QUEUE_EVIDENCE_UNAVAILABLE"
+    )
+
+
+@pytest.mark.parametrize(
+    ("receipt", "expected_code"),
+    (
+        (None, "P4_CURRENT_ALLOCATION_RECEIPT_MISSING"),
+        (
+            SimpleNamespace(
+                tenant_id=TENANT,
+                document_id="document-1",
+                instruction_id="instruction-1",
+                deputy_id=DEPUTY,
+                sheriff_office_id="sheriff-office-1",
+                allocation_evidence_reference="allocation-1",
+                allocated_at=NOW,
+                allocation_command_id="allocation-command-1",
+                fingerprint="e" * 128,
+                to_holder_reference="holder-deputy-1",
+            ),
+            "P4_CURRENT_ALLOCATION_RECEIPT_ATTEMPT_MISMATCH",
+        ),
+        (
+            SimpleNamespace(
+                tenant_id=TENANT,
+                document_id="document-1",
+                instruction_id="instruction-1",
+                deputy_id="foreign-deputy",
+                sheriff_office_id="sheriff-office-1",
+                allocation_evidence_reference="allocation-1",
+                allocated_at=NOW,
+                allocation_command_id="allocation-command-1",
+                fingerprint="f" * 128,
+                to_holder_reference="holder-deputy-1",
+            ),
+            "P4_CURRENT_ALLOCATION_RECEIPT_ATTEMPT_MISMATCH",
+        ),
+    ),
+)
+def test_who_serves_projection_fails_closed_on_missing_or_mismatched_receipt(
+    monkeypatch: pytest.MonkeyPatch,
+    receipt: object,
+    expected_code: str,
+) -> None:
+    _use_snapshot_transaction(monkeypatch)
+    personal = SimpleNamespace(
+        tenant_id=TENANT,
+        principal_id=PRINCIPAL,
+        deputy_id=DEPUTY,
+        active_attempts=(SimpleNamespace(current=_attempt()),),
+    )
+    pointer = SimpleNamespace(
+        authority_evidence_reference="allocation-command-1",
+        authority_evidence_fingerprint="f" * 128,
+        current_holder_reference="holder-deputy-1",
+    )
+    monkeypatch.setattr(
+        legal_router, "get_deputy_personal_active_work",
+        lambda **_kwargs: personal,
+    )
+    monkeypatch.setattr(
+        legal_router.ProcessServiceAllocationRegistry, "get_current",
+        lambda *args, **kwargs: pointer,
+    )
+    monkeypatch.setattr(
+        legal_router.ProcessServiceAllocationRegistry,
+        "get_receipt_by_allocation_command_id",
+        lambda *args, **kwargs: receipt,
+    )
+
+    with TestClient(_app(_Collection(), _Collection(), authorize=True)) as client:
+        response = client.get("/api/legal-operations/deputy/active-work")
+
+    assert response.status_code == 503
+    assert response.json()["detail"] == (
+        "LEGAL_OPERATIONS_DEPUTY_ALLOCATION_EVIDENCE_UNAVAILABLE"
     )
 
 
