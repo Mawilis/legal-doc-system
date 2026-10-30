@@ -81,6 +81,11 @@ describe('SovereignDashboardController resolver', () => {
     })).toBe(DASHBOARD_KEYS.EXECUTIVE);
 
     expect(resolveDashboardKey({
+      user: { id: 'owner-2', role: 'TENANT_OWNER' },
+      manualDashboardKey: 'SHERIFF'
+    })).toBe(DASHBOARD_KEYS.EXECUTIVE);
+
+    expect(resolveDashboardKey({
       user: { id: 'partner-1', role: 'LEGAL_PARTNER' },
       manualDashboardKey: 'FOUNDER_DASHBOARD',
       dashboardIntent: 'EXECUTIVE_DASHBOARD'
