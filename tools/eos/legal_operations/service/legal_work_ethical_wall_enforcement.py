@@ -49,6 +49,12 @@ from tools.eos.legal_operations.domain.legal_work_practitioner_confidentiality_r
     ConfidentialityReviewDecision,
     ConfidentialityReviewDecisionState,
 )
+from tools.eos.legal_operations.domain.legal_work_ethical_wall_membership_acknowledgement import (
+    WallMembershipEvidence,
+    WallAcknowledgementEvidence,
+    WallEvidenceCurrentness,
+    project_wall_membership_and_acknowledgement,
+)
 
 VERSION: Final[str] = "v1.0.0-G77-SOURCE-VERIFIED-NEGATIVE-ENFORCEMENT"
 SOURCE_VERIFIED_CLEARANCE: Final[bool] = False
@@ -217,7 +223,8 @@ def require_source_verified_ethical_wall_access(
     *, authenticated_principal_id: str, tenant_id: str, case_matter_id: str,
     policy_id: str, evaluation_time: datetime, iam_source: object,
     binding_source: object, assignment_source: object, conflict_source: object,
-    review_source: object, wall_source: EthicalWallPolicySource, session: object,
+    review_source: object, wall_source: EthicalWallPolicySource,
+    membership_source: object, acknowledgement_source: object, session: object,
 ) -> NoReturn:
     """Verify every currently available source and always end in bounded denial.
 
@@ -293,9 +300,54 @@ def require_source_verified_ethical_wall_access(
     if decision.permits_operational_access is not False:
         _deny("G77_WALL_SOURCE_INVALID")
 
-    # The repository contains no ratified canonical source for reviewer/admin
-    # eligibility or ethical-wall acknowledgment. Recorded fingerprints cannot
-    # fill that institutional gap, so a favorable documentary chain still denies.
+    # G78 re-reads membership and acknowledgement history in the identical
+    # caller-owned transaction. These records are evidence only: even a complete
+    # chain cannot satisfy institutional issuer/verification authority.
+    memberships = _resolve(
+        membership_source, "G77_WALL_MEMBERSHIP_SOURCE_UNAVAILABLE", **scope,
+    )
+    acknowledgements = _resolve(
+        acknowledgement_source, "G77_WALL_ACKNOWLEDGEMENT_SOURCE_UNAVAILABLE", **scope,
+    )
+    if (
+        type(memberships) is not tuple
+        or any(type(item) is not WallMembershipEvidence for item in memberships)
+        or type(acknowledgements) is not tuple
+        or any(type(item) is not WallAcknowledgementEvidence for item in acknowledgements)
+    ):
+        _deny("G77_WALL_MEMBERSHIP_ACKNOWLEDGEMENT_INVALID")
+    projection = project_wall_membership_and_acknowledgement(
+        tenant_id=tenant, case_matter_id=matter, policy_id=policy,
+        practitioner_principal_id=principal, policy_fingerprint=current.fingerprint,
+        evaluation_time=at, memberships=memberships, acknowledgements=acknowledgements,
+    )
+    state = projection.state
+    if state is WallEvidenceCurrentness.MEMBERSHIP_RESTRICTED:
+        _deny("G77_WALL_MEMBERSHIP_RESTRICTED")
+    if state is WallEvidenceCurrentness.MEMBERSHIP_REVOKED:
+        _deny("G77_WALL_MEMBERSHIP_REVOKED")
+    if state is WallEvidenceCurrentness.MEMBERSHIP_EXPIRED:
+        _deny("G77_WALL_MEMBERSHIP_EXPIRED")
+    if state is WallEvidenceCurrentness.MEMBERSHIP_POLICY_MISMATCH:
+        _deny("G77_WALL_MEMBERSHIP_POLICY_MISMATCH")
+    if state is WallEvidenceCurrentness.MEMBERSHIP_MISSING:
+        _deny("G77_WALL_MEMBERSHIP_REQUIRED")
+    if state is WallEvidenceCurrentness.ACKNOWLEDGEMENT_MISSING:
+        _deny("G77_WALL_ACKNOWLEDGEMENT_REQUIRED")
+    if state is WallEvidenceCurrentness.ACKNOWLEDGEMENT_REVOKED:
+        _deny("G77_WALL_ACKNOWLEDGEMENT_REVOKED")
+    if state is WallEvidenceCurrentness.ACKNOWLEDGEMENT_EXPIRED:
+        _deny("G77_WALL_ACKNOWLEDGEMENT_EXPIRED")
+    if state is WallEvidenceCurrentness.ACKNOWLEDGEMENT_POLICY_MISMATCH:
+        _deny("G77_WALL_ACKNOWLEDGEMENT_POLICY_MISMATCH")
+    if state is WallEvidenceCurrentness.ACKNOWLEDGEMENT_MEMBERSHIP_MISMATCH:
+        _deny("G77_WALL_ACKNOWLEDGEMENT_MEMBERSHIP_MISMATCH")
+    if state is not WallEvidenceCurrentness.RECORDED_COMPLETE_UNVERIFIED:
+        _deny("G77_WALL_MEMBERSHIP_ACKNOWLEDGEMENT_CORRUPT")
+
+    # A complete evidence chain remains non-authorizing until the institutional
+    # issuer, reviewer and independent acknowledgement-verifier authority are
+    # separately established and checked against current IAM.
     _deny("G77_INSTITUTIONAL_AUTHORITY_UNRATIFIED")
 
 
