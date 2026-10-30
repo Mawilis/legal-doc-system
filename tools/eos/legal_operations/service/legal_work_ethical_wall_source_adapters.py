@@ -1,5 +1,5 @@
 """TITLE: WILSY OS Canonical Ethical-Wall Source Adapters.
-VERSION: v1.0.0-G78-CANONICAL-TRANSACTIONAL-SOURCE-ADAPTERS
+VERSION: v1.1.0-G78-MEMBERSHIP-ACK-SOURCES
 AUTHORITY: Exact transaction-bound canonical evidence reads only.
 EPITOME: Adapt current IAM, binding, assignment, conflict, confidentiality
 review and G76-B policy sources to G77 without accepting caller approvals or
@@ -8,7 +8,7 @@ ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/tools/eos/legal_
 COLLABORATION / OWNERSHIP: Wilsy OS Core Engineering / Legal Operations;
 canonical registries retain persistence and currentness ownership.
 CERTIFICATION / UPDATE DATE: 2026-10-21.
-CHANGELOG: 2026-10-21 v1.0.0 introduces six bounded G78 source adapters.
+CHANGELOG: 2026-10-30 v1.1.0 adds canonical append-only wall membership and acknowledgement history adapters.
 COMPLIANCE: POPIA section 19; GDPR Article 32; SOC 2 CC7.2.
 SECURITY / PRIVACY POSTURE: Content-free stable failures and no logging.
 TENANT BOUNDARY: Every read uses exact tenant/matter/practitioner predicates.
@@ -43,7 +43,7 @@ from tools.eos.legal_operations.orchestration.legal_client_matter_conflict_dispo
     LegalClientMatterConflictDispositionCurrentnessComposer,
 )
 
-VERSION: Final[str] = "v1.0.0-G78-CANONICAL-TRANSACTIONAL-SOURCE-ADAPTERS"
+VERSION: Final[str] = "v1.1.0-G78-MEMBERSHIP-ACK-SOURCES"
 SOURCE_VERIFIED_CLEARANCE: Final[bool] = False
 OPERATIONAL_ACCESS_ENABLED: Final[bool] = False
 MAX_BINDING_ROWS: Final[int] = 4
@@ -414,7 +414,7 @@ __all__ = [
 ]
 
 # ARTIFACT: legal_work_ethical_wall_source_adapters.py
-# VERSION: v1.0.0-G78-CANONICAL-TRANSACTIONAL-SOURCE-ADAPTERS
+# VERSION: v1.1.0-G78-MEMBERSHIP-ACK-SOURCES
 # AUTHORITY BOUNDARY: canonical evidence reads only; no content or access grant
 # TENANT POSTURE: exact tenant/matter/practitioner on every operation
 # FAIL-CLOSED POSTURE: missing, revoked, stale, corrupt or foreign source rejects
