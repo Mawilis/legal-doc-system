@@ -437,24 +437,34 @@ export const hasFounderReturnAuthority = ({ user = {}, role = '' } = {}) => {
  * @function resolveDashboardKey
  * @description Resolves canonical dashboard key from override, intent, role and tenant.
  */
-export const resolveDashboardKey = ({ user = {} } = {}) => {
+export const resolveDashboardKey = ({ user = {}, manualDashboardKey = '' } = {}) => {
   const roleToken = normalizeDashboardToken(user.role || user.accountRole || user.tenantRole);
-
-  if (
+  const roleDashboard = (
     roleToken.includes('FOUNDER') ||
     roleToken.includes('SOVEREIGN') ||
     roleToken === 'SUPER_ADMIN' ||
     roleToken === 'SUPERADMIN' ||
     roleToken === 'OMEGA' ||
     roleToken === 'GLOBAL_ROOT'
+  )
+    ? DASHBOARD_KEYS.FOUNDER
+    : (ROLE_DASHBOARD_MAP[roleToken] || DASHBOARD_KEYS.GENERAL);
+
+  const requestedDashboard = mapDashboardAlias(manualDashboardKey);
+  if (requestedDashboard === roleDashboard) return roleDashboard;
+
+  // The only cross-shard return retained is the existing Founder return
+  // affordance, and only for identities carrying its explicit return signal.
+  if (
+    requestedDashboard === DASHBOARD_KEYS.FOUNDER &&
+    hasFounderReturnAuthority({ user, role: roleToken })
   ) {
     return DASHBOARD_KEYS.FOUNDER;
   }
 
-  // Landing surfaces are derived from the authenticated primary role only.
-  // Browser preferences, tenant metadata and route events are navigation hints,
-  // never authority to select a different role workspace.
-  return ROLE_DASHBOARD_MAP[roleToken] || DASHBOARD_KEYS.GENERAL;
+  // Dashboard preferences, tenant metadata and browser storage cannot choose
+  // a different role workspace. Python EOS remains the authorization authority.
+  return roleDashboard;
 };
 
 /**
@@ -664,8 +674,8 @@ const SovereignDashboardController = ({ user: propUser, onLogout }) => {
   const traceId = localStorage.getItem('traceId') || 'SYSTEM_CORE_INIT';
 
   const dashboardKey = useMemo(() => (
-    user ? resolveDashboardKey({ user }) : ''
-  ), [user]);
+    user ? resolveDashboardKey({ user, manualDashboardKey }) : ''
+  ), [manualDashboardKey, user]);
 
   const dashboardLabel = getDashboardDisplayName(dashboardKey);
   const canReturnToFounder = Boolean(
