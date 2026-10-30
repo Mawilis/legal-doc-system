@@ -313,7 +313,22 @@ describe('D15 first-class Legal Matter Operating Room', () => {
     const { container } = render(
       <LegalDashboard
         roleView="LEGAL_PARTNER"
-        user={{ id: 'principal-law', email: 'partner@example.test' }}
+        user={{
+          id: 'principal-law',
+          email: 'partner@example.test',
+          legalPermissionsAuthoritative: true,
+          permissions: [
+            'legal_operations:instruction:write',
+            'legal_operations:return:write',
+            'legal_operations:billing:read',
+            'legal_operations:invoice:read',
+            'legal_operations:matter_deadline:read',
+            'legal_operations:matter_deadline:write',
+            'legal_operations:evidence:write',
+            'legal_operations:productive_work:read',
+            'legal_operations:conflict_review:write',
+          ],
+        }}
         tenantConfig={{ tenantId: 'tenant-law', displayName: 'WILSY Legal Practice' }}
       />,
     );
@@ -644,7 +659,6 @@ describe('D15 first-class Legal Matter Operating Room', () => {
         user={{
           id: 'principal-attorney-legacy-narrow',
           permissions: ['legal_operations:instruction:write'],
-          legalPermissionsAuthoritative: true,
         }}
       />,
     );
@@ -892,7 +906,8 @@ describe('D15 first-class Legal Matter Operating Room', () => {
     expect(
       await screen.findByText('LEGAL_PRACTICE_WORKSPACE_DENIED'),
     ).toBeInTheDocument();
-    expect(screen.getByRole('button', { name: 'Command Center' })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Trust Center' })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Open instructions' })).toBeInTheDocument();
     expect(getSheriffOperationalQueues).not.toHaveBeenCalled();
     expect(getLegalClientMatters).not.toHaveBeenCalled();
     expect(getDeputyPersonalActiveWork).not.toHaveBeenCalled();
@@ -1145,7 +1160,7 @@ describe('D15 first-class Legal Matter Operating Room', () => {
     expect(screen.getByTestId('legal-practice-operating-runway')).toBeInTheDocument();
     expect(screen.getByText('Ready for the next legal instruction')).toBeInTheDocument();
     expect(screen.getByText('No current Legal Operations work is projected for this tenant.')).toBeInTheDocument();
-    expect(within(screen.getByTestId('legal-practice-operating-runway')).queryByRole('button', { name: 'New instruction' })).not.toBeInTheDocument();
+    expect(within(screen.getByTestId('legal-practice-operating-runway')).getByRole('button', { name: 'New instruction' })).toBeInTheDocument();
     expect(within(screen.getByTestId('legal-practice-operating-runway')).getByRole('button', { name: 'Matter register' })).toBeInTheDocument();
     expect(within(screen.getByTestId('legal-practice-operating-runway')).getByRole('button', { name: 'Refresh truth' })).toBeInTheDocument();
     expect(screen.queryByLabelText('Legal operations KPI strip')).not.toBeInTheDocument();
