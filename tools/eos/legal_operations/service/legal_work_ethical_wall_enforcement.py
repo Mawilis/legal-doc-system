@@ -1,10 +1,10 @@
 """TITLE: WILSY OS Source-Verified Ethical-Wall Enforcement Boundary.
-VERSION: v1.0.0-G77-SOURCE-VERIFIED-NEGATIVE-ENFORCEMENT
+VERSION: v1.1.0-G77-G78-TRANSACTION-BOUND-WALL-EVIDENCE
 AUTHORITY: Transaction-bound canonical source verification and denial only.
-EPITOME: Re-read current IAM, binding, assignment, conflict, review and wall
-    sources in one caller-owned transaction, apply restriction/revocation
-    precedence, and deny until institutional reviewer/admin authority and
-    acknowledgment ownership are independently ratified.
+EPITOME: Re-read current IAM, binding, assignment, conflict, review, policy,
+    membership and acknowledgement sources in one caller-owned transaction.
+    Apply explicit-deny precedence and remain deny-only until institutional
+    issuer, reviewer, administrator and verifier authority are independently ratified.
 ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/tools/eos/legal_operations/service/legal_work_ethical_wall_enforcement.py
 COLLABORATION / OWNERSHIP: Wilsy OS Core Engineering / Legal Operations;
     canonical repositories own evidence and disclosure points own enforcement.
@@ -56,7 +56,7 @@ from tools.eos.legal_operations.domain.legal_work_ethical_wall_membership_acknow
     project_wall_membership_and_acknowledgement,
 )
 
-VERSION: Final[str] = "v1.0.0-G77-SOURCE-VERIFIED-NEGATIVE-ENFORCEMENT"
+VERSION: Final[str] = "v1.1.0-G77-G78-TRANSACTION-BOUND-WALL-EVIDENCE"
 SOURCE_VERIFIED_CLEARANCE: Final[bool] = False
 OPERATIONAL_ACCESS_ENABLED: Final[bool] = False
 _ID: Final[re.Pattern[str]] = re.compile(r"[A-Za-z0-9][A-Za-z0-9._:-]{0,199}\Z")
@@ -371,7 +371,7 @@ __all__ = [
 ]
 
 # ARTIFACT: legal_work_ethical_wall_enforcement.py
-# VERSION: v1.0.0-G77-SOURCE-VERIFIED-NEGATIVE-ENFORCEMENT
+# VERSION: v1.1.0-G77-G78-TRANSACTION-BOUND-WALL-EVIDENCE
 # AUTHORITY BOUNDARY: canonical negative verification only; no access grant
 # TENANT POSTURE: exact authenticated tenant/matter/principal on every source
 # FAIL-CLOSED POSTURE: absent, stale, revoked, corrupt or unratified always denies
