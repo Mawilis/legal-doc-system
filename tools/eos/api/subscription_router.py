@@ -1,5 +1,5 @@
 """TITLE: WILSY OS Subscription HTTP Authority Router.
-VERSION: v1.3.0-D22B4-ACTIVE-ENTITLEMENT-COMPOSITION
+VERSION: v1.3.1-D22B5-UPGRADE-ENTITLEMENT-COMPOSITION
 AUTHORITY: FastAPI composition of current Python identity, tenant membership,
 permission and SubscriptionRegistry authorities.
 EPITOME: Retires direct X-Tenant-ID-to-registry forwarding. Every subscription
@@ -10,7 +10,12 @@ ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/tools/eos/api/su
 COLLABORATION / OWNERSHIP: Wilson Khanyezi / Wilsy Core Engineering.
 CERTIFICATION/UPDATE DATE: 2026-10-10.
 CHANGELOG:
-    v1.3.0-D22B4-ACTIVE-ENTITLEMENT-COMPOSITION replaces only create, resume
+    v1.3.1-D22B5-UPGRADE-ENTITLEMENT-COMPOSITION routes subscription
+    upgrades through the sealed P42 shared commercial/Legal entitlement
+    transaction while retaining SUBSCRIPTION_MANAGE_AUTHORITY and the existing
+    HTTP error envelope. Downgrade remains on its pre-existing lifecycle path.
+
+    v1.3.1-D22B5-UPGRADE-ENTITLEMENT-COMPOSITION replaces only create, resume
     and reactivate direct registry calls with the sealed D22B3 active-
     subscription/Legal-entitlement composition service. Existing routes,
     authority dependencies, envelopes and non-migrated registry paths remain
@@ -88,7 +93,7 @@ from tools.eos.saas.domain.subscription import SubscriptionStatus
 from .responses import format_response
 
 
-VERSION = "v1.3.0-D22B4-ACTIVE-ENTITLEMENT-COMPOSITION"
+VERSION = "v1.3.1-D22B5-UPGRADE-ENTITLEMENT-COMPOSITION"
 
 SUBSCRIPTION_READ_PERMISSION = "subscription:read"
 SUBSCRIPTION_MANAGE_PERMISSION = "subscription:manage"
@@ -726,27 +731,21 @@ async def upgrade_subscription(
     tenant_id = _authorized_tenant_id(identity)
 
     try:
-        result = SubscriptionRegistry.upgrade(
+        result = SubscriptionActiveEntitlementCompositionService.upgrade(
             subscription_id,
-            tenant_id_header=tenant_id,
-            upgrade_data=payload,
+            payload,
+            identity,
         )
-    except SubscriptionRegistryError as error:
-        _raise_registry_failure(error)
+    except SubscriptionActiveEntitlementCompositionServiceError as error:
+        _raise_composition_failure(error)
     except Exception as error:
         _raise_unexpected("UPGRADE", error)
-
-    if not result.get("success"):
-        _raise_result_failure(
-            result,
-            default_error="UPGRADE_FAILED",
-        )
 
     return _response(
         request,
         data={
             "subscription":
-                result["subscription"].to_dict()
+                result.subscription.to_dict()
         },
         message="Subscription upgraded successfully.",
         execution_id="SUB-UPGRADE",
@@ -920,7 +919,7 @@ __all__ = [
 ]
 
 # ARTIFACT: tools/eos/api/subscription_router.py
-# VERSION: v1.3.0-D22B4-ACTIVE-ENTITLEMENT-COMPOSITION
+# VERSION: v1.3.1-D22B5-UPGRADE-ENTITLEMENT-COMPOSITION
 # AUTHORITY BOUNDARY: HTTP composition only; identity, membership, role assignment, permission policy and persistence retain canonical ownership
 # TENANT POSTURE: only membership-admitted SovereignIdentity reaches the composition service or remaining registry paths; raw X-Tenant-ID is never persistence authority
 # FAIL-CLOSED POSTURE: missing or invalid identity, membership, role, permission or persistence authority never becomes subscription access
