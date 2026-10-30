@@ -241,6 +241,29 @@ def test_invalid_commercial_cardinality_or_feature_causes_no_writes(
     assert raised.value.code == code
 
 
+def test_founder_branding_only_plan_does_not_grant_legal_entitlement(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """Perpetual Founder term does not widen the persisted feature snapshot."""
+    Registry.items = (
+        subscription(
+            tenant_id="WILSYTENANT-4CD2FZ4O",
+            subscription_id="WILSYSUB-93455E4E",
+            plan_id="WILSYPLAN-37B8164F",
+            features=("tenant.branding",),
+            period_end=NOW - timedelta(days=29),
+        ),
+    )
+    monkeypatch.setattr(
+        composer,
+        "get_current",
+        lambda *_args, **_kwargs: pytest.fail("entitlement read occurred"),
+    )
+    with pytest.raises(composer.TenantProductEntitlementComposerCommercialError) as raised:
+        invoke(tenant_id="WILSYTENANT-4CD2FZ4O")
+    assert raised.value.code == "D22B3_COMMERCIAL_FEATURE_ABSENT"
+
+
 def test_expired_active_commercial_subscription_rejects_before_entitlement_reads(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
