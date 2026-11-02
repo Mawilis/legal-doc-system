@@ -8,12 +8,14 @@ on:
       - "tests/unit/test_sheriff_appointment_source_evidence.py"
       - "tools/eos/legal_operations/registry/sheriff_appointment_source_evidence_registry.py"
       - "tests/unit/test_sheriff_appointment_source_evidence_registry.py"
+      - "tests/integration/test_sheriff_appointment_source_evidence_registry_real_mongo.py"
       - ".github/workflows/sheriff-appointment-source-evidence.yml"
   push:
     branches:
       - main
       - feat/sheriff-appointment-source-evidence-20261102
       - feat/sheriff-appointment-evidence-registry-20261102
+      - ci/sheriff-registry-real-mongo-cert-20261102
     paths:
       - "tools/eos/legal_operations/domain/sheriff_appointment_source_evidence.py"
       - "tests/unit/test_sheriff_appointment_source_evidence.py"
@@ -27,9 +29,11 @@ permissions:
 
 jobs:
   sheriff-appointment-domain:
-    name: Sheriff appointment source evidence — direct and static
+    name: Sheriff appointment source evidence — direct, static and real Mongo
     runs-on: ubuntu-latest
-    timeout-minutes: 15
+    timeout-minutes: 25
+    env:
+      TEST_VENDOR_MONGO_URI: mongodb://127.0.0.1:27017/?replicaSet=wilsyVendorCertRS
     steps:
       - name: Checkout exact commit
         uses: actions/checkout@v4
@@ -51,6 +55,51 @@ jobs:
           python -m pip install --upgrade pip==25.3
           python -m pip install pytest==9.1.1 pymongo==4.18.2
 
+      - name: Start isolated Sheriff evidence Mongo replica set
+        if: ${{ hashFiles('tests/integration/test_sheriff_appointment_source_evidence_registry_real_mongo.py') != '' }}
+        run: |
+          docker run --detach --name wilsy-sheriff-evidence-cert-mongo \
+            --publish 27017:27017 mongo:7.0.37 \
+            mongod --replSet wilsyVendorCertRS --bind_ip_all
+
+      - name: Initialize isolated Sheriff evidence Mongo replica set
+        if: ${{ hashFiles('tests/integration/test_sheriff_appointment_source_evidence_registry_real_mongo.py') != '' }}
+        run: |
+          python - <<'PY'
+          import time
+          from pymongo import MongoClient
+
+          client = MongoClient(
+              "mongodb://127.0.0.1:27017",
+              directConnection=True,
+              serverSelectionTimeoutMS=2000,
+          )
+          deadline = time.monotonic() + 60
+          initiated = False
+          last_error = None
+          while True:
+              try:
+                  hello = client.admin.command("hello")
+                  if not initiated and not hello.get("setName"):
+                      client.admin.command({
+                          "replSetInitiate": {
+                              "_id": "wilsyVendorCertRS",
+                              "members": [{"_id": 0, "host": "127.0.0.1:27017"}],
+                          }
+                      })
+                      initiated = True
+                  if client.admin.command("hello").get("isWritablePrimary"):
+                      break
+              except Exception as error:
+                  last_error = error
+              if time.monotonic() >= deadline:
+                  raise RuntimeError(
+                      f"SHERIFF_EVIDENCE_MONGO_REPLICA_SET_UNAVAILABLE: {last_error!r}"
+                  ) from last_error
+              time.sleep(1)
+          client.close()
+          PY
+
       - name: Compile present Sheriff evidence sources and certificates
         shell: bash
         run: |
@@ -64,6 +113,9 @@ jobs:
               tools/eos/legal_operations/registry/sheriff_appointment_source_evidence_registry.py
               tests/unit/test_sheriff_appointment_source_evidence_registry.py
             )
+          fi
+          if [[ -f tests/integration/test_sheriff_appointment_source_evidence_registry_real_mongo.py ]]; then
+            files+=(tests/integration/test_sheriff_appointment_source_evidence_registry_real_mongo.py)
           fi
           python -m py_compile "${files[@]}"
 
@@ -81,6 +133,9 @@ jobs:
               tests/unit/test_sheriff_appointment_source_evidence_registry.py
             )
           fi
+          if [[ -f tests/integration/test_sheriff_appointment_source_evidence_registry_real_mongo.py ]]; then
+            files+=(tests/integration/test_sheriff_appointment_source_evidence_registry_real_mongo.py)
+          fi
           npx --yes pyright@1.1.413 --pythonpath "$(command -v python)" "${files[@]}"
 
       - name: Run present Sheriff evidence certificates with no skips
@@ -90,6 +145,9 @@ jobs:
           tests=(tests/unit/test_sheriff_appointment_source_evidence.py)
           if [[ -f tests/unit/test_sheriff_appointment_source_evidence_registry.py ]]; then
             tests+=(tests/unit/test_sheriff_appointment_source_evidence_registry.py)
+          fi
+          if [[ -f tests/integration/test_sheriff_appointment_source_evidence_registry_real_mongo.py ]]; then
+            tests+=(tests/integration/test_sheriff_appointment_source_evidence_registry_real_mongo.py)
           fi
           set +e
           output="$(python -m pytest -q -rs "${tests[@]}" 2>&1)"
@@ -104,6 +162,10 @@ jobs:
             echo "Sheriff appointment evidence certification invalid: skipped tests detected"
             exit 1
           fi
+
+      - name: Stop isolated Sheriff evidence Mongo replica set
+        if: always() && hashFiles('tests/integration/test_sheriff_appointment_source_evidence_registry_real_mongo.py') != ''
+        run: docker rm -f wilsy-sheriff-evidence-cert-mongo 2>/dev/null || true
 
       - name: Verify patch whitespace
         run: git diff --check origin/main...HEAD
