@@ -62,9 +62,12 @@ export function useAuthenticatedTenantBrandingAsset(descriptor) {
   // Effects run after paint. Never expose an object URL admitted for the prior
   // tenant/descriptor during the render before the replacement effect executes.
   const visibleState = state.descriptorKey === key
-    ? state
+    ? {
+        objectUrl: state.objectUrl,
+        status: state.status,
+        errorCode: state.errorCode,
+      }
     : {
-        descriptorKey: key,
         objectUrl: null,
         status: key ? 'LOADING' : 'ABSENT',
         errorCode: null,
