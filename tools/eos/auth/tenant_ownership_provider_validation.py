@@ -26,6 +26,8 @@ from tools.eos.auth.tenant_ownership_provider_ports import (
     RecoveryDecisionLookup,
     RecoveryDecisionReceipt,
     RegistrySnapshot,
+    SigningReceipt,
+    SigningRequest,
 )
 
 VERSION: Final[str] = "v1.0.0-ISSUE-300-CONFORMANCE-CRYPTO-RECOVERY"
@@ -238,6 +240,61 @@ def verify_provider_signature(
     return sha256(message).hexdigest()
 
 
+def signing_request_payload(request: SigningRequest) -> bytes:
+    """Canonical bytes bind a provider signature to the exact tenant-purpose digest."""
+    if type(request) is not SigningRequest:
+        raise OwnershipProviderEvidenceError("SIGNING_REQUEST_INVALID")
+    payload = {
+        "payload_digest": _fingerprint("payload_digest", request.payload_digest),
+        "digest_algorithm": _token("digest_algorithm", request.digest_algorithm).upper(),
+        "key_reference": _token("key_reference", request.key_reference),
+        "key_revision": request.key_revision,
+        "purpose": _token("purpose", request.purpose),
+        "tenant_id": _token("tenant_id", request.tenant_id),
+        "evaluated_at": _instant("evaluated_at", request.evaluated_at).isoformat(),
+    }
+    if type(request.key_revision) is not int or request.key_revision < 1:
+        raise OwnershipProviderEvidenceError("SIGNING_KEY_REVISION_INVALID")
+    return json.dumps(payload, sort_keys=True, separators=(",", ":"), ensure_ascii=True).encode("ascii")
+
+
+def validate_signing_receipt(
+    request: SigningRequest,
+    receipt: SigningReceipt,
+    key: VerificationKey,
+    *,
+    evaluated_at: datetime,
+) -> str:
+    """Verify the provider receipt's exact request, custody proof and signature."""
+    if type(request) is not SigningRequest or type(receipt) is not SigningReceipt:
+        raise OwnershipProviderEvidenceError("SIGNING_RECEIPT_TYPES_INVALID")
+    now = _instant("evaluated_at", evaluated_at)
+    signed_at = _instant("signed_at", receipt.signed_at)
+    requested_at = _instant("request_evaluated_at", request.evaluated_at)
+    if signed_at < requested_at or signed_at > now:
+        raise OwnershipProviderEvidenceError("SIGNING_RECEIPT_TIME_INVALID")
+    for name in ("provider_id", "custody_authority_id", "audit_reference"):
+        _token(name, getattr(receipt, name))
+    _fingerprint("custody_proof_fingerprint", receipt.custody_proof_fingerprint)
+    if (
+        receipt.key_reference != request.key_reference
+        or receipt.key_revision != request.key_revision
+        or receipt.payload_digest.lower().removeprefix("sha256:")
+           != request.payload_digest.lower().removeprefix("sha256:")
+        or receipt.purpose != request.purpose
+        or receipt.algorithm.upper() != key.algorithm.upper()
+        or key.key_reference != request.key_reference
+        or key.key_revision != request.key_revision
+    ):
+        raise OwnershipProviderEvidenceError("SIGNING_RECEIPT_REQUEST_BINDING_MISMATCH")
+    return verify_provider_signature(
+        message=signing_request_payload(request),
+        signature_b64=receipt.signature,
+        key=key,
+        evaluated_at=now,
+    )
+
+
 def validate_recovery_decision(
     lookup: RecoveryDecisionLookup,
     receipt: RecoveryDecisionReceipt,
@@ -390,6 +447,7 @@ __all__ = [
     "OwnershipProviderEvidenceError", "RECOVERY_REPLAYS", "RegistryFreshnessPolicy",
     "RegistryLineageAssessment", "RecoveryDecisionReplayRegistry", "VerificationKey",
     "recovery_decision_signing_payload", "invoke_provider_fail_closed",
+    "signing_request_payload", "validate_signing_receipt",
     "VERSION", "assess_registry_lineage", "validate_recovery_decision",
     "verify_provider_signature",
 ]
