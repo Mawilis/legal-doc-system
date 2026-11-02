@@ -760,7 +760,6 @@ class DeputyDeviceProvenanceRegistry:
             or provenance.device_id != challenge.device_id
             or provenance.challenge_id != challenge.challenge_id
             or provenance.principal_id != _identifier("principal_id", principal_id)
-            or provenance.session_reference != _identifier("session_reference", session_reference)
         ):
             _raise(
                 DeputyDeviceProvenanceRegistryPersistedRecordInvalidError,
