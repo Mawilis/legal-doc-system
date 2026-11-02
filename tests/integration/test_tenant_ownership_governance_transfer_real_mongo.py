@@ -11,6 +11,16 @@ from types import SimpleNamespace
 import pytest
 from pymongo import MongoClient
 
+from tools.eos.auth.tenant_ownership_lifecycle_command import (
+    TenantOwnershipLifecycleCommand,
+)
+from tools.eos.auth.tenant_ownership_verifier import (
+    TenantOwnershipOperation,
+    TenantOwnershipVerificationError,
+    TenantOwnershipVerificationRequest,
+    UnavailableTenantOwnershipEvidenceVerifier,
+    VerifiedTenantOwnershipEvidence,
+)
 from tools.eos.auth.tenant_ownership_trust_root_registry import (
     GovernedTrustRootRegistry, TrustRootEnrollmentRequest, TrustRootError,
     VerifiedTrustRootEnrollment, TrustRootRevocationRequest,
@@ -195,6 +205,96 @@ def test_transfer_requires_distinct_proposal_acceptance_and_owner_finalization(m
     assert db["tenant_ownership_transfer_acceptances"].count_documents(
         {"proposal_reference": proposal.proposal_reference}
     ) == 1
+
+
+def test_lifecycle_rechecks_revoked_issuer_root_inside_real_mongo_transaction(mongo):
+    client, db = mongo
+    trust_roots = GovernedTrustRootRegistry(
+        db, GovernanceVerifier(), revocation_verifier=RevocationVerifier()
+    )
+    trust_roots.ensure_indexes()
+    now = datetime.now(timezone.utc)
+    root_request = TrustRootEnrollmentRequest(
+        "root-lifecycle-" + uuid.uuid4().hex, "lifecycle-key-fingerprint", "ZA",
+        "TENANT_OWNERSHIP_ISSUER", "independent-issuer", "lifecycle-key", 1,
+        now - timedelta(minutes=1), now + timedelta(days=10),
+        "lifecycle-enroll-" + uuid.uuid4().hex, "lifecycle-enroll-fingerprint",
+        ("governor-a", "governor-b"), 2,
+    )
+    with client.start_session() as session:
+        with session.start_transaction():
+            enrolled = trust_roots.enroll(root_request, session=session)
+
+    effective_at = datetime.now(timezone.utc) + timedelta(seconds=1)
+    revocation_request = TrustRootRevocationRequest(
+        root_request.trust_root_reference, enrolled.fingerprint, enrolled.key_id,
+        enrolled.key_revision, enrolled.authority_scope, effective_at,
+        "lifecycle-revoke-" + uuid.uuid4().hex, "lifecycle-revoke-fingerprint",
+        ("security-a", "security-b"), 2,
+    )
+    prepared_revocation = trust_roots.prepare_revocation(revocation_request)
+    with client.start_session() as session:
+        with session.start_transaction():
+            trust_roots.revoke(prepared_revocation, session=session)
+
+    class EvidenceRegistryStub:
+        appends = 0
+        def current(self, *, tenant_id: str, session: object) -> None:
+            return None
+        def append(self, **kwargs: object) -> object:
+            self.appends += 1
+            raise AssertionError("revoked issuer evidence must never append")
+
+    class GenesisAuthorizer:
+        def authorize_pretenant_provisioner(self, **kwargs: object) -> object:
+            return SimpleNamespace(authorized=True)
+
+    class TransferAuthorizer:
+        def authorize_current_owner(self, **kwargs: object) -> object:
+            return SimpleNamespace(authorized=False)
+
+    evidence_registry = EvidenceRegistryStub()
+    command = TenantOwnershipLifecycleCommand(
+        verifier=UnavailableTenantOwnershipEvidenceVerifier(),
+        registry=evidence_registry,  # type: ignore[arg-type]
+        transfer_actor_authorizer=TransferAuthorizer(),  # type: ignore[arg-type]
+        genesis_request_authorizer=GenesisAuthorizer(),  # type: ignore[arg-type]
+        trust_root_currentness=trust_roots,
+    )
+    request = TenantOwnershipVerificationRequest(
+        tenant_id="tenant-lifecycle-qa",
+        legal_entity_reference="entity-lifecycle-qa",
+        principal_id="owner-lifecycle-qa",
+        operation=TenantOwnershipOperation.TENANT_GENESIS,
+        evaluated_at=effective_at,
+    )
+    evidence = object.__new__(VerifiedTenantOwnershipEvidence)
+    issuer = SimpleNamespace(
+        trust_root_reference=root_request.trust_root_reference,
+        trust_root_fingerprint=enrolled.fingerprint,
+        key_id=enrolled.key_id,
+        key_revision=enrolled.key_revision,
+        authority_scope="TENANT_OWNERSHIP_ISSUER",
+        issuer_identity="independent-issuer",
+        not_revoked=True,
+    )
+    object.__setattr__(evidence, "request", request)
+    object.__setattr__(evidence, "issuer_authority", issuer)
+    object.__setattr__(evidence, "recovery_authorization", None)
+
+    with client.start_session() as session:
+        with session.start_transaction():
+            with pytest.raises(
+                TenantOwnershipVerificationError,
+                match="OWNERSHIP_ISSUER_TRUST_ROOT_NOT_CURRENT",
+            ):
+                command.execute(
+                    request=request, evidence=evidence,
+                    actor_principal_id="deployment-provisioner",
+                    command_id="lifecycle-revoked-root-denied",
+                    expected_revision=0, session=session,
+                )
+    assert evidence_registry.appends == 0
 
 
 def test_trust_root_key_rotation_is_revisioned_and_currentness_selects_new_key(mongo):
