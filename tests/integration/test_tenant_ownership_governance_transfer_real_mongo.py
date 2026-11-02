@@ -94,7 +94,7 @@ def test_transfer_requires_distinct_proposal_acceptance_and_owner_finalization(m
     lifecycle = Lifecycle()
     protocol = TenantOwnershipTransferProtocol(
         db, proposal_verifier=ProposalVerifier(),
-        acceptance_verifier=AcceptanceVerifier(), lifecycle=lifecycle,
+        acceptance_verifier=AcceptanceVerifier(), lifecycle=lifecycle,  # type: ignore[arg-type]
     )
     protocol.ensure_indexes()
     now = datetime.now(timezone.utc)
