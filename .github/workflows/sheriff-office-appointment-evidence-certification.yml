@@ -10,6 +10,7 @@ on:
       - "tests/unit/test_sheriff_office_appointment_authority.py"
       - "tools/eos/legal_operations/registry/sheriff_office_appointment_authority_registry.py"
       - "tests/unit/test_sheriff_office_appointment_authority_registry.py"
+      - "tests/integration/test_sheriff_office_appointment_authority_registry_real_mongo.py"
       - ".github/workflows/sheriff-office-appointment-evidence-certification.yml"
   workflow_dispatch:
 
@@ -27,6 +28,7 @@ jobs:
     timeout-minutes: 15
     env:
       PIP_DISABLE_PIP_VERSION_CHECK: "1"
+      WILSY_SHERIFF_APPOINTMENT_REAL_MONGO_URI: mongodb://localhost:27017/?replicaSet=wilsySheriffAppointmentRS
     steps:
       - name: Check out repository
         uses: actions/checkout@v4
@@ -48,13 +50,58 @@ jobs:
           python -m pip install --upgrade pip==25.3
           python -m pip install -r requirements.txt pytest==9.1.1
 
+      - name: Start isolated MongoDB replica set
+        run: |
+          docker run --detach --name wilsy-sheriff-appointment-mongo \
+            --publish 27017:27017 mongo:7.0.37 \
+            mongod --replSet wilsySheriffAppointmentRS --bind_ip_all
+
+      - name: Initialize MongoDB replica set
+        run: |
+          python - <<'PY'
+          import time
+          from pymongo import MongoClient
+
+          client = MongoClient(
+              "mongodb://localhost:27017",
+              directConnection=True,
+              serverSelectionTimeoutMS=2_000,
+          )
+          deadline = time.monotonic() + 60
+          initiated = False
+          last_error = None
+          while True:
+              try:
+                  hello = client.admin.command("hello")
+                  if not initiated and not hello.get("setName"):
+                      client.admin.command({
+                          "replSetInitiate": {
+                              "_id": "wilsySheriffAppointmentRS",
+                              "members": [{"_id": 0, "host": "localhost:27017"}],
+                          }
+                      })
+                      initiated = True
+                  if client.admin.command("hello").get("isWritablePrimary"):
+                      break
+              except Exception as error:
+                  last_error = error
+              if time.monotonic() >= deadline:
+                  raise RuntimeError(
+                      f"SHERIFF_APPOINTMENT_MONGO_REPLICA_SET_UNAVAILABLE: {last_error!r}"
+                  ) from last_error
+              time.sleep(1)
+          client.close()
+          PY
+
       - name: Compile appointment evidence domain and certificate
         run: |
           python -m py_compile \
             tools/eos/legal_operations/domain/sheriff_office_appointment_authority.py \
             tests/unit/test_sheriff_office_appointment_authority.py \
             tools/eos/legal_operations/registry/sheriff_office_appointment_authority_registry.py \
-            tests/unit/test_sheriff_office_appointment_authority_registry.py
+            tests/unit/test_sheriff_office_appointment_authority_registry.py \
+            tests/integration/test_sheriff_office_appointment_authority_registry_real_mongo.py \
+            tests/integration/test_sheriff_office_appointment_authority_registry_real_mongo.py
 
       - name: Type-check appointment evidence domain and certificate
         run: |
@@ -63,10 +110,16 @@ jobs:
             tools/eos/legal_operations/domain/sheriff_office_appointment_authority.py \
             tests/unit/test_sheriff_office_appointment_authority.py \
             tools/eos/legal_operations/registry/sheriff_office_appointment_authority_registry.py \
-            tests/unit/test_sheriff_office_appointment_authority_registry.py
+            tests/unit/test_sheriff_office_appointment_authority_registry.py \
+            tests/integration/test_sheriff_office_appointment_authority_registry_real_mongo.py
 
-      - name: Run appointment evidence unit certificate
+      - name: Run appointment evidence unit and real-Mongo certificates
         run: |
           python -m pytest -q \
             tests/unit/test_sheriff_office_appointment_authority.py \
-            tests/unit/test_sheriff_office_appointment_authority_registry.py
+            tests/unit/test_sheriff_office_appointment_authority_registry.py \
+            tests/integration/test_sheriff_office_appointment_authority_registry_real_mongo.py
+
+      - name: Stop isolated MongoDB replica set
+        if: always()
+        run: docker rm -f wilsy-sheriff-appointment-mongo 2>/dev/null || true
