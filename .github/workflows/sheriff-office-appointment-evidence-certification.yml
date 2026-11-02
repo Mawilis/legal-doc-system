@@ -22,6 +22,11 @@ on:
       - "tools/eos/api/legal_operations_router.py"
       - "tests/integration/test_sheriff_location_evidence_http.py"
       - "tests/integration/test_sheriff_office_appointment_authority_real_mongo.py"
+      - "tools/eos/legal_operations/registry/sheriff_appointment_source_evidence_registry.py"
+      - "tests/unit/test_sheriff_appointment_source_evidence_registry.py"
+      - "tests/integration/test_sheriff_appointment_source_evidence_registry_real_mongo.py"
+      - "tools/eos/legal_operations/domain/sheriff_appointment_source_evidence.py"
+      - "tests/unit/test_sheriff_appointment_source_evidence.py"
       - "client/src/services/legalOperationsService.js"
       - "client/src/__tests__/services/legalOperationsService.test.js"
       - "client/package.json"
@@ -128,6 +133,10 @@ jobs:
             tools/eos/api/legal_operations_router.py \
             tests/integration/test_sheriff_location_evidence_http.py \
             tests/integration/test_sheriff_office_appointment_authority_real_mongo.py \
+            tools/eos/legal_operations/registry/sheriff_appointment_source_evidence_registry.py \
+            tests/unit/test_sheriff_appointment_source_evidence_registry.py \
+            tools/eos/legal_operations/domain/sheriff_appointment_source_evidence.py \
+            tests/unit/test_sheriff_appointment_source_evidence.py \
             tests/integration/test_sheriff_office_appointment_authority_registry_real_mongo.py
 
       - name: Type-check appointment evidence domain and certificate
@@ -149,7 +158,11 @@ jobs:
             tests/unit/test_sheriff_office_appointment_command_api.py \
             tools/eos/api/legal_operations_router.py \
             tests/integration/test_sheriff_location_evidence_http.py \
-            tests/integration/test_sheriff_office_appointment_authority_real_mongo.py
+            tests/integration/test_sheriff_office_appointment_authority_real_mongo.py \
+            tools/eos/legal_operations/registry/sheriff_appointment_source_evidence_registry.py \
+            tests/unit/test_sheriff_appointment_source_evidence_registry.py \
+            tools/eos/legal_operations/domain/sheriff_appointment_source_evidence.py \
+            tests/unit/test_sheriff_appointment_source_evidence.py
 
       - name: Run appointment evidence unit and real-Mongo certificates
         run: |
@@ -159,6 +172,8 @@ jobs:
             tests/integration/test_sheriff_office_appointment_authority_registry_real_mongo.py \
             tests/unit/test_sheriff_office_appointment_authority_orchestrator.py \
             tests/unit/test_sheriff_office_appointment_authority_iam.py \
+            tests/unit/test_sheriff_appointment_source_evidence.py \
+            tests/unit/test_sheriff_appointment_source_evidence_registry.py \
             tests/unit/test_sheriff_office_appointment_command_api.py \
             tests/integration/test_sheriff_location_evidence_http.py \
             tests/integration/test_sheriff_office_appointment_authority_real_mongo.py
