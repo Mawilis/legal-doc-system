@@ -109,7 +109,8 @@ jobs:
             tools/eos/legal_operations/orchestration/process_service_location_evidence_orchestrator.py \
             tools/eos/api/legal_operations_router.py \
             tests/unit/test_process_service_location_evidence_authority.py \
-            tests/unit/test_process_service_location_evidence_registry.py
+            tests/unit/test_process_service_location_evidence_registry.py \
+            tests/unit/test_process_service_location_evidence_orchestrator.py
 
       - name: Type-check provenance contracts and certificates
         run: |
@@ -134,7 +135,8 @@ jobs:
             tools/eos/legal_operations/orchestration/process_service_location_evidence_orchestrator.py \
             tools/eos/api/legal_operations_router.py \
             tests/unit/test_process_service_location_evidence_authority.py \
-            tests/unit/test_process_service_location_evidence_registry.py
+            tests/unit/test_process_service_location_evidence_registry.py \
+            tests/unit/test_process_service_location_evidence_orchestrator.py
 
       - name: Run authority, registry, binding and Mongo transaction certificates
         run: |
@@ -147,7 +149,8 @@ jobs:
             tests/unit/test_auth_registry_tenant_bearing_refresh.py \
             tests/integration/test_deputy_device_provenance_http.py \
             tests/unit/test_process_service_location_evidence_authority.py \
-            tests/unit/test_process_service_location_evidence_registry.py
+            tests/unit/test_process_service_location_evidence_registry.py \
+            tests/unit/test_process_service_location_evidence_orchestrator.py
 
       - name: Stop isolated MongoDB replica set
         if: always()
