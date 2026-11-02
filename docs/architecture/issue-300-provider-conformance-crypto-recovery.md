@@ -18,7 +18,7 @@ Key records must themselves come from an independently governed trust-root/key-c
 
 ## Recovery decision validation
 
-A recovery decision is bound to the exact tenant, legal entity, case reference and fingerprint, and successor principal. It must have an unexpired validity interval and a final appeal state (`FINAL`, `NO_APPEAL` or `APPEAL_EXHAUSTED`). The canonical `recovery_decision_signing_payload` binds every decision claim to the lookup scope. `RecoveryDecisionReplayRegistry.consume` requires a valid signature under a key explicitly bound to the receipt's trust-root reference before writing.
+A recovery decision is bound to the exact tenant, legal entity, case reference and fingerprint, and successor principal. It must have an unexpired validity interval, no effective revocation timestamp, and a final appeal state (`FINAL`, `NO_APPEAL` or `APPEAL_EXHAUSTED`). The canonical `recovery_decision_signing_payload` binds every decision claim to the lookup scope. `RecoveryDecisionReplayRegistry.consume` requires a valid signature under a key explicitly bound to the receipt's trust-root reference before writing.
 
 The replay registry has unique tenant/decision and tenant/case indexes. Consumption requires the caller's active Mongo transaction; duplicate decisions or a second decision for the same case are rejected. The registry never starts, commits, aborts or retries a transaction.
 
