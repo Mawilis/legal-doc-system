@@ -5,11 +5,11 @@ on:
     branches: [main]
     paths:
       - "tools/eos/auth/tenant_owner_bootstrap.py"
-      - "tools/eos/auth/tenant_ownership_verifier.py"\n      - "tools/eos/auth/tenant_ownership_evidence_registry.py"
+      - "tools/eos/auth/tenant_ownership_verifier.py"\n      - "tools/eos/auth/tenant_ownership_evidence_registry.py"\n      - "tools/eos/auth/tenant_ownership_evidence_registry.py"
       - "tools/eos/api/tenant_router.py"
       - "tools/eos/api/legal_operations_router.py"
       - "tests/unit/test_tenant_owner_bootstrap.py"
-      - "tests/unit/test_tenant_ownership_verifier.py"\n      - "tests/unit/test_tenant_ownership_evidence_registry.py"\n      - "tests/integration/test_tenant_ownership_evidence_registry_real_mongo.py"
+      - "tests/unit/test_tenant_ownership_verifier.py"\n      - "tests/unit/test_tenant_ownership_evidence_registry.py"\n      - "tests/integration/test_tenant_ownership_evidence_registry_real_mongo.py"\n      - "tests/unit/test_tenant_ownership_evidence_registry.py"\n      - "tests/integration/test_tenant_ownership_evidence_registry_real_mongo.py"
       - "tests/unit/test_tenant_router_fail_closed.py"
       - "tests/unit/test_legal_practice_workspace_confidentiality_boundary.py"
       - "tests/integration/test_tenant_owner_bootstrap_real_mongo.py"
