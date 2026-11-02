@@ -228,10 +228,12 @@ class SheriffFfcEvidence:
         object.__setattr__(self, "valid_from", start)
         object.__setattr__(self, "valid_until", end)
         object.__setattr__(self, "observed_at", observed)
+        if observed < issued:
+            raise SheriffFfcEvidenceError("SHERIFF_FFC_OBSERVATION_CHRONOLOGY_INVALID")
 
         if basis is SheriffFfcValidityBasis.SECTION_32_2_CALENDAR_YEAR:
             year = self.certificate_year
-            if type(year) is not int or year < 1990:
+            if type(year) is not int or year < 1990 or year > 9998:
                 raise SheriffFfcEvidenceError("SHERIFF_FFC_CERTIFICATE_YEAR_REQUIRED")
             expected_end = datetime(year, 12, 31, 23, 59, 59, tzinfo=timezone.utc)
             if end != expected_end:
@@ -262,7 +264,7 @@ class SheriffFfcEvidence:
         if status is SheriffFfcObservedStatus.CANCELLED:
             if cancelled is None or cancel_ref is None or cancel_fp is None:
                 raise SheriffFfcEvidenceError("SHERIFF_FFC_CANCELLATION_EVIDENCE_REQUIRED")
-            if cancelled < issued:
+            if cancelled < issued or observed < cancelled:
                 raise SheriffFfcEvidenceError("SHERIFF_FFC_CANCELLATION_CHRONOLOGY_INVALID")
         elif any(item is not None for item in (cancelled, cancel_ref, cancel_fp)):
             raise SheriffFfcEvidenceError("SHERIFF_FFC_UNEXPECTED_CANCELLATION_EVIDENCE")
