@@ -1145,6 +1145,24 @@ def _http_error(error: BaseException) -> HTTPException:
         return HTTPException(status_code=status.HTTP_409_CONFLICT, detail="LEGAL_OPERATIONS_FIELD_EVIDENCE_CONFLICT")
     if code == "L8_6B_BINDING_CONFLICT":
         return HTTPException(status_code=status.HTTP_409_CONFLICT, detail="LEGAL_OPERATIONS_DEPUTY_BINDING_CONFLICT")
+    if code in {
+        "L8_SOA_APPOINTMENT_CONFLICT",
+        "L8_SOA_STALE_APPOINTMENT_REVISION",
+        "L8_SOA_PREDECESSOR_MISMATCH",
+        "L8_SOA_DIVERGENT_REPLAY",
+    }:
+        return HTTPException(status_code=status.HTTP_409_CONFLICT, detail="SHERIFF_APPOINTMENT_CONFLICT")
+    if code in {
+        "L8_SOA_SELF_VERIFICATION_FORBIDDEN",
+        "L8_SOA_PRINCIPAL_INACTIVE",
+        "L8_SOA_MEMBERSHIP_NOT_FOUND",
+        "L8_SOA_MEMBERSHIP_INACTIVE",
+        "L8_SOA_BUSINESS_ROLE_NOT_FOUND",
+        "L8_SOA_BUSINESS_ROLE_REQUIRED",
+        "L8_SOA_AUTHORIZATION_ROLE_NOT_FOUND",
+        "L8_SOA_AUTHORIZATION_ROLE_REQUIRED",
+    }:
+        return HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="SHERIFF_APPOINTMENT_AUTHORITY_REQUIRED")
     if code == "L8_8J_REVIEW_CONFLICT":
         return HTTPException(status_code=status.HTTP_409_CONFLICT, detail="LEGAL_CONFLICT_REVIEW_CONFLICT")
     if code in {
@@ -1181,6 +1199,9 @@ def _http_error(error: BaseException) -> HTTPException:
             "L8_8J_SCREENING_AUTHORITY_UNAVAILABLE",
             "L8_8J_AUTHORIZATION_EVIDENCE_UNAVAILABLE",
             "L8_8J_REVIEW_PERSISTENCE_UNAVAILABLE",
+            "L8_SOA_APPOINTMENT_HISTORY_UNAVAILABLE",
+            "L8_SOA_APPOINTMENT_PERSISTENCE_UNAVAILABLE",
+            "L8_SOA_APPOINTMENT_ACTIVE_TRANSACTION_REQUIRED",
             "LEGAL_NOTIFICATION_RECIPIENT_AUTHORITY_UNAVAILABLE",
         }
     ):
