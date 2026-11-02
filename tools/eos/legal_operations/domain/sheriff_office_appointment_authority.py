@@ -1,23 +1,23 @@
 """TITLE: WILSY OS Sheriff Office Appointment Evidence Authority
-VERSION: v1.0.0-L8-SHERIFF-OFFICE-APPOINTMENT-EVIDENCE
+VERSION: v1.1.0-L8-SHERIFF-OFFICE-SOURCE-EVIDENCE-BINDING
 ARTIFACT: tools/eos/legal_operations/domain/sheriff_office_appointment_authority.py
-AUTHORITY: Immutable recording of externally issued Sheriff appointment and current Fidelity Fund Certificate evidence.
-EPITOME: Bind one authenticated WILSY principal to one canonical SheriffOffice through separately fingerprinted Ministerial appointment, office/jurisdiction scope, and Board Fidelity Fund Certificate evidence.
+AUTHORITY: Immutable WILSY office-scope binding linked to a separately persisted statutory source observation and current credential evidence.
+EPITOME: Bind one authenticated WILSY principal to one canonical SheriffOffice through an exact source-evidence registry revision, office/jurisdiction scope, Board Fidelity Fund Certificate, and current professional indemnity evidence.
 ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/tools/eos/legal_operations/domain/sheriff_office_appointment_authority.py
 COLLABORATION / OWNERSHIP: Legal Operations owns evidence semantics; IAM owns authenticated principal and tenant authorization; P1 owns canonical SheriffOffice/District identity; the Minister and South African Board for Sheriffs remain external issuing authorities.
 CLASSIFICATION: EMERGING CANONICAL
 CERTIFICATION / UPDATE DATE: 2026-11-02
-CHANGELOG: v1.0.0 establishes immutable, effective-dated evidence facts for permanent and acting Sheriff appointments; no appointment is issued by WILSY.
+CHANGELOG: v1.1.0 links every office binding to the exact immutable SheriffAppointmentSourceEvidence revision and registry fingerprint; the source-observation registry remains non-authorizing.
 COMPLIANCE: Sheriffs Act 90 of 1986, sections 2, 3, 5 and 30-34; POPIA section 19; GDPR Article 32; SOC 2 CC7.2; ISO 27001.
 SECURITY / PRIVACY POSTURE: Opaque identifiers and SHA3-512 evidence fingerprints only; source documents remain outside this value object; no credentials or document contents are stored.
 TENANT BOUNDARY: Exact non-pseudo tenant identity; every appointment binds one principal, one canonical office, and one canonical district.
-AUTHORITY BOUNDARY: Records externally issued appointment/scope/FFC evidence and verifier attestation only; does not appoint a Sheriff, issue a Fidelity Fund Certificate, authenticate a source document, grant IAM, or independently authorize a request.
+AUTHORITY BOUNDARY: Records a WILSY operational office binding to a separately observed statutory source record and current credentials; does not determine statutory appointment validity, authenticate an external issuer, issue a certificate, grant IAM, or independently authorize a request.
 CURRENTNESS: Appointment term AND jurisdiction-matched FFC validity AND professional indemnity insurance validity AND verification time must all be current.
 TRANSACTION OWNERSHIP: NONE; persistence and transaction lifecycle belong to the registry/orchestrator.
 FINANCIAL EXECUTION AUTHORITY: Kennel EOS exclusively.
 FAIL-CLOSED DECLARATION: Missing, malformed, stale, ambiguous, mismatched, or unverifiable evidence rejects.
 
-The source evidence is expected to identify the Ministerial appointment under
+The linked source-evidence registry observation must identify the Ministerial appointment under
 section 2 (or acting appointment under section 5), the office/court/area scope
 under section 2 or section 3, and the current Fidelity Fund Certificate
 issued by the South African Board for Sheriffs. Current professional indemnity
@@ -39,8 +39,8 @@ import json
 import re
 from typing import Final, Mapping, NoReturn, cast
 
-VERSION: Final[str] = "v1.0.0-L8-SHERIFF-OFFICE-APPOINTMENT-EVIDENCE"
-SCHEMA: Final[str] = "WILSY-SHERIFF-OFFICE-APPOINTMENT-EVIDENCE/V1"
+VERSION: Final[str] = "v1.1.0-L8-SHERIFF-OFFICE-SOURCE-EVIDENCE-BINDING"
+SCHEMA: Final[str] = "WILSY-SHERIFF-OFFICE-APPOINTMENT-EVIDENCE/V2"
 _APPOINTMENT_KINDS: Final[frozenset[str]] = frozenset({"PERMANENT", "ACTING"})
 _FORBIDDEN_TENANTS: Final[frozenset[str]] = frozenset({"default", "global", "root", "*"})
 _HEX_128: Final[re.Pattern[str]] = re.compile(r"^[0-9a-f]{128}$")
@@ -97,12 +97,13 @@ def _fingerprint(name: str, value: object) -> str:
 
 @dataclass(frozen=True, slots=True)
 class SheriffOfficeAppointmentAuthority:
-    """Immutable evidence that one principal is appointed for one Sheriff office.
+    """Immutable WILSY office-scope binding linked to an exact source observation.
 
-    This object records source instruments and a verifier attestation. It does
-    not issue an appointment, validate a certificate with the Board, authenticate
-    the source files, or grant access. Callers must independently establish
-    current tenant IAM and canonical office/district identity in the same
+    This object records the exact source-evidence registry revision plus current
+    FFC/insurance evidence and a verifier attestation. It does not determine the
+    legal validity of a Ministerial appointment, authenticate external issuers,
+    issue a certificate, or grant access. Callers must independently establish
+    current tenant IAM and canonical office/District identity in the same
     transaction as any authorization decision.
     """
 
@@ -112,6 +113,10 @@ class SheriffOfficeAppointmentAuthority:
     principal_id: str
     sheriff_office_id: str
     district_id: str
+    source_evidence_id: str
+    source_evidence_revision: int
+    source_evidence_fingerprint: str
+    source_evidence_registry_fingerprint: str
     appointment_kind: str
     appointment_instrument_reference: str
     appointment_instrument_fingerprint: str
@@ -142,6 +147,16 @@ class SheriffOfficeAppointmentAuthority:
         principal = _text("principal_id", self.principal_id)
         office = _text("sheriff_office_id", self.sheriff_office_id)
         district = _text("district_id", self.district_id)
+        source_evidence_id = _text("source_evidence_id", self.source_evidence_id)
+        source_evidence_revision = _revision(self.source_evidence_revision)
+        source_evidence_fingerprint = _fingerprint(
+            "source_evidence_fingerprint",
+            self.source_evidence_fingerprint,
+        )
+        source_evidence_registry_fingerprint = _fingerprint(
+            "source_evidence_registry_fingerprint",
+            self.source_evidence_registry_fingerprint,
+        )
         kind = _text("appointment_kind", self.appointment_kind, 32)
         if kind not in _APPOINTMENT_KINDS:
             _fail("SHERIFF_APPOINTMENT_KIND_UNSUPPORTED")
@@ -245,6 +260,10 @@ class SheriffOfficeAppointmentAuthority:
         object.__setattr__(self, "principal_id", principal)
         object.__setattr__(self, "sheriff_office_id", office)
         object.__setattr__(self, "district_id", district)
+        object.__setattr__(self, "source_evidence_id", source_evidence_id)
+        object.__setattr__(self, "source_evidence_revision", source_evidence_revision)
+        object.__setattr__(self, "source_evidence_fingerprint", source_evidence_fingerprint)
+        object.__setattr__(self, "source_evidence_registry_fingerprint", source_evidence_registry_fingerprint)
         object.__setattr__(self, "appointment_kind", kind)
         object.__setattr__(self, "appointment_instrument_reference", appointment_reference)
         object.__setattr__(self, "appointment_instrument_fingerprint", appointment_fingerprint)
@@ -283,6 +302,10 @@ class SheriffOfficeAppointmentAuthority:
             "principal_id": self.principal_id,
             "sheriff_office_id": self.sheriff_office_id,
             "district_id": self.district_id,
+            "source_evidence_id": self.source_evidence_id,
+            "source_evidence_revision": self.source_evidence_revision,
+            "source_evidence_fingerprint": self.source_evidence_fingerprint,
+            "source_evidence_registry_fingerprint": self.source_evidence_registry_fingerprint,
             "appointment_kind": self.appointment_kind,
             "appointment_instrument_reference": self.appointment_instrument_reference,
             "appointment_instrument_fingerprint": self.appointment_instrument_fingerprint,
