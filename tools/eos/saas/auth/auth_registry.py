@@ -395,6 +395,7 @@ class AuthRegistry:
         permissions: List[str],
         *,
         session: Any = None,
+        session_reference: str | None = None,
     ) -> str:
         """Issue full ACCESS authority bound to fresh durable credential state.
 
@@ -410,6 +411,10 @@ class AuthRegistry:
         revision = self.get_credential_revision(
             claims["tenant_id"], claims["identity_id"], session=session
         )
+        if session_reference is not None:
+            if not isinstance(session_reference, str) or not session_reference.startswith("WILSYSESSION-") or len(session_reference) > 128:
+                raise AuthRegistryError("AUTH_SESSION_REFERENCE_INVALID")
+            claims["session_reference"] = session_reference
         return create_access_token(
             claims,
             expires_in_seconds=JWT_EXPIRY_HOURS * 60 * 60,
@@ -608,14 +613,15 @@ class AuthRegistry:
         canonical = self._require_canonical_tenant(user.tenantId)
         canonical_tenant_id = canonical.tenant_id
         self._require_active_principal_authority(user.id)
+        session_reference = f"WILSYSESSION-{uuid.uuid4()}"
         token = self.generate_access_jwt(
             user.id,
             canonical_tenant_id,
             user.role,
             user.permissions,
             session=session,
+            session_reference=session_reference,
         )
-        session_reference = f"WILSYSESSION-{uuid.uuid4()}"
         created_session = Session(
             userId=user.id,
             token=token,
