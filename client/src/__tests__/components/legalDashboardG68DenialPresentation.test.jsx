@@ -17,7 +17,7 @@ const { getLegalPracticeWorkspace, getLegalConflictScreenings } = vi.hoisted(() 
   getLegalConflictScreenings: vi.fn(),
 }));
 
-vi.mock('../../src/services/legalOperationsService.js', async (importOriginal) => {
+vi.mock('../../services/legalOperationsService.js', async (importOriginal) => {
   const actual = await importOriginal();
   return {
     ...actual,
@@ -26,7 +26,7 @@ vi.mock('../../src/services/legalOperationsService.js', async (importOriginal) =
   };
 });
 
-vi.mock('../../src/contexts/authContext.jsx', () => ({
+vi.mock('../../contexts/authContext.jsx', () => ({
   useAuth: () => ({
     user: {
       id: 'SYNTHETIC-LEGAL-PARTNER',
@@ -48,7 +48,7 @@ vi.mock('../../src/contexts/authContext.jsx', () => ({
   }),
 }));
 
-vi.mock('../../src/contexts/tenantContext.jsx', () => ({
+vi.mock('../../contexts/tenantContext.jsx', () => ({
   useTenants: () => ({
     activeTenant: {
       tenantId: 'TENANT-G68-BROWSER',
@@ -58,19 +58,19 @@ vi.mock('../../src/contexts/tenantContext.jsx', () => ({
   }),
 }));
 
-vi.mock('../../src/hooks/useAuthenticatedTenantBrandingAsset.js', () => ({
+vi.mock('../../hooks/useAuthenticatedTenantBrandingAsset.js', () => ({
   useAuthenticatedTenantBrandingAsset: () => ({ assetUrl: null, loading: false, error: null }),
 }));
 
-vi.mock('../../src/components/os/WilsyOSDashboardChrome.jsx', () => ({
+vi.mock('../../components/os/WilsyOSDashboardChrome.jsx', () => ({
   default: ({ children }) => <>{children}</>,
 }));
 
-vi.mock('../../src/components/account/WilsyAccountCommandCenter.jsx', () => ({
+vi.mock('../../components/account/WilsyAccountCommandCenter.jsx', () => ({
   default: () => null,
 }));
 
-import LegalDashboard from '../../src/components/industry/LegalDashboard.jsx';
+import LegalDashboard from '../../components/industry/LegalDashboard.jsx';
 
 describe('Legal Practice dashboard G68 denial presentation', () => {
   beforeEach(() => {
