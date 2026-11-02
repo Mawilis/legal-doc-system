@@ -226,6 +226,16 @@ def test_consumed_device_provenance_can_be_reloaded_for_delayed_signed_sync():
     assert restored.fingerprint == proof.fingerprint
     assert restored.public_key_spki == proof.public_key_spki
     assert restored.challenge_id == challenge.challenge_id
+    restored_after_reauthentication = registry.get_consumed_provenance(
+        tenant_id=TENANT,
+        challenge_id=challenge.challenge_id,
+        principal_id=PRINCIPAL,
+        session_reference="session-2",
+        at=NOW + timedelta(seconds=3),
+        session=session,
+    )
+    assert restored_after_reauthentication.fingerprint == proof.fingerprint
+    assert auth.calls[-1][2] == "session-2"
     auth.current = False
     with pytest.raises(DeputyDeviceProvenanceRegistryConflictError):
         registry.get_consumed_provenance(
