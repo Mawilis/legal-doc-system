@@ -103,7 +103,13 @@ jobs:
             tools/eos/api/legal_operations_command_router.py \
             tests/unit/test_authentication_principal_authority.py \
             tests/unit/test_auth_registry_tenant_bearing_refresh.py \
-            tests/integration/test_deputy_device_provenance_http.py
+            tests/integration/test_deputy_device_provenance_http.py \
+            tools/eos/legal_operations/domain/process_service_location_evidence_authority.py \
+            tools/eos/legal_operations/registry/process_service_location_evidence_registry.py \
+            tools/eos/legal_operations/orchestration/process_service_location_evidence_orchestrator.py \
+            tools/eos/api/legal_operations_router.py \
+            tests/unit/test_process_service_location_evidence_authority.py \
+            tests/unit/test_process_service_location_evidence_registry.py
 
       - name: Type-check provenance contracts and certificates
         run: |
@@ -122,7 +128,13 @@ jobs:
             tools/eos/api/legal_operations_command_router.py \
             tests/unit/test_authentication_principal_authority.py \
             tests/unit/test_auth_registry_tenant_bearing_refresh.py \
-            tests/integration/test_deputy_device_provenance_http.py
+            tests/integration/test_deputy_device_provenance_http.py \
+            tools/eos/legal_operations/domain/process_service_location_evidence_authority.py \
+            tools/eos/legal_operations/registry/process_service_location_evidence_registry.py \
+            tools/eos/legal_operations/orchestration/process_service_location_evidence_orchestrator.py \
+            tools/eos/api/legal_operations_router.py \
+            tests/unit/test_process_service_location_evidence_authority.py \
+            tests/unit/test_process_service_location_evidence_registry.py
 
       - name: Run authority, registry, binding and Mongo transaction certificates
         run: |
@@ -133,7 +145,9 @@ jobs:
             tests/integration/test_deputy_device_provenance_registry_mongo.py \
             tests/unit/test_authentication_principal_authority.py \
             tests/unit/test_auth_registry_tenant_bearing_refresh.py \
-            tests/integration/test_deputy_device_provenance_http.py
+            tests/integration/test_deputy_device_provenance_http.py \
+            tests/unit/test_process_service_location_evidence_authority.py \
+            tests/unit/test_process_service_location_evidence_registry.py
 
       - name: Stop isolated MongoDB replica set
         if: always()
