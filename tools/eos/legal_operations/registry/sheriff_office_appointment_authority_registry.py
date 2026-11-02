@@ -393,14 +393,9 @@ class SheriffOfficeAppointmentAuthorityRegistry:
         try:
             self._collection.insert_one(payload, session=tx)
         except DuplicateKeyError as error:
-            existing = self.get_revision(
-                value.tenant_id,
-                value.appointment_id,
-                value.revision,
-                session=tx,
-            )
-            if self._equal(existing, value):
-                return existing
+            # A duplicate-key write aborts the active Mongo transaction. Do not
+            # attempt a read on that failed session; the caller may retry in a
+            # fresh transaction to resolve an exact concurrent replay.
             raise SheriffOfficeAppointmentConflictError(
                 "SHERIFF_APPOINTMENT_IDENTITY_CONFLICT"
             ) from error
