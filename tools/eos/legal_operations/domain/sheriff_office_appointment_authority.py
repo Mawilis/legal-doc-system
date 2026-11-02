@@ -12,7 +12,7 @@ COMPLIANCE: Sheriffs Act 90 of 1986, sections 2, 3, 5 and 30-34; POPIA section 1
 SECURITY / PRIVACY POSTURE: Opaque identifiers and SHA3-512 evidence fingerprints only; source documents remain outside this value object; no credentials or document contents are stored.
 TENANT BOUNDARY: Exact non-pseudo tenant identity; every appointment binds one principal, one canonical office, and one canonical district.
 AUTHORITY BOUNDARY: Records externally issued appointment/scope/FFC evidence and verifier attestation only; does not appoint a Sheriff, issue a Fidelity Fund Certificate, authenticate a source document, grant IAM, or independently authorize a request.
-CURRENTNESS: Appointment term AND FFC validity AND verification time must all be current.
+CURRENTNESS: Appointment term AND jurisdiction-matched FFC validity AND professional indemnity insurance validity AND verification time must all be current.
 TRANSACTION OWNERSHIP: NONE; persistence and transaction lifecycle belong to the registry/orchestrator.
 FINANCIAL EXECUTION AUTHORITY: Kennel EOS exclusively.
 FAIL-CLOSED DECLARATION: Missing, malformed, stale, ambiguous, mismatched, or unverifiable evidence rejects.
@@ -117,6 +117,11 @@ class SheriffOfficeAppointmentAuthority:
     office_scope_instrument_fingerprint: str
     fidelity_fund_certificate_reference: str
     fidelity_fund_certificate_fingerprint: str
+    certificate_jurisdiction_reference: str
+    professional_indemnity_insurance_reference: str
+    professional_indemnity_insurance_fingerprint: str
+    professional_indemnity_insurance_valid_from: datetime
+    professional_indemnity_insurance_valid_until: datetime
     appointment_effective_from: datetime
     appointment_effective_until: datetime | None
     certificate_valid_from: datetime
@@ -166,6 +171,20 @@ class SheriffOfficeAppointmentAuthority:
             "fidelity_fund_certificate_fingerprint",
             self.fidelity_fund_certificate_fingerprint,
         )
+        certificate_jurisdiction = _text(
+            "certificate_jurisdiction_reference",
+            self.certificate_jurisdiction_reference,
+            240,
+        )
+        insurance_reference = _text(
+            "professional_indemnity_insurance_reference",
+            self.professional_indemnity_insurance_reference,
+            500,
+        )
+        insurance_fingerprint = _fingerprint(
+            "professional_indemnity_insurance_fingerprint",
+            self.professional_indemnity_insurance_fingerprint,
+        )
 
         appointment_from = _moment(
             "appointment_effective_from",
@@ -191,8 +210,20 @@ class SheriffOfficeAppointmentAuthority:
         )
         if certificate_until <= certificate_from:
             _fail("SHERIFF_APPOINTMENT_CERTIFICATE_WINDOW_INVALID")
+        insurance_from = _moment(
+            "professional_indemnity_insurance_valid_from",
+            self.professional_indemnity_insurance_valid_from,
+        )
+        insurance_until = _moment(
+            "professional_indemnity_insurance_valid_until",
+            self.professional_indemnity_insurance_valid_until,
+        )
+        if insurance_until <= insurance_from:
+            _fail("SHERIFF_APPOINTMENT_INSURANCE_WINDOW_INVALID")
 
         verifier = _text("verified_by_principal_id", self.verified_by_principal_id)
+        if verifier == principal:
+            _fail("SHERIFF_APPOINTMENT_SELF_VERIFICATION_FORBIDDEN")
         verified_at = _moment("verified_at", self.verified_at)
         predecessor = (
             None
@@ -219,6 +250,11 @@ class SheriffOfficeAppointmentAuthority:
         object.__setattr__(self, "office_scope_instrument_fingerprint", scope_fingerprint)
         object.__setattr__(self, "fidelity_fund_certificate_reference", certificate_reference)
         object.__setattr__(self, "fidelity_fund_certificate_fingerprint", certificate_fingerprint)
+        object.__setattr__(self, "certificate_jurisdiction_reference", certificate_jurisdiction)
+        object.__setattr__(self, "professional_indemnity_insurance_reference", insurance_reference)
+        object.__setattr__(self, "professional_indemnity_insurance_fingerprint", insurance_fingerprint)
+        object.__setattr__(self, "professional_indemnity_insurance_valid_from", insurance_from)
+        object.__setattr__(self, "professional_indemnity_insurance_valid_until", insurance_until)
         object.__setattr__(self, "appointment_effective_from", appointment_from)
         object.__setattr__(self, "appointment_effective_until", appointment_until)
         object.__setattr__(self, "certificate_valid_from", certificate_from)
@@ -252,6 +288,11 @@ class SheriffOfficeAppointmentAuthority:
             "office_scope_instrument_fingerprint": self.office_scope_instrument_fingerprint,
             "fidelity_fund_certificate_reference": self.fidelity_fund_certificate_reference,
             "fidelity_fund_certificate_fingerprint": self.fidelity_fund_certificate_fingerprint,
+            "certificate_jurisdiction_reference": self.certificate_jurisdiction_reference,
+            "professional_indemnity_insurance_reference": self.professional_indemnity_insurance_reference,
+            "professional_indemnity_insurance_fingerprint": self.professional_indemnity_insurance_fingerprint,
+            "professional_indemnity_insurance_valid_from": self.professional_indemnity_insurance_valid_from.isoformat(),
+            "professional_indemnity_insurance_valid_until": self.professional_indemnity_insurance_valid_until.isoformat(),
             "appointment_effective_from": self.appointment_effective_from.isoformat(),
             "appointment_effective_until": (
                 None
@@ -287,7 +328,17 @@ class SheriffOfficeAppointmentAuthority:
         certificate_current = (
             self.certificate_valid_from <= moment < self.certificate_valid_until
         )
-        return appointment_current and certificate_current and self.verified_at <= moment
+        insurance_current = (
+            self.professional_indemnity_insurance_valid_from
+            <= moment
+            < self.professional_indemnity_insurance_valid_until
+        )
+        return (
+            appointment_current
+            and certificate_current
+            and insurance_current
+            and self.verified_at <= moment
+        )
 
     def to_dict(self) -> dict[str, object]:
         """Serialize exact immutable appointment evidence."""
@@ -315,6 +366,11 @@ class SheriffOfficeAppointmentAuthority:
             "office_scope_instrument_fingerprint",
             "fidelity_fund_certificate_reference",
             "fidelity_fund_certificate_fingerprint",
+            "certificate_jurisdiction_reference",
+            "professional_indemnity_insurance_reference",
+            "professional_indemnity_insurance_fingerprint",
+            "professional_indemnity_insurance_valid_from",
+            "professional_indemnity_insurance_valid_until",
             "appointment_effective_from",
             "appointment_effective_until",
             "certificate_valid_from",
@@ -353,6 +409,11 @@ class SheriffOfficeAppointmentAuthority:
             office_scope_instrument_fingerprint=cast(str, payload["office_scope_instrument_fingerprint"]),
             fidelity_fund_certificate_reference=cast(str, payload["fidelity_fund_certificate_reference"]),
             fidelity_fund_certificate_fingerprint=cast(str, payload["fidelity_fund_certificate_fingerprint"]),
+            certificate_jurisdiction_reference=cast(str, payload["certificate_jurisdiction_reference"]),
+            professional_indemnity_insurance_reference=cast(str, payload["professional_indemnity_insurance_reference"]),
+            professional_indemnity_insurance_fingerprint=cast(str, payload["professional_indemnity_insurance_fingerprint"]),
+            professional_indemnity_insurance_valid_from=cast(datetime, parse_time("professional_indemnity_insurance_valid_from", payload["professional_indemnity_insurance_valid_from"])),
+            professional_indemnity_insurance_valid_until=cast(datetime, parse_time("professional_indemnity_insurance_valid_until", payload["professional_indemnity_insurance_valid_until"])),
             appointment_effective_from=cast(datetime, parse_time("appointment_effective_from", payload["appointment_effective_from"])),
             appointment_effective_until=cast(datetime | None, parse_time("appointment_effective_until", payload["appointment_effective_until"], True)),
             certificate_valid_from=cast(datetime, parse_time("certificate_valid_from", payload["certificate_valid_from"])),
