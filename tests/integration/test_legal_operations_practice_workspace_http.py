@@ -93,6 +93,7 @@ def _context(
         email="operator@example.test",
         auth_method="TEST",
         status=PrincipalStatus.ACTIVE,
+        session_reference=None,
     )
     decision = TenantAuthorizationDecision(
         authorized=True,
