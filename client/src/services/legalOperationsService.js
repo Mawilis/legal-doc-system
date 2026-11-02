@@ -3208,6 +3208,7 @@ export async function revokeDeputyLocationPermissionGrant({
   ) {
     throw new Error('DEPUTY_LOCATION_REVOCATION_RESPONSE_INVALID');
   }
+  await deleteDeputyLocationStore(DEPUTY_LOCATION_GRANT_STORE, attemptId);
   return Object.freeze(value);
 }
 
