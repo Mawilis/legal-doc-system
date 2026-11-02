@@ -11,6 +11,8 @@ on:
       - "tools/eos/legal_operations/registry/sheriff_office_appointment_authority_registry.py"
       - "tests/unit/test_sheriff_office_appointment_authority_registry.py"
       - "tests/integration/test_sheriff_office_appointment_authority_registry_real_mongo.py"
+      - "tools/eos/legal_operations/orchestration/sheriff_office_appointment_authority_orchestrator.py"
+      - "tests/unit/test_sheriff_office_appointment_authority_orchestrator.py"
       - ".github/workflows/sheriff-office-appointment-evidence-certification.yml"
   workflow_dispatch:
 
@@ -101,6 +103,8 @@ jobs:
             tools/eos/legal_operations/registry/sheriff_office_appointment_authority_registry.py \
             tests/unit/test_sheriff_office_appointment_authority_registry.py \
             tests/integration/test_sheriff_office_appointment_authority_registry_real_mongo.py \
+            tools/eos/legal_operations/orchestration/sheriff_office_appointment_authority_orchestrator.py \
+            tests/unit/test_sheriff_office_appointment_authority_orchestrator.py \
             tests/integration/test_sheriff_office_appointment_authority_registry_real_mongo.py
 
       - name: Type-check appointment evidence domain and certificate
@@ -111,14 +115,17 @@ jobs:
             tests/unit/test_sheriff_office_appointment_authority.py \
             tools/eos/legal_operations/registry/sheriff_office_appointment_authority_registry.py \
             tests/unit/test_sheriff_office_appointment_authority_registry.py \
-            tests/integration/test_sheriff_office_appointment_authority_registry_real_mongo.py
+            tests/integration/test_sheriff_office_appointment_authority_registry_real_mongo.py \
+            tools/eos/legal_operations/orchestration/sheriff_office_appointment_authority_orchestrator.py \
+            tests/unit/test_sheriff_office_appointment_authority_orchestrator.py
 
       - name: Run appointment evidence unit and real-Mongo certificates
         run: |
           python -m pytest -q \
             tests/unit/test_sheriff_office_appointment_authority.py \
             tests/unit/test_sheriff_office_appointment_authority_registry.py \
-            tests/integration/test_sheriff_office_appointment_authority_registry_real_mongo.py
+            tests/integration/test_sheriff_office_appointment_authority_registry_real_mongo.py \
+            tests/unit/test_sheriff_office_appointment_authority_orchestrator.py
 
       - name: Stop isolated MongoDB replica set
         if: always()
