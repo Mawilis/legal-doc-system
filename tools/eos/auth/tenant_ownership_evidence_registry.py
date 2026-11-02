@@ -183,6 +183,12 @@ def _digest(payload: Mapping[str, object]) -> str:
     return sha3_512(canonical.encode("ascii")).hexdigest()
 
 
+def _aware(name: str, value: object) -> datetime:
+    if not isinstance(value, datetime) or value.tzinfo is None or value.utcoffset() is None:
+        raise TenantOwnershipEvidencePersistenceError(f"{name.upper()}_INVALID")
+    return value
+
+
 def _event(
     evidence: VerifiedTenantOwnershipEvidence,
     *,
@@ -298,6 +304,28 @@ def _event(
         values["recovery_decision_reference"] = _identifier("recovery_decision_reference", recovery.decision_reference)
         values["recovery_decision_fingerprint"] = _identifier("recovery_decision_fingerprint", recovery.decision_fingerprint)
         values["recovery_independent_of_current_owner"] = True
+    evaluated_at = _aware("evaluated_at", values["evaluated_at"])
+    entity_valid_at = _aware("entity_valid_at", entity.valid_at)
+    issuer_valid_at = _aware("issuer_valid_at", issuer.valid_at)
+    principal_valid_at = _aware("principal_valid_at", principal.valid_at)
+    mandate_from = _aware("mandate_effective_from", mandate.effective_from)
+    control_from = _aware("ownership_effective_from", control.effective_from)
+    mandate_until = mandate.effective_until
+    control_until = control.effective_until
+    if mandate_until is not None:
+        mandate_until = _aware("mandate_effective_until", mandate_until)
+    if control_until is not None:
+        control_until = _aware("ownership_effective_until", control_until)
+    if (
+        entity_valid_at > evaluated_at
+        or issuer_valid_at > evaluated_at
+        or principal_valid_at > evaluated_at
+        or mandate_from > evaluated_at
+        or control_from > evaluated_at
+        or (mandate_until is not None and evaluated_at >= mandate_until)
+        or (control_until is not None and evaluated_at >= control_until)
+    ):
+        raise TenantOwnershipEvidencePersistenceError("OWNERSHIP_EVIDENCE_NOT_CURRENT_AT_EVALUATION")
     if (
         entity.tenant_id != values["tenant_id"]
         or entity.legal_entity_reference != values["legal_entity_reference"]
@@ -325,7 +353,14 @@ def _hydrate_event(raw: object) -> TenantOwnershipEvidenceEvent:
     body.pop("_id", None)
     try:
         body["operation"] = TenantOwnershipOperation(body["operation"])
-        return TenantOwnershipEvidenceEvent(**body)  # type: ignore[arg-type]
+        event = TenantOwnershipEvidenceEvent(**body)  # type: ignore[arg-type]
+        payload = event.to_document()
+        payload.pop("evidence_id", None)
+        payload.pop("command_id", None)
+        payload.pop("revision", None)
+        if _digest(payload) != event.evidence_id:
+            raise ValueError("evidence digest mismatch")
+        return event
     except (KeyError, TypeError, ValueError) as error:
         raise TenantOwnershipEvidencePersistedRecordInvalidError("PERSISTED_EVENT_INVALID") from error
 
@@ -402,18 +437,34 @@ class TenantOwnershipEvidenceRegistry:
                     raise TenantOwnershipEvidenceConflictError("OWNERSHIP_ALREADY_EXISTS")
                 if event.operation is not TenantOwnershipOperation.TENANT_GENESIS:
                     raise TenantOwnershipEvidenceConflictError("GENESIS_EVIDENCE_REQUIRED")
+                prior = self._history.find_one({"tenant_id": tenant}, session=session)
+                if prior is not None:
+                    raise TenantOwnershipEvidenceConflictError("GENESIS_HISTORY_ALREADY_EXISTS")
             else:
-                if current is None or current.get("revision") != expected_revision:
-                    raise TenantOwnershipEvidenceConflictError("OWNERSHIP_REVISION_CONFLICT")
-                if current.get("legal_entity_reference") != event.legal_entity_reference:
-                    raise TenantOwnershipEvidenceConflictError("LEGAL_ENTITY_SCOPE_CONFLICT")
-                if current.get("principal_id") == event.principal_id:
-                    raise TenantOwnershipEvidenceConflictError("SUCCESSOR_MUST_DIFFER")
-                if (
-                    event.operation is TenantOwnershipOperation.OWNERSHIP_TRANSFER
-                    and current.get("principal_id") != event.acceptance_current_owner_principal_id
-                ):
-                    raise TenantOwnershipEvidenceConflictError("TRANSFER_PROPOSER_NOT_CURRENT_OWNER")
+                if current is None:
+                    if event.operation is not TenantOwnershipOperation.GOVERNED_RECOVERY:
+                        raise TenantOwnershipEvidenceConflictError("OWNERSHIP_REVISION_CONFLICT")
+                    latest = self._history.find_one(
+                        {"tenant_id": tenant},
+                        sort=[("revision", -1)],
+                        session=session,
+                    )
+                    if latest is None or latest.get("revision") != expected_revision:
+                        raise TenantOwnershipEvidenceConflictError("RECOVERY_HISTORY_REVISION_CONFLICT")
+                    if latest.get("legal_entity_reference") != event.legal_entity_reference:
+                        raise TenantOwnershipEvidenceConflictError("LEGAL_ENTITY_SCOPE_CONFLICT")
+                else:
+                    if current.get("revision") != expected_revision:
+                        raise TenantOwnershipEvidenceConflictError("OWNERSHIP_REVISION_CONFLICT")
+                    if current.get("legal_entity_reference") != event.legal_entity_reference:
+                        raise TenantOwnershipEvidenceConflictError("LEGAL_ENTITY_SCOPE_CONFLICT")
+                    if current.get("principal_id") == event.principal_id:
+                        raise TenantOwnershipEvidenceConflictError("SUCCESSOR_MUST_DIFFER")
+                    if (
+                        event.operation is TenantOwnershipOperation.OWNERSHIP_TRANSFER
+                        and current.get("principal_id") != event.acceptance_current_owner_principal_id
+                    ):
+                        raise TenantOwnershipEvidenceConflictError("TRANSFER_PROPOSER_NOT_CURRENT_OWNER")
                 if (
                     event.operation is TenantOwnershipOperation.GOVERNED_RECOVERY
                     and event.recovery_independent_of_current_owner is not True
@@ -429,7 +480,7 @@ class TenantOwnershipEvidenceRegistry:
                 "revision": event.revision,
                 "evidence_id": event.evidence_id,
             }
-            if expected_revision == 0:
+            if expected_revision == 0 or current is None:
                 self._current.insert_one(pointer, session=session)
             else:
                 result = self._current.replace_one(
