@@ -678,15 +678,20 @@ def _location_attempt_sources(
     current_evidence_identity: str,
     database: Any,
     session: Any,
+    *,
+    allow_terminal: bool = False,
 ) -> tuple[ServiceAttempt, Any, Any]:
-    """Resolve one current attempt and its exact P4 allocation sources."""
+    """Resolve one exact P2 attempt and its P4 allocation sources."""
     lifecycle = _collection(database, LIFECYCLE_COLLECTION)
     current = _source(
         lifecycle, context.tenant_id, current_evidence_identity, ServiceAttempt, session
     )
     if (
         current.attempt_id != attempt_id
-        or current.state not in {ServiceAttemptState.ALLOCATED, ServiceAttemptState.ATTEMPTED}
+        or (
+            not allow_terminal
+            and current.state not in {ServiceAttemptState.ALLOCATED, ServiceAttemptState.ATTEMPTED}
+        )
     ):
         raise CommandError("LEGAL_OPERATION_NOT_FOUND")
     _enforce_deputy_attempt_scope(context, current, database, session, required=True)
