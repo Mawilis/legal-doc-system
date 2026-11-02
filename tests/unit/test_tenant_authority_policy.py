@@ -130,7 +130,6 @@ def test_matrix_boundaries() -> None:
     assert tenant_role_operation_eligibility("tenant_owner", "role_grant") == DENY
     assert tenant_role_operation_eligibility("tenant_admin", "lifecycle_archive") == DENY
     assert tenant_role_operation_eligibility("tenant_owner", "lifecycle_create") == DENY
-    assert tenant_role_operation_eligibility("tenant_owner", "lifecycle_create") == DENY
     assert normalize_tenant_business_role("SUPER_ADMIN") is None
     assert normalize_tenant_business_role("AUDITOR") is None
     assert tenant_role_operation_eligibility("unknown", "profile_read") == DENY
