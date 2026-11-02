@@ -719,6 +719,9 @@ class DeputyDeviceProvenanceRegistry:
         *,
         tenant_id: str,
         challenge_id: str,
+        principal_id: str,
+        session_reference: str,
+        at: datetime,
         session: object,
     ) -> DeputyDeviceProvenance:
         """Load an already-consumed challenge proof for signed offline event sync."""
@@ -726,7 +729,7 @@ class DeputyDeviceProvenanceRegistry:
         tenant = _tenant(tenant_id)
         identity = _identifier("challenge_id", challenge_id)
         try:
-            row = self.collection.find_one(
+            row = self._collection.find_one(
                 {"tenant_id": tenant, "challenge_id": identity},
                 session=tx,
             )
@@ -756,11 +759,20 @@ class DeputyDeviceProvenanceRegistry:
             or provenance.session_reference != challenge.session_reference
             or provenance.device_id != challenge.device_id
             or provenance.challenge_id != challenge.challenge_id
+            or provenance.principal_id != _identifier("principal_id", principal_id)
+            or provenance.session_reference != _identifier("session_reference", session_reference)
         ):
             _raise(
                 DeputyDeviceProvenanceRegistryPersistedRecordInvalidError,
                 "L8_6H_PROVENANCE_SCOPE_MISMATCH",
             )
+        self._require_current_session(
+            tenant_id=tenant,
+            principal_id=provenance.principal_id,
+            session_reference=provenance.session_reference,
+            at=_utc("at", at),
+            session=tx,
+        )
         return provenance
 
     def verify_and_consume(
