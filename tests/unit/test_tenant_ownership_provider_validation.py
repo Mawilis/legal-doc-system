@@ -127,6 +127,7 @@ def test_recovery_decision_requires_exact_case_successor_and_finality() -> None:
         (replace(receipt(), recovery_case_fingerprint="9" * 64), "RECOVERY_DECISION_SCOPE_MISMATCH"),
         (replace(receipt(), appeal_status="PENDING"), "RECOVERY_DECISION_NOT_FINAL"),
         (replace(receipt(), valid_until=NOW), "RECOVERY_DECISION_NOT_CURRENT"),
+        (replace(receipt(), revoked_at=NOW - timedelta(seconds=1)), "RECOVERY_DECISION_REVOKED"),
     ]
     for changed, code in variants:
         with pytest.raises(OwnershipProviderEvidenceError) as caught:
