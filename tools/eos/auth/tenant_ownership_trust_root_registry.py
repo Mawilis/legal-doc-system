@@ -222,11 +222,7 @@ class GovernedTrustRootRegistry:
             if type(verified) is not VerifiedTrustRootEnrollment or verified.request != request:
                 raise TrustRootError("GOVERNANCE_VERIFICATION_RESULT_INVALID")
             verified_at = _instant("verified_at", verified.verified_at)
-            if (
-                verified_at > datetime.now(timezone.utc)
-                or verified_at < start
-                or verified_at >= end
-            ):
+            if verified_at > datetime.now(timezone.utc) or verified_at >= end:
                 raise TrustRootError("TRUST_ROOT_NOT_CURRENT_AT_ENROLLMENT")
             record = TrustRootRecord(
                 trust_root_reference=ref, fingerprint=fingerprint,
