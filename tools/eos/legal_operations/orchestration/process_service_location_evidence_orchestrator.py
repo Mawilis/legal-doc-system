@@ -179,7 +179,11 @@ def _verify_location_signature(
     if not isinstance(signature_p1363, bytes) or len(signature_p1363) != 64:
         _fail("P5L_LOCATION_SIGNATURE_INVALID")
     try:
-        public_der = b64decode(proof.public_key_spki, validate=True)
+        public_der = b64decode(
+            proof.public_key_spki + "=" * (-len(proof.public_key_spki) % 4),
+            altchars=b"-_",
+            validate=True,
+        )
         public_key = serialization.load_der_public_key(public_der)
         if not isinstance(public_key, ec.EllipticCurvePublicKey) or not isinstance(public_key.curve, ec.SECP256R1):
             _fail("P5L_LOCATION_PUBLIC_KEY_INVALID")
