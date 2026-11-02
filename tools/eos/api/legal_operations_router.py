@@ -146,7 +146,7 @@ import re
 import time
 import uuid
 from datetime import UTC, datetime
-from typing import Any, Callable, Final, TypeVar
+from typing import Any, Callable, Final, TypeVar, cast
 
 from fastapi import APIRouter, Depends, HTTPException, Query, Response, status
 from pymongo.read_concern import ReadConcern
@@ -164,6 +164,10 @@ from tools.eos.legal_operations.domain.deputy_personal_active_work import (
     DeputyPersonalActiveWorkError,
     get_deputy_personal_active_work,
     get_deputy_personal_field_capabilities,
+)
+from tools.eos.legal_operations.domain.legal_operations_lifecycle import (
+    ServiceAttempt,
+    SheriffOffice,
 )
 from tools.eos.legal_operations.domain.legal_client_matter_projection import (
     LegalClientMatterProjectionError,
@@ -2182,7 +2186,11 @@ async def get_deputy_location_evidence_projection(
             session=session,
         )
         selected = next(
-            (model.current for model in personal.active_attempts if model.current.attempt_id == attempt_id),
+            (
+                cast(ServiceAttempt, model.current)
+                for model in personal.active_attempts
+                if cast(ServiceAttempt, model.current).attempt_id == attempt_id
+            ),
             None,
         )
         if selected is None:
@@ -2298,7 +2306,7 @@ async def get_sheriff_office_location_evidence_projection(
                 status_code=403,
                 detail="SHERIFF_OFFICE_BINDING_REQUIRED",
             )
-        office = offices[0].current
+        office = cast(SheriffOffice, offices[0].current)
         model = get_entity_read_model(
             tenant_id=context.tenant_id,
             entity_type="ServiceAttempt",
@@ -2306,7 +2314,7 @@ async def get_sheriff_office_location_evidence_projection(
             lifecycle_collection=lifecycle,
             session=session,
         )
-        attempt = model.current
+        attempt = cast(ServiceAttempt, model.current)
         pointer = ProcessServiceAllocationRegistry.get_current(
             context.tenant_id,
             attempt.document_id,
