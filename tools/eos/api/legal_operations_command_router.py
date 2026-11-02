@@ -1083,12 +1083,22 @@ def _prior_custody(collection: Any, tenant: str, document_id: str, session: Any)
     return tuple(events)
 
 
-def _transaction(callback: Callable[[Any, Any], _T]) -> _T:
-    """Run one command in one API-owned session/transaction."""
+def _transaction(
+    callback: Callable[[Any, Any], _T],
+    *,
+    prepare: Callable[[Any], None] | None = None,
+) -> _T:
+    """Run one command in one API-owned session/transaction.
+
+    Optional prepare runs before the transaction for idempotent collection-index
+    bootstrap; DDL is never attempted inside the caller-owned transaction.
+    """
     client, database = _db_handles()
     if client is None or database is None:
         raise CommandError("LEGAL_OPERATIONS_PERSISTENCE_UNAVAILABLE")
     try:
+        if prepare is not None:
+            prepare(database)
         with client.start_session() as session:
             session.start_transaction()
             try:
@@ -1106,6 +1116,8 @@ def _transaction(callback: Callable[[Any, Any], _T]) -> _T:
         ProcessServiceAcceptanceReceiptError,
         DeputyPrincipalBindingOrchestrationError,
         DeputyPrincipalBindingRegistryError,
+        SheriffOfficeAppointmentOrchestrationError,
+        SheriffOfficeAppointmentRegistryError,
         ProcessServiceFieldEvidenceAuthorityError,
         ProcessServiceFieldEvidenceOrchestratorError,
         ProcessServiceFieldEvidenceRegistryError,
