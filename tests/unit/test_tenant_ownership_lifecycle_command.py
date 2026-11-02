@@ -16,6 +16,7 @@ from tools.eos.auth.tenant_ownership_verifier import (
     TenantOwnershipVerificationError,
     TenantOwnershipVerificationRequest,
     UnavailableTenantOwnershipEvidenceVerifier,
+    VerifiedTenantOwnershipEvidence,
 )
 
 
@@ -156,6 +157,34 @@ def test_transfer_authorization_does_not_substitute_for_independent_evidence() -
             session=_Session(),
         )
     assert raised.value.code == "VERIFIED_OWNERSHIP_EVIDENCE_REQUIRED"
+    assert authorizer.calls == 1
+    assert registry.appends == 0
+
+
+def test_revoked_or_missing_issuer_root_is_rechecked_inside_commit_transaction() -> None:
+    current = SimpleNamespace(tenant_id="tenant-1", principal_id="owner-1")
+    command, registry, authorizer = _command(current, authorized=True)
+    request = _request(TenantOwnershipOperation.OWNERSHIP_TRANSFER, principal_id="successor-1")
+    evidence = object.__new__(VerifiedTenantOwnershipEvidence)
+    issuer = SimpleNamespace(
+        trust_root_reference="issuer-root",
+        trust_root_fingerprint="issuer-fingerprint",
+        key_id="issuer-key",
+        key_revision=1,
+        authority_scope="TENANT_OWNERSHIP_ISSUER",
+        issuer_identity="independent-issuer",
+        not_revoked=True,
+    )
+    object.__setattr__(evidence, "request", request)
+    object.__setattr__(evidence, "issuer_authority", issuer)
+    object.__setattr__(evidence, "recovery_authorization", None)
+    with pytest.raises(TenantOwnershipVerificationError) as raised:
+        command.execute(
+            request=request, evidence=evidence,
+            actor_principal_id="owner-1", command_id="cmd-root-revoked",
+            expected_revision=1, session=_Session(),
+        )
+    assert raised.value.code == "OWNERSHIP_ISSUER_TRUST_ROOT_NOT_CURRENT"
     assert authorizer.calls == 1
     assert registry.appends == 0
 
