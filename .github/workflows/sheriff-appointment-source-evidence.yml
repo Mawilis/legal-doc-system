@@ -21,6 +21,7 @@ on:
       - "tests/unit/test_sheriff_appointment_source_evidence.py"
       - "tools/eos/legal_operations/registry/sheriff_appointment_source_evidence_registry.py"
       - "tests/unit/test_sheriff_appointment_source_evidence_registry.py"
+      - "tests/integration/test_sheriff_appointment_source_evidence_registry_real_mongo.py"
       - ".github/workflows/sheriff-appointment-source-evidence.yml"
   workflow_dispatch:
 
