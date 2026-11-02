@@ -2096,12 +2096,14 @@ def test_d22b4_route_surface_and_non_migrated_registry_paths_are_exact() -> None
     assert ("/api/subscriptions/{subscription_id}/resume", "POST") in routes
     assert ("/api/subscriptions/{subscription_id}/reactivate", "POST") in routes
     assert ("/api/subscriptions/{subscription_id}/upgrade", "POST") in routes
+    assert ("/api/subscriptions/entitlements/reconcile-existing", "POST") in routes
     source = inspect.getsource(router_module)
     for call in (
         "SubscriptionActiveEntitlementCompositionService.create(",
         "SubscriptionActiveEntitlementCompositionService.resume(",
         "SubscriptionActiveEntitlementCompositionService.reactivate(",
         "SubscriptionActiveEntitlementCompositionService.upgrade(",
+        "SubscriptionActiveEntitlementCompositionService.reconcile_existing(",
     ):
         assert source.count(call) == 1
     for call in (
@@ -2130,6 +2132,7 @@ def test_migrated_routes_retain_exact_manage_authority_dependency() -> None:
         router_module.create_subscription,
         router_module.resume_subscription,
         router_module.reactivate_subscription,
+        router_module.reconcile_existing_subscription_entitlement,
     ):
         dependency = inspect.signature(route).parameters["identity"].default
         assert getattr(dependency, "dependency", None) is router_module.SUBSCRIPTION_MANAGE_AUTHORITY
