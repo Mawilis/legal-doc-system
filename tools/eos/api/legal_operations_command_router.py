@@ -574,6 +574,7 @@ class DeputyLocationObservationCommand(_CommandModel):
 class DeputyLocationPermissionRevocationCommand(_CommandModel):
     """Immutable user-withdrawal event; actor and time are server-owned."""
 
+    current_evidence_identity: str = Field(min_length=1)
     revocation_id: str = Field(min_length=1, max_length=128)
     reason_reference: str = Field(min_length=1, max_length=512)
 
@@ -732,7 +733,7 @@ def _verify_location_device_proof(
         tenant_id=context.tenant_id,
         principal_id=context.identity.identity_id,
         deputy_id=deputy_id,
-        session_reference=session_reference,
+        session_reference=cast(str, session_reference),
         challenge_id=challenge_id,
         signature_p1363=signature,
         lifecycle_collection=_collection(database, LIFECYCLE_COLLECTION),
@@ -1949,7 +1950,7 @@ async def issue_deputy_device_challenge_command(
             tenant_id=context.tenant_id,
             principal_id=context.identity.identity_id,
             deputy_id=deputy_id,
-            session_reference=context.identity.session_reference,
+            session_reference=cast(str, context.identity.session_reference),
             public_key_spki_der=public_key,
             lifecycle_collection=_collection(db, LIFECYCLE_COLLECTION),
             binding_collection=_collection(db, DEPUTY_PRINCIPAL_BINDING_COLLECTION),
@@ -2107,10 +2108,7 @@ async def revoke_deputy_location_permission_grant_command(
     def run(session: Any, db: Any) -> Any:
         current, receipt, allocation_current = _location_attempt_sources(
             context, attempt_id,
-            # Exact P2 locator is resolved from the active grant's persisted attempt.
-            _location_grant_attempt_identity(
-                context.tenant_id, grant_id, _collection(db, LOCATION_PERMISSION_COLLECTION), session
-            ),
+            command.current_evidence_identity,
             db, session,
         )
         deputy_id = _deputy_device_scope(context, db, session)
