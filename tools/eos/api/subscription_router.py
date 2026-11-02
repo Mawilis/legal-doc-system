@@ -438,6 +438,39 @@ async def get_subscription(
 
 
 @subscription_router.post(
+    "/entitlements/reconcile-existing",
+    status_code=status.HTTP_200_OK,
+)
+async def reconcile_existing_subscription_entitlement(
+    request: Request,
+    identity: SovereignIdentity = Depends(
+        SUBSCRIPTION_MANAGE_AUTHORITY
+    ),
+) -> Any:
+    """Reconcile one missing Legal entitlement from existing commercial truth."""
+    _authorized_tenant_id(identity)
+    try:
+        result = SubscriptionActiveEntitlementCompositionService.reconcile_existing(
+            identity
+        )
+    except SubscriptionActiveEntitlementCompositionServiceError as error:
+        _raise_composition_failure(error)
+    except Exception as error:
+        _raise_unexpected("ENTITLEMENT_RECONCILIATION", error)
+
+    return _response(
+        request,
+        data={
+            "subscription_id": result.subscription.subscription_id,
+            "legal_entitlement_applicable": result.legal_entitlement_applicable,
+            "entitlement_issued": result.entitlement_issuance_result is not None,
+        },
+        message="Existing subscription entitlement reconciliation completed.",
+        execution_id="SUB-ENTITLEMENT-RECONCILE",
+    )
+
+
+@subscription_router.post(
     "",
     status_code=status.HTTP_201_CREATED,
 )
