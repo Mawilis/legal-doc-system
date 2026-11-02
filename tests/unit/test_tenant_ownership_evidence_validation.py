@@ -56,7 +56,7 @@ def test_registry_selects_latest_unambiguous_superseding_filing() -> None:
     ((snapshot("a"), snapshot("b")), "CONFLICTING_CURRENT_FILINGS"),
     ((snapshot("a"), snapshot("b", supersedes="missing")), "SUPERSESSION_TARGET_MISSING"),
     ((snapshot("a", supersedes="b"), snapshot("b", supersedes="a")), "FILING_LINEAGE_CYCLE"),
-    ((snapshot("a", status="REVOKED"),), "NO_CURRENT_FILING"),
+    ((snapshot("a", status="REVOKED"),), "SOURCE_RECORD_NOT_ACTIVE"),
 ])
 def test_registry_adversarial_states_deny(rows: tuple[RegistrySnapshot, ...], reason: str) -> None:
     result = assess_registry_snapshots(rows, evaluated_at=NOW, max_age=timedelta(days=1))
