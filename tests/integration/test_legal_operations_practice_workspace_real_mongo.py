@@ -240,6 +240,7 @@ def _context(tenant_id: str) -> TenantAuthorizationContext:
         email="partner@example.test",
         auth_method="TEST",
         status=PrincipalStatus.ACTIVE,
+        session_reference=None,
     )
     decision = TenantAuthorizationDecision(
         authorized=True,
