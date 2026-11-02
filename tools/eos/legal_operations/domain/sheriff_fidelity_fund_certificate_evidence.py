@@ -222,7 +222,7 @@ class SheriffFfcEvidence:
         start = _instant("valid_from", self.valid_from)
         end = _instant("valid_until", self.valid_until)
         observed = _instant("observed_at", self.observed_at)
-        if start < issued or end <= start:
+        if end <= start:
             raise SheriffFfcEvidenceError("SHERIFF_FFC_VALIDITY_WINDOW_INVALID")
         object.__setattr__(self, "issued_at", issued)
         object.__setattr__(self, "valid_from", start)
