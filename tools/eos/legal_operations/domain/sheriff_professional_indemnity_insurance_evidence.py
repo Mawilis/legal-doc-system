@@ -127,7 +127,7 @@ class SheriffProfessionalIndemnityInsuranceEvidence:
     covered_principal_ids: tuple[str, ...]
     covered_capacities: tuple[SheriffAppointmentCapacity | str, ...]
     sheriff_office_id: str
-    appointment_evidence_fingerprint: str
+    appointment_evidence_fingerprints: tuple[str, ...]
     insurer_reference: str
     policy_reference: str
     policy_fingerprint: str
@@ -174,7 +174,6 @@ class SheriffProfessionalIndemnityInsuranceEvidence:
         ):
             object.__setattr__(self, name, _identifier(name, getattr(self, name)))
         for name in (
-            "appointment_evidence_fingerprint",
             "policy_fingerprint",
             "coverage_scope_fingerprint",
             "board_acceptance_fingerprint",
@@ -214,6 +213,20 @@ class SheriffProfessionalIndemnityInsuranceEvidence:
                 "SHERIFF_PI_INSURANCE_COVERED_PRINCIPAL_SCOPE_INVALID"
             )
         object.__setattr__(self, "covered_principal_ids", covered)
+        if (
+            type(self.appointment_evidence_fingerprints) is not tuple
+            or len(self.appointment_evidence_fingerprints) != len(covered)
+        ):
+            raise SheriffPiInsuranceEvidenceError(
+                "SHERIFF_PI_INSURANCE_APPOINTMENT_FINGERPRINT_SCOPE_INVALID"
+            )
+        appointment_fingerprints = tuple(
+            _digest("appointment_evidence_fingerprint", item)
+            for item in self.appointment_evidence_fingerprints
+        )
+        object.__setattr__(
+            self, "appointment_evidence_fingerprints", appointment_fingerprints
+        )
         if type(self.covered_capacities) is not tuple or not self.covered_capacities:
             raise SheriffPiInsuranceEvidenceError(
                 "SHERIFF_PI_INSURANCE_COVERED_CAPACITIES_REQUIRED"
@@ -231,10 +244,7 @@ class SheriffProfessionalIndemnityInsuranceEvidence:
             SheriffAppointmentCapacity.ACTING_SHERIFF,
             SheriffAppointmentCapacity.DEPUTY_SHERIFF,
         }
-        if (
-            len(set(capacities)) != len(capacities)
-            or not set(capacities).issubset(allowed_capacities)
-        ):
+        if not set(capacities).issubset(allowed_capacities):
             raise SheriffPiInsuranceEvidenceError(
                 "SHERIFF_PI_INSURANCE_COVERED_CAPACITY_INVALID"
             )
@@ -347,7 +357,7 @@ class SheriffProfessionalIndemnityInsuranceEvidence:
                 SheriffAppointmentCapacity(item).value for item in self.covered_capacities
             ],
             "sheriff_office_id": self.sheriff_office_id,
-            "appointment_evidence_fingerprint": self.appointment_evidence_fingerprint,
+            "appointment_evidence_fingerprints": list(self.appointment_evidence_fingerprints),
             "insurer_reference": self.insurer_reference,
             "policy_reference": self.policy_reference,
             "policy_fingerprint": self.policy_fingerprint,
