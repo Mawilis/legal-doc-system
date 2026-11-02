@@ -29,6 +29,9 @@ The official Department of Justice copy of the Sheriffs Act describes the Minist
 - Department of Justice, **Sheriffs Act 90 of 1986** (official copy): https://www.justice.gov.za/legislation/acts/1986-090.pdf
 - South African Government legislation record: https://www.gov.za/documents/sheriffs-act-10-mar-1986-0000
 - South African Government, **Sheriffs FAQ**, including the explanation that a Sheriff is appointed for a magisterial district or an area within a district: https://www.justice.gov.za/faq/faq-sheriffs.html
+- South African Board for Sheriffs, **Fidelity Fund**: https://sheriffs.org.za/fidelity-fund/ (annual Fidelity Fund Certificate issuance and Board administration).
+- South African Board for Sheriffs, **Locate a Sheriff**: https://sheriffs.org.za/locate-a-sheriff/ (public directory; a directory listing is an observation source, not a substitute for the underlying appointment and current certificate evidence).
+- Supreme Court of Appeal, *South African Board for Sheriffs v Thaka Frederick Seboka and Others* [2026] ZASCA 109: https://www3.saflii.org/za/cases/ZASCA/2026/109.html (section 5(1B) written Board confirmation issue).
 
 Relevant provisions to encode and have South African legal counsel validate against the currently consolidated Act and regulations:
 - **Section 2:** appointment of Sheriffs by the Minister for a lower or superior court; special appointment of another area's Sheriff in a vacancy scenario is a distinct written appointment.
@@ -57,7 +60,10 @@ The following existing components were inspected on `main`:
 | `tools/eos/legal_operations/domain/legal_principal_operating_role_binding.py` and its registry | Immutable effective-dated descriptive principal-to-operating-role occupancy | IAM, workforce authority, professional status, regulatory appointment or execution authority |
 | `tools/eos/legal_operations/domain/legal_operating_role_scope_binding.py` and its registry | Descriptive office/practice/business-unit/jurisdiction scope metadata | Record-access, matter, route, workflow, assignment or supervision authority |
 | `tools/eos/api/legal_operations_router.py` — `GET /legal-operations/operational-queues` | Sheriff-only, own-tenant operational queue projection | Office-level restriction; it currently delegates tenant scope to the lifecycle queue projection |
+| R62/R63/R64 practitioner professional-standing evidence and regulatory source-verification components | Existing immutable source-observation, issuer classification, FFC validity and freshness patterns for Legal Practice Council evidence | Their canonical issuer map and subject model are LPC-specific; they do not establish South African Sheriff appointment, SABFS certificate status or Sheriff-office scope |
 | Deputy principal binding and personal active-work route | Binds authenticated Deputy principal to canonical Deputy and SheriffOffice evidence | Sheriff principal-to-office appointment |
+
+The repository already has a disciplined R62/R63/R64 pattern for observing and verifying Legal Practice Council professional-standing and FFC records. Its source allowlist is explicitly LPC-only. Reuse its integrity, freshness, issuer-trust and no-self-attestation patterns, but do not reuse its LPC issuer constants, subject model or claim that the South African Board for Sheriffs is already integrated. No authenticated SABFS API/trust-root integration was established in this discovery.
 
 The key current risk is the difference between **tenant IAM admission** and **statutory office authority**. The existing Sheriff queue permission is intentionally own-tenant and Sheriff-role-only, but it is not office-specific. In a tenant representing multiple Sheriff offices, it cannot safely be treated as proof that the caller may see every office's work.
 
@@ -167,7 +173,7 @@ Before enabling office-scoped Sheriff queue reads:
 This capability is **not production-ready** until all of the following are true:
 
 - South African legal counsel has validated the current consolidated Act (including sections 6A, 6B and 30–34), regulations, relevant appointment forms/notices, 2026 SCA judgment implications, and the accepted evidence-verification process.
-- A trusted source for Ministerial appointments, area allocations, Board approvals and revocations has been identified and operationally connected. A public webpage or tenant upload alone is not automatically trusted.
+- A trusted source for Ministerial appointments, area allocations, Board approvals, Fidelity Fund Certificates, insurance evidence and revocations has been identified and operationally connected. The SABFS public directory and Fidelity Fund information page are useful source references, but a public directory observation or tenant upload alone is not automatically an authenticated trust root.
 - The appointment domain, registry, lifecycle command, revocation/currentness projection and office-scoped read enforcement are implemented.
 - All unit, type, real-Mongo, HTTP, security and replay tests pass in isolated CI.
 - Independent security review confirms no caller-controlled office selection, tenant-wide fallback, cross-office leakage or self-appointment path.
