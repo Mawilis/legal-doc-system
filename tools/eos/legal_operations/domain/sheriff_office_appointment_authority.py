@@ -12,7 +12,7 @@ COMPLIANCE: Sheriffs Act 90 of 1986, sections 2, 3, 5 and 30-34; POPIA section 1
 SECURITY / PRIVACY POSTURE: Opaque identifiers and SHA3-512 evidence fingerprints only; source documents remain outside this value object; no credentials or document contents are stored.
 TENANT BOUNDARY: Exact non-pseudo tenant identity; every appointment binds one principal, one canonical office, and one canonical district.
 AUTHORITY BOUNDARY: Records a WILSY operational office binding to a separately observed statutory source record and current credentials; does not determine statutory appointment validity, authenticate an external issuer, issue a certificate, grant IAM, or independently authorize a request.
-CURRENTNESS: Appointment term AND jurisdiction-matched FFC validity AND professional indemnity insurance validity AND verification time must all be current.
+CURRENTNESS: Linked source-evidence revision AND appointment term AND jurisdiction-matched FFC validity AND professional indemnity insurance validity AND verification time must all be current.
 TRANSACTION OWNERSHIP: NONE; persistence and transaction lifecycle belong to the registry/orchestrator.
 FINANCIAL EXECUTION AUTHORITY: Kennel EOS exclusively.
 FAIL-CLOSED DECLARATION: Missing, malformed, stale, ambiguous, mismatched, or unverifiable evidence rejects.
@@ -461,7 +461,7 @@ __all__ = [
 # WILSY OS SOVEREIGN ARTIFACT SEAL
 # ==============================================================================
 # ARTIFACT: tools/eos/legal_operations/domain/sheriff_office_appointment_authority.py
-# VERSION: v1.0.0-L8-SHERIFF-OFFICE-APPOINTMENT-EVIDENCE
+# VERSION: v1.1.0-L8-SHERIFF-OFFICE-SOURCE-EVIDENCE-BINDING
 # AUTHORITY BOUNDARY: externally issued appointment and FFC evidence record only; no IAM or appointment issuance
 # TENANT POSTURE: exact tenant/principal/office/district binding
 # FAIL-CLOSED POSTURE: invalid schema, time windows, fingerprints, source references, or lineage reject
