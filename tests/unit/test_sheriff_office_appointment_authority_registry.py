@@ -33,17 +33,22 @@ OFFICE = "office-jhb"
 DISTRICT = "district-jhb"
 
 
-class _Cursor(list[dict[str, Any]]):
+class _Cursor:
+    def __init__(self, values: list[dict[str, Any]]) -> None:
+        self._values = values
+
+    def __iter__(self):
+        return iter(self._values)
+
     def sort(self, key_or_list: Any, direction: int | None = None) -> "_Cursor":
         fields = (
             key_or_list
             if isinstance(key_or_list, list)
             else [(key_or_list, direction or 1)]
         )
-        values = list(self)
         for key, order in reversed(fields):
-            values.sort(key=lambda item: item[key], reverse=order < 0)
-        return _Cursor(values)
+            self._values.sort(key=lambda item: item[key], reverse=order < 0)
+        return self
 
 
 class _Collection:
