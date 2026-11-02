@@ -565,6 +565,7 @@ class DeputyLocationObservationCommand(_CommandModel):
     observation_id: str = Field(min_length=1, max_length=128)
     challenge_id: str = Field(min_length=1, max_length=128)
     signature_p1363_b64: str = Field(min_length=80, max_length=100)
+    location_signature_p1363_b64: str = Field(min_length=80, max_length=100)
     latitude: float
     longitude: float
     horizontal_accuracy_m: float
@@ -2028,6 +2029,12 @@ async def create_deputy_location_permission_grant_command(
     )
     if len(signature) != 64:
         raise HTTPException(status_code=422, detail="DEPUTY_DEVICE_SIGNATURE_LENGTH_INVALID")
+    location_signature = _decode_base64(
+        command.location_signature_p1363_b64,
+        "LOCATION_OBSERVATION_SIGNATURE_ENCODING_INVALID",
+    )
+    if len(location_signature) != 64:
+        raise HTTPException(status_code=422, detail="LOCATION_OBSERVATION_SIGNATURE_LENGTH_INVALID")
 
     def run(session: Any, db: Any) -> Any:
         current, receipt, allocation_current = _location_attempt_sources(
