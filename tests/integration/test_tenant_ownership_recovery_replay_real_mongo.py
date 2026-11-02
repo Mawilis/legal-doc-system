@@ -7,13 +7,17 @@ from datetime import datetime, timedelta, timezone
 from urllib.parse import urlparse
 
 import pytest
-from pymongo import MongoClient
 from cryptography.hazmat.primitives.asymmetric.ed25519 import Ed25519PrivateKey
+from pymongo import MongoClient
 
 from tools.eos.auth.tenant_ownership_evidence_validation import (
-    OwnershipEvidenceValidationError, RecoveryDecisionReplayRegistry,
+    OwnershipEvidenceValidationError, RecoveryDecisionEnvelope,
+    RecoveryDecisionReplayRegistry, recovery_decision_message,
+    validate_recovery_decision,
 )
-from tools.eos.auth.tenant_ownership_provider_ports import RecoveryDecisionReceipt, RecoveryDecisionLookup
+from tools.eos.auth.tenant_ownership_provider_ports import (
+    RecoveryDecisionLookup, RecoveryDecisionReceipt,
+)
 
 
 @pytest.fixture
@@ -36,11 +40,38 @@ def mongo():
         client.close()
 
 
-def fixture_decision():
+class TrustProvider:
+    def __init__(self):
+        self.private_key = Ed25519PrivateKey.generate()
+        self.unavailable = False
+
+    def recovery_key_status(self, authority_id, trust_root_reference,
+                            trust_root_fingerprint, key_reference, revision, at):
+        if self.unavailable:
+            raise TimeoutError("independent trust-list outage")
+        if (authority_id, trust_root_reference, trust_root_fingerprint,
+            key_reference, revision) != (
+            "independent-recovery", "recovery-root", "b" * 64, "recovery-key", 1
+        ):
+            return "UNTRUSTED"
+        return "ACTIVE"
+
+    def public_key(self, key_reference, revision):
+        if (key_reference, revision) != ("recovery-key", 1):
+            raise KeyError(key_reference)
+        return self.private_key.public_key()
+
+
+def signed_decision(keys, *, tenant_id=None, case_reference=None,
+                    case_fingerprint=None, successor="successor-1"):
     now = datetime.now(timezone.utc)
     lookup = RecoveryDecisionLookup(
-        "tenant-" + uuid.uuid4().hex, "entity-1", "case-" + uuid.uuid4().hex,
-        "a" * 64, "successor-1", now,
+        tenant_id or "tenant-" + uuid.uuid4().hex,
+        "entity-1",
+        case_reference or "case-" + uuid.uuid4().hex,
+        case_fingerprint or "a" * 64,
+        successor,
+        now,
     )
     receipt = RecoveryDecisionReceipt(
         "independent-recovery", "recovery-root", "b" * 64,
@@ -49,106 +80,81 @@ def fixture_decision():
         lookup.successor_principal_id, "d" * 64, "e" * 64, "f" * 64,
         "RESOLVED", now - timedelta(minutes=1), now + timedelta(hours=1), "revocation-1",
     )
-    return lookup, receipt
+    message = recovery_decision_message(lookup, receipt, "recovery-key", 1, "nonce-1")
+    envelope = RecoveryDecisionEnvelope(
+        receipt, "recovery-key", 1, "Ed25519",
+        keys.private_key.sign(message).hex(), "nonce-1",
+    )
+    return lookup, envelope
 
 
 def test_recovery_replay_ledger_is_atomic_and_replay_safe(mongo):
     client, db = mongo
+    keys = TrustProvider()
     registry = RecoveryDecisionReplayRegistry(db)
-    lookup, receipt = fixture_decision()
+    lookup, envelope = signed_decision(keys)
+    validated = validate_recovery_decision(lookup, envelope, keys)
 
-    # A consumed decision is not visible if the caller aborts its transaction.
+    # Validation happens before transaction; the transaction only persists receipt.
     with client.start_session() as session:
         with session.start_transaction():
-            registry.consume(lookup, receipt, session=session)
+            registry.consume_validated(validated, session=session)
             session.abort_transaction()
     assert db[registry.COLLECTION].count_documents({}) == 0
 
-    # The exact same decision may be consumed after the aborted transaction.
     with client.start_session() as session:
         with session.start_transaction():
-            registry.consume(lookup, receipt, session=session)
+            registry.consume_validated(validated, session=session)
     assert db[registry.COLLECTION].count_documents({"tenant_id": lookup.tenant_id}) == 1
 
-    # Duplicate decision replay is rejected; abort the failed transaction.
     with client.start_session() as session:
         with session.start_transaction():
             with pytest.raises(OwnershipEvidenceValidationError, match="RECOVERY_DECISION_REPLAY"):
-                registry.consume(lookup, receipt, session=session)
+                registry.consume_validated(validated, session=session)
             session.abort_transaction()
     assert db[registry.COLLECTION].count_documents({"tenant_id": lookup.tenant_id}) == 1
 
 
-def test_recovery_case_cannot_be_replayed_to_a_different_successor(mongo):
+def test_recovery_case_cannot_be_resolved_for_a_second_successor(mongo):
     client, db = mongo
+    keys = TrustProvider()
     registry = RecoveryDecisionReplayRegistry(db)
-    lookup, receipt = fixture_decision()
+    lookup, envelope = signed_decision(keys)
+    first = validate_recovery_decision(lookup, envelope, keys)
     with client.start_session() as session:
         with session.start_transaction():
-            registry.consume(lookup, receipt, session=session)
-    other = RecoveryDecisionLookup(
-        lookup.tenant_id, lookup.legal_entity_reference, lookup.recovery_case_reference,
-        lookup.recovery_case_fingerprint, "attacker-successor", lookup.evaluated_at,
+            registry.consume_validated(first, session=session)
+
+    second_lookup, second_envelope = signed_decision(
+        keys, tenant_id=lookup.tenant_id,
+        case_reference=lookup.recovery_case_reference,
+        case_fingerprint=lookup.recovery_case_fingerprint,
+        successor="attacker-successor",
     )
-    other_receipt = RecoveryDecisionReceipt(
-        receipt.authority_id, receipt.trust_root_reference, receipt.trust_root_fingerprint,
-        "different-decision", "1" * 64, receipt.recovery_case_reference,
-        receipt.recovery_case_fingerprint, "attacker-successor", receipt.quorum_fingerprint,
-        receipt.conflict_check_fingerprint, receipt.notice_and_objection_fingerprint,
-        receipt.appeal_status, receipt.issued_at, receipt.valid_until, receipt.revocation_reference,
-    )
+    second = validate_recovery_decision(second_lookup, second_envelope, keys)
     with client.start_session() as session:
         with session.start_transaction():
-            registry.consume(other, other_receipt, session=session)
+            with pytest.raises(OwnershipEvidenceValidationError, match="RECOVERY_DECISION_REPLAY"):
+                registry.consume_validated(second, session=session)
+            session.abort_transaction()
     assert db[registry.COLLECTION].count_documents(
         {"tenant_id": lookup.tenant_id, "recovery_case_reference": lookup.recovery_case_reference}
-    ) == 2
+    ) == 1
 
 
-
-def test_real_mongo_composed_verification_denies_external_outage_then_commits(mongo):
+def test_external_trust_provider_outage_denies_before_mongo_transaction(mongo):
     client, db = mongo
-    registry = RecoveryDecisionReplayRegistry(db)
-    lookup, receipt = fixture_decision()
-    private_key = Ed25519PrivateKey.generate()
-
-    class TrustProvider:
-        unavailable = True
-
-        def recovery_key_status(self, authority_id, trust_root_reference,
-                                trust_root_fingerprint, key_reference, revision, at):
-            if self.unavailable:
-                raise TimeoutError("independent trust-list outage")
-            if (authority_id, trust_root_reference, trust_root_fingerprint) != (
-                "independent-recovery", "recovery-root", "b" * 64
-            ):
-                return "UNTRUSTED"
-            return "ACTIVE"
-
-        def public_key(self, key_reference, revision):
-            if (key_reference, revision) != ("recovery-key", 1):
-                raise KeyError(key_reference)
-            return private_key.public_key()
-
     keys = TrustProvider()
-    message = recovery_decision_message(lookup, receipt, "recovery-key", 1, "nonce-1")
-    envelope = RecoveryDecisionEnvelope(
-        receipt, "recovery-key", 1, "Ed25519",
-        private_key.sign(message).hex(), "nonce-1",
-    )
-
-    # A trust-list outage must abort before any replay reservation is persisted.
-    with client.start_session() as session:
-        with session.start_transaction():
-            with pytest.raises(OwnershipEvidenceValidationError, match="KEY_STATUS_UNAVAILABLE"):
-                registry.consume_verified(lookup, envelope, keys, session=session)
-            session.abort_transaction()
+    keys.unavailable = True
+    registry = RecoveryDecisionReplayRegistry(db)
+    lookup, envelope = signed_decision(keys)
+    with pytest.raises(OwnershipEvidenceValidationError, match="RECOVERY_KEY_STATUS_UNAVAILABLE"):
+        validate_recovery_decision(lookup, envelope, keys)
     assert db[registry.COLLECTION].count_documents({}) == 0
 
-    # Once the independent provider is reachable, signature verification and
-    # replay reservation commit atomically under the caller-owned transaction.
     keys.unavailable = False
+    validated = validate_recovery_decision(lookup, envelope, keys)
     with client.start_session() as session:
         with session.start_transaction():
-            registry.consume_verified(lookup, envelope, keys, session=session)
+            registry.consume_validated(validated, session=session)
     assert db[registry.COLLECTION].count_documents({"tenant_id": lookup.tenant_id}) == 1
