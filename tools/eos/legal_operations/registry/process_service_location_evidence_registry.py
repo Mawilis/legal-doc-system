@@ -181,7 +181,11 @@ def _verify_location_record(
     """Revalidate device key identity and the P-256 signature over GPS facts."""
     try:
         signature = b64decode(signature_b64, validate=True)
-        public_der = b64decode(public_key_b64, validate=True)
+        public_der = b64decode(
+            public_key_b64 + "=" * (-len(public_key_b64) % 4),
+            altchars=b"-_",
+            validate=True,
+        )
         if len(signature) != 64:
             raise ValueError("invalid P1363 signature length")
         key = serialization.load_der_public_key(public_der)
