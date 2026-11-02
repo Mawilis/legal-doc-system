@@ -244,9 +244,12 @@ def signing_request_payload(request: SigningRequest) -> bytes:
     """Canonical bytes bind a provider signature to the exact tenant-purpose digest."""
     if type(request) is not SigningRequest:
         raise OwnershipProviderEvidenceError("SIGNING_REQUEST_INVALID")
+    digest_algorithm = _token("digest_algorithm", request.digest_algorithm).upper().replace("-", "")
+    if digest_algorithm != "SHA256":
+        raise OwnershipProviderEvidenceError("SIGNING_DIGEST_ALGORITHM_UNSUPPORTED")
     payload = {
         "payload_digest": _fingerprint("payload_digest", request.payload_digest),
-        "digest_algorithm": _token("digest_algorithm", request.digest_algorithm).upper(),
+        "digest_algorithm": digest_algorithm,
         "key_reference": _token("key_reference", request.key_reference),
         "key_revision": request.key_revision,
         "purpose": _token("purpose", request.purpose),
@@ -276,13 +279,14 @@ def validate_signing_receipt(
     for name in ("provider_id", "custody_authority_id", "audit_reference"):
         _token(name, getattr(receipt, name))
     _fingerprint("custody_proof_fingerprint", receipt.custody_proof_fingerprint)
+    receipt_digest = _fingerprint("receipt_payload_digest", receipt.payload_digest)
+    receipt_algorithm = _token("receipt_algorithm", receipt.algorithm).upper()
     if (
         receipt.key_reference != request.key_reference
         or receipt.key_revision != request.key_revision
-        or receipt.payload_digest.lower().removeprefix("sha256:")
-           != request.payload_digest.lower().removeprefix("sha256:")
+        or receipt_digest != _fingerprint("request_payload_digest", request.payload_digest)
         or receipt.purpose != request.purpose
-        or receipt.algorithm.upper() != key.algorithm.upper()
+        or receipt_algorithm != key.algorithm.upper()
         or key.key_reference != request.key_reference
         or key.key_revision != request.key_revision
     ):
