@@ -117,6 +117,7 @@ jobs:
             tools/eos/legal_operations/registry/process_service_location_evidence_registry.py \
             tools/eos/legal_operations/orchestration/process_service_location_evidence_orchestrator.py \
             tools/eos/api/legal_operations_router.py \
+            tools/eos/api/server.py \
             tests/unit/test_process_service_location_evidence_authority.py \
             tests/unit/test_process_service_location_evidence_registry.py \
             tests/unit/test_process_service_location_evidence_orchestrator.py \
