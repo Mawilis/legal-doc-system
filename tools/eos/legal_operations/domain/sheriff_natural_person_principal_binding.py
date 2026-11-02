@@ -198,7 +198,7 @@ class SheriffNaturalPersonIdentityProof:
         observed = _instant("observed_at", self.observed_at)
         start = _instant("valid_from", self.valid_from)
         end = _instant("valid_until", self.valid_until)
-        if end <= start or observed < start:
+        if end <= start:
             raise SheriffNaturalPersonBindingError(
                 "SHERIFF_NATURAL_PERSON_VALIDITY_WINDOW_INVALID"
             )
