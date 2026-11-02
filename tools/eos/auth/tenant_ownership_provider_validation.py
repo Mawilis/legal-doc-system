@@ -16,7 +16,7 @@ import re
 import json
 from typing import Any, Callable, Final, Iterable, TypeVar
 
-from cryptography.exceptions import InvalidSignature
+from cryptography.exceptions import InvalidSignature, UnsupportedAlgorithm
 from cryptography.hazmat.primitives import hashes, serialization
 from cryptography.hazmat.primitives.asymmetric import ec, ed25519, padding, rsa
 from pymongo import ASCENDING
@@ -149,6 +149,8 @@ def assess_registry_lineage(
             _token("superseded_filing_reference", parent)
             if parent == filing or parent not in by_ref:
                 raise OwnershipProviderEvidenceError("REGISTRY_SUPERSESSION_LINEAGE_INVALID")
+            if by_ref[parent].record_status.upper() in {"ACTIVE", "CURRENT"}:
+                raise OwnershipProviderEvidenceError("REGISTRY_SUPERSESSION_STATUS_CONFLICT")
             if parent in superseded_by:
                 raise OwnershipProviderEvidenceError("REGISTRY_SUPERSESSION_FORK")
             superseded_by[parent] = filing
@@ -217,9 +219,11 @@ def verify_provider_signature(
         algorithm = key.algorithm.upper()
         if algorithm == "ED25519" and isinstance(public_key, ed25519.Ed25519PublicKey):
             public_key.verify(signature, message)
-        elif algorithm == "ECDSA_SHA256" and isinstance(public_key, ec.EllipticCurvePublicKey):
+        elif (algorithm == "ECDSA_SHA256" and isinstance(public_key, ec.EllipticCurvePublicKey)
+              and public_key.curve.key_size >= 256):
             public_key.verify(signature, message, ec.ECDSA(hashes.SHA256()))
-        elif algorithm == "RSA_PSS_SHA256" and isinstance(public_key, rsa.RSAPublicKey):
+        elif (algorithm == "RSA_PSS_SHA256" and isinstance(public_key, rsa.RSAPublicKey)
+              and public_key.key_size >= 2048):
             public_key.verify(
                 signature, message,
                 padding.PSS(mgf=padding.MGF1(hashes.SHA256()), salt_length=padding.PSS.MAX_LENGTH),
@@ -229,7 +233,7 @@ def verify_provider_signature(
             raise OwnershipProviderEvidenceError("SIGNING_ALGORITHM_KEY_TYPE_MISMATCH")
     except OwnershipProviderEvidenceError:
         raise
-    except (ValueError, TypeError, binascii.Error, InvalidSignature) as error:
+    except (ValueError, TypeError, binascii.Error, InvalidSignature, UnsupportedAlgorithm) as error:
         raise OwnershipProviderEvidenceError("SIGNATURE_INVALID") from error
     return sha256(message).hexdigest()
 
