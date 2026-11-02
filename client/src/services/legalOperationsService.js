@@ -994,6 +994,7 @@ function assertCanonicalClientAcceptanceContext(value, expected) {
     || !SHA3_512_PATTERN.test(value.matter_fingerprint)
     || !SHA3_512_PATTERN.test(value.instrument_fingerprint)
     || !SHA3_512_PATTERN.test(value.content_fingerprint)
+    || !isCanonicalText(value.fingerprint)
     || !SHA3_512_PATTERN.test(value.fingerprint)
   ) {
     throw new Error(errorCode);
@@ -1729,23 +1730,26 @@ function assertSheriffAppointmentInput(value) {
   assertExactKeys(value, SHERIFF_APPOINTMENT_INPUT_KEYS, errorCode);
   if (
     !isCanonicalText(value.appointmentId)
+    || value.appointmentId.length > 240
     || !Number.isSafeInteger(value.expectedRevision)
     || value.expectedRevision < 0
     || !isCanonicalText(value.principalId)
+    || value.principalId.length > 240
     || !isCanonicalText(value.sheriffOfficeId)
+    || value.sheriffOfficeId.length > 240
     || !['PERMANENT', 'ACTING'].includes(value.appointmentKind)
     || !isCanonicalText(value.appointmentInstrumentReference)
     || value.appointmentInstrumentReference.length > 500
-    || !SHA3_512_PATTERN.test(value.appointmentInstrumentFingerprint)
+    || (!isCanonicalText(value.appointmentInstrumentFingerprint) || !SHA3_512_PATTERN.test(value.appointmentInstrumentFingerprint))
     || !isCanonicalText(value.officeScopeInstrumentReference)
     || value.officeScopeInstrumentReference.length > 500
-    || !SHA3_512_PATTERN.test(value.officeScopeInstrumentFingerprint)
+    || (!isCanonicalText(value.officeScopeInstrumentFingerprint) || !SHA3_512_PATTERN.test(value.officeScopeInstrumentFingerprint))
     || !isCanonicalText(value.fidelityFundCertificateReference)
     || value.fidelityFundCertificateReference.length > 500
-    || !SHA3_512_PATTERN.test(value.fidelityFundCertificateFingerprint)
+    || (!isCanonicalText(value.fidelityFundCertificateFingerprint) || !SHA3_512_PATTERN.test(value.fidelityFundCertificateFingerprint))
     || !isCanonicalText(value.professionalIndemnityInsuranceReference)
     || value.professionalIndemnityInsuranceReference.length > 500
-    || !SHA3_512_PATTERN.test(value.professionalIndemnityInsuranceFingerprint)
+    || (!isCanonicalText(value.professionalIndemnityInsuranceFingerprint) || !SHA3_512_PATTERN.test(value.professionalIndemnityInsuranceFingerprint))
     || !isCanonicalTimestamp(value.appointmentEffectiveFrom)
     || (
       value.appointmentEffectiveUntil !== null
@@ -1761,7 +1765,7 @@ function assertSheriffAppointmentInput(value) {
     )
     || (
       value.expectedRevision > 0
-      && !SHA3_512_PATTERN.test(value.expectedPredecessorFingerprint)
+      && (!isCanonicalText(value.expectedPredecessorFingerprint) || !SHA3_512_PATTERN.test(value.expectedPredecessorFingerprint))
     )
   ) {
     throw new Error(errorCode);
