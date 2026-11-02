@@ -169,9 +169,6 @@ from tools.eos.legal_operations.registry.process_service_location_evidence_regis
     REVOCATION_COLLECTION as LOCATION_REVOCATION_COLLECTION,
     ProcessServiceLocationEvidenceRegistry,
 )
-from tools.eos.legal_operations.registry.deputy_device_provenance_registry import (
-    COLLECTION as DEPUTY_DEVICE_PROVENANCE_COLLECTION,
-)
 from tools.eos.auth.principal_authority_repository import COLLECTION as PRINCIPAL_AUTHORITY_COLLECTION
 from tools.eos.auth.tenant_membership_repository import COLLECTION as TENANT_MEMBERSHIP_COLLECTION
 from tools.eos.auth.tenant_business_role_repository import COLLECTION as TENANT_BUSINESS_ROLE_COLLECTION
