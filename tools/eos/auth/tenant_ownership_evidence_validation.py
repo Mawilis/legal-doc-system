@@ -331,6 +331,8 @@ def validate_recovery_decision(
     keys: RecoveryKeyTrustProvider,
 ) -> ValidatedRecoveryDecision:
     """Validate independent authority receipt and return a persistence-only receipt."""
+    if type(lookup) is not RecoveryDecisionLookup or type(envelope) is not RecoveryDecisionEnvelope:
+        raise OwnershipEvidenceValidationError("RECOVERY_DECISION_ENVELOPE_INVALID")
     receipt = envelope.receipt
     if type(receipt) is not RecoveryDecisionReceipt:
         raise OwnershipEvidenceValidationError("RECOVERY_DECISION_RECEIPT_INVALID")
