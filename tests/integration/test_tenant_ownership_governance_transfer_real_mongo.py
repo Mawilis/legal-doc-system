@@ -24,7 +24,7 @@ from tools.eos.auth.tenant_ownership_transfer_protocol import (
 class GovernanceVerifier:
     def verify(self, request: TrustRootEnrollmentRequest) -> VerifiedTrustRootEnrollment:
         return VerifiedTrustRootEnrollment(
-            request, request.valid_from + timedelta(minutes=1),
+            request, datetime.now(timezone.utc),
             "independent-governance-verifier", "test-v1", "governance-proof",
         )
 
