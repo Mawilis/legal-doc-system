@@ -203,6 +203,7 @@ class SheriffOfficeAppointmentAuthorityRegistry:
             first.appointment_instrument_fingerprint,
             first.office_scope_instrument_reference,
             first.office_scope_instrument_fingerprint,
+            first.certificate_jurisdiction_reference,
         )
         previous = first
         for expected_revision, item in enumerate(ordered[1:], start=2):
@@ -217,6 +218,7 @@ class SheriffOfficeAppointmentAuthorityRegistry:
                 item.appointment_instrument_fingerprint,
                 item.office_scope_instrument_reference,
                 item.office_scope_instrument_fingerprint,
+                item.certificate_jurisdiction_reference,
             )
             if item.revision != expected_revision:
                 _fail(SheriffOfficeAppointmentPersistedRecordInvalidError, "SHERIFF_APPOINTMENT_HISTORY_GAP")
@@ -437,7 +439,10 @@ class SheriffOfficeAppointmentAuthorityRegistry:
         grouped: dict[str, list[SheriffOfficeAppointmentAuthority]] = {}
         for raw in cursor:
             item = self._hydrate(raw)
-            if item.tenant_id != tenant:
+            if item.tenant_id != tenant or any(
+                getattr(item, field) != expected
+                for field, expected in query.items()
+            ):
                 _fail(SheriffOfficeAppointmentPersistedRecordInvalidError, "SHERIFF_APPOINTMENT_PERSISTED_SCOPE_MISMATCH")
             grouped.setdefault(item.appointment_id, []).append(item)
 
