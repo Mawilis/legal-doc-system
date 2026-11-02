@@ -23,7 +23,7 @@ from tools.eos.auth.tenant_ownership_verifier import (
     TenantOwnershipVerificationRequest,
 )
 
-VERSION: Final[str] = "v1.0.0-ISSUE-300-TWO-PARTY-TRANSFER"
+VERSION: Final[str] = "v1.1.0-ISSUE-300-TWO-PHASE-TRANSFER"
 PROPOSALS: Final[str] = "tenant_ownership_transfer_proposals"
 ACCEPTANCES: Final[str] = "tenant_ownership_transfer_acceptances"
 
@@ -70,6 +70,17 @@ class VerifiedTransferAcceptance:
     successor_identity_proof_fingerprint: str
     verifier_id: str
     proof_fingerprint: str
+
+@dataclass(frozen=True, slots=True, init=False)
+class PreparedTransferProposal:
+    """Opaque verifier-issued proposal receipt for transaction entry."""
+    proof: VerifiedTransferProposal
+
+
+@dataclass(frozen=True, slots=True, init=False)
+class PreparedTransferAcceptance:
+    """Opaque verifier-issued successor acceptance receipt for transaction entry."""
+    proof: VerifiedTransferAcceptance
 
 
 class TransferProposalVerifier(Protocol):
@@ -150,8 +161,8 @@ class TenantOwnershipTransferProtocol:
             name="tenant_ownership_transfer_one_acceptance_per_proposal",
         )
 
-    def propose(self, proposal: TransferProposal, *, session: Any) -> TransferProposal:
-        _active(session)
+    def prepare_proposal(self, proposal: TransferProposal) -> PreparedTransferProposal:
+        """Verify owner proposal outside Mongo transaction scope."""
         if type(proposal) is not TransferProposal:
             raise OwnershipTransferProtocolError("TRANSFER_PROPOSAL_REQUIRED")
         for name in (
@@ -176,6 +187,32 @@ class TenantOwnershipTransferProtocol:
             verified_at = _time("proposal_verified_at", verified.verified_at)
             if verified_at < created or verified_at >= expires:
                 raise OwnershipTransferProtocolError("CURRENT_OWNER_PROPOSAL_NOT_CURRENT")
+            _token("verifier_id", verified.verifier_id)
+            _token("proof_fingerprint", verified.proof_fingerprint)
+            prepared = object.__new__(PreparedTransferProposal)
+            object.__setattr__(prepared, "proof", verified)
+            return prepared
+        except OwnershipTransferProtocolError:
+            raise
+        except Exception as error:
+            raise OwnershipTransferProtocolError("CURRENT_OWNER_PROPOSAL_VERIFICATION_UNAVAILABLE") from error
+
+    def propose(
+        self, proposal: TransferProposal, *, verified: PreparedTransferProposal, session: Any
+    ) -> TransferProposal:
+        """Persist a preverified proposal; performs no external provider calls."""
+        _active(session)
+        if type(proposal) is not TransferProposal or type(verified) is not PreparedTransferProposal:
+            raise OwnershipTransferProtocolError("CURRENT_OWNER_PROPOSAL_VERIFICATION_INVALID")
+        proof = verified.proof
+        if type(proof) is not VerifiedTransferProposal or proof.proposal != proposal:
+            raise OwnershipTransferProtocolError("CURRENT_OWNER_PROPOSAL_VERIFICATION_INVALID")
+        created = _time("created_at", proposal.created_at)
+        expires = _time("expires_at", proposal.expires_at)
+        verified_at = _time("proposal_verified_at", proof.verified_at)
+        if expires <= datetime.now(timezone.utc) or verified_at < created or verified_at >= expires:
+            raise OwnershipTransferProtocolError("CURRENT_OWNER_PROPOSAL_NOT_CURRENT")
+        try:
             self._proposals.insert_one({
                 "proposal_reference": proposal.proposal_reference,
                 "proposal_fingerprint": proposal.proposal_fingerprint,
@@ -187,27 +224,24 @@ class TenantOwnershipTransferProtocol:
                 "created_at": created, "expires_at": expires,
                 "owner_authorization_reference": proposal.owner_authorization_reference,
                 "owner_authorization_fingerprint": proposal.owner_authorization_fingerprint,
-                "verifier_id": _token("verifier_id", verified.verifier_id),
-                "proof_fingerprint": _token("proof_fingerprint", verified.proof_fingerprint),
-                "verified_at": verified_at,
-                "status": "PROPOSED",
+                "verifier_id": _token("verifier_id", proof.verifier_id),
+                "proof_fingerprint": _token("proof_fingerprint", proof.proof_fingerprint),
+                "verified_at": verified_at, "status": "PROPOSED",
             }, session=session)
             return proposal
-        except OwnershipTransferProtocolError:
-            raise
         except DuplicateKeyError as error:
             raise OwnershipTransferProtocolError("TRANSFER_PROPOSAL_REPLAY") from error
         except PyMongoError as error:
             raise OwnershipTransferProtocolError("TRANSFER_PROPOSAL_PERSISTENCE_FAILED") from error
 
-    def accept(
+    def prepare_acceptance(
         self, *, proposal_reference: str, acceptance: VerifiedTransferAcceptance,
-        session: Any, evaluated_at: datetime,
-    ) -> VerifiedTransferAcceptance:
-        _active(session)
+        evaluated_at: datetime,
+    ) -> PreparedTransferAcceptance:
+        """Verify successor acceptance against persisted proposal outside transaction."""
         ref = _token("proposal_reference", proposal_reference)
         now = _time("evaluated_at", evaluated_at)
-        row = self._proposals.find_one({"proposal_reference": ref}, session=session)
+        row = self._proposals.find_one({"proposal_reference": ref})
         if row is None:
             raise OwnershipTransferProtocolError("TRANSFER_PROPOSAL_NOT_FOUND")
         if row.get("status") != "PROPOSED":
@@ -228,8 +262,7 @@ class TenantOwnershipTransferProtocol:
         proposal = TransferProposal(
             proposal_reference=row["proposal_reference"],
             proposal_fingerprint=row["proposal_fingerprint"],
-            tenant_id=row["tenant_id"],
-            legal_entity_reference=row["legal_entity_reference"],
+            tenant_id=row["tenant_id"], legal_entity_reference=row["legal_entity_reference"],
             current_owner_principal_id=row["current_owner_principal_id"],
             successor_principal_id=row["successor_principal_id"],
             expected_revision=row["expected_revision"],
@@ -246,34 +279,119 @@ class TenantOwnershipTransferProtocol:
             expiry = _time("acceptance_expires_at", verified.expires_at)
             if accepted > now or expiry <= now or accepted >= _stored_time("proposal_expiry", row["expires_at"]):
                 raise OwnershipTransferProtocolError("SUCCESSOR_ACCEPTANCE_NOT_CURRENT")
-            self._acceptances.insert_one({
-                "proposal_reference": ref,
-                "proposal_fingerprint": verified.proposal_fingerprint,
-                "tenant_id": verified.tenant_id,
-                "legal_entity_reference": verified.legal_entity_reference,
-                "current_owner_principal_id": verified.current_owner_principal_id,
-                "successor_principal_id": verified.successor_principal_id,
-                "acceptance_reference": _token("acceptance_reference", verified.acceptance_reference),
-                "acceptance_fingerprint": _token("acceptance_fingerprint", verified.acceptance_fingerprint),
-                "accepted_at": accepted, "expires_at": expiry,
-                "successor_identity_proof_fingerprint": _token(
-                    "successor_identity_proof_fingerprint", verified.successor_identity_proof_fingerprint
-                ),
-                "verifier_id": _token("acceptance_verifier_id", verified.verifier_id),
-                "proof_fingerprint": _token("acceptance_proof_fingerprint", verified.proof_fingerprint),
-            }, session=session)
-            return verified
+            for name, value in (
+                ("acceptance_reference", verified.acceptance_reference),
+                ("acceptance_fingerprint", verified.acceptance_fingerprint),
+                ("successor_identity_proof_fingerprint", verified.successor_identity_proof_fingerprint),
+                ("acceptance_verifier_id", verified.verifier_id),
+                ("acceptance_proof_fingerprint", verified.proof_fingerprint),
+            ):
+                _token(name, value)
+            prepared = object.__new__(PreparedTransferAcceptance)
+            object.__setattr__(prepared, "proof", verified)
+            return prepared
         except OwnershipTransferProtocolError:
             raise
+        except Exception as error:
+            raise OwnershipTransferProtocolError("SUCCESSOR_ACCEPTANCE_VERIFICATION_UNAVAILABLE") from error
+
+    def accept(
+        self, *, proposal_reference: str, acceptance: PreparedTransferAcceptance,
+        session: Any, evaluated_at: datetime,
+    ) -> PreparedTransferAcceptance:
+        """Persist preverified successor acceptance after transactional revalidation."""
+        _active(session)
+        ref = _token("proposal_reference", proposal_reference)
+        now = _time("evaluated_at", evaluated_at)
+        row = self._proposals.find_one({"proposal_reference": ref}, session=session)
+        if row is None:
+            raise OwnershipTransferProtocolError("TRANSFER_PROPOSAL_NOT_FOUND")
+        if row.get("status") != "PROPOSED":
+            raise OwnershipTransferProtocolError("TRANSFER_PROPOSAL_NOT_ACCEPTABLE")
+        if now >= _stored_time("proposal_expires_at", row["expires_at"]):
+            raise OwnershipTransferProtocolError("TRANSFER_PROPOSAL_EXPIRED")
+        if type(acceptance) is not PreparedTransferAcceptance:
+            raise OwnershipTransferProtocolError("SUCCESSOR_ACCEPTANCE_REQUIRED")
+        proof = acceptance.proof
+        if type(proof) is not VerifiedTransferAcceptance:
+            raise OwnershipTransferProtocolError("SUCCESSOR_ACCEPTANCE_VERIFICATION_INVALID")
+        if (
+            proof.proposal_reference != ref
+            or proof.proposal_fingerprint != row["proposal_fingerprint"]
+            or proof.tenant_id != row["tenant_id"]
+            or proof.legal_entity_reference != row["legal_entity_reference"]
+            or proof.current_owner_principal_id != row["current_owner_principal_id"]
+            or proof.successor_principal_id != row["successor_principal_id"]
+        ):
+            raise OwnershipTransferProtocolError("SUCCESSOR_ACCEPTANCE_SCOPE_MISMATCH")
+        accepted = _time("accepted_at", proof.accepted_at)
+        expiry = _time("acceptance_expires_at", proof.expires_at)
+        if accepted > now or expiry <= now or accepted >= _stored_time("proposal_expiry", row["expires_at"]):
+            raise OwnershipTransferProtocolError("SUCCESSOR_ACCEPTANCE_NOT_CURRENT")
+        try:
+            self._acceptances.insert_one({
+                "proposal_reference": ref,
+                "proposal_fingerprint": proof.proposal_fingerprint,
+                "tenant_id": proof.tenant_id,
+                "legal_entity_reference": proof.legal_entity_reference,
+                "current_owner_principal_id": proof.current_owner_principal_id,
+                "successor_principal_id": proof.successor_principal_id,
+                "acceptance_reference": _token("acceptance_reference", proof.acceptance_reference),
+                "acceptance_fingerprint": _token("acceptance_fingerprint", proof.acceptance_fingerprint),
+                "accepted_at": accepted, "expires_at": expiry,
+                "successor_identity_proof_fingerprint": _token(
+                    "successor_identity_proof_fingerprint", proof.successor_identity_proof_fingerprint
+                ),
+                "verifier_id": _token("acceptance_verifier_id", proof.verifier_id),
+                "proof_fingerprint": _token("acceptance_proof_fingerprint", proof.proof_fingerprint),
+            }, session=session)
+            return acceptance
         except DuplicateKeyError as error:
             raise OwnershipTransferProtocolError("SUCCESSOR_ACCEPTANCE_REPLAY") from error
         except PyMongoError as error:
             raise OwnershipTransferProtocolError("SUCCESSOR_ACCEPTANCE_PERSISTENCE_FAILED") from error
 
+    def prepare_finalization(
+        self, *, proposal_reference: str, evaluated_at: datetime
+    ) -> object:
+        """Preflight independent ownership evidence outside the commit transaction."""
+        ref = _token("proposal_reference", proposal_reference)
+        now = _time("evaluated_at", evaluated_at)
+        proposal = self._proposals.find_one({"proposal_reference": ref})
+        acceptance = self._acceptances.find_one({"proposal_reference": ref})
+        if proposal is None:
+            raise OwnershipTransferProtocolError("TRANSFER_PROPOSAL_NOT_FOUND")
+        if acceptance is None:
+            raise OwnershipTransferProtocolError("INDEPENDENT_SUCCESSOR_ACCEPTANCE_REQUIRED")
+        if (
+            proposal.get("status") != "PROPOSED"
+            or now >= _stored_time("proposal_expires_at", proposal["expires_at"])
+            or now >= _stored_time("acceptance_expires_at", acceptance["expires_at"])
+            or _stored_time("accepted_at", acceptance["accepted_at"]) > now
+            or proposal["proposal_fingerprint"] != acceptance["proposal_fingerprint"]
+            or proposal["tenant_id"] != acceptance["tenant_id"]
+            or proposal["legal_entity_reference"] != acceptance["legal_entity_reference"]
+            or proposal["current_owner_principal_id"] != acceptance["current_owner_principal_id"]
+            or proposal["successor_principal_id"] != acceptance["successor_principal_id"]
+        ):
+            raise OwnershipTransferProtocolError("TRANSFER_PROPOSAL_ACCEPTANCE_BINDING_INVALID")
+        request = TenantOwnershipVerificationRequest(
+            tenant_id=proposal["tenant_id"],
+            legal_entity_reference=proposal["legal_entity_reference"],
+            principal_id=proposal["successor_principal_id"],
+            operation=TenantOwnershipOperation.OWNERSHIP_TRANSFER,
+            evaluated_at=now,
+        )
+        try:
+            return self._lifecycle.prepare(request)
+        except Exception as error:
+            raise OwnershipTransferProtocolError("OWNERSHIP_EVIDENCE_PREFLIGHT_DENIED") from error
+
     def finalize(
         self, *, proposal_reference: str, actor_principal_id: str,
-        command_id: str, session: Any, evaluated_at: datetime,
+        command_id: str, prepared_evidence: object, session: Any, evaluated_at: datetime,
     ) -> TenantOwnershipEvidenceEvent:
+        """Revalidate proposal/acceptance and atomically commit prepared evidence."""
         _active(session)
         ref = _token("proposal_reference", proposal_reference)
         actor = _token("actor_principal_id", actor_principal_id)
@@ -306,8 +424,10 @@ class TenantOwnershipTransferProtocol:
             operation=TenantOwnershipOperation.OWNERSHIP_TRANSFER,
             evaluated_at=now,
         )
+        if getattr(prepared_evidence, "request", None) != request:
+            raise OwnershipTransferProtocolError("OWNERSHIP_EVIDENCE_PREFLIGHT_SCOPE_MISMATCH")
         event = self._lifecycle.execute(
-            request=request, actor_principal_id=actor,
+            request=request, evidence=prepared_evidence, actor_principal_id=actor,
             command_id=command, expected_revision=proposal["expected_revision"],
             session=session,
         )
@@ -321,8 +441,10 @@ class TenantOwnershipTransferProtocol:
         return event
 
 
+
 __all__ = [
     "ACCEPTANCES", "PROPOSALS", "VERSION", "OwnershipTransferProtocolError",
+    "PreparedTransferAcceptance", "PreparedTransferProposal",
     "TenantOwnershipTransferProtocol", "TransferAcceptanceVerifier",
     "TransferProposal", "TransferProposalVerifier", "VerifiedTransferAcceptance",
     "VerifiedTransferProposal",
