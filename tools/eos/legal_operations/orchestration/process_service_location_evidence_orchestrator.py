@@ -6,10 +6,17 @@ TRANSACTION: Caller supplies one active transaction; this module never commits.
 """
 from __future__ import annotations
 
+from base64 import b64decode
+import binascii
 from datetime import datetime, timedelta, timezone
 import hashlib
 import json
 from typing import Any, Final, NoReturn
+
+from cryptography.exceptions import InvalidSignature
+from cryptography.hazmat.primitives import hashes, serialization
+from cryptography.hazmat.primitives.asymmetric import ec
+from cryptography.hazmat.primitives.asymmetric.utils import encode_dss_signature
 
 from tools.eos.legal_operations.domain.deputy_device_provenance_authority import (
     DeputyDeviceProvenance,
@@ -124,6 +131,76 @@ def _digest(value: object) -> str:
     ).hexdigest()
 
 
+def location_observation_signed_payload(
+    *,
+    tenant_id: str,
+    attempt_id: str,
+    current_evidence_identity: str,
+    deputy_id: str,
+    device_id: str,
+    challenge_id: str,
+    grant_id: str,
+    observation_id: str,
+    current_evidence_identity: str,
+    location_signature_p1363: bytes,
+    latitude: float,
+    longitude: float,
+    horizontal_accuracy_m: float,
+    captured_at: datetime,
+) -> bytes:
+    """Return canonical browser-signable bytes for one exact GPS observation."""
+    captured = captured_at.astimezone(timezone.utc).isoformat(timespec="milliseconds").replace("+00:00", "Z")
+    payload = {
+        "schema": "WILSY-PROCESS-SERVICE-LOCATION-OBSERVATION-SIGNATURE/V1",
+        "tenant_id": tenant_id,
+        "attempt_id": attempt_id,
+        "current_evidence_identity": current_evidence_identity,
+        "deputy_id": deputy_id,
+        "device_id": device_id,
+        "challenge_id": challenge_id,
+        "grant_id": grant_id,
+        "observation_id": observation_id,
+        "latitude": f"{latitude:.7f}",
+        "longitude": f"{longitude:.7f}",
+        "horizontal_accuracy_m": f"{horizontal_accuracy_m:.2f}",
+        "captured_at": captured,
+    }
+    try:
+        return json.dumps(payload, ensure_ascii=True, allow_nan=False, sort_keys=True, separators=(",", ":")).encode("utf-8")
+    except (TypeError, ValueError) as error:
+        _fail("P5L_LOCATION_SIGNATURE_PAYLOAD_INVALID", error)
+
+
+def _verify_location_signature(
+    *,
+    proof: DeputyDeviceProvenance,
+    signed_payload: bytes,
+    signature_p1363: bytes,
+) -> str:
+    """Verify the GPS payload signature with the exact challenge-bound public key."""
+    if not isinstance(signature_p1363, bytes) or len(signature_p1363) != 64:
+        _fail("P5L_LOCATION_SIGNATURE_INVALID")
+    try:
+        public_der = b64decode(proof.public_key_spki, validate=True)
+        public_key = serialization.load_der_public_key(public_der)
+        if not isinstance(public_key, ec.EllipticCurvePublicKey) or not isinstance(public_key.curve, ec.SECP256R1):
+            _fail("P5L_LOCATION_PUBLIC_KEY_INVALID")
+        r = int.from_bytes(signature_p1363[:32], "big")
+        value_s = int.from_bytes(signature_p1363[32:], "big")
+        if r <= 0 or value_s <= 0:
+            _fail("P5L_LOCATION_SIGNATURE_INVALID")
+        public_key.verify(
+            encode_dss_signature(r, value_s),
+            signed_payload,
+            ec.ECDSA(hashes.SHA256()),
+        )
+    except InvalidSignature as error:
+        _fail("P5L_LOCATION_SIGNATURE_VERIFICATION_FAILED", error)
+    except (binascii.Error, ValueError, TypeError) as error:
+        _fail("P5L_LOCATION_SIGNATURE_VERIFICATION_FAILED", error)
+    return hashlib.sha3_512(signed_payload).hexdigest()
+
+
 def issue_process_service_location_permission_grant(
     *,
     attempt: ServiceAttempt,
@@ -228,6 +305,24 @@ def record_process_service_location_observation(
         )
         if grant.device_id != proof.device_id:
             _fail("P5L_GRANT_DEVICE_MISMATCH")
+        signed_payload = location_observation_signed_payload(
+            tenant_id=attempt.tenant_id,
+            attempt_id=attempt.attempt_id,
+            current_evidence_identity=current_evidence_identity,
+            deputy_id=attempt.deputy_id,
+            device_id=proof.device_id,
+            challenge_id=proof.challenge_id,
+            grant_id=grant_id,
+            observation_id=observation_id,
+            latitude=round(latitude, 7),
+            longitude=round(longitude, 7),
+            horizontal_accuracy_m=round(horizontal_accuracy_m, 2),
+            captured_at=captured_at,
+        )
+        signed_payload_fingerprint = _verify_location_signature(
+            proof=proof, signed_payload=signed_payload,
+            signature_p1363=location_signature_p1363,
+        )
         observation = create_process_service_location_observation(
             attempt=attempt,
             allocation_receipt=allocation_receipt,
@@ -235,16 +330,22 @@ def record_process_service_location_observation(
             permission_grant=grant,
             observation_id=observation_id,
             device_id=proof.device_id,
-            latitude=latitude,
-            longitude=longitude,
-            horizontal_accuracy_m=horizontal_accuracy_m,
+            latitude=round(latitude, 7),
+            longitude=round(longitude, 7),
+            horizontal_accuracy_m=round(horizontal_accuracy_m, 2),
             captured_at=captured_at,
             device_provenance_reference=proof.challenge_id,
             device_provenance_fingerprint=proof.fingerprint,
             evidence_reference=f"location-observation:{observation_id}",
         )
         return ProcessServiceLocationEvidenceRegistry.persist_observation(
-            observation, observation_collection, session=tx
+            observation,
+            observation_collection,
+            current_evidence_identity=current_evidence_identity,
+            location_signature_p1363=location_signature_p1363,
+            device_public_key_spki=proof.public_key_spki,
+            signed_payload_fingerprint=signed_payload_fingerprint,
+            session=tx,
         )
     except ProcessServiceLocationEvidenceOrchestrationError:
         raise
