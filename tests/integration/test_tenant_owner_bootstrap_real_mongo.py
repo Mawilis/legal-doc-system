@@ -94,6 +94,7 @@ def test_missing_independent_owner_proof_creates_no_tenant_authority(
         permissions=["*", "tenant:*"],
         auth_method="certificate",
         status=PrincipalStatus.ACTIVE,
+        session_reference=None,
     )
     tenant = TenantEntity(
         organization=OrganizationProfile(
