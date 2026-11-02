@@ -1,6 +1,6 @@
 /**
  * WILSY OS — ROLE-SCOPED LEGAL OPERATIONS CLIENT ADAPTER
- * VERSION: v2.2.0-P8-LEGAL-WORK-COMPLETION-BROWSER-TRANSPORT
+ * VERSION: v2.3.0-P5L-ONE-SHOT-LOCATION-EVIDENCE
  * AUTHORITY: Browser transport validation and presentation adaptation only.
  * EPITOME: Authenticated browser adapter for certified Legal Operations reads,
  *          practice-workspace projection, exact finance evidence lookups,
@@ -82,7 +82,7 @@ import api from './api.js';
 import sovereignClient from '../utils/sovereignClient.js';
 
 export const LEGAL_OPERATIONS_CLIENT_VERSION =
-  'v2.2.0-P8-LEGAL-WORK-COMPLETION-BROWSER-TRANSPORT';
+  'v2.3.0-P5L-ONE-SHOT-LOCATION-EVIDENCE';
 
 const CONFLICT_REVIEW_INPUT_KEYS = Object.freeze([
   'screeningId',
@@ -3077,6 +3077,7 @@ export const __legalOperationsServiceInternals = Object.freeze({
   assertCanonicalConflictScreeningPayload,
   assertFieldObservationInput,
   assertCanonicalFieldCommandResponse,
+  canonicalLocationSigningBytes,
   toFieldCommandBody,
   QUEUE_KEYS,
   RESPONSE_KEYS,
