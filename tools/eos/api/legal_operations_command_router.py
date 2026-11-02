@@ -454,6 +454,51 @@ class DeputyPrincipalBindingCommand(_CommandModel):
     evidence_reference: str = Field(min_length=1, max_length=512)
 
 
+class SheriffOfficeAppointmentCommand(_CommandModel):
+    """Tenant-admin attestation of external appointment, office, FFC and PI evidence.
+
+    Tenant, District, certificate jurisdiction, verifier, verification time,
+    revision and predecessor are server-derived. The body cannot grant IAM or
+    assert that WILSY itself issued an appointment or certificate.
+    """
+
+    appointment_id: str = Field(min_length=1, max_length=240)
+    expected_revision: int = Field(ge=0)
+    expected_predecessor_fingerprint: str | None = Field(
+        default=None,
+        min_length=128,
+        max_length=128,
+        pattern=r"^[0-9a-f]{128}$",
+    )
+    principal_id: str = Field(min_length=1, max_length=240)
+    sheriff_office_id: str = Field(min_length=1, max_length=240)
+    appointment_kind: str = Field(min_length=1, max_length=32)
+    appointment_instrument_reference: str = Field(min_length=1, max_length=500)
+    appointment_instrument_fingerprint: str = Field(
+        min_length=128, max_length=128, pattern=r"^[0-9a-f]{128}$"
+    )
+    office_scope_instrument_reference: str = Field(min_length=1, max_length=500)
+    office_scope_instrument_fingerprint: str = Field(
+        min_length=128, max_length=128, pattern=r"^[0-9a-f]{128}$"
+    )
+    fidelity_fund_certificate_reference: str = Field(min_length=1, max_length=500)
+    fidelity_fund_certificate_fingerprint: str = Field(
+        min_length=128, max_length=128, pattern=r"^[0-9a-f]{128}$"
+    )
+    professional_indemnity_insurance_reference: str = Field(
+        min_length=1, max_length=500
+    )
+    professional_indemnity_insurance_fingerprint: str = Field(
+        min_length=128, max_length=128, pattern=r"^[0-9a-f]{128}$"
+    )
+    appointment_effective_from: datetime
+    appointment_effective_until: datetime | None = None
+    certificate_valid_from: datetime
+    certificate_valid_until: datetime
+    professional_indemnity_insurance_valid_from: datetime
+    professional_indemnity_insurance_valid_until: datetime
+
+
 class AllocationCommand(_CommandModel):
     """Tenant-scoped P4A locators and operator observations only.
 
