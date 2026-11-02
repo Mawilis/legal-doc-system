@@ -11,11 +11,13 @@ from cryptography.hazmat.primitives.asymmetric import ed25519
 
 from tools.eos.auth.tenant_ownership_provider_ports import (
     RecoveryDecisionLookup, RecoveryDecisionReceipt, RegistrySnapshot,
+    SigningReceipt, SigningRequest,
 )
 from tools.eos.auth.tenant_ownership_provider_validation import (
     OwnershipProviderEvidenceError, RegistryFreshnessPolicy, VerificationKey,
     assess_registry_lineage, invoke_provider_fail_closed, validate_recovery_decision,
     verify_provider_signature, recovery_decision_signing_payload,
+    signing_request_payload, validate_signing_receipt,
 )
 
 
@@ -174,3 +176,49 @@ def test_recovery_signature_payload_binds_signing_key_revision() -> None:
     )
     assert payload != rotated
     assert payload != substituted
+
+
+def test_signing_receipt_is_bound_to_digest_tenant_purpose_and_key_revision() -> None:
+    private = ed25519.Ed25519PrivateKey.generate()
+    public_pem = private.public_key().public_bytes(
+        serialization.Encoding.PEM, serialization.PublicFormat.SubjectPublicKeyInfo,
+    )
+    request = SigningRequest(
+        payload_digest=FP, digest_algorithm="SHA-256", key_reference="hsm-key",
+        key_revision=4, purpose="TENANT_OWNERSHIP_ISSUER", tenant_id="tenant-1",
+        evaluated_at=NOW,
+    )
+    key = VerificationKey(
+        "hsm-key", 4, "ED25519", public_pem,
+        NOW - timedelta(days=1), NOW + timedelta(days=1),
+    )
+    signature = base64.b64encode(private.sign(signing_request_payload(request))).decode("ascii")
+    receipt = SigningReceipt(
+        provider_id="hsm-provider", custody_authority_id="custody-authority",
+        key_reference="hsm-key", key_revision=4, algorithm="ED25519",
+        signature=signature, payload_digest=FP, purpose=request.purpose,
+        signed_at=NOW, audit_reference="audit-1", custody_proof_fingerprint="b" * 64,
+    )
+    assert validate_signing_receipt(request, receipt, key, evaluated_at=NOW) == FP
+    with pytest.raises(OwnershipProviderEvidenceError, match="SIGNING_RECEIPT_REQUEST_BINDING_MISMATCH"):
+        validate_signing_receipt(request, replace(receipt, key_revision=5), key, evaluated_at=NOW)
+    with pytest.raises(OwnershipProviderEvidenceError, match="SIGNING_RECEIPT_REQUEST_BINDING_MISMATCH"):
+        validate_signing_receipt(request, replace(receipt, purpose="OTHER"), key, evaluated_at=NOW)
+
+
+def test_signing_receipt_rejects_wrong_payload_signature_and_future_time() -> None:
+    private = ed25519.Ed25519PrivateKey.generate()
+    public_pem = private.public_key().public_bytes(
+        serialization.Encoding.PEM, serialization.PublicFormat.SubjectPublicKeyInfo,
+    )
+    request = SigningRequest(FP, "SHA256", "hsm-key", 1, "purpose", "tenant-1", NOW)
+    key = VerificationKey("hsm-key", 1, "ED25519", public_pem,
+                          NOW - timedelta(days=1), NOW + timedelta(days=1))
+    signature = base64.b64encode(private.sign(signing_request_payload(request))).decode("ascii")
+    receipt = SigningReceipt("provider", "custodian", "hsm-key", 1, "ED25519",
+                             signature, FP, "purpose", NOW, "audit", "c" * 64)
+    with pytest.raises(OwnershipProviderEvidenceError, match="SIGNATURE_INVALID"):
+        validate_signing_receipt(request, replace(receipt, payload_digest="d" * 64), key, evaluated_at=NOW)
+    with pytest.raises(OwnershipProviderEvidenceError, match="SIGNING_RECEIPT_TIME_INVALID"):
+        validate_signing_receipt(request, replace(receipt, signed_at=NOW + timedelta(seconds=1)),
+                                 key, evaluated_at=NOW)
