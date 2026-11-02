@@ -99,7 +99,7 @@ def test_issue_route_uses_server_identity_session_binding_and_transaction(
         return challenge
 
     monkeypatch.setattr(command_api, "issue_deputy_device_challenge", issue)
-    public_key = b"synthetic-public-key-der"
+    public_key = b"P" * 64
 
     with TestClient(app_for(context())) as client:
         response = client.post(
@@ -214,7 +214,7 @@ def test_location_permission_route_consumes_device_proof_and_creates_short_grant
     database = Database()
     session = ActiveSession()
     calls: list[dict[str, Any]] = []
-    proof = SimpleNamespace(device_id="deputy-device:synthetic")
+    proof = SimpleNamespace(device_id="deputy-device:synthetic", challenge_id="challenge-http", fingerprint="c" * 128)
     grant = SimpleNamespace(
         to_dict=lambda: {
             "tenant_id": TENANT, "attempt_id": "attempt-http",
@@ -277,7 +277,7 @@ def test_location_capture_route_requires_both_challenge_and_gps_signatures(
         SimpleNamespace(attempt_id="attempt-http"), object(), object()
     ))
     monkeypatch.setattr(command_api, "_deputy_device_scope", lambda *args: DEPUTY)
-    monkeypatch.setattr(command_api, "_verify_location_device_proof", lambda **kwargs: proof)
+    monkeypatch.setattr(command_api, "_get_consumed_deputy_device_proof", lambda **kwargs: proof)
 
     def record(**kwargs: Any) -> object:
         calls.append(kwargs)
@@ -292,8 +292,7 @@ def test_location_capture_route_requires_both_challenge_and_gps_signatures(
                 "current_evidence_identity": "p2-current-http",
                 "grant_id": "grant-http",
                 "observation_id": "observation-http",
-                "challenge_id": "challenge-http",
-                "signature_p1363_b64": signature,
+                "device_provenance_reference": "challenge-http",
                 "location_signature_p1363_b64": signature,
                 "latitude": -26.2,
                 "longitude": 28.0,
