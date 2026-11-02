@@ -294,7 +294,11 @@ def record_process_service_location_observation(
     )
     try:
         ProcessServiceLocationEvidenceRegistry.assert_permission_grant_active(
-            attempt.tenant_id, grant_id, revocation_collection, session=tx
+            attempt.tenant_id,
+            grant_id,
+            revocation_collection,
+            at=captured_at,
+            session=tx,
         )
         grant = ProcessServiceLocationEvidenceRegistry.get_permission_grant(
             attempt.tenant_id,
