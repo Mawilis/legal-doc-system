@@ -244,13 +244,36 @@ def test_invalid_commercial_cardinality_or_feature_causes_no_writes(
     assert raised.value.code == code
 
 
-def test_founder_branding_only_plan_does_not_grant_legal_entitlement(
+def test_exact_zero_rated_founder_subscription_composes_legal_without_plan_feature(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
-    """Perpetual Founder term does not widen the persisted feature snapshot."""
+    """Exact perpetual platform Founder binding independently grants Legal."""
     Registry.items = (
         subscription(
             tenant_id="WILSYTENANT-4CD2FZ4O",
+            subscription_id="WILSYSUB-93455E4E",
+            plan_id="WILSYPLAN-37B8164F",
+            features=("tenant.branding",),
+            period_end=NOW - timedelta(days=29),
+            amount=0.0,
+            billing_mode="PLATFORM",
+        ),
+    )
+    calls = install_flow(monkeypatch)
+    result = invoke(tenant_id="WILSYTENANT-4CD2FZ4O")
+    assert result.outcome is composer.TenantProductEntitlementCompositionOutcome.COMPOSED
+    assert result.entitlement.lifecycle_state is TenantProductEntitlementState.ACTIVE
+    assert calls[0][0] == "create"
+    assert calls[1][0] == "transition"
+
+
+def test_founder_exception_does_not_apply_to_another_tenant(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """Zero price and branding feature cannot impersonate platform Founder."""
+    Registry.items = (
+        subscription(
+            tenant_id="tenant-impostor",
             subscription_id="WILSYSUB-93455E4E",
             plan_id="WILSYPLAN-37B8164F",
             features=("tenant.branding",),
@@ -265,8 +288,8 @@ def test_founder_branding_only_plan_does_not_grant_legal_entitlement(
         lambda *_args, **_kwargs: pytest.fail("entitlement read occurred"),
     )
     with pytest.raises(composer.TenantProductEntitlementComposerCommercialError) as raised:
-        invoke(tenant_id="WILSYTENANT-4CD2FZ4O")
-    assert raised.value.code == "D22B3_COMMERCIAL_FEATURE_ABSENT"
+        invoke(tenant_id="tenant-impostor")
+    assert raised.value.code == "D22B3_SUBSCRIPTION_TERM_INELIGIBLE"
 
 
 def test_expired_active_commercial_subscription_rejects_before_entitlement_reads(
