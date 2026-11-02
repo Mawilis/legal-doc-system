@@ -104,7 +104,7 @@ STRUCTURAL GOVERNANCE:
 from __future__ import annotations
 
 import logging
-from typing import Any, NoReturn
+from typing import Any, Literal, NoReturn
 
 from fastapi import (
     APIRouter,
@@ -135,7 +135,7 @@ from tools.eos.saas.tenancy.tenant_registry import (
 # SOVEREIGN VERSION
 # =============================================================================
 
-VERSION = "v1.2.0-TENANT-PROFILE-UPDATE-AUTHORITY-WIRING"
+VERSION = "v1.3.0-ISSUE-300-DENY-ONLY-READINESS"
 
 
 # =============================================================================
@@ -348,6 +348,15 @@ class TenantListResponse(BaseModel):
 
     tenants: list[TenantResponse]
     total: int
+
+class TenantOwnershipReadinessResponse(BaseModel):
+    """Read-only status of the independent ownership-authority boundary."""
+
+    tenant_id: str
+    status: Literal["DENY"]
+    reason: Literal["OWNERSHIP_EVIDENCE_AUTHORITY_UNAVAILABLE"]
+    positive_operations_enabled: Literal[False]
+
 
 
 # =============================================================================
@@ -695,6 +704,7 @@ __all__ = [
     "TenantUpdateRequest",
     "TenantResponse",
     "TenantListResponse",
+    "TenantOwnershipReadinessResponse",
     "tenant_router",
 ]
 
@@ -703,7 +713,7 @@ __all__ = [
 # WILSY OS SOVEREIGN ARTIFACT CERTIFICATION SEAL
 # =============================================================================
 # ARTIFACT: tenant_router.py
-# VERSION: v1.2.0-TENANT-PROFILE-UPDATE-AUTHORITY-WIRING
+# VERSION: v1.3.0-ISSUE-300-DENY-ONLY-READINESS
 # AUTHORITY BOUNDARY: tenant HTTP composition, exact request schema, path/scope binding, bounded registry invocation, and HTTP translation only; durable authentication, membership, role, permission, and authorization truth remain external authorities
 # TENANT POSTURE: authorized X-Tenant-ID must exactly equal the detail path tenant before GET/PUT/archive persistence; collection list and create remain contained
 # FAIL-CLOSED POSTURE: GET uses profile_read, PUT uses profile_update, archive uses lifecycle_archive; extra PUT fields are rejected; mismatch denies 403; absence is 404; client mutation errors are 422; persistence corruption/outage/inconsistency is 503
