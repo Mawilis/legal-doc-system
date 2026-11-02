@@ -9,6 +9,7 @@ ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/tests/unit/test_
 
 from __future__ import annotations
 
+import asyncio
 from datetime import UTC, datetime, timedelta
 from types import SimpleNamespace
 from typing import Any
@@ -126,9 +127,13 @@ def test_command_derives_tenant_verifier_and_indexes_before_transaction(
         identity=SimpleNamespace(identity_id="verifying-admin"),
         decision=SimpleNamespace(business_role="tenant_admin"),
     )
-    response = subject.record_sheriff_office_appointment_command(
-        _command(),
-        context,  # type: ignore[arg-type]
+    response = asyncio.run(
+        asyncio.run(
+            subject.record_sheriff_office_appointment_command(
+                _command(),
+                context,  # type: ignore[arg-type]
+            )
+        )
     )
 
     assert response == {"recorded": True}
