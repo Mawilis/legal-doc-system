@@ -313,6 +313,38 @@ def _issuance_idempotency(operation: str, entity: SubscriptionEntity) -> str:
     return prefix + digest[: 64 - len(prefix)]
 
 
+def _existing_subscription_issuance_idempotency(entity: SubscriptionEntity) -> str:
+    """Derive stable replay identity from immutable existing subscription proof."""
+    if (
+        not isinstance(entity, SubscriptionEntity)
+        or not entity.proof_hash
+        or not entity.subscription_id
+        or not entity.idempotency_key
+    ):
+        _raise(
+            SubscriptionActiveEntitlementCompositionLifecycleError,
+            "D22B3_P42_EXISTING_SUBSCRIPTION_EVIDENCE_INVALID",
+        )
+    material = json.dumps(
+        {
+            "namespace": IDEMPOTENCY_NAMESPACE,
+            "operation": "existing_subscription_reconciliation",
+            "tenant_id": entity.tenant_id,
+            "subscription_id": entity.subscription_id,
+            "subscription_create_idempotency": entity.idempotency_key,
+            "subscription_proof_hash": entity.proof_hash,
+            "product_id": TenantProductId.LEGAL_OPERATIONS.value,
+        },
+        sort_keys=True,
+        separators=(",", ":"),
+        ensure_ascii=True,
+        allow_nan=False,
+    ).encode("utf-8")
+    digest = hashlib.sha3_512(material).hexdigest()
+    prefix = f"{IDEMPOTENCY_NAMESPACE}:existing:"
+    return prefix + digest[: 64 - len(prefix)]
+
+
 def _authorization_registry(database: Any) -> TenantAuthorizationDecisionEvidenceRegistry:
     """Construct canonical IAM evidence issuance without inventing authority."""
     return TenantAuthorizationDecisionEvidenceRegistry(
@@ -353,7 +385,36 @@ def _run(
         with session_context as session:
             try:
                 session.start_transaction()
-                if operation == "create":
+                if operation == "reconcile_existing":
+                    existing = SubscriptionRegistry.list_entities(
+                        authority.tenant_id,
+                        collection=subscriptions,
+                        session=session,
+                    )
+                    eligible = tuple(
+                        item
+                        for item in existing
+                        if (
+                            type(item) is SubscriptionEntity
+                            and item.status is SubscriptionStatus.ACTIVE
+                            and evaluate_subscription_term(
+                                item,
+                                evaluated_at=datetime.now(timezone.utc),
+                            ).eligible
+                        )
+                    )
+                    if len(eligible) != 1:
+                        _raise(
+                            SubscriptionActiveEntitlementCompositionLifecycleError,
+                            "D22B3_P42_EXISTING_SUBSCRIPTION_CARDINALITY_INVALID",
+                        )
+                    entity = eligible[0]
+                    commercial = {
+                        "success": True,
+                        "subscription": entity,
+                        "operation": "existing_subscription_reconciliation",
+                    }
+                elif operation == "create":
                     if payload is None:
                         _raise(SubscriptionActiveEntitlementCompositionInputError)
                     commercial = SubscriptionRegistry.create(
@@ -411,7 +472,11 @@ def _run(
                         issuance = issue_tenant_product_entitlement(
                             identity=authority,
                             product_id=TenantProductId.LEGAL_OPERATIONS,
-                            idempotency_key=_issuance_idempotency(operation, entity),
+                            idempotency_key=(
+                                _existing_subscription_issuance_idempotency(entity)
+                                if operation == "reconcile_existing"
+                                else _issuance_idempotency(operation, entity)
+                            ),
                             occurred_at=datetime.now(timezone.utc),
                             subscription_collection=subscriptions,
                             entitlement_history_collection=history,
@@ -468,6 +533,19 @@ class SubscriptionActiveEntitlementCompositionService:
     Public callers cannot supply product, session, transaction, database or
     financial authority.
     """
+
+    @staticmethod
+    def reconcile_existing(
+        identity: SovereignIdentity,
+    ) -> SubscriptionActiveEntitlementCompositionResult:
+        """Issue the missing Legal entitlement from one existing eligible subscription.
+
+        No subscription mutation occurs. The active identity, canonical
+        subscription registry, IAM authorization evidence and entitlement
+        composer all participate in one caller-owned-by-service transaction.
+        Repeated calls use the same proof-derived idempotency key.
+        """
+        return _run("reconcile_existing", identity)
 
     @staticmethod
     def create(
