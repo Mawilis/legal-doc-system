@@ -128,6 +128,7 @@ import {
   Loader2,
   LockKeyhole,
   LogOut,
+  MapPin,
   Play,
   RefreshCw,
   Scale,
@@ -141,7 +142,9 @@ import {
   LEGAL_OPERATIONS_CLIENT_VERSION,
   generateLegalReturnOfService,
   getDeputyFieldCapabilities,
+  getDeputyLocationEvidence,
   getDeputyPersonalActiveWork,
+  captureDeputyLocationEvidence,
   getLegalClientMatters,
   getLegalClientAcceptanceInstruments,
   createLegalClientAcceptanceContext,
@@ -4408,6 +4411,8 @@ export default function LegalDashboard({
   const [observationDrafts, setObservationDrafts] = useState({});
   const [commandState, setCommandState] = useState(null);
   const [fieldDeviceId, setFieldDeviceId] = useState('');
+  const [locationCaptureStates, setLocationCaptureStates] = useState({});
+  const [locationEvidenceByAttempt, setLocationEvidenceByAttempt] = useState({});
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [error, setError] = useState(null);
@@ -4638,6 +4643,82 @@ export default function LegalDashboard({
         [field]: value,
       },
     }));
+  }, []);
+
+  const runDeputyLocationCapture = useCallback(async (attempt) => {
+    const capability = capabilityByAttempt.get(attempt.attempt_id);
+    if (!capability || !['ALLOCATED', 'ATTEMPTED'].includes(capability.currentState)) {
+      setLocationCaptureStates((current) => ({
+        ...current,
+        [attempt.attempt_id]: {
+          status: 'error',
+          message: 'Canonical field capability does not permit location capture.',
+        },
+      }));
+      return;
+    }
+    setLocationCaptureStates((current) => ({
+      ...current,
+      [attempt.attempt_id]: {
+        status: 'pending',
+        message: 'Requesting one location fix and signing it with this browser device key…',
+      },
+    }));
+    try {
+      const result = await captureDeputyLocationEvidence({
+        attemptId: attempt.attempt_id,
+        currentEvidenceIdentity: capability.currentEvidenceIdentity,
+      });
+      const packet = await getDeputyLocationEvidence(attempt.attempt_id);
+      setLocationEvidenceByAttempt((current) => ({
+        ...current,
+        [attempt.attempt_id]: packet,
+      }));
+      setLocationCaptureStates((current) => ({
+        ...current,
+        [attempt.attempt_id]: {
+          status: 'success',
+          message: 'Saved one signed location observation (' + result.observation.observation_id + '). No background tracking was started.',
+        },
+      }));
+    } catch (caught) {
+      setLocationCaptureStates((current) => ({
+        ...current,
+        [attempt.attempt_id]: {
+          status: 'error',
+          message: commandErrorMessage(caught),
+        },
+      }));
+    }
+  }, [capabilityByAttempt]);
+
+  const loadDeputyLocationEvidence = useCallback(async (attempt) => {
+    setLocationCaptureStates((current) => ({
+      ...current,
+      [attempt.attempt_id]: { status: 'pending', message: 'Loading saved location evidence…' },
+    }));
+    try {
+      const packet = await getDeputyLocationEvidence(attempt.attempt_id);
+      setLocationEvidenceByAttempt((current) => ({
+        ...current,
+        [attempt.attempt_id]: packet,
+      }));
+      setLocationCaptureStates((current) => ({
+        ...current,
+        [attempt.attempt_id]: {
+          status: 'success',
+          message: 'Loaded ' + packet.observations.length + ' saved location observation(s).',
+        },
+      }));
+    } catch (caught) {
+      setLocationCaptureStates((current) => ({
+        ...current,
+        [attempt.attempt_id]: {
+          status: 'error',
+          message: commandErrorMessage(caught),
+        },
+      }));
+    }
   }, []);
 
   const runDeputyFieldCommand = useCallback(async (attempt, commandKind) => {
