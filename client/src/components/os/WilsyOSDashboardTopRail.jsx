@@ -27,12 +27,13 @@ import { useTenants } from '../../contexts/tenantContext';
 import {
   compactWilsyDashboardSignal,
   normalizeWilsyDashboardText,
-  resolveWilsyChromeIdentitySources
+  resolveWilsyChromeIdentitySources,
+  isWilsyPlatformTenant
 } from './wilsyDashboardChromeConfig';
 import { useAuthenticatedTenantBrandingAsset } from '../../hooks/useAuthenticatedTenantBrandingAsset.js';
 import './WilsyOSDashboardChrome.module.css';
 
-const WILSY_OS_DASHBOARD_TOP_RAIL_VERSION = 'V1.2.0-D21B12-AUTHENTICATED-BRANDING-ASSET-PRESENTATION';
+const WILSY_OS_DASHBOARD_TOP_RAIL_VERSION = 'V1.3.0-D21B12-WILSY-PLATFORM-TENANT-MARK';
 const WILSY_OS_DEFAULT_MARK = new URL('../../assets/logo/wilsy.jpeg', import.meta.url).href;
 
 /**
@@ -199,7 +200,9 @@ const WilsyOSDashboardTopRail = ({
     objectUrl: tenantLogoObjectUrl,
     status: tenantLogoStatus,
   } = useAuthenticatedTenantBrandingAsset(
-    payload.tenant.branding?.logo || null,
+    isWilsyPlatformTenant(payload.tenant.tenantId)
+      ? null
+      : payload.tenant.branding?.logo || null,
   );
 
   return (
@@ -209,7 +212,7 @@ const WilsyOSDashboardTopRail = ({
       data-wilsy-dashboard-key={payload.dashboardKey}
       data-wilsy-toprail-version={WILSY_OS_DASHBOARD_TOP_RAIL_VERSION}
       data-wilsy-tenant-branding={payload.tenant.branding ? 'authenticated' : 'none'}
-      data-wilsy-tenant-logo={tenantLogoStatus.toLowerCase()}
+      data-wilsy-tenant-logo={isWilsyPlatformTenant(payload.tenant.tenantId) ? 'platform' : tenantLogoStatus.toLowerCase()}
       style={style}
     >
       <div className="wilsyOsChromeTitleBlock">
@@ -231,7 +234,12 @@ const WilsyOSDashboardTopRail = ({
 
       <section className="wilsyOsChromeTenantPlate" aria-label="Tenant identity">
         <div className="wilsyOsChromeTenantMark" aria-label="Tenant identity mark">
-          {tenantLogoObjectUrl ? (
+          {isWilsyPlatformTenant(payload.tenant.tenantId) ? (
+            <img
+              src={WILSY_OS_DEFAULT_MARK}
+              alt={`${payload.tenant.displayName} tenant mark`}
+            />
+          ) : tenantLogoObjectUrl ? (
             <>
               <img
                 src={tenantLogoObjectUrl}

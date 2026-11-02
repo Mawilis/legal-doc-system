@@ -30,7 +30,7 @@
  * FINANCIAL AUTHORITY BOUNDARY: None; Kennel EOS exclusively owns execution.
  */
 
-const VERSION = 'v2.0.0-D21B9-AUTHENTICATED-BRANDING-PRESENTATION';
+const VERSION = 'v2.1.0-D21B9-WILSY-PLATFORM-TENANT-MARK';
 
 function firstNonEmpty(...candidates) {
   for (const candidate of candidates) {
@@ -245,6 +245,15 @@ export function resolveWilsyChromeIdentitySources({
       Array.isArray(storyMessages) && storyMessages.length ? storyMessages : defaultStory
   };
 }
+
+export const WILSY_PLATFORM_TENANT_ID = 'WILSYTENANT-4CD2FZ4O';
+
+/**
+ * Use the first-party platform mark as the tenant mark only for WILSY's own
+ * platform tenant. Other tenants continue to use their authenticated branding.
+ */
+export const isWilsyPlatformTenant = (tenantId) =>
+  typeof tenantId === 'string' && tenantId === WILSY_PLATFORM_TENANT_ID;
 
 export { VERSION };
 
