@@ -1,7 +1,7 @@
 """WILSY OS Legal Operations command boundary.
 
 TITLE: Legal Operations Command API
-VERSION: v1.11.0-P13R4-WORKFLOW-TRANSITION-COMMAND-API
+VERSION: v1.13.0-L8-SHERIFF-APPOINTMENT-EVIDENCE-COMMAND-API
 AUTHORITY: HTTP command composition only; P1/P2/L8-1/L8-2/L8-3/L8-6B/P4/P5 remain canonical authorities.
 EPITOME: Translate authenticated tenant-scoped Legal Operations commands,
          including authorized human conflict review, into bounded canonical
@@ -215,6 +215,10 @@ from tools.eos.legal_operations.orchestration.process_service_acceptance_receipt
     ProcessServiceAcceptanceReceiptError,
     accept_instruction_and_receive_document,
 )
+from tools.eos.legal_operations.orchestration.sheriff_office_appointment_authority_orchestrator import (
+    SheriffOfficeAppointmentOrchestrationError,
+    record_sheriff_office_appointment_authority,
+)
 from tools.eos.legal_operations.orchestration.process_service_attempt_orchestrator import orchestrate_process_service_attempt
 from tools.eos.legal_operations.orchestration.process_service_field_evidence_orchestrator import (
     ProcessServiceFieldEvidenceOrchestratorError,
@@ -231,6 +235,11 @@ from tools.eos.legal_operations.registry.deputy_principal_binding_registry impor
     COLLECTION as DEPUTY_PRINCIPAL_BINDING_COLLECTION,
     DeputyPrincipalBindingRegistry,
     DeputyPrincipalBindingRegistryError,
+)
+from tools.eos.legal_operations.registry.sheriff_office_appointment_authority_registry import (
+    COLLECTION_NAME as SHERIFF_APPOINTMENT_COLLECTION,
+    SheriffOfficeAppointmentAuthorityRegistry,
+    SheriffOfficeAppointmentRegistryError,
 )
 from tools.eos.legal_operations.registry.deputy_device_provenance_registry import (
     COLLECTION as DEPUTY_DEVICE_PROVENANCE_COLLECTION,
@@ -330,7 +339,7 @@ from tools.eos.legal_operations.registry.legal_work_item_registry import (
 )
 
 
-VERSION: Final[str] = "v1.12.0-P14-R20R27-WORK-COMPLETION-COMMAND-API"
+VERSION: Final[str] = "v1.13.0-L8-SHERIFF-APPOINTMENT-EVIDENCE-COMMAND-API"
 router = APIRouter(prefix="/legal-operations", tags=["Legal Operations Commands"])
 _T = TypeVar("_T")
 _SHERIFF_BUSINESS_ROLE: Final[str] = "tenant_sheriff"
