@@ -166,6 +166,7 @@ from tools.eos.legal_operations.domain.deputy_personal_active_work import (
     get_deputy_personal_field_capabilities,
 )
 from tools.eos.legal_operations.domain.legal_operations_lifecycle import (
+    District,
     ServiceAttempt,
     SheriffOffice,
 )
