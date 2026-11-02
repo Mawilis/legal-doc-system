@@ -145,6 +145,15 @@ def test_section_32_3_acting_fixed_term_is_between_one_month_and_one_year() -> N
     assert value.validity_basis is SheriffFfcValidityBasis.SECTION_32_3_ACTING_FIXED_TERM
     assert value.subject_capacity is SheriffAppointmentCapacity.ACTING_SHERIFF
 
+    minimum_term = make_acting(
+        valid_until=datetime(2026, 2, 1, 0, 0, tzinfo=UTC)
+    )
+    maximum_term = make_acting(
+        valid_until=datetime(2027, 1, 1, 0, 0, tzinfo=UTC)
+    )
+    assert minimum_term.valid_until == datetime(2026, 2, 1, 0, 0, tzinfo=UTC)
+    assert maximum_term.valid_until == datetime(2027, 1, 1, 0, 0, tzinfo=UTC)
+
     with pytest.raises(SheriffFfcEvidenceError) as caught:
         make_acting(valid_until=START + timedelta(days=29))
     assert caught.value.code == "SHERIFF_FFC_ACTING_TERM_OUT_OF_RANGE"
