@@ -271,6 +271,45 @@ def test_device_signature_cannot_be_replayed_for_changed_gps_coordinates():
     assert error.value.code == "P5L_LOCATION_SIGNATURE_VERIFICATION_FAILED"
     assert observations.docs == []
 
+
+def test_offline_capture_before_withdrawal_can_sync_after_revocation():
+    attempt, receipt, current, now = sources()
+    proof_value, private_key = proof(now)
+    grants, observations, revocations = Collection(), Collection(), Collection()
+    grant = create_grant(attempt, receipt, current, proof_value, now, grants)
+    captured_at = now + timedelta(seconds=1)
+    current_identity = "p2-current-identity-p5l"
+    signed_payload = location_observation_signed_payload(
+        tenant_id=TENANT, attempt_id=attempt.attempt_id,
+        current_evidence_identity=current_identity, deputy_id=DEPUTY_ID,
+        device_id=proof_value.device_id, challenge_id=proof_value.challenge_id,
+        grant_id=grant.grant_id, observation_id="observation-before-revoke",
+        latitude=-26.2041, longitude=28.0473, horizontal_accuracy_m=10.0,
+        captured_at=captured_at,
+    )
+    der = private_key.sign(signed_payload, ec.ECDSA(hashes.SHA256()))
+    r_value, s_value = decode_dss_signature(der)
+    location_signature = r_value.to_bytes(32, "big") + s_value.to_bytes(32, "big")
+    revoke_process_service_location_permission_grant(
+        tenant_id=TENANT, grant_id=grant.grant_id, revocation_id="revoke-after-capture",
+        revoked_by_principal_id=PRINCIPAL, revoked_at=now + timedelta(seconds=2),
+        reason_reference="user-withdrew-after-capture", grant_collection=grants,
+        revocation_collection=revocations, session=Session(),
+    )
+    value = record_process_service_location_observation(
+        attempt=attempt, allocation_receipt=receipt, allocation_current=current,
+        device_provenance=proof_value, principal_id=PRINCIPAL, grant_id=grant.grant_id,
+        observation_id="observation-before-revoke", current_evidence_identity=current_identity,
+        location_signature_p1363=location_signature, latitude=-26.2041, longitude=28.0473,
+        horizontal_accuracy_m=10.0, captured_at=captured_at,
+        permission_collection=grants, observation_collection=observations,
+        revocation_collection=revocations, session=Session(),
+    )
+    assert value.observation_id == "observation-before-revoke"
+    assert len(observations.docs) == 1
+
+
+
 def test_location_orchestration_requires_caller_transaction():
     attempt, receipt, current, now = sources()
     with pytest.raises(ProcessServiceLocationEvidenceOrchestrationError):
