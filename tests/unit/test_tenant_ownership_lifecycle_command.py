@@ -39,6 +39,16 @@ class _Registry:
         return object()
 
 
+class _GenesisAuthorizer:
+    def __init__(self, authorized: bool = True) -> None:
+        self.authorized = authorized
+        self.calls = 0
+
+    def authorize_pretenant_provisioner(self, **kwargs: Any) -> object:
+        self.calls += 1
+        return SimpleNamespace(authorized=self.authorized)
+
+
 class _Authorizer:
     def __init__(self, authorized: bool) -> None:
         self.authorized = authorized
@@ -74,6 +84,7 @@ def _command(
         verifier=UnavailableTenantOwnershipEvidenceVerifier(),
         registry=registry,  # type: ignore[arg-type]
         transfer_actor_authorizer=authorizer,
+        genesis_request_authorizer=_GenesisAuthorizer(),
     )
     return command, registry, authorizer
 
