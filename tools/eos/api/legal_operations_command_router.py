@@ -686,33 +686,30 @@ def _location_attempt_sources(
         raise CommandError("LEGAL_OPERATION_NOT_FOUND")
     _enforce_deputy_attempt_scope(context, current, database, session, required=True)
     receipt_collection = _collection(database, ALLOCATION_RECEIPT_COLLECTION)
-    try:
-        rows = list(receipt_collection.find(
-            {
-                "tenant_id": context.tenant_id,
-                "document_id": current.document_id,
-                "allocation_evidence_reference": current.allocation_evidence_reference,
-            },
-            session=session,
-        ))
-    except Exception as error:
-        raise CommandError("LEGAL_OPERATIONS_ALLOCATION_EVIDENCE_UNAVAILABLE", error) from error
-    if len(rows) != 1 or not isinstance(rows[0].get("allocation_command_id"), str):
-        raise CommandError("LEGAL_OPERATIONS_ALLOCATION_EVIDENCE_UNAVAILABLE")
-    receipt = get_receipt_by_allocation_command_id(
-        context.tenant_id,
-        current.document_id,
-        rows[0]["allocation_command_id"],
-        receipt_collection,
-        session=session,
-    )
     allocation_current = get_allocation_current(
         context.tenant_id,
         current.document_id,
         _collection(database, ALLOCATION_CURRENT_COLLECTION),
         session=session,
     )
-    if receipt is None:
+    receipt = get_receipt_by_allocation_command_id(
+        context.tenant_id,
+        current.document_id,
+        allocation_current.authority_evidence_reference,
+        receipt_collection,
+        session=session,
+    )
+    if (
+        receipt is None
+        or allocation_current.authority_evidence_fingerprint != receipt.fingerprint
+        or receipt.tenant_id != context.tenant_id
+        or receipt.document_id != current.document_id
+        or receipt.instruction_id != current.instruction_id
+        or receipt.deputy_id != current.deputy_id
+        or receipt.allocation_evidence_reference != current.allocation_evidence_reference
+        or receipt.allocated_at != current.allocated_at
+        or allocation_current.current_holder_reference != current.deputy_id
+    ):
         raise CommandError("LEGAL_OPERATIONS_ALLOCATION_EVIDENCE_UNAVAILABLE")
     return current, receipt, allocation_current
 
