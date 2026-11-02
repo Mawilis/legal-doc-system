@@ -79,6 +79,8 @@ class SheriffNaturalPersonBindingReason(StrEnum):
     IDENTITY_PROOF_NOT_AUTHENTICATED = "IDENTITY_PROOF_NOT_AUTHENTICATED"
     IDENTITY_PROOF_NOT_YET_VALID = "IDENTITY_PROOF_NOT_YET_VALID"
     IDENTITY_PROOF_EXPIRED = "IDENTITY_PROOF_EXPIRED"
+    BINDING_NOT_YET_EFFECTIVE = "BINDING_NOT_YET_EFFECTIVE"
+    BINDING_EXPIRED = "BINDING_EXPIRED"
     IDENTITY_ISSUER_TRUST_ROOT_UNAVAILABLE = "IDENTITY_ISSUER_TRUST_ROOT_UNAVAILABLE"
 
 
@@ -463,6 +465,10 @@ def verify_sheriff_natural_person_binding(
         reason = SheriffNaturalPersonBindingReason.IDENTITY_PROOF_FINGERPRINT_MISMATCH
     elif proof.source_observation_state is not SheriffSourceObservationState.AUTHENTICATED_RESPONSE:
         reason = SheriffNaturalPersonBindingReason.IDENTITY_PROOF_NOT_AUTHENTICATED
+    elif at < binding.effective_from:
+        reason = SheriffNaturalPersonBindingReason.BINDING_NOT_YET_EFFECTIVE
+    elif binding.effective_until is not None and at >= binding.effective_until:
+        reason = SheriffNaturalPersonBindingReason.BINDING_EXPIRED
     elif at < proof.valid_from:
         reason = SheriffNaturalPersonBindingReason.IDENTITY_PROOF_NOT_YET_VALID
     elif at >= proof.valid_until:
