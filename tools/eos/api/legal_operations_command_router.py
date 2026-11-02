@@ -657,6 +657,8 @@ def _deputy_device_scope(
 ) -> str:
     """Resolve exact bound Deputy and require the current authenticated session reference."""
     binding = _bound_deputy(context, database, session, required=True)
+    if binding is None:
+        raise CommandError("DEPUTY_IDENTITY_BINDING_REQUIRED")
     session_reference = context.identity.session_reference
     if (
         not isinstance(session_reference, str)
@@ -1990,7 +1992,7 @@ async def verify_deputy_device_challenge_command(
             tenant_id=context.tenant_id,
             principal_id=context.identity.identity_id,
             deputy_id=deputy_id,
-            session_reference=context.identity.session_reference,
+            session_reference=cast(str, context.identity.session_reference),
             challenge_id=challenge_id,
             signature_p1363=signature,
             lifecycle_collection=_collection(db, LIFECYCLE_COLLECTION),
@@ -2026,13 +2028,6 @@ async def create_deputy_location_permission_grant_command(
     )
     if len(signature) != 64:
         raise HTTPException(status_code=422, detail="DEPUTY_DEVICE_SIGNATURE_LENGTH_INVALID")
-    location_signature = _decode_base64(
-        command.location_signature_p1363_b64,
-        "LOCATION_OBSERVATION_SIGNATURE_ENCODING_INVALID",
-    )
-    if len(location_signature) != 64:
-        raise HTTPException(status_code=422, detail="LOCATION_OBSERVATION_SIGNATURE_LENGTH_INVALID")
-
     def run(session: Any, db: Any) -> Any:
         current, receipt, allocation_current = _location_attempt_sources(
             context, attempt_id, command.current_evidence_identity, db, session
@@ -2072,6 +2067,12 @@ async def record_deputy_location_observation_command(
     )
     if len(signature) != 64:
         raise HTTPException(status_code=422, detail="DEPUTY_DEVICE_SIGNATURE_LENGTH_INVALID")
+    location_signature = _decode_base64(
+        command.location_signature_p1363_b64,
+        "LOCATION_OBSERVATION_SIGNATURE_ENCODING_INVALID",
+    )
+    if len(location_signature) != 64:
+        raise HTTPException(status_code=422, detail="LOCATION_OBSERVATION_SIGNATURE_LENGTH_INVALID")
 
     def run(session: Any, db: Any) -> Any:
         current, receipt, allocation_current = _location_attempt_sources(
@@ -2086,6 +2087,8 @@ async def record_deputy_location_observation_command(
             attempt=current, allocation_receipt=receipt, allocation_current=allocation_current,
             device_provenance=proof, principal_id=context.identity.identity_id,
             grant_id=command.grant_id, observation_id=command.observation_id,
+            current_evidence_identity=command.current_evidence_identity,
+            location_signature_p1363=location_signature,
             latitude=command.latitude, longitude=command.longitude,
             horizontal_accuracy_m=command.horizontal_accuracy_m, captured_at=command.captured_at,
             permission_collection=_collection(db, LOCATION_PERMISSION_COLLECTION),
