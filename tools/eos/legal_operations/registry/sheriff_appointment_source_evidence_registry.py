@@ -286,6 +286,22 @@ def _parse_instant(value: object) -> object:
     return parsed
 
 
+_EVIDENCE_FIELDS: Final[tuple[str, ...]] = (
+    "tenant_id", "evidence_id", "revision", "principal_id",
+    "verified_subject_reference", "sheriff_office_id", "district_id",
+    "court_reference", "service_area_references", "capacity",
+    "statutory_basis", "issuer_authority", "instrument_reference",
+    "instrument_fingerprint", "source_uri", "source_observation_state",
+    "source_verification_method", "source_verification_reference",
+    "verified_by_principal_id", "observed_at", "effective_from",
+    "effective_until", "appointing_principal_id", "board_approval_reference",
+    "board_approval_fingerprint", "board_confirmation_reference",
+    "board_confirmation_fingerprint", "board_consultation_reference",
+    "board_consultation_fingerprint", "conditions_fingerprint",
+    "supersedes_fingerprint", "schema", "version", "fingerprint",
+)
+
+
 def _decode(document: object) -> SheriffAppointmentEvidenceRevision:
     """Hydrate only exact, fingerprint-valid persisted registry documents."""
     if type(document) is not dict:
@@ -293,26 +309,7 @@ def _decode(document: object) -> SheriffAppointmentEvidenceRevision:
             SheriffAppointmentEvidencePersistedInvalid,
             "SHERIFF_APPOINTMENT_REGISTRY_DOCUMENT_INVALID",
         )
-    expected_evidence = set(Evidence(
-        **{
-            key: value
-            for key, value in document.items()
-            if key in {
-                "tenant_id", "evidence_id", "revision", "principal_id",
-                "verified_subject_reference", "sheriff_office_id", "district_id",
-                "court_reference", "service_area_references", "capacity",
-                "statutory_basis", "issuer_authority", "instrument_reference",
-                "instrument_fingerprint", "source_uri", "source_observation_state",
-                "source_verification_method", "source_verification_reference",
-                "verified_by_principal_id", "observed_at", "effective_from",
-                "effective_until", "appointing_principal_id", "board_approval_reference",
-                "board_approval_fingerprint", "board_confirmation_reference",
-                "board_confirmation_fingerprint", "board_consultation_reference",
-                "board_consultation_fingerprint", "conditions_fingerprint",
-                "supersedes_fingerprint", "schema", "version", "fingerprint",
-            }
-        }
-    ).to_dict())
+    expected_evidence = set(_EVIDENCE_FIELDS)
     allowed = expected_evidence | {
         "_id", "registry_schema", "registry_version", "registry_revision",
         "predecessor_registry_fingerprint", "registry_fingerprint",
@@ -324,9 +321,8 @@ def _decode(document: object) -> SheriffAppointmentEvidenceRevision:
         )
     try:
         material = {
-            key: value
-            for key, value in document.items()
-            if key in expected_evidence
+            key: document[key]
+            for key in _EVIDENCE_FIELDS
         }
         for name in ("observed_at", "effective_from", "effective_until"):
             material[name] = _parse_instant(material[name])
