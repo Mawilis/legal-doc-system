@@ -105,7 +105,16 @@ def _token(name: str, value: object) -> str:
 def _time(name: str, value: object) -> datetime:
     if type(value) is not datetime or value.tzinfo is None or value.utcoffset() is None:
         raise OwnershipTransferProtocolError(f"{name.upper()}_INVALID")
-    return value.astimezone(timezone.utc)
+    normalized = value.astimezone(timezone.utc)
+    return normalized.replace(microsecond=(normalized.microsecond // 1000) * 1000)
+
+def _stored_time(name: str, value: object) -> datetime:
+    """Hydrate BSON UTC dates, which PyMongo may return as naive datetimes."""
+    if type(value) is not datetime:
+        raise OwnershipTransferProtocolError(f"{name.upper()}_INVALID")
+    if value.tzinfo is None or value.utcoffset() is None:
+        value = value.replace(tzinfo=timezone.utc)
+    return _time(name, value)
 
 
 class TenantOwnershipTransferProtocol:
@@ -203,7 +212,7 @@ class TenantOwnershipTransferProtocol:
             raise OwnershipTransferProtocolError("TRANSFER_PROPOSAL_NOT_FOUND")
         if row.get("status") != "PROPOSED":
             raise OwnershipTransferProtocolError("TRANSFER_PROPOSAL_NOT_ACCEPTABLE")
-        if now >= _time("proposal_expires_at", row["expires_at"]):
+        if now >= _stored_time("proposal_expires_at", row["expires_at"]):
             raise OwnershipTransferProtocolError("TRANSFER_PROPOSAL_EXPIRED")
         if type(acceptance) is not VerifiedTransferAcceptance:
             raise OwnershipTransferProtocolError("SUCCESSOR_ACCEPTANCE_REQUIRED")
@@ -277,9 +286,9 @@ class TenantOwnershipTransferProtocol:
             raise OwnershipTransferProtocolError("INDEPENDENT_SUCCESSOR_ACCEPTANCE_REQUIRED")
         if (
             proposal["status"] != "PROPOSED"
-            or now >= proposal["expires_at"]
-            or now >= acceptance["expires_at"]
-            or acceptance["accepted_at"] > now
+            or now >= _stored_time("proposal_expires_at", proposal["expires_at"])
+            or now >= _stored_time("acceptance_expires_at", acceptance["expires_at"])
+            or _stored_time("accepted_at", acceptance["accepted_at"]) > now
             or proposal["proposal_fingerprint"] != acceptance["proposal_fingerprint"]
             or proposal["tenant_id"] != acceptance["tenant_id"]
             or proposal["legal_entity_reference"] != acceptance["legal_entity_reference"]
