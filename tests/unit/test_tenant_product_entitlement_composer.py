@@ -267,6 +267,41 @@ def test_exact_zero_rated_founder_subscription_composes_legal_without_plan_featu
     assert calls[1][0] == "transition"
 
 
+
+def test_exact_founder_subscription_wins_over_expired_active_legacy_row(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """Expired ACTIVE legacy rows do not create false subscription ambiguity."""
+    Registry.items = (
+        subscription(
+            tenant_id="WILSYTENANT-4CD2FZ4O",
+            subscription_id="WILSYSUB-93455E4E",
+            plan_id="WILSYPLAN-37B8164F",
+            features=("tenant.branding",),
+            period_end=NOW - timedelta(days=29),
+            amount=0.0,
+            billing_mode="PLATFORM",
+        ),
+        subscription(
+            tenant_id="WILSYTENANT-4CD2FZ4O",
+            subscription_id="legacy-expired-active",
+            plan_id="legacy-plan",
+            features=("other.feature",),
+            period_end=NOW - timedelta(days=30),
+            amount=299.0,
+            billing_mode="PLATFORM",
+        ),
+    )
+    calls = install_flow(monkeypatch)
+    result = invoke(tenant_id="WILSYTENANT-4CD2FZ4O")
+    assert result.outcome is composer.TenantProductEntitlementCompositionOutcome.COMPOSED
+    assert result.entitlement.lifecycle_state is TenantProductEntitlementState.ACTIVE
+    assert len(calls) == 2
+    assert result.entitlement.source_evidence_reference.startswith(
+        "tpe-source:WILSYSUB-93455E4E:LEGAL_OPERATIONS:"
+    )
+
+
 def test_founder_exception_does_not_apply_to_another_tenant(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:

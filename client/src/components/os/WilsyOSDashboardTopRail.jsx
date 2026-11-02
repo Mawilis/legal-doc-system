@@ -34,7 +34,7 @@ import { useAuthenticatedTenantBrandingAsset } from '../../hooks/useAuthenticate
 import './WilsyOSDashboardChrome.module.css';
 
 const WILSY_OS_DASHBOARD_TOP_RAIL_VERSION = 'V1.3.0-D21B12-WILSY-PLATFORM-TENANT-MARK';
-const WILSY_OS_DEFAULT_MARK = new URL('../../assets/logo/wilsy.jpeg', import.meta.url).href;
+const WILSY_OS_DEFAULT_MARK = new URL('../../assets/logo/wilsy-logo.svg', import.meta.url).href;
 
 /**
  * @function normalizeWilsyTopRailStory
