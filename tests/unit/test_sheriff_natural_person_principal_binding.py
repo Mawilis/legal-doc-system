@@ -39,6 +39,7 @@ from tools.eos.legal_operations.domain.sheriff_appointment_source_evidence impor
 )
 from tools.eos.legal_operations.domain.sheriff_natural_person_principal_binding import (
     SheriffNaturalPersonBindingDecision,
+    SheriffNaturalPersonBindingDecision,
     SheriffNaturalPersonBindingError,
     SheriffNaturalPersonBindingReason,
     SheriffNaturalPersonIdentityProof,
@@ -155,7 +156,7 @@ def verify(
     appointment: SheriffAppointmentSourceEvidence | None = None,
     actor: PrincipalAuthority | None = None,
     evaluated_at: datetime = NOW,
-) -> object:
+) -> SheriffNaturalPersonBindingDecision:
     """Evaluate one exact natural-person identity/principal binding."""
     exact_appointment = appointment or make_appointment()
     return verify_sheriff_natural_person_binding(
