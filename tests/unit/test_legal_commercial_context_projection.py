@@ -1,7 +1,7 @@
 """Direct certificate for the Legal commercial-context projection."""
 from __future__ import annotations
 
-from dataclasses import FrozenInstanceError, fields
+from dataclasses import FrozenInstanceError, fields, replace
 from datetime import datetime, timezone
 from types import SimpleNamespace
 from typing import Any
@@ -75,6 +75,7 @@ def invoke(
     *,
     available_value: Any | None = None,
     subscriptions: tuple[SubscriptionEntity, ...] = (),
+    tenant_id: str = TENANT,
 ) -> projection.LegalCommercialContextProjection:
     monkeypatch.setattr(
         projection,
@@ -91,7 +92,7 @@ def invoke(
         lambda *_a, **_k: subscriptions,
     )
     return projection.resolve_legal_commercial_context(
-        TENANT,
+        tenant_id,
         object(),
         object(),
         object(),
@@ -128,6 +129,45 @@ def test_active_legal_subscription_projects_canonical_commercial_snapshot(
         (BillingFrequency.ANNUAL, 14400.0, 1200.0),
     ],
 )
+def test_exact_zero_rated_founder_projects_legal_without_legal_core(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """The exact perpetual Founder tuple is a separate Legal product source."""
+    now = datetime.now(timezone.utc)
+    founder = replace(
+        subscription(),
+        tenant_id="WILSYTENANT-4CD2FZ4O",
+        subscription_id="WILSYSUB-93455E4E",
+        plan_id="WILSYPLAN-37B8164F",
+        plan_name="Founder Enterprise",
+        plan_features=("tenant.branding",),
+        amount=0.0,
+        start_date=now - timedelta(days=90),
+        current_period_start=now - timedelta(days=90),
+        current_period_end=now - timedelta(days=30),
+        billing_mode="PLATFORM",
+    )
+    founder_availability = SimpleNamespace(
+        tenant_id="WILSYTENANT-4CD2FZ4O",
+        product_id=TenantProductId.LEGAL_OPERATIONS,
+        workspace_key="legal-operations",
+        entitlement_id="tpe-founder",
+        lifecycle_state=TenantProductEntitlementState.ACTIVE,
+        available=True,
+    )
+    result = invoke(
+        monkeypatch,
+        available_value=founder_availability,
+        subscriptions=(founder,),
+        tenant_id="WILSYTENANT-4CD2FZ4O",
+    )
+    assert result.product_available is True
+    assert result.subscription_id == "WILSYSUB-93455E4E"
+    assert result.plan_features == ("tenant.branding",)
+    assert result.amount == 0.0
+    assert result.current_period_end == founder.current_period_end
+
+
 def test_monthly_equivalent_is_server_derived(
     monkeypatch: pytest.MonkeyPatch,
     frequency: BillingFrequency,
