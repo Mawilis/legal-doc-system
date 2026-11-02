@@ -264,7 +264,22 @@ def _subscription(
             "D22B3_SUBSCRIPTION_REGISTRY_UNAVAILABLE",
             error,
         )
-    active = tuple(item for item in items if item.status is SubscriptionStatus.ACTIVE)
+    # ACTIVE lifecycle status alone is not commercial eligibility: legacy rows
+    # can remain ACTIVE after their finite billing term has expired. Apply the
+    # shared term policy before cardinality so an expired legacy row cannot
+    # shadow the exact perpetual Founder subscription.
+    active = tuple(
+        item
+        for item in items
+        if (
+            type(item) is SubscriptionEntity
+            and item.status is SubscriptionStatus.ACTIVE
+            and evaluate_subscription_term(
+                item,
+                evaluated_at=occurred_at,
+            ).eligible
+        )
+    )
     if not active:
         _raise(
             TenantProductEntitlementComposerCommercialError,
