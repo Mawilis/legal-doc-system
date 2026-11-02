@@ -72,6 +72,15 @@ class Keys:
     def key_status(self, key_reference: str, revision: int, at: datetime) -> str:
         return self.status if (key_reference, revision) == ("key-1", 3) else "UNKNOWN"
 
+    def recovery_key_status(self, authority_id: str, trust_root_reference: str,
+                            trust_root_fingerprint: str, key_reference: str,
+                            revision: int, at: datetime) -> str:
+        if (authority_id, trust_root_reference, trust_root_fingerprint) != (
+            "independent-recovery", "recovery-root", fp("root")
+        ):
+            return "UNTRUSTED"
+        return self.key_status(key_reference, revision, at)
+
     def public_key(self, key_reference: str, revision: int):
         if (key_reference, revision) != ("key-1", 3):
             raise KeyError(key_reference)
