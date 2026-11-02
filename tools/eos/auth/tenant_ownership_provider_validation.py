@@ -315,7 +315,7 @@ def recovery_decision_signing_payload(
         "issued_at": _instant("issued_at", receipt.issued_at).isoformat(),
         "valid_until": _instant("valid_until", receipt.valid_until).isoformat(),
         "revocation_reference": receipt.revocation_reference,
-        "revoked_at": receipt.revoked_at.isoformat() if receipt.revoked_at is not None else None,
+        "revoked_at": (_instant("revoked_at", receipt.revoked_at).isoformat() if receipt.revoked_at is not None else None),
     }
     if type(key_revision) is not int or key_revision < 1:
         raise OwnershipProviderEvidenceError("SIGNING_KEY_REVISION_INVALID")
