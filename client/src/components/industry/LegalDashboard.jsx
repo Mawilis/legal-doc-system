@@ -4776,7 +4776,7 @@ export default function LegalDashboard({
         setLocationCaptureStates((current) => ({
           ...current,
           [attempt.attempt_id]: {
-            status: 'pending',
+            status: 'queued',
             message: 'Signed location evidence is safely queued on this device and will sync when connectivity returns. No background tracking was started.',
           },
         }));
