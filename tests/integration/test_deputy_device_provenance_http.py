@@ -214,7 +214,11 @@ def test_location_permission_route_consumes_device_proof_and_creates_short_grant
     database = Database()
     session = ActiveSession()
     calls: list[dict[str, Any]] = []
-    proof = SimpleNamespace(device_id="deputy-device:synthetic")
+    proof = SimpleNamespace(
+        device_id="deputy-device:synthetic",
+        challenge_id="challenge-http",
+        fingerprint="c" * 128,
+    )
     grant = SimpleNamespace(
         to_dict=lambda: {
             "tenant_id": TENANT, "attempt_id": "attempt-http",
@@ -228,7 +232,7 @@ def test_location_permission_route_consumes_device_proof_and_creates_short_grant
         SimpleNamespace(attempt_id="attempt-http"), object(), object()
     ))
     monkeypatch.setattr(command_api, "_deputy_device_scope", lambda *args: DEPUTY)
-    monkeypatch.setattr(command_api, "_verify_location_device_proof", lambda **kwargs: proof)
+    monkeypatch.setattr(command_api, "_get_consumed_deputy_device_proof", lambda **kwargs: proof)
 
     def issue(**kwargs: Any) -> object:
         calls.append(kwargs)
@@ -263,7 +267,11 @@ def test_location_capture_route_requires_both_challenge_and_gps_signatures(
     database = Database()
     session = ActiveSession()
     calls: list[dict[str, Any]] = []
-    proof = SimpleNamespace(device_id="deputy-device:synthetic")
+    proof = SimpleNamespace(
+        device_id="deputy-device:synthetic",
+        challenge_id="challenge-http",
+        fingerprint="c" * 128,
+    )
     observation = SimpleNamespace(
         to_dict=lambda: {
             "tenant_id": TENANT, "attempt_id": "attempt-http",
@@ -292,8 +300,7 @@ def test_location_capture_route_requires_both_challenge_and_gps_signatures(
                 "current_evidence_identity": "p2-current-http",
                 "grant_id": "grant-http",
                 "observation_id": "observation-http",
-                "challenge_id": "challenge-http",
-                "signature_p1363_b64": signature,
+                "device_provenance_reference": "challenge-http",
                 "location_signature_p1363_b64": signature,
                 "latitude": -26.2,
                 "longitude": 28.0,
@@ -334,8 +341,7 @@ def test_location_commands_reject_permission_denial_and_extra_authority(
                 "current_evidence_identity": "p2-current-http",
                 "grant_id": "grant-http",
                 "observation_id": "observation-http",
-                "challenge_id": "challenge-http",
-                "signature_p1363_b64": signature,
+                "device_provenance_reference": "challenge-http",
                 "location_signature_p1363_b64": signature,
                 "latitude": -26.2,
                 "longitude": 28.0,
