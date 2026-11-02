@@ -2893,26 +2893,37 @@ export async function captureDeputyLocationEvidence({
   if (!globalThis.navigator?.geolocation?.getCurrentPosition) {
     throw new Error('DEPUTY_LOCATION_GEOLOCATION_UNAVAILABLE');
   }
-  const position = await new Promise((resolve, reject) => {
-    globalThis.navigator.geolocation.getCurrentPosition(
-      resolve,
-      (error) => reject(new Error(
-        error?.code === 1
-          ? 'DEPUTY_LOCATION_PERMISSION_DENIED'
-          : 'DEPUTY_LOCATION_CAPTURE_UNAVAILABLE',
-      )),
-      { enableHighAccuracy: true, maximumAge: 0, timeout: 15000 },
-    );
-  });
-  const latitude = Number(Number(position.coords.latitude).toFixed(7));
-  const longitude = Number(Number(position.coords.longitude).toFixed(7));
-  const horizontalAccuracyM = Number(Number(position.coords.accuracy).toFixed(2));
-  const capturedAt = new Date(position.timestamp || Date.now()).toISOString();
   const grant = await createDeputyLocationPermissionGrant({
     attemptId,
     currentEvidenceIdentity,
     grantId,
   });
+  let position;
+  try {
+    position = await new Promise((resolve, reject) => {
+      globalThis.navigator.geolocation.getCurrentPosition(
+        resolve,
+        (error) => reject(new Error(
+          error?.code === 1
+            ? 'DEPUTY_LOCATION_PERMISSION_DENIED'
+            : 'DEPUTY_LOCATION_CAPTURE_UNAVAILABLE',
+        )),
+        { enableHighAccuracy: true, maximumAge: 0, timeout: 15000 },
+      );
+    });
+  } catch (error) {
+    await revokeDeputyLocationPermissionGrant({
+      attemptId,
+      currentEvidenceIdentity,
+      grantId,
+      reasonReference: 'browser-location-permission-denied-or-unavailable',
+    });
+    throw error;
+  }
+  const latitude = Number(Number(position.coords.latitude).toFixed(7));
+  const longitude = Number(Number(position.coords.longitude).toFixed(7));
+  const horizontalAccuracyM = Number(Number(position.coords.accuracy).toFixed(2));
+  const capturedAt = new Date(position.timestamp || Date.now()).toISOString();
 
   const proof = await issueAndSignDeputyDeviceChallenge();
   const locationPayload = canonicalLocationSigningBytes({
