@@ -349,6 +349,38 @@ class ProcessServiceLocationEvidenceRegistry:
         return grant
 
     @staticmethod
+    def assert_permission_grant_attempt_binding(
+        tenant_id: str,
+        grant_id: str,
+        attempt_id: str,
+        deputy_id: str,
+        collection: Any,
+        *,
+        session: object,
+    ) -> dict[str, Any]:
+        """Validate the immutable grant's exact attempt/deputy binding for revocation."""
+        tx = _active(session)
+        tenant = _tenant(tenant_id)
+        grant = _identity(grant_id, "P5L_GRANT_ID_INVALID")
+        attempt = _identity(attempt_id, "P5L_ATTEMPT_ID_INVALID")
+        deputy = _identity(deputy_id, "P5L_DEPUTY_ID_INVALID")
+        try:
+            row = collection.find_one({"tenant_id": tenant, "grant_id": grant}, session=tx)
+        except PyMongoError as error:
+            _fail(ProcessServiceLocationEvidenceRegistryPersistenceError, "P5L_READ_UNAVAILABLE", error)
+        if row is None:
+            _fail(ProcessServiceLocationEvidenceRegistryConflictError, "P5L_PERMISSION_GRANT_NOT_FOUND")
+        record = _validate_envelope(
+            cast(Mapping[str, Any], row), fields=_GRANT_FIELDS,
+            entity_type="ProcessServiceLocationPermissionGrant", tenant_id=tenant,
+            identity_field="grant_id", identity_value=grant,
+        )
+        payload = cast(Mapping[str, Any], record["payload"])
+        if payload.get("attempt_id") != attempt or payload.get("deputy_id") != deputy:
+            _fail(ProcessServiceLocationEvidenceRegistryConflictError, "P5L_PERMISSION_GRANT_SCOPE_MISMATCH")
+        return dict(payload)
+
+    @staticmethod
     def persist_observation(
         observation: ProcessServiceLocationObservation,
         collection: Any,
