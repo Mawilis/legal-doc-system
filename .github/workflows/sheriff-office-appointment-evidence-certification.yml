@@ -21,6 +21,7 @@ on:
       - "tests/unit/test_sheriff_office_appointment_command_api.py"
       - "tools/eos/api/legal_operations_router.py"
       - "tests/integration/test_sheriff_location_evidence_http.py"
+      - "tests/integration/test_sheriff_office_appointment_authority_real_mongo.py"
       - ".github/workflows/sheriff-office-appointment-evidence-certification.yml"
   workflow_dispatch:
 
@@ -120,6 +121,7 @@ jobs:
             tests/unit/test_sheriff_office_appointment_command_api.py \
             tools/eos/api/legal_operations_router.py \
             tests/integration/test_sheriff_location_evidence_http.py \
+            tests/integration/test_sheriff_office_appointment_authority_real_mongo.py \
             tests/integration/test_sheriff_office_appointment_authority_registry_real_mongo.py
 
       - name: Type-check appointment evidence domain and certificate
@@ -140,7 +142,8 @@ jobs:
             tools/eos/api/legal_operations_command_router.py \
             tests/unit/test_sheriff_office_appointment_command_api.py \
             tools/eos/api/legal_operations_router.py \
-            tests/integration/test_sheriff_location_evidence_http.py
+            tests/integration/test_sheriff_location_evidence_http.py \
+            tests/integration/test_sheriff_office_appointment_authority_real_mongo.py
 
       - name: Run appointment evidence unit and real-Mongo certificates
         run: |
@@ -151,7 +154,8 @@ jobs:
             tests/unit/test_sheriff_office_appointment_authority_orchestrator.py \
             tests/unit/test_sheriff_office_appointment_authority_iam.py \
             tests/unit/test_sheriff_office_appointment_command_api.py \
-            tests/integration/test_sheriff_location_evidence_http.py
+            tests/integration/test_sheriff_location_evidence_http.py \
+            tests/integration/test_sheriff_office_appointment_authority_real_mongo.py
 
       - name: Stop isolated MongoDB replica set
         if: always()
