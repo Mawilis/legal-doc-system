@@ -313,6 +313,8 @@ class SheriffAppointmentSourceEvidence:
         if capacity is SheriffAppointmentCapacity.DEPUTY_SHERIFF:
             if appointing is None or approval_ref is None or approval_fp is None:
                 _fail("SHERIFF_SOURCE_DEPUTY_BOARD_APPROVAL_REQUIRED")
+            if appointing == self.principal_id:
+                _fail("SHERIFF_SOURCE_DEPUTY_SELF_APPOINTMENT_FORBIDDEN")
         else:
             if appointing is not None:
                 _fail("SHERIFF_SOURCE_APPOINTING_PRINCIPAL_FORBIDDEN")
