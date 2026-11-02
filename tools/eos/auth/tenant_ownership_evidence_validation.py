@@ -390,7 +390,12 @@ class RecoveryDecisionReplayRegistry:
         """Persist an already validated decision; no external calls occur in transaction."""
         if type(decision) is not ValidatedRecoveryDecision:
             raise OwnershipEvidenceValidationError("VALIDATED_RECOVERY_DECISION_REQUIRED")
-        if session is None or not callable(getattr(session, "in_transaction", None)) or not session.in_transaction():
+        marker = getattr(session, "in_transaction", None) if session is not None else None
+        try:
+            active = marker() if callable(marker) else marker
+        except (AttributeError, TypeError) as error:
+            raise OwnershipEvidenceValidationError("ACTIVE_TRANSACTION_REQUIRED") from error
+        if active is not True:
             raise OwnershipEvidenceValidationError("ACTIVE_TRANSACTION_REQUIRED")
         if not decision.tenant_id or not decision.decision_reference or not decision.decision_fingerprint:
             raise OwnershipEvidenceValidationError("RECOVERY_REPLAY_SCOPE_INVALID")
