@@ -693,8 +693,6 @@ class DeputyDeviceProvenanceRegistry:
         tx = _require_transaction(session)
         tenant = _tenant(tenant_id)
         identity = _identifier("challenge_id", challenge_id)
-        current_principal = _identifier("principal_id", principal_id)
-        current_session = _identifier("session_reference", session_reference)
         try:
             row = self._collection.find_one(
                 {"tenant_id": tenant, "challenge_id": identity},
@@ -727,9 +725,11 @@ class DeputyDeviceProvenanceRegistry:
         session: object,
     ) -> DeputyDeviceProvenance:
         """Load an already-consumed challenge proof for signed offline event sync."""
-        tx = _active(session)
+        tx = _require_transaction(session)
         tenant = _tenant(tenant_id)
         identity = _identifier("challenge_id", challenge_id)
+        current_principal = _identifier("principal_id", principal_id)
+        current_session = _identifier("session_reference", session_reference)
         try:
             row = self._collection.find_one(
                 {"tenant_id": tenant, "challenge_id": identity},
@@ -771,7 +771,7 @@ class DeputyDeviceProvenanceRegistry:
             tenant_id=tenant,
             principal_id=provenance.principal_id,
             session_reference=current_session,
-            at=_utc("at", at),
+            at=_utc(at, "L8_6H_CURRENT_SESSION_TIME_INVALID"),
             session=tx,
         )
         return provenance
