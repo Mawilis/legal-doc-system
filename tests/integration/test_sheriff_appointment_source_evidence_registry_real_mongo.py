@@ -1,5 +1,5 @@
 """TITLE: Sheriff Appointment Evidence Registry Real-Mongo Certificate
-VERSION: v1.0.0-SHERIFF-APPOINTMENT-EVIDENCE-REGISTRY-REAL-MONGO-CERT
+VERSION: v1.0.1-SHERIFF-APPOINTMENT-EVIDENCE-REGISTRY-REAL-MONGO-CERT
 AUTHORITY: Isolated MongoDB replica-set certification of documentary persistence.
 EPITOME: Prove replica-set topology, exact tenant-first indexes, majority-
     acknowledged caller transactions, append-only history, exact replay,
@@ -9,6 +9,9 @@ COLLABORATION / OWNERSHIP: Host-backed certificate for the Sheriff appointment
     source-evidence registry; no Minister/Board trust root, IAM or queue authority.
 CERTIFICATION / UPDATE DATE: 2026-11-02
 CHANGELOG:
+    2026-11-02 v1.0.1-SHERIFF-APPOINTMENT-EVIDENCE-REGISTRY-REAL-MONGO-CERT
+    Adds deterministic competing-successor certification using a two-party
+    barrier and independent caller transactions.
     2026-11-02 v1.0.0-SHERIFF-APPOINTMENT-EVIDENCE-REGISTRY-REAL-MONGO-CERT
     Establishes isolated replica-set certification for transaction visibility,
     exact replay, abort rollback, indexes, tenant isolation and corruption.
@@ -22,8 +25,10 @@ FINANCIAL AUTHORITY BOUNDARY: None; Kennel EOS exclusively.
 
 from __future__ import annotations
 
+from concurrent.futures import ThreadPoolExecutor
 from datetime import datetime, timedelta, timezone
 import os
+from threading import Barrier
 from typing import Any, Iterator
 import uuid
 
@@ -49,6 +54,7 @@ from tools.eos.legal_operations.registry.sheriff_appointment_source_evidence_reg
     SUCCESSOR_INDEX,
     SheriffAppointmentEvidenceConflict,
     SheriffAppointmentEvidencePersistedInvalid,
+    SheriffAppointmentEvidenceRetryTransaction,
     SheriffAppointmentEvidenceRevision,
     SheriffAppointmentEvidenceRegistry,
 )
@@ -352,9 +358,92 @@ def test_real_persisted_fingerprint_corruption_fails_closed(
                 )
 
 
+def test_real_competing_successors_cannot_both_commit(
+    mongo_context: tuple[MongoClient[Any], Any, Any, SheriffAppointmentEvidenceRegistry],
+) -> None:
+    client, _, collection, registry = mongo_context
+    tenant = "tenant-" + uuid.uuid4().hex
+    evidence_id = "appointment-race-" + uuid.uuid4().hex
+    first = make_revision(
+        make_evidence(tenant_id=tenant, evidence_id=evidence_id)
+    )
+    commit_revision(client, registry, first)
+
+    candidates = (
+        make_revision(
+            make_evidence(
+                tenant_id=tenant,
+                evidence_id=evidence_id,
+                revision=2,
+                predecessor=first.evidence.fingerprint,
+                observed_at=NOW + timedelta(seconds=1),
+                effective_from=NOW + timedelta(days=1),
+                instrument_fingerprint="e" * 128,
+            ),
+            first.registry_fingerprint,
+        ),
+        make_revision(
+            make_evidence(
+                tenant_id=tenant,
+                evidence_id=evidence_id,
+                revision=2,
+                predecessor=first.evidence.fingerprint,
+                observed_at=NOW + timedelta(seconds=2),
+                effective_from=NOW + timedelta(days=1),
+                instrument_fingerprint="f" * 128,
+            ),
+            first.registry_fingerprint,
+        ),
+    )
+    barrier = Barrier(2)
+
+    def compete(
+        value: SheriffAppointmentEvidenceRevision,
+    ) -> tuple[str, str]:
+        try:
+            with client.start_session() as session:
+                with session.start_transaction():
+                    barrier.wait(timeout=15)
+                    registry.persist_revision(value, session=session)
+            return ("COMMITTED", value.evidence.fingerprint)
+        except (
+            SheriffAppointmentEvidenceConflict,
+            SheriffAppointmentEvidenceRetryTransaction,
+        ) as error:
+            return ("REJECTED", type(error).__name__)
+        except Exception as error:
+            # The caller owns transaction commit. A write conflict raised at
+            # commit is therefore surfaced as a raw PyMongo exception.
+            from pymongo.errors import PyMongoError
+
+            if isinstance(error, PyMongoError):
+                return ("REJECTED", type(error).__name__)
+            raise
+
+    with ThreadPoolExecutor(max_workers=2) as pool:
+        outcomes = tuple(pool.map(compete, candidates))
+
+    assert sum(outcome[0] == "COMMITTED" for outcome in outcomes) == 1
+    assert sum(outcome[0] == "REJECTED" for outcome in outcomes) == 1
+    with client.start_session() as session:
+        with session.start_transaction():
+            history = registry.get_history(
+                tenant_id=tenant,
+                evidence_id=evidence_id,
+                session=session,
+            )
+    assert len(history) == 2
+    assert history[-1].evidence.fingerprint in {
+        candidate.evidence.fingerprint for candidate in candidates
+    }
+    assert collection.count_documents(
+        {"tenant_id": tenant, "evidence_id": evidence_id}
+    ) == 2
+
+
 # WILSY OS SOVEREIGN ARTIFACT SEAL
 # ARTIFACT: tests/integration/test_sheriff_appointment_source_evidence_registry_real_mongo.py
-# VERSION: v1.0.0-SHERIFF-APPOINTMENT-EVIDENCE-REGISTRY-REAL-MONGO-CERT
+# VERSION: v1.0.1-SHERIFF-APPOINTMENT-EVIDENCE-REGISTRY-REAL-MONGO-CERT
 # AUTHORITY BOUNDARY: real-Mongo immutable documentary persistence only
 # TENANT POSTURE: UUID-isolated tenant and database; no production tenant access
 # FAIL-CLOSED POSTURE: missing topology, invalid index, replay divergence, abort failure or corruption fails
