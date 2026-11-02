@@ -3,7 +3,7 @@ from __future__ import annotations
 
 from datetime import datetime, timezone
 from types import SimpleNamespace
-from typing import Any
+from typing import Any, cast
 
 import pytest
 
@@ -101,7 +101,7 @@ def test_command_rejects_missing_transaction_before_registry_read() -> None:
     with pytest.raises(TenantOwnershipLifecycleCommandError) as raised:
         command.execute(
             request=_request(TenantOwnershipOperation.TENANT_GENESIS),
-            evidence=object(),  # type: ignore[arg-type]
+            evidence=cast(VerifiedTenantOwnershipEvidence, object()),
             actor_principal_id="provisioner-1",
             command_id="cmd-1",
             expected_revision=0,
