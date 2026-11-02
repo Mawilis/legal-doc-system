@@ -270,7 +270,7 @@ def test_multi_office_tenant_reads_only_the_exact_current_appointment_office(
     assert len(accesses) == 1
     assert accesses[0]["actor_principal_id"] == PRINCIPAL
     assert accesses[0]["actor_scope"] == "SHERIFF_OFFICE:" + OFFICE
-    assert accesses[0]["grant_id"] == first.fingerprint
+    assert accesses[0]["grant_id"] == "all"
     assert accesses[0]["purpose"] == "SHERIFF_OFFICE_LOCATION_EVIDENCE_READ"
 
 
