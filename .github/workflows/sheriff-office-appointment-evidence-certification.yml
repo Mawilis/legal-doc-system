@@ -22,6 +22,10 @@ on:
       - "tools/eos/api/legal_operations_router.py"
       - "tests/integration/test_sheriff_location_evidence_http.py"
       - "tests/integration/test_sheriff_office_appointment_authority_real_mongo.py"
+      - "client/src/services/legalOperationsService.js"
+      - "client/src/__tests__/services/legalOperationsService.test.js"
+      - "client/package.json"
+      - "client/package-lock.json"
       - ".github/workflows/sheriff-office-appointment-evidence-certification.yml"
   workflow_dispatch:
 
@@ -157,6 +161,33 @@ jobs:
             tests/integration/test_sheriff_location_evidence_http.py \
             tests/integration/test_sheriff_office_appointment_authority_real_mongo.py
 
+      - name: Check patch whitespace and clean worktree
+        run: |
+          git diff --check origin/main...HEAD
+          test -z "$(git status --porcelain)"
+
       - name: Stop isolated MongoDB replica set
         if: always()
         run: docker rm -f wilsy-sheriff-appointment-mongo 2>/dev/null || true
+  client-transport:
+    name: Sheriff appointment client transport certification
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: npm
+          cache-dependency-path: client/package-lock.json
+
+      - name: Install client dependencies
+        working-directory: client
+        run: npm ci
+
+      - name: Run strict Legal Operations client transport certificate
+        working-directory: client
+        run: npm run test:run -- src/__tests__/services/legalOperationsService.test.js
