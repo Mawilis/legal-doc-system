@@ -234,7 +234,10 @@ def test_inactive_or_wrong_binding_actor_denies() -> None:
 
 def test_identity_proof_and_binding_effective_windows_are_checked() -> None:
     """Future and expired proof or binding windows cannot pass."""
-    future_proof = make_proof(valid_from=NOW + timedelta(days=1))
+    future_proof = make_proof(
+        valid_from=NOW + timedelta(days=1),
+        valid_until=NOW + timedelta(days=2),
+    )
     assert (
         verify(proof=future_proof).reason
         is SheriffNaturalPersonBindingReason.IDENTITY_PROOF_NOT_YET_VALID
