@@ -75,6 +75,7 @@ class VerifiedTransferAcceptance:
 class TransferProposalVerifier(Protocol):
     def verify_owner_proposal(self, proposal: TransferProposal) -> VerifiedTransferProposal:
         """Verify current-owner signature/mandate and exact scope."""
+        ...
 
 
 class TransferAcceptanceVerifier(Protocol):
@@ -82,6 +83,7 @@ class TransferAcceptanceVerifier(Protocol):
         self, proposal: TransferProposal, acceptance: VerifiedTransferAcceptance
     ) -> VerifiedTransferAcceptance:
         """Independently authenticate successor and bind acceptance to exact proposal."""
+        ...
 
 
 def _active(session: Any) -> None:
@@ -264,6 +266,8 @@ class TenantOwnershipTransferProtocol:
     ) -> TenantOwnershipEvidenceEvent:
         _active(session)
         ref = _token("proposal_reference", proposal_reference)
+        actor = _token("actor_principal_id", actor_principal_id)
+        command = _token("command_id", command_id)
         now = _time("evaluated_at", evaluated_at)
         proposal = self._proposals.find_one({"proposal_reference": ref}, session=session)
         acceptance = self._acceptances.find_one({"proposal_reference": ref}, session=session)
@@ -283,6 +287,8 @@ class TenantOwnershipTransferProtocol:
             or proposal["successor_principal_id"] != acceptance["successor_principal_id"]
         ):
             raise OwnershipTransferProtocolError("TRANSFER_PROPOSAL_ACCEPTANCE_BINDING_INVALID")
+        if actor != proposal["current_owner_principal_id"]:
+            raise OwnershipTransferProtocolError("CURRENT_OWNER_FINALIZATION_REQUIRED")
         request = TenantOwnershipVerificationRequest(
             tenant_id=proposal["tenant_id"],
             legal_entity_reference=proposal["legal_entity_reference"],
@@ -290,15 +296,14 @@ class TenantOwnershipTransferProtocol:
             operation=TenantOwnershipOperation.OWNERSHIP_TRANSFER,
             evaluated_at=now,
         )
-        # Registry append and status transition are in the same caller transaction.
         event = self._lifecycle.execute(
-            request=request, actor_principal_id=actor_principal_id,
-            command_id=command_id, expected_revision=proposal["expected_revision"],
+            request=request, actor_principal_id=actor,
+            command_id=command, expected_revision=proposal["expected_revision"],
             session=session,
         )
         result = self._proposals.update_one(
             {"proposal_reference": ref, "status": "PROPOSED"},
-            {"$set": {"status": "FINALIZED", "finalized_at": now, "finalized_command_id": command_id}},
+            {"$set": {"status": "FINALIZED", "finalized_at": now, "finalized_command_id": command}},
             session=session,
         )
         if getattr(result, "matched_count", 0) != 1:
