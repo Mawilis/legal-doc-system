@@ -203,6 +203,13 @@ def composer(*, registry=None, identity=None, revocation=None, binding=None,
     )
 
 
+def test_composition_rejects_pseudo_tenant_and_purpose_operation_substitution():
+    with pytest.raises(ProviderEvidenceCompositionError, match="TENANT_OWNERSHIP_TENANT_ID_INVALID"):
+        composer().compose(request(tenant_id="default"))
+    with pytest.raises(ProviderEvidenceCompositionError, match="PURPOSE_OPERATION_MISMATCH"):
+        composer().compose(request(purpose="OWNERSHIP_TRANSFER"))
+
+
 def test_composition_binds_registry_subject_and_signature_into_one_preflight():
     keys = Keys()
     signer = Signer(keys)
