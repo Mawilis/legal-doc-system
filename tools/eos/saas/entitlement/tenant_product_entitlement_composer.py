@@ -45,7 +45,10 @@ import re
 from typing import Any, Final, NoReturn
 
 from tools.eos.saas.billing.subscription_registry import SubscriptionRegistry
-from tools.eos.saas.billing.subscription_term_policy import evaluate_subscription_term
+from tools.eos.saas.billing.subscription_term_policy import (
+    SubscriptionTermKind,
+    evaluate_subscription_term,
+)
 from tools.eos.saas.domain.subscription import (
     SubscriptionEntity,
     SubscriptionStatus,
@@ -71,7 +74,7 @@ from tools.eos.saas.entitlement.tenant_product_entitlement_registry import (
 )
 
 
-VERSION: Final[str] = "v1.1.0-D22B3-SUBSCRIPTION-TERM-ENFORCEMENT"
+VERSION: Final[str] = "v1.2.0-D22B3-FOUNDER-PERPETUAL-LEGAL-ENTITLEMENT"
 ENTITLEMENT_ID_NAMESPACE: Final[str] = "WILSY-TENANT-PRODUCT-ENTITLEMENT-ID/V1"
 SOURCE_EVIDENCE_SCHEMA: Final[str] = "WILSY-TENANT-PRODUCT-ENTITLEMENT-SOURCE/V1"
 ACTIVATION_EVIDENCE_SCHEMA: Final[str] = (
@@ -304,6 +307,7 @@ def _evidence(
     feature_id: str,
     mapping_fingerprint: str,
     catalogue_fingerprint: str,
+    commercial_authority_kind: str,
 ) -> tuple[str, str, str, str]:
     """Derive distinct deterministic source and activation evidence contracts."""
     source_payload: dict[str, object] = {
@@ -315,6 +319,7 @@ def _evidence(
         "subscription_proof_hash": subscription.proof_hash,
         "product_id": product_id.value,
         "commercial_feature_id": feature_id,
+        "commercial_authority_kind": commercial_authority_kind,
         "mapping_fingerprint": mapping_fingerprint,
         "product_catalogue_fingerprint": catalogue_fingerprint,
     }
@@ -414,11 +419,16 @@ def compose_tenant_product_entitlement(
         tx,
         subscription_registry,
     )
-    if mapping.feature_id not in subscription.plan_features:
+    term = evaluate_subscription_term(subscription, evaluated_at=when)
+    founder_perpetual = term.kind is SubscriptionTermKind.PERPETUAL_PLATFORM_OWNER
+    if mapping.feature_id not in subscription.plan_features and not founder_perpetual:
         _raise(
             TenantProductEntitlementComposerCommercialError,
             "D22B3_COMMERCIAL_FEATURE_ABSENT",
         )
+    commercial_authority_kind = (
+        "PLATFORM_FOUNDER_PERPETUAL" if founder_perpetual else "PLAN_FEATURE"
+    )
 
     entitlement_id = derive_tenant_product_entitlement_id(tenant, product)
     (
@@ -433,6 +443,7 @@ def compose_tenant_product_entitlement(
         mapping.feature_id,
         mapping.fingerprint,
         mapping.product_catalogue_fingerprint,
+        commercial_authority_kind,
     )
 
     try:
@@ -597,7 +608,7 @@ __all__ = [
 ]
 
 # ARTIFACT: tenant_product_entitlement_composer.py
-# VERSION: v1.1.0-D22B3-SUBSCRIPTION-TERM-ENFORCEMENT
+# VERSION: v1.2.0-D22B3-FOUNDER-PERPETUAL-LEGAL-ENTITLEMENT
 # AUTHORITY BOUNDARY: positive Legal Operations subscription-to-entitlement composition only; no commercial mutation, reconciliation, IAM, route or classification authority
 # TENANT POSTURE: exact tenant-scoped subscription read and entitlement lineage inside one caller-owned transaction
 # FAIL-CLOSED POSTURE: invalid/ambiguous commercial proof, divergent evidence, terminal lifecycle, stale CAS and persistence failures reject
