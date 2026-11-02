@@ -206,6 +206,147 @@ def test_device_proof_requires_session_reference(
     assert error.value.code == "DEPUTY_DEVICE_CURRENT_SESSION_REFERENCE_REQUIRED"
 
 
+
+
+def test_location_permission_route_consumes_device_proof_and_creates_short_grant(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    database = Database()
+    session = ActiveSession()
+    calls: list[dict[str, Any]] = []
+    proof = SimpleNamespace(device_id="deputy-device:synthetic")
+    grant = SimpleNamespace(
+        to_dict=lambda: {
+            "tenant_id": TENANT, "attempt_id": "attempt-http",
+            "grant_id": "grant-http", "device_id": "deputy-device:synthetic",
+            "purpose": "PROCESS_SERVICE_ATTEMPT_FIELD_EVIDENCE",
+        },
+        fingerprint="a" * 128,
+    )
+    monkeypatch.setattr(command_api, "_transaction", lambda callback: callback(session, database))
+    monkeypatch.setattr(command_api, "_location_attempt_sources", lambda *args: (
+        SimpleNamespace(attempt_id="attempt-http"), object(), object()
+    ))
+    monkeypatch.setattr(command_api, "_deputy_device_scope", lambda *args: DEPUTY)
+    monkeypatch.setattr(command_api, "_verify_location_device_proof", lambda **kwargs: proof)
+
+    def issue(**kwargs: Any) -> object:
+        calls.append(kwargs)
+        return grant
+
+    monkeypatch.setattr(command_api, "issue_process_service_location_permission_grant", issue)
+    with TestClient(app_for(context())) as client:
+        response = client.post(
+            "/api/legal-operations/deputy/attempts/attempt-http/location-permission-grants",
+            json={
+                "current_evidence_identity": "p2-current-http",
+                "grant_id": "grant-http",
+                "challenge_id": "challenge-http",
+                "signature_p1363_b64": base64.b64encode(b"C" * 64).decode("ascii"),
+                "permission_granted": True,
+                "permission_notice_version": "P5L-LOCATION-NOTICE-V1",
+            },
+        )
+    assert response.status_code == 200
+    assert response.json()["data"]["grant_id"] == "grant-http"
+    assert len(calls) == 1
+    assert calls[0]["principal_id"] == PRINCIPAL
+    assert calls[0]["device_provenance"] is proof
+    assert calls[0]["permission_granted"] is True
+    assert calls[0]["permission_notice_version"] == "P5L-LOCATION-NOTICE-V1"
+    assert calls[0]["session"] is session
+
+
+def test_location_capture_route_requires_both_challenge_and_gps_signatures(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    database = Database()
+    session = ActiveSession()
+    calls: list[dict[str, Any]] = []
+    proof = SimpleNamespace(device_id="deputy-device:synthetic")
+    observation = SimpleNamespace(
+        to_dict=lambda: {
+            "tenant_id": TENANT, "attempt_id": "attempt-http",
+            "observation_id": "observation-http", "latitude": -26.2,
+            "longitude": 28.0, "horizontal_accuracy_m": 8.0,
+        },
+        fingerprint="b" * 128,
+    )
+    monkeypatch.setattr(command_api, "_transaction", lambda callback: callback(session, database))
+    monkeypatch.setattr(command_api, "_location_attempt_sources", lambda *args: (
+        SimpleNamespace(attempt_id="attempt-http"), object(), object()
+    ))
+    monkeypatch.setattr(command_api, "_deputy_device_scope", lambda *args: DEPUTY)
+    monkeypatch.setattr(command_api, "_verify_location_device_proof", lambda **kwargs: proof)
+
+    def record(**kwargs: Any) -> object:
+        calls.append(kwargs)
+        return observation
+
+    monkeypatch.setattr(command_api, "record_process_service_location_observation", record)
+    signature = base64.b64encode(b"S" * 64).decode("ascii")
+    with TestClient(app_for(context())) as client:
+        response = client.post(
+            "/api/legal-operations/deputy/attempts/attempt-http/location-evidence",
+            json={
+                "current_evidence_identity": "p2-current-http",
+                "grant_id": "grant-http",
+                "observation_id": "observation-http",
+                "challenge_id": "challenge-http",
+                "signature_p1363_b64": signature,
+                "location_signature_p1363_b64": signature,
+                "latitude": -26.2,
+                "longitude": 28.0,
+                "horizontal_accuracy_m": 8.0,
+                "captured_at": "2026-11-02T10:00:00.000Z",
+            },
+        )
+    assert response.status_code == 200
+    assert response.json()["data"]["observation_id"] == "observation-http"
+    assert len(calls) == 1
+    assert calls[0]["current_evidence_identity"] == "p2-current-http"
+    assert calls[0]["location_signature_p1363"] == b"S" * 64
+    assert calls[0]["device_provenance"] is proof
+    assert calls[0]["principal_id"] == PRINCIPAL
+    assert calls[0]["session"] is session
+
+
+def test_location_commands_reject_permission_denial_and_extra_authority(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    monkeypatch.setattr(command_api, "_transaction", lambda callback: pytest.fail("must not open transaction"))
+    signature = base64.b64encode(b"S" * 64).decode("ascii")
+    with TestClient(app_for(context())) as client:
+        denied = client.post(
+            "/api/legal-operations/deputy/attempts/attempt-http/location-permission-grants",
+            json={
+                "current_evidence_identity": "p2-current-http",
+                "grant_id": "grant-http",
+                "challenge_id": "challenge-http",
+                "signature_p1363_b64": signature,
+                "permission_granted": False,
+                "permission_notice_version": "P5L-LOCATION-NOTICE-V1",
+            },
+        )
+        injected = client.post(
+            "/api/legal-operations/deputy/attempts/attempt-http/location-evidence",
+            json={
+                "current_evidence_identity": "p2-current-http",
+                "grant_id": "grant-http",
+                "observation_id": "observation-http",
+                "challenge_id": "challenge-http",
+                "signature_p1363_b64": signature,
+                "location_signature_p1363_b64": signature,
+                "latitude": -26.2,
+                "longitude": 28.0,
+                "horizontal_accuracy_m": 8.0,
+                "captured_at": "2026-11-02T10:00:00.000Z",
+                "tenant_id": "attacker-tenant",
+            },
+        )
+    assert denied.status_code == 403
+    assert injected.status_code == 422
+
 # ARTIFACT: test_deputy_device_provenance_http.py
 # VERSION: v1.0.0-L8-6H-DEVICE-PROOF-HTTP-CERT
 # AUTHORITY BOUNDARY: HTTP composition and server-derived session/deputy scope only.
