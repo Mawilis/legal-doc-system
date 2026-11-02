@@ -197,7 +197,7 @@ def test_revoked_grant_blocks_observation_but_preserves_existing_grant():
         reason_reference="user-withdrew-permission", grant_collection=grants,
         revocation_collection=revocations, session=Session(),
     )
-    with pytest.raises(ProcessServiceLocationEvidenceRegistryConflictError):
+    with pytest.raises(ProcessServiceLocationEvidenceOrchestrationError) as error:
         record_process_service_location_observation(
             attempt=attempt, allocation_receipt=receipt, allocation_current=current,
             device_provenance=proof_value, principal_id=PRINCIPAL, grant_id=grant.grant_id,
@@ -206,6 +206,7 @@ def test_revoked_grant_blocks_observation_but_preserves_existing_grant():
             permission_collection=grants, observation_collection=observations,
             revocation_collection=revocations, session=Session(),
         )
+    assert error.value.code == "P5L_LOCATION_OBSERVATION_PERSISTENCE_REJECTED"
     assert len(grants.docs) == 1 and len(revocations.docs) == 1 and observations.docs == []
 
 
