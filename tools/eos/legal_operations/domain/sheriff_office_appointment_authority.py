@@ -19,8 +19,10 @@ FAIL-CLOSED DECLARATION: Missing, malformed, stale, ambiguous, mismatched, or un
 
 The source evidence is expected to identify the Ministerial appointment under
 section 2 (or acting appointment under section 5), the office/court/area scope
-under section 2 or section 3, and the current Fidelity Fund Certificate issued
-by the South African Board for Sheriffs. A tenant administrator's role, a
+under section 2 or section 3, and the current Fidelity Fund Certificate
+issued by the South African Board for Sheriffs. Current professional indemnity
+insurance is an additional WILSY operational-evidence condition, not a claim that
+the Sheriffs Act itself prescribes this platform gate. A tenant administrator's role, a
 business-role label, an operating-role scope descriptor, or a WILSY-created
 record is not a substitute for those external instruments. The verifier fields
 record who checked the source material; they do not cryptographically prove
