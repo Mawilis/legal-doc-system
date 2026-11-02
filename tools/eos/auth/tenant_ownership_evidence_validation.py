@@ -59,7 +59,7 @@ def assess_registry_snapshots(
 ) -> RegistryAssessment:
     """Resolve filing lineage deterministically; ambiguity and stale data deny."""
     now = _utc(evaluated_at, "REGISTRY_EVALUATION_TIME_INVALID")
-    if max_age <= timedelta(0):
+    if type(max_age) is not timedelta or max_age <= timedelta(0):
         raise OwnershipEvidenceValidationError("REGISTRY_MAX_AGE_INVALID")
     if not snapshots:
         return RegistryAssessment("DENY", None, None, "SOURCE_RECORD_MISSING")
@@ -125,7 +125,7 @@ def validate_subject_proofing_receipt(
     provider: SubjectProofingStatusProvider,
 ) -> None:
     """Validate exact, purpose-limited subject proof and authoritative revocation state."""
-    if type(receipt) is not SubjectProofingReceipt:
+    if type(request) is not SubjectProofingRequest or type(receipt) is not SubjectProofingReceipt:
         raise OwnershipEvidenceValidationError("SUBJECT_PROOFING_RECEIPT_INVALID")
     requested_at = _utc(request.evaluated_at, "SUBJECT_PROOFING_EVALUATION_TIME_INVALID")
     verified_at = _utc(receipt.verified_at, "SUBJECT_PROOFING_VERIFIED_AT_INVALID")
@@ -143,6 +143,8 @@ def validate_subject_proofing_receipt(
         revoked = provider.is_revoked(receipt.revocation_reference, requested_at)
     except Exception as error:
         raise OwnershipEvidenceValidationError("SUBJECT_PROOFING_REVOCATION_UNAVAILABLE") from error
+    if type(revoked) is not bool:
+        raise OwnershipEvidenceValidationError("SUBJECT_PROOFING_REVOCATION_RESPONSE_INVALID")
     if revoked:
         raise OwnershipEvidenceValidationError("SUBJECT_PROOFING_RECEIPT_REVOKED")
 
