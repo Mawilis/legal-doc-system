@@ -65,6 +65,7 @@ def test_registry_supersession_selects_only_active_terminal_filing() -> None:
     ([snapshot("old", retrieved=NOW - timedelta(days=3))], "REGISTRY_SNAPSHOT_STALE"),
     ([snapshot("a"), snapshot("b")], "REGISTRY_CURRENT_FILING_AMBIGUOUS"),
     ([snapshot("a", supersedes="missing")], "REGISTRY_SUPERSESSION_LINEAGE_INVALID"),
+    ([snapshot("a"), snapshot("b", supersedes="a")], "REGISTRY_SUPERSESSION_STATUS_CONFLICT"),
     ([snapshot("a", supersedes="b"), snapshot("b", supersedes="a")], "REGISTRY_SUPERSESSION_CYCLE"),
     ([snapshot("a"), replace(snapshot("a"), attributes_fingerprint="9" * 64)],
      "REGISTRY_FILING_FINGERPRINT_CONFLICT"),
