@@ -1,5 +1,5 @@
 """TITLE: Sheriff Appointment Evidence Registry Unit Certificate
-VERSION: v1.0.1-SHERIFF-APPOINTMENT-EVIDENCE-REGISTRY-UNIT-CERT
+VERSION: v1.0.2-SHERIFF-APPOINTMENT-EVIDENCE-REGISTRY-UNIT-CERT
 AUTHORITY: Unit certification of immutable tenant-scoped registry persistence.
 EPITOME: Verify caller transaction boundaries, tenant-first indexes, strict
     append-only lineage, exact replay, divergent replay and corruption rejection.
@@ -8,6 +8,9 @@ COLLABORATION / OWNERSHIP: Registry-only certificate; no source trust root,
     identity authentication, IAM, office queue or execution behavior.
 CERTIFICATION / UPDATE DATE: 2026-11-02
 CHANGELOG:
+    2026-11-02 v1.0.2-SHERIFF-APPOINTMENT-EVIDENCE-REGISTRY-UNIT-CERT
+    Replaces a list-subclass cursor fake with a protocol-shaped cursor so
+    Pyright validates the test double without incompatible method overrides.
     2026-11-02 v1.0.1-SHERIFF-APPOINTMENT-EVIDENCE-REGISTRY-UNIT-CERT
     Adds scope-drift, strict-document-shape, transaction and disputed-source
     currentness adversarial cases.
@@ -25,7 +28,7 @@ from __future__ import annotations
 
 from copy import deepcopy
 from datetime import datetime, timedelta, timezone
-from typing import Any
+from typing import Any, Iterable
 
 import pytest
 
@@ -57,14 +60,29 @@ class Session:
     in_transaction = True
 
 
-class Cursor(list[dict[str, object]]):
+class Cursor:
     """Small deterministic cursor implementing the Mongo sort/limit contract."""
 
+    def __init__(self, rows: Iterable[dict[str, Any]]) -> None:
+        self._rows = list(rows)
+
     def sort(self, key: str, direction: int) -> "Cursor":
-        return Cursor(sorted(self, key=lambda row: row[key], reverse=direction < 0))
+        return Cursor(
+            sorted(
+                self._rows,
+                key=lambda row: row[key],
+                reverse=direction < 0,
+            )
+        )
 
     def limit(self, count: int) -> "Cursor":
-        return Cursor(self[:count])
+        return Cursor(self._rows[:count])
+
+    def __iter__(self):
+        return iter(self._rows)
+
+    def __len__(self) -> int:
+        return len(self._rows)
 
 
 class Collection:
@@ -370,7 +388,7 @@ def test_registry_revision_must_match_domain_revision() -> None:
 
 # WILSY OS SOVEREIGN ARTIFACT SEAL
 # ARTIFACT: tests/unit/test_sheriff_appointment_source_evidence_registry.py
-# VERSION: v1.0.1-SHERIFF-APPOINTMENT-EVIDENCE-REGISTRY-UNIT-CERT
+# VERSION: v1.0.2-SHERIFF-APPOINTMENT-EVIDENCE-REGISTRY-UNIT-CERT
 # AUTHORITY BOUNDARY: deterministic unit certification of immutable persistence only
 # TENANT POSTURE: exact tenant-first reads, writes, replay and history
 # FAIL-CLOSED POSTURE: absent transaction, pseudo tenant, divergent replay, gap, fork and corruption reject
