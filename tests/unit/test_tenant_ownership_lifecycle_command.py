@@ -94,6 +94,7 @@ def test_command_rejects_missing_transaction_before_registry_read() -> None:
     with pytest.raises(TenantOwnershipLifecycleCommandError) as raised:
         command.execute(
             request=_request(TenantOwnershipOperation.TENANT_GENESIS),
+            evidence=object(),
             actor_principal_id="provisioner-1",
             command_id="cmd-1",
             expected_revision=0,
@@ -109,6 +110,7 @@ def test_transfer_requires_exact_current_owner_before_verifier() -> None:
     with pytest.raises(TenantOwnershipLifecycleCommandError) as raised:
         command.execute(
             request=_request(TenantOwnershipOperation.OWNERSHIP_TRANSFER),
+            evidence=object(),
             actor_principal_id="attacker-1",
             command_id="cmd-1",
             expected_revision=1,
@@ -124,6 +126,7 @@ def test_transfer_requires_canonical_authorization_decision() -> None:
     with pytest.raises(TenantOwnershipLifecycleCommandError) as raised:
         command.execute(
             request=_request(TenantOwnershipOperation.OWNERSHIP_TRANSFER),
+            evidence=object(),
             actor_principal_id="owner-1",
             command_id="cmd-1",
             expected_revision=1,
@@ -140,12 +143,13 @@ def test_transfer_authorization_does_not_substitute_for_independent_evidence() -
     with pytest.raises(TenantOwnershipVerificationError) as raised:
         command.execute(
             request=_request(TenantOwnershipOperation.OWNERSHIP_TRANSFER),
+            evidence=object(),
             actor_principal_id="owner-1",
             command_id="cmd-1",
             expected_revision=1,
             session=_Session(),
         )
-    assert raised.value.code == "OWNERSHIP_EVIDENCE_AUTHORITY_UNAVAILABLE"
+    assert raised.value.code == "VERIFIED_OWNERSHIP_EVIDENCE_REQUIRED"
     assert authorizer.calls == 1
     assert registry.appends == 0
 
@@ -153,13 +157,7 @@ def test_transfer_authorization_does_not_substitute_for_independent_evidence() -
 def test_recovery_never_uses_ordinary_transfer_actor_authority() -> None:
     command, registry, authorizer = _command()
     with pytest.raises(TenantOwnershipVerificationError) as raised:
-        command.execute(
-            request=_request(TenantOwnershipOperation.GOVERNED_RECOVERY),
-            actor_principal_id="recovery-operator-1",
-            command_id="recovery-1",
-            expected_revision=4,
-            session=_Session(),
-        )
+        command.prepare(_request(TenantOwnershipOperation.GOVERNED_RECOVERY))
     assert raised.value.code == "OWNERSHIP_EVIDENCE_AUTHORITY_UNAVAILABLE"
     assert authorizer.calls == 0
     assert registry.appends == 0
@@ -177,6 +175,7 @@ def test_genesis_requires_existing_pretenant_provisioner_authority() -> None:
     with pytest.raises(TenantOwnershipLifecycleCommandError) as raised:
         command.execute(
             request=_request(TenantOwnershipOperation.TENANT_GENESIS, principal_id="owner-1"),
+            evidence=object(),
             actor_principal_id="unapproved-provisioner",
             command_id="genesis-2",
             expected_revision=0,
@@ -189,12 +188,6 @@ def test_genesis_requires_existing_pretenant_provisioner_authority() -> None:
 def test_genesis_remains_denied_without_independent_issuer() -> None:
     command, registry, authorizer = _command()
     with pytest.raises(TenantOwnershipVerificationError) as raised:
-        command.execute(
-            request=_request(TenantOwnershipOperation.TENANT_GENESIS, principal_id="owner-1"),
-            actor_principal_id="deployment-provisioner-1",
-            command_id="genesis-1",
-            expected_revision=0,
-            session=_Session(),
-        )
+        command.prepare(_request(TenantOwnershipOperation.TENANT_GENESIS, principal_id="owner-1"))
     assert raised.value.code == "OWNERSHIP_EVIDENCE_AUTHORITY_UNAVAILABLE"
     assert authorizer.calls == registry.appends == 0
