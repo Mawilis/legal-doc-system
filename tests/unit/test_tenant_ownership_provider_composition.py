@@ -234,6 +234,18 @@ def test_composition_denies_registry_conflict_before_identity_or_signing():
     assert signer.last_request is None
 
 
+def test_composition_rejects_registry_record_for_different_legal_entity():
+    row = Registry().history[0]
+    wrong_entity = row.__class__(
+        row.source_id, "attacker-entity", row.filing_reference, row.filing_revision,
+        row.jurisdiction, row.entity_type, row.record_status, row.retrieved_at,
+        row.effective_at, row.source_fingerprint, row.attributes_fingerprint,
+        row.supersedes_filing_reference,
+    )
+    with pytest.raises(ProviderEvidenceCompositionError, match="REGISTRY_SELECTED_SOURCE_SCOPE_MISMATCH"):
+        composer(registry=Registry((wrong_entity,))).compose(request())
+
+
 def test_composition_denies_registry_identity_signer_and_revocation_outages():
     with pytest.raises(ProviderEvidenceCompositionError, match="REGISTRY_SOURCE_UNAVAILABLE"):
         composer(registry=Registry(unavailable=True)).compose(request())
