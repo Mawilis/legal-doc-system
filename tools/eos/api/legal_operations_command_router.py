@@ -2110,18 +2110,25 @@ async def revoke_deputy_location_permission_grant_command(
 ) -> dict[str, Any]:
     """Append a current Deputy's explicit permission withdrawal."""
     def run(session: Any, db: Any) -> Any:
-        current, receipt, allocation_current = _location_attempt_sources(
-            context, attempt_id,
+        current = _source(
+            _collection(db, LIFECYCLE_COLLECTION),
+            context.tenant_id,
             command.current_evidence_identity,
-            db, session,
+            ServiceAttempt,
+            session,
         )
+        if current.attempt_id != attempt_id:
+            raise CommandError("LEGAL_OPERATION_NOT_FOUND")
+        _enforce_deputy_attempt_scope(context, current, db, session, required=True)
         deputy_id = _deputy_device_scope(context, db, session)
         if current.deputy_id != deputy_id:
             raise CommandError("LEGAL_OPERATION_NOT_FOUND")
-        # Rehydrate the grant against the current P1/P4 source before revocation.
-        ProcessServiceLocationEvidenceRegistry.get_permission_grant(
-            context.tenant_id, grant_id, _collection(db, LOCATION_PERMISSION_COLLECTION),
-            attempt=current, allocation_receipt=receipt, allocation_current=allocation_current,
+        ProcessServiceLocationEvidenceRegistry.assert_permission_grant_attempt_binding(
+            context.tenant_id,
+            grant_id,
+            attempt_id,
+            deputy_id,
+            _collection(db, LOCATION_PERMISSION_COLLECTION),
             session=session,
         )
         return revoke_process_service_location_permission_grant(
