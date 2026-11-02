@@ -84,10 +84,42 @@ def make_evidence(
             SheriffSourceVerificationMethod.PUBLIC_WEB_OBSERVATION
         ),
         source_verification_reference="observation-reference-1",
-        verified_by_principal_id="independent-verifier",
+        verified_by_principal_id="verifier-principal-1",
         observed_at=NOW - timedelta(minutes=5),
         effective_from=effective_from,
         effective_until=effective_until,
+    )
+
+
+
+def make_deputy_evidence() -> SheriffAppointmentSourceEvidence:
+    """Build a Deputy appointment issued by a Sheriff, not the Minister."""
+    return SheriffAppointmentSourceEvidence(
+        tenant_id="tenant-a",
+        evidence_id="deputy-appointment-evidence-1",
+        revision=1,
+        principal_id="deputy-principal-1",
+        verified_subject_reference="subject-reference-1",
+        sheriff_office_id="office-jhb",
+        district_id="district-jhb",
+        court_reference="court-jhb",
+        service_area_references=("area-jhb-central",),
+        capacity=SheriffAppointmentCapacity.DEPUTY_SHERIFF,
+        statutory_basis=SheriffAppointmentStatutoryBasis.SECTION_6_1,
+        issuer_authority=SheriffAppointmentIssuerAuthority.SHERIFF,
+        instrument_reference="sheriff-deputy-instrument-1",
+        instrument_fingerprint=INSTRUMENT_DIGEST,
+        source_uri="https://www.justice.gov.za/notice/synthetic-deputy-appointment",
+        source_observation_state=SheriffSourceObservationState.HUMAN_OBSERVED_PUBLIC_RECORD,
+        source_verification_method=SheriffSourceVerificationMethod.PUBLIC_WEB_OBSERVATION,
+        source_verification_reference="observation-reference-1",
+        verified_by_principal_id="verifier-principal-1",
+        observed_at=NOW - timedelta(minutes=5),
+        effective_from=NOW - timedelta(days=1),
+        effective_until=None,
+        appointing_principal_id="sheriff-principal-1",
+        board_approval_reference="board-approval-1",
+        board_approval_fingerprint="b" * 128,
     )
 
 
@@ -294,3 +326,31 @@ def test_decision_cannot_be_constructed_or_replaced() -> None:
         MinisterialAppointmentVerificationDecision()
     with pytest.raises(SheriffMinisterialAppointmentVerificationError):
         replace(decision, reason=MinisterialAppointmentVerificationReason.ACTOR_INACTIVE)
+
+
+def test_deputy_appointment_cannot_pass_the_ministerial_issuer_gate() -> None:
+    """A Sheriff-issued Deputy instrument is not a Ministerial appointment."""
+    deputy_evidence = make_deputy_evidence()
+    deputy_capture = make_capture(
+        principal_id="deputy-principal-1",
+        instrument_reference="sheriff-deputy-instrument-1",
+    )
+    # The evidence has a distinct source URI; use an exactly bound capture.
+    deputy_capture = replace(
+        deputy_capture,
+        source_uri="https://www.justice.gov.za/notice/synthetic-deputy-appointment",
+    )
+    assert (
+        verify(evidence=deputy_evidence, capture=deputy_capture).reason
+        is MinisterialAppointmentVerificationReason.ISSUER_CAPACITY_MISMATCH
+    )
+
+
+def test_subject_cannot_verify_own_appointment() -> None:
+    """The appointment subject cannot act as its own source verifier."""
+    self_capture = replace(make_capture(), actor_principal_id="sheriff-principal-1")
+    actor = PrincipalAuthority("sheriff-principal-1", PrincipalStatus.ACTIVE, 2)
+    assert (
+        verify(capture=self_capture, actor=actor).reason
+        is MinisterialAppointmentVerificationReason.SELF_ATTESTATION
+    )
