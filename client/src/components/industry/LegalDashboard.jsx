@@ -145,6 +145,7 @@ import {
   getDeputyLocationEvidence,
   getDeputyPersonalActiveWork,
   captureDeputyLocationEvidence,
+  syncPendingDeputyLocationEvidence,
   getLegalClientMatters,
   getLegalClientAcceptanceInstruments,
   createLegalClientAcceptanceContext,
@@ -4771,6 +4772,16 @@ export default function LegalDashboard({
         attemptId: attempt.attempt_id,
         currentEvidenceIdentity: capability.currentEvidenceIdentity,
       });
+      if (result.queued) {
+        setLocationCaptureStates((current) => ({
+          ...current,
+          [attempt.attempt_id]: {
+            status: 'pending',
+            message: 'Signed location evidence is safely queued on this device and will sync when connectivity returns. No background tracking was started.',
+          },
+        }));
+        return;
+      }
       const packet = await getDeputyLocationEvidence(attempt.attempt_id);
       setLocationEvidenceByAttempt((current) => ({
         ...current,
@@ -5030,6 +5041,18 @@ export default function LegalDashboard({
   const isPracticeMode = roleMode === ROLE_MODES.LEGAL_PRACTICE;
   const isFinanceMode = roleMode === ROLE_MODES.LEGAL_FINANCE;
   const isDeputyMode = roleMode === ROLE_MODES.DEPUTY;
+
+  useEffect(() => {
+    if (!isDeputyMode || typeof window === 'undefined') return undefined;
+    const syncPending = () => {
+      syncPendingDeputyLocationEvidence().catch(() => {
+        // Signed events remain in the local outbox for explicit retry.
+      });
+    };
+    syncPending();
+    window.addEventListener('online', syncPending);
+    return () => window.removeEventListener('online', syncPending);
+  }, [isDeputyMode]);
   const isSheriffMode = roleMode === ROLE_MODES.SHERIFF;
   const isClientMode = roleMode === ROLE_MODES.LEGAL_CLIENT;
   // The shared chrome owns tenant asset resolution; the parent never receives a descriptor.
