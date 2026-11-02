@@ -8,7 +8,7 @@ All writes require the caller's active Mongo transaction.
 from __future__ import annotations
 
 from dataclasses import dataclass
-from datetime import datetime, timezone
+from datetime import datetime, timedelta, timezone
 from typing import Any, Final, Protocol
 
 from pymongo import ASCENDING
@@ -19,6 +19,7 @@ COLLECTION: Final[str] = "tenant_ownership_governed_trust_roots"
 EVENTS: Final[str] = "tenant_ownership_trust_root_events"
 ROOT_SCOPE: Final[str] = "TENANT_OWNERSHIP_ISSUER"
 RECOVERY_SCOPE: Final[str] = "TENANT_OWNERSHIP_GOVERNED_RECOVERY"
+MAX_GOVERNANCE_VERIFICATION_AGE: Final[timedelta] = timedelta(minutes=5)
 
 
 class TrustRootError(RuntimeError):
@@ -222,7 +223,12 @@ class GovernedTrustRootRegistry:
             if type(verified) is not VerifiedTrustRootEnrollment or verified.request != request:
                 raise TrustRootError("GOVERNANCE_VERIFICATION_RESULT_INVALID")
             verified_at = _instant("verified_at", verified.verified_at)
-            if verified_at > datetime.now(timezone.utc) or verified_at >= end:
+            verified_now = datetime.now(timezone.utc)
+            if (
+                verified_at > verified_now
+                or verified_at < verified_now - MAX_GOVERNANCE_VERIFICATION_AGE
+                or verified_at >= end
+            ):
                 raise TrustRootError("TRUST_ROOT_NOT_CURRENT_AT_ENROLLMENT")
             record = TrustRootRecord(
                 trust_root_reference=ref, fingerprint=fingerprint,
@@ -329,8 +335,12 @@ class GovernedTrustRootRegistry:
         if type(proof) is not TrustRootRevocationProof or proof.request != request:
             raise TrustRootError("TRUST_ROOT_REVOCATION_PROOF_INVALID")
         verified_at = _instant("verified_at", proof.verified_at)
-        if verified_at > datetime.now(timezone.utc):
-            raise TrustRootError("TRUST_ROOT_REVOCATION_VERIFICATION_TIME_FROM_FUTURE")
+        verified_now = datetime.now(timezone.utc)
+        if (
+            verified_at > verified_now
+            or verified_at < verified_now - MAX_GOVERNANCE_VERIFICATION_AGE
+        ):
+            raise TrustRootError("TRUST_ROOT_REVOCATION_VERIFICATION_TIME_STALE_OR_FROM_FUTURE")
         prepared = object.__new__(PreparedTrustRootRevocation)
         for name, value in {
             "request": request,
@@ -394,6 +404,7 @@ class GovernedTrustRootRegistry:
 
 __all__ = [
     "COLLECTION", "EVENTS", "ROOT_SCOPE", "RECOVERY_SCOPE", "VERSION",
+    "MAX_GOVERNANCE_VERIFICATION_AGE",
     "GovernedTrustRootRegistry", "PreparedTrustRootRevocation",
     "TrustRootEnrollmentRequest", "TrustRootEnrollmentVerifier",
     "TrustRootError", "TrustRootRecord", "TrustRootRevocationProof",
