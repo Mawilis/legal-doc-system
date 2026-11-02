@@ -1,5 +1,5 @@
 """TITLE: Sheriff Appointment Evidence Registry Unit Certificate
-VERSION: v1.0.0-SHERIFF-APPOINTMENT-EVIDENCE-REGISTRY-UNIT-CERT
+VERSION: v1.0.1-SHERIFF-APPOINTMENT-EVIDENCE-REGISTRY-UNIT-CERT
 AUTHORITY: Unit certification of immutable tenant-scoped registry persistence.
 EPITOME: Verify caller transaction boundaries, tenant-first indexes, strict
     append-only lineage, exact replay, divergent replay and corruption rejection.
@@ -8,6 +8,9 @@ COLLABORATION / OWNERSHIP: Registry-only certificate; no source trust root,
     identity authentication, IAM, office queue or execution behavior.
 CERTIFICATION / UPDATE DATE: 2026-11-02
 CHANGELOG:
+    2026-11-02 v1.0.1-SHERIFF-APPOINTMENT-EVIDENCE-REGISTRY-UNIT-CERT
+    Adds scope-drift, strict-document-shape, transaction and disputed-source
+    currentness adversarial cases.
     2026-11-02 v1.0.0-SHERIFF-APPOINTMENT-EVIDENCE-REGISTRY-UNIT-CERT
     Adds deterministic in-memory Mongo contract tests for append-only history,
     tenant isolation, transaction requirements, replay and corruption.
@@ -301,9 +304,73 @@ def test_currentness_is_derived_from_history_and_expiry_fails_closed() -> None:
     ) is None
 
 
+def test_currentness_requires_transaction_and_disputed_observation_blocks() -> None:
+    registry = SheriffAppointmentEvidenceRegistry(Collection())
+    with pytest.raises(SheriffAppointmentEvidenceTransactionRequired):
+        registry.resolve_current(
+            tenant_id="tenant-a",
+            evidence_id="appointment-evidence-1",
+            at=NOW,
+            session=None,
+        )
+
+    collection = Collection()
+    registry = SheriffAppointmentEvidenceRegistry(collection)
+    disputed = evidence(
+        source_observation_state=SheriffSourceObservationState.DISPUTED,
+    )
+    registry.persist_revision(revision(disputed), session=Session())
+    assert registry.resolve_current(
+        tenant_id="tenant-a",
+        evidence_id="appointment-evidence-1",
+        at=NOW,
+        session=Session(),
+    ) is None
+
+
+def test_successor_cannot_change_appointment_identity_or_statutory_scope() -> None:
+    collection = Collection()
+    registry = SheriffAppointmentEvidenceRegistry(collection)
+    first = revision(evidence())
+    registry.persist_revision(first, session=Session())
+    changed_scope = evidence(
+        revision=2,
+        principal_id="different-principal",
+        supersedes_fingerprint=first.evidence.fingerprint,
+        effective_from=NOW + timedelta(days=1),
+        observed_at=NOW + timedelta(seconds=1),
+    )
+    successor = revision(changed_scope, first.registry_fingerprint)
+    with pytest.raises(SheriffAppointmentEvidenceConflict):
+        registry.persist_revision(successor, session=Session())
+
+
+def test_persisted_document_shape_rejects_unrecognized_fields() -> None:
+    collection = Collection()
+    registry = SheriffAppointmentEvidenceRegistry(collection)
+    registry.persist_revision(revision(evidence()), session=Session())
+    collection.documents[0]["unexpected_authority"] = "ADMIN"
+    with pytest.raises(SheriffAppointmentEvidencePersistedInvalid):
+        registry.get_history_if_any(
+            tenant_id="tenant-a",
+            evidence_id="appointment-evidence-1",
+            session=Session(),
+        )
+
+
+def test_registry_revision_must_match_domain_revision() -> None:
+    item = evidence()
+    with pytest.raises(SheriffAppointmentEvidenceConflict):
+        SheriffAppointmentEvidenceRevision(
+            revision=2,
+            predecessor_registry_fingerprint="a" * 128,
+            evidence=item,
+        )
+
+
 # WILSY OS SOVEREIGN ARTIFACT SEAL
 # ARTIFACT: tests/unit/test_sheriff_appointment_source_evidence_registry.py
-# VERSION: v1.0.0-SHERIFF-APPOINTMENT-EVIDENCE-REGISTRY-UNIT-CERT
+# VERSION: v1.0.1-SHERIFF-APPOINTMENT-EVIDENCE-REGISTRY-UNIT-CERT
 # AUTHORITY BOUNDARY: deterministic unit certification of immutable persistence only
 # TENANT POSTURE: exact tenant-first reads, writes, replay and history
 # FAIL-CLOSED POSTURE: absent transaction, pseudo tenant, divergent replay, gap, fork and corruption reject
