@@ -244,7 +244,7 @@ class TenantOwnershipTransferProtocol:
                 raise OwnershipTransferProtocolError("SUCCESSOR_ACCEPTANCE_VERIFICATION_INVALID")
             accepted = _time("accepted_at", verified.accepted_at)
             expiry = _time("acceptance_expires_at", verified.expires_at)
-            if accepted > now or expiry <= now or accepted >= _time("proposal_expiry", row["expires_at"]):
+            if accepted > now or expiry <= now or accepted >= _stored_time("proposal_expiry", row["expires_at"]):
                 raise OwnershipTransferProtocolError("SUCCESSOR_ACCEPTANCE_NOT_CURRENT")
             self._acceptances.insert_one({
                 "proposal_reference": ref,
