@@ -285,7 +285,20 @@ class GovernedTrustRootRegistry:
         )
         if revoked is not None:
             try:
-                revocation_effective_at = _instant("revocation_effective_at", revoked.get("effective_at"))
+                stored_revocation_effective_at = revoked.get("effective_at")
+                if type(stored_revocation_effective_at) is not datetime:
+                    raise TrustRootError("REVOCATION_EFFECTIVE_AT_INVALID")
+                if (
+                    stored_revocation_effective_at.tzinfo is None
+                    or stored_revocation_effective_at.utcoffset() is None
+                ):
+                    # PyMongo decodes BSON UTC datetimes as naive values by default.
+                    stored_revocation_effective_at = stored_revocation_effective_at.replace(
+                        tzinfo=timezone.utc
+                    )
+                revocation_effective_at = _instant(
+                    "revocation_effective_at", stored_revocation_effective_at
+                )
             except TrustRootError as error:
                 raise TrustRootError("TRUST_ROOT_REVOCATION_RECORD_INVALID") from error
             if revocation_effective_at <= instant:
