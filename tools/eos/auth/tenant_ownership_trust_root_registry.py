@@ -222,7 +222,11 @@ class GovernedTrustRootRegistry:
             if type(verified) is not VerifiedTrustRootEnrollment or verified.request != request:
                 raise TrustRootError("GOVERNANCE_VERIFICATION_RESULT_INVALID")
             verified_at = _instant("verified_at", verified.verified_at)
-            if verified_at < start or verified_at >= end:
+            if (
+                verified_at > datetime.now(timezone.utc)
+                or verified_at < start
+                or verified_at >= end
+            ):
                 raise TrustRootError("TRUST_ROOT_NOT_CURRENT_AT_ENROLLMENT")
             record = TrustRootRecord(
                 trust_root_reference=ref, fingerprint=fingerprint,
@@ -329,6 +333,8 @@ class GovernedTrustRootRegistry:
         if type(proof) is not TrustRootRevocationProof or proof.request != request:
             raise TrustRootError("TRUST_ROOT_REVOCATION_PROOF_INVALID")
         verified_at = _instant("verified_at", proof.verified_at)
+        if verified_at > datetime.now(timezone.utc):
+            raise TrustRootError("TRUST_ROOT_REVOCATION_VERIFICATION_TIME_FROM_FUTURE")
         prepared = object.__new__(PreparedTrustRootRevocation)
         for name, value in {
             "request": request,
