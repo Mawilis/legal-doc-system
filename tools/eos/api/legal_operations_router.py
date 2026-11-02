@@ -1,7 +1,7 @@
 """Authenticated deterministic read projections for Legal Operations.
 
 TITLE: WILSY OS Legal Operations Read Projection Router
-VERSION: v1.17.0-G68-P2-PRACTITIONER-CONFIDENTIALITY-CONTAINMENT
+VERSION: v1.18.0-L8-6E-DEPUTY-CURRENT-SERVING-ASSIGNMENT
 AUTHORITY: Authenticated, tenant-scoped projection of canonical Legal Operations evidence only.
 EPITOME: Preserve exact authorized internal/sheriff/deputy/client reads while
          exposing one snapshot-consistent legal-practice workspace projection and
@@ -21,7 +21,8 @@ COLLABORATION / OWNERSHIP: Python EOS API composition. P1 owns lifecycle truth,
                             L8-8E owns immutable conflict-screening persistence;
                             tenant authorization owns access authority.
 CERTIFICATION / UPDATE DATE: 2026-10-22
-CHANGELOG: 2026-10-24 v1.17.0-G68-P2-PRACTITIONER-CONFIDENTIALITY-CONTAINMENT fails closed before any workspace collection access while certified positive practitioner confidentiality authority remains unavailable; returns a distinct non-disclosing 503 and grants no access.
+CHANGELOG: 2026-10-30 v1.18.0-L8-6E-DEPUTY-CURRENT-SERVING-ASSIGNMENT joins each active Deputy attempt to the exact current P4B pointer and fingerprint-verified receipt inside one snapshot; exposes Deputy, Sheriff office, allocation time and current attempt state. Missing or mismatched evidence fails closed. G68 confidentiality containment remains unchanged.
+            2026-10-24 v1.17.0-G68-P2-PRACTITIONER-CONFIDENTIALITY-CONTAINMENT fails closed before any workspace collection access while certified positive practitioner confidentiality authority remains unavailable; returns a distinct non-disclosing 503 and grants no access.
 CHANGELOG: 2026-10-22 v1.16.0-R67-ENTERPRISE-DAILY-WORK-EXECUTION-READ adds
            one deterministic, deduplicated and urgency-ordered daily execution
            queue to the existing authenticated productive-work response. Queue
@@ -183,6 +184,12 @@ from tools.eos.legal_operations.registry.deputy_principal_binding_registry impor
 from tools.eos.legal_operations.registry.legal_client_matter_visibility_registry import (
     COLLECTION as CLIENT_VISIBILITY_COLLECTION,
 )
+from tools.eos.legal_operations.registry.process_service_allocation_registry import (
+    ALLOCATION_CURRENT_COLLECTION,
+    ALLOCATION_RECEIPT_COLLECTION,
+    ProcessServiceAllocationRegistry,
+    ProcessServiceAllocationRegistryError,
+)
 from tools.eos.legal_operations.registry.legal_operations_lifecycle_registry import (
     COLLECTION as LIFECYCLE_COLLECTION,
     LegalOperationsLifecycleRegistry,
@@ -286,7 +293,7 @@ from tools.eos.saas.entitlement.tenant_product_entitlement_registry import (
 )
 
 
-VERSION: Final[str] = "v1.17.0-G68-P2-PRACTITIONER-CONFIDENTIALITY-CONTAINMENT"
+VERSION: Final[str] = "v1.18.0-L8-6E-DEPUTY-CURRENT-SERVING-ASSIGNMENT"
 logger = logging.getLogger("WilsyOS.API.LegalOperationsRouter")
 _IDENTITY = re.compile(r"^[A-Za-z0-9][A-Za-z0-9._:-]{0,127}$")
 _CLIENT_ROLE = "tenant_legal_client"
@@ -523,7 +530,12 @@ def _workspace_projection_transaction(callback: Callable[[Any, Any], _T]) -> _T:
                 if bool(getattr(session, "in_transaction", False)):
                     session.abort_transaction()
                 raise
-    except (HTTPException, LegalOperationsReadModelError):
+    except (
+        HTTPException,
+        LegalOperationsReadModelError,
+        DeputyPersonalActiveWorkError,
+        ProcessServiceAllocationRegistryError,
+    ):
         raise
     except Exception as error:
         raise HTTPException(
@@ -1992,25 +2004,80 @@ async def get_deputy_personal_active_work_projection(
     lifecycle_collection: Any = Depends(get_lifecycle_collection),
     binding_collection: Any = Depends(get_deputy_principal_binding_collection),
 ) -> dict[str, Any]:
-    """Return the authenticated deputy's binding-scoped active service work.
+    """Return authenticated Deputy work with receipt-backed serving assignment.
 
-    Current IAM must authorize the exact legal_deputy_queue_read operation
-    before either collection is accessed. The immutable L8-6B binding is then
-    resolved by the authenticated principal identity and exact authorized
-    tenant. L8-6C returns only current ALLOCATED/ATTEMPTED ServiceAttempt
-    models whose canonical deputy_id equals the bound deputy identity.
-
-    The route accepts no deputy_id, principal_id, tenant_id, urgency, location,
-    billing, client, AI, service-outcome, return, payment, or settlement input.
-    The response is read-only and grants no lifecycle command authority.
+    All identity, active-attempt, current-pointer and immutable receipt reads
+    share one API-owned snapshot. The exact current pointer selects the receipt
+    by its allocation command reference; its fingerprint must match the fully
+    hydrated receipt. The receipt must in turn match the canonical attempt.
+    No caller-selected office, Deputy, tenant, or allocation is accepted.
     """
-    try:
+    def project(session: Any, database: Any) -> dict[str, Any]:
         personal = get_deputy_personal_active_work(
             tenant_id=context.tenant_id,
             principal_id=context.identity.identity_id,
             binding_collection=binding_collection,
             lifecycle_collection=lifecycle_collection,
+            session=session,
         )
+        assignments: list[dict[str, Any]] = []
+        current_collection = database.get_collection(ALLOCATION_CURRENT_COLLECTION)
+        receipt_collection = database.get_collection(ALLOCATION_RECEIPT_COLLECTION)
+        for model in personal.active_attempts:
+            attempt = model.current
+            pointer = ProcessServiceAllocationRegistry.get_current(
+                context.tenant_id,
+                attempt.document_id,
+                current_collection,
+                session=session,
+            )
+            receipt = ProcessServiceAllocationRegistry.get_receipt_by_allocation_command_id(
+                context.tenant_id,
+                attempt.document_id,
+                pointer.authority_evidence_reference,
+                receipt_collection,
+                session=session,
+            )
+            if receipt is None:
+                raise ProcessServiceAllocationRegistryError(
+                    "P4_CURRENT_ALLOCATION_RECEIPT_MISSING"
+                )
+            if (
+                pointer.authority_evidence_fingerprint != receipt.fingerprint
+                or pointer.current_holder_reference != receipt.to_holder_reference
+                or receipt.tenant_id != context.tenant_id
+                or receipt.document_id != attempt.document_id
+                or receipt.instruction_id != attempt.instruction_id
+                or receipt.deputy_id != personal.deputy_id
+                or receipt.deputy_id != attempt.deputy_id
+                or receipt.allocation_evidence_reference
+                != attempt.allocation_evidence_reference
+                or receipt.allocated_at != attempt.allocated_at
+            ):
+                raise ProcessServiceAllocationRegistryError(
+                    "P4_CURRENT_ALLOCATION_RECEIPT_ATTEMPT_MISMATCH"
+                )
+            assignments.append(
+                {
+                    "attempt_id": attempt.attempt_id,
+                    "deputy_id": receipt.deputy_id,
+                    "sheriff_office_id": receipt.sheriff_office_id,
+                    "allocated_at": receipt.allocated_at.isoformat(),
+                    "attempt_state": attempt.state.value,
+                    "allocation_command_id": receipt.allocation_command_id,
+                    "allocation_receipt_fingerprint": receipt.fingerprint,
+                }
+            )
+        return {
+            "tenant_id": personal.tenant_id,
+            "visibility": "DEPUTY_PERSONAL_ACTIVE_WORK",
+            "deputy_id": personal.deputy_id,
+            "active_attempts": [_project(model.current) for model in personal.active_attempts],
+            "who_serves": assignments,
+        }
+
+    try:
+        return _workspace_projection_transaction(project)
     except DeputyPersonalActiveWorkError as error:
         if error.code == "L8_6C_BINDING_REQUIRED":
             raise HTTPException(
@@ -2021,20 +2088,16 @@ async def get_deputy_personal_active_work_projection(
             status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
             detail="LEGAL_OPERATIONS_DEPUTY_QUEUE_EVIDENCE_UNAVAILABLE",
         ) from error
+    except ProcessServiceAllocationRegistryError as error:
+        raise HTTPException(
+            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+            detail="LEGAL_OPERATIONS_DEPUTY_ALLOCATION_EVIDENCE_UNAVAILABLE",
+        ) from error
     except Exception as error:
         raise HTTPException(
             status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
             detail="LEGAL_OPERATIONS_PERSISTENCE_UNAVAILABLE",
         ) from error
-
-    return {
-        "tenant_id": personal.tenant_id,
-        "visibility": "DEPUTY_PERSONAL_ACTIVE_WORK",
-        "deputy_id": personal.deputy_id,
-        "active_attempts": [
-            _project(model.current) for model in personal.active_attempts
-        ],
-    }
 
 
 @router.get("/deputy/field-capabilities")
@@ -2162,7 +2225,7 @@ __all__ = [
 
 
 # ARTIFACT: legal_operations_router.py
-# VERSION: v1.17.0-G68-P2-PRACTITIONER-CONFIDENTIALITY-CONTAINMENT
+# VERSION: v1.18.0-L8-6E-DEPUTY-CURRENT-SERVING-ASSIGNMENT
 # AUTHORITY BOUNDARY: authenticated Legal reads and bounded post-authorization temporal observation only; temporal and specialist workflow projections remain bounded by productive-work visibility and grant no command, IAM assignment, plan/subscription mutation, payment execution or settlement authority
 # TENANT POSTURE: every projection uses exact authenticated/current-authorized tenant context; foreign lifecycle, deadline, workflow, screening, subscription and entitlement evidence is never disclosed
 # COMPLETION PROVENANCE: Canonical immutable completion history
