@@ -117,7 +117,7 @@ def test_transfer_requires_exact_current_owner_before_verifier() -> None:
     with pytest.raises(TenantOwnershipLifecycleCommandError) as raised:
         command.execute(
             request=_request(TenantOwnershipOperation.OWNERSHIP_TRANSFER),
-            evidence=object(),
+            evidence=object(),  # type: ignore[arg-type]
             actor_principal_id="attacker-1",
             command_id="cmd-1",
             expected_revision=1,
@@ -133,7 +133,7 @@ def test_transfer_requires_canonical_authorization_decision() -> None:
     with pytest.raises(TenantOwnershipLifecycleCommandError) as raised:
         command.execute(
             request=_request(TenantOwnershipOperation.OWNERSHIP_TRANSFER),
-            evidence=object(),
+            evidence=object(),  # type: ignore[arg-type]
             actor_principal_id="owner-1",
             command_id="cmd-1",
             expected_revision=1,
@@ -150,7 +150,7 @@ def test_transfer_authorization_does_not_substitute_for_independent_evidence() -
     with pytest.raises(TenantOwnershipVerificationError) as raised:
         command.execute(
             request=_request(TenantOwnershipOperation.OWNERSHIP_TRANSFER),
-            evidence=object(),
+            evidence=object(),  # type: ignore[arg-type]
             actor_principal_id="owner-1",
             command_id="cmd-1",
             expected_revision=1,
@@ -211,7 +211,7 @@ def test_genesis_requires_existing_pretenant_provisioner_authority() -> None:
     with pytest.raises(TenantOwnershipLifecycleCommandError) as raised:
         command.execute(
             request=_request(TenantOwnershipOperation.TENANT_GENESIS, principal_id="owner-1"),
-            evidence=object(),
+            evidence=object(),  # type: ignore[arg-type]
             actor_principal_id="unapproved-provisioner",
             command_id="genesis-2",
             expected_revision=0,
