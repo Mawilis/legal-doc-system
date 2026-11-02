@@ -60,6 +60,7 @@ class VerifiedTrustRootEnrollment:
 class TrustRootEnrollmentVerifier(Protocol):
     def verify(self, request: TrustRootEnrollmentRequest) -> VerifiedTrustRootEnrollment:
         """Validate authority, independent approvers, signatures and currentness."""
+        ...
 
 
 @dataclass(frozen=True, slots=True)
