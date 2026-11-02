@@ -8,7 +8,7 @@ on:
       - "tools/eos/auth/tenant_ownership_verifier.py"
       - "tools/eos/auth/tenant_ownership_evidence_registry.py"
       - "tools/eos/auth/tenant_ownership_lifecycle_command.py"
-      - "tools/eos/auth/tenant_ownership_trust_root_registry.py"
+      - "tools/eos/auth/tenant_ownership_trust_root_registry.py"\n      - "tools/eos/auth/tenant_ownership_provider_ports.py"\n      - "tools/eos/auth/tenant_ownership_evidence_validation.py"\n      - "tests/unit/test_tenant_ownership_provider_ports.py"\n      - "tests/unit/test_tenant_ownership_evidence_validation.py"\n      - "tests/integration/test_tenant_ownership_recovery_replay_real_mongo.py"
       - "tools/eos/auth/tenant_ownership_transfer_protocol.py"
       - "tools/eos/api/tenant_router.py"
       - "tools/eos/api/legal_operations_router.py"
