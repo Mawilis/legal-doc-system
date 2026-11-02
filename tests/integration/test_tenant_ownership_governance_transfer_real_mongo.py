@@ -3,6 +3,7 @@ from __future__ import annotations
 
 import os
 import uuid
+from dataclasses import replace
 from datetime import datetime, timedelta, timezone
 from urllib.parse import urlparse
 
@@ -84,7 +85,7 @@ def test_trust_root_enrollment_is_atomic_and_governance_decision_replay_safe(mon
     with client.start_session() as session:
         with session.start_transaction():
             with pytest.raises(TrustRootError, match="TRUST_ROOT_REPLAY_OR_CONCURRENT_ENROLLMENT"):
-                registry.enroll(request, session=session)
+                registry.enroll(replace(request, trust_root_reference="different-root-" + uuid.uuid4().hex, fingerprint="different-root-fingerprint"), session=session)
             session.abort_transaction()
     assert db["tenant_ownership_trust_root_events"].count_documents({}) == 1
 
