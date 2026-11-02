@@ -168,6 +168,9 @@ def configure(
         jurisdiction_code=jurisdiction,
         evidence_reference="district-source",
     )
+    receipt.district_id = office.district_id
+    receipt.source_sheriff_office_fingerprint = office.fingerprint
+    receipt.source_district_fingerprint = district.fingerprint
 
     monkeypatch.setattr(
         read_api,
