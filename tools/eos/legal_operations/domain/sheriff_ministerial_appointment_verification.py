@@ -40,6 +40,7 @@ from typing import Final
 from tools.eos.auth.principal_authority import PrincipalAuthority
 from tools.eos.auth.principal_status import PrincipalStatus
 from tools.eos.legal_operations.domain.sheriff_appointment_source_evidence import (
+    SheriffAppointmentIssuerAuthority,
     SheriffAppointmentSourceEvidence,
     SheriffSourceObservationState,
 )
@@ -68,6 +69,8 @@ class MinisterialAppointmentVerificationReason(StrEnum):
 
     ACTOR_INACTIVE = "ACTOR_INACTIVE"
     ACTOR_SCOPE_MISMATCH = "ACTOR_SCOPE_MISMATCH"
+    SELF_ATTESTATION = "SELF_ATTESTATION"
+    ISSUER_CAPACITY_MISMATCH = "ISSUER_CAPACITY_MISMATCH"
     INSTRUMENT_SCOPE_MISMATCH = "INSTRUMENT_SCOPE_MISMATCH"
     SOURCE_UNAVAILABLE = "SOURCE_UNAVAILABLE"
     SOURCE_DISPUTED = "SOURCE_DISPUTED"
@@ -307,8 +310,13 @@ def verify_ministerial_appointment(
         or canonical_evidence.tenant_id != capture.tenant_id
         or canonical_evidence.principal_id != capture.principal_id
         or canonical_evidence.verified_subject_reference != capture.subject_reference
+        or canonical_evidence.verified_by_principal_id != capture.actor_principal_id
     ):
         reason = MinisterialAppointmentVerificationReason.ACTOR_SCOPE_MISMATCH
+    elif capture.actor_principal_id == canonical_evidence.principal_id:
+        reason = MinisterialAppointmentVerificationReason.SELF_ATTESTATION
+    elif canonical_evidence.issuer_authority is not SheriffAppointmentIssuerAuthority.MINISTER:
+        reason = MinisterialAppointmentVerificationReason.ISSUER_CAPACITY_MISMATCH
     elif (
         canonical_evidence.instrument_reference != capture.instrument_reference
         or canonical_evidence.instrument_fingerprint != capture.instrument_fingerprint
