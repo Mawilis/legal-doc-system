@@ -1,6 +1,6 @@
 /**
  * WILSY OS — ROLE-SCOPED LEGAL OPERATIONS CLIENT CERTIFICATE
- * VERSION: v2.6.0-LEGAL-COMMERCIAL-CONTEXT-BROWSER-TRANSPORT-CERT
+ * VERSION: v2.7.0-P5L-LOCATION-EVIDENCE-CLIENT-CERT
  * AUTHORITY: Client transport-adapter contract certification only.
  * EPITOME: Certifies the canonical Legal Operations browser adapter across
  *          sheriff/deputy/client reads, D11 law-firm workspace, exact finance
@@ -64,6 +64,7 @@ import {
   __legalOperationsServiceInternals,
   generateLegalReturnOfService,
   getDeputyFieldCapabilities,
+  getDeputyLocationEvidence,
   getDeputyPersonalActiveWork,
   getLegalClientMatters,
   getLegalClientAcceptanceInstruments,
@@ -1682,8 +1683,70 @@ describe('L8-7D7 role-scoped Legal Operations client adapter', () => {
     }
 
     expect(LEGAL_OPERATIONS_CLIENT_VERSION).toBe(
-      'v2.1.0-LEGAL-COMMERCIAL-CONTEXT-BROWSER-TRANSPORT',
+      'v2.3.0-P5L-ONE-SHOT-LOCATION-EVIDENCE',
     );
+  });
+
+
+  it('reads only the bound Deputy location evidence projection for one exact attempt', async () => {
+    mockGet.mockResolvedValueOnce({
+      data: {
+        schema: 'WILSY-DEPUTY-LOCATION-EVIDENCE-PROJECTION/V1',
+        version: 'v1.0.0-P5L-DEPUTY-LOCATION-EVIDENCE-READ',
+        tenant_id: 'tenant-deputy',
+        visibility: 'DEPUTY_OWN_ACTIVE_ATTEMPT_LOCATION_EVIDENCE',
+        attempt_id: 'attempt-1',
+        deputy_id: 'deputy-1',
+        observations: [{
+          observation_id: 'location-1',
+          latitude: -26.2,
+          longitude: 28.0,
+          horizontal_accuracy_m: 9.5,
+          captured_at: '2026-11-02T10:00:00.000Z',
+        }],
+      },
+    });
+
+    const result = await getDeputyLocationEvidence('attempt-1');
+
+    expect(mockGet).toHaveBeenCalledWith(
+      '/legal-operations/deputy/attempts/attempt-1/location-evidence',
+    );
+    expect(result.visibility).toBe('DEPUTY_OWN_ACTIVE_ATTEMPT_LOCATION_EVIDENCE');
+    expect(result.observations[0].latitude).toBe(-26.2);
+    expect(Object.isFrozen(result)).toBe(true);
+    expect(Object.isFrozen(result.observations)).toBe(true);
+    expect(Object.isFrozen(result.observations[0])).toBe(true);
+  });
+
+  it('builds deterministic canonical P-256 signing bytes for exact GPS facts', () => {
+    const bytes = __legalOperationsServiceInternals.canonicalLocationSigningBytes({
+      challenge: {
+        tenant_id: 'tenant-deputy',
+        deputy_id: 'deputy-1',
+        device_id: 'deputy-device:abc',
+        challenge_id: 'challenge-1',
+      },
+      attemptId: 'attempt-1',
+      currentEvidenceIdentity: 'p2-current-1',
+      grantId: 'grant-1',
+      observationId: 'observation-1',
+      latitude: -26.2,
+      longitude: 28,
+      horizontalAccuracyM: 9.5,
+      capturedAt: '2026-11-02T10:00:00.000Z',
+    });
+    const value = JSON.parse(new TextDecoder().decode(bytes));
+    expect(Object.keys(value)).toEqual(Object.keys(value).sort());
+    expect(value.schema).toBe('WILSY-PROCESS-SERVICE-LOCATION-OBSERVATION-SIGNATURE/V1');
+    expect(value.latitude).toBe('-26.2000000');
+    expect(value.longitude).toBe('28.0000000');
+    expect(value.horizontal_accuracy_m).toBe('9.50');
+    expect(value.captured_at).toBe('2026-11-02T10:00:00.000Z');
+    expect(value.tenant_id).toBe('tenant-deputy');
+    expect(value.attempt_id).toBe('attempt-1');
+    expect(value.deputy_id).toBe('deputy-1');
+    expect(value.device_id).toBe('deputy-device:abc');
   });
 
   it('uploads unchanged FormData without browser authority or multipart headers', async () => {
@@ -1720,7 +1783,7 @@ describe('L8-7D7 role-scoped Legal Operations client adapter', () => {
 
 /**
  * ARTIFACT: legalOperationsService.test.js
- * VERSION: v2.6.0-LEGAL-COMMERCIAL-CONTEXT-BROWSER-TRANSPORT-CERT
+ * VERSION: v2.7.0-P5L-LOCATION-EVIDENCE-CLIENT-CERT
  * AUTHORITY BOUNDARY: Legal Operations read/intake/return/deputy-command/conflict-review/commercial-context browser adapter certificate only
  * TENANT POSTURE: server tenant/principal/role/client/deputy scope remains authoritative; browser cannot create authorization scope
  * FAIL-CLOSED POSTURE: malformed/extra/missing/schema/version/order/scope/state/command/commercial-response drift rejects before presentation or transport success
