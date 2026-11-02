@@ -2165,12 +2165,13 @@ async def get_deputy_location_evidence_projection(
     attempt_id: str,
     context: TenantAuthorizationContext = Depends(_DEPUTY_QUEUE_READ),
 ) -> dict[str, Any]:
-    """Return only the authenticated Deputy's active-attempt GPS evidence.
+    """Return only the authenticated Deputy's own attempt GPS evidence.
 
     The exact L8-6B principal binding, P2 attempt, P4 current pointer and receipt
-    are revalidated in one snapshot. Access itself is appended to a metadata-only
-    audit collection in that same transaction. No Sheriff-wide or cross-office
-    location access is inferred by this Deputy endpoint.
+    are revalidated in one snapshot. Completed attempts remain readable by the
+    same bound Deputy for a legitimate delayed offline sync/review. Access itself
+    is appended to a metadata-only audit collection in that same transaction.
+    No Sheriff-wide or cross-office location access is inferred by this endpoint.
     """
     if not attempt_id.strip():
         raise HTTPException(status_code=422, detail="LEGAL_OPERATIONS_COMMAND_INVALID")
@@ -2185,15 +2186,15 @@ async def get_deputy_location_evidence_projection(
             lifecycle_collection=lifecycle,
             session=session,
         )
-        selected = next(
-            (
-                cast(ServiceAttempt, model.current)
-                for model in personal.active_attempts
-                if cast(ServiceAttempt, model.current).attempt_id == attempt_id
-            ),
-            None,
+        model = get_entity_read_model(
+            tenant_id=context.tenant_id,
+            entity_type="ServiceAttempt",
+            entity_identity=attempt_id,
+            lifecycle_collection=lifecycle,
+            session=session,
         )
-        if selected is None:
+        selected = cast(ServiceAttempt, model.current)
+        if selected.attempt_id != attempt_id or selected.deputy_id != personal.deputy_id:
             raise HTTPException(status_code=404, detail="LEGAL_OPERATION_NOT_FOUND")
         pointer = ProcessServiceAllocationRegistry.get_current(
             context.tenant_id,
@@ -2234,7 +2235,7 @@ async def get_deputy_location_evidence_projection(
             attempt_id=attempt_id,
             grant_id="all",
             actor_principal_id=context.identity.identity_id,
-            actor_scope="DEPUTY_PERSONAL_ACTIVE_WORK",
+            actor_scope="DEPUTY_BOUND_ATTEMPT",
             accessed_at=datetime.now(UTC),
             record_count=len(observations),
             purpose="DEPUTY_PERSONAL_LOCATION_EVIDENCE_READ",
@@ -2245,7 +2246,7 @@ async def get_deputy_location_evidence_projection(
             "schema": "WILSY-DEPUTY-LOCATION-EVIDENCE-PROJECTION/V1",
             "version": "v1.0.0-P5L-DEPUTY-LOCATION-EVIDENCE-READ",
             "tenant_id": context.tenant_id,
-            "visibility": "DEPUTY_OWN_ACTIVE_ATTEMPT_LOCATION_EVIDENCE",
+            "visibility": "DEPUTY_OWN_BOUND_ATTEMPT_LOCATION_EVIDENCE",
             "attempt_id": attempt_id,
             "deputy_id": personal.deputy_id,
             "observations": list(observations),
