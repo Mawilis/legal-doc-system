@@ -529,6 +529,32 @@ async def list_tenants(
     _require_tenant_authority_available()
 
 
+@tenant_router.get(
+    "/{tenant_id}/ownership/readiness",
+    response_model=TenantOwnershipReadinessResponse,
+)
+async def get_tenant_ownership_readiness(
+    tenant_id: str,
+    request: Request,
+    authorization: TenantAuthorizationContext = Depends(_PROFILE_READ_AUTHORIZATION),
+) -> TenantOwnershipReadinessResponse:
+    """Expose the current deny-only ownership state to an authorized own-tenant QA client.
+
+    This route is read-only, performs no database access, and cannot trigger
+    genesis, transfer, recovery, trust-root enrollment, or any ownership write.
+    It exists so controlled QA can distinguish an explicit authority denial
+    from an unavailable application route.
+    """
+    del request
+    _require_exact_path_scope(tenant_id, authorization)
+    return TenantOwnershipReadinessResponse(
+        tenant_id=tenant_id,
+        status="DENY",
+        reason="OWNERSHIP_EVIDENCE_AUTHORITY_UNAVAILABLE",
+        positive_operations_enabled=False,
+    )
+
+
 @tenant_router.get("/{tenant_id}", response_model=TenantResponse)
 async def get_tenant(
     tenant_id: str,
