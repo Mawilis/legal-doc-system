@@ -154,7 +154,7 @@ def observation():
     device_id = f"deputy-device:{hashlib.sha3_512(public_der).hexdigest()}"
     value = create_process_service_location_observation(
         attempt=attempt, allocation_receipt=receipt, allocation_current=current,
-        permission_grant=grant(), observation_id="observation-1", device_id=device_id,
+        permission_grant=grant(device_id=device_id), observation_id="observation-1", device_id=device_id,
         latitude=-26.2041, longitude=28.0473, horizontal_accuracy_m=12.5,
         captured_at=BASE + timedelta(minutes=3),
         device_provenance_reference="challenge-proof-1",
