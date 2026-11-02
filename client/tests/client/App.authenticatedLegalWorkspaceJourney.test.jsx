@@ -149,7 +149,8 @@ describe('authenticated Legal workspace journey', () => {
     );
 
     await waitFor(() => expect(screen.queryByTestId('authenticated-legal-runtime')).not.toBeInTheDocument());
-    expect(await screen.findByText(/legal documents are being prepared/i)).toBeInTheDocument();
+    expect(await screen.findByRole("table", { name: "Required legal document records" })).toBeInTheDocument();
+    expect(screen.getByText("LEGAL ADMISSION CONTROL")).toBeInTheDocument();
     expect(api.get).toHaveBeenCalledWith('/auth/workspace-bootstrap', {
       headers: { Authorization: 'Bearer synthetic-session-token' },
     });
