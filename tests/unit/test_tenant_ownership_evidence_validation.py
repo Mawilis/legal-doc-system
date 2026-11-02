@@ -120,6 +120,15 @@ def test_signing_rejects_payload_substitution_and_wrong_key_revision() -> None:
         verify_signing_receipt(request, receipt, keys)
 
 
+def test_signing_rejects_old_key_revision_after_rotation() -> None:
+    request = signing_request()
+    keys = Keys()
+    receipt = signed_receipt(request, keys)
+    rotated = replace(request, key_revision=4)
+    with pytest.raises(OwnershipEvidenceValidationError, match="REQUEST_MISMATCH"):
+        verify_signing_receipt(rotated, receipt, keys)
+
+
 def test_signing_rejects_tampered_signature() -> None:
     request = signing_request()
     keys = Keys()
