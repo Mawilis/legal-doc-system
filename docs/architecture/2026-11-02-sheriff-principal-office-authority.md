@@ -36,7 +36,11 @@ Relevant provisions to encode and have South African legal counsel validate agai
 - **Section 4:** tenure, resignation and removal.
 - **Section 5:** acting Sheriff appointments, including bounded conditions and periods.
 - **Section 6:** Sheriff/acting Sheriff may appoint one or more Deputy Sheriffs with Board approval and applicable conditions; Deputy acts subject to the appointing Sheriff's directions.
-- **Section 6A:** written Ministerial designation of a Department official for a specified period, court and conditions in the stated vacancy circumstances.
+- **Section 6A:** written Ministerial designation of a Department official for a specified period, court and conditions in the stated vacancy circumstances; section 30 expressly does not apply to a section 6A designee.
+- **Section 6B:** written Ministerial appointment of a Sheriff or acting Sheriff to perform specified non-service-of-process functions in another area, after Board consultation and on the Minister's conditions.
+- **Sections 30–34:** a Sheriff or Deputy Sheriff may not perform functions unless the statutory fidelity-fund certificate and professional-indemnity requirements are met; an acting Sheriff has the alternative statutory contribution route. Certificates are time-bounded, and the Board may cancel them. Appointment currentness alone is therefore insufficient for operational currentness.
+
+A 2026 Supreme Court of Appeal judgment, *South African Board for Sheriffs v Thaka Frederick Seboka and Others* [2026] ZASCA 109 (20 August 2026), discusses section 5(1B) and the required written Board confirmation concerning a fidelity-fund certificate before an acting-Sheriff appointment. It must be considered in the legal validation of the acting-Sheriff path: https://www3.saflii.org/za/cases/ZASCA/2026/109.html
 
 This is an engineering source map, not legal advice or a substitute for checking the latest amendments, regulations, appointment notices, fidelity-fund status and instrument-specific conditions before production use.
 
@@ -101,6 +105,7 @@ Before enabling office-scoped Sheriff queue reads:
 - Resolve authenticated principal and exact tenant only from current canonical IAM context.
 - Within the same read snapshot, load the current, verified appointment binding(s) for that principal and tenant.
 - Resolve the exact canonical SheriffOffice and court/service-area scope from P1 directory facts.
+- For functions governed by sections 30–34, resolve current Fidelity Fund Certificate status and professional-indemnity insurance evidence (or the applicable acting-Sheriff contribution route); section 6A designees follow their express statutory exception.
 - Intersect appointment scope with the requested server-derived queue scope; do not accept an office ID as an authority selector from the caller.
 - Filter all three queue classes (office receipt, Deputy assignment, active attempts) by the same authorized office set and verify each returned lifecycle record's tenant, office and district lineage.
 - If there is no current appointment, invalid/expired/revoked evidence, unknown office, multiple ambiguous appointments, missing office lineage, or multi-office tenant with no exact appointment scope, deny before disclosing queue rows.
@@ -116,7 +121,8 @@ Before enabling office-scoped Sheriff queue reads:
 - subject/principal mismatch;
 - court, district, office and allocated-area mismatch;
 - expired, future-dated, revoked, removed, resigned and superseded appointments;
-- acting Sheriff and section 6A scope/period constraints;
+- acting Sheriff and section 6A/6B scope/period constraints;
+- expired/cancelled Fidelity Fund Certificate, missing insurance evidence, acting-Sheriff section 5(1B) Board confirmation, and the section 6A section-30 exception;
 - Deputy appointment without Board approval;
 - cross-tenant, cross-office and caller-substitution denial;
 - multiple valid appointments only where each is explicitly evidenced;
@@ -160,7 +166,7 @@ Before enabling office-scoped Sheriff queue reads:
 
 This capability is **not production-ready** until all of the following are true:
 
-- South African legal counsel has validated the current consolidated Act, regulations, relevant appointment forms/notices, and the accepted evidence-verification process.
+- South African legal counsel has validated the current consolidated Act (including sections 6A, 6B and 30–34), regulations, relevant appointment forms/notices, 2026 SCA judgment implications, and the accepted evidence-verification process.
 - A trusted source for Ministerial appointments, area allocations, Board approvals and revocations has been identified and operationally connected. A public webpage or tenant upload alone is not automatically trusted.
 - The appointment domain, registry, lifecycle command, revocation/currentness projection and office-scoped read enforcement are implemented.
 - All unit, type, real-Mongo, HTTP, security and replay tests pass in isolated CI.
