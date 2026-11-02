@@ -102,7 +102,6 @@ jobs:
             tests/unit/test_sheriff_office_appointment_authority.py \
             tools/eos/legal_operations/registry/sheriff_office_appointment_authority_registry.py \
             tests/unit/test_sheriff_office_appointment_authority_registry.py \
-            tests/integration/test_sheriff_office_appointment_authority_registry_real_mongo.py \
             tools/eos/legal_operations/orchestration/sheriff_office_appointment_authority_orchestrator.py \
             tests/unit/test_sheriff_office_appointment_authority_orchestrator.py \
             tests/integration/test_sheriff_office_appointment_authority_registry_real_mongo.py
