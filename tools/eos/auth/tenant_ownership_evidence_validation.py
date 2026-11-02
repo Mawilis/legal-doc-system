@@ -232,7 +232,6 @@ def recovery_decision_message(lookup: RecoveryDecisionLookup,
                               key_reference: str, key_revision: int, nonce: str) -> bytes:
     """Canonical signed decision envelope bound to exact case and successor."""
     pairs = (
-        (lookup.tenant_id, receipt.recovery_case_reference),
         (lookup.recovery_case_reference, receipt.recovery_case_reference),
         (lookup.recovery_case_fingerprint, receipt.recovery_case_fingerprint),
         (lookup.successor_principal_id, receipt.successor_principal_id),
