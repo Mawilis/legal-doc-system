@@ -1,10 +1,10 @@
 """WILSY OS positive tenant-product entitlement composition authority.
 
 TITLE: Tenant Product Entitlement Composer
-VERSION: v1.1.0-D22B3-SUBSCRIPTION-TERM-ENFORCEMENT
+VERSION: v1.2.0-D22B3-FOUNDER-PERPETUAL-LEGAL-ENTITLEMENT
 AUTHORITY: Wilsy OS Core Governance
-EPITOME: Derive and persist one Legal Operations entitlement lineage from one
-         exact canonical ACTIVE subscription carrying sealed legal.core truth.
+EPITOME: Derive and persist one Legal Operations entitlement lineage from either
+         a canonical legal.core subscription or the exact perpetual Founder grant.
 ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/tools/eos/saas/entitlement/tenant_product_entitlement_composer.py
 COLLABORATION / OWNERSHIP: SubscriptionRegistry owns subscription truth; D22A
                             owns product identity; Product Commercial Feature
@@ -30,7 +30,8 @@ TRANSACTION BOUNDARY: Caller owns session, transaction, commit, abort and whole-
 FINANCIAL AUTHORITY BOUNDARY: No pricing, payment, execution or settlement truth.
                                Kennel EOS remains exclusive.
 FAIL-CLOSED DECLARATION: Missing/ambiguous subscription truth, invalid proof,
-                         absent feature, divergent evidence, unsupported product,
+                         absent commercial feature outside exact Founder exception,
+                         divergent evidence, unsupported product,
                          terminal lifecycle, stale CAS and persistence failure reject.
 """
 from __future__ import annotations
@@ -334,6 +335,7 @@ def _evidence(
         "subscription_proof_hash": subscription.proof_hash,
         "product_id": product_id.value,
         "commercial_feature_id": feature_id,
+        "commercial_authority_kind": commercial_authority_kind,
         "mapping_fingerprint": mapping_fingerprint,
         "target_lifecycle_state": TenantProductEntitlementState.ACTIVE.value,
     }
