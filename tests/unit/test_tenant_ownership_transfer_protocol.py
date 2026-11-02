@@ -169,3 +169,38 @@ def test_acceptance_from_other_tenant_or_entity_is_rejected() -> None:
                 acceptance=acceptance(proposal, **{field: value}),
                 session=Session(), evaluated_at=datetime.now(timezone.utc),
             )
+
+
+def test_finalization_rejects_non_owner_actor_before_lifecycle() -> None:
+    protocol, _, lifecycle, proposal = setup()
+    protocol.propose(proposal, session=Session())
+    protocol.accept(
+        proposal_reference=proposal.proposal_reference,
+        acceptance=acceptance(proposal),
+        session=Session(), evaluated_at=datetime.now(timezone.utc),
+    )
+    with pytest.raises(OwnershipTransferProtocolError, match="CURRENT_OWNER_FINALIZATION_REQUIRED"):
+        protocol.finalize(
+            proposal_reference=proposal.proposal_reference,
+            actor_principal_id="attacker-1", command_id="finalize-attack",
+            session=Session(), evaluated_at=datetime.now(timezone.utc),
+        )
+    assert lifecycle.calls == 0
+
+
+def test_finalization_rejects_expired_successor_acceptance() -> None:
+    protocol, _, lifecycle, proposal = setup()
+    protocol.propose(proposal, session=Session())
+    accepted = acceptance(proposal)
+    protocol.accept(
+        proposal_reference=proposal.proposal_reference,
+        acceptance=accepted, session=Session(),
+        evaluated_at=datetime.now(timezone.utc),
+    )
+    with pytest.raises(OwnershipTransferProtocolError, match="TRANSFER_PROPOSAL_ACCEPTANCE_BINDING_INVALID"):
+        protocol.finalize(
+            proposal_reference=proposal.proposal_reference,
+            actor_principal_id="owner-1", command_id="finalize-expired",
+            session=Session(), evaluated_at=accepted.expires_at + timedelta(seconds=1),
+        )
+    assert lifecycle.calls == 0
