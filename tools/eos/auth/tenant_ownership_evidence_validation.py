@@ -22,8 +22,8 @@ from .tenant_ownership_provider_ports import (
     SigningReceipt, SigningRequest,
 )
 
-_HEX_256 = re.compile(r"[0-9a-f]{64}\\Z")
-_DOMAIN = b"WILSY:TENANT-OWNERSHIP:EVIDENCE:v1\\0"
+_HEX_256 = re.compile(r"[0-9a-f]{64}\Z")
+_DOMAIN = b"WILSY:TENANT-OWNERSHIP:EVIDENCE:v1\0"
 
 
 class OwnershipEvidenceValidationError(RuntimeError):
@@ -162,7 +162,11 @@ def verify_signing_receipt(
     evaluated = _utc(request.evaluated_at, "SIGNING_EVALUATION_TIME_INVALID")
     if signed_at > evaluated:
         raise OwnershipEvidenceValidationError("SIGNING_TIMESTAMP_FROM_FUTURE")
-    if keys.key_status(request.key_reference, request.key_revision, evaluated) != "ACTIVE":
+    try:
+        key_status = keys.key_status(request.key_reference, request.key_revision, evaluated)
+    except Exception as error:
+        raise OwnershipEvidenceValidationError("SIGNING_KEY_STATUS_UNAVAILABLE") from error
+    if key_status != "ACTIVE":
         raise OwnershipEvidenceValidationError("SIGNING_KEY_NOT_CURRENT_OR_REVOKED")
     if receipt.algorithm != "Ed25519":
         raise OwnershipEvidenceValidationError("SIGNING_ALGORITHM_UNSUPPORTED")
@@ -172,6 +176,8 @@ def verify_signing_receipt(
         keys.public_key(request.key_reference, request.key_revision).verify(signature, message)
     except (ValueError, InvalidSignature, KeyError) as error:
         raise OwnershipEvidenceValidationError("SIGNING_SIGNATURE_INVALID") from error
+    except Exception as error:
+        raise OwnershipEvidenceValidationError("SIGNING_KEY_RESOLUTION_UNAVAILABLE") from error
 
 
 @dataclass(frozen=True, slots=True)
@@ -198,7 +204,7 @@ def recovery_decision_message(lookup: RecoveryDecisionLookup,
         raise OwnershipEvidenceValidationError("RECOVERY_DECISION_SCOPE_MISMATCH")
     if not nonce or not key_reference or type(key_revision) is not int or key_revision < 1:
         raise OwnershipEvidenceValidationError("RECOVERY_DECISION_ENVELOPE_INVALID")
-    return b"WILSY:TENANT-OWNERSHIP:RECOVERY:v1\\0" + b"|".join(
+    return b"WILSY:TENANT-OWNERSHIP:RECOVERY:v1\0" + b"|".join(
         value.encode() for value in (
             lookup.tenant_id, lookup.legal_entity_reference,
             lookup.recovery_case_reference, lookup.recovery_case_fingerprint,
@@ -207,7 +213,9 @@ def recovery_decision_message(lookup: RecoveryDecisionLookup,
             receipt.decision_reference, receipt.decision_fingerprint,
             receipt.quorum_fingerprint, receipt.conflict_check_fingerprint,
             receipt.notice_and_objection_fingerprint, receipt.appeal_status,
-            key_reference, str(key_revision), nonce,
+            _utc(receipt.issued_at, "RECOVERY_DECISION_ISSUED_AT_INVALID").isoformat(),
+            _utc(receipt.valid_until, "RECOVERY_DECISION_EXPIRY_INVALID").isoformat(),
+            receipt.revocation_reference, key_reference, str(key_revision), nonce,
         )
     )
 
@@ -236,7 +244,14 @@ def validate_recovery_decision(
         raise OwnershipEvidenceValidationError("RECOVERY_AUTHORITY_PROVENANCE_MISSING")
     if envelope.algorithm != "Ed25519":
         raise OwnershipEvidenceValidationError("RECOVERY_SIGNATURE_ALGORITHM_UNSUPPORTED")
-    if keys.key_status(envelope.key_reference, envelope.key_revision, now) != "ACTIVE":
+    try:
+        key_status = keys.recovery_key_status(
+            receipt.authority_id, receipt.trust_root_reference, receipt.trust_root_fingerprint,
+            envelope.key_reference, envelope.key_revision, now,
+        )
+    except Exception as error:
+        raise OwnershipEvidenceValidationError("RECOVERY_KEY_STATUS_UNAVAILABLE") from error
+    if key_status != "ACTIVE":
         raise OwnershipEvidenceValidationError("RECOVERY_SIGNING_KEY_NOT_CURRENT")
     message = recovery_decision_message(lookup, receipt, envelope.key_reference,
                                         envelope.key_revision, envelope.nonce)
@@ -246,6 +261,8 @@ def validate_recovery_decision(
         )
     except (ValueError, InvalidSignature, KeyError) as error:
         raise OwnershipEvidenceValidationError("RECOVERY_DECISION_SIGNATURE_INVALID") from error
+    except Exception as error:
+        raise OwnershipEvidenceValidationError("RECOVERY_KEY_RESOLUTION_UNAVAILABLE") from error
 
 
 class RecoveryDecisionReplayRegistry:
@@ -257,9 +274,8 @@ class RecoveryDecisionReplayRegistry:
         self._rows = database[self.COLLECTION]
         self._rows.create_index([("tenant_id", ASCENDING), ("decision_reference", ASCENDING)],
                                 unique=True, name="uq_tenant_recovery_decision")
-        self._rows.create_index([("tenant_id", ASCENDING), ("recovery_case_reference", ASCENDING),
-                                 ("successor_principal_id", ASCENDING)],
-                                unique=True, name="uq_tenant_recovery_case_successor")
+        self._rows.create_index([("tenant_id", ASCENDING), ("recovery_case_reference", ASCENDING)],
+                                unique=True, name="uq_tenant_recovery_case_once")
 
     def consume_verified(self, lookup: RecoveryDecisionLookup, envelope: RecoveryDecisionEnvelope,
                          keys: RecoveryKeyTrustProvider, *, session: Any) -> None:
@@ -271,8 +287,7 @@ class RecoveryDecisionReplayRegistry:
                 *, session: Any) -> None:
         if session is None or not callable(getattr(session, "in_transaction", None)) or not session.in_transaction():
             raise OwnershipEvidenceValidationError("ACTIVE_TRANSACTION_REQUIRED")
-        if (lookup.tenant_id != receipt.recovery_case_reference.split(":", 1)[0]
-                and not lookup.tenant_id):
+        if not lookup.tenant_id or not receipt.decision_reference or not receipt.decision_fingerprint:
             raise OwnershipEvidenceValidationError("RECOVERY_REPLAY_SCOPE_INVALID")
         try:
             self._rows.insert_one({
