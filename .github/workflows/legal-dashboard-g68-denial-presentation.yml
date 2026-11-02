@@ -1,0 +1,37 @@
+name: Legal Dashboard G68 Denial Presentation
+
+on:
+  pull_request:
+    paths:
+      - "client/src/components/industry/LegalDashboard.jsx"
+      - "client/src/__tests__/components/legalDashboardG68DenialPresentation.test.jsx"
+      - ".github/workflows/legal-dashboard-g68-denial-presentation.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  g68-denial-presentation:
+    name: Authenticated Legal dashboard preserves G68 denial
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    defaults:
+      run:
+        working-directory: client
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: npm
+          cache-dependency-path: client/package-lock.json
+
+      - name: Install locked client dependencies
+        run: npm ci
+
+      - name: Test Legal dashboard denial presentation
+        run: npx vitest run --config vitest.config.js src/__tests__/components/legalDashboardG68DenialPresentation.test.jsx
