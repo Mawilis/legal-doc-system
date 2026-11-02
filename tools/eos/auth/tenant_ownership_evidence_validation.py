@@ -10,7 +10,7 @@ from dataclasses import dataclass
 from datetime import datetime, timedelta, timezone
 from hashlib import sha256
 import re
-from typing import Any, Mapping, Protocol
+from typing import Any, Protocol
 
 from cryptography.exceptions import InvalidSignature
 from cryptography.hazmat.primitives.asymmetric.ed25519 import Ed25519PublicKey
@@ -76,8 +76,6 @@ def assess_registry_snapshots(
             return RegistryAssessment("DENY", None, None, "SOURCE_RECORD_FROM_FUTURE")
         if now - retrieved > max_age:
             return RegistryAssessment("DENY", None, None, "SOURCE_RECORD_STALE")
-        if item.record_status.upper() in {"REVOKED", "WITHDRAWN", "REJECTED"}:
-            continue
         by_filing[item.filing_reference] = item
     if not by_filing:
         return RegistryAssessment("DENY", None, None, "NO_CURRENT_FILING")
@@ -180,6 +178,45 @@ def verify_signing_receipt(
         raise OwnershipEvidenceValidationError("SIGNING_KEY_RESOLUTION_UNAVAILABLE") from error
 
 
+
+@dataclass(frozen=True, slots=True, init=False)
+class ValidatedRecoveryDecision:
+    """Unforgeable-by-normal-construction technical validation receipt."""
+
+    tenant_id: str
+    legal_entity_reference: str
+    recovery_case_reference: str
+    recovery_case_fingerprint: str
+    successor_principal_id: str
+    decision_reference: str
+    decision_fingerprint: str
+    validation_fingerprint: str
+
+    def __init__(self, *args: object, **kwargs: object) -> None:
+        del args, kwargs
+        raise OwnershipEvidenceValidationError("VALIDATED_RECOVERY_DECISION_CONSTRUCTOR_DISABLED")
+
+
+def _validated_recovery_decision(
+    lookup: RecoveryDecisionLookup, receipt: RecoveryDecisionReceipt, message: bytes,
+    signature: bytes,
+) -> ValidatedRecoveryDecision:
+    value = object.__new__(ValidatedRecoveryDecision)
+    fields = {
+        "tenant_id": decision.tenant_id,
+        "legal_entity_reference": lookup.legal_entity_reference,
+        "recovery_case_reference": decision.recovery_case_reference,
+        "recovery_case_fingerprint": lookup.recovery_case_fingerprint,
+        "successor_principal_id": decision.successor_principal_id,
+        "decision_reference": decision.decision_reference,
+        "decision_fingerprint": decision.decision_fingerprint,
+        "validation_fingerprint": sha256(message + signature).hexdigest(),
+    }
+    for name, item in fields.items():
+        object.__setattr__(value, name, item)
+    return value
+
+
 @dataclass(frozen=True, slots=True)
 class RecoveryDecisionEnvelope:
     receipt: RecoveryDecisionReceipt
@@ -224,8 +261,8 @@ def validate_recovery_decision(
     lookup: RecoveryDecisionLookup,
     envelope: RecoveryDecisionEnvelope,
     keys: RecoveryKeyTrustProvider,
-) -> None:
-    """Validate independent authority receipt, appeal state, expiry, signature."""
+) -> ValidatedRecoveryDecision:
+    """Validate independent authority receipt and return a persistence-only receipt."""
     receipt = envelope.receipt
     if type(receipt) is not RecoveryDecisionReceipt:
         raise OwnershipEvidenceValidationError("RECOVERY_DECISION_RECEIPT_INVALID")
@@ -256,13 +293,15 @@ def validate_recovery_decision(
     message = recovery_decision_message(lookup, receipt, envelope.key_reference,
                                         envelope.key_revision, envelope.nonce)
     try:
+        signature = bytes.fromhex(envelope.signature)
         keys.public_key(envelope.key_reference, envelope.key_revision).verify(
-            bytes.fromhex(envelope.signature), message
+            signature, message
         )
     except (ValueError, InvalidSignature, KeyError) as error:
         raise OwnershipEvidenceValidationError("RECOVERY_DECISION_SIGNATURE_INVALID") from error
     except Exception as error:
         raise OwnershipEvidenceValidationError("RECOVERY_KEY_RESOLUTION_UNAVAILABLE") from error
+    return _validated_recovery_decision(lookup, receipt, message, signature)
 
 
 class RecoveryDecisionReplayRegistry:
@@ -277,17 +316,13 @@ class RecoveryDecisionReplayRegistry:
         self._rows.create_index([("tenant_id", ASCENDING), ("recovery_case_reference", ASCENDING)],
                                 unique=True, name="uq_tenant_recovery_case_once")
 
-    def consume_verified(self, lookup: RecoveryDecisionLookup, envelope: RecoveryDecisionEnvelope,
-                         keys: RecoveryKeyTrustProvider, *, session: Any) -> None:
-        """Validate signed independent authority evidence before consuming its replay slot."""
-        validate_recovery_decision(lookup, envelope, keys)
-        self.consume(lookup, envelope.receipt, session=session)
-
-    def consume(self, lookup: RecoveryDecisionLookup, receipt: RecoveryDecisionReceipt,
-                *, session: Any) -> None:
+    def consume_validated(self, decision: ValidatedRecoveryDecision, *, session: Any) -> None:
+        """Persist an already validated decision; no external calls occur in transaction."""
+        if type(decision) is not ValidatedRecoveryDecision:
+            raise OwnershipEvidenceValidationError("VALIDATED_RECOVERY_DECISION_REQUIRED")
         if session is None or not callable(getattr(session, "in_transaction", None)) or not session.in_transaction():
             raise OwnershipEvidenceValidationError("ACTIVE_TRANSACTION_REQUIRED")
-        if not lookup.tenant_id or not receipt.decision_reference or not receipt.decision_fingerprint:
+        if not decision.tenant_id or not decision.decision_reference or not decision.decision_fingerprint:
             raise OwnershipEvidenceValidationError("RECOVERY_REPLAY_SCOPE_INVALID")
         try:
             self._rows.insert_one({
@@ -296,7 +331,10 @@ class RecoveryDecisionReplayRegistry:
                 "decision_fingerprint": receipt.decision_fingerprint,
                 "recovery_case_reference": lookup.recovery_case_reference,
                 "successor_principal_id": lookup.successor_principal_id,
-                "consumed_at": _utc(lookup.evaluated_at, "RECOVERY_EVALUATION_TIME_INVALID"),
+                "consumed_at": datetime.now(timezone.utc),
+                "legal_entity_reference": decision.legal_entity_reference,
+                "recovery_case_fingerprint": decision.recovery_case_fingerprint,
+                "validation_fingerprint": decision.validation_fingerprint,
             }, session=session)
         except DuplicateKeyError as error:
             raise OwnershipEvidenceValidationError("RECOVERY_DECISION_REPLAY") from error
