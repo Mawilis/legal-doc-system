@@ -88,12 +88,14 @@ jobs:
             tools/eos/auth/tenant_ownership_lifecycle_command.py \
             tools/eos/auth/tenant_ownership_trust_root_registry.py \
             tools/eos/auth/tenant_ownership_transfer_protocol.py \
+            tools/eos/auth/tenant_ownership_transfer_protocol.py \
             tools/eos/api/legal_operations_router.py \
             tests/unit/test_tenant_owner_bootstrap.py \
             tests/unit/test_tenant_ownership_verifier.py \
             tests/unit/test_tenant_ownership_evidence_registry.py \
             tests/unit/test_tenant_ownership_lifecycle_command.py \
             tests/unit/test_tenant_ownership_trust_root_registry.py \
+            tests/unit/test_tenant_ownership_transfer_protocol.py \
             tests/unit/test_tenant_ownership_transfer_protocol.py \
             tests/integration/test_tenant_ownership_evidence_registry_real_mongo.py \
             tests/unit/test_tenant_router_fail_closed.py \
