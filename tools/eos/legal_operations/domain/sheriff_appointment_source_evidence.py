@@ -261,9 +261,8 @@ class SheriffAppointmentSourceEvidence:
         )
         if effective_until is not None and effective_until <= effective_from:
             _fail("SHERIFF_SOURCE_EFFECTIVE_WINDOW_INVALID")
-        if observed < effective_from and observation is SheriffSourceObservationState.AUTHENTICATED_RESPONSE:
-            # Future-dated appointments may be observed before commencement.
-            pass
+        # Future-dated appointments may be observed before commencement; the
+        # currentness projection, not this immutable observation, decides use.
 
         appointing = (
             None if self.appointing_principal_id is None
@@ -297,8 +296,11 @@ class SheriffAppointmentSourceEvidence:
         if capacity is SheriffAppointmentCapacity.DEPUTY_SHERIFF:
             if appointing is None or approval_ref is None or approval_fp is None:
                 _fail("SHERIFF_SOURCE_DEPUTY_BOARD_APPROVAL_REQUIRED")
-        elif appointing is not None:
-            _fail("SHERIFF_SOURCE_APPOINTING_PRINCIPAL_FORBIDDEN")
+        else:
+            if appointing is not None:
+                _fail("SHERIFF_SOURCE_APPOINTING_PRINCIPAL_FORBIDDEN")
+            if approval_ref is not None or approval_fp is not None:
+                _fail("SHERIFF_SOURCE_BOARD_APPROVAL_UNEXPECTED")
 
         if basis is SheriffAppointmentStatutoryBasis.SECTION_2_3:
             if confirmation_ref is None or confirmation_fp is None:
@@ -309,12 +311,22 @@ class SheriffAppointmentSourceEvidence:
         if basis is SheriffAppointmentStatutoryBasis.SECTION_6B_1:
             if consultation_ref is None or consultation_fp is None:
                 _fail("SHERIFF_SOURCE_SECTION_6B_BOARD_CONSULTATION_REQUIRED")
+        if (confirmation_ref is None) != (confirmation_fp is None):
+            _fail("SHERIFF_SOURCE_BOARD_CONFIRMATION_PAIR_INVALID")
+        if (consultation_ref is None) != (consultation_fp is None):
+            _fail("SHERIFF_SOURCE_BOARD_CONSULTATION_PAIR_INVALID")
+        if basis in {
+            SheriffAppointmentStatutoryBasis.SECTION_2_3,
+            SheriffAppointmentStatutoryBasis.SECTION_5_1,
+        } and (confirmation_ref is None or confirmation_fp is None):
+            _fail("SHERIFF_SOURCE_BOARD_CONFIRMATION_REQUIRED")
         if basis not in {
             SheriffAppointmentStatutoryBasis.SECTION_2_3,
             SheriffAppointmentStatutoryBasis.SECTION_5_1,
-            SheriffAppointmentStatutoryBasis.SECTION_6B_1,
-        } and any((confirmation_ref, confirmation_fp, consultation_ref, consultation_fp)):
-            _fail("SHERIFF_SOURCE_BOARD_EVIDENCE_UNEXPECTED")
+        } and any((confirmation_ref, confirmation_fp)):
+            _fail("SHERIFF_SOURCE_BOARD_CONFIRMATION_UNEXPECTED")
+        if basis is not SheriffAppointmentStatutoryBasis.SECTION_6B_1 and any((consultation_ref, consultation_fp)):
+            _fail("SHERIFF_SOURCE_BOARD_CONSULTATION_UNEXPECTED")
 
         conditions_fp = (
             None if self.conditions_fingerprint is None
