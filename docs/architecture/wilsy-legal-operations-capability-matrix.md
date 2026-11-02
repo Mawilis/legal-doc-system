@@ -1,6 +1,6 @@
 # WILSY OS — LEGAL OPERATIONS COMPLETION CAPABILITY MATRIX
 
-VERSION: v1.1.0-LEGAL-OPERATIONS-COMPLETION-MATRIX
+VERSION: v1.2.0-L8-SHERIFF-APPOINTMENT-AUTHORITY-GATE
 AUTHORITY: Wilsy OS Core Governance
 EPITOME: Repository-grounded completion map for the Legal Operations & Process
 Service Plane, distinguishing current canonical truth, legacy/projection seams,
@@ -11,8 +11,9 @@ COLLABORATION / OWNERSHIP: Legal Operations owns process-service operational
 truth; SaaS Billing owns invoice truth; Kennel EOS exclusively owns financial
 execution; Settlement owns settlement allocation; Ledger owns accounting truth;
 client, Storefront, providers, mobile and WILSY AI are projections/capabilities.
-CERTIFICATION / UPDATE DATE: 2026-10-16
-CHANGELOG: v1.1.0 reconciles Storefront/legal acquisition with the certified
+CERTIFICATION / UPDATE DATE: 2026-11-02
+CHANGELOG: v1.2.0 adds the Sheriff appointment/office-scope authority gate: active tenant Sheriff IAM is necessary but not sufficient; an independent tenant administrator verifies Ministerial appointment, exact office scope, jurisdiction-matched Board Fidelity Fund Certificate and current professional indemnity evidence. The feature branch now contains immutable appointment revisions, server-derived tenant/verifier/District/jurisdiction, multi-office-safe location reads, real-replica-set certification and client transport. Admin UI, governed source-document ingestion/authenticity and broader Sheriff/deputy dashboard parity remain launch gaps.
+v1.1.0 reconciles Storefront/legal acquisition with the certified
 pre-tenant public-intent domain, registry, rate limit, HTTP admission and EOS
 server mount; records the remaining browser/Vite projection gap; and separates
 the WILSY Corporate Public Surface roadmap from WILSY OS product authority.
@@ -139,6 +140,17 @@ row selection is not acceptable sovereign truth.
 assignment/allocation, but no production provisioning authority or command path
 was found. Test seeding is not runtime architecture.
 
+### G10 — Sheriff appointment and office authority
+A `tenant_sheriff` business role and `SHERIFF` authorization assignment do not
+establish statutory appointment or authority over every office in a tenant. The
+new backend gate records immutable, independently verified appointment evidence
+and exact office scope; derives District and certificate jurisdiction from P1;
+requires current Fidelity Fund Certificate and professional indemnity evidence;
+and denies location-evidence reads outside the principal's current appointment.
+The API and client transport are certified on the feature branch. The tenant-admin
+evidence-entry UI, source-document ingestion/authenticity controls, and external
+issuer verification remain outstanding; this is not yet a complete release gate.
+
 ### G2 — Intake registration
 No production orchestrator/command was found that constructs and persists the
 initial `CaseMatter`, `LegalInstruction`, `ProcessDocument`, and first
@@ -154,10 +166,11 @@ These transitions must remain separate from allocation and require concurrency-
 safe current-state evidence.
 
 ### G4 — Client parity
-The active sheriff/process-service dashboard is not wired to the canonical
-Python Legal Operations APIs. The general legal dashboard is a separate legacy
-legal-management surface. Canonical backend truth therefore lacks an end-user
-process-service projection.
+The Sheriff location-evidence read now uses the canonical Python API and the
+active client service validates its appointment-scoped V2 projection. Full
+Sheriff/deputy dashboard parity remains incomplete: appointment administration
+UI, intake/receipt/assignment/outcome/return commands, native offline evidence
+and end-to-end client workflows still require canonical transport integration.
 
 ### G5 — Client-facing projection policy
 `tenant_legal_client` is intentionally denied by L7A. A separate bounded
@@ -253,6 +266,7 @@ proves the dependency graph different.
 | L8-3 | Instruction acceptance + document receipt/custody orchestration | Produces the exact P3 prerequisites without collapsing states. |
 | L8-4 | Intake/directory authenticated command API | Makes canonical authorities reachable without browser-owned truth. |
 | L8-5 | Read models: current/history, queues and search | Gives operational consumers deterministic projections. |
+| L8-6J | Sheriff appointment and office-scope authority evidence | Tenant Sheriff IAM is not appointment authority; office access requires current external appointment, office scope, jurisdiction-matched FFC and indemnity evidence. |
 | L8-6 | Sheriff/deputy client migration | Wires the active Legal dashboard to canonical APIs and removes client-local truth. |
 | L8-7 | Law-firm/client bounded projection policy | Exposes only authorized client-visible evidence. |
 | L8-8 | Files, courier and notification adapters | Adds external capability as evidence/projection only. |
