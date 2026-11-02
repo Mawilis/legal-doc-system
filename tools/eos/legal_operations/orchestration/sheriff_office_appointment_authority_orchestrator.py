@@ -19,8 +19,7 @@ FAIL-CLOSED DECLARATION: Missing/inactive/wrong IAM, self-verification, absent/c
 
 from __future__ import annotations
 
-from datetime import datetime
-import hmac
+from datetime import datetime, timezone
 from typing import Any, Final, NoReturn, cast
 
 from tools.eos.auth.principal_authority import PrincipalAuthority
@@ -125,6 +124,14 @@ def _active_transaction(session: object) -> object:
             error_type=SheriffOfficeAppointmentTransactionRequiredError,
         )
     return session
+
+
+def _utc(value: datetime | None) -> datetime | None:
+    if value is None:
+        return None
+    if value.tzinfo is None or value.utcoffset() is None:
+        _fail("L8_SOA_TIMESTAMP_INVALID")
+    return value.astimezone(timezone.utc)
 
 
 def _principal(
@@ -349,10 +356,15 @@ def _same_command(
         value.professional_indemnity_insurance_valid_until,
         value.verified_by_principal_id,
     )
-    return hmac.compare_digest(
-        repr(expected).encode("utf-8"),
-        repr(actual).encode("utf-8"),
+    normalized_expected = tuple(
+        _utc(item) if isinstance(item, datetime) else item
+        for item in expected
     )
+    normalized_actual = tuple(
+        _utc(item) if isinstance(item, datetime) else item
+        for item in actual
+    )
+    return normalized_expected == normalized_actual
 
 
 def record_sheriff_office_appointment_authority(
@@ -477,7 +489,11 @@ def record_sheriff_office_appointment_authority(
     except SheriffOfficeAppointmentRegistryError as error:
         _fail("L8_SOA_APPOINTMENT_HISTORY_UNAVAILABLE", error)
 
-    if expected_revision < 0:
+    if (
+        isinstance(expected_revision, bool)
+        or not isinstance(expected_revision, int)
+        or expected_revision < 0
+    ):
         _fail("L8_SOA_EXPECTED_REVISION_INVALID")
     if len(history) == expected_revision + 1:
         existing = history[-1]
