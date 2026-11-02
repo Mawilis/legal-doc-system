@@ -174,8 +174,10 @@ class GovernedTrustRootRegistry:
             unique=True, name="tenant_ownership_trust_root_decision_unique",
         )
         self._events.create_index(
-            [("trust_root_reference", ASCENDING), ("key_revision", ASCENDING), ("event", ASCENDING)],
-            unique=True, name="tenant_ownership_trust_root_event_revision_unique",
+            [("trust_root_reference", ASCENDING), ("key_revision", ASCENDING)],
+            unique=True,
+            partialFilterExpression={"event": "REVOKED"},
+            name="tenant_ownership_trust_root_revocation_revision_unique",
         )
 
     def enroll(self, request: TrustRootEnrollmentRequest, *, session: Any) -> TrustRootRecord:
