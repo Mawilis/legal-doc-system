@@ -1,0 +1,50 @@
+name: Authenticated Legal Workspace Journey
+
+on:
+  pull_request:
+    paths:
+      - "client/src/App.jsx"
+      - "client/src/contexts/authContext.jsx"
+      - "client/src/contexts/tenantContext.jsx"
+      - "client/tests/client/App.authenticatedLegalWorkspaceJourney.test.jsx"
+      - "client/tests/client/App.legalAcceptanceBarrier.test.jsx"
+      - "client/tests/contexts/authContext.authoritative.test.jsx"
+      - "client/tests/components/auth/TenantIdentityPremium.test.jsx"
+      - ".github/workflows/authenticated-legal-workspace-journey.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  authenticated-legal-workspace:
+    name: Browser auth, tenant bootstrap and Legal admission
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    defaults:
+      run:
+        working-directory: client
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: npm
+          cache-dependency-path: client/package-lock.json
+
+      - name: Install locked client dependencies
+        run: npm ci
+
+      - name: Test authenticated Legal workspace journey
+        run: >-
+          npx vitest run --config vitest.config.js
+          tests/client/App.authenticatedLegalWorkspaceJourney.test.jsx
+          tests/client/App.legalAcceptanceBarrier.test.jsx
+          tests/contexts/authContext.authoritative.test.jsx
+          tests/components/auth/TenantIdentityPremium.test.jsx
+
+      - name: Verify client production build
+        run: npm run build
