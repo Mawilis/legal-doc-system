@@ -301,7 +301,7 @@ def test_location_capture_route_requires_both_challenge_and_gps_signatures(
                 "captured_at": "2026-11-02T10:00:00.000Z",
             },
         )
-    assert response.status_code == 200
+    assert response.status_code == 200, response.text
     assert response.json()["data"]["observation_id"] == "observation-http"
     assert len(calls) == 1
     assert calls[0]["current_evidence_identity"] == "p2-current-http"
