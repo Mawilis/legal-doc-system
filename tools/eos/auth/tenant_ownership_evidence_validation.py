@@ -45,6 +45,12 @@ def _utc(value: datetime, code: str) -> datetime:
     return value.astimezone(timezone.utc)
 
 
+def _text(value: object, code: str) -> str:
+    if type(value) is not str or not value.strip():
+        raise OwnershipEvidenceValidationError(code)
+    return value
+
+
 def _fingerprint(value: str, code: str) -> str:
     if type(value) is not str or not _HEX_256.fullmatch(value):
         raise OwnershipEvidenceValidationError(code)
@@ -67,6 +73,11 @@ def assess_registry_snapshots(
     for item in snapshots:
         if type(item) is not RegistrySnapshot:
             raise OwnershipEvidenceValidationError("REGISTRY_SNAPSHOT_INVALID")
+        for value in (item.source_id, item.record_reference, item.filing_reference,
+                      item.filing_revision, item.jurisdiction, item.entity_type, item.record_status):
+            _text(value, "REGISTRY_SNAPSHOT_FIELD_INVALID")
+        if item.supersedes_filing_reference is not None:
+            _text(item.supersedes_filing_reference, "REGISTRY_SUPERSESSION_REFERENCE_INVALID")
         if item.filing_reference in by_filing:
             raise OwnershipEvidenceValidationError("REGISTRY_DUPLICATE_FILING_REFERENCE")
         retrieved = _utc(item.retrieved_at, "REGISTRY_RETRIEVAL_TIME_INVALID")
@@ -132,10 +143,12 @@ def validate_subject_proofing_receipt(
     valid_until = _utc(receipt.valid_until, "SUBJECT_PROOFING_EXPIRY_INVALID")
     if receipt.subject_reference != request.subject_reference:
         raise OwnershipEvidenceValidationError("SUBJECT_PROOFING_SUBJECT_MISMATCH")
-    if not request.purpose or not receipt.provider_id or not receipt.verifier_id:
-        raise OwnershipEvidenceValidationError("SUBJECT_PROOFING_PROVENANCE_MISSING")
-    if not receipt.assurance_profile or not receipt.evidence_reference or not receipt.revocation_reference:
-        raise OwnershipEvidenceValidationError("SUBJECT_PROOFING_EVIDENCE_INCOMPLETE")
+    _text(request.purpose, "SUBJECT_PROOFING_PROVENANCE_MISSING")
+    _text(receipt.provider_id, "SUBJECT_PROOFING_PROVENANCE_MISSING")
+    _text(receipt.verifier_id, "SUBJECT_PROOFING_PROVENANCE_MISSING")
+    _text(receipt.assurance_profile, "SUBJECT_PROOFING_EVIDENCE_INCOMPLETE")
+    _text(receipt.evidence_reference, "SUBJECT_PROOFING_EVIDENCE_INCOMPLETE")
+    _text(receipt.revocation_reference, "SUBJECT_PROOFING_EVIDENCE_INCOMPLETE")
     _fingerprint(receipt.evidence_fingerprint, "SUBJECT_PROOFING_FINGERPRINT_INVALID")
     if verified_at > requested_at or valid_until <= requested_at or valid_until <= verified_at:
         raise OwnershipEvidenceValidationError("SUBJECT_PROOFING_RECEIPT_NOT_CURRENT")
@@ -167,8 +180,9 @@ def signing_message(request: SigningRequest) -> bytes:
     digest = _fingerprint(request.payload_digest, "SIGNING_PAYLOAD_DIGEST_INVALID")
     if request.digest_algorithm.lower() != "sha256":
         raise OwnershipEvidenceValidationError("SIGNING_DIGEST_ALGORITHM_UNSUPPORTED")
-    if not request.tenant_id or not request.purpose or not request.key_reference:
-        raise OwnershipEvidenceValidationError("SIGNING_SCOPE_INVALID")
+    _text(request.tenant_id, "SIGNING_SCOPE_INVALID")
+    _text(request.purpose, "SIGNING_SCOPE_INVALID")
+    _text(request.key_reference, "SIGNING_SCOPE_INVALID")
     if type(request.key_revision) is not int or request.key_revision < 1:
         raise OwnershipEvidenceValidationError("SIGNING_KEY_REVISION_INVALID")
     payload = {
@@ -204,13 +218,14 @@ def verify_signing_receipt(
         raise OwnershipEvidenceValidationError("SIGNING_KEY_NOT_CURRENT_OR_REVOKED")
     if receipt.algorithm != "Ed25519":
         raise OwnershipEvidenceValidationError("SIGNING_ALGORITHM_UNSUPPORTED")
-    if not receipt.provider_id or not receipt.custody_authority_id or not receipt.audit_reference:
-        raise OwnershipEvidenceValidationError("SIGNING_CUSTODY_PROVENANCE_MISSING")
+    _text(receipt.provider_id, "SIGNING_CUSTODY_PROVENANCE_MISSING")
+    _text(receipt.custody_authority_id, "SIGNING_CUSTODY_PROVENANCE_MISSING")
+    _text(receipt.audit_reference, "SIGNING_CUSTODY_PROVENANCE_MISSING")
     _fingerprint(receipt.custody_proof_fingerprint, "SIGNING_CUSTODY_PROOF_INVALID")
     try:
         signature = bytes.fromhex(receipt.signature)
         keys.public_key(request.key_reference, request.key_revision).verify(signature, message)
-    except (ValueError, InvalidSignature, KeyError) as error:
+    except (ValueError, TypeError, InvalidSignature, KeyError) as error:
         raise OwnershipEvidenceValidationError("SIGNING_SIGNATURE_INVALID") from error
     except Exception as error:
         raise OwnershipEvidenceValidationError("SIGNING_KEY_RESOLUTION_UNAVAILABLE") from error
@@ -330,8 +345,10 @@ def validate_recovery_decision(
                   receipt.quorum_fingerprint, receipt.conflict_check_fingerprint,
                   receipt.notice_and_objection_fingerprint):
         _fingerprint(value, "RECOVERY_DECISION_EVIDENCE_FINGERPRINT_INVALID")
-    if not receipt.authority_id or not receipt.revocation_reference:
-        raise OwnershipEvidenceValidationError("RECOVERY_AUTHORITY_PROVENANCE_MISSING")
+    _text(receipt.authority_id, "RECOVERY_AUTHORITY_PROVENANCE_MISSING")
+    _text(receipt.trust_root_reference, "RECOVERY_AUTHORITY_PROVENANCE_MISSING")
+    _text(receipt.decision_reference, "RECOVERY_AUTHORITY_PROVENANCE_MISSING")
+    _text(receipt.revocation_reference, "RECOVERY_AUTHORITY_PROVENANCE_MISSING")
     if envelope.algorithm != "Ed25519":
         raise OwnershipEvidenceValidationError("RECOVERY_SIGNATURE_ALGORITHM_UNSUPPORTED")
     try:
