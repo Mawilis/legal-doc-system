@@ -2315,6 +2315,7 @@ async def get_sheriff_office_location_evidence_projection(
             or model.entity_type != "ServiceAttempt"
             or model.entity_identity != attempt_id
             or type(model.current) is not ServiceAttempt
+            or cast(ServiceAttempt, model.current).tenant_id != context.tenant_id
         ):
             raise HTTPException(status_code=404, detail="LEGAL_OPERATION_NOT_FOUND")
         attempt = cast(ServiceAttempt, model.current)
@@ -2387,6 +2388,7 @@ async def get_sheriff_office_location_evidence_projection(
             or office_model.entity_type != "SheriffOffice"
             or office_model.entity_identity != receipt.sheriff_office_id
             or type(office_model.current) is not SheriffOffice
+            or cast(SheriffOffice, office_model.current).tenant_id != context.tenant_id
         ):
             raise HTTPException(status_code=404, detail="LEGAL_OPERATION_NOT_FOUND")
         office = cast(SheriffOffice, office_model.current)
@@ -2405,6 +2407,7 @@ async def get_sheriff_office_location_evidence_projection(
             or district_model.entity_type != "District"
             or district_model.entity_identity != office.district_id
             or type(district_model.current) is not District
+            or cast(District, district_model.current).tenant_id != context.tenant_id
         ):
             raise HTTPException(status_code=404, detail="LEGAL_OPERATION_NOT_FOUND")
         district = cast(District, district_model.current)
@@ -2428,7 +2431,7 @@ async def get_sheriff_office_location_evidence_projection(
             tenant_id=context.tenant_id,
             event_id=f"location-access-{uuid.uuid4().hex}",
             attempt_id=attempt_id,
-            grant_id=appointment.fingerprint,
+            grant_id="all",
             actor_principal_id=context.identity.identity_id,
             actor_scope="SHERIFF_OFFICE:" + office.sheriff_office_id,
             accessed_at=accessed_at,
