@@ -263,7 +263,7 @@ def test_location_capture_route_requires_both_challenge_and_gps_signatures(
     database = Database()
     session = ActiveSession()
     calls: list[dict[str, Any]] = []
-    proof = SimpleNamespace(device_id="deputy-device:synthetic")
+    proof = SimpleNamespace(device_id="deputy-device:synthetic", challenge_id="challenge-http", fingerprint="c" * 128)
     observation = SimpleNamespace(
         to_dict=lambda: {
             "tenant_id": TENANT, "attempt_id": "attempt-http",
