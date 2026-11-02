@@ -144,6 +144,7 @@ async def get_current_identity(
         permissions=payload.get("permissions", []) if isinstance(payload.get("permissions", []), list) else [],
         auth_method="JWT",
         status=authority.status,
+        session_reference=_claim(payload, "session_reference"),
     )
     log_auth_event("JWT_AUTH", authority.principal_id, True, {"tenant": tenant_id})
     return identity

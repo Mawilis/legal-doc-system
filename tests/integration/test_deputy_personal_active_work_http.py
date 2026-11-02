@@ -1,7 +1,7 @@
 """Direct ASGI certificate for deputy personal active-work reads.
 
 TITLE: WILSY OS Deputy Personal Work and Field Capability HTTP Certificate
-VERSION: v1.1.0-L8-6D-DEPUTY-FIELD-CAPABILITY-HTTP-CERT
+VERSION: v1.3.0-L8-6E-DEPUTY-SERVING-ASSIGNMENT-HTTP-CERT
 AUTHORITY: Direct HTTP certification of L8-6C/L8-6D deputy-only read routes.
 EPITOME: Preserve personal active-work HTTP proof and certify the L8-6D field
          capability route derives tenant/principal scope from authenticated
@@ -12,8 +12,13 @@ COLLABORATION / OWNERSHIP: HTTP composition certificate only; IAM owns caller
                             admission, L8-6B owns identity binding, L8-6C owns
                             personal active work, and L8-6D owns field-capability
                             composition. Command IAM remains independently enforced.
-CERTIFICATION / UPDATE DATE: 2026-09-23
-CHANGELOG: 2026-09-23 v1.1.0-L8-6D-DEPUTY-FIELD-CAPABILITY-HTTP-CERT
+CERTIFICATION / UPDATE DATE: 2026-10-30
+CHANGELOG: 2026-10-30 v1.3.0-L8-6E-DEPUTY-SERVING-ASSIGNMENT-HTTP-CERT certifies snapshot transaction forwarding and exact pointer/receipt-backed Deputy, office, allocation-time and attempt-state projection.
+           2026-10-30 v1.2.0-L8-6D-G68-ROUTER-ALIGNMENT-HTTP-CERT
+           aligns the exact router-version assertion with the current
+           v1.17.0-G68-P2-PRACTITIONER-CONFIDENTIALITY-CONTAINMENT router;
+           preserves deputy route, permission, binding, and fail-closed proofs.
+           2026-09-23 v1.1.0-L8-6D-DEPUTY-FIELD-CAPABILITY-HTTP-CERT
            adds exact deputy field-capability dispatch/response proof, missing
            binding 403, bounded locator/capability 503, no caller scope input,
            and router v1.5.0 binding while preserving L8-6C active-work tests.
@@ -62,7 +67,7 @@ from tools.eos.legal_operations.domain.legal_operations_lifecycle import (
 )
 
 
-VERSION = "v1.1.0-L8-6D-DEPUTY-FIELD-CAPABILITY-HTTP-CERT"
+VERSION = "v1.3.0-L8-6E-DEPUTY-SERVING-ASSIGNMENT-HTTP-CERT"
 TENANT = "tenant-deputy"
 PRINCIPAL = "principal-deputy"
 DEPUTY = "deputy-1"
@@ -120,6 +125,17 @@ def _capability() -> FieldCommandCapabilityEntry:
     )
 
 
+def _use_snapshot_transaction(monkeypatch: pytest.MonkeyPatch) -> None:
+    """Exercise route error mapping after entering its API-owned snapshot."""
+    session = SimpleNamespace(in_transaction=True)
+    database = SimpleNamespace(get_collection=lambda _name: _Collection())
+    monkeypatch.setattr(
+        legal_router,
+        "_workspace_projection_transaction",
+        lambda callback: callback(session, database),
+    )
+
+
 def _app(
     lifecycle: _Collection,
     binding: _Collection,
@@ -165,7 +181,41 @@ def test_authorized_deputy_dispatches_server_derived_scope_and_projects_only_act
             active_attempts=(SimpleNamespace(current=_attempt()),),
         )
 
+    session = SimpleNamespace(in_transaction=True)
+    pointer = SimpleNamespace(
+        authority_evidence_reference="allocation-command-1",
+        authority_evidence_fingerprint="f" * 128,
+        current_holder_reference="holder-deputy-1",
+    )
+    receipt = SimpleNamespace(
+        tenant_id=TENANT,
+        document_id="document-1",
+        instruction_id="instruction-1",
+        deputy_id=DEPUTY,
+        sheriff_office_id="sheriff-office-1",
+        allocation_evidence_reference="allocation-1",
+        allocated_at=NOW,
+        allocation_command_id="allocation-command-1",
+        fingerprint="f" * 128,
+        to_holder_reference="holder-deputy-1",
+    )
+    database = SimpleNamespace(
+        get_collection=lambda name: SimpleNamespace(collection_name=name)
+    )
+    monkeypatch.setattr(
+        legal_router, "_workspace_projection_transaction",
+        lambda callback: callback(session, database),
+    )
     monkeypatch.setattr(legal_router, "get_deputy_personal_active_work", project)
+    monkeypatch.setattr(
+        legal_router.ProcessServiceAllocationRegistry, "get_current",
+        lambda *args, **kwargs: pointer,
+    )
+    monkeypatch.setattr(
+        legal_router.ProcessServiceAllocationRegistry,
+        "get_receipt_by_allocation_command_id",
+        lambda *args, **kwargs: receipt,
+    )
 
     with TestClient(_app(lifecycle, binding, authorize=True)) as client:
         response = client.get("/api/legal-operations/deputy/active-work")
@@ -177,6 +227,7 @@ def test_authorized_deputy_dispatches_server_derived_scope_and_projects_only_act
         "principal_id": PRINCIPAL,
         "binding_collection": binding,
         "lifecycle_collection": lifecycle,
+        "session": session,
     }
 
     body = response.json()
@@ -185,7 +236,17 @@ def test_authorized_deputy_dispatches_server_derived_scope_and_projects_only_act
         "visibility",
         "deputy_id",
         "active_attempts",
+        "who_serves",
     }
+    assert body["who_serves"] == [{
+        "attempt_id": "attempt-1",
+        "deputy_id": DEPUTY,
+        "sheriff_office_id": "sheriff-office-1",
+        "allocated_at": NOW.isoformat(),
+        "attempt_state": "ALLOCATED",
+        "allocation_command_id": "allocation-command-1",
+        "allocation_receipt_fingerprint": "f" * 128,
+    }]
     assert body["tenant_id"] == TENANT
     assert body["visibility"] == "DEPUTY_PERSONAL_ACTIVE_WORK"
     assert body["deputy_id"] == DEPUTY
@@ -330,6 +391,8 @@ def test_field_capability_failures_are_bounded_without_command_fallback(
 def test_missing_binding_is_bounded_forbidden(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
+    _use_snapshot_transaction(monkeypatch)
+
     def reject(**_kwargs: Any) -> object:
         raise DeputyPersonalActiveWorkError("L8_6C_BINDING_REQUIRED")
 
@@ -354,6 +417,8 @@ def test_projection_failures_are_bounded_evidence_unavailable(
     monkeypatch: pytest.MonkeyPatch,
     code: str,
 ) -> None:
+    _use_snapshot_transaction(monkeypatch)
+
     def reject(**_kwargs: Any) -> object:
         raise DeputyPersonalActiveWorkError(code)
 
@@ -365,6 +430,82 @@ def test_projection_failures_are_bounded_evidence_unavailable(
     assert (
         response.json()["detail"]
         == "LEGAL_OPERATIONS_DEPUTY_QUEUE_EVIDENCE_UNAVAILABLE"
+    )
+
+
+@pytest.mark.parametrize(
+    ("receipt", "expected_code"),
+    (
+        (None, "P4_CURRENT_ALLOCATION_RECEIPT_MISSING"),
+        (
+            SimpleNamespace(
+                tenant_id=TENANT,
+                document_id="document-1",
+                instruction_id="instruction-1",
+                deputy_id=DEPUTY,
+                sheriff_office_id="sheriff-office-1",
+                allocation_evidence_reference="allocation-1",
+                allocated_at=NOW,
+                allocation_command_id="allocation-command-1",
+                fingerprint="e" * 128,
+                to_holder_reference="holder-deputy-1",
+            ),
+            "P4_CURRENT_ALLOCATION_RECEIPT_ATTEMPT_MISMATCH",
+        ),
+        (
+            SimpleNamespace(
+                tenant_id=TENANT,
+                document_id="document-1",
+                instruction_id="instruction-1",
+                deputy_id="foreign-deputy",
+                sheriff_office_id="sheriff-office-1",
+                allocation_evidence_reference="allocation-1",
+                allocated_at=NOW,
+                allocation_command_id="allocation-command-1",
+                fingerprint="f" * 128,
+                to_holder_reference="holder-deputy-1",
+            ),
+            "P4_CURRENT_ALLOCATION_RECEIPT_ATTEMPT_MISMATCH",
+        ),
+    ),
+)
+def test_who_serves_projection_fails_closed_on_missing_or_mismatched_receipt(
+    monkeypatch: pytest.MonkeyPatch,
+    receipt: object,
+    expected_code: str,
+) -> None:
+    _use_snapshot_transaction(monkeypatch)
+    personal = SimpleNamespace(
+        tenant_id=TENANT,
+        principal_id=PRINCIPAL,
+        deputy_id=DEPUTY,
+        active_attempts=(SimpleNamespace(current=_attempt()),),
+    )
+    pointer = SimpleNamespace(
+        authority_evidence_reference="allocation-command-1",
+        authority_evidence_fingerprint="f" * 128,
+        current_holder_reference="holder-deputy-1",
+    )
+    monkeypatch.setattr(
+        legal_router, "get_deputy_personal_active_work",
+        lambda **_kwargs: personal,
+    )
+    monkeypatch.setattr(
+        legal_router.ProcessServiceAllocationRegistry, "get_current",
+        lambda *args, **kwargs: pointer,
+    )
+    monkeypatch.setattr(
+        legal_router.ProcessServiceAllocationRegistry,
+        "get_receipt_by_allocation_command_id",
+        lambda *args, **kwargs: receipt,
+    )
+
+    with TestClient(_app(_Collection(), _Collection(), authorize=True)) as client:
+        response = client.get("/api/legal-operations/deputy/active-work")
+
+    assert response.status_code == 503
+    assert response.json()["detail"] == (
+        "LEGAL_OPERATIONS_DEPUTY_ALLOCATION_EVIDENCE_UNAVAILABLE"
     )
 
 
@@ -392,13 +533,13 @@ def test_route_permission_and_router_version_are_exact() -> None:
     )
     assert legal_router._DEPUTY_QUEUE_READ.operation == "legal_deputy_queue_read"
     assert legal_router.VERSION == (
-        "v1.10.0-D22B5-R21-LEGAL-PRODUCT-AVAILABILITY-CONJUNCTION"
+        "v1.18.0-L8-6E-DEPUTY-CURRENT-SERVING-ASSIGNMENT"
     )
-    assert VERSION == "v1.1.0-L8-6D-DEPUTY-FIELD-CAPABILITY-HTTP-CERT"
+    assert VERSION == "v1.3.0-L8-6E-DEPUTY-SERVING-ASSIGNMENT-HTTP-CERT"
 
 
 # ARTIFACT: test_deputy_personal_active_work_http.py
-# VERSION: v1.1.0-L8-6D-DEPUTY-FIELD-CAPABILITY-HTTP-CERT
+# VERSION: v1.3.0-L8-6E-DEPUTY-SERVING-ASSIGNMENT-HTTP-CERT
 # AUTHORITY BOUNDARY: direct deputy-only personal active-work and field-capability HTTP certificate only
 # TENANT POSTURE: tenant/principal are server-derived from authorized identity context
 # FAIL-CLOSED POSTURE: missing IAM/binding/locator/capability/persistence denies without command or queue fallback

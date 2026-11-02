@@ -34,3 +34,4 @@ class SovereignIdentity(BaseModel):
     permissions: List[str] = Field(default_factory=list, description="Projection of signed/legacy permissions; not lifecycle authority")
     auth_method: str = Field(..., description="Authentication mechanism used")
     status: PrincipalStatus = Field(..., description="Current status copied from durable PrincipalAuthority")
+    session_reference: Optional[str] = Field(None, description="Opaque current AuthRegistry session reference; never bearer material")

@@ -108,6 +108,8 @@ FAIL-CLOSED DECLARATION: Missing authority, malformed locators, unavailable
 """
 from __future__ import annotations
 
+from base64 import b64decode, b64encode
+import binascii
 from datetime import datetime, timezone
 from enum import StrEnum
 import hashlib
@@ -152,6 +154,26 @@ from tools.eos.auth.tenant_membership_repository import (
     TenantMembershipRepositoryError,
 )
 from tools.eos.legal_operations.domain.process_service_field_evidence_authority import ProcessServiceFieldEvidenceAuthorityError
+from tools.eos.legal_operations.orchestration.deputy_device_provenance_orchestrator import (
+    issue_deputy_device_challenge,
+    verify_and_consume_deputy_device_challenge,
+)
+from tools.eos.legal_operations.orchestration.process_service_location_evidence_orchestrator import (
+    issue_process_service_location_permission_grant,
+    record_process_service_location_observation,
+    revoke_process_service_location_permission_grant,
+)
+from tools.eos.legal_operations.registry.process_service_location_evidence_registry import (
+    OBSERVATION_COLLECTION as LOCATION_OBSERVATION_COLLECTION,
+    PERMISSION_COLLECTION as LOCATION_PERMISSION_COLLECTION,
+    REVOCATION_COLLECTION as LOCATION_REVOCATION_COLLECTION,
+    ProcessServiceLocationEvidenceRegistry,
+)
+from tools.eos.auth.principal_authority_repository import COLLECTION as PRINCIPAL_AUTHORITY_COLLECTION
+from tools.eos.auth.tenant_membership_repository import COLLECTION as TENANT_MEMBERSHIP_COLLECTION
+from tools.eos.auth.tenant_business_role_repository import COLLECTION as TENANT_BUSINESS_ROLE_COLLECTION
+from tools.eos.auth.role_assignment_repository import COLLECTION as ROLE_ASSIGNMENT_COLLECTION
+from tools.eos.saas.auth.auth_registry import AuthRegistry
 from tools.eos.legal_operations.domain.legal_conflict_review import (
     LegalConflictReviewOutcome,
 )
@@ -210,6 +232,10 @@ from tools.eos.legal_operations.registry.deputy_principal_binding_registry impor
     DeputyPrincipalBindingRegistry,
     DeputyPrincipalBindingRegistryError,
 )
+from tools.eos.legal_operations.registry.deputy_device_provenance_registry import (
+    COLLECTION as DEPUTY_DEVICE_PROVENANCE_COLLECTION,
+    DeputyDeviceProvenanceRegistry,
+)
 from tools.eos.legal_operations.registry.legal_operations_lifecycle_registry import COLLECTION as LIFECYCLE_COLLECTION, LegalOperationsLifecycleRegistry
 from tools.eos.legal_operations.registry.legal_conflict_screening_registry import (
     COLLECTION as LEGAL_CONFLICT_SCREENING_COLLECTION,
@@ -250,6 +276,7 @@ from tools.eos.legal_operations.registry.process_service_allocation_registry imp
     ProcessServiceAllocationRegistry,
     get_current as get_allocation_current,
     get_receipt_by_idempotency_key,
+    get_receipt_by_allocation_command_id,
 )
 from tools.eos.legal_operations.registry.process_service_attempt_authority_registry import (
     RECEIPT_COLLECTION as ATTEMPT_AUTHORITY_COLLECTION,
@@ -508,6 +535,51 @@ class DeputyFieldOutcomeCommand(DeputyFieldObservationCommand):
     outcome: ServiceAttemptState
 
 
+class DeputyDeviceChallengeIssueCommand(_CommandModel):
+    """Browser-held P-256 public key only; all caller authority is server-derived."""
+
+    public_key_spki_b64: str = Field(min_length=64, max_length=1024)
+
+
+class DeputyDeviceChallengeVerifyCommand(_CommandModel):
+    """One P-256 IEEE-P1363 signature; tenant/principal/device are server-derived."""
+
+    signature_p1363_b64: str = Field(min_length=80, max_length=100)
+
+
+class DeputyLocationPermissionGrantCommand(_CommandModel):
+    """Explicit one-shot location permission acknowledgement plus device proof."""
+
+    current_evidence_identity: str = Field(min_length=1)
+    grant_id: str = Field(min_length=1, max_length=128)
+    challenge_id: str = Field(min_length=1, max_length=128)
+    signature_p1363_b64: str = Field(min_length=80, max_length=100)
+    permission_granted: bool
+    permission_notice_version: str = Field(min_length=1, max_length=64)
+
+
+class DeputyLocationObservationCommand(_CommandModel):
+    """One GPS fix; all attempt/deputy/device authority remains server-derived."""
+
+    current_evidence_identity: str = Field(min_length=1)
+    grant_id: str = Field(min_length=1, max_length=128)
+    observation_id: str = Field(min_length=1, max_length=128)
+    device_provenance_reference: str = Field(min_length=1, max_length=128)
+    location_signature_p1363_b64: str = Field(min_length=80, max_length=100)
+    latitude: float
+    longitude: float
+    horizontal_accuracy_m: float
+    captured_at: datetime
+
+
+class DeputyLocationPermissionRevocationCommand(_CommandModel):
+    """Immutable user-withdrawal event; actor and time are server-owned."""
+
+    current_evidence_identity: str = Field(min_length=1)
+    revocation_id: str = Field(min_length=1, max_length=128)
+    reason_reference: str = Field(min_length=1, max_length=512)
+
+
 class ReturnCommand(_CommandModel):
     """Opaque ServiceExecution locator and return observation passed to P5F."""
 
@@ -565,6 +637,150 @@ class CommandError(RuntimeError):
         super().__init__(code)
         if cause is not None:
             self.__cause__ = cause
+
+
+def _decode_base64(value: str, code: str) -> bytes:
+    """Decode one bounded canonical standard-base64 field."""
+    try:
+        decoded = b64decode(value, validate=True)
+    except (binascii.Error, ValueError) as error:
+        raise CommandError(code, error) from error
+    if not decoded or len(decoded) > 2048:
+        raise CommandError(code)
+    return decoded
+
+
+def _deputy_device_scope(
+    context: TenantAuthorizationContext,
+    database: Any,
+    session: Any,
+) -> str:
+    """Resolve exact bound Deputy and require the current authenticated session reference."""
+    binding = _bound_deputy(context, database, session, required=True)
+    if binding is None:
+        raise CommandError("DEPUTY_IDENTITY_BINDING_REQUIRED")
+    session_reference = context.identity.session_reference
+    if (
+        not isinstance(session_reference, str)
+        or not session_reference.startswith("WILSYSESSION-")
+        or len(session_reference) > 128
+    ):
+        raise CommandError("DEPUTY_DEVICE_CURRENT_SESSION_REFERENCE_REQUIRED")
+    return binding.deputy_id
+
+
+def _location_attempt_sources(
+    context: TenantAuthorizationContext,
+    attempt_id: str,
+    current_evidence_identity: str,
+    database: Any,
+    session: Any,
+    *,
+    allow_terminal: bool = False,
+) -> tuple[ServiceAttempt, Any, Any]:
+    """Resolve one exact P2 attempt and its P4 allocation sources."""
+    lifecycle = _collection(database, LIFECYCLE_COLLECTION)
+    current = _source(
+        lifecycle, context.tenant_id, current_evidence_identity, ServiceAttempt, session
+    )
+    if (
+        current.attempt_id != attempt_id
+        or (
+            not allow_terminal
+            and current.state not in {ServiceAttemptState.ALLOCATED, ServiceAttemptState.ATTEMPTED}
+        )
+    ):
+        raise CommandError("LEGAL_OPERATION_NOT_FOUND")
+    _enforce_deputy_attempt_scope(context, current, database, session, required=True)
+    receipt_collection = _collection(database, ALLOCATION_RECEIPT_COLLECTION)
+    allocation_current = get_allocation_current(
+        context.tenant_id,
+        current.document_id,
+        _collection(database, ALLOCATION_CURRENT_COLLECTION),
+        session=session,
+    )
+    receipt = get_receipt_by_allocation_command_id(
+        context.tenant_id,
+        current.document_id,
+        allocation_current.authority_evidence_reference,
+        receipt_collection,
+        session=session,
+    )
+    if (
+        receipt is None
+        or allocation_current.authority_evidence_fingerprint != receipt.fingerprint
+        or receipt.tenant_id != context.tenant_id
+        or receipt.document_id != current.document_id
+        or receipt.instruction_id != current.instruction_id
+        or receipt.deputy_id != current.deputy_id
+        or receipt.allocation_evidence_reference != current.allocation_evidence_reference
+        or receipt.allocated_at != current.allocated_at
+        or allocation_current.current_holder_reference != current.deputy_id
+    ):
+        raise CommandError("LEGAL_OPERATIONS_ALLOCATION_EVIDENCE_UNAVAILABLE")
+    return current, receipt, allocation_current
+
+
+def _verify_location_device_proof(
+    *,
+    context: TenantAuthorizationContext,
+    deputy_id: str,
+    challenge_id: str,
+    signature: bytes,
+    database: Any,
+    session: Any,
+) -> Any:
+    """Consume one challenge against the exact current deputy/session in this transaction."""
+    session_reference = context.identity.session_reference
+    if not isinstance(session_reference, str):
+        raise CommandError("DEPUTY_DEVICE_CURRENT_SESSION_REFERENCE_REQUIRED")
+    return verify_and_consume_deputy_device_challenge(
+        tenant_id=context.tenant_id,
+        principal_id=context.identity.identity_id,
+        deputy_id=deputy_id,
+        session_reference=cast(str, session_reference),
+        challenge_id=challenge_id,
+        signature_p1363=signature,
+        lifecycle_collection=_collection(database, LIFECYCLE_COLLECTION),
+        binding_collection=_collection(database, DEPUTY_PRINCIPAL_BINDING_COLLECTION),
+        principal_collection=_collection(database, PRINCIPAL_AUTHORITY_COLLECTION),
+        membership_collection=_collection(database, TENANT_MEMBERSHIP_COLLECTION),
+        business_role_collection=_collection(database, TENANT_BUSINESS_ROLE_COLLECTION),
+        role_assignment_collection=_collection(database, ROLE_ASSIGNMENT_COLLECTION),
+        challenge_collection=_collection(database, DEPUTY_DEVICE_PROVENANCE_COLLECTION),
+        auth_registry=AuthRegistry(),
+        session=session,
+    )
+
+
+def _get_consumed_deputy_device_proof(
+    *,
+    context: TenantAuthorizationContext,
+    deputy_id: str,
+    provenance_reference: str,
+    database: Any,
+    session: Any,
+) -> Any:
+    """Resolve an already-consumed, current-session device proof for offline GPS sync."""
+    session_reference = context.identity.session_reference
+    if not isinstance(session_reference, str):
+        raise CommandError("DEPUTY_DEVICE_CURRENT_SESSION_REFERENCE_REQUIRED")
+    registry = DeputyDeviceProvenanceRegistry(
+        _collection(database, DEPUTY_DEVICE_PROVENANCE_COLLECTION),
+        auth_registry=AuthRegistry(),
+        binding_collection=_collection(database, DEPUTY_PRINCIPAL_BINDING_COLLECTION),
+    )
+    proof = registry.get_consumed_provenance(
+        tenant_id=context.tenant_id,
+        challenge_id=provenance_reference,
+        principal_id=context.identity.identity_id,
+        session_reference=session_reference,
+        at=_utcnow(),
+        session=session,
+    )
+    if proof.deputy_id != deputy_id:
+        raise CommandError("DEPUTY_DEVICE_PROVENANCE_SCOPE_INVALID")
+    return proof
 
 
 def _collection(database: Any, name: str) -> Any:
@@ -1745,6 +1961,231 @@ async def record_bound_deputy_field_outcome_command(
     except Exception as error:
         raise _http_error(error) from error
     return {"data": value.to_dict(), "field_evidence": receipt.to_dict()}
+
+
+@router.post("/deputy/device-challenges")
+async def issue_deputy_device_challenge_command(
+    command: DeputyDeviceChallengeIssueCommand,
+    context: TenantAuthorizationContext = Depends(_ATTEMPT),
+) -> dict[str, Any]:
+    """Issue one short-lived P-256 challenge to the currently bound Deputy.
+
+    The browser supplies only a public key. Tenant, principal, Deputy, session
+    reference, canonical binding and all five current IAM authorities are
+    derived or revalidated server-side in one transaction.
+    """
+    public_key = _decode_base64(
+        command.public_key_spki_b64,
+        "DEPUTY_DEVICE_PUBLIC_KEY_ENCODING_INVALID",
+    )
+
+    def run(session: Any, db: Any) -> Any:
+        deputy_id = _deputy_device_scope(context, db, session)
+        return issue_deputy_device_challenge(
+            tenant_id=context.tenant_id,
+            principal_id=context.identity.identity_id,
+            deputy_id=deputy_id,
+            session_reference=cast(str, context.identity.session_reference),
+            public_key_spki_der=public_key,
+            lifecycle_collection=_collection(db, LIFECYCLE_COLLECTION),
+            binding_collection=_collection(db, DEPUTY_PRINCIPAL_BINDING_COLLECTION),
+            principal_collection=_collection(db, PRINCIPAL_AUTHORITY_COLLECTION),
+            membership_collection=_collection(db, TENANT_MEMBERSHIP_COLLECTION),
+            business_role_collection=_collection(db, TENANT_BUSINESS_ROLE_COLLECTION),
+            role_assignment_collection=_collection(db, ROLE_ASSIGNMENT_COLLECTION),
+            challenge_collection=_collection(db, DEPUTY_DEVICE_PROVENANCE_COLLECTION),
+            auth_registry=AuthRegistry(),
+            session=session,
+        )
+
+    try:
+        challenge = _transaction(run)
+    except Exception as error:
+        raise _http_error(error) from error
+    return {"data": challenge.to_dict(), "signed_payload_b64": b64encode(challenge.signed_payload()).decode("ascii")}
+
+
+@router.post("/deputy/device-challenges/{challenge_id}/verify")
+async def verify_deputy_device_challenge_command(
+    challenge_id: str,
+    command: DeputyDeviceChallengeVerifyCommand,
+    context: TenantAuthorizationContext = Depends(_ATTEMPT),
+) -> dict[str, Any]:
+    """Consume one challenge only after current binding, IAM and session revalidation."""
+    if not challenge_id.strip():
+        raise HTTPException(status_code=422, detail="DEPUTY_DEVICE_CHALLENGE_ID_INVALID")
+    signature = _decode_base64(
+        command.signature_p1363_b64,
+        "DEPUTY_DEVICE_SIGNATURE_ENCODING_INVALID",
+    )
+    if len(signature) != 64:
+        raise HTTPException(status_code=422, detail="DEPUTY_DEVICE_SIGNATURE_LENGTH_INVALID")
+
+    def run(session: Any, db: Any) -> Any:
+        deputy_id = _deputy_device_scope(context, db, session)
+        return verify_and_consume_deputy_device_challenge(
+            tenant_id=context.tenant_id,
+            principal_id=context.identity.identity_id,
+            deputy_id=deputy_id,
+            session_reference=cast(str, context.identity.session_reference),
+            challenge_id=challenge_id,
+            signature_p1363=signature,
+            lifecycle_collection=_collection(db, LIFECYCLE_COLLECTION),
+            binding_collection=_collection(db, DEPUTY_PRINCIPAL_BINDING_COLLECTION),
+            principal_collection=_collection(db, PRINCIPAL_AUTHORITY_COLLECTION),
+            membership_collection=_collection(db, TENANT_MEMBERSHIP_COLLECTION),
+            business_role_collection=_collection(db, TENANT_BUSINESS_ROLE_COLLECTION),
+            role_assignment_collection=_collection(db, ROLE_ASSIGNMENT_COLLECTION),
+            challenge_collection=_collection(db, DEPUTY_DEVICE_PROVENANCE_COLLECTION),
+            auth_registry=AuthRegistry(),
+            session=session,
+        )
+
+    try:
+        provenance = _transaction(run)
+    except Exception as error:
+        raise _http_error(error) from error
+    return {"data": provenance.to_dict()}
+
+
+@router.post("/deputy/attempts/{attempt_id}/location-permission-grants")
+async def create_deputy_location_permission_grant_command(
+    attempt_id: str,
+    command: DeputyLocationPermissionGrantCommand,
+    context: TenantAuthorizationContext = Depends(_ATTEMPT),
+) -> dict[str, Any]:
+    """Record explicit permission for one bounded attempt/device location window."""
+    if command.permission_granted is not True:
+        raise HTTPException(status_code=403, detail="LOCATION_PERMISSION_NOT_GRANTED")
+    signature = _decode_base64(
+        command.signature_p1363_b64,
+        "DEPUTY_DEVICE_SIGNATURE_ENCODING_INVALID",
+    )
+    if len(signature) != 64:
+        raise HTTPException(status_code=422, detail="DEPUTY_DEVICE_SIGNATURE_LENGTH_INVALID")
+    def run(session: Any, db: Any) -> Any:
+        current, receipt, allocation_current = _location_attempt_sources(
+            context, attempt_id, command.current_evidence_identity, db, session
+        )
+        deputy_id = _deputy_device_scope(context, db, session)
+        proof = _verify_location_device_proof(
+            context=context, deputy_id=deputy_id, challenge_id=command.challenge_id,
+            signature=signature, database=db, session=session,
+        )
+        grant = issue_process_service_location_permission_grant(
+            attempt=current, allocation_receipt=receipt, allocation_current=allocation_current,
+            device_provenance=proof, principal_id=context.identity.identity_id,
+            grant_id=command.grant_id, permission_granted=command.permission_granted,
+            permission_notice_version=command.permission_notice_version,
+            granted_at=_utcnow(),
+            permission_collection=_collection(db, LOCATION_PERMISSION_COLLECTION),
+            session=session,
+        )
+        return grant, proof
+
+    try:
+        value, proof = _transaction(run)
+    except Exception as error:
+        raise _http_error(error) from error
+    return {
+        "data": value.to_dict(),
+        "fingerprint": value.fingerprint,
+        "device_provenance_reference": proof.challenge_id,
+        "device_provenance_fingerprint": proof.fingerprint,
+    }
+
+
+@router.post("/deputy/attempts/{attempt_id}/location-evidence")
+async def record_deputy_location_observation_command(
+    attempt_id: str,
+    command: DeputyLocationObservationCommand,
+    context: TenantAuthorizationContext = Depends(_ATTEMPT),
+) -> dict[str, Any]:
+    """Capture and persist one GPS fix; this does not establish service or valid service."""
+    location_signature = _decode_base64(
+        command.location_signature_p1363_b64,
+        "LOCATION_OBSERVATION_SIGNATURE_ENCODING_INVALID",
+    )
+    if len(location_signature) != 64:
+        raise HTTPException(status_code=422, detail="LOCATION_OBSERVATION_SIGNATURE_LENGTH_INVALID")
+
+    def run(session: Any, db: Any) -> Any:
+        current, receipt, allocation_current = _location_attempt_sources(
+            context, attempt_id, command.current_evidence_identity, db, session,
+            allow_terminal=True,
+        )
+        deputy_id = _deputy_device_scope(context, db, session)
+        proof = _get_consumed_deputy_device_proof(
+            context=context, deputy_id=deputy_id,
+            provenance_reference=command.device_provenance_reference,
+            database=db, session=session,
+        )
+        return record_process_service_location_observation(
+            attempt=current, allocation_receipt=receipt, allocation_current=allocation_current,
+            device_provenance=proof, principal_id=context.identity.identity_id,
+            grant_id=command.grant_id, observation_id=command.observation_id,
+            current_evidence_identity=command.current_evidence_identity,
+            location_signature_p1363=location_signature,
+            latitude=command.latitude, longitude=command.longitude,
+            horizontal_accuracy_m=command.horizontal_accuracy_m, captured_at=command.captured_at,
+            permission_collection=_collection(db, LOCATION_PERMISSION_COLLECTION),
+            observation_collection=_collection(db, LOCATION_OBSERVATION_COLLECTION),
+            revocation_collection=_collection(db, LOCATION_REVOCATION_COLLECTION),
+            session=session,
+        )
+
+    try:
+        value = _transaction(run)
+    except Exception as error:
+        raise _http_error(error) from error
+    return {"data": value.to_dict(), "fingerprint": value.fingerprint}
+
+
+@router.post("/deputy/attempts/{attempt_id}/location-permission-grants/{grant_id}/revoke")
+async def revoke_deputy_location_permission_grant_command(
+    attempt_id: str,
+    grant_id: str,
+    command: DeputyLocationPermissionRevocationCommand,
+    context: TenantAuthorizationContext = Depends(_ATTEMPT),
+) -> dict[str, Any]:
+    """Append a current Deputy's explicit permission withdrawal."""
+    def run(session: Any, db: Any) -> Any:
+        current = _source(
+            _collection(db, LIFECYCLE_COLLECTION),
+            context.tenant_id,
+            command.current_evidence_identity,
+            ServiceAttempt,
+            session,
+        )
+        if current.attempt_id != attempt_id:
+            raise CommandError("LEGAL_OPERATION_NOT_FOUND")
+        _enforce_deputy_attempt_scope(context, current, db, session, required=True)
+        deputy_id = _deputy_device_scope(context, db, session)
+        if current.deputy_id != deputy_id:
+            raise CommandError("LEGAL_OPERATION_NOT_FOUND")
+        ProcessServiceLocationEvidenceRegistry.assert_permission_grant_attempt_binding(
+            context.tenant_id,
+            grant_id,
+            attempt_id,
+            deputy_id,
+            _collection(db, LOCATION_PERMISSION_COLLECTION),
+            session=session,
+        )
+        return revoke_process_service_location_permission_grant(
+            tenant_id=context.tenant_id, grant_id=grant_id,
+            revocation_id=command.revocation_id,
+            revoked_by_principal_id=context.identity.identity_id,
+            revoked_at=_utcnow(), reason_reference=command.reason_reference,
+            grant_collection=_collection(db, LOCATION_PERMISSION_COLLECTION),
+            revocation_collection=_collection(db, LOCATION_REVOCATION_COLLECTION),
+            session=session,
+        )
+
+    try:
+        value = _transaction(run)
+    except Exception as error:
+        raise _http_error(error) from error
+    return {"data": value}
 
 
 @router.post("/conflict-reviews")
