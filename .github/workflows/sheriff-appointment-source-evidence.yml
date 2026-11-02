@@ -24,7 +24,13 @@ on:
       - ci/sheriff-registry-real-mongo-cert-20261102
     paths:
       - "tools/eos/legal_operations/domain/sheriff_appointment_source_evidence.py"
+      - "tools/eos/legal_operations/domain/sheriff_ministerial_appointment_verification.py"
+      - "tools/eos/legal_operations/domain/sheriff_area_allocation_evidence.py"
+      - "tools/eos/legal_operations/domain/sheriff_professional_indemnity_insurance_evidence.py"
       - "tests/unit/test_sheriff_appointment_source_evidence.py"
+      - "tests/unit/test_sheriff_ministerial_appointment_verification.py"
+      - "tests/unit/test_sheriff_area_allocation_evidence.py"
+      - "tests/unit/test_sheriff_professional_indemnity_insurance_evidence.py"
       - "tools/eos/legal_operations/registry/sheriff_appointment_source_evidence_registry.py"
       - "tests/unit/test_sheriff_appointment_source_evidence_registry.py"
       - "tests/integration/test_sheriff_appointment_source_evidence_registry_real_mongo.py"
