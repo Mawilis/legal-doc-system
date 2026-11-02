@@ -2075,7 +2075,7 @@ async def create_deputy_location_permission_grant_command(
             context=context, deputy_id=deputy_id, challenge_id=command.challenge_id,
             signature=signature, database=db, session=session,
         )
-        return issue_process_service_location_permission_grant(
+        grant = issue_process_service_location_permission_grant(
             attempt=current, allocation_receipt=receipt, allocation_current=allocation_current,
             device_provenance=proof, principal_id=context.identity.identity_id,
             grant_id=command.grant_id, permission_granted=command.permission_granted,
@@ -2084,12 +2084,18 @@ async def create_deputy_location_permission_grant_command(
             permission_collection=_collection(db, LOCATION_PERMISSION_COLLECTION),
             session=session,
         )
+        return grant, proof
 
     try:
-        value = _transaction(run)
+        value, proof = _transaction(run)
     except Exception as error:
         raise _http_error(error) from error
-    return {"data": value.to_dict(), "fingerprint": value.fingerprint}
+    return {
+        "data": value.to_dict(),
+        "fingerprint": value.fingerprint,
+        "device_provenance_reference": proof.challenge_id,
+        "device_provenance_fingerprint": proof.fingerprint,
+    }
 
 
 @router.post("/deputy/attempts/{attempt_id}/location-evidence")
