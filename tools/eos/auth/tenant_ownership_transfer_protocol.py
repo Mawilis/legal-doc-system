@@ -233,7 +233,8 @@ class TenantOwnershipTransferProtocol:
             current_owner_principal_id=row["current_owner_principal_id"],
             successor_principal_id=row["successor_principal_id"],
             expected_revision=row["expected_revision"],
-            created_at=row["created_at"], expires_at=row["expires_at"],
+            created_at=_stored_time("proposal_created_at", row["created_at"]),
+            expires_at=_stored_time("proposal_expires_at", row["expires_at"]),
             owner_authorization_reference=row["owner_authorization_reference"],
             owner_authorization_fingerprint=row["owner_authorization_fingerprint"],
         )
