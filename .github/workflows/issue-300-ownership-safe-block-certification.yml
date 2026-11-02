@@ -6,10 +6,13 @@ on:
     paths:
       - "tools/eos/auth/tenant_owner_bootstrap.py"
       - "tools/eos/auth/tenant_ownership_verifier.py"
+      - "tools/eos/auth/tenant_ownership_evidence_registry.py"
       - "tools/eos/api/tenant_router.py"
       - "tools/eos/api/legal_operations_router.py"
       - "tests/unit/test_tenant_owner_bootstrap.py"
       - "tests/unit/test_tenant_ownership_verifier.py"
+      - "tests/unit/test_tenant_ownership_evidence_registry.py"
+      - "tests/integration/test_tenant_ownership_evidence_registry_real_mongo.py"
       - "tests/unit/test_tenant_router_fail_closed.py"
       - "tests/unit/test_legal_practice_workspace_confidentiality_boundary.py"
       - "tests/integration/test_tenant_owner_bootstrap_real_mongo.py"
@@ -21,10 +24,13 @@ on:
     paths:
       - "tools/eos/auth/tenant_owner_bootstrap.py"
       - "tools/eos/auth/tenant_ownership_verifier.py"
+      - "tools/eos/auth/tenant_ownership_evidence_registry.py"
       - "tools/eos/api/tenant_router.py"
       - "tools/eos/api/legal_operations_router.py"
       - "tests/unit/test_tenant_owner_bootstrap.py"
       - "tests/unit/test_tenant_ownership_verifier.py"
+      - "tests/unit/test_tenant_ownership_evidence_registry.py"
+      - "tests/integration/test_tenant_ownership_evidence_registry_real_mongo.py"
       - "tests/unit/test_tenant_router_fail_closed.py"
       - "tests/unit/test_legal_practice_workspace_confidentiality_boundary.py"
       - "tests/integration/test_tenant_owner_bootstrap_real_mongo.py"
@@ -70,9 +76,12 @@ jobs:
           python -m py_compile \
             tools/eos/auth/tenant_owner_bootstrap.py \
             tools/eos/auth/tenant_ownership_verifier.py \
+            tools/eos/auth/tenant_ownership_evidence_registry.py \
             tools/eos/api/legal_operations_router.py \
             tests/unit/test_tenant_owner_bootstrap.py \
             tests/unit/test_tenant_ownership_verifier.py \
+            tests/unit/test_tenant_ownership_evidence_registry.py \
+            tests/integration/test_tenant_ownership_evidence_registry_real_mongo.py \
             tests/unit/test_tenant_router_fail_closed.py \
             tests/unit/test_legal_practice_workspace_confidentiality_boundary.py \
             tests/integration/test_tenant_owner_bootstrap_real_mongo.py \
@@ -85,9 +94,12 @@ jobs:
             --pythonpath "$(command -v python)" \
             tools/eos/auth/tenant_owner_bootstrap.py \
             tools/eos/auth/tenant_ownership_verifier.py \
+            tools/eos/auth/tenant_ownership_evidence_registry.py \
             tools/eos/api/legal_operations_router.py \
             tests/unit/test_tenant_owner_bootstrap.py \
             tests/unit/test_tenant_ownership_verifier.py \
+            tests/unit/test_tenant_ownership_evidence_registry.py \
+            tests/integration/test_tenant_ownership_evidence_registry_real_mongo.py \
             tests/unit/test_tenant_router_fail_closed.py \
             tests/unit/test_legal_practice_workspace_confidentiality_boundary.py \
             tests/integration/test_tenant_owner_bootstrap_real_mongo.py \
@@ -99,6 +111,7 @@ jobs:
           python -m pytest -q -rs \
             tests/unit/test_tenant_owner_bootstrap.py \
             tests/unit/test_tenant_ownership_verifier.py \
+            tests/unit/test_tenant_ownership_evidence_registry.py \
             tests/unit/test_tenant_router_fail_closed.py \
             tests/unit/test_legal_practice_workspace_confidentiality_boundary.py \
             tests/integration/test_legal_operations_practice_workspace_http.py
@@ -170,6 +183,7 @@ jobs:
         run: |
           python -m pytest -q -rs \
             tests/integration/test_tenant_owner_bootstrap_real_mongo.py \
+            tests/integration/test_tenant_ownership_evidence_registry_real_mongo.py \
             tests/integration/test_legal_operations_practice_workspace_real_mongo.py
 
       - name: Remove disposable Mongo container

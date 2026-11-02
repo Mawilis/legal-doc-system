@@ -181,6 +181,42 @@ class VerifiedRepresentationMandate(Protocol):
 
 
 @runtime_checkable
+class VerifiedSuccessorAcceptance(Protocol):
+    """Independent successor acceptance bound to one exact owner proposal."""
+
+    tenant_id: str
+    legal_entity_reference: str
+    proposal_reference: str
+    proposal_fingerprint: str
+    current_owner_principal_id: str
+    successor_principal_id: str
+    acceptance_reference: str
+    acceptance_fingerprint: str
+    accepted_at: datetime
+    not_revoked: bool
+
+
+@runtime_checkable
+class VerifiedGovernedRecoveryAuthorization(Protocol):
+    """Independent recovery authority decision, never ordinary tenant administration."""
+
+    tenant_id: str
+    legal_entity_reference: str
+    recovery_case_reference: str
+    recovery_case_fingerprint: str
+    recovery_authority_identity: str
+    authority_scope: str
+    trust_root_reference: str
+    trust_root_fingerprint: str
+    decision_reference: str
+    decision_fingerprint: str
+    authorized_successor_principal_id: str
+    valid_at: datetime
+    not_revoked: bool
+    independent_of_current_owner: bool
+
+
+@runtime_checkable
 class VerificationProvenance(Protocol):
     """Describe deterministic verifier/source provenance, not legal sufficiency."""
 
@@ -209,6 +245,8 @@ class VerifiedTenantOwnershipEvidence:
     principal_identity: VerifiedPrincipalIdentity
     representation_mandate: VerifiedRepresentationMandate
     provenance: VerificationProvenance
+    successor_acceptance: VerifiedSuccessorAcceptance | None
+    recovery_authorization: VerifiedGovernedRecoveryAuthorization | None
 
     def __init__(self, *args: object, **kwargs: object) -> None:
         """Reject positive construction until a separately approved issuer exists."""
@@ -268,6 +306,8 @@ __all__ = [
     "VerifiedOwnershipControlEvidence",
     "VerifiedPrincipalIdentity",
     "VerifiedRepresentationMandate",
+    "VerifiedSuccessorAcceptance",
+    "VerifiedGovernedRecoveryAuthorization",
     "VerifiedTenantOwnershipEvidence",
 ]
 
