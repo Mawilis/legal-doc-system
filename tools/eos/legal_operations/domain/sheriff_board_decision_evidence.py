@@ -39,6 +39,11 @@ import json
 import re
 from typing import Final
 
+from tools.eos.legal_operations.domain.sheriff_appointment_source_evidence import (
+    SheriffSourceObservationState,
+    SheriffSourceVerificationMethod,
+)
+
 
 VERSION: Final[str] = "v1.0.0-SHERIFF-BOARD-DECISION-EVIDENCE"
 SCHEMA: Final[str] = "WILSY-SHERIFF-BOARD-DECISION-EVIDENCE/V1"
@@ -133,6 +138,18 @@ _ALLOWED_OUTCOMES: Final[dict[
         frozenset({SheriffBoardDecisionOutcome.EXEMPTED, SheriffBoardDecisionOutcome.NOT_EXEMPTED}),
 }
 
+_REQUIRED_SOURCE_METHOD: Final[dict[
+    SheriffSourceObservationState,
+    SheriffSourceVerificationMethod,
+]] = {
+    SheriffSourceObservationState.HUMAN_OBSERVED_PUBLIC_RECORD:
+        SheriffSourceVerificationMethod.PUBLIC_WEB_OBSERVATION,
+    SheriffSourceObservationState.ATTESTED_DOCUMENT_REVIEW:
+        SheriffSourceVerificationMethod.ATTESTED_DOCUMENT_REVIEW,
+    SheriffSourceObservationState.AUTHENTICATED_RESPONSE:
+        SheriffSourceVerificationMethod.AUTHENTICATED_REGULATOR_RESPONSE,
+}
+
 
 def _identifier(name: str, value: object) -> str:
     """Require one canonical bounded opaque identifier."""
@@ -194,8 +211,8 @@ class SheriffBoardDecisionEvidence:
     instrument_reference: str
     instrument_fingerprint: str
     source_uri: str
-    source_observation_state: str
-    source_verification_method: str
+    source_observation_state: SheriffSourceObservationState | str
+    source_verification_method: SheriffSourceVerificationMethod | str
     source_verification_reference: str
     verified_by_principal_id: str
     observed_at: datetime
@@ -250,6 +267,20 @@ class SheriffBoardDecisionEvidence:
         object.__setattr__(self, "decision_basis", basis)
         object.__setattr__(self, "decision_kind", kind)
         object.__setattr__(self, "decision_outcome", outcome)
+        try:
+            observation = SheriffSourceObservationState(self.source_observation_state)
+            method = SheriffSourceVerificationMethod(self.source_verification_method)
+        except (TypeError, ValueError) as error:
+            raise SheriffBoardDecisionEvidenceError(
+                "SHERIFF_BOARD_DECISION_SOURCE_ENUM_INVALID"
+            ) from error
+        required_method = _REQUIRED_SOURCE_METHOD.get(observation)
+        if required_method is not None and method is not required_method:
+            raise SheriffBoardDecisionEvidenceError(
+                "SHERIFF_BOARD_DECISION_SOURCE_METHOD_MISMATCH"
+            )
+        object.__setattr__(self, "source_observation_state", observation)
+        object.__setattr__(self, "source_verification_method", method)
 
         appointment_fp = (
             None if self.appointment_evidence_fingerprint is None
@@ -345,8 +376,8 @@ class SheriffBoardDecisionEvidence:
             "instrument_reference": self.instrument_reference,
             "instrument_fingerprint": self.instrument_fingerprint,
             "source_uri": self.source_uri,
-            "source_observation_state": self.source_observation_state,
-            "source_verification_method": self.source_verification_method,
+            "source_observation_state": SheriffSourceObservationState(self.source_observation_state).value,
+            "source_verification_method": SheriffSourceVerificationMethod(self.source_verification_method).value,
             "source_verification_reference": self.source_verification_reference,
             "verified_by_principal_id": self.verified_by_principal_id,
             "observed_at": self.observed_at.isoformat(),
