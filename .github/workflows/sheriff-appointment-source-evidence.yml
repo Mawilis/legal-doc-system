@@ -6,14 +6,19 @@ on:
     paths:
       - "tools/eos/legal_operations/domain/sheriff_appointment_source_evidence.py"
       - "tests/unit/test_sheriff_appointment_source_evidence.py"
+      - "tools/eos/legal_operations/registry/sheriff_appointment_source_evidence_registry.py"
+      - "tests/unit/test_sheriff_appointment_source_evidence_registry.py"
       - ".github/workflows/sheriff-appointment-source-evidence.yml"
   push:
     branches:
       - main
       - feat/sheriff-appointment-source-evidence-20261102
+      - feat/sheriff-appointment-evidence-registry-20261102
     paths:
       - "tools/eos/legal_operations/domain/sheriff_appointment_source_evidence.py"
       - "tests/unit/test_sheriff_appointment_source_evidence.py"
+      - "tools/eos/legal_operations/registry/sheriff_appointment_source_evidence_registry.py"
+      - "tests/unit/test_sheriff_appointment_source_evidence_registry.py"
       - ".github/workflows/sheriff-appointment-source-evidence.yml"
   workflow_dispatch:
 
@@ -46,25 +51,31 @@ jobs:
           python -m pip install --upgrade pip==25.3
           python -m pip install pytest==9.1.1 pymongo==4.18.2
 
-      - name: Compile exact domain and certificate
+      - name: Compile exact domain, registry and certificates
         run: |
           python -m py_compile \
             tools/eos/legal_operations/domain/sheriff_appointment_source_evidence.py \
-            tests/unit/test_sheriff_appointment_source_evidence.py
+            tools/eos/legal_operations/registry/sheriff_appointment_source_evidence_registry.py \
+            tests/unit/test_sheriff_appointment_source_evidence.py \
+            tests/unit/test_sheriff_appointment_source_evidence_registry.py
 
-      - name: Type-check exact domain and certificate
+      - name: Type-check exact domain, registry and certificates
         run: |
           npx --yes pyright@1.1.413 \
             --pythonpath "$(command -v python)" \
             tools/eos/legal_operations/domain/sheriff_appointment_source_evidence.py \
-            tests/unit/test_sheriff_appointment_source_evidence.py
+            tools/eos/legal_operations/registry/sheriff_appointment_source_evidence_registry.py \
+            tests/unit/test_sheriff_appointment_source_evidence.py \
+            tests/unit/test_sheriff_appointment_source_evidence_registry.py
 
       - name: Run exact unit certificate with no skips
         shell: bash
         run: |
           set -uo pipefail
           set +e
-          output="$(python -m pytest -q -rs tests/unit/test_sheriff_appointment_source_evidence.py 2>&1)"
+          output="$(python -m pytest -q -rs \
+            tests/unit/test_sheriff_appointment_source_evidence.py \
+            tests/unit/test_sheriff_appointment_source_evidence_registry.py 2>&1)"
           pytest_status=$?
           set -e
           printf '%s\n' "$output"
