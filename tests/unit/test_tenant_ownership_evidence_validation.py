@@ -20,7 +20,7 @@ from tools.eos.auth.tenant_ownership_provider_ports import (
     SigningReceipt, SigningRequest, SubjectProofingReceipt, SubjectProofingRequest,
 )
 
-NOW = datetime(2026, 11, 2, 12, tzinfo=timezone.utc)
+NOW = datetime.now(timezone.utc)
 
 
 def fp(value: str) -> str:
