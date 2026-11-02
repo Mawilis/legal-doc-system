@@ -159,6 +159,15 @@ def test_deputy_sheriff_requires_appointing_sheriff_and_board_approval() -> None
     assert item.capacity is SheriffAppointmentCapacity.DEPUTY_SHERIFF
     assert item.permits_operational_access is False
 
+    with pytest.raises(SheriffAppointmentSourceEvidenceError) as self_appointed:
+        evidence(
+            **values,
+            appointing_principal_id="principal-sheriff",
+            board_approval_reference="sabfs-approval-1",
+            board_approval_fingerprint=BOARD_FP,
+        )
+    assert self_appointed.value.code == "SHERIFF_SOURCE_DEPUTY_SELF_APPOINTMENT_FORBIDDEN"
+
 
 @pytest.mark.parametrize(
     ("basis", "extra", "expected"),
