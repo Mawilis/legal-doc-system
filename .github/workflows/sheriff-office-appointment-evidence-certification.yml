@@ -17,6 +17,8 @@ on:
       - "tools/eos/auth/roles.py"
       - "tools/eos/auth/tenant_authority_policy.py"
       - "tests/unit/test_sheriff_office_appointment_authority_iam.py"
+      - "tools/eos/api/legal_operations_command_router.py"
+      - "tests/unit/test_sheriff_office_appointment_command_api.py"
       - ".github/workflows/sheriff-office-appointment-evidence-certification.yml"
   workflow_dispatch:
 
@@ -112,6 +114,8 @@ jobs:
             tools/eos/auth/roles.py \
             tools/eos/auth/tenant_authority_policy.py \
             tests/unit/test_sheriff_office_appointment_authority_iam.py \
+            tools/eos/api/legal_operations_command_router.py \
+            tests/unit/test_sheriff_office_appointment_command_api.py \
             tests/integration/test_sheriff_office_appointment_authority_registry_real_mongo.py
 
       - name: Type-check appointment evidence domain and certificate
@@ -128,7 +132,9 @@ jobs:
             tools/eos/auth/permission_namespace.py \
             tools/eos/auth/roles.py \
             tools/eos/auth/tenant_authority_policy.py \
-            tests/unit/test_sheriff_office_appointment_authority_iam.py
+            tests/unit/test_sheriff_office_appointment_authority_iam.py \
+            tools/eos/api/legal_operations_command_router.py \
+            tests/unit/test_sheriff_office_appointment_command_api.py
 
       - name: Run appointment evidence unit and real-Mongo certificates
         run: |
@@ -137,7 +143,8 @@ jobs:
             tests/unit/test_sheriff_office_appointment_authority_registry.py \
             tests/integration/test_sheriff_office_appointment_authority_registry_real_mongo.py \
             tests/unit/test_sheriff_office_appointment_authority_orchestrator.py \
-            tests/unit/test_sheriff_office_appointment_authority_iam.py
+            tests/unit/test_sheriff_office_appointment_authority_iam.py \
+            tests/unit/test_sheriff_office_appointment_command_api.py
 
       - name: Stop isolated MongoDB replica set
         if: always()
