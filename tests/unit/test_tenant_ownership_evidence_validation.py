@@ -328,3 +328,26 @@ def test_verified_recovery_composition_denies_provider_outage_before_persisting(
     validated = validate_recovery_decision(lookup, envelope, keys)
     registry.consume_validated(validated, session=Session())
     assert len(db.rows.docs) == 1
+
+
+
+def test_registry_rejects_duplicate_filing_identifiers() -> None:
+    row = snapshot("duplicate")
+    with pytest.raises(OwnershipEvidenceValidationError, match="DUPLICATE_FILING_REFERENCE"):
+        assess_registry_snapshots((row, row), evaluated_at=NOW, max_age=timedelta(days=1))
+
+
+def test_registry_rejects_cross_entity_supersession() -> None:
+    original = snapshot("original")
+    successor = replace(snapshot("successor", supersedes="original"), record_reference="other-entity")
+    result = assess_registry_snapshots((original, successor), evaluated_at=NOW, max_age=timedelta(days=1))
+    assert result.status == "DENY"
+    assert result.reason == "SUPERSESSION_SCOPE_MISMATCH"
+
+
+def test_signing_rejects_algorithm_downgrade() -> None:
+    request = signing_request()
+    keys = Keys()
+    receipt = replace(signed_receipt(request, keys), algorithm="RSA-PSS")
+    with pytest.raises(OwnershipEvidenceValidationError, match="SIGNING_ALGORITHM_UNSUPPORTED"):
+        verify_signing_receipt(request, receipt, keys)
