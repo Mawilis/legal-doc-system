@@ -2414,6 +2414,9 @@ async def get_sheriff_office_location_evidence_projection(
         district = cast(District, district_model.current)
         if (
             district.district_id != office.district_id
+            or receipt.district_id != district.district_id
+            or receipt.source_sheriff_office_fingerprint != office.fingerprint
+            or receipt.source_district_fingerprint != district.fingerprint
             or appointment.district_id != district.district_id
             or appointment.certificate_jurisdiction_reference != district.jurisdiction_code
         ):
