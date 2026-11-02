@@ -50,6 +50,16 @@ def test_registry_selects_latest_unambiguous_superseding_filing() -> None:
     )
 
 
+def test_stale_superseded_filing_does_not_override_fresh_current_filing() -> None:
+    result = assess_registry_snapshots(
+        (snapshot("historic", retrieved=NOW - timedelta(days=30)),
+         snapshot("current", supersedes="historic", retrieved=NOW)),
+        evaluated_at=NOW, max_age=timedelta(days=1),
+    )
+    assert result.status == "VERIFIED_SOURCE_FACT"
+    assert result.selected_filing_reference == "current"
+
+
 @pytest.mark.parametrize(("rows", "reason"), [
     ((snapshot("old", retrieved=NOW - timedelta(days=3)),), "SOURCE_RECORD_STALE"),
     ((snapshot("future", effective=NOW + timedelta(seconds=1)),), "SOURCE_RECORD_FROM_FUTURE"),
