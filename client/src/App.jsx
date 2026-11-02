@@ -1,7 +1,7 @@
 /* eslint-disable */
 /**
  * TITLE: WILSY OS Sovereign Application Root
- * VERSION: v20.1.1-ALL-PROTECTED-ROUTES-LOGOUT-PROPAGATION
+ * VERSION: v20.2.0-TENANT-SUBSCRIPTION-MANAGEMENT-ROUTE
  * AUTHORITY: Wilsy OS Core Governance
  * EPITOME: Composes authenticated routing, exact tenant projection, legal
  *          admission release, and protected workspace presentation without
@@ -11,8 +11,12 @@
  *                            TenantProvider owns bounded tenant projection;
  *                            Python EOS owns authentication, workspace and
  *                            legal-acceptance truth.
- * CERTIFICATION / UPDATE DATE: 2026-09-24
+ * CERTIFICATION / UPDATE DATE: 2026-10-30
  * CHANGELOG:
+ *   v20.2.0-TENANT-SUBSCRIPTION-MANAGEMENT-ROUTE — Adds a protected /billing
+ *     route for authenticated tenant owners, administrators and managers, plus
+ *     existing finance and sovereign operators. Route eligibility is a client
+ *     presentation filter only; Python EOS remains final subscription authority.
  *   v20.1.1-ALL-PROTECTED-ROUTES-LOGOUT-PROPAGATION — Promotes the legal boundary
  *     from REQUIRED to COMPLETE only when LegalAcceptanceGate reports the
  *     server-confirmed COMPLETE state, so the protected runtime mounts in the
@@ -62,6 +66,8 @@ import WilsyOSIntelligenceDockRuntime from './components/intelligence/WilsyOSInt
 import { SovereignOrchestrator, useSovereignMesh } from './components/sovereign/SovereignOrchestrator.jsx';
 import { DataOrchestratorProvider, useSovereignData } from './components/sovereign/DataOrchestrator.jsx';
 
+const BillingHUD = React.lazy(() => import('./components/billing/BillingHUD.jsx'));
+
 // 🛡️ Global development telemetry suppression flag.
 const IS_DEV_MODE = import.meta.env.DEV;
 
@@ -106,6 +112,24 @@ const ProtectedTmsRoute = ({ user, children }) => {
  * @collaboration Wilson Khanyezi & AI Engineering (2026-08-19)
  * @epitome "Institutional Finality"
  */
+/**
+ * @description Presentation-only entry guard for the tenant subscription console.
+ *              Canonical business roles come from AuthProvider's bounded
+ *              Python-EOS workspace projection. This route never grants API
+ *              permission; subscription and entitlement mutations remain
+ *              independently authorized by Python EOS.
+ */
+const ProtectedBillingRoute = ({ user, children }) => {
+  const role = String(user?.role || user?.userRole || '').trim().toUpperCase();
+  const allowedRoles = new Set([
+    'TENANT_OWNER', 'TENANT_ADMIN', 'TENANT_MANAGER',
+    'FINANCE', 'FINANCE_MANAGER', 'BILLING_ADMIN', 'CFO', 'ACCOUNTANT',
+    'FOUNDER', 'FOUNDER_ARCHITECT', 'SUPER_ADMIN', 'SUPERADMIN', 'OMEGA', 'CEO',
+  ]);
+  if (!allowedRoles.has(role)) return <Navigate to="/" replace />;
+  return <>{children}</>;
+};
+
 const SovereignRouter = () => {
   const {
     isAuthenticated,
@@ -245,6 +269,13 @@ const SovereignRouter = () => {
       {/* Explicit /dashboard route for soft navigation */}
       <Route path="/dashboard" element={
         isAuthenticated && user ? <ErrorBoundary><SovereignDashboardController user={user} onLogout={logout} /></ErrorBoundary> : <Navigate to={unauthenticatedEntryPath} replace />
+      } />
+      <Route path="/billing" element={
+        isAuthenticated && user ? (
+          <ProtectedBillingRoute user={user}>
+            <ErrorBoundary><BillingHUD user={user} /></ErrorBoundary>
+          </ProtectedBillingRoute>
+        ) : <Navigate to={unauthenticatedEntryPath} replace />
       } />
       <Route path="/ledger" element={
         isAuthenticated && user ? (
@@ -431,7 +462,7 @@ export default App;
 
 /**
  * ARTIFACT: client/src/App.jsx
- * VERSION: v20.1.1-ALL-PROTECTED-ROUTES-LOGOUT-PROPAGATION
+ * VERSION: v20.2.0-TENANT-SUBSCRIPTION-MANAGEMENT-ROUTE
  * AUTHORITY BOUNDARY: client route and protected-runtime composition only; Python EOS remains authentication, tenant and legal-acceptance authority
  * TENANT POSTURE: discovered tenant may choose login routing but cannot establish authenticated or protected scope
  * FAIL-CLOSED POSTURE: auth revalidation waits; unresolved legal status remains sealed; only server-confirmed legal COMPLETE mounts protected runtime
