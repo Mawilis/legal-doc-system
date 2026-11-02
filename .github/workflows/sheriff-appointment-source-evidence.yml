@@ -140,6 +140,7 @@ jobs:
             tools/eos/legal_operations/domain/sheriff_appointment_source_evidence.py
             tests/unit/test_sheriff_appointment_source_evidence.py
             tests/unit/test_sheriff_ministerial_appointment_verification.py
+            tests/unit/test_sheriff_area_allocation_evidence.py
           )
           if [[ -f tools/eos/legal_operations/domain/sheriff_ministerial_appointment_verification.py ]]; then
             files+=(tools/eos/legal_operations/domain/sheriff_ministerial_appointment_verification.py)
