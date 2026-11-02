@@ -1,5 +1,5 @@
 """TITLE: WILSY OS Permission Namespace Semantic Canon.
-VERSION: v1.55.0-L10A2R-C4D7-RECONCILIATION-READ-PERMISSION
+VERSION: v1.56.0-L8-SHERIFF-APPOINTMENT-EVIDENCE-PERMISSION
 AUTHORITY: Immutable permission vocabulary and scope metadata only.
 EPITOME: Extends the canonical TENANT and SYSTEM permission vocabulary with dedicated
 inbound-collection, merchant-configuration, provider-policy, WILSY AI,
@@ -243,7 +243,7 @@ from types import MappingProxyType
 from typing import Final
 
 
-VERSION = "v1.55.0-L10A2R-C4D7-RECONCILIATION-READ-PERMISSION"
+VERSION = "v1.56.0-L8-SHERIFF-APPOINTMENT-EVIDENCE-PERMISSION"
 
 
 class PermissionDisposition(StrEnum):
@@ -1190,7 +1190,7 @@ __all__ = [
 ]
 
 # ARTIFACT: tools/eos/auth/permission_namespace.py
-# VERSION: v1.55.0-L10A2R-C4D7-RECONCILIATION-READ-PERMISSION
+# VERSION: v1.56.0-L8-SHERIFF-APPOINTMENT-EVIDENCE-PERMISSION
 # AUTHORITY BOUNDARY: canonical permission vocabulary semantics only; no possession or authorization authority
 # TENANT POSTURE: conflict-review, client-matter, client-visibility and other tenant permissions require separately proven exact ACTIVE tenant membership
 # FAIL-CLOSED POSTURE: unknown, malformed, ambiguous and legacy values never manufacture authority
