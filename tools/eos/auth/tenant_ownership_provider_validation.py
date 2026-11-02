@@ -28,8 +28,8 @@ from tools.eos.auth.tenant_ownership_provider_ports import (
 )
 
 VERSION: Final[str] = "v1.0.0-ISSUE-300-CONFORMANCE-CRYPTO-RECOVERY"
-_DIGEST = re.compile(r"(?:sha256:)?[0-9a-f]{64}\\Z", re.IGNORECASE)
-_TOKEN = re.compile(r"[A-Za-z0-9][A-Za-z0-9._:/@+-]{0,255}\\Z")
+_DIGEST = re.compile(r"(?:sha256:)?[0-9a-f]{64}\Z", re.IGNORECASE)
+_TOKEN = re.compile(r"[A-Za-z0-9][A-Za-z0-9._:/@+-]{0,255}\Z")
 RECOVERY_REPLAYS: Final[str] = "tenant_ownership_recovery_decision_replays"
 
 
