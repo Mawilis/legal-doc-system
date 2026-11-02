@@ -14,7 +14,8 @@ from tools.eos.auth.tenant_ownership_provider_ports import (
 )
 from tools.eos.auth.tenant_ownership_provider_validation import (
     OwnershipProviderEvidenceError, RegistryFreshnessPolicy, VerificationKey,
-    assess_registry_lineage, validate_recovery_decision, verify_provider_signature,
+    assess_registry_lineage, invoke_provider_fail_closed, validate_recovery_decision,
+    verify_provider_signature,
 )
 
 
@@ -137,3 +138,23 @@ def test_recovery_decision_rejects_naive_timestamps() -> None:
         validate_recovery_decision(lookup(), replace(receipt(), issued_at=datetime(2026, 11, 2)),
                                    evaluated_at=NOW)
     assert caught.value.code == "RECOVERY_DECISION_ISSUED_AT_MUST_BE_TIMEZONE_AWARE"
+
+
+@pytest.mark.parametrize("failure", [
+    TimeoutError("provider timeout"),
+    ConnectionError("provider unavailable"),
+    ValueError("malformed provider response"),
+])
+def test_external_provider_failures_are_bounded_and_fail_closed(failure: Exception) -> None:
+    def unavailable():
+        raise failure
+    with pytest.raises(OwnershipProviderEvidenceError) as caught:
+        invoke_provider_fail_closed("registry", unavailable)
+    assert caught.value.code == "REGISTRY_PROVIDER_UNAVAILABLE"
+    assert "provider timeout" not in str(caught.value)
+
+
+def test_external_provider_success_is_returned_without_trust_elevation() -> None:
+    assert invoke_provider_fail_closed("registry", lambda: {"status": "untrusted"}) == {
+        "status": "untrusted"
+    }
