@@ -203,13 +203,13 @@ def _validated_recovery_decision(
 ) -> ValidatedRecoveryDecision:
     value = object.__new__(ValidatedRecoveryDecision)
     fields = {
-        "tenant_id": decision.tenant_id,
+        "tenant_id": lookup.tenant_id,
         "legal_entity_reference": lookup.legal_entity_reference,
-        "recovery_case_reference": decision.recovery_case_reference,
+        "recovery_case_reference": lookup.recovery_case_reference,
         "recovery_case_fingerprint": lookup.recovery_case_fingerprint,
-        "successor_principal_id": decision.successor_principal_id,
-        "decision_reference": decision.decision_reference,
-        "decision_fingerprint": decision.decision_fingerprint,
+        "successor_principal_id": lookup.successor_principal_id,
+        "decision_reference": receipt.decision_reference,
+        "decision_fingerprint": receipt.decision_fingerprint,
         "validation_fingerprint": sha256(message + signature).hexdigest(),
     }
     for name, item in fields.items():
@@ -326,11 +326,11 @@ class RecoveryDecisionReplayRegistry:
             raise OwnershipEvidenceValidationError("RECOVERY_REPLAY_SCOPE_INVALID")
         try:
             self._rows.insert_one({
-                "tenant_id": lookup.tenant_id,
-                "decision_reference": receipt.decision_reference,
-                "decision_fingerprint": receipt.decision_fingerprint,
-                "recovery_case_reference": lookup.recovery_case_reference,
-                "successor_principal_id": lookup.successor_principal_id,
+                "tenant_id": decision.tenant_id,
+                "decision_reference": decision.decision_reference,
+                "decision_fingerprint": decision.decision_fingerprint,
+                "recovery_case_reference": decision.recovery_case_reference,
+                "successor_principal_id": decision.successor_principal_id,
                 "consumed_at": datetime.now(timezone.utc),
                 "legal_entity_reference": decision.legal_entity_reference,
                 "recovery_case_fingerprint": decision.recovery_case_fingerprint,
