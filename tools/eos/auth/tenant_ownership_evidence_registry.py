@@ -393,11 +393,14 @@ class TenantOwnershipEvidenceRegistry:
         if row is None:
             return None
         try:
+            revision = row["revision"]
+            if type(revision) is not int or revision < 1:
+                raise ValueError("current pointer revision invalid")
             return TenantOwnershipCurrent(
                 tenant_id=tenant,
                 legal_entity_reference=_identifier("legal_entity_reference", row["legal_entity_reference"]),
                 principal_id=_identifier("principal_id", row["principal_id"]),
-                revision=row["revision"],
+                revision=revision,
                 evidence_id=_identifier("evidence_id", row["evidence_id"]),
             )
         except (KeyError, TypeError, ValueError) as error:
