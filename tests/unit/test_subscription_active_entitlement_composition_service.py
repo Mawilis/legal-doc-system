@@ -206,6 +206,10 @@ class Registry:
         return value
 
     @classmethod
+    def list_entities(cls, *args: object, **kwargs: object) -> object:
+        return cls._call("list_entities", args, kwargs)
+
+    @classmethod
     def create(cls, *args: object, **kwargs: object) -> object:
         return cls._call("create", args, kwargs)
 
@@ -267,6 +271,10 @@ def install(
 
 def invoke(operation: str) -> Any:
     """Invoke one exact public surface without hidden caller transaction input."""
+    if operation == "reconcile_existing":
+        return service.SubscriptionActiveEntitlementCompositionService.reconcile_existing(
+            identity()
+        )
     if operation == "create":
         return service.SubscriptionActiveEntitlementCompositionService.create(
             {"idempotencyKey": "commercial-create-key"}, identity()
@@ -275,6 +283,62 @@ def invoke(operation: str) -> Any:
     if operation == "upgrade":
         return method("subscription-p42", {"newPlanId": "plan-legal"}, identity())
     return method("subscription-p42", {"reason": "certificate"}, identity())
+
+
+
+def test_existing_subscription_reconciliation_issues_without_mutating_subscription(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """Existing active subscription receives authorized replay-safe issuance in one transaction."""
+    value = entity()
+    events: list[str] = []
+    database, client, issue_calls, _constructed = install(
+        monkeypatch,
+        [ (value,) ],
+        operation="reconcile_existing",
+        sessions=[Session(events)],
+    )
+    result = invoke("reconcile_existing")
+    assert result.subscription is value
+    assert result.legal_entitlement_applicable is True
+    assert result.entitlement_issuance_result is not None
+    assert client.calls == 1
+    assert events == ["start", "issue", "commit"]
+    assert Registry.calls[0][0] == "list_entities"
+    args, kwargs = Registry.calls[0][1], Registry.calls[0][2]
+    assert args == ("tenant-p42",)
+    assert kwargs["collection"] is database.collections[service.SUBSCRIPTION_COLLECTION]
+    assert kwargs["session"] is not None
+    assert issue_calls[0]["session"] is kwargs["session"]
+    assert issue_calls[0]["idempotency_key"] == service._existing_subscription_issuance_idempotency(value)
+
+
+def test_existing_subscription_reconciliation_rejects_ambiguous_source(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """More than one eligible existing subscription cannot be selected heuristically."""
+    events: list[str] = []
+    install(
+        monkeypatch,
+        [(entity(), entity(proof="b" * 128))],
+        operation="reconcile_existing",
+        sessions=[Session(events)],
+    )
+    with pytest.raises(
+        service.SubscriptionActiveEntitlementCompositionLifecycleError,
+        match="D22B3_P42_EXISTING_SUBSCRIPTION_CARDINALITY_INVALID",
+    ):
+        invoke("reconcile_existing")
+    assert events == ["start", "abort"]
+
+
+def test_existing_subscription_reconciliation_replay_key_is_stable() -> None:
+    """Repeated reconciliation binds to immutable subscription proof, not wall clock."""
+    value = entity()
+    first = service._existing_subscription_issuance_idempotency(value)
+    second = service._existing_subscription_issuance_idempotency(value)
+    assert first == second
+    assert len(first) <= 64
 
 
 def test_import_version_result_contract_and_immutable_result() -> None:
@@ -295,6 +359,7 @@ def test_import_version_result_contract_and_immutable_result() -> None:
 def test_public_api_exposes_no_product_session_transaction_or_runtime_authority() -> None:
     """Certify exact bounded caller surfaces for later router replacement."""
     cls = service.SubscriptionActiveEntitlementCompositionService
+    assert list(inspect.signature(cls.reconcile_existing).parameters) == ["identity"]
     assert list(inspect.signature(cls.create).parameters) == ["payload", "identity"]
     assert list(inspect.signature(cls.upgrade).parameters) == [
         "subscription_id", "payload", "identity"
