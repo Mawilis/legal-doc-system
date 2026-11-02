@@ -75,8 +75,6 @@ def assess_registry_snapshots(
         _fingerprint(item.attributes_fingerprint, "REGISTRY_ATTRIBUTES_FINGERPRINT_INVALID")
         if retrieved > now or effective > now:
             return RegistryAssessment("DENY", None, None, "SOURCE_RECORD_FROM_FUTURE")
-        if now - retrieved > max_age:
-            return RegistryAssessment("DENY", None, None, "SOURCE_RECORD_STALE")
         by_filing[item.filing_reference] = item
     if not by_filing:
         return RegistryAssessment("DENY", None, None, "NO_CURRENT_FILING")
@@ -109,6 +107,8 @@ def assess_registry_snapshots(
     if len(heads) != 1:
         return RegistryAssessment("DENY", None, None, "CONFLICTING_CURRENT_FILINGS")
     head = heads[0]
+    if now - _utc(head.retrieved_at, "REGISTRY_RETRIEVAL_TIME_INVALID") > max_age:
+        return RegistryAssessment("DENY", None, None, "SOURCE_RECORD_STALE")
     if head.record_status.upper() not in {"ACTIVE", "CURRENT"}:
         return RegistryAssessment("DENY", None, None, "SOURCE_RECORD_NOT_ACTIVE")
     return RegistryAssessment("VERIFIED_SOURCE_FACT", head.filing_reference,
