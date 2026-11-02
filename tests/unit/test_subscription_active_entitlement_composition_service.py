@@ -280,7 +280,7 @@ def invoke(operation: str) -> Any:
 def test_import_version_result_contract_and_immutable_result() -> None:
     """Certify version metadata and immutable typed minimum result contract."""
     assert service.VERSION == (
-        "v1.1.0-D22B3-P42-CATALOGUE-UPGRADE-COMPOSITION"
+        "v1.3.0-P42-FOUNDER-PERPETUAL-LEGAL-ISSUANCE"
     )
     value = service.SubscriptionActiveEntitlementCompositionResult(
         commercial_result={},
