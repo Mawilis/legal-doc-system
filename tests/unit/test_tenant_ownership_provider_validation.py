@@ -15,7 +15,7 @@ from tools.eos.auth.tenant_ownership_provider_ports import (
 from tools.eos.auth.tenant_ownership_provider_validation import (
     OwnershipProviderEvidenceError, RegistryFreshnessPolicy, VerificationKey,
     assess_registry_lineage, invoke_provider_fail_closed, validate_recovery_decision,
-    verify_provider_signature,
+    verify_provider_signature, recovery_decision_signing_payload,
 )
 
 
@@ -158,3 +158,17 @@ def test_external_provider_success_is_returned_without_trust_elevation() -> None
     assert invoke_provider_fail_closed("registry", lambda: {"status": "untrusted"}) == {
         "status": "untrusted"
     }
+
+
+def test_recovery_signature_payload_binds_signing_key_revision() -> None:
+    payload = recovery_decision_signing_payload(
+        lookup(), receipt(), key_reference="hsm-key-7", key_revision=7,
+    )
+    rotated = recovery_decision_signing_payload(
+        lookup(), receipt(), key_reference="hsm-key-7", key_revision=8,
+    )
+    substituted = recovery_decision_signing_payload(
+        lookup(), receipt(), key_reference="other-key", key_revision=7,
+    )
+    assert payload != rotated
+    assert payload != substituted
