@@ -14,7 +14,7 @@ from typing import Any, Final, Protocol
 from pymongo import ASCENDING
 from pymongo.errors import DuplicateKeyError, PyMongoError
 
-VERSION: Final[str] = "v1.1.0-ISSUE-300-GOVERNED-TRUST-ROOT-REVOCATION"
+VERSION: Final[str] = "v1.2.0-ISSUE-300-GOVERNED-TRUST-ROOT-ROTATION-REVOCATION"
 COLLECTION: Final[str] = "tenant_ownership_governed_trust_roots"
 EVENTS: Final[str] = "tenant_ownership_trust_root_events"
 ROOT_SCOPE: Final[str] = "TENANT_OWNERSHIP_ISSUER"
