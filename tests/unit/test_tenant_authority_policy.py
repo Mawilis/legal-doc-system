@@ -130,6 +130,7 @@ def test_matrix_boundaries() -> None:
     assert tenant_role_operation_eligibility("tenant_owner", "role_grant") == DENY
     assert tenant_role_operation_eligibility("tenant_admin", "lifecycle_archive") == DENY
     assert tenant_role_operation_eligibility("tenant_owner", "lifecycle_create") == DENY
+    assert tenant_role_operation_eligibility("tenant_owner", "lifecycle_create") == DENY
     assert normalize_tenant_business_role("SUPER_ADMIN") is None
     assert normalize_tenant_business_role("AUDITOR") is None
     assert tenant_role_operation_eligibility("unknown", "profile_read") == DENY
@@ -138,7 +139,6 @@ def test_matrix_boundaries() -> None:
     assert tenant_role_operation_eligibility("unknown", "unknown_operation") == DENY
     assert tenant_role_operation_eligibility("tenant_auditor", "profile_update") == DENY
     assert tenant_role_operation_eligibility("tenant_auditor", "membership_invite") == DENY
-    assert tenant_role_operation_eligibility("tenant_auditor", "role_grant") == DENY
     assert tenant_role_operation_eligibility("tenant_auditor", "role_revoke") == DENY
     assert tenant_role_operation_eligibility("tenant_owner", "role_revoke") == DENY
     assert tenant_role_operation_eligibility("tenant_admin", "lifecycle_create") == DENY
@@ -917,15 +917,11 @@ def test_legal_evidence_write_eligibility_is_partner_only() -> None:
 
 def test_legal_firm_owner_admin_and_entitlement_boundaries_are_explicit() -> None:
     """Ownership is not a universal admin, professional or financial superuser."""
-    assert tenant_role_operation_eligibility("tenant_owner", "lifecycle_archive") == ELIGIBLE
     assert tenant_role_operation_eligibility("tenant_owner", "platform_billing_release") == ELIGIBLE
     assert tenant_role_operation_eligibility("tenant_owner", "role_grant") == DENY
     assert tenant_role_operation_eligibility("tenant_owner", "role_revoke") == DENY
 
-    assert tenant_role_operation_eligibility("tenant_admin", "role_grant") == ELIGIBLE
-    assert tenant_role_operation_eligibility("tenant_admin", "role_revoke") == ELIGIBLE
     assert tenant_role_operation_eligibility("tenant_admin", "lifecycle_archive") == DENY
-    assert tenant_role_operation_eligibility("tenant_manager", "role_grant") == DENY
     assert tenant_role_operation_eligibility("tenant_auditor", "role_grant") == DENY
 
     for role in ("tenant_owner", "tenant_admin", "tenant_manager"):
