@@ -183,7 +183,7 @@ def test_genesis_requires_existing_pretenant_provisioner_authority() -> None:
             session=_Session(),
         )
     assert str(raised.value) == "PRETENANT_PROVISIONER_AUTHORIZATION_DENIED"
-    assert registry.appends == 0
+    assert registry.current_reads == registry.appends == 0
 
 
 def test_genesis_remains_denied_without_independent_issuer() -> None:
