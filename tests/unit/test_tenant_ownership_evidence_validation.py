@@ -273,7 +273,7 @@ def test_verified_recovery_composition_denies_provider_outage_before_persisting(
     lookup, envelope = recovery_fixture(keys)
     db = Database()
     registry = RecoveryDecisionReplayRegistry(db)
-    with pytest.raises(OwnershipEvidenceValidationError, match="KEY_STATUS_UNAVAILABLE"):
+    with pytest.raises(OwnershipEvidenceValidationError, match="RECOVERY_KEY_STATUS_UNAVAILABLE"):
         validate_recovery_decision(lookup, envelope, Unavailable())
     assert db.rows.docs == []
     validated = validate_recovery_decision(lookup, envelope, keys)
