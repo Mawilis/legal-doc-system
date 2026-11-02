@@ -87,6 +87,12 @@ jobs:
           client.close()
           PY
 
+      - name: Install client dependencies
+        run: npm ci --prefix client
+
+      - name: Run Deputy location browser transport certificate
+        run: npm --prefix client run test:run -- src/__tests__/services/legalOperationsService.test.js
+
       - name: Compile provenance contracts and certificates
         run: |
           python -m py_compile \
