@@ -1,0 +1,48 @@
+name: Tenant branding asset lifecycle certification
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - "client/src/hooks/useAuthenticatedTenantBrandingAsset.js"
+      - "client/tests/hooks/useAuthenticatedTenantBrandingAsset.test.jsx"
+      - "client/src/services/tenantBrandingAssetClient.js"
+      - "client/package.json"
+      - "client/package-lock.json"
+      - ".github/workflows/tenant-branding-asset-lifecycle.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: tenant-branding-asset-lifecycle-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  tenant-branding-asset-lifecycle:
+    name: Tenant branding stale-frame regression
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    defaults:
+      run:
+        working-directory: client
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: npm
+          cache-dependency-path: client/package-lock.json
+
+      - name: Install locked client dependencies
+        run: npm ci
+
+      - name: Run authenticated tenant-branding lifecycle tests
+        run: npm run test:run -- tests/hooks/useAuthenticatedTenantBrandingAsset.test.jsx
+
+      - name: Build client
+        run: npm run build
