@@ -306,7 +306,7 @@ def create_process_service_location_observation(*, attempt: ServiceAttempt,
         "permission_grant_fingerprint": permission_grant.fingerprint,
         "evidence_reference": _ref("evidence_reference", evidence_reference)}
     payload = _observation_payload(values)
-    return ProcessServiceLocationObservation(**values, _proof=_issue(_digest(payload)))
+    return ProcessServiceLocationObservation(**cast(Any, values), _proof=_issue(_digest(payload)))
 
 # ARTIFACT: process_service_location_evidence_authority.py
 # VERSION: v1.0.0-PROCESS-SERVICE-LOCATION-EVIDENCE
