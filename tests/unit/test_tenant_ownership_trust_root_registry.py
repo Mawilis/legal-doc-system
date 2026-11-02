@@ -47,7 +47,7 @@ class Database:
 class Verifier:
     def verify(self, request: TrustRootEnrollmentRequest) -> VerifiedTrustRootEnrollment:
         return VerifiedTrustRootEnrollment(
-            request=request, verified_at=request.valid_from + timedelta(minutes=1),
+            request=request, verified_at=datetime.now(timezone.utc),
             governance_verifier_id="governance-verifier",
             governance_verifier_version="1.0",
             governance_proof_fingerprint="proof-fingerprint",
