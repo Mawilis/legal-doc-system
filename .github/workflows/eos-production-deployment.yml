@@ -138,6 +138,8 @@ jobs:
           kubectl apply -f k8s/eos-api-production.yaml
           kubectl annotate serviceaccount wilsy-eos-api \
             "eks.amazonaws.com/role-arn=$AWS_EOS_RUNTIME_ROLE_ARN" --overwrite
+          # Recreate pods after the ServiceAccount receives its workload role.
+          kubectl rollout restart deployment/wilsy-eos-api
 
       - name: Roll out digest-pinned EOS workload
         shell: bash
