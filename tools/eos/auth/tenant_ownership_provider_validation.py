@@ -280,12 +280,15 @@ def _active_transaction(session: Any) -> None:
 
 
 def recovery_decision_signing_payload(
-    lookup: RecoveryDecisionLookup, receipt: RecoveryDecisionReceipt
+    lookup: RecoveryDecisionLookup, receipt: RecoveryDecisionReceipt, *,
+    key_reference: str, key_revision: int,
 ) -> bytes:
     """Canonical bytes bind every decision claim to the exact request scope."""
     if type(lookup) is not RecoveryDecisionLookup or type(receipt) is not RecoveryDecisionReceipt:
         raise OwnershipProviderEvidenceError("RECOVERY_DECISION_TYPES_INVALID")
     payload = {
+        "signing_key_reference": _token("key_reference", key_reference),
+        "signing_key_revision": key_revision,
         "tenant_id": lookup.tenant_id,
         "legal_entity_reference": lookup.legal_entity_reference,
         "recovery_case_reference": lookup.recovery_case_reference,
@@ -307,6 +310,8 @@ def recovery_decision_signing_payload(
         "valid_until": _instant("valid_until", receipt.valid_until).isoformat(),
         "revocation_reference": receipt.revocation_reference,
     }
+    if type(key_revision) is not int or key_revision < 1:
+        raise OwnershipProviderEvidenceError("SIGNING_KEY_REVISION_INVALID")
     return json.dumps(payload, sort_keys=True, separators=(",", ":"), ensure_ascii=True).encode("ascii")
 
 
@@ -340,7 +345,10 @@ class RecoveryDecisionReplayRegistry:
     ) -> None:
         _active_transaction(session)
         validate_recovery_decision(lookup, receipt, evaluated_at=evaluated_at)
-        signed_payload = recovery_decision_signing_payload(lookup, receipt)
+        signed_payload = recovery_decision_signing_payload(
+            lookup, receipt, key_reference=verification_key.key_reference,
+            key_revision=verification_key.key_revision,
+        )
         verify_provider_signature(
             message=signed_payload, signature_b64=signature_b64,
             key=verification_key, evaluated_at=evaluated_at,
