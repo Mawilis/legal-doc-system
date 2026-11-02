@@ -125,6 +125,7 @@ class RecoveryDecisionReceipt:
     issued_at: datetime
     valid_until: datetime
     revocation_reference: str
+    revoked_at: datetime | None = None
 
 
 @runtime_checkable
