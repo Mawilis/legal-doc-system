@@ -310,11 +310,12 @@ def verify_ministerial_appointment(
         or canonical_evidence.tenant_id != capture.tenant_id
         or canonical_evidence.principal_id != capture.principal_id
         or canonical_evidence.verified_subject_reference != capture.subject_reference
-        or canonical_evidence.verified_by_principal_id != capture.actor_principal_id
     ):
         reason = MinisterialAppointmentVerificationReason.ACTOR_SCOPE_MISMATCH
     elif capture.actor_principal_id == canonical_evidence.principal_id:
         reason = MinisterialAppointmentVerificationReason.SELF_ATTESTATION
+    elif canonical_evidence.verified_by_principal_id != capture.actor_principal_id:
+        reason = MinisterialAppointmentVerificationReason.ACTOR_SCOPE_MISMATCH
     elif canonical_evidence.issuer_authority is not SheriffAppointmentIssuerAuthority.MINISTER:
         reason = MinisterialAppointmentVerificationReason.ISSUER_CAPACITY_MISMATCH
     elif (
