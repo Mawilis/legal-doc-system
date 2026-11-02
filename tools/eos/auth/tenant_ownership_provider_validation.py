@@ -14,7 +14,7 @@ from datetime import datetime, timedelta, timezone
 from hashlib import sha256
 import re
 import json
-from typing import Any, Final, Iterable
+from typing import Any, Callable, Final, Iterable, TypeVar
 
 from cryptography.exceptions import InvalidSignature
 from cryptography.hazmat.primitives import hashes, serialization
@@ -40,6 +40,22 @@ class OwnershipProviderEvidenceError(ValueError):
     def __init__(self, code: str) -> None:
         self.code = code
         super().__init__(code)
+
+
+_ProviderResult = TypeVar("_ProviderResult")
+
+
+def invoke_provider_fail_closed(
+    provider_name: str, operation: Callable[[], _ProviderResult]
+) -> _ProviderResult:
+    """Normalize all provider-side failures without exposing payloads or fallback trust."""
+    _token("provider_name", provider_name)
+    try:
+        return operation()
+    except Exception as error:
+        raise OwnershipProviderEvidenceError(
+            f"{provider_name.upper()}_PROVIDER_UNAVAILABLE"
+        ) from error
 
 
 def _token(name: str, value: object) -> str:
@@ -358,7 +374,7 @@ class RecoveryDecisionReplayRegistry:
 __all__ = [
     "OwnershipProviderEvidenceError", "RECOVERY_REPLAYS", "RegistryFreshnessPolicy",
     "RegistryLineageAssessment", "RecoveryDecisionReplayRegistry", "VerificationKey",
-    "recovery_decision_signing_payload",
+    "recovery_decision_signing_payload", "invoke_provider_fail_closed",
     "VERSION", "assess_registry_lineage", "validate_recovery_decision",
     "verify_provider_signature",
 ]
