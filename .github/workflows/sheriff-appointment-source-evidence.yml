@@ -133,7 +133,11 @@ jobs:
           files=(
             tools/eos/legal_operations/domain/sheriff_appointment_source_evidence.py
             tests/unit/test_sheriff_appointment_source_evidence.py
+            tests/unit/test_sheriff_ministerial_appointment_verification.py
           )
+          if [[ -f tools/eos/legal_operations/domain/sheriff_ministerial_appointment_verification.py ]]; then
+            files+=(tools/eos/legal_operations/domain/sheriff_ministerial_appointment_verification.py)
+          fi
           if [[ -f tools/eos/legal_operations/registry/sheriff_appointment_source_evidence_registry.py ]]; then
             files+=(
               tools/eos/legal_operations/registry/sheriff_appointment_source_evidence_registry.py
@@ -151,7 +155,7 @@ jobs:
           set -uo pipefail
           tests=(tests/unit/test_sheriff_appointment_source_evidence.py)
           if [[ -f tests/unit/test_sheriff_ministerial_appointment_verification.py ]]; then
-            files+=(tests/unit/test_sheriff_ministerial_appointment_verification.py)
+            tests+=(tests/unit/test_sheriff_ministerial_appointment_verification.py)
           fi
           if [[ -f tests/unit/test_sheriff_appointment_source_evidence_registry.py ]]; then
             tests+=(tests/unit/test_sheriff_appointment_source_evidence_registry.py)
