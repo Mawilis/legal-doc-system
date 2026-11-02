@@ -1,7 +1,7 @@
 """Authenticated deterministic read projections for Legal Operations.
 
 TITLE: WILSY OS Legal Operations Read Projection Router
-VERSION: v1.17.0-G68-P2-PRACTITIONER-CONFIDENTIALITY-CONTAINMENT
+VERSION: v1.18.0-ISSUE-300-D22B5-SUBSCRIPTION-ADMISSION
 AUTHORITY: Authenticated, tenant-scoped projection of canonical Legal Operations evidence only.
 EPITOME: Preserve exact authorized internal/sheriff/deputy/client reads while
          exposing one snapshot-consistent legal-practice workspace projection and
@@ -20,8 +20,9 @@ COLLABORATION / OWNERSHIP: Python EOS API composition. P1 owns lifecycle truth,
                             L8-7D5 owns sanitized client matter projection, and
                             L8-8E owns immutable conflict-screening persistence;
                             tenant authorization owns access authority.
-CERTIFICATION / UPDATE DATE: 2026-10-22
+CERTIFICATION / UPDATE DATE: 2026-11-02
 CHANGELOG: 2026-10-24 v1.17.0-G68-P2-PRACTITIONER-CONFIDENTIALITY-CONTAINMENT fails closed before any workspace collection access while certified positive practitioner confidentiality authority remains unavailable; returns a distinct non-disclosing 503 and grants no access.
+CHANGELOG: 2026-11-02 v1.18.0-ISSUE-300-D22B5-SUBSCRIPTION-ADMISSION closes the D22B5 workspace consumer gap by conjoining canonical ACTIVE Legal subscription currentness inside the existing workspace snapshot. Existing four operation-specific IAM dependencies, D22B5 authority, confidentiality denial, workspace response and transaction ownership remain unchanged.
 CHANGELOG: 2026-10-22 v1.16.0-R67-ENTERPRISE-DAILY-WORK-EXECUTION-READ adds
            one deterministic, deduplicated and urgency-ordered daily execution
            queue to the existing authenticated productive-work response. Queue
@@ -270,10 +271,6 @@ from tools.eos.legal_operations.registry.legal_conflict_screening_registry impor
     LegalConflictScreeningRegistry,
     LegalConflictScreeningRegistryError,
 )
-from tools.eos.saas.entitlement.legal_product_availability_projection import (
-    LegalProductAvailabilityProjectionError,
-    resolve_legal_product_availability,
-)
 from tools.eos.saas.entitlement.legal_commercial_context_projection import (
     LegalCommercialContextProjection,
     LegalCommercialContextProjectionError,
@@ -286,7 +283,7 @@ from tools.eos.saas.entitlement.tenant_product_entitlement_registry import (
 )
 
 
-VERSION: Final[str] = "v1.17.0-G68-P2-PRACTITIONER-CONFIDENTIALITY-CONTAINMENT"
+VERSION: Final[str] = "v1.18.0-ISSUE-300-D22B5-SUBSCRIPTION-ADMISSION"
 logger = logging.getLogger("WilsyOS.API.LegalOperationsRouter")
 _IDENTITY = re.compile(r"^[A-Za-z0-9][A-Za-z0-9._:-]{0,127}$")
 _CLIENT_ROLE = "tenant_legal_client"
@@ -1784,7 +1781,10 @@ async def get_legal_practice_workspace_projection(
     Admission is conjunctive: all four existing instruction, allocation,
     attempt, and return read authorities must be current for the same exact
     authenticated principal, tenant, and published legal-practice business role,
-    and the tenant's canonical D22B5 Legal Operations product must be available.
+    and the tenant's canonical D22B5 Legal Operations product must be available
+    together with exactly one canonical ACTIVE subscription containing the
+    Legal feature. Product, subscription, IAM, and workspace reads retain their
+    respective authorities and share this route's read-only snapshot.
     The response enumerates current canonical CaseMatter and P1 lifecycle projections and
     opaque current-snapshot evidence locators. It does not expose history,
     evidence references/fingerprints, client identity, billing, invoice,
@@ -1799,8 +1799,12 @@ async def get_legal_practice_workspace_projection(
 
     def run(session: Any, database: Any) -> dict[str, object]:
         try:
-            product_availability = resolve_legal_product_availability(
+            commercial_context = resolve_legal_commercial_context(
                 context.tenant_id,
+                database.get_collection(
+                    subscription_registry_module
+                    .subscriptions_collection.name
+                ),
                 database.get_collection(
                     TENANT_PRODUCT_ENTITLEMENT_HISTORY_COLLECTION
                 ),
@@ -1809,12 +1813,12 @@ async def get_legal_practice_workspace_projection(
                 ),
                 session=session,
             )
-        except LegalProductAvailabilityProjectionError as error:
+        except LegalCommercialContextProjectionError as error:
             raise HTTPException(
                 status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
-                detail="LEGAL_OPERATIONS_PRODUCT_AUTHORITY_UNAVAILABLE",
+                detail="LEGAL_OPERATIONS_COMMERCIAL_CONTEXT_UNAVAILABLE",
             ) from error
-        if product_availability.available is not True:
+        if commercial_context.product_available is not True:
             raise HTTPException(
                 status_code=status.HTTP_403_FORBIDDEN,
                 detail="LEGAL_OPERATIONS_PRODUCT_UNAVAILABLE",
@@ -2162,12 +2166,12 @@ __all__ = [
 
 
 # ARTIFACT: legal_operations_router.py
-# VERSION: v1.17.0-G68-P2-PRACTITIONER-CONFIDENTIALITY-CONTAINMENT
+# VERSION: v1.18.0-ISSUE-300-D22B5-SUBSCRIPTION-ADMISSION
 # AUTHORITY BOUNDARY: authenticated Legal reads and bounded post-authorization temporal observation only; temporal and specialist workflow projections remain bounded by productive-work visibility and grant no command, IAM assignment, plan/subscription mutation, payment execution or settlement authority
 # TENANT POSTURE: every projection uses exact authenticated/current-authorized tenant context; foreign lifecycle, deadline, workflow, screening, subscription and entitlement evidence is never disclosed
 # COMPLETION PROVENANCE: Canonical immutable completion history
 # DAILY EXECUTION QUEUE: deterministic derived projection; no command authority
 # ACTIVE WORK: Derived from completion currentness
-# FAIL-CLOSED POSTURE: authority/scope mismatch, entitlement/subscription disagreement, unavailable product/commercial/deadline/workflow authority, snapshot failure, corruption, divergence and persistence outages deny
+# FAIL-CLOSED POSTURE: authority/scope mismatch, missing, inactive, ambiguous or mismatched D22B5/subscription truth, unavailable product/commercial/deadline/workflow authority, snapshot failure, corruption, divergence and persistence outages deny
 # FINANCIAL EXECUTION AUTHORITY: Kennel EOS exclusively
 # END OF WILSY OS SOVEREIGN ARTIFACT
