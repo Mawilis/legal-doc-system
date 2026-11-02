@@ -229,6 +229,7 @@ class ValidatedRecoveryDecision:
     decision_reference: str
     decision_fingerprint: str
     evaluated_at: datetime
+    validation_expires_at: datetime
     validation_fingerprint: str
 
     def __init__(self, *args: object, **kwargs: object) -> None:
@@ -250,6 +251,10 @@ def _validated_recovery_decision(
         "decision_reference": receipt.decision_reference,
         "decision_fingerprint": receipt.decision_fingerprint,
         "evaluated_at": _utc(lookup.evaluated_at, "RECOVERY_EVALUATION_TIME_INVALID"),
+        "validation_expires_at": min(
+            _utc(receipt.valid_until, "RECOVERY_DECISION_EXPIRY_INVALID"),
+            _utc(lookup.evaluated_at, "RECOVERY_EVALUATION_TIME_INVALID") + timedelta(minutes=2),
+        ),
         "validation_fingerprint": sha256(message + signature).hexdigest(),
     }
     for name, item in fields.items():
@@ -372,6 +377,8 @@ class RecoveryDecisionReplayRegistry:
             raise OwnershipEvidenceValidationError("ACTIVE_TRANSACTION_REQUIRED")
         if not decision.tenant_id or not decision.decision_reference or not decision.decision_fingerprint:
             raise OwnershipEvidenceValidationError("RECOVERY_REPLAY_SCOPE_INVALID")
+        if datetime.now(timezone.utc) >= decision.validation_expires_at:
+            raise OwnershipEvidenceValidationError("RECOVERY_VALIDATION_WINDOW_EXPIRED")
         try:
             self._rows.insert_one({
                 "tenant_id": decision.tenant_id,
@@ -379,7 +386,8 @@ class RecoveryDecisionReplayRegistry:
                 "decision_fingerprint": decision.decision_fingerprint,
                 "recovery_case_reference": decision.recovery_case_reference,
                 "successor_principal_id": decision.successor_principal_id,
-                "consumed_at": decision.evaluated_at,
+                "evaluated_at": decision.evaluated_at,
+                "consumed_at": datetime.now(timezone.utc),
                 "legal_entity_reference": decision.legal_entity_reference,
                 "recovery_case_fingerprint": decision.recovery_case_fingerprint,
                 "validation_fingerprint": decision.validation_fingerprint,
