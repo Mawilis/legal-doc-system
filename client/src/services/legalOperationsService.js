@@ -2957,13 +2957,12 @@ export async function createDeputyLocationPermissionGrant({
 export async function captureDeputyLocationEvidence({
   attemptId,
   currentEvidenceIdentity,
-  grantId = globalThis.crypto.randomUUID(),
+  grantId,
   observationId = globalThis.crypto.randomUUID(),
 }) {
   if (
     !isCanonicalText(attemptId)
     || !isCanonicalText(currentEvidenceIdentity)
-    || !isCanonicalText(grantId)
     || !isCanonicalText(observationId)
   ) {
     throw new Error('DEPUTY_LOCATION_CAPTURE_INPUT_INVALID');
@@ -2971,11 +2970,34 @@ export async function captureDeputyLocationEvidence({
   if (!globalThis.navigator?.geolocation?.getCurrentPosition) {
     throw new Error('DEPUTY_LOCATION_GEOLOCATION_UNAVAILABLE');
   }
-  const grant = await createDeputyLocationPermissionGrant({
-    attemptId,
-    currentEvidenceIdentity,
-    grantId,
-  });
+
+  let grant = null;
+  if (isCanonicalText(grantId)) {
+    const stored = await readDeputyLocationStore(DEPUTY_LOCATION_GRANT_STORE, attemptId);
+    if (
+      stored?.grant?.grant_id === grantId
+      && stored?.currentEvidenceIdentity === currentEvidenceIdentity
+      && Date.parse(stored.grant.expires_at) > Date.now()
+    ) {
+      grant = stored.grant;
+    }
+  } else {
+    const stored = await readDeputyLocationStore(DEPUTY_LOCATION_GRANT_STORE, attemptId);
+    if (
+      stored?.currentEvidenceIdentity === currentEvidenceIdentity
+      && Date.parse(stored?.grant?.expires_at || '') > Date.now()
+    ) {
+      grant = stored.grant;
+    }
+  }
+  if (!grant) {
+    grant = await createDeputyLocationPermissionGrant({
+      attemptId,
+      currentEvidenceIdentity,
+      grantId: grantId || globalThis.crypto.randomUUID(),
+    });
+  }
+
   let position;
   try {
     position = await new Promise((resolve, reject) => {
@@ -2993,22 +3015,28 @@ export async function captureDeputyLocationEvidence({
     await revokeDeputyLocationPermissionGrant({
       attemptId,
       currentEvidenceIdentity,
-      grantId,
+      grantId: grant.grant_id,
       reasonReference: 'browser-location-permission-denied-or-unavailable',
     });
     throw error;
   }
+
   const latitude = Number(Number(position.coords.latitude).toFixed(7));
   const longitude = Number(Number(position.coords.longitude).toFixed(7));
   const horizontalAccuracyM = Number(Number(position.coords.accuracy).toFixed(2));
   const capturedAt = new Date(position.timestamp || Date.now()).toISOString();
-
-  const proof = await issueAndSignDeputyDeviceChallenge();
+  const key = await loadOrCreateDeputyDeviceKey();
+  const proofContext = {
+    tenant_id: grant.tenant_id,
+    deputy_id: grant.deputy_id,
+    device_id: grant.device_id,
+    challenge_id: grant.device_provenance_reference,
+  };
   const locationPayload = canonicalLocationSigningBytes({
-    challenge: proof.challenge,
+    challenge: proofContext,
     attemptId,
     currentEvidenceIdentity,
-    grantId,
+    grantId: grant.grant_id,
     observationId,
     latitude,
     longitude,
@@ -3017,26 +3045,89 @@ export async function captureDeputyLocationEvidence({
   });
   const locationSignature = await globalThis.crypto.subtle.sign(
     { name: 'ECDSA', hash: 'SHA-256' },
-    proof.key.privateKey,
+    key.privateKey,
     locationPayload,
   );
-  const response = await sovereignClient.post(
-    `/legal-operations/deputy/attempts/${encodeURIComponent(attemptId)}/location-evidence`,
-    {
-      current_evidence_identity: currentEvidenceIdentity,
-      grant_id: grantId,
-      observation_id: observationId,
-      challenge_id: proof.challenge.challenge_id,
-      signature_p1363_b64: proof.signatureP1363B64,
-      location_signature_p1363_b64: bytesToBase64(locationSignature),
-      latitude,
-      longitude,
-      horizontal_accuracy_m: horizontalAccuracyM,
-      captured_at: capturedAt,
-    },
-  );
-  const observation = assertLocationObservationResponse(response?.data, attemptId, observationId);
-  return Object.freeze({ grant, observation });
+  const event = {
+    current_evidence_identity: currentEvidenceIdentity,
+    grant_id: grant.grant_id,
+    observation_id: observationId,
+    device_provenance_reference: grant.device_provenance_reference,
+    location_signature_p1363_b64: bytesToBase64(locationSignature),
+    latitude,
+    longitude,
+    horizontal_accuracy_m: horizontalAccuracyM,
+    captured_at: capturedAt,
+  };
+  try {
+    const response = await sovereignClient.post(
+      `/legal-operations/deputy/attempts/${encodeURIComponent(attemptId)}/location-evidence`,
+      event,
+    );
+    const observation = assertLocationObservationResponse(response?.data, attemptId, observationId);
+    return Object.freeze({ grant, observation, queued: false });
+  } catch (error) {
+    if (error?.response && Number(error.response.status) < 500) {
+      throw error;
+    }
+    await writeDeputyLocationStore(
+      DEPUTY_LOCATION_OUTBOX_STORE,
+      observationId,
+      {
+        attemptId,
+        event,
+        queuedAt: new Date().toISOString(),
+        lastError: 'NETWORK_OR_SERVER_UNAVAILABLE',
+      },
+    );
+    return Object.freeze({
+      grant,
+      observation: null,
+      queued: true,
+      observationId,
+    });
+  }
+}
+
+export async function syncPendingDeputyLocationEvidence() {
+  if (globalThis.navigator?.onLine === false) {
+    return Object.freeze({ synced: 0, pending: (await listPendingDeputyLocationEvents()).length });
+  }
+  const pending = await listPendingDeputyLocationEvents();
+  let synced = 0;
+  const blocked = [];
+  for (const item of pending) {
+    if (!isCanonicalText(item?.attemptId) || !isCanonicalText(item?.event?.observation_id)) {
+      blocked.push(item?.event?.observation_id || 'unknown');
+      continue;
+    }
+    try {
+      const response = await sovereignClient.post(
+        `/legal-operations/deputy/attempts/${encodeURIComponent(item.attemptId)}/location-evidence`,
+        item.event,
+      );
+      assertLocationObservationResponse(
+        response?.data,
+        item.attemptId,
+        item.event.observation_id,
+      );
+      await deleteDeputyLocationStore(
+        DEPUTY_LOCATION_OUTBOX_STORE,
+        item.event.observation_id,
+      );
+      synced += 1;
+    } catch (error) {
+      blocked.push(item.event.observation_id);
+      if (error?.response && Number(error.response.status) >= 400 && Number(error.response.status) < 500) {
+        // Keep the event for explicit operator review; never silently discard signed field evidence.
+      }
+    }
+  }
+  return Object.freeze({
+    synced,
+    pending: Math.max(0, pending.length - synced),
+    blocked: Object.freeze(blocked),
+  });
 }
 
 export async function getDeputyLocationEvidence(attemptId) {
