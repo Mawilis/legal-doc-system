@@ -90,6 +90,21 @@ class TenantOwnershipEvidenceEvent:
     verifier_id: str
     verifier_version: str
     provenance_fingerprint: str
+    acceptance_proposal_reference: str | None
+    acceptance_proposal_fingerprint: str | None
+    acceptance_current_owner_principal_id: str | None
+    acceptance_reference: str | None
+    acceptance_fingerprint: str | None
+    accepted_at: datetime | None
+    recovery_case_reference: str | None
+    recovery_case_fingerprint: str | None
+    recovery_authority_identity: str | None
+    recovery_authority_scope: str | None
+    recovery_trust_root_reference: str | None
+    recovery_trust_root_fingerprint: str | None
+    recovery_decision_reference: str | None
+    recovery_decision_fingerprint: str | None
+    recovery_independent_of_current_owner: bool
 
     def to_document(self) -> dict[str, object]:
         return {
@@ -119,6 +134,21 @@ class TenantOwnershipEvidenceEvent:
             "verifier_id": self.verifier_id,
             "verifier_version": self.verifier_version,
             "provenance_fingerprint": self.provenance_fingerprint,
+            "acceptance_proposal_reference": self.acceptance_proposal_reference,
+            "acceptance_proposal_fingerprint": self.acceptance_proposal_fingerprint,
+            "acceptance_current_owner_principal_id": self.acceptance_current_owner_principal_id,
+            "acceptance_reference": self.acceptance_reference,
+            "acceptance_fingerprint": self.acceptance_fingerprint,
+            "accepted_at": self.accepted_at,
+            "recovery_case_reference": self.recovery_case_reference,
+            "recovery_case_fingerprint": self.recovery_case_fingerprint,
+            "recovery_authority_identity": self.recovery_authority_identity,
+            "recovery_authority_scope": self.recovery_authority_scope,
+            "recovery_trust_root_reference": self.recovery_trust_root_reference,
+            "recovery_trust_root_fingerprint": self.recovery_trust_root_fingerprint,
+            "recovery_decision_reference": self.recovery_decision_reference,
+            "recovery_decision_fingerprint": self.recovery_decision_fingerprint,
+            "recovery_independent_of_current_owner": self.recovery_independent_of_current_owner,
         }
 
 
@@ -194,13 +224,80 @@ def _event(
         "verifier_id": _identifier("verifier_id", provenance.verifier_id),
         "verifier_version": _identifier("verifier_version", provenance.verifier_version),
         "provenance_fingerprint": _identifier("provenance_fingerprint", provenance.semantic_fingerprint),
+        "acceptance_proposal_reference": None,
+        "acceptance_proposal_fingerprint": None,
+        "acceptance_current_owner_principal_id": None,
+        "acceptance_reference": None,
+        "acceptance_fingerprint": None,
+        "accepted_at": None,
+        "recovery_case_reference": None,
+        "recovery_case_fingerprint": None,
+        "recovery_authority_identity": None,
+        "recovery_authority_scope": None,
+        "recovery_trust_root_reference": None,
+        "recovery_trust_root_fingerprint": None,
+        "recovery_decision_reference": None,
+        "recovery_decision_fingerprint": None,
+        "recovery_independent_of_current_owner": False,
     }
+    acceptance = getattr(evidence, "successor_acceptance", None)
+    recovery = getattr(evidence, "recovery_authorization", None)
     if type(values["operation"]) is not TenantOwnershipOperation:
         raise TenantOwnershipEvidencePersistenceError("OWNERSHIP_OPERATION_INVALID")
     if type(revision) is not int or revision < 1:
         raise TenantOwnershipEvidencePersistenceError("OWNERSHIP_REVISION_INVALID")
     if type(values["issuer_key_revision"]) is not int or values["issuer_key_revision"] < 1:
         raise TenantOwnershipEvidencePersistenceError("ISSUER_KEY_REVISION_INVALID")
+    if values["operation"] is TenantOwnershipOperation.TENANT_GENESIS:
+        if acceptance is not None or recovery is not None:
+            raise TenantOwnershipEvidencePersistenceError("GENESIS_HAS_TRANSFER_OR_RECOVERY_AUTHORITY")
+    elif values["operation"] is TenantOwnershipOperation.OWNERSHIP_TRANSFER:
+        if acceptance is None or recovery is not None:
+            raise TenantOwnershipEvidencePersistenceError("INDEPENDENT_SUCCESSOR_ACCEPTANCE_REQUIRED")
+        accepted_at = getattr(acceptance, "accepted_at", None)
+        if (
+            getattr(acceptance, "tenant_id", None) != values["tenant_id"]
+            or getattr(acceptance, "legal_entity_reference", None) != values["legal_entity_reference"]
+            or getattr(acceptance, "successor_principal_id", None) != values["principal_id"]
+            or not getattr(acceptance, "not_revoked", False)
+            or not isinstance(accepted_at, datetime)
+            or accepted_at.tzinfo is None
+            or accepted_at.utcoffset() is None
+        ):
+            raise TenantOwnershipEvidencePersistenceError("SUCCESSOR_ACCEPTANCE_SCOPE_OR_CURRENTNESS_INVALID")
+        values["acceptance_proposal_reference"] = _identifier("acceptance_proposal_reference", acceptance.proposal_reference)
+        values["acceptance_proposal_fingerprint"] = _identifier("acceptance_proposal_fingerprint", acceptance.proposal_fingerprint)
+        values["acceptance_current_owner_principal_id"] = _identifier("acceptance_current_owner_principal_id", acceptance.current_owner_principal_id)
+        values["acceptance_reference"] = _identifier("acceptance_reference", acceptance.acceptance_reference)
+        values["acceptance_fingerprint"] = _identifier("acceptance_fingerprint", acceptance.acceptance_fingerprint)
+        values["accepted_at"] = accepted_at
+        if values["acceptance_current_owner_principal_id"] == values["principal_id"]:
+            raise TenantOwnershipEvidencePersistenceError("SUCCESSOR_MUST_BE_INDEPENDENT")
+    elif values["operation"] is TenantOwnershipOperation.GOVERNED_RECOVERY:
+        if recovery is None or acceptance is not None:
+            raise TenantOwnershipEvidencePersistenceError("INDEPENDENT_RECOVERY_AUTHORIZATION_REQUIRED")
+        valid_at = getattr(recovery, "valid_at", None)
+        if (
+            getattr(recovery, "tenant_id", None) != values["tenant_id"]
+            or getattr(recovery, "legal_entity_reference", None) != values["legal_entity_reference"]
+            or getattr(recovery, "authorized_successor_principal_id", None) != values["principal_id"]
+            or getattr(recovery, "authority_scope", None) != "TENANT_OWNERSHIP_GOVERNED_RECOVERY"
+            or not getattr(recovery, "not_revoked", False)
+            or not getattr(recovery, "independent_of_current_owner", False)
+            or not isinstance(valid_at, datetime)
+            or valid_at.tzinfo is None
+            or valid_at.utcoffset() is None
+        ):
+            raise TenantOwnershipEvidencePersistenceError("GOVERNED_RECOVERY_AUTHORITY_INVALID")
+        values["recovery_case_reference"] = _identifier("recovery_case_reference", recovery.recovery_case_reference)
+        values["recovery_case_fingerprint"] = _identifier("recovery_case_fingerprint", recovery.recovery_case_fingerprint)
+        values["recovery_authority_identity"] = _identifier("recovery_authority_identity", recovery.recovery_authority_identity)
+        values["recovery_authority_scope"] = _identifier("recovery_authority_scope", recovery.authority_scope)
+        values["recovery_trust_root_reference"] = _identifier("recovery_trust_root_reference", recovery.trust_root_reference)
+        values["recovery_trust_root_fingerprint"] = _identifier("recovery_trust_root_fingerprint", recovery.trust_root_fingerprint)
+        values["recovery_decision_reference"] = _identifier("recovery_decision_reference", recovery.decision_reference)
+        values["recovery_decision_fingerprint"] = _identifier("recovery_decision_fingerprint", recovery.decision_fingerprint)
+        values["recovery_independent_of_current_owner"] = True
     if (
         entity.tenant_id != values["tenant_id"]
         or entity.legal_entity_reference != values["legal_entity_reference"]
@@ -312,6 +409,16 @@ class TenantOwnershipEvidenceRegistry:
                     raise TenantOwnershipEvidenceConflictError("LEGAL_ENTITY_SCOPE_CONFLICT")
                 if current.get("principal_id") == event.principal_id:
                     raise TenantOwnershipEvidenceConflictError("SUCCESSOR_MUST_DIFFER")
+                if (
+                    event.operation is TenantOwnershipOperation.OWNERSHIP_TRANSFER
+                    and current.get("principal_id") != event.acceptance_current_owner_principal_id
+                ):
+                    raise TenantOwnershipEvidenceConflictError("TRANSFER_PROPOSER_NOT_CURRENT_OWNER")
+                if (
+                    event.operation is TenantOwnershipOperation.GOVERNED_RECOVERY
+                    and event.recovery_independent_of_current_owner is not True
+                ):
+                    raise TenantOwnershipEvidenceConflictError("RECOVERY_AUTHORITY_NOT_INDEPENDENT")
                 if event.operation is TenantOwnershipOperation.TENANT_GENESIS:
                     raise TenantOwnershipEvidenceConflictError("GENESIS_NOT_TRANSFER")
             self._history.insert_one(event.to_document(), session=session)
