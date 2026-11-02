@@ -301,6 +301,16 @@ def test_recovery_replay_ledger_requires_validated_receipt_and_transaction() -> 
     assert len(db.rows.indexes) == 2
 
 
+def test_recovery_validation_receipt_expires_before_transaction_write() -> None:
+    keys = Keys()
+    lookup, envelope = recovery_fixture(keys)
+    validated = validate_recovery_decision(lookup, envelope, keys)
+    object.__setattr__(validated, "validation_expires_at", NOW - timedelta(seconds=1))
+    registry = RecoveryDecisionReplayRegistry(Database())
+    with pytest.raises(OwnershipEvidenceValidationError, match="VALIDATION_WINDOW_EXPIRED"):
+        registry.consume_validated(validated, session=Session())
+
+
 def test_verified_recovery_composition_denies_provider_outage_before_persisting() -> None:
     class Unavailable(Keys):
         def recovery_key_status(self, authority_id: str, trust_root_reference: str,
