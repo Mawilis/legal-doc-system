@@ -2,7 +2,7 @@
 from __future__ import annotations
 
 from dataclasses import FrozenInstanceError, fields, replace
-from datetime import datetime, timezone
+from datetime import datetime, timedelta, timezone
 from types import SimpleNamespace
 from typing import Any
 
@@ -121,14 +121,6 @@ def test_active_legal_subscription_projects_canonical_commercial_snapshot(
     assert result.monthly_equivalent_amount == 1200.0
 
 
-@pytest.mark.parametrize(
-    ("frequency", "amount", "monthly"),
-    [
-        (BillingFrequency.MONTHLY, 1200.0, 1200.0),
-        (BillingFrequency.QUARTERLY, 3600.0, 1200.0),
-        (BillingFrequency.ANNUAL, 14400.0, 1200.0),
-    ],
-)
 def test_exact_zero_rated_founder_projects_legal_without_legal_core(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
@@ -168,6 +160,14 @@ def test_exact_zero_rated_founder_projects_legal_without_legal_core(
     assert result.current_period_end == founder.current_period_end
 
 
+@pytest.mark.parametrize(
+    ("frequency", "amount", "monthly"),
+    [
+        (BillingFrequency.MONTHLY, 1200.0, 1200.0),
+        (BillingFrequency.QUARTERLY, 3600.0, 1200.0),
+        (BillingFrequency.ANNUAL, 14400.0, 1200.0),
+    ],
+)
 def test_monthly_equivalent_is_server_derived(
     monkeypatch: pytest.MonkeyPatch,
     frequency: BillingFrequency,
