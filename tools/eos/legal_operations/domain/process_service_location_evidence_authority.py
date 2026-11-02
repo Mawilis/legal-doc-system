@@ -31,7 +31,7 @@ import hashlib
 import json
 import math
 import re
-from typing import Final, NoReturn, cast
+from typing import Any, Final, NoReturn, cast
 
 from tools.eos.legal_operations.domain.legal_operations_lifecycle import ServiceAttempt
 from tools.eos.legal_operations.registry.process_service_allocation_registry import (
@@ -191,7 +191,7 @@ def create_location_permission_grant(*, attempt: ServiceAttempt,
     start, end = _time("granted_at", granted_at), _time("expires_at", expires_at)
     if start < attempt.allocated_at or end <= start or purpose != LOCATION_PURPOSE:
         _fail("P5L_PERMISSION_WINDOW_OR_PURPOSE_INVALID")
-    values: dict[str, object] = {"tenant_id": attempt.tenant_id, "grant_id": _id("grant_id", grant_id),
+    values: dict[str, Any] = {"tenant_id": attempt.tenant_id, "grant_id": _id("grant_id", grant_id),
         "attempt_id": attempt.attempt_id, "deputy_id": attempt.deputy_id,
         "device_id": _id("device_id", device_id), "purpose": purpose,
         "permission_evidence_reference": _ref("permission_evidence_reference", permission_evidence_reference),
