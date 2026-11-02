@@ -19,7 +19,7 @@ from pymongo.errors import DuplicateKeyError, PyMongoError
 
 from .tenant_ownership_provider_ports import (
     RecoveryDecisionLookup, RecoveryDecisionReceipt, RegistrySnapshot,
-    SigningReceipt, SigningRequest,
+    SigningReceipt, SigningRequest, SubjectProofingReceipt, SubjectProofingRequest,
 )
 
 _HEX_256 = re.compile(r"[0-9a-f]{64}\Z")
@@ -112,6 +112,38 @@ def assess_registry_snapshots(
         return RegistryAssessment("DENY", None, None, "SOURCE_RECORD_NOT_ACTIVE")
     return RegistryAssessment("VERIFIED_SOURCE_FACT", head.filing_reference,
                                head.source_fingerprint, "CURRENT_UNAMBIGUOUS_FILING")
+
+
+class SubjectProofingStatusProvider(Protocol):
+    def is_revoked(self, revocation_reference: str, at: datetime) -> bool: ...
+
+
+def validate_subject_proofing_receipt(
+    request: SubjectProofingRequest,
+    receipt: SubjectProofingReceipt,
+    provider: SubjectProofingStatusProvider,
+) -> None:
+    """Validate exact, purpose-limited subject proof and authoritative revocation state."""
+    if type(receipt) is not SubjectProofingReceipt:
+        raise OwnershipEvidenceValidationError("SUBJECT_PROOFING_RECEIPT_INVALID")
+    requested_at = _utc(request.evaluated_at, "SUBJECT_PROOFING_EVALUATION_TIME_INVALID")
+    verified_at = _utc(receipt.verified_at, "SUBJECT_PROOFING_VERIFIED_AT_INVALID")
+    valid_until = _utc(receipt.valid_until, "SUBJECT_PROOFING_EXPIRY_INVALID")
+    if receipt.subject_reference != request.subject_reference:
+        raise OwnershipEvidenceValidationError("SUBJECT_PROOFING_SUBJECT_MISMATCH")
+    if not request.purpose or not receipt.provider_id or not receipt.verifier_id:
+        raise OwnershipEvidenceValidationError("SUBJECT_PROOFING_PROVENANCE_MISSING")
+    if not receipt.assurance_profile or not receipt.evidence_reference or not receipt.revocation_reference:
+        raise OwnershipEvidenceValidationError("SUBJECT_PROOFING_EVIDENCE_INCOMPLETE")
+    _fingerprint(receipt.evidence_fingerprint, "SUBJECT_PROOFING_FINGERPRINT_INVALID")
+    if verified_at > requested_at or valid_until <= requested_at or valid_until <= verified_at:
+        raise OwnershipEvidenceValidationError("SUBJECT_PROOFING_RECEIPT_NOT_CURRENT")
+    try:
+        revoked = provider.is_revoked(receipt.revocation_reference, requested_at)
+    except Exception as error:
+        raise OwnershipEvidenceValidationError("SUBJECT_PROOFING_REVOCATION_UNAVAILABLE") from error
+    if revoked:
+        raise OwnershipEvidenceValidationError("SUBJECT_PROOFING_RECEIPT_REVOKED")
 
 
 class KeyStatusProvider(Protocol):
