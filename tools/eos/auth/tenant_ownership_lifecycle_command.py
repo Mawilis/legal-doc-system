@@ -21,7 +21,7 @@ from tools.eos.auth.tenant_ownership_verifier import (
     VerifiedTenantOwnershipEvidence,
 )
 
-VERSION: Final[str] = "v1.0.0-ISSUE-300-OWNERSHIP-LIFECYCLE-COMMAND"
+VERSION: Final[str] = "v1.1.0-ISSUE-300-TWO-PHASE-LIFECYCLE-COMMAND"
 
 
 class TenantOwnershipLifecycleCommandError(RuntimeError):
@@ -95,16 +95,33 @@ class TenantOwnershipLifecycleCommand:
         """Accept only the canonical positive decision shape, never truthy objects."""
         return getattr(decision, "authorized", None) is True
 
+    def prepare(
+        self, request: TenantOwnershipVerificationRequest
+    ) -> VerifiedTenantOwnershipEvidence:
+        """Run independent evidence/provider verification before opening a Mongo transaction."""
+        if type(request) is not TenantOwnershipVerificationRequest:
+            raise TenantOwnershipLifecycleCommandError("VERIFICATION_REQUEST_REQUIRED")
+        try:
+            evidence = self._verifier.verify(request)
+        except TenantOwnershipVerificationError:
+            raise
+        if type(evidence) is not VerifiedTenantOwnershipEvidence:
+            raise TenantOwnershipVerificationError("VERIFIED_OWNERSHIP_EVIDENCE_REQUIRED")
+        if evidence.request != request:
+            raise TenantOwnershipVerificationError("VERIFIED_OWNERSHIP_REQUEST_MISMATCH")
+        return evidence
+
     def execute(
         self,
         *,
         request: TenantOwnershipVerificationRequest,
+        evidence: VerifiedTenantOwnershipEvidence,
         actor_principal_id: str,
         command_id: str,
         expected_revision: int,
         session: Any,
     ) -> TenantOwnershipEvidenceEvent:
-        """Verify one exact genesis, transfer or recovery and append in caller transaction."""
+        """Revalidate mutable authority and append prepared evidence in caller transaction."""
         self._active_transaction(session)
         if type(request) is not TenantOwnershipVerificationRequest:
             raise TenantOwnershipLifecycleCommandError("VERIFICATION_REQUEST_REQUIRED")
@@ -139,14 +156,8 @@ class TenantOwnershipLifecycleCommand:
         else:
             raise TenantOwnershipLifecycleCommandError("OWNERSHIP_OPERATION_INVALID")
 
-        try:
-            evidence = self._verifier.verify(request)
-        except TenantOwnershipVerificationError:
-            raise
         if type(evidence) is not VerifiedTenantOwnershipEvidence:
-            raise TenantOwnershipVerificationError(
-                "VERIFIED_OWNERSHIP_EVIDENCE_REQUIRED"
-            )
+            raise TenantOwnershipVerificationError("VERIFIED_OWNERSHIP_EVIDENCE_REQUIRED")
         if evidence.request != request:
             raise TenantOwnershipVerificationError("VERIFIED_OWNERSHIP_REQUEST_MISMATCH")
         return self._registry.append(
