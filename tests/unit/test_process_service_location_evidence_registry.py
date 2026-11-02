@@ -1,18 +1,24 @@
 """Adversarial registry tests for immutable purpose-bound GPS evidence."""
 from __future__ import annotations
 
+from base64 import b64encode
 from copy import deepcopy
 from datetime import datetime, timedelta, timezone
+import hashlib
 from types import SimpleNamespace
 from typing import Any
 
 import pytest
+from cryptography.hazmat.primitives import hashes, serialization
+from cryptography.hazmat.primitives.asymmetric import ec
+from cryptography.hazmat.primitives.asymmetric.utils import decode_dss_signature
 from pymongo.errors import DuplicateKeyError
 
 from tools.eos.legal_operations.domain.legal_operations_lifecycle import (
     ServiceAttempt,
     ServiceAttemptState,
 )
+from tools.eos.legal_operations.orchestration.process_service_location_evidence_orchestrator import location_observation_signed_payload
 from tools.eos.legal_operations.domain.process_service_location_evidence_authority import (
     LOCATION_PURPOSE,
     create_location_permission_grant,
@@ -141,14 +147,30 @@ def grant(*, grant_id: str = "grant-1", device_id: str = "device-1"):
 
 def observation():
     attempt, receipt, current = sources()
-    return create_process_service_location_observation(
+    private_key = ec.generate_private_key(ec.SECP256R1())
+    public_der = private_key.public_key().public_bytes(
+        serialization.Encoding.DER, serialization.PublicFormat.SubjectPublicKeyInfo
+    )
+    device_id = f"deputy-device:{hashlib.sha3_512(public_der).hexdigest()}"
+    value = create_process_service_location_observation(
         attempt=attempt, allocation_receipt=receipt, allocation_current=current,
-        permission_grant=grant(), observation_id="observation-1", device_id="device-1",
+        permission_grant=grant(), observation_id="observation-1", device_id=device_id,
         latitude=-26.2041, longitude=28.0473, horizontal_accuracy_m=12.5,
         captured_at=BASE + timedelta(minutes=3),
         device_provenance_reference="challenge-proof-1",
         device_provenance_fingerprint=HASH, evidence_reference="gps-event-1",
     )
+    signed = location_observation_signed_payload(
+        tenant_id=TENANT, attempt_id="attempt-1",
+        current_evidence_identity="p2-current-identity-1", deputy_id="deputy-1",
+        device_id=device_id, challenge_id="challenge-proof-1", grant_id="grant-1",
+        observation_id="observation-1", latitude=-26.2041, longitude=28.0473,
+        horizontal_accuracy_m=12.5, captured_at=BASE + timedelta(minutes=3),
+    )
+    der = private_key.sign(signed, ec.ECDSA(hashes.SHA256()))
+    r_value, s_value = decode_dss_signature(der)
+    signature = r_value.to_bytes(32, "big") + s_value.to_bytes(32, "big")
+    return value, signature, b64encode(public_der).decode("ascii"), hashlib.sha3_512(signed).hexdigest(), "p2-current-identity-1"
 
 
 def test_grant_persistence_exact_replay_and_source_hydration():
@@ -183,9 +205,15 @@ def test_divergent_grant_replay_and_foreign_tenant_are_rejected():
 
 def test_observation_append_only_replay_and_integrity_checked_listing():
     collection = Collection()
-    value = observation()
-    Registry.persist_observation(value, collection, session=Session())
-    Registry.persist_observation(value, collection, session=Session())
+    value, signature, public_key, payload_fingerprint, current_identity = observation()
+    kwargs = {
+        "current_evidence_identity": current_identity,
+        "location_signature_p1363": signature,
+        "device_public_key_spki": public_key,
+        "signed_payload_fingerprint": payload_fingerprint,
+    }
+    Registry.persist_observation(value, collection, session=Session(), **kwargs)
+    Registry.persist_observation(value, collection, session=Session(), **kwargs)
     rows = Registry.list_observations_for_attempt(
         TENANT, "attempt-1", collection, session=Session()
     )
