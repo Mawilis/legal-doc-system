@@ -180,11 +180,30 @@ This capability is **not production-ready** until all of the following are true:
 - Client and operational dashboards display the distinction between tenant IAM role, statutory capacity, appointment currentness and office scope.
 - A controlled pilot verifies real appointment instruments and revocation handling before broad release.
 
-## 10. Immediate next engineering slice
+## 10. Implementation status and next engineering slices
 
-The first production code slice should be the **immutable appointment-evidence domain contract only**, with its own unit certificate, after nested governance instructions and the full relationship matrix are checked. The next slice is its caller-transaction registry and real-Mongo certificate. Only after those are independently certified should the issue/revoke command and Sheriff queue enforcement be connected.
+### Merged first slice
 
-Do not change the current Sheriff queue to trust CX27 office references. Until the new appointment evidence path is certified, multi-office Sheriff queue access must remain restricted/denied rather than silently treated as tenant-wide.
+The first pure-domain source-evidence slice has now been merged to `main` in PR #284:
+
+- Primary artifact: `tools/eos/legal_operations/domain/sheriff_appointment_source_evidence.py`
+- Unit certificate: `tests/unit/test_sheriff_appointment_source_evidence.py`
+- Dedicated workflow: `.github/workflows/sheriff-appointment-source-evidence.yml`
+- Domain version: `v1.0.0-SHERIFF-APPOINTMENT-SOURCE-EVIDENCE`
+- Merge commit: `dae3d3dbd9265232976f81ecc0ad62ffe2a3107e`
+- Verification: 20 unit tests passed; Python compilation, pinned Pyright, patch whitespace, repository integrity, Deputy device provenance, image publication, security audit, and the retained R2A/R2B real-Mongo gates all passed on the PR head.
+
+The domain stores typed statutory source observations and required special-path Board references. It is deliberately non-authorizing: it does not authenticate the issuer, prove a current appointment, establish Fidelity Fund Certificate or insurance currentness, grant IAM, or authorize office/queue access.
+
+### Next slices, in order
+
+1. **Sheriff appointment evidence registry:** caller-owned transaction, immutable append-only history, tenant-first unique indexes, exact replay, fork/conflict/corruption rejection, and isolated real-Mongo certification.
+2. **Source verification/currentness:** separate Ministerial appointment/area-allocation and SABFS Board/FFC source evidence, trust-root or independently governed human verification, currentness, revocation, and expiry. Do not reuse LPC trust roots.
+3. **Identity binding:** verified natural-person-to-WILSY-principal correlation, with no self-attestation or tenant-admin self-appointment.
+4. **Office-scoped Sheriff queue enforcement:** same-snapshot appointment, current certificate/insurance, office, court/area and lifecycle reads; no tenant-wide fallback.
+5. **HTTP, client, audit and independent legal/security certification:** cross-office adversarial tests, currentness/revocation races, real-Mongo replay, and controlled pilot.
+
+Do not change the current Sheriff queue to trust CX27 office references. Until the complete appointment, source-currentness and read-enforcement path is certified, multi-office Sheriff queue access must remain restricted/denied rather than silently treated as tenant-wide.
 
 ## 11. Explicit unresolved inputs
 
