@@ -150,7 +150,7 @@ def test_section_32_3_acting_fixed_term_is_between_one_month_and_one_year() -> N
     assert caught.value.code == "SHERIFF_FFC_ACTING_TERM_OUT_OF_RANGE"
 
     with pytest.raises(SheriffFfcEvidenceError) as caught:
-        make_acting(valid_until=datetime(2027, 1, 1, tzinfo=UTC))
+        make_acting(valid_until=datetime(2027, 1, 2, tzinfo=UTC))
     assert caught.value.code == "SHERIFF_FFC_ACTING_TERM_OUT_OF_RANGE"
 
     with pytest.raises(SheriffFfcEvidenceError) as caught:
