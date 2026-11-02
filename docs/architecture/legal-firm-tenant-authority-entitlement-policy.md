@@ -55,7 +55,7 @@ Authorization for a protected operation is conjunctive. A successful tenant IAM 
 
 ### 4.1 `tenant_owner`
 
-The owner is the highest tenant-governance persona, subject to the explicit operation map. The owner profile is intended for:
+The owner is a distinct ownership/commercial-governance persona, not a universal administrator. The existing matrix deliberately gives `tenant_admin` some delegated role-assignment operations (`role_grant` and `role_revoke`) that `tenant_owner` is not eligible to perform. The owner profile is intended for:
 
 - Tenant profile and permitted lifecycle governance.
 - Tenant membership oversight and permitted membership administration.
@@ -69,7 +69,7 @@ The owner role does **not** imply unrestricted access to all client matters, con
 
 ### 4.2 `tenant_admin`
 
-A delegated tenant administrator may perform only the administration operations explicitly eligible and permission-bound to that role. It is not the legal or contractual owner and must not inherit ownership transfer, owner-only commercial liability or owner-only controls by analogy.
+A delegated tenant administrator may perform only the administration operations explicitly eligible and permission-bound to that role. In the reviewed matrix, `tenant_admin` is eligible for `role_grant` and `role_revoke`, while `tenant_owner` is denied those two operations. It is not the legal or contractual owner and must not inherit ownership transfer, owner-only commercial liability or owner-only controls by analogy.
 
 ### 4.3 `tenant_manager`
 
@@ -115,7 +115,7 @@ An entitlement decision must identify at least:
 
 A role may be eligible to administer a subscription without the tenant possessing the product. A tenant may possess a product entitlement while an individual principal lacks permission to use or administer it. Both checks must pass when both are required.
 
-The entitlement resolver must be sourced from the existing canonical subscription/product-entitlement implementation after its schema, registries, currentness and authorization boundaries are inspected. Do not create a second entitlement registry or treat catalogue membership as a purchase.
+**Repository inventory result (baseline commit):** WILSY already has the D22B1 immutable tenant/product entitlement domain (`tools/eos/saas/domain/tenant_product_entitlement.py`), D22B2 append-only/current-pointer registry (`tools/eos/saas/entitlement/tenant_product_entitlement_registry.py`), D22B3 subscription-bound composer (`tools/eos/saas/entitlement/tenant_product_entitlement_composer.py`) and a positive issuance orchestrator. The domain's lifecycle states are `PENDING_SOURCE`, `ACTIVE`, `SUSPENDED` and `REVOKED`; an ACTIVE entitlement is tenant/product availability evidence, not principal permission or route admission. The composer correlates exact tenant scope, canonical product catalogue identity, subscription registry truth and subscription-term policy inside a caller-owned transaction. The issuance operation is already bound as `tenant_product_entitlement_issue` → `tenant_product_entitlement:issue`; eligibility is limited to `tenant_owner`, `tenant_admin` and `tenant_manager`, while the static granting authorization role is `ENTERPRISE_ADMIN`. Existing tests certify this authorization substrate and explicitly distinguish issuance authority from issuance itself. WILSY AI and Tenant Branding remain separate VAS authorities.\n\n**Do not duplicate this entitlement infrastructure.** The next implementation must inspect the complete registry/currentness and product-commercial-feature contracts, then consume the existing composer/registry through their established orchestration boundaries. The reviewed entitlement domain itself does not encode the proposed generic seat/storage/API usage counters or an independent effective-until field; derive term eligibility from canonical subscription truth and do not invent additional fields without a product/contract requirement.
 
 ## 7. Ownership lifecycle and separation of duties
 
