@@ -130,7 +130,6 @@ describe('D21B12 authenticated branding object-url lifecycle', () => {
 
     rerender({ descriptor: null });
     expect(result.current).toEqual({
-      descriptorKey: '',
       objectUrl: null,
       status: 'ABSENT',
       errorCode: null,
