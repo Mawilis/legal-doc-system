@@ -158,6 +158,14 @@ def test_independent_recovery_decision_signature_and_exact_successor_binding() -
         validate_recovery_decision(altered, envelope, keys)
 
 
+def test_recovery_rejects_untrusted_authority_root() -> None:
+    keys = Keys()
+    lookup, envelope = recovery_fixture(keys)
+    altered = replace(envelope.receipt, trust_root_fingerprint=fp("attacker-root"))
+    with pytest.raises(OwnershipEvidenceValidationError, match="KEY_NOT_CURRENT"):
+        validate_recovery_decision(lookup, replace(envelope, receipt=altered), keys)
+
+
 def test_recovery_signature_binds_expiry_and_revocation_reference() -> None:
     keys = Keys()
     lookup, envelope = recovery_fixture(keys)
