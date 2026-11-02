@@ -169,6 +169,7 @@ class VerificationKey:
     public_key_pem: bytes
     valid_from: datetime
     valid_until: datetime
+    trust_root_reference: str | None = None
     revoked_at: datetime | None = None
     superseded_at: datetime | None = None
 
@@ -328,7 +329,7 @@ class RecoveryDecisionReplayRegistry:
             message=signed_payload, signature_b64=signature_b64,
             key=verification_key, evaluated_at=evaluated_at,
         )
-        if verification_key.key_reference != receipt.trust_root_reference:
+        if verification_key.trust_root_reference != receipt.trust_root_reference:
             raise OwnershipProviderEvidenceError("RECOVERY_SIGNING_KEY_TRUST_ROOT_MISMATCH")
         try:
             self._events.insert_one({
