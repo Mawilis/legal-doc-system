@@ -14,6 +14,10 @@ on:
   pull_request:
     branches: [main]
     paths:
+      - "tools/eos/saas/entitlement/tenant_product_entitlement_composer.py"
+      - "tools/eos/saas/entitlement/legal_commercial_context_projection.py"
+      - "tests/unit/test_tenant_product_entitlement_composer.py"
+      - "tests/unit/test_legal_commercial_context_projection.py"
       - "tools/eos/saas/billing/plan_registry.py"
       - "tools/eos/saas/billing/subscription_registry.py"
       - "tools/eos/saas/billing/subscription_active_entitlement_composition_service.py"
@@ -149,6 +153,10 @@ jobs:
             tests/integration/test_legal_evidence_capacity_tenant_profile_real_mongo.py \
             tests/integration/test_crm_core_entitlement_resolver_real_mongo.py \
             tests/integration/test_plan_router_authority_real_mongo.py
+
+
+      - name: Run Founder perpetual Legal entitlement unit certificates
+        run: python -m pytest -q tests/unit/test_tenant_product_entitlement_composer.py tests/unit/test_legal_commercial_context_projection.py
 
       - name: Stop isolated Mongo replica set
         if: always()
