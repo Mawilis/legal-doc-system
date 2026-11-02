@@ -114,10 +114,7 @@ class TenantOwnershipLifecycleCommand:
             or actor_principal_id != actor_principal_id.strip()
         ):
             raise TenantOwnershipLifecycleCommandError("ACTOR_PRINCIPAL_INVALID")
-        current = self._registry.current(tenant_id=request.tenant_id, session=session)
         if request.operation is TenantOwnershipOperation.TENANT_GENESIS:
-            if current is not None or expected_revision != 0:
-                raise TenantOwnershipLifecycleCommandError("TENANT_GENESIS_NOT_AVAILABLE")
             pretenant_decision = self._genesis_request_authorizer.authorize_pretenant_provisioner(
                 principal_id=actor_principal_id,
                 tenant_id=request.tenant_id,
@@ -125,6 +122,10 @@ class TenantOwnershipLifecycleCommand:
             )
             if not self._authorized(pretenant_decision):
                 raise TenantOwnershipLifecycleCommandError("PRETENANT_PROVISIONER_AUTHORIZATION_DENIED")
+        current = self._registry.current(tenant_id=request.tenant_id, session=session)
+        if request.operation is TenantOwnershipOperation.TENANT_GENESIS:
+            if current is not None or expected_revision != 0:
+                raise TenantOwnershipLifecycleCommandError("TENANT_GENESIS_NOT_AVAILABLE")
         elif request.operation is TenantOwnershipOperation.OWNERSHIP_TRANSFER:
             self._require_current_owner(
                 current=current,
