@@ -2824,7 +2824,7 @@ function assertLocationGrantResponse(value, attemptId, grantId) {
     || grant.attempt_id !== attemptId
     || grant.grant_id !== grantId
     || !isCanonicalText(grant.device_id)
-    || grant.purpose !== 'PROCESS_SERVICE_LOCATION_EVIDENCE'
+    || grant.purpose !== 'PROCESS_SERVICE_ATTEMPT_FIELD_EVIDENCE'
     || !isCanonicalText(value?.fingerprint)
   ) {
     throw new Error('DEPUTY_LOCATION_PERMISSION_GRANT_RESPONSE_INVALID');
