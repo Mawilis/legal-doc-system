@@ -190,6 +190,7 @@ class ValidatedRecoveryDecision:
     successor_principal_id: str
     decision_reference: str
     decision_fingerprint: str
+    evaluated_at: datetime
     validation_fingerprint: str
 
     def __init__(self, *args: object, **kwargs: object) -> None:
@@ -210,6 +211,7 @@ def _validated_recovery_decision(
         "successor_principal_id": lookup.successor_principal_id,
         "decision_reference": receipt.decision_reference,
         "decision_fingerprint": receipt.decision_fingerprint,
+        "evaluated_at": _utc(lookup.evaluated_at, "RECOVERY_EVALUATION_TIME_INVALID"),
         "validation_fingerprint": sha256(message + signature).hexdigest(),
     }
     for name, item in fields.items():
@@ -330,7 +332,7 @@ class RecoveryDecisionReplayRegistry:
                 "decision_fingerprint": decision.decision_fingerprint,
                 "recovery_case_reference": decision.recovery_case_reference,
                 "successor_principal_id": decision.successor_principal_id,
-                "consumed_at": datetime.now(timezone.utc),
+                "consumed_at": decision.evaluated_at,
                 "legal_entity_reference": decision.legal_entity_reference,
                 "recovery_case_fingerprint": decision.recovery_case_fingerprint,
                 "validation_fingerprint": decision.validation_fingerprint,
