@@ -36,7 +36,11 @@ from .tenant_ownership_provider_ports import (
     SubjectProofingReceipt,
     SubjectProofingRequest,
 )
-from .tenant_ownership_verifier import TenantOwnershipOperation
+from .tenant_ownership_verifier import (
+    TenantOwnershipOperation,
+    TenantOwnershipVerificationError,
+    TenantOwnershipVerificationRequest,
+)
 
 
 class ProviderEvidenceCompositionError(RuntimeError):
@@ -183,6 +187,15 @@ class TenantOwnershipProviderEvidenceComposer:
             raise ProviderEvidenceCompositionError("PROVIDER_PREFLIGHT_SCOPE_INVALID")
         if type(request.operation) is not TenantOwnershipOperation:
             raise ProviderEvidenceCompositionError("PROVIDER_PREFLIGHT_OPERATION_INVALID")
+        if request.purpose != request.operation.value:
+            raise ProviderEvidenceCompositionError("PROVIDER_PREFLIGHT_PURPOSE_OPERATION_MISMATCH")
+        try:
+            TenantOwnershipVerificationRequest(
+                request.tenant_id, request.legal_entity_reference, request.principal_id,
+                request.operation, request.evaluated_at,
+            )
+        except TenantOwnershipVerificationError as error:
+            raise ProviderEvidenceCompositionError(error.code) from error
         if type(request.signing_key_revision) is not int or request.signing_key_revision < 1:
             raise ProviderEvidenceCompositionError("PROVIDER_PREFLIGHT_KEY_REVISION_INVALID")
         if type(request.max_registry_age) is not timedelta or request.max_registry_age <= timedelta(0):
