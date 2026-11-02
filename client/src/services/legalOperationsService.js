@@ -2891,10 +2891,17 @@ function assertLocationGrantResponse(value, attemptId, grantId) {
     || !isCanonicalText(grant.device_id)
     || grant.purpose !== 'PROCESS_SERVICE_ATTEMPT_FIELD_EVIDENCE'
     || !isCanonicalText(value?.fingerprint)
+    || !isCanonicalText(value?.device_provenance_reference)
+    || !isCanonicalText(value?.device_provenance_fingerprint)
   ) {
     throw new Error('DEPUTY_LOCATION_PERMISSION_GRANT_RESPONSE_INVALID');
   }
-  return Object.freeze({ ...grant, fingerprint: value.fingerprint });
+  return Object.freeze({
+    ...grant,
+    fingerprint: value.fingerprint,
+    device_provenance_reference: value.device_provenance_reference,
+    device_provenance_fingerprint: value.device_provenance_fingerprint,
+  });
 }
 
 function assertLocationObservationResponse(value, attemptId, observationId) {
@@ -2938,7 +2945,13 @@ export async function createDeputyLocationPermissionGrant({
       permission_notice_version: LOCATION_PERMISSION_NOTICE_VERSION,
     },
   );
-  return assertLocationGrantResponse(response?.data, attemptId, grantId);
+  const grant = assertLocationGrantResponse(response?.data, attemptId, grantId);
+  await writeDeputyLocationStore(DEPUTY_LOCATION_GRANT_STORE, attemptId, {
+    grant,
+    currentEvidenceIdentity,
+    storedAt: new Date().toISOString(),
+  });
+  return grant;
 }
 
 export async function captureDeputyLocationEvidence({
