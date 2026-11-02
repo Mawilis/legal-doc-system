@@ -66,7 +66,7 @@ def test_recovery_decision_consumption_is_transactional_and_replay_safe(mongo):
         now - timedelta(days=1), now + timedelta(days=1),
         trust_root_reference=receipt.trust_root_reference,
     )
-    signature = base64.b64encode(private.sign(recovery_decision_signing_payload(lookup, receipt))).decode("ascii")
+    signature = base64.b64encode(private.sign(recovery_decision_signing_payload(lookup, receipt, key_reference=key.key_reference, key_revision=key.key_revision))).decode("ascii")
 
     with client.start_session() as session:
         with session.start_transaction():
@@ -98,7 +98,7 @@ def test_recovery_decision_consumption_is_transactional_and_replay_safe(mongo):
         receipt.issued_at, receipt.valid_until, receipt.revocation_reference,
     )
     second_signature = base64.b64encode(
-        private.sign(recovery_decision_signing_payload(lookup, second))
+        private.sign(recovery_decision_signing_payload(lookup, second, key_reference=key.key_reference, key_revision=key.key_revision))
     ).decode("ascii")
     with client.start_session() as session:
         with session.start_transaction():
