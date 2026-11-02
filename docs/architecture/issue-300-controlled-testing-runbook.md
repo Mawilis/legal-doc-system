@@ -38,9 +38,9 @@ Focused commands (run from repository root):
 
 ```bash
 python -m compileall -q tools/eos/auth tests/unit tests/integration
-pyright tools/eos/auth/tenant_ownership_verifier.py tools/eos/auth/tenant_ownership_evidence_registry.py tools/eos/auth/tenant_ownership_lifecycle_command.py tools/eos/auth/tenant_ownership_trust_root_registry.py tools/eos/auth/tenant_ownership_transfer_protocol.py
+pyright tools/eos/auth/tenant_ownership_verifier.py tools/eos/auth/tenant_ownership_evidence_registry.py tools/eos/auth/tenant_ownership_lifecycle_command.py tools/eos/auth/tenant_ownership_trust_root_registry.py tools/eos/auth/tenant_ownership_transfer_protocol.py tools/eos/api/tenant_router.py
 pytest -q tests/unit/test_tenant_ownership_verifier.py tests/unit/test_tenant_ownership_evidence_registry.py tests/unit/test_tenant_ownership_lifecycle_command.py tests/unit/test_tenant_ownership_trust_root_registry.py tests/unit/test_tenant_ownership_transfer_protocol.py tests/unit/test_tenant_ownership_provider_composition.py tests/unit/test_tenant_ownership_evidence_validation.py tests/unit/test_tenant_ownership_provider_ports.py
-pytest -q tests/integration/test_tenant_ownership_evidence_registry_real_mongo.py tests/integration/test_tenant_ownership_governance_transfer_real_mongo.py tests/integration/test_tenant_ownership_provider_composition_real_mongo.py tests/integration/test_tenant_ownership_recovery_replay_real_mongo.py
+pytest -q tests/integration/test_tenant_ownership_evidence_registry_real_mongo.py tests/integration/test_tenant_ownership_governance_transfer_real_mongo.py tests/integration/test_tenant_ownership_provider_composition_real_mongo.py tests/integration/test_tenant_ownership_recovery_replay_real_mongo.py tests/integration/test_tenant_router_get_archive_real_mongo.py
 ```
 
 The GitHub Actions Issue #300 certification workflow is the authoritative CI path and must pass on the exact proposed commit. Do not point these tests at a shared, staging, or production database.
