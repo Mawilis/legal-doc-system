@@ -149,6 +149,28 @@ def test_independent_recovery_decision_signature_and_exact_successor_binding() -
         validate_recovery_decision(altered, envelope, keys)
 
 
+def test_recovery_signature_binds_expiry_and_revocation_reference() -> None:
+    keys = Keys()
+    lookup, envelope = recovery_fixture(keys)
+    altered = replace(envelope.receipt, valid_until=NOW + timedelta(days=30))
+    with pytest.raises(OwnershipEvidenceValidationError, match="SIGNATURE_INVALID"):
+        validate_recovery_decision(lookup, replace(envelope, receipt=altered), keys)
+    altered = replace(envelope.receipt, revocation_reference="substituted-revocation")
+    with pytest.raises(OwnershipEvidenceValidationError, match="SIGNATURE_INVALID"):
+        validate_recovery_decision(lookup, replace(envelope, receipt=altered), keys)
+
+
+def test_key_status_provider_timeout_fails_closed() -> None:
+    class Unavailable(Keys):
+        def key_status(self, key_reference: str, revision: int, at: datetime) -> str:
+            raise TimeoutError("provider timeout")
+
+    request = signing_request()
+    keys = Unavailable()
+    with pytest.raises(OwnershipEvidenceValidationError, match="KEY_STATUS_UNAVAILABLE"):
+        verify_signing_receipt(request, signed_receipt(request, keys), keys)
+
+
 def test_recovery_denies_pending_appeal_expiry_and_revoked_key() -> None:
     keys = Keys()
     lookup, envelope = recovery_fixture(keys)
