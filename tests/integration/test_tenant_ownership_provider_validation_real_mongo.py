@@ -17,7 +17,7 @@ from tools.eos.auth.tenant_ownership_provider_ports import (
 )
 from tools.eos.auth.tenant_ownership_provider_validation import (
     OwnershipProviderEvidenceError, RecoveryDecisionReplayRegistry, VerificationKey,
-    recovery_decision_signing_payload,
+    recovery_decision_signing_payload, invoke_provider_fail_closed,
 )
 
 
@@ -73,6 +73,23 @@ def test_recovery_decision_consumption_is_transactional_and_replay_safe(mongo):
             registry.consume(lookup, receipt, session=session, evaluated_at=now,
                              signature_b64=signature, verification_key=key)
             session.abort_transaction()
+
+    # A transport outage or invalid signature cannot leave a recovery event behind.
+    def unavailable_recovery_provider():
+        raise TimeoutError("provider timeout")
+
+    with pytest.raises(OwnershipProviderEvidenceError, match="RECOVERY_PROVIDER_UNAVAILABLE"):
+        invoke_provider_fail_closed("recovery", unavailable_recovery_provider)
+    with client.start_session() as session:
+        with session.start_transaction():
+            with pytest.raises(OwnershipProviderEvidenceError, match="SIGNATURE_INVALID"):
+                registry.consume(
+                    lookup, receipt, session=session, evaluated_at=now,
+                    signature_b64=base64.b64encode(b"forged").decode("ascii"),
+                    verification_key=key,
+                )
+            session.abort_transaction()
+    assert db["tenant_ownership_recovery_decision_replays"].count_documents({}) == 0
     assert db["tenant_ownership_recovery_decision_replays"].count_documents({}) == 0
 
     with client.start_session() as session:
