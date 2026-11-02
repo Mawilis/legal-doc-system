@@ -47,9 +47,9 @@ from tools.eos.legal_operations.domain.sheriff_appointment_source_evidence impor
 
 VERSION: Final[str] = "v1.0.0-SHERIFF-MINISTERIAL-APPOINTMENT-VERIFICATION"
 SCHEMA: Final[str] = "WILSY-SHERIFF-MINISTERIAL-APPOINTMENT-VERIFICATION/V1"
-_HEX_128: Final[re.Pattern[str]] = re.compile(r"[0-9a-f]{128}\\Z")
+_HEX_128: Final[re.Pattern[str]] = re.compile(r"[0-9a-f]{128}\Z")
 _IDENTIFIER: Final[re.Pattern[str]] = re.compile(
-    r"[A-Za-z0-9][A-Za-z0-9._:/?#=&%-]{0,511}\\Z"
+    r"[A-Za-z0-9][A-Za-z0-9._:/?#=&%-]{0,511}\Z"
 )
 _FORBIDDEN_TENANTS: Final[frozenset[str]] = frozenset({"default", "global", "root", "*"})
 
