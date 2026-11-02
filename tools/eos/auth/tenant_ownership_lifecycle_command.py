@@ -187,6 +187,8 @@ class TenantOwnershipLifecycleCommand:
             or getattr(issuer_root, "key_revision", None) != issuer.key_revision
             or getattr(issuer_root, "authority_scope", None) != issuer.authority_scope
             or getattr(issuer_root, "issuer_identity", None) != issuer.issuer_identity
+            or issuer.authority_scope != "TENANT_OWNERSHIP_ISSUER"
+            or issuer.not_revoked is not True
         ):
             raise TenantOwnershipVerificationError("OWNERSHIP_ISSUER_TRUST_ROOT_NOT_CURRENT")
         if request.operation is TenantOwnershipOperation.GOVERNED_RECOVERY:
@@ -201,8 +203,12 @@ class TenantOwnershipLifecycleCommand:
                 or getattr(recovery_root, "fingerprint", None) != recovery.trust_root_fingerprint
                 or getattr(recovery_root, "authority_scope", None) != recovery.authority_scope
                 or getattr(recovery_root, "authority_scope", None) != "TENANT_OWNERSHIP_GOVERNED_RECOVERY"
+                or getattr(recovery_root, "issuer_identity", None) != recovery.recovery_authority_identity
+                or recovery.not_revoked is not True
             ):
                 raise TenantOwnershipVerificationError("GOVERNED_RECOVERY_TRUST_ROOT_NOT_CURRENT")
+        elif evidence.recovery_authorization is not None:
+            raise TenantOwnershipVerificationError("UNEXPECTED_GOVERNED_RECOVERY_AUTHORIZATION")
         return self._registry.append(
             evidence=evidence,
             command_id=command_id,
