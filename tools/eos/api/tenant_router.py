@@ -12,7 +12,7 @@ FILE:
     tools/eos/api/tenant_router.py
 
 VERSION:
-    v1.2.0-TENANT-PROFILE-UPDATE-AUTHORITY-WIRING
+    v1.3.0-ISSUE-300-DENY-ONLY-READINESS
 
 AUTHORITY:
     Wilsy OS Core Governance.
@@ -32,9 +32,15 @@ COLLABORATION / OWNERSHIP:
     Wilson Khanyezi / Wilsy Core Engineering.
 
 CERTIFICATION / UPDATE DATE:
-    2026-08-31
+    2026-11-02
 
 CHANGELOG:
+    v1.3.0-ISSUE-300-DENY-ONLY-READINESS
+        - Adds authenticated GET /api/tenants/{tenant_id}/ownership/readiness.
+        - Reports the explicit unavailable-authority denial without Mongo access,
+          ownership writes, genesis, transfer, recovery, or trust-root mutation.
+        - Reuses profile_read authorization and exact tenant path/header binding.
+
     v1.2.0-TENANT-PROFILE-UPDATE-AUTHORITY-WIRING
         - Activates PUT /api/tenants/{tenant_id} with canonical
           tenant:profile:write + profile_update authorization.
@@ -104,7 +110,7 @@ STRUCTURAL GOVERNANCE:
 from __future__ import annotations
 
 import logging
-from typing import Any, NoReturn
+from typing import Any, Literal, NoReturn
 
 from fastapi import (
     APIRouter,
@@ -135,7 +141,7 @@ from tools.eos.saas.tenancy.tenant_registry import (
 # SOVEREIGN VERSION
 # =============================================================================
 
-VERSION = "v1.2.0-TENANT-PROFILE-UPDATE-AUTHORITY-WIRING"
+VERSION = "v1.3.0-ISSUE-300-DENY-ONLY-READINESS"
 
 
 # =============================================================================
@@ -170,6 +176,7 @@ class _RouteTenantAuthorization(RequireTenantAuthorization):
 
     async def __call__(
         self,
+        request: Request,
         identity: SovereignIdentity = Depends(
             tenant_authorization_http.get_current_identity
         ),
@@ -189,6 +196,7 @@ class _RouteTenantAuthorization(RequireTenantAuthorization):
     ) -> TenantAuthorizationContext:
         """Delegate current-truth authorization with route-safe scope naming."""
         return await super().__call__(
+            request=request,
             identity=identity,
             tenant_id=tenant_scope,
             principal_repository=principal_repository,
@@ -348,6 +356,15 @@ class TenantListResponse(BaseModel):
 
     tenants: list[TenantResponse]
     total: int
+
+class TenantOwnershipReadinessResponse(BaseModel):
+    """Read-only status of the independent ownership-authority boundary."""
+
+    tenant_id: str
+    status: Literal["DENY"]
+    reason: Literal["OWNERSHIP_EVIDENCE_AUTHORITY_UNAVAILABLE"]
+    positive_operations_enabled: Literal[False]
+
 
 
 # =============================================================================
@@ -510,6 +527,32 @@ async def list_tenants(
     """
     del request, search, skip, limit
     _require_tenant_authority_available()
+
+
+@tenant_router.get(
+    "/{tenant_id}/ownership/readiness",
+    response_model=TenantOwnershipReadinessResponse,
+)
+async def get_tenant_ownership_readiness(
+    tenant_id: str,
+    request: Request,
+    authorization: TenantAuthorizationContext = Depends(_PROFILE_READ_AUTHORIZATION),
+) -> TenantOwnershipReadinessResponse:
+    """Expose the current deny-only ownership state to an authorized own-tenant QA client.
+
+    This route is read-only, performs no database access, and cannot trigger
+    genesis, transfer, recovery, trust-root enrollment, or any ownership write.
+    It exists so controlled QA can distinguish an explicit authority denial
+    from an unavailable application route.
+    """
+    del request
+    _require_exact_path_scope(tenant_id, authorization)
+    return TenantOwnershipReadinessResponse(
+        tenant_id=tenant_id,
+        status="DENY",
+        reason="OWNERSHIP_EVIDENCE_AUTHORITY_UNAVAILABLE",
+        positive_operations_enabled=False,
+    )
 
 
 @tenant_router.get("/{tenant_id}", response_model=TenantResponse)
@@ -695,6 +738,8 @@ __all__ = [
     "TenantUpdateRequest",
     "TenantResponse",
     "TenantListResponse",
+    "TenantOwnershipReadinessResponse",
+    "get_tenant_ownership_readiness",
     "tenant_router",
 ]
 
@@ -703,7 +748,7 @@ __all__ = [
 # WILSY OS SOVEREIGN ARTIFACT CERTIFICATION SEAL
 # =============================================================================
 # ARTIFACT: tenant_router.py
-# VERSION: v1.2.0-TENANT-PROFILE-UPDATE-AUTHORITY-WIRING
+# VERSION: v1.3.0-ISSUE-300-DENY-ONLY-READINESS
 # AUTHORITY BOUNDARY: tenant HTTP composition, exact request schema, path/scope binding, bounded registry invocation, and HTTP translation only; durable authentication, membership, role, permission, and authorization truth remain external authorities
 # TENANT POSTURE: authorized X-Tenant-ID must exactly equal the detail path tenant before GET/PUT/archive persistence; collection list and create remain contained
 # FAIL-CLOSED POSTURE: GET uses profile_read, PUT uses profile_update, archive uses lifecycle_archive; extra PUT fields are rejected; mismatch denies 403; absence is 404; client mutation errors are 422; persistence corruption/outage/inconsistency is 503

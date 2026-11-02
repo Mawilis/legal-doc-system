@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 from datetime import datetime, timedelta, timezone
+from types import SimpleNamespace
 from typing import Any
 
 import pytest
@@ -67,6 +68,9 @@ class Lifecycle:
     def __init__(self) -> None:
         self.calls = 0
 
+    def prepare(self, request: Any) -> object:
+        return SimpleNamespace(request=request)
+
     def execute(self, **kwargs: Any) -> object:
         self.calls += 1
         return object()
@@ -115,45 +119,71 @@ def acceptance(proposal: TransferProposal, **changes: Any) -> VerifiedTransferAc
 
 def test_proposal_requires_active_transaction_before_verification() -> None:
     protocol, _, _, proposal = setup()
+    verified = protocol.prepare_proposal(proposal)
     with pytest.raises(OwnershipTransferProtocolError, match="ACTIVE_TRANSACTION_REQUIRED"):
-        protocol.propose(proposal, session=None)
+        protocol.propose(proposal, verified=verified, session=None)
 
 
 def test_successor_acceptance_must_bind_exact_proposal_and_successor() -> None:
     protocol, _, _, proposal = setup()
-    protocol.propose(proposal, session=Session())
+    protocol.propose(proposal, verified=protocol.prepare_proposal(proposal), session=Session())
     bad = acceptance(proposal, successor_principal_id="attacker-1")
     with pytest.raises(OwnershipTransferProtocolError, match="SUCCESSOR_ACCEPTANCE_SCOPE_MISMATCH"):
-        protocol.accept(
+        protocol.prepare_acceptance(
             proposal_reference=proposal.proposal_reference, acceptance=bad,
+            evaluated_at=datetime.now(timezone.utc),
+        )
+
+
+def test_public_proof_dataclasses_cannot_bypass_preflight_receipts() -> None:
+    protocol, _, _, proposal = setup()
+    forged_proposal = VerifiedTransferProposal(
+        proposal, proposal.created_at, "forged-verifier", "forged-proof"
+    )
+    with pytest.raises(OwnershipTransferProtocolError, match="CURRENT_OWNER_PROPOSAL_VERIFICATION_INVALID"):
+        protocol.propose(proposal, verified=forged_proposal, session=Session())  # type: ignore[arg-type]
+
+    prepared = protocol.prepare_proposal(proposal)
+    protocol.propose(proposal, verified=prepared, session=Session())
+    forged_acceptance = acceptance(proposal)
+    with pytest.raises(OwnershipTransferProtocolError, match="SUCCESSOR_ACCEPTANCE_REQUIRED"):
+        protocol.accept(
+            proposal_reference=proposal.proposal_reference,
+            acceptance=forged_acceptance,  # type: ignore[arg-type]
             session=Session(), evaluated_at=datetime.now(timezone.utc),
         )
 
 
 def test_finalization_is_denied_until_independent_acceptance_exists() -> None:
     protocol, _, lifecycle, proposal = setup()
-    protocol.propose(proposal, session=Session())
+    protocol.propose(proposal, verified=protocol.prepare_proposal(proposal), session=Session())
     with pytest.raises(OwnershipTransferProtocolError, match="INDEPENDENT_SUCCESSOR_ACCEPTANCE_REQUIRED"):
-        protocol.finalize(
+        protocol.prepare_finalization(
             proposal_reference=proposal.proposal_reference,
-            actor_principal_id="owner-1", command_id="finalize-1",
-            session=Session(), evaluated_at=datetime.now(timezone.utc),
+            evaluated_at=datetime.now(timezone.utc),
         )
     assert lifecycle.calls == 0
 
 
 def test_finalization_delegates_atomic_owner_and_evidence_checks() -> None:
     protocol, database, lifecycle, proposal = setup()
-    protocol.propose(proposal, session=Session())
+    protocol.propose(proposal, verified=protocol.prepare_proposal(proposal), session=Session())
     accepted = acceptance(proposal)
+    now = datetime.now(timezone.utc)
+    prepared_acceptance = protocol.prepare_acceptance(
+        proposal_reference=proposal.proposal_reference, acceptance=accepted, evaluated_at=now,
+    )
     protocol.accept(
-        proposal_reference=proposal.proposal_reference, acceptance=accepted,
-        session=Session(), evaluated_at=datetime.now(timezone.utc),
+        proposal_reference=proposal.proposal_reference, acceptance=prepared_acceptance,
+        session=Session(), evaluated_at=now,
+    )
+    prepared_evidence = protocol.prepare_finalization(
+        proposal_reference=proposal.proposal_reference, evaluated_at=now,
     )
     protocol.finalize(
         proposal_reference=proposal.proposal_reference,
         actor_principal_id="owner-1", command_id="finalize-1",
-        session=Session(), evaluated_at=datetime.now(timezone.utc),
+        prepared_evidence=prepared_evidence, session=Session(), evaluated_at=now,
     )
     assert lifecycle.calls == 1
     assert database["tenant_ownership_transfer_proposals"].rows[0]["status"] == "FINALIZED"
@@ -161,46 +191,62 @@ def test_finalization_delegates_atomic_owner_and_evidence_checks() -> None:
 
 def test_acceptance_from_other_tenant_or_entity_is_rejected() -> None:
     protocol, _, _, proposal = setup()
-    protocol.propose(proposal, session=Session())
+    protocol.propose(proposal, verified=protocol.prepare_proposal(proposal), session=Session())
     for field, value in (("tenant_id", "tenant-2"), ("legal_entity_reference", "entity-2")):
         with pytest.raises(OwnershipTransferProtocolError, match="SUCCESSOR_ACCEPTANCE_SCOPE_MISMATCH"):
-            protocol.accept(
+            protocol.prepare_acceptance(
                 proposal_reference=proposal.proposal_reference,
                 acceptance=acceptance(proposal, **{field: value}),
-                session=Session(), evaluated_at=datetime.now(timezone.utc),
+                evaluated_at=datetime.now(timezone.utc),
             )
 
 
 def test_finalization_rejects_non_owner_actor_before_lifecycle() -> None:
     protocol, _, lifecycle, proposal = setup()
-    protocol.propose(proposal, session=Session())
+    protocol.propose(proposal, verified=protocol.prepare_proposal(proposal), session=Session())
+    now = datetime.now(timezone.utc)
+    verified_acceptance = protocol.prepare_acceptance(
+        proposal_reference=proposal.proposal_reference,
+        acceptance=acceptance(proposal), evaluated_at=now,
+    )
     protocol.accept(
         proposal_reference=proposal.proposal_reference,
-        acceptance=acceptance(proposal),
-        session=Session(), evaluated_at=datetime.now(timezone.utc),
+        acceptance=verified_acceptance,
+        session=Session(), evaluated_at=now,
+    )
+    prepared_evidence = protocol.prepare_finalization(
+        proposal_reference=proposal.proposal_reference, evaluated_at=now,
     )
     with pytest.raises(OwnershipTransferProtocolError, match="CURRENT_OWNER_FINALIZATION_REQUIRED"):
         protocol.finalize(
             proposal_reference=proposal.proposal_reference,
             actor_principal_id="attacker-1", command_id="finalize-attack",
-            session=Session(), evaluated_at=datetime.now(timezone.utc),
+            prepared_evidence=prepared_evidence, session=Session(), evaluated_at=now,
         )
     assert lifecycle.calls == 0
 
 
 def test_finalization_rejects_expired_successor_acceptance() -> None:
     protocol, _, lifecycle, proposal = setup()
-    protocol.propose(proposal, session=Session())
+    protocol.propose(proposal, verified=protocol.prepare_proposal(proposal), session=Session())
     accepted = acceptance(proposal)
+    accepted_at = datetime.now(timezone.utc)
+    verified_acceptance = protocol.prepare_acceptance(
+        proposal_reference=proposal.proposal_reference,
+        acceptance=accepted, evaluated_at=accepted_at,
+    )
     protocol.accept(
         proposal_reference=proposal.proposal_reference,
-        acceptance=accepted, session=Session(),
-        evaluated_at=datetime.now(timezone.utc),
+        acceptance=verified_acceptance, session=Session(), evaluated_at=accepted_at,
+    )
+    prepared_evidence = protocol.prepare_finalization(
+        proposal_reference=proposal.proposal_reference, evaluated_at=accepted_at,
     )
     with pytest.raises(OwnershipTransferProtocolError, match="TRANSFER_PROPOSAL_ACCEPTANCE_BINDING_INVALID"):
         protocol.finalize(
             proposal_reference=proposal.proposal_reference,
             actor_principal_id="owner-1", command_id="finalize-expired",
-            session=Session(), evaluated_at=accepted.expires_at + timedelta(seconds=1),
+            prepared_evidence=prepared_evidence, session=Session(),
+            evaluated_at=accepted.expires_at + timedelta(seconds=1),
         )
     assert lifecycle.calls == 0

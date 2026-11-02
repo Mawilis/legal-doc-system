@@ -357,6 +357,31 @@ def _without_id(document: dict[str, Any] | None) -> dict[str, Any] | None:
     return result
 
 
+def test_application_http_ownership_readiness_is_authorized_deny_only() -> None:
+    """The composed FastAPI app exposes readiness without enabling ownership writes."""
+    tenant_id = f"qa-readiness-{uuid4().hex}"
+    app = _app_for_scope(tenant_id)
+
+    with TestClient(app) as client:
+        response = client.get(
+            f"/api/tenants/{tenant_id}/ownership/readiness",
+            headers={"X-Tenant-ID": tenant_id},
+        )
+        cross_tenant = client.get(
+            f"/api/tenants/{tenant_id}/ownership/readiness",
+            headers={"X-Tenant-ID": f"other-{uuid4().hex}"},
+        )
+
+    assert response.status_code == 200
+    assert response.json() == {
+        "tenant_id": tenant_id,
+        "status": "DENY",
+        "reason": "OWNERSHIP_EVIDENCE_AUTHORITY_UNAVAILABLE",
+        "positive_operations_enabled": False,
+    }
+    assert cross_tenant.status_code == 403
+
+
 def test_real_mongo_authorized_get_returns_healthy_tenant_and_sector() -> None:
     """Authorized GET reaches real Mongo and exposes durable sector."""
     with _state() as (collection, _, tenant_a, _, _):

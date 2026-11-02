@@ -2,7 +2,7 @@
 """
 ===============================================================================
 WILSY OS — SOVEREIGN CERTIFICATION ARTIFACT
-TENANT ROUTER — C2 CONTROLLED PROFILE UPDATE — UNIT CERTIFICATE
+TENANT ROUTER — C2 PROFILE UPDATE AND ISSUE 300 READINESS — UNIT CERTIFICATE
 ===============================================================================
 
 TITLE:
@@ -39,7 +39,7 @@ CERTIFICATION / UPDATE DATE:
 CHANGELOG:
     v1.2.0-TENANT-PROFILE-UPDATE-AUTHORITY-CERT
         - Activates deterministic certification for PUT profile mutation.
-        - Preserves exact five-route ownership.
+        - Preserves five profile routes plus the Issue 300 readiness route.
         - Preserves collection GET and POST containment before persistence.
         - Preserves exact GET and DELETE authorization bindings.
         - Adds exact PUT write authorization binding and six-field schema proof.
@@ -109,7 +109,7 @@ from tools.eos.saas.tenancy.tenant_registry import (
 
 
 VERSION = "v1.2.0-TENANT-PROFILE-UPDATE-AUTHORITY-CERT"
-EXPECTED_ROUTER_VERSION = "v1.2.0-TENANT-PROFILE-UPDATE-AUTHORITY-WIRING"
+EXPECTED_ROUTER_VERSION = "v1.3.0-ISSUE-300-DENY-ONLY-READINESS"
 
 EXPECTED_ROUTES = Counter(
     {
@@ -118,6 +118,7 @@ EXPECTED_ROUTES = Counter(
         ("GET", "/api/tenants/{tenant_id}"): 1,
         ("PUT", "/api/tenants/{tenant_id}"): 1,
         ("DELETE", "/api/tenants/{tenant_id}"): 1,
+        ("GET", "/api/tenants/{tenant_id}/ownership/readiness"): 1,
     }
 )
 
@@ -211,12 +212,21 @@ def _request() -> Request:
     return Request(scope)
 
 
-def test_version_and_exact_five_route_surface() -> None:
-    """C2 keeps the exact five-route API surface."""
+def test_version_and_exact_six_route_surface() -> None:
+    """C2 preserves five profile routes and adds one deny-only readiness route."""
     assert VERSION == "v1.2.0-TENANT-PROFILE-UPDATE-AUTHORITY-CERT"
     assert TENANT_ROUTER_VERSION == EXPECTED_ROUTER_VERSION
     assert _route_counter() == EXPECTED_ROUTES
-    assert len(tenant_router.routes) == 5
+    assert len(tenant_router.routes) == 6
+
+
+def test_ownership_readiness_route_has_exact_profile_read_authorization_dependency() -> None:
+    """Ownership readiness is own-tenant read-only and cannot write ownership."""
+    route = _route("GET", "/api/tenants/{tenant_id}/ownership/readiness")
+    dependencies = _tenant_authorization_dependencies(route)
+    assert len(dependencies) == 1
+    assert dependencies[0].permission_id == "tenant:profile:read"
+    assert dependencies[0].operation == "profile_read"
 
 
 def test_get_detail_has_exact_profile_read_authorization_dependency() -> None:

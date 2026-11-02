@@ -21,7 +21,7 @@ from tools.eos.auth.tenant_ownership_verifier import (
     VerifiedTenantOwnershipEvidence,
 )
 
-VERSION: Final[str] = "v1.0.0-ISSUE-300-OWNERSHIP-LIFECYCLE-COMMAND"
+VERSION: Final[str] = "v1.1.0-ISSUE-300-TWO-PHASE-LIFECYCLE-COMMAND"
 
 
 class TenantOwnershipLifecycleCommandError(RuntimeError):
@@ -56,6 +56,16 @@ class TenantOwnershipTransferActorAuthorizer(Protocol):
         ...
 
 
+class TenantOwnershipTrustRootCurrentness(Protocol):
+    """Read-only transaction-bound trust-root currentness authority."""
+
+    def current(
+        self, trust_root_reference: str, *, at: Any, session: Any
+    ) -> object | None:
+        """Return the exact current enrolled root or None when revoked/unknown."""
+        ...
+
+
 class TenantOwnershipLifecycleCommand:
     """Coordinate verification, current-owner admission and one atomic registry append.
 
@@ -72,13 +82,15 @@ class TenantOwnershipLifecycleCommand:
         registry: TenantOwnershipEvidenceRegistry,
         transfer_actor_authorizer: TenantOwnershipTransferActorAuthorizer,
         genesis_request_authorizer: TenantOwnershipGenesisRequestAuthorizer,
+        trust_root_currentness: TenantOwnershipTrustRootCurrentness,
     ) -> None:
-        if verifier is None or registry is None or transfer_actor_authorizer is None or genesis_request_authorizer is None:
+        if verifier is None or registry is None or transfer_actor_authorizer is None or genesis_request_authorizer is None or trust_root_currentness is None:
             raise TenantOwnershipLifecycleCommandError("LIFECYCLE_DEPENDENCY_REQUIRED")
         self._verifier = verifier
         self._registry = registry
         self._transfer_actor_authorizer = transfer_actor_authorizer
         self._genesis_request_authorizer = genesis_request_authorizer
+        self._trust_root_currentness = trust_root_currentness
 
     @staticmethod
     def _active_transaction(session: Any) -> None:
@@ -95,16 +107,33 @@ class TenantOwnershipLifecycleCommand:
         """Accept only the canonical positive decision shape, never truthy objects."""
         return getattr(decision, "authorized", None) is True
 
+    def prepare(
+        self, request: TenantOwnershipVerificationRequest
+    ) -> VerifiedTenantOwnershipEvidence:
+        """Run independent evidence/provider verification before opening a Mongo transaction."""
+        if type(request) is not TenantOwnershipVerificationRequest:
+            raise TenantOwnershipLifecycleCommandError("VERIFICATION_REQUEST_REQUIRED")
+        try:
+            evidence = self._verifier.verify(request)
+        except TenantOwnershipVerificationError:
+            raise
+        if type(evidence) is not VerifiedTenantOwnershipEvidence:
+            raise TenantOwnershipVerificationError("VERIFIED_OWNERSHIP_EVIDENCE_REQUIRED")
+        if evidence.request != request:
+            raise TenantOwnershipVerificationError("VERIFIED_OWNERSHIP_REQUEST_MISMATCH")
+        return evidence
+
     def execute(
         self,
         *,
         request: TenantOwnershipVerificationRequest,
+        evidence: VerifiedTenantOwnershipEvidence,
         actor_principal_id: str,
         command_id: str,
         expected_revision: int,
         session: Any,
     ) -> TenantOwnershipEvidenceEvent:
-        """Verify one exact genesis, transfer or recovery and append in caller transaction."""
+        """Revalidate mutable authority and append prepared evidence in caller transaction."""
         self._active_transaction(session)
         if type(request) is not TenantOwnershipVerificationRequest:
             raise TenantOwnershipLifecycleCommandError("VERIFICATION_REQUEST_REQUIRED")
@@ -139,16 +168,47 @@ class TenantOwnershipLifecycleCommand:
         else:
             raise TenantOwnershipLifecycleCommandError("OWNERSHIP_OPERATION_INVALID")
 
-        try:
-            evidence = self._verifier.verify(request)
-        except TenantOwnershipVerificationError:
-            raise
         if type(evidence) is not VerifiedTenantOwnershipEvidence:
-            raise TenantOwnershipVerificationError(
-                "VERIFIED_OWNERSHIP_EVIDENCE_REQUIRED"
-            )
+            raise TenantOwnershipVerificationError("VERIFIED_OWNERSHIP_EVIDENCE_REQUIRED")
         if evidence.request != request:
             raise TenantOwnershipVerificationError("VERIFIED_OWNERSHIP_REQUEST_MISMATCH")
+
+        # Provider signatures are checked in prepare(); the authoritative
+        # revocation/currentness state is re-read from Mongo inside this commit
+        # transaction to close the preflight-to-commit race.
+        issuer = evidence.issuer_authority
+        issuer_root = self._trust_root_currentness.current(
+            issuer.trust_root_reference, at=request.evaluated_at, session=session
+        )
+        if (
+            issuer_root is None
+            or getattr(issuer_root, "fingerprint", None) != issuer.trust_root_fingerprint
+            or getattr(issuer_root, "key_id", None) != issuer.key_id
+            or getattr(issuer_root, "key_revision", None) != issuer.key_revision
+            or getattr(issuer_root, "authority_scope", None) != issuer.authority_scope
+            or getattr(issuer_root, "issuer_identity", None) != issuer.issuer_identity
+            or issuer.authority_scope != "TENANT_OWNERSHIP_ISSUER"
+            or issuer.not_revoked is not True
+        ):
+            raise TenantOwnershipVerificationError("OWNERSHIP_ISSUER_TRUST_ROOT_NOT_CURRENT")
+        if request.operation is TenantOwnershipOperation.GOVERNED_RECOVERY:
+            recovery = evidence.recovery_authorization
+            if recovery is None:
+                raise TenantOwnershipVerificationError("GOVERNED_RECOVERY_AUTHORIZATION_REQUIRED")
+            recovery_root = self._trust_root_currentness.current(
+                recovery.trust_root_reference, at=request.evaluated_at, session=session
+            )
+            if (
+                recovery_root is None
+                or getattr(recovery_root, "fingerprint", None) != recovery.trust_root_fingerprint
+                or getattr(recovery_root, "authority_scope", None) != recovery.authority_scope
+                or getattr(recovery_root, "authority_scope", None) != "TENANT_OWNERSHIP_GOVERNED_RECOVERY"
+                or getattr(recovery_root, "issuer_identity", None) != recovery.recovery_authority_identity
+                or recovery.not_revoked is not True
+            ):
+                raise TenantOwnershipVerificationError("GOVERNED_RECOVERY_TRUST_ROOT_NOT_CURRENT")
+        elif evidence.recovery_authorization is not None:
+            raise TenantOwnershipVerificationError("UNEXPECTED_GOVERNED_RECOVERY_AUTHORIZATION")
         return self._registry.append(
             evidence=evidence,
             command_id=command_id,
@@ -185,4 +245,5 @@ __all__ = [
     "TenantOwnershipLifecycleCommandError",
     "TenantOwnershipGenesisRequestAuthorizer",
     "TenantOwnershipTransferActorAuthorizer",
+    "TenantOwnershipTrustRootCurrentness",
 ]

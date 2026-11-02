@@ -6,13 +6,25 @@ import uuid
 from dataclasses import replace
 from datetime import datetime, timedelta, timezone
 from urllib.parse import urlparse
+from types import SimpleNamespace
 
 import pytest
 from pymongo import MongoClient
 
+from tools.eos.auth.tenant_ownership_lifecycle_command import (
+    TenantOwnershipLifecycleCommand,
+)
+from tools.eos.auth.tenant_ownership_verifier import (
+    TenantOwnershipOperation,
+    TenantOwnershipVerificationError,
+    TenantOwnershipVerificationRequest,
+    UnavailableTenantOwnershipEvidenceVerifier,
+    VerifiedTenantOwnershipEvidence,
+)
 from tools.eos.auth.tenant_ownership_trust_root_registry import (
     GovernedTrustRootRegistry, TrustRootEnrollmentRequest, TrustRootError,
-    VerifiedTrustRootEnrollment,
+    VerifiedTrustRootEnrollment, TrustRootRevocationRequest,
+    TrustRootRevocationProof,
 )
 from tools.eos.auth.tenant_ownership_transfer_protocol import (
     OwnershipTransferProtocolError, TenantOwnershipTransferProtocol,
@@ -22,8 +34,15 @@ from tools.eos.auth.tenant_ownership_transfer_protocol import (
 class GovernanceVerifier:
     def verify(self, request: TrustRootEnrollmentRequest) -> VerifiedTrustRootEnrollment:
         return VerifiedTrustRootEnrollment(
-            request, request.valid_from + timedelta(minutes=1),
+            request, datetime.now(timezone.utc),
             "independent-governance-verifier", "test-v1", "governance-proof",
+        )
+
+class RevocationVerifier:
+    def verify(self, request: TrustRootRevocationRequest) -> TrustRootRevocationProof:
+        return TrustRootRevocationProof(
+            request, datetime.now(timezone.utc),
+            "independent-revocation-verifier", "test-v1", "revocation-proof",
         )
 
 class ProposalVerifier:
@@ -37,6 +56,8 @@ class AcceptanceVerifier:
 class Lifecycle:
     def __init__(self) -> None:
         self.calls = 0
+    def prepare(self, request: object) -> object:
+        return SimpleNamespace(request=request)
     def execute(self, **kwargs: object) -> object:
         self.calls += 1
         return object()
@@ -104,6 +125,18 @@ def test_transfer_requires_distinct_proposal_acceptance_and_owner_finalization(m
         "owner", "successor", 4, now - timedelta(seconds=1),
         now + timedelta(hours=2), "mandate-ref", "mandate-fingerprint",
     )
+    verified_proposal = protocol.prepare_proposal(proposal)  # provider call outside transaction
+
+    # Proposal persistence remains caller-transaction-owned and rollback-safe.
+    with client.start_session() as session:
+        with session.start_transaction():
+            protocol.propose(proposal, verified=verified_proposal, session=session)
+            session.abort_transaction()
+    assert db["tenant_ownership_transfer_proposals"].count_documents({}) == 0
+    with client.start_session() as session:
+        with session.start_transaction():
+            protocol.propose(proposal, verified=verified_proposal, session=session)
+
     acceptance = VerifiedTransferAcceptance(
         proposal.proposal_reference, proposal.proposal_fingerprint,
         proposal.tenant_id, proposal.legal_entity_reference,
@@ -112,62 +145,57 @@ def test_transfer_requires_distinct_proposal_acceptance_and_owner_finalization(m
         now, now + timedelta(hours=1), "successor-identity-proof",
         "successor-verifier", "acceptance-proof",
     )
+    verified_acceptance = protocol.prepare_acceptance(
+        proposal_reference=proposal.proposal_reference,
+        acceptance=acceptance, evaluated_at=now,
+    )  # successor verification outside transaction
 
-    # Prove proposal and acceptance writes roll back together.
+    # Acceptance persistence also rolls back independently.
     with client.start_session() as session:
         with session.start_transaction():
-            protocol.propose(proposal, session=session)
-            with pytest.raises(OwnershipTransferProtocolError, match="INDEPENDENT_SUCCESSOR_ACCEPTANCE_REQUIRED"):
-                protocol.finalize(
-                    proposal_reference=proposal.proposal_reference,
-                    actor_principal_id="owner", command_id="early",
-                    session=session, evaluated_at=now,
-                )
             protocol.accept(
                 proposal_reference=proposal.proposal_reference,
-                acceptance=acceptance, session=session, evaluated_at=now,
+                acceptance=verified_acceptance, session=session, evaluated_at=now,
             )
             session.abort_transaction()
-    assert db["tenant_ownership_transfer_proposals"].count_documents({}) == 0
     assert db["tenant_ownership_transfer_acceptances"].count_documents({}) == 0
-
-    # Commit independently verified proposal and successor acceptance.
     with client.start_session() as session:
         with session.start_transaction():
-            protocol.propose(proposal, session=session)
             protocol.accept(
                 proposal_reference=proposal.proposal_reference,
-                acceptance=acceptance, session=session, evaluated_at=now,
+                acceptance=verified_acceptance, session=session, evaluated_at=now,
             )
 
-    # A duplicate-key replay aborts its transaction; verify it in isolation.
+    # Replay cannot create a second acceptance for the same proposal.
     with client.start_session() as session:
         with session.start_transaction():
             with pytest.raises(OwnershipTransferProtocolError, match="SUCCESSOR_ACCEPTANCE_REPLAY"):
                 protocol.accept(
                     proposal_reference=proposal.proposal_reference,
-                    acceptance=acceptance, session=session, evaluated_at=now,
+                    acceptance=verified_acceptance, session=session, evaluated_at=now,
                 )
             session.abort_transaction()
 
-    # Unauthorized finalization is denied without invoking the lifecycle command.
+    # Independent ownership evidence preflight occurs before finalization transaction.
+    prepared_evidence = protocol.prepare_finalization(
+        proposal_reference=proposal.proposal_reference, evaluated_at=now,
+    )
     with client.start_session() as session:
         with session.start_transaction():
             with pytest.raises(OwnershipTransferProtocolError, match="CURRENT_OWNER_FINALIZATION_REQUIRED"):
                 protocol.finalize(
                     proposal_reference=proposal.proposal_reference,
                     actor_principal_id="attacker", command_id="attacker",
-                    session=session, evaluated_at=now,
+                    prepared_evidence=prepared_evidence, session=session, evaluated_at=now,
                 )
     assert lifecycle.calls == 0
 
-    # Only the current owner can finalize, atomically with lifecycle execution.
     with client.start_session() as session:
         with session.start_transaction():
             protocol.finalize(
                 proposal_reference=proposal.proposal_reference,
                 actor_principal_id="owner", command_id="finalize-once",
-                session=session, evaluated_at=now,
+                prepared_evidence=prepared_evidence, session=session, evaluated_at=now,
             )
     assert lifecycle.calls == 1
     stored = db["tenant_ownership_transfer_proposals"].find_one(
@@ -177,3 +205,210 @@ def test_transfer_requires_distinct_proposal_acceptance_and_owner_finalization(m
     assert db["tenant_ownership_transfer_acceptances"].count_documents(
         {"proposal_reference": proposal.proposal_reference}
     ) == 1
+
+
+def test_lifecycle_rechecks_revoked_issuer_root_inside_real_mongo_transaction(mongo):
+    client, db = mongo
+    trust_roots = GovernedTrustRootRegistry(
+        db, GovernanceVerifier(), revocation_verifier=RevocationVerifier()
+    )
+    trust_roots.ensure_indexes()
+    now = datetime.now(timezone.utc)
+    root_request = TrustRootEnrollmentRequest(
+        "root-lifecycle-" + uuid.uuid4().hex, "lifecycle-key-fingerprint", "ZA",
+        "TENANT_OWNERSHIP_ISSUER", "independent-issuer", "lifecycle-key", 1,
+        now - timedelta(minutes=1), now + timedelta(days=10),
+        "lifecycle-enroll-" + uuid.uuid4().hex, "lifecycle-enroll-fingerprint",
+        ("governor-a", "governor-b"), 2,
+    )
+    with client.start_session() as session:
+        with session.start_transaction():
+            enrolled = trust_roots.enroll(root_request, session=session)
+
+    effective_at = datetime.now(timezone.utc) + timedelta(seconds=1)
+    revocation_request = TrustRootRevocationRequest(
+        root_request.trust_root_reference, enrolled.fingerprint, enrolled.key_id,
+        enrolled.key_revision, enrolled.authority_scope, effective_at,
+        "lifecycle-revoke-" + uuid.uuid4().hex, "lifecycle-revoke-fingerprint",
+        ("security-a", "security-b"), 2,
+    )
+    prepared_revocation = trust_roots.prepare_revocation(revocation_request)
+    with client.start_session() as session:
+        with session.start_transaction():
+            trust_roots.revoke(prepared_revocation, session=session)
+
+    class EvidenceRegistryStub:
+        appends = 0
+        def current(self, *, tenant_id: str, session: object) -> None:
+            return None
+        def append(self, **kwargs: object) -> object:
+            self.appends += 1
+            raise AssertionError("revoked issuer evidence must never append")
+
+    class GenesisAuthorizer:
+        def authorize_pretenant_provisioner(self, **kwargs: object) -> object:
+            return SimpleNamespace(authorized=True)
+
+    class TransferAuthorizer:
+        def authorize_current_owner(self, **kwargs: object) -> object:
+            return SimpleNamespace(authorized=False)
+
+    evidence_registry = EvidenceRegistryStub()
+    command = TenantOwnershipLifecycleCommand(
+        verifier=UnavailableTenantOwnershipEvidenceVerifier(),
+        registry=evidence_registry,  # type: ignore[arg-type]
+        transfer_actor_authorizer=TransferAuthorizer(),  # type: ignore[arg-type]
+        genesis_request_authorizer=GenesisAuthorizer(),  # type: ignore[arg-type]
+        trust_root_currentness=trust_roots,
+    )
+    request = TenantOwnershipVerificationRequest(
+        tenant_id="tenant-lifecycle-qa",
+        legal_entity_reference="entity-lifecycle-qa",
+        principal_id="owner-lifecycle-qa",
+        operation=TenantOwnershipOperation.TENANT_GENESIS,
+        evaluated_at=effective_at,
+    )
+    evidence = object.__new__(VerifiedTenantOwnershipEvidence)
+    issuer = SimpleNamespace(
+        trust_root_reference=root_request.trust_root_reference,
+        trust_root_fingerprint=enrolled.fingerprint,
+        key_id=enrolled.key_id,
+        key_revision=enrolled.key_revision,
+        authority_scope="TENANT_OWNERSHIP_ISSUER",
+        issuer_identity="independent-issuer",
+        not_revoked=True,
+    )
+    object.__setattr__(evidence, "request", request)
+    object.__setattr__(evidence, "issuer_authority", issuer)
+    object.__setattr__(evidence, "recovery_authorization", None)
+
+    with client.start_session() as session:
+        with session.start_transaction():
+            with pytest.raises(
+                TenantOwnershipVerificationError,
+                match="OWNERSHIP_ISSUER_TRUST_ROOT_NOT_CURRENT",
+            ):
+                command.execute(
+                    request=request, evidence=evidence,
+                    actor_principal_id="deployment-provisioner",
+                    command_id="lifecycle-revoked-root-denied",
+                    expected_revision=0, session=session,
+                )
+    assert evidence_registry.appends == 0
+
+
+def test_trust_root_key_rotation_is_revisioned_and_currentness_selects_new_key(mongo):
+    client, db = mongo
+    registry = GovernedTrustRootRegistry(db, GovernanceVerifier())
+    registry.ensure_indexes()
+    now = datetime.now(timezone.utc)
+    root_ref = "root-rotate-" + uuid.uuid4().hex
+    first = TrustRootEnrollmentRequest(
+        root_ref, "public-key-fingerprint-1", "ZA",
+        "TENANT_OWNERSHIP_ISSUER", "independent-issuer", "issuer-key-1", 1,
+        now - timedelta(minutes=5), now + timedelta(days=10),
+        "enroll-key-one-" + uuid.uuid4().hex, "decision-fingerprint-1",
+        ("governor-a", "governor-b"), 2,
+    )
+    with client.start_session() as session:
+        with session.start_transaction():
+            first_record = registry.enroll(first, session=session)
+
+    rotation_start = now + timedelta(hours=1)
+    second = TrustRootEnrollmentRequest(
+        root_ref, "public-key-fingerprint-2", "ZA",
+        "TENANT_OWNERSHIP_ISSUER", "independent-issuer", "issuer-key-2", 2,
+        rotation_start, now + timedelta(days=11),
+        "enroll-key-two-" + uuid.uuid4().hex, "decision-fingerprint-2",
+        ("governor-c", "governor-d"), 2,
+    )
+    with client.start_session() as session:
+        with session.start_transaction():
+            second_record = registry.enroll(second, session=session)
+
+    assert second_record.revision == first_record.revision + 1
+    assert second_record.fingerprint != first_record.fingerprint
+    with client.start_session() as session:
+        with session.start_transaction():
+            assert registry.current(root_ref, at=now, session=session) == first_record
+            assert registry.current(
+                root_ref, at=rotation_start + timedelta(seconds=1), session=session
+            ) == second_record
+
+
+def test_trust_root_revocation_is_independently_verified_append_only_and_revision_scoped(mongo):
+    client, db = mongo
+    registry = GovernedTrustRootRegistry(
+        db, GovernanceVerifier(), revocation_verifier=RevocationVerifier()
+    )
+    registry.ensure_indexes()
+    now = datetime.now(timezone.utc)
+    request = TrustRootEnrollmentRequest(
+        "root-revoke-" + uuid.uuid4().hex, "root-revoke-fingerprint", "ZA",
+        "TENANT_OWNERSHIP_ISSUER", "independent-issuer", "key-revoke-1", 1,
+        now - timedelta(minutes=1), now + timedelta(days=10),
+        "enroll-decision-" + uuid.uuid4().hex, "enroll-decision-fingerprint",
+        ("governor-a", "governor-b"), 2,
+    )
+    with client.start_session() as session:
+        with session.start_transaction():
+            record = registry.enroll(request, session=session)
+
+    effective_at = now + timedelta(hours=1)
+    revocation = TrustRootRevocationRequest(
+        request.trust_root_reference, record.fingerprint, record.key_id,
+        record.key_revision, record.authority_scope, effective_at,
+        "revoke-decision-" + uuid.uuid4().hex, "revoke-decision-fingerprint",
+        ("security-governor-a", "security-governor-b"), 2,
+    )
+    prepared = registry.prepare_revocation(revocation)  # external verification, outside transaction
+
+    # Aborting the persistence transaction must leave the enrolled root current.
+    with client.start_session() as session:
+        with session.start_transaction():
+            registry.revoke(prepared, session=session)
+            session.abort_transaction()
+    with client.start_session() as session:
+        with session.start_transaction():
+            assert registry.current(
+                request.trust_root_reference, at=effective_at, session=session
+            ) == record
+    assert db["tenant_ownership_trust_root_events"].count_documents({"event": "REVOKED"}) == 0
+
+    # Commit the append-only revocation. Historical checks before its effective
+    # instant remain valid; checks at/after it fail closed.
+    with client.start_session() as session:
+        with session.start_transaction():
+            registry.revoke(prepared, session=session)
+    with client.start_session() as session:
+        with session.start_transaction():
+            assert registry.current(
+                request.trust_root_reference,
+                at=effective_at - timedelta(seconds=1),
+                session=session,
+            ) == record
+            assert registry.current(
+                request.trust_root_reference, at=effective_at, session=session
+            ) is None
+    assert db["tenant_ownership_trust_root_events"].count_documents({"event": "REVOKED"}) == 1
+
+    # A second decision cannot revoke the same root revision a second time.
+    duplicate = registry.prepare_revocation(revocation)
+    with client.start_session() as session:
+        with session.start_transaction():
+            with pytest.raises(TrustRootError, match="TRUST_ROOT_REVOCATION_REPLAY_OR_ALREADY_REVOKED"):
+                registry.revoke(duplicate, session=session)
+            session.abort_transaction()
+
+
+def test_trust_root_revocation_is_unavailable_without_independent_authority(mongo):
+    _, db = mongo
+    registry = GovernedTrustRootRegistry(db, GovernanceVerifier())
+    now = datetime.now(timezone.utc)
+    request = TrustRootRevocationRequest(
+        "root", "fingerprint", "key-1", 1, "TENANT_OWNERSHIP_ISSUER",
+        now, "decision", "decision-fingerprint",
+        ("governor-a", "governor-b"), 2,
+    )
+    with pytest.raises(TrustRootError, match="TRUST_ROOT_REVOCATION_AUTHORITY_UNAVAILABLE"):
+        registry.prepare_revocation(request)
