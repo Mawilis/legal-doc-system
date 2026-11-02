@@ -351,7 +351,7 @@ def test_office_district_mismatch_rejects_before_registry_write(
     )
     with pytest.raises(
         subject.SheriffOfficeAppointmentOrchestrationError,
-        match="DISTRICT_EVIDENCE_UNAVAILABLE",
+        match="DISTRICT_EVIDENCE_INVALID",
     ):
         subject.record_sheriff_office_appointment_authority(
             **_arguments()  # type: ignore[arg-type]
