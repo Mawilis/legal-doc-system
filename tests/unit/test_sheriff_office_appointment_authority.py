@@ -114,6 +114,24 @@ def test_unsupported_appointment_kind_fails_closed() -> None:
         _authority(appointment_kind="AD_HOC")
 
 
+def test_self_verification_is_forbidden() -> None:
+    with pytest.raises(
+        SheriffOfficeAppointmentAuthorityError,
+        match="SELF_VERIFICATION_FORBIDDEN",
+    ):
+        _authority(verified_by_principal_id=PRINCIPAL)
+
+
+def test_currentness_requires_current_professional_indemnity_insurance() -> None:
+    value = _authority(
+        certificate_valid_from=NOW - timedelta(days=1),
+        certificate_valid_until=NOW + timedelta(days=30),
+        professional_indemnity_insurance_valid_from=NOW - timedelta(days=1),
+        professional_indemnity_insurance_valid_until=NOW,
+    )
+    assert not value.is_current(NOW)
+
+
 @pytest.mark.parametrize(
     ("field", "value", "code"),
     [
