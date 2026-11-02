@@ -4213,8 +4213,12 @@ function DeputyAttemptRow({
   draft,
   commandState,
   fieldDeviceId,
+  locationState,
+  locationEvidence,
   onDraftChange,
   onCommand,
+  onCaptureLocation,
+  onLoadLocationEvidence,
 }) {
   const pending =
     commandState?.status === 'pending'
@@ -4315,6 +4319,56 @@ function DeputyAttemptRow({
                 </button>
               )}
             </div>
+
+            <section aria-label={'Location evidence for ' + item.attempt_id} className="mt-5 rounded-xl border border-sky-900/40 bg-sky-950/10 p-4">
+              <div className="flex items-start gap-3">
+                <MapPin size={18} className="mt-0.5 shrink-0 text-sky-300" aria-hidden="true" />
+                <div>
+                  <p className="text-xs font-black uppercase tracking-wider text-sky-200">One-shot location evidence</p>
+                  <p className="mt-1 text-xs leading-5 text-stone-400">
+                    Capture starts only when you press the button. Your browser may ask for location permission.
+                    Wilsy records one fix for this attempt; it does not start background or continuous tracking.
+                    GPS coordinates are supporting evidence, not proof that service was legally valid.
+                  </p>
+                </div>
+              </div>
+              <div className="mt-3 flex flex-wrap gap-2">
+                <button
+                  type="button"
+                  disabled={pending || locationState?.status === 'pending' || !['ALLOCATED', 'ATTEMPTED'].includes(capability.currentState)}
+                  onClick={() => onCaptureLocation(item)}
+                  className="inline-flex min-h-[44px] items-center justify-center gap-2 rounded-lg border border-sky-700/50 bg-sky-500/10 px-4 py-2 text-xs font-bold text-sky-100 hover:bg-sky-500/20 disabled:cursor-not-allowed disabled:opacity-40"
+                >
+                  {locationState?.status === 'pending' ? <Loader2 className="animate-spin" size={15} /> : <MapPin size={15} />}
+                  Capture one location fix
+                </button>
+                <button
+                  type="button"
+                  disabled={locationState?.status === 'pending'}
+                  onClick={() => onLoadLocationEvidence(item)}
+                  className="inline-flex min-h-[44px] items-center justify-center gap-2 rounded-lg border border-stone-700 bg-stone-900 px-4 py-2 text-xs font-bold text-stone-200 hover:bg-stone-800 disabled:cursor-not-allowed disabled:opacity-40"
+                >
+                  <RefreshCw size={14} />
+                  View saved evidence
+                </button>
+              </div>
+              {locationState?.message && (
+                <p className={'mt-3 text-xs ' + (locationState.status === 'error' ? 'text-red-300' : locationState.status === 'success' ? 'text-emerald-300' : 'text-sky-200')}>
+                  {locationState.message}
+                </p>
+              )}
+              {locationEvidence?.observations?.length > 0 && (
+                <ul className="mt-3 space-y-2 border-t border-sky-900/30 pt-3">
+                  {locationEvidence.observations.slice(-3).map((observation) => (
+                    <li key={observation.observation_id} className="text-xs text-stone-300">
+                      <span className="font-mono">{Number(observation.latitude).toFixed(5)}, {Number(observation.longitude).toFixed(5)}</span>
+                      <span className="ml-2 text-stone-500">±{Number(observation.horizontal_accuracy_m).toFixed(1)} m</span>
+                      <span className="ml-2 text-stone-500">{observation.captured_at}</span>
+                    </li>
+                  ))}
+                </ul>
+              )}
+            </section>
 
             <div className="mt-3 flex flex-wrap gap-x-4 gap-y-1 text-[10px] uppercase tracking-wider text-stone-600">
               <span>State: {capability.currentState}</span>
@@ -5306,8 +5360,12 @@ export default function LegalDashboard({
                   draft={observationDrafts[item.attempt_id]}
                   commandState={commandState}
                   fieldDeviceId={fieldDeviceId}
+                  locationState={locationCaptureStates[item.attempt_id]}
+                  locationEvidence={locationEvidenceByAttempt[item.attempt_id]}
                   onDraftChange={updateObservationDraft}
                   onCommand={runDeputyFieldCommand}
+                  onCaptureLocation={runDeputyLocationCapture}
+                  onLoadLocationEvidence={loadDeputyLocationEvidence}
                 />
               )}
             />
