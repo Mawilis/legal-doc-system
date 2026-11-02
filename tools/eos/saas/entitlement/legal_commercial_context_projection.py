@@ -89,9 +89,13 @@ CONSTITUTION:
 from __future__ import annotations
 
 from dataclasses import dataclass
-from datetime import datetime
+from datetime import datetime, timezone
 from typing import Any, Final, NoReturn
 
+from tools.eos.saas.billing.subscription_term_policy import (
+    SubscriptionTermKind,
+    evaluate_subscription_term,
+)
 from tools.eos.saas.billing.subscription_registry import (
     SubscriptionRegistry,
     SubscriptionRegistryError,
@@ -113,7 +117,7 @@ from tools.eos.saas.entitlement.legal_product_availability_projection import (
 from tools.eos.saas.entitlement.product_catalogue import TenantProductId
 
 
-VERSION: Final[str] = "v1.0.1-SOVEREIGN-LEGAL-COMMERCIAL-CONTEXT"
+VERSION: Final[str] = "v1.1.0-FOUNDER-PERPETUAL-LEGAL-COMMERCIAL-CONTEXT"
 LEGAL_FEATURE: Final[str] = "legal.core"
 
 
@@ -171,7 +175,13 @@ def _active_legal_subscriptions(
         if (
             isinstance(value, SubscriptionEntity)
             and value.status is SubscriptionStatus.ACTIVE
-            and LEGAL_FEATURE in value.plan_features
+            and (
+                LEGAL_FEATURE in value.plan_features
+                or evaluate_subscription_term(
+                    value,
+                    evaluated_at=datetime.now(timezone.utc),
+                ).kind is SubscriptionTermKind.PERPETUAL_PLATFORM_OWNER
+            )
         )
     )
 
@@ -332,7 +342,7 @@ __all__ = [
 # WILSY OS SOVEREIGN ARTIFACT SEAL
 # =============================================================================
 # ARTIFACT: legal_commercial_context_projection.py
-# VERSION: v1.0.1-SOVEREIGN-LEGAL-COMMERCIAL-CONTEXT
+# VERSION: v1.1.0-FOUNDER-PERPETUAL-LEGAL-COMMERCIAL-CONTEXT
 # AUTHORITY BOUNDARY: descriptive Legal commercial context only; no IAM, Legal command, payment execution or settlement authority
 # TENANT POSTURE: exact tenant-scoped entitlement and canonical subscription evidence only
 # FAIL-CLOSED POSTURE: ambiguity, mismatch, corruption and dependency failure reject; no synthetic commercial truth
