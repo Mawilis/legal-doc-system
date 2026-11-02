@@ -99,7 +99,7 @@ def sources():
     return attempt, receipt, current, now
 
 
-def proof(now: datetime) -> DeputyDeviceProvenance:
+def proof(now: datetime) -> tuple[DeputyDeviceProvenance, Any]:
     deputy = Deputy(
         tenant_id=TENANT, deputy_id=DEPUTY_ID, sheriff_office_id=OFFICE,
         display_name="Synthetic Deputy", badge_reference="badge-p5l",
