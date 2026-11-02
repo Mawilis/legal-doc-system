@@ -2984,6 +2984,30 @@ export async function getDeputyLocationEvidence(attemptId) {
   });
 }
 
+export async function getSheriffLocationEvidence(attemptId) {
+  if (!isCanonicalText(attemptId)) {
+    throw new Error('SHERIFF_LOCATION_EVIDENCE_READ_INPUT_INVALID');
+  }
+  const response = await api.get(
+    `/legal-operations/sheriff/attempts/${encodeURIComponent(attemptId)}/location-evidence`,
+  );
+  const value = response?.data;
+  if (
+    value?.schema !== 'WILSY-SHERIFF-OFFICE-LOCATION-EVIDENCE-PROJECTION/V1'
+    || value?.version !== 'v1.0.0-P5L-SHERIFF-OFFICE-LOCATION-EVIDENCE-READ'
+    || value?.visibility !== 'ONE_CANONICAL_SHERIFF_OFFICE_LOCATION_EVIDENCE'
+    || value?.attempt_id !== attemptId
+    || !isCanonicalText(value?.sheriff_office_id)
+    || !Array.isArray(value?.observations)
+  ) {
+    throw new Error('SHERIFF_LOCATION_EVIDENCE_READ_RESPONSE_INVALID');
+  }
+  return Object.freeze({
+    ...value,
+    observations: Object.freeze(value.observations.map((row) => Object.freeze(row))),
+  });
+}
+
 export async function revokeDeputyLocationPermissionGrant({
   attemptId,
   currentEvidenceIdentity,
