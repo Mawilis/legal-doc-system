@@ -13,11 +13,11 @@ from tools.eos.auth.tenant_ownership_evidence_validation import (
     OwnershipEvidenceValidationError, RecoveryDecisionEnvelope,
     RecoveryDecisionReplayRegistry, RegistryAssessment, assess_registry_snapshots,
     recovery_decision_message, signing_message, validate_recovery_decision,
-    verify_signing_receipt,
+    verify_signing_receipt, validate_subject_proofing_receipt,
 )
 from tools.eos.auth.tenant_ownership_provider_ports import (
     RecoveryDecisionLookup, RecoveryDecisionReceipt, RegistrySnapshot,
-    SigningReceipt, SigningRequest,
+    SigningReceipt, SigningRequest, SubjectProofingReceipt, SubjectProofingRequest,
 )
 
 NOW = datetime(2026, 11, 2, 12, tzinfo=timezone.utc)
@@ -62,6 +62,35 @@ def test_registry_adversarial_states_deny(rows: tuple[RegistrySnapshot, ...], re
     result = assess_registry_snapshots(rows, evaluated_at=NOW, max_age=timedelta(days=1))
     assert result.status == "DENY"
     assert result.reason == reason
+
+
+class SubjectRevocation:
+    def __init__(self, revoked: bool = False, unavailable: bool = False):
+        self.revoked = revoked
+        self.unavailable = unavailable
+
+    def is_revoked(self, revocation_reference: str, at: datetime) -> bool:
+        if self.unavailable:
+            raise TimeoutError("revocation provider unavailable")
+        return self.revoked
+
+
+def test_subject_proofing_receipt_is_exact_current_and_revocation_checked() -> None:
+    request = SubjectProofingRequest("subject-1", "TENANT_OWNERSHIP", NOW)
+    receipt = SubjectProofingReceipt(
+        "identity-provider", "independent-verifier", "IAL2",
+        "subject-1", "evidence-1", fp("subject-evidence"),
+        NOW - timedelta(minutes=1), NOW + timedelta(hours=1), "revocation-1",
+    )
+    validate_subject_proofing_receipt(request, receipt, SubjectRevocation())
+    with pytest.raises(OwnershipEvidenceValidationError, match="SUBJECT_MISMATCH"):
+        validate_subject_proofing_receipt(
+            request, replace(receipt, subject_reference="attacker"), SubjectRevocation()
+        )
+    with pytest.raises(OwnershipEvidenceValidationError, match="REVOKED"):
+        validate_subject_proofing_receipt(request, receipt, SubjectRevocation(revoked=True))
+    with pytest.raises(OwnershipEvidenceValidationError, match="REVOCATION_UNAVAILABLE"):
+        validate_subject_proofing_receipt(request, receipt, SubjectRevocation(unavailable=True))
 
 
 class Keys:
