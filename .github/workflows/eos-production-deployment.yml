@@ -1,0 +1,184 @@
+name: WILSY EOS Guarded Production Deployment
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  packages: read
+  id-token: write
+
+concurrency:
+  group: wilsy-eos-production-deployment
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    name: Deploy certified EOS to production EKS
+    # This runner must be registered inside the approved production VPC.
+    # GitHub-hosted runners are intentionally not admitted for private EKS.
+    runs-on: [self-hosted, linux, x64, wilsy-production]
+    environment: production
+    timeout-minutes: 30
+    env:
+      AWS_REGION: ${{ vars.AWS_REGION }}
+      EKS_CLUSTER_NAME: ${{ vars.EKS_CLUSTER_NAME }}
+      AWS_DEPLOY_ROLE_ARN: ${{ vars.AWS_DEPLOY_ROLE_ARN }}
+      AWS_EOS_RUNTIME_ROLE_ARN: ${{ vars.AWS_EOS_RUNTIME_ROLE_ARN }}
+      EOS_IMAGE: ${{ vars.EOS_IMAGE }}
+      LEGAL_EVIDENCE_S3_BUCKET: ${{ vars.LEGAL_EVIDENCE_S3_BUCKET }}
+      LEGAL_EVIDENCE_S3_REGION: ${{ vars.LEGAL_EVIDENCE_S3_REGION }}
+      LEGAL_EVIDENCE_RECONCILIATION_AWS_ROLE_ARN: ${{ vars.LEGAL_EVIDENCE_RECONCILIATION_AWS_ROLE_ARN }}
+      LEGAL_EVIDENCE_S3_KMS_KEY_ID: ${{ vars.LEGAL_EVIDENCE_S3_KMS_KEY_ID }}
+      HR_DOCUMENT_S3_KMS_KEY_ID: ${{ vars.HR_DOCUMENT_S3_KMS_KEY_ID }}
+      MONGODB_URI: ${{ secrets.EOS_PRODUCTION_MONGODB_URI }}
+      AUDIT_MONGODB_URI: ${{ secrets.EOS_PRODUCTION_AUDIT_MONGODB_URI }}
+      INTERNAL_AUTH_SERVICE_ID: ${{ secrets.EOS_INTERNAL_AUTH_SERVICE_ID }}
+      INTERNAL_AUTH_AUDIENCE: ${{ secrets.EOS_INTERNAL_AUTH_AUDIENCE }}
+      INTERNAL_AUTH_KEY_ID: ${{ secrets.EOS_INTERNAL_AUTH_KEY_ID }}
+      INTERNAL_AUTH_SECRET: ${{ secrets.EOS_INTERNAL_AUTH_SECRET }}
+      RECONCILIATION_TENANT_ID: ${{ secrets.EOS_LEGAL_EVIDENCE_RECONCILIATION_TENANT_ID }}
+
+    steps:
+      - name: Checkout deployment manifest
+        uses: actions/checkout@v4
+
+      - name: Validate all production inputs before cloud access
+        shell: bash
+        run: |
+          set -euo pipefail
+          required=(
+            AWS_REGION EKS_CLUSTER_NAME AWS_DEPLOY_ROLE_ARN AWS_EOS_RUNTIME_ROLE_ARN
+            EOS_IMAGE LEGAL_EVIDENCE_S3_BUCKET LEGAL_EVIDENCE_S3_REGION
+            LEGAL_EVIDENCE_RECONCILIATION_AWS_ROLE_ARN MONGODB_URI AUDIT_MONGODB_URI
+            INTERNAL_AUTH_SERVICE_ID INTERNAL_AUTH_AUDIENCE INTERNAL_AUTH_KEY_ID
+            INTERNAL_AUTH_SECRET RECONCILIATION_TENANT_ID
+          )
+          for name in "${required[@]}"; do
+            if [[ -z "${!name:-}" ]]; then
+              printf 'DEPLOYMENT_BLOCKED: required GitHub environment variable/secret is missing: %s\n' "$name" >&2
+              exit 1
+            fi
+          done
+          [[ "$AWS_DEPLOY_ROLE_ARN" == arn:aws:iam::*:role/* ]] || { echo "DEPLOYMENT_BLOCKED: invalid AWS deploy role ARN"; exit 1; }
+          [[ "$AWS_EOS_RUNTIME_ROLE_ARN" == arn:aws:iam::*:role/* ]] || { echo "DEPLOYMENT_BLOCKED: invalid EOS runtime role ARN"; exit 1; }
+          [[ "$LEGAL_EVIDENCE_RECONCILIATION_AWS_ROLE_ARN" == arn:aws:iam::*:role/* ]] || { echo "DEPLOYMENT_BLOCKED: invalid read-only reconciliation role ARN"; exit 1; }
+          [[ "$EOS_IMAGE" =~ ^ghcr\.io/[^[:space:]@]+@sha256:[a-f0-9]{64}$ ]] || { echo "DEPLOYMENT_BLOCKED: EOS_IMAGE must be an immutable GHCR digest"; exit 1; }
+          [[ "$MONGODB_URI" =~ ^mongodb(\+srv)?:// ]] || { echo "DEPLOYMENT_BLOCKED: business Mongo URI is not a MongoDB URI"; exit 1; }
+          [[ "$AUDIT_MONGODB_URI" =~ ^mongodb(\+srv)?:// ]] || { echo "DEPLOYMENT_BLOCKED: audit Mongo URI is not a MongoDB URI"; exit 1; }
+          [[ "$INTERNAL_AUTH_SECRET" != "$MONGODB_URI" && "$INTERNAL_AUTH_SECRET" != "$AUDIT_MONGODB_URI" ]] || { echo "DEPLOYMENT_BLOCKED: credential values are not independently scoped"; exit 1; }
+          echo "Production inputs are present; URI contents remain redacted."
+
+      - name: Configure AWS credentials through GitHub OIDC
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ env.AWS_DEPLOY_ROLE_ARN }}
+          aws-region: ${{ env.AWS_REGION }}
+          role-session-name: WilsyEosProductionDeployment
+
+      - name: Verify AWS identity and EKS target
+        shell: bash
+        run: |
+          set -euo pipefail
+          aws sts get-caller-identity --query 'Account' --output text >/dev/null
+          aws eks describe-cluster --name "$EKS_CLUSTER_NAME" --region "$AWS_REGION" --query 'cluster.status' --output text | grep -qx ACTIVE
+          aws eks update-kubeconfig --name "$EKS_CLUSTER_NAME" --region "$AWS_REGION"
+
+      - name: Authenticate to GHCR
+        shell: bash
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          set -euo pipefail
+          printf '%s' "$GH_TOKEN" | docker login ghcr.io --username "${GITHUB_ACTOR}" --password-stdin
+
+      - name: Provision and independently verify audit indexes
+        shell: bash
+        run: |
+          set -euo pipefail
+          provision_output="$(docker run --rm --entrypoint python \
+            -e MONGODB_URI \
+            -e WILSY_LEGAL_EVIDENCE_RECONCILIATION_AUDIT_MONGODB_URI="$AUDIT_MONGODB_URI" \
+            "$EOS_IMAGE" -m tools.eos.legal_operations.service.legal_evidence_provider_readonly_reconciliation_audit_provisioner)"
+          printf '%s\n' "$provision_output"
+          provision_fingerprint="$(printf '%s\n' "$provision_output" | sed -n 's/^AUDIT_TARGET_FINGERPRINT=//p')"
+          [[ -n "$provision_fingerprint" ]] || { echo "DEPLOYMENT_BLOCKED: audit provisioner did not emit a target fingerprint"; exit 1; }
+          echo "AUDIT_TARGET_FINGERPRINT=$provision_fingerprint" >> "$GITHUB_ENV"
+
+      - name: Create production runtime Secret and ConfigMap
+        shell: bash
+        run: |
+          set -euo pipefail
+          umask 077
+          secret_file="$(mktemp)"
+          config_file="$(mktemp)"
+          trap 'rm -f "$secret_file" "$config_file"' EXIT
+          {
+            printf 'mongodb-uri=%s\n' "$MONGODB_URI"
+            printf 'legal-evidence-reconciliation-audit-mongodb-uri=%s\n' "$AUDIT_MONGODB_URI"
+            printf 'internal-auth-service-id=%s\n' "$INTERNAL_AUTH_SERVICE_ID"
+            printf 'internal-auth-audience=%s\n' "$INTERNAL_AUTH_AUDIENCE"
+            printf 'internal-auth-key-id=%s\n' "$INTERNAL_AUTH_KEY_ID"
+            printf 'internal-auth-secret=%s\n' "$INTERNAL_AUTH_SECRET"
+            printf 'legal-evidence-reconciliation-tenant-id=%s\n' "$RECONCILIATION_TENANT_ID"
+          } > "$secret_file"
+          kubectl create secret generic wilsy-eos-runtime-secrets --from-env-file="$secret_file" --dry-run=client -o yaml | kubectl apply -f -
+          {
+            printf 'hr-document-max-upload-bytes=26214400\n'
+            printf 'legal-evidence-s3-bucket=%s\n' "$LEGAL_EVIDENCE_S3_BUCKET"
+            printf 'legal-evidence-s3-region=%s\n' "$LEGAL_EVIDENCE_S3_REGION"
+            printf 'legal-evidence-reconciliation-aws-role-arn=%s\n' "$LEGAL_EVIDENCE_RECONCILIATION_AWS_ROLE_ARN"
+            if [[ -n "${LEGAL_EVIDENCE_S3_KMS_KEY_ID:-}" ]]; then printf 'legal-evidence-s3-kms-key-id=%s\n' "$LEGAL_EVIDENCE_S3_KMS_KEY_ID"; fi
+            if [[ -n "${HR_DOCUMENT_S3_KMS_KEY_ID:-}" ]]; then printf 'hr-document-s3-kms-key-id=%s\n' "$HR_DOCUMENT_S3_KMS_KEY_ID"; fi
+          } > "$config_file"
+          kubectl create configmap wilsy-eos-runtime --from-env-file="$config_file" --dry-run=client -o yaml | kubectl apply -f -
+
+      - name: Bind the dedicated EOS ServiceAccount workload identity
+        shell: bash
+        run: |
+          set -euo pipefail
+          kubectl apply -f k8s/eos-api-production.yaml --dry-run=client -o yaml >/dev/null
+          kubectl annotate serviceaccount wilsy-eos-api \
+            "eks.amazonaws.com/role-arn=$AWS_EOS_RUNTIME_ROLE_ARN" --overwrite
+
+      - name: Apply digest-pinned EOS workload
+        shell: bash
+        run: |
+          set -euo pipefail
+          kubectl apply -f k8s/eos-api-production.yaml
+          kubectl set image deployment/wilsy-eos-api "eos-api=$EOS_IMAGE"
+          kubectl rollout status deployment/wilsy-eos-api --timeout=8m
+
+      - name: Verify audit target parity and live reconciliation readiness
+        shell: bash
+        run: |
+          set -euo pipefail
+          runtime_logs="$(kubectl logs deployment/wilsy-eos-api --all-pods=true --prefix=true --since=10m)"
+          runtime_fingerprint="$(printf '%s\n' "$runtime_logs" | sed -n 's/.*AUDIT_TARGET_FINGERPRINT=//p' | tail -n 1)"
+          [[ -n "$runtime_fingerprint" ]] || { echo "DEPLOYMENT_BLOCKED: runtime audit fingerprint absent"; exit 1; }
+          [[ "$runtime_fingerprint" == "$AUDIT_TARGET_FINGERPRINT" ]] || { echo "DEPLOYMENT_BLOCKED: provisioner/runtime audit target fingerprint mismatch"; exit 1; }
+          kubectl port-forward service/wilsy-eos-api 19095:9095 >/tmp/wilsy-eos-port-forward.log 2>&1 &
+          port_forward_pid=$!
+          trap 'kill "$port_forward_pid" 2>/dev/null || true' EXIT
+          for attempt in $(seq 1 30); do
+            if curl --fail --silent --show-error --max-time 3 http://127.0.0.1:19095/api/legal-operations/evidence-provider/reconciliation/health; then
+              echo
+              echo "EOS_PRODUCTION_DEPLOYMENT_AND_AUDIT_READINESS_VERIFIED"
+              exit 0
+            fi
+            sleep 2
+          done
+          echo "DEPLOYMENT_BLOCKED: live EOS reconciliation readiness endpoint did not pass"
+          exit 1
+
+      - name: Record acceptance boundary
+        if: success()
+        shell: bash
+        run: |
+          {
+            echo "### EOS production deployment"
+            echo "- Digest-pinned workload rollout and live reconciliation readiness passed."
+            echo "- Independent audit index provisioning and runtime fingerprint parity passed."
+            echo "- G68 confidentiality authority remains fail-closed pending independently verified G64 institutional ratification."
+            echo "- Deployment success does not itself authorize the authenticated Legal workspace acceptance test."
+          } >> "$GITHUB_STEP_SUMMARY"
