@@ -254,6 +254,44 @@ def test_service_has_no_positive_or_content_delivery_surface() -> None:
     assert service.OPERATIONAL_ACCESS_ENABLED is False
 
 
+
+def test_expired_and_future_confidentiality_reviews_deny_at_boundaries() -> None:
+    wall = policy()
+    with pytest.raises(service.EthicalWallEnforcementDenied, match="G77_REVIEW_EXPIRED"):
+        enforce(review_source=Source(review(wall, expires_at=NOW)))
+    with pytest.raises(service.EthicalWallEnforcementDenied, match="G77_REVIEW_EXPIRED"):
+        enforce(review_source=Source(review(wall, decided_at=NOW + timedelta(seconds=1))))
+
+
+def test_expired_wall_policy_denies_even_with_recorded_approval() -> None:
+    wall = policy(effective_until=NOW)
+    with pytest.raises(service.EthicalWallEnforcementDenied, match="G77_WALL_NOT_SATISFIED"):
+        enforce(wall_source=WallSource(wall), review_source=Source(review(wall)))
+
+
+def test_wall_current_pointer_must_match_final_history_revision() -> None:
+    wall = policy()
+
+    class DivergentHistory(WallSource):
+        def list_history(self, tenant_id: str, case_matter_id: str, policy_id: str, *, session: object) -> tuple[EthicalWallPolicyRevision, ...]:
+            return ()
+
+    with pytest.raises(service.EthicalWallEnforcementDenied, match="G77_WALL_POINTER_INVALID"):
+        enforce(wall_source=DivergentHistory(wall))
+
+
+def test_cross_tenant_wall_source_is_rejected() -> None:
+    foreign = policy(tenant_id="tenant-b")
+    with pytest.raises(service.EthicalWallEnforcementDenied, match="G77_WALL_REVOKED_OR_SCOPE_INVALID"):
+        enforce(wall_source=WallSource(foreign), review_source=Source(review(foreign)))
+
+
+def test_review_must_correlate_to_current_conflict_disposition() -> None:
+    wall = policy()
+    with pytest.raises(service.EthicalWallEnforcementDenied, match="G77_REVIEW_CONFLICT_MISMATCH"):
+        enforce(review_source=Source(review(wall, conflict_disposition_fingerprint="f" * 128)))
+
+
 # ARTIFACT: test_legal_work_ethical_wall_enforcement.py
 # VERSION: v1.0.0-G77-SOURCE-VERIFIED-DENIAL-CERT
 # AUTHORITY BOUNDARY: canonical negative verification only; no access grant
