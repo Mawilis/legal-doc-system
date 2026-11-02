@@ -859,6 +859,13 @@ _PERMISSIONS: Final = MappingProxyType(
             "legal_operations:directory:write", "TENANT", "TENANT",
             "provision own-tenant process-service directory identities", tenant=True,
         ),
+        "legal_operations:sheriff_appointment:write": _meta(
+            "legal_operations:sheriff_appointment:write",
+            "TENANT",
+            "TENANT",
+            "verify and record own-tenant Sheriff appointment and certificate evidence",
+            tenant=True,
+        ),
         "legal_operations:receipt:write": _meta(
             "legal_operations:receipt:write", "TENANT", "TENANT",
             "accept own-tenant instructions and record sheriff-office receipt", tenant=True,
