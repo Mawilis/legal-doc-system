@@ -461,7 +461,7 @@ def verify_sheriff_natural_person_binding(
         or canonical_appointment.fingerprint != binding.appointment_evidence_fingerprint
     ):
         reason = SheriffNaturalPersonBindingReason.APPOINTMENT_SCOPE_MISMATCH
-    elif not hmac.compare_digest(proof.fingerprint, binding.identity_proof_fingerprint):
+    elif not hmac.compare_digest(proof.identity_proof_fingerprint, binding.identity_proof_fingerprint):
         reason = SheriffNaturalPersonBindingReason.IDENTITY_PROOF_FINGERPRINT_MISMATCH
     elif proof.source_observation_state is not SheriffSourceObservationState.AUTHENTICATED_RESPONSE:
         reason = SheriffNaturalPersonBindingReason.IDENTITY_PROOF_NOT_AUTHENTICATED
@@ -480,7 +480,8 @@ def verify_sheriff_natural_person_binding(
         "tenant_id": binding.tenant_id,
         "principal_id": binding.principal_id,
         "identity_subject_reference": binding.identity_subject_reference,
-        "identity_proof_fingerprint": proof.fingerprint,
+        "identity_proof_fingerprint": proof.identity_proof_fingerprint,
+        "identity_proof_record_fingerprint": proof.fingerprint,
         "appointment_evidence_fingerprint": binding.appointment_evidence_fingerprint,
         "evaluated_at": at.isoformat(),
         "reason": reason.value,
@@ -494,7 +495,7 @@ def verify_sheriff_natural_person_binding(
         tenant_id=binding.tenant_id,
         principal_id=binding.principal_id,
         identity_subject_reference=binding.identity_subject_reference,
-        identity_proof_fingerprint=proof.fingerprint,
+        identity_proof_fingerprint=proof.identity_proof_fingerprint,
         appointment_evidence_fingerprint=binding.appointment_evidence_fingerprint,
         evaluated_at=at,
         reason=reason,
