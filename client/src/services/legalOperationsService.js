@@ -2825,11 +2825,11 @@ function assertLocationGrantResponse(value, attemptId, grantId) {
     || grant.grant_id !== grantId
     || !isCanonicalText(grant.device_id)
     || grant.purpose !== 'PROCESS_SERVICE_LOCATION_EVIDENCE'
-    || !isCanonicalText(grant.fingerprint)
+    || !isCanonicalText(value?.fingerprint)
   ) {
     throw new Error('DEPUTY_LOCATION_PERMISSION_GRANT_RESPONSE_INVALID');
   }
-  return Object.freeze(grant);
+  return Object.freeze({ ...grant, fingerprint: value.fingerprint });
 }
 
 function assertLocationObservationResponse(value, attemptId, observationId) {
@@ -2839,14 +2839,14 @@ function assertLocationObservationResponse(value, attemptId, observationId) {
     || observation.attempt_id !== attemptId
     || observation.observation_id !== observationId
     || !isCanonicalText(observation.device_id)
-    || !isCanonicalText(observation.fingerprint)
+    || !isCanonicalText(value?.fingerprint)
     || !Number.isFinite(observation.latitude)
     || !Number.isFinite(observation.longitude)
     || !Number.isFinite(observation.horizontal_accuracy_m)
   ) {
     throw new Error('DEPUTY_LOCATION_OBSERVATION_RESPONSE_INVALID');
   }
-  return Object.freeze(observation);
+  return Object.freeze({ ...observation, fingerprint: value.fingerprint });
 }
 
 export async function createDeputyLocationPermissionGrant({
@@ -2879,7 +2879,7 @@ export async function createDeputyLocationPermissionGrant({
 export async function captureDeputyLocationEvidence({
   attemptId,
   currentEvidenceIdentity,
-  grantId,
+  grantId = globalThis.crypto.randomUUID(),
   observationId = globalThis.crypto.randomUUID(),
 }) {
   if (
@@ -2908,6 +2908,11 @@ export async function captureDeputyLocationEvidence({
   const longitude = Number(Number(position.coords.longitude).toFixed(7));
   const horizontalAccuracyM = Number(Number(position.coords.accuracy).toFixed(2));
   const capturedAt = new Date(position.timestamp || Date.now()).toISOString();
+  const grant = await createDeputyLocationPermissionGrant({
+    attemptId,
+    currentEvidenceIdentity,
+    grantId,
+  });
 
   const proof = await issueAndSignDeputyDeviceChallenge();
   const locationPayload = canonicalLocationSigningBytes({
@@ -2941,7 +2946,8 @@ export async function captureDeputyLocationEvidence({
       captured_at: capturedAt,
     },
   );
-  return assertLocationObservationResponse(response?.data, attemptId, observationId);
+  const observation = assertLocationObservationResponse(response?.data, attemptId, observationId);
+  return Object.freeze({ grant, observation });
 }
 
 export async function getDeputyLocationEvidence(attemptId) {
