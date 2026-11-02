@@ -2666,6 +2666,341 @@ export async function recordDeputyFieldOutcome(value) {
   );
 }
 
+const DEPUTY_DEVICE_KEY_DB = 'wilsy-deputy-device-key-v1';
+const DEPUTY_DEVICE_KEY_STORE = 'device-keys';
+const LOCATION_PERMISSION_NOTICE_VERSION = 'P5L-LOCATION-NOTICE-V1';
+
+function bytesToBase64(value) {
+  const bytes = value instanceof Uint8Array ? value : new Uint8Array(value);
+  let binary = '';
+  for (let offset = 0; offset < bytes.length; offset += 0x8000) {
+    binary += String.fromCharCode(...bytes.subarray(offset, offset + 0x8000));
+  }
+  return btoa(binary);
+}
+
+function base64ToBytes(value) {
+  if (!isCanonicalText(value)) {
+    throw new Error('DEPUTY_DEVICE_BASE64_INVALID');
+  }
+  const binary = atob(value);
+  return Uint8Array.from(binary, (character) => character.charCodeAt(0));
+}
+
+function openDeputyDeviceKeyDatabase() {
+  if (!globalThis.indexedDB) {
+    throw new Error('DEPUTY_DEVICE_SECURE_KEY_STORAGE_UNAVAILABLE');
+  }
+  return new Promise((resolve, reject) => {
+    const request = globalThis.indexedDB.open(DEPUTY_DEVICE_KEY_DB, 1);
+    request.onupgradeneeded = () => {
+      const database = request.result;
+      if (!database.objectStoreNames.contains(DEPUTY_DEVICE_KEY_STORE)) {
+        database.createObjectStore(DEPUTY_DEVICE_KEY_STORE);
+      }
+    };
+    request.onsuccess = () => resolve(request.result);
+    request.onerror = () => reject(new Error('DEPUTY_DEVICE_SECURE_KEY_STORAGE_UNAVAILABLE'));
+    request.onblocked = () => reject(new Error('DEPUTY_DEVICE_SECURE_KEY_STORAGE_BLOCKED'));
+  });
+}
+
+async function loadOrCreateDeputyDeviceKey() {
+  const subtle = globalThis.crypto?.subtle;
+  if (!subtle || !globalThis.crypto?.getRandomValues) {
+    throw new Error('DEPUTY_DEVICE_WEBCRYPTO_UNAVAILABLE');
+  }
+  const database = await openDeputyDeviceKeyDatabase();
+  try {
+    const existing = await new Promise((resolve, reject) => {
+      const request = database
+        .transaction(DEPUTY_DEVICE_KEY_STORE, 'readonly')
+        .objectStore(DEPUTY_DEVICE_KEY_STORE)
+        .get('current');
+      request.onsuccess = () => resolve(request.result || null);
+      request.onerror = () => reject(new Error('DEPUTY_DEVICE_SECURE_KEY_READ_FAILED'));
+    });
+    if (existing?.privateKey?.type === 'private' && isCanonicalText(existing.publicKeySpkiB64)) {
+      return existing;
+    }
+
+    const generated = await subtle.generateKey(
+      { name: 'ECDSA', namedCurve: 'P-256' },
+      true,
+      ['sign', 'verify'],
+    );
+    const publicSpki = await subtle.exportKey('spki', generated.publicKey);
+    const privatePkcs8 = new Uint8Array(await subtle.exportKey('pkcs8', generated.privateKey));
+    const privateKey = await subtle.importKey(
+      'pkcs8',
+      privatePkcs8,
+      { name: 'ECDSA', namedCurve: 'P-256' },
+      false,
+      ['sign'],
+    );
+    privatePkcs8.fill(0);
+    const value = {
+      privateKey,
+      publicKeySpkiB64: bytesToBase64(publicSpki),
+    };
+    await new Promise((resolve, reject) => {
+      const transaction = database.transaction(DEPUTY_DEVICE_KEY_STORE, 'readwrite');
+      transaction.objectStore(DEPUTY_DEVICE_KEY_STORE).put(value, 'current');
+      transaction.oncomplete = () => resolve();
+      transaction.onerror = () => reject(new Error('DEPUTY_DEVICE_SECURE_KEY_WRITE_FAILED'));
+      transaction.onabort = () => reject(new Error('DEPUTY_DEVICE_SECURE_KEY_WRITE_FAILED'));
+    });
+    return value;
+  } finally {
+    database.close();
+  }
+}
+
+function canonicalLocationSigningBytes({
+  challenge,
+  attemptId,
+  currentEvidenceIdentity,
+  grantId,
+  observationId,
+  latitude,
+  longitude,
+  horizontalAccuracyM,
+  capturedAt,
+}) {
+  const values = {
+    schema: 'WILSY-PROCESS-SERVICE-LOCATION-OBSERVATION-SIGNATURE/V1',
+    tenant_id: challenge.tenant_id,
+    attempt_id: attemptId,
+    current_evidence_identity: currentEvidenceIdentity,
+    deputy_id: challenge.deputy_id,
+    device_id: challenge.device_id,
+    challenge_id: challenge.challenge_id,
+    grant_id: grantId,
+    observation_id: observationId,
+    latitude: Number(latitude).toFixed(7),
+    longitude: Number(longitude).toFixed(7),
+    horizontal_accuracy_m: Number(horizontalAccuracyM).toFixed(2),
+    captured_at: capturedAt,
+  };
+  const canonical = Object.fromEntries(
+    Object.keys(values).sort().map((key) => [key, values[key]]),
+  );
+  return new TextEncoder().encode(JSON.stringify(canonical));
+}
+
+async function issueAndSignDeputyDeviceChallenge() {
+  const key = await loadOrCreateDeputyDeviceKey();
+  const response = await sovereignClient.post(
+    '/legal-operations/deputy/device-challenges',
+    { public_key_spki_b64: key.publicKeySpkiB64 },
+  );
+  const challenge = response?.data?.data;
+  const signedPayloadB64 = response?.data?.signed_payload_b64;
+  if (
+    !isCanonicalText(challenge?.challenge_id)
+    || !isCanonicalText(challenge?.tenant_id)
+    || !isCanonicalText(challenge?.deputy_id)
+    || !isCanonicalText(challenge?.device_id)
+    || !isCanonicalText(signedPayloadB64)
+  ) {
+    throw new Error('DEPUTY_DEVICE_CHALLENGE_RESPONSE_INVALID');
+  }
+  const signature = await globalThis.crypto.subtle.sign(
+    { name: 'ECDSA', hash: 'SHA-256' },
+    key.privateKey,
+    base64ToBytes(signedPayloadB64),
+  );
+  return {
+    key,
+    challenge,
+    signatureP1363B64: bytesToBase64(signature),
+  };
+}
+
+function assertLocationGrantResponse(value, attemptId, grantId) {
+  const grant = value?.data;
+  if (
+    !grant
+    || grant.attempt_id !== attemptId
+    || grant.grant_id !== grantId
+    || !isCanonicalText(grant.device_id)
+    || grant.purpose !== 'PROCESS_SERVICE_LOCATION_EVIDENCE'
+    || !isCanonicalText(grant.fingerprint)
+  ) {
+    throw new Error('DEPUTY_LOCATION_PERMISSION_GRANT_RESPONSE_INVALID');
+  }
+  return Object.freeze(grant);
+}
+
+function assertLocationObservationResponse(value, attemptId, observationId) {
+  const observation = value?.data;
+  if (
+    !observation
+    || observation.attempt_id !== attemptId
+    || observation.observation_id !== observationId
+    || !isCanonicalText(observation.device_id)
+    || !isCanonicalText(observation.fingerprint)
+    || !Number.isFinite(observation.latitude)
+    || !Number.isFinite(observation.longitude)
+    || !Number.isFinite(observation.horizontal_accuracy_m)
+  ) {
+    throw new Error('DEPUTY_LOCATION_OBSERVATION_RESPONSE_INVALID');
+  }
+  return Object.freeze(observation);
+}
+
+export async function createDeputyLocationPermissionGrant({
+  attemptId,
+  currentEvidenceIdentity,
+  grantId = globalThis.crypto.randomUUID(),
+}) {
+  if (
+    !isCanonicalText(attemptId)
+    || !isCanonicalText(currentEvidenceIdentity)
+    || !isCanonicalText(grantId)
+  ) {
+    throw new Error('DEPUTY_LOCATION_PERMISSION_INPUT_INVALID');
+  }
+  const proof = await issueAndSignDeputyDeviceChallenge();
+  const response = await sovereignClient.post(
+    `/legal-operations/deputy/attempts/${encodeURIComponent(attemptId)}/location-permission-grants`,
+    {
+      current_evidence_identity: currentEvidenceIdentity,
+      grant_id: grantId,
+      challenge_id: proof.challenge.challenge_id,
+      signature_p1363_b64: proof.signatureP1363B64,
+      permission_granted: true,
+      permission_notice_version: LOCATION_PERMISSION_NOTICE_VERSION,
+    },
+  );
+  return assertLocationGrantResponse(response?.data, attemptId, grantId);
+}
+
+export async function captureDeputyLocationEvidence({
+  attemptId,
+  currentEvidenceIdentity,
+  grantId,
+  observationId = globalThis.crypto.randomUUID(),
+}) {
+  if (
+    !isCanonicalText(attemptId)
+    || !isCanonicalText(currentEvidenceIdentity)
+    || !isCanonicalText(grantId)
+    || !isCanonicalText(observationId)
+  ) {
+    throw new Error('DEPUTY_LOCATION_CAPTURE_INPUT_INVALID');
+  }
+  if (!globalThis.navigator?.geolocation?.getCurrentPosition) {
+    throw new Error('DEPUTY_LOCATION_GEOLOCATION_UNAVAILABLE');
+  }
+  const position = await new Promise((resolve, reject) => {
+    globalThis.navigator.geolocation.getCurrentPosition(
+      resolve,
+      (error) => reject(new Error(
+        error?.code === 1
+          ? 'DEPUTY_LOCATION_PERMISSION_DENIED'
+          : 'DEPUTY_LOCATION_CAPTURE_UNAVAILABLE',
+      )),
+      { enableHighAccuracy: true, maximumAge: 0, timeout: 15000 },
+    );
+  });
+  const latitude = Number(Number(position.coords.latitude).toFixed(7));
+  const longitude = Number(Number(position.coords.longitude).toFixed(7));
+  const horizontalAccuracyM = Number(Number(position.coords.accuracy).toFixed(2));
+  const capturedAt = new Date(position.timestamp || Date.now()).toISOString();
+
+  const proof = await issueAndSignDeputyDeviceChallenge();
+  const locationPayload = canonicalLocationSigningBytes({
+    challenge: proof.challenge,
+    attemptId,
+    currentEvidenceIdentity,
+    grantId,
+    observationId,
+    latitude,
+    longitude,
+    horizontalAccuracyM,
+    capturedAt,
+  });
+  const locationSignature = await globalThis.crypto.subtle.sign(
+    { name: 'ECDSA', hash: 'SHA-256' },
+    proof.key.privateKey,
+    locationPayload,
+  );
+  const response = await sovereignClient.post(
+    `/legal-operations/deputy/attempts/${encodeURIComponent(attemptId)}/location-evidence`,
+    {
+      current_evidence_identity: currentEvidenceIdentity,
+      grant_id: grantId,
+      observation_id: observationId,
+      challenge_id: proof.challenge.challenge_id,
+      signature_p1363_b64: proof.signatureP1363B64,
+      location_signature_p1363_b64: bytesToBase64(locationSignature),
+      latitude,
+      longitude,
+      horizontal_accuracy_m: horizontalAccuracyM,
+      captured_at: capturedAt,
+    },
+  );
+  return assertLocationObservationResponse(response?.data, attemptId, observationId);
+}
+
+export async function getDeputyLocationEvidence(attemptId) {
+  if (!isCanonicalText(attemptId)) {
+    throw new Error('DEPUTY_LOCATION_EVIDENCE_READ_INPUT_INVALID');
+  }
+  const response = await api.get(
+    `/legal-operations/deputy/attempts/${encodeURIComponent(attemptId)}/location-evidence`,
+  );
+  const value = response?.data;
+  if (
+    value?.schema !== 'WILSY-DEPUTY-LOCATION-EVIDENCE-PROJECTION/V1'
+    || value?.version !== 'v1.0.0-P5L-DEPUTY-LOCATION-EVIDENCE-READ'
+    || value?.visibility !== 'DEPUTY_OWN_ACTIVE_ATTEMPT_LOCATION_EVIDENCE'
+    || value?.attempt_id !== attemptId
+    || !Array.isArray(value?.observations)
+  ) {
+    throw new Error('DEPUTY_LOCATION_EVIDENCE_READ_RESPONSE_INVALID');
+  }
+  return Object.freeze({
+    ...value,
+    observations: Object.freeze(value.observations.map((row) => Object.freeze(row))),
+  });
+}
+
+export async function revokeDeputyLocationPermissionGrant({
+  attemptId,
+  currentEvidenceIdentity,
+  grantId,
+  reasonReference,
+}) {
+  if (
+    !isCanonicalText(attemptId)
+    || !isCanonicalText(currentEvidenceIdentity)
+    || !isCanonicalText(grantId)
+    || !isCanonicalText(reasonReference)
+  ) {
+    throw new Error('DEPUTY_LOCATION_REVOCATION_INPUT_INVALID');
+  }
+  const response = await sovereignClient.post(
+    `/legal-operations/deputy/attempts/${encodeURIComponent(attemptId)}/location-permission-grants/${encodeURIComponent(grantId)}/revoke`,
+    {
+      current_evidence_identity: currentEvidenceIdentity,
+      revocation_id: globalThis.crypto.randomUUID(),
+      reason_reference: reasonReference,
+    },
+  );
+  const value = response?.data?.data;
+  if (
+    value?.tenant_id == null
+    || value?.grant_id !== grantId
+    || value?.entity_type !== 'ProcessServiceLocationPermissionRevocation'
+    || !isCanonicalText(value?.fingerprint)
+  ) {
+    throw new Error('DEPUTY_LOCATION_REVOCATION_RESPONSE_INVALID');
+  }
+  return Object.freeze(value);
+}
+
 /**
  * Upload one file for an already-visible canonical ProcessDocument.
  * The browser supplies no tenant, principal, matter, fingerprint, capacity,
