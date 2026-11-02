@@ -1183,6 +1183,7 @@ def _ctx(permission: str, operation: str) -> RequireTenantAuthorization:
 _INTAKE = _ctx("legal_operations:instruction:write", "legal_instruction_write")
 _RECEIPT = _ctx("legal_operations:receipt:write", "legal_receipt_write")
 _DIRECTORY = _ctx("legal_operations:directory:write", "legal_directory_write")
+_SHERIFF_APPOINTMENT = _ctx("legal_operations:sheriff_appointment:write", "legal_sheriff_appointment_write")
 _ALLOCATE = _ctx("legal_operations:allocation:write", "legal_allocation_write")
 _ATTEMPT = _ctx("legal_operations:attempt:write", "legal_attempt_write")
 _OUTCOME = _ctx("legal_operations:attempt_outcome:write", "legal_attempt_outcome_write")
