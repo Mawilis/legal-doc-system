@@ -21,6 +21,7 @@ from tools.eos.auth.tenant_ownership_lifecycle_command import (
 from tools.eos.auth.tenant_ownership_verifier import (
     TenantOwnershipOperation,
     TenantOwnershipVerificationRequest,
+    VerifiedTenantOwnershipEvidence,
 )
 
 VERSION: Final[str] = "v1.1.0-ISSUE-300-TWO-PHASE-TRANSFER"
@@ -353,7 +354,7 @@ class TenantOwnershipTransferProtocol:
 
     def prepare_finalization(
         self, *, proposal_reference: str, evaluated_at: datetime
-    ) -> object:
+    ) -> VerifiedTenantOwnershipEvidence:
         """Preflight independent ownership evidence outside the commit transaction."""
         ref = _token("proposal_reference", proposal_reference)
         now = _time("evaluated_at", evaluated_at)
@@ -389,7 +390,7 @@ class TenantOwnershipTransferProtocol:
 
     def finalize(
         self, *, proposal_reference: str, actor_principal_id: str,
-        command_id: str, prepared_evidence: object, session: Any, evaluated_at: datetime,
+        command_id: str, prepared_evidence: VerifiedTenantOwnershipEvidence, session: Any, evaluated_at: datetime,
     ) -> TenantOwnershipEvidenceEvent:
         """Revalidate proposal/acceptance and atomically commit prepared evidence."""
         _active(session)
