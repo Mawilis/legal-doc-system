@@ -40,6 +40,7 @@ def context() -> TenantAuthorizationContext:
         email="sheriff@example.test",
         auth_method="TEST",
         status=PrincipalStatus.ACTIVE,
+        session_reference=None,
     )
     decision = TenantAuthorizationDecision(
         True,
