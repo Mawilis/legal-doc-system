@@ -184,7 +184,7 @@ def test_key_status_provider_timeout_fails_closed() -> None:
 
     request = signing_request()
     keys = Unavailable()
-    with pytest.raises(OwnershipEvidenceValidationError, match="KEY_STATUS_UNAVAILABLE"):
+    with pytest.raises(OwnershipEvidenceValidationError, match="SIGNING_KEY_STATUS_UNAVAILABLE"):
         verify_signing_receipt(request, signed_receipt(request, keys), keys)
 
 
