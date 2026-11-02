@@ -12,7 +12,7 @@ FILE:
     tools/eos/api/tenant_router.py
 
 VERSION:
-    v1.2.0-TENANT-PROFILE-UPDATE-AUTHORITY-WIRING
+    v1.3.0-ISSUE-300-DENY-ONLY-READINESS
 
 AUTHORITY:
     Wilsy OS Core Governance.
@@ -32,9 +32,15 @@ COLLABORATION / OWNERSHIP:
     Wilson Khanyezi / Wilsy Core Engineering.
 
 CERTIFICATION / UPDATE DATE:
-    2026-08-31
+    2026-11-02
 
 CHANGELOG:
+    v1.3.0-ISSUE-300-DENY-ONLY-READINESS
+        - Adds authenticated GET /api/tenants/{tenant_id}/ownership/readiness.
+        - Reports the explicit unavailable-authority denial without Mongo access,
+          ownership writes, genesis, transfer, recovery, or trust-root mutation.
+        - Reuses profile_read authorization and exact tenant path/header binding.
+
     v1.2.0-TENANT-PROFILE-UPDATE-AUTHORITY-WIRING
         - Activates PUT /api/tenants/{tenant_id} with canonical
           tenant:profile:write + profile_update authorization.
