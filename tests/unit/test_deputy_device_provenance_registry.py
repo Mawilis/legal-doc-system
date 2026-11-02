@@ -207,7 +207,7 @@ def test_valid_proof_is_atomically_consumed_once_and_replay_is_rejected():
 def test_consumed_device_provenance_can_be_reloaded_for_delayed_signed_sync():
     registry, store, binding_store, auth, key, challenge, session = fixture()
     registry.create(challenge, session=session)
-    signature = _signature(key, challenge)
+    signature = signature(key, challenge)
     proof = registry.verify_and_consume(
         tenant_id=TENANT,
         challenge_id=challenge.challenge_id,
