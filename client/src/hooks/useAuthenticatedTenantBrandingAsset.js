@@ -1,6 +1,6 @@
 /**
  * TITLE: WILSY OS Authenticated Tenant Branding Asset Hook
- * VERSION: v1.0.0-D21B12-AUTHENTICATED-BRANDING-ASSET-LIFECYCLE
+ * VERSION: v1.1.0-D21B12-TENANT-SWITCH-STALE-PAINT-GUARD
  * AUTHORITY: Wilsy OS Core Governance
  * EPITOME: Convert one already-admitted D21B8 logo/favicon descriptor into a
  *          transient browser object URL through the certified D21B12 client,
@@ -30,7 +30,7 @@ import {
 } from '../services/tenantBrandingAssetClient.js';
 
 export const VERSION =
-  'v1.0.0-D21B12-AUTHENTICATED-BRANDING-ASSET-LIFECYCLE';
+  'v1.1.0-D21B12-TENANT-SWITCH-STALE-PAINT-GUARD';
 
 const descriptorKey = (descriptor) => {
   if (!descriptor || typeof descriptor !== 'object') return '';
@@ -53,10 +53,25 @@ export function useAuthenticatedTenantBrandingAsset(descriptor) {
     ],
   );
   const [state, setState] = useState({
+    descriptorKey: '',
     objectUrl: null,
     status: 'ABSENT',
     errorCode: null,
   });
+
+  // Effects run after paint. Never expose an object URL admitted for the prior
+  // tenant/descriptor during the render before the replacement effect executes.
+  const visibleState = state.descriptorKey === key
+    ? {
+        objectUrl: state.objectUrl,
+        status: state.status,
+        errorCode: state.errorCode,
+      }
+    : {
+        objectUrl: null,
+        status: key ? 'LOADING' : 'ABSENT',
+        errorCode: null,
+      };
 
   useEffect(() => {
     let cancelled = false;
@@ -64,6 +79,7 @@ export function useAuthenticatedTenantBrandingAsset(descriptor) {
 
     if (!key) {
       setState({
+        descriptorKey: key,
         objectUrl: null,
         status: 'ABSENT',
         errorCode: null,
@@ -74,6 +90,7 @@ export function useAuthenticatedTenantBrandingAsset(descriptor) {
     }
 
     setState({
+      descriptorKey: key,
       objectUrl: null,
       status: 'LOADING',
       errorCode: null,
@@ -92,6 +109,7 @@ export function useAuthenticatedTenantBrandingAsset(descriptor) {
         }
 
         setState({
+          descriptorKey: key,
           objectUrl,
           status: 'READY',
           errorCode: null,
@@ -99,6 +117,7 @@ export function useAuthenticatedTenantBrandingAsset(descriptor) {
       } catch (error) {
         if (cancelled) return;
         setState({
+          descriptorKey: key,
           objectUrl: null,
           status: 'UNAVAILABLE',
           errorCode:
@@ -120,7 +139,7 @@ export function useAuthenticatedTenantBrandingAsset(descriptor) {
     };
   }, [key]);
 
-  return state;
+  return visibleState;
 }
 
 export default useAuthenticatedTenantBrandingAsset;
