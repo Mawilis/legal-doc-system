@@ -194,6 +194,12 @@ from tools.eos.legal_operations.registry.legal_operations_lifecycle_registry imp
     COLLECTION as LIFECYCLE_COLLECTION,
     LegalOperationsLifecycleRegistry,
 )
+from tools.eos.legal_operations.registry.process_service_location_evidence_registry import (
+    ACCESS_AUDIT_COLLECTION as LOCATION_ACCESS_AUDIT_COLLECTION,
+    OBSERVATION_COLLECTION as LOCATION_OBSERVATION_COLLECTION,
+    ProcessServiceLocationEvidenceRegistry,
+    ProcessServiceLocationEvidenceRegistryError,
+)
 
 from tools.eos.legal_operations.registry.legal_work_item_registry import (
     COLLECTION_NAME as LEGAL_WORK_ITEM_COLLECTION,
@@ -2148,6 +2154,119 @@ async def get_deputy_field_capability_projection(
         "deputy_id": personal.deputy_id,
         "capabilities": [value.to_dict() for value in personal.capabilities],
     }
+
+
+@router.get("/deputy/attempts/{attempt_id}/location-evidence")
+async def get_deputy_location_evidence_projection(
+    attempt_id: str,
+    context: TenantAuthorizationContext = Depends(_DEPUTY_QUEUE_READ),
+) -> dict[str, Any]:
+    """Return only the authenticated Deputy's active-attempt GPS evidence.
+
+    The exact L8-6B principal binding, P2 attempt, P4 current pointer and receipt
+    are revalidated in one snapshot. Access itself is appended to a metadata-only
+    audit collection in that same transaction. No Sheriff-wide or cross-office
+    location access is inferred by this Deputy endpoint.
+    """
+    if not attempt_id.strip():
+        raise HTTPException(status_code=422, detail="LEGAL_OPERATIONS_COMMAND_INVALID")
+
+    def project(session: Any, database: Any) -> dict[str, Any]:
+        lifecycle = database.get_collection(LIFECYCLE_COLLECTION)
+        binding = database.get_collection(DEPUTY_PRINCIPAL_BINDING_COLLECTION)
+        personal = get_deputy_personal_active_work(
+            tenant_id=context.tenant_id,
+            principal_id=context.identity.identity_id,
+            binding_collection=binding,
+            lifecycle_collection=lifecycle,
+            session=session,
+        )
+        selected = next(
+            (model.current for model in personal.active_attempts if model.current.attempt_id == attempt_id),
+            None,
+        )
+        if selected is None:
+            raise HTTPException(status_code=404, detail="LEGAL_OPERATION_NOT_FOUND")
+        pointer = ProcessServiceAllocationRegistry.get_current(
+            context.tenant_id,
+            selected.document_id,
+            database.get_collection(ALLOCATION_CURRENT_COLLECTION),
+            session=session,
+        )
+        receipt = ProcessServiceAllocationRegistry.get_receipt_by_allocation_command_id(
+            context.tenant_id,
+            selected.document_id,
+            pointer.authority_evidence_reference,
+            database.get_collection(ALLOCATION_RECEIPT_COLLECTION),
+            session=session,
+        )
+        if (
+            receipt is None
+            or pointer.authority_evidence_fingerprint != receipt.fingerprint
+            or receipt.tenant_id != context.tenant_id
+            or receipt.document_id != selected.document_id
+            or receipt.instruction_id != selected.instruction_id
+            or receipt.deputy_id != personal.deputy_id
+            or receipt.deputy_id != selected.deputy_id
+            or receipt.allocation_evidence_reference != selected.allocation_evidence_reference
+            or receipt.allocated_at != selected.allocated_at
+        ):
+            raise ProcessServiceAllocationRegistryError(
+                "P4_CURRENT_ALLOCATION_RECEIPT_ATTEMPT_MISMATCH"
+            )
+        observations = ProcessServiceLocationEvidenceRegistry.list_observations_for_attempt(
+            context.tenant_id,
+            attempt_id,
+            database.get_collection(LOCATION_OBSERVATION_COLLECTION),
+            session=session,
+        )
+        ProcessServiceLocationEvidenceRegistry.record_access(
+            tenant_id=context.tenant_id,
+            event_id=f"location-access-{uuid.uuid4().hex}",
+            attempt_id=attempt_id,
+            grant_id="all",
+            actor_principal_id=context.identity.identity_id,
+            actor_scope="DEPUTY_PERSONAL_ACTIVE_WORK",
+            accessed_at=datetime.now(UTC),
+            record_count=len(observations),
+            purpose="DEPUTY_PERSONAL_LOCATION_EVIDENCE_READ",
+            collection=database.get_collection(LOCATION_ACCESS_AUDIT_COLLECTION),
+            session=session,
+        )
+        return {
+            "schema": "WILSY-DEPUTY-LOCATION-EVIDENCE-PROJECTION/V1",
+            "version": "v1.0.0-P5L-DEPUTY-LOCATION-EVIDENCE-READ",
+            "tenant_id": context.tenant_id,
+            "visibility": "DEPUTY_OWN_ACTIVE_ATTEMPT_LOCATION_EVIDENCE",
+            "attempt_id": attempt_id,
+            "deputy_id": personal.deputy_id,
+            "observations": list(observations),
+        }
+
+    try:
+        return _workspace_projection_transaction(project)
+    except HTTPException:
+        raise
+    except DeputyPersonalActiveWorkError as error:
+        if error.code == "L8_6C_BINDING_REQUIRED":
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail="DEPUTY_IDENTITY_BINDING_REQUIRED",
+            ) from error
+        raise HTTPException(
+            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+            detail="LEGAL_OPERATIONS_DEPUTY_LOCATION_EVIDENCE_UNAVAILABLE",
+        ) from error
+    except (ProcessServiceAllocationRegistryError, ProcessServiceLocationEvidenceRegistryError) as error:
+        raise HTTPException(
+            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+            detail="LEGAL_OPERATIONS_DEPUTY_LOCATION_EVIDENCE_UNAVAILABLE",
+        ) from error
+    except Exception as error:
+        raise HTTPException(
+            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+            detail="LEGAL_OPERATIONS_PERSISTENCE_UNAVAILABLE",
+        ) from error
 
 
 @router.get("/instructions/{entity_identity}")
