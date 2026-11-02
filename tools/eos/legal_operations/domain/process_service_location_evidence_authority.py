@@ -31,7 +31,7 @@ import hashlib
 import json
 import math
 import re
-from typing import Final, NoReturn, cast
+from typing import Any, Final, NoReturn, cast
 
 from tools.eos.legal_operations.domain.legal_operations_lifecycle import ServiceAttempt
 from tools.eos.legal_operations.registry.process_service_allocation_registry import (
@@ -42,7 +42,7 @@ from tools.eos.legal_operations.registry.process_service_allocation_registry imp
 VERSION: Final[str] = "v1.0.0-PROCESS-SERVICE-LOCATION-EVIDENCE"
 SCHEMA: Final[str] = "WILSY-PROCESS-SERVICE-LOCATION-EVIDENCE/V1"
 LOCATION_PURPOSE: Final[str] = "PROCESS_SERVICE_ATTEMPT_FIELD_EVIDENCE"
-_ID = re.compile(r"^[A-Za-z0-9][A-Za-z0-9._:-]{0,127}$")
+_ID = re.compile(r"^[A-Za-z0-9][A-Za-z0-9._:-]{0,191}$")
 _SHA3 = re.compile(r"^[0-9a-f]{128}$")
 _FORBIDDEN = frozenset({"default", "global", "global_root", "root", "master", "*"})
 
@@ -191,7 +191,7 @@ def create_location_permission_grant(*, attempt: ServiceAttempt,
     start, end = _time("granted_at", granted_at), _time("expires_at", expires_at)
     if start < attempt.allocated_at or end <= start or purpose != LOCATION_PURPOSE:
         _fail("P5L_PERMISSION_WINDOW_OR_PURPOSE_INVALID")
-    values: dict[str, object] = {"tenant_id": attempt.tenant_id, "grant_id": _id("grant_id", grant_id),
+    values: dict[str, Any] = {"tenant_id": attempt.tenant_id, "grant_id": _id("grant_id", grant_id),
         "attempt_id": attempt.attempt_id, "deputy_id": attempt.deputy_id,
         "device_id": _id("device_id", device_id), "purpose": purpose,
         "permission_evidence_reference": _ref("permission_evidence_reference", permission_evidence_reference),
@@ -306,7 +306,7 @@ def create_process_service_location_observation(*, attempt: ServiceAttempt,
         "permission_grant_fingerprint": permission_grant.fingerprint,
         "evidence_reference": _ref("evidence_reference", evidence_reference)}
     payload = _observation_payload(values)
-    return ProcessServiceLocationObservation(**values, _proof=_issue(_digest(payload)))
+    return ProcessServiceLocationObservation(**cast(Any, values), _proof=_issue(_digest(payload)))
 
 # ARTIFACT: process_service_location_evidence_authority.py
 # VERSION: v1.0.0-PROCESS-SERVICE-LOCATION-EVIDENCE

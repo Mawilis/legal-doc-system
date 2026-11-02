@@ -220,6 +220,7 @@ def test_create_session_chain_is_tenant_bearing_and_preserves_session_identity(
         permissions: list[str],
         *,
         session: Any = None,
+        session_reference: str | None = None,
     ) -> str:
         access_issuer_calls.append(
             {
@@ -228,6 +229,7 @@ def test_create_session_chain_is_tenant_bearing_and_preserves_session_identity(
                 "role": role,
                 "permissions": list(permissions),
                 "session": session,
+                "session_reference": session_reference,
             }
         )
         return "synthetic-session-jwt"
@@ -248,6 +250,7 @@ def test_create_session_chain_is_tenant_bearing_and_preserves_session_identity(
     assert access_issuer_calls[0]["role"] == user.role
     assert access_issuer_calls[0]["permissions"] == user.permissions
     assert access_issuer_calls[0]["session"] is caller_session
+    assert access_issuer_calls[0]["session_reference"] == created.sessionReference
     assert created.tenantId == user.tenantId
     assert sessions.documents[0]["tenant_id"] == user.tenantId
     assert refresh.documents[0]["user_id"] == user.id

@@ -40,6 +40,7 @@ from datetime import datetime, timedelta, timezone
 import hashlib
 import json
 import re
+from collections.abc import Mapping
 from typing import Any, Final, NoReturn, cast
 
 from cryptography.exceptions import InvalidSignature
@@ -392,6 +393,50 @@ class DeputyDeviceProvenance:
             object.__setattr__(value, name, item)
         value._validate()
         return cast("DeputyDeviceProvenance", value)
+
+    @classmethod
+    def from_persisted(
+        cls,
+        value: Mapping[str, object],
+    ) -> "DeputyDeviceProvenance":
+        """Rehydrate only a registry-validated immutable proof envelope."""
+        expected = {
+            "schema", "version", "entity_type", "tenant_id", "principal_id",
+            "deputy_id", "sheriff_office_id", "session_reference", "device_id",
+            "public_key_spki", "public_key_fingerprint", "challenge_id",
+            "challenge_fingerprint", "verified_at", "signature_fingerprint",
+            "fingerprint",
+        }
+        if not isinstance(value, Mapping) or set(value) != expected:
+            _fail("L8_6G_PERSISTED_PROVENANCE_SHAPE_INVALID")
+        if (
+            value.get("schema") != SCHEMA
+            or value.get("version") != VERSION
+            or value.get("entity_type") != "DeputyDeviceProvenance"
+        ):
+            _fail("L8_6G_PERSISTED_PROVENANCE_SCHEMA_INVALID")
+        try:
+            verified_at_value = value["verified_at"]
+            if not isinstance(verified_at_value, str):
+                _fail("L8_6G_PERSISTED_VERIFIED_AT_INVALID")
+            verified_at = datetime.fromisoformat(
+                verified_at_value.replace("Z", "+00:00")
+            )
+        except (TypeError, ValueError) as error:
+            _fail("L8_6G_PERSISTED_VERIFIED_AT_INVALID", error)
+        instance = cast(Any, object.__new__(cls))
+        for name in (
+            "tenant_id", "principal_id", "deputy_id", "sheriff_office_id",
+            "session_reference", "device_id", "public_key_spki",
+            "public_key_fingerprint", "challenge_id", "challenge_fingerprint",
+            "signature_fingerprint",
+        ):
+            object.__setattr__(instance, name, value[name])
+        object.__setattr__(instance, "verified_at", verified_at)
+        instance._validate()
+        if value.get("fingerprint") != instance.fingerprint:
+            _fail("L8_6G_PERSISTED_PROVENANCE_FINGERPRINT_INVALID")
+        return cast("DeputyDeviceProvenance", instance)
 
     def _validate(self) -> None:
         """Revalidate immutable proof shape without claiming currentness."""

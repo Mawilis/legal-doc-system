@@ -175,6 +175,13 @@ from tools.eos.legal_operations.registry.deputy_principal_binding_registry impor
     COLLECTION as DEPUTY_PRINCIPAL_BINDING_COLLECTION,
     DeputyPrincipalBindingRegistry,
 )
+from tools.eos.legal_operations.registry.process_service_location_evidence_registry import (
+    ACCESS_AUDIT_COLLECTION as LOCATION_ACCESS_AUDIT_COLLECTION,
+    OBSERVATION_COLLECTION as LOCATION_OBSERVATION_COLLECTION,
+    PERMISSION_COLLECTION as LOCATION_PERMISSION_COLLECTION,
+    REVOCATION_COLLECTION as LOCATION_REVOCATION_COLLECTION,
+    ProcessServiceLocationEvidenceRegistry,
+)
 from tools.eos.legal_operations.registry.legal_storefront_public_intent_registry import (
     COLLECTION as LEGAL_STOREFRONT_PUBLIC_INTENT_COLLECTION,
     LegalStorefrontPublicIntentRegistry,
@@ -458,6 +465,12 @@ class WilsyAPIServer:
                 ).ensure_indexes()
                 DeputyPrincipalBindingRegistry.ensure_indexes(
                     database[DEPUTY_PRINCIPAL_BINDING_COLLECTION]
+                )
+                ProcessServiceLocationEvidenceRegistry.ensure_indexes(
+                    database[LOCATION_PERMISSION_COLLECTION],
+                    database[LOCATION_OBSERVATION_COLLECTION],
+                    database[LOCATION_REVOCATION_COLLECTION],
+                    database[LOCATION_ACCESS_AUDIT_COLLECTION],
                 )
                 LegalStorefrontPublicIntentRegistry.ensure_indexes(
                     database[LEGAL_STOREFRONT_PUBLIC_INTENT_COLLECTION]

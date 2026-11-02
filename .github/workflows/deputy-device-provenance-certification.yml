@@ -4,6 +4,7 @@ on:
   push:
     branches:
       - feat/deputy-location-evidence-mobile-suite-20261030
+      - feat/deputy-location-evidence-completion-20261102
   pull_request:
   workflow_dispatch:
 
@@ -86,6 +87,15 @@ jobs:
           client.close()
           PY
 
+      - name: Install client dependencies
+        run: npm ci --prefix client
+
+      - name: Run Deputy location browser transport certificate
+        run: npm --prefix client run test:run -- src/__tests__/services/legalOperationsService.test.js
+
+      - name: Build mobile and legal workbench client
+        run: npm --prefix client run build
+
       - name: Compile provenance contracts and certificates
         run: |
           python -m py_compile \
@@ -95,7 +105,23 @@ jobs:
             tests/unit/test_deputy_device_provenance_authority.py \
             tests/unit/test_deputy_device_provenance_registry.py \
             tests/unit/test_deputy_principal_binding_orchestrator.py \
-            tests/integration/test_deputy_device_provenance_registry_mongo.py
+            tests/integration/test_deputy_device_provenance_registry_mongo.py \
+            tools/eos/auth/identity.py \
+            tools/eos/auth/authentication.py \
+            tools/eos/saas/auth/auth_registry.py \
+            tools/eos/api/legal_operations_command_router.py \
+            tests/unit/test_authentication_principal_authority.py \
+            tests/unit/test_auth_registry_tenant_bearing_refresh.py \
+            tests/integration/test_deputy_device_provenance_http.py \
+            tools/eos/legal_operations/domain/process_service_location_evidence_authority.py \
+            tools/eos/legal_operations/registry/process_service_location_evidence_registry.py \
+            tools/eos/legal_operations/orchestration/process_service_location_evidence_orchestrator.py \
+            tools/eos/api/legal_operations_router.py \
+            tools/eos/api/server.py \
+            tests/unit/test_process_service_location_evidence_authority.py \
+            tests/unit/test_process_service_location_evidence_registry.py \
+            tests/unit/test_process_service_location_evidence_orchestrator.py \
+            tests/integration/test_sheriff_location_evidence_http.py
 
       - name: Type-check provenance contracts and certificates
         run: |
@@ -107,7 +133,22 @@ jobs:
             tests/unit/test_deputy_device_provenance_authority.py \
             tests/unit/test_deputy_device_provenance_registry.py \
             tests/unit/test_deputy_principal_binding_orchestrator.py \
-            tests/integration/test_deputy_device_provenance_registry_mongo.py
+            tests/integration/test_deputy_device_provenance_registry_mongo.py \
+            tools/eos/auth/identity.py \
+            tools/eos/auth/authentication.py \
+            tools/eos/saas/auth/auth_registry.py \
+            tools/eos/api/legal_operations_command_router.py \
+            tests/unit/test_authentication_principal_authority.py \
+            tests/unit/test_auth_registry_tenant_bearing_refresh.py \
+            tests/integration/test_deputy_device_provenance_http.py \
+            tools/eos/legal_operations/domain/process_service_location_evidence_authority.py \
+            tools/eos/legal_operations/registry/process_service_location_evidence_registry.py \
+            tools/eos/legal_operations/orchestration/process_service_location_evidence_orchestrator.py \
+            tools/eos/api/legal_operations_router.py \
+            tests/unit/test_process_service_location_evidence_authority.py \
+            tests/unit/test_process_service_location_evidence_registry.py \
+            tests/unit/test_process_service_location_evidence_orchestrator.py \
+            tests/integration/test_sheriff_location_evidence_http.py
 
       - name: Run authority, registry, binding and Mongo transaction certificates
         run: |
@@ -115,7 +156,14 @@ jobs:
             tests/unit/test_deputy_device_provenance_authority.py \
             tests/unit/test_deputy_device_provenance_registry.py \
             tests/unit/test_deputy_principal_binding_orchestrator.py \
-            tests/integration/test_deputy_device_provenance_registry_mongo.py
+            tests/integration/test_deputy_device_provenance_registry_mongo.py \
+            tests/unit/test_authentication_principal_authority.py \
+            tests/unit/test_auth_registry_tenant_bearing_refresh.py \
+            tests/integration/test_deputy_device_provenance_http.py \
+            tests/unit/test_process_service_location_evidence_authority.py \
+            tests/unit/test_process_service_location_evidence_registry.py \
+            tests/unit/test_process_service_location_evidence_orchestrator.py \
+            tests/integration/test_sheriff_location_evidence_http.py
 
       - name: Stop isolated MongoDB replica set
         if: always()

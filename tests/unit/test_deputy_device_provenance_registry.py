@@ -203,6 +203,52 @@ def test_valid_proof_is_atomically_consumed_once_and_replay_is_rejected():
     assert len([call for call in store.calls if call[0] == "update_one"]) == 1
 
 
+
+def test_consumed_device_provenance_can_be_reloaded_for_delayed_signed_sync():
+    registry, store, binding_store, auth, key, challenge, session = fixture()
+    registry.create(challenge, session=session)
+    signature_bytes = signature(key, challenge)
+    proof = registry.verify_and_consume(
+        tenant_id=TENANT,
+        challenge_id=challenge.challenge_id,
+        signature_p1363=signature_bytes,
+        verified_at=NOW + timedelta(seconds=1),
+        session=session,
+    )
+    restored = registry.get_consumed_provenance(
+        tenant_id=TENANT,
+        challenge_id=challenge.challenge_id,
+        principal_id=PRINCIPAL,
+        session_reference=SESSION_REF,
+        at=NOW + timedelta(seconds=2),
+        session=session,
+    )
+    assert restored.fingerprint == proof.fingerprint
+    assert restored.public_key_spki == proof.public_key_spki
+    assert restored.challenge_id == challenge.challenge_id
+    restored_after_reauthentication = registry.get_consumed_provenance(
+        tenant_id=TENANT,
+        challenge_id=challenge.challenge_id,
+        principal_id=PRINCIPAL,
+        session_reference="session-2",
+        at=NOW + timedelta(seconds=3),
+        session=session,
+    )
+    assert restored_after_reauthentication.fingerprint == proof.fingerprint
+    assert auth.calls[-1][2] == "session-2"
+    auth.current = False
+    with pytest.raises(DeputyDeviceProvenanceRegistryConflictError):
+        registry.get_consumed_provenance(
+            tenant_id=TENANT,
+            challenge_id=challenge.challenge_id,
+            principal_id=PRINCIPAL,
+            session_reference=SESSION_REF,
+            at=NOW + timedelta(seconds=3),
+            session=session,
+        )
+
+
+
 def test_stale_session_bad_signature_and_cas_miss_do_not_consume():
     registry, store, _, auth, key, challenge, session = fixture()
     registry.create(challenge, session=session)

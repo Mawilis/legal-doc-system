@@ -73,7 +73,7 @@ def run(monkeypatch, repository, payload=None, api_key=None, registry_calls=None
 def test_active_requires_durable_authority_and_projects_status(monkeypatch):
     authority_calls = []
     durable_calls = []
-    payload = access_payload(identity_id="p", tenant_id="t")
+    payload = access_payload(identity_id="p", tenant_id="t", session_reference="WILSYSESSION-test")
     value = run(
         monkeypatch,
         Repository(PrincipalStatus.ACTIVE, authority_calls),
@@ -81,6 +81,7 @@ def test_active_requires_durable_authority_and_projects_status(monkeypatch):
         registry_calls=durable_calls,
     )
     assert value.identity_id == "p" and value.status is PrincipalStatus.ACTIVE
+    assert value.session_reference == "WILSYSESSION-test"
     assert authority_calls == ["p"]
     assert durable_calls == [("t", "p")]
 

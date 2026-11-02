@@ -128,6 +128,7 @@ import {
   Loader2,
   LockKeyhole,
   LogOut,
+  MapPin,
   Play,
   RefreshCw,
   Scale,
@@ -141,7 +142,10 @@ import {
   LEGAL_OPERATIONS_CLIENT_VERSION,
   generateLegalReturnOfService,
   getDeputyFieldCapabilities,
+  getDeputyLocationEvidence,
   getDeputyPersonalActiveWork,
+  captureDeputyLocationEvidence,
+  syncPendingDeputyLocationEvidence,
   getLegalClientMatters,
   getLegalClientAcceptanceInstruments,
   createLegalClientAcceptanceContext,
@@ -153,6 +157,7 @@ import {
   getLegalProductiveWork,
   completeLegalWorkItem,
   getLegalSpecialistWorkflow,
+  getSheriffLocationEvidence,
   getSheriffOperationalQueues,
   issueLegalConflictReview,
   recordDeputyFieldOutcome,
@@ -4204,14 +4209,63 @@ function LegalFinanceWorkspace({
   );
 }
 
+function SheriffAttemptRow({
+  item,
+  locationState,
+  locationEvidence,
+  onLoadLocationEvidence,
+}) {
+  return (
+    <div>
+      <AttemptQueueRow item={item} />
+      <div className="border-t border-stone-900 bg-black/20 px-5 py-4">
+        <div className="flex flex-wrap items-center justify-between gap-3">
+          <p className="text-xs text-stone-400">
+            Location evidence is visible only when the authenticated tenant resolves to one canonical Sheriff Office.
+          </p>
+          <button
+            type="button"
+            disabled={locationState?.status === 'pending'}
+            onClick={() => onLoadLocationEvidence(item)}
+            className="inline-flex min-h-[42px] items-center gap-2 rounded-lg border border-sky-700/40 bg-sky-500/10 px-4 py-2 text-xs font-bold text-sky-100 hover:bg-sky-500/20 disabled:cursor-not-allowed disabled:opacity-40"
+          >
+            {locationState?.status === 'pending' ? <Loader2 className="animate-spin" size={14} /> : <MapPin size={14} />}
+            View office-scoped location evidence
+          </button>
+        </div>
+        {locationState?.message && (
+          <p className={'mt-2 text-xs ' + (locationState.status === 'error' ? 'text-red-300' : locationState.status === 'success' ? 'text-emerald-300' : 'text-sky-200')}>
+            {locationState.message}
+          </p>
+        )}
+        {locationEvidence?.observations?.length > 0 && (
+          <ul className="mt-3 space-y-2 border-t border-sky-900/30 pt-3">
+            {locationEvidence.observations.slice(-3).map((observation) => (
+              <li key={observation.observation_id} className="text-xs text-stone-300">
+                <span className="font-mono">{Number(observation.latitude).toFixed(5)}, {Number(observation.longitude).toFixed(5)}</span>
+                <span className="ml-2 text-stone-500">±{Number(observation.horizontal_accuracy_m).toFixed(1)} m</span>
+                <span className="ml-2 text-stone-500">{observation.captured_at}</span>
+              </li>
+            ))}
+          </ul>
+        )}
+      </div>
+    </div>
+  );
+}
+
 function DeputyAttemptRow({
   item,
   capability,
   draft,
   commandState,
   fieldDeviceId,
+  locationState,
+  locationEvidence,
   onDraftChange,
   onCommand,
+  onCaptureLocation,
+  onLoadLocationEvidence,
 }) {
   const pending =
     commandState?.status === 'pending'
@@ -4313,6 +4367,56 @@ function DeputyAttemptRow({
               )}
             </div>
 
+            <section aria-label={'Location evidence for ' + item.attempt_id} className="mt-5 rounded-xl border border-sky-900/40 bg-sky-950/10 p-4">
+              <div className="flex items-start gap-3">
+                <MapPin size={18} className="mt-0.5 shrink-0 text-sky-300" aria-hidden="true" />
+                <div>
+                  <p className="text-xs font-black uppercase tracking-wider text-sky-200">One-shot location evidence</p>
+                  <p className="mt-1 text-xs leading-5 text-stone-400">
+                    Capture starts only when you press the button. Your browser may ask for location permission.
+                    Wilsy records one fix for this attempt; it does not start background or continuous tracking.
+                    GPS coordinates are supporting evidence, not proof that service was legally valid.
+                  </p>
+                </div>
+              </div>
+              <div className="mt-3 flex flex-wrap gap-2">
+                <button
+                  type="button"
+                  disabled={pending || locationState?.status === 'pending' || !['ALLOCATED', 'ATTEMPTED'].includes(capability.currentState)}
+                  onClick={() => onCaptureLocation(item)}
+                  className="inline-flex min-h-[44px] items-center justify-center gap-2 rounded-lg border border-sky-700/50 bg-sky-500/10 px-4 py-2 text-xs font-bold text-sky-100 hover:bg-sky-500/20 disabled:cursor-not-allowed disabled:opacity-40"
+                >
+                  {locationState?.status === 'pending' ? <Loader2 className="animate-spin" size={15} /> : <MapPin size={15} />}
+                  Capture one location fix
+                </button>
+                <button
+                  type="button"
+                  disabled={locationState?.status === 'pending'}
+                  onClick={() => onLoadLocationEvidence(item)}
+                  className="inline-flex min-h-[44px] items-center justify-center gap-2 rounded-lg border border-stone-700 bg-stone-900 px-4 py-2 text-xs font-bold text-stone-200 hover:bg-stone-800 disabled:cursor-not-allowed disabled:opacity-40"
+                >
+                  <RefreshCw size={14} />
+                  View saved evidence
+                </button>
+              </div>
+              {locationState?.message && (
+                <p className={'mt-3 text-xs ' + (locationState.status === 'error' ? 'text-red-300' : locationState.status === 'success' ? 'text-emerald-300' : 'text-sky-200')}>
+                  {locationState.message}
+                </p>
+              )}
+              {locationEvidence?.observations?.length > 0 && (
+                <ul className="mt-3 space-y-2 border-t border-sky-900/30 pt-3">
+                  {locationEvidence.observations.slice(-3).map((observation) => (
+                    <li key={observation.observation_id} className="text-xs text-stone-300">
+                      <span className="font-mono">{Number(observation.latitude).toFixed(5)}, {Number(observation.longitude).toFixed(5)}</span>
+                      <span className="ml-2 text-stone-500">±{Number(observation.horizontal_accuracy_m).toFixed(1)} m</span>
+                      <span className="ml-2 text-stone-500">{observation.captured_at}</span>
+                    </li>
+                  ))}
+                </ul>
+              )}
+            </section>
+
             <div className="mt-3 flex flex-wrap gap-x-4 gap-y-1 text-[10px] uppercase tracking-wider text-stone-600">
               <span>State: {capability.currentState}</span>
               <span>Device provenance: {fieldDeviceId || 'Unavailable'}</span>
@@ -4408,6 +4512,10 @@ export default function LegalDashboard({
   const [observationDrafts, setObservationDrafts] = useState({});
   const [commandState, setCommandState] = useState(null);
   const [fieldDeviceId, setFieldDeviceId] = useState('');
+  const [locationCaptureStates, setLocationCaptureStates] = useState({});
+  const [locationEvidenceByAttempt, setLocationEvidenceByAttempt] = useState({});
+  const [sheriffLocationStates, setSheriffLocationStates] = useState({});
+  const [sheriffLocationEvidenceByAttempt, setSheriffLocationEvidenceByAttempt] = useState({});
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [error, setError] = useState(null);
@@ -4640,6 +4748,121 @@ export default function LegalDashboard({
     }));
   }, []);
 
+  const runDeputyLocationCapture = useCallback(async (attempt) => {
+    const capability = capabilityByAttempt.get(attempt.attempt_id);
+    if (!capability || !['ALLOCATED', 'ATTEMPTED'].includes(capability.currentState)) {
+      setLocationCaptureStates((current) => ({
+        ...current,
+        [attempt.attempt_id]: {
+          status: 'error',
+          message: 'Canonical field capability does not permit location capture.',
+        },
+      }));
+      return;
+    }
+    setLocationCaptureStates((current) => ({
+      ...current,
+      [attempt.attempt_id]: {
+        status: 'pending',
+        message: 'Requesting one location fix and signing it with this browser device key…',
+      },
+    }));
+    try {
+      const result = await captureDeputyLocationEvidence({
+        attemptId: attempt.attempt_id,
+        currentEvidenceIdentity: capability.currentEvidenceIdentity,
+      });
+      if (result.queued) {
+        setLocationCaptureStates((current) => ({
+          ...current,
+          [attempt.attempt_id]: {
+            status: 'queued',
+            message: 'Signed location evidence is safely queued on this device and will sync when connectivity returns. No background tracking was started.',
+          },
+        }));
+        return;
+      }
+      const packet = await getDeputyLocationEvidence(attempt.attempt_id);
+      setLocationEvidenceByAttempt((current) => ({
+        ...current,
+        [attempt.attempt_id]: packet,
+      }));
+      setLocationCaptureStates((current) => ({
+        ...current,
+        [attempt.attempt_id]: {
+          status: 'success',
+          message: 'Saved one signed location observation (' + result.observation.observation_id + '). No background tracking was started.',
+        },
+      }));
+    } catch (caught) {
+      setLocationCaptureStates((current) => ({
+        ...current,
+        [attempt.attempt_id]: {
+          status: 'error',
+          message: commandErrorMessage(caught),
+        },
+      }));
+    }
+  }, [capabilityByAttempt]);
+
+  const loadDeputyLocationEvidence = useCallback(async (attempt) => {
+    setLocationCaptureStates((current) => ({
+      ...current,
+      [attempt.attempt_id]: { status: 'pending', message: 'Loading saved location evidence…' },
+    }));
+    try {
+      const packet = await getDeputyLocationEvidence(attempt.attempt_id);
+      setLocationEvidenceByAttempt((current) => ({
+        ...current,
+        [attempt.attempt_id]: packet,
+      }));
+      setLocationCaptureStates((current) => ({
+        ...current,
+        [attempt.attempt_id]: {
+          status: 'success',
+          message: 'Loaded ' + packet.observations.length + ' saved location observation(s).',
+        },
+      }));
+    } catch (caught) {
+      setLocationCaptureStates((current) => ({
+        ...current,
+        [attempt.attempt_id]: {
+          status: 'error',
+          message: commandErrorMessage(caught),
+        },
+      }));
+    }
+  }, []);
+
+  const loadSheriffLocationEvidence = useCallback(async (attempt) => {
+    setSheriffLocationStates((current) => ({
+      ...current,
+      [attempt.attempt_id]: { status: 'pending', message: 'Checking office-scoped location evidence…' },
+    }));
+    try {
+      const packet = await getSheriffLocationEvidence(attempt.attempt_id);
+      setSheriffLocationEvidenceByAttempt((current) => ({
+        ...current,
+        [attempt.attempt_id]: packet,
+      }));
+      setSheriffLocationStates((current) => ({
+        ...current,
+        [attempt.attempt_id]: {
+          status: 'success',
+          message: 'Loaded ' + packet.observations.length + ' observation(s) for Sheriff Office ' + packet.sheriff_office_id + '.',
+        },
+      }));
+    } catch (caught) {
+      setSheriffLocationStates((current) => ({
+        ...current,
+        [attempt.attempt_id]: {
+          status: 'error',
+          message: commandErrorMessage(caught),
+        },
+      }));
+    }
+  }, []);
+
   const runDeputyFieldCommand = useCallback(async (attempt, commandKind) => {
     const capability = capabilityByAttempt.get(attempt.attempt_id);
     if (
@@ -4818,6 +5041,43 @@ export default function LegalDashboard({
   const isPracticeMode = roleMode === ROLE_MODES.LEGAL_PRACTICE;
   const isFinanceMode = roleMode === ROLE_MODES.LEGAL_FINANCE;
   const isDeputyMode = roleMode === ROLE_MODES.DEPUTY;
+
+  useEffect(() => {
+    if (!isDeputyMode || typeof window === 'undefined') return undefined;
+    const syncPending = () => {
+      syncPendingDeputyLocationEvidence().then(async (result) => {
+        for (const attemptId of result.syncedAttemptIds || []) {
+          try {
+            const packet = await getDeputyLocationEvidence(attemptId);
+            setLocationEvidenceByAttempt((current) => ({
+              ...current,
+              [attemptId]: packet,
+            }));
+            setLocationCaptureStates((current) => ({
+              ...current,
+              [attemptId]: {
+                status: 'success',
+                message: 'Offline signed location evidence synced successfully.',
+              },
+            }));
+          } catch {
+            setLocationCaptureStates((current) => ({
+              ...current,
+              [attemptId]: {
+                status: 'success',
+                message: 'Offline signed location evidence synced. Saved evidence is available when this attempt is opened.',
+              },
+            }));
+          }
+        }
+      }).catch(() => {
+        // Signed events remain in the local outbox for explicit retry.
+      });
+    };
+    syncPending();
+    window.addEventListener('online', syncPending);
+    return () => window.removeEventListener('online', syncPending);
+  }, [isDeputyMode]);
   const isSheriffMode = roleMode === ROLE_MODES.SHERIFF;
   const isClientMode = roleMode === ROLE_MODES.LEGAL_CLIENT;
   // The shared chrome owns tenant asset resolution; the parent never receives a descriptor.
@@ -5109,7 +5369,13 @@ export default function LegalDashboard({
               rows={queues.activeAttempts.filter(specialistSearchMatches)}
               emptyMessage="No active service attempts are currently certified."
               renderRow={(item) => (
-                <AttemptQueueRow key={item.attempt_id} item={item} />
+                <SheriffAttemptRow
+                  key={item.attempt_id}
+                  item={item}
+                  locationState={sheriffLocationStates[item.attempt_id]}
+                  locationEvidence={sheriffLocationEvidenceByAttempt[item.attempt_id]}
+                  onLoadLocationEvidence={loadSheriffLocationEvidence}
+                />
               )}
             />
           </>
@@ -5225,8 +5491,12 @@ export default function LegalDashboard({
                   draft={observationDrafts[item.attempt_id]}
                   commandState={commandState}
                   fieldDeviceId={fieldDeviceId}
+                  locationState={locationCaptureStates[item.attempt_id]}
+                  locationEvidence={locationEvidenceByAttempt[item.attempt_id]}
                   onDraftChange={updateObservationDraft}
                   onCommand={runDeputyFieldCommand}
+                  onCaptureLocation={runDeputyLocationCapture}
+                  onLoadLocationEvidence={loadDeputyLocationEvidence}
                 />
               )}
             />
