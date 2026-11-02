@@ -156,6 +156,7 @@ import {
   getLegalProductiveWork,
   completeLegalWorkItem,
   getLegalSpecialistWorkflow,
+  getSheriffLocationEvidence,
   getSheriffOperationalQueues,
   issueLegalConflictReview,
   recordDeputyFieldOutcome,
@@ -4207,6 +4208,51 @@ function LegalFinanceWorkspace({
   );
 }
 
+function SheriffAttemptRow({
+  item,
+  locationState,
+  locationEvidence,
+  onLoadLocationEvidence,
+}) {
+  return (
+    <div>
+      <AttemptQueueRow item={item} />
+      <div className="border-t border-stone-900 bg-black/20 px-5 py-4">
+        <div className="flex flex-wrap items-center justify-between gap-3">
+          <p className="text-xs text-stone-400">
+            Location evidence is visible only when the authenticated tenant resolves to one canonical Sheriff Office.
+          </p>
+          <button
+            type="button"
+            disabled={locationState?.status === 'pending'}
+            onClick={() => onLoadLocationEvidence(item)}
+            className="inline-flex min-h-[42px] items-center gap-2 rounded-lg border border-sky-700/40 bg-sky-500/10 px-4 py-2 text-xs font-bold text-sky-100 hover:bg-sky-500/20 disabled:cursor-not-allowed disabled:opacity-40"
+          >
+            {locationState?.status === 'pending' ? <Loader2 className="animate-spin" size={14} /> : <MapPin size={14} />}
+            View office-scoped location evidence
+          </button>
+        </div>
+        {locationState?.message && (
+          <p className={'mt-2 text-xs ' + (locationState.status === 'error' ? 'text-red-300' : locationState.status === 'success' ? 'text-emerald-300' : 'text-sky-200')}>
+            {locationState.message}
+          </p>
+        )}
+        {locationEvidence?.observations?.length > 0 && (
+          <ul className="mt-3 space-y-2 border-t border-sky-900/30 pt-3">
+            {locationEvidence.observations.slice(-3).map((observation) => (
+              <li key={observation.observation_id} className="text-xs text-stone-300">
+                <span className="font-mono">{Number(observation.latitude).toFixed(5)}, {Number(observation.longitude).toFixed(5)}</span>
+                <span className="ml-2 text-stone-500">±{Number(observation.horizontal_accuracy_m).toFixed(1)} m</span>
+                <span className="ml-2 text-stone-500">{observation.captured_at}</span>
+              </li>
+            ))}
+          </ul>
+        )}
+      </div>
+    </div>
+  );
+}
+
 function DeputyAttemptRow({
   item,
   capability,
@@ -4467,6 +4513,8 @@ export default function LegalDashboard({
   const [fieldDeviceId, setFieldDeviceId] = useState('');
   const [locationCaptureStates, setLocationCaptureStates] = useState({});
   const [locationEvidenceByAttempt, setLocationEvidenceByAttempt] = useState({});
+  const [sheriffLocationStates, setSheriffLocationStates] = useState({});
+  const [sheriffLocationEvidenceByAttempt, setSheriffLocationEvidenceByAttempt] = useState({});
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [error, setError] = useState(null);
@@ -4766,6 +4814,35 @@ export default function LegalDashboard({
       }));
     } catch (caught) {
       setLocationCaptureStates((current) => ({
+        ...current,
+        [attempt.attempt_id]: {
+          status: 'error',
+          message: commandErrorMessage(caught),
+        },
+      }));
+    }
+  }, []);
+
+  const loadSheriffLocationEvidence = useCallback(async (attempt) => {
+    setSheriffLocationStates((current) => ({
+      ...current,
+      [attempt.attempt_id]: { status: 'pending', message: 'Checking office-scoped location evidence…' },
+    }));
+    try {
+      const packet = await getSheriffLocationEvidence(attempt.attempt_id);
+      setSheriffLocationEvidenceByAttempt((current) => ({
+        ...current,
+        [attempt.attempt_id]: packet,
+      }));
+      setSheriffLocationStates((current) => ({
+        ...current,
+        [attempt.attempt_id]: {
+          status: 'success',
+          message: 'Loaded ' + packet.observations.length + ' observation(s) for Sheriff Office ' + packet.sheriff_office_id + '.',
+        },
+      }));
+    } catch (caught) {
+      setSheriffLocationStates((current) => ({
         ...current,
         [attempt.attempt_id]: {
           status: 'error',
@@ -5244,7 +5321,13 @@ export default function LegalDashboard({
               rows={queues.activeAttempts.filter(specialistSearchMatches)}
               emptyMessage="No active service attempts are currently certified."
               renderRow={(item) => (
-                <AttemptQueueRow key={item.attempt_id} item={item} />
+                <SheriffAttemptRow
+                  key={item.attempt_id}
+                  item={item}
+                  locationState={sheriffLocationStates[item.attempt_id]}
+                  locationEvidence={sheriffLocationEvidenceByAttempt[item.attempt_id]}
+                  onLoadLocationEvidence={loadSheriffLocationEvidence}
+                />
               )}
             />
           </>
