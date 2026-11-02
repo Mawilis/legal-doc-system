@@ -385,24 +385,24 @@ const AuthenticatedRuntimeComposition = () => {
   );
 };
 
-const AuthenticatedTenantBoundary = () => {
+export const AuthenticatedTenantBoundary = ({ runtime }) => {
   const { isAuthenticated, tenant, user } = useAuth();
   if (!isAuthenticated) return <RuntimeComposition />;
   return (
     <TenantProvider initialTenant={tenant} authenticatedTenantId={String(user?.tenantId || '')}>
-      <AuthenticatedBootstrapBoundary />
+      <AuthenticatedBootstrapBoundary runtime={runtime} />
     </TenantProvider>
   );
 };
 
-const AuthenticatedBootstrapBoundary = () => {
+const AuthenticatedBootstrapBoundary = ({ runtime }) => {
   const { activeTenant, bootstrapReady, loading, error, authorityMismatch } = useTenants();
   if (!bootstrapReady || loading) return <WorkspaceBootstrapSurface />;
   if (authorityMismatch || error || !activeTenant) {
     return <WorkspaceBootstrapError message={authorityMismatch ? 'AUTHENTICATED_WORKSPACE_AUTHORITY_MISMATCH' : (error || 'AUTHENTICATED_WORKSPACE_UNRESOLVED')} />;
   }
   return (
-    <LegalAcceptanceBoundary runtime={<AuthenticatedRuntimeComposition />} />
+    <LegalAcceptanceBoundary runtime={runtime || <AuthenticatedRuntimeComposition />} />
   );
 };
 
