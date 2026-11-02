@@ -219,8 +219,10 @@ class Rows:
 
     def insert_one(self, doc, *, session):
         assert session.in_transaction()
-        if any(row["decision_reference"] == doc["decision_reference"]
-               and row["tenant_id"] == doc["tenant_id"] for row in self.docs):
+        if any(row["tenant_id"] == doc["tenant_id"] and (
+               row["decision_reference"] == doc["decision_reference"] or
+               row["recovery_case_reference"] == doc["recovery_case_reference"]
+               ) for row in self.docs):
             from pymongo.errors import DuplicateKeyError
             raise DuplicateKeyError("duplicate")
         self.docs.append(dict(doc))
@@ -234,16 +236,37 @@ class Database:
         return self.rows
 
 
-def test_recovery_replay_ledger_requires_transaction_and_rejects_replay() -> None:
-    lookup = RecoveryDecisionLookup("tenant-1", "entity-1", "case-1",
-                                    fp("case"), "successor-1", NOW)
-    _, envelope = recovery_fixture(Keys())
+def test_recovery_replay_ledger_requires_validated_receipt_and_transaction() -> None:
+    keys = Keys()
+    lookup, envelope = recovery_fixture(keys)
+    validated = validate_recovery_decision(lookup, envelope, keys)
     db = Database()
     registry = RecoveryDecisionReplayRegistry(db)
+    with pytest.raises(OwnershipEvidenceValidationError, match="VALIDATED_RECOVERY_DECISION_REQUIRED"):
+        registry.consume_validated(envelope.receipt, session=Session())  # type: ignore[arg-type]
     with pytest.raises(OwnershipEvidenceValidationError, match="ACTIVE_TRANSACTION_REQUIRED"):
-        registry.consume(lookup, envelope.receipt, session=None)
-    registry.consume(lookup, envelope.receipt, session=Session())
+        registry.consume_validated(validated, session=None)
+    registry.consume_validated(validated, session=Session())
     with pytest.raises(OwnershipEvidenceValidationError, match="RECOVERY_DECISION_REPLAY"):
-        registry.consume(lookup, envelope.receipt, session=Session())
+        registry.consume_validated(validated, session=Session())
     assert len(db.rows.docs) == 1
     assert len(db.rows.indexes) == 2
+
+
+def test_verified_recovery_composition_denies_provider_outage_before_persisting() -> None:
+    class Unavailable(Keys):
+        def recovery_key_status(self, authority_id: str, trust_root_reference: str,
+                                trust_root_fingerprint: str, key_reference: str,
+                                revision: int, at: datetime) -> str:
+            raise TimeoutError("trust-list unavailable")
+
+    keys = Keys()
+    lookup, envelope = recovery_fixture(keys)
+    db = Database()
+    registry = RecoveryDecisionReplayRegistry(db)
+    with pytest.raises(OwnershipEvidenceValidationError, match="KEY_STATUS_UNAVAILABLE"):
+        validate_recovery_decision(lookup, envelope, Unavailable())
+    assert db.rows.docs == []
+    validated = validate_recovery_decision(lookup, envelope, keys)
+    registry.consume_validated(validated, session=Session())
+    assert len(db.rows.docs) == 1
