@@ -1,6 +1,6 @@
 /**
  * WILSY OS — ROLE-SCOPED LEGAL OPERATIONS CLIENT ADAPTER
- * VERSION: v2.3.0-P5L-ONE-SHOT-LOCATION-EVIDENCE
+ * VERSION: v2.4.0-L8-SHERIFF-APPOINTMENT-EVIDENCE-CLIENT-TRANSPORT
  * AUTHORITY: Browser transport validation and presentation adaptation only.
  * EPITOME: Authenticated browser adapter for certified Legal Operations reads,
  *          practice-workspace projection, exact finance evidence lookups,
@@ -17,8 +17,9 @@
  *                            invoice evidence, intake and ReturnOfService HTTP
  *                            authority. This adapter owns strict browser transport
  *                            validation and immutable presentation adaptation only.
- * CERTIFICATION / UPDATE DATE: 2026-10-19
- * CHANGELOG: 2026-10-19 v2.2.0-P8-LEGAL-WORK-COMPLETION-BROWSER-TRANSPORT adds one authenticated authority-free work-completion browser command, strict three-field input whitelist, exact canonical server endpoint, opaque evidence only, and response work-item binding. Server retains tenant, principal, authorization, assignment, transaction, timestamp and durable completion truth.
+ * CERTIFICATION / UPDATE DATE: 2026-11-02
+ * CHANGELOG: 2026-11-02 v2.4.0-L8-SHERIFF-APPOINTMENT-EVIDENCE-CLIENT-TRANSPORT adds strict tenant-admin Sheriff appointment evidence command transport, rejects browser-owned tenant/District/jurisdiction/verifier/time/revision authority, and validates the appointment-scoped location projection V2 with current office, District and appointment identity.
+ *            2026-10-19 v2.2.0-P8-LEGAL-WORK-COMPLETION-BROWSER-TRANSPORT adds one authenticated authority-free work-completion browser command, strict three-field input whitelist, exact canonical server endpoint, opaque evidence only, and response work-item binding. Server retains tenant, principal, authorization, assignment, transaction, timestamp and durable completion truth.
  *            2026-10-16 v2.1.0-LEGAL-COMMERCIAL-CONTEXT-BROWSER-TRANSPORT adds one strict authenticated GET /legal-operations/commercial-context adapter. It validates the exact server-owned product/subscription/plan/commercial contract, preserves 401/403 as access denial, rejects malformed or extra commercial fields, accepts no tenant/plan/subscription/price selector, and creates no IAM, Legal, payment or settlement authority.
  *            2026-10-12 v2.0.0-LEGAL-EVIDENCE-UPLOAD-BROWSER-TRANSPORT adds one governed FormData upload command carrying only the selected file, document path identity, and idempotency header; it sets no multipart boundary and validates bounded canonical commit/reconciliation evidence.
  *            2026-09-25 v1.9.0-LEGAL-CLIENT-ACCEPTANCE-BROWSER-TRANSPORT adds the authenticated bounded conflict-screening review-queue read adapter. It accepts no tenant input, validates exact server-owned screening identity/status/matter/timestamp rows, preserves deterministic order and excludes screening evidence, party data, review/IAM and financial authority.
@@ -70,7 +71,7 @@
  *                  finance, client and deputy projections. Browser requests never
  *                  select tenant/principal/role authority; deputy rows remain
  *                  bound to the server-authorized canonical deputy identity.
- * AUTHORITY BOUNDARY: Read/intake/return/deputy-command transport validation
+ * AUTHORITY BOUNDARY: Read/intake/return/deputy-command/appointment-evidence transport validation
  *                     only. Browser role, menu, capability, generated opaque IDs,
  *                     visibility, observation or display state never grants legal
  *                     practice, sheriff, deputy, finance or client authority and
@@ -82,7 +83,7 @@ import api from './api.js';
 import sovereignClient from '../utils/sovereignClient.js';
 
 export const LEGAL_OPERATIONS_CLIENT_VERSION =
-  'v2.3.0-P5L-ONE-SHOT-LOCATION-EVIDENCE';
+  'v2.4.0-L8-SHERIFF-APPOINTMENT-EVIDENCE-CLIENT-TRANSPORT';
 
 const CONFLICT_REVIEW_INPUT_KEYS = Object.freeze([
   'screeningId',
@@ -101,6 +102,58 @@ const CONFLICT_REVIEW_OUTCOMES = Object.freeze([
   'CONFLICT_IDENTIFIED',
   'NO_CONFLICT_IDENTIFIED',
   'ESCALATION_REQUIRED',
+]);
+const SHERIFF_APPOINTMENT_INPUT_KEYS = Object.freeze([
+  'appointmentId',
+  'expectedRevision',
+  'expectedPredecessorFingerprint',
+  'principalId',
+  'sheriffOfficeId',
+  'appointmentKind',
+  'appointmentInstrumentReference',
+  'appointmentInstrumentFingerprint',
+  'officeScopeInstrumentReference',
+  'officeScopeInstrumentFingerprint',
+  'fidelityFundCertificateReference',
+  'fidelityFundCertificateFingerprint',
+  'professionalIndemnityInsuranceReference',
+  'professionalIndemnityInsuranceFingerprint',
+  'appointmentEffectiveFrom',
+  'appointmentEffectiveUntil',
+  'certificateValidFrom',
+  'certificateValidUntil',
+  'professionalIndemnityInsuranceValidFrom',
+  'professionalIndemnityInsuranceValidUntil',
+]);
+const SHERIFF_APPOINTMENT_RESPONSE_KEYS = Object.freeze([
+  'schema',
+  'appointment_version',
+  'tenant_id',
+  'appointment_id',
+  'revision',
+  'principal_id',
+  'sheriff_office_id',
+  'district_id',
+  'appointment_kind',
+  'appointment_instrument_reference',
+  'appointment_instrument_fingerprint',
+  'office_scope_instrument_reference',
+  'office_scope_instrument_fingerprint',
+  'fidelity_fund_certificate_reference',
+  'fidelity_fund_certificate_fingerprint',
+  'certificate_jurisdiction_reference',
+  'professional_indemnity_insurance_reference',
+  'professional_indemnity_insurance_fingerprint',
+  'professional_indemnity_insurance_valid_from',
+  'professional_indemnity_insurance_valid_until',
+  'appointment_effective_from',
+  'appointment_effective_until',
+  'certificate_valid_from',
+  'certificate_valid_until',
+  'verified_by_principal_id',
+  'verified_at',
+  'supersedes_fingerprint',
+  'fingerprint',
 ]);
 
 const LEGAL_COMMERCIAL_CONTEXT_SCHEMA =
@@ -941,6 +994,7 @@ function assertCanonicalClientAcceptanceContext(value, expected) {
     || !SHA3_512_PATTERN.test(value.matter_fingerprint)
     || !SHA3_512_PATTERN.test(value.instrument_fingerprint)
     || !SHA3_512_PATTERN.test(value.content_fingerprint)
+    || !isCanonicalText(value.fingerprint)
     || !SHA3_512_PATTERN.test(value.fingerprint)
   ) {
     throw new Error(errorCode);
@@ -1667,6 +1721,125 @@ function assertCanonicalConflictReviewResponse(value, input) {
     outcome: data.outcome,
     reviewedAt: data.reviewed_at,
     fingerprint: data.fingerprint,
+  });
+}
+
+
+function assertSheriffAppointmentInput(value) {
+  const errorCode = 'SHERIFF_APPOINTMENT_COMMAND_INPUT_INVALID';
+  assertExactKeys(value, SHERIFF_APPOINTMENT_INPUT_KEYS, errorCode);
+  if (
+    !isCanonicalText(value.appointmentId)
+    || value.appointmentId.length > 240
+    || !Number.isSafeInteger(value.expectedRevision)
+    || value.expectedRevision < 0
+    || !isCanonicalText(value.principalId)
+    || value.principalId.length > 240
+    || !isCanonicalText(value.sheriffOfficeId)
+    || value.sheriffOfficeId.length > 240
+    || !['PERMANENT', 'ACTING'].includes(value.appointmentKind)
+    || !isCanonicalText(value.appointmentInstrumentReference)
+    || value.appointmentInstrumentReference.length > 500
+    || (!isCanonicalText(value.appointmentInstrumentFingerprint) || !SHA3_512_PATTERN.test(value.appointmentInstrumentFingerprint))
+    || !isCanonicalText(value.officeScopeInstrumentReference)
+    || value.officeScopeInstrumentReference.length > 500
+    || (!isCanonicalText(value.officeScopeInstrumentFingerprint) || !SHA3_512_PATTERN.test(value.officeScopeInstrumentFingerprint))
+    || !isCanonicalText(value.fidelityFundCertificateReference)
+    || value.fidelityFundCertificateReference.length > 500
+    || (!isCanonicalText(value.fidelityFundCertificateFingerprint) || !SHA3_512_PATTERN.test(value.fidelityFundCertificateFingerprint))
+    || !isCanonicalText(value.professionalIndemnityInsuranceReference)
+    || value.professionalIndemnityInsuranceReference.length > 500
+    || (!isCanonicalText(value.professionalIndemnityInsuranceFingerprint) || !SHA3_512_PATTERN.test(value.professionalIndemnityInsuranceFingerprint))
+    || !isCanonicalTimestamp(value.appointmentEffectiveFrom)
+    || (
+      value.appointmentEffectiveUntil !== null
+      && !isCanonicalTimestamp(value.appointmentEffectiveUntil)
+    )
+    || !isCanonicalTimestamp(value.certificateValidFrom)
+    || !isCanonicalTimestamp(value.certificateValidUntil)
+    || !isCanonicalTimestamp(value.professionalIndemnityInsuranceValidFrom)
+    || !isCanonicalTimestamp(value.professionalIndemnityInsuranceValidUntil)
+    || (
+      value.expectedRevision === 0
+      && value.expectedPredecessorFingerprint !== null
+    )
+    || (
+      value.expectedRevision > 0
+      && (!isCanonicalText(value.expectedPredecessorFingerprint) || !SHA3_512_PATTERN.test(value.expectedPredecessorFingerprint))
+    )
+  ) {
+    throw new Error(errorCode);
+  }
+  return Object.freeze({ ...value });
+}
+
+function assertCanonicalSheriffAppointmentResponse(value, input) {
+  const errorCode = 'SHERIFF_APPOINTMENT_COMMAND_RESPONSE_INVALID';
+  assertExactKeys(value, SHERIFF_APPOINTMENT_RESPONSE_KEYS, errorCode);
+  const sameTime = (actual, expected) => Date.parse(actual) === Date.parse(expected);
+  if (
+    value.schema !== 'WILSY-SHERIFF-OFFICE-APPOINTMENT-EVIDENCE/V1'
+    || value.appointment_version !== 'v1.0.0-L8-SHERIFF-OFFICE-APPOINTMENT-EVIDENCE'
+    || !isCanonicalText(value.tenant_id)
+    || value.appointment_id !== input.appointmentId
+    || value.revision !== input.expectedRevision + 1
+    || value.principal_id !== input.principalId
+    || value.sheriff_office_id !== input.sheriffOfficeId
+    || !isCanonicalText(value.district_id)
+    || value.appointment_kind !== input.appointmentKind
+    || value.appointment_instrument_reference !== input.appointmentInstrumentReference
+    || value.appointment_instrument_fingerprint !== input.appointmentInstrumentFingerprint
+    || value.office_scope_instrument_reference !== input.officeScopeInstrumentReference
+    || value.office_scope_instrument_fingerprint !== input.officeScopeInstrumentFingerprint
+    || value.fidelity_fund_certificate_reference !== input.fidelityFundCertificateReference
+    || value.fidelity_fund_certificate_fingerprint !== input.fidelityFundCertificateFingerprint
+    || !isCanonicalText(value.certificate_jurisdiction_reference)
+    || value.professional_indemnity_insurance_reference !== input.professionalIndemnityInsuranceReference
+    || value.professional_indemnity_insurance_fingerprint !== input.professionalIndemnityInsuranceFingerprint
+    || !isCanonicalTimestamp(value.professional_indemnity_insurance_valid_from)
+    || !sameTime(value.professional_indemnity_insurance_valid_from, input.professionalIndemnityInsuranceValidFrom)
+    || !isCanonicalTimestamp(value.professional_indemnity_insurance_valid_until)
+    || !sameTime(value.professional_indemnity_insurance_valid_until, input.professionalIndemnityInsuranceValidUntil)
+    || !isCanonicalTimestamp(value.appointment_effective_from)
+    || !sameTime(value.appointment_effective_from, input.appointmentEffectiveFrom)
+    || (
+      input.appointmentEffectiveUntil === null
+        ? value.appointment_effective_until !== null
+        : (
+          !isCanonicalTimestamp(value.appointment_effective_until)
+          || !sameTime(value.appointment_effective_until, input.appointmentEffectiveUntil)
+        )
+    )
+    || !isCanonicalTimestamp(value.certificate_valid_from)
+    || !sameTime(value.certificate_valid_from, input.certificateValidFrom)
+    || !isCanonicalTimestamp(value.certificate_valid_until)
+    || !sameTime(value.certificate_valid_until, input.certificateValidUntil)
+    || !isCanonicalText(value.verified_by_principal_id)
+    || !isCanonicalTimestamp(value.verified_at)
+    || value.supersedes_fingerprint !== input.expectedPredecessorFingerprint
+    || !SHA3_512_PATTERN.test(value.fingerprint)
+  ) {
+    throw new Error(errorCode);
+  }
+  return Object.freeze({
+    tenantId: value.tenant_id,
+    appointmentId: value.appointment_id,
+    revision: value.revision,
+    principalId: value.principal_id,
+    sheriffOfficeId: value.sheriff_office_id,
+    districtId: value.district_id,
+    appointmentKind: value.appointment_kind,
+    certificateJurisdictionReference: value.certificate_jurisdiction_reference,
+    appointmentEffectiveFrom: value.appointment_effective_from,
+    appointmentEffectiveUntil: value.appointment_effective_until,
+    certificateValidFrom: value.certificate_valid_from,
+    certificateValidUntil: value.certificate_valid_until,
+    professionalIndemnityInsuranceValidFrom: value.professional_indemnity_insurance_valid_from,
+    professionalIndemnityInsuranceValidUntil: value.professional_indemnity_insurance_valid_until,
+    verifiedByPrincipalId: value.verified_by_principal_id,
+    verifiedAt: value.verified_at,
+    supersedesFingerprint: value.supersedes_fingerprint,
+    fingerprint: value.fingerprint,
   });
 }
 
@@ -3165,11 +3338,15 @@ export async function getSheriffLocationEvidence(attemptId) {
   );
   const value = response?.data;
   if (
-    value?.schema !== 'WILSY-SHERIFF-OFFICE-LOCATION-EVIDENCE-PROJECTION/V1'
-    || value?.version !== 'v1.0.0-P5L-SHERIFF-OFFICE-LOCATION-EVIDENCE-READ'
-    || value?.visibility !== 'ONE_CANONICAL_SHERIFF_OFFICE_LOCATION_EVIDENCE'
+    value?.schema !== 'WILSY-SHERIFF-OFFICE-LOCATION-EVIDENCE-PROJECTION/V2'
+    || value?.version !== 'v1.1.0-L8-SHERIFF-APPOINTMENT-SCOPED-LOCATION-READ'
+    || value?.visibility !== 'CURRENT_VERIFIED_APPOINTMENT_OFFICE_LOCATION_EVIDENCE'
     || value?.attempt_id !== attemptId
     || !isCanonicalText(value?.sheriff_office_id)
+    || !isCanonicalText(value?.district_id)
+    || !isCanonicalText(value?.appointment_id)
+    || !Number.isSafeInteger(value?.appointment_revision)
+    || value.appointment_revision < 1
     || !Array.isArray(value?.observations)
   ) {
     throw new Error('SHERIFF_LOCATION_EVIDENCE_READ_RESPONSE_INVALID');
@@ -3178,6 +3355,33 @@ export async function getSheriffLocationEvidence(attemptId) {
     ...value,
     observations: Object.freeze(value.observations.map((row) => Object.freeze(row))),
   });
+}
+
+export async function recordSheriffOfficeAppointment(value) {
+  const input = assertSheriffAppointmentInput(value);
+  const response = await sovereignClient.post('/legal-operations/sheriff/appointments', {
+    appointment_id: input.appointmentId,
+    expected_revision: input.expectedRevision,
+    expected_predecessor_fingerprint: input.expectedPredecessorFingerprint,
+    principal_id: input.principalId,
+    sheriff_office_id: input.sheriffOfficeId,
+    appointment_kind: input.appointmentKind,
+    appointment_instrument_reference: input.appointmentInstrumentReference,
+    appointment_instrument_fingerprint: input.appointmentInstrumentFingerprint,
+    office_scope_instrument_reference: input.officeScopeInstrumentReference,
+    office_scope_instrument_fingerprint: input.officeScopeInstrumentFingerprint,
+    fidelity_fund_certificate_reference: input.fidelityFundCertificateReference,
+    fidelity_fund_certificate_fingerprint: input.fidelityFundCertificateFingerprint,
+    professional_indemnity_insurance_reference: input.professionalIndemnityInsuranceReference,
+    professional_indemnity_insurance_fingerprint: input.professionalIndemnityInsuranceFingerprint,
+    appointment_effective_from: input.appointmentEffectiveFrom,
+    appointment_effective_until: input.appointmentEffectiveUntil,
+    certificate_valid_from: input.certificateValidFrom,
+    certificate_valid_until: input.certificateValidUntil,
+    professional_indemnity_insurance_valid_from: input.professionalIndemnityInsuranceValidFrom,
+    professional_indemnity_insurance_valid_until: input.professionalIndemnityInsuranceValidUntil,
+  });
+  return assertCanonicalSheriffAppointmentResponse(response?.data, input);
 }
 
 export async function revokeDeputyLocationPermissionGrant({
@@ -3312,6 +3516,10 @@ export const __legalOperationsServiceInternals = Object.freeze({
   assertCanonicalLegalIntakeResponse,
   assertConflictReviewInput,
   assertCanonicalConflictReviewResponse,
+  assertSheriffAppointmentInput,
+  assertCanonicalSheriffAppointmentResponse,
+  SHERIFF_APPOINTMENT_INPUT_KEYS,
+  SHERIFF_APPOINTMENT_RESPONSE_KEYS,
   CONFLICT_REVIEW_INPUT_KEYS,
   CONFLICT_REVIEW_RESPONSE_KEYS,
   CONFLICT_REVIEW_OUTCOMES,
@@ -3350,7 +3558,7 @@ export const __legalOperationsServiceInternals = Object.freeze({
 
 /**
  * ARTIFACT: legalOperationsService.js
- * VERSION: v2.2.0-P8-LEGAL-WORK-COMPLETION-BROWSER-TRANSPORT
+ * VERSION: v2.4.0-L8-SHERIFF-APPOINTMENT-EVIDENCE-CLIENT-TRANSPORT
  * AUTHORITY BOUNDARY: role-scoped Legal Operations read/intake/return/deputy-command/conflict-review browser transport validation only
  * TENANT POSTURE: server tenant/principal/role/client/deputy scope remains authoritative across practice, finance, client and field surfaces; browser cannot establish authorization scope
  * FAIL-CLOSED POSTURE: malformed/extra/missing/scope/state/schema/version/order/command-response drift rejects without fallback

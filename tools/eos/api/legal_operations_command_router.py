@@ -1,7 +1,7 @@
 """WILSY OS Legal Operations command boundary.
 
 TITLE: Legal Operations Command API
-VERSION: v1.11.0-P13R4-WORKFLOW-TRANSITION-COMMAND-API
+VERSION: v1.13.0-L8-SHERIFF-APPOINTMENT-EVIDENCE-COMMAND-API
 AUTHORITY: HTTP command composition only; P1/P2/L8-1/L8-2/L8-3/L8-6B/P4/P5 remain canonical authorities.
 EPITOME: Translate authenticated tenant-scoped Legal Operations commands,
          including authorized human conflict review, into bounded canonical
@@ -12,8 +12,9 @@ ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/tools/eos/api/le
 COLLABORATION / OWNERSHIP: API composition owns transport and transaction
                            mechanics; domain/registry/orchestrator modules own
                            lifecycle, evidence, and persistence truth.
-CERTIFICATION / UPDATE DATE: 2026-10-16
-CHANGELOG: 2026-10-16 v1.11.0-P13R4-WORKFLOW-TRANSITION-COMMAND-API adds Partner/Attorney-authorized POST /matter-workflow-transitions. The body carries only transition, workflow-instance, target-stage, gate-satisfaction and optional branch intent references. One API-owned transaction issues durable current authorization evidence and delegates all definition/topology/current-source/target/gate resolution plus immutable append to the P13R3 service. No authority object or authority fingerprint is accepted.
+CERTIFICATION / UPDATE DATE: 2026-11-02
+CHANGELOG: 2026-11-02 v1.13.0-L8-SHERIFF-APPOINTMENT-EVIDENCE-COMMAND-API adds tenant-admin-only POST /sheriff/appointments. The browser supplies external appointment, office-scope, FFC and professional-indemnity evidence references/fingerprints plus effective windows; tenant, target IAM, canonical office/District, jurisdiction, verifier, verification time and revision lineage are server-derived. One API-owned transaction verifies active Sheriff and independent tenant-admin IAM plus canonical P1 lineage before append-only persistence. WILSY does not issue appointments or authenticate external source documents.
+            2026-10-16 v1.11.0-P13R4-WORKFLOW-TRANSITION-COMMAND-API adds Partner/Attorney-authorized POST /matter-workflow-transitions. The body carries only transition, workflow-instance, target-stage, gate-satisfaction and optional branch intent references. One API-owned transaction issues durable current authorization evidence and delegates all definition/topology/current-source/target/gate resolution plus immutable append to the P13R3 service. No authority object or authority fingerprint is accepted.
            2026-10-16 v1.10.0-SHERIFF-ALLOCATION-COMMAND-CAPABILITIES adds the exact Sheriff allocation-capability read while preserving P4 mutation separation.
            2026-10-16 v1.9.0-CROSS-ROLE-ATTEMPT-AUTHORITY-BRIDGE adds the missing Sheriff-authorized HTTP bridge from exact durable P4 allocation receipt/current evidence to separately persisted P5A/P5B attempt authority. The route accepts only document/idempotency locators plus new opaque attempt identities and chronology; tenant, instruction, deputy, custody and allocation evidence remain server-derived. Allocation remains distinct from attempt creation.
            2026-10-12 v1.8.0-L8-8H6-NOTIFICATION-RECIPIENT-BINDING-COMMAND-API adds Partner/Attorney-only explicit recipient-binding create/revoke/supersede admission. Tenant and actor are server-derived; durable authorization evidence re-proves actor authority inside the API-owned transaction and its authorized_at instant exclusively owns immutable binding/lifecycle creation chronology. Target recipient current principal and own-tenant membership are revalidated for create/supersede. Original bindings remain immutable; contact address, transport, delivery, Court, AI and financial authority remain absent.
@@ -215,6 +216,10 @@ from tools.eos.legal_operations.orchestration.process_service_acceptance_receipt
     ProcessServiceAcceptanceReceiptError,
     accept_instruction_and_receive_document,
 )
+from tools.eos.legal_operations.orchestration.sheriff_office_appointment_authority_orchestrator import (
+    SheriffOfficeAppointmentOrchestrationError,
+    record_sheriff_office_appointment_authority,
+)
 from tools.eos.legal_operations.orchestration.process_service_attempt_orchestrator import orchestrate_process_service_attempt
 from tools.eos.legal_operations.orchestration.process_service_field_evidence_orchestrator import (
     ProcessServiceFieldEvidenceOrchestratorError,
@@ -231,6 +236,11 @@ from tools.eos.legal_operations.registry.deputy_principal_binding_registry impor
     COLLECTION as DEPUTY_PRINCIPAL_BINDING_COLLECTION,
     DeputyPrincipalBindingRegistry,
     DeputyPrincipalBindingRegistryError,
+)
+from tools.eos.legal_operations.registry.sheriff_office_appointment_authority_registry import (
+    COLLECTION_NAME as SHERIFF_APPOINTMENT_COLLECTION,
+    SheriffOfficeAppointmentAuthorityRegistry,
+    SheriffOfficeAppointmentRegistryError,
 )
 from tools.eos.legal_operations.registry.deputy_device_provenance_registry import (
     COLLECTION as DEPUTY_DEVICE_PROVENANCE_COLLECTION,
@@ -330,7 +340,7 @@ from tools.eos.legal_operations.registry.legal_work_item_registry import (
 )
 
 
-VERSION: Final[str] = "v1.12.0-P14-R20R27-WORK-COMPLETION-COMMAND-API"
+VERSION: Final[str] = "v1.13.0-L8-SHERIFF-APPOINTMENT-EVIDENCE-COMMAND-API"
 router = APIRouter(prefix="/legal-operations", tags=["Legal Operations Commands"])
 _T = TypeVar("_T")
 _SHERIFF_BUSINESS_ROLE: Final[str] = "tenant_sheriff"
@@ -443,6 +453,51 @@ class DeputyPrincipalBindingCommand(_CommandModel):
     deputy_id: str = Field(min_length=1)
     bound_at: datetime
     evidence_reference: str = Field(min_length=1, max_length=512)
+
+
+class SheriffOfficeAppointmentCommand(_CommandModel):
+    """Tenant-admin attestation of external appointment, office, FFC and PI evidence.
+
+    Tenant, District, certificate jurisdiction, verifier, verification time,
+    revision and predecessor are server-derived. The body cannot grant IAM or
+    assert that WILSY itself issued an appointment or certificate.
+    """
+
+    appointment_id: str = Field(min_length=1, max_length=240)
+    expected_revision: int = Field(ge=0)
+    expected_predecessor_fingerprint: str | None = Field(
+        default=None,
+        min_length=128,
+        max_length=128,
+        pattern=r"^[0-9a-f]{128}$",
+    )
+    principal_id: str = Field(min_length=1, max_length=240)
+    sheriff_office_id: str = Field(min_length=1, max_length=240)
+    appointment_kind: str = Field(min_length=1, max_length=32)
+    appointment_instrument_reference: str = Field(min_length=1, max_length=500)
+    appointment_instrument_fingerprint: str = Field(
+        min_length=128, max_length=128, pattern=r"^[0-9a-f]{128}$"
+    )
+    office_scope_instrument_reference: str = Field(min_length=1, max_length=500)
+    office_scope_instrument_fingerprint: str = Field(
+        min_length=128, max_length=128, pattern=r"^[0-9a-f]{128}$"
+    )
+    fidelity_fund_certificate_reference: str = Field(min_length=1, max_length=500)
+    fidelity_fund_certificate_fingerprint: str = Field(
+        min_length=128, max_length=128, pattern=r"^[0-9a-f]{128}$"
+    )
+    professional_indemnity_insurance_reference: str = Field(
+        min_length=1, max_length=500
+    )
+    professional_indemnity_insurance_fingerprint: str = Field(
+        min_length=128, max_length=128, pattern=r"^[0-9a-f]{128}$"
+    )
+    appointment_effective_from: datetime
+    appointment_effective_until: datetime | None = None
+    certificate_valid_from: datetime
+    certificate_valid_until: datetime
+    professional_indemnity_insurance_valid_from: datetime
+    professional_indemnity_insurance_valid_until: datetime
 
 
 class AllocationCommand(_CommandModel):
@@ -1029,12 +1084,22 @@ def _prior_custody(collection: Any, tenant: str, document_id: str, session: Any)
     return tuple(events)
 
 
-def _transaction(callback: Callable[[Any, Any], _T]) -> _T:
-    """Run one command in one API-owned session/transaction."""
+def _transaction(
+    callback: Callable[[Any, Any], _T],
+    *,
+    prepare: Callable[[Any], None] | None = None,
+) -> _T:
+    """Run one command in one API-owned session/transaction.
+
+    Optional prepare runs before the transaction for idempotent collection-index
+    bootstrap; DDL is never attempted inside the caller-owned transaction.
+    """
     client, database = _db_handles()
     if client is None or database is None:
         raise CommandError("LEGAL_OPERATIONS_PERSISTENCE_UNAVAILABLE")
     try:
+        if prepare is not None:
+            prepare(database)
         with client.start_session() as session:
             session.start_transaction()
             try:
@@ -1052,6 +1117,8 @@ def _transaction(callback: Callable[[Any, Any], _T]) -> _T:
         ProcessServiceAcceptanceReceiptError,
         DeputyPrincipalBindingOrchestrationError,
         DeputyPrincipalBindingRegistryError,
+        SheriffOfficeAppointmentOrchestrationError,
+        SheriffOfficeAppointmentRegistryError,
         ProcessServiceFieldEvidenceAuthorityError,
         ProcessServiceFieldEvidenceOrchestratorError,
         ProcessServiceFieldEvidenceRegistryError,
@@ -1079,6 +1146,24 @@ def _http_error(error: BaseException) -> HTTPException:
         return HTTPException(status_code=status.HTTP_409_CONFLICT, detail="LEGAL_OPERATIONS_FIELD_EVIDENCE_CONFLICT")
     if code == "L8_6B_BINDING_CONFLICT":
         return HTTPException(status_code=status.HTTP_409_CONFLICT, detail="LEGAL_OPERATIONS_DEPUTY_BINDING_CONFLICT")
+    if code in {
+        "L8_SOA_APPOINTMENT_CONFLICT",
+        "L8_SOA_STALE_APPOINTMENT_REVISION",
+        "L8_SOA_PREDECESSOR_MISMATCH",
+        "L8_SOA_DIVERGENT_REPLAY",
+    }:
+        return HTTPException(status_code=status.HTTP_409_CONFLICT, detail="SHERIFF_APPOINTMENT_CONFLICT")
+    if code in {
+        "L8_SOA_SELF_VERIFICATION_FORBIDDEN",
+        "L8_SOA_PRINCIPAL_INACTIVE",
+        "L8_SOA_MEMBERSHIP_NOT_FOUND",
+        "L8_SOA_MEMBERSHIP_INACTIVE",
+        "L8_SOA_BUSINESS_ROLE_NOT_FOUND",
+        "L8_SOA_BUSINESS_ROLE_REQUIRED",
+        "L8_SOA_AUTHORIZATION_ROLE_NOT_FOUND",
+        "L8_SOA_AUTHORIZATION_ROLE_REQUIRED",
+    }:
+        return HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="SHERIFF_APPOINTMENT_AUTHORITY_REQUIRED")
     if code == "L8_8J_REVIEW_CONFLICT":
         return HTTPException(status_code=status.HTTP_409_CONFLICT, detail="LEGAL_CONFLICT_REVIEW_CONFLICT")
     if code in {
@@ -1115,6 +1200,15 @@ def _http_error(error: BaseException) -> HTTPException:
             "L8_8J_SCREENING_AUTHORITY_UNAVAILABLE",
             "L8_8J_AUTHORIZATION_EVIDENCE_UNAVAILABLE",
             "L8_8J_REVIEW_PERSISTENCE_UNAVAILABLE",
+            "L8_SOA_PRINCIPAL_AUTHORITY_UNAVAILABLE",
+            "L8_SOA_MEMBERSHIP_AUTHORITY_UNAVAILABLE",
+            "L8_SOA_BUSINESS_ROLE_AUTHORITY_UNAVAILABLE",
+            "L8_SOA_AUTHORIZATION_ROLE_UNAVAILABLE",
+            "L8_SOA_DISTRICT_EVIDENCE_UNAVAILABLE",
+            "L8_SOA_OFFICE_EVIDENCE_UNAVAILABLE",
+            "L8_SOA_APPOINTMENT_HISTORY_UNAVAILABLE",
+            "L8_SOA_APPOINTMENT_PERSISTENCE_UNAVAILABLE",
+            "L8_SOA_ACTIVE_TRANSACTION_REQUIRED",
             "LEGAL_NOTIFICATION_RECIPIENT_AUTHORITY_UNAVAILABLE",
         }
     ):
@@ -1129,6 +1223,7 @@ def _ctx(permission: str, operation: str) -> RequireTenantAuthorization:
 _INTAKE = _ctx("legal_operations:instruction:write", "legal_instruction_write")
 _RECEIPT = _ctx("legal_operations:receipt:write", "legal_receipt_write")
 _DIRECTORY = _ctx("legal_operations:directory:write", "legal_directory_write")
+_SHERIFF_APPOINTMENT = _ctx("legal_operations:sheriff_appointment:write", "legal_sheriff_appointment_write")
 _ALLOCATE = _ctx("legal_operations:allocation:write", "legal_allocation_write")
 _ATTEMPT = _ctx("legal_operations:attempt:write", "legal_attempt_write")
 _OUTCOME = _ctx("legal_operations:attempt_outcome:write", "legal_attempt_outcome_write")
@@ -1169,6 +1264,71 @@ _WORK_COMPLETION = _ctx(
     _WORK_COMPLETION_PERMISSION,
     _WORK_COMPLETION_OPERATION,
 )
+
+
+@router.post("/sheriff/appointments")
+async def record_sheriff_office_appointment_command(
+    command: SheriffOfficeAppointmentCommand,
+    context: TenantAuthorizationContext = Depends(_SHERIFF_APPOINTMENT),
+) -> dict[str, Any]:
+    """Record or exactly replay one independently verified Sheriff appointment.
+
+    Only an active tenant administrator can invoke this command. The body
+    supplies external source references/fingerprints and effective windows;
+    tenant, target IAM, canonical office/District, certificate jurisdiction,
+    verifier, verification time, revision and lineage are server-derived.
+    """
+
+    if context.decision.business_role != "tenant_admin":
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="SHERIFF_APPOINTMENT_VERIFIER_REQUIRED",
+        )
+
+    def prepare(database: Any) -> None:
+        SheriffOfficeAppointmentAuthorityRegistry(
+            _collection(database, SHERIFF_APPOINTMENT_COLLECTION)
+        ).ensure_indexes()
+
+    def run(session: Any, database: Any) -> Any:
+        return record_sheriff_office_appointment_authority(
+            tenant_id=context.tenant_id,
+            appointment_id=command.appointment_id,
+            expected_revision=command.expected_revision,
+            expected_predecessor_fingerprint=command.expected_predecessor_fingerprint,
+            principal_id=command.principal_id,
+            sheriff_office_id=command.sheriff_office_id,
+            appointment_kind=command.appointment_kind,
+            appointment_instrument_reference=command.appointment_instrument_reference,
+            appointment_instrument_fingerprint=command.appointment_instrument_fingerprint,
+            office_scope_instrument_reference=command.office_scope_instrument_reference,
+            office_scope_instrument_fingerprint=command.office_scope_instrument_fingerprint,
+            fidelity_fund_certificate_reference=command.fidelity_fund_certificate_reference,
+            fidelity_fund_certificate_fingerprint=command.fidelity_fund_certificate_fingerprint,
+            professional_indemnity_insurance_reference=command.professional_indemnity_insurance_reference,
+            professional_indemnity_insurance_fingerprint=command.professional_indemnity_insurance_fingerprint,
+            appointment_effective_from=command.appointment_effective_from,
+            appointment_effective_until=command.appointment_effective_until,
+            certificate_valid_from=command.certificate_valid_from,
+            certificate_valid_until=command.certificate_valid_until,
+            professional_indemnity_insurance_valid_from=command.professional_indemnity_insurance_valid_from,
+            professional_indemnity_insurance_valid_until=command.professional_indemnity_insurance_valid_until,
+            verifier_principal_id=context.identity.identity_id,
+            verified_at=_utcnow(),
+            lifecycle_collection=_collection(database, LIFECYCLE_COLLECTION),
+            appointment_collection=_collection(database, SHERIFF_APPOINTMENT_COLLECTION),
+            principal_collection=_collection(database, PRINCIPAL_AUTHORITY_COLLECTION),
+            membership_collection=_collection(database, TENANT_MEMBERSHIP_COLLECTION),
+            business_role_collection=_collection(database, TENANT_BUSINESS_ROLE_COLLECTION),
+            role_assignment_collection=_collection(database, ROLE_ASSIGNMENT_COLLECTION),
+            session=session,
+        )
+
+    try:
+        value = _transaction(run, prepare=prepare)
+        return value.to_dict()
+    except Exception as error:
+        raise _http_error(error) from error
 
 
 @router.post("/intake/registrations")
@@ -2733,7 +2893,7 @@ async def complete_legal_work_item_command(
 __all__ = ["VERSION", "router", "CommandError"]
 
 # ARTIFACT: legal_operations_command_router.py
-# VERSION: v1.12.0-P14-R20R27-WORK-COMPLETION-COMMAND-API
+# VERSION: v1.13.0-L8-SHERIFF-APPOINTMENT-EVIDENCE-COMMAND-API
 # AUTHORITY BOUNDARY: authenticated command composition including L8-8K human conflict review and L8-8H6 explicit recipient-binding administration; canonical domain, registry, orchestration and IAM authorities remain separate
 # TENANT POSTURE: explicit authorized tenant scope on every source and write
 # FAIL-CLOSED POSTURE: malformed, unauthorized, stale, divergent, ambiguous or unavailable commands reject; recipient-binding commands expose no caller IAM, contact, transport, delivery or financial authority

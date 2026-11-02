@@ -1,5 +1,5 @@
 """TITLE: WILSY OS Tenant Business Authority Policy Canon.
-VERSION: v1.51.0-R59-P9-REASSIGNMENT-IAM-INTEGRATION
+VERSION: v1.52.0-L8-SHERIFF-APPOINTMENT-EVIDENCE-ELIGIBILITY
 AUTHORITY: Canonical business eligibility facts only; this module does not authorize.
 EPITOME: Defines bounded tenant-role eligibility and field boundaries, including
 own-tenant WILSY AI usage-capacity and billing-intelligence evidence read eligibility and dedicated
@@ -219,7 +219,7 @@ from types import MappingProxyType
 from typing import Final, FrozenSet
 from tools.eos.auth.hr_business_role_catalog import ALL_HR_BUSINESS_ROLES
 
-VERSION = "v1.51.0-R59-P9-REASSIGNMENT-IAM-INTEGRATION"
+VERSION = "v1.52.0-L8-SHERIFF-APPOINTMENT-EVIDENCE-ELIGIBILITY"
 class SystemAuthorityClassification(StrEnum):
     SYSTEM_REQUIRED = "SYSTEM_REQUIRED"
     SYSTEM_NOT_INHERENTLY_REQUIRED = "SYSTEM_NOT_INHERENTLY_REQUIRED"
@@ -268,6 +268,7 @@ BUSINESS_ROLE_OPERATION_PERMISSIONS: Final = MappingProxyType({
     "tenant_branding_profile_manage": "tenant_branding:profile:manage",
     "tenant_branding_asset_manage": "tenant_branding:asset:manage",
     "legal_operating_model_manage": "legal_operations:operating_model:manage",
+    "legal_sheriff_appointment_write": "legal_operations:sheriff_appointment:write",
     "legal_workflow_activation_manage": "legal_operations:workflow_activation:manage",
     "legal_matter_workflow_read": "legal_operations:matter_workflow:read",
     "legal_matter_workflow_instantiate": "legal_operations:matter_workflow:instantiate",
@@ -304,6 +305,12 @@ ELIGIBILITY = MappingProxyType({
 })
 OPERATIONS: FrozenSet[str] = frozenset((*OPERATIONS, "legal_directory_write", "legal_receipt_write", "legal_queue_read", "legal_deputy_queue_read", "legal_client_visibility_write", "legal_client_matter_read", "legal_conflict_review_write", "legal_client_acceptance_write", "legal_matter_acceptance_instrument_write", "legal_matter_acceptance_instrument_approval_write", "legal_matter_mandate_acknowledgment_write", "legal_matter_engagement_firm_decision_write", "legal_matter_representation_firm_decision_write", "legal_attempt_outcome_write", "legal_return_write", "wilsy_ai_legal_tool_read", "wilsy_ai_legal_advisory_generate", "wilsy_ai_legal_advisory_read"))
 OPERATIONS: FrozenSet[str] = frozenset((*OPERATIONS, "tenant_branding_read", "tenant_branding_profile_manage", "tenant_branding_asset_manage", "legal_operating_model_manage", "telemetry_event_write"))
+OPERATIONS: FrozenSet[str] = frozenset((*OPERATIONS, "legal_sheriff_appointment_write"))
+_sheriff_appointment_eligibility = dict(ELIGIBILITY)
+_tenant_admin_sheriff_appointment = dict(_sheriff_appointment_eligibility["tenant_admin"])
+_tenant_admin_sheriff_appointment["legal_sheriff_appointment_write"] = ELIGIBLE
+_sheriff_appointment_eligibility["tenant_admin"] = MappingProxyType(_tenant_admin_sheriff_appointment)
+ELIGIBILITY = MappingProxyType(_sheriff_appointment_eligibility)
 _eligibility_updates = dict(ELIGIBILITY)
 _client_existing = dict(ELIGIBILITY["tenant_legal_client"])
 _client_existing["legal_client_matter_read"] = ELIGIBLE
@@ -977,7 +984,7 @@ ELIGIBILITY = MappingProxyType(_assignment_roles)
 
 
 # ARTIFACT: tenant_authority_policy.py
-# VERSION: v1.51.0-R59-P9-REASSIGNMENT-IAM-INTEGRATION
+# VERSION: v1.52.0-L8-SHERIFF-APPOINTMENT-EVIDENCE-ELIGIBILITY
 # AUTHORITY BOUNDARY: business eligibility facts only; no authorization or mutation
 # TENANT POSTURE: own-tenant eligibility requires separate ACTIVE membership, current role assignment, matter scope and exact permission binding
 # FAIL-CLOSED POSTURE: unknown roles and operations deny; ELIGIBLE never grants access

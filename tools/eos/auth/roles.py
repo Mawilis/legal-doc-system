@@ -1,5 +1,5 @@
 """TITLE: WILSY OS Role Definition Policy.
-VERSION: v1.49.0-R59-P9-REASSIGNMENT-IAM-INTEGRATION
+VERSION: v1.50.0-L8-SHERIFF-APPOINTMENT-EVIDENCE-ADMIN-GRANT
 AUTHORITY: Canonical Python role identifiers and explicit permission grants.
 EPITOME: Defines current tenant-scoped authorization roles, including
 least-privilege subscription/plan-catalogue grants, read-only WILSY AI
@@ -224,7 +224,7 @@ from __future__ import annotations
 from collections.abc import Iterable
 
 
-VERSION = "v1.49.0-R59-P9-REASSIGNMENT-IAM-INTEGRATION"
+VERSION = "v1.50.0-L8-SHERIFF-APPOINTMENT-EVIDENCE-ADMIN-GRANT"
 
 
 ROLE_PERMISSIONS_MAP: dict[str, list[str]] = {
@@ -259,6 +259,7 @@ ROLE_PERMISSIONS_MAP: dict[str, list[str]] = {
         "tenant_branding:profile:manage",
         "tenant_branding:asset:manage",
         "legal_operations:operating_model:manage",
+        "legal_operations:sheriff_appointment:write",
         "crm:lead:create",
         "crm:lead:read",
         "crm:email_template:create",
@@ -576,7 +577,7 @@ ROLE_PERMISSIONS_MAP["LEGAL_PARTNER"].append(
 )
 
 # ARTIFACT: tools/eos/auth/roles.py
-# VERSION: v1.49.0-R59-P9-REASSIGNMENT-IAM-INTEGRATION
+# VERSION: v1.50.0-L8-SHERIFF-APPOINTMENT-EVIDENCE-ADMIN-GRANT
 # AUTHORITY BOUNDARY: role identifiers and deterministic permission definitions only; current assignment is separate authority
 # TENANT POSTURE: role definitions never establish tenant membership or role possession; assignment write is Partner/Attorney-only static policy
 # FAIL-CLOSED POSTURE: unknown roles and permissions never manufacture grants
