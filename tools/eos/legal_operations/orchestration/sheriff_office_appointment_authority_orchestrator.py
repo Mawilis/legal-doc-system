@@ -254,6 +254,7 @@ def _district(
         or model.entity_type != "District"
         or model.entity_identity != district_id
         or type(model.current) is not District
+        or cast(District, model.current).district_id != district_id
     ):
         _fail("L8_SOA_DISTRICT_EVIDENCE_INVALID")
     return cast(District, model.current)
@@ -283,6 +284,7 @@ def _office(
         or model.entity_type != "SheriffOffice"
         or model.entity_identity != sheriff_office_id
         or type(model.current) is not SheriffOffice
+        or cast(SheriffOffice, model.current).sheriff_office_id != sheriff_office_id
     ):
         _fail("L8_SOA_OFFICE_EVIDENCE_INVALID")
     return cast(SheriffOffice, model.current)
