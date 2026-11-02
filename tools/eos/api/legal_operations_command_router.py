@@ -108,6 +108,8 @@ FAIL-CLOSED DECLARATION: Missing authority, malformed locators, unavailable
 """
 from __future__ import annotations
 
+from base64 import b64decode
+import binascii
 from datetime import datetime, timezone
 from enum import StrEnum
 import hashlib
@@ -152,6 +154,18 @@ from tools.eos.auth.tenant_membership_repository import (
     TenantMembershipRepositoryError,
 )
 from tools.eos.legal_operations.domain.process_service_field_evidence_authority import ProcessServiceFieldEvidenceAuthorityError
+from tools.eos.legal_operations.orchestration.deputy_device_provenance_orchestrator import (
+    issue_deputy_device_challenge,
+    verify_and_consume_deputy_device_challenge,
+)
+from tools.eos.legal_operations.registry.deputy_device_provenance_registry import (
+    COLLECTION as DEPUTY_DEVICE_PROVENANCE_COLLECTION,
+)
+from tools.eos.auth.principal_authority_repository import COLLECTION as PRINCIPAL_AUTHORITY_COLLECTION
+from tools.eos.auth.tenant_membership_repository import COLLECTION as TENANT_MEMBERSHIP_COLLECTION
+from tools.eos.auth.tenant_business_role_repository import COLLECTION as TENANT_BUSINESS_ROLE_COLLECTION
+from tools.eos.auth.role_assignment_repository import COLLECTION as ROLE_ASSIGNMENT_COLLECTION
+from tools.eos.saas.auth.auth_registry import AuthRegistry
 from tools.eos.legal_operations.domain.legal_conflict_review import (
     LegalConflictReviewOutcome,
 )
@@ -508,6 +522,18 @@ class DeputyFieldOutcomeCommand(DeputyFieldObservationCommand):
     outcome: ServiceAttemptState
 
 
+class DeputyDeviceChallengeIssueCommand(_CommandModel):
+    """Browser-held P-256 public key only; all caller authority is server-derived."""
+
+    public_key_spki_b64: str = Field(min_length=64, max_length=1024)
+
+
+class DeputyDeviceChallengeVerifyCommand(_CommandModel):
+    """One P-256 IEEE-P1363 signature; tenant/principal/device are server-derived."""
+
+    signature_p1363_b64: str = Field(min_length=80, max_length=100)
+
+
 class ReturnCommand(_CommandModel):
     """Opaque ServiceExecution locator and return observation passed to P5F."""
 
@@ -565,6 +591,34 @@ class CommandError(RuntimeError):
         super().__init__(code)
         if cause is not None:
             self.__cause__ = cause
+
+
+def _decode_base64(value: str, code: str) -> bytes:
+    """Decode one bounded canonical standard-base64 field."""
+    try:
+        decoded = b64decode(value, validate=True)
+    except (binascii.Error, ValueError) as error:
+        raise CommandError(code, error) from error
+    if not decoded or len(decoded) > 2048:
+        raise CommandError(code)
+    return decoded
+
+
+def _deputy_device_scope(
+    context: TenantAuthorizationContext,
+    database: Any,
+    session: Any,
+) -> str:
+    """Resolve exact bound Deputy and require the current authenticated session reference."""
+    binding = _bound_deputy(context, database, session, required=True)
+    session_reference = context.identity.session_reference
+    if (
+        not isinstance(session_reference, str)
+        or not session_reference.startswith("WILSYSESSION-")
+        or len(session_reference) > 128
+    ):
+        raise CommandError("DEPUTY_DEVICE_CURRENT_SESSION_REFERENCE_REQUIRED")
+    return binding.deputy_id
 
 
 def _collection(database: Any, name: str) -> Any:
@@ -1745,6 +1799,91 @@ async def record_bound_deputy_field_outcome_command(
     except Exception as error:
         raise _http_error(error) from error
     return {"data": value.to_dict(), "field_evidence": receipt.to_dict()}
+
+
+@router.post("/deputy/device-challenges")
+async def issue_deputy_device_challenge_command(
+    command: DeputyDeviceChallengeIssueCommand,
+    context: TenantAuthorizationContext = Depends(_ATTEMPT),
+) -> dict[str, Any]:
+    """Issue one short-lived P-256 challenge to the currently bound Deputy.
+
+    The browser supplies only a public key. Tenant, principal, Deputy, session
+    reference, canonical binding and all five current IAM authorities are
+    derived or revalidated server-side in one transaction.
+    """
+    public_key = _decode_base64(
+        command.public_key_spki_b64,
+        "DEPUTY_DEVICE_PUBLIC_KEY_ENCODING_INVALID",
+    )
+
+    def run(session: Any, db: Any) -> Any:
+        deputy_id = _deputy_device_scope(context, db, session)
+        return issue_deputy_device_challenge(
+            tenant_id=context.tenant_id,
+            principal_id=context.identity.identity_id,
+            deputy_id=deputy_id,
+            session_reference=context.identity.session_reference,
+            public_key_spki_der=public_key,
+            lifecycle_collection=_collection(db, LIFECYCLE_COLLECTION),
+            binding_collection=_collection(db, DEPUTY_PRINCIPAL_BINDING_COLLECTION),
+            principal_collection=_collection(db, PRINCIPAL_AUTHORITY_COLLECTION),
+            membership_collection=_collection(db, TENANT_MEMBERSHIP_COLLECTION),
+            business_role_collection=_collection(db, TENANT_BUSINESS_ROLE_COLLECTION),
+            role_assignment_collection=_collection(db, ROLE_ASSIGNMENT_COLLECTION),
+            challenge_collection=_collection(db, DEPUTY_DEVICE_PROVENANCE_COLLECTION),
+            auth_registry=AuthRegistry(),
+            session=session,
+        )
+
+    try:
+        challenge = _transaction(run)
+    except Exception as error:
+        raise _http_error(error) from error
+    return {"data": challenge.to_dict()}
+
+
+@router.post("/deputy/device-challenges/{challenge_id}/verify")
+async def verify_deputy_device_challenge_command(
+    challenge_id: str,
+    command: DeputyDeviceChallengeVerifyCommand,
+    context: TenantAuthorizationContext = Depends(_ATTEMPT),
+) -> dict[str, Any]:
+    """Consume one challenge only after current binding, IAM and session revalidation."""
+    if not challenge_id.strip():
+        raise HTTPException(status_code=422, detail="DEPUTY_DEVICE_CHALLENGE_ID_INVALID")
+    signature = _decode_base64(
+        command.signature_p1363_b64,
+        "DEPUTY_DEVICE_SIGNATURE_ENCODING_INVALID",
+    )
+    if len(signature) != 64:
+        raise HTTPException(status_code=422, detail="DEPUTY_DEVICE_SIGNATURE_LENGTH_INVALID")
+
+    def run(session: Any, db: Any) -> Any:
+        deputy_id = _deputy_device_scope(context, db, session)
+        return verify_and_consume_deputy_device_challenge(
+            tenant_id=context.tenant_id,
+            principal_id=context.identity.identity_id,
+            deputy_id=deputy_id,
+            session_reference=context.identity.session_reference,
+            challenge_id=challenge_id,
+            signature_p1363=signature,
+            lifecycle_collection=_collection(db, LIFECYCLE_COLLECTION),
+            binding_collection=_collection(db, DEPUTY_PRINCIPAL_BINDING_COLLECTION),
+            principal_collection=_collection(db, PRINCIPAL_AUTHORITY_COLLECTION),
+            membership_collection=_collection(db, TENANT_MEMBERSHIP_COLLECTION),
+            business_role_collection=_collection(db, TENANT_BUSINESS_ROLE_COLLECTION),
+            role_assignment_collection=_collection(db, ROLE_ASSIGNMENT_COLLECTION),
+            challenge_collection=_collection(db, DEPUTY_DEVICE_PROVENANCE_COLLECTION),
+            auth_registry=AuthRegistry(),
+            session=session,
+        )
+
+    try:
+        provenance = _transaction(run)
+    except Exception as error:
+        raise _http_error(error) from error
+    return {"data": provenance.to_dict()}
 
 
 @router.post("/conflict-reviews")
