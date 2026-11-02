@@ -165,6 +165,27 @@ def test_recovery_never_uses_ordinary_transfer_actor_authority() -> None:
     assert registry.appends == 0
 
 
+def test_genesis_requires_existing_pretenant_provisioner_authority() -> None:
+    registry = _Registry()
+    authorizer = _Authorizer(authorized=True)
+    command = TenantOwnershipLifecycleCommand(
+        verifier=UnavailableTenantOwnershipEvidenceVerifier(),
+        registry=registry,  # type: ignore[arg-type]
+        transfer_actor_authorizer=authorizer,
+        genesis_request_authorizer=_GenesisAuthorizer(authorized=False),
+    )
+    with pytest.raises(TenantOwnershipLifecycleCommandError) as raised:
+        command.execute(
+            request=_request(TenantOwnershipOperation.TENANT_GENESIS, principal_id="owner-1"),
+            actor_principal_id="unapproved-provisioner",
+            command_id="genesis-2",
+            expected_revision=0,
+            session=_Session(),
+        )
+    assert str(raised.value) == "PRETENANT_PROVISIONER_AUTHORIZATION_DENIED"
+    assert registry.appends == 0
+
+
 def test_genesis_remains_denied_without_independent_issuer() -> None:
     command, registry, authorizer = _command()
     with pytest.raises(TenantOwnershipVerificationError) as raised:
