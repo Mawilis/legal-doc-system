@@ -7,7 +7,7 @@ VerifiedTenantOwnershipEvidence or activate an issuer/recovery authority.
 from __future__ import annotations
 
 from dataclasses import dataclass
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from hashlib import sha256
 import json
 from typing import Protocol
@@ -176,7 +176,7 @@ class TenantOwnershipProviderEvidenceComposer:
         """Perform every provider call outside Mongo transactions and return technical receipt."""
         if type(request) is not ProviderEvidencePreflightRequest:
             raise ProviderEvidenceCompositionError("PROVIDER_PREFLIGHT_REQUEST_REQUIRED")
-        if request.evaluated_at.tzinfo is None or request.evaluated_at.utcoffset() is None:
+        if type(request.evaluated_at) is not datetime or request.evaluated_at.tzinfo is None or request.evaluated_at.utcoffset() is None:
             raise ProviderEvidenceCompositionError("PROVIDER_PREFLIGHT_TIME_INVALID")
         if not all((request.tenant_id, request.legal_entity_reference, request.jurisdiction,
                     request.principal_id, request.purpose, request.signing_key_reference)):
@@ -185,13 +185,13 @@ class TenantOwnershipProviderEvidenceComposer:
             raise ProviderEvidenceCompositionError("PROVIDER_PREFLIGHT_OPERATION_INVALID")
         if type(request.signing_key_revision) is not int or request.signing_key_revision < 1:
             raise ProviderEvidenceCompositionError("PROVIDER_PREFLIGHT_KEY_REVISION_INVALID")
-        if request.max_registry_age <= timedelta(0):
+        if type(request.max_registry_age) is not timedelta or request.max_registry_age <= timedelta(0):
             raise ProviderEvidenceCompositionError("PROVIDER_PREFLIGHT_MAX_AGE_INVALID")
         recovery_operation = request.operation is TenantOwnershipOperation.GOVERNED_RECOVERY
         if recovery_operation != (request.recovery_lookup is not None):
             raise ProviderEvidenceCompositionError("RECOVERY_LOOKUP_OPERATION_MISMATCH")
 
-        instant = request.evaluated_at
+        instant = request.evaluated_at.astimezone(timezone.utc)
         registry_lookup = RegistryLookup(
             request.jurisdiction, request.legal_entity_reference, instant
         )
@@ -204,6 +204,12 @@ class TenantOwnershipProviderEvidenceComposer:
         )
         if assessment.status != "VERIFIED_SOURCE_FACT":
             raise ProviderEvidenceCompositionError("REGISTRY_SOURCE_NOT_CURRENT_AND_UNAMBIGUOUS")
+        selected_snapshot = next(
+            (item for item in history if item.filing_reference == assessment.selected_filing_reference),
+            None,
+        )
+        if selected_snapshot is None or selected_snapshot.jurisdiction != request.jurisdiction:
+            raise ProviderEvidenceCompositionError("REGISTRY_SELECTED_SOURCE_SCOPE_MISMATCH")
 
         try:
             subject_reference = self._principal_binding.subject_reference_for(
@@ -236,6 +242,9 @@ class TenantOwnershipProviderEvidenceComposer:
             "purpose": request.purpose,
             "registry_filing_reference": assessment.selected_filing_reference,
             "registry_source_fingerprint": assessment.source_fingerprint,
+            "registry_attributes_fingerprint": selected_snapshot.attributes_fingerprint,
+            "registry_record_reference": selected_snapshot.record_reference,
+            "registry_entity_type": selected_snapshot.entity_type,
             "subject_reference": subject_reference,
             "subject_evidence_fingerprint": subject_receipt.evidence_fingerprint,
         }
@@ -259,7 +268,8 @@ class TenantOwnershipProviderEvidenceComposer:
 
         recovery_validation: ValidatedRecoveryDecision | None = None
         if recovery_operation:
-            assert request.recovery_lookup is not None
+            if request.recovery_lookup is None:
+                raise ProviderEvidenceCompositionError("RECOVERY_LOOKUP_REQUIRED")
             if (
                 request.recovery_lookup.tenant_id != request.tenant_id
                 or request.recovery_lookup.legal_entity_reference != request.legal_entity_reference
@@ -267,7 +277,8 @@ class TenantOwnershipProviderEvidenceComposer:
                 or request.recovery_lookup.evaluated_at != instant
             ):
                 raise ProviderEvidenceCompositionError("RECOVERY_LOOKUP_SCOPE_MISMATCH")
-            assert self._recovery is not None and self._recovery_keys is not None
+            if self._recovery is None or self._recovery_keys is None:
+                raise ProviderEvidenceCompositionError("RECOVERY_PROVIDER_PAIR_REQUIRED")
             try:
                 recovery_envelope = self._recovery.verify_decision(request.recovery_lookup)
             except Exception as error:
