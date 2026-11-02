@@ -2668,6 +2668,8 @@ export async function recordDeputyFieldOutcome(value) {
 
 const DEPUTY_DEVICE_KEY_DB = 'wilsy-deputy-device-key-v1';
 const DEPUTY_DEVICE_KEY_STORE = 'device-keys';
+const DEPUTY_LOCATION_GRANT_STORE = 'location-grants';
+const DEPUTY_LOCATION_OUTBOX_STORE = 'pending-location-events';
 const LOCATION_PERMISSION_NOTICE_VERSION = 'P5L-LOCATION-NOTICE-V1';
 
 function bytesToBase64(value) {
@@ -2692,17 +2694,80 @@ function openDeputyDeviceKeyDatabase() {
     throw new Error('DEPUTY_DEVICE_SECURE_KEY_STORAGE_UNAVAILABLE');
   }
   return new Promise((resolve, reject) => {
-    const request = globalThis.indexedDB.open(DEPUTY_DEVICE_KEY_DB, 1);
+    const request = globalThis.indexedDB.open(DEPUTY_DEVICE_KEY_DB, 2);
     request.onupgradeneeded = () => {
       const database = request.result;
-      if (!database.objectStoreNames.contains(DEPUTY_DEVICE_KEY_STORE)) {
-        database.createObjectStore(DEPUTY_DEVICE_KEY_STORE);
+      for (const storeName of [
+        DEPUTY_DEVICE_KEY_STORE,
+        DEPUTY_LOCATION_GRANT_STORE,
+        DEPUTY_LOCATION_OUTBOX_STORE,
+      ]) {
+        if (!database.objectStoreNames.contains(storeName)) {
+          database.createObjectStore(storeName);
+        }
       }
     };
     request.onsuccess = () => resolve(request.result);
     request.onerror = () => reject(new Error('DEPUTY_DEVICE_SECURE_KEY_STORAGE_UNAVAILABLE'));
     request.onblocked = () => reject(new Error('DEPUTY_DEVICE_SECURE_KEY_STORAGE_BLOCKED'));
   });
+}
+
+async function readDeputyLocationStore(storeName, key) {
+  const database = await openDeputyDeviceKeyDatabase();
+  try {
+    return await new Promise((resolve, reject) => {
+      const request = database.transaction(storeName, 'readonly').objectStore(storeName).get(key);
+      request.onsuccess = () => resolve(request.result || null);
+      request.onerror = () => reject(new Error('DEPUTY_LOCATION_LOCAL_READ_FAILED'));
+    });
+  } finally {
+    database.close();
+  }
+}
+
+async function writeDeputyLocationStore(storeName, key, value) {
+  const database = await openDeputyDeviceKeyDatabase();
+  try {
+    await new Promise((resolve, reject) => {
+      const transaction = database.transaction(storeName, 'readwrite');
+      transaction.objectStore(storeName).put(value, key);
+      transaction.oncomplete = () => resolve();
+      transaction.onerror = () => reject(new Error('DEPUTY_LOCATION_LOCAL_WRITE_FAILED'));
+      transaction.onabort = () => reject(new Error('DEPUTY_LOCATION_LOCAL_WRITE_FAILED'));
+    });
+  } finally {
+    database.close();
+  }
+}
+
+async function deleteDeputyLocationStore(storeName, key) {
+  const database = await openDeputyDeviceKeyDatabase();
+  try {
+    await new Promise((resolve, reject) => {
+      const transaction = database.transaction(storeName, 'readwrite');
+      transaction.objectStore(storeName).delete(key);
+      transaction.oncomplete = () => resolve();
+      transaction.onerror = () => reject(new Error('DEPUTY_LOCATION_LOCAL_DELETE_FAILED'));
+      transaction.onabort = () => reject(new Error('DEPUTY_LOCATION_LOCAL_DELETE_FAILED'));
+    });
+  } finally {
+    database.close();
+  }
+}
+
+async function listPendingDeputyLocationEvents() {
+  const database = await openDeputyDeviceKeyDatabase();
+  try {
+    return await new Promise((resolve, reject) => {
+      const request = database.transaction(DEPUTY_LOCATION_OUTBOX_STORE, 'readonly')
+        .objectStore(DEPUTY_LOCATION_OUTBOX_STORE).getAll();
+      request.onsuccess = () => resolve(request.result || []);
+      request.onerror = () => reject(new Error('DEPUTY_LOCATION_OUTBOX_READ_FAILED'));
+    });
+  } finally {
+    database.close();
+  }
 }
 
 async function loadOrCreateDeputyDeviceKey() {
