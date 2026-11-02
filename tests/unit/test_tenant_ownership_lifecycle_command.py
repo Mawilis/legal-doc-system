@@ -24,6 +24,11 @@ class _Session:
         return True
 
 
+class _TrustRoots:
+    def current(self, trust_root_reference: str, *, at: Any, session: Any) -> object | None:
+        return None
+
+
 class _Registry:
     def __init__(self, current: object = None) -> None:
         self.current_value = current
@@ -85,6 +90,7 @@ def _command(
         registry=registry,  # type: ignore[arg-type]
         transfer_actor_authorizer=authorizer,
         genesis_request_authorizer=_GenesisAuthorizer(),
+        trust_root_currentness=_TrustRoots(),
     )
     return command, registry, authorizer
 
@@ -171,6 +177,7 @@ def test_genesis_requires_existing_pretenant_provisioner_authority() -> None:
         registry=registry,  # type: ignore[arg-type]
         transfer_actor_authorizer=authorizer,
         genesis_request_authorizer=_GenesisAuthorizer(authorized=False),
+        trust_root_currentness=_TrustRoots(),
     )
     with pytest.raises(TenantOwnershipLifecycleCommandError) as raised:
         command.execute(
