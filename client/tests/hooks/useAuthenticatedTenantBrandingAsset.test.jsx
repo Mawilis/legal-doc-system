@@ -1,6 +1,6 @@
 /**
  * TITLE: D21B12 Authenticated Branding Asset Hook Certificate
- * VERSION: v1.0.0-D21B12-AUTHENTICATED-BRANDING-ASSET-LIFECYCLE-CERT
+ * VERSION: v1.1.0-D21B12-TENANT-SWITCH-STALE-PAINT-GUARD-CERT
  * AUTHORITY: Wilsy OS Core Governance
  * ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/client/tests/hooks/useAuthenticatedTenantBrandingAsset.test.jsx
  * CERTIFICATION / UPDATE DATE: 2026-09-25
@@ -107,6 +107,8 @@ describe('D21B12 authenticated branding object-url lifecycle', () => {
     );
 
     rerender({ descriptor: newerLogo });
+    expect(result.current.objectUrl).toBeNull();
+    expect(result.current.status).toBe('LOADING');
     expect(mocks.revokeUrl).toHaveBeenCalledWith(
       'blob:http://localhost/logo-1',
     );
@@ -114,6 +116,28 @@ describe('D21B12 authenticated branding object-url lifecycle', () => {
       expect(result.current.objectUrl).toBe('blob:http://localhost/logo-2'),
     );
     expect(mocks.fetchAsset).toHaveBeenLastCalledWith(newerLogo);
+  });
+
+  it('hides the prior tenant logo synchronously when branding becomes absent', async () => {
+    mocks.fetchAsset.mockResolvedValue(new Blob(['logo'], { type: 'image/png' }));
+    mocks.createUrl.mockReturnValue('blob:http://localhost/tenant-a-logo');
+
+    const { result, rerender } = renderHook(
+      ({ descriptor }) => useAuthenticatedTenantBrandingAsset(descriptor),
+      { initialProps: { descriptor: logo } },
+    );
+    await waitFor(() => expect(result.current.status).toBe('READY'));
+
+    rerender({ descriptor: null });
+    expect(result.current).toEqual({
+      descriptorKey: '',
+      objectUrl: null,
+      status: 'ABSENT',
+      errorCode: null,
+    });
+    expect(mocks.revokeUrl).toHaveBeenCalledWith(
+      'blob:http://localhost/tenant-a-logo',
+    );
   });
 
   it('revokes its owned URL on unmount', async () => {
@@ -195,7 +219,7 @@ describe('D21B12 authenticated branding object-url lifecycle', () => {
 });
 
 // ARTIFACT: useAuthenticatedTenantBrandingAsset.test.jsx
-// VERSION: v1.0.0-D21B12-AUTHENTICATED-BRANDING-ASSET-LIFECYCLE-CERT
+// VERSION: v1.1.0-D21B12-TENANT-SWITCH-STALE-PAINT-GUARD-CERT
 // AUTHORITY BOUNDARY: transient object-URL lifecycle certificate only
 // TENANT POSTURE: no browser tenant selector is introduced
 // FAIL-CLOSED POSTURE: absent/error/stale responses cannot leave a renderable stale URL
