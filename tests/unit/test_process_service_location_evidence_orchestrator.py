@@ -21,6 +21,7 @@ from tools.eos.legal_operations.domain.legal_operations_lifecycle import (
     ServiceAttemptState,
 )
 from tools.eos.legal_operations.orchestration.process_service_location_evidence_orchestrator import (
+    location_observation_signed_payload,
     MAX_PERMISSION_WINDOW,
     ProcessServiceLocationEvidenceOrchestrationError,
     issue_process_service_location_permission_grant,
@@ -123,7 +124,7 @@ def proof(now: datetime) -> DeputyDeviceProvenance:
     signature = r.to_bytes(32, "big") + s.to_bytes(32, "big")
     return DeputyDeviceProvenance.verify(
         challenge=challenge, signature_p1363=signature, verified_at=now
-    )
+    ), private_key
 
 
 def create_grant(attempt, receipt, current, device_proof, now, collection):
@@ -137,7 +138,7 @@ def create_grant(attempt, receipt, current, device_proof, now, collection):
 
 def test_short_lived_grant_is_bound_to_verified_device_and_server_acknowledgement():
     attempt, receipt, current, now = sources()
-    proof_value = proof(now)
+    proof_value, _private_key = proof(now)
     grants = Collection()
     grant = create_grant(attempt, receipt, current, proof_value, now, grants)
     assert grant.device_id == proof_value.device_id
@@ -148,7 +149,7 @@ def test_short_lived_grant_is_bound_to_verified_device_and_server_acknowledgemen
 
 def test_permission_denial_and_wrong_principal_do_not_persist():
     attempt, receipt, current, now = sources()
-    proof_value = proof(now)
+    proof_value, _private_key = proof(now)
     grants = Collection()
     with pytest.raises(ProcessServiceLocationEvidenceOrchestrationError):
         issue_process_service_location_permission_grant(
@@ -169,14 +170,28 @@ def test_permission_denial_and_wrong_principal_do_not_persist():
 
 def test_location_observation_requires_active_grant_and_same_device():
     attempt, receipt, current, now = sources()
-    proof_value = proof(now)
+    proof_value, private_key = proof(now)
     grants, observations, revocations = Collection(), Collection(), Collection()
     grant = create_grant(attempt, receipt, current, proof_value, now, grants)
+    current_identity = "p2-current-identity-p5l"
+    captured_at = now + timedelta(seconds=1)
+    signed_payload = location_observation_signed_payload(
+        tenant_id=TENANT, attempt_id=attempt.attempt_id,
+        current_evidence_identity=current_identity, deputy_id=DEPUTY_ID,
+        device_id=proof_value.device_id, challenge_id=proof_value.challenge_id,
+        grant_id=grant.grant_id, observation_id="observation-p5l",
+        latitude=-26.2041, longitude=28.0473, horizontal_accuracy_m=10.0,
+        captured_at=captured_at,
+    )
+    der = private_key.sign(signed_payload, ec.ECDSA(hashes.SHA256()))
+    r_value, s_value = decode_dss_signature(der)
+    location_signature = r_value.to_bytes(32, "big") + s_value.to_bytes(32, "big")
     value = record_process_service_location_observation(
         attempt=attempt, allocation_receipt=receipt, allocation_current=current,
         device_provenance=proof_value, principal_id=PRINCIPAL, grant_id=grant.grant_id,
-        observation_id="observation-p5l", latitude=-26.2041, longitude=28.0473,
-        horizontal_accuracy_m=10.0, captured_at=now + timedelta(seconds=1),
+        observation_id="observation-p5l", current_evidence_identity=current_identity,
+        location_signature_p1363=location_signature, latitude=-26.2041, longitude=28.0473,
+        horizontal_accuracy_m=10.0, captured_at=captured_at,
         permission_collection=grants, observation_collection=observations,
         revocation_collection=revocations, session=Session(),
     )
@@ -188,7 +203,7 @@ def test_location_observation_requires_active_grant_and_same_device():
 
 def test_revoked_grant_blocks_observation_but_preserves_existing_grant():
     attempt, receipt, current, now = sources()
-    proof_value = proof(now)
+    proof_value, private_key = proof(now)
     grants, observations, revocations = Collection(), Collection(), Collection()
     grant = create_grant(attempt, receipt, current, proof_value, now, grants)
     revoke_process_service_location_permission_grant(
@@ -197,12 +212,25 @@ def test_revoked_grant_blocks_observation_but_preserves_existing_grant():
         reason_reference="user-withdrew-permission", grant_collection=grants,
         revocation_collection=revocations, session=Session(),
     )
+    captured_at = now + timedelta(seconds=3)
+    signed_payload = location_observation_signed_payload(
+        tenant_id=TENANT, attempt_id=attempt.attempt_id,
+        current_evidence_identity="p2-current-identity-p5l", deputy_id=DEPUTY_ID,
+        device_id=proof_value.device_id, challenge_id=proof_value.challenge_id,
+        grant_id=grant.grant_id, observation_id="observation-after-revoke",
+        latitude=-26.2, longitude=28.0, horizontal_accuracy_m=10.0,
+        captured_at=captured_at,
+    )
+    der = private_key.sign(signed_payload, ec.ECDSA(hashes.SHA256()))
+    r_value, s_value = decode_dss_signature(der)
+    location_signature = r_value.to_bytes(32, "big") + s_value.to_bytes(32, "big")
     with pytest.raises(ProcessServiceLocationEvidenceOrchestrationError) as error:
         record_process_service_location_observation(
             attempt=attempt, allocation_receipt=receipt, allocation_current=current,
             device_provenance=proof_value, principal_id=PRINCIPAL, grant_id=grant.grant_id,
-            observation_id="observation-after-revoke", latitude=-26.2, longitude=28.0,
-            horizontal_accuracy_m=10.0, captured_at=now + timedelta(seconds=3),
+            observation_id="observation-after-revoke", current_evidence_identity="p2-current-identity-p5l",
+            location_signature_p1363=location_signature, latitude=-26.2, longitude=28.0,
+            horizontal_accuracy_m=10.0, captured_at=captured_at,
             permission_collection=grants, observation_collection=observations,
             revocation_collection=revocations, session=Session(),
         )
@@ -215,7 +243,7 @@ def test_location_orchestration_requires_caller_transaction():
     with pytest.raises(ProcessServiceLocationEvidenceOrchestrationError):
         issue_process_service_location_permission_grant(
             attempt=attempt, allocation_receipt=receipt, allocation_current=current,
-            device_provenance=proof(now), principal_id=PRINCIPAL, grant_id="grant-no-tx",
+            device_provenance=proof(now)[0], principal_id=PRINCIPAL, grant_id="grant-no-tx",
             permission_granted=True, permission_notice_version="location-notice-v1",
             granted_at=now, permission_collection=Collection(), session=None,
         )
