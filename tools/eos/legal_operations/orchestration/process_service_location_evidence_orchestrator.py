@@ -284,11 +284,13 @@ def record_process_service_location_observation(
     """Persist one GPS fix under an active grant and fresh consumed device proof."""
     tx = _transaction(session)
     _sources(attempt, allocation_receipt, allocation_current)
+    if not isinstance(captured_at, datetime) or captured_at.tzinfo is None or captured_at.utcoffset() is None:
+        _fail("P5L_LOCATION_CAPTURE_TIMESTAMP_INVALID")
     proof = _proof(
         device_provenance,
         attempt=attempt,
         principal_id=principal_id,
-        at=datetime.now(timezone.utc),
+        at=captured_at.astimezone(timezone.utc),
     )
     try:
         ProcessServiceLocationEvidenceRegistry.assert_permission_grant_active(
@@ -305,6 +307,8 @@ def record_process_service_location_observation(
         )
         if grant.device_id != proof.device_id:
             _fail("P5L_GRANT_DEVICE_MISMATCH")
+        if proof.sheriff_office_id != allocation_receipt.sheriff_office_id:
+            _fail("P5L_DEVICE_OFFICE_SCOPE_INVALID")
         signed_payload = location_observation_signed_payload(
             tenant_id=attempt.tenant_id,
             attempt_id=attempt.attempt_id,
