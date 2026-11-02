@@ -65,6 +65,7 @@ import {
   generateLegalReturnOfService,
   getDeputyFieldCapabilities,
   getDeputyLocationEvidence,
+  getSheriffLocationEvidence,
   getDeputyPersonalActiveWork,
   getLegalClientMatters,
   getLegalClientAcceptanceInstruments,
@@ -1717,6 +1718,27 @@ describe('L8-7D7 role-scoped Legal Operations client adapter', () => {
     expect(Object.isFrozen(result)).toBe(true);
     expect(Object.isFrozen(result.observations)).toBe(true);
     expect(Object.isFrozen(result.observations[0])).toBe(true);
+  });
+
+
+  it('reads Sheriff location evidence only with the single-office response contract', async () => {
+    mockGet.mockResolvedValueOnce({
+      data: {
+        schema: 'WILSY-SHERIFF-OFFICE-LOCATION-EVIDENCE-PROJECTION/V1',
+        version: 'v1.0.0-P5L-SHERIFF-OFFICE-LOCATION-EVIDENCE-READ',
+        tenant_id: 'tenant-sheriff',
+        visibility: 'ONE_CANONICAL_SHERIFF_OFFICE_LOCATION_EVIDENCE',
+        sheriff_office_id: 'office-1',
+        attempt_id: 'attempt-1',
+        observations: [],
+      },
+    });
+    const result = await getSheriffLocationEvidence('attempt-1');
+    expect(mockGet).toHaveBeenCalledWith(
+      '/legal-operations/sheriff/attempts/attempt-1/location-evidence',
+    );
+    expect(result.sheriff_office_id).toBe('office-1');
+    expect(Object.isFrozen(result)).toBe(true);
   });
 
   it('builds deterministic canonical P-256 signing bytes for exact GPS facts', () => {
