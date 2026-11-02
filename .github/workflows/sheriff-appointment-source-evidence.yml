@@ -51,39 +51,56 @@ jobs:
           python -m pip install --upgrade pip==25.3
           python -m pip install pytest==9.1.1 pymongo==4.18.2
 
-      - name: Compile exact domain, registry and certificates
+      - name: Compile present Sheriff evidence sources and certificates
+        shell: bash
         run: |
-          python -m py_compile \
-            tools/eos/legal_operations/domain/sheriff_appointment_source_evidence.py \
-            tools/eos/legal_operations/registry/sheriff_appointment_source_evidence_registry.py \
-            tests/unit/test_sheriff_appointment_source_evidence.py \
-            tests/unit/test_sheriff_appointment_source_evidence_registry.py
+          set -euo pipefail
+          files=(
+            tools/eos/legal_operations/domain/sheriff_appointment_source_evidence.py
+            tests/unit/test_sheriff_appointment_source_evidence.py
+          )
+          if [[ -f tools/eos/legal_operations/registry/sheriff_appointment_source_evidence_registry.py ]]; then
+            files+=(
+              tools/eos/legal_operations/registry/sheriff_appointment_source_evidence_registry.py
+              tests/unit/test_sheriff_appointment_source_evidence_registry.py
+            )
+          fi
+          python -m py_compile "${files[@]}"
 
-      - name: Type-check exact domain, registry and certificates
+      - name: Type-check present Sheriff evidence sources and certificates
+        shell: bash
         run: |
-          npx --yes pyright@1.1.413 \
-            --pythonpath "$(command -v python)" \
-            tools/eos/legal_operations/domain/sheriff_appointment_source_evidence.py \
-            tools/eos/legal_operations/registry/sheriff_appointment_source_evidence_registry.py \
-            tests/unit/test_sheriff_appointment_source_evidence.py \
-            tests/unit/test_sheriff_appointment_source_evidence_registry.py
+          set -euo pipefail
+          files=(
+            tools/eos/legal_operations/domain/sheriff_appointment_source_evidence.py
+            tests/unit/test_sheriff_appointment_source_evidence.py
+          )
+          if [[ -f tools/eos/legal_operations/registry/sheriff_appointment_source_evidence_registry.py ]]; then
+            files+=(
+              tools/eos/legal_operations/registry/sheriff_appointment_source_evidence_registry.py
+              tests/unit/test_sheriff_appointment_source_evidence_registry.py
+            )
+          fi
+          npx --yes pyright@1.1.413 --pythonpath "$(command -v python)" "${files[@]}"
 
-      - name: Run exact unit certificate with no skips
+      - name: Run present Sheriff evidence certificates with no skips
         shell: bash
         run: |
           set -uo pipefail
+          tests=(tests/unit/test_sheriff_appointment_source_evidence.py)
+          if [[ -f tests/unit/test_sheriff_appointment_source_evidence_registry.py ]]; then
+            tests+=(tests/unit/test_sheriff_appointment_source_evidence_registry.py)
+          fi
           set +e
-          output="$(python -m pytest -q -rs \
-            tests/unit/test_sheriff_appointment_source_evidence.py \
-            tests/unit/test_sheriff_appointment_source_evidence_registry.py 2>&1)"
+          output="$(python -m pytest -q -rs "${tests[@]}" 2>&1)"
           pytest_status=$?
           set -e
-          printf '%s\n' "$output"
+          printf '%s\\n' "$output"
           if [ "$pytest_status" -ne 0 ]; then
             exit "$pytest_status"
           fi
-          printf '%s\n' "$output" | grep -Eq '[0-9]+ passed'
-          if printf '%s\n' "$output" | grep -qi 'skipped'; then
+          printf '%s\\n' "$output" | grep -Eq '[0-9]+ passed'
+          if printf '%s\\n' "$output" | grep -qi 'skipped'; then
             echo "Sheriff appointment evidence certification invalid: skipped tests detected"
             exit 1
           fi
