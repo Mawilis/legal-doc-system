@@ -3096,6 +3096,7 @@ export async function syncPendingDeputyLocationEvidence() {
   const pending = await listPendingDeputyLocationEvents();
   let synced = 0;
   const blocked = [];
+  const syncedAttemptIds = new Set();
   for (const item of pending) {
     if (!isCanonicalText(item?.attemptId) || !isCanonicalText(item?.event?.observation_id)) {
       blocked.push(item?.event?.observation_id || 'unknown');
@@ -3115,6 +3116,7 @@ export async function syncPendingDeputyLocationEvidence() {
         DEPUTY_LOCATION_OUTBOX_STORE,
         item.event.observation_id,
       );
+      syncedAttemptIds.add(item.attemptId);
       synced += 1;
     } catch (error) {
       blocked.push(item.event.observation_id);
@@ -3127,6 +3129,7 @@ export async function syncPendingDeputyLocationEvidence() {
     synced,
     pending: Math.max(0, pending.length - synced),
     blocked: Object.freeze(blocked),
+    syncedAttemptIds: Object.freeze([...syncedAttemptIds]),
   });
 }
 
