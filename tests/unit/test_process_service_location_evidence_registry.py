@@ -254,6 +254,20 @@ def test_revocation_is_append_only_and_blocks_future_grant_use():
     assert len(grants.docs) == 1 and len(revocations.docs) == 1
 
 
+
+def test_revocation_binding_can_be_checked_after_attempt_terminal_transition():
+    grants = Collection()
+    Registry.persist_permission_grant(grant(), grants, session=Session())
+    payload = Registry.assert_permission_grant_attempt_binding(
+        TENANT, "grant-1", "attempt-1", "deputy-1", grants, session=Session()
+    )
+    assert payload["attempt_id"] == "attempt-1"
+    assert payload["deputy_id"] == "deputy-1"
+    with pytest.raises(ProcessServiceLocationEvidenceRegistryConflictError):
+        Registry.assert_permission_grant_attempt_binding(
+            TENANT, "grant-1", "attempt-foreign", "deputy-1", grants, session=Session()
+        )
+
 def test_access_audit_is_metadata_only_and_tenant_scoped():
     collection = Collection()
     event = Registry.record_access(
