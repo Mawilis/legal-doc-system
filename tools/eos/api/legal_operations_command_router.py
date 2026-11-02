@@ -1259,6 +1259,71 @@ _WORK_COMPLETION = _ctx(
 )
 
 
+@router.post("/sheriff/appointments")
+async def record_sheriff_office_appointment_command(
+    command: SheriffOfficeAppointmentCommand,
+    context: TenantAuthorizationContext = Depends(_SHERIFF_APPOINTMENT),
+) -> dict[str, Any]:
+    """Record or exactly replay one independently verified Sheriff appointment.
+
+    Only an active tenant administrator can invoke this command. The body
+    supplies external source references/fingerprints and effective windows;
+    tenant, target IAM, canonical office/District, certificate jurisdiction,
+    verifier, verification time, revision and lineage are server-derived.
+    """
+
+    if context.decision.business_role != "tenant_admin":
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="SHERIFF_APPOINTMENT_VERIFIER_REQUIRED",
+        )
+
+    def prepare(database: Any) -> None:
+        SheriffOfficeAppointmentAuthorityRegistry(
+            _collection(database, SHERIFF_APPOINTMENT_COLLECTION)
+        ).ensure_indexes()
+
+    def run(session: Any, database: Any) -> Any:
+        return record_sheriff_office_appointment_authority(
+            tenant_id=context.tenant_id,
+            appointment_id=command.appointment_id,
+            expected_revision=command.expected_revision,
+            expected_predecessor_fingerprint=command.expected_predecessor_fingerprint,
+            principal_id=command.principal_id,
+            sheriff_office_id=command.sheriff_office_id,
+            appointment_kind=command.appointment_kind,
+            appointment_instrument_reference=command.appointment_instrument_reference,
+            appointment_instrument_fingerprint=command.appointment_instrument_fingerprint,
+            office_scope_instrument_reference=command.office_scope_instrument_reference,
+            office_scope_instrument_fingerprint=command.office_scope_instrument_fingerprint,
+            fidelity_fund_certificate_reference=command.fidelity_fund_certificate_reference,
+            fidelity_fund_certificate_fingerprint=command.fidelity_fund_certificate_fingerprint,
+            professional_indemnity_insurance_reference=command.professional_indemnity_insurance_reference,
+            professional_indemnity_insurance_fingerprint=command.professional_indemnity_insurance_fingerprint,
+            appointment_effective_from=command.appointment_effective_from,
+            appointment_effective_until=command.appointment_effective_until,
+            certificate_valid_from=command.certificate_valid_from,
+            certificate_valid_until=command.certificate_valid_until,
+            professional_indemnity_insurance_valid_from=command.professional_indemnity_insurance_valid_from,
+            professional_indemnity_insurance_valid_until=command.professional_indemnity_insurance_valid_until,
+            verifier_principal_id=context.identity.identity_id,
+            verified_at=_utcnow(),
+            lifecycle_collection=_collection(database, LIFECYCLE_COLLECTION),
+            appointment_collection=_collection(database, SHERIFF_APPOINTMENT_COLLECTION),
+            principal_collection=_collection(database, PRINCIPAL_AUTHORITY_COLLECTION),
+            membership_collection=_collection(database, TENANT_MEMBERSHIP_COLLECTION),
+            business_role_collection=_collection(database, TENANT_BUSINESS_ROLE_COLLECTION),
+            role_assignment_collection=_collection(database, ROLE_ASSIGNMENT_COLLECTION),
+            session=session,
+        )
+
+    try:
+        value = _transaction(run, prepare=prepare)
+        return value.to_dict()
+    except Exception as error:
+        raise _http_error(error) from error
+
+
 @router.post("/intake/registrations")
 async def register_process_service_intake_command(
     command: IntakeRegistrationCommand,
