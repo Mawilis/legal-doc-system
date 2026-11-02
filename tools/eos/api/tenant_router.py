@@ -176,6 +176,7 @@ class _RouteTenantAuthorization(RequireTenantAuthorization):
 
     async def __call__(
         self,
+        request: Request,
         identity: SovereignIdentity = Depends(
             tenant_authorization_http.get_current_identity
         ),
@@ -195,6 +196,7 @@ class _RouteTenantAuthorization(RequireTenantAuthorization):
     ) -> TenantAuthorizationContext:
         """Delegate current-truth authorization with route-safe scope naming."""
         return await super().__call__(
+            request=request,
             identity=identity,
             tenant_id=tenant_scope,
             principal_repository=principal_repository,
@@ -711,6 +713,7 @@ __all__ = [
     "TenantResponse",
     "TenantListResponse",
     "TenantOwnershipReadinessResponse",
+    "get_tenant_ownership_readiness",
     "tenant_router",
 ]
 
