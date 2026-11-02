@@ -5,6 +5,7 @@ import asyncio
 from types import SimpleNamespace
 
 import pytest
+from typing import Any, cast
 from fastapi import HTTPException
 
 from tools.eos.api.tenant_router import get_tenant_ownership_readiness
@@ -14,8 +15,8 @@ def test_readiness_reports_explicit_deny_without_database_or_write_authority() -
     response = asyncio.run(
         get_tenant_ownership_readiness(
             tenant_id="tenant-qa-001",
-            request=object(),  # type: ignore[arg-type]
-            authorization=SimpleNamespace(tenant_id="tenant-qa-001"),  # type: ignore[arg-type]
+            request=cast(Any, object()),
+            authorization=cast(Any, SimpleNamespace(tenant_id="tenant-qa-001")),
         )
     )
     assert response.model_dump() == {
@@ -32,7 +33,7 @@ def test_readiness_rejects_cross_tenant_authorization_scope() -> None:
             get_tenant_ownership_readiness(
                 tenant_id="tenant-target",
                 request=object(),  # type: ignore[arg-type]
-                authorization=SimpleNamespace(tenant_id="tenant-other"),  # type: ignore[arg-type]
+                authorization=cast(Any, SimpleNamespace(tenant_id="tenant-other")),
             )
         )
     assert raised.value.status_code == 403
