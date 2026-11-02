@@ -52,8 +52,8 @@ jobs:
         run: |
           python -m py_compile \
             tools/eos/legal_operations/domain/sheriff_office_appointment_authority.py \
-            tests/unit/test_sheriff_office_appointment_authority.py \\
-            tools/eos/legal_operations/registry/sheriff_office_appointment_authority_registry.py \\
+            tests/unit/test_sheriff_office_appointment_authority.py \
+            tools/eos/legal_operations/registry/sheriff_office_appointment_authority_registry.py \
             tests/unit/test_sheriff_office_appointment_authority_registry.py
 
       - name: Type-check appointment evidence domain and certificate
@@ -61,12 +61,12 @@ jobs:
           npx --yes pyright@1.1.413 \
             --pythonpath "$(python -c 'import sys; print(sys.executable)')" \
             tools/eos/legal_operations/domain/sheriff_office_appointment_authority.py \
-            tests/unit/test_sheriff_office_appointment_authority.py \\
-            tools/eos/legal_operations/registry/sheriff_office_appointment_authority_registry.py \\
+            tests/unit/test_sheriff_office_appointment_authority.py \
+            tools/eos/legal_operations/registry/sheriff_office_appointment_authority_registry.py \
             tests/unit/test_sheriff_office_appointment_authority_registry.py
 
       - name: Run appointment evidence unit certificate
         run: |
-          python -m pytest -q \\
-            tests/unit/test_sheriff_office_appointment_authority.py \\
+          python -m pytest -q \
+            tests/unit/test_sheriff_office_appointment_authority.py \
             tests/unit/test_sheriff_office_appointment_authority_registry.py
