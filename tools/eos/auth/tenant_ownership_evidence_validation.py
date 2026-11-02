@@ -121,6 +121,14 @@ class KeyStatusProvider(Protocol):
     def public_key(self, key_reference: str, revision: int) -> Ed25519PublicKey: ...
 
 
+class RecoveryKeyTrustProvider(Protocol):
+    def recovery_key_status(
+        self, authority_id: str, trust_root_reference: str, trust_root_fingerprint: str,
+        key_reference: str, revision: int, at: datetime,
+    ) -> str: ...
+    def public_key(self, key_reference: str, revision: int) -> Ed25519PublicKey: ...
+
+
 def signing_message(request: SigningRequest) -> bytes:
     """Canonical domain-separated message; binds digest, tenant, key and purpose."""
     digest = _fingerprint(request.payload_digest, "SIGNING_PAYLOAD_DIGEST_INVALID")
@@ -207,7 +215,7 @@ def recovery_decision_message(lookup: RecoveryDecisionLookup,
 def validate_recovery_decision(
     lookup: RecoveryDecisionLookup,
     envelope: RecoveryDecisionEnvelope,
-    keys: KeyStatusProvider,
+    keys: RecoveryKeyTrustProvider,
 ) -> None:
     """Validate independent authority receipt, appeal state, expiry, signature."""
     receipt = envelope.receipt
@@ -252,6 +260,12 @@ class RecoveryDecisionReplayRegistry:
         self._rows.create_index([("tenant_id", ASCENDING), ("recovery_case_reference", ASCENDING),
                                  ("successor_principal_id", ASCENDING)],
                                 unique=True, name="uq_tenant_recovery_case_successor")
+
+    def consume_verified(self, lookup: RecoveryDecisionLookup, envelope: RecoveryDecisionEnvelope,
+                         keys: RecoveryKeyTrustProvider, *, session: Any) -> None:
+        """Validate signed independent authority evidence before consuming its replay slot."""
+        validate_recovery_decision(lookup, envelope, keys)
+        self.consume(lookup, envelope.receipt, session=session)
 
     def consume(self, lookup: RecoveryDecisionLookup, receipt: RecoveryDecisionReceipt,
                 *, session: Any) -> None:
