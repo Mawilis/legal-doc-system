@@ -235,6 +235,10 @@ from tools.eos.legal_operations.registry.deputy_principal_binding_registry impor
     DeputyPrincipalBindingRegistry,
     DeputyPrincipalBindingRegistryError,
 )
+from tools.eos.legal_operations.registry.deputy_device_provenance_registry import (
+    COLLECTION as DEPUTY_DEVICE_PROVENANCE_COLLECTION,
+    DeputyDeviceProvenanceRegistry,
+)
 from tools.eos.legal_operations.registry.legal_operations_lifecycle_registry import COLLECTION as LIFECYCLE_COLLECTION, LegalOperationsLifecycleRegistry
 from tools.eos.legal_operations.registry.legal_conflict_screening_registry import (
     COLLECTION as LEGAL_CONFLICT_SCREENING_COLLECTION,
@@ -563,8 +567,7 @@ class DeputyLocationObservationCommand(_CommandModel):
     current_evidence_identity: str = Field(min_length=1)
     grant_id: str = Field(min_length=1, max_length=128)
     observation_id: str = Field(min_length=1, max_length=128)
-    challenge_id: str = Field(min_length=1, max_length=128)
-    signature_p1363_b64: str = Field(min_length=80, max_length=100)
+    device_provenance_reference: str = Field(min_length=1, max_length=128)
     location_signature_p1363_b64: str = Field(min_length=80, max_length=100)
     latitude: float
     longitude: float
@@ -746,6 +749,36 @@ def _verify_location_device_proof(
         auth_registry=AuthRegistry(),
         session=session,
     )
+
+
+def _get_consumed_deputy_device_proof(
+    *,
+    context: TenantAuthorizationContext,
+    deputy_id: str,
+    provenance_reference: str,
+    database: Any,
+    session: Any,
+) -> Any:
+    """Resolve an already-consumed, current-session device proof for offline GPS sync."""
+    session_reference = context.identity.session_reference
+    if not isinstance(session_reference, str):
+        raise CommandError("DEPUTY_DEVICE_CURRENT_SESSION_REFERENCE_REQUIRED")
+    registry = DeputyDeviceProvenanceRegistry(
+        _collection(database, DEPUTY_DEVICE_PROVENANCE_COLLECTION),
+        auth_registry=AuthRegistry(),
+        binding_collection=_collection(database, DEPUTY_PRINCIPAL_BINDING_COLLECTION),
+    )
+    proof = registry.get_consumed_provenance(
+        tenant_id=context.tenant_id,
+        challenge_id=provenance_reference,
+        principal_id=context.identity.identity_id,
+        session_reference=session_reference,
+        at=_utcnow(),
+        session=session,
+    )
+    if proof.deputy_id != deputy_id:
+        raise CommandError("DEPUTY_DEVICE_PROVENANCE_SCOPE_INVALID")
+    return proof
 
 
 def _collection(database: Any, name: str) -> Any:
@@ -2061,12 +2094,6 @@ async def record_deputy_location_observation_command(
     context: TenantAuthorizationContext = Depends(_ATTEMPT),
 ) -> dict[str, Any]:
     """Capture and persist one GPS fix; this does not establish service or valid service."""
-    signature = _decode_base64(
-        command.signature_p1363_b64,
-        "DEPUTY_DEVICE_SIGNATURE_ENCODING_INVALID",
-    )
-    if len(signature) != 64:
-        raise HTTPException(status_code=422, detail="DEPUTY_DEVICE_SIGNATURE_LENGTH_INVALID")
     location_signature = _decode_base64(
         command.location_signature_p1363_b64,
         "LOCATION_OBSERVATION_SIGNATURE_ENCODING_INVALID",
@@ -2076,12 +2103,14 @@ async def record_deputy_location_observation_command(
 
     def run(session: Any, db: Any) -> Any:
         current, receipt, allocation_current = _location_attempt_sources(
-            context, attempt_id, command.current_evidence_identity, db, session
+            context, attempt_id, command.current_evidence_identity, db, session,
+            allow_terminal=True,
         )
         deputy_id = _deputy_device_scope(context, db, session)
-        proof = _verify_location_device_proof(
-            context=context, deputy_id=deputy_id, challenge_id=command.challenge_id,
-            signature=signature, database=db, session=session,
+        proof = _get_consumed_deputy_device_proof(
+            context=context, deputy_id=deputy_id,
+            provenance_reference=command.device_provenance_reference,
+            database=db, session=session,
         )
         return record_process_service_location_observation(
             attempt=current, allocation_receipt=receipt, allocation_current=allocation_current,
