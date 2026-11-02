@@ -269,6 +269,8 @@ def validate_recovery_decision(
     expires = _instant("recovery_decision_valid_until", receipt.valid_until)
     if issued > now or expires <= now or expires <= issued:
         raise OwnershipProviderEvidenceError("RECOVERY_DECISION_NOT_CURRENT")
+    if receipt.revoked_at is not None and now >= _instant("recovery_decision_revoked_at", receipt.revoked_at):
+        raise OwnershipProviderEvidenceError("RECOVERY_DECISION_REVOKED")
     if not receipt.authority_id or not receipt.trust_root_reference:
         raise OwnershipProviderEvidenceError("RECOVERY_AUTHORITY_REQUIRED")
 
