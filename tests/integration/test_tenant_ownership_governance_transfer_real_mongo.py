@@ -112,6 +112,8 @@ def test_transfer_requires_distinct_proposal_acceptance_and_owner_finalization(m
         now, now + timedelta(hours=1), "successor-identity-proof",
         "successor-verifier", "acceptance-proof",
     )
+
+    # Prove proposal and acceptance writes roll back together.
     with client.start_session() as session:
         with session.start_transaction():
             protocol.propose(proposal, session=session)
@@ -121,27 +123,57 @@ def test_transfer_requires_distinct_proposal_acceptance_and_owner_finalization(m
                     actor_principal_id="owner", command_id="early",
                     session=session, evaluated_at=now,
                 )
-            protocol.accept(proposal_reference=proposal.proposal_reference, acceptance=acceptance, session=session, evaluated_at=now)
+            protocol.accept(
+                proposal_reference=proposal.proposal_reference,
+                acceptance=acceptance, session=session, evaluated_at=now,
+            )
+            session.abort_transaction()
+    assert db["tenant_ownership_transfer_proposals"].count_documents({}) == 0
+    assert db["tenant_ownership_transfer_acceptances"].count_documents({}) == 0
+
+    # Commit independently verified proposal and successor acceptance.
+    with client.start_session() as session:
+        with session.start_transaction():
+            protocol.propose(proposal, session=session)
+            protocol.accept(
+                proposal_reference=proposal.proposal_reference,
+                acceptance=acceptance, session=session, evaluated_at=now,
+            )
+
+    # A duplicate-key replay aborts its transaction; verify it in isolation.
+    with client.start_session() as session:
+        with session.start_transaction():
             with pytest.raises(OwnershipTransferProtocolError, match="SUCCESSOR_ACCEPTANCE_REPLAY"):
-                protocol.accept(proposal_reference=proposal.proposal_reference, acceptance=acceptance, session=session, evaluated_at=now)
+                protocol.accept(
+                    proposal_reference=proposal.proposal_reference,
+                    acceptance=acceptance, session=session, evaluated_at=now,
+                )
+            session.abort_transaction()
+
+    # Unauthorized finalization is denied without invoking the lifecycle command.
+    with client.start_session() as session:
+        with session.start_transaction():
             with pytest.raises(OwnershipTransferProtocolError, match="CURRENT_OWNER_FINALIZATION_REQUIRED"):
                 protocol.finalize(
                     proposal_reference=proposal.proposal_reference,
                     actor_principal_id="attacker", command_id="attacker",
                     session=session, evaluated_at=now,
                 )
-            assert lifecycle.calls == 0
-            session.abort_transaction()
-    assert db["tenant_ownership_transfer_proposals"].count_documents({}) == 0
-    assert db["tenant_ownership_transfer_acceptances"].count_documents({}) == 0
+    assert lifecycle.calls == 0
+
+    # Only the current owner can finalize, atomically with lifecycle execution.
     with client.start_session() as session:
         with session.start_transaction():
-            protocol.propose(proposal, session=session)
-            protocol.accept(proposal_reference=proposal.proposal_reference, acceptance=acceptance, session=session, evaluated_at=now)
             protocol.finalize(
                 proposal_reference=proposal.proposal_reference,
                 actor_principal_id="owner", command_id="finalize-once",
                 session=session, evaluated_at=now,
             )
     assert lifecycle.calls == 1
-    assert db["tenant_ownership_transfer_proposals"].find_one({"proposal_reference": proposal.proposal_reference})["status"] == "FINALIZED"
+    stored = db["tenant_ownership_transfer_proposals"].find_one(
+        {"proposal_reference": proposal.proposal_reference}
+    )
+    assert stored is not None and stored["status"] == "FINALIZED"
+    assert db["tenant_ownership_transfer_acceptances"].count_documents(
+        {"proposal_reference": proposal.proposal_reference}
+    ) == 1
