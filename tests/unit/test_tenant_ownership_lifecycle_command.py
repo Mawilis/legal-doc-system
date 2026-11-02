@@ -101,7 +101,7 @@ def test_command_rejects_missing_transaction_before_registry_read() -> None:
     with pytest.raises(TenantOwnershipLifecycleCommandError) as raised:
         command.execute(
             request=_request(TenantOwnershipOperation.TENANT_GENESIS),
-            evidence=object(),
+            evidence=object(),  # type: ignore[arg-type]
             actor_principal_id="provisioner-1",
             command_id="cmd-1",
             expected_revision=0,
