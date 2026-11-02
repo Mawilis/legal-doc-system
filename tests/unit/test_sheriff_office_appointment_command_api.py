@@ -128,11 +128,9 @@ def test_command_derives_tenant_verifier_and_indexes_before_transaction(
         decision=SimpleNamespace(business_role="tenant_admin"),
     )
     response = asyncio.run(
-        asyncio.run(
-            subject.record_sheriff_office_appointment_command(
-                _command(),
-                context,  # type: ignore[arg-type]
-            )
+        subject.record_sheriff_office_appointment_command(
+            _command(),
+            context,  # type: ignore[arg-type]
         )
     )
 
@@ -167,9 +165,11 @@ def test_non_admin_business_role_cannot_call_appointment_verifier(
     )
 
     with pytest.raises(HTTPException) as error:
-        subject.record_sheriff_office_appointment_command(
-            _command(),
-            context,  # type: ignore[arg-type]
+        asyncio.run(
+            subject.record_sheriff_office_appointment_command(
+                _command(),
+                context,  # type: ignore[arg-type]
+            )
         )
 
     assert error.value.status_code == 403
