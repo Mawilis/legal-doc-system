@@ -28,6 +28,7 @@ from tools.eos.auth.tenant_authorization import (
 )
 from tools.eos.legal_operations.domain.legal_operations_lifecycle import (
     District,
+    ServiceAttempt,
     SheriffOffice,
 )
 from tools.eos.legal_operations.domain.sheriff_office_appointment_authority import (
@@ -144,11 +145,13 @@ def configure(
         allocation_evidence_reference="allocation-1",
         sheriff_office_id=receipt_office_id,
     )
-    attempt = SimpleNamespace(
+    attempt = ServiceAttempt(
+        tenant_id=TENANT,
         attempt_id=ATTEMPT,
         document_id="document-1",
         instruction_id="instruction-1",
         deputy_id="deputy-1",
+        allocated_at=NOW - timedelta(minutes=10),
         allocation_evidence_reference="allocation-1",
     )
     office = SheriffOffice(
@@ -248,7 +251,7 @@ def test_multi_office_tenant_reads_only_the_exact_current_appointment_office(
         "appointment-cpt",
         district_id="district-western-cape",
         jurisdiction="ZA-WC-CPT",
-        seed="e",
+        seed="5",
     )
     accesses = configure(monkeypatch, appointments=(first, second))
 
@@ -279,7 +282,7 @@ def test_sheriff_cannot_read_an_office_without_a_current_appointment(
         "appointment-cpt",
         district_id="district-western-cape",
         jurisdiction="ZA-WC-CPT",
-        seed="e",
+        seed="5",
     )
     accesses = configure(monkeypatch, appointments=(other_office,))
 
@@ -300,7 +303,7 @@ def test_sheriff_location_read_rejects_wrong_certificate_jurisdiction(
         OFFICE,
         "appointment-wrong-jurisdiction",
         jurisdiction="ZA-WC-CPT",
-        seed="e",
+        seed="5",
     )
     accesses = configure(monkeypatch, appointments=(wrong_jurisdiction,))
 
