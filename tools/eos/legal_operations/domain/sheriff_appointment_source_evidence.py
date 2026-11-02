@@ -219,6 +219,13 @@ class SheriffAppointmentSourceEvidence:
             "verified_by_principal_id",
         ):
             object.__setattr__(self, name, _identifier(name, getattr(self, name)))
+        object.__setattr__(
+            self,
+            "instrument_fingerprint",
+            _digest("instrument_fingerprint", self.instrument_fingerprint),
+        )
+        if self.verified_by_principal_id == self.principal_id:
+            _fail("SHERIFF_SOURCE_SELF_ATTESTATION_FORBIDDEN")
 
         if type(self.revision) is not int or self.revision < 1:
             _fail("SHERIFF_SOURCE_REVISION_INVALID")
@@ -236,6 +243,16 @@ class SheriffAppointmentSourceEvidence:
 
         if basis not in _CAPACITY_BASES[capacity]:
             _fail("SHERIFF_SOURCE_CAPACITY_BASIS_MISMATCH")
+        required_method = {
+            SheriffSourceObservationState.HUMAN_OBSERVED_PUBLIC_RECORD:
+                SheriffSourceVerificationMethod.PUBLIC_WEB_OBSERVATION,
+            SheriffSourceObservationState.ATTESTED_DOCUMENT_REVIEW:
+                SheriffSourceVerificationMethod.ATTESTED_DOCUMENT_REVIEW,
+            SheriffSourceObservationState.AUTHENTICATED_RESPONSE:
+                SheriffSourceVerificationMethod.AUTHENTICATED_REGULATOR_RESPONSE,
+        }.get(observation)
+        if required_method is not None and method is not required_method:
+            _fail("SHERIFF_SOURCE_OBSERVATION_METHOD_MISMATCH")
 
         expected_issuer = {
             SheriffAppointmentCapacity.SHERIFF: SheriffAppointmentIssuerAuthority.MINISTER,
