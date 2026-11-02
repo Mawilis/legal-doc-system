@@ -914,3 +914,33 @@ def test_legal_evidence_write_eligibility_is_partner_only() -> None:
 # FAIL-CLOSED POSTURE: unknown values deny
 # FINANCIAL EXECUTION AUTHORITY: Kennel EOS remains exclusive.
 # END OF WILSY OS SOVEREIGN ARTIFACT
+
+def test_legal_firm_owner_admin_and_entitlement_boundaries_are_explicit() -> None:
+    """Ownership is not a universal admin, professional or financial superuser."""
+    assert tenant_role_operation_eligibility("tenant_owner", "lifecycle_archive") == ELIGIBLE
+    assert tenant_role_operation_eligibility("tenant_owner", "platform_billing_release") == ELIGIBLE
+    assert tenant_role_operation_eligibility("tenant_owner", "role_grant") == DENY
+    assert tenant_role_operation_eligibility("tenant_owner", "role_revoke") == DENY
+
+    assert tenant_role_operation_eligibility("tenant_admin", "role_grant") == ELIGIBLE
+    assert tenant_role_operation_eligibility("tenant_admin", "role_revoke") == ELIGIBLE
+    assert tenant_role_operation_eligibility("tenant_admin", "lifecycle_archive") == DENY
+    assert tenant_role_operation_eligibility("tenant_manager", "role_grant") == DENY
+    assert tenant_role_operation_eligibility("tenant_auditor", "role_grant") == DENY
+
+    for role in ("tenant_owner", "tenant_admin", "tenant_manager"):
+        assert tenant_role_operation_eligibility(
+            role, "tenant_product_entitlement_issue"
+        ) == ELIGIBLE
+    assert tenant_role_operation_eligibility(
+        "tenant_auditor", "tenant_product_entitlement_issue"
+    ) == DENY
+
+    assert all(
+        tenant_role_operation_eligibility(role, "financial_execution") == DENY
+        for role in TENANT_ROLES
+    )
+    assert all(
+        tenant_role_operation_eligibility(role, "cross_tenant") == DENY
+        for role in TENANT_ROLES
+    )
