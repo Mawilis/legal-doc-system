@@ -1,5 +1,5 @@
 """TITLE: WILSY OS Sheriff Appointment Evidence Registry
-VERSION: v1.0.0-SHERIFF-APPOINTMENT-EVIDENCE-REGISTRY
+VERSION: v1.0.1-SHERIFF-APPOINTMENT-EVIDENCE-REGISTRY
 AUTHORITY: Immutable tenant-scoped appointment source-observation persistence only.
 EPITOME: Persist Sheriff appointment source evidence as append-only, caller-
     transaction-owned revision history with exact replay, deterministic
@@ -10,6 +10,9 @@ COLLABORATION / OWNERSHIP: Legal Operations owns documentary persistence;
     external statutory authorities; identity, verification and IAM are separate.
 CERTIFICATION / UPDATE DATE: 2026-11-02
 CHANGELOG:
+    2026-11-02 v1.0.1-SHERIFF-APPOINTMENT-EVIDENCE-REGISTRY
+    Corrects the exact identifier regular-expression terminator so valid
+    tenant and evidence identifiers pass the intended fail-closed validation.
     2026-11-02 v1.0.0-SHERIFF-APPOINTMENT-EVIDENCE-REGISTRY
     Introduces append-only source-evidence history, caller-owned active
     transaction enforcement, exact replay, predecessor lineage and fail-closed
@@ -45,7 +48,7 @@ from tools.eos.legal_operations.domain.sheriff_appointment_source_evidence impor
 )
 
 
-VERSION: Final[str] = "v1.0.0-SHERIFF-APPOINTMENT-EVIDENCE-REGISTRY"
+VERSION: Final[str] = "v1.0.1-SHERIFF-APPOINTMENT-EVIDENCE-REGISTRY"
 SCHEMA: Final[str] = "WILSY-SHERIFF-APPOINTMENT-EVIDENCE-REGISTRY/V1"
 COLLECTION_NAME: Final[str] = "sheriff_appointment_source_evidence"
 MAX_HISTORY: Final[int] = 512
@@ -693,7 +696,7 @@ __all__ = [
 # WILSY OS SOVEREIGN ARTIFACT SEAL
 # ==============================================================================
 # ARTIFACT: tools/eos/legal_operations/registry/sheriff_appointment_source_evidence_registry.py
-# VERSION: v1.0.0-SHERIFF-APPOINTMENT-EVIDENCE-REGISTRY
+# VERSION: v1.0.1-SHERIFF-APPOINTMENT-EVIDENCE-REGISTRY
 # AUTHORITY BOUNDARY: immutable source-observation persistence only; no authentication, IAM, office access or execution
 # TENANT POSTURE: exact tenant-first queries, indexes, replay and history
 # FAIL-CLOSED POSTURE: absent transaction, divergent replay, fork, corruption, race and persistence outage reject
