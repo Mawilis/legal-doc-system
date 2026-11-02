@@ -13,6 +13,7 @@ from dataclasses import dataclass
 from datetime import datetime, timedelta, timezone
 from hashlib import sha256
 import re
+import json
 from typing import Any, Final, Iterable
 
 from cryptography.exceptions import InvalidSignature
@@ -230,7 +231,7 @@ def validate_recovery_decision(
         _token(name, getattr(lookup, name))
     for name in ("recovery_case_fingerprint",):
         _fingerprint(name, getattr(lookup, name))
-    for name in ("authority_id", "trust_root_reference", "decision_reference", "appeal_status"):
+    for name in ("authority_id", "trust_root_reference", "decision_reference", "appeal_status", "revocation_reference"):
         _token(name, getattr(receipt, name))
     for name in ("trust_root_fingerprint", "decision_fingerprint", "recovery_case_fingerprint",
                  "quorum_fingerprint", "conflict_check_fingerprint", "notice_and_objection_fingerprint"):
@@ -261,6 +262,37 @@ def _active_transaction(session: Any) -> None:
         raise OwnershipProviderEvidenceError("ACTIVE_TRANSACTION_REQUIRED")
 
 
+def recovery_decision_signing_payload(
+    lookup: RecoveryDecisionLookup, receipt: RecoveryDecisionReceipt
+) -> bytes:
+    """Canonical bytes bind every decision claim to the exact request scope."""
+    if type(lookup) is not RecoveryDecisionLookup or type(receipt) is not RecoveryDecisionReceipt:
+        raise OwnershipProviderEvidenceError("RECOVERY_DECISION_TYPES_INVALID")
+    payload = {
+        "tenant_id": lookup.tenant_id,
+        "legal_entity_reference": lookup.legal_entity_reference,
+        "recovery_case_reference": lookup.recovery_case_reference,
+        "recovery_case_fingerprint": lookup.recovery_case_fingerprint,
+        "successor_principal_id": lookup.successor_principal_id,
+        "authority_id": receipt.authority_id,
+        "trust_root_reference": receipt.trust_root_reference,
+        "trust_root_fingerprint": receipt.trust_root_fingerprint,
+        "decision_reference": receipt.decision_reference,
+        "decision_fingerprint": receipt.decision_fingerprint,
+        "recovery_case_reference_receipt": receipt.recovery_case_reference,
+        "recovery_case_fingerprint_receipt": receipt.recovery_case_fingerprint,
+        "successor_principal_id_receipt": receipt.successor_principal_id,
+        "quorum_fingerprint": receipt.quorum_fingerprint,
+        "conflict_check_fingerprint": receipt.conflict_check_fingerprint,
+        "notice_and_objection_fingerprint": receipt.notice_and_objection_fingerprint,
+        "appeal_status": receipt.appeal_status,
+        "issued_at": _instant("issued_at", receipt.issued_at).isoformat(),
+        "valid_until": _instant("valid_until", receipt.valid_until).isoformat(),
+        "revocation_reference": receipt.revocation_reference,
+    }
+    return json.dumps(payload, sort_keys=True, separators=(",", ":"), ensure_ascii=True).encode("ascii")
+
+
 class RecoveryDecisionReplayRegistry:
     """Atomically consume one decision once, inside the caller's Mongo transaction."""
 
@@ -286,9 +318,18 @@ class RecoveryDecisionReplayRegistry:
         *,
         session: Any,
         evaluated_at: datetime,
+        signature_b64: str,
+        verification_key: VerificationKey,
     ) -> None:
         _active_transaction(session)
         validate_recovery_decision(lookup, receipt, evaluated_at=evaluated_at)
+        signed_payload = recovery_decision_signing_payload(lookup, receipt)
+        verify_provider_signature(
+            message=signed_payload, signature_b64=signature_b64,
+            key=verification_key, evaluated_at=evaluated_at,
+        )
+        if verification_key.key_reference != receipt.trust_root_reference:
+            raise OwnershipProviderEvidenceError("RECOVERY_SIGNING_KEY_TRUST_ROOT_MISMATCH")
         try:
             self._events.insert_one({
                 "tenant_id": lookup.tenant_id,
@@ -301,6 +342,9 @@ class RecoveryDecisionReplayRegistry:
                 "authority_id": receipt.authority_id,
                 "trust_root_reference": receipt.trust_root_reference,
                 "trust_root_fingerprint": receipt.trust_root_fingerprint,
+                "signing_key_reference": verification_key.key_reference,
+                "signing_key_revision": verification_key.key_revision,
+                "signature_fingerprint": sha256(signature_b64.encode("ascii")).hexdigest(),
                 "issued_at": _instant("issued_at", receipt.issued_at),
                 "consumed_at": _instant("evaluated_at", evaluated_at),
             }, session=session)
@@ -313,6 +357,7 @@ class RecoveryDecisionReplayRegistry:
 __all__ = [
     "OwnershipProviderEvidenceError", "RECOVERY_REPLAYS", "RegistryFreshnessPolicy",
     "RegistryLineageAssessment", "RecoveryDecisionReplayRegistry", "VerificationKey",
+    "recovery_decision_signing_payload",
     "VERSION", "assess_registry_lineage", "validate_recovery_decision",
     "verify_provider_signature",
 ]
