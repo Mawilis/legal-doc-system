@@ -10,12 +10,14 @@ on:
       - "tools/eos/legal_operations/domain/sheriff_board_decision_evidence.py"
       - "tools/eos/legal_operations/domain/sheriff_fidelity_fund_certificate_evidence.py"
       - "tools/eos/legal_operations/domain/sheriff_professional_indemnity_insurance_evidence.py"
+      - "tools/eos/legal_operations/domain/sheriff_natural_person_principal_binding.py"
       - "tests/unit/test_sheriff_appointment_source_evidence.py"
       - "tests/unit/test_sheriff_ministerial_appointment_verification.py"
       - "tests/unit/test_sheriff_area_allocation_evidence.py"
       - "tests/unit/test_sheriff_board_decision_evidence.py"
       - "tests/unit/test_sheriff_fidelity_fund_certificate_evidence.py"
       - "tests/unit/test_sheriff_professional_indemnity_insurance_evidence.py"
+      - "tests/unit/test_sheriff_natural_person_principal_binding.py"
       - "tools/eos/legal_operations/registry/sheriff_appointment_source_evidence_registry.py"
       - "tests/unit/test_sheriff_appointment_source_evidence_registry.py"
       - "tests/integration/test_sheriff_appointment_source_evidence_registry_real_mongo.py"
@@ -32,11 +34,15 @@ on:
       - "tools/eos/legal_operations/domain/sheriff_area_allocation_evidence.py"
       - "tools/eos/legal_operations/domain/sheriff_board_decision_evidence.py"
       - "tools/eos/legal_operations/domain/sheriff_fidelity_fund_certificate_evidence.py"
+      - "tools/eos/legal_operations/domain/sheriff_professional_indemnity_insurance_evidence.py"
+      - "tools/eos/legal_operations/domain/sheriff_natural_person_principal_binding.py"
       - "tests/unit/test_sheriff_appointment_source_evidence.py"
       - "tests/unit/test_sheriff_ministerial_appointment_verification.py"
       - "tests/unit/test_sheriff_area_allocation_evidence.py"
       - "tests/unit/test_sheriff_board_decision_evidence.py"
       - "tests/unit/test_sheriff_fidelity_fund_certificate_evidence.py"
+      - "tests/unit/test_sheriff_professional_indemnity_insurance_evidence.py"
+      - "tests/unit/test_sheriff_natural_person_principal_binding.py"
       - "tools/eos/legal_operations/registry/sheriff_appointment_source_evidence_registry.py"
       - "tests/unit/test_sheriff_appointment_source_evidence_registry.py"
       - "tests/integration/test_sheriff_appointment_source_evidence_registry_real_mongo.py"
@@ -131,6 +137,7 @@ jobs:
             tests/unit/test_sheriff_board_decision_evidence.py
             tests/unit/test_sheriff_fidelity_fund_certificate_evidence.py
             tests/unit/test_sheriff_professional_indemnity_insurance_evidence.py
+            tests/unit/test_sheriff_natural_person_principal_binding.py
           )
           if [[ -f tools/eos/legal_operations/domain/sheriff_ministerial_appointment_verification.py ]]; then
             files+=(tools/eos/legal_operations/domain/sheriff_ministerial_appointment_verification.py)
@@ -146,6 +153,9 @@ jobs:
           fi
           if [[ -f tools/eos/legal_operations/domain/sheriff_professional_indemnity_insurance_evidence.py ]]; then
             files+=(tools/eos/legal_operations/domain/sheriff_professional_indemnity_insurance_evidence.py)
+          fi
+          if [[ -f tools/eos/legal_operations/domain/sheriff_natural_person_principal_binding.py ]]; then
+            files+=(tools/eos/legal_operations/domain/sheriff_natural_person_principal_binding.py)
           fi
           if [[ -f tools/eos/legal_operations/registry/sheriff_appointment_source_evidence_registry.py ]]; then
             files+=(
@@ -169,6 +179,8 @@ jobs:
             tests/unit/test_sheriff_area_allocation_evidence.py
             tests/unit/test_sheriff_board_decision_evidence.py
             tests/unit/test_sheriff_fidelity_fund_certificate_evidence.py
+            tests/unit/test_sheriff_professional_indemnity_insurance_evidence.py
+            tests/unit/test_sheriff_natural_person_principal_binding.py
           )
           if [[ -f tools/eos/legal_operations/domain/sheriff_ministerial_appointment_verification.py ]]; then
             files+=(tools/eos/legal_operations/domain/sheriff_ministerial_appointment_verification.py)
@@ -181,6 +193,12 @@ jobs:
           fi
           if [[ -f tools/eos/legal_operations/domain/sheriff_fidelity_fund_certificate_evidence.py ]]; then
             files+=(tools/eos/legal_operations/domain/sheriff_fidelity_fund_certificate_evidence.py)
+          fi
+          if [[ -f tools/eos/legal_operations/domain/sheriff_professional_indemnity_insurance_evidence.py ]]; then
+            files+=(tools/eos/legal_operations/domain/sheriff_professional_indemnity_insurance_evidence.py)
+          fi
+          if [[ -f tools/eos/legal_operations/domain/sheriff_natural_person_principal_binding.py ]]; then
+            files+=(tools/eos/legal_operations/domain/sheriff_natural_person_principal_binding.py)
           fi
           if [[ -f tools/eos/legal_operations/registry/sheriff_appointment_source_evidence_registry.py ]]; then
             files+=(
@@ -212,6 +230,9 @@ jobs:
           fi
           if [[ -f tests/unit/test_sheriff_professional_indemnity_insurance_evidence.py ]]; then
             tests+=(tests/unit/test_sheriff_professional_indemnity_insurance_evidence.py)
+          fi
+          if [[ -f tests/unit/test_sheriff_natural_person_principal_binding.py ]]; then
+            tests+=(tests/unit/test_sheriff_natural_person_principal_binding.py)
           fi
           if [[ -f tests/unit/test_sheriff_appointment_source_evidence_registry.py ]]; then
             tests+=(tests/unit/test_sheriff_appointment_source_evidence_registry.py)
