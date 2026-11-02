@@ -40,6 +40,7 @@ from datetime import datetime, timedelta, timezone
 import hashlib
 import json
 import re
+from collections.abc import Mapping
 from typing import Any, Final, NoReturn, cast
 
 from cryptography.exceptions import InvalidSignature
