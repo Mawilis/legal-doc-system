@@ -140,16 +140,6 @@ row selection is not acceptable sovereign truth.
 assignment/allocation, but no production provisioning authority or command path
 was found. Test seeding is not runtime architecture.
 
-### G10 — Sheriff appointment and office authority
-A `tenant_sheriff` business role and `SHERIFF` authorization assignment do not
-establish statutory appointment or authority over every office in a tenant. The
-new backend gate records immutable, independently verified appointment evidence
-and exact office scope; derives District and certificate jurisdiction from P1;
-requires current Fidelity Fund Certificate and professional indemnity evidence;
-and denies location-evidence reads outside the principal's current appointment.
-The API and client transport are certified on the feature branch. The tenant-admin
-evidence-entry UI, source-document ingestion/authenticity controls, and external
-issuer verification remain outstanding; this is not yet a complete release gate.
 
 ### G2 — Intake registration
 No production orchestrator/command was found that constructs and persists the
@@ -202,6 +192,17 @@ Existing unit, HTTP and real-Mongo certificates cover many backend slices, but
 the whole path from authenticated intake -> receipt -> allocation -> attempt ->
 field evidence -> outcome -> return -> billing eligibility -> invoice projection
 -> Kennel handoff is not yet represented as one closed, zero-skip campaign.
+
+### G10 — Sheriff appointment and office authority
+A `tenant_sheriff` business role and `SHERIFF` authorization assignment do not
+establish statutory appointment or authority over every office in a tenant. The
+new backend gate records immutable, independently verified appointment evidence
+and exact office scope; derives District and certificate jurisdiction from P1;
+requires current Fidelity Fund Certificate and professional indemnity evidence;
+and denies location-evidence reads outside the principal's current appointment.
+The API and client transport are certified on the feature branch. The tenant-admin
+evidence-entry UI, source-document ingestion/authenticity controls, and external
+issuer verification remain outstanding; this is not yet a complete release gate.
 
 ---
 
@@ -359,7 +360,7 @@ one certified delivery.
 # SOVEREIGN ARTIFACT SEAL
 
 ARTIFACT: wilsy-legal-operations-capability-matrix.md
-VERSION: v1.1.0-LEGAL-OPERATIONS-COMPLETION-MATRIX
+VERSION: v1.2.0-L8-SHERIFF-APPOINTMENT-AUTHORITY-GATE
 AUTHORITY BOUNDARY: architecture discovery/map only; no runtime authority
 TENANT POSTURE: all target capabilities remain exact-tenant scoped
 FAIL-CLOSED POSTURE: unknown ownership, ambiguous current truth and unexecuted
