@@ -50,13 +50,13 @@ def test_actual_practice_route_denies_before_lifecycle_reads():
         if isinstance(n, ast.FunctionDef) and n.name == "run"
     )
 
-    product_calls = [
+    commercial_calls = [
         n for n in ast.walk(run)
         if isinstance(n, ast.Call)
         and isinstance(n.func, ast.Name)
-        and n.func.id == "resolve_legal_product_availability"
+        and n.func.id == "resolve_legal_commercial_context"
     ]
-    assert len(product_calls) == 1
+    assert len(commercial_calls) == 1
 
     containment_raises = [
         n for n in ast.walk(run)
@@ -73,7 +73,7 @@ def test_actual_practice_route_denies_before_lifecycle_reads():
         )
     ]
     assert len(containment_raises) == 1
-    assert product_calls[0].lineno < containment_raises[0].lineno
+    assert commercial_calls[0].lineno < containment_raises[0].lineno
 
     # This route must not collect lifecycle rows and only then deny disclosure.
     assert not any(

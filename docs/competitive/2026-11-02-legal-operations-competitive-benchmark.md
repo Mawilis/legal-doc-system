@@ -1,7 +1,7 @@
 # WILSY Legal Operations — competitive benchmark and product strategy
 
-**Research date:** 2 November 2026  
-**Market focus:** South African sheriff/process-service workflows, with international process-serving platforms as capability benchmarks.  
+**Research date:** 2 November 2026
+**Market focus:** South African sheriff/process-service workflows, with international process-serving platforms as capability benchmarks.
 **Status:** Public-source desk research; vendor claims are not independently audited.
 
 ## Executive position
@@ -111,5 +111,5 @@ This document is product research, not legal advice or a finding that WILSY or a
 **Do not copy the whole competitor surface at once.** Win the high-trust legal-operational core first: canonical workflow, verified authority, evidence integrity, privacy and return-of-service correctness. Then close mobile/offline parity and distribution. This gives WILSY a credible route to compete with Prosource locally and with ServeManager/Proof on field operations—without making unsupported claims about legal validity or competitor weakness.
 
 ---
-**Document owner:** WILSY Legal Operations Product & Engineering  
+**Document owner:** WILSY Legal Operations Product & Engineering
 **Version:** v1.0.0 — 2026-11-02

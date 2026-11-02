@@ -1,7 +1,7 @@
 """Direct ASGI certificate for deputy personal active-work reads.
 
 TITLE: WILSY OS Deputy Personal Work and Field Capability HTTP Certificate
-VERSION: v1.3.0-L8-6E-DEPUTY-SERVING-ASSIGNMENT-HTTP-CERT
+VERSION: v1.4.0-L8-6E-ISSUE-300-COMBINED-ROUTER-HTTP-CERT
 AUTHORITY: Direct HTTP certification of L8-6C/L8-6D deputy-only read routes.
 EPITOME: Preserve personal active-work HTTP proof and certify the L8-6D field
          capability route derives tenant/principal scope from authenticated
@@ -12,7 +12,8 @@ COLLABORATION / OWNERSHIP: HTTP composition certificate only; IAM owns caller
                             admission, L8-6B owns identity binding, L8-6C owns
                             personal active work, and L8-6D owns field-capability
                             composition. Command IAM remains independently enforced.
-CERTIFICATION / UPDATE DATE: 2026-10-30
+CERTIFICATION / UPDATE DATE: 2026-11-02
+CHANGELOG: 2026-11-02 v1.4.0-L8-6E-ISSUE-300-COMBINED-ROUTER-HTTP-CERT updates the exact router-version assertion after the semantic merge and retains snapshot transaction forwarding plus pointer/receipt-backed Deputy, office, allocation-time and attempt-state assertions.
 CHANGELOG: 2026-10-30 v1.3.0-L8-6E-DEPUTY-SERVING-ASSIGNMENT-HTTP-CERT certifies snapshot transaction forwarding and exact pointer/receipt-backed Deputy, office, allocation-time and attempt-state projection.
            2026-10-30 v1.2.0-L8-6D-G68-ROUTER-ALIGNMENT-HTTP-CERT
            aligns the exact router-version assertion with the current
@@ -67,7 +68,7 @@ from tools.eos.legal_operations.domain.legal_operations_lifecycle import (
 )
 
 
-VERSION = "v1.3.0-L8-6E-DEPUTY-SERVING-ASSIGNMENT-HTTP-CERT"
+VERSION = "v1.4.0-L8-6E-ISSUE-300-COMBINED-ROUTER-HTTP-CERT"
 TENANT = "tenant-deputy"
 PRINCIPAL = "principal-deputy"
 DEPUTY = "deputy-1"
@@ -533,13 +534,13 @@ def test_route_permission_and_router_version_are_exact() -> None:
     )
     assert legal_router._DEPUTY_QUEUE_READ.operation == "legal_deputy_queue_read"
     assert legal_router.VERSION == (
-        "v1.18.0-L8-6E-DEPUTY-CURRENT-SERVING-ASSIGNMENT"
+        "v1.19.0-L8-6E-D22B5-SUBSCRIPTION-ADMISSION"
     )
-    assert VERSION == "v1.3.0-L8-6E-DEPUTY-SERVING-ASSIGNMENT-HTTP-CERT"
+    assert VERSION == "v1.4.0-L8-6E-ISSUE-300-COMBINED-ROUTER-HTTP-CERT"
 
 
 # ARTIFACT: test_deputy_personal_active_work_http.py
-# VERSION: v1.3.0-L8-6E-DEPUTY-SERVING-ASSIGNMENT-HTTP-CERT
+# VERSION: v1.4.0-L8-6E-ISSUE-300-COMBINED-ROUTER-HTTP-CERT
 # AUTHORITY BOUNDARY: direct deputy-only personal active-work and field-capability HTTP certificate only
 # TENANT POSTURE: tenant/principal are server-derived from authorized identity context
 # FAIL-CLOSED POSTURE: missing IAM/binding/locator/capability/persistence denies without command or queue fallback
