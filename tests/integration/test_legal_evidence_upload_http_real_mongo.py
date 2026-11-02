@@ -88,7 +88,7 @@ def certificate() -> Iterator[tuple[Any, TestClient]]:
     plan_module.plans_collection = database.get_collection("plans")
     subscription_module.subscriptions_collection = database.get_collection("subscriptions")
     try:
-        PlanRegistry._ensure_indexes()
+        PlanRegistry.provision_indexes()
         plan = PlanRegistry.create({
             "name": "Legal Evidence Certificate", "price": 1.0, "currency": "ZAR",
             "billingFrequency": "monthly", "planType": "PROFESSIONAL",

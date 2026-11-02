@@ -139,7 +139,7 @@ def mongo_context() -> Iterator[_MongoContext]:
     subscription_registry_module.subscriptions_collection = subscriptions
 
     try:
-        PlanRegistry._ensure_indexes()
+        PlanRegistry.provision_indexes()
         yield _MongoContext(
             client=client,
             plans=plans,

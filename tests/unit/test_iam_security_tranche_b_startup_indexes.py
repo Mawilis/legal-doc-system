@@ -64,7 +64,7 @@ def test_startup_bootstrap_creates_no_security_or_business_authority() -> None:
 def test_server_version_is_tranche_b_bootstrap_version() -> None:
     assert (
         server.VERSION
-        == "v1.33.0-P12C-R4N-PRACTITIONER-BINDING-LIFECYCLE"
+        == "v1.34.0-L10A2R-C4D7-RECONCILIATION-RUNTIME-BOOTSTRAP"
     )
 
 

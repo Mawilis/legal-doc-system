@@ -1,7 +1,7 @@
 """WILSY OS positive tenant-product entitlement composition authority.
 
 TITLE: Tenant Product Entitlement Composer
-VERSION: v1.0.0-D22B3-TENANT-PRODUCT-ENTITLEMENT-COMPOSER
+VERSION: v1.1.0-D22B3-SUBSCRIPTION-TERM-ENFORCEMENT
 AUTHORITY: Wilsy OS Core Governance
 EPITOME: Derive and persist one Legal Operations entitlement lineage from one
          exact canonical ACTIVE subscription carrying sealed legal.core truth.
@@ -11,7 +11,9 @@ COLLABORATION / OWNERSHIP: SubscriptionRegistry owns subscription truth; D22A
                             owns mapping metadata; D22B1 owns lifecycle; D22B2
                             owns persistence. This composer correlates them only.
 CERTIFICATION / UPDATE DATE: 2026-10-09
-CHANGELOG: v1.0.0-D22B3-TENANT-PRODUCT-ENTITLEMENT-COMPOSER establishes stable
+CHANGELOG: v1.1.0-D22B3-SUBSCRIPTION-TERM-ENFORCEMENT applies the shared
+           Founder-perpetual versus ordinary finite billing-period decision
+           before entitlement reads or writes. v1.0.0-D22B3 establishes stable
            tenant/product lineage IDs, server-derived source/activation evidence,
            exact ACTIVE subscription cardinality, positive Legal composition,
            pending/active replay and terminal-lifecycle rejection.
@@ -43,6 +45,7 @@ import re
 from typing import Any, Final, NoReturn
 
 from tools.eos.saas.billing.subscription_registry import SubscriptionRegistry
+from tools.eos.saas.billing.subscription_term_policy import evaluate_subscription_term
 from tools.eos.saas.domain.subscription import (
     SubscriptionEntity,
     SubscriptionStatus,
@@ -68,7 +71,7 @@ from tools.eos.saas.entitlement.tenant_product_entitlement_registry import (
 )
 
 
-VERSION: Final[str] = "v1.0.0-D22B3-TENANT-PRODUCT-ENTITLEMENT-COMPOSER"
+VERSION: Final[str] = "v1.1.0-D22B3-SUBSCRIPTION-TERM-ENFORCEMENT"
 ENTITLEMENT_ID_NAMESPACE: Final[str] = "WILSY-TENANT-PRODUCT-ENTITLEMENT-ID/V1"
 SOURCE_EVIDENCE_SCHEMA: Final[str] = "WILSY-TENANT-PRODUCT-ENTITLEMENT-SOURCE/V1"
 ACTIVATION_EVIDENCE_SCHEMA: Final[str] = (
@@ -239,6 +242,7 @@ def _occurred_at(value: object) -> datetime:
 
 def _subscription(
     tenant_id: str,
+    occurred_at: datetime,
     collection: Any,
     session: Any,
     registry: type[SubscriptionRegistry],
@@ -283,6 +287,12 @@ def _subscription(
         _raise(
             TenantProductEntitlementComposerCommercialError,
             "D22B3_SUBSCRIPTION_PROOF_INVALID",
+        )
+    term = evaluate_subscription_term(item, evaluated_at=occurred_at)
+    if not term.eligible:
+        _raise(
+            TenantProductEntitlementComposerCommercialError,
+            "D22B3_SUBSCRIPTION_TERM_INELIGIBLE",
         )
     return item
 
@@ -399,6 +409,7 @@ def compose_tenant_product_entitlement(
     mapping = get_product_commercial_feature(product)
     subscription = _subscription(
         tenant,
+        when,
         subscription_collection,
         tx,
         subscription_registry,
@@ -586,7 +597,7 @@ __all__ = [
 ]
 
 # ARTIFACT: tenant_product_entitlement_composer.py
-# VERSION: v1.0.0-D22B3-TENANT-PRODUCT-ENTITLEMENT-COMPOSER
+# VERSION: v1.1.0-D22B3-SUBSCRIPTION-TERM-ENFORCEMENT
 # AUTHORITY BOUNDARY: positive Legal Operations subscription-to-entitlement composition only; no commercial mutation, reconciliation, IAM, route or classification authority
 # TENANT POSTURE: exact tenant-scoped subscription read and entitlement lineage inside one caller-owned transaction
 # FAIL-CLOSED POSTURE: invalid/ambiguous commercial proof, divergent evidence, terminal lifecycle, stale CAS and persistence failures reject

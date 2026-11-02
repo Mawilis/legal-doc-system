@@ -148,7 +148,7 @@ def test_index_bootstrap_failure_propagates_fail_closed(
 
 def test_server_version_is_exact_l8_6b_bootstrap_release() -> None:
     """Certificate remains bound to the intended production startup release."""
-    assert server.VERSION == "v1.33.0-P12C-R4N-PRACTITIONER-BINDING-LIFECYCLE"
+    assert server.VERSION == "v1.34.0-L10A2R-C4D7-RECONCILIATION-RUNTIME-BOOTSTRAP"
     assert VERSION == "v1.0.0-L8-6B-DEPUTY-BINDING-INDEX-BOOTSTRAP-CERT"
 
 

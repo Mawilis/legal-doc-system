@@ -1,14 +1,14 @@
 """D15 direct HTTP certificate for the Legal Practice workspace.
 
 TITLE: WILSY OS First-Class Legal Matter Workspace HTTP Certificate
-VERSION: v1.4.0-ISSUE-300-D22B5-SUBSCRIPTION-CERT
+VERSION: v1.5.0-ISSUE-300-COMBINED-ROUTER-CERT
 AUTHORITY: Direct HTTP certificate for the D15 read-only practice projection.
 EPITOME: Prove conjunctive same-principal/tenant/role/product admission, exact current
          CaseMatter/lifecycle field whitelists, deterministic summary counts, opaque
          evidence locators, bounded role denial and no financial truth.
 ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/tests/integration/test_legal_operations_practice_workspace_http.py
 COLLABORATION / OWNERSHIP: Containment certificate for tools/eos/api/legal_operations_router.py
-                            v1.18.0-ISSUE-300-D22B5-SUBSCRIPTION-ADMISSION.
+                            v1.19.0-L8-6E-D22B5-SUBSCRIPTION-ADMISSION.
 CERTIFICATION / UPDATE DATE: 2026-11-02
 COMPLIANCE: POPIA section 19; GDPR Article 32; SOC 2 CC7.2; ISO 27001.
 SECURITY / PRIVACY POSTURE: Synthetic opaque identities only.
@@ -18,6 +18,7 @@ AUTHORITY BOUNDARY: Read projection certificate only; no lifecycle mutation,
                     service execution, return, invoice, payment or settlement.
 FINANCIAL AUTHORITY BOUNDARY: Kennel EOS exclusively owns financial execution.
 CHANGELOG: 2026-10-24 v1.3.0-G68-P2-CONFIDENTIALITY-CONTAINMENT-HTTP-CERT certifies fail-closed containment before collection access, the exact non-disclosing 503 response, and distinct product-unavailable and product-authority failures.
+CHANGELOG: 2026-11-02 v1.5.0-ISSUE-300-COMBINED-ROUTER-CERT updates the pinned production router version after the semantic merge of D22B5 subscription admission and L8-6E Deputy evidence routes; the HTTP certificate retains the exact subscription, entitlement, D15 IAM and G68 denial assertions.
 CHANGELOG: 2026-11-02 v1.4.0-ISSUE-300-D22B5-SUBSCRIPTION-CERT certifies that workspace admission passes the exact subscription, entitlement collections and session into the canonical commercial conjunction while retaining D15 IAM and confidentiality gates.
 CHANGELOG: 2026-10-10 v1.2.0-D22B5-R21-LEGAL-PRODUCT-CONJUNCTION-HTTP-CERT adds ACTIVE success, non-disclosing unavailable denial, distinct product-authority failure, exact collection/session propagation and runtime ordering proof while preserving the four D15 dependencies, context helper and response contract.
            2026-09-24 v1.1.0-L8-7D15-FIRST-CLASS-MATTER-WORKSPACE-HTTP-CERT adds direct canonical CaseMatter projection, field-whitelist, matter-count and version binding coverage while preserving D11 role/scope/read-only guarantees.
@@ -43,7 +44,7 @@ from tools.eos.auth.tenant_authorization import (
 )
 
 
-VERSION = "v1.4.0-ISSUE-300-D22B5-SUBSCRIPTION-CERT"
+VERSION = "v1.5.0-ISSUE-300-COMBINED-ROUTER-CERT"
 TENANT = "tenant-law"
 PRINCIPAL = "principal-law"
 EVIDENCE = "a" * 128
@@ -415,15 +416,15 @@ def test_workspace_matter_row_whitelist_exposes_only_first_class_case_truth(
 
 def test_workspace_version_and_authority_surface_are_frozen() -> None:
     """D15 remains read-only and bound to the intended production version."""
-    assert legal_router.VERSION == "v1.18.0-ISSUE-300-D22B5-SUBSCRIPTION-ADMISSION"
-    assert VERSION == "v1.4.0-ISSUE-300-D22B5-SUBSCRIPTION-CERT"
+    assert legal_router.VERSION == "v1.19.0-L8-6E-D22B5-SUBSCRIPTION-ADMISSION"
+    assert VERSION == "v1.5.0-ISSUE-300-COMBINED-ROUTER-CERT"
     assert not hasattr(legal_router, "insert_one")
     assert not hasattr(legal_router, "update_one")
     assert not hasattr(legal_router, "delete_one")
 
 
 # ARTIFACT: test_legal_operations_practice_workspace_http.py
-# VERSION: v1.4.0-ISSUE-300-D22B5-SUBSCRIPTION-CERT
+# VERSION: v1.5.0-ISSUE-300-COMBINED-ROUTER-CERT
 # AUTHORITY BOUNDARY: D15 IAM plus same-snapshot D22B5 and canonical subscription conjunction; read-only workspace HTTP certificate
 # TENANT POSTURE: same exact tenant/principal/published-practice-role required
 # FAIL-CLOSED POSTURE: scope/role/product/projection drift rejects without fallback or lifecycle disclosure

@@ -399,7 +399,7 @@ def mongo_context() -> Iterator[_MongoContext]:
         plans
     )
 
-    PlanRegistry._ensure_indexes()
+    PlanRegistry.provision_indexes()
 
     # Bootstrap indexes through the public create path, then clean.
     bootstrap_tenant = (
@@ -468,7 +468,7 @@ def test_real_mongo_version_database_and_index_contract(
     """Prove actual Mongo, isolated database and deterministic indexes."""
     assert (
         REGISTRY_VERSION
-        == "v1.4.0-CALLER-TRANSACTION-INJECTION"
+        == "v1.5.0-CATALOGUE-CHANGE-TRANSACTION-INJECTION"
     )
     assert (
         TEST_VERSION

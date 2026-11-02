@@ -1,9 +1,18 @@
 # WILSY OS — Python EOS / MongoDB Atlas Production Provisioning Plan
 
-**Version:** `v1.0.0-P0-C12F7C-EOS-ATLAS-PRODUCTION-PLAN`
+**Version:** `v1.4.0-L10A2R-C4D7-AUDIT-TLS-DEPLOYMENT-IDENTITY`
 **Authority:** Wilsy OS Core Governance
-**Date:** 2026-10-06
+**Date:** 2026-10-25
 **Artifact:** `k8s/eos-api-atlas-production-provisioning-plan.md`
+
+## Changelog
+
+- `v1.4.0-L10A2R-C4D7-AUDIT-TLS-DEPLOYMENT-IDENTITY` requires TLS for the
+  audit URI and rejects same-cluster/different-database configurations, in
+  addition to requiring the approved read-only AWS role and EKS identity.
+- `v1.2.0-L10A2R-C4D7-LEGAL-EVIDENCE-CONFIG-BINDINGS` binds the server-owned
+  reconciliation tenant and canonical Legal Evidence S3 bucket/region/KMS
+  settings through explicit Kubernetes Secret/ConfigMap references.
 
 ## Purpose
 
@@ -28,6 +37,17 @@ The certified EOS Kubernetes workload consumes:
 - `WILSY_HR_DOCUMENT_MAX_UPLOAD_BYTES=26214400`
 - optional `WILSY_HR_DOCUMENT_S3_KMS_KEY_ID`
 - required secret `MONGODB_URI`
+- required ConfigMap `WILSY_LEGAL_EVIDENCE_S3_BUCKET` and
+  `WILSY_LEGAL_EVIDENCE_S3_REGION`; optional approved
+  `WILSY_LEGAL_EVIDENCE_S3_KMS_KEY_ID`
+- required server-owned tenant `WILSY_LEGAL_EVIDENCE_RECONCILIATION_TENANT_ID`
+- required internal workload trust values `WILSY_INTERNAL_AUTH_SERVICE_ID`,
+  `WILSY_INTERNAL_AUTH_AUDIENCE`, `WILSY_INTERNAL_AUTH_KEY_ID`, and
+  `WILSY_INTERNAL_AUTH_SECRET`
+- required distinct audit target
+  `WILSY_LEGAL_EVIDENCE_RECONCILIATION_AUDIT_MONGODB_URI`
+- required dedicated assumed read-only S3 role
+  `WILSY_LEGAL_EVIDENCE_RECONCILIATION_AWS_ROLE_ARN`
 
 The EOS image remains bound by immutable digest in
 `k8s/eos-api-production.yaml`.
@@ -85,6 +105,129 @@ approved TLS production connection string must be injected as:
 - process variable: `MONGODB_URI`
 
 The actual URI must never appear in this repository.
+
+## Governed Legal-Evidence Reconciliation Runtime Inputs
+
+The Python EOS production deployment now declares these additional required
+keys in the existing `wilsy-eos-runtime-secrets` Kubernetes Secret:
+
+| Secret key | Process variable | Purpose |
+| --- | --- | --- |
+| `internal-auth-service-id` | `WILSY_INTERNAL_AUTH_SERVICE_ID` | Exact registered internal caller identity |
+| `internal-auth-audience` | `WILSY_INTERNAL_AUTH_AUDIENCE` | Signed workload audience accepted by EOS |
+| `internal-auth-key-id` | `WILSY_INTERNAL_AUTH_KEY_ID` | Active signed-workload key identifier |
+| `internal-auth-secret` | `WILSY_INTERNAL_AUTH_SECRET` | Secret used by the existing signed-workload protocol |
+| `legal-evidence-reconciliation-audit-mongodb-uri` | `WILSY_LEGAL_EVIDENCE_RECONCILIATION_AUDIT_MONGODB_URI` | Separate MongoDB audit deployment URI |
+| `legal-evidence-reconciliation-tenant-id` | `WILSY_LEGAL_EVIDENCE_RECONCILIATION_TENANT_ID` | Fixed server-owned reconciliation tenant scope |
+
+The existing `wilsy-eos-runtime` ConfigMap must also provide
+`legal-evidence-s3-bucket` and `legal-evidence-s3-region` for the shared
+Legal Evidence S3 provider configuration. `legal-evidence-s3-kms-key-id` is
+optional only when the existing Legal Evidence storage policy does not require
+a customer-managed KMS key. These are configuration references, not literal
+values in this manifest. Do not substitute the HR document bucket or infer a
+tenant identifier from a request.
+
+The production Kubernetes readiness probe now targets
+`/api/legal-operations/evidence-provider/reconciliation/health`, not the
+generic root-health endpoint. The pod becomes ready only when startup has
+injected the canonical composition, the distinct audit client is retained, and
+the platform decision-audit indexes have been verified. A missing or invalid
+configuration keeps the pod unready; it is not represented as a healthy
+reconciliation runtime.
+
+These key names are deployment contracts, not populated credentials. Do not
+create placeholder or synthetic production values. The internal service ID,
+audience, key ID, and secret must be provisioned from the actual approved caller
+and existing internal-service trust authority. **A repository search found the generic signing helper but no callsite that
+invokes this reconciliation route; no actual caller is certified here. No
+caller-side signature change is made in this Python/EOS work. The registered
+service ID must not be guessed or populated until the real caller is approved.**
+
+The exact mounted endpoint is:
+
+`POST /api/legal-operations/evidence-provider/reconciliation`
+
+The caller must sign the actual origin-form path including `/api`, the HTTP
+method, exact body bytes, body SHA3-512 digest, timestamp, nonce, service ID,
+audience, key ID, correlation ID, and signature using the existing
+`X-Wilsy-*` contract. The UTF-8 JSON body schema is exactly
+`{"idempotency_key":"<caller-generated-stable-operation-key>"}`; duplicate
+JSON properties and additional fields are rejected. Retries must use a fresh
+signed nonce while preserving the same operation idempotency key and exact
+operation body. Correlation ID is not an idempotency key.
+
+Before enabling the endpoint, identify and certify the actual caller, verify
+that it signs the exact path above, and run adversarial HTTP tests for bad
+signatures, replayed nonce, changed body/key conflict, scope/permission denial,
+audit outage, and transaction abort. Until the secret values come from that
+approved caller and deployment, the reconciliation composition intentionally
+remains unavailable and the route returns a bounded 503.
+
+### Legal-evidence provider and AWS workload identity
+
+The provider composition also requires the deployment-owned
+`WILSY_LEGAL_EVIDENCE_S3_BUCKET` and `WILSY_LEGAL_EVIDENCE_S3_REGION`
+ConfigMap values. The optional KMS key must match the approved storage policy.
+The example runtime authority file now declares these keys with empty
+fail-closed values so applying it unchanged cannot masquerade as a configured
+provider.
+
+No approved AWS workload-role ARN or proven web-identity binding for the
+`wilsy-eos-api` ServiceAccount was found in the repository. Do not copy the
+unrelated example role from `server/k8s/deployment.yaml`, use a node role by
+assumption, or add static AWS keys. Before production readiness can pass, the
+platform owner must bind an approved source workload identity and the dedicated
+read-only target role scoped to the actual configured legal-evidence bucket.
+The role ARN and bucket policy must be reviewed against the concrete production
+account/bucket; neither is invented here.
+
+The reconciliation-only assumed role must be limited to the operations actually
+used by the provider facade: `s3:ListBucketMultipartUploads` and
+`s3:ListBucketVersions` on the approved bucket, plus `s3:GetObjectVersion`
+on the exact object-resource scope required for version HEAD observations.
+Apply an `s3:prefix` condition derived from the approved tenant scope where
+the S3 API supports it. Do not grant `s3:PutObject`, multipart completion,
+abort, delete, bucket administration, or IAM administration to this assumed
+role. The existing upload endpoint has its separately governed provider client;
+the reconciliation facade receives only temporary credentials for this
+read-only role. The source workload identity must have only the exact
+`sts:AssumeRole` permission for the approved target role in addition to its
+separately governed existing workload needs.
+
+### Audit target provisioning and identity proof
+
+1. Select the approved audit MongoDB deployment and a dedicated runtime database
+   principal. Do not reuse the business Mongo URI or credentials unless a
+   separately governed design explicitly approves it.
+2. Populate the Secret key
+   `legal-evidence-reconciliation-audit-mongodb-uri` with the exact approved
+   TLS URI, and use that same secret key/value for the deployment-only
+   `tools.eos.legal_operations.service.legal_evidence_provider_readonly_reconciliation_audit_provisioner`
+   invocation.
+3. Supply the canonical business `MONGODB_URI` and the audit URI to the
+   provisioner. It requires TLS and rejects the same Mongo deployment even if
+   the database names differ (and fails closed if direct/SRV identity forms
+   cannot be compared). It provisions the two required unique platform
+   decision-evidence indexes and verifies them.
+4. The EOS startup runtime independently reads the same named audit URI
+   variable, requires TLS and a deployment identity distinct from the business
+   Mongo deployment, creates and pings its own retained client, and the composition verifies the provisioned audit
+   index shape read-only. Never substitute the business database, a CI URI, or
+   an implicit default database.
+5. Capture the provisioner's success output and runtime startup logs without
+   printing either URI. Both now emit the same credential-free
+   `AUDIT_TARGET_FINGERPRINT` derived from the connection target and deployment
+   identity (host list/SRV FQDN, replica set, and database; never username,
+   password, or query credentials). Compare that
+   fingerprint and database name across both records. Do not claim production
+   audit-target certification until the fingerprints match and both index
+   verification observations exist.
+
+The provisioner is a deployment-only command and must never be invoked from a
+request handler. The production Kubernetes manifest references these keys but
+does not create the Secret or assert that a production caller, cluster, or
+audit deployment already exists.
 
 ## HR Upload Policy
 
@@ -212,7 +355,7 @@ Those claims require separate runtime evidence.
 ### WILSY OS Sovereign Artifact Seal
 
 **Artifact:** `k8s/eos-api-atlas-production-provisioning-plan.md`
-**Version:** `v1.0.0-P0-C12F7C-EOS-ATLAS-PRODUCTION-PLAN`
+**Version:** `v1.4.0-L10A2R-C4D7-AUDIT-TLS-DEPLOYMENT-IDENTITY`
 **Mongo Strategy:** MongoDB Atlas
 **HR Upload Policy:** 25 MiB / 26,214,400 bytes
 **Secret Posture:** no production secret committed

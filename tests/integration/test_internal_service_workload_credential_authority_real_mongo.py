@@ -46,7 +46,7 @@ from tools.eos.auth.principal_authority import PrincipalAuthority
 from tools.eos.auth.principal_authority_repository import COLLECTION as PRINCIPAL_COLLECTION, PrincipalAuthorityRepository
 from tools.eos.auth.principal_status import PrincipalStatus
 from tools.eos.auth.privileged_workload_trust_currentness_registry import (
-    COLLECTION as WORKLOAD_COLLECTION, PrivilegedWorkloadTrustCurrentnessRegistry,
+    COLLECTION as WORKLOAD_COLLECTION, PrivilegedWorkloadTrustCurrentnessRegistry, WorkloadTrustStatus,
 )
 
 MONGO_URI = "mongodb://127.0.0.1:27027/?replicaSet=wilsyVendorCertRS"
@@ -181,6 +181,38 @@ def test_replay_denies_second_proof(mongo_context) -> None:
         _record(client, service, request)
     assert database[WORKLOAD_COLLECTION].count_documents({}) == 1
     assert database[REPLAY_COLLECTION].count_documents({}) == 1
+
+
+def test_fresh_signed_nonce_reuses_current_fact_for_same_credential_generation(mongo_context) -> None:
+    client, database, credentials, workloads = mongo_context
+    _provision(client, database, credentials)
+    service = _service(database, credentials, workloads)
+
+    first = _record(client, service, _signed())
+    second = _record(client, service, _signed())
+
+    assert second == first
+    assert database[WORKLOAD_COLLECTION].count_documents({}) == 1
+    assert database[REPLAY_COLLECTION].count_documents({}) == 2
+
+
+def test_fresh_nonce_cannot_resurrect_invalidated_credential_currentness(mongo_context) -> None:
+    client, database, credentials, workloads = mongo_context
+    _provision(client, database, credentials)
+    service = _service(database, credentials, workloads)
+    fact = _record(client, service, _signed())
+
+    with client.start_session() as session:
+        with session.start_transaction():
+            workloads.terminate(
+                proof_reference=fact.proof_reference,
+                target_status=WorkloadTrustStatus.INVALIDATED,
+                session=session,
+            )
+
+    with pytest.raises(InternalServiceWorkloadProofDeniedError):
+        _record(client, service, _signed())
+    assert database[WORKLOAD_COLLECTION].count_documents({}) == 1
 
 
 def test_rotation_rejects_old_key_and_admits_new_generation(mongo_context) -> None:

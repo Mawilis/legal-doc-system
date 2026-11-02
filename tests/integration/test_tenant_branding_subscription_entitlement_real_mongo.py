@@ -277,7 +277,7 @@ def mongo_context() -> Iterator[_MongoContext]:
         )
         plan_registry_module.plans_collection = plans
         subscription_registry_module.subscriptions_collection = subscriptions
-        PlanRegistry._ensure_indexes()
+        PlanRegistry.provision_indexes()
         subscription_registry_module._ensure_indexes()
         EntitlementRegistry.ensure_indexes(history, current)
         _seed_plans()

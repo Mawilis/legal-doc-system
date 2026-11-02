@@ -1,7 +1,7 @@
 """D15 host-backed real-Mongo certificate for first-class Legal Practice matters.
 
 TITLE: WILSY OS First-Class Legal Matter Workspace Real-Mongo Certificate
-VERSION: v1.3.0-ISSUE-300-EXPLICIT-MONGO-URI-RM-CERT
+VERSION: v1.4.0-ISSUE-300-COMBINED-ROUTER-RM-CERT
 AUTHORITY: Host-backed certificate for durable CaseMatter projection through the
            authenticated Legal Practice workspace read boundary.
 EPITOME: Prove that one real L8-2 intake transaction durably creates CaseMatter,
@@ -19,6 +19,7 @@ COLLABORATION / OWNERSHIP: L8-2 owns intake composition; P1 owns lifecycle value
                             the access authority outside this persistence-focused
                             certificate.
 CERTIFICATION / UPDATE DATE: 2026-11-02
+CHANGELOG: 2026-11-02 v1.4.0-ISSUE-300-COMBINED-ROUTER-RM-CERT updates the pinned production router version after the semantic merge, provisions required Plan indexes only in the UUID-isolated disposable database, and preserves explicit allowlisted loopback Mongo URI and transaction certification.
 CHANGELOG: 2026-11-02 v1.3.0-ISSUE-300-EXPLICIT-MONGO-URI-RM-CERT requires an explicit allowlisted loopback replica-set URI, rejects unsafe endpoints before client construction, and preserves real transaction certification.
 CHANGELOG: 2026-11-02 v1.2.0-ISSUE-300-D22B5-SUBSCRIPTION-RM-CERT proves the D22B5 plus active-subscription conjunction under a caller-owned real-Mongo snapshot transaction; endpoint collection/session propagation is covered by the HTTP certificate.
 CHANGELOG: 2026-10-10 v1.1.0-D22B5-R21-LEGAL-PRODUCT-CONJUNCTION-RM-CERT adds real ACTIVE success, absence/PENDING denial, product tenant isolation, corruption-as-authority-failure and zero-write projection proof inside the existing workspace snapshot transaction.
@@ -97,7 +98,7 @@ from tools.eos.saas.entitlement.tenant_product_entitlement_composer import (
 )
 
 
-VERSION = "v1.3.0-ISSUE-300-EXPLICIT-MONGO-URI-RM-CERT"
+VERSION = "v1.4.0-ISSUE-300-COMBINED-ROUTER-RM-CERT"
 EXPECTED_REPLICA_SET = "wilsyVendorCertRS"
 _ALLOWED_LOOPBACK_HOSTS = frozenset({"127.0.0.1", "localhost", "::1"})
 _ALLOWED_DISPOSABLE_PORTS = frozenset({27017, 27028})
@@ -187,7 +188,7 @@ def mongo_context(monkeypatch: pytest.MonkeyPatch) -> Iterator[dict[str, Any]]:
             "subscriptions_collection",
             subscriptions,
         )
-        PlanRegistry._ensure_indexes()
+        PlanRegistry.provision_indexes()
         subscription_registry_module._ensure_indexes(subscriptions)
         lifecycle = database.get_collection(
             COLLECTION,
@@ -754,8 +755,8 @@ def test_real_mongo_active_product_read_performs_zero_writes(
 
 def test_d15b_certificate_surface_is_frozen() -> None:
     """Preserve D15 provenance and prohibit router write-authority expansion."""
-    assert VERSION == "v1.3.0-ISSUE-300-EXPLICIT-MONGO-URI-RM-CERT"
-    assert legal_router.VERSION == "v1.18.0-ISSUE-300-D22B5-SUBSCRIPTION-ADMISSION"
+    assert VERSION == "v1.4.0-ISSUE-300-COMBINED-ROUTER-RM-CERT"
+    assert legal_router.VERSION == "v1.19.0-L8-6E-D22B5-SUBSCRIPTION-ADMISSION"
     assert not hasattr(legal_router, "insert_one")
     assert not hasattr(legal_router, "update_one")
     assert not hasattr(legal_router, "delete_one")
@@ -764,7 +765,7 @@ def test_d15b_certificate_surface_is_frozen() -> None:
 
 
 # ARTIFACT: test_legal_operations_practice_workspace_real_mongo.py
-# VERSION: v1.3.0-ISSUE-300-EXPLICIT-MONGO-URI-RM-CERT
+# VERSION: v1.4.0-ISSUE-300-COMBINED-ROUTER-RM-CERT
 # AUTHORITY BOUNDARY: D15 IAM plus same-snapshot D22B5 and canonical subscription conjunction; real-Mongo workspace certificate only
 # TENANT POSTURE: exact-tenant durable intake and workspace projection; foreign matter excluded
 # FAIL-CLOSED POSTURE: explicit loopback URI, replica-set, transaction, product, projection, locator, corruption, and tenant drift fail

@@ -1,7 +1,7 @@
 """Live-IAM real-Mongo certificate for deputy personal active-work reads.
 
 TITLE: WILSY OS Deputy Personal Work and Field Capability Live-IAM Real-Mongo Certificate
-VERSION: v1.1.0-L8-6D-DEPUTY-FIELD-CAPABILITY-LIVE-IAM-RM-CERT
+VERSION: v1.2.0-L8-6E-CURRENT-ASSIGNMENT-REAL-MONGO-CERT
 AUTHORITY: Host-backed certification of DEPUTY IAM + L8-6B/L8-6C/L8-6D reads.
 EPITOME: Preserve durable personal-work proof and certify real current P2
          ServiceAttempt rows produce exact bound-deputy field capabilities whose
@@ -11,7 +11,8 @@ ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/tests/integratio
 COLLABORATION / OWNERSHIP: Host certificate for L8-6C/L8-6D read composition.
                             IAM, L8-6B, P1/P2/L8-0/L8-5/P5M retain canonical
                             authority; command mutation remains separately gated.
-CERTIFICATION / UPDATE DATE: 2026-09-23
+CERTIFICATION / UPDATE DATE: 2026-11-02
+CHANGELOG: 2026-11-02 v1.2.0-L8-6E-CURRENT-ASSIGNMENT-REAL-MONGO-CERT binds router reads to a caller-owned Mongo snapshot, provisions explicit P4B pointer/receipt fixtures, and pins the combined router version.
 CHANGELOG: 2026-09-23 v1.1.0-L8-6D-DEPUTY-FIELD-CAPABILITY-LIVE-IAM-RM-CERT
            adds real-Mongo field-capability proof for exact durable current
            evidence_identity, ALLOCATED/ATTEMPTED command-kind mapping, sheriff
@@ -50,6 +51,7 @@ import tools.eos.api.legal_operations_router as legal_router
 import tools.eos.api.tenant_authorization_http as authorization_http
 import tools.eos.auth.authentication as authentication
 import tools.eos.auth.tenant_access as tenant_access
+import tools.eos.kernel.db as kernel_db
 from tools.eos.api.errors import register_error_handlers
 from tools.eos.auth.identity import SovereignIdentity
 from tools.eos.auth.principal_authority import PrincipalAuthority
@@ -89,13 +91,20 @@ from tools.eos.legal_operations.registry.deputy_principal_binding_registry impor
     COLLECTION as BINDING_COLLECTION,
     DeputyPrincipalBindingRegistry,
 )
+from tools.eos.legal_operations.registry.process_service_allocation_registry import (
+    ALLOCATION_CURRENT_COLLECTION,
+    ALLOCATION_RECEIPT_COLLECTION,
+    ProcessServiceAllocationCurrent,
+    ProcessServiceAllocationReceipt,
+    ProcessServiceAllocationRegistry,
+)
 from tools.eos.legal_operations.registry.legal_operations_lifecycle_registry import (
     COLLECTION as LIFECYCLE_COLLECTION,
     LegalOperationsLifecycleRegistry,
 )
 
 
-VERSION = "v1.1.0-L8-6D-DEPUTY-FIELD-CAPABILITY-LIVE-IAM-RM-CERT"
+VERSION = "v1.2.0-L8-6E-CURRENT-ASSIGNMENT-REAL-MONGO-CERT"
 MONGO_URI = os.getenv(
     "TEST_VENDOR_MONGO_URI",
     "mongodb://127.0.0.1:27027/?replicaSet=wilsyVendorCertRS",
@@ -177,7 +186,7 @@ class _RoleReader:
 
 
 @pytest.fixture
-def mongo_context() -> Iterator[dict[str, Any]]:
+def mongo_context(monkeypatch: pytest.MonkeyPatch) -> Iterator[dict[str, Any]]:
     client = MongoClient(
         MONGO_URI,
         serverSelectionTimeoutMS=3000,
@@ -208,6 +217,8 @@ def mongo_context() -> Iterator[dict[str, Any]]:
             "membership": database.get_collection("tenant_memberships"),
             "business": database.get_collection("tenant_business_roles"),
             "role": database.get_collection("role_assignments"),
+            "allocation_receipts": database.get_collection(ALLOCATION_RECEIPT_COLLECTION),
+            "allocation_current": database.get_collection(ALLOCATION_CURRENT_COLLECTION),
         }
         LegalOperationsLifecycleRegistry.ensure_indexes(collections["lifecycle"])
         DeputyPrincipalBindingRegistry.ensure_indexes(collections["binding"])
@@ -215,6 +226,11 @@ def mongo_context() -> Iterator[dict[str, Any]]:
         TenantMembershipRepository.ensure_indexes(collections["membership"])
         TenantBusinessRoleRepository.ensure_indexes(collections["business"])
         RoleAssignmentRepository.ensure_indexes(collections["role"])
+        ProcessServiceAllocationRegistry.ensure_indexes(
+            collections["allocation_receipts"], collections["allocation_current"]
+        )
+        monkeypatch.setattr(kernel_db, "get_client", lambda: client)
+        monkeypatch.setattr(kernel_db, "get_database", lambda: database)
         yield {"client": client, "database": database, "collections": collections}
     finally:
         active_error = sys.exc_info()[0] is not None
@@ -327,6 +343,7 @@ def _persist_attempt_chain(
         allocation_evidence_reference=f"allocation-{attempt_id}",
     )
     LegalOperationsLifecycleRegistry.create(allocated, collections["lifecycle"])
+    _seed_allocation_currentness(collections, tenant_id, allocated)
     if terminal is ServiceAttemptState.CANCELLED:
         cancelled = allocated.transition_to(
             ServiceAttemptState.CANCELLED,
@@ -356,6 +373,63 @@ def _persist_attempt_chain(
                 terminal_value,
                 collections["lifecycle"],
             )
+
+
+def _seed_allocation_currentness(
+    collections: dict[str, Any], tenant_id: str, attempt: ServiceAttempt
+) -> None:
+    """Seed test-only prior currentness and persist its matching P4B receipt."""
+    source_fingerprint = "a" * 128
+    prior_chain_fingerprint = "b" * 128
+    prior_head_fingerprint = "c" * 128
+    prior = ProcessServiceAllocationCurrent(
+        tenant_id=tenant_id, document_id=attempt.document_id,
+        process_document_fingerprint=source_fingerprint,
+        custody_chain_fingerprint=prior_chain_fingerprint,
+        custody_head_event_id=f"custody-head-{attempt.attempt_id}",
+        custody_head_fingerprint=prior_head_fingerprint,
+        custody_head_sequence_number=2, current_holder_reference="office-1",
+        authority_evidence_reference=f"migration-head-{attempt.attempt_id}",
+        authority_evidence_fingerprint="d" * 128,
+    )
+    receipt = ProcessServiceAllocationReceipt(
+        tenant_id=tenant_id,
+        allocation_command_id=f"allocation-command-{attempt.attempt_id}",
+        idempotency_key=f"idempotency-{attempt.attempt_id}",
+        instruction_id=attempt.instruction_id,
+        case_matter_id=f"matter-{attempt.attempt_id}",
+        document_id=attempt.document_id, district_id="district-1",
+        sheriff_office_id="office-1", deputy_id=attempt.deputy_id,
+        assignment_decision_id=f"assignment-{attempt.attempt_id}",
+        assignment_decision_fingerprint="e" * 128,
+        source_instruction_fingerprint="f" * 128,
+        source_document_fingerprint=source_fingerprint,
+        source_district_fingerprint="1" * 128,
+        source_sheriff_office_fingerprint="2" * 128,
+        source_deputy_fingerprint="3" * 128,
+        prior_custody_chain_fingerprint=prior_chain_fingerprint,
+        prior_custody_head_event_id=prior.custody_head_event_id,
+        prior_custody_head_fingerprint=prior_head_fingerprint,
+        prior_custody_head_sequence_number=prior.custody_head_sequence_number,
+        from_holder_reference="office-1", to_holder_reference=attempt.deputy_id,
+        allocation_custody_event_id=f"allocation-event-{attempt.attempt_id}",
+        allocation_evidence_reference=attempt.allocation_evidence_reference,
+        allocated_at=attempt.allocated_at, allocated_document_fingerprint="4" * 128,
+        allocation_custody_event_fingerprint="5" * 128,
+        result_custody_chain_fingerprint="6" * 128,
+    )
+    client = collections["lifecycle"].database.client
+    with client.start_session() as session:
+        session.start_transaction(
+            read_concern=ReadConcern("snapshot"),
+            write_concern=WriteConcern(w="majority", j=True),
+        )
+        collections["allocation_current"].insert_one(prior.to_dict(), session=session)
+        ProcessServiceAllocationRegistry.persist_receipt_and_advance_current(
+            receipt, prior, collections["allocation_receipts"],
+            collections["allocation_current"], session=session,
+        )
+        session.commit_transaction()
 
 
 def _identity(principal_id: str, tenant_id: str) -> SovereignIdentity:
@@ -697,15 +771,15 @@ def test_real_response_excludes_sheriff_invented_and_financial_truth(
         assert forbidden not in serialized
 
     assert legal_router.VERSION == (
-        "v1.15.0-P7-COMPLETION-AWARE-PRODUCTIVE-WORK-HTTP"
+        "v1.19.0-L8-6E-D22B5-SUBSCRIPTION-ADMISSION"
     )
     assert VERSION == (
-        "v1.1.0-L8-6D-DEPUTY-FIELD-CAPABILITY-LIVE-IAM-RM-CERT"
+        "v1.2.0-L8-6E-CURRENT-ASSIGNMENT-REAL-MONGO-CERT"
     )
 
 
 # ARTIFACT: test_deputy_personal_active_work_http_real_mongo.py
-# VERSION: v1.1.0-L8-6D-DEPUTY-FIELD-CAPABILITY-LIVE-IAM-RM-CERT
+# VERSION: v1.2.0-L8-6E-CURRENT-ASSIGNMENT-REAL-MONGO-CERT
 # AUTHORITY BOUNDARY: live-IAM real-Mongo bound-deputy personal-work and field-capability read certificate only
 # TENANT POSTURE: exact authorized tenant + immutable principal-to-Deputy binding
 # FAIL-CLOSED POSTURE: sheriff/missing-binding/evidence/locator/capability/scope failures deny without queue or command fallback

@@ -110,7 +110,7 @@ def mongo_context() -> Iterator[tuple[MongoClient[Any], Any, Any, Any, Any, Any]
         )
         plan_registry_module.plans_collection = plans
         subscription_registry_module.subscriptions_collection = subscriptions
-        PlanRegistry._ensure_indexes()
+        PlanRegistry.provision_indexes()
         subscription_registry_module._ensure_indexes()
         ensure_indexes(history, current)
         yield client, plans, subscriptions, history, current, database

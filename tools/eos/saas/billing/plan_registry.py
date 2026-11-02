@@ -4,7 +4,7 @@ TITLE:
     WILSY OS — Sovereign Plan Registry — Real Mongo Persistence
 
 VERSION:
-    v1.2.0-EXACT-TENANT-SCOPE
+    v1.3.0-READ-ONLY-INDEX-VALIDATION
 
 AUTHORITY:
     Wilsy OS Core Governance
@@ -37,6 +37,12 @@ CERTIFICATION DATE:
     2026-09-03
 
 CHANGELOG:
+    2026-10-30 v1.3.0-READ-ONLY-INDEX-VALIDATION
+        - Catalogue reads validate existing index metadata without createIndexes.
+        - Adds an explicit DDL provisioning operation; MongoDB credentials must
+          independently authorize index creation.
+        - Missing or divergent indexes fail closed with migration-required detail.
+
     2026-09-15 L7D import-safety hardening (compatibility version retained)
         - Defers Mongo topology discovery until a registry operation executes;
           importing the API no longer performs external DNS/network work.
@@ -131,7 +137,7 @@ from ..domain.plan import (
 
 logger = logging.getLogger("WilsyOS.PlanRegistry")
 
-PLAN_REGISTRY_VERSION = "v1.2.0-EXACT-TENANT-SCOPE"
+PLAN_REGISTRY_VERSION = "v1.3.0-READ-ONLY-INDEX-VALIDATION"
 
 _REGISTRY_REVISION_FIELD = "_registry_revision"
 
@@ -400,49 +406,13 @@ class PlanRegistry:
     def _ensure_indexes(
         cls,
     ) -> None:
-        for (
-            name,
-            keys,
-            unique,
-            partial,
-        ) in _INDEX_CONTRACT:
-            kwargs: dict[
-                str,
-                Any,
-            ] = {
-                "name": name,
-            }
+        """Validate the complete index contract without performing DDL.
 
-            if unique:
-                kwargs[
-                    "unique"
-                ] = True
-
-            if partial is not None:
-                kwargs[
-                    "partialFilterExpression"
-                ] = partial
-
-            observed_name = (
-                plans_collection.create_index(
-                    keys,
-                    **kwargs,
-                )
-            )
-
-            if (
-                observed_name
-                != name
-            ):
-                raise RuntimeError(
-                    "PLAN_REGISTRY_INDEX_NAME_MISMATCH:"
-                    f"{name}:{observed_name}"
-                )
-
-        information = (
-            plans_collection
-            .index_information()
-        )
+        This method is called by catalogue reads and therefore is compatible
+        with read-only production Mongo credentials. Missing or mismatched
+        indexes fail closed with an explicit provisioning requirement.
+        """
+        information = plans_collection.index_information()
 
         for (
             name,
@@ -450,49 +420,58 @@ class PlanRegistry:
             unique,
             partial,
         ) in _INDEX_CONTRACT:
-            details = information.get(
-                name
-            )
-
+            details = information.get(name)
             if details is None:
                 raise RuntimeError(
                     "PLAN_REGISTRY_INDEX_MISSING:"
                     + name
+                    + ":AUTHORIZED_PROVISIONING_REQUIRED"
                 )
-
-            if list(
-                details.get(
-                    "key",
-                    [],
-                )
-            ) != keys:
+            if list(details.get("key", [])) != keys:
                 raise RuntimeError(
-                    "PLAN_REGISTRY_INDEX_KEY_MISMATCH:"
-                    + name
+                    "PLAN_REGISTRY_INDEX_KEY_MISMATCH:" + name
                 )
-
-            if bool(
-                details.get(
-                    "unique",
-                    False,
-                )
-            ) != unique:
+            if bool(details.get("unique", False)) != unique:
                 raise RuntimeError(
-                    "PLAN_REGISTRY_INDEX_UNIQUENESS_MISMATCH:"
-                    + name
+                    "PLAN_REGISTRY_INDEX_UNIQUENESS_MISMATCH:" + name
+                )
+            if partial is not None and details.get(
+                "partialFilterExpression"
+            ) != partial:
+                raise RuntimeError(
+                    "PLAN_REGISTRY_INDEX_PARTIAL_MISMATCH:" + name
                 )
 
+    @classmethod
+    def provision_indexes(
+        cls,
+    ) -> None:
+        """Provision indexes only from an explicitly invoked Mongo-DDL context.
+
+        This method is not called by reads or application startup. MongoDB
+        credentials must independently possess createIndexes authority; a
+        read-only runtime principal cannot provision or repair catalogue
+        indexes. Successful DDL is followed by the same read-only contract
+        validation used by catalogue reads.
+        """
+        for (
+            name,
+            keys,
+            unique,
+            partial,
+        ) in _INDEX_CONTRACT:
+            kwargs: dict[str, Any] = {"name": name}
+            if unique:
+                kwargs["unique"] = True
             if partial is not None:
-                if (
-                    details.get(
-                        "partialFilterExpression"
-                    )
-                    != partial
-                ):
-                    raise RuntimeError(
-                        "PLAN_REGISTRY_INDEX_PARTIAL_MISMATCH:"
-                        + name
-                    )
+                kwargs["partialFilterExpression"] = partial
+            observed_name = plans_collection.create_index(keys, **kwargs)
+            if observed_name != name:
+                raise RuntimeError(
+                    "PLAN_REGISTRY_INDEX_NAME_MISMATCH:"
+                    f"{name}:{observed_name}"
+                )
+        cls._ensure_indexes()
 
     @classmethod
     def _hydrate(
@@ -1631,7 +1610,7 @@ Status:
     PRODUCTION REGISTRY CONTRACT — REAL MONGODB PERSISTENCE
 
 Version:
-    v1.2.0-EXACT-TENANT-SCOPE
+    v1.3.0-READ-ONLY-INDEX-VALIDATION
 
 Authority:
     Wilsy OS Core Governance
@@ -1665,7 +1644,7 @@ Certification date:
 
 WILSY OS — ALL OR NOTHING.
 # ARTIFACT: plan_registry.py
-# VERSION: v1.2.0-EXACT-TENANT-SCOPE
+# VERSION: v1.3.0-READ-ONLY-INDEX-VALIDATION
 # AUTHORITY BOUNDARY: durable Plan catalogue persistence and lifecycle only.
 # TENANT POSTURE: tenant_id is catalogue scope evidence, not membership authority.
 # FAIL-CLOSED POSTURE: import defers network discovery; persistence/hydration failures remain explicit.

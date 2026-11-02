@@ -182,7 +182,7 @@ def mongo_context() -> Iterator[tuple[MongoClient[Any], Any, dict[str, Any]]]:
         subscription_registry_module.subscriptions_collection = collections[
             "subscriptions"
         ]
-        PlanRegistry._ensure_indexes()
+        PlanRegistry.provision_indexes()
         subscription_registry_module._ensure_indexes()
         PrincipalAuthorityRepository.ensure_indexes(collections["principal"])
         TenantMembershipRepository.ensure_indexes(collections["membership"])

@@ -1,11 +1,15 @@
 """TITLE: WILSY OS System Permission Assignment Command Service.
-VERSION: v1.0.0-D12-ASSIGNMENT-COMMAND-SERVICE
+VERSION: v1.2.0-L10A2R-C4D7-RECONCILIATION-READ-DELEGATION
 AUTHORITY: Ongoing bounded SYSTEM permission assignment command composition.
-EPITOME: Requires current write-command possession and delegates only privileged_activation:issue.
+EPITOME: Requires current write-command possession and delegates only the exact source-governed SYSTEM assignment allowlist.
 ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/tools/eos/auth/system_permission_assignment_command_service.py
 COLLABORATION: Current possession resolver, principal repository, D12 policy/evidence, assignment registry.
 CERTIFICATION DATE: 2026-10-14
-CHANGELOG: v1.0.0 establishes non-recursive caller-transaction-owned assignment.
+CHANGELOG: v1.2.0-L10A2R-C4D7-RECONCILIATION-READ-DELEGATION aligns the command-service certificate with the exact
+    source-policy allowlist, including the dedicated reconciliation-read
+    permission. Assignment still requires current assignment-command possession,
+    an ACTIVE target principal, exact evidence, and the caller-owned transaction;
+    use still requires the separate P5 reconciliation gate.
 COMPLIANCE / SECURITY: Current actor and target; exact policy; immutable evidence.
 TENANT BOUNDARY: SYSTEM only.
 AUTHORITY BOUNDARY: Cannot assign command permissions or arbitrary permissions.
@@ -23,7 +27,7 @@ from tools.eos.auth.system_permission_assignment_registry import SystemPermissio
 from tools.eos.auth.system_permission_command_evidence import SystemPermissionCommandEvidence, SystemPermissionCommandOperation
 from tools.eos.auth.system_permission_command_policy import ASSIGN_COMMAND_PERMISSION, require_ongoing_assignment
 
-VERSION: Final[str] = "v1.0.0-D12-ASSIGNMENT-COMMAND-SERVICE"
+VERSION: Final[str] = "v1.2.0-L10A2R-C4D7-RECONCILIATION-READ-DELEGATION"
 
 
 class SystemPermissionAssignmentCommandError(RuntimeError):
@@ -43,7 +47,7 @@ class SystemPermissionAssignmentCommandService:
         self._assignments = assignment_registry
 
     def assign(self, evidence: SystemPermissionCommandEvidence, *, session: ClientSession) -> SystemPermissionAssignment:
-        """Assign the sole ongoing delegable permission inside the caller transaction."""
+        """Assign one currently permitted SYSTEM permission inside the caller transaction."""
         if session is None or getattr(session, "in_transaction", False) is not True:
             raise SystemPermissionAssignmentCommandError("ACTIVE_TRANSACTION_REQUIRED")
         if not isinstance(evidence, SystemPermissionCommandEvidence) or evidence.operation is not SystemPermissionCommandOperation.ASSIGN:
@@ -66,7 +70,7 @@ class SystemPermissionAssignmentCommandService:
 __all__ = ["VERSION", "SystemPermissionAssignmentCommandError", "SystemPermissionAssignmentCommandService"]
 # WILSY OS SOVEREIGN ARTIFACT SEAL
 # ARTIFACT: system_permission_assignment_command_service.py
-# VERSION: v1.0.0-D12-ASSIGNMENT-COMMAND-SERVICE
+# VERSION: v1.2.0-L10A2R-C4D7-RECONCILIATION-READ-DELEGATION
 # AUTHORITY BOUNDARY: PRIVILEGED ACTIVATION ISSUE ASSIGNMENT ONLY
 # TENANT POSTURE: SYSTEM ONLY
 # FAIL-CLOSED POSTURE: CURRENT ACTOR COMMAND + CURRENT TARGET + CLOSED POLICY

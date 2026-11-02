@@ -178,7 +178,7 @@ def mongo_context(
             collections["subscriptions"],
         )
 
-        PlanRegistry._ensure_indexes()
+        PlanRegistry.provision_indexes()
         subscription_registry_module._ensure_indexes()
         entitlement_registry.ensure_indexes(
             collections["history"],

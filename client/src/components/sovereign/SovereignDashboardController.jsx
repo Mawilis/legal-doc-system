@@ -1,7 +1,7 @@
 /* eslint-disable */
 /**
  * TITLE: WILSY OS Sovereign Dashboard Controller
- * VERSION: v18.6.0-CANONICAL-KERNEL-HEALTH-TRANSPORT
+ * VERSION: v18.7.0-AUTHENTICATED-ROLE-LANDING
  * AUTHORITY: Authenticated client dashboard routing and presentation composition.
  * EPITOME: Resolves the existing WILSY OS dashboard shard from authenticated
  *          identity and tenant context. L8-7D10 converges every published Legal
@@ -244,7 +244,7 @@ const WILSY_OPERATING_SKINS = Object.freeze({
 });
 
 const KERNEL_PROBE_INTERVAL_MS = 60_000;
-const CONTROLLER_VERSION = 'v18.6.0-CANONICAL-KERNEL-HEALTH-TRANSPORT';
+const CONTROLLER_VERSION = 'v18.7.0-AUTHENTICATED-ROLE-LANDING';
 
 // ─── Theme helpers ───────────────────────────────────────────────────────────
 
@@ -437,34 +437,34 @@ export const hasFounderReturnAuthority = ({ user = {}, role = '' } = {}) => {
  * @function resolveDashboardKey
  * @description Resolves canonical dashboard key from override, intent, role and tenant.
  */
-export const resolveDashboardKey = ({
-  user = {},
-  activeTenant = {},
-  manualDashboardKey = '',
-  dashboardIntent = ''
-} = {}) => {
-  const manualTarget = mapDashboardAlias(manualDashboardKey);
-  if (manualTarget) return manualTarget;
-
-  const explicitTarget = collectDashboardSignals({ user, activeTenant, dashboardIntent })
-    .map(mapDashboardAlias)
-    .find(Boolean);
-  if (explicitTarget) return explicitTarget;
-
+export const resolveDashboardKey = ({ user = {}, manualDashboardKey = '' } = {}) => {
   const roleToken = normalizeDashboardToken(user.role || user.accountRole || user.tenantRole);
-
-  if (
+  const roleDashboard = (
     roleToken.includes('FOUNDER') ||
     roleToken.includes('SOVEREIGN') ||
     roleToken === 'SUPER_ADMIN' ||
     roleToken === 'SUPERADMIN' ||
     roleToken === 'OMEGA' ||
     roleToken === 'GLOBAL_ROOT'
+  )
+    ? DASHBOARD_KEYS.FOUNDER
+    : (ROLE_DASHBOARD_MAP[roleToken] || DASHBOARD_KEYS.GENERAL);
+
+  const requestedDashboard = mapDashboardAlias(manualDashboardKey);
+  if (requestedDashboard === roleDashboard) return roleDashboard;
+
+  // The only cross-shard return retained is the existing Founder return
+  // affordance, and only for identities carrying its explicit return signal.
+  if (
+    requestedDashboard === DASHBOARD_KEYS.FOUNDER &&
+    hasFounderReturnAuthority({ user, role: roleToken })
   ) {
     return DASHBOARD_KEYS.FOUNDER;
   }
 
-  return ROLE_DASHBOARD_MAP[roleToken] || DASHBOARD_KEYS.GENERAL;
+  // Dashboard preferences, tenant metadata and browser storage cannot choose
+  // a different role workspace. Python EOS remains the authorization authority.
+  return roleDashboard;
 };
 
 /**
@@ -670,19 +670,12 @@ const SovereignDashboardController = ({ user: propUser, onLogout }) => {
     return null;
   }, [propUser]);
 
-  const dashboardIntent = useMemo(() => (
-    localStorage.getItem('wilsy_dashboard_intent')
-    || localStorage.getItem('wilsy_default_dashboard')
-    || localStorage.getItem('wilsy_last_dashboard')
-    || ''
-  ), [user?.email, user?.id, user?._id]);
-
-  const role = normalizeDashboardToken(user?.role || user?.accountRole || user?.tenantRole);
+    const role = normalizeDashboardToken(user?.role || user?.accountRole || user?.tenantRole);
   const traceId = localStorage.getItem('traceId') || 'SYSTEM_CORE_INIT';
 
   const dashboardKey = useMemo(() => (
-    user ? resolveDashboardKey({ user, activeTenant, manualDashboardKey, dashboardIntent }) : ''
-  ), [activeTenant, dashboardIntent, manualDashboardKey, user]);
+    user ? resolveDashboardKey({ user, manualDashboardKey }) : ''
+  ), [manualDashboardKey, user]);
 
   const dashboardLabel = getDashboardDisplayName(dashboardKey);
   const canReturnToFounder = Boolean(
