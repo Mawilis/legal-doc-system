@@ -128,7 +128,7 @@ def test_command_derives_tenant_verifier_and_indexes_before_transaction(
     )
     response = subject.record_sheriff_office_appointment_command(
         _command(),
-        context,
+        context,  # type: ignore[arg-type]
     )
 
     assert response == {"recorded": True}
@@ -138,7 +138,7 @@ def test_command_derives_tenant_verifier_and_indexes_before_transaction(
     assert captured["verified_at"] == NOW
     assert captured["principal_id"] == "principal-sheriff"
     assert captured["sheriff_office_id"] == "office-johannesburg"
-    assert captured["certificate_jurisdiction_reference"] if "certificate_jurisdiction_reference" in captured else True
+    assert "certificate_jurisdiction_reference" not in captured
     assert captured["expected_revision"] == 0
     assert captured["expected_predecessor_fingerprint"] is None
     assert captured["session"] is session
@@ -162,7 +162,10 @@ def test_non_admin_business_role_cannot_call_appointment_verifier(
     )
 
     with pytest.raises(HTTPException) as error:
-        subject.record_sheriff_office_appointment_command(_command(), context)
+        subject.record_sheriff_office_appointment_command(
+            _command(),
+            context,  # type: ignore[arg-type]
+        )
 
     assert error.value.status_code == 403
     assert called is False
