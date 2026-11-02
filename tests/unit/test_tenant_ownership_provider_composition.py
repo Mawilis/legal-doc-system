@@ -78,7 +78,7 @@ class Revocation:
         self.revoked = revoked
         self.unavailable = unavailable
 
-    def is_revoked(self, reference: str, at: datetime) -> bool:
+    def is_revoked(self, revocation_reference: str, at: datetime) -> bool:
         if self.unavailable:
             raise TimeoutError("revocation unavailable")
         return self.revoked
@@ -210,6 +210,7 @@ def test_composition_binds_registry_subject_and_signature_into_one_preflight():
     assert type(preflight) is ProviderEvidencePreflight
     assert preflight.registry_assessment.selected_filing_reference == "filing-1"
     assert preflight.subject_reference == "subject-1"
+    assert signer.last_request is not None
     assert preflight.signing_payload_digest == signer.last_request.payload_digest
     assert len(preflight.validation_fingerprint) == 64
     with pytest.raises(ProviderEvidenceCompositionError, match="CONSTRUCTOR_DISABLED"):
