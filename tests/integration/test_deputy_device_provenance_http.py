@@ -82,7 +82,8 @@ def test_issue_route_uses_server_identity_session_binding_and_transaction(
             "tenant_id": TENANT,
             "principal_id": PRINCIPAL,
             "deputy_id": DEPUTY,
-        }
+        },
+        signed_payload=lambda: b"synthetic-challenge-payload",
     )
 
     monkeypatch.setattr(
