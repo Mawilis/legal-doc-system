@@ -9,13 +9,19 @@ FINANCIAL AUTHORITY: None; Kennel EOS remains exclusive.
 """
 from __future__ import annotations
 
+from base64 import b64decode, b64encode
+import binascii
 from collections.abc import Mapping
-from datetime import datetime
+from datetime import datetime, timezone
 import hashlib
 import json
 import re
 from typing import Any, Final, NoReturn, cast
 
+from cryptography.exceptions import InvalidSignature
+from cryptography.hazmat.primitives import hashes, serialization
+from cryptography.hazmat.primitives.asymmetric import ec
+from cryptography.hazmat.primitives.asymmetric.utils import encode_dss_signature
 from pymongo.errors import DuplicateKeyError, PyMongoError
 
 from tools.eos.legal_operations.domain.process_service_location_evidence_authority import (
@@ -41,7 +47,7 @@ _SHA3 = re.compile(r"^[0-9a-f]{128}$")
 _FORBIDDEN = frozenset({"default", "global", "global_root", "root", "master", "*"})
 
 _GRANT_FIELDS = frozenset({"schema", "version", "entity_type", "tenant_id", "grant_id", "attempt_id", "fingerprint", "payload"})
-_OBSERVATION_FIELDS = frozenset({"schema", "version", "entity_type", "tenant_id", "observation_id", "attempt_id", "grant_id", "fingerprint", "payload"})
+_OBSERVATION_FIELDS = frozenset({"schema", "version", "entity_type", "tenant_id", "observation_id", "attempt_id", "grant_id", "fingerprint", "payload", "current_evidence_identity", "location_signature_p1363_b64", "device_public_key_spki", "signed_payload_fingerprint", "record_fingerprint"})
 _REVOCATION_FIELDS = frozenset({"schema", "version", "entity_type", "tenant_id", "grant_id", "revocation_id", "revoked_by_principal_id", "revoked_at", "reason_reference", "evidence_reference", "fingerprint"})
 _ACCESS_FIELDS = frozenset({"schema", "version", "entity_type", "tenant_id", "event_id", "attempt_id", "grant_id", "actor_principal_id", "actor_scope", "accessed_at", "record_count", "purpose", "fingerprint"})
 
@@ -135,6 +141,72 @@ def _parse_time(value: object, code: str) -> datetime:
     if parsed.tzinfo is None or parsed.utcoffset() is None or parsed.isoformat() != value:
         _fail(ProcessServiceLocationEvidenceRegistryRecordInvalidError, code)
     return parsed
+
+
+def _location_signed_payload(payload: Mapping[str, Any], current_evidence_identity: str) -> bytes:
+    """Rebuild the exact canonical bytes signed by the browser."""
+    try:
+        captured = datetime.fromisoformat(cast(str, payload["captured_at"]))
+        if captured.tzinfo is None or captured.utcoffset() is None:
+            raise ValueError("capture timestamp must be aware")
+        captured_text = captured.astimezone(timezone.utc).isoformat(timespec="milliseconds").replace("+00:00", "Z")
+        value = {
+            "schema": "WILSY-PROCESS-SERVICE-LOCATION-OBSERVATION-SIGNATURE/V1",
+            "tenant_id": cast(str, payload["tenant_id"]),
+            "attempt_id": cast(str, payload["attempt_id"]),
+            "current_evidence_identity": current_evidence_identity,
+            "deputy_id": cast(str, payload["deputy_id"]),
+            "device_id": cast(str, payload["device_id"]),
+            "challenge_id": cast(str, payload["device_provenance_reference"]),
+            "grant_id": cast(str, payload["grant_id"]),
+            "observation_id": cast(str, payload["observation_id"]),
+            "latitude": f"{float(payload['latitude']):.7f}",
+            "longitude": f"{float(payload['longitude']):.7f}",
+            "horizontal_accuracy_m": f"{float(payload['horizontal_accuracy_m']):.2f}",
+            "captured_at": captured_text,
+        }
+        return json.dumps(value, ensure_ascii=True, allow_nan=False, sort_keys=True, separators=(",", ":")).encode("utf-8")
+    except (KeyError, TypeError, ValueError) as error:
+        _fail(ProcessServiceLocationEvidenceRegistryRecordInvalidError, "P5L_LOCATION_SIGNATURE_PAYLOAD_INVALID", error)
+
+
+def _verify_location_record(
+    *,
+    payload: Mapping[str, Any],
+    current_evidence_identity: str,
+    signature_b64: str,
+    public_key_b64: str,
+    signed_payload_fingerprint: str,
+) -> None:
+    """Revalidate device key identity and the P-256 signature over GPS facts."""
+    try:
+        signature = b64decode(signature_b64, validate=True)
+        public_der = b64decode(public_key_b64, validate=True)
+        if len(signature) != 64:
+            raise ValueError("invalid P1363 signature length")
+        key = serialization.load_der_public_key(public_der)
+        if not isinstance(key, ec.EllipticCurvePublicKey) or not isinstance(key.curve, ec.SECP256R1):
+            raise ValueError("P-256 public key required")
+        expected_device_id = f"deputy-device:{hashlib.sha3_512(public_der).hexdigest()}"
+        if payload.get("device_id") != expected_device_id:
+            raise ValueError("device public key does not match observation device")
+        r = int.from_bytes(signature[:32], "big")
+        value_s = int.from_bytes(signature[32:], "big")
+        if r <= 0 or value_s <= 0:
+            raise ValueError("invalid P1363 signature")
+        signed_payload = _location_signed_payload(payload, current_evidence_identity)
+        actual_payload_fingerprint = hashlib.sha3_512(signed_payload).hexdigest()
+        if actual_payload_fingerprint != signed_payload_fingerprint:
+            raise ValueError("signed payload fingerprint mismatch")
+        key.verify(
+            encode_dss_signature(r, value_s),
+            signed_payload,
+            ec.ECDSA(hashes.SHA256()),
+        )
+    except InvalidSignature as error:
+        _fail(ProcessServiceLocationEvidenceRegistryRecordInvalidError, "P5L_LOCATION_SIGNATURE_INVALID", error)
+    except (binascii.Error, TypeError, ValueError) as error:
+        _fail(ProcessServiceLocationEvidenceRegistryRecordInvalidError, "P5L_LOCATION_SIGNATURE_INVALID", error)
 
 
 def _validate_envelope(
@@ -281,6 +353,10 @@ class ProcessServiceLocationEvidenceRegistry:
         observation: ProcessServiceLocationObservation,
         collection: Any,
         *,
+        current_evidence_identity: str,
+        location_signature_p1363: bytes,
+        device_public_key_spki: str,
+        signed_payload_fingerprint: str,
         session: object,
     ) -> ProcessServiceLocationObservation:
         """Append one immutable GPS observation; no update or overwrite path exists."""
@@ -292,12 +368,32 @@ class ProcessServiceLocationEvidenceRegistry:
             fingerprint = observation.fingerprint
         except ProcessServiceLocationEvidenceAuthorityError as error:
             _fail(ProcessServiceLocationEvidenceRegistryError, "P5L_OBSERVATION_INVALID", error)
+        identity = _identity(current_evidence_identity, "P5L_CURRENT_EVIDENCE_IDENTITY_INVALID")
+        if not isinstance(location_signature_p1363, bytes) or len(location_signature_p1363) != 64:
+            _fail(ProcessServiceLocationEvidenceRegistryError, "P5L_LOCATION_SIGNATURE_INVALID")
+        if not isinstance(device_public_key_spki, str) or not device_public_key_spki:
+            _fail(ProcessServiceLocationEvidenceRegistryError, "P5L_LOCATION_PUBLIC_KEY_REQUIRED")
+        if not isinstance(signed_payload_fingerprint, str) or _SHA3.fullmatch(signed_payload_fingerprint) is None:
+            _fail(ProcessServiceLocationEvidenceRegistryError, "P5L_SIGNED_PAYLOAD_FINGERPRINT_INVALID")
+        signature_b64 = b64encode(location_signature_p1363).decode("ascii")
+        _verify_location_record(
+            payload=payload,
+            current_evidence_identity=identity,
+            signature_b64=signature_b64,
+            public_key_b64=device_public_key_spki,
+            signed_payload_fingerprint=signed_payload_fingerprint,
+        )
         record = {
             "schema": SCHEMA, "version": VERSION, "entity_type": "ProcessServiceLocationObservation",
             "tenant_id": observation.tenant_id, "observation_id": observation.observation_id,
             "attempt_id": observation.attempt_id, "grant_id": observation.grant_id,
             "fingerprint": fingerprint, "payload": payload,
+            "current_evidence_identity": identity,
+            "location_signature_p1363_b64": signature_b64,
+            "device_public_key_spki": device_public_key_spki,
+            "signed_payload_fingerprint": signed_payload_fingerprint,
         }
+        record["record_fingerprint"] = _digest(record)
         _persist(collection, record, identity_query={"tenant_id": observation.tenant_id, "observation_id": observation.observation_id}, session=session)
         return observation
 
@@ -332,6 +428,17 @@ class ProcessServiceLocationEvidenceRegistry:
             payload = cast(Mapping[str, Any], record["payload"])
             if payload.get("tenant_id") != tenant or payload.get("attempt_id") != attempt or payload.get("observation_id") != record["observation_id"] or payload.get("grant_id") != record["grant_id"]:
                 _fail(ProcessServiceLocationEvidenceRegistryRecordInvalidError, "P5L_OBSERVATION_PAYLOAD_BINDING_INVALID")
+            integrity = dict(record)
+            record_fingerprint = integrity.pop("record_fingerprint", None)
+            if not isinstance(record_fingerprint, str) or _digest(integrity) != record_fingerprint:
+                _fail(ProcessServiceLocationEvidenceRegistryRecordInvalidError, "P5L_OBSERVATION_RECORD_FINGERPRINT_INVALID")
+            _verify_location_record(
+                payload=payload,
+                current_evidence_identity=cast(str, record["current_evidence_identity"]),
+                signature_b64=cast(str, record["location_signature_p1363_b64"]),
+                public_key_b64=cast(str, record["device_public_key_spki"]),
+                signed_payload_fingerprint=cast(str, record["signed_payload_fingerprint"]),
+            )
             result.append(dict(payload))
         return tuple(result)
 
