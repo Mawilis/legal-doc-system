@@ -5045,7 +5045,32 @@ export default function LegalDashboard({
   useEffect(() => {
     if (!isDeputyMode || typeof window === 'undefined') return undefined;
     const syncPending = () => {
-      syncPendingDeputyLocationEvidence().catch(() => {
+      syncPendingDeputyLocationEvidence().then(async (result) => {
+        for (const attemptId of result.syncedAttemptIds || []) {
+          try {
+            const packet = await getDeputyLocationEvidence(attemptId);
+            setLocationEvidenceByAttempt((current) => ({
+              ...current,
+              [attemptId]: packet,
+            }));
+            setLocationCaptureStates((current) => ({
+              ...current,
+              [attemptId]: {
+                status: 'success',
+                message: 'Offline signed location evidence synced successfully.',
+              },
+            }));
+          } catch {
+            setLocationCaptureStates((current) => ({
+              ...current,
+              [attemptId]: {
+                status: 'success',
+                message: 'Offline signed location evidence synced. Saved evidence is available when this attempt is opened.',
+              },
+            }));
+          }
+        }
+      }).catch(() => {
         // Signed events remain in the local outbox for explicit retry.
       });
     };
