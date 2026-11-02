@@ -197,6 +197,45 @@ def test_transfer_requires_distinct_proposal_acceptance_and_owner_finalization(m
     ) == 1
 
 
+def test_trust_root_key_rotation_is_revisioned_and_currentness_selects_new_key(mongo):
+    client, db = mongo
+    registry = GovernedTrustRootRegistry(db, GovernanceVerifier())
+    registry.ensure_indexes()
+    now = datetime.now(timezone.utc)
+    root_ref = "root-rotate-" + uuid.uuid4().hex
+    first = TrustRootEnrollmentRequest(
+        root_ref, "public-key-fingerprint-1", "ZA",
+        "TENANT_OWNERSHIP_ISSUER", "independent-issuer", "issuer-key-1", 1,
+        now - timedelta(minutes=5), now + timedelta(days=10),
+        "enroll-key-one-" + uuid.uuid4().hex, "decision-fingerprint-1",
+        ("governor-a", "governor-b"), 2,
+    )
+    with client.start_session() as session:
+        with session.start_transaction():
+            first_record = registry.enroll(first, session=session)
+
+    rotation_start = now + timedelta(hours=1)
+    second = TrustRootEnrollmentRequest(
+        root_ref, "public-key-fingerprint-2", "ZA",
+        "TENANT_OWNERSHIP_ISSUER", "independent-issuer", "issuer-key-2", 2,
+        rotation_start, now + timedelta(days=11),
+        "enroll-key-two-" + uuid.uuid4().hex, "decision-fingerprint-2",
+        ("governor-c", "governor-d"), 2,
+    )
+    with client.start_session() as session:
+        with session.start_transaction():
+            second_record = registry.enroll(second, session=session)
+
+    assert second_record.revision == first_record.revision + 1
+    assert second_record.fingerprint != first_record.fingerprint
+    with client.start_session() as session:
+        with session.start_transaction():
+            assert registry.current(root_ref, at=now, session=session) == first_record
+            assert registry.current(
+                root_ref, at=rotation_start + timedelta(seconds=1), session=session
+            ) == second_record
+
+
 def test_trust_root_revocation_is_independently_verified_append_only_and_revision_scoped(mongo):
     client, db = mongo
     registry = GovernedTrustRootRegistry(
