@@ -213,8 +213,7 @@ class GovernedTrustRootRegistry:
                 {"trust_root_reference": ref}, sort=[("revision", -1)], session=session
             )
             if prior is not None and (
-                prior.get("fingerprint") != fingerprint
-                or prior.get("issuer_identity") != issuer
+                prior.get("issuer_identity") != issuer
                 or prior.get("authority_scope") != scope
                 or request.key_revision <= prior.get("key_revision", 0)
             ):
