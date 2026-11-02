@@ -98,7 +98,8 @@ def _active(session: Any) -> None:
 def _instant(name: str, value: object) -> datetime:
     if type(value) is not datetime or value.tzinfo is None or value.utcoffset() is None:
         raise TrustRootError(f"{name.upper()}_INVALID")
-    return value.astimezone(timezone.utc)
+    normalized = value.astimezone(timezone.utc)
+    return normalized.replace(microsecond=(normalized.microsecond // 1000) * 1000)
 
 
 def _token(name: str, value: object) -> str:
@@ -215,7 +216,16 @@ class GovernedTrustRootRegistry:
         if row is None:
             return None
         try:
-            return TrustRootRecord(**{name: row[name] for name in TrustRootRecord.__dataclass_fields__})
+            values = {name: row[name] for name in TrustRootRecord.__dataclass_fields__}
+            for field in ("valid_from", "valid_until", "enrolled_at"):
+                stored = values[field]
+                if type(stored) is not datetime:
+                    raise TypeError("persisted timestamp is not datetime")
+                if stored.tzinfo is None or stored.utcoffset() is None:
+                    stored = stored.replace(tzinfo=timezone.utc)
+                values[field] = _instant(field, stored)
+            values["approver_subjects"] = tuple(values["approver_subjects"])
+            return TrustRootRecord(**values)
         except (KeyError, TypeError, ValueError) as error:
             raise TrustRootError("TRUST_ROOT_PERSISTED_RECORD_INVALID") from error
 
