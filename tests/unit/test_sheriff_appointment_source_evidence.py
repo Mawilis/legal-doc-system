@@ -152,7 +152,7 @@ def test_deputy_sheriff_requires_appointing_sheriff_and_board_approval() -> None
 
     item = evidence(
         **values,
-        appointing_principal_id="principal-sheriff",
+        appointing_principal_id="principal-appointing-sheriff",
         board_approval_reference="sabfs-approval-1",
         board_approval_fingerprint=BOARD_FP,
     )
@@ -244,7 +244,7 @@ def test_source_observation_method_pair_must_be_consistent() -> None:
 
 def test_effective_window_and_service_area_are_required() -> None:
     with pytest.raises(SheriffAppointmentSourceEvidenceError) as window:
-        evidence(effective_until=NOW - timedelta(seconds=1))
+        evidence(effective_until=NOW - timedelta(days=2))
     assert window.value.code == "SHERIFF_SOURCE_EFFECTIVE_WINDOW_INVALID"
 
     with pytest.raises(SheriffAppointmentSourceEvidenceError) as areas:
