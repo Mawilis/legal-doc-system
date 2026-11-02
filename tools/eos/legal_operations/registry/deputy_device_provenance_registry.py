@@ -714,6 +714,55 @@ class DeputyDeviceProvenanceRegistry:
             session=tx,
         )
 
+    def get_consumed_provenance(
+        self,
+        *,
+        tenant_id: str,
+        challenge_id: str,
+        session: object,
+    ) -> DeputyDeviceProvenance:
+        """Load an already-consumed challenge proof for signed offline event sync."""
+        tx = _active(session)
+        tenant = _tenant(tenant_id)
+        identity = _identifier("challenge_id", challenge_id)
+        try:
+            row = self.collection.find_one(
+                {"tenant_id": tenant, "challenge_id": identity},
+                session=tx,
+            )
+        except PyMongoError as error:
+            _raise(
+                DeputyDeviceProvenanceRegistryPersistenceError,
+                "L8_6H_READ_UNAVAILABLE",
+                error,
+            )
+        if row is None:
+            _raise(DeputyDeviceProvenanceRegistryConflictError, "L8_6H_CHALLENGE_NOT_FOUND")
+        challenge = self._hydrate_challenge(
+            cast(Mapping[str, object], row),
+            session=tx,
+        )
+        payload = cast(Mapping[str, object], row)
+        if payload.get("consumed_at") is None or not isinstance(payload.get("provenance"), Mapping):
+            _raise(DeputyDeviceProvenanceRegistryConflictError, "L8_6H_CHALLENGE_NOT_CONSUMED")
+        provenance = DeputyDeviceProvenance.from_persisted(
+            cast(Mapping[str, object], payload["provenance"])
+        )
+        if (
+            provenance.tenant_id != tenant
+            or provenance.principal_id != challenge.principal_id
+            or provenance.deputy_id != challenge.deputy_id
+            or provenance.sheriff_office_id != challenge.sheriff_office_id
+            or provenance.session_reference != challenge.session_reference
+            or provenance.device_id != challenge.device_id
+            or provenance.challenge_id != challenge.challenge_id
+        ):
+            _raise(
+                DeputyDeviceProvenanceRegistryPersistedRecordInvalidError,
+                "L8_6H_PROVENANCE_SCOPE_MISMATCH",
+            )
+        return provenance
+
     def verify_and_consume(
         self,
         *,
