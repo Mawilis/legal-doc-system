@@ -47,7 +47,7 @@ def _command(**overrides: object) -> subject.SheriffOfficeAppointmentCommand:
         "professional_indemnity_insurance_valid_until": NOW + timedelta(days=365),
     }
     values.update(overrides)
-    return subject.SheriffOfficeAppointmentCommand(**values)
+    return subject.SheriffOfficeAppointmentCommand.model_validate(values)
 
 
 def test_request_model_rejects_browser_owned_authority_fields() -> None:
