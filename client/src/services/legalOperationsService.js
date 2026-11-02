@@ -1,6 +1,6 @@
 /**
  * WILSY OS — ROLE-SCOPED LEGAL OPERATIONS CLIENT ADAPTER
- * VERSION: v2.3.0-P5L-ONE-SHOT-LOCATION-EVIDENCE
+ * VERSION: v2.4.0-L8-SHERIFF-APPOINTMENT-EVIDENCE-CLIENT-TRANSPORT
  * AUTHORITY: Browser transport validation and presentation adaptation only.
  * EPITOME: Authenticated browser adapter for certified Legal Operations reads,
  *          practice-workspace projection, exact finance evidence lookups,
@@ -17,8 +17,8 @@
  *                            invoice evidence, intake and ReturnOfService HTTP
  *                            authority. This adapter owns strict browser transport
  *                            validation and immutable presentation adaptation only.
- * CERTIFICATION / UPDATE DATE: 2026-10-19
- * CHANGELOG: 2026-10-19 v2.2.0-P8-LEGAL-WORK-COMPLETION-BROWSER-TRANSPORT adds one authenticated authority-free work-completion browser command, strict three-field input whitelist, exact canonical server endpoint, opaque evidence only, and response work-item binding. Server retains tenant, principal, authorization, assignment, transaction, timestamp and durable completion truth.
+ * CERTIFICATION / UPDATE DATE: 2026-11-02
+ * CHANGELOG: 2026-11-02 v2.4.0-L8-SHERIFF-APPOINTMENT-EVIDENCE-CLIENT-TRANSPORT adds strict tenant-admin Sheriff appointment evidence command transport, rejects browser-owned tenant/District/jurisdiction/verifier/time/revision authority, and validates the appointment-scoped location projection V2 with current office, District and appointment identity.\n *            2026-10-19 v2.2.0-P8-LEGAL-WORK-COMPLETION-BROWSER-TRANSPORT adds one authenticated authority-free work-completion browser command, strict three-field input whitelist, exact canonical server endpoint, opaque evidence only, and response work-item binding. Server retains tenant, principal, authorization, assignment, transaction, timestamp and durable completion truth.
  *            2026-10-16 v2.1.0-LEGAL-COMMERCIAL-CONTEXT-BROWSER-TRANSPORT adds one strict authenticated GET /legal-operations/commercial-context adapter. It validates the exact server-owned product/subscription/plan/commercial contract, preserves 401/403 as access denial, rejects malformed or extra commercial fields, accepts no tenant/plan/subscription/price selector, and creates no IAM, Legal, payment or settlement authority.
  *            2026-10-12 v2.0.0-LEGAL-EVIDENCE-UPLOAD-BROWSER-TRANSPORT adds one governed FormData upload command carrying only the selected file, document path identity, and idempotency header; it sets no multipart boundary and validates bounded canonical commit/reconciliation evidence.
  *            2026-09-25 v1.9.0-LEGAL-CLIENT-ACCEPTANCE-BROWSER-TRANSPORT adds the authenticated bounded conflict-screening review-queue read adapter. It accepts no tenant input, validates exact server-owned screening identity/status/matter/timestamp rows, preserves deterministic order and excludes screening evidence, party data, review/IAM and financial authority.
@@ -70,7 +70,7 @@
  *                  finance, client and deputy projections. Browser requests never
  *                  select tenant/principal/role authority; deputy rows remain
  *                  bound to the server-authorized canonical deputy identity.
- * AUTHORITY BOUNDARY: Read/intake/return/deputy-command transport validation
+ * AUTHORITY BOUNDARY: Read/intake/return/deputy-command/appointment-evidence transport validation
  *                     only. Browser role, menu, capability, generated opaque IDs,
  *                     visibility, observation or display state never grants legal
  *                     practice, sheriff, deputy, finance or client authority and
