@@ -26,6 +26,7 @@ Prepared proposal and acceptance receipts are opaque, verifier-issued values. Pa
 - `prepare_revocation` verifies the institutional revocation before a Mongo transaction is opened.
 - `revoke` appends the verified revocation event in the caller-owned transaction; it never edits or deletes the enrolled root.
 - Revocation is bound to exact root reference, public-key fingerprint, key ID, key revision and issuer/recovery purpose scope.
+- Key rotation appends a strictly higher key revision under the same trust-root reference and issuer/purpose scope; the public-key fingerprint and key ID may change. Currentness selects the newest valid revision, while prior revisions remain available for historical verification.
 - A revocation cannot be backdated, replayed, self-approved by the issuer, or applied to another key revision.
 - Currentness checks fail closed on malformed revocation records. Historical checks before a future effective instant remain historically valid; current checks at/after the effective instant deny.
 
