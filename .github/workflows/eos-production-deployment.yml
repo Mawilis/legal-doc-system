@@ -15,8 +15,6 @@ concurrency:
 jobs:
   deploy:
     name: Deploy certified EOS to production EKS
-    # This runner must be registered inside the approved production VPC.
-    # GitHub-hosted runners are intentionally not admitted for private EKS.
     runs-on: [self-hosted, linux, x64, wilsy-production]
     environment: production
     timeout-minutes: 30
@@ -43,7 +41,7 @@ jobs:
       - name: Checkout deployment manifest
         uses: actions/checkout@v4
 
-      - name: Validate all production inputs before cloud access
+      - name: Validate production inputs before cloud access
         shell: bash
         run: |
           set -euo pipefail
@@ -56,7 +54,7 @@ jobs:
           )
           for name in "${required[@]}"; do
             if [[ -z "${!name:-}" ]]; then
-              printf 'DEPLOYMENT_BLOCKED: required GitHub environment variable/secret is missing: %s\n' "$name" >&2
+              printf 'DEPLOYMENT_BLOCKED: required production variable/secret missing: %s\n' "$name" >&2
               exit 1
             fi
           done
@@ -64,10 +62,10 @@ jobs:
           [[ "$AWS_EOS_RUNTIME_ROLE_ARN" == arn:aws:iam::*:role/* ]] || { echo "DEPLOYMENT_BLOCKED: invalid EOS runtime role ARN"; exit 1; }
           [[ "$LEGAL_EVIDENCE_RECONCILIATION_AWS_ROLE_ARN" == arn:aws:iam::*:role/* ]] || { echo "DEPLOYMENT_BLOCKED: invalid read-only reconciliation role ARN"; exit 1; }
           [[ "$EOS_IMAGE" =~ ^ghcr\.io/[^[:space:]@]+@sha256:[a-f0-9]{64}$ ]] || { echo "DEPLOYMENT_BLOCKED: EOS_IMAGE must be an immutable GHCR digest"; exit 1; }
-          [[ "$MONGODB_URI" =~ ^mongodb(\+srv)?:// ]] || { echo "DEPLOYMENT_BLOCKED: business Mongo URI is not a MongoDB URI"; exit 1; }
-          [[ "$AUDIT_MONGODB_URI" =~ ^mongodb(\+srv)?:// ]] || { echo "DEPLOYMENT_BLOCKED: audit Mongo URI is not a MongoDB URI"; exit 1; }
-          [[ "$INTERNAL_AUTH_SECRET" != "$MONGODB_URI" && "$INTERNAL_AUTH_SECRET" != "$AUDIT_MONGODB_URI" ]] || { echo "DEPLOYMENT_BLOCKED: credential values are not independently scoped"; exit 1; }
-          echo "Production inputs are present; URI contents remain redacted."
+          [[ "$MONGODB_URI" =~ ^mongodb(\+srv)?:// ]] || { echo "DEPLOYMENT_BLOCKED: invalid business Mongo URI scheme"; exit 1; }
+          [[ "$AUDIT_MONGODB_URI" =~ ^mongodb(\+srv)?:// ]] || { echo "DEPLOYMENT_BLOCKED: invalid audit Mongo URI scheme"; exit 1; }
+          [[ "$INTERNAL_AUTH_SECRET" != "$MONGODB_URI" && "$INTERNAL_AUTH_SECRET" != "$AUDIT_MONGODB_URI" ]] || { echo "DEPLOYMENT_BLOCKED: credential scopes are not independent"; exit 1; }
+          echo "Production inputs are present; sensitive values remain redacted."
 
       - name: Configure AWS credentials through GitHub OIDC
         uses: aws-actions/configure-aws-credentials@v4
@@ -92,7 +90,7 @@ jobs:
           set -euo pipefail
           printf '%s' "$GH_TOKEN" | docker login ghcr.io --username "${GITHUB_ACTOR}" --password-stdin
 
-      - name: Provision and independently verify audit indexes
+      - name: Provision and verify independent audit indexes
         shell: bash
         run: |
           set -euo pipefail
@@ -102,7 +100,7 @@ jobs:
             "$EOS_IMAGE" -m tools.eos.legal_operations.service.legal_evidence_provider_readonly_reconciliation_audit_provisioner)"
           printf '%s\n' "$provision_output"
           provision_fingerprint="$(printf '%s\n' "$provision_output" | sed -n 's/^AUDIT_TARGET_FINGERPRINT=//p')"
-          [[ -n "$provision_fingerprint" ]] || { echo "DEPLOYMENT_BLOCKED: audit provisioner did not emit a target fingerprint"; exit 1; }
+          [[ -n "$provision_fingerprint" ]] || { echo "DEPLOYMENT_BLOCKED: audit target fingerprint absent"; exit 1; }
           echo "AUDIT_TARGET_FINGERPRINT=$provision_fingerprint" >> "$GITHUB_ENV"
 
       - name: Create production runtime Secret and ConfigMap
@@ -133,19 +131,18 @@ jobs:
           } > "$config_file"
           kubectl create configmap wilsy-eos-runtime --from-env-file="$config_file" --dry-run=client -o yaml | kubectl apply -f -
 
-      - name: Bind the dedicated EOS ServiceAccount workload identity
-        shell: bash
-        run: |
-          set -euo pipefail
-          kubectl apply -f k8s/eos-api-production.yaml --dry-run=client -o yaml >/dev/null
-          kubectl annotate serviceaccount wilsy-eos-api \
-            "eks.amazonaws.com/role-arn=$AWS_EOS_RUNTIME_ROLE_ARN" --overwrite
-
-      - name: Apply digest-pinned EOS workload
+      - name: Apply ServiceAccount and bind its approved workload identity
         shell: bash
         run: |
           set -euo pipefail
           kubectl apply -f k8s/eos-api-production.yaml
+          kubectl annotate serviceaccount wilsy-eos-api \
+            "eks.amazonaws.com/role-arn=$AWS_EOS_RUNTIME_ROLE_ARN" --overwrite
+
+      - name: Roll out digest-pinned EOS workload
+        shell: bash
+        run: |
+          set -euo pipefail
           kubectl set image deployment/wilsy-eos-api "eos-api=$EOS_IMAGE"
           kubectl rollout status deployment/wilsy-eos-api --timeout=8m
 
