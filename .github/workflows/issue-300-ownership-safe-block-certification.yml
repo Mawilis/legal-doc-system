@@ -13,6 +13,7 @@ on:
       - "tools/eos/auth/tenant_ownership_evidence_validation.py"
       - "tools/eos/auth/tenant_ownership_provider_composition.py"
       - "tests/unit/test_tenant_ownership_provider_composition.py"
+      - "tests/integration/test_tenant_ownership_provider_composition_real_mongo.py"
       - "tests/unit/test_tenant_ownership_provider_ports.py"
       - "tests/unit/test_tenant_ownership_evidence_validation.py"
       - "tests/integration/test_tenant_ownership_recovery_replay_real_mongo.py"
@@ -117,6 +118,7 @@ jobs:
             tests/unit/test_tenant_ownership_evidence_validation.py \
             tests/unit/test_tenant_ownership_provider_composition.py \
             tests/integration/test_tenant_ownership_recovery_replay_real_mongo.py \
+            tests/integration/test_tenant_ownership_provider_composition_real_mongo.py \
             tests/unit/test_tenant_ownership_transfer_protocol.py \
             tests/unit/test_tenant_ownership_transfer_protocol.py \
             tests/integration/test_tenant_ownership_evidence_registry_real_mongo.py \
@@ -154,6 +156,7 @@ jobs:
             tests/integration/test_tenant_ownership_evidence_registry_real_mongo.py \
             tests/integration/test_tenant_ownership_governance_transfer_real_mongo.py \
             tests/integration/test_tenant_ownership_recovery_replay_real_mongo.py \
+            tests/integration/test_tenant_ownership_provider_composition_real_mongo.py \
             tests/unit/test_tenant_router_fail_closed.py \
             tests/unit/test_legal_practice_workspace_confidentiality_boundary.py \
             tests/integration/test_tenant_owner_bootstrap_real_mongo.py \
@@ -246,6 +249,7 @@ jobs:
             tests/integration/test_tenant_ownership_evidence_registry_real_mongo.py \
             tests/integration/test_tenant_ownership_governance_transfer_real_mongo.py \
             tests/integration/test_tenant_ownership_recovery_replay_real_mongo.py \
+            tests/integration/test_tenant_ownership_provider_composition_real_mongo.py \
             tests/integration/test_legal_operations_practice_workspace_real_mongo.py
 
       - name: Remove disposable Mongo container
