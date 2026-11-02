@@ -3141,7 +3141,7 @@ export async function getDeputyLocationEvidence(attemptId) {
   if (
     value?.schema !== 'WILSY-DEPUTY-LOCATION-EVIDENCE-PROJECTION/V1'
     || value?.version !== 'v1.0.0-P5L-DEPUTY-LOCATION-EVIDENCE-READ'
-    || value?.visibility !== 'DEPUTY_OWN_ACTIVE_ATTEMPT_LOCATION_EVIDENCE'
+    || value?.visibility !== 'DEPUTY_OWN_BOUND_ATTEMPT_LOCATION_EVIDENCE'
     || value?.attempt_id !== attemptId
     || !Array.isArray(value?.observations)
   ) {
