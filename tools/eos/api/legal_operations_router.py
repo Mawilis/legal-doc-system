@@ -2038,7 +2038,7 @@ async def get_deputy_personal_active_work_projection(
         current_collection = database.get_collection(ALLOCATION_CURRENT_COLLECTION)
         receipt_collection = database.get_collection(ALLOCATION_RECEIPT_COLLECTION)
         for model in personal.active_attempts:
-            attempt = model.current
+            attempt = cast(ServiceAttempt, model.current)
             pointer = ProcessServiceAllocationRegistry.get_current(
                 context.tenant_id,
                 attempt.document_id,
@@ -2062,7 +2062,7 @@ async def get_deputy_personal_active_work_projection(
                 or receipt.tenant_id != context.tenant_id
                 or receipt.document_id != attempt.document_id
                 or receipt.instruction_id != attempt.instruction_id
-                or receipt.deputy_id != deputy_id
+                or receipt.deputy_id != personal.deputy_id
                 or receipt.deputy_id != attempt.deputy_id
                 or receipt.allocation_evidence_reference
                 != attempt.allocation_evidence_reference
@@ -2085,7 +2085,7 @@ async def get_deputy_personal_active_work_projection(
         return {
             "tenant_id": personal.tenant_id,
             "visibility": "DEPUTY_PERSONAL_ACTIVE_WORK",
-            "deputy_id": deputy_id,
+            "deputy_id": personal.deputy_id,
             "active_attempts": [_project(model.current) for model in personal.active_attempts],
             "who_serves": assignments,
         }
@@ -2219,7 +2219,7 @@ async def get_deputy_location_evidence_projection(
             or receipt.tenant_id != context.tenant_id
             or receipt.document_id != selected.document_id
             or receipt.instruction_id != selected.instruction_id
-            or receipt.deputy_id != personal.deputy_id
+            or receipt.deputy_id != deputy_id
             or receipt.deputy_id != selected.deputy_id
             or receipt.allocation_evidence_reference != selected.allocation_evidence_reference
             or receipt.allocated_at != selected.allocated_at
@@ -2252,7 +2252,7 @@ async def get_deputy_location_evidence_projection(
             "tenant_id": context.tenant_id,
             "visibility": "DEPUTY_OWN_BOUND_ATTEMPT_LOCATION_EVIDENCE",
             "attempt_id": attempt_id,
-            "deputy_id": personal.deputy_id,
+            "deputy_id": deputy_id,
             "observations": list(observations),
         }
 
