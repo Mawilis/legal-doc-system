@@ -109,7 +109,7 @@ MONGO_URI = os.getenv(
     "mongodb://127.0.0.1:27027/?replicaSet=wilsyVendorCertRS",
 )
 EXPECTED_REPLICA_SET = "wilsyVendorCertRS"
-NOW = datetime(2026, 10, 9, 12, 0, tzinfo=timezone.utc)
+NOW = datetime.now(timezone.utc)
 
 
 def _majority(database: Any, name: str) -> Any:

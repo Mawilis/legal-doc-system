@@ -56,7 +56,10 @@ from tools.eos.auth.tenant_authorization_decision_evidence_registry import (
 )
 from tools.eos.auth.tenant_membership_repository import TenantMembershipRepository
 from tools.eos.kernel.db import get_client, get_database
-from tools.eos.saas.billing.subscription_term_policy import evaluate_subscription_term
+from tools.eos.saas.billing.subscription_term_policy import (
+    SubscriptionTermKind,
+    evaluate_subscription_term,
+)
 from tools.eos.saas.billing.subscription_registry import (
     SubscriptionRegistry,
     SubscriptionRegistryError,
@@ -79,7 +82,7 @@ from tools.eos.saas.entitlement.tenant_product_entitlement_registry import (
 
 
 VERSION: Final[str] = (
-    "v1.1.0-D22B3-P42-CATALOGUE-UPGRADE-COMPOSITION"
+    "v1.3.0-P42-FOUNDER-PERPETUAL-LEGAL-ISSUANCE"
 )
 SUBSCRIPTION_COLLECTION: Final[str] = "subscriptions"
 LEGAL_FEATURE: Final[str] = "legal.core"
@@ -397,7 +400,10 @@ def _run(
                 applicable = (
                     term.eligible
                     and entity.status is SubscriptionStatus.ACTIVE
-                    and LEGAL_FEATURE in entity.plan_features
+                    and (
+                        LEGAL_FEATURE in entity.plan_features
+                        or term.kind is SubscriptionTermKind.PERPETUAL_PLATFORM_OWNER
+                    )
                 )
                 issuance: TenantProductEntitlementIssuanceResult | None = None
                 if applicable:
@@ -535,7 +541,7 @@ __all__ = [
 
 # WILSY OS SOVEREIGN ARTIFACT SEAL
 # ARTIFACT: subscription_active_entitlement_composition_service.py
-# VERSION: v1.2.0-P42-SUBSCRIPTION-TERM-ENFORCEMENT
+# VERSION: v1.3.0-P42-FOUNDER-PERPETUAL-LEGAL-ISSUANCE
 # AUTHORITY BOUNDARY: transaction composition of subscription lifecycle and positive Legal Operations entitlement only
 # TENANT POSTURE: exact SovereignIdentity tenant/principal scope and one active session
 # FAIL-CLOSED POSTURE: invalid input, dependency, lifecycle, issuance, retry exhaustion and uncertain commit reject
