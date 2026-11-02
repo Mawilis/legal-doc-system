@@ -12,6 +12,7 @@ from cryptography.hazmat.primitives.asymmetric.ed25519 import Ed25519PrivateKey
 from pymongo import MongoClient
 
 from tools.eos.auth.tenant_ownership_evidence_validation import (
+    OwnershipEvidenceValidationError,
     RecoveryDecisionEnvelope,
     RecoveryDecisionReplayRegistry,
     recovery_decision_message,
@@ -215,7 +216,7 @@ def test_composed_preflight_persists_only_inside_real_mongo_transaction(mongo):
 
     with client.start_session() as session:
         with session.start_transaction():
-            with pytest.raises(Exception, match="RECOVERY_DECISION_REPLAY"):
+            with pytest.raises(OwnershipEvidenceValidationError, match="RECOVERY_DECISION_REPLAY"):
                 registry.consume_validated(preflight.recovery_validation, session=session)
             session.abort_transaction()
     assert db[registry.COLLECTION].count_documents({"tenant_id": lookup.tenant_id}) == 1
