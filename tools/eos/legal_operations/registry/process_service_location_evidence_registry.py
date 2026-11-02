@@ -528,9 +528,10 @@ class ProcessServiceLocationEvidenceRegistry:
         grant_id: str,
         revocation_collection: Any,
         *,
+        at: datetime | None = None,
         session: object,
     ) -> None:
-        """Reject an exact grant once a tenant-scoped revocation exists."""
+        """Reject captures at/after revocation; preserve evidence captured before withdrawal."""
         tx = _active(session)
         tenant = _tenant(tenant_id)
         grant = _identity(grant_id, "P5L_GRANT_ID_INVALID")
@@ -546,7 +547,9 @@ class ProcessServiceLocationEvidenceRegistry:
             fingerprint = cast(str, expected.pop("fingerprint"))
             if _digest(expected) != fingerprint:
                 _fail(ProcessServiceLocationEvidenceRegistryRecordInvalidError, "P5L_REVOCATION_FINGERPRINT_INVALID")
-            _fail(ProcessServiceLocationEvidenceRegistryConflictError, "P5L_PERMISSION_GRANT_REVOKED")
+            revoked_at = _parse_time(value["revoked_at"], "P5L_REVOCATION_TIMESTAMP_INVALID")
+            if at is None or _timestamp(at, "P5L_CAPTURE_TIMESTAMP_INVALID") >= revoked_at:
+                _fail(ProcessServiceLocationEvidenceRegistryConflictError, "P5L_PERMISSION_GRANT_REVOKED")
 
     @staticmethod
     def record_access(
