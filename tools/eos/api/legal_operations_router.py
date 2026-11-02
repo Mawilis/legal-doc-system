@@ -198,6 +198,10 @@ from tools.eos.legal_operations.registry.legal_operations_lifecycle_registry imp
     COLLECTION as LIFECYCLE_COLLECTION,
     LegalOperationsLifecycleRegistry,
 )
+from tools.eos.legal_operations.registry.deputy_principal_binding_registry import (
+    DeputyPrincipalBindingRegistry,
+    DeputyPrincipalBindingRegistryError,
+)
 from tools.eos.legal_operations.registry.process_service_location_evidence_registry import (
     ACCESS_AUDIT_COLLECTION as LOCATION_ACCESS_AUDIT_COLLECTION,
     OBSERVATION_COLLECTION as LOCATION_OBSERVATION_COLLECTION,
@@ -2058,7 +2062,7 @@ async def get_deputy_personal_active_work_projection(
                 or receipt.tenant_id != context.tenant_id
                 or receipt.document_id != attempt.document_id
                 or receipt.instruction_id != attempt.instruction_id
-                or receipt.deputy_id != personal.deputy_id
+                or receipt.deputy_id != deputy_id
                 or receipt.deputy_id != attempt.deputy_id
                 or receipt.allocation_evidence_reference
                 != attempt.allocation_evidence_reference
@@ -2081,7 +2085,7 @@ async def get_deputy_personal_active_work_projection(
         return {
             "tenant_id": personal.tenant_id,
             "visibility": "DEPUTY_PERSONAL_ACTIVE_WORK",
-            "deputy_id": personal.deputy_id,
+            "deputy_id": deputy_id,
             "active_attempts": [_project(model.current) for model in personal.active_attempts],
             "who_serves": assignments,
         }
@@ -2178,14 +2182,14 @@ async def get_deputy_location_evidence_projection(
 
     def project(session: Any, database: Any) -> dict[str, Any]:
         lifecycle = database.get_collection(LIFECYCLE_COLLECTION)
-        binding = database.get_collection(DEPUTY_PRINCIPAL_BINDING_COLLECTION)
-        personal = get_deputy_personal_active_work(
-            tenant_id=context.tenant_id,
-            principal_id=context.identity.identity_id,
-            binding_collection=binding,
-            lifecycle_collection=lifecycle,
+        binding_collection = database.get_collection(DEPUTY_PRINCIPAL_BINDING_COLLECTION)
+        binding = DeputyPrincipalBindingRegistry.resolve_by_principal(
+            context.tenant_id,
+            context.identity.identity_id,
+            binding_collection,
             session=session,
         )
+        deputy_id = binding.deputy_id
         model = get_entity_read_model(
             tenant_id=context.tenant_id,
             entity_type="ServiceAttempt",
@@ -2194,7 +2198,7 @@ async def get_deputy_location_evidence_projection(
             session=session,
         )
         selected = cast(ServiceAttempt, model.current)
-        if selected.attempt_id != attempt_id or selected.deputy_id != personal.deputy_id:
+        if selected.attempt_id != attempt_id or selected.deputy_id != deputy_id:
             raise HTTPException(status_code=404, detail="LEGAL_OPERATION_NOT_FOUND")
         pointer = ProcessServiceAllocationRegistry.get_current(
             context.tenant_id,
@@ -2256,15 +2260,10 @@ async def get_deputy_location_evidence_projection(
         return _workspace_projection_transaction(project)
     except HTTPException:
         raise
-    except DeputyPersonalActiveWorkError as error:
-        if error.code == "L8_6C_BINDING_REQUIRED":
-            raise HTTPException(
-                status_code=status.HTTP_403_FORBIDDEN,
-                detail="DEPUTY_IDENTITY_BINDING_REQUIRED",
-            ) from error
+    except DeputyPrincipalBindingRegistryError as error:
         raise HTTPException(
-            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
-            detail="LEGAL_OPERATIONS_DEPUTY_LOCATION_EVIDENCE_UNAVAILABLE",
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="DEPUTY_IDENTITY_BINDING_REQUIRED",
         ) from error
     except (ProcessServiceAllocationRegistryError, ProcessServiceLocationEvidenceRegistryError) as error:
         raise HTTPException(
