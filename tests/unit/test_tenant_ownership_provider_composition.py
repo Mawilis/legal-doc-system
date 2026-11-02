@@ -293,6 +293,11 @@ def test_recovery_composition_requires_exact_scope_and_independent_signed_decisi
         )
 
 
+class MalformedRecovery:
+    def verify_decision(self, lookup: RecoveryDecisionLookup):
+        return None
+
+
 def test_recovery_provider_outage_and_untrusted_key_fail_closed():
     recovery_keys = RecoveryKeys()
     lookup = RecoveryDecisionLookup(TENANT, ENTITY, "case-1", fp("case"), PRINCIPAL, NOW)
@@ -304,6 +309,11 @@ def test_recovery_provider_outage_and_untrusted_key_fail_closed():
             operation=TenantOwnershipOperation.GOVERNED_RECOVERY,
             purpose="GOVERNED_RECOVERY", recovery_lookup=lookup,
         ))
+    with pytest.raises(ProviderEvidenceCompositionError, match="RECOVERY_DECISION_ENVELOPE_INVALID"):
+        composer(recovery=MalformedRecovery(), recovery_keys=recovery_keys).compose(
+            request(operation=TenantOwnershipOperation.GOVERNED_RECOVERY,
+                    purpose="GOVERNED_RECOVERY", recovery_lookup=lookup)
+        )
     recovery_keys.status = "REVOKED"
     with pytest.raises(ProviderEvidenceCompositionError, match="RECOVERY_SIGNING_KEY_NOT_CURRENT"):
         composer(recovery=Recovery(recovery_keys), recovery_keys=recovery_keys).compose(
