@@ -9,6 +9,7 @@ from __future__ import annotations
 from dataclasses import dataclass
 from datetime import datetime, timedelta, timezone
 from hashlib import sha256
+import json
 import re
 from typing import Any, Protocol
 
@@ -168,11 +169,12 @@ def signing_message(request: SigningRequest) -> bytes:
         raise OwnershipEvidenceValidationError("SIGNING_SCOPE_INVALID")
     if type(request.key_revision) is not int or request.key_revision < 1:
         raise OwnershipEvidenceValidationError("SIGNING_KEY_REVISION_INVALID")
-    return _DOMAIN + b"|".join((
-        b"sha256", digest.encode(), request.tenant_id.encode(),
-        request.purpose.encode(), request.key_reference.encode(),
-        str(request.key_revision).encode(),
-    ))
+    payload = {
+        "digest_algorithm": "sha256", "payload_digest": digest,
+        "tenant_id": request.tenant_id, "purpose": request.purpose,
+        "key_reference": request.key_reference, "key_revision": request.key_revision,
+    }
+    return _DOMAIN + json.dumps(payload, sort_keys=True, separators=(",", ":"), ensure_ascii=False).encode("utf-8")
 
 
 def verify_signing_receipt(
@@ -200,6 +202,8 @@ def verify_signing_receipt(
         raise OwnershipEvidenceValidationError("SIGNING_KEY_NOT_CURRENT_OR_REVOKED")
     if receipt.algorithm != "Ed25519":
         raise OwnershipEvidenceValidationError("SIGNING_ALGORITHM_UNSUPPORTED")
+    if not receipt.provider_id or not receipt.custody_authority_id or not receipt.audit_reference:
+        raise OwnershipEvidenceValidationError("SIGNING_CUSTODY_PROVENANCE_MISSING")
     _fingerprint(receipt.custody_proof_fingerprint, "SIGNING_CUSTODY_PROOF_INVALID")
     try:
         signature = bytes.fromhex(receipt.signature)
@@ -274,20 +278,29 @@ def recovery_decision_message(lookup: RecoveryDecisionLookup,
         raise OwnershipEvidenceValidationError("RECOVERY_DECISION_SCOPE_MISMATCH")
     if not nonce or not key_reference or type(key_revision) is not int or key_revision < 1:
         raise OwnershipEvidenceValidationError("RECOVERY_DECISION_ENVELOPE_INVALID")
-    return b"WILSY:TENANT-OWNERSHIP:RECOVERY:v1\0" + b"|".join(
-        value.encode() for value in (
-            lookup.tenant_id, lookup.legal_entity_reference,
-            lookup.recovery_case_reference, lookup.recovery_case_fingerprint,
-            lookup.successor_principal_id, receipt.authority_id,
-            receipt.trust_root_reference, receipt.trust_root_fingerprint,
-            receipt.decision_reference, receipt.decision_fingerprint,
-            receipt.quorum_fingerprint, receipt.conflict_check_fingerprint,
-            receipt.notice_and_objection_fingerprint, receipt.appeal_status,
-            _utc(receipt.issued_at, "RECOVERY_DECISION_ISSUED_AT_INVALID").isoformat(),
-            _utc(receipt.valid_until, "RECOVERY_DECISION_EXPIRY_INVALID").isoformat(),
-            receipt.revocation_reference, key_reference, str(key_revision), nonce,
-        )
-    )
+    payload = {
+        "tenant_id": lookup.tenant_id,
+        "legal_entity_reference": lookup.legal_entity_reference,
+        "recovery_case_reference": lookup.recovery_case_reference,
+        "recovery_case_fingerprint": _fingerprint(lookup.recovery_case_fingerprint, "RECOVERY_CASE_FINGERPRINT_INVALID"),
+        "successor_principal_id": lookup.successor_principal_id,
+        "authority_id": receipt.authority_id,
+        "trust_root_reference": receipt.trust_root_reference,
+        "trust_root_fingerprint": receipt.trust_root_fingerprint,
+        "decision_reference": receipt.decision_reference,
+        "decision_fingerprint": receipt.decision_fingerprint,
+        "quorum_fingerprint": receipt.quorum_fingerprint,
+        "conflict_check_fingerprint": receipt.conflict_check_fingerprint,
+        "notice_and_objection_fingerprint": receipt.notice_and_objection_fingerprint,
+        "appeal_status": receipt.appeal_status,
+        "issued_at": _utc(receipt.issued_at, "RECOVERY_DECISION_ISSUED_AT_INVALID").isoformat(),
+        "valid_until": _utc(receipt.valid_until, "RECOVERY_DECISION_EXPIRY_INVALID").isoformat(),
+        "revocation_reference": receipt.revocation_reference,
+        "key_reference": key_reference, "key_revision": key_revision, "nonce": nonce,
+    }
+    return b"WILSY:TENANT-OWNERSHIP:RECOVERY:v1\0" + json.dumps(
+        payload, sort_keys=True, separators=(",", ":"), ensure_ascii=False
+    ).encode("utf-8")
 
 
 def validate_recovery_decision(
