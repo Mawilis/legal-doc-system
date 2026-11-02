@@ -1695,7 +1695,7 @@ describe('L8-7D7 role-scoped Legal Operations client adapter', () => {
         schema: 'WILSY-DEPUTY-LOCATION-EVIDENCE-PROJECTION/V1',
         version: 'v1.0.0-P5L-DEPUTY-LOCATION-EVIDENCE-READ',
         tenant_id: 'tenant-deputy',
-        visibility: 'DEPUTY_OWN_ACTIVE_ATTEMPT_LOCATION_EVIDENCE',
+        visibility: 'DEPUTY_OWN_BOUND_ATTEMPT_LOCATION_EVIDENCE',
         attempt_id: 'attempt-1',
         deputy_id: 'deputy-1',
         observations: [{
@@ -1713,7 +1713,7 @@ describe('L8-7D7 role-scoped Legal Operations client adapter', () => {
     expect(mockGet).toHaveBeenCalledWith(
       '/legal-operations/deputy/attempts/attempt-1/location-evidence',
     );
-    expect(result.visibility).toBe('DEPUTY_OWN_ACTIVE_ATTEMPT_LOCATION_EVIDENCE');
+    expect(result.visibility).toBe('DEPUTY_OWN_BOUND_ATTEMPT_LOCATION_EVIDENCE');
     expect(result.observations[0].latitude).toBe(-26.2);
     expect(Object.isFrozen(result)).toBe(true);
     expect(Object.isFrozen(result.observations)).toBe(true);
