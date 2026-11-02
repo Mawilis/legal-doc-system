@@ -42,7 +42,7 @@ from tools.eos.legal_operations.registry.process_service_allocation_registry imp
 VERSION: Final[str] = "v1.0.0-PROCESS-SERVICE-LOCATION-EVIDENCE"
 SCHEMA: Final[str] = "WILSY-PROCESS-SERVICE-LOCATION-EVIDENCE/V1"
 LOCATION_PURPOSE: Final[str] = "PROCESS_SERVICE_ATTEMPT_FIELD_EVIDENCE"
-_ID = re.compile(r"^[A-Za-z0-9][A-Za-z0-9._:-]{0,127}$")
+_ID = re.compile(r"^[A-Za-z0-9][A-Za-z0-9._:-]{0,191}$")
 _SHA3 = re.compile(r"^[0-9a-f]{128}$")
 _FORBIDDEN = frozenset({"default", "global", "global_root", "root", "master", "*"})
 
