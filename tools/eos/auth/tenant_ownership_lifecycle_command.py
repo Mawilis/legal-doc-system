@@ -28,6 +28,20 @@ class TenantOwnershipLifecycleCommandError(RuntimeError):
     """Bounded lifecycle command denial."""
 
 
+class TenantOwnershipGenesisRequestAuthorizer(Protocol):
+    """Adapter to the existing deployment-rooted pretenant provisioner gate."""
+
+    def authorize_pretenant_provisioner(
+        self,
+        *,
+        principal_id: str,
+        tenant_id: str,
+        session: Any,
+    ) -> object:
+        """Return the canonical positive pretenant decision; never a caller Boolean."""
+        ...
+
+
 class TenantOwnershipTransferActorAuthorizer(Protocol):
     """Adapter to the canonical tenant IAM decision for ownership transfer."""
 
@@ -57,12 +71,14 @@ class TenantOwnershipLifecycleCommand:
         verifier: TenantOwnershipEvidenceVerifier,
         registry: TenantOwnershipEvidenceRegistry,
         transfer_actor_authorizer: TenantOwnershipTransferActorAuthorizer,
+        genesis_request_authorizer: TenantOwnershipGenesisRequestAuthorizer,
     ) -> None:
-        if verifier is None or registry is None or transfer_actor_authorizer is None:
+        if verifier is None or registry is None or transfer_actor_authorizer is None or genesis_request_authorizer is None:
             raise TenantOwnershipLifecycleCommandError("LIFECYCLE_DEPENDENCY_REQUIRED")
         self._verifier = verifier
         self._registry = registry
         self._transfer_actor_authorizer = transfer_actor_authorizer
+        self._genesis_request_authorizer = genesis_request_authorizer
 
     @staticmethod
     def _active_transaction(session: Any) -> None:
@@ -102,6 +118,13 @@ class TenantOwnershipLifecycleCommand:
         if request.operation is TenantOwnershipOperation.TENANT_GENESIS:
             if current is not None or expected_revision != 0:
                 raise TenantOwnershipLifecycleCommandError("TENANT_GENESIS_NOT_AVAILABLE")
+            pretenant_decision = self._genesis_request_authorizer.authorize_pretenant_provisioner(
+                principal_id=actor_principal_id,
+                tenant_id=request.tenant_id,
+                session=session,
+            )
+            if not self._authorized(pretenant_decision):
+                raise TenantOwnershipLifecycleCommandError("PRETENANT_PROVISIONER_AUTHORIZATION_DENIED")
         elif request.operation is TenantOwnershipOperation.OWNERSHIP_TRANSFER:
             self._require_current_owner(
                 current=current,
@@ -159,5 +182,6 @@ __all__ = [
     "VERSION",
     "TenantOwnershipLifecycleCommand",
     "TenantOwnershipLifecycleCommandError",
+    "TenantOwnershipGenesisRequestAuthorizer",
     "TenantOwnershipTransferActorAuthorizer",
 ]
