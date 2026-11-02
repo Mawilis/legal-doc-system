@@ -225,7 +225,7 @@ def test_location_permission_route_consumes_device_proof_and_creates_short_grant
         fingerprint="a" * 128,
     )
     monkeypatch.setattr(command_api, "_transaction", lambda callback: callback(session, database))
-    monkeypatch.setattr(command_api, "_location_attempt_sources", lambda *args: (
+    monkeypatch.setattr(command_api, "_location_attempt_sources", lambda *args, **kwargs: (
         SimpleNamespace(attempt_id="attempt-http"), object(), object()
     ))
     monkeypatch.setattr(command_api, "_deputy_device_scope", lambda *args: DEPUTY)
@@ -274,7 +274,7 @@ def test_location_capture_route_requires_both_challenge_and_gps_signatures(
         fingerprint="b" * 128,
     )
     monkeypatch.setattr(command_api, "_transaction", lambda callback: callback(session, database))
-    monkeypatch.setattr(command_api, "_location_attempt_sources", lambda *args: (
+    monkeypatch.setattr(command_api, "_location_attempt_sources", lambda *args, **kwargs: (
         SimpleNamespace(attempt_id="attempt-http"), object(), object()
     ))
     monkeypatch.setattr(command_api, "_deputy_device_scope", lambda *args: DEPUTY)
