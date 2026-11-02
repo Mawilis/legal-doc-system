@@ -1,14 +1,14 @@
 /**
  * WILSY OS — ROLE-SCOPED LEGAL OPERATIONS CLIENT CERTIFICATE
- * VERSION: v2.7.0-P5L-LOCATION-EVIDENCE-CLIENT-CERT
+ * VERSION: v2.8.0-L8-SHERIFF-APPOINTMENT-EVIDENCE-CLIENT-CERT
  * AUTHORITY: Client transport-adapter contract certification only.
  * EPITOME: Certifies the canonical Legal Operations browser adapter across
  *          sheriff/deputy/client reads, D11 law-firm workspace, exact finance
  *          evidence lookup, governed initial intake, ReturnOfService generation
  *          and bound-Deputy field commands without browser-owned authority.
  * ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/client/src/__tests__/services/legalOperationsService.test.js
- * CERTIFICATION / UPDATE DATE: 2026-10-12
- * CHANGELOG: 2026-10-16 v2.6.0-LEGAL-COMMERCIAL-CONTEXT-BROWSER-TRANSPORT-CERT certifies the strict GET /legal-operations/commercial-context browser adapter, exact LEGAL_DASHBOARD product identity, canonical plan/subscription/commercial projection, 401/403 access-denied classification, malformed-response rejection, no tenant/plan/price selector, and no financial execution authority.
+ * CERTIFICATION / UPDATE DATE: 2026-11-02
+ * CHANGELOG: 2026-11-02 v2.8.0-L8-SHERIFF-APPOINTMENT-EVIDENCE-CLIENT-CERT certifies the strict Sheriff appointment evidence command whitelist/response, server-owned tenant/District/jurisdiction/verifier/time/revision fields, and the current-appointment office-scoped location projection V2.\n *            2026-10-16 v2.6.0-LEGAL-COMMERCIAL-CONTEXT-BROWSER-TRANSPORT-CERT certifies the strict GET /legal-operations/commercial-context browser adapter, exact LEGAL_DASHBOARD product identity, canonical plan/subscription/commercial projection, 401/403 access-denied classification, malformed-response rejection, no tenant/plan/price selector, and no financial execution authority.
  *            2026-10-12 v2.5.0-LEGAL-EVIDENCE-UPLOAD-BROWSER-TRANSPORT-CERT proves unchanged FormData, no manual multipart boundary, exact document endpoint/idempotency header, no browser authority fields, and strict canonical response validation.
  *            2026-09-25 v2.3.0-L8-8N-CONFLICT-SCREENING-READ-CLIENT-CERT binds the authenticated screening review-queue read adapter to the canonical /api/legal-operations/conflict-screenings path, proves exact data-minimized rows, server-owned tenant/order/status and privileged-field rejection.
  *            2026-09-25 v2.2.0-L8-8L-CONFLICT-REVIEW-COMMAND-CLIENT-CERT binds the authenticated four-field conflict-review adapter to the canonical /api/legal-operations/conflict-reviews path, proves server-owned authority exclusion, bounded receipt validation and unchanged 401/403/404/409/transport failures.
@@ -65,7 +65,7 @@ import {
   generateLegalReturnOfService,
   getDeputyFieldCapabilities,
   getDeputyLocationEvidence,
-  getSheriffLocationEvidence,
+  getSheriffLocationEvidence,\n  recordSheriffOfficeAppointment,
   getDeputyPersonalActiveWork,
   getLegalClientMatters,
   getLegalClientAcceptanceInstruments,
@@ -109,6 +109,60 @@ const payload = () => ({
       state: 'ALLOCATED',
     },
   ],
+});
+
+const sheriffAppointmentInput = () => ({
+  appointmentId: 'appointment-1',
+  expectedRevision: 0,
+  expectedPredecessorFingerprint: null,
+  principalId: 'sheriff-1',
+  sheriffOfficeId: 'office-1',
+  appointmentKind: 'PERMANENT',
+  appointmentInstrumentReference: 'gazette:appointment-1',
+  appointmentInstrumentFingerprint: 'a'.repeat(128),
+  officeScopeInstrumentReference: 'gazette:office-scope-1',
+  officeScopeInstrumentFingerprint: 'b'.repeat(128),
+  fidelityFundCertificateReference: 'sabfs:ffc-1',
+  fidelityFundCertificateFingerprint: 'c'.repeat(128),
+  professionalIndemnityInsuranceReference: 'insurer:pi-1',
+  professionalIndemnityInsuranceFingerprint: 'd'.repeat(128),
+  appointmentEffectiveFrom: '2026-10-01T00:00:00.000Z',
+  appointmentEffectiveUntil: null,
+  certificateValidFrom: '2026-10-01T00:00:00.000Z',
+  certificateValidUntil: '2027-10-01T00:00:00.000Z',
+  professionalIndemnityInsuranceValidFrom: '2026-10-01T00:00:00.000Z',
+  professionalIndemnityInsuranceValidUntil: '2027-10-01T00:00:00.000Z',
+});
+
+const sheriffAppointmentResponse = (input = sheriffAppointmentInput()) => ({
+  schema: 'WILSY-SHERIFF-OFFICE-APPOINTMENT-EVIDENCE/V1',
+  appointment_version: 'v1.0.0-L8-SHERIFF-OFFICE-APPOINTMENT-EVIDENCE',
+  tenant_id: 'tenant-sheriff',
+  appointment_id: input.appointmentId,
+  revision: input.expectedRevision + 1,
+  principal_id: input.principalId,
+  sheriff_office_id: input.sheriffOfficeId,
+  district_id: 'district-gauteng',
+  appointment_kind: input.appointmentKind,
+  appointment_instrument_reference: input.appointmentInstrumentReference,
+  appointment_instrument_fingerprint: input.appointmentInstrumentFingerprint,
+  office_scope_instrument_reference: input.officeScopeInstrumentReference,
+  office_scope_instrument_fingerprint: input.officeScopeInstrumentFingerprint,
+  fidelity_fund_certificate_reference: input.fidelityFundCertificateReference,
+  fidelity_fund_certificate_fingerprint: input.fidelityFundCertificateFingerprint,
+  certificate_jurisdiction_reference: 'ZA-GP-JHB',
+  professional_indemnity_insurance_reference: input.professionalIndemnityInsuranceReference,
+  professional_indemnity_insurance_fingerprint: input.professionalIndemnityInsuranceFingerprint,
+  professional_indemnity_insurance_valid_from: input.professionalIndemnityInsuranceValidFrom,
+  professional_indemnity_insurance_valid_until: input.professionalIndemnityInsuranceValidUntil,
+  appointment_effective_from: input.appointmentEffectiveFrom,
+  appointment_effective_until: input.appointmentEffectiveUntil,
+  certificate_valid_from: input.certificateValidFrom,
+  certificate_valid_until: input.certificateValidUntil,
+  verified_by_principal_id: 'tenant-admin-1',
+  verified_at: '2026-11-02T12:00:00.000Z',
+  supersedes_fingerprint: input.expectedPredecessorFingerprint,
+  fingerprint: 'f'.repeat(128),
 });
 
 const commercialContextPayload = () => ({
@@ -1684,7 +1738,7 @@ describe('L8-7D7 role-scoped Legal Operations client adapter', () => {
     }
 
     expect(LEGAL_OPERATIONS_CLIENT_VERSION).toBe(
-      'v2.3.0-P5L-ONE-SHOT-LOCATION-EVIDENCE',
+      'v2.4.0-L8-SHERIFF-APPOINTMENT-EVIDENCE-CLIENT-TRANSPORT',
     );
   });
 
@@ -1721,14 +1775,17 @@ describe('L8-7D7 role-scoped Legal Operations client adapter', () => {
   });
 
 
-  it('reads Sheriff location evidence only with the single-office response contract', async () => {
+  it('reads Sheriff location evidence under the current-appointment office-scoped contract', async () => {
     mockGet.mockResolvedValueOnce({
       data: {
-        schema: 'WILSY-SHERIFF-OFFICE-LOCATION-EVIDENCE-PROJECTION/V1',
-        version: 'v1.0.0-P5L-SHERIFF-OFFICE-LOCATION-EVIDENCE-READ',
+        schema: 'WILSY-SHERIFF-OFFICE-LOCATION-EVIDENCE-PROJECTION/V2',
+        version: 'v1.1.0-L8-SHERIFF-APPOINTMENT-SCOPED-LOCATION-READ',
         tenant_id: 'tenant-sheriff',
-        visibility: 'ONE_CANONICAL_SHERIFF_OFFICE_LOCATION_EVIDENCE',
+        visibility: 'CURRENT_VERIFIED_APPOINTMENT_OFFICE_LOCATION_EVIDENCE',
         sheriff_office_id: 'office-1',
+        district_id: 'district-gauteng',
+        appointment_id: 'appointment-1',
+        appointment_revision: 1,
         attempt_id: 'attempt-1',
         observations: [],
       },
@@ -1738,7 +1795,80 @@ describe('L8-7D7 role-scoped Legal Operations client adapter', () => {
       '/legal-operations/sheriff/attempts/attempt-1/location-evidence',
     );
     expect(result.sheriff_office_id).toBe('office-1');
+    expect(result.appointment_id).toBe('appointment-1');
     expect(Object.isFrozen(result)).toBe(true);
+  });
+
+  it('rejects browser-owned Sheriff appointment authority and invalid revision lineage', () => {
+    const input = sheriffAppointmentInput();
+    expect(() => __legalOperationsServiceInternals.assertSheriffAppointmentInput({
+      ...input,
+      tenantId: 'tenant-forged',
+    })).toThrow('SHERIFF_APPOINTMENT_COMMAND_INPUT_INVALID');
+    expect(() => __legalOperationsServiceInternals.assertSheriffAppointmentInput({
+      ...input,
+      expectedPredecessorFingerprint: 'a'.repeat(128),
+    })).toThrow('SHERIFF_APPOINTMENT_COMMAND_INPUT_INVALID');
+    expect(() => __legalOperationsServiceInternals.assertSheriffAppointmentInput({
+      ...input,
+      verifiedByPrincipalId: 'forged-admin',
+    })).toThrow('SHERIFF_APPOINTMENT_COMMAND_INPUT_INVALID');
+  });
+
+  it('records Sheriff appointment evidence with only the strict source facts', async () => {
+    const input = sheriffAppointmentInput();
+    mockConflictReviewPost.mockResolvedValueOnce({
+      data: sheriffAppointmentResponse(input),
+    });
+
+    const result = await recordSheriffOfficeAppointment(input);
+    const [path, body] = mockConflictReviewPost.mock.calls[0];
+
+    expect(path).toBe('/legal-operations/sheriff/appointments');
+    expect(body).toEqual({
+      appointment_id: input.appointmentId,
+      expected_revision: 0,
+      expected_predecessor_fingerprint: null,
+      principal_id: input.principalId,
+      sheriff_office_id: input.sheriffOfficeId,
+      appointment_kind: input.appointmentKind,
+      appointment_instrument_reference: input.appointmentInstrumentReference,
+      appointment_instrument_fingerprint: input.appointmentInstrumentFingerprint,
+      office_scope_instrument_reference: input.officeScopeInstrumentReference,
+      office_scope_instrument_fingerprint: input.officeScopeInstrumentFingerprint,
+      fidelity_fund_certificate_reference: input.fidelityFundCertificateReference,
+      fidelity_fund_certificate_fingerprint: input.fidelityFundCertificateFingerprint,
+      professional_indemnity_insurance_reference: input.professionalIndemnityInsuranceReference,
+      professional_indemnity_insurance_fingerprint: input.professionalIndemnityInsuranceFingerprint,
+      appointment_effective_from: input.appointmentEffectiveFrom,
+      appointment_effective_until: null,
+      certificate_valid_from: input.certificateValidFrom,
+      certificate_valid_until: input.certificateValidUntil,
+      professional_indemnity_insurance_valid_from: input.professionalIndemnityInsuranceValidFrom,
+      professional_indemnity_insurance_valid_until: input.professionalIndemnityInsuranceValidUntil,
+    });
+    expect(body).not.toHaveProperty('tenant_id');
+    expect(body).not.toHaveProperty('district_id');
+    expect(body).not.toHaveProperty('certificate_jurisdiction_reference');
+    expect(body).not.toHaveProperty('verified_by_principal_id');
+    expect(body).not.toHaveProperty('verified_at');
+    expect(result.appointmentId).toBe(input.appointmentId);
+    expect(result.certificateJurisdictionReference).toBe('ZA-GP-JHB');
+    expect(result.verifiedByPrincipalId).toBe('tenant-admin-1');
+    expect(Object.isFrozen(result)).toBe(true);
+  });
+
+  it('rejects a Sheriff appointment response bound to a different principal', async () => {
+    const input = sheriffAppointmentInput();
+    mockConflictReviewPost.mockResolvedValueOnce({
+      data: {
+        ...sheriffAppointmentResponse(input),
+        principal_id: 'different-principal',
+      },
+    });
+    await expect(recordSheriffOfficeAppointment(input)).rejects.toThrow(
+      'SHERIFF_APPOINTMENT_COMMAND_RESPONSE_INVALID',
+    );
   });
 
   it('builds deterministic canonical P-256 signing bytes for exact GPS facts', () => {
@@ -1805,7 +1935,7 @@ describe('L8-7D7 role-scoped Legal Operations client adapter', () => {
 
 /**
  * ARTIFACT: legalOperationsService.test.js
- * VERSION: v2.7.0-P5L-LOCATION-EVIDENCE-CLIENT-CERT
+ * VERSION: v2.8.0-L8-SHERIFF-APPOINTMENT-EVIDENCE-CLIENT-CERT
  * AUTHORITY BOUNDARY: Legal Operations read/intake/return/deputy-command/conflict-review/commercial-context browser adapter certificate only
  * TENANT POSTURE: server tenant/principal/role/client/deputy scope remains authoritative; browser cannot create authorization scope
  * FAIL-CLOSED POSTURE: malformed/extra/missing/schema/version/order/scope/state/command/commercial-response drift rejects before presentation or transport success
