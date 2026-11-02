@@ -413,7 +413,7 @@ class AuthRegistry:
         )
         if session_reference is not None:
             if not isinstance(session_reference, str) or not session_reference.startswith("WILSYSESSION-") or len(session_reference) > 128:
-                raise AuthRegistryError("AUTH_SESSION_REFERENCE_INVALID")
+                raise AuthRegistryTenantError("AUTH_SESSION_REFERENCE_INVALID")
             claims["session_reference"] = session_reference
         return create_access_token(
             claims,
