@@ -208,7 +208,11 @@ class TenantOwnershipProviderEvidenceComposer:
             (item for item in history if item.filing_reference == assessment.selected_filing_reference),
             None,
         )
-        if selected_snapshot is None or selected_snapshot.jurisdiction != request.jurisdiction:
+        if (
+            selected_snapshot is None
+            or selected_snapshot.jurisdiction != request.jurisdiction
+            or selected_snapshot.record_reference != request.legal_entity_reference
+        ):
             raise ProviderEvidenceCompositionError("REGISTRY_SELECTED_SOURCE_SCOPE_MISMATCH")
 
         try:
