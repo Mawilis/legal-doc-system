@@ -14,7 +14,7 @@ from typing import Any, Final, Protocol
 from pymongo import ASCENDING
 from pymongo.errors import DuplicateKeyError, PyMongoError
 
-VERSION: Final[str] = "v1.0.0-ISSUE-300-GOVERNED-TRUST-ROOT"
+VERSION: Final[str] = "v1.1.0-ISSUE-300-GOVERNED-TRUST-ROOT-REVOCATION"
 COLLECTION: Final[str] = "tenant_ownership_governed_trust_roots"
 EVENTS: Final[str] = "tenant_ownership_trust_root_events"
 ROOT_SCOPE: Final[str] = "TENANT_OWNERSHIP_ISSUER"
@@ -61,6 +61,45 @@ class TrustRootEnrollmentVerifier(Protocol):
     def verify(self, request: TrustRootEnrollmentRequest) -> VerifiedTrustRootEnrollment:
         """Validate authority, independent approvers, signatures and currentness."""
         ...
+
+@dataclass(frozen=True, slots=True)
+class TrustRootRevocationRequest:
+    trust_root_reference: str
+    fingerprint: str
+    key_id: str
+    key_revision: int
+    authority_scope: str
+    effective_at: datetime
+    governance_decision_reference: str
+    governance_decision_fingerprint: str
+    approver_subjects: tuple[str, ...]
+    required_approvals: int
+
+
+@dataclass(frozen=True, slots=True)
+class TrustRootRevocationProof:
+    request: TrustRootRevocationRequest
+    verified_at: datetime
+    governance_verifier_id: str
+    governance_verifier_version: str
+    governance_proof_fingerprint: str
+
+
+class TrustRootRevocationVerifier(Protocol):
+    def verify(self, request: TrustRootRevocationRequest) -> TrustRootRevocationProof:
+        """Verify independently authorized revocation outside the Mongo transaction."""
+        ...
+
+
+@dataclass(frozen=True, slots=True, init=False)
+class PreparedTrustRootRevocation:
+    """Opaque result of the external governance verification preflight."""
+
+    request: TrustRootRevocationRequest
+    verified_at: datetime
+    governance_verifier_id: str
+    governance_verifier_version: str
+    governance_proof_fingerprint: str
 
 
 @dataclass(frozen=True, slots=True)
@@ -111,12 +150,19 @@ def _token(name: str, value: object) -> str:
 class GovernedTrustRootRegistry:
     """Append-only trust-root enrollment with revision and replay protection."""
 
-    def __init__(self, database: Any, verifier: TrustRootEnrollmentVerifier) -> None:
+    def __init__(
+        self,
+        database: Any,
+        verifier: TrustRootEnrollmentVerifier,
+        *,
+        revocation_verifier: TrustRootRevocationVerifier | None = None,
+    ) -> None:
         if database is None or verifier is None:
             raise TrustRootError("TRUST_ROOT_DEPENDENCIES_REQUIRED")
         self._roots = database[COLLECTION]
         self._events = database[EVENTS]
         self._verifier = verifier
+        self._revocation_verifier = revocation_verifier
 
     def ensure_indexes(self) -> None:
         self._roots.create_index(
@@ -126,6 +172,10 @@ class GovernedTrustRootRegistry:
         self._events.create_index(
             [("governance_decision_reference", ASCENDING)],
             unique=True, name="tenant_ownership_trust_root_decision_unique",
+        )
+        self._events.create_index(
+            [("trust_root_reference", ASCENDING), ("key_revision", ASCENDING), ("event", ASCENDING)],
+            unique=True, name="tenant_ownership_trust_root_event_revision_unique",
         )
 
     def enroll(self, request: TrustRootEnrollmentRequest, *, session: Any) -> TrustRootRecord:
@@ -193,6 +243,7 @@ class GovernedTrustRootRegistry:
             self._roots.insert_one(doc, session=session)
             self._events.insert_one({
                 "trust_root_reference": ref, "revision": record.revision,
+                "key_revision": record.key_revision,
                 "governance_decision_reference": decision,
                 "governance_decision_fingerprint": decision_fp,
                 "event": "ENROLLED", "enrolled_at": verified_at,
@@ -215,6 +266,23 @@ class GovernedTrustRootRegistry:
         )
         if row is None:
             return None
+        # Revocation is append-only and revision-specific. A future-effective
+        # revocation does not invalidate historical verification before its time.
+        revoked = self._events.find_one(
+            {
+                "trust_root_reference": ref,
+                "key_revision": row.get("key_revision"),
+                "event": "REVOKED",
+            },
+            session=session,
+        )
+        if revoked is not None:
+            try:
+                revocation_effective_at = _instant("revocation_effective_at", revoked.get("effective_at"))
+            except TrustRootError as error:
+                raise TrustRootError("TRUST_ROOT_REVOCATION_RECORD_INVALID") from error
+            if revocation_effective_at <= instant:
+                return None
         try:
             values = {name: row[name] for name in TrustRootRecord.__dataclass_fields__}
             for field in ("valid_from", "valid_until", "enrolled_at"):
@@ -229,10 +297,103 @@ class GovernedTrustRootRegistry:
         except (KeyError, TypeError, ValueError) as error:
             raise TrustRootError("TRUST_ROOT_PERSISTED_RECORD_INVALID") from error
 
+    def prepare_revocation(self, request: TrustRootRevocationRequest) -> PreparedTrustRootRevocation:
+        """Verify institutional revocation before opening the persistence transaction."""
+        if self._revocation_verifier is None:
+            raise TrustRootError("TRUST_ROOT_REVOCATION_AUTHORITY_UNAVAILABLE")
+        if type(request) is not TrustRootRevocationRequest:
+            raise TrustRootError("TRUST_ROOT_REVOCATION_REQUEST_REQUIRED")
+        ref = _token("trust_root_reference", request.trust_root_reference)
+        fingerprint = _token("fingerprint", request.fingerprint)
+        key_id = _token("key_id", request.key_id)
+        decision = _token("governance_decision_reference", request.governance_decision_reference)
+        decision_fp = _token("governance_decision_fingerprint", request.governance_decision_fingerprint)
+        scope = _token("authority_scope", request.authority_scope)
+        if scope not in {ROOT_SCOPE, RECOVERY_SCOPE}:
+            raise TrustRootError("TRUST_ROOT_SCOPE_INVALID")
+        if type(request.key_revision) is not int or request.key_revision < 1:
+            raise TrustRootError("TRUST_ROOT_KEY_REVISION_INVALID")
+        if type(request.required_approvals) is not int or request.required_approvals < 2:
+            raise TrustRootError("INDEPENDENT_GOVERNANCE_QUORUM_REQUIRED")
+        approvers = tuple(_token("approver_subject", item) for item in request.approver_subjects)
+        if len(set(approvers)) != len(approvers) or len(approvers) < request.required_approvals:
+            raise TrustRootError("INDEPENDENT_GOVERNANCE_APPROVALS_INSUFFICIENT")
+        effective_at = _instant("effective_at", request.effective_at)
+        if not all((ref, fingerprint, key_id, decision, decision_fp, scope)):
+            raise TrustRootError("TRUST_ROOT_REVOCATION_REQUEST_INVALID")
+        try:
+            proof = self._revocation_verifier.verify(request)
+        except Exception as error:
+            raise TrustRootError("TRUST_ROOT_REVOCATION_VERIFICATION_UNAVAILABLE") from error
+        if type(proof) is not TrustRootRevocationProof or proof.request != request:
+            raise TrustRootError("TRUST_ROOT_REVOCATION_PROOF_INVALID")
+        verified_at = _instant("verified_at", proof.verified_at)
+        prepared = object.__new__(PreparedTrustRootRevocation)
+        for name, value in {
+            "request": request,
+            "verified_at": verified_at,
+            "governance_verifier_id": _token("governance_verifier_id", proof.governance_verifier_id),
+            "governance_verifier_version": _token("governance_verifier_version", proof.governance_verifier_version),
+            "governance_proof_fingerprint": _token("governance_proof_fingerprint", proof.governance_proof_fingerprint),
+        }.items():
+            object.__setattr__(prepared, name, value)
+        return prepared
+
+    def revoke(self, prepared: PreparedTrustRootRevocation, *, session: Any) -> None:
+        """Append a verified, revision-specific revocation inside caller transaction."""
+        _active(session)
+        if type(prepared) is not PreparedTrustRootRevocation:
+            raise TrustRootError("PREPARED_TRUST_ROOT_REVOCATION_REQUIRED")
+        request = prepared.request
+        ref = _token("trust_root_reference", request.trust_root_reference)
+        effective_at = _instant("effective_at", request.effective_at)
+        try:
+            root = self._roots.find_one(
+                {
+                    "trust_root_reference": ref,
+                    "fingerprint": request.fingerprint,
+                    "key_id": request.key_id,
+                    "key_revision": request.key_revision,
+                    "authority_scope": request.authority_scope,
+                },
+                session=session,
+            )
+            if root is None:
+                raise TrustRootError("TRUST_ROOT_REVOCATION_TARGET_MISMATCH")
+            if root.get("issuer_identity") in request.approver_subjects:
+                raise TrustRootError("ISSUER_CANNOT_APPROVE_OWN_REVOCATION")
+            if effective_at < prepared.verified_at:
+                raise TrustRootError("TRUST_ROOT_REVOCATION_CANNOT_BE_BACKDATED")
+            self._events.insert_one({
+                "trust_root_reference": ref,
+                "key_revision": request.key_revision,
+                "fingerprint": request.fingerprint,
+                "key_id": request.key_id,
+                "authority_scope": request.authority_scope,
+                "governance_decision_reference": request.governance_decision_reference,
+                "governance_decision_fingerprint": request.governance_decision_fingerprint,
+                "approver_subjects": tuple(request.approver_subjects),
+                "required_approvals": request.required_approvals,
+                "governance_verifier_id": prepared.governance_verifier_id,
+                "governance_verifier_version": prepared.governance_verifier_version,
+                "governance_proof_fingerprint": prepared.governance_proof_fingerprint,
+                "verified_at": prepared.verified_at,
+                "effective_at": effective_at,
+                "event": "REVOKED",
+            }, session=session)
+        except TrustRootError:
+            raise
+        except DuplicateKeyError as error:
+            raise TrustRootError("TRUST_ROOT_REVOCATION_REPLAY_OR_ALREADY_REVOKED") from error
+        except PyMongoError as error:
+            raise TrustRootError("TRUST_ROOT_REVOCATION_PERSISTENCE_FAILED") from error
+
 
 __all__ = [
     "COLLECTION", "EVENTS", "ROOT_SCOPE", "RECOVERY_SCOPE", "VERSION",
-    "GovernedTrustRootRegistry", "TrustRootEnrollmentRequest",
-    "TrustRootEnrollmentVerifier", "TrustRootError", "TrustRootRecord",
+    "GovernedTrustRootRegistry", "PreparedTrustRootRevocation",
+    "TrustRootEnrollmentRequest", "TrustRootEnrollmentVerifier",
+    "TrustRootError", "TrustRootRecord", "TrustRootRevocationProof",
+    "TrustRootRevocationRequest", "TrustRootRevocationVerifier",
     "TrustRootTransactionRequired", "VerifiedTrustRootEnrollment",
 ]
