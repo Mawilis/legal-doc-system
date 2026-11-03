@@ -48,27 +48,34 @@ def test_startup_installs_global_credential_and_challenge_indexes_before_readine
     credential = source.index("PrincipalCredentialRepository.ensure_indexes(")
     challenge = source.index("MembershipSelectionChallengeService.ensure_indexes(")
     factor = source.index("GlobalPrincipalTotpVerifier.ensure_indexes(")
+    enrollment = source.index("GlobalPrincipalMfaEnrollmentService.ensure_indexes(")
     rate_limit = source.index("PrincipalAuthenticationRateLimit(")
     readiness = source.index("global_principal_auth_indexes_ready = client is not None")
-    assert credential < challenge < factor < rate_limit < readiness
+    assert credential < challenge < factor < enrollment < rate_limit < readiness
     assert "database[PRINCIPAL_CREDENTIAL_COLLECTION]" in source
     assert "database[MEMBERSHIP_SELECTION_CHALLENGE_COLLECTION]" in source
     assert "database[GLOBAL_PRINCIPAL_MFA_FACTOR_COLLECTION]" in source
+    assert "database[GLOBAL_PRINCIPAL_MFA_ENROLLMENT_CHALLENGE_COLLECTION]" in source
     assert "database[PRINCIPAL_AUTH_RATE_LIMIT_COLLECTION]" in source
+    assert "kms_envelope.validate_access()" in source
 
 
 def test_global_auth_index_readiness_defaults_and_shutdown_fail_closed():
     assert server.app.state.global_principal_auth_indexes_ready is False
+    assert server.app.state.global_principal_mfa_enrollment_indexes_ready is False
     startup = _startup_source()
     shutdown = _shutdown_source()
     assert "global_principal_auth_indexes_ready = False" in startup
     assert "global_principal_auth_indexes_ready = False" in shutdown
     assert "global_principal_mfa_factor_indexes_ready = False" in startup
     assert "global_principal_mfa_factor_indexes_ready = False" in shutdown
+    assert "global_principal_mfa_enrollment_indexes_ready = False" in startup
+    assert "global_principal_mfa_enrollment_indexes_ready = False" in shutdown
+    assert "global_principal_mfa_kms_envelope = None" in shutdown
 
 
 def test_server_version_is_the_governed_global_auth_route_bootstrap():
-    assert server.VERSION.endswith("GLOBAL-PRINCIPAL-AUTH-ROUTES-AND-MFA-FACTOR-BOOTSTRAP")
+    assert server.VERSION == "v1.41.0-GLOBAL-MFA-ENROLLMENT-AND-LEGACY-MIGRATION"
 
 
 # ARTIFACT: test_global_principal_auth_challenge_startup.py
