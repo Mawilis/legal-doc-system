@@ -469,4 +469,11 @@ Committed code on this branch:
 
 **Integration boundary:** this is deliberately a read-only projection primitive, not yet a public login endpoint. The global credential authority does not yet exist. The existing AuthRegistry stores password hash, MFA state and tenantId together in `users`; login looks up one row by email; credential-revision validation, MFA, ACCESS issuance and refresh-token persistence remain tenant-bound. Wiring the new projection into login before migrating those credential/session dependencies would preserve the same single-tenant assumption behind a new endpoint and is therefore prohibited.
 
-**Next engineering gate:** implement a tenant-neutral global principal credential registry and its controlled migration contract, then bind MFA, credential revision, session and selected membership/capacity revisions to that principal. Only then expose the membership choices endpoint and complete the HTTP/browser journey. The migration must quarantine ambiguous duplicate/conflicting legacy identities rather than merge them or create membership.
+**Additional credential foundation now committed:**
+
+- `PrincipalCredential` defines a tenant-neutral immutable record containing global principal ID, normalized email, bcrypt verifier and credential revision only.
+- `PrincipalCredentialRepository` defines unique principal/email indexes, exact lookups, duplicate rejection and password-verifier compare-and-swap revision updates.
+- Unit tests cover schema separation, uniqueness, normalized email lookup, CAS, malformed records and caller-session propagation.
+- The repository is not wired into login/startup and has not created a production collection. This is intentional: existing MFA, recovery, refresh, session and access-token revision paths still depend on the old tenant-bound `users` document.
+
+**Next engineering gate:** implement the controlled legacy credential migration and move MFA, recovery, credential revision, refresh, session and token verification together to the global principal credential. Then bind selected membership and capacity revisions to the session, expose the membership choices endpoint and complete the HTTP/browser journey. Ambiguous duplicate/conflicting legacy identities must be quarantined, never silently merged or used to create membership.
