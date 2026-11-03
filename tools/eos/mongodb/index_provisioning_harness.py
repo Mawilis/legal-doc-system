@@ -82,6 +82,14 @@ def validate_manifest(manifest: dict[str, Any]) -> tuple[int, int]:
             if index_key in indexes:
                 raise ManifestError(f"Duplicate index declaration: {index_key}")
             indexes.add(index_key)
+            if "unique" in index and not isinstance(index["unique"], bool):
+                raise ManifestError(f"Index unique option must be boolean: {index_key}")
+            if "sparse" in index and not isinstance(index["sparse"], bool):
+                raise ManifestError(f"Index sparse option must be boolean: {index_key}")
+            if "partialFilterExpression" in index and not isinstance(index["partialFilterExpression"], dict):
+                raise ManifestError(f"Index partialFilterExpression must be an object: {index_key}")
+            if "collation" in index and not isinstance(index["collation"], dict):
+                raise ManifestError(f"Index collation must be an object: {index_key}")
             for pair in index["keys"]:
                 if not isinstance(pair, list) or len(pair) != 2:
                     raise ManifestError(f"Invalid key pair in {index_key}")
