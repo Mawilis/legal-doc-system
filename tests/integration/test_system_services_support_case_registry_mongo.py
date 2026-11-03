@@ -20,6 +20,14 @@ from tools.eos.system_services.support_case import (
     SupportCaseEvent,
     SupportCaseScope,
     SupportCaseStatus,
+    SupportCaseApplicationService,
+    SupportCaseActorContext,
+    SupportCaseApplicationError,
+)
+from tools.eos.system_services.support_case_service import (
+    SupportCaseApplicationService,
+    SupportCaseActorContext,
+    SupportCaseApplicationError,
 )
 from tools.eos.system_services.support_case_registry import (
     CASE_COLLECTION,
@@ -202,3 +210,66 @@ def test_canonical_eos_startup_registers_case_indexes_and_readiness(monkeypatch)
     finally:
         client.drop_database(database_name)
         client.close()
+
+
+class _DenySystemAuthorizer:
+    def require(self, *, principal_id, permission_id, session):
+        raise PermissionError("SYSTEM_IAM_DENIED")
+
+
+def test_self_service_case_is_principal_bound_and_idempotent(mongo_case_registry):
+    client, database, registry = mongo_case_registry
+    service = SupportCaseApplicationService(
+        registry=registry,
+        authorizer=_DenySystemAuthorizer(),
+        clock=lambda: NOW,
+    )
+    actor = SupportCaseActorContext(
+        principal_id="principal-self-service",
+        scope=SupportCaseScope.TENANT,
+        tenant_id="tenant-self",
+    )
+    with client.start_session() as session:
+        with session.start_transaction():
+            created = service.create_own_case(
+                actor=actor,
+                category=SupportCaseCategory.PASSWORD_RECOVERY,
+                idempotency_key="self-service-request-001",
+                session=session,
+            )
+    with client.start_session() as session:
+        with session.start_transaction():
+            replay = service.create_own_case(
+                actor=actor,
+                category=SupportCaseCategory.PASSWORD_RECOVERY,
+                idempotency_key="self-service-request-001",
+                session=session,
+            )
+    assert replay.case_id == created.case_id
+    assert database[CASE_COLLECTION].count_documents({"case_id": created.case_id}) == 1
+    own = service.list_own_cases(actor=actor)
+    assert tuple(item.case_id for item in own) == (created.case_id,)
+    other_actor = SupportCaseActorContext(
+        principal_id="principal-other",
+        scope=SupportCaseScope.TENANT,
+        tenant_id="tenant-self",
+    )
+    assert service.list_own_cases(actor=other_actor) == ()
+    with pytest.raises(SupportCaseApplicationError, match="CASE_NOT_OWNED_BY_ACTOR"):
+        service.read_own_case_history(actor=other_actor, case_id=created.case_id)
+
+
+def test_tenant_self_service_cannot_read_system_queue(mongo_case_registry):
+    _, _, registry = mongo_case_registry
+    service = SupportCaseApplicationService(
+        registry=registry,
+        authorizer=_DenySystemAuthorizer(),
+        clock=lambda: NOW,
+    )
+    actor = SupportCaseActorContext(
+        principal_id="tenant-principal",
+        scope=SupportCaseScope.TENANT,
+        tenant_id="tenant-a",
+    )
+    with pytest.raises(SupportCaseApplicationError, match="SYSTEM_SERVICES_SCOPE_REQUIRED"):
+        service.list_system_queue(actor=actor)
