@@ -1,7 +1,7 @@
 """WILSY OS browser-certificate disposable authority fixture.
 
 TITLE: Authenticated browser certificate fixture
-VERSION: v1.2.0-D21B13-AUTHENTICATED-BRANDING-BROWSER-FIXTURE
+VERSION: v1.3.0-OWNER-COMMERCIAL-BROWSER-FIXTURE
 AUTHORITY: Test-owned disposable Mongo fixture only.
 EPITOME: Seed existing EOS repositories with disposable authenticated Legal
          operators, canonical Legal evidence, and a fully correlated current
@@ -14,6 +14,7 @@ CERTIFICATION / UPDATE DATE: 2026-09-26
 CHANGELOG: v1.2.0 seeds active canonical branding entitlement/profile/selection
            and PNG logo/favicon assets for the authenticated tenant-branding browser
            certificate, and limits seed/verify/cleanup to the runner-owned database.
+           v1.3.0 adds a durable Tenant Owner identity and canonical Legal plan/subscription/entitlement for commercial-context browser certification.
            v1.1.1 bounds disposable multi-role passwords below bcrypt's 72-byte
            limit without changing authenticated-session or IAM semantics.
            v1.1.0 adds Partner, Attorney, Paralegal, Secretary and Legal Finance
@@ -131,7 +132,7 @@ from tools.eos.saas.domain.tenant_branding_profile_selection import (
 
 
 DEFAULT_URI = "mongodb://127.0.0.1:27027/?replicaSet=wilsyVendorCertRS"
-STATE_VERSION = "v1.2.0-D21B13-AUTHENTICATED-BRANDING-BROWSER-CERT-STATE"
+STATE_VERSION = "v1.3.0-OWNER-COMMERCIAL-BROWSER-CERT-STATE"
 BROWSER_CERT_DATABASE_PREFIX = "wilsy_l8_8m_r3_"
 BRANDING_EVIDENCE_FINGERPRINT = "f" * 128
 
@@ -729,7 +730,7 @@ if __name__ == "__main__":
 
 
 # ARTIFACT: browser_cert_fixture.py
-# VERSION: v1.2.0-D21B13-AUTHENTICATED-BRANDING-BROWSER-FIXTURE
+# VERSION: v1.3.0-OWNER-COMMERCIAL-BROWSER-FIXTURE
 # AUTHORITY BOUNDARY: disposable synthetic browser-cert fixture only
 # TENANT POSTURE: authenticated tenant and unjoined foreign tenant in a runner-owned disposable database
 # FAIL-CLOSED POSTURE: wrong URI, unavailable replica set, and seed failures stop
