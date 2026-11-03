@@ -214,10 +214,16 @@ def test_operation_aware_selection_ignores_revoked_capacity_and_checks_scope():
     repo = MultiCapacityRepo([
         _capacity("tenant_owner", TenantBusinessRoleStatus.REVOKED),
         _capacity("tenant_legal_partner"),
-        _capacity("tenant_auditor", principal="other"),
     ])
     result = resolve_current_tenant_business_role(
         principal_id="p", tenant_id="t", repository=repo,
         operation="crm_work_item_read",
     )
     assert result.resolution is BusinessRoleResolution.NO_ELIGIBLE_TENANT_BUSINESS_ROLE
+
+    mismatched = MultiCapacityRepo([_capacity("tenant_owner", principal="other")])
+    denied = resolve_current_tenant_business_role(
+        principal_id="p", tenant_id="t", repository=mismatched,
+        operation="crm_work_item_read",
+    )
+    assert denied.resolution is BusinessRoleResolution.TENANT_BUSINESS_ROLE_AUTHORITY_UNAVAILABLE
