@@ -290,7 +290,12 @@ class GlobalPrincipalMfaEnrollmentService:
         ):
             raise GlobalPrincipalMfaEnrollmentRejected("GLOBAL_MFA_ENROLLMENT_CHALLENGE_CORRUPT")
         try:
-            credential = self._credentials.get_by_principal(principal_id, session=session)
+            if self._credential_collection is None:
+                credential = self._credentials.get_by_principal(principal_id, session=session)
+            else:
+                credential = self._credentials.get_by_principal(
+                    principal_id, self._credential_collection, session=session
+                )
         except PrincipalCredentialNotFoundError as error:
             raise GlobalPrincipalMfaEnrollmentRejected("GLOBAL_MFA_ENROLLMENT_CREDENTIAL_REQUIRED") from error
         except PrincipalCredentialRepositoryError as error:
