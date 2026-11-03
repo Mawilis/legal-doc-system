@@ -189,9 +189,10 @@ def test_wilsy_env_production_enforces_verified_tls(monkeypatch: pytest.MonkeyPa
 
 
 # ARTIFACT: test_kernel_db_configuration_authority.py
-# VERSION: v1.0.0-R1D-B0F-B3B-R0-CANONICAL-URI
+# VERSION: v1.1.0-EOS-PRODUCTION-ENV-ALIAS-ALIGNMENT
 # AUTHORITY BOUNDARY: Kernel configuration certificate only.
 # TENANT POSTURE: Database identity is not selected by tenant aliases or requests.
 # FAIL-CLOSED POSTURE: Missing production MONGODB_URI prevents MongoClient creation.
+# ENVIRONMENT POSTURE: WILSY_ENV=production is authoritative for EOS deployments.
 # FINANCIAL EXECUTION AUTHORITY: none; Kennel EOS remains exclusive.
 # END OF WILSY OS SOVEREIGN ARTIFACT
