@@ -77,6 +77,14 @@ from tools.eos.auth.tenant_authorization_decision_evidence_registry import (
     COLLECTION as AUTHORIZATION_COLLECTION,
     TenantAuthorizationDecisionEvidenceRegistry,
 )
+from tools.eos.auth.tenant_business_role import (
+    TenantBusinessRoleAuthority,
+    TenantBusinessRoleStatus,
+)
+from tools.eos.auth.tenant_business_role_repository import (
+    COLLECTION as BUSINESS_ROLE_COLLECTION,
+    TenantBusinessRoleRepository,
+)
 from tools.eos.auth.tenant_membership import (
     TenantMembershipAuthority,
     TenantMembershipStatus,
@@ -129,6 +137,7 @@ def _collections(database: Any) -> dict[str, Any]:
         "principal": PRINCIPAL_COLLECTION,
         "membership": MEMBERSHIP_COLLECTION,
         "assignment": ROLE_ASSIGNMENT_COLLECTION,
+        "business_role": BUSINESS_ROLE_COLLECTION,
         "authorization": AUTHORIZATION_COLLECTION,
         "history": HISTORY_COLLECTION,
         "current": CURRENT_COLLECTION,
@@ -176,6 +185,7 @@ def mongo_context(
         PrincipalAuthorityRepository.ensure_indexes(collections["principal"])
         TenantMembershipRepository.ensure_indexes(collections["membership"])
         RoleAssignmentRepository.ensure_indexes(collections["assignment"])
+        TenantBusinessRoleRepository.ensure_indexes(collections["business_role"])
         service_module._authorization_registry(database).ensure_indexes()
         ensure_entitlement_indexes(collections["history"], collections["current"])
         yield client, database, collections
@@ -212,6 +222,18 @@ def _seed_authority(
             principal_id, tenant_id, TenantMembershipStatus.ACTIVE, 1
         ),
         collections["membership"],
+    )
+    TenantBusinessRoleRepository.insert(
+        TenantBusinessRoleAuthority(
+            principal_id,
+            tenant_id,
+            "tenant_owner",
+            TenantBusinessRoleStatus.ACTIVE,
+            0,
+            NOW,
+            None,
+        ),
+        collections["business_role"],
     )
     for role_id in ("tenant_owner", "ENTERPRISE_ADMIN"):
         RoleAssignmentRepository.insert(
