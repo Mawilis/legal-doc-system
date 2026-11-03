@@ -90,6 +90,8 @@ const extractPayload = (response) => response?.data?.data || response?.data || n
  * @returns {any} Matrix runtime feedback data context output
  */
 const BoardroomHUD = () => {
+  const { user } = useAuth();
+  const tenantId = user?.tenantId || null;
   const mesh = useSovereignMesh();
   const sovereignData = useSovereignData(); // Reserved for future consistency checks
 
@@ -966,6 +968,5 @@ const formatLivePercent = (value) => value === null ? 'NO LIVE DATA' : `${value}
   );
 };
 
-export default BoardroomHUD;  const { user } = useAuth();
-  const tenantId = user?.tenantId || null;
+export default BoardroomHUD;
 
