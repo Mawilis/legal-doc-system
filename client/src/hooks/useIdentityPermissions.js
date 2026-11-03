@@ -27,6 +27,7 @@ import { useState, useEffect, useCallback, useRef, useMemo } from 'react';
 import { useTenantContext } from '../context/TenantContext';
 import sovereignClient from '../utils/sovereignClient';
 import { broadcastTelemetry } from '../utils/telemetryHelper';
+import { isCanonicalTenantTransportId } from '../services/api';
 
 /**
  * @constant DEFAULT_RETRY_CONFIG
@@ -132,8 +133,9 @@ const useIdentityPermissions = (options = {}) => {
 
   // Resolve effective tenant ID.
   const effectiveTenantId = useMemo(() => {
-    if (explicitTenantId) return explicitTenantId;
-    return currentTenant?.id || currentTenant?.tenantId || null;
+    if (explicitTenantId) return isCanonicalTenantTransportId(explicitTenantId) ? explicitTenantId : null;
+    const candidate = currentTenant?.id || currentTenant?.tenantId || null;
+    return isCanonicalTenantTransportId(candidate) ? candidate : null;
   }, [explicitTenantId, currentTenant]);
 
   // ─── STATE ────────────────────────────────────────────────────────────────
