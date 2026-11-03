@@ -45,11 +45,11 @@ class AwsKmsGlobalMfaEnvelope:
 
     The adapter deliberately has no local-key or environment-secret fallback.
     Configure WILSY_GLOBAL_MFA_KMS_PROVIDER=AWS_KMS,
-    WILSY_GLOBAL_MFA_KMS_KEY_ID and AWS_REGION. AWS credentials
+    WILSY_GLOBAL_MFA_KMS_KEY_ID, AWS_REGION and optional WILSY_GLOBAL_MFA_KMS_DECRYPT_KEY_IDS for staged key rotation. AWS credentials
     must come from the workload's standard IAM role/credential chain.
     """
 
-    def __init__(self, *, key_id: str, region_name: str | None = None, client: Any = None) -> None:
+    def __init__(self, *, key_id: str, region_name: str | None = None, decrypt_key_ids: list[str] | None = None, client: Any = None) -> None:
         if not isinstance(key_id, str) or not key_id.strip():
             raise GlobalMfaKeyManagementError("GLOBAL_MFA_KMS_KEY_ID_REQUIRED")
         self.key_id = key_id.strip()
@@ -64,6 +64,21 @@ class AwsKmsGlobalMfaEnvelope:
             raise GlobalMfaKeyManagementError("GLOBAL_MFA_KMS_REGION_REQUIRED")
         if self.region_name != key_match.group(1):
             raise GlobalMfaKeyManagementError("GLOBAL_MFA_KMS_REGION_KEY_MISMATCH")
+        configured_decrypt_ids = decrypt_key_ids or []
+        if not isinstance(configured_decrypt_ids, list):
+            raise GlobalMfaKeyManagementError("GLOBAL_MFA_KMS_DECRYPT_KEYRING_INVALID")
+        self.decrypt_key_ids = {self.key_id}
+        for decrypt_key_id in configured_decrypt_ids:
+            if not isinstance(decrypt_key_id, str):
+                raise GlobalMfaKeyManagementError("GLOBAL_MFA_KMS_DECRYPT_KEYRING_INVALID")
+            candidate = decrypt_key_id.strip()
+            candidate_match = re.fullmatch(
+                r"arn:[a-z0-9-]+:kms:([a-z0-9-]+):\\d{12}:key/[A-Za-z0-9-]+",
+                candidate,
+            )
+            if candidate_match is None or candidate_match.group(1) != self.region_name:
+                raise GlobalMfaKeyManagementError("GLOBAL_MFA_KMS_DECRYPT_KEYRING_INVALID")
+            self.decrypt_key_ids.add(candidate)
         if client is None:
             try:
                 import boto3
@@ -82,7 +97,17 @@ class AwsKmsGlobalMfaEnvelope:
         key_id = os.getenv("WILSY_GLOBAL_MFA_KMS_KEY_ID", "").strip()
         if not key_id:
             raise GlobalMfaKeyManagementError("GLOBAL_MFA_KMS_KEY_ID_REQUIRED")
-        return cls(key_id=key_id, region_name=os.getenv("AWS_REGION"), client=client)
+        decrypt_key_ids = [
+            item.strip()
+            for item in os.getenv("WILSY_GLOBAL_MFA_KMS_DECRYPT_KEY_IDS", "").split(",")
+            if item.strip()
+        ]
+        return cls(
+            key_id=key_id,
+            region_name=os.getenv("AWS_REGION"),
+            decrypt_key_ids=decrypt_key_ids,
+            client=client,
+        )
 
     def encrypt_secret(
         self, *, secret: str, principal_id: str, credential_revision: int
@@ -121,7 +146,7 @@ class AwsKmsGlobalMfaEnvelope:
             not isinstance(envelope, Mapping)
             or envelope.get("schema") != ENVELOPE_SCHEMA
             or envelope.get("provider") != PROVIDER_AWS_KMS
-            or envelope.get("key_id") != self.key_id
+            or envelope.get("key_id") not in self.decrypt_key_ids
             or not isinstance(envelope.get("ciphertext"), str)
         ):
             raise GlobalMfaKeyManagementError("GLOBAL_MFA_KMS_ENVELOPE_INVALID")
@@ -131,12 +156,12 @@ class AwsKmsGlobalMfaEnvelope:
                 raise ValueError("empty ciphertext")
             result = self._client.decrypt(
                 CiphertextBlob=ciphertext,
-                KeyId=self.key_id,
+                KeyId=envelope["key_id"],
                 EncryptionContext=context,
             )
             plaintext = result.get("Plaintext")
             key_id = result.get("KeyId")
-            if key_id != self.key_id:
+            if key_id != envelope["key_id"]:
                 raise GlobalMfaKeyManagementError("GLOBAL_MFA_KMS_KEY_ID_MISMATCH")
             if not isinstance(plaintext, (bytes, bytearray)) or not plaintext:
                 raise GlobalMfaKeyManagementError("GLOBAL_MFA_KMS_DECRYPTION_EMPTY")
