@@ -97,3 +97,12 @@ def test_runtime_tenant_boundaries_have_no_synthetic_root_fallbacks() -> None:
     assert "WILSY_ROOT" not in auth_service.split("const resolvedTenantId", 1)[0]
     assert "tenantId || 'wilsy-sovereign-root'" not in tenant_middleware
     assert "req.tenantId !== 'WILSY_ROOT'" not in node_routes
+
+
+def test_retirement_uses_canonical_kernel_uri_resolution() -> None:
+    source = Path("tools/eos/tenancy/retire_legacy_root_aliases.py").read_text(
+        encoding="utf-8"
+    )
+    assert "from tools.eos.kernel.db import resolve_mongo_uri" in source
+    assert "uri = resolve_mongo_uri()" in source
+    assert 'uri = os.getenv("MONGODB_URI")' not in source
