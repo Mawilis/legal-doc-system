@@ -3,7 +3,7 @@
 Version: v1.0.0-TENANT-DISCOVERY-IAM-WORKSPACE-ROADMAP
 Authority: Wilsy OS Core Governance
 Date: 2026-11-03
-Status: Seven-day engineering programme; discovery findings recorded, implementation and certification outstanding
+Status: Seven-day engineering programme; Day 1 implementation started. Dynamic discovery-derived request scope is committed; global-principal membership selection and canonical workspace contract remain outstanding.
 Scope: EOS-owned identity, tenant resolution, IAM, workspace selection, dashboard delivery and retirement of the legacy server-side JavaScript runtime.
 
 ## 1. Executive decision
@@ -306,7 +306,23 @@ Competitive lesson: use a clear persona/workspace experience, granular permissio
 11. No production readiness or one-million-tenant capacity claim without live infrastructure, adversarial tests and measured evidence.
 12. No secrets, credentials or private governance evidence are copied into Git or this roadmap.
 
-## 12. Delivery control
+## 12. Implementation progress — 3 November 2026
+
+Day 1 has started on `eos/tenant-discovery-iam-dashboard-roadmap`:
+
+- Removed the compiled-in `WILSYTENANT-4CD2FZ4O` request-tenant constant from `client/src/services/api.js`.
+- Request tenant selection now reads the exact canonical `tenantId` from the JSON server-discovery projection in `discoveredTenant`; malformed or absent discovery removes the tenant header instead of inventing a default.
+- Updated `client/src/__tests__/services/api.test.js` to cover arbitrary discovered tenant IDs, malformed/missing discovery and MFA bearer preservation. Test execution is pending in the local checkout/CI.
+- Removed the synthetic `GLOBAL_ROOT` tenant fallback from `client/src/components/ErrorBoundary.jsx` telemetry.
+- Added `docs/architecture/wilsy-day1-runtime-dependency-route-inventory.md` with the current auth/workspace route map, client/EOS dependencies, legacy runtime migration register and known limitations.
+
+These changes only correct browser transport selectors. They do not yet allocate or select a tenant membership. The current AuthRegistry/login flow remains email/password against a user record with one `tenantId`; the ACCESS token carries tenant context and workspace bootstrap revalidates membership for that tenant. A global principal with multiple memberships, post-auth membership selection, tenant-bound session issuance and revocation-safe tenant switching remain Day 2 work.
+
+The EOS workspace bootstrap currently returns `businessRole` and permission presentation metadata, but not a canonical `workspace_id`. Client dashboard selection still uses a role-to-dashboard map. Replacing that with a versioned EOS workspace decision is a Day 1/Day 3 gate; no dashboard redesign should proceed until it exists and is tested.
+
+No membership, IAM role, permission, subscription, entitlement or production data was changed. No legacy runtime files were deleted. No test result or certification is claimed until executed.
+
+## 13. Delivery control
 
 Implementation should proceed in small, reversible, independently tested changes. Each change must identify its primary file, callers, consumers, persisted schemas, tests, tenant/authority blast radius and rollback. Preserve the current integration branch and all local uncommitted work. The roadmap does not authorize production data mutation, permission elevation, deletion of evidence or bypass of independent governance gates.
 
