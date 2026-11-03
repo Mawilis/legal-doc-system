@@ -167,6 +167,20 @@ def test_kms_adapter_requires_full_key_arn_and_matching_explicit_region():
         AwsKmsGlobalMfaEnvelope(key_id=KEY, region_name="eu-west-1", client=_KmsClient())
 
 
+def test_environment_factory_requires_and_uses_explicit_aws_region(monkeypatch):
+    monkeypatch.setenv("WILSY_GLOBAL_MFA_KMS_PROVIDER", "AWS_KMS")
+    monkeypatch.setenv("WILSY_GLOBAL_MFA_KMS_KEY_ID", KEY)
+    monkeypatch.delenv("AWS_REGION", raising=False)
+    monkeypatch.setenv("AWS_DEFAULT_REGION", "af-south-1")
+    with pytest.raises(GlobalMfaKeyManagementError, match="GLOBAL_MFA_KMS_REGION_REQUIRED"):
+        build_global_mfa_kms_envelope_from_environment(client=_KmsClient())
+
+    monkeypatch.setenv("AWS_REGION", "af-south-1")
+    adapter = build_global_mfa_kms_envelope_from_environment(client=_KmsClient())
+    assert adapter is not None
+    assert adapter.region_name == "af-south-1"
+
+
 def test_invalid_identity_context_is_rejected():
     client = _KmsClient()
     adapter = AwsKmsGlobalMfaEnvelope(key_id=KEY, region_name="af-south-1", client=client)
