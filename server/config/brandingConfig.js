@@ -56,7 +56,7 @@ const SOVEREIGN_BRAND = Object.freeze({
   mission: 'ANCHORING ASSETS WITH MATHEMATICAL CERTAINTY',
   logoFileName: 'wilsy.jpeg',
   logoSubdirectory: 'assets/logo',
-  tenantId: 'WILSY_ROOT'
+  tenantId: 'WILSYTENANT-4CD2FZ4O'
 });
 
 // ============================================================================
@@ -106,10 +106,10 @@ export function registerTenantBrand(tenantId, brandOverride) {
  * Retrieves the fully resolved brand configuration for a specific tenant.
  * Merges sovereign defaults with any registered tenant overrides.
  *
- * @param {string} [tenantId='WILSY_ROOT'] – The tenant to resolve.
+ * @param {string} [tenantId='WILSYTENANT-4CD2FZ4O'] – The tenant to resolve.
  * @returns {Object} Complete brand configuration object.
  */
-export function getTenantBrand(tenantId = 'WILSY_ROOT') {
+export function getTenantBrand(tenantId = 'WILSYTENANT-4CD2FZ4O') {
   const overrides = TENANT_BRAND_OVERRIDES.get(tenantId) || {};
   return { ...SOVEREIGN_BRAND, ...overrides, tenantId };
 }
@@ -122,10 +122,10 @@ export function getTenantBrand(tenantId = 'WILSY_ROOT') {
  * Resolves the absolute file path to a tenant's logo image.
  * Fallback chain: tenant‑specific logo → sovereign root logo → genesis placeholder.
  *
- * @param {string} [tenantId='WILSY_ROOT'] – Tenant identifier.
+ * @param {string} [tenantId='WILSYTENANT-4CD2FZ4O'] – Tenant identifier.
  * @returns {string} Absolute path to the logo file.
  */
-export function resolveLogoPath(tenantId = 'WILSY_ROOT') {
+export function resolveLogoPath(tenantId = 'WILSYTENANT-4CD2FZ4O') {
   const brand = getTenantBrand(tenantId);
   const serverRoot = getServerRoot();
 
@@ -155,10 +155,10 @@ export function resolveLogoPath(tenantId = 'WILSY_ROOT') {
  * Includes colour palettes, typography, header/footer configurations, and
  * cryptographic compliance metadata.
  *
- * @param {string} [tenantId='WILSY_ROOT'] – Tenant identifier.
+ * @param {string} [tenantId='WILSYTENANT-4CD2FZ4O'] – Tenant identifier.
  * @returns {Object} Investor‑grade theme configuration.
  */
-export function generateInvestorTheme(tenantId = 'WILSY_ROOT') {
+export function generateInvestorTheme(tenantId = 'WILSYTENANT-4CD2FZ4O') {
   const brand = getTenantBrand(tenantId);
   return {
     colors: {
@@ -215,10 +215,10 @@ export function generateInvestorTheme(tenantId = 'WILSY_ROOT') {
  * This can be injected into the document root at runtime, instantly theming
  * all components that reference these variables.
  *
- * @param {string} [tenantId='WILSY_ROOT'] – Tenant identifier.
+ * @param {string} [tenantId='WILSYTENANT-4CD2FZ4O'] – Tenant identifier.
  * @returns {string} CSS custom properties, ready for a <style> tag.
  */
-export function toCSSVariables(tenantId = 'WILSY_ROOT') {
+export function toCSSVariables(tenantId = 'WILSYTENANT-4CD2FZ4O') {
   const brand = getTenantBrand(tenantId);
   return `
     :root {
@@ -248,7 +248,7 @@ export function toCSSVariables(tenantId = 'WILSY_ROOT') {
  */
 const brandingConfig = {
   ...SOVEREIGN_BRAND,
-  logoPath: resolveLogoPath('WILSY_ROOT'),
+  logoPath: resolveLogoPath('WILSYTENANT-4CD2FZ4O'),
   headers: {
     revenue: 'WILSY OS - REVENUE SINGULARITY STATEMENT',
     compliance: 'SOVEREIGN COMPLIANCE AUDIT',

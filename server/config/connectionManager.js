@@ -38,7 +38,7 @@ export const getSovereignDb = () => {
   }
 
   console.log(chalk.bold.cyan('\n🏛️  ANCHORING MASTER CONNECTION...'));
-  broadcastTelemetry("GLOBAL_ROOT", "SYSTEM_EVENT", "MASTER_CONNECTION_REQUEST", "ConnectionManager", {
+  broadcastTelemetry("SYSTEM", "SYSTEM_EVENT", "MASTER_CONNECTION_REQUEST", "ConnectionManager", {
     readyState: mongoose.connection.readyState,
     timestamp: new Date().toISOString()
   });

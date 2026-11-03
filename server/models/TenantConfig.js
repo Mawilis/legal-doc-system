@@ -358,13 +358,8 @@ tenantConfigSchema.pre('save', async function() {
     this.configSeal = crypto.createHash('sha3-512').update(preImage).digest('hex');
   }
 
-  // Enforce master root protection
-  const masterIds = ['WILSY_ROOT', 'MASTER', 'WILSY_MASTER', 'GLOBAL_ROOT', 'WILSY_GLOBAL_ROOT'];
-  if (masterIds.includes(this.tenantId)) {
-    this.status = 'ACTIVE';
-    this.tier = 'SOVEREIGN';
-    this.businessType = BUSINESS_TYPES.SOVEREIGN;
-  }
+  // Legacy root/master aliases are not tenants and receive no lifecycle privilege.
+  // Their retirement status must never be overwritten by model middleware.
 
   // Ensure nameNormalized is set for duplicate checks
   if (this.name && !this.nameNormalized) {

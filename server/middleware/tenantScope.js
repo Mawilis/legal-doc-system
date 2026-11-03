@@ -145,7 +145,7 @@ const resolveAuditService = () => {
     // 🛡️ RECTIFIED: Replaced inline require with ESM compatible broadcastTelemetry hook
     _auditService = async (req, auditData) => {
       if (typeof broadcastTelemetry === 'function') {
-        const tenantId = req.tenantId || req.context?.tenantId || 'GLOBAL_ROOT';
+        const tenantId = req.tenantId || req.context?.tenantId || 'SYSTEM';
         await broadcastTelemetry(tenantId, 'SECURITY_AUDIT', auditData.action, 'TenantScope', auditData);
       }
     };
@@ -171,17 +171,28 @@ const resolveTenantService = () => {
   try {
     _tenantService = {
       validateTenantExistence: async (tenantId) => {
-        // 🛡️ RECTIFIED: Removed strict ObjectId check to allow String Slugs (e.g., 'GLOBAL_ROOT')
-        const safeId = String(tenantId).trim();
+        const safeId = String(tenantId || '').trim();
+        if (!safeId || ['WILSY_ROOT', 'MASTER', 'WILSY_MASTER', 'GLOBAL_ROOT', 'WILSY_GLOBAL_ROOT', 'WILSY-SOVEREIGN-ROOT', 'WILSY'].includes(safeId.toUpperCase())) {
+          return { valid: false, reason: 'Tenant identifier is missing or retired' };
+        }
         const isObjectId = mongoose.Types.ObjectId.isValid(safeId);
-
-        // Supports both legacy ObjectId lookups and new Sovereign ID lookups
-        const query = isObjectId ? { _id: safeId } : { tenantId: safeId.toUpperCase() };
-
-        // 🛡️ RECTIFIED: Pointed to new TenantConfig model
-        const tenant = await TenantConfig.findOne(query)
-          .select('_id tenantId name status')
-          .lean();
+        let tenant = await TenantConfig.findOne(
+          isObjectId ? { _id: safeId } : { tenantId: safeId.toUpperCase() }
+        ).select('_id tenantId name status').lean();
+        if (!tenant) {
+          const canonical = await TenantConfig.db.collection('tenants').findOne({
+            tenant_id: safeId.toUpperCase(),
+            status: 'ACTIVE',
+          });
+          if (canonical) {
+            tenant = {
+              _id: canonical._id,
+              tenantId: canonical.tenant_id,
+              name: canonical.name,
+              status: canonical.status,
+            };
+          }
+        }
 
         if (!tenant) {
           return { valid: false, reason: 'Tenant not found' };

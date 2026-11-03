@@ -87,7 +87,7 @@ describe('🏛️ WILSY OS - Sovereign Node Routes Tests', () => {
 
   describe('🔐 Quantum Header Validation Middleware', () => {
     it('should reject requests without X-Quantum-Verified header', async () => {
-      const response = await request(app).get('/api/nodes').set('X-Tenant-ID', 'MASTER');
+      const response = await request(app).get('/api/nodes').set('X-Tenant-ID', 'WILSYTENANT-4CD2FZ4O');
       expect(response.status).to.equal(403);
       expect(response.body.error).to.equal('QUANTUM_VERIFICATION_REQUIRED');
     });
@@ -96,7 +96,7 @@ describe('🏛️ WILSY OS - Sovereign Node Routes Tests', () => {
       const response = await request(app)
         .get('/api/nodes')
         .set('X-Quantum-Verified', 'false')
-        .set('X-Tenant-ID', 'MASTER');
+        .set('X-Tenant-ID', 'WILSYTENANT-4CD2FZ4O');
       expect(response.status).to.equal(403);
     });
 
@@ -105,7 +105,7 @@ describe('🏛️ WILSY OS - Sovereign Node Routes Tests', () => {
         .get('/api/nodes')
         .set('X-Quantum-Verified', 'true')
         .set('X-PQE-Circuit', 'NISTDILITHIUM-5·1024')
-        .set('X-Tenant-ID', 'MASTER');
+        .set('X-Tenant-ID', 'WILSYTENANT-4CD2FZ4O');
 
       expect(response.status).to.equal(200);
       // GOD MODE: Expect 8 nodes (full institutional network)
@@ -117,7 +117,7 @@ describe('🏛️ WILSY OS - Sovereign Node Routes Tests', () => {
         .get('/api/nodes')
         .set('X-Quantum-Verified', 'true')
         .set('X-PQE-Circuit', 'INVALID-CIRCUIT')
-        .set('X-Tenant-ID', 'MASTER');
+        .set('X-Tenant-ID', 'WILSYTENANT-4CD2FZ4O');
       expect(response.status).to.equal(403);
       expect(response.body.error).to.equal('INVALID_PQE_CIRCUIT');
     });
@@ -133,13 +133,34 @@ describe('🏛️ WILSY OS - Sovereign Node Routes Tests', () => {
     });
   });
 
+  describe('EOS tenant retirement boundary', () => {
+    it('rejects all five retired root aliases as tenant identities', async () => {
+      for (const alias of ['WILSY_ROOT', 'MASTER', 'WILSY_MASTER', 'GLOBAL_ROOT', 'WILSY_GLOBAL_ROOT']) {
+        const response = await request(app)
+          .get('/api/nodes')
+          .set('X-Quantum-Verified', 'true')
+          .set('X-Tenant-ID', alias);
+        expect(response.status).to.equal(400);
+        expect(response.body.code).to.equal('RETIRED_TENANT_ALIAS');
+      }
+    });
+
+    it('rejects missing tenant context', async () => {
+      const response = await request(app)
+        .get('/api/nodes')
+        .set('X-Quantum-Verified', 'true');
+      expect(response.status).to.equal(400);
+      expect(response.body.code).to.equal('TENANT_CONTEXT_REQUIRED');
+    });
+  });
+
   describe('📡 GET /api/nodes - Sovereign Node List', () => {
     it('should return node list with quantum headers', async () => {
       const response = await request(app)
         .get('/api/nodes')
         .set('X-Quantum-Verified', 'true')
         .set('X-PQE-Circuit', 'NISTDILITHIUM-5·1024')
-        .set('X-Tenant-ID', 'MASTER');
+        .set('X-Tenant-ID', 'WILSYTENANT-4CD2FZ4O');
 
       expect(response.status).to.equal(200);
       // GOD MODE: Full 8-node institutional network
@@ -150,7 +171,7 @@ describe('🏛️ WILSY OS - Sovereign Node Routes Tests', () => {
       const response = await request(app)
         .get('/api/nodes')
         .set('X-Quantum-Verified', 'true')
-        .set('X-Tenant-ID', 'MASTER');
+        .set('X-Tenant-ID', 'WILSYTENANT-4CD2FZ4O');
 
       const entities = response.body.data.nodes.map(n => n.entity);
       expect(entities).to.include('WILSY (PTY) LTD');
@@ -166,7 +187,7 @@ describe('🏛️ WILSY OS - Sovereign Node Routes Tests', () => {
       const response = await request(app)
         .get('/api/nodes/NODE_ZA_001')
         .set('X-Quantum-Verified', 'true')
-        .set('X-Tenant-ID', 'MASTER');
+        .set('X-Tenant-ID', 'WILSYTENANT-4CD2FZ4O');
       expect(response.status).to.equal(200);
       expect(response.body.data.id).to.equal('NODE_ZA_001');
     });
@@ -175,7 +196,7 @@ describe('🏛️ WILSY OS - Sovereign Node Routes Tests', () => {
       const response = await request(app)
         .get('/api/nodes/NODE_INVALID_999')
         .set('X-Quantum-Verified', 'true')
-        .set('X-Tenant-ID', 'MASTER');
+        .set('X-Tenant-ID', 'WILSYTENANT-4CD2FZ4O');
       expect(response.status).to.equal(404);
     });
   });
@@ -185,10 +206,10 @@ describe('🏛️ WILSY OS - Sovereign Node Routes Tests', () => {
       const response = await request(app)
         .post('/api/nodes')
         .set('X-Quantum-Verified', 'true')
-        .set('X-Tenant-ID', 'MASTER')
+        .set('X-Tenant-ID', 'WILSYTENANT-4CD2FZ4O')
         .send({ entity: 'CAPE TOWN QUANTUM HUB', region: 'ZA_CPT', type: 'FINANCIAL_NODE' });
-      expect(response.status).to.equal(201);
-      expect(response.body.data.entity).to.equal('CAPE TOWN QUANTUM HUB');
+      expect(response.status).to.equal(403);
+      expect(response.body.code).to.equal('SYSTEM_AUTHORITY_REQUIRED');
     });
   });
 
@@ -197,7 +218,7 @@ describe('🏛️ WILSY OS - Sovereign Node Routes Tests', () => {
       const response = await request(app)
         .put('/api/nodes/NODE_UK_003/status')
         .set('X-Quantum-Verified', 'true')
-        .set('X-Tenant-ID', 'MASTER')
+        .set('X-Tenant-ID', 'WILSYTENANT-4CD2FZ4O')
         .send({ status: 'ONLINE' });
       expect(response.status).to.equal(200);
       expect(response.body.data.status).to.equal('ONLINE');
@@ -216,7 +237,7 @@ describe('🏛️ WILSY OS - Sovereign Node Routes Tests', () => {
       const response = await request(app)
         .get('/api/nodes/forensic/ledger')
         .set('X-Quantum-Verified', 'true')
-        .set('X-Tenant-ID', 'MASTER');
+        .set('X-Tenant-ID', 'WILSYTENANT-4CD2FZ4O');
       expect(response.status).to.equal(200);
     });
   });
@@ -246,7 +267,7 @@ describe('🏛️ WILSY OS - Sovereign Node Routes Tests', () => {
       const response = await request(app)
         .get('/api/nodes')
         .set('X-Quantum-Verified', 'true')
-        .set('X-Tenant-ID', 'MASTER');
+        .set('X-Tenant-ID', 'WILSYTENANT-4CD2FZ4O');
       const entities = response.body.data.nodes.map(n => n.entity);
       expect(entities).to.include('WILSY (PTY) LTD');
       expect(entities).to.include('DUBAI SOVEREIGN WEALTH FUND');

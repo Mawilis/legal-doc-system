@@ -135,16 +135,9 @@ const metrics = {
 export const tenantStorage = new AsyncLocalStorage();
 
 const TENANT_CONSTANTS = {
-  DEFAULT_TENANT: process.env.DEFAULT_TENANT || 'wilsy-sovereign-root',
+  DEFAULT_TENANT: process.env.DEFAULT_TENANT || 'WILSYTENANT-4CD2FZ4O',
   ANONYMOUS_USER: 'ANON_ENTITY',
   POPIA_STRICT_MODE: true,
-  PLATFORM_ROOTS: new Set([
-    'master',
-    'global_root',
-    'wilsy_root',
-    'wilsy-sovereign-root',
-    'wilsy_master',
-  ]),
 };
 
 const DEFAULT_BILLING_DEFAULTS = Object.freeze({
@@ -176,11 +169,11 @@ const isDatabaseAnchored = () => mongoose.connection?.readyState === 1;
 
 /**
  * @function getCurrentTenantId
- * @description Current tenant id from ALS with sovereign fallback.
+ * @description Current tenant id from ALS; absent context remains unresolved.
  */
 export const getCurrentTenantId = () => {
   const store = tenantStorage.getStore();
-  return store?.tenantId || TENANT_CONSTANTS.DEFAULT_TENANT;
+  return store?.tenantId || null;
 };
 
 /**
@@ -341,26 +334,46 @@ async function hydrateTenantSurface(tenantId) {
     tenantDoc: null,
   };
 
-  if (!Tenant || !tenantId) return surface;
+  if (!tenantId) return surface;
 
   try {
     let doc = null;
-    if (typeof Tenant.findByTenantId === 'function') {
+    if (Tenant && typeof Tenant.findByTenantId === 'function') {
       doc = await Tenant.findByTenantId(tenantId);
       if (doc && typeof doc.toObject === 'function') doc = doc.toObject();
       else if (doc?.toJSON) doc = doc.toJSON();
     }
-    if (!doc) {
+    if (!doc && Tenant) {
       doc = await Tenant.findOne({
-        $or: [{ tenantId }, { alias: tenantId }, { _id: tenantId }],
+        $or: [{ tenantId }, { _id: tenantId }],
       })
         .select(
           'tenantId name legalName legalEntity companyName businessName tradingName displayName registrationNumber companyReg regNo taxNumber vatNumber taxId email billingEmail registeredAddress address jurisdiction country sellerJurisdiction logoUrl brandColor invoiceFooter branding subscription.tier kennelShard billingDefaults metadata'
         )
         .lean();
     }
+    // The canonical EOS tenant registry is stored with snake_case BSON fields.
+    // Read it exactly by tenant_id when the legacy Mongoose projection misses.
+    if (!doc && mongoose.connection?.readyState === 1 && mongoose.connection.db) {
+      const canonical = await mongoose.connection.db.collection('tenants').findOne({
+        tenant_id: tenantId,
+        status: 'ACTIVE',
+      });
+      if (canonical) {
+        doc = {
+          ...canonical,
+          tenantId: canonical.tenant_id,
+          legalName: canonical.legal_name,
+          taxNumber: canonical.tax_id,
+          email: canonical.contact_email,
+          registrationNumber: canonical.metadata?.registration_number,
+          registeredAddress: canonical.metadata?.registered_address,
+          jurisdiction: canonical.region,
+        };
+      }
+    }
 
-    if (!doc) return surface;
+    if (!doc || doc.status !== 'ACTIVE') return surface;
 
     surface.tenantDoc = doc;
     surface.tier = doc.subscription?.tier || surface.tier;
@@ -428,7 +441,10 @@ async function hydrateTenantSurface(tenantId) {
 }
 
 const runDegradedTenantContext = (req, res, next, context) => {
-  const tenantId = context.tenantId || TENANT_CONSTANTS.DEFAULT_TENANT;
+  const tenantId = context.tenantId;
+  if (typeof tenantId !== 'string' || !tenantId.trim()) {
+    throw new Error('TENANT_CONTEXT_REQUIRED');
+  }
   const userId = context.userId || TENANT_CONSTANTS.ANONYMOUS_USER;
   const contextSeal = generateContextSeal(
     tenantId,
@@ -477,7 +493,7 @@ const runDegradedTenantContext = (req, res, next, context) => {
 
 /**
  * @function isWilsyUnanchoredTenantValue
- * @description True only for empty/null sentinels — NOT for MASTER/GLOBAL_ROOT (valid platform roots).
+ * @description True only for empty/null tenant selectors.
  */
 function isWilsyUnanchoredTenantValue(value) {
   const candidate = String(value ?? '')
@@ -489,11 +505,11 @@ function isWilsyUnanchoredTenantValue(value) {
 
 /**
  * @function normalizeWilsyTenantCandidate
- * @description Normalize empty candidates to DEFAULT_TENANT; preserve platform roots.
+ * @description Normalize explicit tenant identifiers without supplying an implicit default.
  */
 function normalizeWilsyTenantCandidate(value) {
   if (isWilsyUnanchoredTenantValue(value)) {
-    return TENANT_CONSTANTS.DEFAULT_TENANT;
+    return '';
   }
   return String(value).trim();
 }
@@ -503,6 +519,7 @@ function resolveIncomingTenantCandidate(req = {}) {
   const body = req.body || {};
   const query = req.query || {};
   const candidates = [
+    req.user?.tenantId,
     headers['x-tenant-id'],
     headers['x-tenantid'],
     headers['x-wilsy-tenant-id'],
@@ -510,7 +527,6 @@ function resolveIncomingTenantCandidate(req = {}) {
     headers['tenant-id'],
     headers.tenantid,
     headers.tenant,
-    req.user?.tenantId,
     body.tenantId,
     body.tenant_id,
     body.tenant,
@@ -570,7 +586,10 @@ function applyTenantComplianceBodyOverlay(req, complianceFlags) {
  * @description Execute fn inside sealed tenant ALS context (jobs/workers).
  */
 export const runWithContext = async (context, fn) => {
-  const tenantId = context.tenantId || TENANT_CONSTANTS.DEFAULT_TENANT;
+  const tenantId = context?.tenantId;
+  if (typeof tenantId !== 'string' || !tenantId.trim()) {
+    throw new Error('TENANT_CONTEXT_REQUIRED');
+  }
   const userId = context.userId || TENANT_CONSTANTS.ANONYMOUS_USER;
   const traceId =
     context.requestId ||
@@ -632,8 +651,7 @@ const ContextValidator = {
     const uuidPattern =
       /^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$/;
     const slugPattern = /^[a-zA-Z0-9_-]{3,80}$/;
-    const rootPattern = /^(MASTER|GLOBAL_ROOT|WILSY_ROOT|WILSY_MASTER|WILSY-SOVEREIGN-ROOT)$/i;
-    return uuidPattern.test(clean) || slugPattern.test(clean) || rootPattern.test(clean);
+    return uuidPattern.test(clean) || slugPattern.test(clean);
   },
 };
 
@@ -720,9 +738,45 @@ export const tenantContext = async (req, res, next) => {
     );
   }
 
+  const authenticatedTenantId = req.user?.tenantId ? String(req.user.tenantId).trim().toUpperCase() : '';
+  const requestedTenantSelectors = [
+    req.headers['x-tenant-id'],
+    req.headers['x-tenantid'],
+    req.headers['x-wilsy-tenant-id'],
+    req.headers['x-wilsy-tenantid'],
+    req.headers['tenant-id'],
+    req.headers.tenantid,
+    req.headers.tenant,
+    req.query?.tenantId,
+    req.query?.tenant_id,
+    req.query?.tenant,
+    req.body?.tenantId,
+    req.body?.tenant_id,
+    req.body?.tenant,
+  ].filter((value) => !isWilsyUnanchoredTenantValue(value));
+  if (authenticatedTenantId && requestedTenantSelectors.some(
+    (value) => authenticatedTenantId !== String(value).trim().toUpperCase()
+  )) {
+    return res.status(403).json({
+      success: false,
+      error: { code: 'TENANT_CONTEXT_MISMATCH', message: 'Requested tenant does not match authenticated tenant authority.' },
+    });
+  }
   const incomingTenantId = resolveIncomingTenantCandidate(req);
+  if (!incomingTenantId) {
+    return res.status(400).json({
+      success: false,
+      error: { code: 'TENANT_CONTEXT_REQUIRED', message: 'An authenticated, explicit tenant context is required.' },
+    });
+  }
+  if (['WILSY_ROOT', 'MASTER', 'WILSY_MASTER', 'GLOBAL_ROOT', 'WILSY_GLOBAL_ROOT', 'WILSY-SOVEREIGN-ROOT', 'WILSY'].includes(incomingTenantId.toUpperCase())) {
+    return res.status(400).json({
+      success: false,
+      error: { code: 'RETIRED_TENANT_ALIAS', message: 'Legacy root aliases are not tenant identities.' },
+    });
+  }
 
-  if (incomingTenantId && !ContextValidator.isValidTenantId(incomingTenantId)) {
+  if (!ContextValidator.isValidTenantId(incomingTenantId)) {
     return res.status(400).json({
       success: false,
       error: {
@@ -749,6 +803,12 @@ export const tenantContext = async (req, res, next) => {
       startFetch,
     });
   }
+  if (!isDatabaseAnchored()) {
+    return res.status(503).json({
+      success: false,
+      error: { code: 'TENANT_DATABASE_UNAVAILABLE', message: 'Tenant data access is temporarily unavailable.' },
+    });
+  }
 
   try {
     let db = null;
@@ -757,60 +817,39 @@ export const tenantContext = async (req, res, next) => {
     } catch (shardErr) {
       ctxWarn(
         chalk.yellow(
-          `[SYSTEM] Shard Exception for ${tenantId}: ${shardErr.message}. Forcing fallback path.`
+          `[SYSTEM] Tenant database unavailable for ${tenantId}: ${shardErr.message}`
         )
       );
-      db = null;
-    }
-
-    const surface = await hydrateTenantSurface(tenantId);
-    let tier = surface.tier;
-    let kennelShard = surface.kennelShard;
-    let billingDefaults = surface.billingDefaults;
-    let invoiceIdentity = surface.invoiceIdentity;
-
-    if (!db) {
-      ctxWarn(
-        chalk.yellow(
-          `[SYSTEM] Shard Link Failed: ${tenantId}. Re-anchoring to Sovereign Root.`
-        )
-      );
-      try {
-        req.db = await useDatabase(TENANT_CONSTANTS.DEFAULT_TENANT);
-      } catch (_) {
-        req.db = null;
-      }
-      // Preserve requested tenantId for billing scope; only DB falls back
-      req.tenantId = tenantId || TENANT_CONSTANTS.DEFAULT_TENANT;
-      req.tier = tier;
-      req.kennelShard = kennelShard;
-      req.billingDefaults = billingDefaults;
-      req.invoiceIdentity = invoiceIdentity;
-      req.tenantContextStatus = req.db ? 'ROOT_DB_FALLBACK' : 'DEGRADED_NO_DB';
-
-      metrics.increment('telemetry_integrity_failures_total', 1, {
-        tenantId: req.tenantId,
-        type: 'TENANT_ROUTING_RECOVERY',
-        tier,
+      return res.status(503).json({
+        success: false,
+        error: { code: 'TENANT_DATABASE_UNAVAILABLE', message: 'Tenant data access is temporarily unavailable.' },
       });
-
-      try {
-        broadcastTelemetry('GLOBAL_ROOT', 'AUDIT_EVENT', 'TENANT_RECOVERY_ROUTING', 'TenantContext', {
-          traceId,
-          attemptedTenant: tenantId,
-          fallbackTenant: TENANT_CONSTANTS.DEFAULT_TENANT,
-          severity: 'ELEVATED',
-        });
-      } catch (_) { }
-    } else {
-      req.db = db;
-      req.tenantId = tenantId;
-      req.tier = tier;
-      req.kennelShard = kennelShard;
-      req.billingDefaults = billingDefaults;
-      req.invoiceIdentity = invoiceIdentity;
-      req.tenantContextStatus = 'SEALED';
     }
+    if (!db) {
+      return res.status(503).json({
+        success: false,
+        error: { code: 'TENANT_DATABASE_UNAVAILABLE', message: 'Tenant data access is temporarily unavailable.' },
+      });
+    }
+    const surface = await hydrateTenantSurface(tenantId);
+    if (!surface.tenantDoc) {
+      return res.status(403).json({
+        success: false,
+        error: { code: 'TENANT_NOT_FOUND_OR_INACTIVE', message: 'The requested canonical tenant is not active.' },
+      });
+    }
+    const tier = surface.tier;
+    const kennelShard = surface.kennelShard;
+    const billingDefaults = surface.billingDefaults;
+    const invoiceIdentity = surface.invoiceIdentity;
+
+    req.db = db;
+    req.tenantId = tenantId;
+    req.tier = tier;
+    req.kennelShard = kennelShard;
+    req.billingDefaults = billingDefaults;
+    req.invoiceIdentity = invoiceIdentity;
+    req.tenantContextStatus = 'SEALED';
 
     let complianceFlags = { POPIA: 'POPIA_CLEAN', GDPR: 'COMPLIANT' };
     complianceFlags = applyTenantComplianceBodyOverlay(req, complianceFlags);
@@ -900,14 +939,14 @@ export const tenantContext = async (req, res, next) => {
     }
 
     metrics.increment('system_errors_total', 1, {
-      tenantId: 'GLOBAL_ROOT',
+      tenantId: 'SYSTEM',
       severity: 'CRITICAL',
       type: 'CONTEXT_FRACTURE',
       tier: 'default',
     });
 
     try {
-      broadcastTelemetry('GLOBAL_ROOT', 'SYSTEM_EVENT', 'DB_PANIC', 'TenantContext', {
+      broadcastTelemetry('SYSTEM', 'SYSTEM_EVENT', 'DB_PANIC', 'TenantContext', {
         traceId,
         attemptedTenant: incomingTenantId || 'UNKNOWN',
         error: error.message,
@@ -936,7 +975,7 @@ export default tenantContext;
  * INSTITUTIONAL CERTIFICATION SEAL – tenantContext v29.0.0-BUSINESS-IDENTITY-CONTEXT
  * ═══════════════════════════════════════════════════════════════════════════════
  * Status: PRODUCTION READY — 10/10 (middleware surface)
- * Tenant: MASTER / GLOBAL_ROOT preserved (not forced to DEFAULT)
+ * Tenant: canonical tenant identifiers only; legacy root aliases rejected
  * Hydration: tier, kennelShard, billingDefaults (v30), invoiceIdentity
  * Soft deps: Tenant, metrics, telemetry, cryptoCore, chalk, useDatabase
  * Seal: SHA3-512 + timing-safe verifyContextSeal

@@ -15,8 +15,17 @@ import logger from '../utils/logger.js';
 export const verifyTenantScope = async (req, res, next) => {
   try {
     if (!req.tenant || !req.tenant.id) {
-      const tenantId = req.headers['x-tenant-id'] || (req.user && req.user.tenantId);
-      req.tenant = { id: tenantId || 'wilsy-sovereign-root' };
+      const requestedTenantId = req.headers['x-tenant-id'];
+      const authenticatedTenantId = req.user?.tenantId ? String(req.user.tenantId).trim() : '';
+      if (authenticatedTenantId && requestedTenantId &&
+          authenticatedTenantId.toUpperCase() !== String(requestedTenantId).trim().toUpperCase()) {
+        return res.status(403).json({ success: false, code: 'TENANT_CONTEXT_MISMATCH' });
+      }
+      const tenantId = authenticatedTenantId || requestedTenantId;
+      if (!tenantId || ['WILSY_ROOT', 'MASTER', 'WILSY_MASTER', 'GLOBAL_ROOT', 'WILSY_GLOBAL_ROOT', 'WILSY-SOVEREIGN-ROOT', 'WILSY'].includes(String(tenantId).trim().toUpperCase())) {
+        return res.status(400).json({ success: false, code: 'TENANT_CONTEXT_REQUIRED' });
+      }
+      req.tenant = { id: String(tenantId).trim() };
     }
 
     // Sovereign Security Override

@@ -115,7 +115,6 @@ const PlanSchema = new mongoose.Schema(
       trim: true,
       enum: [
         'EOS_PRIMARY', 'EOS_SECONDARY', 'EOS_EU', 'EOS_US', 'EOS_APAC',
-        'WILSY_ROOT', 'MASTER', 'WILSY_MASTER', 'GLOBAL_ROOT', 'WILSY_GLOBAL_ROOT',
       ],
     },
 

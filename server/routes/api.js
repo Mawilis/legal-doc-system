@@ -196,7 +196,7 @@ function detectNexusAnomalies(req, payload = {}) {
  * @returns {Object} Evidence package with proofHash.
  */
 function generateEvidencePackage(req, res, decision = 'PASS', anomalies = [], extra = {}) {
-  const tenantId = req.headers['x-tenant-id'] || req.headers['x-wilsy-tenant-id'] || 'GLOBAL_ROOT';
+  const tenantId = req.tenantId || 'SYSTEM';
   const tier = req.headers['x-wilsy-tier'] || 'default';
   const payload = {
     tenantId,
@@ -428,9 +428,8 @@ router.use((req, res, next) => {
     `TRC-TITAN-${crypto.randomBytes(8).toString('hex').toUpperCase()}`;
   req.startTime = startTime;
 
-  const tenantId = req.headers['x-tenant-id'] || req.headers['x-wilsy-tenant-id'] || 'GLOBAL_ROOT';
+  const tenantId = req.tenantId || null;
   const tier = req.headers['x-wilsy-tier'] || 'default';
-  req.tenantId = tenantId;
   req.tier = tier;
 
   // Forensic hash header
@@ -564,7 +563,7 @@ router.post('/generate/pdf', generateSovereignArtifactPdf);
 router.use((err, req, res, next) => {
   const errorId = `ERR-TITAN-${crypto.randomBytes(4).toString('hex').toUpperCase()}`;
   const duration = (performance.now() - req.startTime).toFixed(3);
-  const tenantId = req.headers['x-tenant-id'] || 'WILSY_ROOT';
+  const tenantId = req.tenantId || 'SYSTEM';
   const tier = req.headers['x-wilsy-tier'] || 'default';
   const route = req.route?.path || req.path || 'unknown';
 

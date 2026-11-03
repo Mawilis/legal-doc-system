@@ -60,10 +60,12 @@ function detectAuthAnomalies(req) {
 }
 
 function normalizeTenantId(raw) {
-  if (raw === 'WILSY_ROOT' || raw === 'MASTER' || raw === 'GLOBAL_ROOT') {
-    return 'wilsy-sovereign-root';
+  const tenantId = typeof raw === 'string' ? raw.trim().toUpperCase() : '';
+  if (!tenantId) throw new Error('TENANT_CONTEXT_REQUIRED');
+  if (['WILSY_ROOT', 'MASTER', 'WILSY_MASTER', 'GLOBAL_ROOT', 'WILSY_GLOBAL_ROOT', 'WILSY-SOVEREIGN-ROOT', 'WILSY'].includes(tenantId)) {
+    throw new Error('RETIRED_TENANT_ALIAS');
   }
-  return raw || 'wilsy-sovereign-root';
+  return tenantId;
 }
 
 function issueAccessToken(user) {

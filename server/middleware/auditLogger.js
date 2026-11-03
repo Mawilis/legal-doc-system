@@ -173,7 +173,7 @@ class AuditLogger {
         user: {
           id: auditEvent.userId,
           role: auditEvent.userRole,
-          tenantId: auditEvent.tenantId || 'WILSY_ROOT',
+          tenantId: auditEvent.tenantId || 'SYSTEM',
         },
         action: {
           method: auditEvent.method,
@@ -209,7 +209,7 @@ class AuditLogger {
       level: event.level || 'info',
       userId: event.userId || 'SYSTEM',
       userRole: event.userRole || 'SYSTEM',
-      tenantId: event.tenantId || 'GLOBAL_ROOT',
+      tenantId: event.tenantId || 'SYSTEM',
       method: event.method,
       url: event.url,
       endpoint: event.endpoint,
@@ -261,7 +261,7 @@ class AuditLogger {
             req.headers['x-tenant-id'] ||
             req.tenantId ||
             req.user?.tenantId ||
-            'GLOBAL_ROOT',
+            'SYSTEM',
           method: req.method,
           url: req.originalUrl || req.url,
           endpoint: req.route?.path || req.path,

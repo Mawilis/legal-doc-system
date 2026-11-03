@@ -88,7 +88,7 @@ function withAuthTelemetry(handler, routeName, eventType) {
   return async (req, res, next) => {
     const start = process.hrtime.bigint();
     const tenantId =
-      req.headers['x-tenant-id'] || req.headers['x-wilsy-tenant-id'] || 'GLOBAL_ROOT';
+      req.tenantId || 'SYSTEM';
     const tier = req.headers['x-wilsy-tier'] || 'default';
 
     try {
