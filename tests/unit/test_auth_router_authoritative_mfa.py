@@ -1,7 +1,7 @@
 """WILSY OS authoritative MFA router certificate.
 
 TITLE: Authentication Router Authoritative MFA Certificate
-VERSION: v1.5.0-REQUIRED-ASGI-REQUEST-LOGIN-CERT
+VERSION: v1.5.1-REQUIRED-ASGI-REQUEST-LOGIN-CERT
 AUTHORITY: Wilsy OS Core Governance
 EPITOME: Certifies exact setup, reconciliation, verification, persistence, and
          bounded tenant-discovery behavior without a live database.
@@ -10,7 +10,8 @@ COLLABORATION / OWNERSHIP: Exercises tools.eos.api.auth_router with deterministi
                            registry and tenant doubles.
 CERTIFICATION / UPDATE DATE: 2026-09-17
 CHANGELOG:
-  v1.5.0-REQUIRED-ASGI-REQUEST-LOGIN-CERT supplies concrete Request doubles
+  v1.5.1-REQUIRED-ASGI-REQUEST-LOGIN-CERT supplies the remaining direct MFA-reconciliation login Request.
+  v1.5.0 supplies concrete Request doubles
   for every direct login invocation and isolates rate-gate behavior by test.
   v1.4.3 balances all synthetic ASGI Request casts for static type checking.
   v1.4.2 corrects the closing delimiter on the synthetic Request doubles.
@@ -290,7 +291,7 @@ def test_reconciled_user_returns_normal_mfa_challenge_on_next_login(
     monkeypatch.setattr(auth_router, "get_auth_registry", lambda _tenant: registry)
 
     _run(auth_router.verify_otp(VerifyOTPRequest(email="person@example.com", code="123456", tenant_id="TENANT-TEST")))
-    response = _run(auth_router.login(AuthRequest(email="person@example.com", password="valid", tenant_id="TENANT-TEST")))
+    response = _run(auth_router.login(AuthRequest(email="person@example.com", password="valid", tenant_id="TENANT-TEST"), _http_request()))
 
     assert response.status == "MFA_REQUIRED"
     assert response.qrCode is None
@@ -624,7 +625,7 @@ def test_http_login_fails_closed_when_throttle_authority_is_unavailable(
 
 
 # ARTIFACT: tests/unit/test_auth_router_authoritative_mfa.py
-# VERSION: v1.5.0-REQUIRED-ASGI-REQUEST-LOGIN-CERT
+# VERSION: v1.5.1-REQUIRED-ASGI-REQUEST-LOGIN-CERT
 # AUTHORITY BOUNDARY: deterministic HTTP-state certificate only
 # TENANT POSTURE: unknown aliases fail closed without directory enumeration
 # FAIL-CLOSED POSTURE: persistence uncertainty cannot issue a session
