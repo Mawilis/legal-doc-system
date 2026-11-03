@@ -86,25 +86,9 @@ class ErrorLogger {
     if (TELEMETRY_ENABLED && navigator.onLine) {
       // Retrieve forensic authentication tokens for secure backend transit
       const authToken = localStorage.getItem('wilsy_auth_token');
-      let tenantId = '';
-      try {
-        const discovered = JSON.parse(
-          localStorage.getItem('discoveredTenant') || 'null',
-        );
-        if (
-          typeof discovered?.tenantId === 'string'
-          && discovered.tenantId
-          && discovered.tenantId === discovered.tenantId.trim()
-          && !/[\\u0000-\\u001f\\u007f]/.test(discovered.tenantId)
-        ) {
-          tenantId = discovered.tenantId;
-        }
-      } catch {
-        // Malformed or absent discovery never becomes a synthetic tenant.
-      }
-
+      // Error telemetry forwards the authenticated bearer only. A tenant
+      // selector from discovery storage is not authenticated session scope.
       const headers = { 'Content-Type': 'application/json' };
-      if (tenantId) headers['x-tenant-id'] = tenantId;
       if (authToken) headers.Authorization = `Bearer ${authToken}`;
 
       fetch(TELEMETRY_ENDPOINT, {
