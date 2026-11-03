@@ -106,12 +106,22 @@ def system_services_workspace_bootstrap(
 
     def project(session: ClientSession):
         cases = service.list_system_queue(actor=actor, limit=100, session=session)
+        capabilities = ["system_services:queue:read"]
+        try:
+            authorizer.require(
+                principal_id=actor.principal_id,
+                permission_id="system_services:identity:read",
+                session=session,
+            )
+            capabilities.append("system_services:identity:read")
+        except SystemServicesAuthorizationError:
+            pass
         return {
             "status": "READY",
             "authority": "EOS_SYSTEM_SERVICES",
             "principalId": actor.principal_id,
             "scope": "SYSTEM",
-            "capabilities": ["system_services:queue:read"],
+            "capabilities": capabilities,
             "summary": {
                 "openCases": sum(case.status is SupportCaseStatus.OPEN for case in cases),
                 "securityEscalations": sum(case.status is SupportCaseStatus.ESCALATED_SECURITY_INCIDENT for case in cases),
