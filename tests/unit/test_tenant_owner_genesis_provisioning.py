@@ -238,12 +238,13 @@ def test_genesis_rejects_ownership_event_scope_or_command_mismatch(
         revision=1,
     )
     lifecycle = _Lifecycle(event=bad_event)
+    def tenant_create(payload: dict[str, Any], *, session: object) -> dict[str, Any]:
+        calls["tenant"] = payload
+        return {"success": True, "tenant": SimpleNamespace(tenant_id=payload["tenant_id"])}
+
     command = TenantOwnerGenesisProvisioningCommand(
         lifecycle=lifecycle,  # type: ignore[arg-type]
-        tenant_create=lambda payload, *, session: (
-            calls.setdefault("tenant", payload)
-            or {"success": True, "tenant": SimpleNamespace(tenant_id=payload["tenant_id"])}
-        ),
+        tenant_create=tenant_create,
     )
     with pytest.raises(TenantOwnerGenesisProvisioningError, match="OWNERSHIP_GENESIS_RESULT_MISMATCH"):
         command.execute(
