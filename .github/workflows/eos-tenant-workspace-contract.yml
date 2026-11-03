@@ -1,0 +1,66 @@
+name: EOS Tenant Workspace Contract
+
+on:
+  pull_request:
+    paths:
+      - "tools/eos/auth/workspace_contract.py"
+      - "tools/eos/auth/workspace_bootstrap_projection.py"
+      - "tools/eos/api/auth_router.py"
+      - "tests/unit/test_workspace_contract.py"
+      - "tests/unit/test_workspace_bootstrap_projection.py"
+      - "client/src/services/api.js"
+      - "client/src/contexts/authContext.jsx"
+      - "client/src/components/sovereign/SovereignDashboardController.jsx"
+      - "client/src/__tests__/services/api.test.js"
+      - "client/tests/client/SovereignDashboardController.test.js"
+      - "client/tests/contexts/authContext.authoritative.test.jsx"
+      - "client/tests/client/App.authenticatedLegalWorkspaceJourney.test.jsx"
+      - ".github/workflows/eos-tenant-workspace-contract.yml"
+
+permissions:
+  contents: read
+
+jobs:
+  python-workspace-contract:
+    name: Python EOS workspace contract
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    env:
+      PIP_DISABLE_PIP_VERSION_CHECK: "1"
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Install EOS test dependencies
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install -r requirements.txt pytest==9.1.1
+      - name: Compile workspace contract
+        run: |
+          python -m py_compile             tools/eos/auth/workspace_contract.py             tools/eos/auth/workspace_bootstrap_projection.py             tools/eos/api/auth_router.py
+      - name: Run workspace authority tests
+        run: |
+          python -m pytest -q             tests/unit/test_workspace_contract.py             tests/unit/test_workspace_bootstrap_projection.py
+
+  browser-workspace-contract:
+    name: Browser tenant transport and workspace selection
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    defaults:
+      run:
+        working-directory: client
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: npm
+          cache-dependency-path: client/package-lock.json
+      - name: Install locked client dependencies
+        run: npm ci
+      - name: Run focused tenant and workspace tests
+        run: |
+          npx vitest run --config vitest.config.js             src/__tests__/services/api.test.js             tests/client/SovereignDashboardController.test.js             tests/contexts/authContext.authoritative.test.jsx             tests/client/App.authenticatedLegalWorkspaceJourney.test.jsx
+      - name: Verify client production build
+        run: npm run build
