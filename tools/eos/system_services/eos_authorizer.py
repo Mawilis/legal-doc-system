@@ -11,7 +11,6 @@ from datetime import datetime, timezone
 from typing import Any, Callable, Protocol
 
 from tools.eos.auth.current_system_permission_possession import (
-    CurrentSystemPermissionPossessionResolver,
     CurrentSystemPermissionPossessionError,
 )
 from tools.eos.auth.permission_namespace import (
