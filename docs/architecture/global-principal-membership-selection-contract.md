@@ -28,7 +28,7 @@ A tenant alias/domain is a discovery hint only. It is not a principal identifier
 
 ## 3. Canonical persistence target
 
-Introduce a global credential authority (proposed collection: `principal_credentials`) with a unique normalized-email key and unique principal key. It owns password verifier, credential revision, MFA enrollment/factor reference and credential lifecycle. It must not contain tenant_id, tenant roles, tenant permissions or workspace selection.
+Introduce a global credential authority (proposed collection: `principal_credentials`) with a unique normalized-email key and unique principal key. It owns the password verifier, credential revision, explicit MFA-enrollment state and credential lifecycle. The MFA secret remains in a separately protected principal-scoped factor store and is never copied into this record. It must not contain tenant_id, tenant roles, tenant permissions or workspace selection.
 
 Existing `users` rows must not be silently merged or treated as global credentials. They currently combine email/password hash/MFA state with one `tenantId`, and `AuthRegistry.get_user_by_email` assumes a single result. Before cutover:
 
@@ -46,7 +46,7 @@ No migration creates PrincipalAuthority, TenantMembership, business capacity, au
 
 ## 3A. Global credential persistence primitive added in this branch
 
-- Added `PrincipalCredential` as a tenant-neutral immutable credential snapshot containing only `principal_id`, normalized email, bcrypt password verifier and monotonic credential revision.
+- Added `PrincipalCredential` as a tenant-neutral immutable credential snapshot containing only `principal_id`, normalized email, bcrypt password verifier, monotonic credential revision and an explicit MFA-enrollment boolean.
 - Added `PrincipalCredentialRepository` with unique principal/email index definitions, exact lookups, duplicate rejection and compare-and-swap password verifier revision updates.
 - The new credential schema contains no tenant ID, membership, business role, permission, workspace, raw MFA secret or financial fields.
 - Unit tests cover schema boundaries, normalized email lookup, principal/email uniqueness, credential revision CAS, malformed verifier rejection and caller-session forwarding.
