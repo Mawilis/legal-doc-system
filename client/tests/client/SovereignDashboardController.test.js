@@ -142,6 +142,18 @@ describe('SovereignDashboardController resolver', () => {
     })).toBe(DASHBOARD_KEYS.LEGAL);
   });
 
+  it('fails closed for an unknown workspace in the current EOS contract', () => {
+    expect(resolveDashboardKey({
+      user: {
+        id: 'unknown-workspace',
+        role: 'tenant_owner',
+        workspaceId: 'CRM_DASHBOARD',
+        workspaceContractVersion: 'v1.0.0-WILSY-EOS-WORKSPACE-CONTRACT',
+      },
+      manualDashboardKey: 'EXECUTIVE_DASHBOARD',
+    })).toBe('');
+  });
+
   it('routes specialist roles to their own dashboards before falling back to general', () => {
     expect(resolveDashboardKey({ user: { id: 'sales-1', role: 'SALES_REPRESENTATIVE' } })).toBe(DASHBOARD_KEYS.SALES);
     expect(resolveDashboardKey({ user: { id: 'finance-1', role: 'CFO' } })).toBe(DASHBOARD_KEYS.FINANCE);
