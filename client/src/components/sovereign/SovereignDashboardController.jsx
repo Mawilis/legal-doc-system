@@ -829,7 +829,13 @@ const SovereignDashboardController = ({ user: propUser, onLogout }) => {
   if (dashboardKey === DASHBOARD_KEYS.FOUNDER) {
     dashboardShard = <FounderDashboard user={user} onSwitchDashboard={handleManualDashboardSwitch} />;
   } else if (dashboardKey === DASHBOARD_KEYS.EXECUTIVE) {
-    dashboardShard = <ExecutiveDashboard role={getExecutiveRoleLabel(user)} user={user} />;
+    dashboardShard = (
+      <ExecutiveDashboard
+        role={getExecutiveRoleLabel(user)}
+        user={user}
+        onSwitchDashboard={handleManualDashboardSwitch}
+      />
+    );
   } else if (dashboardKey === DASHBOARD_KEYS.COO) {
     dashboardShard = <COODashboard user={user} />;
   } else if (dashboardKey === DASHBOARD_KEYS.CRM) {
