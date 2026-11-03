@@ -1070,6 +1070,30 @@ async def complete_password_reset(request: PasswordResetRequest) -> Response:
     return Response(status_code=status.HTTP_204_NO_CONTENT)
 
 
+def _require_discovered_tenant_binding(tenant_id: object, user: Any) -> None:
+    """Bind credentials/MFA to the exact tenant selected through EOS discovery.
+
+    This is a selector check, not membership creation or role authority. The
+    durable user tenant remains canonical and workspace-bootstrap subsequently
+    revalidates ACTIVE membership and IAM before any session is promoted.
+    """
+    if (
+        not isinstance(tenant_id, str)
+        or not tenant_id
+        or tenant_id != tenant_id.strip()
+    ):
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Discover your organization before signing in.",
+        )
+    if getattr(user, "tenantId", None) != tenant_id:
+        # Keep tenant mismatch indistinguishable from invalid credentials.
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Invalid credentials",
+        )
+
+
 # ─── LOGIN ──────────────────────────────────────────────────────────────────
 @router.post("/login", response_model=AuthResponse, response_model_exclude_none=True)
 async def login(request: AuthRequest):
@@ -1084,6 +1108,7 @@ async def login(request: AuthRequest):
                 status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid credentials"
             )
 
+        _require_discovered_tenant_binding(request.tenant_id, user)
         existing_otp_secret = auth_registry.get_otp_secret(user.id)
 
         # A durable secret with a missing enrollment flag is reconciliation, not
@@ -1299,6 +1324,8 @@ async def validate_mfa_setup(request: VerifyOTPRequest):
                 status_code=status.HTTP_401_UNAUTHORIZED, detail="User not found"
             )
 
+        _require_discovered_tenant_binding(request.tenant_id, user)
+
         # The setup endpoint accepts the same compatibility aliases as normal
         # verification, then narrows them to a concrete string before TOTP use.
         setup_code: str = request.code or request.otp or ""
@@ -1420,6 +1447,8 @@ async def verify_otp(request: VerifyOTPRequest):
                 status_code=status.HTTP_401_UNAUTHORIZED,
                 detail="User not found.",
             )
+
+        _require_discovered_tenant_binding(request.tenant_id, user)
 
         if not user.mfaRegistered and not auth_registry.get_otp_secret(user.id):
             raise HTTPException(
