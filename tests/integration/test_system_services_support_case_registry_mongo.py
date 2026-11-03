@@ -115,6 +115,10 @@ def test_real_mongo_create_transition_commit_and_tenant_scope(mongo_case_registr
             )
     assert updated.status is SupportCaseStatus.TRIAGED
     assert updated.revision == 1
+    queue = registry.list_cases(scope=SupportCaseScope.SYSTEM, statuses=(SupportCaseStatus.TRIAGED,))
+    assert tuple(item.case_id for item in queue) == (case.case_id,)
+    history = registry.list_events(case_id=case.case_id, scope=SupportCaseScope.SYSTEM)
+    assert tuple(item.to_status for item in history) == (SupportCaseStatus.OPEN, SupportCaseStatus.TRIAGED)
     assert database[CASE_COLLECTION].count_documents({"case_id": case.case_id}) == 1
     assert database[EVENT_COLLECTION].count_documents({"case_id": case.case_id}) == 2
     with pytest.raises(SupportCaseNotFoundError):
