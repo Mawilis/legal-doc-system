@@ -78,6 +78,7 @@ def credential(principal="principal-1", email="Owner@Example.com", password_hash
         normalized_email=normalize_principal_email(email),
         password_hash=password_hash,
         credential_revision=revision,
+        mfa_enabled=True,
     )
 
 
@@ -89,7 +90,7 @@ def test_global_credential_has_no_tenant_membership_or_role_fields():
     value = credential()
     assert value.normalized_email == "owner@example.com"
     assert set(value.__dataclass_fields__) == {
-        "principal_id", "normalized_email", "password_hash", "credential_revision"
+        "principal_id", "normalized_email", "password_hash", "credential_revision", "mfa_enabled"
     }
     assert "tenant_id" not in value.__dataclass_fields__
     assert "business_role" not in value.__dataclass_fields__
@@ -148,6 +149,7 @@ def test_invalid_hash_and_malformed_persisted_credential_fail_closed():
         "normalized_email": "owner@example.com",
         "password_hash": "invalid",
         "credential_revision": 0,
+        "mfa_enabled": True,
     })
     with pytest.raises(PrincipalCredentialPersistedRecordInvalidError):
         PrincipalCredentialRepository.get_by_principal("principal-1", collection(fake))
