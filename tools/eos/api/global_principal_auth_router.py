@@ -228,6 +228,7 @@ async def select_membership(payload: GlobalMembershipSelectionRequest, request: 
 async def verify_global_mfa(payload: GlobalMfaVerificationRequest, request: Request) -> dict[str, Any]:
     """Verify principal TOTP, consume MFA challenge, and issue session atomically."""
     _require_ready(request, "global_principal_session_indexes_ready")
+    _require_ready(request, "global_principal_mfa_factor_indexes_ready")
     verifier = getattr(request.app.state, "global_principal_totp_verifier", None)
     if verifier is None:
         raise HTTPException(status_code=503, detail="GLOBAL_MFA_KEY_SERVICE_UNAVAILABLE")
