@@ -1,0 +1,167 @@
+"""Disposable replica-set certification for the System Services case registry."""
+from __future__ import annotations
+
+import os
+import uuid
+from datetime import datetime, timedelta, timezone
+from typing import Any
+
+import pytest
+from pymongo import MongoClient
+from pymongo.read_concern import ReadConcern
+from pymongo.write_concern import WriteConcern
+
+from tools.eos.system_services.support_case import (
+    SupportCase,
+    SupportCaseCategory,
+    SupportCaseEvent,
+    SupportCaseScope,
+    SupportCaseStatus,
+)
+from tools.eos.system_services.support_case_registry import (
+    CASE_COLLECTION,
+    EVENT_COLLECTION,
+    SupportCaseConflictError,
+    SupportCaseNotFoundError,
+    SupportCaseRegistry,
+)
+
+URI_ENV = "SYSTEM_SERVICES_CASE_MONGO_URI"
+REPLICA_SET = "wilsySystemServicesCaseRS"
+NOW = datetime(2026, 11, 3, 12, 0, tzinfo=timezone.utc)
+
+
+@pytest.fixture
+def mongo_case_registry():
+    uri = os.environ.get(URI_ENV, "").strip()
+    if not uri or ("localhost" not in uri and "127.0.0.1" not in uri):
+        pytest.skip(f"{URI_ENV} must point to a disposable loopback MongoDB replica set")
+    client: MongoClient[Any] = MongoClient(uri, serverSelectionTimeoutMS=3000)
+    hello = client.admin.command("hello")
+    address = client.address
+    if address is None or address[0] not in {"localhost", "127.0.0.1"}:
+        client.close()
+        pytest.skip("System Services certification requires loopback MongoDB")
+    if hello.get("setName") != REPLICA_SET or not hello.get("isWritablePrimary"):
+        client.close()
+        pytest.skip("System Services certification requires its disposable writable replica set")
+    database_name = "wilsy_system_services_case_" + uuid.uuid4().hex
+    database = client.get_database(
+        database_name,
+        read_concern=ReadConcern("majority"),
+        write_concern=WriteConcern(w="majority", j=True),
+    )
+    registry = SupportCaseRegistry(
+        cases=database[CASE_COLLECTION],
+        events=database[EVENT_COLLECTION],
+    )
+    registry.ensure_indexes()
+    try:
+        yield client, database, registry
+    finally:
+        client.drop_database(database_name)
+        assert database_name not in client.list_database_names()
+        client.close()
+
+
+def _case(case_id: str, *, scope=SupportCaseScope.SYSTEM, tenant_id=None):
+    return SupportCase(
+        case_id=case_id,
+        scope=scope,
+        tenant_id=tenant_id,
+        principal_id="principal-synthetic-1",
+        category=SupportCaseCategory.ACCOUNT_ACCESS,
+        created_at=NOW,
+        updated_at=NOW,
+    )
+
+
+def _event(event_id, case_id, key, actor, before, after, action, at):
+    return SupportCaseEvent(
+        event_id=event_id,
+        case_id=case_id,
+        actor_principal_id=actor,
+        idempotency_key=key,
+        from_status=before,
+        to_status=after,
+        action=action,
+        occurred_at=at,
+        evidence_reference="evidence-synthetic-1",
+    )
+
+
+def test_real_mongo_create_transition_commit_and_tenant_scope(mongo_case_registry):
+    client, database, registry = mongo_case_registry
+    case = _case("case-commit-1")
+    with client.start_session() as session:
+        with session.start_transaction():
+            registry.create(
+                case,
+                _event("event-open-1", case.case_id, "idem-open-1", "actor-1", None, SupportCaseStatus.OPEN, "CASE_CREATED", NOW),
+                session=session,
+            )
+    with client.start_session() as session:
+        current = registry.get(case_id=case.case_id, scope=SupportCaseScope.SYSTEM, session=session)
+        with session.start_transaction():
+            updated = registry.transition(
+                current=current,
+                next_status=SupportCaseStatus.TRIAGED,
+                event=_event("event-triage-1", case.case_id, "idem-triage-1", "actor-1", SupportCaseStatus.OPEN, SupportCaseStatus.TRIAGED, "CASE_TRIAGED", NOW + timedelta(seconds=1)),
+                expected_revision=0,
+                session=session,
+            )
+    assert updated.status is SupportCaseStatus.TRIAGED
+    assert updated.revision == 1
+    assert database[CASE_COLLECTION].count_documents({"case_id": case.case_id}) == 1
+    assert database[EVENT_COLLECTION].count_documents({"case_id": case.case_id}) == 2
+    with pytest.raises(SupportCaseNotFoundError):
+        registry.get(case_id=case.case_id, scope=SupportCaseScope.TENANT, tenant_id="tenant-other")
+
+
+def test_real_mongo_transaction_abort_removes_case_and_event(mongo_case_registry):
+    client, database, registry = mongo_case_registry
+    case = _case("case-abort-1")
+    with client.start_session() as session:
+        with pytest.raises(RuntimeError, match="ABORT_CERTIFICATE"):
+            with session.start_transaction():
+                registry.create(
+                    case,
+                    _event("event-abort-1", case.case_id, "idem-abort-1", "actor-1", None, SupportCaseStatus.OPEN, "CASE_CREATED", NOW),
+                    session=session,
+                )
+                raise RuntimeError("ABORT_CERTIFICATE")
+    assert database[CASE_COLLECTION].count_documents({"case_id": case.case_id}) == 0
+    assert database[EVENT_COLLECTION].count_documents({"case_id": case.case_id}) == 0
+
+
+def test_real_mongo_stale_revision_and_event_replay_are_rejected(mongo_case_registry):
+    client, database, registry = mongo_case_registry
+    case = _case("case-cas-1")
+    with client.start_session() as session:
+        with session.start_transaction():
+            registry.create(
+                case,
+                _event("event-cas-open", case.case_id, "idem-cas-open", "actor-1", None, SupportCaseStatus.OPEN, "CASE_CREATED", NOW),
+                session=session,
+            )
+    with client.start_session() as session:
+        stale = registry.get(case_id=case.case_id, scope=SupportCaseScope.SYSTEM, session=session)
+        with session.start_transaction():
+            registry.transition(
+                current=stale,
+                next_status=SupportCaseStatus.TRIAGED,
+                event=_event("event-cas-triage", case.case_id, "idem-cas-triage", "actor-1", SupportCaseStatus.OPEN, SupportCaseStatus.TRIAGED, "CASE_TRIAGED", NOW + timedelta(seconds=1)),
+                expected_revision=0,
+                session=session,
+            )
+        with session.start_transaction():
+            with pytest.raises(SupportCaseConflictError, match="SYSTEM_SERVICES_CASE_CONCURRENT_TRANSITION"):
+                registry.transition(
+                    current=stale,
+                    next_status=SupportCaseStatus.TRIAGED,
+                    event=_event("event-cas-replay", case.case_id, "idem-cas-replay", "actor-2", SupportCaseStatus.OPEN, SupportCaseStatus.TRIAGED, "CASE_TRIAGED", NOW + timedelta(seconds=2)),
+                    expected_revision=0,
+                    session=session,
+                )
+    assert database[CASE_COLLECTION].count_documents({"case_id": case.case_id}) == 1
+    assert database[EVENT_COLLECTION].count_documents({"case_id": case.case_id}) == 2
