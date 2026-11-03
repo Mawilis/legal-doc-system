@@ -21,6 +21,7 @@ from tools.eos.api.global_principal_auth_router import (
 
 def _request() -> Request:
     app = FastAPI()
+    app.state.global_principal_auth_indexes_ready = True
     app.state.global_principal_session_indexes_ready = True
     app.state.global_principal_mfa_factor_indexes_ready = True
     app.state.global_principal_totp_verifier = None
