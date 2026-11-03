@@ -1,7 +1,7 @@
 """WILSY OS startup certification for global credential and challenge indexes.
 
 TITLE: Global Principal Authentication Startup Index Certificate
-VERSION: v1.0.0-GLOBAL-PRINCIPAL-CHALLENGE-STARTUP-TESTS
+VERSION: v1.0.1-GLOBAL-PRINCIPAL-CHALLENGE-STARTUP-TESTS
 AUTHORITY: Verifies canonical EOS startup owns global credential and challenge index DDL.
 EPITOME: Proves unique credential and one-time challenge indexes are installed
          before readiness is asserted and are never created by request handlers.
@@ -10,9 +10,9 @@ ABSOLUTE CANONICAL PATH:
 COLLABORATION / OWNERSHIP: Wilsy Core Engineering.
 CERTIFICATION / UPDATE DATE: 2026-11-03.
 CHANGELOG:
-    v1.0.0-GLOBAL-PRINCIPAL-CHALLENGE-STARTUP-TESTS certifies startup index
-    ownership, readiness fail-closed defaults, shutdown readiness reset and
-    exact server artifact version.
+    v1.0.1-GLOBAL-PRINCIPAL-CHALLENGE-STARTUP-TESTS adds the durable global
+    authentication rate-limit index to the required startup readiness set.
+    v1.0.0 certifies credential/challenge index ownership and readiness lifecycle.
 COMPLIANCE: Test artifact for POPIA section 19; GDPR Article 32; SOC 2 CC7.2.
 SECURITY / PRIVACY POSTURE: Static composition inspection; no database connection or secrets.
 TENANT BOUNDARY: Global credential indexes are tenant-neutral; challenge digests are scope-bound.
@@ -47,11 +47,12 @@ def test_startup_installs_global_credential_and_challenge_indexes_before_readine
     source = _startup_source()
     credential = source.index("PrincipalCredentialRepository.ensure_indexes(")
     challenge = source.index("MembershipSelectionChallengeService.ensure_indexes(")
+    rate_limit = source.index("PrincipalAuthenticationRateLimit(")
     readiness = source.index("global_principal_auth_indexes_ready = client is not None")
-    assert credential < readiness
-    assert challenge < readiness
+    assert credential < challenge < rate_limit < readiness
     assert "database[PRINCIPAL_CREDENTIAL_COLLECTION]" in source
     assert "database[MEMBERSHIP_SELECTION_CHALLENGE_COLLECTION]" in source
+    assert "database[PRINCIPAL_AUTH_RATE_LIMIT_COLLECTION]" in source
 
 
 def test_global_auth_index_readiness_defaults_and_shutdown_fail_closed():
@@ -63,11 +64,11 @@ def test_global_auth_index_readiness_defaults_and_shutdown_fail_closed():
 
 
 def test_server_version_is_the_governed_global_auth_index_bootstrap():
-    assert server.VERSION == "v1.35.0-GLOBAL-PRINCIPAL-MFA-CHALLENGE-INDEX-BOOTSTRAP"
+    assert server.VERSION == "v1.36.0-GLOBAL-PRINCIPAL-AUTH-THROTTLE-INDEX-BOOTSTRAP"
 
 
 # ARTIFACT: test_global_principal_auth_challenge_startup.py
-# VERSION: v1.0.0-GLOBAL-PRINCIPAL-CHALLENGE-STARTUP-TESTS
+# VERSION: v1.0.1-GLOBAL-PRINCIPAL-CHALLENGE-STARTUP-TESTS
 # AUTHORITY BOUNDARY: startup index ownership and readiness certification only
 # TENANT POSTURE: global credential indexes remain tenant-neutral; challenge index stores no raw token
 # FAIL-CLOSED POSTURE: readiness remains false unless connected startup completes both index declarations
