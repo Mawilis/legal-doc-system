@@ -1,4 +1,5 @@
 from datetime import datetime, timedelta, timezone
+from dataclasses import replace
 
 import pytest
 
@@ -48,11 +49,11 @@ def test_daily_queue_prioritises_overdue_then_due_today_then_future():
 
 def test_daily_queue_excludes_foreign_tenant_and_terminal_items():
     foreign = item("Foreign", tenant="OTHER-TENANT")
-    completed = OwnerCommercialWorkItem(
-        **{**item("Done").__dict__, "status": OwnerWorkStatus.COMPLETED,
-           "completed_at": NOW, "updated_at": NOW}
-    ) if hasattr(item("Done"), "__dict__") else None
-    queue = build_daily_queue([foreign], tenant_id=TENANT, now=NOW)
+    completed = replace(
+        item("Done"), status=OwnerWorkStatus.COMPLETED,
+        completed_at=NOW, updated_at=NOW,
+    )
+    queue = build_daily_queue([foreign, completed], tenant_id=TENANT, now=NOW)
     assert queue == ()
 
 
