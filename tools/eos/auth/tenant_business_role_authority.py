@@ -72,18 +72,11 @@ def resolve_current_tenant_business_role(*, principal_id: object, tenant_id: obj
             if len(eligible) > 1:
                 return TenantBusinessRoleResult(None, BusinessRoleResolution.MULTIPLE_ACTIVE_TENANT_BUSINESS_ROLES)
             if active:
-                # Preserve legacy single-capacity evidence for compatibility,
-                # but never select a role from a true multi-capacity authority
-                # when no capacity is eligible for this operation.
-                legacy_single_capacity = (
-                    getattr(repository, "multi_capacity_authority_available", True)
-                    is False
-                )
-                sole_active = (
-                    next(iter(active))
-                    if len(active) == 1 and legacy_single_capacity
-                    else None
-                )
+                # Retain one exact active role as denial evidence. This does
+                # not select it for authorization: resolution remains
+                # NO_ELIGIBLE_TENANT_BUSINESS_ROLE and the permission lookup
+                # must not run. Multiple active roles remain non-singular.
+                sole_active = next(iter(active)) if len(active) == 1 else None
                 return TenantBusinessRoleResult(
                     sole_active,
                     BusinessRoleResolution.NO_ELIGIBLE_TENANT_BUSINESS_ROLE,
