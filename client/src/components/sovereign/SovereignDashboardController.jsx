@@ -640,6 +640,14 @@ const SovereignDashboardController = ({ user: propUser, onLogout }) => {
   }, [propUser]);
 
     const role = normalizeDashboardToken(user?.role || user?.accountRole || user?.tenantRole);
+
+  useEffect(() => {
+    systemServicesRequestRef.current += 1;
+    setSystemServicesWorkspace(null);
+    if (manualDashboardKey === DASHBOARD_KEYS.SYSTEM_SERVICES) {
+      setManualDashboardKey('');
+    }
+  }, [user?.id, user?.email]);
   const traceId = localStorage.getItem('traceId') || 'SYSTEM_CORE_INIT';
 
   const dashboardUser = useMemo(() => (
