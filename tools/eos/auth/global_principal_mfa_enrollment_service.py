@@ -125,11 +125,13 @@ class GlobalPrincipalMfaEnrollmentService:
         kms: Any,
         challenge_collection: Collection | None = None,
         factor_collection: Collection | None = None,
+        legacy_factor_collection: Collection | None = None,
         credential_repository: Any = None,
     ) -> None:
         self._kms = kms
         self._challenges = challenge_collection
         self._factors = factor_collection
+        self._legacy_factors = legacy_factor_collection
         self._credentials = credential_repository or PrincipalCredentialRepository()
 
     @staticmethod
@@ -173,6 +175,15 @@ class GlobalPrincipalMfaEnrollmentService:
         if credential.credential_revision != credential_revision:
             raise GlobalPrincipalMfaEnrollmentRejected("GLOBAL_MFA_ENROLLMENT_CREDENTIAL_STALE")
         if credential.mfa_enabled is not False:
+            raise GlobalPrincipalMfaEnrollmentRejected("GLOBAL_MFA_RECOVERY_REQUIRED")
+        legacy_factors = _target(self._legacy_factors, "otp_secrets")
+        try:
+            legacy_rows = list(
+                legacy_factors.find({"user_id": principal_id}, session=session).limit(2)
+            )
+        except PyMongoError as error:
+            raise GlobalPrincipalMfaEnrollmentUnavailable("GLOBAL_MFA_ENROLLMENT_LEGACY_FACTOR_READ_FAILED") from error
+        if legacy_rows:
             raise GlobalPrincipalMfaEnrollmentRejected("GLOBAL_MFA_RECOVERY_REQUIRED")
 
         challenges = _target(self._challenges, CHALLENGE_COLLECTION)
