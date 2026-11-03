@@ -50,6 +50,8 @@ import styles from '../sovereign/FounderDashboard.module.css';
 const InvoiceSentinel = () => {
   const { user } = useAuth();
   const { activeTenant } = useTenants();
+  const tenantId = activeTenant?.tenantId || activeTenant?.id || null;
+  const hasAuthenticatedTenant = Boolean(tenantId && tenantId === user?.tenantId);
 
   // System State Management Ledger
   const [loading, setLoading] = useState(true);
@@ -80,6 +82,11 @@ const InvoiceSentinel = () => {
    * Utilizes an explicit request signaling chain to cleanly abort stale, mid-flight tasks.
    */
   const fetchInstitutionalLedger = useCallback(async () => {
+    if (!hasAuthenticatedTenant) {
+      setError('AUTHENTICATED_WORKSPACE_AUTHORITY_MISMATCH');
+      setLoading(false);
+      return;
+    }
     if (abortControllerRef.current) {
       abortControllerRef.current.abort();
     }
@@ -88,7 +95,7 @@ const InvoiceSentinel = () => {
     setLoading(true);
     setError(null);
     try {
-      const tenantContext = activeTenant?.id || 'GLOBAL_ROOT';
+      const tenantContext = tenantId;
 
       // Request active ledger states via the proxy gateway interceptor
       const response = await api.get('/billing/institutional/summary', {
@@ -118,7 +125,7 @@ const InvoiceSentinel = () => {
     } finally {
       setLoading(false);
     }
-  }, [activeTenant?.id]);
+  }, [tenantId, hasAuthenticatedTenant]);
 
   /**
    * @async
@@ -129,7 +136,7 @@ const InvoiceSentinel = () => {
    */
   const handleClientStrike = async (e) => {
     e.preventDefault();
-    if (!clientIdentifier || !invoiceAmount) return;
+    if (!hasAuthenticatedTenant || !clientIdentifier || !invoiceAmount) return;
 
     if (isFrozen) {
       setStrikeResult({ type: 'error', message: 'Operation Intercepted: Cannot dispatch invoices while active shard is frozen.' });
@@ -140,7 +147,7 @@ const InvoiceSentinel = () => {
     setStrikeResult(null);
     try {
       const payload = {
-        tenantId: activeTenant?.id || 'GLOBAL_ROOT',
+        tenantId,
         clientId: clientIdentifier,
         type: serviceType,
         amount: Number(invoiceAmount),
@@ -178,6 +185,7 @@ const InvoiceSentinel = () => {
    */
   const downloadInvoiceArtifact = async (invoiceId) => {
     if (!invoiceId) return;
+    if (!hasAuthenticatedTenant) throw new Error('AUTHENTICATED_WORKSPACE_AUTHORITY_MISMATCH');
     setDownloadingId(invoiceId);
 
     try {
@@ -185,7 +193,7 @@ const InvoiceSentinel = () => {
       const response = await api.get(`/billing/institutional/invoice/${invoiceId}/download`, {
         responseType: 'blob',
         headers: {
-          'X-Tenant-ID': activeTenant?.id || 'GLOBAL_ROOT'
+          'X-Tenant-ID': tenantId
         }
       });
 
