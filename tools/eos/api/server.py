@@ -90,6 +90,7 @@ from .router import direct_router, router
 from .subscription_router import subscription_router
 from .tenant_router import tenant_router
 from .legal_operations_router import router as legal_operations_router
+from .owner_commercial_workspace_router import router as owner_commercial_workspace_router
 from .legal_operations_command_router import router as legal_operations_command_router
 from .authorization_role_revocation_router import router as authorization_role_revocation_router
 from .legal_operations_billing_read_router import router as legal_operations_billing_read_router
@@ -594,6 +595,7 @@ class WilsyAPIServer:
         app.include_router(router)
         app.include_router(tenant_router)
         app.include_router(legal_operations_router, prefix="/api")
+        app.include_router(owner_commercial_workspace_router, prefix="/api")
         app.include_router(legal_operations_command_router, prefix="/api")
         app.include_router(authorization_role_revocation_router, prefix="/api")
         app.include_router(legal_operations_billing_read_router, prefix="/api")

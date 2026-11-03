@@ -251,6 +251,9 @@ _BINDINGS = MappingProxyType({**_BINDINGS, "legal_operating_model_manage": "lega
 _BINDINGS = MappingProxyType({
     "crm_lead_create": "crm:lead:create",
     "crm_lead_read": "crm:lead:read",
+    "crm_work_item_read": "crm:work_item:read",
+    "crm_work_item_create": "crm:work_item:create",
+    "crm_work_item_complete": "crm:work_item:complete",
     "crm_email_template_create": "crm:email_template:create",
     "crm_email_template_read": "crm:email_template:read",
     "crm_email_template_revise": "crm:email_template:revise",

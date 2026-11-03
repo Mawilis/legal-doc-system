@@ -501,6 +501,9 @@ _PERMISSIONS: Final = MappingProxyType(
             "read CRM leads",
             tenant=True,
         ),
+        "crm:work_item:read": _meta("crm:work_item:read", "TENANT", "TENANT", "read owner commercial work items", tenant=True),
+        "crm:work_item:create": _meta("crm:work_item:create", "TENANT", "TENANT", "create owner commercial work items", tenant=True),
+        "crm:work_item:complete": _meta("crm:work_item:complete", "TENANT", "TENANT", "complete owner commercial work items", tenant=True),
         "crm:email_template:create": _meta(
             "crm:email_template:create",
             "TENANT",

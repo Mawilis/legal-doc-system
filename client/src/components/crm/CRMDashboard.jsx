@@ -86,6 +86,7 @@ import { WilsyMeetingsWorkspace } from './meeting/workspace';
 import WilsyMeetingOperatingRoom from './meeting/WilsyMeetingOperatingRoom';
 import WilsyCrmSetupControlPlane from './setup/WilsyCrmSetupControlPlane';
 import WilsyCrmRawStreamThread from './WilsyCrmRawStreamThread.jsx';
+import OwnerCommercialWorkspace from './OwnerCommercialWorkspace.jsx';
 
 // ─── SOVEREIGN BUSINESS CONTEXT INTEGRATION ──────────────────────────────────
 // This is the competitive differentiator: CRM now consumes live HR and Sales
@@ -2502,15 +2503,16 @@ function CRMDashboard({ user = {}, tenantConfig = {}, onExit = null }) {
 
       <section className={styles.commandSurface}>
         {activeWorkspace === 'home' ? (
-          <header data-wilsy-r85-crm-workspace-topbar="tabbed-command" className={styles.osChrome}>
+          <header data-wilsy-r85-crm-workspace-topbar="tabbed-command" className={crmPermissionProfile.scope === 'tenant' ? styles.ownerChrome : styles.osChrome}>
             <div className={styles.chromeTitle}>
-              <small><Home size={13} /> CRM Workspace</small>
-              <h1 className={styles.crmOneLineTitleLock} aria-label="Wilsy CRM Workspace">
-                <span className={styles.crmOneLineTitleText}>Wilsy&nbsp;<span className={styles.crmOneLineTitleGold}>CRM</span></span>
+              <small><Home size={13} /> {crmPermissionProfile.scope === 'tenant' ? 'Legal Operations' : 'CRM Workspace'}</small>
+              <h1 className={styles.crmOneLineTitleLock} aria-label={crmPermissionProfile.scope === 'tenant' ? 'WILSY Legal Operations Owner Workspace' : 'Wilsy CRM Workspace'}>
+                <span className={styles.crmOneLineTitleText}>{crmPermissionProfile.scope === 'tenant' ? <>WILSY&nbsp;<span className={styles.crmOneLineTitleGold}>LEGAL OPS</span></> : <>Wilsy&nbsp;<span className={styles.crmOneLineTitleGold}>CRM</span></>}</span>
               </h1>
-              <p>Source-led pipeline. Sovereign search. Evidence proof. A CRM command shell that outclasses Zoho, HubSpot, Zendesk, Apollo and Lemlist.</p>
+              <p>{crmPermissionProfile.scope === 'tenant' ? 'Daily owner actions, commercial follow-ups and subscription-governed Legal operations.' : 'Source-led pipeline. Sovereign search. Evidence proof.'}</p>
             </div>
 
+            {crmPermissionProfile.scope !== 'tenant' ? (
             <nav className={styles.crmTopAppMenu} aria-label="CRM command menu">
               {visibleHomeTabs.map(tab => {
                 const TabIcon = tab.icon;
@@ -2535,12 +2537,15 @@ function CRMDashboard({ user = {}, tenantConfig = {}, onExit = null }) {
                 );
               })}
             </nav>
+            ) : null}
 
+            {crmPermissionProfile.scope !== 'tenant' ? (
             <div className={styles.investorStrip} aria-label="Investor telemetry">
               <span title={rootHashStatus}><LockKeyhole size={16} /> {String(rootHashStatus || '').toLowerCase().includes('root') ? 'Root sealed' : 'Root pending'}</span>
               <span><Network size={16} /> {resolveWilsyR91K110RouteSurfaceLabel(operatingSnapshot.sourcePosture)}</span>
               <span><Shield size={16} /> {readinessScore}% readiness</span>
             </div>
+            ) : null}
 
             <div className={styles.chromeTenant}>
               <img
@@ -2704,6 +2709,9 @@ function CRMDashboard({ user = {}, tenantConfig = {}, onExit = null }) {
               onBackHome={() => setActiveWorkspace('home')}
             />
           ) : activeWorkspace === 'home' ? (
+            crmPermissionProfile.scope === 'tenant' ? (
+              <OwnerCommercialWorkspace />
+            ) : (
             <section className={styles.homeGrid}>
               <section className={styles.crmWorkspaceDeck} aria-label="CRM module workspaces">
                 {workspaceTelemetry.map(workspace => {
@@ -2808,6 +2816,7 @@ function CRMDashboard({ user = {}, tenantConfig = {}, onExit = null }) {
                 </article>
               </section>
             </section>
+            )
           ) : (
             <section className={styles.recordsSurface}>
               <div className={styles.recordsHeader}>

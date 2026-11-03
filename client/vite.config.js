@@ -130,6 +130,13 @@ export default defineConfig({
         changeOrigin: true,
         secure: false,
       },
+      // Python EOS owns the tenant-owner commercial Legal workspace.
+      // Preserve /api; this is transport only, never browser-side business logic.
+      '/api/crm/owner-workspace': {
+        target: 'http://localhost:9095',
+        changeOrigin: true,
+        secure: false,
+      },
       // Python EOS owns authenticated Legal Operations read/command authority.
       // Preserve /api because the EOS router is mounted under /api.
       '/api/legal-operations': {

@@ -4,6 +4,11 @@ on:
   pull_request:
     paths:
       - "client/src/App.jsx"
+      - "client/src/components/crm/CRMDashboard.jsx"
+      - "client/src/components/crm/OwnerCommercialWorkspace.jsx"
+      - "client/src/components/crm/OwnerCommercialWorkspace.module.css"
+      - "client/src/services/ownerCommercialWorkspaceService.js"
+      - "client/vite.config.js"
       - "client/src/contexts/authContext.jsx"
       - "client/src/contexts/tenantContext.jsx"
       - "client/tests/client/App.authenticatedLegalWorkspaceJourney.test.jsx"

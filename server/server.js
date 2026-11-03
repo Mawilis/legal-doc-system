@@ -298,6 +298,25 @@ function createApp() {
   );
   app.use('/auth', buildKennelProxy({ mountPrefix: '/auth', targetPrefix: '/api/auth' }));
 
+  // Tenant-owner Legal workspace transport. Python EOS remains the sole
+  // owner of authentication admission, Legal entitlement, task lifecycle and
+  // tenant persistence; this BFF forwards only the bounded route surface.
+  app.use(
+    '/api/crm/owner-workspace',
+    buildSelectiveLegalProxy({
+      mountPrefix: '/api/crm/owner-workspace',
+      targetPrefix: '/api/crm/owner-workspace',
+      allowed: (method, suffix) => {
+        const pathOnly = String(suffix || '/').split('?', 1)[0];
+        return (
+          (method === 'GET' && (pathOnly === '/' || pathOnly === '')) ||
+          (method === 'POST' && pathOnly === '/work-items') ||
+          (method === 'POST' && /^\/work-items\/[^/]+\/complete$/.test(pathOnly))
+        );
+      },
+    })
+  );
+
   // C1C/C1E transport-only bridge.  These selective mounts deliberately sit
   // before body parsers so POST streams reach Python EOS byte-for-byte.  Node
   // forwards headers and responses but never interprets advisory semantics.
@@ -361,7 +380,7 @@ function createApp() {
       error: 'BFF_ROUTE_NOT_PROXIED',
       message:
         `No selective Kennel proxy for ${req.method} /api${req.url}. ` +
-        'Owned prefixes: /api/auth, /api/tenants, /api/business/tenants, /api/employees, /api/kernel, /api/plans, /api/subscriptions, /api/billing → /billing, exact legal-acceptance routes, and exact C1C/C1E legal-advisory routes.',
+        'Owned prefixes: /api/auth, /api/tenants, /api/business/tenants, /api/employees, /api/kernel, /api/plans, /api/subscriptions, /api/billing → /billing, exact legal-acceptance routes, the tenant-owner Legal workspace, and exact C1C/C1E legal-advisory routes.',
       path: `/api${req.url}`,
       timestamp: new Date().toISOString(),
     });
