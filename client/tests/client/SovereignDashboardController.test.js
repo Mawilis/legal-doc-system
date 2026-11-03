@@ -1,4 +1,5 @@
 /* eslint-disable */
+// @vitest-environment node
 /**
  * TITLE: WILSY OS Sovereign Dashboard Controller Legal Role Routing Certificate
  * VERSION: v1.2.0-AUTHENTICATED-ROLE-LANDING-CERT
