@@ -739,13 +739,13 @@ const SovereignDashboardController = ({ user: propUser, onLogout }) => {
   // Mount telemetry once per identity+dashboard (not on every kernel poll)
   const mountLoggedRef = useRef('');
   useEffect(() => {
-    if (!user || !role || !dashboardKey) return;
+    if (!user || !user.tenantId || !role || !dashboardKey) return;
     const mountKey = `${user.email || user.id || ''}|${dashboardKey}|${role}`;
     if (mountLoggedRef.current === mountKey) return;
     mountLoggedRef.current = mountKey;
 
     broadcastTelemetry(
-      user.tenantAlias || user.tenantId || 'GLOBAL_ROOT',
+      user.tenantId,
       'DASHBOARD_EVENT',
       'DASHBOARD_MOUNT_SUCCESS',
       user.email || user.id,
