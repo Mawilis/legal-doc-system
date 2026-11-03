@@ -63,11 +63,30 @@ def authenticate_global_principal(
     try:
         credential = credentials.get_by_email(normalized_email, session=session)
     except PrincipalCredentialNotFoundError:
+        # Consume bcrypt-equivalent work for unknown emails so the public
+        # boundary does not expose a cheap account-existence timing oracle.
+        try:
+            bcrypt.hashpw(
+                password.encode("utf-8"),
+                bcrypt.gensalt(rounds=12),
+            )
+        except (TypeError, ValueError):
+            pass
         return None
     except PrincipalCredentialRepositoryError as error:
         raise GlobalPrincipalAuthenticationUnavailable(
             "GLOBAL_PRINCIPAL_CREDENTIAL_UNAVAILABLE"
         ) from error
+
+    try:
+        password_matches = bcrypt.checkpw(
+            password.encode("utf-8"),
+            credential.password_hash.encode("utf-8"),
+        )
+    except (TypeError, ValueError):
+        return None
+    if not password_matches:
+        return None
 
     try:
         principal = principals.get(credential.principal_id, session=session)
@@ -82,16 +101,6 @@ def authenticate_global_principal(
         getattr(principal, "principal_id", None) != credential.principal_id
         or getattr(principal, "status", None) is not PrincipalStatus.ACTIVE
     ):
-        return None
-
-    try:
-        password_matches = bcrypt.checkpw(
-            password.encode("utf-8"),
-            credential.password_hash.encode("utf-8"),
-        )
-    except (TypeError, ValueError):
-        return None
-    if not password_matches:
         return None
 
     return AuthenticatedGlobalPrincipal(
