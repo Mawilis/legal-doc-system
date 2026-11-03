@@ -72,7 +72,8 @@ def resolve_current_tenant_business_role(*, principal_id: object, tenant_id: obj
             if len(eligible) > 1:
                 return TenantBusinessRoleResult(None, BusinessRoleResolution.MULTIPLE_ACTIVE_TENANT_BUSINESS_ROLES)
             if active:
-                return TenantBusinessRoleResult(None, BusinessRoleResolution.NO_ELIGIBLE_TENANT_BUSINESS_ROLE)
+                sole_active = next(iter(active)) if len(active) == 1 else None
+                return TenantBusinessRoleResult(sole_active, BusinessRoleResolution.NO_ELIGIBLE_TENANT_BUSINESS_ROLE)
             return TenantBusinessRoleResult(None, BusinessRoleResolution.NO_ACTIVE_TENANT_BUSINESS_ROLE)
 
     # The HTTP role reader can resolve the dedicated business-role record
@@ -120,7 +121,7 @@ def resolve_current_tenant_business_role(*, principal_id: object, tenant_id: obj
             == TenantBusinessRoleStatus.ACTIVE.value
         ):
             if operation is not None and tenant_role_operation_eligibility(role, operation) != ELIGIBLE:
-                return TenantBusinessRoleResult(None, BusinessRoleResolution.NO_ELIGIBLE_TENANT_BUSINESS_ROLE)
+                return TenantBusinessRoleResult(role, BusinessRoleResolution.NO_ELIGIBLE_TENANT_BUSINESS_ROLE)
             return TenantBusinessRoleResult(role, BusinessRoleResolution.RESOLVED)
         return TenantBusinessRoleResult(
             None, BusinessRoleResolution.NO_ACTIVE_TENANT_BUSINESS_ROLE
