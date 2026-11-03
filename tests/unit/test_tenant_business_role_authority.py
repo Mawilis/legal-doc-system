@@ -152,3 +152,72 @@ def test_compound_scope_and_invalid_inputs() -> None:
 # FAIL-CLOSED POSTURE: ambiguity and unavailable storage deny
 # FINANCIAL EXECUTION AUTHORITY: Kennel EOS remains exclusive
 # END OF WILSY OS SOVEREIGN ARTIFACT
+
+
+class MultiCapacityRepo:
+    def __init__(self, values):
+        self.values = values
+        self.calls = []
+
+    def resolve_all_business_roles(self, principal_id, tenant_id, *, session=None):
+        self.calls.append((principal_id, tenant_id, session))
+        return tuple(self.values)
+
+
+def _capacity(role, status=TenantBusinessRoleStatus.ACTIVE, principal="p", tenant="t"):
+    return SimpleNamespace(
+        principal_id=principal,
+        tenant_id=tenant,
+        business_role=role,
+        status=status,
+    )
+
+
+def test_operation_aware_selection_preserves_legal_partner_and_selects_owner_for_crm_work():
+    repo = MultiCapacityRepo([
+        _capacity("tenant_legal_partner"),
+        _capacity("tenant_owner"),
+    ])
+    result = resolve_current_tenant_business_role(
+        principal_id="p", tenant_id="t", repository=repo,
+        operation="crm_work_item_create",
+    )
+    assert result.role == "tenant_owner"
+    assert result.resolution is BusinessRoleResolution.RESOLVED
+    assert repo.calls == [("p", "t", None)]
+
+
+def test_operation_aware_selection_denies_specialist_role_for_owner_operation():
+    repo = MultiCapacityRepo([_capacity("tenant_legal_partner")])
+    result = resolve_current_tenant_business_role(
+        principal_id="p", tenant_id="t", repository=repo,
+        operation="crm_work_item_create",
+    )
+    assert result.role is None
+    assert result.resolution is BusinessRoleResolution.NO_ELIGIBLE_TENANT_BUSINESS_ROLE
+
+
+def test_operation_aware_selection_denies_ambiguity_without_permission_union():
+    repo = MultiCapacityRepo([
+        _capacity("tenant_owner"),
+        _capacity("tenant_admin"),
+    ])
+    result = resolve_current_tenant_business_role(
+        principal_id="p", tenant_id="t", repository=repo,
+        operation="crm_work_item_read",
+    )
+    assert result.role is None
+    assert result.resolution is BusinessRoleResolution.MULTIPLE_ACTIVE_TENANT_BUSINESS_ROLES
+
+
+def test_operation_aware_selection_ignores_revoked_capacity_and_checks_scope():
+    repo = MultiCapacityRepo([
+        _capacity("tenant_owner", TenantBusinessRoleStatus.REVOKED),
+        _capacity("tenant_legal_partner"),
+        _capacity("tenant_auditor", principal="other"),
+    ])
+    result = resolve_current_tenant_business_role(
+        principal_id="p", tenant_id="t", repository=repo,
+        operation="crm_work_item_read",
+    )
+    assert result.resolution is BusinessRoleResolution.NO_ELIGIBLE_TENANT_BUSINESS_ROLE
