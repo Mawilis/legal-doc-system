@@ -116,7 +116,7 @@ def test_owner_genesis_commits_all_records_and_rolls_back_every_participant(
             with session.start_transaction():
                 TenantBusinessRoleRepository.record_capacity_revision(
                     TenantBusinessRoleAuthority(
-                        owner_principal, owner_tenant, "legal_partner",
+                        owner_principal, owner_tenant, "tenant_legal_partner",
                         TenantBusinessRoleStatus.ACTIVE, 0,
                         datetime.now(timezone.utc), None,
                     ),
@@ -144,7 +144,7 @@ def test_owner_genesis_commits_all_records_and_rolls_back_every_participant(
         assert database["tenant_memberships"].count_documents({"tenant_id": owner_tenant, "principal_id": owner_principal}) == 1
         assert database["role_assignments"].count_documents({"tenant_id": owner_tenant, "principal_id": owner_principal, "role_id": "TENANT_OWNER"}) == 1
         capacities = TenantBusinessRoleRepository.resolve_all(owner_principal, owner_tenant)
-        assert {item.business_role for item in capacities} == {"legal_partner", "tenant_owner"}
+        assert {item.business_role for item in capacities} == {"tenant_legal_partner", "tenant_owner"}
         assert database[HISTORY_COLLECTION].count_documents({"tenant_id": owner_tenant}) == 2
 
         # Force failure after both current capacity and immutable history writes.
