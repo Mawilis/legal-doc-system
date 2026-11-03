@@ -10,6 +10,8 @@ from dataclasses import dataclass
 from datetime import datetime, timezone
 from hashlib import sha3_256
 from typing import Callable, Protocol
+
+from pymongo.client_session import ClientSession
 from uuid import uuid4
 
 from tools.eos.system_services.support_case import (
@@ -62,7 +64,7 @@ class SystemServicesAuthorizer(Protocol):
         *,
         principal_id: str,
         permission_id: str,
-        session: object | None,
+        session: ClientSession | None = None,
     ) -> None: ...
 
 
