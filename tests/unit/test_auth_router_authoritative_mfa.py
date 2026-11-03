@@ -1,7 +1,7 @@
 """WILSY OS authoritative MFA router certificate.
 
 TITLE: Authentication Router Authoritative MFA Certificate
-VERSION: v1.4.3-GLOBAL-PRINCIPAL-FAILURE-THROTTLE-HTTP-CERT
+VERSION: v1.5.0-REQUIRED-ASGI-REQUEST-LOGIN-CERT
 AUTHORITY: Wilsy OS Core Governance
 EPITOME: Certifies exact setup, reconciliation, verification, persistence, and
          bounded tenant-discovery behavior without a live database.
@@ -10,8 +10,9 @@ COLLABORATION / OWNERSHIP: Exercises tools.eos.api.auth_router with deterministi
                            registry and tenant doubles.
 CERTIFICATION / UPDATE DATE: 2026-09-17
 CHANGELOG:
-  v1.4.3-GLOBAL-PRINCIPAL-FAILURE-THROTTLE-HTTP-CERT balances all synthetic
-  ASGI Request casts for static type checking.
+  v1.5.0-REQUIRED-ASGI-REQUEST-LOGIN-CERT supplies concrete Request doubles
+  for every direct login invocation and isolates rate-gate behavior by test.
+  v1.4.3 balances all synthetic ASGI Request casts for static type checking.
   v1.4.2 corrects the closing delimiter on the synthetic Request doubles.
   v1.4.1 explicitly typed the first synthetic Request double.
   v1.4.0-GLOBAL-PRINCIPAL-FAILURE-THROTTLE-HTTP-CERT certifies HTTP admission,
@@ -131,6 +132,28 @@ def _run(coro: Any) -> Any:
     return asyncio.run(coro)
 
 
+def _http_request() -> Request:
+    """Return a typed synthetic ASGI request for direct route-function tests."""
+    return cast(Request, SimpleNamespace(client=SimpleNamespace(host="203.0.113.25")))
+
+
+@pytest.fixture(autouse=True)
+def _default_allow_rate_gate(monkeypatch: pytest.MonkeyPatch) -> None:
+    """Keep existing MFA-state tests independent of Mongo throttle persistence."""
+
+    class _AllowGate:
+        def require_allowed(self, **_kwargs: Any) -> None:
+            return None
+
+        def record_failure(self, **_kwargs: Any) -> None:
+            return None
+
+        def record_success(self, **_kwargs: Any) -> None:
+            return None
+
+    monkeypatch.setattr(auth_router, "PrincipalAuthenticationRateLimit", _AllowGate)
+
+
 @pytest.mark.parametrize(
     ("enrolled", "secret", "expected_status", "qr_expected"),
     [
@@ -149,7 +172,7 @@ def test_login_exposes_exact_authoritative_mfa_state(
     registry = _Registry(_user(enrolled=enrolled), secret)
     monkeypatch.setattr(auth_router, "get_auth_registry", lambda _tenant: registry)
 
-    response = _run(auth_router.login(AuthRequest(email="person@example.com", password="valid", tenant_id="TENANT-TEST")))
+    response = _run(auth_router.login(AuthRequest(email="person@example.com", password="valid", tenant_id="TENANT-TEST"), _http_request()))
 
     assert response.status == expected_status
     assert bool(response.qrCode) is qr_expected
@@ -187,7 +210,8 @@ def test_login_rejects_a_tenant_other_than_the_discovered_tenant(
                     email="person@example.com",
                     password="valid",
                     tenant_id="TENANT-OTHER",
-                )
+                ),
+                _http_request(),
             )
         )
 
@@ -206,7 +230,8 @@ def test_login_requires_tenant_discovery_before_credentials(
     with pytest.raises(HTTPException) as error:
         _run(
             auth_router.login(
-                AuthRequest(email="person@example.com", password="valid")
+                AuthRequest(email="person@example.com", password="valid"),
+                _http_request(),
             )
         )
 
@@ -599,7 +624,7 @@ def test_http_login_fails_closed_when_throttle_authority_is_unavailable(
 
 
 # ARTIFACT: tests/unit/test_auth_router_authoritative_mfa.py
-# VERSION: v1.4.3-GLOBAL-PRINCIPAL-FAILURE-THROTTLE-HTTP-CERT
+# VERSION: v1.5.0-REQUIRED-ASGI-REQUEST-LOGIN-CERT
 # AUTHORITY BOUNDARY: deterministic HTTP-state certificate only
 # TENANT POSTURE: unknown aliases fail closed without directory enumeration
 # FAIL-CLOSED POSTURE: persistence uncertainty cannot issue a session
