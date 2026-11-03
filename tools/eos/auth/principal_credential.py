@@ -18,6 +18,7 @@ class PrincipalCredential:
     normalized_email: str
     password_hash: str
     credential_revision: int
+    mfa_enabled: bool
 
     def __post_init__(self) -> None:
         if not isinstance(self.principal_id, str) or not self.principal_id or self.principal_id != self.principal_id.strip():
@@ -25,6 +26,8 @@ class PrincipalCredential:
         if not isinstance(self.normalized_email, str) or not self.normalized_email or self.normalized_email != self.normalized_email.strip() or self.normalized_email != self.normalized_email.lower():
             raise ValueError("normalized_email must be lowercase and trimmed")
         validate_password_hash(self.password_hash)
+        if not isinstance(self.mfa_enabled, bool):
+            raise TypeError("mfa_enabled must be an explicit boolean")
         if isinstance(self.credential_revision, bool) or not isinstance(self.credential_revision, int) or not 0 <= self.credential_revision <= MAX_CREDENTIAL_REVISION:
             raise ValueError("credential_revision must be a bounded non-negative integer")
 
