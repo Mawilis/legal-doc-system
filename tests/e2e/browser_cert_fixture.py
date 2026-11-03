@@ -112,6 +112,11 @@ from tools.eos.saas.entitlement.product_catalogue import TenantProductId
 from tools.eos.saas.entitlement.tenant_product_entitlement_composer import (
     derive_tenant_product_entitlement_id,
 )
+from tools.eos.saas.billing.plan_registry import PlanRegistry
+from tools.eos.saas.billing.subscription_active_entitlement_composition_service import (
+    SubscriptionActiveEntitlementCompositionService,
+)
+from tools.eos.auth.identity import SovereignIdentity
 from tools.eos.saas.tenancy.tenant_registry import TenantRegistry
 from tools.eos.saas.billing import tenant_branding_asset_registry as branding_asset_registry
 from tools.eos.saas.billing import tenant_branding_entitlement_registry as branding_entitlement_registry
@@ -371,6 +376,7 @@ def seed(state_path: Path) -> None:
         suffix = uuid4().hex
         tenant_id = f"browser-tenant-{suffix}"
         actor_specs = (
+            ("tenant_owner", "TENANT_OWNER", "tenant_owner", "Owner"),
             ("partner", "LEGAL_PARTNER", "tenant_legal_partner", "Partner"),
             ("attorney", "LEGAL_ATTORNEY", "tenant_legal_attorney", "Attorney"),
             ("paralegal", "LEGAL_PARALEGAL", "tenant_legal_paralegal", "Paralegal"),
@@ -520,35 +526,50 @@ def seed(state_path: Path) -> None:
                     collections["roles"],
                     session=session,
                 )
-            entitlement_id = derive_tenant_product_entitlement_id(
-                tenant_id,
-                TenantProductId.LEGAL_OPERATIONS,
+            PlanRegistry.provision_indexes()
+            plan = PlanRegistry.create(
+                {
+                    "name": "WILSY Legal Enterprise",
+                    "price": 14400.0,
+                    "currency": "ZAR",
+                    "billingFrequency": "annual",
+                    "planType": "ENTERPRISE",
+                    "idempotencyKey": f"browser-cert-plan-{tenant_id}",
+                    "active": True,
+                    "features": ["legal.core"],
+                    "metadata": {"certificate": "WILSY-OWNER-BROWSER-CERT"},
+                    "tags": ["wilsy-owner-browser-cert"],
+                    "user": "WILSY-OWNER-BROWSER-CERT",
+                }
             )
-            entitlement = create_tenant_product_entitlement(
+            if plan.get("success") is not True:
+                raise RuntimeError("BROWSER_CERT_LEGAL_PLAN_SEED_FAILED")
+            owner = actors["tenant_owner"]
+            owner_identity = SovereignIdentity(
+                identity_id=owner["principal_id"],
                 tenant_id=tenant_id,
-                entitlement_id=entitlement_id,
-                product_id=TenantProductId.LEGAL_OPERATIONS,
-                source_evidence_reference=f"browser-cert-product:{tenant_id}",
-                source_evidence_fingerprint="d" * 128,
+                username=owner["email"],
+                email=owner["email"],
+                roles=[],
+                permissions=[],
+                auth_method="BROWSER_CERT",
+                status=PrincipalStatus.ACTIVE,
+                session_reference=None,
             )
-            entitlement_registry.create_or_replay(
-                entitlement,
-                collections["entitlement_history"],
-                collections["entitlement_current"],
-                session=session,
+            commercial = SubscriptionActiveEntitlementCompositionService.create(
+                {
+                    "tenantId": tenant_id,
+                    "planId": plan["plan"].plan_id,
+                    "startDate": now.isoformat(),
+                    "idempotencyKey": f"browser-cert-subscription-{tenant_id}",
+                    "billingMode": "PLATFORM",
+                    "onboardingRef": f"BROWSER-CERT-{tenant_id}",
+                    "metadata": {"certificate": "WILSY-OWNER-BROWSER-CERT"},
+                },
+                owner_identity,
             )
-            entitlement_registry.transition(
-                tenant_id=tenant_id,
-                entitlement_id=entitlement.entitlement_id,
-                target_state=TenantProductEntitlementState.ACTIVE,
-                expected_revision=0,
-                evidence_reference=f"browser-cert-product-activation:{tenant_id}",
-                evidence_fingerprint="e" * 128,
-                occurred_at=now,
-                history_collection=collections["entitlement_history"],
-                current_collection=collections["entitlement_current"],
-                session=session,
-            )
+            if not commercial.legal_entitlement_applicable or commercial.entitlement_issuance_result is None:
+                raise RuntimeError("BROWSER_CERT_LEGAL_COMMERCIAL_SEED_FAILED")
             branding = _seed_branding_chain(
                 tenant_id=tenant_id,
                 suffix=suffix,
