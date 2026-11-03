@@ -98,12 +98,8 @@ class OwnerCommercialWorkItem:
         _text(self.title, "TITLE_INVALID")
         _text(self.description, "DESCRIPTION_INVALID")
         _text(self.owner_principal_id, "OWNER_PRINCIPAL_ID_INVALID")
-        try:
-            OwnerWorkKind(self.kind)
-            OwnerWorkStatus(self.status)
-            OwnerWorkPriority(self.priority)
-        except (TypeError, ValueError) as error:
-            raise OwnerWorkItemError("CLASSIFICATION_INVALID") from error
+        if not isinstance(self.kind, OwnerWorkKind) or not isinstance(self.status, OwnerWorkStatus) or not isinstance(self.priority, OwnerWorkPriority):
+            raise OwnerWorkItemError("CLASSIFICATION_INVALID")
         created = _time(self.created_at, "CREATED_AT_INVALID")
         updated = _time(self.updated_at, "UPDATED_AT_INVALID")
         if updated < created:
