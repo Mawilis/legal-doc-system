@@ -61,6 +61,7 @@ jobs:
       - name: Exercise non-production harness safety tests
         run: |
           python -m unittest tests.unit.test_eos_index_provisioning_harness
+          python -m unittest tests.unit.test_eos_read_only_index_verifier
           set +e
           python tools/eos/mongodb/index_provisioning_harness.py --apply
           apply_status=$?
