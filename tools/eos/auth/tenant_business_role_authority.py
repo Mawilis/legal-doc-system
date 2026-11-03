@@ -50,31 +50,30 @@ def resolve_current_tenant_business_role(*, principal_id: object, tenant_id: obj
         return TenantBusinessRoleResult(None, BusinessRoleResolution.INVALID_INPUT)
     if operation is not None:
         resolve_all = getattr(repository, "resolve_all_business_roles", None)
-        if not callable(resolve_all):
-            return TenantBusinessRoleResult(None, BusinessRoleResolution.TENANT_BUSINESS_ROLE_AUTHORITY_UNAVAILABLE)
-        try:
-            values = resolve_all(principal_id, tenant_id, session=session)
-        except (TenantBusinessRoleNotFoundError, RoleAssignmentNotFoundError):
+        if callable(resolve_all):
+            try:
+                    values = resolve_all(principal_id, tenant_id, session=session)
+            except (TenantBusinessRoleNotFoundError, RoleAssignmentNotFoundError):
+                return TenantBusinessRoleResult(None, BusinessRoleResolution.NO_ACTIVE_TENANT_BUSINESS_ROLE)
+            except (TenantBusinessRoleRepositoryError, RoleAssignmentRepositoryError, AttributeError, TypeError):
+                return TenantBusinessRoleResult(None, BusinessRoleResolution.TENANT_BUSINESS_ROLE_AUTHORITY_UNAVAILABLE)
+            active: dict[str, object] = {}
+            for value in values:
+                if getattr(value, "principal_id", None) != principal_id or getattr(value, "tenant_id", None) != tenant_id:
+                    return TenantBusinessRoleResult(None, BusinessRoleResolution.TENANT_BUSINESS_ROLE_AUTHORITY_UNAVAILABLE)
+                role = getattr(value, "business_role", None)
+                if role not in TENANT_ROLES:
+                    return TenantBusinessRoleResult(None, BusinessRoleResolution.TENANT_BUSINESS_ROLE_AUTHORITY_UNAVAILABLE)
+                if getattr(getattr(value, "status", None), "value", None) == TenantBusinessRoleStatus.ACTIVE.value:
+                    active[role] = value
+            eligible = [role for role in active if tenant_role_operation_eligibility(role, operation) == ELIGIBLE]
+            if len(eligible) == 1:
+                return TenantBusinessRoleResult(eligible[0], BusinessRoleResolution.RESOLVED)
+            if len(eligible) > 1:
+                return TenantBusinessRoleResult(None, BusinessRoleResolution.MULTIPLE_ACTIVE_TENANT_BUSINESS_ROLES)
+            if active:
+                return TenantBusinessRoleResult(None, BusinessRoleResolution.NO_ELIGIBLE_TENANT_BUSINESS_ROLE)
             return TenantBusinessRoleResult(None, BusinessRoleResolution.NO_ACTIVE_TENANT_BUSINESS_ROLE)
-        except (TenantBusinessRoleRepositoryError, RoleAssignmentRepositoryError, AttributeError, TypeError):
-            return TenantBusinessRoleResult(None, BusinessRoleResolution.TENANT_BUSINESS_ROLE_AUTHORITY_UNAVAILABLE)
-        active: dict[str, object] = {}
-        for value in values:
-            if getattr(value, "principal_id", None) != principal_id or getattr(value, "tenant_id", None) != tenant_id:
-                return TenantBusinessRoleResult(None, BusinessRoleResolution.TENANT_BUSINESS_ROLE_AUTHORITY_UNAVAILABLE)
-            role = getattr(value, "business_role", None)
-            if role not in TENANT_ROLES:
-                return TenantBusinessRoleResult(None, BusinessRoleResolution.TENANT_BUSINESS_ROLE_AUTHORITY_UNAVAILABLE)
-            if getattr(getattr(value, "status", None), "value", None) == TenantBusinessRoleStatus.ACTIVE.value:
-                active[role] = value
-        eligible = [role for role in active if tenant_role_operation_eligibility(role, operation) == ELIGIBLE]
-        if len(eligible) == 1:
-            return TenantBusinessRoleResult(eligible[0], BusinessRoleResolution.RESOLVED)
-        if len(eligible) > 1:
-            return TenantBusinessRoleResult(None, BusinessRoleResolution.MULTIPLE_ACTIVE_TENANT_BUSINESS_ROLES)
-        if active:
-            return TenantBusinessRoleResult(None, BusinessRoleResolution.NO_ELIGIBLE_TENANT_BUSINESS_ROLE)
-        return TenantBusinessRoleResult(None, BusinessRoleResolution.NO_ACTIVE_TENANT_BUSINESS_ROLE)
 
     # The HTTP role reader can resolve the dedicated business-role record
     # directly. Prefer that exact-scope, single-read contract when available;
@@ -120,6 +119,8 @@ def resolve_current_tenant_business_role(*, principal_id: object, tenant_id: obj
             getattr(getattr(assignment, "status", None), "value", None)
             == TenantBusinessRoleStatus.ACTIVE.value
         ):
+            if operation is not None and tenant_role_operation_eligibility(role, operation) != ELIGIBLE:
+                return TenantBusinessRoleResult(None, BusinessRoleResolution.NO_ELIGIBLE_TENANT_BUSINESS_ROLE)
             return TenantBusinessRoleResult(role, BusinessRoleResolution.RESOLVED)
         return TenantBusinessRoleResult(
             None, BusinessRoleResolution.NO_ACTIVE_TENANT_BUSINESS_ROLE
@@ -137,6 +138,8 @@ def resolve_current_tenant_business_role(*, principal_id: object, tenant_id: obj
     except (RoleAssignmentRepositoryError, AttributeError, TypeError):
         return TenantBusinessRoleResult(None, BusinessRoleResolution.TENANT_BUSINESS_ROLE_AUTHORITY_UNAVAILABLE)
     if len(active) == 1:
+        if operation is not None and tenant_role_operation_eligibility(active[0], operation) != ELIGIBLE:
+            return TenantBusinessRoleResult(None, BusinessRoleResolution.NO_ELIGIBLE_TENANT_BUSINESS_ROLE)
         return TenantBusinessRoleResult(active[0], BusinessRoleResolution.RESOLVED)
     if len(active) > 1:
         return TenantBusinessRoleResult(None, BusinessRoleResolution.MULTIPLE_ACTIVE_TENANT_BUSINESS_ROLES)
