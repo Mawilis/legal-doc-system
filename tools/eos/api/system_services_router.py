@@ -8,9 +8,11 @@ case read/write.
 """
 from __future__ import annotations
 
-from typing import Annotated
+from typing import Annotated, Callable, TypeVar, cast
 
-from fastapi import APIRouter, Depends, Header, HTTPException, Query, Request, status
+from pymongo.client_session import ClientSession
+
+from fastapi import APIRouter, Depends, Header, HTTPException, Query, Request
 from pydantic import BaseModel, ConfigDict, Field, StrictInt
 
 from tools.eos.auth.authentication import get_current_identity
@@ -19,11 +21,12 @@ from tools.eos.system_services.eos_authorizer import (
     SystemServicesAuthorizationError,
     SystemServicesAuthorizationUnavailable,
 )
-from tools.eos.system_services.support_case import SupportCaseStatus
+from tools.eos.system_services.support_case import SupportCaseScope, SupportCaseStatus
 from tools.eos.system_services.support_case_service import (
     SupportCaseActorContext,
     SupportCaseApplicationError,
     SupportCaseApplicationService,
+    SystemServicesAuthorizer,
 )
 from tools.eos.system_services.support_case_registry import (
     SupportCaseConflictError,
@@ -34,6 +37,7 @@ from tools.eos.kernel.db import get_client
 
 
 router = APIRouter(prefix="/system-services", tags=["System Services"])
+_Result = TypeVar("_Result")
 
 
 class CaseTransitionRequest(BaseModel):
@@ -48,21 +52,18 @@ def _actor(identity: SovereignIdentity) -> SupportCaseActorContext:
         raise HTTPException(status_code=401, detail="Authenticated principal required.")
     return SupportCaseActorContext(
         principal_id=identity.identity_id,
-        scope=__import__(
-            "tools.eos.system_services.support_case",
-            fromlist=["SupportCaseScope"],
-        ).SupportCaseScope.SYSTEM,
+        scope=SupportCaseScope.SYSTEM,
     )
 
 
-def _runtime(request: Request) -> tuple[SupportCaseRegistry, object]:
+def _runtime(request: Request) -> tuple[SupportCaseRegistry, SystemServicesAuthorizer]:
     if getattr(request.app.state, "system_services_case_indexes_ready", False) is not True:
         raise HTTPException(status_code=503, detail="System Services storage is not ready.")
     registry = getattr(request.app.state, "system_services_case_registry", None)
     authorizer = getattr(request.app.state, "system_services_authorizer", None)
     if type(registry) is not SupportCaseRegistry or not callable(getattr(authorizer, "require", None)):
         raise HTTPException(status_code=503, detail="System Services authority is not configured.")
-    return registry, authorizer
+    return registry, cast(SystemServicesAuthorizer, authorizer)
 
 
 def _service(request: Request) -> SupportCaseApplicationService:
@@ -70,7 +71,7 @@ def _service(request: Request) -> SupportCaseApplicationService:
     return SupportCaseApplicationService(registry=registry, authorizer=authorizer)
 
 
-def _run_transaction(callback):
+def _run_transaction(callback: Callable[[ClientSession], _Result]) -> _Result:
     client = get_client()
     if client is None:
         raise HTTPException(status_code=503, detail="System Services persistence is unavailable.")
