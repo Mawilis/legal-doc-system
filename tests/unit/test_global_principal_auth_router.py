@@ -8,9 +8,13 @@ from fastapi import FastAPI, HTTPException
 from starlette.requests import Request
 
 from tools.eos.api.global_principal_auth_router import (
+    GlobalCredentialRequest,
+    GlobalMembershipSelectionRequest,
     GlobalMfaVerificationRequest,
+    global_login,
     logout_global_session,
     router,
+    select_membership,
     verify_global_mfa,
 )
 
@@ -54,3 +58,144 @@ def test_global_auth_routes_are_mounted_under_one_explicit_prefix() -> None:
         "/auth/global/refresh",
         "/auth/global/logout",
     }
+
+
+class _Session:
+    def __init__(self) -> None:
+        self.in_transaction = True
+        self.committed = False
+        self.ended = False
+
+    def commit_transaction(self) -> None:
+        self.committed = True
+        self.in_transaction = False
+
+    def abort_transaction(self) -> None:
+        self.in_transaction = False
+
+    def end_session(self) -> None:
+        self.ended = True
+
+
+def _request_with_state(**state_values):
+    app = FastAPI()
+    for key, value in state_values.items():
+        setattr(app.state, key, value)
+    return Request({
+        "type": "http",
+        "app": app,
+        "headers": [],
+        "client": ("127.0.0.1", 5000),
+    })
+
+
+def test_global_login_issues_tenant_neutral_selection_and_current_membership_page(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    session = _Session()
+    class RateGate:
+        def require_allowed(self, **_kwargs):
+            return None
+        def record_success(self, **_kwargs):
+            return None
+    class ChallengeService:
+        def issue_membership_selection_challenge(self, **kwargs):
+            assert kwargs["principal_id"] == "principal-global"
+            assert kwargs["credential_revision"] == 7
+            assert kwargs["session"] is session
+            return SimpleNamespace(
+                challenge_token="selection-token",
+                expires_at=SimpleNamespace(isoformat=lambda: "2026-11-03T12:05:00+00:00"),
+            )
+    page = SimpleNamespace(
+        memberships=(
+            SimpleNamespace(
+                tenant_id="tenant-a",
+                membership_revision=3,
+                capacities=(
+                    SimpleNamespace(
+                        business_role="tenant_owner",
+                        workspace_id="EXECUTIVE_COMMAND_CENTRE",
+                        business_role_revision=5,
+                    ),
+                ),
+            ),
+        ),
+        next_cursor=None,
+    )
+    monkeypatch.setattr(
+        "tools.eos.api.global_principal_auth_router.PrincipalAuthenticationRateLimit",
+        RateGate,
+    )
+    monkeypatch.setattr(
+        "tools.eos.api.global_principal_auth_router.authenticate_global_principal",
+        lambda **_kwargs: SimpleNamespace(
+            principal_id="principal-global", credential_revision=7
+        ),
+    )
+    monkeypatch.setattr(
+        "tools.eos.api.global_principal_auth_router._begin_transaction",
+        lambda: (session, object()),
+    )
+    monkeypatch.setattr(
+        "tools.eos.api.global_principal_auth_router.MembershipSelectionChallengeService",
+        ChallengeService,
+    )
+    monkeypatch.setattr(
+        "tools.eos.api.global_principal_auth_router.build_membership_selection_page",
+        lambda **kwargs: page if kwargs["principal_id"] == "principal-global" and kwargs["session"] is session else None,
+    )
+    response = asyncio.run(global_login(
+        GlobalCredentialRequest(email="person@example.com", password="ValidPassword!123"),
+        _request_with_state(global_principal_auth_indexes_ready=True),
+    ))
+    assert response["status"] == "MEMBERSHIP_SELECTION_REQUIRED"
+    assert response["selection_challenge"] == "selection-token"
+    assert response["memberships"][0]["tenant_id"] == "tenant-a"
+    assert response["memberships"][0]["capacities"][0]["business_role"] == "tenant_owner"
+    assert session.committed and session.ended
+
+
+def test_membership_selection_route_accepts_only_explicit_tenant_and_capacity(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    session = _Session()
+    observed = {}
+    class ChallengeService:
+        def select_membership_and_issue_mfa_challenge(self, **kwargs):
+            observed.update(kwargs)
+            return SimpleNamespace(
+                challenge_token="mfa-token",
+                expires_at=SimpleNamespace(isoformat=lambda: "2026-11-03T12:05:00+00:00"),
+                tenant_id=kwargs["tenant_id"],
+                business_role=kwargs["business_role"],
+                workspace_id="EXECUTIVE_COMMAND_CENTRE",
+            )
+    monkeypatch.setattr(
+        "tools.eos.api.global_principal_auth_router._begin_transaction",
+        lambda: (session, object()),
+    )
+    monkeypatch.setattr(
+        "tools.eos.api.global_principal_auth_router.MembershipSelectionChallengeService",
+        ChallengeService,
+    )
+    response = asyncio.run(select_membership(
+        GlobalMembershipSelectionRequest(
+            selection_challenge="selection-token",
+            tenant_id="tenant-a",
+            business_role="tenant_owner",
+        ),
+        _request_with_state(
+            global_principal_auth_indexes_ready=True,
+            global_principal_session_indexes_ready=True,
+        ),
+    ))
+    assert response["status"] == "MFA_REQUIRED"
+    assert response["mfa_challenge"] == "mfa-token"
+    assert observed == {
+        "selection_challenge_token": "selection-token",
+        "tenant_id": "tenant-a",
+        "business_role": "tenant_owner",
+        "session": session,
+    }
+    assert session.committed and session.ended
