@@ -77,12 +77,8 @@ class TenantOwnerGenesisProvisioningCommand:
             raise TenantOwnerGenesisProvisioningError("VERIFICATION_REQUEST_REQUIRED")
         if request.operation is not TenantOwnershipOperation.TENANT_GENESIS:
             raise TenantOwnerGenesisProvisioningError("TENANT_GENESIS_REQUEST_REQUIRED")
-        try:
-            evidence = self._lifecycle.prepare(request)
-        except Exception as error:
-            # Preserve the verifier's stable denial code without exposing
-            # provider internals through an HTTP-facing orchestration layer.
-            raise
+        # Preserve the verifier's stable denial code at the orchestration boundary.
+        evidence = self._lifecycle.prepare(request)
         if type(evidence) is not VerifiedTenantOwnershipEvidence or evidence.request != request:
             raise TenantOwnerGenesisProvisioningError("VERIFIED_OWNERSHIP_EVIDENCE_REQUIRED")
         return evidence
