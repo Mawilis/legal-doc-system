@@ -216,3 +216,56 @@ def test_membership_selection_route_accepts_only_explicit_tenant_and_capacity(
         "session": session,
     }
     assert session.committed and session.ended
+
+
+def test_global_login_requires_migrated_current_mfa_factor_before_selection(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    session = _Session()
+    class RateGate:
+        def require_allowed(self, **_kwargs):
+            return None
+        def record_success(self, **_kwargs):
+            return None
+    class FactorCollection:
+        def find_one(self, _query, *, projection, session):
+            assert projection == {"principal_id": 1}
+            assert session.in_transaction is True
+            return None
+    class Database:
+        def __getitem__(self, _name):
+            return FactorCollection()
+    class ChallengeService:
+        def issue_membership_selection_challenge(self, **_kwargs):
+            raise AssertionError("no selection challenge before factor migration")
+    monkeypatch.setattr(
+        "tools.eos.api.global_principal_auth_router.PrincipalAuthenticationRateLimit",
+        RateGate,
+    )
+    monkeypatch.setattr(
+        "tools.eos.api.global_principal_auth_router.authenticate_global_principal",
+        lambda **_kwargs: SimpleNamespace(
+            principal_id="principal-global", credential_revision=7, mfa_enabled=True
+        ),
+    )
+    monkeypatch.setattr(
+        "tools.eos.api.global_principal_auth_router._begin_transaction",
+        lambda: (session, Database()),
+    )
+    monkeypatch.setattr(
+        "tools.eos.api.global_principal_auth_router.MembershipSelectionChallengeService",
+        ChallengeService,
+    )
+    with pytest.raises(HTTPException) as error:
+        asyncio.run(global_login(
+            GlobalCredentialRequest(email="person@example.com", password="ValidPassword!123"),
+            _request_with_state(
+                global_principal_auth_indexes_ready=True,
+                global_principal_mfa_factor_indexes_ready=True,
+                global_principal_totp_verifier=object(),
+            ),
+        ))
+    assert error.value.status_code == 409
+    assert error.value.detail == "GLOBAL_MFA_FACTOR_MIGRATION_REQUIRED"
+    assert session.in_transaction is False
+    assert session.ended
