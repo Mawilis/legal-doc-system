@@ -1,7 +1,7 @@
 """WILSY OS certification tests for one-time membership-selection and MFA challenges.
 
 TITLE: Membership Selection Challenge Unit Certification
-VERSION: v1.0.0-GLOBAL-MEMBERSHIP-SELECTION-CHALLENGE-TESTS
+VERSION: v1.0.1-GLOBAL-MEMBERSHIP-SELECTION-CHALLENGE-TESTS
 AUTHORITY: Verifies challenge lifecycle boundaries; grants no runtime authority.
 EPITOME: Exercises one-time challenge use, transaction requirements, exact
          EOS authority revalidation and credential/membership/capacity revision binding.
@@ -10,9 +10,10 @@ ABSOLUTE CANONICAL PATH:
 COLLABORATION / OWNERSHIP: Wilsy Core Engineering.
 CERTIFICATION / UPDATE DATE: 2026-11-03.
 CHANGELOG:
-    v1.0.0-GLOBAL-MEMBERSHIP-SELECTION-CHALLENGE-TESTS adds adversarial
-    unit coverage for selection and MFA challenge issuance, consumption,
-    expiry, replay, stale revisions, inactive authority and transaction gates.
+    v1.0.1-GLOBAL-MEMBERSHIP-SELECTION-CHALLENGE-TESTS makes test doubles
+    explicit to Pyright without changing runtime assertions.
+    v1.0.0 adds adversarial unit coverage for selection and MFA challenge
+    issuance, consumption, expiry, replay, stale revisions and transaction gates.
 COMPLIANCE: Test artifact for POPIA section 19; GDPR Article 32; SOC 2 CC7.2.
 SECURITY / PRIVACY POSTURE: Uses synthetic principals and fake persistence only;
     no production credentials, challenge secrets or tenant data are accessed.
@@ -22,6 +23,9 @@ FINANCIAL AUTHORITY BOUNDARY: No financial authority; Kennel EOS remains exclusi
 """
 
 from datetime import datetime, timedelta, timezone
+from typing import Any, cast
+
+from pymongo.collection import Collection as MongoCollection
 from types import SimpleNamespace
 
 import pytest
@@ -152,7 +156,7 @@ def make_service(
     membership = MembershipRepository(membership_revision, membership_status)
     capacity = BusinessRoleRepository(capacity_revision, capacity_status)
     service = MembershipSelectionChallengeService(
-        collection=collection,
+        collection=cast(MongoCollection, collection),
         principal_repository=principal,
         credential_repository=credential,
         membership_repository=membership,
@@ -276,17 +280,17 @@ def test_stale_or_inactive_authority_rejects_selected_capacity(overrides, reason
     selection = issue_selection(service)
     mfa = select_capacity(service, selection)
     if "principal_status" in overrides:
-        service._principals.status = overrides["principal_status"]
+        cast(Any, service)._principals.status = overrides["principal_status"]
     if "credential_revision" in overrides:
-        service._credentials.revision = overrides["credential_revision"]
+        cast(Any, service)._credentials.revision = overrides["credential_revision"]
     if "membership_status" in overrides:
-        service._memberships.status = overrides["membership_status"]
+        cast(Any, service)._memberships.status = overrides["membership_status"]
     if "capacity_status" in overrides:
-        service._business_roles.status = overrides["capacity_status"]
+        cast(Any, service)._business_roles.status = overrides["capacity_status"]
     if "membership_revision" in overrides:
-        service._memberships.revision = overrides["membership_revision"]
+        cast(Any, service)._memberships.revision = overrides["membership_revision"]
     if "capacity_revision" in overrides:
-        service._business_roles.revision = overrides["capacity_revision"]
+        cast(Any, service)._business_roles.revision = overrides["capacity_revision"]
     with pytest.raises(MembershipSelectionChallengeRejected, match=reason):
         service.consume_mfa_challenge_after_factor_verification(
             mfa_challenge_token=mfa.challenge_token,
@@ -318,14 +322,14 @@ def test_challenge_transition_requires_caller_owned_active_transaction():
 
 def test_index_contract_has_unique_digest_and_expiry_ttl():
     service, collection, *_ = make_service()
-    service.ensure_indexes(collection)
+    service.ensure_indexes(cast(MongoCollection, collection))
     assert collection.indexes[0][1]["unique"] is True
     assert collection.indexes[0][1]["name"] == "eos_authentication_challenge_digest_unique"
     assert collection.indexes[1][1]["expireAfterSeconds"] == 0
 
 
 # ARTIFACT: test_membership_selection_challenge.py
-# VERSION: v1.0.0-GLOBAL-MEMBERSHIP-SELECTION-CHALLENGE-TESTS
+# VERSION: v1.0.1-GLOBAL-MEMBERSHIP-SELECTION-CHALLENGE-TESTS
 # AUTHORITY BOUNDARY: challenge lifecycle certification only
 # TENANT POSTURE: synthetic exact principal/tenant scope
 # FAIL-CLOSED POSTURE: replay, expiry, stale revisions and inactive authority are rejected
