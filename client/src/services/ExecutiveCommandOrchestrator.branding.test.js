@@ -37,11 +37,11 @@ describe('executive tenant branding descriptor projection', () => {
 
   it('preserves text-only tenant branding when no authenticated logo descriptor exists', () => {
     const branding = buildTenantBrandingConfig({
-      name: 'Wilsy (Pty) Ltd',
+      name: 'Wilsy Limited',
       branding: { primaryColor: '#D4AF37' },
     });
     expect(branding.logo).toBeNull();
     expect(branding.assetDescriptor).toBeNull();
-    expect(branding.initials).toBe('WP');
+    expect(branding.initials).toBe('WL');
   });
 });
