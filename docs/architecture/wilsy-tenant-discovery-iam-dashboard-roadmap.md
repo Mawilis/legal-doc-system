@@ -335,6 +335,7 @@ The Day 2 entry gate has begun with a narrow, reversible tenant-binding change:
 - Added backend tests for missing discovery and tenant mismatch, and updated browser/backend fixtures to assert selector propagation.
 - Removed the unreferenced `client/src/bootstrap/EnterpriseBootstrap.jsx`, which fabricated `tenant_wilsy_001` and provided a direct login bypass; repository search found no imports/callers.
 - Removed the `wilsy` fallback from the legacy superadmin auth adapter and the legacy ObjectId tenant fallback from the sovereign auth bridge. The adapter now requires the EOS-discovered tenant projection and sends `tenant_id`.
+- Removed the unused bootstrap component that fabricated a tenant and bypassed MFA, removed the synthetic `GLOBAL_ROOT` telemetry tenant, and blocked browser-only cross-tenant switching until EOS issues a fresh membership-bound session.
 
 **Important scope limit:** this closes a discovery-to-login tenant-confusion gap for the existing single-tenant-shaped AuthRegistry user record. It does not yet implement a global principal with multiple memberships. A person who belongs to multiple firms still needs the Day 2 global-principal credential model, membership enumeration after authentication, explicit selected-membership MFA/session binding, and tenant-switch session rotation. The current `tenantId` field must not be treated as a permanent one-tenant-per-person model.
 
