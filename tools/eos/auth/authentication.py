@@ -142,6 +142,7 @@ async def get_current_identity(
             session_reference=session_reference,
             expected_business_role=roles[0],
             expected_workspace_id=workspace_id,
+            expected_credential_revision=token_revision,
             expected_membership_revision=membership_revision,
             expected_capacity_revision=capacity_revision,
         )
