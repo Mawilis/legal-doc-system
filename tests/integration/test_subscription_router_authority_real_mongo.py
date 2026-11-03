@@ -118,6 +118,14 @@ from tools.eos.auth.roles import (
 from tools.eos.auth.tenant_access import (
     get_tenant_membership_repository,
 )
+from tools.eos.auth.tenant_business_role import (
+    TenantBusinessRoleAuthority,
+    TenantBusinessRoleStatus,
+)
+from tools.eos.auth.tenant_business_role_repository import (
+    COLLECTION as BUSINESS_ROLE_COLLECTION,
+    TenantBusinessRoleRepository,
+)
 from tools.eos.auth.tenant_membership import (
     TenantMembershipAuthority,
     TenantMembershipStatus,
@@ -510,6 +518,9 @@ def context(monkeypatch: pytest.MonkeyPatch) -> Iterator[Context]:
     RoleAssignmentRepository.ensure_indexes(
         roles
     )
+    TenantBusinessRoleRepository.ensure_indexes(
+        database[BUSINESS_ROLE_COLLECTION]
+    )
 
     original_collection = (
         registry_module.subscriptions_collection
@@ -658,15 +669,17 @@ def _seed_business_role(
     tenant_id: str,
 ) -> None:
     """Add the exact tenant_owner eligibility required by positive issuance."""
-    RoleAssignmentRepository.insert(
-        RoleAssignmentAuthority(
+    TenantBusinessRoleRepository.insert(
+        TenantBusinessRoleAuthority(
             principal_id,
             tenant_id,
             "tenant_owner",
-            RoleAssignmentStatus.ACTIVE,
+            TenantBusinessRoleStatus.ACTIVE,
             0,
+            datetime.now(timezone.utc),
+            None,
         ),
-        context.roles,
+        context.client[context.database_name][BUSINESS_ROLE_COLLECTION],
     )
 
 

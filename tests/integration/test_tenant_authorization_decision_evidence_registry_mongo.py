@@ -7,6 +7,7 @@ FINANCIAL AUTHORITY: Kennel EOS exclusively executes financial operations.
 """
 from __future__ import annotations
 import os
+from datetime import datetime, timezone
 from uuid import uuid4
 import pytest
 from pymongo import MongoClient
@@ -22,6 +23,8 @@ from tools.eos.auth.tenant_authorization_decision_evidence_registry import (
     TenantAuthorizationDecisionEvidenceRegistry,
     TenantAuthorizationDecisionEvidenceTransactionRequiredError,
 )
+from tools.eos.auth.tenant_business_role import TenantBusinessRoleAuthority, TenantBusinessRoleStatus
+from tools.eos.auth.tenant_business_role_repository import TenantBusinessRoleRepository
 from tools.eos.auth.tenant_membership import TenantMembershipAuthority, TenantMembershipStatus
 from tools.eos.auth.tenant_membership_repository import TenantMembershipRepository
 from tools.eos.auth import permission_namespace, roles, tenant_authority_policy, tenant_authorization
@@ -33,17 +36,19 @@ class _Repo:
         if self.kind == "principal": return PrincipalAuthorityRepository.get(args[0], self.collection, session=session)
         if self.kind == "membership": return TenantMembershipRepository.resolve(args[0], args[1], self.collection, session=session)
         return RoleAssignmentRepository.resolve(args[0], args[1], args[2], self.collection, session=session)
+    def resolve_current_business_role(self, principal_id, tenant_id, *, session=None):
+        return TenantBusinessRoleRepository.resolve(principal_id, tenant_id, self.collection, session=session)
 
 def _registry(db):
-    return TenantAuthorizationDecisionEvidenceRegistry(db["evidence"], principal_repository=_Repo(db["principals"], "principal"), membership_repository=_Repo(db["memberships"], "membership"), role_assignment_repository=_Repo(db["assignments"], "assignment"), business_role_repository=_Repo(db["assignments"], "assignment"))
+    return TenantAuthorizationDecisionEvidenceRegistry(db["evidence"], principal_repository=_Repo(db["principals"], "principal"), membership_repository=_Repo(db["memberships"], "membership"), role_assignment_repository=_Repo(db["assignments"], "assignment"), business_role_repository=_Repo(db["business_roles"], "business_role"))
 
 def _seed(db, tenant, principal):
-    PrincipalAuthorityRepository.ensure_indexes(db["principals"]); TenantMembershipRepository.ensure_indexes(db["memberships"]); RoleAssignmentRepository.ensure_indexes(db["assignments"])
+    PrincipalAuthorityRepository.ensure_indexes(db["principals"]); TenantMembershipRepository.ensure_indexes(db["memberships"]); RoleAssignmentRepository.ensure_indexes(db["assignments"]); TenantBusinessRoleRepository.ensure_indexes(db["business_roles"])
     PrincipalAuthorityRepository.create(PrincipalAuthority(principal, PrincipalStatus.ACTIVE, 0), db["principals"])
     TenantMembershipRepository.insert(TenantMembershipAuthority(principal, tenant, TenantMembershipStatus.ACTIVE, 7), db["memberships"])
-    for role in ("tenant_owner", "ENTERPRISE_ADMIN"):
-        RoleAssignmentRepository.insert(RoleAssignmentAuthority(principal, tenant, role, RoleAssignmentStatus.ACTIVE, 0), db["assignments"])
-        db["assignments"].update_one({"principal_id": principal, "tenant_id": tenant, "role_id": role}, {"$set": {"revision": 11}})
+    TenantBusinessRoleRepository.insert(TenantBusinessRoleAuthority(principal, tenant, "tenant_owner", TenantBusinessRoleStatus.ACTIVE, 0, datetime.now(timezone.utc), None), db["business_roles"])
+    RoleAssignmentRepository.insert(RoleAssignmentAuthority(principal, tenant, "ENTERPRISE_ADMIN", RoleAssignmentStatus.ACTIVE, 0), db["assignments"])
+    db["assignments"].update_one({"principal_id": principal, "tenant_id": tenant, "role_id": "ENTERPRISE_ADMIN"}, {"$set": {"revision": 11}})
 
 def _request(tenant, principal, key, subject="subject"):
     return dict(tenant_id=tenant, principal_id=principal, operation="platform_billing_release", permission="platform_billing:release", subject_reference=subject, subject_evidence_fingerprint="a" * 128, idempotency_key=key)

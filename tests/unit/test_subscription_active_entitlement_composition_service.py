@@ -587,7 +587,7 @@ def test_exact_collections_and_authorization_repository_construction(
         "principal_repository": service.PrincipalAuthorityRepository,
         "membership_repository": service.TenantMembershipRepository,
         "role_assignment_repository": service.RoleAssignmentRepository,
-        "business_role_repository": service.RoleAssignmentRepository,
+        "business_role_repository": service.TenantBusinessRoleRepository,
     }
     assert issue_calls[0]["authorization_evidence_registry"] is not None
 

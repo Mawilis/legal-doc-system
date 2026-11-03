@@ -125,6 +125,7 @@ jobs:
             tools/eos/saas/billing/subscription_registry.py \
             tools/eos/saas/billing/subscription_active_entitlement_composition_service.py \
             tools/eos/api/subscription_router.py \
+            tools/eos/saas/billing/reconcile_wilsy_founder_legal_entitlement.py \
             tests/unit/test_subscription_active_entitlement_composition_service.py \
             tests/unit/test_subscription_registry_transaction_injection.py \
             tests/integration/test_plan_registry_real_mongo.py \

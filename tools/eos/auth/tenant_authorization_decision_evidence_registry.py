@@ -21,6 +21,7 @@ from .tenant_authorization import TenantAuthorizationDecision, authorize_tenant_
 from . import permission_namespace, roles, tenant_authority_policy
 from .tenant_membership_repository import TenantMembershipRepository
 from .role_assignment_repository import RoleAssignmentRepository
+from .tenant_business_role_repository import TenantBusinessRoleRepository
 
 VERSION = "v1.0.0-TENANT-AUTHORIZATION-DECISION-EVIDENCE-REGISTRY"
 COLLECTION = "tenant_authorization_decision_evidence"
@@ -33,7 +34,7 @@ class TenantAuthorizationDecisionEvidencePersistenceError(TenantAuthorizationDec
 
 class TenantAuthorizationDecisionEvidenceRegistry:
     """Durable issuer; never creates or owns sessions or transactions."""
-    def __init__(self, collection: Collection, *, principal_repository: Any, membership_repository: Any = TenantMembershipRepository, role_assignment_repository: Any = RoleAssignmentRepository, business_role_repository: Any = RoleAssignmentRepository) -> None:
+    def __init__(self, collection: Collection, *, principal_repository: Any, membership_repository: Any = TenantMembershipRepository, role_assignment_repository: Any = RoleAssignmentRepository, business_role_repository: Any = TenantBusinessRoleRepository) -> None:
         self._collection = collection
         self._principal_repository = principal_repository
         self._membership_repository = membership_repository

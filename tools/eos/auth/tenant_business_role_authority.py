@@ -21,6 +21,10 @@ from tools.eos.auth.role_assignment import RoleAssignmentStatus
 from tools.eos.auth.role_assignment_repository import RoleAssignmentNotFoundError, RoleAssignmentRepositoryError
 from tools.eos.auth.tenant_authority_policy import TENANT_ROLES
 from tools.eos.auth.tenant_business_role import TenantBusinessRoleStatus
+from tools.eos.auth.tenant_business_role_repository import (
+    TenantBusinessRoleNotFoundError,
+    TenantBusinessRoleRepositoryError,
+)
 
 VERSION = "v1.1.0-TENANT-BUSINESS-ROLE-DIRECT-RESOLUTION"
 
@@ -54,11 +58,16 @@ def resolve_current_tenant_business_role(*, principal_id: object, tenant_id: obj
                 if session is None
                 else direct_resolver(principal_id, tenant_id, session=session)
             )
-        except RoleAssignmentNotFoundError:
+        except (RoleAssignmentNotFoundError, TenantBusinessRoleNotFoundError):
             return TenantBusinessRoleResult(
                 None, BusinessRoleResolution.NO_ACTIVE_TENANT_BUSINESS_ROLE
             )
-        except (RoleAssignmentRepositoryError, AttributeError, TypeError):
+        except (
+            RoleAssignmentRepositoryError,
+            TenantBusinessRoleRepositoryError,
+            AttributeError,
+            TypeError,
+        ):
             return TenantBusinessRoleResult(
                 None,
                 BusinessRoleResolution.TENANT_BUSINESS_ROLE_AUTHORITY_UNAVAILABLE,
