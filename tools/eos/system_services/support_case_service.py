@@ -8,6 +8,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 from datetime import datetime, timezone
+from hashlib import sha3_256
 from typing import Callable, Protocol
 from uuid import uuid4
 
@@ -104,8 +105,12 @@ class SupportCaseApplicationService:
         if not isinstance(idempotency_key, str) or not idempotency_key or idempotency_key != idempotency_key.strip():
             raise SupportCaseApplicationError("CASE_IDEMPOTENCY_KEY_INVALID")
         now = self._clock()
+        request_fingerprint = sha3_256(
+            (actor.principal_id + "\\0" + idempotency_key).encode("utf-8")
+        ).hexdigest()
+        stable_case_id = "case-" + request_fingerprint
         case = SupportCase(
-            case_id=self._id_factory("case"),
+            case_id=stable_case_id,
             scope=SupportCaseScope.TENANT,
             tenant_id=actor.tenant_id,
             principal_id=actor.principal_id,
@@ -114,7 +119,7 @@ class SupportCaseApplicationService:
             updated_at=now,
         )
         event = SupportCaseEvent(
-            event_id=self._id_factory("event"),
+            event_id="event-" + request_fingerprint,
             case_id=case.case_id,
             actor_principal_id=actor.principal_id,
             idempotency_key=idempotency_key,
