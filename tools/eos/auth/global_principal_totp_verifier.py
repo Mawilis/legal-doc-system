@@ -69,7 +69,7 @@ class GlobalPrincipalTotpVerifier:
         *,
         collection: Collection | Any = None,
         credential_repository: Any = None,
-        decrypt_secret: Callable[[Any], str] | None = None,
+        decrypt_secret: Callable[..., str] | None = None,
     ) -> None:
         self._collection = collection
         self._credentials = credential_repository or PrincipalCredentialRepository()
@@ -148,14 +148,18 @@ class GlobalPrincipalTotpVerifier:
             or isinstance(persisted_revision, bool)
             or not isinstance(persisted_revision, int)
             or persisted_revision != credential_revision
-            or not isinstance(encrypted_secret, (str, bytes))
+            or not isinstance(encrypted_secret, (str, bytes, dict))
             or not encrypted_secret
             or "secret" in factor
         ):
             raise GlobalPrincipalFactorRejected("GLOBAL_FACTOR_ENROLLMENT_STALE")
 
         try:
-            secret = self._decrypt_secret(encrypted_secret)
+            secret = self._decrypt_secret(
+                encrypted_secret,
+                principal_id=principal_id,
+                credential_revision=credential_revision,
+            )
             if not isinstance(secret, str) or not secret:
                 raise ValueError("decrypted factor secret is invalid")
             totp = pyotp.TOTP(secret, digits=TOTP_DIGITS, interval=TOTP_PERIOD_SECONDS)
