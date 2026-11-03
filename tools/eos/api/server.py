@@ -280,6 +280,9 @@ class WilsyAPIServer:
         # No binding command is ready before certified index startup.
         app.state.p12c_binding_indexes_ready = False
         app.state.global_principal_auth_indexes_ready = False
+        app.state.global_principal_session_indexes_ready = False
+        app.state.global_principal_mfa_factor_indexes_ready = False
+        app.state.global_principal_totp_verifier = None
         app.state.global_principal_mfa_decrypt_secret = self.global_principal_mfa_decrypt_secret
         # Case storage readiness is separate from IAM authorization readiness.
         app.state.system_services_case_indexes_ready = False
@@ -641,7 +644,8 @@ class WilsyAPIServer:
             app.state.p12c_binding_indexes_ready = False
             app.state.global_principal_auth_indexes_ready = False
             app.state.global_principal_session_indexes_ready = False
-            app.state.global_principal_session_indexes_ready = False
+            app.state.global_principal_mfa_factor_indexes_ready = False
+            app.state.global_principal_totp_verifier = None
             app.state.system_services_case_indexes_ready = False
             app.state.system_services_authority_ready = False
             app.state.system_services_authorizer = None
