@@ -307,7 +307,8 @@ jobs:
           echo "Retained and sovereign production gates have completed."
           if [ "${{ needs.security-scan.result }}" != "success" ] || \
              [ "${{ needs.vendor-bill-r2a-certification.result }}" != "success" ] || \
-             [ "${{ needs.vendor-bill-r2b-release-certification.result }}" != "success" ]; then
+             [ "${{ needs.vendor-bill-r2b-release-certification.result }}" != "success" ] || \
+             [ "${{ needs['tenant-owner-genesis-unit-certification'].result }}" != "success" ]; then
             echo "❌ A retained or sovereign production gate failed."
             exit 1
           fi
