@@ -107,3 +107,12 @@ It now includes verified source index declarations for the six upload registries
 - Validate the candidate Mongo role and S3 policy with positive and negative integration tests against an explicitly fingerprinted non-production environment.
 
 **NO-GO:** no production role, database credential, S3 policy, KMS key, network allowlist, deployment or data has been changed. No production target has been selected.
+
+
+### 4.3 Server-owned legal AI orchestration and tool evidence
+
+The server composition root also constructs the server-owned C1C tool registry and mounts the legal gateway/services/advisory routes. Two further durable collections are confirmed:
+- `wilsy_ai_tool_orchestrations` — `find_one`, `insert_one`, `replace_one`; unique `tenant_id, orchestration_id` index.
+- `wilsy_ai_legal_tool_invocations` — `find_one`, `insert_one`; unique tenant/invocation identity and tenant/fingerprint indexes.
+
+Their exact source index declarations have been added to the versioned manifest in commit `fe19610ba79d2b7da45977900a48a7c05e73e70e`. The gateway and advisory route transitive dependencies still need complete call-graph closure; these two collections do not exhaust that work.
