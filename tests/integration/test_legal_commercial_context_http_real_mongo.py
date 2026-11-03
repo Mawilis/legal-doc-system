@@ -654,6 +654,41 @@ def test_enterprise_admin_reads_exact_canonical_commercial_context(
     assert body["commercial"]["financial_execution_authority"] is False
 
 
+def test_tenant_owner_reads_commercial_context_without_practice_authority(
+    context: Context,
+) -> None:
+    """TENANT_OWNER receives the exact commercial read and no Legal practice grant."""
+    principal = f"principal-owner-{uuid.uuid4().hex}"
+    tenant = f"tenant-owner-{uuid.uuid4().hex}"
+
+    _seed_principal(
+        context,
+        principal_id=principal,
+        tenant_id=tenant,
+        role_id="TENANT_OWNER",
+        add_tenant_owner=True,
+    )
+    created = _seed_legal_commercial_truth(
+        context,
+        tenant_id=tenant,
+        principal_id=principal,
+    )
+
+    response = _get(
+        context,
+        principal_id=principal,
+        tenant_id=tenant,
+    )
+
+    assert response.status_code == 200
+    body = response.json()
+    assert body["tenant_id"] == tenant
+    assert body["product"]["available"] is True
+    assert body["subscription"]["subscription_id"] == created.subscription.subscription_id
+    assert body["plan"]["features"] == ["legal.core"]
+    assert body["commercial"]["financial_execution_authority"] is False
+
+
 def test_auditor_can_read_existing_commercial_context(
     context: Context,
 ) -> None:

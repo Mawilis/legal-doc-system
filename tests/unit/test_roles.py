@@ -235,6 +235,17 @@ def test_exact_role_vocabulary_and_grant_matrix() -> None:
     assert ROLE_PERMISSIONS_MAP["AUDITOR"] == EXPECTED_ROLE_PERMISSIONS["AUDITOR"] + ["subscription:read", "plan:read", "wilsy_ai:usage_capacity:read", "billing_intelligence:evidence:read", "tenant:business_role:read", "tenant_branding:read", "crm:lead:read", "crm:email_template:read", "crm:work_item:read"]
 
 
+def test_tenant_owner_has_commercial_read_without_practice_or_subscription_mutation() -> None:
+    """Tenant Owner can read commercial context without Legal practice authority."""
+    assert "subscription:read" in ROLE_PERMISSIONS_MAP["TENANT_OWNER"]
+    assert "subscription:manage" not in ROLE_PERMISSIONS_MAP["TENANT_OWNER"]
+    assert "plan:manage" not in ROLE_PERMISSIONS_MAP["TENANT_OWNER"]
+    assert "legal_operations:instruction:read" not in ROLE_PERMISSIONS_MAP["TENANT_OWNER"]
+    assert "legal_operations:work_item:read" not in ROLE_PERMISSIONS_MAP["TENANT_OWNER"]
+    assert "subscription:read" in get_roles_granting_permission("subscription:read")
+    assert "TENANT_OWNER" not in get_roles_granting_permission("subscription:manage")
+
+
 def test_legal_role_grants_are_explicit_and_least_authority() -> None:
     """Legal personas receive only the certified legal-operation capabilities."""
     assert ROLE_PERMISSIONS_MAP["LEGAL_PARTNER"] == [
