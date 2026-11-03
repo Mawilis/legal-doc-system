@@ -143,6 +143,17 @@ def test_changed_credential_revision_rejects_factor() -> None:
         )
 
 
+def test_plaintext_factor_secret_is_rejected() -> None:
+    factor = _factor()
+    factor["secret"] = SECRET
+    collection = _Collection(factor)
+    with pytest.raises(GlobalPrincipalFactorRejected, match="GLOBAL_FACTOR_ENROLLMENT_STALE"):
+        _verifier(collection).verify(
+            principal_id="principal-global", credential_revision=4,
+            code=pyotp.TOTP(SECRET).at(NOW), session=_Transaction(), now=NOW,
+        )
+
+
 def test_missing_key_management_capability_fails_closed() -> None:
     collection = _Collection(_factor())
     verifier = GlobalPrincipalTotpVerifier(
