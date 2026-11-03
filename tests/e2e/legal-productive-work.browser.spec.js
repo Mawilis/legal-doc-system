@@ -1,8 +1,9 @@
 /**
  * TITLE: WILSY OS authenticated Legal productive-work browser certificate
- * VERSION: v1.0.0-PW-P11C-AUTHENTICATED-PRODUCTIVE-WORK-BROWSER-CERT
+ * VERSION: v1.1.0-OWNER-COMMERCIAL-AND-PRACTICE-BOUNDARY-BROWSER-CERT
  * AUTHORITY: Browser certification evidence only.
- * EPITOME: Prove authenticated workspace bootstrap, durable productive-work HTTP,
+ * EPITOME: Prove Tenant Owner commercial workspace admission and practice denial,
+ *          plus authenticated operator workspace bootstrap and productive-work HTTP,
  *          own-principal projection, canonical Legal dashboard rendering, and
  *          responsive narrow-viewport presentation without browser-owned authority.
  * TENANT BOUNDARY: Exact disposable fixture tenant only.
