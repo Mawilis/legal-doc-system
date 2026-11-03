@@ -9,7 +9,7 @@ ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/tests/unit/test_
 COLLABORATION / OWNERSHIP: Wilson Khanyezi / Wilsy Core Engineering.
 CERTIFICATION/UPDATE DATE: 2026-10-15.
 CHANGELOG:
-2026-11-03 v1.13.0-SYSTEM-SERVICES-AUDIT-READ-CERT certifies twelve exact SYSTEM-scoped System Services/IAM vocabulary entries as assignment-required, workforce-current, non-self-authorizing metadata only. Closed-canon cardinality is 137 canonical permissions / 140 total rows. No role grants or assignment allowlist changes are created.
+2026-11-03 v1.13.0-SYSTEM-SERVICES-AUDIT-READ-CERT certifies twelve exact SYSTEM-scoped System Services/IAM vocabulary entries as assignment-required, workforce-current, non-self-authorizing metadata only. Closed-canon cardinality is 138 canonical permissions / 141 total rows. No role grants or assignment allowlist changes are created.
 2026-10-20 v1.10.0-P47-R76-BINDING-PROVISION-PERMISSION-CERT certifies the
 exact own-tenant practitioner matter-binding provisioning permission, its
 non-self-authorizing and non-financial metadata, fail-closed aliases, and the
@@ -287,7 +287,7 @@ def test_provider_reconciliation_read_permission_is_system_scoped_and_non_author
 
 
 def test_runtime_version_source_is_canonical() -> None:
-    assert POLICY_VERSION == "v1.55.0-L10A2R-C4D7-RECONCILIATION-READ-PERMISSION"
+    assert POLICY_VERSION == "v1.57.0-SYSTEM-SERVICES-AUDIT-READ-PERMISSION"
 
 
 def test_practitioner_binding_provision_permission_is_exact_and_bounded() -> None:
@@ -1042,7 +1042,7 @@ def test_system_services_and_iam_vocabulary_is_system_scoped_and_non_authorizing
             permission_metadata(invalid)
 
 # ARTIFACT: test_permission_namespace.py
-# VERSION: v1.11.0-L10A2R-C4D7-RECONCILIATION-READ-PERMISSION-CERT
+# VERSION: v1.13.0-SYSTEM-SERVICES-AUDIT-READ-CERT
 # AUTHORITY BOUNDARY: permission semantic certification only
 # TENANT POSTURE: conflict-review, client-matter, client-visibility and other tenant permissions remain policy; exact ACTIVE membership remains separately governed
 # FAIL-CLOSED POSTURE: unknown and malformed values deny
