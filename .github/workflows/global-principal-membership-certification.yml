@@ -1,11 +1,12 @@
 # TITLE: WILSY OS Global Principal and Membership Selection Certification
-# VERSION: v1.1.0-GLOBAL-PRINCIPAL-MEMBERSHIP-CHALLENGE-CI
+# VERSION: v1.2.0-GLOBAL-PRINCIPAL-MEMBERSHIP-CHALLENGE-CI
 # AUTHORITY: CI orchestration for global principal, membership and MFA challenge tests.
 # EPITOME: Compile and execute focused unit and real-Mongo certification suites.
 # ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/.github/workflows/global-principal-membership-certification.yml
 # COLLABORATION / OWNERSHIP: Wilsy Core Engineering.
 # CERTIFICATION / UPDATE DATE: 2026-11-03.
-# CHANGELOG: v1.1.0 adds membership-selection challenge source and adversarial unit tests.
+# CHANGELOG: v1.2.0 adds pinned Pyright, diff whitespace and clean-checkout verification.
+#           v1.1.0 adds membership-selection challenge source and adversarial unit tests.
 # COMPLIANCE: CI evidence only; does not grant runtime authority.
 # SECURITY / PRIVACY POSTURE: Uses disposable MongoDB replica-set data; no production secrets.
 # TENANT BOUNDARY: Tests principal-scoped membership and exact selected-tenant capacity.
@@ -49,11 +50,18 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
 
       - name: Set up Python
         uses: actions/setup-python@v5
         with:
           python-version: "3.12"
+
+      - name: Set up Node for pinned Pyright
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
           cache: pip
           cache-dependency-path: requirements.txt
 
@@ -106,6 +114,18 @@ jobs:
             tests/unit/test_membership_selection_challenge.py \
             tests/integration/test_principal_credential_repository_mongo.py
 
+      - name: Type-check global principal and membership challenge contracts
+        run: |
+          npx --yes pyright@1.1.413 \
+            --pythonpath "$(command -v python)" \
+            tools/eos/auth/membership_selection_challenge.py \
+            tests/unit/test_membership_selection_challenge.py
+
+      - name: Verify diff whitespace and clean checkout
+        run: |
+          git diff --check "origin/${{ github.base_ref }}...HEAD"
+          test -z "$(git status --short)"
+
       - name: Run focused global principal and membership tests
         run: |
           python -m pytest -q \
@@ -122,7 +142,7 @@ jobs:
         run: docker rm -f wilsy-global-principal-mongo 2>/dev/null || true
 
 # ARTIFACT: global-principal-membership-certification.yml
-# VERSION: v1.1.0-GLOBAL-PRINCIPAL-MEMBERSHIP-CHALLENGE-CI
+# VERSION: v1.2.0-GLOBAL-PRINCIPAL-MEMBERSHIP-CHALLENGE-CI
 # AUTHORITY BOUNDARY: focused CI execution only
 # TENANT POSTURE: synthetic principal-scoped and tenant-scoped certification data
 # FAIL-CLOSED POSTURE: compile, unit or replica-set failures fail the job
