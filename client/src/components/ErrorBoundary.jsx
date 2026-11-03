@@ -86,16 +86,26 @@ class ErrorLogger {
     if (TELEMETRY_ENABLED && navigator.onLine) {
       // Retrieve forensic authentication tokens for secure backend transit
       const authToken = localStorage.getItem('wilsy_auth_token');
-      const tenantId = localStorage.getItem('discoveredTenant') || 'GLOBAL_ROOT';
-
-      const headers = {
-        'Content-Type': 'application/json',
-        'x-tenant-id': tenantId
-      };
-
-      if (authToken) {
-        headers['Authorization'] = `Bearer ${authToken}`;
+      let tenantId = '';
+      try {
+        const discovered = JSON.parse(
+          localStorage.getItem('discoveredTenant') || 'null',
+        );
+        if (
+          typeof discovered?.tenantId === 'string'
+          && discovered.tenantId
+          && discovered.tenantId === discovered.tenantId.trim()
+          && !/[\\u0000-\\u001f\\u007f]/.test(discovered.tenantId)
+        ) {
+          tenantId = discovered.tenantId;
+        }
+      } catch {
+        // Malformed or absent discovery never becomes a synthetic tenant.
       }
+
+      const headers = { 'Content-Type': 'application/json' };
+      if (tenantId) headers['x-tenant-id'] = tenantId;
+      if (authToken) headers.Authorization = `Bearer ${authToken}`;
 
       fetch(TELEMETRY_ENDPOINT, {
         method: 'POST',
