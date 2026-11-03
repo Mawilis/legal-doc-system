@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from datetime import datetime, timezone
 from types import SimpleNamespace
-from typing import Any
+from typing import Any, cast
 
 import pyotp
 import pytest
@@ -150,8 +150,8 @@ def _service(mfa_enabled=False):
     kms = _Kms()
     service = GlobalPrincipalMfaEnrollmentService(
         kms=kms,
-        challenge_collection=challenges,
-        factor_collection=factors,
+        challenge_collection=cast(Any, challenges),
+        factor_collection=cast(Any, factors),
         credential_repository=credentials,
     )
     return service, challenges, factors, credentials, kms
