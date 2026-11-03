@@ -455,16 +455,11 @@ export const hasFounderReturnAuthority = ({ user = {}, role = '' } = {}) => {
  */
 export const resolveDashboardKey = ({ user = {}, manualDashboardKey = '' } = {}) => {
   const roleToken = normalizeDashboardToken(user.role || user.accountRole || user.tenantRole);
-  const hasEosWorkspaceContract = (
-    user.workspaceContractVersion === WORKSPACE_CONTRACT_VERSION
-    && typeof user.workspaceId === 'string'
-    && Object.prototype.hasOwnProperty.call(WORKSPACE_DASHBOARD_MAP, user.workspaceId)
-  );
   // An authenticated EOS workspace contract is the sole dashboard selector.
-  // Browser role labels, saved preferences and manual route events cannot
-  // switch a session into a different workspace/capacity.
-  if (hasEosWorkspaceContract) {
-    return WORKSPACE_DASHBOARD_MAP[user.workspaceId];
+  // An unknown workspace under the current contract fails closed; it must not
+  // fall back to a browser role label or manual route request.
+  if (user.workspaceContractVersion === WORKSPACE_CONTRACT_VERSION) {
+    return WORKSPACE_DASHBOARD_MAP[user.workspaceId] || '';
   }
 
   const roleDashboard = (
