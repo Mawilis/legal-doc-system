@@ -631,9 +631,6 @@ async def migrate_legacy_global_mfa_factor(
     if principal is None:
         _record_failure(rate_gate, payload.email, source, now)
         raise HTTPException(status_code=401, detail="Invalid credentials")
-    if principal.mfa_enabled is not True:
-        raise HTTPException(status_code=409, detail="GLOBAL_MFA_ENROLLMENT_REQUIRED")
-
     session, database = _begin_transaction()
     try:
         service = GlobalPrincipalMfaLegacyMigrationService(
