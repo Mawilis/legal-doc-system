@@ -140,54 +140,6 @@ const DASHBOARD_ALIASES = Object.freeze({
   LEGAL_OS: DASHBOARD_KEYS.LEGAL
 });
 
-const ROLE_DASHBOARD_MAP = Object.freeze({
-  FOUNDER_ARCHITECT: DASHBOARD_KEYS.FOUNDER,
-  SUPER_ADMIN: DASHBOARD_KEYS.FOUNDER,
-  SUPERADMIN: DASHBOARD_KEYS.FOUNDER,
-  ACCOUNT_EXECUTIVE: DASHBOARD_KEYS.SALES,
-  ACCOUNTANT: DASHBOARD_KEYS.FINANCE,
-  ADMIN: DASHBOARD_KEYS.GENERAL,
-  BOARD_MEMBER: DASHBOARD_KEYS.EXECUTIVE,
-  BUSINESS_DEVELOPMENT: DASHBOARD_KEYS.SALES,
-  CEO: DASHBOARD_KEYS.EXECUTIVE,
-  CFO: DASHBOARD_KEYS.FINANCE,
-  COO: DASHBOARD_KEYS.COO,
-  CRM: DASHBOARD_KEYS.CRM,
-  CUSTOMER_SUCCESS: DASHBOARD_KEYS.CRM,
-  EXECUTIVE: DASHBOARD_KEYS.EXECUTIVE,
-  FINANCE: DASHBOARD_KEYS.FINANCE,
-  FINANCE_MANAGER: DASHBOARD_KEYS.FINANCE,
-  HR: DASHBOARD_KEYS.HR,
-  HR_MANAGER: DASHBOARD_KEYS.HR,
-  IT: DASHBOARD_KEYS.IT,
-  IT_ADMIN: DASHBOARD_KEYS.IT,
-  MANAGER: DASHBOARD_KEYS.GENERAL,
-  OWNER: DASHBOARD_KEYS.CRM,
-  SALES: DASHBOARD_KEYS.SALES,
-  SALES_MANAGER: DASHBOARD_KEYS.SALES,
-  SALES_REP: DASHBOARD_KEYS.SALES,
-  SALES_REPRESENTATIVE: DASHBOARD_KEYS.SALES,
-  TENANT_ADMIN: DASHBOARD_KEYS.GENERAL,
-  TENANT_OWNER: DASHBOARD_KEYS.CRM,
-  LEGAL_PARTNER: DASHBOARD_KEYS.LEGAL,
-  TENANT_LEGAL_PARTNER: DASHBOARD_KEYS.LEGAL,
-  LEGAL_ATTORNEY: DASHBOARD_KEYS.LEGAL,
-  TENANT_LEGAL_ATTORNEY: DASHBOARD_KEYS.LEGAL,
-  LEGAL_PARALEGAL: DASHBOARD_KEYS.LEGAL,
-  TENANT_LEGAL_PARALEGAL: DASHBOARD_KEYS.LEGAL,
-  LEGAL_SECRETARY: DASHBOARD_KEYS.LEGAL,
-  TENANT_LEGAL_SECRETARY: DASHBOARD_KEYS.LEGAL,
-  LEGAL_FINANCE: DASHBOARD_KEYS.LEGAL,
-  TENANT_LEGAL_FINANCE: DASHBOARD_KEYS.LEGAL,
-  LEGAL_CLIENT: DASHBOARD_KEYS.LEGAL,
-  TENANT_LEGAL_CLIENT: DASHBOARD_KEYS.LEGAL,
-  SHERIFF: DASHBOARD_KEYS.LEGAL,
-  TENANT_SHERIFF: DASHBOARD_KEYS.LEGAL,
-  DEPUTY: DASHBOARD_KEYS.LEGAL,
-  TENANT_DEPUTY: DASHBOARD_KEYS.LEGAL,
-  USER: DASHBOARD_KEYS.GENERAL
-});
-
 const FOUNDER_AUTHORITY_TOKENS = Object.freeze([
   'FOUNDER',
   'FOUNDER_ARCHITECT',
@@ -437,41 +389,31 @@ export const hasFounderReturnAuthority = ({ user = {}, role = '' } = {}) => {
  * @function resolveDashboardKey
  * @description Resolves canonical dashboard key from override, intent, role and tenant.
  */
+const WORKSPACE_DASHBOARD_MAP = Object.freeze({
+  EXECUTIVE_COMMAND_CENTRE: DASHBOARD_KEYS.EXECUTIVE,
+  TENANT_ADMINISTRATION: DASHBOARD_KEYS.GENERAL,
+  AUDIT_REPORTING: DASHBOARD_KEYS.GENERAL,
+  TENANT_OPERATIONS: DASHBOARD_KEYS.GENERAL,
+  LEGAL_PRACTICE: DASHBOARD_KEYS.LEGAL,
+  LEGAL_FINANCE: DASHBOARD_KEYS.FINANCE,
+  CLIENT_PORTAL: DASHBOARD_KEYS.LEGAL,
+  PROCESS_SERVICE: DASHBOARD_KEYS.LEGAL,
+  PEOPLE_OPERATIONS: DASHBOARD_KEYS.HR,
+});
+
+/**
+ * Resolve the presentation shard from the versioned workspace contract
+ * returned by EOS after current identity, membership and IAM verification.
+ * Role labels, browser preferences and manual dashboard requests cannot
+ * override the canonical workspace identifier.
+ */
 export const resolveDashboardKey = ({ user = {}, manualDashboardKey = '' } = {}) => {
-  const roleToken = normalizeDashboardToken(user.role || user.accountRole || user.tenantRole);
-  const roleDashboard = (
-    roleToken.includes('FOUNDER') ||
-    roleToken.includes('SOVEREIGN') ||
-    roleToken === 'SUPER_ADMIN' ||
-    roleToken === 'SUPERADMIN' ||
-    roleToken === 'OMEGA' ||
-    roleToken === 'GLOBAL_ROOT'
-  )
-    ? DASHBOARD_KEYS.FOUNDER
-    : (ROLE_DASHBOARD_MAP[roleToken] || DASHBOARD_KEYS.GENERAL);
-
+  const workspaceDashboard = WORKSPACE_DASHBOARD_MAP[user.workspaceId] || '';
+  if (!workspaceDashboard) return '';
   const requestedDashboard = mapDashboardAlias(manualDashboardKey);
-  if (requestedDashboard === roleDashboard) return roleDashboard;
-
-  // Legal OS is an explicit product surface, not a role escalation. A caller
-  // may navigate to its shell; Python EOS independently authorizes every
-  // commercial-context and workspace request and the shell fails closed for
-  // unsupported business roles. The Executive entry button performs a
-  // server commercial-context preflight before requesting this presentation.
-  if (requestedDashboard === DASHBOARD_KEYS.LEGAL) return DASHBOARD_KEYS.LEGAL;
-
-  // The only cross-shard return retained is the existing Founder return
-  // affordance, and only for identities carrying its explicit return signal.
-  if (
-    requestedDashboard === DASHBOARD_KEYS.FOUNDER &&
-    hasFounderReturnAuthority({ user, role: roleToken })
-  ) {
-    return DASHBOARD_KEYS.FOUNDER;
-  }
-
-  // Dashboard preferences, tenant metadata and browser storage cannot choose
-  // a different role workspace. Python EOS remains the authorization authority.
-  return roleDashboard;
+  return requestedDashboard === workspaceDashboard
+    ? requestedDashboard
+    : workspaceDashboard;
 };
 
 /**
