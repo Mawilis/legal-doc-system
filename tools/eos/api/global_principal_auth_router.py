@@ -519,6 +519,7 @@ async def start_global_mfa_enrollment(
             kms=kms,
             challenge_collection=database[GLOBAL_PRINCIPAL_MFA_ENROLLMENT_CHALLENGE_COLLECTION],
             factor_collection=database[GLOBAL_PRINCIPAL_MFA_ENROLLMENT_FACTOR_COLLECTION],
+            legacy_factor_collection=database[LEGACY_MFA_FACTOR_COLLECTION],
         )
         receipt = service.issue(
             principal_id=principal.principal_id,
