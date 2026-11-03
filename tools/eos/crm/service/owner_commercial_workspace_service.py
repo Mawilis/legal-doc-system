@@ -7,6 +7,8 @@ the commercial workspace. It does not read or mutate Legal matters.
 from __future__ import annotations
 
 from datetime import datetime
+from dataclasses import replace
+from hashlib import sha3_256
 from typing import Any
 
 from tools.eos.crm.domain.owner_commercial_work_item import (
@@ -62,11 +64,19 @@ class OwnerCommercialWorkspaceService:
         idempotency_key: str, now: datetime, session: Any,
     ) -> OwnerCommercialWorkItem:
         self._require_entitlement(tenant_id, session)
+        if not isinstance(idempotency_key, str) or not idempotency_key or idempotency_key != idempotency_key.strip():
+            raise OwnerCommercialWorkspaceError("OWNER_WORK_IDEMPOTENCY_KEY_INVALID")
+        stable_id = "owk_" + sha3_256(
+            (tenant_id + "\\0" + idempotency_key).encode("utf-8")
+        ).hexdigest()[:32]
         item = OwnerCommercialWorkItem.create(
             tenant_id=tenant_id, title=title, description=description,
             kind=kind, priority=priority, owner_principal_id=principal_id,
             due_at=due_at, source_type=source_type, source_id=source_id, now=now,
         )
+        # A retry with the same tenant/key reconstructs the identical domain
+        # value, allowing the registry fingerprint to prove exact replay.
+        item = replace(item, work_item_id=stable_id)
         return self._registry.create_or_replay(
             item, idempotency_key=idempotency_key, session=session,
         )
