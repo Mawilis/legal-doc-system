@@ -1,0 +1,117 @@
+name: Owner commercial workspace certification
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - "tools/eos/crm/domain/owner_commercial_work_item.py"
+      - "tools/eos/crm/persistence/owner_commercial_work_registry.py"
+      - "tools/eos/crm/service/owner_commercial_workspace_service.py"
+      - "tools/eos/api/owner_commercial_workspace_router.py"
+      - "tools/eos/auth/permission_namespace.py"
+      - "tools/eos/auth/roles.py"
+      - "tools/eos/auth/tenant_authority_policy.py"
+      - "tools/eos/auth/tenant_authorization.py"
+      - "tests/unit/test_owner_commercial_*.py"
+      - "tests/integration/test_owner_commercial_work_registry_real_mongo.py"
+      - ".github/workflows/owner-commercial-workspace-certification.yml"
+
+permissions:
+  contents: read
+
+concurrency:
+  group: owner-commercial-workspace-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  owner-commercial-eos:
+    name: Python EOS owner workspace and real-Mongo certification
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    env:
+      TEST_VENDOR_MONGO_URI: mongodb://127.0.0.1:27017/?replicaSet=ownerCommercialCertRS
+      PIP_DISABLE_PIP_VERSION_CHECK: "1"
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install Python dependencies
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install -r requirements.txt pytest==9.1.1
+
+      - name: Start isolated Mongo replica set
+        run: |
+          docker run --detach --name owner-commercial-cert-mongo \
+            --publish 27017:27017 mongo:7.0.37 \
+            mongod --replSet ownerCommercialCertRS --bind_ip_all
+
+      - name: Initialize Mongo replica set
+        run: |
+          python - <<'PY'
+          import time
+          from pymongo import MongoClient
+
+          client = MongoClient(
+              "mongodb://127.0.0.1:27017",
+              directConnection=True,
+              serverSelectionTimeoutMS=2000,
+          )
+          deadline = time.monotonic() + 60
+          initiated = False
+          last_error = None
+          while True:
+              try:
+                  hello = client.admin.command("hello")
+                  if not initiated and not hello.get("setName"):
+                      client.admin.command({
+                          "replSetInitiate": {
+                              "_id": "ownerCommercialCertRS",
+                              "members": [{"_id": 0, "host": "127.0.0.1:27017"}],
+                          }
+                      })
+                      initiated = True
+                  if client.admin.command("hello").get("isWritablePrimary"):
+                      break
+              except Exception as error:
+                  last_error = error
+              if time.monotonic() >= deadline:
+                  raise RuntimeError(
+                      f"OWNER_COMMERCIAL_MONGO_UNAVAILABLE: {last_error!r}"
+                  ) from last_error
+              time.sleep(1)
+          client.close()
+          PY
+
+      - name: Compile owner commercial EOS contracts
+        run: |
+          python -m py_compile \
+            tools/eos/crm/domain/owner_commercial_work_item.py \
+            tools/eos/crm/persistence/owner_commercial_work_registry.py \
+            tools/eos/crm/service/owner_commercial_workspace_service.py \
+            tools/eos/api/owner_commercial_workspace_router.py \
+            tools/eos/auth/permission_namespace.py \
+            tools/eos/auth/roles.py \
+            tools/eos/auth/tenant_authority_policy.py \
+            tools/eos/auth/tenant_authorization.py
+
+      - name: Run focused unit and real-Mongo tests
+        run: |
+          python -m pytest -q \
+            tests/unit/test_owner_commercial_work_authority.py \
+            tests/unit/test_owner_commercial_work_item.py \
+            tests/unit/test_owner_commercial_work_registry.py \
+            tests/unit/test_owner_commercial_workspace_server_mount.py \
+            tests/integration/test_owner_commercial_work_registry_real_mongo.py \
+            tests/unit/test_permission_namespace.py \
+            tests/unit/test_roles.py \
+            tests/unit/test_crm_lead_authority_substrate.py
+
+      - name: Stop isolated Mongo replica set
+        if: always()
+        run: docker rm -f owner-commercial-cert-mongo 2>/dev/null || true
