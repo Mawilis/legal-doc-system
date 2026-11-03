@@ -26,7 +26,10 @@ const { api, sovereignClient } = vi.hoisted(() => ({
   },
 }));
 
-vi.mock('../../src/services/api', () => ({ default: api }));
+vi.mock('../../src/services/api', () => ({
+  default: api,
+  setActiveTenantTransportId: vi.fn(),
+}));
 vi.mock('../../src/utils/sovereignClient', () => ({ default: sovereignClient }));
 
 import { AuthProvider } from '../../src/contexts/authContext.jsx';
@@ -47,6 +50,8 @@ const readyWorkspace = {
   workspace: {
     tenantId,
     businessRole: 'tenant_legal_partner',
+    workspaceId: 'LEGAL_PRACTICE',
+    workspaceContractVersion: 'v1.0.0-WILSY-EOS-WORKSPACE-RESOLUTION',
     membershipRevision: 4,
     businessRoleRevision: 9,
     legalPermissions: [
