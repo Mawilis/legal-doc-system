@@ -679,6 +679,8 @@ async def workspace_bootstrap(
         "workspace": {
             "tenantId": projection.tenant_id,
             "businessRole": projection.business_role,
+            "workspaceId": projection.workspace_id,
+            "workspaceContractVersion": projection.workspace_contract_version,
             "membershipRevision": projection.membership_revision,
             "businessRoleRevision": projection.business_role_revision,
             "legalPermissions": list(legal_permissions),

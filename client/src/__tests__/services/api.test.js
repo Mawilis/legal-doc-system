@@ -220,7 +220,26 @@ describe('api.js – Sovereign HTTP Client', () => {
         headers: {},
       });
 
-      expect(sealed.headers['X-Tenant-ID']).toBe('WILSYTENANT-4CD2FZ4O');
+      expect(sealed.headers['X-Tenant-ID']).toBeUndefined();
+    });
+
+    it('uses the selected tenant projection rather than a fixed development tenant', async () => {
+      localStorageMock.setItem('wilsy_active_tenant', JSON.stringify({
+        tenantId: 'TENANT-SECOND-FIRM',
+        alias: 'second-firm',
+      }));
+      localStorageMock.setItem('discoveredTenant', JSON.stringify({
+        tenantId: 'WILSYTENANT-4CD2FZ4O',
+        alias: 'wilsy',
+      }));
+
+      const sealed = await requestInterceptorCapture.fulfilled({
+        url: '/legal-operations/commercial-context',
+        method: 'get',
+        headers: {},
+      });
+
+      expect(sealed.headers['X-Tenant-ID']).toBe('TENANT-SECOND-FIRM');
     });
 
     it('preserves an explicitly supplied MFA candidate bearer over stale browser storage', async () => {
@@ -243,7 +262,7 @@ describe('api.js – Sovereign HTTP Client', () => {
       expect(sealed.headers.Authorization).toBe(
         'Bearer freshly-verified-candidate-token',
       );
-      expect(sealed.headers['X-Tenant-ID']).toBe('WILSYTENANT-4CD2FZ4O');
+      expect(sealed.headers['X-Tenant-ID']).toBe('TENANT-BOOTSTRAP-TEST');
     });
 
     it('rejects empty or malformed explicit bearer headers and uses the valid stored session', async () => {

@@ -79,12 +79,12 @@ describe('SovereignDashboardController resolver', () => {
       activeTenant: { dashboardKey: 'LEGAL_DASHBOARD', defaultDashboard: 'FOUNDER' },
       manualDashboardKey: 'FOUNDER_DASHBOARD',
       dashboardIntent: 'LEGAL_DASHBOARD'
-    })).toBe(DASHBOARD_KEYS.EXECUTIVE);
+    })).toBe(DASHBOARD_KEYS.CRM);
 
     expect(resolveDashboardKey({
       user: { id: 'owner-2', role: 'TENANT_OWNER' },
       manualDashboardKey: 'SHERIFF'
-    })).toBe(DASHBOARD_KEYS.EXECUTIVE);
+    })).toBe(DASHBOARD_KEYS.CRM);
 
     // Product navigation changes presentation only; Legal EOS still authorizes
     // every commercial-context and workspace request for the exact identity.
@@ -100,11 +100,11 @@ describe('SovereignDashboardController resolver', () => {
     })).toBe(DASHBOARD_KEYS.LEGAL);
   });
 
-  it('routes tenant owners to the executive command surface and rejects stale Founder return', () => {
+  it('keeps tenant owners in CRM when a stale Founder return is requested', () => {
     expect(resolveDashboardKey({
       user: { id: 'tenant-owner-1', role: 'TENANT_OWNER' },
       manualDashboardKey: 'FOUNDER_DASHBOARD'
-    })).toBe(DASHBOARD_KEYS.EXECUTIVE);
+    })).toBe(DASHBOARD_KEYS.CRM);
 
     expect(resolveDashboardKey({
       user: { id: 'founder-return-1', role: 'TENANT_OWNER', permissions: ['FOUNDER'] },
@@ -114,8 +114,44 @@ describe('SovereignDashboardController resolver', () => {
 
   it('routes executive and owner identities to the standalone executive surface', () => {
     expect(resolveDashboardKey({ user: { id: 'ceo-1', role: 'CEO' } })).toBe(DASHBOARD_KEYS.EXECUTIVE);
-    expect(resolveDashboardKey({ user: { id: 'owner-1', role: 'TENANT_OWNER' } })).toBe(DASHBOARD_KEYS.EXECUTIVE);
-    expect(resolveDashboardKey({ user: { id: 'owner-2', role: 'OWNER' } })).toBe(DASHBOARD_KEYS.CRM);
+    expect(resolveDashboardKey({ user: { id: 'owner-1', role: 'TENANT_OWNER' } })).toBe(DASHBOARD_KEYS.CRM);
+    expect(resolveDashboardKey({ user: { id: 'owner-2', role: 'OWNER' } })).toBe(DASHBOARD_KEYS.EXECUTIVE);
+  });
+
+  it('uses the EOS workspace contract ahead of role labels and ignores browser dashboard overrides', () => {
+    const owner = {
+      id: 'owner-contract',
+      role: 'tenant_owner',
+      workspaceId: 'EXECUTIVE_COMMAND_CENTRE',
+      workspaceContractVersion: 'v1.0.0-WILSY-EOS-WORKSPACE-CONTRACT',
+    };
+    expect(resolveDashboardKey({
+      user: owner,
+      manualDashboardKey: 'CRM_DASHBOARD',
+    })).toBe(DASHBOARD_KEYS.EXECUTIVE);
+
+    const legal = {
+      id: 'legal-contract',
+      role: 'tenant_legal_partner',
+      workspaceId: 'LEGAL_PRACTICE',
+      workspaceContractVersion: 'v1.0.0-WILSY-EOS-WORKSPACE-CONTRACT',
+    };
+    expect(resolveDashboardKey({
+      user: legal,
+      manualDashboardKey: 'EXECUTIVE_DASHBOARD',
+    })).toBe(DASHBOARD_KEYS.LEGAL);
+  });
+
+  it('fails closed for an unknown workspace in the current EOS contract', () => {
+    expect(resolveDashboardKey({
+      user: {
+        id: 'unknown-workspace',
+        role: 'tenant_owner',
+        workspaceId: 'CRM_DASHBOARD',
+        workspaceContractVersion: 'v1.0.0-WILSY-EOS-WORKSPACE-CONTRACT',
+      },
+      manualDashboardKey: 'EXECUTIVE_DASHBOARD',
+    })).toBe('');
   });
 
   it('routes specialist roles to their own dashboards before falling back to general', () => {

@@ -106,6 +106,8 @@ const workspaceBootstrap = ({
     workspace: {
       tenantId,
       businessRole,
+      workspaceId: businessRole === 'tenant_legal_partner' ? 'LEGAL_PRACTICE' : 'AUDIT_REPORTING',
+      workspaceContractVersion: 'v1.0.0-WILSY-EOS-WORKSPACE-CONTRACT',
       membershipRevision: 7,
       businessRoleRevision: 11,
       ...(legalPermissions === undefined ? {} : { legalPermissions }),
@@ -808,6 +810,8 @@ describe('authoritative authentication state machine', () => {
         workspace: {
           tenantId: 'TENANT-BROWSER',
           businessRole: 'tenant_auditor',
+          workspaceId: 'AUDIT_REPORTING',
+          workspaceContractVersion: 'v1.0.0-WILSY-EOS-WORKSPACE-CONTRACT',
           membershipRevision: 7,
           businessRoleRevision: 11,
           branding: null,

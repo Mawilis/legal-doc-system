@@ -47,6 +47,10 @@ from tools.eos.auth.tenant_membership_repository import (
     TenantMembershipRepositoryError,
 )
 from tools.eos.saas.tenancy.tenant_registry import TenantRegistry
+from tools.eos.auth.workspace_contract import (
+    WorkspaceContractResolutionError,
+    resolve_workspace_contract,
+)
 
 
 VERSION = "v1.0.0-WILSY-WORKSPACE-BOOTSTRAP-PROJECTION"
@@ -64,6 +68,8 @@ class WorkspaceBootstrapProjection:
     email: str | None
     tenant_id: str
     business_role: str
+    workspace_id: str
+    workspace_contract_version: str
     membership_revision: int
     business_role_revision: int
     tenant: Any
@@ -220,6 +226,13 @@ def build_workspace_bootstrap_projection(
             "WORKSPACE_BOOTSTRAP_TENANT_MISMATCH"
         )
 
+    try:
+        workspace_contract = resolve_workspace_contract(business_role)
+    except WorkspaceContractResolutionError as error:
+        raise WorkspaceBootstrapProjectionError(
+            "WORKSPACE_BOOTSTRAP_WORKSPACE_CONTRACT_UNAVAILABLE"
+        ) from error
+
     email = getattr(identity, "email", None)
     if email is not None and not isinstance(email, str):
         email = None
@@ -229,6 +242,8 @@ def build_workspace_bootstrap_projection(
         email=email,
         tenant_id=tenant_id,
         business_role=business_role,
+        workspace_id=workspace_contract.workspace_id,
+        workspace_contract_version=workspace_contract.version,
         membership_revision=membership_revision,
         business_role_revision=business_role_revision,
         tenant=tenant,

@@ -65,16 +65,38 @@ const SOURCE_BACKOFF_MS = Number(import.meta.env?.VITE_SOURCE_BACKOFF_MS || 4500
 const sourceBackoffUntil = new Map();
 
 /**
- * @function resolveRequestTenantId
- * @description Converts the tenant‑discovery storage record into the scalar identifier required by the API contract.
- * @returns {string} Canonical tenant alias or identifier for the X‑Tenant‑ID header.
- * @collaboration AI Engineering (2026-08-14) — Added to prevent serialized tenant metadata from being misused.
- * @epitome Guarantees that every request is properly tenant‑isolated.
- * @institutional Mandatory for POPIA §19 data segregation.
+ * Resolve only a server-discovered or server-revalidated tenant projection.
+ * This value is a transport selector, never authorization. EOS independently
+ * verifies the authenticated principal's tenant on every protected request.
  */
-const CANONICAL_WILSY_TENANT_ID = 'WILSYTENANT-4CD2FZ4O';
-
-const resolveRequestTenantId = () => CANONICAL_WILSY_TENANT_ID;
+const resolveRequestTenantId = () => {
+  if (typeof window === 'undefined') return null;
+  try {
+    const storage = window.localStorage;
+    for (const key of ['wilsy_active_tenant', 'discoveredTenant']) {
+      try {
+        const raw = storage.getItem(key);
+        if (!raw) continue;
+        const projection = JSON.parse(raw);
+        const tenantId = projection && typeof projection === 'object'
+          ? projection.tenantId
+          : null;
+        if (
+          typeof tenantId === 'string'
+          && tenantId === tenantId.trim()
+          && /^[A-Za-z0-9][A-Za-z0-9._:-]{0,199}$/.test(tenantId)
+        ) {
+          return tenantId;
+        }
+      } catch {
+        // Malformed browser state is not a tenant identity source.
+      }
+    }
+  } catch {
+    // Storage access failure must not manufacture a tenant fallback.
+  }
+  return null;
+};
 
 /**
  * @function getSourceBackoffKey
@@ -390,9 +412,16 @@ api.interceptors.request.use(
       }
     }
 
-    // The canonical tenant is a transport selector only; Python EOS owns
-    // membership, identity, and authorization decisions.
-    config.headers['X-Tenant-ID'] = resolveRequestTenantId();
+    // Tenant context is a candidate transport selector only. Never pin a
+    // development tenant or trust a caller-supplied header; EOS revalidates
+    // the authenticated principal and canonical tenant independently.
+    const requestTenantId = resolveRequestTenantId();
+    if (requestTenantId) {
+      config.headers['X-Tenant-ID'] = requestTenantId;
+    } else {
+      delete config.headers['X-Tenant-ID'];
+      delete config.headers['x-tenant-id'];
+    }
 
     // 🛡️ Expanded public paths to include all auth endpoints, including MFA/OTP.
     const isPublicPath = /^\/status$/i.test(config.url)

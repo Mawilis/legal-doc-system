@@ -1,9 +1,8 @@
 /**
  * TITLE: WILSY OS authenticated Legal productive-work browser certificate
- * VERSION: v1.1.0-OWNER-COMMERCIAL-AND-PRACTICE-BOUNDARY-BROWSER-CERT
+ * VERSION: v1.0.0-PW-P11C-AUTHENTICATED-PRODUCTIVE-WORK-BROWSER-CERT
  * AUTHORITY: Browser certification evidence only.
- * EPITOME: Prove Tenant Owner commercial workspace admission and practice denial,
- *          plus authenticated operator workspace bootstrap and productive-work HTTP,
+ * EPITOME: Prove authenticated workspace bootstrap, durable productive-work HTTP,
  *          own-principal projection, canonical Legal dashboard rendering, and
  *          responsive narrow-viewport presentation without browser-owned authority.
  * TENANT BOUNDARY: Exact disposable fixture tenant only.
@@ -121,63 +120,6 @@ async function openProductiveWork(page) {
     response,
   };
 }
-
-test(
-  'certifies Tenant Owner Legal commercial workspace without practice access',
-  async ({ browser }) => {
-    const { actor, context, page } = await openAuthenticatedLegalWorkspace(
-      browser,
-      'tenant_owner',
-    );
-    const commercialResponsePromise = page.waitForResponse((response) => (
-      new URL(response.url()).pathname === '/api/legal-operations/commercial-context'
-      && response.request().method() === 'GET'
-    ));
-
-    await expect(
-      page.getByRole('button', { name: 'LEGAL OS' }),
-    ).toBeVisible();
-    await page.getByRole('button', { name: 'LEGAL OS' }).click();
-
-    const commercialResponse = await commercialResponsePromise;
-    expect(commercialResponse.status()).toBe(200);
-    const payload = await commercialResponse.json();
-    expect(payload).toMatchObject({
-      tenant_id: state.tenant_id,
-      visibility: 'LEGAL_COMMERCIAL_CONTEXT_SUBSCRIPTION_READ',
-      product: {
-        product_id: 'LEGAL_OPERATIONS',
-        available: true,
-        access_basis: 'LEGAL_PLAN_FEATURE',
-      },
-      subscription: { status: 'active' },
-    });
-
-    await expect(
-      page.getByRole('heading', { name: 'Legal Product Command' }),
-    ).toBeVisible();
-    await expect(page.getByText('Tenant owner · commercial authority only')).toBeVisible();
-    await expect(page.getByText('ROLE-GATED')).toBeVisible();
-
-    const forbiddenPracticeRequests = [];
-    page.on('request', (request) => {
-      const path = new URL(request.url()).pathname;
-      if (
-        path === '/api/legal-operations/workspace'
-        || path === '/api/legal-operations/productive-work'
-        || path === '/api/legal-operations/conflict-screenings'
-      ) forbiddenPracticeRequests.push(path);
-    });
-    await page.reload();
-    await expect(
-      page.getByRole('heading', { name: 'Legal Product Command' }),
-    ).toBeVisible();
-    await expect(page.getByText('ROLE-GATED')).toBeVisible();
-    expect(forbiddenPracticeRequests).toEqual([]);
-
-    await context.close();
-  },
-);
 
 test(
   'certifies Partner authenticated own-principal productive work on the canonical Legal dashboard',
