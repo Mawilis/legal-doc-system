@@ -1,4 +1,4 @@
-"""Tenant-owner Legal commercial operating workspace HTTP surface.
+""""Tenant-owner Legal commercial operating workspace HTTP surface.
 
 This is a separate owner-commercial projection. It never exposes Legal matters,
 client-confidential records, professional work items or practitioner commands.
@@ -10,7 +10,9 @@ from typing import Any, Literal
 
 from fastapi import APIRouter, Depends, Header, HTTPException, status
 from pydantic import BaseModel, ConfigDict, Field
-from pymongo import ReadConcern, ReadPreference, WriteConcern
+from pymongo.read_concern import ReadConcern
+from pymongo.read_preferences import ReadPreference
+from pymongo.write_concern import WriteConcern
 
 from tools.eos.api.tenant_authorization_http import (
     RequireTenantAuthorization, TenantAuthorizationContext,
