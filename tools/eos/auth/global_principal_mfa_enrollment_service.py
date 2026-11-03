@@ -31,6 +31,7 @@ VERSION = "v1.0.0-GLOBAL-PRINCIPAL-MFA-ENROLLMENT"
 CHALLENGE_COLLECTION = "global_principal_mfa_enrollment_challenges"
 FACTOR_COLLECTION = "global_principal_mfa_factors"
 ENROLLMENT_TTL_SECONDS = 300
+MAX_ENROLLMENT_CODE_ATTEMPTS = 5
 TOTP_PERIOD_SECONDS = 30
 TOTP_DIGITS = 6
 TOTP_VALID_WINDOW = 1
@@ -47,6 +48,11 @@ class GlobalPrincipalMfaEnrollmentRejected(GlobalPrincipalMfaEnrollmentError):
 
 class GlobalPrincipalMfaEnrollmentUnavailable(GlobalPrincipalMfaEnrollmentError):
     """Required KMS or persistence capability is unavailable."""
+
+
+class GlobalPrincipalMfaEnrollmentCodeRejected(GlobalPrincipalMfaEnrollmentRejected):
+    """Invalid enrollment code; caller must commit the durable attempt counter."""
+
 
 
 @dataclass(frozen=True, slots=True)
@@ -199,6 +205,7 @@ class GlobalPrincipalMfaEnrollmentService:
             "challenge_digest": _digest(token),
             "encrypted_secret": envelope,
             "status": "PENDING",
+            "attempt_count": 0,
             "created_at": instant,
             "expires_at": expires_at,
         }
@@ -249,6 +256,9 @@ class GlobalPrincipalMfaEnrollmentService:
             raise GlobalPrincipalMfaEnrollmentUnavailable("GLOBAL_MFA_ENROLLMENT_READ_FAILED") from error
         if not isinstance(challenge, Mapping):
             raise GlobalPrincipalMfaEnrollmentRejected("GLOBAL_MFA_ENROLLMENT_CHALLENGE_INVALID_EXPIRED_OR_CONSUMED")
+        attempt_count = challenge.get("attempt_count", 0)
+        if isinstance(attempt_count, bool) or not isinstance(attempt_count, int) or not 0 <= attempt_count < MAX_ENROLLMENT_CODE_ATTEMPTS:
+            raise GlobalPrincipalMfaEnrollmentRejected("GLOBAL_MFA_ENROLLMENT_ATTEMPTS_EXHAUSTED")
         principal_id = challenge.get("principal_id")
         credential_revision = challenge.get("credential_revision")
         envelope = challenge.get("encrypted_secret")
@@ -283,7 +293,26 @@ class GlobalPrincipalMfaEnrollmentService:
             raise GlobalPrincipalMfaEnrollmentUnavailable("GLOBAL_MFA_ENROLLMENT_SECRET_UNAVAILABLE")
         accepted_step = _matching_totp_step(secret, code, instant)
         if accepted_step is None:
-            raise GlobalPrincipalMfaEnrollmentRejected("GLOBAL_MFA_ENROLLMENT_CODE_INVALID")
+            update_fields: dict[str, Any] = {"last_failed_at": instant}
+            if attempt_count + 1 >= MAX_ENROLLMENT_CODE_ATTEMPTS:
+                update_fields.update({"status": "LOCKED", "locked_at": instant})
+            try:
+                attempted = challenges.update_one(
+                    {
+                        "_id": challenge.get("_id"),
+                        "challenge_digest": _digest(challenge_token),
+                        "status": "PENDING",
+                        "attempt_count": attempt_count,
+                    },
+                    {"$inc": {"attempt_count": 1}, "$set": update_fields},
+                    upsert=False,
+                    session=session,
+                )
+            except PyMongoError as error:
+                raise GlobalPrincipalMfaEnrollmentUnavailable("GLOBAL_MFA_ENROLLMENT_ATTEMPT_WRITE_FAILED") from error
+            if getattr(attempted, "matched_count", 0) != 1:
+                raise GlobalPrincipalMfaEnrollmentRejected("GLOBAL_MFA_ENROLLMENT_ATTEMPT_STATE_CONFLICT")
+            raise GlobalPrincipalMfaEnrollmentCodeRejected("GLOBAL_MFA_ENROLLMENT_CODE_INVALID")
 
         try:
             enabled = self._credentials.enable_mfa(
@@ -353,6 +382,7 @@ __all__ = [
     "GlobalPrincipalMfaEnrollmentError",
     "GlobalPrincipalMfaEnrollmentRejected",
     "GlobalPrincipalMfaEnrollmentUnavailable",
+    "GlobalPrincipalMfaEnrollmentCodeRejected",
     "GlobalPrincipalMfaEnrollmentReceipt",
     "GlobalPrincipalMfaEnrollmentCompletion",
     "GlobalPrincipalMfaEnrollmentService",
