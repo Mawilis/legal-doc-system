@@ -5,7 +5,7 @@ business capacity, authorization, workspace selection and financial authority.
 """
 from __future__ import annotations
 
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 
 MAX_CREDENTIAL_REVISION = (1 << 63) - 1
 
@@ -16,7 +16,7 @@ class PrincipalCredential:
 
     principal_id: str
     normalized_email: str
-    password_hash: str
+    password_hash: str = field(repr=False)
     credential_revision: int
     mfa_enabled: bool
 
