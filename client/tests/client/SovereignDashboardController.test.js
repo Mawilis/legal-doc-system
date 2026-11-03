@@ -1,28 +1,9 @@
 /* eslint-disable */
 // @vitest-environment node
 /**
- * TITLE: WILSY OS Sovereign Dashboard Controller Legal Role Routing Certificate
- * VERSION: v1.2.0-AUTHENTICATED-ROLE-LANDING-CERT
- * AUTHORITY: Client routing/resolver certification only.
- * EPITOME: Certifies SovereignDashboardController resolves every published Legal
- *          business role to the single canonical Legal OS shard, preserves
- *          existing non-Legal dashboard mappings, accepts canonical Legal OS
- *          aliases, and forwards normalized authenticated role only as
- *          presentation roleView.
- * ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/client/tests/client/SovereignDashboardController.test.js
- * COLLABORATION / OWNERSHIP: Controller owns client routing; Python EOS owns IAM
- *                            and Legal Operations authority.
- * CERTIFICATION / UPDATE DATE: 2026-09-23
- * CHANGELOG: 2026-09-23 v1.1.0-L8-7D10-LEGAL-ROLE-CONVERGENCE-CERT adds exact routing coverage for
- *            LEGAL_PARTNER, LEGAL_ATTORNEY, LEGAL_PARALEGAL, LEGAL_SECRETARY,
- *            LEGAL_FINANCE, LEGAL_CLIENT and TENANT_* aliases while retaining
- *            SHERIFF/DEPUTY and all existing non-Legal mappings.
- *            2026-09-23 v1.0.0-L8-6C-LEGAL-ROLE-ROUTING-CERT establishes L8-6C Legal OS role-routing coverage.
- * COMPLIANCE: POPIA section 19; GDPR Article 32; SOC 2 CC7.2; ISO 27001.
- * SECURITY / PRIVACY POSTURE: Synthetic identities only; no credentials or PII.
- * TENANT BOUNDARY: Tests routing only and create no tenant authority.
- * AUTHORITY BOUNDARY: Resolver/wiring evidence only; role routing is not IAM.
- * FINANCIAL AUTHORITY BOUNDARY: None; Kennel EOS remains exclusive.
+ * WILSY OS dashboard contract certificate.
+ * Dashboard selection is presentation-only and consumes the validated EOS
+ * workspace identifier. Role labels and browser preferences are non-authoritative.
  */
 import { readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
@@ -32,7 +13,7 @@ import {
   getExecutiveRoleLabel,
   hasFounderReturnAuthority,
   mapDashboardAlias,
-  resolveDashboardKey
+  resolveDashboardKey,
 } from '../../src/components/sovereign/SovereignDashboardController.jsx';
 
 const CONTROLLER_SOURCE = resolve(
@@ -40,146 +21,109 @@ const CONTROLLER_SOURCE = resolve(
   'src/components/sovereign/SovereignDashboardController.jsx',
 );
 
-describe('SovereignDashboardController resolver', () => {
-  it('defaults founder authority to the Founder Dashboard when no explicit dashboard is requested', () => {
-    const dashboardKey = resolveDashboardKey({
-      user: {
-        id: 'wilson-root',
-        email: 'wilson@example.com',
-        role: 'FOUNDER'
-      }
-    });
-
-    expect(dashboardKey).toBe(DASHBOARD_KEYS.FOUNDER);
-    expect(hasFounderReturnAuthority({ user: { role: 'FOUNDER', id: 'wilson-root' } })).toBe(true);
-  });
-
-  it('honors founder executive intent as a standalone dashboard with return authority', () => {
-    const user = {
-      id: 'wilson-root',
-      email: 'wilson@example.com',
-      role: 'OMEGA',
-      defaultDashboard: 'EXECUTIVE_OVERSIGHT'
-    };
-
-    expect(resolveDashboardKey({ user })).toBe(DASHBOARD_KEYS.FOUNDER);
-    expect(hasFounderReturnAuthority({ user })).toBe(true);
-    expect(getExecutiveRoleLabel(user)).toBe('CEO');
-  });
-
-  it('ignores stale browser and profile dashboard preferences when resolving the authenticated role', () => {
+describe('SovereignDashboardController EOS workspace contract', () => {
+  it('routes the tenant owner to Executive Command Centre from the EOS workspace contract', () => {
     expect(resolveDashboardKey({
       user: {
         id: 'owner-1',
         role: 'TENANT_OWNER',
-        dashboardKey: 'LEGAL_DASHBOARD',
-        defaultDashboard: 'FOUNDER_DASHBOARD',
-        preferences: { dashboard: 'SHERIFF' }
+        workspaceId: 'EXECUTIVE_COMMAND_CENTRE',
       },
-      activeTenant: { dashboardKey: 'LEGAL_DASHBOARD', defaultDashboard: 'FOUNDER' },
+      manualDashboardKey: 'CRM_DASHBOARD',
+      dashboardIntent: 'LEGAL_DASHBOARD',
+    })).toBe(DASHBOARD_KEYS.EXECUTIVE);
+    expect(getExecutiveRoleLabel({ role: 'TENANT_OWNER' })).toBe('OWNER');
+  });
+
+  it('does not infer a dashboard from a role, founder permission or browser preference', () => {
+    expect(resolveDashboardKey({
+      user: {
+        id: 'owner-2',
+        role: 'OWNER',
+        permissions: ['FOUNDER'],
+        defaultDashboard: 'CRM_DASHBOARD',
+      },
       manualDashboardKey: 'FOUNDER_DASHBOARD',
-      dashboardIntent: 'LEGAL_DASHBOARD'
-    })).toBe(DASHBOARD_KEYS.EXECUTIVE);
-
+    })).toBe('');
     expect(resolveDashboardKey({
-      user: { id: 'owner-2', role: 'TENANT_OWNER' },
-      manualDashboardKey: 'SHERIFF'
-    })).toBe(DASHBOARD_KEYS.EXECUTIVE);
-
-    // Product navigation changes presentation only; Legal EOS still authorizes
-    // every commercial-context and workspace request for the exact identity.
+      user: { id: 'ceo-1', role: 'CEO' },
+    })).toBe('');
     expect(resolveDashboardKey({
-      user: { id: 'owner-3', role: 'TENANT_OWNER' },
-      manualDashboardKey: 'LEGAL_DASHBOARD'
-    })).toBe(DASHBOARD_KEYS.LEGAL);
-
-    expect(resolveDashboardKey({
-      user: { id: 'partner-1', role: 'LEGAL_PARTNER' },
-      manualDashboardKey: 'FOUNDER_DASHBOARD',
-      dashboardIntent: 'EXECUTIVE_DASHBOARD'
-    })).toBe(DASHBOARD_KEYS.LEGAL);
+      user: { id: 'founder-1', role: 'FOUNDER' },
+    })).toBe('');
   });
 
-  it('routes tenant owners to the executive command surface and rejects stale Founder return', () => {
-    expect(resolveDashboardKey({
-      user: { id: 'tenant-owner-1', role: 'TENANT_OWNER' },
-      manualDashboardKey: 'FOUNDER_DASHBOARD'
-    })).toBe(DASHBOARD_KEYS.EXECUTIVE);
-
-    expect(resolveDashboardKey({
-      user: { id: 'founder-return-1', role: 'TENANT_OWNER', permissions: ['FOUNDER'] },
-      manualDashboardKey: 'FOUNDER_DASHBOARD'
-    })).toBe(DASHBOARD_KEYS.FOUNDER);
-  });
-
-  it('routes executive and owner identities to the standalone executive surface', () => {
-    expect(resolveDashboardKey({ user: { id: 'ceo-1', role: 'CEO' } })).toBe(DASHBOARD_KEYS.EXECUTIVE);
-    expect(resolveDashboardKey({ user: { id: 'owner-1', role: 'TENANT_OWNER' } })).toBe(DASHBOARD_KEYS.EXECUTIVE);
-    expect(resolveDashboardKey({ user: { id: 'owner-2', role: 'OWNER' } })).toBe(DASHBOARD_KEYS.CRM);
-  });
-
-  it('routes specialist roles to their own dashboards before falling back to general', () => {
-    expect(resolveDashboardKey({ user: { id: 'sales-1', role: 'SALES_REPRESENTATIVE' } })).toBe(DASHBOARD_KEYS.SALES);
-    expect(resolveDashboardKey({ user: { id: 'finance-1', role: 'CFO' } })).toBe(DASHBOARD_KEYS.FINANCE);
-    expect(resolveDashboardKey({ user: { id: 'tenant-1', role: 'TENANT_ADMIN' } })).toBe(DASHBOARD_KEYS.GENERAL);
-  });
-
-  it('routes every published Legal business role to the canonical Legal OS shard', () => {
-    const roles = [
-      'LEGAL_PARTNER',
-      'TENANT_LEGAL_PARTNER',
-      'LEGAL_ATTORNEY',
-      'TENANT_LEGAL_ATTORNEY',
-      'LEGAL_PARALEGAL',
-      'TENANT_LEGAL_PARALEGAL',
-      'LEGAL_SECRETARY',
-      'TENANT_LEGAL_SECRETARY',
-      'LEGAL_FINANCE',
-      'TENANT_LEGAL_FINANCE',
-      'LEGAL_CLIENT',
-      'TENANT_LEGAL_CLIENT',
-      'SHERIFF',
-      'TENANT_SHERIFF',
-      'DEPUTY',
-      'TENANT_DEPUTY',
-    ];
-
-    for (const role of roles) {
-      expect(resolveDashboardKey({ user: { id: `legal-${role}`, role } })).toBe(
-        DASHBOARD_KEYS.LEGAL,
-      );
+  it('does not let the tenant owner switch into CRM, Legal Practice or Founder dashboards', () => {
+    const user = {
+      id: 'owner-3',
+      role: 'TENANT_OWNER',
+      workspaceId: 'EXECUTIVE_COMMAND_CENTRE',
+    };
+    for (const request of ['CRM_DASHBOARD', 'LEGAL_DASHBOARD', 'FOUNDER_DASHBOARD']) {
+      expect(resolveDashboardKey({ user, manualDashboardKey: request }))
+        .toBe(DASHBOARD_KEYS.EXECUTIVE);
     }
   });
 
-  it('keeps legacy Founder module names compatible with canonical dashboard keys', () => {
+  it('routes a Legal practice user only from the EOS Legal workspace identifier', () => {
+    expect(resolveDashboardKey({
+      user: {
+        id: 'legal-partner-1',
+        role: 'TENANT_LEGAL_PARTNER',
+        workspaceId: 'LEGAL_PRACTICE',
+      },
+      manualDashboardKey: 'FOUNDER_DASHBOARD',
+    })).toBe(DASHBOARD_KEYS.LEGAL);
+  });
+
+  it('maps every published workspace identifier to an existing presentation shard', () => {
+    const cases = [
+      ['TENANT_ADMINISTRATION', DASHBOARD_KEYS.GENERAL],
+      ['AUDIT_REPORTING', DASHBOARD_KEYS.GENERAL],
+      ['TENANT_OPERATIONS', DASHBOARD_KEYS.GENERAL],
+      ['LEGAL_PRACTICE', DASHBOARD_KEYS.LEGAL],
+      ['LEGAL_FINANCE', DASHBOARD_KEYS.FINANCE],
+      ['CLIENT_PORTAL', DASHBOARD_KEYS.LEGAL],
+      ['PROCESS_SERVICE', DASHBOARD_KEYS.LEGAL],
+      ['PEOPLE_OPERATIONS', DASHBOARD_KEYS.HR],
+    ];
+    for (const [workspaceId, dashboardKey] of cases) {
+      expect(resolveDashboardKey({
+        user: { id: workspaceId, role: 'UNTRUSTED_ROLE_LABEL', workspaceId },
+      })).toBe(dashboardKey);
+    }
+  });
+
+  it('retains Founder-return predicate as a separate presentation helper only', () => {
+    expect(hasFounderReturnAuthority({
+      user: { role: 'FOUNDER', id: 'founder-2' },
+    })).toBe(true);
+    expect(resolveDashboardKey({
+      user: {
+        id: 'owner-4',
+        role: 'TENANT_OWNER',
+        permissions: ['FOUNDER'],
+        workspaceId: 'EXECUTIVE_COMMAND_CENTRE',
+      },
+      manualDashboardKey: 'FOUNDER_DASHBOARD',
+    })).toBe(DASHBOARD_KEYS.EXECUTIVE);
+  });
+
+  it('keeps historical module aliases as labels, not workspace authority', () => {
     expect(mapDashboardAlias('CEO_DASHBOARD')).toBe(DASHBOARD_KEYS.EXECUTIVE);
     expect(mapDashboardAlias('REVENUE_LEDGER')).toBe(DASHBOARD_KEYS.FINANCE);
     expect(mapDashboardAlias('SINGULARITY_MATRIX')).toBe(DASHBOARD_KEYS.FOUNDER);
-  });
-
-  it('recognizes Legal OS aliases without inventing authorization', () => {
     expect(mapDashboardAlias('LEGAL')).toBe(DASHBOARD_KEYS.LEGAL);
     expect(mapDashboardAlias('LEGAL_DASHBOARD')).toBe(DASHBOARD_KEYS.LEGAL);
     expect(mapDashboardAlias('LEGAL_OS')).toBe(DASHBOARD_KEYS.LEGAL);
   });
 
-  it('forwards normalized authenticated role as presentation roleView', () => {
+  it('keeps the Legal role as presentation metadata and not as dashboard authority', () => {
     const source = readFileSync(CONTROLLER_SOURCE, 'utf8');
     expect(source).toContain("const LegalDashboard = React.lazy(() => import('../industry/LegalDashboard'))");
     expect(source).toContain('dashboardKey === DASHBOARD_KEYS.LEGAL');
     expect(source).toContain('roleView={role}');
-    expect(source).toContain('onSwitchDashboard={handleManualDashboardSwitch}');
-    expect(source).not.toContain('roleView="DEPUTY"');
-    expect(source).not.toContain('roleView="SHERIFF"');
+    expect(source).toContain('WORKSPACE_DASHBOARD_MAP[user.workspaceId]');
+    expect(source).not.toContain('ROLE_DASHBOARD_MAP');
   });
 });
-
-/**
- * ARTIFACT: SovereignDashboardController.test.js
- * VERSION: v1.2.0-AUTHENTICATED-ROLE-LANDING-CERT
- * AUTHORITY BOUNDARY: client resolver and Legal OS routing certification only
- * TENANT POSTURE: routing evidence does not create or widen tenant authority
- * FAIL-CLOSED POSTURE: role routing never substitutes browser authority for Python EOS IAM
- * FINANCIAL EXECUTION AUTHORITY: none; Kennel EOS remains exclusive
- * END OF WILSY OS SOVEREIGN ARTIFACT
- */
