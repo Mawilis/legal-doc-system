@@ -79,12 +79,12 @@ describe('SovereignDashboardController resolver', () => {
       activeTenant: { dashboardKey: 'LEGAL_DASHBOARD', defaultDashboard: 'FOUNDER' },
       manualDashboardKey: 'FOUNDER_DASHBOARD',
       dashboardIntent: 'LEGAL_DASHBOARD'
-    })).toBe(DASHBOARD_KEYS.CRM);
+    })).toBe(DASHBOARD_KEYS.EXECUTIVE);
 
     expect(resolveDashboardKey({
       user: { id: 'owner-2', role: 'TENANT_OWNER' },
       manualDashboardKey: 'SHERIFF'
-    })).toBe(DASHBOARD_KEYS.CRM);
+    })).toBe(DASHBOARD_KEYS.EXECUTIVE);
 
     // Product navigation changes presentation only; Legal EOS still authorizes
     // every commercial-context and workspace request for the exact identity.
@@ -100,11 +100,11 @@ describe('SovereignDashboardController resolver', () => {
     })).toBe(DASHBOARD_KEYS.LEGAL);
   });
 
-  it('keeps tenant owners in CRM when a stale Founder return is requested', () => {
+  it('routes tenant owners to the executive command surface and rejects stale Founder return', () => {
     expect(resolveDashboardKey({
       user: { id: 'tenant-owner-1', role: 'TENANT_OWNER' },
       manualDashboardKey: 'FOUNDER_DASHBOARD'
-    })).toBe(DASHBOARD_KEYS.CRM);
+    })).toBe(DASHBOARD_KEYS.EXECUTIVE);
 
     expect(resolveDashboardKey({
       user: { id: 'founder-return-1', role: 'TENANT_OWNER', permissions: ['FOUNDER'] },
