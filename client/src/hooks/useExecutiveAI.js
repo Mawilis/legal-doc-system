@@ -29,7 +29,6 @@ import api from '../services/api'; // Sovereign HTTP client with forensic sealin
 // -----------------------------------------------------------------------------
 
 const DEFAULT_OPTIONS = {
-  tenantId: 'GLOBAL_ROOT', // Will be overridden by api interceptor if set
   autoTrace: true,
   timeout: 30000,
 };
