@@ -1,6 +1,6 @@
 /**
  * TITLE: WILSY OS browser-certificate runner
- * VERSION: v1.5.1-L8-8M-EXPLICIT-DISPOSABLE-MONGO-TARGET
+ * VERSION: v1.6.0-OWNER-COMMERCIAL-AND-PRACTICE-PREFLIGHT
  * AUTHORITY: Test process lifecycle only.
  * EPITOME: Own the synthetic fixture, disposable EOS, isolated Node BFF, Vite,
  *          browser suite, bounded diagnostics, and ordered cleanup.
@@ -13,6 +13,7 @@
  *            EOS preflights so canonical tenant authorization evaluates the
  *            synthetic principal's durable authority instead of rejecting a
  *            missing X-Tenant-ID request context.
+ *            v1.6.0 preflights Tenant Owner commercial-context success and productive-work denial alongside Partner practice reads.
  *            v1.4.0 tracks startup, Mongo/seed, authenticated preflight, browser,
  *            cleanup, and shutdown phases; preserves redacted child failure
  *            type/message/exit details; and reports primary and cleanup failures
@@ -437,11 +438,19 @@ async function preflightAuthenticatedEos(eosBaseUrl) {
   if (typeof tenantId !== 'string' || tenantId.length === 0 || tenantId !== tenantId.trim()) {
     throw new Error('BROWSER_CERT_FIXTURE_TENANT_SCOPE_UNAVAILABLE');
   }
-  return Promise.all([
+  const results = await Promise.all([
     preflightEosRoute('workspace', partnerToken, tenantId, eosBaseUrl),
     preflightEosRoute('productive-work', partnerToken, tenantId, eosBaseUrl),
     preflightEosRoute('commercial-context', ownerToken, tenantId, eosBaseUrl),
+    preflightEosRoute('productive-work', ownerToken, tenantId, eosBaseUrl),
   ]);
+  const ownerPracticeRead = results[3];
+  if (ownerPracticeRead.status !== 403) {
+    throw new Error(
+      'BROWSER_CERT_OWNER_PRACTICE_READ_NOT_DENIED:' + ownerPracticeRead.status,
+    );
+  }
+  return results.slice(0, 3);
 }
 
 function missingBffDependencies() {
@@ -546,7 +555,7 @@ try {
   if (eosProcess.closed) throw new Error('BROWSER_CERT_EOS_EXITED_DURING_STARTUP');
   if (!eosReady.ok) throw new Error('BROWSER_CERT_EOS_KERNEL_HEALTH_FAILED:' + eosReady.status);
 
-  setPhase('authenticated_preflights', 'workspace_and_productive_work');
+  setPhase('authenticated_preflights', 'partner_practice_and_owner_commercial_authority');
   const preflightResults = await preflightAuthenticatedEos(eosBaseUrl);
   const failedPreflights = preflightResults.filter((result) => result.status !== 200);
   if (failedPreflights.length > 0) {
