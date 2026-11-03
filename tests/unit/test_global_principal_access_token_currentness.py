@@ -57,6 +57,7 @@ def test_global_access_token_requires_exact_current_session_claims(monkeypatch: 
         "session_reference": "WILSYGLOBALSESSION-abc",
         "expected_business_role": "tenant_owner",
         "expected_workspace_id": "EXECUTIVE_COMMAND_CENTRE",
+        "expected_credential_revision": 7,
         "expected_membership_revision": 3,
         "expected_capacity_revision": 5,
     }
