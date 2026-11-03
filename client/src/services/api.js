@@ -70,26 +70,30 @@ const sourceBackoffUntil = new Map();
  * verifies the authenticated principal's tenant on every protected request.
  */
 const resolveRequestTenantId = () => {
-  if (typeof window === 'undefined' || !window.localStorage) return null;
-
-  for (const key of ['wilsy_active_tenant', 'discoveredTenant']) {
-    try {
-      const raw = window.localStorage.getItem(key);
-      if (!raw) continue;
-      const projection = JSON.parse(raw);
-      const tenantId = projection && typeof projection === 'object'
-        ? projection.tenantId
-        : null;
-      if (
-        typeof tenantId === 'string'
-        && tenantId === tenantId.trim()
-        && /^[A-Za-z0-9][A-Za-z0-9._:-]{0,199}$/.test(tenantId)
-      ) {
-        return tenantId;
+  if (typeof window === 'undefined') return null;
+  try {
+    const storage = window.localStorage;
+    for (const key of ['wilsy_active_tenant', 'discoveredTenant']) {
+      try {
+        const raw = storage.getItem(key);
+        if (!raw) continue;
+        const projection = JSON.parse(raw);
+        const tenantId = projection && typeof projection === 'object'
+          ? projection.tenantId
+          : null;
+        if (
+          typeof tenantId === 'string'
+          && tenantId === tenantId.trim()
+          && /^[A-Za-z0-9][A-Za-z0-9._:-]{0,199}$/.test(tenantId)
+        ) {
+          return tenantId;
+        }
+      } catch {
+        // Malformed browser state is not a tenant identity source.
       }
-    } catch {
-      // Malformed browser state is not a tenant identity source.
     }
+  } catch {
+    // Storage access failure must not manufacture a tenant fallback.
   }
   return null;
 };
