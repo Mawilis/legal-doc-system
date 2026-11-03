@@ -686,6 +686,7 @@ __all__ = [
     "MembershipSelectionChallengeReceipt",
     "SelectedMembershipMfaChallenge",
     "SelectedMembershipContext",
+    "MfaChallengeFactorContext",
     "MembershipSelectionChallengeService",
 ]
 
