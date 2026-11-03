@@ -145,6 +145,10 @@ from tools.eos.auth.global_principal_mfa_kms_envelope import (
     GlobalMfaKeyManagementError,
     build_global_mfa_kms_envelope_from_environment,
 )
+from tools.eos.auth.global_principal_mfa_enrollment_service import (
+    CHALLENGE_COLLECTION as GLOBAL_PRINCIPAL_MFA_ENROLLMENT_CHALLENGE_COLLECTION,
+    GlobalPrincipalMfaEnrollmentService,
+)
 from tools.eos.auth.global_principal_totp_verifier import (
     COLLECTION as GLOBAL_PRINCIPAL_MFA_FACTOR_COLLECTION,
     GlobalPrincipalTotpVerifier,
@@ -286,6 +290,7 @@ class WilsyAPIServer:
         app.state.global_principal_auth_indexes_ready = False
         app.state.global_principal_session_indexes_ready = False
         app.state.global_principal_mfa_factor_indexes_ready = False
+        app.state.global_principal_mfa_enrollment_indexes_ready = False
         app.state.global_principal_totp_verifier = None
         app.state.global_principal_mfa_decrypt_secret = self.global_principal_mfa_decrypt_secret
         app.state.global_principal_mfa_kms_envelope = None
@@ -415,7 +420,7 @@ class WilsyAPIServer:
             response.headers["X-Content-Type-Options"] = "nosniff"
             response.headers["Referrer-Policy"] = "no-referrer"
             response.headers["X-Frame-Options"] = "DENY"
-            if request.url.path.startswith(("/api/legal-operations", "/api/wilsy-ai/reasoning", "/api/wilsy-ai/legal-next-actions")):
+            if request.url.path.startswith(("/api/legal-operations", "/api/wilsy-ai/reasoning", "/api/wilsy-ai/legal-next-actions", "/api/auth/global")):
                 response.headers["Cache-Control"] = "no-store"
             if "x-trace-id" not in response.headers and "x-trace-id" in request.headers:
                 response.headers["x-trace-id"] = request.headers["x-trace-id"]
@@ -453,6 +458,7 @@ class WilsyAPIServer:
             app.state.global_principal_auth_indexes_ready = False
             app.state.global_principal_session_indexes_ready = False
             app.state.global_principal_mfa_factor_indexes_ready = False
+            app.state.global_principal_mfa_enrollment_indexes_ready = False
             app.state.global_principal_totp_verifier = None
             app.state.global_principal_mfa_kms_envelope = None
             app.state.system_services_case_indexes_ready = False
@@ -515,6 +521,10 @@ class WilsyAPIServer:
                     database[GLOBAL_PRINCIPAL_MFA_FACTOR_COLLECTION]
                 )
                 app.state.global_principal_mfa_factor_indexes_ready = client is not None
+                GlobalPrincipalMfaEnrollmentService.ensure_indexes(
+                    database[GLOBAL_PRINCIPAL_MFA_ENROLLMENT_CHALLENGE_COLLECTION]
+                )
+                app.state.global_principal_mfa_enrollment_indexes_ready = client is not None
                 decrypt_global_mfa_secret = cast(
                     Callable[..., str] | None,
                     getattr(app.state, "global_principal_mfa_decrypt_secret", None),
