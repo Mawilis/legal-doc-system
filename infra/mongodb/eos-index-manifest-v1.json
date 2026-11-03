@@ -3028,6 +3028,643 @@
         }
       ],
       "provisioning_owner": "separate_eos_index_provisioner"
+    },
+    {
+      "id": "legal-matter-workflow-instances",
+      "database": "canonical_eos_business_database",
+      "collection": "legal_matter_workflow_instances",
+      "source": "tools/eos/legal_operations/registry/legal_matter_workflow_instance_registry.py",
+      "indexes": [
+        {
+          "name": "legal_matter_workflow_instance_identity_unique",
+          "keys": [
+            [
+              "tenant_id",
+              1
+            ],
+            [
+              "workflow_instance_id",
+              1
+            ]
+          ],
+          "unique": true
+        },
+        {
+          "name": "legal_matter_workflow_instance_fingerprint_unique",
+          "keys": [
+            [
+              "tenant_id",
+              1
+            ],
+            [
+              "fingerprint",
+              1
+            ]
+          ],
+          "unique": true
+        },
+        {
+          "name": "legal_matter_workflow_instance_matter_history",
+          "keys": [
+            [
+              "tenant_id",
+              1
+            ],
+            [
+              "case_matter_id",
+              1
+            ],
+            [
+              "started_at",
+              1
+            ],
+            [
+              "workflow_instance_id",
+              1
+            ]
+          ],
+          "unique": false
+        },
+        {
+          "name": "legal_matter_workflow_instance_definition_history",
+          "keys": [
+            [
+              "tenant_id",
+              1
+            ],
+            [
+              "workflow_definition_id",
+              1
+            ],
+            [
+              "started_at",
+              1
+            ],
+            [
+              "workflow_instance_id",
+              1
+            ]
+          ],
+          "unique": false
+        }
+      ],
+      "provisioning_owner": "separate_eos_index_provisioner"
+    },
+    {
+      "id": "legal-matter-workflow-transitions",
+      "database": "canonical_eos_business_database",
+      "collection": "legal_matter_workflow_transitions",
+      "source": "tools/eos/legal_operations/registry/legal_matter_workflow_transition_registry.py",
+      "indexes": [
+        {
+          "name": "legal_matter_workflow_transition_identity_unique",
+          "keys": [
+            [
+              "tenant_id",
+              1
+            ],
+            [
+              "transition_id",
+              1
+            ]
+          ],
+          "unique": true
+        },
+        {
+          "name": "legal_matter_workflow_transition_fingerprint_unique",
+          "keys": [
+            [
+              "tenant_id",
+              1
+            ],
+            [
+              "fingerprint",
+              1
+            ]
+          ],
+          "unique": true
+        },
+        {
+          "name": "legal_matter_workflow_transition_sequence_unique",
+          "keys": [
+            [
+              "tenant_id",
+              1
+            ],
+            [
+              "workflow_instance_id",
+              1
+            ],
+            [
+              "sequence_number",
+              1
+            ]
+          ],
+          "unique": true
+        },
+        {
+          "name": "legal_matter_workflow_transition_matter_history",
+          "keys": [
+            [
+              "tenant_id",
+              1
+            ],
+            [
+              "case_matter_id",
+              1
+            ],
+            [
+              "workflow_instance_id",
+              1
+            ],
+            [
+              "sequence_number",
+              1
+            ]
+          ],
+          "unique": false
+        }
+      ],
+      "provisioning_owner": "separate_eos_index_provisioner"
+    },
+    {
+      "id": "legal-workflow-definitions",
+      "database": "canonical_eos_business_database",
+      "collection": "legal_workflow_definitions",
+      "source": "tools/eos/legal_operations/registry/legal_workflow_definition_registry.py",
+      "indexes": [
+        {
+          "name": "legal_workflow_definition_identity_unique",
+          "keys": [
+            [
+              "owner",
+              1
+            ],
+            [
+              "owner_tenant_id",
+              1
+            ],
+            [
+              "workflow_definition_id",
+              1
+            ],
+            [
+              "definition_revision",
+              1
+            ]
+          ],
+          "unique": true
+        },
+        {
+          "name": "legal_workflow_definition_fingerprint_unique",
+          "keys": [
+            [
+              "owner",
+              1
+            ],
+            [
+              "owner_tenant_id",
+              1
+            ],
+            [
+              "fingerprint",
+              1
+            ]
+          ],
+          "unique": true
+        }
+      ],
+      "provisioning_owner": "separate_eos_index_provisioner"
+    },
+    {
+      "id": "legal-workflow-gate-satisfactions",
+      "database": "canonical_eos_business_database",
+      "collection": "legal_workflow_gate_satisfactions",
+      "source": "tools/eos/legal_operations/registry/legal_workflow_gate_satisfaction_registry.py",
+      "indexes": [
+        {
+          "name": "legal_workflow_gate_satisfaction_identity_unique",
+          "keys": [
+            [
+              "tenant_id",
+              1
+            ],
+            [
+              "gate_satisfaction_id",
+              1
+            ]
+          ],
+          "unique": true
+        },
+        {
+          "name": "legal_workflow_gate_satisfaction_fingerprint_unique",
+          "keys": [
+            [
+              "tenant_id",
+              1
+            ],
+            [
+              "fingerprint",
+              1
+            ]
+          ],
+          "unique": true
+        },
+        {
+          "name": "legal_workflow_gate_satisfaction_instance_history",
+          "keys": [
+            [
+              "tenant_id",
+              1
+            ],
+            [
+              "workflow_instance_id",
+              1
+            ],
+            [
+              "source_stage_definition_id",
+              1
+            ],
+            [
+              "gate_reference",
+              1
+            ],
+            [
+              "evaluated_at",
+              1
+            ],
+            [
+              "gate_satisfaction_id",
+              1
+            ]
+          ],
+          "unique": false
+        }
+      ],
+      "provisioning_owner": "separate_eos_index_provisioner"
+    },
+    {
+      "id": "legal-workflow-stages",
+      "database": "canonical_eos_business_database",
+      "collection": "legal_workflow_stages",
+      "source": "tools/eos/legal_operations/registry/legal_workflow_stage_registry.py",
+      "indexes": [
+        {
+          "name": "legal_workflow_stage_definition_identity_unique",
+          "keys": [
+            [
+              "workflow_definition_fingerprint",
+              1
+            ],
+            [
+              "stage_definition_id",
+              1
+            ]
+          ],
+          "unique": true
+        },
+        {
+          "name": "legal_workflow_stage_fingerprint_unique",
+          "keys": [
+            [
+              "fingerprint",
+              1
+            ]
+          ],
+          "unique": true
+        },
+        {
+          "name": "legal_workflow_stage_definition_lookup",
+          "keys": [
+            [
+              "workflow_definition_id",
+              1
+            ],
+            [
+              "definition_revision",
+              1
+            ]
+          ],
+          "unique": false
+        }
+      ],
+      "provisioning_owner": "separate_eos_index_provisioner"
+    },
+    {
+      "id": "legal-workflow-topologies",
+      "database": "canonical_eos_business_database",
+      "collection": "legal_workflow_topologies",
+      "source": "tools/eos/legal_operations/registry/legal_workflow_topology_registry.py",
+      "indexes": [
+        {
+          "name": "legal_workflow_topology_definition_fingerprint_unique",
+          "keys": [
+            [
+              "workflow_definition_fingerprint",
+              1
+            ]
+          ],
+          "unique": true
+        },
+        {
+          "name": "legal_workflow_topology_fingerprint_unique",
+          "keys": [
+            [
+              "fingerprint",
+              1
+            ]
+          ],
+          "unique": true
+        },
+        {
+          "name": "legal_workflow_topology_definition_lookup",
+          "keys": [
+            [
+              "workflow_definition_id",
+              1
+            ],
+            [
+              "definition_revision",
+              1
+            ]
+          ],
+          "unique": false
+        }
+      ],
+      "provisioning_owner": "separate_eos_index_provisioner"
+    },
+    {
+      "id": "process-service-allocation-receipts",
+      "database": "canonical_eos_business_database",
+      "collection": "process_service_allocation_receipts",
+      "source": "tools/eos/legal_operations/registry/process_service_allocation_registry.py",
+      "indexes": [
+        {
+          "name": "process_service_allocation_tenant_command_unique",
+          "keys": [
+            [
+              "tenant_id",
+              1
+            ],
+            [
+              "allocation_command_id",
+              1
+            ]
+          ],
+          "unique": true
+        },
+        {
+          "name": "process_service_allocation_tenant_document_idempotency_unique",
+          "keys": [
+            [
+              "tenant_id",
+              1
+            ],
+            [
+              "document_id",
+              1
+            ],
+            [
+              "idempotency_key",
+              1
+            ]
+          ],
+          "unique": true
+        },
+        {
+          "name": "process_service_allocation_tenant_event_unique",
+          "keys": [
+            [
+              "tenant_id",
+              1
+            ],
+            [
+              "allocation_custody_event_id",
+              1
+            ]
+          ],
+          "unique": true
+        }
+      ],
+      "provisioning_owner": "separate_eos_index_provisioner"
+    },
+    {
+      "id": "process-service-allocation-current",
+      "database": "canonical_eos_business_database",
+      "collection": "process_service_allocation_current",
+      "source": "tools/eos/legal_operations/registry/process_service_allocation_registry.py",
+      "indexes": [
+        {
+          "name": "process_service_allocation_current_tenant_document_unique",
+          "keys": [
+            [
+              "tenant_id",
+              1
+            ],
+            [
+              "document_id",
+              1
+            ]
+          ],
+          "unique": true
+        }
+      ],
+      "provisioning_owner": "separate_eos_index_provisioner"
+    },
+    {
+      "id": "deputy-device-provenance",
+      "database": "canonical_eos_business_database",
+      "collection": "legal_operations_deputy_device_provenance_challenges",
+      "source": "tools/eos/legal_operations/registry/deputy_device_provenance_registry.py",
+      "indexes": [
+        {
+          "name": "legal_operations_deputy_device_challenge_tenant_identity_unique",
+          "keys": [
+            [
+              "tenant_id",
+              1
+            ],
+            [
+              "challenge_id",
+              1
+            ]
+          ],
+          "unique": true
+        },
+        {
+          "name": "legal_operations_deputy_device_challenge_principal_history",
+          "keys": [
+            [
+              "tenant_id",
+              1
+            ],
+            [
+              "principal_id",
+              1
+            ],
+            [
+              "issued_at",
+              1
+            ]
+          ],
+          "unique": false
+        }
+      ],
+      "provisioning_owner": "separate_eos_index_provisioner"
+    },
+    {
+      "id": "legal-conflict-screenings",
+      "database": "canonical_eos_business_database",
+      "collection": "legal_conflict_screenings",
+      "source": "tools/eos/legal_operations/registry/legal_conflict_screening_registry.py",
+      "indexes": [
+        {
+          "name": "legal_conflict_tenant_screening_unique",
+          "keys": [
+            [
+              "tenant_id",
+              1
+            ],
+            [
+              "screening_id",
+              1
+            ]
+          ],
+          "unique": true
+        },
+        {
+          "name": "legal_conflict_tenant_source_history",
+          "keys": [
+            [
+              "tenant_id",
+              1
+            ],
+            [
+              "source_party_id",
+              1
+            ],
+            [
+              "screened_at",
+              -1
+            ]
+          ],
+          "unique": false
+        },
+        {
+          "name": "legal_conflict_tenant_subject_history",
+          "keys": [
+            [
+              "tenant_id",
+              1
+            ],
+            [
+              "subject_identity_fingerprint",
+              1
+            ],
+            [
+              "screened_at",
+              -1
+            ]
+          ],
+          "unique": false
+        },
+        {
+          "name": "legal_conflict_tenant_status_queue",
+          "keys": [
+            [
+              "tenant_id",
+              1
+            ],
+            [
+              "status",
+              1
+            ],
+            [
+              "screened_at",
+              -1
+            ]
+          ],
+          "unique": false
+        }
+      ],
+      "provisioning_owner": "separate_eos_index_provisioner"
+    },
+    {
+      "id": "legal-conflict-reviews",
+      "database": "canonical_eos_business_database",
+      "collection": "legal_conflict_reviews",
+      "source": "tools/eos/legal_operations/registry/legal_conflict_review_registry.py",
+      "indexes": [
+        {
+          "name": "legal_conflict_review_tenant_review_unique",
+          "keys": [
+            [
+              "tenant_id",
+              1
+            ],
+            [
+              "review_id",
+              1
+            ]
+          ],
+          "unique": true
+        },
+        {
+          "name": "legal_conflict_review_tenant_screening_history",
+          "keys": [
+            [
+              "tenant_id",
+              1
+            ],
+            [
+              "screening_id",
+              1
+            ],
+            [
+              "reviewed_at",
+              1
+            ]
+          ],
+          "unique": false
+        },
+        {
+          "name": "legal_conflict_review_tenant_reviewer_history",
+          "keys": [
+            [
+              "tenant_id",
+              1
+            ],
+            [
+              "reviewer_principal_id",
+              1
+            ],
+            [
+              "reviewed_at",
+              -1
+            ]
+          ],
+          "unique": false
+        },
+        {
+          "name": "legal_conflict_review_tenant_outcome_history",
+          "keys": [
+            [
+              "tenant_id",
+              1
+            ],
+            [
+              "outcome",
+              1
+            ],
+            [
+              "reviewed_at",
+              -1
+            ]
+          ],
+          "unique": false
+        }
+      ],
+      "provisioning_owner": "separate_eos_index_provisioner"
     }
   ],
   "excluded_until_inventory_complete": [
