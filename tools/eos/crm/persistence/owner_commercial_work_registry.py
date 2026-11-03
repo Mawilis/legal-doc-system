@@ -178,7 +178,11 @@ class OwnerCommercialWorkRegistry:
         identity = _exact(work_item_id, "OWNER_WORK_ID_INVALID")
         caller_session = _session(session)
         current = self.get(tenant_id=tenant, work_item_id=identity, session=caller_session)
-        if current.status in (OwnerWorkStatus.COMPLETED, OwnerWorkStatus.CANCELLED):
+        if current.status is OwnerWorkStatus.COMPLETED:
+            if current.completion_note == completion_note:
+                return current
+            raise OwnerWorkRegistryConflict("OWNER_WORK_DIVERGENT_COMPLETION_REPLAY")
+        if current.status is OwnerWorkStatus.CANCELLED:
             raise OwnerWorkRegistryConflict("OWNER_WORK_TERMINAL_STATE")
         updated = replace(
             current, status=OwnerWorkStatus.COMPLETED,
