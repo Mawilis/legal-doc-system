@@ -521,8 +521,9 @@ class WilsyAPIServer:
                 if not callable(decrypt_global_mfa_secret):
                     try:
                         kms_envelope = build_global_mfa_kms_envelope_from_environment()
-                        app.state.global_principal_mfa_kms_envelope = kms_envelope
                         if kms_envelope is not None:
+                            kms_envelope.validate_access()
+                            app.state.global_principal_mfa_kms_envelope = kms_envelope
                             decrypt_global_mfa_secret = kms_envelope.decrypt_secret
                     except GlobalMfaKeyManagementError as error:
                         app.state.global_principal_mfa_kms_envelope = None
