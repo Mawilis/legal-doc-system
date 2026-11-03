@@ -10,7 +10,7 @@ Related integration: PR #342
 ## 0. Delivery checkpoint (2026-11-03)
 
 Implemented on this branch as foundation artifacts:
-- Eleven exact System Services/IAM permission identifiers are present in the canonical permission namespace with SYSTEM scope, SYSTEM assignment requirement, workforce-currentness requirement, no tenant membership, no cross-tenant capability, no financial capability, and no self-authorization.
+- Twelve exact System Services/IAM permission identifiers are present in the canonical permission namespace with SYSTEM scope, SYSTEM assignment requirement, workforce-currentness requirement, no tenant membership, no cross-tenant capability, no financial capability, and no self-authorization.
 - The ongoing SYSTEM permission assignment/revocation allowlists remain unchanged; the new vocabulary is not assignable merely because it is registered.
 - An immutable support-case domain and a Mongo registry now exist. Case writes require a caller-owned transaction; case state and append-only transition events are committed together. Exact scope reads, optimistic revision checks, event idempotency indexes, and strict persisted-field hydration are defined.
 - Unit and disposable real-Mongo tests plus a dedicated GitHub Actions workflow have been added for the case foundation.
