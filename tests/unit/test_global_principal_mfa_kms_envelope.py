@@ -1,8 +1,6 @@
 from __future__ import annotations
 
 import base64
-from types import SimpleNamespace
-
 import pytest
 
 from tools.eos.auth.global_principal_mfa_kms_envelope import (
@@ -129,6 +127,15 @@ def test_rotation_keyring_rejects_key_from_another_region():
             decrypt_key_ids=["arn:aws:kms:eu-west-1:123456789012:key/other"],
             client=_KmsClient(),
         )
+
+
+def test_kms_adapter_requires_full_key_arn_and_matching_explicit_region():
+    with pytest.raises(GlobalMfaKeyManagementError, match="GLOBAL_MFA_KMS_KEY_ARN_REQUIRED"):
+        AwsKmsGlobalMfaEnvelope(key_id="alias/wilsy-mfa", region_name="af-south-1", client=_KmsClient())
+    with pytest.raises(GlobalMfaKeyManagementError, match="GLOBAL_MFA_KMS_REGION_REQUIRED"):
+        AwsKmsGlobalMfaEnvelope(key_id=KEY, client=_KmsClient())
+    with pytest.raises(GlobalMfaKeyManagementError, match="GLOBAL_MFA_KMS_REGION_KEY_MISMATCH"):
+        AwsKmsGlobalMfaEnvelope(key_id=KEY, region_name="eu-west-1", client=_KmsClient())
 
 
 def test_invalid_identity_context_is_rejected():
