@@ -1,5 +1,5 @@
 """TITLE: WILSY OS Permission Namespace Canon Certification.
-VERSION: v1.12.0-SYSTEM-SERVICES-IAM-VOCABULARY-CERT
+VERSION: v1.13.0-SYSTEM-SERVICES-AUDIT-READ-CERT
 AUTHORITY: Certification of immutable permission vocabulary semantics only.
 EPITOME: Proves bounded namespaces, fail-closed metadata, deterministic policy
 bytes, and exact own-tenant subscription/plan/WILSY AI capacity,
@@ -9,7 +9,7 @@ ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/tests/unit/test_
 COLLABORATION / OWNERSHIP: Wilson Khanyezi / Wilsy Core Engineering.
 CERTIFICATION/UPDATE DATE: 2026-10-15.
 CHANGELOG:
-2026-11-03 v1.12.0-SYSTEM-SERVICES-IAM-VOCABULARY-CERT certifies eleven exact SYSTEM-scoped System Services/IAM vocabulary entries as assignment-required, workforce-current, non-self-authorizing metadata only. Closed-canon cardinality is 137 canonical permissions / 140 total rows. No role grants or assignment allowlist changes are created.
+2026-11-03 v1.13.0-SYSTEM-SERVICES-AUDIT-READ-CERT certifies twelve exact SYSTEM-scoped System Services/IAM vocabulary entries as assignment-required, workforce-current, non-self-authorizing metadata only. Closed-canon cardinality is 137 canonical permissions / 140 total rows. No role grants or assignment allowlist changes are created.
 2026-10-20 v1.10.0-P47-R76-BINDING-PROVISION-PERMISSION-CERT certifies the
 exact own-tenant practitioner matter-binding provisioning permission, its
 non-self-authorizing and non-financial metadata, fail-closed aliases, and the
@@ -408,9 +408,9 @@ def test_permission_canon_properties() -> None:
             for row in rows
             if row["disposition"] == "CANONICAL"
         ]
-    ) == 137
+    ) == 138
 
-    assert len(rows) == 140
+    assert len(rows) == 141
 
     for permission_id in tenant:
         metadata = permission_metadata(
@@ -1012,13 +1012,14 @@ def test_system_services_and_iam_vocabulary_is_system_scoped_and_non_authorizing
         "system_services:recovery:request",
         "system_services:session:revoke",
         "system_services:incident:escalate",
+        "system_services:audit:read",
         "iam:access_request:read",
         "iam:access_request:decide",
         "iam:role_assignment:read",
         "iam:role_assignment:write",
         "iam:role_assignment:revoke",
     )
-    assert len(permissions) == 11
+    assert len(permissions) == 12
     for permission in permissions:
         metadata = permission_metadata(permission)
         assert metadata.namespace == "SYSTEM"
