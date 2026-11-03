@@ -23,7 +23,7 @@ from tools.eos.auth.tenant_business_role import TenantBusinessRoleStatus
 from tools.eos.auth.tenant_business_role_repository import TenantBusinessRoleRepository
 from tools.eos.auth.tenant_membership import TenantMembershipStatus
 from tools.eos.auth.tenant_membership_repository import TenantMembershipRepository
-from tools.eos.kernel.db import get_client, get_database
+from tools.eos.kernel.db import connect_db, disconnect_db, get_client, get_database
 from tools.eos.saas.billing.subscription_active_entitlement_composition_service import (
     SubscriptionActiveEntitlementCompositionService,
 )
@@ -159,9 +159,14 @@ def _existing_entitlement(database: Any) -> dict[str, Any] | None:
 
 def reconcile(*, apply: bool) -> dict[str, Any]:
     _require(bool(os.getenv("MONGODB_URI", "").strip()), "MONGODB_URI_UNAVAILABLE")
-    client = get_client()
-    database = get_database()
+    connected = False
     try:
+        connected_ok, _connection_message = connect_db()
+        _require(connected_ok, "MONGODB_CONNECTION_FAILED")
+        connected = True
+        client = get_client()
+        database = get_database()
+        _require(client is not None and database is not None, "MONGODB_CONNECTION_UNAVAILABLE")
         _require(database.name == "wilsy", "NON_CANONICAL_DATABASE")
         hello = client.admin.command("hello")
         _require(bool(hello.get("setName")), "MONGO_REPLICA_SET_REQUIRED")
@@ -260,7 +265,8 @@ def reconcile(*, apply: bool) -> dict[str, Any]:
             "authorization_records": authorization_count,
         }
     finally:
-        client.close()
+        if connected:
+            disconnect_db()
 
 
 def main() -> int:
