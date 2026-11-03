@@ -1,5 +1,5 @@
 # TITLE: WILSY OS Global Principal and Membership Selection Certification
-# VERSION: v1.5.0-GLOBAL-PRINCIPAL-SESSION-CERTIFICATION-CI
+# VERSION: v1.6.0-EOS-DB-ENVIRONMENT-BOUNDARY-CERTIFICATION
 # AUTHORITY: CI orchestration for global principal, membership and MFA challenge tests.
 # EPITOME: Compile and execute focused unit and real-Mongo certification suites.
 # ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/.github/workflows/global-principal-membership-certification.yml
@@ -48,6 +48,8 @@ on:
       - "tools/eos/auth/global_principal_mfa_session_transition.py"
       - "tools/eos/auth/principal_authentication_rate_limit.py"
       - "tools/eos/api/server.py"
+      - "tools/eos/kernel/db.py"
+      - "tests/unit/test_kernel_db_configuration_authority.py"
       - "tools/eos/api/auth_router.py"
       - "tools/eos/api/global_principal_auth_router.py"
       - "tools/eos/auth/authentication.py"
@@ -154,9 +156,13 @@ jobs:
             tools/eos/auth/global_principal_mfa_session_transition.py \
             tools/eos/auth/principal_authentication_rate_limit.py \
             tools/eos/api/server.py \
+            tools/eos/kernel/db.py \
+            tests/unit/test_kernel_db_configuration_authority.py \
             tools/eos/api/auth_router.py \
             tools/eos/api/global_principal_auth_router.py \
             tools/eos/auth/authentication.py \
+            tools/eos/kernel/db.py \
+            tests/unit/test_kernel_db_configuration_authority.py \
             tests/unit/test_principal_credential_repository.py \
             tests/unit/test_principal_credential_authentication.py \
             tests/unit/test_principal_credential_migration_assessment.py \
@@ -174,6 +180,7 @@ jobs:
             tests/unit/test_global_principal_auth_router.py \
             tests/unit/test_principal_authentication_rate_limit.py \
             tests/unit/test_auth_router_authoritative_mfa.py \
+            tests/unit/test_kernel_db_configuration_authority.py \
             tests/integration/test_membership_selection_challenge_mongo.py \
             tests/integration/test_global_principal_session_authority_mongo.py \
             tests/integration/test_global_principal_mfa_session_transition_mongo.py \
@@ -196,9 +203,13 @@ jobs:
             tools/eos/auth/global_principal_mfa_session_transition.py \
             tools/eos/auth/principal_authentication_rate_limit.py \
             tools/eos/api/server.py \
+            tools/eos/kernel/db.py \
+            tests/unit/test_kernel_db_configuration_authority.py \
             tools/eos/api/auth_router.py \
             tools/eos/api/global_principal_auth_router.py \
             tools/eos/auth/authentication.py \
+            tools/eos/kernel/db.py \
+            tests/unit/test_kernel_db_configuration_authority.py \
             tests/unit/test_membership_selection_challenge.py \
             tests/unit/test_global_principal_session_authority.py \
             tests/unit/test_global_principal_totp_verifier.py \
@@ -208,6 +219,7 @@ jobs:
             tests/unit/test_global_principal_mfa_session_transition.py \
             tests/unit/test_global_principal_auth_challenge_startup.py \
             tests/unit/test_auth_router_authoritative_mfa.py \
+            tests/unit/test_kernel_db_configuration_authority.py \
             tests/unit/test_global_principal_access_token_currentness.py \
             tests/unit/test_global_principal_auth_router.py \
             tests/unit/test_principal_authentication_rate_limit.py \
