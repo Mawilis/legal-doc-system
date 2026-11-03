@@ -31,14 +31,12 @@ import loggerRaw from '../utils/logger.js';
 import auditLogger from '../utils/auditLogger.js';
 import { broadcastTelemetry } from '../utils/telemetryHelper.js';
 import { breakerRegistry } from '../utils/circuitBreaker.js';
-import { canBypassTenant } from '../config/roles.registry.js';
-
 const logger = loggerRaw.default || loggerRaw;
 
 // ============================================================================
 // 🏛️ SOVEREIGN PILLAR & BYPASS IDS
 // ============================================================================
-const RETIRED_TENANT_ALIASES = new Set(['WILSY_ROOT', 'MASTER', 'WILSY_MASTER', 'GLOBAL_ROOT', 'WILSY_GLOBAL_ROOT', 'WILSY_SOVEREIGN_ROOT', 'WILSY-SOVEREIGN-ROOT', 'WILSY']);
+const CANONICAL_TENANT_ID = 'WILSYTENANT-4CD2FZ4O';
 
 // 🔐 Secure list of sovereign emails from environment (POPIA/GDPR safe)
 const SOVEREIGN_EMAILS = (process.env.SOVEREIGN_EMAILS || '')
@@ -61,9 +59,8 @@ const OBJECT_ID_REGEX = /^[0-9a-fA-F]{24}$/;
  */
 export const isValidTenantFormat = (tenantId) => {
   if (!tenantId) return false;
-  const tid = String(tenantId).trim();
-  if (RETIRED_TENANT_ALIASES.has(tid.toUpperCase())) return false;
-  return (OBJECT_ID_REGEX.test(tid) && tid.length === 24) || SLUG_REGEX.test(tid);
+  const tid = String(tenantId).trim().toUpperCase();
+  return tid === CANONICAL_TENANT_ID;
 };
 
 /**
@@ -178,10 +175,13 @@ export const tenantGuard = (req, res, next) => {
         req.headers?.['x-tenant-id'] ||
         req.headers?.['X-Tenant-Id'] ||
         req.headers?.['x-wilsy-tenant-id'] ||
-        req.headers?.['X-Wilsy-Tenant-ID'] ||
-        'MASTER';
+        req.headers?.['X-Wilsy-Tenant-ID'];
+      if (sourceRegistryTenantId &&
+          String(sourceRegistryTenantId).trim().toUpperCase() !== CANONICAL_TENANT_ID) {
+        return res.status(403).json({ success: false, code: 'TENANT_NOT_AUTHORIZED' });
+      }
 
-      req.tenantId = String(sourceRegistryTenantId || 'MASTER');
+      req.tenantId = CANONICAL_TENANT_ID;
       req.tenant = req.tenant || {
         id: req.tenantId,
         tenantId: req.tenantId,
@@ -207,10 +207,11 @@ export const tenantGuard = (req, res, next) => {
     ];
     if (publicPaths.some((p) => req.originalUrl?.includes(p) || req.path?.includes(p))) {
       const requestedTenantId = req.headers['x-tenant-id'] || req.headers['X-Tenant-ID'];
-      if (requestedTenantId && RETIRED_TENANT_ALIASES.has(String(requestedTenantId).trim().toUpperCase())) {
-        return res.status(400).json({ success: false, code: 'RETIRED_TENANT_ALIAS' });
+      if (requestedTenantId &&
+          String(requestedTenantId).trim().toUpperCase() !== CANONICAL_TENANT_ID) {
+        return res.status(403).json({ success: false, code: 'TENANT_NOT_AUTHORIZED' });
       }
-      req.tenantId = requestedTenantId ? String(requestedTenantId).trim() : null;
+      req.tenantId = requestedTenantId ? CANONICAL_TENANT_ID : null;
       req.isSovereignAccess = false;
       if (req.tenantId) res.setHeader('X-Tenant-ID', req.tenantId);
 
@@ -236,10 +237,12 @@ export const tenantGuard = (req, res, next) => {
       const founderRole = userRoleUpper === 'FOUNDER' || userRoleUpper === 'OMEGA';
 
       if (isSovereignEmail || omegaClearance || founderRole) {
-        if (!tenantId) tenantId = userTenantId;
+        if (!tenantId) tenantId = req.user.tenantId;
         if (!tenantId) return res.status(400).json({ success: false, code: 'TENANT_CONTEXT_REQUIRED' });
-        if (RETIRED_TENANT_ALIASES.has(String(tenantId).trim().toUpperCase())) return res.status(400).json({ success: false, code: 'RETIRED_TENANT_ALIAS' });
-        req.tenantId = String(tenantId).trim();
+        if (String(tenantId).trim().toUpperCase() !== CANONICAL_TENANT_ID) {
+          return res.status(403).json({ success: false, code: 'TENANT_NOT_AUTHORIZED' });
+        }
+        req.tenantId = CANONICAL_TENANT_ID;
         req.isSovereignAccess = true;
         if (req.session) req.session.tenantId = req.tenantId;
         res.setHeader('X-Tenant-ID', req.tenantId);
@@ -253,83 +256,45 @@ export const tenantGuard = (req, res, next) => {
       }
     }
 
-    // ── Standard Tenant Hopping Check ──────────────────────────────────────
-    if (req.user && req.user.tenantId) {
-      const userTenantId = String(req.user.tenantId);
-      const userRole = req.user.role;
-      const isSovereignUser = canBypassTenant(userRole);
-      if (tenantId && String(tenantId) !== userTenantId && !isSovereignUser) {
+    // ── Canonical Tenant Membership ───────────────────────────────────────
+    if (req.user?.tenantId) {
+      const authenticatedTenantId = String(req.user.tenantId).trim().toUpperCase();
+      const requestedTenantId = tenantId ? String(tenantId).trim().toUpperCase() : authenticatedTenantId;
+      if (authenticatedTenantId !== CANONICAL_TENANT_ID ||
+          requestedTenantId !== CANONICAL_TENANT_ID) {
         const forensicFingerprint = crypto.randomBytes(16).toString('hex').toUpperCase();
-
-        if (breakerRegistry && typeof breakerRegistry.trip === 'function') {
-          breakerRegistry.trip('TENANT_GUARD', userTenantId);
-        }
-
-        broadcastTelemetry(
-          userTenantId,
-          'SECURITY_ALERT',
-          'TENANT_HOPPING_ATTEMPT',
-          'TenantGuard',
-          {
-            userId: req.user.id,
-            attemptedTenant: String(tenantId),
-            forensicFingerprint,
-            ipAddress: req.ip,
-            userRole,
-            isSovereignUser,
-          }
-        );
-
         auditLogger.security('TENANT_ISOLATION_BREACH', {
           userId: req.user.id,
-          attemptedTenant: String(tenantId),
-          anchoredTenant: userTenantId,
+          attemptedTenant: requestedTenantId,
+          anchoredTenant: authenticatedTenantId,
           forensicFingerprint,
-          userRole,
+          userRole: req.user.role,
         });
-
-        // 🔗 Optional blockchain anchoring – non‑blocking fire‑and‑forget
-        if (typeof req.blockchainService === 'function') {
-          const breachPayload = {
-            action: 'TENANT_ISOLATION_BREACH',
-            userId: req.user.id,
-            attemptedTenant: String(tenantId),
-            anchoredTenant: userTenantId,
-            forensicFingerprint,
-            timestamp: new Date().toISOString(),
-          };
-          const breachSeal = crypto.createHash('sha3-512').update(JSON.stringify(breachPayload)).digest('hex').toUpperCase();
-          req.blockchainService(breachSeal).catch(err => {
-            logger.warn('[TENANT_GUARD] Blockchain anchoring failed for breach', { error: err.message });
-          });
-        }
-
-        const end = process.hrtime.bigint();
-        const latencyMs = Number(end - start) / 1e6;
-        logger.info('[TENANT_GUARD] tenantHoppingBlock latency', { latencyMs: latencyMs.toFixed(3) });
-
+        broadcastTelemetry(CANONICAL_TENANT_ID, 'SECURITY_ALERT', 'TENANT_SCOPE_REJECTED', 'TenantGuard', {
+          userId: req.user.id,
+          attemptedTenant: requestedTenantId,
+          forensicFingerprint,
+        });
         return res.status(403).json({
           success: false,
-          error: 'TENANT_ISOLATION_BREACH',
-          code: 'TENANT_HOPPING_DETECTED',
-          message: `Role ${userRole} cannot access tenant ${String(tenantId)}`,
+          error: 'TENANT_NOT_AUTHORIZED',
+          code: 'TENANT_NOT_AUTHORIZED',
           requestId,
           forensicFingerprint,
         });
       }
-
-      tenantId = tenantId || userTenantId;
+      tenantId = CANONICAL_TENANT_ID;
     }
 
     // Tenant identity must be explicit; no synthetic global tenant is selected.
     if (!tenantId) {
       return res.status(400).json({ success: false, code: 'TENANT_CONTEXT_REQUIRED' });
     }
-    if (RETIRED_TENANT_ALIASES.has(String(tenantId).trim().toUpperCase())) {
-      return res.status(400).json({ success: false, code: 'RETIRED_TENANT_ALIAS' });
+    if (String(tenantId).trim().toUpperCase() !== CANONICAL_TENANT_ID) {
+      return res.status(403).json({ success: false, code: 'TENANT_NOT_AUTHORIZED' });
     }
 
-    tenantId = String(tenantId).trim();
+    tenantId = CANONICAL_TENANT_ID;
     const validationDetails = getValidationDetails(tenantId);
 
     if (!validationDetails.isValid) {
