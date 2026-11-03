@@ -1295,6 +1295,276 @@
         "insert_one"
       ],
       "provisioning_owner": "separate_eos_index_provisioner"
+    },
+    {
+      "id": "hr-documents",
+      "database": "canonical_eos_business_database",
+      "collection": "hr_documents",
+      "source": "tools/eos/saas/hr/hr_document_registry.py",
+      "indexes": [
+        {
+          "name": "hr_document_tenant_version_unique",
+          "keys": [
+            [
+              "tenant_id",
+              1
+            ],
+            [
+              "document_version_id",
+              1
+            ]
+          ],
+          "unique": true
+        },
+        {
+          "name": "hr_document_tenant_fingerprint_unique",
+          "keys": [
+            [
+              "tenant_id",
+              1
+            ],
+            [
+              "fingerprint",
+              1
+            ]
+          ],
+          "unique": true
+        },
+        {
+          "name": "hr_document_tenant_employee_created",
+          "keys": [
+            [
+              "tenant_id",
+              1
+            ],
+            [
+              "employee_id",
+              1
+            ],
+            [
+              "created_at",
+              -1
+            ]
+          ],
+          "unique": false
+        },
+        {
+          "name": "hr_document_tenant_employee_document_created",
+          "keys": [
+            [
+              "tenant_id",
+              1
+            ],
+            [
+              "employee_id",
+              1
+            ],
+            [
+              "document_id",
+              1
+            ],
+            [
+              "created_at",
+              -1
+            ]
+          ],
+          "unique": false
+        },
+        {
+          "name": "hr_document_tenant_employee_class_created",
+          "keys": [
+            [
+              "tenant_id",
+              1
+            ],
+            [
+              "employee_id",
+              1
+            ],
+            [
+              "document_class",
+              1
+            ],
+            [
+              "created_at",
+              -1
+            ]
+          ],
+          "unique": false
+        },
+        {
+          "name": "hr_document_tenant_employee_sensitivity_created",
+          "keys": [
+            [
+              "tenant_id",
+              1
+            ],
+            [
+              "employee_id",
+              1
+            ],
+            [
+              "sensitivity",
+              1
+            ],
+            [
+              "created_at",
+              -1
+            ]
+          ],
+          "unique": false
+        }
+      ],
+      "runtime_operations": [
+        "find_one",
+        "find",
+        "insert_one"
+      ],
+      "append_only": true,
+      "provisioning_owner": "separate_eos_index_provisioner"
+    },
+    {
+      "id": "hr-document-commit-uncertainties",
+      "database": "canonical_eos_business_database",
+      "collection": "hr_document_commit_uncertainties",
+      "source": "tools/eos/saas/hr/hr_document_commit_uncertainty_registry.py",
+      "indexes": [
+        {
+          "name": "hr_document_commit_uncertainty_tenant_identity_unique",
+          "keys": [
+            [
+              "tenant_id",
+              1
+            ],
+            [
+              "uncertainty_id",
+              1
+            ]
+          ],
+          "unique": true
+        },
+        {
+          "name": "hr_document_commit_uncertainty_tenant_ingestion_unique",
+          "keys": [
+            [
+              "tenant_id",
+              1
+            ],
+            [
+              "ingestion_reference",
+              1
+            ]
+          ],
+          "unique": true
+        },
+        {
+          "name": "hr_document_commit_uncertainty_tenant_provider_object_unique",
+          "keys": [
+            [
+              "tenant_id",
+              1
+            ],
+            [
+              "provider_name",
+              1
+            ],
+            [
+              "storage_reference",
+              1
+            ],
+            [
+              "object_version_reference",
+              1
+            ]
+          ],
+          "unique": true
+        },
+        {
+          "name": "hr_document_commit_uncertainty_tenant_detected",
+          "keys": [
+            [
+              "tenant_id",
+              1
+            ],
+            [
+              "detected_at",
+              -1
+            ],
+            [
+              "uncertainty_id",
+              1
+            ]
+          ],
+          "unique": false
+        }
+      ],
+      "runtime_operations": [
+        "find_one",
+        "insert_one",
+        "find"
+      ],
+      "append_only": true,
+      "provisioning_owner": "separate_eos_index_provisioner"
+    },
+    {
+      "id": "hr-document-reconciliation-outcomes",
+      "database": "canonical_eos_business_database",
+      "collection": "hr_document_commit_reconciliation_outcomes",
+      "source": "tools/eos/saas/hr/hr_document_commit_reconciliation_outcome_registry.py",
+      "indexes": [
+        {
+          "name": "hr_document_commit_reconciliation_outcome_tenant_identity_unique",
+          "keys": [
+            [
+              "tenant_id",
+              1
+            ],
+            [
+              "outcome_id",
+              1
+            ]
+          ],
+          "unique": true
+        },
+        {
+          "name": "hr_document_commit_reconciliation_outcome_tenant_uncertainty_unique",
+          "keys": [
+            [
+              "tenant_id",
+              1
+            ],
+            [
+              "uncertainty_id",
+              1
+            ]
+          ],
+          "unique": true
+        },
+        {
+          "name": "hr_document_commit_reconciliation_outcome_tenant_reconciled",
+          "keys": [
+            [
+              "tenant_id",
+              1
+            ],
+            [
+              "reconciled_at",
+              -1
+            ],
+            [
+              "outcome_id",
+              1
+            ]
+          ],
+          "unique": false
+        }
+      ],
+      "runtime_operations": [
+        "find_one",
+        "insert_one"
+      ],
+      "append_only": true,
+      "provisioning_owner": "separate_eos_index_provisioner"
     }
   ],
   "excluded_until_inventory_complete": [
@@ -1309,7 +1579,11 @@
     "tenant registry, workforce relationship and subscription/billing collections",
     "all remaining mounted API routers and worker-specific collections",
     "S3 object storage permission scoping and exact bucket/prefix authority",
-    "remaining Legal Evidence registry index definitions and route/worker reachability"
+    "remaining Legal Evidence registry index definitions and route/worker reachability",
+    "HR object-store bucket/KMS workload identity and retention/disposal execution path",
+    "HR commit reconciliation runtime invocation and cleanup scheduler ownership",
+    "billing registry/index declarations and remaining mounted route dependencies",
+    "full mounted router transitive call-graph closure"
   ],
   "execution_gate": "Do not apply until all excluded families are resolved, source definitions are complete for the exact commit, duplicate-data preflight is certified, and a non-production target fingerprint is approved."
 }
