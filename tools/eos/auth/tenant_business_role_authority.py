@@ -130,7 +130,11 @@ def resolve_current_tenant_business_role(*, principal_id: object, tenant_id: obj
             == TenantBusinessRoleStatus.ACTIVE.value
         ):
             if operation is not None and tenant_role_operation_eligibility(role, operation) != ELIGIBLE:
-                return TenantBusinessRoleResult(role, BusinessRoleResolution.NO_ELIGIBLE_TENANT_BUSINESS_ROLE)
+                return TenantBusinessRoleResult(
+                    None,
+                    BusinessRoleResolution.NO_ELIGIBLE_TENANT_BUSINESS_ROLE,
+                    evidence_role=role,
+                )
             return TenantBusinessRoleResult(role, BusinessRoleResolution.RESOLVED)
         return TenantBusinessRoleResult(
             None, BusinessRoleResolution.NO_ACTIVE_TENANT_BUSINESS_ROLE
