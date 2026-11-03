@@ -2834,6 +2834,200 @@
         }
       ],
       "provisioning_owner": "separate_eos_index_provisioner"
+    },
+    {
+      "id": "tenant-branding-assets",
+      "database": "canonical_eos_business_database",
+      "collection": "tenant_branding_assets",
+      "source": "tools/eos/saas/billing/tenant_branding_asset_registry.py",
+      "indexes": [
+        {
+          "name": "tenant_branding_asset_tenant_reference_unique",
+          "keys": [
+            [
+              "tenant_id",
+              1
+            ],
+            [
+              "asset_reference",
+              1
+            ]
+          ],
+          "unique": true
+        },
+        {
+          "name": "tenant_branding_asset_tenant_content",
+          "keys": [
+            [
+              "tenant_id",
+              1
+            ],
+            [
+              "content_fingerprint",
+              1
+            ]
+          ],
+          "unique": false
+        }
+      ],
+      "provisioning_owner": "separate_eos_index_provisioner"
+    },
+    {
+      "id": "tenant-branding-entitlement-history",
+      "database": "canonical_eos_business_database",
+      "collection": "tenant_branding_entitlement_history",
+      "source": "tools/eos/saas/billing/tenant_branding_entitlement_registry.py",
+      "indexes": [
+        {
+          "name": "tenant_branding_entitlement_tenant_identity_revision_unique",
+          "keys": [
+            [
+              "tenant_id",
+              1
+            ],
+            [
+              "entitlement_id",
+              1
+            ],
+            [
+              "lifecycle_revision",
+              1
+            ]
+          ],
+          "unique": true
+        },
+        {
+          "name": "tenant_branding_entitlement_tenant_fingerprint_unique",
+          "keys": [
+            [
+              "tenant_id",
+              1
+            ],
+            [
+              "entitlement_fingerprint",
+              1
+            ]
+          ],
+          "unique": true
+        }
+      ],
+      "provisioning_owner": "separate_eos_index_provisioner"
+    },
+    {
+      "id": "tenant-branding-entitlement-current",
+      "database": "canonical_eos_business_database",
+      "collection": "tenant_branding_entitlement_current",
+      "source": "tools/eos/saas/billing/tenant_branding_entitlement_registry.py",
+      "indexes": [
+        {
+          "name": "tenant_branding_entitlement_current_tenant_identity_unique",
+          "keys": [
+            [
+              "tenant_id",
+              1
+            ],
+            [
+              "entitlement_id",
+              1
+            ]
+          ],
+          "unique": true
+        }
+      ],
+      "provisioning_owner": "separate_eos_index_provisioner"
+    },
+    {
+      "id": "tenant-branding-profiles",
+      "database": "canonical_eos_business_database",
+      "collection": "tenant_branding_profiles",
+      "source": "tools/eos/saas/billing/tenant_branding_profile_registry.py",
+      "indexes": [
+        {
+          "name": "tenant_branding_profile_tenant_profile_unique",
+          "keys": [
+            [
+              "tenant_id",
+              1
+            ],
+            [
+              "profile_id",
+              1
+            ]
+          ],
+          "unique": true
+        },
+        {
+          "name": "tenant_branding_profile_tenant_fingerprint_unique",
+          "keys": [
+            [
+              "tenant_id",
+              1
+            ],
+            [
+              "profile_fingerprint",
+              1
+            ]
+          ],
+          "unique": true
+        }
+      ],
+      "provisioning_owner": "separate_eos_index_provisioner"
+    },
+    {
+      "id": "tenant-branding-profile-selections",
+      "database": "canonical_eos_business_database",
+      "collection": "tenant_branding_profile_selections",
+      "source": "tools/eos/saas/billing/tenant_branding_profile_registry.py",
+      "indexes": [
+        {
+          "name": "tenant_branding_selection_tenant_selection_unique",
+          "keys": [
+            [
+              "tenant_id",
+              1
+            ],
+            [
+              "selection_id",
+              1
+            ]
+          ],
+          "unique": true
+        },
+        {
+          "name": "tenant_branding_selection_tenant_revision_unique",
+          "keys": [
+            [
+              "tenant_id",
+              1
+            ],
+            [
+              "selection_revision",
+              1
+            ]
+          ],
+          "unique": true
+        }
+      ],
+      "provisioning_owner": "separate_eos_index_provisioner"
+    },
+    {
+      "id": "tenant-branding-profile-current",
+      "database": "canonical_eos_business_database",
+      "collection": "tenant_branding_profile_current",
+      "source": "tools/eos/saas/billing/tenant_branding_profile_registry.py",
+      "indexes": [
+        {
+          "name": "tenant_branding_current_tenant_unique",
+          "keys": [
+            [
+              "tenant_id",
+              1
+            ]
+          ],
+          "unique": true
+        }
+      ],
+      "provisioning_owner": "separate_eos_index_provisioner"
     }
   ],
   "excluded_until_inventory_complete": [
