@@ -100,6 +100,10 @@ def test_persisted_schema_and_unknown_state_fail_closed():
     with pytest.raises(SupportCaseError, match="CASE_SCHEMA_INVALID"):
         SupportCase.from_document(payload)
     payload = _case().to_document()
+    payload["password"] = "must-never-persist"
+    with pytest.raises(SupportCaseError, match="CASE_PERSISTED_FIELDS_INVALID"):
+        SupportCase.from_document(payload)
+    payload = _case().to_document()
     payload["status"] = "UNLOCK_EVERYTHING"
     with pytest.raises(SupportCaseError, match="CASE_PERSISTED_STATE_INVALID"):
         SupportCase.from_document(payload)
