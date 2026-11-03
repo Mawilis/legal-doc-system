@@ -1,7 +1,7 @@
 """WILSY OS authoritative MFA router certificate.
 
 TITLE: Authentication Router Authoritative MFA Certificate
-VERSION: v1.4.1-GLOBAL-PRINCIPAL-FAILURE-THROTTLE-HTTP-CERT
+VERSION: v1.4.2-GLOBAL-PRINCIPAL-FAILURE-THROTTLE-HTTP-CERT
 AUTHORITY: Wilsy OS Core Governance
 EPITOME: Certifies exact setup, reconciliation, verification, persistence, and
          bounded tenant-discovery behavior without a live database.
@@ -10,7 +10,9 @@ COLLABORATION / OWNERSHIP: Exercises tools.eos.api.auth_router with deterministi
                            registry and tenant doubles.
 CERTIFICATION / UPDATE DATE: 2026-09-17
 CHANGELOG:
-  v1.4.1-GLOBAL-PRINCIPAL-FAILURE-THROTTLE-HTTP-CERT — explicitly types synthetic ASGI Request doubles for Pyright.
+  v1.4.2-GLOBAL-PRINCIPAL-FAILURE-THROTTLE-HTTP-CERT corrects the closing
+  delimiter on all synthetic ASGI Request doubles.
+  v1.4.1 explicitly typed the first synthetic Request double.
   v1.4.0-GLOBAL-PRINCIPAL-FAILURE-THROTTLE-HTTP-CERT certifies HTTP admission,
   failure-only recording, authenticated-email reset, generic 429 retry guidance,
   and fail-closed throttle persistence handling.
@@ -516,7 +518,7 @@ def test_http_login_records_failed_password_without_logging_raw_email(
     monkeypatch.setattr(auth_router, "PrincipalAuthenticationRateLimit", _Gate)
     monkeypatch.setattr(auth_router, "get_auth_registry", lambda _tenant: registry)
     monkeypatch.setattr(auth_router, "broadcast_telemetry", lambda *args: telemetry.append(args))
-    http_request = cast(Request, SimpleNamespace(client=SimpleNamespace(host="203.0.113.25"))))
+    http_request = cast(Request, SimpleNamespace(client=SimpleNamespace(host="203.0.113.25")))
 
     with pytest.raises(HTTPException) as error:
         _run(
@@ -596,7 +598,7 @@ def test_http_login_fails_closed_when_throttle_authority_is_unavailable(
 
 
 # ARTIFACT: tests/unit/test_auth_router_authoritative_mfa.py
-# VERSION: v1.4.1-GLOBAL-PRINCIPAL-FAILURE-THROTTLE-HTTP-CERT
+# VERSION: v1.4.2-GLOBAL-PRINCIPAL-FAILURE-THROTTLE-HTTP-CERT
 # AUTHORITY BOUNDARY: deterministic HTTP-state certificate only
 # TENANT POSTURE: unknown aliases fail closed without directory enumeration
 # FAIL-CLOSED POSTURE: persistence uncertainty cannot issue a session
