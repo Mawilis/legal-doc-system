@@ -1,5 +1,5 @@
 """TITLE: Wilsy OS Authentication Router.
-VERSION: v1.15.0-P3-R3G-S5-A2-FACTOR-CURRENTNESS-ATOMIC-SESSION-WIRING
+VERSION: v1.16.0-GLOBAL-PRINCIPAL-FAILURE-THROTTLE-HTTP-ADMISSION
 AUTHORITY: Wilsy OS Core Governance.
 EPITOME: Canonical authentication HTTP endpoints, including bounded token verification,
 MFA setup and verification, password-recovery request and reset completion, login,
@@ -9,6 +9,7 @@ COLLABORATION / OWNERSHIP: Authentication service and FastAPI server consume thi
 credential and identity authorities remain in tools.eos.auth.
 CERTIFICATION/UPDATE DATE: 2026-10-16.
 CHANGELOG:
+  v1.16.0-GLOBAL-PRINCIPAL-FAILURE-THROTTLE-HTTP-ADMISSION: Applies EOS-owned dual-dimension failure-only throttling before legacy credential verification. Failed passwords increment normalized-email and direct transport-peer buckets; successful credential verification clears only the email bucket. Exhaustion returns generic 429 with bounded Retry-After; throttle persistence uncertainty returns 503. No raw email is included in login-failure telemetry. The route remains tenant-bound until the global principal/membership/MFA session flow is wired.
   v1.15.0-P3-R3G-S5-A2-FACTOR-CURRENTNESS-ATOMIC-SESSION-WIRING: Atomically binds successful MFA setup and OTP verification session creation to one privileged factor-currentness evidence write in the same caller-owned Mongo transaction. Canonical application startup owns factor-currentness index DDL; request paths perform no index creation. All current-main Legal presentation, tenant discovery, branding, recovery, IAM, billing, and financial boundaries are preserved.
   v1.14.0-LEGAL-CONFLICT-REVIEW-PRESENTATION-PROJECTION: Adds the existing legal_operations:conflict_review:write authority to the bounded workspace presentation projection. Every projection remains independently re-evaluated by the canonical tenant authorization compositor, so only currently authorized Partner and Attorney principals receive the browser presentation capability; Paralegal and Secretary remain excluded. This creates no IAM, role, command, conflict decision, billing, payment, execution, or settlement authority.
   v1.13.0-D21B11-TENANT-BRANDING-ASSET-HTTP: Adds authenticated current-branding asset delivery at /auth/workspace-branding/{logo|favicon}. The browser may select only the closed asset kind; tenant, reference, fingerprint and media identity are server-derived from the revalidated workspace and D21B10 current-branding delivery chain. Each bounded attempt owns a fresh read transaction, retries only governed whole-transaction races, and returns exact immutable D21B5B bytes with private/no-store, nosniff and same-origin response headers. Missing current branding/asset returns bounded 404; authority outage/corruption returns 503. No public URL, filesystem path, base64, upload, IAM, legal-command or financial authority is created.
@@ -90,9 +91,9 @@ FINANCIAL AUTHORITY BOUNDARY: Kennel EOS exclusively owns financial execution.
 
 from __future__ import annotations
 
-VERSION = "v1.15.0-P3-R3G-S5-A2-FACTOR-CURRENTNESS-ATOMIC-SESSION-WIRING"
+VERSION = "v1.16.0-GLOBAL-PRINCIPAL-FAILURE-THROTTLE-HTTP-ADMISSION"
 
-from fastapi import APIRouter, Depends, HTTPException, Response, status
+from fastapi import APIRouter, Depends, HTTPException, Request, Response, status
 from datetime import datetime, timezone
 from functools import lru_cache
 import logging
@@ -142,6 +143,11 @@ from ..auth.authentication import (
 )
 from ..auth.identity import SovereignIdentity
 from ..auth.tenant_access import get_tenant_membership_repository
+from ..auth.principal_authentication_rate_limit import (
+    PrincipalAuthenticationRateLimit,
+    PrincipalAuthenticationRateLimited,
+    PrincipalAuthenticationRateLimitUnavailable,
+)
 from ..auth.tenant_authorization import (
     TenantAuthorizationReason,
     authorize_tenant_operation,
@@ -1096,27 +1102,102 @@ def _require_discovered_tenant_binding(tenant_id: object, user: Any) -> None:
 
 # ─── LOGIN ──────────────────────────────────────────────────────────────────
 @router.post("/login", response_model=AuthResponse, response_model_exclude_none=True)
-async def login(request: AuthRequest):
+async def login(request: AuthRequest, http_request: Request | None = None):
+    rate_gate: PrincipalAuthenticationRateLimit | None = None
+    observed_at = datetime.now(timezone.utc)
+    source_address: str | None = None
+    if http_request is not None:
+        peer = http_request.client
+        if peer is None or not isinstance(peer.host, str) or not peer.host:
+            raise HTTPException(
+                status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+                detail="Authentication is temporarily unavailable.",
+            )
+        source_address = peer.host
+        rate_gate = PrincipalAuthenticationRateLimit()
+        try:
+            rate_gate.require_allowed(
+                email=str(request.email),
+                source_address=source_address,
+                observed_at=observed_at,
+            )
+        except PrincipalAuthenticationRateLimited as error:
+            raise HTTPException(
+                status_code=status.HTTP_429_TOO_MANY_REQUESTS,
+                detail="Too many unsuccessful sign-in attempts. Try again later.",
+                headers={"Retry-After": str(error.retry_after_seconds)},
+            ) from None
+        except PrincipalAuthenticationRateLimitUnavailable:
+            _log_error(
+                RuntimeError("PRINCIPAL_AUTH_RATE_LIMIT_UNAVAILABLE"),
+                "PRINCIPAL_AUTH_RATE_LIMIT_UNAVAILABLE",
+            )
+            raise HTTPException(
+                status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+                detail="Authentication is temporarily unavailable.",
+            ) from None
+
     try:
         auth_registry = get_auth_registry(None)
         user = auth_registry.authenticate(request.email, request.password)
         if not user:
+            if rate_gate is not None and source_address is not None:
+                try:
+                    rate_gate.record_failure(
+                        email=str(request.email),
+                        source_address=source_address,
+                        observed_at=observed_at,
+                    )
+                except PrincipalAuthenticationRateLimitUnavailable:
+                    _log_error(
+                        RuntimeError("PRINCIPAL_AUTH_RATE_LIMIT_WRITE_UNAVAILABLE"),
+                        "PRINCIPAL_AUTH_RATE_LIMIT_WRITE_UNAVAILABLE",
+                    )
+                    raise HTTPException(
+                        status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+                        detail="Authentication is temporarily unavailable.",
+                    ) from None
             broadcast_telemetry(
-                "unresolved", "AUTH", "LOGIN_FAILED", "auth_router", {"email": request.email}
+                "unresolved",
+                "AUTH",
+                "LOGIN_FAILED",
+                "auth_router",
+                {"reason": "INVALID_CREDENTIALS"},
             )
             raise HTTPException(
-                status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid credentials"
+                status_code=status.HTTP_401_UNAUTHORIZED,
+                detail="Invalid credentials",
             )
+
+        if rate_gate is not None:
+            try:
+                rate_gate.record_success(
+                    email=str(request.email),
+                    observed_at=observed_at,
+                )
+            except PrincipalAuthenticationRateLimitUnavailable:
+                _log_error(
+                    RuntimeError("PRINCIPAL_AUTH_RATE_LIMIT_RESET_UNAVAILABLE"),
+                    "PRINCIPAL_AUTH_RATE_LIMIT_RESET_UNAVAILABLE",
+                )
+                raise HTTPException(
+                    status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+                    detail="Authentication is temporarily unavailable.",
+                ) from None
 
         _require_discovered_tenant_binding(request.tenant_id, user)
         existing_otp_secret = auth_registry.get_otp_secret(user.id)
 
         # A durable secret with a missing enrollment flag is reconciliation, not
-        # first-time setup.  Never call get_otp_uri() in this branch: that would
+        # first-time setup. Never call get_otp_uri() in this branch: that would
         # disclose or rotate an already-established provisioning secret.
         if not user.mfaRegistered and existing_otp_secret:
             broadcast_telemetry(
-                user.tenantId, "AUTH", "MFA_RECONCILIATION_REQUIRED", "auth_router", {"userId": user.id}
+                user.tenantId,
+                "AUTH",
+                "MFA_RECONCILIATION_REQUIRED",
+                "auth_router",
+                {"userId": user.id},
             )
             return AuthResponse(
                 status="MFA_RECONCILIATION_REQUIRED",
@@ -1135,7 +1216,11 @@ async def login(request: AuthRequest):
                 user.id, user.tenantId, user.role, user.permissions
             )
             broadcast_telemetry(
-                user.tenantId, "AUTH", "MFA_SETUP_REQUIRED", "auth_router", {"userId": user.id}
+                user.tenantId,
+                "AUTH",
+                "MFA_SETUP_REQUIRED",
+                "auth_router",
+                {"userId": user.id},
             )
             return AuthResponse(
                 status="MFA_SETUP",
@@ -1146,7 +1231,11 @@ async def login(request: AuthRequest):
             )
 
         broadcast_telemetry(
-            user.tenantId, "AUTH", "MFA_CHALLENGE_REQUIRED", "auth_router", {"userId": user.id}
+            user.tenantId,
+            "AUTH",
+            "MFA_CHALLENGE_REQUIRED",
+            "auth_router",
+            {"userId": user.id},
         )
 
         temp_token = auth_registry.generate_pre_auth_jwt(
@@ -1157,20 +1246,20 @@ async def login(request: AuthRequest):
             requiresMFA=True,
             tempToken=temp_token,
         )
-    except PyMongoError as e:
-        _log_error(e, "LOGIN_DB_ERROR")
+    except PyMongoError as error:
+        _log_error(error, "LOGIN_DB_ERROR")
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail="Database error during login. Please try again later.",
-        )
+        ) from None
     except HTTPException:
         raise
-    except Exception as e:
-        _log_error(e, "LOGIN_UNEXPECTED_ERROR")
+    except Exception as error:
+        _log_error(error, "LOGIN_UNEXPECTED_ERROR")
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail="An unexpected error occurred during login.",
-        )
+        ) from None
 
 
 # ─── VALIDATE MFA SETUP ──────────────────────────────────────────────────
@@ -1600,7 +1689,7 @@ async def logout():
 
 
 # ARTIFACT: auth_router.py
-# VERSION: v1.15.0-P3-R3G-S5-A2-FACTOR-CURRENTNESS-ATOMIC-SESSION-WIRING
+# VERSION: v1.16.0-GLOBAL-PRINCIPAL-FAILURE-THROTTLE-HTTP-ADMISSION
 # AUTHORITY BOUNDARY: Authentication/recovery/contact-verification HTTP routing and bounded projections only; D21B11 serves only exact current logo/favicon bytes after workspace revalidation plus D21B10/D21B6/D21B5B proof, D21B7 workspace branding is a read-only D21B6 projection after current durable entitlement/profile/asset correlation, D24A names are descriptive durable rereads, workspace legalPermissions remain authorization-compositor presentation outputs, and D19 practice fields remain descriptive; none creates credential, membership, role, permission, entitlement, asset-upload, legal-command, operating-model, billing, payment, execution, settlement, or financial authority.
 # TENANT POSTURE: workspace branding and D21B11 asset bytes are resolved only for the exact server-revalidated tenant under tenant-scoped D21B2B/D21B4B/D21B5B reads; recovery tenant remains lookup scope only and no caller tenant authority is created.
 # FAIL-CLOSED POSTURE: auth fails closed; D21B11 invalid/missing asset returns bounded absence while current-branding outage/corruption fails closed; workspace permission, durable-principal-profile, or configured-branding authority outage/inconsistency fails closed; lawful no-branding is explicit null, never legacy/browser fallback; D24A never infers person names from email/browser state; D19 never infers missing tenant profile values or operating-model authority; recovery initiation is enumeration-safe generic acceptance.
