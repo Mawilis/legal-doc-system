@@ -53,6 +53,10 @@ No migration creates PrincipalAuthority, TenantMembership, business capacity, au
 
 This repository is intentionally not wired into login or application startup yet. Existing MFA, password reset, refresh, session and access-token currentness paths still depend on the legacy tenant-scoped `users` record. Switching only the login lookup would create inconsistent credential authorities. No production collection/index or credential row has been created by this code change.
 
+- Added `assess_legacy_user_credential`, a read-only migration assessor. It admits only one unique email row with valid credential/MFA shape, an exact ACTIVE global principal, canonical ACTIVE tenant and existing ACTIVE membership. Conflicting/duplicate or incomplete records are quarantined with bounded reason codes; authority outages are surfaced separately.
+- Password verifiers are hidden from the credential object's representation to reduce accidental diagnostic disclosure.
+- The assessor does not write, merge, create principals, create memberships or assign capacities. It has not been run against production data and no production collection/index or credential row has been created.
+
 ## 4. Membership selection projection added in this branch
 
 - `TenantMembershipRepository.list_for_principal` provides a bounded page (maximum 100) sorted by canonical tenant ID, with a continuation cursor and caller-session propagation.
