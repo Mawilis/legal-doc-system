@@ -235,17 +235,16 @@ def _seed_authority(
         ),
         collections["business_role"],
     )
-    for role_id in ("tenant_owner", "ENTERPRISE_ADMIN"):
-        RoleAssignmentRepository.insert(
-            RoleAssignmentAuthority(
-                principal_id,
-                tenant_id,
-                role_id,
-                RoleAssignmentStatus.ACTIVE,
-                0,
-            ),
-            collections["assignment"],
-        )
+    RoleAssignmentRepository.insert(
+        RoleAssignmentAuthority(
+            principal_id,
+            tenant_id,
+            "ENTERPRISE_ADMIN",
+            RoleAssignmentStatus.ACTIVE,
+            0,
+        ),
+        collections["assignment"],
+    )
 
 
 def _plan(
