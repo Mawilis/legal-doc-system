@@ -16,7 +16,7 @@ from tools.eos.api.tenant_authorization_http import (
 )
 from tools.eos.crm.domain.owner_commercial_work_item import OwnerWorkKind, OwnerWorkPriority, OwnerWorkItemError
 from tools.eos.crm.persistence.owner_commercial_work_registry import (
-    COLLECTION, OwnerCommercialWorkRegistry, OwnerWorkRegistryError,
+    COLLECTION, OwnerCommercialWorkRegistry, OwnerWorkRegistryError, OwnerWorkRegistryConflict,
 )
 from tools.eos.crm.service.owner_commercial_workspace_service import (
     OwnerCommercialWorkspaceError, OwnerCommercialWorkspaceService,
@@ -31,6 +31,12 @@ router = APIRouter(prefix="/crm/owner-workspace", tags=["Owner Commercial Worksp
 
 _READ = RequireTenantAuthorization("crm:work_item:read", "crm_work_item_read")
 _CREATE = RequireTenantAuthorization("crm:work_item:create", "crm_work_item_create")
+_COMPLETE = RequireTenantAuthorization("crm:work_item:complete", "crm_work_item_complete")
+
+
+class OwnerWorkCompleteRequest(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+    completion_note: str = Field(min_length=1, max_length=1000)
 
 
 class OwnerWorkCreateRequest(BaseModel):
@@ -65,6 +71,8 @@ def _transaction(callback):
         if code in {"OWNER_WORK_LEGAL_NOT_ENTITLED", "OWNER_WORK_LEGAL_ENTITLEMENT_UNAVAILABLE"}:
             raise HTTPException(status_code=403 if code.endswith("NOT_ENTITLED") else 503, detail=code) from error
         raise HTTPException(status_code=503, detail="OWNER_WORK_SERVICE_UNAVAILABLE") from error
+    except OwnerWorkRegistryConflict as error:
+        raise HTTPException(status_code=409, detail=error.code) from error
     except OwnerWorkRegistryError as error:
         raise HTTPException(status_code=503, detail=error.code) from error
     except OwnerWorkItemError as error:
@@ -118,4 +126,21 @@ async def create_owner_work_item(
     return _transaction(create)
 
 
-__all__ = ["router", "OwnerWorkCreateRequest"]
+@router.post("/work-items/{work_item_id}/complete")
+async def complete_owner_work_item(
+    work_item_id: str,
+    body: OwnerWorkCompleteRequest,
+    context: TenantAuthorizationContext = Depends(_COMPLETE),
+) -> dict[str, object]:
+    """Complete one exact tenant work item with server-owned completion time."""
+    def complete(service: OwnerCommercialWorkspaceService, session: Any):
+        item = service.complete(
+            tenant_id=context.tenant_id, work_item_id=work_item_id,
+            completion_note=body.completion_note,
+            now=datetime.now(timezone.utc), session=session,
+        )
+        return item.to_dict()
+    return _transaction(complete)
+
+
+__all__ = ["router", "OwnerWorkCreateRequest", "OwnerWorkCompleteRequest"]
