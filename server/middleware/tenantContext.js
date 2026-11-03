@@ -135,7 +135,7 @@ const metrics = {
 export const tenantStorage = new AsyncLocalStorage();
 
 const TENANT_CONSTANTS = {
-  DEFAULT_TENANT: process.env.DEFAULT_TENANT || 'WILSYTENANT-4CD2FZ4O',
+  DEFAULT_TENANT: 'WILSYTENANT-4CD2FZ4O',
   ANONYMOUS_USER: 'ANON_ENTITY',
   POPIA_STRICT_MODE: true,
 };
@@ -650,8 +650,7 @@ const ContextValidator = {
     const clean = tenantId.trim();
     const uuidPattern =
       /^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$/;
-    const slugPattern = /^[a-zA-Z0-9_-]{3,80}$/;
-    return uuidPattern.test(clean) || slugPattern.test(clean);
+    return clean.toUpperCase() === 'WILSYTENANT-4CD2FZ4O';
   },
 };
 
@@ -769,10 +768,10 @@ export const tenantContext = async (req, res, next) => {
       error: { code: 'TENANT_CONTEXT_REQUIRED', message: 'An authenticated, explicit tenant context is required.' },
     });
   }
-  if (['WILSY_ROOT', 'MASTER', 'WILSY_MASTER', 'GLOBAL_ROOT', 'WILSY_GLOBAL_ROOT', 'WILSY-SOVEREIGN-ROOT', 'WILSY'].includes(incomingTenantId.toUpperCase())) {
-    return res.status(400).json({
+  if (incomingTenantId.toUpperCase() !== 'WILSYTENANT-4CD2FZ4O') {
+    return res.status(403).json({
       success: false,
-      error: { code: 'RETIRED_TENANT_ALIAS', message: 'Legacy root aliases are not tenant identities.' },
+      error: { code: 'TENANT_NOT_AUTHORIZED', message: 'Only the canonical WILSY tenant is admitted.' },
     });
   }
 

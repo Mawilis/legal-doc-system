@@ -99,3 +99,20 @@ def test_retirement_uses_canonical_kernel_uri_resolution() -> None:
     assert "from tools.eos.kernel.db import resolve_mongo_uri" in source
     assert "uri = resolve_mongo_uri()" in source
     assert 'uri = os.getenv("MONGODB_URI")' not in source
+
+
+def test_every_request_boundary_admits_only_the_canonical_wilsy_tenant() -> None:
+    root = Path(".")
+    guard = (root / "server/middleware/tenantGuard.js").read_text(encoding="utf-8")
+    context = (root / "server/middleware/tenantContext.js").read_text(encoding="utf-8")
+    scope = (root / "server/middleware/tenant.middleware.js").read_text(encoding="utf-8")
+    resolver = (root / "server/middleware/tenantResolver.js").read_text(encoding="utf-8")
+
+    for source in (guard, context, scope, resolver):
+        assert "WILSYTENANT-4CD2FZ4O" in source
+        assert "TENANT_NOT_AUTHORIZED" in source
+    assert "'MASTER'" not in guard
+    assert "RETIRED_TENANT_ALIASES" not in guard
+    assert "process.env.DEFAULT_TENANT" not in context
+    assert "canBypassTenant" not in guard
+    assert "tenantId || requestedTenantId" not in scope
