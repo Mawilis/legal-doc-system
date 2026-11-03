@@ -10,6 +10,8 @@ from collections import defaultdict
 from datetime import datetime, timezone
 from typing import Any, Callable, Protocol
 
+from pymongo.client_session import ClientSession
+
 from tools.eos.auth.current_system_permission_possession import (
     CurrentSystemPermissionPossessionError,
 )
