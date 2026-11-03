@@ -77,6 +77,18 @@ class _Credentials:
         assert principal_id == "principal-global"
         return self.value
 
+    def enable_mfa(self, principal_id, expected_revision, *, session=None):
+        assert session is not None
+        assert principal_id == self.value.principal_id
+        assert self.value.credential_revision == expected_revision
+        assert self.value.mfa_enabled is False
+        self.value = SimpleNamespace(
+            principal_id=principal_id,
+            credential_revision=expected_revision + 1,
+            mfa_enabled=True,
+        )
+        return self.value
+
 
 class _Principals:
     def __init__(self, status=PrincipalStatus.ACTIVE):
@@ -141,6 +153,25 @@ def test_migration_requires_password_verified_current_global_credential_and_lega
     )
     # The legacy row is retained until the tenant-bound authentication cutover.
     assert legacy.rows == [{"user_id": "principal-global", "secret": SECRET}]
+
+
+
+def test_legacy_factor_proof_enables_stale_mfa_flag_and_rebinds_envelope_to_new_revision():
+    service, _legacy, factors, kms = _service(mfa_enabled=False)
+    receipt = service.migrate(
+        principal_id="principal-global",
+        credential_revision=7,
+        code=pyotp.TOTP(SECRET).at(NOW),
+        session=_Session(),
+        now=NOW,
+    )
+    factor = factors.rows[0]
+    assert receipt.credential_revision == 8
+    assert factor["credential_revision"] == 8
+    assert factor["encrypted_secret"]["credential_revision"] == 8
+    assert kms.values[factor["encrypted_secret"]["ciphertext_reference"]] == (
+        SECRET, "principal-global", 8
+    )
 
 
 def test_invalid_legacy_totp_code_is_rejected_without_global_factor_write():
