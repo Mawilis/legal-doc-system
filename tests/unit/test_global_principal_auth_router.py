@@ -16,8 +16,10 @@ from tools.eos.api.global_principal_auth_router import (
     GlobalMfaVerificationRequest,
     GlobalMfaEnrollmentStartRequest,
     GlobalMfaEnrollmentConfirmRequest,
+    GlobalMfaLegacyMigrationRequest,
     start_global_mfa_enrollment,
     confirm_global_mfa_enrollment,
+    migrate_legacy_global_mfa_factor,
     global_login,
     logout_global_session,
     router,
@@ -67,6 +69,7 @@ def test_global_auth_routes_are_mounted_under_one_explicit_prefix() -> None:
         "/auth/global/logout",
         "/auth/global/mfa/enrollment/start",
         "/auth/global/mfa/enrollment/confirm",
+        "/auth/global/mfa/migrate-legacy",
     }
 
 
