@@ -13,6 +13,14 @@ from pydantic import BaseModel, StrictStr
 from pymongo.errors import PyMongoError
 
 from tools.eos.auth.authentication import get_current_identity
+from tools.eos.auth.global_principal_mfa_enrollment_service import (
+    CHALLENGE_COLLECTION as GLOBAL_PRINCIPAL_MFA_ENROLLMENT_CHALLENGE_COLLECTION,
+    FACTOR_COLLECTION as GLOBAL_PRINCIPAL_MFA_ENROLLMENT_FACTOR_COLLECTION,
+    GlobalPrincipalMfaEnrollmentCodeRejected,
+    GlobalPrincipalMfaEnrollmentRejected,
+    GlobalPrincipalMfaEnrollmentService,
+    GlobalPrincipalMfaEnrollmentUnavailable,
+)
 from tools.eos.auth.global_principal_mfa_session_transition import (
     GlobalPrincipalMfaSessionTransition,
 )
@@ -67,6 +75,16 @@ class GlobalMembershipSelectionRequest(BaseModel):
 class GlobalMembershipOptionsRequest(BaseModel):
     selection_challenge: StrictStr
     after_tenant_id: StrictStr | None = None
+
+
+class GlobalMfaEnrollmentStartRequest(BaseModel):
+    email: StrictStr
+    password: StrictStr
+
+
+class GlobalMfaEnrollmentConfirmRequest(BaseModel):
+    enrollment_challenge: StrictStr
+    code: StrictStr
 
 
 class GlobalMfaVerificationRequest(BaseModel):
@@ -438,6 +456,128 @@ async def logout_global_session(identity: Any = Depends(get_current_identity)) -
         _abort_if_active(session)
         raise
     except GlobalPrincipalSessionError:
+        _abort_if_active(session)
+        raise HTTPException(status_code=503, detail="GLOBAL_AUTHENTICATION_UNAVAILABLE") from None
+    except PyMongoError:
+        _abort_if_active(session)
+        raise HTTPException(status_code=503, detail="GLOBAL_AUTHENTICATION_UNAVAILABLE") from None
+    except Exception:
+        _abort_if_active(session)
+        raise
+    finally:
+        session.end_session()
+
+
+@router.post("/mfa/enrollment/start")
+async def start_global_mfa_enrollment(
+    payload: GlobalMfaEnrollmentStartRequest,
+    request: Request,
+) -> dict[str, Any]:
+    """Authenticate the principal and issue one encrypted, short-lived TOTP setup challenge."""
+    _require_ready(request, "global_principal_auth_indexes_ready")
+    _require_ready(request, "global_principal_mfa_enrollment_indexes_ready")
+    kms = getattr(request.app.state, "global_principal_mfa_kms_envelope", None)
+    if kms is None:
+        raise HTTPException(status_code=503, detail="GLOBAL_MFA_KEY_SERVICE_UNAVAILABLE")
+    now = datetime.now(timezone.utc)
+    peer = request.client
+    if peer is None or not isinstance(peer.host, str) or not peer.host:
+        raise HTTPException(status_code=503, detail="GLOBAL_AUTHENTICATION_UNAVAILABLE")
+    source = peer.host
+    rate_gate = PrincipalAuthenticationRateLimit()
+    _rate_limit_or_http(rate_gate, payload.email, source, now)
+    try:
+        principal = authenticate_global_principal(email=payload.email, password=payload.password)
+    except GlobalPrincipalAuthenticationUnavailable:
+        raise HTTPException(status_code=503, detail="GLOBAL_AUTHENTICATION_UNAVAILABLE") from None
+    if principal is None:
+        _record_failure(rate_gate, payload.email, source, now)
+        raise HTTPException(status_code=401, detail="Invalid credentials")
+    try:
+        rate_gate.record_success(email=payload.email, observed_at=now)
+    except PrincipalAuthenticationRateLimitUnavailable:
+        raise HTTPException(status_code=503, detail="GLOBAL_AUTHENTICATION_UNAVAILABLE") from None
+
+    session, database = _begin_transaction()
+    try:
+        service = GlobalPrincipalMfaEnrollmentService(
+            kms=kms,
+            challenge_collection=database[GLOBAL_PRINCIPAL_MFA_ENROLLMENT_CHALLENGE_COLLECTION],
+            factor_collection=database[GLOBAL_PRINCIPAL_MFA_ENROLLMENT_FACTOR_COLLECTION],
+        )
+        receipt = service.issue(
+            principal_id=principal.principal_id,
+            credential_revision=principal.credential_revision,
+            session=session,
+            now=now,
+        )
+        session.commit_transaction()
+        return {
+            "status": "MFA_ENROLLMENT_REQUIRED",
+            "enrollment_challenge": receipt.challenge_token,
+            "expires_at": receipt.expires_at.isoformat(),
+            "provisioning_uri": receipt.provisioning_uri,
+            "secret": receipt.secret,
+        }
+    except GlobalPrincipalMfaEnrollmentRejected as error:
+        _abort_if_active(session)
+        status = 409 if str(error) in {
+            "GLOBAL_MFA_RECOVERY_REQUIRED",
+            "GLOBAL_MFA_ENROLLMENT_ALREADY_PENDING",
+        } else 401
+        raise HTTPException(status_code=status, detail=str(error)) from None
+    except GlobalPrincipalMfaEnrollmentUnavailable:
+        _abort_if_active(session)
+        raise HTTPException(status_code=503, detail="GLOBAL_AUTHENTICATION_UNAVAILABLE") from None
+    except PyMongoError:
+        _abort_if_active(session)
+        raise HTTPException(status_code=503, detail="GLOBAL_AUTHENTICATION_UNAVAILABLE") from None
+    except Exception:
+        _abort_if_active(session)
+        raise
+    finally:
+        session.end_session()
+
+
+@router.post("/mfa/enrollment/confirm")
+async def confirm_global_mfa_enrollment(
+    payload: GlobalMfaEnrollmentConfirmRequest,
+    request: Request,
+) -> dict[str, Any]:
+    """Confirm possession of the new TOTP factor and atomically activate it."""
+    _require_ready(request, "global_principal_mfa_enrollment_indexes_ready")
+    kms = getattr(request.app.state, "global_principal_mfa_kms_envelope", None)
+    if kms is None:
+        raise HTTPException(status_code=503, detail="GLOBAL_MFA_KEY_SERVICE_UNAVAILABLE")
+    session, database = _begin_transaction()
+    try:
+        service = GlobalPrincipalMfaEnrollmentService(
+            kms=kms,
+            challenge_collection=database[GLOBAL_PRINCIPAL_MFA_ENROLLMENT_CHALLENGE_COLLECTION],
+            factor_collection=database[GLOBAL_PRINCIPAL_MFA_ENROLLMENT_FACTOR_COLLECTION],
+        )
+        completion = service.confirm(
+            challenge_token=payload.enrollment_challenge,
+            code=payload.code,
+            session=session,
+            now=datetime.now(timezone.utc),
+        )
+        session.commit_transaction()
+        return {
+            "status": "MFA_ENROLLED",
+            "principal_id": completion.principal_id,
+            "credential_revision": completion.credential_revision,
+            "next_step": "SIGN_IN_AGAIN",
+        }
+    except GlobalPrincipalMfaEnrollmentCodeRejected as error:
+        # Invalid codes are the one failure path whose attempt counter must commit.
+        session.commit_transaction()
+        raise HTTPException(status_code=401, detail=str(error)) from None
+    except GlobalPrincipalMfaEnrollmentRejected as error:
+        _abort_if_active(session)
+        status = 409 if str(error) == "GLOBAL_MFA_ENROLLMENT_ATTEMPTS_EXHAUSTED" else 401
+        raise HTTPException(status_code=status, detail=str(error)) from None
+    except GlobalPrincipalMfaEnrollmentUnavailable:
         _abort_if_active(session)
         raise HTTPException(status_code=503, detail="GLOBAL_AUTHENTICATION_UNAVAILABLE") from None
     except PyMongoError:
