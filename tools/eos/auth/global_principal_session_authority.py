@@ -368,6 +368,7 @@ class GlobalPrincipalSessionAuthority:
         now: datetime | None = None,
         expected_business_role: str | None = None,
         expected_workspace_id: str | None = None,
+        expected_credential_revision: int | None = None,
         expected_membership_revision: int | None = None,
         expected_capacity_revision: int | None = None,
     ) -> bool:
@@ -384,6 +385,7 @@ class GlobalPrincipalSessionAuthority:
             if (
                 (expected_business_role is not None and row.get("business_role") != expected_business_role)
                 or (expected_workspace_id is not None and row.get("workspace_id") != expected_workspace_id)
+                or (expected_credential_revision is not None and row.get("credential_revision") != expected_credential_revision)
                 or (expected_membership_revision is not None and row.get("membership_revision") != expected_membership_revision)
                 or (expected_capacity_revision is not None and row.get("capacity_revision") != expected_capacity_revision)
             ):
