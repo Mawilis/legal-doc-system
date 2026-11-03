@@ -51,3 +51,74 @@ def test_no_transaction_or_authorization_methods():
 # FAIL-CLOSED POSTURE: corruption, duplicates, and stale CAS reject
 # FINANCIAL EXECUTION AUTHORITY: Kennel EOS remains exclusive
 # END OF WILSY OS SOVEREIGN ARTIFACT
+
+
+def test_multi_capacity_revision_requires_caller_owned_transaction_and_appends_history():
+    session = Mock(spec=ClientSession)
+    session.in_transaction.return_value = False
+    database = Mock()
+    with pytest.raises(TenantBusinessRoleRepositoryError, match="TRANSACTION_REQUIRED"):
+        TenantBusinessRoleRepository.record_capacity_revision(
+            value(), None, database, session=session
+        )
+    database.get_collection.assert_not_called()
+
+    session.in_transaction.return_value = True
+    current = Mock()
+    history = Mock()
+    database.get_collection.side_effect = lambda name: {
+        MULTI_COLLECTION: current,
+        HISTORY_COLLECTION: history,
+    }[name]
+    candidate = value("tenant_owner", revision=0)
+    assert TenantBusinessRoleRepository.record_capacity_revision(
+        candidate, None, database, session=session
+    ) == candidate
+    history.insert_one.assert_called_once()
+    current.insert_one.assert_called_once()
+    assert history.insert_one.call_args.kwargs["session"] is session
+    assert current.insert_one.call_args.kwargs["session"] is session
+
+
+def test_multi_capacity_revision_uses_exact_scope_revision_cas():
+    session = Mock(spec=ClientSession)
+    session.in_transaction.return_value = True
+    database = Mock()
+    current = Mock()
+    history = Mock()
+    current.replace_one.return_value = Mock(matched_count=1)
+    database.get_collection.side_effect = lambda name: {
+        MULTI_COLLECTION: current,
+        HISTORY_COLLECTION: history,
+    }[name]
+    candidate = value("tenant_owner", revision=3)
+    assert TenantBusinessRoleRepository.record_capacity_revision(
+        candidate, 2, database, session=session
+    ) == candidate
+    assert current.replace_one.call_args.args[0] == {
+        "principal_id": "p",
+        "tenant_id": "t",
+        "business_role": "tenant_owner",
+        "revision": 2,
+    }
+    assert current.replace_one.call_args.kwargs["upsert"] is False
+    assert current.replace_one.call_args.kwargs["session"] is session
+
+
+def test_multi_capacity_revision_rejects_stale_revision_without_current_write():
+    session = Mock(spec=ClientSession)
+    session.in_transaction.return_value = True
+    database = Mock()
+    current = Mock()
+    history = Mock()
+    current.replace_one.return_value = Mock(matched_count=0)
+    database.get_collection.side_effect = lambda name: {
+        MULTI_COLLECTION: current,
+        HISTORY_COLLECTION: history,
+    }[name]
+    with pytest.raises(TenantBusinessRoleRevisionConflictError):
+        TenantBusinessRoleRepository.record_capacity_revision(
+            value("tenant_owner", revision=1), 0, database, session=session
+        )
+    assert history.insert_one.call_count == 1
+    assert current.replace_one.call_count == 1

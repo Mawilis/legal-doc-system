@@ -1,0 +1,109 @@
+name: Tenant business-role multi-capacity real-Mongo certification
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - "tools/eos/auth/tenant_business_role.py"
+      - "tools/eos/auth/tenant_business_role_repository.py"
+      - "tools/eos/auth/tenant_business_role_authority.py"
+      - "tools/eos/auth/tenant_authorization.py"
+      - "tools/eos/api/tenant_authorization_http.py"
+      - "tests/unit/test_tenant_business_role_*.py"
+      - "tests/unit/test_tenant_authorization.py"
+      - "tests/integration/test_tenant_business_role_repository_real_mongo.py"
+      - ".github/workflows/tenant-business-role-multi-capacity-real-mongo-certification.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: tenant-business-role-multi-capacity-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  tenant-business-role-real-mongo:
+    name: Python EOS multi-capacity authority and real-Mongo certification
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    env:
+      TEST_VENDOR_MONGO_URI: mongodb://127.0.0.1:27017/?replicaSet=wilsyVendorCertRS
+      PIP_DISABLE_PIP_VERSION_CHECK: "1"
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install governed Python dependencies
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install -r requirements.txt pytest==9.1.1
+
+      - name: Start isolated Mongo replica set
+        run: |
+          docker run --detach --name tenant-business-role-cert-mongo \
+            --publish 27017:27017 mongo:7.0.37 \
+            mongod --replSet wilsyVendorCertRS --bind_ip_all
+
+      - name: Initialize Mongo replica set
+        run: |
+          python - <<'PY'
+          import time
+          from pymongo import MongoClient
+
+          client = MongoClient(
+              "mongodb://127.0.0.1:27017",
+              directConnection=True,
+              serverSelectionTimeoutMS=2000,
+          )
+          deadline = time.monotonic() + 60
+          initiated = False
+          last_error = None
+          while True:
+              try:
+                  hello = client.admin.command("hello")
+                  if not initiated and not hello.get("setName"):
+                      client.admin.command({
+                          "replSetInitiate": {
+                              "_id": "wilsyVendorCertRS",
+                              "members": [{"_id": 0, "host": "127.0.0.1:27017"}],
+                          }
+                      })
+                      initiated = True
+                  if client.admin.command("hello").get("isWritablePrimary"):
+                      break
+              except Exception as error:
+                  last_error = error
+              if time.monotonic() >= deadline:
+                  raise RuntimeError(
+                      f"TENANT_BUSINESS_ROLE_MONGO_UNAVAILABLE: {last_error!r}"
+                  ) from last_error
+              time.sleep(1)
+          client.close()
+          PY
+
+      - name: Compile Python EOS authority contracts
+        run: |
+          python -m py_compile \
+            tools/eos/auth/tenant_business_role.py \
+            tools/eos/auth/tenant_business_role_repository.py \
+            tools/eos/auth/tenant_business_role_authority.py \
+            tools/eos/auth/tenant_authorization.py \
+            tools/eos/api/tenant_authorization_http.py
+
+      - name: Run multi-capacity unit and real-Mongo certificates
+        run: |
+          python -m pytest -q \
+            tests/unit/test_tenant_business_role_authority.py \
+            tests/unit/test_tenant_business_role_repository.py \
+            tests/unit/test_tenant_authorization.py \
+            tests/integration/test_tenant_business_role_repository_real_mongo.py
+
+      - name: Stop isolated Mongo replica set
+        if: always()
+        run: docker rm -f tenant-business-role-cert-mongo 2>/dev/null || true

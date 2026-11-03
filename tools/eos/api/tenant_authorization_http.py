@@ -260,7 +260,7 @@ class _TenantAuthorityRoleReader:
         *,
         session: Any = None,
     ) -> object:
-        """Resolve the single canonical business-role row without role fan-out."""
+        """Resolve the legacy business-role projection for compatibility callers."""
 
         try:
             return (
@@ -279,6 +279,24 @@ class _TenantAuthorityRoleReader:
                 "TENANT_BUSINESS_ROLE_AUTHORITY_UNAVAILABLE"
             ) from exc
 
+    def resolve_all_business_roles(
+        self, principal_id: str, tenant_id: str, *, session: Any = None
+    ) -> tuple[object, ...]:
+        """Read all current capacities for operation-aware selection."""
+        try:
+            resolver = getattr(self._business_repository, "resolve_all", None)
+            if callable(resolver):
+                return resolver(principal_id, tenant_id, session=session)
+            # Existing injected adapters remain single-capacity until migrated.
+            legacy = self.resolve_current_business_role(
+                principal_id, tenant_id, session=session
+            )
+            return (legacy,)
+        except TenantBusinessRoleNotFoundError as exc:
+            raise RoleAssignmentNotFoundError("TENANT_BUSINESS_ROLE_NOT_FOUND") from exc
+        except TenantBusinessRoleRepositoryError as exc:
+            raise RoleAssignmentRepositoryError("TENANT_BUSINESS_ROLE_AUTHORITY_UNAVAILABLE") from exc
+
     def resolve(
         self,
         principal_id: str,
@@ -291,13 +309,17 @@ class _TenantAuthorityRoleReader:
 
         if role_id in TENANT_ROLES:
             try:
-                value = (
-                    self._business_repository.resolve(principal_id, tenant_id)
-                    if session is None
-                    else self._business_repository.resolve(
+                exact_resolver = getattr(self._business_repository, "resolve_business_role", None)
+                if callable(exact_resolver):
+                    value = exact_resolver(
+                        principal_id, tenant_id, role_id, session=session
+                    )
+                else:
+                    value = self._business_repository.resolve(
                         principal_id, tenant_id, session=session
                     )
-                )
+                    if getattr(value, "business_role", None) != role_id:
+                        raise TenantBusinessRoleNotFoundError("TENANT_BUSINESS_ROLE_NOT_FOUND")
             except TenantBusinessRoleNotFoundError as exc:
                 raise RoleAssignmentNotFoundError(
                     "TENANT_BUSINESS_ROLE_NOT_FOUND"

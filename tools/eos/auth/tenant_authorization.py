@@ -223,7 +223,7 @@ from tools.eos.auth.roles import get_roles_granting_permission
 
 VERSION = "v1.47.0-R59-P9-REASSIGNMENT-IAM-INTEGRATION"
 class TenantAuthorizationReason(StrEnum):
-    AUTHORIZED="AUTHORIZED"; INVALID_INPUT="INVALID_INPUT"; PRINCIPAL_NOT_FOUND="PRINCIPAL_NOT_FOUND"; PRINCIPAL_INACTIVE="PRINCIPAL_INACTIVE"; PRINCIPAL_AUTHORITY_UNAVAILABLE="PRINCIPAL_AUTHORITY_UNAVAILABLE"; MEMBERSHIP_NOT_FOUND="MEMBERSHIP_NOT_FOUND"; MEMBERSHIP_INACTIVE="MEMBERSHIP_INACTIVE"; MEMBERSHIP_AUTHORITY_UNAVAILABLE="MEMBERSHIP_AUTHORITY_UNAVAILABLE"; NO_ACTIVE_TENANT_BUSINESS_ROLE="NO_ACTIVE_TENANT_BUSINESS_ROLE"; MULTIPLE_ACTIVE_TENANT_BUSINESS_ROLES="MULTIPLE_ACTIVE_TENANT_BUSINESS_ROLES"; TENANT_BUSINESS_ROLE_AUTHORITY_UNAVAILABLE="TENANT_BUSINESS_ROLE_AUTHORITY_UNAVAILABLE"; PERMISSION_UNKNOWN="PERMISSION_UNKNOWN"; PERMISSION_NOT_CANONICAL="PERMISSION_NOT_CANONICAL"; PERMISSION_NAMESPACE_MISMATCH="PERMISSION_NAMESPACE_MISMATCH"; PERMISSION_OPERATION_MISMATCH="PERMISSION_OPERATION_MISMATCH"; PERMISSION_NOT_GRANTED="PERMISSION_NOT_GRANTED"; ROLE_ASSIGNMENT_INACTIVE="ROLE_ASSIGNMENT_INACTIVE"; BUSINESS_ROLE_INELIGIBLE="BUSINESS_ROLE_INELIGIBLE"; SYSTEM_AUTHORITY_REQUIRED="SYSTEM_AUTHORITY_REQUIRED"; FINANCIAL_EXECUTION_PROHIBITED="FINANCIAL_EXECUTION_PROHIBITED"; ROLE_ASSIGNMENT_AUTHORITY_UNAVAILABLE="ROLE_ASSIGNMENT_AUTHORITY_UNAVAILABLE"; WORKFORCE_NOT_CURRENT="WORKFORCE_NOT_CURRENT"; WORKFORCE_AUTHORITY_UNAVAILABLE="WORKFORCE_AUTHORITY_UNAVAILABLE"
+    AUTHORIZED="AUTHORIZED"; INVALID_INPUT="INVALID_INPUT"; PRINCIPAL_NOT_FOUND="PRINCIPAL_NOT_FOUND"; PRINCIPAL_INACTIVE="PRINCIPAL_INACTIVE"; PRINCIPAL_AUTHORITY_UNAVAILABLE="PRINCIPAL_AUTHORITY_UNAVAILABLE"; MEMBERSHIP_NOT_FOUND="MEMBERSHIP_NOT_FOUND"; MEMBERSHIP_INACTIVE="MEMBERSHIP_INACTIVE"; MEMBERSHIP_AUTHORITY_UNAVAILABLE="MEMBERSHIP_AUTHORITY_UNAVAILABLE"; NO_ACTIVE_TENANT_BUSINESS_ROLE="NO_ACTIVE_TENANT_BUSINESS_ROLE"; NO_ELIGIBLE_TENANT_BUSINESS_ROLE="NO_ELIGIBLE_TENANT_BUSINESS_ROLE"; MULTIPLE_ACTIVE_TENANT_BUSINESS_ROLES="MULTIPLE_ACTIVE_TENANT_BUSINESS_ROLES"; TENANT_BUSINESS_ROLE_AUTHORITY_UNAVAILABLE="TENANT_BUSINESS_ROLE_AUTHORITY_UNAVAILABLE"; PERMISSION_UNKNOWN="PERMISSION_UNKNOWN"; PERMISSION_NOT_CANONICAL="PERMISSION_NOT_CANONICAL"; PERMISSION_NAMESPACE_MISMATCH="PERMISSION_NAMESPACE_MISMATCH"; PERMISSION_OPERATION_MISMATCH="PERMISSION_OPERATION_MISMATCH"; PERMISSION_NOT_GRANTED="PERMISSION_NOT_GRANTED"; ROLE_ASSIGNMENT_INACTIVE="ROLE_ASSIGNMENT_INACTIVE"; BUSINESS_ROLE_INELIGIBLE="BUSINESS_ROLE_INELIGIBLE"; SYSTEM_AUTHORITY_REQUIRED="SYSTEM_AUTHORITY_REQUIRED"; FINANCIAL_EXECUTION_PROHIBITED="FINANCIAL_EXECUTION_PROHIBITED"; ROLE_ASSIGNMENT_AUTHORITY_UNAVAILABLE="ROLE_ASSIGNMENT_AUTHORITY_UNAVAILABLE"; WORKFORCE_NOT_CURRENT="WORKFORCE_NOT_CURRENT"; WORKFORCE_AUTHORITY_UNAVAILABLE="WORKFORCE_AUTHORITY_UNAVAILABLE"
 @dataclass(frozen=True, slots=True)
 class TenantAuthorizationDecision:
     authorized: bool
@@ -351,17 +351,20 @@ def authorize_tenant_operation(*, principal_id: object, tenant_id: object, permi
     except TenantMembershipNotFoundError: return TenantAuthorizationDecision(False, TenantAuthorizationReason.MEMBERSHIP_NOT_FOUND)
     except TenantMembershipRepositoryError: return TenantAuthorizationDecision(False, TenantAuthorizationReason.MEMBERSHIP_AUTHORITY_UNAVAILABLE)
     if getattr(membership, "status", None) is not TenantMembershipStatus.ACTIVE: return TenantAuthorizationDecision(False, TenantAuthorizationReason.MEMBERSHIP_INACTIVE)
-    role_result = resolve_current_tenant_business_role(principal_id=pid, tenant_id=tid, repository=business_role_repository, session=session)
-    if role_result.resolution is not BusinessRoleResolution.RESOLVED: return TenantAuthorizationDecision(False, TenantAuthorizationReason(role_result.resolution.value)) if role_result.resolution.value in TenantAuthorizationReason._value2member_map_ else TenantAuthorizationDecision(False, TenantAuthorizationReason.TENANT_BUSINESS_ROLE_AUTHORITY_UNAVAILABLE)
-    if op == "financial_execution": return TenantAuthorizationDecision(False, TenantAuthorizationReason.FINANCIAL_EXECUTION_PROHIBITED, role_result.role)
+    if op == "financial_execution": return TenantAuthorizationDecision(False, TenantAuthorizationReason.FINANCIAL_EXECUTION_PROHIBITED)
     system = requires_system_authority(op)
-    if system is SystemAuthorityClassification.SYSTEM_REQUIRED: return TenantAuthorizationDecision(False, TenantAuthorizationReason.SYSTEM_AUTHORITY_REQUIRED, role_result.role)
-    if system is SystemAuthorityClassification.UNKNOWN: return TenantAuthorizationDecision(False, TenantAuthorizationReason.INVALID_INPUT, role_result.role)
+    if system is SystemAuthorityClassification.SYSTEM_REQUIRED: return TenantAuthorizationDecision(False, TenantAuthorizationReason.SYSTEM_AUTHORITY_REQUIRED)
+    if system is SystemAuthorityClassification.UNKNOWN: return TenantAuthorizationDecision(False, TenantAuthorizationReason.INVALID_INPUT)
     try: metadata = permission_metadata(perm)
-    except ValueError: return TenantAuthorizationDecision(False, TenantAuthorizationReason.PERMISSION_UNKNOWN, role_result.role)
-    if metadata.disposition is not PermissionDisposition.CANONICAL: return TenantAuthorizationDecision(False, TenantAuthorizationReason.PERMISSION_NOT_CANONICAL, role_result.role)
-    if metadata.namespace != "TENANT" or not metadata.tenant_membership_required or metadata.cross_tenant_capable or metadata.financial_execution_capable: return TenantAuthorizationDecision(False, TenantAuthorizationReason.PERMISSION_NAMESPACE_MISMATCH, role_result.role)
-    if _BINDINGS.get(op) != perm: return TenantAuthorizationDecision(False, TenantAuthorizationReason.PERMISSION_OPERATION_MISMATCH, role_result.role)
+    except ValueError: return TenantAuthorizationDecision(False, TenantAuthorizationReason.PERMISSION_UNKNOWN)
+    if metadata.disposition is not PermissionDisposition.CANONICAL: return TenantAuthorizationDecision(False, TenantAuthorizationReason.PERMISSION_NOT_CANONICAL)
+    if metadata.namespace != "TENANT" or not metadata.tenant_membership_required or metadata.cross_tenant_capable or metadata.financial_execution_capable: return TenantAuthorizationDecision(False, TenantAuthorizationReason.PERMISSION_NAMESPACE_MISMATCH)
+    if _BINDINGS.get(op) != perm: return TenantAuthorizationDecision(False, TenantAuthorizationReason.PERMISSION_OPERATION_MISMATCH)
+    role_result = resolve_current_tenant_business_role(principal_id=pid, tenant_id=tid, repository=business_role_repository, session=session, operation=op)
+    if role_result.resolution is not BusinessRoleResolution.RESOLVED:
+        if role_result.resolution is BusinessRoleResolution.NO_ELIGIBLE_TENANT_BUSINESS_ROLE:
+            return TenantAuthorizationDecision(False, TenantAuthorizationReason.BUSINESS_ROLE_INELIGIBLE, role_result.evidence_role or role_result.role)
+        return TenantAuthorizationDecision(False, TenantAuthorizationReason(role_result.resolution.value)) if role_result.resolution.value in TenantAuthorizationReason._value2member_map_ else TenantAuthorizationDecision(False, TenantAuthorizationReason.TENANT_BUSINESS_ROLE_AUTHORITY_UNAVAILABLE)
     if tenant_role_operation_eligibility(role_result.role, op) != ELIGIBLE: return TenantAuthorizationDecision(False, TenantAuthorizationReason.BUSINESS_ROLE_INELIGIBLE, role_result.role)
     if metadata.workforce_currentness_required:
         marker = None

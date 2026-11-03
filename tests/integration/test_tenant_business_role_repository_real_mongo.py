@@ -57,3 +57,129 @@ def test_real_mongo_business_role_repository() -> None:
 # FAIL-CLOSED POSTURE: uniqueness, corruption, stale and gap CAS reject
 # FINANCIAL EXECUTION AUTHORITY: Kennel EOS remains exclusive
 # END OF WILSY OS SOVEREIGN ARTIFACT
+
+
+def test_multi_capacity_history_cas_and_abort_are_atomic_on_real_replica_set() -> None:
+    """Prove the multi-capacity current projection and immutable history share caller transactions."""
+    uri = os.getenv(
+        "TEST_VENDOR_MONGO_URI",
+        "mongodb://127.0.0.1:27027/?replicaSet=wilsyVendorCertRS",
+    )
+    client = MongoClient(uri, serverSelectionTimeoutMS=5000, retryWrites=True)
+    database = client[f"wilsy_business_role_multi_{uuid4().hex}"]
+    legacy = database["tenant_business_roles"]
+    current = database["tenant_business_role_assignments"]
+    history = database["tenant_business_role_assignment_history"]
+    repo = TenantBusinessRoleRepository
+    stamp = datetime(2026, 1, 1, tzinfo=timezone.utc)
+
+    try:
+        hello = client.admin.command("hello")
+        assert hello.get("isWritablePrimary") is True
+        assert hello.get("setName") == "wilsyVendorCertRS"
+
+        repo.ensure_indexes(legacy)
+        repo.ensure_multi_capacity_indexes(database)
+        current_indexes = current.index_information()
+        history_indexes = history.index_information()
+        assert current_indexes["principal_tenant_business_role_capacity_unique"]["unique"] is True
+        assert history_indexes["principal_tenant_business_role_history_revision_unique"]["unique"] is True
+
+        # Preserve the legacy capacity while adding a second independent capacity.
+        legacy_partner = TenantBusinessRoleAuthority(
+            "principal", "tenant", "tenant_legal_partner",
+            TenantBusinessRoleStatus.ACTIVE, 0, stamp, None,
+        )
+        repo.insert(legacy_partner, legacy)
+        owner = TenantBusinessRoleAuthority(
+            "principal", "tenant", "tenant_owner",
+            TenantBusinessRoleStatus.ACTIVE, 0, stamp, None,
+        )
+
+        with client.start_session() as session:
+            with session.start_transaction():
+                assert repo.record_capacity_revision(
+                    owner, None, database, session=session
+                ) == owner
+
+            resolved = repo.resolve_all("principal", "tenant", legacy)
+            assert {value.business_role for value in resolved} == {
+                "tenant_legal_partner", "tenant_owner"
+            }
+            assert repo.resolve_business_role(
+                "principal", "tenant", "tenant_owner", legacy
+            ) == owner
+            assert history.count_documents({
+                "principal_id": "principal",
+                "tenant_id": "tenant",
+                "business_role": "tenant_owner",
+            }) == 1
+
+            revised_owner = TenantBusinessRoleAuthority(
+                "principal", "tenant", "tenant_owner",
+                TenantBusinessRoleStatus.ACTIVE, 1, stamp, None,
+            )
+            with session.start_transaction():
+                assert repo.record_capacity_revision(
+                    revised_owner, 0, database, session=session
+                ) == revised_owner
+
+            assert current.find_one({
+                "principal_id": "principal",
+                "tenant_id": "tenant",
+                "business_role": "tenant_owner",
+            })["revision"] == 1
+            assert history.count_documents({
+                "principal_id": "principal",
+                "tenant_id": "tenant",
+                "business_role": "tenant_owner",
+            }) == 2
+
+            # A history append followed by a stale CAS must roll back as one unit.
+            stale = TenantBusinessRoleAuthority(
+                "principal", "tenant", "tenant_owner",
+                TenantBusinessRoleStatus.ACTIVE, 1, stamp, None,
+            )
+            with pytest.raises(TenantBusinessRoleRevisionConflictError):
+                with session.start_transaction():
+                    repo.record_capacity_revision(
+                        stale, 0, database, session=session
+                    )
+            assert current.find_one({
+                "principal_id": "principal",
+                "tenant_id": "tenant",
+                "business_role": "tenant_owner",
+            })["revision"] == 1
+            assert history.count_documents({
+                "principal_id": "principal",
+                "tenant_id": "tenant",
+                "business_role": "tenant_owner",
+            }) == 2
+
+            # Explicit caller abort must remove both current and history writes.
+            aborted = TenantBusinessRoleAuthority(
+                "principal", "tenant", "tenant_admin",
+                TenantBusinessRoleStatus.ACTIVE, 0, stamp, None,
+            )
+            with pytest.raises(RuntimeError, match="force caller abort"):
+                with session.start_transaction():
+                    repo.record_capacity_revision(
+                        aborted, None, database, session=session
+                    )
+                    raise RuntimeError("force caller abort")
+
+        assert current.find_one({
+            "principal_id": "principal",
+            "tenant_id": "tenant",
+            "business_role": "tenant_admin",
+        }) is None
+        assert history.count_documents({
+            "principal_id": "principal",
+            "tenant_id": "tenant",
+            "business_role": "tenant_admin",
+        }) == 0
+    finally:
+        try:
+            client.drop_database(database.name)
+        finally:
+            client.close()
