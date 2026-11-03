@@ -142,7 +142,7 @@ def test_login_exposes_exact_authoritative_mfa_state(
     registry = _Registry(_user(enrolled=enrolled), secret)
     monkeypatch.setattr(auth_router, "get_auth_registry", lambda _tenant: registry)
 
-    response = _run(auth_router.login(AuthRequest(email="person@example.com", password="valid")))
+    response = _run(auth_router.login(AuthRequest(email="person@example.com", password="valid", tenant_id="TENANT-TEST")))
 
     assert response.status == expected_status
     assert bool(response.qrCode) is qr_expected
@@ -165,6 +165,47 @@ def _http_state_factor_session_adapter(
 ) -> Any:
     """Test-only seam for separately certified factor-currentness composition."""
     return registry.create_session(user)
+
+
+def test_login_rejects_a_tenant_other_than_the_discovered_tenant(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    registry = _Registry(_user(enrolled=True), "SECRET")
+    monkeypatch.setattr(auth_router, "get_auth_registry", lambda _tenant: registry)
+
+    with pytest.raises(HTTPException) as error:
+        _run(
+            auth_router.login(
+                AuthRequest(
+                    email="person@example.com",
+                    password="valid",
+                    tenant_id="TENANT-OTHER",
+                )
+            )
+        )
+
+    assert error.value.status_code == 401
+    assert error.value.detail == "Invalid credentials"
+    assert registry.get_uri_calls == 0
+    assert registry.session_calls == 0
+
+
+def test_login_requires_tenant_discovery_before_credentials(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    registry = _Registry(_user(enrolled=True), "SECRET")
+    monkeypatch.setattr(auth_router, "get_auth_registry", lambda _tenant: registry)
+
+    with pytest.raises(HTTPException) as error:
+        _run(
+            auth_router.login(
+                AuthRequest(email="person@example.com", password="valid")
+            )
+        )
+
+    assert error.value.status_code == 400
+    assert registry.get_uri_calls == 0
+    assert registry.session_calls == 0
 
 
 def test_legacy_otp_verification_persists_and_rereads_before_session(
@@ -198,7 +239,7 @@ def test_legacy_otp_verification_persists_and_rereads_before_session(
     registry.create_session = session  # type: ignore[method-assign]
     monkeypatch.setattr(auth_router, "get_auth_registry", lambda _tenant: registry)
 
-    response = _run(auth_router.verify_otp(VerifyOTPRequest(email="person@example.com", code="123456")))
+    response = _run(auth_router.verify_otp(VerifyOTPRequest(email="person@example.com", code="123456", tenant_id="TENANT-TEST")))
 
     assert response.status == "AUTHENTICATED"
     assert events == ["update", "reread", "session"]
@@ -216,8 +257,8 @@ def test_reconciled_user_returns_normal_mfa_challenge_on_next_login(
     )
     monkeypatch.setattr(auth_router, "get_auth_registry", lambda _tenant: registry)
 
-    _run(auth_router.verify_otp(VerifyOTPRequest(email="person@example.com", code="123456")))
-    response = _run(auth_router.login(AuthRequest(email="person@example.com", password="valid")))
+    _run(auth_router.verify_otp(VerifyOTPRequest(email="person@example.com", code="123456", tenant_id="TENANT-TEST")))
+    response = _run(auth_router.login(AuthRequest(email="person@example.com", password="valid", tenant_id="TENANT-TEST")))
 
     assert response.status == "MFA_REQUIRED"
     assert response.qrCode is None
@@ -235,7 +276,7 @@ def test_invalid_otp_fails_closed_without_session(monkeypatch: pytest.MonkeyPatc
     monkeypatch.setattr(auth_router, "get_auth_registry", lambda _tenant: registry)
 
     with pytest.raises(HTTPException) as error:
-        _run(auth_router.verify_otp(VerifyOTPRequest(email="person@example.com", code="123456")))
+        _run(auth_router.verify_otp(VerifyOTPRequest(email="person@example.com", code="123456", tenant_id="TENANT-TEST")))
 
     assert error.value.status_code == 401
     assert registry.session_calls == 0
@@ -248,7 +289,7 @@ def test_setup_persistence_failure_never_creates_session(monkeypatch: pytest.Mon
     monkeypatch.setattr(auth_router, "get_auth_registry", lambda _tenant: registry)
 
     with pytest.raises(HTTPException) as error:
-        _run(auth_router.validate_mfa_setup(VerifyOTPRequest(email="person@example.com", code="123456")))
+        _run(auth_router.validate_mfa_setup(VerifyOTPRequest(email="person@example.com", code="123456", tenant_id="TENANT-TEST")))
 
     assert error.value.status_code == 500
     assert registry.session_calls == 0
