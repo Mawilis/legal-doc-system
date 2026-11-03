@@ -217,7 +217,7 @@ from tools.eos.legal_operations.service.legal_storefront_public_intent_rate_limi
     LegalStorefrontPublicIntentRateLimit,
 )
 
-VERSION = "v1.37.0-SYSTEM-SERVICES-CASE-INDEX-BOOTSTRAP"
+VERSION = "v1.38.0-GLOBAL-PRINCIPAL-SESSION-INDEX-BOOTSTRAP"
 logger = logging.getLogger("WilsyOS.API.Server")
 
 
@@ -436,7 +436,6 @@ class WilsyAPIServer:
             app.state.p12c_binding_indexes_ready = False
             app.state.global_principal_auth_indexes_ready = False
             app.state.global_principal_session_indexes_ready = False
-            app.state.global_principal_session_indexes_ready = False
             app.state.system_services_case_indexes_ready = False
             app.state.system_services_authority_ready = False
             app.state.system_services_authorizer = None
@@ -619,6 +618,7 @@ class WilsyAPIServer:
             """Release the kernel database during controlled application shutdown."""
             app.state.p12c_binding_indexes_ready = False
             app.state.global_principal_auth_indexes_ready = False
+            app.state.global_principal_session_indexes_ready = False
             app.state.system_services_case_indexes_ready = False
             app.state.system_services_authority_ready = False
             app.state.system_services_authorizer = None
