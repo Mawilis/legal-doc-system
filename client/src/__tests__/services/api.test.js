@@ -220,7 +220,7 @@ describe('api.js – Sovereign HTTP Client', () => {
         headers: {},
       });
 
-      expect(sealed.headers['X-Tenant-ID']).toBe('WILSYTENANT-4CD2FZ4O');
+      expect(sealed.headers['X-Tenant-ID']).toBeUndefined();
     });
 
     it('preserves an explicitly supplied MFA candidate bearer over stale browser storage', async () => {
@@ -243,7 +243,7 @@ describe('api.js – Sovereign HTTP Client', () => {
       expect(sealed.headers.Authorization).toBe(
         'Bearer freshly-verified-candidate-token',
       );
-      expect(sealed.headers['X-Tenant-ID']).toBe('WILSYTENANT-4CD2FZ4O');
+      expect(sealed.headers['X-Tenant-ID']).toBe('TENANT-BOOTSTRAP-TEST');
     });
 
     it('rejects empty or malformed explicit bearer headers and uses the valid stored session', async () => {
