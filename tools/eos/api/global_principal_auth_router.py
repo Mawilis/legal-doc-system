@@ -166,12 +166,12 @@ async def global_login(payload: GlobalCredentialRequest, request: Request) -> di
     if principal is None:
         _record_failure(rate_gate, payload.email, source, now)
         raise HTTPException(status_code=401, detail="Invalid credentials")
-    if principal.mfa_enabled is not True:
-        raise HTTPException(status_code=409, detail="GLOBAL_MFA_ENROLLMENT_REQUIRED")
     try:
         rate_gate.record_success(email=payload.email, observed_at=now)
     except PrincipalAuthenticationRateLimitUnavailable:
         raise HTTPException(status_code=503, detail="GLOBAL_AUTHENTICATION_UNAVAILABLE") from None
+    if principal.mfa_enabled is not True:
+        raise HTTPException(status_code=409, detail="GLOBAL_MFA_ENROLLMENT_REQUIRED")
 
     session, database = _begin_transaction()
     try:
