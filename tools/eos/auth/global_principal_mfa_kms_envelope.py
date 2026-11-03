@@ -73,7 +73,7 @@ class AwsKmsGlobalMfaEnvelope:
                 raise GlobalMfaKeyManagementError("GLOBAL_MFA_KMS_DECRYPT_KEYRING_INVALID")
             candidate = decrypt_key_id.strip()
             candidate_match = re.fullmatch(
-                r"arn:[a-z0-9-]+:kms:([a-z0-9-]+):\\d{12}:key/[A-Za-z0-9-]+",
+                r"arn:[a-z0-9-]+:kms:([a-z0-9-]+):\d{12}:key/[A-Za-z0-9-]+",
                 candidate,
             )
             if candidate_match is None or candidate_match.group(1) != self.region_name:
