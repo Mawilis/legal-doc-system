@@ -35,7 +35,7 @@ KEY = "arn:aws:kms:af-south-1:123456789012:key/test"
 
 def test_encrypt_and_decrypt_bind_ciphertext_to_principal_and_credential_epoch():
     client = _KmsClient()
-    adapter = AwsKmsGlobalMfaEnvelope(key_id=KEY, client=client)
+    adapter = AwsKmsGlobalMfaEnvelope(key_id=KEY, region_name="af-south-1", client=client)
     envelope = adapter.encrypt_secret(
         secret="JBSWY3DPEHPK3PXP",
         principal_id="principal-1",
@@ -60,7 +60,7 @@ def test_encrypt_and_decrypt_bind_ciphertext_to_principal_and_credential_epoch()
 
 def test_ciphertext_cannot_be_decrypted_for_another_principal_or_revision():
     client = _KmsClient()
-    adapter = AwsKmsGlobalMfaEnvelope(key_id=KEY, client=client)
+    adapter = AwsKmsGlobalMfaEnvelope(key_id=KEY, region_name="af-south-1", client=client)
     envelope = adapter.encrypt_secret(
         secret="secret", principal_id="principal-1", credential_revision=9
     )
@@ -72,7 +72,7 @@ def test_ciphertext_cannot_be_decrypted_for_another_principal_or_revision():
 
 def test_envelope_key_substitution_is_rejected_before_kms_call():
     client = _KmsClient()
-    adapter = AwsKmsGlobalMfaEnvelope(key_id=KEY, client=client)
+    adapter = AwsKmsGlobalMfaEnvelope(key_id=KEY, region_name="af-south-1", client=client)
     with pytest.raises(GlobalMfaKeyManagementError, match="GLOBAL_MFA_KMS_ENVELOPE_INVALID"):
         adapter.decrypt_secret(
             {"schema": ENVELOPE_SCHEMA, "provider": "AWS_KMS", "key_id": "other", "ciphertext": "YQ=="},
@@ -100,7 +100,7 @@ def test_environment_factory_requires_key_id_and_rejects_unknown_provider(monkey
 
 def test_invalid_identity_context_is_rejected():
     client = _KmsClient()
-    adapter = AwsKmsGlobalMfaEnvelope(key_id=KEY, client=client)
+    adapter = AwsKmsGlobalMfaEnvelope(key_id=KEY, region_name="af-south-1", client=client)
     with pytest.raises(GlobalMfaKeyManagementError, match="GLOBAL_MFA_KMS_CONTEXT_INVALID"):
         adapter.encrypt_secret(secret="secret", principal_id=" ", credential_revision=1)
     with pytest.raises(GlobalMfaKeyManagementError, match="GLOBAL_MFA_KMS_CONTEXT_INVALID"):
