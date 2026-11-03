@@ -94,6 +94,42 @@ def _run_transaction(callback: Callable[[ClientSession], _Result]) -> _Result:
         raise HTTPException(status_code=503, detail="System Services operation is unavailable.") from error
 
 
+
+@router.get("/workspace-bootstrap")
+def system_services_workspace_bootstrap(
+    request: Request,
+    identity: SovereignIdentity = Depends(get_current_identity),
+):
+    """Project the staff workspace only after the exact EOS queue permission is current."""
+    actor = _actor(identity)
+    service = _service(request)
+
+    def project(session: ClientSession):
+        cases = service.list_system_queue(actor=actor, limit=100, session=session)
+        return {
+            "status": "READY",
+            "authority": "EOS_SYSTEM_SERVICES",
+            "principalId": actor.principal_id,
+            "scope": "SYSTEM",
+            "capabilities": ["system_services:queue:read"],
+            "summary": {
+                "openCases": sum(case.status is SupportCaseStatus.OPEN for case in cases),
+                "securityEscalations": sum(case.status is SupportCaseStatus.ESCALATED_SECURITY_INCIDENT for case in cases),
+            },
+            "cases": [
+                {
+                    "caseId": case.case_id,
+                    "reference": case.case_id,
+                    "category": case.category.value,
+                    "status": case.status.value,
+                }
+                for case in cases
+            ],
+        }
+
+    return _run_transaction(project)
+
+
 @router.get("/cases")
 def list_system_cases(
     request: Request,
