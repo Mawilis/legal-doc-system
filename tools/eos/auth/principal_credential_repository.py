@@ -17,6 +17,7 @@ from tools.eos.auth.principal_credential import (
     MAX_CREDENTIAL_REVISION,
     PrincipalCredential,
     normalize_principal_email,
+    validate_password_hash,
 )
 
 VERSION = "v1.0.0-GLOBAL-PRINCIPAL-CREDENTIAL-REPOSITORY"
@@ -181,17 +182,11 @@ class PrincipalCredentialRepository:
                 "PRINCIPAL_CREDENTIAL_REVISION_CONFLICT"
             )
         try:
-            current = PrincipalCredential(
-                principal_id=principal_id,
-                normalized_email="validation@example.invalid",
-                password_hash=new_password_hash,
-                credential_revision=expected_revision + 1,
-            )
-        except (TypeError, ValueError) as error:
+            validate_password_hash(new_password_hash)
+        except ValueError as error:
             raise PrincipalCredentialRepositoryError(
                 "PRINCIPAL_CREDENTIAL_PASSWORD_VERIFIER_INVALID"
             ) from error
-        del current
         try:
             result = _target(collection).update_one(
                 {
