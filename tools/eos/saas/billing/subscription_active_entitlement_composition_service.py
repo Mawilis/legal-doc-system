@@ -55,6 +55,7 @@ from tools.eos.auth.tenant_authorization_decision_evidence_registry import (
     TenantAuthorizationDecisionEvidenceRegistry,
 )
 from tools.eos.auth.tenant_membership_repository import TenantMembershipRepository
+from tools.eos.auth.tenant_business_role_repository import TenantBusinessRoleRepository
 from tools.eos.kernel.db import get_client, get_database
 from tools.eos.saas.billing.subscription_term_policy import (
     SubscriptionTermKind,
@@ -352,7 +353,7 @@ def _authorization_registry(database: Any) -> TenantAuthorizationDecisionEvidenc
         principal_repository=PrincipalAuthorityRepository,
         membership_repository=TenantMembershipRepository,
         role_assignment_repository=RoleAssignmentRepository,
-        business_role_repository=RoleAssignmentRepository,
+        business_role_repository=TenantBusinessRoleRepository,
     )
 
 
