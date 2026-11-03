@@ -41,6 +41,7 @@ on:
       - "tools/eos/auth/workspace_bootstrap_projection.py"
       - "tools/eos/auth/membership_selection_challenge.py"
       - "tools/eos/auth/global_principal_session_authority.py"
+      - "tools/eos/auth/global_principal_mfa_session_transition.py"
       - "tools/eos/auth/principal_authentication_rate_limit.py"
       - "tools/eos/api/server.py"
       - "tools/eos/api/auth_router.py"
@@ -51,11 +52,13 @@ on:
       - "tests/unit/test_membership_selection_projection.py"
       - "tests/unit/test_membership_selection_challenge.py"
       - "tests/unit/test_global_principal_session_authority.py"
+      - "tests/unit/test_global_principal_mfa_session_transition.py"
       - "tests/unit/test_global_principal_auth_challenge_startup.py"
       - "tests/unit/test_auth_router_authoritative_mfa.py"
       - "tests/unit/test_principal_authentication_rate_limit.py"
       - "tests/integration/test_membership_selection_challenge_mongo.py"
       - "tests/integration/test_global_principal_session_authority_mongo.py"
+      - "tests/integration/test_global_principal_mfa_session_transition_mongo.py"
       - "tests/integration/test_principal_authentication_rate_limit_mongo.py"
       - "tests/integration/test_principal_credential_repository_mongo.py"
       - ".github/workflows/global-principal-membership-certification.yml"
@@ -129,6 +132,7 @@ jobs:
             tools/eos/auth/membership_selection_projection.py \
             tools/eos/auth/membership_selection_challenge.py \
             tools/eos/auth/global_principal_session_authority.py \
+            tools/eos/auth/global_principal_mfa_session_transition.py \
             tools/eos/auth/principal_authentication_rate_limit.py \
             tools/eos/api/server.py \
             tools/eos/api/auth_router.py \
@@ -139,11 +143,13 @@ jobs:
             tests/unit/test_membership_selection_projection.py \
             tests/unit/test_membership_selection_challenge.py \
             tests/unit/test_global_principal_session_authority.py \
+            tests/unit/test_global_principal_mfa_session_transition.py \
             tests/unit/test_global_principal_auth_challenge_startup.py \
             tests/unit/test_principal_authentication_rate_limit.py \
             tests/unit/test_auth_router_authoritative_mfa.py \
             tests/integration/test_membership_selection_challenge_mongo.py \
             tests/integration/test_global_principal_session_authority_mongo.py \
+            tests/integration/test_global_principal_mfa_session_transition_mongo.py \
             tests/integration/test_principal_authentication_rate_limit_mongo.py \
             tests/integration/test_principal_credential_repository_mongo.py
 
@@ -153,11 +159,13 @@ jobs:
             --pythonpath "$(command -v python)" \
             tools/eos/auth/membership_selection_challenge.py \
             tools/eos/auth/global_principal_session_authority.py \
+            tools/eos/auth/global_principal_mfa_session_transition.py \
             tools/eos/auth/principal_authentication_rate_limit.py \
             tools/eos/api/server.py \
             tools/eos/api/auth_router.py \
             tests/unit/test_membership_selection_challenge.py \
             tests/unit/test_global_principal_session_authority.py \
+            tests/unit/test_global_principal_mfa_session_transition.py \
             tests/unit/test_global_principal_auth_challenge_startup.py \
             tests/unit/test_auth_router_authoritative_mfa.py \
             tests/unit/test_principal_authentication_rate_limit.py \
@@ -166,7 +174,7 @@ jobs:
 
       - name: Verify diff whitespace and clean checkout
         run: |
-          git diff --check "origin/${{ github.base_ref }}...HEAD" -- tools/eos/auth/membership_selection_challenge.py tools/eos/api/server.py tools/eos/api/auth_router.py tests/unit/test_membership_selection_challenge.py tests/unit/test_global_principal_session_authority.py tests/unit/test_global_principal_auth_challenge_startup.py tests/unit/test_auth_router_authoritative_mfa.py tests/integration/test_membership_selection_challenge_mongo.py tests/integration/test_global_principal_session_authority_mongo.py tools/eos/auth/global_principal_session_authority.py tools/eos/auth/principal_authentication_rate_limit.py tests/unit/test_principal_authentication_rate_limit.py tests/integration/test_principal_authentication_rate_limit_mongo.py .github/workflows/global-principal-membership-certification.yml
+          git diff --check "origin/${{ github.base_ref }}...HEAD" -- tools/eos/auth/membership_selection_challenge.py tools/eos/api/server.py tools/eos/api/auth_router.py tests/unit/test_membership_selection_challenge.py tests/unit/test_global_principal_session_authority.py tests/unit/test_global_principal_mfa_session_transition.py tests/unit/test_global_principal_auth_challenge_startup.py tests/unit/test_auth_router_authoritative_mfa.py tests/integration/test_membership_selection_challenge_mongo.py tests/integration/test_global_principal_session_authority_mongo.py tools/eos/auth/global_principal_session_authority.py tools/eos/auth/principal_authentication_rate_limit.py tests/unit/test_principal_authentication_rate_limit.py tests/integration/test_principal_authentication_rate_limit_mongo.py .github/workflows/global-principal-membership-certification.yml
           test -z "$(git status --short)"
 
       - name: Run focused global principal and membership tests
@@ -179,11 +187,13 @@ jobs:
             tests/unit/test_membership_selection_projection.py \
             tests/unit/test_membership_selection_challenge.py \
             tests/unit/test_global_principal_session_authority.py \
+            tests/unit/test_global_principal_mfa_session_transition.py \
             tests/unit/test_global_principal_auth_challenge_startup.py \
             tests/unit/test_principal_authentication_rate_limit.py \
             tests/unit/test_auth_router_authoritative_mfa.py \
             tests/integration/test_membership_selection_challenge_mongo.py \
             tests/integration/test_global_principal_session_authority_mongo.py \
+            tests/integration/test_global_principal_mfa_session_transition_mongo.py \
             tests/integration/test_principal_authentication_rate_limit_mongo.py \
             tests/integration/test_principal_credential_repository_mongo.py
 
