@@ -1,11 +1,12 @@
 # TITLE: WILSY OS Global Principal and Membership Selection Certification
-# VERSION: v1.2.1-GLOBAL-PRINCIPAL-MEMBERSHIP-CHALLENGE-CI
+# VERSION: v1.2.2-GLOBAL-PRINCIPAL-MEMBERSHIP-CHALLENGE-CI
 # AUTHORITY: CI orchestration for global principal, membership and MFA challenge tests.
 # EPITOME: Compile and execute focused unit and real-Mongo certification suites.
 # ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/.github/workflows/global-principal-membership-certification.yml
 # COLLABORATION / OWNERSHIP: Wilsy Core Engineering.
 # CERTIFICATION / UPDATE DATE: 2026-11-03.
-# CHANGELOG: v1.2.1 corrects Node setup inputs so the pinned Pyright gate executes.
+# CHANGELOG: v1.2.2 aligns the complete changelog version with the artifact version.
+#           v1.2.1 corrects Node setup inputs so the pinned Pyright gate executes.
 #           v1.2.0 adds pinned Pyright, diff whitespace and clean-checkout verification.
 #           v1.1.0 adds membership-selection challenge source and adversarial unit tests.
 # COMPLIANCE: CI evidence only; does not grant runtime authority.
@@ -141,7 +142,7 @@ jobs:
         run: docker rm -f wilsy-global-principal-mongo 2>/dev/null || true
 
 # ARTIFACT: global-principal-membership-certification.yml
-# VERSION: v1.2.1-GLOBAL-PRINCIPAL-MEMBERSHIP-CHALLENGE-CI
+# VERSION: v1.2.2-GLOBAL-PRINCIPAL-MEMBERSHIP-CHALLENGE-CI
 # AUTHORITY BOUNDARY: focused CI execution only
 # TENANT POSTURE: synthetic principal-scoped and tenant-scoped certification data
 # FAIL-CLOSED POSTURE: compile, unit or replica-set failures fail the job
