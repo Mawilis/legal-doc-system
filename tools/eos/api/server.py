@@ -81,6 +81,7 @@ from fastapi import Depends, FastAPI, HTTPException, Request, Response
 from fastapi.middleware.cors import CORSMiddleware
 
 from .auth_router import router as auth_router
+from .global_principal_auth_router import router as global_principal_auth_router
 from .authority_bridge_router import router as authority_bridge_router
 from .billing_router import evaluate_all_tenant_dunning_lifecycles, router as billing_router
 from .employee_router import router as employee_router
@@ -139,6 +140,10 @@ from tools.eos.auth.global_principal_session_authority import (
     SESSION_COLLECTION as GLOBAL_PRINCIPAL_SESSION_COLLECTION,
     REFRESH_COLLECTION as GLOBAL_PRINCIPAL_REFRESH_COLLECTION,
     GlobalPrincipalSessionAuthority,
+)
+from tools.eos.auth.global_principal_totp_verifier import (
+    COLLECTION as GLOBAL_PRINCIPAL_MFA_FACTOR_COLLECTION,
+    GlobalPrincipalTotpVerifier,
 )
 from tools.eos.auth.principal_authentication_rate_limit import (
     COLLECTION as PRINCIPAL_AUTH_RATE_LIMIT_COLLECTION,
@@ -436,6 +441,8 @@ class WilsyAPIServer:
             app.state.p12c_binding_indexes_ready = False
             app.state.global_principal_auth_indexes_ready = False
             app.state.global_principal_session_indexes_ready = False
+            app.state.global_principal_mfa_factor_indexes_ready = False
+            app.state.global_principal_totp_verifier = None
             app.state.system_services_case_indexes_ready = False
             app.state.system_services_authority_ready = False
             app.state.system_services_authorizer = None
@@ -492,6 +499,18 @@ class WilsyAPIServer:
                     database[GLOBAL_PRINCIPAL_REFRESH_COLLECTION],
                 )
                 app.state.global_principal_session_indexes_ready = client is not None
+                GlobalPrincipalTotpVerifier.ensure_indexes(
+                    database[GLOBAL_PRINCIPAL_MFA_FACTOR_COLLECTION]
+                )
+                app.state.global_principal_mfa_factor_indexes_ready = client is not None
+                decrypt_global_mfa_secret = getattr(
+                    app.state, "global_principal_mfa_decrypt_secret", None
+                )
+                if callable(decrypt_global_mfa_secret):
+                    app.state.global_principal_totp_verifier = GlobalPrincipalTotpVerifier(
+                        collection=database[GLOBAL_PRINCIPAL_MFA_FACTOR_COLLECTION],
+                        decrypt_secret=decrypt_global_mfa_secret,
+                    )
                 PrincipalAuthenticationRateLimit(
                     database[PRINCIPAL_AUTH_RATE_LIMIT_COLLECTION]
                 ).ensure_indexes()
@@ -728,6 +747,7 @@ class WilsyAPIServer:
         app.include_router(plan_router)
 
         app.include_router(auth_router, prefix="/api")
+        app.include_router(global_principal_auth_router, prefix="/api")
         app.include_router(system_services_router, prefix="/api")
 
         app.include_router(billing_router)
