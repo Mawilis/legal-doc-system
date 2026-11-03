@@ -60,6 +60,7 @@ def _document(value: PrincipalCredential) -> dict[str, object]:
         "normalized_email": value.normalized_email,
         "password_hash": value.password_hash,
         "credential_revision": value.credential_revision,
+        "mfa_enabled": value.mfa_enabled,
     }
 
 
@@ -85,6 +86,7 @@ def _hydrate(document: Mapping[str, object]) -> PrincipalCredential:
             normalized_email=document["normalized_email"],  # type: ignore[arg-type]
             password_hash=document["password_hash"],  # type: ignore[arg-type]
             credential_revision=document["credential_revision"],  # type: ignore[arg-type]
+            mfa_enabled=document["mfa_enabled"],  # type: ignore[arg-type]
         )
     except (KeyError, TypeError, ValueError) as error:
         raise PrincipalCredentialPersistedRecordInvalidError(
@@ -238,6 +240,7 @@ class PrincipalCredentialRepository:
             normalized_email=current.normalized_email,
             password_hash=new_password_hash,
             credential_revision=expected_revision + 1,
+            mfa_enabled=current.mfa_enabled,
         )
 
 
