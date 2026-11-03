@@ -24,6 +24,30 @@ The System Services Department is operated by WILSY OS. It is not delegated to e
 
 The current WilsyAccountCommandCenter remains the user's account and self-service entry point. The new System Services Console is a separate staff workspace. Do not duplicate the user's security panel or imply that an account settings panel is an internal help desk.
 
+## 2A. WILSY System Services Agent persona and self-service-first operating model
+
+Create a platform service persona named **WILSY System Services Agent**. This is a product persona and bounded service identity, not a human workforce identity, SYSTEM administrator, or IAM role. It has no standing permission assignments and cannot mint, approve, extend, or revoke its own capabilities.
+
+### User experience order
+
+1. **Self-service first:** password reset through the existing verified-contact recovery flow; recovery-contact verification; MFA recovery/re-enrolment through an assurance-appropriate workflow; active session/device review and supported revocation; sign-in activity; recovery progress; and support-case creation.
+2. **Agent-assisted self-service:** explain errors in plain language, classify the issue, guide the user through the supported flow, check case/recovery status, explain safe next steps, and create a sanitized case when the self-service path is unavailable or fails. The agent never asks for or accepts passwords, OTPs, recovery tokens, MFA seeds, private keys, or full payment credentials.
+3. **Human escalation:** required when the user cannot satisfy existing identity proofing, a verified contact is unavailable, a factor is lost and recovery requires higher assurance, a compromise signal is present, self-service dependencies are unavailable, or an action is policy-designated for independent human approval.
+4. **Resolution and feedback:** return a safe outcome, next step, and case reference; notify only verified channels; preserve audit evidence; and require fresh authentication/MFA when policy says the recovery event invalidated existing sessions or factors.
+
+### Agent authority envelope
+
+- The agent may read public help content and the authenticated user's own, already-authorized self-service projections.
+- It may invoke only allowlisted, user-initiated workflows through EOS service APIs; the API independently validates principal, challenge, currentness, scope, rate limits, replay protection and risk policy.
+- It may create a support case with sanitized category and opaque references. It cannot browse the platform queue or search arbitrary principals.
+- It may not directly change passwords, verify a contact, mark MFA as satisfied, unlock a security suspension, revoke another person's sessions, inspect raw recovery material, decide IAM access requests, assign roles, or approve its own escalation.
+- It must disclose when a human operator is required and must not simulate a successful action when a dependency is unavailable.
+- Agent outputs are advisory. EOS is the sole policy decision and enforcement plane. Tool calls are attributable to the initiating principal and the agent service identity, with a bounded purpose and correlation reference.
+
+### Escalation triggers
+
+Escalate to a human queue only for a concrete exception: identity proofing failure, inaccessible verified factors, suspected account takeover, privileged/platform-root target, repeated recovery failure, policy-required dual control, delivery/persistence outage, or an unresolved user request outside the agent's allowlist. Preserve generic responses where account enumeration is possible.
+
 ## 3. Role and permission model (IAM-owned)
 
 The dashboard must not authorize from a React role string, route, local storage, JWT display claim, or hidden navigation item. EOS must issue a bounded workspace projection only after it verifies current authority. The client uses that projection to decide which panels to render; EOS independently checks every API request.
@@ -112,7 +136,7 @@ Use Mongo transactions and unique/TTL indexes where required. Index DDL belongs 
 
 - **S0 — Certification recovery:** get Global Principal and Membership Selection passing; run its real-Mongo suite; complete Deputy Device Provenance and all dependent workspace checks on one exact PR head SHA.
 - **S1 — IAM contract:** reconcile the proposed permission IDs with the canonical namespace, permission metadata, role policy, system assignment allowlist, current-possession resolver, workforce-currentness and dual-control tests. No automatic grants.
-- **S2 — Service case domain:** immutable case state, repository, transition service, audit/outbox and real-Mongo concurrency/replay tests.
+- **S2 — Service case domain:** immutable case state, repository, transition service, audit/outbox and real-Mongo concurrency/replay tests. Define the WILSY System Services Agent as a bounded product persona, with self-service-first UX and explicit human-escalation triggers; no standing IAM grants to the agent.
 - **S3 — Recovery integration:** case-bound adapters to existing R10 recovery/contact verification and session/device revocation. Preserve enumeration safety and one-time capability semantics.
 - **S4 — EOS APIs and bootstrap:** implement permission-checked reads and commands; deny by default; add real-Mongo API tests.
 - **S5 — Console UI:** build the staff dashboard and navigation only from EOS workspace capability projection; add accessibility, empty/unavailable, denial and cross-tenant tests.
