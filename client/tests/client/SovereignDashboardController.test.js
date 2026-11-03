@@ -79,7 +79,7 @@ describe('SovereignDashboardController resolver', () => {
       activeTenant: { dashboardKey: 'LEGAL_DASHBOARD', defaultDashboard: 'FOUNDER' },
       manualDashboardKey: 'FOUNDER_DASHBOARD',
       dashboardIntent: 'LEGAL_DASHBOARD'
-    })).toBe(DASHBOARD_KEYS.EXECUTIVE);
+    })).toBe(DASHBOARD_KEYS.CRM);
 
     expect(resolveDashboardKey({
       user: { id: 'owner-2', role: 'TENANT_OWNER' },
@@ -100,11 +100,11 @@ describe('SovereignDashboardController resolver', () => {
     })).toBe(DASHBOARD_KEYS.LEGAL);
   });
 
-  it('allows the existing Founder return affordance only when its return signal is present', () => {
+  it('keeps tenant owners in CRM when a stale Founder return is requested', () => {
     expect(resolveDashboardKey({
       user: { id: 'tenant-owner-1', role: 'TENANT_OWNER' },
       manualDashboardKey: 'FOUNDER_DASHBOARD'
-    })).toBe(DASHBOARD_KEYS.EXECUTIVE);
+    })).toBe(DASHBOARD_KEYS.CRM);
 
     expect(resolveDashboardKey({
       user: { id: 'founder-return-1', role: 'TENANT_OWNER', permissions: ['FOUNDER'] },
