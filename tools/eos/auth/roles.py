@@ -582,3 +582,14 @@ ROLE_PERMISSIONS_MAP["LEGAL_PARTNER"].append(
 # FAIL-CLOSED POSTURE: unknown roles and permissions never manufacture grants
 # FINANCIAL EXECUTION AUTHORITY: Kennel EOS exclusively
 # END OF WILSY OS SOVEREIGN ARTIFACT
+
+
+# Owner-commercial work queue: static possession vocabulary only.
+# Current ACTIVE assignment, tenant membership and business-role eligibility
+# remain conjunctive requirements in tenant_authorization.
+ROLE_PERMISSIONS_MAP["ENTERPRISE_ADMIN"].extend([
+    "crm:work_item:read",
+    "crm:work_item:create",
+    "crm:work_item:complete",
+])
+ROLE_PERMISSIONS_MAP["AUDITOR"].append("crm:work_item:read")
