@@ -1,9 +1,10 @@
 """One-tenant, fail-closed Founder Legal entitlement reconciliation.
 
 This command never creates a tenant, principal, role, membership, plan, or
-subscription. It only evolves the exact existing zero-rated Founder plan and
-uses P42 to same-plan-upgrade the exact existing subscription, or calls the
-non-mutating-subscription reconciliation path when Legal is already present.
+subscription. It validates the exact existing zero-rated Founder subscription
+and uses P42's perpetual-platform-owner reconciliation path. Other historical
+or non-eligible subscriptions do not invalidate the exact Founder source;
+P42 independently rejects ambiguous eligible-subscription cardinality.
 
 Dry-run is the default. Pass --apply to perform the governed writes.
 """
@@ -98,7 +99,9 @@ def _load_exact_sources(database: Any) -> tuple[dict[str, Any], dict[str, Any]]:
     subscriptions = database["subscriptions"]
     plans = database["plans"]
     _require(
-        subscriptions.count_documents({"tenant_id": TENANT_ID}) == 1,
+        subscriptions.count_documents(
+            {"subscription_id": SUBSCRIPTION_ID, "tenant_id": TENANT_ID}
+        ) == 1,
         "FOUNDER_SUBSCRIPTION_CARDINALITY_INVALID",
     )
     subscription = subscriptions.find_one(
