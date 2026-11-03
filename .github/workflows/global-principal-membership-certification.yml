@@ -24,7 +24,9 @@ jobs:
   global-principal-membership:
     name: Global credential, migration assessment and membership projection
     runs-on: ubuntu-latest
-    timeout-minutes: 15
+    timeout-minutes: 20
+    env:
+      TEST_GLOBAL_PRINCIPAL_MONGO_URI: mongodb://localhost:27017/?replicaSet=wilsyGlobalPrincipalCertRS
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -41,6 +43,32 @@ jobs:
           python -m pip install --disable-pip-version-check -r requirements.txt
           python -m pip install --disable-pip-version-check pytest==9.1.1
 
+      - name: Start disposable MongoDB replica set
+        run: |
+          docker run --detach --name wilsy-global-principal-mongo --publish 27017:27017 mongo:7.0.37 mongod --replSet wilsyGlobalPrincipalCertRS --bind_ip_all
+          python - <<'PY'
+          import time
+          from pymongo import MongoClient
+          client = MongoClient("mongodb://localhost:27017", directConnection=True, serverSelectionTimeoutMS=2000)
+          deadline = time.monotonic() + 60
+          initiated = False
+          last_error = None
+          while True:
+              try:
+                  hello = client.admin.command("hello")
+                  if not initiated and not hello.get("setName"):
+                      client.admin.command({"replSetInitiate": {"_id": "wilsyGlobalPrincipalCertRS", "members": [{"_id": 0, "host": "localhost:27017"}]}})
+                      initiated = True
+                  if client.admin.command("hello").get("isWritablePrimary"):
+                      break
+              except Exception as error:
+                  last_error = error
+              if time.monotonic() >= deadline:
+                  raise RuntimeError(f"GLOBAL_PRINCIPAL_MONGO_UNAVAILABLE: {last_error!r}")
+              time.sleep(1)
+          client.close()
+          PY
+
       - name: Compile global principal and membership contracts
         run: |
           python -m py_compile \
@@ -52,7 +80,8 @@ jobs:
             tests/unit/test_principal_credential_repository.py \
             tests/unit/test_principal_credential_migration_assessment.py \
             tests/unit/test_tenant_membership_repository.py \
-            tests/unit/test_membership_selection_projection.py
+            tests/unit/test_membership_selection_projection.py \
+            tests/integration/test_principal_credential_repository_mongo.py
 
       - name: Run focused global principal and membership tests
         run: |
@@ -60,4 +89,9 @@ jobs:
             tests/unit/test_principal_credential_repository.py \
             tests/unit/test_principal_credential_migration_assessment.py \
             tests/unit/test_tenant_membership_repository.py \
-            tests/unit/test_membership_selection_projection.py
+            tests/unit/test_membership_selection_projection.py \
+            tests/integration/test_principal_credential_repository_mongo.py
+
+      - name: Stop disposable MongoDB replica set
+        if: always()
+        run: docker rm -f wilsy-global-principal-mongo 2>/dev/null || true
