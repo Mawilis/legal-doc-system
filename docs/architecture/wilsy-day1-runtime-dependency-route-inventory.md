@@ -96,11 +96,11 @@ The roadmap checkpoint identifies these legacy runtime surfaces. This is the mig
 
 ## 7. Package, process and deployment dependencies
 
-- Root package.json currently includes Express-era scripts: server:dev, server:start, pm2:deploy, pm2:stop and pm2:status. Remove only after no active workflow, developer command or deployment references them.
+- Root package.json no longer exposes server:dev, server:start, pm2:deploy, pm2:stop or pm2:status scripts. The default dev command now invokes scripts/start-dev-stack.sh.
 - Root package.json includes frontend/test dependencies and scripts as well as legacy server dependencies. Do not remove all root Node dependencies wholesale.
 - client/package.json owns Vite, React, browser build and Vitest dependencies; preserve.
-- scripts/start-dev-stack.mjs starts EOS, a legacy Express process and the Vite client. Replace with a launcher that starts only EOS and Vite and performs explicit health/readiness checks.
-- client/vite.config.js contains direct EOS route entries and legacy port-4000 proxy entries. Build a full path-to-EOS-router table before deleting catch-all/legacy entries.
+- scripts/start-dev-stack.mjs has been deleted. scripts/start-dev-stack.sh now starts/reuses Python EOS and starts/reuses the Vite presentation client only; bash syntax check passed.
+- client/vite.config.js routes the catch-all /api and legacy /auth compatibility path directly to EOS; there are no port-4000 proxy targets in the current PR branch. Endpoint parity is not yet proven for all frontend callers.
 - Audit .github/workflows, Dockerfiles, deployment manifests, Procfiles, PM2 config, shell scripts and docs for server startup, port 4000, Express and server/.env references.
 - Never print or commit secrets while comparing environment-variable names and configuration ownership.
 
@@ -118,6 +118,255 @@ The roadmap checkpoint identifies these legacy runtime surfaces. This is the mig
 | Establish versioned EOS workspaceId and client contract validation | COMMITTED; tests added, execution pending |
 | Exhaustive recursive server route/import/test/workflow/data inventory | IN PROGRESS |
 | Retire legacy server runtime | NOT STARTED; blocked on migration proof |
+
+
+## 10. Expanded endpoint and legacy dependency census
+
+The committed `runtime_endpoints.txt` snapshot contains 384 source-reference lines and 152 distinct `/api/*` path tokens. It is a client-callsite inventory, not proof that each route is mounted or implemented in EOS. `runtime_fetch_all.txt` contains 92 fetch callsite lines. Direct-origin callsites were also found that bypass Vite, including `http://127.0.0.1:8000/api/v1` and several `http://localhost:5050/api` routes. These must be removed or redirected through an EOS-owned API contract; do not silently point them at unrelated routes.
+
+### Distinct client endpoint tokens
+
+```text
+/api/account/compliance-command
+/api/account/compliance-command?tenantId=
+/api/account/identity-posture?tenantId=
+/api/agriculture/fields
+/api/agriculture/metrics
+/api/analytics/revenue?period=
+/api/audit/verify-qr/:traceId
+/api/auth/discover
+/api/auth/login
+/api/auth/logout
+/api/auth/me
+/api/auth/refresh
+/api/auth/verify-3fa
+/api/auth/webauthn-challenge
+/api/axiosConfig.js
+/api/axiosConfig.js:
+/api/business/contracts?tenantId=
+/api/business/deals?tenantId=
+/api/business/employees?tenantId=
+/api/consulting/metrics
+/api/consulting/projects
+/api/crm
+/api/crm/
+/api/crm/activities
+/api/crm/command
+/api/crm/command-center
+/api/crm/command/address/suggest
+/api/crm/command/contacts
+/api/crm/command/contacts.
+/api/crm/command/leads
+/api/crm/command/leads/
+/api/crm/command/leads/:id
+/api/crm/command/leads/:id.
+/api/crm/command/meetings
+/api/crm/command/meetings/
+/api/crm/command/meetings/:id
+/api/crm/command/meetings/action
+/api/crm/command/meetings/import-preview
+/api/crm/command/protected
+/api/crm/command/search/regulator-evidence/terminal-api-surface-registry/latest
+/api/crm/command/search/regulator-evidence/terminal-cockpit-contract/latest
+/api/crm/command/search/regulator-evidence/terminal-command-index/latest
+/api/crm/command/search/regulator-evidence/terminal-launch-packet/latest
+/api/crm/command/search/regulator-evidence/terminal-release-brief/latest
+/api/crm/command/search/regulator-evidence/terminal-release-passport/latest
+/api/crm/command/search/regulator-evidence/terminal-release-passport/verify/latest
+/api/crm/command/search/regulator-evidence/terminal-release-readiness/latest
+/api/crm/command/setup/control-surface/resolve
+/api/crm/command/setup/reviews
+/api/crm/command/setup/reviews/
+/api/crm/command/setup/reviews/approve
+/api/crm/command/setup/reviews/clear
+/api/crm/command/setup/reviews/evidence
+/api/crm/command/setup/reviews/list
+/api/crm/command/setup/reviews/open
+/api/crm/command/setup/reviews/release
+/api/crm/control-state/leads/filters
+/api/crm/customers
+/api/crm/export
+/api/crm/import
+/api/crm/import/preview
+/api/crm/intelligence/
+/api/crm/intelligence/accounts
+/api/crm/intelligence/deals
+/api/crm/intelligence/leads
+/api/crm/leads/views
+/api/crm/leads/views/
+/api/crm/leads/views/proof-ledger/access/resolve
+/api/crm/live/
+/api/crm/live/accounts
+/api/crm/live/connectors
+/api/crm/live/contacts
+/api/crm/live/deals
+/api/crm/live/evidence
+/api/crm/live/leads
+/api/crm/live/meetings
+/api/crm/live/source-posture
+/api/crm/live/tasks
+/api/crm/source-registry/evidence
+/api/deals
+/api/deals/
+/api/deals?limit=100
+/api/deals?limit=20
+/api/education/metrics
+/api/education/students
+/api/email/send
+/api/energy/generation
+/api/energy/metrics
+/api/entertainment/metrics
+/api/entertainment/productions
+/api/finance/metrics?range=
+/api/finance/portfolio
+/api/forensics/merkle-auditor/anchors?
+/api/forensics/merkle-auditor/receipts/
+/api/forensics/merkle-auditor/receipts?
+/api/forensics/merkle-auditor/run
+/api/forensics/merkle-auditor/seal-safe-window
+/api/forensics/merkle-auditor/status
+/api/forensics/verify-chain
+/api/forensics/verify-chain?
+/api/generate/pdf
+/api/generate/pdf.
+/api/kernel
+/api/kernel/status
+/api/knowledge-base/vault
+/api/legal/deputies
+/api/legal/documents
+/api/legal/metrics?district=
+/api/logistics/agri
+/api/logistics/alerts
+/api/logistics/borders
+/api/logistics/metrics
+/api/logistics/parts
+/api/logistics/ports
+/api/logistics/routes
+/api/logistics/shipments
+/api/logistics/vehicles
+/api/production/alerts
+/api/production/downtime/events
+/api/production/downtime/reasons
+/api/production/lines
+/api/production/live
+/api/production/metrics
+/api/production/oee/components
+/api/production/quality/defects
+/api/production/shift/schedule
+/api/project/alerts
+/api/project/list
+/api/project/metrics
+/api/project/milestones
+/api/project/resources
+/api/project/risks
+/api/property/alerts
+/api/property/financials
+/api/property/list
+/api/property/maintenance
+/api/property/market-trends
+/api/property/metrics
+/api/property/tenants
+/api/public/alerts
+/api/public/analytics
+/api/public/budget
+/api/public/metrics
+/api/public/projects
+/api/public/requests
+/api/public/services
+/api/retail/alerts
+/api/retail/inventory
+/api/retail/products/top
+/api/retail/sales
+/api/source-registry
+/api/source-registry/health
+/api/source-registry/health?wilsyAiContext=RESOLVE
+/api/sports/alerts
+/api/sports/injuries
+/api/sports/matches
+/api/sports/metrics
+/api/sports/players
+/api/sports/standings
+/api/statements/
+/api/superadmin
+/api/superadmin.js
+/api/superadmin/metrics
+/api/tech/alerts
+/api/tech/metrics
+/api/tech/services
+/api/telemetry
+/api/telemetry/boardroom
+/api/telemetry/dashboard
+/api/telemetry/error
+/api/telemetry/event
+/api/tenantApi.js
+/api/tenantApi.js:
+/api/tenants/
+/api/tenants/activate/
+/api/tenants/create
+/api/tenants/suspend
+/api/tenants/suspend/
+/api/users/anchor-biometric
+/api/users/forensic/
+/api/users/revoke
+/api/users?tenant=
+/api/v1
+/api/v1/crm/dashboard
+/api/v1/crm/dashboard.
+/api/v1/crm/execution
+/api/v1/dashboard
+/api/v1/engines
+/api/v1/events
+/api/v1/execution
+/api/v1/execution.
+/api/v1/intelligence/repository-census
+/api/v1/onboarding/initialize
+/api/v1/runtime
+/api/v2/sovereign/demo/ignite
+/api/wilsy/ai/operator/resolve
+```
+
+### Legacy Express application route mounts
+
+`server/server.js` is a selective transport layer. It has health routes (`/ping`, `/api/ping`, `/api/billing/ping`, `/health`, `/`), forwarding mounts for auth, tenants, business/tenants, employees, kernel, plans, subscriptions, billing, legacy auth, owner-workspace, Legal acceptance, Legal AI/advisory, and a local `POST /api/generate/pdf` implementation. It ends with a 404 for every unproxied `/api` route. Its PDF handler and renderer are currently classified RETAIN by `tools/eos/governance/production_surface_policy.json`.
+
+`server/app.js` is a separate 614-line Express application with 17 route declarations/mounts:
+
+```text
+PATCH /api/crm/command/leads/:id
+POST /api/generate/pdf
+GET /api/status
+POST /api/telemetry/pulse
+GET /api/ping
+GET /ping
+USE /api/
+GET /api/v1/sovereign-health
+USE /api/crm/live
+USE /api/crm/command
+USE /api/crm/intelligence
+USE /api/wilsy/ai
+USE /api/billing
+USE /api/qr
+USE /api
+USE /api/forensics
+USE /monitoring
+```
+
+It imports CRM command routes, a local PDF renderer, tenant context middleware, production hardening middleware, metrics, route bundles for CRM live/intelligence, billing, QR, AI, forensics and sovereign operations, audit/telemetry helpers, Redis health and a verification-sync scheduler. It also contains a local non-production PATCH `/api/crm/command/leads/:id` persistence route. This is not a safe blind-delete candidate. Every imported route/service/job and persistence path must be inventoried and either migrated into EOS or formally retired.
+
+`orchestrator.js` is another legacy Node process manager: it forks `server/server.js` and `server/jobs/workerEntry.js`, and restarts failed children. Its references, worker schedule and data effects are a separate retirement gate. Search also found historical gate scripts and release manifests that explicitly read/assert `server/app.js` or `server/server.js`; those tests/evidence must be updated only when their tested behavior is migrated, not deleted to hide failures.
+
+### Runtime and package changes already made on this branch
+
+- Added `scripts/start-dev-stack.sh`, which starts/reuses only Python EOS and Vite. A standalone `bash -n` syntax check passed.
+- Changed root `package.json` default `dev` to the shell launcher.
+- Removed root Express lifecycle scripts (`server:dev`, `server:start`, `pm2:deploy`, `pm2:stop`, `pm2:status`).
+- Deleted `scripts/start-dev-stack.mjs`.
+- Vite's `/api` catch-all and legacy `/auth` compatibility route now target Python EOS directly.
+- This removes the legacy Express process from the default development startup path; it does not yet delete the server source tree or certify every former route.
+
+### Production retention policy conflict
+
+`tools/eos/governance/production_surface_policy.json` explicitly classifies `server/server.js`, the PDF controller/renderer/QR generator and `server/package.json` / `server/package-lock.json` as RETAIN. `tests/unit/test_owner_commercial_workspace_server_mount.py` also reads `server/server.js` and asserts its proxy mount. Other historical CRM gate scripts read `server/app.js`. These governance/test dependencies must be reconciled through a deliberate policy and test migration before deleting those files.
 
 ## 9. Safety and release boundaries
 
