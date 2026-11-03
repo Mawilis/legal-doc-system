@@ -13,6 +13,7 @@ from tools.eos.auth.principal_credential_repository import (
     PrincipalCredentialRepository,
     PrincipalCredentialRepositoryError,
     PrincipalCredentialRevisionConflictError,
+    PrincipalCredentialMfaStateConflictError,
 )
 
 HASH_A = "$2b$12$" + "a" * 53
@@ -72,13 +73,13 @@ class Collection:
         return Result(0)
 
 
-def credential(principal="principal-1", email="Owner@Example.com", password_hash=HASH_A, revision=0):
+def credential(principal="principal-1", email="Owner@Example.com", password_hash=HASH_A, revision=0, mfa_enabled=True):
     return PrincipalCredential(
         principal_id=principal,
         normalized_email=normalize_principal_email(email),
         password_hash=password_hash,
         credential_revision=revision,
-        mfa_enabled=True,
+        mfa_enabled=mfa_enabled,
     )
 
 
@@ -135,6 +136,23 @@ def test_password_hash_revision_compare_and_swap_is_exact_and_monotonic():
     with pytest.raises(PrincipalCredentialRevisionConflictError):
         PrincipalCredentialRepository.compare_and_swap_password_hash(
             "principal-1", 0, HASH_A, collection(fake)
+        )
+
+
+
+def test_mfa_enablement_is_one_time_and_advances_credential_revision():
+    fake = Collection()
+    PrincipalCredentialRepository.insert(
+        credential(mfa_enabled=False), collection(fake)
+    )
+    updated = PrincipalCredentialRepository.enable_mfa(
+        "principal-1", 0, collection(fake)
+    )
+    assert updated.mfa_enabled is True
+    assert updated.credential_revision == 1
+    with pytest.raises(PrincipalCredentialMfaStateConflictError):
+        PrincipalCredentialRepository.enable_mfa(
+            "principal-1", 1, collection(fake)
         )
 
 
