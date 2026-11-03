@@ -78,12 +78,19 @@ describe('SovereignDashboardController resolver', () => {
       activeTenant: { dashboardKey: 'LEGAL_DASHBOARD', defaultDashboard: 'FOUNDER' },
       manualDashboardKey: 'FOUNDER_DASHBOARD',
       dashboardIntent: 'LEGAL_DASHBOARD'
-    })).toBe(DASHBOARD_KEYS.EXECUTIVE);
+    })).toBe(DASHBOARD_KEYS.LEGAL);
 
     expect(resolveDashboardKey({
       user: { id: 'owner-2', role: 'TENANT_OWNER' },
       manualDashboardKey: 'SHERIFF'
     })).toBe(DASHBOARD_KEYS.EXECUTIVE);
+
+    // Product navigation changes presentation only; Legal EOS still authorizes
+    // every commercial-context and workspace request for the exact identity.
+    expect(resolveDashboardKey({
+      user: { id: 'owner-3', role: 'TENANT_OWNER' },
+      manualDashboardKey: 'LEGAL_DASHBOARD'
+    })).toBe(DASHBOARD_KEYS.LEGAL);
 
     expect(resolveDashboardKey({
       user: { id: 'partner-1', role: 'LEGAL_PARTNER' },
