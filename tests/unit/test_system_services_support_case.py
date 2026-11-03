@@ -81,6 +81,7 @@ def test_event_requires_actor_idempotency_and_case_binding_fields():
         evidence_reference="evidence-001",
     )
     assert event.to_document()["to_status"] == "OPEN"
+    assert SupportCaseEvent.from_document(event.to_document()) == event
     with pytest.raises(SupportCaseError, match="CASE_EVENT_IDEMPOTENCY_INVALID"):
         SupportCaseEvent(
             event_id="event-002",
