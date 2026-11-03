@@ -47,7 +47,6 @@ const AuditTimeline = ({ traceIds }) => {
  * @returns {any} Matrix runtime feedback data context output
  */
 const fetchForensicData = async () => {
-      const startTime = performance.now();
       try {
         // 🛡️ Executing the Sovereign Batch Verification Strike
         const response = await api.post('/audit/batch', { traceIds });
