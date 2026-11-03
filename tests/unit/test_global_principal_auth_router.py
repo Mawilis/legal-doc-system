@@ -7,6 +7,9 @@ import pytest
 from fastapi import FastAPI, HTTPException
 from starlette.requests import Request
 
+from tools.eos.auth.global_principal_mfa_enrollment_service import (
+    GlobalPrincipalMfaEnrollmentCodeRejected,
+)
 from tools.eos.api.global_principal_auth_router import (
     GlobalCredentialRequest,
     GlobalMembershipSelectionRequest,
