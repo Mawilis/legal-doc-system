@@ -57,14 +57,24 @@ Illustrative runtime IAM statement (replace the ARN and bind the role through th
 
 This statement is not a complete key policy. The key policy must also authorize the approved account key administrators and the exact workload role. Do not grant the runtime role `kms:CreateKey`, `kms:PutKeyPolicy`, `kms:ScheduleKeyDeletion`, `kms:DisableKey`, or broad `kms:*`.
 
+## Enrollment and legacy-factor migration
+
+The additive EOS API now exposes:
+
+- `POST /api/auth/global/mfa/enrollment/start`: password-authenticated first-time enrollment only when the global credential explicitly has MFA disabled. It returns a one-time provisioning URI and secret; the persisted challenge contains only the KMS envelope and a digest of the bearer.
+- `POST /api/auth/global/mfa/enrollment/confirm`: confirms possession of the new TOTP seed, advances the credential revision, re-encrypts the seed against that new revision, and atomically activates the factor. Five invalid codes lock the short-lived challenge. The caller must sign in again after enrollment.
+- `POST /api/auth/global/mfa/migrate-legacy`: requires global password proof and a valid code from exactly one legacy `otp_secrets.user_id == principal_id` record, plus an ACTIVE global principal. It encrypts the existing factor for the current credential revision. It never generates or resets a legacy factor.
+
+An account with MFA already enabled but no current global factor cannot use password-only enrollment. It must prove the existing legacy TOTP through migration or use the still-outstanding independent recovery process. The legacy plaintext `otp_secrets` row is intentionally retained until the tenant-bound authentication cutover is certified; deleting it earlier would break compatibility. The migration does not copy the plaintext into the global factor record.
+
 ## Certification gates before enabling production login
 
 1. Provision the production key and workload identity through approved infrastructure-as-code.
-2. Set the three required runtime settings and restart EOS; verify startup composes the KMS adapter without exposing key material.
-3. Run a deployment smoke test that encrypts and decrypts a synthetic TOTP seed using the production role and the exact principal/revision encryption context.
-4. Prove cross-principal, cross-revision, wrong-key, wrong-region and missing-provider denials.
-5. Complete the controlled global MFA enrollment and recovery lifecycle. The adapter's encryption primitive alone does not enroll a factor or authorize MFA reset.
-6. Complete real API journey certification against the production KMS adapter and disposable/approved synthetic MongoDB records.
+2. Set the three required runtime settings and restart EOS. Startup performs an ephemeral KMS Encrypt/Decrypt round-trip using a synthetic principal context; readiness remains closed if the real workload identity cannot use the key.
+3. Prove cross-principal, cross-revision, wrong-key, wrong-region, cross-account rotation-key and missing-provider denials.
+4. Complete real API journey certification against the production KMS adapter and disposable/approved synthetic MongoDB records, including enrollment, legacy-factor migration, lockout and transaction rollback.
+5. Complete an independently governed recovery and factor-replacement lifecycle. Neither the enrollment route nor the legacy migration route grants a password-only MFA reset.
+6. Complete legacy login/refresh/logout compatibility cutover, and remove or protect legacy plaintext factor storage only after that cutover.
 7. Obtain independent security approval before switching production traffic to the global login routes.
 
 **No production key, key ARN, IAM role, MFA factor, or production credential is created by this repository change.**
