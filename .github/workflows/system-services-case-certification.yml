@@ -6,6 +6,7 @@ on:
       - "tools/eos/system_services/**"
       - "tests/unit/test_system_services_support_case.py"
       - "tests/unit/test_system_services_case_startup.py"
+      - "tests/unit/test_system_services_agent_policy.py"
       - "tests/integration/test_system_services_support_case_registry_mongo.py"
       - ".github/workflows/system-services-case-certification.yml"
   workflow_dispatch:
@@ -55,9 +56,9 @@ jobs:
           PY
       - name: Compile and type-check case contracts
         run: |
-          python -m py_compile tools/eos/system_services/support_case.py tools/eos/system_services/support_case_registry.py tools/eos/api/server.py tests/unit/test_system_services_support_case.py tests/unit/test_system_services_case_startup.py tests/integration/test_system_services_support_case_registry_mongo.py
+          python -m py_compile tools/eos/system_services/support_case.py tools/eos/system_services/support_case_registry.py tools/eos/system_services/agent_policy.py tools/eos/api/server.py tests/unit/test_system_services_support_case.py tests/unit/test_system_services_case_startup.py tests/unit/test_system_services_agent_policy.py tests/integration/test_system_services_support_case_registry_mongo.py
           python -m pip install --disable-pip-version-check pyright==1.1.413
-          pyright tools/eos/system_services/support_case.py tools/eos/system_services/support_case_registry.py tests/unit/test_system_services_support_case.py tests/unit/test_system_services_case_startup.py tests/integration/test_system_services_support_case_registry_mongo.py
+          pyright tools/eos/system_services/support_case.py tools/eos/system_services/support_case_registry.py tests/unit/test_system_services_support_case.py tests/unit/test_system_services_case_startup.py tests/unit/test_system_services_agent_policy.py tests/integration/test_system_services_support_case_registry_mongo.py
       - name: Run unit and real-Mongo case certification
         run: |
           python -m pytest -q tests/unit/test_system_services_support_case.py tests/unit/test_system_services_case_startup.py tests/integration/test_system_services_support_case_registry_mongo.py
