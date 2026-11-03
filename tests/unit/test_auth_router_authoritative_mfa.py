@@ -1,7 +1,7 @@
 """WILSY OS authoritative MFA router certificate.
 
 TITLE: Authentication Router Authoritative MFA Certificate
-VERSION: v1.3.0-R10C2F8A1-AUTH-ROUTER-AUTHORITATIVE-MFA-CERT-METADATA-REPAIR
+VERSION: v1.4.0-GLOBAL-PRINCIPAL-FAILURE-THROTTLE-HTTP-CERT
 AUTHORITY: Wilsy OS Core Governance
 EPITOME: Certifies exact setup, reconciliation, verification, persistence, and
          bounded tenant-discovery behavior without a live database.
@@ -10,6 +10,9 @@ COLLABORATION / OWNERSHIP: Exercises tools.eos.api.auth_router with deterministi
                            registry and tenant doubles.
 CERTIFICATION / UPDATE DATE: 2026-09-17
 CHANGELOG:
+  v1.4.0-GLOBAL-PRINCIPAL-FAILURE-THROTTLE-HTTP-CERT — certifies HTTP admission,
+  failure-only recording, authenticated-email reset, generic 429 retry guidance,
+  and fail-closed throttle persistence handling.
   v1.3.0-R10C2F8A1-AUTH-ROUTER-AUTHORITATIVE-MFA-CERT-METADATA-REPAIR —
   Preserves the F8A PRE_AUTH fixture reconciliation unchanged and repairs
   only its accidentally regressed certificate version lineage and metadata;
@@ -457,9 +460,143 @@ def test_direct_terminal_or_financial_authority_is_not_exposed() -> None:
     assert "refreshToken=" not in text
 
 
+def test_http_login_records_only_failed_credentials_and_resets_after_success(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    registry = _Registry(_user(enrolled=True), "SECRET")
+    calls: list[tuple[str, str]] = []
+
+    class _Gate:
+        def require_allowed(self, **kwargs: Any) -> None:
+            calls.append(("check", kwargs["email"]))
+
+        def record_failure(self, **kwargs: Any) -> None:
+            calls.append(("failure", kwargs["email"]))
+
+        def record_success(self, **kwargs: Any) -> None:
+            calls.append(("success", kwargs["email"]))
+
+    monkeypatch.setattr(auth_router, "PrincipalAuthenticationRateLimit", _Gate)
+    monkeypatch.setattr(auth_router, "get_auth_registry", lambda _tenant: registry)
+    http_request = SimpleNamespace(client=SimpleNamespace(host="203.0.113.25"))
+
+    response = _run(
+        auth_router.login(
+            AuthRequest(email="person@example.com", password="valid", tenant_id="TENANT-TEST"),
+            http_request,
+        )
+    )
+
+    assert response.status == "MFA_REQUIRED"
+    assert calls == [
+        ("check", "person@example.com"),
+        ("success", "person@example.com"),
+    ]
+
+
+def test_http_login_records_failed_password_without_logging_raw_email(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    registry = _Registry(_user(enrolled=True), "SECRET")
+    registry.authenticate = lambda *_args: None  # type: ignore[method-assign]
+    calls: list[tuple[str, str]] = []
+    telemetry: list[tuple[Any, ...]] = []
+
+    class _Gate:
+        def require_allowed(self, **kwargs: Any) -> None:
+            calls.append(("check", kwargs["email"]))
+
+        def record_failure(self, **kwargs: Any) -> None:
+            calls.append(("failure", kwargs["email"]))
+
+        def record_success(self, **kwargs: Any) -> None:
+            raise AssertionError("failed authentication must not reset email failures")
+
+    monkeypatch.setattr(auth_router, "PrincipalAuthenticationRateLimit", _Gate)
+    monkeypatch.setattr(auth_router, "get_auth_registry", lambda _tenant: registry)
+    monkeypatch.setattr(auth_router, "broadcast_telemetry", lambda *args: telemetry.append(args))
+    http_request = SimpleNamespace(client=SimpleNamespace(host="203.0.113.25"))
+
+    with pytest.raises(HTTPException) as error:
+        _run(
+            auth_router.login(
+                AuthRequest(email="person@example.com", password="wrong", tenant_id="TENANT-TEST"),
+                http_request,
+            )
+        )
+
+    assert error.value.status_code == 401
+    assert calls == [
+        ("check", "person@example.com"),
+        ("failure", "person@example.com"),
+    ]
+    assert "person@example.com" not in repr(telemetry)
+
+
+def test_http_login_returns_generic_429_before_credential_lookup(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    from tools.eos.auth.principal_authentication_rate_limit import (
+        PrincipalAuthenticationRateLimited,
+    )
+
+    registry = _Registry(_user(enrolled=True), "SECRET")
+
+    class _Gate:
+        def require_allowed(self, **_kwargs: Any) -> None:
+            raise PrincipalAuthenticationRateLimited(120)
+
+    monkeypatch.setattr(auth_router, "PrincipalAuthenticationRateLimit", _Gate)
+    monkeypatch.setattr(auth_router, "get_auth_registry", lambda _tenant: registry)
+    http_request = SimpleNamespace(client=SimpleNamespace(host="203.0.113.25"))
+
+    with pytest.raises(HTTPException) as error:
+        _run(
+            auth_router.login(
+                AuthRequest(email="person@example.com", password="wrong", tenant_id="TENANT-TEST"),
+                http_request,
+            )
+        )
+
+    assert error.value.status_code == 429
+    assert error.value.headers == {"Retry-After": "120"}
+    assert registry.get_uri_calls == 0
+    assert registry.session_calls == 0
+
+
+def test_http_login_fails_closed_when_throttle_authority_is_unavailable(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    from tools.eos.auth.principal_authentication_rate_limit import (
+        PrincipalAuthenticationRateLimitUnavailable,
+    )
+
+    registry = _Registry(_user(enrolled=True), "SECRET")
+
+    class _Gate:
+        def require_allowed(self, **_kwargs: Any) -> None:
+            raise PrincipalAuthenticationRateLimitUnavailable("RATE_STORE_DOWN")
+
+    monkeypatch.setattr(auth_router, "PrincipalAuthenticationRateLimit", _Gate)
+    monkeypatch.setattr(auth_router, "get_auth_registry", lambda _tenant: registry)
+    http_request = SimpleNamespace(client=SimpleNamespace(host="203.0.113.25"))
+
+    with pytest.raises(HTTPException) as error:
+        _run(
+            auth_router.login(
+                AuthRequest(email="person@example.com", password="valid", tenant_id="TENANT-TEST"),
+                http_request,
+            )
+        )
+
+    assert error.value.status_code == 503
+    assert registry.pre_auth_issuer_calls == []
+    assert registry.session_calls == 0
+
+
 """
 ARTIFACT: tests/unit/test_auth_router_authoritative_mfa.py
-VERSION: v1.3.0-R10C2F8A1-AUTH-ROUTER-AUTHORITATIVE-MFA-CERT-METADATA-REPAIR
+VERSION: v1.4.0-GLOBAL-PRINCIPAL-FAILURE-THROTTLE-HTTP-CERT
 AUTHORITY BOUNDARY: deterministic HTTP-state certificate only
 TENANT POSTURE: unknown aliases fail closed without directory enumeration
 FAIL-CLOSED POSTURE: persistence uncertainty cannot issue a session
