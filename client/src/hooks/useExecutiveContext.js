@@ -37,7 +37,7 @@ const DEFAULT_OPTIONS = {
  * Manages loading, error, and data state.
  *
  * @param {Object} options - Configuration options.
- * @param {string} options.tenantId - Tenant context (default: 'GLOBAL_ROOT').
+ * @param {string} [options.tenantId] - Optional UI context; EOS tenant scope is supplied by the verified API session.
  * @param {boolean} options.autoLoad - Automatically load context on mount (default: true).
  * @param {string|null} options.contextId - Optional context ID to load.
  * @returns {Object} { context, loading, error, loadContext, updateContext, resetContext }
