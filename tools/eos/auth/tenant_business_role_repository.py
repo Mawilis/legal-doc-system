@@ -129,6 +129,54 @@ class TenantBusinessRoleRepository:
         )
 
     @staticmethod
+    def record_capacity_revision(
+        value: TenantBusinessRoleAuthority,
+        expected_revision: int | None,
+        database: Any,
+        *,
+        session: Optional[ClientSession] = None,
+    ) -> TenantBusinessRoleAuthority:
+        """Atomically append immutable history and CAS the current capacity projection.
+
+        The caller owns the Mongo transaction. This method never starts, commits,
+        or aborts a transaction and cannot be used outside an active transaction.
+        """
+        if session is None or not callable(getattr(session, "in_transaction", None)) or session.in_transaction() is not True:
+            raise TenantBusinessRoleRepositoryError("TENANT_BUSINESS_ROLE_TRANSACTION_REQUIRED")
+        if not isinstance(value, TenantBusinessRoleAuthority):
+            raise TenantBusinessRoleRepositoryError("TENANT_BUSINESS_ROLE_INSERT_INVALID")
+        current = database.get_collection(MULTI_COLLECTION)
+        history = database.get_collection(HISTORY_COLLECTION)
+        if expected_revision is None:
+            if value.revision != 0:
+                raise TenantBusinessRoleRevisionConflictError("TENANT_BUSINESS_ROLE_REVISION_CONFLICT")
+        elif isinstance(expected_revision, bool) or not isinstance(expected_revision, int) or expected_revision < 0 or value.revision != expected_revision + 1:
+            raise TenantBusinessRoleRevisionConflictError("TENANT_BUSINESS_ROLE_REVISION_CONFLICT")
+        key = {
+            "principal_id": value.principal_id,
+            "tenant_id": value.tenant_id,
+            "business_role": value.business_role,
+        }
+        try:
+            history.insert_one(_document(value), session=session)
+            if expected_revision is None:
+                current.insert_one({**_document(value), "business_role": value.business_role}, session=session)
+            else:
+                result = current.replace_one(
+                    {**key, "revision": expected_revision},
+                    _document(value),
+                    upsert=False,
+                    session=session,
+                )
+                if result.matched_count != 1:
+                    raise TenantBusinessRoleRevisionConflictError("TENANT_BUSINESS_ROLE_REVISION_CONFLICT")
+        except DuplicateKeyError as error:
+            raise TenantBusinessRoleRevisionConflictError("TENANT_BUSINESS_ROLE_REVISION_CONFLICT") from error
+        except PyMongoError as error:
+            raise TenantBusinessRoleRepositoryError("TENANT_BUSINESS_ROLE_CAPACITY_WRITE_FAILED") from error
+        return value
+
+    @staticmethod
     def append_history(value: TenantBusinessRoleAuthority, collection: Optional[Collection] = None, *, session: Optional[ClientSession] = None) -> None:
         """Append one immutable revision; caller must supply an active transaction."""
         if session is None or not callable(getattr(session, "in_transaction", None)) or session.in_transaction() is not True:
