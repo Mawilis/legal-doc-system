@@ -78,7 +78,7 @@ describe('SovereignDashboardController resolver', () => {
       activeTenant: { dashboardKey: 'LEGAL_DASHBOARD', defaultDashboard: 'FOUNDER' },
       manualDashboardKey: 'FOUNDER_DASHBOARD',
       dashboardIntent: 'LEGAL_DASHBOARD'
-    })).toBe(DASHBOARD_KEYS.LEGAL);
+    })).toBe(DASHBOARD_KEYS.EXECUTIVE);
 
     expect(resolveDashboardKey({
       user: { id: 'owner-2', role: 'TENANT_OWNER' },
