@@ -134,6 +134,14 @@ from tools.eos.auth.role_assignment_repository import (
     RoleAssignmentRepositoryError,
 )
 from tools.eos.auth.tenant_access import get_tenant_membership_repository
+from tools.eos.auth.tenant_business_role import (
+    TenantBusinessRoleAuthority,
+    TenantBusinessRoleStatus,
+)
+from tools.eos.auth.tenant_business_role_repository import (
+    COLLECTION as BUSINESS_ROLE_COLLECTION,
+    TenantBusinessRoleRepository,
+)
 from tools.eos.auth.tenant_membership import (
     TenantMembershipAuthority,
     TenantMembershipStatus,
@@ -317,6 +325,9 @@ def context(
         PrincipalAuthorityRepository.ensure_indexes(principals)
         TenantMembershipRepository.ensure_indexes(memberships)
         RoleAssignmentRepository.ensure_indexes(roles)
+        TenantBusinessRoleRepository.ensure_indexes(
+            database[BUSINESS_ROLE_COLLECTION]
+        )
 
         monkeypatch.setattr(
             registry_module,
@@ -440,15 +451,17 @@ def _seed_principal(
         context.roles,
     )
     if add_tenant_owner:
-        RoleAssignmentRepository.insert(
-            RoleAssignmentAuthority(
+        TenantBusinessRoleRepository.insert(
+            TenantBusinessRoleAuthority(
                 principal_id,
                 tenant_id,
                 "tenant_owner",
-                RoleAssignmentStatus.ACTIVE,
+                TenantBusinessRoleStatus.ACTIVE,
                 0,
+                NOW,
+                None,
             ),
-            context.roles,
+            context.database[BUSINESS_ROLE_COLLECTION],
         )
 
 
