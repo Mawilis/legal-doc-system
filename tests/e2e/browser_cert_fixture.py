@@ -1,7 +1,7 @@
 """WILSY OS browser-certificate disposable authority fixture.
 
 TITLE: Authenticated browser certificate fixture
-VERSION: v1.3.0-OWNER-COMMERCIAL-BROWSER-FIXTURE
+VERSION: v1.3.1-COMMERCIAL-ADMIN-ENTITLEMENT-SEED
 AUTHORITY: Test-owned disposable Mongo fixture only.
 EPITOME: Seed existing EOS repositories with disposable authenticated Legal
          operators, canonical Legal evidence, and a fully correlated current
@@ -374,6 +374,7 @@ def seed(state_path: Path) -> None:
         tenant_id = f"browser-tenant-{suffix}"
         actor_specs = (
             ("tenant_owner", "TENANT_OWNER", "tenant_owner", "Owner"),
+            ("commercial_admin", "ENTERPRISE_ADMIN", "tenant_owner", "CommercialAdmin"),
             ("partner", "LEGAL_PARTNER", "tenant_legal_partner", "Partner"),
             ("attorney", "LEGAL_ATTORNEY", "tenant_legal_attorney", "Attorney"),
             ("paralegal", "LEGAL_PARALEGAL", "tenant_legal_paralegal", "Paralegal"),
@@ -625,12 +626,12 @@ def seed(state_path: Path) -> None:
         )
         if plan.get("success") is not True:
             raise RuntimeError("BROWSER_CERT_LEGAL_PLAN_SEED_FAILED")
-        owner = actors["tenant_owner"]
-        owner_identity = SovereignIdentity(
-            identity_id=owner["principal_id"],
+        commercial_admin = actors["commercial_admin"]
+        commercial_admin_identity = SovereignIdentity(
+            identity_id=commercial_admin["principal_id"],
             tenant_id=tenant_id,
-            username=owner["email"],
-            email=owner["email"],
+            username=commercial_admin["email"],
+            email=commercial_admin["email"],
             roles=[],
             permissions=[],
             auth_method="BROWSER_CERT",
@@ -647,7 +648,7 @@ def seed(state_path: Path) -> None:
                 "onboardingRef": f"BROWSER-CERT-{tenant_id}",
                 "metadata": {"certificate": "WILSY-OWNER-BROWSER-CERT"},
             },
-            owner_identity,
+            commercial_admin_identity,
         )
         if not commercial.legal_entitlement_applicable or commercial.entitlement_issuance_result is None:
             raise RuntimeError("BROWSER_CERT_LEGAL_COMMERCIAL_SEED_FAILED")
