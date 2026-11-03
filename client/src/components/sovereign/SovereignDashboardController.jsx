@@ -140,6 +140,22 @@ const DASHBOARD_ALIASES = Object.freeze({
   LEGAL_OS: DASHBOARD_KEYS.LEGAL
 });
 
+const WORKSPACE_CONTRACT_VERSION = 'v1.0.0-WILSY-EOS-WORKSPACE-CONTRACT';
+const WORKSPACE_DASHBOARD_MAP = Object.freeze({
+  EXECUTIVE_COMMAND_CENTRE: DASHBOARD_KEYS.EXECUTIVE,
+  TENANT_ADMINISTRATION: DASHBOARD_KEYS.GENERAL,
+  TENANT_OPERATIONS: DASHBOARD_KEYS.COO,
+  AUDIT_REPORTING: DASHBOARD_KEYS.GENERAL,
+  LEGAL_PRACTICE: DASHBOARD_KEYS.LEGAL,
+  LEGAL_FINANCE: DASHBOARD_KEYS.FINANCE,
+  PROCESS_SERVICE: DASHBOARD_KEYS.GENERAL,
+  CLIENT_PORTAL: DASHBOARD_KEYS.GENERAL,
+  PLATFORM_OPERATIONS: DASHBOARD_KEYS.GENERAL,
+  PLATFORM_FINANCE_OPERATIONS: DASHBOARD_KEYS.FINANCE,
+  PLATFORM_SECURITY_OPERATIONS: DASHBOARD_KEYS.IT,
+  HR_OPERATIONS: DASHBOARD_KEYS.HR,
+});
+
 const ROLE_DASHBOARD_MAP = Object.freeze({
   FOUNDER_ARCHITECT: DASHBOARD_KEYS.FOUNDER,
   SUPER_ADMIN: DASHBOARD_KEYS.FOUNDER,
@@ -162,7 +178,7 @@ const ROLE_DASHBOARD_MAP = Object.freeze({
   IT: DASHBOARD_KEYS.IT,
   IT_ADMIN: DASHBOARD_KEYS.IT,
   MANAGER: DASHBOARD_KEYS.GENERAL,
-  OWNER: DASHBOARD_KEYS.CRM,
+  OWNER: DASHBOARD_KEYS.EXECUTIVE,
   SALES: DASHBOARD_KEYS.SALES,
   SALES_MANAGER: DASHBOARD_KEYS.SALES,
   SALES_REP: DASHBOARD_KEYS.SALES,
@@ -439,6 +455,18 @@ export const hasFounderReturnAuthority = ({ user = {}, role = '' } = {}) => {
  */
 export const resolveDashboardKey = ({ user = {}, manualDashboardKey = '' } = {}) => {
   const roleToken = normalizeDashboardToken(user.role || user.accountRole || user.tenantRole);
+  const hasEosWorkspaceContract = (
+    user.workspaceContractVersion === WORKSPACE_CONTRACT_VERSION
+    && typeof user.workspaceId === 'string'
+    && Object.prototype.hasOwnProperty.call(WORKSPACE_DASHBOARD_MAP, user.workspaceId)
+  );
+  // An authenticated EOS workspace contract is the sole dashboard selector.
+  // Browser role labels, saved preferences and manual route events cannot
+  // switch a session into a different workspace/capacity.
+  if (hasEosWorkspaceContract) {
+    return WORKSPACE_DASHBOARD_MAP[user.workspaceId];
+  }
+
   const roleDashboard = (
     roleToken.includes('FOUNDER') ||
     roleToken.includes('SOVEREIGN') ||
