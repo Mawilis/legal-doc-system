@@ -19,7 +19,7 @@ from enum import StrEnum
 from typing import Any, Final, Protocol
 from tools.eos.auth.role_assignment import RoleAssignmentStatus
 from tools.eos.auth.role_assignment_repository import RoleAssignmentNotFoundError, RoleAssignmentRepositoryError
-from tools.eos.auth.tenant_authority_policy import TENANT_ROLES
+from tools.eos.auth.tenant_authority_policy import ELIGIBLE, TENANT_ROLES, tenant_role_operation_eligibility
 from tools.eos.auth.tenant_business_role import TenantBusinessRoleStatus
 from tools.eos.auth.tenant_business_role_repository import (
     TenantBusinessRoleNotFoundError,
@@ -34,6 +34,7 @@ class BusinessRoleResolution(StrEnum):
     MULTIPLE_ACTIVE_TENANT_BUSINESS_ROLES = "MULTIPLE_ACTIVE_TENANT_BUSINESS_ROLES"
     TENANT_BUSINESS_ROLE_AUTHORITY_UNAVAILABLE = "TENANT_BUSINESS_ROLE_AUTHORITY_UNAVAILABLE"
     INVALID_INPUT = "INVALID_INPUT"
+    NO_ELIGIBLE_TENANT_BUSINESS_ROLE = "NO_ELIGIBLE_TENANT_BUSINESS_ROLE"
 
 @dataclass(frozen=True, slots=True)
 class TenantBusinessRoleResult:
@@ -43,10 +44,38 @@ class TenantBusinessRoleResult:
 class RoleAssignmentReader(Protocol):
     def resolve(self, principal_id: str, tenant_id: str, role_id: str, *, session: Any = None) -> object: ...
 
-def resolve_current_tenant_business_role(*, principal_id: object, tenant_id: object, repository: Any, session: Any = None) -> TenantBusinessRoleResult:
+def resolve_current_tenant_business_role(*, principal_id: object, tenant_id: object, repository: Any, session: Any = None, operation: str | None = None) -> TenantBusinessRoleResult:
     """Return current durable business-role evidence; membership and authorization remain separate."""
     if not isinstance(principal_id, str) or not principal_id.strip() or principal_id != principal_id.strip() or not isinstance(tenant_id, str) or not tenant_id.strip() or tenant_id != tenant_id.strip():
         return TenantBusinessRoleResult(None, BusinessRoleResolution.INVALID_INPUT)
+    if operation is not None:
+        resolve_all = getattr(repository, "resolve_all_business_roles", None)
+        if not callable(resolve_all):
+            return TenantBusinessRoleResult(None, BusinessRoleResolution.TENANT_BUSINESS_ROLE_AUTHORITY_UNAVAILABLE)
+        try:
+            values = resolve_all(principal_id, tenant_id, session=session)
+        except (TenantBusinessRoleNotFoundError, RoleAssignmentNotFoundError):
+            return TenantBusinessRoleResult(None, BusinessRoleResolution.NO_ACTIVE_TENANT_BUSINESS_ROLE)
+        except (TenantBusinessRoleRepositoryError, RoleAssignmentRepositoryError, AttributeError, TypeError):
+            return TenantBusinessRoleResult(None, BusinessRoleResolution.TENANT_BUSINESS_ROLE_AUTHORITY_UNAVAILABLE)
+        active: dict[str, object] = {}
+        for value in values:
+            if getattr(value, "principal_id", None) != principal_id or getattr(value, "tenant_id", None) != tenant_id:
+                return TenantBusinessRoleResult(None, BusinessRoleResolution.TENANT_BUSINESS_ROLE_AUTHORITY_UNAVAILABLE)
+            role = getattr(value, "business_role", None)
+            if role not in TENANT_ROLES:
+                return TenantBusinessRoleResult(None, BusinessRoleResolution.TENANT_BUSINESS_ROLE_AUTHORITY_UNAVAILABLE)
+            if getattr(getattr(value, "status", None), "value", None) == TenantBusinessRoleStatus.ACTIVE.value:
+                active[role] = value
+        eligible = [role for role in active if tenant_role_operation_eligibility(role, operation) == ELIGIBLE]
+        if len(eligible) == 1:
+            return TenantBusinessRoleResult(eligible[0], BusinessRoleResolution.RESOLVED)
+        if len(eligible) > 1:
+            return TenantBusinessRoleResult(None, BusinessRoleResolution.MULTIPLE_ACTIVE_TENANT_BUSINESS_ROLES)
+        if active:
+            return TenantBusinessRoleResult(None, BusinessRoleResolution.NO_ELIGIBLE_TENANT_BUSINESS_ROLE)
+        return TenantBusinessRoleResult(None, BusinessRoleResolution.NO_ACTIVE_TENANT_BUSINESS_ROLE)
+
     # The HTTP role reader can resolve the dedicated business-role record
     # directly. Prefer that exact-scope, single-read contract when available;
     # generic role-assignment readers retain the established exhaustive path.
