@@ -1035,7 +1035,7 @@ const ExecutiveDashboard = ({
 }) => {
   const { activeTenant } = useTenants();
   const access = useSovereignAccess();
-  const tenantId = activeTenant?.tenantId || activeTenant?.id || access.tenantId || 'MASTER';
+  const tenantId = activeTenant?.tenantId || null;
   const accessDecision = useMemo(() => (
     buildExecutiveAccessDecision(access, activeTenant)
   ), [access.userRole, activeTenant]);
@@ -1442,7 +1442,7 @@ const ExecutiveDashboard = ({
   }, [access.isLoading, accessDecision.allowed, tenantId]);
 
   useEffect(() => {
-    if (access.isLoading || accessDecision.allowed) return;
+    if (access.isLoading || accessDecision.allowed || !tenantId) return;
     broadcastTelemetry(tenantId, 'EXEC_ACCESS_DENIED', 'DENIED', 'ExecutiveDashboard', {
       userRole: access.userRole || 'unknown',
       userEmail: access.userEmail || 'unknown',
