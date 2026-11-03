@@ -16,7 +16,7 @@ from tools.eos.api.tenant_authorization_http import (
 )
 from tools.eos.crm.domain.owner_commercial_work_item import OwnerWorkKind, OwnerWorkPriority, OwnerWorkItemError
 from tools.eos.crm.persistence.owner_commercial_work_registry import (
-    COLLECTION, OwnerCommercialWorkRegistry, OwnerWorkRegistryError, OwnerWorkRegistryConflict,
+    COLLECTION, OwnerCommercialWorkRegistry, OwnerWorkRegistryError, OwnerWorkRegistryConflict, ensure_indexes,
 )
 from tools.eos.crm.service.owner_commercial_workspace_service import (
     OwnerCommercialWorkspaceError, OwnerCommercialWorkspaceService,
@@ -64,6 +64,7 @@ def _transaction(callback):
     if client is None or database is None:
         raise HTTPException(status_code=503, detail="OWNER_WORK_DATABASE_UNAVAILABLE")
     try:
+        ensure_indexes(database.get_collection(COLLECTION))
         with client.start_session() as session:
             return session.with_transaction(lambda current: callback(_service(database), current))
     except OwnerCommercialWorkspaceError as error:
