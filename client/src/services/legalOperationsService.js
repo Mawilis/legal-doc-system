@@ -106,7 +106,7 @@ const CONFLICT_REVIEW_OUTCOMES = Object.freeze([
 const LEGAL_COMMERCIAL_CONTEXT_SCHEMA =
   'WILSY-LEGAL-OPERATIONS-COMMERCIAL-CONTEXT/V1';
 const LEGAL_COMMERCIAL_CONTEXT_VERSION =
-  'v1.0.0-LEGAL-COMMERCIAL-CONTEXT-HTTP';
+  'v1.1.0-FOUNDER-PERPETUAL-ACCESS-BASIS';
 const LEGAL_COMMERCIAL_CONTEXT_VISIBILITY =
   'LEGAL_COMMERCIAL_CONTEXT_SUBSCRIPTION_READ';
 
@@ -125,6 +125,7 @@ const LEGAL_COMMERCIAL_PRODUCT_KEYS = Object.freeze([
   'product_id',
   'workspace_key',
   'available',
+  'access_basis',
   'entitlement_state',
 ]);
 
@@ -161,6 +162,11 @@ const LEGAL_COMMERCIAL_ALLOWED_ENTITLEMENT_STATES = Object.freeze([
   'PENDING_SOURCE',
   'SUSPENDED',
   'REVOKED',
+]);
+const LEGAL_COMMERCIAL_ACCESS_BASES = Object.freeze([
+  'NONE',
+  'LEGAL_PLAN_FEATURE',
+  'PERPETUAL_PLATFORM_OWNER',
 ]);
 
 const QUEUE_KEYS = Object.freeze([
@@ -2095,6 +2101,7 @@ const validateLegalCommercialContext = (payload) => {
     product.product_id !== 'LEGAL_OPERATIONS'
     || product.workspace_key !== 'LEGAL_DASHBOARD'
     || typeof product.available !== 'boolean'
+    || !LEGAL_COMMERCIAL_ACCESS_BASES.includes(product.access_basis)
   ) {
     throw new Error('LEGAL_COMMERCIAL_CONTEXT_INVALID_PRODUCT');
   }
@@ -2191,9 +2198,27 @@ const validateLegalCommercialContext = (payload) => {
       );
     }
 
-    if (!features.includes('legal.core')) {
+    if (
+      product.access_basis === 'LEGAL_PLAN_FEATURE'
+      && !features.includes('legal.core')
+    ) {
       throw new Error(
         'LEGAL_COMMERCIAL_CONTEXT_LEGAL_FEATURE_REQUIRED',
+      );
+    }
+
+    if (
+      product.access_basis === 'PERPETUAL_PLATFORM_OWNER'
+      && features.includes('legal.core')
+    ) {
+      throw new Error(
+        'LEGAL_COMMERCIAL_CONTEXT_ACCESS_BASIS_MISMATCH',
+      );
+    }
+
+    if (product.access_basis === 'NONE') {
+      throw new Error(
+        'LEGAL_COMMERCIAL_CONTEXT_ACCESS_BASIS_REQUIRED',
       );
     }
 
@@ -2233,12 +2258,22 @@ const validateLegalCommercialContext = (payload) => {
       );
     }
 
+    if (
+      product.access_basis === 'PERPETUAL_PLATFORM_OWNER'
+      && (amount !== 0 || monthlyEquivalentAmount !== 0)
+    ) {
+      throw new Error(
+        'LEGAL_COMMERCIAL_CONTEXT_FOUNDER_BASIS_INVALID',
+      );
+    }
+
     return Object.freeze({
       tenantId,
       product: Object.freeze({
         productId: product.product_id,
         workspaceKey: product.workspace_key,
         available: true,
+        accessBasis: product.access_basis,
         entitlementState: product.entitlement_state,
       }),
       subscription: Object.freeze({
@@ -2278,7 +2313,8 @@ const validateLegalCommercialContext = (payload) => {
   ];
 
   if (
-    product.entitlement_state !== null
+    product.access_basis !== 'NONE'
+    || product.entitlement_state !== null
     || features.length !== 0
     || absenceFields.some((value) => value !== null)
   ) {
@@ -2293,6 +2329,7 @@ const validateLegalCommercialContext = (payload) => {
       productId: product.product_id,
       workspaceKey: product.workspace_key,
       available: false,
+      accessBasis: product.access_basis,
       entitlementState: null,
     }),
     subscription: null,

@@ -328,7 +328,7 @@ _COMMERCIAL_CONTEXT_SCHEMA: Final[str] = (
     "WILSY-LEGAL-OPERATIONS-COMMERCIAL-CONTEXT/V1"
 )
 _COMMERCIAL_CONTEXT_HTTP_VERSION: Final[str] = (
-    "v1.0.0-LEGAL-COMMERCIAL-CONTEXT-HTTP"
+    "v1.1.0-FOUNDER-PERPETUAL-ACCESS-BASIS"
 )
 _COMMERCIAL_CONTEXT_VISIBILITY: Final[str] = (
     "LEGAL_COMMERCIAL_CONTEXT_SUBSCRIPTION_READ"
@@ -436,6 +436,18 @@ def _commercial_context_payload(
             "product_id": projection.product_id.value,
             "workspace_key": projection.workspace_key,
             "available": projection.product_available,
+            # The projection admits only legal.core subscriptions or the exact
+            # perpetual platform-owner term. Preserve the canonical plan feature
+            # list and make the server-verified admission basis explicit.
+            "access_basis": (
+                "NONE"
+                if projection.product_available is not True
+                else (
+                    "LEGAL_PLAN_FEATURE"
+                    if "legal.core" in projection.plan_features
+                    else "PERPETUAL_PLATFORM_OWNER"
+                )
+            ),
             "entitlement_state": (
                 projection.entitlement_state.value
                 if projection.entitlement_state is not None

@@ -637,6 +637,7 @@ def test_enterprise_admin_reads_exact_canonical_commercial_context(
         "product_id": "LEGAL_OPERATIONS",
         "workspace_key": "LEGAL_DASHBOARD",
         "available": True,
+        "access_basis": "LEGAL_PLAN_FEATURE",
         "entitlement_state": "ACTIVE",
     }
     assert (
