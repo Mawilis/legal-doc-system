@@ -108,6 +108,15 @@ class TenantBusinessRoleRepository:
         return tuple(by_role[key] for key in sorted(by_role))
 
     @staticmethod
+    def resolve_business_role(principal_id: str, tenant_id: str, business_role: str, collection: Optional[Collection] = None, *, session: Optional[ClientSession] = None) -> TenantBusinessRoleAuthority:
+        """Resolve one exact business-role capacity from legacy or multi-role storage."""
+        values = TenantBusinessRoleRepository.resolve_all(principal_id, tenant_id, collection, session=session)
+        matches = [value for value in values if value.business_role == business_role]
+        if len(matches) != 1:
+            raise TenantBusinessRoleNotFoundError("TENANT_BUSINESS_ROLE_NOT_FOUND")
+        return matches[0]
+
+    @staticmethod
     def ensure_multi_capacity_indexes(database: Any) -> None:
         """Create additive indexes; never alter the legacy unique principal/tenant index."""
         database.get_collection(MULTI_COLLECTION).create_index(
