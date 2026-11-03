@@ -63,8 +63,8 @@ def test_global_auth_index_readiness_defaults_and_shutdown_fail_closed():
     assert "global_principal_auth_indexes_ready = False" in shutdown
 
 
-def test_server_version_is_the_governed_global_auth_index_bootstrap():
-    assert server.VERSION == "v1.37.0-SYSTEM-SERVICES-CASE-INDEX-BOOTSTRAP"
+def test_server_version_is_the_governed_global_session_index_bootstrap():
+    assert server.VERSION.endswith("GLOBAL-PRINCIPAL-SESSION-INDEX-BOOTSTRAP")
 
 
 # ARTIFACT: test_global_principal_auth_challenge_startup.py
