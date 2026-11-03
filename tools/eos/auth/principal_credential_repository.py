@@ -63,6 +63,21 @@ def _document(value: PrincipalCredential) -> dict[str, object]:
     }
 
 
+def _find_unique(
+    target: Collection,
+    query: dict[str, object],
+    *,
+    session: Optional[ClientSession] = None,
+) -> Mapping[str, object] | None:
+    """Read at most two exact matches so missing indexes cannot hide ambiguity."""
+    rows = list(target.find(query, session=session).limit(2))
+    if len(rows) > 1:
+        raise PrincipalCredentialPersistedRecordInvalidError(
+            "PRINCIPAL_CREDENTIAL_DUPLICATE_KEY"
+        )
+    return rows[0] if rows else None
+
+
 def _hydrate(document: Mapping[str, object]) -> PrincipalCredential:
     try:
         return PrincipalCredential(
@@ -125,7 +140,7 @@ class PrincipalCredentialRepository:
         if not isinstance(principal_id, str) or not principal_id or principal_id != principal_id.strip():
             raise PrincipalCredentialNotFoundError("PRINCIPAL_CREDENTIAL_NOT_FOUND")
         try:
-            row = _target(collection).find_one({"principal_id": principal_id}, session=session)
+            row = _find_unique(_target(collection), {"principal_id": principal_id}, session=session)
         except PyMongoError as error:
             raise PrincipalCredentialRepositoryError("PRINCIPAL_CREDENTIAL_READ_FAILED") from error
         if row is None:
@@ -149,7 +164,8 @@ class PrincipalCredentialRepository:
         except ValueError as error:
             raise PrincipalCredentialNotFoundError("PRINCIPAL_CREDENTIAL_NOT_FOUND") from error
         try:
-            row = _target(collection).find_one(
+            row = _find_unique(
+                _target(collection),
                 {"normalized_email": normalized_email},
                 session=session,
             )
