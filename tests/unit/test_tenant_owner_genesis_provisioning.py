@@ -46,6 +46,11 @@ class _Lifecycle:
     def __init__(self, event: object | None = None) -> None:
         self.event = event
         self.calls: list[dict[str, Any]] = []
+        self.prepare_calls: list[Any] = []
+
+    def prepare(self, request: Any) -> Any:
+        self.prepare_calls.append(request)
+        return _evidence(request)
 
     def execute(self, **kwargs: Any) -> object:
         self.calls.append(kwargs)
@@ -254,3 +259,33 @@ def test_genesis_rejects_ownership_event_scope_or_command_mismatch(
         )
     assert "tenant" in calls
     assert len(lifecycle.calls) == 1
+
+
+def test_genesis_prepare_verifies_before_transaction_and_returns_exact_request_evidence(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    command, lifecycle, calls = _command(monkeypatch)
+    request = _request()
+    evidence = command.prepare(request)
+    assert evidence.request == request
+    assert lifecycle.prepare_calls == [request]
+    assert lifecycle.calls == []
+    assert calls == {}
+
+
+def test_genesis_prepare_rejects_non_genesis_before_provider_call(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    command, lifecycle, calls = _command(monkeypatch)
+    transfer_request = TenantOwnershipVerificationRequest(
+        tenant_id="tenant-genesis-1",
+        legal_entity_reference="entity-za-1",
+        principal_id="principal-owner-1",
+        operation=TenantOwnershipOperation.OWNERSHIP_TRANSFER,
+        evaluated_at=datetime(2026, 11, 3, tzinfo=timezone.utc),
+    )
+    with pytest.raises(TenantOwnerGenesisProvisioningError, match="TENANT_GENESIS_REQUEST_REQUIRED"):
+        command.prepare(transfer_request)
+    assert lifecycle.prepare_calls == []
+    assert lifecycle.calls == []
+    assert calls == {}

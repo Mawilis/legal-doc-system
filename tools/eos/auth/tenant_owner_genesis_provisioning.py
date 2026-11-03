@@ -64,6 +64,29 @@ class TenantOwnerGenesisProvisioningCommand:
         if active is not True:
             raise TenantOwnerGenesisProvisioningError("ACTIVE_CALLER_TRANSACTION_REQUIRED")
 
+    def prepare(
+        self, request: TenantOwnershipVerificationRequest
+    ) -> VerifiedTenantOwnershipEvidence:
+        """Verify issuer evidence before any tenant transaction is opened.
+
+        Authentication proves the principal's login only. This explicit
+        pre-transaction phase obtains the independent ownership result and
+        cannot create tenant or IAM state.
+        """
+        if type(request) is not TenantOwnershipVerificationRequest:
+            raise TenantOwnerGenesisProvisioningError("VERIFICATION_REQUEST_REQUIRED")
+        if request.operation is not TenantOwnershipOperation.TENANT_GENESIS:
+            raise TenantOwnerGenesisProvisioningError("TENANT_GENESIS_REQUEST_REQUIRED")
+        try:
+            evidence = self._lifecycle.prepare(request)
+        except Exception as error:
+            # Preserve the verifier's stable denial code without exposing
+            # provider internals through an HTTP-facing orchestration layer.
+            raise
+        if type(evidence) is not VerifiedTenantOwnershipEvidence or evidence.request != request:
+            raise TenantOwnerGenesisProvisioningError("VERIFIED_OWNERSHIP_EVIDENCE_REQUIRED")
+        return evidence
+
     def execute(
         self,
         *,
