@@ -75,7 +75,7 @@ def test_global_access_token_rejected_when_global_session_is_not_current(
     monkeypatch.setattr(authentication, "GlobalPrincipalSessionAuthority", Sessions)
     with pytest.raises(UnauthorizedAccessException):
         asyncio.run(authentication.get_current_identity(
-            request=object(), credentials=_credentials(), api_key=None, repository=object()
+            request=cast(Any, object()), credentials=_credentials(), api_key=None, repository=cast(Any, object())
         ))
 
 
@@ -101,7 +101,7 @@ def test_tenant_bound_access_token_keeps_legacy_revision_validation(
     ))
     monkeypatch.setattr(authentication, "AuthRegistry", Registry)
     identity = asyncio.run(authentication.get_current_identity(
-        request=object(), credentials=_credentials(), api_key=None, repository=object()
+        request=cast(Any, object()), credentials=_credentials(), api_key=None, repository=cast(Any, object())
     ))
     assert identity.session_reference == "WILSYSESSION-legacy"
     assert calls == [("tenant-exact", "principal-global")]
