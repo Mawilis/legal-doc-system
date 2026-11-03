@@ -26,6 +26,7 @@ import React, { createContext, useContext, useEffect, useState, useCallback, use
 import { useSovereignMesh } from './SovereignOrchestrator';
 import { broadcastTelemetry } from '../../utils/telemetryHelper';
 import api from '../../services/api';
+import { useAuth } from '../../contexts/authContext.jsx';
 
 const SecurityContext = createContext(null);
 
@@ -37,6 +38,8 @@ export
  * @returns {any} Matrix runtime feedback data context output
  */
 const SecurityManager = ({ children }) => {
+  const { user } = useAuth();
+  const tenantId = user?.tenantId || null;
   const mesh = useSovereignMesh();
   const [threatLevel, setThreatLevel] = useState('NOMINAL');
   const [hardwareBound, setHardwareBound] = useState(false);
@@ -49,11 +52,12 @@ const SecurityManager = ({ children }) => {
    * @description Rotates the session nonce every 60 seconds.
    */
   const rotateQuantumKey = useCallback(async () => {
+    if (!tenantId) return;
     try {
       const currentNonce = sessionNonceRef.current;
       const { data } = await api.post('/security/rotate-key', {
         nonce: currentNonce,
-        tenantId: 'GLOBAL_ROOT'
+        tenantId
       });
       sessionNonceRef.current = data.newNonce;
       broadcastTelemetry('SYSTEM_CORE', 'SECURITY', 'KEY_ROTATION_SUCCESS', 'SecurityManager', {
@@ -65,7 +69,7 @@ const SecurityManager = ({ children }) => {
       });
       setThreatLevel('ELEVATED');
     }
-  }, []);
+  }, [tenantId]);
 
   /**
    * @function analyzeBehavioralEntropy
