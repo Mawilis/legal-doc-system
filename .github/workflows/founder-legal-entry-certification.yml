@@ -6,6 +6,8 @@ on:
       - "client/src/components/sovereign/SovereignDashboardController.jsx"
       - "client/tests/client/SovereignDashboardController.test.js"
       - "client/src/components/executive/ExecutiveDashboard.jsx"
+      - "client/src/components/industry/LegalDashboard.jsx"
+      - "client/tests/client/LegalDashboardTenantOwnerCommercialView.test.js"
       - "client/src/services/ExecutiveCommandOrchestrator.js"
       - "client/src/services/ExecutiveCommandOrchestrator.branding.test.js"
       - ".github/workflows/founder-legal-entry-certification.yml"
@@ -39,6 +41,7 @@ jobs:
         run: >-
           npx vitest run --config vitest.config.js
           tests/client/SovereignDashboardController.test.js
+          tests/client/LegalDashboardTenantOwnerCommercialView.test.js
           src/services/ExecutiveCommandOrchestrator.branding.test.js
 
       - name: Build client
