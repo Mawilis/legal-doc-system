@@ -41,7 +41,10 @@ const { api } = vi.hoisted(() => ({
   },
 }));
 
-vi.mock('@/services/api', () => ({ default: api }));
+vi.mock('@/services/api', () => ({
+  default: api,
+  setActiveTenantTransportId: vi.fn(),
+}));
 
 import { AUTH_STATES, AuthProvider, useAuth } from '../../src/contexts/authContext.jsx';
 
@@ -106,6 +109,8 @@ const workspaceBootstrap = ({
     workspace: {
       tenantId,
       businessRole,
+      workspaceId: businessRole === 'tenant_owner' ? 'EXECUTIVE_COMMAND_CENTRE' : 'AUDIT_REPORTING',
+      workspaceContractVersion: 'v1.0.0-WILSY-EOS-WORKSPACE-RESOLUTION',
       membershipRevision: 7,
       businessRoleRevision: 11,
       ...(legalPermissions === undefined ? {} : { legalPermissions }),
