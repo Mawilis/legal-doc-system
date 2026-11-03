@@ -144,6 +144,7 @@ function Harness() {
       }</span>
       <button type="button" onClick={() => auth.discoverTenant('Acme Law')}>discover</button>
       <button type="button" onClick={() => { void auth.login('person@example.com', 'password', 'TENANT-BROWSER').catch(() => {}); }}>login</button>
+      <button type="button" onClick={() => { void auth.login('person@example.com', 'password').catch(() => {}); }}>login-without-discovery</button>
       <button type="button" onClick={() => { void auth.verifyOTP('person@example.com', '123456', null, null, false, 'TENANT-BROWSER').catch(() => {}); }}>verify</button>
       <button type="button" onClick={() => { void auth.logout(); }}>logout</button>
     </div>
@@ -186,6 +187,17 @@ describe('authoritative authentication state machine', () => {
       body: JSON.stringify({ alias: 'acme law' }),
     }));
     expect(window.localStorage.getItem('discoveredTenant')).toContain('TENANT-ACME');
+  });
+
+  it('refuses credential submission when no EOS-discovered tenant is selected', async () => {
+    renderHarness();
+
+    fireEvent.click(screen.getByRole('button', { name: 'login-without-discovery' }));
+
+    await waitFor(() => {
+      expect(screen.getByTestId('stage')).toHaveTextContent(AUTH_STATES.IDLE);
+    });
+    expect(api.post).not.toHaveBeenCalled();
   });
 
   it('projects reconciliation without QR and persists only authenticated response', async () => {
