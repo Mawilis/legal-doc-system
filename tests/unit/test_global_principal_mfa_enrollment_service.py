@@ -19,6 +19,18 @@ class _Session:
     in_transaction = True
 
 
+class _Cursor:
+    def __init__(self, rows):
+        self.rows = rows
+
+    def limit(self, count):
+        self.rows = self.rows[:count]
+        return self
+
+    def __iter__(self):
+        return iter(self.rows)
+
+
 class _Collection:
     def __init__(self) -> None:
         self.rows: list[dict[str, Any]] = []
@@ -42,6 +54,12 @@ class _Collection:
             elif actual != expected:
                 return False
         return True
+
+    def find(self, query, *, session=None):
+        assert session is not None
+        return _Cursor(
+            [dict(row) for row in self.rows if self._matches(row, query)]
+        )
 
     def delete_many(self, query, *, session=None):
         assert session is not None
