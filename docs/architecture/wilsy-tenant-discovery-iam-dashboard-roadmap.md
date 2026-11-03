@@ -325,6 +325,19 @@ The currently published workspace map routes `tenant_owner` to `EXECUTIVE_COMMAN
 
 The route/dependency inventory is substantially expanded but still requires a recursive caller/import/test/workflow/data reconciliation before deleting the remaining legacy server tree. No legacy server source files have been deleted. No membership, role, permission, subscription, entitlement or production data was changed. No test execution or certification is claimed until it has been run against the synced local checkout.
 
+## 12A. Discovery-bound authentication implementation — 3 November 2026
+
+The Day 2 entry gate has begun with a narrow, reversible tenant-binding change:
+
+- The browser login call now sends the exact canonical `tenantId` returned by `POST /api/auth/discover`; no WILSY tenant fallback is introduced.
+- EOS `AuthRequest` and `VerifyOTPRequest` accept a strict optional `tenant_id` selector for compatibility at the schema boundary, but login, MFA setup and OTP verification reject a missing selector and reject a selector that differs from the durable authenticated user's canonical `tenantId`.
+- The selected tenant is carried through the MFA setup/verification requests. The final ACCESS session is still promoted only after `GET /api/auth/workspace-bootstrap` revalidates current principal, ACTIVE membership, business capacity and canonical tenant.
+- Added backend tests for missing discovery and tenant mismatch, and updated browser/backend fixtures to assert selector propagation.
+
+**Important scope limit:** this closes a discovery-to-login tenant-confusion gap for the existing single-tenant-shaped AuthRegistry user record. It does not yet implement a global principal with multiple memberships. A person who belongs to multiple firms still needs the Day 2 global-principal credential model, membership enumeration after authentication, explicit selected-membership MFA/session binding, and tenant-switch session rotation. The current `tenantId` field must not be treated as a permanent one-tenant-per-person model.
+
+The optional schema field preserves controlled compatibility for non-login consumers, but the login and MFA HTTP handlers fail closed if it is absent. No membership, role, permission, subscription, entitlement or production data was changed. Test execution remains pending; commits are not a substitute for running the suites.
+
 ## 13. Delivery control
 
 Implementation should proceed in small, reversible, independently tested changes. Each change must identify its primary file, callers, consumers, persisted schemas, tests, tenant/authority blast radius and rollback. Preserve the current integration branch and all local uncommitted work. The roadmap does not authorize production data mutation, permission elevation, deletion of evidence or bypass of independent governance gates.
