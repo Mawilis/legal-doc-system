@@ -71,7 +71,12 @@ def _transaction(callback):
     try:
         ensure_indexes(database.get_collection(COLLECTION))
         with client.start_session() as session:
-            return session.with_transaction(\n                lambda current: callback(_service(database), current),\n                read_concern=ReadConcern("snapshot"),\n                write_concern=WriteConcern(w="majority", j=True),\n                read_preference=ReadPreference.PRIMARY,\n            )
+            return session.with_transaction(
+                lambda current: callback(_service(database), current),
+                read_concern=ReadConcern("snapshot"),
+                write_concern=WriteConcern(w="majority", j=True),
+                read_preference=ReadPreference.PRIMARY,
+            )
     except OwnerCommercialWorkspaceError as error:
         code = error.code
         if code in {"OWNER_WORK_LEGAL_NOT_ENTITLED", "OWNER_WORK_LEGAL_ENTITLEMENT_UNAVAILABLE"}:
