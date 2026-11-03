@@ -27,7 +27,7 @@ Status: Initial dependency/route inventory and first tenant-header correction co
 | MFA verification | AuthContext.verifyOTP | POST /api/auth/verify-otp (and alias /verify-3fa) | AuthRegistry + factor-currentness evidence | Verify factor and issue session |
 | Authenticated workspace resolution | AuthContext.persistSession / restore / refreshWorkspace | GET /api/auth/workspace-bootstrap | Principal authority, TenantMembershipRepository, TenantBusinessRoleRepository, TenantRegistry and canonical permission compositor | Return READY only after current principal, active membership, business capacity, tenant and bounded permission projections are revalidated |
 | Authenticated branding | AuthContext workspace projection | GET /api/auth/workspace-branding/{asset_kind} | D21B current branding projection and asset delivery | Exact tenant-bound asset; no browser-created branding authority |
-| Dashboard selection | SovereignDashboardController.jsx | No canonical EOS workspace decision contract yet at baseline | Currently browser role map | Must be replaced by EOS workspace_id contract; client may map only a server-issued workspace_id to a view |
+| Dashboard selection | SovereignDashboardController.jsx | GET /api/auth/workspace-bootstrap now returns workspaceId and workspaceContractVersion from EOS | EOS business-role-to-workspace projection | Client maps only the validated server-issued workspaceId to a view; browser role mapping has been removed in this branch |
 | Protected operations | Client API callers | Corresponding mounted /api EOS routers | Route-specific EOS IAM and resource scope | Independently authorize each request; dashboard manifest is not an access token |
 
 ### Current auth limitations
@@ -74,7 +74,7 @@ This changes transport selection only. EOS continues to prove membership and aut
 | Membership | tools/eos/auth/tenant_access.py, tenant_membership.py, tenant_membership_repository.py | Exact ACTIVE membership for principal and discovered tenant |
 | Business capacity | tools/eos/auth/tenant_business_role_authority.py, tenant_authority_policy.py | Explicit active capacity selection; no silent most-permissive role or union |
 | Authorization | tools/eos/auth/tenant_authorization.py, tenant_authorization_http.py, role and permission registries | Exact operation/permission and active granting-role decisions on every protected route |
-| Workspace bootstrap | tools/eos/auth/workspace_bootstrap_projection.py and GET /api/auth/workspace-bootstrap | Extend to a versioned canonical workspace decision with workspace_id, active membership/capacity references, revisions and bounded manifest |
+| Workspace bootstrap | tools/eos/auth/workspace_bootstrap_projection.py and GET /api/auth/workspace-bootstrap | Versioned workspaceId/contract version and membership/business-role revisions now exist; membership_id, active capacity selection, server-issued manifest and multi-membership session context remain outstanding |
 | API composition | tools/eos/api/server.py and tools/eos/api/*_router.py | Each application route mounted exactly once in EOS and covered by route-level tests |
 
 ## 6. Legacy server route inventory — migration register
@@ -114,8 +114,8 @@ The roadmap checkpoint identifies these legacy runtime surfaces. This is the mig
 | Add dynamic-discovery and no-fallback transport tests | COMMITTED; execution pending in the local checkout/CI |
 | Remove synthetic GLOBAL_ROOT telemetry tenant fallback | COMMITTED |
 | Identify principal/membership limitation in login | CONFIRMED; implementation outstanding |
-| Identify role/capacity ambiguity | CONFIRMED; implementation outstanding |
-| Freeze EOS workspace contract schema and implement it | OUTSTANDING |
+| Identify role/capacity ambiguity | CONFIRMED; explicit multi-capacity selection outstanding |
+| Establish versioned EOS workspaceId and client contract validation | COMMITTED; tests added, execution pending |
 | Exhaustive recursive server route/import/test/workflow/data inventory | IN PROGRESS |
 | Retire legacy server runtime | NOT STARTED; blocked on migration proof |
 
