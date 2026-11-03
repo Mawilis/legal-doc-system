@@ -8,6 +8,8 @@ closed when deployment configuration or KMS access is unavailable.
 from __future__ import annotations
 
 import base64
+import hmac
+import secrets
 import os
 import re
 from typing import Any, Mapping
@@ -108,6 +110,23 @@ class AwsKmsGlobalMfaEnvelope:
             decrypt_key_ids=decrypt_key_ids,
             client=client,
         )
+
+    def validate_access(self) -> None:
+        """Prove the configured workload identity can round-trip a synthetic KMS envelope."""
+        probe_secret = secrets.token_urlsafe(32)
+        probe_principal = f"WILSY_KMS_STARTUP_PROBE:{secrets.token_hex(16)}"
+        envelope = self.encrypt_secret(
+            secret=probe_secret,
+            principal_id=probe_principal,
+            credential_revision=0,
+        )
+        recovered = self.decrypt_secret(
+            envelope,
+            principal_id=probe_principal,
+            credential_revision=0,
+        )
+        if not isinstance(recovered, str) or not hmac.compare_digest(recovered, probe_secret):
+            raise GlobalMfaKeyManagementError("GLOBAL_MFA_KMS_STARTUP_PROBE_FAILED")
 
     def encrypt_secret(
         self, *, secret: str, principal_id: str, credential_revision: int
