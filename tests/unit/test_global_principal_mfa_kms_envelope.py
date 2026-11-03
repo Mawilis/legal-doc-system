@@ -26,7 +26,7 @@ class _KmsClient:
         self.decrypt_calls.append(kwargs)
         return {
             "Plaintext": b"JBSWY3DPEHPK3PXP",
-            "KeyId": "arn:aws:kms:af-south-1:123456789012:key/test",
+            "KeyId": kwargs["KeyId"],
         }
 
 
@@ -96,6 +96,39 @@ def test_environment_factory_requires_key_id_and_rejects_unknown_provider(monkey
     monkeypatch.setenv("WILSY_GLOBAL_MFA_KMS_PROVIDER", "LOCAL")
     with pytest.raises(GlobalMfaKeyManagementError, match="GLOBAL_MFA_KMS_PROVIDER_UNSUPPORTED"):
         build_global_mfa_kms_envelope_from_environment(client=object())
+
+
+OLD_KEY = "arn:aws:kms:af-south-1:123456789012:key/previous"
+
+
+def test_decrypt_supports_explicitly_allowlisted_previous_key_during_rotation():
+    client = _KmsClient()
+    adapter = AwsKmsGlobalMfaEnvelope(
+        key_id=KEY,
+        region_name="af-south-1",
+        decrypt_key_ids=[OLD_KEY],
+        client=client,
+    )
+    envelope = {
+        "schema": ENVELOPE_SCHEMA,
+        "provider": "AWS_KMS",
+        "key_id": OLD_KEY,
+        "ciphertext": base64.b64encode(b"old-ciphertext").decode("ascii"),
+    }
+    assert adapter.decrypt_secret(
+        envelope, principal_id="principal-1", credential_revision=9
+    ) == "JBSWY3DPEHPK3PXP"
+    assert client.decrypt_calls[0]["KeyId"] == OLD_KEY
+
+
+def test_rotation_keyring_rejects_key_from_another_region():
+    with pytest.raises(GlobalMfaKeyManagementError, match="GLOBAL_MFA_KMS_DECRYPT_KEYRING_INVALID"):
+        AwsKmsGlobalMfaEnvelope(
+            key_id=KEY,
+            region_name="af-south-1",
+            decrypt_key_ids=["arn:aws:kms:eu-west-1:123456789012:key/other"],
+            client=_KmsClient(),
+        )
 
 
 def test_invalid_identity_context_is_rejected():
