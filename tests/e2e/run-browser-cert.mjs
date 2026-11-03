@@ -1,6 +1,6 @@
 /**
  * TITLE: WILSY OS browser-certificate runner
- * VERSION: v1.5.1-L8-8M-EXPLICIT-DISPOSABLE-MONGO-TARGET
+ * VERSION: v1.8.0-G68-INDEPENDENT-WORKSPACE-GATE
  * AUTHORITY: Test process lifecycle only.
  * EPITOME: Own the synthetic fixture, disposable EOS, isolated Node BFF, Vite,
  *          browser suite, bounded diagnostics, and ordered cleanup.
@@ -13,6 +13,7 @@
  *            EOS preflights so canonical tenant authorization evaluates the
  *            synthetic principal's durable authority instead of rejecting a
  *            missing X-Tenant-ID request context.
+ *            v1.8.0 does not gate browser journeys on the separately fail-closed G68 /workspace projection; it verifies Partner productive-work, Owner commercial read and Owner productive-work denial. v1.7.0 accepts an explicit loopback disposable replica set on a non-default host port using directConnection when host port 27017 is occupied.
  *            v1.4.0 tracks startup, Mongo/seed, authenticated preflight, browser,
  *            cleanup, and shutdown phases; preserves redacted child failure
  *            type/message/exit details; and reports primary and cleanup failures
@@ -82,10 +83,15 @@ const mongoDatabase = decodeURIComponent(mongoTarget.pathname.slice(1));
 if (
   mongoTarget.protocol !== 'mongodb:'
   || !['127.0.0.1', 'localhost'].includes(mongoTarget.hostname)
-  || mongoTarget.port !== '27017'
+  || !Number.isInteger(Number(mongoTarget.port))
+  || Number(mongoTarget.port) < 1024
+  || Number(mongoTarget.port) > 65535
   || mongoTarget.username
   || mongoTarget.password
-  || mongoTarget.searchParams.get('replicaSet') !== 'wilsyVendorCertRS'
+  || !(
+    mongoTarget.searchParams.get('replicaSet') === 'wilsyVendorCertRS'
+    || mongoTarget.searchParams.get('directConnection') === 'true'
+  )
   || !/^wilsy_l8_8m_r3_[a-zA-Z0-9_-]+$/.test(mongoDatabase)
 ) {
   throw new Error('BROWSER_CERT_DISPOSABLE_MONGO_TARGET_REQUIRED');
@@ -425,18 +431,34 @@ async function preflightAuthenticatedEos(eosBaseUrl) {
   } catch {
     throw new Error('BROWSER_CERT_FIXTURE_STATE_UNAVAILABLE');
   }
-  const token = state?.actors?.partner?.access_token;
-  if (typeof token !== 'string' || token.length === 0) {
+  const partnerToken = state?.actors?.partner?.access_token;
+  const ownerToken = state?.actors?.tenant_owner?.access_token;
+  if (
+    typeof partnerToken !== 'string' || partnerToken.length === 0
+    || typeof ownerToken !== 'string' || ownerToken.length === 0
+  ) {
     throw new Error('BROWSER_CERT_FIXTURE_SESSION_UNAVAILABLE');
   }
   const tenantId = state?.tenant_id;
   if (typeof tenantId !== 'string' || tenantId.length === 0 || tenantId !== tenantId.trim()) {
     throw new Error('BROWSER_CERT_FIXTURE_TENANT_SCOPE_UNAVAILABLE');
   }
-  return Promise.all([
-    preflightEosRoute('workspace', token, tenantId, eosBaseUrl),
-    preflightEosRoute('productive-work', token, tenantId, eosBaseUrl),
+  // The legacy /workspace confidentiality projection remains independently
+  // fail-closed under G68 and is not consumed by these browser journeys.
+  // Certify the actual Partner productive-work path and Owner commercial read;
+  // explicitly prove that Owner productive-work remains denied.
+  const results = await Promise.all([
+    preflightEosRoute('productive-work', partnerToken, tenantId, eosBaseUrl),
+    preflightEosRoute('commercial-context', ownerToken, tenantId, eosBaseUrl),
+    preflightEosRoute('productive-work', ownerToken, tenantId, eosBaseUrl),
   ]);
+  const ownerPracticeRead = results[2];
+  if (ownerPracticeRead.status !== 403) {
+    throw new Error(
+      'BROWSER_CERT_OWNER_PRACTICE_READ_NOT_DENIED:' + ownerPracticeRead.status,
+    );
+  }
+  return results.slice(0, 2);
 }
 
 function missingBffDependencies() {
@@ -541,7 +563,7 @@ try {
   if (eosProcess.closed) throw new Error('BROWSER_CERT_EOS_EXITED_DURING_STARTUP');
   if (!eosReady.ok) throw new Error('BROWSER_CERT_EOS_KERNEL_HEALTH_FAILED:' + eosReady.status);
 
-  setPhase('authenticated_preflights', 'workspace_and_productive_work');
+  setPhase('authenticated_preflights', 'partner_practice_and_owner_commercial_authority');
   const preflightResults = await preflightAuthenticatedEos(eosBaseUrl);
   const failedPreflights = preflightResults.filter((result) => result.status !== 200);
   if (failedPreflights.length > 0) {
