@@ -39,4 +39,4 @@ def test_system_services_startup_does_not_create_cases_or_grants():
 
 
 def test_system_services_server_version_tracks_case_index_bootstrap():
-    assert server.VERSION == "v1.40.0-GLOBAL-MFA-KMS-AND-ENROLLMENT-BOOTSTRAP"
+    assert server.VERSION == "v1.41.0-GLOBAL-MFA-ENROLLMENT-AND-LEGACY-MIGRATION"
