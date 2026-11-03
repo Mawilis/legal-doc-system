@@ -199,3 +199,24 @@ def test_genesis_rejects_duplicate_owner_capacity_without_overwriting_existing_a
     assert "membership" in calls and "role" in calls
     assert "capacity" not in calls
     assert lifecycle.calls[0]["session"] is not None
+
+
+def test_tenant_create_result_must_expose_exact_canonical_tenant_id(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    session = _Session()
+    lifecycle = _Lifecycle()
+    command = TenantOwnerGenesisProvisioningCommand(
+        lifecycle=lifecycle,
+        tenant_create=lambda payload, *, session: {
+            "success": True,
+            "tenant": SimpleNamespace(display_name="tenant object without canonical id"),
+        },
+    )
+    with pytest.raises(TenantOwnerGenesisProvisioningError, match="TENANT_REGISTRY_SCOPE_MISMATCH"):
+        command.execute(
+            request=_request(), evidence=_evidence(),
+            actor_principal_id="principal-owner-1", command_id="cmd-tenant-shape",
+            tenant_payload={"name": "Synthetic"}, database=object(), session=session,
+        )
+    assert lifecycle.calls == []

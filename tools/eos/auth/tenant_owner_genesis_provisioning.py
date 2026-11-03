@@ -98,7 +98,7 @@ class TenantOwnerGenesisProvisioningCommand:
         if not isinstance(tenant_result, Mapping) or tenant_result.get("success") is not True:
             raise TenantOwnerGenesisProvisioningError("TENANT_REGISTRY_CREATE_FAILED")
         tenant = tenant_result.get("tenant")
-        if tenant is None or getattr(tenant, "tenant_id", request.tenant_id) != request.tenant_id:
+        if tenant is None or getattr(tenant, "tenant_id", None) != request.tenant_id:
             raise TenantOwnerGenesisProvisioningError("TENANT_REGISTRY_SCOPE_MISMATCH")
 
         ownership_event = self._lifecycle.execute(
