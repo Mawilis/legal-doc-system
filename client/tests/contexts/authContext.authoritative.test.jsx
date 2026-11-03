@@ -828,6 +828,8 @@ describe('authoritative authentication state machine', () => {
         workspace: {
           tenantId: 'TENANT-BROWSER',
           businessRole: 'tenant_auditor',
+          workspaceId: 'AUDIT_REPORTING',
+          workspaceContractVersion: 'v1.0.0-WILSY-EOS-WORKSPACE-RESOLUTION',
           membershipRevision: 7,
           businessRoleRevision: 11,
           branding: null,
