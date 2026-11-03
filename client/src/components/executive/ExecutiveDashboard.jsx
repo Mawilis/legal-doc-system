@@ -89,6 +89,8 @@ import {
   buildExecutiveTransformationPlaybook
 } from '../../services/ExecutiveTransformationEngine';
 import WilsyAccountCommandCenter from '../account/WilsyAccountCommandCenter';
+import api from '../../services/api.js';
+import useAuthenticatedTenantBrandingAsset from '../../hooks/useAuthenticatedTenantBrandingAsset.js';
 import BusinessArtifactStudio from '../artifacts/BusinessArtifactStudio';
 import styles from './ExecutiveDashboard.module.css';
 
@@ -1028,7 +1030,8 @@ const ExecutiveDashboard = ({
   user = null,
   onSignOut = null,
   onFounderReturn = null,
-  founderReturnEnabled = false
+  founderReturnEnabled = false,
+  onSwitchDashboard = null
 }) => {
   const { activeTenant } = useTenants();
   const access = useSovereignAccess();
@@ -1049,6 +1052,8 @@ const ExecutiveDashboard = ({
   const [isAccountCommandCenterOpen, setIsAccountCommandCenterOpen] = useState(false);
   const [accountThemeId, setAccountThemeId] = useState(() => readWilsyExecutiveThemePreference().themeId);
   const [accountThemeMode, setAccountThemeMode] = useState(() => readWilsyExecutiveThemePreference().mode);
+  const [isOpeningLegalWorkspace, setIsOpeningLegalWorkspace] = useState(false);
+  const [legalEntryError, setLegalEntryError] = useState('');
 
   const executiveThemeVars = useMemo(() => (
     buildWilsyExecutiveThemeVars(accountThemeId, accountThemeMode)
@@ -1144,6 +1149,32 @@ const ExecutiveDashboard = ({
   const tenantBranding = useMemo(() => (
     buildTenantBrandingConfig(activeTenant, executiveOperatingSystem.profile)
   ), [activeTenant, executiveOperatingSystem.profile]);
+  const { objectUrl: tenantLogoObjectUrl } = useAuthenticatedTenantBrandingAsset(
+    tenantBranding.assetDescriptor,
+  );
+
+  const openLegalWorkspace = useCallback(async () => {
+    if (typeof onSwitchDashboard !== 'function' || isOpeningLegalWorkspace) return;
+    setIsOpeningLegalWorkspace(true);
+    setLegalEntryError('');
+    try {
+      // This server decision proves current commercial-context permission for
+      // the authenticated principal. Browser role labels never grant access.
+      await api.get('/legal-operations/commercial-context');
+      onSwitchDashboard('LEGAL_DASHBOARD');
+    } catch (error) {
+      const status = error?.response?.status;
+      setLegalEntryError(
+        status === 403
+          ? 'Legal product access is not authorized for this signed-in identity.'
+          : status === 503
+            ? 'Legal commercial context is temporarily unavailable.'
+            : 'Legal product access could not be verified. Try again after reconnecting.'
+      );
+    } finally {
+      setIsOpeningLegalWorkspace(false);
+    }
+  }, [isOpeningLegalWorkspace, onSwitchDashboard]);
 
   const wilsyAiPlan = useMemo(() => (
     wilsyAIEntitlements.plans.length
@@ -4042,8 +4073,8 @@ const ExecutiveDashboard = ({
         </div>
         <div className={styles.brandPlate}>
           <div className={styles.tenantMark}>
-            {tenantBranding.logo ? (
-              <img src={tenantBranding.logo} alt={`${tenantBranding.displayName} mark`} />
+            {tenantLogoObjectUrl ? (
+              <img src={tenantLogoObjectUrl} alt={`${tenantBranding.displayName} mark`} />
             ) : (
               <span>{tenantBranding.initials}</span>
             )}
@@ -4077,6 +4108,23 @@ const ExecutiveDashboard = ({
           >
             <UserCog size={13} /> COMMAND CENTER
           </button>
+          {typeof onSwitchDashboard === 'function' && (
+            <button
+              type="button"
+              onClick={openLegalWorkspace}
+              disabled={isOpeningLegalWorkspace}
+              className={styles.secondaryButton}
+              title="Verify Legal commercial access and open WILSY Legal OS"
+              data-wilsy-legal-entry="commercial-context-gated"
+            >
+              <ShieldCheck size={13} /> {isOpeningLegalWorkspace ? 'VERIFYING LEGAL' : 'LEGAL OS'}
+            </button>
+          )}
+          {legalEntryError && (
+            <span role="alert" className={styles.sourceStatus}>
+              {legalEntryError}
+            </span>
+          )}
           <button
             onClick={loadAllData}
             disabled={isRefreshing}
@@ -4317,8 +4365,8 @@ const ExecutiveDashboard = ({
         </div>
         <div className={styles.brandPlate}>
           <div className={styles.tenantMark}>
-            {tenantBranding.logo ? (
-              <img src={tenantBranding.logo} alt={`${tenantBranding.displayName} mark`} />
+            {tenantLogoObjectUrl ? (
+              <img src={tenantLogoObjectUrl} alt={`${tenantBranding.displayName} mark`} />
             ) : (
               <span>{tenantBranding.initials}</span>
             )}

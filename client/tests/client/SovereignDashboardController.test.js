@@ -85,6 +85,13 @@ describe('SovereignDashboardController resolver', () => {
       manualDashboardKey: 'SHERIFF'
     })).toBe(DASHBOARD_KEYS.EXECUTIVE);
 
+    // Product navigation changes presentation only; Legal EOS still authorizes
+    // every commercial-context and workspace request for the exact identity.
+    expect(resolveDashboardKey({
+      user: { id: 'owner-3', role: 'TENANT_OWNER' },
+      manualDashboardKey: 'LEGAL_DASHBOARD'
+    })).toBe(DASHBOARD_KEYS.LEGAL);
+
     expect(resolveDashboardKey({
       user: { id: 'partner-1', role: 'LEGAL_PARTNER' },
       manualDashboardKey: 'FOUNDER_DASHBOARD',
@@ -159,6 +166,7 @@ describe('SovereignDashboardController resolver', () => {
     expect(source).toContain("const LegalDashboard = React.lazy(() => import('../industry/LegalDashboard'))");
     expect(source).toContain('dashboardKey === DASHBOARD_KEYS.LEGAL');
     expect(source).toContain('roleView={role}');
+    expect(source).toContain('onSwitchDashboard={handleManualDashboardSwitch}');
     expect(source).not.toContain('roleView="DEPUTY"');
     expect(source).not.toContain('roleView="SHERIFF"');
   });
