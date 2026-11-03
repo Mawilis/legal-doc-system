@@ -260,3 +260,72 @@ The index names were cross-checked against the registry constants after initial 
 ### 10.2 Harness CI coverage
 
 The GitHub provisioning gate now runs `tests.unit.test_eos_index_provisioning_harness` and exercises the CLI's `--apply` refusal, requiring exit code 3. The gate now runs on pull requests and pushes to the roadmap branch when the manifest/workflow changes. The job remains intentionally non-mutating and does not contact MongoDB.
+
+
+## 12. Legal Operations command factory closure
+
+The mounted `/api/legal-operations` command router does not own a generic collection name supplied by the request. Its `_collection(database, name)` factory receives only imported registry constants. The direct collection dependency set was closed from the router's import graph and all call sites:
+
+- Core lifecycle journal: `legal_operations_lifecycle_evidence`.
+- Allocation: allocation current pointer and immutable allocation receipt.
+- Attempt authority, transition and outcome registries.
+- Deputy principal binding and device provenance.
+- Field evidence and return evidence.
+- Location permission, observation and revocation evidence.
+- Conflict screening and review evidence.
+- Workflow definition, topology, stage, instance, gate satisfaction and transition registries.
+- Notification recipient binding and lifecycle registries.
+- Legal work assignment, work item and completion event registries.
+- Tenant authorization decision evidence.
+- Principal authority, tenant membership, tenant business role and role assignment repositories.
+
+The exact imported registry symbols in the router are `LIFECYCLE_COLLECTION`, `ALLOCATION_CURRENT_COLLECTION`, `ALLOCATION_RECEIPT_COLLECTION`, `ATTEMPT_AUTHORITY_COLLECTION`, `TRANSITION_COLLECTION`, `OUTCOME_COLLECTION`, `RETURN_COLLECTION`, `FIELD_EVIDENCE_COLLECTION`, `DEPUTY_PRINCIPAL_BINDING_COLLECTION`, `DEPUTY_DEVICE_PROVENANCE_COLLECTION`, `LOCATION_PERMISSION_COLLECTION`, `LOCATION_OBSERVATION_COLLECTION`, `LOCATION_REVOCATION_COLLECTION`, `LEGAL_CONFLICT_SCREENING_COLLECTION`, `LEGAL_CONFLICT_REVIEW_COLLECTION`, `WORKFLOW_DEFINITION_COLLECTION`, `WORKFLOW_TOPOLOGY_COLLECTION`, `WORKFLOW_STAGE_COLLECTION`, `WORKFLOW_INSTANCE_COLLECTION`, `WORKFLOW_GATE_SATISFACTION_COLLECTION`, `WORKFLOW_TRANSITION_COLLECTION`, `RECIPIENT_BINDING_COLLECTION`, `RECIPIENT_BINDING_LIFECYCLE_COLLECTION`, `LEGAL_WORK_ASSIGNMENT_COLLECTION`, `LEGAL_WORK_ITEM_COLLECTION`, and `LEGAL_WORK_COMPLETION_EVENT_COLLECTION`, plus the canonical IAM collection constants.
+
+This is a bounded server-side factory, not an unrestricted dynamic collection resolver. The API caller's Mongo role still needs the union of CRUD actions actually reached by the invoked command; collection presence alone does not justify blanket read/write rights. The existing API-owned transaction is propagated into the orchestration/registry calls. Index DDL remains a distinct provisioner responsibility.
+
+## 13. AI Legal Gateway transitive read closure
+
+The mounted `/api/wilsy-ai/legal-tools` routes resolve the following direct collections:
+- `wilsy_ai_entitlements` — current entitlement read;
+- `wilsy_ai_usage_observations` — usage/capacity read;
+- `legal_operations_lifecycle_evidence` — instruction, attempt, execution and return source read;
+- process-service tariff assessment and billing eligibility registries — read projections;
+- `client_invoices` and `issuance` — invoice projection/correlation read;
+- `wilsy_ai_legal_tool_invocations` — append-only post-read invocation evidence write.
+
+The `LegalAIReadAdapter` delegates seven tool identities to canonical L7A/L7C read callables: instruction, attempt, execution, return, tariff assessment, billing eligibility and invoice. It does not implement a second legal repository or grant mutation authority. Gateway authorization separately recomposes current IAM and commercial admission before materializing legal data. The invocation evidence write occurs after the read; listing tools persists no invocation evidence.
+
+This gateway's effective permissions therefore include the read dependencies of both canonical router families plus the invocation append. It does not imply permission to mutate invoices, payments, tariffs, legal lifecycle, entitlement or usage observations.
+
+## 14. Branding persistence closure and index declarations
+
+The mounted `/api/tenant-branding` router composes these registries:
+- `tenant_branding_assets`: tenant/reference immutable asset evidence and content lookup;
+- `tenant_branding_entitlement_history` and `tenant_branding_entitlement_current`: revisioned commercial branding entitlement and current pointer;
+- `tenant_branding_profiles`, `tenant_branding_profile_selections`, and `tenant_branding_profile_current`: immutable profile/selection facts and explicit current pointer.
+
+The router's reads/writes are transaction-scoped and tenant-scoped. Asset bytes are stored in the asset record as bounded payload/content evidence; no S3/object-storage dependency is inferred from these registries. No separate cleanup worker or object deletion caller was established by this source pass.
+
+The manifest now records the exact `ensure_indexes` declarations for these six collections (17 index declarations), including all unique flags and key order. AI entitlement, usage-observation and invocation registry indexes are also recorded (9 declarations). These definitions have not been provisioned.
+
+## 15. Read-only live index verifier
+
+Added `tools/eos/mongodb/read_only_index_verifier.py`. It:
+- requires explicit `--target nonproduction`, exact database name, an independently approved opaque fingerprint and a protected environment URI variable;
+- uses only MongoDB `hello` and `list_indexes()` read operations;
+- fingerprints replica-set identity/host membership plus the explicitly selected database without printing hostnames or URI material;
+- compares key order and the declared unique/sparse/TTL/partial-filter/collation/hidden options;
+- reports missing, divergent and undeclared extra indexes;
+- contains no create/drop/update/insert/delete operation and always reports zero mutations.
+
+The verifier refuses to run while the manifest is `INVENTORY_INCOMPLETE`, refuses the separate audit database in the same invocation, and fails if the independently injected approval does not match the command-line approval. Unit tests use fake collections and cover exact match, missing index, TTL mismatch, undeclared extra index, and database-scoped fingerprint stability. The CI provisioning gate runs these tests.
+
+**Execution is intentionally pending.** No EOS non-production Atlas target has been verified; `legal-doc-test` remains rejected. The verifier must not be run against that cluster or any guessed target.
+
+## 16. Remaining explicit blockers after this tranche
+
+- Dunning's `collections_day` policy field has no implemented state/event semantics. A product/legal policy decision is required before a safe evaluator can map it into lifecycle transitions.
+- Dunning audit and state idempotency indexes, duplicate-data preflight and exact subscription identity are not yet source-certified; no transaction implementation is enabled.
+- Branding and AI indexes are now inventoried, but C1C orchestration/accounting and AI advisory/service router transitive persistence require separate route-to-registry closure.
+- Dynamic legal command collection references are closed to imported registry constants, but their exact index options and CRUD action set must still be merged from every registry source before the API permission manifest is marked complete.
+- No candidate workload identity or live runtime target is proven; operator credentials and production remain unchanged.
