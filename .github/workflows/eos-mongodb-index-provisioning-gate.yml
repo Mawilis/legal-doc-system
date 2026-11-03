@@ -50,6 +50,8 @@ jobs:
           else
             python tools/eos/mongodb/index_provisioning_harness.py
           fi
+      - name: Run provisioning harness unit tests
+        run: python -m unittest tests.unit.test_eos_index_provisioning_harness
       - name: Enforce fail-closed execution gate
         run: |
           echo "The manifest remains inventory-incomplete."
