@@ -1,7 +1,7 @@
 """WILSY OS authoritative MFA router certificate.
 
 TITLE: Authentication Router Authoritative MFA Certificate
-VERSION: v1.4.0-GLOBAL-PRINCIPAL-FAILURE-THROTTLE-HTTP-CERT
+VERSION: v1.4.1-GLOBAL-PRINCIPAL-FAILURE-THROTTLE-HTTP-CERT
 AUTHORITY: Wilsy OS Core Governance
 EPITOME: Certifies exact setup, reconciliation, verification, persistence, and
          bounded tenant-discovery behavior without a live database.
@@ -10,7 +10,8 @@ COLLABORATION / OWNERSHIP: Exercises tools.eos.api.auth_router with deterministi
                            registry and tenant doubles.
 CERTIFICATION / UPDATE DATE: 2026-09-17
 CHANGELOG:
-  v1.4.0-GLOBAL-PRINCIPAL-FAILURE-THROTTLE-HTTP-CERT — certifies HTTP admission,
+  v1.4.1-GLOBAL-PRINCIPAL-FAILURE-THROTTLE-HTTP-CERT — explicitly types synthetic ASGI Request doubles for Pyright.
+  v1.4.0-GLOBAL-PRINCIPAL-FAILURE-THROTTLE-HTTP-CERT certifies HTTP admission,
   failure-only recording, authenticated-email reset, generic 429 retry guidance,
   and fail-closed throttle persistence handling.
   v1.3.0-R10C2F8A1-AUTH-ROUTER-AUTHORITATIVE-MFA-CERT-METADATA-REPAIR —
@@ -36,10 +37,10 @@ from __future__ import annotations
 
 import asyncio
 from types import SimpleNamespace
-from typing import Any
+from typing import Any, cast
 
 import pytest
-from fastapi import HTTPException
+from fastapi import HTTPException, Request
 
 from tools.eos.api import auth_router
 from tools.eos.saas.domain.auth import AuthRequest, DiscoverRequest, VerifyOTPRequest
@@ -478,7 +479,7 @@ def test_http_login_records_only_failed_credentials_and_resets_after_success(
 
     monkeypatch.setattr(auth_router, "PrincipalAuthenticationRateLimit", _Gate)
     monkeypatch.setattr(auth_router, "get_auth_registry", lambda _tenant: registry)
-    http_request = SimpleNamespace(client=SimpleNamespace(host="203.0.113.25"))
+    http_request = cast(Request, SimpleNamespace(client=SimpleNamespace(host="203.0.113.25")))
 
     response = _run(
         auth_router.login(
@@ -595,7 +596,7 @@ def test_http_login_fails_closed_when_throttle_authority_is_unavailable(
 
 
 # ARTIFACT: tests/unit/test_auth_router_authoritative_mfa.py
-# VERSION: v1.4.0-GLOBAL-PRINCIPAL-FAILURE-THROTTLE-HTTP-CERT
+# VERSION: v1.4.1-GLOBAL-PRINCIPAL-FAILURE-THROTTLE-HTTP-CERT
 # AUTHORITY BOUNDARY: deterministic HTTP-state certificate only
 # TENANT POSTURE: unknown aliases fail closed without directory enumeration
 # FAIL-CLOSED POSTURE: persistence uncertainty cannot issue a session
