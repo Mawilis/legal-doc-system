@@ -24,7 +24,6 @@ from tools.eos.auth.tenant_business_role_repository import TenantBusinessRoleRep
 from tools.eos.auth.tenant_membership import TenantMembershipStatus
 from tools.eos.auth.tenant_membership_repository import TenantMembershipRepository
 from tools.eos.kernel.db import get_client, get_database
-from tools.eos.saas.billing.plan_registry import PlanRegistry
 from tools.eos.saas.billing.subscription_active_entitlement_composition_service import (
     SubscriptionActiveEntitlementCompositionService,
 )
@@ -193,10 +192,7 @@ def reconcile(*, apply: bool) -> dict[str, Any]:
 
         plan_features = tuple(plan.get("features") or ())
         subscription_features = tuple(subscription.get("plan_features") or ())
-        if LEGAL_FEATURE in subscription_features:
-            action = "RECONCILE_EXISTING"
-        else:
-            action = "SAME_PLAN_UPGRADE"
+        action = "PERPETUAL_FOUNDER_RECONCILE"
         if not apply:
             return {
                 "outcome": "DRY_RUN",
@@ -204,33 +200,17 @@ def reconcile(*, apply: bool) -> dict[str, Any]:
                 "tenant_id": TENANT_ID,
                 "subscription_id": SUBSCRIPTION_ID,
                 "plan_id": PLAN_ID,
-                "plan_catalogue_needs_legal_feature": LEGAL_FEATURE not in plan_features,
-                "subscription_snapshot_needs_legal_feature": LEGAL_FEATURE not in subscription_features,
+                "issuance_basis": "PERPETUAL_PLATFORM_OWNER",
+                "plan_mutation_required": False,
+                "subscription_mutation_required": False,
                 "writes_performed": False,
             }
 
-        if LEGAL_FEATURE not in plan_features:
-            updated = PlanRegistry.update(
-                PLAN_ID,
-                {
-                    "features": [BRANDING_FEATURE, LEGAL_FEATURE],
-                    "user": "WILSY-FOUNDER-LEGAL-RECONCILIATION",
-                },
-                tenant_id=TENANT_ID,
-                exact_tenant=True,
-            )
-            _require(updated.get("success") is True, "FOUNDER_PLAN_EVOLUTION_FAILED")
-
-        if action == "SAME_PLAN_UPGRADE":
-            result = SubscriptionActiveEntitlementCompositionService.upgrade(
-                SUBSCRIPTION_ID,
-                {"newPlanId": PLAN_ID},
-                identity,
-            )
-        else:
-            result = SubscriptionActiveEntitlementCompositionService.reconcile_existing(
-                identity
-            )
+        # The Founder term is perpetual platform-owner eligibility. P42 issues
+        # Legal from that existing term without editing the plan or subscription.
+        result = SubscriptionActiveEntitlementCompositionService.reconcile_existing(
+            identity
+        )
 
         _require(
             result.legal_entitlement_applicable is True,
@@ -249,7 +229,9 @@ def reconcile(*, apply: bool) -> dict[str, Any]:
         _require(evidence.tenant_id == TENANT_ID, "AUTHORIZATION_TENANT_MISMATCH")
         _require(result.subscription.subscription_id == SUBSCRIPTION_ID, "RECONCILED_SUBSCRIPTION_MISMATCH")
         _require(result.subscription.plan_id == PLAN_ID, "RECONCILED_PLAN_MISMATCH")
-        _require(LEGAL_FEATURE in tuple(result.subscription.plan_features), "LEGAL_FEATURE_NOT_IN_SUBSCRIPTION_SNAPSHOT")
+        _require(result.subscription.tier == "FOUNDER_ENTERPRISE", "RECONCILED_TIER_MISMATCH")
+        _require(result.subscription.amount == 0, "RECONCILED_SUBSCRIPTION_NOT_ZERO_RATED")
+        _require(result.subscription.billing_mode == "PLATFORM", "RECONCILED_BILLING_MODE_MISMATCH")
 
         current = database[CURRENT_COLLECTION].find_one({"tenant_id": TENANT_ID})
         history_count = database[HISTORY_COLLECTION].count_documents(
