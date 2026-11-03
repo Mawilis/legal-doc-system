@@ -103,6 +103,7 @@ def system_services_workspace_bootstrap(
     """Project the staff workspace only after the exact EOS queue permission is current."""
     actor = _actor(identity)
     service = _service(request)
+    _, authorizer = _runtime(request)
 
     def project(session: ClientSession):
         cases = service.list_system_queue(actor=actor, limit=100, session=session)
