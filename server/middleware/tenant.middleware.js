@@ -30,11 +30,9 @@ export const verifyTenantScope = async (req, res, next) => {
     }
 
     req.tenantId = CANONICAL_TENANT_ID;
-    req.tenant = {
-      ...(req.tenant || {}),
-      id: CANONICAL_TENANT_ID,
-      tenantId: CANONICAL_TENANT_ID,
-    };
+    req.tenant = req.tenant || {};
+    req.tenant.id = CANONICAL_TENANT_ID;
+    req.tenant.tenantId = CANONICAL_TENANT_ID;
 
     return next();
   } catch (error) {
