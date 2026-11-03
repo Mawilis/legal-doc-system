@@ -122,7 +122,7 @@ The roadmap checkpoint identifies these legacy runtime surfaces. This is the mig
 
 ## 10. Expanded endpoint and legacy dependency census
 
-The committed `runtime_endpoints.txt` snapshot contains 384 source-reference lines and 152 distinct `/api/*` path tokens. It is a client-callsite inventory, not proof that each route is mounted or implemented in EOS. `runtime_fetch_all.txt` contains 92 fetch callsite lines. Direct-origin callsites were also found that bypass Vite, including `http://127.0.0.1:8000/api/v1` and several `http://localhost:5050/api` routes. These must be removed or redirected through an EOS-owned API contract; do not silently point them at unrelated routes.
+The committed `runtime_endpoints.txt` snapshot contains 384 source-reference lines and 196 distinct `/api/*` path strings (including dynamic path fragments and query variants). It is a client-callsite inventory, not proof that each route is mounted or implemented in EOS. `runtime_fetch_all.txt` contains 92 fetch callsite lines. Direct-origin callsites were also found that bypass Vite, including `http://127.0.0.1:8000/api/v1` and several `http://localhost:5050/api` routes. These must be removed or redirected through an EOS-owned API contract; do not silently point them at unrelated routes.
 
 ### Distinct client endpoint tokens
 
@@ -357,12 +357,12 @@ It imports CRM command routes, a local PDF renderer, tenant context middleware, 
 
 ### Runtime and package changes already made on this branch
 
-- Added `scripts/start-dev-stack.sh`, which starts/reuses only Python EOS and Vite. A standalone `bash -n` syntax check passed.
+- Added `scripts/start-dev-stack.sh`, which starts/reuses only Python EOS and Vite. It verifies the working directory of listeners on ports 9095 and 5173 and refuses to reuse a process from another checkout.
 - Changed root `package.json` default `dev` to the shell launcher.
 - Removed root Express lifecycle scripts (`server:dev`, `server:start`, `pm2:deploy`, `pm2:stop`, `pm2:status`).
 - Deleted `scripts/start-dev-stack.mjs`.
 - Vite's `/api` catch-all and legacy `/auth` compatibility route now target Python EOS directly.
-- This removes the legacy Express process from the default development startup path; it does not yet delete the server source tree or certify every former route.
+- This removes the legacy Express process from the default development startup path; it does not yet delete the server source tree or certify every former route. The launcher requires macOS/Linux `lsof` to verify process ownership; validate this on the target developer OS.
 
 ### Production retention policy conflict
 
