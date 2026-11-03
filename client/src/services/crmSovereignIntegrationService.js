@@ -75,7 +75,8 @@ export function buildTenantTheme(activeTenant = {}, user = {}) {
  * @returns {object} Account profile projection.
  * @collaboration Makes CRM context-aware of the account profile without coupling to a single profile hook.
  */
-export function buildAccountProfile(activeTenant = {}, user = {}, tenantId = 'WILSY_GLOBAL_ROOT') {
+export function buildAccountProfile(activeTenant = {}, user = {}, tenantId = null) {
+  const resolvedTenantId = tenantId || activeTenant?.tenantId || null;
   const branding = activeTenant?.branding || {};
   const profile = activeTenant?.profile || activeTenant?.accountProfile || {};
 
@@ -93,7 +94,7 @@ export function buildAccountProfile(activeTenant = {}, user = {}, tenantId = 'WI
   const operatingModel = safeText(profile.operatingModel, activeTenant?.operatingModel, 'Sovereign OS');
 
   return {
-    tenantId,
+    tenantId: resolvedTenantId,
     companyName,
     industry,
     jurisdiction,
