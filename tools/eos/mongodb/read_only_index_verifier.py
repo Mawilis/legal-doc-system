@@ -97,7 +97,7 @@ def verify(client: Any, entries: list[dict[str, Any]], database_name: str) -> di
         collection_name = entry["collection"]
         try:
             actual = {item["name"]: item for item in database[collection_name].list_indexes()}
-        except PyMongoError as error:
+        except Exception as error:
             raise VerificationError(f"Cannot read indexes for declared collection {collection_name}") from error
         expected = {item["name"]: item for item in entry["indexes"]}
         for name, spec in expected.items():
