@@ -18,6 +18,8 @@ from pymongo.collection import Collection
 from pymongo.database import Database
 from pymongo.errors import CollectionInvalid
 
+from tools.eos.kernel.db import resolve_mongo_uri
+
 
 CANONICAL_TENANT_ID = "WILSYTENANT-4CD2FZ4O"
 FOUNDER_SUBSCRIPTION_ID = "WILSYSUB-93455E4E"
@@ -286,7 +288,7 @@ def main() -> int:
     parser.add_argument("--database", default=os.getenv("MONGODB_DATABASE", "wilsy"))
     parser.add_argument("--apply", action="store_true", help="Apply the guarded retirement transaction.")
     args = parser.parse_args()
-    uri = os.getenv("MONGODB_URI")
+    uri = resolve_mongo_uri()
     if not uri:
         raise SystemExit("MONGODB_URI_REQUIRED")
     import json
