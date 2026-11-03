@@ -48,6 +48,7 @@ def test_global_auth_routes_are_mounted_under_one_explicit_prefix() -> None:
     paths = {getattr(route, "path", None) for route in router.routes}
     assert paths == {
         "/auth/global/login",
+        "/auth/global/membership-options",
         "/auth/global/select-membership",
         "/auth/global/verify-mfa",
         "/auth/global/refresh",
