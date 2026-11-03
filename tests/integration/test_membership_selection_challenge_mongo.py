@@ -1,7 +1,7 @@
 """WILSY OS real-Mongo certification for membership-selection challenge transactions.
 
 TITLE: Membership Selection Challenge Real-Mongo Certification
-VERSION: v1.0.0-GLOBAL-MEMBERSHIP-SELECTION-CHALLENGE-MONGO-TESTS
+VERSION: v1.0.1-GLOBAL-MEMBERSHIP-SELECTION-CHALLENGE-MONGO-TESTS
 AUTHORITY: Certifies challenge persistence and caller-owned transaction semantics only.
 EPITOME: Exercises digest indexes, single-use challenge consumption, MFA binding
          and rollback against a disposable MongoDB replica set.
@@ -10,9 +10,10 @@ ABSOLUTE CANONICAL PATH:
 COLLABORATION / OWNERSHIP: Wilsy Core Engineering.
 CERTIFICATION / UPDATE DATE: 2026-11-03.
 CHANGELOG:
-    v1.0.0-GLOBAL-MEMBERSHIP-SELECTION-CHALLENGE-MONGO-TESTS adds real
-    replica-set coverage for committed selection/MFA transitions, replay
-    rejection and transaction abort restoring an unconsumed selection token.
+    v1.0.1-GLOBAL-MEMBERSHIP-SELECTION-CHALLENGE-MONGO-TESTS uses an explicit
+    hashlib import for deterministic persisted-digest inspection.
+    v1.0.0 adds real replica-set coverage for committed selection/MFA transitions,
+    replay rejection and transaction abort restoring an unconsumed selection token.
 COMPLIANCE: Test artifact for POPIA section 19; GDPR Article 32; SOC 2 CC7.2.
 SECURITY / PRIVACY POSTURE: Uses synthetic authority and isolated disposable databases.
 TENANT BOUNDARY: Exact synthetic principal/tenant/capacity selection only.
@@ -22,6 +23,7 @@ FINANCIAL AUTHORITY BOUNDARY: No financial authority; Kennel EOS remains exclusi
 
 from __future__ import annotations
 
+import hashlib
 import os
 import uuid
 from types import SimpleNamespace
@@ -180,7 +182,7 @@ def test_real_mongo_abort_restores_selection_challenge_for_safe_retry(mongo_chal
         select_capacity(service, selection.challenge_token, session)
         session.abort_transaction()
 
-    persisted = collection.find_one({"challenge_digest": __import__("hashlib").sha3_512(
+    persisted = collection.find_one({"challenge_digest": hashlib.sha3_512(
         selection.challenge_token.encode("utf-8")
     ).hexdigest()})
     assert persisted is not None
@@ -196,7 +198,7 @@ def test_real_mongo_abort_restores_selection_challenge_for_safe_retry(mongo_chal
 
 
 # ARTIFACT: test_membership_selection_challenge_mongo.py
-# VERSION: v1.0.0-GLOBAL-MEMBERSHIP-SELECTION-CHALLENGE-MONGO-TESTS
+# VERSION: v1.0.1-GLOBAL-MEMBERSHIP-SELECTION-CHALLENGE-MONGO-TESTS
 # AUTHORITY BOUNDARY: real-Mongo challenge persistence and transaction certification only
 # TENANT POSTURE: isolated synthetic principal/tenant/capacity scope
 # FAIL-CLOSED POSTURE: replay, expiry and transaction failures reject; abort restores uncommitted state
