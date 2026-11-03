@@ -131,12 +131,24 @@ def test_global_login_issues_tenant_neutral_selection_and_current_membership_pag
     monkeypatch.setattr(
         "tools.eos.api.global_principal_auth_router.authenticate_global_principal",
         lambda **_kwargs: SimpleNamespace(
-            principal_id="principal-global", credential_revision=7
+            principal_id="principal-global", credential_revision=7, mfa_enabled=True
         ),
     )
+    class FactorCollection:
+        def find_one(self, query, *, projection, session):
+            assert query["principal_id"] == "principal-global"
+            assert query["credential_revision"] == 7
+            assert query["status"] == "ACTIVE"
+            assert projection == {"principal_id": 1}
+            assert session is session
+            return {"principal_id": "principal-global"}
+    class Database:
+        def __getitem__(self, _name):
+            return FactorCollection()
+    database = Database()
     monkeypatch.setattr(
         "tools.eos.api.global_principal_auth_router._begin_transaction",
-        lambda: (session, object()),
+        lambda: (session, database),
     )
     monkeypatch.setattr(
         "tools.eos.api.global_principal_auth_router.MembershipSelectionChallengeService",
@@ -148,7 +160,11 @@ def test_global_login_issues_tenant_neutral_selection_and_current_membership_pag
     )
     response = asyncio.run(global_login(
         GlobalCredentialRequest(email="person@example.com", password="ValidPassword!123"),
-        _request_with_state(global_principal_auth_indexes_ready=True),
+        _request_with_state(
+            global_principal_auth_indexes_ready=True,
+            global_principal_mfa_factor_indexes_ready=True,
+            global_principal_totp_verifier=object(),
+        ),
     ))
     assert response["status"] == "MEMBERSHIP_SELECTION_REQUIRED"
     assert response["selection_challenge"] == "selection-token"
