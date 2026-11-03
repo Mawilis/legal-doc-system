@@ -63,6 +63,10 @@ class GlobalMembershipSelectionRequest(BaseModel):
     tenant_id: StrictStr
     business_role: StrictStr
 
+class GlobalMembershipOptionsRequest(BaseModel):
+    selection_challenge: StrictStr
+    after_tenant_id: StrictStr | None = None
+
 
 class GlobalMfaVerificationRequest(BaseModel):
     mfa_challenge: StrictStr
@@ -186,6 +190,40 @@ async def global_login(payload: GlobalCredentialRequest, request: Request) -> di
     except (MembershipSelectionChallengeRejected, MembershipSelectionProjectionError):
         _abort_if_active(session)
         raise HTTPException(status_code=401, detail="Membership selection is unavailable") from None
+    except (MembershipSelectionChallengeUnavailable, PyMongoError):
+        _abort_if_active(session)
+        raise HTTPException(status_code=503, detail="GLOBAL_AUTHENTICATION_UNAVAILABLE") from None
+    except Exception:
+        _abort_if_active(session)
+        raise
+    finally:
+        session.end_session()
+
+
+@router.post("/membership-options")
+async def membership_options(payload: GlobalMembershipOptionsRequest, request: Request) -> dict[str, Any]:
+    """Return the next bounded page only to a holder of the live selection challenge."""
+    _require_ready(request, "global_principal_auth_indexes_ready")
+    session, _database = _begin_transaction()
+    try:
+        challenge = MembershipSelectionChallengeService().get_selection_challenge_context(
+            selection_challenge_token=payload.selection_challenge,
+            session=session,
+        )
+        page = build_membership_selection_page(
+            principal_id=challenge.principal_id,
+            after_tenant_id=payload.after_tenant_id,
+            session=session,
+        )
+        session.commit_transaction()
+        return {
+            "status": "MEMBERSHIP_SELECTION_REQUIRED",
+            "memberships": _membership_payload(page),
+            "next_cursor": page.next_cursor,
+        }
+    except (MembershipSelectionChallengeRejected, MembershipSelectionProjectionError):
+        _abort_if_active(session)
+        raise HTTPException(status_code=401, detail="Membership selection is invalid or expired") from None
     except (MembershipSelectionChallengeUnavailable, PyMongoError):
         _abort_if_active(session)
         raise HTTPException(status_code=503, detail="GLOBAL_AUTHENTICATION_UNAVAILABLE") from None
