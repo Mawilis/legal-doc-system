@@ -39,6 +39,7 @@ from tools.eos.auth.jwt_provider import CREDENTIAL_REVISION_MAX, TokenPurpose, v
 from tools.eos.auth.principal_authority import PrincipalAuthority
 from tools.eos.auth.principal_authority_repository import PrincipalAuthorityNotFoundError, PrincipalAuthorityRepository, PrincipalAuthorityRepositoryError
 from tools.eos.auth.principal_status import PrincipalStatus
+from tools.eos.auth.global_principal_session_authority import GlobalPrincipalSessionAuthority
 from tools.eos.saas.auth.auth_registry import AuthRegistry
 
 security_scheme = HTTPBearer(auto_error=False)
@@ -114,6 +115,54 @@ async def get_current_identity(
     tenant_id = _claim(payload, "tenant_id")
     if tenant_id is None:
         raise UnauthorizedAccessException("Tenant context is required.")
+
+    principal_scope = payload.get("principal_scope")
+    if principal_scope == "GLOBAL":
+        session_reference = _claim(payload, "session_reference")
+        workspace_id = _claim(payload, "workspace_id")
+        roles = payload.get("roles")
+        permissions = payload.get("permissions")
+        membership_revision = payload.get("membership_revision")
+        capacity_revision = payload.get("capacity_revision")
+        if (
+            session_reference is None
+            or workspace_id is None
+            or not isinstance(roles, list)
+            or len(roles) != 1
+            or not isinstance(roles[0], str)
+            or not roles[0].strip()
+            or permissions != []
+            or not _valid_access_revision(membership_revision)
+            or not _valid_access_revision(capacity_revision)
+        ):
+            raise UnauthorizedAccessException("Invalid or expired sovereign JWT token.")
+        current = GlobalPrincipalSessionAuthority().is_session_current(
+            principal_id=authority.principal_id,
+            tenant_id=tenant_id,
+            session_reference=session_reference,
+            expected_business_role=roles[0],
+            expected_workspace_id=workspace_id,
+            expected_membership_revision=membership_revision,
+            expected_capacity_revision=capacity_revision,
+        )
+        if not current:
+            raise UnauthorizedAccessException("Invalid or expired sovereign JWT token.")
+        identity = SovereignIdentity(
+            identity_id=authority.principal_id,
+            tenant_id=tenant_id,
+            username=_claim(payload, "username"),
+            email=_claim(payload, "email"),
+            roles=roles,
+            permissions=[],
+            auth_method="JWT",
+            status=authority.status,
+            session_reference=session_reference,
+        )
+        log_auth_event("GLOBAL_JWT_AUTH", authority.principal_id, True, {"tenant": tenant_id})
+        return identity
+    if principal_scope not in (None, "TENANT"):
+        raise UnauthorizedAccessException("Invalid or expired sovereign JWT token.")
+
     try:
         durable_revision = AuthRegistry().get_credential_revision(
             tenant_id,
