@@ -44,6 +44,11 @@ class PrincipalCredentialPersistedRecordInvalidError(PrincipalCredentialReposito
     """Persisted global credential material failed strict hydration."""
 
 
+class PrincipalCredentialMfaStateConflictError(PrincipalCredentialRepositoryError):
+    """MFA enrollment state is already enabled or changed concurrently."""
+
+
+
 def _target(collection: Optional[Collection]) -> Collection:
     if collection is not None:
         return collection
@@ -183,6 +188,66 @@ class PrincipalCredentialRepository:
         return value
 
     @staticmethod
+    def enable_mfa(
+        principal_id: str,
+        expected_revision: int,
+        collection: Optional[Collection] = None,
+        *,
+        session: Optional[ClientSession] = None,
+    ) -> PrincipalCredential:
+        """Enable MFA once and advance the global credential epoch atomically."""
+        if (
+            not isinstance(expected_revision, int)
+            or isinstance(expected_revision, bool)
+            or not 0 <= expected_revision < MAX_CREDENTIAL_REVISION
+        ):
+            raise PrincipalCredentialRevisionConflictError(
+                "PRINCIPAL_CREDENTIAL_REVISION_CONFLICT"
+            )
+        current = PrincipalCredentialRepository.get_by_principal(
+            principal_id,
+            collection,
+            session=session,
+        )
+        if current.credential_revision != expected_revision:
+            raise PrincipalCredentialRevisionConflictError(
+                "PRINCIPAL_CREDENTIAL_REVISION_CONFLICT"
+            )
+        if current.mfa_enabled is True:
+            raise PrincipalCredentialMfaStateConflictError(
+                "PRINCIPAL_CREDENTIAL_MFA_ALREADY_ENABLED"
+            )
+        try:
+            result = _target(collection).update_one(
+                {
+                    "principal_id": principal_id,
+                    "credential_revision": expected_revision,
+                    "mfa_enabled": False,
+                },
+                {
+                    "$set": {"mfa_enabled": True},
+                    "$inc": {"credential_revision": 1},
+                },
+                upsert=False,
+                session=session,
+            )
+        except PyMongoError as error:
+            raise PrincipalCredentialRepositoryError(
+                "PRINCIPAL_CREDENTIAL_MFA_ENABLE_FAILED"
+            ) from error
+        if getattr(result, "matched_count", 0) != 1:
+            raise PrincipalCredentialMfaStateConflictError(
+                "PRINCIPAL_CREDENTIAL_MFA_STATE_CONFLICT"
+            )
+        return PrincipalCredential(
+            principal_id=current.principal_id,
+            normalized_email=current.normalized_email,
+            password_hash=current.password_hash,
+            credential_revision=expected_revision + 1,
+            mfa_enabled=True,
+        )
+
+    @staticmethod
     def compare_and_swap_password_hash(
         principal_id: str,
         expected_revision: int,
@@ -253,4 +318,5 @@ __all__ = [
     "PrincipalCredentialAlreadyExistsError",
     "PrincipalCredentialRevisionConflictError",
     "PrincipalCredentialPersistedRecordInvalidError",
+    "PrincipalCredentialMfaStateConflictError",
 ]
