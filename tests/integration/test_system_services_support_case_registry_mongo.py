@@ -203,6 +203,7 @@ def test_canonical_eos_startup_registers_case_indexes_and_readiness(monkeypatch)
             assert any(index.get("name") == "system_service_case_scope_status_created" for index in case_indexes)
             assert any(index.get("name") == "system_service_case_event_identity_unique" for index in event_indexes)
             assert any(index.get("name") == "system_service_case_event_idempotency_unique" for index in event_indexes)
+            assert any(index.get("name") == "system_service_case_actor_idempotency_unique" for index in event_indexes)
         assert app.state.system_services_case_indexes_ready is False
     finally:
         client.drop_database(database_name)
