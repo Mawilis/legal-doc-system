@@ -244,6 +244,35 @@ class SupportCaseEvent:
             "evidence_reference": self.evidence_reference,
         }
 
+    @classmethod
+    def from_document(cls, value: dict[str, object]) -> "SupportCaseEvent":
+        expected_fields = {
+            "schema", "event_id", "case_id", "actor_principal_id",
+            "idempotency_key", "from_status", "to_status", "action",
+            "occurred_at", "evidence_reference",
+        }
+        if value.get("schema") != SCHEMA:
+            raise SupportCaseError("CASE_EVENT_SCHEMA_INVALID")
+        if set(value) != expected_fields:
+            raise SupportCaseError("CASE_EVENT_PERSISTED_FIELDS_INVALID")
+        try:
+            before = value.get("from_status")
+            return cls(
+                event_id=value["event_id"],  # type: ignore[arg-type]
+                case_id=value["case_id"],  # type: ignore[arg-type]
+                actor_principal_id=value["actor_principal_id"],  # type: ignore[arg-type]
+                idempotency_key=value["idempotency_key"],  # type: ignore[arg-type]
+                from_status=SupportCaseStatus(before) if before is not None else None,
+                to_status=SupportCaseStatus(value["to_status"]),  # type: ignore[arg-type]
+                action=value["action"],  # type: ignore[arg-type]
+                occurred_at=value["occurred_at"],  # type: ignore[arg-type]
+                evidence_reference=value.get("evidence_reference"),  # type: ignore[arg-type]
+            )
+        except (KeyError, TypeError, ValueError) as error:
+            if isinstance(error, SupportCaseError):
+                raise
+            raise SupportCaseError("CASE_EVENT_PERSISTED_STATE_INVALID") from error
+
 
 __all__ = [
     "VERSION", "SCHEMA", "SupportCaseError", "SupportCaseScope",
