@@ -44,6 +44,11 @@ def test_owner_admin_manager_are_eligible_but_specialized_roles_are_not(operatio
 
 
 def test_static_role_grants_are_narrow_and_nonpossessory():
+    assert ROLE_PERMISSIONS_MAP["TENANT_OWNER"] == [
+        "crm:work_item:read",
+        "crm:work_item:create",
+        "crm:work_item:complete",
+    ]
     assert get_roles_granting_permission("crm:work_item:read") == ("AUDITOR", "ENTERPRISE_ADMIN", "TENANT_OWNER")
     assert get_roles_granting_permission("crm:work_item:create") == ("ENTERPRISE_ADMIN", "TENANT_OWNER")
     assert get_roles_granting_permission("crm:work_item:complete") == ("ENTERPRISE_ADMIN", "TENANT_OWNER")
