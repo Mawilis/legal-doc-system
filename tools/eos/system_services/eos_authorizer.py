@@ -8,7 +8,7 @@ from __future__ import annotations
 
 from collections import defaultdict
 from datetime import datetime, timezone
-from typing import Any, Callable, Protocol
+from typing import Any, Callable, Protocol, cast
 
 from pymongo.client_session import ClientSession
 
@@ -128,7 +128,7 @@ class SystemServicesEosAuthorizer:
             assignment = self._possession.resolve(
                 principal_id=principal_id,
                 permission_id=permission_id,
-                session=session,
+                session=cast(ClientSession | None, session),
             )
         except CurrentSystemPermissionPossessionError as error:
             raise SystemServicesAuthorizationUnavailable(
