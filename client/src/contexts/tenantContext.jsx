@@ -237,33 +237,23 @@ export const TenantProvider = ({ children, initialTenant = null, authenticatedTe
   const switchTenant = useCallback(async (tenantId) => {
     const requestedId = String(tenantId || '').trim();
     if (!requestedId) throw new Error('A canonical tenant identifier is required.');
-    if (tenantIdentifier(activeTenant).toLowerCase() === requestedId.toLowerCase()) return activeTenant;
-    setLoading(true);
-    setError(null);
-    try {
-      let tenant = tenants.find(t => tenantIdentifier(t).toLowerCase() === requestedId.toLowerCase());
-      if (!tenant) {
-        const response = await tenantApi.getTenant(requestedId);
-        tenant = response?.data;
-        if (!tenant) throw new Error('Tenant not found.');
-        setTenants((prev) => prev.some((item) => tenantIdentifier(item) === tenantIdentifier(tenant)) ? prev : [...prev, tenant]);
-      }
-      const resolvedId = tenantIdentifier(tenant);
-      if (authenticatedTenantId && resolvedId !== String(authenticatedTenantId).trim()) {
-        setAuthorityMismatch(true);
-        throw new Error('AUTHENTICATED_WORKSPACE_AUTHORITY_MISMATCH');
-      }
-      if (tenantIdentifier(activeTenant) !== resolvedId) setActiveTenant(tenant);
-      localStorage.setItem('wilsy_active_tenant', JSON.stringify(tenant));
-      setAuthorityMismatch(false);
-      return tenant;
-    } catch (err) {
-      const message = err.response?.data?.message || err.message || 'Failed to switch tenant.';
-      setError(message);
-    } finally {
-      setLoading(false);
+
+    const authenticatedId = String(authenticatedTenantId || '').trim();
+    if (!authenticatedId) {
+      throw new Error('TENANT_SWITCH_REQUIRES_AUTHENTICATED_WORKSPACE');
     }
-  }, [activeTenant, authenticatedTenantId, tenantIdentifier, tenants]);
+    if (requestedId !== authenticatedId) {
+      // Cross-tenant changes require a fresh EOS membership decision and
+      // session issuance. A client directory lookup cannot switch authority.
+      throw new Error('TENANT_SWITCH_REQUIRES_EOS_MEMBERSHIP_SELECTION');
+    }
+
+    const activeId = tenantIdentifier(activeTenant);
+    if (activeId !== authenticatedId) {
+      throw new Error('AUTHENTICATED_WORKSPACE_AUTHORITY_MISMATCH');
+    }
+    return activeTenant;
+  }, [activeTenant, authenticatedTenantId, tenantIdentifier]);
 
   // ─── Exposed context value ────────────────────────────────────────────────
   const contextValue = useMemo(() => ({
