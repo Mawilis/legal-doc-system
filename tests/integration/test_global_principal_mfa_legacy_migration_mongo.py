@@ -78,6 +78,7 @@ def legacy_migration_store():
         kms=_Kms(),
         legacy_factor_collection=legacy,
         factor_collection=factors,
+        credential_collection=credentials,
         credential_repository=PrincipalCredentialRepository,
         principal_repository=_Principals(),
     )
