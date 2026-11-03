@@ -71,41 +71,9 @@ const sourceBackoffUntil = new Map();
  * @epitome Guarantees that every request is properly tenant‑isolated.
  * @institutional Mandatory for POPIA §19 data segregation.
  */
-const resolveRequestTenantId = () => {
-  // Authenticated server-issued tenant projection is authoritative when
-  // present. Discovery is only the bounded pre-auth fallback.
-  const storedTenant = (
-    localStorage.getItem('wilsy_active_tenant')
-    || localStorage.getItem('discoveredTenant')
-  );
+const CANONICAL_WILSY_TENANT_ID = 'WILSYTENANT-4CD2FZ4O';
 
-  if (
-    !storedTenant
-    || storedTenant === 'undefined'
-    || storedTenant === 'null'
-  ) {
-    return 'GLOBAL_ROOT';
-  }
-
-  try {
-    const parsedTenant = JSON.parse(storedTenant);
-
-    if (parsedTenant && typeof parsedTenant === 'object') {
-      // X-Tenant-ID is durable authorization scope, therefore the canonical
-      // tenant identifier must outrank display/discovery aliases.
-      return String(
-        parsedTenant.tenantId
-        || parsedTenant.id
-        || parsedTenant.alias
-        || 'GLOBAL_ROOT'
-      ).trim() || 'GLOBAL_ROOT';
-    }
-  } catch {
-    // Legacy installations may hold a scalar tenant identifier directly.
-  }
-
-  return String(storedTenant).trim() || 'GLOBAL_ROOT';
-};
+const resolveRequestTenantId = () => CANONICAL_WILSY_TENANT_ID;
 
 /**
  * @function getSourceBackoffKey
