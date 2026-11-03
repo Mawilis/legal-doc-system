@@ -84,7 +84,7 @@ describe('SovereignDashboardController resolver', () => {
     expect(resolveDashboardKey({
       user: { id: 'owner-2', role: 'TENANT_OWNER' },
       manualDashboardKey: 'SHERIFF'
-    })).toBe(DASHBOARD_KEYS.EXECUTIVE);
+    })).toBe(DASHBOARD_KEYS.CRM);
 
     // Product navigation changes presentation only; Legal EOS still authorizes
     // every commercial-context and workspace request for the exact identity.
@@ -114,7 +114,8 @@ describe('SovereignDashboardController resolver', () => {
 
   it('routes executive and owner identities to the standalone executive surface', () => {
     expect(resolveDashboardKey({ user: { id: 'ceo-1', role: 'CEO' } })).toBe(DASHBOARD_KEYS.EXECUTIVE);
-    expect(resolveDashboardKey({ user: { id: 'owner-1', role: 'TENANT_OWNER' } })).toBe(DASHBOARD_KEYS.EXECUTIVE);
+    expect(resolveDashboardKey({ user: { id: 'owner-1', role: 'TENANT_OWNER' } })).toBe(DASHBOARD_KEYS.CRM);
+    expect(resolveDashboardKey({ user: { id: 'owner-2', role: 'OWNER' } })).toBe(DASHBOARD_KEYS.CRM);
   });
 
   it('routes specialist roles to their own dashboards before falling back to general', () => {
