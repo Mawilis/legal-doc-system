@@ -58,8 +58,8 @@ class OwnerWorkPriority(StrEnum):
     LOW = "LOW"
 
 
-def _text(value: object, code: str) -> str:
-    if not isinstance(value, str) or not value or value != value.strip():
+def _text(value: object, code: str, *, allow_empty: bool = False) -> str:
+    if not isinstance(value, str) or (not allow_empty and not value) or value != value.strip():
         raise OwnerWorkItemError(code)
     if any(ord(ch) < 32 for ch in value):
         raise OwnerWorkItemError(code)
@@ -96,7 +96,7 @@ class OwnerCommercialWorkItem:
             raise OwnerWorkItemError("TENANT_ID_INVALID")
         _text(self.work_item_id, "WORK_ITEM_ID_INVALID")
         _text(self.title, "TITLE_INVALID")
-        _text(self.description, "DESCRIPTION_INVALID")
+        _text(self.description, "DESCRIPTION_INVALID", allow_empty=True)
         _text(self.owner_principal_id, "OWNER_PRINCIPAL_ID_INVALID")
         if not isinstance(self.kind, OwnerWorkKind) or not isinstance(self.status, OwnerWorkStatus) or not isinstance(self.priority, OwnerWorkPriority):
             raise OwnerWorkItemError("CLASSIFICATION_INVALID")
