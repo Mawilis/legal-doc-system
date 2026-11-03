@@ -42,6 +42,7 @@ on:
       - "tools/eos/auth/membership_selection_challenge.py"
       - "tools/eos/auth/global_principal_session_authority.py"
       - "tools/eos/auth/global_principal_totp_verifier.py"
+      - "tools/eos/auth/global_principal_mfa_kms_envelope.py"
       - "tools/eos/auth/global_principal_mfa_session_transition.py"
       - "tools/eos/auth/principal_authentication_rate_limit.py"
       - "tools/eos/api/server.py"
@@ -56,6 +57,7 @@ on:
       - "tests/unit/test_membership_selection_challenge.py"
       - "tests/unit/test_global_principal_session_authority.py"
       - "tests/unit/test_global_principal_totp_verifier.py"
+      - "tests/unit/test_global_principal_mfa_kms_envelope.py"
       - "tests/integration/test_global_principal_totp_verifier_mongo.py"
       - "tests/unit/test_global_principal_mfa_session_transition.py"
       - "tests/unit/test_global_principal_auth_challenge_startup.py"
@@ -140,6 +142,9 @@ jobs:
             tools/eos/auth/membership_selection_challenge.py \
             tools/eos/auth/global_principal_session_authority.py \
             tools/eos/auth/global_principal_totp_verifier.py \
+            tools/eos/auth/global_principal_mfa_kms_envelope.py \
+            tools/eos/auth/global_principal_mfa_kms_envelope.py \
+            tools/eos/auth/global_principal_mfa_kms_envelope.py \
             tools/eos/auth/global_principal_mfa_session_transition.py \
             tools/eos/auth/principal_authentication_rate_limit.py \
             tools/eos/api/server.py \
@@ -154,6 +159,9 @@ jobs:
             tests/unit/test_membership_selection_challenge.py \
             tests/unit/test_global_principal_session_authority.py \
             tests/unit/test_global_principal_totp_verifier.py \
+            tests/unit/test_global_principal_mfa_kms_envelope.py \
+            tests/unit/test_global_principal_mfa_kms_envelope.py \
+            tests/unit/test_global_principal_mfa_kms_envelope.py \
             tests/unit/test_global_principal_mfa_session_transition.py \
             tests/unit/test_global_principal_auth_challenge_startup.py \
             tests/unit/test_global_principal_access_token_currentness.py \
