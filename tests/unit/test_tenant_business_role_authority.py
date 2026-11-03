@@ -23,6 +23,10 @@ from tools.eos.auth.role_assignment_repository import (
     RoleAssignmentNotFoundError,
     RoleAssignmentRepositoryError,
 )
+from tools.eos.auth.tenant_business_role_repository import (
+    TenantBusinessRoleNotFoundError,
+    TenantBusinessRoleRepositoryError,
+)
 
 @dataclass
 class Assignment:
@@ -66,6 +70,17 @@ def test_direct_business_role_reader_uses_one_exact_current_lookup():
     assert result.role == "tenant_owner"
     assert result.resolution is BusinessRoleResolution.RESOLVED
     assert repo.calls == [("p", "t", None)]
+
+def test_direct_business_role_reader_maps_dedicated_repository_errors():
+    assert resolve_current_tenant_business_role(
+        principal_id="p", tenant_id="t",
+        repository=DirectBusinessRoleRepo(error=TenantBusinessRoleNotFoundError("missing")),
+    ).resolution is BusinessRoleResolution.NO_ACTIVE_TENANT_BUSINESS_ROLE
+    assert resolve_current_tenant_business_role(
+        principal_id="p", tenant_id="t",
+        repository=DirectBusinessRoleRepo(error=TenantBusinessRoleRepositoryError("down")),
+    ).resolution is BusinessRoleResolution.TENANT_BUSINESS_ROLE_AUTHORITY_UNAVAILABLE
+
 
 def test_direct_business_role_reader_fails_closed():
     inactive = SimpleNamespace(
