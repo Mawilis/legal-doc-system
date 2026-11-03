@@ -176,6 +176,7 @@ from tools.eos.intelligence.providers.reasoning_provider_runtime import (
     build_reasoning_provider_binding_from_environment,
 )
 from tools.eos.kernel.db import connect_db, disconnect_db, get_database, get_client
+from tools.eos.system_services.support_case_registry import SupportCaseRegistry
 from tools.eos.intelligence.tools import ServerOwnedAIToolRegistry
 from tools.eos.intelligence.tools.legal_operations_read_tools import build_legal_read_registrations
 from tools.eos.intelligence.wilsy_ai_tool_orchestrator import WilsyAIToolOrchestrator
@@ -206,7 +207,7 @@ from tools.eos.legal_operations.service.legal_storefront_public_intent_rate_limi
     LegalStorefrontPublicIntentRateLimit,
 )
 
-VERSION = "v1.36.0-GLOBAL-PRINCIPAL-AUTH-THROTTLE-INDEX-BOOTSTRAP"
+VERSION = "v1.37.0-SYSTEM-SERVICES-CASE-INDEX-BOOTSTRAP"
 logger = logging.getLogger("WilsyOS.API.Server")
 
 
@@ -262,6 +263,8 @@ class WilsyAPIServer:
         # No binding command is ready before certified index startup.
         app.state.p12c_binding_indexes_ready = False
         app.state.global_principal_auth_indexes_ready = False
+        # Case storage readiness is separate from IAM authorization readiness.
+        app.state.system_services_case_indexes_ready = False
         app.state.legal_evidence_provider_readonly_reconciliation_composition = None
         app.state.legal_evidence_provider_readonly_reconciliation_audit_client = None
         # C1E service is constructed lazily or by deployment composition; it
@@ -419,6 +422,7 @@ class WilsyAPIServer:
             """Own explicit database bootstrap at application startup."""
             app.state.p12c_binding_indexes_ready = False
             app.state.global_principal_auth_indexes_ready = False
+            app.state.system_services_case_indexes_ready = False
             app.state.telemetry_indexes_ready = False
             connected, detail = connect_db()
             if not connected:
@@ -431,6 +435,14 @@ class WilsyAPIServer:
             if database is None:
                 return
             if database is not None:
+                # Support-case storage indexes are canonical startup DDL.
+                # This flag signals storage readiness only; route admission
+                # must independently authorize every caller through EOS IAM.
+                SupportCaseRegistry(
+                    cases=database["system_service_cases"],
+                    events=database["system_service_case_events"],
+                ).ensure_indexes()
+                app.state.system_services_case_indexes_ready = client is not None
                 # Global authentication and one-time challenge indexes are
                 # canonical startup DDL. Request handlers never create indexes.
                 PrincipalCredentialRepository.ensure_indexes(
@@ -565,6 +577,7 @@ class WilsyAPIServer:
             """Release the kernel database during controlled application shutdown."""
             app.state.p12c_binding_indexes_ready = False
             app.state.global_principal_auth_indexes_ready = False
+            app.state.system_services_case_indexes_ready = False
             app.state.telemetry_indexes_ready = False
             audit_client = getattr(
                 app.state,
