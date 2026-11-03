@@ -76,6 +76,14 @@ def _utc(value: datetime | None) -> datetime:
         raise GlobalPrincipalSessionRejected("GLOBAL_SESSION_TIME_INVALID")
     return instant.astimezone(timezone.utc)
 
+def _persisted_utc(value: Any) -> datetime:
+    """Interpret BSON-naive datetimes as UTC; reject all other malformed values."""
+    if not isinstance(value, datetime):
+        raise GlobalPrincipalSessionRejected("GLOBAL_SESSION_TIME_INVALID")
+    if value.tzinfo is None or value.utcoffset() is None:
+        return value.replace(tzinfo=timezone.utc)
+    return value.astimezone(timezone.utc)
+
 
 def _require_transaction(session: ClientSession | Any) -> None:
     marker = getattr(session, "in_transaction", None) if session is not None else None
@@ -309,7 +317,11 @@ class GlobalPrincipalSessionAuthority:
         # Rotation retains the same session reference and authority epoch.
         new_refresh = secrets.token_urlsafe(48)
         access_expiry = instant + timedelta(seconds=ACCESS_TTL_SECONDS)
-        refresh_expiry = min(session_row["expires_at"], instant + timedelta(seconds=REFRESH_TTL_SECONDS))
+        persisted_session_expiry = _persisted_utc(session_row.get("expires_at"))
+        refresh_expiry = min(
+            persisted_session_expiry,
+            instant + timedelta(seconds=REFRESH_TTL_SECONDS),
+        )
         access = create_access_token(
             {"identity_id": selected.principal_id, "tenant_id": selected.tenant_id,
              "roles": [selected.business_role], "permissions": [],
