@@ -1,7 +1,9 @@
 from tools.eos.api.owner_commercial_workspace_router import (
     _COMPLETE, _CREATE, _READ, router,
 )
-import inspect\n\nfrom tools.eos.api import server
+import inspect
+
+from tools.eos.api import server
 
 
 def test_owner_commercial_workspace_routes_are_mounted_once():
