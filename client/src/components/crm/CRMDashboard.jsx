@@ -2506,7 +2506,7 @@ function CRMDashboard({ user = {}, tenantConfig = {}, onExit = null }) {
           <header data-wilsy-r85-crm-workspace-topbar="tabbed-command" className={styles.osChrome}>
             <div className={styles.chromeTitle}>
               <small><Home size={13} /> {crmPermissionProfile.scope === 'tenant' ? 'Legal Operations' : 'CRM Workspace'}</small>
-              <h1 className={styles.crmOneLineTitleLock} aria-label="Wilsy CRM Workspace">
+              <h1 className={styles.crmOneLineTitleLock} aria-label={crmPermissionProfile.scope === 'tenant' ? 'WILSY Legal Operations Owner Workspace' : 'Wilsy CRM Workspace'}>
                 <span className={styles.crmOneLineTitleText}>{crmPermissionProfile.scope === 'tenant' ? <>WILSY&nbsp;<span className={styles.crmOneLineTitleGold}>LEGAL OPS</span></> : <>Wilsy&nbsp;<span className={styles.crmOneLineTitleGold}>CRM</span></>}</span>
               </h1>
               <p>{crmPermissionProfile.scope === 'tenant' ? 'Daily owner actions, commercial follow-ups and subscription-governed Legal operations.' : 'Source-led pipeline. Sovereign search. Evidence proof.'}</p>
