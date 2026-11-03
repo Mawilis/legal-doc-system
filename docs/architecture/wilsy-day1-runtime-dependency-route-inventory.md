@@ -4,7 +4,7 @@ Date: 2026-11-03
 Repository: Mawilis/legal-doc-system
 Inventory baseline: eos/atomic-owner-genesis-integration at e482195fd70eda3fcceafe0ef6c0bdca2c0ad931
 Working branch: eos/tenant-discovery-iam-dashboard-roadmap
-Status: Initial dependency/route inventory and first tenant-header correction committed; exhaustive recursive legacy retirement certification remains in progress.
+Status: Runtime/route inventory recorded; EOS workspace contract and session-bound tenant transport implemented; exhaustive recursive legacy retirement certification remains in progress.
 
 ## 1. Runtime boundary
 
@@ -14,7 +14,7 @@ Status: Initial dependency/route inventory and first tenant-header correction co
 | Browser application | React, JSX, client/src | Retain; presentation and transport only |
 | Frontend development/build | Vite, client/vite.config.js, client/package.json | Retain; not a business runtime |
 | Legacy API runtime | Express, server/server.js and server/app.js | Retire after every active route, job, import, data dependency and test has a certified EOS replacement or documented removal |
-| Development orchestration | scripts/start-dev-stack.mjs | Replace with EOS + Vite launcher; no additional API process |
+| Development orchestration | scripts/start-dev-stack.sh | EOS + Vite launcher; no additional application API process |
 | Root package tooling | package.json | Remove legacy server scripts/dependencies only after callers are migrated; preserve frontend build/test/security tooling |
 
 ## 2. Authentication and workspace route map
@@ -44,11 +44,11 @@ Status: Initial dependency/route inventory and first tenant-header correction co
 Committed on this branch:
 
 - client/src/services/api.js no longer contains CANONICAL_WILSY_TENANT_ID.
-- Request tenant scope is read from the JSON server-discovery projection in discoveredTenant.
-- Malformed, absent or non-canonical discovery data yields no tenant header; there is no WILSY, GLOBAL_ROOT or other fallback.
+- Request tenant scope is held in memory only after AuthContext accepts a READY EOS workspace-bootstrap response; discovery storage is not promoted to authenticated request scope.
+- Missing authenticated session context yields no tenant header; there is no WILSY, GLOBAL_ROOT, discovery-storage or other fallback.
 - A stale default header is removed when discovery cannot supply a valid tenant.
-- client/src/__tests__/services/api.test.js now covers a non-WILSY discovered tenant, missing/malformed discovery, and preservation of the MFA candidate bearer without substituting a tenant.
-- client/src/components/ErrorBoundary.jsx no longer manufactures GLOBAL_ROOT for telemetry; it sends a tenant header only when it can parse a valid server-discovery projection.
+- client/src/__tests__/services/api.test.js now covers the in-memory EOS-verified tenant context, proves discovery storage cannot establish it, and verifies preservation of an MFA candidate bearer without substituting a tenant.
+- client/src/components/ErrorBoundary.jsx sends no tenant selector for optional error telemetry; EOS derives authenticated scope from the bearer where applicable.
 
 This changes transport selection only. EOS continues to prove membership and authorization. It does not create or assign membership, issue a tenant-scoped session, or enable cross-tenant switching.
 
@@ -59,10 +59,10 @@ This changes transport selection only. EOS continues to prove membership and aut
 | client/src/components/sovereign/TenantDiscovery.jsx | Tenant discovery presentation | Retain; calls AuthContext discovery |
 | client/src/contexts/authContext.jsx | Candidate token, discovery projection, MFA and server bootstrap promotion | Retain and evolve; must support selected membership/session context from EOS |
 | client/src/contexts/tenantContext.jsx | Browser projection of authenticated tenant | Retain as projection only; prevent local storage and directory calls from authorizing tenant switches |
-| client/src/services/api.js | Shared Axios transport | Retain; hardcoded tenant removed; no fallback before discovery |
-| client/src/components/sovereign/SovereignDashboardController.jsx | Dashboard component composition | Refactor only after EOS workspace contract exists; role-to-dashboard map is not authority |
+| client/src/services/api.js | Shared Axios transport | Retain; no hardcoded tenant; session-bound in-memory scope only after EOS revalidation |
+| client/src/components/sovereign/SovereignDashboardController.jsx | Dashboard component composition | Consumes the validated EOS workspace identifier; client role-to-dashboard map removed |
 | client/src/components/ErrorBoundary.jsx | Error boundary and optional telemetry | Retain; synthetic GLOBAL_ROOT tenant fallback removed |
-| client/vite.config.js | Development routing | Must be audited so every API path goes directly to EOS; remove any route targeting port 4000 after EOS equivalents are verified |
+| client/vite.config.js | Development routing | All application API routes now target EOS directly; remaining endpoint gaps must be reconciled against EOS route mounts |
 | client/src/__tests__/services/api.test.js | Shared transport contract tests | Updated for dynamic discovered tenant and fail-closed no-discovery behavior |
 
 ## 5. EOS authority dependencies
