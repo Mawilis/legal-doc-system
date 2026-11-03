@@ -43,6 +43,14 @@ class Collection:
         assert session is not None
         return Cursor(row for row in self.rows if all(row.get(k) == v for k, v in query.items()))
 
+    def update_one(self, query, update, session=None):
+        assert session is not None
+        row = next((row for row in self.rows if all(row.get(k) == v for k, v in query.items())), None)
+        if row is None:
+            return type("Result", (), {"matched_count": 0})()
+        row.update(update["$set"])
+        return type("Result", (), {"matched_count": 1})()
+
 
 def make_item(tenant=TENANT):
     return OwnerCommercialWorkItem.create(
@@ -108,3 +116,28 @@ def test_terminal_work_item_not_in_daily_queue():
     # from a source snapshot; registry creation remains an immutable insert.
     from tools.eos.crm.domain.owner_commercial_work_item import build_daily_queue
     assert build_daily_queue([completed], tenant_id=TENANT, now=NOW) == ()
+
+
+def test_completion_is_tenant_scoped_compare_and_set_and_exact_replay():
+    registry = OwnerCommercialWorkRegistry(Collection())
+    item = make_item()
+    registry.create_or_replay(item, idempotency_key="cmd-1", session=object())
+    completed = registry.complete(
+        tenant_id=TENANT, work_item_id=item.work_item_id,
+        completion_note="Confirmed completed", now=NOW, session=object(),
+    )
+    assert completed.status is OwnerWorkStatus.COMPLETED
+    assert registry.complete(
+        tenant_id=TENANT, work_item_id=item.work_item_id,
+        completion_note="Confirmed completed", now=NOW, session=object(),
+    ) == completed
+    with pytest.raises(OwnerWorkRegistryConflict):
+        registry.complete(
+            tenant_id=TENANT, work_item_id=item.work_item_id,
+            completion_note="Different evidence", now=NOW, session=object(),
+        )
+    with pytest.raises(OwnerWorkRegistryNotFound):
+        registry.complete(
+            tenant_id="OTHER-TENANT", work_item_id=item.work_item_id,
+            completion_note="Confirmed completed", now=NOW, session=object(),
+        )
