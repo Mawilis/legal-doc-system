@@ -114,7 +114,7 @@ describe('SovereignDashboardController resolver', () => {
 
   it('routes executive and owner identities to the standalone executive surface', () => {
     expect(resolveDashboardKey({ user: { id: 'ceo-1', role: 'CEO' } })).toBe(DASHBOARD_KEYS.EXECUTIVE);
-    expect(resolveDashboardKey({ user: { id: 'owner-1', role: 'TENANT_OWNER' } })).toBe(DASHBOARD_KEYS.CRM);
+    expect(resolveDashboardKey({ user: { id: 'owner-1', role: 'TENANT_OWNER' } })).toBe(DASHBOARD_KEYS.EXECUTIVE);
     expect(resolveDashboardKey({ user: { id: 'owner-2', role: 'OWNER' } })).toBe(DASHBOARD_KEYS.CRM);
   });
 
