@@ -4,11 +4,13 @@ from typing import Any, cast
 from types import SimpleNamespace
 
 import pytest
+from pymongo.errors import PyMongoError
 
 from tools.eos.auth import global_principal_session_authority as authority_module
 from tools.eos.auth.global_principal_session_authority import (
     GlobalPrincipalSessionAuthority,
     GlobalPrincipalSessionRejected,
+    GlobalPrincipalSessionUnavailable,
 )
 from tools.eos.auth.membership_selection_challenge import SelectedMembershipContext
 from tools.eos.auth.principal_status import PrincipalStatus
@@ -121,6 +123,18 @@ def test_issue_persists_digest_only_and_binds_exact_authority(monkeypatch):
     assert refresh.rows[0]["tenant_id"] == "tenant-A"
     assert sessions.rows[0]["membership_revision"] == 3
     assert sessions.rows[0]["capacity_revision"] == 5
+
+
+def test_session_persistence_failure_propagates_without_transaction_ownership(monkeypatch):
+    service, _, _, _, selected = setup(monkeypatch)
+    class BrokenSessions:
+        def insert_one(self, *_args, **_kwargs):
+            raise PyMongoError("synthetic persistence failure")
+    cast(Any, service)._sessions = cast(Any, BrokenSessions())
+    transaction = Transaction()
+    with pytest.raises(GlobalPrincipalSessionUnavailable, match="PERSISTENCE_FAILED"):
+        service.issue_after_mfa(selected, session=transaction)
+    assert transaction.in_transaction is True
 
 
 def test_issue_requires_caller_owned_transaction(monkeypatch):
