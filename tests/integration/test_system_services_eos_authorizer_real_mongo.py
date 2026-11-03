@@ -1,0 +1,236 @@
+"""Real-Mongo certificate for the composed System Services EOS authorizer."""
+
+from __future__ import annotations
+
+from datetime import datetime, timedelta, timezone
+import os
+from uuid import uuid4
+
+import pytest
+from pymongo import MongoClient
+
+from tools.eos.auth.current_system_permission_possession import CurrentSystemPermissionPossessionResolver
+from tools.eos.auth.principal_authority import PrincipalAuthority
+from tools.eos.auth.principal_authority_repository import PrincipalAuthorityRepository
+from tools.eos.auth.principal_status import PrincipalStatus
+from tools.eos.auth.system_permission_assignment import SystemPermissionAssignment
+from tools.eos.auth.system_permission_assignment_registry import SystemPermissionAssignmentRegistry
+from tools.eos.system_services.eos_authorizer import (
+    SystemServicesAuthorizationError,
+    SystemServicesEosAuthorizer,
+)
+from tools.eos.workforce.domain.workforce_relationship import (
+    WorkforceRelationship,
+    WorkforceRelationshipStatus,
+    WorkforceRelationshipType,
+    WorkforceScopeKind,
+)
+from tools.eos.workforce.registry import workforce_relationship_registry as workforce_registry
+
+URI = os.getenv(
+    "SYSTEM_SERVICES_CASE_MONGO_URI",
+    "mongodb://127.0.0.1:27017/?replicaSet=wilsySystemServicesCaseRS",
+)
+REPLICA_SET = "wilsySystemServicesCaseRS"
+PERMISSION = "system_services:queue:read"
+PRINCIPAL = "system-services-staff-001"
+PLATFORM_SCOPE = "platform-workforce-cert"
+AT = datetime(2026, 11, 3, 12, tzinfo=timezone.utc)
+
+
+@pytest.fixture
+def mongo_context():
+    client = MongoClient(URI, serverSelectionTimeoutMS=5000, retryWrites=True)
+    hello = client.admin.command("hello")
+    assert hello.get("setName") == REPLICA_SET
+    assert hello.get("isWritablePrimary") is True
+    database_name = "wilsy_system_services_iam_" + uuid4().hex[:16]
+    database = client[database_name]
+    principal_collection = database["principal_authorities"]
+    assignment_collection = database["system_permission_assignments"]
+    workforce_collection = database[workforce_registry.COLLECTION_NAME]
+    assignment_registry = SystemPermissionAssignmentRegistry(assignment_collection)
+    assignment_registry.ensure_indexes()
+    workforce_registry.ensure_indexes(workforce_collection)
+    possession = CurrentSystemPermissionPossessionResolver(
+        principal_collection=principal_collection,
+        assignment_registry=assignment_registry,
+    )
+    authorizer = SystemServicesEosAuthorizer(
+        possession_resolver=possession,
+        workforce_collection=workforce_collection,
+        platform_scope_id=PLATFORM_SCOPE,
+        clock=lambda: AT + timedelta(hours=2),
+    )
+    try:
+        yield {
+            "client": client,
+            "database": database,
+            "principal_collection": principal_collection,
+            "assignment_collection": assignment_collection,
+            "workforce_collection": workforce_collection,
+            "assignment_registry": assignment_registry,
+            "authorizer": authorizer,
+        }
+    finally:
+        client.drop_database(database_name)
+        client.close()
+
+
+def principal() -> PrincipalAuthority:
+    return PrincipalAuthority(PRINCIPAL, PrincipalStatus.ACTIVE, 1)
+
+
+def assignment() -> SystemPermissionAssignment:
+    return SystemPermissionAssignment.assign(
+        assignment_id="system-services-assignment-001",
+        principal_id=PRINCIPAL,
+        permission_id=PERMISSION,
+        assigned_by_principal_id="independent-iam-issuer",
+        assigned_at=AT,
+        assignment_evidence_reference="approved-assignment-evidence-001",
+    )
+
+
+def workforce(status=WorkforceRelationshipStatus.ACTIVE, previous=None, revision=1):
+    return WorkforceRelationship(
+        relationship_id="system-services-workforce-001",
+        revision=revision,
+        scope_kind=WorkforceScopeKind.PLATFORM,
+        scope_id=PLATFORM_SCOPE,
+        principal_id=PRINCIPAL,
+        relationship_type=WorkforceRelationshipType.EMPLOYEE,
+        status=status,
+        effective_from=AT - timedelta(days=10),
+        effective_until=None,
+        status_effective_at=AT + timedelta(hours=revision - 1),
+        reason_reference=f"workforce-evidence-{revision}",
+        supersedes_fingerprint=None if previous is None else previous.fingerprint,
+    )
+
+
+def seed_authority(context):
+    with context["client"].start_session() as session:
+        with session.start_transaction():
+            PrincipalAuthorityRepository.create(
+                principal(),
+                collection=context["principal_collection"],
+                session=session,
+            )
+            context["assignment_registry"].create_or_replay(
+                assignment(),
+                idempotency_key="system-services-assignment-create",
+                session=session,
+            )
+            workforce_registry.persist_revision(
+                workforce(),
+                collection=context["workforce_collection"],
+                session=session,
+            )
+
+
+def test_real_mongo_active_principal_assignment_and_platform_workforce_allow(mongo_context):
+    seed_authority(mongo_context)
+    with mongo_context["client"].start_session() as session:
+        with session.start_transaction():
+            assert mongo_context["authorizer"].require(
+                principal_id=PRINCIPAL,
+                permission_id=PERMISSION,
+                session=session,
+            ) is None
+            session.abort_transaction()
+
+
+def test_real_mongo_suspended_platform_workforce_denies(mongo_context):
+    seed_authority(mongo_context)
+    active = workforce()
+    suspended = workforce(
+        status=WorkforceRelationshipStatus.SUSPENDED,
+        previous=active,
+        revision=2,
+    )
+    with mongo_context["client"].start_session() as session:
+        with session.start_transaction():
+            workforce_registry.persist_revision(
+                suspended,
+                collection=mongo_context["workforce_collection"],
+                session=session,
+            )
+    with mongo_context["client"].start_session() as session:
+        with session.start_transaction():
+            with pytest.raises(SystemServicesAuthorizationError, match="ACTIVE_PLATFORM_WORKFORCE_REQUIRED"):
+                mongo_context["authorizer"].require(
+                    principal_id=PRINCIPAL,
+                    permission_id=PERMISSION,
+                    session=session,
+                )
+            session.abort_transaction()
+
+
+def test_real_mongo_tenant_workforce_cannot_satisfy_system_authority(mongo_context):
+    with mongo_context["client"].start_session() as session:
+        with session.start_transaction():
+            PrincipalAuthorityRepository.create(
+                principal(),
+                collection=mongo_context["principal_collection"],
+                session=session,
+            )
+            mongo_context["assignment_registry"].create_or_replay(
+                assignment(),
+                idempotency_key="system-services-assignment-create",
+                session=session,
+            )
+            tenant_relation = WorkforceRelationship(
+                relationship_id="tenant-workforce-only",
+                revision=1,
+                scope_kind=WorkforceScopeKind.TENANT,
+                scope_id=PLATFORM_SCOPE,
+                principal_id=PRINCIPAL,
+                relationship_type=WorkforceRelationshipType.EMPLOYEE,
+                status=WorkforceRelationshipStatus.ACTIVE,
+                effective_from=AT - timedelta(days=1),
+                effective_until=None,
+                status_effective_at=AT - timedelta(days=1),
+                reason_reference="tenant-workforce-evidence",
+                supersedes_fingerprint=None,
+            )
+            workforce_registry.persist_revision(
+                tenant_relation,
+                collection=mongo_context["workforce_collection"],
+                session=session,
+            )
+    with mongo_context["client"].start_session() as session:
+        with session.start_transaction():
+            with pytest.raises(SystemServicesAuthorizationError, match="ACTIVE_PLATFORM_WORKFORCE_REQUIRED"):
+                mongo_context["authorizer"].require(
+                    principal_id=PRINCIPAL,
+                    permission_id=PERMISSION,
+                    session=session,
+                )
+            session.abort_transaction()
+
+
+def test_real_mongo_revoked_system_assignment_denies(mongo_context):
+    seed_authority(mongo_context)
+    active = assignment()
+    revoked = active.revoke(
+        revoked_by_principal_id="independent-iam-revoker",
+        revoked_at=AT + timedelta(minutes=1),
+        revocation_evidence_reference="approved-revocation-evidence",
+    )
+    with mongo_context["client"].start_session() as session:
+        with session.start_transaction():
+            mongo_context["assignment_registry"].revoke_or_replay(
+                revoked,
+                revocation_idempotency_key="system-services-assignment-revoke",
+                session=session,
+            )
+    with mongo_context["client"].start_session() as session:
+        with session.start_transaction():
+            with pytest.raises(SystemServicesAuthorizationError, match="CURRENT_SYSTEM_PERMISSION_REQUIRED"):
+                mongo_context["authorizer"].require(
+                    principal_id=PRINCIPAL,
+                    permission_id=PERMISSION,
+                    session=session,
+                )
+            session.abort_transaction()
