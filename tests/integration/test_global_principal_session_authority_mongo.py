@@ -1,6 +1,8 @@
 """Disposable replica-set certification for global session/refresh authority."""
 import os
 import uuid
+from concurrent.futures import ThreadPoolExecutor
+from threading import Barrier
 from datetime import datetime, timezone
 from types import SimpleNamespace
 
@@ -155,3 +157,34 @@ def test_replica_set_cross_tenant_isolation_and_exact_revocation(mongo_authority
         session.commit_transaction()
     assert sessions.count_documents({"revoked_at": None}) == 0
     assert refresh.count_documents({"revoked_at": None}) == 0
+
+
+def test_replica_set_concurrent_refresh_race_has_exactly_one_winner(mongo_authority):
+    client, _db, service, _auth, _sessions, refresh = mongo_authority
+    original = issue(service, client)
+    barrier = Barrier(2)
+
+    def rotate_once():
+        with client.start_session() as session:
+            session.start_transaction()
+            barrier.wait(timeout=10)
+            try:
+                receipt = service.rotate_refresh_token(
+                    original.refresh_token,
+                    session=session,
+                    now=datetime(2026, 11, 3, 0, 1, tzinfo=timezone.utc),
+                )
+                session.commit_transaction()
+                return ("success", receipt)
+            except Exception as error:
+                if session.in_transaction:
+                    session.abort_transaction()
+                return ("rejected", error)
+
+    with ThreadPoolExecutor(max_workers=2) as executor:
+        outcomes = list(executor.map(lambda _index: rotate_once(), range(2)))
+
+    assert sum(outcome[0] == "success" for outcome in outcomes) == 1
+    assert sum(outcome[0] == "rejected" for outcome in outcomes) == 1
+    assert refresh.count_documents({"consumed_at": None, "revoked_at": None}) == 1
+    assert refresh.count_documents({"token_digest": {"$exists": True}}) == 2
