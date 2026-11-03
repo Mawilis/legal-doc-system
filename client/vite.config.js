@@ -74,7 +74,7 @@ export default defineConfig({
         target: 'http://127.0.0.1:9095',
         changeOrigin: true,
         secure: false,
-        rewrite: (path) => path.replace(/^\\/auth/, '/api/auth'),
+        rewrite: (path) => path.replace(/^\/auth/, '/api/auth'),
       },
       // Kennel invoice lifecycle endpoints are mounted at /billing/*, not /api/billing/*.
       // Keep these rules before the general /api EOS rule so compose/list reach EOS,
