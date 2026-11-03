@@ -32,7 +32,7 @@
  *                               execution and settlement authority.
  */
 
-import React from 'react';
+import React, { useState } from 'react';
 import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
@@ -54,6 +54,7 @@ const authenticatedTenant = {
 };
 
 function Harness() {
+  const [switchError, setSwitchError] = useState('');
   const {
     activeTenant,
     bootstrapReady,
@@ -70,7 +71,9 @@ function Harness() {
       <span data-testid="tenant-name">{activeTenant?.name || ''}</span>
       <span data-testid="mismatch">{String(authorityMismatch)}</span>
       <span data-testid="error">{error || ''}</span>
+      <span data-testid="switch-error">{switchError}</span>
       <button type="button" onClick={() => switchTenant('TENANT-A')}>same</button>
+      <button type="button" onClick={() => { void switchTenant('TENANT-B').catch((reason) => setSwitchError(reason.message)); }}>cross-tenant</button>
       <button type="button" onClick={() => refreshTenants()}>refresh</button>
     </div>
   );
@@ -171,6 +174,25 @@ describe('authenticated workspace tenant projection handoff', () => {
     expect(screen.getByTestId('error')).toHaveTextContent(
       'AUTHENTICATED_WORKSPACE_AUTHORITY_MISMATCH',
     );
+    expect(tenantApi.getTenant).not.toHaveBeenCalled();
+    expect(tenantApi.getTenants).not.toHaveBeenCalled();
+  });
+
+  it('requires a new EOS membership decision before cross-tenant switching', async () => {
+    renderProvider({
+      initialTenant: authenticatedTenant,
+      authenticatedTenantId: 'TENANT-A',
+    });
+
+    await waitFor(() => expect(screen.getByTestId('ready')).toHaveTextContent('true'));
+    fireEvent.click(screen.getByRole('button', { name: 'cross-tenant' }));
+
+    await waitFor(() => {
+      expect(screen.getByTestId('switch-error')).toHaveTextContent(
+        'TENANT_SWITCH_REQUIRES_EOS_MEMBERSHIP_SELECTION',
+      );
+    });
+    expect(screen.getByTestId('tenant')).toHaveTextContent('TENANT-A');
     expect(tenantApi.getTenant).not.toHaveBeenCalled();
     expect(tenantApi.getTenants).not.toHaveBeenCalled();
   });
