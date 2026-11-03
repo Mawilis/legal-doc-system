@@ -1224,7 +1224,7 @@ const FounderDashboard = memo(({ onSwitchDashboard }) => {
                     <div className={styles.singularitySurfaceMount}>
                       <Suspense fallback={<div className={styles.loading}>HYDRATING {activeSingularitySurface.label}...</div>}>
                         {activeSingularitySurface.id === 'REVENUE' && <RevenueHUD metrics={billingMetrics} embedded />}
-                        {activeSingularitySurface.id === 'COMPLIANCE' && <ComplianceHUD metrics={compliance} embedded />}
+                        {activeSingularitySurface.id === 'COMPLIANCE' && <ComplianceHUD tenantId={activeTenant?.tenantId} metrics={compliance} embedded />}
                         {activeSingularitySurface.id === 'FORENSICS' && <ForensicsHUD embedded />}
                         {activeSingularitySurface.id === 'COMMAND' && <SingularityDashboard />}
                       </Suspense>
