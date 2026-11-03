@@ -55,11 +55,17 @@ class AwsKmsGlobalMfaEnvelope:
         if not isinstance(key_id, str) or not key_id.strip():
             raise GlobalMfaKeyManagementError("GLOBAL_MFA_KMS_KEY_ID_REQUIRED")
         self.key_id = key_id.strip()
-        if not self.key_id.startswith("arn:"):
+        key_match = re.fullmatch(
+            r"arn:[a-z0-9-]+:kms:([a-z0-9-]+):\\d{12}:key/[A-Za-z0-9-]+",
+            self.key_id,
+        )
+        if key_match is None:
             raise GlobalMfaKeyManagementError("GLOBAL_MFA_KMS_KEY_ARN_REQUIRED")
         self.region_name = (region_name or os.getenv("AWS_REGION") or "").strip()
         if not self.region_name:
             raise GlobalMfaKeyManagementError("GLOBAL_MFA_KMS_REGION_REQUIRED")
+        if self.region_name != key_match.group(1):
+            raise GlobalMfaKeyManagementError("GLOBAL_MFA_KMS_REGION_KEY_MISMATCH")
         if client is None:
             try:
                 import boto3
