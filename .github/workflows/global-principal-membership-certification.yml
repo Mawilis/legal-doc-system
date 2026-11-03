@@ -14,6 +14,7 @@ on:
       - "tests/unit/test_principal_credential_migration_assessment.py"
       - "tests/unit/test_tenant_membership_repository.py"
       - "tests/unit/test_membership_selection_projection.py"
+      - "tests/integration/test_principal_credential_repository_mongo.py"
       - ".github/workflows/global-principal-membership-certification.yml"
   workflow_dispatch:
 
