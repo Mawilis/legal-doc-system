@@ -57,6 +57,7 @@ def enrollment_store():
     credentials = database[CREDENTIAL_COLLECTION]
     challenges = database[CHALLENGE_COLLECTION]
     factors = database[FACTOR_COLLECTION]
+    legacy_factors = database["otp_secrets"]
     PrincipalCredentialRepository.ensure_indexes(credentials)
     GlobalPrincipalMfaEnrollmentService.ensure_indexes(challenges)
     GlobalPrincipalTotpVerifier.ensure_indexes(factors)
@@ -75,6 +76,7 @@ def enrollment_store():
         kms=kms,
         challenge_collection=challenges,
         factor_collection=factors,
+        legacy_factor_collection=legacy_factors,
         credential_repository=PrincipalCredentialRepository,
     )
     try:
