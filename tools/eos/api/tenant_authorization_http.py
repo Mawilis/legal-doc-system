@@ -252,11 +252,6 @@ class _TenantAuthorityRoleReader:
     ) -> None:
         self._authorization_repository = authorization_repository
         self._business_repository = business_repository
-        # Distinguish a true multi-capacity repository from the compatibility
-        # adapter path, which temporarily exposes one legacy record as a tuple.
-        self.multi_capacity_authority_available = callable(
-            getattr(business_repository, "resolve_all", None)
-        )
 
     def resolve_current_business_role(
         self,
