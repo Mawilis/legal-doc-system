@@ -67,13 +67,26 @@ const sourceBackoffUntil = new Map();
 // Active tenant transport context is set only after EOS workspace-bootstrap
 // revalidates the authenticated principal and its current tenant membership.
 let activeTenantTransportId = null;
+const RESERVED_TENANT_SCOPE_VALUES = new Set([
+  'DEFAULT', 'GLOBAL', 'GLOBAL_ROOT', 'MASTER', 'ROOT',
+  'SOVEREIGN_ROOT', 'WILSY', 'WILSY_GLOBAL_ROOT', 'WILSY_SOVEREIGN_ROOT',
+]);
+
+export const isCanonicalTenantTransportId = (tenantId) => (
+  typeof tenantId === 'string'
+  && tenantId === tenantId.trim()
+  && tenantId.length > 0
+  && !RESERVED_TENANT_SCOPE_VALUES.has(tenantId.toUpperCase())
+  && /^[A-Za-z0-9][A-Za-z0-9._:-]{0,199}$/.test(tenantId)
+);
+
 
 export const setActiveTenantTransportId = (tenantId) => {
   if (tenantId === null || tenantId === undefined || tenantId === '') {
     activeTenantTransportId = null;
     return;
   }
-  if (typeof tenantId !== 'string' || tenantId !== tenantId.trim() || !/^[A-Za-z0-9][A-Za-z0-9._:-]{0,199}$/.test(tenantId)) {
+  if (!isCanonicalTenantTransportId(tenantId)) {
     throw new Error('ACTIVE_TENANT_TRANSPORT_CONTEXT_INVALID');
   }
   activeTenantTransportId = tenantId;
