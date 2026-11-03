@@ -40,6 +40,7 @@ class BusinessRoleResolution(StrEnum):
 class TenantBusinessRoleResult:
     role: str | None
     resolution: BusinessRoleResolution
+    evidence_role: str | None = None
 
 class RoleAssignmentReader(Protocol):
     def resolve(self, principal_id: str, tenant_id: str, role_id: str, *, session: Any = None) -> object: ...
@@ -78,8 +79,9 @@ def resolve_current_tenant_business_role(*, principal_id: object, tenant_id: obj
                 # must not run. Multiple active roles remain non-singular.
                 sole_active = next(iter(active)) if len(active) == 1 else None
                 return TenantBusinessRoleResult(
-                    sole_active,
+                    None,
                     BusinessRoleResolution.NO_ELIGIBLE_TENANT_BUSINESS_ROLE,
+                    evidence_role=sole_active,
                 )
             return TenantBusinessRoleResult(None, BusinessRoleResolution.NO_ACTIVE_TENANT_BUSINESS_ROLE)
 
