@@ -66,6 +66,8 @@ const BillingHUD = React.lazy(() => import('../billing/BillingHUD'));
 const HRDashboard = React.lazy(() => import('../hr/HrDashboard'));
 const ITDashboard = React.lazy(() => import('../it/ITDashboard'));
 const LegalDashboard = React.lazy(() => import('../industry/LegalDashboard'));
+const SystemServicesDashboard = React.lazy(() => import('../system-services/SystemServicesDashboard'));
+
 
 export const DASHBOARD_KEYS = Object.freeze({
   FOUNDER: 'FOUNDER_DASHBOARD',
@@ -77,7 +79,8 @@ export const DASHBOARD_KEYS = Object.freeze({
   FINANCE: 'FINANCE_DASHBOARD',   // ⬅️ Now resolves to BillingHUD
   HR: 'HR_DASHBOARD',
   IT: 'IT_DASHBOARD',
-  LEGAL: 'LEGAL_DASHBOARD'
+  LEGAL: 'LEGAL_DASHBOARD',
+  SYSTEM_SERVICES: 'SYSTEM_SERVICES_DASHBOARD'
 });
 
 const DASHBOARD_LABELS = Object.freeze({
@@ -90,7 +93,8 @@ const DASHBOARD_LABELS = Object.freeze({
   [DASHBOARD_KEYS.FINANCE]: 'Billing Hub',  // ⬅️ Updated label
   [DASHBOARD_KEYS.HR]: 'HR Dashboard',
   [DASHBOARD_KEYS.IT]: 'IT Dashboard',
-  [DASHBOARD_KEYS.LEGAL]: 'WILSY Legal OS'
+  [DASHBOARD_KEYS.LEGAL]: 'WILSY Legal OS',
+  [DASHBOARD_KEYS.SYSTEM_SERVICES]: 'System Services'
 });
 
 const DASHBOARD_ALIASES = Object.freeze({
@@ -137,7 +141,9 @@ const DASHBOARD_ALIASES = Object.freeze({
   TECHNOLOGY: DASHBOARD_KEYS.IT,
   LEGAL: DASHBOARD_KEYS.LEGAL,
   LEGAL_DASHBOARD: DASHBOARD_KEYS.LEGAL,
-  LEGAL_OS: DASHBOARD_KEYS.LEGAL
+  LEGAL_OS: DASHBOARD_KEYS.LEGAL,
+  SYSTEM_SERVICES: DASHBOARD_KEYS.SYSTEM_SERVICES,
+  SYSTEM_SERVICES_DASHBOARD: DASHBOARD_KEYS.SYSTEM_SERVICES
 });
 
 const FOUNDER_AUTHORITY_TOKENS = Object.freeze([
@@ -408,9 +414,21 @@ const WORKSPACE_DASHBOARD_MAP = Object.freeze({
  * override the canonical workspace identifier.
  */
 export const resolveDashboardKey = ({ user = {}, manualDashboardKey = '' } = {}) => {
+  const requestedDashboard = mapDashboardAlias(manualDashboardKey);
+  const systemWorkspace = user.systemServicesWorkspace;
+  if (
+    requestedDashboard === DASHBOARD_KEYS.SYSTEM_SERVICES
+    && systemWorkspace?.status === 'READY'
+    && systemWorkspace?.authority === 'EOS_SYSTEM_SERVICES'
+    && typeof systemWorkspace?.principalId === 'string'
+    && systemWorkspace.principalId.length > 0
+    && Array.isArray(systemWorkspace?.capabilities)
+    && systemWorkspace.capabilities.includes('system_services:queue:read')
+  ) {
+    return DASHBOARD_KEYS.SYSTEM_SERVICES;
+  }
   const workspaceDashboard = WORKSPACE_DASHBOARD_MAP[user.workspaceId] || '';
   if (!workspaceDashboard) return '';
-  const requestedDashboard = mapDashboardAlias(manualDashboardKey);
   return requestedDashboard === workspaceDashboard
     ? requestedDashboard
     : workspaceDashboard;
@@ -595,6 +613,8 @@ const FounderReturnFrame = ({ dashboardLabel, onReturn, children }) => {
 const SovereignDashboardController = ({ user: propUser, onLogout }) => {
   const { activeTenant } = useTenants();
   const [manualDashboardKey, setManualDashboardKey] = useState('');
+  const [systemServicesWorkspace, setSystemServicesWorkspace] = useState(null);
+  const systemServicesRequestRef = useRef(0);
   const [isGlobalCommandSearchOpen, setIsGlobalCommandSearchOpen] = useState(false);
   const [kernelHealth, setKernelHealth] = useState({
     status: 'UNKNOWN',
@@ -622,9 +642,13 @@ const SovereignDashboardController = ({ user: propUser, onLogout }) => {
     const role = normalizeDashboardToken(user?.role || user?.accountRole || user?.tenantRole);
   const traceId = localStorage.getItem('traceId') || 'SYSTEM_CORE_INIT';
 
+  const dashboardUser = useMemo(() => (
+    user && systemServicesWorkspace ? { ...user, systemServicesWorkspace } : user
+  ), [systemServicesWorkspace, user]);
+
   const dashboardKey = useMemo(() => (
-    user ? resolveDashboardKey({ user, manualDashboardKey }) : ''
-  ), [manualDashboardKey, user]);
+    dashboardUser ? resolveDashboardKey({ user: dashboardUser, manualDashboardKey }) : ''
+  ), [dashboardUser, manualDashboardKey]);
 
   const dashboardLabel = getDashboardDisplayName(dashboardKey);
   const canReturnToFounder = Boolean(
@@ -775,7 +799,9 @@ const SovereignDashboardController = ({ user: propUser, onLogout }) => {
   }
 
   let dashboardShard = null;
-  if (dashboardKey === DASHBOARD_KEYS.FOUNDER) {
+  if (dashboardKey === DASHBOARD_KEYS.SYSTEM_SERVICES) {
+    dashboardShard = <SystemServicesDashboard workspace={dashboardUser?.systemServicesWorkspace || null} />;
+  } else   if (dashboardKey === DASHBOARD_KEYS.FOUNDER) {
     dashboardShard = <FounderDashboard user={user} onSwitchDashboard={handleManualDashboardSwitch} />;
   } else if (dashboardKey === DASHBOARD_KEYS.EXECUTIVE) {
     dashboardShard = (
@@ -830,6 +856,32 @@ const SovereignDashboardController = ({ user: propUser, onLogout }) => {
   }
 
   const handleGlobalSearchNavigate = (result = {}) => {
+    if (result.command === 'OPEN_SYSTEM_SERVICES') {
+      const requestId = ++systemServicesRequestRef.current;
+      setSystemServicesWorkspace(null);
+      api.get('/system-services/workspace-bootstrap', { timeout: 12000 })
+        .then((response) => {
+          if (requestId !== systemServicesRequestRef.current) return;
+          const projection = response?.data;
+          if (
+            projection?.status === 'READY'
+            && projection?.authority === 'EOS_SYSTEM_SERVICES'
+            && typeof projection?.principalId === 'string'
+            && Array.isArray(projection?.capabilities)
+            && projection.capabilities.includes('system_services:queue:read')
+          ) {
+            setSystemServicesWorkspace(projection);
+            setManualDashboardKey(DASHBOARD_KEYS.SYSTEM_SERVICES);
+          }
+        })
+        .catch(() => {
+          if (requestId === systemServicesRequestRef.current) {
+            setSystemServicesWorkspace(null);
+            setManualDashboardKey('');
+          }
+        });
+      return;
+    }
     if (result.dashboardKey) handleManualDashboardSwitch(result.dashboardKey);
     if (typeof window !== 'undefined') {
       window.dispatchEvent(new CustomEvent('wilsy:global-search-activate', {
