@@ -153,6 +153,13 @@ class MfaChallengeFactorContext:
     principal_id: str
     credential_revision: int
 
+@dataclass(frozen=True, slots=True)
+class SelectionChallengeContext:
+    """Minimal principal/credential binding read from an unconsumed selection challenge."""
+
+    principal_id: str
+    credential_revision: int
+
 
 def _require_exact_text(value: object, code: str) -> str:
     """Require one non-empty, already-trimmed identifier without normalization."""
@@ -561,6 +568,44 @@ class MembershipSelectionChallengeService:
             challenge_token=token,
         )
 
+    def get_selection_challenge_context(
+        self,
+        *,
+        selection_challenge_token: str,
+        session: ClientSession | Any,
+        now: datetime | None = None,
+    ) -> SelectionChallengeContext:
+        """Read an unconsumed selection challenge for bounded membership pagination."""
+        _require_transaction(session)
+        instant = _utc_now(now)
+        if not isinstance(selection_challenge_token, str) or not 40 <= len(selection_challenge_token) <= 128:
+            raise MembershipSelectionChallengeRejected("AUTH_CHALLENGE_INVALID_EXPIRED_OR_CONSUMED")
+        try:
+            document = _target(self._collection).find_one(
+                {
+                    "challenge_digest": _digest(selection_challenge_token),
+                    "purpose": SELECTION_PURPOSE,
+                    "consumed_at": None,
+                    "expires_at": {"$gt": instant},
+                },
+                session=session,
+            )
+        except PyMongoError as error:
+            raise MembershipSelectionChallengeUnavailable("AUTH_CHALLENGE_READ_FAILED") from error
+        if not isinstance(document, Mapping):
+            raise MembershipSelectionChallengeRejected("AUTH_CHALLENGE_INVALID_EXPIRED_OR_CONSUMED")
+        principal = _require_exact_text(
+            document.get("principal_id"),
+            "AUTH_CHALLENGE_PRINCIPAL_INVALID",
+        )
+        revision = _require_revision(
+            document.get("credential_revision"),
+            "AUTH_CHALLENGE_CREDENTIAL_REVISION_INVALID",
+        )
+        _require_active_principal(principal, self._principals, session)
+        _require_current_credential(principal, revision, self._credentials, session)
+        return SelectionChallengeContext(principal_id=principal, credential_revision=revision)
+
     def get_mfa_challenge_factor_context(
         self,
         *,
@@ -687,6 +732,7 @@ __all__ = [
     "SelectedMembershipMfaChallenge",
     "SelectedMembershipContext",
     "MfaChallengeFactorContext",
+    "SelectionChallengeContext",
     "MembershipSelectionChallengeService",
 ]
 
