@@ -86,6 +86,7 @@ import { WilsyMeetingsWorkspace } from './meeting/workspace';
 import WilsyMeetingOperatingRoom from './meeting/WilsyMeetingOperatingRoom';
 import WilsyCrmSetupControlPlane from './setup/WilsyCrmSetupControlPlane';
 import WilsyCrmRawStreamThread from './WilsyCrmRawStreamThread.jsx';
+import OwnerCommercialWorkspace from './OwnerCommercialWorkspace.jsx';
 
 // ─── SOVEREIGN BUSINESS CONTEXT INTEGRATION ──────────────────────────────────
 // This is the competitive differentiator: CRM now consumes live HR and Sales
@@ -2504,11 +2505,11 @@ function CRMDashboard({ user = {}, tenantConfig = {}, onExit = null }) {
         {activeWorkspace === 'home' ? (
           <header data-wilsy-r85-crm-workspace-topbar="tabbed-command" className={styles.osChrome}>
             <div className={styles.chromeTitle}>
-              <small><Home size={13} /> CRM Workspace</small>
+              <small><Home size={13} /> {crmPermissionProfile.scope === 'tenant' ? 'Legal Operations' : 'CRM Workspace'}</small>
               <h1 className={styles.crmOneLineTitleLock} aria-label="Wilsy CRM Workspace">
-                <span className={styles.crmOneLineTitleText}>Wilsy&nbsp;<span className={styles.crmOneLineTitleGold}>CRM</span></span>
+                <span className={styles.crmOneLineTitleText}>{crmPermissionProfile.scope === 'tenant' ? <>WILSY&nbsp;<span className={styles.crmOneLineTitleGold}>LEGAL OPS</span></> : <>Wilsy&nbsp;<span className={styles.crmOneLineTitleGold}>CRM</span></>}</span>
               </h1>
-              <p>Source-led pipeline. Sovereign search. Evidence proof. A CRM command shell that outclasses Zoho, HubSpot, Zendesk, Apollo and Lemlist.</p>
+              <p>{crmPermissionProfile.scope === 'tenant' ? 'Daily owner actions, commercial follow-ups and subscription-governed Legal operations.' : 'Source-led pipeline. Sovereign search. Evidence proof.'}</p>
             </div>
 
             <nav className={styles.crmTopAppMenu} aria-label="CRM command menu">
@@ -2704,6 +2705,9 @@ function CRMDashboard({ user = {}, tenantConfig = {}, onExit = null }) {
               onBackHome={() => setActiveWorkspace('home')}
             />
           ) : activeWorkspace === 'home' ? (
+            {crmPermissionProfile.scope === 'tenant' ? (
+              <OwnerCommercialWorkspace />
+            ) : (
             <section className={styles.homeGrid}>
               <section className={styles.crmWorkspaceDeck} aria-label="CRM module workspaces">
                 {workspaceTelemetry.map(workspace => {
@@ -2808,6 +2812,7 @@ function CRMDashboard({ user = {}, tenantConfig = {}, onExit = null }) {
                 </article>
               </section>
             </section>
+            )}
           ) : (
             <section className={styles.recordsSurface}>
               <div className={styles.recordsHeader}>
