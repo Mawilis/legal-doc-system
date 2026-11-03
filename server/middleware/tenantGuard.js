@@ -182,9 +182,10 @@ export const tenantGuard = (req, res, next) => {
       }
 
       req.tenantId = CANONICAL_TENANT_ID;
-      req.tenant = req.tenant || {
-        id: req.tenantId,
-        tenantId: req.tenantId,
+      req.tenant = {
+        ...(req.tenant || {}),
+        id: CANONICAL_TENANT_ID,
+        tenantId: CANONICAL_TENANT_ID,
         source: 'READONLY_OPERATING_BRIDGE_BYPASS',
         readOnly: true,
       };
