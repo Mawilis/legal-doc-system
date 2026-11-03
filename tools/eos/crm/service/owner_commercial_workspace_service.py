@@ -66,6 +66,19 @@ class OwnerCommercialWorkspaceService:
             tenant_id=tenant_id, now=now, session=session,
         )
 
+    def complete(
+        self, *, tenant_id: str, work_item_id: str, completion_note: str,
+        now: datetime, session: Any,
+    ) -> OwnerCommercialWorkItem:
+        self._require_entitlement(tenant_id, session)
+        try:
+            return self._registry.complete(
+                tenant_id=tenant_id, work_item_id=work_item_id,
+                completion_note=completion_note, now=now, session=session,
+            )
+        except Exception as error:
+            raise OwnerCommercialWorkspaceError("OWNER_WORK_COMPLETION_REJECTED") from error
+
     def create(
         self, *, tenant_id: str, principal_id: str, title: str,
         description: str, kind: OwnerWorkKind, priority: OwnerWorkPriority,
