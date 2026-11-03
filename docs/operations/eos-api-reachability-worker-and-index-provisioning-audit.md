@@ -92,3 +92,23 @@ Before an apply stage exists, require: complete source/route/worker inventory; e
 The System Services case/event contract is source-verified. The in-process dunning scheduler and its shared API database identity are now identified. The two reconciliation persistence targets are distinguished. The initial manifest and workflow are intentionally non-mutating and incomplete.
 
 **NO-GO** remains for production role changes, index application, credential rotation or Atlas network changes. No production resources or secrets were modified.
+
+
+## 6. CLI migration identity — explicit principal reconciliation utility
+
+The repository contains `tools/eos/saas/auth/migrations/reconcile_legacy_super_admin_tenant.py`. It is an operator-invoked CLI, not a request handler or worker. It calls `kernel_db.connect_db()`, obtains the shared configured database/client, and disconnects in `finally`.
+
+Exact collections and operations:
+- `tenants`: `find` for exact canonical tenant and legacy pseudo-tenant validation.
+- `users`: `find` exact ObjectId + legacy/canonical tenant; `update_one` exact ObjectId + old tenant predicate to change only `tenantId`.
+- `sessions`: `find` principal-scoped preflight; `delete_many` exact `user_id` during confirmed execution.
+- `refresh_tokens`: `find` principal-scoped preflight; `delete_many` exact `user_id` during confirmed execution.
+
+Dry-run performs reads only. Mutation requires explicit old/new tenant confirmation and a Mongo transaction. The operation revokes only that principal's sessions and refresh tokens. This CLI therefore requires a separately governed migration/operator identity with tightly scoped write/delete rights, not the normal API role. The current source uses the same kernel URI authority unless the CLI environment is separately configured; the deployed operator credential boundary is not yet proven.
+
+The source uses a legacy auth data model (`users`, `sessions`, `refresh_tokens`, `tenants`) distinct from the global-principal collections. Do not merge those grants into the EOS global-identity runtime role.
+
+## 7. Scheduler transaction and isolation risk
+
+The dunning evaluator performs sequential collection writes directly through the shared billing database helper. In the inspected function, no caller-owned Mongo session is opened or passed through those reads/writes. A failure between the state update, subscription update, audit insert and telemetry emission may therefore leave a partially applied lifecycle transition. This is both an identity-isolation issue and a consistency/certification issue; extract and transactionally redesign it before granting an independent scheduler role.
+
