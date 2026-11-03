@@ -1,4 +1,4 @@
-"""Static EOS certificate for governed legacy root alias retirement."""
+"""EOS certificate for the single canonical WILSY tenant boundary."""
 from __future__ import annotations
 
 import ast
@@ -7,7 +7,7 @@ from pathlib import Path
 from tools.eos.tenancy import retire_legacy_root_aliases as retirement
 
 
-def test_exact_allowlist_and_canonical_founder_identity() -> None:
+def test_exact_obsolete_allowlist_and_canonical_tenant() -> None:
     assert retirement.ALIASES == (
         "WILSY_ROOT",
         "MASTER",
@@ -18,39 +18,34 @@ def test_exact_allowlist_and_canonical_founder_identity() -> None:
     assert retirement.CANONICAL_TENANT_ID == "WILSYTENANT-4CD2FZ4O"
 
 
-def test_retirement_is_transactional_and_uses_append_only_evidence() -> None:
-    source = Path("tools/eos/tenancy/retire_legacy_root_aliases.py").read_text(
-        encoding="utf-8"
-    )
+def test_retirement_is_transactional_and_deletes_only_exact_registry_aliases() -> None:
+    source = Path("tools/eos/tenancy/retire_legacy_root_aliases.py").read_text(encoding="utf-8")
     tree = ast.parse(source)
-    attributes = {
-        node.attr for node in ast.walk(tree) if isinstance(node, ast.Attribute)
-    }
+    attributes = {node.attr for node in ast.walk(tree) if isinstance(node, ast.Attribute)}
     assert "with_transaction" in attributes
-    assert "insert_one" in attributes
-    assert "update_one" in attributes
-    assert "delete_one" not in attributes
-    assert "delete_many" not in attributes
+    assert "delete_many" in attributes
+    assert "insert_one" not in attributes
+    assert "update_one" not in attributes
     assert "drop" not in attributes
+    assert 'database["tenant_configs"].delete_many' in source
+    assert "database.list_collection_names()" not in source
+    assert "_preserved_inventory" not in source
+    assert "sovereign_nodes" not in source
 
 
-def test_retirement_never_mutates_historical_node_or_forensic_records() -> None:
-    source = Path("tools/eos/tenancy/retire_legacy_root_aliases.py").read_text(
-        encoding="utf-8"
-    )
+def test_retirement_mutates_no_pre_iam_collections() -> None:
+    source = Path("tools/eos/tenancy/retire_legacy_root_aliases.py").read_text(encoding="utf-8")
     tree = ast.parse(source)
-    update_targets = []
+    mutation_targets = []
     for node in ast.walk(tree):
         if isinstance(node, ast.Call) and isinstance(node.func, ast.Attribute):
             if node.func.attr in {"update_one", "update_many", "delete_one", "delete_many"}:
-                update_targets.append(ast.unparse(node.func.value))
-    assert update_targets == ["database['tenant_configs']"]
+                mutation_targets.append(ast.unparse(node.func.value))
+    assert mutation_targets == ["database['tenant_configs']"]
 
 
 def test_founder_subscription_entitlement_and_authority_are_pre_and_post_invariants() -> None:
-    source = Path("tools/eos/tenancy/retire_legacy_root_aliases.py").read_text(
-        encoding="utf-8"
-    )
+    source = Path("tools/eos/tenancy/retire_legacy_root_aliases.py").read_text(encoding="utf-8")
     assert 'database["tenants"]' in source
     assert 'database["subscriptions"]' in source
     assert 'database["tenant_product_entitlement_current"]' in source
@@ -60,12 +55,10 @@ def test_founder_subscription_entitlement_and_authority_are_pre_and_post_invaria
 
 
 def test_dry_run_is_default_and_apply_is_explicit() -> None:
-    source = Path("tools/eos/tenancy/retire_legacy_root_aliases.py").read_text(
-        encoding="utf-8"
-    )
+    source = Path("tools/eos/tenancy/retire_legacy_root_aliases.py").read_text(encoding="utf-8")
     assert 'parser.add_argument("--apply", action="store_true"' in source
-    assert 'if not apply:' in source
-    assert 'status": "ARCHIVED"' in source
+    assert "if not apply:" in source
+    assert '"legacy_collections_scanned": 0' in source
 
 
 def test_runtime_tenant_boundaries_have_no_synthetic_root_fallbacks() -> None:
@@ -90,7 +83,9 @@ def test_runtime_tenant_boundaries_have_no_synthetic_root_fallbacks() -> None:
     assert "TENANT_DATABASE_UNAVAILABLE" in tenant_context
     assert "tenant_id: tenantId" in tenant_context
     assert "return store?.tenantId || null" in tenant_context
-    assert all(alias in tenant_resolver for alias in retirement.ALIASES)
+    assert "WILSYTENANT-4CD2FZ4O" in tenant_resolver
+    assert "TENANT_NOT_AUTHORIZED" in tenant_resolver
+    assert "retiredAliases" not in tenant_resolver
     assert "req.tenantId || req.context?.tenantId || 'GLOBAL_ROOT'" not in tenant_scope
     assert "'GLOBAL_ROOT'" not in api_routes
     assert "wilsy-sovereign-root" not in auth_controller
@@ -100,34 +95,7 @@ def test_runtime_tenant_boundaries_have_no_synthetic_root_fallbacks() -> None:
 
 
 def test_retirement_uses_canonical_kernel_uri_resolution() -> None:
-    source = Path("tools/eos/tenancy/retire_legacy_root_aliases.py").read_text(
-        encoding="utf-8"
-    )
+    source = Path("tools/eos/tenancy/retire_legacy_root_aliases.py").read_text(encoding="utf-8")
     assert "from tools.eos.kernel.db import resolve_mongo_uri" in source
     assert "uri = resolve_mongo_uri()" in source
     assert 'uri = os.getenv("MONGODB_URI")' not in source
-
-
-def test_all_alias_scoped_historical_records_are_fingerprinted_and_preserved() -> None:
-    source = Path("tools/eos/tenancy/retire_legacy_root_aliases.py").read_text(
-        encoding="utf-8"
-    )
-    assert "database.list_collection_names()" in source
-    assert '"tenantId": {"$in": list(ALIASES)}' in source
-    assert '"tenant_id": {"$in": list(ALIASES)}' in source
-    assert '"preserved_record_evidence"' in source
-    assert "PRESERVED_LEGACY_RECORD_EVIDENCE_DRIFT" in source
-    assert '"legacy_records_preserved": len(preserved_records)' in source
-
-
-def test_retirement_still_mutates_only_alias_configuration_records() -> None:
-    source = Path("tools/eos/tenancy/retire_legacy_root_aliases.py").read_text(
-        encoding="utf-8"
-    )
-    tree = ast.parse(source)
-    mutation_targets = []
-    for node in ast.walk(tree):
-        if isinstance(node, ast.Call) and isinstance(node.func, ast.Attribute):
-            if node.func.attr in {"update_one", "update_many", "delete_one", "delete_many"}:
-                mutation_targets.append(ast.unparse(node.func.value))
-    assert mutation_targets == ["database['tenant_configs']"]
