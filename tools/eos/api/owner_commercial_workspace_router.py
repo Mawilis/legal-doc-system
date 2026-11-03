@@ -10,6 +10,7 @@ from typing import Any, Literal
 
 from fastapi import APIRouter, Depends, Header, HTTPException, status
 from pydantic import BaseModel, ConfigDict, Field
+from pymongo import ReadConcern, WriteConcern
 
 from tools.eos.api.tenant_authorization_http import (
     RequireTenantAuthorization, TenantAuthorizationContext,
@@ -52,7 +53,11 @@ class OwnerWorkCreateRequest(BaseModel):
 
 def _service(database: Any) -> OwnerCommercialWorkspaceService:
     return OwnerCommercialWorkspaceService(
-        OwnerCommercialWorkRegistry(database.get_collection(COLLECTION)),
+        OwnerCommercialWorkRegistry(database.get_collection(
+            COLLECTION,
+            write_concern=WriteConcern(w="majority", j=True),
+            read_concern=ReadConcern("majority"),
+        )),
         subscription_registry_module.subscriptions_collection,
         database.get_collection(HISTORY_COLLECTION),
         database.get_collection(CURRENT_COLLECTION),
