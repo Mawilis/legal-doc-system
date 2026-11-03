@@ -203,6 +203,15 @@ class PrincipalCredentialRepository:
             raise PrincipalCredentialRepositoryError(
                 "PRINCIPAL_CREDENTIAL_PASSWORD_VERIFIER_INVALID"
             ) from error
+        current = PrincipalCredentialRepository.get_by_principal(
+            principal_id,
+            collection,
+            session=session,
+        )
+        if current.credential_revision != expected_revision:
+            raise PrincipalCredentialRevisionConflictError(
+                "PRINCIPAL_CREDENTIAL_REVISION_CONFLICT"
+            )
         try:
             result = _target(collection).update_one(
                 {
@@ -224,10 +233,11 @@ class PrincipalCredentialRepository:
             raise PrincipalCredentialRevisionConflictError(
                 "PRINCIPAL_CREDENTIAL_REVISION_CONFLICT"
             )
-        return PrincipalCredentialRepository.get_by_principal(
-            principal_id,
-            collection,
-            session=session,
+        return PrincipalCredential(
+            principal_id=current.principal_id,
+            normalized_email=current.normalized_email,
+            password_hash=new_password_hash,
+            credential_revision=expected_revision + 1,
         )
 
 
