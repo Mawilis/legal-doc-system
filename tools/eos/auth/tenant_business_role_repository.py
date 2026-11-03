@@ -24,6 +24,8 @@ from tools.eos.auth.tenant_business_role import TenantBusinessRoleAuthority, Ten
 
 VERSION = "v1.0.0-TENANT-BUSINESS-ROLE-REPOSITORY"
 COLLECTION = "tenant_business_roles"
+MULTI_COLLECTION = "tenant_business_role_assignments"
+HISTORY_COLLECTION = "tenant_business_role_assignment_history"
 
 class TenantBusinessRoleRepositoryError(RuntimeError): pass
 class TenantBusinessRoleAlreadyExistsError(TenantBusinessRoleRepositoryError): pass
@@ -69,6 +71,71 @@ class TenantBusinessRoleRepository:
     def ensure_indexes(collection: Optional[Collection] = None) -> None:
         _target(collection).create_index([('principal_id', ASCENDING), ('tenant_id', ASCENDING)], unique=True, name='principal_tenant_business_role_unique')
     @staticmethod
+    def resolve_all(principal_id: str, tenant_id: str, collection: Optional[Collection] = None, *, session: Optional[ClientSession] = None) -> tuple[TenantBusinessRoleAuthority, ...]:
+        """Resolve every current business-role fact for one exact principal/tenant.
+
+        The legacy single-role projection remains readable during migration. New
+        capacities live in a separate collection so its historical unique index
+        is never weakened or dropped.
+        """
+        if not all(isinstance(v, str) and v == v.strip() and v for v in (principal_id, tenant_id)):
+            raise TenantBusinessRoleNotFoundError("TENANT_BUSINESS_ROLE_NOT_FOUND")
+        try:
+            database = getattr(_target(collection), "database", None)
+            if database is None:
+                # Injected test collections may not expose a database. In that
+                # case the supplied collection is the complete current source.
+                rows = list(_target(collection).find({"principal_id": principal_id, "tenant_id": tenant_id}, session=session))
+                legacy = None
+            else:
+                rows = list(database.get_collection(MULTI_COLLECTION).find(
+                    {"principal_id": principal_id, "tenant_id": tenant_id}, session=session
+                ))
+                legacy = _target(collection).find_one(
+                    {"principal_id": principal_id, "tenant_id": tenant_id}, session=session
+                )
+            if legacy is not None:
+                rows.append(legacy)
+        except PyMongoError as error:
+            raise TenantBusinessRoleRepositoryError("TENANT_BUSINESS_ROLE_READ_FAILED") from error
+        by_role: dict[str, TenantBusinessRoleAuthority] = {}
+        for row in rows:
+            value = _hydrate(row)
+            previous = by_role.get(value.business_role)
+            if previous is not None and previous != value:
+                raise TenantBusinessRolePersistedRecordInvalidError("TENANT_BUSINESS_ROLE_DUPLICATE_CONFLICT")
+            by_role[value.business_role] = value
+        return tuple(by_role[key] for key in sorted(by_role))
+
+    @staticmethod
+    def ensure_multi_capacity_indexes(database: Any) -> None:
+        """Create additive indexes; never alter the legacy unique principal/tenant index."""
+        database.get_collection(MULTI_COLLECTION).create_index(
+            [("principal_id", ASCENDING), ("tenant_id", ASCENDING), ("business_role", ASCENDING)],
+            unique=True, name="principal_tenant_business_role_capacity_unique",
+        )
+        database.get_collection(HISTORY_COLLECTION).create_index(
+            [("principal_id", ASCENDING), ("tenant_id", ASCENDING), ("business_role", ASCENDING), ("revision", ASCENDING)],
+            unique=True, name="principal_tenant_business_role_history_revision_unique",
+        )
+
+    @staticmethod
+    def append_history(value: TenantBusinessRoleAuthority, collection: Optional[Collection] = None, *, session: Optional[ClientSession] = None) -> None:
+        """Append one immutable revision; caller must supply an active transaction."""
+        if session is None or not callable(getattr(session, "in_transaction", None)) or session.in_transaction() is not True:
+            raise TenantBusinessRoleRepositoryError("TENANT_BUSINESS_ROLE_TRANSACTION_REQUIRED")
+        target = _target(collection)
+        database = getattr(target, "database", None)
+        if database is None:
+            raise TenantBusinessRoleRepositoryError("TENANT_BUSINESS_ROLE_HISTORY_UNAVAILABLE")
+        try:
+            database.get_collection(HISTORY_COLLECTION).insert_one(_document(value), session=session)
+        except DuplicateKeyError as error:
+            raise TenantBusinessRoleRevisionConflictError("TENANT_BUSINESS_ROLE_REVISION_CONFLICT") from error
+        except PyMongoError as error:
+            raise TenantBusinessRoleRepositoryError("TENANT_BUSINESS_ROLE_HISTORY_WRITE_FAILED") from error
+
+    @staticmethod
     def insert(value: TenantBusinessRoleAuthority, collection: Optional[Collection] = None, *, session: Optional[ClientSession] = None) -> TenantBusinessRoleAuthority:
         if not isinstance(value, TenantBusinessRoleAuthority): raise TenantBusinessRoleRepositoryError("TENANT_BUSINESS_ROLE_INSERT_INVALID")
         try: _target(collection).insert_one(_document(value), session=session); return value
@@ -89,7 +156,7 @@ class TenantBusinessRoleRepository:
         if result.matched_count != 1: raise TenantBusinessRoleRevisionConflictError("TENANT_BUSINESS_ROLE_REVISION_CONFLICT")
         return value
 
-__all__ = ['COLLECTION','VERSION','TenantBusinessRoleRepository','TenantBusinessRoleRepositoryError','TenantBusinessRoleAlreadyExistsError','TenantBusinessRoleNotFoundError','TenantBusinessRoleRevisionConflictError','TenantBusinessRolePersistedRecordInvalidError']
+__all__ = ['COLLECTION','MULTI_COLLECTION','HISTORY_COLLECTION','VERSION','TenantBusinessRoleRepository','TenantBusinessRoleRepositoryError','TenantBusinessRoleAlreadyExistsError','TenantBusinessRoleNotFoundError','TenantBusinessRoleRevisionConflictError','TenantBusinessRolePersistedRecordInvalidError']
 # ARTIFACT: tenant_business_role_repository.py
 # VERSION: v1.0.0-TENANT-BUSINESS-ROLE-REPOSITORY
 # AUTHORITY BOUNDARY: business-role persistence and CAS only
