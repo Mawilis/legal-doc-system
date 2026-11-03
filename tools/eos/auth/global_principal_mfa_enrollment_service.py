@@ -333,6 +333,8 @@ class GlobalPrincipalMfaEnrollmentService:
                 raise GlobalPrincipalMfaEnrollmentRejected("GLOBAL_MFA_ENROLLMENT_CHALLENGE_CONSUMPTION_FAILED")
         except GlobalPrincipalMfaEnrollmentError:
             raise
+        except DuplicateKeyError as error:
+            raise GlobalPrincipalMfaEnrollmentRejected("GLOBAL_MFA_ENROLLMENT_FACTOR_CONFLICT") from error
         except GlobalMfaKeyManagementError as error:
             raise GlobalPrincipalMfaEnrollmentUnavailable("GLOBAL_MFA_ENROLLMENT_KEY_SERVICE_UNAVAILABLE") from error
         except PyMongoError as error:
