@@ -7,11 +7,15 @@ on:
     paths:
       - "infra/mongodb/eos-index-manifest-v1.json"
       - ".github/workflows/eos-mongodb-index-provisioning-gate.yml"
+      - "tools/eos/mongodb/read_only_index_verifier.py"
+      - "tests/unit/test_eos_read_only_index_verifier.py"
   pull_request:
     paths:
       - "infra/mongodb/eos-index-manifest-v1.json"
       - "tools/eos/mongodb/index_provisioning_harness.py"
       - ".github/workflows/eos-mongodb-index-provisioning-gate.yml"
+      - "tools/eos/mongodb/read_only_index_verifier.py"
+      - "tests/unit/test_eos_read_only_index_verifier.py"
   workflow_dispatch:
     inputs:
       target:
