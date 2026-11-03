@@ -26,6 +26,7 @@ from __future__ import annotations
 import hashlib
 import os
 import uuid
+from datetime import datetime, timedelta, timezone
 from types import SimpleNamespace
 
 import pytest
@@ -112,22 +113,24 @@ def mongo_challenge_service():
         client.close()
 
 
-def issue_selection(service, session):
+def issue_selection(service, session, now=None):
     """Issue one tenant-neutral challenge inside the supplied transaction."""
     return service.issue_membership_selection_challenge(
         principal_id="principal-mongo-1",
         credential_revision=2,
         session=session,
+        now=now,
     )
 
 
-def select_capacity(service, token, session):
+def select_capacity(service, token, session, now=None):
     """Consume selection challenge and issue one revision-bound MFA challenge."""
     return service.select_membership_and_issue_mfa_challenge(
         selection_challenge_token=token,
         tenant_id="tenant-mongo-1",
         business_role="tenant_owner",
         session=session,
+        now=now,
     )
 
 
@@ -204,3 +207,30 @@ def test_real_mongo_abort_restores_selection_challenge_for_safe_retry(mongo_chal
 # FAIL-CLOSED POSTURE: replay, expiry and transaction failures reject; abort restores uncommitted state
 # FINANCIAL EXECUTION AUTHORITY: Kennel EOS remains exclusive
 # END OF WILSY OS SOVEREIGN ARTIFACT
+
+
+def test_real_mongo_expired_selection_challenge_cannot_be_consumed(mongo_challenge_service):
+    client, collection, service = mongo_challenge_service
+    issued_at = datetime(2026, 11, 3, 12, 0, tzinfo=timezone.utc)
+    with client.start_session() as session:
+        session.start_transaction()
+        selection = issue_selection(service, session, now=issued_at)
+        session.commit_transaction()
+
+    with client.start_session() as session:
+        session.start_transaction()
+        with pytest.raises(MembershipSelectionChallengeRejected, match="INVALID_EXPIRED_OR_CONSUMED"):
+            select_capacity(
+                service,
+                selection.challenge_token,
+                session,
+                now=issued_at + timedelta(minutes=6),
+            )
+        session.abort_transaction()
+
+    persisted = collection.find_one({
+        "challenge_digest": hashlib.sha3_512(selection.challenge_token.encode("utf-8")).hexdigest()
+    })
+    assert persisted is not None
+    assert persisted["consumed_at"] is None
+    assert collection.count_documents({"purpose": MFA_PURPOSE}) == 0
