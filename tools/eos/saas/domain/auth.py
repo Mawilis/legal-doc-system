@@ -26,7 +26,7 @@
 ╚══════════════════════════════════════════════════════════════════════════════╝
 """
 
-from pydantic import BaseModel, EmailStr, Field, validator
+from pydantic import BaseModel, EmailStr, Field, StrictStr, validator
 from typing import Optional, List
 from datetime import datetime
 
@@ -63,7 +63,7 @@ class AuthRequest(BaseModel):
     email: EmailStr
     password: str
     # Exact tenant returned by EOS discovery; never a client default.
-    tenant_id: Optional[str] = None
+    tenant_id: Optional[StrictStr] = None
 
     @validator('email')
     def normalise_email(cls, v):
