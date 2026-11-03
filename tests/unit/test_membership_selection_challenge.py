@@ -68,6 +68,17 @@ class ChallengeCollection:
         self.documents.append(dict(document))
         return SimpleNamespace(inserted_id=len(self.documents))
 
+    def find_one(self, query, session=None):
+        """Read one exact unconsumed challenge without changing its state."""
+        for row in self.documents:
+            if any(row.get(key) != value for key, value in query.items() if key != "expires_at"):
+                continue
+            expiry = query.get("expires_at", {}).get("$gt")
+            if expiry is not None and not row["expires_at"] > expiry:
+                continue
+            return dict(row)
+        return None
+
     def find_one_and_update(self, query, update, return_document=None, session=None):
         """Atomically match purpose, digest, expiry and unused state."""
         for row in self.documents:
@@ -232,6 +243,30 @@ def test_mfa_challenge_consumption_revalidates_and_returns_current_selection():
     assert selected.credential_revision == 4
     assert selected.membership_revision == 8
     assert selected.capacity_revision == 11
+
+
+def test_selection_challenge_context_is_read_only_and_revision_bound():
+    service, collection, *_ = make_service()
+    receipt = issue_selection(service)
+    context = service.get_selection_challenge_context(
+        selection_challenge_token=receipt.challenge_token,
+        session=Transaction(),
+    )
+    assert context.principal_id == "principal-1"
+    assert context.credential_revision == 4
+    assert collection.documents[0]["consumed_at"] is None
+
+
+def test_mfa_factor_context_is_read_only_and_principal_bound():
+    service, collection, *_ = make_service()
+    mfa = select_capacity(service, issue_selection(service))
+    context = service.get_mfa_challenge_factor_context(
+        mfa_challenge_token=mfa.challenge_token,
+        session=Transaction(),
+    )
+    assert context.principal_id == "principal-1"
+    assert context.credential_revision == 4
+    assert collection.documents[1]["consumed_at"] is None
 
 
 def test_selection_challenge_is_single_use():
