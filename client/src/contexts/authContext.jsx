@@ -51,6 +51,22 @@
 import React, { createContext, useCallback, useContext, useEffect, useMemo, useState } from 'react';
 import api from '@/services/api';
 
+const WORKSPACE_CONTRACT_VERSION = 'v1.0.0-WILSY-EOS-WORKSPACE-CONTRACT';
+const WORKSPACE_ID_SET = new Set([
+  'EXECUTIVE_COMMAND_CENTRE',
+  'TENANT_ADMINISTRATION',
+  'TENANT_OPERATIONS',
+  'AUDIT_REPORTING',
+  'LEGAL_PRACTICE',
+  'LEGAL_FINANCE',
+  'PROCESS_SERVICE',
+  'CLIENT_PORTAL',
+  'PLATFORM_OPERATIONS',
+  'PLATFORM_FINANCE_OPERATIONS',
+  'PLATFORM_SECURITY_OPERATIONS',
+  'HR_OPERATIONS',
+]);
+
 const LEGAL_PRESENTATION_PERMISSION_SET = new Set([
   'legal_operations:conflict_review:write',
   'legal_operations:instruction:write',
@@ -417,6 +433,8 @@ const boundedWorkspaceProjection = (data, fallbackEmail = '') => {
   const tenantId = String(workspace?.tenantId || '').trim();
   const tenantProjectionId = String(tenantProjection?.tenantId || '').trim();
   const businessRole = String(workspace?.businessRole || '').trim();
+  const workspaceId = String(workspace?.workspaceId || '').trim();
+  const workspaceContractVersion = String(workspace?.workspaceContractVersion || '').trim();
   const membershipRevision = workspace?.membershipRevision;
   const businessRoleRevision = workspace?.businessRoleRevision;
   const branding = boundedWorkspaceBrandingProjection(workspace, tenantId);
@@ -452,6 +470,8 @@ const boundedWorkspaceProjection = (data, fallbackEmail = '') => {
     || !tenantProjection
     || tenantProjectionId !== tenantId
     || !businessRole
+    || workspaceContractVersion !== WORKSPACE_CONTRACT_VERSION
+    || !WORKSPACE_ID_SET.has(workspaceId)
     || !Number.isInteger(membershipRevision)
     || membershipRevision < 0
     || !Number.isInteger(businessRoleRevision)
@@ -468,6 +488,8 @@ const boundedWorkspaceProjection = (data, fallbackEmail = '') => {
       lastName,
       tenantId,
       role: businessRole,
+      workspaceId,
+      workspaceContractVersion,
       permissions: [...legalPermissions],
       legalPermissionsAuthoritative: hasLegalPermissionProjection,
       membershipRevision,
