@@ -234,3 +234,40 @@ def test_real_mongo_revoked_system_assignment_denies(mongo_context):
                     session=session,
                 )
             session.abort_transaction()
+
+
+def test_real_mongo_system_services_queue_http_uses_current_eos_authority(mongo_context, monkeypatch):
+    from fastapi import FastAPI
+    from fastapi.testclient import TestClient
+    from tools.eos.api.auth_router import get_current_identity
+    from tools.eos.api.system_services_router import router
+    from tools.eos.auth.identity import SovereignIdentity
+    from tools.eos.system_services.support_case_registry import (
+        CASE_COLLECTION, EVENT_COLLECTION, SupportCaseRegistry,
+    )
+
+    seed_authority(mongo_context)
+    registry = SupportCaseRegistry(
+        cases=mongo_context["database"][CASE_COLLECTION],
+        events=mongo_context["database"][EVENT_COLLECTION],
+    )
+    registry.ensure_indexes()
+    app = FastAPI()
+    app.include_router(router, prefix="/api")
+    app.state.system_services_case_indexes_ready = True
+    app.state.system_services_case_registry = registry
+    app.state.system_services_authorizer = mongo_context["authorizer"]
+    app.dependency_overrides[get_current_identity] = lambda: SovereignIdentity(
+        identity_id=PRINCIPAL,
+        tenant_id="ignored-context",
+        auth_method="CERTIFICATION",
+        status=PrincipalStatus.ACTIVE,
+    )
+    monkeypatch.setattr(
+        "tools.eos.api.system_services_router.get_client",
+        lambda: mongo_context["client"],
+    )
+    with TestClient(app) as http:
+        response = http.get("/api/system-services/cases")
+    assert response.status_code == 200
+    assert response.json() == []
