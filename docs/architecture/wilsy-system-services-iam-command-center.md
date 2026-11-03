@@ -12,11 +12,14 @@ Related integration: PR #342
 Implemented on this branch as foundation artifacts:
 - Twelve exact System Services/IAM permission identifiers are present in the canonical permission namespace with SYSTEM scope, SYSTEM assignment requirement, workforce-currentness requirement, no tenant membership, no cross-tenant capability, no financial capability, and no self-authorization.
 - The ongoing SYSTEM permission assignment/revocation allowlists remain unchanged; the new vocabulary is not assignable merely because it is registered.
-- An immutable support-case domain and a Mongo registry now exist. Case writes require a caller-owned transaction; case state and append-only transition events are committed together. Exact scope reads, optimistic revision checks, event idempotency indexes, and strict persisted-field hydration are defined.
+- An immutable support-case domain and a Mongo registry now exist. Case writes require a caller-owned transaction; case state and append-only transition events are committed together. Exact scope reads, bounded queue reads, ordered case history, optimistic revision checks, principal-wide create idempotency, event replay indexes, and strict persisted-field hydration are defined.
+- Canonical EOS API startup now owns the case/event index DDL and exposes a storage-readiness flag that is explicitly not an authorization grant. Startup integration tests inspect the indexes against a disposable replica set.
+- A case application service now separates tenant self-service (create/list/read own case only) from SYSTEM queue/history/transition methods that require an injected current-IAM authorizer. It derives case IDs from principal plus idempotency key to make self-service creation retries stable.
+- The System Services Agent has a closed workflow allowlist and explicit human-escalation reasons; credential and recovery secrets are forbidden from its input schema.
 - Unit and disposable real-Mongo tests plus a dedicated GitHub Actions workflow have been added for the case foundation.
 - The existing account experience already contains password-recovery initiation, recovery-contact verification, and MFA enrollment/challenge components. These are existing foundations, not proof that MFA recovery, session/device self-service, case tracking UI, or the staff console are complete.
 
-Not yet implemented or certified: case API/router wiring, startup index registration, agent orchestration, self-service MFA recovery, session/device self-service endpoints, independent approval services, console bootstrap integration, and end-to-end cross-tenant/adversarial certification. No production support operations or new IAM grants are claimed.
+Not yet implemented or certified: concrete current-IAM/workforce authorizer adapter, case API/router wiring, agent orchestration/runtime, self-service MFA recovery, session/device self-service endpoints, independent approval services, console bootstrap integration, and end-to-end cross-tenant/adversarial certification. The staff queue methods fail closed until the injected EOS authorizer is supplied. No production support operations or new IAM grants are claimed.
 
 ## 1. Product decision
 
