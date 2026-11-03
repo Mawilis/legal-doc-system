@@ -17,6 +17,7 @@ from tools.eos.auth.global_principal_mfa_session_transition import (
     GlobalPrincipalMfaSessionTransition,
 )
 from tools.eos.auth.global_principal_totp_verifier import (
+    COLLECTION as GLOBAL_PRINCIPAL_MFA_FACTOR_COLLECTION,
     GlobalPrincipalFactorRejected,
     GlobalPrincipalFactorUnavailable,
 )
@@ -145,6 +146,9 @@ def _membership_payload(page: Any) -> list[dict[str, Any]]:
 async def global_login(payload: GlobalCredentialRequest, request: Request) -> dict[str, Any]:
     """Verify tenant-neutral credentials and issue a one-time membership selector."""
     _require_ready(request, "global_principal_auth_indexes_ready")
+    _require_ready(request, "global_principal_mfa_factor_indexes_ready")
+    if getattr(request.app.state, "global_principal_totp_verifier", None) is None:
+        raise HTTPException(status_code=503, detail="GLOBAL_MFA_KEY_SERVICE_UNAVAILABLE")
     now = datetime.now(timezone.utc)
     peer = request.client
     if peer is None or not isinstance(peer.host, str) or not peer.host:
@@ -162,13 +166,27 @@ async def global_login(payload: GlobalCredentialRequest, request: Request) -> di
     if principal is None:
         _record_failure(rate_gate, payload.email, source, now)
         raise HTTPException(status_code=401, detail="Invalid credentials")
+    if principal.mfa_enabled is not True:
+        raise HTTPException(status_code=409, detail="GLOBAL_MFA_ENROLLMENT_REQUIRED")
     try:
         rate_gate.record_success(email=payload.email, observed_at=now)
     except PrincipalAuthenticationRateLimitUnavailable:
         raise HTTPException(status_code=503, detail="GLOBAL_AUTHENTICATION_UNAVAILABLE") from None
 
-    session, _database = _begin_transaction()
+    session, database = _begin_transaction()
     try:
+        factor = database[GLOBAL_PRINCIPAL_MFA_FACTOR_COLLECTION].find_one(
+            {
+                "principal_id": principal.principal_id,
+                "status": "ACTIVE",
+                "credential_revision": principal.credential_revision,
+            },
+            projection={"principal_id": 1},
+            session=session,
+        )
+        if not isinstance(factor, dict) or factor.get("principal_id") != principal.principal_id:
+            _abort_if_active(session)
+            raise HTTPException(status_code=409, detail="GLOBAL_MFA_FACTOR_MIGRATION_REQUIRED")
         challenge = MembershipSelectionChallengeService().issue_membership_selection_challenge(
             principal_id=principal.principal_id,
             credential_revision=principal.credential_revision,
