@@ -75,7 +75,7 @@ class SovereignPdfService {
    * @returns {Promise<string>} The new JWT token.
    * @throws {Error} If refresh fails after all retries.
    */
-  async _refreshAuthTokenWithBackoff(maxRetries = 3, tenantId = 'WILSY_GLOBAL_ROOT', correlationId = '') {
+  async _refreshAuthTokenWithBackoff(maxRetries = 3, tenantId, correlationId = '') {
     const refreshToken = this._getRefreshToken();
     if (!refreshToken) {
       broadcastTelemetry(tenantId, 'AUTH', 'REFRESH_FAILED', 'SovereignPdfService', {
@@ -143,7 +143,7 @@ class SovereignPdfService {
    * @param {string} correlationId - Correlation ID.
    * @returns {Promise<string>} Valid JWT token.
    */
-  async _getValidToken(tenantId = 'WILSY_GLOBAL_ROOT', correlationId = '') {
+  async _getValidToken(tenantId, correlationId = '') {
     let token = this._getAuthToken();
     if (!token || token === 'undefined' || token === 'null') {
       token = await this._refreshAuthTokenWithBackoff(3, tenantId, correlationId);
@@ -160,7 +160,7 @@ class SovereignPdfService {
    *              Automatically refreshes expired tokens with exponential backoff and logs telemetry.
    * @param {string} templateType - Layout identifier (e.g., 'forensicReport', 'invoice', 'statement').
    * @param {object} data - Data payload for PDF hydration.
-   * @param {string} [tenantId='WILSY_GLOBAL_ROOT'] - Tenant identifier for isolation.
+   * @param {string} [tenantId] - Tenant identifier for isolation.
    * @returns {Promise<Blob>} The validated binary Blob of the PDF.
    * @throws {Error} If the request fails after all retries, with a human‑readable message.
    *
@@ -169,7 +169,10 @@ class SovereignPdfService {
    * 📡 Observability: Broadcasts telemetry for every request, refresh attempt, and outcome.
    * 🔗 Auditability: Correlation ID links PDF request and refresh events in Sovereign Mesh.
    */
-  async generateInstitutionalPDF(templateType, data, tenantId = 'WILSY_GLOBAL_ROOT') {
+  async generateInstitutionalPDF(templateType, data, tenantId) {
+    if (typeof tenantId !== 'string' || !tenantId.trim() || tenantId !== tenantId.trim()) {
+      throw new Error('PDF_TENANT_CONTEXT_REQUIRED');
+    }
     const correlationId = `CORR-${Date.now()}-${Math.random().toString(36).substring(2, 7).toUpperCase()}`;
     const traceId = `PDF-STRIKE-${Date.now()}-${Math.random().toString(36).substring(2, 7).toUpperCase()}`;
     const timestamp = new Date().toISOString();
@@ -274,7 +277,7 @@ class SovereignPdfService {
    *              Creates a temporary anchor element, simulates a click, and cleans up the object URL.
    * @param {string} templateType - Layout identifier (used in filename).
    * @param {object} data - Data payload for the PDF.
-   * @param {string} [tenantId='WILSY_GLOBAL_ROOT'] - Tenant identifier (used in filename).
+   * @param {string} [tenantId] - Tenant identifier (used in filename).
    * @returns {Promise<Object>} Object containing success flag and generated filename.
    * @throws {Error} If PDF generation or download fails.
    *
@@ -283,7 +286,10 @@ class SovereignPdfService {
    * 🧠 Innovation: Uses `window.URL.createObjectURL` for memory‑efficient downloads and revokes it
    *    immediately after the click, preventing memory leaks.
    */
-  async downloadArtifact(templateType, data, tenantId = 'WILSY_GLOBAL_ROOT') {
+  async downloadArtifact(templateType, data, tenantId) {
+    if (typeof tenantId !== 'string' || !tenantId.trim() || tenantId !== tenantId.trim()) {
+      throw new Error('PDF_TENANT_CONTEXT_REQUIRED');
+    }
     try {
       const blob = await this.generateInstitutionalPDF(templateType, data, tenantId);
       const timestamp = new Date().toISOString().replace(/[:.]/g, '-').substring(0, 19);
