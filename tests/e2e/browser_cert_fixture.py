@@ -103,15 +103,7 @@ from tools.eos.legal_operations.registry.legal_operations_lifecycle_registry imp
     LegalOperationsLifecycleRegistry,
 )
 from tools.eos.saas.auth.auth_registry import AuthRegistry
-from tools.eos.saas.domain.tenant_product_entitlement import (
-    TenantProductEntitlementState,
-    create_tenant_product_entitlement,
-)
 from tools.eos.saas.entitlement import tenant_product_entitlement_registry as entitlement_registry
-from tools.eos.saas.entitlement.product_catalogue import TenantProductId
-from tools.eos.saas.entitlement.tenant_product_entitlement_composer import (
-    derive_tenant_product_entitlement_id,
-)
 from tools.eos.saas.billing.plan_registry import PlanRegistry
 from tools.eos.saas.billing.subscription_active_entitlement_composition_service import (
     SubscriptionActiveEntitlementCompositionService,
@@ -526,50 +518,6 @@ def seed(state_path: Path) -> None:
                     collections["roles"],
                     session=session,
                 )
-            PlanRegistry.provision_indexes()
-            plan = PlanRegistry.create(
-                {
-                    "name": "WILSY Legal Enterprise",
-                    "price": 14400.0,
-                    "currency": "ZAR",
-                    "billingFrequency": "annual",
-                    "planType": "ENTERPRISE",
-                    "idempotencyKey": f"browser-cert-plan-{tenant_id}",
-                    "active": True,
-                    "features": ["legal.core"],
-                    "metadata": {"certificate": "WILSY-OWNER-BROWSER-CERT"},
-                    "tags": ["wilsy-owner-browser-cert"],
-                    "user": "WILSY-OWNER-BROWSER-CERT",
-                }
-            )
-            if plan.get("success") is not True:
-                raise RuntimeError("BROWSER_CERT_LEGAL_PLAN_SEED_FAILED")
-            owner = actors["tenant_owner"]
-            owner_identity = SovereignIdentity(
-                identity_id=owner["principal_id"],
-                tenant_id=tenant_id,
-                username=owner["email"],
-                email=owner["email"],
-                roles=[],
-                permissions=[],
-                auth_method="BROWSER_CERT",
-                status=PrincipalStatus.ACTIVE,
-                session_reference=None,
-            )
-            commercial = SubscriptionActiveEntitlementCompositionService.create(
-                {
-                    "tenantId": tenant_id,
-                    "planId": plan["plan"].plan_id,
-                    "startDate": now.isoformat(),
-                    "idempotencyKey": f"browser-cert-subscription-{tenant_id}",
-                    "billingMode": "PLATFORM",
-                    "onboardingRef": f"BROWSER-CERT-{tenant_id}",
-                    "metadata": {"certificate": "WILSY-OWNER-BROWSER-CERT"},
-                },
-                owner_identity,
-            )
-            if not commercial.legal_entitlement_applicable or commercial.entitlement_issuance_result is None:
-                raise RuntimeError("BROWSER_CERT_LEGAL_COMMERCIAL_SEED_FAILED")
             branding = _seed_branding_chain(
                 tenant_id=tenant_id,
                 suffix=suffix,
@@ -653,6 +601,52 @@ def seed(state_path: Path) -> None:
                 session=session,
             )
             session.commit_transaction()
+
+        PlanRegistry.provision_indexes()
+        plan = PlanRegistry.create(
+            {
+                "name": "WILSY Legal Enterprise",
+                "price": 14400.0,
+                "currency": "ZAR",
+                "billingFrequency": "annual",
+                "planType": "ENTERPRISE",
+                "idempotencyKey": f"browser-cert-plan-{tenant_id}",
+                "active": True,
+                "features": ["legal.core"],
+                "metadata": {"certificate": "WILSY-OWNER-BROWSER-CERT"},
+                "tags": ["wilsy-owner-browser-cert"],
+                "user": "WILSY-OWNER-BROWSER-CERT",
+            }
+        )
+        if plan.get("success") is not True:
+            raise RuntimeError("BROWSER_CERT_LEGAL_PLAN_SEED_FAILED")
+        owner = actors["tenant_owner"]
+        owner_identity = SovereignIdentity(
+            identity_id=owner["principal_id"],
+            tenant_id=tenant_id,
+            username=owner["email"],
+            email=owner["email"],
+            roles=[],
+            permissions=[],
+            auth_method="BROWSER_CERT",
+            status=PrincipalStatus.ACTIVE,
+            session_reference=None,
+        )
+        commercial = SubscriptionActiveEntitlementCompositionService.create(
+            {
+                "tenantId": tenant_id,
+                "planId": plan["plan"].plan_id,
+                "startDate": now.isoformat(),
+                "idempotencyKey": f"browser-cert-subscription-{tenant_id}",
+                "billingMode": "PLATFORM",
+                "onboardingRef": f"BROWSER-CERT-{tenant_id}",
+                "metadata": {"certificate": "WILSY-OWNER-BROWSER-CERT"},
+            },
+            owner_identity,
+        )
+        if not commercial.legal_entitlement_applicable or commercial.entitlement_issuance_result is None:
+            raise RuntimeError("BROWSER_CERT_LEGAL_COMMERCIAL_SEED_FAILED")
+
 
         for actor in actors.values():
             user = registry.get_user_by_id(actor["principal_id"])
