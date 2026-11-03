@@ -177,6 +177,11 @@ from tools.eos.intelligence.providers.reasoning_provider_runtime import (
 )
 from tools.eos.kernel.db import connect_db, disconnect_db, get_database, get_client
 from tools.eos.system_services.support_case_registry import SupportCaseRegistry
+from tools.eos.system_services.runtime import (
+    PLATFORM_WORKFORCE_SCOPE_ENV,
+    build_system_services_runtime,
+)
+from .system_services_router import router as system_services_router
 from tools.eos.intelligence.tools import ServerOwnedAIToolRegistry
 from tools.eos.intelligence.tools.legal_operations_read_tools import build_legal_read_registrations
 from tools.eos.intelligence.wilsy_ai_tool_orchestrator import WilsyAIToolOrchestrator
@@ -265,6 +270,9 @@ class WilsyAPIServer:
         app.state.global_principal_auth_indexes_ready = False
         # Case storage readiness is separate from IAM authorization readiness.
         app.state.system_services_case_indexes_ready = False
+        app.state.system_services_authority_ready = False
+        app.state.system_services_authorizer = None
+        app.state.system_services_case_registry = None
         app.state.legal_evidence_provider_readonly_reconciliation_composition = None
         app.state.legal_evidence_provider_readonly_reconciliation_audit_client = None
         # C1E service is constructed lazily or by deployment composition; it
@@ -423,6 +431,9 @@ class WilsyAPIServer:
             app.state.p12c_binding_indexes_ready = False
             app.state.global_principal_auth_indexes_ready = False
             app.state.system_services_case_indexes_ready = False
+            app.state.system_services_authority_ready = False
+            app.state.system_services_authorizer = None
+            app.state.system_services_case_registry = None
             app.state.telemetry_indexes_ready = False
             connected, detail = connect_db()
             if not connected:
@@ -443,6 +454,25 @@ class WilsyAPIServer:
                     events=database["system_service_case_events"],
                 ).ensure_indexes()
                 app.state.system_services_case_indexes_ready = client is not None
+                # SYSTEM Services authority is composed only from trusted
+                # deployment configuration and canonical EOS repositories.
+                # Missing scope configuration keeps staff APIs unavailable;
+                # it never falls back to a tenant ID or a source-code default.
+                platform_scope_id = os.getenv(PLATFORM_WORKFORCE_SCOPE_ENV, "")
+                try:
+                    case_registry, system_authorizer = build_system_services_runtime(
+                        database,
+                        platform_workforce_scope_id=platform_scope_id,
+                    )
+                    app.state.system_services_case_registry = case_registry
+                    app.state.system_services_authorizer = system_authorizer
+                    app.state.system_services_authority_ready = True
+                except Exception as error:
+                    app.state.system_services_case_registry = None
+                    app.state.system_services_authorizer = None
+                    app.state.system_services_authority_ready = False
+                    code = getattr(error, "code", "SYSTEM_SERVICES_AUTHORITY_CONFIGURATION_UNAVAILABLE")
+                    logger.warning("[SYSTEM_SERVICES] Authority composition unavailable: %s", code)
                 # Global authentication and one-time challenge indexes are
                 # canonical startup DDL. Request handlers never create indexes.
                 PrincipalCredentialRepository.ensure_indexes(
@@ -578,6 +608,9 @@ class WilsyAPIServer:
             app.state.p12c_binding_indexes_ready = False
             app.state.global_principal_auth_indexes_ready = False
             app.state.system_services_case_indexes_ready = False
+            app.state.system_services_authority_ready = False
+            app.state.system_services_authorizer = None
+            app.state.system_services_case_registry = None
             app.state.telemetry_indexes_ready = False
             audit_client = getattr(
                 app.state,
@@ -682,6 +715,7 @@ class WilsyAPIServer:
         app.include_router(plan_router)
 
         app.include_router(auth_router, prefix="/api")
+        app.include_router(system_services_router, prefix="/api")
 
         app.include_router(billing_router)
         app.include_router(billing_router, prefix="/api")
