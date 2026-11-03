@@ -920,6 +920,31 @@ for _reassign_business_role in ("tenant_legal_partner", "tenant_legal_attorney")
     _reassignment_eligibility[_reassign_business_role] = MappingProxyType(_current)
 ELIGIBILITY = MappingProxyType(_reassignment_eligibility)
 
+# Owner-commercial work queue is distinct from Legal practice work items.
+# Tenant-owner/admin/manager may manage only their own tenant's commercial tasks.
+# Auditor is read-only. Specialized Legal roles remain denied by absence.
+OPERATIONS = frozenset((*OPERATIONS, "crm_work_item_read", "crm_work_item_create", "crm_work_item_complete"))
+BUSINESS_ROLE_OPERATION_PERMISSIONS = MappingProxyType({
+    **BUSINESS_ROLE_OPERATION_PERMISSIONS,
+    "crm_work_item_read": "crm:work_item:read",
+    "crm_work_item_create": "crm:work_item:create",
+    "crm_work_item_complete": "crm:work_item:complete",
+})
+_owner_work_eligibility = dict(ELIGIBILITY)
+for _owner_work_role in ("tenant_owner", "tenant_admin", "tenant_manager"):
+    _owner_work_row = dict(_owner_work_eligibility[_owner_work_role])
+    _owner_work_row.update({
+        "crm_work_item_read": ELIGIBLE,
+        "crm_work_item_create": ELIGIBLE,
+        "crm_work_item_complete": ELIGIBLE,
+    })
+    _owner_work_eligibility[_owner_work_role] = MappingProxyType(_owner_work_row)
+_auditor_work_row = dict(_owner_work_eligibility["tenant_auditor"])
+_auditor_work_row["crm_work_item_read"] = ELIGIBLE
+_owner_work_eligibility["tenant_auditor"] = MappingProxyType(_auditor_work_row)
+ELIGIBILITY = MappingProxyType(_owner_work_eligibility)
+
+
 def tenant_role_operation_eligibility(role: object, operation: object) -> str:
     """Return business eligibility only; ELIGIBLE is never an authorization grant."""
     if not isinstance(role, str) or not isinstance(operation, str): return DENY
