@@ -25,9 +25,7 @@
 # TENANT BOUNDARY: Tests principal-scoped membership and exact selected-tenant capacity.
 # AUTHORITY BOUNDARY: Verification orchestration only; no identity or access decisions.
 # FINANCIAL AUTHORITY BOUNDARY: No financial execution authority; Kennel EOS remains exclusive.
-
 name: EOS Global Principal and Membership Selection Certification
-
 on:
   pull_request:
     paths:
@@ -80,10 +78,8 @@ on:
       - "tests/integration/test_principal_credential_repository_mongo.py"
       - ".github/workflows/global-principal-membership-certification.yml"
   workflow_dispatch:
-
 permissions:
   contents: read
-
 jobs:
   global-principal-membership:
     name: Global credential, migration assessment and membership projection
@@ -96,22 +92,18 @@ jobs:
         uses: actions/checkout@v4
         with:
           fetch-depth: 0
-
       - name: Set up Python
         uses: actions/setup-python@v5
         with:
           python-version: "3.12"
-
       - name: Set up Node for pinned Pyright
         uses: actions/setup-node@v4
         with:
           node-version: "20"
-
       - name: Install repository Python dependencies and pytest
         run: |
           python -m pip install --disable-pip-version-check -r requirements.txt
           python -m pip install --disable-pip-version-check pytest==9.1.1
-
       - name: Start disposable MongoDB replica set
         run: |
           docker run --detach --name wilsy-global-principal-mongo --publish 27017:27017 mongo:7.0.37 mongod --replSet wilsyGlobalPrincipalCertRS --bind_ip_all
@@ -137,7 +129,6 @@ jobs:
               time.sleep(1)
           client.close()
           PY
-
       - name: Compile global principal, membership and challenge contracts
         run: |
           python -m py_compile \
@@ -161,7 +152,6 @@ jobs:
             tools/eos/api/auth_router.py \
             tools/eos/api/global_principal_auth_router.py \
             tools/eos/auth/authentication.py \
-
             tests/unit/test_principal_credential_repository.py \
             tests/unit/test_principal_credential_authentication.py \
             tests/unit/test_principal_credential_migration_assessment.py \
@@ -179,7 +169,6 @@ jobs:
             tests/unit/test_global_principal_auth_router.py \
             tests/unit/test_principal_authentication_rate_limit.py \
             tests/unit/test_auth_router_authoritative_mfa.py \
-
             tests/integration/test_membership_selection_challenge_mongo.py \
             tests/integration/test_global_principal_session_authority_mongo.py \
             tests/integration/test_global_principal_mfa_session_transition_mongo.py \
@@ -188,7 +177,6 @@ jobs:
             tests/integration/test_global_principal_mfa_legacy_migration_mongo.py \
             tests/integration/test_principal_authentication_rate_limit_mongo.py \
             tests/integration/test_principal_credential_repository_mongo.py
-
       - name: Type-check global principal and membership challenge contracts
         run: |
           npx --yes pyright@1.1.413 \
@@ -207,7 +195,6 @@ jobs:
             tools/eos/api/auth_router.py \
             tools/eos/api/global_principal_auth_router.py \
             tools/eos/auth/authentication.py \
-
             tests/unit/test_membership_selection_challenge.py \
             tests/unit/test_global_principal_session_authority.py \
             tests/unit/test_global_principal_totp_verifier.py \
@@ -217,7 +204,6 @@ jobs:
             tests/unit/test_global_principal_mfa_session_transition.py \
             tests/unit/test_global_principal_auth_challenge_startup.py \
             tests/unit/test_auth_router_authoritative_mfa.py \
-
             tests/unit/test_global_principal_access_token_currentness.py \
             tests/unit/test_global_principal_auth_router.py \
             tests/unit/test_principal_authentication_rate_limit.py \
@@ -228,7 +214,6 @@ jobs:
             tests/integration/test_global_principal_mfa_enrollment_mongo.py \
             tests/integration/test_global_principal_mfa_legacy_migration_mongo.py \
             tests/integration/test_principal_authentication_rate_limit_mongo.py
-
       - name: Verify diff whitespace and clean checkout
         run: |
           git diff --check "origin/${{ github.base_ref }}...HEAD" -- \
@@ -267,7 +252,6 @@ jobs:
             tests/integration/test_principal_authentication_rate_limit_mongo.py \
             .github/workflows/global-principal-membership-certification.yml
           test -z "$(git status --short)"
-
       - name: Run focused global principal and membership tests
         run: |
           python -m pytest -q \
@@ -296,11 +280,9 @@ jobs:
             tests/integration/test_global_principal_mfa_legacy_migration_mongo.py \
             tests/integration/test_principal_authentication_rate_limit_mongo.py \
             tests/integration/test_principal_credential_repository_mongo.py
-
       - name: Stop disposable MongoDB replica set
         if: always()
         run: docker rm -f wilsy-global-principal-mongo 2>/dev/null || true
-
 # ARTIFACT: global-principal-membership-certification.yml
 # VERSION: v1.5.0-GLOBAL-PRINCIPAL-SESSION-CERTIFICATION-CI
 # AUTHORITY BOUNDARY: focused CI execution only
