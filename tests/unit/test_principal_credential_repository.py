@@ -1,0 +1,146 @@
+"""Unit tests for tenant-neutral global principal credential persistence."""
+import pytest
+from typing import cast, Mapping
+from pymongo.client_session import ClientSession
+from pymongo.collection import Collection as MongoCollection
+from pymongo.errors import DuplicateKeyError
+
+from tools.eos.auth.principal_credential import PrincipalCredential, normalize_principal_email
+from tools.eos.auth.principal_credential_repository import (
+    PrincipalCredentialAlreadyExistsError,
+    PrincipalCredentialPersistedRecordInvalidError,
+    PrincipalCredentialRepository,
+    PrincipalCredentialRepositoryError,
+    PrincipalCredentialRevisionConflictError,
+)
+
+HASH_A = "$2b$12$" + "a" * 53
+HASH_B = "$2b$12$" + "b" * 53
+
+
+class Result:
+    def __init__(self, matched_count=1):
+        self.matched_count = matched_count
+
+
+class Collection:
+    def __init__(self):
+        self.rows = []
+        self.session = None
+        self.indexes = []
+
+    def create_index(self, keys, **kwargs):
+        self.indexes.append((keys, kwargs))
+        return kwargs.get("name")
+
+    def insert_one(self, document, session=None):
+        self.session = session
+        if any(row["principal_id"] == document["principal_id"] or row["normalized_email"] == document["normalized_email"] for row in self.rows):
+            raise DuplicateKeyError("duplicate")
+        self.rows.append(dict(document))
+
+    def find_one(self, query, session=None):
+        self.session = session
+        return next((dict(row) for row in self.rows if all(row.get(key) == value for key, value in query.items())), None)
+
+    def update_one(self, query, update, upsert=False, session=None):
+        self.session = session
+        for row in self.rows:
+            if all(row.get(key) == value for key, value in query.items()):
+                row.update(update["$set"])
+                for key, value in update["$inc"].items():
+                    row[key] = row.get(key, 0) + value
+                return Result(1)
+        return Result(0)
+
+
+def credential(principal="principal-1", email="Owner@Example.com", password_hash=HASH_A, revision=0):
+    return PrincipalCredential(
+        principal_id=principal,
+        normalized_email=normalize_principal_email(email),
+        password_hash=password_hash,
+        credential_revision=revision,
+    )
+
+
+def collection(value):
+    return cast(MongoCollection[Mapping[str, object]], value)
+
+
+def test_global_credential_has_no_tenant_membership_or_role_fields():
+    value = credential()
+    assert value.normalized_email == "owner@example.com"
+    assert set(value.__dataclass_fields__) == {
+        "principal_id", "normalized_email", "password_hash", "credential_revision"
+    }
+    assert "tenant_id" not in value.__dataclass_fields__
+    assert "business_role" not in value.__dataclass_fields__
+    assert "permissions" not in value.__dataclass_fields__
+
+
+def test_unique_principal_and_email_indexes_and_exact_lookups():
+    fake = Collection()
+    PrincipalCredentialRepository.ensure_indexes(collection(fake))
+    assert [item[1]["name"] for item in fake.indexes] == [
+        "principal_credential_principal_unique",
+        "principal_credential_email_unique",
+    ]
+    value = credential()
+    PrincipalCredentialRepository.insert(value, collection(fake))
+    assert PrincipalCredentialRepository.get_by_principal("principal-1", collection(fake)) == value
+    assert PrincipalCredentialRepository.get_by_email("OWNER@example.com", collection(fake)) == value
+    with pytest.raises(PrincipalCredentialAlreadyExistsError):
+        PrincipalCredentialRepository.insert(value, collection(fake))
+    with pytest.raises(Exception):
+        PrincipalCredentialRepository.get_by_email("unknown@example.com", collection(fake))
+
+
+def test_duplicate_email_across_distinct_principals_is_rejected():
+    fake = Collection()
+    PrincipalCredentialRepository.insert(credential(), collection(fake))
+    with pytest.raises(PrincipalCredentialAlreadyExistsError):
+        PrincipalCredentialRepository.insert(
+            credential(principal="principal-2", email="owner@example.com"),
+            collection(fake),
+        )
+
+
+def test_password_hash_revision_compare_and_swap_is_exact_and_monotonic():
+    fake = Collection()
+    PrincipalCredentialRepository.insert(credential(), collection(fake))
+    updated = PrincipalCredentialRepository.compare_and_swap_password_hash(
+        "principal-1", 0, HASH_B, collection(fake)
+    )
+    assert updated.password_hash == HASH_B
+    assert updated.credential_revision == 1
+    with pytest.raises(PrincipalCredentialRevisionConflictError):
+        PrincipalCredentialRepository.compare_and_swap_password_hash(
+            "principal-1", 0, HASH_A, collection(fake)
+        )
+
+
+def test_invalid_hash_and_malformed_persisted_credential_fail_closed():
+    fake = Collection()
+    with pytest.raises(PrincipalCredentialRepositoryError):
+        PrincipalCredentialRepository.compare_and_swap_password_hash(
+            "principal-1", 0, "not-a-bcrypt-hash", collection(fake)
+        )
+    fake.rows.append({
+        "principal_id": "principal-1",
+        "normalized_email": "owner@example.com",
+        "password_hash": "invalid",
+        "credential_revision": 0,
+    })
+    with pytest.raises(PrincipalCredentialPersistedRecordInvalidError):
+        PrincipalCredentialRepository.get_by_principal("principal-1", collection(fake))
+
+
+def test_repository_forwards_caller_session_without_owning_transaction():
+    fake = Collection()
+    token = cast(ClientSession, object())
+    PrincipalCredentialRepository.insert(credential(), collection(fake), session=token)
+    assert fake.session is token
+    assert PrincipalCredentialRepository.get_by_email(
+        "owner@example.com", collection(fake), session=token
+    ) == credential()
+    assert fake.session is token
