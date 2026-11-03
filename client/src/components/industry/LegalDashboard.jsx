@@ -154,6 +154,7 @@ import {
   getLegalConflictScreenings,
   getLegalFinanceEvidence,
   getLegalPracticeWorkspace,
+  getLegalCommercialContext,
   getLegalProductiveWork,
   completeLegalWorkItem,
   getLegalSpecialistWorkflow,
@@ -268,6 +269,7 @@ const ROLE_MODES = Object.freeze({
   SHERIFF: 'SHERIFF',
   DEPUTY: 'DEPUTY',
   LEGAL_CLIENT: 'LEGAL_CLIENT',
+  TENANT_OWNER: 'TENANT_OWNER',
   UNRESOLVED: 'UNRESOLVED',
 });
 
@@ -679,8 +681,9 @@ function LegalPracticeProfile({ tenant }) {
   );
 }
 
-function resolveRoleMode(value) {
+export function resolveRoleMode(value) {
   const token = normalizeRoleToken(value);
+  if (token === 'TENANT_OWNER' || token === 'OWNER') return ROLE_MODES.TENANT_OWNER;
   if (PRACTICE_ROLE_TOKENS.includes(token)) return ROLE_MODES.LEGAL_PRACTICE;
   if (
     token === 'LEGAL_FINANCE'
@@ -4119,6 +4122,149 @@ function LegalPracticeWorkspace({
   );
 }
 
+function LegalTenantOwnerWorkspace({ onLogout, tenantConfig, user }) {
+  const [loadingCommercial, setLoadingCommercial] = useState(true);
+  const [commercialError, setCommercialError] = useState('');
+  const [commercialContext, setCommercialContext] = useState(null);
+  const [accountCenterOpen, setAccountCenterOpen] = useState(false);
+  const tenant = {
+    ...(tenantConfig || {}),
+    tenantId: tenantConfig?.tenantId || tenantConfig?.id || '',
+  };
+  const identity = legalAuthenticatedIdentity(user, 'Authenticated tenant owner');
+
+  const loadCommercialContext = useCallback(async () => {
+    setLoadingCommercial(true);
+    setCommercialError('');
+    try {
+      const result = await getLegalCommercialContext();
+      if (result.access !== 'AUTHORIZED' || !result.context) {
+        setCommercialContext(null);
+        setCommercialError('Legal commercial access is not authorized for this authenticated identity.');
+        return;
+      }
+      setCommercialContext(result.context);
+    } catch (error) {
+      setCommercialContext(null);
+      setCommercialError(
+        error?.response?.status === 503
+          ? 'Legal commercial evidence is temporarily unavailable.'
+          : 'Legal commercial context could not be verified.',
+      );
+    } finally {
+      setLoadingCommercial(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    void loadCommercialContext();
+  }, [loadCommercialContext]);
+
+  const available = commercialContext?.product?.available === true;
+  const plan = commercialContext?.plan;
+  const subscription = commercialContext?.subscription;
+  const commercial = commercialContext?.commercial;
+
+  return (
+    <WilsyOSDashboardChrome
+      dashboardKey="legal-tenant-owner"
+      commandLabel="WILSY Legal OS"
+      title="Legal Product Command"
+      role="TENANT_OWNER"
+      posture={loadingCommercial ? 'VERIFYING' : available ? 'COMMERCIAL_ACCESS_VERIFIED' : 'SOURCE_GAPS'}
+      tenant={tenant}
+      operator={{ ...(user || {}), displayName: identity.displayName, role: 'TENANT_OWNER' }}
+      storyMessages={[
+        'Tenant-owner commercial view only',
+        'Practice operations remain restricted to published Legal roles',
+        'Python EOS independently authorizes every Legal workspace request',
+      ]}
+      actions={{
+        liveSyncLabel: 'Refresh commercial context',
+        onLiveSync: loadCommercialContext,
+        isRefreshing: loadingCommercial,
+      }}
+      account={{
+        isOpen: accountCenterOpen,
+        onOpen: () => setAccountCenterOpen(true),
+        onClose: () => setAccountCenterOpen(false),
+        onSignOut: onLogout,
+        user: user || {},
+        label: 'ACCOUNT',
+        CommandCenterComponent: WilsyAccountCommandCenter,
+      }}
+      trustCenter={{
+        label: 'Trust & Authority',
+        content: (
+          <div className="space-y-3 text-xs leading-6 text-stone-300">
+            <p>Commercial entitlement is separate from Legal Practice authorization.</p>
+            <p>No matter, instruction, document, client or process-service records are exposed in this tenant-owner view.</p>
+            <p>G68 confidentiality authority remains independently fail-closed.</p>
+          </div>
+        ),
+      }}
+      metrics={[
+        { id: 'product', label: 'Legal product', value: loadingCommercial ? 'VERIFYING' : available ? 'ACTIVE' : 'NOT AVAILABLE', detail: 'Server-verified commercial context' },
+        { id: 'practice', label: 'Practice workspace', value: 'ROLE-GATED', detail: 'Requires published Legal practice authority' },
+      ]}
+      leftRail={(
+        <nav aria-label="Legal tenant-owner navigation">
+          <button type="button" data-active="true" aria-current="page" title="Legal product">
+            <Briefcase size={16} />
+            <span>Product</span>
+          </button>
+          {typeof onLogout === 'function' && (
+            <button type="button" onClick={onLogout} title="Sign out">
+              <LogOut size={16} />
+              <span>Sign out</span>
+            </button>
+          )}
+        </nav>
+      )}
+    >
+      <div className="space-y-6">
+        <section className="rounded-2xl border border-amber-800/35 bg-stone-950/70 p-6">
+          <p className="text-[10px] font-black uppercase tracking-[0.2em] text-amber-400">Tenant owner · commercial authority only</p>
+          <h2 className="mt-2 text-xl font-black text-white">WILSY Legal OS</h2>
+          <p className="mt-2 max-w-3xl text-sm leading-6 text-stone-400">
+            This view confirms the Legal product subscription for the tenant. It does not grant a professional practice role, matter visibility, reviewer authority or access to confidential client records.
+          </p>
+          {loadingCommercial ? (
+            <p role="status" className="mt-5 text-sm text-amber-300">Verifying current Legal commercial context…</p>
+          ) : commercialError ? (
+            <p role="alert" className="mt-5 text-sm text-red-300">{commercialError}</p>
+          ) : available ? (
+            <div className="mt-6 grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+              <div><small className="text-[10px] uppercase text-stone-500">Entitlement</small><p className="mt-1 font-bold text-emerald-300">{commercialContext.product.entitlementState}</p></div>
+              <div><small className="text-[10px] uppercase text-stone-500">Plan</small><p className="mt-1 font-bold text-white">{plan?.name || '—'}</p><p className="text-xs text-stone-500">{plan?.tier || ''}</p></div>
+              <div><small className="text-[10px] uppercase text-stone-500">Subscription</small><p className="mt-1 font-bold text-white">{subscription?.status || '—'}</p><p className="text-xs text-stone-500">Through {subscription?.currentPeriodEnd || '—'}</p></div>
+              <div><small className="text-[10px] uppercase text-stone-500">Commercial value</small><p className="mt-1 font-bold text-white">{commercial ? commercial.currency + ' ' + commercial.amount : '—'}</p><p className="text-xs text-stone-500">{commercial?.billingFrequency || ''}</p></div>
+            </div>
+          ) : (
+            <p role="status" className="mt-5 text-sm text-amber-300">Legal product entitlement is not currently available for this tenant.</p>
+          )}
+          <button
+            type="button"
+            onClick={loadCommercialContext}
+            disabled={loadingCommercial}
+            className="mt-6 rounded-lg border border-amber-700/40 px-4 py-2 text-xs font-black uppercase tracking-wider text-amber-200 disabled:opacity-50"
+          >
+            Refresh commercial context
+          </button>
+        </section>
+
+        <section className="rounded-2xl border border-stone-800 bg-black/30 p-6">
+          <h3 className="text-sm font-black uppercase tracking-wider text-white">Practice workspace access boundary</h3>
+          <p className="mt-2 text-sm leading-6 text-stone-400">
+            To operate matters, instructions, evidence, deadlines, conflict reviews or process-service queues, the authenticated person must hold the appropriate published Legal business role and current server-side permissions. This commercial owner view deliberately does not substitute for those authorities.
+          </p>
+          <p className="mt-3 text-xs text-stone-500">Tenant: {commercialContext?.tenantId || tenant.tenantId || '—'}</p>
+        </section>
+      </div>
+    </WilsyOSDashboardChrome>
+  );
+}
+
 function LegalFinanceWorkspace({
   onLogout,
   roleView,
@@ -4525,6 +4671,21 @@ export default function LegalDashboard({
     if (refresh) setRefreshing(true);
     else setLoading(true);
     setError(null);
+
+    if (roleMode === ROLE_MODES.TENANT_OWNER) {
+      // Tenant owners receive commercial product status only. No matter,
+      // instruction, document, queue, client or practice endpoint is queried.
+      setQueues(EMPTY_QUEUES);
+      setDeputyWork(EMPTY_DEPUTY_WORK);
+      setClientMatters(EMPTY_CLIENT_MATTERS);
+      setPracticeWorkspace(EMPTY_PRACTICE_WORKSPACE);
+      setConflictScreenings(EMPTY_CONFLICT_SCREENINGS);
+      setDeputyCapabilities(EMPTY_DEPUTY_CAPABILITIES);
+      setLastUpdated(new Date());
+      setLoading(false);
+      setRefreshing(false);
+      return { tenantOwnerCommercialView: true };
+    }
 
     if (roleMode === ROLE_MODES.UNRESOLVED) {
       setQueues(EMPTY_QUEUES);
@@ -5105,6 +5266,16 @@ export default function LegalDashboard({
           </p>
         </div>
       </div>
+    );
+  }
+
+  if (roleMode === ROLE_MODES.TENANT_OWNER) {
+    return (
+      <LegalTenantOwnerWorkspace
+        onLogout={onLogout}
+        tenantConfig={authenticatedTenant || tenantConfig}
+        user={currentUser}
+      />
     );
   }
 
