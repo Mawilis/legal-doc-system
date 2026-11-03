@@ -186,16 +186,23 @@ Important boundaries:
 - Tenant Partner is not yet an admitted IAM business role in the inspected catalogue; its executive-equivalent role policy and permission parity remain Day 3 work.
 - A user holding multiple capacities still requires a separate explicit active-capacity/session selection design; the current bootstrap remains a single-active-business-role projection.
 
+## 8A. Discovery-bound login/MFA selector
+
+The discovered canonical tenant is now carried from `SovereignLogin` through AuthContext into EOS credential login. The same selector is sent with MFA setup and OTP verification. EOS rejects a missing selector or one that differs from the durable user's canonical tenant before issuing a challenge/session. The resulting candidate session is still not promoted until workspace-bootstrap independently proves current ACTIVE membership and IAM.
+
+This closes a tenant-confusion gap in the current two-user, single-tenant-shaped development profile. It is **not** the global-principal/multiple-membership feature: AuthRegistry's credential user still contains one `tenantId`. Multi-firm identity, listing eligible memberships after authentication, selecting one membership, binding MFA/session issuance to that membership, and revocation-safe tenant switching remain open implementation gates.
+
 ## 9. Files changed in this implementation phase
 
 | File | Change |
 |---|---|
 | `tools/eos/auth/workspace_bootstrap_projection.py` | Closed EOS role-to-workspace resolver; workspace identifier included in projection |
-| `tools/eos/api/auth_router.py` | Emits versioned canonical workspace identifier in workspace-bootstrap |
+| `tools/eos/api/auth_router.py` | Emits versioned canonical workspace identifier in workspace-bootstrap; binds login and MFA requests to the exact discovered tenant selector |
 | `tests/unit/test_workspace_bootstrap_projection.py` | Verifies Owner/Legal separation, full published-role mapping and unknown-role denial |
 | `client/src/services/api.js` | Removes discovery/local-storage tenant header inference; adds in-memory verified-session transport context |
-| `client/src/contexts/authContext.jsx` | Strictly validates workspace contract and establishes/clears tenant transport context at session boundaries |
+| `client/src/contexts/authContext.jsx` | Strictly validates workspace contract, carries discovered tenant through login/MFA, and establishes/clears tenant transport context at session boundaries |
 | `client/src/components/sovereign/SovereignDashboardController.jsx` | Removes client role-to-dashboard mapping; renders from EOS workspace identifier |
+| `client/src/components/auth/SovereignLogin.jsx` and `SovereignMfaPortal.jsx` | Pass only the discovered canonical tenant selector through login/MFA; no tenant default |
 | `client/src/__tests__/services/api.test.js` | Verifies discovery storage does not establish authenticated tenant transport |
 | `client/src/__tests__/components/sovereignDashboardWorkspaceResolution.test.jsx` | Certifies Owner executive landing, Legal practice landing and fail-closed missing workspace behavior |
 | `client/vite.config.js` | Application API fallback and legacy `/auth` compatibility path route directly to EOS |
@@ -222,6 +229,7 @@ The next inventory pass must build a recursive import/caller graph and reconcile
 | EOS auth/workspace route chain inspected | <b>PASS</b> |
 | Hardcoded WILSY tenant constant removed from current API client | <b>PASS — source inspection</b> |
 | Discovery/localStorage no longer establishes request tenant header | <b>PASS — source inspection and updated test</b> |
+| Login and MFA require the exact discovered tenant selector | <b>IMPLEMENTED — tests added; execution pending</b> |
 | EOS workspace identifier emitted by workspace-bootstrap | <b>PASS — source inspection</b> |
 | Browser dashboard resolver no longer maps role names | <b>PASS — source inspection and added test</b> |
 | Python unit tests executed | <b>NOT YET RUN</b> — connector edits have not been executed in a local checkout |
