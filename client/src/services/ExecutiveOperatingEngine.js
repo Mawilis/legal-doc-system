@@ -475,27 +475,25 @@ export const resolveTenantBusinessProfile = (input = {}) => {
 export const buildExecutiveAccessDecision = (access = {}, activeTenant = {}) => {
   const tenant = activeTenant && typeof activeTenant === 'object' ? activeTenant : {};
   const role = String(access.userRole || '').toLowerCase();
-  const activeTenantId = tenant.tenantId || tenant.id || null;
-  const userTenantId = access.tenantId || null;
-  const omegaAuthority = ['super_admin', 'founder', 'omega'].includes(role);
-  const crossTenantAuthority = omegaAuthority || ['executive'].includes(role);
-  const tenantMismatch = activeTenantId
+  const activeTenantId = typeof tenant.tenantId === 'string' ? tenant.tenantId : null;
+  const userTenantId = typeof access.tenantId === 'string' ? access.tenantId : null;
+  const tenantContextValid = Boolean(
+    activeTenantId
     && userTenantId
-    && userTenantId !== 'MASTER'
-    && userTenantId !== 'GLOBAL_ROOT'
-    && userTenantId !== 'WILSY_SOVEREIGN_ROOT'
-    && activeTenantId !== userTenantId
-    && !crossTenantAuthority;
+    && activeTenantId === userTenantId
+  );
   const tenantPermissions = tenant.permissions || tenant.enabledPermissions || [];
-  const explicitPermission = tenantPermissions.includes('executive_dashboard') || access.hasPermission?.('executive_dashboard');
-  const allowed = omegaAuthority || ['executive', 'tenant_owner'].includes(role) || explicitPermission;
+  const explicitPermission = tenantPermissions.includes('executive_dashboard')
+    || access.hasPermission?.('executive_dashboard');
+  const roleEligible = ['super_admin', 'founder', 'omega', 'executive', 'tenant_owner'].includes(role);
+  const allowed = tenantContextValid && (roleEligible || explicitPermission);
 
-  if (tenantMismatch) {
+  if (!tenantContextValid) {
     return {
       allowed: false,
-      reason: `Tenant isolation blocked this request. User tenant ${userTenantId} cannot command tenant ${activeTenantId}.`,
-      required: 'Requires same-tenant ownership or cross-tenant executive authority.',
-      channel: 'Ask the tenant owner or Wilsy OS administrator to switch tenant context or grant the correct tenant permission.'
+      reason: 'TENANT_CONTEXT_UNVERIFIED',
+      required: 'A current EOS-authenticated tenant membership matching the active tenant is required.',
+      channel: 'Complete tenant discovery and authenticated workspace bootstrap before opening executive operations.'
     };
   }
 
@@ -503,8 +501,8 @@ export const buildExecutiveAccessDecision = (access = {}, activeTenant = {}) => 
     return {
       allowed: true,
       reason: 'EXECUTIVE_ACCESS_GRANTED',
-      required: 'super_admin, executive, tenant_owner or executive_dashboard permission',
-      channel: 'Tenant owner or Wilsy OS administrator'
+      required: 'An eligible executive capacity or explicit executive_dashboard permission in the verified active tenant.',
+      channel: 'Tenant owner or authorized executive'
     };
   }
 
@@ -512,11 +510,9 @@ export const buildExecutiveAccessDecision = (access = {}, activeTenant = {}) => 
     allowed: false,
     reason: role === 'sales_representative'
       ? 'Sales representatives are restricted to sales and customer workflows.'
-      : role === 'unauthenticated'
-        ? 'Authentication is required before executive operating authority can be evaluated.'
-        : 'Your current role does not include executive operating authority.',
-    required: 'Requires executive, tenant_owner or explicit executive_dashboard permission.',
-    channel: 'Ask the tenant owner or Wilsy OS administrator to grant the executive_dashboard permission.'
+      : 'Your current role does not include executive operating authority.',
+    required: 'Requires an eligible executive capacity or explicit executive_dashboard permission in this tenant.',
+    channel: 'Ask the tenant owner to grant the appropriate tenant-scoped executive permission.'
   };
 };
 
