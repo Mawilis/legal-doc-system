@@ -509,8 +509,9 @@ class WilsyAPIServer:
                     database[GLOBAL_PRINCIPAL_MFA_FACTOR_COLLECTION]
                 )
                 app.state.global_principal_mfa_factor_indexes_ready = client is not None
-                decrypt_global_mfa_secret = getattr(
-                    app.state, "global_principal_mfa_decrypt_secret", None
+                decrypt_global_mfa_secret = cast(
+                    Callable[[Any], str] | None,
+                    getattr(app.state, "global_principal_mfa_decrypt_secret", None),
                 )
                 if callable(decrypt_global_mfa_secret):
                     app.state.global_principal_totp_verifier = GlobalPrincipalTotpVerifier(
