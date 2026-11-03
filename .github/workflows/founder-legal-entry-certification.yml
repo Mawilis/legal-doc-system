@@ -1,0 +1,45 @@
+name: Founder Legal Entry and Branding Certification
+
+on:
+  pull_request:
+    paths:
+      - "client/src/components/sovereign/SovereignDashboardController.jsx"
+      - "client/tests/client/SovereignDashboardController.test.js"
+      - "client/src/components/executive/ExecutiveDashboard.jsx"
+      - "client/src/services/ExecutiveCommandOrchestrator.js"
+      - "client/src/services/ExecutiveCommandOrchestrator.branding.test.js"
+      - ".github/workflows/founder-legal-entry-certification.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  executive-legal-entry:
+    name: Executive Legal entry, branding and client build
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: client
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: client/package-lock.json
+
+      - name: Install locked client dependencies
+        run: npm ci
+
+      - name: Run focused routing and branding tests
+        run: >-
+          npx vitest run --config vitest.config.js
+          tests/client/SovereignDashboardController.test.js
+          src/services/ExecutiveCommandOrchestrator.branding.test.js
+
+      - name: Build client
+        run: npm run build
