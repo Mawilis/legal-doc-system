@@ -274,7 +274,23 @@ export const buildTenantBrandingConfig = (activeTenant = {}, profile = {}) => {
   const primaryColor = tenant.primaryColor || branding.primaryColor || branding.color || DEFAULT_BRAND_PRIMARY;
   const secondaryColor = tenant.secondaryColor || branding.secondaryColor || DEFAULT_BRAND_SECONDARY;
   const rawLogo = tenant.logo || branding.logo || branding.icon || null;
-  const logo = rawLogo && !['DEFAULT_LOGO', 'DEFAULT', 'NONE'].includes(String(rawLogo).toUpperCase()) ? rawLogo : null;
+  // D21B8 descriptors are opaque references, never browser image URLs.
+  // The authenticated branding client resolves bytes into a transient object URL.
+  const assetDescriptor = (
+    rawLogo
+    && typeof rawLogo === 'object'
+    && !Array.isArray(rawLogo)
+    && rawLogo.kind === 'LOGO'
+    && typeof rawLogo.reference === 'string'
+    && typeof rawLogo.contentFingerprint === 'string'
+    && typeof rawLogo.mediaType === 'string'
+  ) ? {
+    kind: rawLogo.kind,
+    reference: rawLogo.reference,
+    contentFingerprint: rawLogo.contentFingerprint,
+    mediaType: rawLogo.mediaType
+  } : null;
+  const logo = null;
   const initials = String(displayName)
     .split(/\s+/)
     .filter(Boolean)
@@ -287,6 +303,7 @@ export const buildTenantBrandingConfig = (activeTenant = {}, profile = {}) => {
     displayName,
     initials,
     logo,
+    assetDescriptor,
     primaryColor,
     secondaryColor,
     surfaceColor: branding.surfaceColor || DEFAULT_BRAND_SURFACE,
@@ -295,7 +312,7 @@ export const buildTenantBrandingConfig = (activeTenant = {}, profile = {}) => {
       '--exec-brand-secondary': secondaryColor,
       '--exec-brand-surface': branding.surfaceColor || DEFAULT_BRAND_SURFACE
     },
-    sourceStatus: logo || tenant.primaryColor || branding.primaryColor ? 'TENANT_BRAND_SOURCE' : 'TENANT_BRAND_DEFAULTED'
+    sourceStatus: assetDescriptor || tenant.primaryColor || branding.primaryColor ? 'TENANT_BRAND_SOURCE' : 'TENANT_BRAND_DEFAULTED'
   };
 };
 
