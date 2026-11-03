@@ -30,6 +30,7 @@ FINANCIAL AUTHORITY BOUNDARY:
 from __future__ import annotations
 
 from dataclasses import dataclass
+from types import MappingProxyType
 from typing import Any
 
 from tools.eos.auth.principal_status import PrincipalStatus
@@ -46,10 +47,50 @@ from tools.eos.auth.tenant_membership_repository import (
     TenantMembershipRepository,
     TenantMembershipRepositoryError,
 )
+from tools.eos.auth.hr_business_role_catalog import ALL_HR_BUSINESS_ROLES
 from tools.eos.saas.tenancy.tenant_registry import TenantRegistry
 
 
-VERSION = "v1.0.0-WILSY-WORKSPACE-BOOTSTRAP-PROJECTION"
+VERSION = "v1.1.0-EOS-CANONICAL-WORKSPACE-RESOLUTION"
+WORKSPACE_CONTRACT_VERSION = "v1.0.0-WILSY-EOS-WORKSPACE-RESOLUTION"
+
+# Canonical workspace selection is an EOS projection of an already-verified
+# durable tenant business role. This mapping selects presentation scope only;
+# every workspace API independently enforces its own IAM and resource policy.
+_WORKSPACE_BY_BUSINESS_ROLE = MappingProxyType({
+    "tenant_owner": "EXECUTIVE_COMMAND_CENTRE",
+    "tenant_admin": "TENANT_ADMINISTRATION",
+    "tenant_manager": "TENANT_ADMINISTRATION",
+    "tenant_auditor": "AUDIT_REPORTING",
+    "tenant_platform_billing_provider_policy_admin": "TENANT_OPERATIONS",
+    "tenant_inbound_collection_authorization_admin": "TENANT_OPERATIONS",
+    "tenant_inbound_merchant_configuration_admin": "TENANT_OPERATIONS",
+    "tenant_inbound_provider_security_admin": "TENANT_OPERATIONS",
+    "tenant_inbound_provider_policy_admin": "TENANT_OPERATIONS",
+    "tenant_inbound_provider_policy_activation_admin": "TENANT_OPERATIONS",
+    "tenant_legal_partner": "LEGAL_PRACTICE",
+    "tenant_legal_attorney": "LEGAL_PRACTICE",
+    "tenant_legal_paralegal": "LEGAL_PRACTICE",
+    "tenant_legal_secretary": "LEGAL_PRACTICE",
+    "tenant_legal_finance": "LEGAL_FINANCE",
+    "tenant_legal_client": "CLIENT_PORTAL",
+    "tenant_sheriff": "PROCESS_SERVICE",
+    "tenant_deputy": "PROCESS_SERVICE",
+})
+
+
+def resolve_workspace_id(business_role: str) -> str:
+    """Resolve one closed workspace identifier from current durable IAM role."""
+    workspace_id = _WORKSPACE_BY_BUSINESS_ROLE.get(business_role)
+    if workspace_id is not None:
+        return workspace_id
+    if business_role in ALL_HR_BUSINESS_ROLES:
+        return "PEOPLE_OPERATIONS"
+    raise WorkspaceBootstrapProjectionError(
+        "WORKSPACE_BOOTSTRAP_WORKSPACE_UNMAPPED"
+    )
+
+
 
 
 class WorkspaceBootstrapProjectionError(RuntimeError):
@@ -64,6 +105,7 @@ class WorkspaceBootstrapProjection:
     email: str | None
     tenant_id: str
     business_role: str
+    workspace_id: str
     membership_revision: int
     business_role_revision: int
     tenant: Any
@@ -224,11 +266,14 @@ def build_workspace_bootstrap_projection(
     if email is not None and not isinstance(email, str):
         email = None
 
+    workspace_id = resolve_workspace_id(business_role)
+
     return WorkspaceBootstrapProjection(
         principal_id=principal_id,
         email=email,
         tenant_id=tenant_id,
         business_role=business_role,
+        workspace_id=workspace_id,
         membership_revision=membership_revision,
         business_role_revision=business_role_revision,
         tenant=tenant,
@@ -237,6 +282,8 @@ def build_workspace_bootstrap_projection(
 
 __all__ = [
     "VERSION",
+    "WORKSPACE_CONTRACT_VERSION",
+    "resolve_workspace_id",
     "WorkspaceBootstrapProjection",
     "WorkspaceBootstrapProjectionError",
     "build_workspace_bootstrap_projection",
