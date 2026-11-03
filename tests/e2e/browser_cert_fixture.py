@@ -168,10 +168,14 @@ def _uri() -> str:
     if (
         parsed.scheme != "mongodb"
         or parsed.hostname not in {"127.0.0.1", "localhost"}
-        or parsed.port != 27017
+        or parsed.port is None
+        or not 1024 <= parsed.port <= 65535
         or parsed.username is not None
         or parsed.password is not None
-        or query.get("replicaSet") != ["wilsyVendorCertRS"]
+        or not (
+            query.get("replicaSet") == ["wilsyVendorCertRS"]
+            or query.get("directConnection") == ["true"]
+        )
     ):
         raise RuntimeError("BROWSER_CERT_LOCAL_REPLICA_SET_URI_REQUIRED")
     return value
