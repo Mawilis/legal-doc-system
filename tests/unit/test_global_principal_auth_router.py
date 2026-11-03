@@ -140,7 +140,7 @@ def test_global_login_issues_tenant_neutral_selection_and_current_membership_pag
             assert query["credential_revision"] == 7
             assert query["status"] == "ACTIVE"
             assert projection == {"principal_id": 1}
-            assert session is session
+            assert session.in_transaction is True
             return {"principal_id": "principal-global"}
     class Database:
         def __getitem__(self, _name):
