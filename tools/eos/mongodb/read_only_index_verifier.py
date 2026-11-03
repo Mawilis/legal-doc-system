@@ -16,8 +16,6 @@ import sys
 from pathlib import Path
 from typing import Any
 
-from pymongo import MongoClient
-from pymongo.errors import PyMongoError
 
 DEFAULT_MANIFEST = Path(__file__).resolve().parents[3] / "infra" / "mongodb" / "eos-index-manifest-v1.json"
 URI_ENV = "WILSY_EOS_INDEX_MONGODB_URI"
@@ -146,6 +144,9 @@ def main() -> int:
         print("NO-GO: approved fingerprint must be a SHA-256 hex digest.", file=sys.stderr)
         return 2
     try:
+        from pymongo import MongoClient
+        from pymongo.errors import PyMongoError
+
         entries = _manifest_entries(args.manifest, args.database)
         client = MongoClient(uri, serverSelectionTimeoutMS=8000, connectTimeoutMS=8000, retryWrites=False)
         try:
