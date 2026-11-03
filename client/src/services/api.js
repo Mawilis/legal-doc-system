@@ -64,30 +64,19 @@ const api = axios.create({
 const SOURCE_BACKOFF_MS = Number(import.meta.env?.VITE_SOURCE_BACKOFF_MS || 45000);
 const sourceBackoffUntil = new Map();
 
-/**
- * Resolve the transport tenant exclusively from the last server-issued
- * discovery projection. This value selects request scope only: EOS still
- * authenticates the principal and proves ACTIVE membership and authorization.
- * There is deliberately no default tenant, development tenant, or browser
- * fallback. Before discovery, tenant-scoped requests carry no tenant header.
- */
-const resolveRequestTenantId = () => {
-  if (typeof window === 'undefined') return '';
-  try {
-    const raw = window.localStorage.getItem('discoveredTenant');
-    if (!raw) return '';
-    const discovered = JSON.parse(raw);
-    const tenantId = discovered?.tenantId;
-    if (
-      typeof tenantId !== 'string'
-      || !tenantId
-      || tenantId !== tenantId.trim()
-      || /[\u0000-\u001f\u007f]/.test(tenantId)
-    ) return '';
-    return tenantId;
-  } catch {
-    return '';
+// Active tenant transport context is set only after EOS workspace-bootstrap
+// revalidates the authenticated principal and its current tenant membership.
+let activeTenantTransportId = null;
+
+export const setActiveTenantTransportId = (tenantId) => {
+  if (tenantId === null || tenantId === undefined || tenantId === '') {
+    activeTenantTransportId = null;
+    return;
   }
+  if (typeof tenantId !== 'string' || tenantId !== tenantId.trim() || !/^[A-Za-z0-9][A-Za-z0-9._:-]{0,199}$/.test(tenantId)) {
+    throw new Error('ACTIVE_TENANT_TRANSPORT_CONTEXT_INVALID');
+  }
+  activeTenantTransportId = tenantId;
 };
 
 /**
@@ -404,11 +393,9 @@ api.interceptors.request.use(
       }
     }
 
-    // Discovery selects transport scope only. Never invent a tenant before
-    // discovery; EOS independently proves membership and authorization.
-    const requestTenantId = resolveRequestTenantId();
-    if (requestTenantId) {
-      config.headers['X-Tenant-ID'] = requestTenantId;
+    // Attach tenant scope only after EOS workspace-bootstrap revalidation.
+    if (activeTenantTransportId) {
+      config.headers['X-Tenant-ID'] = activeTenantTransportId;
     } else if (typeof config.headers?.delete === 'function') {
       config.headers.delete('X-Tenant-ID');
       config.headers.delete('x-tenant-id');
