@@ -147,7 +147,7 @@ const SovereignRouter = () => {
         path: location.pathname
       });
 
-      broadcastTelemetry("GLOBAL_ROOT", "NAV_EVENT", "ROUTE_CHANGE", "App", {
+      broadcastTelemetry(user?.tenantId || currentTenant?.tenantId || "unresolved", "NAV_EVENT", "ROUTE_CHANGE", "App", {
         path: location.pathname,
         userId: user?.id,
         tenant: currentTenant,
