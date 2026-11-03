@@ -76,11 +76,10 @@ const tenantSchema = new mongoose.Schema(
     // 🔐 KENNEL EOS AWARENESS
     kennelShard: {
       type: String,
-      default: 'WILSY_ROOT', // Updated default to Wilsy's root anchor for new tenants
+      default: 'EOS_PRIMARY', // Infrastructure shard is independent of tenant identity
       index: true,
       enum: [
-        'EOS_PRIMARY', 'EOS_SECONDARY', 'EOS_EU', 'EOS_US', 'EOS_APAC',
-        'WILSY_ROOT', 'MASTER', 'WILSY_MASTER', 'GLOBAL_ROOT', 'WILSY_GLOBAL_ROOT'
+        'EOS_PRIMARY', 'EOS_SECONDARY', 'EOS_EU', 'EOS_US', 'EOS_APAC'
       ],
     },
     jurisdiction: {
@@ -319,7 +318,7 @@ tenantSchema.statics.detectAnomalies = async function () {
     totalChecked: tenants.length,
     anomalyCount: anomalies.length,
     anomalies: anomalies,
-    kennelShard: 'WILSY_ROOT', // Running from root shard
+    kennelShard: 'EOS_PRIMARY', // Infrastructure shard is independent of tenant identity
   };
 };
 

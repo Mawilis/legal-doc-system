@@ -138,6 +138,7 @@ VERSION = "v1.6.0-R1D-B0F-B3B-CANONICAL-TENANT-SOURCE"
 _RESERVED_PSEUDO_TENANT_IDS = frozenset(
     {
         "MASTER",
+        "WILSY_ROOT",
         "GLOBAL_ROOT",
         "WILSY",
         "WILSY_GLOBAL_ROOT",

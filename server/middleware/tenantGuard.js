@@ -38,19 +38,7 @@ const logger = loggerRaw.default || loggerRaw;
 // ============================================================================
 // 🏛️ SOVEREIGN PILLAR & BYPASS IDS
 // ============================================================================
-const SOVEREIGN_PILLAR_ID = '69cb49e30276ea90ea1a0961';
-
-const SOVEREIGN_BYPASS_IDS = [
-  'MASTER',
-  'DEV_TENANT',
-  SOVEREIGN_PILLAR_ID,
-  'WILSY_SOVEREIGN_ROOT',
-  'wilsy-sovereign-root',
-  'GLOBAL_ROOT',
-  'WILSY_GLOBAL_ROOT',
-  'WILSY_MASTER',
-  'WILSY_ROOT',
-];
+const RETIRED_TENANT_ALIASES = new Set(['WILSY_ROOT', 'MASTER', 'WILSY_MASTER', 'GLOBAL_ROOT', 'WILSY_GLOBAL_ROOT', 'WILSY_SOVEREIGN_ROOT', 'WILSY-SOVEREIGN-ROOT', 'WILSY']);
 
 // 🔐 Secure list of sovereign emails from environment (POPIA/GDPR safe)
 const SOVEREIGN_EMAILS = (process.env.SOVEREIGN_EMAILS || '')
@@ -74,11 +62,8 @@ const OBJECT_ID_REGEX = /^[0-9a-fA-F]{24}$/;
 export const isValidTenantFormat = (tenantId) => {
   if (!tenantId) return false;
   const tid = String(tenantId).trim();
-  return (
-    SOVEREIGN_BYPASS_IDS.includes(tid) ||
-    (OBJECT_ID_REGEX.test(tid) && tid.length === 24) ||
-    SLUG_REGEX.test(tid)
-  );
+  if (RETIRED_TENANT_ALIASES.has(tid.toUpperCase())) return false;
+  return (OBJECT_ID_REGEX.test(tid) && tid.length === 24) || SLUG_REGEX.test(tid);
 };
 
 /**
@@ -94,7 +79,7 @@ export const getValidationDetails = (tenantId) => {
     originalValue: tenantId,
     stringValue: tid,
     length: tid.length,
-    isSovereignBypass: SOVEREIGN_BYPASS_IDS.includes(tid),
+    isSovereignBypass: false,
     isMongoObjectId: OBJECT_ID_REGEX.test(tid) && tid.length === 24,
     isSlugFormat: SLUG_REGEX.test(tid),
     isValid: isValidTenantFormat(tid),
@@ -221,9 +206,13 @@ export const tenantGuard = (req, res, next) => {
       '/api/status',
     ];
     if (publicPaths.some((p) => req.originalUrl?.includes(p) || req.path?.includes(p))) {
-      req.tenantId = req.headers['x-tenant-id'] || req.headers['X-Tenant-ID'] || 'GLOBAL_ROOT';
-      req.isSovereignAccess = true;
-      res.setHeader('X-Tenant-ID', req.tenantId);
+      const requestedTenantId = req.headers['x-tenant-id'] || req.headers['X-Tenant-ID'];
+      if (requestedTenantId && RETIRED_TENANT_ALIASES.has(String(requestedTenantId).trim().toUpperCase())) {
+        return res.status(400).json({ success: false, code: 'RETIRED_TENANT_ALIAS' });
+      }
+      req.tenantId = requestedTenantId ? String(requestedTenantId).trim() : null;
+      req.isSovereignAccess = false;
+      if (req.tenantId) res.setHeader('X-Tenant-ID', req.tenantId);
 
       const end = process.hrtime.bigint();
       const latencyMs = Number(end - start) / 1e6;
@@ -247,7 +236,9 @@ export const tenantGuard = (req, res, next) => {
       const founderRole = userRoleUpper === 'FOUNDER' || userRoleUpper === 'OMEGA';
 
       if (isSovereignEmail || omegaClearance || founderRole) {
-        if (!tenantId) tenantId = 'GLOBAL_ROOT';
+        if (!tenantId) tenantId = userTenantId;
+        if (!tenantId) return res.status(400).json({ success: false, code: 'TENANT_CONTEXT_REQUIRED' });
+        if (RETIRED_TENANT_ALIASES.has(String(tenantId).trim().toUpperCase())) return res.status(400).json({ success: false, code: 'RETIRED_TENANT_ALIAS' });
         req.tenantId = String(tenantId).trim();
         req.isSovereignAccess = true;
         if (req.session) req.session.tenantId = req.tenantId;
@@ -267,11 +258,7 @@ export const tenantGuard = (req, res, next) => {
       const userTenantId = String(req.user.tenantId);
       const userRole = req.user.role;
       const isSovereignUser = canBypassTenant(userRole);
-      const isTargetMaster = SOVEREIGN_BYPASS_IDS.includes(String(tenantId));
-      const isSourceMaster = SOVEREIGN_BYPASS_IDS.includes(userTenantId);
-      const isLateralMovement = isTargetMaster && isSourceMaster;
-
-      if (tenantId && String(tenantId) !== userTenantId && !isSovereignUser && !isLateralMovement) {
+      if (tenantId && String(tenantId) !== userTenantId && !isSovereignUser) {
         const forensicFingerprint = crypto.randomBytes(16).toString('hex').toUpperCase();
 
         if (breakerRegistry && typeof breakerRegistry.trip === 'function') {
@@ -334,9 +321,12 @@ export const tenantGuard = (req, res, next) => {
       tenantId = tenantId || userTenantId;
     }
 
-    // ── Default Tenant ─────────────────────────────────────────────────────
+    // Tenant identity must be explicit; no synthetic global tenant is selected.
     if (!tenantId) {
-      tenantId = 'wilsy-sovereign-root';
+      return res.status(400).json({ success: false, code: 'TENANT_CONTEXT_REQUIRED' });
+    }
+    if (RETIRED_TENANT_ALIASES.has(String(tenantId).trim().toUpperCase())) {
+      return res.status(400).json({ success: false, code: 'RETIRED_TENANT_ALIAS' });
     }
 
     tenantId = String(tenantId).trim();

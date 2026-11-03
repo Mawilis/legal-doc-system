@@ -46,7 +46,12 @@ const getTenantNodeModel = (req) => {
  * 🛡️ TENANT ISOLATION PROTOCOL
  */
 const enforceTenantIsolation = (req) => {
-  const tenantId = req.tenantId || req.headers['x-tenant-id'] || 'WILSY_ROOT';
+  const tenantId = req.tenantId || req.user?.tenantId;
+  if (typeof tenantId !== 'string' || !tenantId.trim()) {
+    const error = new Error('TENANT_CONTEXT_REQUIRED');
+    error.code = 'TENANT_CONTEXT_REQUIRED';
+    throw error;
+  }
   const operator = (req.user && req.user.email) ? req.user.email : 'SYSTEM_ARCHITECT';
   return { tenantId, operator };
 };

@@ -28,7 +28,7 @@ import { broadcastTelemetry } from '../utils/telemetryHelper.js';
 const FORBIDDEN_TENANT_IDS = [
   'admin', 'system', 'super',
   'legal', 'court', 'government', 'public',
-  'all', 'default', 'null', 'undefined', 'test'
+  'all', 'default', 'null', 'undefined', 'test', 'wilsy_root', 'master', 'wilsy_master', 'global_root', 'wilsy_global_root', 'wilsy-sovereign-root', 'wilsy'
 ];
 
 /**
@@ -54,8 +54,8 @@ const extractTenantId = (req) => {
   const altId = req.query.tenantId || req.body.tenantId || req.body.organizationAlias;
   if (altId) return altId.toUpperCase().trim();
 
-  // 4. BIBLICAL FALLBACK: Anchor to 'WILSY_ROOT' for the Master Core
-  return 'WILSY_ROOT';
+  // Missing tenant identity is not a tenant. Reject rather than selecting a global alias.
+  return null;
 };
 
 /**
@@ -65,6 +65,13 @@ const extractTenantId = (req) => {
 export const tenantDiscovery = async (req, res, next) => {
   try {
     const alias = extractTenantId(req);
+    const authenticatedTenantId = req.user?.tenantId ? String(req.user.tenantId).trim().toUpperCase() : '';
+    if (authenticatedTenantId && alias && authenticatedTenantId !== alias) {
+      return res.status(403).json({ error: 'TENANT_CONTEXT_MISMATCH' });
+    }
+    if (!alias) {
+      return res.status(400).json({ error: 'TENANT_CONTEXT_REQUIRED' });
+    }
 
     // 🛡️ Security Quantum: Block Forbidden IDs
     if (FORBIDDEN_TENANT_IDS.includes(alias.toLowerCase())) {
@@ -72,29 +79,21 @@ export const tenantDiscovery = async (req, res, next) => {
 
       // 📊 GRAFANA FEED: Intrusion attempt logged for Security Dashboard
       if (typeof broadcastTelemetry === 'function') {
-        broadcastTelemetry('GLOBAL_ROOT', 'SECURITY_ALERT', 'FORBIDDEN_ALIAS_REJECTION', 'tenantMiddleware', { attemptedAlias: alias });
+        broadcastTelemetry('SYSTEM', 'SECURITY_ALERT', 'FORBIDDEN_ALIAS_REJECTION', 'tenantMiddleware', { attemptedAlias: alias });
       }
 
       return res.status(403).json({ error: "Identity rejection: Forbidden identifier." });
     }
 
-    // 🏛️ LEDGER LOOKUP
-    // Supports both legacy Tenant models and the new Sovereign Identity
-    let tenant = await Tenant.findOne({
-      $or: [{ slug: alias.toLowerCase() }, { organizationAlias: alias }, { tenantId: alias }],
-      status: 'ACTIVE'
-    });
-
-    // 🛡️ FOUNDER RECOVERY: Force-anchor if record is misaligned
-    if (!tenant && (alias === 'WILSY' || alias === 'WILSY_ROOT')) {
-      console.warn("[SOVEREIGN] 🛡️ Founder Override: Manual anchor for 'wilsy' root.");
-      tenant = await Tenant.findOne({ adminEmail: "wilsonkhanyezi@gmail.com" });
-
-      if (tenant && tenant.slug !== 'wilsy') {
-        tenant.slug = 'wilsy';
-        await tenant.save();
-      }
-    }
+    // Resolve only an exact canonical tenant identifier. Never infer identity from
+    // a Founder email, slug, or retired platform alias.
+    const tenant = await Tenant.collection.findOne({
+      tenant_id: alias,
+      status: 'ACTIVE',
+    }) || await Tenant.findOne({
+      tenantId: alias,
+      status: 'ACTIVE',
+    }).lean();
 
     if (!tenant) {
       console.error(`🚨 [SOVEREIGN] REJECTION: Organization "${alias}" not found in Ledger.`);
@@ -105,7 +104,7 @@ export const tenantDiscovery = async (req, res, next) => {
 
     // 🎯 ANCHOR TO REQUEST OBJECT
     req.tenant = tenant;
-    req.tenantId = tenant.tenantId || tenant.slug; // Prioritize V40 tenantId over legacy slug
+    req.tenantId = tenant.tenant_id || tenant.tenantId;
 
     console.log(`✅ [SOVEREIGN] Identity Anchored: ${tenant.name || 'Master Core'} [${req.tenantId}]`);
 

@@ -30,18 +30,30 @@ export const resolveTenant = async (req, res, next) => {
 
   try {
     // 1. EXTRACT IDENTITY ANCHOR
-    // 🛡️ RECTIFIED: Aligned default fallback to 'WILSY_ROOT' per new architecture
-    const rawId = req.headers['x-tenant-id'] || req.query?.tenantId || req.body?.tenantId || 'WILSY_ROOT';
-    // 🛡️ RECTIFIED: Master Shards use uppercase in the new structure
-    const safeRawId = String(rawId).toUpperCase().trim();
+    // Tenant context must be explicit; retired system aliases are never tenant identities.
+    const rawId = req.user?.tenantId || req.headers['x-tenant-id'] || req.query?.tenantId || req.body?.tenantId;
+    if (typeof rawId !== 'string' || !rawId.trim()) {
+      return res.status(400).json({ success: false, code: 'TENANT_CONTEXT_REQUIRED' });
+    }
+    const safeRawId = rawId.toUpperCase().trim();
+    const retiredAliases = new Set(['WILSY_ROOT', 'MASTER', 'WILSY_MASTER', 'GLOBAL_ROOT', 'WILSY_GLOBAL_ROOT', 'WILSY-SOVEREIGN-ROOT', 'WILSY']);
+    if (retiredAliases.has(safeRawId)) {
+      return res.status(400).json({ success: false, code: 'RETIRED_TENANT_ALIAS' });
+    }
 
     // 2. RESILIENT RETRY HANDSHAKE
     // Implements a brief retry logic for transient DB blips during high-concurrency ignition.
     let tenant = null;
     while (retryCount <= MAX_RETRIES) {
       tenant = await TenantConfig.findOne({
-        $or: [{ tenantId: safeRawId }, { registrationNumber: safeRawId }]
+        { tenantId: safeRawId }
       }).lean();
+      if (!tenant) {
+        tenant = await TenantConfig.db.collection('tenants').findOne({
+          tenant_id: safeRawId,
+          status: 'ACTIVE',
+        });
+      }
 
       if (tenant) break;
       retryCount++;
@@ -51,7 +63,7 @@ export const resolveTenant = async (req, res, next) => {
     // 3. IDENTITY REJECTION PROTOCOL
     if (!tenant) {
       const errorPayload = { id: safeRawId, ip: req.ip, timestamp: new Date() };
-      broadcastTelemetry('GLOBAL_ROOT', "RESOLUTION_FAILURE", "SYSTEM_GATEWAY", "IDENTITY_NOT_FOUND", errorPayload);
+      broadcastTelemetry('SYSTEM', "RESOLUTION_FAILURE", "SYSTEM_GATEWAY", "IDENTITY_NOT_FOUND", errorPayload);
 
       console.error(chalk.red(`🚨 [IDENTITY REJECTION]: Organization [${safeRawId}] not found in Ledger.`));
       return res.status(403).json({
@@ -85,7 +97,7 @@ export const resolveTenant = async (req, res, next) => {
 
     // 6. ATTACH SOVEREIGN IDENTITY
     req.tenant = tenant;
-    req.tenantId = tenant.tenantId;
+    req.tenantId = tenant.tenant_id || tenant.tenantId;
     global.currentTenantId = req.tenantId;
 
     // 7. BOARDROOM TELEMETRY BROADCAST

@@ -51,6 +51,10 @@ const generateRefreshToken = (user) => {
 router.post('/register', async (req, res) => {
   try {
     const { firstName, lastName, email, password, role, tenantId } = req.body;
+    const resolvedTenantId = req.tenantId || tenantId;
+    if (!resolvedTenantId || ['WILSY_ROOT', 'MASTER', 'WILSY_MASTER', 'GLOBAL_ROOT', 'WILSY_GLOBAL_ROOT', 'WILSY-SOVEREIGN-ROOT', 'WILSY'].includes(String(resolvedTenantId).trim().toUpperCase())) {
+      return res.status(400).json({ success: false, code: 'TENANT_CONTEXT_REQUIRED' });
+    }
 
     if (!firstName || !lastName || !email || !password) {
       return res.status(400).json({ success: false, message: 'Missing required fields' });
@@ -67,7 +71,7 @@ router.post('/register', async (req, res) => {
       email,
       password,
       role: role || 'user',
-      tenantId: tenantId || 'WILSY_ROOT'
+      tenantId: resolvedTenantId
     });
 
     await newUser.appendForensicEntry('USER_REGISTRATION', 'SYSTEM', { email });
@@ -90,7 +94,7 @@ router.post('/register', async (req, res) => {
       }
     });
 
-    await broadcastTelemetry(tenantId || 'WILSY_ROOT', 'IDENTITY', 'USER_REGISTERED', 'AuthService', { userId: newUser._id });
+    await broadcastTelemetry(resolvedTenantId, 'IDENTITY', 'USER_REGISTERED', 'AuthService', { userId: newUser._id });
 
   } catch (err) {
     console.error('Register Error:', err);

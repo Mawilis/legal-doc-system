@@ -91,7 +91,7 @@ export const validateApiKey = async (req, res, next) => {
       await auditLogger.log({
         action: 'API_KEY_DENIED',
         resource: 'GATEWAY',
-        tenantId: 'WILSY_ROOT',
+        tenantId: 'SYSTEM',
         metadata: { keyPrefix: apiKey.substring(0, 8), reason: 'INVALID_OR_EXPIRED' },
       });
 

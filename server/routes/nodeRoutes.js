@@ -32,7 +32,6 @@ import crypto from 'node:crypto';
 import { body, param, query, validationResult } from 'express-validator';
 import Node from '../models/nodeModel.js';
 import { checkRedisHealth } from '../config/redis.js';
-import { seedGlobalNodes } from '../scripts/seedGlobalNodes.js';
 import logger from '../utils/logger.js';
 
 const router = express.Router();
@@ -88,11 +87,20 @@ const writeLimiter = rateLimit({
  * @institutional Ensures all downstream controllers enforce tenant isolation per POPIA §19.
  */
 const validateTenant = (req, res, next) => {
-  const tenantId = req.query.tenant || req.headers['x-tenant-id'];
-  if (!tenantId && req.method !== 'GET') {
-    return res.status(400).json({ success: false, message: 'X-Tenant-ID header required' });
+  const authenticatedTenantId = req.user?.tenantId ? String(req.user.tenantId).trim() : '';
+  const requestedTenantId = req.headers['x-tenant-id'] || req.query.tenant;
+  if (authenticatedTenantId && requestedTenantId &&
+      authenticatedTenantId.toUpperCase() !== String(requestedTenantId).trim().toUpperCase()) {
+    return res.status(403).json({ success: false, code: 'TENANT_CONTEXT_MISMATCH' });
   }
-  req.tenantId = tenantId || 'WILSY_ROOT';
+  const tenantId = authenticatedTenantId || requestedTenantId;
+  if (typeof tenantId !== 'string' || !tenantId.trim()) {
+    return res.status(400).json({ success: false, code: 'TENANT_CONTEXT_REQUIRED' });
+  }
+  if (['WILSY_ROOT', 'MASTER', 'WILSY_MASTER', 'GLOBAL_ROOT', 'WILSY_GLOBAL_ROOT', 'WILSY-SOVEREIGN-ROOT', 'WILSY'].includes(tenantId.trim().toUpperCase())) {
+    return res.status(400).json({ success: false, code: 'RETIRED_TENANT_ALIAS' });
+  }
+  req.tenantId = tenantId.trim();
   next();
 };
 
@@ -167,23 +175,12 @@ router.get('/_manifest', (req, res) => {
  * @collaboration AI Engineering – seedGlobalNodes script.
  * @institutional Ensures the node registry is never empty.
  */
-router.post('/seed-global', async (req, res, next) => {
-  const start = process.hrtime.bigint();
-  try {
-    const report = await seedGlobalNodes();
-    const end = process.hrtime.bigint();
-    const latencyMs = Number(end - start) / 1e6;
-    logger.info('[NODE_ROUTES] seed-global latency', { latencyMs: latencyMs.toFixed(3) });
-    res.status(201).json({
-      success: true,
-      message: 'Global sovereign node registry anchored',
-      count: report.count,
-      nodes: report.nodes
-    });
-  } catch (err) {
-    logger.error('[NODE_ROUTES] seed-global error', { error: err.message, stack: err.stack, traceId: req.traceId });
-    next(err);
-  }
+router.post('/seed-global', (req, res) => {
+  return res.status(410).json({
+    success: false,
+    code: 'EOS_GLOBAL_NODE_SEEDER_RETIRED',
+    message: 'Global node records are managed by governed EOS infrastructure workflows.',
+  });
 });
 
 // ============================================================================
@@ -213,12 +210,8 @@ router.get('/',
       const page = parseInt(req.query.page) || 1;
       const limit = parseInt(req.query.limit) || 20;
       const skip = (page - 1) * limit;
-      const filter = tenantId === 'WILSY_ROOT' ? {} : { tenantId };
+      const filter = { tenantId };
       let total = await Node.countDocuments(filter);
-      if (total === 0 && tenantId === 'WILSY_ROOT') {
-        await seedGlobalNodes();
-        total = await Node.countDocuments(filter);
-      }
       const nodes = await Node.find(filter).sort({ createdAt: -1 }).skip(skip).limit(limit).lean();
       const etag = `W/"${Buffer.from(JSON.stringify({ total, page, limit, count: nodes.length })).toString('base64')}"`;
       res.setHeader('ETag', etag);
@@ -253,7 +246,7 @@ router.get('/registry', validateTenant, async (req, res, next) => {
   const start = process.hrtime.bigint();
   try {
     const { tenantId } = req;
-    const filter = tenantId === 'WILSY_ROOT' ? {} : { tenantId };
+    const filter = { tenantId };
     const nodes = await Node.find(filter).lean();
     const registry = nodes.map(n => ({
       nodeId: n._id,
@@ -291,8 +284,7 @@ router.get('/master-anchor', validateTenant, async (req, res, next) => {
   const start = process.hrtime.bigint();
   try {
     const { tenantId } = req;
-    const query = { isMasterAnchor: true };
-    if (tenantId !== 'WILSY_ROOT') query.tenantId = tenantId;
+    const query = { isMasterAnchor: true, tenantId };
     const master = await Node.findOne(query).sort({ createdAt: 1 });
     if (!master) {
       return res.status(404).json({ success: false, message: 'Master anchor not found' });
@@ -332,7 +324,7 @@ router.get('/:nodeId',
       if (!node) {
         return res.status(404).json({ success: false, message: 'Node not found' });
       }
-      if (req.tenantId !== 'WILSY_ROOT' && node.tenantId !== req.tenantId) {
+      if (node.tenantId !== req.tenantId) {
         return res.status(403).json({ success: false, message: 'Tenant isolation violation' });
       }
       const etag = `W/"${node.nodeSeal?.substring(0, 16) || node._id}"`;
@@ -371,7 +363,7 @@ router.get('/:nodeId/proof',
       if (!node) {
         return res.status(404).json({ success: false, message: 'Node not found' });
       }
-      if (req.tenantId !== 'WILSY_ROOT' && node.tenantId !== req.tenantId) {
+      if (node.tenantId !== req.tenantId) {
         return res.status(403).json({ success: false, message: 'Tenant isolation violation' });
       }
       const proofHash = crypto.createHash('sha3-512').update(JSON.stringify(node)).digest('hex');
@@ -453,9 +445,7 @@ router.post('/',
     }
     try {
       const { tenantId } = req;
-      if (tenantId !== 'WILSY_ROOT') {
-        return res.status(403).json({ success: false, message: 'Only root tenant can create new nodes' });
-      }
+      return res.status(403).json({ success: false, code: 'SYSTEM_AUTHORITY_REQUIRED' });
       const { entity, region, lat, lng, type = 'MASTER_NODE', status = 'ONLINE', metadata = {} } = req.body;
       const newNode = new Node({
         tenantId,
@@ -508,7 +498,7 @@ router.put('/:nodeId/status',
       if (!node) {
         return res.status(404).json({ success: false, message: 'Node not found' });
       }
-      if (req.tenantId !== 'WILSY_ROOT' && node.tenantId !== req.tenantId) {
+      if (node.tenantId !== req.tenantId) {
         return res.status(403).json({ success: false, message: 'Tenant isolation violation' });
       }
       if (status) node.status = status;
