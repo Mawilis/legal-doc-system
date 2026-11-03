@@ -94,6 +94,36 @@ describe('SovereignDashboardController EOS workspace contract', () => {
     }
   });
 
+  it('mounts System Services only from a READY EOS capability projection', () => {
+    const workspace = {
+      status: 'READY',
+      authority: 'EOS_SYSTEM_SERVICES',
+      principalId: 'platform-staff-1',
+      capabilities: ['system_services:queue:read'],
+    };
+    expect(resolveDashboardKey({
+      user: { id: 'staff-1', role: 'TENANT_OWNER', workspaceId: 'EXECUTIVE_COMMAND_CENTRE', systemServicesWorkspace: workspace },
+      manualDashboardKey: 'SYSTEM_SERVICES_DASHBOARD',
+    })).toBe(DASHBOARD_KEYS.SYSTEM_SERVICES);
+    expect(resolveDashboardKey({
+      user: { id: 'staff-2', role: 'SYSTEM_ADMIN', workspaceId: 'EXECUTIVE_COMMAND_CENTRE' },
+      manualDashboardKey: 'SYSTEM_SERVICES_DASHBOARD',
+    })).toBe(DASHBOARD_KEYS.EXECUTIVE);
+  });
+
+  it('rejects a malformed or capability-free System Services workspace projection', () => {
+    for (const systemServicesWorkspace of [
+      { status: 'READY', authority: 'SYSTEM_ADMIN', principalId: 'staff-1', capabilities: ['system_services:queue:read'] },
+      { status: 'PENDING', authority: 'EOS_SYSTEM_SERVICES', principalId: 'staff-1', capabilities: ['system_services:queue:read'] },
+      { status: 'READY', authority: 'EOS_SYSTEM_SERVICES', principalId: 'staff-1', capabilities: [] },
+    ]) {
+      expect(resolveDashboardKey({
+        user: { id: 'staff-1', role: 'SYSTEM_ADMIN', workspaceId: 'EXECUTIVE_COMMAND_CENTRE', systemServicesWorkspace },
+        manualDashboardKey: 'SYSTEM_SERVICES_DASHBOARD',
+      })).toBe(DASHBOARD_KEYS.EXECUTIVE);
+    }
+  });
+
   it('retains Founder-return predicate as a separate presentation helper only', () => {
     expect(hasFounderReturnAuthority({
       user: { role: 'FOUNDER', id: 'founder-2' },
