@@ -333,6 +333,8 @@ The Day 2 entry gate has begun with a narrow, reversible tenant-binding change:
 - EOS `AuthRequest` and `VerifyOTPRequest` accept a strict optional `tenant_id` selector for compatibility at the schema boundary, but login, MFA setup and OTP verification reject a missing selector and reject a selector that differs from the durable authenticated user's canonical `tenantId`.
 - The selected tenant is carried through the MFA setup/verification requests. The final ACCESS session is still promoted only after `GET /api/auth/workspace-bootstrap` revalidates current principal, ACTIVE membership, business capacity and canonical tenant.
 - Added backend tests for missing discovery and tenant mismatch, and updated browser/backend fixtures to assert selector propagation.
+- Removed the unreferenced `client/src/bootstrap/EnterpriseBootstrap.jsx`, which fabricated `tenant_wilsy_001` and provided a direct login bypass; repository search found no imports/callers.
+- Removed the `wilsy` fallback from the legacy superadmin auth adapter and the legacy ObjectId tenant fallback from the sovereign auth bridge. The adapter now requires the EOS-discovered tenant projection and sends `tenant_id`.
 
 **Important scope limit:** this closes a discovery-to-login tenant-confusion gap for the existing single-tenant-shaped AuthRegistry user record. It does not yet implement a global principal with multiple memberships. A person who belongs to multiple firms still needs the Day 2 global-principal credential model, membership enumeration after authentication, explicit selected-membership MFA/session binding, and tenant-switch session rotation. The current `tenantId` field must not be treated as a permanent one-tenant-per-person model.
 
