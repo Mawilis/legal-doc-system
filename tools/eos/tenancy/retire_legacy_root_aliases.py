@@ -126,6 +126,41 @@ def _alias_inventory(
     return configs, nodes
 
 
+def _preserved_inventory(
+    database: Database[Any], collection_names: list[str], session: Any = None
+) -> list[dict[str, str]]:
+    """Fingerprint every alias-scoped record outside the mutable alias registry."""
+    preserved: list[dict[str, str]] = []
+    for collection_name in sorted(set(collection_names) - {"tenant_configs", EVIDENCE_COLLECTION}):
+        collection = database[collection_name]
+        documents = collection.find(
+            {
+                "$or": [
+                    {"tenantId": {"$in": list(ALIASES)}},
+                    {"tenant_id": {"$in": list(ALIASES)}},
+                ]
+            },
+            session=session,
+        ).sort("_id", 1)
+        for document in documents:
+            tenant_values = {
+                document[field]
+                for field in ("tenantId", "tenant_id")
+                if document.get(field) is not None
+            }
+            if len(tenant_values) != 1 or next(iter(tenant_values)) not in ALIASES:
+                raise RetirementError("LEGACY_RECORD_TENANT_SCOPE_CONFLICT")
+            preserved.append(
+                {
+                    "collection": collection_name,
+                    "tenant_id": next(iter(tenant_values)),
+                    "document_id": str(document["_id"]),
+                    "fingerprint": _fingerprint(document),
+                }
+            )
+    return preserved
+
+
 def _ensure_evidence_collection(database: Database[Any]) -> Collection:
     try:
         database.create_collection(EVIDENCE_COLLECTION)
@@ -137,8 +172,11 @@ def _ensure_evidence_collection(database: Database[Any]) -> Collection:
     return collection
 
 
-def _retire_transaction(session: Any, database: Database[Any]) -> dict[str, Any]:
+def _retire_transaction(
+    session: Any, database: Database[Any], collection_names: list[str]
+) -> dict[str, Any]:
     configs, nodes = _alias_inventory(database, session=session, allow_archived=True)
+    preserved_records = _preserved_inventory(database, collection_names, session=session)
     before = _founder_snapshot(database, session=session)
     before_fingerprint = _fingerprint(before)
     evidence = database[EVIDENCE_COLLECTION]
@@ -173,6 +211,17 @@ def _retire_transaction(session: Any, database: Database[Any]) -> dict[str, Any]
                 )
                 if expected_node_fingerprints != recorded_node_fingerprints:
                     raise RetirementError("PRESERVED_NODE_EVIDENCE_DRIFT")
+                expected_preserved = sorted(
+                    (record["collection"], record["document_id"], record["fingerprint"])
+                    for record in preserved_records
+                    if record["tenant_id"] == item["alias_id"]
+                )
+                recorded_preserved = sorted(
+                    (record["collection"], record["document_id"], record["fingerprint"])
+                    for record in item.get("preserved_record_evidence", [])
+                )
+                if expected_preserved != recorded_preserved:
+                    raise RetirementError("PRESERVED_LEGACY_RECORD_EVIDENCE_DRIFT")
             return {"already_retired": True, "aliases": len(existing)}
         raise RetirementError("RETIREMENT_EVIDENCE_STATE_CONFLICT")
 
@@ -202,6 +251,9 @@ def _retire_transaction(session: Any, database: Database[Any]) -> dict[str, Any]
                     "fingerprint": _fingerprint(node),
                 }
                 for node in alias_nodes
+            ],
+            "preserved_record_evidence": [
+                record for record in preserved_records if record["tenant_id"] == alias
             ],
             "founder_invariant_fingerprint": before_fingerprint,
             "recorded_at": now,
@@ -256,7 +308,9 @@ def run(*, uri: str, database_name: str, apply: bool) -> dict[str, Any]:
         if not hello.get("setName") or hello.get("logicalSessionTimeoutMinutes") is None:
             raise RetirementError("TRANSACTION_CAPABLE_REPLICA_SET_REQUIRED")
         database = client[database_name]
+        collection_names = database.list_collection_names()
         configs, nodes = _alias_inventory(database, allow_archived=True)
+        preserved_records = _preserved_inventory(database, collection_names)
         founder = _founder_snapshot(database)
         report = {
             "mode": "APPLY" if apply else "DRY_RUN",
@@ -265,6 +319,11 @@ def run(*, uri: str, database_name: str, apply: bool) -> dict[str, Any]:
             "legacy_aliases": [item["tenantId"] for item in configs],
             "legacy_config_count": len(configs),
             "legacy_node_records_preserved": len(nodes),
+            "legacy_records_preserved": len(preserved_records),
+            "legacy_records_by_collection": {
+                name: sum(1 for record in preserved_records if record["collection"] == name)
+                for name in sorted({record["collection"] for record in preserved_records})
+            },
             "founder_invariant_fingerprint": _fingerprint(founder),
             "founder_subscription_id": FOUNDER_SUBSCRIPTION_ID,
             "founder_entitlement_id": FOUNDER_ENTITLEMENT_ID,
@@ -274,7 +333,9 @@ def run(*, uri: str, database_name: str, apply: bool) -> dict[str, Any]:
         _ensure_evidence_collection(database)
         with client.start_session() as session:
             result = session.with_transaction(
-                lambda active_session: _retire_transaction(active_session, database)
+                lambda active_session: _retire_transaction(
+                    active_session, database, collection_names
+                )
             )
         report.update(result)
         return report
