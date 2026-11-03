@@ -2,7 +2,7 @@
 /**
  * WILSY OS — INSTITUTIONAL HTTP CLIENT
  * TITLE: Wilsy OS Diplomatic Bridge and Institutional HTTP Client
- * VERSION: V74.6.0-L10-P2C8-EXPLICIT-BEARER-PRESERVATION
+ * VERSION: V74.7.0-L10-P2C9-FAIL-CLOSED-SESSION-HEADERS
  * AUTHORITY: Wilsy OS Core Governance
  * EPITOME: Provides the governed browser HTTP transport seam while preserving
  *          server-owned authentication, recovery, tenant, credential, and
@@ -12,7 +12,8 @@
  *                            Python EOS owns auth/recovery business truth and
  *                            server contracts; external HTTP is transport only.
  * CERTIFICATION / UPDATE DATE: 2026-10-28
- * CHANGELOG: V74.6.0-L10-P2C8-EXPLICIT-BEARER-PRESERVATION — Preserves an explicitly supplied Authorization header so the server revalidates the exact post-MFA candidate token rather than silently substituting stale browser storage.
+ * CHANGELOG: V74.7.0-L10-P2C9-FAIL-CLOSED-SESSION-HEADERS — Rejects empty or malformed bearer headers as credentials, preserves valid explicit MFA candidate bearers, and removes fabricated tenant fallbacks while leaving authorization to Python EOS.
+ *            V74.6.0-L10-P2C8-EXPLICIT-BEARER-PRESERVATION — Preserves an explicitly supplied Authorization header so the server revalidates the exact post-MFA candidate token rather than silently substituting stale browser storage.
  *            V74.5.0-L10-P2C7-MULTIPART-PRESERVATION — Preserves multipart
  *            upload bodies from JSON forensic-body mutation while retaining
  *            transport headers and request sealing.
@@ -361,16 +362,36 @@ api.interceptors.request.use(
     const suppliedAuthorization = typeof config.headers?.get === 'function'
       ? config.headers.get('Authorization')
       : config.headers?.Authorization || config.headers?.authorization;
-    const hasSuppliedAuthorization = (
+    const authorizationValue = (
       typeof suppliedAuthorization === 'string'
-      && suppliedAuthorization.trim().length > 0
+        ? suppliedAuthorization.trim()
+        : ''
+    );
+    // Only a non-empty bearer credential is an explicit candidate. Malformed
+    // values cannot suppress the current session bearer.
+    const hasSuppliedAuthorization = /^Bearer\s+\S+$/i.test(
+      authorizationValue
     );
     const token = getStoredToken();
-    if (!config.skipAuth && !hasSuppliedAuthorization && token) {
-      config.headers.Authorization = `Bearer ${token}`;
+    const storedToken = typeof token === 'string' ? token.trim() : '';
+    const hasStoredToken = (
+      storedToken.length > 0
+      && !/^(undefined|null)$/i.test(storedToken)
+    );
+
+    if (!config.skipAuth && !hasSuppliedAuthorization && hasStoredToken) {
+      config.headers.Authorization = `Bearer ${storedToken}`;
+    } else if (!hasSuppliedAuthorization) {
+      if (typeof config.headers?.delete === 'function') {
+        config.headers.delete('Authorization');
+      } else {
+        delete config.headers.Authorization;
+        delete config.headers.authorization;
+      }
     }
 
-    // Force Tenant ID injection to prevent 403 authorization fractures
+    // The canonical tenant is a transport selector only; Python EOS owns
+    // membership, identity, and authorization decisions.
     config.headers['X-Tenant-ID'] = resolveRequestTenantId();
 
     // 🛡️ Expanded public paths to include all auth endpoints, including MFA/OTP.
@@ -701,7 +722,7 @@ export {
 
 /**
  * ARTIFACT: client/src/services/api.js
- * VERSION: V74.6.0-L10-P2C8-EXPLICIT-BEARER-PRESERVATION
+ * VERSION: V74.7.0-L10-P2C9-FAIL-CLOSED-SESSION-HEADERS
  * AUTHORITY BOUNDARY: browser HTTP transport and transport evidence only
  * TENANT POSTURE: client tenant values remain selectors/projections; server truth is sovereign
  * FAIL-CLOSED POSTURE: strict public recovery/reset bodies are never mutated by forensic metadata

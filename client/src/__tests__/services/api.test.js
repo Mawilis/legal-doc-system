@@ -246,6 +246,40 @@ describe('api.js – Sovereign HTTP Client', () => {
       expect(sealed.headers['X-Tenant-ID']).toBe('WILSYTENANT-4CD2FZ4O');
     });
 
+    it('rejects empty or malformed explicit bearer headers and uses the valid stored session', async () => {
+      expect(requestInterceptorCapture.fulfilled).toEqual(expect.any(Function));
+      localStorageMock.setItem('wilsy_auth_token', 'active-session-token');
+
+      const emptyBearer = await requestInterceptorCapture.fulfilled({
+        url: '/legal-operations/commercial-context',
+        method: 'get',
+        headers: { Authorization: 'Bearer ' },
+      });
+      expect(emptyBearer.headers.Authorization).toBe('Bearer active-session-token');
+
+      const malformedScheme = await requestInterceptorCapture.fulfilled({
+        url: '/legal-operations/commercial-context',
+        method: 'get',
+        headers: { Authorization: 'Basic not-a-bearer' },
+      });
+      expect(malformedScheme.headers.Authorization).toBe('Bearer active-session-token');
+    });
+
+    it('never forwards undefined or null stored tokens as bearer credentials', async () => {
+      expect(requestInterceptorCapture.fulfilled).toEqual(expect.any(Function));
+
+      for (const invalidToken of ['undefined', 'null', '   ']) {
+        localStorageMock.clear();
+        localStorageMock.setItem('wilsy_auth_token', invalidToken);
+        const sealed = await requestInterceptorCapture.fulfilled({
+          url: '/legal-operations/commercial-context',
+          method: 'get',
+          headers: { Authorization: 'Bearer ' },
+        });
+        expect(sealed.headers.Authorization).toBeUndefined();
+      }
+    });
+
     it('preserves historical timestamp body injection for unrelated mutation routes', async () => {
       expect(requestInterceptorCapture.fulfilled).toEqual(expect.any(Function));
 

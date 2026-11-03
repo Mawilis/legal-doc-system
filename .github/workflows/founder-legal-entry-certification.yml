@@ -10,6 +10,8 @@ on:
       - "client/tests/client/LegalDashboardTenantOwnerCommercialView.test.js"
       - "client/src/services/ExecutiveCommandOrchestrator.js"
       - "client/src/services/ExecutiveCommandOrchestrator.branding.test.js"
+      - "client/src/services/api.js"
+      - "client/src/__tests__/services/api.test.js"
       - ".github/workflows/founder-legal-entry-certification.yml"
   workflow_dispatch:
 
@@ -43,6 +45,7 @@ jobs:
           tests/client/SovereignDashboardController.test.js
           tests/client/LegalDashboardTenantOwnerCommercialView.test.js
           src/services/ExecutiveCommandOrchestrator.branding.test.js
+          src/__tests__/services/api.test.js
 
       - name: Build client
         run: npm run build
