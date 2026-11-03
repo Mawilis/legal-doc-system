@@ -1,7 +1,7 @@
 """WILSY OS sovereign Python API server composition root.
 
 TITLE: WILSY OS EOS Kernel API Server Factory
-VERSION: v1.34.0-L10A2R-C4D7-RECONCILIATION-RUNTIME-BOOTSTRAP
+VERSION: v1.35.0-GLOBAL-PRINCIPAL-MFA-CHALLENGE-INDEX-BOOTSTRAP
 AUTHORITY: Wilsy OS Core Governance
 EPITOME: Mount sovereign Python API authorities, including the authenticated
          practitioner-binding command transport, and hold that transport
@@ -12,7 +12,8 @@ EPITOME: Mount sovereign Python API authorities, including the authenticated
 ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/tools/eos/api/server.py
 COLLABORATION / OWNERSHIP: Wilson Khanyezi / Wilsy OS Core Engineering
 CERTIFICATION / UPDATE DATE: 2026-10-20
-CHANGELOG: 2026-10-25 v1.34.0-L10A2R-C4D7-RECONCILIATION-RUNTIME-BOOTSTRAP mounts the dedicated signed-workload reconciliation route and binds canonical P2/P4/P5 authorities, a distinct deployment audit target, and transaction-bound idempotent response replay during startup; missing configuration remains fail-closed.
+CHANGELOG: 2026-11-03 v1.35.0-GLOBAL-PRINCIPAL-MFA-CHALLENGE-INDEX-BOOTSTRAP installs unique global-principal credential and single-use membership/MFA challenge indexes during canonical connected startup; no credentials, memberships, capacities, permissions, sessions, or identity authority are created.
+2026-10-25 v1.34.0-L10A2R-C4D7-RECONCILIATION-RUNTIME-BOOTSTRAP mounts the dedicated signed-workload reconciliation route and binds canonical P2/P4/P5 authorities, a distinct deployment audit target, and transaction-bound idempotent response replay during startup; missing configuration remains fail-closed.
 2026-10-20 v1.33.0-P12C-R4N-PRACTITIONER-BINDING-LIFECYCLE mounts the authenticated practitioner-binding command router exactly once, installs its access, binding and conflict-disposition indexes during connected startup, and denies commands until startup readiness completes while preserving router-owned tenant admission, transaction, Legal, ethical-wall, billing, settlement and Kennel EOS financial-execution boundaries.
 2026-10-18 v1.27.0-P3-R3G-S5-A2-IAM-SECURITY-EVIDENCE-FACTOR-INDEX-BOOTSTRAP moves the already-certified tenant-authorization decision-evidence, authorization-role-revocation evidence, and privileged factor-currentness registry index DDL into canonical connected application startup while preserving all current-main router composition, request-path semantics, tenant boundaries, caller-owned transaction authority, and Kennel EOS financial execution exclusivity.
 2026-10-18 v1.26.0-P1-R3E-AUTHORIZATION-ROLE-REVOCATION-RUNTIME-MOUNT mounts the certified ordinary authorization-role revocation router exactly once under /api while preserving router-owned authentication, tenant authorization, command, transaction, persistence, replay, root-lifecycle and financial boundaries; no privileged-security startup indexes are introduced.
@@ -125,6 +126,14 @@ from .hr_document_router import router as hr_document_router
 from tools.eos.auth.authentication import get_principal_authority_repository
 from tools.eos.auth.authorization import get_role_assignment_repository
 from tools.eos.auth.tenant_access import get_tenant_membership_repository
+from tools.eos.auth.principal_credential_repository import (
+    COLLECTION as PRINCIPAL_CREDENTIAL_COLLECTION,
+    PrincipalCredentialRepository,
+)
+from tools.eos.auth.membership_selection_challenge import (
+    COLLECTION as MEMBERSHIP_SELECTION_CHALLENGE_COLLECTION,
+    MembershipSelectionChallengeService,
+)
 from tools.eos.auth.tenant_authorization_decision_evidence_registry import (
     COLLECTION as TENANT_AUTHORIZATION_DECISION_EVIDENCE_COLLECTION,
     TenantAuthorizationDecisionEvidenceRegistry,
@@ -192,7 +201,7 @@ from tools.eos.legal_operations.service.legal_storefront_public_intent_rate_limi
     LegalStorefrontPublicIntentRateLimit,
 )
 
-VERSION = "v1.34.0-L10A2R-C4D7-RECONCILIATION-RUNTIME-BOOTSTRAP"
+VERSION = "v1.35.0-GLOBAL-PRINCIPAL-MFA-CHALLENGE-INDEX-BOOTSTRAP"
 logger = logging.getLogger("WilsyOS.API.Server")
 
 
@@ -247,6 +256,7 @@ class WilsyAPIServer:
         app.state.wilsy_ai_legal_services_orchestrator = None
         # No binding command is ready before certified index startup.
         app.state.p12c_binding_indexes_ready = False
+        app.state.global_principal_auth_indexes_ready = False
         app.state.legal_evidence_provider_readonly_reconciliation_composition = None
         app.state.legal_evidence_provider_readonly_reconciliation_audit_client = None
         # C1E service is constructed lazily or by deployment composition; it
@@ -403,6 +413,7 @@ class WilsyAPIServer:
         async def start_database() -> None:
             """Own explicit database bootstrap at application startup."""
             app.state.p12c_binding_indexes_ready = False
+            app.state.global_principal_auth_indexes_ready = False
             app.state.telemetry_indexes_ready = False
             connected, detail = connect_db()
             if not connected:
@@ -415,6 +426,15 @@ class WilsyAPIServer:
             if database is None:
                 return
             if database is not None:
+                # Global authentication and one-time challenge indexes are
+                # canonical startup DDL. Request handlers never create indexes.
+                PrincipalCredentialRepository.ensure_indexes(
+                    database[PRINCIPAL_CREDENTIAL_COLLECTION]
+                )
+                MembershipSelectionChallengeService.ensure_indexes(
+                    database[MEMBERSHIP_SELECTION_CHALLENGE_COLLECTION]
+                )
+                app.state.global_principal_auth_indexes_ready = client is not None
                 database["wilsy_sovereign_telemetry"].create_index(
                     "trace_id", unique=True, sparse=True, name="uq_telemetry_trace_id"
                 )
@@ -536,6 +556,7 @@ class WilsyAPIServer:
         async def stop_database() -> None:
             """Release the kernel database during controlled application shutdown."""
             app.state.p12c_binding_indexes_ready = False
+            app.state.global_principal_auth_indexes_ready = False
             app.state.telemetry_indexes_ready = False
             audit_client = getattr(
                 app.state,
@@ -667,7 +688,7 @@ class WilsyAPIServer:
 app = WilsyAPIServer().get_app()
 
 # ARTIFACT: server.py
-# VERSION: v1.34.0-L10A2R-C4D7-RECONCILIATION-RUNTIME-BOOTSTRAP
+# VERSION: v1.35.0-GLOBAL-PRINCIPAL-MFA-CHALLENGE-INDEX-BOOTSTRAP
 # AUTHORITY BOUNDARY: HTTP application composition only; domain authorities remain separate.
 # TENANT POSTURE: Mounted routers retain their canonical tenant isolation and admission rules.
 # FAIL-CLOSED POSTURE: Unmounted or failed router composition is never represented as operational authority.
