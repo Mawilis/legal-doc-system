@@ -16,9 +16,15 @@ from tools.eos.auth.authentication import get_current_identity
 from tools.eos.auth.global_principal_mfa_session_transition import (
     GlobalPrincipalMfaSessionTransition,
 )
+from tools.eos.auth.global_principal_totp_verifier import (
+    GlobalPrincipalFactorRejected,
+    GlobalPrincipalFactorUnavailable,
+)
 from tools.eos.auth.global_principal_session_authority import (
     GlobalPrincipalSessionAuthority,
     GlobalPrincipalSessionError,
+    GlobalPrincipalSessionRejected,
+    GlobalPrincipalSessionUnavailable,
 )
 from tools.eos.auth.membership_selection_challenge import (
     MembershipSelectionChallengeRejected,
@@ -291,8 +297,15 @@ async def verify_global_mfa(payload: GlobalMfaVerificationRequest, request: Requ
         _abort_if_active(session)
         raise HTTPException(status_code=401, detail="MFA challenge is invalid or expired") from None
     except (
+        GlobalPrincipalFactorRejected,
+        GlobalPrincipalSessionRejected,
+    ):
+        _abort_if_active(session)
+        raise HTTPException(status_code=401, detail="MFA challenge or authenticator code is invalid") from None
+    except (
+        GlobalPrincipalFactorUnavailable,
         MembershipSelectionChallengeUnavailable,
-        GlobalPrincipalSessionError,
+        GlobalPrincipalSessionUnavailable,
         PrincipalCredentialRepositoryError,
         PyMongoError,
     ):
@@ -324,10 +337,10 @@ async def refresh_global_session(payload: GlobalRefreshRequest, request: Request
             "access_expires_at": receipt.access_expires_at.isoformat(),
             "refresh_expires_at": receipt.refresh_expires_at.isoformat(),
         }
-    except GlobalPrincipalSessionError:
+    except GlobalPrincipalSessionRejected:
         _abort_if_active(session)
         raise HTTPException(status_code=401, detail="Refresh credential is invalid or expired") from None
-    except PyMongoError:
+    except (GlobalPrincipalSessionUnavailable, PyMongoError):
         _abort_if_active(session)
         raise HTTPException(status_code=503, detail="GLOBAL_AUTHENTICATION_UNAVAILABLE") from None
     except Exception:
