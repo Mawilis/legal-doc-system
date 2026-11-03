@@ -7,6 +7,17 @@ Repository: Mawilis/legal-doc-system
 Branch: eos/tenant-discovery-iam-dashboard-roadmap
 Related integration: PR #342
 
+## 0. Delivery checkpoint (2026-11-03)
+
+Implemented on this branch as foundation artifacts:
+- Eleven exact System Services/IAM permission identifiers are present in the canonical permission namespace with SYSTEM scope, SYSTEM assignment requirement, workforce-currentness requirement, no tenant membership, no cross-tenant capability, no financial capability, and no self-authorization.
+- The ongoing SYSTEM permission assignment/revocation allowlists remain unchanged; the new vocabulary is not assignable merely because it is registered.
+- An immutable support-case domain and a Mongo registry now exist. Case writes require a caller-owned transaction; case state and append-only transition events are committed together. Exact scope reads, optimistic revision checks, event idempotency indexes, and strict persisted-field hydration are defined.
+- Unit and disposable real-Mongo tests plus a dedicated GitHub Actions workflow have been added for the case foundation.
+- The existing account experience already contains password-recovery initiation, recovery-contact verification, and MFA enrollment/challenge components. These are existing foundations, not proof that MFA recovery, session/device self-service, case tracking UI, or the staff console are complete.
+
+Not yet implemented or certified: case API/router wiring, startup index registration, agent orchestration, self-service MFA recovery, session/device self-service endpoints, independent approval services, console bootstrap integration, and end-to-end cross-tenant/adversarial certification. No production support operations or new IAM grants are claimed.
+
 ## 1. Product decision
 
 Create one platform-owned **WILSY OS System Services Department**. It is the accountable service owner for platform identity support, account recovery operations, access-request routing, IAM administration, incident handling and service health.
