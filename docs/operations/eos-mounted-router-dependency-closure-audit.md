@@ -127,3 +127,58 @@ This tranche resolves source composition and names additional persistence author
 - whether each source-tree worker/CLI is deployed or invoked.
 
 The index manifest must not be marked complete from this document. All collection action and index entries need registry-source verification and tests.
+
+
+## 9. Correction and extension: tenant, subscription and plan routers
+
+The initial router-decorator scan matched only the variable name `router` and missed three separately named APIRouters. The canonical server mounts all three. Their routes are now explicitly included in the inventory:
+
+### Tenant router — `/api/tenants`
+- `GET /`: global listing deliberately denied before persistence.
+- `GET /{tenant_id}/ownership/readiness`: deny-only response, no database access.
+- `GET /{tenant_id}`: own-tenant profile read after exact path/header authorization.
+- `POST /`: tenant creation denied before persistence.
+- `PUT /{tenant_id}`: strict six-field profile update.
+- `DELETE /{tenant_id}`: soft archive, not hard delete.
+- Registry collection is `tenants`; registry lazily resolves it through `kernel_db.get_database()`.
+- Registry methods observed: `find_one`, bounded `find`, `insert_one` in the registry API (but current router POST remains contained), and `update_one` with post-write reads. Exact route-reachable CRUD must distinguish inactive registry methods from mounted route methods.
+
+### Subscription router
+Mounted as `subscription_router`, not `router`. Routes include list/get, create, update, archive, pause, resume, cancel, upgrade, downgrade, reactivate, audit, metrics and existing-entitlement reconciliation.
+
+**Critical connection finding:** `tools/eos/saas/billing/subscription_registry.py` creates a module-level independent `MongoClient`. Its URI precedence is:
+1. `WILSY_SUBSCRIPTION_MONGO_URI`;
+2. `MONGODB_URI`;
+3. fallback `mongodb://127.0.0.1:27017/wilsy`.
+
+It selects the URI default database, falling back to `wilsy`. The registry owns a module-level `subscriptions` collection and calls `_ensure_indexes` during subscription creation. That helper creates four indexes:
+- unique `tenant_id, subscription_id`;
+- unique `tenant_id, idempotency_key`;
+- `tenant_id, status`;
+- `tenant_id, plan`.
+
+This means the earlier statement that `MONGODB_URI` is the only Mongo URI authority is not true for the full application source. The dedicated override can point to a different cluster, and the localhost fallback can silently diverge when both dedicated and canonical URI variables are absent. The runtime secret mapping and actual connection target must be independently proven. Do not change credentials until resolved.
+
+### Plan router
+Mounted as `plan_router`, not `router`. Routes include list/get/create/update/archive under tenant-authorized plan read/manage permissions.
+
+**Critical connection finding:** `tools/eos/saas/billing/plan_registry.py` creates a separate module-level `MongoClient`. Its URI precedence is:
+1. `WILSY_PLAN_MONGO_URI`;
+2. `MONGODB_URI`;
+3. fallback `mongodb://127.0.0.1:27017/wilsy`.
+
+Database selection uses `WILSY_PLAN_MONGO_DATABASE`, then URI default database, then `wilsy`. It owns a module-level `plans` collection. Catalogue reads validate existing index metadata read-only; explicit `provision_indexes` owns DDL. The exact five source index declarations are now recorded in the manifest:
+- unique partial `plan_id`;
+- unique partial `idempotency_key`;
+- `tenant_id, active`;
+- `tenant_id, plan_type`;
+- `created_at, plan_id`.
+
+### Consequence for runtime identity design
+
+The API process currently has at least three Mongo connection compositions:
+- canonical shared `tools.eos.kernel.db` client;
+- subscription registry module-level client;
+- plan registry module-level client.
+
+These may resolve to the same target when environment variables align, but source does not prove they do. Their separate URI and database override variables must be inventoried as separate secret references and compared using redacted target fingerprints. The candidate API identity cannot be designed from the kernel URI alone.
