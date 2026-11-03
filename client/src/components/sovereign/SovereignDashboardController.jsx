@@ -453,6 +453,13 @@ export const resolveDashboardKey = ({ user = {}, manualDashboardKey = '' } = {})
   const requestedDashboard = mapDashboardAlias(manualDashboardKey);
   if (requestedDashboard === roleDashboard) return roleDashboard;
 
+  // Legal OS is an explicit product surface, not a role escalation. A caller
+  // may navigate to its shell; Python EOS independently authorizes every
+  // commercial-context and workspace request and the shell fails closed for
+  // unsupported business roles. The Executive entry button performs a
+  // server commercial-context preflight before requesting this presentation.
+  if (requestedDashboard === DASHBOARD_KEYS.LEGAL) return DASHBOARD_KEYS.LEGAL;
+
   // The only cross-shard return retained is the existing Founder return
   // affordance, and only for identities carrying its explicit return signal.
   if (
