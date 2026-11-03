@@ -126,12 +126,14 @@ class GlobalPrincipalMfaEnrollmentService:
         challenge_collection: Collection | None = None,
         factor_collection: Collection | None = None,
         legacy_factor_collection: Collection | None = None,
+        credential_collection: Collection | None = None,
         credential_repository: Any = None,
     ) -> None:
         self._kms = kms
         self._challenges = challenge_collection
         self._factors = factor_collection
         self._legacy_factors = legacy_factor_collection
+        self._credential_collection = credential_collection
         self._credentials = credential_repository or PrincipalCredentialRepository()
 
     @staticmethod
@@ -167,7 +169,12 @@ class GlobalPrincipalMfaEnrollmentService:
         if isinstance(credential_revision, bool) or not isinstance(credential_revision, int) or credential_revision < 0:
             raise GlobalPrincipalMfaEnrollmentRejected("GLOBAL_MFA_ENROLLMENT_REVISION_INVALID")
         try:
-            credential = self._credentials.get_by_principal(principal_id, session=session)
+            if self._credential_collection is None:
+                credential = self._credentials.get_by_principal(principal_id, session=session)
+            else:
+                credential = self._credentials.get_by_principal(
+                    principal_id, self._credential_collection, session=session
+                )
         except PrincipalCredentialNotFoundError as error:
             raise GlobalPrincipalMfaEnrollmentRejected("GLOBAL_MFA_ENROLLMENT_CREDENTIAL_REQUIRED") from error
         except PrincipalCredentialRepositoryError as error:
@@ -326,11 +333,17 @@ class GlobalPrincipalMfaEnrollmentService:
             raise GlobalPrincipalMfaEnrollmentCodeRejected("GLOBAL_MFA_ENROLLMENT_CODE_INVALID")
 
         try:
-            enabled = self._credentials.enable_mfa(
-                principal_id,
-                credential_revision,
-                session=session,
-            )
+            if self._credential_collection is None:
+                enabled = self._credentials.enable_mfa(
+                    principal_id, credential_revision, session=session
+                )
+            else:
+                enabled = self._credentials.enable_mfa(
+                    principal_id,
+                    credential_revision,
+                    self._credential_collection,
+                    session=session,
+                )
         except PrincipalCredentialMfaStateConflictError as error:
             raise GlobalPrincipalMfaEnrollmentRejected("GLOBAL_MFA_ENROLLMENT_CREDENTIAL_STATE_CONFLICT") from error
         except PrincipalCredentialRepositoryError as error:
