@@ -1,7 +1,7 @@
 """WILSY OS tests for failure-only global principal authentication throttling.
 
 TITLE: Global Principal Authentication Failure Throttle Unit Certificate
-VERSION: v1.1.0-GLOBAL-PRINCIPAL-FAILURE-THROTTLE-TESTS
+VERSION: v1.1.1-GLOBAL-PRINCIPAL-FAILURE-THROTTLE-TESTS
 AUTHORITY: Certifies failed-attempt admission only; grants no authentication authority.
 EPITOME: Exercises non-mutating admission checks, failure-only atomic counters,
          success reset, opaque PII-free buckets, UTC windows and TTL indexes.
@@ -10,7 +10,9 @@ ABSOLUTE CANONICAL PATH:
 COLLABORATION / OWNERSHIP: Wilsy Core Engineering.
 CERTIFICATION / UPDATE DATE: 2026-11-03.
 CHANGELOG:
-    v1.1.0-GLOBAL-PRINCIPAL-FAILURE-THROTTLE-TESTS verifies successful attempts
+    v1.1.1-GLOBAL-PRINCIPAL-FAILURE-THROTTLE-TESTS asserts that successful
+    authentication clears the email bucket while retaining the source bucket.
+    v1.1.0 verifies successful attempts
     do not consume failure budgets and only a successful email identity resets
     its account bucket while source spraying counters remain.
     v1.0.0-GLOBAL-PRINCIPAL-AUTH-RATE-LIMIT-TESTS covered initial dual buckets.
@@ -151,13 +153,13 @@ def test_success_resets_only_the_exact_email_bucket_not_source_spray_history():
     gate = PrincipalAuthenticationRateLimit(
         RateLimitCollection(),
         email_max_failures=1,
-        source_max_failures=10,
+        source_max_failures=1,
     )
-    fail(gate)
+    fail(gate, source="203.0.113.25")
     gate.record_success(email="OWNER@example.com", observed_at=observed_at())
-    allow(gate)
+    allow(gate, source="203.0.113.26")
     with pytest.raises(PrincipalAuthenticationRateLimited):
-        allow(gate, email="another@example.com")
+        allow(gate, email="another@example.com", source="203.0.113.25")
 
 
 @pytest.mark.parametrize("source", ["", " 203.0.113.25", "unknown", "203.0.113.999"])
@@ -191,7 +193,7 @@ def test_index_contract_uses_unique_bucket_identity_and_expiry_ttl():
 
 
 # ARTIFACT: test_principal_authentication_rate_limit.py
-# VERSION: v1.1.0-GLOBAL-PRINCIPAL-FAILURE-THROTTLE-TESTS
+# VERSION: v1.1.1-GLOBAL-PRINCIPAL-FAILURE-THROTTLE-TESTS
 # AUTHORITY BOUNDARY: failure-only throttle certification
 # TENANT POSTURE: tenant-neutral email and source digest dimensions
 # FAIL-CLOSED POSTURE: malformed inputs, corrupt persistence and exhausted budgets reject
