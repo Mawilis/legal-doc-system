@@ -154,6 +154,7 @@ def _service(mfa_enabled=False, legacy_rows=None):
         kms=kms,
         challenge_collection=cast(Any, challenges),
         factor_collection=cast(Any, factors),
+        legacy_factor_collection=cast(Any, legacy_factors),
         credential_repository=credentials,
     )
     return service, challenges, factors, credentials, kms
