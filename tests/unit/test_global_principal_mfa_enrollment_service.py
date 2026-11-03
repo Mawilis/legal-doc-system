@@ -143,9 +143,11 @@ class _Kms:
         return stored[0]
 
 
-def _service(mfa_enabled=False):
+def _service(mfa_enabled=False, legacy_rows=None):
     challenges = _Collection()
     factors = _Collection()
+    legacy_factors = _Collection()
+    legacy_factors.rows = [dict(row) for row in (legacy_rows or [])]
     credentials = _Credentials(mfa_enabled=mfa_enabled)
     kms = _Kms()
     service = GlobalPrincipalMfaEnrollmentService(
@@ -179,6 +181,21 @@ def test_issue_returns_secret_once_and_persists_only_encrypted_seed():
 
 def test_issue_rejects_password_only_reenrollment_when_mfa_is_already_enabled():
     service, *_ = _service(mfa_enabled=True)
+    with pytest.raises(GlobalPrincipalMfaEnrollmentRejected, match="GLOBAL_MFA_RECOVERY_REQUIRED"):
+        service.issue(
+            principal_id="principal-global",
+            credential_revision=3,
+            session=_Session(),
+            now=NOW,
+        )
+
+
+
+def test_first_time_enrollment_cannot_bypass_an_existing_legacy_factor():
+    service, *_ = _service(
+        mfa_enabled=False,
+        legacy_rows=[{"user_id": "principal-global", "secret": "legacy-secret"}],
+    )
     with pytest.raises(GlobalPrincipalMfaEnrollmentRejected, match="GLOBAL_MFA_RECOVERY_REQUIRED"):
         service.issue(
             principal_id="principal-global",
