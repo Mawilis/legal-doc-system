@@ -1,11 +1,12 @@
 # TITLE: WILSY OS Global Principal and Membership Selection Certification
-# VERSION: v1.3.1-GLOBAL-PRINCIPAL-MEMBERSHIP-CHALLENGE-CI
+# VERSION: v1.3.2-GLOBAL-PRINCIPAL-MEMBERSHIP-CHALLENGE-CI
 # AUTHORITY: CI orchestration for global principal, membership and MFA challenge tests.
 # EPITOME: Compile and execute focused unit and real-Mongo certification suites.
 # ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/.github/workflows/global-principal-membership-certification.yml
 # COLLABORATION / OWNERSHIP: Wilsy Core Engineering.
 # CERTIFICATION / UPDATE DATE: 2026-11-03.
-# CHANGELOG: v1.3.1-GLOBAL-PRINCIPAL-MEMBERSHIP-CHALLENGE-CI adds the failure-throttle unit suite to Pyright and pytest and removes duplicate compile input.
+# CHANGELOG: v1.3.2-GLOBAL-PRINCIPAL-MEMBERSHIP-CHALLENGE-CI includes the failure-throttle unit test in compile, Pyright and pytest exactly once.
+#           v1.3.1-GLOBAL-PRINCIPAL-MEMBERSHIP-CHALLENGE-CI begins failure-throttle unit certification.
 #           v1.3.0-GLOBAL-PRINCIPAL-MEMBERSHIP-CHALLENGE-CI begins failure-throttle unit certification.
 #           v1.2.9-GLOBAL-PRINCIPAL-MEMBERSHIP-CHALLENGE-CI certifies global authentication rate-limit source, unit and real-Mongo paths.
 #           v1.2.8-GLOBAL-PRINCIPAL-MEMBERSHIP-CHALLENGE-CI certifies canonical server startup index wiring and readiness.
@@ -131,7 +132,6 @@ jobs:
             tests/unit/test_membership_selection_challenge.py \
             tests/unit/test_global_principal_auth_challenge_startup.py \
             tests/unit/test_principal_authentication_rate_limit.py \
-            tests/unit/test_principal_authentication_rate_limit.py \
             tests/integration/test_membership_selection_challenge_mongo.py \
             tests/integration/test_principal_authentication_rate_limit_mongo.py \
             tests/integration/test_principal_credential_repository_mongo.py
@@ -145,6 +145,7 @@ jobs:
             tools/eos/api/server.py \
             tests/unit/test_membership_selection_challenge.py \
             tests/unit/test_global_principal_auth_challenge_startup.py \
+            tests/unit/test_principal_authentication_rate_limit.py \
             tests/integration/test_membership_selection_challenge_mongo.py \
             tests/integration/test_principal_authentication_rate_limit_mongo.py
 
@@ -163,6 +164,7 @@ jobs:
             tests/unit/test_membership_selection_projection.py \
             tests/unit/test_membership_selection_challenge.py \
             tests/unit/test_global_principal_auth_challenge_startup.py \
+            tests/unit/test_principal_authentication_rate_limit.py \
             tests/integration/test_membership_selection_challenge_mongo.py \
             tests/integration/test_principal_authentication_rate_limit_mongo.py \
             tests/integration/test_principal_credential_repository_mongo.py
@@ -172,7 +174,7 @@ jobs:
         run: docker rm -f wilsy-global-principal-mongo 2>/dev/null || true
 
 # ARTIFACT: global-principal-membership-certification.yml
-# VERSION: v1.3.1-GLOBAL-PRINCIPAL-MEMBERSHIP-CHALLENGE-CI
+# VERSION: v1.3.2-GLOBAL-PRINCIPAL-MEMBERSHIP-CHALLENGE-CI
 # AUTHORITY BOUNDARY: focused CI execution only
 # TENANT POSTURE: synthetic principal-scoped and tenant-scoped certification data
 # FAIL-CLOSED POSTURE: compile, unit or replica-set failures fail the job
