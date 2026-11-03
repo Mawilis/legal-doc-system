@@ -44,6 +44,15 @@ Existing `users` rows must not be silently merged or treated as global credentia
 
 No migration creates PrincipalAuthority, TenantMembership, business capacity, authorization RoleAssignment, or legal practice authority.
 
+## 3A. Global credential persistence primitive added in this branch
+
+- Added `PrincipalCredential` as a tenant-neutral immutable credential snapshot containing only `principal_id`, normalized email, bcrypt password verifier and monotonic credential revision.
+- Added `PrincipalCredentialRepository` with unique principal/email index definitions, exact lookups, duplicate rejection and compare-and-swap password verifier revision updates.
+- The new credential schema contains no tenant ID, membership, business role, permission, workspace or financial fields.
+- Unit tests cover schema boundaries, normalized email lookup, principal/email uniqueness, credential revision CAS, malformed verifier rejection and caller-session forwarding.
+
+This repository is intentionally not wired into login or application startup yet. Existing MFA, password reset, refresh, session and access-token currentness paths still depend on the legacy tenant-scoped `users` record. Switching only the login lookup would create inconsistent credential authorities. No production collection/index or credential row has been created by this code change.
+
 ## 4. Membership selection projection added in this branch
 
 - `TenantMembershipRepository.list_for_principal` provides a bounded page (maximum 100) sorted by canonical tenant ID, with a continuation cursor and caller-session propagation.
