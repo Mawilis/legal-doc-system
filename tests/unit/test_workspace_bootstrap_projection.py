@@ -187,6 +187,8 @@ def test_workspace_bootstrap_uses_only_current_durable_workspace_authorities() -
     assert projection.email == "principal@example.com"
     assert projection.tenant_id == "TENANT-A"
     assert projection.business_role == "tenant_auditor"
+    assert projection.workspace_id == "AUDIT_REPORTING"
+    assert projection.workspace_contract_version == "v1.0.0-WILSY-EOS-WORKSPACE-CONTRACT"
     assert projection.membership_revision == 7
     assert projection.business_role_revision == 11
     assert projection.tenant.tenant_id == "TENANT-A"
