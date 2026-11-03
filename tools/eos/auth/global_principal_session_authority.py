@@ -288,6 +288,8 @@ class GlobalPrincipalSessionAuthority:
         if not isinstance(row, dict):
             raise GlobalPrincipalSessionRejected("GLOBAL_REFRESH_INVALID")
         reference = row.get("session_reference")
+        if not isinstance(reference, str) or not reference:
+            raise GlobalPrincipalSessionRejected("GLOBAL_REFRESH_SESSION_INVALID")
         session_row = _target(self._sessions, SESSION_COLLECTION).find_one(
             {"session_reference": reference, "principal_id": row.get("principal_id"),
              "tenant_id": row.get("tenant_id"), "revoked_at": None,
