@@ -64,7 +64,7 @@ def test_global_auth_index_readiness_defaults_and_shutdown_fail_closed():
 
 
 def test_server_version_is_the_governed_global_auth_index_bootstrap():
-    assert server.VERSION == "v1.36.0-GLOBAL-PRINCIPAL-AUTH-THROTTLE-INDEX-BOOTSTRAP"
+    assert server.VERSION == "v1.37.0-SYSTEM-SERVICES-CASE-INDEX-BOOTSTRAP"
 
 
 # ARTIFACT: test_global_principal_auth_challenge_startup.py
