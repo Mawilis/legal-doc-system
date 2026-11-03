@@ -1,7 +1,7 @@
 """WILSY OS real-Mongo certification for global principal authentication throttling.
 
 TITLE: Global Principal Authentication Rate Limit Real-Mongo Certificate
-VERSION: v1.1.3-GLOBAL-PRINCIPAL-FAILURE-THROTTLE-MONGO-TESTS
+VERSION: v1.1.4-GLOBAL-PRINCIPAL-FAILURE-THROTTLE-MONGO-TESTS
 AUTHORITY: Certifies durable rate-counter persistence and atomic increments only.
 EPITOME: Verifies dual-dimension admission and concurrent Mongo counter behavior
          against the disposable EOS replica set.
@@ -10,8 +10,9 @@ ABSOLUTE CANONICAL PATH:
 COLLABORATION / OWNERSHIP: Wilsy Core Engineering.
 CERTIFICATION / UPDATE DATE: 2026-11-03.
 CHANGELOG:
-    v1.1.3-GLOBAL-PRINCIPAL-FAILURE-THROTTLE-MONGO-TESTS corrects the concurrent
-    test's source failure-budget constructor argument.
+    v1.1.4-GLOBAL-PRINCIPAL-FAILURE-THROTTLE-MONGO-TESTS asserts the renamed
+    failure-only persistence dimensions.
+    v1.1.3 corrects the concurrent test's source failure-budget argument.
     v1.1.2 corrects the constrained source-budget argument.
     v1.1.1 aligns the email failure-budget constructor argument.
     v1.1.0-GLOBAL-PRINCIPAL-FAILURE-THROTTLE-MONGO-TESTS verifies failure-only
@@ -71,7 +72,7 @@ def test_real_mongo_persists_both_tenant_neutral_rate_dimensions(mongo_rate_gate
     )
     rows = list(collection.find({}))
     assert len(rows) == 2
-    assert {row["scope"] for row in rows} == {"EMAIL", "SOURCE"}
+    assert {row["scope"] for row in rows} == {"EMAIL_FAILURE", "SOURCE_FAILURE"}
     assert all(len(row["subject_digest"]) == 128 for row in rows)
     assert all("owner@example.com" not in repr(row) for row in rows)
     assert all("203.0.113.25" not in repr(row) for row in rows)
@@ -123,7 +124,7 @@ def test_real_mongo_concurrent_requests_increment_each_bucket_atomically(mongo_r
 
 
 # ARTIFACT: test_principal_authentication_rate_limit_mongo.py
-# VERSION: v1.1.3-GLOBAL-PRINCIPAL-FAILURE-THROTTLE-MONGO-TESTS
+# VERSION: v1.1.4-GLOBAL-PRINCIPAL-FAILURE-THROTTLE-MONGO-TESTS
 # AUTHORITY BOUNDARY: real-Mongo request-density persistence certification only
 # TENANT POSTURE: tenant-neutral email/source dimensions
 # FAIL-CLOSED POSTURE: exhausted budgets and persistence failures reject
