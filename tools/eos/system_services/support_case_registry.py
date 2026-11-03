@@ -30,6 +30,7 @@ CASE_INDEXES: Final = (
 )
 EVENT_INDEXES: Final = (
     ((( "event_id", ASCENDING),), True, "system_service_case_event_identity_unique"),
+    ((("actor_principal_id", ASCENDING), ("idempotency_key", ASCENDING)), True, "system_service_case_actor_idempotency_unique"),
     ((("case_id", ASCENDING), ("idempotency_key", ASCENDING)), True, "system_service_case_event_idempotency_unique"),
     ((("case_id", ASCENDING), ("occurred_at", ASCENDING)), False, "system_service_case_event_timeline"),
 )
