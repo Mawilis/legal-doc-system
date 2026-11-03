@@ -8,6 +8,8 @@ from types import SimpleNamespace
 
 import pyotp
 import pytest
+
+from tools.eos.auth.principal_status import PrincipalStatus
 from pymongo import MongoClient
 
 from tools.eos.auth.global_principal_mfa_legacy_migration_service import (
@@ -29,7 +31,7 @@ SECRET = "JBSWY3DPEHPK3PXP"
 class _Principals:
     def get(self, principal_id, *, session=None):
         assert session is not None
-        return SimpleNamespace(principal_id=principal_id, status="ACTIVE")
+        return SimpleNamespace(principal_id=principal_id, status=PrincipalStatus.ACTIVE)
 
 
 class _Kms:
