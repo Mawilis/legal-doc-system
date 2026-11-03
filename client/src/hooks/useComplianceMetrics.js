@@ -17,7 +17,7 @@
  */
 
 import { useEffect, useState, useCallback, useRef } from 'react';
-import api from '../services/api';
+import api, { isCanonicalTenantTransportId } from '../services/api';
 import { broadcastTelemetry } from '../utils/telemetryHelper.js';
 import { generateSovereignSeal } from '../utils/cryptoCore.js';
 
@@ -183,12 +183,9 @@ const DEFAULT_METRICS = {
  * @param {string} id - Raw tenant identifier.
  * @returns {string|null} Canonical tenant ID or null when scope is unresolved.
  */
-const normalizeTenantId = (id) => {
-  if (!id || id === 'TENANT-ID' || id === 'TENANT_ID' || id === 'undefined' || id === 'null') {
-    return null;
-  }
-  return id;
-};
+const normalizeTenantId = (id) => (
+  isCanonicalTenantTransportId(id) ? id : null
+);
 
 /**
  * @function useComplianceMetrics
