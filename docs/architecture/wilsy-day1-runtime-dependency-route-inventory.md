@@ -113,7 +113,8 @@ The roadmap checkpoint identifies these legacy runtime surfaces. This is the mig
 | Remove hardcoded tenant from shared API client | COMMITTED |
 | Add dynamic-discovery and no-fallback transport tests | COMMITTED; execution pending in the local checkout/CI |
 | Remove synthetic GLOBAL_ROOT telemetry tenant fallback | COMMITTED |
-| Identify principal/membership limitation in login | CONFIRMED; implementation outstanding |
+| Identify principal/membership limitation in login | CONFIRMED; global-principal implementation outstanding |
+| Bind login and MFA requests to exact EOS-discovered tenant | IMPLEMENTED; tests added, execution pending |
 | Identify role/capacity ambiguity | CONFIRMED; explicit multi-capacity selection outstanding |
 | Establish versioned EOS workspaceId and client contract validation | COMMITTED; tests added, execution pending |
 | Exhaustive recursive server route/import/test/workflow/data inventory | IN PROGRESS |
@@ -416,6 +417,17 @@ axios, canvas, chart.js, cmdk, crypto-js, docx, history, html2canvas, js-sha3, j
 ```
 
 Manifest presence is not proof of runtime use. The next dependency pass must map every direct import/require/dynamic import, worker, test, script and workflow to its owning package. In particular, keep React, Vite, JSX, Vitest, Playwright and required build tooling even though they run on Node.js; they are not the legacy application server.
+
+## 11A. Discovery-to-login tenant selector closure
+
+The Day 1 transport correction is now carried into the authentication boundary:
+
+- `SovereignLogin` passes the exact tenant ID from the EOS discovery projection to AuthContext.
+- AuthContext sends that value as `tenant_id` for credential login and carries it through MFA setup/verification.
+- EOS rejects missing selectors and tenant mismatch before MFA enrollment, challenge completion or session issuance.
+- Workspace bootstrap remains the final promotion gate for ACTIVE membership, business capacity, tenant and workspace authority.
+
+This is not yet multi-membership authentication. AuthRegistry still stores one `tenantId` on the current user credential record; global-principal identity and many tenant memberships, selection of one exact ACTIVE membership, and membership-bound token/session issuance are Day 2 work. Do not claim cross-tenant identity support from this selector check alone.
 
 ## 12. Safety and release boundaries
 
