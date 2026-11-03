@@ -237,6 +237,7 @@ async def membership_options(payload: GlobalMembershipOptionsRequest, request: R
 @router.post("/select-membership")
 async def select_membership(payload: GlobalMembershipSelectionRequest, request: Request) -> dict[str, Any]:
     """Consume the selector and bind MFA to one explicit tenant/business capacity."""
+    _require_ready(request, "global_principal_auth_indexes_ready")
     _require_ready(request, "global_principal_session_indexes_ready")
     session, _database = _begin_transaction()
     try:
@@ -271,6 +272,7 @@ async def select_membership(payload: GlobalMembershipSelectionRequest, request: 
 @router.post("/verify-mfa")
 async def verify_global_mfa(payload: GlobalMfaVerificationRequest, request: Request) -> dict[str, Any]:
     """Verify principal TOTP, consume MFA challenge, and issue session atomically."""
+    _require_ready(request, "global_principal_auth_indexes_ready")
     _require_ready(request, "global_principal_session_indexes_ready")
     _require_ready(request, "global_principal_mfa_factor_indexes_ready")
     verifier = getattr(request.app.state, "global_principal_totp_verifier", None)
