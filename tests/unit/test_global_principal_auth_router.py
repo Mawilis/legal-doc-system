@@ -11,6 +11,10 @@ from tools.eos.api.global_principal_auth_router import (
     GlobalCredentialRequest,
     GlobalMembershipSelectionRequest,
     GlobalMfaVerificationRequest,
+    GlobalMfaEnrollmentStartRequest,
+    GlobalMfaEnrollmentConfirmRequest,
+    start_global_mfa_enrollment,
+    confirm_global_mfa_enrollment,
     global_login,
     logout_global_session,
     router,
@@ -58,6 +62,8 @@ def test_global_auth_routes_are_mounted_under_one_explicit_prefix() -> None:
         "/auth/global/verify-mfa",
         "/auth/global/refresh",
         "/auth/global/logout",
+        "/auth/global/mfa/enrollment/start",
+        "/auth/global/mfa/enrollment/confirm",
     }
 
 
