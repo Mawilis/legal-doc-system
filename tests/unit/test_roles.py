@@ -242,7 +242,7 @@ def test_tenant_owner_has_commercial_read_without_practice_or_subscription_mutat
     assert "plan:manage" not in ROLE_PERMISSIONS_MAP["TENANT_OWNER"]
     assert "legal_operations:instruction:read" not in ROLE_PERMISSIONS_MAP["TENANT_OWNER"]
     assert "legal_operations:work_item:read" not in ROLE_PERMISSIONS_MAP["TENANT_OWNER"]
-    assert "subscription:read" in get_roles_granting_permission("subscription:read")
+    assert "TENANT_OWNER" in get_roles_granting_permission("subscription:read")
     assert "TENANT_OWNER" not in get_roles_granting_permission("subscription:manage")
 
 
@@ -548,7 +548,7 @@ def test_permission_expansion_is_explicit_deterministic_and_fail_closed() -> Non
         ("tenant:membership:write", ("ENTERPRISE_ADMIN",)),
         ("tenant:role_assignment:read", ("AUDITOR", "ENTERPRISE_ADMIN")),
         ("tenant:role_assignment:write", ("ENTERPRISE_ADMIN",)),
-        ("subscription:read", ("AUDITOR", "ENTERPRISE_ADMIN")),
+        ("subscription:read", ("AUDITOR", "ENTERPRISE_ADMIN", "TENANT_OWNER")),
         ("subscription:manage", ("ENTERPRISE_ADMIN",)),
         ("plan:read", ("AUDITOR", "ENTERPRISE_ADMIN")),
         ("plan:manage", ("ENTERPRISE_ADMIN",)),
