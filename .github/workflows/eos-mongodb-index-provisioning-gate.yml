@@ -1,6 +1,12 @@
 name: EOS MongoDB Index Provisioning Gate
 
 on:
+  push:
+    branches:
+      - eos/tenant-discovery-iam-dashboard-roadmap
+    paths:
+      - "infra/mongodb/eos-index-manifest-v1.json"
+      - ".github/workflows/eos-mongodb-index-provisioning-gate.yml"
   pull_request:
     paths:
       - "infra/mongodb/eos-index-manifest-v1.json"
