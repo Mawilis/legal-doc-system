@@ -1,6 +1,6 @@
 /**
  * TITLE: WILSY OS browser-certificate runner
- * VERSION: v1.7.0-LOOPBACK-DISPOSABLE-MONGO-PORT
+ * VERSION: v1.8.0-G68-INDEPENDENT-WORKSPACE-GATE
  * AUTHORITY: Test process lifecycle only.
  * EPITOME: Own the synthetic fixture, disposable EOS, isolated Node BFF, Vite,
  *          browser suite, bounded diagnostics, and ordered cleanup.
@@ -13,7 +13,7 @@
  *            EOS preflights so canonical tenant authorization evaluates the
  *            synthetic principal's durable authority instead of rejecting a
  *            missing X-Tenant-ID request context.
- *            v1.7.0 accepts an explicit loopback disposable replica set on a non-default host port using directConnection when host port 27017 is occupied.
+ *            v1.8.0 does not gate browser journeys on the separately fail-closed G68 /workspace projection; it verifies Partner productive-work, Owner commercial read and Owner productive-work denial. v1.7.0 accepts an explicit loopback disposable replica set on a non-default host port using directConnection when host port 27017 is occupied.
  *            v1.4.0 tracks startup, Mongo/seed, authenticated preflight, browser,
  *            cleanup, and shutdown phases; preserves redacted child failure
  *            type/message/exit details; and reports primary and cleanup failures
@@ -443,19 +443,22 @@ async function preflightAuthenticatedEos(eosBaseUrl) {
   if (typeof tenantId !== 'string' || tenantId.length === 0 || tenantId !== tenantId.trim()) {
     throw new Error('BROWSER_CERT_FIXTURE_TENANT_SCOPE_UNAVAILABLE');
   }
+  // The legacy /workspace confidentiality projection remains independently
+  // fail-closed under G68 and is not consumed by these browser journeys.
+  // Certify the actual Partner productive-work path and Owner commercial read;
+  // explicitly prove that Owner productive-work remains denied.
   const results = await Promise.all([
-    preflightEosRoute('workspace', partnerToken, tenantId, eosBaseUrl),
     preflightEosRoute('productive-work', partnerToken, tenantId, eosBaseUrl),
     preflightEosRoute('commercial-context', ownerToken, tenantId, eosBaseUrl),
     preflightEosRoute('productive-work', ownerToken, tenantId, eosBaseUrl),
   ]);
-  const ownerPracticeRead = results[3];
+  const ownerPracticeRead = results[2];
   if (ownerPracticeRead.status !== 403) {
     throw new Error(
       'BROWSER_CERT_OWNER_PRACTICE_READ_NOT_DENIED:' + ownerPracticeRead.status,
     );
   }
-  return results.slice(0, 3);
+  return results.slice(0, 2);
 }
 
 function missingBffDependencies() {
