@@ -138,24 +138,6 @@ describe('api.js – Sovereign HTTP Client', () => {
     const bindAuthenticatedTransport = () => {
       localStorageMock.setItem('wilsy_auth_token', 'bounded-test-token');
       setActiveTenantTransportId(tenantId);
-
-      // Current authenticated projection is authoritative where supported.
-      localStorageMock.setItem(
-        'wilsy_active_tenant',
-        JSON.stringify({
-          tenantId,
-          alias: 'wilsy',
-        }),
-      );
-
-      // Preserve compatibility with discovery-backed installations.
-      localStorageMock.setItem(
-        'discoveredTenant',
-        JSON.stringify({
-          tenantId,
-          alias: 'wilsy',
-        }),
-      );
     };
 
     it('preserves the exact five-field legal-acceptance body while retaining forensic headers', async () => {
