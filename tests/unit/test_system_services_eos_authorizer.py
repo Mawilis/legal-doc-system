@@ -1,4 +1,5 @@
 from datetime import datetime, timedelta, timezone
+from types import SimpleNamespace
 
 import pytest
 
@@ -30,7 +31,7 @@ class Possession:
 
     def resolve(self, **kwargs):
         self.calls.append(kwargs)
-        return object() if self.assignment else None
+        return SimpleNamespace(principal_id=kwargs["principal_id"], permission_id=kwargs["permission_id"]) if self.assignment else None
 
 
 def relationship(status=WorkforceRelationshipStatus.ACTIVE, scope_kind=WorkforceScopeKind.PLATFORM):
