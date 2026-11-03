@@ -143,8 +143,8 @@ function Harness() {
           : (auth.tenant?.branding?.brandingTier || '')
       }</span>
       <button type="button" onClick={() => auth.discoverTenant('Acme Law')}>discover</button>
-      <button type="button" onClick={() => { void auth.login('person@example.com', 'password').catch(() => {}); }}>login</button>
-      <button type="button" onClick={() => { void auth.verifyOTP('person@example.com', '123456').catch(() => {}); }}>verify</button>
+      <button type="button" onClick={() => { void auth.login('person@example.com', 'password', 'TENANT-BROWSER').catch(() => {}); }}>login</button>
+      <button type="button" onClick={() => { void auth.verifyOTP('person@example.com', '123456', null, null, false, 'TENANT-BROWSER').catch(() => {}); }}>verify</button>
       <button type="button" onClick={() => { void auth.logout(); }}>logout</button>
     </div>
   );
@@ -212,7 +212,8 @@ describe('authoritative authentication state machine', () => {
     expect(promotedUser.lastName).toBe('Principal');
     expect(promotedUser.firstName).not.toBe('FORGED LOGIN FIRST');
     expect(promotedUser.lastName).not.toBe('FORGED LOGIN LAST');
-    expect(api.post).toHaveBeenNthCalledWith(2, '/auth/verify-otp', { email: 'person@example.com', code: '123456' });
+    expect(api.post).toHaveBeenNthCalledWith(1, '/auth/login', { email: 'person@example.com', password: 'password', tenant_id: 'TENANT-BROWSER' });
+    expect(api.post).toHaveBeenNthCalledWith(2, '/auth/verify-otp', { email: 'person@example.com', code: '123456', tenant_id: 'TENANT-BROWSER' });
   });
 
   it('fails closed when discovered and authenticated tenant identities diverge', async () => {
