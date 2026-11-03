@@ -19,6 +19,11 @@ import './HUDAlertBanner.css';
 import { handleBiometricAcknowledge } from '../utils/BiometricHandler';
 import { broadcastTelemetry } from '../utils/telemetryHelper';
 
+const emitTenantTelemetry = (tenantId, ...args) => {
+  if (typeof tenantId !== 'string' || !tenantId.trim()) return;
+  return broadcastTelemetry(tenantId, ...args);
+};
+
 // ============================================================================
 // 🔥 CONSTANTS
 // ============================================================================
@@ -93,14 +98,14 @@ const SingleAlert = ({ alert, tenantId, onDismiss, isAutoDismissEnabled }) => {
   const [lockoutMessage, setLockoutMessage] = useState(null);
   const dismissTimerRef = useRef(null);
 
-  const effectiveTenantId = tenantId || alert?.tenantId || 'WILSY_GLOBAL_ROOT';
+  const effectiveTenantId = tenantId || alert?.tenantId || null;
   const { severity, title, message, details = {}, actions = [], timestamp, alertId, correlationId } = alert || {};
 
   // Auto‑dismiss timer setup
   useEffect(() => {
     if (isAutoDismissEnabled && severity !== 'critical') {
       dismissTimerRef.current = setTimeout(() => {
-        broadcastTelemetry(effectiveTenantId, 'ALERT_BANNER', 'AUTO_DISMISSED', 'HUDAlertBanner', {
+        emitTenantTelemetry(effectiveTenantId, 'ALERT_BANNER', 'AUTO_DISMISSED', 'HUDAlertBanner', {
           alertId,
           correlationId,
           severity,
@@ -275,7 +280,7 @@ const SingleAlert = ({ alert, tenantId, onDismiss, isAutoDismissEnabled }) => {
  *
  * @param {Object} props - React props.
  * @param {Object|Array<Object>} props.alert - Single alert payload or array of alerts.
- * @param {string} [props.tenantId] - Tenant identifier (falls back to alert.tenantId or 'WILSY_GLOBAL_ROOT').
+ * @param {string} [props.tenantId] - Authenticated tenant identifier; absent scope suppresses telemetry.
  * @returns {JSX.Element|null} Rendered stack of banners, or null if none.
  *
  * @real-world
@@ -292,7 +297,7 @@ const SingleAlert = ({ alert, tenantId, onDismiss, isAutoDismissEnabled }) => {
  *
  * @example
  * // Single alert
- * <HUDAlertBanner alert={singleAlert} tenantId="GLOBAL_ROOT" />
+ * <HUDAlertBanner alert={singleAlert} tenantId="TENANT-EXAMPLE" />
  *
  * // Multiple alerts
  * <HUDAlertBanner alert={[alert1, alert2]} />
@@ -312,8 +317,8 @@ const HUDAlertBanner = ({ alert, tenantId }) => {
     const newAlerts = Array.isArray(alert) ? alert : (alert ? [alert] : []);
     if (newAlerts.length !== activeAlerts.length || JSON.stringify(newAlerts) !== JSON.stringify(activeAlerts)) {
       setActiveAlerts(newAlerts);
-      const effectiveTenant = tenantId || newAlerts[0]?.tenantId || 'WILSY_GLOBAL_ROOT';
-      broadcastTelemetry(effectiveTenant, 'ALERT_STACK', 'STACK_UPDATED', 'HUDAlertBanner', {
+      const effectiveTenant = tenantId || newAlerts[0]?.tenantId || null;
+      emitTenantTelemetry(effectiveTenant, 'ALERT_STACK', 'STACK_UPDATED', 'HUDAlertBanner', {
         count: newAlerts.length,
         severities: newAlerts.map(a => a.severity)
       });
