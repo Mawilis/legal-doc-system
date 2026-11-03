@@ -88,8 +88,12 @@ class TenantBusinessRoleRepository:
                 rows = list(_target(collection).find({"principal_id": principal_id, "tenant_id": tenant_id}, session=session))
                 legacy = None
             else:
-                rows = list(database.get_collection(MULTI_COLLECTION).find(
-                    {"principal_id": principal_id, "tenant_id": tenant_id}, session=session
+                rows = list(database.get_collection(
+                    MULTI_COLLECTION,
+                    codec_options=CodecOptions(tz_aware=True, tzinfo=timezone.utc),
+                ).find(
+                    {"principal_id": principal_id, "tenant_id": tenant_id},
+                    session=session,
                 ))
                 legacy = _target(collection).find_one(
                     {"principal_id": principal_id, "tenant_id": tenant_id}, session=session
