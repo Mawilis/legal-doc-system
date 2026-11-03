@@ -72,8 +72,22 @@ def resolve_current_tenant_business_role(*, principal_id: object, tenant_id: obj
             if len(eligible) > 1:
                 return TenantBusinessRoleResult(None, BusinessRoleResolution.MULTIPLE_ACTIVE_TENANT_BUSINESS_ROLES)
             if active:
-                sole_active = next(iter(active)) if len(active) == 1 else None
-                return TenantBusinessRoleResult(sole_active, BusinessRoleResolution.NO_ELIGIBLE_TENANT_BUSINESS_ROLE)
+                # Preserve legacy single-capacity evidence for compatibility,
+                # but never select a role from a true multi-capacity authority
+                # when no capacity is eligible for this operation.
+                legacy_single_capacity = (
+                    getattr(repository, "multi_capacity_authority_available", True)
+                    is False
+                )
+                sole_active = (
+                    next(iter(active))
+                    if len(active) == 1 and legacy_single_capacity
+                    else None
+                )
+                return TenantBusinessRoleResult(
+                    sole_active,
+                    BusinessRoleResolution.NO_ELIGIBLE_TENANT_BUSINESS_ROLE,
+                )
             return TenantBusinessRoleResult(None, BusinessRoleResolution.NO_ACTIVE_TENANT_BUSINESS_ROLE)
 
     # The HTTP role reader can resolve the dedicated business-role record
