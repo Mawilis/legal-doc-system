@@ -433,6 +433,16 @@ The Day 1 transport correction is now carried into the authentication boundary:
 
 This is not yet multi-membership authentication. AuthRegistry still stores one `tenantId` on the current user credential record; global-principal identity and many tenant memberships, selection of one exact ACTIVE membership, and membership-bound token/session issuance are Day 2 work. Do not claim cross-tenant identity support from this selector check alone.
 
+### Additional tenant-default cleanup in the client
+
+- Added shared `isCanonicalTenantTransportId` validation in `client/src/services/api.js`; it rejects reserved pseudo-tenant values before establishing the in-memory authenticated tenant context.
+- Removed pseudo-tenant defaults from Executive AI/context hooks, Compliance/Revenue/Billing/Identity metrics hooks, and the Kennel billing client. Tenant-scoped requests now wait for an explicit canonical tenant or fail closed.
+- Updated RevenueHUD, InvoiceSentinel, GlobalSearch, BoardroomHUD, SecurityManager and SovereignOrchestrator to use the authenticated tenant projection rather than a `GLOBAL_ROOT` fallback.
+- The Boardroom and Invoice Sentinel surfaces compare the projected tenant against the authenticated user tenant before sending requests.
+
+**Not a repo-wide zero-default certification:** the wider client/server scan still finds legacy tenant placeholders in older tax/dunning/intelligence surfaces and throughout the inactive server-side runtime. Those files remain in the Day 1 dependency closure and must be migrated or retired before declaring that no tenant default exists anywhere. The 2,029-file legacy server tree has not been deleted.
+
+
 ## 12. Safety and release boundaries
 
 - No membership, role, permission, subscription, entitlement or user record was created or modified by the tenant-header correction.
