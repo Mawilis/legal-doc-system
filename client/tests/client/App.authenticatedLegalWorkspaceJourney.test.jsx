@@ -47,6 +47,8 @@ const readyWorkspace = {
   workspace: {
     tenantId,
     businessRole: 'tenant_legal_partner',
+    workspaceId: 'LEGAL_PRACTICE',
+    workspaceContractVersion: 'v1.0.0-WILSY-EOS-WORKSPACE-CONTRACT',
     membershipRevision: 4,
     businessRoleRevision: 9,
     legalPermissions: [
