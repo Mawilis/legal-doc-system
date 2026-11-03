@@ -51,6 +51,14 @@ def _aware(value: datetime) -> datetime:
         raise ValueError("persisted timestamp must be timezone-aware")
     return value
 
+def _require_active_transaction(session: Optional[ClientSession]) -> None:
+    marker = getattr(session, "in_transaction", None) if session is not None else None
+    active = marker() if callable(marker) else marker
+    if active is not True:
+        raise TenantBusinessRoleRepositoryError(
+            "TENANT_BUSINESS_ROLE_TRANSACTION_REQUIRED"
+        )
+
 def _hydrate(document: Mapping[str, object]) -> TenantBusinessRoleAuthority:
     try:
         value = TenantBusinessRoleAuthority(cast(str, document["principal_id"]), cast(str, document["tenant_id"]), cast(str, document["business_role"]), TenantBusinessRoleStatus(cast(str, document["status"])), cast(int, document["revision"]), _aware(cast(datetime, document["effective_at"])), None if document.get("revoked_at") is None else _aware(cast(datetime, document["revoked_at"])))
@@ -145,8 +153,7 @@ class TenantBusinessRoleRepository:
         The caller owns the Mongo transaction. This method never starts, commits,
         or aborts a transaction and cannot be used outside an active transaction.
         """
-        if session is None or not callable(getattr(session, "in_transaction", None)) or session.in_transaction() is not True:
-            raise TenantBusinessRoleRepositoryError("TENANT_BUSINESS_ROLE_TRANSACTION_REQUIRED")
+        _require_active_transaction(session)
         if not isinstance(value, TenantBusinessRoleAuthority):
             raise TenantBusinessRoleRepositoryError("TENANT_BUSINESS_ROLE_INSERT_INVALID")
         current = database.get_collection(MULTI_COLLECTION)
@@ -183,8 +190,7 @@ class TenantBusinessRoleRepository:
     @staticmethod
     def append_history(value: TenantBusinessRoleAuthority, collection: Optional[Collection] = None, *, session: Optional[ClientSession] = None) -> None:
         """Append one immutable revision; caller must supply an active transaction."""
-        if session is None or not callable(getattr(session, "in_transaction", None)) or session.in_transaction() is not True:
-            raise TenantBusinessRoleRepositoryError("TENANT_BUSINESS_ROLE_TRANSACTION_REQUIRED")
+        _require_active_transaction(session)
         target = _target(collection)
         database = getattr(target, "database", None)
         if database is None:
