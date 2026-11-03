@@ -64,7 +64,7 @@ class SystemServicesAuthorizer(Protocol):
         *,
         principal_id: str,
         permission_id: str,
-        session: ClientSession | None = None,
+        session: object | None,
     ) -> None: ...
 
 
