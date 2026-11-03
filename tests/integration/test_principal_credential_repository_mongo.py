@@ -14,6 +14,7 @@ from tools.eos.auth.principal_credential_repository import (
     PrincipalCredentialNotFoundError,
     PrincipalCredentialRepository,
     PrincipalCredentialRevisionConflictError,
+    PrincipalCredentialMfaStateConflictError,
 )
 
 HASH_A = "$2b$12$" + "d" * 53
@@ -39,13 +40,13 @@ def mongo_collection():
         client.close()
 
 
-def credential(principal_id="principal-1", email="owner@example.com", password_hash=HASH_A, revision=0):
+def credential(principal_id="principal-1", email="owner@example.com", password_hash=HASH_A, revision=0, mfa_enabled=True):
     return PrincipalCredential(
         principal_id=principal_id,
         normalized_email=email,
         password_hash=password_hash,
         credential_revision=revision,
-        mfa_enabled=True,
+        mfa_enabled=mfa_enabled,
     )
 
 
@@ -60,6 +61,19 @@ def test_real_mongo_unique_principal_and_normalized_email(mongo_collection):
             collection,
         )
     assert PrincipalCredentialRepository.get_by_email("OWNER@example.com", collection).principal_id == "principal-1"
+
+
+
+def test_real_mongo_mfa_enablement_is_one_time_and_advances_credential_epoch(mongo_collection):
+    _client, collection = mongo_collection
+    PrincipalCredentialRepository.insert(
+        credential(mfa_enabled=False), collection
+    )
+    enabled = PrincipalCredentialRepository.enable_mfa("principal-1", 0, collection)
+    assert enabled.mfa_enabled is True
+    assert enabled.credential_revision == 1
+    with pytest.raises(PrincipalCredentialMfaStateConflictError):
+        PrincipalCredentialRepository.enable_mfa("principal-1", 1, collection)
 
 
 def test_real_mongo_password_revision_compare_and_swap(mongo_collection):
