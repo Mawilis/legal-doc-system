@@ -222,7 +222,7 @@ from tools.eos.legal_operations.service.legal_storefront_public_intent_rate_limi
     LegalStorefrontPublicIntentRateLimit,
 )
 
-VERSION = "v1.38.0-GLOBAL-PRINCIPAL-SESSION-INDEX-BOOTSTRAP"
+VERSION = "v1.39.0-GLOBAL-PRINCIPAL-AUTH-ROUTES-AND-MFA-FACTOR-BOOTSTRAP"
 logger = logging.getLogger("WilsyOS.API.Server")
 
 
@@ -237,6 +237,7 @@ class WilsyAPIServer:
         debug: bool = False,
         allowed_origins: Optional[List[str]] = None,
         reasoning_provider_binding: Any | None = None,
+        global_principal_mfa_decrypt_secret: Callable[[Any], str] | None = None,
     ) -> None:
         """Initialize immutable server configuration and build the FastAPI app."""
         self.title = title
@@ -258,6 +259,7 @@ class WilsyAPIServer:
                 logger.error("[WILSY_AI_PROVIDER] binding unavailable: %s", code)
                 reasoning_provider_binding = None
         self.reasoning_provider_binding = reasoning_provider_binding
+        self.global_principal_mfa_decrypt_secret = global_principal_mfa_decrypt_secret
         self.app: FastAPI = self._build_app()
 
     def _build_app(self) -> FastAPI:
@@ -278,6 +280,7 @@ class WilsyAPIServer:
         # No binding command is ready before certified index startup.
         app.state.p12c_binding_indexes_ready = False
         app.state.global_principal_auth_indexes_ready = False
+        app.state.global_principal_mfa_decrypt_secret = self.global_principal_mfa_decrypt_secret
         # Case storage readiness is separate from IAM authorization readiness.
         app.state.system_services_case_indexes_ready = False
         app.state.system_services_authority_ready = False
