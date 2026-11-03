@@ -427,6 +427,8 @@ The Day 1 transport correction is now carried into the authentication boundary:
 - EOS rejects missing selectors and tenant mismatch before MFA enrollment, challenge completion or session issuance.
 - Removed the unused `client/src/bootstrap/EnterpriseBootstrap.jsx` component after repository search found no imports/callers; it fabricated `tenant_wilsy_001` and issued a direct login outside the canonical MFA/session flow.
 - Removed the old `wilsy` hostname/storage fallback from `client/src/services/superadmin/auth.service.js`; its selector now comes only from the EOS discovery projection and is submitted as `tenant_id`. Removed the legacy ObjectId tenant fallback from `client/src/services/sovereignAuth.js`.
+- Removed the synthetic `GLOBAL_ROOT` tenant selector from App route telemetry; unresolved telemetry now uses the non-tenant sentinel `unresolved`.
+- Blocked client-only cross-tenant switching in `TenantProvider`. A different tenant now requires a fresh EOS membership-selection/session decision; same-tenant projection remains idempotent.
 - Workspace bootstrap remains the final promotion gate for ACTIVE membership, business capacity, tenant and workspace authority.
 
 This is not yet multi-membership authentication. AuthRegistry still stores one `tenantId` on the current user credential record; global-principal identity and many tenant memberships, selection of one exact ACTIVE membership, and membership-bound token/session issuance are Day 2 work. Do not claim cross-tenant identity support from this selector check alone.
