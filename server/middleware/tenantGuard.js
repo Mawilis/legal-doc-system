@@ -182,13 +182,11 @@ export const tenantGuard = (req, res, next) => {
       }
 
       req.tenantId = CANONICAL_TENANT_ID;
-      req.tenant = {
-        ...(req.tenant || {}),
-        id: CANONICAL_TENANT_ID,
-        tenantId: CANONICAL_TENANT_ID,
-        source: 'READONLY_OPERATING_BRIDGE_BYPASS',
-        readOnly: true,
-      };
+      req.tenant = req.tenant || {};
+      req.tenant.id = CANONICAL_TENANT_ID;
+      req.tenant.tenantId = CANONICAL_TENANT_ID;
+      req.tenant.source = 'READONLY_OPERATING_BRIDGE_BYPASS';
+      req.tenant.readOnly = true;
 
       res.setHeader('X-Wilsy-Tenant-Bypass', 'READONLY_OPERATING_BRIDGE');
 
