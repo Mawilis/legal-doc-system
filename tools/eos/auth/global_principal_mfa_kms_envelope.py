@@ -56,7 +56,7 @@ class AwsKmsGlobalMfaEnvelope:
             raise GlobalMfaKeyManagementError("GLOBAL_MFA_KMS_KEY_ID_REQUIRED")
         self.key_id = key_id.strip()
         key_match = re.fullmatch(
-            r"arn:[a-z0-9-]+:kms:([a-z0-9-]+):\d{12}:key/[A-Za-z0-9-]+",
+            r"arn:([a-z0-9-]+):kms:([a-z0-9-]+):(\d{12}):key/[A-Za-z0-9-]+",
             self.key_id,
         )
         if key_match is None:
@@ -64,7 +64,7 @@ class AwsKmsGlobalMfaEnvelope:
         self.region_name = (region_name or os.getenv("AWS_REGION") or "").strip()
         if not self.region_name:
             raise GlobalMfaKeyManagementError("GLOBAL_MFA_KMS_REGION_REQUIRED")
-        if self.region_name != key_match.group(1):
+        if self.region_name != key_match.group(2):
             raise GlobalMfaKeyManagementError("GLOBAL_MFA_KMS_REGION_KEY_MISMATCH")
         configured_decrypt_ids = decrypt_key_ids or []
         if not isinstance(configured_decrypt_ids, list):
@@ -78,7 +78,7 @@ class AwsKmsGlobalMfaEnvelope:
                 r"arn:[a-z0-9-]+:kms:([a-z0-9-]+):\d{12}:key/[A-Za-z0-9-]+",
                 candidate,
             )
-            if candidate_match is None or candidate_match.group(1) != self.region_name:
+            if candidate_match is None or candidate_match.groups() != key_match.groups():
                 raise GlobalMfaKeyManagementError("GLOBAL_MFA_KMS_DECRYPT_KEYRING_INVALID")
             self.decrypt_key_ids.add(candidate)
         if client is None:
