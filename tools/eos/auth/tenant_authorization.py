@@ -363,7 +363,7 @@ def authorize_tenant_operation(*, principal_id: object, tenant_id: object, permi
     role_result = resolve_current_tenant_business_role(principal_id=pid, tenant_id=tid, repository=business_role_repository, session=session, operation=op)
     if role_result.resolution is not BusinessRoleResolution.RESOLVED:
         if role_result.resolution is BusinessRoleResolution.NO_ELIGIBLE_TENANT_BUSINESS_ROLE:
-            return TenantAuthorizationDecision(False, TenantAuthorizationReason.BUSINESS_ROLE_INELIGIBLE, role_result.role)
+            return TenantAuthorizationDecision(False, TenantAuthorizationReason.BUSINESS_ROLE_INELIGIBLE, role_result.evidence_role or role_result.role)
         return TenantAuthorizationDecision(False, TenantAuthorizationReason(role_result.resolution.value)) if role_result.resolution.value in TenantAuthorizationReason._value2member_map_ else TenantAuthorizationDecision(False, TenantAuthorizationReason.TENANT_BUSINESS_ROLE_AUTHORITY_UNAVAILABLE)
     if tenant_role_operation_eligibility(role_result.role, op) != ELIGIBLE: return TenantAuthorizationDecision(False, TenantAuthorizationReason.BUSINESS_ROLE_INELIGIBLE, role_result.role)
     if metadata.workforce_currentness_required:
