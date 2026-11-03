@@ -149,7 +149,11 @@ def resolve_current_tenant_business_role(*, principal_id: object, tenant_id: obj
         return TenantBusinessRoleResult(None, BusinessRoleResolution.TENANT_BUSINESS_ROLE_AUTHORITY_UNAVAILABLE)
     if len(active) == 1:
         if operation is not None and tenant_role_operation_eligibility(active[0], operation) != ELIGIBLE:
-            return TenantBusinessRoleResult(None, BusinessRoleResolution.NO_ELIGIBLE_TENANT_BUSINESS_ROLE)
+            return TenantBusinessRoleResult(
+                None,
+                BusinessRoleResolution.NO_ELIGIBLE_TENANT_BUSINESS_ROLE,
+                evidence_role=active[0],
+            )
         return TenantBusinessRoleResult(active[0], BusinessRoleResolution.RESOLVED)
     if len(active) > 1:
         return TenantBusinessRoleResult(None, BusinessRoleResolution.MULTIPLE_ACTIVE_TENANT_BUSINESS_ROLES)
