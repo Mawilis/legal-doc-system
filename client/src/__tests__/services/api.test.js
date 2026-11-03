@@ -205,14 +205,13 @@ describe('api.js – Sovereign HTTP Client', () => {
       );
     });
 
-    it('never derives the authenticated tenant header from stale discovery aliases', async () => {
+    it('uses the canonical tenant returned by discovery, not a compiled-in tenant', async () => {
       expect(requestInterceptorCapture.fulfilled).toEqual(expect.any(Function));
 
-      localStorageMock.setItem('wilsy_active_tenant', JSON.stringify({
-        alias: 'wilsy',
-        id: 'WILSY_ROOT',
+      localStorageMock.setItem('discoveredTenant', JSON.stringify({
+        tenantId: 'TENANT-ACME-01',
+        alias: 'acme-law',
       }));
-      localStorageMock.setItem('discoveredTenant', 'GLOBAL_ROOT');
 
       const sealed = await requestInterceptorCapture.fulfilled({
         url: '/legal-operations/commercial-context',
@@ -220,7 +219,25 @@ describe('api.js – Sovereign HTTP Client', () => {
         headers: {},
       });
 
-      expect(sealed.headers['X-Tenant-ID']).toBe('WILSYTENANT-4CD2FZ4O');
+      expect(sealed.headers['X-Tenant-ID']).toBe('TENANT-ACME-01');
+    });
+
+    it('does not invent a tenant header before successful discovery', async () => {
+      expect(requestInterceptorCapture.fulfilled).toEqual(expect.any(Function));
+
+      localStorageMock.setItem('wilsy_active_tenant', JSON.stringify({
+        tenantId: 'STALE-TENANT',
+      }));
+      localStorageMock.setItem('discoveredTenant', 'GLOBAL_ROOT');
+
+      const sealed = await requestInterceptorCapture.fulfilled({
+        url: '/legal-operations/commercial-context',
+        method: 'get',
+        headers: { 'X-Tenant-ID': 'STALE-DEFAULT' },
+      });
+
+      expect(sealed.headers['X-Tenant-ID']).toBeUndefined();
+      expect(sealed.headers['x-tenant-id']).toBeUndefined();
     });
 
     it('preserves an explicitly supplied MFA candidate bearer over stale browser storage', async () => {
@@ -243,7 +260,7 @@ describe('api.js – Sovereign HTTP Client', () => {
       expect(sealed.headers.Authorization).toBe(
         'Bearer freshly-verified-candidate-token',
       );
-      expect(sealed.headers['X-Tenant-ID']).toBe('WILSYTENANT-4CD2FZ4O');
+      expect(sealed.headers['X-Tenant-ID']).toBe('TENANT-BOOTSTRAP-TEST');
     });
 
     it('rejects empty or malformed explicit bearer headers and uses the valid stored session', async () => {
