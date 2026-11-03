@@ -230,7 +230,7 @@ from tools.eos.legal_operations.service.legal_storefront_public_intent_rate_limi
     LegalStorefrontPublicIntentRateLimit,
 )
 
-VERSION = "v1.39.0-GLOBAL-PRINCIPAL-AUTH-ROUTES-AND-MFA-FACTOR-BOOTSTRAP"
+VERSION = "v1.40.0-GLOBAL-MFA-KMS-AND-ENROLLMENT-BOOTSTRAP"
 logger = logging.getLogger("WilsyOS.API.Server")
 
 
