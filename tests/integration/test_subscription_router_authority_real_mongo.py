@@ -798,6 +798,7 @@ def test_permission_canon_role_grants_and_router_surface_are_fail_closed() -> No
         == (
             "AUDITOR",
             "ENTERPRISE_ADMIN",
+            "TENANT_OWNER",
         )
     )
 

@@ -659,6 +659,7 @@ def test_tenant_owner_reads_commercial_context_without_practice_authority(
 ) -> None:
     """TENANT_OWNER receives the exact commercial read and no Legal practice grant."""
     principal = f"principal-owner-{uuid.uuid4().hex}"
+    admin = f"principal-admin-{uuid.uuid4().hex}"
     tenant = f"tenant-owner-{uuid.uuid4().hex}"
 
     _seed_principal(
@@ -668,10 +669,19 @@ def test_tenant_owner_reads_commercial_context_without_practice_authority(
         role_id="TENANT_OWNER",
         add_tenant_owner=True,
     )
+    _seed_principal(
+        context,
+        principal_id=admin,
+        tenant_id=tenant,
+        role_id="ENTERPRISE_ADMIN",
+        add_tenant_owner=True,
+    )
+    # Subscription/entitlement issuance remains with the commercial admin.
+    # The Tenant Owner is tested only as the read-only commercial consumer.
     created = _seed_legal_commercial_truth(
         context,
         tenant_id=tenant,
-        principal_id=principal,
+        principal_id=admin,
     )
 
     response = _get(
