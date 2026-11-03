@@ -59,10 +59,10 @@ def _hydrate(document: Mapping[str, object]) -> TenantBusinessRoleAuthority:
 class TenantBusinessRoleRepository:
     """Persist and resolve current business-role facts without owning transactions."""
     @staticmethod
-    def resolve_current_business_role(principal_id: str, tenant_id: str, *, session: Optional[ClientSession] = None) -> TenantBusinessRoleAuthority:
+    def resolve_current_business_role(principal_id: str, tenant_id: str, collection: Optional[Collection] = None, *, session: Optional[ClientSession] = None) -> TenantBusinessRoleAuthority:
         """Resolve the exact principal/tenant business-role snapshot for IAM composition."""
         return TenantBusinessRoleRepository.resolve(
-            principal_id, tenant_id, session=session
+            principal_id, tenant_id, collection, session=session
         )
 
     @staticmethod
