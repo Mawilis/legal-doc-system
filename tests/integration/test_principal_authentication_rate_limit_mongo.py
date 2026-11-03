@@ -1,7 +1,7 @@
 """WILSY OS real-Mongo certification for global principal authentication throttling.
 
 TITLE: Global Principal Authentication Rate Limit Real-Mongo Certificate
-VERSION: v1.0.0-GLOBAL-PRINCIPAL-AUTH-RATE-LIMIT-MONGO-TESTS
+VERSION: v1.1.0-GLOBAL-PRINCIPAL-FAILURE-THROTTLE-MONGO-TESTS
 AUTHORITY: Certifies durable rate-counter persistence and atomic increments only.
 EPITOME: Verifies dual-dimension admission and concurrent Mongo counter behavior
          against the disposable EOS replica set.
@@ -10,9 +10,10 @@ ABSOLUTE CANONICAL PATH:
 COLLABORATION / OWNERSHIP: Wilsy Core Engineering.
 CERTIFICATION / UPDATE DATE: 2026-11-03.
 CHANGELOG:
-    v1.0.0-GLOBAL-PRINCIPAL-AUTH-RATE-LIMIT-MONGO-TESTS adds real replica-set
-    tests for unique/TTL index declarations, durable email/source counters,
-    and concurrent fixed-window increments.
+    v1.1.0-GLOBAL-PRINCIPAL-FAILURE-THROTTLE-MONGO-TESTS verifies failure-only
+    accounting, successful-email reset and concurrent atomic failed-attempt
+    increments against the disposable replica set.
+    v1.0.0 adds the initial real-Mongo fixed-window counter tests.
 COMPLIANCE: Test artifact for POPIA section 19; GDPR Article 32; SOC 2 CC7.2.
 SECURITY / PRIVACY POSTURE: Synthetic email and documentation-range IP addresses only.
 TENANT BOUNDARY: Rate budgets are global and tenant-neutral.
@@ -59,7 +60,7 @@ def mongo_rate_gate():
 
 def test_real_mongo_persists_both_tenant_neutral_rate_dimensions(mongo_rate_gate):
     _client, collection, gate = mongo_rate_gate
-    gate.require_allowed(
+    gate.record_failure(
         email="owner@example.com",
         source_address="203.0.113.25",
         observed_at=datetime(2026, 11, 3, 12, 0, tzinfo=timezone.utc),
@@ -75,12 +76,12 @@ def test_real_mongo_persists_both_tenant_neutral_rate_dimensions(mongo_rate_gate
 def test_real_mongo_enforces_email_budget_across_multiple_source_addresses(mongo_rate_gate):
     _client, _collection, gate = mongo_rate_gate
     constrained = PrincipalAuthenticationRateLimit(
-        gate._collection,
-        email_max_requests=1,
-        source_max_requests=20,
+        _collection,
+        email_max_failures=1,
+        source_max_failures=20,
     )
     observed = datetime(2026, 11, 3, 12, 0, tzinfo=timezone.utc)
-    constrained.require_allowed(
+    constrained.record_failure(
         email="owner@example.com",
         source_address="203.0.113.25",
         observed_at=observed,
@@ -103,7 +104,7 @@ def test_real_mongo_concurrent_requests_increment_each_bucket_atomically(mongo_r
     observed = datetime(2026, 11, 3, 12, 0, tzinfo=timezone.utc)
 
     def attempt(_index):
-        gate.require_allowed(
+        gate.record_failure(
             email="concurrent@example.com",
             source_address="203.0.113.50",
             observed_at=observed,
@@ -118,7 +119,7 @@ def test_real_mongo_concurrent_requests_increment_each_bucket_atomically(mongo_r
 
 
 # ARTIFACT: test_principal_authentication_rate_limit_mongo.py
-# VERSION: v1.0.0-GLOBAL-PRINCIPAL-AUTH-RATE-LIMIT-MONGO-TESTS
+# VERSION: v1.1.0-GLOBAL-PRINCIPAL-FAILURE-THROTTLE-MONGO-TESTS
 # AUTHORITY BOUNDARY: real-Mongo request-density persistence certification only
 # TENANT POSTURE: tenant-neutral email/source dimensions
 # FAIL-CLOSED POSTURE: exhausted budgets and persistence failures reject
