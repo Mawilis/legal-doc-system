@@ -32,7 +32,7 @@ def test_platform_workforce_scope_requires_trusted_explicit_configuration(monkey
         configured_platform_workforce_scope_id()
 
 
-@pytest.mark.parametrize("value", ["", " ", "wilsy-platform ", "*", "platform\\n"])
+@pytest.mark.parametrize("value", ["", " ", "wilsy-platform ", "*", "platform value"])
 def test_platform_workforce_scope_rejects_invalid_values(value):
     with pytest.raises(SystemServicesAuthorizationUnavailable):
         resolve_platform_workforce_scope_id(value)
