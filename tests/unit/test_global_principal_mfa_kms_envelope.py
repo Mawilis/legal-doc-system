@@ -15,15 +15,25 @@ class _KmsClient:
     def __init__(self) -> None:
         self.encrypt_calls = []
         self.decrypt_calls = []
+        self.last_plaintext = b"JBSWY3DPEHPK3PXP"
+        self.last_context = {
+            "purpose": "GLOBAL_PRINCIPAL_TOTP",
+            "principal_id": "principal-1",
+            "credential_revision": "9",
+        }
 
     def encrypt(self, **kwargs):
         self.encrypt_calls.append(kwargs)
+        self.last_plaintext = kwargs["Plaintext"]
+        self.last_context = kwargs["EncryptionContext"]
         return {"CiphertextBlob": b"ciphertext", "KeyId": "arn:aws:kms:af-south-1:123456789012:key/test"}
 
     def decrypt(self, **kwargs):
         self.decrypt_calls.append(kwargs)
+        if kwargs["EncryptionContext"] != self.last_context:
+            raise ValueError("encryption context mismatch")
         return {
-            "Plaintext": b"JBSWY3DPEHPK3PXP",
+            "Plaintext": self.last_plaintext,
             "KeyId": kwargs["KeyId"],
         }
 
@@ -54,6 +64,18 @@ def test_encrypt_and_decrypt_bind_ciphertext_to_principal_and_credential_epoch()
         envelope, principal_id="principal-1", credential_revision=9
     ) == "JBSWY3DPEHPK3PXP"
     assert client.decrypt_calls[0]["EncryptionContext"] == client.encrypt_calls[0]["EncryptionContext"]
+
+
+def test_startup_access_validation_round_trips_ephemeral_probe_without_persistence():
+    client = _KmsClient()
+    adapter = AwsKmsGlobalMfaEnvelope(key_id=KEY, region_name="af-south-1", client=client)
+    adapter.validate_access()
+    assert len(client.encrypt_calls) == 1
+    assert len(client.decrypt_calls) == 1
+    context = client.encrypt_calls[0]["EncryptionContext"]
+    assert context["purpose"] == "GLOBAL_PRINCIPAL_TOTP"
+    assert context["principal_id"].startswith("WILSY_KMS_STARTUP_PROBE:")
+    assert context["credential_revision"] == "0"
 
 
 def test_ciphertext_cannot_be_decrypted_for_another_principal_or_revision():
