@@ -109,7 +109,9 @@ const workspaceBootstrap = ({
     workspace: {
       tenantId,
       businessRole,
-      workspaceId: businessRole === 'tenant_owner' ? 'EXECUTIVE_COMMAND_CENTRE' : 'AUDIT_REPORTING',
+      workspaceId: businessRole === 'tenant_owner'
+        ? 'EXECUTIVE_COMMAND_CENTRE'
+        : (businessRole === 'tenant_legal_partner' ? 'LEGAL_PRACTICE' : 'AUDIT_REPORTING'),
       workspaceContractVersion: 'v1.0.0-WILSY-EOS-WORKSPACE-RESOLUTION',
       membershipRevision: 7,
       businessRoleRevision: 11,
