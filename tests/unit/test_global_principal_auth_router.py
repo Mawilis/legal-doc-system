@@ -45,7 +45,7 @@ def test_global_logout_does_not_revoke_a_legacy_tenant_session() -> None:
 
 
 def test_global_auth_routes_are_mounted_under_one_explicit_prefix() -> None:
-    paths = {route.path for route in router.routes}
+    paths = {getattr(route, "path", None) for route in router.routes}
     assert paths == {
         "/auth/global/login",
         "/auth/global/select-membership",
