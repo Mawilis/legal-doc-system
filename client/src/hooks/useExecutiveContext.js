@@ -23,7 +23,6 @@ import { useState, useCallback, useEffect, useRef } from 'react';
 import api from '../services/api';
 
 const DEFAULT_OPTIONS = {
-  tenantId: 'GLOBAL_ROOT',
   autoLoad: true,
   contextId: null, // Optional: specific context ID to load
 };
