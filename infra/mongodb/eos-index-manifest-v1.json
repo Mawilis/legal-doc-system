@@ -13,31 +13,1220 @@
     "require_exact_target_fingerprint_approval": true
   },
   "entries": [
-    {"id":"system-services-cases","database":"canonical_eos_business_database","collection":"system_service_cases","source":"tools/eos/system_services/support_case_registry.py","indexes":[
-      {"name":"system_service_case_identity_unique","keys":[["case_id",1]],"unique":true},
-      {"name":"system_service_case_scope_status_created","keys":[["scope",1],["tenant_id",1],["status",1],["created_at",1]],"unique":false},
-      {"name":"system_service_case_principal_created","keys":[["principal_id",1],["created_at",1]],"unique":false}
-    ],"runtime_operations":["find_one","find","insert_one","replace_one"],"provisioning_owner":"separate_eos_index_provisioner"},
-    {"id":"system-services-case-events","database":"canonical_eos_business_database","collection":"system_service_case_events","source":"tools/eos/system_services/support_case_registry.py","indexes":[
-      {"name":"system_service_case_event_identity_unique","keys":[["event_id",1]],"unique":true},
-      {"name":"system_service_case_actor_idempotency_unique","keys":[["actor_principal_id",1],["idempotency_key",1]],"unique":true},
-      {"name":"system_service_case_event_idempotency_unique","keys":[["case_id",1],["idempotency_key",1]],"unique":true},
-      {"name":"system_service_case_event_timeline","keys":[["case_id",1],["occurred_at",1]],"unique":false}
-    ],"runtime_operations":["find_one","find","insert_one"],"data_policy":"append_only_events","provisioning_owner":"separate_eos_index_provisioner"},
-    {"id":"telemetry","database":"canonical_eos_business_database","collection":"wilsy_sovereign_telemetry","source":"tools/eos/api/server.py","indexes":[
-      {"name":"uq_telemetry_trace_id","keys":[["trace_id",1]],"unique":true,"sparse":true}
-    ],"runtime_operations":["source-specific telemetry operations; separate route inventory required"],"provisioning_owner":"separate_eos_index_provisioner"},
-    {"id":"legal-storefront-public-intent-rate-limits","database":"canonical_eos_business_database","collection":"legal_storefront_public_intent_rate_limits","source":"tools/eos/legal_operations/service/legal_storefront_public_intent_rate_limit.py","indexes":[
-      {"name":"legal_storefront_public_intent_rate_lookup","keys":[["namespace",1],["subject_digest",1],["bucket_start",1]],"unique":false},
-      {"name":"legal_storefront_public_intent_rate_ttl","keys":[["expires_at",1]],"expireAfterSeconds":0}
-    ],"runtime_operations":["find_one","find_one_and_update"],"provisioning_owner":"separate_eos_index_provisioner"},
-    {"id":"legal-evidence-reconciliation-business-idempotency","database":"canonical_eos_business_database","collection":"legal_evidence_provider_reconciliation_operations","source":"tools/eos/legal_operations/service/legal_evidence_provider_readonly_reconciliation_idempotency_registry.py","indexes":[
-      {"name":"legal_evidence_reconciliation_operation_idempotency_unique","keys":[["service_id",1],["idempotency_key",1]],"unique":true}
-    ],"runtime_operations":["find_one","insert_one"],"provisioning_owner":"separate_eos_index_provisioner"},
-    {"id":"legal-evidence-platform-decision-audit","database":"separate_reconciliation_audit_database","collection":"platform_authorization_decision_evidence","source":"tools/eos/auth/platform_authorization_decision_evidence_registry.py","indexes":[
-      {"name":"platform_auth_decision_idempotency_unique","keys":[["idempotency_key",1]],"unique":true},
-      {"name":"platform_auth_decision_identity_unique","keys":[["decision_id",1]],"unique":true}
-    ],"runtime_operations":["find_one","insert_one","index_information"],"provisioning_owner":"separate_audit_index_provisioner","runtime_index_verification_is_read_only":true}
+    {
+      "id": "system-services-cases",
+      "database": "canonical_eos_business_database",
+      "collection": "system_service_cases",
+      "source": "tools/eos/system_services/support_case_registry.py",
+      "indexes": [
+        {
+          "name": "system_service_case_identity_unique",
+          "keys": [
+            [
+              "case_id",
+              1
+            ]
+          ],
+          "unique": true
+        },
+        {
+          "name": "system_service_case_scope_status_created",
+          "keys": [
+            [
+              "scope",
+              1
+            ],
+            [
+              "tenant_id",
+              1
+            ],
+            [
+              "status",
+              1
+            ],
+            [
+              "created_at",
+              1
+            ]
+          ],
+          "unique": false
+        },
+        {
+          "name": "system_service_case_principal_created",
+          "keys": [
+            [
+              "principal_id",
+              1
+            ],
+            [
+              "created_at",
+              1
+            ]
+          ],
+          "unique": false
+        }
+      ],
+      "runtime_operations": [
+        "find_one",
+        "find",
+        "insert_one",
+        "replace_one"
+      ],
+      "provisioning_owner": "separate_eos_index_provisioner"
+    },
+    {
+      "id": "system-services-case-events",
+      "database": "canonical_eos_business_database",
+      "collection": "system_service_case_events",
+      "source": "tools/eos/system_services/support_case_registry.py",
+      "indexes": [
+        {
+          "name": "system_service_case_event_identity_unique",
+          "keys": [
+            [
+              "event_id",
+              1
+            ]
+          ],
+          "unique": true
+        },
+        {
+          "name": "system_service_case_actor_idempotency_unique",
+          "keys": [
+            [
+              "actor_principal_id",
+              1
+            ],
+            [
+              "idempotency_key",
+              1
+            ]
+          ],
+          "unique": true
+        },
+        {
+          "name": "system_service_case_event_idempotency_unique",
+          "keys": [
+            [
+              "case_id",
+              1
+            ],
+            [
+              "idempotency_key",
+              1
+            ]
+          ],
+          "unique": true
+        },
+        {
+          "name": "system_service_case_event_timeline",
+          "keys": [
+            [
+              "case_id",
+              1
+            ],
+            [
+              "occurred_at",
+              1
+            ]
+          ],
+          "unique": false
+        }
+      ],
+      "runtime_operations": [
+        "find_one",
+        "find",
+        "insert_one"
+      ],
+      "data_policy": "append_only_events",
+      "provisioning_owner": "separate_eos_index_provisioner"
+    },
+    {
+      "id": "telemetry",
+      "database": "canonical_eos_business_database",
+      "collection": "wilsy_sovereign_telemetry",
+      "source": "tools/eos/api/server.py",
+      "indexes": [
+        {
+          "name": "uq_telemetry_trace_id",
+          "keys": [
+            [
+              "trace_id",
+              1
+            ]
+          ],
+          "unique": true,
+          "sparse": true
+        }
+      ],
+      "runtime_operations": [
+        "source-specific telemetry operations; separate route inventory required"
+      ],
+      "provisioning_owner": "separate_eos_index_provisioner"
+    },
+    {
+      "id": "legal-storefront-public-intent-rate-limits",
+      "database": "canonical_eos_business_database",
+      "collection": "legal_storefront_public_intent_rate_limits",
+      "source": "tools/eos/legal_operations/service/legal_storefront_public_intent_rate_limit.py",
+      "indexes": [
+        {
+          "name": "legal_storefront_public_intent_rate_lookup",
+          "keys": [
+            [
+              "namespace",
+              1
+            ],
+            [
+              "subject_digest",
+              1
+            ],
+            [
+              "bucket_start",
+              1
+            ]
+          ],
+          "unique": false
+        },
+        {
+          "name": "legal_storefront_public_intent_rate_ttl",
+          "keys": [
+            [
+              "expires_at",
+              1
+            ]
+          ],
+          "expireAfterSeconds": 0
+        }
+      ],
+      "runtime_operations": [
+        "find_one",
+        "find_one_and_update"
+      ],
+      "provisioning_owner": "separate_eos_index_provisioner"
+    },
+    {
+      "id": "legal-evidence-reconciliation-business-idempotency",
+      "database": "canonical_eos_business_database",
+      "collection": "legal_evidence_provider_reconciliation_operations",
+      "source": "tools/eos/legal_operations/service/legal_evidence_provider_readonly_reconciliation_idempotency_registry.py",
+      "indexes": [
+        {
+          "name": "legal_evidence_reconciliation_operation_idempotency_unique",
+          "keys": [
+            [
+              "service_id",
+              1
+            ],
+            [
+              "idempotency_key",
+              1
+            ]
+          ],
+          "unique": true
+        }
+      ],
+      "runtime_operations": [
+        "find_one",
+        "insert_one"
+      ],
+      "provisioning_owner": "separate_eos_index_provisioner"
+    },
+    {
+      "id": "legal-evidence-platform-decision-audit",
+      "database": "separate_reconciliation_audit_database",
+      "collection": "platform_authorization_decision_evidence",
+      "source": "tools/eos/auth/platform_authorization_decision_evidence_registry.py",
+      "indexes": [
+        {
+          "name": "platform_auth_decision_idempotency_unique",
+          "keys": [
+            [
+              "idempotency_key",
+              1
+            ]
+          ],
+          "unique": true
+        },
+        {
+          "name": "platform_auth_decision_identity_unique",
+          "keys": [
+            [
+              "decision_id",
+              1
+            ]
+          ],
+          "unique": true
+        }
+      ],
+      "runtime_operations": [
+        "find_one",
+        "insert_one",
+        "index_information"
+      ],
+      "provisioning_owner": "separate_audit_index_provisioner",
+      "runtime_index_verification_is_read_only": true
+    },
+    {
+      "id": "legal-evidence-capacity-fences",
+      "database": "canonical_eos_business_database",
+      "collection": "legal_evidence_capacity_admission_fences",
+      "source": "tools/eos/legal_operations/registry/legal_evidence_capacity_admission_fence_registry.py",
+      "indexes": [
+        {
+          "name": "legal_evidence_capacity_admission_fence_tenant_unique",
+          "keys": [
+            [
+              "tenant_id",
+              1
+            ]
+          ],
+          "unique": true
+        }
+      ],
+      "runtime_operations": [
+        "find_one",
+        "insert_one",
+        "find_one_and_update"
+      ],
+      "no_ttl": true,
+      "provisioning_owner": "separate_eos_index_provisioner"
+    },
+    {
+      "id": "legal-evidence-capacity-reservations",
+      "database": "canonical_eos_business_database",
+      "collection": "legal_evidence_capacity_reservations",
+      "source": "tools/eos/legal_operations/registry/legal_evidence_capacity_reservation_registry.py",
+      "indexes": [
+        {
+          "name": "legal_evidence_capacity_reservation_tenant_reservation_unique",
+          "keys": [
+            [
+              "tenant_id",
+              1
+            ],
+            [
+              "reservation_id",
+              1
+            ]
+          ],
+          "unique": true
+        },
+        {
+          "name": "legal_evidence_capacity_reservation_tenant_ingestion_intent_unique",
+          "keys": [
+            [
+              "tenant_id",
+              1
+            ],
+            [
+              "ingestion_intent_id",
+              1
+            ]
+          ],
+          "unique": true
+        },
+        {
+          "name": "legal_evidence_capacity_reservation_tenant_idempotency_unique",
+          "keys": [
+            [
+              "tenant_id",
+              1
+            ],
+            [
+              "idempotency_key",
+              1
+            ]
+          ],
+          "unique": true
+        },
+        {
+          "name": "legal_evidence_capacity_reservation_tenant_status_expiry",
+          "keys": [
+            [
+              "tenant_id",
+              1
+            ],
+            [
+              "status",
+              1
+            ],
+            [
+              "_expires_at_epoch_us",
+              1
+            ]
+          ],
+          "unique": false
+        },
+        {
+          "name": "legal_evidence_capacity_reservation_tenant_document_status",
+          "keys": [
+            [
+              "tenant_id",
+              1
+            ],
+            [
+              "document_id",
+              1
+            ],
+            [
+              "status",
+              1
+            ]
+          ],
+          "unique": false
+        }
+      ],
+      "runtime_operations": [
+        "find_one",
+        "insert_one",
+        "find",
+        "find_one_and_update"
+      ],
+      "no_ttl": true,
+      "provisioning_owner": "separate_eos_index_provisioner"
+    },
+    {
+      "id": "legal-evidence-commit-uncertainties",
+      "database": "canonical_eos_business_database",
+      "collection": "legal_evidence_commit_uncertainties",
+      "source": "tools/eos/legal_operations/registry/legal_evidence_commit_uncertainty_registry.py",
+      "indexes": [
+        {
+          "name": "legal_evidence_commit_uncertainty_tenant_identity_unique",
+          "keys": [
+            [
+              "tenant_id",
+              1
+            ],
+            [
+              "uncertainty_id",
+              1
+            ]
+          ],
+          "unique": true
+        },
+        {
+          "name": "legal_evidence_commit_uncertainty_tenant_ingestion_unique",
+          "keys": [
+            [
+              "tenant_id",
+              1
+            ],
+            [
+              "ingestion_intent_id",
+              1
+            ]
+          ],
+          "unique": true
+        },
+        {
+          "name": "legal_evidence_commit_uncertainty_tenant_provider_object_unique",
+          "keys": [
+            [
+              "tenant_id",
+              1
+            ],
+            [
+              "provider_name",
+              1
+            ],
+            [
+              "storage_reference",
+              1
+            ],
+            [
+              "object_version_reference",
+              1
+            ]
+          ],
+          "unique": true
+        },
+        {
+          "name": "legal_evidence_commit_uncertainty_tenant_detected",
+          "keys": [
+            [
+              "tenant_id",
+              1
+            ],
+            [
+              "detected_at",
+              -1
+            ],
+            [
+              "uncertainty_id",
+              1
+            ]
+          ],
+          "unique": false
+        }
+      ],
+      "runtime_operations": [
+        "find_one",
+        "insert_one",
+        "find"
+      ],
+      "no_ttl": true,
+      "provisioning_owner": "separate_eos_index_provisioner"
+    },
+    {
+      "id": "legal-evidence-object-metadata",
+      "database": "canonical_eos_business_database",
+      "collection": "legal_evidence_object_metadata",
+      "source": "tools/eos/legal_operations/registry/legal_evidence_object_metadata_registry.py",
+      "indexes": [
+        {
+          "name": "legal_evidence_object_metadata_tenant_reference_unique",
+          "keys": [
+            [
+              "tenant_id",
+              1
+            ],
+            [
+              "content_reference",
+              1
+            ]
+          ],
+          "unique": true
+        },
+        {
+          "name": "legal_evidence_object_metadata_tenant_matter_document_registered",
+          "keys": [
+            [
+              "tenant_id",
+              1
+            ],
+            [
+              "case_matter_id",
+              1
+            ],
+            [
+              "document_id",
+              1
+            ],
+            [
+              "registered_at",
+              -1
+            ]
+          ],
+          "unique": false
+        },
+        {
+          "name": "legal_evidence_object_metadata_tenant_content_fingerprint",
+          "keys": [
+            [
+              "tenant_id",
+              1
+            ],
+            [
+              "content_fingerprint",
+              1
+            ]
+          ],
+          "unique": false
+        },
+        {
+          "name": "legal_evidence_object_metadata_tenant_provider_object",
+          "keys": [
+            [
+              "tenant_id",
+              1
+            ],
+            [
+              "provider_name",
+              1
+            ],
+            [
+              "storage_reference",
+              1
+            ],
+            [
+              "object_version_reference",
+              1
+            ]
+          ],
+          "unique": false
+        }
+      ],
+      "runtime_operations": [
+        "find_one",
+        "insert_one",
+        "find"
+      ],
+      "no_ttl": true,
+      "provisioning_owner": "separate_eos_index_provisioner"
+    },
+    {
+      "id": "legal-evidence-usage-observations",
+      "database": "canonical_eos_business_database",
+      "collection": "legal_evidence_usage_observations",
+      "source": "tools/eos/legal_operations/registry/legal_evidence_usage_observation_registry.py",
+      "indexes": [
+        {
+          "name": "legal_evidence_usage_tenant_observation_unique",
+          "keys": [
+            [
+              "tenant_id",
+              1
+            ],
+            [
+              "usage_observation_id",
+              1
+            ]
+          ],
+          "unique": true
+        },
+        {
+          "name": "legal_evidence_usage_tenant_idempotency_unique",
+          "keys": [
+            [
+              "tenant_id",
+              1
+            ],
+            [
+              "idempotency_key",
+              1
+            ]
+          ],
+          "unique": true
+        },
+        {
+          "name": "legal_evidence_usage_tenant_occurred",
+          "keys": [
+            [
+              "tenant_id",
+              1
+            ],
+            [
+              "occurred_at",
+              1
+            ]
+          ],
+          "unique": false
+        },
+        {
+          "name": "legal_evidence_usage_tenant_document_occurred",
+          "keys": [
+            [
+              "tenant_id",
+              1
+            ],
+            [
+              "document_id",
+              1
+            ],
+            [
+              "occurred_at",
+              1
+            ]
+          ],
+          "unique": false
+        }
+      ],
+      "runtime_operations": [
+        "find_one",
+        "insert_one",
+        "find"
+      ],
+      "no_ttl": true,
+      "provisioning_owner": "separate_eos_index_provisioner"
+    },
+    {
+      "id": "legal-evidence-binary-write-intents",
+      "database": "canonical_eos_business_database",
+      "collection": "legal_evidence_binary_write_intents",
+      "source": "tools/eos/legal_operations/registry/legal_evidence_binary_write_intent_registry.py",
+      "indexes": [
+        {
+          "name": "legal_evidence_binary_write_intents_tenant_ingestion_unique",
+          "keys": [
+            [
+              "tenant_id",
+              1
+            ],
+            [
+              "ingestion_reference",
+              1
+            ]
+          ],
+          "unique": true
+        },
+        {
+          "name": "legal_evidence_binary_write_intents_tenant_fingerprint_unique",
+          "keys": [
+            [
+              "tenant_id",
+              1
+            ],
+            [
+              "write_intent_fingerprint",
+              1
+            ]
+          ],
+          "unique": true
+        },
+        {
+          "name": "legal_evidence_binary_write_intents_tenant_document_registered",
+          "keys": [
+            [
+              "tenant_id",
+              1
+            ],
+            [
+              "document_id",
+              1
+            ],
+            [
+              "registered_at",
+              1
+            ]
+          ],
+          "unique": false
+        }
+      ],
+      "runtime_operations": [
+        "find_one",
+        "insert_one"
+      ],
+      "no_ttl": true,
+      "provisioning_owner": "separate_eos_index_provisioner"
+    },
+    {
+      "id": "legal-practitioner-matter-access",
+      "database": "canonical_eos_business_database",
+      "collection": "legal_practitioner_matter_access_evidence",
+      "source": "tools/eos/legal_operations/registry/legal_practitioner_matter_access_registry.py",
+      "indexes": [
+        {
+          "name": "p9_access_evidence_tenant_identity_unique",
+          "keys": [
+            [
+              "tenant_id",
+              1
+            ],
+            [
+              "access_evidence_id",
+              1
+            ]
+          ],
+          "unique": true
+        },
+        {
+          "name": "p9_access_evidence_tenant_scope_revision_unique",
+          "keys": [
+            [
+              "tenant_id",
+              1
+            ],
+            [
+              "case_matter_id",
+              1
+            ],
+            [
+              "practitioner_principal_id",
+              1
+            ],
+            [
+              "revision",
+              1
+            ]
+          ],
+          "unique": true
+        },
+        {
+          "name": "p9_access_evidence_tenant_fingerprint_unique",
+          "keys": [
+            [
+              "tenant_id",
+              1
+            ],
+            [
+              "fingerprint",
+              1
+            ]
+          ],
+          "unique": true
+        }
+      ],
+      "runtime_operations": [
+        "find_one",
+        "insert_one"
+      ],
+      "provisioning_owner": "separate_eos_index_provisioner"
+    },
+    {
+      "id": "legal-practitioner-matter-bindings",
+      "database": "canonical_eos_business_database",
+      "collection": "legal_practitioner_matter_bindings",
+      "source": "tools/eos/legal_operations/registry/legal_practitioner_matter_binding_registry.py",
+      "indexes": [
+        {
+          "name": "p9_binding_tenant_identity_status_unique",
+          "keys": [
+            [
+              "tenant_id",
+              1
+            ],
+            [
+              "binding_id",
+              1
+            ],
+            [
+              "status",
+              1
+            ]
+          ],
+          "unique": true
+        },
+        {
+          "name": "p9_binding_tenant_fingerprint_unique",
+          "keys": [
+            [
+              "tenant_id",
+              1
+            ],
+            [
+              "fingerprint",
+              1
+            ]
+          ],
+          "unique": true
+        },
+        {
+          "name": "p9_binding_tenant_matter_practitioner_history",
+          "keys": [
+            [
+              "tenant_id",
+              1
+            ],
+            [
+              "case_matter_id",
+              1
+            ],
+            [
+              "practitioner_principal_id",
+              1
+            ]
+          ],
+          "unique": true,
+          "partialFilterExpression": {
+            "status": "ACTIVE"
+          }
+        }
+      ],
+      "runtime_operations": [
+        "find",
+        "insert_one"
+      ],
+      "provisioning_owner": "separate_eos_index_provisioner"
+    },
+    {
+      "id": "legal-practitioner-matter-conflict-dispositions",
+      "database": "canonical_eos_business_database",
+      "collection": "legal_client_matter_conflict_dispositions",
+      "source": "tools/eos/legal_operations/registry/legal_client_matter_conflict_disposition_registry.py",
+      "indexes": [
+        {
+          "name": "legal_client_matter_conflict_disposition_tenant_id_unique",
+          "keys": [
+            [
+              "tenant_id",
+              1
+            ],
+            [
+              "disposition_id",
+              1
+            ]
+          ],
+          "unique": true
+        },
+        {
+          "name": "legal_client_matter_conflict_disposition_tenant_fingerprint_unique",
+          "keys": [
+            [
+              "tenant_id",
+              1
+            ],
+            [
+              "fingerprint",
+              1
+            ]
+          ],
+          "unique": true
+        },
+        {
+          "name": "legal_client_matter_conflict_disposition_tenant_idempotency_unique",
+          "keys": [
+            [
+              "tenant_id",
+              1
+            ],
+            [
+              "idempotency_key",
+              1
+            ]
+          ],
+          "unique": true
+        },
+        {
+          "name": "legal_client_matter_conflict_disposition_review_lineage_unique",
+          "keys": [
+            [
+              "tenant_id",
+              1
+            ],
+            [
+              "conflict_review_id",
+              1
+            ],
+            [
+              "conflict_review_fingerprint",
+              1
+            ]
+          ],
+          "unique": true
+        },
+        {
+          "name": "legal_client_matter_conflict_disposition_matter_history",
+          "keys": [
+            [
+              "tenant_id",
+              1
+            ],
+            [
+              "case_matter_id",
+              1
+            ],
+            [
+              "client_party_id",
+              1
+            ],
+            [
+              "effective_from",
+              1
+            ],
+            [
+              "occurred_at",
+              1
+            ],
+            [
+              "fingerprint",
+              1
+            ]
+          ],
+          "unique": false
+        },
+        {
+          "name": "legal_client_matter_conflict_disposition_matter_fingerprint_history",
+          "keys": [
+            [
+              "tenant_id",
+              1
+            ],
+            [
+              "matter_fingerprint",
+              1
+            ],
+            [
+              "effective_from",
+              1
+            ],
+            [
+              "occurred_at",
+              1
+            ],
+            [
+              "fingerprint",
+              1
+            ]
+          ],
+          "unique": false
+        },
+        {
+          "name": "legal_client_matter_conflict_disposition_client_party_history",
+          "keys": [
+            [
+              "tenant_id",
+              1
+            ],
+            [
+              "client_party_id",
+              1
+            ],
+            [
+              "effective_from",
+              1
+            ],
+            [
+              "fingerprint",
+              1
+            ]
+          ],
+          "unique": false
+        },
+        {
+          "name": "legal_client_matter_conflict_disposition_subject_history",
+          "keys": [
+            [
+              "tenant_id",
+              1
+            ],
+            [
+              "subject_identity_fingerprint",
+              1
+            ],
+            [
+              "effective_from",
+              1
+            ],
+            [
+              "fingerprint",
+              1
+            ]
+          ],
+          "unique": false
+        }
+      ],
+      "runtime_operations": [
+        "find",
+        "insert_one"
+      ],
+      "provisioning_owner": "separate_eos_index_provisioner"
+    },
+    {
+      "id": "ai-model-invocations",
+      "database": "canonical_eos_business_database",
+      "collection": "wilsy_ai_model_invocations",
+      "source": "tools/eos/intelligence/registry/ai_model_invocation_registry.py",
+      "indexes": [
+        {
+          "name": "wilsy_ai_model_invocation_tenant_identity_unique",
+          "keys": [
+            [
+              "tenant_id",
+              1
+            ],
+            [
+              "invocation_id",
+              1
+            ]
+          ],
+          "unique": true
+        }
+      ],
+      "runtime_operations": [
+        "find_one",
+        "insert_one"
+      ],
+      "provisioning_owner": "separate_eos_index_provisioner"
+    },
+    {
+      "id": "ai-entitlements",
+      "database": "canonical_eos_business_database",
+      "collection": "wilsy_ai_entitlements",
+      "source": "tools/eos/saas/billing/wilsy_ai_entitlement_registry.py",
+      "indexes": [
+        {
+          "name": "wilsy_ai_entitlement_tenant_id_unique",
+          "keys": [
+            [
+              "tenant_id",
+              1
+            ],
+            [
+              "entitlement_id",
+              1
+            ]
+          ],
+          "unique": true
+        },
+        {
+          "name": "wilsy_ai_entitlement_tenant_module_unique",
+          "keys": [
+            [
+              "tenant_id",
+              1
+            ],
+            [
+              "module_id",
+              1
+            ]
+          ],
+          "unique": true
+        },
+        {
+          "name": "wilsy_ai_entitlement_tenant_idempotency_unique",
+          "keys": [
+            [
+              "tenant_id",
+              1
+            ],
+            [
+              "idempotency_key",
+              1
+            ]
+          ],
+          "unique": true
+        }
+      ],
+      "runtime_operations": [
+        "find_one",
+        "insert_one",
+        "update_one"
+      ],
+      "provisioning_owner": "separate_eos_index_provisioner"
+    },
+    {
+      "id": "ai-usage-admissions",
+      "database": "canonical_eos_business_database",
+      "collection": "wilsy_ai_usage_admissions",
+      "source": "tools/eos/saas/billing/wilsy_ai_usage_admission_registry.py",
+      "indexes": [
+        {
+          "name": "wilsy_ai_admission_tenant_identity_unique",
+          "keys": [
+            [
+              "tenant_id",
+              1
+            ],
+            [
+              "admission_id",
+              1
+            ]
+          ],
+          "unique": true
+        },
+        {
+          "name": "wilsy_ai_admission_tenant_idempotency_unique",
+          "keys": [
+            [
+              "tenant_id",
+              1
+            ],
+            [
+              "idempotency_key",
+              1
+            ]
+          ],
+          "unique": true
+        },
+        {
+          "name": "wilsy_ai_admission_tenant_window_state",
+          "keys": [
+            [
+              "tenant_id",
+              1
+            ],
+            [
+              "entitlement_id",
+              1
+            ],
+            [
+              "window_start",
+              1
+            ],
+            [
+              "state",
+              1
+            ]
+          ],
+          "unique": false
+        }
+      ],
+      "runtime_operations": [
+        "find_one",
+        "insert_one",
+        "update_one",
+        "find"
+      ],
+      "provisioning_owner": "separate_eos_index_provisioner"
+    },
+    {
+      "id": "ai-usage-observations",
+      "database": "canonical_eos_business_database",
+      "collection": "wilsy_ai_usage_observations",
+      "source": "tools/eos/saas/billing/wilsy_ai_usage_observation_registry.py",
+      "indexes": [
+        {
+          "name": "wilsy_ai_usage_tenant_observation_unique",
+          "keys": [
+            [
+              "tenant_id",
+              1
+            ],
+            [
+              "usage_observation_id",
+              1
+            ]
+          ],
+          "unique": true
+        },
+        {
+          "name": "wilsy_ai_usage_tenant_idempotency_unique",
+          "keys": [
+            [
+              "tenant_id",
+              1
+            ],
+            [
+              "idempotency_key",
+              1
+            ]
+          ],
+          "unique": true
+        },
+        {
+          "name": "wilsy_ai_usage_tenant_occurred_lookup",
+          "keys": [
+            [
+              "tenant_id",
+              1
+            ],
+            [
+              "occurred_at",
+              1
+            ],
+            [
+              "usage_observation_id",
+              1
+            ]
+          ],
+          "unique": false
+        },
+        {
+          "name": "wilsy_ai_usage_tenant_entitlement_module_lookup",
+          "keys": [
+            [
+              "tenant_id",
+              1
+            ],
+            [
+              "entitlement_id",
+              1
+            ],
+            [
+              "module_id",
+              1
+            ],
+            [
+              "occurred_at",
+              1
+            ],
+            [
+              "usage_observation_id",
+              1
+            ]
+          ],
+          "unique": false
+        }
+      ],
+      "runtime_operations": [
+        "find_one",
+        "insert_one",
+        "find"
+      ],
+      "provisioning_owner": "separate_eos_index_provisioner"
+    }
   ],
   "excluded_until_inventory_complete": [
     "global principal authentication and MFA indexes",
@@ -49,7 +1238,9 @@
     "AI orchestration conditional indexes",
     "Legal Evidence upload, capacity, usage, cleanup and reconciliation registries",
     "tenant registry, workforce relationship and subscription/billing collections",
-    "all remaining mounted API routers and worker-specific collections"
+    "all remaining mounted API routers and worker-specific collections",
+    "S3 object storage permission scoping and exact bucket/prefix authority",
+    "remaining Legal Evidence registry index definitions and route/worker reachability"
   ],
   "execution_gate": "Do not apply until all excluded families are resolved, source definitions are complete for the exact commit, duplicate-data preflight is certified, and a non-production target fingerprint is approved."
 }
