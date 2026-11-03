@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from datetime import datetime, timezone
 from types import SimpleNamespace
-from typing import Any
+from typing import Any, cast
 
 import pyotp
 import pytest
@@ -109,8 +109,8 @@ def _service(*, legacy_rows=None, factor_rows=None, mfa_enabled=True, principal_
     kms = _Kms()
     service = GlobalPrincipalMfaLegacyMigrationService(
         kms=kms,
-        legacy_factor_collection=legacy,
-        factor_collection=factors,
+        legacy_factor_collection=cast(Any, legacy),
+        factor_collection=cast(Any, factors),
         credential_repository=_Credentials(mfa_enabled=mfa_enabled),
         principal_repository=_Principals(principal_status),
     )
@@ -175,7 +175,7 @@ def test_ambiguous_legacy_factor_rows_are_quarantined():
 
 
 def test_migration_requires_active_global_principal_and_existing_mfa_enrollment():
-    inactive, *_ = _service(principal_status="SUSPENDED")
+    inactive, *_ = _service(principal_status=PrincipalStatus.SUSPENDED)
     with pytest.raises(GlobalPrincipalMfaLegacyMigrationRejected, match="PRINCIPAL_NOT_ACTIVE"):
         inactive.migrate(
             principal_id="principal-global",
