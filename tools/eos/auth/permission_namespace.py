@@ -243,7 +243,7 @@ from types import MappingProxyType
 from typing import Final
 
 
-VERSION = "v1.56.0-SYSTEM-SERVICES-IAM-VOCABULARY"
+VERSION = "v1.57.0-SYSTEM-SERVICES-AUDIT-READ-PERMISSION"
 
 
 class PermissionDisposition(StrEnum):
@@ -399,6 +399,11 @@ _PERMISSIONS: Final = MappingProxyType(
         "system_services:session:revoke": _meta(
             "system_services:session:revoke", "SYSTEM", "SYSTEM",
             "request case-bound session or device revocation under independent policy",
+            system=True, workforce=True,
+        ),
+        "system_services:audit:read": _meta(
+            "system_services:audit:read", "SYSTEM", "SYSTEM",
+            "read authorized System Services audit projections without secret material",
             system=True, workforce=True,
         ),
         "system_services:incident:escalate": _meta(
