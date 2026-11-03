@@ -76,15 +76,19 @@ def _manifest_entries(path: Path, database_name: str) -> list[dict[str, Any]]:
 
 
 def _actual_options(index: dict[str, Any]) -> dict[str, Any]:
-    options: dict[str, Any] = {}
-    for field in ("unique", "sparse", "expireAfterSeconds", "partialFilterExpression", "collation", "hidden"):
+    options: dict[str, Any] = {"unique": bool(index.get("unique", False)), "sparse": bool(index.get("sparse", False)), "hidden": bool(index.get("hidden", False))}
+    for field in ("expireAfterSeconds", "partialFilterExpression", "collation"):
         if field in index:
             options[field] = index[field]
     return options
 
 
 def _expected_options(index: dict[str, Any]) -> dict[str, Any]:
-    return {field: index[field] for field in ("unique", "sparse", "expireAfterSeconds", "partialFilterExpression", "collation", "hidden") if field in index}
+    options: dict[str, Any] = {"unique": bool(index.get("unique", False)), "sparse": bool(index.get("sparse", False)), "hidden": bool(index.get("hidden", False))}
+    for field in ("expireAfterSeconds", "partialFilterExpression", "collation"):
+        if field in index:
+            options[field] = index[field]
+    return options
 
 
 def verify(client: Any, entries: list[dict[str, Any]], database_name: str) -> dict[str, Any]:
