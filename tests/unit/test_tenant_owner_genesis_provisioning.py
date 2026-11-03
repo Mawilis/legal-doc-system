@@ -44,16 +44,19 @@ def _evidence(request: Any | None = None) -> VerifiedTenantOwnershipEvidence:
 
 class _Lifecycle:
     def __init__(self, event: object | None = None) -> None:
-        self.event = event or SimpleNamespace(
-            tenant_id="tenant-genesis-1",
-            principal_id="principal-owner-1",
-            revision=1,
-        )
+        self.event = event
         self.calls: list[dict[str, Any]] = []
 
     def execute(self, **kwargs: Any) -> object:
         self.calls.append(kwargs)
-        return self.event
+        return self.event or SimpleNamespace(
+            tenant_id=kwargs["request"].tenant_id,
+            legal_entity_reference=kwargs["request"].legal_entity_reference,
+            principal_id=kwargs["request"].principal_id,
+            operation=kwargs["request"].operation,
+            command_id=kwargs["command_id"],
+            revision=1,
+        )
 
 
 def _command(monkeypatch: pytest.MonkeyPatch, *, existing_roles: tuple[object, ...] = ()):
@@ -220,3 +223,33 @@ def test_tenant_create_result_must_expose_exact_canonical_tenant_id(
             tenant_payload={"name": "Synthetic"}, database=object(), session=session,
         )
     assert lifecycle.calls == []
+
+
+def test_genesis_rejects_ownership_event_scope_or_command_mismatch(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    calls: dict[str, Any] = {}
+    bad_event = SimpleNamespace(
+        tenant_id="tenant-genesis-1",
+        legal_entity_reference="different-entity",
+        principal_id="principal-owner-1",
+        operation=TenantOwnershipOperation.TENANT_GENESIS,
+        command_id="cmd-expected",
+        revision=1,
+    )
+    lifecycle = _Lifecycle(event=bad_event)
+    command = TenantOwnerGenesisProvisioningCommand(
+        lifecycle=lifecycle,  # type: ignore[arg-type]
+        tenant_create=lambda payload, *, session: (
+            calls.setdefault("tenant", payload)
+            or {"success": True, "tenant": SimpleNamespace(tenant_id=payload["tenant_id"])}
+        ),
+    )
+    with pytest.raises(TenantOwnerGenesisProvisioningError, match="OWNERSHIP_GENESIS_RESULT_MISMATCH"):
+        command.execute(
+            request=_request(), evidence=_evidence(),
+            actor_principal_id="principal-owner-1", command_id="cmd-expected",
+            tenant_payload={"name": "Synthetic"}, database=object(), session=_Session(),
+        )
+    assert "tenant" in calls
+    assert len(lifecycle.calls) == 1

@@ -67,7 +67,10 @@ class _MongoLifecycle:
         )
         return SimpleNamespace(
             tenant_id=request.tenant_id,
+            legal_entity_reference=request.legal_entity_reference,
             principal_id=request.principal_id,
+            operation=request.operation,
+            command_id=kwargs["command_id"],
             revision=1,
         )
 

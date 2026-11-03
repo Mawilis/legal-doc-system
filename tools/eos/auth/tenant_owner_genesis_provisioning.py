@@ -107,7 +107,10 @@ class TenantOwnerGenesisProvisioningCommand:
         )
         if (
             ownership_event.tenant_id != request.tenant_id
+            or ownership_event.legal_entity_reference != request.legal_entity_reference
             or ownership_event.principal_id != request.principal_id
+            or ownership_event.operation is not request.operation
+            or ownership_event.command_id != command_id
             or ownership_event.revision != 1
         ):
             raise TenantOwnerGenesisProvisioningError("OWNERSHIP_GENESIS_RESULT_MISMATCH")
