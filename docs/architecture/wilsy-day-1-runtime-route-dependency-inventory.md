@@ -148,6 +148,16 @@ Repository code search and source inspection found these additional live/static 
 
 Additional search results show `server/app.js` is directly referenced by CRM release-gate scripts and `server/middleware/ProductionHardening.middleware.js`. It is not safe to remove until these gates are replaced or explicitly retired with their evidence preserved.
 
+Further import/caller analysis established:
+
+- Root `orchestrator.js` explicitly starts `./server/server.js`; it is an active process-manager dependency.
+- `Genesis_Ignition.sh` imports `./app.js` from its server working context; it is a separate legacy ignition path and must be classified.
+- `tests/merkle.test.js` dynamically probes legacy server/app entrypoint paths and uses an Express fallback; the test must be migrated or retired with its evidence.
+- `server/routes/api.js` and `server/routes/artifactRoutes.js` both import the same PDF controller and expose artifact routes. Duplicate route ownership must be reconciled.
+- `client/src/services/pdfService.js` and `client/src/services/artifacts/artifactExportService.js` both call `/api/generate/pdf`; both are live client-side consumers to preserve or migrate.
+- The production-surface governance policy explicitly references the primary entrypoint and PDF controller, so its controls must be updated as part of a reviewed migration.
+
+
 The current `tests/e2e/run-browser-cert.mjs` also contains an isolated legacy process orchestration path. It was changed on the integration branch at commit `966296c6fa8aa3f7e3a4d0024bc83f40d078392b`; that baseline change has been incorporated into this implementation branch as a merge parent and must be preserved during runtime retirement.
 
 ## 9. Retirement gates — no deletion yet
