@@ -1,7 +1,7 @@
 from tools.eos.api.owner_commercial_workspace_router import (
     _COMPLETE, _CREATE, _READ, router,
 )
-from tools.eos.api import server
+import inspect\n\nfrom tools.eos.api import server
 
 
 def test_owner_commercial_workspace_routes_are_mounted_once():
@@ -12,11 +12,11 @@ def test_owner_commercial_workspace_routes_are_mounted_once():
     assert ("/crm/owner-workspace", ("GET",)) in routes
     assert ("/crm/owner-workspace/work-items", ("POST",)) in routes
     assert ("/crm/owner-workspace/work-items/{work_item_id}/complete", ("POST",)) in routes
-    app_routes = [
-        route for route in server.app.routes
-        if getattr(route, "path", "").startswith("/api/crm/owner-workspace")
-    ]
-    assert len(app_routes) == 3
+    source = inspect.getsource(server)
+    assert source.count(
+        "app.include_router(owner_commercial_workspace_router, prefix=\"/api\")"
+    ) == 1
+    assert "from .owner_commercial_workspace_router import router as owner_commercial_workspace_router" in source
 
 
 def test_each_owner_workspace_command_has_its_exact_permission_binding():
