@@ -1565,6 +1565,166 @@
       ],
       "append_only": true,
       "provisioning_owner": "separate_eos_index_provisioner"
+    },
+    {
+      "id": "plans-catalogue",
+      "database": "WILSY_PLAN_MONGO_DATABASE_or_uri_default",
+      "collection": "plans",
+      "source": "tools/eos/saas/billing/plan_registry.py",
+      "indexes": [
+        {
+          "name": "plan_id_unique",
+          "keys": [
+            [
+              "plan_id",
+              1
+            ]
+          ],
+          "unique": true,
+          "partialFilterExpression": {
+            "plan_id": {
+              "$type": "string"
+            }
+          }
+        },
+        {
+          "name": "idempotency_key_unique",
+          "keys": [
+            [
+              "idempotency_key",
+              1
+            ]
+          ],
+          "unique": true,
+          "partialFilterExpression": {
+            "idempotency_key": {
+              "$type": "string"
+            }
+          }
+        },
+        {
+          "name": "tenant_active",
+          "keys": [
+            [
+              "tenant_id",
+              1
+            ],
+            [
+              "active",
+              1
+            ]
+          ],
+          "unique": false
+        },
+        {
+          "name": "tenant_plan_type",
+          "keys": [
+            [
+              "tenant_id",
+              1
+            ],
+            [
+              "plan_type",
+              1
+            ]
+          ],
+          "unique": false
+        },
+        {
+          "name": "catalogue_order",
+          "keys": [
+            [
+              "created_at",
+              1
+            ],
+            [
+              "plan_id",
+              1
+            ]
+          ],
+          "unique": false
+        }
+      ],
+      "runtime_operations": [
+        "find",
+        "find_one",
+        "insert_one",
+        "replace_one"
+      ],
+      "runtime_index_behavior": "read-only index_information validation; explicit provision_indexes method owns DDL",
+      "provisioning_owner": "separate_eos_index_provisioner"
+    },
+    {
+      "id": "subscriptions-lifecycle",
+      "database": "wilsy_default_database_from_WILSY_SUBSCRIPTION_MONGO_URI_or_MONGODB_URI",
+      "collection": "subscriptions",
+      "source": "tools/eos/saas/billing/subscription_registry.py",
+      "indexes": [
+        {
+          "name": "tenant_subscription_unique",
+          "keys": [
+            [
+              "tenant_id",
+              1
+            ],
+            [
+              "subscription_id",
+              1
+            ]
+          ],
+          "unique": true
+        },
+        {
+          "name": "tenant_idempotency_unique",
+          "keys": [
+            [
+              "tenant_id",
+              1
+            ],
+            [
+              "idempotency_key",
+              1
+            ]
+          ],
+          "unique": true
+        },
+        {
+          "name": "tenant_status",
+          "keys": [
+            [
+              "tenant_id",
+              1
+            ],
+            [
+              "status",
+              1
+            ]
+          ],
+          "unique": false
+        },
+        {
+          "name": "tenant_plan",
+          "keys": [
+            [
+              "tenant_id",
+              1
+            ],
+            [
+              "plan",
+              1
+            ]
+          ],
+          "unique": false
+        }
+      ],
+      "runtime_operations": [
+        "find_one",
+        "find",
+        "insert_one",
+        "replace_one"
+      ],
+      "runtime_index_behavior": "_ensure_indexes calls create_index during subscription creation",
+      "provisioning_owner": "separate_eos_index_provisioner"
     }
   ],
   "excluded_until_inventory_complete": [
@@ -1583,7 +1743,10 @@
     "HR object-store bucket/KMS workload identity and retention/disposal execution path",
     "HR commit reconciliation runtime invocation and cleanup scheduler ownership",
     "billing registry/index declarations and remaining mounted route dependencies",
-    "full mounted router transitive call-graph closure"
+    "full mounted router transitive call-graph closure",
+    "billing registry URI/database split and exact deployment secret bindings",
+    "tenant_registry route and tenant collection index/action parity",
+    "plan/subscription index DDL extraction and startup/runtime role impact"
   ],
   "execution_gate": "Do not apply until all excluded families are resolved, source definitions are complete for the exact commit, duplicate-data preflight is certified, and a non-production target fingerprint is approved."
 }
