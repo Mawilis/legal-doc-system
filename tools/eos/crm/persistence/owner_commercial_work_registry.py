@@ -6,6 +6,7 @@ Legal matter access, IAM, assignment, entitlement, messaging or financial power.
 from __future__ import annotations
 
 from collections.abc import Mapping
+from dataclasses import replace
 from typing import Any
 
 from pymongo import ASCENDING
@@ -13,7 +14,7 @@ from pymongo.errors import DuplicateKeyError, PyMongoError
 
 from tools.eos.crm.domain.owner_commercial_work_item import (
     OwnerCommercialWorkItem,
-    OwnerWorkItemError,
+    OwnerWorkItemError, OwnerWorkStatus,
     build_daily_queue,
     command_fingerprint,
 )
@@ -167,6 +168,32 @@ class OwnerCommercialWorkRegistry:
             return tuple(_hydrate(row) for row in cursor)
         except PyMongoError as error:
             raise OwnerWorkRegistryError("OWNER_WORK_PERSISTENCE_UNAVAILABLE") from error
+
+    def complete(
+        self, *, tenant_id: str, work_item_id: str, completion_note: str,
+        now: Any, session: Any,
+    ) -> OwnerCommercialWorkItem:
+        """Complete one own-tenant active task using a status compare-and-set."""
+        tenant = _exact(tenant_id, "OWNER_WORK_TENANT_INVALID")
+        identity = _exact(work_item_id, "OWNER_WORK_ID_INVALID")
+        caller_session = _session(session)
+        current = self.get(tenant_id=tenant, work_item_id=identity, session=caller_session)
+        if current.status in (OwnerWorkStatus.COMPLETED, OwnerWorkStatus.CANCELLED):
+            raise OwnerWorkRegistryConflict("OWNER_WORK_TERMINAL_STATE")
+        updated = replace(
+            current, status=OwnerWorkStatus.COMPLETED,
+            updated_at=now, completed_at=now, completion_note=completion_note,
+        )
+        try:
+            result = self._collection.update_one(
+                {"tenant_id": tenant, "work_item_id": identity, "status": current.status.value},
+                {"$set": updated.to_dict()}, session=caller_session,
+            )
+        except PyMongoError as error:
+            raise OwnerWorkRegistryError("OWNER_WORK_PERSISTENCE_UNAVAILABLE") from error
+        if getattr(result, "matched_count", 0) != 1:
+            raise OwnerWorkRegistryConflict("OWNER_WORK_CONCURRENT_TRANSITION")
+        return updated
 
     def daily_queue(
         self, *, tenant_id: str, now: Any, session: Any, limit: int = 250,
