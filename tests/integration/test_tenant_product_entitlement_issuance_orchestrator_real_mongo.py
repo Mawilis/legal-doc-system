@@ -47,6 +47,11 @@ from tools.eos.auth.role_assignment_repository import RoleAssignmentRepository
 from tools.eos.auth.tenant_authorization_decision_evidence_registry import (
     TenantAuthorizationDecisionEvidenceRegistry,
 )
+from tools.eos.auth.tenant_business_role import (
+    TenantBusinessRoleAuthority,
+    TenantBusinessRoleStatus,
+)
+from tools.eos.auth.tenant_business_role_repository import TenantBusinessRoleRepository
 from tools.eos.auth.tenant_membership import (
     TenantMembershipAuthority,
     TenantMembershipStatus,
@@ -104,6 +109,13 @@ class _Repository:
             args[0], args[1], args[2], self.collection, session=session
         )
 
+    def resolve_current_business_role(
+        self, principal_id: str, tenant_id: str, *, session: Any = None
+    ) -> Any:
+        return TenantBusinessRoleRepository.resolve(
+            principal_id, tenant_id, self.collection, session=session
+        )
+
 
 def _identity(tenant: str, principal: str) -> SovereignIdentity:
     """Create an active synthetic identity without credential material."""
@@ -134,6 +146,7 @@ def _collections(database: Any) -> dict[str, Any]:
         "principal": collection("principal_authorities"),
         "membership": collection("tenant_memberships"),
         "assignment": collection("role_assignments"),
+        "business_role": collection("tenant_business_roles"),
         "authorization": collection("tenant_authorization_decision_evidence"),
         "history": collection(HISTORY_COLLECTION),
         "current": collection(CURRENT_COLLECTION),
@@ -143,12 +156,13 @@ def _collections(database: Any) -> dict[str, Any]:
 def _issuer(collections: dict[str, Any]) -> TenantAuthorizationDecisionEvidenceRegistry:
     """Build the real evidence issuer over isolated canonical IAM sources."""
     assignment = _Repository(collections["assignment"], "assignment")
+    business_role = _Repository(collections["business_role"], "business_role")
     return TenantAuthorizationDecisionEvidenceRegistry(
         collections["authorization"],
         principal_repository=_Repository(collections["principal"], "principal"),
         membership_repository=_Repository(collections["membership"], "membership"),
         role_assignment_repository=assignment,
-        business_role_repository=assignment,
+        business_role_repository=business_role,
     )
 
 
@@ -187,6 +201,7 @@ def mongo_context() -> Iterator[tuple[MongoClient[Any], Any, dict[str, Any]]]:
         PrincipalAuthorityRepository.ensure_indexes(collections["principal"])
         TenantMembershipRepository.ensure_indexes(collections["membership"])
         RoleAssignmentRepository.ensure_indexes(collections["assignment"])
+        TenantBusinessRoleRepository.ensure_indexes(collections["business_role"])
         _issuer(collections).ensure_indexes()
         ensure_indexes(collections["history"], collections["current"])
         yield client, database, collections
@@ -243,14 +258,21 @@ def _seed(client: MongoClient[Any], collections: dict[str, Any], tenant: str, pr
                 collections["membership"],
                 session=session,
             )
-            for role in ("tenant_owner", "ENTERPRISE_ADMIN"):
-                RoleAssignmentRepository.insert(
-                    RoleAssignmentAuthority(
-                        principal, tenant, role, RoleAssignmentStatus.ACTIVE, 0
-                    ),
-                    collections["assignment"],
-                    session=session,
-                )
+            TenantBusinessRoleRepository.insert(
+                TenantBusinessRoleAuthority(
+                    principal, tenant, "tenant_owner", TenantBusinessRoleStatus.ACTIVE,
+                    0, NOW, None,
+                ),
+                collections["business_role"],
+                session=session,
+            )
+            RoleAssignmentRepository.insert(
+                RoleAssignmentAuthority(
+                    principal, tenant, "ENTERPRISE_ADMIN", RoleAssignmentStatus.ACTIVE, 0
+                ),
+                collections["assignment"],
+                session=session,
+            )
 
 
 def _issue(
