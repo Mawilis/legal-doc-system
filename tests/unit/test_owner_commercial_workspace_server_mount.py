@@ -1,4 +1,5 @@
 import inspect
+from pathlib import Path
 
 from tools.eos.api import server
 from tools.eos.api.owner_commercial_workspace_router import (
@@ -19,6 +20,11 @@ def test_owner_commercial_workspace_routes_are_mounted_once():
         "app.include_router(owner_commercial_workspace_router, prefix=\"/api\")"
     ) == 1
     assert "from .owner_commercial_workspace_router import router as owner_commercial_workspace_router" in source
+
+    bff = Path("server/server.js").read_text(encoding="utf-8")
+    vite = Path("client/vite.config.js").read_text(encoding="utf-8")
+    assert "app.use(\n    '/api/crm/owner-workspace'" in bff
+    assert "'/api/crm/owner-workspace': {" in vite
 
 
 def test_each_owner_workspace_command_has_its_exact_permission_binding():
