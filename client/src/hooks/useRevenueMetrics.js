@@ -23,7 +23,7 @@
  */
 
 import { useEffect, useState, useCallback, useRef } from 'react';
-import api from '../services/api';
+import api, { isCanonicalTenantTransportId } from '../services/api';
 import { broadcastTelemetry } from '../utils/telemetryHelper.js';
 import { generateSovereignSeal } from '../utils/cryptoCore.js';
 
@@ -146,11 +146,12 @@ export
 const useRevenueMetrics = (options = {}) => {
   const {
     refreshInterval = DEFAULT_BASE_INTERVAL,
-    tenantId = null,
+    tenantId: rawTenantId = null,
     enabled = true,
     maxRetries = 3,
     useErrorBoundary = false,
   } = options;
+  const tenantId = isCanonicalTenantTransportId(rawTenantId) ? rawTenantId : null;
 
   const [metrics, setMetrics] = useState({
     data: null,
