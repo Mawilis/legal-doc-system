@@ -50,6 +50,7 @@ No migration creates PrincipalAuthority, TenantMembership, business capacity, au
 - Added `PrincipalCredentialRepository` with unique principal/email index definitions, exact lookups, duplicate rejection and compare-and-swap password verifier revision updates.
 - The new credential schema contains no tenant ID, membership, business role, permission, workspace, raw MFA secret or financial fields.
 - Unit tests cover schema boundaries, normalized email lookup, principal/email uniqueness, credential revision CAS, malformed verifier rejection and caller-session forwarding.
+- Added `.github/workflows/global-principal-membership-certification.yml` to compile and execute the focused principal-credential, migration-assessment, membership-repository and membership-projection unit tests on relevant pull-request changes.
 
 This repository is intentionally not wired into login or application startup yet. Existing MFA, password reset, refresh, session and access-token currentness paths still depend on the legacy tenant-scoped `users` record. Switching only the login lookup would create inconsistent credential authorities. No production collection/index or credential row has been created by this code change.
 
