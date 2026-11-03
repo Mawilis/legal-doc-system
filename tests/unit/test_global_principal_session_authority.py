@@ -5,6 +5,7 @@ from types import SimpleNamespace
 
 import pytest
 
+from tools.eos.auth import global_principal_session_authority as authority_module
 from tools.eos.auth.global_principal_session_authority import (
     GlobalPrincipalSessionAuthority,
     GlobalPrincipalSessionRejected,
@@ -162,6 +163,17 @@ def test_membership_and_capacity_revision_changes_invalidate_currentness(monkeyp
     authorities.capacity_revision = 6
     assert not service.is_session_current(principal_id="principal-A", tenant_id="tenant-A",
                                           session_reference=receipt.session_reference)
+
+
+def test_workspace_mapping_change_invalidates_existing_global_session(monkeypatch):
+    service, _, _, _, selected = setup(monkeypatch)
+    receipt = issue(service, selected)
+    monkeypatch.setattr(authority_module, "resolve_workspace_id", lambda _role: "DIFFERENT_WORKSPACE")
+    assert not service.is_session_current(
+        principal_id="principal-A",
+        tenant_id="tenant-A",
+        session_reference=receipt.session_reference,
+    )
 
 
 def test_cross_tenant_session_lookup_and_revocation_are_isolated(monkeypatch):
