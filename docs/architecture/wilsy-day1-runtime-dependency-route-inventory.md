@@ -455,3 +455,18 @@ This is not yet multi-membership authentication. AuthRegistry still stores one `
 - Do not claim multi-tenant principal support until the identity, login, MFA, session, membership and revocation paths all support it and tests prove isolation.
 
 **END OF DAY 1 INVENTORY**
+
+
+## 11. Global-principal membership-selection implementation checkpoint
+
+The follow-on implementation is recorded in `global-principal-membership-selection-contract.md`.
+
+Committed code on this branch:
+
+- `TenantMembershipRepository.list_for_principal` adds deterministic cursor pagination scoped by one exact principal, with a maximum page size of 100 and caller-owned Mongo session propagation.
+- `membership_selection_projection.py` composes the ACTIVE global PrincipalAuthority, principal-scoped membership page, current canonical ACTIVE tenant, and every ACTIVE tenant business capacity. Each capacity maps to an EOS workspace identifier but conveys no permissions or authorization grant.
+- Unit tests cover principal status, active/inactive membership filtering, multiple capacities, workspace projection, tenant mismatch, cursor preservation, page bounds and caller-session propagation.
+
+**Integration boundary:** this is deliberately a read-only projection primitive, not yet a public login endpoint. The global credential authority does not yet exist. The existing AuthRegistry stores password hash, MFA state and tenantId together in `users`; login looks up one row by email; credential-revision validation, MFA, ACCESS issuance and refresh-token persistence remain tenant-bound. Wiring the new projection into login before migrating those credential/session dependencies would preserve the same single-tenant assumption behind a new endpoint and is therefore prohibited.
+
+**Next engineering gate:** implement a tenant-neutral global principal credential registry and its controlled migration contract, then bind MFA, credential revision, session and selected membership/capacity revisions to that principal. Only then expose the membership choices endpoint and complete the HTTP/browser journey. The migration must quarantine ambiguous duplicate/conflicting legacy identities rather than merge them or create membership.
