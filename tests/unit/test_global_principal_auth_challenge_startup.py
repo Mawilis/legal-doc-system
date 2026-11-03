@@ -63,6 +63,8 @@ def test_global_auth_index_readiness_defaults_and_shutdown_fail_closed():
     shutdown = _shutdown_source()
     assert "global_principal_auth_indexes_ready = False" in startup
     assert "global_principal_auth_indexes_ready = False" in shutdown
+    assert "global_principal_mfa_factor_indexes_ready = False" in startup
+    assert "global_principal_mfa_factor_indexes_ready = False" in shutdown
 
 
 def test_server_version_is_the_governed_global_auth_route_bootstrap():
