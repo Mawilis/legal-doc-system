@@ -106,3 +106,28 @@ def test_retirement_uses_canonical_kernel_uri_resolution() -> None:
     assert "from tools.eos.kernel.db import resolve_mongo_uri" in source
     assert "uri = resolve_mongo_uri()" in source
     assert 'uri = os.getenv("MONGODB_URI")' not in source
+
+
+def test_all_alias_scoped_historical_records_are_fingerprinted_and_preserved() -> None:
+    source = Path("tools/eos/tenancy/retire_legacy_root_aliases.py").read_text(
+        encoding="utf-8"
+    )
+    assert "database.list_collection_names()" in source
+    assert '"tenantId": {"$in": list(ALIASES)}' in source
+    assert '"tenant_id": {"$in": list(ALIASES)}' in source
+    assert '"preserved_record_evidence"' in source
+    assert "PRESERVED_LEGACY_RECORD_EVIDENCE_DRIFT" in source
+    assert '"legacy_records_preserved": len(preserved_records)' in source
+
+
+def test_retirement_still_mutates_only_alias_configuration_records() -> None:
+    source = Path("tools/eos/tenancy/retire_legacy_root_aliases.py").read_text(
+        encoding="utf-8"
+    )
+    tree = ast.parse(source)
+    mutation_targets = []
+    for node in ast.walk(tree):
+        if isinstance(node, ast.Call) and isinstance(node.func, ast.Attribute):
+            if node.func.attr in {"update_one", "update_many", "delete_one", "delete_many"}:
+                mutation_targets.append(ast.unparse(node.func.value))
+    assert mutation_targets == ["database['tenant_configs']"]
