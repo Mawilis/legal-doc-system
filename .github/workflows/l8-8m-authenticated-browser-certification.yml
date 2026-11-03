@@ -1,5 +1,5 @@
 # TITLE: L8-8M and D21B13 authenticated browser/branding certification
-# VERSION: v1.1.0-OWNER-COMMERCIAL-BROWSER-CERT
+# VERSION: v1.1.1-OWNER-COMMERCIAL-BROWSER-CERT-PEER-LOCK
 # AUTHORITY: Disposable certification orchestration only.
 # EPITOME: Run the authenticated Legal browser suite and the independent real-Mongo
 #          branding delivery integration certificate against isolated replica sets.
@@ -104,7 +104,7 @@ jobs:
         run: |
           npm ci --legacy-peer-deps
           npm --prefix client ci
-          npm --prefix server ci
+          npm --prefix server ci --legacy-peer-deps
 
       - name: Install Chromium for Playwright
         run: npx playwright install --with-deps chromium
