@@ -24,6 +24,16 @@ class Result:
         self.matched_count = matched_count
 
 
+class Cursor:
+    def __init__(self, rows):
+        self.rows = rows
+    def limit(self, count):
+        self.rows = self.rows[:count]
+        return self
+    def __iter__(self):
+        return iter(self.rows)
+
+
 class Collection:
     def __init__(self):
         self.rows = []
@@ -43,6 +53,13 @@ class Collection:
     def find_one(self, query, session=None):
         self.session = session
         return next((dict(row) for row in self.rows if all(row.get(key) == value for key, value in query.items())), None)
+
+    def find(self, query, session=None):
+        self.session = session
+        return Cursor([
+            dict(row) for row in self.rows
+            if all(row.get(key) == value for key, value in query.items())
+        ])
 
     def update_one(self, query, update, upsert=False, session=None):
         self.session = session
@@ -145,3 +162,18 @@ def test_repository_forwards_caller_session_without_owning_transaction():
         "owner@example.com", collection(fake), session=token
     ) == credential()
     assert fake.session is token
+
+
+def test_duplicate_persisted_principal_or_email_rows_fail_closed():
+    fake = Collection()
+    row = {
+        "principal_id": "principal-1",
+        "normalized_email": "owner@example.com",
+        "password_hash": HASH_A,
+        "credential_revision": 0,
+    }
+    fake.rows.extend([dict(row), dict(row)])
+    with pytest.raises(PrincipalCredentialPersistedRecordInvalidError):
+        PrincipalCredentialRepository.get_by_principal("principal-1", collection(fake))
+    with pytest.raises(PrincipalCredentialPersistedRecordInvalidError):
+        PrincipalCredentialRepository.get_by_email("owner@example.com", collection(fake))
