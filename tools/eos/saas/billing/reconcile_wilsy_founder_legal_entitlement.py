@@ -131,6 +131,10 @@ def _load_exact_sources(database: Any) -> tuple[dict[str, Any], dict[str, Any]]:
         "FOUNDER_SUBSCRIPTION_FEATURE_SNAPSHOT_UNEXPECTED",
     )
     _require(
+        subscription_features == plan_features,
+        "FOUNDER_PLAN_SUBSCRIPTION_FEATURE_SNAPSHOT_MISMATCH",
+    )
+    _require(
         not (LEGAL_FEATURE in subscription_features and LEGAL_FEATURE not in plan_features),
         "SUBSCRIPTION_FEATURES_EXCEED_CANONICAL_PLAN",
     )
