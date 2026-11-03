@@ -308,19 +308,22 @@ Competitive lesson: use a clear persona/workspace experience, granular permissio
 
 ## 12. Implementation progress — 3 November 2026
 
-Day 1 has started on `eos/tenant-discovery-iam-dashboard-roadmap`:
+Day 1 implementation is active on `eos/tenant-discovery-iam-dashboard-roadmap`.
 
-- Removed the compiled-in `WILSYTENANT-4CD2FZ4O` request-tenant constant from `client/src/services/api.js`.
-- Request tenant selection now reads the exact canonical `tenantId` from the JSON server-discovery projection in `discoveredTenant`; malformed or absent discovery removes the tenant header instead of inventing a default.
-- Updated `client/src/__tests__/services/api.test.js` to cover arbitrary discovered tenant IDs, malformed/missing discovery and MFA bearer preservation. Test execution is pending in the local checkout/CI.
-- Removed the synthetic `GLOBAL_ROOT` tenant fallback from `client/src/components/ErrorBoundary.jsx` telemetry.
-- Added `docs/architecture/wilsy-day1-runtime-dependency-route-inventory.md` with the current auth/workspace route map, client/EOS dependencies, legacy runtime migration register and known limitations.
+- Removed the compiled-in WILSY tenant constant from `client/src/services/api.js`. Authenticated tenant transport is now set only after EOS workspace-bootstrap revalidates the current session; discovery storage alone cannot establish authenticated request scope.
+- Added tests for authenticated tenant context, discovery-only denial, missing tenant context and MFA bearer preservation. Execution is pending in the local checkout/CI.
+- Removed the synthetic `GLOBAL_ROOT` tenant fallback from browser error telemetry.
+- Added a versioned EOS workspace contract. EOS maps the exact durable business role to a closed `workspaceId` and returns `workspaceContractVersion`; AuthContext validates both before session promotion.
+- Replaced browser role-to-dashboard inference with a presentation mapping from the EOS `workspaceId`. Added tests for Owner executive routing, Legal practice routing, absent-contract denial and refusal to honor a conflicting manual dashboard preference.
+- Changed Vite's catch-all `/api` and legacy `/auth` compatibility route to target Python EOS directly. No port-4000 proxy target remains in the current PR branch.
+- Added an EOS-only shell development launcher with process-working-directory checks, changed the root `dev` command to use it, removed root Express lifecycle scripts and deleted the old multi-runtime `.mjs` launcher.
+- Expanded the Day 1 inventory with the client endpoint census, direct-origin findings, Express route mounts, legacy process-manager references, production retention-policy conflicts and root/server/client package dependency counts.
 
-These changes only correct browser transport selectors. They do not yet allocate or select a tenant membership. The current AuthRegistry/login flow remains email/password against a user record with one `tenantId`; the ACCESS token carries tenant context and workspace bootstrap revalidates membership for that tenant. A global principal with multiple memberships, post-auth membership selection, tenant-bound session issuance and revocation-safe tenant switching remain Day 2 work.
+The first workspace contract is a presentation-routing contract, not a full membership-selection implementation. Current AuthRegistry login still authenticates against a user record carrying one `tenantId`; the ACCESS token carries one tenant context, and workspace bootstrap revalidates membership for that scope. A global principal with multiple tenant memberships, discovery-bound membership selection, tenant-scoped session issuance/switching, explicit active-capacity selection and revocation-safe tenant switching remain outstanding.
 
-The EOS workspace bootstrap currently returns `businessRole` and permission presentation metadata, but not a canonical `workspace_id`. Client dashboard selection still uses a role-to-dashboard map. Replacing that with a versioned EOS workspace decision is a Day 1/Day 3 gate; no dashboard redesign should proceed until it exists and is tested.
+The currently published workspace map routes `tenant_owner` to `EXECUTIVE_COMMAND_CENTRE` and professional Legal roles to their separately governed workspaces. The proposed `tenant_partner` business capacity is not yet present in the IAM catalogue; it must be added as a distinct executive-equivalent capacity, never by reusing `tenant_legal_partner`.
 
-No membership, IAM role, permission, subscription, entitlement or production data was changed. No legacy runtime files were deleted. No test result or certification is claimed until executed.
+The route/dependency inventory is substantially expanded but still requires a recursive caller/import/test/workflow/data reconciliation before deleting the remaining legacy server tree. No legacy server source files have been deleted. No membership, role, permission, subscription, entitlement or production data was changed. No test execution or certification is claimed until it has been run against the synced local checkout.
 
 ## 13. Delivery control
 
