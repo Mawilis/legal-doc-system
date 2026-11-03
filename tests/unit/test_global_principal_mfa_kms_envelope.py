@@ -149,6 +149,13 @@ def test_rotation_keyring_rejects_key_from_another_region():
             decrypt_key_ids=["arn:aws:kms:eu-west-1:123456789012:key/other"],
             client=_KmsClient(),
         )
+    with pytest.raises(GlobalMfaKeyManagementError, match="GLOBAL_MFA_KMS_DECRYPT_KEYRING_INVALID"):
+        AwsKmsGlobalMfaEnvelope(
+            key_id=KEY,
+            region_name="af-south-1",
+            decrypt_key_ids=["arn:aws:kms:af-south-1:999999999999:key/other"],
+            client=_KmsClient(),
+        )
 
 
 def test_kms_adapter_requires_full_key_arn_and_matching_explicit_region():
