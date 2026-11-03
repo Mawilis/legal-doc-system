@@ -516,7 +516,7 @@ def test_http_login_records_failed_password_without_logging_raw_email(
     monkeypatch.setattr(auth_router, "PrincipalAuthenticationRateLimit", _Gate)
     monkeypatch.setattr(auth_router, "get_auth_registry", lambda _tenant: registry)
     monkeypatch.setattr(auth_router, "broadcast_telemetry", lambda *args: telemetry.append(args))
-    http_request = SimpleNamespace(client=SimpleNamespace(host="203.0.113.25"))
+    http_request = cast(Request, SimpleNamespace(client=SimpleNamespace(host="203.0.113.25"))))
 
     with pytest.raises(HTTPException) as error:
         _run(
@@ -549,7 +549,7 @@ def test_http_login_returns_generic_429_before_credential_lookup(
 
     monkeypatch.setattr(auth_router, "PrincipalAuthenticationRateLimit", _Gate)
     monkeypatch.setattr(auth_router, "get_auth_registry", lambda _tenant: registry)
-    http_request = SimpleNamespace(client=SimpleNamespace(host="203.0.113.25"))
+    http_request = cast(Request, SimpleNamespace(client=SimpleNamespace(host="203.0.113.25"))))
 
     with pytest.raises(HTTPException) as error:
         _run(
@@ -580,7 +580,7 @@ def test_http_login_fails_closed_when_throttle_authority_is_unavailable(
 
     monkeypatch.setattr(auth_router, "PrincipalAuthenticationRateLimit", _Gate)
     monkeypatch.setattr(auth_router, "get_auth_registry", lambda _tenant: registry)
-    http_request = SimpleNamespace(client=SimpleNamespace(host="203.0.113.25"))
+    http_request = cast(Request, SimpleNamespace(client=SimpleNamespace(host="203.0.113.25"))))
 
     with pytest.raises(HTTPException) as error:
         _run(
