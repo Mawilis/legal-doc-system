@@ -71,7 +71,9 @@ class _Collection:
         assert session is not None
         for row in self.rows:
             if self._matches(row, query):
-                row.update(update["$set"])
+                row.update(update.get("$set", {}))
+                for key, increment in update.get("$inc", {}).items():
+                    row[key] = row.get(key, 0) + increment
                 return SimpleNamespace(matched_count=1, upserted_id=None)
         if upsert:
             row = dict(query)
@@ -250,7 +252,35 @@ def test_invalid_confirmation_code_does_not_enable_or_consume_enrollment():
     assert credentials.current.mfa_enabled is False
     assert credentials.current.credential_revision == 3
     assert len(challenges.rows) == 1
+    assert challenges.rows[0]["attempt_count"] == 1
     assert factors.rows == []
+
+
+def test_enrollment_challenge_locks_after_five_invalid_codes():
+    service, challenges, *_ = _service()
+    receipt = service.issue(
+        principal_id="principal-global",
+        credential_revision=3,
+        session=_Session(),
+        now=NOW,
+    )
+    for _ in range(5):
+        with pytest.raises(GlobalPrincipalMfaEnrollmentRejected, match="CODE_INVALID"):
+            service.confirm(
+                challenge_token=receipt.challenge_token,
+                code="000000",
+                session=_Session(),
+                now=NOW,
+            )
+    assert challenges.rows[0]["attempt_count"] == 5
+    assert challenges.rows[0]["status"] == "LOCKED"
+    with pytest.raises(GlobalPrincipalMfaEnrollmentRejected, match="INVALID_EXPIRED_OR_CONSUMED"):
+        service.confirm(
+            challenge_token=receipt.challenge_token,
+            code="000000",
+            session=_Session(),
+            now=NOW,
+        )
 
 
 def test_confirmation_challenge_is_single_use():
