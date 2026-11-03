@@ -2503,7 +2503,7 @@ function CRMDashboard({ user = {}, tenantConfig = {}, onExit = null }) {
 
       <section className={styles.commandSurface}>
         {activeWorkspace === 'home' ? (
-          <header data-wilsy-r85-crm-workspace-topbar="tabbed-command" className={styles.osChrome}>
+          <header data-wilsy-r85-crm-workspace-topbar="tabbed-command" className={crmPermissionProfile.scope === 'tenant' ? styles.ownerChrome : styles.osChrome}>
             <div className={styles.chromeTitle}>
               <small><Home size={13} /> {crmPermissionProfile.scope === 'tenant' ? 'Legal Operations' : 'CRM Workspace'}</small>
               <h1 className={styles.crmOneLineTitleLock} aria-label={crmPermissionProfile.scope === 'tenant' ? 'WILSY Legal Operations Owner Workspace' : 'Wilsy CRM Workspace'}>
@@ -2512,6 +2512,7 @@ function CRMDashboard({ user = {}, tenantConfig = {}, onExit = null }) {
               <p>{crmPermissionProfile.scope === 'tenant' ? 'Daily owner actions, commercial follow-ups and subscription-governed Legal operations.' : 'Source-led pipeline. Sovereign search. Evidence proof.'}</p>
             </div>
 
+            {crmPermissionProfile.scope !== 'tenant' ? (
             <nav className={styles.crmTopAppMenu} aria-label="CRM command menu">
               {visibleHomeTabs.map(tab => {
                 const TabIcon = tab.icon;
@@ -2536,12 +2537,15 @@ function CRMDashboard({ user = {}, tenantConfig = {}, onExit = null }) {
                 );
               })}
             </nav>
+            ) : null}
 
+            {crmPermissionProfile.scope !== 'tenant' ? (
             <div className={styles.investorStrip} aria-label="Investor telemetry">
               <span title={rootHashStatus}><LockKeyhole size={16} /> {String(rootHashStatus || '').toLowerCase().includes('root') ? 'Root sealed' : 'Root pending'}</span>
               <span><Network size={16} /> {resolveWilsyR91K110RouteSurfaceLabel(operatingSnapshot.sourcePosture)}</span>
               <span><Shield size={16} /> {readinessScore}% readiness</span>
             </div>
+            ) : null}
 
             <div className={styles.chromeTenant}>
               <img
