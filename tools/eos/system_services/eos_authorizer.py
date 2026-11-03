@@ -12,6 +12,8 @@ from typing import Any, Callable, Protocol
 
 from pymongo.client_session import ClientSession
 
+from pymongo.client_session import ClientSession
+
 from tools.eos.auth.current_system_permission_possession import (
     CurrentSystemPermissionPossessionError,
 )
@@ -54,7 +56,7 @@ class SystemServicesAuthorizationUnavailable(RuntimeError):
 
 class PermissionPossessionResolver(Protocol):
     def resolve(
-        self, *, principal_id: str, permission_id: str, session: object
+        self, *, principal_id: str, permission_id: str, session: ClientSession | None = None
     ) -> object | None: ...
 
 
