@@ -107,6 +107,7 @@ import api, {
   exportStatement,
   exportStatementPdf,
   verifyStatementSeal,
+  setActiveTenantTransportId,
 } from '../../services/api.js';
 
 // ──────────────────────────────────────────────────────────────────────────────
@@ -119,6 +120,7 @@ describe('api.js – Sovereign HTTP Client', () => {
   beforeEach(() => {
     vi.clearAllMocks();
     localStorageMock.clear();
+    setActiveTenantTransportId(null);
     consoleErrorSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
   });
 
@@ -135,6 +137,7 @@ describe('api.js – Sovereign HTTP Client', () => {
 
     const bindAuthenticatedTransport = () => {
       localStorageMock.setItem('wilsy_auth_token', 'bounded-test-token');
+      setActiveTenantTransportId(tenantId);
 
       // Current authenticated projection is authoritative where supported.
       localStorageMock.setItem(
@@ -205,7 +208,7 @@ describe('api.js – Sovereign HTTP Client', () => {
       );
     });
 
-    it('uses the canonical tenant returned by discovery, not a compiled-in tenant', async () => {
+    it('does not promote discovery storage into authenticated tenant transport context', async () => {
       expect(requestInterceptorCapture.fulfilled).toEqual(expect.any(Function));
 
       localStorageMock.setItem('discoveredTenant', JSON.stringify({
@@ -219,7 +222,7 @@ describe('api.js – Sovereign HTTP Client', () => {
         headers: {},
       });
 
-      expect(sealed.headers['X-Tenant-ID']).toBe('TENANT-ACME-01');
+      expect(sealed.headers['X-Tenant-ID']).toBeUndefined();
     });
 
     it('does not invent a tenant header before successful discovery', async () => {
@@ -260,7 +263,7 @@ describe('api.js – Sovereign HTTP Client', () => {
       expect(sealed.headers.Authorization).toBe(
         'Bearer freshly-verified-candidate-token',
       );
-      expect(sealed.headers['X-Tenant-ID']).toBe('TENANT-BOOTSTRAP-TEST');
+      expect(sealed.headers['X-Tenant-ID']).toBeUndefined();
     });
 
     it('rejects empty or malformed explicit bearer headers and uses the valid stored session', async () => {
