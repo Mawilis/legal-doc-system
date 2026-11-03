@@ -454,6 +454,7 @@ class WilsyAPIServer:
             app.state.global_principal_session_indexes_ready = False
             app.state.global_principal_mfa_factor_indexes_ready = False
             app.state.global_principal_totp_verifier = None
+            app.state.global_principal_mfa_kms_envelope = None
             app.state.system_services_case_indexes_ready = False
             app.state.system_services_authority_ready = False
             app.state.system_services_authorizer = None
