@@ -1,7 +1,7 @@
 """Direct certificate for the canonical Kernel database configuration authority.
 
 TITLE: WILSY OS Kernel Database Configuration Authority Certificate
-VERSION: v1.0.0-R1D-B0F-B3B-R0-CANONICAL-URI
+VERSION: v1.1.0-EOS-PRODUCTION-ENV-ALIAS-ALIGNMENT
 AUTHORITY: Wilsy OS Core Governance
 EPITOME: Proves that MONGODB_URI is the sole production database authority,
          production never receives repository-dotenv rescue, non-production
@@ -115,6 +115,77 @@ def test_resolver_source_has_no_legacy_fallback_authorities() -> None:
     assert "DATABASE_URL" not in source
     assert "WILSY_MONGO_URI" not in source
     assert "localhost" not in source
+
+
+
+def test_wilsy_env_production_disables_repository_dotenv_without_legacy_env(monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.setenv("WILSY_ENV", "production")
+    monkeypatch.delenv("ENV", raising=False)
+    monkeypatch.setenv("MONGODB_URI", "mongodb+srv://deployment.example/wilsy")
+
+    def forbidden_dotenv(*_args: Any, **_kwargs: Any) -> None:
+        raise AssertionError("WILSY_ENV=production must disable repository dotenv")
+
+    monkeypatch.setattr(kernel_db, "load_dotenv", forbidden_dotenv)
+    assert kernel_db._is_production_environment() is True
+    assert kernel_db.resolve_mongo_uri() == "mongodb+srv://deployment.example/wilsy"
+
+
+def test_wilsy_env_production_missing_uri_fails_before_client_creation(monkeypatch: pytest.MonkeyPatch) -> None:
+    _disable_dotenv(monkeypatch)
+    monkeypatch.setenv("WILSY_ENV", "production")
+    monkeypatch.delenv("ENV", raising=False)
+    monkeypatch.delenv("MONGODB_URI", raising=False)
+    created: list[bool] = []
+
+    class ForbiddenClient:
+        def __init__(self, *_args: Any, **_kwargs: Any) -> None:
+            created.append(True)
+
+    monkeypatch.setattr(kernel_db, "MongoClient", ForbiddenClient)
+    kernel_db.disconnect_db()
+    connected, detail = kernel_db.connect_db()
+    assert connected is False
+    assert "missing" in detail.lower()
+    assert created == []
+
+
+def test_wilsy_env_production_enforces_verified_tls(monkeypatch: pytest.MonkeyPatch) -> None:
+    _disable_dotenv(monkeypatch)
+    monkeypatch.setenv("WILSY_ENV", "production")
+    monkeypatch.delenv("ENV", raising=False)
+    monkeypatch.setenv("MONGODB_URI", "mongodb+srv://deployment.example/wilsy")
+    captured: dict[str, Any] = {}
+
+    class FakeAdmin:
+        def command(self, command: str) -> dict[str, int]:
+            assert command == "ping"
+            return {"ok": 1}
+
+    class FakeDatabase:
+        name = "wilsy"
+
+    class FakeClient:
+        def __init__(self, _uri: str, **options: Any) -> None:
+            captured.update(options)
+            self.admin = FakeAdmin()
+
+        def get_database(self) -> FakeDatabase:
+            return FakeDatabase()
+
+        def close(self) -> None:
+            return None
+
+    monkeypatch.setattr(kernel_db, "MongoClient", FakeClient)
+    kernel_db.disconnect_db()
+    connected, detail = kernel_db.connect_db()
+    try:
+        assert connected is True, detail
+        assert captured["tls"] is True
+        assert captured["tlsAllowInvalidCertificates"] is False
+        assert captured["tlsAllowInvalidHostnames"] is False
+    finally:
+        kernel_db.disconnect_db()
 
 
 # ARTIFACT: test_kernel_db_configuration_authority.py
