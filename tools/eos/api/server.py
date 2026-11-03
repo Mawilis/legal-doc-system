@@ -619,6 +619,7 @@ class WilsyAPIServer:
             app.state.p12c_binding_indexes_ready = False
             app.state.global_principal_auth_indexes_ready = False
             app.state.global_principal_session_indexes_ready = False
+            app.state.global_principal_session_indexes_ready = False
             app.state.system_services_case_indexes_ready = False
             app.state.system_services_authority_ready = False
             app.state.system_services_authorizer = None
