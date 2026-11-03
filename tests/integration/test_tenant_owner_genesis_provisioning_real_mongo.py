@@ -86,7 +86,7 @@ def test_owner_genesis_commits_all_records_and_rolls_back_every_participant(
 ) -> None:
     uri = os.environ.get("TEST_TENANT_OWNER_MONGO_URI", "").strip()
     if not uri:
-        pytest.skip("TEST_TENANT_OWNER_MONGO_URI is not configured")
+        pytest.fail("TEST_TENANT_OWNER_MONGO_URI is required for real-Mongo certification")
 
     client = MongoClient(uri, serverSelectionTimeoutMS=10_000)
     database_name = f"owner_genesis_cert_{uuid4().hex}"
