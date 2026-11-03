@@ -150,6 +150,7 @@ from .tenant_authorization_http import (
     get_role_assignment_repository as get_tenant_authority_role_repository,
 )
 from ..auth.workspace_bootstrap_projection import (
+    WORKSPACE_CONTRACT_VERSION,
     WorkspaceBootstrapProjectionError,
     build_workspace_bootstrap_projection,
 )
@@ -679,6 +680,8 @@ async def workspace_bootstrap(
         "workspace": {
             "tenantId": projection.tenant_id,
             "businessRole": projection.business_role,
+            "workspaceId": projection.workspace_id,
+            "workspaceContractVersion": WORKSPACE_CONTRACT_VERSION,
             "membershipRevision": projection.membership_revision,
             "businessRoleRevision": projection.business_role_revision,
             "legalPermissions": list(legal_permissions),
