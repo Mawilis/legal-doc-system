@@ -594,12 +594,10 @@ def test_http_login_fails_closed_when_throttle_authority_is_unavailable(
     assert registry.session_calls == 0
 
 
-"""
-ARTIFACT: tests/unit/test_auth_router_authoritative_mfa.py
-VERSION: v1.4.0-GLOBAL-PRINCIPAL-FAILURE-THROTTLE-HTTP-CERT
-AUTHORITY BOUNDARY: deterministic HTTP-state certificate only
-TENANT POSTURE: unknown aliases fail closed without directory enumeration
-FAIL-CLOSED POSTURE: persistence uncertainty cannot issue a session
-FINANCIAL EXECUTION AUTHORITY: none; Kennel EOS remains exclusive
-END OF WILSY OS SOVEREIGN ARTIFACT
-"""
+# ARTIFACT: tests/unit/test_auth_router_authoritative_mfa.py
+# VERSION: v1.4.0-GLOBAL-PRINCIPAL-FAILURE-THROTTLE-HTTP-CERT
+# AUTHORITY BOUNDARY: deterministic HTTP-state certificate only
+# TENANT POSTURE: unknown aliases fail closed without directory enumeration
+# FAIL-CLOSED POSTURE: persistence uncertainty cannot issue a session
+# FINANCIAL EXECUTION AUTHORITY: none; Kennel EOS remains exclusive
+# END OF WILSY OS SOVEREIGN ARTIFACT
