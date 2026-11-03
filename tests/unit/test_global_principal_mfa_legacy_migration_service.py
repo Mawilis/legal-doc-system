@@ -6,6 +6,8 @@ from typing import Any
 
 import pyotp
 import pytest
+
+from tools.eos.auth.principal_status import PrincipalStatus
 from pymongo.errors import DuplicateKeyError
 
 from tools.eos.auth.global_principal_mfa_legacy_migration_service import (
@@ -77,7 +79,7 @@ class _Credentials:
 
 
 class _Principals:
-    def __init__(self, status="ACTIVE"):
+    def __init__(self, status=PrincipalStatus.ACTIVE):
         self.value = SimpleNamespace(principal_id="principal-global", status=status)
 
     def get(self, principal_id, *, session=None):
@@ -101,7 +103,7 @@ class _Kms:
         }
 
 
-def _service(*, legacy_rows=None, factor_rows=None, mfa_enabled=True, principal_status="ACTIVE"):
+def _service(*, legacy_rows=None, factor_rows=None, mfa_enabled=True, principal_status=PrincipalStatus.ACTIVE):
     legacy = _Collection(legacy_rows or [{"user_id": "principal-global", "secret": SECRET}])
     factors = _Collection(factor_rows)
     kms = _Kms()
