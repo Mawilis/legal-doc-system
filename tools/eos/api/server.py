@@ -141,6 +141,10 @@ from tools.eos.auth.global_principal_session_authority import (
     REFRESH_COLLECTION as GLOBAL_PRINCIPAL_REFRESH_COLLECTION,
     GlobalPrincipalSessionAuthority,
 )
+from tools.eos.auth.global_principal_mfa_kms_envelope import (
+    GlobalMfaKeyManagementError,
+    build_global_mfa_kms_envelope_from_environment,
+)
 from tools.eos.auth.global_principal_totp_verifier import (
     COLLECTION as GLOBAL_PRINCIPAL_MFA_FACTOR_COLLECTION,
     GlobalPrincipalTotpVerifier,
@@ -237,7 +241,7 @@ class WilsyAPIServer:
         debug: bool = False,
         allowed_origins: Optional[List[str]] = None,
         reasoning_provider_binding: Any | None = None,
-        global_principal_mfa_decrypt_secret: Callable[[Any], str] | None = None,
+        global_principal_mfa_decrypt_secret: Callable[..., str] | None = None,
     ) -> None:
         """Initialize immutable server configuration and build the FastAPI app."""
         self.title = title
@@ -284,6 +288,7 @@ class WilsyAPIServer:
         app.state.global_principal_mfa_factor_indexes_ready = False
         app.state.global_principal_totp_verifier = None
         app.state.global_principal_mfa_decrypt_secret = self.global_principal_mfa_decrypt_secret
+        app.state.global_principal_mfa_kms_envelope = None
         # Case storage readiness is separate from IAM authorization readiness.
         app.state.system_services_case_indexes_ready = False
         app.state.system_services_authority_ready = False
@@ -510,9 +515,21 @@ class WilsyAPIServer:
                 )
                 app.state.global_principal_mfa_factor_indexes_ready = client is not None
                 decrypt_global_mfa_secret = cast(
-                    Callable[[Any], str] | None,
+                    Callable[..., str] | None,
                     getattr(app.state, "global_principal_mfa_decrypt_secret", None),
                 )
+                if not callable(decrypt_global_mfa_secret):
+                    try:
+                        kms_envelope = build_global_mfa_kms_envelope_from_environment()
+                        app.state.global_principal_mfa_kms_envelope = kms_envelope
+                        if kms_envelope is not None:
+                            decrypt_global_mfa_secret = kms_envelope.decrypt_secret
+                    except GlobalMfaKeyManagementError as error:
+                        app.state.global_principal_mfa_kms_envelope = None
+                        logger.warning(
+                            "[GLOBAL_PRINCIPAL_MFA] KMS composition unavailable: %s",
+                            str(error),
+                        )
                 if callable(decrypt_global_mfa_secret):
                     app.state.global_principal_totp_verifier = GlobalPrincipalTotpVerifier(
                         collection=database[GLOBAL_PRINCIPAL_MFA_FACTOR_COLLECTION],
