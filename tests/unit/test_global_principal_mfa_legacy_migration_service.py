@@ -116,7 +116,11 @@ class _Kms:
 
 
 def _service(*, legacy_rows=None, factor_rows=None, mfa_enabled=True, principal_status=PrincipalStatus.ACTIVE):
-    legacy = _Collection(legacy_rows or [{"user_id": "principal-global", "secret": SECRET}])
+    legacy = _Collection(
+        [{"user_id": "principal-global", "secret": SECRET}]
+        if legacy_rows is None
+        else legacy_rows
+    )
     factors = _Collection(factor_rows)
     kms = _Kms()
     service = GlobalPrincipalMfaLegacyMigrationService(
@@ -215,8 +219,8 @@ def test_migration_requires_active_global_principal_and_existing_mfa_enrollment(
             session=_Session(),
             now=NOW,
         )
-    not_enrolled, *_ = _service(mfa_enabled=False)
-    with pytest.raises(GlobalPrincipalMfaLegacyMigrationRejected, match="ENROLLMENT_REQUIRED"):
+    not_enrolled, *_ = _service(mfa_enabled=False, legacy_rows=[])
+    with pytest.raises(GlobalPrincipalMfaLegacyMigrationRejected, match="LEGACY_FACTOR_NOT_UNIQUE"):
         not_enrolled.migrate(
             principal_id="principal-global",
             credential_revision=7,
