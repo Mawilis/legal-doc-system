@@ -154,3 +154,28 @@ A repository manifest, an Atlas cluster existing, an image being published, or a
 | Backup/restore certification | **Not evidenced** |
 
 **Release decision: NO-GO for production credential migration or production activation.** The repository-side security correction and evidence map are safe to advance; live credentials remain untouched until the complete chain is proven.
+
+
+## 8. Critical correction: the full application has additional Mongo clients
+
+The earlier description of `MONGODB_URI` as the sole application MongoDB URI authority is incomplete. Source inspection of the mounted subscription and plan routers found two independent module-level clients:
+
+| Registry | URI precedence | Database selection | Collection |
+|---|---|---|---|
+| Subscription | `WILSY_SUBSCRIPTION_MONGO_URI` → `MONGODB_URI` → localhost fallback | URI default database, fallback `wilsy` | `subscriptions` |
+| Plan | `WILSY_PLAN_MONGO_URI` → `MONGODB_URI` → localhost fallback | `WILSY_PLAN_MONGO_DATABASE` → URI default → `wilsy` | `plans` |
+
+The canonical kernel client remains a third independent composition. These three clients may share the same Atlas target if configured identically, but that is not guaranteed by source.
+
+Both dedicated registries use a localhost fallback if their dedicated URI and `MONGODB_URI` are absent. This must be treated as a fail-closed configuration defect candidate: the API can otherwise import successfully while billing registry calls target a local MongoDB instead of the deployment-owned EOS database. Production behavior depends on actual environment variables, which have not been verified.
+
+Subscription creation invokes `_ensure_indexes` and creates four indexes at runtime. Plan catalogue reads perform read-only index validation; explicit `PlanRegistry.provision_indexes` owns plan DDL.
+
+**Required resolution before runtime role design:**
+1. Remove independent URI/database authorities or prove and enforce one canonical injected database/client contract.
+2. Remove localhost fallbacks for production and fail startup/readiness when required database configuration is absent.
+3. Preserve caller-owned session propagation across subscription/entitlement composition.
+4. Move subscription index DDL to the separate provisioner and keep runtime verification read-only.
+5. Compare redacted fingerprints for canonical kernel, subscription and plan targets before any Atlas role/user work.
+
+This correction supersedes any earlier statement that all EOS Python persistence is proven to use only the kernel `MONGODB_URI`.
