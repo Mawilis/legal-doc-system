@@ -20,9 +20,6 @@ from tools.eos.system_services.support_case import (
     SupportCaseEvent,
     SupportCaseScope,
     SupportCaseStatus,
-    SupportCaseApplicationService,
-    SupportCaseActorContext,
-    SupportCaseApplicationError,
 )
 from tools.eos.system_services.support_case_service import (
     SupportCaseApplicationService,
