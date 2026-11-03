@@ -2705,7 +2705,7 @@ function CRMDashboard({ user = {}, tenantConfig = {}, onExit = null }) {
               onBackHome={() => setActiveWorkspace('home')}
             />
           ) : activeWorkspace === 'home' ? (
-            {crmPermissionProfile.scope === 'tenant' ? (
+            crmPermissionProfile.scope === 'tenant' ? (
               <OwnerCommercialWorkspace />
             ) : (
             <section className={styles.homeGrid}>
@@ -2812,7 +2812,7 @@ function CRMDashboard({ user = {}, tenantConfig = {}, onExit = null }) {
                 </article>
               </section>
             </section>
-            )}
+            )
           ) : (
             <section className={styles.recordsSurface}>
               <div className={styles.recordsHeader}>
