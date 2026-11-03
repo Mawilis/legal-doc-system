@@ -49,6 +49,18 @@ data:
   legal-evidence-s3-region: ""
   # OPTIONAL only if the approved legal-evidence design uses S3-managed SSE-S3.
   legal-evidence-s3-kms-key-id: ""
+
+  # OPTIONAL GLOBAL-PRINCIPAL MFA KMS CONFIGURATION.
+  #
+  # Leave provider/key blank to keep global MFA KMS unconfigured and disabled.
+  # The real symmetric KMS key ARN and region must be verified against the
+  # actual EOS runtime account/cluster before populating these fields.
+  # Never put AWS access keys or other credentials in this ConfigMap.
+  global-principal-mfa-kms-provider: ""
+  global-principal-mfa-kms-key-id: ""
+  # Comma-separated previous full key ARNs only during an approved rotation.
+  global-principal-mfa-kms-decrypt-key-ids: ""
+  global-principal-mfa-kms-region: ""
   # REQUIRED; exact approved dedicated read-only role ARN for reconciliation.
   legal-evidence-reconciliation-aws-role-arn: ""
 
@@ -99,9 +111,23 @@ stringData:
 #    - Must be chosen by production deployment authority.
 #    - Repository test values are not production policy.
 #
-# 4. KMS
-#    - Optional only.
-#    - Do not add KMS IAM actions unless a certified KMS key is configured.
+# 4. Global-principal MFA KMS
+#    - The production Deployment references optional ConfigMap keys:
+#        global-principal-mfa-kms-provider
+#        global-principal-mfa-kms-key-id
+#        global-principal-mfa-kms-decrypt-key-ids
+#        global-principal-mfa-kms-region
+#    - Keep provider/key blank until the actual production AWS account, region,
+#      symmetric key ARN, key policy, and dedicated EOS workload identity pass
+#      independent verification. Blank/missing references do not activate KMS.
+#    - The EOS workload role receives only kms:Encrypt and kms:Decrypt on the
+#      exact MFA key ARN, with kms:EncryptionContext:purpose restricted to
+#      GLOBAL_PRINCIPAL_TOTP. Keep key administration separate.
+#    - No AWS role annotation is added until EKS cluster OIDC/provider identity
+#      and the role trust policy are proven from the live cluster/account.
+#    - Never store static AWS credentials, TOTP seeds, or production key material
+#      in this ConfigMap or repository.
+#
 #
 # ARTIFACT: k8s/eos-api-runtime-authority.example.yaml
 # VERSION: v1.3.0-L10A2R-C4D7-READONLY-AWS-ROLE-CONTRACT
