@@ -270,6 +270,27 @@ def test_reconciled_user_returns_normal_mfa_challenge_on_next_login(
     assert registry.access_issuer_calls == []
 
 
+def test_otp_verification_rejects_a_tenant_other_than_discovery(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    registry = _Registry(_user(enrolled=True), "SECRET")
+    monkeypatch.setattr(auth_router, "get_auth_registry", lambda _tenant: registry)
+
+    with pytest.raises(HTTPException) as error:
+        _run(
+            auth_router.verify_otp(
+                VerifyOTPRequest(
+                    email="person@example.com",
+                    code="123456",
+                    tenant_id="TENANT-OTHER",
+                )
+            )
+        )
+
+    assert error.value.status_code == 401
+    assert registry.session_calls == 0
+
+
 def test_invalid_otp_fails_closed_without_session(monkeypatch: pytest.MonkeyPatch) -> None:
     registry = _Registry(_user(enrolled=True), "SECRET")
     registry.verify_otp = lambda *_args: False  # type: ignore[method-assign]
