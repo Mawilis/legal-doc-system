@@ -1,6 +1,6 @@
 /**
  * TITLE: WILSY OS browser-certificate runner
- * VERSION: v1.6.0-OWNER-COMMERCIAL-AND-PRACTICE-PREFLIGHT
+ * VERSION: v1.7.0-LOOPBACK-DISPOSABLE-MONGO-PORT
  * AUTHORITY: Test process lifecycle only.
  * EPITOME: Own the synthetic fixture, disposable EOS, isolated Node BFF, Vite,
  *          browser suite, bounded diagnostics, and ordered cleanup.
@@ -13,7 +13,7 @@
  *            EOS preflights so canonical tenant authorization evaluates the
  *            synthetic principal's durable authority instead of rejecting a
  *            missing X-Tenant-ID request context.
- *            v1.6.0 preflights Tenant Owner commercial-context success and productive-work denial alongside Partner practice reads.
+ *            v1.7.0 accepts an explicit loopback disposable replica set on a non-default host port using directConnection when host port 27017 is occupied.
  *            v1.4.0 tracks startup, Mongo/seed, authenticated preflight, browser,
  *            cleanup, and shutdown phases; preserves redacted child failure
  *            type/message/exit details; and reports primary and cleanup failures
@@ -83,10 +83,15 @@ const mongoDatabase = decodeURIComponent(mongoTarget.pathname.slice(1));
 if (
   mongoTarget.protocol !== 'mongodb:'
   || !['127.0.0.1', 'localhost'].includes(mongoTarget.hostname)
-  || mongoTarget.port !== '27017'
+  || !Number.isInteger(Number(mongoTarget.port))
+  || Number(mongoTarget.port) < 1024
+  || Number(mongoTarget.port) > 65535
   || mongoTarget.username
   || mongoTarget.password
-  || mongoTarget.searchParams.get('replicaSet') !== 'wilsyVendorCertRS'
+  || !(
+    mongoTarget.searchParams.get('replicaSet') === 'wilsyVendorCertRS'
+    || mongoTarget.searchParams.get('directConnection') === 'true'
+  )
   || !/^wilsy_l8_8m_r3_[a-zA-Z0-9_-]+$/.test(mongoDatabase)
 ) {
   throw new Error('BROWSER_CERT_DISPOSABLE_MONGO_TARGET_REQUIRED');
