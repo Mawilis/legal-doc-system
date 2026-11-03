@@ -368,7 +368,56 @@ It imports CRM command routes, a local PDF renderer, tenant context middleware, 
 
 `tools/eos/governance/production_surface_policy.json` explicitly classifies `server/server.js`, the PDF controller/renderer/QR generator and `server/package.json` / `server/package-lock.json` as RETAIN. `tests/unit/test_owner_commercial_workspace_server_mount.py` also reads `server/server.js` and asserts its proxy mount. Other historical CRM gate scripts read `server/app.js`. These governance/test dependencies must be reconciled through a deliberate policy and test migration before deleting those files.
 
-## 9. Safety and release boundaries
+
+## 11. Package dependency census
+
+Package manifests at this checkpoint:
+
+| Manifest | Runtime dependencies | Development dependencies | Disposition |
+|---|---:|---:|---|
+| Root `package.json` | 10 | 25 | Mixed tooling and legacy dependencies; classify imports before removal |
+| `server/package.json` | 114 | 34 | Legacy Express application, worker and server test dependencies; retire after all active behavior migrates |
+| `client/package.json` | 27 | 23 | React/Vite presentation and browser-test dependencies; preserve |
+
+### Root runtime dependencies
+
+```text
+@aws-sdk/client-s3, @fidm/x509, bcrypt, dotenv, ioredis, node-cache, prom-client, qrcode, speakeasy, uuid
+```
+
+### Root development/test dependencies
+
+```text
+@babel/core, @babel/preset-env, @babel/preset-react, @babel/register, @playwright/test, @testing-library/jest-dom, @testing-library/react, @testing-library/react-hooks, @vitest/ui, chai, husky, jsdom, jsdom-global, lint-staged, mocha, mongodb-memory-server, mongoose, nock, nodemon, pm2, pyright, react, react-dom, sinon, vitest
+```
+
+### Legacy server runtime dependencies (114)
+
+```text
+@babel/core, @babel/preset-env, @babel/preset-react, @huggingface/transformers, @mongodb-js/zstd, @noble/curves, @noble/post-quantum, @pagerduty/pdjs, @react-pdf/renderer, @tensorflow/tfjs, @tensorflow/tfjs-backend-cpu, @tensorflow/tfjs-backend-webgl, agenda, asn1js, async-mutex, axios, axios-retry, bcrypt, bcryptjs, bn.js, bullmq, canonical-json, chalk, compression, compromise, compromise-dates, compromise-ngrams, compromise-numbers, cors, crypto, csv-parser, docxtemplater, dotenv, exceljs, express, express-async-handler, express-fileupload, express-mongo-sanitize, express-rate-limit, express-validator, express-ws, fast-json-patch, fast-xml-parser, gpu.js, handlebars, helmet, hpp, httpxy, ical-generator, ioredis, ip-address, joi, js-sha3, js-yaml, jsdom, json-stable-stringify, json2csv, jsonwebtoken, keccak256, lodash, lru-cache, luxon, mammoth, merkle-tree-stream, merkletreejs, moment, moment-timezone, mongoose-sequence, morgan, msgpack-lite, multer, node-cache, node-cron, node-rsa, nodemailer, opossum, otplib, pdf-lib, pdf-parse, pdfkit, pg, pg-hstore, pino, pino-http, pino-pretty, pizzip, pkijs, prom-client, qrcode, rate-limit-redis, rate-limiter-flexible, redis, sequelize, sha3, snappy, socket.io, speakeasy, sqlite3, stopword, tar, twilio, ua-parser-js, ulid, uuid, validator, winston, winston-daily-rotate-file, winston-mongodb, ws, xml2js, xss, xss-clean, zod, zxcvbn
+```
+
+### Legacy server development/test dependencies (34)
+
+```text
+@babel/core, @babel/preset-env, @babel/register, @tensorflow/tfjs-node, @types/chai, @types/ioredis-mock, @types/jest, @types/mocha, ajv, ajv-formats, brain.js, chai, chai-as-promised, eslint, eslint-config-airbnb-base, eslint-config-prettier, eslint-plugin-import, eslint-plugin-prettier, geoip-lite, glob, ioredis-mock, jest, mocha, mocha-junit-reporter, mongodb-memory-server, mongoose, natural, nodemon, nyc, prettier, redis-mock, rimraf, sinon, supertest
+```
+
+### Client runtime dependencies (27)
+
+```text
+axios, canvas, chart.js, cmdk, crypto-js, docx, history, html2canvas, js-sha3, jspdf, libphonenumber-js, lodash, lucide-react, pdfkit, qrcode, react, react-chartjs-2, react-dom, react-joyride, react-router-dom, recharts, socket.io-client, styled-components, topojson-client, uuid, world-atlas, zustand
+```
+
+### Client development/test dependencies (23)
+
+```text
+@babel/core, @babel/preset-env, @babel/preset-react, @babel/register, @tailwindcss/postcss, @testing-library/jest-dom, @testing-library/react, @testing-library/user-event, @types/react, @types/react-dom, @vitejs/plugin-react, @vitest/ui, autoprefixer, c8, chai, jsdom, mocha, postcss, prop-types, sinon, tailwindcss, vite, vitest
+```
+
+Manifest presence is not proof of runtime use. The next dependency pass must map every direct import/require/dynamic import, worker, test, script and workflow to its owning package. In particular, keep React, Vite, JSX, Vitest, Playwright and required build tooling even though they run on Node.js; they are not the legacy application server.
+
+## 12. Safety and release boundaries
 
 - No membership, role, permission, subscription, entitlement or user record was created or modified by the tenant-header correction.
 - No production data migration has been run.
