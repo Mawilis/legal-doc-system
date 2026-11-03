@@ -128,7 +128,29 @@ The following changes have been committed to `eos/tenant-iam-workspace-implement
 
 These changes are implementation evidence, not a claim of local test execution or production certification. Local test execution and real-Mongo/browser verification remain required.
 
-## 8. Retirement gates — no deletion yet
+## 8. Confirmed transitive references and retirement blockers
+
+Repository code search and source inspection found these additional live/static references:
+
+| Reference | Evidence | Required action before retirement |
+|---|---|---|
+| `orchestrator.js` | Explicit process script points to `./server/server.js` | Replace the process definition with EOS-only runtime orchestration; verify no production PM2 consumer remains. |
+| `docker-compose.yml` | Defines port 4000, API port 9095, publishes 4000 and health-checks `/health` on 4000 | Rework the compose topology to EOS + browser delivery only; preserve unrelated infrastructure services and validate health/readiness dependencies. |
+| `server/Dockerfile` | Node 20 image, port 4000 and `node server.js` command | Retire after container/deployment replacement is tested. |
+| `server/deploy-production.sh` | Builds and exposes port 4000 and probes old predictive endpoints | Replace or archive as historical deployment evidence only after a supported EOS deployment path is available. |
+| `server/k8s/deployment.yaml`, `server/k8s/service.yaml` | Kubernetes resources expose/target port 4000 | Reconcile with actual deployment topology; do not apply or delete based on source presence alone. |
+| `server/kernelBridge.js` | Express router bridges selected paths to Python | Determine all callers and whether EOS has direct routes; retire after all callers are moved. |
+| `scripts/wilsy-r72w-server-app-crm-route-mount-gate.js` | Reads and certifies `server/app.js` CRM mounts | Preserve as historical evidence or replace with EOS route contract tests before removing the source it certifies. |
+| `scripts/wilsy-r72x-auth-security-hardening-gate.js` | Asserts CRM route mounts remain in `server/app.js` | Rewrite the gate to test the canonical EOS routes and IAM boundary before app.js removal. |
+| `tools/eos/governance/production_surface_policy.json` | Contains explicit patterns for `server/server.js` and the PDF controller | Update policy only with governance/evidence continuity and a certified replacement; do not bypass the production-surface guard. |
+| Root CI workflow | `.github/workflows/ci.yml` installs `server/` dependencies and lints retained PDF/QR files | Split retained/migrated artifacts from the retired application runtime and preserve security checks on replacements. |
+| PDF consumers | `client/src/services/pdfService.js` calls `/api/generate/pdf`; Business Artifact Studio and several server modules reference the controller | Migrate the full document generation contract, not merely the HTTP route. |
+
+Additional search results show `server/app.js` is directly referenced by CRM release-gate scripts and `server/middleware/ProductionHardening.middleware.js`. It is not safe to remove until these gates are replaced or explicitly retired with their evidence preserved.
+
+The current `tests/e2e/run-browser-cert.mjs` also contains an isolated legacy process orchestration path. It was changed on the integration branch at commit `966296c6fa8aa3f7e3a4d0024bc83f40d078392b`; that baseline change has been incorporated into this implementation branch as a merge parent and must be preserved during runtime retirement.
+
+## 9. Retirement gates — no deletion yet
 
 The following files/directories remain protected from blind deletion:
 
@@ -141,7 +163,7 @@ The following files/directories remain protected from blind deletion:
 - Root package dependencies are shared; only remove packages after import and script reference analysis.
 - React/Vite source and build/test tooling remain part of the browser product and are not legacy application-server files.
 
-## 9. Remaining Day 1 tasks
+## 10. Remaining Day 1 tasks
 
 - Complete recursive import/caller search for `server/app.js`, `server/server.js`, `businessArtifactPdfController`, websocket servers, workers and scheduled jobs.
 - Compare all frontend API callsites with EOS OpenAPI routes and identify missing, duplicate and legacy paths.
