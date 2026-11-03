@@ -17,8 +17,8 @@ from tools.eos.crm.domain.owner_commercial_work_item import (
 from tools.eos.crm.persistence.owner_commercial_work_registry import (
     OwnerCommercialWorkRegistry,
 )
-from tools.eos.crm.service.crm_core_entitlement_resolver import (
-    CrmCoreEntitlementResolverError, resolve_crm_core_entitlement,
+from tools.eos.saas.entitlement.legal_commercial_context_projection import (
+    LegalCommercialContextProjectionError, resolve_legal_commercial_context,
 )
 
 
@@ -33,23 +33,32 @@ class OwnerCommercialWorkspaceService:
 
     __slots__ = ("_registry", "_subscriptions")
 
-    def __init__(self, registry: OwnerCommercialWorkRegistry, subscription_collection: Any) -> None:
+    def __init__(
+        self, registry: OwnerCommercialWorkRegistry, subscription_collection: Any,
+        entitlement_history_collection: Any, entitlement_current_collection: Any,
+    ) -> None:
         if not isinstance(registry, OwnerCommercialWorkRegistry):
             raise OwnerCommercialWorkspaceError("OWNER_WORK_REGISTRY_REQUIRED")
-        if subscription_collection is None:
-            raise OwnerCommercialWorkspaceError("OWNER_WORK_SUBSCRIPTIONS_REQUIRED")
+        if any(value is None for value in (
+            subscription_collection, entitlement_history_collection,
+            entitlement_current_collection,
+        )):
+            raise OwnerCommercialWorkspaceError("OWNER_WORK_LEGAL_ENTITLEMENT_DEPENDENCIES_REQUIRED")
         self._registry = registry
         self._subscriptions = subscription_collection
+        self._entitlement_history = entitlement_history_collection
+        self._entitlement_current = entitlement_current_collection
 
     def _require_entitlement(self, tenant_id: str, session: Any) -> None:
         try:
-            entitlement = resolve_crm_core_entitlement(
-                tenant_id, self._subscriptions, session,
+            context = resolve_legal_commercial_context(
+                tenant_id, self._subscriptions, self._entitlement_history,
+                self._entitlement_current, session=session,
             )
-        except CrmCoreEntitlementResolverError as error:
-            raise OwnerCommercialWorkspaceError("OWNER_WORK_ENTITLEMENT_UNAVAILABLE") from error
-        if entitlement is None or entitlement.tenant_id != tenant_id:
-            raise OwnerCommercialWorkspaceError("OWNER_WORK_CRM_CORE_NOT_ENTITLED")
+        except LegalCommercialContextProjectionError as error:
+            raise OwnerCommercialWorkspaceError("OWNER_WORK_LEGAL_ENTITLEMENT_UNAVAILABLE") from error
+        if context.tenant_id != tenant_id or context.product_available is not True or context.subscription_status is None:
+            raise OwnerCommercialWorkspaceError("OWNER_WORK_LEGAL_NOT_ENTITLED")
 
     def daily_queue(self, *, tenant_id: str, now: datetime, session: Any):
         self._require_entitlement(tenant_id, session)
