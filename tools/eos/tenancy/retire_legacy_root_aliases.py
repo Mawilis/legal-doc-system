@@ -1,23 +1,20 @@
-"""Governed retirement of synthetic EOS root/master tenant aliases.
+"""Remove pre-IAM synthetic tenant aliases from the EOS tenant registry.
 
-Dry-run is the default. Apply archives only the five allow-listed tenant_configs
-records and appends immutable retirement evidence in the same Mongo transaction.
-Historical sovereign_nodes and all forensic records are preserved unchanged.
+Only the five exact obsolete tenant_configs records are in scope. No legacy
+collections are scanned, copied, fingerprinted, preserved, or mutated. The
+canonical WILSY tenant and Founder Legal authority are checked before and after
+the transactional deletion. Dry-run is the default.
 """
 from __future__ import annotations
 
 import argparse
 import hashlib
 import os
-from datetime import datetime, timezone
 from typing import Any
 
 from bson import json_util
 from pymongo import MongoClient
-from pymongo.collection import Collection
 from pymongo.database import Database
-from pymongo.errors import CollectionInvalid
-
 
 
 CANONICAL_TENANT_ID = "WILSYTENANT-4CD2FZ4O"
@@ -34,20 +31,15 @@ ALIASES = (
     "GLOBAL_ROOT",
     "WILSY_GLOBAL_ROOT",
 )
-EVIDENCE_COLLECTION = "eos_tenant_alias_retirement_evidence"
-MIGRATION_ID = "EOS-LEGACY-ROOT-ALIAS-RETIREMENT-2026-11-03"
 
 
 class RetirementError(RuntimeError):
-    """Raised when any precondition or postcondition fails closed."""
-
-
-def _canonical(value: Any) -> str:
-    return json_util.dumps(value, sort_keys=True, separators=(",", ":"))
+    """Raised when a retirement precondition or postcondition fails closed."""
 
 
 def _fingerprint(value: Any) -> str:
-    return hashlib.sha512(_canonical(value).encode("utf-8")).hexdigest()
+    canonical = json_util.dumps(value, sort_keys=True, separators=(",", ":"))
+    return hashlib.sha512(canonical.encode("utf-8")).hexdigest()
 
 
 def _founder_snapshot(database: Database[Any], session: Any = None) -> dict[str, Any]:
@@ -59,31 +51,27 @@ def _founder_snapshot(database: Database[Any], session: Any = None) -> dict[str,
             "subscription_id": FOUNDER_SUBSCRIPTION_ID,
             "tenant_id": CANONICAL_TENANT_ID,
             "status": "active",
-        }, session=session
+        },
+        session=session,
     )
     entitlement = database["tenant_product_entitlement_current"].find_one(
         {
             "tenant_id": CANONICAL_TENANT_ID,
             "entitlement_id": FOUNDER_ENTITLEMENT_ID,
             "lifecycle_state": "ACTIVE",
-        }, session=session
+        },
+        session=session,
     )
     history = list(
         database["tenant_product_entitlement_history"].find(
-            {
-                "tenant_id": CANONICAL_TENANT_ID,
-                "entitlement_id": FOUNDER_ENTITLEMENT_ID,
-            },
+            {"tenant_id": CANONICAL_TENANT_ID, "entitlement_id": FOUNDER_ENTITLEMENT_ID},
             {"_id": 0},
             session=session,
         ).sort("lifecycle_revision", 1)
     )
     decisions = list(
         database["tenant_authorization_decision_evidence"].find(
-            {
-                "tenant_id": CANONICAL_TENANT_ID,
-                "principal_id": FOUNDER_PRINCIPAL_ID,
-            },
+            {"tenant_id": CANONICAL_TENANT_ID, "principal_id": FOUNDER_PRINCIPAL_ID},
             {"_id": 0},
             session=session,
         ).sort("authorized_at", 1)
@@ -101,201 +89,48 @@ def _founder_snapshot(database: Database[Any], session: Any = None) -> dict[str,
     }
 
 
-def _alias_inventory(
-    database: Database[Any], session: Any = None, *, allow_archived: bool = False
-) -> tuple[list[dict], list[dict]]:
+def _alias_configs(database: Database[Any], session: Any = None) -> list[dict[str, Any]]:
     configs = list(
-        database["tenant_configs"].find({"tenantId": {"$in": list(ALIASES)}}, session=session)
-        .sort("tenantId", 1)
+        database["tenant_configs"].find(
+            {"tenantId": {"$in": list(ALIASES)}}, session=session
+        ).sort("tenantId", 1)
     )
-    nodes = list(
-        database["sovereign_nodes"].find({"tenantId": {"$in": list(ALIASES)}}, session=session)
-        .sort("tenantId", 1)
-    )
+    if not configs:
+        return []
     if len(configs) != len(ALIASES):
         raise RetirementError("LEGACY_ALIAS_CONFIG_CARDINALITY_MISMATCH")
     if {item.get("tenantId") for item in configs} != set(ALIASES):
         raise RetirementError("LEGACY_ALIAS_CONFIG_SET_MISMATCH")
-    expected_statuses = {"ACTIVE", "ARCHIVED"} if allow_archived else {"ACTIVE"}
-    if any(item.get("status") not in expected_statuses for item in configs):
-        raise RetirementError("LEGACY_ALIAS_CONFIG_STATE_MISMATCH")
-    if len(nodes) != len(ALIASES):
-        raise RetirementError("LEGACY_ALIAS_NODE_CARDINALITY_MISMATCH")
-    if {item.get("tenantId") for item in nodes} != set(ALIASES):
-        raise RetirementError("LEGACY_ALIAS_NODE_SET_MISMATCH")
-    return configs, nodes
+    return configs
 
 
-def _preserved_inventory(
-    database: Database[Any], collection_names: list[str], session: Any = None
-) -> list[dict[str, str]]:
-    """Fingerprint every alias-scoped record outside the mutable alias registry."""
-    preserved: list[dict[str, str]] = []
-    for collection_name in sorted(set(collection_names) - {"tenant_configs", EVIDENCE_COLLECTION}):
-        collection = database[collection_name]
-        documents = collection.find(
-            {
-                "$or": [
-                    {"tenantId": {"$in": list(ALIASES)}},
-                    {"tenant_id": {"$in": list(ALIASES)}},
-                ]
-            },
-            session=session,
-        ).sort("_id", 1)
-        for document in documents:
-            tenant_values = {
-                document[field]
-                for field in ("tenantId", "tenant_id")
-                if document.get(field) is not None
-            }
-            if len(tenant_values) != 1 or next(iter(tenant_values)) not in ALIASES:
-                raise RetirementError("LEGACY_RECORD_TENANT_SCOPE_CONFLICT")
-            preserved.append(
-                {
-                    "collection": collection_name,
-                    "tenant_id": next(iter(tenant_values)),
-                    "document_id": str(document["_id"]),
-                    "fingerprint": _fingerprint(document),
-                }
-            )
-    return preserved
-
-
-def _ensure_evidence_collection(database: Database[Any]) -> Collection:
-    try:
-        database.create_collection(EVIDENCE_COLLECTION)
-    except CollectionInvalid:
-        pass
-    collection = database[EVIDENCE_COLLECTION]
-    collection.create_index("alias_id", unique=True, name="eos_alias_retirement_alias_unique")
-    collection.create_index("migration_id", name="eos_alias_retirement_migration")
-    return collection
-
-
-def _retire_transaction(
-    session: Any, database: Database[Any], collection_names: list[str]
-) -> dict[str, Any]:
-    configs, nodes = _alias_inventory(database, session=session, allow_archived=True)
-    preserved_records = _preserved_inventory(database, collection_names, session=session)
+def _retire_transaction(session: Any, database: Database[Any]) -> dict[str, Any]:
     before = _founder_snapshot(database, session=session)
     before_fingerprint = _fingerprint(before)
-    evidence = database[EVIDENCE_COLLECTION]
-    existing = list(evidence.find({"migration_id": MIGRATION_ID}, session=session))
-    if existing:
-        if len(existing) != len(ALIASES) or {item["alias_id"] for item in existing} != set(ALIASES):
-            raise RetirementError("PARTIAL_RETIREMENT_EVIDENCE_REQUIRES_MANUAL_REVIEW")
-        archived_configs = [
-            database["tenant_configs"].find_one(
-                {"tenantId": alias, "status": "ARCHIVED"}, session=session
-            )
-            for alias in ALIASES
-        ]
-        if all(archived_configs) and all(config.get("status") == "ARCHIVED" for config in configs):
-            nodes_by_alias = {alias: [] for alias in ALIASES}
-            for node in nodes:
-                nodes_by_alias[node["tenantId"]].append(node)
-            for item in existing:
-                expected_payload = {
-                    key: value for key, value in item.items()
-                    if key not in {"_id", "evidence_fingerprint"}
-                }
-                if item.get("evidence_fingerprint") != _fingerprint(expected_payload):
-                    raise RetirementError("RETIREMENT_EVIDENCE_FINGERPRINT_INVALID")
-                if item.get("founder_invariant_fingerprint") != before_fingerprint:
-                    raise RetirementError("FOUNDER_INVARIANT_DRIFT_AFTER_RETIREMENT")
-                expected_node_fingerprints = sorted(
-                    _fingerprint(node) for node in nodes_by_alias[item["alias_id"]]
-                )
-                recorded_node_fingerprints = sorted(
-                    node["fingerprint"] for node in item.get("node_evidence", [])
-                )
-                if expected_node_fingerprints != recorded_node_fingerprints:
-                    raise RetirementError("PRESERVED_NODE_EVIDENCE_DRIFT")
-                expected_preserved = sorted(
-                    (record["collection"], record["document_id"], record["fingerprint"])
-                    for record in preserved_records
-                    if record["tenant_id"] == item["alias_id"]
-                )
-                recorded_preserved = sorted(
-                    (record["collection"], record["document_id"], record["fingerprint"])
-                    for record in item.get("preserved_record_evidence", [])
-                )
-                if expected_preserved != recorded_preserved:
-                    raise RetirementError("PRESERVED_LEGACY_RECORD_EVIDENCE_DRIFT")
-            return {"already_retired": True, "aliases": len(existing)}
-        raise RetirementError("RETIREMENT_EVIDENCE_STATE_CONFLICT")
+    configs = _alias_configs(database, session=session)
+    if not configs:
+        return {"already_retired": True, "deleted_alias_configs": 0}
 
-    nodes_by_alias: dict[str, list[dict]] = {alias: [] for alias in ALIASES}
-    for node in nodes:
-        nodes_by_alias[node["tenantId"]].append(node)
-
-    now = datetime.now(timezone.utc)
-    now = now.replace(microsecond=(now.microsecond // 1000) * 1000)
-    for config in configs:
-        alias = config["tenantId"]
-        alias_nodes = nodes_by_alias[alias]
-        payload = {
-            "schema": "eos.tenant_alias_retirement_evidence.v1",
-            "migration_id": MIGRATION_ID,
-            "alias_id": alias,
-            "canonical_tenant_id": CANONICAL_TENANT_ID,
-            "config_document_id": str(config["_id"]),
-            "config_fingerprint": _fingerprint(config),
-            "config_status_before": config["status"],
-            "config_status_after": "ARCHIVED",
-            "node_evidence": [
-                {
-                    "document_id": str(node["_id"]),
-                    "status": node.get("status"),
-                    "node_seal": node.get("nodeSeal"),
-                    "fingerprint": _fingerprint(node),
-                }
-                for node in alias_nodes
-            ],
-            "preserved_record_evidence": [
-                record for record in preserved_records if record["tenant_id"] == alias
-            ],
-            "founder_invariant_fingerprint": before_fingerprint,
-            "recorded_at": now,
-            "reason": "Synthetic platform alias retired; canonical tenant and system authority remain separate.",
-            "actor": "EOS_GOVERNED_MIGRATION",
-        }
-        payload["evidence_fingerprint"] = _fingerprint(payload)
-        evidence.insert_one(payload, session=session)
-        result = database["tenant_configs"].update_one(
-            {"_id": config["_id"], "tenantId": alias, "status": "ACTIVE"},
-            {
-                "$set": {
-                    "status": "ARCHIVED",
-                    "metadata.eosAliasRetirement": {
-                        "migrationId": MIGRATION_ID,
-                        "canonicalTenantId": CANONICAL_TENANT_ID,
-                        "retiredAt": now,
-                        "evidenceFingerprint": payload["evidence_fingerprint"],
-                    },
-                }
-            },
-            session=session,
-        )
-        if result.matched_count != 1 or result.modified_count != 1:
-            raise RetirementError("LEGACY_ALIAS_OPTIMISTIC_UPDATE_FAILED")
-
-    archived = list(
-        database["tenant_configs"].find(
-            {"tenantId": {"$in": list(ALIASES)}, "status": "ARCHIVED"},
-            {"tenantId": 1, "status": 1, "_id": 0},
-            session=session,
-        )
+    result = database["tenant_configs"].delete_many(
+        {
+            "_id": {"$in": [item["_id"] for item in configs]},
+            "tenantId": {"$in": list(ALIASES)},
+        },
+        session=session,
     )
-    if {item["tenantId"] for item in archived} != set(ALIASES):
+    if result.deleted_count != len(ALIASES):
+        raise RetirementError("LEGACY_ALIAS_DELETE_CARDINALITY_MISMATCH")
+    if database["tenant_configs"].count_documents(
+        {"tenantId": {"$in": list(ALIASES)}}, session=session
+    ):
         raise RetirementError("LEGACY_ALIAS_POSTCONDITION_FAILED")
+
     after = _founder_snapshot(database, session=session)
     if _fingerprint(after) != before_fingerprint:
         raise RetirementError("FOUNDER_INVARIANT_CHANGED_DURING_RETIREMENT")
     return {
         "already_retired": False,
-        "aliases": len(archived),
-        "preserved_node_records": len(nodes),
+        "deleted_alias_configs": result.deleted_count,
         "founder_invariant_fingerprint": before_fingerprint,
     }
 
@@ -308,34 +143,24 @@ def run(*, uri: str, database_name: str, apply: bool) -> dict[str, Any]:
         if not hello.get("setName") or hello.get("logicalSessionTimeoutMinutes") is None:
             raise RetirementError("TRANSACTION_CAPABLE_REPLICA_SET_REQUIRED")
         database = client[database_name]
-        collection_names = database.list_collection_names()
-        configs, nodes = _alias_inventory(database, allow_archived=True)
-        preserved_records = _preserved_inventory(database, collection_names)
+        configs = _alias_configs(database)
         founder = _founder_snapshot(database)
         report = {
             "mode": "APPLY" if apply else "DRY_RUN",
-            "migration_id": MIGRATION_ID,
             "canonical_tenant_id": CANONICAL_TENANT_ID,
-            "legacy_aliases": [item["tenantId"] for item in configs],
-            "legacy_config_count": len(configs),
-            "legacy_node_records_preserved": len(nodes),
-            "legacy_records_preserved": len(preserved_records),
-            "legacy_records_by_collection": {
-                name: sum(1 for record in preserved_records if record["collection"] == name)
-                for name in sorted({record["collection"] for record in preserved_records})
-            },
+            "obsolete_aliases": [item["tenantId"] for item in configs],
+            "obsolete_alias_config_count": len(configs),
+            "legacy_collections_scanned": 0,
             "founder_invariant_fingerprint": _fingerprint(founder),
             "founder_subscription_id": FOUNDER_SUBSCRIPTION_ID,
             "founder_entitlement_id": FOUNDER_ENTITLEMENT_ID,
         }
         if not apply:
+            report["already_retired"] = not configs
             return report
-        _ensure_evidence_collection(database)
         with client.start_session() as session:
             result = session.with_transaction(
-                lambda active_session: _retire_transaction(
-                    active_session, database, collection_names
-                )
+                lambda active_session: _retire_transaction(active_session, database)
             )
         report.update(result)
         return report
@@ -346,9 +171,8 @@ def run(*, uri: str, database_name: str, apply: bool) -> dict[str, Any]:
 def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--database", default=os.getenv("MONGODB_DATABASE", "wilsy"))
-    parser.add_argument("--apply", action="store_true", help="Apply the guarded retirement transaction.")
+    parser.add_argument("--apply", action="store_true", help="Delete only the five exact obsolete tenant registry records.")
     args = parser.parse_args()
-    # Import only for CLI execution; the kernel package has broader runtime dependencies.
     from tools.eos.kernel.db import resolve_mongo_uri
 
     uri = resolve_mongo_uri()
