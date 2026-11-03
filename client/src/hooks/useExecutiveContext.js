@@ -129,9 +129,6 @@ export const useExecutiveContext = (options = {}) => {
 
       const response = await api.post('/ai/executive/context', payload, {
         signal: controller.signal,
-        headers: {
-          'X-Tenant-ID': mergedOptions.tenantId,
-        },
       });
       const result = response?.data ?? response;
       setContext(result);
