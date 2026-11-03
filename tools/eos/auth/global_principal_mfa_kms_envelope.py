@@ -10,6 +10,7 @@ from __future__ import annotations
 import base64
 import binascii
 import os
+import re
 from typing import Any, Mapping
 
 from botocore.exceptions import BotoCoreError, ClientError
@@ -54,7 +55,11 @@ class AwsKmsGlobalMfaEnvelope:
         if not isinstance(key_id, str) or not key_id.strip():
             raise GlobalMfaKeyManagementError("GLOBAL_MFA_KMS_KEY_ID_REQUIRED")
         self.key_id = key_id.strip()
-        self.region_name = (region_name or os.getenv("AWS_REGION") or "af-south-1").strip()
+        if not self.key_id.startswith("arn:"):
+            raise GlobalMfaKeyManagementError("GLOBAL_MFA_KMS_KEY_ARN_REQUIRED")
+        self.region_name = (region_name or os.getenv("AWS_REGION") or "").strip()
+        if not self.region_name:
+            raise GlobalMfaKeyManagementError("GLOBAL_MFA_KMS_REGION_REQUIRED")
         if client is None:
             try:
                 import boto3
@@ -91,7 +96,7 @@ class AwsKmsGlobalMfaEnvelope:
             key_id = result.get("KeyId")
             if not isinstance(ciphertext, (bytes, bytearray)) or not ciphertext:
                 raise GlobalMfaKeyManagementError("GLOBAL_MFA_KMS_ENCRYPTION_EMPTY")
-            if key_id and key_id != self.key_id:
+            if key_id != self.key_id:
                 raise GlobalMfaKeyManagementError("GLOBAL_MFA_KMS_KEY_ID_MISMATCH")
             return {
                 "schema": ENVELOPE_SCHEMA,
@@ -127,7 +132,7 @@ class AwsKmsGlobalMfaEnvelope:
             )
             plaintext = result.get("Plaintext")
             key_id = result.get("KeyId")
-            if key_id and key_id != self.key_id:
+            if key_id != self.key_id:
                 raise GlobalMfaKeyManagementError("GLOBAL_MFA_KMS_KEY_ID_MISMATCH")
             if not isinstance(plaintext, (bytes, bytearray)) or not plaintext:
                 raise GlobalMfaKeyManagementError("GLOBAL_MFA_KMS_DECRYPTION_EMPTY")
