@@ -425,8 +425,12 @@ async function preflightAuthenticatedEos(eosBaseUrl) {
   } catch {
     throw new Error('BROWSER_CERT_FIXTURE_STATE_UNAVAILABLE');
   }
-  const token = state?.actors?.partner?.access_token;
-  if (typeof token !== 'string' || token.length === 0) {
+  const partnerToken = state?.actors?.partner?.access_token;
+  const ownerToken = state?.actors?.tenant_owner?.access_token;
+  if (
+    typeof partnerToken !== 'string' || partnerToken.length === 0
+    || typeof ownerToken !== 'string' || ownerToken.length === 0
+  ) {
     throw new Error('BROWSER_CERT_FIXTURE_SESSION_UNAVAILABLE');
   }
   const tenantId = state?.tenant_id;
@@ -434,8 +438,9 @@ async function preflightAuthenticatedEos(eosBaseUrl) {
     throw new Error('BROWSER_CERT_FIXTURE_TENANT_SCOPE_UNAVAILABLE');
   }
   return Promise.all([
-    preflightEosRoute('workspace', token, tenantId, eosBaseUrl),
-    preflightEosRoute('productive-work', token, tenantId, eosBaseUrl),
+    preflightEosRoute('workspace', partnerToken, tenantId, eosBaseUrl),
+    preflightEosRoute('productive-work', partnerToken, tenantId, eosBaseUrl),
+    preflightEosRoute('commercial-context', ownerToken, tenantId, eosBaseUrl),
   ]);
 }
 
