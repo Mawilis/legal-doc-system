@@ -1,0 +1,66 @@
+name: EOS MongoDB Index Provisioning Gate
+
+on:
+  workflow_dispatch:
+    inputs:
+      target:
+        description: "Must be nonproduction. Production is intentionally unsupported."
+        required: true
+        type: choice
+        options:
+          - nonproduction
+      action:
+        description: "Inventory validation only until the manifest is complete and independently approved."
+        required: true
+        type: choice
+        options:
+          - validate
+
+permissions:
+  contents: read
+
+concurrency:
+  group: eos-mongodb-index-provisioning-gate
+  cancel-in-progress: false
+
+jobs:
+  validate-provisioning-manifest:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.ref }}
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Validate versioned index inventory
+        run: |
+          python - <<'PY'
+          import json
+          from pathlib import Path
+
+          path = Path("infra/mongodb/eos-index-manifest-v1.json")
+          manifest = json.loads(path.read_text(encoding="utf-8"))
+          assert manifest["manifest_version"] == "1.0.0"
+          assert manifest["status"] == "INVENTORY_INCOMPLETE"
+          assert manifest["production_mutation_authorized"] is False
+          assert manifest["provisioning_policy"]["runtime_api_may_create_indexes"] is False
+          assert manifest["provisioning_policy"]["provisioning_identity_separate_from_runtime"] is True
+          assert manifest["excluded_until_inventory_complete"]
+          names = set()
+          for entry in manifest["entries"]:
+              assert entry["collection"] and entry["source"] and entry["indexes"]
+              for index in entry["indexes"]:
+                  assert index["name"] and index["keys"]
+                  key = (entry["database"], entry["collection"], index["name"])
+                  assert key not in names, f"duplicate index declaration: {key}"
+                  names.add(key)
+          print(f"Validated {len(manifest['entries'])} collection entries and {len(names)} index declarations.")
+          print("NO DATABASE CONNECTION WAS OPENED; NO INDEXES WERE CREATED OR MODIFIED.")
+          PY
+      - name: Enforce fail-closed execution gate
+        run: |
+          echo "The manifest is inventory-incomplete. Database provisioning is disabled."
+          echo "Complete route/worker inventory, verify every index definition, review duplicate data,"
+          echo "and approve an exact nonproduction target fingerprint before adding an apply stage."
+          exit 0
