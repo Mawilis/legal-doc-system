@@ -1733,7 +1733,7 @@
       "source": "tools/eos/legal_operations/registry/legal_client_acceptance_context_registry.py",
       "indexes": [
         {
-          "name": "legal_client_acceptance_context_tenant_identity_unique",
+          "name": "legal_client_acceptance_context_tenant_context_unique",
           "keys": [
             [
               "tenant_id",
@@ -1775,7 +1775,7 @@
           "unique": true
         },
         {
-          "name": "legal_client_acceptance_context_actor_issued",
+          "name": "legal_client_acceptance_context_tenant_actor_issued",
           "keys": [
             [
               "tenant_id",
@@ -1793,7 +1793,7 @@
           "unique": false
         },
         {
-          "name": "legal_client_acceptance_context_matter_issued",
+          "name": "legal_client_acceptance_context_tenant_matter_issued",
           "keys": [
             [
               "tenant_id",
@@ -1811,7 +1811,7 @@
           "unique": false
         },
         {
-          "name": "legal_client_acceptance_context_party_issued",
+          "name": "legal_client_acceptance_context_tenant_matter_party_issued",
           "keys": [
             [
               "tenant_id",
@@ -1833,7 +1833,7 @@
           "unique": false
         },
         {
-          "name": "legal_client_acceptance_context_expires",
+          "name": "legal_client_acceptance_context_tenant_expires",
           "keys": [
             [
               "tenant_id",
@@ -1847,7 +1847,7 @@
           "unique": false
         },
         {
-          "name": "legal_client_acceptance_context_actor_expires",
+          "name": "legal_client_acceptance_context_tenant_actor_expires",
           "keys": [
             [
               "tenant_id",
@@ -1874,7 +1874,7 @@
       "source": "tools/eos/legal_operations/registry/legal_client_acceptance_registry.py",
       "indexes": [
         {
-          "name": "legal_client_acceptance_tenant_id_unique",
+          "name": "legal_client_acceptance_tenant_acceptance_unique",
           "keys": [
             [
               "tenant_id",
@@ -1902,7 +1902,7 @@
           "unique": true
         },
         {
-          "name": "legal_client_acceptance_matter_accepted",
+          "name": "legal_client_acceptance_tenant_matter_lookup",
           "keys": [
             [
               "tenant_id",
@@ -1929,7 +1929,7 @@
       "source": "tools/eos/legal_operations/registry/legal_client_acting_capacity_registry.py",
       "indexes": [
         {
-          "name": "legal_client_acting_capacity_tenant_id_unique",
+          "name": "legal_acting_capacity_tenant_capacity_unique",
           "keys": [
             [
               "tenant_id",
@@ -1943,7 +1943,7 @@
           "unique": true
         },
         {
-          "name": "legal_client_acting_capacity_tenant_fingerprint_unique",
+          "name": "legal_acting_capacity_tenant_fingerprint_unique",
           "keys": [
             [
               "tenant_id",
@@ -1957,7 +1957,7 @@
           "unique": true
         },
         {
-          "name": "legal_client_acting_capacity_matter_principal_effective",
+          "name": "legal_acting_capacity_tenant_matter_principal_effective",
           "keys": [
             [
               "tenant_id",
@@ -1979,7 +1979,7 @@
           "unique": false
         },
         {
-          "name": "legal_client_acting_capacity_matter_party_effective",
+          "name": "legal_acting_capacity_tenant_matter_party_effective",
           "keys": [
             [
               "tenant_id",
@@ -2001,7 +2001,7 @@
           "unique": false
         },
         {
-          "name": "legal_client_acting_capacity_matter_effective",
+          "name": "legal_acting_capacity_tenant_matter_effective",
           "keys": [
             [
               "tenant_id",
@@ -2028,7 +2028,7 @@
       "source": "tools/eos/legal_operations/registry/legal_client_matter_acceptance_instrument_approval_registry.py",
       "indexes": [
         {
-          "name": "legal_client_instrument_approval_tenant_id_unique",
+          "name": "legal_client_matter_instrument_approval_tenant_approval_unique",
           "keys": [
             [
               "tenant_id",
@@ -2042,7 +2042,7 @@
           "unique": true
         },
         {
-          "name": "legal_client_instrument_approval_tenant_fingerprint_unique",
+          "name": "legal_client_matter_instrument_approval_tenant_fingerprint_unique",
           "keys": [
             [
               "tenant_id",
@@ -2056,7 +2056,7 @@
           "unique": true
         },
         {
-          "name": "legal_client_instrument_approval_idempotency_unique",
+          "name": "legal_client_matter_instrument_approval_tenant_idempotency_unique",
           "keys": [
             [
               "tenant_id",
@@ -2070,7 +2070,7 @@
           "unique": true
         },
         {
-          "name": "legal_client_instrument_approval_history",
+          "name": "legal_client_matter_instrument_approval_subject_history",
           "keys": [
             [
               "tenant_id",
@@ -2112,7 +2112,7 @@
           "unique": false
         },
         {
-          "name": "legal_client_instrument_approval_decision",
+          "name": "legal_client_matter_instrument_approval_subject_decision",
           "keys": [
             [
               "tenant_id",
@@ -2159,7 +2159,7 @@
       "source": "tools/eos/legal_operations/registry/legal_client_matter_acceptance_instrument_lifecycle_registry.py",
       "indexes": [
         {
-          "name": "legal_client_instrument_lifecycle_identity_unique",
+          "name": "legal_client_matter_instrument_lifecycle_identity_unique",
           "keys": [
             [
               "tenant_id",
@@ -2185,7 +2185,7 @@
           "unique": true
         },
         {
-          "name": "legal_client_instrument_lifecycle_fingerprint_unique",
+          "name": "legal_client_matter_instrument_lifecycle_fingerprint_unique",
           "keys": [
             [
               "tenant_id",
@@ -2199,7 +2199,7 @@
           "unique": true
         },
         {
-          "name": "legal_client_instrument_lifecycle_terminal_unique",
+          "name": "legal_client_matter_instrument_lifecycle_terminal_unique",
           "keys": [
             [
               "tenant_id",
@@ -2234,7 +2234,7 @@
           }
         },
         {
-          "name": "legal_client_instrument_lifecycle_history",
+          "name": "legal_client_matter_instrument_lifecycle_history",
           "keys": [
             [
               "tenant_id",
@@ -2264,7 +2264,7 @@
           "unique": false
         },
         {
-          "name": "legal_client_instrument_lifecycle_state",
+          "name": "legal_client_matter_instrument_lifecycle_state_history",
           "keys": [
             [
               "tenant_id",
@@ -2295,7 +2295,7 @@
       "source": "tools/eos/legal_operations/registry/legal_client_matter_acceptance_instrument_registry.py",
       "indexes": [
         {
-          "name": "legal_client_instrument_tenant_identity_unique",
+          "name": "legal_client_matter_instrument_tenant_identity_unique",
           "keys": [
             [
               "tenant_id",
@@ -2313,7 +2313,7 @@
           "unique": true
         },
         {
-          "name": "legal_client_instrument_tenant_fingerprint_unique",
+          "name": "legal_client_matter_instrument_tenant_fingerprint_unique",
           "keys": [
             [
               "tenant_id",
@@ -2327,7 +2327,7 @@
           "unique": true
         },
         {
-          "name": "legal_client_instrument_matter_version_lookup",
+          "name": "legal_client_matter_instrument_tenant_matter_instrument_effective",
           "keys": [
             [
               "tenant_id",
@@ -2353,7 +2353,7 @@
           "unique": false
         },
         {
-          "name": "legal_client_instrument_matter_kind_lookup",
+          "name": "legal_client_matter_instrument_tenant_matter_kind_effective",
           "keys": [
             [
               "tenant_id",
@@ -2375,7 +2375,7 @@
           "unique": false
         },
         {
-          "name": "legal_client_instrument_matter_effective_lookup",
+          "name": "legal_client_matter_instrument_tenant_matter_effective",
           "keys": [
             [
               "tenant_id",
@@ -2666,7 +2666,7 @@
       "source": "tools/eos/legal_operations/registry/legal_matter_deadline_registry.py",
       "indexes": [
         {
-          "name": "legal_matter_deadline_tenant_identity_unique",
+          "name": "legal_deadline_tenant_deadline_unique",
           "keys": [
             [
               "tenant_id",
@@ -2680,7 +2680,7 @@
           "unique": true
         },
         {
-          "name": "legal_matter_deadline_matter_lookup",
+          "name": "legal_deadline_tenant_matter_deadline",
           "keys": [
             [
               "tenant_id",
@@ -2698,7 +2698,7 @@
           "unique": false
         },
         {
-          "name": "legal_matter_deadline_matter_due",
+          "name": "legal_deadline_tenant_matter_due",
           "keys": [
             [
               "tenant_id",
@@ -2716,7 +2716,7 @@
           "unique": false
         },
         {
-          "name": "legal_matter_deadline_matter_status_due",
+          "name": "legal_deadline_tenant_matter_status_due",
           "keys": [
             [
               "tenant_id",
