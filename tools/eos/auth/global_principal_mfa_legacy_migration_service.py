@@ -127,8 +127,8 @@ class GlobalPrincipalMfaLegacyMigrationService:
             raise GlobalPrincipalMfaLegacyMigrationUnavailable("GLOBAL_MFA_MIGRATION_CREDENTIAL_UNAVAILABLE") from error
         if credential.credential_revision != credential_revision:
             raise GlobalPrincipalMfaLegacyMigrationRejected("GLOBAL_MFA_MIGRATION_CREDENTIAL_STALE")
-        if credential.mfa_enabled is not True:
-            raise GlobalPrincipalMfaLegacyMigrationRejected("GLOBAL_MFA_ENROLLMENT_REQUIRED")
+        if credential.mfa_enabled not in (True, False):
+            raise GlobalPrincipalMfaLegacyMigrationRejected("GLOBAL_MFA_MIGRATION_MFA_STATE_INVALID")
 
         try:
             principal = self._principals.get(principal_id, session=session)
@@ -172,11 +172,25 @@ class GlobalPrincipalMfaLegacyMigrationService:
             raise GlobalPrincipalMfaLegacyMigrationCodeRejected("GLOBAL_MFA_MIGRATION_CODE_INVALID")
         accepted_step = max(matching_steps)
 
+        target_revision = credential_revision
+        if credential.mfa_enabled is False:
+            try:
+                enabled = self._credentials.enable_mfa(
+                    principal_id,
+                    credential_revision,
+                    session=session,
+                )
+                target_revision = enabled.credential_revision
+            except PrincipalCredentialRepositoryError as error:
+                raise GlobalPrincipalMfaLegacyMigrationRejected(
+                    "GLOBAL_MFA_MIGRATION_CREDENTIAL_STATE_CONFLICT"
+                ) from error
+
         try:
             envelope = self._kms.encrypt_secret(
                 secret=secret,
                 principal_id=principal_id,
-                credential_revision=credential_revision,
+                credential_revision=target_revision,
             )
             result = factors.update_one(
                 {
@@ -189,7 +203,7 @@ class GlobalPrincipalMfaLegacyMigrationService:
                 {
                     "$set": {
                         "principal_id": principal_id,
-                        "credential_revision": credential_revision,
+                        "credential_revision": target_revision,
                         "encrypted_secret": envelope,
                         "status": "ACTIVE",
                         "last_accepted_step": accepted_step,
@@ -212,7 +226,7 @@ class GlobalPrincipalMfaLegacyMigrationService:
             raise GlobalPrincipalMfaLegacyMigrationUnavailable("GLOBAL_MFA_MIGRATION_FACTOR_WRITE_FAILED") from error
         return GlobalPrincipalMfaLegacyMigrationReceipt(
             principal_id=principal_id,
-            credential_revision=credential_revision,
+            credential_revision=target_revision,
             migrated_at=instant,
         )
 
