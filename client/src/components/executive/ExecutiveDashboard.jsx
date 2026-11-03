@@ -4365,8 +4365,8 @@ const ExecutiveDashboard = ({
         </div>
         <div className={styles.brandPlate}>
           <div className={styles.tenantMark}>
-            {tenantBranding.logo ? (
-              <img src={tenantBranding.logo} alt={`${tenantBranding.displayName} mark`} />
+            {tenantLogoObjectUrl ? (
+              <img src={tenantLogoObjectUrl} alt={`${tenantBranding.displayName} mark`} />
             ) : (
               <span>{tenantBranding.initials}</span>
             )}
