@@ -65,16 +65,30 @@ const SOURCE_BACKOFF_MS = Number(import.meta.env?.VITE_SOURCE_BACKOFF_MS || 4500
 const sourceBackoffUntil = new Map();
 
 /**
- * @function resolveRequestTenantId
- * @description Converts the tenant‑discovery storage record into the scalar identifier required by the API contract.
- * @returns {string} Canonical tenant alias or identifier for the X‑Tenant‑ID header.
- * @collaboration AI Engineering (2026-08-14) — Added to prevent serialized tenant metadata from being misused.
- * @epitome Guarantees that every request is properly tenant‑isolated.
- * @institutional Mandatory for POPIA §19 data segregation.
+ * Resolve the transport tenant exclusively from the last server-issued
+ * discovery projection. This value selects request scope only: EOS still
+ * authenticates the principal and proves ACTIVE membership and authorization.
+ * There is deliberately no default tenant, development tenant, or browser
+ * fallback. Before discovery, tenant-scoped requests carry no tenant header.
  */
-const CANONICAL_WILSY_TENANT_ID = 'WILSYTENANT-4CD2FZ4O';
-
-const resolveRequestTenantId = () => CANONICAL_WILSY_TENANT_ID;
+const resolveRequestTenantId = () => {
+  if (typeof window === 'undefined') return '';
+  try {
+    const raw = window.localStorage.getItem('discoveredTenant');
+    if (!raw) return '';
+    const discovered = JSON.parse(raw);
+    const tenantId = discovered?.tenantId;
+    if (
+      typeof tenantId !== 'string'
+      || !tenantId
+      || tenantId !== tenantId.trim()
+      || /[\u0000-\u001f\u007f]/.test(tenantId)
+    ) return '';
+    return tenantId;
+  } catch {
+    return '';
+  }
+};
 
 /**
  * @function getSourceBackoffKey
@@ -390,9 +404,18 @@ api.interceptors.request.use(
       }
     }
 
-    // The canonical tenant is a transport selector only; Python EOS owns
-    // membership, identity, and authorization decisions.
-    config.headers['X-Tenant-ID'] = resolveRequestTenantId();
+    // Discovery selects transport scope only. Never invent a tenant before
+    // discovery; EOS independently proves membership and authorization.
+    const requestTenantId = resolveRequestTenantId();
+    if (requestTenantId) {
+      config.headers['X-Tenant-ID'] = requestTenantId;
+    } else if (typeof config.headers?.delete === 'function') {
+      config.headers.delete('X-Tenant-ID');
+      config.headers.delete('x-tenant-id');
+    } else {
+      delete config.headers['X-Tenant-ID'];
+      delete config.headers['x-tenant-id'];
+    }
 
     // 🛡️ Expanded public paths to include all auth endpoints, including MFA/OTP.
     const isPublicPath = /^\/status$/i.test(config.url)
