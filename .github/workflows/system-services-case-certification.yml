@@ -1,0 +1,66 @@
+name: WILSY System Services Case Registry Certification
+
+on:
+  pull_request:
+    paths:
+      - "tools/eos/system_services/**"
+      - "tests/unit/test_system_services_support_case.py"
+      - "tests/integration/test_system_services_support_case_registry_mongo.py"
+      - ".github/workflows/system-services-case-certification.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  system-services-case:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    env:
+      SYSTEM_SERVICES_CASE_MONGO_URI: mongodb://localhost:27017/?replicaSet=wilsySystemServicesCaseRS
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Install dependencies
+        run: |
+          python -m pip install --disable-pip-version-check -r requirements.txt
+          python -m pip install --disable-pip-version-check pytest==9.1.1
+      - name: Start disposable MongoDB replica set
+        run: |
+          docker run --detach --name wilsy-system-services-case-mongo --publish 27017:27017 mongo:7.0.37 mongod --replSet wilsySystemServicesCaseRS --bind_ip_all
+          python - <<'PY'
+          import time
+          from pymongo import MongoClient
+          client = MongoClient("mongodb://localhost:27017", directConnection=True, serverSelectionTimeoutMS=2000)
+          deadline = time.monotonic() + 60
+          initiated = False
+          last_error = None
+          while True:
+              try:
+                  hello = client.admin.command("hello")
+                  if not initiated and not hello.get("setName"):
+                      client.admin.command({"replSetInitiate": {"_id": "wilsySystemServicesCaseRS", "members": [{"_id": 0, "host": "localhost:27017"}]}})
+                      initiated = True
+                  if client.admin.command("hello").get("isWritablePrimary"):
+                      break
+              except Exception as error:
+                  last_error = error
+              if time.monotonic() >= deadline:
+                  raise RuntimeError(f"SYSTEM_SERVICES_MONGO_UNAVAILABLE: {last_error!r}")
+              time.sleep(1)
+          client.close()
+          PY
+      - name: Compile and type-check case contracts
+        run: |
+          python -m py_compile tools/eos/system_services/support_case.py tools/eos/system_services/support_case_registry.py tests/unit/test_system_services_support_case.py tests/integration/test_system_services_support_case_registry_mongo.py
+          python -m pip install --disable-pip-version-check pyright==1.1.413
+          pyright tools/eos/system_services/support_case.py tools/eos/system_services/support_case_registry.py tests/unit/test_system_services_support_case.py tests/integration/test_system_services_support_case_registry_mongo.py
+      - name: Run unit and real-Mongo case certification
+        run: |
+          python -m pytest -q tests/unit/test_system_services_support_case.py tests/integration/test_system_services_support_case_registry_mongo.py
+      - name: Verify patch whitespace and clean checkout
+        run: |
+          git diff --check
+          test -z "$(git status --short)"
