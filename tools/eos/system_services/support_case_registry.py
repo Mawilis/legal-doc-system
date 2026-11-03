@@ -143,6 +143,14 @@ class SupportCaseRegistry:
         session: Any | None = None,
     ) -> SupportCase:
         """Read one exact scope-bound case; never infer tenant or cross-scope fallback."""
+        if (
+            not isinstance(case_id, str)
+            or not case_id
+            or case_id != case_id.strip()
+            or len(case_id) > 256
+            or any(ord(character) < 33 or ord(character) == 127 for character in case_id)
+        ):
+            raise SupportCaseRegistryError("SYSTEM_SERVICES_CASE_ID_INVALID")
         if not isinstance(scope, SupportCaseScope):
             raise SupportCaseRegistryError("SYSTEM_SERVICES_CASE_SCOPE_INVALID")
         if scope is SupportCaseScope.SYSTEM and tenant_id is not None:
