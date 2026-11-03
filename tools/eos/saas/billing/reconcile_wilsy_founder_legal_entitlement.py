@@ -179,6 +179,11 @@ def reconcile(*, apply: bool) -> dict[str, Any]:
         subscription, plan = _load_exact_sources(database)
         existing = _existing_entitlement(database)
         if existing is not None:
+            _require(
+                LEGAL_FEATURE in tuple(plan.get("features") or ())
+                and LEGAL_FEATURE in tuple(subscription.get("plan_features") or ()),
+                "EXISTING_ENTITLEMENT_COMMERCIAL_SOURCE_MISMATCH",
+            )
             return {
                 "outcome": "ALREADY_ISSUED",
                 "tenant_id": TENANT_ID,
@@ -241,6 +246,10 @@ def reconcile(*, apply: bool) -> dict[str, Any]:
             "ENTITLEMENT_PRODUCT_MISMATCH",
         )
         _require(evidence.principal_id == PRINCIPAL_ID, "AUTHORIZATION_PRINCIPAL_MISMATCH")
+        _require(evidence.tenant_id == TENANT_ID, "AUTHORIZATION_TENANT_MISMATCH")
+        _require(result.subscription.subscription_id == SUBSCRIPTION_ID, "RECONCILED_SUBSCRIPTION_MISMATCH")
+        _require(result.subscription.plan_id == PLAN_ID, "RECONCILED_PLAN_MISMATCH")
+        _require(LEGAL_FEATURE in tuple(result.subscription.plan_features), "LEGAL_FEATURE_NOT_IN_SUBSCRIPTION_SNAPSHOT")
 
         current = database[CURRENT_COLLECTION].find_one({"tenant_id": TENANT_ID})
         history_count = database[HISTORY_COLLECTION].count_documents(
