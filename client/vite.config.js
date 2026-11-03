@@ -1,34 +1,11 @@
 /* eslint-disable */
 /**
- * ╔════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════╗
- * ║ WILSY OS - VITE CLIENT CONFIGURATION RUNTIME [V2.4.1-L10-P2C7B-TENANT-BRANDING-ROUTER]                                                            ║
- * ║ AUTHORITY: WILSY OS CORE INFRASTRUCTURE | TERMINAL WORKFLOW COMPLIANT                                                                ║
- * ╠════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════╣
- * ║ VERSION: 2.4.1-L10-P2C7B-TENANT-BRANDING-ROUTER | PRODUCTION READY                                                                               ║
- * ║ ABSOLUTE PATH: /Users/wilsonkhanyezi/legal-doc-system/client/vite.config.js                                                          ║
- * ╠════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════╣
- * ║ EPITOME:                                                                                                                             ║
- * ║ Routes Python-EOS-owned auth, legal-acceptance, Legal Operations, kernel, and governed billing paths to port 9095 while preserving   ║
- * ║ all application API traffic directly to the Python EOS authority runtime.                                                          ║
- * ╠════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════╣
- * ║ 🔧 CHANGE LOG (v2.4.1):
- * ║   1. Routes Python-EOS-owned /api/legal-operations directly to port 9095 so L8-6A sheriff queue reads cannot fall through Node.      ║
- * ║   2. Preserves the /api prefix because the Legal Operations router is mounted under /api.                                             ║
- * ║   3. Routes Python-EOS-owned /api/tenant-branding directly to port 9095 so governed branding activation cannot fall through Node.     ║
- * ║ 🔧 PRIOR CHANGE LOG (v2.3.9):
- * ║   1. Routes Python-EOS-owned /api/legal-acceptance directly to port 9095 so authenticated legal gating cannot fall through Node.
- * ║ 🔧 PRIOR CHANGE LOG (v2.3.8):                                                                                                               ║
- * ║   1. Routed /api/auth directly to the verified Kennel auth router; the live Node bootstrap was proxying it as /auth/login.         ║
- * ║ 🔧 PRIOR CHANGE LOG (v2.3.7):                                                                                                        ║
- * ║   1. Routed Kennel billing read models through /api/billing/* with the required /api removal only at the EOS boundary.             ║
- * ║   2. Preserved the /api catch-all for Node-owned auth, business, telemetry, v1, treasury, subscriptions and partial payments.     ║
- * ║ 🔧 PRIOR CHANGE LOG (v2.3.6):                                                                                                        ║
- * ║   1. Preserved /api/auth → Node without rewriting.                                                                                  ║
- * ║   2. Routed /api/billing/platform|client/invoices → Kennel /billing/* (Kennel has no /api prefix).                                 ║
- * ║   3. Routed all remaining /api calls → Node, including /api/billing/invoices/:id/partial-payment.                                  ║
- * ╚════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════╝
+ * WILSY OS — React/Vite frontend development configuration.
+ * Application API authority: Python EOS only.
+ * Browser responsibility: presentation and transport; EOS owns identity,
+ * tenant membership, IAM, business operations and durable application state.
+ * Vite is a frontend development/build tool, not an application backend.
  */
-
 import { defineConfig } from 'vite';
 import react from '@vitejs/plugin-react';
 import path from 'path';
@@ -44,7 +21,7 @@ export default defineConfig({
     strictPort: true,
     open: true,
     proxy: {
-      // Kennel owns the live /api/auth router. Preserve its /api prefix.
+      // Python EOS owns the canonical /api/auth router. Preserve its /api prefix.
       '/api/auth': {
         target: 'http://localhost:9095',
         changeOrigin: true,
@@ -62,7 +39,7 @@ export default defineConfig({
               res.writeHead(502, { 'Content-Type': 'application/json' });
               res.end(JSON.stringify({
                 success: false,
-                message: 'Auth backend unreachable – verify Kennel server on port 9095 is active.',
+                message: 'Auth backend unreachable – verify EOS API on port 9095 is active.',
                 error: err.message
               }));
             }
@@ -76,7 +53,7 @@ export default defineConfig({
         secure: false,
         rewrite: (path) => path.replace(/^\/auth/, '/api/auth'),
       },
-      // Kennel invoice lifecycle endpoints are mounted at /billing/*, not /api/billing/*.
+      // EOS billing lifecycle routes are mounted at /billing/* and /api/billing/*.
       // Keep these rules before the general /api EOS rule so compose/list reach EOS,
       // while EOS-owned application routes retain their canonical owner.
       '/api/billing/platform': {
@@ -91,7 +68,7 @@ export default defineConfig({
         secure: false,
         rewrite: (path) => path.replace(/^\/api/, ''),
       },
-      // Kennel billing read models are mounted at /billing/*, not /api/billing/*.
+      // EOS billing read models are mounted at /billing/*.
       // This explicit rule must remain ahead of /api so EOS routes retain their canonical ownership.
       '^/api/billing/(plans|summary|analytics|credit-scores|forensic-status)(?:/|$)': {
         target: 'http://localhost:9095',
@@ -185,7 +162,7 @@ export default defineConfig({
         },
       },
 
-      // Kennel owns the tenant and employee directories used by BillingHUD typeaheads.
+      // EOS owns the tenant and employee directories used by workspace typeaheads.
       '/api/tenants': {
         target: 'http://localhost:9095',
         changeOrigin: true,
