@@ -747,12 +747,14 @@ export const AuthProvider = ({ children }) => {
     return undefined;
   }, [refreshWorkspace]);
 
-  const login = useCallback(async (email, password) => {
+  const login = useCallback(async (email, password, discoveredTenantId = tenant?.tenantId) => {
+    const tenantId = String(discoveredTenantId || '').trim();
+    if (!tenantId) throw new Error('Discover your organization before signing in.');
     setLoading(true);
     setError(null);
     setAuthStage(AUTH_STATES.PRIMARY_AUTHENTICATING);
     try {
-      const response = await api.post('/auth/login', { email, password });
+      const response = await api.post('/auth/login', { email, password, tenant_id: tenantId });
       const data = response.data || {};
       const currentStatus = data.status;
       if (![AUTH_STATES.MFA_SETUP, AUTH_STATES.MFA_RECONCILIATION_REQUIRED, AUTH_STATES.MFA_REQUIRED, 'AUTHENTICATED'].includes(currentStatus)) {
@@ -794,9 +796,9 @@ export const AuthProvider = ({ children }) => {
     } finally {
       setLoading(false);
     }
-  }, [persistSession]);
+  }, [persistSession, tenant]);
 
-  const verifyOTP = useCallback(async (email, code, _biometricAssertion = null, _traceId = null, mfaSetup = false) => {
+  const verifyOTP = useCallback(async (email, code, _biometricAssertion = null, _traceId = null, mfaSetup = false, discoveredTenantId = tenant?.tenantId) => {
     const targetEmail = email || pendingEmail;
     const targetCode = String(code || '').trim();
     if (!/^\d{6}$/.test(targetCode)) throw new Error('Enter the current six-digit code from your authenticator app.');
@@ -805,7 +807,7 @@ export const AuthProvider = ({ children }) => {
     setAuthStage(AUTH_STATES.MFA_VERIFYING);
     try {
       const endpoint = mfaSetup || authStage === AUTH_STATES.MFA_SETUP ? '/auth/validate-mfa-setup' : '/auth/verify-otp';
-      const response = await api.post(endpoint, { email: targetEmail, code: targetCode });
+      const response = await api.post(endpoint, { email: targetEmail, code: targetCode, tenant_id: tenantId });
       const data = response.data || {};
       const candidate = candidateSessionProjection(data, targetEmail);
       const promoted = await persistSession(
@@ -828,7 +830,7 @@ export const AuthProvider = ({ children }) => {
     } finally {
       setLoading(false);
     }
-  }, [authStage, pendingEmail, persistSession]);
+  }, [authStage, pendingEmail, persistSession, tenant]);
 
   const updateSovereignIdentity = useCallback(async (updates) => {
     if (!user) throw new Error('No authenticated identity is available.');
@@ -880,7 +882,7 @@ export const AuthProvider = ({ children }) => {
     discoverTenant,
     login,
     verifyOTP,
-    verify3FA: (code) => verifyOTP(pendingEmail, code),
+    verify3FA: (code) => verifyOTP(pendingEmail, code, null, null, false, tenant?.tenantId),
     logout,
     updateSovereignIdentity,
     refreshWorkspace,
