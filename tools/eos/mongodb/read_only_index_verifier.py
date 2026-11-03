@@ -148,7 +148,7 @@ def main() -> int:
         from pymongo.errors import PyMongoError
 
         entries = _manifest_entries(args.manifest, args.database)
-        client = MongoClient(uri, serverSelectionTimeoutMS=8000, connectTimeoutMS=8000, retryWrites=False)
+        client = MongoClient(uri, tls=True, readPreference="primary", serverSelectionTimeoutMS=8000, connectTimeoutMS=8000, retryWrites=False)
         try:
             hello = client.admin.command("hello")
             observed = _fingerprint(hello, args.database)
