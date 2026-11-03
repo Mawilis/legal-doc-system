@@ -146,6 +146,13 @@ class SelectedMembershipContext:
     membership_revision: int
     capacity_revision: int
 
+@dataclass(frozen=True, slots=True)
+class MfaChallengeFactorContext:
+    """Minimal principal/credential binding read from an unconsumed MFA challenge."""
+
+    principal_id: str
+    credential_revision: int
+
 
 def _require_exact_text(value: object, code: str) -> str:
     """Require one non-empty, already-trimmed identifier without normalization."""
@@ -553,6 +560,47 @@ class MembershipSelectionChallengeService:
             expires_at=expires_at,
             challenge_token=token,
         )
+
+    def get_mfa_challenge_factor_context(
+        self,
+        *,
+        mfa_challenge_token: str,
+        session: ClientSession | Any,
+        now: datetime | None = None,
+    ) -> MfaChallengeFactorContext:
+        """Read the exact unconsumed MFA challenge binding inside the caller transaction.
+
+        This read does not consume the challenge. It lets the caller verify the
+        enrolled principal factor in the same transaction before the subsequent
+        consume-and-session transition. A failed factor must abort the transaction.
+        """
+        _require_transaction(session)
+        instant = _utc_now(now)
+        if not isinstance(mfa_challenge_token, str) or not 40 <= len(mfa_challenge_token) <= 128:
+            raise MembershipSelectionChallengeRejected("AUTH_CHALLENGE_INVALID_EXPIRED_OR_CONSUMED")
+        try:
+            document = _target(self._collection).find_one(
+                {
+                    "challenge_digest": _digest(mfa_challenge_token),
+                    "purpose": MFA_PURPOSE,
+                    "consumed_at": None,
+                    "expires_at": {"$gt": instant},
+                },
+                session=session,
+            )
+        except PyMongoError as error:
+            raise MembershipSelectionChallengeUnavailable("AUTH_CHALLENGE_READ_FAILED") from error
+        if not isinstance(document, Mapping):
+            raise MembershipSelectionChallengeRejected("AUTH_CHALLENGE_INVALID_EXPIRED_OR_CONSUMED")
+        principal = _require_exact_text(
+            document.get("principal_id"),
+            "AUTH_CHALLENGE_PRINCIPAL_INVALID",
+        )
+        revision = _require_revision(
+            document.get("credential_revision"),
+            "AUTH_CHALLENGE_CREDENTIAL_REVISION_INVALID",
+        )
+        return MfaChallengeFactorContext(principal_id=principal, credential_revision=revision)
 
     def consume_mfa_challenge_after_factor_verification(
         self,
