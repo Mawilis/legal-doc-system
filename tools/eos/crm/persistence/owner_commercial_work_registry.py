@@ -6,11 +6,9 @@ Legal matter access, IAM, assignment, entitlement, messaging or financial power.
 from __future__ import annotations
 
 from collections.abc import Mapping
-import hashlib
-import json
 from typing import Any
 
-from pymongo import ASCENDING, DESCENDING
+from pymongo import ASCENDING
 from pymongo.errors import DuplicateKeyError, PyMongoError
 
 from tools.eos.crm.domain.owner_commercial_work_item import (
@@ -59,7 +57,6 @@ def _collection(value: Any) -> Any:
 
 
 def _hydrate(row: Mapping[str, object]) -> OwnerCommercialWorkItem:
-    fields = OwnerCommercialWorkItem.create.__annotations__
     try:
         projected = {
             "schema": row["schema"],
