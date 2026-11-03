@@ -6,6 +6,7 @@ notifications, reset credentials, or own transaction lifecycle.
 """
 from __future__ import annotations
 
+from datetime import datetime, timezone
 from typing import Any, Final
 
 from pymongo import ASCENDING
@@ -82,6 +83,11 @@ def _hydrate_case(row: Any) -> SupportCase:
         except (TypeError, ValueError) as error:
             raise SupportCasePersistenceError("SYSTEM_SERVICES_CASE_RECORD_INVALID") from error
     row.pop("_id", None)
+    # PyMongo decodes BSON datetimes as naive UTC unless tz_aware is enabled.
+    for field in ("created_at", "updated_at"):
+        value = row.get(field)
+        if isinstance(value, datetime) and value.tzinfo is None:
+            row[field] = value.replace(tzinfo=timezone.utc)
     try:
         return SupportCase.from_document(row)
     except (TypeError, ValueError) as error:
