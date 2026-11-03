@@ -152,3 +152,88 @@ The manifest remains `INVENTORY_INCOMPLETE`, non-executable, and explicitly disa
 8. Validate each candidate with representative positive and denied Mongo commands, transaction behavior, TTL/index options, network restrictions and cloud-object operations against an explicitly verified non-production target.
 
 **NO-GO:** no production credential, MongoDB role/user, network entry, cloud identity, S3 policy, KMS key, deployment or production data has been changed. The target non-production Atlas cluster and its runtime secret reference have not yet been proven to be the EOS test target.
+
+
+## 7. Additional route-to-registry closure from the next source pass
+
+The following modules were followed from mounted router through their directly constructed service/orchestrator and registry dependencies. They are now classified more precisely than the initial router-name inventory.
+
+| Router / route family | Durable collections and transitive repositories | Operations / authority notes |
+|---|---|---|
+| `legal_acceptance_router` | `legal_documents`, `legal_client_acceptances` | Service composes document read and append-only acceptance write; document registry also exposes approved/current document selection. Authenticated identity; no corporate execution/payment authority. |
+| `legal_client_acceptance_router` | `legal_operations_lifecycle_evidence`, `legal_operations_client_matter_visibility_bindings`, `legal_matter_parties`, `legal_client_acting_capacities`, `legal_client_matter_acceptance_instruments`, `legal_client_matter_acceptance_instrument_contents`, `legal_client_matter_acceptance_instrument_lifecycle`, `legal_client_matter_acceptance_instrument_approvals`, `legal_client_acceptance_contexts`, `legal_client_acceptances`, plus tenant authorization evidence and IAM principal/membership/role repositories | Four route concerns: actionable instrument projection, instrument provisioning, content delivery, context composition and acceptance issuance. Router owns one caller Mongo transaction and passes exact session to orchestration/registries. Append-only evidence and immutable instrument/content facts; lifecycle/context operations must be scoped by tenant and matter. |
+| `legal_matter_deadline_router` | `legal_operations_lifecycle_evidence`, `legal_matter_deadlines` | Create/list/detail and deterministic intelligence read. Exact tenant authorization. One caller transaction per route; telemetry is bounded logging, not a durable collection in this router. |
+| `legal_operations_billing_read_router` | tariff assessment collection, process-service billing eligibility collection, `client_invoices`, `issuance` | GET-only read projection; no invoice issuance, payment or settlement writes. Client business-role projection is explicitly denied pending a separate client policy. |
+| `tenant_legal_operating_model_router` | `legal_tenant_operating_models`, plus IAM principal, membership, business-role and role-assignment repositories | Read current revision and append/configure revision under caller transaction. Operating-model configuration is not entitlement or IAM authority. |
+| `legal_storefront_public_intent_router` | `legal_storefront_public_intents`, `legal_storefront_public_intent_rate_limits` | Anonymous pre-tenant POST only. Atomic rate admission is a distinct operation; intent persistence is in caller-owned transaction. No tenant/principal/billing authority is created. |
+| `authorization_role_revocation_router` | `authorization_role_revocation_evidence`, `tenant_authorization_decision_evidence`, principal authority, role assignments, tenant business roles and tenant memberships | One caller transaction. Reauthorization, replay protection, target currentness, role-assignment CAS and revocation evidence are command-owned. Root roles are outside ordinary revocation. |
+| `owner_commercial_workspace_router` | `owner_commercial_work_items`, `tenant_product_entitlement_current`, `tenant_product_entitlement_history`, subscription registry collection | Queue read, create and complete. Router currently calls `ensure_indexes` inside request transaction setup; this is another runtime DDL site to move to the provisioner. Subscription and product entitlement are read-side admission dependencies, not authority to mutate billing. |
+| `tenant_branding_router` | branding profile, selection, asset and entitlement current/history registries; principal authority, tenant membership, business role and role assignment repositories | Authenticated tenant-scoped profile/asset writes and projections. Asset bytes are bounded in the route; this is not a global asset-storage or tenant-independent role. Exact per-registry indexes and any external object store need a separate source closure. |
+
+**Collection-name rule:** the table names constants as exposed by the imported registry modules where the source pass confirmed them. For the deadline, billing tariff/eligibility and branding registry families, the manifest must use the registry module's canonical constant and exact index declaration—not a guessed collection name. The exact names/options for those remaining families are not marked complete by this table.
+
+## 8. Operator/worker invocation matrix — invocation proof separated from code presence
+
+| Entrypoint / process family | Invocation evidence found | Target/identity status | Decision |
+|---|---|---|---|
+| API-hosted dunning scheduler | Explicit task creation in `server.py`, env flag and daily clock schedule | Same API kernel Mongo client; no separate workload identity | Must extract only after transaction and concurrency redesign |
+| Legal Evidence audit index provisioner | Explicit CLI `main`; dedicated audit URI environment variable; separate audit client | Separate audit DB identity is architecturally required; actual deployed secret/identity not proven | Keep separate; only its two audit indexes are in scope |
+| Legacy principal-authority reconciliation | CLI module and `__main__` path; kernel DB connection | Shared configured kernel URI unless separately injected; deployed operator credential unproven | Human migration identity, not API |
+| Legacy super-admin tenant reconciliation | CLI module and `__main__` path; explicit preflight/confirmation/transaction | Shared configured kernel URI unless separately injected; deployed operator credential unproven | Human migration identity, tightly targeted update/delete |
+| Refresh-token index migration | CLI module; index creation path | Exact invocation and deployed credential not proven | Separate index-provisioner identity |
+| Refresh-token tenant backfill | Migration module exists; direct executable entrypoint not confirmed in inspected source | Unknown | Do not assign mutation role until caller and operations verified |
+| Merchant-configuration lifecycle idempotency projection migration | Migration module has scan/update/create-index logic | Direct runner and target credential not confirmed | Separate migration/provisioning phases; do not run from API |
+| Provider-credential security authority index migration | Migration module exists in source tree | Direct runner/target credential not confirmed | Source closure remains open |
+| Founder legal entitlement reconciliation | CLI and kernel DB binding | Deployed identity not proven | Human-governed migration/reconciliation role |
+| HR commit reconciliation service | Caller-owned transaction service, no autonomous scheduler found | Invoker/worker owner not proven | No independent worker identity or cleanup rights inferred |
+| Legal Evidence cleanup authorization/command services | Authorization and command domains/registries found; no active worker schedule established | No deployment or object-delete caller proven | No delete permission inferred |
+| Generic EOS scheduler/worker frameworks | Framework modules present in source tree | No evidence they run dunning, HR reconciliation or Legal Evidence cleanup | Not deployment evidence |
+| Legacy Node scheduler/retention/migration scripts | Separate Node runtime tree | Separate legacy DB/config boundary not proven equivalent to Python EOS | Do not share EOS runtime identity |
+
+The matrix intentionally distinguishes **code exists**, **direct CLI is executable**, **scheduler is wired**, and **deployed invocation is proven**. Only the dunning scheduler is directly wired into the API host in the reviewed Python composition root. The other service/framework presence must not be mistaken for a running production worker.
+
+## 9. Dunning transaction redesign — prepared contract, not yet implemented
+
+Current evaluator has the following unsafe sequence without one shared Mongo session: read policy/invoices/state; upsert dunning state; update matching subscription documents; insert audit event; emit telemetry. Two concurrent evaluators can read the same old state and independently write duplicate or divergent transitions. A crash can persist only a prefix of the transition.
+
+Proposed transition contract:
+
+1. **Stable evaluation identity:** derive a deterministic idempotency key from tenant, subscription, invoice, target state and policy revision/fingerprint. Do not use the evaluation timestamp as the identity.
+2. **Claim/fence:** atomically claim a tenant+subscription evaluation lease with owner token, lease expiry and monotonic fencing revision. Expired leases may be reclaimed only with a strictly higher fencing revision.
+3. **Snapshot and compare:** read invoice, policy revision, dunning state revision and subscription correlation inside the transaction. Revalidate invoice is still overdue/unpaid and policy still current.
+4. **CAS state transition:** update only when expected state/revision still matches; set new state, transition key, proof hash and incremented revision. Never use blind upsert for a transition after the canonical state row is established.
+5. **Subscription projection:** update only the exact tenant+subscription identity, requiring a matched canonical subscription and an expected prior projection/revision. No broad tenant update.
+6. **Audit:** append exactly one immutable `billing_audit_events` transition with the same idempotency key and proof hash, under the same Mongo session/transaction.
+7. **Commit uncertainty:** on unknown commit result, do not blindly repeat writes. Resolve by exact idempotency key/transition ID from a fresh primary read; return a reconciliation-required state if evidence is incomplete.
+8. **Telemetry:** emit only after a confirmed commit; telemetry failure cannot roll back or fabricate a business transition.
+9. **Dry-run:** same read/derivation path, no lease, state, subscription or audit writes.
+10. **Worker boundary:** standalone worker gets only invoice/policy/state reads, claim/CAS state writes, exact subscription projection writes and append-only audit writes. API command route receives its own explicitly approved narrower scope. Index DDL and KMS/S3 rights are not part of the worker role.
+
+Before worker deployment, add replica-set tests for simultaneous evaluators, expired lease/fencing, stale state revision, paid invoice racing evaluation, policy revision racing evaluation, subscription missing/divergent, duplicate audit prevention, transaction abort after each write boundary, unknown commit recovery, dry-run read-only behavior, and two-worker concurrency.
+
+No dunning source code was changed in this tranche. The contract is a design input for a separately reviewed implementation.
+
+## 10. Provisioning harness execution and remaining blockers
+
+Existing `tools/eos/mongodb/index_provisioning_harness.py` is deliberately non-mutating:
+- validates manifest schema and unique collection/index declarations;
+- requires explicit `nonproduction` target and matching approved/observed opaque fingerprints for `--plan`;
+- prints a plan only; it has no MongoDB client;
+- rejects `--apply` with exit code 3;
+- returns NO-GO while manifest status is `INVENTORY_INCOMPLETE`.
+
+Unit coverage exists in `tests/unit/test_eos_index_provisioning_harness.py` for manifest structure, duplicate collection, production target rejection, fingerprint mismatch and matching non-production fingerprint.
+
+A real target cannot yet be safely tested. The discovered Atlas `legal-doc-test` cluster is rejected as an EOS target because its databases/collections do not match the EOS manifest. The deployment-owned non-production EOS secret reference and its target fingerprint are still unknown. The harness must not be given a URI until that identity/target chain is established; it must never print the URI.
+
+The next harness phase should add a separate read-only live verifier (not apply) that connects using an explicitly injected non-production credential, verifies server/cluster/database fingerprint against independent approval, lists current indexes, compares every option (key order, unique, sparse, partial filter, collation, TTL, hidden/expire options), and reports missing/extra/divergent indexes. Only after complete inventory, duplicate-data preflight, backup/restore proof, approved target and role tests should a separately reviewed apply command exist.
+
+## 11. Updated no-go conditions
+
+- Manifest stays `INVENTORY_INCOMPLETE`.
+- No Atlas cluster is approved as EOS non-production target yet.
+- No apply path exists.
+- API startup DDL has not been removed.
+- No candidate runtime/provisioner/worker roles have been created.
+- Dunning remains API-hosted and non-atomic.
+- No production credentials, Atlas roles, network entries, cloud identities, object-storage policies, KMS keys, deployments or production data have been changed.
