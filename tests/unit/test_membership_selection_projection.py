@@ -59,14 +59,14 @@ def capacity(tenant_id, role, revision=7, status=TenantBusinessRoleStatus.ACTIVE
     )
 
 
-def build(rows, roles, *, principal_status=PrincipalStatus.ACTIVE, next_cursor=None, session=None):
+def build(rows, roles, *, principal_status=PrincipalStatus.ACTIVE, next_cursor=None, session=None, tenant_resolver=None):
     return build_membership_selection_page(
         principal_id="principal-1",
         limit=25,
         principal_repository=PrincipalRepository(principal_status),
         membership_repository=MembershipRepository(rows, next_cursor),
         business_role_repository=BusinessRoleRepository(roles),
-        tenant_resolver=lambda tenant_id, session=None: SimpleNamespace(tenant_id=tenant_id),
+        tenant_resolver=tenant_resolver or (lambda tenant_id, session=None: SimpleNamespace(tenant_id=tenant_id)),
         session=session,
     )
 
@@ -112,9 +112,7 @@ def test_tenant_mismatch_fails_closed():
         build(
             [membership("tenant-a")],
             {"tenant-a": (capacity("tenant-a", "tenant_owner"),)},
-        ) if False else build(
-            [membership("tenant-a")],
-            {"tenant-a": (capacity("tenant-a", "tenant_owner"),)},
+            tenant_resolver=lambda tenant_id, session=None: SimpleNamespace(tenant_id="tenant-b"),
         )
 
 
