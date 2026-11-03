@@ -1725,6 +1725,1115 @@
       ],
       "runtime_index_behavior": "_ensure_indexes calls create_index during subscription creation",
       "provisioning_owner": "separate_eos_index_provisioner"
+    },
+    {
+      "id": "legal-client-acceptance-contexts",
+      "database": "canonical_eos_business_database",
+      "collection": "legal_client_acceptance_contexts",
+      "source": "tools/eos/legal_operations/registry/legal_client_acceptance_context_registry.py",
+      "indexes": [
+        {
+          "name": "legal_client_acceptance_context_tenant_identity_unique",
+          "keys": [
+            [
+              "tenant_id",
+              1
+            ],
+            [
+              "acceptance_context_id",
+              1
+            ]
+          ],
+          "unique": true
+        },
+        {
+          "name": "legal_client_acceptance_context_tenant_fingerprint_unique",
+          "keys": [
+            [
+              "tenant_id",
+              1
+            ],
+            [
+              "fingerprint",
+              1
+            ]
+          ],
+          "unique": true
+        },
+        {
+          "name": "legal_client_acceptance_context_tenant_replay_unique",
+          "keys": [
+            [
+              "tenant_id",
+              1
+            ],
+            [
+              "replay_key",
+              1
+            ]
+          ],
+          "unique": true
+        },
+        {
+          "name": "legal_client_acceptance_context_actor_issued",
+          "keys": [
+            [
+              "tenant_id",
+              1
+            ],
+            [
+              "actor_principal_id",
+              1
+            ],
+            [
+              "issued_at",
+              -1
+            ]
+          ],
+          "unique": false
+        },
+        {
+          "name": "legal_client_acceptance_context_matter_issued",
+          "keys": [
+            [
+              "tenant_id",
+              1
+            ],
+            [
+              "case_matter_id",
+              1
+            ],
+            [
+              "issued_at",
+              -1
+            ]
+          ],
+          "unique": false
+        },
+        {
+          "name": "legal_client_acceptance_context_party_issued",
+          "keys": [
+            [
+              "tenant_id",
+              1
+            ],
+            [
+              "case_matter_id",
+              1
+            ],
+            [
+              "party_id",
+              1
+            ],
+            [
+              "issued_at",
+              -1
+            ]
+          ],
+          "unique": false
+        },
+        {
+          "name": "legal_client_acceptance_context_expires",
+          "keys": [
+            [
+              "tenant_id",
+              1
+            ],
+            [
+              "expires_at",
+              1
+            ]
+          ],
+          "unique": false
+        },
+        {
+          "name": "legal_client_acceptance_context_actor_expires",
+          "keys": [
+            [
+              "tenant_id",
+              1
+            ],
+            [
+              "actor_principal_id",
+              1
+            ],
+            [
+              "expires_at",
+              1
+            ]
+          ],
+          "unique": false
+        }
+      ],
+      "provisioning_owner": "separate_eos_index_provisioner"
+    },
+    {
+      "id": "legal-client-acceptances",
+      "database": "canonical_eos_business_database",
+      "collection": "legal_client_acceptances",
+      "source": "tools/eos/legal_operations/registry/legal_client_acceptance_registry.py",
+      "indexes": [
+        {
+          "name": "legal_client_acceptance_tenant_id_unique",
+          "keys": [
+            [
+              "tenant_id",
+              1
+            ],
+            [
+              "acceptance_id",
+              1
+            ]
+          ],
+          "unique": true
+        },
+        {
+          "name": "legal_client_acceptance_tenant_fingerprint_unique",
+          "keys": [
+            [
+              "tenant_id",
+              1
+            ],
+            [
+              "fingerprint",
+              1
+            ]
+          ],
+          "unique": true
+        },
+        {
+          "name": "legal_client_acceptance_matter_accepted",
+          "keys": [
+            [
+              "tenant_id",
+              1
+            ],
+            [
+              "case_matter_id",
+              1
+            ],
+            [
+              "accepted_at",
+              -1
+            ]
+          ],
+          "unique": false
+        }
+      ],
+      "provisioning_owner": "separate_eos_index_provisioner"
+    },
+    {
+      "id": "legal-client-acting-capacities",
+      "database": "canonical_eos_business_database",
+      "collection": "legal_client_acting_capacities",
+      "source": "tools/eos/legal_operations/registry/legal_client_acting_capacity_registry.py",
+      "indexes": [
+        {
+          "name": "legal_client_acting_capacity_tenant_id_unique",
+          "keys": [
+            [
+              "tenant_id",
+              1
+            ],
+            [
+              "capacity_id",
+              1
+            ]
+          ],
+          "unique": true
+        },
+        {
+          "name": "legal_client_acting_capacity_tenant_fingerprint_unique",
+          "keys": [
+            [
+              "tenant_id",
+              1
+            ],
+            [
+              "fingerprint",
+              1
+            ]
+          ],
+          "unique": true
+        },
+        {
+          "name": "legal_client_acting_capacity_matter_principal_effective",
+          "keys": [
+            [
+              "tenant_id",
+              1
+            ],
+            [
+              "case_matter_id",
+              1
+            ],
+            [
+              "principal_id",
+              1
+            ],
+            [
+              "effective_from",
+              -1
+            ]
+          ],
+          "unique": false
+        },
+        {
+          "name": "legal_client_acting_capacity_matter_party_effective",
+          "keys": [
+            [
+              "tenant_id",
+              1
+            ],
+            [
+              "case_matter_id",
+              1
+            ],
+            [
+              "party_id",
+              1
+            ],
+            [
+              "effective_from",
+              -1
+            ]
+          ],
+          "unique": false
+        },
+        {
+          "name": "legal_client_acting_capacity_matter_effective",
+          "keys": [
+            [
+              "tenant_id",
+              1
+            ],
+            [
+              "case_matter_id",
+              1
+            ],
+            [
+              "effective_from",
+              -1
+            ]
+          ],
+          "unique": false
+        }
+      ],
+      "provisioning_owner": "separate_eos_index_provisioner"
+    },
+    {
+      "id": "legal-client-instrument-approvals",
+      "database": "canonical_eos_business_database",
+      "collection": "legal_client_matter_acceptance_instrument_approvals",
+      "source": "tools/eos/legal_operations/registry/legal_client_matter_acceptance_instrument_approval_registry.py",
+      "indexes": [
+        {
+          "name": "legal_client_instrument_approval_tenant_id_unique",
+          "keys": [
+            [
+              "tenant_id",
+              1
+            ],
+            [
+              "approval_id",
+              1
+            ]
+          ],
+          "unique": true
+        },
+        {
+          "name": "legal_client_instrument_approval_tenant_fingerprint_unique",
+          "keys": [
+            [
+              "tenant_id",
+              1
+            ],
+            [
+              "fingerprint",
+              1
+            ]
+          ],
+          "unique": true
+        },
+        {
+          "name": "legal_client_instrument_approval_idempotency_unique",
+          "keys": [
+            [
+              "tenant_id",
+              1
+            ],
+            [
+              "idempotency_key",
+              1
+            ]
+          ],
+          "unique": true
+        },
+        {
+          "name": "legal_client_instrument_approval_history",
+          "keys": [
+            [
+              "tenant_id",
+              1
+            ],
+            [
+              "case_matter_id",
+              1
+            ],
+            [
+              "instrument_id",
+              1
+            ],
+            [
+              "version",
+              1
+            ],
+            [
+              "instrument_fingerprint",
+              1
+            ],
+            [
+              "content_fingerprint",
+              1
+            ],
+            [
+              "effective_from",
+              1
+            ],
+            [
+              "occurred_at",
+              1
+            ],
+            [
+              "fingerprint",
+              1
+            ]
+          ],
+          "unique": false
+        },
+        {
+          "name": "legal_client_instrument_approval_decision",
+          "keys": [
+            [
+              "tenant_id",
+              1
+            ],
+            [
+              "case_matter_id",
+              1
+            ],
+            [
+              "instrument_id",
+              1
+            ],
+            [
+              "version",
+              1
+            ],
+            [
+              "instrument_fingerprint",
+              1
+            ],
+            [
+              "content_fingerprint",
+              1
+            ],
+            [
+              "effective_from",
+              -1
+            ],
+            [
+              "decision",
+              1
+            ]
+          ],
+          "unique": false
+        }
+      ],
+      "provisioning_owner": "separate_eos_index_provisioner"
+    },
+    {
+      "id": "legal-client-instrument-lifecycle",
+      "database": "canonical_eos_business_database",
+      "collection": "legal_client_matter_acceptance_instrument_lifecycle",
+      "source": "tools/eos/legal_operations/registry/legal_client_matter_acceptance_instrument_lifecycle_registry.py",
+      "indexes": [
+        {
+          "name": "legal_client_instrument_lifecycle_identity_unique",
+          "keys": [
+            [
+              "tenant_id",
+              1
+            ],
+            [
+              "case_matter_id",
+              1
+            ],
+            [
+              "instrument_id",
+              1
+            ],
+            [
+              "version",
+              1
+            ],
+            [
+              "status",
+              1
+            ]
+          ],
+          "unique": true
+        },
+        {
+          "name": "legal_client_instrument_lifecycle_fingerprint_unique",
+          "keys": [
+            [
+              "tenant_id",
+              1
+            ],
+            [
+              "fingerprint",
+              1
+            ]
+          ],
+          "unique": true
+        },
+        {
+          "name": "legal_client_instrument_lifecycle_terminal_unique",
+          "keys": [
+            [
+              "tenant_id",
+              1
+            ],
+            [
+              "case_matter_id",
+              1
+            ],
+            [
+              "instrument_id",
+              1
+            ],
+            [
+              "version",
+              1
+            ],
+            [
+              "prior_status",
+              1
+            ]
+          ],
+          "unique": true,
+          "partialFilterExpression": {
+            "status": {
+              "$in": [
+                "SUPERSEDED",
+                "RETIRED",
+                "WITHDRAWN"
+              ]
+            }
+          }
+        },
+        {
+          "name": "legal_client_instrument_lifecycle_history",
+          "keys": [
+            [
+              "tenant_id",
+              1
+            ],
+            [
+              "case_matter_id",
+              1
+            ],
+            [
+              "instrument_id",
+              1
+            ],
+            [
+              "version",
+              1
+            ],
+            [
+              "occurred_at",
+              1
+            ],
+            [
+              "fingerprint",
+              1
+            ]
+          ],
+          "unique": false
+        },
+        {
+          "name": "legal_client_instrument_lifecycle_state",
+          "keys": [
+            [
+              "tenant_id",
+              1
+            ],
+            [
+              "case_matter_id",
+              1
+            ],
+            [
+              "status",
+              1
+            ],
+            [
+              "occurred_at",
+              -1
+            ]
+          ],
+          "unique": false
+        }
+      ],
+      "provisioning_owner": "separate_eos_index_provisioner"
+    },
+    {
+      "id": "legal-client-instruments",
+      "database": "canonical_eos_business_database",
+      "collection": "legal_client_matter_acceptance_instruments",
+      "source": "tools/eos/legal_operations/registry/legal_client_matter_acceptance_instrument_registry.py",
+      "indexes": [
+        {
+          "name": "legal_client_instrument_tenant_identity_unique",
+          "keys": [
+            [
+              "tenant_id",
+              1
+            ],
+            [
+              "instrument_id",
+              1
+            ],
+            [
+              "version",
+              1
+            ]
+          ],
+          "unique": true
+        },
+        {
+          "name": "legal_client_instrument_tenant_fingerprint_unique",
+          "keys": [
+            [
+              "tenant_id",
+              1
+            ],
+            [
+              "fingerprint",
+              1
+            ]
+          ],
+          "unique": true
+        },
+        {
+          "name": "legal_client_instrument_matter_version_lookup",
+          "keys": [
+            [
+              "tenant_id",
+              1
+            ],
+            [
+              "case_matter_id",
+              1
+            ],
+            [
+              "instrument_id",
+              1
+            ],
+            [
+              "effective_from",
+              -1
+            ],
+            [
+              "version",
+              -1
+            ]
+          ],
+          "unique": false
+        },
+        {
+          "name": "legal_client_instrument_matter_kind_lookup",
+          "keys": [
+            [
+              "tenant_id",
+              1
+            ],
+            [
+              "case_matter_id",
+              1
+            ],
+            [
+              "instrument_kind",
+              1
+            ],
+            [
+              "effective_from",
+              -1
+            ]
+          ],
+          "unique": false
+        },
+        {
+          "name": "legal_client_instrument_matter_effective_lookup",
+          "keys": [
+            [
+              "tenant_id",
+              1
+            ],
+            [
+              "case_matter_id",
+              1
+            ],
+            [
+              "effective_from",
+              -1
+            ]
+          ],
+          "unique": false
+        }
+      ],
+      "provisioning_owner": "separate_eos_index_provisioner"
+    },
+    {
+      "id": "legal-client-instrument-contents",
+      "database": "canonical_eos_business_database",
+      "collection": "legal_client_matter_acceptance_instrument_contents",
+      "source": "tools/eos/legal_operations/registry/legal_client_matter_acceptance_instrument_content_registry.py",
+      "indexes": [
+        {
+          "name": "client_acceptance_instrument_content_identity_unique",
+          "keys": [
+            [
+              "tenant_id",
+              1
+            ],
+            [
+              "case_matter_id",
+              1
+            ],
+            [
+              "instrument_id",
+              1
+            ],
+            [
+              "instrument_version",
+              1
+            ]
+          ],
+          "unique": true
+        },
+        {
+          "name": "client_acceptance_instrument_content_reference_unique",
+          "keys": [
+            [
+              "tenant_id",
+              1
+            ],
+            [
+              "content_reference",
+              1
+            ]
+          ],
+          "unique": true
+        },
+        {
+          "name": "client_acceptance_instrument_content_fingerprint_lookup",
+          "keys": [
+            [
+              "tenant_id",
+              1
+            ],
+            [
+              "content_fingerprint",
+              1
+            ]
+          ],
+          "unique": false
+        }
+      ],
+      "provisioning_owner": "separate_eos_index_provisioner"
+    },
+    {
+      "id": "legal-client-matter-visibility",
+      "database": "canonical_eos_business_database",
+      "collection": "legal_operations_client_matter_visibility_bindings",
+      "source": "tools/eos/legal_operations/registry/legal_client_matter_visibility_registry.py",
+      "indexes": [
+        {
+          "name": "legal_operations_client_matter_visibility_lifecycle_unique",
+          "keys": [
+            [
+              "tenant_id",
+              1
+            ],
+            [
+              "binding_identity",
+              1
+            ],
+            [
+              "status",
+              1
+            ]
+          ],
+          "unique": true
+        },
+        {
+          "name": "legal_operations_client_matter_visibility_fingerprint_unique",
+          "keys": [
+            [
+              "tenant_id",
+              1
+            ],
+            [
+              "fingerprint",
+              1
+            ]
+          ],
+          "unique": true
+        },
+        {
+          "name": "legal_operations_client_visibility_principal_history",
+          "keys": [
+            [
+              "tenant_id",
+              1
+            ],
+            [
+              "client_principal_id",
+              1
+            ],
+            [
+              "binding_identity",
+              1
+            ]
+          ],
+          "unique": false
+        },
+        {
+          "name": "legal_operations_matter_visibility_client_history",
+          "keys": [
+            [
+              "tenant_id",
+              1
+            ],
+            [
+              "case_matter_id",
+              1
+            ],
+            [
+              "binding_identity",
+              1
+            ]
+          ],
+          "unique": false
+        }
+      ],
+      "provisioning_owner": "separate_eos_index_provisioner"
+    },
+    {
+      "id": "legal-matter-parties",
+      "database": "canonical_eos_business_database",
+      "collection": "legal_matter_parties",
+      "source": "tools/eos/legal_operations/registry/legal_matter_party_registry.py",
+      "indexes": [
+        {
+          "name": "legal_party_tenant_party_unique",
+          "keys": [
+            [
+              "tenant_id",
+              1
+            ],
+            [
+              "party_id",
+              1
+            ]
+          ],
+          "unique": true
+        },
+        {
+          "name": "legal_party_tenant_matter_subject_unique",
+          "keys": [
+            [
+              "tenant_id",
+              1
+            ],
+            [
+              "case_matter_id",
+              1
+            ],
+            [
+              "subject_identity_fingerprint",
+              1
+            ]
+          ],
+          "unique": true
+        },
+        {
+          "name": "legal_party_tenant_matter_lookup",
+          "keys": [
+            [
+              "tenant_id",
+              1
+            ],
+            [
+              "case_matter_id",
+              1
+            ]
+          ],
+          "unique": false
+        },
+        {
+          "name": "legal_party_tenant_subject_lookup",
+          "keys": [
+            [
+              "tenant_id",
+              1
+            ],
+            [
+              "subject_identity_fingerprint",
+              1
+            ]
+          ],
+          "unique": false
+        }
+      ],
+      "provisioning_owner": "separate_eos_index_provisioner"
+    },
+    {
+      "id": "legal-operations-lifecycle-evidence",
+      "database": "canonical_eos_business_database",
+      "collection": "legal_operations_lifecycle_evidence",
+      "source": "tools/eos/legal_operations/registry/legal_operations_lifecycle_registry.py",
+      "indexes": [
+        {
+          "name": "legal_operations_tenant_entity_history",
+          "keys": [
+            [
+              "tenant_id",
+              1
+            ],
+            [
+              "entity_type",
+              1
+            ],
+            [
+              "entity_identity",
+              1
+            ]
+          ],
+          "unique": false
+        },
+        {
+          "name": "legal_operations_tenant_document_custody_history",
+          "keys": [
+            [
+              "tenant_id",
+              1
+            ],
+            [
+              "entity_type",
+              1
+            ],
+            [
+              "p1_payload.document_id",
+              1
+            ]
+          ],
+          "unique": false
+        },
+        {
+          "name": "legal_operations_tenant_evidence_unique",
+          "keys": [
+            [
+              "tenant_id",
+              1
+            ],
+            [
+              "evidence_identity",
+              1
+            ]
+          ],
+          "unique": true
+        }
+      ],
+      "provisioning_owner": "separate_eos_index_provisioner"
+    },
+    {
+      "id": "legal-matter-deadlines",
+      "database": "canonical_eos_business_database",
+      "collection": "legal_matter_deadlines",
+      "source": "tools/eos/legal_operations/registry/legal_matter_deadline_registry.py",
+      "indexes": [
+        {
+          "name": "legal_matter_deadline_tenant_identity_unique",
+          "keys": [
+            [
+              "tenant_id",
+              1
+            ],
+            [
+              "deadline_id",
+              1
+            ]
+          ],
+          "unique": true
+        },
+        {
+          "name": "legal_matter_deadline_matter_lookup",
+          "keys": [
+            [
+              "tenant_id",
+              1
+            ],
+            [
+              "case_matter_id",
+              1
+            ],
+            [
+              "deadline_id",
+              1
+            ]
+          ],
+          "unique": false
+        },
+        {
+          "name": "legal_matter_deadline_matter_due",
+          "keys": [
+            [
+              "tenant_id",
+              1
+            ],
+            [
+              "case_matter_id",
+              1
+            ],
+            [
+              "due_at",
+              1
+            ]
+          ],
+          "unique": false
+        },
+        {
+          "name": "legal_matter_deadline_matter_status_due",
+          "keys": [
+            [
+              "tenant_id",
+              1
+            ],
+            [
+              "case_matter_id",
+              1
+            ],
+            [
+              "status",
+              1
+            ],
+            [
+              "due_at",
+              1
+            ]
+          ],
+          "unique": false
+        }
+      ],
+      "provisioning_owner": "separate_eos_index_provisioner"
+    },
+    {
+      "id": "tenant-legal-operating-models",
+      "database": "canonical_eos_business_database",
+      "collection": "legal_tenant_operating_models",
+      "source": "tools/eos/legal_operations/registry/tenant_legal_operating_model_registry.py",
+      "indexes": [
+        {
+          "name": "legal_tenant_operating_model_identity_unique",
+          "keys": [
+            [
+              "tenant_id",
+              1
+            ],
+            [
+              "operating_model_id",
+              1
+            ]
+          ],
+          "unique": true
+        },
+        {
+          "name": "legal_tenant_operating_model_fingerprint_unique",
+          "keys": [
+            [
+              "tenant_id",
+              1
+            ],
+            [
+              "fingerprint",
+              1
+            ]
+          ],
+          "unique": true
+        },
+        {
+          "name": "legal_tenant_operating_model_tenant_revision_history",
+          "keys": [
+            [
+              "tenant_id",
+              1
+            ],
+            [
+              "revision",
+              1
+            ],
+            [
+              "effective_from",
+              1
+            ],
+            [
+              "operating_model_id",
+              1
+            ]
+          ],
+          "unique": false
+        },
+        {
+          "name": "legal_tenant_operating_model_tenant_effective_history",
+          "keys": [
+            [
+              "tenant_id",
+              1
+            ],
+            [
+              "effective_from",
+              1
+            ],
+            [
+              "revision",
+              1
+            ],
+            [
+              "operating_model_id",
+              1
+            ]
+          ],
+          "unique": false
+        },
+        {
+          "name": "legal_tenant_operating_model_tenant_supersession",
+          "keys": [
+            [
+              "tenant_id",
+              1
+            ],
+            [
+              "supersedes_operating_model_id",
+              1
+            ]
+          ],
+          "unique": false
+        }
+      ],
+      "provisioning_owner": "separate_eos_index_provisioner"
     }
   ],
   "excluded_until_inventory_complete": [
