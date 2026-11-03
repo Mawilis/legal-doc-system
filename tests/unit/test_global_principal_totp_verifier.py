@@ -88,7 +88,7 @@ def _verifier(collection: _Collection, revision: int = 4) -> GlobalPrincipalTotp
     return GlobalPrincipalTotpVerifier(
         collection=collection,
         credential_repository=_Credentials(revision),
-        decrypt_secret=lambda envelope: SECRET if envelope == "kms-envelope" else "",
+        decrypt_secret=lambda envelope, *, principal_id, credential_revision: SECRET if envelope == "kms-envelope" and principal_id == "principal-global" and credential_revision == 4 else "",
     )
 
 
