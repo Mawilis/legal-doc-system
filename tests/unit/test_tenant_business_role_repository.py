@@ -118,7 +118,7 @@ def test_multi_capacity_revision_rejects_stale_revision_without_current_write():
     }[name]
     with pytest.raises(TenantBusinessRoleRevisionConflictError):
         TenantBusinessRoleRepository.record_capacity_revision(
-            value("tenant_owner", revision=2), 0, database, session=session
+            value("tenant_owner", revision=1), 0, database, session=session
         )
     assert history.insert_one.call_count == 1
     assert current.replace_one.call_count == 1
