@@ -1,6 +1,10 @@
 name: EOS MongoDB Index Provisioning Gate
 
 on:
+  pull_request:
+    paths:
+      - "infra/mongodb/eos-index-manifest-v1.json"
+      - ".github/workflows/eos-mongodb-index-provisioning-gate.yml"
   workflow_dispatch:
     inputs:
       target:
@@ -20,7 +24,7 @@ permissions:
   contents: read
 
 concurrency:
-  group: eos-mongodb-index-provisioning-gate
+  group: eos-mongodb-index-provisioning-gate-${{ github.ref }}
   cancel-in-progress: false
 
 jobs:
@@ -29,7 +33,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
         with:
-          ref: ${{ github.ref }}
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
       - uses: actions/setup-python@v5
         with:
           python-version: "3.12"
@@ -44,23 +48,42 @@ jobs:
           assert manifest["manifest_version"] == "1.0.0"
           assert manifest["status"] == "INVENTORY_INCOMPLETE"
           assert manifest["production_mutation_authorized"] is False
-          assert manifest["provisioning_policy"]["runtime_api_may_create_indexes"] is False
-          assert manifest["provisioning_policy"]["provisioning_identity_separate_from_runtime"] is True
+          policy = manifest["provisioning_policy"]
+          assert policy["runtime_api_may_create_indexes"] is False
+          assert policy["provisioning_identity_separate_from_runtime"] is True
+          assert policy["first_execution_environment"] == "nonproduction"
+          assert policy["require_duplicate_data_preflight"] is True
+          assert policy["require_exact_target_fingerprint_approval"] is True
           assert manifest["excluded_until_inventory_complete"]
-          names = set()
+          assert manifest["execution_gate"]
+          seen_collections = set()
+          seen_indexes = set()
+          total_indexes = 0
           for entry in manifest["entries"]:
-              assert entry["collection"] and entry["source"] and entry["indexes"]
+              assert entry["id"] and entry["database"] and entry["collection"] and entry["source"]
+              collection_key = (entry["database"], entry["collection"])
+              assert collection_key not in seen_collections, f"duplicate collection entry: {collection_key}"
+              seen_collections.add(collection_key)
+              assert entry["indexes"], f"no indexes recorded for {collection_key}"
               for index in entry["indexes"]:
                   assert index["name"] and index["keys"]
                   key = (entry["database"], entry["collection"], index["name"])
-                  assert key not in names, f"duplicate index declaration: {key}"
-                  names.add(key)
-          print(f"Validated {len(manifest['entries'])} collection entries and {len(names)} index declarations.")
+                  assert key not in seen_indexes, f"duplicate index declaration: {key}"
+                  seen_indexes.add(key)
+                  total_indexes += 1
+                  for field, direction in index["keys"]:
+                      assert isinstance(field, str) and field
+                      assert direction in (-1, 1), f"unsupported index direction: {key}"
+                  if "expireAfterSeconds" in index:
+                      assert index["expireAfterSeconds"] >= 0
+                      assert len(index["keys"]) == 1
+                      assert index["keys"][0][1] == 1
+          print(f"Validated {len(seen_collections)} collection entries and {total_indexes} index declarations.")
           print("NO DATABASE CONNECTION WAS OPENED; NO INDEXES WERE CREATED OR MODIFIED.")
           PY
       - name: Enforce fail-closed execution gate
         run: |
           echo "The manifest is inventory-incomplete. Database provisioning is disabled."
-          echo "Complete route/worker inventory, verify every index definition, review duplicate data,"
+          echo "Complete route/worker inventory, verify every index option, review duplicate data,"
           echo "and approve an exact nonproduction target fingerprint before adding an apply stage."
           exit 0
