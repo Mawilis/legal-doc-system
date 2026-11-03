@@ -17,6 +17,7 @@ from pydantic import BaseModel, ConfigDict, Field, StrictInt
 
 from tools.eos.auth.authentication import get_current_identity
 from tools.eos.auth.identity import SovereignIdentity
+from tools.eos.auth.principal_status import PrincipalStatus
 from tools.eos.system_services.eos_authorizer import (
     SystemServicesAuthorizationError,
     SystemServicesAuthorizationUnavailable,
@@ -48,7 +49,7 @@ class CaseTransitionRequest(BaseModel):
 
 def _actor(identity: SovereignIdentity) -> SupportCaseActorContext:
     """Discard tenant context: the exact SYSTEM authorization is independently re-proven."""
-    if not isinstance(identity.identity_id, str) or not identity.identity_id.strip():
+    if not isinstance(identity.identity_id, str) or not identity.identity_id.strip() or identity.status is not PrincipalStatus.ACTIVE:
         raise HTTPException(status_code=401, detail="Authenticated principal required.")
     return SupportCaseActorContext(
         principal_id=identity.identity_id,
