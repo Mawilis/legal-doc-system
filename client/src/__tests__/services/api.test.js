@@ -223,6 +223,25 @@ describe('api.js – Sovereign HTTP Client', () => {
       expect(sealed.headers['X-Tenant-ID']).toBeUndefined();
     });
 
+    it('uses the selected tenant projection rather than a fixed development tenant', async () => {
+      localStorageMock.setItem('wilsy_active_tenant', JSON.stringify({
+        tenantId: 'TENANT-SECOND-FIRM',
+        alias: 'second-firm',
+      }));
+      localStorageMock.setItem('discoveredTenant', JSON.stringify({
+        tenantId: 'WILSYTENANT-4CD2FZ4O',
+        alias: 'wilsy',
+      }));
+
+      const sealed = await requestInterceptorCapture.fulfilled({
+        url: '/legal-operations/commercial-context',
+        method: 'get',
+        headers: {},
+      });
+
+      expect(sealed.headers['X-Tenant-ID']).toBe('TENANT-SECOND-FIRM');
+    });
+
     it('preserves an explicitly supplied MFA candidate bearer over stale browser storage', async () => {
       expect(requestInterceptorCapture.fulfilled).toEqual(expect.any(Function));
 
