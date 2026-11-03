@@ -1,5 +1,6 @@
 """Adversarial unit tests for global-principal session and refresh authority."""
 from datetime import datetime, timezone
+from typing import Any, cast
 from types import SimpleNamespace
 
 import pytest
@@ -93,7 +94,7 @@ def setup(monkeypatch):
         lambda *args, **kwargs: "signed-access-token",
     )
     service = GlobalPrincipalSessionAuthority(
-        sessions=sessions, refresh_tokens=refresh,
+        sessions=cast(Any, sessions), refresh_tokens=cast(Any, refresh),
         principal_repository=SimpleNamespace(get=authorities.principal),
         credential_repository=SimpleNamespace(get_by_principal=authorities.credential),
         membership_repository=SimpleNamespace(resolve=authorities.membership),
