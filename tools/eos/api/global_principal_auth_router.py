@@ -63,6 +63,7 @@ from tools.eos.auth.principal_credential_authentication import (
     authenticate_global_principal,
 )
 from tools.eos.auth.principal_credential_repository import (
+    COLLECTION as PRINCIPAL_CREDENTIAL_COLLECTION,
     PrincipalCredentialRepository,
     PrincipalCredentialRepositoryError,
 )
@@ -520,6 +521,7 @@ async def start_global_mfa_enrollment(
             challenge_collection=database[GLOBAL_PRINCIPAL_MFA_ENROLLMENT_CHALLENGE_COLLECTION],
             factor_collection=database[GLOBAL_PRINCIPAL_MFA_ENROLLMENT_FACTOR_COLLECTION],
             legacy_factor_collection=database[LEGACY_MFA_FACTOR_COLLECTION],
+            credential_collection=database[PRINCIPAL_CREDENTIAL_COLLECTION],
         )
         receipt = service.issue(
             principal_id=principal.principal_id,
@@ -637,6 +639,7 @@ async def migrate_legacy_global_mfa_factor(
             kms=kms,
             legacy_factor_collection=database[LEGACY_MFA_FACTOR_COLLECTION],
             factor_collection=database[GLOBAL_MIGRATED_MFA_FACTOR_COLLECTION],
+            credential_collection=database[PRINCIPAL_CREDENTIAL_COLLECTION],
         )
         receipt = service.migrate(
             principal_id=principal.principal_id,
