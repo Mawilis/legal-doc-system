@@ -272,5 +272,11 @@ def test_real_mongo_system_services_queue_http_uses_current_eos_authority(mongo_
     )
     with TestClient(app) as http:
         response = http.get("/api/system-services/cases")
+        workspace = http.get("/api/system-services/workspace-bootstrap")
     assert response.status_code == 200
     assert response.json() == []
+    assert workspace.status_code == 200
+    assert workspace.json()["status"] == "READY"
+    assert workspace.json()["authority"] == "EOS_SYSTEM_SERVICES"
+    assert workspace.json()["principalId"] == PRINCIPAL
+    assert workspace.json()["capabilities"] == ["system_services:queue:read"]
