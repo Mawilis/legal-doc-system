@@ -82,19 +82,13 @@ def legacy_migration_store():
         principal_repository=_Principals(),
     )
     try:
-        yield client, legacy, factors, service
+        yield client, credentials, legacy, factors, service
     finally:
         client.drop_database(database.name)
         client.close()
 
 def test_real_mongo_legacy_factor_proof_repairs_unset_mfa_flag_with_new_revision(legacy_migration_store):
-    client, legacy, factors, service = legacy_migration_store
-    database_name = next(
-        name for name in client.list_database_names()
-        if name.startswith("global_mfa_legacy_migration_")
-        and client[name][CREDENTIAL_COLLECTION].count_documents({"principal_id": "principal-legacy-mfa"}) == 1
-    )
-    credentials = client[database_name][CREDENTIAL_COLLECTION]
+    client, credentials, legacy, factors, service = legacy_migration_store
     PrincipalCredentialRepository.insert(
         PrincipalCredential(
             principal_id="principal-legacy-unset",
@@ -127,7 +121,7 @@ def test_real_mongo_legacy_factor_proof_repairs_unset_mfa_flag_with_new_revision
 
 
 def test_real_mongo_legacy_factor_migration_is_atomic_and_preserves_source_until_cutover(legacy_migration_store):
-    client, legacy, factors, service = legacy_migration_store
+    client, _credentials, legacy, factors, service = legacy_migration_store
     code = pyotp.TOTP(SECRET).at(NOW)
 
     with client.start_session() as session:
