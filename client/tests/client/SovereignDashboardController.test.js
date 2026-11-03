@@ -159,6 +159,7 @@ describe('SovereignDashboardController resolver', () => {
     expect(source).toContain("const LegalDashboard = React.lazy(() => import('../industry/LegalDashboard'))");
     expect(source).toContain('dashboardKey === DASHBOARD_KEYS.LEGAL');
     expect(source).toContain('roleView={role}');
+    expect(source).toContain('onSwitchDashboard={handleManualDashboardSwitch}');
     expect(source).not.toContain('roleView="DEPUTY"');
     expect(source).not.toContain('roleView="SHERIFF"');
   });
