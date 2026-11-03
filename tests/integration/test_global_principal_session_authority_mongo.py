@@ -26,6 +26,8 @@ class Authorities:
     credential_revision = 2
     membership_revision = 3
     capacity_revision = 5
+    membership_status = TenantMembershipStatus.ACTIVE
+    capacity_status = TenantBusinessRoleStatus.ACTIVE
 
     def get_principal(self, principal_id, *, session=None):
         return SimpleNamespace(principal_id=principal_id, status=PrincipalStatus.ACTIVE)
@@ -36,11 +38,11 @@ class Authorities:
 
     def get_membership(self, principal_id, tenant_id, *, session=None):
         return SimpleNamespace(principal_id=principal_id, tenant_id=tenant_id,
-                               revision=self.membership_revision, status=TenantMembershipStatus.ACTIVE)
+                               revision=self.membership_revision, status=self.membership_status)
 
     def get_capacity(self, principal_id, tenant_id, role, *, session=None):
         return SimpleNamespace(principal_id=principal_id, tenant_id=tenant_id, business_role=role,
-                               revision=self.capacity_revision, status=TenantBusinessRoleStatus.ACTIVE)
+                               revision=self.capacity_revision, status=self.capacity_status)
 
 
 @pytest.fixture()
@@ -188,3 +190,38 @@ def test_replica_set_concurrent_refresh_race_has_exactly_one_winner(mongo_author
     assert sum(outcome[0] == "rejected" for outcome in outcomes) == 1
     assert refresh.count_documents({"consumed_at": None, "revoked_at": None}) == 1
     assert refresh.count_documents({"token_digest": {"$exists": True}}) == 2
+
+
+def test_replica_set_revoked_membership_and_capacity_block_global_session(mongo_authority):
+    client, _db, service, authorities, _sessions, _refresh = mongo_authority
+    receipt = issue(service, client)
+    authorities.membership_status = TenantMembershipStatus.SUSPENDED
+    assert not service.is_session_current(
+        principal_id="principal-A", tenant_id="tenant-A",
+        session_reference=receipt.session_reference,
+    )
+    authorities.membership_status = TenantMembershipStatus.ACTIVE
+    authorities.capacity_status = TenantBusinessRoleStatus.REVOKED
+    assert not service.is_session_current(
+        principal_id="principal-A", tenant_id="tenant-A",
+        session_reference=receipt.session_reference,
+    )
+
+
+def test_replica_set_credential_revision_change_blocks_global_refresh(mongo_authority):
+    client, _db, service, authorities, _sessions, _refresh = mongo_authority
+    receipt = issue(service, client)
+    authorities.credential_revision = 3
+    assert not service.is_session_current(
+        principal_id="principal-A", tenant_id="tenant-A",
+        session_reference=receipt.session_reference,
+    )
+    with client.start_session() as session:
+        session.start_transaction()
+        with pytest.raises(GlobalPrincipalSessionRejected, match="CREDENTIAL_STALE"):
+            service.rotate_refresh_token(
+                receipt.refresh_token,
+                session=session,
+                now=datetime(2026, 11, 3, 0, 1, tzinfo=timezone.utc),
+            )
+        session.abort_transaction()
