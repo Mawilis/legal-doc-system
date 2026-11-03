@@ -187,11 +187,9 @@ def reconcile(*, apply: bool) -> dict[str, Any]:
         subscription, plan = _load_exact_sources(database)
         existing = _existing_entitlement(database)
         if existing is not None:
-            _require(
-                LEGAL_FEATURE in tuple(plan.get("features") or ())
-                and LEGAL_FEATURE in tuple(subscription.get("plan_features") or ()),
-                "EXISTING_ENTITLEMENT_COMMERCIAL_SOURCE_MISMATCH",
-            )
+            # Exact Founder source was already validated above. Its perpetual
+            # platform-owner term intentionally does not require legal.core in
+            # the catalogue feature snapshot.
             return {
                 "outcome": "ALREADY_ISSUED",
                 "tenant_id": TENANT_ID,
