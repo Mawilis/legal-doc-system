@@ -61,7 +61,7 @@ class AwsKmsGlobalMfaEnvelope:
         )
         if key_match is None:
             raise GlobalMfaKeyManagementError("GLOBAL_MFA_KMS_KEY_ARN_REQUIRED")
-        self.region_name = (region_name or os.getenv("AWS_REGION") or "").strip()
+        self.region_name = (region_name or "").strip()
         if not self.region_name:
             raise GlobalMfaKeyManagementError("GLOBAL_MFA_KMS_REGION_REQUIRED")
         if self.region_name != key_match.group(2):
