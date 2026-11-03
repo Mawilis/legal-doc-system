@@ -177,6 +177,12 @@ class SupportCase:
     def from_document(cls, value: dict[str, object]) -> "SupportCase":
         if value.get("schema") != SCHEMA:
             raise SupportCaseError("CASE_SCHEMA_INVALID")
+        expected_fields = {
+            "schema", "case_id", "scope", "tenant_id", "principal_id",
+            "category", "status", "created_at", "updated_at", "revision",
+        }
+        if set(value) != expected_fields:
+            raise SupportCaseError("CASE_PERSISTED_FIELDS_INVALID")
         try:
             return cls(
                 case_id=value["case_id"],  # type: ignore[arg-type]
