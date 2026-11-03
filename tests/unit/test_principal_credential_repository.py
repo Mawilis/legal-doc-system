@@ -8,6 +8,7 @@ from pymongo.errors import DuplicateKeyError
 from tools.eos.auth.principal_credential import PrincipalCredential, normalize_principal_email
 from tools.eos.auth.principal_credential_repository import (
     PrincipalCredentialAlreadyExistsError,
+    PrincipalCredentialNotFoundError,
     PrincipalCredentialPersistedRecordInvalidError,
     PrincipalCredentialRepository,
     PrincipalCredentialRepositoryError,
@@ -91,7 +92,7 @@ def test_unique_principal_and_email_indexes_and_exact_lookups():
     assert PrincipalCredentialRepository.get_by_email("OWNER@example.com", collection(fake)) == value
     with pytest.raises(PrincipalCredentialAlreadyExistsError):
         PrincipalCredentialRepository.insert(value, collection(fake))
-    with pytest.raises(Exception):
+    with pytest.raises(PrincipalCredentialNotFoundError):
         PrincipalCredentialRepository.get_by_email("unknown@example.com", collection(fake))
 
 
