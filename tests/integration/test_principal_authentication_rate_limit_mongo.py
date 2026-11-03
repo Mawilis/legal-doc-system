@@ -1,7 +1,7 @@
 """WILSY OS real-Mongo certification for global principal authentication throttling.
 
 TITLE: Global Principal Authentication Rate Limit Real-Mongo Certificate
-VERSION: v1.1.1-GLOBAL-PRINCIPAL-FAILURE-THROTTLE-MONGO-TESTS
+VERSION: v1.1.2-GLOBAL-PRINCIPAL-FAILURE-THROTTLE-MONGO-TESTS
 AUTHORITY: Certifies durable rate-counter persistence and atomic increments only.
 EPITOME: Verifies dual-dimension admission and concurrent Mongo counter behavior
          against the disposable EOS replica set.
@@ -10,8 +10,9 @@ ABSOLUTE CANONICAL PATH:
 COLLABORATION / OWNERSHIP: Wilsy Core Engineering.
 CERTIFICATION / UPDATE DATE: 2026-11-03.
 CHANGELOG:
-    v1.1.1-GLOBAL-PRINCIPAL-FAILURE-THROTTLE-MONGO-TESTS aligns integration
-    policy arguments with the failure-only throttle contract.
+    v1.1.2-GLOBAL-PRINCIPAL-FAILURE-THROTTLE-MONGO-TESTS corrects the remaining
+    source failure-budget constructor argument.
+    v1.1.1 aligns the email failure-budget constructor argument.
     v1.1.0-GLOBAL-PRINCIPAL-FAILURE-THROTTLE-MONGO-TESTS verifies failure-only
     accounting, successful-email reset and concurrent atomic failed-attempt
     increments against the disposable replica set.
@@ -121,7 +122,7 @@ def test_real_mongo_concurrent_requests_increment_each_bucket_atomically(mongo_r
 
 
 # ARTIFACT: test_principal_authentication_rate_limit_mongo.py
-# VERSION: v1.1.1-GLOBAL-PRINCIPAL-FAILURE-THROTTLE-MONGO-TESTS
+# VERSION: v1.1.2-GLOBAL-PRINCIPAL-FAILURE-THROTTLE-MONGO-TESTS
 # AUTHORITY BOUNDARY: real-Mongo request-density persistence certification only
 # TENANT POSTURE: tenant-neutral email/source dimensions
 # FAIL-CLOSED POSTURE: exhausted budgets and persistence failures reject
