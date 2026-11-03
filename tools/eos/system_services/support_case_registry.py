@@ -9,7 +9,7 @@ from __future__ import annotations
 from datetime import datetime, timezone
 from typing import Any, Final
 
-from pymongo import ASCENDING
+from pymongo import ASCENDING, DESCENDING
 from pymongo.errors import DuplicateKeyError, PyMongoError
 
 from tools.eos.system_services.support_case import (
@@ -168,6 +168,87 @@ class SupportCaseRegistry:
         if value.case_id != case_id or value.scope is not scope or value.tenant_id != tenant_id:
             raise SupportCasePersistenceError("SYSTEM_SERVICES_CASE_SCOPE_MISMATCH")
         return value
+
+    def list_cases(
+        self,
+        *,
+        scope: SupportCaseScope,
+        tenant_id: str | None = None,
+        principal_id: str | None = None,
+        statuses: tuple[SupportCaseStatus, ...] = (),
+        limit: int = 50,
+        session: Any | None = None,
+    ) -> tuple[SupportCase, ...]:
+        """Return a bounded exact-scope queue projection; callers authorize first."""
+        if not isinstance(scope, SupportCaseScope):
+            raise SupportCaseRegistryError("SYSTEM_SERVICES_CASE_SCOPE_INVALID")
+        if scope is SupportCaseScope.SYSTEM and tenant_id is not None:
+            raise SupportCaseRegistryError("SYSTEM_CASE_MUST_NOT_BIND_TENANT")
+        if scope is SupportCaseScope.TENANT and (
+            not isinstance(tenant_id, str) or not tenant_id or tenant_id != tenant_id.strip()
+        ):
+            raise SupportCaseRegistryError("TENANT_CASE_SCOPE_REQUIRED")
+        if isinstance(limit, bool) or not isinstance(limit, int) or not 1 <= limit <= 100:
+            raise SupportCaseRegistryError("SYSTEM_SERVICES_CASE_LIMIT_INVALID")
+        if principal_id is not None and (
+            not isinstance(principal_id, str) or not principal_id or principal_id != principal_id.strip()
+        ):
+            raise SupportCaseRegistryError("SYSTEM_SERVICES_CASE_PRINCIPAL_FILTER_INVALID")
+        if not isinstance(statuses, tuple) or any(
+            not isinstance(item, SupportCaseStatus) for item in statuses
+        ):
+            raise SupportCaseRegistryError("SYSTEM_SERVICES_CASE_STATUS_FILTER_INVALID")
+        query: dict[str, object] = {
+            "scope": scope.value,
+            "tenant_id": tenant_id,
+        }
+        if principal_id is not None:
+            query["principal_id"] = principal_id
+        if statuses:
+            query["status"] = {"$in": [item.value for item in statuses]}
+        try:
+            rows = _target(self._cases, CASE_COLLECTION).find(
+                query, session=session
+            ).sort([("created_at", DESCENDING), ("case_id", DESCENDING)]).limit(limit)
+            return tuple(_hydrate_case(row) for row in rows)
+        except PyMongoError as error:
+            raise SupportCasePersistenceError("SYSTEM_SERVICES_CASE_QUEUE_READ_FAILED") from error
+
+    def list_events(
+        self,
+        *,
+        case_id: str,
+        scope: SupportCaseScope,
+        tenant_id: str | None = None,
+        session: Any | None = None,
+        limit: int = 100,
+    ) -> tuple[SupportCaseEvent, ...]:
+        """Return ordered event history only after exact-scope case existence is proven."""
+        self.get(case_id=case_id, scope=scope, tenant_id=tenant_id, session=session)
+        if isinstance(limit, bool) or not isinstance(limit, int) or not 1 <= limit <= 500:
+            raise SupportCaseRegistryError("SYSTEM_SERVICES_CASE_EVENT_LIMIT_INVALID")
+        try:
+            rows = _target(self._events, EVENT_COLLECTION).find(
+                {"case_id": case_id}, session=session
+            ).sort([("occurred_at", ASCENDING), ("event_id", ASCENDING)]).limit(limit)
+            values: list[SupportCaseEvent] = []
+            for raw in rows:
+                if not isinstance(raw, dict):
+                    raw = dict(raw)
+                raw.pop("_id", None)
+                occurred = raw.get("occurred_at")
+                if isinstance(occurred, datetime) and occurred.tzinfo is None:
+                    raw["occurred_at"] = occurred.replace(tzinfo=timezone.utc)
+                try:
+                    event = SupportCaseEvent.from_document(raw)
+                except (TypeError, ValueError) as error:
+                    raise SupportCasePersistenceError("SYSTEM_SERVICES_CASE_EVENT_RECORD_INVALID") from error
+                if event.case_id != case_id:
+                    raise SupportCasePersistenceError("SYSTEM_SERVICES_CASE_EVENT_SCOPE_MISMATCH")
+                values.append(event)
+            return tuple(values)
+        except PyMongoError as error:
+            raise SupportCasePersistenceError("SYSTEM_SERVICES_CASE_HISTORY_READ_FAILED") from error
 
     def transition(
         self,
