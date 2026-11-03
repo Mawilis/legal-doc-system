@@ -43,7 +43,7 @@ def factor_store():
     verifier = GlobalPrincipalTotpVerifier(
         collection=factors,
         credential_repository=credentials,
-        decrypt_secret=lambda envelope: SECRET if envelope == "test-kms-envelope" else "",
+        decrypt_secret=lambda envelope, *, principal_id, credential_revision: SECRET if envelope == "test-kms-envelope" and principal_id == "principal-global" and credential_revision == 7 else "",
     )
     try:
         yield client, factors, verifier
