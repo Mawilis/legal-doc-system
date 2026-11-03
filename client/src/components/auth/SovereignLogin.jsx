@@ -87,7 +87,7 @@ export default function SovereignLogin({ onLoginSuccess }) {
     event.preventDefault();
     setError('');
     try {
-      const result = await login(email.trim(), password);
+      const result = await login(email.trim(), password, resolvedTenant?.tenantId);
       if ([AUTH_STATES.MFA_SETUP, AUTH_STATES.MFA_RECONCILIATION_REQUIRED, AUTH_STATES.MFA_REQUIRED].includes(result.status)) {
         navigate('/mfa', { replace: true, state: { tenant: resolvedTenant } });
         return;
