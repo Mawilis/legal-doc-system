@@ -113,7 +113,9 @@ export default function OwnerCommercialWorkspace() {
             <span>{loading ? 'Loading' : `${items.length} active`}</span>
           </div>
           {loading ? <p className={styles.empty}>Loading the tenant-scoped EOS queue…</p> :
-            items.length === 0 ? (
+            !snapshot ? (
+              <p className={styles.empty}>The workspace source is unavailable. No task count or empty-state claim can be made until EOS responds.</p>
+            ) : items.length === 0 ? (
               <div className={styles.empty}>
                 <h3>No open actions</h3>
                 <p>Create your first task, reminder or client follow-up. This queue never invents work or displays sample records.</p>
@@ -128,7 +130,7 @@ export default function OwnerCommercialWorkspace() {
                         <span data-priority={item.priority}>{item.priority}</span>
                       </div>
                       <p>{item.kind.replace('_', ' ')} · {item.status.replace('_', ' ')}</p>
-                      <small>{formatDue(item.due_at)} · {item.owner_principal_id}</small>
+                      <small>{formatDue(item.due_at)}</small>
                     </div>
                     <div className={styles.itemActions}>
                       {item.is_overdue && <em>Overdue</em>}
