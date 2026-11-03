@@ -85,12 +85,14 @@ class GlobalPrincipalMfaLegacyMigrationService:
         kms: Any,
         legacy_factor_collection: Collection | None = None,
         factor_collection: Collection | None = None,
+        credential_collection: Collection | None = None,
         credential_repository: Any = None,
         principal_repository: Any = None,
     ) -> None:
         self._kms = kms
         self._legacy = legacy_factor_collection
         self._factors = factor_collection
+        self._credential_collection = credential_collection
         self._credentials = credential_repository or PrincipalCredentialRepository()
         self._principals = principal_repository or PrincipalAuthorityRepository()
 
@@ -120,7 +122,12 @@ class GlobalPrincipalMfaLegacyMigrationService:
         if isinstance(credential_revision, bool) or not isinstance(credential_revision, int) or credential_revision < 0:
             raise GlobalPrincipalMfaLegacyMigrationRejected("GLOBAL_MFA_MIGRATION_REVISION_INVALID")
         try:
-            credential = self._credentials.get_by_principal(principal_id, session=session)
+            if self._credential_collection is None:
+                credential = self._credentials.get_by_principal(principal_id, session=session)
+            else:
+                credential = self._credentials.get_by_principal(
+                    principal_id, self._credential_collection, session=session
+                )
         except PrincipalCredentialNotFoundError as error:
             raise GlobalPrincipalMfaLegacyMigrationRejected("GLOBAL_MFA_MIGRATION_CREDENTIAL_REQUIRED") from error
         except PrincipalCredentialRepositoryError as error:
@@ -175,11 +182,17 @@ class GlobalPrincipalMfaLegacyMigrationService:
         target_revision = credential_revision
         if credential.mfa_enabled is False:
             try:
-                enabled = self._credentials.enable_mfa(
-                    principal_id,
-                    credential_revision,
-                    session=session,
-                )
+                if self._credential_collection is None:
+                    enabled = self._credentials.enable_mfa(
+                        principal_id, credential_revision, session=session
+                    )
+                else:
+                    enabled = self._credentials.enable_mfa(
+                        principal_id,
+                        credential_revision,
+                        self._credential_collection,
+                        session=session,
+                    )
                 target_revision = enabled.credential_revision
             except PrincipalCredentialRepositoryError as error:
                 raise GlobalPrincipalMfaLegacyMigrationRejected(
