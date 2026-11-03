@@ -44,7 +44,7 @@ const DEFAULT_OPTIONS = {
  * query submission.
  *
  * @param {Object} options - Configuration options.
- * @param {string} options.tenantId - Tenant context (default: 'GLOBAL_ROOT').
+ * @param {string} [options.tenantId] - Optional UI context; EOS tenant scope is supplied by the verified API session.
  * @param {boolean} options.autoTrace - Auto‑generate trace IDs (default: true) – handled by api.
  * @param {number} options.timeout - Request timeout in ms (default: 30000).
  * @returns {Object} { data, loading, error, execute, reset, lastResponse }
