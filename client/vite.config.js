@@ -77,8 +77,8 @@ export default defineConfig({
         rewrite: (path) => path.replace(/^\\/auth/, '/api/auth'),
       },
       // Kennel invoice lifecycle endpoints are mounted at /billing/*, not /api/billing/*.
-      // Keep these rules before the general /api BFF rule so compose/list reach EOS,
-      // while Node-owned actions (partial pay, PDF, audit) retain their correct owner.
+      // Keep these rules before the general /api EOS rule so compose/list reach EOS,
+      // while EOS-owned application routes retain their canonical owner.
       '/api/billing/platform': {
         target: 'http://localhost:9095',
         changeOrigin: true,
@@ -92,7 +92,7 @@ export default defineConfig({
         rewrite: (path) => path.replace(/^\/api/, ''),
       },
       // Kennel billing read models are mounted at /billing/*, not /api/billing/*.
-      // This explicit rule must remain ahead of /api so Node-only routes retain Node ownership.
+      // This explicit rule must remain ahead of /api so EOS routes retain their canonical ownership.
       '^/api/billing/(plans|summary|analytics|credit-scores|forensic-status)(?:/|$)': {
         target: 'http://localhost:9095',
         changeOrigin: true,
