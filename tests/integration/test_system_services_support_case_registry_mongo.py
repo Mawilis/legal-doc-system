@@ -8,6 +8,9 @@ from typing import Any
 
 import pytest
 from pymongo import MongoClient
+from fastapi.testclient import TestClient
+
+from tools.eos.api import server
 from pymongo.read_concern import ReadConcern
 from pymongo.write_concern import WriteConcern
 
@@ -165,3 +168,33 @@ def test_real_mongo_stale_revision_and_event_replay_are_rejected(mongo_case_regi
                 )
     assert database[CASE_COLLECTION].count_documents({"case_id": case.case_id}) == 1
     assert database[EVENT_COLLECTION].count_documents({"case_id": case.case_id}) == 2
+
+
+
+def test_canonical_eos_startup_registers_case_indexes_and_readiness(monkeypatch):
+    client: MongoClient[Any] = MongoClient(
+        os.environ[URI_ENV],
+        serverSelectionTimeoutMS=3000,
+    )
+    database_name = "wilsy_system_services_startup_" + uuid.uuid4().hex
+    database = client[database_name]
+    monkeypatch.setattr(server, "connect_db", lambda: (True, "CERT"))
+    monkeypatch.setattr(server, "get_database", lambda: database)
+    monkeypatch.setattr(server, "get_client", lambda: client)
+    monkeypatch.setattr(server, "disconnect_db", lambda: None)
+    monkeypatch.setenv("WILSY_DUNNING_SCHEDULER_ENABLED", "false")
+    app = server.WilsyAPIServer(reasoning_provider_binding=None).get_app()
+
+    try:
+        with TestClient(app):
+            assert app.state.system_services_case_indexes_ready is True
+            case_indexes = list(database[CASE_COLLECTION].list_indexes())
+            event_indexes = list(database[EVENT_COLLECTION].list_indexes())
+            assert any(index.get("name") == "system_service_case_identity_unique" for index in case_indexes)
+            assert any(index.get("name") == "system_service_case_scope_status_created" for index in case_indexes)
+            assert any(index.get("name") == "system_service_case_event_identity_unique" for index in event_indexes)
+            assert any(index.get("name") == "system_service_case_event_idempotency_unique" for index in event_indexes)
+        assert app.state.system_services_case_indexes_ready is False
+    finally:
+        client.drop_database(database_name)
+        client.close()
