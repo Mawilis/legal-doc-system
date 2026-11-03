@@ -237,3 +237,26 @@ The next harness phase should add a separate read-only live verifier (not apply)
 - No candidate runtime/provisioner/worker roles have been created.
 - Dunning remains API-hosted and non-atomic.
 - No production credentials, Atlas roles, network entries, cloud identities, object-storage policies, KMS keys, deployments or production data have been changed.
+
+
+### 10.1 Additional exact legal-operation indexes added to the manifest
+
+Source declarations were checked against each registry's `ensure_indexes` body and literal index-name constants. The manifest now includes 12 more collection entries:
+- `legal_client_acceptance_contexts` (8 indexes);
+- `legal_client_acceptances` (3);
+- `legal_client_acting_capacities` (5);
+- `legal_client_matter_acceptance_instrument_approvals` (5);
+- `legal_client_matter_acceptance_instrument_lifecycle` (5, including its exact partial unique terminal-state filter);
+- `legal_client_matter_acceptance_instruments` (5);
+- `legal_client_matter_acceptance_instrument_contents` (3);
+- `legal_operations_client_matter_visibility_bindings` (4);
+- `legal_matter_parties` (4);
+- `legal_operations_lifecycle_evidence` (3);
+- `legal_matter_deadlines` (4);
+- `legal_tenant_operating_models` (5).
+
+The index names were cross-checked against the registry constants after initial construction; the manifest uses the exact source literals, ordered key tuples, uniqueness flags and lifecycle partial filter. Commit `2c4ec26` contains the corrected exact names. These are index specifications only; no indexes were created in Atlas.
+
+### 10.2 Harness CI coverage
+
+The GitHub provisioning gate now runs `tests.unit.test_eos_index_provisioning_harness` and exercises the CLI's `--apply` refusal, requiring exit code 3. The gate now runs on pull requests and pushes to the roadmap branch when the manifest/workflow changes. The job remains intentionally non-mutating and does not contact MongoDB.
