@@ -126,8 +126,38 @@ class SupportCaseRegistry:
         ):
             raise SupportCaseRegistryError("SYSTEM_SERVICES_CASE_CREATE_EVENT_INVALID")
         try:
-            _target(self._cases, CASE_COLLECTION).insert_one(case.to_document(), session=session)
-            _target(self._events, EVENT_COLLECTION).insert_one(event.to_document(), session=session)
+            case_collection = _target(self._cases, CASE_COLLECTION)
+            event_collection = _target(self._events, EVENT_COLLECTION)
+            prior_event = event_collection.find_one(
+                {
+                    "actor_principal_id": event.actor_principal_id,
+                    "idempotency_key": event.idempotency_key,
+                },
+                session=session,
+            )
+            if prior_event is not None:
+                prior_event.pop("_id", None)
+                occurred = prior_event.get("occurred_at")
+                if isinstance(occurred, datetime) and occurred.tzinfo is None:
+                    prior_event["occurred_at"] = occurred.replace(tzinfo=timezone.utc)
+                prior = SupportCaseEvent.from_document(prior_event)
+                prior_case = self.get(
+                    case_id=prior.case_id,
+                    scope=case.scope,
+                    tenant_id=case.tenant_id,
+                    session=session,
+                )
+                if (
+                    prior.action == event.action
+                    and prior.to_status is SupportCaseStatus.OPEN
+                    and prior.from_status is None
+                    and prior_case.principal_id == case.principal_id
+                    and prior_case.category is case.category
+                ):
+                    return prior_case
+                raise SupportCaseConflictError("SYSTEM_SERVICES_CASE_CREATE_REPLAY_DIVERGED")
+            case_collection.insert_one(case.to_document(), session=session)
+            event_collection.insert_one(event.to_document(), session=session)
         except DuplicateKeyError as error:
             raise SupportCaseConflictError("SYSTEM_SERVICES_CASE_ALREADY_EXISTS_OR_REPLAYED") from error
         except PyMongoError as error:
