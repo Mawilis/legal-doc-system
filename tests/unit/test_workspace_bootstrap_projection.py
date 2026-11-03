@@ -29,6 +29,7 @@ from tools.eos.auth.tenant_membership_repository import (
     TenantMembershipNotFoundError,
     TenantMembershipRepositoryError,
 )
+from tools.eos.auth.tenant_authority_policy import TENANT_ROLES
 
 
 def _contract() -> Any:
@@ -187,6 +188,7 @@ def test_workspace_bootstrap_uses_only_current_durable_workspace_authorities() -
     assert projection.email == "principal@example.com"
     assert projection.tenant_id == "TENANT-A"
     assert projection.business_role == "tenant_auditor"
+    assert projection.workspace_id == "AUDIT_REPORTING"
     assert projection.membership_revision == 7
     assert projection.business_role_revision == 11
     assert projection.tenant.tenant_id == "TENANT-A"
@@ -312,3 +314,35 @@ def test_workspace_bootstrap_requires_exact_canonical_tenant() -> None:
     with pytest.raises(contract.WorkspaceBootstrapProjectionError) as unavailable:
         _build(tenant_error=RuntimeError("TENANT_REGISTRY_UNAVAILABLE"))
     assert _error_code(unavailable.value) == "WORKSPACE_BOOTSTRAP_TENANT_UNAVAILABLE"
+
+
+
+def test_workspace_resolution_maps_owner_and_legal_practice_to_distinct_workspaces() -> None:
+    contract = _contract()
+
+    assert contract.resolve_workspace_id("tenant_owner") == "EXECUTIVE_COMMAND_CENTRE"
+    assert contract.resolve_workspace_id("tenant_legal_partner") == "LEGAL_PRACTICE"
+    assert contract.resolve_workspace_id("tenant_legal_attorney") == "LEGAL_PRACTICE"
+    assert contract.resolve_workspace_id("tenant_sheriff") == "PROCESS_SERVICE"
+
+
+def test_every_published_tenant_business_role_has_one_workspace_mapping() -> None:
+    contract = _contract()
+
+    resolved = {
+        role: contract.resolve_workspace_id(role)
+        for role in TENANT_ROLES
+    }
+
+    assert resolved["tenant_owner"] == "EXECUTIVE_COMMAND_CENTRE"
+    assert resolved["tenant_legal_partner"] == "LEGAL_PRACTICE"
+    assert all(isinstance(workspace_id, str) and workspace_id for workspace_id in resolved.values())
+
+
+def test_unknown_workspace_role_fails_closed() -> None:
+    contract = _contract()
+
+    with pytest.raises(contract.WorkspaceBootstrapProjectionError) as raised:
+        contract.resolve_workspace_id("tenant_unpublished_role")
+
+    assert _error_code(raised.value) == "WORKSPACE_BOOTSTRAP_WORKSPACE_UNMAPPED"

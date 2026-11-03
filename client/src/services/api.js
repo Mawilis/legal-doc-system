@@ -64,17 +64,20 @@ const api = axios.create({
 const SOURCE_BACKOFF_MS = Number(import.meta.env?.VITE_SOURCE_BACKOFF_MS || 45000);
 const sourceBackoffUntil = new Map();
 
-/**
- * @function resolveRequestTenantId
- * @description Converts the tenant‑discovery storage record into the scalar identifier required by the API contract.
- * @returns {string} Canonical tenant alias or identifier for the X‑Tenant‑ID header.
- * @collaboration AI Engineering (2026-08-14) — Added to prevent serialized tenant metadata from being misused.
- * @epitome Guarantees that every request is properly tenant‑isolated.
- * @institutional Mandatory for POPIA §19 data segregation.
- */
-const CANONICAL_WILSY_TENANT_ID = 'WILSYTENANT-4CD2FZ4O';
+// Active tenant transport context is set only after EOS workspace-bootstrap
+// revalidates the authenticated principal and its current tenant membership.
+let activeTenantTransportId = null;
 
-const resolveRequestTenantId = () => CANONICAL_WILSY_TENANT_ID;
+export const setActiveTenantTransportId = (tenantId) => {
+  if (tenantId === null || tenantId === undefined || tenantId === '') {
+    activeTenantTransportId = null;
+    return;
+  }
+  if (typeof tenantId !== 'string' || tenantId !== tenantId.trim() || !/^[A-Za-z0-9][A-Za-z0-9._:-]{0,199}$/.test(tenantId)) {
+    throw new Error('ACTIVE_TENANT_TRANSPORT_CONTEXT_INVALID');
+  }
+  activeTenantTransportId = tenantId;
+};
 
 /**
  * @function getSourceBackoffKey
@@ -390,9 +393,16 @@ api.interceptors.request.use(
       }
     }
 
-    // The canonical tenant is a transport selector only; Python EOS owns
-    // membership, identity, and authorization decisions.
-    config.headers['X-Tenant-ID'] = resolveRequestTenantId();
+    // Attach tenant scope only after EOS workspace-bootstrap revalidation.
+    if (activeTenantTransportId) {
+      config.headers['X-Tenant-ID'] = activeTenantTransportId;
+    } else if (typeof config.headers?.delete === 'function') {
+      config.headers.delete('X-Tenant-ID');
+      config.headers.delete('x-tenant-id');
+    } else {
+      delete config.headers['X-Tenant-ID'];
+      delete config.headers['x-tenant-id'];
+    }
 
     // 🛡️ Expanded public paths to include all auth endpoints, including MFA/OTP.
     const isPublicPath = /^\/status$/i.test(config.url)

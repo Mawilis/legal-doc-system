@@ -49,7 +49,20 @@
  */
 
 import React, { createContext, useCallback, useContext, useEffect, useMemo, useState } from 'react';
-import api from '@/services/api';
+import api, { setActiveTenantTransportId } from '@/services/api';
+
+const WORKSPACE_CONTRACT_VERSION = 'v1.0.0-WILSY-EOS-WORKSPACE-RESOLUTION';
+const WORKSPACE_ID_SET = new Set([
+  'EXECUTIVE_COMMAND_CENTRE',
+  'TENANT_ADMINISTRATION',
+  'AUDIT_REPORTING',
+  'TENANT_OPERATIONS',
+  'LEGAL_PRACTICE',
+  'LEGAL_FINANCE',
+  'CLIENT_PORTAL',
+  'PROCESS_SERVICE',
+  'PEOPLE_OPERATIONS',
+]);
 
 const LEGAL_PRESENTATION_PERMISSION_SET = new Set([
   'legal_operations:conflict_review:write',
@@ -417,6 +430,8 @@ const boundedWorkspaceProjection = (data, fallbackEmail = '') => {
   const tenantId = String(workspace?.tenantId || '').trim();
   const tenantProjectionId = String(tenantProjection?.tenantId || '').trim();
   const businessRole = String(workspace?.businessRole || '').trim();
+  const workspaceId = String(workspace?.workspaceId || '').trim();
+  const workspaceContractVersion = String(workspace?.workspaceContractVersion || '').trim();
   const membershipRevision = workspace?.membershipRevision;
   const businessRoleRevision = workspace?.businessRoleRevision;
   const branding = boundedWorkspaceBrandingProjection(workspace, tenantId);
@@ -452,6 +467,8 @@ const boundedWorkspaceProjection = (data, fallbackEmail = '') => {
     || !tenantProjection
     || tenantProjectionId !== tenantId
     || !businessRole
+    || workspaceContractVersion !== WORKSPACE_CONTRACT_VERSION
+    || !WORKSPACE_ID_SET.has(workspaceId)
     || !Number.isInteger(membershipRevision)
     || membershipRevision < 0
     || !Number.isInteger(businessRoleRevision)
@@ -468,6 +485,8 @@ const boundedWorkspaceProjection = (data, fallbackEmail = '') => {
       lastName,
       tenantId,
       role: businessRole,
+      workspaceId,
+      workspaceContractVersion,
       permissions: [...legalPermissions],
       legalPermissionsAuthoritative: hasLegalPermissionProjection,
       membershipRevision,
@@ -506,6 +525,7 @@ export const AuthProvider = ({ children }) => {
 
     if (!candidateToken) {
       anchorCanonicalBearer(null);
+      setActiveTenantTransportId(null);
       setLoading(false);
       return () => { active = false; };
     }
@@ -549,6 +569,7 @@ export const AuthProvider = ({ children }) => {
 
         // Only the revalidated READY server projection may restore authority.
         anchorCanonicalBearer(candidateToken);
+        setActiveTenantTransportId(authoritative.user.tenantId);
         localStorage.setItem('wilsy_auth_token', candidateToken);
         localStorage.setItem('token', candidateToken);
         localStorage.setItem(
@@ -568,6 +589,7 @@ export const AuthProvider = ({ children }) => {
       } catch {
         if (!active) return;
         clearPersistedSessionAuthority();
+        setActiveTenantTransportId(null);
         setToken(null);
         setUser(null);
         setTenant(readPersistedDiscoveredTenant());
@@ -586,15 +608,15 @@ export const AuthProvider = ({ children }) => {
   useEffect(() => {
     if (token) api.defaults.headers.common.Authorization = `Bearer ${token}`;
     else delete api.defaults.headers.common.Authorization;
-    if (tenant?.tenantId) api.defaults.headers.common['x-tenant-id'] = tenant.tenantId;
-    else delete api.defaults.headers.common['x-tenant-id'];
-  }, [token, tenant]);
+    setActiveTenantTransportId(token && user?.tenantId ? user.tenantId : null);
+  }, [token, user?.tenantId]);
 
   const discoverTenant = useCallback(async (tenantAlias) => {
     const alias = String(tenantAlias || '').trim().toLowerCase();
     if (!alias) throw new Error('Enter an organization or workspace identifier.');
     setLoading(true);
     setError(null);
+    setActiveTenantTransportId(null);
     try {
       const response = await fetch('/api/auth/discover', {
         method: 'POST',
@@ -659,6 +681,7 @@ export const AuthProvider = ({ children }) => {
 
     // Only the READY server-owned projection may establish browser authority.
     anchorCanonicalBearer(candidateToken);
+    setActiveTenantTransportId(authoritative.user.tenantId);
 
     localStorage.setItem('wilsy_auth_token', candidateToken);
     localStorage.setItem('token', candidateToken);
@@ -705,6 +728,7 @@ export const AuthProvider = ({ children }) => {
     }
     setUser(authoritative.user);
     setTenant(authoritative.tenant);
+    setActiveTenantTransportId(authoritative.user.tenantId);
     localStorage.setItem('wilsy_sovereign_user', JSON.stringify(authoritative.user));
     localStorage.setItem('wilsy_active_tenant', JSON.stringify(authoritative.tenant));
     return authoritative;
@@ -821,6 +845,7 @@ export const AuthProvider = ({ children }) => {
       // Local purge is still required; server logout is best-effort.
     } finally {
       anchorCanonicalBearer(null);
+      setActiveTenantTransportId(null);
       setToken(null);
       setUser(null);
       setTenant(null);
