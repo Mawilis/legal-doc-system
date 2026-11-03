@@ -92,6 +92,7 @@ jobs:
         run: |
           python -m pytest -q \
             tests/unit/test_principal_credential_repository.py \
+            tests/unit/test_principal_credential_authentication.py \
             tests/unit/test_principal_credential_migration_assessment.py \
             tests/unit/test_tenant_membership_repository.py \
             tests/unit/test_membership_selection_projection.py \
