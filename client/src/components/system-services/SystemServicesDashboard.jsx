@@ -7,7 +7,7 @@ const CAPABILITIES = Object.freeze({
   recovery: 'system_services:recovery:request',
   accessRequests: 'iam:access_request:read',
   assignments: 'iam:role_assignment:read',
-  audit: 'system_services:auditor:read',
+  audit: 'system_services:audit:read',
 });
 
 const styles = {
