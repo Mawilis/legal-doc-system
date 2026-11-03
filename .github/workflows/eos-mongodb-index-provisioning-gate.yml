@@ -52,6 +52,15 @@ jobs:
           fi
       - name: Run provisioning harness unit tests
         run: python -m unittest tests.unit.test_eos_index_provisioning_harness
+      - name: Exercise non-production harness safety tests
+        run: |
+          python -m unittest tests.unit.test_eos_index_provisioning_harness
+          set +e
+          python tools/eos/mongodb/index_provisioning_harness.py --apply
+          apply_status=$?
+          set -e
+          test "$apply_status" -eq 3
+          echo "Apply refusal verified (exit 3)."
       - name: Enforce fail-closed execution gate
         run: |
           echo "The manifest remains inventory-incomplete."
