@@ -205,6 +205,24 @@ describe('api.js – Sovereign HTTP Client', () => {
       );
     });
 
+    it('never derives the authenticated tenant header from stale discovery aliases', async () => {
+      expect(requestInterceptorCapture.fulfilled).toEqual(expect.any(Function));
+
+      localStorageMock.setItem('wilsy_active_tenant', JSON.stringify({
+        alias: 'wilsy',
+        id: 'WILSY_ROOT',
+      }));
+      localStorageMock.setItem('discoveredTenant', 'GLOBAL_ROOT');
+
+      const sealed = await requestInterceptorCapture.fulfilled({
+        url: '/legal-operations/commercial-context',
+        method: 'get',
+        headers: {},
+      });
+
+      expect(sealed.headers['X-Tenant-ID']).toBe('WILSYTENANT-4CD2FZ4O');
+    });
+
     it('preserves an explicitly supplied MFA candidate bearer over stale browser storage', async () => {
       expect(requestInterceptorCapture.fulfilled).toEqual(expect.any(Function));
 
@@ -225,7 +243,7 @@ describe('api.js – Sovereign HTTP Client', () => {
       expect(sealed.headers.Authorization).toBe(
         'Bearer freshly-verified-candidate-token',
       );
-      expect(sealed.headers['X-Tenant-ID']).toBe('TENANT-BOOTSTRAP-TEST');
+      expect(sealed.headers['X-Tenant-ID']).toBe('WILSYTENANT-4CD2FZ4O');
     });
 
     it('preserves historical timestamp body injection for unrelated mutation routes', async () => {
