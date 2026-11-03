@@ -14,7 +14,7 @@ from pydantic import BaseModel, ConfigDict, Field
 from tools.eos.api.tenant_authorization_http import (
     RequireTenantAuthorization, TenantAuthorizationContext,
 )
-from tools.eos.crm.domain.owner_commercial_work_item import OwnerWorkKind, OwnerWorkPriority
+from tools.eos.crm.domain.owner_commercial_work_item import OwnerWorkKind, OwnerWorkPriority, OwnerWorkItemError
 from tools.eos.crm.persistence.owner_commercial_work_registry import (
     COLLECTION, OwnerCommercialWorkRegistry, OwnerWorkRegistryError,
 )
@@ -34,7 +34,7 @@ _CREATE = RequireTenantAuthorization("crm:work_item:create", "crm_work_item_crea
 
 
 class OwnerWorkCreateRequest(BaseModel):
-    model_config = ConfigDict(extra="forbid", strict=True)
+    model_config = ConfigDict(extra="forbid")
     title: str = Field(min_length=1, max_length=240)
     description: str = Field(default="", max_length=4000)
     kind: Literal["TASK", "REMINDER", "FOLLOW_UP"] = "TASK"
@@ -67,6 +67,8 @@ def _transaction(callback):
         raise HTTPException(status_code=503, detail="OWNER_WORK_SERVICE_UNAVAILABLE") from error
     except OwnerWorkRegistryError as error:
         raise HTTPException(status_code=503, detail=error.code) from error
+    except OwnerWorkItemError as error:
+        raise HTTPException(status_code=422, detail=error.code) from error
     except HTTPException:
         raise
     except Exception as error:
@@ -99,6 +101,10 @@ async def create_owner_work_item(
 ) -> dict[str, object]:
     """Persist one explicit owner task/reminder/follow-up under Legal entitlement."""
     def create(service: OwnerCommercialWorkspaceService, session: Any):
+        if body.due_at is not None and (body.due_at.tzinfo is None or body.due_at.utcoffset() is None):
+            raise HTTPException(status_code=422, detail="DUE_AT_MUST_BE_TIMEZONE_AWARE")
+        if (body.source_type is None) != (body.source_id is None):
+            raise HTTPException(status_code=422, detail="SOURCE_COORDINATE_INVALID")
         item = service.create(
             tenant_id=context.tenant_id,
             principal_id=context.identity.identity_id,
