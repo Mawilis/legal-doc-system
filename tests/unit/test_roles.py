@@ -140,7 +140,7 @@ from tools.eos.auth.roles import (
 )
 
 def test_runtime_version_source_is_canonical() -> None:
-    assert POLICY_VERSION == "v1.50.0-UNIVERSAL-TENANT-OWNER-WORKSPACE-GRANTS"
+    assert POLICY_VERSION == "v1.51.0-TENANT-OWNER-LEGAL-COMMERCIAL-READ"
 
 VERSION = "v1.8.0-P47-R94-WORK-ASSIGNMENT-GRANTS-CERT"
 
