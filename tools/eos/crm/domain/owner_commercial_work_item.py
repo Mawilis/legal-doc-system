@@ -195,7 +195,12 @@ class OwnerCommercialWorkItem:
 
 def command_fingerprint(item: OwnerCommercialWorkItem, idempotency_key: str) -> str:
     key = _text(idempotency_key, "IDEMPOTENCY_KEY_INVALID")
-    material = {"tenant_id": item.tenant_id, "idempotency_key": key, "item": item.to_dict()}
+    command = item.to_dict()
+    # Server-generated identity and timestamps must not make a client retry
+    # divergent. All caller-controlled business fields remain fingerprinted.
+    for generated in ("work_item_id", "created_at", "updated_at"):
+        command.pop(generated, None)
+    material = {"tenant_id": item.tenant_id, "idempotency_key": key, "item": command}
     encoded = json.dumps(material, sort_keys=True, separators=(",", ":"), ensure_ascii=False).encode()
     return sha3_512(encoded).hexdigest()
 
