@@ -150,3 +150,23 @@ def test_explicit_platform_scope_id_is_mandatory():
             workforce_collection=object(),
             platform_scope_id=" ",
         )
+
+
+def test_mismatched_assignment_binding_is_unavailable(monkeypatch):
+    class MismatchedPossession:
+        def resolve(self, **kwargs):
+            return SimpleNamespace(
+                principal_id="another-principal",
+                permission_id=kwargs["permission_id"],
+            )
+
+    authorizer, _, calls = make_authorizer(
+        monkeypatch, [relationship()], possession=MismatchedPossession()
+    )
+    with pytest.raises(SystemServicesAuthorizationUnavailable, match="SYSTEM_ASSIGNMENT_BINDING_INVALID"):
+        authorizer.require(
+            principal_id=PRINCIPAL,
+            permission_id="system_services:queue:read",
+            session=Transaction(),
+        )
+    assert calls == []
