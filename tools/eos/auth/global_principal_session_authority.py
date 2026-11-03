@@ -36,6 +36,10 @@ from tools.eos.auth.tenant_business_role_repository import (
     TenantBusinessRoleRepository, TenantBusinessRoleRepositoryError,
 )
 from tools.eos.auth.tenant_business_role import TenantBusinessRoleStatus
+from tools.eos.auth.workspace_bootstrap_projection import (
+    WorkspaceBootstrapProjectionError,
+    resolve_workspace_id,
+)
 from tools.eos.saas.tenancy.tenant_registry import TenantRegistry, TenantRegistryError
 
 VERSION = "v1.0.0-GLOBAL-PRINCIPAL-SESSION-AUTHORITY"
@@ -193,6 +197,12 @@ class GlobalPrincipalSessionAuthority:
             raise GlobalPrincipalSessionRejected("GLOBAL_SESSION_CAPACITY_STALE")
         if getattr(tenant, "tenant_id", None) != selected.tenant_id:
             raise GlobalPrincipalSessionRejected("GLOBAL_SESSION_TENANT_INVALID")
+        try:
+            canonical_workspace_id = resolve_workspace_id(selected.business_role)
+        except WorkspaceBootstrapProjectionError as error:
+            raise GlobalPrincipalSessionRejected("GLOBAL_SESSION_WORKSPACE_INVALID") from error
+        if canonical_workspace_id != selected.workspace_id:
+            raise GlobalPrincipalSessionRejected("GLOBAL_SESSION_WORKSPACE_STALE")
 
     def issue_after_mfa(
         self,
