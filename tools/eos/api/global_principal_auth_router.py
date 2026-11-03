@@ -21,6 +21,15 @@ from tools.eos.auth.global_principal_mfa_enrollment_service import (
     GlobalPrincipalMfaEnrollmentService,
     GlobalPrincipalMfaEnrollmentUnavailable,
 )
+from tools.eos.auth.global_principal_mfa_legacy_migration_service import (
+    LEGACY_FACTOR_COLLECTION as LEGACY_MFA_FACTOR_COLLECTION,
+    GLOBAL_FACTOR_COLLECTION as GLOBAL_MIGRATED_MFA_FACTOR_COLLECTION,
+    GlobalPrincipalMfaLegacyMigrationCodeRejected,
+    GlobalPrincipalMfaLegacyMigrationRejected,
+    GlobalPrincipalMfaLegacyMigrationService,
+    GlobalPrincipalMfaLegacyMigrationUnavailable,
+)
+
 from tools.eos.auth.global_principal_mfa_session_transition import (
     GlobalPrincipalMfaSessionTransition,
 )
@@ -84,6 +93,12 @@ class GlobalMfaEnrollmentStartRequest(BaseModel):
 
 class GlobalMfaEnrollmentConfirmRequest(BaseModel):
     enrollment_challenge: StrictStr
+    code: StrictStr
+
+
+class GlobalMfaLegacyMigrationRequest(BaseModel):
+    email: StrictStr
+    password: StrictStr
     code: StrictStr
 
 
@@ -583,6 +598,87 @@ async def confirm_global_mfa_enrollment(
     except PyMongoError:
         _abort_if_active(session)
         raise HTTPException(status_code=503, detail="GLOBAL_AUTHENTICATION_UNAVAILABLE") from None
+    except Exception:
+        _abort_if_active(session)
+        raise
+    finally:
+        session.end_session()
+
+
+@router.post("/mfa/migrate-legacy")
+async def migrate_legacy_global_mfa_factor(
+    payload: GlobalMfaLegacyMigrationRequest,
+    request: Request,
+) -> dict[str, Any]:
+    """Migrate only an existing factor after password and legacy-TOTP proof."""
+    _require_ready(request, "global_principal_auth_indexes_ready")
+    _require_ready(request, "global_principal_mfa_factor_indexes_ready")
+    kms = getattr(request.app.state, "global_principal_mfa_kms_envelope", None)
+    if kms is None:
+        raise HTTPException(status_code=503, detail="GLOBAL_MFA_KEY_SERVICE_UNAVAILABLE")
+    now = datetime.now(timezone.utc)
+    peer = request.client
+    if peer is None or not isinstance(peer.host, str) or not peer.host:
+        raise HTTPException(status_code=503, detail="GLOBAL_AUTHENTICATION_UNAVAILABLE")
+    source = peer.host
+    rate_gate = PrincipalAuthenticationRateLimit()
+    _rate_limit_or_http(rate_gate, payload.email, source, now)
+    try:
+        principal = authenticate_global_principal(email=payload.email, password=payload.password)
+    except GlobalPrincipalAuthenticationUnavailable:
+        raise HTTPException(status_code=503, detail="GLOBAL_AUTHENTICATION_UNAVAILABLE") from None
+    if principal is None:
+        _record_failure(rate_gate, payload.email, source, now)
+        raise HTTPException(status_code=401, detail="Invalid credentials")
+    if principal.mfa_enabled is not True:
+        raise HTTPException(status_code=409, detail="GLOBAL_MFA_ENROLLMENT_REQUIRED")
+
+    session, database = _begin_transaction()
+    try:
+        service = GlobalPrincipalMfaLegacyMigrationService(
+            kms=kms,
+            legacy_factor_collection=database[LEGACY_MFA_FACTOR_COLLECTION],
+            factor_collection=database[GLOBAL_MIGRATED_MFA_FACTOR_COLLECTION],
+        )
+        receipt = service.migrate(
+            principal_id=principal.principal_id,
+            credential_revision=principal.credential_revision,
+            code=payload.code,
+            session=session,
+            now=now,
+        )
+        session.commit_transaction()
+        try:
+            rate_gate.record_success(email=payload.email, observed_at=now)
+        except PrincipalAuthenticationRateLimitUnavailable:
+            raise HTTPException(status_code=503, detail="GLOBAL_AUTHENTICATION_UNAVAILABLE") from None
+        return {
+            "status": "MFA_FACTOR_MIGRATED",
+            "principal_id": receipt.principal_id,
+            "credential_revision": receipt.credential_revision,
+            "next_step": "SIGN_IN_AGAIN",
+        }
+    except GlobalPrincipalMfaLegacyMigrationCodeRejected:
+        _abort_if_active(session)
+        _record_failure(rate_gate, payload.email, source, now)
+        raise HTTPException(status_code=401, detail="Invalid authenticator code") from None
+    except GlobalPrincipalMfaLegacyMigrationRejected as error:
+        _abort_if_active(session)
+        status = 409 if str(error) in {
+            "GLOBAL_MFA_MIGRATION_LEGACY_FACTOR_NOT_UNIQUE",
+            "GLOBAL_MFA_MIGRATION_FACTOR_ALREADY_CURRENT",
+            "GLOBAL_MFA_ENROLLMENT_REQUIRED",
+        } else 401
+        raise HTTPException(status_code=status, detail=str(error)) from None
+    except GlobalPrincipalMfaLegacyMigrationUnavailable:
+        _abort_if_active(session)
+        raise HTTPException(status_code=503, detail="GLOBAL_AUTHENTICATION_UNAVAILABLE") from None
+    except PyMongoError:
+        _abort_if_active(session)
+        raise HTTPException(status_code=503, detail="GLOBAL_AUTHENTICATION_UNAVAILABLE") from None
+    except HTTPException:
+        _abort_if_active(session)
+        raise
     except Exception:
         _abort_if_active(session)
         raise
