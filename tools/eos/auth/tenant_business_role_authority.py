@@ -52,7 +52,7 @@ def resolve_current_tenant_business_role(*, principal_id: object, tenant_id: obj
         resolve_all = getattr(repository, "resolve_all_business_roles", None)
         if callable(resolve_all):
             try:
-                    values = resolve_all(principal_id, tenant_id, session=session)
+                values = resolve_all(principal_id, tenant_id, session=session)
             except (TenantBusinessRoleNotFoundError, RoleAssignmentNotFoundError):
                 return TenantBusinessRoleResult(None, BusinessRoleResolution.NO_ACTIVE_TENANT_BUSINESS_ROLE)
             except (TenantBusinessRoleRepositoryError, RoleAssignmentRepositoryError, AttributeError, TypeError):
