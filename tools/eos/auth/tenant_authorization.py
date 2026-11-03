@@ -361,7 +361,10 @@ def authorize_tenant_operation(*, principal_id: object, tenant_id: object, permi
     if metadata.namespace != "TENANT" or not metadata.tenant_membership_required or metadata.cross_tenant_capable or metadata.financial_execution_capable: return TenantAuthorizationDecision(False, TenantAuthorizationReason.PERMISSION_NAMESPACE_MISMATCH)
     if _BINDINGS.get(op) != perm: return TenantAuthorizationDecision(False, TenantAuthorizationReason.PERMISSION_OPERATION_MISMATCH)
     role_result = resolve_current_tenant_business_role(principal_id=pid, tenant_id=tid, repository=business_role_repository, session=session, operation=op)
-    if role_result.resolution is not BusinessRoleResolution.RESOLVED: return TenantAuthorizationDecision(False, TenantAuthorizationReason(role_result.resolution.value)) if role_result.resolution.value in TenantAuthorizationReason._value2member_map_ else TenantAuthorizationDecision(False, TenantAuthorizationReason.TENANT_BUSINESS_ROLE_AUTHORITY_UNAVAILABLE)
+    if role_result.resolution is not BusinessRoleResolution.RESOLVED:
+        if role_result.resolution is BusinessRoleResolution.NO_ELIGIBLE_TENANT_BUSINESS_ROLE:
+            return TenantAuthorizationDecision(False, TenantAuthorizationReason.BUSINESS_ROLE_INELIGIBLE)
+        return TenantAuthorizationDecision(False, TenantAuthorizationReason(role_result.resolution.value)) if role_result.resolution.value in TenantAuthorizationReason._value2member_map_ else TenantAuthorizationDecision(False, TenantAuthorizationReason.TENANT_BUSINESS_ROLE_AUTHORITY_UNAVAILABLE)
     if tenant_role_operation_eligibility(role_result.role, op) != ELIGIBLE: return TenantAuthorizationDecision(False, TenantAuthorizationReason.BUSINESS_ROLE_INELIGIBLE, role_result.role)
     if metadata.workforce_currentness_required:
         marker = None
