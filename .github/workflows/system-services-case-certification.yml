@@ -1,4 +1,5 @@
 name: WILSY System Services Case Registry Certification
+# Includes canonical SYSTEM assignment plus current platform-workforce authorization tests.
 
 on:
   pull_request:
