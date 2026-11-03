@@ -8,12 +8,10 @@ closed when deployment configuration or KMS access is unavailable.
 from __future__ import annotations
 
 import base64
-import binascii
 import os
 import re
 from typing import Any, Mapping
 
-from botocore.exceptions import BotoCoreError, ClientError
 
 VERSION = "v1.0.0-GLOBAL-MFA-KMS-ENVELOPE"
 ENVELOPE_SCHEMA = "WILSY_GLOBAL_MFA_KMS_V1"
@@ -47,7 +45,7 @@ class AwsKmsGlobalMfaEnvelope:
 
     The adapter deliberately has no local-key or environment-secret fallback.
     Configure WILSY_GLOBAL_MFA_KMS_PROVIDER=AWS_KMS,
-    WILSY_GLOBAL_MFA_KMS_KEY_ID, and optionally AWS_REGION. AWS credentials
+    WILSY_GLOBAL_MFA_KMS_KEY_ID and AWS_REGION. AWS credentials
     must come from the workload's standard IAM role/credential chain.
     """
 
@@ -56,7 +54,7 @@ class AwsKmsGlobalMfaEnvelope:
             raise GlobalMfaKeyManagementError("GLOBAL_MFA_KMS_KEY_ID_REQUIRED")
         self.key_id = key_id.strip()
         key_match = re.fullmatch(
-            r"arn:[a-z0-9-]+:kms:([a-z0-9-]+):\\d{12}:key/[A-Za-z0-9-]+",
+            r"arn:[a-z0-9-]+:kms:([a-z0-9-]+):\d{12}:key/[A-Za-z0-9-]+",
             self.key_id,
         )
         if key_match is None:
@@ -112,7 +110,7 @@ class AwsKmsGlobalMfaEnvelope:
             }
         except GlobalMfaKeyManagementError:
             raise
-        except (BotoCoreError, ClientError, Exception) as error:
+        except Exception as error:
             raise GlobalMfaKeyManagementError("GLOBAL_MFA_KMS_ENCRYPT_FAILED") from error
 
     def decrypt_secret(
@@ -145,7 +143,7 @@ class AwsKmsGlobalMfaEnvelope:
             return bytes(plaintext).decode("utf-8")
         except GlobalMfaKeyManagementError:
             raise
-        except (BotoCoreError, ClientError, binascii.Error, UnicodeDecodeError, ValueError, Exception) as error:
+        except Exception as error:
             raise GlobalMfaKeyManagementError("GLOBAL_MFA_KMS_DECRYPT_FAILED") from error
 
 
