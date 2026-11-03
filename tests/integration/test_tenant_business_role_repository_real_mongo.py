@@ -138,7 +138,7 @@ def test_multi_capacity_history_cas_and_abort_are_atomic_on_real_replica_set() -
             # A history append followed by a stale CAS must roll back as one unit.
             stale = TenantBusinessRoleAuthority(
                 "principal", "tenant", "tenant_owner",
-                TenantBusinessRoleStatus.ACTIVE, 2, stamp, None,
+                TenantBusinessRoleStatus.ACTIVE, 1, stamp, None,
             )
             with pytest.raises(TenantBusinessRoleRevisionConflictError):
                 with session.start_transaction():
