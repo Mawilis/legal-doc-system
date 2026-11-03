@@ -149,7 +149,7 @@ export const SovereignOrchestrator = ({ children }) => {
     const hardFailures = failures.filter(failure => ![401, 403, 404].includes(failure.status));
     const elapsedMs = Math.round(performance.now() - startTime);
 
-    broadcastTelemetry(tenantId || 'GLOBAL_ROOT', 'PREFETCH', hardFailures.length ? 'DEGRADED' : 'SUCCESS', 'Orchestrator', {
+    broadcastTelemetry(tenantId, 'PREFETCH', hardFailures.length ? 'DEGRADED' : 'SUCCESS', 'Orchestrator', {
       elapsedMs,
       warmed: results.length - failures.length,
       failed: failures.map(({ key, status }) => ({ key, status }))
