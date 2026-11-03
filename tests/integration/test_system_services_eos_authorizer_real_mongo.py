@@ -260,8 +260,11 @@ def test_real_mongo_system_services_queue_http_uses_current_eos_authority(mongo_
     app.dependency_overrides[get_current_identity] = lambda: SovereignIdentity(
         identity_id=PRINCIPAL,
         tenant_id="ignored-context",
+        username=None,
+        email=None,
         auth_method="CERTIFICATION",
         status=PrincipalStatus.ACTIVE,
+        session_reference=None,
     )
     monkeypatch.setattr(
         "tools.eos.api.system_services_router.get_client",
