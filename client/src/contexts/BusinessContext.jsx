@@ -46,14 +46,14 @@ export const BusinessProvider = ({ children, tenantId }) => {
   const isMountedRef = useRef(true);
   const fetchTimerRef = useRef(null);
 
-  const { events } = useTelemetryFeed(tenantId || 'MASTER');
-  const { stats } = useTelemetryStats(tenantId || 'MASTER');
+  const { events } = useTelemetryFeed(tenantId);
+  const { stats } = useTelemetryStats(tenantId);
 
   const auditLog = useCallback((eventType, details = {}) => {
     const entry = {
       id: generateAuditId(),
       timestamp: new Date().toISOString(),
-      tenantId: tenantId || 'MASTER',
+      tenantId: tenantId || null,
       eventType,
       details,
       source: 'BusinessContext',
@@ -67,6 +67,15 @@ export const BusinessProvider = ({ children, tenantId }) => {
   }, [tenantId]);
 
   const fetchData = useCallback(async (attempt = 0) => {
+    if (typeof tenantId !== 'string' || !tenantId.trim()) {
+      setEmployees([]);
+      setDeals([]);
+      setContracts([]);
+      setError({ message: 'TENANT_CONTEXT_REQUIRED', status: 403, retries: 0, timestamp: new Date().toISOString() });
+      setHealthMetrics((prev) => ({ ...prev, status: 'unavailable', errorCount: prev.errorCount }));
+      setLoading(false);
+      return;
+    }
     if (abortControllerRef.current) abortControllerRef.current.abort();
     const controller = new AbortController();
     abortControllerRef.current = controller;
