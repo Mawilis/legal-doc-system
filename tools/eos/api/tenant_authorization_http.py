@@ -284,9 +284,14 @@ class _TenantAuthorityRoleReader:
     ) -> tuple[object, ...]:
         """Read all current capacities for operation-aware selection."""
         try:
-            return self._business_repository.resolve_all(
+            resolver = getattr(self._business_repository, "resolve_all", None)
+            if callable(resolver):
+                return resolver(principal_id, tenant_id, session=session)
+            # Existing injected adapters remain single-capacity until migrated.
+            legacy = self.resolve_current_business_role(
                 principal_id, tenant_id, session=session
             )
+            return (legacy,)
         except TenantBusinessRoleNotFoundError as exc:
             raise RoleAssignmentNotFoundError("TENANT_BUSINESS_ROLE_NOT_FOUND") from exc
         except TenantBusinessRoleRepositoryError as exc:
@@ -304,9 +309,17 @@ class _TenantAuthorityRoleReader:
 
         if role_id in TENANT_ROLES:
             try:
-                value = self._business_repository.resolve_business_role(
-                    principal_id, tenant_id, role_id, session=session
-                )
+                exact_resolver = getattr(self._business_repository, "resolve_business_role", None)
+                if callable(exact_resolver):
+                    value = exact_resolver(
+                        principal_id, tenant_id, role_id, session=session
+                    )
+                else:
+                    value = self._business_repository.resolve(
+                        principal_id, tenant_id, session=session
+                    )
+                    if getattr(value, "business_role", None) != role_id:
+                        raise TenantBusinessRoleNotFoundError("TENANT_BUSINESS_ROLE_NOT_FOUND")
             except TenantBusinessRoleNotFoundError as exc:
                 raise RoleAssignmentNotFoundError(
                     "TENANT_BUSINESS_ROLE_NOT_FOUND"
