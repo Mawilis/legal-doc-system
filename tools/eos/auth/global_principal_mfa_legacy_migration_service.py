@@ -197,7 +197,7 @@ class GlobalPrincipalMfaLegacyMigrationService:
                     "principal_id": principal_id,
                     "$or": [
                         {"status": {"$ne": "ACTIVE"}},
-                        {"credential_revision": {"$ne": credential_revision}},
+                        {"credential_revision": {"$ne": target_revision}},
                     ],
                 },
                 {
