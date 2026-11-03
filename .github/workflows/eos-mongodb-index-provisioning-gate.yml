@@ -4,6 +4,7 @@ on:
   pull_request:
     paths:
       - "infra/mongodb/eos-index-manifest-v1.json"
+      - "tools/eos/mongodb/index_provisioning_harness.py"
       - ".github/workflows/eos-mongodb-index-provisioning-gate.yml"
   workflow_dispatch:
     inputs:
@@ -14,11 +15,12 @@ on:
         options:
           - nonproduction
       action:
-        description: "Inventory validation only until the manifest is complete and independently approved."
+        description: "Validation and non-mutating plan only. Apply is not implemented."
         required: true
         type: choice
         options:
           - validate
+          - plan
 
 permissions:
   contents: read
@@ -37,53 +39,21 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: "3.12"
-      - name: Validate versioned index inventory
+      - name: Validate and plan without database access
+        env:
+          WILSY_EOS_INDEX_TARGET_ENV: ${{ github.event.inputs.target || 'nonproduction' }}
+          WILSY_EOS_INDEX_APPROVED_TARGET_FINGERPRINT: ${{ vars.WILSY_EOS_INDEX_APPROVED_TARGET_FINGERPRINT }}
+          WILSY_EOS_INDEX_OBSERVED_TARGET_FINGERPRINT: ${{ vars.WILSY_EOS_INDEX_OBSERVED_TARGET_FINGERPRINT }}
         run: |
-          python - <<'PY'
-          import json
-          from pathlib import Path
-
-          path = Path("infra/mongodb/eos-index-manifest-v1.json")
-          manifest = json.loads(path.read_text(encoding="utf-8"))
-          assert manifest["manifest_version"] == "1.0.0"
-          assert manifest["status"] == "INVENTORY_INCOMPLETE"
-          assert manifest["production_mutation_authorized"] is False
-          policy = manifest["provisioning_policy"]
-          assert policy["runtime_api_may_create_indexes"] is False
-          assert policy["provisioning_identity_separate_from_runtime"] is True
-          assert policy["first_execution_environment"] == "nonproduction"
-          assert policy["require_duplicate_data_preflight"] is True
-          assert policy["require_exact_target_fingerprint_approval"] is True
-          assert manifest["excluded_until_inventory_complete"]
-          assert manifest["execution_gate"]
-          seen_collections = set()
-          seen_indexes = set()
-          total_indexes = 0
-          for entry in manifest["entries"]:
-              assert entry["id"] and entry["database"] and entry["collection"] and entry["source"]
-              collection_key = (entry["database"], entry["collection"])
-              assert collection_key not in seen_collections, f"duplicate collection entry: {collection_key}"
-              seen_collections.add(collection_key)
-              assert entry["indexes"], f"no indexes recorded for {collection_key}"
-              for index in entry["indexes"]:
-                  assert index["name"] and index["keys"]
-                  key = (entry["database"], entry["collection"], index["name"])
-                  assert key not in seen_indexes, f"duplicate index declaration: {key}"
-                  seen_indexes.add(key)
-                  total_indexes += 1
-                  for field, direction in index["keys"]:
-                      assert isinstance(field, str) and field
-                      assert direction in (-1, 1), f"unsupported index direction: {key}"
-                  if "expireAfterSeconds" in index:
-                      assert index["expireAfterSeconds"] >= 0
-                      assert len(index["keys"]) == 1
-                      assert index["keys"][0][1] == 1
-          print(f"Validated {len(seen_collections)} collection entries and {total_indexes} index declarations.")
-          print("NO DATABASE CONNECTION WAS OPENED; NO INDEXES WERE CREATED OR MODIFIED.")
-          PY
+          if [ "${{ github.event.inputs.action || 'validate' }}" = "plan" ]; then
+            python tools/eos/mongodb/index_provisioning_harness.py --plan
+          else
+            python tools/eos/mongodb/index_provisioning_harness.py
+          fi
       - name: Enforce fail-closed execution gate
         run: |
-          echo "The manifest is inventory-incomplete. Database provisioning is disabled."
-          echo "Complete route/worker inventory, verify every index option, review duplicate data,"
-          echo "and approve an exact nonproduction target fingerprint before adding an apply stage."
-          exit 0
+          echo "The manifest remains inventory-incomplete."
+          echo "The harness has no MongoDB client and cannot create or alter indexes."
+          echo "A future apply stage requires verified nonproduction target ownership,"
+          echo "complete source/index parity, duplicate-data preflight, backup/rollback,"
+          echo "and a separately provisioned identity."
