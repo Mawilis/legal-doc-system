@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import asyncio
 from types import SimpleNamespace
-from typing import Any
+from typing import Any, cast
 
 import pytest
 from fastapi.security import HTTPAuthorizationCredentials
@@ -45,7 +45,7 @@ def test_global_access_token_requires_exact_current_session_claims(monkeypatch: 
     monkeypatch.setattr(authentication, "GlobalPrincipalSessionAuthority", Sessions)
 
     identity = asyncio.run(authentication.get_current_identity(
-        request=object(), credentials=_credentials(), api_key=None, repository=object()
+        request=cast(Any, object()), credentials=_credentials(), api_key=None, repository=cast(Any, object())
     ))
     assert identity.identity_id == "principal-global"
     assert identity.tenant_id == "tenant-exact"
