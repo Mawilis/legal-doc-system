@@ -77,6 +77,7 @@ def enrollment_store():
         challenge_collection=challenges,
         factor_collection=factors,
         legacy_factor_collection=legacy_factors,
+        credential_collection=credentials,
         credential_repository=PrincipalCredentialRepository,
     )
     try:
