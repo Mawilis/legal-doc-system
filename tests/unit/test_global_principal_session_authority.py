@@ -165,6 +165,17 @@ def test_membership_and_capacity_revision_changes_invalidate_currentness(monkeyp
                                           session_reference=receipt.session_reference)
 
 
+def test_access_token_credential_epoch_must_match_persisted_session(monkeypatch):
+    service, _, _, _, selected = setup(monkeypatch)
+    receipt = issue(service, selected)
+    assert not service.is_session_current(
+        principal_id="principal-A",
+        tenant_id="tenant-A",
+        session_reference=receipt.session_reference,
+        expected_credential_revision=99,
+    )
+
+
 def test_workspace_mapping_change_invalidates_existing_global_session(monkeypatch):
     service, _, _, _, selected = setup(monkeypatch)
     receipt = issue(service, selected)
