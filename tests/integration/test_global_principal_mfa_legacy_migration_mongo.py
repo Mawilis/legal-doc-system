@@ -87,6 +87,44 @@ def legacy_migration_store():
         client.drop_database(database.name)
         client.close()
 
+def test_real_mongo_legacy_factor_proof_repairs_unset_mfa_flag_with_new_revision(legacy_migration_store):
+    client, legacy, factors, service = legacy_migration_store
+    database_name = next(
+        name for name in client.list_database_names()
+        if name.startswith("global_mfa_legacy_migration_")
+        and client[name][CREDENTIAL_COLLECTION].count_documents({"principal_id": "principal-legacy-mfa"}) == 1
+    )
+    credentials = client[database_name][CREDENTIAL_COLLECTION]
+    PrincipalCredentialRepository.insert(
+        PrincipalCredential(
+            principal_id="principal-legacy-unset",
+            normalized_email="legacy-unset@example.com",
+            password_hash="$2b$12$" + "b" * 53,
+            credential_revision=0,
+            mfa_enabled=False,
+        ),
+        credentials,
+    )
+    legacy.insert_one({"user_id": "principal-legacy-unset", "secret": SECRET})
+    with client.start_session() as session:
+        session.start_transaction()
+        receipt = service.migrate(
+            principal_id="principal-legacy-unset",
+            credential_revision=0,
+            code=pyotp.TOTP(SECRET).at(NOW),
+            session=session,
+            now=NOW,
+        )
+        session.commit_transaction()
+    updated = PrincipalCredentialRepository.get_by_principal(
+        "principal-legacy-unset", credentials
+    )
+    factor = factors.find_one({"principal_id": "principal-legacy-unset"})
+    assert receipt.credential_revision == 1
+    assert updated.mfa_enabled is True
+    assert updated.credential_revision == 1
+    assert factor["credential_revision"] == 1
+
 
 def test_real_mongo_legacy_factor_migration_is_atomic_and_preserves_source_until_cutover(legacy_migration_store):
     client, legacy, factors, service = legacy_migration_store
