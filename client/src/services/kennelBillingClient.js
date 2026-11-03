@@ -9,6 +9,7 @@
  * Compliance: POPIA §19 · GDPR §32 · SOC2 §CC7.2 · ISO 27001 · ECT Act §15
  */
 import sovereignClient from '../utils/sovereignClient';
+import { isCanonicalTenantTransportId } from './api';
 
 const IDEMPOTENCY_HEADER = 'X-Idempotency-Key';
 
@@ -19,7 +20,7 @@ const IDEMPOTENCY_HEADER = 'X-Idempotency-Key';
  */
 export function createIdempotencyKey(tenantId) {
   const canonicalTenantId = String(tenantId || '').trim();
-  if (!canonicalTenantId) throw new Error('TENANT_CONTEXT_REQUIRED');
+  if (!isCanonicalTenantTransportId(canonicalTenantId)) throw new Error('TENANT_CONTEXT_REQUIRED');
   const entropy = globalThis.crypto?.randomUUID
     ? globalThis.crypto.randomUUID().slice(0, 12)
     : `${Date.now().toString(36)}${Math.random().toString(36).slice(2, 8)}`;
@@ -102,7 +103,7 @@ export async function createKennelInvoice(draft = {}, { mode = 'PLATFORM', tenan
   const path = isClient ? '/billing/client/invoices' : '/billing/platform/invoices';
   const body = buildKennelInvoicePayload(draft, { mode });
   const tid = String(tenantId || body.tenant_id || '').trim();
-  if (!tid) throw new Error('TENANT_CONTEXT_REQUIRED');
+  if (!isCanonicalTenantTransportId(tid)) throw new Error('TENANT_CONTEXT_REQUIRED');
   const key = body.idempotency_key || createIdempotencyKey(tid);
 
   const res = await sovereignClient.post(path, body, {
