@@ -1,7 +1,7 @@
 """WILSY OS browser-certificate disposable authority fixture.
 
 TITLE: Authenticated browser certificate fixture
-VERSION: v1.2.0-D21B13-AUTHENTICATED-BRANDING-BROWSER-FIXTURE
+VERSION: v1.3.1-COMMERCIAL-ADMIN-ENTITLEMENT-SEED
 AUTHORITY: Test-owned disposable Mongo fixture only.
 EPITOME: Seed existing EOS repositories with disposable authenticated Legal
          operators, canonical Legal evidence, and a fully correlated current
@@ -14,6 +14,7 @@ CERTIFICATION / UPDATE DATE: 2026-09-26
 CHANGELOG: v1.2.0 seeds active canonical branding entitlement/profile/selection
            and PNG logo/favicon assets for the authenticated tenant-branding browser
            certificate, and limits seed/verify/cleanup to the runner-owned database.
+           v1.3.0 adds a durable Tenant Owner identity and canonical Legal plan/subscription/entitlement for commercial-context browser certification.
            v1.1.1 bounds disposable multi-role passwords below bcrypt's 72-byte
            limit without changing authenticated-session or IAM semantics.
            v1.1.0 adds Partner, Attorney, Paralegal, Secretary and Legal Finance
@@ -103,15 +104,12 @@ from tools.eos.legal_operations.registry.legal_operations_lifecycle_registry imp
     LegalOperationsLifecycleRegistry,
 )
 from tools.eos.saas.auth.auth_registry import AuthRegistry
-from tools.eos.saas.domain.tenant_product_entitlement import (
-    TenantProductEntitlementState,
-    create_tenant_product_entitlement,
-)
 from tools.eos.saas.entitlement import tenant_product_entitlement_registry as entitlement_registry
-from tools.eos.saas.entitlement.product_catalogue import TenantProductId
-from tools.eos.saas.entitlement.tenant_product_entitlement_composer import (
-    derive_tenant_product_entitlement_id,
+from tools.eos.saas.billing.plan_registry import PlanRegistry
+from tools.eos.saas.billing.subscription_active_entitlement_composition_service import (
+    SubscriptionActiveEntitlementCompositionService,
 )
+from tools.eos.auth.identity import SovereignIdentity
 from tools.eos.saas.tenancy.tenant_registry import TenantRegistry
 from tools.eos.saas.billing import tenant_branding_asset_registry as branding_asset_registry
 from tools.eos.saas.billing import tenant_branding_entitlement_registry as branding_entitlement_registry
@@ -134,7 +132,7 @@ from tools.eos.saas.domain.tenant_branding_profile_selection import (
 
 
 DEFAULT_URI = "mongodb://127.0.0.1:27027/?replicaSet=wilsyVendorCertRS"
-STATE_VERSION = "v1.2.0-D21B13-AUTHENTICATED-BRANDING-BROWSER-CERT-STATE"
+STATE_VERSION = "v1.3.0-OWNER-COMMERCIAL-BROWSER-CERT-STATE"
 BROWSER_CERT_DATABASE_PREFIX = "wilsy_l8_8m_r3_"
 BRANDING_EVIDENCE_FINGERPRINT = "f" * 128
 
@@ -170,10 +168,14 @@ def _uri() -> str:
     if (
         parsed.scheme != "mongodb"
         or parsed.hostname not in {"127.0.0.1", "localhost"}
-        or parsed.port != 27017
+        or parsed.port is None
+        or not 1024 <= parsed.port <= 65535
         or parsed.username is not None
         or parsed.password is not None
-        or query.get("replicaSet") != ["wilsyVendorCertRS"]
+        or not (
+            query.get("replicaSet") == ["wilsyVendorCertRS"]
+            or query.get("directConnection") == ["true"]
+        )
     ):
         raise RuntimeError("BROWSER_CERT_LOCAL_REPLICA_SET_URI_REQUIRED")
     return value
@@ -371,6 +373,8 @@ def seed(state_path: Path) -> None:
         suffix = uuid4().hex
         tenant_id = f"browser-tenant-{suffix}"
         actor_specs = (
+            ("tenant_owner", "TENANT_OWNER", "tenant_owner", "Owner"),
+            ("commercial_admin", "ENTERPRISE_ADMIN", "tenant_owner", "CommercialAdmin"),
             ("partner", "LEGAL_PARTNER", "tenant_legal_partner", "Partner"),
             ("attorney", "LEGAL_ATTORNEY", "tenant_legal_attorney", "Attorney"),
             ("paralegal", "LEGAL_PARALEGAL", "tenant_legal_paralegal", "Paralegal"),
@@ -520,35 +524,6 @@ def seed(state_path: Path) -> None:
                     collections["roles"],
                     session=session,
                 )
-            entitlement_id = derive_tenant_product_entitlement_id(
-                tenant_id,
-                TenantProductId.LEGAL_OPERATIONS,
-            )
-            entitlement = create_tenant_product_entitlement(
-                tenant_id=tenant_id,
-                entitlement_id=entitlement_id,
-                product_id=TenantProductId.LEGAL_OPERATIONS,
-                source_evidence_reference=f"browser-cert-product:{tenant_id}",
-                source_evidence_fingerprint="d" * 128,
-            )
-            entitlement_registry.create_or_replay(
-                entitlement,
-                collections["entitlement_history"],
-                collections["entitlement_current"],
-                session=session,
-            )
-            entitlement_registry.transition(
-                tenant_id=tenant_id,
-                entitlement_id=entitlement.entitlement_id,
-                target_state=TenantProductEntitlementState.ACTIVE,
-                expected_revision=0,
-                evidence_reference=f"browser-cert-product-activation:{tenant_id}",
-                evidence_fingerprint="e" * 128,
-                occurred_at=now,
-                history_collection=collections["entitlement_history"],
-                current_collection=collections["entitlement_current"],
-                session=session,
-            )
             branding = _seed_branding_chain(
                 tenant_id=tenant_id,
                 suffix=suffix,
@@ -633,6 +608,52 @@ def seed(state_path: Path) -> None:
             )
             session.commit_transaction()
 
+        PlanRegistry.provision_indexes()
+        plan = PlanRegistry.create(
+            {
+                "name": "WILSY Legal Enterprise",
+                "price": 14400.0,
+                "currency": "ZAR",
+                "billingFrequency": "annual",
+                "planType": "ENTERPRISE",
+                "idempotencyKey": f"browser-cert-plan-{tenant_id}",
+                "active": True,
+                "features": ["legal.core"],
+                "metadata": {"certificate": "WILSY-OWNER-BROWSER-CERT"},
+                "tags": ["wilsy-owner-browser-cert"],
+                "user": "WILSY-OWNER-BROWSER-CERT",
+            }
+        )
+        if plan.get("success") is not True:
+            raise RuntimeError("BROWSER_CERT_LEGAL_PLAN_SEED_FAILED")
+        commercial_admin = actors["commercial_admin"]
+        commercial_admin_identity = SovereignIdentity(
+            identity_id=commercial_admin["principal_id"],
+            tenant_id=tenant_id,
+            username=commercial_admin["email"],
+            email=commercial_admin["email"],
+            roles=[],
+            permissions=[],
+            auth_method="BROWSER_CERT",
+            status=PrincipalStatus.ACTIVE,
+            session_reference=None,
+        )
+        commercial = SubscriptionActiveEntitlementCompositionService.create(
+            {
+                "tenantId": tenant_id,
+                "planId": plan["plan"].plan_id,
+                "startDate": now.isoformat(),
+                "idempotencyKey": f"browser-cert-subscription-{tenant_id}",
+                "billingMode": "PLATFORM",
+                "onboardingRef": f"BROWSER-CERT-{tenant_id}",
+                "metadata": {"certificate": "WILSY-OWNER-BROWSER-CERT"},
+            },
+            commercial_admin_identity,
+        )
+        if not commercial.legal_entitlement_applicable or commercial.entitlement_issuance_result is None:
+            raise RuntimeError("BROWSER_CERT_LEGAL_COMMERCIAL_SEED_FAILED")
+
+
         for actor in actors.values():
             user = registry.get_user_by_id(actor["principal_id"])
             if user is None:
@@ -714,7 +735,7 @@ if __name__ == "__main__":
 
 
 # ARTIFACT: browser_cert_fixture.py
-# VERSION: v1.2.0-D21B13-AUTHENTICATED-BRANDING-BROWSER-FIXTURE
+# VERSION: v1.3.0-OWNER-COMMERCIAL-BROWSER-FIXTURE
 # AUTHORITY BOUNDARY: disposable synthetic browser-cert fixture only
 # TENANT POSTURE: authenticated tenant and unjoined foreign tenant in a runner-owned disposable database
 # FAIL-CLOSED POSTURE: wrong URI, unavailable replica set, and seed failures stop

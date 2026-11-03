@@ -224,7 +224,7 @@ from __future__ import annotations
 from collections.abc import Iterable
 
 
-VERSION = "v1.50.0-UNIVERSAL-TENANT-OWNER-WORKSPACE-GRANTS"
+VERSION = "v1.51.0-TENANT-OWNER-LEGAL-COMMERCIAL-READ"
 
 
 ROLE_PERMISSIONS_MAP: dict[str, list[str]] = {
@@ -289,6 +289,7 @@ ROLE_PERMISSIONS_MAP: dict[str, list[str]] = {
     # Tenant-scoped owner workspace authority only; never a platform administrator.
     # Business-role eligibility and ACTIVE membership remain separate conjuncts.
     "TENANT_OWNER": [
+        "subscription:read",
         "crm:work_item:read",
         "crm:work_item:create",
         "crm:work_item:complete",
