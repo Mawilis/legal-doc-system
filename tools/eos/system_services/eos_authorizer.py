@@ -113,6 +113,9 @@ class SystemServicesEosAuthorizer:
             or metadata.tenant_membership_required is not False
             or metadata.workforce_currentness_required is not True
             or metadata.authorizes_by_itself is not False
+            or metadata.cross_tenant_capable is not False
+            or metadata.financial_execution_capable is not False
+            or metadata.deprecated_or_legacy is not False
             or metadata.disposition is not PermissionDisposition.CANONICAL
         ):
             raise SystemServicesAuthorizationError("SYSTEM_WORKFORCE_PERMISSION_REQUIRED")
@@ -129,6 +132,11 @@ class SystemServicesEosAuthorizer:
             ) from error
         if assignment is None:
             raise SystemServicesAuthorizationError("CURRENT_SYSTEM_PERMISSION_REQUIRED")
+        if (
+            getattr(assignment, "principal_id", None) != principal_id
+            or getattr(assignment, "permission_id", None) != permission_id
+        ):
+            raise SystemServicesAuthorizationUnavailable("SYSTEM_ASSIGNMENT_BINDING_INVALID")
 
         observed_at = self._clock()
         if (
@@ -168,13 +176,14 @@ class SystemServicesEosAuthorizer:
             histories[relationship.relationship_id].append(relationship)
 
         try:
-            active = any(
+            currentness = tuple(
                 derive_workforce_relationship_currentness(
                     tuple(sorted(history, key=lambda item: item.revision)),
                     observed_at,
-                ).is_active
+                )
                 for history in histories.values()
             )
+            active = any(item.is_active for item in currentness)
         except WorkforceRelationshipCurrentnessError as error:
             raise SystemServicesAuthorizationUnavailable(
                 "PLATFORM_WORKFORCE_HISTORY_INVALID"
