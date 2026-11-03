@@ -1226,6 +1226,75 @@
         "find"
       ],
       "provisioning_owner": "separate_eos_index_provisioner"
+    },
+    {
+      "id": "ai-tool-orchestrations",
+      "database": "canonical_eos_business_database",
+      "collection": "wilsy_ai_tool_orchestrations",
+      "source": "tools/eos/intelligence/registry/ai_tool_orchestration_registry.py",
+      "indexes": [
+        {
+          "name": "c1c_orchestration_identity_unique",
+          "keys": [
+            [
+              "tenant_id",
+              1
+            ],
+            [
+              "orchestration_id",
+              1
+            ]
+          ],
+          "unique": true
+        }
+      ],
+      "runtime_operations": [
+        "find_one",
+        "insert_one",
+        "replace_one"
+      ],
+      "provisioning_owner": "separate_eos_index_provisioner"
+    },
+    {
+      "id": "ai-legal-tool-invocations",
+      "database": "canonical_eos_business_database",
+      "collection": "wilsy_ai_legal_tool_invocations",
+      "source": "tools/eos/intelligence/registry/legal_ai_tool_invocation_registry.py",
+      "indexes": [
+        {
+          "name": "wilsy_ai_legal_tool_invocation_unique",
+          "keys": [
+            [
+              "tenant_id",
+              1
+            ],
+            [
+              "invocation_id",
+              1
+            ]
+          ],
+          "unique": true
+        },
+        {
+          "name": "wilsy_ai_legal_tool_evidence_unique",
+          "keys": [
+            [
+              "tenant_id",
+              1
+            ],
+            [
+              "fingerprint",
+              1
+            ]
+          ],
+          "unique": true
+        }
+      ],
+      "runtime_operations": [
+        "find_one",
+        "insert_one"
+      ],
+      "provisioning_owner": "separate_eos_index_provisioner"
     }
   ],
   "excluded_until_inventory_complete": [
