@@ -135,6 +135,11 @@ from tools.eos.auth.membership_selection_challenge import (
     COLLECTION as MEMBERSHIP_SELECTION_CHALLENGE_COLLECTION,
     MembershipSelectionChallengeService,
 )
+from tools.eos.auth.global_principal_session_authority import (
+    SESSION_COLLECTION as GLOBAL_PRINCIPAL_SESSION_COLLECTION,
+    REFRESH_COLLECTION as GLOBAL_PRINCIPAL_REFRESH_COLLECTION,
+    GlobalPrincipalSessionAuthority,
+)
 from tools.eos.auth.principal_authentication_rate_limit import (
     COLLECTION as PRINCIPAL_AUTH_RATE_LIMIT_COLLECTION,
     PrincipalAuthenticationRateLimit,
@@ -430,6 +435,8 @@ class WilsyAPIServer:
             """Own explicit database bootstrap at application startup."""
             app.state.p12c_binding_indexes_ready = False
             app.state.global_principal_auth_indexes_ready = False
+            app.state.global_principal_session_indexes_ready = False
+            app.state.global_principal_session_indexes_ready = False
             app.state.system_services_case_indexes_ready = False
             app.state.system_services_authority_ready = False
             app.state.system_services_authorizer = None
@@ -481,6 +488,11 @@ class WilsyAPIServer:
                 MembershipSelectionChallengeService.ensure_indexes(
                     database[MEMBERSHIP_SELECTION_CHALLENGE_COLLECTION]
                 )
+                GlobalPrincipalSessionAuthority.ensure_indexes(
+                    database[GLOBAL_PRINCIPAL_SESSION_COLLECTION],
+                    database[GLOBAL_PRINCIPAL_REFRESH_COLLECTION],
+                )
+                app.state.global_principal_session_indexes_ready = client is not None
                 PrincipalAuthenticationRateLimit(
                     database[PRINCIPAL_AUTH_RATE_LIMIT_COLLECTION]
                 ).ensure_indexes()
