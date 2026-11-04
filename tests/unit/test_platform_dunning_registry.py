@@ -160,4 +160,4 @@ def test_invoice_order_does_not_change_transition_fingerprint() -> None:
 def test_unknown_projection_state_is_rejected():
     collection = FakeCollection()
     with pytest.raises(PlatformDunningRegistryError, match="STATE_INVALID"):
-        transition(collection, state="REMINDER")
+        transition(collection, state="UNKNOWN_STAGE")
