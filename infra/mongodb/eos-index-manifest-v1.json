@@ -5609,6 +5609,1060 @@
         }
       ],
       "provisioning_owner": "separate_eos_index_provisioner"
+    },
+    {
+      "id": "legal-evidence-contents",
+      "database": "canonical_eos_business_database",
+      "collection": "legal_evidence_contents",
+      "source": "tools/eos/legal_operations/registry/legal_evidence_content_registry.py",
+      "indexes": [
+        {
+          "name": "legal_evidence_content_tenant_reference_unique",
+          "keys": [
+            [
+              "tenant_id",
+              1
+            ],
+            [
+              "content_reference",
+              1
+            ]
+          ],
+          "unique": true
+        },
+        {
+          "name": "legal_evidence_content_tenant_matter_document_registered",
+          "keys": [
+            [
+              "tenant_id",
+              1
+            ],
+            [
+              "case_matter_id",
+              1
+            ],
+            [
+              "document_id",
+              1
+            ],
+            [
+              "registered_at",
+              -1
+            ]
+          ],
+          "unique": false
+        },
+        {
+          "name": "legal_evidence_content_tenant_document_content_fingerprint",
+          "keys": [
+            [
+              "tenant_id",
+              1
+            ],
+            [
+              "document_id",
+              1
+            ],
+            [
+              "content_fingerprint",
+              1
+            ]
+          ],
+          "unique": false
+        }
+      ],
+      "provisioning_owner": "separate_eos_index_provisioner"
+    },
+    {
+      "id": "legal-evidence-legal-hold-constraints",
+      "database": "canonical_eos_business_database",
+      "collection": "legal_evidence_legal_hold_constraints",
+      "source": "tools/eos/legal_operations/registry/legal_evidence_legal_hold_constraint_registry.py",
+      "indexes": [
+        {
+          "name": "legal_evidence_legal_hold_tenant_fingerprint_unique",
+          "keys": [
+            [
+              "tenant_id",
+              1
+            ],
+            [
+              "fingerprint",
+              1
+            ]
+          ],
+          "unique": true
+        },
+        {
+          "name": "legal_evidence_legal_hold_tenant_hold_history",
+          "keys": [
+            [
+              "tenant_id",
+              1
+            ],
+            [
+              "hold_reference",
+              1
+            ],
+            [
+              "imposed_at",
+              -1
+            ]
+          ],
+          "unique": false
+        },
+        {
+          "name": "legal_evidence_legal_hold_tenant_provider_object_history",
+          "keys": [
+            [
+              "tenant_id",
+              1
+            ],
+            [
+              "provider_name",
+              1
+            ],
+            [
+              "storage_reference",
+              1
+            ],
+            [
+              "object_version_reference",
+              1
+            ],
+            [
+              "imposed_at",
+              -1
+            ]
+          ],
+          "unique": false
+        },
+        {
+          "name": "legal_evidence_legal_hold_tenant_hold_state_history",
+          "keys": [
+            [
+              "tenant_id",
+              1
+            ],
+            [
+              "hold_reference",
+              1
+            ],
+            [
+              "state",
+              1
+            ],
+            [
+              "imposed_at",
+              -1
+            ]
+          ],
+          "unique": false
+        }
+      ],
+      "provisioning_owner": "separate_eos_index_provisioner"
+    },
+    {
+      "id": "legal-evidence-provider-cleanup-authorizations",
+      "database": "canonical_eos_business_database",
+      "collection": "legal_evidence_provider_cleanup_authorizations",
+      "source": "tools/eos/legal_operations/registry/legal_evidence_provider_cleanup_authorization_registry.py",
+      "indexes": [
+        {
+          "name": "legal_evidence_cleanup_authorization_tenant_authorization_id_unique",
+          "keys": [
+            [
+              "tenant_id",
+              1
+            ],
+            [
+              "authorization_id",
+              1
+            ]
+          ],
+          "unique": true
+        },
+        {
+          "name": "legal_evidence_cleanup_authorization_tenant_fingerprint_unique",
+          "keys": [
+            [
+              "tenant_id",
+              1
+            ],
+            [
+              "fingerprint",
+              1
+            ]
+          ],
+          "unique": true
+        },
+        {
+          "name": "legal_evidence_cleanup_authorization_tenant_provider_object_unique",
+          "keys": [
+            [
+              "tenant_id",
+              1
+            ],
+            [
+              "provider_name",
+              1
+            ],
+            [
+              "storage_reference",
+              1
+            ],
+            [
+              "object_version_reference",
+              1
+            ]
+          ],
+          "unique": true
+        }
+      ],
+      "provisioning_owner": "separate_eos_index_provisioner"
+    },
+    {
+      "id": "legal-evidence-provider-cleanup-commands",
+      "database": "canonical_eos_business_database",
+      "collection": "legal_evidence_provider_cleanup_commands",
+      "source": "tools/eos/legal_operations/registry/legal_evidence_provider_cleanup_command_registry.py",
+      "indexes": [
+        {
+          "name": "legal_evidence_cleanup_command_tenant_command_id_unique",
+          "keys": [
+            [
+              "tenant_id",
+              1
+            ],
+            [
+              "command_id",
+              1
+            ]
+          ],
+          "unique": true
+        },
+        {
+          "name": "legal_evidence_cleanup_command_tenant_fingerprint_unique",
+          "keys": [
+            [
+              "tenant_id",
+              1
+            ],
+            [
+              "fingerprint",
+              1
+            ]
+          ],
+          "unique": true
+        },
+        {
+          "name": "legal_evidence_cleanup_command_tenant_cleanup_authorization_unique",
+          "keys": [
+            [
+              "tenant_id",
+              1
+            ],
+            [
+              "cleanup_authorization_id",
+              1
+            ]
+          ],
+          "unique": true
+        },
+        {
+          "name": "legal_evidence_cleanup_command_tenant_provider_object_unique",
+          "keys": [
+            [
+              "tenant_id",
+              1
+            ],
+            [
+              "provider_name",
+              1
+            ],
+            [
+              "storage_reference",
+              1
+            ],
+            [
+              "object_version_reference",
+              1
+            ]
+          ],
+          "unique": true
+        }
+      ],
+      "provisioning_owner": "separate_eos_index_provisioner"
+    },
+    {
+      "id": "legal-evidence-provider-delete-execution-claims",
+      "database": "canonical_eos_business_database",
+      "collection": "legal_evidence_provider_delete_execution_claims",
+      "source": "tools/eos/legal_operations/registry/legal_evidence_provider_delete_execution_claim_registry.py",
+      "indexes": [
+        {
+          "name": "legal_evidence_provider_delete_claim_tenant_claim_id_unique",
+          "keys": [
+            [
+              "tenant_id",
+              1
+            ],
+            [
+              "claim_id",
+              1
+            ]
+          ],
+          "unique": true
+        },
+        {
+          "name": "legal_evidence_provider_delete_claim_tenant_fingerprint_unique",
+          "keys": [
+            [
+              "tenant_id",
+              1
+            ],
+            [
+              "fingerprint",
+              1
+            ]
+          ],
+          "unique": true
+        },
+        {
+          "name": "legal_evidence_provider_delete_claim_tenant_command_unique",
+          "keys": [
+            [
+              "tenant_id",
+              1
+            ],
+            [
+              "command_id",
+              1
+            ]
+          ],
+          "unique": true
+        },
+        {
+          "name": "legal_evidence_provider_delete_claim_tenant_cleanup_authorization_unique",
+          "keys": [
+            [
+              "tenant_id",
+              1
+            ],
+            [
+              "cleanup_authorization_id",
+              1
+            ]
+          ],
+          "unique": true
+        },
+        {
+          "name": "legal_evidence_provider_delete_claim_tenant_provider_object_unique",
+          "keys": [
+            [
+              "tenant_id",
+              1
+            ],
+            [
+              "provider_name",
+              1
+            ],
+            [
+              "storage_reference",
+              1
+            ],
+            [
+              "object_version_reference",
+              1
+            ]
+          ],
+          "unique": true
+        }
+      ],
+      "provisioning_owner": "separate_eos_index_provisioner"
+    },
+    {
+      "id": "legal-evidence-provider-delete-execution-evidence",
+      "database": "canonical_eos_business_database",
+      "collection": "legal_evidence_provider_delete_execution_evidence",
+      "source": "tools/eos/legal_operations/registry/legal_evidence_provider_delete_execution_evidence_registry.py",
+      "indexes": [
+        {
+          "name": "legal_evidence_provider_delete_execution_evidence_tenant_id_unique",
+          "keys": [
+            [
+              "tenant_id",
+              1
+            ],
+            [
+              "execution_evidence_id",
+              1
+            ]
+          ],
+          "unique": true
+        },
+        {
+          "name": "legal_evidence_provider_delete_execution_evidence_tenant_fingerprint_unique",
+          "keys": [
+            [
+              "tenant_id",
+              1
+            ],
+            [
+              "fingerprint",
+              1
+            ]
+          ],
+          "unique": true
+        },
+        {
+          "name": "legal_evidence_provider_delete_execution_evidence_tenant_command_unique",
+          "keys": [
+            [
+              "tenant_id",
+              1
+            ],
+            [
+              "command_id",
+              1
+            ]
+          ],
+          "unique": true
+        },
+        {
+          "name": "legal_evidence_provider_delete_execution_evidence_tenant_provider_object_unique",
+          "keys": [
+            [
+              "tenant_id",
+              1
+            ],
+            [
+              "provider_name",
+              1
+            ],
+            [
+              "storage_reference",
+              1
+            ],
+            [
+              "object_version_reference",
+              1
+            ]
+          ],
+          "unique": true
+        }
+      ],
+      "provisioning_owner": "separate_eos_index_provisioner"
+    },
+    {
+      "id": "legal-evidence-provider-delete-execution-uncertainties",
+      "database": "canonical_eos_business_database",
+      "collection": "legal_evidence_provider_delete_execution_uncertainties",
+      "source": "tools/eos/legal_operations/registry/legal_evidence_provider_delete_execution_uncertainty_registry.py",
+      "indexes": [
+        {
+          "name": "legal_evidence_provider_delete_uncertainty_tenant_uncertainty_id_unique",
+          "keys": [
+            [
+              "tenant_id",
+              1
+            ],
+            [
+              "uncertainty_id",
+              1
+            ]
+          ],
+          "unique": true
+        },
+        {
+          "name": "legal_evidence_provider_delete_uncertainty_tenant_fingerprint_unique",
+          "keys": [
+            [
+              "tenant_id",
+              1
+            ],
+            [
+              "fingerprint",
+              1
+            ]
+          ],
+          "unique": true
+        },
+        {
+          "name": "legal_evidence_provider_delete_uncertainty_tenant_command_unique",
+          "keys": [
+            [
+              "tenant_id",
+              1
+            ],
+            [
+              "command_id",
+              1
+            ]
+          ],
+          "unique": true
+        },
+        {
+          "name": "legal_evidence_provider_delete_uncertainty_tenant_execution_evidence_unique",
+          "keys": [
+            [
+              "tenant_id",
+              1
+            ],
+            [
+              "execution_evidence_id",
+              1
+            ]
+          ],
+          "unique": true
+        },
+        {
+          "name": "legal_evidence_provider_delete_uncertainty_tenant_provider_object_unique",
+          "keys": [
+            [
+              "tenant_id",
+              1
+            ],
+            [
+              "provider_name",
+              1
+            ],
+            [
+              "storage_reference",
+              1
+            ],
+            [
+              "object_version_reference",
+              1
+            ]
+          ],
+          "unique": true
+        }
+      ],
+      "provisioning_owner": "separate_eos_index_provisioner"
+    },
+    {
+      "id": "legal-evidence-provider-object-disownerships",
+      "database": "canonical_eos_business_database",
+      "collection": "legal_evidence_provider_object_disownerships",
+      "source": "tools/eos/legal_operations/registry/legal_evidence_provider_object_disownership_registry.py",
+      "indexes": [
+        {
+          "name": "legal_evidence_disownership_tenant_reference_unique",
+          "keys": [
+            [
+              "tenant_id",
+              1
+            ],
+            [
+              "disownership_reference",
+              1
+            ]
+          ],
+          "unique": true
+        },
+        {
+          "name": "legal_evidence_disownership_tenant_fingerprint_unique",
+          "keys": [
+            [
+              "tenant_id",
+              1
+            ],
+            [
+              "fingerprint",
+              1
+            ]
+          ],
+          "unique": true
+        },
+        {
+          "name": "legal_evidence_disownership_tenant_provider_object_unique",
+          "keys": [
+            [
+              "tenant_id",
+              1
+            ],
+            [
+              "provider_name",
+              1
+            ],
+            [
+              "storage_reference",
+              1
+            ],
+            [
+              "object_version_reference",
+              1
+            ]
+          ],
+          "unique": true
+        }
+      ],
+      "provisioning_owner": "separate_eos_index_provisioner"
+    },
+    {
+      "id": "legal-evidence-provider-object-orphan-proofs",
+      "database": "canonical_eos_business_database",
+      "collection": "legal_evidence_provider_object_orphan_proofs",
+      "source": "tools/eos/legal_operations/registry/legal_evidence_provider_object_orphan_proof_registry.py",
+      "indexes": [
+        {
+          "name": "legal_evidence_orphan_proof_tenant_reference_unique",
+          "keys": [
+            [
+              "tenant_id",
+              1
+            ],
+            [
+              "orphan_proof_reference",
+              1
+            ]
+          ],
+          "unique": true
+        },
+        {
+          "name": "legal_evidence_orphan_proof_tenant_fingerprint_unique",
+          "keys": [
+            [
+              "tenant_id",
+              1
+            ],
+            [
+              "fingerprint",
+              1
+            ]
+          ],
+          "unique": true
+        },
+        {
+          "name": "legal_evidence_orphan_proof_tenant_provider_object_unique",
+          "keys": [
+            [
+              "tenant_id",
+              1
+            ],
+            [
+              "provider_name",
+              1
+            ],
+            [
+              "storage_reference",
+              1
+            ],
+            [
+              "object_version_reference",
+              1
+            ]
+          ],
+          "unique": true
+        }
+      ],
+      "provisioning_owner": "separate_eos_index_provisioner"
+    },
+    {
+      "id": "legal-evidence-retention-constraints",
+      "database": "canonical_eos_business_database",
+      "collection": "legal_evidence_retention_constraints",
+      "source": "tools/eos/legal_operations/registry/legal_evidence_retention_constraint_registry.py",
+      "indexes": [
+        {
+          "name": "legal_evidence_retention_tenant_fingerprint_unique",
+          "keys": [
+            [
+              "tenant_id",
+              1
+            ],
+            [
+              "fingerprint",
+              1
+            ]
+          ],
+          "unique": true
+        },
+        {
+          "name": "legal_evidence_retention_tenant_provider_object_unique",
+          "keys": [
+            [
+              "tenant_id",
+              1
+            ],
+            [
+              "provider_name",
+              1
+            ],
+            [
+              "storage_reference",
+              1
+            ],
+            [
+              "object_version_reference",
+              1
+            ]
+          ],
+          "unique": true
+        },
+        {
+          "name": "legal_evidence_retention_tenant_source_evidence",
+          "keys": [
+            [
+              "tenant_id",
+              1
+            ],
+            [
+              "source_evidence_reference",
+              1
+            ]
+          ],
+          "unique": false
+        }
+      ],
+      "provisioning_owner": "separate_eos_index_provisioner"
+    },
+    {
+      "id": "legal-operating-role-capability-bindings",
+      "database": "canonical_eos_business_database",
+      "collection": "legal_operating_role_capability_bindings",
+      "source": "tools/eos/legal_operations/registry/legal_operating_role_capability_binding_registry.py",
+      "indexes": [
+        {
+          "name": "legal_operating_role_capability_bindings_identity_unique",
+          "keys": [
+            [
+              "tenant_id",
+              1
+            ],
+            [
+              "capability_binding_id",
+              1
+            ],
+            [
+              "capability_binding_revision",
+              1
+            ]
+          ],
+          "unique": true
+        },
+        {
+          "name": "legal_operating_role_capability_bindings_fingerprint_unique",
+          "keys": [
+            [
+              "tenant_id",
+              1
+            ],
+            [
+              "fingerprint",
+              1
+            ]
+          ],
+          "unique": true
+        },
+        {
+          "name": "legal_operating_role_capability_bindings_history",
+          "keys": [
+            [
+              "tenant_id",
+              1
+            ],
+            [
+              "capability_binding_id",
+              1
+            ],
+            [
+              "capability_binding_revision",
+              1
+            ]
+          ],
+          "unique": false
+        },
+        {
+          "name": "legal_operating_role_capability_bindings_currentness",
+          "keys": [
+            [
+              "tenant_id",
+              1
+            ],
+            [
+              "capability_binding_id",
+              1
+            ],
+            [
+              "effective_from",
+              1
+            ],
+            [
+              "capability_binding_revision",
+              1
+            ]
+          ],
+          "unique": false
+        },
+        {
+          "name": "legal_operating_role_capability_role_history",
+          "keys": [
+            [
+              "tenant_id",
+              1
+            ],
+            [
+              "operating_role_id",
+              1
+            ],
+            [
+              "operating_role_revision",
+              1
+            ],
+            [
+              "capability_binding_revision",
+              1
+            ]
+          ],
+          "unique": false
+        }
+      ],
+      "provisioning_owner": "separate_eos_index_provisioner"
+    },
+    {
+      "id": "legal-operating-role-definitions",
+      "database": "canonical_eos_business_database",
+      "collection": "legal_operating_role_definitions",
+      "source": "tools/eos/legal_operations/registry/legal_operating_role_definition_registry.py",
+      "indexes": [
+        {
+          "name": "legal_operating_role_definitions_identity_unique",
+          "keys": [
+            [
+              "tenant_id",
+              1
+            ],
+            [
+              "operating_role_id",
+              1
+            ],
+            [
+              "role_revision",
+              1
+            ]
+          ],
+          "unique": true
+        },
+        {
+          "name": "legal_operating_role_definitions_fingerprint_unique",
+          "keys": [
+            [
+              "tenant_id",
+              1
+            ],
+            [
+              "fingerprint",
+              1
+            ]
+          ],
+          "unique": true
+        },
+        {
+          "name": "legal_operating_role_definitions_history",
+          "keys": [
+            [
+              "tenant_id",
+              1
+            ],
+            [
+              "operating_role_id",
+              1
+            ],
+            [
+              "role_revision",
+              1
+            ]
+          ],
+          "unique": false
+        },
+        {
+          "name": "legal_operating_role_definitions_currentness",
+          "keys": [
+            [
+              "tenant_id",
+              1
+            ],
+            [
+              "operating_role_id",
+              1
+            ],
+            [
+              "effective_from",
+              1
+            ],
+            [
+              "role_revision",
+              1
+            ]
+          ],
+          "unique": false
+        }
+      ],
+      "provisioning_owner": "separate_eos_index_provisioner"
+    },
+    {
+      "id": "legal-operating-role-scope-bindings",
+      "database": "canonical_eos_business_database",
+      "collection": "legal_operating_role_scope_bindings",
+      "source": "tools/eos/legal_operations/registry/legal_operating_role_scope_binding_registry.py",
+      "indexes": [
+        {
+          "name": "legal_operating_role_scope_bindings_identity_unique",
+          "keys": [
+            [
+              "tenant_id",
+              1
+            ],
+            [
+              "scope_binding_id",
+              1
+            ],
+            [
+              "scope_binding_revision",
+              1
+            ]
+          ],
+          "unique": true
+        },
+        {
+          "name": "legal_operating_role_scope_bindings_fingerprint_unique",
+          "keys": [
+            [
+              "tenant_id",
+              1
+            ],
+            [
+              "fingerprint",
+              1
+            ]
+          ],
+          "unique": true
+        },
+        {
+          "name": "legal_operating_role_scope_bindings_history",
+          "keys": [
+            [
+              "tenant_id",
+              1
+            ],
+            [
+              "scope_binding_id",
+              1
+            ],
+            [
+              "scope_binding_revision",
+              1
+            ]
+          ],
+          "unique": false
+        },
+        {
+          "name": "legal_operating_role_scope_bindings_currentness",
+          "keys": [
+            [
+              "tenant_id",
+              1
+            ],
+            [
+              "scope_binding_id",
+              1
+            ],
+            [
+              "effective_from",
+              1
+            ],
+            [
+              "scope_binding_revision",
+              1
+            ]
+          ],
+          "unique": false
+        },
+        {
+          "name": "legal_operating_role_scope_role_history",
+          "keys": [
+            [
+              "tenant_id",
+              1
+            ],
+            [
+              "operating_role_id",
+              1
+            ],
+            [
+              "operating_role_revision",
+              1
+            ],
+            [
+              "scope_binding_revision",
+              1
+            ]
+          ],
+          "unique": false
+        }
+      ],
+      "provisioning_owner": "separate_eos_index_provisioner"
+    },
+    {
+      "id": "legal-practitioner-matter-access-review-requests",
+      "database": "canonical_eos_business_database",
+      "collection": "legal_practitioner_matter_access_review_requests",
+      "source": "tools/eos/legal_operations/registry/legal_practitioner_matter_access_review_registry.py",
+      "indexes": [
+        {
+          "name": "r65_access_review_identity_unique",
+          "keys": [
+            [
+              "tenant_id",
+              1
+            ],
+            [
+              "review_request_id",
+              1
+            ]
+          ],
+          "unique": true
+        },
+        {
+          "name": "r65_access_review_idempotency_unique",
+          "keys": [
+            [
+              "tenant_id",
+              1
+            ],
+            [
+              "idempotency_key",
+              1
+            ]
+          ],
+          "unique": true
+        },
+        {
+          "name": "r65_access_review_scope",
+          "keys": [
+            [
+              "tenant_id",
+              1
+            ],
+            [
+              "case_matter_id",
+              1
+            ],
+            [
+              "practitioner_principal_id",
+              1
+            ],
+            [
+              "recorded_at",
+              1
+            ]
+          ],
+          "unique": false
+        }
+      ],
+      "provisioning_owner": "separate_eos_index_provisioner"
     }
   ],
   "excluded_until_inventory_complete": [
