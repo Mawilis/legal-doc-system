@@ -19,11 +19,12 @@ from .platform_dunning_registry import (
 TERMINAL_INVOICE_STATUSES = frozenset({"paid", "void", "cancelled", "canceled", "refunded"})
 STATE_ORDER = {
     "ACTIVE": 0,
-    "WARNING": 1,
-    "CRITICAL": 2,
-    "SUSPENSION_REVIEW": 3,
-    "COLLECTIONS_REVIEW": 4,
-    "TERMINATION_REVIEW": 5,
+    "REMINDER": 1,
+    "WARNING": 2,
+    "CRITICAL": 3,
+    "SUSPENSION_REVIEW": 4,
+    "COLLECTIONS_REVIEW": 5,
+    "TERMINATION_REVIEW": 6,
 }
 DEFAULT_POLICY = {
     "reminder_day": 3,
@@ -81,6 +82,8 @@ def state_for_days(days_overdue: int, policy: dict[str, int]) -> str:
         return "CRITICAL"
     if days_overdue >= policy["warning_day"]:
         return "WARNING"
+    if days_overdue >= policy["reminder_day"]:
+        return "REMINDER"
     return "ACTIVE"
 
 
