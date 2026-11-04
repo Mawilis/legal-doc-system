@@ -456,3 +456,8 @@ These entries describe source declarations only. No Atlas index was created or i
 - PayShap secret: repository search found `WILSY_PAYSHAP_WEBHOOK_SECRET` only in the webhook router's environment lookup. No K8s Secret key mapping, external secret reference, rotation automation or independent workload credential source was found in the reviewed repository.
 - Registry index methods for PayShap/financial execution are invoked in integration-test fixtures. Repository search did not find an API startup or webhook request call to those methods. Their existence in test setup is not deployment provisioning evidence.
 - Subscription registry's `create` path invokes `_ensure_indexes` itself, so its four indexes are runtime DDL on the create path. Its tenant+subscription identity unique index is a useful source-level identity contract, but the dunning evaluator does not use that registry or a subscription revision CAS.
+
+
+### Billing / webhook repeatable certification
+
+Added `.github/workflows/eos-billing-webhook-certification.yml`. It provisions a disposable local MongoDB 7.0.37 replica set and runs existing billing registry, financial-truth firewall, subscription transaction-injection, execution reconciliation and PayShap host integration suites, plus focused billing/dunning unit suites. It uses the repository's fixed test URI contract on loopback port 27027 and a synthetic PayShap test secret from the test fixture. This does not connect to Atlas or require production credentials. The workflow is new and its first run must complete before certification is claimed.
