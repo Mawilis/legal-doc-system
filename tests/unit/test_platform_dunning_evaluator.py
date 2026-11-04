@@ -162,7 +162,7 @@ def test_settled_invoice_resolves_existing_projection():
         projection_collection=collection,
         now=NOW,
     )
-    assert first["transitions"][0]["state"] == "CRITICAL"
+    assert first["transitions"][0]["state"] == "SUSPENSION_REVIEW"
     settled = evaluate_platform_dunning(
         tenant_id="tenant-a",
         invoices=[invoice("inv-a", "sub-1", "2026-10-20T00:00:00+00:00", status="paid")],
