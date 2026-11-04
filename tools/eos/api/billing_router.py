@@ -1746,11 +1746,12 @@ async def get_dunning_state(
     access-control decision. Lifecycle enforcement must resolve SubscriptionRegistry.
     """
     tenant_id = authorization.tenant_id
+    from tools.eos.saas.billing.platform_dunning_registry import COLLECTION as DUNNING_PROJECTION_COLLECTION
     query: Dict[str, Any] = {"tenant_id": tenant_id}
     if subscription_id:
         query["subscription_id"] = subscription_id
     rows = list(
-        _require_db()["platform_subscription_dunning_projections"]
+        _require_db()[DUNNING_PROJECTION_COLLECTION]
         .find(query, {"_id": 0})
         .sort("updated_at", -1)
         .limit(100)
@@ -1776,6 +1777,7 @@ async def evaluate_tenant_dunning_lifecycle(
         PlatformDunningRegistry,
         PlatformDunningRegistryError,
         PlatformDunningRevisionConflict,
+        COLLECTION as DUNNING_PROJECTION_COLLECTION,
     )
     from tools.eos.saas.billing.platform_dunning_evaluator import (
         PlatformDunningEvaluationError,
@@ -1794,7 +1796,7 @@ async def evaluate_tenant_dunning_lifecycle(
                 {"subscriptionId": body.subscription_id},
             ]
         }]
-    projection_collection = coll_db["platform_subscription_dunning_projections"]
+    projection_collection = coll_db[DUNNING_PROJECTION_COLLECTION]
     audit_collection = coll_db["billing_audit_events"]
     PlatformDunningRegistry.ensure_indexes(projection_collection)
     audit_collection.create_index(
