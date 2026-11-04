@@ -400,3 +400,51 @@ The manifest now contains the source-declared C1C orchestration identity index. 
 ### C1E collection-map correction certification
 
 Commit `3e48152` changes advisory source reads to canonical L7A/L7C registry constants; `717a112` adds the exact collection-map unit assertion. A dedicated workflow, `.github/workflows/eos-ai-advisory-certification.yml`, now runs the C1E/C1D/C1C focused unit suites and existing real-replica-set advisory/gateway integration suites against a disposable local MongoDB replica set. It is currently running on PR head `5c3eaf2`; no certification claim is made until its job completes.
+
+
+## 20. Billing and PayShap webhook execution / credential closure
+
+### Billing HTTP surface
+
+The mounted `tools/eos/api/billing_router.py` exposes platform/client invoice create/read/update/void operations, payment read/create/status/refund compatibility routes, invoice email and partial-payment compatibility routes, audit/integrity, investor proof, statement, plans, intelligence and dunning routes. Its direct collection references include:
+
+- Commercial invoice/payment: `platform_invoices`, `client_invoices`, `payments`.
+- Subscription and dunning: `subscriptions`, `billing_dunning_policies`, `billing_dunning_states`.
+- Audit/financial evidence: `billing_audit_events`, `billing_statements`, `billing_integrity_controls`, `billing_investor_proofs`.
+- Intelligence/receivables: `billing_intelligence_evidence`, `commercial_receivables`, `commercial_receivable_aging`, `commercial_receivable_dunning`.
+
+The route code uses `find`, `find_one`, `distinct`, `insert_one`, `update_one` and `update_many`. The registry-owned invoice indexes are now in the manifest, but direct billing-router collections and commercial receivable projection families still require their canonical index owner and exact options. The existing billing registry's `_ensure_indexes()` creates indexes for platform invoices, client invoices and payments, but source search found no caller; two legacy idempotency index calls are wrapped in broad exception suppression. No deployment-time provisioning proof follows from the function's presence.
+
+The billing registry is a commercial invoice and historical payment projection owner only. HTTP settlement mutations are guarded by the Kennel financial-truth boundary; a caller cannot establish payment success, refund, paid state or settlement by posting a billing DTO.
+
+### Dunning runtime remains unsafe for extraction
+
+The current API-hosted daily task in `tools/eos/api/server.py` invokes `evaluate_all_tenant_dunning_lifecycles()` from the API lifecycle. It uses the API's shared kernel database/client; no dedicated dunning worker process or independent Mongo identity was found. The scheduler's exact trigger/enable configuration remains in the API composition root.
+
+The evaluator reads platform invoices, tenant policy and current dunning state, then performs separate writes to `billing_dunning_states`, `subscriptions`, and `billing_audit_events`, followed by telemetry. It does not pass one caller-owned Mongo session through the sequence. Its subscription projection uses `update_many`, and the state write is an upsert, so the current path is not transactionally atomic or protected by a canonical state-revision CAS.
+
+Policy normalization accepts `collections_day`, but `_dunning_state_for_days` does not use it. The current state ladder is ACTIVE, WARNING, CRITICAL, SUSPENDED_READONLY and TERMINATED; the collections threshold has no defined state/action. This remains a policy/legal product decision and must not be guessed in code. No dunning worker extraction, transactional write or policy reinterpretation was made.
+
+### PayShap webhook host ingress
+
+The mounted `POST /providers/payshap/webhook` route:
+- Resolves the already-connected shared kernel Mongo client/database at request execution time.
+- Resolves `WILSY_PAYSHAP_WEBHOOK_SECRET` from process environment; no secret value was read or recorded. Its deployment secret reference and rotation owner are unverified.
+- Starts one Mongo session and transaction around authenticated PayShap evidence, provider observation, attempt/command correlation, neutral execution fact and applicable AP/platform execution-truth reconciliation.
+- Uses the API process database credential; no separate webhook workload identity, queue consumer or dedicated worker was found.
+
+The persistence dependency set is source-verified: `kennel_payshap_provider_evidence`, `kennel_financial_execution_attempts`, `kennel_financial_execution_provider_observations`, `kennel_financial_execution_commands`, `kennel_financial_execution_facts`, `kennel_financial_execution_truth`, and `kennel_platform_billing_financial_execution_truth`. Their registry index declarations have been added to the manifest. The webhook route itself does not call those registries' `ensure_indexes`; no canonical deployment-time provisioner invocation was established by this pass.
+
+PayShap EXECUTED is authenticated provider evidence, not by itself settlement. The router delegates to Kennel reconciliation and never directly writes the commercial invoice paid state.
+
+### Index inventory tranche
+
+Commit `e2f01f9` adds 10 source-verified collection entries and 38 index declarations:
+- platform/client invoices and payments (13);
+- PayShap provider evidence (2);
+- Kennel command and attempt (8);
+- provider observations (5);
+- AP execution truth and neutral execution facts (8);
+- platform billing execution truth (2).
+
+These entries describe source declarations only. No Atlas index was created or inspected. The manifest remains `INVENTORY_INCOMPLETE`; direct billing projections, webhook provisioning invocation, billing index exception suppression, and deployed API/webhook credential source remain open evidence items.
