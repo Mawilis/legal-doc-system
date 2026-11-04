@@ -1,8 +1,11 @@
 from __future__ import annotations
 
+import json
+import tempfile
 import unittest
+from pathlib import Path
 
-from tools.eos.mongodb.read_only_index_verifier import _fingerprint, verify
+from tools.eos.mongodb.read_only_index_verifier import _fingerprint, _manifest_entries, verify
 
 
 class _Collection:
@@ -73,6 +76,23 @@ class ReadOnlyIndexVerifierTests(unittest.TestCase):
         ])}))
         result = verify(client, self.entries, "eos_nonproduction")
         self.assertIn("UNDECLARED_EXTRA", {item["status"] for item in result["findings"]})
+
+
+    def test_business_database_pass_skips_separate_audit_database(self):
+        manifest = {
+            "status": "COMPLETE",
+            "production_mutation_authorized": False,
+            "entries": [
+                {"database": "canonical_eos_business_database", "collection": "records", "indexes": []},
+                {"database": "platform_authorization_audit_database", "collection": "audit", "indexes": []},
+            ],
+        }
+        with tempfile.TemporaryDirectory() as directory:
+            path = Path(directory) / "manifest.json"
+            path.write_text(json.dumps(manifest), encoding="utf-8")
+            entries = _manifest_entries(path, "eos_nonproduction")
+        self.assertEqual([entry["collection"] for entry in entries], ["records"])
+        self.assertEqual(entries[0]["database"], "eos_nonproduction")
 
     def test_fingerprint_is_stable_and_database_scoped(self):
         hello = {"setName": "rs0", "hosts": ["b.example:27017", "a.example:27017"], "setVersion": 3}
