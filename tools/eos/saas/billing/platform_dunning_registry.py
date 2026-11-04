@@ -17,7 +17,7 @@ from pymongo.errors import DuplicateKeyError, PyMongoError
 
 
 _SCHEMA = "WILSY-PLATFORM-DUNNING-PROJECTION/V1"
-_STATES = frozenset({"ACTIVE", "REMINDER", "WARNING", "CRITICAL", "SUSPENSION_REVIEW", "COLLECTIONS_REVIEW", "TERMINATION_REVIEW"})
+_STATES = frozenset({"ACTIVE", "REMINDER", "WARNING", "CRITICAL", "SUSPENSION_REVIEW", "COLLECTIONS_REVIEW", "TERMINATION_REVIEW", "RESOLVED"})
 _REQUIRED = frozenset({
     "schema", "tenant_id", "subscription_id", "state", "revision",
     "invoice_ids", "days_overdue", "policy_fingerprint",
