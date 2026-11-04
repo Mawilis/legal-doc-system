@@ -13,6 +13,7 @@ from pymongo import MongoClient
 from pymongo.read_concern import ReadConcern
 from pymongo.write_concern import WriteConcern
 
+from tools.eos.saas.billing.platform_dunning_evaluator import evaluate_platform_dunning
 from tools.eos.saas.billing.platform_dunning_registry import (
     PlatformDunningRegistry,
     PlatformDunningRevisionConflict,
@@ -206,3 +207,65 @@ def test_real_mongo_concurrent_writers_have_one_revision_winner(
     assert sorted(outcomes) == ["conflict", "won:2"]
     persisted = PlatformDunningRegistry.get(TENANT, SUBSCRIPTION, collection)
     assert persisted is not None and persisted["revision"] == 2
+
+
+def test_real_mongo_projection_and_audit_share_caller_transaction(
+    mongo_context: tuple[MongoClient[Any], Any],
+) -> None:
+    client, database = mongo_context
+    projections = database.get_collection(
+        "platform_dunning_states",
+        write_concern=WriteConcern(w="majority", j=True),
+        read_concern=ReadConcern("majority"),
+    )
+    audit = database.get_collection(
+        "billing_audit_events",
+        write_concern=WriteConcern(w="majority", j=True),
+        read_concern=ReadConcern("majority"),
+    )
+    PlatformDunningRegistry.ensure_indexes(projections)
+    audit.create_index(
+        [("tenant_id", 1), ("event_type", 1), ("subscription_id", 1), ("revision", 1)],
+        unique=True,
+        partialFilterExpression={"event_type": "DUNNING_PROJECTION_TRANSITION"},
+        name="dunning_projection_transition_audit_unique",
+    )
+    policy = {
+        "reminder_day": 3,
+        "warning_day": 7,
+        "critical_day": 10,
+        "suspension_day": 14,
+        "collections_day": 21,
+        "termination_day": 30,
+    }
+    invoices = [{
+        "tenant_id": TENANT,
+        "subscription_id": SUBSCRIPTION,
+        "invoice_id": "invoice-atomic",
+        "due_at": "2026-10-20T00:00:00+00:00",
+        "status": "open",
+    }]
+
+    with pytest.raises(RuntimeError, match="synthetic atomic abort"):
+        with client.start_session() as session:
+            with session.start_transaction():
+                result = evaluate_platform_dunning(
+                    tenant_id=TENANT,
+                    invoices=invoices,
+                    policy=policy,
+                    projection_collection=projections,
+                    now=NOW,
+                    session=session,
+                )
+                transition = result["transitions"][0]
+                audit.insert_one({
+                    "tenant_id": TENANT,
+                    "event_type": "DUNNING_PROJECTION_TRANSITION",
+                    "subscription_id": SUBSCRIPTION,
+                    "revision": transition["revision"],
+                    "proof_hash": transition["transition_fingerprint"],
+                }, session=session)
+                raise RuntimeError("synthetic atomic abort")
+
+    assert projections.count_documents({"tenant_id": TENANT}) == 0
+    assert audit.count_documents({"tenant_id": TENANT}) == 0
