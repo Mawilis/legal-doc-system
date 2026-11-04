@@ -1767,75 +1767,89 @@ async def evaluate_tenant_dunning_lifecycle(
     tenant_id: str,
     body: DunningEvaluationRequest,
 ) -> Dict[str, Any]:
-    """Evaluates one tenant's platform receivables without crossing its billing boundary.
+    """Aggregate overdue platform invoices and persist only a guarded dunning projection.
 
-    @param tenant_id: Tenant that owns the Wilsy platform subscription.
-    @param body: Evaluation options supplied by the API command or daily scheduler.
-    @returns: Immutable transition candidates and the policy used to derive them.
-    @collaboration: Shared by the authenticated command route and Kennel-native daily scheduler.
+    Subscription lifecycle truth remains exclusively owned by SubscriptionRegistry.
+    This evaluator never writes subscription status, suspension, entitlement, or access.
     """
+    from tools.eos.saas.billing.platform_dunning_registry import (
+        PlatformDunningRegistry,
+        PlatformDunningRegistryError,
+        PlatformDunningRevisionConflict,
+    )
+    from tools.eos.saas.billing.platform_dunning_evaluator import (
+        PlatformDunningEvaluationError,
+        evaluate_platform_dunning,
+    )
+
     coll_db = _require_db()
-    policy_doc = coll_db["billing_dunning_policies"].find_one({"tenant_id": tenant_id}, {"_id": 0}) or {}
+    policy_doc = coll_db["billing_dunning_policies"].find_one(
+        {"tenant_id": tenant_id}, {"_id": 0}
+    ) or {}
     policy = _normalize_dunning_policy(policy_doc.get("policy", DUNNING_DEFAULT_POLICY))
     now = datetime.now(timezone.utc)
     invoice_query: Dict[str, Any] = {
         "$or": [{"tenant_id": tenant_id}, {"tenantId": tenant_id}],
     }
     if body.subscription_id:
-        invoice_query["$and"] = [{"$or": [{"subscription_id": body.subscription_id}, {"subscriptionId": body.subscription_id}]}]
+        invoice_query["$and"] = [{
+            "$or": [
+                {"subscription_id": body.subscription_id},
+                {"subscriptionId": body.subscription_id},
+            ]
+        }]
     invoices = list(coll_db["platform_invoices"].find(invoice_query, {"_id": 0}))
-    transitions: List[Dict[str, Any]] = []
-
-    for invoice in invoices:
-        invoice_status = str(invoice.get("status") or "").strip().lower()
-        if invoice_status in {"paid", "void", "cancelled", "canceled"}:
-            continue
-        due_at = _as_utc(invoice.get("due_at") or invoice.get("dueAt"))
-        subscription_id = str(invoice.get("subscription_id") or invoice.get("subscriptionId") or "").strip()
-        invoice_id = str(invoice.get("invoice_id") or invoice.get("invoiceId") or "").strip()
-        if not due_at or not subscription_id or not invoice_id or due_at > now:
-            continue
-        days_overdue = max(0, (now.date() - due_at.date()).days)
-        next_state = _dunning_state_for_days(days_overdue, policy)
-        state_filter = {"tenant_id": tenant_id, "subscription_id": subscription_id}
-        existing = coll_db["billing_dunning_states"].find_one(state_filter, {"_id": 0}) or {}
-        current_state = str(existing.get("state") or "ACTIVE").upper()
-        if DUNNING_STATE_ORDER.get(next_state, 0) <= DUNNING_STATE_ORDER.get(current_state, 0):
-            continue
-        transition = {
-            "tenant_id": tenant_id,
-            "subscription_id": subscription_id,
-            "invoice_id": invoice_id,
-            "from_state": current_state,
-            "state": next_state,
-            "days_overdue": days_overdue,
-            "policy": policy,
-            "evaluated_at": now.isoformat(),
-        }
-        transition["proof_hash"] = _sha3_512(transition)
-        transitions.append(transition)
-        if body.dry_run:
-            continue
-        coll_db["billing_dunning_states"].update_one(
-            state_filter,
-            {"$set": {**transition, "updated_at": now}, "$setOnInsert": {"created_at": now}},
-            upsert=True,
+    projection_collection = coll_db["billing_dunning_states"]
+    PlatformDunningRegistry.ensure_indexes(projection_collection)
+    try:
+        result = evaluate_platform_dunning(
+            tenant_id=tenant_id,
+            invoices=invoices,
+            policy=policy,
+            projection_collection=projection_collection,
+            now=now,
+            dry_run=body.dry_run,
+            subscription_id=body.subscription_id,
         )
-        coll_db["subscriptions"].update_many(
-            {"tenant_id": tenant_id, "$or": [{"subscription_id": subscription_id}, {"subscriptionId": subscription_id}]},
-            {"$set": {"suspension_state": next_state, "dunning_state": next_state, "dunning_updated_at": now}},
+    except PlatformDunningRevisionConflict:
+        raise HTTPException(
+            status_code=409,
+            detail="DUNNING_PROJECTION_REVISION_CONFLICT; retry from current projection",
         )
-        coll_db["billing_audit_events"].insert_one({
-            "tenant_id": tenant_id,
-            "event_type": "DUNNING_STATE_TRANSITION",
-            "proof_hash": transition["proof_hash"],
-            "metadata": transition,
-            "created_at": now,
-        })
-        _telemetry(tenant_id, "BILLING", "DUNNING_STATE_TRANSITION", "billing_router", transition)
+    except (PlatformDunningRegistryError, PlatformDunningEvaluationError) as error:
+        raise HTTPException(status_code=503, detail=str(error)) from error
 
-    return {"success": True, "tenant_id": tenant_id, "dry_run": body.dry_run, "policy": policy, "transitions": transitions}
-
+    if not body.dry_run:
+        for transition in result["transitions"]:
+            audit = {
+                "tenant_id": tenant_id,
+                "event_type": "DUNNING_PROJECTION_TRANSITION",
+                "proof_hash": transition["transition_fingerprint"],
+                "metadata": transition,
+                "created_at": now,
+            }
+            coll_db["billing_audit_events"].update_one(
+                {
+                    "tenant_id": tenant_id,
+                    "event_type": "DUNNING_PROJECTION_TRANSITION",
+                    "subscription_id": transition["subscription_id"],
+                    "revision": transition["revision"],
+                },
+                {"$setOnInsert": audit},
+                upsert=True,
+            )
+            _telemetry(
+                tenant_id,
+                "BILLING",
+                "DUNNING_PROJECTION_TRANSITION",
+                "billing_router",
+                transition,
+            )
+    return {
+        **result,
+        "policy": policy,
+        "subscription_lifecycle_mutated": False,
+    }
 
 async def evaluate_all_tenant_dunning_lifecycles() -> Dict[str, Any]:
     """Runs one idempotent dunning pass for every tenant with a platform invoice.
