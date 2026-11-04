@@ -147,6 +147,10 @@ def evaluate_platform_dunning(
             tenant_id, current_subscription, projection_collection, session=session
         )
         current_state = existing["state"] if existing else "ACTIVE"
+        if existing is None and target_state == "ACTIVE":
+            # Below the first escalation threshold there is no dunning
+            # projection transition to persist.
+            continue
         if STATE_ORDER[target_state] < STATE_ORDER[current_state]:
             continue
         if target_state == current_state and existing is not None:
