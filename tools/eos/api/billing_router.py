@@ -126,6 +126,17 @@ _WILSY_AI_CAPACITY_READ_AUTHORIZATION = RequireTenantAuthorization(
     "wilsy_ai_usage_capacity_read",
 )
 
+_BILLING_DUNNING_PROJECTION_READ_AUTHORIZATION = RequireTenantAuthorization(
+    "billing_dunning:projection:read",
+    "billing_dunning_projection_read",
+)
+
+_BILLING_DUNNING_PROJECTION_EVALUATE_AUTHORIZATION = RequireTenantAuthorization(
+    "billing_dunning:projection:evaluate",
+    "billing_dunning_projection_evaluate",
+)
+
+
 _LEGACY_INTELLIGENCE_UNSUPPORTED: tuple[str, ...] = (
     "arr",
     "mrr",
@@ -1723,12 +1734,18 @@ async def update_dunning_policy(body: DunningPolicyUpdate, tenant_id: str = Depe
 
 
 @router.get("/dunning/state", response_model=Dict[str, Any])
-async def get_dunning_state(tenant_id: str = Depends(get_tenant_id), subscription_id: Optional[str] = None):
+async def get_dunning_state(
+    subscription_id: Optional[str] = None,
+    authorization: TenantAuthorizationContext = Depends(
+        _BILLING_DUNNING_PROJECTION_READ_AUTHORIZATION
+    ),
+):
     """Return collection projections separately from authoritative subscription lifecycle.
 
     A dunning projection is never an entitlement, suspension, termination, or
     access-control decision. Lifecycle enforcement must resolve SubscriptionRegistry.
     """
+    tenant_id = authorization.tenant_id
     query: Dict[str, Any] = {"tenant_id": tenant_id}
     if subscription_id:
         query["subscription_id"] = subscription_id
@@ -1899,14 +1916,19 @@ async def evaluate_all_tenant_dunning_lifecycles() -> Dict[str, Any]:
 
 
 @router.post("/dunning/evaluate", response_model=Dict[str, Any])
-async def evaluate_dunning_lifecycle(body: DunningEvaluationRequest, tenant_id: str = Depends(get_tenant_id)):
+async def evaluate_dunning_lifecycle(
+    body: DunningEvaluationRequest,
+    authorization: TenantAuthorizationContext = Depends(
+        _BILLING_DUNNING_PROJECTION_EVALUATE_AUTHORIZATION
+    ),
+):
     """Evaluates overdue platform invoices and persists collection workflow projections only.
 
     Repeated calls are idempotent while source evidence is unchanged. Projection
     stages do not suspend, terminate, or grant/revoke subscription access.
     Subscription lifecycle remains exclusively owned by SubscriptionRegistry.
     """
-    return await evaluate_tenant_dunning_lifecycle(tenant_id, body)
+    return await evaluate_tenant_dunning_lifecycle(authorization.tenant_id, body)
 
 
 @router.post("/merkle/verify", response_model=Dict[str, Any])
