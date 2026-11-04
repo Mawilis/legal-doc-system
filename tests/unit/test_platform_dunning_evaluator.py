@@ -112,7 +112,7 @@ def test_below_warning_threshold_does_not_create_noop_active_projection():
     collection = ProjectionCollection()
     result = evaluate_platform_dunning(
         tenant_id="tenant-a",
-        invoices=[invoice("inv-a", "sub-1", "2026-11-01T00:00:00+00:00")],
+        invoices=[invoice("inv-a", "sub-1", "2026-11-03T00:00:00+00:00")],
         policy=POLICY,
         projection_collection=collection,
         now=NOW,
