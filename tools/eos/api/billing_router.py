@@ -1755,13 +1755,27 @@ async def update_dunning_policy(body: DunningPolicyUpdate, tenant_id: str = Depe
 
 @router.get("/dunning/state", response_model=Dict[str, Any])
 async def get_dunning_state(tenant_id: str = Depends(get_tenant_id), subscription_id: Optional[str] = None):
-    """Returns tenant-scoped collection workflow projections; this is not access-control authority."""
+    """Return collection projections separately from authoritative subscription lifecycle.
+
+    A dunning projection is never an entitlement, suspension, termination, or
+    access-control decision. Lifecycle enforcement must resolve SubscriptionRegistry.
+    """
     query: Dict[str, Any] = {"tenant_id": tenant_id}
     if subscription_id:
         query["subscription_id"] = subscription_id
-    rows = list(_require_db()["platform_subscription_dunning_projections"].find(query, {"_id": 0}).sort("updated_at", -1).limit(100))
-    return {"success": True, "tenant_id": tenant_id, "states": rows}
-
+    rows = list(
+        _require_db()["platform_subscription_dunning_projections"]
+        .find(query, {"_id": 0})
+        .sort("updated_at", -1)
+        .limit(100)
+    )
+    return {
+        "success": True,
+        "tenant_id": tenant_id,
+        "states": [],
+        "dunning_projections": rows,
+        "access_posture_source": "SUBSCRIPTION_REGISTRY_REQUIRED",
+    }
 
 async def evaluate_tenant_dunning_lifecycle(
     tenant_id: str,
