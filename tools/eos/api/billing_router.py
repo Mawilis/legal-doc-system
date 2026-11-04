@@ -1755,11 +1755,11 @@ async def update_dunning_policy(body: DunningPolicyUpdate, tenant_id: str = Depe
 
 @router.get("/dunning/state", response_model=Dict[str, Any])
 async def get_dunning_state(tenant_id: str = Depends(get_tenant_id), subscription_id: Optional[str] = None):
-    """Returns persisted service-access posture; tenant UI uses this to enforce read-only mode truthfully."""
+    """Returns tenant-scoped collection workflow projections; this is not access-control authority."""
     query: Dict[str, Any] = {"tenant_id": tenant_id}
     if subscription_id:
         query["subscription_id"] = subscription_id
-    rows = list(_require_db()["billing_dunning_states"].find(query, {"_id": 0}).sort("updated_at", -1).limit(100))
+    rows = list(_require_db()["platform_subscription_dunning_projections"].find(query, {"_id": 0}).sort("updated_at", -1).limit(100))
     return {"success": True, "tenant_id": tenant_id, "states": rows}
 
 
@@ -1799,7 +1799,7 @@ async def evaluate_tenant_dunning_lifecycle(
             ]
         }]
     invoices = list(coll_db["platform_invoices"].find(invoice_query, {"_id": 0}))
-    projection_collection = coll_db["billing_dunning_states"]
+    projection_collection = coll_db["platform_subscription_dunning_projections"]
     PlatformDunningRegistry.ensure_indexes(projection_collection)
     try:
         result = evaluate_platform_dunning(
