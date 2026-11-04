@@ -362,3 +362,36 @@ The transaction redesign remains a reviewed contract, not an activated code path
 - The exact unique/idempotency indexes and canonical subscription identity needed for a transaction-safe state + subscription + audit transition are not yet source-certified.
 
 No worker was extracted and no dunning writes were changed. The next implementation must introduce the idempotency/fencing evidence and CAS semantics together with its exact index manifest entries and disposable replica-set integration tests, then replace the API evaluator in one reviewed change. The current evaluator remains the known non-atomic implementation; it must not be represented as certified.
+
+
+## 19. C1C orchestration, AI reasoning, legal services and advisory closure
+
+Additional mounted AI route families were followed:
+
+| Route family | Persistence dependencies | Operations / notes |
+|---|---|---|
+| `/api/wilsy-ai/legal-services` | `wilsy_ai_entitlements`, `wilsy_ai_usage_observations`, C1C orchestration composition and invocation evidence | Tool orchestrator invokes only server-registered tools; API composition persists bounded C1C orchestration and invocation facts. Provider execution is separate from legal source reads and has no legal lifecycle/payment authority. |
+| `/api/wilsy-ai/reasoning` | `wilsy_ai_entitlements`, `wilsy_ai_usage_admissions`, `wilsy_ai_model_invocations`, `wilsy_ai_usage_observations` | One request transaction; current entitlement/capacity admission, admission evidence, model invocation evidence and usage observation. Model/provider configuration is external runtime dependency, not a MongoDB collection. |
+| `/api/wilsy-ai/legal-next-actions` | `wilsy_ai_tool_orchestrations`, `wilsy_ai_legal_tool_invocations`, `wilsy_ai_next_best_action_advisories`, plus legal L7A/L7C read sources, IAM, entitlement and usage capacity | Service reads completed C1C TOOL_ASSISTED root and invocation, reauthorizes the underlying legal permission, re-reads the legal source snapshot, then appends an immutable advisory. Advisory GET derives current/stale status from successor evidence. |
+| C1C orchestration registry | `wilsy_ai_tool_orchestrations` | `find_one`, `insert_one`, `replace_one`; unique tenant/orchestration identity and revision CAS. Its index provisioning is explicitly called from API startup through `ensure_c1c_indexes`, so API runtime currently performs this DDL. |
+| C1D advisory registry | `wilsy_ai_next_best_action_advisories` | `find_one`, `insert_one`, bounded `find`; immutable append-only records and derived successor status. Four exact indexes include partial unique successor constraint. The inspected server startup does not call its `ensure_indexes`; actual index installation entrypoint remains unproven. |
+
+### Advisory collection drift found and corrected
+
+The C1E advisory service had five hardcoded collection names. Three did not match the canonical L7A/L7C providers:
+- lifecycle: old `legal_operations_lifecycle_facts` vs canonical `legal_operations_lifecycle_evidence`;
+- billing eligibility: plural `process_service_billing_eligibilities` vs canonical singular `process_service_billing_eligibility`;
+- invoice issuance: `process_service_client_invoice_issuances` vs canonical L7C `issuance`.
+
+This could have made the advisory path read a different or empty data family than the authenticated gateway, despite using the same adapter contract. Commit `3e48152` changes the service to import and use the canonical lifecycle, tariff, eligibility, invoice and issuance constants. Commit `717a112` adds a unit assertion for the exact collection map. This is a source correction; runtime deployment and Mongo data parity remain unproven.
+
+### Additional C1C/C1D/C1B index manifest entries
+
+The manifest now contains the source-declared C1C orchestration identity index. Existing C1D advisory, C1A model invocation and C1B usage-admission index entries were confirmed against their respective registry declarations. The C1B admission set includes the unique tenant/admission identity, unique tenant/idempotency identity and non-unique tenant/entitlement/window/state lookup. No indexes were created.
+
+### Remaining AI gaps
+
+- C1C startup index DDL must move to the separate provisioner and be replaced by read-only readiness verification.
+- C1D advisory index installation caller must be identified; do not infer that a registry method is deployed.
+- AI Legal Services and Reasoning provider credential/configuration sources, usage observation/outbox behavior and any background retry/cleanup invocation require their own runtime/worker inventory.
+- The advisory legal-source collection mismatch is corrected in code but requires the existing unit and real-Mongo advisory suites to certify before the fix is considered complete.
