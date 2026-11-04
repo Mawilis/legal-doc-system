@@ -1900,10 +1900,11 @@ async def evaluate_all_tenant_dunning_lifecycles() -> Dict[str, Any]:
 
 @router.post("/dunning/evaluate", response_model=Dict[str, Any])
 async def evaluate_dunning_lifecycle(body: DunningEvaluationRequest, tenant_id: str = Depends(get_tenant_id)):
-    """Evaluates overdue platform-subscription invoices and persists only forward lifecycle transitions.
+    """Evaluates overdue platform invoices and persists collection workflow projections only.
 
-    This endpoint is safe for a scheduled worker: repeated calls are idempotent while the invoice remains unpaid.
-    It never evaluates tenant-to-client receivables as a reason to suspend the tenant's Wilsy service.
+    Repeated calls are idempotent while source evidence is unchanged. Projection
+    stages do not suspend, terminate, or grant/revoke subscription access.
+    Subscription lifecycle remains exclusively owned by SubscriptionRegistry.
     """
     return await evaluate_tenant_dunning_lifecycle(tenant_id, body)
 
