@@ -98,8 +98,12 @@ class PlatformDunningRegistry:
         for field in ("policy_fingerprint", "evidence_fingerprint", "transition_fingerprint"):
             cls._fingerprint(value[field], field)
         for field in ("evaluated_at", "created_at", "updated_at"):
-            if not isinstance(value[field], datetime) or value[field].tzinfo is None:
+            if not isinstance(value[field], datetime):
                 raise PlatformDunningRegistryError(f"PLATFORM_DUNNING_{field.upper()}_INVALID")
+            if value[field].tzinfo is None:
+                value[field] = value[field].replace(tzinfo=timezone.utc)
+            else:
+                value[field] = value[field].astimezone(timezone.utc)
         expected_evidence = cls._digest({
             "tenant_id": value["tenant_id"],
             "subscription_id": value["subscription_id"],
