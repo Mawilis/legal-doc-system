@@ -190,7 +190,7 @@ def test_partial_settlement_can_reduce_stage_for_remaining_invoice_evidence():
         tenant_id="tenant-a",
         invoices=[
             invoice("inv-old", "sub-1", "2026-10-01T00:00:00+00:00", status="paid"),
-            invoice("inv-new", "sub-1", "2026-10-28T00:00:00+00:00"),
+            invoice("inv-new", "sub-1", "2026-10-30T00:00:00+00:00"),
         ],
         policy=POLICY,
         projection_collection=collection,
