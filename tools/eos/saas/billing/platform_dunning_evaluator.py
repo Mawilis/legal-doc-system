@@ -130,6 +130,7 @@ def evaluate_platform_dunning(
     now: datetime,
     dry_run: bool = False,
     subscription_id: str | None = None,
+    session: Any = None,
 ) -> dict[str, Any]:
     """Aggregate once per subscription and CAS-write projection; never touch lifecycle."""
     if not isinstance(tenant_id, str) or not tenant_id.strip() or tenant_id != tenant_id.strip():
@@ -143,7 +144,7 @@ def evaluate_platform_dunning(
     for current_subscription, evidence in groups.items():
         target_state = state_for_days(evidence["days_overdue"], normalized)
         existing = PlatformDunningRegistry.get(
-            tenant_id, current_subscription, projection_collection
+            tenant_id, current_subscription, projection_collection, session=session
         )
         current_state = existing["state"] if existing else "ACTIVE"
         if STATE_ORDER[target_state] < STATE_ORDER[current_state]:
@@ -177,6 +178,7 @@ def evaluate_platform_dunning(
                 expected_revision=candidate["expected_revision"],
                 collection=projection_collection,
                 evaluated_at=now,
+                session=session,
             )
             candidate["revision"] = persisted["revision"]
             candidate["transition_fingerprint"] = persisted["transition_fingerprint"]
