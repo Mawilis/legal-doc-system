@@ -209,65 +209,66 @@ def evaluate_platform_dunning(
     # Resolution requires every invoice in the prior projection to be present
     # in this tenant's source snapshot and terminal (settled/void/cancelled).
     source_by_id = {
-            str(item.get("invoice_id") or item.get("invoiceId") or ""): item
-            for item in invoices
-            if isinstance(item, dict)
-            and (item.get("tenant_id") or item.get("tenantId")) == tenant_id
-        }
-        for existing in projection_collection.find({"tenant_id": tenant_id}, session=session):
-            current_subscription = existing.get("subscription_id")
-            if subscription_id and current_subscription != subscription_id:
-                continue
-            if current_subscription in groups or current_subscription in {
-                item["subscription_id"] for item in transitions
-            }:
-                continue
-            hydrated = PlatformDunningRegistry.get(
-                tenant_id, current_subscription, projection_collection, session=session
+        str(item.get("invoice_id") or item.get("invoiceId") or ""): item
+        for item in invoices
+        if isinstance(item, dict)
+        and (item.get("tenant_id") or item.get("tenantId")) == tenant_id
+    }
+    for existing in projection_collection.find({"tenant_id": tenant_id}, session=session):
+        current_subscription = existing.get("subscription_id")
+        if subscription_id and current_subscription != subscription_id:
+            continue
+        if current_subscription in groups or current_subscription in {
+            item["subscription_id"] for item in transitions
+        }:
+            continue
+        hydrated = PlatformDunningRegistry.get(
+            tenant_id, current_subscription, projection_collection, session=session
+        )
+        if hydrated is None or hydrated["state"] == "RESOLVED":
+            continue
+        prior_ids = hydrated["invoice_ids"]
+        source_rows = [source_by_id.get(invoice_id) for invoice_id in prior_ids]
+        if not source_rows or any(row is None for row in source_rows):
+            continue
+        terminal = {"paid", "void", "voided", "cancelled", "canceled", "refunded"}
+        if not all(str(row.get("status") or "").strip().lower() in terminal for row in source_rows):
+            continue
+        if not dry_run:
+            persisted = PlatformDunningRegistry.transition(
+                tenant_id=tenant_id,
+                subscription_id=current_subscription,
+                state="RESOLVED",
+                invoice_ids=prior_ids,
+                days_overdue=0,
+                policy_fingerprint=policy_fp,
+                expected_revision=hydrated["revision"],
+                collection=projection_collection,
+                evaluated_at=now,
+                session=session,
             )
-            if hydrated is None or hydrated["state"] == "RESOLVED":
-                continue
-            prior_ids = hydrated["invoice_ids"]
-            source_rows = [source_by_id.get(invoice_id) for invoice_id in prior_ids]
-            if not source_rows or any(row is None for row in source_rows):
-                continue
-            terminal = {"paid", "void", "voided", "cancelled", "canceled", "refunded"}
-            if not all(str(row.get("status") or "").strip().lower() in terminal for row in source_rows):
-                continue
-            if not dry_run:
-                persisted = PlatformDunningRegistry.transition(
-                    tenant_id=tenant_id,
-                    subscription_id=current_subscription,
-                    state="RESOLVED",
-                    invoice_ids=prior_ids,
-                    days_overdue=0,
-                    policy_fingerprint=policy_fp,
-                    expected_revision=hydrated["revision"],
-                    collection=projection_collection,
-                    evaluated_at=now,
-                    session=session,
-                )
-                transitions.append({
-                    "tenant_id": tenant_id,
-                    "subscription_id": current_subscription,
-                    "from_state": hydrated["state"],
-                    "state": "RESOLVED",
-                    "invoice_ids": prior_ids,
-                    "days_overdue": 0,
-                    "revision": persisted["revision"],
-                    "transition_fingerprint": persisted["transition_fingerprint"],
-                    "resolution_reason": "ALL_PROJECTED_INVOICES_TERMINAL",
-                })
-            else:
-                transitions.append({
-                    "tenant_id": tenant_id,
-                    "subscription_id": current_subscription,
-                    "from_state": hydrated["state"],
-                    "state": "RESOLVED",
-                    "invoice_ids": prior_ids,
-                    "days_overdue": 0,
-                    "resolution_reason": "ALL_PROJECTED_INVOICES_TERMINAL",
-                })
+            transitions.append({
+                "tenant_id": tenant_id,
+                "subscription_id": current_subscription,
+                "from_state": hydrated["state"],
+                "state": "RESOLVED",
+                "invoice_ids": prior_ids,
+                "days_overdue": 0,
+                "revision": persisted["revision"],
+                "transition_fingerprint": persisted["transition_fingerprint"],
+                "resolution_reason": "ALL_PROJECTED_INVOICES_TERMINAL",
+            })
+        else:
+            transitions.append({
+                "tenant_id": tenant_id,
+                "subscription_id": current_subscription,
+                "from_state": hydrated["state"],
+                "state": "RESOLVED",
+                "invoice_ids": prior_ids,
+                "days_overdue": 0,
+                "resolution_reason": "ALL_PROJECTED_INVOICES_TERMINAL",
+            })
+
     return {
         "success": True,
         "tenant_id": tenant_id,
