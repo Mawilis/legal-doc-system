@@ -6663,6 +6663,1078 @@
         }
       ],
       "provisioning_owner": "separate_eos_index_provisioner"
+    },
+    {
+      "id": "legal-client-matter-engagement-firm-decisions",
+      "database": "canonical_eos_business_database",
+      "collection": "legal_client_matter_engagement_firm_decisions",
+      "source": "tools/eos/legal_operations/registry/legal_client_matter_engagement_firm_decision_registry.py",
+      "indexes": [
+        {
+          "name": "legal_client_matter_engagement_firm_decision_tenant_id_unique",
+          "keys": [
+            [
+              "tenant_id",
+              1
+            ],
+            [
+              "decision_id",
+              1
+            ]
+          ],
+          "unique": true
+        },
+        {
+          "name": "legal_client_matter_engagement_firm_decision_tenant_fingerprint_unique",
+          "keys": [
+            [
+              "tenant_id",
+              1
+            ],
+            [
+              "fingerprint",
+              1
+            ]
+          ],
+          "unique": true
+        },
+        {
+          "name": "legal_client_matter_engagement_firm_decision_tenant_idempotency_unique",
+          "keys": [
+            [
+              "tenant_id",
+              1
+            ],
+            [
+              "idempotency_key",
+              1
+            ]
+          ],
+          "unique": true
+        },
+        {
+          "name": "legal_client_matter_engagement_firm_decision_context_history",
+          "keys": [
+            [
+              "tenant_id",
+              1
+            ],
+            [
+              "case_matter_id",
+              1
+            ],
+            [
+              "matter_fingerprint",
+              1
+            ],
+            [
+              "client_party_id",
+              1
+            ],
+            [
+              "subject_identity_fingerprint",
+              1
+            ],
+            [
+              "effective_from",
+              1
+            ],
+            [
+              "occurred_at",
+              1
+            ],
+            [
+              "fingerprint",
+              1
+            ],
+            [
+              "decision_id",
+              1
+            ]
+          ],
+          "unique": false
+        }
+      ],
+      "provisioning_owner": "separate_eos_index_provisioner"
+    },
+    {
+      "id": "legal-client-matter-engagements",
+      "database": "canonical_eos_business_database",
+      "collection": "legal_client_matter_engagements",
+      "source": "tools/eos/legal_operations/registry/legal_client_matter_engagement_registry.py",
+      "indexes": [
+        {
+          "name": "legal_client_matter_engagement_tenant_id_unique",
+          "keys": [
+            [
+              "tenant_id",
+              1
+            ],
+            [
+              "engagement_id",
+              1
+            ]
+          ],
+          "unique": true
+        },
+        {
+          "name": "legal_client_matter_engagement_tenant_fingerprint_unique",
+          "keys": [
+            [
+              "tenant_id",
+              1
+            ],
+            [
+              "fingerprint",
+              1
+            ]
+          ],
+          "unique": true
+        },
+        {
+          "name": "legal_client_matter_engagement_tenant_idempotency_unique",
+          "keys": [
+            [
+              "tenant_id",
+              1
+            ],
+            [
+              "idempotency_key",
+              1
+            ]
+          ],
+          "unique": true
+        },
+        {
+          "name": "legal_client_matter_engagement_context_history",
+          "keys": [
+            [
+              "tenant_id",
+              1
+            ],
+            [
+              "case_matter_id",
+              1
+            ],
+            [
+              "matter_fingerprint",
+              1
+            ],
+            [
+              "client_party_id",
+              1
+            ],
+            [
+              "subject_identity_fingerprint",
+              1
+            ],
+            [
+              "effective_from",
+              1
+            ],
+            [
+              "fingerprint",
+              1
+            ],
+            [
+              "engagement_id",
+              1
+            ]
+          ],
+          "unique": false
+        }
+      ],
+      "provisioning_owner": "separate_eos_index_provisioner"
+    },
+    {
+      "id": "legal-client-matter-final-representations",
+      "database": "canonical_eos_business_database",
+      "collection": "legal_client_matter_final_representations",
+      "source": "tools/eos/legal_operations/registry/legal_client_matter_final_representation_registry.py",
+      "indexes": [
+        {
+          "name": "legal_client_matter_final_representation_tenant_id_unique",
+          "keys": [
+            [
+              "tenant_id",
+              1
+            ],
+            [
+              "representation_id",
+              1
+            ]
+          ],
+          "unique": true
+        },
+        {
+          "name": "legal_client_matter_final_representation_tenant_fingerprint_unique",
+          "keys": [
+            [
+              "tenant_id",
+              1
+            ],
+            [
+              "fingerprint",
+              1
+            ]
+          ],
+          "unique": true
+        },
+        {
+          "name": "legal_client_matter_final_representation_tenant_idempotency_unique",
+          "keys": [
+            [
+              "tenant_id",
+              1
+            ],
+            [
+              "idempotency_key",
+              1
+            ]
+          ],
+          "unique": true
+        },
+        {
+          "name": "legal_client_matter_final_representation_matter_client_representative_history",
+          "keys": [
+            [
+              "tenant_id",
+              1
+            ],
+            [
+              "case_matter_id",
+              1
+            ],
+            [
+              "client_party_id",
+              1
+            ],
+            [
+              "representative_principal_id",
+              1
+            ],
+            [
+              "effective_from",
+              1
+            ]
+          ],
+          "unique": false
+        },
+        {
+          "name": "legal_client_matter_final_representation_matter_authority_history",
+          "keys": [
+            [
+              "tenant_id",
+              1
+            ],
+            [
+              "case_matter_id",
+              1
+            ],
+            [
+              "representation_authority_id",
+              1
+            ],
+            [
+              "representation_authority_fingerprint",
+              1
+            ]
+          ],
+          "unique": false
+        },
+        {
+          "name": "legal_client_matter_final_representation_matter_decision_history",
+          "keys": [
+            [
+              "tenant_id",
+              1
+            ],
+            [
+              "case_matter_id",
+              1
+            ],
+            [
+              "firm_representation_decision_id",
+              1
+            ],
+            [
+              "firm_representation_decision_fingerprint",
+              1
+            ]
+          ],
+          "unique": false
+        },
+        {
+          "name": "legal_client_matter_final_representation_matter_effective_history",
+          "keys": [
+            [
+              "tenant_id",
+              1
+            ],
+            [
+              "case_matter_id",
+              1
+            ],
+            [
+              "effective_from",
+              1
+            ]
+          ],
+          "unique": false
+        }
+      ],
+      "provisioning_owner": "separate_eos_index_provisioner"
+    },
+    {
+      "id": "legal-client-matter-mandate-acknowledgments",
+      "database": "canonical_eos_business_database",
+      "collection": "legal_client_matter_mandate_acknowledgments",
+      "source": "tools/eos/legal_operations/registry/legal_client_matter_mandate_acknowledgment_registry.py",
+      "indexes": [
+        {
+          "name": "legal_client_matter_mandate_acknowledgment_tenant_id_unique",
+          "keys": [
+            [
+              "tenant_id",
+              1
+            ],
+            [
+              "acknowledgment_id",
+              1
+            ]
+          ],
+          "unique": true
+        },
+        {
+          "name": "legal_client_matter_mandate_acknowledgment_tenant_fingerprint_unique",
+          "keys": [
+            [
+              "tenant_id",
+              1
+            ],
+            [
+              "fingerprint",
+              1
+            ]
+          ],
+          "unique": true
+        },
+        {
+          "name": "legal_client_matter_mandate_acknowledgment_tenant_idempotency_unique",
+          "keys": [
+            [
+              "tenant_id",
+              1
+            ],
+            [
+              "idempotency_key",
+              1
+            ]
+          ],
+          "unique": true
+        },
+        {
+          "name": "legal_client_matter_mandate_acknowledgment_grant_history",
+          "keys": [
+            [
+              "tenant_id",
+              1
+            ],
+            [
+              "client_grant_id",
+              1
+            ],
+            [
+              "client_grant_fingerprint",
+              1
+            ],
+            [
+              "effective_from",
+              1
+            ],
+            [
+              "occurred_at",
+              1
+            ],
+            [
+              "fingerprint",
+              1
+            ]
+          ],
+          "unique": false
+        },
+        {
+          "name": "legal_client_matter_mandate_acknowledgment_grant_decision",
+          "keys": [
+            [
+              "tenant_id",
+              1
+            ],
+            [
+              "client_grant_id",
+              1
+            ],
+            [
+              "client_grant_fingerprint",
+              1
+            ],
+            [
+              "effective_from",
+              -1
+            ],
+            [
+              "decision",
+              1
+            ]
+          ],
+          "unique": false
+        }
+      ],
+      "provisioning_owner": "separate_eos_index_provisioner"
+    },
+    {
+      "id": "legal-client-matter-mandate-grant-lifecycle",
+      "database": "canonical_eos_business_database",
+      "collection": "legal_client_matter_mandate_grant_lifecycle",
+      "source": "tools/eos/legal_operations/registry/legal_client_matter_mandate_grant_lifecycle_registry.py",
+      "indexes": [
+        {
+          "name": "legal_client_matter_grant_lifecycle_tenant_event_unique",
+          "keys": [
+            [
+              "tenant_id",
+              1
+            ],
+            [
+              "lifecycle_event_id",
+              1
+            ]
+          ],
+          "unique": true
+        },
+        {
+          "name": "legal_client_matter_grant_lifecycle_tenant_fingerprint_unique",
+          "keys": [
+            [
+              "tenant_id",
+              1
+            ],
+            [
+              "fingerprint",
+              1
+            ]
+          ],
+          "unique": true
+        },
+        {
+          "name": "legal_client_matter_grant_lifecycle_tenant_idempotency_unique",
+          "keys": [
+            [
+              "tenant_id",
+              1
+            ],
+            [
+              "idempotency_key",
+              1
+            ]
+          ],
+          "unique": true
+        },
+        {
+          "name": "legal_client_matter_grant_lifecycle_history",
+          "keys": [
+            [
+              "tenant_id",
+              1
+            ],
+            [
+              "client_grant_id",
+              1
+            ],
+            [
+              "client_grant_fingerprint",
+              1
+            ],
+            [
+              "effective_from",
+              1
+            ],
+            [
+              "occurred_at",
+              1
+            ],
+            [
+              "fingerprint",
+              1
+            ]
+          ],
+          "unique": false
+        },
+        {
+          "name": "legal_client_matter_grant_lifecycle_event_history",
+          "keys": [
+            [
+              "tenant_id",
+              1
+            ],
+            [
+              "client_grant_id",
+              1
+            ],
+            [
+              "event",
+              1
+            ],
+            [
+              "effective_from",
+              1
+            ]
+          ],
+          "unique": false
+        }
+      ],
+      "provisioning_owner": "separate_eos_index_provisioner"
+    },
+    {
+      "id": "legal-client-matter-mandate-grants",
+      "database": "canonical_eos_business_database",
+      "collection": "legal_client_matter_mandate_grants",
+      "source": "tools/eos/legal_operations/registry/legal_client_matter_mandate_grant_registry.py",
+      "indexes": [
+        {
+          "name": "legal_client_matter_grant_tenant_grant_unique",
+          "keys": [
+            [
+              "tenant_id",
+              1
+            ],
+            [
+              "client_grant_id",
+              1
+            ]
+          ],
+          "unique": true
+        },
+        {
+          "name": "legal_client_matter_grant_tenant_fingerprint_unique",
+          "keys": [
+            [
+              "tenant_id",
+              1
+            ],
+            [
+              "fingerprint",
+              1
+            ]
+          ],
+          "unique": true
+        },
+        {
+          "name": "legal_client_matter_grant_tenant_idempotency_unique",
+          "keys": [
+            [
+              "tenant_id",
+              1
+            ],
+            [
+              "idempotency_key",
+              1
+            ]
+          ],
+          "unique": true
+        },
+        {
+          "name": "legal_client_matter_grant_tenant_matter_client_effective",
+          "keys": [
+            [
+              "tenant_id",
+              1
+            ],
+            [
+              "case_matter_id",
+              1
+            ],
+            [
+              "client_party_id",
+              1
+            ],
+            [
+              "effective_from",
+              1
+            ],
+            [
+              "occurred_at",
+              1
+            ],
+            [
+              "fingerprint",
+              1
+            ]
+          ],
+          "unique": false
+        },
+        {
+          "name": "legal_client_matter_grant_tenant_matter_client_scope_effective",
+          "keys": [
+            [
+              "tenant_id",
+              1
+            ],
+            [
+              "case_matter_id",
+              1
+            ],
+            [
+              "client_party_id",
+              1
+            ],
+            [
+              "scope_fingerprint",
+              1
+            ],
+            [
+              "effective_from",
+              1
+            ],
+            [
+              "fingerprint",
+              1
+            ]
+          ],
+          "unique": false
+        }
+      ],
+      "provisioning_owner": "separate_eos_index_provisioner"
+    },
+    {
+      "id": "legal-client-matter-mandates",
+      "database": "canonical_eos_business_database",
+      "collection": "legal_client_matter_mandates",
+      "source": "tools/eos/legal_operations/registry/legal_client_matter_mandate_registry.py",
+      "indexes": [
+        {
+          "name": "legal_client_matter_mandate_tenant_id_unique",
+          "keys": [
+            [
+              "tenant_id",
+              1
+            ],
+            [
+              "mandate_id",
+              1
+            ]
+          ],
+          "unique": true
+        },
+        {
+          "name": "legal_client_matter_mandate_tenant_fingerprint_unique",
+          "keys": [
+            [
+              "tenant_id",
+              1
+            ],
+            [
+              "fingerprint",
+              1
+            ]
+          ],
+          "unique": true
+        },
+        {
+          "name": "legal_client_matter_mandate_tenant_idempotency_unique",
+          "keys": [
+            [
+              "tenant_id",
+              1
+            ],
+            [
+              "idempotency_key",
+              1
+            ]
+          ],
+          "unique": true
+        },
+        {
+          "name": "legal_client_matter_mandate_grant_ack_pair_unique",
+          "keys": [
+            [
+              "tenant_id",
+              1
+            ],
+            [
+              "client_grant_fingerprint",
+              1
+            ],
+            [
+              "firm_acknowledgment_fingerprint",
+              1
+            ]
+          ],
+          "unique": true
+        },
+        {
+          "name": "legal_client_matter_mandate_matter_history",
+          "keys": [
+            [
+              "tenant_id",
+              1
+            ],
+            [
+              "case_matter_id",
+              1
+            ],
+            [
+              "client_party_id",
+              1
+            ],
+            [
+              "effective_from",
+              1
+            ],
+            [
+              "occurred_at",
+              1
+            ],
+            [
+              "fingerprint",
+              1
+            ]
+          ],
+          "unique": false
+        }
+      ],
+      "provisioning_owner": "separate_eos_index_provisioner"
+    },
+    {
+      "id": "legal-client-matter-representation-authorities",
+      "database": "canonical_eos_business_database",
+      "collection": "legal_client_matter_representation_authorities",
+      "source": "tools/eos/legal_operations/registry/legal_client_matter_representation_authority_registry.py",
+      "indexes": [
+        {
+          "name": "legal_client_matter_representation_authority_tenant_id_unique",
+          "keys": [
+            [
+              "tenant_id",
+              1
+            ],
+            [
+              "authority_id",
+              1
+            ]
+          ],
+          "unique": true
+        },
+        {
+          "name": "legal_client_matter_representation_authority_tenant_fingerprint_unique",
+          "keys": [
+            [
+              "tenant_id",
+              1
+            ],
+            [
+              "fingerprint",
+              1
+            ]
+          ],
+          "unique": true
+        },
+        {
+          "name": "legal_client_matter_representation_authority_tenant_idempotency_unique",
+          "keys": [
+            [
+              "tenant_id",
+              1
+            ],
+            [
+              "idempotency_key",
+              1
+            ]
+          ],
+          "unique": true
+        },
+        {
+          "name": "legal_client_matter_representation_authority_lineage_history",
+          "keys": [
+            [
+              "tenant_id",
+              1
+            ],
+            [
+              "case_matter_id",
+              1
+            ],
+            [
+              "matter_fingerprint",
+              1
+            ],
+            [
+              "client_party_id",
+              1
+            ],
+            [
+              "subject_identity_fingerprint",
+              1
+            ],
+            [
+              "representative_principal_id",
+              1
+            ],
+            [
+              "effective_from",
+              1
+            ],
+            [
+              "occurred_at",
+              1
+            ],
+            [
+              "fingerprint",
+              1
+            ],
+            [
+              "authority_id",
+              1
+            ]
+          ],
+          "unique": false
+        }
+      ],
+      "provisioning_owner": "separate_eos_index_provisioner"
+    },
+    {
+      "id": "legal-client-matter-representation-authorization-evidence",
+      "database": "canonical_eos_business_database",
+      "collection": "legal_client_matter_representation_authorization_evidence",
+      "source": "tools/eos/legal_operations/registry/legal_client_matter_representation_authorization_evidence_registry.py",
+      "indexes": [
+        {
+          "name": "legal_client_matter_representation_authorization_evidence_tenant_id_unique",
+          "keys": [
+            [
+              "tenant_id",
+              1
+            ],
+            [
+              "evidence_id",
+              1
+            ]
+          ],
+          "unique": true
+        },
+        {
+          "name": "legal_client_matter_representation_authorization_evidence_tenant_fingerprint_unique",
+          "keys": [
+            [
+              "tenant_id",
+              1
+            ],
+            [
+              "fingerprint",
+              1
+            ]
+          ],
+          "unique": true
+        },
+        {
+          "name": "legal_client_matter_representation_authorization_evidence_tenant_idempotency_unique",
+          "keys": [
+            [
+              "tenant_id",
+              1
+            ],
+            [
+              "idempotency_key",
+              1
+            ]
+          ],
+          "unique": true
+        },
+        {
+          "name": "legal_client_matter_representation_authorization_evidence_lineage_history",
+          "keys": [
+            [
+              "tenant_id",
+              1
+            ],
+            [
+              "case_matter_id",
+              1
+            ],
+            [
+              "matter_fingerprint",
+              1
+            ],
+            [
+              "client_party_id",
+              1
+            ],
+            [
+              "subject_identity_fingerprint",
+              1
+            ],
+            [
+              "appointing_principal_id",
+              1
+            ],
+            [
+              "acting_capacity_id",
+              1
+            ],
+            [
+              "acting_capacity_fingerprint",
+              1
+            ],
+            [
+              "engagement_id",
+              1
+            ],
+            [
+              "engagement_fingerprint",
+              1
+            ],
+            [
+              "mandate_id",
+              1
+            ],
+            [
+              "mandate_fingerprint",
+              1
+            ],
+            [
+              "representative_principal_id",
+              1
+            ],
+            [
+              "representative_role",
+              1
+            ],
+            [
+              "effective_from",
+              1
+            ],
+            [
+              "occurred_at",
+              1
+            ],
+            [
+              "fingerprint",
+              1
+            ],
+            [
+              "evidence_id",
+              1
+            ]
+          ],
+          "unique": false
+        }
+      ],
+      "provisioning_owner": "separate_eos_index_provisioner"
+    },
+    {
+      "id": "legal-client-matter-representation-firm-decisions",
+      "database": "canonical_eos_business_database",
+      "collection": "legal_client_matter_representation_firm_decisions",
+      "source": "tools/eos/legal_operations/registry/legal_client_matter_representation_firm_decision_registry.py",
+      "indexes": [
+        {
+          "name": "legal_client_matter_representation_firm_decision_tenant_id_unique",
+          "keys": [
+            [
+              "tenant_id",
+              1
+            ],
+            [
+              "decision_id",
+              1
+            ]
+          ],
+          "unique": true
+        },
+        {
+          "name": "legal_client_matter_representation_firm_decision_tenant_fingerprint_unique",
+          "keys": [
+            [
+              "tenant_id",
+              1
+            ],
+            [
+              "fingerprint",
+              1
+            ]
+          ],
+          "unique": true
+        },
+        {
+          "name": "legal_client_matter_representation_firm_decision_tenant_idempotency_unique",
+          "keys": [
+            [
+              "tenant_id",
+              1
+            ],
+            [
+              "idempotency_key",
+              1
+            ]
+          ],
+          "unique": true
+        },
+        {
+          "name": "legal_client_matter_representation_firm_decision_lineage_history",
+          "keys": [
+            [
+              "tenant_id",
+              1
+            ],
+            [
+              "case_matter_id",
+              1
+            ],
+            [
+              "matter_fingerprint",
+              1
+            ],
+            [
+              "client_party_id",
+              1
+            ],
+            [
+              "subject_identity_fingerprint",
+              1
+            ],
+            [
+              "representation_authority_id",
+              1
+            ],
+            [
+              "representation_authority_fingerprint",
+              1
+            ],
+            [
+              "representative_principal_id",
+              1
+            ],
+            [
+              "effective_from",
+              1
+            ],
+            [
+              "occurred_at",
+              1
+            ],
+            [
+              "fingerprint",
+              1
+            ],
+            [
+              "decision_id",
+              1
+            ]
+          ],
+          "unique": false
+        }
+      ],
+      "provisioning_owner": "separate_eos_index_provisioner"
     }
   ],
   "excluded_until_inventory_complete": [
