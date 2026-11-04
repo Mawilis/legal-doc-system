@@ -104,7 +104,7 @@ def test_stale_revision_is_rejected() -> None:
     transition(collection)
     transition(collection, revision=1, state="CRITICAL", days=30)
     with pytest.raises(PlatformDunningRevisionConflict):
-        transition(collection, revision=1, state="SUSPENDED_READONLY", days=45)
+        transition(collection, revision=1, state="SUSPENSION_REVIEW", days=45)
 
 
 def test_revision_guard_advances_exactly_once() -> None:
