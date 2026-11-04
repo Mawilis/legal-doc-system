@@ -489,3 +489,25 @@ The manifest now contains 87 collection entries and 281 index declarations. It r
 ### Billing / PayShap workflow result
 
 The first run of `.github/workflows/eos-billing-webhook-certification.yml` completed successfully on commit `8500989`: compilation passed, 28 focused unit tests passed, and 87 disposable replica-set integration tests passed (115 total). The test environment used only a local MongoDB replica set and the synthetic fixture secret. This certifies the existing billing registry, subscription transaction-injection, Kennel execution reconciliation and PayShap host composition suites; it does not certify the current dunning evaluator as atomic or authorize production use.
+
+
+## 22. Extended Legal Evidence, mandate, operating-role and work registry closure
+
+A complete pass over the 93 Python Legal Operations registry modules found and source-verified another 44 collection/index definitions across these families:
+- Legal Evidence content, legal holds, cleanup authorization/commands, delete execution claims/evidence/uncertainties, object disownership/orphan proofs and retention constraints.
+- Legal operating-role definitions, capability bindings, scope bindings and principal operating-role bindings.
+- Client matter engagements and firm decisions; mandate grants, acknowledgments, lifecycle and mandates; representation authorities, authorization evidence, final representations and firm decisions.
+- Legal corpus approval and provisioning authority, courier observations, court-operation preparation and versioned legal documents.
+- Legal work transition materialization receipts, dependency edges, ethical-wall policy revisions/currentness, materialization policies, operational matter access, confidentiality clearances, supervision bindings and tenant workflow activations.
+- Professional-standing evidence, legal acceptance and process-service billing eligibility.
+
+The source declarations include the non-default unique/partial filters for revision roots, successors, current work access roots, and predecessor lineage. The manifest now has 131 collection entries and 466 index declarations, subject to the latest gate run.
+
+### Remaining source boundary
+
+The 93-file comparison leaves only three registry-tree modules without a manifest source path:
+- `legal_practitioner_matter_access_history_reader.py`: read-only query helper, not an index owner.
+- `legal_practitioner_matter_access_review_codec.py`: serialization/validation codec, not a persistence owner.
+- `legal_practitioner_ethical_wall_restriction_registry.py`: declares three index methods but receives its collection by injection and has no canonical collection-name constant or repository caller that proves the collection identity. It is deliberately not added under a guessed collection name.
+
+The final item requires a verified caller/collection binding before its indexes can be included. The source registry modules that do declare canonical collection names now have matching manifest source entries. This source-level closure still does not prove that deployment provisioning invokes every owner or that live Atlas indexes match.
