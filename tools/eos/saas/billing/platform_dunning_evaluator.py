@@ -16,7 +16,7 @@ from .platform_dunning_registry import (
 )
 
 
-TERMINAL_INVOICE_STATUSES = frozenset({"paid", "void", "cancelled", "canceled", "refunded"})
+ELIGIBLE_INVOICE_STATUSES = frozenset({"open", "unpaid", "overdue"})
 STATE_ORDER = {
     "ACTIVE": 0,
     "REMINDER": 1,
@@ -105,7 +105,7 @@ def aggregate_overdue_invoices(
         if invoice_tenant != tenant_id:
             continue
         status = str(invoice.get("status") or "").strip().lower()
-        if status in TERMINAL_INVOICE_STATUSES:
+        if status not in ELIGIBLE_INVOICE_STATUSES:
             continue
         due_at = _utc(invoice.get("due_at") or invoice.get("dueAt"))
         if due_at is None or due_at > instant:
