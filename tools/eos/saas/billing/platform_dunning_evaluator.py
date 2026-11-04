@@ -208,8 +208,7 @@ def evaluate_platform_dunning(
     # Reconcile existing cases that no longer have eligible overdue invoices.
     # Resolution requires every invoice in the prior projection to be present
     # in this tenant's source snapshot and terminal (settled/void/cancelled).
-    if not subscription_id:
-        source_by_id = {
+    source_by_id = {
             str(item.get("invoice_id") or item.get("invoiceId") or ""): item
             for item in invoices
             if isinstance(item, dict)
@@ -217,6 +216,8 @@ def evaluate_platform_dunning(
         }
         for existing in projection_collection.find({"tenant_id": tenant_id}, session=session):
             current_subscription = existing.get("subscription_id")
+            if subscription_id and current_subscription != subscription_id:
+                continue
             if current_subscription in groups or current_subscription in {
                 item["subscription_id"] for item in transitions
             }:
