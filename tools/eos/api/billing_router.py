@@ -1882,6 +1882,8 @@ async def evaluate_tenant_dunning_lifecycle(
             status_code=409,
             detail="DUNNING_PROJECTION_REVISION_CONFLICT; retry from current projection",
         )
+    except HTTPException:
+        raise
     except (PlatformDunningRegistryError, PlatformDunningEvaluationError) as error:
         raise HTTPException(status_code=503, detail=str(error)) from error
     except Exception as error:
