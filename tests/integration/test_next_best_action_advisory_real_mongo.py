@@ -53,7 +53,7 @@ def _advisory(tenant: str, attempt: str, stamp: datetime, idempotency: str, supe
     result_fp = hashlib.sha3_512(json.dumps(result, sort_keys=True, separators=(",", ":"), default=str).encode()).hexdigest()
     root = AIToolOrchestration(root_id, tenant, principal, root_id, OrchestrationPhase.COMPLETED, f"planner-{idempotency}", tool_invocation_id=f"inv-{idempotency}", synthesis_invocation_id=f"synth-{idempotency}", tool_identity="legal.attempt.read.v1", resource_identity=attempt, evidence_references=(f"result-{idempotency}",), outcome="TOOL_ASSISTED", revision=1, occurred_at=stamp)
     contract = TOOL_CONTRACTS["legal.attempt.read.v1"]
-    invocation = LegalAIToolInvocationEvidence(f"inv-{idempotency}", tenant, principal, "legal.attempt.read.v1", "v1", GATEWAY_PERMISSION, contract.underlying_permission, contract.capability, "role", f"ent-{tenant}", 1, "a" * 128, "tier", "b" * 128, f"capacity:{tenant}", "c" * 128, root_id, "d" * 128, "READ", attempt, result_fp, stamp)
+    invocation = LegalAIToolInvocationEvidence(f"inv-{idempotency}", tenant, principal, "legal.attempt.read.v1", "v1", GATEWAY_PERMISSION, contract.underlying_permission, contract.capability, "role", f"ent-{tenant}", 1, "a" * 128, "tier", "b" * 128, f"capacity:{tenant}", "c" * 128, root_id, "d" * 128, "READ", f"ServiceAttempt:{attempt}", result_fp, stamp)
     return build_legal_advisory(tenant_id=tenant, scope_ref="matter-r1a", root=root, invocation=invocation, result=result, generated_at=stamp, supersedes_advisory_id=supersedes), result
 
 
