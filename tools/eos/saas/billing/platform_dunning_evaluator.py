@@ -107,8 +107,13 @@ def aggregate_overdue_invoices(
         status = str(invoice.get("status") or "").strip().lower()
         if status not in ELIGIBLE_INVOICE_STATUSES:
             continue
-        due_at = _utc(invoice.get("due_at") or invoice.get("dueAt"))
-        if due_at is None or due_at > instant:
+        raw_due_at = invoice.get("due_at") or invoice.get("dueAt")
+        if raw_due_at is None:
+            continue
+        due_at = _utc(raw_due_at)
+        if due_at is None:
+            raise PlatformDunningEvaluationError("PLATFORM_DUNNING_INVOICE_DUE_AT_INVALID")
+        if due_at > instant:
             continue
         subscription_id = str(invoice.get("subscription_id") or invoice.get("subscriptionId") or "").strip()
         invoice_id = str(invoice.get("invoice_id") or invoice.get("invoiceId") or "").strip()
