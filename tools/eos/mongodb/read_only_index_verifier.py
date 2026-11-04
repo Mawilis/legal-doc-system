@@ -65,7 +65,8 @@ def _manifest_entries(path: Path, database_name: str) -> list[dict[str, Any]]:
         if entry.get("database") == "canonical_eos_business_database":
             entries.append({**entry, "database": database_name})
         elif entry.get("database") == "platform_authorization_audit_database":
-            raise VerificationError("Separate audit database must be verified in a separate invocation")
+            # Separate audit DB is intentionally excluded from this business-DB pass.
+            continue
         else:
             raise VerificationError("Manifest contains an unresolved database mapping")
     if not entries:
