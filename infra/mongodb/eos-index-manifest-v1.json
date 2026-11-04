@@ -3747,6 +3747,720 @@
         }
       ],
       "provisioning_owner": "separate_eos_index_provisioner"
+    },
+    {
+      "id": "billing-platform-invoices",
+      "database": "canonical_eos_business_database",
+      "collection": "platform_invoices",
+      "source": "tools/eos/saas/billing/billing_registry.py",
+      "indexes": [
+        {
+          "name": "tenant_id_1_invoice_id_1",
+          "keys": [
+            [
+              "tenant_id",
+              1
+            ],
+            [
+              "invoice_id",
+              1
+            ]
+          ],
+          "unique": true
+        },
+        {
+          "name": "tenant_id_1_status_1",
+          "keys": [
+            [
+              "tenant_id",
+              1
+            ],
+            [
+              "status",
+              1
+            ]
+          ],
+          "unique": false
+        },
+        {
+          "name": "tenant_id_1_issued_at_-1",
+          "keys": [
+            [
+              "tenant_id",
+              1
+            ],
+            [
+              "issued_at",
+              -1
+            ]
+          ],
+          "unique": false
+        },
+        {
+          "name": "tenant_id_1_due_at_1",
+          "keys": [
+            [
+              "tenant_id",
+              1
+            ],
+            [
+              "due_at",
+              1
+            ]
+          ],
+          "unique": false
+        },
+        {
+          "name": "idempotencyKey_1_partial",
+          "keys": [
+            [
+              "idempotencyKey",
+              1
+            ]
+          ],
+          "unique": true,
+          "partialFilterExpression": {
+            "idempotencyKey": {
+              "$type": "string"
+            }
+          }
+        }
+      ],
+      "provisioning_owner": "separate_eos_index_provisioner"
+    },
+    {
+      "id": "billing-client-invoices",
+      "database": "canonical_eos_business_database",
+      "collection": "client_invoices",
+      "source": "tools/eos/saas/billing/billing_registry.py",
+      "indexes": [
+        {
+          "name": "tenant_id_1_invoice_id_1",
+          "keys": [
+            [
+              "tenant_id",
+              1
+            ],
+            [
+              "invoice_id",
+              1
+            ]
+          ],
+          "unique": true
+        },
+        {
+          "name": "tenant_id_1_status_1",
+          "keys": [
+            [
+              "tenant_id",
+              1
+            ],
+            [
+              "status",
+              1
+            ]
+          ],
+          "unique": false
+        },
+        {
+          "name": "tenant_id_1_issued_at_-1",
+          "keys": [
+            [
+              "tenant_id",
+              1
+            ],
+            [
+              "issued_at",
+              -1
+            ]
+          ],
+          "unique": false
+        },
+        {
+          "name": "p6e_client_exact_idempotency_unique",
+          "keys": [
+            [
+              "tenant_id",
+              1
+            ],
+            [
+              "idempotency_key",
+              1
+            ]
+          ],
+          "unique": true,
+          "partialFilterExpression": {
+            "idempotency_key": {
+              "$type": "string"
+            }
+          }
+        },
+        {
+          "name": "idempotencyKey_1_partial",
+          "keys": [
+            [
+              "idempotencyKey",
+              1
+            ]
+          ],
+          "unique": true,
+          "partialFilterExpression": {
+            "idempotencyKey": {
+              "$type": "string"
+            }
+          }
+        }
+      ],
+      "provisioning_owner": "separate_eos_index_provisioner"
+    },
+    {
+      "id": "billing-payments",
+      "database": "canonical_eos_business_database",
+      "collection": "payments",
+      "source": "tools/eos/saas/billing/billing_registry.py",
+      "indexes": [
+        {
+          "name": "invoice_id_1_payment_id_1",
+          "keys": [
+            [
+              "invoice_id",
+              1
+            ],
+            [
+              "payment_id",
+              1
+            ]
+          ],
+          "unique": true
+        },
+        {
+          "name": "tenant_id_1_status_1",
+          "keys": [
+            [
+              "tenant_id",
+              1
+            ],
+            [
+              "status",
+              1
+            ]
+          ],
+          "unique": false
+        },
+        {
+          "name": "idempotencyKey_1_partial",
+          "keys": [
+            [
+              "idempotencyKey",
+              1
+            ]
+          ],
+          "unique": true,
+          "partialFilterExpression": {
+            "idempotencyKey": {
+              "$type": "string"
+            }
+          }
+        }
+      ],
+      "provisioning_owner": "separate_eos_index_provisioner"
+    },
+    {
+      "id": "kennel-payshap-provider-evidence",
+      "database": "canonical_eos_business_database",
+      "collection": "kennel_payshap_provider_evidence",
+      "source": "tools/eos/kennel/evidence/payshap_evidence_store.py",
+      "indexes": [
+        {
+          "name": "tenant_payshap_event_unique",
+          "keys": [
+            [
+              "tenant_id",
+              1
+            ],
+            [
+              "provider_event_id",
+              1
+            ]
+          ],
+          "unique": true
+        },
+        {
+          "name": "tenant_payshap_reference_timeline",
+          "keys": [
+            [
+              "tenant_id",
+              1
+            ],
+            [
+              "provider_reference",
+              1
+            ],
+            [
+              "observed_at",
+              1
+            ]
+          ],
+          "unique": false
+        }
+      ],
+      "provisioning_owner": "separate_eos_index_provisioner"
+    },
+    {
+      "id": "kennel-financial-execution-commands",
+      "database": "canonical_eos_business_database",
+      "collection": "kennel_financial_execution_commands",
+      "source": "tools/eos/kennel/registry/financial_execution_command_registry.py",
+      "indexes": [
+        {
+          "name": "tenant_execution_command_identity_unique",
+          "keys": [
+            [
+              "tenant_id",
+              1
+            ],
+            [
+              "execution_command_id",
+              1
+            ]
+          ],
+          "unique": true
+        },
+        {
+          "name": "tenant_family_source_execution_request_unique",
+          "keys": [
+            [
+              "tenant_id",
+              1
+            ],
+            [
+              "source_authority_kind",
+              1
+            ],
+            [
+              "source_authority.execution_request_id",
+              1
+            ]
+          ],
+          "unique": true
+        },
+        {
+          "name": "tenant_payable_commands_timeline",
+          "keys": [
+            [
+              "tenant_id",
+              1
+            ],
+            [
+              "source_authority.payable_id",
+              1
+            ],
+            [
+              "created_at",
+              1
+            ]
+          ],
+          "unique": false
+        },
+        {
+          "name": "tenant_release_authorization_commands_timeline",
+          "keys": [
+            [
+              "tenant_id",
+              1
+            ],
+            [
+              "source_authority.release_authorization_id",
+              1
+            ],
+            [
+              "created_at",
+              1
+            ]
+          ],
+          "unique": false
+        }
+      ],
+      "provisioning_owner": "separate_eos_index_provisioner"
+    },
+    {
+      "id": "kennel-financial-execution-attempts",
+      "database": "canonical_eos_business_database",
+      "collection": "kennel_financial_execution_attempts",
+      "source": "tools/eos/kennel/registry/financial_execution_attempt_registry.py",
+      "indexes": [
+        {
+          "name": "tenant_execution_attempt_identity_unique",
+          "keys": [
+            [
+              "tenant_id",
+              1
+            ],
+            [
+              "execution_attempt_id",
+              1
+            ]
+          ],
+          "unique": true
+        },
+        {
+          "name": "tenant_execution_command_attempts",
+          "keys": [
+            [
+              "tenant_id",
+              1
+            ],
+            [
+              "execution_command_id",
+              1
+            ]
+          ],
+          "unique": false
+        },
+        {
+          "name": "tenant_provider_request_attempts",
+          "keys": [
+            [
+              "tenant_id",
+              1
+            ],
+            [
+              "provider_name",
+              1
+            ],
+            [
+              "provider_request_reference",
+              1
+            ]
+          ],
+          "unique": false
+        },
+        {
+          "name": "tenant_attempt_state_timeline",
+          "keys": [
+            [
+              "tenant_id",
+              1
+            ],
+            [
+              "state",
+              1
+            ],
+            [
+              "created_at",
+              1
+            ]
+          ],
+          "unique": false
+        }
+      ],
+      "provisioning_owner": "separate_eos_index_provisioner"
+    },
+    {
+      "id": "kennel-financial-execution-provider-observations",
+      "database": "canonical_eos_business_database",
+      "collection": "kennel_financial_execution_provider_observations",
+      "source": "tools/eos/kennel/registry/financial_execution_provider_observation_registry.py",
+      "indexes": [
+        {
+          "name": "tenant_observation_identity_unique",
+          "keys": [
+            [
+              "tenant_id",
+              1
+            ],
+            [
+              "observation_id",
+              1
+            ]
+          ],
+          "unique": true
+        },
+        {
+          "name": "tenant_attempt_observation_timeline",
+          "keys": [
+            [
+              "tenant_id",
+              1
+            ],
+            [
+              "execution_attempt_id",
+              1
+            ],
+            [
+              "observed_at",
+              1
+            ],
+            [
+              "observation_id",
+              1
+            ]
+          ],
+          "unique": false
+        },
+        {
+          "name": "tenant_provider_request_observations",
+          "keys": [
+            [
+              "tenant_id",
+              1
+            ],
+            [
+              "provider_name",
+              1
+            ],
+            [
+              "provider_request_reference",
+              1
+            ]
+          ],
+          "unique": false
+        },
+        {
+          "name": "tenant_provider_execution_observations",
+          "keys": [
+            [
+              "tenant_id",
+              1
+            ],
+            [
+              "provider_name",
+              1
+            ],
+            [
+              "provider_execution_reference",
+              1
+            ]
+          ],
+          "unique": false
+        },
+        {
+          "name": "tenant_observation_status_timeline",
+          "keys": [
+            [
+              "tenant_id",
+              1
+            ],
+            [
+              "observation_status",
+              1
+            ],
+            [
+              "observed_at",
+              1
+            ]
+          ],
+          "unique": false
+        }
+      ],
+      "provisioning_owner": "separate_eos_index_provisioner"
+    },
+    {
+      "id": "kennel-financial-execution-truth",
+      "database": "canonical_eos_business_database",
+      "collection": "kennel_financial_execution_truth",
+      "source": "tools/eos/kennel/registry/financial_execution_registry.py",
+      "indexes": [
+        {
+          "name": "tenant_execution_truth_identity_unique",
+          "keys": [
+            [
+              "tenant_id",
+              1
+            ],
+            [
+              "execution_truth_id",
+              1
+            ]
+          ],
+          "unique": true
+        },
+        {
+          "name": "tenant_payable_execution_create_idempotency_unique",
+          "keys": [
+            [
+              "tenant_id",
+              1
+            ],
+            [
+              "payable_id",
+              1
+            ],
+            [
+              "create_idempotency_key",
+              1
+            ]
+          ],
+          "unique": true
+        },
+        {
+          "name": "tenant_provider_execution_timeline",
+          "keys": [
+            [
+              "tenant_id",
+              1
+            ],
+            [
+              "provider",
+              1
+            ],
+            [
+              "provider_execution_reference",
+              1
+            ],
+            [
+              "executed_at",
+              1
+            ],
+            [
+              "execution_truth_id",
+              1
+            ]
+          ],
+          "unique": false
+        },
+        {
+          "name": "tenant_release_authorization_execution_timeline",
+          "keys": [
+            [
+              "tenant_id",
+              1
+            ],
+            [
+              "release_authorization_id",
+              1
+            ],
+            [
+              "executed_at",
+              1
+            ],
+            [
+              "execution_truth_id",
+              1
+            ]
+          ],
+          "unique": false
+        },
+        {
+          "name": "tenant_payable_execution_timeline",
+          "keys": [
+            [
+              "tenant_id",
+              1
+            ],
+            [
+              "payable_id",
+              1
+            ],
+            [
+              "executed_at",
+              1
+            ],
+            [
+              "execution_truth_id",
+              1
+            ]
+          ],
+          "unique": false
+        },
+        {
+          "name": "tenant_execution_status_timeline",
+          "keys": [
+            [
+              "tenant_id",
+              1
+            ],
+            [
+              "execution_status",
+              1
+            ],
+            [
+              "executed_at",
+              1
+            ],
+            [
+              "execution_truth_id",
+              1
+            ]
+          ],
+          "unique": false
+        }
+      ],
+      "provisioning_owner": "separate_eos_index_provisioner"
+    },
+    {
+      "id": "kennel-financial-execution-facts",
+      "database": "canonical_eos_business_database",
+      "collection": "kennel_financial_execution_facts",
+      "source": "tools/eos/kennel/registry/financial_execution_registry.py",
+      "indexes": [
+        {
+          "name": "tenant_execution_fact_identity_unique",
+          "keys": [
+            [
+              "tenant_id",
+              1
+            ],
+            [
+              "execution_fact_id",
+              1
+            ]
+          ],
+          "unique": true
+        },
+        {
+          "name": "tenant_execution_fact_attempt_unique",
+          "keys": [
+            [
+              "tenant_id",
+              1
+            ],
+            [
+              "execution_attempt_id",
+              1
+            ]
+          ],
+          "unique": true
+        }
+      ],
+      "provisioning_owner": "separate_eos_index_provisioner"
+    },
+    {
+      "id": "kennel-platform-billing-financial-execution-truth",
+      "database": "canonical_eos_business_database",
+      "collection": "kennel_platform_billing_financial_execution_truth",
+      "source": "tools/eos/kennel/registry/platform_billing_financial_execution_truth_registry.py",
+      "indexes": [
+        {
+          "name": "tenant_id_1_execution_truth_id_1",
+          "keys": [
+            [
+              "tenant_id",
+              1
+            ],
+            [
+              "execution_truth_id",
+              1
+            ]
+          ],
+          "unique": true
+        },
+        {
+          "name": "tenant_id_1_execution_request_id_1",
+          "keys": [
+            [
+              "tenant_id",
+              1
+            ],
+            [
+              "execution_request_id",
+              1
+            ]
+          ],
+          "unique": true
+        }
+      ],
+      "provisioning_owner": "separate_eos_index_provisioner"
     }
   ],
   "excluded_until_inventory_complete": [
