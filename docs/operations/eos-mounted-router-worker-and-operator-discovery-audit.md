@@ -484,3 +484,8 @@ The new manifest commit `8500989` adds the exact source-declared key order, uniq
 These are source-owner declarations, not live Atlas observations. The source registry methods must still be separated from runtime DDL and invoked by a controlled external provisioner/readiness path. No production index creation or live target verification occurred.
 
 The manifest now contains 87 collection entries and 281 index declarations. It remains `INVENTORY_INCOMPLETE`: other collection families, deployed index state, API-startup DDL migration, and source-to-runtime provisioning invocation still require closure.
+
+
+### Billing / PayShap workflow result
+
+The first run of `.github/workflows/eos-billing-webhook-certification.yml` completed successfully on commit `8500989`: compilation passed, 28 focused unit tests passed, and 87 disposable replica-set integration tests passed (115 total). The test environment used only a local MongoDB replica set and the synthetic fixture secret. This certifies the existing billing registry, subscription transaction-injection, Kennel execution reconciliation and PayShap host composition suites; it does not certify the current dunning evaluator as atomic or authorize production use.
