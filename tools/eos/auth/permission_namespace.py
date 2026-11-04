@@ -688,6 +688,20 @@ _PERMISSIONS: Final = MappingProxyType(
             "read own-tenant canonical billing-intelligence evidence",
             tenant=True,
         ),
+        "billing_dunning:projection:read": _meta(
+            "billing_dunning:projection:read",
+            "TENANT",
+            "TENANT",
+            "read own-tenant collection workflow projections",
+            tenant=True,
+        ),
+        "billing_dunning:projection:evaluate": _meta(
+            "billing_dunning:projection:evaluate",
+            "TENANT",
+            "TENANT",
+            "evaluate own-tenant collection workflow projections",
+            tenant=True,
+        ),
         "hr:employee_relation:write": _meta(
             "hr:employee_relation:write",
             "TENANT",
