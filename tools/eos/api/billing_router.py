@@ -1801,16 +1801,65 @@ async def evaluate_tenant_dunning_lifecycle(
     invoices = list(coll_db["platform_invoices"].find(invoice_query, {"_id": 0}))
     projection_collection = coll_db["platform_subscription_dunning_projections"]
     PlatformDunningRegistry.ensure_indexes(projection_collection)
+    audit_collection = coll_db["billing_audit_events"]
+    audit_collection.create_index(
+        [
+            ("tenant_id", 1),
+            ("event_type", 1),
+            ("subscription_id", 1),
+            ("revision", 1),
+        ],
+        unique=True,
+        partialFilterExpression={"event_type": "DUNNING_PROJECTION_TRANSITION"},
+        name="dunning_projection_transition_audit_unique",
+    )
     try:
-        result = evaluate_platform_dunning(
-            tenant_id=tenant_id,
-            invoices=invoices,
-            policy=policy,
-            projection_collection=projection_collection,
-            now=now,
-            dry_run=body.dry_run,
-            subscription_id=body.subscription_id,
-        )
+        if body.dry_run:
+            result = evaluate_platform_dunning(
+                tenant_id=tenant_id,
+                invoices=invoices,
+                policy=policy,
+                projection_collection=projection_collection,
+                now=now,
+                dry_run=True,
+                subscription_id=body.subscription_id,
+            )
+        else:
+            # This route owns the transaction; the projection registry only
+            # receives and propagates the caller's session.
+            with coll_db.client.start_session() as session:
+                with session.start_transaction():
+                    result = evaluate_platform_dunning(
+                        tenant_id=tenant_id,
+                        invoices=invoices,
+                        policy=policy,
+                        projection_collection=projection_collection,
+                        now=now,
+                        dry_run=False,
+                        subscription_id=body.subscription_id,
+                        session=session,
+                    )
+                    for transition in result["transitions"]:
+                        audit = {
+                            "tenant_id": tenant_id,
+                            "event_type": "DUNNING_PROJECTION_TRANSITION",
+                            "subscription_id": transition["subscription_id"],
+                            "revision": transition["revision"],
+                            "proof_hash": transition["transition_fingerprint"],
+                            "metadata": transition,
+                            "created_at": now,
+                        }
+                        audit_collection.update_one(
+                            {
+                                "tenant_id": tenant_id,
+                                "event_type": "DUNNING_PROJECTION_TRANSITION",
+                                "subscription_id": transition["subscription_id"],
+                                "revision": transition["revision"],
+                            },
+                            {"$setOnInsert": audit},
+                            upsert=True,
+                            session=session,
+                        )
     except PlatformDunningRevisionConflict:
         raise HTTPException(
             status_code=409,
@@ -1818,26 +1867,11 @@ async def evaluate_tenant_dunning_lifecycle(
         )
     except (PlatformDunningRegistryError, PlatformDunningEvaluationError) as error:
         raise HTTPException(status_code=503, detail=str(error)) from error
-
+    except Exception as error:
+        # A failed response does not prove rollback after an unknown commit.
+        raise HTTPException(status_code=503, detail="DUNNING_TRANSACTION_OUTCOME_UNCERTAIN") from error
     if not body.dry_run:
         for transition in result["transitions"]:
-            audit = {
-                "tenant_id": tenant_id,
-                "event_type": "DUNNING_PROJECTION_TRANSITION",
-                "proof_hash": transition["transition_fingerprint"],
-                "metadata": transition,
-                "created_at": now,
-            }
-            coll_db["billing_audit_events"].update_one(
-                {
-                    "tenant_id": tenant_id,
-                    "event_type": "DUNNING_PROJECTION_TRANSITION",
-                    "subscription_id": transition["subscription_id"],
-                    "revision": transition["revision"],
-                },
-                {"$setOnInsert": audit},
-                upsert=True,
-            )
             _telemetry(
                 tenant_id,
                 "BILLING",
