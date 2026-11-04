@@ -156,3 +156,52 @@ def test_real_mongo_caller_owned_transaction_rollback(
                 raise RuntimeError("synthetic abort")
 
     assert collection.count_documents({"tenant_id": TENANT}) == 0
+
+
+def test_real_mongo_concurrent_writers_have_one_revision_winner(
+    mongo_context: tuple[MongoClient[Any], Any],
+) -> None:
+    client, database = mongo_context
+    collection = database.get_collection(
+        "platform_dunning_states",
+        write_concern=WriteConcern(w="majority", j=True),
+        read_concern=ReadConcern("majority"),
+    )
+    PlatformDunningRegistry.ensure_indexes(collection)
+    PlatformDunningRegistry.transition(
+        tenant_id=TENANT,
+        subscription_id=SUBSCRIPTION,
+        state="WARNING",
+        invoice_ids=("invoice-a",),
+        days_overdue=7,
+        policy_fingerprint=POLICY,
+        expected_revision=0,
+        collection=collection,
+        evaluated_at=NOW,
+    )
+
+    def writer(state: str, invoice_id: str) -> str:
+        try:
+            value = PlatformDunningRegistry.transition(
+                tenant_id=TENANT,
+                subscription_id=SUBSCRIPTION,
+                state=state,
+                invoice_ids=(invoice_id,),
+                days_overdue=10 if state == "CRITICAL" else 14,
+                policy_fingerprint=POLICY,
+                expected_revision=1,
+                collection=collection,
+                evaluated_at=NOW,
+            )
+            return f"won:{value['revision']}"
+        except PlatformDunningRevisionConflict:
+            return "conflict"
+
+    with ThreadPoolExecutor(max_workers=2) as pool:
+        outcomes = list(pool.map(
+            lambda args: writer(*args),
+            [("CRITICAL", "invoice-b"), ("SUSPENDED_READONLY", "invoice-c")],
+        ))
+    assert sorted(outcomes) == ["conflict", "won:2"]
+    persisted = PlatformDunningRegistry.get(TENANT, SUBSCRIPTION, collection)
+    assert persisted is not None and persisted["revision"] == 2
