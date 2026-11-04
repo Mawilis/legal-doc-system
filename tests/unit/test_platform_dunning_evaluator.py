@@ -106,3 +106,17 @@ def test_terminal_invoices_are_excluded_and_policy_must_be_monotonic():
             projection_collection=ProjectionCollection(),
             now=NOW,
         )
+
+
+def test_below_warning_threshold_does_not_create_noop_active_projection():
+    collection = ProjectionCollection()
+    result = evaluate_platform_dunning(
+        tenant_id="tenant-a",
+        invoices=[invoice("inv-a", "sub-1", "2026-11-01T00:00:00+00:00")],
+        policy=POLICY,
+        projection_collection=collection,
+        now=NOW,
+    )
+    assert result["evaluated_subscriptions"] == 1
+    assert result["transition_count"] == 0
+    assert collection.documents == []
