@@ -6,6 +6,7 @@ from tools.eos.saas.billing.platform_dunning_evaluator import (
     PlatformDunningEvaluationError,
     aggregate_overdue_invoices,
     evaluate_platform_dunning,
+    state_for_days,
 )
 
 
@@ -120,3 +121,19 @@ def test_below_warning_threshold_does_not_create_noop_active_projection():
     assert result["evaluated_subscriptions"] == 1
     assert result["transition_count"] == 0
     assert collection.documents == []
+
+
+@pytest.mark.parametrize(
+    ("days", "expected"),
+    [
+        (2, "ACTIVE"),
+        (3, "REMINDER"),
+        (7, "WARNING"),
+        (10, "CRITICAL"),
+        (14, "SUSPENSION_REVIEW"),
+        (21, "COLLECTIONS_REVIEW"),
+        (30, "TERMINATION_REVIEW"),
+    ],
+)
+def test_policy_ladder_selects_one_deterministic_collection_stage(days, expected):
+    assert state_for_days(days, POLICY) == expected
