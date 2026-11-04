@@ -96,7 +96,12 @@ def test_dry_run_does_not_persist():
 
 
 def test_terminal_invoices_are_excluded_and_policy_must_be_monotonic():
-    rows = [invoice("inv-a", "sub-1", "2026-10-01T00:00:00+00:00", status="void")]
+    rows = [
+        invoice("inv-void", "sub-1", "2026-10-01T00:00:00+00:00", status="void"),
+        invoice("inv-draft", "sub-1", "2026-10-01T00:00:00+00:00", status="draft"),
+        invoice("inv-pending", "sub-1", "2026-10-01T00:00:00+00:00", status="pending"),
+        invoice("inv-unknown", "sub-1", "2026-10-01T00:00:00+00:00", status="mystery"),
+    ]
     assert aggregate_overdue_invoices(rows, tenant_id="tenant-a", now=NOW) == {}
     invalid = dict(POLICY, termination_day=2)
     with pytest.raises(PlatformDunningEvaluationError, match="NOT_MONOTONIC"):
