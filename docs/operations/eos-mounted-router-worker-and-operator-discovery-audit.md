@@ -329,3 +329,36 @@ The verifier refuses to run while the manifest is `INVENTORY_INCOMPLETE`, refuse
 - Branding and AI indexes are now inventoried, but C1C orchestration/accounting and AI advisory/service router transitive persistence require separate route-to-registry closure.
 - Dynamic legal command collection references are closed to imported registry constants, but their exact index options and CRUD action set must still be merged from every registry source before the API permission manifest is marked complete.
 - No candidate workload identity or live runtime target is proven; operator credentials and production remain unchanged.
+
+
+## 17. Legal Operations workflow/command index tranche
+
+Added 11 more source-verified collection entries to `infra/mongodb/eos-index-manifest-v1.json`:
+- process-service allocation receipts and current pointer (4 exact indexes);
+- deputy device provenance challenges (2);
+- legal conflict screenings and reviews (8);
+- legal matter workflow instances and transitions (8);
+- legal workflow definitions, gate satisfactions, stages and topologies (11).
+
+All index names, key order and unique flags were checked against the registry source. No TTL indexes are declared by these registries. These additions are manifest-only and do not provision MongoDB.
+
+The source pass also identified collections in the command dependency graph for which no `ensure_indexes` or direct `create_index` declaration was found in the inspected registry module:
+- `legal_operations_lifecycle_evidence`;
+- `legal_operations_deputy_principal_bindings`;
+- `process_service_attempt_outcome_evidence`;
+- `process_service_attempt_transition_evidence`;
+- `process_service_field_evidence`;
+- `process_service_return_evidence`;
+- the four process-service location permission/observation/revocation/access-audit collections;
+- legal notification recipient binding and lifecycle collections;
+- legal work assignment, work item and completion-event collections.
+
+This does **not** prove these collections have no indexes: indexes may be declared in another bootstrap or a shared owner. Their canonical index owner and exact deployed definitions remain unresolved, so they are excluded from any complete-manifest claim. The API's reachable CRUD actions are likewise not collapsed into blanket CRUD; each registry method remains the source of the action matrix.
+
+## 18. Dunning implementation gate
+
+The transaction redesign remains a reviewed contract, not an activated code path. Two source facts make immediate implementation unsafe:
+- `collections_day` is accepted and persisted by policy normalization but is ignored by the state derivation function; product/legal policy must decide its meaning.
+- The exact unique/idempotency indexes and canonical subscription identity needed for a transaction-safe state + subscription + audit transition are not yet source-certified.
+
+No worker was extracted and no dunning writes were changed. The next implementation must introduce the idempotency/fencing evidence and CAS semantics together with its exact index manifest entries and disposable replica-set integration tests, then replace the API evaluator in one reviewed change. The current evaluator remains the known non-atomic implementation; it must not be represented as certified.
