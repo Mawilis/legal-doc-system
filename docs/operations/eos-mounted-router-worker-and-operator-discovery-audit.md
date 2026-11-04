@@ -501,7 +501,7 @@ A complete pass over the 93 Python Legal Operations registry modules found and s
 - Legal work transition materialization receipts, dependency edges, ethical-wall policy revisions/currentness, materialization policies, operational matter access, confidentiality clearances, supervision bindings and tenant workflow activations.
 - Professional-standing evidence, legal acceptance and process-service billing eligibility.
 
-The source declarations include the non-default unique/partial filters for revision roots, successors, current work access roots, and predecessor lineage. The manifest now has 131 collection entries and 466 index declarations, subject to the latest gate run.
+The source declarations include the non-default unique/partial filters for revision roots, successors, current work access roots, and predecessor lineage. The manifest now has 131 collection entries and 466 index declarations. The provisioning gate passed on commit `376c287`: manifest validation, the manifest/harness/verifier unit suites, and the explicit apply-refusal check all passed.
 
 ### Remaining source boundary
 
