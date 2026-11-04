@@ -11,7 +11,7 @@ on:
       - "tools/eos/saas/billing/platform_dunning_*.py"
       - "tools/eos/api/billing_router.py"
       - "tests/unit/test_platform_dunning_*.py"
-      - "tests/integration/test_platform_dunning_registry_real_mongo.py"
+      - "tests/integration/test_platform_dunning_registry_real_mongo.py"\n      - "tests/integration/test_billing_intelligence_http_real_mongo.py"
       - ".github/workflows/platform-dunning-certification.yml"
 
 permissions:
@@ -84,7 +84,7 @@ jobs:
 
       - name: Run real Mongo replica-set certification
         run: |
-          python -m pytest -q             tests/integration/test_platform_dunning_registry_real_mongo.py
+          python -m pytest -q             tests/integration/test_platform_dunning_registry_real_mongo.py             tests/integration/test_billing_intelligence_http_real_mongo.py
 
       - name: Stop disposable MongoDB
         if: always()
