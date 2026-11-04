@@ -3665,6 +3665,88 @@
         }
       ],
       "provisioning_owner": "separate_eos_index_provisioner"
+    },
+    {
+      "id": "wilsy-ai-next-best-action-advisories",
+      "database": "canonical_eos_business_database",
+      "collection": "wilsy_ai_next_best_action_advisories",
+      "source": "tools/eos/intelligence/registry/next_best_action_advisory_registry.py",
+      "indexes": [
+        {
+          "name": "c1d_advisory_identity_unique",
+          "keys": [
+            [
+              "tenant_id",
+              1
+            ],
+            [
+              "advisory_id",
+              1
+            ]
+          ],
+          "unique": true
+        },
+        {
+          "name": "c1d_advisory_fingerprint_unique",
+          "keys": [
+            [
+              "tenant_id",
+              1
+            ],
+            [
+              "fingerprint",
+              1
+            ]
+          ],
+          "unique": true
+        },
+        {
+          "name": "c1d_advisory_snapshot_unique",
+          "keys": [
+            [
+              "tenant_id",
+              1
+            ],
+            [
+              "scope_ref",
+              1
+            ],
+            [
+              "source_snapshot_fingerprint",
+              1
+            ],
+            [
+              "policy_id",
+              1
+            ],
+            [
+              "policy_version",
+              1
+            ]
+          ],
+          "unique": true
+        },
+        {
+          "name": "c1d_advisory_successor_unique",
+          "keys": [
+            [
+              "tenant_id",
+              1
+            ],
+            [
+              "supersedes_advisory_id",
+              1
+            ]
+          ],
+          "unique": true,
+          "partialFilterExpression": {
+            "supersedes_advisory_id": {
+              "$type": "string"
+            }
+          }
+        }
+      ],
+      "provisioning_owner": "separate_eos_index_provisioner"
     }
   ],
   "excluded_until_inventory_complete": [
