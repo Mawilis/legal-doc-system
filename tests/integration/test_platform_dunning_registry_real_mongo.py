@@ -115,7 +115,7 @@ def test_real_mongo_unique_identity_revision_replay_and_tenant_isolation(
         PlatformDunningRegistry.transition(
             tenant_id=TENANT,
             subscription_id=SUBSCRIPTION,
-            state="SUSPENDED_READONLY",
+            state="SUSPENSION_REVIEW",
             invoice_ids=("invoice-a",),
             days_overdue=14,
             policy_fingerprint=POLICY,
@@ -202,7 +202,7 @@ def test_real_mongo_concurrent_writers_have_one_revision_winner(
     with ThreadPoolExecutor(max_workers=2) as pool:
         outcomes = list(pool.map(
             lambda args: writer(*args),
-            [("CRITICAL", "invoice-b"), ("SUSPENDED_READONLY", "invoice-c")],
+            [("CRITICAL", "invoice-b"), ("SUSPENSION_REVIEW", "invoice-c")],
         ))
     assert sorted(outcomes) == ["conflict", "won:2"]
     persisted = PlatformDunningRegistry.get(TENANT, SUBSCRIPTION, collection)
