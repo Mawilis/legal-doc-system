@@ -7735,6 +7735,411 @@
         }
       ],
       "provisioning_owner": "separate_eos_index_provisioner"
+    },
+    {
+      "id": "legal-corpus-approval-evidence",
+      "database": "canonical_eos_business_database",
+      "collection": "legal_corpus_approval_evidence",
+      "source": "tools/eos/legal_operations/registry/legal_corpus_approval_registry.py",
+      "indexes": [
+        {
+          "name": "legal_corpus_approval_evidence_id_unique",
+          "keys": [
+            [
+              "approval_evidence.approval_evidence_id",
+              1
+            ]
+          ],
+          "unique": true
+        },
+        {
+          "name": "legal_corpus_approval_authorization_id_unique",
+          "keys": [
+            [
+              "authorization_id",
+              1
+            ]
+          ],
+          "unique": true
+        },
+        {
+          "name": "legal_corpus_approval_authorization_idempotency_unique",
+          "keys": [
+            [
+              "scope",
+              1
+            ],
+            [
+              "operation",
+              1
+            ],
+            [
+              "idempotency_key",
+              1
+            ]
+          ],
+          "unique": true
+        },
+        {
+          "name": "legal_corpus_approval_evidence_idempotency_unique",
+          "keys": [
+            [
+              "scope",
+              1
+            ],
+            [
+              "operation",
+              1
+            ],
+            [
+              "approval_evidence.idempotency_key",
+              1
+            ]
+          ],
+          "unique": true
+        },
+        {
+          "name": "legal_corpus_approval_target_version_unique",
+          "keys": [
+            [
+              "scope",
+              1
+            ],
+            [
+              "operation",
+              1
+            ],
+            [
+              "approval_evidence.approved_document_id",
+              1
+            ],
+            [
+              "approval_evidence.approved_version",
+              1
+            ]
+          ],
+          "unique": true
+        },
+        {
+          "name": "legal_corpus_approval_evidence_fingerprint_lookup",
+          "keys": [
+            [
+              "approval_evidence.evidence_fingerprint",
+              1
+            ]
+          ],
+          "unique": false
+        },
+        {
+          "name": "legal_corpus_approval_source_lookup",
+          "keys": [
+            [
+              "approval_evidence.source_document_id",
+              1
+            ],
+            [
+              "approval_evidence.source_version",
+              1
+            ]
+          ],
+          "unique": false
+        }
+      ],
+      "provisioning_owner": "separate_eos_index_provisioner"
+    },
+    {
+      "id": "legal-corpus-provisioning-authority-evidence",
+      "database": "canonical_eos_business_database",
+      "collection": "legal_corpus_provisioning_authority_evidence",
+      "source": "tools/eos/legal_operations/registry/legal_corpus_provisioning_authority_registry.py",
+      "indexes": [
+        {
+          "name": "legal_corpus_provisioning_authority_evidence_id_unique",
+          "keys": [
+            [
+              "authority_evidence_id",
+              1
+            ]
+          ],
+          "unique": true
+        },
+        {
+          "name": "legal_corpus_provisioning_authority_source_version_unique",
+          "keys": [
+            [
+              "scope",
+              1
+            ],
+            [
+              "operation",
+              1
+            ],
+            [
+              "source_document_id",
+              1
+            ],
+            [
+              "source_version",
+              1
+            ]
+          ],
+          "unique": true
+        },
+        {
+          "name": "legal_corpus_provisioning_authority_idempotency_unique",
+          "keys": [
+            [
+              "scope",
+              1
+            ],
+            [
+              "operation",
+              1
+            ],
+            [
+              "idempotency_key",
+              1
+            ]
+          ],
+          "unique": true
+        }
+      ],
+      "provisioning_owner": "separate_eos_index_provisioner"
+    },
+    {
+      "id": "legal-courier-observations",
+      "database": "canonical_eos_business_database",
+      "collection": "legal_courier_observations",
+      "source": "tools/eos/legal_operations/registry/legal_courier_observation_registry.py",
+      "indexes": [
+        {
+          "name": "legal_courier_tenant_observation_unique",
+          "keys": [
+            [
+              "tenant_id",
+              1
+            ],
+            [
+              "observation_id",
+              1
+            ]
+          ],
+          "unique": true
+        },
+        {
+          "name": "legal_courier_tenant_provider_event_unique",
+          "keys": [
+            [
+              "tenant_id",
+              1
+            ],
+            [
+              "provider_key",
+              1
+            ],
+            [
+              "provider_event_reference",
+              1
+            ]
+          ],
+          "unique": true
+        },
+        {
+          "name": "legal_courier_tenant_document_observed",
+          "keys": [
+            [
+              "tenant_id",
+              1
+            ],
+            [
+              "case_matter_id",
+              1
+            ],
+            [
+              "document_id",
+              1
+            ],
+            [
+              "observed_at",
+              1
+            ]
+          ],
+          "unique": false
+        },
+        {
+          "name": "legal_courier_tenant_tracking_observed",
+          "keys": [
+            [
+              "tenant_id",
+              1
+            ],
+            [
+              "provider_key",
+              1
+            ],
+            [
+              "tracking_reference",
+              1
+            ],
+            [
+              "observed_at",
+              1
+            ]
+          ],
+          "unique": false
+        }
+      ],
+      "provisioning_owner": "separate_eos_index_provisioner"
+    },
+    {
+      "id": "legal-court-operation-preparations",
+      "database": "canonical_eos_business_database",
+      "collection": "legal_court_operation_preparations",
+      "source": "tools/eos/legal_operations/registry/legal_court_operation_preparation_registry.py",
+      "indexes": [
+        {
+          "name": "legal_court_operation_preparation_tenant_id_unique",
+          "keys": [
+            [
+              "tenant_id",
+              1
+            ],
+            [
+              "operation_preparation_id",
+              1
+            ]
+          ],
+          "unique": true
+        },
+        {
+          "name": "legal_court_operation_preparation_tenant_fingerprint_unique",
+          "keys": [
+            [
+              "tenant_id",
+              1
+            ],
+            [
+              "fingerprint",
+              1
+            ]
+          ],
+          "unique": true
+        },
+        {
+          "name": "legal_court_operation_preparation_tenant_idempotency_unique",
+          "keys": [
+            [
+              "tenant_id",
+              1
+            ],
+            [
+              "idempotency_key",
+              1
+            ]
+          ],
+          "unique": true
+        },
+        {
+          "name": "legal_court_operation_preparation_matter_operation_history",
+          "keys": [
+            [
+              "tenant_id",
+              1
+            ],
+            [
+              "case_matter_id",
+              1
+            ],
+            [
+              "operation_type",
+              1
+            ],
+            [
+              "occurred_at",
+              1
+            ]
+          ],
+          "unique": false
+        },
+        {
+          "name": "legal_court_operation_preparation_matter_representation_history",
+          "keys": [
+            [
+              "tenant_id",
+              1
+            ],
+            [
+              "case_matter_id",
+              1
+            ],
+            [
+              "final_representation_id",
+              1
+            ],
+            [
+              "occurred_at",
+              1
+            ]
+          ],
+          "unique": false
+        },
+        {
+          "name": "legal_court_operation_preparation_target_court_history",
+          "keys": [
+            [
+              "tenant_id",
+              1
+            ],
+            [
+              "target_court_id",
+              1
+            ],
+            [
+              "occurred_at",
+              1
+            ]
+          ],
+          "unique": false
+        }
+      ],
+      "provisioning_owner": "separate_eos_index_provisioner"
+    },
+    {
+      "id": "legal-document-versions",
+      "database": "canonical_eos_business_database",
+      "collection": "legal_document_versions",
+      "source": "tools/eos/legal_operations/registry/legal_document_registry.py",
+      "indexes": [
+        {
+          "name": "legal_document_version_unique",
+          "keys": [
+            [
+              "document_id",
+              1
+            ],
+            [
+              "version",
+              1
+            ]
+          ],
+          "unique": true
+        },
+        {
+          "name": "legal_agreement_version_unique",
+          "keys": [
+            [
+              "agreement_type",
+              1
+            ],
+            [
+              "version",
+              1
+            ]
+          ],
+          "unique": true
+        }
+      ],
+      "provisioning_owner": "separate_eos_index_provisioner"
     }
   ],
   "excluded_until_inventory_complete": [
