@@ -1,0 +1,158 @@
+"""Host-backed platform dunning projection certification on disposable Mongo RS."""
+from __future__ import annotations
+
+from datetime import datetime, timezone
+import os
+import uuid
+from typing import Any, Iterator
+from urllib.parse import urlparse
+
+import pytest
+from pymongo import MongoClient
+from pymongo.read_concern import ReadConcern
+from pymongo.write_concern import WriteConcern
+
+from tools.eos.saas.billing.platform_dunning_registry import (
+    PlatformDunningRegistry,
+    PlatformDunningRevisionConflict,
+)
+
+
+DEFAULT_URI = "mongodb://127.0.0.1:27027/?replicaSet=wilsyVendorCertRS"
+REPLICA_SET = "wilsyVendorCertRS"
+TENANT = "tenant-platform-dunning-real"
+SUBSCRIPTION = "sub-platform-dunning-real"
+POLICY = "a" * 128
+NOW = datetime(2026, 11, 4, 10, tzinfo=timezone.utc)
+
+
+def _uri() -> str:
+    value = os.getenv("TEST_VENDOR_MONGO_URI", DEFAULT_URI)
+    parsed = urlparse(value)
+    if parsed.scheme != "mongodb" or parsed.hostname not in {"127.0.0.1", "localhost", "::1"}:
+        raise RuntimeError("PLATFORM_DUNNING_REAL_MONGO_LOOPBACK_REQUIRED")
+    return value
+
+
+@pytest.fixture
+def mongo_context() -> Iterator[tuple[MongoClient[Any], Any]]:
+    client: MongoClient[Any] = MongoClient(
+        _uri(),
+        serverSelectionTimeoutMS=3000,
+        retryWrites=True,
+    )
+    try:
+        hello = client.admin.command("hello")
+        if hello.get("setName") != REPLICA_SET or hello.get("isWritablePrimary") is not True:
+            pytest.fail("PLATFORM_DUNNING_WRITABLE_REPLICA_SET_REQUIRED")
+        if hello.get("logicalSessionTimeoutMinutes") is None:
+            pytest.fail("PLATFORM_DUNNING_TRANSACTIONS_REQUIRED")
+    except Exception as error:
+        client.close()
+        pytest.fail(f"PLATFORM_DUNNING_MONGO_UNAVAILABLE:{type(error).__name__}")
+    database = client[f"wilsy_platform_dunning_{uuid.uuid4().hex}"]
+    try:
+        yield client, database
+    finally:
+        client.drop_database(database.name)
+        client.close()
+
+
+def test_real_mongo_unique_identity_revision_replay_and_tenant_isolation(
+    mongo_context: tuple[MongoClient[Any], Any],
+) -> None:
+    client, database = mongo_context
+    collection = database.get_collection(
+        "platform_dunning_states",
+        write_concern=WriteConcern(w="majority", j=True),
+        read_concern=ReadConcern("majority"),
+    )
+    PlatformDunningRegistry.ensure_indexes(collection)
+
+    first = PlatformDunningRegistry.transition(
+        tenant_id=TENANT,
+        subscription_id=SUBSCRIPTION,
+        state="WARNING",
+        invoice_ids=("invoice-b", "invoice-a"),
+        days_overdue=7,
+        policy_fingerprint=POLICY,
+        expected_revision=0,
+        collection=collection,
+        evaluated_at=NOW,
+    )
+    assert first["revision"] == 1
+    assert PlatformDunningRegistry.get("other-tenant", SUBSCRIPTION, collection) is None
+
+    replay = PlatformDunningRegistry.transition(
+        tenant_id=TENANT,
+        subscription_id=SUBSCRIPTION,
+        state="WARNING",
+        invoice_ids=("invoice-a", "invoice-b"),
+        days_overdue=7,
+        policy_fingerprint=POLICY,
+        expected_revision=1,
+        collection=collection,
+        evaluated_at=NOW,
+    )
+    assert replay == first
+    assert collection.count_documents({"tenant_id": TENANT, "subscription_id": SUBSCRIPTION}) == 1
+
+    second = PlatformDunningRegistry.transition(
+        tenant_id=TENANT,
+        subscription_id=SUBSCRIPTION,
+        state="CRITICAL",
+        invoice_ids=("invoice-a", "invoice-b", "invoice-c"),
+        days_overdue=10,
+        policy_fingerprint=POLICY,
+        expected_revision=1,
+        collection=collection,
+        evaluated_at=NOW,
+    )
+    assert second["revision"] == 2
+    with pytest.raises(PlatformDunningRevisionConflict):
+        PlatformDunningRegistry.transition(
+            tenant_id=TENANT,
+            subscription_id=SUBSCRIPTION,
+            state="SUSPENDED_READONLY",
+            invoice_ids=("invoice-a",),
+            days_overdue=14,
+            policy_fingerprint=POLICY,
+            expected_revision=1,
+            collection=collection,
+            evaluated_at=NOW,
+        )
+
+    indexes = {item["name"]: item for item in collection.list_indexes()}
+    assert indexes["platform_dunning_tenant_subscription_unique"]["unique"] is True
+
+
+def test_real_mongo_caller_owned_transaction_rollback(
+    mongo_context: tuple[MongoClient[Any], Any],
+) -> None:
+    client, database = mongo_context
+    collection = database.get_collection(
+        "platform_dunning_states",
+        write_concern=WriteConcern(w="majority", j=True),
+        read_concern=ReadConcern("majority"),
+    )
+    PlatformDunningRegistry.ensure_indexes(collection)
+
+    with pytest.raises(RuntimeError, match="synthetic abort"):
+        with client.start_session() as session:
+            with session.start_transaction():
+                PlatformDunningRegistry.transition(
+                    tenant_id=TENANT,
+                    subscription_id=SUBSCRIPTION,
+                    state="WARNING",
+                    invoice_ids=("invoice-a",),
+                    days_overdue=7,
+                    policy_fingerprint=POLICY,
+                    expected_revision=0,
+                    collection=collection,
+                    session=session,
+                    evaluated_at=NOW,
+                )
+                assert session.in_transaction
+                raise RuntimeError("synthetic abort")
+
+    assert collection.count_documents({"tenant_id": TENANT}) == 0
