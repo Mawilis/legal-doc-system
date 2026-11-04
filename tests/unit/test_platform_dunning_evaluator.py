@@ -142,3 +142,9 @@ def test_below_warning_threshold_does_not_create_noop_active_projection():
 )
 def test_policy_ladder_selects_one_deterministic_collection_stage(days, expected):
     assert state_for_days(days, POLICY) == expected
+
+
+def test_malformed_due_date_fails_closed():
+    rows = [invoice("inv-a", "sub-1", "not-a-date")]
+    with pytest.raises(PlatformDunningEvaluationError, match="DUE_AT_INVALID"):
+        aggregate_overdue_invoices(rows, tenant_id="tenant-a", now=NOW)
