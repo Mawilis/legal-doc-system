@@ -269,3 +269,70 @@ def test_real_mongo_projection_and_audit_share_caller_transaction(
 
     assert projections.count_documents({"tenant_id": TENANT}) == 0
     assert audit.count_documents({"tenant_id": TENANT}) == 0
+
+
+def test_settlement_reconciliation_resolves_projection_and_allows_new_cycle(
+    mongo_context: tuple[MongoClient[Any], Any],
+) -> None:
+    client, database = mongo_context
+    projections = database.get_collection(
+        "platform_dunning_states",
+        write_concern=WriteConcern(w="majority", j=True),
+        read_concern=ReadConcern("majority"),
+    )
+    PlatformDunningRegistry.ensure_indexes(projections)
+    PlatformDunningRegistry.transition(
+        tenant_id=TENANT,
+        subscription_id=SUBSCRIPTION,
+        state="WARNING",
+        invoice_ids=["invoice-settled"],
+        days_overdue=8,
+        policy_fingerprint=POLICY,
+        expected_revision=0,
+        collection=projections,
+        evaluated_at=NOW,
+    )
+    paid_invoice = {
+        "tenant_id": TENANT,
+        "subscription_id": SUBSCRIPTION,
+        "invoice_id": "invoice-settled",
+        "due_at": datetime(2026, 10, 1, tzinfo=timezone.utc),
+        "status": "paid",
+    }
+    policy = {
+        "reminder_day": 3,
+        "warning_day": 7,
+        "critical_day": 10,
+        "suspension_day": 14,
+        "collections_day": 21,
+        "termination_day": 30,
+    }
+    resolved = evaluate_platform_dunning(
+        tenant_id=TENANT,
+        invoices=[paid_invoice],
+        policy=policy,
+        projection_collection=projections,
+        now=NOW,
+    )
+    assert resolved["transitions"][0]["state"] == "RESOLVED"
+    stored = PlatformDunningRegistry.get(TENANT, SUBSCRIPTION, projections)
+    assert stored["state"] == "RESOLVED"
+    assert stored["revision"] == 2
+
+    new_invoice = {
+        "tenant_id": TENANT,
+        "subscription_id": SUBSCRIPTION,
+        "invoice_id": "invoice-new-cycle",
+        "due_at": datetime(2026, 10, 29, tzinfo=timezone.utc),
+        "status": "open",
+    }
+    reopened = evaluate_platform_dunning(
+        tenant_id=TENANT,
+        invoices=[paid_invoice, new_invoice],
+        policy=policy,
+        projection_collection=projections,
+        now=NOW,
+    )
+    assert reopened["transitions"][0]["state"] == "REMINDER"
+    assert reopened["transitions"][0]["from_state"] == "RESOLVED"
+    assert reopened["transitions"][0]["revision"] == 3
