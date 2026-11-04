@@ -461,3 +461,26 @@ These entries describe source declarations only. No Atlas index was created or i
 ### Billing / webhook repeatable certification
 
 Added `.github/workflows/eos-billing-webhook-certification.yml`. It provisions a disposable local MongoDB 7.0.37 replica set and runs existing billing registry, financial-truth firewall, subscription transaction-injection, execution reconciliation and PayShap host integration suites, plus focused billing/dunning unit suites. It uses the repository's fixed test URI contract on loopback port 27027 and a synthetic PayShap test secret from the test fixture. This does not connect to Atlas or require production credentials. The workflow is new and its first run must complete before certification is claimed.
+
+
+## 21. Legal registry index-owner closure — corrected source findings
+
+A deeper registry-owner pass found that several families previously listed as lacking an index declaration do in fact declare their own indexes. The earlier statement that these had no declaration in the inspected registry module is superseded by this section. Source owners and exact definitions are now recorded for 21 additional collections / 45 indexes:
+
+- deputy principal bindings;
+- notification contact verification, verified contacts, recipient bindings and recipient-binding lifecycle;
+- return-ready notification intents;
+- legal work assignments, work items and completion events;
+- process-service attempt authority receipts, attempt outcomes, attempt transitions and field evidence;
+- process-service location permission grants, observations, revocations and access audit;
+- process-service return evidence;
+- process-service tariff schedules, versions and assessments.
+
+The new manifest commit `8500989` adds the exact source-declared key order, uniqueness, explicit names and partial filters. Notable non-default options include:
+- verified notification active-address unique index filtered by `revoked_at: null`;
+- legal work assignment initial-current index filtered by `supersedes_assignment_id: null`;
+- legal work assignment predecessor unique index filtered by `supersedes_assignment_id: {$type: "string"}`.
+
+These are source-owner declarations, not live Atlas observations. The source registry methods must still be separated from runtime DDL and invoked by a controlled external provisioner/readiness path. No production index creation or live target verification occurred.
+
+The manifest now contains 87 collection entries and 268 index declarations. It remains `INVENTORY_INCOMPLETE`: other collection families, deployed index state, API-startup DDL migration, and source-to-runtime provisioning invocation still require closure.
