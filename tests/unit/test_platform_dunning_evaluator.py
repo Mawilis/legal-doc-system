@@ -28,6 +28,9 @@ class ProjectionCollection:
     def find_one(self, query, *, session=None):
         return next((dict(row) for row in self.documents if all(row.get(k) == v for k, v in query.items())), None)
 
+    def find(self, query, *, session=None):
+        return [dict(row) for row in self.documents if all(row.get(k) == v for k, v in query.items())]
+
     def insert_one(self, document, *, session=None):
         self.documents.append(dict(document))
 
@@ -148,3 +151,50 @@ def test_malformed_due_date_fails_closed():
     rows = [invoice("inv-a", "sub-1", "not-a-date")]
     with pytest.raises(PlatformDunningEvaluationError, match="DUE_AT_INVALID"):
         aggregate_overdue_invoices(rows, tenant_id="tenant-a", now=NOW)
+
+
+def test_settled_invoice_resolves_existing_projection():
+    collection = ProjectionCollection()
+    first = evaluate_platform_dunning(
+        tenant_id="tenant-a",
+        invoices=[invoice("inv-a", "sub-1", "2026-10-20T00:00:00+00:00")],
+        policy=POLICY,
+        projection_collection=collection,
+        now=NOW,
+    )
+    assert first["transitions"][0]["state"] == "CRITICAL"
+    settled = evaluate_platform_dunning(
+        tenant_id="tenant-a",
+        invoices=[invoice("inv-a", "sub-1", "2026-10-20T00:00:00+00:00", status="paid")],
+        policy=POLICY,
+        projection_collection=collection,
+        now=NOW,
+    )
+    assert settled["transitions"][0]["state"] == "RESOLVED"
+    assert collection.documents[0]["state"] == "RESOLVED"
+
+
+def test_partial_settlement_can_reduce_stage_for_remaining_invoice_evidence():
+    collection = ProjectionCollection()
+    evaluate_platform_dunning(
+        tenant_id="tenant-a",
+        invoices=[
+            invoice("inv-old", "sub-1", "2026-10-01T00:00:00+00:00"),
+            invoice("inv-new", "sub-1", "2026-10-28T00:00:00+00:00"),
+        ],
+        policy=POLICY,
+        projection_collection=collection,
+        now=NOW,
+    )
+    result = evaluate_platform_dunning(
+        tenant_id="tenant-a",
+        invoices=[
+            invoice("inv-old", "sub-1", "2026-10-01T00:00:00+00:00", status="paid"),
+            invoice("inv-new", "sub-1", "2026-10-28T00:00:00+00:00"),
+        ],
+        policy=POLICY,
+        projection_collection=collection,
+        now=NOW,
+    )
+    assert result["transitions"][0]["state"] == "REMINDER"
+    assert result["transitions"][0]["invoice_ids"] == ["inv-new"]
