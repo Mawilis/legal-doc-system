@@ -1981,11 +1981,11 @@ async def billing_actions_surface():
 ════════════════════════════════════════════════════════════════════════════════
 INSTITUTIONAL CERTIFICATION SEAL — WILSY OS BILLING ROUTER v1.11.0-L7D-B-LAZY-BILLING-HANDLES
 ════════════════════════════════════════════════════════════════════════════════
-Status:          CERTIFIED PRODUCTION ARTIFACT
+Status:          ENGINEERING ARTIFACT — PRODUCTION ACTIVATION NOT CERTIFIED
 Version:         v1.11.0-L7D-B-LAZY-BILLING-HANDLES
 Fixes:           Financial-truth HTTP firewall; canonical billing-intelligence authorization seam and P4/P6B/P6A/P6C WILSY AI capacity seams preserved.
 Compliance:      POPIA §19 │ GDPR §32 │ SOC2 §CC7.2 │ ISO 27001
-Note:            Plan catalogue persistence/hydration authority is PlanRegistry; Kennel remains exclusive financial execution authority.
+Note:            Plan catalogue authority is PlanRegistry; Kennel remains exclusive financial execution authority. Dunning is a separate collection projection and cannot mutate subscription lifecycle or access.
 ════════════════════════════════════════════════════════════════════════════════
 """
 
