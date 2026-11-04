@@ -17,6 +17,7 @@ from pymongo.errors import DuplicateKeyError, PyMongoError
 
 
 _SCHEMA = "WILSY-PLATFORM-DUNNING-PROJECTION/V1"
+COLLECTION = "platform_subscription_dunning_projections"
 _STATES = frozenset({"ACTIVE", "REMINDER", "WARNING", "CRITICAL", "SUSPENSION_REVIEW", "COLLECTIONS_REVIEW", "TERMINATION_REVIEW", "RESOLVED"})
 _REQUIRED = frozenset({
     "schema", "tenant_id", "subscription_id", "state", "revision",
@@ -251,4 +252,4 @@ class PlatformDunningRegistry:
             raise PlatformDunningRegistryError("PLATFORM_DUNNING_WRITE_UNAVAILABLE") from error
 
 
-__all__ = ["PlatformDunningRegistry", "PlatformDunningRegistryError", "PlatformDunningRevisionConflict"]
+__all__ = ["COLLECTION", "PlatformDunningRegistry", "PlatformDunningRegistryError", "PlatformDunningRevisionConflict"]
