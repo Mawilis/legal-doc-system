@@ -75,7 +75,7 @@ def test_evaluator_writes_one_projection_and_never_claims_lifecycle_mutation():
         now=NOW,
     )
     assert result["transition_count"] == 1
-    assert result["transitions"][0]["state"] == "TERMINATED"
+    assert result["transitions"][0]["state"] == "SUSPENDED_READONLY"
     assert result["subscription_lifecycle_mutated"] is False
     assert len(collection.documents) == 1
 
