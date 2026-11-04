@@ -1461,14 +1461,6 @@ class DunningEvaluationRequest(BaseModel):
     dry_run: bool = False
 
 
-DUNNING_STATE_ORDER = {
-    "ACTIVE": 0,
-    "WARNING": 1,
-    "CRITICAL": 2,
-    "SUSPENDED_READONLY": 3,
-    "TERMINATED": 4,
-}
-
 DUNNING_DEFAULT_POLICY = {
     "reminder_day": 3,
     "warning_day": 7,
@@ -1480,38 +1472,15 @@ DUNNING_DEFAULT_POLICY = {
 
 
 def _normalize_dunning_policy(payload: Dict[str, Any]) -> Dict[str, int]:
-    """Validates a monotonic tenant dunning ladder before it can automate access changes."""
-    policy = {key: int(payload.get(key, fallback)) for key, fallback in DUNNING_DEFAULT_POLICY.items()}
-    values = [policy[key] for key in DUNNING_DEFAULT_POLICY]
-    if any(value < 0 for value in values) or values != sorted(values):
-        raise HTTPException(status_code=422, detail="Dunning policy days must be non-negative and chronological")
-    return policy
-
-
-def _dunning_state_for_days(days_overdue: int, policy: Dict[str, int]) -> str:
-    """Resolves the approved service state for one overdue platform subscription invoice."""
-    if days_overdue >= policy["termination_day"]:
-        return "TERMINATED"
-    if days_overdue >= policy["suspension_day"]:
-        return "SUSPENDED_READONLY"
-    if days_overdue >= policy["critical_day"]:
-        return "CRITICAL"
-    if days_overdue >= policy["warning_day"]:
-        return "WARNING"
-    return "ACTIVE"
-
-
-def _as_utc(value: Any) -> Optional[datetime]:
-    """Normalizes Mongo and domain timestamps for deterministic overdue-day calculation."""
-    if isinstance(value, datetime):
-        return value if value.tzinfo else value.replace(tzinfo=timezone.utc)
-    if not value:
-        return None
+    """Use the canonical deterministic dunning policy validator."""
+    from tools.eos.saas.billing.platform_dunning_evaluator import (
+        PlatformDunningEvaluationError,
+        normalize_policy,
+    )
     try:
-        parsed = datetime.fromisoformat(str(value).replace("Z", "+00:00"))
-        return parsed if parsed.tzinfo else parsed.replace(tzinfo=timezone.utc)
-    except (TypeError, ValueError):
-        return None
+        return normalize_policy(payload)
+    except PlatformDunningEvaluationError as error:
+        raise HTTPException(status_code=422, detail=str(error)) from error
 
 
 def _resolve_invoice_any(registry: BillingRegistry, tenant_id: str, invoice_id: str):
