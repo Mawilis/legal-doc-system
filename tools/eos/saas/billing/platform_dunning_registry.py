@@ -17,6 +17,7 @@ from pymongo.errors import DuplicateKeyError, PyMongoError
 
 
 _SCHEMA = "WILSY-PLATFORM-DUNNING-PROJECTION/V1"
+_STATES = frozenset({"ACTIVE", "WARNING", "CRITICAL", "SUSPENDED_READONLY", "TERMINATED"})
 _REQUIRED = frozenset({
     "schema", "tenant_id", "subscription_id", "state", "revision",
     "invoice_ids", "days_overdue", "policy_fingerprint",
@@ -84,6 +85,8 @@ class PlatformDunningRegistry:
         cls._identifier(value["tenant_id"], "tenant_id")
         cls._identifier(value["subscription_id"], "subscription_id")
         cls._identifier(value["state"], "state")
+        if value["state"] not in _STATES:
+            raise PlatformDunningRegistryError("PLATFORM_DUNNING_STATE_INVALID")
         revision = value["revision"]
         if isinstance(revision, bool) or not isinstance(revision, int) or revision < 1:
             raise PlatformDunningRegistryError("PLATFORM_DUNNING_REVISION_INVALID")
@@ -164,6 +167,8 @@ class PlatformDunningRegistry:
         tenant = cls._identifier(tenant_id, "tenant_id")
         subscription = cls._identifier(subscription_id, "subscription_id")
         target_state = cls._identifier(state, "state")
+        if target_state not in _STATES:
+            raise PlatformDunningRegistryError("PLATFORM_DUNNING_STATE_INVALID")
         if isinstance(expected_revision, bool) or not isinstance(expected_revision, int) or expected_revision < 0:
             raise PlatformDunningRegistryError("PLATFORM_DUNNING_EXPECTED_REVISION_INVALID")
         if isinstance(days_overdue, bool) or not isinstance(days_overdue, int) or days_overdue < 0:
