@@ -15,6 +15,7 @@ from pymongo.write_concern import WriteConcern
 
 from tools.eos.saas.billing.platform_dunning_evaluator import evaluate_platform_dunning
 from tools.eos.saas.billing.platform_dunning_registry import (
+    COLLECTION as DUNNING_PROJECTION_COLLECTION,
     PlatformDunningRegistry,
     PlatformDunningRevisionConflict,
 )
@@ -65,7 +66,7 @@ def test_real_mongo_unique_identity_revision_replay_and_tenant_isolation(
 ) -> None:
     client, database = mongo_context
     collection = database.get_collection(
-        "platform_dunning_states",
+        DUNNING_PROJECTION_COLLECTION,
         write_concern=WriteConcern(w="majority", j=True),
         read_concern=ReadConcern("majority"),
     )
@@ -133,7 +134,7 @@ def test_real_mongo_caller_owned_transaction_rollback(
 ) -> None:
     client, database = mongo_context
     collection = database.get_collection(
-        "platform_dunning_states",
+        DUNNING_PROJECTION_COLLECTION,
         write_concern=WriteConcern(w="majority", j=True),
         read_concern=ReadConcern("majority"),
     )
@@ -165,7 +166,7 @@ def test_real_mongo_concurrent_writers_have_one_revision_winner(
 ) -> None:
     client, database = mongo_context
     collection = database.get_collection(
-        "platform_dunning_states",
+        DUNNING_PROJECTION_COLLECTION,
         write_concern=WriteConcern(w="majority", j=True),
         read_concern=ReadConcern("majority"),
     )
@@ -214,7 +215,7 @@ def test_real_mongo_projection_and_audit_share_caller_transaction(
 ) -> None:
     client, database = mongo_context
     projections = database.get_collection(
-        "platform_dunning_states",
+        DUNNING_PROJECTION_COLLECTION,
         write_concern=WriteConcern(w="majority", j=True),
         read_concern=ReadConcern("majority"),
     )
@@ -276,7 +277,7 @@ def test_settlement_reconciliation_resolves_projection_and_allows_new_cycle(
 ) -> None:
     client, database = mongo_context
     projections = database.get_collection(
-        "platform_dunning_states",
+        DUNNING_PROJECTION_COLLECTION,
         write_concern=WriteConcern(w="majority", j=True),
         read_concern=ReadConcern("majority"),
     )
