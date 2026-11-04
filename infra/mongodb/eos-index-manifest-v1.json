@@ -8140,6 +8140,1365 @@
         }
       ],
       "provisioning_owner": "separate_eos_index_provisioner"
+    },
+    {
+      "id": "legal-acceptance-evidence",
+      "database": "canonical_eos_business_database",
+      "collection": "legal_acceptance_evidence",
+      "source": "tools/eos/legal_operations/registry/legal_acceptance_registry.py",
+      "indexes": [
+        {
+          "name": "legal_acceptance_version_unique",
+          "keys": [
+            [
+              "tenant_id",
+              1
+            ],
+            [
+              "principal_id",
+              1
+            ],
+            [
+              "agreement_type",
+              1
+            ],
+            [
+              "document_id",
+              1
+            ],
+            [
+              "document_version",
+              1
+            ]
+          ],
+          "unique": true
+        },
+        {
+          "name": "legal_acceptance_idempotency_unique",
+          "keys": [
+            [
+              "tenant_id",
+              1
+            ],
+            [
+              "principal_id",
+              1
+            ],
+            [
+              "idempotency_key",
+              1
+            ]
+          ],
+          "unique": true,
+          "sparse": true
+        }
+      ],
+      "provisioning_owner": "separate_eos_index_provisioner"
+    },
+    {
+      "id": "legal-practitioner-professional-standing-evidence",
+      "database": "canonical_eos_business_database",
+      "collection": "legal_practitioner_professional_standing_evidence",
+      "source": "tools/eos/legal_operations/registry/legal_practitioner_professional_standing_evidence_registry.py",
+      "indexes": [
+        {
+          "name": "r63_professional_evidence_identity_unique",
+          "keys": [
+            [
+              "tenant_id",
+              1
+            ],
+            [
+              "practitioner_principal_id",
+              1
+            ],
+            [
+              "verified_subject_id",
+              1
+            ],
+            [
+              "jurisdiction",
+              1
+            ],
+            [
+              "evidence_kind",
+              1
+            ],
+            [
+              "revision",
+              1
+            ]
+          ],
+          "unique": true
+        },
+        {
+          "name": "r63_professional_evidence_root_unique",
+          "keys": [
+            [
+              "tenant_id",
+              1
+            ],
+            [
+              "practitioner_principal_id",
+              1
+            ],
+            [
+              "verified_subject_id",
+              1
+            ],
+            [
+              "jurisdiction",
+              1
+            ],
+            [
+              "evidence_kind",
+              1
+            ]
+          ],
+          "unique": true,
+          "partialFilterExpression": {
+            "revision": 1
+          }
+        },
+        {
+          "name": "r63_professional_evidence_successor_unique",
+          "keys": [
+            [
+              "tenant_id",
+              1
+            ],
+            [
+              "practitioner_principal_id",
+              1
+            ],
+            [
+              "verified_subject_id",
+              1
+            ],
+            [
+              "jurisdiction",
+              1
+            ],
+            [
+              "evidence_kind",
+              1
+            ],
+            [
+              "predecessor_registry_fingerprint",
+              1
+            ]
+          ],
+          "unique": true,
+          "partialFilterExpression": {
+            "predecessor_registry_fingerprint": {
+              "$type": "string"
+            }
+          }
+        },
+        {
+          "name": "r63_professional_evidence_fingerprint_unique",
+          "keys": [
+            [
+              "tenant_id",
+              1
+            ],
+            [
+              "registry_fingerprint",
+              1
+            ]
+          ],
+          "unique": true
+        },
+        {
+          "name": "r63_professional_evidence_reference_unique",
+          "keys": [
+            [
+              "tenant_id",
+              1
+            ],
+            [
+              "evidence_reference",
+              1
+            ]
+          ],
+          "unique": true
+        },
+        {
+          "name": "r63_professional_evidence_currentness",
+          "keys": [
+            [
+              "tenant_id",
+              1
+            ],
+            [
+              "practitioner_principal_id",
+              1
+            ],
+            [
+              "verified_subject_id",
+              1
+            ],
+            [
+              "jurisdiction",
+              1
+            ],
+            [
+              "evidence_kind",
+              1
+            ],
+            [
+              "observed_at",
+              1
+            ],
+            [
+              "revision",
+              1
+            ]
+          ],
+          "unique": false
+        }
+      ],
+      "provisioning_owner": "separate_eos_index_provisioner"
+    },
+    {
+      "id": "legal-principal-operating-role-bindings",
+      "database": "canonical_eos_business_database",
+      "collection": "legal_principal_operating_role_bindings",
+      "source": "tools/eos/legal_operations/registry/legal_principal_operating_role_binding_registry.py",
+      "indexes": [
+        {
+          "name": "legal_principal_operating_role_bindings_identity_unique",
+          "keys": [
+            [
+              "tenant_id",
+              1
+            ],
+            [
+              "principal_operating_role_binding_id",
+              1
+            ],
+            [
+              "binding_revision",
+              1
+            ]
+          ],
+          "unique": true
+        },
+        {
+          "name": "legal_principal_operating_role_bindings_fingerprint_unique",
+          "keys": [
+            [
+              "tenant_id",
+              1
+            ],
+            [
+              "fingerprint",
+              1
+            ]
+          ],
+          "unique": true
+        },
+        {
+          "name": "legal_principal_operating_role_bindings_history",
+          "keys": [
+            [
+              "tenant_id",
+              1
+            ],
+            [
+              "principal_operating_role_binding_id",
+              1
+            ],
+            [
+              "binding_revision",
+              1
+            ]
+          ],
+          "unique": false
+        },
+        {
+          "name": "legal_principal_operating_role_bindings_currentness",
+          "keys": [
+            [
+              "tenant_id",
+              1
+            ],
+            [
+              "principal_operating_role_binding_id",
+              1
+            ],
+            [
+              "effective_from",
+              1
+            ],
+            [
+              "binding_revision",
+              1
+            ]
+          ],
+          "unique": false
+        },
+        {
+          "name": "legal_principal_operating_role_principal_history",
+          "keys": [
+            [
+              "tenant_id",
+              1
+            ],
+            [
+              "principal_id",
+              1
+            ],
+            [
+              "effective_from",
+              1
+            ],
+            [
+              "binding_revision",
+              1
+            ]
+          ],
+          "unique": false
+        },
+        {
+          "name": "legal_principal_operating_role_role_history",
+          "keys": [
+            [
+              "tenant_id",
+              1
+            ],
+            [
+              "operating_role_id",
+              1
+            ],
+            [
+              "operating_role_revision",
+              1
+            ],
+            [
+              "principal_id",
+              1
+            ],
+            [
+              "binding_revision",
+              1
+            ]
+          ],
+          "unique": false
+        }
+      ],
+      "provisioning_owner": "separate_eos_index_provisioner"
+    },
+    {
+      "id": "legal-storefront-public-intents",
+      "database": "canonical_eos_business_database",
+      "collection": "legal_storefront_public_intents",
+      "source": "tools/eos/legal_operations/registry/legal_storefront_public_intent_registry.py",
+      "indexes": [
+        {
+          "name": "legal_storefront_public_intent_id_unique",
+          "keys": [
+            [
+              "intent_id",
+              1
+            ]
+          ],
+          "unique": true
+        },
+        {
+          "name": "legal_storefront_public_intent_fingerprint_unique",
+          "keys": [
+            [
+              "fingerprint",
+              1
+            ]
+          ],
+          "unique": true
+        }
+      ],
+      "provisioning_owner": "separate_eos_index_provisioner"
+    },
+    {
+      "id": "legal-transition-work-materialization-receipts",
+      "database": "canonical_eos_business_database",
+      "collection": "legal_transition_work_materialization_receipts",
+      "source": "tools/eos/legal_operations/registry/legal_transition_work_materialization_receipt_registry.py",
+      "indexes": [
+        {
+          "name": "legal_transition_work_materialization_receipt_identity_unique",
+          "keys": [
+            [
+              "tenant_id",
+              1
+            ],
+            [
+              "receipt_id",
+              1
+            ]
+          ],
+          "unique": true
+        },
+        {
+          "name": "legal_transition_work_materialization_receipt_transition_unique",
+          "keys": [
+            [
+              "tenant_id",
+              1
+            ],
+            [
+              "transition_id",
+              1
+            ]
+          ],
+          "unique": true
+        },
+        {
+          "name": "legal_transition_work_materialization_receipt_fingerprint_unique",
+          "keys": [
+            [
+              "tenant_id",
+              1
+            ],
+            [
+              "fingerprint",
+              1
+            ]
+          ],
+          "unique": true
+        },
+        {
+          "name": "legal_transition_work_materialization_receipt_matter",
+          "keys": [
+            [
+              "tenant_id",
+              1
+            ],
+            [
+              "case_matter_id",
+              1
+            ]
+          ],
+          "unique": false
+        },
+        {
+          "name": "legal_transition_work_materialization_receipt_policy",
+          "keys": [
+            [
+              "tenant_id",
+              1
+            ],
+            [
+              "policy_id",
+              1
+            ],
+            [
+              "policy_revision",
+              1
+            ]
+          ],
+          "unique": false
+        }
+      ],
+      "provisioning_owner": "separate_eos_index_provisioner"
+    },
+    {
+      "id": "legal-work-dependency-edges",
+      "database": "canonical_eos_business_database",
+      "collection": "legal_work_dependency_edges",
+      "source": "tools/eos/legal_operations/registry/legal_work_dependency_edge_registry.py",
+      "indexes": [
+        {
+          "name": "legal_work_dependency_edge_identity_unique",
+          "keys": [
+            [
+              "tenant_id",
+              1
+            ],
+            [
+              "dependency_edge_id",
+              1
+            ]
+          ],
+          "unique": true
+        },
+        {
+          "name": "legal_work_dependency_edge_relation_unique",
+          "keys": [
+            [
+              "tenant_id",
+              1
+            ],
+            [
+              "source_materialization_receipt_id",
+              1
+            ],
+            [
+              "predecessor_work_item_id",
+              1
+            ],
+            [
+              "successor_work_item_id",
+              1
+            ]
+          ],
+          "unique": true
+        },
+        {
+          "name": "legal_work_dependency_edge_fingerprint_unique",
+          "keys": [
+            [
+              "tenant_id",
+              1
+            ],
+            [
+              "fingerprint",
+              1
+            ]
+          ],
+          "unique": true
+        },
+        {
+          "name": "legal_work_dependency_edge_receipt",
+          "keys": [
+            [
+              "tenant_id",
+              1
+            ],
+            [
+              "source_materialization_receipt_id",
+              1
+            ]
+          ],
+          "unique": false
+        },
+        {
+          "name": "legal_work_dependency_edge_matter",
+          "keys": [
+            [
+              "tenant_id",
+              1
+            ],
+            [
+              "case_matter_id",
+              1
+            ]
+          ],
+          "unique": false
+        },
+        {
+          "name": "legal_work_dependency_edge_predecessor",
+          "keys": [
+            [
+              "tenant_id",
+              1
+            ],
+            [
+              "predecessor_work_item_id",
+              1
+            ]
+          ],
+          "unique": false
+        },
+        {
+          "name": "legal_work_dependency_edge_successor",
+          "keys": [
+            [
+              "tenant_id",
+              1
+            ],
+            [
+              "successor_work_item_id",
+              1
+            ]
+          ],
+          "unique": false
+        }
+      ],
+      "provisioning_owner": "separate_eos_index_provisioner"
+    },
+    {
+      "id": "legal-work-ethical-wall-policy-revisions",
+      "database": "canonical_eos_business_database",
+      "collection": "legal_work_ethical_wall_policy_revisions",
+      "source": "tools/eos/legal_operations/registry/legal_work_ethical_wall_policy_registry.py",
+      "indexes": [
+        {
+          "name": "g76_wall_tenant_matter_policy_revision_unique",
+          "keys": [
+            [
+              "tenant_id",
+              1
+            ],
+            [
+              "case_matter_id",
+              1
+            ],
+            [
+              "policy_id",
+              1
+            ],
+            [
+              "revision",
+              1
+            ]
+          ],
+          "unique": true
+        },
+        {
+          "name": "g76_wall_tenant_matter_policy_root_unique",
+          "keys": [
+            [
+              "tenant_id",
+              1
+            ],
+            [
+              "case_matter_id",
+              1
+            ],
+            [
+              "policy_id",
+              1
+            ]
+          ],
+          "unique": true,
+          "partialFilterExpression": {
+            "revision": 1
+          }
+        },
+        {
+          "name": "g76_wall_tenant_matter_policy_successor_unique",
+          "keys": [
+            [
+              "tenant_id",
+              1
+            ],
+            [
+              "case_matter_id",
+              1
+            ],
+            [
+              "policy_id",
+              1
+            ],
+            [
+              "predecessor_fingerprint",
+              1
+            ]
+          ],
+          "unique": true,
+          "partialFilterExpression": {
+            "predecessor_fingerprint": {
+              "$type": "string"
+            }
+          }
+        },
+        {
+          "name": "g76_wall_tenant_fingerprint_unique",
+          "keys": [
+            [
+              "tenant_id",
+              1
+            ],
+            [
+              "fingerprint",
+              1
+            ]
+          ],
+          "unique": true
+        },
+        {
+          "name": "g76_wall_tenant_matter_effective_history",
+          "keys": [
+            [
+              "tenant_id",
+              1
+            ],
+            [
+              "case_matter_id",
+              1
+            ],
+            [
+              "effective_from",
+              1
+            ],
+            [
+              "policy_id",
+              1
+            ]
+          ],
+          "unique": false
+        }
+      ],
+      "provisioning_owner": "separate_eos_index_provisioner"
+    },
+    {
+      "id": "legal-work-ethical-wall-policy-currentness",
+      "database": "canonical_eos_business_database",
+      "collection": "legal_work_ethical_wall_policy_currentness",
+      "source": "tools/eos/legal_operations/registry/legal_work_ethical_wall_policy_registry.py",
+      "indexes": [
+        {
+          "name": "g76_wall_tenant_matter_policy_current_unique",
+          "keys": [
+            [
+              "tenant_id",
+              1
+            ],
+            [
+              "case_matter_id",
+              1
+            ],
+            [
+              "policy_id",
+              1
+            ]
+          ],
+          "unique": true
+        }
+      ],
+      "provisioning_owner": "separate_eos_index_provisioner"
+    },
+    {
+      "id": "legal-work-materialization-policies",
+      "database": "canonical_eos_business_database",
+      "collection": "legal_work_materialization_policies",
+      "source": "tools/eos/legal_operations/registry/legal_work_materialization_policy_registry.py",
+      "indexes": [
+        {
+          "name": "legal_work_materialization_policy_identity_unique",
+          "keys": [
+            [
+              "tenant_id",
+              1
+            ],
+            [
+              "policy_id",
+              1
+            ],
+            [
+              "policy_revision",
+              1
+            ]
+          ],
+          "unique": true
+        },
+        {
+          "name": "legal_work_materialization_policy_fingerprint_unique",
+          "keys": [
+            [
+              "tenant_id",
+              1
+            ],
+            [
+              "fingerprint",
+              1
+            ]
+          ],
+          "unique": true
+        },
+        {
+          "name": "legal_work_materialization_policy_workflow_stage",
+          "keys": [
+            [
+              "tenant_id",
+              1
+            ],
+            [
+              "workflow_definition_id",
+              1
+            ],
+            [
+              "target_stage_definition_id",
+              1
+            ]
+          ],
+          "unique": false
+        }
+      ],
+      "provisioning_owner": "separate_eos_index_provisioner"
+    },
+    {
+      "id": "legal-work-operational-matter-access-events",
+      "database": "canonical_eos_business_database",
+      "collection": "legal_work_operational_matter_access_events",
+      "source": "tools/eos/legal_operations/registry/legal_work_operational_matter_access_registry.py",
+      "indexes": [
+        {
+          "name": "work_access_tenant_event_unique",
+          "keys": [
+            [
+              "tenant_id",
+              1
+            ],
+            [
+              "event_id",
+              1
+            ]
+          ],
+          "unique": true
+        },
+        {
+          "name": "work_access_tenant_predecessor_unique",
+          "keys": [
+            [
+              "tenant_id",
+              1
+            ],
+            [
+              "case_matter_id",
+              1
+            ],
+            [
+              "practitioner_principal_id",
+              1
+            ],
+            [
+              "predecessor_event_id",
+              1
+            ]
+          ],
+          "unique": true,
+          "partialFilterExpression": {
+            "predecessor_event_id": {
+              "$type": "string"
+            }
+          }
+        },
+        {
+          "name": "work_access_tenant_scope_root_unique",
+          "keys": [
+            [
+              "tenant_id",
+              1
+            ],
+            [
+              "case_matter_id",
+              1
+            ],
+            [
+              "practitioner_principal_id",
+              1
+            ]
+          ],
+          "unique": true,
+          "partialFilterExpression": {
+            "predecessor_event_id": {
+              "$type": "null"
+            }
+          }
+        },
+        {
+          "name": "work_access_scope_chronology_read",
+          "keys": [
+            [
+              "tenant_id",
+              1
+            ],
+            [
+              "case_matter_id",
+              1
+            ],
+            [
+              "practitioner_principal_id",
+              1
+            ],
+            [
+              "occurred_at",
+              1
+            ]
+          ],
+          "unique": false
+        }
+      ],
+      "provisioning_owner": "separate_eos_index_provisioner"
+    },
+    {
+      "id": "legal-work-practitioner-confidentiality-clearance-events",
+      "database": "canonical_eos_business_database",
+      "collection": "legal_work_practitioner_confidentiality_clearance_events",
+      "source": "tools/eos/legal_operations/registry/legal_work_practitioner_confidentiality_clearance_registry.py",
+      "indexes": [
+        {
+          "name": "p47_clearance_tenant_event_unique",
+          "keys": [
+            [
+              "tenant_id",
+              1
+            ],
+            [
+              "clearance_event_id",
+              1
+            ]
+          ],
+          "unique": true
+        },
+        {
+          "name": "p47_clearance_tenant_scope_root_unique",
+          "keys": [
+            [
+              "tenant_id",
+              1
+            ],
+            [
+              "case_matter_id",
+              1
+            ],
+            [
+              "practitioner_principal_id",
+              1
+            ]
+          ],
+          "unique": true,
+          "partialFilterExpression": {
+            "predecessor_event_id": null
+          }
+        },
+        {
+          "name": "p47_clearance_tenant_scope_successor_unique",
+          "keys": [
+            [
+              "tenant_id",
+              1
+            ],
+            [
+              "case_matter_id",
+              1
+            ],
+            [
+              "practitioner_principal_id",
+              1
+            ],
+            [
+              "predecessor_event_id",
+              1
+            ]
+          ],
+          "unique": true,
+          "partialFilterExpression": {
+            "predecessor_event_id": {
+              "$type": "string"
+            }
+          }
+        },
+        {
+          "name": "p47_clearance_tenant_fingerprint_unique",
+          "keys": [
+            [
+              "tenant_id",
+              1
+            ],
+            [
+              "fingerprint",
+              1
+            ]
+          ],
+          "unique": true
+        },
+        {
+          "name": "p47_clearance_scope_history",
+          "keys": [
+            [
+              "tenant_id",
+              1
+            ],
+            [
+              "case_matter_id",
+              1
+            ],
+            [
+              "practitioner_principal_id",
+              1
+            ],
+            [
+              "effective_at",
+              1
+            ]
+          ],
+          "unique": false
+        }
+      ],
+      "provisioning_owner": "separate_eos_index_provisioner"
+    },
+    {
+      "id": "legal-work-supervision-bindings",
+      "database": "canonical_eos_business_database",
+      "collection": "legal_work_supervision_bindings",
+      "source": "tools/eos/legal_operations/registry/legal_work_supervision_binding_registry.py",
+      "indexes": [
+        {
+          "name": "legal_work_supervision_tenant_binding_unique",
+          "keys": [
+            [
+              "tenant_id",
+              1
+            ],
+            [
+              "supervision_binding_id",
+              1
+            ]
+          ],
+          "unique": true
+        },
+        {
+          "name": "legal_work_supervision_tenant_predecessor_unique",
+          "keys": [
+            [
+              "tenant_id",
+              1
+            ],
+            [
+              "supersedes_supervision_binding_id",
+              1
+            ]
+          ],
+          "unique": true,
+          "partialFilterExpression": {
+            "supersedes_supervision_binding_id": {
+              "$type": "string"
+            }
+          }
+        },
+        {
+          "name": "legal_work_supervision_tenant_supervisor",
+          "keys": [
+            [
+              "tenant_id",
+              1
+            ],
+            [
+              "supervisor_principal_id",
+              1
+            ],
+            [
+              "effective_from",
+              1
+            ],
+            [
+              "supervision_binding_id",
+              1
+            ]
+          ],
+          "unique": false
+        },
+        {
+          "name": "legal_work_supervision_tenant_supervisee",
+          "keys": [
+            [
+              "tenant_id",
+              1
+            ],
+            [
+              "supervisee_principal_id",
+              1
+            ],
+            [
+              "effective_from",
+              1
+            ],
+            [
+              "supervision_binding_id",
+              1
+            ]
+          ],
+          "unique": false
+        },
+        {
+          "name": "legal_work_supervision_tenant_work_scope",
+          "keys": [
+            [
+              "tenant_id",
+              1
+            ],
+            [
+              "case_matter_id",
+              1
+            ],
+            [
+              "scope",
+              1
+            ],
+            [
+              "work_item_id",
+              1
+            ],
+            [
+              "effective_from",
+              1
+            ]
+          ],
+          "unique": false
+        }
+      ],
+      "provisioning_owner": "separate_eos_index_provisioner"
+    },
+    {
+      "id": "process-service-billing-eligibility",
+      "database": "canonical_eos_business_database",
+      "collection": "process_service_billing_eligibility",
+      "source": "tools/eos/legal_operations/registry/process_service_billing_eligibility_registry.py",
+      "indexes": [
+        {
+          "name": "p6b_tenant_evidence_unique",
+          "keys": [
+            [
+              "tenant_id",
+              1
+            ],
+            [
+              "evidence_identity",
+              1
+            ]
+          ],
+          "unique": true
+        },
+        {
+          "name": "p6b_tenant_entity_unique",
+          "keys": [
+            [
+              "tenant_id",
+              1
+            ],
+            [
+              "entity_type",
+              1
+            ],
+            [
+              "entity_identity",
+              1
+            ]
+          ],
+          "unique": true
+        }
+      ],
+      "provisioning_owner": "separate_eos_index_provisioner"
+    },
+    {
+      "id": "sheriff-appointment-source-evidence",
+      "database": "canonical_eos_business_database",
+      "collection": "sheriff_appointment_source_evidence",
+      "source": "tools/eos/legal_operations/registry/sheriff_appointment_source_evidence_registry.py",
+      "indexes": [
+        {
+          "name": "sheriff_appointment_evidence_identity_unique",
+          "keys": [
+            [
+              "tenant_id",
+              1
+            ],
+            [
+              "practitioner_principal_id",
+              1
+            ],
+            [
+              "verified_subject_id",
+              1
+            ],
+            [
+              "jurisdiction",
+              1
+            ],
+            [
+              "evidence_kind",
+              1
+            ],
+            [
+              "revision",
+              1
+            ]
+          ],
+          "unique": true
+        },
+        {
+          "name": "sheriff_appointment_evidence_root_unique",
+          "keys": [
+            [
+              "tenant_id",
+              1
+            ],
+            [
+              "practitioner_principal_id",
+              1
+            ],
+            [
+              "verified_subject_id",
+              1
+            ],
+            [
+              "jurisdiction",
+              1
+            ],
+            [
+              "evidence_kind",
+              1
+            ]
+          ],
+          "unique": true,
+          "partialFilterExpression": {
+            "revision": 1
+          }
+        },
+        {
+          "name": "sheriff_appointment_evidence_successor_unique",
+          "keys": [
+            [
+              "tenant_id",
+              1
+            ],
+            [
+              "practitioner_principal_id",
+              1
+            ],
+            [
+              "verified_subject_id",
+              1
+            ],
+            [
+              "jurisdiction",
+              1
+            ],
+            [
+              "evidence_kind",
+              1
+            ],
+            [
+              "supersedes_fingerprint",
+              1
+            ]
+          ],
+          "unique": true,
+          "partialFilterExpression": {
+            "supersedes_fingerprint": {
+              "$type": "string"
+            }
+          }
+        },
+        {
+          "name": "sheriff_appointment_evidence_fingerprint_unique",
+          "keys": [
+            [
+              "tenant_id",
+              1
+            ],
+            [
+              "registry_fingerprint",
+              1
+            ]
+          ],
+          "unique": true
+        },
+        {
+          "name": "sheriff_appointment_evidence_history",
+          "keys": [
+            [
+              "tenant_id",
+              1
+            ],
+            [
+              "practitioner_principal_id",
+              1
+            ],
+            [
+              "verified_subject_id",
+              1
+            ],
+            [
+              "jurisdiction",
+              1
+            ],
+            [
+              "evidence_kind",
+              1
+            ],
+            [
+              "observed_at",
+              1
+            ],
+            [
+              "revision",
+              1
+            ]
+          ],
+          "unique": false
+        }
+      ],
+      "provisioning_owner": "separate_eos_index_provisioner"
+    },
+    {
+      "id": "tenant-legal-workflow-activations",
+      "database": "canonical_eos_business_database",
+      "collection": "tenant_legal_workflow_activations",
+      "source": "tools/eos/legal_operations/registry/tenant_legal_workflow_activation_registry.py",
+      "indexes": [
+        {
+          "name": "tenant_legal_workflow_activation_identity_unique",
+          "keys": [
+            [
+              "tenant_id",
+              1
+            ],
+            [
+              "activation_id",
+              1
+            ]
+          ],
+          "unique": true
+        },
+        {
+          "name": "tenant_legal_workflow_activation_fingerprint_unique",
+          "keys": [
+            [
+              "tenant_id",
+              1
+            ],
+            [
+              "fingerprint",
+              1
+            ]
+          ],
+          "unique": true
+        },
+        {
+          "name": "tenant_legal_workflow_activation_revision_unique",
+          "keys": [
+            [
+              "tenant_id",
+              1
+            ],
+            [
+              "workflow_definition_id",
+              1
+            ],
+            [
+              "activation_revision",
+              1
+            ]
+          ],
+          "unique": true
+        },
+        {
+          "name": "tenant_legal_workflow_activation_effective_history",
+          "keys": [
+            [
+              "tenant_id",
+              1
+            ],
+            [
+              "workflow_definition_id",
+              1
+            ],
+            [
+              "effective_from",
+              1
+            ],
+            [
+              "activation_revision",
+              1
+            ]
+          ],
+          "unique": false
+        }
+      ],
+      "provisioning_owner": "separate_eos_index_provisioner"
     }
   ],
   "excluded_until_inventory_complete": [
