@@ -448,3 +448,11 @@ Commit `e2f01f9` adds 10 source-verified collection entries and 38 index declara
 - platform billing execution truth (2).
 
 These entries describe source declarations only. No Atlas index was created or inspected. The manifest remains `INVENTORY_INCOMPLETE`; direct billing projections, webhook provisioning invocation, billing index exception suppression, and deployed API/webhook credential source remain open evidence items.
+
+
+### Runtime invocation details confirmed
+
+- Dunning schedule: daily at 00:15 Africa/Johannesburg. `WILSY_DUNNING_SCHEDULER_ENABLED` defaults to false in production mode and true outside production, with explicit environment override. It is an in-process asyncio task, not a separately deployed worker.
+- PayShap secret: repository search found `WILSY_PAYSHAP_WEBHOOK_SECRET` only in the webhook router's environment lookup. No K8s Secret key mapping, external secret reference, rotation automation or independent workload credential source was found in the reviewed repository.
+- Registry index methods for PayShap/financial execution are invoked in integration-test fixtures. Repository search did not find an API startup or webhook request call to those methods. Their existence in test setup is not deployment provisioning evidence.
+- Subscription registry's `create` path invokes `_ensure_indexes` itself, so its four indexes are runtime DDL on the create path. Its tenant+subscription identity unique index is a useful source-level identity contract, but the dunning evaluator does not use that registry or a subscription revision CAS.
