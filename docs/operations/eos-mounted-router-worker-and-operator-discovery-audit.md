@@ -395,3 +395,8 @@ The manifest now contains the source-declared C1C orchestration identity index. 
 - C1D advisory index installation caller must be identified; do not infer that a registry method is deployed.
 - AI Legal Services and Reasoning provider credential/configuration sources, usage observation/outbox behavior and any background retry/cleanup invocation require their own runtime/worker inventory.
 - The advisory legal-source collection mismatch is corrected in code but requires the existing unit and real-Mongo advisory suites to certify before the fix is considered complete.
+
+
+### C1E collection-map correction certification
+
+Commit `3e48152` changes advisory source reads to canonical L7A/L7C registry constants; `717a112` adds the exact collection-map unit assertion. A dedicated workflow, `.github/workflows/eos-ai-advisory-certification.yml`, now runs the C1E/C1D/C1C focused unit suites and existing real-replica-set advisory/gateway integration suites against a disposable local MongoDB replica set. It is currently running on PR head `5c3eaf2`; no certification claim is made until its job completes.
