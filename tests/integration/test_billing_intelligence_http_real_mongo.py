@@ -134,6 +134,12 @@ def _app(database: Any) -> TestClient:
     app.dependency_overrides[module._BILLING_INTELLIGENCE_EVIDENCE_READ_AUTHORIZATION] = (
         lambda: _authorized_context(AUTHORIZED_TENANT)
     )
+    app.dependency_overrides[module._BILLING_DUNNING_PROJECTION_READ_AUTHORIZATION] = (
+        lambda: _authorized_context(AUTHORIZED_TENANT)
+    )
+    app.dependency_overrides[module._BILLING_DUNNING_PROJECTION_EVALUATE_AUTHORIZATION] = (
+        lambda: _authorized_context(AUTHORIZED_TENANT)
+    )
     return TestClient(app)
 
 
@@ -252,3 +258,81 @@ def test_cross_tenant_and_source_corruption_fail_closed(http_context: Any) -> No
 # FAIL-CLOSED POSTURE: authorization and source corruption cannot produce success.
 # FINANCIAL EXECUTION AUTHORITY: Kennel EOS remains exclusive.
 # END OF WILSY OS SOVEREIGN ARTIFACT
+
+
+def test_dunning_http_routes_use_authorized_tenant_and_atomic_projection_audit(
+    http_context: tuple[Any, Any, Any],
+) -> None:
+    """Exercise the authenticated production dunning routes on a real replica set."""
+    _, database, _ = http_context
+    import tools.eos.api.billing_router as module
+
+    database["platform_invoices"].insert_many([
+        {
+            "tenant_id": AUTHORIZED_TENANT,
+            "subscription_id": "sub-route",
+            "invoice_id": "inv-route-a",
+            "due_at": datetime(2026, 10, 1, tzinfo=timezone.utc),
+            "status": "open",
+        },
+        {
+            "tenant_id": "tenant-attacker",
+            "subscription_id": "sub-attacker",
+            "invoice_id": "inv-attacker",
+            "due_at": datetime(2026, 9, 1, tzinfo=timezone.utc),
+            "status": "open",
+        },
+    ])
+    database["billing_dunning_policies"].insert_one({
+        "tenant_id": AUTHORIZED_TENANT,
+        "policy": {
+            "reminder_day": 3,
+            "warning_day": 7,
+            "critical_day": 10,
+            "suspension_day": 14,
+            "collections_day": 21,
+            "termination_day": 30,
+        },
+    })
+    app_client = _app(database)
+    try:
+        response = app_client.post("/billing/dunning/evaluate", json={})
+        assert response.status_code == 200, response.text
+        body = response.json()
+        assert body["tenant_id"] == AUTHORIZED_TENANT
+        assert body["subscription_lifecycle_mutated"] is False
+        assert body["transitions"][0]["subscription_id"] == "sub-route"
+        assert database["platform_subscription_dunning_projections"].count_documents(
+            {"tenant_id": "tenant-attacker"}
+        ) == 0
+        assert database["billing_audit_events"].count_documents({
+            "tenant_id": AUTHORIZED_TENANT,
+            "event_type": "DUNNING_PROJECTION_TRANSITION",
+            "subscription_id": "sub-route",
+            "revision": 1,
+        }) == 1
+        assert database["subscriptions"].count_documents({"tenant_id": AUTHORIZED_TENANT}) == 0
+
+        state_response = app_client.get("/billing/dunning/state")
+        assert state_response.status_code == 200, state_response.text
+        state_body = state_response.json()
+        assert state_body["tenant_id"] == AUTHORIZED_TENANT
+        assert len(state_body["dunning_projections"]) == 1
+    finally:
+        app_client.close()
+
+
+def test_dunning_http_routes_are_bound_to_canonical_authorization_dependencies() -> None:
+    """Header-only tenant claims cannot satisfy either dunning endpoint."""
+    import tools.eos.api.billing_router as module
+
+    for path, method, dependency in (
+        ("/billing/dunning/state", "GET", module._BILLING_DUNNING_PROJECTION_READ_AUTHORIZATION),
+        ("/billing/dunning/evaluate", "POST", module._BILLING_DUNNING_PROJECTION_EVALUATE_AUTHORIZATION),
+    ):
+        routes = [
+            route for route in module.router.routes
+            if getattr(route, "path", "") == path and method in getattr(route, "methods", set())
+        ]
+        assert len(routes) == 1
+        assert any(item.call is dependency for item in routes[0].dependant.dependencies)
