@@ -58,7 +58,7 @@ class Session:
     in_transaction = True
 
 
-def transition(collection: FakeCollection, *, revision: int = 0, state: str = "REMINDER",
+def transition(collection: FakeCollection, *, revision: int = 0, state: str = "WARNING",
                invoice_ids: tuple[str, ...] = ("inv-2", "inv-1"), days: int = 14,
                session: Any = None) -> dict[str, Any]:
     return PlatformDunningRegistry.transition(
@@ -155,3 +155,9 @@ def test_invoice_order_does_not_change_transition_fingerprint() -> None:
     a = transition(left, invoice_ids=("inv-1", "inv-2"))
     b = transition(right, invoice_ids=("inv-2", "inv-1"))
     assert a["transition_fingerprint"] == b["transition_fingerprint"]
+
+
+def test_unknown_projection_state_is_rejected():
+    collection = FakeCollection()
+    with pytest.raises(PlatformDunningRegistryError, match="STATE_INVALID"):
+        transition(collection, state="REMINDER")
