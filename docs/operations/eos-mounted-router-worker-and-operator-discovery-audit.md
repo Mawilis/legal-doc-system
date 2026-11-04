@@ -483,4 +483,4 @@ The new manifest commit `8500989` adds the exact source-declared key order, uniq
 
 These are source-owner declarations, not live Atlas observations. The source registry methods must still be separated from runtime DDL and invoked by a controlled external provisioner/readiness path. No production index creation or live target verification occurred.
 
-The manifest now contains 87 collection entries and 268 index declarations. It remains `INVENTORY_INCOMPLETE`: other collection families, deployed index state, API-startup DDL migration, and source-to-runtime provisioning invocation still require closure.
+The manifest now contains 87 collection entries and 281 index declarations. It remains `INVENTORY_INCOMPLETE`: other collection families, deployed index state, API-startup DDL migration, and source-to-runtime provisioning invocation still require closure.
