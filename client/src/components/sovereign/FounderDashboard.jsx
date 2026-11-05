@@ -233,7 +233,7 @@ class SovereignErrorBoundary extends Component {
 // ============================================================================
 import MetricCard from './MetricCard';
 import styles from './FounderDashboard.module.css';
-import wilsyLogo from '../../assets/logo/wilsy.jpeg';
+import wilsyLogo from '../../assets/logo/wilsy-logo.svg';
 import iconManifest from '../../assets/iconManifest';
 import CommandPalette from './CommandPalette';
 import QuickPanel from './QuickPanel';
