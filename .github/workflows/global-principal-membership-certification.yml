@@ -164,6 +164,7 @@ jobs:
             tests/unit/test_membership_selection_challenge.py \
             tests/unit/test_global_principal_session_authority.py \
             tests/unit/test_global_principal_system_session_authority.py \
+            tests/unit/test_global_principal_system_session_authority.py \
             tests/unit/test_global_principal_totp_verifier.py \
             tests/unit/test_global_principal_mfa_kms_envelope.py \
             tests/unit/test_global_principal_mfa_enrollment_service.py \
@@ -178,8 +179,10 @@ jobs:
             tests/unit/test_principal_authentication_rate_limit.py \
             tests/integration/test_global_principal_system_session_authority_mongo.py \
             tests/unit/test_auth_router_authoritative_mfa.py \
+            tests/unit/test_authentication_principal_authority.py \
             tests/integration/test_membership_selection_challenge_mongo.py \
             tests/integration/test_global_principal_session_authority_mongo.py \
+            tests/integration/test_global_principal_system_session_authority_mongo.py \
             tests/integration/test_global_principal_system_session_authority_mongo.py \
             tests/integration/test_global_principal_mfa_session_transition_mongo.py \
             tests/integration/test_global_principal_totp_verifier_mongo.py \
