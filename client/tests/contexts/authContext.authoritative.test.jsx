@@ -943,7 +943,7 @@ describe('authoritative authentication state machine', () => {
         data: {
           status: AUTH_STATES.MFA_REQUIRED,
           scope: 'SYSTEM',
-          mfa_challenge: 'sysmfa-browser-candidate',
+          mfa_challenge: 'sysmfa_browser_candidate',
         },
       })
       .mockResolvedValueOnce({
@@ -951,7 +951,7 @@ describe('authoritative authentication state machine', () => {
           status: AUTH_STATES.AUTHENTICATED,
           scope: 'SYSTEM',
           access_token: 'candidate-session-token',
-          refresh_token: 'sysrefresh-browser-candidate',
+          refresh_token: 'sysrefresh_browser_candidate',
           principal_id: 'WILSYAUTH-browser-user',
           workspace_id: 'SYSTEM_SERVICES',
         },
