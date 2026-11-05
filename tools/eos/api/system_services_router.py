@@ -791,13 +791,30 @@ def execute_approved_system_permission_revocation(
     actor = _actor(identity)
     idempotency_key = _validate_response_idempotency_key(idempotency_key)
     decision_registry, _, executor, permission_assignments = _response_runtime(request)
+    incidents, _ = _assignment_runtime(request)
 
     def execute(session):
         decision = decision_registry.get(decision_id, session=session)
+        incident = incidents.get_by_id(incident_id=decision.incident_id, session=session)
+        if (
+            incident.tenant_id != decision.tenant_id
+            or incident.reporter_principal_id != decision.target_principal_id
+        ):
+            raise HTTPException(status_code=409, detail="Approved decision no longer matches its incident target.")
         if decision.revision != payload.expected_revision:
             raise HTTPException(status_code=409, detail="Response decision revision conflict.")
         if decision.target_assignment_id is None or decision.target_permission_id is None:
             raise HTTPException(status_code=409, detail="Approved decision has no permission assignment binding.")
+        assignment_history = permission_assignments.get_history(
+            decision.target_assignment_id,
+            session=session,
+        )
+        if (
+            not assignment_history
+            or assignment_history[0].principal_id != decision.target_principal_id
+            or assignment_history[0].permission_id != decision.target_permission_id
+        ):
+            raise HTTPException(status_code=409, detail="Approved decision permission assignment correlation is invalid.")
         execution_receipt = decision_registry.find_execution(
             decision=decision,
             actor_principal_id=actor.principal_id,
@@ -825,6 +842,8 @@ def execute_approved_system_permission_revocation(
                     raise HTTPException(status_code=409, detail="Revocation replay does not match the approved decision.")
                 execution_at = replay.revoked_at
             else:
+                if assignment_history[-1].status is not SystemPermissionAssignmentStatus.ACTIVE:
+                    raise HTTPException(status_code=409, detail="Target permission assignment is not active.")
                 execution_at = datetime.now(timezone.utc)
         evidence = SystemPermissionCommandEvidence(
             operation=SystemPermissionCommandOperation.REVOKE,
