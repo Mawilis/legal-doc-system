@@ -7,6 +7,7 @@ on:
       - "tools/eos/system_services/**"
       - "tests/unit/test_system_services_security_incident_duty.py"
       - "tests/unit/test_system_services_security_incident_response_decision.py"
+      - "tests/unit/test_system_services_security_incident_response_execution.py"
       - "tools/eos/api/system_services_router.py"
       - "tools/eos/system_services/runtime.py"
       - "tools/eos/api/server.py"
