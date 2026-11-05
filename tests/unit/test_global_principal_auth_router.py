@@ -1,11 +1,14 @@
 from __future__ import annotations
 
 import asyncio
+from datetime import datetime, timedelta, timezone
 from types import SimpleNamespace
 
 import pytest
 from fastapi import FastAPI, HTTPException
 from starlette.requests import Request
+
+NOW = datetime(2026, 11, 5, 12, 0, tzinfo=timezone.utc)
 
 from tools.eos.auth.global_principal_mfa_enrollment_service import (
     GlobalPrincipalMfaEnrollmentCodeRejected,
@@ -313,7 +316,7 @@ def test_global_login_routes_membership_free_principal_through_current_system_au
             assert kwargs["principal_id"] == "platform-responder"
             assert kwargs["credential_revision"] == 12
             assert kwargs["session"] is session
-            return "sysmfa-one-time", NOW + __import__("datetime").timedelta(minutes=5)
+            return "sysmfa-one-time", NOW + timedelta(minutes=5)
 
     class Authorizer:
         def require(self, **kwargs):
