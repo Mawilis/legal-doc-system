@@ -9,6 +9,10 @@ on:
       - "tools/eos/api/system_services_router.py"
       - "tools/eos/system_services/runtime.py"
       - "tools/eos/api/server.py"
+      - "client/src/components/system-services/**"
+      - "client/src/components/sovereign/SovereignDashboardController.jsx"
+      - "client/package.json"
+      - "client/package-lock.json"
       - "docs/security/eos-account-protection-and-system-services-escalation-gap-audit.md"
       - "tools/eos/auth/current_system_permission_possession.py"
       - "tools/eos/auth/permission_namespace.py"
@@ -42,6 +46,14 @@ jobs:
         run: |
           python -m pip install --disable-pip-version-check -r requirements.txt
           python -m pip install --disable-pip-version-check pytest==9.1.1
+      - name: Setup Node for authenticated System Services presentation tests
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: npm
+          cache-dependency-path: client/package-lock.json
+      - name: Install exact client dependencies
+        run: npm --prefix client ci
       - name: Start disposable MongoDB replica set
         run: |
           docker run --detach --name wilsy-system-services-case-mongo --publish 27017:27017 mongo:7.0.37 mongod --replSet wilsySystemServicesCaseRS --bind_ip_all
@@ -72,6 +84,8 @@ jobs:
           python -m py_compile tools/eos/system_services/security_incident.py tools/eos/system_services/security_incident_registry.py tools/eos/system_services/security_incident_assignment.py tools/eos/system_services/security_incident_assignment_registry.py tools/eos/system_services/security_incident_escalation_service.py tools/eos/system_services/security_incident_duty.py tools/eos/system_services/support_case.py tools/eos/system_services/support_case_registry.py tools/eos/system_services/agent_policy.py tools/eos/system_services/support_case_service.py tools/eos/system_services/eos_authorizer.py tools/eos/system_services/runtime.py tools/eos/api/system_services_router.py tools/eos/api/server.py tests/unit/test_system_services_security_incident_duty.py tests/unit/test_system_services_support_case.py tests/unit/test_system_services_case_startup.py tests/unit/test_system_services_agent_policy.py tests/unit/test_system_services_eos_authorizer.py tests/unit/test_system_services_runtime.py tests/integration/test_system_services_eos_authorizer_real_mongo.py tests/integration/test_system_services_support_case_registry_mongo.py
           python -m pip install --disable-pip-version-check pyright==1.1.413
           pyright tools/eos/system_services/security_incident.py tools/eos/system_services/security_incident_duty.py tools/eos/system_services/security_incident_registry.py tools/eos/system_services/security_incident_assignment.py tools/eos/system_services/security_incident_assignment_registry.py tools/eos/system_services/security_incident_escalation_service.py tools/eos/system_services/security_incident_duty.py tools/eos/system_services/support_case.py tools/eos/system_services/support_case_registry.py tools/eos/system_services/support_case_service.py tools/eos/system_services/eos_authorizer.py tools/eos/system_services/runtime.py tools/eos/api/system_services_router.py tests/unit/test_system_services_eos_authorizer.py tests/unit/test_system_services_runtime.py tests/integration/test_system_services_eos_authorizer_real_mongo.py tests/unit/test_system_services_support_case.py tests/unit/test_system_services_case_startup.py tests/unit/test_system_services_agent_policy.py tests/integration/test_system_services_support_case_registry_mongo.py
+      - name: Run System Services browser-surface component certificate
+        run: npm --prefix client run test:run -- src/components/system-services/SystemServicesDashboard.test.jsx
       - name: Run unit and real-Mongo case certification
         run: |
           python -m pytest -q tests/unit/test_system_services_security_incident_duty.py tests/unit/test_system_services_support_case.py tests/unit/test_system_services_case_startup.py tests/unit/test_system_services_agent_policy.py tests/unit/test_system_services_eos_authorizer.py tests/unit/test_system_services_runtime.py tests/integration/test_system_services_eos_authorizer_real_mongo.py tests/integration/test_system_services_support_case_registry_mongo.py
