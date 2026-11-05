@@ -1108,6 +1108,7 @@ def test_real_mongo_canonical_revocation_and_execution_receipt_rollback_together
     )
     assignment_registry.ensure_indexes()
     principals = database["principal_authorities"]
+    PrincipalAuthorityRepository.ensure_indexes(principals)
     occurred_at = NOW + timedelta(minutes=2)
     decision = SecurityIncidentResponseDecision(
         decision_id=decision_id,
