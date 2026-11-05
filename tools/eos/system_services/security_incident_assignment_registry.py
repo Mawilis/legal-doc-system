@@ -14,6 +14,9 @@ from tools.eos.system_services.security_incident_assignment import (
 
 COLLECTION = "system_security_incident_assignments"
 EVENT_COLLECTION = "system_security_incident_assignment_events"
+PLATFORM_AUDIT_COLLECTION = "system_platform_audit_events"
+PLATFORM_OUTBOX_COLLECTION = "system_platform_audit_outbox"
+AUDIT_SCHEMA_VERSION = "WILSY-PLATFORM-AUDIT/V1"
 
 
 class IncidentAssignmentRegistryError(RuntimeError):
@@ -31,6 +34,10 @@ class IncidentAssignmentNotFoundError(IncidentAssignmentRegistryError):
 
 
 class IncidentAssignmentPersistenceError(IncidentAssignmentRegistryError):
+    pass
+
+
+class IncidentAssignmentAuditEvidenceConflictError(IncidentAssignmentRegistryError):
     pass
 
 
@@ -95,6 +102,12 @@ class SecurityIncidentAssignmentRegistry:
             raise IncidentAssignmentRegistryError("INCIDENT_ASSIGNMENT_COLLECTION_REQUIRED")
         self._assignments = assignments
         self._events = events
+        try:
+            database = assignments.database
+            self._audit_events = database[PLATFORM_AUDIT_COLLECTION]
+            self._outbox = database[PLATFORM_OUTBOX_COLLECTION]
+        except Exception as error:
+            raise IncidentAssignmentRegistryError("INCIDENT_ASSIGNMENT_AUDIT_STORAGE_REQUIRED") from error
 
     def ensure_indexes(self) -> None:
         self._assignments.create_index([("assignment_id", ASCENDING)], unique=True, name="incident_assignment_identity_unique")
@@ -102,6 +115,54 @@ class SecurityIncidentAssignmentRegistry:
         self._assignments.create_index([("idempotency_fingerprint", ASCENDING)], unique=True, name="incident_assignment_idempotency_unique")
         self._events.create_index([("event_id", ASCENDING)], unique=True, name="incident_assignment_event_identity_unique")
         self._events.create_index([("idempotency_fingerprint", ASCENDING)], unique=True, name="incident_assignment_event_idempotency_unique")
+        self._audit_events.create_index([("event_key", ASCENDING)], unique=True, name="system_platform_audit_event_key_unique")
+        self._outbox.create_index([("event_key", ASCENDING)], unique=True, name="system_platform_audit_outbox_event_key_unique")
+        self._outbox.create_index([("status", ASCENDING), ("created_at", ASCENDING)], name="system_platform_audit_outbox_pending")
+
+    @staticmethod
+    def _insert_or_verify(collection: Any, document: dict[str, object]) -> None:
+        key = document["event_key"]
+        try:
+            collection.insert_one(document)
+            return
+        except DuplicateKeyError:
+            existing = collection.find_one({"event_key": key})
+            if existing is None:
+                raise IncidentAssignmentAuditEvidenceConflictError("INCIDENT_ASSIGNMENT_AUDIT_EVIDENCE_CONFLICT")
+            for field, expected in document.items():
+                if existing.get(field) != expected:
+                    raise IncidentAssignmentAuditEvidenceConflictError("INCIDENT_ASSIGNMENT_AUDIT_EVIDENCE_CONFLICT")
+        except PyMongoError as error:
+            raise IncidentAssignmentPersistenceError("INCIDENT_ASSIGNMENT_AUDIT_WRITE_FAILED") from error
+
+    def record_platform_audit(self, *, assignment: SecurityIncidentAssignment, event: SecurityIncidentAssignmentEvent, session: Any) -> None:
+        """Persist independent audit evidence and delivery intent in the caller transaction."""
+        _require_transaction(session)
+        if (
+            not isinstance(assignment, SecurityIncidentAssignment)
+            or not isinstance(event, SecurityIncidentAssignmentEvent)
+            or event.assignment_id != assignment.assignment_id
+            or event.actor_principal_id not in {assignment.assigned_by_principal_id, assignment.assigned_to_principal_id}
+            or not isinstance(event.idempotency_fingerprint, str)
+            or len(event.idempotency_fingerprint) != 64
+        ):
+            raise IncidentAssignmentRegistryError("INCIDENT_ASSIGNMENT_AUDIT_INPUT_INVALID")
+        event_key = "system-services:" + event.event_id
+        occurred_at = event.occurred_at.isoformat()
+        common: dict[str, object] = {
+            "event_key": event_key,
+            "schema_version": AUDIT_SCHEMA_VERSION,
+            "event_type": event.action,
+            "tenant_id": assignment.tenant_id,
+            "actor_principal_id": event.actor_principal_id,
+            "target_id": assignment.assignment_id,
+            "fingerprint": event.idempotency_fingerprint,
+            "occurred_at": occurred_at,
+        }
+        audit_document = dict(common)
+        outbox_document = {**common, "status": "PENDING", "attempts": 0, "created_at": occurred_at}
+        self._insert_or_verify(self._audit_events, audit_document)
+        self._insert_or_verify(self._outbox, outbox_document)
 
     def get(self, *, assignment_id: str, session: Any) -> SecurityIncidentAssignment:
         _require_transaction(session)
@@ -232,5 +293,7 @@ class SecurityIncidentAssignmentRegistry:
 __all__ = [
     "COLLECTION", "EVENT_COLLECTION", "SecurityIncidentAssignmentRegistry",
     "IncidentAssignmentRegistryError", "IncidentAssignmentConflictError",
-    "IncidentAssignmentNotFoundError", "IncidentAssignmentPersistenceError",
+        "IncidentAssignmentNotFoundError", "IncidentAssignmentPersistenceError",
+    "IncidentAssignmentAuditEvidenceConflictError", "PLATFORM_AUDIT_COLLECTION",
+    "PLATFORM_OUTBOX_COLLECTION",
 ]
