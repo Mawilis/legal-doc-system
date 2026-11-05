@@ -75,6 +75,18 @@ test('certifies independent request, rejection, approval and canonical permissio
   expect(rejected.status).toBe(200);
   expect(rejected.body.status).toBe('REJECTED');
   expect(rejected.body.revision).toBe(1);
+  const staleApproval = await postAs(
+    browser,
+    'system_approver',
+    '/api/system-services/security-response-decisions/' + rejectedRequest.body.decisionId + '/decision',
+    {
+      approved: true,
+      expected_revision: 0,
+      decision_evidence_reference: 'browser-cert-stale-approval:' + state.database_name,
+    },
+    'browser-response-stale-approval-' + state.database_name,
+  );
+  expect(staleApproval.status).toBe(409);
 
   const requested = await postAs(
     browser,
