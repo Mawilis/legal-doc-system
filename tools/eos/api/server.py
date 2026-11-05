@@ -582,7 +582,10 @@ class WilsyAPIServer:
                     app.state.system_services_authority_ready = False
                     code = getattr(error, "code", "SYSTEM_SERVICES_AUTHORITY_CONFIGURATION_UNAVAILABLE")
                     logger.warning("[SYSTEM_SERVICES] Authority composition unavailable: %s", code)
-                if app.state.system_services_authority_ready is True:
+                if (
+                    app.state.system_services_authority_ready is True
+                    and app.state.system_services_authorizer is not None
+                ):
                     try:
                         response_runtime = build_system_services_response_runtime(
                             database,
