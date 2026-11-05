@@ -61,8 +61,14 @@ export async function resolveEosWorkspaceIdentity({
   const user = payload?.user;
   const id = typeof user?.id === 'string' ? user.id.trim() : '';
   const email = typeof user?.email === 'string' ? user.email.trim().toLowerCase() : '';
+  const responseTenantId = typeof payload?.workspace?.tenantId === 'string'
+    ? payload.workspace.tenantId.trim()
+    : '';
   if (payload?.status !== 'READY' || !id || !email || !email.includes('@')) {
     return { ok: false, status: 503, code: 'AUTHORITY_RESPONSE_INVALID' };
+  }
+  if (responseTenantId !== scopedTenantId) {
+    return { ok: false, status: 403, code: 'WORKSPACE_ACCESS_DENIED' };
   }
 
   const firstName = typeof user.firstName === 'string' ? user.firstName.trim() : '';
