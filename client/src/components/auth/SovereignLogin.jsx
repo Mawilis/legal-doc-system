@@ -75,7 +75,7 @@ import wilsyBrandAsset from '../../assets/logo/wilsy-icon.svg';
 export default function SovereignLogin({ onLoginSuccess }) {
   const navigate = useNavigate();
   const location = useLocation();
-  const { login, loading, error: authError, tenant } = useAuth();
+  const { login, loading, error: authError, tenant, authStage } = useAuth();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
