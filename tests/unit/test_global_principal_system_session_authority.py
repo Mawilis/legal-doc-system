@@ -249,13 +249,13 @@ def test_system_refresh_rotation_consumes_old_bearer_and_issues_one_successor(mo
     )
     session = SimpleNamespace(in_transaction=True)
     receipt = authority.rotate_refresh_token(
-        "sysrefresh-current",
+        "sysrefresh_current",
         session=cast(Any, session),
         now=NOW,
     )
     assert receipt.access_token == "rotated-access-token"
     assert receipt.refresh_token.startswith("sysrefresh_")
-    assert receipt.refresh_token != "sysrefresh-current"
+    assert receipt.refresh_token != "sysrefresh_current"
     assert receipt.refresh_expires_at.tzinfo is timezone.utc
     query = refresh_tokens.find_one_and_update.call_args.args[0]
     assert query["token_digest"]
