@@ -87,6 +87,8 @@ from tools.eos.auth.system_permission_command_evidence import (
 )
 from tools.eos.auth.system_permission_assignment_registry import (
     SystemPermissionAssignmentConflictError,
+    SystemPermissionAssignmentNotFoundError,
+    SystemPermissionAssignmentPersistedInvalidError,
     SystemPermissionAssignmentRegistry as CanonicalSystemPermissionAssignmentRegistry,
 )
 from tools.eos.auth.system_permission_revocation_command_service import (
@@ -172,7 +174,12 @@ def _run_transaction(callback: Callable[[ClientSession], _Result]) -> _Result:
         raise HTTPException(status_code=403, detail="System Services access denied.") from error
     except SystemServicesAuthorizationUnavailable as error:
         raise HTTPException(status_code=503, detail="System Services authority is unavailable.") from error
-    except (SupportCaseNotFoundError, IncidentAssignmentNotFoundError, SecurityIncidentNotFoundError) as error:
+    except (
+        SupportCaseNotFoundError,
+        IncidentAssignmentNotFoundError,
+        SecurityIncidentNotFoundError,
+        SystemPermissionAssignmentNotFoundError,
+    ) as error:
         raise HTTPException(status_code=404, detail="System Services record not found.") from error
     except (
         SupportCaseConflictError, SupportCaseApplicationError,
@@ -183,6 +190,7 @@ def _run_transaction(callback: Callable[[ClientSession], _Result]) -> _Result:
         SecurityIncidentResponseDecisionServiceError,
         SecurityIncidentResponseExecutionError,
         SystemPermissionAssignmentConflictError,
+        SystemPermissionAssignmentPersistedInvalidError,
         SystemPermissionRevocationCommandError,
     ) as error:
         raise HTTPException(status_code=409, detail="Support case operation conflicts with current state.") from error
