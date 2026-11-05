@@ -51,3 +51,27 @@ def test_registry_imports_do_not_construct_independent_mongo_clients() -> None:
     assert "127.0.0.1:27017" not in subscription_source
     assert "get_database()" in plan_source
     assert "get_database()" in subscription_source
+
+
+def test_billing_runtime_consumers_do_not_construct_or_select_independent_databases():
+    import inspect
+
+    from tools.eos.saas.billing import (
+        financial_approval_aggregator,
+        order_number_service,
+        platform_billing_financial_execution_request_issuance,
+        platform_billing_release_authorization_issuance,
+    )
+
+    for module in (
+        plan_registry,
+        subscription_registry,
+        order_number_service,
+        financial_approval_aggregator,
+        platform_billing_financial_execution_request_issuance,
+        platform_billing_release_authorization_issuance,
+    ):
+        source = inspect.getsource(module)
+        assert "MongoClient(" not in source
+        assert "127.0.0.1:27017" not in source
+    assert 'get_database("wilsy")' not in inspect.getsource(order_number_service)
