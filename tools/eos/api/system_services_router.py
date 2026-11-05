@@ -803,6 +803,14 @@ def execute_approved_system_permission_revocation(
             raise HTTPException(status_code=409, detail="Approved decision no longer matches its incident target.")
         if decision.revision != payload.expected_revision:
             raise HTTPException(status_code=409, detail="Response decision revision conflict.")
+        try:
+            executor.authorize_execution(
+                decision,
+                actor_principal_id=actor.principal_id,
+                session=session,
+            )
+        except SecurityIncidentResponseExecutionError as error:
+            raise HTTPException(status_code=403, detail="Independent response execution authority required.") from error
         if decision.target_assignment_id is None or decision.target_permission_id is None:
             raise HTTPException(status_code=409, detail="Approved decision has no permission assignment binding.")
         assignment_history = permission_assignments.get_history(
