@@ -11,9 +11,11 @@ on:
       - "tools/eos/api/electrum_payshap_completion_router.py"
       - "tools/eos/api/server.py"
       - "tools/eos/saas/billing/**"
+      - "tools/eos/saas/employee/employee_registry.py"
       - "tests/unit/test_billing_registries_share_eos_mongo_runtime.py"
       - "tests/unit/test_order_number_service_runtime_binding.py"
-      - "tests/unit/test_financial_approval_aggregator_runtime_binding.py"
+      - "tests/unit/test_financial_approval_aggregator_runtime_binding.py tests/unit/test_employee_registry_uses_kernel_database.py"
+      - "tests/unit/test_employee_registry_uses_kernel_database.py"
       - "tools/eos/kennel/**"
       - "tests/unit/test_billing_registry.py"
       - "tests/unit/test_commercial_receivable_dunning.py"
@@ -93,7 +95,7 @@ jobs:
           PY
       - name: Compile billing and webhook sources
         run: |
-          python -m compileall -q tools/eos/api/billing_router.py tools/eos/api/payshap_webhook_router.py tools/eos/api/electrum_payshap_completion_router.py tools/eos/api/server.py tools/eos/saas/billing tools/eos/kennel
+          python -m compileall -q tools/eos/api/billing_router.py tools/eos/api/payshap_webhook_router.py tools/eos/api/electrum_payshap_completion_router.py tools/eos/api/server.py tools/eos/saas/billing tools/eos/saas/employee/employee_registry.py tools/eos/kennel
       - name: Run billing unit certification
         run: |
           python -m pytest -q tests/unit/test_billing_registries_share_eos_mongo_runtime.py tests/unit/test_order_number_service_runtime_binding.py tests/unit/test_financial_approval_aggregator_runtime_binding.py tests/unit/test_billing_registry.py tests/unit/test_commercial_receivable_dunning.py tests/unit/test_payshap_webhook_router_host_runtime.py tests/unit/test_authenticated_settlement_observation_ingestion.py tests/unit/test_settlement_observation_to_platform_settlement_evidence.py tests/unit/test_platform_billing_commercial_settlement_projection_orchestration.py tests/unit/test_atomic_platform_settlement.py tests/unit/test_platform_settlement_outbox.py tests/unit/test_platform_invoice_settlement_allocation.py tests/unit/test_electrum_payshap_completion.py tests/unit/test_electrum_payshap_completion_router.py tests/unit/test_electrum_payshap_completion_processing.py
