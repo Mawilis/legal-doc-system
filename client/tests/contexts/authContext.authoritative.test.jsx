@@ -133,6 +133,7 @@ function Harness() {
   return (
     <div>
       <span data-testid="stage">{auth.authStage}</span>
+      <span data-testid="error">{auth.error || ""}</span>
       <span data-testid="authenticated">{String(auth.isAuthenticated)}</span>
       <span data-testid="qr">{auth.qrCodeData || ''}</span>
       <span data-testid="role">{auth.userRole || ''}</span>
