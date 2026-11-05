@@ -12,6 +12,7 @@ import jwt
 
 import tools.eos.api.electrum_payshap_completion_router as router_module
 from tools.eos.kennel.providers.electrum_payshap_completion import (
+    VerifiedElectrumMessage,
     verify_electrum_http_message_signature,
 )
 from tools.eos.kennel.registry.electrum_payshap_completion_inbox_registry import (
@@ -83,9 +84,11 @@ def _setup(monkeypatch, *, replay=False):
     monkeypatch.setattr(router_module, "_runtime", lambda: runtime)
     event = router_module.create_electrum_completion_inbox_event(
         _payload(),
-        verified_message=SimpleNamespace(
-            content_digest=hashlib.sha256(json.dumps(_payload(), separators=(",", ":")).encode()).hexdigest(),
+        verified_message=VerifiedElectrumMessage(
             key_id="electrum-key-1",
+            issuer="electrum.co.za",
+            issued_at=int(datetime.now(timezone.utc).timestamp()),
+            content_digest=hashlib.sha256(json.dumps(_payload(), separators=(",", ":")).encode()).hexdigest(),
         ),
         received_at=datetime.now(timezone.utc),
     )
