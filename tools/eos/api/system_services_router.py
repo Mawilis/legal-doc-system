@@ -86,7 +86,11 @@ from tools.eos.auth.system_permission_command_evidence import (
     SystemPermissionCommandOperation,
 )
 from tools.eos.auth.system_permission_assignment_registry import (
+    SystemPermissionAssignmentConflictError,
     SystemPermissionAssignmentRegistry as CanonicalSystemPermissionAssignmentRegistry,
+)
+from tools.eos.auth.system_permission_revocation_command_service import (
+    SystemPermissionRevocationCommandError,
 )
 from tools.eos.system_services.support_case_registry import (
     SupportCaseConflictError,
@@ -180,6 +184,8 @@ def _run_transaction(callback: Callable[[ClientSession], _Result]) -> _Result:
         SecurityIncidentResponseDecisionConflictError,
         SecurityIncidentResponseDecisionServiceError,
         SecurityIncidentResponseExecutionError,
+        SystemPermissionAssignmentConflictError,
+        SystemPermissionRevocationCommandError,
     ) as error:
         raise HTTPException(status_code=409, detail="Support case operation conflicts with current state.") from error
     except Exception as error:
