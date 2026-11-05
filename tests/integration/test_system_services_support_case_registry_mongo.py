@@ -696,7 +696,7 @@ def test_incident_responder_assignment_requires_separate_permissions_and_accepta
     assert assigned_record.assignment_id == created.assignment_id
     assert assigned_incident.incident_id == incident.incident_id
     assert authorizer.calls.count((triage_actor, "system_services:case:triage")) == 2
-    assert authorizer.calls.count((responder, "system_services:incident:escalate")) == 2
+    assert authorizer.calls.count((responder, "system_services:incident:escalate")) == 4
 
     with client.start_session() as session:
         with session.start_transaction():
