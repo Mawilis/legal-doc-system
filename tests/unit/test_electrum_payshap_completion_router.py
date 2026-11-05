@@ -149,3 +149,20 @@ def test_http_ingress_rejects_missing_signature_with_signed_401(monkeypatch):
         response.content, response.headers["x-jwt-signature"],
         verification_keys={"wilsy-key-1": wilsy_public}, issuer=config.signing_issuer,
     )
+
+
+def test_ingress_does_not_ack_when_worker_is_disabled(monkeypatch):
+    client, provider_private, wilsy_public, config = _setup(monkeypatch)
+    client.app.state.electrum_settlement_worker_enabled = False
+    body = json.dumps(_payload(), separators=(",", ":")).encode()
+    response = client.post(
+        router_module.ROUTE_PATH,
+        content=body,
+        headers={"x-jwt-signature": _provider_signature(body, provider_private)},
+    )
+    assert response.status_code == 503
+    assert response.json()["code"] == "ELECTRUM_SETTLEMENT_WORKER_NOT_READY"
+    verify_electrum_http_message_signature(
+        response.content, response.headers["x-jwt-signature"],
+        verification_keys={"wilsy-key-1": wilsy_public}, issuer=config.signing_issuer,
+    )
