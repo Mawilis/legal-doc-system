@@ -892,6 +892,68 @@ def verify(state_path: Path) -> None:
         )
         if screening_count != 1 or review_count != 1:
             raise RuntimeError("BROWSER_CERT_DURABLE_REVIEW_CARDINALITY_INVALID")
+
+        response_request_key = "browser-response-request-" + state["database_name"]
+        response_decision_id = "response-" + sha3_256(
+            (
+                state["system_incident_id"]
+                + "\\0"
+                + state["system_actors"]["system_requester"]["principal_id"]
+                + "\\0"
+                + response_request_key
+            ).encode("utf-8")
+        ).hexdigest()
+        decisions = database["system_security_incident_response_decisions"]
+        decision = decisions.find_one({"decision_id": response_decision_id})
+        if (
+            decision is None
+            or decision.get("status") != "APPROVED"
+            or decision.get("revision") != 1
+            or decision.get("target_principal_id") != state["actors"]["partner"]["principal_id"]
+            or decision.get("target_assignment_id") != state["system_target_permission_assignment_id"]
+            or decision.get("target_permission_id") != "privileged_activation:issue"
+            or decision.get("requested_by_principal_id") == decision.get("decided_by_principal_id")
+        ):
+            raise RuntimeError("BROWSER_CERT_RESPONSE_DECISION_DURABLE_BINDING_INVALID")
+
+        decision_events = database["system_security_incident_response_decision_events"]
+        expected_events = {
+            0: "SECURITY_INCIDENT_RESPONSE_REQUESTED",
+            1: "SECURITY_INCIDENT_RESPONSE_APPROVED",
+            2: "SECURITY_INCIDENT_RESPONSE_EXECUTED",
+        }
+        for revision, event_type in expected_events.items():
+            event = decision_events.find_one(
+                {"decision_id": response_decision_id, "revision": revision}
+            )
+            if event is None or event.get("event_type") != event_type:
+                raise RuntimeError("BROWSER_CERT_RESPONSE_EVENT_CHAIN_INVALID")
+
+        event_keys = [
+            f"system-services-response-decision:{response_decision_id}:revision:0",
+            f"system-services-response-decision:{response_decision_id}:revision:1",
+            f"system-services-response-execution:{response_decision_id}:revision:2",
+        ]
+        audit = database["system_platform_audit_events"]
+        outbox = database["system_platform_audit_outbox"]
+        if audit.count_documents({"event_key": {"$in": event_keys}}) != 3:
+            raise RuntimeError("BROWSER_CERT_RESPONSE_AUDIT_CARDINALITY_INVALID")
+        if outbox.count_documents({
+            "event_key": {"$in": event_keys},
+            "status": "PENDING",
+            "attempts": 0,
+        }) != 3:
+            raise RuntimeError("BROWSER_CERT_RESPONSE_OUTBOX_NOT_PENDING")
+
+        revoked = database["system_permission_assignments"].find_one({
+            "assignment_id": state["system_target_permission_assignment_id"],
+            "principal_id": state["actors"]["partner"]["principal_id"],
+            "permission_id": "privileged_activation:issue",
+            "status": "REVOKED",
+            "revoked_by_principal_id": state["system_actors"]["system_executor"]["principal_id"],
+        })
+        if revoked is None:
+            raise RuntimeError("BROWSER_CERT_CANONICAL_PERMISSION_REVOCATION_MISSING")
     finally:
         client.close()
 
