@@ -188,6 +188,14 @@ class SecurityIncidentAssignmentRegistry:
             or updated.idempotency_fingerprint != current.idempotency_fingerprint
             or updated.updated_at < current.updated_at
             or event.actor_principal_id != current.assigned_to_principal_id
+            or event.action != (
+                "INCIDENT_ASSIGNMENT_ACCEPTED"
+                if updated.status is SecurityIncidentAssignmentStatus.ACCEPTED
+                else "INCIDENT_ASSIGNMENT_DECLINED"
+            )
+            or isinstance(expected_revision, bool)
+            or not isinstance(expected_revision, int)
+            or expected_revision < 0
         ):
             raise IncidentAssignmentConflictError("INCIDENT_ASSIGNMENT_REVISION_OR_EVENT_INVALID")
         try:
