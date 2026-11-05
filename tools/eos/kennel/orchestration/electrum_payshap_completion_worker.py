@@ -18,9 +18,9 @@ logger = logging.getLogger(__name__)
 
 INBOX = "electrum_payshap_completion_inbox"
 BINDINGS = "electrum_provider_tenant_bindings"
-OBSERVATIONS = "kennel_financial_settlement_observations"
-EXECUTION_FACTS = "kennel_financial_execution_facts"
-PLATFORM_TRUTH = "kennel_platform_billing_financial_execution_truth"
+OBSERVATIONS = "financial_settlement_observations"
+EXECUTION_FACTS = "financial_execution_facts"
+PLATFORM_TRUTH = "platform_billing_financial_execution_truths"
 RELEASE_AUTHORIZATIONS = "platform_billing_release_authorizations"
 INVOICES = "invoices"
 ALLOCATIONS = "platform_invoice_settlement_allocations"
