@@ -109,7 +109,7 @@ def _setup(monkeypatch, *, replay=False):
     return TestClient(app), provider_private, wilsy_public, config
 
 
-def test_http_ingress_persists_inbox_and_returns_signed_empty_204(monkeypatch):
+def test_http_ingress_persists_inbox_and_returns_signed_empty_202(monkeypatch):
     client, provider_private, wilsy_public, config = _setup(monkeypatch)
     body = json.dumps(_payload(), separators=(",", ":")).encode()
     response = client.post(
@@ -117,7 +117,7 @@ def test_http_ingress_persists_inbox_and_returns_signed_empty_204(monkeypatch):
         content=body,
         headers={"x-jwt-signature": _provider_signature(body, provider_private)},
     )
-    assert response.status_code == 204
+    assert response.status_code == 202
     assert response.content == b""
     verified = verify_electrum_http_message_signature(
         response.content,
@@ -129,7 +129,7 @@ def test_http_ingress_persists_inbox_and_returns_signed_empty_204(monkeypatch):
     assert jwt.decode(response.headers["x-jwt-signature"], wilsy_public, algorithms=["ES256"], issuer=config.signing_issuer).get("electrum.co.za/content-digest") is None
 
 
-def test_http_ingress_replay_still_returns_signed_empty_204(monkeypatch):
+def test_http_ingress_replay_still_returns_signed_empty_202(monkeypatch):
     client, provider_private, wilsy_public, config = _setup(monkeypatch, replay=True)
     body = json.dumps(_payload(), separators=(",", ":")).encode()
     response = client.post(
@@ -137,7 +137,7 @@ def test_http_ingress_replay_still_returns_signed_empty_204(monkeypatch):
         content=body,
         headers={"x-jwt-signature": _provider_signature(body, provider_private)},
     )
-    assert response.status_code == 204
+    assert response.status_code == 202
     assert response.content == b""
     verify_electrum_http_message_signature(
         response.content, response.headers["x-jwt-signature"],
