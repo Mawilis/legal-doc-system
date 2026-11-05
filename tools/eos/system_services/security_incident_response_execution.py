@@ -6,7 +6,7 @@ here. Every execution delegates to the existing canonical service.
 
 from __future__ import annotations
 
-from typing import Any, Final, Iterable
+from typing import Any, Callable, Final, Iterable
 
 from tools.eos.auth.system_permission_command_evidence import (
     SystemPermissionCommandEvidence,
@@ -17,6 +17,7 @@ from tools.eos.auth.system_permission_revocation_command_service import (
 )
 from tools.eos.system_services.eos_authorizer import SystemServicesEosAuthorizer
 from tools.eos.saas.auth.password_reset_service import (
+    PasswordResetExecutionEvidenceError,
     PasswordResetExecutionGuardError,
     PasswordResetResult,
     PasswordResetService,
@@ -129,6 +130,7 @@ class SecurityIncidentResponseCanonicalExecutor:
         actor_principal_id: str,
         recovery_token: str,
         new_password: str,
+        transaction_completion: Callable[[Any, Any, int], None],
         context_terms: Iterable[str] | None = None,
     ) -> PasswordResetResult:
         """Delegate only to canonical R10 password reset with its durable capability.
@@ -169,12 +171,19 @@ class SecurityIncidentResponseCanonicalExecutor:
                 new_password=new_password,
                 context_terms=context_terms,
                 transaction_guard=authorize_inside_canonical_reset_transaction,
+                transaction_completion=transaction_completion,
             )
         except PasswordResetExecutionGuardError as error:
             if error.__cause__ is not None:
                 raise error.__cause__
             raise SecurityIncidentResponseExecutionError(
                 "PASSWORD_RESET_EXECUTION_AUTHORIZATION_FAILED"
+            ) from error
+        except PasswordResetExecutionEvidenceError as error:
+            if error.__cause__ is not None:
+                raise error.__cause__
+            raise SecurityIncidentResponseExecutionError(
+                "PASSWORD_RESET_EXECUTION_EVIDENCE_FAILED"
             ) from error
 
     def execute_system_permission_revocation(
