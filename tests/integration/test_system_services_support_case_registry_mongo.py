@@ -1055,3 +1055,35 @@ def test_real_mongo_execution_evidence_rejects_stale_decision_revision(mongo_cas
     assert database[RESPONSE_DECISION_EVENT_COLLECTION].count_documents({
         "decision_id": approved.decision_id, "revision": 2,
     }) == 0
+
+
+def test_real_mongo_execution_receipt_rejects_non_independent_actor_and_noncanonical_result(mongo_case_registry):
+    client, database, _, registry = mongo_case_registry
+    decision = _approved_revocation_decision("decision-execution-invalid-actor")
+    approved = _persist_approved_decision(client, registry, decision)
+    invalid_attempts = (
+        ("principal-independent-requester", "REVOKED", 2),
+        ("principal-independent-approver", "REVOKED", 2),
+        ("principal-target-1", "REVOKED", 2),
+        ("principal-independent-executor", "ACTIVE", 2),
+        ("principal-independent-executor", "REVOKED", 1),
+    )
+    for index, (actor, status, revision) in enumerate(invalid_attempts):
+        with client.start_session() as session:
+            with session.start_transaction():
+                with pytest.raises(
+                    SecurityIncidentResponseDecisionConflictError,
+                    match="RESPONSE_EXECUTION_EVIDENCE_INVALID",
+                ):
+                    registry.record_execution(
+                        decision=approved,
+                        actor_principal_id=actor,
+                        idempotency_key=f"canonical-revocation-invalid-{index}",
+                        occurred_at=NOW + timedelta(minutes=2),
+                        result_status=status,
+                        result_revision=revision,
+                        session=session,
+                    )
+    assert database[RESPONSE_DECISION_EVENT_COLLECTION].count_documents({
+        "decision_id": decision.decision_id, "revision": 2,
+    }) == 0
