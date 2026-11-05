@@ -73,6 +73,10 @@ async function openSystemServices(browser, actorKey = 'system_responder') {
     systemScope: 'SYSTEM',
     principalMatches: true,
   });
+  console.log('[SYSTEM DASHBOARD SURFACE]', JSON.stringify({
+    url: page.url(),
+    bodyText: await page.locator('body').innerText(),
+  }));
   // localStorage can be populated immediately before React commits the authenticated
   // SYSTEM dashboard. Wait for the rendered workspace before sending its shortcut.
   await expect(page.getByRole('heading', { name: 'System Services' })).toBeVisible();
