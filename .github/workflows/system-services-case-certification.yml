@@ -8,6 +8,7 @@ on:
       - "tools/eos/api/system_services_router.py"
       - "tools/eos/system_services/runtime.py"
       - "tools/eos/api/server.py"
+      - "docs/security/eos-account-protection-and-system-services-escalation-gap-audit.md"
       - "tools/eos/auth/current_system_permission_possession.py"
       - "tools/eos/auth/permission_namespace.py"
       - "tools/eos/workforce/domain/workforce_relationship*.py"
