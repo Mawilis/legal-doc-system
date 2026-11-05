@@ -34,7 +34,7 @@ import {
 } from 'lucide-react';
 
 const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:5050';
-const DEFAULT_WILSY_LOGO = '/src/assets/logo/wilsy.jpeg';
+const DEFAULT_WILSY_LOGO = '/assets/images/superadmin/wilsy-logo.svg';
 
 const WORLD_CLASS_STANDARDS = {
   citizenSatisfaction: 85,
