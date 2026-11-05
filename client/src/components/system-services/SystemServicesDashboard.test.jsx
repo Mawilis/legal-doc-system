@@ -1,5 +1,5 @@
 import React from 'react';
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
 import { render, screen } from '@testing-library/react';
 import SystemServicesDashboard, { hasSystemServicesCapability } from './SystemServicesDashboard.jsx';
 
@@ -49,4 +49,65 @@ describe('SystemServicesDashboard EOS authority boundary', () => {
     expect(screen.getByText('—')).toBeInTheDocument();
     expect(screen.queryByText('0')).not.toBeInTheDocument();
   });
+
+
+  it('renders only the incident queue and responder inbox capabilities supplied by EOS', () => {
+    const onOpenAssignment = vi.fn();
+    const onDecideAssignment = vi.fn();
+    render(
+      <SystemServicesDashboard
+        workspace={{
+          status: 'READY',
+          authority: 'EOS_SYSTEM_SERVICES',
+          principalId: 'system-principal-test',
+          scope: 'SYSTEM',
+          capabilities: ['system_services:queue:read', 'system_services:incident:escalate'],
+          summary: {},
+        }}
+        incidents={[{
+          incidentId: 'incident-1',
+          category: 'SUSPECTED_COMPROMISE',
+          status: 'REPORTED',
+          observedAt: '2026-11-05T08:00:00+02:00',
+        }]}
+        assignments={[{
+          assignmentId: 'assignment-1',
+          incidentId: 'incident-1',
+          status: 'PENDING_ACCEPTANCE',
+          revision: 2,
+        }]}
+        onOpenAssignment={onOpenAssignment}
+        onDecideAssignment={onDecideAssignment}
+      />,
+    );
+    expect(screen.getByText('Security incident queue')).toBeInTheDocument();
+    expect(screen.getByText('SUSPECTED_COMPROMISE')).toBeInTheDocument();
+    expect(screen.getByText('My responder assignments')).toBeInTheDocument();
+    expect(screen.getByText('assignment-1')).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Accept' })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Decline' })).toBeInTheDocument();
+  });
+
+  it('does not render responder controls without the exact escalation capability', () => {
+    render(
+      <SystemServicesDashboard
+        workspace={{
+          status: 'READY',
+          authority: 'EOS_SYSTEM_SERVICES',
+          principalId: 'system-principal-test',
+          capabilities: ['system_services:queue:read'],
+        }}
+        assignments={[{
+          assignmentId: 'assignment-1',
+          incidentId: 'incident-1',
+          status: 'PENDING_ACCEPTANCE',
+          revision: 0,
+        }]}
+      />,
+    );
+    expect(screen.getByText('Security incident queue')).toBeInTheDocument();
+    expect(screen.queryByText('My responder assignments')).not.toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: 'Accept' })).not.toBeInTheDocument();
+  });
+
 });
