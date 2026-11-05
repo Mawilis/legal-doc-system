@@ -89,6 +89,8 @@ from .errors import register_error_handlers
 from .kernel_routes import router as kernel_router
 from .payshap_webhook_router import router as payshap_webhook_router
 from .electrum_payshap_completion_router import router as electrum_payshap_completion_router
+from tools.eos.kennel.orchestration.electrum_payshap_completion_processing import ensure_electrum_payshap_completion_indexes
+from tools.eos.kennel.orchestration.electrum_payshap_completion_worker import run_electrum_payshap_completion_worker
 from .plan_router import plan_router
 from .router import direct_router, router
 from .subscription_router import subscription_router
@@ -467,6 +469,7 @@ class WilsyAPIServer:
             app.state.system_services_authorizer = None
             app.state.system_services_case_registry = None
             app.state.telemetry_indexes_ready = False
+            app.state.electrum_completion_indexes_ready = False
             connected, detail = connect_db()
             if not connected:
                 logger.error("[KENNEL_DB] Explicit startup bootstrap unavailable: %s", detail)
@@ -478,6 +481,23 @@ class WilsyAPIServer:
             if database is None:
                 return
             if database is not None:
+                try:
+                    ensure_electrum_payshap_completion_indexes(
+                        inbox_collection=database["electrum_payshap_completion_inbox"],
+                        binding_collection=database["electrum_provider_tenant_bindings"],
+                        observation_collection=database["kennel_financial_settlement_observations"],
+                        platform_truth_collection=database["kennel_platform_billing_financial_execution_truth"],
+                        allocation_collection=database["platform_invoice_settlement_allocations"],
+                        audit_collection=database["billing_audit_events"],
+                        outbox_collection=database["billing_outbox_events"],
+                    )
+                    app.state.electrum_completion_indexes_ready = True
+                except Exception as error:
+                    app.state.electrum_completion_indexes_ready = False
+                    logger.warning(
+                        "[ELECTRUM_SETTLEMENT] Index provisioning unavailable: %s",
+                        type(error).__name__,
+                    )
                 # Support-case storage indexes are canonical startup DDL.
                 # This flag signals storage readiness only; route admission
                 # must independently authorize every caller through EOS IAM.
@@ -719,6 +739,31 @@ class WilsyAPIServer:
         async def stop_dunning_scheduler() -> None:
             """Cancel the scheduler cleanly during controlled API shutdown."""
             task = getattr(app.state, "dunning_scheduler_task", None)
+            if task:
+                task.cancel()
+                with suppress(asyncio.CancelledError):
+                    await task
+
+        @app.on_event("startup")
+        async def start_electrum_settlement_worker() -> None:
+            """Arm the settlement inbox worker only by explicit environment opt-in."""
+            enabled = os.getenv(
+                "WILSY_ELECTRUM_SETTLEMENT_WORKER_ENABLED", "false"
+            ).strip().lower() in {"1", "true", "yes", "on"}
+            if enabled and getattr(app.state, "electrum_completion_indexes_ready", False) is True:
+                app.state.electrum_settlement_worker_task = asyncio.create_task(
+                    run_electrum_payshap_completion_worker()
+                )
+                logger.info("[ELECTRUM_SETTLEMENT] Completion inbox worker explicitly enabled")
+            else:
+                logger.info(
+                    "[ELECTRUM_SETTLEMENT] Completion inbox worker remains disabled"
+                )
+
+        @app.on_event("shutdown")
+        async def stop_electrum_settlement_worker() -> None:
+            """Cancel the opt-in inbox worker cleanly during API shutdown."""
+            task = getattr(app.state, "electrum_settlement_worker_task", None)
             if task:
                 task.cancel()
                 with suppress(asyncio.CancelledError):
