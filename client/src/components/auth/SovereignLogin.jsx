@@ -75,7 +75,7 @@ import wilsyBrandAsset from '../../assets/logo/wilsy-icon.svg';
 export default function SovereignLogin({ onLoginSuccess }) {
   const navigate = useNavigate();
   const location = useLocation();
-  const { login, loading, error: authError, tenant } = useAuth();
+  const { login, loading, error: authError, tenant, authStage } = useAuth();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
@@ -103,7 +103,7 @@ export default function SovereignLogin({ onLoginSuccess }) {
 
   return (
     <main style={pageStyle}>
-      <section style={panelStyle} aria-labelledby="login-title" data-testid="login-panel">
+      <section style={panelStyle} aria-labelledby="login-title" data-testid="login-panel" data-auth-stage={authStage}>
         <header style={brandRow}>
           <img src={wilsyBrandAsset} alt="WILSY OS platform mark" style={platformMarkStyle} />
           <div style={brandCopyStyle}><strong>WILSY OS</strong><span>Institutional access</span></div>
