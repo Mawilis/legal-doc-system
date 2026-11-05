@@ -134,3 +134,36 @@ def test_account_binding_is_opaque_unique_and_tenant_scoped(mongo_collections):
                     payment_destination_reference="destination-b",
                     collection=bindings, session=session,
                 )
+
+
+def test_revision_guarded_retry_backoff_preserves_pending_event(mongo_collections):
+    client, inbox, _ = mongo_collections
+    value, _ = ElectrumPayShapCompletionInboxRegistry.create(event(), inbox)
+    retry_at = datetime(2026, 11, 5, 8, 0, 2, tzinfo=timezone.utc)
+    with client.start_session() as session:
+        with session.start_transaction():
+            ElectrumPayShapCompletionInboxRegistry.schedule_retry(
+                value,
+                collection=inbox,
+                session=session,
+                expected_revision=0,
+                expected_attempt_count=0,
+                retry_at=retry_at,
+                error_code="EXECUTION_TRUTH_NOT_UNIQUE",
+            )
+    saved = inbox.find_one({"message_id": "message-1"})
+    assert saved["processing_status"] == "PENDING"
+    assert saved["processing_revision"] == 1
+    assert saved["attempt_count"] == 1
+    assert saved["available_at"] == retry_at.isoformat()
+    with client.start_session() as session:
+        with session.start_transaction():
+            ElectrumPayShapCompletionInboxRegistry.mark_processed(
+                value,
+                collection=inbox,
+                session=session,
+                processed_at=retry_at,
+                allocation_id="allocation-1",
+                expected_revision=1,
+            )
+    assert inbox.find_one({"message_id": "message-1"})["processing_status"] == "PROCESSED"
