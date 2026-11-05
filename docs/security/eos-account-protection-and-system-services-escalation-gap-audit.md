@@ -182,3 +182,13 @@ No production deployment, credential/account mutation, workforce assignment, sub
 - The 61 tests include the independent platform audit/outbox rollback proof and the five duty-policy cases.
 
 This certifies the code-level audit/outbox and duty-policy foundations on the tested commit. It does not certify a live duty roster, dispatch/notification delivery, a browser journey, or containment/recovery authority.
+
+### Incident-intake audit/outbox extension (2026-11-05)
+
+- Extended the same independent platform audit/outbox contract to tenant security-incident intake. The incident record, immutable `INCIDENT_REPORTED` event, platform audit event and pending outbox intent now share the same caller-owned MongoDB transaction.
+- Idempotent intake replay verifies the original immutable event timestamp and does not create duplicate audit/outbox rows.
+- Added real-replica-set assertions for intake audit/outbox persistence and transaction rollback across all four records.
+- Exact-head System Services workflow #582 on commit `8b5277b19010ad5e402a31ae80f3caf1b2534a3b`: **success** — https://github.com/Mawilis/legal-doc-system/actions/runs/42004725693
+- Compilation, Pyright, unit and real MongoDB replica-set tests passed: **61 passed, 0 failed**. Patch whitespace and clean-checkout checks passed.
+
+The audit/outbox foundation now covers incident intake, responder assignment and responder acknowledgement/decline. Outbox delivery remains intentionally unimplemented/unactivated pending a defined notification owner, privacy-safe payload contract, retry/dead-letter policy and operational approval.
