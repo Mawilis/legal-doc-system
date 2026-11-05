@@ -659,6 +659,17 @@ class SecurityIncidentResponseExecutionRequest(BaseModel):
     expected_revision: StrictInt = Field(ge=1)
 
 
+def _validate_response_idempotency_key(value: str) -> str:
+    if (
+        not isinstance(value, str)
+        or not value
+        or value != value.strip()
+        or "*" in value
+    ):
+        raise HTTPException(status_code=422, detail="A valid idempotency key is required.")
+    return value
+
+
 def _project_response_decision(value: SecurityIncidentResponseDecision) -> dict[str, object]:
     return {
         "decisionId": value.decision_id,
@@ -683,6 +694,7 @@ def request_security_incident_response(
 ):
     """Create an incident-bound proposal; this route never performs containment."""
     actor = _actor(identity)
+    idempotency_key = _validate_response_idempotency_key(idempotency_key)
     decision_registry, decision_service, _, permission_assignments = _response_runtime(request)
     incidents, _ = _assignment_runtime(request)
 
@@ -826,6 +838,7 @@ def execute_approved_system_permission_revocation(
 ):
     """Execute one approved revocation through canonical D12 in this caller transaction."""
     actor = _actor(identity)
+    idempotency_key = _validate_response_idempotency_key(idempotency_key)
     decision_registry, _, executor, permission_assignments = _response_runtime(request)
 
     def execute(session):
