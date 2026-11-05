@@ -38,6 +38,19 @@ from tools.eos.system_services.support_case_registry import (
     SupportCaseNotFoundError,
     SupportCaseRegistry,
 )
+from tools.eos.system_services.security_incident_response_decision import (
+    SecurityIncidentResponseAction,
+    SecurityIncidentResponseDecision,
+    SecurityIncidentResponseDecisionStatus,
+)
+from tools.eos.system_services.security_incident_response_decision_registry import (
+    COLLECTION as RESPONSE_DECISION_COLLECTION,
+    EVENT_COLLECTION as RESPONSE_DECISION_EVENT_COLLECTION,
+    PLATFORM_AUDIT_COLLECTION,
+    PLATFORM_OUTBOX_COLLECTION,
+    SecurityIncidentResponseDecisionRegistry,
+    SecurityIncidentResponseDecisionConflictError,
+)
 
 URI_ENV = "SYSTEM_SERVICES_CASE_MONGO_URI"
 REPLICA_SET = "wilsySystemServicesCaseRS"
@@ -69,8 +82,15 @@ def mongo_case_registry():
         events=database[EVENT_COLLECTION],
     )
     registry.ensure_indexes()
+    response_decision_registry = SecurityIncidentResponseDecisionRegistry(
+        decisions=database[RESPONSE_DECISION_COLLECTION],
+        events=database[RESPONSE_DECISION_EVENT_COLLECTION],
+        audit_events=database[PLATFORM_AUDIT_COLLECTION],
+        outbox=database[PLATFORM_OUTBOX_COLLECTION],
+    )
+    response_decision_registry.ensure_indexes()
     try:
-        yield client, database, registry
+        yield client, database, registry, response_decision_registry
     finally:
         client.drop_database(database_name)
         assert database_name not in client.list_database_names()
@@ -104,7 +124,7 @@ def _event(event_id, case_id, key, actor, before, after, action, at):
 
 
 def test_real_mongo_create_transition_commit_and_tenant_scope(mongo_case_registry):
-    client, database, registry = mongo_case_registry
+    client, database, registry, _ = mongo_case_registry
     case = _case("case-commit-1")
     with client.start_session() as session:
         with session.start_transaction():
@@ -792,3 +812,108 @@ def test_incident_assignment_platform_audit_and_outbox_roll_back_with_business_w
                 raise RuntimeError("SYSTEM_SERVICES_AUDIT_ABORT_CERTIFICATE")
     for collection in (COLLECTION, EVENT_COLLECTION, PLATFORM_AUDIT_COLLECTION, PLATFORM_OUTBOX_COLLECTION):
         assert database[collection].count_documents({}) == 0
+
+
+
+def _response_decision(decision_id: str) -> SecurityIncidentResponseDecision:
+    return SecurityIncidentResponseDecision(
+        decision_id=decision_id,
+        incident_id="incident-response-1",
+        tenant_id="tenant-response-1",
+        target_principal_id="principal-target-1",
+        action=SecurityIncidentResponseAction.PASSWORD_RESET,
+        requested_by_principal_id="principal-responder-1",
+        requested_at=NOW,
+        request_evidence_reference="incident-evidence-response-1",
+    )
+
+
+def test_real_mongo_response_decision_approval_and_audit_are_atomic(mongo_case_registry):
+    client, database, _, decision_registry = mongo_case_registry
+    request = _response_decision("decision-commit-1")
+    with client.start_session() as session:
+        with session.start_transaction():
+            decision_registry.create(request, session=session)
+            approved = decision_registry.decide(
+                request.decision_id,
+                approved=True,
+                decided_by_principal_id="principal-independent-approver",
+                decided_at=NOW + timedelta(minutes=1),
+                decision_evidence_reference="governance-approval-1",
+                expected_revision=0,
+                session=session,
+            )
+    assert approved.status is SecurityIncidentResponseDecisionStatus.APPROVED
+    assert approved.revision == 1
+    assert database[RESPONSE_DECISION_COLLECTION].count_documents({"decision_id": request.decision_id}) == 1
+    assert database[RESPONSE_DECISION_EVENT_COLLECTION].count_documents({"decision_id": request.decision_id}) == 2
+    assert database[PLATFORM_AUDIT_COLLECTION].count_documents({"target_id": request.decision_id}) == 2
+    assert database[PLATFORM_OUTBOX_COLLECTION].count_documents({"target_id": request.decision_id, "status": "PENDING"}) == 2
+
+
+def test_real_mongo_response_decision_rejects_stale_and_self_approval(mongo_case_registry):
+    client, database, _, decision_registry = mongo_case_registry
+    request = _response_decision("decision-cas-1")
+    with client.start_session() as session:
+        with session.start_transaction():
+            decision_registry.create(request, session=session)
+    with client.start_session() as session:
+        with session.start_transaction():
+            with pytest.raises(SecurityIncidentResponseDecisionConflictError, match="INDEPENDENT_DECISION_MAKER_REQUIRED"):
+                decision_registry.decide(
+                    request.decision_id,
+                    approved=True,
+                    decided_by_principal_id=request.requested_by_principal_id,
+                    decided_at=NOW + timedelta(minutes=1),
+                    decision_evidence_reference="self-approval",
+                    expected_revision=0,
+                    session=session,
+                )
+    with client.start_session() as session:
+        with session.start_transaction():
+            decision_registry.decide(
+                request.decision_id,
+                approved=False,
+                decided_by_principal_id="principal-independent-approver",
+                decided_at=NOW + timedelta(minutes=1),
+                decision_evidence_reference="governance-rejection-1",
+                expected_revision=0,
+                session=session,
+            )
+        with session.start_transaction():
+            with pytest.raises(SecurityIncidentResponseDecisionConflictError, match="DECISION_REVISION_CONFLICT"):
+                decision_registry.decide(
+                    request.decision_id,
+                    approved=True,
+                    decided_by_principal_id="principal-second-approver",
+                    decided_at=NOW + timedelta(minutes=2),
+                    decision_evidence_reference="late-approval",
+                    expected_revision=0,
+                    session=session,
+                )
+    assert database[RESPONSE_DECISION_COLLECTION].find_one({"decision_id": request.decision_id})["status"] == "REJECTED"
+    assert database[RESPONSE_DECISION_EVENT_COLLECTION].count_documents({"decision_id": request.decision_id}) == 2
+
+
+def test_real_mongo_response_decision_rollback_removes_projection_events_and_outbox(mongo_case_registry):
+    client, database, _, decision_registry = mongo_case_registry
+    request = _response_decision("decision-abort-1")
+    with client.start_session() as session:
+        with pytest.raises(RuntimeError, match="RESPONSE_DECISION_ABORT"):
+            with session.start_transaction():
+                decision_registry.create(request, session=session)
+                decision_registry.decide(
+                    request.decision_id,
+                    approved=True,
+                    decided_by_principal_id="principal-independent-approver",
+                    decided_at=NOW + timedelta(minutes=1),
+                    decision_evidence_reference="governance-approval-abort",
+                    expected_revision=0,
+                    session=session,
+                )
+                raise RuntimeError("RESPONSE_DECISION_ABORT")
+    assert database[RESPONSE_DECISION_COLLECTION].count_documents({"decision_id": request.decision_id}) == 0
+    assert database[RESPONSE_DECISION_EVENT_COLLECTION].count_documents({"decision_id": request.decision_id}) == 0
+    assert database[PLATFORM_AUDIT_COLLECTION].count_documents({"target_id": request.decision_id}) == 0
+    assert database[PLATFORM_OUTBOX_COLLECTION].count_documents({"target_id": request.decision_id}) == 0
+
