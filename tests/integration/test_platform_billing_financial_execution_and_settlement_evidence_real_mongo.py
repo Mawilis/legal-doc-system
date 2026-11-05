@@ -517,8 +517,10 @@ def test_partial_settlement_observation_never_becomes_full_platform_settlement_e
                     session=session,
                     created_at=instant,
                 )
-            session.abort_transaction()
-        assert observations.count_documents({"tenant_id": "t"}) == 0
+            # The authenticated partial observation is durable, but the
+            # full-platform-settlement bridge must not manufacture full evidence.
+            session.commit_transaction()
+        assert observations.count_documents({"tenant_id": "t"}) == 1
         assert evidence.count_documents({"tenant_id": "t"}) == 0
     finally:
         close(client)
