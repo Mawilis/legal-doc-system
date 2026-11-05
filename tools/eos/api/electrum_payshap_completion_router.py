@@ -11,7 +11,11 @@ from datetime import datetime, timezone
 import json
 import logging
 import os
+import re
 from typing import Any, Mapping
+
+from cryptography.hazmat.primitives import serialization
+from cryptography.hazmat.primitives.asymmetric import ec
 
 from fastapi import APIRouter, Request, Response
 from pymongo.write_concern import WriteConcern
@@ -70,9 +74,23 @@ def _transport_configuration() -> ElectrumTransportConfiguration | None:
     normalized_keys = {
         str(k): str(v).replace("\\n", "\n")
         for k, v in keys.items()
-        if isinstance(k, str) and isinstance(v, str) and v.strip()
+        if isinstance(k, str) and re.fullmatch(r"[A-Za-z0-9._:-]{1,128}", k)
+        and isinstance(v, str) and v.strip()
     }
     if len(normalized_keys) != len(keys):
+        return None
+    try:
+        for public_pem in normalized_keys.values():
+            public_key = serialization.load_pem_public_key(public_pem.encode("utf-8"))
+            if not isinstance(public_key, ec.EllipticCurvePublicKey) or not isinstance(public_key.curve, ec.SECP256R1):
+                return None
+        private_pem = private_key.replace("\\n", "\n").encode("utf-8")
+        signing_key = serialization.load_pem_private_key(private_pem, password=None)
+        if not isinstance(signing_key, ec.EllipticCurvePrivateKey) or not isinstance(signing_key.curve, ec.SECP256R1):
+            return None
+    except (TypeError, ValueError):
+        return None
+    if re.fullmatch(r"[A-Za-z0-9._:-]{1,128}", key_id.strip()) is None:
         return None
     return ElectrumTransportConfiguration(
         verification_keys=normalized_keys,
