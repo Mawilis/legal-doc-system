@@ -415,9 +415,12 @@ const WORKSPACE_DASHBOARD_MAP = Object.freeze({
 export const resolveDashboardKey = ({ user = {}, manualDashboardKey = '' } = {}) => {
   const requestedDashboard = mapDashboardAlias(manualDashboardKey);
   const systemWorkspace = user.systemServicesWorkspace;
+  // A fully verified EOS SYSTEM projection is itself the canonical workspace
+  // selector. Requiring a second, client-originated dashboard request creates
+  // a first-render race and can redirect a valid SYSTEM principal before the
+  // post-mount effect has a chance to set manualDashboardKey.
   if (
-    requestedDashboard === DASHBOARD_KEYS.SYSTEM_SERVICES
-    && systemWorkspace?.status === 'READY'
+    systemWorkspace?.status === 'READY'
     && systemWorkspace?.authority === 'EOS_SYSTEM_SERVICES'
     && systemWorkspace?.scope === 'SYSTEM'
     && typeof systemWorkspace?.principalId === 'string'
