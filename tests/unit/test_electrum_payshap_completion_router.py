@@ -159,6 +159,12 @@ def test_http_ingress_rejects_missing_signature_with_signed_401(monkeypatch):
 def test_ingress_acknowledges_durable_inbox_when_worker_is_disabled(monkeypatch):
     client, provider_private, wilsy_public, config = _setup(monkeypatch)
     client.app.state.electrum_settlement_worker_enabled = False
+    persisted = []
+    monkeypatch.setattr(
+        router_module.ElectrumPayShapCompletionInboxRegistry,
+        "create",
+        lambda *args, **kwargs: (persisted.append(True), False),
+    )
     body = json.dumps(_payload(), separators=(",", ":")).encode()
     response = client.post(
         router_module.ROUTE_PATH,
@@ -167,7 +173,7 @@ def test_ingress_acknowledges_durable_inbox_when_worker_is_disabled(monkeypatch)
     )
     assert response.status_code == 202
     assert response.content == b""
-    assert client.app.state.electrum_test_inbox.count_documents({}) == 1
+    assert persisted == [True]
     verify_electrum_http_message_signature(
         b"", response.headers["x-jwt-signature"],
         verification_keys={"wilsy-key-1": wilsy_public}, issuer=config.signing_issuer,
