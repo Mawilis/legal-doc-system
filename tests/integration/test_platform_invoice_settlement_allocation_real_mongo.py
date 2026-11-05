@@ -102,22 +102,36 @@ def _real_invoice_orchestration_fixture(monkeypatch, db):
     now = datetime(2026, 11, 5, 8, 0, tzinfo=timezone.utc)
 
     observations = {}
-    fact = SimpleNamespace(
-        tenant_id=tenant_id, execution_fact_id=fact_id, fingerprint="b" * 128,
-        execution_status=FinancialExecutionStatus.EXECUTED, provider="ELECTRUM",
-        provider_execution_reference=execution_reference, currency="ZAR",
-        payment_destination_reference=destination, executed_amount_minor=10000,
-    )
-    platform_truth = SimpleNamespace(
-        tenant_id=tenant_id, execution_truth_id="platform-truth-e2e",
-        execution_status=PlatformExecutionStatus.EXECUTED,
-        source_execution_fact_id=fact_id, source_execution_fact_fingerprint=fact.fingerprint,
-        provider="ELECTRUM", provider_execution_reference=execution_reference,
-        currency="ZAR", payment_destination_reference=destination,
-        executed_amount_minor=10000, platform_invoice_id=invoice_id,
-        release_authorization_id="release-e2e",
-        release_authorization_fingerprint=release_fingerprint,
-    )
+    facts = {}
+    platform_truths = {}
+    def ensure_execution(observation_id, amount_minor):
+        local_fact_id = f"fact-{observation_id}"
+        local_reference = f"uetr-{observation_id}"
+        fact = SimpleNamespace(
+            tenant_id=tenant_id, execution_fact_id=local_fact_id, fingerprint=(observation_id[-1] * 128),
+            execution_status=FinancialExecutionStatus.EXECUTED, provider="ELECTRUM",
+            provider_execution_reference=local_reference, currency="ZAR",
+            payment_destination_reference=destination, executed_amount_minor=amount_minor,
+        )
+        truth = SimpleNamespace(
+            tenant_id=tenant_id, execution_truth_id=f"platform-truth-{local_fact_id}",
+            execution_status=PlatformExecutionStatus.EXECUTED,
+            source_execution_fact_id=local_fact_id, source_execution_fact_fingerprint=fact.fingerprint,
+            provider="ELECTRUM", provider_execution_reference=local_reference,
+            currency="ZAR", payment_destination_reference=destination,
+            executed_amount_minor=amount_minor, platform_invoice_id=invoice_id,
+            release_authorization_id="release-e2e",
+            release_authorization_fingerprint=release_fingerprint,
+        )
+        facts[local_fact_id] = fact
+        platform_truths[truth.execution_truth_id] = truth
+        db["platform_truth"].insert_one({
+            "tenant_id": tenant_id,
+            "source_execution_fact_id": local_fact_id,
+            "execution_truth_id": truth.execution_truth_id,
+            "provider_execution_reference": local_reference,
+        })
+        return local_fact_id, local_reference
     authorization = SimpleNamespace(
         tenant_id=tenant_id, platform_invoice_id=invoice_id, currency="ZAR",
         authorized_amount_minor=10000,
@@ -139,19 +153,14 @@ def _real_invoice_orchestration_fixture(monkeypatch, db):
     monkeypatch.setattr(module.FinancialSettlementObservationRegistry, "get",
                         lambda tenant, observation_id, collection, session=None: observations[observation_id])
     monkeypatch.setattr(module.FinancialExecutionFactRegistry, "get",
-                        lambda *args, **kwargs: fact)
+                        lambda tenant, execution_truth_id, collection, session=None: facts[execution_truth_id])
     monkeypatch.setattr(module.PlatformBillingFinancialExecutionTruthRegistry, "get",
-                        lambda *args, **kwargs: platform_truth)
+                        lambda tenant, execution_truth_id, collection, session=None: platform_truths[execution_truth_id])
     monkeypatch.setattr(module.PlatformBillingReleaseAuthorizationRegistry, "get",
                         lambda *args, **kwargs: authorization)
     monkeypatch.setattr(module, "PlatformInvoice", SimpleNamespace(from_dict=invoice_model))
 
     invoices = db["invoices"]
-    db["platform_truth"].insert_one({
-        "tenant_id": tenant_id,
-        "source_execution_fact_id": fact_id,
-        "execution_truth_id": "platform-truth-e2e",
-    })
     allocations = db["allocations"]
     audit = db["audit"]
     outbox = db["outbox"]
@@ -165,10 +174,11 @@ def _real_invoice_orchestration_fixture(monkeypatch, db):
     })
 
     def add_observation(observation_id, amount_minor, offset_seconds):
+        local_fact_id, local_reference = ensure_execution(observation_id, amount_minor)
         observation = SimpleNamespace(
             tenant_id=tenant_id, observation_id=observation_id,
-            execution_truth_id=fact_id, provider_name="ELECTRUM",
-            provider_execution_reference=execution_reference,
+            execution_truth_id=local_fact_id, provider_name="ELECTRUM",
+            provider_execution_reference=local_reference,
             settlement_reference=f"settlement-{observation_id}",
             provider_settlement_evidence_reference=f"message-{observation_id}",
             currency="ZAR", payment_destination_reference=destination,
