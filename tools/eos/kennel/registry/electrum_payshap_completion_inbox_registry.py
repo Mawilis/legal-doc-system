@@ -80,6 +80,9 @@ class ElectrumPayShapCompletionInboxEvent:
             "processing_revision": 0,
             "processed_at": None,
             "allocation_id": None,
+            "attempt_count": 0,
+            "available_at": payload_received_at if (payload_received_at := payload.get("received_at")) else None,
+            "last_error_code": None,
         })
         return payload
 
@@ -109,7 +112,7 @@ class ElectrumPayShapCompletionInboxRegistry:
             name="uq_electrum_completion_transaction",
         )
         collection.create_index(
-            [("processing_status", 1), ("received_at", 1)],
+            [("processing_status", 1), ("available_at", 1), ("received_at", 1)],
             name="ix_electrum_completion_pending",
         )
 
@@ -160,6 +163,7 @@ class ElectrumPayShapCompletionInboxRegistry:
         processed_at: datetime,
         allocation_id: str | None,
         ignored: bool = False,
+        expected_revision: int = 0,
     ) -> None:
         if session is None or not bool(getattr(session, "in_transaction", False)):
             raise ElectrumCompletionInboxError("ELECTRUM_INBOX_CALLER_TRANSACTION_REQUIRED")
@@ -174,12 +178,12 @@ class ElectrumPayShapCompletionInboxRegistry:
                 "message_id": event.message_id,
                 "event_fingerprint": event.fingerprint,
                 "processing_status": "PENDING",
-                "processing_revision": 0,
+                "processing_revision": expected_revision,
             },
             {
                 "$set": {
                     "processing_status": status,
-                    "processing_revision": 1,
+                    "processing_revision": expected_revision + 1,
                     "processed_at": processed_at.astimezone(timezone.utc).isoformat(),
                     "allocation_id": allocation_id,
                 }
@@ -188,6 +192,51 @@ class ElectrumPayShapCompletionInboxRegistry:
         )
         if result.matched_count != 1:
             raise ElectrumCompletionInboxConflict("ELECTRUM_INBOX_PROCESSING_REVISION_CONFLICT")
+
+    @staticmethod
+    def schedule_retry(
+        event: ElectrumPayShapCompletionInboxEvent,
+        *,
+        collection,
+        session,
+        expected_revision: int,
+        expected_attempt_count: int,
+        retry_at: datetime,
+        error_code: str,
+    ) -> None:
+        import re
+        if session is None or not bool(getattr(session, "in_transaction", False)):
+            raise ElectrumCompletionInboxError("ELECTRUM_INBOX_CALLER_TRANSACTION_REQUIRED")
+        if (
+            isinstance(expected_revision, bool) or not isinstance(expected_revision, int) or expected_revision < 0
+            or isinstance(expected_attempt_count, bool) or not isinstance(expected_attempt_count, int) or expected_attempt_count < 0
+        ):
+            raise ElectrumCompletionInboxError("ELECTRUM_INBOX_RETRY_REVISION_INVALID")
+        if not isinstance(retry_at, datetime) or retry_at.tzinfo is None:
+            raise ElectrumCompletionInboxError("ELECTRUM_INBOX_RETRY_TIME_INVALID")
+        if not isinstance(error_code, str) or re.fullmatch(r"[A-Z0-9_]{1,64}", error_code) is None:
+            raise ElectrumCompletionInboxError("ELECTRUM_INBOX_RETRY_CODE_INVALID")
+        result = collection.update_one(
+            {
+                "provider_name": event.provider_name,
+                "message_id": event.message_id,
+                "event_fingerprint": event.fingerprint,
+                "processing_status": "PENDING",
+                "processing_revision": expected_revision,
+                "attempt_count": expected_attempt_count,
+            },
+            {
+                "$set": {
+                    "processing_revision": expected_revision + 1,
+                    "attempt_count": expected_attempt_count + 1,
+                    "available_at": retry_at.astimezone(timezone.utc).isoformat(),
+                    "last_error_code": error_code,
+                }
+            },
+            session=session,
+        )
+        if result.matched_count != 1:
+            raise ElectrumCompletionInboxConflict("ELECTRUM_INBOX_RETRY_REVISION_CONFLICT")
 
 
 __all__ = [
