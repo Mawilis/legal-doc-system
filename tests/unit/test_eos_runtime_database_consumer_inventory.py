@@ -54,9 +54,9 @@ def test_runtime_mongo_client_construction_is_confined_to_kernel_and_isolated_au
             relative = _relative(path)
             if relative in OPERATOR_ONLY_CONNECTIONS or "/scripts/" in relative:
                 continue
-        tree = ast.parse(path.read_text(encoding="utf-8"), filename=relative)
-        if _constructs_mongo_client(tree):
-            runtime_calls.add(relative)
+            tree = ast.parse(path.read_text(encoding="utf-8"), filename=relative)
+            if _constructs_mongo_client(tree):
+                runtime_calls.add(relative)
 
     assert runtime_calls == {CANONICAL_CONNECTOR, ISOLATED_AUDIT_SINK}
 
