@@ -23,8 +23,13 @@ The API server starts and stops that kernel-owned connection. Runtime readiness 
 5. **Platform financial execution-request issuance** rejects a supplied client that does not own the supplied database.
 6. **Platform release-authorization issuance** already resolves the kernel client/database pair and enforces the same-client invariant.
 7. The billing router's compatibility `db`/`client` aliases remain unset in production; runtime consumers resolve the kernel database/client.
+8. **EmployeeRegistry** previously created a module-level `MongoClient`, read `MONGODB_URI` independently and hard-coded the `wilsy` database. It now resolves the `employees` collection lazily through `get_database()`; missing kernel readiness fails closed. A focused unit certificate and the billing/runtime CI gate cover every read method.
 
 New unit certificates cover the Plan/Subscription collection proxies, order-number database binding, and mixed-client rejection in financial approval aggregation. The billing workflow runs these tests.
+
+## Non-runtime operator tools
+
+The one-off scripts under `tools/eos/scripts/` and the legacy-alias retirement CLI still accept an explicit operator-supplied URI and may select a named database. They are not imported into the live ASGI runtime and must remain separately reviewed, explicitly invoked maintenance tools; they are not a second application-runtime connection authority. No such script was run by this change.
 
 ## Deliberate boundary requiring separate review
 
