@@ -26,6 +26,8 @@ from tools.eos.saas.domain.platform_billing_financial_execution_request import P
 def issue_platform_billing_financial_execution_request(client: MongoClient, database: Any, tenant_id: str, release_authorization_id: str, *, execution_request_id: str, requested_at: datetime, session: Any) -> tuple[PlatformBillingFinancialExecutionRequest, bool]:
     if session is None or getattr(session, "in_transaction", False) is not True:
         raise RuntimeError("ACTIVE_TRANSACTION_REQUIRED")
+    if client is not None and getattr(database, "client", None) is not client:
+        raise RuntimeError("MIXED_MONGO_CLIENT_DATABASE")
     authorization = PlatformBillingReleaseAuthorizationRegistry.get(tenant_id, release_authorization_id, collection=database["platform_billing_release_authorizations"], session=session)
     from tools.eos.kennel.registry.platform_billing_provider_policy_runtime_binding_registry import PlatformBillingProviderPolicyRuntimeBindingRegistry
     from tools.eos.kennel.registry.platform_billing_provider_policy_registry import PlatformBillingProviderPolicyRegistry
