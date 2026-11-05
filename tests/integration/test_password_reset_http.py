@@ -12,7 +12,8 @@ COLLABORATION / OWNERSHIP: Exercises the canonical ``tools.eos.api.server``
                            the reset transaction remains owned by the frozen
                            PasswordResetService.
 CERTIFICATION / UPDATE DATE: 2026-09-24
-CHANGELOG: v1.3.0-R10E78-TRANSACTION-BOUNDARY-HTTP-CERT refreshes the exact R10D byte freeze after adding caller-owned transaction guard and completion evidence to the canonical reset service, with direct and real-replica-set certificates.\n           v1.2.0-R10E76-PASSWORD-POLICY-DEPENDENCY-HTTP-CERT certifies policy-dependency failure as bounded 503
+CHANGELOG: v1.3.0-R10E78-TRANSACTION-BOUNDARY-HTTP-CERT refreshes the exact R10D byte freeze after adding caller-owned transaction guard and completion evidence to the canonical reset service, with direct and real-replica-set certificates.
+           v1.2.0-R10E76-PASSWORD-POLICY-DEPENDENCY-HTTP-CERT certifies policy-dependency failure as bounded 503
            while preserving user-correctable password-policy rejection as 400,
            and refreshes the exact reset-service/direct-certificate byte freeze.
            v1.1.0-R10E53-R10D-RESET-FREEZE-BOUNDARY narrows the historical R10D byte-freeze to the
