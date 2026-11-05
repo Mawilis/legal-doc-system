@@ -214,6 +214,8 @@ jobs:
           src/__tests__/components/legalDashboardBrandingPresentation.test.jsx
           tests/services/tenantBrandingAssetClient.test.js
           tests/hooks/useAuthenticatedTenantBrandingAsset.test.jsx
+          tests/contexts/authContext.authoritative.test.jsx
+          tests/client/SovereignDashboardController.test.js
 
       - name: Run D21B10 real-Mongo branding delivery certificate
         env:
