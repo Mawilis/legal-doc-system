@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from datetime import datetime, timezone
 from types import SimpleNamespace
+from typing import Any, cast
 from unittest.mock import Mock
 
 import pytest
@@ -28,7 +29,7 @@ def test_system_mfa_challenge_is_principal_scoped_and_consumed_once():
     token, expires_at = service.issue(
         principal_id="principal-system",
         credential_revision=8,
-        session=session,
+        session=cast(Any, session),
         now=NOW,
     )
     inserted = collection.insert_one.call_args.args[0]
@@ -65,7 +66,7 @@ def test_system_mfa_challenge_is_principal_scoped_and_consumed_once():
 def test_system_mfa_challenge_rejects_replay_and_foreign_principal():
     service = GlobalPrincipalSystemMfaChallengeService(collection=Mock())
     session = SimpleNamespace(in_transaction=True)
-    collection = service._store()
+    collection = cast(Any, service._store())
     collection.find_one.return_value = None
     with pytest.raises(Exception, match="SYSTEM_MFA_CHALLENGE_INVALID_OR_EXPIRED"):
         service.get_factor_context("sysmfa_invalid", session=session, now=NOW)
