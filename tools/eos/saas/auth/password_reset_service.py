@@ -383,7 +383,7 @@ class PasswordResetService:
         new_password: str,
         context_terms: Iterable[str] | None = None,
         transaction_guard: Callable[[Any, PasswordRecoveryCapability], None] | None = None,
-        transaction_completion: Callable[[Any, PasswordRecoveryCapability, int], None] | None = None,
+        transaction_completion: Callable[[Any, str, str, int], None] | None = None,
     ) -> PasswordResetResult:
         """Reset one capability-bound principal and atomically persist notice intent.
 
@@ -398,8 +398,8 @@ class PasswordResetService:
 
         Transaction semantics: password CAS, session revocation, refresh
         revocation, capability consumption, pristine PENDING notification
-        creation, and optional caller-owned transaction_completion evidence all
-        share one Mongo session and transaction callback. A completion failure
+        creation, and optional caller-owned transaction_completion evidence (tenant/principal identifiers
+        and the resulting credential revision only) all share one Mongo session and transaction callback. A completion failure
         aborts every canonical reset participant. PyMongo owns whole-callback
         retry. notification_id/event time are created once outside the callback
         so transaction retries refer to one logical event.
@@ -524,7 +524,12 @@ class PasswordResetService:
                 notification_registry.create(notification, session=session)
                 if transaction_completion is not None:
                     try:
-                        transaction_completion(session, current, new_credential_revision)
+                        transaction_completion(
+                            session,
+                            current.tenant_id,
+                            current.principal_id,
+                            new_credential_revision,
+                        )
                     except Exception as error:
                         raise PasswordResetExecutionEvidenceError(
                             "PASSWORD_RESET_EXECUTION_EVIDENCE_REJECTED"
