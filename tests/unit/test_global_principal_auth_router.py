@@ -410,8 +410,9 @@ def test_system_mfa_verification_consumes_challenge_and_issues_session_in_same_t
             return True
 
     class SystemSessionAuthority:
-        def __init__(self, *, sessions, authorizer):
+        def __init__(self, *, sessions, refresh_tokens, authorizer):
             assert sessions is not None
+            assert refresh_tokens is not None
             assert authorizer is not None
         def issue_after_mfa(self, principal_id, credential_revision, *, session, now):
             events.append(("issue", session))
@@ -420,8 +421,10 @@ def test_system_mfa_verification_consumes_challenge_and_issues_session_in_same_t
             assert session is session_ref
             return SimpleNamespace(
                 access_token="system-access",
+                refresh_token="sysrefresh-rotatable",
                 principal_id=principal_id,
                 access_expires_at=NOW,
+                refresh_expires_at=NOW,
             )
 
     class Database:
