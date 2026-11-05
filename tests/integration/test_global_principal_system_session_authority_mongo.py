@@ -137,6 +137,15 @@ def test_system_mfa_challenge_and_session_issue_revoke_and_rollback_are_atomic(m
             "consumed_at": None,
             "revoked_at": None,
         }) == 1
+        with client.start_session() as session:
+            session.start_transaction()
+            with pytest.raises(GlobalPrincipalSystemSessionRejected):
+                authority.rotate_refresh_token(
+                    receipt.refresh_token,
+                    session=session,
+                    now=now,
+                )
+            session.abort_transaction()
 
         with client.start_session() as session:
             session.start_transaction()
@@ -158,6 +167,10 @@ def test_system_mfa_challenge_and_session_issue_revoke_and_rollback_are_atomic(m
                 now=now,
             ) is True
             session.commit_transaction()
+        assert refresh_tokens.count_documents({
+            "session_reference": receipt.session_reference,
+            "revoked_at": None,
+        }) == 0
 
         with client.start_session() as session:
             session.start_transaction()
@@ -206,6 +219,7 @@ def test_system_mfa_challenge_and_session_issue_revoke_and_rollback_are_atomic(m
 
         assert challenges.find_one({"challenge_digest": __import__("hashlib").sha256(rollback_token.encode()).hexdigest()}) is None
         assert sessions.find_one({"session_reference": rollback_reference}) is None
+        assert refresh_tokens.find_one({"session_reference": rollback_reference}) is None
 
         with client.start_session() as session:
             session.start_transaction()
