@@ -291,10 +291,10 @@ async def global_login(payload: GlobalCredentialRequest, request: Request) -> di
             "memberships": _membership_payload(page),
             "next_cursor": page.next_cursor,
         }
-    except (MembershipSelectionChallengeRejected, MembershipSelectionProjectionError):
+    except (MembershipSelectionChallengeRejected, MembershipSelectionProjectionError, GlobalPrincipalSystemSessionRejected):
         _abort_if_active(session)
         raise HTTPException(status_code=401, detail="Membership selection is unavailable") from None
-    except (MembershipSelectionChallengeUnavailable, PyMongoError):
+    except (MembershipSelectionChallengeUnavailable, GlobalPrincipalSystemSessionUnavailable, PyMongoError):
         _abort_if_active(session)
         raise HTTPException(status_code=503, detail="GLOBAL_AUTHENTICATION_UNAVAILABLE") from None
     except Exception:
