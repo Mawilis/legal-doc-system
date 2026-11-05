@@ -22,7 +22,7 @@ The worker remains opt-in and production settlement enforcement is not enabled.
 - Creditor account correlation is based on a SHA-256 fingerprint of the stable
   `creditorAccount.identification` and/or `creditorAccount.proxy` locator.
   Raw account/proxy data is not persisted.
-- Each completion is durably inserted into the inbox before acknowledgement.
+- Each completion is durably inserted into the inbox before acknowledgement. Electrum's asynchronous ACK deadline is one second; the receiver ACKs durable receipt independently of the settlement worker, which may remain disabled and leave accepted events pending for later authorised processing.
 - Electrum completion acknowledgement is HTTP 202 with an empty body and a
   signed `x-jwt-signature` header. The content-digest claim is omitted for an
   empty body as required by Electrum's HTTP message signing contract.
