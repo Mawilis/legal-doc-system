@@ -107,7 +107,7 @@ test('certifies independent request, approval and canonical permission revocatio
 
   const wrongExecutor = await postAs(
     browser,
-    'system_requester',
+    'system_responder',
     '/api/system-services/security-response-decisions/' + decisionId + '/execute/permission-revocation',
     executionPayload,
     'browser-response-wrong-executor-' + state.database_name,
