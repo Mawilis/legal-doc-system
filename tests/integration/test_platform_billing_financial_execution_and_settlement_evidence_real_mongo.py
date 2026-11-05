@@ -374,11 +374,17 @@ def _retry_exact_settlement_replay(operation, *, attempts=5):
     from tools.eos.kennel.registry.financial_settlement_observation_registry import (
         FinancialSettlementObservationConflictError,
     )
+    from tools.eos.kennel.registry.platform_billing_financial_settlement_evidence_registry import (
+        PlatformBillingFinancialSettlementEvidenceConflictError,
+    )
     last_error = None
     for _ in range(attempts):
         try:
             return operation()
-        except FinancialSettlementObservationConflictError as error:
+        except (
+            FinancialSettlementObservationConflictError,
+            PlatformBillingFinancialSettlementEvidenceConflictError,
+        ) as error:
             last_error = error
         except PyMongoError as error:
             if not error.has_error_label("TransientTransactionError"):
