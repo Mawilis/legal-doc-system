@@ -67,6 +67,17 @@ from tools.eos.saas.auth.password_reset_service import (
     PasswordResetServiceError,
 )
 from tools.eos.saas.tenancy import tenant_registry as tenant_registry_module
+from tools.eos.system_services.security_incident_response_decision import (
+    SecurityIncidentResponseAction,
+    SecurityIncidentResponseDecision,
+)
+from tools.eos.system_services.security_incident_response_decision_registry import (
+    COLLECTION as RESPONSE_DECISION_COLLECTION,
+    EVENT_COLLECTION as RESPONSE_DECISION_EVENT_COLLECTION,
+    PLATFORM_AUDIT_COLLECTION,
+    PLATFORM_OUTBOX_COLLECTION,
+    SecurityIncidentResponseDecisionRegistry,
+)
 
 
 VERSION = "v1.0.0-R10D3-PASSWORD-RESET-SERVICE-REAL-MONGO-CERT"
@@ -764,3 +775,120 @@ def test_response_execution_receipt_failure_rolls_back_canonical_reset(bound_dat
 
     _assert_rollback(bound_database, fixture)
     assert evidence.count_documents({"decision_id": "decision-response-completion-failed"}) == 0
+
+
+def _approved_password_reset_decision(
+    context: MongoContext,
+    fixture: Fixture,
+    decision_id: str,
+) -> tuple[SecurityIncidentResponseDecisionRegistry, Any]:
+    registry = SecurityIncidentResponseDecisionRegistry(
+        decisions=context.database[RESPONSE_DECISION_COLLECTION],
+        events=context.database[RESPONSE_DECISION_EVENT_COLLECTION],
+        audit_events=context.database[PLATFORM_AUDIT_COLLECTION],
+        outbox=context.database[PLATFORM_OUTBOX_COLLECTION],
+    )
+    registry.ensure_indexes()
+    request = SecurityIncidentResponseDecision(
+        decision_id=decision_id,
+        incident_id="incident-" + decision_id,
+        tenant_id=fixture.tenant_id,
+        target_principal_id=fixture.principal_id,
+        action=SecurityIncidentResponseAction.PASSWORD_RESET,
+        requested_by_principal_id="independent-requester-" + decision_id,
+        requested_at=BASE_TIME,
+        request_evidence_reference="request-evidence-" + decision_id,
+    )
+    with context.client.start_session() as session:
+        with session.start_transaction():
+            registry.create(request, session=session)
+            approved = registry.decide(
+                decision_id,
+                approved=True,
+                decided_by_principal_id="independent-approver-" + decision_id,
+                decided_at=BASE_TIME + timedelta(minutes=1),
+                decision_evidence_reference="approval-evidence-" + decision_id,
+                expected_revision=0,
+                session=session,
+            )
+    return registry, approved
+
+
+def test_response_decision_receipt_is_atomic_with_real_canonical_password_reset(bound_database: MongoContext) -> None:
+    _prepare(bound_database)
+    fixture = _seed(bound_database, "response-receipt-commit")
+    service = _service(bound_database)
+    registry, approved = _approved_password_reset_decision(
+        bound_database, fixture, "decision-r10-response-commit",
+    )
+    event_key = "system-services-response-execution:" + approved.decision_id + ":revision:2"
+
+    def completion(session: Any, capability: PasswordRecoveryCapability, credential_revision: int) -> None:
+        registry.record_execution(
+            decision=approved,
+            actor_principal_id="independent-executor-decision-r10-response-commit",
+            idempotency_key="r10-response-execution-commit",
+            occurred_at=BASE_TIME + timedelta(minutes=2),
+            result_status="PASSWORD_RESET_COMPLETED",
+            result_revision=credential_revision,
+            session=session,
+        )
+
+    result = service.reset_password(
+        tenant_id=fixture.tenant_id,
+        recovery_token=fixture.token,
+        new_password=NEW_PASSWORD,
+        transaction_completion=completion,
+    )
+
+    assert result == PasswordResetResult()
+    event = bound_database.database[RESPONSE_DECISION_EVENT_COLLECTION].find_one({
+        "decision_id": approved.decision_id,
+        "revision": 2,
+    })
+    assert event is not None
+    assert event["event_type"] == "SECURITY_INCIDENT_RESPONSE_EXECUTED"
+    assert event["result_status"] == "PASSWORD_RESET_COMPLETED"
+    assert event["result_revision"] == fixture.starting_revision + 1
+    assert bound_database.database[PLATFORM_AUDIT_COLLECTION].count_documents({"event_key": event_key}) == 1
+    assert bound_database.database[PLATFORM_OUTBOX_COLLECTION].count_documents({
+        "event_key": event_key, "status": "PENDING", "attempts": 0,
+    }) == 1
+    assert _read_user(bound_database, fixture.principal_id, fixture.tenant_id)["credential_revision"] == fixture.starting_revision + 1
+
+
+def test_response_decision_receipt_rollback_aborts_real_canonical_password_reset(bound_database: MongoContext) -> None:
+    _prepare(bound_database)
+    fixture = _seed(bound_database, "response-receipt-rollback")
+    service = _service(bound_database)
+    registry, approved = _approved_password_reset_decision(
+        bound_database, fixture, "decision-r10-response-rollback",
+    )
+    event_key = "system-services-response-execution:" + approved.decision_id + ":revision:2"
+
+    def completion(session: Any, capability: PasswordRecoveryCapability, credential_revision: int) -> None:
+        registry.record_execution(
+            decision=approved,
+            actor_principal_id="independent-executor-decision-r10-response-rollback",
+            idempotency_key="r10-response-execution-rollback",
+            occurred_at=BASE_TIME + timedelta(minutes=2),
+            result_status="PASSWORD_RESET_COMPLETED",
+            result_revision=credential_revision,
+            session=session,
+        )
+        raise RuntimeError("synthetic post-receipt failure")
+
+    with pytest.raises(PasswordResetExecutionEvidenceError):
+        service.reset_password(
+            tenant_id=fixture.tenant_id,
+            recovery_token=fixture.token,
+            new_password=NEW_PASSWORD,
+            transaction_completion=completion,
+        )
+
+    _assert_rollback(bound_database, fixture)
+    assert bound_database.database[RESPONSE_DECISION_EVENT_COLLECTION].count_documents({
+        "decision_id": approved.decision_id, "revision": 2,
+    }) == 0
+    assert bound_database.database[PLATFORM_AUDIT_COLLECTION].count_documents({"event_key": event_key}) == 0
+    assert bound_database.database[PLATFORM_OUTBOX_COLLECTION].count_documents({"event_key": event_key}) == 0
