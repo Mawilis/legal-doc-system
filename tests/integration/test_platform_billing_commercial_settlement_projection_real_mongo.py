@@ -739,7 +739,7 @@ def test_r3fc_rm12_unknown_commit_acknowledgement_retries_same_transaction_on_re
             "mode": {"times": 1},
             "data": {
                 "failCommands": ["commitTransaction"],
-                "errorCode": 91,
+                "errorCode": 50,
                 "errorLabels": ["UnknownTransactionCommitResult"],
             },
         })
