@@ -187,15 +187,18 @@ def test_permission_revocation_delegates_exact_approved_lineage_to_canonical_ser
     result = value.execute_system_permission_revocation(
         decision,
         evidence=evidence,
+        session="caller-owned-transaction",
     )
 
     assert result == "canonical-revocation"
     value._permission_revocation.revoke.assert_called_once_with(
         evidence,
+        session="caller-owned-transaction",
     )
     value._authorizer.require.assert_called_once_with(
         principal_id="authorized-revocation-operator",
         permission_id="system_services:incident:response:execute",
+        session="caller-owned-transaction",
     )
 
 
@@ -223,6 +226,7 @@ def test_permission_revocation_executor_must_be_distinct_from_requester_and_appr
         value.execute_system_permission_revocation(
             decision,
             evidence=evidence,
+            session="caller-owned-transaction",
         )
     value._permission_revocation.revoke.assert_not_called()
 
@@ -251,6 +255,7 @@ def test_permission_revocation_target_cannot_execute_own_containment():
         value.execute_system_permission_revocation(
             decision,
             evidence=evidence,
+            session="caller-owned-transaction",
         )
     value._permission_revocation.revoke.assert_not_called()
 
@@ -280,5 +285,6 @@ def test_permission_revocation_mismatch_fails_before_canonical_service():
         value.execute_system_permission_revocation(
             decision,
             evidence=evidence,
+            session="caller-owned-transaction",
         )
     value._permission_revocation.revoke.assert_not_called()
