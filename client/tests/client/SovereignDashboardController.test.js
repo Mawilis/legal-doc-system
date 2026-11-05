@@ -104,6 +104,9 @@ describe('SovereignDashboardController EOS workspace contract', () => {
     };
     expect(resolveDashboardKey({
       user: { id: 'platform-staff-1', role: 'SYSTEM_SERVICES', systemServicesWorkspace: workspace },
+    })).toBe(DASHBOARD_KEYS.SYSTEM_SERVICES);
+    expect(resolveDashboardKey({
+      user: { id: 'platform-staff-1', role: 'SYSTEM_SERVICES', systemServicesWorkspace: workspace },
       manualDashboardKey: 'SYSTEM_SERVICES_DASHBOARD',
     })).toBe(DASHBOARD_KEYS.SYSTEM_SERVICES);
     expect(resolveDashboardKey({
