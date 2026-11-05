@@ -551,7 +551,8 @@ def _run_atomic_settlement(client, db, state, evidence, execution_truth_id, plat
     settlement_evidence = db["platform_billing_financial_settlement_evidence"]
     projections = db["projections"]
     audit = db["billing_audit_events"]
-    ensure_atomic_settlement_audit_indexes(audit)
+    outbox = db["billing_outbox_events"]
+    ensure_atomic_settlement_audit_indexes(audit, outbox)
     with client.start_session() as session:
         with session.start_transaction():
             return settle_platform_invoice_atomically(
@@ -568,6 +569,7 @@ def _run_atomic_settlement(client, db, state, evidence, execution_truth_id, plat
                 commercial_projection_collection=projections,
                 subscription_collection=state["subscription_collection"],
                 audit_collection=audit,
+                outbox_collection=outbox,
                 session=session,
                 created_at=created_at,
                 projected_at=created_at,
@@ -590,12 +592,13 @@ def test_r3fc_rm07_atomic_settlement_commits_observation_evidence_invoice_projec
         assert db["platform_billing_financial_settlement_evidence"].count_documents({"tenant_id": tenant}) == 1
         assert db["projections"].count_documents({"tenant_id": tenant}) == 1
         assert db["billing_audit_events"].count_documents({"tenant_id": tenant, "event_type": "PLATFORM_INVOICE_SETTLED"}) == 1
+        assert db["billing_outbox_events"].count_documents({"tenant_id": tenant, "event_type": "PLATFORM_INVOICE_SETTLED"}) == 1
         after_subscription = db["subscriptions"].find_one({
             "tenant_id": tenant,
             "subscription_id": state["subscription"].subscription_id,
         })
         assert after_subscription == before_subscription
-        assert result["audit_outbox_intent"]["status"] == "PENDING"
+        assert result["outbox_event"]["delivery_status"] == "PENDING"
     finally:
         client.close()
 
@@ -609,7 +612,8 @@ def test_r3fc_rm08_atomic_settlement_abort_rolls_back_every_stage_then_recovers(
             settle_platform_invoice_atomically,
         )
         audit = db["billing_audit_events"]
-        ensure_atomic_settlement_audit_indexes(audit)
+        outbox = db["billing_outbox_events"]
+        ensure_atomic_settlement_audit_indexes(audit, outbox)
         with client.start_session() as session:
             with pytest.raises(RuntimeError, match="SIMULATED_INTERRUPTION"):
                 with session.start_transaction():
@@ -626,6 +630,7 @@ def test_r3fc_rm08_atomic_settlement_abort_rolls_back_every_stage_then_recovers(
                         commercial_projection_collection=db["projections"],
                         subscription_collection=state["subscription_collection"],
                         audit_collection=audit,
+                        outbox_collection=outbox,
                         session=session,
                         created_at=created_at,
                         projected_at=created_at,
@@ -638,6 +643,7 @@ def test_r3fc_rm08_atomic_settlement_abort_rolls_back_every_stage_then_recovers(
         assert db["platform_billing_financial_settlement_evidence"].count_documents({"tenant_id": tenant}) == 0
         assert db["projections"].count_documents({"tenant_id": tenant}) == 0
         assert audit.count_documents({"tenant_id": tenant, "event_type": "PLATFORM_INVOICE_SETTLED"}) == 0
+        assert outbox.count_documents({"tenant_id": tenant, "event_type": "PLATFORM_INVOICE_SETTLED"}) == 0
 
         recovered = _run_atomic_settlement(client, db, state, evidence, fact_id, platform_id, created_at)
         assert recovered["commercial_projection"].tenant_id == tenant
@@ -645,6 +651,7 @@ def test_r3fc_rm08_atomic_settlement_abort_rolls_back_every_stage_then_recovers(
         assert db["platform_billing_financial_settlement_evidence"].count_documents({"tenant_id": tenant}) == 1
         assert db["projections"].count_documents({"tenant_id": tenant}) == 1
         assert audit.count_documents({"tenant_id": tenant, "event_type": "PLATFORM_INVOICE_SETTLED"}) == 1
+        assert outbox.count_documents({"tenant_id": tenant, "event_type": "PLATFORM_INVOICE_SETTLED"}) == 1
     finally:
         client.close()
 
