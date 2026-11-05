@@ -123,15 +123,19 @@ class SecurityIncidentAssignmentRegistry:
     def _insert_or_verify(collection: Any, document: dict[str, object], *, session: Any) -> None:
         key = document["event_key"]
         try:
-            collection.insert_one(document, session=session)
-            return
-        except DuplicateKeyError:
             existing = collection.find_one({"event_key": key}, session=session)
-            if existing is None:
-                raise IncidentAssignmentAuditEvidenceConflictError("INCIDENT_ASSIGNMENT_AUDIT_EVIDENCE_CONFLICT")
-            for field, expected in document.items():
-                if existing.get(field) != expected:
-                    raise IncidentAssignmentAuditEvidenceConflictError("INCIDENT_ASSIGNMENT_AUDIT_EVIDENCE_CONFLICT")
+            if existing is not None:
+                for field, expected in document.items():
+                    if existing.get(field) != expected:
+                        raise IncidentAssignmentAuditEvidenceConflictError("INCIDENT_ASSIGNMENT_AUDIT_EVIDENCE_CONFLICT")
+                return
+            collection.insert_one(document, session=session)
+        except IncidentAssignmentAuditEvidenceConflictError:
+            raise
+        except DuplicateKeyError as error:
+            # A concurrent writer may win after the read. MongoDB aborts this transaction;
+            # never attempt a read-after-duplicate in the aborted transaction.
+            raise IncidentAssignmentAuditEvidenceConflictError("INCIDENT_ASSIGNMENT_AUDIT_CONCURRENT_DUPLICATE") from error
         except PyMongoError as error:
             raise IncidentAssignmentPersistenceError("INCIDENT_ASSIGNMENT_AUDIT_WRITE_FAILED") from error
 
