@@ -77,7 +77,6 @@ def test_password_reset_delegates_only_approved_decision_to_canonical_service():
     value._authorizer.require.assert_called_once_with(
         principal_id="independent-executor",
         permission_id="system_services:incident:response:execute",
-        session="caller-owned-transaction",
     )
 
 
@@ -93,7 +92,6 @@ def test_password_reset_executor_must_be_distinct_from_requester_approver_and_ta
             value.execute_password_reset(
                 decision,
                 actor_principal_id=actor,
-                session="caller-owned-transaction",
                 recovery_token="single-use-capability",
                 new_password="Transient-Strong-Passphrase-2026!",
             )
@@ -107,16 +105,19 @@ def test_password_reset_executor_requires_current_execute_permission():
     decision = approved(SecurityIncidentResponseAction.PASSWORD_RESET)
     value._authorizer.require.side_effect = PermissionError("CURRENT_SYSTEM_PERMISSION_REQUIRED")
 
+    value.execute_password_reset(
+        decision,
+        actor_principal_id="independent-executor",
+        recovery_token="single-use-capability",
+        new_password="Transient-Strong-Passphrase-2026!",
+    )
+    guard = value._password_reset.reset_password.call_args.kwargs["transaction_guard"]
     with pytest.raises(PermissionError, match="CURRENT_SYSTEM_PERMISSION_REQUIRED"):
-        value.execute_password_reset(
-            decision,
-            actor_principal_id="independent-executor",
-            session="caller-owned-transaction",
-            recovery_token="single-use-capability",
-            new_password="Transient-Strong-Passphrase-2026!",
+        guard(
+            "caller-owned-transaction",
+            SimpleNamespace(tenant_id="tenant-1", principal_id="target-principal"),
         )
-
-    value._password_reset.reset_password.assert_not_called()
+    value._password_reset.reset_password.assert_called_once()
 
 
 def test_password_reset_decision_does_not_replace_canonical_recovery_capability():
@@ -128,7 +129,6 @@ def test_password_reset_decision_does_not_replace_canonical_recovery_capability(
         value.execute_password_reset(
             decision,
             actor_principal_id="independent-executor",
-            session="caller-owned-transaction",
             recovery_token="invalid-capability",
             new_password="Transient-Strong-Passphrase-2026!",
         )
@@ -151,7 +151,6 @@ def test_pending_or_wrong_action_cannot_reach_canonical_service():
         value.execute_password_reset(
             pending,
             actor_principal_id="independent-executor",
-            session="caller-owned-transaction",
             recovery_token="token",
             new_password="Transient-Strong-Passphrase-2026!",
         )
@@ -187,18 +186,15 @@ def test_permission_revocation_delegates_exact_approved_lineage_to_canonical_ser
     result = value.execute_system_permission_revocation(
         decision,
         evidence=evidence,
-        session="caller-owned-transaction",
     )
 
     assert result == "canonical-revocation"
     value._permission_revocation.revoke.assert_called_once_with(
         evidence,
-        session="caller-owned-transaction",
     )
     value._authorizer.require.assert_called_once_with(
         principal_id="authorized-revocation-operator",
         permission_id="system_services:incident:response:execute",
-        session="caller-owned-transaction",
     )
 
 
@@ -226,7 +222,6 @@ def test_permission_revocation_executor_must_be_distinct_from_requester_and_appr
         value.execute_system_permission_revocation(
             decision,
             evidence=evidence,
-            session="caller-owned-transaction",
         )
     value._permission_revocation.revoke.assert_not_called()
 
@@ -255,7 +250,6 @@ def test_permission_revocation_target_cannot_execute_own_containment():
         value.execute_system_permission_revocation(
             decision,
             evidence=evidence,
-            session="caller-owned-transaction",
         )
     value._permission_revocation.revoke.assert_not_called()
 
@@ -285,6 +279,5 @@ def test_permission_revocation_mismatch_fails_before_canonical_service():
         value.execute_system_permission_revocation(
             decision,
             evidence=evidence,
-            session="caller-owned-transaction",
         )
     value._permission_revocation.revoke.assert_not_called()
