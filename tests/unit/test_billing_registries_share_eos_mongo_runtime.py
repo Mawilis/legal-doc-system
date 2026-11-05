@@ -10,13 +10,18 @@ from typing import Any
 from tools.eos.saas.billing import plan_registry, subscription_registry
 
 
+class _Collection:
+    def index_information(self) -> dict[str, Any]:
+        return {}
+
+
 class _Database:
     def __init__(self) -> None:
         self.requests: list[tuple[str, dict[str, Any]]] = []
 
-    def get_collection(self, name: str, **kwargs: Any) -> object:
+    def get_collection(self, name: str, **kwargs: Any) -> _Collection:
         self.requests.append((name, kwargs))
-        return object()
+        return _Collection()
 
 
 def test_plan_and_subscription_registries_resolve_from_one_kernel_database(monkeypatch) -> None:
