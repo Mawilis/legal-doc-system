@@ -97,6 +97,26 @@ describe('EOS workspace identity resolver for local PDF rendering', () => {
     }
   });
 
+  it('rejects an EOS workspace projection for a different tenant', async () => {
+    const result = await resolveEosWorkspaceIdentity({
+      ...INPUT,
+      fetchImpl: async () => ({
+        ok: true,
+        status: 200,
+        json: async () => ({
+          status: 'READY',
+          user: { id: 'principal-certified', email: 'person@example.test' },
+          workspace: { tenantId: 'tenant-other' },
+        }),
+      }),
+    });
+    assert.deepEqual(result, {
+      ok: false,
+      status: 403,
+      code: 'WORKSPACE_ACCESS_DENIED',
+    });
+  });
+
   it('fails closed on malformed EOS projections and network errors', async () => {
     const malformed = await resolveEosWorkspaceIdentity({
       ...INPUT,
