@@ -273,6 +273,14 @@ class SecurityIncidentResponseDecisionRegistry:
         session: Any,
     ) -> SecurityIncidentResponseDecision:
         _require_transaction(session)
+        if not isinstance(approved, bool):
+            raise SecurityIncidentResponseDecisionConflictError("RESPONSE_DECISION_APPROVAL_INVALID")
+        if (
+            not isinstance(decided_at, datetime)
+            or decided_at.tzinfo is None
+            or decided_at.utcoffset() is None
+        ):
+            raise SecurityIncidentResponseDecisionConflictError("DECISION_AT_INVALID")
         try:
             raw = self._decisions.find_one({"decision_id": decision_id}, session=session)
             if raw is None:
