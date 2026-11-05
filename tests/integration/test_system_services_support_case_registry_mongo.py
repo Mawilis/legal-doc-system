@@ -734,3 +734,54 @@ def test_incident_responder_assignment_requires_separate_permissions_and_accepta
     assert len(outbox_rows) == 2
     assert all(row["status"] == "PENDING" and row["attempts"] == 0 for row in outbox_rows)
     assert {row["event_key"] for row in audit_rows} == {row["event_key"] for row in outbox_rows}
+
+
+def test_incident_assignment_platform_audit_and_outbox_roll_back_with_business_write(mongo_case_registry):
+    """Replica-set proof that business state, immutable audit, and outbox share one transaction."""
+    from datetime import datetime, timezone
+    from tools.eos.system_services.security_incident_assignment import (
+        SecurityIncidentAssignment, SecurityIncidentAssignmentEvent,
+        SecurityIncidentAssignmentStatus,
+    )
+    from tools.eos.system_services.security_incident_assignment_registry import (
+        COLLECTION, EVENT_COLLECTION, PLATFORM_AUDIT_COLLECTION,
+        PLATFORM_OUTBOX_COLLECTION, SecurityIncidentAssignmentRegistry,
+    )
+
+    client, database, _ = mongo_case_registry
+    registry = SecurityIncidentAssignmentRegistry(
+        assignments=database[COLLECTION], events=database[EVENT_COLLECTION],
+    )
+    registry.ensure_indexes()
+    now = datetime(2026, 11, 5, 9, tzinfo=timezone.utc)
+    assignment = SecurityIncidentAssignment(
+        assignment_id="assignment-audit-rollback-certificate",
+        incident_id="incident-audit-rollback-certificate",
+        tenant_id="tenant-audit-rollback-certificate",
+        reporter_principal_id="reporter-audit-rollback",
+        assigned_by_principal_id="triage-audit-rollback",
+        assigned_to_principal_id="responder-audit-rollback",
+        status=SecurityIncidentAssignmentStatus.PENDING_ACCEPTANCE,
+        revision=0, created_at=now, updated_at=now,
+        idempotency_fingerprint="e" * 64,
+    )
+    event = SecurityIncidentAssignmentEvent(
+        event_id="assignment-event-audit-rollback-certificate",
+        assignment_id=assignment.assignment_id,
+        actor_principal_id=assignment.assigned_by_principal_id,
+        idempotency_fingerprint="f" * 64,
+        from_status=None,
+        to_status=SecurityIncidentAssignmentStatus.PENDING_ACCEPTANCE,
+        action="INCIDENT_RESPONDER_ASSIGNED",
+        occurred_at=now,
+    )
+    with client.start_session() as session:
+        with pytest.raises(RuntimeError, match="SYSTEM_SERVICES_AUDIT_ABORT_CERTIFICATE"):
+            with session.start_transaction():
+                persisted = registry.create(assignment, event, session=session)
+                registry.record_platform_audit(
+                    assignment=persisted, event=event, session=session,
+                )
+                raise RuntimeError("SYSTEM_SERVICES_AUDIT_ABORT_CERTIFICATE")
+    for collection in (COLLECTION, EVENT_COLLECTION, PLATFORM_AUDIT_COLLECTION, PLATFORM_OUTBOX_COLLECTION):
+        assert database[collection].count_documents({}) == 0
