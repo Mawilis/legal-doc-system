@@ -67,7 +67,7 @@ export default function SovereignMfaPortal({ onVerificationSuccess }) {
     try {
       const result = await verifyOTP(pendingEmail, otp, null, null, setup, tenant?.tenantId);
       onVerificationSuccess?.(result.user);
-      navigate(result.user?.hasSignedCovenant ? '/' : '/covenant', { replace: true });
+      navigate(result.user?.systemServicesWorkspace || result.user?.hasSignedCovenant ? '/' : '/covenant', { replace: true });
     } catch (verificationError) {
       setError(verificationError?.response?.data?.detail || verificationError?.response?.data?.message || verificationError.message || 'Identity verification failed.');
     }
