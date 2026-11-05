@@ -680,6 +680,12 @@ def test_incident_responder_assignment_requires_separate_permissions_and_accepta
                 session=session,
             )
     assert replay.assignment_id == created.assignment_id
+    with client.start_session() as session:
+        with session.start_transaction():
+            responder_inbox = service.list_my_assignments(
+                actor_principal_id=responder, session=session,
+            )
+    assert tuple(item.assignment_id for item in responder_inbox) == (created.assignment_id,)
     assert authorizer.calls.count((triage_actor, "system_services:case:triage")) == 2
     assert authorizer.calls.count((responder, "system_services:incident:escalate")) == 2
 
