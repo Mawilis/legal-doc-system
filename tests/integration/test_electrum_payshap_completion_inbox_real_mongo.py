@@ -11,9 +11,9 @@ from tools.eos.kennel.registry.electrum_payshap_completion_inbox_registry import
     ElectrumPayShapCompletionInboxEvent,
     ElectrumPayShapCompletionInboxRegistry,
 )
-from tools.eos.kennel.registry.electrum_provider_tenant_binding_registry import (
-    ElectrumProviderTenantBindingError,
-    ElectrumProviderTenantBindingRegistry,
+from tools.eos.kennel.registry.electrum_provider_account_binding_registry import (
+    ElectrumProviderAccountBindingError,
+    ElectrumProviderAccountBindingRegistry,
 )
 
 URI = "mongodb://127.0.0.1:27027/?replicaSet=wilsyVendorCertRS"
@@ -27,9 +27,9 @@ def mongo_collections():
     assert client.admin.command("hello").get("isWritablePrimary") is True
     db = client[f"electrum_inbox_{uuid4().hex}"]
     inbox = db["completion_inbox"]
-    bindings = db["tenant_bindings"]
+    bindings = db["account_bindings"]
     ElectrumPayShapCompletionInboxRegistry.ensure_indexes(inbox)
-    ElectrumProviderTenantBindingRegistry.ensure_indexes(bindings)
+    ElectrumProviderAccountBindingRegistry.ensure_indexes(bindings)
     try:
         yield client, inbox, bindings
     finally:
@@ -113,23 +113,23 @@ def test_account_binding_is_opaque_unique_and_tenant_scoped(mongo_collections):
     fingerprint = "c" * 64
     with client.start_session() as session:
         with session.start_transaction():
-            created = ElectrumProviderTenantBindingRegistry.create(
-                tenant_id="tenant-a", binding_id="binding-a",
+            created = ElectrumProviderAccountBindingRegistry.create(
+                binding_id="binding-a",
                 creditor_account_fingerprint=fingerprint,
                 payment_destination_reference="destination-a",
                 collection=bindings, session=session,
             )
     with client.start_session() as session:
         with session.start_transaction():
-            resolved = ElectrumProviderTenantBindingRegistry.get_by_creditor_account_fingerprint(
+            resolved = ElectrumProviderAccountBindingRegistry.get_by_creditor_account_fingerprint(
                 fingerprint, bindings, session=session
             )
-    assert resolved["tenant_id"] == created["tenant_id"] == "tenant-a"
+    assert resolved["binding_id"] == created["binding_id"] == "binding-a"
     with client.start_session() as session:
         with session.start_transaction():
-            with pytest.raises(ElectrumProviderTenantBindingError, match="BINDING_CONFLICT"):
-                ElectrumProviderTenantBindingRegistry.create(
-                    tenant_id="tenant-b", binding_id="binding-b",
+            with pytest.raises(ElectrumProviderAccountBindingError, match="ACCOUNT_BINDING_CONFLICT"):
+                ElectrumProviderAccountBindingRegistry.create(
+                    binding_id="binding-b",
                     creditor_account_fingerprint=fingerprint,
                     payment_destination_reference="destination-b",
                     collection=bindings, session=session,
