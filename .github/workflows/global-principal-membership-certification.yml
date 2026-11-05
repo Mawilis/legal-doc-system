@@ -39,6 +39,7 @@ on:
       - "tools/eos/auth/workspace_bootstrap_projection.py"
       - "tools/eos/auth/membership_selection_challenge.py"
       - "tools/eos/auth/global_principal_session_authority.py"
+      - "tools/eos/auth/global_principal_system_session_authority.py"
       - "tools/eos/auth/global_principal_totp_verifier.py"
       - "tools/eos/auth/global_principal_mfa_kms_envelope.py"
       - "tools/eos/auth/global_principal_mfa_enrollment_service.py"
@@ -140,6 +141,7 @@ jobs:
             tools/eos/auth/membership_selection_projection.py \
             tools/eos/auth/membership_selection_challenge.py \
             tools/eos/auth/global_principal_session_authority.py \
+            tools/eos/auth/global_principal_system_session_authority.py \
             tools/eos/auth/global_principal_totp_verifier.py \
             tools/eos/auth/global_principal_mfa_kms_envelope.py \
             tools/eos/auth/global_principal_mfa_enrollment_service.py \
@@ -159,6 +161,8 @@ jobs:
             tests/unit/test_membership_selection_projection.py \
             tests/unit/test_membership_selection_challenge.py \
             tests/unit/test_global_principal_session_authority.py \
+            tests/unit/test_global_principal_system_session_authority.py \
+            tests/unit/test_global_principal_system_session_authority.py \
             tests/unit/test_global_principal_totp_verifier.py \
             tests/unit/test_global_principal_mfa_kms_envelope.py \
             tests/unit/test_global_principal_mfa_enrollment_service.py \
