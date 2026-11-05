@@ -719,16 +719,16 @@ def test_response_execution_receipt_commits_with_canonical_reset(bound_database:
         assert capability.tenant_id == fixture.tenant_id
         assert capability.principal_id == fixture.principal_id
 
-    def completion(session: Any, capability: PasswordRecoveryCapability, credential_revision: int) -> None:
+    def completion(session: Any, tenant_id: str, principal_id: str, credential_revision: int) -> None:
         assert session.in_transaction is True
-        assert capability.tenant_id == fixture.tenant_id
-        assert capability.principal_id == fixture.principal_id
+        assert tenant_id == fixture.tenant_id
+        assert principal_id == fixture.principal_id
         seen_sessions.append(id(session))
         evidence.insert_one(
             {
                 "decision_id": "decision-response-completion",
-                "tenant_id": capability.tenant_id,
-                "target_principal_id": capability.principal_id,
+                "tenant_id": tenant_id,
+                "target_principal_id": principal_id,
                 "result_status": "PASSWORD_RESET_COMPLETED",
                 "result_revision": credential_revision,
             },
@@ -823,7 +823,8 @@ def test_response_decision_receipt_is_atomic_with_real_canonical_password_reset(
     )
     event_key = "system-services-response-execution:" + approved.decision_id + ":revision:2"
 
-    def completion(session: Any, capability: PasswordRecoveryCapability, credential_revision: int) -> None:
+    def completion(session: Any, tenant_id: str, principal_id: str, credential_revision: int) -> None:
+        assert tenant_id == fixture.tenant_id and principal_id == fixture.principal_id
         registry.record_execution(
             decision=approved,
             actor_principal_id="independent-executor-decision-r10-response-commit",
@@ -866,7 +867,8 @@ def test_response_decision_receipt_rollback_aborts_real_canonical_password_reset
     )
     event_key = "system-services-response-execution:" + approved.decision_id + ":revision:2"
 
-    def completion(session: Any, capability: PasswordRecoveryCapability, credential_revision: int) -> None:
+    def completion(session: Any, tenant_id: str, principal_id: str, credential_revision: int) -> None:
+        assert tenant_id == fixture.tenant_id and principal_id == fixture.principal_id
         registry.record_execution(
             decision=approved,
             actor_principal_id="independent-executor-decision-r10-response-rollback",
