@@ -49,10 +49,23 @@ Obtain these values directly through Electrum's approved onboarding channel:
 8. The sponsor-bank-issued creditor account and approved PayShap receiving
    identifier(s), including any proxy namespace and account currency.
 
-WILSY generates and retains its private ES256 key material. Never send a
-private key through chat, email, issue comments, or source control. Store it
-only in the approved secret manager and expose it to the runtime through the
-deployment's secret-injection mechanism.
+WILSY generates and retains its private ES256 key material. Generate it
+outside the repository on a controlled workstation or approved key-management
+host, then store the PKCS#8 private key only in the approved secret manager:
+
+```sh
+umask 077
+openssl ecparam -name prime256v1 -genkey -noout -out electrum-wilsy-ec-key.pem
+openssl pkcs8 -topk8 -inform PEM -in electrum-wilsy-ec-key.pem \
+  -outform PEM -nocrypt -out electrum-wilsy-private-key-pkcs8.pem
+openssl ec -in electrum-wilsy-private-key-pkcs8.pem -pubout \
+  -out electrum-wilsy-public-key.pem
+```
+
+Exchange only the public key through Electrum's approved onboarding channel.
+Never send a private key through chat, email, issue comments, or source
+control. Store it only in the approved secret manager and expose it to the
+runtime through the deployment's secret-injection mechanism.
 
 ## Runtime configuration
 
