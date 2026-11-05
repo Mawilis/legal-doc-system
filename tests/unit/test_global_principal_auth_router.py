@@ -469,3 +469,56 @@ def test_system_mfa_verification_consumes_challenge_and_issues_session_in_same_t
     assert "tenant_id" not in response
     assert events == [("consume", session), ("issue", session)]
     assert session.committed and session.ended
+
+
+def test_system_refresh_route_rotates_only_the_tenant_neutral_refresh_family(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    session = _Session()
+
+    class Database:
+        def __getitem__(self, name):
+            assert name in {
+                "global_principal_system_sessions",
+                "global_principal_system_refresh_tokens",
+            }
+            return object()
+
+    class Authority:
+        def __init__(self, *, sessions, refresh_tokens, authorizer):
+            assert sessions is not None
+            assert refresh_tokens is not None
+            assert authorizer is not None
+        def rotate_refresh_token(self, token, *, session):
+            assert token == "sysrefresh-current"
+            assert session is session_ref
+            return SimpleNamespace(
+                principal_id="platform-responder",
+                access_token="rotated-system-access",
+                refresh_token="sysrefresh-next",
+                access_expires_at=NOW,
+                refresh_expires_at=NOW,
+            )
+
+    session_ref = session
+    monkeypatch.setattr(
+        "tools.eos.api.global_principal_auth_router._begin_transaction",
+        lambda: (session, Database()),
+    )
+    monkeypatch.setattr(
+        "tools.eos.api.global_principal_auth_router.GlobalPrincipalSystemSessionAuthority",
+        Authority,
+    )
+    response = asyncio.run(refresh_global_session(
+        GlobalRefreshRequest(refresh_token="sysrefresh-current"),
+        _request_with_state(
+            global_principal_system_session_indexes_ready=True,
+            system_services_authorizer=object(),
+        ),
+    ))
+    assert response["status"] == "REFRESHED"
+    assert response["scope"] == "SYSTEM"
+    assert response["access_token"] == "rotated-system-access"
+    assert response["refresh_token"] == "sysrefresh-next"
+    assert "tenant_id" not in response
+    assert session.committed and session.ended
