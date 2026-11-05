@@ -227,6 +227,7 @@ test('certifies initial tenant-neutral SYSTEM credentials, MFA and workspace boo
   await page.getByLabel('Work email').fill('platform-responder@example.com');
   await page.getByRole('textbox', { name: 'Password' }).fill('Synthetic-Platform-Password-123!');
   await page.getByRole('button', { name: 'Continue securely' }).click();
+  expect(calls).toContain('global-login');
   await expect(page).toHaveURL(/\/mfa$/);
   await page.getByLabel('Six-digit code').fill('123456');
   await page.getByRole('button', { name: 'Verify identity' }).click();
