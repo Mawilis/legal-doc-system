@@ -545,6 +545,11 @@ def seed(state_path: Path) -> None:
         )
         branding_asset_registry.ensure_indexes(collections["branding_assets"])
 
+        _, system_authorizer = build_system_services_runtime(
+            database,
+            platform_workforce_scope_id=SYSTEM_WORKFORCE_SCOPE_ID,
+        )
+
         with client.start_session() as session:
             session.start_transaction(
                 read_concern=ReadConcern("snapshot"),
@@ -557,6 +562,29 @@ def seed(state_path: Path) -> None:
                     collections["principal"],
                     session=session,
                 )
+                TenantMembershipRepository.insert(
+                    TenantMembershipAuthority(
+                        principal_id, tenant_id, TenantMembershipStatus.ACTIVE, 0,
+                    ),
+                    collections["membership"],
+                    session=session,
+                )
+                TenantBusinessRoleRepository.insert(
+                    TenantBusinessRoleAuthority(
+                        principal_id, tenant_id, actor["business_role"],
+                        TenantBusinessRoleStatus.ACTIVE, 0, now, None,
+                    ),
+                    collections["business"],
+                    session=session,
+                )
+                RoleAssignmentRepository.insert(
+                    RoleAssignmentAuthority(
+                        principal_id, tenant_id, actor["grant_role"],
+                        RoleAssignmentStatus.ACTIVE, 0,
+                    ),
+                    collections["roles"],
+                    session=session,
+                )
             for actor in system_actors.values():
                 PrincipalAuthorityRepository.create(
                     PrincipalAuthority(actor["principal_id"], PrincipalStatus.ACTIVE, 0),
@@ -567,8 +595,7 @@ def seed(state_path: Path) -> None:
                 ("system_triage", ("system_services:queue:read", "system_services:case:triage")),
                 ("system_responder", ("system_services:queue:read", "system_services:incident:escalate")),
             ):
-                actor = system_actors[key]
-                principal_id = actor["principal_id"]
+                principal_id = system_actors[key]["principal_id"]
                 for permission_id in permission_ids:
                     permission_assignment_registry.create_or_replay(
                         SystemPermissionAssignment.assign(
@@ -598,40 +625,6 @@ def seed(state_path: Path) -> None:
                         supersedes_fingerprint=None,
                     ),
                     collection=workforce_collection,
-                    session=session,
-                )
-                TenantMembershipRepository.insert(
-                    TenantMembershipAuthority(
-                        principal_id,
-                        tenant_id,
-                        TenantMembershipStatus.ACTIVE,
-                        0,
-                    ),
-                    collections["membership"],
-                    session=session,
-                )
-                TenantBusinessRoleRepository.insert(
-                    TenantBusinessRoleAuthority(
-                        principal_id,
-                        tenant_id,
-                        actor["business_role"],
-                        TenantBusinessRoleStatus.ACTIVE,
-                        0,
-                        now,
-                        None,
-                    ),
-                    collections["business"],
-                    session=session,
-                )
-                RoleAssignmentRepository.insert(
-                    RoleAssignmentAuthority(
-                        principal_id,
-                        tenant_id,
-                        actor["grant_role"],
-                        RoleAssignmentStatus.ACTIVE,
-                        0,
-                    ),
-                    collections["roles"],
                     session=session,
                 )
             branding = _seed_branding_chain(
@@ -746,10 +739,6 @@ def seed(state_path: Path) -> None:
             incident_registry.create_or_replay(incident, incident_event, session=session)
             incident_registry.record_platform_audit(
                 incident=incident, event=incident_event, session=session,
-            )
-            _, system_authorizer = build_system_services_runtime(
-                database,
-                platform_workforce_scope_id=SYSTEM_WORKFORCE_SCOPE_ID,
             )
             escalation = SecurityIncidentEscalationService(
                 incidents=incident_registry,
