@@ -933,6 +933,50 @@ def verify(state_path: Path) -> None:
             ).encode("utf-8")
         ).hexdigest()
         decisions = database["system_security_incident_response_decisions"]
+        rejection_request_key = "browser-response-rejection-request-" + state["database_name"]
+        rejection_decision_id = "response-" + sha3_256(
+            (
+                state["system_incident_id"]
+                + "\\0"
+                + system_actors["system_requester"]["principal_id"]
+                + "\\0"
+                + rejection_request_key
+            ).encode("utf-8")
+        ).hexdigest()
+        rejected = decisions.find_one({"decision_id": rejection_decision_id})
+        if (
+            rejected is None
+            or rejected.get("status") != "REJECTED"
+            or rejected.get("revision") != 1
+            or rejected.get("requested_by_principal_id") != system_actors["system_requester"]["principal_id"]
+            or rejected.get("decided_by_principal_id") != system_actors["system_approver"]["principal_id"]
+        ):
+            raise RuntimeError("BROWSER_CERT_RESPONSE_REJECTION_BINDING_INVALID")
+        decision_events = database["system_security_incident_response_decision_events"]
+        rejection_event_keys = [
+            f"system-services-response-decision:{rejection_decision_id}:revision:0",
+            f"system-services-response-decision:{rejection_decision_id}:revision:1",
+        ]
+        for revision, event_type in (
+            (0, "SECURITY_INCIDENT_RESPONSE_REQUESTED"),
+            (1, "SECURITY_INCIDENT_RESPONSE_REJECTED"),
+        ):
+            event = decision_events.find_one({"decision_id": rejection_decision_id, "revision": revision})
+            if event is None or event.get("event_type") != event_type:
+                raise RuntimeError("BROWSER_CERT_RESPONSE_REJECTION_EVENT_CHAIN_INVALID")
+        if decision_events.count_documents({"decision_id": rejection_decision_id}) != 2:
+            raise RuntimeError("BROWSER_CERT_REJECTED_DECISION_MUST_NOT_EXECUTE")
+        audit = database["system_platform_audit_events"]
+        outbox = database["system_platform_audit_outbox"]
+        if audit.count_documents({"event_key": {"$in": rejection_event_keys}}) != 2:
+            raise RuntimeError("BROWSER_CERT_RESPONSE_REJECTION_AUDIT_INVALID")
+        if outbox.count_documents({
+            "event_key": {"$in": rejection_event_keys},
+            "status": "PENDING",
+            "attempts": 0,
+        }) != 2:
+            raise RuntimeError("BROWSER_CERT_RESPONSE_REJECTION_OUTBOX_INVALID")
+
         decision = decisions.find_one({"decision_id": response_decision_id})
         if (
             decision is None
