@@ -544,7 +544,6 @@ async def refresh_global_session(payload: GlobalRefreshRequest, request: Request
 
 @router.post("/logout")
 async def logout_global_session(
-    request: Request,
     identity: Any = Depends(get_current_identity),
 ) -> dict[str, str]:
     """Revoke the exact global tenant or tenant-neutral SYSTEM session."""
