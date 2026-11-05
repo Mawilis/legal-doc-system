@@ -51,6 +51,10 @@ class ElectrumCompletionRuntime:
 
 def _transport_configuration() -> ElectrumTransportConfiguration | None:
     """Resolve onboarding key material at request time; never log or persist it."""
+    # This workstream is sandbox-only. A production environment must not load
+    # Electrum signing material or expose a live settlement acknowledgement.
+    if os.getenv("WILSY_ELECTRUM_ENVIRONMENT", "").strip().lower() != "sandbox":
+        return None
     raw_keys = os.getenv("WILSY_ELECTRUM_VERIFICATION_KEYS_JSON", "")
     private_key = os.getenv("WILSY_ELECTRUM_SIGNING_PRIVATE_KEY_PEM", "")
     key_id = os.getenv("WILSY_ELECTRUM_SIGNING_KEY_ID", "")
