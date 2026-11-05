@@ -589,33 +589,36 @@ def _run_atomic_settlement(client, db, state, evidence, execution_truth_id, plat
                 "tenant_id": state["tenant"],
                 "invoice_id": state["invoice"].invoice_id,
             })
-            return (
-                observations.find_one({
+            checks = {
+                "observation": observations.find_one({
                     "tenant_id": state["tenant"],
                     "observation_id": observation.observation_id,
-                }) is not None
-                and settlement_evidence.find_one({
+                }) is not None,
+                "settlement_evidence": settlement_evidence.find_one({
                     "tenant_id": state["tenant"],
                     "settlement_evidence_id": settlement.settlement_evidence_id,
                     "fingerprint": settlement.fingerprint,
-                }) is not None
-                and projections.find_one({
+                }) is not None,
+                "commercial_projection": projections.find_one({
                     "tenant_id": state["tenant"],
                     "projection_id": projection.projection_id,
-                }) is not None
-                and invoice is not None
-                and invoice.get("status") in ("paid", "PAID")
-                and audit.find_one({
+                }) is not None,
+                "invoice_paid": invoice is not None and invoice.get("status") in ("paid", "PAID"),
+                "audit": audit.find_one({
                     "tenant_id": state["tenant"],
                     "event_key": event_key,
                     "event_type": "PLATFORM_INVOICE_SETTLED",
-                }) is not None
-                and outbox.find_one({
+                }) is not None,
+                "outbox": outbox.find_one({
                     "tenant_id": state["tenant"],
                     "event_key": event_key,
                     "event_type": "PLATFORM_INVOICE_SETTLED",
-                }) is not None
-            )
+                }) is not None,
+            }
+            missing = [name for name, present in checks.items() if not present]
+            if missing:
+                raise AssertionError(f"SETTLEMENT_READBACK_INCOMPLETE:{missing}")
+            return True
 
         result["commit_result"] = commit_atomic_settlement_transaction(
             session,
