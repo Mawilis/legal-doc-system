@@ -260,13 +260,13 @@ jobs:
       - name: Run critical SYSTEM browser certification
         run: |
           browser_cert_database_suffix="$(python -c 'import uuid; print(uuid.uuid4().hex)')"
-          BROWSER_CERT_MONGO_URI="mongodb://127.0.0.1:27017/wilsy_l8_8m_system_${browser_cert_database_suffix}?replicaSet=wilsyVendorCertRS" \
+          BROWSER_CERT_MONGO_URI="mongodb://127.0.0.1:27017/wilsy_l8_8m_r3_system_${browser_cert_database_suffix}?replicaSet=wilsyVendorCertRS" \
             node tests/e2e/run-browser-cert.mjs tests/e2e/system-services-incident.browser.spec.js tests/e2e/system-services-response.browser.spec.js
 
       - name: Run broader authenticated browser certification
         run: |
           browser_cert_database_suffix="$(python -c 'import uuid; print(uuid.uuid4().hex)')"
-          BROWSER_CERT_MONGO_URI="mongodb://127.0.0.1:27017/wilsy_l8_8m_broad_${browser_cert_database_suffix}?replicaSet=wilsyVendorCertRS" \
+          BROWSER_CERT_MONGO_URI="mongodb://127.0.0.1:27017/wilsy_l8_8m_r3_broad_${browser_cert_database_suffix}?replicaSet=wilsyVendorCertRS" \
             node tests/e2e/run-browser-cert.mjs --grep-invert "certifies SYSTEM incident queue|does not expose responder inbox|certifies initial tenant-neutral SYSTEM credentials|certifies independent request, rejection, approval"
 
       - name: Stop disposable Mongo replica sets
