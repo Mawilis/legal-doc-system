@@ -29,6 +29,7 @@ on:
       - "client/src/components/industry/LegalDashboard.jsx"
       - "client/src/components/sovereign/SovereignDashboardController.jsx"
       - "client/src/contexts/authContext.jsx"
+      - "client/src/services/api.js"
       - "client/src/components/auth/SovereignMfaPortal.jsx"
       - "client/tests/client/SovereignDashboardController.test.js"
       - "client/tests/contexts/authContext.authoritative.test.jsx"
