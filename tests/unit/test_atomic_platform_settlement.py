@@ -146,3 +146,82 @@ def test_atomic_audit_replay_conflict_fails_closed():
             session=session,
         )
     audit.insert_one.assert_not_called()
+
+
+def test_settlement_observation_registry_preflights_exact_replay_before_insert():
+    from tools.eos.kennel.domain.financial_settlement_observation import (
+        FinancialSettlementObservation,
+        SettlementObservationStatus,
+    )
+    from tools.eos.kennel.registry.financial_settlement_observation_registry import (
+        FinancialSettlementObservationRegistry,
+    )
+
+    evidence = _evidence()
+    value = FinancialSettlementObservation(
+        tenant_id=evidence.tenant_id,
+        observation_id="observation-replay-1",
+        provider_name=evidence.provider_name,
+        execution_truth_id="execution-fact-1",
+        provider_execution_reference=evidence.provider_execution_reference,
+        settlement_reference=evidence.settlement_reference,
+        provider_settlement_evidence_reference=evidence.provider_settlement_evidence_reference,
+        status=SettlementObservationStatus.SETTLED,
+        settled_amount_minor=evidence.settled_amount_minor,
+        currency=evidence.currency,
+        payment_destination_reference=evidence.payment_destination_reference,
+        observed_at=evidence.observed_at,
+        settled_at=evidence.settled_at,
+        evidence_strength=evidence.evidence_strength,
+        transport_disposition=evidence.transport_disposition,
+    )
+    persisted = {**value.to_dict(), "observation_fingerprint": value.fingerprint}
+    collection = Mock()
+    collection.find_one.side_effect = [persisted]
+    outcome, replayed = FinancialSettlementObservationRegistry.create(
+        value, collection, session=Mock(in_transaction=True)
+    )
+    assert outcome == "IDEMPOTENT_REPLAY"
+    assert replayed == value
+    collection.insert_one.assert_not_called()
+
+
+def test_settlement_observation_registry_rejects_divergent_replay_before_insert():
+    from tools.eos.kennel.domain.financial_settlement_observation import (
+        FinancialSettlementObservation,
+        SettlementObservationStatus,
+    )
+    from tools.eos.kennel.registry.financial_settlement_observation_registry import (
+        FinancialSettlementObservationConflictError,
+        FinancialSettlementObservationRegistry,
+    )
+
+    evidence = _evidence()
+    value = FinancialSettlementObservation(
+        tenant_id=evidence.tenant_id,
+        observation_id="observation-replay-2",
+        provider_name=evidence.provider_name,
+        execution_truth_id="execution-fact-1",
+        provider_execution_reference=evidence.provider_execution_reference,
+        settlement_reference=evidence.settlement_reference,
+        provider_settlement_evidence_reference=evidence.provider_settlement_evidence_reference,
+        status=SettlementObservationStatus.SETTLED,
+        settled_amount_minor=evidence.settled_amount_minor,
+        currency=evidence.currency,
+        payment_destination_reference=evidence.payment_destination_reference,
+        observed_at=evidence.observed_at,
+        settled_at=evidence.settled_at,
+        evidence_strength=evidence.evidence_strength,
+        transport_disposition=evidence.transport_disposition,
+    )
+    divergent = FinancialSettlementObservation(
+        **{**value.__dict__, "provider_settlement_evidence_reference": "different-proof"}
+    )
+    persisted = {**value.to_dict(), "observation_fingerprint": value.fingerprint}
+    collection = Mock()
+    collection.find_one.side_effect = [persisted]
+    with pytest.raises(FinancialSettlementObservationConflictError):
+        FinancialSettlementObservationRegistry.create(
+            divergent, collection, session=Mock(in_transaction=True)
+        )
+    collection.insert_one.assert_not_called()
