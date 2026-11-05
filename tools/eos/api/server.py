@@ -211,6 +211,7 @@ from tools.eos.system_services.security_incident_assignment_registry import (
 from tools.eos.system_services.runtime import (
     PLATFORM_WORKFORCE_SCOPE_ENV,
     build_system_services_runtime,
+    build_system_services_response_runtime,
 )
 from .system_services_router import router as system_services_router
 from tools.eos.intelligence.tools import ServerOwnedAIToolRegistry
@@ -316,6 +317,10 @@ class WilsyAPIServer:
         app.state.system_services_incident_registry = None
         app.state.system_services_assignment_indexes_ready = False
         app.state.system_services_assignment_registry = None
+        app.state.system_services_response_indexes_ready = False
+        app.state.system_services_response_decision_registry = None
+        app.state.system_services_response_decision_service = None
+        app.state.system_services_response_executor = None
         app.state.legal_evidence_provider_readonly_reconciliation_composition = None
         app.state.legal_evidence_provider_readonly_reconciliation_audit_client = None
         # C1E service is constructed lazily or by deployment composition; it
@@ -486,6 +491,10 @@ class WilsyAPIServer:
             app.state.system_services_incident_registry = None
             app.state.system_services_assignment_indexes_ready = False
             app.state.system_services_assignment_registry = None
+            app.state.system_services_response_indexes_ready = False
+            app.state.system_services_response_decision_registry = None
+            app.state.system_services_response_decision_service = None
+            app.state.system_services_response_executor = None
             app.state.telemetry_indexes_ready = False
             app.state.electrum_completion_indexes_ready = False
             app.state.electrum_settlement_worker_enabled = False
@@ -562,6 +571,25 @@ class WilsyAPIServer:
                     app.state.system_services_authority_ready = False
                     code = getattr(error, "code", "SYSTEM_SERVICES_AUTHORITY_CONFIGURATION_UNAVAILABLE")
                     logger.warning("[SYSTEM_SERVICES] Authority composition unavailable: %s", code)
+                if app.state.system_services_authority_ready is True:
+                    try:
+                        response_runtime = build_system_services_response_runtime(
+                            database,
+                            authorizer=app.state.system_services_authorizer,
+                        )
+                        app.state.system_services_response_decision_registry = response_runtime.decision_registry
+                        app.state.system_services_response_decision_service = response_runtime.decision_service
+                        app.state.system_services_response_executor = response_runtime.canonical_executor
+                        app.state.system_services_response_indexes_ready = True
+                    except Exception as error:
+                        # Response governance fails closed independently; the
+                        # existing queue and tenant intake retain their own readiness.
+                        app.state.system_services_response_indexes_ready = False
+                        app.state.system_services_response_decision_registry = None
+                        app.state.system_services_response_decision_service = None
+                        app.state.system_services_response_executor = None
+                        code = getattr(error, "code", "SYSTEM_SERVICES_RESPONSE_COMPOSITION_UNAVAILABLE")
+                        logger.warning("[SYSTEM_SERVICES] Response composition unavailable: %s", code)
                 # Global authentication and one-time challenge indexes are
                 # canonical startup DDL. Request handlers never create indexes.
                 PrincipalCredentialRepository.ensure_indexes(
