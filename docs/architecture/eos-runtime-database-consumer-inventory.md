@@ -15,10 +15,10 @@ The Python EOS kernel owns the business MongoDB client/database lifecycle throug
 | `npm run dev` → `scripts/start-dev-stack.sh` | Python EOS + Vite development stack | Starts `uvicorn tools.eos.api.server:app`; no Node business database process |
 | `npm run dev:kernel` | Python EOS API | Kernel-owned Mongo lifecycle |
 | `npm run prod:kernel` | Python EOS API | Kernel-owned Mongo lifecycle |
-| `server/ecosystem.config.js` and `server/package.json` → `server/server.js` | Production Node BFF | HTTP proxy only; no Mongo client, no Mongoose connection, no business registry |
+| `server/ecosystem.config.js` and `server/package.json` → `server/server.js` | Production Node BFF + local PDF renderer | HTTP proxy and artifact rendering only; no Mongo client or Mongoose connection; PDF identity is verified by EOS workspace-bootstrap |
 | `server/deploy.sh` | PM2 deployment wrapper | Reloads the BFF entrypoint above |
 
-The active Node BFF health response now states `database: NOT_CONNECTED_BY_BFF` and `databaseAuthority: PYTHON_EOS`. It no longer opens a duplicate connection merely to report Mongoose connection state.
+The active Node BFF health response now states `database: NOT_CONNECTED_BY_BFF` and `databaseAuthority: PYTHON_EOS`. It no longer opens a duplicate connection merely to report Mongoose connection state. Its local PDF renderer obtains the current user/profile from `GET /api/auth/workspace-bootstrap` using the caller's bearer token and tenant header; Python EOS validates the session, tenant membership and role. The PDF controller accepts only this EOS-verified request identity and contains no Mongoose model lookup or JWT-claim decoding.
 
 ## Business registry and API consumers reviewed
 
