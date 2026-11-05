@@ -266,8 +266,29 @@ class SecurityIncidentResponseDecisionRegistry:
             if event is None:
                 return None
             if (
-                event.get("event_type") != "SECURITY_INCIDENT_RESPONSE_EXECUTED"
+                event.get("event_id") != decision.decision_id + ":revision:2"
+                or event.get("revision") != 2
+                or event.get("event_type") != "SECURITY_INCIDENT_RESPONSE_EXECUTED"
                 or event.get("actor_principal_id") != actor_principal_id
+                or actor_principal_id in {
+                    decision.requested_by_principal_id,
+                    decision.decided_by_principal_id,
+                    decision.target_principal_id,
+                }
+                or not (
+                    (
+                        decision.action is SecurityIncidentResponseAction.SYSTEM_PERMISSION_REVOCATION
+                        and event.get("result_status") == "REVOKED"
+                        and event.get("result_revision") == 2
+                    )
+                    or (
+                        decision.action is SecurityIncidentResponseAction.PASSWORD_RESET
+                        and event.get("result_status") == "PASSWORD_RESET_COMPLETED"
+                        and isinstance(event.get("result_revision"), int)
+                        and not isinstance(event.get("result_revision"), bool)
+                        and event.get("result_revision") >= 1
+                    )
+                )
                 or event.get("execution_idempotency_fingerprint") != key_fingerprint
             ):
                 raise SecurityIncidentResponseDecisionConflictError(
