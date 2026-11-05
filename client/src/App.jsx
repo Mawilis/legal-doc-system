@@ -245,13 +245,13 @@ const SovereignRouter = () => {
       <Route path="/verify-recovery-contact" element={<RecoveryContactVerificationPortal />} />
       <Route path="/reset-password" element={<PasswordResetPortal />} />
       <Route path="/mfa" element={
-        authStage === AUTH_STATES.PRIMARY_AUTHENTICATING
+        (authLoading || authStage === AUTH_STATES.PRIMARY_AUTHENTICATING)
           ? <div role="status" data-testid="mfa-transition">Preparing secure MFA challenge…</div>
           : [AUTH_STATES.MFA_SETUP, AUTH_STATES.MFA_RECONCILIATION_REQUIRED, AUTH_STATES.MFA_REQUIRED, AUTH_STATES.MFA_VERIFYING].includes(authStage)
             ? <SovereignMfaPortal /> : <Navigate to="/login" replace />
       } />
       <Route path="/mfa-setup" element={
-        authStage === AUTH_STATES.PRIMARY_AUTHENTICATING
+        (authLoading || authStage === AUTH_STATES.PRIMARY_AUTHENTICATING)
           ? <div role="status" data-testid="mfa-transition">Preparing secure MFA challenge…</div>
           : [AUTH_STATES.MFA_SETUP, AUTH_STATES.MFA_RECONCILIATION_REQUIRED, AUTH_STATES.MFA_REQUIRED, AUTH_STATES.MFA_VERIFYING].includes(authStage)
             ? <SovereignMfaPortal /> : <Navigate to="/login" replace />
