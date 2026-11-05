@@ -156,7 +156,7 @@ def test_real_mongo_create_transition_commit_and_tenant_scope(mongo_case_registr
 
 
 def test_real_mongo_transaction_abort_removes_case_and_event(mongo_case_registry):
-    client, database, registry = mongo_case_registry
+    client, database, registry, _ = mongo_case_registry
     case = _case("case-abort-1")
     with client.start_session() as session:
         with pytest.raises(RuntimeError, match="ABORT_CERTIFICATE"):
@@ -172,7 +172,7 @@ def test_real_mongo_transaction_abort_removes_case_and_event(mongo_case_registry
 
 
 def test_real_mongo_stale_revision_and_event_replay_are_rejected(mongo_case_registry):
-    client, database, registry = mongo_case_registry
+    client, database, registry, _ = mongo_case_registry
     case = _case("case-cas-1")
     with client.start_session() as session:
         with session.start_transaction():
@@ -263,7 +263,7 @@ class _DenySystemAuthorizer:
 
 
 def test_self_service_case_is_principal_bound_and_idempotent(mongo_case_registry):
-    client, database, registry = mongo_case_registry
+    client, database, registry, _ = mongo_case_registry
     service = SupportCaseApplicationService(
         registry=registry,
         authorizer=_DenySystemAuthorizer(),
@@ -319,7 +319,7 @@ def test_self_service_case_is_principal_bound_and_idempotent(mongo_case_registry
 
 
 def test_tenant_self_service_cannot_read_system_queue(mongo_case_registry):
-    _, _, registry = mongo_case_registry
+    _, _, registry, _ = mongo_case_registry
     service = SupportCaseApplicationService(
         registry=registry,
         authorizer=_DenySystemAuthorizer(),
@@ -339,7 +339,7 @@ def test_authenticated_tenant_self_service_http_binds_current_membership_and_pri
     mongo_case_registry, monkeypatch
 ):
     """Real-replica-set HTTP proof for tenant/principal binding and fail-closed admission."""
-    client, database, registry = mongo_case_registry
+    client, database, registry, _ = mongo_case_registry
     principal_id = "principal-self-service-http"
     tenant_id = "tenant-self-service-http"
     PrincipalAuthorityRepository.create(
@@ -461,7 +461,7 @@ def test_authenticated_security_incident_intake_is_sanitized_append_only_and_ide
     mongo_case_registry, monkeypatch
 ):
     """Replica-set proof for distinct incident intake, ownership and durable event."""
-    client, database, case_registry = mongo_case_registry
+    client, database, case_registry, _ = mongo_case_registry
     principal_id = "principal-security-incident-http"
     tenant_id = "tenant-security-incident-http"
     PrincipalAuthorityRepository.create(
@@ -573,7 +573,7 @@ def test_security_incident_registry_rolls_back_incident_and_event_together(
         PLATFORM_OUTBOX_COLLECTION, SecurityIncidentRegistry,
     )
 
-    client, database, _ = mongo_case_registry
+    client, database, _, _ = mongo_case_registry
     registry = SecurityIncidentRegistry(
         incidents=database[COLLECTION], events=database[EVENT_COLLECTION]
     )
@@ -635,7 +635,7 @@ def test_incident_responder_assignment_requires_separate_permissions_and_accepta
         SecurityIncidentEscalationError,
     )
 
-    client, database, _ = mongo_case_registry
+    client, database, _, _ = mongo_case_registry
     now = datetime(2026, 11, 5, 8, tzinfo=timezone.utc)
     incidents = SecurityIncidentRegistry(
         incidents=database[INCIDENTS], events=database[INCIDENT_EVENTS]
@@ -775,7 +775,7 @@ def test_incident_assignment_platform_audit_and_outbox_roll_back_with_business_w
         PLATFORM_OUTBOX_COLLECTION, SecurityIncidentAssignmentRegistry,
     )
 
-    client, database, _ = mongo_case_registry
+    client, database, _, _ = mongo_case_registry
     registry = SecurityIncidentAssignmentRegistry(
         assignments=database[COLLECTION], events=database[EVENT_COLLECTION],
     )
