@@ -108,6 +108,17 @@ class SecurityIncidentEscalationService:
         except IncidentAssignmentConflictError as error:
             raise SecurityIncidentEscalationError("INCIDENT_ALREADY_ASSIGNED_OR_REPLAYED") from error
 
+    def list_my_assignments(
+        self, *, actor_principal_id: str, session: object, limit: int = 50,
+    ) -> tuple[SecurityIncidentAssignment, ...]:
+        actor = self._principal(actor_principal_id)
+        self._authorizer.require(
+            principal_id=actor, permission_id=PERMISSION_INCIDENT_ESCALATE, session=session,
+        )
+        return self._assignments.list_for_responder(
+            principal_id=actor, session=session, limit=limit,
+        )
+
     def _respond(
         self, *, actor_principal_id: str, assignment_id: str,
         expected_revision: int, idempotency_key: str, accepted: bool,
