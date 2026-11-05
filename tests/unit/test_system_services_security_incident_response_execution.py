@@ -55,11 +55,13 @@ def test_password_reset_delegates_only_approved_decision_to_canonical_service():
     decision = approved(SecurityIncidentResponseAction.PASSWORD_RESET)
     value._password_reset.reset_password.return_value = "canonical-receipt"
 
+    completion = Mock()
     result = value.execute_password_reset(
         decision,
         actor_principal_id="independent-executor",
         recovery_token="transient-single-use-capability",
         new_password="Transient-Strong-Passphrase-2026!",
+        transaction_completion=completion,
         context_terms=("WILSY",),
     )
 
@@ -69,6 +71,7 @@ def test_password_reset_delegates_only_approved_decision_to_canonical_service():
     assert reset_kwargs["tenant_id"] == "tenant-1"
     assert reset_kwargs["recovery_token"] == "transient-single-use-capability"
     assert reset_kwargs["new_password"] == "Transient-Strong-Passphrase-2026!"
+    assert reset_kwargs["transaction_completion"] is completion
     assert reset_kwargs["context_terms"] == ("WILSY",)
     reset_kwargs["transaction_guard"](
         "caller-owned-transaction",
@@ -95,6 +98,7 @@ def test_password_reset_executor_must_be_distinct_from_requester_approver_and_ta
                 actor_principal_id=actor,
                 recovery_token="single-use-capability",
                 new_password="Transient-Strong-Passphrase-2026!",
+                transaction_completion=lambda session, capability, revision: None,
             )
 
     value._authorizer.require.assert_not_called()
@@ -111,6 +115,7 @@ def test_password_reset_executor_requires_current_execute_permission():
         actor_principal_id="independent-executor",
         recovery_token="single-use-capability",
         new_password="Transient-Strong-Passphrase-2026!",
+        transaction_completion=lambda session, capability, revision: None,
     )
     guard = value._password_reset.reset_password.call_args.kwargs["transaction_guard"]
     with pytest.raises(PermissionError, match="CURRENT_SYSTEM_PERMISSION_REQUIRED"):
@@ -132,6 +137,7 @@ def test_password_reset_decision_does_not_replace_canonical_recovery_capability(
             actor_principal_id="independent-executor",
             recovery_token="invalid-capability",
             new_password="Transient-Strong-Passphrase-2026!",
+            transaction_completion=lambda session, capability, revision: None,
         )
     value._password_reset.reset_password.assert_called_once()
 
@@ -154,6 +160,7 @@ def test_pending_or_wrong_action_cannot_reach_canonical_service():
             actor_principal_id="independent-executor",
             recovery_token="token",
             new_password="Transient-Strong-Passphrase-2026!",
+            transaction_completion=lambda session, capability, revision: None,
         )
     with pytest.raises(SecurityIncidentResponseExecutionError, match="RESPONSE_DECISION_ACTION_MISMATCH"):
         value.execute_system_permission_revocation(
