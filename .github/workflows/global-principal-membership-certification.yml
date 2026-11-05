@@ -108,7 +108,7 @@ jobs:
       - name: Install repository Python dependencies and pytest
         run: |
           python -m pip install --disable-pip-version-check -r requirements.txt
-          python -m pip install --disable-pip-version-check pytest==9.1.1
+          python -m pip install --disable-pip-version-check pytest==9.1.1 httpx==0.28.1
       - name: Start disposable MongoDB replica set
         run: |
           docker run --detach --name wilsy-global-principal-mongo --publish 27017:27017 mongo:7.0.37 mongod --replSet wilsyGlobalPrincipalCertRS --bind_ip_all
