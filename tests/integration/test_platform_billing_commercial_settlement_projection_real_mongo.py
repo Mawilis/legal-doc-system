@@ -329,7 +329,7 @@ def _seed_canonical_subscription(database, tenant_id):
     plan_registry_module.plans_collection = plan_collection
     try:
         PlanRegistry.provision_indexes()
-        plan_id = f"plan-{uuid.uuid4().hex}"
+        plan_id = f"WILSYPLAN-{uuid.uuid4().hex.upper()}"
         plan_result = PlanRegistry.create({
             "name": "Settlement Correlation Certificate",
             "price": 100.0,
