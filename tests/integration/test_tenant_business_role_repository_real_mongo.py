@@ -15,7 +15,11 @@ import pytest
 from pymongo import MongoClient
 from pymongo.errors import PyMongoError, ServerSelectionTimeoutError
 from tools.eos.auth.tenant_business_role import TenantBusinessRoleAuthority, TenantBusinessRoleStatus
-from tools.eos.auth.tenant_business_role_authority import (\n    BusinessRoleResolution,\n    resolve_current_tenant_business_role,\n)\nfrom tools.eos.auth.tenant_business_role_repository import (TenantBusinessRoleAlreadyExistsError, TenantBusinessRolePersistedRecordInvalidError, TenantBusinessRoleRepository, TenantBusinessRoleNotFoundError, TenantBusinessRoleRevisionConflictError)
+from tools.eos.auth.tenant_business_role_authority import (
+    BusinessRoleResolution,
+    resolve_current_tenant_business_role,
+)
+from tools.eos.auth.tenant_business_role_repository import (TenantBusinessRoleAlreadyExistsError, TenantBusinessRolePersistedRecordInvalidError, TenantBusinessRoleRepository, TenantBusinessRoleNotFoundError, TenantBusinessRoleRevisionConflictError)
 
 def test_real_mongo_business_role_repository() -> None:
  client=MongoClient(os.getenv('TEST_VENDOR_MONGO_URI','mongodb://127.0.0.1:27027/?replicaSet=wilsyVendorCertRS'),serverSelectionTimeoutMS=2000); db=client['wilsy_business_role_'+uuid4().hex]; c=db['tenant_business_roles']; repo=TenantBusinessRoleRepository
