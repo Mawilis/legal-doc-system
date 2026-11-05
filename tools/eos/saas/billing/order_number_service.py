@@ -199,8 +199,13 @@ def get_order_number_service(mongo_client: MongoClient) -> OrderNumberService:
     @return: The global OrderNumberService instance.
     """
     global _order_service
+    database = get_database()
+    if database is None or getattr(database, "client", None) is not mongo_client:
+        raise RuntimeError("ORDER_NUMBER_CANONICAL_DATABASE_UNAVAILABLE")
     if _order_service is None:
         _order_service = OrderNumberService(mongo_client)
+    elif _order_service.db is not database or _order_service.db.client is not mongo_client:
+        raise RuntimeError("ORDER_NUMBER_RUNTIME_REBIND_REQUIRED")
     return _order_service
 
 
