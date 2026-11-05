@@ -9,6 +9,8 @@ case read/write.
 from __future__ import annotations
 
 from typing import Annotated, Callable, TypeVar, cast
+from datetime import datetime, timezone
+from hashlib import sha3_256
 
 from pymongo.client_session import ClientSession
 
@@ -35,6 +37,15 @@ from tools.eos.system_services.support_case_service import (
     SupportCaseApplicationError,
     SupportCaseApplicationService,
     SystemServicesAuthorizer,
+)
+from tools.eos.system_services.security_incident import (
+    SecurityIncident,
+    SecurityIncidentCategory,
+    SecurityIncidentEvent,
+)
+from tools.eos.system_services.security_incident_registry import (
+    SecurityIncidentRegistry,
+    SecurityIncidentConflictError,
 )
 from tools.eos.system_services.support_case_registry import (
     SupportCaseConflictError,
@@ -95,7 +106,7 @@ def _run_transaction(callback: Callable[[ClientSession], _Result]) -> _Result:
         raise HTTPException(status_code=503, detail="System Services authority is unavailable.") from error
     except SupportCaseNotFoundError as error:
         raise HTTPException(status_code=404, detail="Support case not found.") from error
-    except (SupportCaseConflictError, SupportCaseApplicationError) as error:
+    except (SupportCaseConflictError, SupportCaseApplicationError, SecurityIncidentConflictError) as error:
         raise HTTPException(status_code=409, detail="Support case operation conflicts with current state.") from error
     except Exception as error:
         # No exception text, Mongo detail, identity, or case content reaches the caller.
@@ -179,6 +190,96 @@ def _project_tenant_case(case):
         "createdAt": case.created_at.isoformat(),
         "updatedAt": case.updated_at.isoformat(),
     }
+
+
+
+class SecurityIncidentIntakeRequest(BaseModel):
+    """Structured security signal only; free text and secret material are excluded."""
+    model_config = ConfigDict(extra="forbid", frozen=True)
+    category: SecurityIncidentCategory
+    observed_at: datetime
+
+
+def _incident_runtime(request: Request) -> SecurityIncidentRegistry:
+    if getattr(request.app.state, "system_services_incident_indexes_ready", False) is not True:
+        raise HTTPException(status_code=503, detail="Security incident intake is not ready.")
+    registry = getattr(request.app.state, "system_services_incident_registry", None)
+    if type(registry) is not SecurityIncidentRegistry:
+        raise HTTPException(status_code=503, detail="Security incident intake is not configured.")
+    return registry
+
+
+def _project_incident(value: SecurityIncident) -> dict[str, object]:
+    return {
+        "incidentId": value.incident_id,
+        "category": value.category.value,
+        "status": value.status,
+        "revision": value.revision,
+        "observedAt": value.observed_at.isoformat(),
+        "receivedAt": value.received_at.isoformat(),
+    }
+
+
+@router.post("/self-service/security-incidents", status_code=201)
+def report_own_security_incident(
+    payload: SecurityIncidentIntakeRequest,
+    request: Request,
+    tenant_id: Annotated[str, Header(alias="X-Tenant-ID", min_length=1, max_length=256)],
+    idempotency_key: Annotated[str, Header(alias="Idempotency-Key", min_length=1, max_length=256)],
+    identity: SovereignIdentity = Depends(get_current_identity),
+):
+    """Durably report a structured suspected-security event; performs no containment."""
+    registry = _incident_runtime(request)
+    def record(session):
+        actor = _require_current_tenant_actor(identity=identity, tenant_id=tenant_id, session=session)
+        if payload.observed_at.tzinfo is None or payload.observed_at.utcoffset() is None:
+            raise HTTPException(status_code=422, detail="An aware observation timestamp is required.")
+        received_at = datetime.now(timezone.utc)
+        fingerprint = sha3_256(
+            (tenant_id + "\\0" + actor.principal_id + "\\0" + idempotency_key).encode("utf-8")
+        ).hexdigest()
+        incident_id = "incident-" + fingerprint
+        event_fingerprint = sha3_256(
+            (incident_id + "\\0INCIDENT_REPORTED").encode("utf-8")
+        ).hexdigest()
+        incident = SecurityIncident(
+            incident_id=incident_id,
+            tenant_id=tenant_id,
+            reporter_principal_id=actor.principal_id,
+            idempotency_fingerprint=fingerprint,
+            category=payload.category,
+            observed_at=payload.observed_at,
+            received_at=received_at,
+        )
+        event = SecurityIncidentEvent(
+            event_id="incident-event-" + fingerprint,
+            incident_id=incident_id,
+            tenant_id=tenant_id,
+            actor_principal_id=actor.principal_id,
+            event_type="INCIDENT_REPORTED",
+            occurred_at=received_at,
+            fingerprint=event_fingerprint,
+        )
+        return _project_incident(registry.create_or_replay(incident, event, session=session))
+    return _run_transaction(record)
+
+
+@router.get("/self-service/security-incidents")
+def list_own_security_incidents(
+    request: Request,
+    tenant_id: Annotated[str, Header(alias="X-Tenant-ID", min_length=1, max_length=256)],
+    limit: Annotated[int, Query(ge=1, le=100)] = 50,
+    identity: SovereignIdentity = Depends(get_current_identity),
+):
+    """List only the authenticated reporter's own structured incident receipts."""
+    registry = _incident_runtime(request)
+    def read(session):
+        actor = _require_current_tenant_actor(identity=identity, tenant_id=tenant_id, session=session)
+        return [_project_incident(item) for item in registry.list_own(
+            tenant_id=tenant_id, principal_id=actor.principal_id,
+            session=session, limit=limit,
+        )]
+    return _run_transaction(read)
 
 
 @router.post("/self-service/cases", status_code=201)
