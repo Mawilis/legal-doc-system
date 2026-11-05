@@ -27,9 +27,10 @@ def test_claim_uses_lease_and_increments_attempt_count():
     )
     assert result["delivery_status"] == "CLAIMED"
     args, kwargs = collection.find_one_and_update.call_args
-    assert kwargs["update"]["$inc"] == {"delivery_attempts": 1}
-    assert kwargs["update"]["$set"]["lease_token"] == "lease-a"
-    assert kwargs["update"]["$set"]["lease_until"] == NOW + timedelta(seconds=60)
+    update = args[1]
+    assert update["$inc"] == {"delivery_attempts": 1}
+    assert update["$set"]["lease_token"] == "lease-a"
+    assert update["$set"]["lease_until"] == NOW + timedelta(seconds=60)
 
 
 def test_ack_is_fenced_by_worker_and_lease_token():
