@@ -281,3 +281,185 @@ def test_global_login_requires_migrated_current_mfa_factor_before_selection(
     assert error.value.detail == "GLOBAL_MFA_FACTOR_MIGRATION_REQUIRED"
     assert session.in_transaction is False
     assert session.ended
+
+
+def test_global_login_routes_membership_free_principal_through_current_system_authority_and_mfa(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    session = _Session()
+
+    class RateGate:
+        def require_allowed(self, **_kwargs):
+            return None
+        def record_success(self, **_kwargs):
+            return None
+
+    class FactorCollection:
+        def find_one(self, query, *, projection, session):
+            assert query["principal_id"] == "platform-responder"
+            assert query["credential_revision"] == 12
+            assert query["status"] == "ACTIVE"
+            assert projection == {"principal_id": 1}
+            return {"principal_id": "platform-responder"}
+
+    class Database:
+        def __getitem__(self, _name):
+            return FactorCollection()
+
+    class SystemChallenge:
+        def __init__(self, *, collection):
+            assert collection is not None
+        def issue(self, **kwargs):
+            assert kwargs["principal_id"] == "platform-responder"
+            assert kwargs["credential_revision"] == 12
+            assert kwargs["session"] is session
+            return "sysmfa-one-time", NOW + __import__("datetime").timedelta(minutes=5)
+
+    class Authorizer:
+        def require(self, **kwargs):
+            assert kwargs["principal_id"] == "platform-responder"
+            assert kwargs["permission_id"] == "system_services:queue:read"
+            assert kwargs["session"] is session
+
+    monkeypatch.setattr(
+        "tools.eos.api.global_principal_auth_router.PrincipalAuthenticationRateLimit",
+        RateGate,
+    )
+    monkeypatch.setattr(
+        "tools.eos.api.global_principal_auth_router.authenticate_global_principal",
+        lambda **_kwargs: SimpleNamespace(
+            principal_id="platform-responder",
+            credential_revision=12,
+            mfa_enabled=True,
+        ),
+    )
+    monkeypatch.setattr(
+        "tools.eos.api.global_principal_auth_router._begin_transaction",
+        lambda: (session, Database()),
+    )
+    monkeypatch.setattr(
+        "tools.eos.api.global_principal_auth_router.build_membership_selection_page",
+        lambda **_kwargs: SimpleNamespace(memberships=(), next_cursor=None),
+    )
+    monkeypatch.setattr(
+        "tools.eos.api.global_principal_auth_router.GlobalPrincipalSystemMfaChallengeService",
+        SystemChallenge,
+    )
+    response = asyncio.run(global_login(
+        GlobalCredentialRequest(email="platform@example.com", password="ValidPassword!123"),
+        _request_with_state(
+            global_principal_auth_indexes_ready=True,
+            global_principal_mfa_factor_indexes_ready=True,
+            global_principal_system_session_indexes_ready=True,
+            global_principal_totp_verifier=object(),
+            system_services_authority_ready=True,
+            system_services_case_indexes_ready=True,
+            system_services_authorizer=Authorizer(),
+        ),
+    ))
+    assert response["status"] == "MFA_REQUIRED"
+    assert response["scope"] == "SYSTEM"
+    assert response["mfa_challenge"] == "sysmfa-one-time"
+    assert response["workspace_id"] == "SYSTEM_SERVICES"
+    assert "tenant_id" not in response
+    assert session.committed and session.ended
+
+
+def test_system_mfa_verification_consumes_challenge_and_issues_session_in_same_transaction(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    session = _Session()
+    events = []
+
+    class RateGate:
+        def require_allowed(self, **_kwargs):
+            return None
+        def record_success(self, **_kwargs):
+            return None
+
+    class ChallengeService:
+        def __init__(self, *, collection):
+            assert collection is not None
+        def get_factor_context(self, token, *, session, now):
+            assert token == "sysmfa-valid"
+            assert session is session_ref
+            return SimpleNamespace(principal_id="platform-responder", credential_revision=12)
+        def consume(self, token, **kwargs):
+            events.append(("consume", kwargs["session"]))
+            assert token == "sysmfa-valid"
+            assert kwargs["principal_id"] == "platform-responder"
+            assert kwargs["credential_revision"] == 12
+
+    session_ref = session
+
+    class CredentialRepository:
+        @staticmethod
+        def get_by_principal(principal_id, *, session):
+            assert principal_id == "platform-responder"
+            assert session is session_ref
+            return SimpleNamespace(normalized_email="platform@example.com")
+
+    class Verifier:
+        def verify(self, **kwargs):
+            assert kwargs["principal_id"] == "platform-responder"
+            assert kwargs["credential_revision"] == 12
+            assert kwargs["session"] is session_ref
+            return True
+
+    class SystemSessionAuthority:
+        def __init__(self, *, sessions, authorizer):
+            assert sessions is not None
+            assert authorizer is not None
+        def issue_after_mfa(self, principal_id, credential_revision, *, session, now):
+            events.append(("issue", session))
+            assert principal_id == "platform-responder"
+            assert credential_revision == 12
+            assert session is session_ref
+            return SimpleNamespace(
+                access_token="system-access",
+                principal_id=principal_id,
+                access_expires_at=NOW,
+            )
+
+    class Database:
+        def __getitem__(self, _name):
+            return object()
+
+    monkeypatch.setattr(
+        "tools.eos.api.global_principal_auth_router._begin_transaction",
+        lambda: (session, Database()),
+    )
+    monkeypatch.setattr(
+        "tools.eos.api.global_principal_auth_router.PrincipalAuthenticationRateLimit",
+        RateGate,
+    )
+    monkeypatch.setattr(
+        "tools.eos.api.global_principal_auth_router.PrincipalCredentialRepository",
+        CredentialRepository,
+    )
+    monkeypatch.setattr(
+        "tools.eos.api.global_principal_auth_router.GlobalPrincipalSystemMfaChallengeService",
+        ChallengeService,
+    )
+    monkeypatch.setattr(
+        "tools.eos.api.global_principal_auth_router.GlobalPrincipalSystemSessionAuthority",
+        SystemSessionAuthority,
+    )
+    response = asyncio.run(verify_global_mfa(
+        GlobalMfaVerificationRequest(mfa_challenge="sysmfa-valid", code="123456"),
+        _request_with_state(
+            global_principal_auth_indexes_ready=True,
+            global_principal_session_indexes_ready=True,
+            global_principal_system_session_indexes_ready=True,
+            global_principal_mfa_factor_indexes_ready=True,
+            global_principal_totp_verifier=Verifier(),
+            system_services_authorizer=object(),
+        ),
+    ))
+    assert response["status"] == "AUTHENTICATED"
+    assert response["scope"] == "SYSTEM"
+    assert response["access_token"] == "system-access"
+    assert response["principal_id"] == "platform-responder"
+    assert "tenant_id" not in response
+    assert events == [("consume", session), ("issue", session)]
+    assert session.committed and session.ended
