@@ -26,6 +26,11 @@ from tools.eos.system_services.support_case_service import (
     SupportCaseActorContext,
     SupportCaseApplicationError,
 )
+from tools.eos.auth.principal_authority import PrincipalAuthority
+from tools.eos.auth.principal_authority_repository import PrincipalAuthorityRepository
+from tools.eos.auth.principal_status import PrincipalStatus
+from tools.eos.auth.tenant_membership import TenantMembershipAuthority, TenantMembershipStatus
+from tools.eos.auth.tenant_membership_repository import TenantMembershipRepository
 from tools.eos.system_services.support_case_registry import (
     CASE_COLLECTION,
     EVENT_COLLECTION,
@@ -271,3 +276,100 @@ def test_tenant_self_service_cannot_read_system_queue(mongo_case_registry):
     )
     with pytest.raises(SupportCaseApplicationError, match="SYSTEM_SERVICES_SCOPE_REQUIRED"):
         service.list_system_queue(actor=actor)
+
+
+
+def test_authenticated_tenant_self_service_http_binds_current_membership_and_principal(
+    mongo_case_registry, monkeypatch
+):
+    """Real-replica-set HTTP proof for tenant/principal binding and fail-closed admission."""
+    client, database, registry = mongo_case_registry
+    principal_id = "principal-self-service-http"
+    tenant_id = "tenant-self-service-http"
+    PrincipalAuthorityRepository.create(
+        PrincipalAuthority(principal_id, PrincipalStatus.ACTIVE, 1),
+        collection=database["principal_authorities"],
+    )
+    TenantMembershipRepository.insert(
+        TenantMembershipAuthority(
+            principal_id, tenant_id, TenantMembershipStatus.ACTIVE, 1
+        ),
+        collection=database["tenant_memberships"],
+    )
+
+    class MembershipReader:
+        def resolve(self, requested_principal, requested_tenant, *, session=None):
+            return TenantMembershipRepository.resolve(
+                requested_principal,
+                requested_tenant,
+                collection=database["tenant_memberships"],
+                session=session,
+            )
+
+    from fastapi import FastAPI
+    from fastapi.testclient import TestClient
+    from tools.eos.api.auth_router import get_current_identity
+    from tools.eos.api import system_services_router
+    from tools.eos.auth.identity import SovereignIdentity
+
+    app = FastAPI()
+    app.include_router(system_services_router.router, prefix="/api")
+    app.state.system_services_case_indexes_ready = True
+    app.state.system_services_case_registry = registry
+    app.dependency_overrides[get_current_identity] = lambda: SovereignIdentity(
+        identity_id=principal_id,
+        tenant_id="untrusted-token-tenant",
+        username=None,
+        email=None,
+        auth_method="CERTIFICATION",
+        status=PrincipalStatus.ACTIVE,
+        session_reference=None,
+    )
+    monkeypatch.setattr(system_services_router, "get_client", lambda: client)
+    monkeypatch.setattr(
+        system_services_router,
+        "get_tenant_membership_repository",
+        lambda: MembershipReader(),
+    )
+
+    with TestClient(app) as http:
+        denied = http.post(
+            "/api/system-services/self-service/cases",
+            headers={"X-Tenant-ID": "tenant-forged", "Idempotency-Key": "http-denied-1"},
+            json={"category": "PASSWORD_RECOVERY"},
+        )
+        created = http.post(
+            "/api/system-services/self-service/cases",
+            headers={"X-Tenant-ID": tenant_id, "Idempotency-Key": "http-create-1"},
+            json={"category": "PASSWORD_RECOVERY"},
+        )
+        listed = http.get(
+            "/api/system-services/self-service/cases",
+            headers={"X-Tenant-ID": tenant_id},
+        )
+        detail = http.get(
+            f"/api/system-services/self-service/cases/{created.json()['caseId']}",
+            headers={"X-Tenant-ID": tenant_id},
+        )
+        history = http.get(
+            f"/api/system-services/self-service/cases/{created.json()['caseId']}/events",
+            headers={"X-Tenant-ID": tenant_id},
+        )
+        forged_body = http.post(
+            "/api/system-services/self-service/cases",
+            headers={"X-Tenant-ID": tenant_id, "Idempotency-Key": "http-forged-2"},
+            json={"category": "PASSWORD_RECOVERY", "principal_id": "victim"},
+        )
+
+    assert denied.status_code == 403
+    assert created.status_code == 201
+    assert listed.status_code == 200 and len(listed.json()) == 1
+    assert detail.status_code == 200
+    assert history.status_code == 200 and len(history.json()) == 1
+    assert forged_body.status_code == 422
+    assert database[CASE_COLLECTION].count_documents(
+        {"tenant_id": "tenant-forged"}
+    ) == 0
+    assert database[CASE_COLLECTION].count_documents(
+        {"tenant_id": tenant_id, "principal_id": principal_id}
+    ) == 1
