@@ -197,7 +197,7 @@ function attachSafeDiagnostics(record) {
         const match = line.match(/HTTP:\s+http:\/\/localhost:(\d+)/);
         if (match) record.listeningPort = Number(match[1]);
       } else if (record.label === 'VITE') {
-        const match = line.match(/Local:\s+http:\/\/127\.0\.0\.1:(\d+)/);
+        const match = line.match(/Local:\s+http:\/\/(?:127\.0\.0\.1|localhost):(\d+)/);
         if (match) record.listeningPort = Number(match[1]);
       }
       const event = classifyStartupLine(record.label, line);
