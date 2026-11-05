@@ -1,7 +1,7 @@
 """WILSY OS browser-certificate disposable authority fixture.
 
 TITLE: Authenticated browser certificate fixture
-VERSION: v1.3.1-COMMERCIAL-ADMIN-ENTITLEMENT-SEED
+VERSION: v1.4.0-INDEPENDENT-SYSTEM-RESPONSE-ACTORS
 AUTHORITY: Test-owned disposable Mongo fixture only.
 EPITOME: Seed existing EOS repositories with disposable authenticated Legal
          operators, canonical Legal evidence, and a fully correlated current
@@ -162,7 +162,7 @@ from tools.eos.saas.domain.tenant_branding_profile_selection import (
 
 
 DEFAULT_URI = "mongodb://127.0.0.1:27027/?replicaSet=wilsyVendorCertRS"
-STATE_VERSION = "v1.4.0-SYSTEM-SERVICES-BROWSER-CERT-STATE"
+STATE_VERSION = "v1.5.0-INDEPENDENT-RESPONSE-GOVERNANCE"
 SYSTEM_WORKFORCE_SCOPE_ID = "browser-cert-platform-workforce"
 BROWSER_CERT_DATABASE_PREFIX = "wilsy_l8_8m_r3_"
 BRANDING_EVIDENCE_FINGERPRINT = "f" * 128
