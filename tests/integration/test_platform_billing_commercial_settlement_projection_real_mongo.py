@@ -678,6 +678,57 @@ def test_r3fc_rm09_atomic_duplicate_delivery_is_one_durable_settlement():
         client.close()
 
 
+def test_r3fc_rm11_concurrent_identical_settlement_delivery_converges_to_one_commit():
+    """Concurrent duplicate deliveries may conflict, but whole-transaction retry converges."""
+    from concurrent.futures import ThreadPoolExecutor
+    from threading import Barrier
+    from time import sleep
+
+    client, db, state = graph()
+    try:
+        evidence, fact_id, platform_id, created_at = _atomic_transport_for_existing_execution(
+            client, db, state
+        )
+        barrier = Barrier(2)
+
+        def deliver():
+            barrier.wait(timeout=10)
+            last_error = None
+            for attempt in range(3):
+                try:
+                    return _run_atomic_settlement(
+                        client, db, state, evidence, fact_id, platform_id, created_at
+                    )
+                except Exception as error:
+                    last_error = error
+                    if attempt < 2:
+                        sleep(0.05 * (attempt + 1))
+            raise AssertionError("CONCURRENT_SETTLEMENT_RETRY_EXHAUSTED") from last_error
+
+        with ThreadPoolExecutor(max_workers=2) as executor:
+            results = list(executor.map(lambda _: deliver(), range(2)))
+
+        tenant = state["tenant"]
+        assert len(results) == 2
+        assert all(result["settlement_evidence"].fingerprint == results[0]["settlement_evidence"].fingerprint for result in results)
+        assert db["invoices"].count_documents({
+            "tenant_id": tenant,
+            "invoice_id": state["invoice"].invoice_id,
+            "status": {"$in": [InvoiceStatus.PAID.value, InvoiceStatus.PAID.name]},
+        }) == 1
+        assert db["financial_settlement_observations"].count_documents({"tenant_id": tenant}) == 1
+        assert db["platform_billing_financial_settlement_evidence"].count_documents({"tenant_id": tenant}) == 1
+        assert db["projections"].count_documents({"tenant_id": tenant}) == 1
+        assert db["billing_audit_events"].count_documents({
+            "tenant_id": tenant, "event_type": "PLATFORM_INVOICE_SETTLED"
+        }) == 1
+        assert db["billing_outbox_events"].count_documents({
+            "tenant_id": tenant, "event_type": "PLATFORM_INVOICE_SETTLED"
+        }) == 1
+    finally:
+        client.close()
+
+
 def test_r3fc_rm10_atomic_divergent_settlement_replay_is_rejected():
     from dataclasses import replace
     from tools.eos.saas.billing.atomic_platform_settlement import AtomicPlatformSettlementError
