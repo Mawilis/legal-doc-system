@@ -704,7 +704,7 @@ try {
   if (chrome) playwrightEnvironment.WILSY_BROWSER_EXECUTABLE = chrome;
   await runAndWait(
     playwright,
-    ['test', '--config', 'tests/e2e/playwright.config.js'],
+    ['test', '--config', 'tests/e2e/playwright.config.js', ...process.argv.slice(2)],
     { env: playwrightEnvironment, stdio: ['ignore', 'inherit', 'inherit'] },
     'PLAYWRIGHT',
   );
