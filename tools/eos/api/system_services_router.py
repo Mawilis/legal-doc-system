@@ -477,6 +477,30 @@ def assign_security_incident_responder(
     )))
 
 
+
+@router.get("/security-incident-assignments/mine")
+def list_my_security_incident_assignments(
+    request: Request,
+    limit: Annotated[int, Query(ge=1, le=100)] = 50,
+    identity: SovereignIdentity = Depends(get_current_identity),
+):
+    """List only assignments addressed to the authenticated current responder."""
+    actor = _actor(identity)
+    incidents, assignments = _assignment_runtime(request)
+    _, authorizer = _runtime(request)
+    service = SecurityIncidentEscalationService(
+        incidents=incidents, assignments=assignments, authorizer=authorizer,
+    )
+    return _run_transaction(lambda session: [
+        _project_assignment(item)
+        for item in service.list_my_assignments(
+            actor_principal_id=actor.principal_id,
+            session=session,
+            limit=limit,
+        )
+    ])
+
+
 @router.post("/security-incident-assignments/{assignment_id}/accept")
 def accept_security_incident_assignment(
     assignment_id: str,
