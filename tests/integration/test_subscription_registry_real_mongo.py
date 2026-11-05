@@ -1088,6 +1088,10 @@ def test_real_mongo_independent_process_restart_durability(
 
     code = r'''
 import sys
+from tools.eos.kernel.db import connect_db
+ok, message = connect_db()
+if not ok:
+    raise SystemExit(message)
 from tools.eos.saas.billing.subscription_registry import SubscriptionRegistry
 
 subscription_id = sys.argv[1]
@@ -1106,12 +1110,9 @@ print(entity.tenant_id)
 '''
 
     environment = os.environ.copy()
-    environment[
-        "WILSY_SUBSCRIPTION_MONGO_URI"
-    ] = mongo_context.database_uri
-    environment[
-        "WILSY_PLAN_MONGO_URI"
-    ] = mongo_context.database_uri
+    environment["MONGODB_URI"] = mongo_context.database_uri
+    environment.pop("WILSY_SUBSCRIPTION_MONGO_URI", None)
+    environment.pop("WILSY_PLAN_MONGO_URI", None)
 
     completed = subprocess.run(
         [
