@@ -34,6 +34,7 @@ on:
       - "tests/integration/test_financial_execution_reconciliation_mongo.py"
       - "tests/integration/test_payshap_webhook_evidence_mongo.py"
       - "tests/integration/test_platform_billing_commercial_settlement_projection_real_mongo.py"
+      - "tests/integration/test_platform_billing_financial_execution_and_settlement_evidence_real_mongo.py"
       - "tests/integration/test_platform_settlement_outbox_real_mongo.py"
       - "tests/integration/test_subscription_registry_real_mongo.py"
       - "tests/integration/test_subscription_registry_transaction_injection_real_mongo.py"
