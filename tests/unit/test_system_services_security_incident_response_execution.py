@@ -217,7 +217,7 @@ def test_permission_revocation_executor_must_be_distinct_from_requester_and_appr
     )
     with pytest.raises(
         SecurityIncidentResponseExecutionError,
-        match="CANONICAL_REVOCATION_EVIDENCE_BINDING_INVALID",
+        match="INDEPENDENT_RESPONSE_EXECUTOR_REQUIRED",
     ):
         value.execute_system_permission_revocation(
             decision,
@@ -246,7 +246,7 @@ def test_permission_revocation_target_cannot_execute_own_containment():
     )
     with pytest.raises(
         SecurityIncidentResponseExecutionError,
-        match="CANONICAL_REVOCATION_EVIDENCE_BINDING_INVALID",
+        match="INDEPENDENT_RESPONSE_EXECUTOR_REQUIRED",
     ):
         value.execute_system_permission_revocation(
             decision,
@@ -276,7 +276,7 @@ def test_permission_revocation_mismatch_fails_before_canonical_service():
 
     with pytest.raises(
         SecurityIncidentResponseExecutionError,
-        match="CANONICAL_REVOCATION_EVIDENCE_BINDING_INVALID",
+        match="INDEPENDENT_RESPONSE_EXECUTOR_REQUIRED",
     ):
         value.execute_system_permission_revocation(
             decision,
