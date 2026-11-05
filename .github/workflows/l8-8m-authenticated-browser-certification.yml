@@ -216,7 +216,7 @@ jobs:
           PY
 
       - name: Compile browser fixture
-        run: python -m py_compile tests/e2e/browser_cert_fixture.py
+        run: python -m py_compile tests/e2e/browser_cert_fixture.py tests/e2e/browser_cert_scope_verify.py
 
       - name: Run focused D21B12 client lifecycle regressions
         run: >-
