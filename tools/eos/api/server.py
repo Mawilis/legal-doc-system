@@ -203,6 +203,11 @@ from tools.eos.system_services.security_incident_registry import (
     EVENT_COLLECTION as SECURITY_INCIDENT_EVENT_COLLECTION,
     SecurityIncidentRegistry,
 )
+from tools.eos.system_services.security_incident_assignment_registry import (
+    COLLECTION as SECURITY_INCIDENT_ASSIGNMENT_COLLECTION,
+    EVENT_COLLECTION as SECURITY_INCIDENT_ASSIGNMENT_EVENT_COLLECTION,
+    SecurityIncidentAssignmentRegistry,
+)
 from tools.eos.system_services.runtime import (
     PLATFORM_WORKFORCE_SCOPE_ENV,
     build_system_services_runtime,
@@ -309,6 +314,8 @@ class WilsyAPIServer:
         app.state.system_services_case_registry = None
         app.state.system_services_incident_indexes_ready = False
         app.state.system_services_incident_registry = None
+        app.state.system_services_assignment_indexes_ready = False
+        app.state.system_services_assignment_registry = None
         app.state.legal_evidence_provider_readonly_reconciliation_composition = None
         app.state.legal_evidence_provider_readonly_reconciliation_audit_client = None
         # C1E service is constructed lazily or by deployment composition; it
@@ -477,6 +484,8 @@ class WilsyAPIServer:
             app.state.system_services_case_registry = None
             app.state.system_services_incident_indexes_ready = False
             app.state.system_services_incident_registry = None
+            app.state.system_services_assignment_indexes_ready = False
+            app.state.system_services_assignment_registry = None
             app.state.telemetry_indexes_ready = False
             app.state.electrum_completion_indexes_ready = False
             app.state.electrum_settlement_worker_enabled = False
@@ -525,6 +534,13 @@ class WilsyAPIServer:
                 incident_registry.ensure_indexes()
                 app.state.system_services_incident_registry = incident_registry
                 app.state.system_services_incident_indexes_ready = client is not None
+                assignment_registry = SecurityIncidentAssignmentRegistry(
+                    assignments=database[SECURITY_INCIDENT_ASSIGNMENT_COLLECTION],
+                    events=database[SECURITY_INCIDENT_ASSIGNMENT_EVENT_COLLECTION],
+                )
+                assignment_registry.ensure_indexes()
+                app.state.system_services_assignment_registry = assignment_registry
+                app.state.system_services_assignment_indexes_ready = client is not None
                 # SYSTEM Services authority is composed only from trusted
                 # deployment configuration and canonical EOS repositories.
                 # Missing scope configuration keeps staff APIs unavailable;
@@ -726,6 +742,8 @@ class WilsyAPIServer:
             app.state.system_services_case_registry = None
             app.state.system_services_incident_indexes_ready = False
             app.state.system_services_incident_registry = None
+            app.state.system_services_assignment_indexes_ready = False
+            app.state.system_services_assignment_registry = None
             app.state.telemetry_indexes_ready = False
             audit_client = getattr(
                 app.state,
