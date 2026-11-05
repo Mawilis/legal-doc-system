@@ -114,6 +114,8 @@ class SecurityIncidentEscalationService:
         session: object,
     ) -> SecurityIncidentAssignment:
         actor = self._principal(actor_principal_id)
+        if isinstance(expected_revision, bool) or not isinstance(expected_revision, int) or expected_revision < 0:
+            raise SecurityIncidentEscalationError("INCIDENT_ASSIGNMENT_REVISION_INVALID")
         if not isinstance(idempotency_key, str) or not idempotency_key or idempotency_key != idempotency_key.strip():
             raise SecurityIncidentEscalationError("INCIDENT_ASSIGNMENT_IDEMPOTENCY_INVALID")
         self._authorizer.require(
