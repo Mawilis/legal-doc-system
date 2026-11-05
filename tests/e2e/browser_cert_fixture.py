@@ -444,7 +444,13 @@ def seed(state_path: Path) -> None:
         registry = AuthRegistry()
         actors: dict[str, dict[str, str]] = {}
         system_actors: dict[str, dict[str, str]] = {}
-        for key, last_name in (("system_triage", "SystemTriage"), ("system_responder", "SystemResponder")):
+        for key, last_name in (
+            ("system_triage", "SystemTriage"),
+            ("system_responder", "SystemResponder"),
+            ("system_requester", "SystemRequester"),
+            ("system_approver", "SystemApprover"),
+            ("system_executor", "SystemExecutor"),
+        ):
             email = f"browser-{key}-{suffix}@example.com"
             user = registry.register_user(
                 email=email,
@@ -594,6 +600,13 @@ def seed(state_path: Path) -> None:
             for key, permission_ids in (
                 ("system_triage", ("system_services:queue:read", "system_services:case:triage")),
                 ("system_responder", ("system_services:queue:read", "system_services:incident:escalate")),
+                ("system_requester", ("system_services:queue:read", "system_services:incident:escalate")),
+                ("system_approver", ("system_services:queue:read", "system_services:incident:response:decide")),
+                ("system_executor", (
+                    "system_services:queue:read",
+                    "system_services:incident:response:execute",
+                    "system_permission_assignment:revoke",
+                )),
             ):
                 principal_id = system_actors[key]["principal_id"]
                 for permission_id in permission_ids:
@@ -627,6 +640,19 @@ def seed(state_path: Path) -> None:
                     collection=workforce_collection,
                     session=session,
                 )
+            target_permission_assignment_id = f"browser-target-privileged-activation-{suffix}"
+            permission_assignment_registry.create_or_replay(
+                SystemPermissionAssignment.assign(
+                    assignment_id=target_permission_assignment_id,
+                    principal_id=actors["partner"]["principal_id"],
+                    permission_id="privileged_activation:issue",
+                    assigned_by_principal_id="browser-cert-independent-iam-issuer",
+                    assigned_at=now,
+                    assignment_evidence_reference=f"browser-cert-target-permission:{suffix}",
+                ),
+                idempotency_key=f"browser-cert-target-permission:{suffix}",
+                session=session,
+            )
             branding = _seed_branding_chain(
                 tenant_id=tenant_id,
                 suffix=suffix,
@@ -825,6 +851,7 @@ def seed(state_path: Path) -> None:
                     "system_actors": system_actors,
                     "system_incident_id": incident_id,
                     "system_assignment_id": seeded_assignment.assignment_id,
+                    "system_target_permission_assignment_id": target_permission_assignment_id,
                     "system_workforce_scope_id": SYSTEM_WORKFORCE_SCOPE_ID,
                     "matter_id": matter_id,
                     "screening_id": screening.screening_id,
