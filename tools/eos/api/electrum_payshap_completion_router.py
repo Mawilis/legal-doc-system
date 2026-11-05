@@ -155,6 +155,8 @@ async def receive_electrum_payshap_completion(request: Request) -> Response:
     if config is None:
         # Not a live integration until the onboarding keys/issuer are provisioned.
         return Response(status_code=503, content=b"ELECTRUM_TRANSPORT_NOT_CONFIGURED")
+    if getattr(request.app.state, "electrum_completion_indexes_ready", False) is not True:
+        return _error(503, "ELECTRUM_INDEXES_NOT_READY", config, now)
     runtime = _runtime()
     if runtime is None:
         return _error(503, "ELECTRUM_RUNTIME_UNAVAILABLE", config, now)
