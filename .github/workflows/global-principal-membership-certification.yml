@@ -70,6 +70,7 @@ on:
       - "tests/unit/test_global_principal_auth_challenge_startup.py"
       - "tests/unit/test_auth_router_authoritative_mfa.py"
       - "tests/unit/test_global_principal_access_token_currentness.py"
+      - "tests/unit/test_authentication_principal_authority.py"
       - "tests/unit/test_global_principal_auth_router.py"
       - "tests/unit/test_principal_authentication_rate_limit.py"
       - "tests/integration/test_membership_selection_challenge_mongo.py"
@@ -170,6 +171,9 @@ jobs:
             tests/unit/test_global_principal_mfa_session_transition.py \
             tests/unit/test_global_principal_auth_challenge_startup.py \
             tests/unit/test_global_principal_access_token_currentness.py \
+            tests/unit/test_authentication_principal_authority.py \
+            tests/unit/test_authentication_principal_authority.py \
+            tests/unit/test_authentication_principal_authority.py \
             tests/unit/test_global_principal_auth_router.py \
             tests/unit/test_principal_authentication_rate_limit.py \
             tests/integration/test_global_principal_system_session_authority_mongo.py \
