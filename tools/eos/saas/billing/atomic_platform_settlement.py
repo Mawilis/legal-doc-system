@@ -1,9 +1,9 @@
 """WILSY OS atomic settlement composition boundary.
 
-The caller owns the Mongo transaction. This function composes authenticated
-settlement observation, durable platform settlement evidence, invoice paid
-projection, and a durable audit/outbox intent in that one transaction.
-It never invokes or mutates SubscriptionRegistry lifecycle commands.
+The caller owns the Mongo transaction. Authenticated settlement observation,
+durable platform settlement evidence, invoice paid projection, immutable
+audit evidence, and mutable outbox delivery intent commit together.
+SubscriptionRegistry lifecycle authority is never invoked or mutated here.
 """
 from __future__ import annotations
 
@@ -30,28 +30,61 @@ class AtomicPlatformSettlementError(RuntimeError):
     """Fail-closed error for the composed settlement transaction."""
 
 
-def ensure_atomic_settlement_audit_indexes(audit_collection: Collection) -> None:
-    """Enforce one durable audit/outbox intent per tenant-scoped settlement."""
-    audit_collection.create_index(
-        [("tenant_id", 1), ("event_key", 1)],
-        unique=True,
-        name="uq_billing_settlement_audit_event",
+def ensure_atomic_settlement_audit_indexes(
+    audit_collection: Collection, outbox_collection: Collection
+) -> None:
+    """Enforce tenant-scoped uniqueness for immutable audit and outbox records."""
+    for collection, name in (
+        (audit_collection, "uq_billing_settlement_audit_event"),
+        (outbox_collection, "uq_billing_settlement_outbox_event"),
+    ):
+        collection.create_index(
+            [("tenant_id", 1), ("event_key", 1)],
+            unique=True,
+            name=name,
+            partialFilterExpression={"event_key": {"$type": "string"}},
+        )
+
+
+def _insert_or_verify_event(
+    collection: Collection,
+    document: dict[str, Any],
+    *,
+    tenant_id: str,
+    event_key: str,
+    conflict_code: str,
+    session: ClientSession,
+) -> dict[str, Any]:
+    existing = collection.find_one(
+        {"tenant_id": tenant_id, "event_key": event_key}, session=session
     )
+    if existing is not None:
+        persisted = {key: value for key, value in existing.items() if key != "_id"}
+        if persisted != document:
+            raise AtomicPlatformSettlementError(conflict_code)
+        return persisted
+    try:
+        collection.insert_one(document, session=session)
+    except DuplicateKeyError as error:
+        raise AtomicPlatformSettlementError(conflict_code) from error
+    return document
 
 
-def _persist_audit_outbox_intent(
+def _persist_audit_and_outbox(
     *,
     tenant_id: str,
     settlement_evidence: Any,
     audit_collection: Collection,
+    outbox_collection: Collection,
     session: ClientSession,
-) -> dict[str, Any]:
-    """Insert or verify the immutable, deterministic audit/outbox intent."""
+) -> tuple[dict[str, Any], dict[str, Any]]:
+    """Persist append-only audit evidence and independently mutable delivery intent."""
     event_key = (
         f"platform-settlement:{tenant_id}:"
         f"{settlement_evidence.settlement_evidence_id}"
     )
-    event = {
+    created_at = settlement_evidence.created_at.isoformat()
+    audit_event = {
         "tenant_id": tenant_id,
         "event_key": event_key,
         "event_type": "PLATFORM_INVOICE_SETTLED",
@@ -60,35 +93,31 @@ def _persist_audit_outbox_intent(
         "settlement_fingerprint": settlement_evidence.fingerprint,
         "platform_execution_truth_id": settlement_evidence.platform_execution_truth_id,
         "platform_invoice_id": settlement_evidence.platform_invoice_id,
-        "status": "PENDING",
-        "created_at": settlement_evidence.created_at.isoformat(),
+        "created_at": created_at,
     }
-    existing = audit_collection.find_one(
-        {"tenant_id": tenant_id, "event_key": event_key}, session=session
+    outbox_event = {
+        **audit_event,
+        "delivery_status": "PENDING",
+        "delivery_attempts": 0,
+        "available_at": created_at,
+    }
+    persisted_audit = _insert_or_verify_event(
+        audit_collection,
+        audit_event,
+        tenant_id=tenant_id,
+        event_key=event_key,
+        conflict_code="ATOMIC_SETTLEMENT_AUDIT_REPLAY_CONFLICT",
+        session=session,
     )
-    if existing is not None:
-        persisted = {key: value for key, value in existing.items() if key != "_id"}
-        if persisted != event:
-            raise AtomicPlatformSettlementError(
-                "ATOMIC_SETTLEMENT_AUDIT_REPLAY_CONFLICT"
-            )
-        return persisted
-    try:
-        audit_collection.insert_one(event, session=session)
-    except DuplicateKeyError as error:
-        existing = audit_collection.find_one(
-            {"tenant_id": tenant_id, "event_key": event_key}, session=session
-        )
-        if existing is None:
-            raise AtomicPlatformSettlementError(
-                "ATOMIC_SETTLEMENT_AUDIT_WRITE_CONFLICT"
-            ) from error
-        persisted = {key: value for key, value in existing.items() if key != "_id"}
-        if persisted != event:
-            raise AtomicPlatformSettlementError(
-                "ATOMIC_SETTLEMENT_AUDIT_REPLAY_CONFLICT"
-            ) from error
-    return event
+    persisted_outbox = _insert_or_verify_event(
+        outbox_collection,
+        outbox_event,
+        tenant_id=tenant_id,
+        event_key=event_key,
+        conflict_code="ATOMIC_SETTLEMENT_OUTBOX_REPLAY_CONFLICT",
+        session=session,
+    )
+    return persisted_audit, persisted_outbox
 
 
 def settle_platform_invoice_atomically(
@@ -106,16 +135,15 @@ def settle_platform_invoice_atomically(
     commercial_projection_collection: Collection,
     subscription_collection: Collection | None,
     audit_collection: Collection,
+    outbox_collection: Collection,
     session: ClientSession,
     created_at: datetime,
     projected_at: datetime | None = None,
 ) -> dict[str, Any]:
-    """Compose all settlement writes under the caller's active transaction.
+    """Compose every settlement write under the caller's active transaction.
 
-    The caller must commit or abort the supplied session. No nested
-    transaction is started here. Every durable write receives this same
-    session, including observation, evidence, invoice CAS/projection, and
-    audit/outbox intent.
+    No nested transaction is started. The caller must commit or abort the
+    supplied session. Every durable write receives this exact session.
     """
     if session is None or not bool(getattr(session, "in_transaction", False)):
         raise AtomicPlatformSettlementError("ATOMIC_SETTLEMENT_ACTIVE_SESSION_REQUIRED")
@@ -155,10 +183,11 @@ def settle_platform_invoice_atomically(
             session=session,
             projected_at=projected_at,
         )
-        audit_intent = _persist_audit_outbox_intent(
+        audit_event, outbox_event = _persist_audit_and_outbox(
             tenant_id=tenant_id,
             settlement_evidence=settlement_evidence,
             audit_collection=audit_collection,
+            outbox_collection=outbox_collection,
             session=session,
         )
     except AtomicPlatformSettlementError:
@@ -172,5 +201,6 @@ def settle_platform_invoice_atomically(
         "observation": observation,
         "settlement_evidence": settlement_evidence,
         "commercial_projection": projection,
-        "audit_outbox_intent": audit_intent,
+        "audit_event": audit_event,
+        "outbox_event": outbox_event,
     }
