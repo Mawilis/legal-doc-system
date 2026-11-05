@@ -171,3 +171,14 @@ No production deployment, credential/account mutation, workforce assignment, sub
 - Added unit coverage for routed, out-of-hours, unstaffed, overlap-conflict and invalid-time/SLA cases. The dedicated System Services workflow now includes this module and test in compilation, Pyright and pytest gates.
 
 **Operational limitation:** no trusted duty roster, acknowledgement SLA approval, notification channel, after-hours fallback owner or dispatch worker has been configured. This is a tested policy foundation only; it is not a live on-call process.
+
+### Exact-head certification result (2026-11-05)
+
+- Latest System Services workflow #578 on commit `80a4132545e5b50638ada874bce78f96da2d1ca3`: **success** — https://github.com/Mawilis/legal-doc-system/actions/runs/42004272573
+- Python compilation: passed.
+- Pyright: passed.
+- Unit and real MongoDB replica-set certification: **61 passed, 0 failed**.
+- `git diff --check` and clean-checkout verification: passed.
+- The 61 tests include the independent platform audit/outbox rollback proof and the five duty-policy cases.
+
+This certifies the code-level audit/outbox and duty-policy foundations on the tested commit. It does not certify a live duty roster, dispatch/notification delivery, a browser journey, or containment/recovery authority.
