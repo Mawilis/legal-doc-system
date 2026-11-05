@@ -178,6 +178,35 @@ def test_permission_revocation_executor_must_be_distinct_from_requester_and_appr
     value._permission_revocation.revoke.assert_not_called()
 
 
+def test_permission_revocation_target_cannot_execute_own_containment():
+    value = executor_with_mocks()
+    decision = approved(
+        SecurityIncidentResponseAction.SYSTEM_PERMISSION_REVOCATION,
+        assignment_id="assignment-1",
+        permission_id="privileged_activation:issue",
+    )
+    evidence = SystemPermissionCommandEvidence(
+        operation=SystemPermissionCommandOperation.REVOKE,
+        actor_principal_id="target-principal",
+        target_principal_id="target-principal",
+        permission_id="privileged_activation:issue",
+        evidence_reference="security-incident-response-decision:decision-1",
+        occurred_at=NOW + timedelta(minutes=2),
+        idempotency_key="revocation-idempotency-target",
+        assignment_id="assignment-1",
+    )
+    with pytest.raises(
+        SecurityIncidentResponseExecutionError,
+        match="CANONICAL_REVOCATION_EVIDENCE_BINDING_INVALID",
+    ):
+        value.execute_system_permission_revocation(
+            decision,
+            evidence=evidence,
+            session="caller-owned-transaction",
+        )
+    value._permission_revocation.revoke.assert_not_called()
+
+
 def test_permission_revocation_mismatch_fails_before_canonical_service():
     value = executor_with_mocks()
     decision = approved(
