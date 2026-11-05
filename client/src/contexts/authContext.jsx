@@ -953,6 +953,11 @@ export const AuthProvider = ({ children }) => {
     setAuthStage(AUTH_STATES.PRIMARY_AUTHENTICATING);
     try {
       if (!tenantId) {
+        anchorCanonicalBearer(null);
+        setActiveTenantTransportId(null);
+        localStorage.removeItem('wilsy_active_tenant');
+        localStorage.removeItem('wilsy_tenant_id');
+        localStorage.removeItem('tenantId');
         const response = await api.post('/auth/global/login', { email, password });
         const data = response.data || {};
         if (
