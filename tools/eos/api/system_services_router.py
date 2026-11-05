@@ -49,6 +49,7 @@ from tools.eos.system_services.security_incident import (
 from tools.eos.system_services.security_incident_registry import (
     SecurityIncidentRegistry,
     SecurityIncidentConflictError,
+    SecurityIncidentNotFoundError,
 )
 from tools.eos.system_services.security_incident_assignment import (
     SecurityIncidentAssignment,
@@ -119,7 +120,7 @@ def _run_transaction(callback: Callable[[ClientSession], _Result]) -> _Result:
         raise HTTPException(status_code=403, detail="System Services access denied.") from error
     except SystemServicesAuthorizationUnavailable as error:
         raise HTTPException(status_code=503, detail="System Services authority is unavailable.") from error
-    except (SupportCaseNotFoundError, IncidentAssignmentNotFoundError) as error:
+    except (SupportCaseNotFoundError, IncidentAssignmentNotFoundError, SecurityIncidentNotFoundError) as error:
         raise HTTPException(status_code=404, detail="System Services record not found.") from error
     except (
         SupportCaseConflictError, SupportCaseApplicationError,
