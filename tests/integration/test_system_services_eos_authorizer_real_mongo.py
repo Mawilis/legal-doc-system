@@ -332,7 +332,7 @@ def test_real_mongo_incident_assignment_permissions_require_current_platform_wor
                     session=session,
                 )
                 workforce_registry.persist_revision(
-                    relation(principal_id, f"workforce-{relation_id}"),
+                    relation(principal_id, f"workforce-{assignment_id}"),
                     collection=mongo_context["workforce_collection"],
                     session=session,
                 )
