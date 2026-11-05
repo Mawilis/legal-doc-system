@@ -60,7 +60,7 @@ async function seedCitadel() {
           primaryColor: '#ffd700',
           secondaryColor: '#10b981',
           accentColor: '#3b82f6',
-          logo: '/assets/images/superadmin/wilsy.jpeg',
+          logo: '/assets/images/superadmin/wilsy-logo.svg',
           favicon: '/favicon.ico',
           theme: 'dark'
         },
