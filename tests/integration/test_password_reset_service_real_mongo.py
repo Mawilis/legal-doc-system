@@ -856,6 +856,15 @@ def test_response_decision_receipt_is_atomic_with_real_canonical_password_reset(
     assert bound_database.database[PLATFORM_OUTBOX_COLLECTION].count_documents({
         "event_key": event_key, "status": "PENDING", "attempts": 0,
     }) == 1
+    with bound_database.client.start_session() as session:
+        with session.start_transaction():
+            replay = registry.find_execution(
+                decision=approved,
+                actor_principal_id="independent-executor-decision-r10-response-commit",
+                idempotency_key="r10-response-execution-commit",
+                session=session,
+            )
+            assert replay == event
     assert _read_user(bound_database, fixture.principal_id, fixture.tenant_id)["credential_revision"] == fixture.starting_revision + 1
 
 
