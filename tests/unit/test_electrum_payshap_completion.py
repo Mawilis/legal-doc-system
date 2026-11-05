@@ -12,6 +12,7 @@ from tools.eos.kennel.providers.electrum_payshap_completion import (
     ElectrumMessageAuthenticationError,
     VerifiedElectrumMessage,
     normalize_electrum_payshap_completion,
+    sign_electrum_http_message,
     verify_electrum_http_message_signature,
 )
 
@@ -139,3 +140,20 @@ def test_non_approved_completion_is_not_settlement_eligible(outcome):
 def test_approval_without_verified_transport_is_rejected():
     with pytest.raises(ElectrumCompletionContractError, match="VERIFIED_TRANSPORT"):
         normalize_electrum_payshap_completion(_payload(), verified_message=None)
+
+
+def test_electrum_partner_response_is_also_signed_with_body_digest():
+    private, public = _keys()
+    body = b'{"accepted":true}'
+    token = sign_electrum_http_message(
+        body, private_key=private, key_id="wilsy-key-1",
+        issuer="wilsy-onboarding-issuer", issued_at=int(NOW.timestamp()),
+    )
+    verified = verify_electrum_http_message_signature(
+        body, token,
+        verification_keys={"wilsy-key-1": public},
+        now=NOW,
+        issuer="wilsy-onboarding-issuer",
+    )
+    assert verified.key_id == "wilsy-key-1"
+    assert verified.content_digest == hashlib.sha256(body).hexdigest()
