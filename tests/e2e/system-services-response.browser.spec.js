@@ -172,6 +172,14 @@ test('certifies independent request, rejection, approval and canonical permissio
   );
   expect(replay.status).toBe(200);
   expect(replay.body).toEqual(executed.body);
+  const staleExecution = await postAs(
+    browser,
+    'system_executor',
+    '/api/system-services/security-response-decisions/' + decisionId + '/execute/permission-revocation',
+    { expected_revision: 0 },
+    'browser-response-stale-execution-' + state.database_name,
+  );
+  expect(staleExecution.status).toBe(409);
 
   const wrongExecutor = await postAs(
     browser,
