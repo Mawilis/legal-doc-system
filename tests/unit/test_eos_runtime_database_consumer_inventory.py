@@ -8,17 +8,23 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[2]
 TOOLS_EOS = ROOT / "tools" / "eos"
-RUNTIME_ROOTS = (
-    "kernel",
-    "api",
-    "auth",
-    "saas",
-    "kennel",
-    "legal_operations/service",
-    "system_services",
-    "workforce",
-    "governance",
+NON_RUNTIME_PREFIXES = (
+    "tools/eos/scripts/",
+    "tools/eos/tests/",
+    "tools/eos/docs/",
+    "tools/eos/documentation/",
+    "tools/eos/benchmark/",
 )
+NON_RUNTIME_FILES = {
+    "tools/eos/__init__.py",
+    "tools/eos/mock_kennel_server.py",
+    "tools/eos/test_phase_integration.py",
+    "tools/eos/run_aggregator_test.py",
+    "tools/eos/run_dashboard_live_test.py",
+    "tools/eos/run_scheduler_playbook.py",
+    "tools/eos/ws_test_client.py",
+    "tools/eos/packet_runner.py",
+}
 CANONICAL_CONNECTOR = "tools/eos/kernel/db.py"
 ISOLATED_AUDIT_SINK = (
     "tools/eos/legal_operations/service/"
@@ -50,14 +56,17 @@ def _constructs_mongo_client(tree: ast.AST) -> bool:
 
 def test_runtime_mongo_client_construction_is_confined_to_kernel_and_isolated_audit_sink():
     runtime_calls = set()
-    for runtime_root in RUNTIME_ROOTS:
-        for path in (TOOLS_EOS / runtime_root).rglob("*.py"):
-            relative = _relative(path)
-            if relative in OPERATOR_ONLY_CONNECTIONS or "/scripts/" in relative:
-                continue
-            tree = ast.parse(path.read_text(encoding="utf-8"), filename=relative)
-            if _constructs_mongo_client(tree):
-                runtime_calls.add(relative)
+    for path in TOOLS_EOS.rglob("*.py"):
+        relative = _relative(path)
+        if (
+            relative in NON_RUNTIME_FILES
+            or relative in OPERATOR_ONLY_CONNECTIONS
+            or relative.startswith(NON_RUNTIME_PREFIXES)
+        ):
+            continue
+        tree = ast.parse(path.read_text(encoding="utf-8"), filename=relative)
+        if _constructs_mongo_client(tree):
+            runtime_calls.add(relative)
 
     assert runtime_calls == {CANONICAL_CONNECTOR, ISOLATED_AUDIT_SINK}
 
