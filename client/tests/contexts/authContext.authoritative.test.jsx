@@ -194,7 +194,7 @@ describe('authoritative authentication state machine', () => {
       data: {
         status: AUTH_STATES.MFA_REQUIRED,
         scope: 'SYSTEM',
-        mfa_challenge: 'sysmfa-one-time-challenge',
+        mfa_challenge: 'sysmfa_one-time-challenge',
         workspace_id: 'SYSTEM_SERVICES',
       },
     });
@@ -219,7 +219,7 @@ describe('authoritative authentication state machine', () => {
         data: {
           status: AUTH_STATES.MFA_REQUIRED,
           scope: 'SYSTEM',
-          mfa_challenge: 'sysmfa-one-time-challenge',
+          mfa_challenge: 'sysmfa_one-time-challenge',
           workspace_id: 'SYSTEM_SERVICES',
         },
       })
@@ -264,7 +264,7 @@ describe('authoritative authentication state machine', () => {
       password: 'password',
     });
     expect(api.post).toHaveBeenNthCalledWith(2, '/auth/global/verify-mfa', {
-      mfa_challenge: 'sysmfa-one-time-challenge',
+      mfa_challenge: 'sysmfa_one-time-challenge',
       code: '123456',
     });
     expect(api.get).toHaveBeenCalledWith('/system-services/workspace-bootstrap');
