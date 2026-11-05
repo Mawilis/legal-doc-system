@@ -173,7 +173,7 @@ def test_revision_guarded_retry_backoff_preserves_pending_event(mongo_collection
     assert inbox.find_one({"message_id": "message-1"})["processing_status"] == "PROCESSED"
 
 
-def test_signed_http_completion_to_real_inbox_empty_204_and_replay(mongo_collections, monkeypatch):
+def test_signed_http_completion_to_real_inbox_empty_202_and_replay(mongo_collections, monkeypatch):
     import hashlib
     import json
     from cryptography.hazmat.primitives.asymmetric import ec
