@@ -314,11 +314,61 @@ def _canonical_settlement_evidence(
             )
 
 
+def _seed_canonical_subscription(database, tenant_id):
+    """Create canonical SubscriptionRegistry truth in this isolated test database."""
+    from tools.eos.saas.billing import subscription_registry as subscription_registry_module
+    from tools.eos.saas.billing import plan_registry as plan_registry_module
+    from tools.eos.saas.billing.plan_registry import PlanRegistry
+    from tools.eos.saas.billing.subscription_registry import SubscriptionRegistry
+
+    previous_subscriptions = subscription_registry_module.subscriptions_collection
+    previous_plans = plan_registry_module.plans_collection
+    subscription_collection = database["subscriptions"]
+    plan_collection = database["plans"]
+    subscription_registry_module.subscriptions_collection = subscription_collection
+    plan_registry_module.plans_collection = plan_collection
+    try:
+        PlanRegistry.provision_indexes()
+        plan_id = f"plan-{uuid.uuid4().hex}"
+        plan_result = PlanRegistry.create({
+            "name": "Settlement Correlation Certificate",
+            "price": 100.0,
+            "currency": "ZAR",
+            "billingFrequency": "monthly",
+            "planType": "ENTERPRISE",
+            "idempotencyKey": f"plan-cert-{uuid.uuid4().hex}",
+            "plan_id": plan_id,
+            "active": True,
+            "features": ["crm.core"],
+            "metadata": {"certificate": True, "catalogueAuthority": "PlanRegistry"},
+            "tags": ["settlement-correlation-cert"],
+            "user": "EOS-SETTLEMENT-CERT",
+        })
+        assert plan_result["success"] is True
+        created = SubscriptionRegistry.create({
+            "tenantId": tenant_id,
+            "planId": plan_id,
+            "startDate": "2026-01-01T00:00:00+00:00",
+            "idempotencyKey": f"subscription-cert-{uuid.uuid4().hex}",
+            "billingMode": "PLATFORM",
+            "onboardingRef": f"ONBOARD-{tenant_id}",
+            "sector": "LEGAL",
+            "region": "ZA",
+            "metadata": {"certificate": True},
+        }, tenant_id_header=tenant_id)
+        assert created["success"] is True
+        return created["subscription"], subscription_collection
+    finally:
+        subscription_registry_module.subscriptions_collection = previous_subscriptions
+        plan_registry_module.plans_collection = previous_plans
+
+
 def graph():
     if not URI: raise RuntimeError("TEST_VENDOR_MONGO_URI is required")
     client = MongoClient(URI, serverSelectionTimeoutMS=2000, retryWrites=True); client.admin.command("ping")
     db = client[f"r3fc_{uuid.uuid4().hex}"]; tenant = f"tenant-{uuid.uuid4().hex}"; invoice_id = f"invoice-{uuid.uuid4().hex}"; now = datetime(2026, 1, 1, tzinfo=timezone.utc)
-    invoice = PlatformInvoice.from_dict({"tenant_id": tenant, "invoice_id": invoice_id, "status": "open", "amount": 100.0, "total": 100.0, "currency": "ZAR", "issued_at": now, "created_at": now, "updated_at": now, "line_items": [{"description": "Platform", "amount": 100.0}]})
+    subscription, subscription_collection = _seed_canonical_subscription(db, tenant)
+    invoice = PlatformInvoice.from_dict({"tenant_id": tenant, "invoice_id": invoice_id, "subscription_id": subscription.subscription_id, "status": "open", "amount": 100.0, "total": 100.0, "currency": "ZAR", "issued_at": now, "created_at": now, "updated_at": now, "line_items": [{"description": "Platform", "amount": 100.0}]})
     db["invoices"].insert_one(invoice.to_dict())
     authorization = PlatformBillingReleaseAuthorization(tenant, f"auth-{uuid.uuid4().hex}", invoice_id, invoice.commercial_release_evidence_fingerprint, "evidence", "a" * 128, invoice.release_amount_minor, invoice.currency, "principal", "basis", "destination", f"idem-{uuid.uuid4().hex}", now, now)
     authorization_collection = db["platform_billing_release_authorizations"]
@@ -338,18 +388,56 @@ def graph():
     PlatformBillingFinancialExecutionTruthRegistry.ensure_indexes(truth_collection); PlatformBillingFinancialSettlementEvidenceRegistry.ensure_indexes(settlement_collection); PlatformBillingCommercialSettlementProjectionRegistry.ensure_indexes(db["projections"])
     truth = _canonical_execution_truth(tenant, request.execution_request_id, request_collection=request_collection, truth_collection=truth_collection, provider="P", provider_execution_reference="execution", execution_status=PlatformExecutionStatus.EXECUTED, executed_at=now, provider_evidence_reference="evidence", created_at=now)
     settlement = _canonical_settlement_evidence(tenant, truth.execution_truth_id, execution_collection=truth_collection, settlement_collection=settlement_collection, settlement_reference="settlement", provider_settlement_evidence_reference="settled", settled_at=now, created_at=now)
-    return client, db, {"tenant": tenant, "invoice": invoice, "authorization": authorization, "settlement": settlement}
+    return client, db, {"tenant": tenant, "invoice": invoice, "authorization": authorization, "settlement": settlement, "subscription": subscription, "subscription_collection": subscription_collection}
 
 def project(client, db, state, settlement_id=None):
     with client.start_session() as session:
         with session.start_transaction():
-            return project_platform_billing_commercial_settlement(state["tenant"], settlement_id or state["settlement"].settlement_evidence_id, settlement_collection=db["platform_billing_financial_settlement_evidence"], release_authorization_collection=db["platform_billing_release_authorizations"], platform_invoice_collection=db["invoices"], commercial_projection_collection=db["projections"], session=session)
+            return project_platform_billing_commercial_settlement(state["tenant"], settlement_id or state["settlement"].settlement_evidence_id, settlement_collection=db["platform_billing_financial_settlement_evidence"], release_authorization_collection=db["platform_billing_release_authorizations"], platform_invoice_collection=db["invoices"], commercial_projection_collection=db["projections"], subscription_collection=state["subscription_collection"], session=session)
 
 def test_r3fc_rm01_canonical_full_settlement():
     client, db, state = graph()
     try:
         result = project(client, db, state); invoice = db["invoices"].find_one({"invoice_id": state["invoice"].invoice_id}); assert result.tenant_id == state["tenant"] and db["projections"].count_documents({"tenant_id": state["tenant"]}) == 1 and invoice["status"] in (InvoiceStatus.PAID.value, InvoiceStatus.PAID.name) and invoice["amount_paid"] == 100.0 and invoice["outstanding_amount"] == 0  # type: ignore[index]
     finally: client.close()
+
+def test_r3fc_rm01b_linked_invoice_settlement_preserves_canonical_subscription():
+    client, db, state = graph()
+    try:
+        before = db["subscriptions"].find_one({
+            "tenant_id": state["tenant"],
+            "subscription_id": state["subscription"].subscription_id,
+        })
+        assert before is not None
+        result = project(client, db, state)
+        after = db["subscriptions"].find_one({
+            "tenant_id": state["tenant"],
+            "subscription_id": state["subscription"].subscription_id,
+        })
+        invoice = db["invoices"].find_one({"invoice_id": state["invoice"].invoice_id})
+        assert result.tenant_id == state["tenant"]
+        assert invoice["status"] in (InvoiceStatus.PAID.value, InvoiceStatus.PAID.name)
+        assert after == before
+        assert after["_registry_revision"] == before["_registry_revision"]
+    finally:
+        client.close()
+
+
+def test_r3fc_rm01c_cross_tenant_subscription_link_cannot_settle_invoice():
+    client, db, state = graph()
+    try:
+        db["subscriptions"].update_one(
+            {"tenant_id": state["tenant"], "subscription_id": state["subscription"].subscription_id},
+            {"$set": {"tenant_id": "neighbor-" + state["tenant"]}},
+        )
+        with pytest.raises(PlatformBillingCommercialSettlementProjectionError):
+            project(client, db, state)
+        invoice = db["invoices"].find_one({"invoice_id": state["invoice"].invoice_id})
+        assert invoice["status"] not in (InvoiceStatus.PAID.value, InvoiceStatus.PAID.name)
+        assert db["projections"].count_documents({"tenant_id": state["tenant"]}) == 0
+    finally:
+        client.close()
+
 
 def test_r3fc_rm02_wrong_tenant_missing_settlement():
     client, db, state = graph()
