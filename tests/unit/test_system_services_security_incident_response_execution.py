@@ -276,7 +276,7 @@ def test_permission_revocation_mismatch_fails_before_canonical_service():
 
     with pytest.raises(
         SecurityIncidentResponseExecutionError,
-        match="INDEPENDENT_RESPONSE_EXECUTOR_REQUIRED",
+        match="CANONICAL_REVOCATION_EVIDENCE_BINDING_INVALID",
     ):
         value.execute_system_permission_revocation(
             decision,
