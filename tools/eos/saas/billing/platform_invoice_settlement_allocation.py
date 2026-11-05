@@ -241,14 +241,27 @@ def allocate_settlement_observation_to_platform_invoice(
     cas = {
         "tenant_id": tenant_id,
         "invoice_id": invoice.invoice_id,
-        "amount_paid": doc.get("amount_paid", doc.get("amountPaid", 0)),
-        "outstanding_amount": doc.get("outstanding_amount", doc.get("outstandingAmount", _major(total_minor, invoice.currency))),
         "status": doc.get("status"),
         "settlement_allocation_revision": doc.get("settlement_allocation_revision", 0),
-        "currency": doc.get("currency"),
-        "total": doc.get("total"),
     }
-    for field in ("subscription_id", "subscriptionId", "release_amount_minor"):
+    # Match the exact persisted representation. Some historical invoices are
+    # snake_case-only, some camelCase-only, and newer rows may carry both.
+    for field in ("amount_paid", "amountPaid", "outstanding_amount", "outstandingAmount",
+                  "currency", "total", "total_amount", "totalAmount", "paid_at", "paidAt"):
+        if field in doc:
+            cas[field] = doc[field]
+    # The release fingerprint covers every field below. Bind every persisted
+    # member in the invoice CAS so a concurrent commercial rewrite cannot be
+    # settled against a stale snapshot.
+    for field in (
+        "release_amount_minor", "amount", "tax_amount", "taxAmount", "tax_type",
+        "taxType", "line_items", "lineItems", "issued_at", "issuedAt", "due_at",
+        "dueAt", "payment_terms_days", "paymentTermsDays", "collection_method",
+        "collectionMethod", "billing_mode", "billingMode", "seller_jurisdiction",
+        "sellerJurisdiction", "customer_jurisdiction", "customerJurisdiction",
+        "subscription_id", "subscriptionId", "plan_id", "planId", "order_number",
+        "orderNumber", "purchase_order", "purchaseOrder",
+    ):
         if field in doc:
             cas[field] = doc[field]
     result = platform_invoice_collection.update_one(cas, update, session=session)
