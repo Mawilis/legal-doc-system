@@ -175,6 +175,19 @@ class SecurityIncidentRegistry:
         except PyMongoError as error:
             raise SecurityIncidentPersistenceError("SECURITY_INCIDENT_READ_FAILED") from error
 
+    def list_system_queue(self, *, session: Any, limit: int = 100) -> tuple[SecurityIncident, ...]:
+        """Return a bounded sanitized incident queue; caller proves SYSTEM queue permission."""
+        _transaction(session)
+        if isinstance(limit, bool) or not isinstance(limit, int) or not 1 <= limit <= 100:
+            raise SecurityIncidentRegistryError("SECURITY_INCIDENT_LIMIT_INVALID")
+        try:
+            rows = self._incidents.find({}, session=session).sort(
+                [("received_at", 1), ("incident_id", 1)]
+            ).limit(limit)
+            return tuple(_hydrate(dict(row)) for row in rows)
+        except PyMongoError as error:
+            raise SecurityIncidentPersistenceError("SECURITY_INCIDENT_QUEUE_READ_FAILED") from error
+
     def list_own(
         self, *, tenant_id: str, principal_id: str, session: Any, limit: int = 50
     ) -> tuple[SecurityIncident, ...]:
