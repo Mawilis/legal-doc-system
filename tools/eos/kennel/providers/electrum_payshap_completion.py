@@ -141,6 +141,41 @@ def verify_electrum_http_message_signature(
     )
 
 
+def sign_electrum_http_message(
+    raw_body: bytes,
+    *,
+    private_key: str | bytes,
+    key_id: str,
+    issuer: str,
+    issued_at: int,
+) -> str:
+    """Sign an Electrum partner-side HTTP response using ES256 and body digest."""
+    if not isinstance(raw_body, bytes):
+        raise ElectrumMessageAuthenticationError("ELECTRUM_RESPONSE_BODY_INVALID")
+    if not isinstance(private_key, (str, bytes)) or not private_key:
+        raise ElectrumMessageAuthenticationError("ELECTRUM_SIGNING_KEY_UNAVAILABLE")
+    if not isinstance(key_id, str) or not key_id.strip():
+        raise ElectrumMessageAuthenticationError("ELECTRUM_SIGNING_KEY_ID_REQUIRED")
+    if not isinstance(issuer, str) or not issuer.strip():
+        raise ElectrumMessageAuthenticationError("ELECTRUM_SIGNING_ISSUER_REQUIRED")
+    if isinstance(issued_at, bool) or not isinstance(issued_at, int):
+        raise ElectrumMessageAuthenticationError("ELECTRUM_IAT_INVALID")
+    claims = {
+        "iss": issuer,
+        "iat": issued_at,
+        CONTENT_DIGEST_CLAIM: hashlib.sha256(raw_body).hexdigest(),
+    }
+    try:
+        return jwt.encode(
+            claims,
+            private_key,
+            algorithm="ES256",
+            headers={"kid": key_id, "typ": "JWT"},
+        )
+    except Exception as error:
+        raise ElectrumMessageAuthenticationError("ELECTRUM_RESPONSE_SIGNING_FAILED") from error
+
+
 def _required_text(value: Any, code: str, *, maximum: int = 256) -> str:
     if not isinstance(value, str) or not value.strip() or len(value) > maximum:
         raise ElectrumCompletionContractError(code)
@@ -279,6 +314,7 @@ __all__ = [
     "VerifiedElectrumMessage",
     "ElectrumPayShapCompletion",
     "verify_electrum_http_message_signature",
+    "sign_electrum_http_message",
     "electrum_creditor_account_fingerprint",
     "normalize_electrum_payshap_completion",
 ]
