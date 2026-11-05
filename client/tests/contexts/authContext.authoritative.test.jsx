@@ -323,6 +323,93 @@ describe('authoritative authentication state machine', () => {
     expect(persistedUser.legalPermissionsAuthoritative).toBe(true);
   });
 
+  it('restores a SYSTEM principal only through the exact EOS System Services projection', async () => {
+    window.localStorage.setItem('wilsy_auth_token', 'stored-system-token');
+    window.localStorage.setItem('token', 'stored-system-token');
+    window.localStorage.setItem('wilsy_sovereign_user', JSON.stringify({
+      id: 'WILSYAUTH-system-responder',
+      email: 'responder@example.com',
+      role: 'FORGED_TENANT_OWNER',
+      tenantId: 'FORGED-TENANT',
+      permissions: ['*'],
+    }));
+    api.get
+      .mockRejectedValueOnce(new Error('tenant workspace unavailable'))
+      .mockResolvedValueOnce({
+        data: {
+          status: 'READY',
+          authority: 'EOS_SYSTEM_SERVICES',
+          principalId: 'WILSYAUTH-system-responder',
+          scope: 'SYSTEM',
+          capabilities: [
+            'system_services:queue:read',
+            'system_services:incident:escalate',
+          ],
+          summary: { openCases: 2, securityEscalations: 1 },
+          cases: [{
+            caseId: 'CASE-1',
+            reference: 'CASE-1',
+            category: 'ACCOUNT_ACCESS',
+            status: 'OPEN',
+          }],
+        },
+      });
+
+    renderHarness();
+
+    await waitFor(() => {
+      expect(screen.getByTestId('authenticated')).toHaveTextContent('true');
+    });
+    expect(api.get).toHaveBeenNthCalledWith(1, '/auth/workspace-bootstrap', {
+      headers: { Authorization: 'Bearer stored-system-token' },
+    });
+    expect(api.get).toHaveBeenNthCalledWith(2, '/system-services/workspace-bootstrap', {
+      headers: { Authorization: 'Bearer stored-system-token' },
+    });
+    expect(screen.getByTestId('role')).toHaveTextContent('SYSTEM_SERVICES');
+    expect(screen.getByTestId('tenant-id')).toBeEmptyDOMElement();
+    expect(api.defaults.headers.common.Authorization).toBe('Bearer stored-system-token');
+    expect(window.localStorage.getItem('wilsy_active_tenant')).toBeNull();
+    expect(window.localStorage.getItem('tenantId')).toBeNull();
+    expect(JSON.parse(window.localStorage.getItem('wilsy_sovereign_user'))).toMatchObject({
+      id: 'WILSYAUTH-system-responder',
+      role: 'SYSTEM_SERVICES',
+      workspaceId: 'SYSTEM_SERVICES',
+      systemServicesWorkspace: {
+        status: 'READY',
+        authority: 'EOS_SYSTEM_SERVICES',
+        scope: 'SYSTEM',
+        capabilities: ['system_services:queue:read', 'system_services:incident:escalate'],
+      },
+    });
+    expect(JSON.parse(window.localStorage.getItem('wilsy_sovereign_user')).permissions).toBeUndefined();
+  });
+
+  it('does not use SYSTEM workspace fallback when a tenant selection is present', async () => {
+    window.localStorage.setItem('wilsy_auth_token', 'stored-system-token');
+    window.localStorage.setItem('token', 'stored-system-token');
+    window.localStorage.setItem('discoveredTenant', JSON.stringify({
+      tenantId: 'TENANT-SELECTED',
+      alias: 'selected',
+      name: 'Selected Tenant',
+    }));
+    window.localStorage.setItem('wilsy_sovereign_user', JSON.stringify({
+      id: 'WILSYAUTH-system-responder',
+      email: 'responder@example.com',
+    }));
+    api.get
+      .mockRejectedValueOnce(new Error('tenant workspace unavailable'));
+
+    renderHarness();
+
+    await waitFor(() => {
+      expect(screen.getByTestId('authenticated')).toHaveTextContent('false');
+    });
+    expect(api.get).toHaveBeenCalledTimes(1);
+    expect(window.localStorage.getItem('wilsy_auth_token')).toBeNull();
+    expect(window.localStorage.getItem('discoveredTenant')).not.toBeNull();
+  });
+
   it('projects only exact workspace branding and strips every legacy branding alias', async () => {
     const forgedBranding = {
       tenantId: 'TENANT-BROWSER',
