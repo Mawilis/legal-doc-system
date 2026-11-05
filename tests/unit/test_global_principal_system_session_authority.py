@@ -150,7 +150,7 @@ def test_system_session_issuance_fails_closed_without_authorizer():
         authority.issue_after_mfa(
             "principal-system",
             8,
-            session=SimpleNamespace(in_transaction=True),
+            session=cast(Any, SimpleNamespace(in_transaction=True)),
             now=NOW,
         )
 
