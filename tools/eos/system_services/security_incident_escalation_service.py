@@ -119,6 +119,26 @@ class SecurityIncidentEscalationService:
             principal_id=actor, session=session, limit=limit,
         )
 
+    def read_my_assignment(
+        self, *, actor_principal_id: str, assignment_id: str, session: object,
+    ) -> tuple[SecurityIncidentAssignment, SecurityIncident]:
+        actor = self._principal(actor_principal_id)
+        self._authorizer.require(
+            principal_id=actor, permission_id=PERMISSION_INCIDENT_ESCALATE, session=session,
+        )
+        assignment = self._assignments.get(assignment_id=assignment_id, session=session)
+        if assignment.assigned_to_principal_id != actor:
+            raise SecurityIncidentEscalationError("INCIDENT_ASSIGNMENT_RESPONDER_ONLY")
+        incident = self._incidents.get_by_id(
+            incident_id=assignment.incident_id, session=session,
+        )
+        if (
+            incident.tenant_id != assignment.tenant_id
+            or incident.reporter_principal_id != assignment.reporter_principal_id
+        ):
+            raise SecurityIncidentEscalationError("INCIDENT_ASSIGNMENT_SCOPE_MISMATCH")
+        return assignment, incident
+
     def _respond(
         self, *, actor_principal_id: str, assignment_id: str,
         expected_revision: int, idempotency_key: str, accepted: bool,
