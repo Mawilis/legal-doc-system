@@ -107,7 +107,7 @@ class ElectrumPayShapCompletionInboxRegistry:
             name="uq_electrum_completion_message",
         )
         collection.create_index(
-            [("provider_name", 1), ("uetr", 1), ("transaction_reference", 1)],
+            [("provider_name", 1), ("uetr", 1)],
             unique=True,
             name="uq_electrum_completion_transaction",
         )
@@ -124,7 +124,6 @@ class ElectrumPayShapCompletionInboxRegistry:
             existing = collection.find_one({
                 "provider_name": value.provider_name,
                 "uetr": value.uetr,
-                "transaction_reference": value.transaction_reference,
             }, session=session)
         if existing is not None:
             try:
