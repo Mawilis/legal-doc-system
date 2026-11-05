@@ -161,3 +161,63 @@ def test_electrum_partner_response_is_also_signed_with_body_digest():
     )
     assert verified.key_id == "wilsy-key-1"
     assert verified.content_digest == hashlib.sha256(body).hexdigest()
+
+
+def test_electrum_empty_ack_signature_omits_content_digest():
+    from tools.eos.kennel.providers.electrum_payshap_completion import sign_electrum_http_message
+
+    private, public = _keys()
+    token = sign_electrum_http_message(
+        b"",
+        private_key=private,
+        key_id="wilsy-key-1",
+        issuer="wilsy-onboarding-issuer",
+        issued_at=int(NOW.timestamp()),
+    )
+    claims = jwt.decode(
+        token, public, algorithms=["ES256"], issuer="wilsy-onboarding-issuer"
+    )
+    assert "electrum.co.za/content-digest" not in claims
+    verified = verify_electrum_http_message_signature(
+        b"",
+        token,
+        verification_keys={"wilsy-key-1": public},
+        now=NOW,
+        issuer="wilsy-onboarding-issuer",
+    )
+    assert verified.content_digest == hashlib.sha256(b"").hexdigest()
+
+
+def test_electrum_empty_ack_rejects_unnecessary_content_digest():
+    private, public = _keys()
+    token = jwt.encode(
+        {
+            "iss": "wilsy-onboarding-issuer",
+            "iat": int(NOW.timestamp()),
+            "electrum.co.za/content-digest": hashlib.sha256(b"").hexdigest(),
+        },
+        private,
+        algorithm="ES256",
+        headers={"kid": "wilsy-key-1", "typ": "JWT"},
+    )
+    with pytest.raises(ElectrumMessageAuthenticationError, match="EMPTY_BODY_DIGEST"):
+        verify_electrum_http_message_signature(
+            b"",
+            token,
+            verification_keys={"wilsy-key-1": public},
+            now=NOW,
+            issuer="wilsy-onboarding-issuer",
+        )
+
+
+def test_completion_requires_original_message_identifiers():
+    payload = _payload()
+    payload.pop("originalMessageIdentifiers")
+    verified = VerifiedElectrumMessage(
+        key_id="electrum-key-1",
+        issuer="electrum.co.za",
+        issued_at=int(NOW.timestamp()),
+        content_digest="a" * 64,
+    )
+    with pytest.raises(ElectrumCompletionContractError, match="COMPLETION_FIELDS_INVALID"):
+        normalize_electrum_payshap_completion(payload, verified_message=verified)
