@@ -242,6 +242,19 @@ def test_real_http_system_login_mfa_access_refresh_replay_logout_and_tenant_head
     assert tokens["scope"] == "SYSTEM"
     assert tokens["principal_id"] == state["principal_id"]
     assert tokens["workspace_id"] == "SYSTEM_SERVICES"
+    assert state["challenges"].count_documents({
+        "principal_id": state["principal_id"],
+        "consumed_at": {"$ne": None},
+    }) == 1
+    assert state["sessions"].count_documents({
+        "principal_id": state["principal_id"],
+        "revoked_at": None,
+    }) == 1
+    assert state["refresh_tokens"].count_documents({
+        "principal_id": state["principal_id"],
+        "consumed_at": None,
+        "revoked_at": None,
+    }) == 1
 
     headers = {
         "Authorization": "Bearer " + tokens["access_token"],
