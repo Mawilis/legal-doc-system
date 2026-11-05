@@ -1767,6 +1767,8 @@ def test_real_mongo_independent_process_restart_durability(
     ]
 
     code = (
+        "from tools.eos.kernel.db import connect_db; "
+        "ok, message = connect_db(); assert ok, message; "
         "from tools.eos.saas.billing.plan_registry "
         "import PlanRegistry; "
         f"p=PlanRegistry.get('{plan.plan_id}', "
@@ -1782,11 +1784,8 @@ def test_real_mongo_independent_process_restart_durability(
         os.environ
     )
 
-    environment[
-        "WILSY_PLAN_MONGO_URI"
-    ] = (
-        mongo_context.database_uri
-    )
+    environment["MONGODB_URI"] = mongo_context.database_uri
+    environment.pop("WILSY_PLAN_MONGO_URI", None)
 
     environment.pop(
         "WILSY_PLAN_MONGO_DATABASE",
@@ -1942,10 +1941,8 @@ def test_real_mongo_source_has_no_in_memory_or_kernel_db_authority() -> None:
         )
     )
 
-    assert (
-        "kernel.db"
-        not in source
-    )
+    assert "from tools.eos.kernel.db import get_database" in source
+    assert "WILSY_PLAN_MONGO_URI" not in source
 
     assert (
         "cls._plans"
