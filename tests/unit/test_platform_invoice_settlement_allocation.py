@@ -116,7 +116,7 @@ def _orchestration_fixture(monkeypatch, *, paid_minor=0, amount_minor=4000):
     monkeypatch.setattr(module.FinancialExecutionFactRegistry, "get", lambda *a, **k: fact)
     monkeypatch.setattr(module.PlatformBillingFinancialExecutionTruthRegistry, "get", lambda *a, **k: platform_truth)
     monkeypatch.setattr(module.PlatformBillingReleaseAuthorizationRegistry, "get", lambda *a, **k: authorization)
-    monkeypatch.setattr(module.PlatformInvoice, "from_dict", lambda doc: invoice)
+    monkeypatch.setattr(module, "PlatformInvoice", SimpleNamespace(from_dict=lambda doc: invoice))
     monkeypatch.setattr(module, "to_minor_units", lambda value, currency: int(round(value * 100)))
     args = dict(
         tenant_id="tenant-a", observation_id="observation-1",
