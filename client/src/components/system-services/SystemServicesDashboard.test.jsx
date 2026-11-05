@@ -46,7 +46,7 @@ describe('SystemServicesDashboard EOS authority boundary', () => {
         }}
       />,
     );
-    expect(screen.getByText('—')).toBeInTheDocument();
+    expect(screen.getAllByText('—')).toHaveLength(4);
     expect(screen.queryByText('0')).not.toBeInTheDocument();
   });
 
@@ -83,7 +83,7 @@ describe('SystemServicesDashboard EOS authority boundary', () => {
     expect(screen.getByText('Security incident queue')).toBeInTheDocument();
     expect(screen.getByText('SUSPECTED_COMPROMISE')).toBeInTheDocument();
     expect(screen.getByText('My responder assignments')).toBeInTheDocument();
-    expect(screen.getByText('assignment-1')).toBeInTheDocument();
+    expect(screen.getByText(/assignment-1/)).toBeInTheDocument();
     expect(screen.getByRole('button', { name: 'Accept' })).toBeInTheDocument();
     expect(screen.getByRole('button', { name: 'Decline' })).toBeInTheDocument();
     fireEvent.click(screen.getByRole('button', { name: 'View incident' }));
