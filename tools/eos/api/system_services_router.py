@@ -18,11 +18,18 @@ from pydantic import BaseModel, ConfigDict, Field, StrictInt
 from tools.eos.auth.authentication import get_current_identity
 from tools.eos.auth.identity import SovereignIdentity
 from tools.eos.auth.principal_status import PrincipalStatus
+from tools.eos.auth.principal_authority_repository import PrincipalAuthorityRepository
+from tools.eos.auth.tenant_access import get_tenant_membership_repository
+from tools.eos.auth.tenant_membership import TenantMembershipStatus
 from tools.eos.system_services.eos_authorizer import (
     SystemServicesAuthorizationError,
     SystemServicesAuthorizationUnavailable,
 )
-from tools.eos.system_services.support_case import SupportCaseScope, SupportCaseStatus
+from tools.eos.system_services.support_case import (
+    SupportCaseCategory,
+    SupportCaseScope,
+    SupportCaseStatus,
+)
 from tools.eos.system_services.support_case_service import (
     SupportCaseActorContext,
     SupportCaseApplicationError,
@@ -94,6 +101,172 @@ def _run_transaction(callback: Callable[[ClientSession], _Result]) -> _Result:
         # No exception text, Mongo detail, identity, or case content reaches the caller.
         raise HTTPException(status_code=503, detail="System Services operation is unavailable.") from error
 
+
+
+
+
+class SelfServiceCaseCreateRequest(BaseModel):
+    """Strict non-secret account-support intake; actor and tenant are never inputs."""
+    model_config = ConfigDict(extra="forbid", frozen=True)
+    category: SupportCaseCategory
+
+
+def _tenant_runtime(request: Request) -> SupportCaseRegistry:
+    """Resolve only the case store; tenant self-service requires no staff authority."""
+    if getattr(request.app.state, "system_services_case_indexes_ready", False) is not True:
+        raise HTTPException(status_code=503, detail="System Services storage is not ready.")
+    registry = getattr(request.app.state, "system_services_case_registry", None)
+    if type(registry) is not SupportCaseRegistry:
+        raise HTTPException(status_code=503, detail="System Services storage is not configured.")
+    return registry
+
+
+def _require_current_tenant_actor(
+    *,
+    identity: SovereignIdentity,
+    tenant_id: str,
+    session: ClientSession,
+) -> SupportCaseActorContext:
+    """Re-prove ACTIVE principal and exact ACTIVE membership in the write/read transaction."""
+    if identity.status is not PrincipalStatus.ACTIVE:
+        raise HTTPException(status_code=401, detail="Authenticated principal required.")
+    if not isinstance(tenant_id, str) or not tenant_id or tenant_id != tenant_id.strip():
+        raise HTTPException(status_code=403, detail="Tenant membership required.")
+    try:
+        principal = PrincipalAuthorityRepository().resolve(
+            identity.identity_id, session=session
+        )
+        if principal.status is not PrincipalStatus.ACTIVE:
+            raise HTTPException(status_code=401, detail="Authenticated principal required.")
+        membership = get_tenant_membership_repository().resolve(
+            identity.identity_id, tenant_id, session=session
+        )
+        if (
+            membership.principal_id != identity.identity_id
+            or membership.tenant_id != tenant_id
+            or membership.status is not TenantMembershipStatus.ACTIVE
+        ):
+            raise HTTPException(status_code=403, detail="Tenant membership required.")
+    except HTTPException:
+        raise
+    except Exception as error:
+        # Absence is denied; repository/infrastructure failures are not converted to grants.
+        from tools.eos.auth.principal_authority_repository import PrincipalAuthorityNotFoundError
+        from tools.eos.auth.tenant_membership_repository import TenantMembershipNotFoundError
+        if isinstance(error, (PrincipalAuthorityNotFoundError, TenantMembershipNotFoundError)):
+            raise HTTPException(status_code=403, detail="Tenant membership required.") from error
+        raise HTTPException(status_code=503, detail="Tenant authority is unavailable.") from error
+    return SupportCaseActorContext(
+        principal_id=identity.identity_id,
+        scope=SupportCaseScope.TENANT,
+        tenant_id=tenant_id,
+    )
+
+
+def _project_tenant_case(case):
+    """Expose only the authenticated principal's own non-secret case status."""
+    return {
+        "caseId": case.case_id,
+        "category": case.category.value,
+        "status": case.status.value,
+        "revision": case.revision,
+        "createdAt": case.created_at.isoformat(),
+        "updatedAt": case.updated_at.isoformat(),
+    }
+
+
+@router.post("/self-service/cases", status_code=201)
+def create_own_support_case(
+    payload: SelfServiceCaseCreateRequest,
+    request: Request,
+    tenant_id: Annotated[str, Header(alias="X-Tenant-ID", min_length=1, max_length=256)],
+    idempotency_key: Annotated[str, Header(alias="Idempotency-Key", min_length=1, max_length=256)],
+    identity: SovereignIdentity = Depends(get_current_identity),
+):
+    """Create one authenticated user's own tenant-scoped support case."""
+    registry = _tenant_runtime(request)
+    service = SupportCaseApplicationService(
+        registry=registry,
+        authorizer=cast(SystemServicesAuthorizer, object()),
+    )
+    return _run_transaction(
+        lambda session: _project_tenant_case(
+            service.create_own_case(
+                actor=_require_current_tenant_actor(
+                    identity=identity, tenant_id=tenant_id, session=session
+                ),
+                category=payload.category,
+                idempotency_key=idempotency_key,
+                session=session,
+            )
+        )
+    )
+
+
+@router.get("/self-service/cases")
+def list_own_support_cases(
+    request: Request,
+    tenant_id: Annotated[str, Header(alias="X-Tenant-ID", min_length=1, max_length=256)],
+    limit: Annotated[int, Query(ge=1, le=100)] = 50,
+    identity: SovereignIdentity = Depends(get_current_identity),
+):
+    """List only cases owned by the authenticated principal in the exact tenant."""
+    registry = _tenant_runtime(request)
+    service = SupportCaseApplicationService(
+        registry=registry,
+        authorizer=cast(SystemServicesAuthorizer, object()),
+    )
+    def read(session):
+        actor = _require_current_tenant_actor(identity=identity, tenant_id=tenant_id, session=session)
+        return [_project_tenant_case(item) for item in service.list_own_cases(
+            actor=actor, limit=limit, session=session
+        )]
+    return _run_transaction(read)
+
+
+@router.get("/self-service/cases/{case_id}")
+def read_own_support_case(
+    case_id: str,
+    request: Request,
+    tenant_id: Annotated[str, Header(alias="X-Tenant-ID", min_length=1, max_length=256)],
+    identity: SovereignIdentity = Depends(get_current_identity),
+):
+    """Read only the authenticated principal's own case status."""
+    registry = _tenant_runtime(request)
+    def read(session):
+        actor = _require_current_tenant_actor(identity=identity, tenant_id=tenant_id, session=session)
+        case = registry.get(
+            case_id=case_id, scope=SupportCaseScope.TENANT,
+            tenant_id=tenant_id, session=session,
+        )
+        if case.principal_id != actor.principal_id:
+            raise HTTPException(status_code=404, detail="Support case not found.")
+        return _project_tenant_case(case)
+    return _run_transaction(read)
+
+
+@router.get("/self-service/cases/{case_id}/events")
+def read_own_support_case_events(
+    case_id: str,
+    request: Request,
+    tenant_id: Annotated[str, Header(alias="X-Tenant-ID", min_length=1, max_length=256)],
+    identity: SovereignIdentity = Depends(get_current_identity),
+):
+    """Read append-only history only after principal ownership is proven."""
+    registry = _tenant_runtime(request)
+    def read(session):
+        actor = _require_current_tenant_actor(identity=identity, tenant_id=tenant_id, session=session)
+        case = registry.get(
+            case_id=case_id, scope=SupportCaseScope.TENANT,
+            tenant_id=tenant_id, session=session,
+        )
+        if case.principal_id != actor.principal_id:
+            raise HTTPException(status_code=404, detail="Support case not found.")
+        return [event.to_document() for event in registry.list_events(
+            case_id=case_id, scope=SupportCaseScope.TENANT,
+            tenant_id=tenant_id, session=session,
+        )]
+    return _run_transaction(read)
 
 
 @router.get("/workspace-bootstrap")
