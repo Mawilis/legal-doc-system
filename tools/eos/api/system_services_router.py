@@ -1,10 +1,13 @@
-"""Authenticated SYSTEM-scoped support-case API routes.
+"""Authenticated tenant self-service and SYSTEM support-case API routes.
 
-Principal identity comes from EOS ACCESS-token verification. Tenant claims,
-browser roles, request actor IDs and request permission lists are never used
-for SYSTEM authorization; each operation re-proves current SYSTEM assignment
-and active PLATFORM workforce evidence in the same Mongo transaction as the
-case read/write.
+Tenant self-service derives the principal from EOS ACCESS-token verification,
+treats X-Tenant-ID only as a requested scope, and revalidates ACTIVE principal
+plus exact ACTIVE membership in the same caller-owned Mongo transaction as
+each case or incident read/write. Tenant users can access only their own
+records. SYSTEM operations independently re-prove current SYSTEM assignment
+and active PLATFORM workforce evidence in the same transaction. Incident
+intake is append-only and grants no containment, recovery, or account-action
+authority.
 """
 from __future__ import annotations
 
