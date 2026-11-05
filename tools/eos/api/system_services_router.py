@@ -665,7 +665,9 @@ class SecurityIncidentResponseApprovalRequest(BaseModel):
 
 class SecurityIncidentResponseExecutionRequest(BaseModel):
     model_config = ConfigDict(extra="forbid", frozen=True)
-    expected_revision: StrictInt = Field(ge=1)
+    # Revision zero is a valid stale precondition; the approved execution route
+    # returns 409 from its revision guard rather than a schema-level 422.
+    expected_revision: StrictInt = Field(ge=0)
 
 
 class SecurityIncidentPasswordResetExecutionRequest(BaseModel):
