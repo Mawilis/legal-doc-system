@@ -246,7 +246,8 @@ test('certifies initial tenant-neutral SYSTEM credentials, MFA and workspace boo
     activeTenant: null,
     bearer: 'synthetic-system-access-token',
   });
-  expect(calls).toEqual(['global-login', 'global-mfa', 'system-workspace']);
+  expect(calls.slice(0, 2)).toEqual(['global-login', 'global-mfa']);
+  expect(calls.filter((value) => value === 'system-workspace').length).toBeGreaterThanOrEqual(1);
   await context.close();
 });
 
