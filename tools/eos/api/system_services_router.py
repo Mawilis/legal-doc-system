@@ -700,7 +700,7 @@ def request_security_incident_response(
         decision_id = "response-" + sha3_256(
             (incident.incident_id + "\\0" + actor.principal_id + "\\0" + idempotency_key).encode("utf-8")
         ).hexdigest()
-        existing = decision_registry.get(decision_id, session=session)
+        existing = decision_registry.find(decision_id, session=session)
         requested_at = existing.requested_at if existing is not None else datetime.now(timezone.utc)
         decision = SecurityIncidentResponseDecision(
             decision_id=decision_id,
