@@ -210,9 +210,9 @@ async function requireEosWorkspaceIdentity(req, res, next) {
   }
 
   if (!result?.ok) {
-    return res.status(result.status).json({
+    return res.status(result?.status || 503).json({
       success: false,
-      error: result.code,
+      error: result?.code || 'AUTHORITY_UNAVAILABLE',
     });
   }
 
