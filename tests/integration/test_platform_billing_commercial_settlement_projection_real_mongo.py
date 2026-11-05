@@ -594,11 +594,17 @@ def _run_atomic_settlement(client, db, state, evidence, execution_truth_id, plat
                     "tenant_id": state["tenant"],
                     "observation_id": observation.observation_id,
                 }) is not None,
-                "settlement_evidence": settlement_evidence.find_one({
-                    "tenant_id": state["tenant"],
-                    "settlement_evidence_id": settlement.settlement_evidence_id,
-                    "fingerprint": settlement.fingerprint,
-                }) is not None,
+                "settlement_evidence": (
+                    (persisted_settlement := settlement_evidence.find_one({
+                        "tenant_id": state["tenant"],
+                        "settlement_evidence_id": settlement.settlement_evidence_id,
+                    })) is not None
+                    and PlatformBillingFinancialSettlementEvidenceRegistry.get(
+                        state["tenant"],
+                        settlement.settlement_evidence_id,
+                        settlement_evidence,
+                    ).fingerprint == settlement.fingerprint
+                ),
                 "commercial_projection": projections.find_one({
                     "tenant_id": state["tenant"],
                     "commercial_settlement_projection_id": projection.commercial_settlement_projection_id,
