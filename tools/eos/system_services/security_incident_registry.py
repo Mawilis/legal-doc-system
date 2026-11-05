@@ -139,6 +139,16 @@ class SecurityIncidentRegistry:
                 value = _hydrate(dict(prior))
                 if value.incident_id != incident.incident_id or value.category is not incident.category:
                     raise SecurityIncidentConflictError("SECURITY_INCIDENT_IDEMPOTENCY_CONFLICT")
+                prior_event = self._events.find_one(
+                    {"incident_id": value.incident_id, "event_type": "INCIDENT_REPORTED"},
+                    session=session,
+                )
+                if (
+                    prior_event is None
+                    or prior_event.get("fingerprint") != event.fingerprint
+                    or prior_event.get("actor_principal_id") != value.reporter_principal_id
+                ):
+                    raise SecurityIncidentPersistenceError("SECURITY_INCIDENT_INITIAL_EVENT_MISSING_OR_INVALID")
                 return value
             self._incidents.insert_one(_doc(incident), session=session)
             self._events.insert_one(_event_doc(event), session=session)
