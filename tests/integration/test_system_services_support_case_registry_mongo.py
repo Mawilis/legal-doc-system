@@ -468,7 +468,8 @@ def test_authenticated_security_incident_intake_is_sanitized_append_only_and_ide
     from tools.eos.api import system_services_router
     from tools.eos.auth.identity import SovereignIdentity
     from tools.eos.system_services.security_incident_registry import (
-        COLLECTION, EVENT_COLLECTION, SecurityIncidentRegistry,
+        COLLECTION, EVENT_COLLECTION, PLATFORM_AUDIT_COLLECTION,
+        PLATFORM_OUTBOX_COLLECTION, SecurityIncidentRegistry,
     )
 
     incident_registry = SecurityIncidentRegistry(
@@ -531,6 +532,8 @@ def test_authenticated_security_incident_intake_is_sanitized_append_only_and_ide
     assert database[EVENT_COLLECTION].count_documents(
         {"event_type": "INCIDENT_REPORTED"}
     ) == 1
+    assert database[PLATFORM_AUDIT_COLLECTION].count_documents({"target_id": first.json()["incidentId"]}) == 1
+    assert database[PLATFORM_OUTBOX_COLLECTION].count_documents({"target_id": first.json()["incidentId"], "status": "PENDING"}) == 1
     persisted = database[COLLECTION].find_one({"tenant_id": tenant_id})
     assert persisted is not None
     assert "password" not in persisted and "secret" not in persisted
@@ -546,7 +549,8 @@ def test_security_incident_registry_rolls_back_incident_and_event_together(
         SecurityIncident, SecurityIncidentCategory, SecurityIncidentEvent,
     )
     from tools.eos.system_services.security_incident_registry import (
-        COLLECTION, EVENT_COLLECTION, SecurityIncidentRegistry,
+        COLLECTION, EVENT_COLLECTION, PLATFORM_AUDIT_COLLECTION,
+        PLATFORM_OUTBOX_COLLECTION, SecurityIncidentRegistry,
     )
 
     client, database, _ = mongo_case_registry
@@ -576,7 +580,8 @@ def test_security_incident_registry_rolls_back_incident_and_event_together(
     with client.start_session() as session:
         with pytest.raises(RuntimeError, match="INCIDENT_ABORT_CERTIFICATE"):
             with session.start_transaction():
-                registry.create_or_replay(incident, event, session=session)
+                persisted = registry.create_or_replay(incident, event, session=session)
+                registry.record_platform_audit(incident=persisted, event=event, session=session)
                 raise RuntimeError("INCIDENT_ABORT_CERTIFICATE")
     assert database[COLLECTION].count_documents(
         {"incident_id": incident.incident_id}
@@ -584,6 +589,8 @@ def test_security_incident_registry_rolls_back_incident_and_event_together(
     assert database[EVENT_COLLECTION].count_documents(
         {"incident_id": incident.incident_id}
     ) == 0
+    assert database[PLATFORM_AUDIT_COLLECTION].count_documents({"target_id": incident.incident_id}) == 0
+    assert database[PLATFORM_OUTBOX_COLLECTION].count_documents({"target_id": incident.incident_id}) == 0
 
 
 
