@@ -12,6 +12,7 @@ on:
       - "tests/integration/test_billing_registry_real_mongo.py"
       - "tests/integration/test_billing_registry_financial_truth_firewall_real_mongo.py"
       - "tests/integration/test_financial_execution_reconciliation_mongo.py"
+      - "tests/integration/test_payshap_webhook_evidence_mongo.py"
       - "tests/integration/test_payshap_webhook_reconciliation_host_mongo.py"
       - "tests/integration/test_subscription_registry_real_mongo.py"
       - "tests/integration/test_subscription_registry_transaction_injection_real_mongo.py"
@@ -76,4 +77,4 @@ jobs:
           python -m pytest -q tests/unit/test_billing_registry.py tests/unit/test_commercial_receivable_dunning.py
       - name: Run billing, subscription and financial-truth replica-set certification
         run: |
-          python -m pytest -q tests/integration/test_billing_registry_real_mongo.py tests/integration/test_billing_registry_financial_truth_firewall_real_mongo.py tests/integration/test_subscription_registry_real_mongo.py tests/integration/test_subscription_registry_transaction_injection_real_mongo.py tests/integration/test_financial_execution_reconciliation_mongo.py tests/integration/test_payshap_webhook_reconciliation_host_mongo.py
+          python -m pytest -q tests/integration/test_billing_registry_real_mongo.py tests/integration/test_billing_registry_financial_truth_firewall_real_mongo.py tests/integration/test_subscription_registry_real_mongo.py tests/integration/test_subscription_registry_transaction_injection_real_mongo.py tests/integration/test_financial_execution_reconciliation_mongo.py tests/integration/test_payshap_webhook_evidence_mongo.py tests/integration/test_payshap_webhook_reconciliation_host_mongo.py
