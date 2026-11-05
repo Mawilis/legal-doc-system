@@ -424,6 +424,7 @@ api.interceptors.request.use(
       || /^\/auth\/verify-token$/i.test(config.url)
       || /^\/auth\/discover$/i.test(config.url)
       || /^\/auth\/login$/i.test(config.url)
+      || /^\/auth\/global\/(?:login|verify-mfa|refresh)$/i.test(config.url)
       || /^\/auth\/sovereign-login$/i.test(config.url)
       || /^\/auth\/register$/i.test(config.url)
       || /^\/auth\/refresh$/i.test(config.url)
