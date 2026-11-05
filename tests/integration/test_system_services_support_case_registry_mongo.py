@@ -650,6 +650,7 @@ def test_incident_responder_assignment_requires_separate_permissions_and_accepta
             self.calls.append((principal_id, permission_id))
             allowed = {
                 (triage_actor, "system_services:case:triage"),
+                (triage_actor, "system_services:incident:escalate"),
                 (responder, "system_services:incident:escalate"),
             }
             if (principal_id, permission_id) not in allowed:
