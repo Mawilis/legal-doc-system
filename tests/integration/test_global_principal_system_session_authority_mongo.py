@@ -12,6 +12,7 @@ from pymongo import MongoClient
 from tools.eos.auth.global_principal_system_session_authority import (
     CHALLENGE_COLLECTION,
     SESSION_COLLECTION,
+    REFRESH_COLLECTION,
     GlobalPrincipalSystemMfaChallengeService,
     GlobalPrincipalSystemSessionAuthority,
     GlobalPrincipalSystemSessionRejected,
@@ -50,10 +51,11 @@ def test_system_mfa_challenge_and_session_issue_revoke_and_rollback_are_atomic(m
         credentials = database["principal_credentials"]
         challenges = database[CHALLENGE_COLLECTION]
         sessions = database[SESSION_COLLECTION]
+        refresh_tokens = database[REFRESH_COLLECTION]
         PrincipalAuthorityRepository.ensure_indexes(principals)
         PrincipalCredentialRepository.ensure_indexes(credentials)
         GlobalPrincipalSystemMfaChallengeService.ensure_indexes(challenges)
-        GlobalPrincipalSystemSessionAuthority.ensure_indexes(sessions)
+        GlobalPrincipalSystemSessionAuthority.ensure_indexes(sessions, refresh_tokens)
         PrincipalAuthorityRepository.create(
             PrincipalAuthority(principal_id, PrincipalStatus.ACTIVE, 0),
             principals,
@@ -71,6 +73,7 @@ def test_system_mfa_challenge_and_session_issue_revoke_and_rollback_are_atomic(m
         challenge_service = GlobalPrincipalSystemMfaChallengeService(collection=challenges)
         authority = GlobalPrincipalSystemSessionAuthority(
             sessions=sessions,
+            refresh_tokens=refresh_tokens,
             principal_collection=principals,
             credential_collection=credentials,
             authorizer=_CurrentSystemAuthorizer(),
@@ -111,6 +114,29 @@ def test_system_mfa_challenge_and_session_issue_revoke_and_rollback_are_atomic(m
         assert session_row["principal_id"] == principal_id
         assert session_row["credential_revision"] == 3
         assert session_row["revoked_at"] is None
+        refresh_row = refresh_tokens.find_one({
+            "session_reference": receipt.session_reference,
+            "consumed_at": None,
+            "revoked_at": None,
+        })
+        assert refresh_row is not None
+        assert receipt.refresh_token.startswith("sysrefresh_")
+
+        with client.start_session() as session:
+            session.start_transaction()
+            rotated = authority.rotate_refresh_token(
+                receipt.refresh_token,
+                session=session,
+                now=now,
+            )
+            session.commit_transaction()
+        assert rotated.refresh_token.startswith("sysrefresh_")
+        assert rotated.refresh_token != receipt.refresh_token
+        assert refresh_tokens.count_documents({
+            "session_reference": receipt.session_reference,
+            "consumed_at": None,
+            "revoked_at": None,
+        }) == 1
 
         with client.start_session() as session:
             session.start_transaction()
