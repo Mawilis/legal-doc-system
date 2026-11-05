@@ -1,4 +1,5 @@
 from datetime import datetime, timedelta, timezone
+from types import SimpleNamespace
 from unittest.mock import Mock
 
 import pytest
@@ -57,23 +58,26 @@ def test_password_reset_delegates_only_approved_decision_to_canonical_service():
     result = value.execute_password_reset(
         decision,
         actor_principal_id="independent-executor",
-        session="caller-owned-transaction",
         recovery_token="transient-single-use-capability",
         new_password="Transient-Strong-Passphrase-2026!",
         context_terms=("WILSY",),
     )
 
     assert result == "canonical-receipt"
+    value._password_reset.reset_password.assert_called_once()
+    reset_kwargs = value._password_reset.reset_password.call_args.kwargs
+    assert reset_kwargs["tenant_id"] == "tenant-1"
+    assert reset_kwargs["recovery_token"] == "transient-single-use-capability"
+    assert reset_kwargs["new_password"] == "Transient-Strong-Passphrase-2026!"
+    assert reset_kwargs["context_terms"] == ("WILSY",)
+    reset_kwargs["transaction_guard"](
+        "caller-owned-transaction",
+        SimpleNamespace(tenant_id="tenant-1", principal_id="target-principal"),
+    )
     value._authorizer.require.assert_called_once_with(
         principal_id="independent-executor",
         permission_id="system_services:incident:response:execute",
         session="caller-owned-transaction",
-    )
-    value._password_reset.reset_password.assert_called_once_with(
-        tenant_id="tenant-1",
-        recovery_token="transient-single-use-capability",
-        new_password="Transient-Strong-Passphrase-2026!",
-        context_terms=("WILSY",),
     )
 
 
