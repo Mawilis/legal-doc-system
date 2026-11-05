@@ -303,3 +303,27 @@ The adapter is not exposed through an authenticated route yet. Route activation
 remains gated on an independently issued governance permission and a verified
 approver workforce/assignment source. The record and adapter are therefore
 development foundations, not an operational containment switch.
+
+
+### Independent IAM gates for response governance
+
+The canonical permission namespace now includes two explicit SYSTEM workforce
+permissions:
+
+- `system_services:incident:response:decide` — approve or reject a response
+  proposal under independent review.
+- `system_services:incident:response:execute` — execute one approved response
+  through a canonical EOS service.
+
+Both permissions require current SYSTEM assignment and active PLATFORM
+workforce evidence. The response decision service separately requires the
+existing `system_services:incident:escalate` permission to request action,
+binds the proposed target to the reporter principal on the exact incident, and
+requires the new decision permission for approval/rejection. The requester and
+approver must be different principals.
+
+The canonical execution adapter now also requires the response-execute
+permission, in addition to the canonical D12 revocation command authority for
+permission revocation. The permission namespace additions do not assign these
+permissions to anyone. They are vocabulary only; independent assignment,
+approver roster, and route-level governance remain gated.
