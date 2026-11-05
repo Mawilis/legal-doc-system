@@ -54,6 +54,36 @@ from pymongo.write_concern import WriteConcern
 from tools.eos.auth.principal_authority import PrincipalAuthority
 from tools.eos.auth.principal_authority_repository import PrincipalAuthorityRepository
 from tools.eos.auth.principal_status import PrincipalStatus
+from hashlib import sha3_256
+
+from tools.eos.auth.system_permission_assignment import SystemPermissionAssignment
+from tools.eos.auth.system_permission_assignment_registry import SystemPermissionAssignmentRegistry
+from tools.eos.workforce.domain.workforce_relationship import (
+    WorkforceRelationship,
+    WorkforceRelationshipStatus,
+    WorkforceRelationshipType,
+    WorkforceScopeKind,
+)
+from tools.eos.workforce.registry import workforce_relationship_registry
+from tools.eos.system_services.runtime import build_system_services_runtime
+from tools.eos.system_services.security_incident import (
+    SecurityIncident,
+    SecurityIncidentCategory,
+    SecurityIncidentEvent,
+)
+from tools.eos.system_services.security_incident_registry import (
+    COLLECTION as SYSTEM_INCIDENT_COLLECTION,
+    EVENT_COLLECTION as SYSTEM_INCIDENT_EVENT_COLLECTION,
+    SecurityIncidentRegistry,
+)
+from tools.eos.system_services.security_incident_assignment_registry import (
+    COLLECTION as SYSTEM_INCIDENT_ASSIGNMENT_COLLECTION,
+    EVENT_COLLECTION as SYSTEM_INCIDENT_ASSIGNMENT_EVENT_COLLECTION,
+    SecurityIncidentAssignmentRegistry,
+)
+from tools.eos.system_services.security_incident_escalation_service import (
+    SecurityIncidentEscalationService,
+)
 from tools.eos.auth.role_assignment import (
     RoleAssignmentAuthority,
     RoleAssignmentStatus,
@@ -132,7 +162,8 @@ from tools.eos.saas.domain.tenant_branding_profile_selection import (
 
 
 DEFAULT_URI = "mongodb://127.0.0.1:27027/?replicaSet=wilsyVendorCertRS"
-STATE_VERSION = "v1.3.0-OWNER-COMMERCIAL-BROWSER-CERT-STATE"
+STATE_VERSION = "v1.4.0-SYSTEM-SERVICES-BROWSER-CERT-STATE"
+SYSTEM_WORKFORCE_SCOPE_ID = "browser-cert-platform-workforce"
 BROWSER_CERT_DATABASE_PREFIX = "wilsy_l8_8m_r3_"
 BRANDING_EVIDENCE_FINGERPRINT = "f" * 128
 
@@ -412,6 +443,26 @@ def seed(state_path: Path) -> None:
         )
         registry = AuthRegistry()
         actors: dict[str, dict[str, str]] = {}
+        system_actors: dict[str, dict[str, str]] = {}
+        for key, last_name in (("system_triage", "SystemTriage"), ("system_responder", "SystemResponder")):
+            email = f"browser-{key}-{suffix}@example.com"
+            user = registry.register_user(
+                email=email,
+                password=f"Bcert-{key}-{suffix[:12]}!",
+                firstName="Synthetic",
+                lastName=last_name,
+                role="SYSTEM_SERVICES",
+                tenantId=tenant_id,
+            )
+            database["users"].update_one(
+                {"user_id": user.id},
+                {"$set": {"mfaRegistered": True}},
+            )
+            system_actors[key] = {
+                "principal_id": user.id,
+                "email": email,
+                "grant_role": "SYSTEM_SERVICES",
+            }
         for key, grant_role, business_role, last_name in actor_specs:
             email = f"browser-{key}-{suffix}@example.com"
             user = registry.register_user(
@@ -453,6 +504,22 @@ def seed(state_path: Path) -> None:
             "branding_profile_current": database[branding_profile_registry.CURRENT_COLLECTION],
             "branding_assets": database[branding_asset_registry.COLLECTION],
         }
+        permission_assignment_registry = SystemPermissionAssignmentRegistry(
+            database["system_permission_assignments"]
+        )
+        permission_assignment_registry.ensure_indexes()
+        workforce_collection = database[workforce_relationship_registry.COLLECTION_NAME]
+        workforce_relationship_registry.ensure_indexes(workforce_collection)
+        incident_registry = SecurityIncidentRegistry(
+            incidents=database[SYSTEM_INCIDENT_COLLECTION],
+            events=database[SYSTEM_INCIDENT_EVENT_COLLECTION],
+        )
+        incident_registry.ensure_indexes()
+        incident_assignment_registry = SecurityIncidentAssignmentRegistry(
+            assignments=database[SYSTEM_INCIDENT_ASSIGNMENT_COLLECTION],
+            events=database[SYSTEM_INCIDENT_ASSIGNMENT_EVENT_COLLECTION],
+        )
+        incident_assignment_registry.ensure_indexes()
         PrincipalAuthorityRepository.ensure_indexes(collections["principal"])
         TenantMembershipRepository.ensure_indexes(collections["membership"])
         TenantBusinessRoleRepository.ensure_indexes(collections["business"])
@@ -488,6 +555,49 @@ def seed(state_path: Path) -> None:
                 PrincipalAuthorityRepository.create(
                     PrincipalAuthority(principal_id, PrincipalStatus.ACTIVE, 0),
                     collections["principal"],
+                    session=session,
+                )
+            for actor in system_actors.values():
+                PrincipalAuthorityRepository.create(
+                    PrincipalAuthority(actor["principal_id"], PrincipalStatus.ACTIVE, 0),
+                    collections["principal"],
+                    session=session,
+                )
+            for key, permission_ids in (
+                ("system_triage", ("system_services:queue:read", "system_services:case:triage")),
+                ("system_responder", ("system_services:queue:read", "system_services:incident:escalate")),
+            ):
+                actor = system_actors[key]
+                principal_id = actor["principal_id"]
+                for permission_id in permission_ids:
+                    permission_assignment_registry.create_or_replay(
+                        SystemPermissionAssignment.assign(
+                            assignment_id=f"browser-system-permission-{key}-{permission_id.replace(':', '-')}-{suffix}",
+                            principal_id=principal_id,
+                            permission_id=permission_id,
+                            assigned_by_principal_id="browser-cert-independent-iam-issuer",
+                            assigned_at=now,
+                            assignment_evidence_reference=f"browser-cert-approved:{key}:{permission_id}:{suffix}",
+                        ),
+                        idempotency_key=f"browser-cert:{key}:{permission_id}:{suffix}",
+                        session=session,
+                    )
+                workforce_relationship_registry.persist_revision(
+                    WorkforceRelationship(
+                        relationship_id=f"browser-workforce-{key}-{suffix}",
+                        revision=1,
+                        scope_kind=WorkforceScopeKind.PLATFORM,
+                        scope_id=SYSTEM_WORKFORCE_SCOPE_ID,
+                        principal_id=principal_id,
+                        relationship_type=WorkforceRelationshipType.EMPLOYEE,
+                        status=WorkforceRelationshipStatus.ACTIVE,
+                        effective_from=now,
+                        effective_until=None,
+                        status_effective_at=now,
+                        reason_reference=f"browser-cert-workforce-approved:{key}:{suffix}",
+                        supersedes_fingerprint=None,
+                    ),
+                    collection=workforce_collection,
                     session=session,
                 )
                 TenantMembershipRepository.insert(
@@ -606,6 +716,54 @@ def seed(state_path: Path) -> None:
                 collections["screening"],
                 session=session,
             )
+            # Create a synthetic tenant-reported incident and assign it through
+            # the same EOS authorizer/service used by authenticated HTTP routes.
+            reporter = actors["partner"]["principal_id"]
+            triage_principal = system_actors["system_triage"]["principal_id"]
+            responder_principal = system_actors["system_responder"]["principal_id"]
+            incident_fingerprint = sha3_256(
+                f"browser-incident:{suffix}".encode("utf-8")
+            ).hexdigest()
+            incident_id = f"browser-incident-{suffix}"
+            incident = SecurityIncident(
+                incident_id=incident_id,
+                tenant_id=tenant_id,
+                reporter_principal_id=reporter,
+                idempotency_fingerprint=incident_fingerprint,
+                category=SecurityIncidentCategory.SUSPECTED_ACCOUNT_COMPROMISE,
+                observed_at=now,
+                received_at=now,
+            )
+            incident_event = SecurityIncidentEvent(
+                event_id=f"browser-incident-event-{suffix}",
+                incident_id=incident_id,
+                tenant_id=tenant_id,
+                actor_principal_id=reporter,
+                event_type="INCIDENT_REPORTED",
+                occurred_at=now,
+                fingerprint=sha3_256(f"browser-incident-event:{suffix}".encode("utf-8")).hexdigest(),
+            )
+            incident_registry.create_or_replay(incident, incident_event, session=session)
+            incident_registry.record_platform_audit(
+                incident=incident, event=incident_event, session=session,
+            )
+            _, system_authorizer = build_system_services_runtime(
+                database,
+                platform_workforce_scope_id=SYSTEM_WORKFORCE_SCOPE_ID,
+            )
+            escalation = SecurityIncidentEscalationService(
+                incidents=incident_registry,
+                assignments=incident_assignment_registry,
+                authorizer=system_authorizer,
+                clock=lambda: now,
+            )
+            seeded_assignment = escalation.assign(
+                actor_principal_id=triage_principal,
+                assigned_to_principal_id=responder_principal,
+                incident_id=incident_id,
+                idempotency_key=f"browser-cert-assignment:{suffix}",
+                session=session,
+            )
             session.commit_transaction()
 
         PlanRegistry.provision_indexes()
@@ -659,6 +817,11 @@ def seed(state_path: Path) -> None:
             if user is None:
                 raise RuntimeError("BROWSER_CERT_USER_READBACK_FAILED")
             actor["access_token"] = registry.create_session(user).token
+        for actor in system_actors.values():
+            user = registry.get_user_by_id(actor["principal_id"])
+            if user is None:
+                raise RuntimeError("BROWSER_CERT_SYSTEM_USER_READBACK_FAILED")
+            actor["access_token"] = registry.create_session(user).token
         partner = actors["partner"]
         state_path.write_text(
             json.dumps(
@@ -670,6 +833,10 @@ def seed(state_path: Path) -> None:
                     "email": partner["email"],
                     "access_token": partner["access_token"],
                     "actors": actors,
+                    "system_actors": system_actors,
+                    "system_incident_id": incident_id,
+                    "system_assignment_id": seeded_assignment.assignment_id,
+                    "system_workforce_scope_id": SYSTEM_WORKFORCE_SCOPE_ID,
                     "matter_id": matter_id,
                     "screening_id": screening.screening_id,
                     "source_case_matter_id": screening.source_case_matter_id,
