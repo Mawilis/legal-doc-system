@@ -144,6 +144,112 @@ test('does not expose responder inbox to an independently authorized triage-only
   await context.close();
 });
 
+test('certifies initial tenant-neutral SYSTEM credentials, MFA and workspace bootstrap in the browser', async ({ browser }) => {
+  const context = await browser.newContext({
+    baseURL,
+    viewport: { width: 1440, height: 1000 },
+  });
+  const page = await context.newPage();
+  const calls = [];
+
+  await page.route('**/api/auth/global/login', async (route) => {
+    calls.push('global-login');
+    const body = route.request().postDataJSON();
+    expect(body).toEqual({
+      email: 'platform-responder@example.com',
+      password: 'Synthetic-Platform-Password-123!',
+    });
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify({
+        status: 'MFA_REQUIRED',
+        scope: 'SYSTEM',
+        mfa_challenge: 'sysmfa-browser-one-time',
+        workspace_id: 'SYSTEM_SERVICES',
+      }),
+    });
+  });
+
+  await page.route('**/api/auth/global/verify-mfa', async (route) => {
+    calls.push('global-mfa');
+    expect(route.request().postDataJSON()).toEqual({
+      mfa_challenge: 'sysmfa-browser-one-time',
+      code: '123456',
+    });
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify({
+        status: 'AUTHENTICATED',
+        scope: 'SYSTEM',
+        access_token: 'synthetic-system-access-token',
+        principal_id: 'WILSYAUTH-browser-system-principal',
+        workspace_id: 'SYSTEM_SERVICES',
+      }),
+    });
+  });
+
+  await page.route('**/api/system-services/workspace-bootstrap', async (route) => {
+    calls.push('system-workspace');
+    expect(route.request().headers().authorization).toBe('Bearer synthetic-system-access-token');
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify({
+        status: 'READY',
+        authority: 'EOS_SYSTEM_SERVICES',
+        principalId: 'WILSYAUTH-browser-system-principal',
+        scope: 'SYSTEM',
+        capabilities: ['system_services:queue:read'],
+        summary: { openCases: 0, securityEscalations: 0 },
+        cases: [],
+      }),
+    });
+  });
+
+  await page.route('**/api/system-services/security-incidents', (route) => route.fulfill({
+    status: 200,
+    contentType: 'application/json',
+    body: '[]',
+  }));
+  await page.route('**/api/system-services/security-incident-assignments/mine', (route) => route.fulfill({
+    status: 200,
+    contentType: 'application/json',
+    body: '[]',
+  }));
+
+  await page.goto('/login');
+  await page.getByLabel('Work email').fill('platform-responder@example.com');
+  await page.getByLabel('Password').fill('Synthetic-Platform-Password-123!');
+  await page.getByRole('button', { name: 'Continue securely' }).click();
+  await expect(page).toHaveURL(/\/mfa$/);
+  await page.getByLabel('Six-digit code').fill('123456');
+  await page.getByRole('button', { name: 'Verify identity' }).click();
+
+  await expect(page.getByRole('heading', { name: 'System Services' })).toBeVisible();
+  await expect.poll(() => page.evaluate(() => {
+    const user = JSON.parse(localStorage.getItem('wilsy_sovereign_user') || 'null');
+    return {
+      principalId: user?.id,
+      scope: user?.systemServicesWorkspace?.scope,
+      authority: user?.systemServicesWorkspace?.authority,
+      tenantId: localStorage.getItem('tenantId'),
+      activeTenant: localStorage.getItem('wilsy_active_tenant'),
+      bearer: localStorage.getItem('wilsy_auth_token'),
+    };
+  })).toEqual({
+    principalId: 'WILSYAUTH-browser-system-principal',
+    scope: 'SYSTEM',
+    authority: 'EOS_SYSTEM_SERVICES',
+    tenantId: null,
+    activeTenant: null,
+    bearer: 'synthetic-system-access-token',
+  });
+  expect(calls).toEqual(['global-login', 'global-mfa', 'system-workspace']);
+  await context.close();
+});
+
 // ARTIFACT: system-services-incident.browser.spec.js
 // AUTHORITY BOUNDARY: real browser plus EOS-authenticated disposable test authority
 // END OF WILSY OS SOVEREIGN ARTIFACT
