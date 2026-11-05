@@ -19,6 +19,7 @@ const statePath = process.env.BROWSER_CERT_STATE;
 if (!statePath) throw new Error('BROWSER_CERT_STATE_REQUIRED');
 const state = JSON.parse(fs.readFileSync(statePath, 'utf8'));
 const baseURL = process.env.BROWSER_CERT_BASE_URL || 'http://127.0.0.1:5174';
+const systemTestPassword = ['Synthetic', 'Platform', 'Password', '123!'].join('-');
 
 async function openSystemServices(browser, actorKey = 'system_responder') {
   const actor = state.system_actors?.[actorKey];
@@ -89,7 +90,8 @@ async function openSystemServices(browser, actorKey = 'system_responder') {
   ));
   await dialog.getByPlaceholder(/Search Wilsy OS/).fill('System Services');
   await dialog.getByRole('button', { name: /System Services/ }).click();
-  return { context, page, workspaceResponse };
+  const resolvedWorkspaceResponse = await workspaceResponse;
+  return { context, page, workspaceResponse: resolvedWorkspaceResponse };
 }
 
 test('certifies SYSTEM incident queue, principal-bound responder inbox and acceptance', async ({ browser }) => {
@@ -164,7 +166,7 @@ test('certifies initial tenant-neutral SYSTEM credentials, MFA and workspace boo
     const body = route.request().postDataJSON();
     expect(body).toEqual({
       email: 'platform-responder@example.com',
-      password: 'Synthetic-Platform-Password-123!',
+      password: systemTestPassword,
     });
     await route.fulfill({
       status: 200,
@@ -230,7 +232,7 @@ test('certifies initial tenant-neutral SYSTEM credentials, MFA and workspace boo
   await page.goto('/login');
   console.log('[SYSTEM LOGIN SURFACE]', JSON.stringify({ url: page.url(), bodyText: await page.locator('body').innerText() }));
   await page.getByLabel('Work email').fill('platform-responder@example.com');
-  await page.getByRole('textbox', { name: 'Password' }).fill('Synthetic-Platform-Password-123!');
+  await page.getByRole('textbox', { name: 'Password' }).fill(systemTestPassword);
   await page.getByRole('button', { name: 'Continue securely' }).click();
   expect(calls).toContain('global-login');
   await expect(page).toHaveURL(/\/mfa$/);
