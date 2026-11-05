@@ -59,7 +59,7 @@ def ensure_electrum_payshap_completion_indexes(
     ElectrumProviderAccountBindingRegistry.ensure_indexes(binding_collection)
     FinancialSettlementObservationRegistry.ensure_indexes(observation_collection)
     platform_truth_collection.create_index(
-        [("tenant_id", 1), ("provider_execution_reference", 1)],
+        [("provider_execution_reference", 1)],
         name="ix_platform_truth_provider_execution_reference",
     )
     from tools.eos.saas.billing.platform_invoice_settlement_allocation import (
