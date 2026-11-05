@@ -183,6 +183,12 @@ jobs:
             tests/integration/test_membership_selection_challenge_mongo.py \
             tests/integration/test_global_principal_session_authority_mongo.py \
             tests/integration/test_global_principal_system_session_authority_mongo.py \
+            tests/integration/test_global_principal_system_http_mongo.py \
+            tests/integration/test_global_principal_system_session_authority_mongo.py \
+            tests/integration/test_global_principal_system_http_mongo.py \
+            tests/integration/test_global_principal_system_session_authority_mongo.py \
+            tests/integration/test_global_principal_system_http_mongo.py \
+            tests/integration/test_global_principal_system_session_authority_mongo.py \
             tests/integration/test_global_principal_system_session_authority_mongo.py \
             tests/integration/test_global_principal_mfa_session_transition_mongo.py \
             tests/integration/test_global_principal_totp_verifier_mongo.py \
