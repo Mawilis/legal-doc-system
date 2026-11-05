@@ -123,6 +123,24 @@ class SecurityIncidentResponseCanonicalExecutor:
             session=session,
         )
 
+    def authorize_password_reset_replay(
+        self,
+        decision: SecurityIncidentResponseDecision,
+        *,
+        actor_principal_id: str,
+        session: Any,
+    ) -> None:
+        """Re-prove independent execution authority before a reset receipt replay lookup."""
+        self._require_approved(
+            decision,
+            SecurityIncidentResponseAction.PASSWORD_RESET,
+        )
+        self._require_independent_executor(
+            decision,
+            actor_principal_id=actor_principal_id,
+            session=session,
+        )
+
     def execute_password_reset(
         self,
         decision: SecurityIncidentResponseDecision,
