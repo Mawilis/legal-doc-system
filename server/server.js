@@ -2,20 +2,22 @@
 /**
  * ╔════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════╗
  * ║ 🏛️ WILSY OS – SOVEREIGN RUNTIME BOOTSTRAPPER [v5.6.0-P0-C4E5-EOS-PDF-IDENTITY]                                                                    ║
- * ║ TITLE: Selective legal-acceptance browser-to-Python BFF transport                                                                  ║
- * ║ AUTHORITY: Wilsy OS Core Governance; Node transport only                                                                           ║
+ * ║ TITLE: EOS workspace-authorized PDF renderer and browser-to-Python BFF transport                                                                  ║
+ * ║ AUTHORITY: Node transport/PDF rendering only; Python EOS owns identity and business data                                                                           ║
  * ║ TENANT BOUNDARY: Forward authenticated tenant scope without deriving membership                                                   ║
  * ║ AUTHORITY BOUNDARY: No C1C/C1E/legal/financial authority is interpreted or created                                                ║
  * ║ FINANCIAL AUTHORITY BOUNDARY: Kennel EOS exclusively owns financial execution                                                      ║
  * ║ EPITOME: Production BFF with CORRECT middleware order – proxies run BEFORE body parsers.                                            ║
  * ║          Uses direct httpxy transport for all Kennel routes, including billing.                                                       ║
- * ║          Raw request streams are forwarded – no body consumption issues.                                                            ║
+ * ║          Raw request streams are forwarded; PDF identity is verified by EOS workspace-bootstrap.                                                            ║
  * ║ COMPLIANCE: POPIA §19 · GDPR §32 · SOC2 §CC7.2 · ISO 27001 · ECT Act §15                                                           ║
  * ╠════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════╣
  * ║ VERSION: v5.6.0-P0-C4E5-EOS-PDF-IDENTITY | PRODUCTION READY                                                                                        ║
  * ║ ABSOLUTE PATH: /Users/wilsonkhanyezi/legal-doc-system/server/server.js                                                               ║
  * ╠════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════╣
- * ║ 🔧 CHANGE LOG (v5.5.0-P0-C4E4):                                                                                                     ║
+ * ║ 🔧 CHANGE LOG (v5.6.0-P0-C4E5-EOS-PDF-IDENTITY):                                                                                                     ║
+ * ║   2026-11-05 – PDF rendering accepts only identity returned by EOS workspace-bootstrap; Mongoose profile lookup is removed.           ║
+ * ║   2026-11-05 – Removed the BFF Mongo connection; Python EOS owns the business database graph.                                      ║
  * ║   2026-10-03 – Replaced http-proxy-middleware runtime transport with direct httpxy while preserving the certified proxy contract.     ║
  * ║   2026-10-03 – Redacted raw upstream connection exceptions from the public proxy-unavailable response.                             ║
  * ║   2026-09-17 – Added bounded legal-acceptance status/document/accept transport; Node remains transport-only.                         ║
@@ -23,7 +25,7 @@
  * ║   2026-09-17 – Added deterministic application-factory export and direct-execution bootstrap guard.                                 ║
  * ║   2026-08-24 – Preserved raw-stream proxy ordering before body parsers.                                                             ║
  * ╠════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════╣
- * ║ CERTIFICATION SEAL: PRODUCTION_READY_v5.5.0-P0-C4E4                                                                             ║
+ * ║ CERTIFICATION SEAL: EOS_VERIFIED_IDENTITY_v5.6.0-P0-C4E5                                                                             ║
  * ╚════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════╝
  */
 
