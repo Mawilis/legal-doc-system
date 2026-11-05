@@ -300,7 +300,7 @@ class ErrorBoundary extends React.Component {
           <p>Wilsy OS encountered an unexpected error while rendering this dashboard.</p>
 
           {IS_DEVELOPMENT && error && (
-            <details style={{ marginTop: '1rem', whiteSpace: 'pre-wrap' }}>
+            <details open={IS_DEVELOPMENT} style={{ marginTop: '1rem', whiteSpace: 'pre-wrap' }}>
               <summary style={{ cursor: 'pointer', fontWeight: 'bold' }}>Technical details (development only)</summary>
               <pre style={{ overflow: 'auto', padding: '0.5rem', backgroundColor: '#f5f5f5' }}>
                 {error.stack || error.toString()}
