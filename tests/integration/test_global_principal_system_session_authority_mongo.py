@@ -32,12 +32,16 @@ class _CurrentSystemAuthorizer:
         assert session.in_transaction is True
 
 
-def test_system_mfa_challenge_and_session_issue_revoke_and_rollback_are_atomic():
+def test_system_mfa_challenge_and_session_issue_revoke_and_rollback_are_atomic(monkeypatch: pytest.MonkeyPatch):
     if not URI:
         raise RuntimeError("TEST_GLOBAL_PRINCIPAL_MONGO_URI_REQUIRED")
     client = MongoClient(URI, serverSelectionTimeoutMS=5_000, retryWrites=True, tz_aware=True)
     database_name = "global_system_session_" + uuid.uuid4().hex
     database = client[database_name]
+    monkeypatch.setattr(
+        "tools.eos.auth.global_principal_system_session_authority.create_access_token",
+        lambda _claims, **_kwargs: "synthetic-signed-system-token",
+    )
     principal_id = "system-principal-" + uuid.uuid4().hex
     email = principal_id + "@example.test"
     now = datetime.now(timezone.utc).replace(microsecond=0)
