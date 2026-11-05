@@ -1713,6 +1713,9 @@ class SubscriptionRegistry:
         cls,
         subscription_id: str,
         tenant_id_header: str | None = None,
+        *,
+        collection: Any = None,
+        session: Any = None,
     ) -> SubscriptionEntity | None:
         """Read one tenant-bound subscription.
 
@@ -1740,6 +1743,8 @@ class SubscriptionRegistry:
         document = _find_document(
             subscription_id,
             tenant_id,
+            collection=collection,
+            session=session,
         )
 
         if document is None:
