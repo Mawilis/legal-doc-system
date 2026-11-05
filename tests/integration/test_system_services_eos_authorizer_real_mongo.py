@@ -558,6 +558,9 @@ def test_real_mongo_authenticated_incident_assignment_and_responder_acceptance_h
         )
         active_principal["id"] = responder
         inbox = http.get("/api/system-services/security-incident-assignments/mine")
+        assignment_detail = http.get(
+            f"/api/system-services/security-incident-assignments/{assigned.json()['assignmentId']}"
+        )
         accepted = http.post(
             f"/api/system-services/security-incident-assignments/{assigned.json()['assignmentId']}/accept",
             headers={"Idempotency-Key": "route-incident-accept-001"},
@@ -567,6 +570,8 @@ def test_real_mongo_authenticated_incident_assignment_and_responder_acceptance_h
     assert assigned.status_code == 201
     assert inbox.status_code == 200
     assert len(inbox.json()) == 1
+    assert assignment_detail.status_code == 200
+    assert assignment_detail.json()["incident"]["incidentId"] == incident.incident_id
     assert accepted.status_code == 200
     assert accepted.json()["status"] == "ACCEPTED"
     assert accepted.json()["revision"] == 1
