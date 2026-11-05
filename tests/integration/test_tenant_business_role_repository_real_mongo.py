@@ -193,9 +193,15 @@ def test_multi_capacity_history_cas_and_abort_are_atomic_on_real_replica_set() -
                 "business_role": "tenant_owner",
             }) == 3
 
-            # A history append followed by a stale CAS must roll back as one unit.
+            # A stale current revision rejects after the candidate history
+            # append; the caller transaction must roll that append back.
+            current.insert_one({
+                "principal_id": "principal", "tenant_id": "tenant",
+                "business_role": "tenant_manager", "status": "ACTIVE",
+                "revision": 2, "effective_at": stamp, "revoked_at": None,
+            })
             stale = TenantBusinessRoleAuthority(
-                "principal", "tenant", "tenant_owner",
+                "principal", "tenant", "tenant_manager",
                 TenantBusinessRoleStatus.ACTIVE, 2, stamp, None,
             )
             with pytest.raises(TenantBusinessRoleRevisionConflictError):
@@ -206,13 +212,13 @@ def test_multi_capacity_history_cas_and_abort_are_atomic_on_real_replica_set() -
             assert current.find_one({
                 "principal_id": "principal",
                 "tenant_id": "tenant",
-                "business_role": "tenant_owner",
+                "business_role": "tenant_manager",
             })["revision"] == 2
             assert history.count_documents({
                 "principal_id": "principal",
                 "tenant_id": "tenant",
-                "business_role": "tenant_owner",
-            }) == 3
+                "business_role": "tenant_manager",
+            }) == 0
 
             # Explicit caller abort must remove both current and history writes.
             aborted = TenantBusinessRoleAuthority(
