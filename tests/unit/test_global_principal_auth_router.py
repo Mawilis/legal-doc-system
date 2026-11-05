@@ -318,7 +318,7 @@ def test_global_login_routes_membership_free_principal_through_current_system_au
             assert kwargs["principal_id"] == "platform-responder"
             assert kwargs["credential_revision"] == 12
             assert kwargs["session"] is session
-            return "sysmfa-one-time", NOW + timedelta(minutes=5)
+            return "sysmfa_one_time", NOW + timedelta(minutes=5)
 
     class Authorizer:
         def require(self, **kwargs):
@@ -364,7 +364,7 @@ def test_global_login_routes_membership_free_principal_through_current_system_au
     ))
     assert response["status"] == "MFA_REQUIRED"
     assert response["scope"] == "SYSTEM"
-    assert response["mfa_challenge"] == "sysmfa-one-time"
+    assert response["mfa_challenge"] == "sysmfa_one_time"
     assert response["workspace_id"] == "SYSTEM_SERVICES"
     assert "tenant_id" not in response
     assert session.committed and session.ended
@@ -386,12 +386,12 @@ def test_system_mfa_verification_consumes_challenge_and_issues_session_in_same_t
         def __init__(self, *, collection):
             assert collection is not None
         def get_factor_context(self, token, *, session, now):
-            assert token == "sysmfa-valid"
+            assert token == "sysmfa_valid"
             assert session is session_ref
             return SimpleNamespace(principal_id="platform-responder", credential_revision=12)
         def consume(self, token, **kwargs):
             events.append(("consume", kwargs["session"]))
-            assert token == "sysmfa-valid"
+            assert token == "sysmfa_valid"
             assert kwargs["principal_id"] == "platform-responder"
             assert kwargs["credential_revision"] == 12
 
@@ -423,7 +423,7 @@ def test_system_mfa_verification_consumes_challenge_and_issues_session_in_same_t
             assert session is session_ref
             return SimpleNamespace(
                 access_token="system-access",
-                refresh_token="sysrefresh-rotatable",
+                refresh_token="sysrefresh_rotatable",
                 principal_id=principal_id,
                 access_expires_at=NOW,
                 refresh_expires_at=NOW,
@@ -454,7 +454,7 @@ def test_system_mfa_verification_consumes_challenge_and_issues_session_in_same_t
         SystemSessionAuthority,
     )
     response = asyncio.run(verify_global_mfa(
-        GlobalMfaVerificationRequest(mfa_challenge="sysmfa-valid", code="123456"),
+        GlobalMfaVerificationRequest(mfa_challenge="sysmfa_valid", code="123456"),
         _request_with_state(
             global_principal_auth_indexes_ready=True,
             global_principal_session_indexes_ready=True,
@@ -492,12 +492,12 @@ def test_system_refresh_route_rotates_only_the_tenant_neutral_refresh_family(
             assert refresh_tokens is not None
             assert authorizer is not None
         def rotate_refresh_token(self, token, *, session):
-            assert token == "sysrefresh-current"
+            assert token == "sysrefresh_current"
             assert session is session_ref
             return SimpleNamespace(
                 principal_id="platform-responder",
                 access_token="rotated-system-access",
-                refresh_token="sysrefresh-next",
+                refresh_token="sysrefresh_next",
                 access_expires_at=NOW,
                 refresh_expires_at=NOW,
             )
@@ -512,7 +512,7 @@ def test_system_refresh_route_rotates_only_the_tenant_neutral_refresh_family(
         Authority,
     )
     response = asyncio.run(refresh_global_session(
-        GlobalRefreshRequest(refresh_token="sysrefresh-current"),
+        GlobalRefreshRequest(refresh_token="sysrefresh_current"),
         _request_with_state(
             global_principal_system_session_indexes_ready=True,
             system_services_authorizer=object(),
@@ -521,6 +521,6 @@ def test_system_refresh_route_rotates_only_the_tenant_neutral_refresh_family(
     assert response["status"] == "REFRESHED"
     assert response["scope"] == "SYSTEM"
     assert response["access_token"] == "rotated-system-access"
-    assert response["refresh_token"] == "sysrefresh-next"
+    assert response["refresh_token"] == "sysrefresh_next"
     assert "tenant_id" not in response
     assert session.committed and session.ended
