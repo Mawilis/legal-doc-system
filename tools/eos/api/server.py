@@ -784,6 +784,7 @@ class WilsyAPIServer:
             app.state.p12c_binding_indexes_ready = False
             app.state.global_principal_auth_indexes_ready = False
             app.state.global_principal_session_indexes_ready = False
+            app.state.global_principal_system_session_indexes_ready = False
             app.state.global_principal_mfa_factor_indexes_ready = False
             app.state.global_principal_mfa_enrollment_indexes_ready = False
             app.state.global_principal_totp_verifier = None
