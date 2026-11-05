@@ -1082,6 +1082,8 @@ export const AuthProvider = ({ children }) => {
           data.status !== 'AUTHENTICATED'
           || data.scope !== 'SYSTEM'
           || typeof data.access_token !== 'string'
+          || typeof data.refresh_token !== 'string'
+          || !data.refresh_token.startsWith('sysrefresh_')
           || typeof data.principal_id !== 'string'
           || data.workspace_id !== 'SYSTEM_SERVICES'
         ) throw new Error('EOS did not issue a valid SYSTEM session.');
