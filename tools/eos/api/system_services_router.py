@@ -865,6 +865,18 @@ def execute_approved_system_permission_revocation(
             or incident.reporter_principal_id != decision.target_principal_id
         ):
             raise HTTPException(status_code=409, detail="Approved decision no longer matches its incident target.")
+        # Authenticate execution authority before resolving any persisted
+        # receipt. An unauthorized principal must receive 403, not learn that a
+        # receipt exists or receive an integrity-conflict response.
+        try:
+            executor.authorize_execution(
+                decision,
+                actor_principal_id=actor.principal_id,
+                session=session,
+            )
+        except SecurityIncidentResponseExecutionError as error:
+            raise HTTPException(status_code=403, detail="Independent response execution authority required.") from error
+
         # The decision record remains at its approved revision (1); execution
         # is represented by the separate immutable revision-2 event. Resolve
         # that exact, integrity-checked receipt before re-entering D12. This
@@ -885,14 +897,6 @@ def execute_approved_system_permission_revocation(
             }
         if decision.revision != payload.expected_revision:
             raise HTTPException(status_code=409, detail="Response decision revision conflict.")
-        try:
-            executor.authorize_execution(
-                decision,
-                actor_principal_id=actor.principal_id,
-                session=session,
-            )
-        except SecurityIncidentResponseExecutionError as error:
-            raise HTTPException(status_code=403, detail="Independent response execution authority required.") from error
         if decision.target_assignment_id is None or decision.target_permission_id is None:
             raise HTTPException(status_code=409, detail="Approved decision has no permission assignment binding.")
         assignment_history = permission_assignments.get_history(
