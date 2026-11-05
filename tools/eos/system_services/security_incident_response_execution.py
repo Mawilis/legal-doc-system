@@ -135,6 +135,11 @@ class SecurityIncidentResponseCanonicalExecutor:
 
         Approval does not mint or replace the single-use recovery capability;
         PasswordResetService remains the sole credential/session mutation owner.
+        The current SYSTEM execute grant is re-proven inside R10's own Mongo
+        transaction after the durable capability is re-read. No HTTP route is
+        exposed until an execution receipt can be committed idempotently with
+        the canonical reset transaction; this adapter does not claim cross-
+        transaction atomicity with the decision projection.
         Secret values are passed transiently and are not retained on this adapter.
         """
         self._require_approved(decision, SecurityIncidentResponseAction.PASSWORD_RESET)
