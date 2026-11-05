@@ -53,7 +53,7 @@ def test_startup_installs_global_credential_and_challenge_indexes_before_readine
     system_sessions = source.index("GlobalPrincipalSystemSessionAuthority.ensure_indexes(")
     system_readiness = source.index("global_principal_system_session_indexes_ready = client is not None")
     readiness = source.index("global_principal_auth_indexes_ready = client is not None")
-    assert credential < challenge < factor < enrollment < system_sessions < rate_limit < readiness
+    assert credential < challenge < system_sessions < factor < enrollment < rate_limit < readiness
     assert system_sessions < system_readiness < readiness
     assert "database[GLOBAL_PRINCIPAL_SYSTEM_SESSION_COLLECTION]" in source
     assert "database[GLOBAL_PRINCIPAL_SYSTEM_REFRESH_COLLECTION]" in source
