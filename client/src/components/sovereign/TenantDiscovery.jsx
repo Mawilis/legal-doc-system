@@ -28,7 +28,7 @@ import { AlertCircle, ArrowRight, Loader2 } from 'lucide-react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { useAuth } from '../../contexts/authContext.jsx';
 import TenantIdentityCard from '../auth/TenantIdentityCard.jsx';
-import wilsyBrandAsset from '../../assets/logo/wilsy.jpeg';
+import wilsyBrandAsset from '../../assets/logo/wilsy-icon.svg';
 
 export default function TenantDiscovery({ savedTenant }) {
   const navigate = useNavigate();
