@@ -181,7 +181,7 @@ describe('fixed proxy route, path, query, and method contract', () => {
     assert.equal(unscoped.body.error, 'TENANT_SCOPE_REQUIRED');
   });
 
-  it('keeps the BFF transport-only with no direct MongoDB connection', async () => {
+  it('reports EOS-owned database authority without opening a BFF Mongo connection', async () => {
     const response = await request(app).get('/health').expect(200);
     assert.equal(response.body.database, 'NOT_CONNECTED_BY_BFF');
     assert.equal(response.body.databaseAuthority, 'PYTHON_EOS');
