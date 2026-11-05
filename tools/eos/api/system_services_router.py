@@ -1015,7 +1015,7 @@ def execute_approved_password_reset(
             context_terms=payload.context_terms,
             transaction_completion=persist_receipt,
         )
-    except PasswordResetServiceError as error:
+    except (PasswordResetServiceError, SecurityIncidentResponseExecutionError) as error:
         # A concurrent request using the same key may have committed first.
         # Re-resolve only after independently re-authorizing the actor.
         replay = _run_transaction(resolve_replay)
