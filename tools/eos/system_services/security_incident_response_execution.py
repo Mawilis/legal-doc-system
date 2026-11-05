@@ -112,6 +112,7 @@ class SecurityIncidentResponseCanonicalExecutor:
             or evidence.actor_principal_id in {
                 decision.requested_by_principal_id,
                 decision.decided_by_principal_id,
+                decision.target_principal_id,
             }
             or evidence.assignment_id != decision.target_assignment_id
             or evidence.permission_id != decision.target_permission_id
