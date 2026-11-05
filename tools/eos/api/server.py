@@ -502,10 +502,12 @@ class WilsyAPIServer:
                 # Support-case storage indexes are canonical startup DDL.
                 # This flag signals storage readiness only; route admission
                 # must independently authorize every caller through EOS IAM.
-                SupportCaseRegistry(
+                case_registry = SupportCaseRegistry(
                     cases=database["system_service_cases"],
                     events=database["system_service_case_events"],
-                ).ensure_indexes()
+                )
+                case_registry.ensure_indexes()
+                app.state.system_services_case_registry = case_registry
                 app.state.system_services_case_indexes_ready = client is not None
                 # SYSTEM Services authority is composed only from trusted
                 # deployment configuration and canonical EOS repositories.
@@ -521,7 +523,9 @@ class WilsyAPIServer:
                     app.state.system_services_authorizer = system_authorizer
                     app.state.system_services_authority_ready = True
                 except Exception as error:
-                    app.state.system_services_case_registry = None
+                    # Tenant self-service remains available from the independent
+                    # case store; only the privileged SYSTEM queue stays unavailable.
+                    app.state.system_services_case_registry = case_registry
                     app.state.system_services_authorizer = None
                     app.state.system_services_authority_ready = False
                     code = getattr(error, "code", "SYSTEM_SERVICES_AUTHORITY_CONFIGURATION_UNAVAILABLE")
