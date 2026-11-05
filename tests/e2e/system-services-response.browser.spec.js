@@ -46,7 +46,36 @@ async function postAs(browser, actorKey, path, body, idempotencyKey) {
   return result;
 }
 
-test('certifies independent request, approval and canonical permission revocation with replay', async ({ browser }) => {
+test('certifies independent request, rejection, approval and canonical permission revocation with replay', async ({ browser }) => {
+  const rejectedRequestKey = 'browser-response-rejection-request-' + state.database_name;
+  const rejectedRequest = await postAs(
+    browser,
+    'system_requester',
+    '/api/system-services/security-response-decisions',
+    {
+      incident_id: state.system_incident_id,
+      action: 'SYSTEM_PERMISSION_REVOCATION',
+      target_assignment_id: state.system_target_permission_assignment_id,
+      target_permission_id: 'privileged_activation:issue',
+    },
+    rejectedRequestKey,
+  );
+  expect(rejectedRequest.status).toBe(201);
+  const rejected = await postAs(
+    browser,
+    'system_approver',
+    '/api/system-services/security-response-decisions/' + rejectedRequest.body.decisionId + '/decision',
+    {
+      approved: false,
+      expected_revision: 0,
+      decision_evidence_reference: 'browser-cert-independent-rejection:' + state.database_name,
+    },
+    'browser-response-rejection-' + state.database_name,
+  );
+  expect(rejected.status).toBe(200);
+  expect(rejected.body.status).toBe('REJECTED');
+  expect(rejected.body.revision).toBe(1);
+
   const requested = await postAs(
     browser,
     'system_requester',
