@@ -1,6 +1,6 @@
 import React from 'react';
 import { describe, expect, it, vi } from 'vitest';
-import { render, screen } from '@testing-library/react';
+import { fireEvent, render, screen } from '@testing-library/react';
 import SystemServicesDashboard, { hasSystemServicesCapability } from './SystemServicesDashboard.jsx';
 
 describe('SystemServicesDashboard EOS authority boundary', () => {
@@ -86,6 +86,12 @@ describe('SystemServicesDashboard EOS authority boundary', () => {
     expect(screen.getByText('assignment-1')).toBeInTheDocument();
     expect(screen.getByRole('button', { name: 'Accept' })).toBeInTheDocument();
     expect(screen.getByRole('button', { name: 'Decline' })).toBeInTheDocument();
+    fireEvent.click(screen.getByRole('button', { name: 'View incident' }));
+    expect(onOpenAssignment).toHaveBeenCalledWith('assignment-1');
+    fireEvent.click(screen.getByRole('button', { name: 'Accept' }));
+    expect(onDecideAssignment).toHaveBeenCalledWith('assignment-1', 'accept');
+    fireEvent.click(screen.getByRole('button', { name: 'Decline' }));
+    expect(onDecideAssignment).toHaveBeenCalledWith('assignment-1', 'decline');
   });
 
   it('does not render responder controls without the exact escalation capability', () => {
