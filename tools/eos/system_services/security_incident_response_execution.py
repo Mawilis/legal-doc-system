@@ -95,6 +95,9 @@ class SecurityIncidentResponseCanonicalExecutor:
             decision,
             SecurityIncidentResponseAction.SYSTEM_PERMISSION_REVOCATION,
         )
+        decided_at = decision.decided_at
+        if decided_at is None:
+            raise SecurityIncidentResponseExecutionError("APPROVED_RESPONSE_DECISION_REQUIRED")
         if (
             decision.target_assignment_id is None
             or decision.target_permission_id is None
@@ -110,7 +113,7 @@ class SecurityIncidentResponseCanonicalExecutor:
             or evidence.evidence_reference != (
                 "security-incident-response-decision:" + decision.decision_id
             )
-            or evidence.occurred_at < decision.decided_at
+            or evidence.occurred_at < decided_at
         ):
             raise SecurityIncidentResponseExecutionError(
                 "CANONICAL_REVOCATION_EVIDENCE_BINDING_INVALID"
