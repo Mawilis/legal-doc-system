@@ -917,3 +917,141 @@ def test_real_mongo_response_decision_rollback_removes_projection_events_and_out
     assert database[PLATFORM_AUDIT_COLLECTION].count_documents({"target_id": request.decision_id}) == 0
     assert database[PLATFORM_OUTBOX_COLLECTION].count_documents({"target_id": request.decision_id}) == 0
 
+
+
+def _approved_revocation_decision(decision_id: str) -> SecurityIncidentResponseDecision:
+    return SecurityIncidentResponseDecision(
+        decision_id=decision_id,
+        incident_id="incident-response-execution-1",
+        tenant_id="tenant-response-1",
+        target_principal_id="principal-target-1",
+        action=SecurityIncidentResponseAction.SYSTEM_PERMISSION_REVOCATION,
+        requested_by_principal_id="principal-independent-requester",
+        requested_at=NOW,
+        request_evidence_reference="incident-evidence-response-execution-1",
+        target_assignment_id="assignment-target-privileged-1",
+        target_permission_id="privileged_activation:issue",
+    )
+
+
+def _persist_approved_decision(client: Any, registry: SecurityIncidentResponseDecisionRegistry, decision: SecurityIncidentResponseDecision) -> SecurityIncidentResponseDecision:
+    with client.start_session() as session:
+        with session.start_transaction():
+            registry.create(decision, session=session)
+            return registry.decide(
+                decision.decision_id,
+                approved=True,
+                decided_by_principal_id="principal-independent-approver",
+                decided_at=NOW + timedelta(minutes=1),
+                decision_evidence_reference="independent-approval:" + decision.decision_id,
+                expected_revision=0,
+                session=session,
+            )
+
+
+def test_real_mongo_canonical_execution_evidence_audit_outbox_and_replay_are_atomic(mongo_case_registry):
+    client, database, _, registry = mongo_case_registry
+    decision = _approved_revocation_decision("decision-execution-commit")
+    approved = _persist_approved_decision(client, registry, decision)
+    occurred_at = NOW + timedelta(minutes=2)
+    with client.start_session() as session:
+        with session.start_transaction():
+            recorded = registry.record_execution(
+                decision=approved,
+                actor_principal_id="principal-independent-executor",
+                idempotency_key="canonical-revocation-execution-commit",
+                occurred_at=occurred_at,
+                result_status="REVOKED",
+                result_revision=2,
+                session=session,
+            )
+    with client.start_session() as session:
+        with session.start_transaction():
+            found = registry.find_execution(
+                decision=approved,
+                actor_principal_id="principal-independent-executor",
+                idempotency_key="canonical-revocation-execution-commit",
+                session=session,
+            )
+            assert found == recorded
+            replayed = registry.record_execution(
+                decision=approved,
+                actor_principal_id="principal-independent-executor",
+                idempotency_key="canonical-revocation-execution-commit",
+                occurred_at=occurred_at,
+                result_status="REVOKED",
+                result_revision=2,
+                session=session,
+            )
+            assert replayed == recorded
+    event_key = "system-services-response-execution:" + decision.decision_id + ":revision:2"
+    event = database[RESPONSE_DECISION_EVENT_COLLECTION].find_one(
+        {"decision_id": decision.decision_id, "revision": 2}
+    )
+    assert event is not None
+    assert event["event_type"] == "SECURITY_INCIDENT_RESPONSE_EXECUTED"
+    assert event["actor_principal_id"] == "principal-independent-executor"
+    assert event["execution_idempotency_fingerprint"]
+    assert database[PLATFORM_AUDIT_COLLECTION].count_documents({"event_key": event_key}) == 1
+    assert database[PLATFORM_OUTBOX_COLLECTION].count_documents({
+        "event_key": event_key, "status": "PENDING", "attempts": 0,
+    }) == 1
+    with client.start_session() as session:
+        with session.start_transaction():
+            with pytest.raises(SecurityIncidentResponseDecisionConflictError, match="RESPONSE_EXECUTION_REPLAY_CONFLICT"):
+                registry.find_execution(
+                    decision=approved,
+                    actor_principal_id="principal-independent-executor",
+                    idempotency_key="different-execution-key",
+                    session=session,
+                )
+
+
+def test_real_mongo_execution_evidence_rollback_preserves_approved_decision(mongo_case_registry):
+    client, database, _, registry = mongo_case_registry
+    decision = _approved_revocation_decision("decision-execution-abort")
+    approved = _persist_approved_decision(client, registry, decision)
+    event_key = "system-services-response-execution:" + decision.decision_id + ":revision:2"
+    with client.start_session() as session:
+        with pytest.raises(RuntimeError, match="RESPONSE_EXECUTION_ABORT"):
+            with session.start_transaction():
+                registry.record_execution(
+                    decision=approved,
+                    actor_principal_id="principal-independent-executor",
+                    idempotency_key="canonical-revocation-execution-abort",
+                    occurred_at=NOW + timedelta(minutes=2),
+                    result_status="REVOKED",
+                    result_revision=2,
+                    session=session,
+                )
+                raise RuntimeError("RESPONSE_EXECUTION_ABORT")
+    persisted = database[RESPONSE_DECISION_COLLECTION].find_one({"decision_id": decision.decision_id})
+    assert persisted is not None
+    assert persisted["status"] == "APPROVED"
+    assert persisted["revision"] == 1
+    assert database[RESPONSE_DECISION_EVENT_COLLECTION].count_documents({
+        "decision_id": decision.decision_id, "revision": 2,
+    }) == 0
+    assert database[PLATFORM_AUDIT_COLLECTION].count_documents({"event_key": event_key}) == 0
+    assert database[PLATFORM_OUTBOX_COLLECTION].count_documents({"event_key": event_key}) == 0
+
+
+def test_real_mongo_execution_evidence_rejects_stale_decision_revision(mongo_case_registry):
+    client, database, _, registry = mongo_case_registry
+    decision = _approved_revocation_decision("decision-execution-stale")
+    approved = _persist_approved_decision(client, registry, decision)
+    with client.start_session() as session:
+        with session.start_transaction():
+            with pytest.raises(SecurityIncidentResponseDecisionConflictError, match="RESPONSE_EXECUTION_EVIDENCE_INVALID"):
+                registry.record_execution(
+                    decision=decision,
+                    actor_principal_id="principal-independent-executor",
+                    idempotency_key="canonical-revocation-execution-stale",
+                    occurred_at=NOW + timedelta(minutes=2),
+                    result_status="REVOKED",
+                    result_revision=2,
+                    session=session,
+                )
+    assert database[RESPONSE_DECISION_EVENT_COLLECTION].count_documents({
+        "decision_id": approved.decision_id, "revision": 2,
+    }) == 0
