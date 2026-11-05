@@ -485,7 +485,7 @@ class WilsyAPIServer:
                 try:
                     ensure_electrum_payshap_completion_indexes(
                         inbox_collection=database["electrum_payshap_completion_inbox"],
-                        binding_collection=database["electrum_provider_tenant_bindings"],
+                        binding_collection=database["electrum_provider_account_bindings"],
                         observation_collection=database["financial_settlement_observations"],
                         platform_truth_collection=database["platform_billing_financial_execution_truths"],
                         allocation_collection=database["platform_invoice_settlement_allocations"],
