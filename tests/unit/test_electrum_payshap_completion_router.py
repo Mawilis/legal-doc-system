@@ -170,3 +170,26 @@ def test_ingress_does_not_ack_when_worker_is_disabled(monkeypatch):
         response.content, response.headers["x-jwt-signature"],
         verification_keys={"wilsy-key-1": wilsy_public}, issuer=config.signing_issuer,
     )
+
+
+def test_transport_configuration_is_sandbox_only_and_validates_p256_key_material(monkeypatch):
+    provider_private, provider_public = _keypair()
+    wilsy_private, _ = _keypair()
+    monkeypatch.setenv("WILSY_ELECTRUM_ENVIRONMENT", "production")
+    monkeypatch.setenv(
+        "WILSY_ELECTRUM_VERIFICATION_KEYS_JSON",
+        json.dumps({"electrum-key-1": provider_public.decode()}),
+    )
+    monkeypatch.setenv("WILSY_ELECTRUM_SIGNING_PRIVATE_KEY_PEM", wilsy_private.decode())
+    monkeypatch.setenv("WILSY_ELECTRUM_SIGNING_KEY_ID", "wilsy-key-1")
+    monkeypatch.setenv("WILSY_ELECTRUM_SIGNING_ISSUER", "wilsy-onboarding-issuer")
+    assert router_module._transport_configuration() is None
+
+    monkeypatch.setenv("WILSY_ELECTRUM_ENVIRONMENT", "sandbox")
+    config = router_module._transport_configuration()
+    assert config is not None
+    assert set(config.verification_keys) == {"electrum-key-1"}
+    assert config.signing_key_id == "wilsy-key-1"
+
+    monkeypatch.setenv("WILSY_ELECTRUM_VERIFICATION_KEYS_JSON", json.dumps({"bad-key": "not-a-public-key"}))
+    assert router_module._transport_configuration() is None
