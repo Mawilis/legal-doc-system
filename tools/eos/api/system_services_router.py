@@ -631,6 +631,181 @@ def decline_security_incident_assignment(
     )))
 
 
+
+class SecurityIncidentResponseRequest(BaseModel):
+    model_config = ConfigDict(extra="forbid", frozen=True)
+    incident_id: StrictStr
+    action: SecurityIncidentResponseAction
+    target_assignment_id: StrictStr | None = None
+    target_permission_id: StrictStr | None = None
+
+
+class SecurityIncidentResponseApprovalRequest(BaseModel):
+    model_config = ConfigDict(extra="forbid", frozen=True)
+    approved: StrictBool
+    expected_revision: StrictInt = Field(ge=0)
+    decision_evidence_reference: StrictStr = Field(min_length=1, max_length=256)
+
+
+class SecurityIncidentResponseExecutionRequest(BaseModel):
+    model_config = ConfigDict(extra="forbid", frozen=True)
+    expected_revision: StrictInt = Field(ge=1)
+
+
+def _project_response_decision(value: SecurityIncidentResponseDecision) -> dict[str, object]:
+    return {
+        "decisionId": value.decision_id,
+        "incidentId": value.incident_id,
+        "tenantId": value.tenant_id,
+        "targetPrincipalId": value.target_principal_id,
+        "action": value.action.value,
+        "status": value.status.value,
+        "revision": value.revision,
+        "requestedByPrincipalId": value.requested_by_principal_id,
+        "decidedByPrincipalId": value.decided_by_principal_id,
+        "decidedAt": value.decided_at.isoformat() if value.decided_at else None,
+    }
+
+
+@router.post("/security-response-decisions", status_code=201)
+def request_security_incident_response(
+    payload: SecurityIncidentResponseRequest,
+    request: Request,
+    idempotency_key: Annotated[str, Header(alias="Idempotency-Key", min_length=1, max_length=256)],
+    identity: SovereignIdentity = Depends(get_current_identity),
+):
+    """Create an incident-bound proposal; this route never performs containment."""
+    actor = _actor(identity)
+    decision_registry, decision_service, _, permission_assignments = _response_runtime(request)
+    incidents, _ = _assignment_runtime(request)
+
+    def create(session):
+        incident = incidents.get_by_id(incident_id=payload.incident_id, session=session)
+        target_assignment_id = payload.target_assignment_id
+        target_permission_id = payload.target_permission_id
+        if payload.action is SecurityIncidentResponseAction.SYSTEM_PERMISSION_REVOCATION:
+            if not target_assignment_id or not target_permission_id:
+                raise HTTPException(status_code=422, detail="Exact permission assignment binding is required.")
+            history = permission_assignments.get_history(target_assignment_id, session=session)
+            if (
+                not history
+                or history[0].principal_id != incident.reporter_principal_id
+                or history[0].permission_id != target_permission_id
+                or history[-1].status is not SystemPermissionAssignmentStatus.ACTIVE
+            ):
+                raise HTTPException(status_code=409, detail="Target permission assignment does not match the incident.")
+        elif target_assignment_id is not None or target_permission_id is not None:
+            raise HTTPException(status_code=422, detail="Permission assignment binding is not valid for this action.")
+
+        decision_id = "response-" + sha3_256(
+            (incident.incident_id + "\\0" + actor.principal_id + "\\0" + idempotency_key).encode("utf-8")
+        ).hexdigest()
+        existing = decision_registry.get(decision_id, session=session)
+        requested_at = existing.requested_at if existing is not None else datetime.now(timezone.utc)
+        decision = SecurityIncidentResponseDecision(
+            decision_id=decision_id,
+            incident_id=incident.incident_id,
+            tenant_id=incident.tenant_id,
+            target_principal_id=incident.reporter_principal_id,
+            action=payload.action,
+            requested_by_principal_id=actor.principal_id,
+            requested_at=requested_at,
+            request_evidence_reference="security-incident:" + incident.incident_id,
+            target_assignment_id=target_assignment_id,
+            target_permission_id=target_permission_id,
+        )
+        persisted = decision_service.request(
+            actor_principal_id=actor.principal_id,
+            decision=decision,
+            session=session,
+        )
+        return _project_response_decision(persisted)
+
+    return _run_transaction(create)
+
+
+@router.post("/security-response-decisions/{decision_id}/decision")
+def decide_security_incident_response(
+    decision_id: str,
+    payload: SecurityIncidentResponseApprovalRequest,
+    request: Request,
+    identity: SovereignIdentity = Depends(get_current_identity),
+):
+    """Approve or reject only through an independently authorized principal."""
+    actor = _actor(identity)
+    decision_registry, decision_service, _, _ = _response_runtime(request)
+
+    def decide(session):
+        current = decision_registry.get(decision_id, session=session)
+        decided_at = datetime.now(timezone.utc)
+        if current.revision == 1:
+            same_outcome = (
+                current.status.value == ("APPROVED" if payload.approved else "REJECTED")
+                and current.decided_by_principal_id == actor.principal_id
+                and current.decision_evidence_reference == payload.decision_evidence_reference
+                and payload.expected_revision == 0
+            )
+            if not same_outcome:
+                raise HTTPException(status_code=409, detail="Response decision revision conflict.")
+            decided_at = current.decided_at
+        persisted = decision_service.decide(
+            decision_id,
+            actor_principal_id=actor.principal_id,
+            approved=payload.approved,
+            decided_at=decided_at,
+            decision_evidence_reference=payload.decision_evidence_reference,
+            expected_revision=payload.expected_revision,
+            session=session,
+        )
+        return _project_response_decision(persisted)
+
+    return _run_transaction(decide)
+
+
+@router.post("/security-response-decisions/{decision_id}/execute/permission-revocation")
+def execute_approved_system_permission_revocation(
+    decision_id: str,
+    payload: SecurityIncidentResponseExecutionRequest,
+    request: Request,
+    idempotency_key: Annotated[str, Header(alias="Idempotency-Key", min_length=1, max_length=256)],
+    identity: SovereignIdentity = Depends(get_current_identity),
+):
+    """Execute one approved revocation through canonical D12 in this caller transaction."""
+    actor = _actor(identity)
+    decision_registry, _, executor, _ = _response_runtime(request)
+
+    def execute(session):
+        decision = decision_registry.get(decision_id, session=session)
+        if decision.revision != payload.expected_revision:
+            raise HTTPException(status_code=409, detail="Response decision revision conflict.")
+        if decision.target_assignment_id is None or decision.target_permission_id is None:
+            raise HTTPException(status_code=409, detail="Approved decision has no permission assignment binding.")
+        evidence = SystemPermissionCommandEvidence(
+            operation=SystemPermissionCommandOperation.REVOKE,
+            actor_principal_id=actor.principal_id,
+            target_principal_id=decision.target_principal_id,
+            permission_id=decision.target_permission_id,
+            evidence_reference="security-incident-response-decision:" + decision.decision_id,
+            occurred_at=datetime.now(timezone.utc),
+            idempotency_key=idempotency_key,
+            assignment_id=decision.target_assignment_id,
+        )
+        revoked = executor.execute_system_permission_revocation(
+            decision,
+            evidence=evidence,
+            session=session,
+        )
+        return {
+            "decisionId": decision.decision_id,
+            "assignmentId": revoked.assignment_id,
+            "permissionId": revoked.permission_id,
+            "status": revoked.status.value,
+            "revision": revoked.revision,
+        }
+
+    return _run_transaction(execute)
+
+
 @router.get("/workspace-bootstrap")
 def system_services_workspace_bootstrap(
     request: Request,
