@@ -213,7 +213,7 @@ def test_real_invoice_projection_partial_then_final_and_exact_replay(mongo_alloc
         with client.start_session() as session:
             with session.start_transaction():
                 first = module.allocate_settlement_observation_to_platform_invoice(
-                    "tenant-e2e", "obs-partial", **{**args, "session": session}
+                    **{**args, "observation_id": "obs-partial", "session": session}
                 )
         invoice = invoices.find_one({"tenant_id": "tenant-e2e", "invoice_id": "invoice-e2e"})
         assert first["allocation"].allocation_status == "PARTIAL"
@@ -226,7 +226,7 @@ def test_real_invoice_projection_partial_then_final_and_exact_replay(mongo_alloc
         with client.start_session() as session:
             with session.start_transaction():
                 replay = module.allocate_settlement_observation_to_platform_invoice(
-                    "tenant-e2e", "obs-partial", **{**args, "session": session}
+                    **{**args, "observation_id": "obs-partial", "session": session}
                 )
         assert replay["replayed"] is True
         assert allocations.count_documents({}) == 1
@@ -235,7 +235,7 @@ def test_real_invoice_projection_partial_then_final_and_exact_replay(mongo_alloc
         with client.start_session() as session:
             with session.start_transaction():
                 final = module.allocate_settlement_observation_to_platform_invoice(
-                    "tenant-e2e", "obs-final", **{**args, "session": session}
+                    **{**args, "observation_id": "obs-final", "session": session}
                 )
         invoice = invoices.find_one({"tenant_id": "tenant-e2e", "invoice_id": "invoice-e2e"})
         assert final["allocation"].allocation_status == "FINAL"
@@ -261,7 +261,7 @@ def test_real_invoice_allocation_interrupted_transaction_rolls_back_every_projec
             with pytest.raises(RuntimeError, match="simulated interruption"):
                 with session.start_transaction():
                     module.allocate_settlement_observation_to_platform_invoice(
-                        "tenant-e2e", "obs-abort", **{**args, "session": session}
+                        **{**args, "observation_id": "obs-abort", "session": session}
                     )
                     raise RuntimeError("simulated interruption")
         invoice = invoices.find_one({"tenant_id": "tenant-e2e", "invoice_id": "invoice-e2e"})
