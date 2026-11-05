@@ -970,12 +970,12 @@ const SovereignDashboardController = ({ user: propUser, onLogout }) => {
         timeout: 12000, forceNetworkRetry: true,
       });
       setSystemServicesAssignments(Array.isArray(refreshed?.data) ? refreshed.data : []);
-      setSystemServicesActionState(decision === 'accept'
-        ? 'EOS recorded responder acceptance. No containment or account action was performed.'
-        : 'EOS recorded responder decline. No containment or account action was performed.');
       if (systemServicesAssignmentDetail?.assignment?.assignmentId === assignmentId) {
         await handleOpenSystemServicesAssignment(assignmentId);
       }
+      setSystemServicesActionState(decision === 'accept'
+        ? 'EOS recorded responder acceptance. No containment or account action was performed.'
+        : 'EOS recorded responder decline. No containment or account action was performed.');
     } catch {
       setSystemServicesActionState('EOS did not confirm this decision. Refresh the inbox before retrying.');
     }
