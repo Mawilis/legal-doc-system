@@ -941,6 +941,8 @@ def verify(state_path: Path) -> None:
             or decision.get("target_principal_id") != state["actors"]["partner"]["principal_id"]
             or decision.get("target_assignment_id") != state["system_target_permission_assignment_id"]
             or decision.get("target_permission_id") != "privileged_activation:issue"
+            or decision.get("requested_by_principal_id") != system_actors["system_requester"]["principal_id"]
+            or decision.get("decided_by_principal_id") != system_actors["system_approver"]["principal_id"]
             or decision.get("requested_by_principal_id") == decision.get("decided_by_principal_id")
         ):
             raise RuntimeError("BROWSER_CERT_RESPONSE_DECISION_DURABLE_BINDING_INVALID")
@@ -957,6 +959,8 @@ def verify(state_path: Path) -> None:
             )
             if event is None or event.get("event_type") != event_type:
                 raise RuntimeError("BROWSER_CERT_RESPONSE_EVENT_CHAIN_INVALID")
+            if revision == 2 and event.get("actor_principal_id") != system_actors["system_executor"]["principal_id"]:
+                raise RuntimeError("BROWSER_CERT_RESPONSE_EXECUTOR_EVIDENCE_INVALID")
 
         event_keys = [
             f"system-services-response-decision:{response_decision_id}:revision:0",
