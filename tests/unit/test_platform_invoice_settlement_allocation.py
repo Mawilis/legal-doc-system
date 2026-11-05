@@ -75,7 +75,7 @@ def _orchestration_fixture(monkeypatch, *, paid_minor=0, amount_minor=4000):
         execution_status=PlatformExecutionStatus.EXECUTED,
         source_execution_fact_id="fact-1", source_execution_fact_fingerprint="b" * 128,
         provider="PAYSHAP", provider_execution_reference="provider-ref",
-        currency="ZAR", payment_destination_reference="destination-1",
+        currency="ZAR", payment_destination_reference="destination-1", executed_amount_minor=10000,
         platform_invoice_id="invoice-1", release_authorization_id="release-1",
         release_authorization_fingerprint="d" * 128,
     )
