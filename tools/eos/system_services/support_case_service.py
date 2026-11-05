@@ -102,6 +102,8 @@ class SupportCaseApplicationService:
         """Create a case only for the authenticated principal's exact tenant scope."""
         if not isinstance(actor, SupportCaseActorContext) or actor.scope is not SupportCaseScope.TENANT:
             raise SupportCaseApplicationError("TENANT_SELF_SERVICE_SCOPE_REQUIRED")
+        if actor.tenant_id is None:
+            raise SupportCaseApplicationError("TENANT_ACTOR_SCOPE_REQUIRED")
         if not isinstance(category, SupportCaseCategory):
             raise SupportCaseApplicationError("CASE_CATEGORY_INVALID")
         if not isinstance(idempotency_key, str) or not idempotency_key or idempotency_key != idempotency_key.strip():
