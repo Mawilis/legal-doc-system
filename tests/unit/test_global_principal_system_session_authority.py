@@ -207,3 +207,58 @@ def test_system_session_revocation_is_scoped_to_exact_principal_and_reference():
         "session_reference": "WILSYS-SYSTEM-SESSION-x",
         "revoked_at": None,
     }
+
+
+def test_system_refresh_rotation_consumes_old_bearer_and_issues_one_successor(monkeypatch):
+    principal_repository = Mock()
+    principal_repository.get.return_value = SimpleNamespace(status=PrincipalStatus.ACTIVE)
+    credential_repository = Mock()
+    credential_repository.get_by_principal.return_value = SimpleNamespace(
+        credential_revision=8,
+        mfa_enabled=True,
+    )
+    authorizer = Mock()
+    sessions = Mock()
+    refresh_tokens = Mock()
+    refresh_tokens.find_one_and_update.return_value = {
+        "principal_id": "principal-system",
+        "credential_revision": 8,
+        "session_reference": "WILSYS-SYSTEM-SESSION-current",
+    }
+    sessions.find_one.return_value = {
+        "principal_id": "principal-system",
+        "credential_revision": 8,
+        "session_reference": "WILSYS-SYSTEM-SESSION-current",
+        "expires_at": NOW.replace(year=NOW.year + 1),
+    }
+    monkeypatch.setattr(
+        "tools.eos.auth.global_principal_system_session_authority.create_access_token",
+        lambda claims, **_kwargs: (
+            "rotated-access-token"
+            if claims["principal_scope"] == "SYSTEM"
+            else (_ for _ in ()).throw(AssertionError("non-SYSTEM token"))
+        ),
+    )
+    authority = GlobalPrincipalSystemSessionAuthority(
+        sessions=sessions,
+        refresh_tokens=refresh_tokens,
+        principal_repository=principal_repository,
+        credential_repository=credential_repository,
+        authorizer=authorizer,
+    )
+    session = SimpleNamespace(in_transaction=True)
+    receipt = authority.rotate_refresh_token(
+        "sysrefresh-current",
+        session=session,
+        now=NOW,
+    )
+    assert receipt.access_token == "rotated-access-token"
+    assert receipt.refresh_token.startswith("sysrefresh_")
+    assert receipt.refresh_token != "sysrefresh-current"
+    query = refresh_tokens.find_one_and_update.call_args.args[0]
+    assert query["token_digest"]
+    assert query["consumed_at"] is None
+    assert query["revoked_at"] is None
+    assert refresh_tokens.insert_one.call_count == 1
+    assert refresh_tokens.insert_one.call_args.kwargs["session"] is session
+    authorizer.require.assert_called_once()
