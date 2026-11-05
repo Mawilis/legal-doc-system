@@ -411,6 +411,16 @@ _PERMISSIONS: Final = MappingProxyType(
             "escalate suspected identity compromise to security incident handling",
             system=True, workforce=True,
         ),
+        "system_services:incident:response:decide": _meta(
+            "system_services:incident:response:decide", "SYSTEM", "SYSTEM",
+            "approve or reject an incident response proposal under independent review",
+            system=True, workforce=True,
+        ),
+        "system_services:incident:response:execute": _meta(
+            "system_services:incident:response:execute", "SYSTEM", "SYSTEM",
+            "execute one independently approved incident response through a canonical EOS service",
+            system=True, workforce=True,
+        ),
         "iam:access_request:read": _meta(
             "iam:access_request:read", "SYSTEM", "SYSTEM",
             "read access requests and their evidence",
