@@ -99,6 +99,7 @@ def _setup(monkeypatch, *, replay=False):
     )
     app = FastAPI()
     app.state.electrum_completion_indexes_ready = True
+    app.state.electrum_settlement_worker_enabled = True
     app.include_router(router_module.router)
     return TestClient(app), provider_private, wilsy_public, config
 
