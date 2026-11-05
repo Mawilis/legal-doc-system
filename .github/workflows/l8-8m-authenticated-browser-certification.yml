@@ -33,6 +33,7 @@ on:
       - "client/src/components/auth/SovereignMfaPortal.jsx"
       - "client/tests/client/SovereignDashboardController.test.js"
       - "client/tests/contexts/authContext.authoritative.test.jsx"
+      - "tests/e2e/system-services-incident.browser.spec.js"
       - "client/src/components/os/WilsyOSDashboardChrome.jsx"
       - "client/src/components/os/wilsyDashboardChromeConfig.js"
       - "client/src/hooks/useAuthenticatedTenantBrandingAsset.js"
