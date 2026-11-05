@@ -446,8 +446,9 @@ api.interceptors.request.use(
       // Strict server-owned request contracts must retain the exact caller
       // payload. Forensic time remains transport evidence in the dedicated
       // x-forensic-timestamp header and request seal; it is not legal body truth.
-      const preservesCanonicalRequestBody = /^\/legal-acceptance\/accept$/i.test(
-        config.url
+      const preservesCanonicalRequestBody = (
+        /^\/legal-acceptance\/accept$/i.test(config.url)
+        || /^\/system-services\/security-incident-assignments\/[^/]+\/(?:accept|decline)$/i.test(config.url)
       );
       const isMultipartBody = typeof FormData !== 'undefined'
         && config.data instanceof FormData;
