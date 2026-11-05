@@ -245,6 +245,19 @@ def test_real_mongo_system_services_queue_http_uses_current_eos_authority(mongo_
     from tools.eos.system_services.support_case_registry import (
         CASE_COLLECTION, EVENT_COLLECTION, SupportCaseRegistry,
     )
+    from tools.eos.system_services.security_incident import (
+        SecurityIncident, SecurityIncidentCategory, SecurityIncidentEvent,
+    )
+    from tools.eos.system_services.security_incident_registry import (
+        COLLECTION as INCIDENT_COLLECTION,
+        EVENT_COLLECTION as INCIDENT_EVENT_COLLECTION,
+        SecurityIncidentRegistry,
+    )
+    from tools.eos.system_services.security_incident_assignment_registry import (
+        COLLECTION as ASSIGNMENT_COLLECTION,
+        EVENT_COLLECTION as ASSIGNMENT_EVENT_COLLECTION,
+        SecurityIncidentAssignmentRegistry,
+    )
 
     seed_authority(mongo_context)
     registry = SupportCaseRegistry(
@@ -252,10 +265,46 @@ def test_real_mongo_system_services_queue_http_uses_current_eos_authority(mongo_
         events=mongo_context["database"][EVENT_COLLECTION],
     )
     registry.ensure_indexes()
+    incident_registry = SecurityIncidentRegistry(
+        incidents=mongo_context["database"][INCIDENT_COLLECTION],
+        events=mongo_context["database"][INCIDENT_EVENT_COLLECTION],
+    )
+    incident_registry.ensure_indexes()
+    assignment_registry = SecurityIncidentAssignmentRegistry(
+        assignments=mongo_context["database"][ASSIGNMENT_COLLECTION],
+        events=mongo_context["database"][ASSIGNMENT_EVENT_COLLECTION],
+    )
+    assignment_registry.ensure_indexes()
+    incident_at = AT
+    incident = SecurityIncident(
+        incident_id="system-queue-incident-001",
+        tenant_id="tenant-incident-001",
+        reporter_principal_id="tenant-reporter-001",
+        idempotency_fingerprint="e" * 64,
+        category=SecurityIncidentCategory.SUSPECTED_ACCOUNT_COMPROMISE,
+        observed_at=incident_at,
+        received_at=incident_at,
+    )
+    incident_event = SecurityIncidentEvent(
+        event_id="system-queue-incident-event-001",
+        incident_id=incident.incident_id,
+        tenant_id=incident.tenant_id,
+        actor_principal_id=incident.reporter_principal_id,
+        event_type="INCIDENT_REPORTED",
+        occurred_at=incident_at,
+        fingerprint="f" * 64,
+    )
+    with mongo_context["client"].start_session() as session:
+        with session.start_transaction():
+            incident_registry.create_or_replay(incident, incident_event, session=session)
     app = FastAPI()
     app.include_router(router, prefix="/api")
     app.state.system_services_case_indexes_ready = True
     app.state.system_services_case_registry = registry
+    app.state.system_services_incident_indexes_ready = True
+    app.state.system_services_incident_registry = incident_registry
+    app.state.system_services_assignment_indexes_ready = True
+    app.state.system_services_assignment_registry = assignment_registry
     app.state.system_services_authorizer = mongo_context["authorizer"]
     app.dependency_overrides[get_current_identity] = lambda: SovereignIdentity(
         identity_id=PRINCIPAL,
@@ -273,6 +322,11 @@ def test_real_mongo_system_services_queue_http_uses_current_eos_authority(mongo_
     with TestClient(app) as http:
         response = http.get("/api/system-services/cases")
         workspace = http.get("/api/system-services/workspace-bootstrap")
+        incident_queue = http.get("/api/system-services/security-incidents")
+        responder_inbox_denied = http.get("/api/system-services/security-incident-assignments/mine")
+    assert incident_queue.status_code == 200
+    assert incident_queue.json()[0]["incidentId"] == incident.incident_id
+    assert responder_inbox_denied.status_code == 403
     assert response.status_code == 200
     assert response.json() == []
     assert workspace.status_code == 200
