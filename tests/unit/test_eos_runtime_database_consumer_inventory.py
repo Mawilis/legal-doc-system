@@ -37,6 +37,7 @@ OPERATOR_ONLY_CONNECTIONS = {
     "tools/eos/scripts/update_platform_tenant_direct.py",
     "tools/eos/tenancy/retire_legacy_root_aliases.py",
     "tools/eos/legal_operations/service/legal_evidence_provider_readonly_reconciliation_audit_provisioner.py",
+    "tools/eos/mongodb/read_only_index_verifier.py",
 }
 
 
@@ -82,6 +83,11 @@ def test_runtime_mongo_client_construction_is_confined_to_kernel_and_isolated_au
     assert "def main()" in audit_provisioner
     assert 'if __name__ == "__main__":' in audit_provisioner
     assert "client.close()" in audit_provisioner
+
+    index_verifier = (ROOT / "tools/eos/mongodb/read_only_index_verifier.py").read_text(encoding="utf-8")
+    assert "def main()" in index_verifier
+    assert 'if __name__ == "__main__":' in index_verifier
+    assert "mutations_performed\": 0" in index_verifier
 
     connector = (ROOT / CANONICAL_CONNECTOR).read_text(encoding="utf-8")
     assert "MongoClient(" in connector
