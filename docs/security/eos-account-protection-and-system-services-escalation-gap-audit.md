@@ -128,3 +128,13 @@ These are implementation claims, not test-pass claims. The exact-head System Ser
 6. Review privacy retention, POPIA purpose limitation, user notification and incident closure policy before operational activation.
 
 No production deployment, credential/account mutation, self-assigned permission, subscription lifecycle action, merge or Electrum activation is authorized by this implementation update.
+
+
+### Additional responder workflow increment
+
+- Added a principal-bound responder inbox and exact assignment-detail read. Both require the responder's current `system_services:incident:escalate` permission; detail reads also verify the assignment's tenant and reporter bindings against the incident record.
+- Added real-replica-set EOS authorizer tests for exact `system_services:case:triage` and `system_services:incident:escalate` assignments plus active PLATFORM workforce relationships.
+- Added an authenticated HTTP integration journey using the real EOS System Services authorizer: independently authorized triage actor assigns, the separately authorized responder reads their inbox/detail, and that responder accepts under a revision guard.
+- Fixed self-service support-case idempotency so the persisted event key is scoped to tenant + principal + caller idempotency key, matching the unique event index and preventing cross-tenant collisions.
+
+The System Services exact-head CI run is queued/pending at the time of this update. These tests are authored but not yet reported as passing.
