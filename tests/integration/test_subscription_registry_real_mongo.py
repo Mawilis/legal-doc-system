@@ -3267,3 +3267,25 @@ def test_real_mongo_founder_enterprise_subscription_derives_catalogue_truth_from
             "tenant_id": tenant_id,
         }
     ) == 1
+
+
+def test_real_mongo_get_uses_injected_collection_and_caller_session(
+    mongo_context: _MongoContext,
+) -> None:
+    tenant_id = "tenant-read-injection-" + uuid.uuid4().hex
+    created = SubscriptionRegistry.create(
+        _payload(tenant_id, "read-injection-" + uuid.uuid4().hex),
+        tenant_id_header=tenant_id,
+    )
+    expected = created["subscription"]
+    with mongo_context.client.start_session() as session:
+        with session.start_transaction():
+            actual = SubscriptionRegistry.get(
+                expected.subscription_id,
+                tenant_id_header=tenant_id,
+                collection=mongo_context.collection,
+                session=session,
+            )
+            assert actual is not None
+            assert actual.subscription_id == expected.subscription_id
+            assert actual.tenant_id == tenant_id
