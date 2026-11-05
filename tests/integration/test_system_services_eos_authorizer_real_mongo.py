@@ -280,3 +280,79 @@ def test_real_mongo_system_services_queue_http_uses_current_eos_authority(mongo_
     assert workspace.json()["authority"] == "EOS_SYSTEM_SERVICES"
     assert workspace.json()["principalId"] == PRINCIPAL
     assert workspace.json()["capabilities"] == ["system_services:queue:read"]
+
+
+
+def test_real_mongo_incident_assignment_permissions_require_current_platform_workforce(mongo_context):
+    """Exact triage and incident-escalation permissions each require current workforce."""
+    from tools.eos.auth.system_permission_assignment import SystemPermissionAssignment
+
+    triage_principal = "system-services-triage-incident-001"
+    responder_principal = "system-services-incident-responder-001"
+    triage_permission = "system_services:case:triage"
+    responder_permission = "system_services:incident:escalate"
+
+    def relation(principal_id: str, relation_id: str) -> WorkforceRelationship:
+        return WorkforceRelationship(
+            relationship_id=relation_id,
+            revision=1,
+            scope_kind=WorkforceScopeKind.PLATFORM,
+            scope_id=PLATFORM_SCOPE,
+            principal_id=principal_id,
+            relationship_type=WorkforceRelationshipType.EMPLOYEE,
+            status=WorkforceRelationshipStatus.ACTIVE,
+            effective_from=AT - timedelta(days=10),
+            effective_until=None,
+            status_effective_at=AT,
+            reason_reference=f"workforce-evidence-{relation_id}",
+            supersedes_fingerprint=None,
+        )
+
+    with mongo_context["client"].start_session() as session:
+        with session.start_transaction():
+            for principal_id, permission_id, assignment_id in (
+                (triage_principal, triage_permission, "incident-triage-permission-assignment"),
+                (responder_principal, responder_permission, "incident-responder-permission-assignment"),
+            ):
+                PrincipalAuthorityRepository.create(
+                    PrincipalAuthority(principal_id, PrincipalStatus.ACTIVE, 1),
+                    collection=mongo_context["principal_collection"],
+                    session=session,
+                )
+                mongo_context["assignment_registry"].create_or_replay(
+                    SystemPermissionAssignment.assign(
+                        assignment_id=assignment_id,
+                        principal_id=principal_id,
+                        permission_id=permission_id,
+                        assigned_by_principal_id="independent-system-iam-issuer",
+                        assigned_at=AT,
+                        assignment_evidence_reference=f"approved-{assignment_id}",
+                    ),
+                    idempotency_key=f"idem-{assignment_id}",
+                    session=session,
+                )
+                workforce_registry.persist_revision(
+                    relation(principal_id, f"workforce-{relation_id}"),
+                    collection=mongo_context["workforce_collection"],
+                    session=session,
+                )
+
+    with mongo_context["client"].start_session() as session:
+        with session.start_transaction():
+            mongo_context["authorizer"].require(
+                principal_id=triage_principal,
+                permission_id=triage_permission,
+                session=session,
+            )
+            mongo_context["authorizer"].require(
+                principal_id=responder_principal,
+                permission_id=responder_permission,
+                session=session,
+            )
+            with pytest.raises(SystemServicesAuthorizationError):
+                mongo_context["authorizer"].require(
+                    principal_id=triage_principal,
+                    permission_id=responder_permission,
+                    session=session,
+                )
+            session.abort_transaction()
