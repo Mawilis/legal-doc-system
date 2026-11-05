@@ -94,6 +94,9 @@ from tools.eos.auth.system_permission_assignment_registry import (
 from tools.eos.auth.system_permission_revocation_command_service import (
     SystemPermissionRevocationCommandError,
 )
+from tools.eos.saas.auth.password_reset_service import (
+    PasswordResetServiceError,
+)
 from tools.eos.system_services.support_case_registry import (
     SupportCaseConflictError,
     SupportCaseNotFoundError,
@@ -665,6 +668,14 @@ class SecurityIncidentResponseExecutionRequest(BaseModel):
     expected_revision: StrictInt = Field(ge=1)
 
 
+class SecurityIncidentPasswordResetExecutionRequest(BaseModel):
+    model_config = ConfigDict(extra="forbid", frozen=True)
+    expected_revision: StrictInt = Field(ge=1)
+    recovery_token: StrictStr = Field(min_length=1, max_length=4096)
+    new_password: StrictStr = Field(min_length=1, max_length=1024)
+    context_terms: tuple[StrictStr, ...] | None = None
+
+
 def _validate_response_idempotency_key(value: str) -> str:
     if (
         not isinstance(value, str)
@@ -702,11 +713,6 @@ def request_security_incident_response(
     """Create an incident-bound proposal; this route never performs containment."""
     actor = _actor(identity)
     idempotency_key = _validate_response_idempotency_key(idempotency_key)
-    if payload.action is not SecurityIncidentResponseAction.SYSTEM_PERMISSION_REVOCATION:
-        raise HTTPException(
-            status_code=409,
-            detail="Password-reset decisions remain unavailable until canonical execution receipt persistence is atomic.",
-        )
     decision_registry, decision_service, _, permission_assignments = _response_runtime(request)
     incidents, _ = _assignment_runtime(request)
 
@@ -769,32 +775,35 @@ def decide_security_incident_response(
 
     def decide(session):
         current = decision_registry.get(decision_id, session=session)
-        if current.action is not SecurityIncidentResponseAction.SYSTEM_PERMISSION_REVOCATION:
-            raise HTTPException(
-                status_code=409,
-                detail="This response action is not enabled for canonical execution.",
-            )
+        if current.action not in {
+            SecurityIncidentResponseAction.SYSTEM_PERMISSION_REVOCATION,
+            SecurityIncidentResponseAction.PASSWORD_RESET,
+        }:
+            raise HTTPException(status_code=409, detail="This response action is not enabled for canonical execution.")
         incident = incidents.get_by_id(incident_id=current.incident_id, session=session)
         if (
             incident.tenant_id != current.tenant_id
             or incident.reporter_principal_id != current.target_principal_id
-            or current.target_assignment_id is None
-            or current.target_permission_id is None
         ):
             raise HTTPException(status_code=409, detail="Response decision incident/target binding is invalid.")
-        history = permission_assignments.get_history(current.target_assignment_id, session=session)
-        if (
-            not history
-            or history[0].principal_id != current.target_principal_id
-            or history[0].permission_id != current.target_permission_id
-        ):
-            raise HTTPException(status_code=409, detail="Response decision assignment lineage is invalid.")
-        if (
-            current.revision == 0
-            and payload.approved
-            and history[-1].status is not SystemPermissionAssignmentStatus.ACTIVE
-        ):
-            raise HTTPException(status_code=409, detail="Cannot approve a response for an inactive target assignment.")
+        if current.action is SecurityIncidentResponseAction.SYSTEM_PERMISSION_REVOCATION:
+            if current.target_assignment_id is None or current.target_permission_id is None:
+                raise HTTPException(status_code=409, detail="Response decision assignment binding is missing.")
+            history = permission_assignments.get_history(current.target_assignment_id, session=session)
+            if (
+                not history
+                or history[0].principal_id != current.target_principal_id
+                or history[0].permission_id != current.target_permission_id
+            ):
+                raise HTTPException(status_code=409, detail="Response decision assignment lineage is invalid.")
+            if (
+                current.revision == 0
+                and payload.approved
+                and history[-1].status is not SystemPermissionAssignmentStatus.ACTIVE
+            ):
+                raise HTTPException(status_code=409, detail="Cannot approve a response for an inactive target assignment.")
+        elif current.target_assignment_id is not None or current.target_permission_id is not None:
+            raise HTTPException(status_code=409, detail="Password-reset decision cannot bind a permission assignment.")
         decided_at = datetime.now(timezone.utc)
         if current.revision == 1:
             same_outcome = (
@@ -927,6 +936,102 @@ def execute_approved_system_permission_revocation(
         }
 
     return _run_transaction(execute)
+
+
+@router.post("/security-response-decisions/{decision_id}/execute/password-reset")
+def execute_approved_password_reset(
+    decision_id: str,
+    payload: SecurityIncidentPasswordResetExecutionRequest,
+    request: Request,
+    idempotency_key: Annotated[str, Header(alias="Idempotency-Key", min_length=1, max_length=256)],
+    identity: SovereignIdentity = Depends(get_current_identity),
+):
+    """Execute an approved reset only through R10 and atomically record its receipt."""
+    actor = _actor(identity)
+    idempotency_key = _validate_response_idempotency_key(idempotency_key)
+    decision_registry, _, executor, _ = _response_runtime(request)
+    incidents, _ = _assignment_runtime(request)
+
+    def resolve_replay(session):
+        decision = decision_registry.get(decision_id, session=session)
+        if decision.action is not SecurityIncidentResponseAction.PASSWORD_RESET:
+            raise HTTPException(status_code=409, detail="Response decision action mismatch.")
+        incident = incidents.get_by_id(incident_id=decision.incident_id, session=session)
+        if (
+            incident.tenant_id != decision.tenant_id
+            or incident.reporter_principal_id != decision.target_principal_id
+            or decision.target_assignment_id is not None
+            or decision.target_permission_id is not None
+            or decision.revision != payload.expected_revision
+        ):
+            raise HTTPException(status_code=409, detail="Approved password-reset decision binding or revision is invalid.")
+        try:
+            executor.authorize_password_reset_replay(
+                decision,
+                actor_principal_id=actor.principal_id,
+                session=session,
+            )
+        except SecurityIncidentResponseExecutionError as error:
+            raise HTTPException(status_code=403, detail="Independent response execution authority required.") from error
+        return decision_registry.find_execution(
+            decision=decision,
+            actor_principal_id=actor.principal_id,
+            idempotency_key=idempotency_key,
+            session=session,
+        )
+
+    replay = _run_transaction(resolve_replay)
+    if replay is not None:
+        return {
+            "decisionId": decision_id,
+            "status": replay["result_status"],
+            "credentialRevision": replay["result_revision"],
+            "replayed": True,
+        }
+
+    # PasswordResetService owns its transaction. The completion callback writes
+    # the decision receipt, platform audit, and pending outbox intent on that
+    # exact session, so any evidence failure rolls the canonical reset back.
+    def persist_receipt(session, tenant_id, principal_id, credential_revision):
+        decision_registry.record_execution(
+            decision=approved_decision,
+            actor_principal_id=actor.principal_id,
+            idempotency_key=idempotency_key,
+            occurred_at=datetime.now(timezone.utc),
+            result_status="PASSWORD_RESET_COMPLETED",
+            result_revision=credential_revision,
+            session=session,
+        )
+
+    approved_decision = _run_transaction(
+        lambda session: decision_registry.get(decision_id, session=session)
+    )
+    try:
+        result = executor.execute_password_reset(
+            approved_decision,
+            actor_principal_id=actor.principal_id,
+            recovery_token=payload.recovery_token,
+            new_password=payload.new_password,
+            context_terms=payload.context_terms,
+            transaction_completion=persist_receipt,
+        )
+    except PasswordResetServiceError as error:
+        # A concurrent request using the same key may have committed first.
+        # Re-resolve only after independently re-authorizing the actor.
+        replay = _run_transaction(resolve_replay)
+        if replay is not None:
+            return {
+                "decisionId": decision_id,
+                "status": replay["result_status"],
+                "credentialRevision": replay["result_revision"],
+                "replayed": True,
+            }
+        raise HTTPException(status_code=409, detail="Canonical password recovery was not completed.") from error
+    return {
+        "decisionId": decision_id,
+        "status": result.status,
+        "replayed": False,
+    }
 
 
 @router.get("/workspace-bootstrap")
