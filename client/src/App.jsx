@@ -178,8 +178,12 @@ const SovereignRouter = () => {
   // 🛡️ Deterministic navigation state-machine.
   const targetPath = useMemo(() => {
     if (authLoading) return null;
-    const isMfaChallenge = [AUTH_STATES.PRIMARY_AUTHENTICATING, AUTH_STATES.MFA_SETUP, AUTH_STATES.MFA_RECONCILIATION_REQUIRED, AUTH_STATES.MFA_REQUIRED, AUTH_STATES.MFA_VERIFYING].includes(authStage);
-    if (location.pathname === '/mfa' || location.pathname === '/mfa-setup') return isMfaChallenge ? null : '/login';
+    const isMfaReady = [AUTH_STATES.MFA_SETUP, AUTH_STATES.MFA_RECONCILIATION_REQUIRED, AUTH_STATES.MFA_REQUIRED, AUTH_STATES.MFA_VERIFYING].includes(authStage);
+    const isMfaPending = authStage === AUTH_STATES.PRIMARY_AUTHENTICATING
+      || (Boolean(location.state?.pendingPrimaryAuth) && authStage !== AUTH_STATES.FAILED);
+    if (location.pathname === '/mfa' || location.pathname === '/mfa-setup') {
+      return (isMfaReady || isMfaPending) ? null : '/login';
+    }
     if (
       location.pathname === '/reset-password'
       || location.pathname === '/forgot-password'
@@ -245,16 +249,18 @@ const SovereignRouter = () => {
       <Route path="/verify-recovery-contact" element={<RecoveryContactVerificationPortal />} />
       <Route path="/reset-password" element={<PasswordResetPortal />} />
       <Route path="/mfa" element={
-        (authLoading || authStage === AUTH_STATES.PRIMARY_AUTHENTICATING)
-          ? <div role="status" data-testid="mfa-transition">Preparing secure MFA challenge…</div>
-          : [AUTH_STATES.MFA_SETUP, AUTH_STATES.MFA_RECONCILIATION_REQUIRED, AUTH_STATES.MFA_REQUIRED, AUTH_STATES.MFA_VERIFYING].includes(authStage)
-            ? <SovereignMfaPortal /> : <Navigate to="/login" replace />
+        [AUTH_STATES.MFA_SETUP, AUTH_STATES.MFA_RECONCILIATION_REQUIRED, AUTH_STATES.MFA_REQUIRED, AUTH_STATES.MFA_VERIFYING].includes(authStage)
+          ? <SovereignMfaPortal />
+          : ((authStage === AUTH_STATES.PRIMARY_AUTHENTICATING || (location.state?.pendingPrimaryAuth && authStage !== AUTH_STATES.FAILED))
+            ? <div role="status" data-testid="mfa-transition">Preparing secure MFA challenge…</div>
+            : <Navigate to="/login" replace />)
       } />
       <Route path="/mfa-setup" element={
-        (authLoading || authStage === AUTH_STATES.PRIMARY_AUTHENTICATING)
-          ? <div role="status" data-testid="mfa-transition">Preparing secure MFA challenge…</div>
-          : [AUTH_STATES.MFA_SETUP, AUTH_STATES.MFA_RECONCILIATION_REQUIRED, AUTH_STATES.MFA_REQUIRED, AUTH_STATES.MFA_VERIFYING].includes(authStage)
-            ? <SovereignMfaPortal /> : <Navigate to="/login" replace />
+        [AUTH_STATES.MFA_SETUP, AUTH_STATES.MFA_RECONCILIATION_REQUIRED, AUTH_STATES.MFA_REQUIRED, AUTH_STATES.MFA_VERIFYING].includes(authStage)
+          ? <SovereignMfaPortal />
+          : ((authStage === AUTH_STATES.PRIMARY_AUTHENTICATING || (location.state?.pendingPrimaryAuth && authStage !== AUTH_STATES.FAILED))
+            ? <div role="status" data-testid="mfa-transition">Preparing secure MFA challenge…</div>
+            : <Navigate to="/login" replace />)
       } />
       <Route path="/covenant" element={<LegalAcceptanceGate onComplete={() => navigate('/', { replace: true })} />} />
       <Route path="/signature" element={<Navigate to="/covenant" replace />} />
