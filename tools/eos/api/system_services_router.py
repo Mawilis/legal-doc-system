@@ -863,19 +863,17 @@ def execute_approved_system_permission_revocation(
             or incident.reporter_principal_id != decision.target_principal_id
         ):
             raise HTTPException(status_code=409, detail="Approved decision no longer matches its incident target.")
-        # A committed execution advances the decision to revision 2. Resolve
-        # its integrity-checked receipt before applying the revision-1 command
-        # precondition; an exact replay must return the original result without
-        # invoking the canonical revocation command a second time.
-        if decision.revision == 2:
-            execution_receipt = decision_registry.find_execution(
-                decision=decision,
-                actor_principal_id=actor.principal_id,
-                idempotency_key=idempotency_key,
-                session=session,
-            )
-            if execution_receipt is None:
-                raise HTTPException(status_code=409, detail="Response execution receipt is unavailable.")
+        # The decision record remains at its approved revision (1); execution
+        # is represented by the separate immutable revision-2 event. Resolve
+        # that exact, integrity-checked receipt before re-entering D12. This
+        # avoids treating a successful execution as a second revocation.
+        execution_receipt = decision_registry.find_execution(
+            decision=decision,
+            actor_principal_id=actor.principal_id,
+            idempotency_key=idempotency_key,
+            session=session,
+        )
+        if execution_receipt is not None:
             return {
                 "decisionId": decision.decision_id,
                 "assignmentId": decision.target_assignment_id,
@@ -905,36 +903,27 @@ def execute_approved_system_permission_revocation(
             or assignment_history[0].permission_id != decision.target_permission_id
         ):
             raise HTTPException(status_code=409, detail="Approved decision permission assignment correlation is invalid.")
-        execution_receipt = decision_registry.find_execution(
-            decision=decision,
-            actor_principal_id=actor.principal_id,
+        replay = permission_assignments.find_revocation_replay(
+            assignment_id=decision.target_assignment_id,
             idempotency_key=idempotency_key,
             session=session,
         )
-        if execution_receipt is not None:
-            execution_at = datetime.fromisoformat(execution_receipt["occurred_at"])
+        if replay is not None:
+            if (
+                replay.principal_id != decision.target_principal_id
+                or replay.permission_id != decision.target_permission_id
+                or replay.revoked_by_principal_id != actor.principal_id
+                or replay.revocation_evidence_reference != (
+                    "security-incident-response-decision:" + decision.decision_id
+                )
+                or replay.revoked_at is None
+            ):
+                raise HTTPException(status_code=409, detail="Revocation replay does not match the approved decision.")
+            execution_at = replay.revoked_at
         else:
-            replay = permission_assignments.find_revocation_replay(
-                assignment_id=decision.target_assignment_id,
-                idempotency_key=idempotency_key,
-                session=session,
-            )
-            if replay is not None:
-                if (
-                    replay.principal_id != decision.target_principal_id
-                    or replay.permission_id != decision.target_permission_id
-                    or replay.revoked_by_principal_id != actor.principal_id
-                    or replay.revocation_evidence_reference != (
-                        "security-incident-response-decision:" + decision.decision_id
-                    )
-                    or replay.revoked_at is None
-                ):
-                    raise HTTPException(status_code=409, detail="Revocation replay does not match the approved decision.")
-                execution_at = replay.revoked_at
-            else:
-                if assignment_history[-1].status is not SystemPermissionAssignmentStatus.ACTIVE:
-                    raise HTTPException(status_code=409, detail="Target permission assignment is not active.")
-                execution_at = datetime.now(timezone.utc)
+            if assignment_history[-1].status is not SystemPermissionAssignmentStatus.ACTIVE:
+                raise HTTPException(status_code=409, detail="Target permission assignment is not active.")
+            execution_at = datetime.now(timezone.utc)
         evidence = SystemPermissionCommandEvidence(
             operation=SystemPermissionCommandOperation.REVOKE,
             actor_principal_id=actor.principal_id,
