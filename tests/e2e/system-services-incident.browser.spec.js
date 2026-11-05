@@ -73,6 +73,9 @@ async function openSystemServices(browser, actorKey = 'system_responder') {
     systemScope: 'SYSTEM',
     principalMatches: true,
   });
+  // localStorage can be populated immediately before React commits the authenticated
+  // SYSTEM dashboard. Wait for the rendered workspace before sending its shortcut.
+  await expect(page.getByRole('heading', { name: 'System Services' })).toBeVisible();
   await page.keyboard.press('Control+k');
   const dialog = page.getByRole('dialog', { name: 'Wilsy OS Global Search' });
   await expect(dialog).toBeVisible();
@@ -222,7 +225,7 @@ test('certifies initial tenant-neutral SYSTEM credentials, MFA and workspace boo
 
   await page.goto('/login');
   await page.getByLabel('Work email').fill('platform-responder@example.com');
-  await page.getByLabel('Password').fill('Synthetic-Platform-Password-123!');
+  await page.getByRole('textbox', { name: 'Password' }).fill('Synthetic-Platform-Password-123!');
   await page.getByRole('button', { name: 'Continue securely' }).click();
   await expect(page).toHaveURL(/\/mfa$/);
   await page.getByLabel('Six-digit code').fill('123456');
