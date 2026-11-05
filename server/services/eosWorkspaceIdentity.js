@@ -5,6 +5,26 @@
  * EOS verifies the bearer token, current session, tenant membership and role,
  * then returns the current principal profile in workspace-bootstrap.
  */
+export function resolveEosWorkspaceTenantScope({
+  requestedTenantId,
+  workspace,
+  suppliedTenantIds = [],
+} = {}) {
+  const requested = typeof requestedTenantId === 'string' ? requestedTenantId.trim() : '';
+  const canonical = typeof workspace?.tenantId === 'string' ? workspace.tenantId.trim() : '';
+  const supplied = (Array.isArray(suppliedTenantIds) ? suppliedTenantIds : [])
+    .filter((value) => value !== undefined && value !== null && String(value).trim() !== '')
+    .map((value) => String(value).trim());
+
+  if (!requested || !canonical || requested !== canonical) {
+    return { ok: false, status: 403, code: 'WORKSPACE_SCOPE_MISMATCH' };
+  }
+  if (supplied.some((tenantId) => tenantId !== canonical)) {
+    return { ok: false, status: 403, code: 'WORKSPACE_SCOPE_MISMATCH' };
+  }
+  return { ok: true, tenantId: canonical };
+}
+
 export async function resolveEosWorkspaceIdentity({
   baseUrl,
   authorization,
