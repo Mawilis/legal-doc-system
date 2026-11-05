@@ -229,6 +229,7 @@ def test_signed_http_completion_to_real_inbox_empty_204_and_replay(mongo_collect
         },
         "paymentScheme": {"schema": "ZA_RPP"},
         "transactionIdentifiers": {
+            "endToEndIdentification": "e2e-reference-001",
             "uetr": "8f14e45f-ea5e-4f5f-9c5d-8f14e45fea5e",
             "transactionIdentification": "sandbox-rrn-001",
         },
