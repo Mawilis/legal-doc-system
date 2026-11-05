@@ -23,7 +23,7 @@ The worker remains opt-in and production settlement enforcement is not enabled.
   `creditorAccount.identification` and/or `creditorAccount.proxy` locator.
   Raw account/proxy data is not persisted.
 - Each completion is durably inserted into the inbox before acknowledgement.
-- Electrum completion acknowledgement is HTTP 204 with an empty body and a
+- Electrum completion acknowledgement is HTTP 202 with an empty body and a
   signed `x-jwt-signature` header. The content-digest claim is omitted for an
   empty body as required by Electrum's HTTP message signing contract.
 - Non-approved completion messages are durably retained and marked ignored;
@@ -98,8 +98,8 @@ invoice and destination correlation are then checked against that truth.
    unknown key ID, stale `iat`, altered body, malformed schema, wrong scheme,
    missing original message identifiers and invalid UETR cases.
 4. Verify a valid completion is durably inserted and answered with a signed,
-   empty HTTP 204 response inside Electrum's agreed response deadline.
-5. Verify exact delivery replay returns another signed empty 204 without a
+   empty HTTP 202 response inside Electrum's agreed response deadline.
+5. Verify exact delivery replay returns another signed empty 202 without a
    second inbox record or second allocation. Verify divergent message replay
    and duplicate UETR are rejected and raised for reconciliation.
 6. Verify `CANCELLED`, `PENDING`, `REJECTED` and
