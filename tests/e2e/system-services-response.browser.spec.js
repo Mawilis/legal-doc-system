@@ -64,6 +64,20 @@ test('certifies independent request, approval and canonical permission revocatio
   expect(requested.body.revision).toBe(0);
   expect(requested.body.targetPrincipalId).toBe(state.actors.partner.principal_id);
   const decisionId = requested.body.decisionId;
+  const requestReplay = await postAs(
+    browser,
+    'system_requester',
+    '/api/system-services/security-response-decisions',
+    {
+      incident_id: state.system_incident_id,
+      action: 'SYSTEM_PERMISSION_REVOCATION',
+      target_assignment_id: state.system_target_permission_assignment_id,
+      target_permission_id: 'privileged_activation:issue',
+    },
+    'browser-response-request-' + state.database_name,
+  );
+  expect(requestReplay.status).toBe(201);
+  expect(requestReplay.body.decisionId).toBe(decisionId);
 
   const approved = await postAs(
     browser,
@@ -80,6 +94,19 @@ test('certifies independent request, approval and canonical permission revocatio
   expect(approved.body.status).toBe('APPROVED');
   expect(approved.body.revision).toBe(1);
   expect(approved.body.decidedByPrincipalId).toBe(state.system_actors.system_approver.principal_id);
+  const approvalReplay = await postAs(
+    browser,
+    'system_approver',
+    '/api/system-services/security-response-decisions/' + decisionId + '/decision',
+    {
+      approved: true,
+      expected_revision: 0,
+      decision_evidence_reference: 'browser-cert-independent-approval:' + state.database_name,
+    },
+    'browser-response-approval-' + state.database_name,
+  );
+  expect(approvalReplay.status).toBe(200);
+  expect(approvalReplay.body).toEqual(approved.body);
 
   const executionPayload = { expected_revision: 1 };
   const executionKey = 'browser-response-execution-' + state.database_name;
