@@ -210,3 +210,28 @@ def test_subscription_link_without_collection_fails_closed(monkeypatch: pytest.M
             platform_invoice_collection=collection, commercial_projection_collection=collection,
             session=session, projected_at=now,
         )
+
+
+def test_subscription_link_reads_platform_invoice_camel_case_field(monkeypatch: pytest.MonkeyPatch) -> None:
+    collection, session, now, _ = _replay_setup(monkeypatch)
+    original_find_one = collection.find_one
+    def linked_invoice(query, *, session=None):
+        document = original_find_one(query, session=session)
+        if "invoice_id" in query:
+            return dict(document, subscriptionId="sub-canonical")
+        return document
+    monkeypatch.setattr(collection, "find_one", linked_invoice)
+    seen = {}
+    canonical = SimpleNamespace(tenant_id="tenant-replay", subscription_id="sub-canonical")
+    def registry_get(subscription_id, *, tenant_id_header, collection, session):
+        seen.update(subscription_id=subscription_id, tenant_id=tenant_id_header, collection=collection, session=session)
+        return canonical
+    monkeypatch.setattr(orchestration.SubscriptionRegistry, "get", staticmethod(registry_get))
+    project_platform_billing_commercial_settlement(
+        "tenant-replay", "settlement-replay",
+        settlement_collection=collection, release_authorization_collection=collection,
+        platform_invoice_collection=collection, commercial_projection_collection=collection,
+        subscription_collection=collection, session=session, projected_at=now,
+    )
+    assert seen["subscription_id"] == "sub-canonical"
+    assert seen["session"] is session
