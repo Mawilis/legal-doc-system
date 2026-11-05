@@ -148,7 +148,11 @@ describe('EOS runtime database ownership inventory', () => {
     assert.doesNotMatch(pdfController, /mongoose|findWilsyLiveUserProfileDocument/);
     assert.match(pdfController, /EOS_VERIFIED_WORKSPACE_BOOTSTRAP/);
     assert.match(source, /resolveEosWorkspaceIdentity/);
+    assert.match(source, /resolveEosWorkspaceTenantScope\(\{/);
+    assert.match(source, /req\.tenantId = tenantScope\.tenantId/);
     assert.match(source, /requireEosWorkspaceIdentity, generateSovereignArtifactPdf/);
+    assert.match(pdfController, /resolveEosWorkspaceTenantScope\(\{/);
+    assert.match(pdfController, /suppliedTenantIds/);
 
     const identityAdapter = await readFile(
       resolve(ROOT, 'server/services/eosWorkspaceIdentity.js'),
