@@ -49,6 +49,11 @@ from tools.eos.auth.system_permission_assignment_registry import (
 )
 from tools.eos.kernel import db as kernel_db
 from tools.eos.system_services.eos_authorizer import SystemServicesEosAuthorizer
+from tools.eos.system_services.support_case_registry import (
+    CASE_COLLECTION,
+    EVENT_COLLECTION,
+    SupportCaseRegistry,
+)
 from tools.eos.workforce.domain.workforce_relationship import (
     WorkforceRelationship,
     WorkforceRelationshipStatus,
@@ -123,6 +128,12 @@ def system_http_mongo(monkeypatch: pytest.MonkeyPatch):
         "credential_revision": 4,
         "encrypted_secret": "test-envelope-only",
     })
+
+    case_registry = SupportCaseRegistry(
+        cases=database[CASE_COLLECTION],
+        events=database[EVENT_COLLECTION],
+    )
+    case_registry.ensure_indexes()
 
     possession = CurrentSystemPermissionPossessionResolver(
         principal_collection=principals,
