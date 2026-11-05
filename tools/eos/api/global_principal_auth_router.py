@@ -367,7 +367,7 @@ async def select_membership(payload: GlobalMembershipSelectionRequest, request: 
 
 @router.post("/verify-mfa")
 async def verify_global_mfa(payload: GlobalMfaVerificationRequest, request: Request) -> dict[str, Any]:
-    """Verify principal TOTP, consume MFA challenge, and issue session atomically."""
+    """Verify principal TOTP and atomically consume challenge plus issue scoped session."""
     _require_ready(request, "global_principal_auth_indexes_ready")
     _require_ready(request, "global_principal_session_indexes_ready")
     _require_ready(request, "global_principal_mfa_factor_indexes_ready")
@@ -379,14 +379,30 @@ async def verify_global_mfa(payload: GlobalMfaVerificationRequest, request: Requ
     if peer is None or not isinstance(peer.host, str) or not peer.host:
         raise HTTPException(status_code=503, detail="GLOBAL_AUTHENTICATION_UNAVAILABLE")
     source = peer.host
-    session, _database = _begin_transaction()
+    is_system_challenge = payload.mfa_challenge.startswith("sysmfa_")
+    if is_system_challenge:
+        _require_ready(request, "global_principal_system_session_indexes_ready")
+    session, database = _begin_transaction()
     try:
-        challenge_service = MembershipSelectionChallengeService()
-        factor_context = challenge_service.get_mfa_challenge_factor_context(
-            mfa_challenge_token=payload.mfa_challenge,
-            session=session,
-            now=now,
-        )
+        if is_system_challenge:
+            system_challenge_service = GlobalPrincipalSystemMfaChallengeService(
+                collection=database[SYSTEM_MFA_CHALLENGE_COLLECTION],
+            )
+            factor_context = system_challenge_service.get_factor_context(
+                payload.mfa_challenge,
+                session=session,
+                now=now,
+            )
+            challenge_service = None
+        else:
+            challenge_service = MembershipSelectionChallengeService()
+            system_challenge_service = None
+            factor_context = challenge_service.get_mfa_challenge_factor_context(
+                mfa_challenge_token=payload.mfa_challenge,
+                session=session,
+                now=now,
+            )
+
         credential = PrincipalCredentialRepository.get_by_principal(
             factor_context.principal_id,
             session=session,
@@ -404,6 +420,37 @@ async def verify_global_mfa(payload: GlobalMfaVerificationRequest, request: Requ
             _abort_if_active(session)
             _record_failure(rate_gate, credential.normalized_email, source, now)
             raise HTTPException(status_code=401, detail="Invalid authenticator code")
+
+        if is_system_challenge:
+            assert system_challenge_service is not None
+            system_challenge_service.consume(
+                payload.mfa_challenge,
+                principal_id=factor_context.principal_id,
+                credential_revision=factor_context.credential_revision,
+                session=session,
+                now=now,
+            )
+            receipt = GlobalPrincipalSystemSessionAuthority(
+                sessions=database[SYSTEM_SESSION_COLLECTION],
+                authorizer=getattr(request.app.state, "system_services_authorizer", None),
+            ).issue_after_mfa(
+                factor_context.principal_id,
+                factor_context.credential_revision,
+                session=session,
+                now=now,
+            )
+            session.commit_transaction()
+            return {
+                "status": "AUTHENTICATED",
+                "scope": "SYSTEM",
+                "access_token": receipt.access_token,
+                "token_type": "Bearer",
+                "access_expires_at": receipt.access_expires_at.isoformat(),
+                "principal_id": receipt.principal_id,
+                "workspace_id": "SYSTEM_SERVICES",
+            }
+
+        assert challenge_service is not None
         transition = GlobalPrincipalMfaSessionTransition(
             challenge_service=challenge_service,
             session_authority=GlobalPrincipalSessionAuthority(),
@@ -429,7 +476,7 @@ async def verify_global_mfa(payload: GlobalMfaVerificationRequest, request: Requ
     except HTTPException:
         _abort_if_active(session)
         raise
-    except MembershipSelectionChallengeRejected:
+    except (MembershipSelectionChallengeRejected, GlobalPrincipalSystemSessionRejected):
         _abort_if_active(session)
         raise HTTPException(status_code=401, detail="MFA challenge is invalid or expired") from None
     except (
@@ -442,6 +489,7 @@ async def verify_global_mfa(payload: GlobalMfaVerificationRequest, request: Requ
         GlobalPrincipalFactorUnavailable,
         MembershipSelectionChallengeUnavailable,
         GlobalPrincipalSessionUnavailable,
+        GlobalPrincipalSystemSessionUnavailable,
         PrincipalCredentialRepositoryError,
         PyMongoError,
     ):
