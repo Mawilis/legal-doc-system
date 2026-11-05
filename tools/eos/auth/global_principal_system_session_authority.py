@@ -203,11 +203,15 @@ class GlobalPrincipalSystemSessionAuthority:
         sessions: Collection | None = None,
         principal_repository: Any = None,
         credential_repository: Any = None,
+        principal_collection: Collection | None = None,
+        credential_collection: Collection | None = None,
         authorizer: Any = None,
     ) -> None:
         self._sessions = sessions
         self._principals = principal_repository or PrincipalAuthorityRepository()
         self._credentials = credential_repository or PrincipalCredentialRepository()
+        self._principal_collection = principal_collection
+        self._credential_collection = credential_collection
         self._authorizer = authorizer
 
     def _store(self) -> Collection:
@@ -240,8 +244,8 @@ class GlobalPrincipalSystemSessionAuthority:
         session: ClientSession,
     ) -> None:
         try:
-            principal = self._principals.get(principal_id, session=session)
-            credential = self._credentials.get_by_principal(principal_id, session=session)
+            principal = self._principals.get(principal_id, self._principal_collection, session=session)
+            credential = self._credentials.get_by_principal(principal_id, self._credential_collection, session=session)
         except (PrincipalAuthorityRepositoryError, PrincipalCredentialRepositoryError) as error:
             raise GlobalPrincipalSystemSessionUnavailable("SYSTEM_PRINCIPAL_AUTHORITY_UNAVAILABLE") from error
         if principal.status is not PrincipalStatus.ACTIVE:
