@@ -274,8 +274,13 @@ def normalize_electrum_payshap_completion(
         raise ElectrumCompletionContractError("ELECTRUM_UETR_INVALID") from error
     uetr = uetr.lower()
 
+    end_to_end_identification = _required_text(
+        transaction_ids.get("endToEndIdentification"),
+        "ELECTRUM_END_TO_END_IDENTIFICATION_INVALID",
+        maximum=35,
+    )
     transaction_reference = _required_text(
-        transaction_ids.get("transactionIdentification") or uetr,
+        transaction_ids.get("transactionIdentification") or end_to_end_identification,
         "ELECTRUM_TRANSACTION_REFERENCE_INVALID",
         maximum=35,
     )
