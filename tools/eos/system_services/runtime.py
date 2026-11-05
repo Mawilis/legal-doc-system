@@ -107,6 +107,7 @@ class SystemServicesResponseRuntime:
     decision_registry: SecurityIncidentResponseDecisionRegistry
     decision_service: SecurityIncidentResponseDecisionService
     canonical_executor: SecurityIncidentResponseCanonicalExecutor
+    permission_assignment_registry: SystemPermissionAssignmentRegistry
 
 
 def build_system_services_response_runtime(
@@ -165,6 +166,7 @@ def build_system_services_response_runtime(
         decision_registry=decisions,
         decision_service=decision_service,
         canonical_executor=executor,
+        permission_assignment_registry=assignment_registry,
     )
 
 
