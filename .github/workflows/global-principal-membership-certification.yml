@@ -162,7 +162,6 @@ jobs:
             tests/unit/test_membership_selection_challenge.py \
             tests/unit/test_global_principal_session_authority.py \
             tests/unit/test_global_principal_system_session_authority.py \
-            tests/unit/test_global_principal_system_session_authority.py \
             tests/unit/test_global_principal_totp_verifier.py \
             tests/unit/test_global_principal_mfa_kms_envelope.py \
             tests/unit/test_global_principal_mfa_enrollment_service.py \
@@ -187,6 +186,7 @@ jobs:
             --pythonpath "$(command -v python)" \
             tools/eos/auth/membership_selection_challenge.py \
             tools/eos/auth/global_principal_session_authority.py \
+            tools/eos/auth/global_principal_system_session_authority.py \
             tools/eos/auth/global_principal_totp_verifier.py \
             tools/eos/auth/global_principal_mfa_kms_envelope.py \
             tools/eos/auth/global_principal_mfa_enrollment_service.py \
@@ -201,6 +201,7 @@ jobs:
             tools/eos/auth/authentication.py \
             tests/unit/test_membership_selection_challenge.py \
             tests/unit/test_global_principal_session_authority.py \
+            tests/unit/test_global_principal_system_session_authority.py \
             tests/unit/test_global_principal_totp_verifier.py \
             tests/unit/test_global_principal_mfa_kms_envelope.py \
             tests/unit/test_global_principal_mfa_enrollment_service.py \
@@ -223,6 +224,7 @@ jobs:
           git diff --check "origin/${{ github.base_ref }}...HEAD" -- \
             tools/eos/auth/membership_selection_challenge.py \
             tools/eos/auth/global_principal_session_authority.py \
+            tools/eos/auth/global_principal_system_session_authority.py \
             tools/eos/auth/global_principal_totp_verifier.py \
             tools/eos/auth/global_principal_mfa_kms_envelope.py \
             tools/eos/auth/global_principal_mfa_enrollment_service.py \
@@ -237,6 +239,7 @@ jobs:
             tools/eos/api/global_principal_auth_router.py \
             tests/unit/test_membership_selection_challenge.py \
             tests/unit/test_global_principal_session_authority.py \
+            tests/unit/test_global_principal_system_session_authority.py \
             tests/unit/test_global_principal_totp_verifier.py \
             tests/unit/test_global_principal_mfa_kms_envelope.py \
             tests/unit/test_global_principal_mfa_enrollment_service.py \
