@@ -259,6 +259,7 @@ def normalize_electrum_payshap_completion(
             raise ValueError("non-canonical UUID")
     except (ValueError, AttributeError) as error:
         raise ElectrumCompletionContractError("ELECTRUM_UETR_INVALID") from error
+    uetr = uetr.lower()
 
     transaction_reference = _required_text(
         transaction_ids.get("transactionIdentification") or uetr,
