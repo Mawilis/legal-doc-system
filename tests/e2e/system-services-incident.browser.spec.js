@@ -44,8 +44,19 @@ async function openSystemServices(browser, actorKey = 'system_responder') {
     new URL(response.url()).pathname === '/api/auth/workspace-bootstrap'
     && response.request().method() === 'GET'
   ));
+  const systemBootstrap = page.waitForResponse((response) => (
+    new URL(response.url()).pathname === '/api/system-services/workspace-bootstrap'
+    && response.request().method() === 'GET'
+  ));
   await page.goto('/');
-  expect((await authBootstrap).status()).toBe(200);
+  const [tenantBootstrapResponse, systemBootstrapResponse] = await Promise.all([
+    authBootstrap,
+    systemBootstrap,
+  ]);
+  // SYSTEM workforce principals intentionally have no tenant membership.
+  // Tenant bootstrap must deny; the separate SYSTEM authority must succeed.
+  expect(tenantBootstrapResponse.status()).toBe(403);
+  expect(systemBootstrapResponse.status()).toBe(200);
   await page.keyboard.press('Control+k');
   const dialog = page.getByRole('dialog', { name: 'Wilsy OS Global Search' });
   await expect(dialog).toBeVisible();
