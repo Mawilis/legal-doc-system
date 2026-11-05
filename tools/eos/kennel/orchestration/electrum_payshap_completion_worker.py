@@ -19,7 +19,7 @@ from tools.eos.kennel.registry.electrum_payshap_completion_inbox_registry import
 logger = logging.getLogger(__name__)
 
 INBOX = "electrum_payshap_completion_inbox"
-BINDINGS = "electrum_provider_tenant_bindings"
+BINDINGS = "electrum_provider_account_bindings"
 OBSERVATIONS = "financial_settlement_observations"
 EXECUTION_FACTS = "financial_execution_facts"
 PLATFORM_TRUTH = "platform_billing_financial_execution_truths"
