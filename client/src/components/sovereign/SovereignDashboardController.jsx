@@ -142,7 +142,6 @@ const DASHBOARD_ALIASES = Object.freeze({
   LEGAL: DASHBOARD_KEYS.LEGAL,
   LEGAL_DASHBOARD: DASHBOARD_KEYS.LEGAL,
   LEGAL_OS: DASHBOARD_KEYS.LEGAL,
-  SYSTEM_SERVICES: DASHBOARD_KEYS.SYSTEM_SERVICES,
   SYSTEM_SERVICES_DASHBOARD: DASHBOARD_KEYS.SYSTEM_SERVICES
 });
 
@@ -658,7 +657,16 @@ const SovereignDashboardController = ({ user: propUser, onLogout }) => {
     setSystemServicesAssignments([]);
     setSystemServicesAssignmentDetail(null);
     setSystemServicesActionState('');
-    if (manualDashboardKey === DASHBOARD_KEYS.SYSTEM_SERVICES) {
+    if (
+      user?.systemServicesWorkspace?.status === 'READY'
+      && user.systemServicesWorkspace.authority === 'EOS_SYSTEM_SERVICES'
+      && user.systemServicesWorkspace.scope === 'SYSTEM'
+      && user.systemServicesWorkspace.principalId === user.id
+      && Array.isArray(user.systemServicesWorkspace.capabilities)
+      && user.systemServicesWorkspace.capabilities.includes('system_services:queue:read')
+    ) {
+      setManualDashboardKey(DASHBOARD_KEYS.SYSTEM_SERVICES);
+    } else if (manualDashboardKey === DASHBOARD_KEYS.SYSTEM_SERVICES) {
       setManualDashboardKey('');
     }
   }, [user?.id, user?.email]);
