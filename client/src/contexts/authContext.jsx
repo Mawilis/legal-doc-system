@@ -715,6 +715,7 @@ export const AuthProvider = ({ children }) => {
           );
           localStorage.removeItem('wilsy_active_tenant');
           localStorage.removeItem('tenantId');
+          localStorage.removeItem('wilsy_tenant_id');
           setToken(candidateToken);
           setUser(systemWorkspace.user);
           setTenant(null);
