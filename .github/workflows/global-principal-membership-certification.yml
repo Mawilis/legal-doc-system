@@ -1,11 +1,11 @@
 # TITLE: WILSY OS Global Principal and Membership Selection Certification
-# VERSION: v1.6.0-EOS-DB-ENVIRONMENT-BOUNDARY-CERTIFICATION
+# VERSION: v1.7.0-SYSTEM-HTTP-REAL-MONGO-CERTIFICATION
 # AUTHORITY: CI orchestration for global principal, membership and MFA challenge tests.
 # EPITOME: Compile and execute focused unit and real-Mongo certification suites.
 # ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/.github/workflows/global-principal-membership-certification.yml
 # COLLABORATION / OWNERSHIP: Wilsy Core Engineering.
 # CERTIFICATION / UPDATE DATE: 2026-11-03.
-# CHANGELOG: v1.4.0-GLOBAL-PRINCIPAL-MEMBERSHIP-CHALLENGE-CI certifies HTTP login throttle integration and adversarial router tests.
+# CHANGELOG: v1.7.0-SYSTEM-HTTP-REAL-MONGO-CERTIFICATION adds the actual HTTP-to-replica-set SYSTEM login, MFA, session, refresh, replay and logout journey.\n#           v1.4.0-GLOBAL-PRINCIPAL-MEMBERSHIP-CHALLENGE-CI certifies HTTP login throttle integration and adversarial router tests.
 #           v1.3.2-GLOBAL-PRINCIPAL-MEMBERSHIP-CHALLENGE-CI includes the failure-throttle unit test in compile, Pyright and pytest exactly once.
 #           v1.3.1-GLOBAL-PRINCIPAL-MEMBERSHIP-CHALLENGE-CI begins failure-throttle unit certification.
 #           v1.3.0-GLOBAL-PRINCIPAL-MEMBERSHIP-CHALLENGE-CI begins failure-throttle unit certification.
@@ -75,7 +75,7 @@ on:
       - "tests/unit/test_principal_authentication_rate_limit.py"
       - "tests/integration/test_membership_selection_challenge_mongo.py"
       - "tests/integration/test_global_principal_session_authority_mongo.py"
-      - "tests/integration/test_global_principal_system_session_authority_mongo.py"
+      - "tests/integration/test_global_principal_system_session_authority_mongo.py"\n      - "tests/integration/test_global_principal_system_http_mongo.py"
       - "tests/integration/test_global_principal_mfa_session_transition_mongo.py"
       - "tests/integration/test_principal_authentication_rate_limit_mongo.py"
       - "tests/integration/test_principal_credential_repository_mongo.py"
@@ -134,174 +134,166 @@ jobs:
           PY
       - name: Compile global principal, membership and challenge contracts
         run: |
-          python -m py_compile \
-            tools/eos/auth/principal_credential.py \
-            tools/eos/auth/principal_credential_repository.py \
-            tools/eos/auth/principal_credential_authentication.py \
-            tools/eos/auth/principal_credential_migration_assessment.py \
-            tools/eos/auth/tenant_membership_repository.py \
-            tools/eos/auth/membership_selection_projection.py \
-            tools/eos/auth/membership_selection_challenge.py \
-            tools/eos/auth/global_principal_session_authority.py \
-            tools/eos/auth/global_principal_system_session_authority.py \
-            tools/eos/auth/global_principal_totp_verifier.py \
-            tools/eos/auth/global_principal_mfa_kms_envelope.py \
-            tools/eos/auth/global_principal_mfa_enrollment_service.py \
-            tools/eos/auth/global_principal_mfa_legacy_migration_service.py \
-            tools/eos/auth/global_principal_mfa_session_transition.py \
-            tools/eos/auth/principal_authentication_rate_limit.py \
-            tools/eos/api/server.py \
-            tools/eos/kernel/db.py \
-            tests/unit/test_kernel_db_configuration_authority.py \
-            tools/eos/api/auth_router.py \
-            tools/eos/api/global_principal_auth_router.py \
-            tools/eos/auth/authentication.py \
-            tests/unit/test_principal_credential_repository.py \
-            tests/unit/test_principal_credential_authentication.py \
-            tests/unit/test_principal_credential_migration_assessment.py \
-            tests/unit/test_tenant_membership_repository.py \
-            tests/unit/test_membership_selection_projection.py \
-            tests/unit/test_membership_selection_challenge.py \
-            tests/unit/test_global_principal_session_authority.py \
-            tests/unit/test_global_principal_system_session_authority.py \
-            tests/unit/test_global_principal_system_session_authority.py \
-            tests/unit/test_global_principal_totp_verifier.py \
-            tests/unit/test_global_principal_mfa_kms_envelope.py \
-            tests/unit/test_global_principal_mfa_enrollment_service.py \
-            tests/unit/test_global_principal_mfa_legacy_migration_service.py \
-            tests/unit/test_global_principal_mfa_session_transition.py \
-            tests/unit/test_global_principal_auth_challenge_startup.py \
-            tests/unit/test_global_principal_access_token_currentness.py \
-            tests/unit/test_authentication_principal_authority.py \
-            tests/unit/test_authentication_principal_authority.py \
-            tests/unit/test_authentication_principal_authority.py \
-            tests/unit/test_global_principal_auth_router.py \
-            tests/unit/test_principal_authentication_rate_limit.py \
-            tests/integration/test_global_principal_system_session_authority_mongo.py \
-            tests/unit/test_auth_router_authoritative_mfa.py \
-            tests/unit/test_authentication_principal_authority.py \
-            tests/integration/test_membership_selection_challenge_mongo.py \
-            tests/integration/test_global_principal_session_authority_mongo.py \
-            tests/integration/test_global_principal_system_session_authority_mongo.py \
-            tests/integration/test_global_principal_system_http_mongo.py \
-            tests/integration/test_global_principal_system_session_authority_mongo.py \
-            tests/integration/test_global_principal_system_http_mongo.py \
-            tests/integration/test_global_principal_system_session_authority_mongo.py \
-            tests/integration/test_global_principal_system_http_mongo.py \
-            tests/integration/test_global_principal_system_session_authority_mongo.py \
-            tests/integration/test_global_principal_system_session_authority_mongo.py \
-            tests/integration/test_global_principal_mfa_session_transition_mongo.py \
-            tests/integration/test_global_principal_totp_verifier_mongo.py \
-            tests/integration/test_global_principal_mfa_enrollment_mongo.py \
-            tests/integration/test_global_principal_mfa_legacy_migration_mongo.py \
-            tests/integration/test_principal_authentication_rate_limit_mongo.py \
+          python -m py_compile \\
+            tools/eos/auth/principal_credential.py \\
+            tools/eos/auth/principal_credential_repository.py \\
+            tools/eos/auth/principal_credential_authentication.py \\
+            tools/eos/auth/principal_credential_migration_assessment.py \\
+            tools/eos/auth/tenant_membership_repository.py \\
+            tools/eos/auth/membership_selection_projection.py \\
+            tools/eos/auth/membership_selection_challenge.py \\
+            tools/eos/auth/global_principal_session_authority.py \\
+            tools/eos/auth/global_principal_system_session_authority.py \\
+            tools/eos/auth/global_principal_totp_verifier.py \\
+            tools/eos/auth/global_principal_mfa_kms_envelope.py \\
+            tools/eos/auth/global_principal_mfa_enrollment_service.py \\
+            tools/eos/auth/global_principal_mfa_legacy_migration_service.py \\
+            tools/eos/auth/global_principal_mfa_session_transition.py \\
+            tools/eos/auth/principal_authentication_rate_limit.py \\
+            tools/eos/api/server.py \\
+            tools/eos/kernel/db.py \\
+            tests/unit/test_kernel_db_configuration_authority.py \\
+            tools/eos/api/auth_router.py \\
+            tools/eos/api/global_principal_auth_router.py \\
+            tools/eos/auth/authentication.py \\
+            tests/unit/test_principal_credential_repository.py \\
+            tests/unit/test_principal_credential_authentication.py \\
+            tests/unit/test_principal_credential_migration_assessment.py \\
+            tests/unit/test_tenant_membership_repository.py \\
+            tests/unit/test_membership_selection_projection.py \\
+            tests/unit/test_membership_selection_challenge.py \\
+            tests/unit/test_global_principal_session_authority.py \\
+            tests/unit/test_global_principal_system_session_authority.py \\
+            tests/unit/test_global_principal_totp_verifier.py \\
+            tests/unit/test_global_principal_mfa_kms_envelope.py \\
+            tests/unit/test_global_principal_mfa_enrollment_service.py \\
+            tests/unit/test_global_principal_mfa_legacy_migration_service.py \\
+            tests/unit/test_global_principal_mfa_session_transition.py \\
+            tests/unit/test_global_principal_auth_challenge_startup.py \\
+            tests/unit/test_global_principal_access_token_currentness.py \\
+            tests/unit/test_authentication_principal_authority.py \\
+            tests/unit/test_global_principal_auth_router.py \\
+            tests/unit/test_principal_authentication_rate_limit.py \\
+            tests/unit/test_auth_router_authoritative_mfa.py \\
+            tests/integration/test_membership_selection_challenge_mongo.py \\
+            tests/integration/test_global_principal_session_authority_mongo.py \\
+            tests/integration/test_global_principal_system_session_authority_mongo.py \\
+            tests/integration/test_global_principal_system_http_mongo.py \\
+            tests/integration/test_global_principal_mfa_session_transition_mongo.py \\
+            tests/integration/test_global_principal_totp_verifier_mongo.py \\
+            tests/integration/test_global_principal_mfa_enrollment_mongo.py \\
+            tests/integration/test_global_principal_mfa_legacy_migration_mongo.py \\
+            tests/integration/test_principal_authentication_rate_limit_mongo.py \\
             tests/integration/test_principal_credential_repository_mongo.py
       - name: Type-check global principal and membership challenge contracts
         run: |
-          npx --yes pyright@1.1.413 \
-            --pythonpath "$(command -v python)" \
-            tools/eos/auth/membership_selection_challenge.py \
-            tools/eos/auth/global_principal_session_authority.py \
-            tools/eos/auth/global_principal_system_session_authority.py \
-            tools/eos/auth/global_principal_totp_verifier.py \
-            tools/eos/auth/global_principal_mfa_kms_envelope.py \
-            tools/eos/auth/global_principal_mfa_enrollment_service.py \
-            tools/eos/auth/global_principal_mfa_legacy_migration_service.py \
-            tools/eos/auth/global_principal_mfa_session_transition.py \
-            tools/eos/auth/principal_authentication_rate_limit.py \
-            tools/eos/api/server.py \
-            tools/eos/kernel/db.py \
-            tests/unit/test_kernel_db_configuration_authority.py \
-            tools/eos/api/auth_router.py \
-            tools/eos/api/global_principal_auth_router.py \
-            tools/eos/auth/authentication.py \
-            tests/unit/test_membership_selection_challenge.py \
-            tests/unit/test_global_principal_session_authority.py \
-            tests/unit/test_global_principal_system_session_authority.py \
-            tests/unit/test_global_principal_totp_verifier.py \
-            tests/unit/test_global_principal_mfa_kms_envelope.py \
-            tests/unit/test_global_principal_mfa_enrollment_service.py \
-            tests/unit/test_global_principal_mfa_legacy_migration_service.py \
-            tests/unit/test_global_principal_mfa_session_transition.py \
-            tests/unit/test_global_principal_auth_challenge_startup.py \
-            tests/unit/test_auth_router_authoritative_mfa.py \
-            tests/unit/test_global_principal_access_token_currentness.py \
-            tests/unit/test_global_principal_auth_router.py \
-            tests/unit/test_principal_authentication_rate_limit.py \
-            tests/integration/test_membership_selection_challenge_mongo.py \
-            tests/integration/test_global_principal_session_authority_mongo.py \
-            tests/integration/test_global_principal_mfa_session_transition_mongo.py \
-            tests/integration/test_global_principal_totp_verifier_mongo.py \
-            tests/integration/test_global_principal_mfa_enrollment_mongo.py \
-            tests/integration/test_global_principal_mfa_legacy_migration_mongo.py \
-            tests/integration/test_principal_authentication_rate_limit_mongo.py
+          npx --yes pyright@1.1.413 \\
+            --pythonpath "$(command -v python)" \\
+            tools/eos/auth/membership_selection_challenge.py \\
+            tools/eos/auth/global_principal_session_authority.py \\
+            tools/eos/auth/global_principal_system_session_authority.py \\
+            tools/eos/auth/global_principal_totp_verifier.py \\
+            tools/eos/auth/global_principal_mfa_kms_envelope.py \\
+            tools/eos/auth/global_principal_mfa_enrollment_service.py \\
+            tools/eos/auth/global_principal_mfa_legacy_migration_service.py \\
+            tools/eos/auth/global_principal_mfa_session_transition.py \\
+            tools/eos/auth/principal_authentication_rate_limit.py \\
+            tools/eos/api/server.py \\
+            tools/eos/kernel/db.py \\
+            tests/unit/test_kernel_db_configuration_authority.py \\
+            tools/eos/api/auth_router.py \\
+            tools/eos/api/global_principal_auth_router.py \\
+            tools/eos/auth/authentication.py \\
+            tests/unit/test_membership_selection_challenge.py \\
+            tests/unit/test_global_principal_session_authority.py \\
+            tests/unit/test_global_principal_system_session_authority.py \\
+            tests/unit/test_global_principal_totp_verifier.py \\
+            tests/unit/test_global_principal_mfa_kms_envelope.py \\
+            tests/unit/test_global_principal_mfa_enrollment_service.py \\
+            tests/unit/test_global_principal_mfa_legacy_migration_service.py \\
+            tests/unit/test_global_principal_mfa_session_transition.py \\
+            tests/unit/test_global_principal_auth_challenge_startup.py \\
+            tests/unit/test_auth_router_authoritative_mfa.py \\
+            tests/unit/test_global_principal_access_token_currentness.py \\
+            tests/unit/test_authentication_principal_authority.py \\
+            tests/unit/test_global_principal_auth_router.py \\
+            tests/unit/test_principal_authentication_rate_limit.py \\
+            tests/integration/test_global_principal_system_http_mongo.py
       - name: Verify diff whitespace and clean checkout
         run: |
-          git diff --check "origin/${{ github.base_ref }}...HEAD" -- \
-            tools/eos/auth/membership_selection_challenge.py \
-            tools/eos/auth/global_principal_session_authority.py \
-            tools/eos/auth/global_principal_system_session_authority.py \
-            tools/eos/auth/global_principal_totp_verifier.py \
-            tools/eos/auth/global_principal_mfa_kms_envelope.py \
-            tools/eos/auth/global_principal_mfa_enrollment_service.py \
-            tools/eos/auth/global_principal_mfa_legacy_migration_service.py \
-            tools/eos/auth/global_principal_mfa_session_transition.py \
-            tools/eos/auth/principal_authentication_rate_limit.py \
-            tools/eos/auth/authentication.py \
-            tools/eos/api/server.py \
-            tools/eos/kernel/db.py \
-            tests/unit/test_kernel_db_configuration_authority.py \
-            tools/eos/api/auth_router.py \
-            tools/eos/api/global_principal_auth_router.py \
-            tests/unit/test_membership_selection_challenge.py \
-            tests/unit/test_global_principal_session_authority.py \
-            tests/unit/test_global_principal_system_session_authority.py \
-            tests/unit/test_global_principal_totp_verifier.py \
-            tests/unit/test_global_principal_mfa_kms_envelope.py \
-            tests/unit/test_global_principal_mfa_enrollment_service.py \
-            tests/unit/test_global_principal_mfa_legacy_migration_service.py \
-            tests/unit/test_global_principal_mfa_session_transition.py \
-            tests/unit/test_global_principal_auth_challenge_startup.py \
-            tests/unit/test_auth_router_authoritative_mfa.py \
-            tests/unit/test_global_principal_access_token_currentness.py \
-            tests/unit/test_global_principal_auth_router.py \
-            tests/unit/test_principal_authentication_rate_limit.py \
-            tests/integration/test_membership_selection_challenge_mongo.py \
-            tests/integration/test_global_principal_session_authority_mongo.py \
-            tests/integration/test_global_principal_mfa_session_transition_mongo.py \
-            tests/integration/test_global_principal_totp_verifier_mongo.py \
-            tests/integration/test_global_principal_mfa_enrollment_mongo.py \
-            tests/integration/test_global_principal_mfa_legacy_migration_mongo.py \
-            tests/integration/test_principal_authentication_rate_limit_mongo.py \
+          git diff --check "origin/${{ github.base_ref }}...HEAD" -- \\
+            tools/eos/auth/membership_selection_challenge.py \\
+            tools/eos/auth/global_principal_session_authority.py \\
+            tools/eos/auth/global_principal_system_session_authority.py \\
+            tools/eos/auth/global_principal_totp_verifier.py \\
+            tools/eos/auth/global_principal_mfa_kms_envelope.py \\
+            tools/eos/auth/global_principal_mfa_enrollment_service.py \\
+            tools/eos/auth/global_principal_mfa_legacy_migration_service.py \\
+            tools/eos/auth/global_principal_mfa_session_transition.py \\
+            tools/eos/auth/principal_authentication_rate_limit.py \\
+            tools/eos/auth/authentication.py \\
+            tools/eos/api/server.py \\
+            tools/eos/kernel/db.py \\
+            tests/unit/test_kernel_db_configuration_authority.py \\
+            tools/eos/api/auth_router.py \\
+            tools/eos/api/global_principal_auth_router.py \\
+            tests/unit/test_membership_selection_challenge.py \\
+            tests/unit/test_global_principal_session_authority.py \\
+            tests/unit/test_global_principal_system_session_authority.py \\
+            tests/unit/test_global_principal_totp_verifier.py \\
+            tests/unit/test_global_principal_mfa_kms_envelope.py \\
+            tests/unit/test_global_principal_mfa_enrollment_service.py \\
+            tests/unit/test_global_principal_mfa_legacy_migration_service.py \\
+            tests/unit/test_global_principal_mfa_session_transition.py \\
+            tests/unit/test_global_principal_auth_challenge_startup.py \\
+            tests/unit/test_auth_router_authoritative_mfa.py \\
+            tests/unit/test_global_principal_access_token_currentness.py \\
+            tests/unit/test_authentication_principal_authority.py \\
+            tests/unit/test_global_principal_auth_router.py \\
+            tests/unit/test_principal_authentication_rate_limit.py \\
+            tests/integration/test_membership_selection_challenge_mongo.py \\
+            tests/integration/test_global_principal_session_authority_mongo.py \\
+            tests/integration/test_global_principal_system_session_authority_mongo.py \\
+            tests/integration/test_global_principal_system_http_mongo.py \\
+            tests/integration/test_global_principal_mfa_session_transition_mongo.py \\
+            tests/integration/test_global_principal_totp_verifier_mongo.py \\
+            tests/integration/test_global_principal_mfa_enrollment_mongo.py \\
+            tests/integration/test_global_principal_mfa_legacy_migration_mongo.py \\
+            tests/integration/test_principal_authentication_rate_limit_mongo.py \\
+            tests/integration/test_principal_credential_repository_mongo.py \\
             .github/workflows/global-principal-membership-certification.yml
           test -z "$(git status --short)"
       - name: Run focused global principal and membership tests
         run: |
-          python -m pytest -q \
-            tests/unit/test_principal_credential_repository.py \
-            tests/unit/test_principal_credential_authentication.py \
-            tests/unit/test_principal_credential_migration_assessment.py \
-            tests/unit/test_tenant_membership_repository.py \
-            tests/unit/test_membership_selection_projection.py \
-            tests/unit/test_membership_selection_challenge.py \
-            tests/unit/test_global_principal_session_authority.py \
-            tests/unit/test_global_principal_totp_verifier.py \
-            tests/unit/test_global_principal_mfa_kms_envelope.py \
-            tests/unit/test_global_principal_mfa_enrollment_service.py \
-            tests/unit/test_global_principal_mfa_legacy_migration_service.py \
-            tests/unit/test_global_principal_mfa_session_transition.py \
-            tests/unit/test_global_principal_auth_challenge_startup.py \
-            tests/unit/test_global_principal_access_token_currentness.py \
-            tests/unit/test_global_principal_auth_router.py \
-            tests/unit/test_principal_authentication_rate_limit.py \
-            tests/unit/test_auth_router_authoritative_mfa.py \
-            tests/integration/test_membership_selection_challenge_mongo.py \
-            tests/integration/test_global_principal_session_authority_mongo.py \
-            tests/integration/test_global_principal_mfa_session_transition_mongo.py \
-            tests/integration/test_global_principal_totp_verifier_mongo.py \
-            tests/integration/test_global_principal_mfa_enrollment_mongo.py \
-            tests/integration/test_global_principal_mfa_legacy_migration_mongo.py \
-            tests/integration/test_principal_authentication_rate_limit_mongo.py \
+          python -m pytest -q \\
+            tests/unit/test_principal_credential_repository.py \\
+            tests/unit/test_principal_credential_authentication.py \\
+            tests/unit/test_principal_credential_migration_assessment.py \\
+            tests/unit/test_tenant_membership_repository.py \\
+            tests/unit/test_membership_selection_projection.py \\
+            tests/unit/test_membership_selection_challenge.py \\
+            tests/unit/test_global_principal_session_authority.py \\
+            tests/unit/test_global_principal_system_session_authority.py \\
+            tests/unit/test_global_principal_totp_verifier.py \\
+            tests/unit/test_global_principal_mfa_kms_envelope.py \\
+            tests/unit/test_global_principal_mfa_enrollment_service.py \\
+            tests/unit/test_global_principal_mfa_legacy_migration_service.py \\
+            tests/unit/test_global_principal_mfa_session_transition.py \\
+            tests/unit/test_global_principal_auth_challenge_startup.py \\
+            tests/unit/test_global_principal_access_token_currentness.py \\
+            tests/unit/test_authentication_principal_authority.py \\
+            tests/unit/test_global_principal_auth_router.py \\
+            tests/unit/test_principal_authentication_rate_limit.py \\
+            tests/unit/test_auth_router_authoritative_mfa.py \\
+            tests/integration/test_membership_selection_challenge_mongo.py \\
+            tests/integration/test_global_principal_session_authority_mongo.py \\
+            tests/integration/test_global_principal_system_session_authority_mongo.py \\
+            tests/integration/test_global_principal_system_http_mongo.py \\
+            tests/integration/test_global_principal_mfa_session_transition_mongo.py \\
+            tests/integration/test_global_principal_totp_verifier_mongo.py \\
+            tests/integration/test_global_principal_mfa_enrollment_mongo.py \\
+            tests/integration/test_global_principal_mfa_legacy_migration_mongo.py \\
+            tests/integration/test_principal_authentication_rate_limit_mongo.py \\
             tests/integration/test_principal_credential_repository_mongo.py
       - name: Stop disposable MongoDB replica set
         if: always()
