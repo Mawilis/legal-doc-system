@@ -64,7 +64,7 @@ jobs:
           python -m pip install --disable-pip-version-check pytest==9.1.1
       - name: Start disposable MongoDB replica set
         run: |
-          docker run --detach --name wilsy-billing-webhook-mongo --network host mongo:7.0.37 mongod --port 27027 --replSet wilsyVendorCertRS --bind_ip_all
+          docker run --detach --name wilsy-billing-webhook-mongo --network host mongo:7.0.37 mongod --port 27027 --replSet wilsyVendorCertRS --bind_ip_all --setParameter enableTestCommands=1
           python - <<'PY'
           import time
           from pymongo import MongoClient
