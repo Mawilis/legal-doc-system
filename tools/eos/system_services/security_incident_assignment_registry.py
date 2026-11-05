@@ -120,13 +120,13 @@ class SecurityIncidentAssignmentRegistry:
         self._outbox.create_index([("status", ASCENDING), ("created_at", ASCENDING)], name="system_platform_audit_outbox_pending")
 
     @staticmethod
-    def _insert_or_verify(collection: Any, document: dict[str, object]) -> None:
+    def _insert_or_verify(collection: Any, document: dict[str, object], *, session: Any) -> None:
         key = document["event_key"]
         try:
-            collection.insert_one(document)
+            collection.insert_one(document, session=session)
             return
         except DuplicateKeyError:
-            existing = collection.find_one({"event_key": key})
+            existing = collection.find_one({"event_key": key}, session=session)
             if existing is None:
                 raise IncidentAssignmentAuditEvidenceConflictError("INCIDENT_ASSIGNMENT_AUDIT_EVIDENCE_CONFLICT")
             for field, expected in document.items():
@@ -147,8 +147,22 @@ class SecurityIncidentAssignmentRegistry:
             or len(event.idempotency_fingerprint) != 64
         ):
             raise IncidentAssignmentRegistryError("INCIDENT_ASSIGNMENT_AUDIT_INPUT_INVALID")
+        stored_event = self._events.find_one({"event_id": event.event_id}, session=session)
+        if (
+            stored_event is None
+            or stored_event.get("assignment_id") != assignment.assignment_id
+            or stored_event.get("actor_principal_id") != event.actor_principal_id
+            or stored_event.get("idempotency_fingerprint") != event.idempotency_fingerprint
+            or stored_event.get("action") != event.action
+        ):
+            raise IncidentAssignmentAuditEvidenceConflictError("INCIDENT_ASSIGNMENT_IMMUTABLE_EVENT_REQUIRED")
+        occurred_at_value = stored_event.get("occurred_at")
+        if not isinstance(occurred_at_value, datetime):
+            raise IncidentAssignmentAuditEvidenceConflictError("INCIDENT_ASSIGNMENT_IMMUTABLE_EVENT_INVALID")
+        if occurred_at_value.tzinfo is None:
+            occurred_at_value = occurred_at_value.replace(tzinfo=timezone.utc)
         event_key = "system-services:" + event.event_id
-        occurred_at = event.occurred_at.isoformat()
+        occurred_at = occurred_at_value.isoformat()
         common: dict[str, object] = {
             "event_key": event_key,
             "schema_version": AUDIT_SCHEMA_VERSION,
@@ -161,8 +175,8 @@ class SecurityIncidentAssignmentRegistry:
         }
         audit_document = dict(common)
         outbox_document = {**common, "status": "PENDING", "attempts": 0, "created_at": occurred_at}
-        self._insert_or_verify(self._audit_events, audit_document)
-        self._insert_or_verify(self._outbox, outbox_document)
+        self._insert_or_verify(self._audit_events, audit_document, session=session)
+        self._insert_or_verify(self._outbox, outbox_document, session=session)
 
     def get(self, *, assignment_id: str, session: Any) -> SecurityIncidentAssignment:
         _require_transaction(session)
