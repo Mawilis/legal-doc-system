@@ -24,6 +24,7 @@ NON_RUNTIME_FILES = {
     "tools/eos/run_scheduler_playbook.py",
     "tools/eos/ws_test_client.py",
     "tools/eos/packet_runner.py",
+    "tools/eos/reliability/high_availability/heartbeat.py",
 }
 CANONICAL_CONNECTOR = "tools/eos/kernel/db.py"
 ISOLATED_AUDIT_SINK = (
