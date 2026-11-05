@@ -7,6 +7,29 @@ from __future__ import annotations
 
 import os
 from typing import Any
+from dataclasses import dataclass
+
+from tools.eos.auth.system_permission_command_evidence import SystemPermissionCommandEvidence
+from tools.eos.auth.system_permission_revocation_command_service import SystemPermissionRevocationCommandService
+from tools.eos.saas.auth.password_reset_service import PasswordResetService
+from tools.eos.system_services.security_incident_response_decision_registry import (
+    COLLECTION as RESPONSE_DECISION_COLLECTION,
+    EVENT_COLLECTION as RESPONSE_DECISION_EVENT_COLLECTION,
+    PLATFORM_AUDIT_COLLECTION,
+    PLATFORM_OUTBOX_COLLECTION,
+    SecurityIncidentResponseDecisionRegistry,
+)
+from tools.eos.system_services.security_incident_response_decision_service import (
+    SecurityIncidentResponseDecisionService,
+)
+from tools.eos.system_services.security_incident_response_execution import (
+    SecurityIncidentResponseCanonicalExecutor,
+)
+from tools.eos.system_services.security_incident_registry import (
+    COLLECTION as SECURITY_INCIDENT_COLLECTION,
+    EVENT_COLLECTION as SECURITY_INCIDENT_EVENT_COLLECTION,
+    SecurityIncidentRegistry,
+)
 
 from tools.eos.auth.current_system_permission_possession import CurrentSystemPermissionPossessionResolver
 from tools.eos.auth.principal_authority_repository import PrincipalAuthorityRepository
@@ -78,9 +101,79 @@ def build_system_services_runtime(database: Any, *, platform_workforce_scope_id:
     return case_registry, authorizer
 
 
+@dataclass(frozen=True, slots=True)
+class SystemServicesResponseRuntime:
+    """Separately ready decision governance and canonical execution composition."""
+
+    decision_registry: SecurityIncidentResponseDecisionRegistry
+    decision_service: SecurityIncidentResponseDecisionService
+    canonical_executor: SecurityIncidentResponseCanonicalExecutor
+
+
+def build_system_services_response_runtime(
+    database: Any,
+    *,
+    authorizer: SystemServicesEosAuthorizer,
+) -> SystemServicesResponseRuntime:
+    """Compose response governance without enabling dispatch or owning transactions.
+
+    PasswordResetService is intentionally created without a notification
+    dispatcher. Its own transaction remains canonical; permission revocation
+    receives the caller-owned session through the canonical executor.
+    """
+    if database is None:
+        raise SystemServicesAuthorizationUnavailable("SYSTEM_SERVICES_DATABASE_REQUIRED")
+    if type(authorizer) is not SystemServicesEosAuthorizer:
+        raise SystemServicesAuthorizationUnavailable("CURRENT_PLATFORM_AUTHORIZER_REQUIRED")
+
+    decisions = SecurityIncidentResponseDecisionRegistry(
+        decisions=database[RESPONSE_DECISION_COLLECTION],
+        events=database[RESPONSE_DECISION_EVENT_COLLECTION],
+        audit_events=database[PLATFORM_AUDIT_COLLECTION],
+        outbox=database[PLATFORM_OUTBOX_COLLECTION],
+    )
+    decisions.ensure_indexes()
+
+    incidents = SecurityIncidentRegistry(
+        incidents=database[SECURITY_INCIDENT_COLLECTION],
+        events=database[SECURITY_INCIDENT_EVENT_COLLECTION],
+    )
+    assignment_registry = SystemPermissionAssignmentRegistry(
+        database[SYSTEM_PERMISSION_ASSIGNMENT_COLLECTION]
+    )
+    assignment_registry.ensure_indexes()
+    possession = CurrentSystemPermissionPossessionResolver(
+        principal_collection=database["principal_authorities"],
+        assignment_registry=assignment_registry,
+    )
+    revocation = SystemPermissionRevocationCommandService(
+        principal_collection=database["principal_authorities"],
+        possession_resolver=possession,
+        assignment_registry=assignment_registry,
+    )
+    password_reset = PasswordResetService()
+    decision_service = SecurityIncidentResponseDecisionService(
+        decisions=decisions,
+        incidents=incidents,
+        authorizer=authorizer,
+    )
+    executor = SecurityIncidentResponseCanonicalExecutor(
+        password_reset_service=password_reset,
+        permission_revocation_service=revocation,
+        system_services_authorizer=authorizer,
+    )
+    return SystemServicesResponseRuntime(
+        decision_registry=decisions,
+        decision_service=decision_service,
+        canonical_executor=executor,
+    )
+
+
 __all__ = [
     "PLATFORM_WORKFORCE_SCOPE_ENV",
     "resolve_platform_workforce_scope_id",
     "configured_platform_workforce_scope_id",
     "build_system_services_runtime",
+    "SystemServicesResponseRuntime",
+    "build_system_services_response_runtime",
 ]
