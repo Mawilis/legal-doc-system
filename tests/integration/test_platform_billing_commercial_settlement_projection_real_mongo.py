@@ -668,5 +668,6 @@ def test_r3fc_rm09_atomic_duplicate_delivery_is_one_durable_settlement():
         assert db["platform_billing_financial_settlement_evidence"].count_documents({"tenant_id": tenant}) == 1
         assert db["projections"].count_documents({"tenant_id": tenant}) == 1
         assert db["billing_audit_events"].count_documents({"tenant_id": tenant, "event_type": "PLATFORM_INVOICE_SETTLED"}) == 1
+        assert db["billing_outbox_events"].count_documents({"tenant_id": tenant, "event_type": "PLATFORM_INVOICE_SETTLED"}) == 1
     finally:
         client.close()
