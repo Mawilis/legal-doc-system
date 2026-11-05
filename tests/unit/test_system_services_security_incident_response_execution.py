@@ -77,6 +77,7 @@ def test_password_reset_delegates_only_approved_decision_to_canonical_service():
     value._authorizer.require.assert_called_once_with(
         principal_id="independent-executor",
         permission_id="system_services:incident:response:execute",
+        session="caller-owned-transaction",
     )
 
 
