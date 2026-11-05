@@ -28,6 +28,7 @@ OPERATOR_ONLY_CONNECTIONS = {
     "tools/eos/scripts/update_platform_tenant.py",
     "tools/eos/scripts/update_platform_tenant_direct.py",
     "tools/eos/tenancy/retire_legacy_root_aliases.py",
+    "tools/eos/legal_operations/service/legal_evidence_provider_readonly_reconciliation_audit_provisioner.py",
 }
 
 
