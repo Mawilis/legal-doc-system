@@ -1,16 +1,1 @@
-<svg width="180" height="40" viewBox="0 0 180 40" fill="none" xmlns="http://www.w3.org/2000/svg">
-  <path d="M20 0L0 10V30L20 40L40 30V10L20 0Z" fill="url(#gradient)" />
-  <path d="M20 8L8 15V25L20 32L32 25V15L20 8Z" fill="white" fill-opacity="0.2" />
-  <text x="50" y="28" font-family="Inter" font-weight="800" font-size="24" fill="white">
-    WILSY<tspan fill="#6366f1">OS</tspan>
-  </text>
-  <text x="50" y="38" font-family="Inter" font-weight="500" font-size="12" fill="#94A3B8">
-    SUPER ADMIN
-  </text>
-  <defs>
-    <linearGradient id="gradient" x1="0" y1="0" x2="40" y2="40" gradientUnits="userSpaceOnUse">
-      <stop stop-color="#6366f1"/>
-      <stop offset="1" stop-color="#8b5cf6"/>
-    </linearGradient>
-  </defs>
-</svg>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 900 260" role="img" aria-labelledby="t"><title id="t">WILSY OS</title><defs><linearGradient id="g" x2="1" y2="1"><stop stop-color="#FFF1A8"/><stop offset=".45" stop-color="#D9A83E"/><stop offset="1" stop-color="#A76B16"/></linearGradient></defs><g transform="translate(8 16) scale(.43)"><rect x="12" y="12" width="488" height="488" rx="100" fill="#061632" stroke="url(#g)" stroke-width="10"/><path d="M105 139L194 361L256 213L318 361L407 139" fill="none" stroke="url(#g)" stroke-width="38" stroke-linejoin="round"/><path d="M75 290C143 383 359 338 430 198C461 137 410 88 343 103" fill="none" stroke="url(#g)" stroke-width="15" stroke-linecap="round"/></g><text x="255" y="150" font-family="Inter,Arial,sans-serif" font-size="116" font-weight="800" letter-spacing="7" fill="#F7F8FC">WILSY</text><path d="M260 184H720" stroke="url(#g)" stroke-width="5"/><text x="490" y="242" text-anchor="middle" font-family="Inter,Arial,sans-serif" font-size="54" font-weight="700" letter-spacing="19" fill="url(#g)">O S</text></svg>
