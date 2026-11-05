@@ -501,3 +501,165 @@ def test_r3fc_rm06_conflict_or_drift_fails_closed():
 # FAIL-CLOSED POSTURE: All failures surface; no skips or xfails.
 # FINANCIAL EXECUTION AUTHORITY: Kennel EOS exclusively.
 # END OF WILSY OS SOVEREIGN ARTIFACT
+
+
+def _atomic_transport_for_existing_execution(client, db, state):
+    """Reset only settlement-stage rows and return the authenticated synthetic event."""
+    from tools.eos.kennel.domain.financial_execution_provider_observation import EvidenceStrength, TransportDisposition
+    from tools.eos.kennel.orchestration.authenticated_settlement_observation_ingestion import AuthenticatedSettlementTransportEvidence
+    from tools.eos.kennel.registry.financial_execution_registry import FinancialExecutionFactRegistry
+    from tools.eos.kennel.registry.platform_billing_financial_execution_truth_registry import PlatformBillingFinancialExecutionTruthRegistry
+
+    settlement = state["settlement"]
+    tenant_id = state["tenant"]
+    platform = PlatformBillingFinancialExecutionTruthRegistry.get(
+        tenant_id,
+        settlement.platform_execution_truth_id,
+        db["platform_billing_financial_execution_truths"],
+    )
+    fact = FinancialExecutionFactRegistry.get(
+        tenant_id,
+        platform.source_execution_fact_id,
+        db["financial_execution_facts"],
+    )
+    db["financial_settlement_observations"].delete_many({"tenant_id": tenant_id})
+    db["platform_billing_financial_settlement_evidence"].delete_many({"tenant_id": tenant_id})
+    evidence = AuthenticatedSettlementTransportEvidence(
+        tenant_id=tenant_id,
+        provider_name=fact.provider,
+        provider_execution_reference=fact.provider_execution_reference,
+        settlement_reference=settlement.settlement_reference,
+        provider_settlement_evidence_reference=settlement.provider_settlement_evidence_reference,
+        settled_amount_minor=fact.executed_amount_minor,
+        currency=fact.currency,
+        payment_destination_reference=fact.payment_destination_reference,
+        observed_at=settlement.settled_at,
+        settled_at=settlement.settled_at,
+        evidence_strength=EvidenceStrength.AUTHENTICATED,
+        transport_disposition=TransportDisposition.RESPONSE_RECEIVED,
+    )
+    return evidence, fact.execution_fact_id, platform.execution_truth_id, settlement.created_at
+
+
+def _run_atomic_settlement(client, db, state, evidence, execution_truth_id, platform_truth_id, created_at):
+    from tools.eos.saas.billing.atomic_platform_settlement import (
+        ensure_atomic_settlement_audit_indexes,
+        settle_platform_invoice_atomically,
+    )
+
+    observations = db["financial_settlement_observations"]
+    settlement_evidence = db["platform_billing_financial_settlement_evidence"]
+    projections = db["projections"]
+    audit = db["billing_audit_events"]
+    ensure_atomic_settlement_audit_indexes(audit)
+    with client.start_session() as session:
+        with session.start_transaction():
+            return settle_platform_invoice_atomically(
+                state["tenant"],
+                evidence,
+                execution_truth_id=execution_truth_id,
+                platform_truth_id=platform_truth_id,
+                execution_truth_collection=db["financial_execution_facts"],
+                observation_collection=observations,
+                platform_truth_collection=db["platform_billing_financial_execution_truths"],
+                settlement_evidence_collection=settlement_evidence,
+                release_authorization_collection=db["platform_billing_release_authorizations"],
+                platform_invoice_collection=db["invoices"],
+                commercial_projection_collection=projections,
+                subscription_collection=state["subscription_collection"],
+                audit_collection=audit,
+                session=session,
+                created_at=created_at,
+                projected_at=created_at,
+            )
+
+
+def test_r3fc_rm07_atomic_settlement_commits_observation_evidence_invoice_projection_and_audit():
+    client, db, state = graph()
+    try:
+        before_subscription = db["subscriptions"].find_one({
+            "tenant_id": state["tenant"],
+            "subscription_id": state["subscription"].subscription_id,
+        })
+        evidence, fact_id, platform_id, created_at = _atomic_transport_for_existing_execution(client, db, state)
+        result = _run_atomic_settlement(client, db, state, evidence, fact_id, platform_id, created_at)
+        tenant = state["tenant"]
+        invoice = db["invoices"].find_one({"tenant_id": tenant, "invoice_id": state["invoice"].invoice_id})
+        assert invoice["status"] in (InvoiceStatus.PAID.value, InvoiceStatus.PAID.name)
+        assert db["financial_settlement_observations"].count_documents({"tenant_id": tenant}) == 1
+        assert db["platform_billing_financial_settlement_evidence"].count_documents({"tenant_id": tenant}) == 1
+        assert db["projections"].count_documents({"tenant_id": tenant}) == 1
+        assert db["billing_audit_events"].count_documents({"tenant_id": tenant, "event_type": "PLATFORM_INVOICE_SETTLED"}) == 1
+        after_subscription = db["subscriptions"].find_one({
+            "tenant_id": tenant,
+            "subscription_id": state["subscription"].subscription_id,
+        })
+        assert after_subscription == before_subscription
+        assert result["audit_outbox_intent"]["status"] == "PENDING"
+    finally:
+        client.close()
+
+
+def test_r3fc_rm08_atomic_settlement_abort_rolls_back_every_stage_then_recovers():
+    client, db, state = graph()
+    try:
+        evidence, fact_id, platform_id, created_at = _atomic_transport_for_existing_execution(client, db, state)
+        from tools.eos.saas.billing.atomic_platform_settlement import (
+            ensure_atomic_settlement_audit_indexes,
+            settle_platform_invoice_atomically,
+        )
+        audit = db["billing_audit_events"]
+        ensure_atomic_settlement_audit_indexes(audit)
+        with client.start_session() as session:
+            with pytest.raises(RuntimeError, match="SIMULATED_INTERRUPTION"):
+                with session.start_transaction():
+                    settle_platform_invoice_atomically(
+                        state["tenant"], evidence,
+                        execution_truth_id=fact_id,
+                        platform_truth_id=platform_id,
+                        execution_truth_collection=db["financial_execution_facts"],
+                        observation_collection=db["financial_settlement_observations"],
+                        platform_truth_collection=db["platform_billing_financial_execution_truths"],
+                        settlement_evidence_collection=db["platform_billing_financial_settlement_evidence"],
+                        release_authorization_collection=db["platform_billing_release_authorizations"],
+                        platform_invoice_collection=db["invoices"],
+                        commercial_projection_collection=db["projections"],
+                        subscription_collection=state["subscription_collection"],
+                        audit_collection=audit,
+                        session=session,
+                        created_at=created_at,
+                        projected_at=created_at,
+                    )
+                    raise RuntimeError("SIMULATED_INTERRUPTION")
+        tenant = state["tenant"]
+        invoice = db["invoices"].find_one({"tenant_id": tenant, "invoice_id": state["invoice"].invoice_id})
+        assert invoice["status"] not in (InvoiceStatus.PAID.value, InvoiceStatus.PAID.name)
+        assert db["financial_settlement_observations"].count_documents({"tenant_id": tenant}) == 0
+        assert db["platform_billing_financial_settlement_evidence"].count_documents({"tenant_id": tenant}) == 0
+        assert db["projections"].count_documents({"tenant_id": tenant}) == 0
+        assert audit.count_documents({"tenant_id": tenant, "event_type": "PLATFORM_INVOICE_SETTLED"}) == 0
+
+        recovered = _run_atomic_settlement(client, db, state, evidence, fact_id, platform_id, created_at)
+        assert recovered["commercial_projection"].tenant_id == tenant
+        assert db["financial_settlement_observations"].count_documents({"tenant_id": tenant}) == 1
+        assert db["platform_billing_financial_settlement_evidence"].count_documents({"tenant_id": tenant}) == 1
+        assert db["projections"].count_documents({"tenant_id": tenant}) == 1
+        assert audit.count_documents({"tenant_id": tenant, "event_type": "PLATFORM_INVOICE_SETTLED"}) == 1
+    finally:
+        client.close()
+
+
+def test_r3fc_rm09_atomic_duplicate_delivery_is_one_durable_settlement():
+    client, db, state = graph()
+    try:
+        evidence, fact_id, platform_id, created_at = _atomic_transport_for_existing_execution(client, db, state)
+        first = _run_atomic_settlement(client, db, state, evidence, fact_id, platform_id, created_at)
+        second = _run_atomic_settlement(client, db, state, evidence, fact_id, platform_id, created_at)
+        tenant = state["tenant"]
+        assert first["settlement_evidence"].fingerprint == second["settlement_evidence"].fingerprint
+        assert db["financial_settlement_observations"].count_documents({"tenant_id": tenant}) == 1
+        assert db["platform_billing_financial_settlement_evidence"].count_documents({"tenant_id": tenant}) == 1
+        assert db["projections"].count_documents({"tenant_id": tenant}) == 1
+        assert db["billing_audit_events"].count_documents({"tenant_id": tenant, "event_type": "PLATFORM_INVOICE_SETTLED"}) == 1
+    finally:
+        client.close()
