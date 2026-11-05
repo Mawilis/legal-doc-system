@@ -66,10 +66,38 @@ class SecurityIncidentResponseCanonicalExecutor:
         if decision.action is not action or decision.decided_at is None:
             raise SecurityIncidentResponseExecutionError("RESPONSE_DECISION_ACTION_MISMATCH")
 
+    def _require_independent_executor(
+        self,
+        decision: SecurityIncidentResponseDecision,
+        *,
+        actor_principal_id: str,
+        session: Any,
+    ) -> None:
+        if (
+            not isinstance(actor_principal_id, str)
+            or not actor_principal_id
+            or actor_principal_id != actor_principal_id.strip()
+            or actor_principal_id in {
+                decision.requested_by_principal_id,
+                decision.decided_by_principal_id,
+                decision.target_principal_id,
+            }
+        ):
+            raise SecurityIncidentResponseExecutionError(
+                "INDEPENDENT_RESPONSE_EXECUTOR_REQUIRED"
+            )
+        self._authorizer.require(
+            principal_id=actor_principal_id,
+            permission_id="system_services:incident:response:execute",
+            session=session,
+        )
+
     def execute_password_reset(
         self,
         decision: SecurityIncidentResponseDecision,
         *,
+        actor_principal_id: str,
+        session: Any,
         recovery_token: str,
         new_password: str,
         context_terms: Iterable[str] | None = None,
@@ -81,6 +109,11 @@ class SecurityIncidentResponseCanonicalExecutor:
         Secret values are passed transiently and are not retained on this adapter.
         """
         self._require_approved(decision, SecurityIncidentResponseAction.PASSWORD_RESET)
+        self._require_independent_executor(
+            decision,
+            actor_principal_id=actor_principal_id,
+            session=session,
+        )
         return self._password_reset.reset_password(
             tenant_id=decision.tenant_id,
             recovery_token=recovery_token,
@@ -109,11 +142,6 @@ class SecurityIncidentResponseCanonicalExecutor:
             or not isinstance(evidence, SystemPermissionCommandEvidence)
             or evidence.operation is not SystemPermissionCommandOperation.REVOKE
             or evidence.target_principal_id != decision.target_principal_id
-            or evidence.actor_principal_id in {
-                decision.requested_by_principal_id,
-                decision.decided_by_principal_id,
-                decision.target_principal_id,
-            }
             or evidence.assignment_id != decision.target_assignment_id
             or evidence.permission_id != decision.target_permission_id
             or evidence.evidence_reference != (
@@ -124,9 +152,9 @@ class SecurityIncidentResponseCanonicalExecutor:
             raise SecurityIncidentResponseExecutionError(
                 "CANONICAL_REVOCATION_EVIDENCE_BINDING_INVALID"
             )
-        self._authorizer.require(
-            principal_id=evidence.actor_principal_id,
-            permission_id="system_services:incident:response:execute",
+        self._require_independent_executor(
+            decision,
+            actor_principal_id=evidence.actor_principal_id,
             session=session,
         )
         return self._permission_revocation.revoke(evidence, session=session)
