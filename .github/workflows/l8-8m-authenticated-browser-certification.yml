@@ -227,6 +227,9 @@ jobs:
           tests/contexts/authContext.authoritative.test.jsx
           tests/client/SovereignDashboardController.test.js
 
+      - name: Run exact EOS API transport contract tests
+        run: npm --prefix client run test:run -- src/__tests__/services/api.test.js
+
       - name: Run D21B10 real-Mongo branding delivery certificate
         env:
           TEST_VENDOR_MONGO_URI: mongodb://127.0.0.1:27018/?replicaSet=wilsyVendorCertRS
