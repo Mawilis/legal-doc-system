@@ -66,7 +66,7 @@ const renderModule = () => {
       <aside className={styles.sidebar}>
         <div className={styles.branding}>
           <div className={styles.logoPulse}>
-            <img src={'/assets/images/superadmin/wilsy.jpeg'} alt="Wilsy" />
+            <img src={'/assets/images/superadmin/wilsy-logo.svg'} alt="Wilsy" />
           </div>
           <h1 className={styles.osTitle}>{activeTenant?.name?.toUpperCase() || 'TENANT'} <span className={styles.version}>v16.6</span></h1>
         </div>
