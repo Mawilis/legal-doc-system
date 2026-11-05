@@ -280,7 +280,9 @@ def report_own_security_incident(
             occurred_at=received_at,
             fingerprint=event_fingerprint,
         )
-        return _project_incident(registry.create_or_replay(incident, event, session=session))
+        persisted = registry.create_or_replay(incident, event, session=session)
+        registry.record_platform_audit(incident=persisted, event=event, session=session)
+        return _project_incident(persisted)
     return _run_transaction(record)
 
 
