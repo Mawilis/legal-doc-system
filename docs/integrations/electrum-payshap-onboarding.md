@@ -29,6 +29,25 @@ The worker remains opt-in and production settlement enforcement is not enabled.
 - Non-approved completion messages are durably retained and marked ignored;
   they never create settlement observations or invoice allocations.
 
+## Provider contract references
+
+This receiver follows the Electrum Regulated Payments Partner API
+`PaymentStatusReport` schema and its inbound completion notification flow.
+Electrum's partner API specifies an HTTP `202` acknowledgement with no
+response content for the completion notification. All HTTP requests and
+responses carry the `x-jwt-signature` header; ES256/P-256 is the supported
+algorithm, and the content-digest claim is present only when a body exists.
+The minimum TLS version is 1.2; mutual TLS is not supported. Partner-side
+calls do not use the bank OIDC bearer-token mechanism described for
+Electrum-side calls.
+
+Official references:
+
+- [Electrum Regulated Payments Partner API – PaymentStatusReport](https://docs.electrumsoftware.com/openapi/elpapi/elpapi-partner/schema/paymentstatusreport)
+- [Electrum security](https://docs.electrumsoftware.com/epc/public/security)
+- [Electrum HTTP message signing](https://docs.electrumsoftware.com/epc/public/http-message-signing)
+- [Electrum PayShap partner-auth flow](https://docs.electrumsoftware.com/epc/public/payshap-partner-auth)
+
 ## Electrum onboarding exchange
 
 Obtain these values directly through Electrum's approved onboarding channel:
