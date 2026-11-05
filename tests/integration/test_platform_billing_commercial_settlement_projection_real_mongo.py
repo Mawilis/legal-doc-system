@@ -439,6 +439,22 @@ def test_r3fc_rm01c_cross_tenant_subscription_link_cannot_settle_invoice():
         client.close()
 
 
+def test_r3fc_rm01d_missing_canonical_subscription_cannot_settle_invoice():
+    client, db, state = graph()
+    try:
+        db["subscriptions"].delete_one({
+            "tenant_id": state["tenant"],
+            "subscription_id": state["subscription"].subscription_id,
+        })
+        with pytest.raises(PlatformBillingCommercialSettlementProjectionError):
+            project(client, db, state)
+        invoice = db["invoices"].find_one({"invoice_id": state["invoice"].invoice_id})
+        assert invoice["status"] not in (InvoiceStatus.PAID.value, InvoiceStatus.PAID.name)
+        assert db["projections"].count_documents({"tenant_id": state["tenant"]}) == 0
+    finally:
+        client.close()
+
+
 def test_r3fc_rm02_wrong_tenant_missing_settlement():
     client, db, state = graph()
     try:
