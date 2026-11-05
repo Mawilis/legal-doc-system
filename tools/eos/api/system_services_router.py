@@ -863,6 +863,26 @@ def execute_approved_system_permission_revocation(
             or incident.reporter_principal_id != decision.target_principal_id
         ):
             raise HTTPException(status_code=409, detail="Approved decision no longer matches its incident target.")
+        # A committed execution advances the decision to revision 2. Resolve
+        # its integrity-checked receipt before applying the revision-1 command
+        # precondition; an exact replay must return the original result without
+        # invoking the canonical revocation command a second time.
+        if decision.revision == 2:
+            execution_receipt = decision_registry.find_execution(
+                decision=decision,
+                actor_principal_id=actor.principal_id,
+                idempotency_key=idempotency_key,
+                session=session,
+            )
+            if execution_receipt is None:
+                raise HTTPException(status_code=409, detail="Response execution receipt is unavailable.")
+            return {
+                "decisionId": decision.decision_id,
+                "assignmentId": decision.target_assignment_id,
+                "permissionId": decision.target_permission_id,
+                "status": execution_receipt["result_status"],
+                "revision": execution_receipt["result_revision"],
+            }
         if decision.revision != payload.expected_revision:
             raise HTTPException(status_code=409, detail="Response decision revision conflict.")
         try:
