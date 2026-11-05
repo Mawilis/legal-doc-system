@@ -54,6 +54,10 @@ def _payload(outcome="APPROVED"):
             "messageIdentification": "electrum-message-001",
             "creationDateTime": "2026-11-05T08:00:00Z",
         },
+        "originalMessageIdentifiers": {
+            "messageIdentification": "original-message-1",
+            "creationDateTime": "2026-11-05T07:59:00Z",
+        },
         "transactionIdentifiers": {
             "uetr": "8f14e45f-ea5e-4f5f-9c5d-8f14e45fea5e",
             "transactionIdentification": "transaction-001",
