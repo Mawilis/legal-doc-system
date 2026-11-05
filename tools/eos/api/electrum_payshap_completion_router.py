@@ -189,7 +189,7 @@ async def receive_electrum_payshap_completion(request: Request) -> Response:
 
     try:
         collection = runtime.database.get_collection(_INBOX_COLLECTION).with_options(
-            write_concern=WriteConcern(w="majority", j=True)
+            write_concern=WriteConcern(w="majority", j=True, wtimeout=750)
         )
         _, replayed = ElectrumPayShapCompletionInboxRegistry.create(event, collection)
     except ElectrumCompletionInboxConflict:
