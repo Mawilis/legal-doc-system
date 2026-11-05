@@ -229,7 +229,7 @@ def test_system_refresh_rotation_consumes_old_bearer_and_issues_one_successor(mo
         "principal_id": "principal-system",
         "credential_revision": 8,
         "session_reference": "WILSYS-SYSTEM-SESSION-current",
-        "expires_at": NOW.replace(year=NOW.year + 1),
+        "expires_at": NOW.replace(year=NOW.year + 1, tzinfo=None),
     }
     monkeypatch.setattr(
         "tools.eos.auth.global_principal_system_session_authority.create_access_token",
@@ -255,6 +255,7 @@ def test_system_refresh_rotation_consumes_old_bearer_and_issues_one_successor(mo
     assert receipt.access_token == "rotated-access-token"
     assert receipt.refresh_token.startswith("sysrefresh_")
     assert receipt.refresh_token != "sysrefresh-current"
+    assert receipt.refresh_expires_at.tzinfo is timezone.utc
     query = refresh_tokens.find_one_and_update.call_args.args[0]
     assert query["token_digest"]
     assert query["consumed_at"] is None
