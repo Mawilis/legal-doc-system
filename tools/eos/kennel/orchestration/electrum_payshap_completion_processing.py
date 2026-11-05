@@ -104,7 +104,13 @@ def process_electrum_payshap_completion_event(
             "allocation_id": raw.get("allocation_id"),
             "replayed": True,
         }
-    if state != "PENDING" or raw.get("processing_revision") != 0:
+    revision = raw.get("processing_revision")
+    if (
+        state != "PENDING"
+        or isinstance(revision, bool)
+        or not isinstance(revision, int)
+        or revision < 0
+    ):
         raise ElectrumCompletionInboxError("ELECTRUM_INBOX_PROCESSING_STATE_INVALID")
 
     if event.outcome != "APPROVED":
@@ -115,6 +121,7 @@ def process_electrum_payshap_completion_event(
             processed_at=processed_at,
             allocation_id=None,
             ignored=True,
+            expected_revision=revision,
         )
         return {
             "message_id": message_id,
@@ -200,6 +207,7 @@ def process_electrum_payshap_completion_event(
         session=session,
         processed_at=processed_at,
         allocation_id=allocation.allocation_id,
+        expected_revision=revision,
     )
     return {
         "message_id": message_id,
