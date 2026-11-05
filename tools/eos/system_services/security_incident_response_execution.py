@@ -15,6 +15,7 @@ from tools.eos.auth.system_permission_command_evidence import (
 from tools.eos.auth.system_permission_revocation_command_service import (
     SystemPermissionRevocationCommandService,
 )
+from tools.eos.system_services.eos_authorizer import SystemServicesEosAuthorizer
 from tools.eos.saas.auth.password_reset_service import (
     PasswordResetResult,
     PasswordResetService,
@@ -41,13 +42,17 @@ class SecurityIncidentResponseCanonicalExecutor:
         *,
         password_reset_service: PasswordResetService,
         permission_revocation_service: SystemPermissionRevocationCommandService,
+        system_services_authorizer: SystemServicesEosAuthorizer,
     ) -> None:
         if type(password_reset_service) is not PasswordResetService:
             raise SecurityIncidentResponseExecutionError("CANONICAL_PASSWORD_RESET_SERVICE_REQUIRED")
         if type(permission_revocation_service) is not SystemPermissionRevocationCommandService:
             raise SecurityIncidentResponseExecutionError("CANONICAL_PERMISSION_REVOCATION_SERVICE_REQUIRED")
+        if type(system_services_authorizer) is not SystemServicesEosAuthorizer:
+            raise SecurityIncidentResponseExecutionError("CURRENT_PLATFORM_WORKFORCE_AUTHORIZER_REQUIRED")
         self._password_reset = password_reset_service
         self._permission_revocation = permission_revocation_service
+        self._authorizer = system_services_authorizer
 
     @staticmethod
     def _require_approved(
@@ -118,6 +123,11 @@ class SecurityIncidentResponseCanonicalExecutor:
             raise SecurityIncidentResponseExecutionError(
                 "CANONICAL_REVOCATION_EVIDENCE_BINDING_INVALID"
             )
+        self._authorizer.require(
+            principal_id=evidence.actor_principal_id,
+            permission_id="system_services:incident:response:execute",
+            session=session,
+        )
         return self._permission_revocation.revoke(evidence, session=session)
 
 
