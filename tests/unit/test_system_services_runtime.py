@@ -3,6 +3,7 @@ import pytest
 from tools.eos.system_services.runtime import (
     PLATFORM_WORKFORCE_SCOPE_ENV,
     build_system_services_runtime,
+    build_system_services_response_runtime,
     configured_platform_workforce_scope_id,
     resolve_platform_workforce_scope_id,
 )
@@ -53,3 +54,21 @@ def test_runtime_composes_repositories_without_creating_authority_records():
     assert "principal_authorities" in database.collections
     assert "system_permission_assignments" in database.collections
     assert "workforce_relationship_history" in database.collections
+
+
+def test_response_runtime_composes_decisions_and_canonical_adapters_without_dispatch():
+    database = Database()
+    _, authorizer = build_system_services_runtime(
+        database,
+        platform_workforce_scope_id="wilsy-platform",
+    )
+
+    runtime = build_system_services_response_runtime(database, authorizer=authorizer)
+
+    assert runtime.decision_registry is not None
+    assert runtime.decision_service is not None
+    assert runtime.canonical_executor is not None
+    assert runtime.permission_assignment_registry is not None
+    assert runtime.canonical_executor._password_reset._notification_dispatcher is None
+    assert "system_security_incident_response_decisions" in database.collections
+    assert "system_security_incident_response_decision_events" in database.collections
