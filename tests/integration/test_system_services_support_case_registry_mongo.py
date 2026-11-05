@@ -29,6 +29,14 @@ from tools.eos.system_services.support_case_service import (
 from tools.eos.auth.principal_authority import PrincipalAuthority
 from tools.eos.auth.principal_authority_repository import PrincipalAuthorityRepository
 from tools.eos.auth.principal_status import PrincipalStatus
+from tools.eos.auth.current_system_permission_possession import CurrentSystemPermissionPossessionResolver
+from tools.eos.auth.system_permission_assignment import SystemPermissionAssignment, SystemPermissionAssignmentStatus
+from tools.eos.auth.system_permission_assignment_registry import SystemPermissionAssignmentRegistry
+from tools.eos.auth.system_permission_command_evidence import (
+    SystemPermissionCommandEvidence,
+    SystemPermissionCommandOperation,
+)
+from tools.eos.auth.system_permission_revocation_command_service import SystemPermissionRevocationCommandService
 from tools.eos.auth.tenant_membership import TenantMembershipAuthority, TenantMembershipStatus
 from tools.eos.auth.tenant_membership_repository import TenantMembershipRepository
 from tools.eos.system_services.support_case_registry import (
@@ -1087,3 +1095,125 @@ def test_real_mongo_execution_receipt_rejects_non_independent_actor_and_noncanon
     assert database[RESPONSE_DECISION_EVENT_COLLECTION].count_documents({
         "decision_id": decision.decision_id, "revision": 2,
     }) == 0
+
+
+def test_real_mongo_canonical_revocation_and_execution_receipt_rollback_together(mongo_case_registry):
+    client, database, _, decision_registry = mongo_case_registry
+    target_principal = "principal-response-rollback-target"
+    executor_principal = "principal-response-rollback-executor"
+    assignment_id = "assignment-response-rollback-target"
+    decision_id = "decision-response-canonical-rollback"
+    assignment_registry = SystemPermissionAssignmentRegistry(
+        database["system_permission_assignments"]
+    )
+    assignment_registry.ensure_indexes()
+    principals = database["principal_authorities"]
+    occurred_at = NOW + timedelta(minutes=2)
+    decision = SecurityIncidentResponseDecision(
+        decision_id=decision_id,
+        incident_id="incident-response-canonical-rollback",
+        tenant_id="tenant-response-canonical-rollback",
+        target_principal_id=target_principal,
+        action=SecurityIncidentResponseAction.SYSTEM_PERMISSION_REVOCATION,
+        requested_by_principal_id="principal-response-rollback-requester",
+        requested_at=NOW,
+        request_evidence_reference="request-evidence-response-canonical-rollback",
+        target_assignment_id=assignment_id,
+        target_permission_id="privileged_activation:issue",
+    )
+
+    with client.start_session() as session:
+        with session.start_transaction():
+            PrincipalAuthorityRepository.create(
+                PrincipalAuthority(target_principal, PrincipalStatus.ACTIVE, 0),
+                principals,
+                session=session,
+            )
+            PrincipalAuthorityRepository.create(
+                PrincipalAuthority(executor_principal, PrincipalStatus.ACTIVE, 0),
+                principals,
+                session=session,
+            )
+            assignment_registry.create_or_replay(
+                SystemPermissionAssignment.assign(
+                    assignment_id=assignment_id,
+                    principal_id=target_principal,
+                    permission_id="privileged_activation:issue",
+                    assigned_by_principal_id="independent-iam-issuer",
+                    assigned_at=NOW,
+                    assignment_evidence_reference="target-assignment-response-rollback",
+                ),
+                idempotency_key="target-assignment-response-rollback",
+                session=session,
+            )
+            assignment_registry.create_or_replay(
+                SystemPermissionAssignment.assign(
+                    assignment_id="assignment-response-rollback-executor-revoke",
+                    principal_id=executor_principal,
+                    permission_id="system_permission_assignment:revoke",
+                    assigned_by_principal_id="independent-iam-issuer",
+                    assigned_at=NOW,
+                    assignment_evidence_reference="executor-revoke-authority-response-rollback",
+                ),
+                idempotency_key="executor-revoke-authority-response-rollback",
+                session=session,
+            )
+            decision_registry.create(decision, session=session)
+            approved = decision_registry.decide(
+                decision_id,
+                approved=True,
+                decided_by_principal_id="principal-response-rollback-approver",
+                decided_at=NOW + timedelta(minutes=1),
+                decision_evidence_reference="approval-evidence-response-canonical-rollback",
+                expected_revision=0,
+                session=session,
+            )
+
+    possession = CurrentSystemPermissionPossessionResolver(
+        principal_collection=principals,
+        assignment_registry=assignment_registry,
+    )
+    revocation = SystemPermissionRevocationCommandService(
+        principal_collection=principals,
+        possession_resolver=possession,
+        assignment_registry=assignment_registry,
+    )
+    evidence = SystemPermissionCommandEvidence(
+        operation=SystemPermissionCommandOperation.REVOKE,
+        actor_principal_id=executor_principal,
+        target_principal_id=target_principal,
+        permission_id="privileged_activation:issue",
+        evidence_reference="security-incident-response-decision:" + decision_id,
+        occurred_at=occurred_at,
+        idempotency_key="execution-response-canonical-rollback",
+        assignment_id=assignment_id,
+    )
+    event_key = "system-services-response-execution:" + decision_id + ":revision:2"
+
+    with client.start_session() as session:
+        with pytest.raises(RuntimeError, match="CANONICAL_RESPONSE_EXECUTION_ABORT"):
+            with session.start_transaction():
+                revoked = revocation.revoke(evidence, session=session)
+                assert revoked.status is SystemPermissionAssignmentStatus.REVOKED
+                decision_registry.record_execution(
+                    decision=approved,
+                    actor_principal_id=executor_principal,
+                    idempotency_key=evidence.idempotency_key,
+                    occurred_at=occurred_at,
+                    result_status=revoked.status.value,
+                    result_revision=revoked.revision,
+                    session=session,
+                )
+                raise RuntimeError("CANONICAL_RESPONSE_EXECUTION_ABORT")
+
+    history = assignment_registry.get_history(assignment_id)
+    assert len(history) == 1
+    assert history[0].status is SystemPermissionAssignmentStatus.ACTIVE
+    persisted_decision = decision_registry.get(decision_id, session=_read_only_session(client))
+    assert persisted_decision.status is SecurityIncidentResponseDecisionStatus.APPROVED
+    assert persisted_decision.revision == 1
+    assert database[RESPONSE_DECISION_EVENT_COLLECTION].count_documents({
+        "decision_id": decision_id, "revision": 2,
+    }) == 0
+    assert database[PLATFORM_AUDIT_COLLECTION].count_documents({"event_key": event_key}) == 0
+    assert database[PLATFORM_OUTBOX_COLLECTION].count_documents({"event_key": event_key}) == 0
