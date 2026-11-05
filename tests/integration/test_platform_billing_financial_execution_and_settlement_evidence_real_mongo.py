@@ -19,9 +19,12 @@ FAIL-CLOSED DECLARATION: Missing URI, invalid provenance, and persistence failur
 """
 from __future__ import annotations
 import os,uuid
+from concurrent.futures import ThreadPoolExecutor
+from threading import Barrier, local
 from datetime import datetime,timezone
 import pytest
 from pymongo import MongoClient
+from pymongo.errors import PyMongoError
 from tools.eos.saas.domain.platform_billing_release_authorization import PlatformBillingReleaseAuthorization
 from tools.eos.saas.billing.platform_billing_release_authorization_registry import PlatformBillingReleaseAuthorizationRegistry
 from tools.eos.saas.billing.platform_billing_financial_execution_request_issuance import issue_platform_billing_financial_execution_request as _issue_platform_billing_financial_execution_request
@@ -362,6 +365,260 @@ def test_r3f0_rm06():
   with pytest.raises(Exception):
    _canonical_settlement_evidence('t',first.execution_truth_id,execution_collection=d['platform_billing_financial_execution_truths'],settlement_collection=d['platform_billing_financial_settlement_evidence'],settlement_reference='different',provider_settlement_evidence_reference='se',settled_at=settled_at,created_at=settlement_created_at)
  finally: close(c)
+
+
+def _retry_exact_settlement_replay(operation, *, attempts=5):
+    """Caller-owned whole-transaction retry after a duplicate/write race."""
+    from tools.eos.kennel.registry.financial_settlement_observation_registry import (
+        FinancialSettlementObservationConflictError,
+    )
+    last_error = None
+    for _ in range(attempts):
+        try:
+            return operation()
+        except FinancialSettlementObservationConflictError as error:
+            last_error = error
+        except PyMongoError as error:
+            if not error.has_error_label("TransientTransactionError"):
+                raise
+            last_error = error
+    raise AssertionError("SETTLEMENT_TRANSACTION_RETRY_EXHAUSTED") from last_error
+
+
+def test_settlement_observation_and_platform_evidence_concurrent_exact_replay(
+    monkeypatch,
+):
+    """Two independent transactions converge to one observation and one evidence row."""
+    from tools.eos.kennel.registry.financial_settlement_observation_registry import (
+        FinancialSettlementObservationRegistry,
+    )
+
+    client, database, _ = setup_graph()
+    try:
+        instant = datetime(2026, 1, 1, tzinfo=timezone.utc)
+        execution = truth(database, executed_at=instant, created_at=instant)
+        barrier = Barrier(2)
+        thread_state = local()
+        original_create = FinancialSettlementObservationRegistry.create
+
+        def synchronized_create(value, collection, *, session=None):
+            if not getattr(thread_state, "entered", False):
+                thread_state.entered = True
+                barrier.wait(timeout=10)
+            return original_create(value, collection, session=session)
+
+        monkeypatch.setattr(
+            FinancialSettlementObservationRegistry,
+            "create",
+            staticmethod(synchronized_create),
+        )
+
+        def deliver():
+            return _retry_exact_settlement_replay(
+                lambda: _canonical_settlement_evidence(
+                    "t",
+                    execution.execution_truth_id,
+                    execution_collection=database["platform_billing_financial_execution_truths"],
+                    settlement_collection=database["platform_billing_financial_settlement_evidence"],
+                    settlement_reference="concurrent-settlement",
+                    provider_settlement_evidence_reference="concurrent-provider-evidence",
+                    settled_at=instant,
+                    created_at=instant,
+                )
+            )
+
+        with ThreadPoolExecutor(max_workers=2) as pool:
+            first, second = [future.result(timeout=30) for future in (
+                pool.submit(deliver),
+                pool.submit(deliver),
+            )]
+
+        assert first == second
+        assert database["financial_settlement_observations"].count_documents({
+            "tenant_id": "t",
+            "settlement_reference": "concurrent-settlement",
+        }) == 1
+        assert database["platform_billing_financial_settlement_evidence"].count_documents({
+            "tenant_id": "t",
+            "platform_execution_truth_id": execution.execution_truth_id,
+        }) == 1
+    finally:
+        close(client)
+
+
+def test_partial_settlement_observation_never_becomes_full_platform_settlement_evidence():
+    """Partial provider settlement remains observation-only until full amount is proven."""
+    from tools.eos.kennel.domain.financial_execution_provider_observation import (
+        EvidenceStrength,
+        TransportDisposition,
+    )
+    from tools.eos.kennel.orchestration.authenticated_settlement_observation_ingestion import (
+        AuthenticatedSettlementTransportEvidence,
+        ingest_authenticated_settlement_observation,
+    )
+    from tools.eos.kennel.orchestration.settlement_observation_to_platform_settlement_evidence import (
+        SettlementObservationBridgeError,
+        bridge_settlement_observation_to_platform_evidence,
+    )
+    from tools.eos.kennel.registry.financial_execution_registry import (
+        FinancialExecutionFactRegistry,
+    )
+
+    client, database, _ = setup_graph()
+    try:
+        instant = datetime(2026, 1, 1, tzinfo=timezone.utc)
+        execution = truth(database, executed_at=instant, created_at=instant)
+        facts = database["financial_execution_facts"]
+        observations = database["financial_settlement_observations"]
+        evidence = database["platform_billing_financial_settlement_evidence"]
+        with client.start_session() as session:
+            session.start_transaction()
+            fact = FinancialExecutionFactRegistry.get(
+                "t", execution.source_execution_fact_id, facts, session=session
+            )
+            _, observation = ingest_authenticated_settlement_observation(
+                "t",
+                AuthenticatedSettlementTransportEvidence(
+                    tenant_id="t",
+                    provider_name=fact.provider,
+                    provider_execution_reference=fact.provider_execution_reference,
+                    settlement_reference="partial-settlement",
+                    provider_settlement_evidence_reference="partial-provider-evidence",
+                    settled_amount_minor=40,
+                    currency=fact.currency,
+                    payment_destination_reference=fact.payment_destination_reference,
+                    observed_at=instant,
+                    settled_at=instant,
+                    evidence_strength=EvidenceStrength.AUTHENTICATED,
+                    transport_disposition=TransportDisposition.RESPONSE_RECEIVED,
+                ),
+                execution_truth_id=fact.execution_fact_id,
+                execution_truth_collection=facts,
+                observation_collection=observations,
+                session=session,
+            )
+            with pytest.raises(SettlementObservationBridgeError, match="PARTIAL_SETTLEMENT"):
+                bridge_settlement_observation_to_platform_evidence(
+                    "t",
+                    observation.observation_id,
+                    execution.execution_truth_id,
+                    observation_collection=observations,
+                    generic_truth_collection=facts,
+                    platform_truth_collection=database["platform_billing_financial_execution_truths"],
+                    evidence_collection=evidence,
+                    session=session,
+                    created_at=instant,
+                )
+            session.abort_transaction()
+        assert observations.count_documents({"tenant_id": "t"}) == 0
+        assert evidence.count_documents({"tenant_id": "t"}) == 0
+    finally:
+        close(client)
+
+
+def test_unknown_commit_ack_retries_commit_without_replaying_settlement_writes(monkeypatch):
+    """An unknown commit result retries commit on the same transaction, never ingestion."""
+    from pymongo.client_session import ClientSession
+    from tools.eos.kennel.domain.financial_execution_provider_observation import (
+        EvidenceStrength,
+        TransportDisposition,
+    )
+    from tools.eos.kennel.orchestration.authenticated_settlement_observation_ingestion import (
+        AuthenticatedSettlementTransportEvidence,
+        ingest_authenticated_settlement_observation,
+    )
+    from tools.eos.kennel.orchestration.settlement_observation_to_platform_settlement_evidence import (
+        bridge_settlement_observation_to_platform_evidence,
+    )
+    from tools.eos.kennel.registry.financial_execution_registry import (
+        FinancialExecutionFactRegistry,
+    )
+
+    client, database, _ = setup_graph()
+    try:
+        instant = datetime(2026, 1, 1, tzinfo=timezone.utc)
+        execution = truth(database, executed_at=instant, created_at=instant)
+        facts = database["financial_execution_facts"]
+        observations = database["financial_settlement_observations"]
+        evidence = database["platform_billing_financial_settlement_evidence"]
+        original_commit = ClientSession.commit_transaction
+        commit_calls = 0
+        ingestion_calls = 0
+
+        class UnknownCommitAcknowledgement(PyMongoError):
+            def has_error_label(self, label):
+                return label == "UnknownTransactionCommitResult"
+
+        def commit_with_lost_ack(session, *args, **kwargs):
+            nonlocal commit_calls
+            commit_calls += 1
+            result = original_commit(session, *args, **kwargs)
+            if commit_calls == 1:
+                raise UnknownCommitAcknowledgement("simulated lost commit acknowledgement")
+            return result
+
+        monkeypatch.setattr(ClientSession, "commit_transaction", commit_with_lost_ack)
+        with client.start_session() as session:
+            session.start_transaction()
+            fact = FinancialExecutionFactRegistry.get(
+                "t", execution.source_execution_fact_id, facts, session=session
+            )
+            ingestion_calls += 1
+            _, observation = ingest_authenticated_settlement_observation(
+                "t",
+                AuthenticatedSettlementTransportEvidence(
+                    tenant_id="t",
+                    provider_name=fact.provider,
+                    provider_execution_reference=fact.provider_execution_reference,
+                    settlement_reference="unknown-commit-settlement",
+                    provider_settlement_evidence_reference="unknown-commit-provider-evidence",
+                    settled_amount_minor=fact.executed_amount_minor,
+                    currency=fact.currency,
+                    payment_destination_reference=fact.payment_destination_reference,
+                    observed_at=instant,
+                    settled_at=instant,
+                    evidence_strength=EvidenceStrength.AUTHENTICATED,
+                    transport_disposition=TransportDisposition.RESPONSE_RECEIVED,
+                ),
+                execution_truth_id=fact.execution_fact_id,
+                execution_truth_collection=facts,
+                observation_collection=observations,
+                session=session,
+            )
+            bridge_settlement_observation_to_platform_evidence(
+                "t",
+                observation.observation_id,
+                execution.execution_truth_id,
+                observation_collection=observations,
+                generic_truth_collection=facts,
+                platform_truth_collection=database["platform_billing_financial_execution_truths"],
+                evidence_collection=evidence,
+                session=session,
+                created_at=instant,
+            )
+            for _ in range(3):
+                try:
+                    session.commit_transaction()
+                    break
+                except PyMongoError as error:
+                    if not error.has_error_label("UnknownTransactionCommitResult"):
+                        raise
+            else:
+                raise AssertionError("UNKNOWN_COMMIT_RESULT_RETRY_EXHAUSTED")
+
+        assert commit_calls == 2
+        assert ingestion_calls == 1
+        assert observations.count_documents({
+            "tenant_id": "t",
+            "settlement_reference": "unknown-commit-settlement",
+        }) == 1
+        assert evidence.count_documents({
+            "tenant_id": "t",
+            "platform_execution_truth_id": execution.execution_truth_id,
+        }) == 1
+    finally:
+        close(client)
+
 # ARTIFACT: test_platform_billing_financial_execution_and_settlement_evidence_real_mongo.py
 # VERSION: v1.1.0
 # AUTHORITY BOUNDARY: Kennel evidence only.
