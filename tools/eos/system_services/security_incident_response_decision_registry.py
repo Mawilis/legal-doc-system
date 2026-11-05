@@ -273,6 +273,28 @@ class SecurityIncidentResponseDecisionRegistry:
                 raise SecurityIncidentResponseDecisionConflictError(
                     "RESPONSE_EXECUTION_REPLAY_CONFLICT"
                 )
+            occurred_at = event.get("occurred_at")
+            payload = {
+                "decision_id": decision.decision_id,
+                "incident_id": decision.incident_id,
+                "tenant_id": decision.tenant_id,
+                "target_principal_id": decision.target_principal_id,
+                "action": decision.action.value,
+                "target_assignment_id": decision.target_assignment_id,
+                "target_permission_id": decision.target_permission_id,
+                "actor_principal_id": actor_principal_id,
+                "execution_idempotency_fingerprint": key_fingerprint,
+                "occurred_at": occurred_at,
+                "result_status": event.get("result_status"),
+                "result_revision": event.get("result_revision"),
+            }
+            expected_fingerprint = hashlib.sha3_256(
+                json.dumps(payload, sort_keys=True, separators=(",", ":"), ensure_ascii=True).encode("utf-8")
+            ).hexdigest()
+            if event.get("decision_fingerprint") != expected_fingerprint:
+                raise SecurityIncidentResponseDecisionConflictError(
+                    "RESPONSE_EXECUTION_FINGERPRINT_INVALID"
+                )
             event_key = "system-services-response-execution:" + decision.decision_id + ":revision:2"
             common = {
                 "event_key": event_key,
