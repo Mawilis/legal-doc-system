@@ -592,6 +592,68 @@ const boundedWorkspaceProjection = (data, fallbackEmail = '') => {
   };
 };
 
+const authenticatedSystemServicesUser = (projection, principalId, email) => {
+  if (
+    !projection
+    || projection.status !== 'READY'
+    || projection.authority !== 'EOS_SYSTEM_SERVICES'
+    || projection.scope !== 'SYSTEM'
+    || projection.principalId !== principalId
+    || !Array.isArray(projection.capabilities)
+    || projection.capabilities.length > 16
+    || new Set(projection.capabilities).size !== projection.capabilities.length
+    || !projection.capabilities.includes('system_services:queue:read')
+    || !projection.capabilities.every((value) => [
+      'system_services:queue:read',
+      'system_services:identity:read',
+      'system_services:incident:escalate',
+    ].includes(value))
+    || !projection.summary
+    || !Number.isInteger(projection.summary.openCases)
+    || projection.summary.openCases < 0
+    || !Number.isInteger(projection.summary.securityEscalations)
+    || projection.summary.securityEscalations < 0
+    || !Array.isArray(projection.cases)
+    || projection.cases.length > 100
+  ) {
+    throw new Error('SYSTEM_WORKSPACE_PROJECTION_INVALID');
+  }
+  const cases = projection.cases.map((item) => {
+    if (
+      !item
+      || typeof item.caseId !== 'string'
+      || !item.caseId
+      || item.reference !== item.caseId
+      || typeof item.category !== 'string'
+      || typeof item.status !== 'string'
+    ) throw new Error('SYSTEM_WORKSPACE_CASE_PROJECTION_INVALID');
+    return {
+      caseId: item.caseId,
+      reference: item.reference,
+      category: item.category,
+      status: item.status,
+    };
+  });
+  return {
+    id: principalId,
+    email,
+    role: 'SYSTEM_SERVICES',
+    workspaceId: 'SYSTEM_SERVICES',
+    systemServicesWorkspace: {
+      status: projection.status,
+      authority: projection.authority,
+      scope: projection.scope,
+      principalId: projection.principalId,
+      capabilities: [...projection.capabilities],
+      summary: {
+        openCases: projection.summary.openCases,
+        securityEscalations: projection.summary.securityEscalations,
+      },
+      cases,
+    },
+  };
+};
+
 export const AuthProvider = ({ children }) => {
   const [user, setUser] = useState(null);
   // Persisted bearer material is only a candidate. It remains unanchored until
@@ -602,6 +664,7 @@ export const AuthProvider = ({ children }) => {
   const [pendingEmail, setPendingEmail] = useState('');
   const [qrCodeData, setQrCodeData] = useState(null);
   const [mfaTempToken, setMfaTempToken] = useState(null);
+  const [globalMfaChallenge, setGlobalMfaChallenge] = useState(null);
   const [loading, setLoading] = useState(
     () => Boolean(readPersistedAccessTokenCandidate()),
   );
@@ -885,11 +948,29 @@ export const AuthProvider = ({ children }) => {
 
   const login = useCallback(async (email, password, discoveredTenantId = tenant?.tenantId) => {
     const tenantId = String(discoveredTenantId || '').trim();
-    if (!tenantId) throw new Error('Discover your organization before signing in.');
     setLoading(true);
     setError(null);
     setAuthStage(AUTH_STATES.PRIMARY_AUTHENTICATING);
     try {
+      if (!tenantId) {
+        const response = await api.post('/auth/global/login', { email, password });
+        const data = response.data || {};
+        if (
+          data.status !== AUTH_STATES.MFA_REQUIRED
+          || data.scope !== 'SYSTEM'
+          || typeof data.mfa_challenge !== 'string'
+          || !data.mfa_challenge.startsWith('sysmfa_')
+        ) {
+          throw new Error('Global sign-in did not return an authorized SYSTEM MFA challenge.');
+        }
+        setPendingEmail(email);
+        setGlobalMfaChallenge(data.mfa_challenge);
+        setMfaTempToken(null);
+        setQrCodeData(null);
+        setAuthStage(AUTH_STATES.MFA_REQUIRED);
+        return { ...data, status: AUTH_STATES.MFA_REQUIRED };
+      }
+
       const response = await api.post('/auth/login', { email, password, tenant_id: tenantId });
       const data = response.data || {};
       const currentStatus = data.status;
@@ -898,6 +979,7 @@ export const AuthProvider = ({ children }) => {
       }
       setPendingEmail(email);
       setMfaTempToken(data.tempToken || null);
+      setGlobalMfaChallenge(null);
       if (currentStatus === AUTH_STATES.MFA_SETUP) {
         if (!data.qrCode) throw new Error('First-time MFA setup did not return a provisioning QR.');
         setQrCodeData(data.qrCode);
@@ -937,13 +1019,61 @@ export const AuthProvider = ({ children }) => {
   const verifyOTP = useCallback(async (email, code, _biometricAssertion = null, _traceId = null, mfaSetup = false, discoveredTenantId = tenant?.tenantId) => {
     const targetEmail = email || pendingEmail;
     const targetCode = String(code || '').trim();
-    const tenantId = String(discoveredTenantId || '').trim();
-    if (!tenantId) throw new Error('Discover your organization before verifying identity.');
-    if (!/^\d{6}$/.test(targetCode)) throw new Error('Enter the current six-digit code from your authenticator app.');
+    if (!/^\\d{6}$/.test(targetCode)) throw new Error('Enter the current six-digit code from your authenticator app.');
     setLoading(true);
     setError(null);
     setAuthStage(AUTH_STATES.MFA_VERIFYING);
     try {
+      if (globalMfaChallenge) {
+        const response = await api.post('/auth/global/verify-mfa', {
+          mfa_challenge: globalMfaChallenge,
+          code: targetCode,
+        });
+        const data = response.data || {};
+        if (
+          data.status !== 'AUTHENTICATED'
+          || data.scope !== 'SYSTEM'
+          || typeof data.access_token !== 'string'
+          || typeof data.principal_id !== 'string'
+          || data.workspace_id !== 'SYSTEM_SERVICES'
+        ) throw new Error('EOS did not issue a valid SYSTEM session.');
+
+        anchorCanonicalBearer(data.access_token);
+        setActiveTenantTransportId(null);
+        try {
+          const workspaceResponse = await api.get('/system-services/workspace-bootstrap');
+          const projectedUser = authenticatedSystemServicesUser(
+            workspaceResponse?.data || {},
+            data.principal_id,
+            targetEmail,
+          );
+          localStorage.setItem('wilsy_auth_token', data.access_token);
+          localStorage.setItem('token', data.access_token);
+          localStorage.setItem('wilsy_sovereign_user', JSON.stringify(projectedUser));
+          localStorage.removeItem('wilsy_refresh_token');
+          localStorage.removeItem('wilsy_active_tenant');
+          localStorage.removeItem('wilsy_tenant_id');
+          localStorage.removeItem('tenantId');
+          localStorage.removeItem('discoveredTenant');
+          setToken(data.access_token);
+          setUser(projectedUser);
+          setTenant(null);
+          setGlobalMfaChallenge(null);
+          setPendingEmail('');
+          setQrCodeData(null);
+          setMfaTempToken(null);
+          setAuthStage(AUTH_STATES.AUTHENTICATED);
+          emitAuthState(AUTH_STATES.AUTHENTICATED);
+          return { ...data, success: true, token: data.access_token, user: projectedUser };
+        } catch (projectionError) {
+          anchorCanonicalBearer(null);
+          setActiveTenantTransportId(null);
+          throw projectionError;
+        }
+      }
+
+      const tenantId = String(discoveredTenantId || '').trim();
+      if (!tenantId) throw new Error('Discover your organization before verifying identity.');
       const endpoint = mfaSetup || authStage === AUTH_STATES.MFA_SETUP ? '/auth/validate-mfa-setup' : '/auth/verify-otp';
       const response = await api.post(endpoint, { email: targetEmail, code: targetCode, tenant_id: tenantId });
       const data = response.data || {};
@@ -968,7 +1098,7 @@ export const AuthProvider = ({ children }) => {
     } finally {
       setLoading(false);
     }
-  }, [authStage, pendingEmail, persistSession, tenant]);
+  }, [authStage, globalMfaChallenge, pendingEmail, persistSession, tenant]);
 
   const updateSovereignIdentity = useCallback(async (updates) => {
     if (!user) throw new Error('No authenticated identity is available.');
@@ -980,7 +1110,7 @@ export const AuthProvider = ({ children }) => {
 
   const logout = useCallback(async () => {
     try {
-      if (token) await api.post('/auth/logout');
+      if (token) await api.post(user?.systemServicesWorkspace ? '/auth/global/logout' : '/auth/logout');
     } catch {
       // Local purge is still required; server logout is best-effort.
     } finally {
@@ -993,6 +1123,7 @@ export const AuthProvider = ({ children }) => {
       setPendingEmail('');
       setQrCodeData(null);
       setMfaTempToken(null);
+      setGlobalMfaChallenge(null);
       localStorage.removeItem('wilsy_auth_token');
       localStorage.removeItem('token');
       localStorage.removeItem('wilsy_sovereign_user');
@@ -1015,6 +1146,7 @@ export const AuthProvider = ({ children }) => {
     pendingEmail,
     qrCodeData,
     mfaTempToken,
+    globalMfaChallenge,
     loading,
     error,
     discoverTenant,
@@ -1026,7 +1158,7 @@ export const AuthProvider = ({ children }) => {
     refreshWorkspace,
     setAuthStage,
     publicAuthPaths,
-  }), [user, token, isAuthenticated, tenant, authStage, mfaRequired, pendingEmail, qrCodeData, mfaTempToken, loading, error, discoverTenant, login, verifyOTP, logout, updateSovereignIdentity, refreshWorkspace]);
+  }), [user, token, isAuthenticated, tenant, authStage, mfaRequired, pendingEmail, qrCodeData, mfaTempToken, globalMfaChallenge, loading, error, discoverTenant, login, verifyOTP, logout, updateSovereignIdentity, refreshWorkspace]);
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 };
