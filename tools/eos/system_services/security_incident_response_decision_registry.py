@@ -215,6 +215,21 @@ class SecurityIncidentResponseDecisionRegistry:
                 "RESPONSE_DECISION_EVENT_PERSISTENCE_FAILED"
             ) from error
 
+    def get(self, decision_id: str, *, session: Any) -> SecurityIncidentResponseDecision:
+        """Read one decision only inside the caller-owned transaction."""
+        _require_transaction(session)
+        if not isinstance(decision_id, str) or not decision_id or decision_id != decision_id.strip():
+            raise SecurityIncidentResponseDecisionRegistryError("RESPONSE_DECISION_ID_INVALID")
+        try:
+            raw = self._decisions.find_one({"decision_id": decision_id}, session=session)
+            if raw is None:
+                raise SecurityIncidentResponseDecisionRegistryError("RESPONSE_DECISION_NOT_FOUND")
+            return _hydrate(dict(raw))
+        except SecurityIncidentResponseDecisionRegistryError:
+            raise
+        except PyMongoError as error:
+            raise SecurityIncidentResponseDecisionRegistryError("RESPONSE_DECISION_READ_FAILED") from error
+
     def create(self, value: SecurityIncidentResponseDecision, *, session: Any) -> SecurityIncidentResponseDecision:
         _require_transaction(session)
         if not isinstance(value, SecurityIncidentResponseDecision) or value.revision != 0:
