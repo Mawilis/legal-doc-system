@@ -983,7 +983,7 @@ const SovereignDashboardController = ({ user: propUser, onLogout }) => {
   };
 
 
-  const handleOpenSystemServicesAssignment = async (assignmentId) => {
+  async function handleOpenSystemServicesAssignment(assignmentId) {
     setSystemServicesActionState('Loading authorized incident detail…');
     try {
       const response = await api.get(
@@ -996,9 +996,9 @@ const SovereignDashboardController = ({ user: propUser, onLogout }) => {
       setSystemServicesAssignmentDetail(null);
       setSystemServicesActionState('Incident detail is unavailable or this assignment is no longer authorized.');
     }
-  };
+  }
 
-  const handleSystemServicesAssignmentDecision = async (assignmentId, decision) => {
+  async function handleSystemServicesAssignmentDecision(assignmentId, decision) {
     const assignment = systemServicesAssignments.find((item) => item.assignmentId === assignmentId);
     if (!assignment || assignment.status !== 'PENDING_ACCEPTANCE' || !['accept', 'decline'].includes(decision)) return;
     setSystemServicesActionState('Submitting responder decision to EOS…');
@@ -1023,7 +1023,7 @@ const SovereignDashboardController = ({ user: propUser, onLogout }) => {
     } catch {
       setSystemServicesActionState('EOS did not confirm this decision. Refresh the inbox before retrying.');
     }
-  };
+  }
 
   // ═══════════════════════════════════════════════════════════════════════════
   // FIX: Wrap guardedShard in an overflow-enabled container to allow
