@@ -29,6 +29,7 @@ from typing import Dict, Optional
 
 from pymongo import MongoClient
 from pymongo.errors import PyMongoError
+from tools.eos.kernel.db import get_database
 
 logger = logging.getLogger(__name__)
 
@@ -58,7 +59,10 @@ class OrderNumberService:
 
         @param mongo_client: Connected MongoDB client (already authenticated).
         """
-        self.db = mongo_client.get_database("wilsy")
+        database = get_database()
+        if database is None or getattr(database, "client", None) is not mongo_client:
+            raise RuntimeError("ORDER_NUMBER_CANONICAL_DATABASE_UNAVAILABLE")
+        self.db = database
         self.counters = self.db["counters"]
         self._ensure_counters()
 
