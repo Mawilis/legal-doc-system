@@ -1132,7 +1132,7 @@ export const AuthProvider = ({ children }) => {
       localStorage.removeItem('wilsy_active_tenant');
       emitAuthState(AUTH_STATES.IDLE);
     }
-  }, [token]);
+  }, [token, user]);
 
   const value = useMemo(() => ({
     user,
