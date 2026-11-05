@@ -156,7 +156,7 @@ def test_http_ingress_rejects_missing_signature_with_signed_401(monkeypatch):
     )
 
 
-def test_ingress_does_not_ack_when_worker_is_disabled(monkeypatch):
+def test_ingress_acknowledges_durable_inbox_when_worker_is_disabled(monkeypatch):
     client, provider_private, wilsy_public, config = _setup(monkeypatch)
     client.app.state.electrum_settlement_worker_enabled = False
     body = json.dumps(_payload(), separators=(",", ":")).encode()
@@ -165,10 +165,11 @@ def test_ingress_does_not_ack_when_worker_is_disabled(monkeypatch):
         content=body,
         headers={"x-jwt-signature": _provider_signature(body, provider_private)},
     )
-    assert response.status_code == 503
-    assert response.json()["code"] == "ELECTRUM_SETTLEMENT_WORKER_NOT_READY"
+    assert response.status_code == 202
+    assert response.content == b""
+    assert client.app.state.electrum_test_inbox.count_documents({}) == 1
     verify_electrum_http_message_signature(
-        response.content, response.headers["x-jwt-signature"],
+        b"", response.headers["x-jwt-signature"],
         verification_keys={"wilsy-key-1": wilsy_public}, issuer=config.signing_issuer,
     )
 
