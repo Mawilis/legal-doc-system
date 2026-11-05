@@ -931,7 +931,7 @@ describe('authoritative authentication state machine', () => {
     expect(api.defaults.headers.common.Authorization).toBeUndefined();
   });
 
-  it('requires server workspace bootstrap before elevating an MFA session', async () => {
+  it('requires server SYSTEM workspace bootstrap before elevating an MFA session', async () => {
     let resolveBootstrap;
     const bootstrapPending = new Promise((resolve) => {
       resolveBootstrap = resolve;
@@ -941,21 +941,18 @@ describe('authoritative authentication state machine', () => {
       .mockResolvedValueOnce({
         data: {
           status: AUTH_STATES.MFA_REQUIRED,
-          tempToken: 'mfa-candidate',
+          scope: 'SYSTEM',
+          mfa_challenge: 'sysmfa-browser-candidate',
         },
       })
       .mockResolvedValueOnce({
         data: {
           status: AUTH_STATES.AUTHENTICATED,
-          token: 'candidate-session-token',
-          user: {
-            id: 'WILSYAUTH-browser-user',
-            email: 'person@example.com',
-            tenantId: 'FORGED-BROWSER-TENANT',
-            role: 'SUPER_ADMIN',
-            permissions: ['*'],
-            mfaRegistered: true,
-          },
+          scope: 'SYSTEM',
+          access_token: 'candidate-session-token',
+          refresh_token: 'sysrefresh-browser-candidate',
+          principal_id: 'WILSYAUTH-browser-user',
+          workspace_id: 'SYSTEM_SERVICES',
         },
       });
 
@@ -973,17 +970,11 @@ describe('authoritative authentication state machine', () => {
     fireEvent.click(screen.getByRole('button', { name: 'verify' }));
 
     await waitFor(() => {
-      expect(api.get).toHaveBeenCalledWith(
-        '/auth/workspace-bootstrap',
-        {
-          headers: {
-            Authorization: 'Bearer candidate-session-token',
-          },
-        },
-      );
+      expect(api.get).toHaveBeenCalledWith('/system-services/workspace-bootstrap');
     });
 
     // The MFA response and candidate bearer alone are never browser authority.
+    expect(api.defaults.headers.common.Authorization).toBe('Bearer candidate-session-token');
     expect(screen.getByTestId('authenticated')).toHaveTextContent('false');
     expect(screen.getByTestId('stage')).not.toHaveTextContent(
       AUTH_STATES.AUTHENTICATED,
@@ -994,25 +985,15 @@ describe('authoritative authentication state machine', () => {
     resolveBootstrap({
       data: {
         status: 'READY',
-        user: {
-          id: 'WILSYAUTH-browser-user',
-          email: 'person@example.com',
+        authority: 'EOS_SYSTEM_SERVICES',
+        scope: 'SYSTEM',
+        principalId: 'WILSYAUTH-browser-user',
+        capabilities: ['system_services:queue:read'],
+        summary: {
+          openCases: 0,
+          securityEscalations: 0,
         },
-        workspace: {
-          tenantId: 'TENANT-BROWSER',
-          businessRole: 'tenant_auditor',
-          workspaceId: 'AUDIT_REPORTING',
-          workspaceContractVersion: 'v1.0.0-WILSY-EOS-WORKSPACE-RESOLUTION',
-          membershipRevision: 7,
-          businessRoleRevision: 11,
-          branding: null,
-          tenant: {
-            tenantId: 'TENANT-BROWSER',
-            name: 'Canonical Browser Tenant',
-            legalName: 'Canonical Browser Tenant (Pty) Ltd',
-            status: 'ACTIVE',
-          },
-        },
+        cases: [],
       },
     });
 
@@ -1020,19 +1001,18 @@ describe('authoritative authentication state machine', () => {
       expect(screen.getByTestId('authenticated')).toHaveTextContent('true');
     });
 
-    expect(screen.getByTestId('role')).toHaveTextContent('tenant_auditor');
-    expect(screen.getByTestId('tenant-id')).toHaveTextContent('TENANT-BROWSER');
-
+    expect(screen.getByTestId('role')).toHaveTextContent('SYSTEM_SERVICES');
+    expect(screen.getByTestId('tenant-id')).toHaveTextContent('');
     const persistedUser = JSON.parse(
       window.localStorage.getItem('wilsy_sovereign_user'),
     );
     expect(persistedUser).toMatchObject({
       id: 'WILSYAUTH-browser-user',
       email: 'person@example.com',
-      tenantId: 'TENANT-BROWSER',
-      role: 'tenant_auditor',
+      role: 'SYSTEM_SERVICES',
+      workspaceId: 'SYSTEM_SERVICES',
     });
-    expect(persistedUser.role).not.toBe('SUPER_ADMIN');
+    expect(persistedUser.tenantId).toBeUndefined();
     expect(persistedUser.permissions || []).not.toContain('*');
   });
 
