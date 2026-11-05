@@ -104,6 +104,24 @@ class SecurityIncidentResponseCanonicalExecutor:
             session=session,
         )
 
+    def authorize_execution(
+        self,
+        decision: SecurityIncidentResponseDecision,
+        *,
+        actor_principal_id: str,
+        session: Any,
+    ) -> None:
+        """Authorize before receipt lookup so replay cannot bypass actor checks."""
+        self._require_approved(
+            decision,
+            SecurityIncidentResponseAction.SYSTEM_PERMISSION_REVOCATION,
+        )
+        self._require_independent_executor(
+            decision,
+            actor_principal_id=actor_principal_id,
+            session=session,
+        )
+
     def execute_password_reset(
         self,
         decision: SecurityIncidentResponseDecision,
