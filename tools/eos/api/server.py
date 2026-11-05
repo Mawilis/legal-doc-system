@@ -470,6 +470,7 @@ class WilsyAPIServer:
             app.state.system_services_case_registry = None
             app.state.telemetry_indexes_ready = False
             app.state.electrum_completion_indexes_ready = False
+            app.state.electrum_settlement_worker_enabled = False
             connected, detail = connect_db()
             if not connected:
                 logger.error("[KENNEL_DB] Explicit startup bootstrap unavailable: %s", detail)
@@ -754,8 +755,10 @@ class WilsyAPIServer:
                 app.state.electrum_settlement_worker_task = asyncio.create_task(
                     run_electrum_payshap_completion_worker()
                 )
+                app.state.electrum_settlement_worker_enabled = True
                 logger.info("[ELECTRUM_SETTLEMENT] Completion inbox worker explicitly enabled")
             else:
+                app.state.electrum_settlement_worker_enabled = False
                 logger.info(
                     "[ELECTRUM_SETTLEMENT] Completion inbox worker remains disabled"
                 )
