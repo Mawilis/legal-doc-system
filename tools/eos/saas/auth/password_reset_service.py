@@ -397,10 +397,12 @@ class PasswordResetService:
         notification state or the returned receipt.
 
         Transaction semantics: password CAS, session revocation, refresh
-        revocation, capability consumption, and pristine PENDING notification
-        creation all share one Mongo session and transaction callback. PyMongo
-        owns whole-callback retry. notification_id/event time are created once
-        outside the callback so transaction retries refer to one logical event.
+        revocation, capability consumption, pristine PENDING notification
+        creation, and optional caller-owned transaction_completion evidence all
+        share one Mongo session and transaction callback. A completion failure
+        aborts every canonical reset participant. PyMongo owns whole-callback
+        retry. notification_id/event time are created once outside the callback
+        so transaction retries refer to one logical event.
 
         Post-commit semantics: when a dispatcher was injected, it runs only after
         with_transaction returns. A stable dispatch failure cannot roll back the
@@ -410,6 +412,8 @@ class PasswordResetService:
         :param recovery_token: One transient bearer capability value.
         :param new_password: Complete prospective password text.
         :param context_terms: Optional exact policy context terms.
+        :param transaction_guard: Optional current-authority check on the canonical session.
+        :param transaction_completion: Optional caller evidence writer on that same session.
         :returns: A non-sensitive committed receipt.
         :raises PasswordResetServiceError: For invalid/conflicting/unavailable
             pre-commit reset or notification-intent state.
