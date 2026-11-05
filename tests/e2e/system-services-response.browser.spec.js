@@ -105,6 +105,18 @@ test('certifies independent request, rejection, approval and canonical permissio
   expect(requested.body.revision).toBe(0);
   expect(requested.body.targetPrincipalId).toBe(state.actors.partner.principal_id);
   const decisionId = requested.body.decisionId;
+  const requesterSelfApproval = await postAs(
+    browser,
+    'system_requester',
+    '/api/system-services/security-response-decisions/' + decisionId + '/decision',
+    {
+      approved: true,
+      expected_revision: 0,
+      decision_evidence_reference: 'browser-cert-requester-self-approval:' + state.database_name,
+    },
+    'browser-response-requester-self-approval-' + state.database_name,
+  );
+  expect(requesterSelfApproval.status).toBe(403);
   const requestReplay = await postAs(
     browser,
     'system_requester',
