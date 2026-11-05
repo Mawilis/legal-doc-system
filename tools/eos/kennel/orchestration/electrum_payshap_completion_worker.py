@@ -6,6 +6,8 @@ from datetime import datetime, timedelta, timezone
 import logging
 import re
 
+from pymongo.write_concern import WriteConcern
+
 from tools.eos.kennel.orchestration.electrum_payshap_completion_processing import (
     process_electrum_payshap_completion_event,
 )
@@ -70,7 +72,7 @@ async def run_electrum_payshap_completion_worker(*, poll_interval_seconds: float
             message_id = pending["message_id"]
             try:
                 with client.start_session() as session:
-                    with session.start_transaction():
+                    with session.start_transaction(write_concern=WriteConcern(w="majority", j=True)):
                         result = process_electrum_payshap_completion_event(
                             message_id,
                             inbox_collection=inbox,
