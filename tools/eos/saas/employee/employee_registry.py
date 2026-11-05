@@ -135,7 +135,7 @@ class EmployeeRegistry:
             if tenant_id != "MASTER":
                 query["tenantId"] = tenant_id
 
-            doc = employees_coll.find_one(query)
+            doc = self._collection().find_one(query)
             if not doc:
                 return None
             return EmployeeEntity.from_dict(doc)
