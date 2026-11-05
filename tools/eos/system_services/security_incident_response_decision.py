@@ -93,6 +93,8 @@ class SecurityIncidentResponseDecision:
             raise SecurityIncidentResponseDecisionError("PERMISSION_REVOCATION_BINDING_FORBIDDEN")
         if not isinstance(self.status, SecurityIncidentResponseDecisionStatus):
             raise SecurityIncidentResponseDecisionError("STATUS_INVALID")
+        if self.requested_by_principal_id == self.target_principal_id:
+            raise SecurityIncidentResponseDecisionError("DECISION_TARGET_CANNOT_REQUEST_OWN_CONTAINMENT")
         if self.revision == 0 and self.status is SecurityIncidentResponseDecisionStatus.PENDING:
             if any(value is not None for value in (
                 self.decided_by_principal_id, self.decided_at, self.decision_evidence_reference,
