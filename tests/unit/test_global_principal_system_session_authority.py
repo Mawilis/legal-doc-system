@@ -44,7 +44,7 @@ def test_system_mfa_challenge_is_principal_scoped_and_consumed_once():
         "principal_id": "principal-system",
         "credential_revision": 8,
     }
-    context = service.get_factor_context(token, session=session, now=NOW)
+    context = service.get_factor_context(token, session=cast(Any, session), now=NOW)
     assert context.principal_id == "principal-system"
     assert context.credential_revision == 8
 
@@ -53,7 +53,7 @@ def test_system_mfa_challenge_is_principal_scoped_and_consumed_once():
         token,
         principal_id="principal-system",
         credential_revision=8,
-        session=session,
+        session=cast(Any, session),
         now=NOW,
     )
     query = collection.update_one.call_args.args[0]
@@ -69,7 +69,7 @@ def test_system_mfa_challenge_rejects_replay_and_foreign_principal():
     collection = cast(Any, service._store())
     collection.find_one.return_value = None
     with pytest.raises(Exception, match="SYSTEM_MFA_CHALLENGE_INVALID_OR_EXPIRED"):
-        service.get_factor_context("sysmfa_invalid", session=session, now=NOW)
+        service.get_factor_context("sysmfa_invalid", session=cast(Any, session), now=NOW)
 
     collection.update_one.return_value = SimpleNamespace(modified_count=0)
     with pytest.raises(Exception, match="SYSTEM_MFA_CHALLENGE_ALREADY_CONSUMED"):
@@ -77,7 +77,7 @@ def test_system_mfa_challenge_rejects_replay_and_foreign_principal():
             "sysmfa_invalid",
             principal_id="foreign-principal",
             credential_revision=8,
-            session=session,
+            session=cast(Any, session),
             now=NOW,
         )
 
@@ -115,7 +115,7 @@ def test_system_session_issuance_requires_current_permission_and_platform_workfo
     receipt = authority.issue_after_mfa(
         "principal-system",
         8,
-        session=session,
+        session=cast(Any, session),
         now=NOW,
     )
     assert receipt.access_token == "signed-system-token"
@@ -124,7 +124,7 @@ def test_system_session_issuance_requires_current_permission_and_platform_workfo
     authorizer.require.assert_called_once_with(
         principal_id="principal-system",
         permission_id=QUEUE_READ_PERMISSION,
-        session=session,
+        session=cast(Any, session),
     )
     document = sessions.insert_one.call_args.args[0]
     assert document["principal_id"] == "principal-system"
@@ -177,7 +177,7 @@ def test_system_session_currentness_revalidates_authority_and_revocation():
         principal_id="principal-system",
         session_reference="WILSYS-SYSTEM-SESSION-x",
         expected_credential_revision=8,
-        session=session,
+        session=cast(Any, session),
         now=NOW,
     ) is True
     authorizer.require.assert_called_once()
@@ -186,7 +186,7 @@ def test_system_session_currentness_revalidates_authority_and_revocation():
         principal_id="principal-system",
         session_reference="WILSYS-SYSTEM-SESSION-x",
         expected_credential_revision=8,
-        session=session,
+        session=cast(Any, session),
         now=NOW,
     ) is False
 
@@ -199,7 +199,7 @@ def test_system_session_revocation_is_scoped_to_exact_principal_and_reference():
     assert authority.revoke(
         principal_id="principal-system",
         session_reference="WILSYS-SYSTEM-SESSION-x",
-        session=session,
+        session=cast(Any, session),
         now=NOW,
     ) is True
     query = sessions.update_one.call_args.args[0]
@@ -250,7 +250,7 @@ def test_system_refresh_rotation_consumes_old_bearer_and_issues_one_successor(mo
     session = SimpleNamespace(in_transaction=True)
     receipt = authority.rotate_refresh_token(
         "sysrefresh-current",
-        session=session,
+        session=cast(Any, session),
         now=NOW,
     )
     assert receipt.access_token == "rotated-access-token"
