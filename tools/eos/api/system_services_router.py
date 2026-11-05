@@ -341,7 +341,7 @@ def list_own_support_cases(
     registry = _tenant_runtime(request)
     service = SupportCaseApplicationService(
         registry=registry,
-        authorizer=cast(SystemServicesAuthorizer, object()),
+        authorizer=_TenantSelfServiceAuthorizer(),
     )
     def read(session):
         actor = _require_current_tenant_actor(identity=identity, tenant_id=tenant_id, session=session)
