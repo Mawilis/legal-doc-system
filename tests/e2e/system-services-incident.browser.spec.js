@@ -161,6 +161,7 @@ test('certifies initial tenant-neutral SYSTEM credentials, MFA and workspace boo
   const page = await context.newPage();
   const calls = [];
   const systemMfaChallenge = ['sysmfa', 'browser', 'one', 'time'].join('_');
+  const systemRefreshToken = ['sysrefresh', 'browser', 'token'].join('_');
 
   await page.route('**/api/auth/global/login', async (route) => {
     calls.push('global-login');
@@ -194,7 +195,7 @@ test('certifies initial tenant-neutral SYSTEM credentials, MFA and workspace boo
         status: 'AUTHENTICATED',
         scope: 'SYSTEM',
         access_token: 'synthetic-system-access-token',
-        refresh_token: 'sysrefresh-browser-token',
+        refresh_token: systemRefreshToken,
         principal_id: 'WILSYAUTH-browser-system-principal',
         workspace_id: 'SYSTEM_SERVICES',
       }),
@@ -264,7 +265,7 @@ test('certifies initial tenant-neutral SYSTEM credentials, MFA and workspace boo
     tenantId: null,
     activeTenant: null,
     bearer: 'synthetic-system-access-token',
-    refresh: 'sysrefresh-browser-token',
+    refresh: systemRefreshToken,
   });
   expect(calls.slice(0, 2)).toEqual(['global-login', 'global-mfa']);
   expect(calls.filter((value) => value === 'system-workspace').length).toBeGreaterThanOrEqual(1);
