@@ -36,21 +36,23 @@ class PlatformInvoiceSettlementAllocationRegistry:
 
     @staticmethod
     def create(value: PlatformInvoiceSettlementAllocation, collection, *, session):
+        existing = collection.find_one(
+            {"tenant_id": value.tenant_id, "observation_id": value.observation_id},
+            session=session,
+        )
+        if existing is not None:
+            try:
+                replay = PlatformInvoiceSettlementAllocation.from_dict(existing)
+            except (TypeError, ValueError, KeyError) as invalid:
+                raise PlatformInvoiceSettlementAllocationConflict("ALLOCATION_PERSISTED_RECORD_INVALID") from invalid
+            if replay.fingerprint == value.fingerprint:
+                return replay
+            raise PlatformInvoiceSettlementAllocationConflict("ALLOCATION_DUPLICATE_OR_CONFLICT")
         try:
             collection.insert_one(value.to_dict(), session=session)
             return value
         except DuplicateKeyError as error:
-            existing = collection.find_one(
-                {"tenant_id": value.tenant_id, "observation_id": value.observation_id},
-                session=session,
-            )
-            if existing is not None:
-                try:
-                    replay = PlatformInvoiceSettlementAllocation.from_dict(existing)
-                except (TypeError, ValueError, KeyError) as invalid:
-                    raise PlatformInvoiceSettlementAllocationConflict("ALLOCATION_PERSISTED_RECORD_INVALID") from invalid
-                if replay.fingerprint == value.fingerprint:
-                    return replay
+            # A concurrent unique-index winner requires retrying the entire caller transaction.
             raise PlatformInvoiceSettlementAllocationConflict("ALLOCATION_DUPLICATE_OR_CONFLICT") from error
 
     @staticmethod
