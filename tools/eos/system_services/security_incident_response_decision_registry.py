@@ -353,8 +353,24 @@ class SecurityIncidentResponseDecisionRegistry:
                 decision.decided_by_principal_id,
                 decision.target_principal_id,
             }
-            or result_status != "REVOKED"
-            or result_revision != 2
+            or not (
+                (
+                    decision.action is SecurityIncidentResponseAction.SYSTEM_PERMISSION_REVOCATION
+                    and decision.target_assignment_id is not None
+                    and decision.target_permission_id is not None
+                    and result_status == "REVOKED"
+                    and result_revision == 2
+                )
+                or (
+                    decision.action is SecurityIncidentResponseAction.PASSWORD_RESET
+                    and decision.target_assignment_id is None
+                    and decision.target_permission_id is None
+                    and result_status == "PASSWORD_RESET_COMPLETED"
+                    and isinstance(result_revision, int)
+                    and not isinstance(result_revision, bool)
+                    and result_revision >= 1
+                )
+            )
             or not isinstance(occurred_at, datetime)
             or occurred_at.tzinfo is None
             or occurred_at.utcoffset() is None
