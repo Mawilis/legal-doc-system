@@ -171,3 +171,110 @@ def test_revision_guarded_retry_backoff_preserves_pending_event(mongo_collection
                 expected_revision=1,
             )
     assert inbox.find_one({"message_id": "message-1"})["processing_status"] == "PROCESSED"
+
+
+def test_signed_http_completion_to_real_inbox_empty_204_and_replay(mongo_collections, monkeypatch):
+    import hashlib
+    import json
+    from cryptography.hazmat.primitives.asymmetric import ec
+    from cryptography.hazmat.primitives import serialization
+    from fastapi import FastAPI
+    from fastapi.testclient import TestClient
+    import jwt
+
+    import tools.eos.api.electrum_payshap_completion_router as router
+    from tools.eos.kennel.providers.electrum_payshap_completion import verify_electrum_http_message_signature
+
+    client, inbox, _ = mongo_collections
+    provider_private = ec.generate_private_key(ec.SECP256R1())
+    provider_private_pem = provider_private.private_bytes(
+        serialization.Encoding.PEM, serialization.PrivateFormat.PKCS8, serialization.NoEncryption()
+    )
+    provider_public_pem = provider_private.public_key().public_bytes(
+        serialization.Encoding.PEM, serialization.PublicFormat.SubjectPublicKeyInfo
+    )
+    wilsy_private = ec.generate_private_key(ec.SECP256R1())
+    wilsy_private_pem = wilsy_private.private_bytes(
+        serialization.Encoding.PEM, serialization.PrivateFormat.PKCS8, serialization.NoEncryption()
+    )
+    wilsy_public_pem = wilsy_private.public_key().public_bytes(
+        serialization.Encoding.PEM, serialization.PublicFormat.SubjectPublicKeyInfo
+    )
+    config = router.ElectrumTransportConfiguration(
+        verification_keys={"electrum-sandbox-kid": provider_public_pem},
+        signing_private_key=wilsy_private_pem,
+        signing_key_id="wilsy-sandbox-kid",
+        signing_issuer="wilsy-sandbox-issuer",
+    )
+    monkeypatch.setattr(router, "_transport_configuration", lambda: config)
+    monkeypatch.setattr(
+        router, "_runtime",
+        lambda: router.ElectrumCompletionRuntime(client=client, database=inbox.database),
+    )
+    app = FastAPI()
+    app.state.electrum_completion_indexes_ready = True
+    app.state.electrum_settlement_worker_enabled = True
+    app.include_router(router.router)
+    http = TestClient(app)
+
+    payload = {
+        "schema": "PaymentStatusReport",
+        "messageIdentifiers": {
+            "messageIdentification": "sandbox-completion-001",
+            "creationDateTime": NOW.isoformat(),
+        },
+        "originalMessageIdentifiers": {
+            "messageIdentification": "sandbox-authorisation-001",
+            "creationDateTime": NOW.isoformat(),
+        },
+        "paymentScheme": {"schema": "ZA_RPP"},
+        "transactionIdentifiers": {
+            "uetr": "8f14e45f-ea5e-4f5f-9c5d-8f14e45fea5e",
+            "transactionIdentification": "sandbox-rrn-001",
+        },
+        "status": {"outcome": "APPROVED"},
+        "originalTransactionData": {
+            "paymentMethod": "CreditTransfer",
+            "amounts": {"bankSettlementAmount": {"currency": "ZAR", "value": 40.00}},
+            "settlementDate": "2026-11-05",
+            "creditorAccount": {"proxy": {"schema": "CUSTOM", "value": "wilsy-sandbox-proxy"}},
+        },
+    }
+
+    def send(value):
+        body = json.dumps(value, separators=(",", ":")).encode()
+        token = jwt.encode(
+            {
+                "iss": "electrum.co.za",
+                "iat": int(datetime.now(timezone.utc).timestamp()),
+                "electrum.co.za/content-digest": hashlib.sha256(body).hexdigest(),
+            },
+            provider_private_pem,
+            algorithm="ES256",
+            headers={"kid": "electrum-sandbox-kid", "typ": "JWT"},
+        )
+        return http.post(router.ROUTE_PATH, content=body, headers={"x-jwt-signature": token})
+
+    first = send(payload)
+    assert first.status_code == 204
+    assert first.content == b""
+    verify_electrum_http_message_signature(
+        b"", first.headers["x-jwt-signature"],
+        verification_keys={"wilsy-sandbox-kid": wilsy_public_pem},
+        issuer="wilsy-sandbox-issuer",
+    )
+    assert inbox.count_documents({"message_id": "sandbox-completion-001"}) == 1
+
+    replay = send(payload)
+    assert replay.status_code == 204
+    assert replay.content == b""
+    assert inbox.count_documents({"message_id": "sandbox-completion-001"}) == 1
+
+    divergent = dict(payload)
+    divergent["originalTransactionData"] = dict(payload["originalTransactionData"])
+    divergent["originalTransactionData"]["amounts"] = {
+        "bankSettlementAmount": {"currency": "ZAR", "value": 41.00}
+    }
+    conflict = send(divergent)
+    assert conflict.status_code == 409
+    assert inbox.count_documents({"message_id": "sandbox-completion-001"}) == 1
