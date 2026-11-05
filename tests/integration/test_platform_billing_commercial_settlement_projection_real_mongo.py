@@ -661,9 +661,14 @@ def test_r3fc_rm09_atomic_duplicate_delivery_is_one_durable_settlement():
     try:
         evidence, fact_id, platform_id, created_at = _atomic_transport_for_existing_execution(client, db, state)
         first = _run_atomic_settlement(client, db, state, evidence, fact_id, platform_id, created_at)
+        db["billing_outbox_events"].update_one(
+            {"tenant_id": state["tenant"], "event_key": first["outbox_event"]["event_key"]},
+            {"$set": {"delivery_status": "DELIVERED", "delivery_attempts": 1, "delivered_at": created_at.isoformat()}},
+        )
         second = _run_atomic_settlement(client, db, state, evidence, fact_id, platform_id, created_at)
         tenant = state["tenant"]
         assert first["settlement_evidence"].fingerprint == second["settlement_evidence"].fingerprint
+        assert second["outbox_event"]["delivery_status"] == "DELIVERED"
         assert db["financial_settlement_observations"].count_documents({"tenant_id": tenant}) == 1
         assert db["platform_billing_financial_settlement_evidence"].count_documents({"tenant_id": tenant}) == 1
         assert db["projections"].count_documents({"tenant_id": tenant}) == 1
