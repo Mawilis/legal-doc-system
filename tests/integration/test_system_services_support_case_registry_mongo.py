@@ -498,3 +498,53 @@ def test_authenticated_security_incident_intake_is_sanitized_append_only_and_ide
     persisted = database[COLLECTION].find_one({"tenant_id": tenant_id})
     assert persisted is not None
     assert "password" not in persisted and "secret" not in persisted
+
+
+
+def test_security_incident_registry_rolls_back_incident_and_event_together(
+    mongo_case_registry,
+):
+    """A failed caller transaction must leave neither incident nor initial event."""
+    from datetime import datetime, timezone
+    from tools.eos.system_services.security_incident import (
+        SecurityIncident, SecurityIncidentCategory, SecurityIncidentEvent,
+    )
+    from tools.eos.system_services.security_incident_registry import (
+        COLLECTION, EVENT_COLLECTION, SecurityIncidentRegistry,
+    )
+
+    client, database, _ = mongo_case_registry
+    registry = SecurityIncidentRegistry(
+        incidents=database[COLLECTION], events=database[EVENT_COLLECTION]
+    )
+    registry.ensure_indexes()
+    now = datetime(2026, 11, 5, 8, tzinfo=timezone.utc)
+    incident = SecurityIncident(
+        incident_id="incident-atomicity-certificate",
+        tenant_id="tenant-atomicity-certificate",
+        reporter_principal_id="principal-atomicity-certificate",
+        idempotency_fingerprint="a" * 64,
+        category=SecurityIncidentCategory.SUSPECTED_ACCOUNT_COMPROMISE,
+        observed_at=now,
+        received_at=now,
+    )
+    event = SecurityIncidentEvent(
+        event_id="incident-event-atomicity-certificate",
+        incident_id=incident.incident_id,
+        tenant_id=incident.tenant_id,
+        actor_principal_id=incident.reporter_principal_id,
+        event_type="INCIDENT_REPORTED",
+        occurred_at=now,
+        fingerprint="b" * 64,
+    )
+    with client.start_session() as session:
+        with pytest.raises(RuntimeError, match="INCIDENT_ABORT_CERTIFICATE"):
+            with session.start_transaction():
+                registry.create_or_replay(incident, event, session=session)
+                raise RuntimeError("INCIDENT_ABORT_CERTIFICATE")
+    assert database[COLLECTION].count_documents(
+        {"incident_id": incident.incident_id}
+    ) == 0
+    assert database[EVENT_COLLECTION].count_documents(
+        {"incident_id": incident.incident_id}
+    ) == 0
