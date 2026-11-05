@@ -1,5 +1,6 @@
 import argparse
 import json
+from hashlib import sha3_256
 from pathlib import Path
 from pymongo import MongoClient
 from browser_cert_fixture import _owned_database, _uri
