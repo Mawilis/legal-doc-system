@@ -15,6 +15,9 @@ from pymongo.collection import Collection
 from tools.eos.kennel.domain.financial_execution import FinancialExecutionStatus
 from tools.eos.kennel.registry.financial_execution_registry import FinancialExecutionFactRegistry
 from tools.eos.kennel.registry.financial_settlement_observation_registry import FinancialSettlementObservationRegistry
+from tools.eos.kennel.registry.platform_billing_financial_execution_truth_registry import PlatformBillingFinancialExecutionTruthRegistry
+from tools.eos.kennel.domain.platform_billing_financial_execution_truth import PlatformExecutionStatus
+from tools.eos.saas.billing.platform_billing_release_authorization_registry import PlatformBillingReleaseAuthorizationRegistry
 from tools.eos.saas.domain.billing import InvoiceStatus, PlatformInvoice
 from tools.eos.saas.domain.money import SUPPORTED_CURRENCY_EXPONENTS, to_minor_units
 from tools.eos.saas.billing.subscription_registry import SubscriptionRegistry
@@ -59,6 +62,8 @@ def allocate_settlement_observation_to_platform_invoice(
     *,
     observation_collection: Collection,
     execution_truth_collection: Collection,
+    platform_truth_collection: Collection,
+    release_authorization_collection: Collection,
     platform_invoice_collection: Collection,
     allocation_collection: Collection,
     audit_collection: Collection,
@@ -98,14 +103,47 @@ def allocate_settlement_observation_to_platform_invoice(
     ):
         raise PlatformInvoiceSettlementAllocationOrchestrationError("ALLOCATION_EXECUTION_PROVENANCE_MISMATCH")
 
+    platform_truth_docs = list(platform_truth_collection.find(
+        {"tenant_id": tenant_id, "source_execution_fact_id": truth.execution_fact_id},
+        session=session,
+    ).limit(2))
+    if len(platform_truth_docs) != 1:
+        raise PlatformInvoiceSettlementAllocationOrchestrationError("ALLOCATION_PLATFORM_TRUTH_NOT_UNIQUE")
+    platform_truth = PlatformBillingFinancialExecutionTruthRegistry.get(
+        tenant_id, platform_truth_docs[0]["execution_truth_id"], platform_truth_collection, session=session
+    )
+    if (
+        platform_truth.execution_status is not PlatformExecutionStatus.EXECUTED
+        or platform_truth.source_execution_fact_id != truth.execution_fact_id
+        or platform_truth.source_execution_fact_fingerprint != truth.fingerprint
+        or (platform_truth.provider, platform_truth.provider_execution_reference,
+            platform_truth.currency, platform_truth.payment_destination_reference)
+        != (observation.provider_name, observation.provider_execution_reference,
+            observation.currency, observation.payment_destination_reference)
+        or observation.settled_amount_minor > platform_truth.executed_amount_minor
+    ):
+        raise PlatformInvoiceSettlementAllocationOrchestrationError("ALLOCATION_PLATFORM_TRUTH_MISMATCH")
+    authorization = PlatformBillingReleaseAuthorizationRegistry.get(
+        tenant_id, platform_truth.release_authorization_id, release_authorization_collection, session=session
+    )
     doc = platform_invoice_collection.find_one(
-        {"tenant_id": tenant_id, "invoice_id": observation.platform_invoice_id},
+        {"tenant_id": tenant_id, "invoice_id": platform_truth.platform_invoice_id},
         session=session,
     )
     if doc is None:
         raise PlatformInvoiceSettlementAllocationOrchestrationError("ALLOCATION_INVOICE_NOT_FOUND")
     invoice = PlatformInvoice.from_dict(dict(doc))
-    if invoice.tenant_id != tenant_id or invoice.currency != observation.currency:
+    if (
+        invoice.tenant_id != tenant_id
+        or invoice.currency != observation.currency
+        or authorization.tenant_id != tenant_id
+        or authorization.platform_invoice_id != invoice.invoice_id
+        or authorization.currency != invoice.currency
+        or authorization.authorized_amount_minor != invoice.release_amount_minor
+        or authorization.platform_invoice_evidence_fingerprint != invoice.commercial_release_evidence_fingerprint
+        or authorization.payment_destination_reference != platform_truth.payment_destination_reference
+        or platform_truth.release_authorization_fingerprint != authorization.release_authorization_fingerprint
+    ):
         raise PlatformInvoiceSettlementAllocationOrchestrationError("ALLOCATION_INVOICE_PROVENANCE_MISMATCH")
     if invoice.status in {InvoiceStatus.PAID, InvoiceStatus.VOID, InvoiceStatus.CANCELLED} or invoice.paid_at is not None:
         raise PlatformInvoiceSettlementAllocationOrchestrationError("ALLOCATION_INVOICE_NOT_OPEN")
@@ -133,6 +171,11 @@ def allocate_settlement_observation_to_platform_invoice(
     if amount_minor <= 0 or amount_minor > outstanding_minor:
         raise PlatformInvoiceSettlementAllocationOrchestrationError("ALLOCATION_OVERPAYMENT_REJECTED")
 
+    prior_execution_allocations = list(allocation_collection.find(
+        {"tenant_id": tenant_id, "execution_truth_id": truth.execution_fact_id}, session=session
+    ))
+    if sum(int(item.get("amount_minor", 0)) for item in prior_execution_allocations) + amount_minor > platform_truth.executed_amount_minor:
+        raise PlatformInvoiceSettlementAllocationOrchestrationError("ALLOCATION_EXECUTION_OVERALLOCATION")
     sequence = allocation_collection.count_documents(
         {"tenant_id": tenant_id, "invoice_id": invoice.invoice_id}, session=session
     ) + 1
