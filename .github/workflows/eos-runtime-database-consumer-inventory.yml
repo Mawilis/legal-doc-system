@@ -7,6 +7,9 @@ on:
       - "server/server.js"
       - "server/ecosystem.config.js"
       - "server/tests/advanced/runtime-database-ownership.test.mjs"
+      - "server/tests/advanced/eos-workspace-identity.test.mjs"
+      - "server/controllers/businessArtifactPdfController.js"
+      - "server/services/eosWorkspaceIdentity.js"
       - "server/tests/routes/wilsyAiAdvisoryProxy.test.js"
       - "scripts/start-dev-stack.sh"
       - "package.json"
@@ -43,4 +46,4 @@ jobs:
           node-version: "20"
 
       - name: Certify Node BFF transport-only database boundary
-        run: node --test server/tests/advanced/runtime-database-ownership.test.mjs
+        run: node --test server/tests/advanced/runtime-database-ownership.test.mjs server/tests/advanced/eos-workspace-identity.test.mjs
