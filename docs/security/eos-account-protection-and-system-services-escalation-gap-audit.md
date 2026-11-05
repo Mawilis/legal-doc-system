@@ -138,3 +138,26 @@ No production deployment, credential/account mutation, self-assigned permission,
 - Fixed self-service support-case idempotency so the persisted event key is scoped to tenant + principal + caller idempotency key, matching the unique event index and preventing cross-tenant collisions.
 
 The System Services exact-head CI run is queued/pending at the time of this update. These tests are authored but not yet reported as passing.
+
+
+### Transactional platform audit/outbox implementation increment (2026-11-05)
+
+- Added separate `system_platform_audit_events` and `system_platform_audit_outbox` collections for responder assignment and acknowledgement/decline events. These are distinct from the System Services assignment event history.
+- Assignment and transition services now write the business projection, immutable assignment event, platform audit record and pending outbox intent through the same caller-owned MongoDB session. No nested transaction or background dispatch is introduced.
+- Audit/outbox event identity is deterministic and idempotent. Duplicate delivery is accepted only when the stored evidence exactly matches; a conflicting event fails closed.
+- Audit evidence is derived from the immutable persisted assignment event, including its original timestamp, so a command replay does not fabricate a new audit time.
+- Startup index provisioning now includes unique audit/outbox event keys and a bounded pending-outbox scan index. Failure to provision these indexes prevents assignment registry readiness.
+- Added real-replica-set assertions that assignment and acceptance each produce independent audit/outbox records, plus a transaction-abort test proving assignment, assignment event, audit record and outbox intent all roll back together.
+
+**Certification status:** implementation committed; exact-head CI is pending. This does not certify delivery/dispatch, alert notification, browser workflow, duty-rota/SLA coverage, or any containment/recovery operation. The outbox remains pending and no worker is activated by this change.
+
+### Remaining before operational certification (revised)
+
+1. Complete exact-head Python compilation, Pyright, unit and real-replica-set certification for the audit/outbox integration; fix any failures before treating it as certified.
+2. Add governed duty routing, acknowledgement deadlines, escalation timers, out-of-hours fallback, reassignment and conflict/recusal history. Do not invent a staffed rota; missing or stale rota data must fail closed into an explicit unstaffed state.
+3. Build and certify the authenticated browser journey from incident intake through responder acknowledgement and user-visible status/closure.
+4. Define independent approval and canonical execution for containment/recovery. Audit/outbox persistence and responder acceptance do not authorize session revocation, MFA reset, password reset, unlock, recovery-contact changes or device trust changes.
+5. Add outbox consumer delivery/retry/dead-letter/reconciliation policy only after the delivery owner and operational notification contract are defined. The current implementation creates durable pending intents only.
+6. Review privacy retention, POPIA purpose limitation, user notification and incident closure policy before operational activation.
+
+No production deployment, credential/account mutation, workforce assignment, subscription lifecycle action, merge or Electrum activation is authorized by this implementation update.
