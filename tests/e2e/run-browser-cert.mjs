@@ -630,39 +630,47 @@ try {
     throw new Error('BROWSER_CERT_EOS_PREFLIGHT_FAILED:' + summary);
   }
 
-  setPhase('startup', 'bff_dependency_check_and_launch');
-  const missingDependencies = missingBffDependencies();
-  if (missingDependencies.length > 0) {
-    throw new Error('BROWSER_CERT_BFF_DEPENDENCIES_MISSING:' + missingDependencies.join(','));
-  }
-  const bffEnvironment = {
-    ...environment,
-    PORT: String(bffPort),
-    MONGODB_URI: mongoUri,
-    MONGO_URI: mongoUri,
-    KENNEL_URL: eosBaseUrl,
-  };
-  console.info('[BROWSER-CERT-STARTUP] service=BFF action=starting port=' + bffPort);
-  const bffProcess = spawnOwned(
-    process.execPath,
-    ['--import', './preload-shield.js', 'server.js'],
-    { cwd: serverDirectory, env: bffEnvironment, stdio: ['ignore', 'pipe', 'pipe'] },
-    'BFF',
-  );
-  bffPort = await waitForOwnedPort(bffProcess);
-  const bffHealthResponse = await waitFor('http://127.0.0.1:' + bffPort + '/health', 'BFF');
-  if (bffProcess.closed) throw new Error('BROWSER_CERT_BFF_EXITED_DURING_STARTUP');
-  await verifyBffHealth(bffHealthResponse);
-
   const baseViteConfigPath = join(clientDirectory, 'vite.config.js');
   const baseViteConfig = await readFile(baseViteConfigPath, 'utf-8');
-  if (!baseViteConfig.includes('http://localhost:9095')
-    || !baseViteConfig.includes('http://localhost:4000')) {
-    throw new Error('BROWSER_CERT_VITE_PROXY_TARGETS_NOT_FOUND');
+  const hasEosProxy = baseViteConfig.includes('http://localhost:9095')
+    || baseViteConfig.includes('http://127.0.0.1:9095');
+  const usesBffProxy = baseViteConfig.includes('http://localhost:4000')
+    || baseViteConfig.includes('http://127.0.0.1:4000');
+  if (!hasEosProxy) {
+    throw new Error('BROWSER_CERT_VITE_EOS_PROXY_TARGET_NOT_FOUND');
+  }
+  if (usesBffProxy) {
+    setPhase('startup', 'bff_dependency_check_and_launch');
+    const missingDependencies = missingBffDependencies();
+    if (missingDependencies.length > 0) {
+      throw new Error('BROWSER_CERT_BFF_DEPENDENCIES_MISSING:' + missingDependencies.join(','));
+    }
+    const bffEnvironment = {
+      ...environment,
+      PORT: String(bffPort),
+      MONGODB_URI: mongoUri,
+      MONGO_URI: mongoUri,
+      KENNEL_URL: eosBaseUrl,
+    };
+    console.info('[BROWSER-CERT-STARTUP] service=BFF action=starting port=' + bffPort);
+    const bffProcess = spawnOwned(
+      process.execPath,
+      ['--import', './preload-shield.js', 'server.js'],
+      { cwd: serverDirectory, env: bffEnvironment, stdio: ['ignore', 'pipe', 'pipe'] },
+      'BFF',
+    );
+    bffPort = await waitForOwnedPort(bffProcess);
+    const bffHealthResponse = await waitFor('http://127.0.0.1:' + bffPort + '/health', 'BFF');
+    if (bffProcess.closed) throw new Error('BROWSER_CERT_BFF_EXITED_DURING_STARTUP');
+    await verifyBffHealth(bffHealthResponse);
+  } else {
+    console.info('[BROWSER-CERT-STARTUP] service=BFF action=skipped reason=EOS_OWNS_ALL_API_PROXY_ROUTES');
   }
   const configuredVite = baseViteConfig
     .replaceAll('http://localhost:9095', eosBaseUrl)
-    .replaceAll('http://localhost:4000', 'http://127.0.0.1:' + bffPort);
+    .replaceAll('http://127.0.0.1:9095', eosBaseUrl)
+    .replaceAll('http://localhost:4000', 'http://127.0.0.1:' + bffPort)
+    .replaceAll('http://127.0.0.1:4000', 'http://127.0.0.1:' + bffPort);
   await writeFile(viteConfigPath, configuredVite, { encoding: 'utf-8', mode: 0o600 });
 
   setPhase('startup', 'vite_startup');
