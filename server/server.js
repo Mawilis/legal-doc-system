@@ -198,13 +198,18 @@ async function requireEosWorkspaceIdentity(req, res, next) {
     req.headers['x-tenant'] ||
     req.headers['x-wilsy-tenant-id'] ||
     '';
-  const result = await resolveEosWorkspaceIdentity({
-    baseUrl: KENNEL_TARGET,
-    authorization: req.headers.authorization || '',
-    tenantId,
-  });
+  let result;
+  try {
+    result = await resolveEosWorkspaceIdentity({
+      baseUrl: KENNEL_TARGET,
+      authorization: req.headers.authorization || '',
+      tenantId,
+    });
+  } catch {
+    return res.status(503).json({ success: false, error: 'AUTHORITY_UNAVAILABLE' });
+  }
 
-  if (!result.ok) {
+  if (!result?.ok) {
     return res.status(result.status).json({
       success: false,
       error: result.code,
