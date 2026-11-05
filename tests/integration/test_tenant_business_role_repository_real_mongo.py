@@ -251,3 +251,83 @@ def test_multi_capacity_history_cas_and_abort_are_atomic_on_real_replica_set() -
             client.drop_database(database.name)
         finally:
             client.close()
+
+
+def test_multi_capacity_concurrent_revision_writers_are_fenced_on_real_replica_set() -> None:
+    """Two concurrent writers cannot both advance the same capacity revision."""
+    from concurrent.futures import ThreadPoolExecutor
+    from threading import Barrier
+
+    client = MongoClient(
+        os.getenv(
+            "TEST_VENDOR_MONGO_URI",
+            "mongodb://127.0.0.1:27027/?replicaSet=wilsyVendorCertRS",
+        ),
+        serverSelectionTimeoutMS=5000,
+        retryWrites=True,
+    )
+    database = client[f"wilsy_business_role_race_{uuid4().hex}"]
+    legacy = database["tenant_business_roles"]
+    current = database["tenant_business_role_assignments"]
+    history = database["tenant_business_role_assignment_history"]
+    repo = TenantBusinessRoleRepository
+    stamp = datetime(2026, 1, 1, tzinfo=timezone.utc)
+    barrier = Barrier(2)
+
+    try:
+        assert client.admin.command("hello").get("isWritablePrimary") is True
+        repo.ensure_indexes(legacy)
+        repo.ensure_multi_capacity_indexes(database)
+        initial = TenantBusinessRoleAuthority(
+            "principal", "tenant", "tenant_owner",
+            TenantBusinessRoleStatus.ACTIVE, 0, stamp, None,
+        )
+        with client.start_session() as session:
+            with session.start_transaction():
+                repo.record_capacity_revision(
+                    initial, None, database, session=session
+                )
+
+        def write(status: TenantBusinessRoleStatus):
+            candidate = TenantBusinessRoleAuthority(
+                "principal", "tenant", "tenant_owner",
+                status, 1, stamp,
+                stamp + timedelta(seconds=1)
+                if status is TenantBusinessRoleStatus.REVOKED else None,
+            )
+            try:
+                with client.start_session() as session:
+                    with session.start_transaction():
+                        barrier.wait(timeout=10)
+                        repo.record_capacity_revision(
+                            candidate, 0, database, session=session
+                        )
+                return "COMMITTED"
+            except (
+                TenantBusinessRoleRevisionConflictError,
+                TenantBusinessRoleRepositoryError,
+            ):
+                return "REJECTED"
+
+        with ThreadPoolExecutor(max_workers=2) as pool:
+            outcomes = list(pool.map(
+                write,
+                (TenantBusinessRoleStatus.ACTIVE, TenantBusinessRoleStatus.REVOKED),
+            ))
+
+        assert outcomes.count("COMMITTED") == 1
+        assert outcomes.count("REJECTED") == 1
+        winner = current.find_one({
+            "principal_id": "principal", "tenant_id": "tenant",
+            "business_role": "tenant_owner",
+        })
+        assert winner["revision"] == 1
+        assert history.count_documents({
+            "principal_id": "principal", "tenant_id": "tenant",
+            "business_role": "tenant_owner",
+        }) == 2
+    finally:
+        try:
+            client.drop_database(database.name)
+        finally:
+            client.close()
