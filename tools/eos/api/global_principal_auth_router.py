@@ -67,6 +67,14 @@ from tools.eos.auth.principal_credential_repository import (
     PrincipalCredentialRepository,
     PrincipalCredentialRepositoryError,
 )
+from tools.eos.auth.global_principal_system_session_authority import (
+    CHALLENGE_COLLECTION as SYSTEM_MFA_CHALLENGE_COLLECTION,
+    SESSION_COLLECTION as SYSTEM_SESSION_COLLECTION,
+    GlobalPrincipalSystemMfaChallengeService,
+    GlobalPrincipalSystemSessionAuthority,
+    GlobalPrincipalSystemSessionRejected,
+    GlobalPrincipalSystemSessionUnavailable,
+)
 from tools.eos.kernel.db import get_client, get_database
 
 router = APIRouter(prefix="/auth/global", tags=["Global Principal Authentication"])
@@ -231,6 +239,42 @@ async def global_login(payload: GlobalCredentialRequest, request: Request) -> di
             principal_id=principal.principal_id,
             session=session,
         )
+        if not page.memberships:
+            if (
+                getattr(request.app.state, "system_services_authority_ready", False) is not True
+                or getattr(request.app.state, "system_services_case_indexes_ready", False) is not True
+            ):
+                _abort_if_active(session)
+                raise HTTPException(status_code=503, detail="SYSTEM_AUTHORITY_UNAVAILABLE")
+            authorizer = getattr(request.app.state, "system_services_authorizer", None)
+            if authorizer is None:
+                _abort_if_active(session)
+                raise HTTPException(status_code=503, detail="SYSTEM_AUTHORITY_UNAVAILABLE")
+            try:
+                authorizer.require(
+                    principal_id=principal.principal_id,
+                    permission_id="system_services:queue:read",
+                    session=session,
+                )
+            except Exception:
+                _abort_if_active(session)
+                raise HTTPException(status_code=403, detail="No eligible workspace is assigned to this principal.") from None
+            challenge_token, expires_at = GlobalPrincipalSystemMfaChallengeService(
+                collection=database[SYSTEM_MFA_CHALLENGE_COLLECTION],
+            ).issue(
+                principal_id=principal.principal_id,
+                credential_revision=principal.credential_revision,
+                session=session,
+                now=now,
+            )
+            session.commit_transaction()
+            return {
+                "status": "MFA_REQUIRED",
+                "scope": "SYSTEM",
+                "mfa_challenge": challenge_token,
+                "expires_at": expires_at.isoformat(),
+                "workspace_id": "SYSTEM_SERVICES",
+            }
         session.commit_transaction()
         return {
             "status": "MEMBERSHIP_SELECTION_REQUIRED",
