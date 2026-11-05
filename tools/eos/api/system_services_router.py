@@ -18,7 +18,7 @@ from hashlib import sha3_256
 from pymongo.client_session import ClientSession
 
 from fastapi import APIRouter, Depends, Header, HTTPException, Query, Request
-from pydantic import BaseModel, ConfigDict, Field, StrictInt, StrictStr
+from pydantic import BaseModel, ConfigDict, Field, StrictBool, StrictInt, StrictStr
 
 from tools.eos.auth.authentication import get_current_identity
 from tools.eos.auth.identity import SovereignIdentity
@@ -63,6 +63,31 @@ from tools.eos.system_services.security_incident_escalation_service import (
     SecurityIncidentEscalationService,
     SecurityIncidentEscalationError,
 )
+from tools.eos.system_services.security_incident_response_decision import (
+    SecurityIncidentResponseAction,
+    SecurityIncidentResponseDecision,
+)
+from tools.eos.system_services.security_incident_response_decision_registry import (
+    SecurityIncidentResponseDecisionRegistry,
+    SecurityIncidentResponseDecisionRegistryError,
+    SecurityIncidentResponseDecisionConflictError,
+)
+from tools.eos.system_services.security_incident_response_decision_service import (
+    SecurityIncidentResponseDecisionService,
+    SecurityIncidentResponseDecisionServiceError,
+)
+from tools.eos.system_services.security_incident_response_execution import (
+    SecurityIncidentResponseCanonicalExecutor,
+    SecurityIncidentResponseExecutionError,
+)
+from tools.eos.auth.system_permission_assignment import SystemPermissionAssignmentStatus
+from tools.eos.auth.system_permission_command_evidence import (
+    SystemPermissionCommandEvidence,
+    SystemPermissionCommandOperation,
+)
+from tools.eos.auth.system_permission_assignment_registry import (
+    SystemPermissionAssignmentRegistry as CanonicalSystemPermissionAssignmentRegistry,
+)
 from tools.eos.system_services.support_case_registry import (
     SupportCaseConflictError,
     SupportCaseNotFoundError,
@@ -106,6 +131,30 @@ def _service(request: Request) -> SupportCaseApplicationService:
     return SupportCaseApplicationService(registry=registry, authorizer=authorizer)
 
 
+def _response_runtime(
+    request: Request,
+) -> tuple[
+    SecurityIncidentResponseDecisionRegistry,
+    SecurityIncidentResponseDecisionService,
+    SecurityIncidentResponseCanonicalExecutor,
+    CanonicalSystemPermissionAssignmentRegistry,
+]:
+    if getattr(request.app.state, "system_services_response_indexes_ready", False) is not True:
+        raise HTTPException(status_code=503, detail="System Services response governance is not ready.")
+    registry = getattr(request.app.state, "system_services_response_decision_registry", None)
+    service = getattr(request.app.state, "system_services_response_decision_service", None)
+    executor = getattr(request.app.state, "system_services_response_executor", None)
+    assignments = getattr(request.app.state, "system_services_response_permission_assignments", None)
+    if (
+        type(registry) is not SecurityIncidentResponseDecisionRegistry
+        or type(service) is not SecurityIncidentResponseDecisionService
+        or type(executor) is not SecurityIncidentResponseCanonicalExecutor
+        or type(assignments) is not CanonicalSystemPermissionAssignmentRegistry
+    ):
+        raise HTTPException(status_code=503, detail="System Services response authority is not configured.")
+    return registry, service, executor, assignments
+
+
 def _run_transaction(callback: Callable[[ClientSession], _Result]) -> _Result:
     client = get_client()
     if client is None:
@@ -126,6 +175,10 @@ def _run_transaction(callback: Callable[[ClientSession], _Result]) -> _Result:
         SupportCaseConflictError, SupportCaseApplicationError,
         SecurityIncidentConflictError, IncidentAssignmentConflictError,
         SecurityIncidentEscalationError,
+        SecurityIncidentResponseDecisionRegistryError,
+        SecurityIncidentResponseDecisionConflictError,
+        SecurityIncidentResponseDecisionServiceError,
+        SecurityIncidentResponseExecutionError,
     ) as error:
         raise HTTPException(status_code=409, detail="Support case operation conflicts with current state.") from error
     except Exception as error:
