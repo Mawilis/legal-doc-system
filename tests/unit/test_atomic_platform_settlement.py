@@ -47,6 +47,8 @@ def _args(session):
     )
     audit = Mock()
     audit.find_one.return_value = None
+    outbox = Mock()
+    outbox.find_one.return_value = None
     return {
         "tenant_id": "tenant-a",
         "transport_evidence": _evidence(),
@@ -61,7 +63,7 @@ def _args(session):
         "commercial_projection_collection": Mock(),
         "subscription_collection": Mock(),
         "audit_collection": audit,
-        "outbox_collection": Mock(),
+        "outbox_collection": outbox,
         "session": session,
         "created_at": now,
         "_observation": observation,
