@@ -501,6 +501,33 @@ def list_my_security_incident_assignments(
     ])
 
 
+
+@router.get("/security-incident-assignments/{assignment_id}")
+def read_my_security_incident_assignment(
+    assignment_id: str,
+    request: Request,
+    identity: SovereignIdentity = Depends(get_current_identity),
+):
+    """Read only the exact incident assigned to the authenticated responder."""
+    actor = _actor(identity)
+    incidents, assignments = _assignment_runtime(request)
+    _, authorizer = _runtime(request)
+    service = SecurityIncidentEscalationService(
+        incidents=incidents, assignments=assignments, authorizer=authorizer,
+    )
+    def read(session):
+        assignment, incident = service.read_my_assignment(
+            actor_principal_id=actor.principal_id,
+            assignment_id=assignment_id,
+            session=session,
+        )
+        return {
+            "assignment": _project_assignment(assignment),
+            "incident": _project_incident(incident),
+        }
+    return _run_transaction(read)
+
+
 @router.post("/security-incident-assignments/{assignment_id}/accept")
 def accept_security_incident_assignment(
     assignment_id: str,
