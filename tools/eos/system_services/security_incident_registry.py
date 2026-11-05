@@ -1,0 +1,173 @@
+"""Caller-transaction security-incident intake registry.
+
+This registry is append-only: it accepts initial sanitized intake evidence and
+has no status transition, containment, recovery, or account-action authority.
+"""
+from __future__ import annotations
+
+from datetime import datetime, timezone
+from typing import Any
+
+from pymongo import ASCENDING
+from pymongo.errors import DuplicateKeyError, PyMongoError
+
+from tools.eos.system_services.security_incident import (
+    SecurityIncident, SecurityIncidentEvent, SecurityIncidentCategory,
+)
+
+COLLECTION = "system_security_incidents"
+EVENT_COLLECTION = "system_security_incident_events"
+
+
+class SecurityIncidentRegistryError(RuntimeError):
+    def __init__(self, code: str) -> None:
+        self.code = code
+        super().__init__(code)
+
+
+class SecurityIncidentConflictError(SecurityIncidentRegistryError):
+    pass
+
+
+class SecurityIncidentPersistenceError(SecurityIncidentRegistryError):
+    pass
+
+
+def _transaction(session: Any) -> None:
+    try:
+        marker = getattr(session, "in_transaction")
+        active = marker() if callable(marker) else marker
+    except Exception as error:
+        raise SecurityIncidentRegistryError("SECURITY_INCIDENT_TRANSACTION_REQUIRED") from error
+    if active is not True:
+        raise SecurityIncidentRegistryError("SECURITY_INCIDENT_TRANSACTION_REQUIRED")
+
+
+def _doc(value: SecurityIncident) -> dict[str, object]:
+    return {
+        "incident_id": value.incident_id,
+        "tenant_id": value.tenant_id,
+        "reporter_principal_id": value.reporter_principal_id,
+        "idempotency_fingerprint": value.idempotency_fingerprint,
+        "category": value.category.value,
+        "observed_at": value.observed_at,
+        "received_at": value.received_at,
+        "revision": value.revision,
+        "status": value.status,
+    }
+
+
+def _event_doc(value: SecurityIncidentEvent) -> dict[str, object]:
+    return {
+        "event_id": value.event_id,
+        "incident_id": value.incident_id,
+        "tenant_id": value.tenant_id,
+        "actor_principal_id": value.actor_principal_id,
+        "event_type": value.event_type,
+        "occurred_at": value.occurred_at,
+        "fingerprint": value.fingerprint,
+    }
+
+
+def _hydrate(raw: dict[str, Any]) -> SecurityIncident:
+    for key in ("observed_at", "received_at"):
+        value = raw.get(key)
+        if isinstance(value, datetime) and value.tzinfo is None:
+            raw[key] = value.replace(tzinfo=timezone.utc)
+    return SecurityIncident(
+        incident_id=raw["incident_id"],
+        tenant_id=raw["tenant_id"],
+        reporter_principal_id=raw["reporter_principal_id"],
+        idempotency_fingerprint=raw["idempotency_fingerprint"],
+        category=SecurityIncidentCategory(raw["category"]),
+        observed_at=raw["observed_at"],
+        received_at=raw["received_at"],
+        revision=raw["revision"],
+        status=raw["status"],
+    )
+
+
+class SecurityIncidentRegistry:
+    """Append-only intake persistence; caller owns transaction and authorization."""
+
+    def __init__(self, *, incidents: Any, events: Any) -> None:
+        if incidents is None or events is None:
+            raise SecurityIncidentRegistryError("SECURITY_INCIDENT_COLLECTION_REQUIRED")
+        self._incidents = incidents
+        self._events = events
+
+    def ensure_indexes(self) -> None:
+        self._incidents.create_index(
+            [("incident_id", ASCENDING)], unique=True,
+            name="security_incident_identity_unique",
+        )
+        self._incidents.create_index(
+            [("tenant_id", ASCENDING), ("reporter_principal_id", ASCENDING),
+             ("idempotency_fingerprint", ASCENDING)],
+            unique=True, name="security_incident_reporter_idempotency_unique",
+        )
+        self._events.create_index(
+            [("event_id", ASCENDING)], unique=True,
+            name="security_incident_event_identity_unique",
+        )
+        self._events.create_index(
+            [("incident_id", ASCENDING), ("event_type", ASCENDING)],
+            unique=True, name="security_incident_initial_event_unique",
+        )
+
+    def create_or_replay(
+        self, incident: SecurityIncident, event: SecurityIncidentEvent, *, session: Any
+    ) -> SecurityIncident:
+        _transaction(session)
+        if (
+            not isinstance(incident, SecurityIncident)
+            or not isinstance(event, SecurityIncidentEvent)
+            or event.incident_id != incident.incident_id
+            or event.tenant_id != incident.tenant_id
+            or event.actor_principal_id != incident.reporter_principal_id
+            or event.event_type != "INCIDENT_REPORTED"
+        ):
+            raise SecurityIncidentRegistryError("SECURITY_INCIDENT_EVENT_MISMATCH")
+        query = {
+            "tenant_id": incident.tenant_id,
+            "reporter_principal_id": incident.reporter_principal_id,
+            "idempotency_fingerprint": incident.idempotency_fingerprint,
+        }
+        try:
+            prior = self._incidents.find_one(query, session=session)
+            if prior is not None:
+                value = _hydrate(dict(prior))
+                if value.incident_id != incident.incident_id or value.category is not incident.category:
+                    raise SecurityIncidentConflictError("SECURITY_INCIDENT_IDEMPOTENCY_CONFLICT")
+                return value
+            self._incidents.insert_one(_doc(incident), session=session)
+            self._events.insert_one(_event_doc(event), session=session)
+            return incident
+        except SecurityIncidentRegistryError:
+            raise
+        except DuplicateKeyError as error:
+            raise SecurityIncidentConflictError("SECURITY_INCIDENT_CONCURRENT_REPLAY") from error
+        except PyMongoError as error:
+            raise SecurityIncidentPersistenceError("SECURITY_INCIDENT_INTAKE_FAILED") from error
+
+    def list_own(
+        self, *, tenant_id: str, principal_id: str, session: Any, limit: int = 50
+    ) -> tuple[SecurityIncident, ...]:
+        _transaction(session)
+        if not 1 <= limit <= 100:
+            raise SecurityIncidentRegistryError("SECURITY_INCIDENT_LIMIT_INVALID")
+        try:
+            rows = self._incidents.find(
+                {"tenant_id": tenant_id, "reporter_principal_id": principal_id},
+                session=session,
+            ).sort([("received_at", -1), ("incident_id", -1)]).limit(limit)
+            return tuple(_hydrate(dict(row)) for row in rows)
+        except PyMongoError as error:
+            raise SecurityIncidentPersistenceError("SECURITY_INCIDENT_READ_FAILED") from error
+
+
+__all__ = [
+    "COLLECTION", "EVENT_COLLECTION", "SecurityIncidentRegistry",
+    "SecurityIncidentRegistryError", "SecurityIncidentConflictError",
+    "SecurityIncidentPersistenceError",
+]
