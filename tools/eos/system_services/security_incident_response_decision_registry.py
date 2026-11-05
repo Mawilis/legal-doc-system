@@ -241,6 +241,182 @@ class SecurityIncidentResponseDecisionRegistry:
         except PyMongoError as error:
             raise SecurityIncidentResponseDecisionRegistryError("RESPONSE_DECISION_READ_FAILED") from error
 
+    @staticmethod
+    def _execution_idempotency_fingerprint(value: str) -> str:
+        if not isinstance(value, str) or not value or value != value.strip() or "*" in value:
+            raise SecurityIncidentResponseDecisionRegistryError("RESPONSE_EXECUTION_IDEMPOTENCY_INVALID")
+        return hashlib.sha3_256(value.encode("utf-8")).hexdigest()
+
+    def find_execution(
+        self,
+        *,
+        decision: SecurityIncidentResponseDecision,
+        actor_principal_id: str,
+        idempotency_key: str,
+        session: Any,
+    ) -> dict[str, Any] | None:
+        """Resolve one exact execution receipt for safe timestamp-stable replay."""
+        _require_transaction(session)
+        key_fingerprint = self._execution_idempotency_fingerprint(idempotency_key)
+        try:
+            event = self._events.find_one(
+                {"decision_id": decision.decision_id, "revision": 2},
+                session=session,
+            )
+            if event is None:
+                return None
+            if (
+                event.get("event_type") != "SECURITY_INCIDENT_RESPONSE_EXECUTED"
+                or event.get("actor_principal_id") != actor_principal_id
+                or event.get("execution_idempotency_fingerprint") != key_fingerprint
+            ):
+                raise SecurityIncidentResponseDecisionConflictError(
+                    "RESPONSE_EXECUTION_REPLAY_CONFLICT"
+                )
+            event_key = "system-services-response-execution:" + decision.decision_id + ":revision:2"
+            common = {
+                "event_key": event_key,
+                "schema_version": AUDIT_SCHEMA_VERSION,
+                "event_type": event["event_type"],
+                "tenant_id": decision.tenant_id,
+                "actor_principal_id": actor_principal_id,
+                "target_id": decision.decision_id,
+                "fingerprint": event["decision_fingerprint"],
+                "occurred_at": event["occurred_at"],
+            }
+            audit = self._audit_events.find_one({"event_key": event_key}, session=session)
+            outbox = self._outbox.find_one({"event_key": event_key}, session=session)
+            if (
+                audit is None
+                or any(audit.get(key) != expected for key, expected in common.items())
+                or outbox is None
+                or any(outbox.get(key) != expected for key, expected in common.items())
+                or outbox.get("status") != "PENDING"
+                or outbox.get("attempts") != 0
+            ):
+                raise SecurityIncidentResponseDecisionConflictError(
+                    "RESPONSE_EXECUTION_AUDIT_REPLAY_CONFLICT"
+                )
+            return dict(event)
+        except (SecurityIncidentResponseDecisionRegistryError, SecurityIncidentResponseDecisionConflictError):
+            raise
+        except PyMongoError as error:
+            raise SecurityIncidentResponseDecisionRegistryError(
+                "RESPONSE_EXECUTION_READ_FAILED"
+            ) from error
+
+    def record_execution(
+        self,
+        *,
+        decision: SecurityIncidentResponseDecision,
+        actor_principal_id: str,
+        idempotency_key: str,
+        occurred_at: datetime,
+        result_status: str,
+        result_revision: int,
+        session: Any,
+    ) -> dict[str, Any]:
+        """Atomically record execution evidence, platform audit, and pending outbox intent."""
+        _require_transaction(session)
+        if (
+            decision.status is not SecurityIncidentResponseDecisionStatus.APPROVED
+            or decision.revision != 1
+            or not isinstance(occurred_at, datetime)
+            or occurred_at.tzinfo is None
+            or occurred_at.utcoffset() is None
+            or occurred_at < decision.decided_at
+            or not isinstance(result_status, str)
+            or not result_status
+            or not isinstance(result_revision, int)
+            or isinstance(result_revision, bool)
+            or result_revision < 1
+        ):
+            raise SecurityIncidentResponseDecisionConflictError(
+                "RESPONSE_EXECUTION_EVIDENCE_INVALID"
+            )
+        key_fingerprint = self._execution_idempotency_fingerprint(idempotency_key)
+        event_key = "system-services-response-execution:" + decision.decision_id + ":revision:2"
+        payload = {
+            "decision_id": decision.decision_id,
+            "incident_id": decision.incident_id,
+            "tenant_id": decision.tenant_id,
+            "target_principal_id": decision.target_principal_id,
+            "action": decision.action.value,
+            "target_assignment_id": decision.target_assignment_id,
+            "target_permission_id": decision.target_permission_id,
+            "actor_principal_id": actor_principal_id,
+            "execution_idempotency_fingerprint": key_fingerprint,
+            "occurred_at": occurred_at.astimezone(timezone.utc).isoformat(),
+            "result_status": result_status,
+            "result_revision": result_revision,
+        }
+        fingerprint = hashlib.sha3_256(
+            json.dumps(payload, sort_keys=True, separators=(",", ":"), ensure_ascii=True).encode("utf-8")
+        ).hexdigest()
+        event = {
+            "decision_id": decision.decision_id,
+            "revision": 2,
+            "event_type": "SECURITY_INCIDENT_RESPONSE_EXECUTED",
+            "actor_principal_id": actor_principal_id,
+            "occurred_at": payload["occurred_at"],
+            "decision_fingerprint": fingerprint,
+            "execution_idempotency_fingerprint": key_fingerprint,
+            "event_id": decision.decision_id + ":revision:2",
+            "result_status": result_status,
+            "result_revision": result_revision,
+        }
+        common = {
+            "event_key": event_key,
+            "schema_version": AUDIT_SCHEMA_VERSION,
+            "event_type": event["event_type"],
+            "tenant_id": decision.tenant_id,
+            "actor_principal_id": actor_principal_id,
+            "target_id": decision.decision_id,
+            "fingerprint": fingerprint,
+            "occurred_at": event["occurred_at"],
+        }
+        try:
+            existing = self._events.find_one(
+                {"decision_id": decision.decision_id, "revision": 2},
+                session=session,
+            )
+            if existing is not None:
+                if any(existing.get(key) != expected for key, expected in event.items()):
+                    raise SecurityIncidentResponseDecisionConflictError(
+                        "RESPONSE_EXECUTION_REPLAY_CONFLICT"
+                    )
+                audit = self._audit_events.find_one({"event_key": event_key}, session=session)
+                outbox = self._outbox.find_one({"event_key": event_key}, session=session)
+                if (
+                    audit is None
+                    or any(audit.get(key) != expected for key, expected in common.items())
+                    or outbox is None
+                    or any(outbox.get(key) != expected for key, expected in common.items())
+                    or outbox.get("status") != "PENDING"
+                    or outbox.get("attempts") != 0
+                ):
+                    raise SecurityIncidentResponseDecisionConflictError(
+                        "RESPONSE_EXECUTION_AUDIT_REPLAY_CONFLICT"
+                    )
+                return dict(existing)
+            self._events.insert_one(event, session=session)
+            self._audit_events.insert_one(common, session=session)
+            self._outbox.insert_one(
+                {**common, "status": "PENDING", "attempts": 0, "created_at": event["occurred_at"]},
+                session=session,
+            )
+            return event
+        except (SecurityIncidentResponseDecisionRegistryError, SecurityIncidentResponseDecisionConflictError):
+            raise
+        except DuplicateKeyError as error:
+            raise SecurityIncidentResponseDecisionConflictError(
+                "RESPONSE_EXECUTION_CONCURRENT_DUPLICATE"
+            ) from error
+        except PyMongoError as error:
+            raise SecurityIncidentResponseDecisionRegistryError(
+                "RESPONSE_EXECUTION_PERSISTENCE_FAILED"
+            ) from error
+
     def create(self, value: SecurityIncidentResponseDecision, *, session: Any) -> SecurityIncidentResponseDecision:
         _require_transaction(session)
         if not isinstance(value, SecurityIncidentResponseDecision) or value.revision != 0:
