@@ -617,7 +617,7 @@ def _run_atomic_settlement(client, db, state, evidence, execution_truth_id, plat
                 }) is not None
             )
 
-        commit_atomic_settlement_transaction(
+        result["commit_result"] = commit_atomic_settlement_transaction(
             session,
             verify_committed=verify_committed,
             max_commit_attempts=3,
@@ -773,6 +773,56 @@ def test_r3fc_rm12_unknown_commit_acknowledgement_retries_same_transaction_on_re
             })
         except Exception:
             pass
+        client.close()
+
+
+def test_r3fc_rm13_unknown_commit_exhaustion_reconciles_exact_durable_readback(monkeypatch):
+    """A committed transaction with three lost acknowledgements is read-back reconciled."""
+    from pymongo.client_session import ClientSession
+    from pymongo.errors import PyMongoError
+
+    client, db, state = graph()
+    try:
+        evidence, fact_id, platform_id, created_at = _atomic_transport_for_existing_execution(
+            client, db, state
+        )
+        original_commit = ClientSession.commit_transaction
+        commit_calls = 0
+
+        class LostCommitAcknowledgement(PyMongoError):
+            def has_error_label(self, label):
+                return label == "UnknownTransactionCommitResult"
+
+        def commit_then_lose_ack(session, *args, **kwargs):
+            nonlocal commit_calls
+            commit_calls += 1
+            original_commit(session, *args, **kwargs)
+            raise LostCommitAcknowledgement("server commit completed; acknowledgement was lost")
+
+        monkeypatch.setattr(ClientSession, "commit_transaction", commit_then_lose_ack)
+        result = _run_atomic_settlement(
+            client, db, state, evidence, fact_id, platform_id, created_at
+        )
+        tenant = state["tenant"]
+        assert commit_calls == 3
+        assert result["commit_result"] == "COMMITTED_RECONCILED"
+        assert db["financial_settlement_observations"].count_documents({"tenant_id": tenant}) == 1
+        assert db["platform_billing_financial_settlement_evidence"].count_documents({"tenant_id": tenant}) == 1
+        assert db["projections"].count_documents({"tenant_id": tenant}) == 1
+        assert db["invoices"].count_documents({
+            "tenant_id": tenant,
+            "invoice_id": state["invoice"].invoice_id,
+            "status": {"$in": ["paid", "PAID"]},
+        }) == 1
+        assert db["billing_audit_events"].count_documents({
+            "tenant_id": tenant,
+            "event_type": "PLATFORM_INVOICE_SETTLED",
+        }) == 1
+        assert db["billing_outbox_events"].count_documents({
+            "tenant_id": tenant,
+            "event_type": "PLATFORM_INVOICE_SETTLED",
+        }) == 1
+    finally:
         client.close()
 
 
