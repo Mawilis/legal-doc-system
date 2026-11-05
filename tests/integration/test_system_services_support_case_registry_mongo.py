@@ -296,6 +296,18 @@ def test_authenticated_tenant_self_service_http_binds_current_membership_and_pri
         ),
         collection=database["tenant_memberships"],
     )
+    other_principal_id = "principal-self-service-http-other"
+    PrincipalAuthorityRepository.create(
+        PrincipalAuthority(other_principal_id, PrincipalStatus.ACTIVE, 1),
+        collection=database["principal_authorities"],
+    )
+    TenantMembershipRepository.insert(
+        TenantMembershipAuthority(
+            other_principal_id, tenant_id, TenantMembershipStatus.ACTIVE, 1
+        ),
+        collection=database["tenant_memberships"],
+    )
+    active_principal = {"id": principal_id}
 
     class MembershipReader:
         def resolve(self, requested_principal, requested_tenant, *, session=None):
@@ -317,7 +329,7 @@ def test_authenticated_tenant_self_service_http_binds_current_membership_and_pri
     app.state.system_services_case_indexes_ready = True
     app.state.system_services_case_registry = registry
     app.dependency_overrides[get_current_identity] = lambda: SovereignIdentity(
-        identity_id=principal_id,
+        identity_id=active_principal["id"],
         tenant_id="untrusted-token-tenant",
         username=None,
         email=None,
@@ -356,6 +368,16 @@ def test_authenticated_tenant_self_service_http_binds_current_membership_and_pri
             f"/api/system-services/self-service/cases/{created.json()['caseId']}/events",
             headers={"X-Tenant-ID": tenant_id},
         )
+        active_principal["id"] = other_principal_id
+        cross_principal_detail = http.get(
+            f"/api/system-services/self-service/cases/{created.json()['caseId']}",
+            headers={"X-Tenant-ID": tenant_id},
+        )
+        cross_principal_history = http.get(
+            f"/api/system-services/self-service/cases/{created.json()['caseId']}/events",
+            headers={"X-Tenant-ID": tenant_id},
+        )
+        active_principal["id"] = principal_id
         forged_body = http.post(
             "/api/system-services/self-service/cases",
             headers={"X-Tenant-ID": tenant_id, "Idempotency-Key": "http-forged-2"},
@@ -367,6 +389,8 @@ def test_authenticated_tenant_self_service_http_binds_current_membership_and_pri
     assert listed.status_code == 200 and len(listed.json()) == 1
     assert detail.status_code == 200
     assert history.status_code == 200 and len(history.json()) == 1
+    assert cross_principal_detail.status_code == 404
+    assert cross_principal_history.status_code == 404
     assert forged_body.status_code == 422
     assert database[CASE_COLLECTION].count_documents(
         {"tenant_id": "tenant-forged"}
