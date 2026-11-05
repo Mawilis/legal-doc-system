@@ -115,6 +115,10 @@ class PasswordResetCode(StrEnum):
     TRANSACTION_FAILURE = "PASSWORD_RESET_TRANSACTION_FAILURE"
 
 
+class PasswordResetExecutionGuardError(RuntimeError):
+    """Preserve a caller's current-authority denial across canonical rollback."""
+
+
 class PasswordResetServiceError(RuntimeError):
     """Bounded reset failure without password, token, identity, or revision data.
 
@@ -374,6 +378,7 @@ class PasswordResetService:
         recovery_token: str,
         new_password: str,
         context_terms: Iterable[str] | None = None,
+        transaction_guard: Callable[[Any, PasswordRecoveryCapability], None] | None = None,
     ) -> PasswordResetResult:
         """Reset one capability-bound principal and atomically persist notice intent.
 
@@ -476,6 +481,13 @@ class PasswordResetService:
                     or current.token_digest != capability.token_digest
                 ):
                     raise PasswordResetServiceError(PasswordResetCode.RECOVERY_INVALID)
+                if transaction_guard is not None:
+                    try:
+                        transaction_guard(session, current)
+                    except Exception as error:
+                        raise PasswordResetExecutionGuardError(
+                            "PASSWORD_RESET_EXECUTION_GUARD_REJECTED"
+                        ) from error
 
                 expected_revision = auth.get_credential_revision(
                     current.tenant_id,
@@ -502,7 +514,7 @@ class PasswordResetService:
                 registry.consume(current, self._clock(), session=session)
                 notification_registry.create(notification, session=session)
                 holder["result"] = PasswordResetResult()
-            except PasswordResetServiceError:
+            except (PasswordResetServiceError, PasswordResetExecutionGuardError):
                 raise
             except (
                 PasswordRecoveryCapabilityLifecycleConflictError,
@@ -532,7 +544,7 @@ class PasswordResetService:
         try:
             with client.start_session() as session:
                 session.with_transaction(callback)
-        except PasswordResetServiceError:
+        except (PasswordResetServiceError, PasswordResetExecutionGuardError):
             raise
         except Exception:
             raise PasswordResetServiceError(
@@ -560,6 +572,7 @@ __all__ = [
     "PasswordResetResult",
     "PasswordResetService",
     "PasswordResetServiceError",
+    "PasswordResetExecutionGuardError",
     "VERSION",
 ]
 
