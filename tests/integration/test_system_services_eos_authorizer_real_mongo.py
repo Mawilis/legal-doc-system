@@ -410,3 +410,163 @@ def test_real_mongo_incident_assignment_permissions_require_current_platform_wor
                     session=session,
                 )
             session.abort_transaction()
+
+
+
+def test_real_mongo_authenticated_incident_assignment_and_responder_acceptance_http(
+    mongo_context, monkeypatch,
+):
+    """Full authenticated HTTP route journey under current SYSTEM IAM/workforce evidence."""
+    from fastapi import FastAPI
+    from fastapi.testclient import TestClient
+    from tools.eos.api.auth_router import get_current_identity
+    from tools.eos.api.system_services_router import router
+    from tools.eos.auth.identity import SovereignIdentity
+    from tools.eos.auth.system_permission_assignment import SystemPermissionAssignment
+    from tools.eos.system_services.support_case_registry import (
+        CASE_COLLECTION, EVENT_COLLECTION, SupportCaseRegistry,
+    )
+    from tools.eos.system_services.security_incident import (
+        SecurityIncident, SecurityIncidentCategory, SecurityIncidentEvent,
+    )
+    from tools.eos.system_services.security_incident_registry import (
+        COLLECTION as INCIDENT_COLLECTION,
+        EVENT_COLLECTION as INCIDENT_EVENT_COLLECTION,
+        SecurityIncidentRegistry,
+    )
+    from tools.eos.system_services.security_incident_assignment_registry import (
+        COLLECTION as ASSIGNMENT_COLLECTION,
+        EVENT_COLLECTION as ASSIGNMENT_EVENT_COLLECTION,
+        SecurityIncidentAssignmentRegistry,
+    )
+
+    seed_authority(mongo_context)
+    responder = "system-services-route-responder-001"
+    with mongo_context["client"].start_session() as session:
+        with session.start_transaction():
+            mongo_context["assignment_registry"].create_or_replay(
+                SystemPermissionAssignment.assign(
+                    assignment_id="route-triage-permission",
+                    principal_id=PRINCIPAL,
+                    permission_id="system_services:case:triage",
+                    assigned_by_principal_id="independent-route-iam-issuer",
+                    assigned_at=AT,
+                    assignment_evidence_reference="approved-route-triage-assignment",
+                ),
+                idempotency_key="route-triage-permission-create",
+                session=session,
+            )
+            PrincipalAuthorityRepository.create(
+                PrincipalAuthority(responder, PrincipalStatus.ACTIVE, 1),
+                collection=mongo_context["principal_collection"],
+                session=session,
+            )
+            mongo_context["assignment_registry"].create_or_replay(
+                SystemPermissionAssignment.assign(
+                    assignment_id="route-responder-permission",
+                    principal_id=responder,
+                    permission_id="system_services:incident:escalate",
+                    assigned_by_principal_id="independent-route-iam-issuer",
+                    assigned_at=AT,
+                    assignment_evidence_reference="approved-route-responder-assignment",
+                ),
+                idempotency_key="route-responder-permission-create",
+                session=session,
+            )
+            responder_workforce = WorkforceRelationship(
+                relationship_id="route-responder-platform-workforce",
+                revision=1,
+                scope_kind=WorkforceScopeKind.PLATFORM,
+                scope_id=PLATFORM_SCOPE,
+                principal_id=responder,
+                relationship_type=WorkforceRelationshipType.EMPLOYEE,
+                status=WorkforceRelationshipStatus.ACTIVE,
+                effective_from=AT - timedelta(days=10),
+                effective_until=None,
+                status_effective_at=AT,
+                reason_reference="route-responder-workforce-evidence",
+                supersedes_fingerprint=None,
+            )
+            workforce_registry.persist_revision(
+                responder_workforce,
+                collection=mongo_context["workforce_collection"],
+                session=session,
+            )
+
+    case_registry = SupportCaseRegistry(
+        cases=mongo_context["database"][CASE_COLLECTION],
+        events=mongo_context["database"][EVENT_COLLECTION],
+    )
+    case_registry.ensure_indexes()
+    incident_registry = SecurityIncidentRegistry(
+        incidents=mongo_context["database"][INCIDENT_COLLECTION],
+        events=mongo_context["database"][INCIDENT_EVENT_COLLECTION],
+    )
+    incident_registry.ensure_indexes()
+    assignment_registry = SecurityIncidentAssignmentRegistry(
+        assignments=mongo_context["database"][ASSIGNMENT_COLLECTION],
+        events=mongo_context["database"][ASSIGNMENT_EVENT_COLLECTION],
+    )
+    assignment_registry.ensure_indexes()
+    incident = SecurityIncident(
+        incident_id="incident-authenticated-assignment-http",
+        tenant_id="tenant-authenticated-assignment-http",
+        reporter_principal_id="tenant-reporter-authenticated-http",
+        idempotency_fingerprint="9" * 64,
+        category=SecurityIncidentCategory.SUSPECTED_ACCOUNT_COMPROMISE,
+        observed_at=AT,
+        received_at=AT,
+    )
+    incident_event = SecurityIncidentEvent(
+        event_id="incident-event-authenticated-assignment-http",
+        incident_id=incident.incident_id,
+        tenant_id=incident.tenant_id,
+        actor_principal_id=incident.reporter_principal_id,
+        event_type="INCIDENT_REPORTED",
+        occurred_at=AT,
+        fingerprint="8" * 64,
+    )
+    with mongo_context["client"].start_session() as session:
+        with session.start_transaction():
+            incident_registry.create_or_replay(incident, incident_event, session=session)
+
+    active_principal = {"id": PRINCIPAL}
+    app = FastAPI()
+    app.include_router(router, prefix="/api")
+    app.state.system_services_case_indexes_ready = True
+    app.state.system_services_case_registry = case_registry
+    app.state.system_services_incident_indexes_ready = True
+    app.state.system_services_incident_registry = incident_registry
+    app.state.system_services_assignment_indexes_ready = True
+    app.state.system_services_assignment_registry = assignment_registry
+    app.state.system_services_authorizer = mongo_context["authorizer"]
+    app.dependency_overrides[get_current_identity] = lambda: SovereignIdentity(
+        identity_id=active_principal["id"], tenant_id="untrusted",
+        username=None, email=None, auth_method="CERTIFICATION",
+        status=PrincipalStatus.ACTIVE, session_reference=None,
+    )
+    monkeypatch.setattr(
+        "tools.eos.api.system_services_router.get_client",
+        lambda: mongo_context["client"],
+    )
+
+    with TestClient(app) as http:
+        assigned = http.post(
+            f"/api/system-services/security-incidents/{incident.incident_id}/assign",
+            headers={"Idempotency-Key": "route-incident-assign-001"},
+            json={"assigned_to_principal_id": responder},
+        )
+        active_principal["id"] = responder
+        inbox = http.get("/api/system-services/security-incident-assignments/mine")
+        accepted = http.post(
+            f"/api/system-services/security-incident-assignments/{assigned.json()['assignmentId']}/accept",
+            headers={"Idempotency-Key": "route-incident-accept-001"},
+            json={"expected_revision": 0},
+        )
+
+    assert assigned.status_code == 201
+    assert inbox.status_code == 200
+    assert len(inbox.json()) == 1
+    assert accepted.status_code == 200
+    assert accepted.json()["status"] == "ACCEPTED"
+    assert accepted.json()["revision"] == 1
