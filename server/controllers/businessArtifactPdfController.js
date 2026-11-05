@@ -33,7 +33,6 @@
 
 import crypto from 'node:crypto';
 import streamEnterpriseArtifactPdf from '../services/artifacts/wilsyEnterprisePdfRenderer.js';
-import mongoose from 'mongoose';
 
 /**
  * @function readHeader
@@ -191,269 +190,50 @@ function resolveWilsyProfessionalDisplayNameCandidate(value = '') {
 }
 
 /**
- * @function resolveWilsyAuthorizationBearerToken
- * @description Extracts the Bearer token from request headers without logging or exposing token content.
- * @param {object} req Express request.
- * @returns {string} Bearer token without the Bearer prefix.
- * @collaboration Artifact PDF route authentication, live identity resolution, and no-secret logging discipline.
- */
-function resolveWilsyAuthorizationBearerToken(req = {}) {
-  const authorization = clean(req.headers?.authorization || req.headers?.Authorization, '');
-  const match = authorization.match(/^Bearer\s+(.+)$/i);
-
-  return match ? clean(match[1], '') : '';
-}
-
-/**
- * @function decodeWilsyBase64UrlJsonSegment
- * @description Decodes a JWT base64url JSON segment for identity claim discovery without logging token content.
- * @param {string} segment JWT segment.
- * @returns {object} Decoded JSON object or an empty object.
- * @collaboration Bearer token identity bridge, PDF live user resolver, and profile lookup.
- */
-function decodeWilsyBase64UrlJsonSegment(segment = '') {
-  try {
-    const normalized = clean(segment, '').replace(/-/g, '+').replace(/_/g, '/');
-    const padded = `${normalized}${'='.repeat((4 - (normalized.length % 4)) % 4)}`;
-    const decoded = Buffer.from(padded, 'base64').toString('utf8');
-    const parsed = JSON.parse(decoded);
-
-    return parsed && typeof parsed === 'object' ? parsed : {};
-  } catch {
-    return {};
-  }
-}
-
-/**
- * @function resolveWilsyBearerTokenClaims
- * @description Reads identity claims from the provided Bearer token so the controller can find the live database profile.
- * @param {object} req Express request.
- * @returns {object} Bearer token claims or an empty object.
- * @collaboration /api/generate/pdf, token-backed user identity, MongoDB profile lookup, and fail-closed Knowledge Base export.
- */
-function resolveWilsyBearerTokenClaims(req = {}) {
-  const token = resolveWilsyAuthorizationBearerToken(req);
-  const parts = token.split('.');
-
-  if (parts.length < 2) return {};
-
-  return decodeWilsyBase64UrlJsonSegment(parts[1]);
-}
-
-// WILSY_FG108O3M2D_BEARER_IDENTITY_BRIDGE
-
-/**
  * @function extractWilsyLiveUserProfileIdentity
- * @description Extracts live authenticated user/profile identity from request user objects and optional database user document.
- * @param {object} req Express request.
- * @param {object|null} profileDoc Optional database profile document.
- * @returns {object} Normalized live user identity.
- * @collaboration Auth middleware, Mongoose user profiles, account identity posture, and PDF document control.
+ * @description Accepts identity only after the BFF has verified the workspace through Python EOS.
+ * @param {object} req Express request enriched by the EOS workspace-bootstrap verifier.
+ * @returns {object} Normalized verified user identity.
  */
-function extractWilsyLiveUserProfileIdentity(req = {}, profileDoc = null) {
-  const user = req.user || {};
-  const profile = user.profile || {};
-  const tokenClaims = resolveWilsyBearerTokenClaims(req);
-  const tokenProfile = tokenClaims.profile || tokenClaims.user || tokenClaims.account || {};
-  const doc = profileDoc || {};
-  const docProfile = doc.profile || {};
-  const docAccount = doc.account || {};
+function extractWilsyLiveUserProfileIdentity(req = {}) {
+  if (req.eosAuthenticatedIdentity !== true) {
+    return {
+      userId: '',
+      email: '',
+      displayName: '',
+      source: 'EOS_AUTHORITY_UNVERIFIED',
+      hasProfessionalDisplayName: false,
+    };
+  }
 
-  const displayCandidates = [
+  const user = req.user || {};
+  const displayName = [
     user.displayName,
     user.fullName,
-    user.name,
     user.firstName && user.lastName ? `${user.firstName} ${user.lastName}` : '',
-    profile.displayName,
-    profile.fullName,
-    profile.name,
-    profile.firstName && profile.lastName ? `${profile.firstName} ${profile.lastName}` : '',
-    tokenClaims.displayName,
-    tokenClaims.fullName,
-    tokenClaims.name,
-    tokenClaims.given_name && tokenClaims.family_name
-      ? `${tokenClaims.given_name} ${tokenClaims.family_name}`
-      : '',
-    tokenProfile.displayName,
-    tokenProfile.fullName,
-    tokenProfile.name,
-    tokenProfile.firstName && tokenProfile.lastName
-      ? `${tokenProfile.firstName} ${tokenProfile.lastName}`
-      : '',
-    doc.displayName,
-    doc.fullName,
-    doc.name,
-    doc.firstName && doc.lastName ? `${doc.firstName} ${doc.lastName}` : '',
-    docProfile.displayName,
-    docProfile.fullName,
-    docProfile.name,
-    docProfile.firstName && docProfile.lastName
-      ? `${docProfile.firstName} ${docProfile.lastName}`
-      : '',
-    docAccount.displayName,
-    docAccount.fullName,
-    docAccount.name,
-  ];
-
-  const emailCandidates = [
-    user.email,
-    user.userEmail,
-    user.primaryEmail,
-    profile.email,
-    profile.userEmail,
-    tokenClaims.email,
-    tokenClaims.userEmail,
-    tokenClaims.primaryEmail,
-    tokenProfile.email,
-    tokenProfile.userEmail,
-    doc.email,
-    doc.userEmail,
-    doc.primaryEmail,
-    docProfile.email,
-    docProfile.userEmail,
-  ];
-
-  const idCandidates = [
-    user.id,
-    user._id,
-    user.userId,
-    user.sub,
-    tokenClaims.sub,
-    tokenClaims.id,
-    tokenClaims._id,
-    tokenClaims.userId,
-    tokenProfile.id,
-    tokenProfile._id,
-    tokenProfile.userId,
-    doc._id,
-    doc.id,
-    doc.userId,
-  ];
-
-  const displayName =
-    displayCandidates.map(resolveWilsyProfessionalDisplayNameCandidate).find(Boolean) || '';
-
-  const email =
-    emailCandidates.map((item) => clean(item, '')).find((item) => item && item.includes('@')) || '';
-
-  const userId = idCandidates.map((item) => clean(item, '')).find(Boolean) || '';
+  ]
+    .map(resolveWilsyProfessionalDisplayNameCandidate)
+    .find(Boolean) || '';
+  const email = clean(user.email, '');
+  const userId = clean(user.id, '');
 
   return {
     userId,
     email,
     displayName,
-    source: profileDoc
-      ? 'LIVE_DATABASE_PROFILE'
-      : Object.keys(tokenClaims || {}).length
-        ? 'LIVE_BEARER_TOKEN_CLAIMS'
-        : 'LIVE_REQUEST_USER',
+    source: 'EOS_VERIFIED_WORKSPACE_BOOTSTRAP',
     hasProfessionalDisplayName: Boolean(displayName),
   };
 }
 
 /**
- * @function findWilsyLiveUserProfileDocument
- * @description Looks up the authenticated user in registered Mongoose user/profile models without hard-coded user identifiers.
- * @param {object} req Express request.
- * @returns {Promise<object|null>} User/profile document or null.
- * @collaboration MongoDB, Mongoose models, auth middleware, tenant profile data, and live Generated By resolution.
- */
-async function findWilsyLiveUserProfileDocument(req = {}) {
-  if (!mongoose?.connection?.readyState) return null;
-
-  const user = req.user || {};
-  const profile = user.profile || {};
-  const tokenClaims = resolveWilsyBearerTokenClaims(req);
-  const tokenProfile = tokenClaims.profile || tokenClaims.user || tokenClaims.account || {};
-
-  const rawIds = [
-    user._id,
-    user.id,
-    user.userId,
-    user.sub,
-    tokenClaims.sub,
-    tokenClaims.id,
-    tokenClaims._id,
-    tokenClaims.userId,
-    tokenProfile.id,
-    tokenProfile._id,
-    tokenProfile.userId,
-  ]
-    .map((item) => clean(item, ''))
-    .filter(Boolean);
-
-  const emails = [
-    user.email,
-    user.userEmail,
-    user.primaryEmail,
-    profile.email,
-    profile.userEmail,
-    tokenClaims.email,
-    tokenClaims.userEmail,
-    tokenClaims.primaryEmail,
-    tokenProfile.email,
-    tokenProfile.userEmail,
-  ]
-    .map((item) => clean(item, ''))
-    .filter((item) => item && item.includes('@'));
-
-  const modelNames = Object.keys(mongoose.models || {}).filter((name) =>
-    /user|profile|account|operator|member/i.test(name)
-  );
-
-  for (const modelName of modelNames) {
-    const Model = mongoose.models[modelName];
-
-    for (const rawId of rawIds) {
-      if (!mongoose.Types.ObjectId.isValid(rawId)) continue;
-
-      try {
-        const found = await Model.findById(rawId).lean().exec();
-        if (found) return found;
-      } catch {
-        // Continue across models.
-      }
-    }
-
-    for (const email of emails) {
-      try {
-        const found = await Model.findOne({
-          $or: [
-            { email },
-            { userEmail: email },
-            { primaryEmail: email },
-            { 'profile.email': email },
-            { 'profile.userEmail': email },
-            { 'account.email': email },
-            { 'auth.email': email },
-            { 'local.email': email },
-            { 'contact.email': email },
-          ],
-        })
-          .lean()
-          .exec();
-
-        if (found) return found;
-      } catch {
-        // Continue across models.
-      }
-    }
-  }
-
-  return null;
-}
-
-/**
  * @function resolveWilsyLiveAuthenticatedUserIdentity
- * @description Resolves live backend authenticated user identity from req.user and registered database profile models without hard-coded names or emails.
- * @param {object} req Express request.
- * @returns {Promise<object>} Live authenticated user identity.
- * @collaboration PDF controller, auth middleware, MongoDB profile records, and no-hardcode Generated By governance.
+ * @description Resolves the exact user profile returned by EOS after token, session, tenant and membership checks.
+ * @param {object} req Express request enriched by the EOS workspace-bootstrap verifier.
+ * @returns {Promise<object>} Verified identity projection for PDF metadata.
  */
 async function resolveWilsyLiveAuthenticatedUserIdentity(req = {}) {
-  const profileDoc = await findWilsyLiveUserProfileDocument(req);
-  const identity = extractWilsyLiveUserProfileIdentity(req, profileDoc);
-
+  const identity = extractWilsyLiveUserProfileIdentity(req);
   return {
     ...identity,
     generatedByDisplayName: identity.displayName,
