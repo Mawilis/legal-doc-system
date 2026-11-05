@@ -601,7 +601,7 @@ def _run_atomic_settlement(client, db, state, evidence, execution_truth_id, plat
                 }) is not None,
                 "commercial_projection": projections.find_one({
                     "tenant_id": state["tenant"],
-                    "projection_id": projection.projection_id,
+                    "commercial_settlement_projection_id": projection.commercial_settlement_projection_id,
                 }) is not None,
                 "invoice_paid": invoice is not None and invoice.get("status") in ("paid", "PAID"),
                 "audit": audit.find_one({
