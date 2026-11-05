@@ -233,12 +233,6 @@ async def global_login(payload: GlobalCredentialRequest, request: Request) -> di
         if not isinstance(factor, dict) or factor.get("principal_id") != principal.principal_id:
             _abort_if_active(session)
             raise HTTPException(status_code=409, detail="GLOBAL_MFA_FACTOR_MIGRATION_REQUIRED")
-        challenge = MembershipSelectionChallengeService().issue_membership_selection_challenge(
-            principal_id=principal.principal_id,
-            credential_revision=principal.credential_revision,
-            session=session,
-            now=now,
-        )
         page = build_membership_selection_page(
             principal_id=principal.principal_id,
             session=session,
@@ -283,6 +277,12 @@ async def global_login(payload: GlobalCredentialRequest, request: Request) -> di
                 "expires_at": expires_at.isoformat(),
                 "workspace_id": "SYSTEM_SERVICES",
             }
+        challenge = MembershipSelectionChallengeService().issue_membership_selection_challenge(
+            principal_id=principal.principal_id,
+            credential_revision=principal.credential_revision,
+            session=session,
+            now=now,
+        )
         session.commit_transaction()
         return {
             "status": "MEMBERSHIP_SELECTION_REQUIRED",
