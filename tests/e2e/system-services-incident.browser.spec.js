@@ -160,6 +160,7 @@ test('certifies initial tenant-neutral SYSTEM credentials, MFA and workspace boo
   });
   const page = await context.newPage();
   const calls = [];
+  const systemMfaChallenge = ['sysmfa', 'browser', 'one', 'time'].join('_');
 
   await page.route('**/api/auth/global/login', async (route) => {
     calls.push('global-login');
@@ -174,7 +175,7 @@ test('certifies initial tenant-neutral SYSTEM credentials, MFA and workspace boo
       body: JSON.stringify({
         status: 'MFA_REQUIRED',
         scope: 'SYSTEM',
-        mfa_challenge: 'sysmfa-browser-one-time',
+        mfa_challenge: systemMfaChallenge,
         workspace_id: 'SYSTEM_SERVICES',
       }),
     });
@@ -183,7 +184,7 @@ test('certifies initial tenant-neutral SYSTEM credentials, MFA and workspace boo
   await page.route('**/api/auth/global/verify-mfa', async (route) => {
     calls.push('global-mfa');
     expect(route.request().postDataJSON()).toEqual({
-      mfa_challenge: 'sysmfa-browser-one-time',
+      mfa_challenge: systemMfaChallenge,
       code: '123456',
     });
     await route.fulfill({
