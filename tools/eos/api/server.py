@@ -486,8 +486,8 @@ class WilsyAPIServer:
                     ensure_electrum_payshap_completion_indexes(
                         inbox_collection=database["electrum_payshap_completion_inbox"],
                         binding_collection=database["electrum_provider_tenant_bindings"],
-                        observation_collection=database["kennel_financial_settlement_observations"],
-                        platform_truth_collection=database["kennel_platform_billing_financial_execution_truth"],
+                        observation_collection=database["financial_settlement_observations"],
+                        platform_truth_collection=database["platform_billing_financial_execution_truths"],
                         allocation_collection=database["platform_invoice_settlement_allocations"],
                         audit_collection=database["billing_audit_events"],
                         outbox_collection=database["billing_outbox_events"],
