@@ -65,7 +65,7 @@
  * FINANCIAL AUTHORITY BOUNDARY: None; Kennel EOS exclusively owns financial execution.
  */
 
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { AlertCircle, ArrowLeft, Eye, EyeOff, Loader2 } from 'lucide-react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { AUTH_STATES, useAuth } from '../../contexts/authContext.jsx';
@@ -83,13 +83,26 @@ export default function SovereignLogin({ onLoginSuccess }) {
 
   const resolvedTenant = location.state?.tenant || tenant;
 
+  // Navigate only after AuthProvider's MFA stage has committed to React state.
+  // Navigating from the resolved login promise can race SovereignRouter's
+  // route guard, which may still observe PRIMARY_AUTHENTICATING and send the
+  // browser back to /login before the MFA projection renders.
+  useEffect(() => {
+    if ([
+      AUTH_STATES.MFA_SETUP,
+      AUTH_STATES.MFA_RECONCILIATION_REQUIRED,
+      AUTH_STATES.MFA_REQUIRED,
+    ].includes(authStage)) {
+      navigate('/mfa', { replace: true, state: { tenant: resolvedTenant } });
+    }
+  }, [authStage, navigate, resolvedTenant]);
+
   const handleSubmit = async (event) => {
     event.preventDefault();
     setError('');
     try {
       const result = await login(email.trim(), password, resolvedTenant?.tenantId);
       if ([AUTH_STATES.MFA_SETUP, AUTH_STATES.MFA_RECONCILIATION_REQUIRED, AUTH_STATES.MFA_REQUIRED].includes(result.status)) {
-        navigate('/mfa', { replace: true, state: { tenant: resolvedTenant } });
         return;
       }
       if (result.status === 'AUTHENTICATED') {
