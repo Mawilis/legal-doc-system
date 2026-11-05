@@ -132,6 +132,29 @@ class SecurityIncidentAssignmentRegistry:
         ):
             raise IncidentAssignmentRegistryError("INCIDENT_ASSIGNMENT_EVENT_MISMATCH")
         try:
+            prior = self._assignments.find_one(
+                {"idempotency_fingerprint": value.idempotency_fingerprint},
+                session=session,
+            )
+            if prior is not None:
+                existing = _hydrate(dict(prior))
+                if (
+                    existing.assignment_id != value.assignment_id
+                    or existing.incident_id != value.incident_id
+                    or existing.assigned_to_principal_id != value.assigned_to_principal_id
+                    or existing.assigned_by_principal_id != value.assigned_by_principal_id
+                ):
+                    raise IncidentAssignmentConflictError("INCIDENT_ASSIGNMENT_IDEMPOTENCY_CONFLICT")
+                prior_event = self._events.find_one(
+                    {"assignment_id": existing.assignment_id, "from_status": None},
+                    session=session,
+                )
+                if (
+                    prior_event is None
+                    or prior_event.get("idempotency_fingerprint") != event.idempotency_fingerprint
+                ):
+                    raise IncidentAssignmentPersistenceError("INCIDENT_ASSIGNMENT_INITIAL_EVENT_INVALID")
+                return existing
             self._assignments.insert_one(_doc(value), session=session)
             self._events.insert_one(_event_doc(event), session=session)
             return value
