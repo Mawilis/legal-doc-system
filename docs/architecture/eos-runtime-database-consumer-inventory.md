@@ -15,7 +15,7 @@ The Python EOS kernel owns the business MongoDB client/database lifecycle throug
 | `npm run dev` → `scripts/start-dev-stack.sh` | Python EOS + Vite development stack | Starts `uvicorn tools.eos.api.server:app`; no Node business database process |
 | `npm run dev:kernel` | Python EOS API | Kernel-owned Mongo lifecycle |
 | `npm run prod:kernel` | Python EOS API | Kernel-owned Mongo lifecycle |
-| `server/ecosystem.config.js` → `server/server.js` | Production Node BFF | HTTP proxy only; no Mongo client, no Mongoose connection, no business registry |
+| `server/ecosystem.config.js` and `server/package.json` → `server/server.js` | Production Node BFF | HTTP proxy only; no Mongo client, no Mongoose connection, no business registry |
 | `server/deploy.sh` | PM2 deployment wrapper | Reloads the BFF entrypoint above |
 
 The active Node BFF health response now states `database: NOT_CONNECTED_BY_BFF` and `databaseAuthority: PYTHON_EOS`. It no longer opens a duplicate connection merely to report Mongoose connection state.
