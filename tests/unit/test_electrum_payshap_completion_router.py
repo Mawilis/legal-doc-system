@@ -41,6 +41,10 @@ def _payload():
             "messageIdentification": "message-router-1",
             "creationDateTime": "2026-11-05T08:00:00Z",
         },
+        "originalMessageIdentifiers": {
+            "messageIdentification": "original-message-1",
+            "creationDateTime": "2026-11-05T07:59:00Z",
+        },
         "transactionIdentifiers": {
             "uetr": "8f14e45f-ea5e-4f5f-9c5d-8f14e45fea5e",
             "transactionIdentification": "transaction-router-1",
@@ -104,7 +108,7 @@ def _setup(monkeypatch, *, replay=False):
     return TestClient(app), provider_private, wilsy_public, config
 
 
-def test_http_ingress_persists_inbox_and_returns_signed_202(monkeypatch):
+def test_http_ingress_persists_inbox_and_returns_signed_empty_204(monkeypatch):
     client, provider_private, wilsy_public, config = _setup(monkeypatch)
     body = json.dumps(_payload(), separators=(",", ":")).encode()
     response = client.post(
@@ -112,19 +116,19 @@ def test_http_ingress_persists_inbox_and_returns_signed_202(monkeypatch):
         content=body,
         headers={"x-jwt-signature": _provider_signature(body, provider_private)},
     )
-    assert response.status_code == 202
-    assert response.json()["accepted"] is True
-    assert response.json()["settlement_eligible"] is True
+    assert response.status_code == 204
+    assert response.content == b""
     verified = verify_electrum_http_message_signature(
         response.content,
         response.headers["x-jwt-signature"],
         verification_keys={"wilsy-key-1": wilsy_public},
         issuer=config.signing_issuer,
     )
-    assert verified.content_digest == hashlib.sha256(response.content).hexdigest()
+    assert verified.content_digest == hashlib.sha256(b"").hexdigest()
+    assert jwt.decode(response.headers["x-jwt-signature"], wilsy_public, algorithms=["ES256"], issuer=config.signing_issuer).get("electrum.co.za/content-digest") is None
 
 
-def test_http_ingress_replay_still_returns_signed_202(monkeypatch):
+def test_http_ingress_replay_still_returns_signed_empty_204(monkeypatch):
     client, provider_private, wilsy_public, config = _setup(monkeypatch, replay=True)
     body = json.dumps(_payload(), separators=(",", ":")).encode()
     response = client.post(
@@ -132,8 +136,8 @@ def test_http_ingress_replay_still_returns_signed_202(monkeypatch):
         content=body,
         headers={"x-jwt-signature": _provider_signature(body, provider_private)},
     )
-    assert response.status_code == 202
-    assert response.json()["replayed"] is True
+    assert response.status_code == 204
+    assert response.content == b""
     verify_electrum_http_message_signature(
         response.content, response.headers["x-jwt-signature"],
         verification_keys={"wilsy-key-1": wilsy_public}, issuer=config.signing_issuer,
