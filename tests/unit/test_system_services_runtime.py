@@ -11,7 +11,8 @@ from tools.eos.system_services.eos_authorizer import SystemServicesAuthorization
 
 
 class Collection:
-    def __init__(self):
+    def __init__(self, database=None):
+        self.database = database
         self.indexes = []
 
     def create_index(self, keys, **kwargs):
@@ -24,7 +25,9 @@ class Database:
         self.collections = {}
 
     def __getitem__(self, name):
-        return self.collections.setdefault(name, Collection())
+        if name not in self.collections:
+            self.collections[name] = Collection(database=self)
+        return self.collections[name]
 
 
 def test_platform_workforce_scope_requires_trusted_explicit_configuration(monkeypatch):
