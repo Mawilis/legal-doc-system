@@ -61,6 +61,7 @@ def _args(session):
         "commercial_projection_collection": Mock(),
         "subscription_collection": Mock(),
         "audit_collection": audit,
+        "outbox_collection": Mock(),
         "session": session,
         "created_at": now,
         "_observation": observation,
@@ -95,11 +96,12 @@ def test_atomic_composition_forwards_one_caller_session_to_every_stage():
     assert result["observation"] is observation
     assert result["settlement_evidence"] is settlement
     assert result["commercial_projection"] is projection
-    assert result["audit_outbox_intent"]["event_key"] == (
+    assert result["audit_event"]["event_key"] == (
         "platform-settlement:tenant-a:settlement-evidence-1"
     )
-    assert result["audit_outbox_intent"]["status"] == "PENDING"
+    assert result["outbox_event"]["delivery_status"] == "PENDING"
     assert args["audit_collection"].insert_one.call_args.kwargs["session"] is session
+    assert args["outbox_collection"].insert_one.call_args.kwargs["session"] is session
     assert ingest.call_args.kwargs["session"] is session
     assert bridge.call_args.kwargs["session"] is session
     assert project.call_args.kwargs["session"] is session
@@ -123,7 +125,7 @@ def test_atomic_composition_rejects_cross_tenant_transport_evidence():
 
 
 def test_atomic_audit_replay_conflict_fails_closed():
-    from tools.eos.saas.billing.atomic_platform_settlement import _persist_audit_outbox_intent
+    from tools.eos.saas.billing.atomic_platform_settlement import _persist_audit_and_outbox
 
     session = Mock(in_transaction=True)
     settlement = _args(session)["_settlement"]
@@ -134,10 +136,11 @@ def test_atomic_audit_replay_conflict_fails_closed():
         "event_type": "TAMPERED",
     }
     with pytest.raises(AtomicPlatformSettlementError, match="AUDIT_REPLAY_CONFLICT"):
-        _persist_audit_outbox_intent(
+        _persist_audit_and_outbox(
             tenant_id="tenant-a",
             settlement_evidence=settlement,
             audit_collection=audit,
+            outbox_collection=Mock(),
             session=session,
         )
     audit.insert_one.assert_not_called()
