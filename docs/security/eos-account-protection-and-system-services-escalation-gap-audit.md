@@ -161,3 +161,13 @@ The System Services exact-head CI run is queued/pending at the time of this upda
 6. Review privacy retention, POPIA purpose limitation, user notification and incident closure policy before operational activation.
 
 No production deployment, credential/account mutation, workforce assignment, subscription lifecycle action, merge or Electrum activation is authorized by this implementation update.
+
+### Duty coverage and acknowledgement policy foundation (2026-11-05)
+
+- Added a pure, immutable duty-policy resolver that accepts only an explicitly supplied roster snapshot and an approved acknowledgement interval.
+- Exactly one active duty entry resolves to `ROUTED`; an existing schedule with no active entry resolves to `OUT_OF_HOURS`; an absent rota resolves to `UNSTAFFED`. Neither uncovered state invents a responder.
+- Overlapping active entries fail closed instead of selecting an arbitrary staff member. All timestamps must be timezone-aware, and acknowledgement intervals are explicitly bounded.
+- The resolver returns a deterministic acknowledgement deadline and next scheduled coverage time when available. It does not assign staff, send notifications, execute escalation timers or grant permissions.
+- Added unit coverage for routed, out-of-hours, unstaffed, overlap-conflict and invalid-time/SLA cases. The dedicated System Services workflow now includes this module and test in compilation, Pyright and pytest gates.
+
+**Operational limitation:** no trusted duty roster, acknowledgement SLA approval, notification channel, after-hours fallback owner or dispatch worker has been configured. This is a tested policy foundation only; it is not a live on-call process.
