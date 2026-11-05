@@ -111,6 +111,12 @@ class SelfServiceCaseCreateRequest(BaseModel):
     category: SupportCaseCategory
 
 
+class _TenantSelfServiceAuthorizer:
+    """Deny-only adapter; tenant self-service never invokes SYSTEM authority."""
+    def require(self, *, principal_id: str, permission_id: str, session: object | None) -> None:
+        raise SystemServicesAuthorizationError("SYSTEM_SCOPE_REQUIRED")
+
+
 def _tenant_runtime(request: Request) -> SupportCaseRegistry:
     """Resolve only the case store; tenant self-service requires no staff authority."""
     if getattr(request.app.state, "system_services_case_indexes_ready", False) is not True:
@@ -187,7 +193,7 @@ def create_own_support_case(
     registry = _tenant_runtime(request)
     service = SupportCaseApplicationService(
         registry=registry,
-        authorizer=cast(SystemServicesAuthorizer, object()),
+        authorizer=_TenantSelfServiceAuthorizer(),
     )
     return _run_transaction(
         lambda session: _project_tenant_case(
