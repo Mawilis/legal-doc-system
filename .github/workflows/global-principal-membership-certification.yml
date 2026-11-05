@@ -155,6 +155,9 @@ jobs:
             tools/eos/api/server.py \
             tools/eos/kernel/db.py \
             tests/unit/test_kernel_db_configuration_authority.py \
+            tests/unit/test_eos_runtime_database_consumer_inventory.py \
+            tests/unit/test_eos_runtime_database_consumer_inventory.py \
+            tests/unit/test_eos_runtime_database_consumer_inventory.py \
             tools/eos/api/auth_router.py \
             tools/eos/api/global_principal_auth_router.py \
             tools/eos/auth/authentication.py \
@@ -165,6 +168,7 @@ jobs:
             tests/unit/test_membership_selection_projection.py \
             tests/unit/test_membership_selection_challenge.py \
             tests/unit/test_global_principal_session_authority.py \
+            tests/unit/test_eos_runtime_database_consumer_inventory.py \
             tests/unit/test_global_principal_system_session_authority.py \
             tests/unit/test_global_principal_totp_verifier.py \
             tests/unit/test_global_principal_mfa_kms_envelope.py \
