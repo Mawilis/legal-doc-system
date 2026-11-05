@@ -3,7 +3,7 @@ import { readFile } from 'node:fs/promises';
 import { fileURLToPath } from 'node:url';
 import { dirname, resolve } from 'node:path';
 import { describe, it } from 'node:test';
-import { resolveEosWorkspaceIdentity } from '../../services/eosWorkspaceIdentity.js';
+import { resolveEosWorkspaceIdentity, resolveEosWorkspaceTenantScope } from '../../services/eosWorkspaceIdentity.js';
 
 const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '../../..');
 
@@ -45,6 +45,33 @@ describe('EOS runtime database ownership inventory', () => {
     assert.equal(calls[0].url, 'http://127.0.0.1:9095/api/auth/workspace-bootstrap');
     assert.equal(calls[0].options.headers.Authorization, 'Bearer opaque-session-token');
     assert.equal(calls[0].options.headers['X-Tenant-ID'], 'WILSY-TENANT-1');
+  });
+
+  it('rejects PDF body tenant substitution against the EOS-authorized workspace', () => {
+    const workspace = { tenantId: 'WILSY-TENANT-A' };
+    assert.deepEqual(
+      resolveEosWorkspaceTenantScope({
+        requestedTenantId: 'WILSY-TENANT-A',
+        workspace,
+        suppliedTenantIds: ['WILSY-TENANT-A'],
+      }),
+      { ok: true, tenantId: 'WILSY-TENANT-A' },
+    );
+    assert.deepEqual(
+      resolveEosWorkspaceTenantScope({
+        requestedTenantId: 'WILSY-TENANT-A',
+        workspace,
+        suppliedTenantIds: ['WILSY-TENANT-B'],
+      }),
+      { ok: false, status: 403, code: 'WORKSPACE_SCOPE_MISMATCH' },
+    );
+    assert.deepEqual(
+      resolveEosWorkspaceTenantScope({
+        requestedTenantId: 'WILSY-TENANT-B',
+        workspace,
+      }),
+      { ok: false, status: 403, code: 'WORKSPACE_SCOPE_MISMATCH' },
+    );
   });
 
   it('rejects missing bearer or tenant scope before contacting EOS', async () => {
@@ -128,6 +155,7 @@ describe('EOS runtime database ownership inventory', () => {
       'utf8',
     );
     assert.match(identityAdapter, /\/api\/auth\/workspace-bootstrap/);
+    assert.match(identityAdapter, /resolveEosWorkspaceTenantScope/);
   });
 
   it('keeps PM2 and local development on the repository-defined EOS entrypoints', async () => {
