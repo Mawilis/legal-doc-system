@@ -147,6 +147,11 @@ def _real_invoice_orchestration_fixture(monkeypatch, db):
     monkeypatch.setattr(module, "PlatformInvoice", SimpleNamespace(from_dict=invoice_model))
 
     invoices = db["invoices"]
+    db["platform_truth"].insert_one({
+        "tenant_id": tenant_id,
+        "source_execution_fact_id": fact_id,
+        "execution_truth_id": "platform-truth-e2e",
+    })
     allocations = db["allocations"]
     audit = db["audit"]
     outbox = db["outbox"]
