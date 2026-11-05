@@ -64,7 +64,9 @@ class ElectrumPayShapCompletionInboxEvent:
     @property
     def fingerprint(self) -> str:
         payload = asdict(self)
-        for field in ("message_created_at", "received_at"):
+        payload.pop("received_at", None)
+        payload.pop("signature_key_id", None)
+        for field in ("message_created_at",):
             payload[field] = payload[field].astimezone(timezone.utc).isoformat()
         return hashlib.sha3_512(json.dumps(payload, sort_keys=True, separators=(",", ":")).encode()).hexdigest()
 
