@@ -75,6 +75,10 @@ from tools.eos.auth.global_principal_system_session_authority import (
     GlobalPrincipalSystemSessionRejected,
     GlobalPrincipalSystemSessionUnavailable,
 )
+from tools.eos.system_services.eos_authorizer import (
+    SystemServicesAuthorizationError,
+    SystemServicesAuthorizationUnavailable,
+)
 from tools.eos.kernel.db import get_client, get_database
 
 router = APIRouter(prefix="/auth/global", tags=["Global Principal Authentication"])
@@ -240,6 +244,7 @@ async def global_login(payload: GlobalCredentialRequest, request: Request) -> di
             session=session,
         )
         if not page.memberships:
+            _require_ready(request, "global_principal_system_session_indexes_ready")
             if (
                 getattr(request.app.state, "system_services_authority_ready", False) is not True
                 or getattr(request.app.state, "system_services_case_indexes_ready", False) is not True
@@ -256,9 +261,12 @@ async def global_login(payload: GlobalCredentialRequest, request: Request) -> di
                     permission_id="system_services:queue:read",
                     session=session,
                 )
-            except Exception:
+            except SystemServicesAuthorizationError:
                 _abort_if_active(session)
                 raise HTTPException(status_code=403, detail="No eligible workspace is assigned to this principal.") from None
+            except SystemServicesAuthorizationUnavailable:
+                _abort_if_active(session)
+                raise HTTPException(status_code=503, detail="SYSTEM_AUTHORITY_UNAVAILABLE") from None
             challenge_token, expires_at = GlobalPrincipalSystemMfaChallengeService(
                 collection=database[SYSTEM_MFA_CHALLENGE_COLLECTION],
             ).issue(
