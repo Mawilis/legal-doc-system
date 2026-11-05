@@ -1019,6 +1019,19 @@ def execute_approved_password_reset(
         raise HTTPException(status_code=403, detail="Independent response execution authority required.") from error
     except SystemServicesAuthorizationUnavailable as error:
         raise HTTPException(status_code=503, detail="System Services execution authority is unavailable.") from error
+    except SecurityIncidentResponseDecisionConflictError as error:
+        # A concurrent request using the same key may have committed first.
+        replay = _run_transaction(resolve_replay)
+        if replay is not None:
+            return {
+                "decisionId": decision_id,
+                "status": replay["result_status"],
+                "credentialRevision": replay["result_revision"],
+                "replayed": True,
+            }
+        raise HTTPException(status_code=409, detail="Canonical password recovery conflicts with current decision state.") from error
+    except SecurityIncidentResponseDecisionRegistryError as error:
+        raise HTTPException(status_code=503, detail="Password-reset execution evidence is unavailable.") from error
     except (PasswordResetServiceError, SecurityIncidentResponseExecutionError) as error:
         # A concurrent request using the same key may have committed first.
         # Re-resolve only after independently re-authorizing the actor.
