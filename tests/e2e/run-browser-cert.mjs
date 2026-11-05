@@ -682,16 +682,19 @@ try {
       '--config', viteConfigPath,
       '--host', '127.0.0.1',
       '--port', String(vitePort),
+      '--strictPort',
     ],
     { cwd: clientDirectory, stdio: ['ignore', 'pipe', 'pipe'] },
     'VITE',
   );
-  const viteListeningPort = await waitForOwnedPort(viteProcess);
+  // The selected ephemeral port is authoritative; certify it by HTTP rather
+  // than depending on Vite-version-specific console URL formatting.
+  await waitFor('http://127.0.0.1:' + vitePort + '/', 'VITE');
+  if (viteProcess.closed) throw new Error('BROWSER_CERT_VITE_EXITED_DURING_STARTUP');
+  const viteListeningPort = vitePort;
   if (viteListeningPort !== vitePort) {
     throw new Error('BROWSER_CERT_VITE_LISTEN_PORT_MISMATCH:' + viteListeningPort + ':' + vitePort);
   }
-  await waitFor('http://127.0.0.1:' + vitePort + '/', 'VITE');
-  if (viteProcess.closed) throw new Error('BROWSER_CERT_VITE_EXITED_DURING_STARTUP');
 
   setPhase('browser_suite', 'playwright_authenticated_journeys');
   const playwrightEnvironment = {
