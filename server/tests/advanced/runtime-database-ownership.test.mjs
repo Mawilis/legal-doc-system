@@ -153,6 +153,9 @@ describe('EOS runtime database ownership inventory', () => {
     assert.match(source, /requireEosWorkspaceIdentity, generateSovereignArtifactPdf/);
     assert.match(pdfController, /resolveEosWorkspaceTenantScope\(\{/);
     assert.match(pdfController, /suppliedTenantIds/);
+    assert.match(pdfController, /PDF_IDENTITY_SCOPE_MISMATCH/);
+    assert.match(pdfController, /suppliedGeneratedBy !== generatedBy/);
+    assert.match(pdfController, /Authenticated WILSY User/);
 
     const identityAdapter = await readFile(
       resolve(ROOT, 'server/services/eosWorkspaceIdentity.js'),
