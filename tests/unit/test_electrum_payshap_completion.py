@@ -59,6 +59,7 @@ def _payload(outcome="APPROVED"):
             "creationDateTime": "2026-11-05T07:59:00Z",
         },
         "transactionIdentifiers": {
+            "endToEndIdentification": "e2e-reference-001",
             "uetr": "8f14e45f-ea5e-4f5f-9c5d-8f14e45fea5e",
             "transactionIdentification": "transaction-001",
         },
