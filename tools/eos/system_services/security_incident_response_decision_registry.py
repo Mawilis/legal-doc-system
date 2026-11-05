@@ -321,6 +321,7 @@ class SecurityIncidentResponseDecisionRegistry:
         if (
             decision.status is not SecurityIncidentResponseDecisionStatus.APPROVED
             or decision.revision != 1
+            or decision.decided_at is None
             or not isinstance(occurred_at, datetime)
             or occurred_at.tzinfo is None
             or occurred_at.utcoffset() is None
