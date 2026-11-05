@@ -12,7 +12,7 @@ from hashlib import sha256
 import secrets
 from typing import Any
 
-from pymongo import ASCENDING
+from pymongo import ASCENDING, ReturnDocument
 from pymongo.collection import Collection
 from pymongo.client_session import ClientSession
 from pymongo.errors import PyMongoError
@@ -34,8 +34,10 @@ from tools.eos.system_services.eos_authorizer import (
 
 CHALLENGE_COLLECTION = "global_principal_system_mfa_challenges"
 SESSION_COLLECTION = "global_principal_system_sessions"
+REFRESH_COLLECTION = "global_principal_system_refresh_tokens"
 CHALLENGE_TTL_SECONDS = 300
 ACCESS_TTL_SECONDS = 900
+REFRESH_TTL_SECONDS = 60 * 60 * 8
 SYSTEM_SCOPE_MARKER = "SYSTEM"
 SYSTEM_WORKSPACE_ID = "SYSTEM_SERVICES"
 SYSTEM_ROLE = "SYSTEM_SERVICES"
@@ -65,7 +67,9 @@ class GlobalPrincipalSystemSessionReceipt:
     principal_id: str
     session_reference: str
     access_token: str = field(repr=False)
+    refresh_token: str = field(repr=False)
     access_expires_at: datetime
+    refresh_expires_at: datetime
 
 
 def _digest(value: str) -> str:
@@ -201,6 +205,7 @@ class GlobalPrincipalSystemSessionAuthority:
         self,
         *,
         sessions: Collection | None = None,
+        refresh_tokens: Collection | None = None,
         principal_repository: Any = None,
         credential_repository: Any = None,
         principal_collection: Collection | None = None,
@@ -208,6 +213,7 @@ class GlobalPrincipalSystemSessionAuthority:
         authorizer: Any = None,
     ) -> None:
         self._sessions = sessions
+        self._refresh_tokens = refresh_tokens
         self._principals = principal_repository or PrincipalAuthorityRepository()
         self._credentials = credential_repository or PrincipalCredentialRepository()
         self._principal_collection = principal_collection
@@ -220,21 +226,40 @@ class GlobalPrincipalSystemSessionAuthority:
         return self._sessions
 
     @staticmethod
-    def ensure_indexes(collection: Collection) -> None:
-        collection.create_index(
+    def ensure_indexes(sessions: Collection, refresh_tokens: Collection) -> None:
+        sessions.create_index(
             [("session_reference", ASCENDING)],
             unique=True,
             name="global_principal_system_session_reference_unique",
         )
-        collection.create_index(
+        sessions.create_index(
             [("principal_id", ASCENDING), ("revoked_at", ASCENDING)],
             name="global_principal_system_session_current_lookup",
         )
-        collection.create_index(
+        sessions.create_index(
             [("expires_at", ASCENDING)],
             expireAfterSeconds=0,
             name="global_principal_system_session_expiry_ttl",
         )
+        refresh_tokens.create_index(
+            [("token_digest", ASCENDING)],
+            unique=True,
+            name="global_principal_system_refresh_digest_unique",
+        )
+        refresh_tokens.create_index(
+            [("session_reference", ASCENDING), ("revoked_at", ASCENDING)],
+            name="global_principal_system_refresh_session_lookup",
+        )
+        refresh_tokens.create_index(
+            [("expires_at", ASCENDING)],
+            expireAfterSeconds=0,
+            name="global_principal_system_refresh_expiry_ttl",
+        )
+
+    def _refresh_store(self) -> Collection:
+        if self._refresh_tokens is None:
+            raise GlobalPrincipalSystemSessionUnavailable("SYSTEM_REFRESH_STORE_UNAVAILABLE")
+        return self._refresh_tokens
 
     def _revalidate_principal(
         self,
@@ -277,7 +302,9 @@ class GlobalPrincipalSystemSessionAuthority:
         instant = now or datetime.now(timezone.utc)
         self._revalidate_principal(principal_id, credential_revision, session=session)
         reference = "WILSYS-SYSTEM-SESSION-" + secrets.token_urlsafe(24)
-        expires_at = instant + timedelta(seconds=ACCESS_TTL_SECONDS)
+        refresh_token = "sysrefresh_" + secrets.token_urlsafe(32)
+        access_expires_at = instant + timedelta(seconds=ACCESS_TTL_SECONDS)
+        refresh_expires_at = instant + timedelta(seconds=REFRESH_TTL_SECONDS)
         token = create_access_token(
             {
                 "identity_id": principal_id,
@@ -298,7 +325,21 @@ class GlobalPrincipalSystemSessionAuthority:
                 "principal_id": principal_id,
                 "credential_revision": credential_revision,
                 "created_at": instant,
-                "expires_at": expires_at,
+                "expires_at": refresh_expires_at,
+                "revoked_at": None,
+                "schema_version": 1,
+            },
+            session=session,
+        )
+        self._refresh_store().insert_one(
+            {
+                "token_digest": _digest(refresh_token),
+                "session_reference": reference,
+                "principal_id": principal_id,
+                "credential_revision": credential_revision,
+                "issued_at": instant,
+                "expires_at": refresh_expires_at,
+                "consumed_at": None,
                 "revoked_at": None,
                 "schema_version": 1,
             },
@@ -308,7 +349,103 @@ class GlobalPrincipalSystemSessionAuthority:
             principal_id=principal_id,
             session_reference=reference,
             access_token=token,
-            access_expires_at=expires_at,
+            refresh_token=refresh_token,
+            access_expires_at=access_expires_at,
+            refresh_expires_at=refresh_expires_at,
+        )
+
+    def rotate_refresh_token(
+        self,
+        refresh_token: str,
+        *,
+        session: ClientSession,
+        now: datetime | None = None,
+    ) -> GlobalPrincipalSystemSessionReceipt:
+        """Rotate a SYSTEM refresh bearer in the caller-owned transaction."""
+        _require_transaction(session)
+        instant = now or datetime.now(timezone.utc)
+        if not isinstance(refresh_token, str) or not refresh_token.startswith("sysrefresh_"):
+            raise GlobalPrincipalSystemSessionRejected("SYSTEM_REFRESH_INVALID")
+        try:
+            row = self._refresh_store().find_one_and_update(
+                {
+                    "token_digest": _digest(refresh_token),
+                    "consumed_at": None,
+                    "revoked_at": None,
+                    "expires_at": {"$gt": instant},
+                },
+                {"$set": {"consumed_at": instant}},
+                return_document=ReturnDocument.AFTER,
+                session=session,
+            )
+        except PyMongoError as error:
+            raise GlobalPrincipalSystemSessionUnavailable("SYSTEM_REFRESH_READ_FAILED") from error
+        if not isinstance(row, dict):
+            raise GlobalPrincipalSystemSessionRejected("SYSTEM_REFRESH_INVALID")
+        principal_id = row.get("principal_id")
+        credential_revision = row.get("credential_revision")
+        reference = row.get("session_reference")
+        if (
+            not isinstance(principal_id, str)
+            or not isinstance(credential_revision, int)
+            or isinstance(credential_revision, bool)
+            or not isinstance(reference, str)
+        ):
+            raise GlobalPrincipalSystemSessionRejected("SYSTEM_REFRESH_SESSION_INVALID")
+        session_row = self._store().find_one(
+            {
+                "principal_id": principal_id,
+                "session_reference": reference,
+                "credential_revision": credential_revision,
+                "revoked_at": None,
+                "expires_at": {"$gt": instant},
+            },
+            session=session,
+        )
+        if not isinstance(session_row, dict):
+            raise GlobalPrincipalSystemSessionRejected("SYSTEM_REFRESH_SESSION_REVOKED")
+        self._revalidate_principal(principal_id, credential_revision, session=session)
+        new_refresh = "sysrefresh_" + secrets.token_urlsafe(32)
+        refresh_expires_at = min(session_row["expires_at"], instant + timedelta(seconds=REFRESH_TTL_SECONDS))
+        access_expires_at = instant + timedelta(seconds=ACCESS_TTL_SECONDS)
+        access = create_access_token(
+            {
+                "identity_id": principal_id,
+                "tenant_id": SYSTEM_SCOPE_MARKER,
+                "roles": [SYSTEM_ROLE],
+                "permissions": [],
+                "session_reference": reference,
+                "workspace_id": SYSTEM_WORKSPACE_ID,
+                "principal_scope": "SYSTEM",
+            },
+            expires_in_seconds=ACCESS_TTL_SECONDS,
+            token_purpose=TokenPurpose.ACCESS,
+            credential_revision=credential_revision,
+        )
+        try:
+            self._refresh_store().insert_one(
+                {
+                    "token_digest": _digest(new_refresh),
+                    "session_reference": reference,
+                    "principal_id": principal_id,
+                    "credential_revision": credential_revision,
+                    "issued_at": instant,
+                    "expires_at": refresh_expires_at,
+                    "consumed_at": None,
+                    "revoked_at": None,
+                    "schema_version": 1,
+                },
+                session=session,
+            )
+        except PyMongoError as error:
+            raise GlobalPrincipalSystemSessionUnavailable("SYSTEM_REFRESH_ROTATION_FAILED") from error
+        return GlobalPrincipalSystemSessionReceipt(
+            principal_id=principal_id,
+            session_reference=reference,
+            access_token=access,
+            refresh_token=new_refresh,
+            access_expires_at=access_expires_at,
+            refresh_expires_at=refresh_expires_at,
         )
 
     def is_session_current(
@@ -346,13 +483,23 @@ class GlobalPrincipalSystemSessionAuthority:
         now: datetime | None = None,
     ) -> bool:
         _require_transaction(session)
+        instant = now or datetime.now(timezone.utc)
         result = self._store().update_one(
             {
                 "principal_id": principal_id,
                 "session_reference": session_reference,
                 "revoked_at": None,
             },
-            {"$set": {"revoked_at": now or datetime.now(timezone.utc)}},
+            {"$set": {"revoked_at": instant}},
+            session=session,
+        )
+        self._refresh_store().update_many(
+            {
+                "principal_id": principal_id,
+                "session_reference": session_reference,
+                "revoked_at": None,
+            },
+            {"$set": {"revoked_at": instant}},
             session=session,
         )
         return result.modified_count == 1
