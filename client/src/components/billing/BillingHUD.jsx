@@ -104,7 +104,7 @@ import dunningIntelligence from '../../services/DunningIntelligence';
 import useSubscriptions from '../../hooks/useSubscriptions';
 import WilsyOSDashboardChrome from '../os/WilsyOSDashboardChrome';
 import WilsyAccountCommandCenter from '../account/WilsyAccountCommandCenter';
-import wilsyLogo from '../../assets/logo/wilsy.jpeg';
+import wilsyLogo from '../../assets/logo/wilsy-logo.svg';
 import hudStyles from './BillingHUD.module.css';
 import StatementEngine from './StatementEngine';
 import { AuditTab } from '../audit/AuditTab';
