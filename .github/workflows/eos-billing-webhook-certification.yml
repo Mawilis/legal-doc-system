@@ -25,7 +25,7 @@ on:
       - "tests/unit/test_electrum_payshap_completion_router.py"
       - "tests/unit/test_electrum_payshap_completion_processing.py"
       - "tests/integration/test_platform_settlement_outbox_real_mongo.py"
-      - "tests/integration/test_platform_invoice_settlement_allocation_real_mongo.py tests/integration/test_electrum_payshap_completion_inbox_real_mongo.py"
+      - "tests/integration/test_platform_invoice_settlement_allocation_real_mongo.py tests/integration/test_electrum_payshap_completion_inbox_real_mongo.py tests/integration/test_electrum_payshap_completion_inbox_real_mongo.py"
       - "tests/integration/test_electrum_payshap_completion_inbox_real_mongo.py"
       - "tests/integration/test_billing_registry_real_mongo.py"
       - "tests/integration/test_billing_registry_financial_truth_firewall_real_mongo.py"
