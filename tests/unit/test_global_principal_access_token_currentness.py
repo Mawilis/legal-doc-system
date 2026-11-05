@@ -167,7 +167,7 @@ def test_system_access_token_requires_durable_system_session_and_current_workfor
     monkeypatch.setattr(authentication, "GlobalPrincipalSystemSessionAuthority", Authority)
 
     identity = asyncio.run(authentication.get_current_identity(
-        request=request,
+        request=cast(Any, request),
         credentials=_credentials(),
         api_key=None,
         repository=cast(Any, object()),
