@@ -1015,6 +1015,10 @@ def execute_approved_password_reset(
             context_terms=payload.context_terms,
             transaction_completion=persist_receipt,
         )
+    except SystemServicesAuthorizationError as error:
+        raise HTTPException(status_code=403, detail="Independent response execution authority required.") from error
+    except SystemServicesAuthorizationUnavailable as error:
+        raise HTTPException(status_code=503, detail="System Services execution authority is unavailable.") from error
     except (PasswordResetServiceError, SecurityIncidentResponseExecutionError) as error:
         # A concurrent request using the same key may have committed first.
         # Re-resolve only after independently re-authorizing the actor.
