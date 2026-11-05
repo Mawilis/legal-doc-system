@@ -101,3 +101,30 @@ The next development tranche must add and certify:
 **Current result: PARTIALLY IMPLEMENTED; NOT READY FOR OPERATIONAL CERTIFICATION.**
 
 The foundation is appropriately deny-first, but the missing tenant-facing routes and distinct incident/escalation operating controls are material. Close those gaps in the PR branch, then require authenticated route-level and real replica-set transaction certification on one exact commit. Keep PR #342 open and unmerged until its independent release gates are satisfied.
+
+
+## 6. Development implementation update (2026-11-05)
+
+The following foundations have since been committed to this branch:
+
+- Authenticated tenant self-service case create/list/status/history routes. The actor comes from EOS authentication; the tenant header is only a selector. ACTIVE principal and exact ACTIVE membership are re-resolved inside the same caller-owned Mongo transaction as each case operation.
+- Tenant + principal + idempotency-key scoping for self-service case creation.
+- A distinct structured security-incident intake domain and append-only registry. It accepts bounded categories and an aware observation timestamp, not free-form narrative or secret-bearing fields.
+- Tenant-owned incident intake/list routes, with durable incident and initial event inserted in one caller-owned transaction.
+- A bounded SYSTEM incident queue read route guarded by current `system_services:queue:read`.
+- A responder assignment and acceptance/decline foundation. Assignment requires current `system_services:case:triage` for the assigning staff principal and current `system_services:incident:escalate` for the proposed responder, each checked through the EOS System Services authorizer in the same transaction. The assignment rejects reporter/assigner/responder conflicts, supports one assignment per incident, records immutable events, and uses revision-guarded acceptance/decline. Only the assigned responder can accept or decline.
+- Startup provisioning and readiness flags for incident and assignment registries, independent of whether SYSTEM workforce authority is configured. Missing staff authority keeps staff operations unavailable without disabling the tenant's case storage.
+- Real-replica-set tests for tenant spoofing, cross-principal case privacy, forged request fields, incident replay, incident record/event rollback, assignment replay, permission separation and responder-only acceptance. Startup certification checks the new unique indexes.
+
+These are implementation claims, not test-pass claims. The exact-head System Services certification workflow must complete successfully before this work is described as certified.
+
+### Remaining before operational certification
+
+1. Replace the assignment service test double with real Mongo-backed `SystemServicesEosAuthorizer` coverage proving both exact permission assignments and current PLATFORM workforce relationships for assigner and responder.
+2. Add governed re-assignment, duty routing, acknowledgement deadlines, out-of-hours handling and conflict/recusal history.
+3. Integrate the independent audit/outbox contract atomically with incident, assignment and event writes; the current event collections are not a substitute for the platform audit/outbox.
+4. Define independent approval and canonical execution for containment/recovery. Assignment acceptance does not authorize session revocation, MFA reset, password reset, unlock, recovery-contact changes or device trust changes.
+5. Add full authenticated browser journey, negative route tests for every staff operation, concurrency/unknown-commit/reconciliation coverage and exact-head CI.
+6. Review privacy retention, POPIA purpose limitation, user notification and incident closure policy before operational activation.
+
+No production deployment, credential/account mutation, self-assigned permission, subscription lifecycle action, merge or Electrum activation is authorized by this implementation update.
