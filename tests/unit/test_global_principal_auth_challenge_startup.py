@@ -50,8 +50,13 @@ def test_startup_installs_global_credential_and_challenge_indexes_before_readine
     factor = source.index("GlobalPrincipalTotpVerifier.ensure_indexes(")
     enrollment = source.index("GlobalPrincipalMfaEnrollmentService.ensure_indexes(")
     rate_limit = source.index("PrincipalAuthenticationRateLimit(")
+    system_sessions = source.index("GlobalPrincipalSystemSessionAuthority.ensure_indexes(")
+    system_readiness = source.index("global_principal_system_session_indexes_ready = client is not None")
     readiness = source.index("global_principal_auth_indexes_ready = client is not None")
-    assert credential < challenge < factor < enrollment < rate_limit < readiness
+    assert credential < challenge < factor < enrollment < system_sessions < rate_limit < readiness
+    assert system_sessions < system_readiness < readiness
+    assert "database[GLOBAL_PRINCIPAL_SYSTEM_SESSION_COLLECTION]" in source
+    assert "database[GLOBAL_PRINCIPAL_SYSTEM_REFRESH_COLLECTION]" in source
     assert "database[PRINCIPAL_CREDENTIAL_COLLECTION]" in source
     assert "database[MEMBERSHIP_SELECTION_CHALLENGE_COLLECTION]" in source
     assert "database[GLOBAL_PRINCIPAL_MFA_FACTOR_COLLECTION]" in source
@@ -69,6 +74,8 @@ def test_global_auth_index_readiness_defaults_and_shutdown_fail_closed():
     assert "global_principal_auth_indexes_ready = False" in shutdown
     assert "global_principal_mfa_factor_indexes_ready = False" in startup
     assert "global_principal_mfa_factor_indexes_ready = False" in shutdown
+    assert "global_principal_system_session_indexes_ready = False" in startup
+    assert "global_principal_system_session_indexes_ready = False" in shutdown
     assert "global_principal_mfa_enrollment_indexes_ready = False" in startup
     assert "global_principal_mfa_enrollment_indexes_ready = False" in shutdown
     assert "global_principal_mfa_kms_envelope = None" in shutdown
