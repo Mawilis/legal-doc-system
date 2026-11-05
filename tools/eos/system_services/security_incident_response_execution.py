@@ -168,6 +168,29 @@ class SecurityIncidentResponseCanonicalExecutor:
                 session=session,
             )
 
+        def persist_execution_receipt(
+            session: Any,
+            tenant_id: str,
+            principal_id: str,
+            credential_revision: int,
+        ) -> None:
+            if (
+                tenant_id != decision.tenant_id
+                or principal_id != decision.target_principal_id
+                or not isinstance(credential_revision, int)
+                or isinstance(credential_revision, bool)
+                or credential_revision < 1
+            ):
+                raise SecurityIncidentResponseExecutionError(
+                    "PASSWORD_RESET_EXECUTION_RECEIPT_BINDING_INVALID"
+                )
+            transaction_completion(
+                session,
+                tenant_id,
+                principal_id,
+                credential_revision,
+            )
+
         try:
             return self._password_reset.reset_password(
                 tenant_id=decision.tenant_id,
@@ -175,7 +198,7 @@ class SecurityIncidentResponseCanonicalExecutor:
                 new_password=new_password,
                 context_terms=context_terms,
                 transaction_guard=authorize_inside_canonical_reset_transaction,
-                transaction_completion=transaction_completion,
+                transaction_completion=persist_execution_receipt,
             )
         except PasswordResetExecutionGuardError as error:
             if error.__cause__ is not None:
