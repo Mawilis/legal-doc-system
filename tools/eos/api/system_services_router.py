@@ -688,6 +688,12 @@ def _validate_response_idempotency_key(value: str) -> str:
     return value
 
 
+def _normalize_bson_utc_datetime(value: datetime) -> datetime:
+    """Align event timestamps with MongoDB BSON's millisecond datetime precision."""
+    normalized = value.astimezone(timezone.utc)
+    return normalized.replace(microsecond=(normalized.microsecond // 1000) * 1000)
+
+
 def _project_response_decision(value: SecurityIncidentResponseDecision) -> dict[str, object]:
     return {
         "decisionId": value.decision_id,
@@ -738,7 +744,11 @@ def request_security_incident_response(
             (incident.incident_id + "\\0" + actor.principal_id + "\\0" + idempotency_key).encode("utf-8")
         ).hexdigest()
         existing = decision_registry.find(decision_id, session=session)
-        requested_at = existing.requested_at if existing is not None else datetime.now(timezone.utc)
+        requested_at = (
+            existing.requested_at
+            if existing is not None
+            else _normalize_bson_utc_datetime(datetime.now(timezone.utc))
+        )
         decision = SecurityIncidentResponseDecision(
             decision_id=decision_id,
             incident_id=incident.incident_id,
@@ -804,7 +814,7 @@ def decide_security_incident_response(
                 raise HTTPException(status_code=409, detail="Cannot approve a response for an inactive target assignment.")
         elif current.target_assignment_id is not None or current.target_permission_id is not None:
             raise HTTPException(status_code=409, detail="Password-reset decision cannot bind a permission assignment.")
-        decided_at = datetime.now(timezone.utc)
+        decided_at = _normalize_bson_utc_datetime(datetime.now(timezone.utc))
         if current.revision == 1:
             same_outcome = (
                 current.status.value == ("APPROVED" if payload.approved else "REJECTED")
