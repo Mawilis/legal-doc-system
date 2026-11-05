@@ -91,7 +91,6 @@ async def get_current_identity(
     legacy-purpose, stale, future, malformed, missing, and unavailable states
     fail closed without exposing revision values or owning persistence.
     """
-    del request
     if api_key:
         log_auth_event("API_KEY_AUTH", "unresolved", False, {"reason": "principal_resolution_required"})
         raise UnauthorizedAccessException("API-key principal is not mapped to durable authority.")
