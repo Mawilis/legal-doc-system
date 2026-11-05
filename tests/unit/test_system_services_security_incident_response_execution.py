@@ -56,18 +56,63 @@ def test_password_reset_delegates_only_approved_decision_to_canonical_service():
 
     result = value.execute_password_reset(
         decision,
+        actor_principal_id="independent-executor",
+        session="caller-owned-transaction",
         recovery_token="transient-single-use-capability",
         new_password="Transient-Strong-Passphrase-2026!",
         context_terms=("WILSY",),
     )
 
     assert result == "canonical-receipt"
+    value._authorizer.require.assert_called_once_with(
+        principal_id="independent-executor",
+        permission_id="system_services:incident:response:execute",
+        session="caller-owned-transaction",
+    )
     value._password_reset.reset_password.assert_called_once_with(
         tenant_id="tenant-1",
         recovery_token="transient-single-use-capability",
         new_password="Transient-Strong-Passphrase-2026!",
         context_terms=("WILSY",),
     )
+
+
+def test_password_reset_executor_must_be_distinct_from_requester_approver_and_target():
+    value = executor_with_mocks()
+    decision = approved(SecurityIncidentResponseAction.PASSWORD_RESET)
+
+    for actor in ("requester-principal", "independent-approver", "target-principal"):
+        with pytest.raises(
+            SecurityIncidentResponseExecutionError,
+            match="INDEPENDENT_RESPONSE_EXECUTOR_REQUIRED",
+        ):
+            value.execute_password_reset(
+                decision,
+                actor_principal_id=actor,
+                session="caller-owned-transaction",
+                recovery_token="single-use-capability",
+                new_password="Transient-Strong-Passphrase-2026!",
+            )
+
+    value._authorizer.require.assert_not_called()
+    value._password_reset.reset_password.assert_not_called()
+
+
+def test_password_reset_executor_requires_current_execute_permission():
+    value = executor_with_mocks()
+    decision = approved(SecurityIncidentResponseAction.PASSWORD_RESET)
+    value._authorizer.require.side_effect = PermissionError("CURRENT_SYSTEM_PERMISSION_REQUIRED")
+
+    with pytest.raises(PermissionError, match="CURRENT_SYSTEM_PERMISSION_REQUIRED"):
+        value.execute_password_reset(
+            decision,
+            actor_principal_id="independent-executor",
+            session="caller-owned-transaction",
+            recovery_token="single-use-capability",
+            new_password="Transient-Strong-Passphrase-2026!",
+        )
+
+    value._password_reset.reset_password.assert_not_called()
 
 
 def test_password_reset_decision_does_not_replace_canonical_recovery_capability():
@@ -78,6 +123,8 @@ def test_password_reset_decision_does_not_replace_canonical_recovery_capability(
     with pytest.raises(RuntimeError, match="RECOVERY_INVALID"):
         value.execute_password_reset(
             decision,
+            actor_principal_id="independent-executor",
+            session="caller-owned-transaction",
             recovery_token="invalid-capability",
             new_password="Transient-Strong-Passphrase-2026!",
         )
@@ -99,6 +146,8 @@ def test_pending_or_wrong_action_cannot_reach_canonical_service():
     with pytest.raises(SecurityIncidentResponseExecutionError, match="APPROVED_RESPONSE_DECISION_REQUIRED"):
         value.execute_password_reset(
             pending,
+            actor_principal_id="independent-executor",
+            session="caller-owned-transaction",
             recovery_token="token",
             new_password="Transient-Strong-Passphrase-2026!",
         )
