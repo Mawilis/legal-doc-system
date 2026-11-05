@@ -32,6 +32,28 @@ class PlatformInvoiceSettlementAllocationOrchestrationError(RuntimeError):
     pass
 
 
+def ensure_platform_invoice_settlement_allocation_indexes(
+    allocation_collection: Collection,
+    audit_collection: Collection,
+    outbox_collection: Collection,
+) -> None:
+    """Provision tenant-scoped immutable allocation, audit, and outbox keys.
+
+    Run as an explicit schema/index migration outside business transactions.
+    """
+    PlatformInvoiceSettlementAllocationRegistry.ensure_indexes(allocation_collection)
+    for collection, name in (
+        (audit_collection, "uq_platform_invoice_allocation_audit_event"),
+        (outbox_collection, "uq_platform_invoice_allocation_outbox_event"),
+    ):
+        collection.create_index(
+            [("tenant_id", 1), ("event_key", 1)],
+            unique=True,
+            name=name,
+            partialFilterExpression={"event_key": {"$type": "string"}},
+        )
+
+
 def _major(minor: int, currency: str) -> float:
     exponent = SUPPORTED_CURRENCY_EXPONENTS[currency]
     return float(Decimal(minor) / (Decimal(10) ** exponent))
