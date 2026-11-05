@@ -235,6 +235,11 @@ test('certifies initial tenant-neutral SYSTEM credentials, MFA and workspace boo
   await page.getByRole('textbox', { name: 'Password' }).fill(systemTestPassword);
   await page.getByRole('button', { name: 'Continue securely' }).click();
   expect(calls).toContain('global-login');
+  console.log('[SYSTEM LOGIN AFTER SUBMIT]', JSON.stringify({
+    url: page.url(),
+    authStage: await page.locator('[data-testid="login-panel"]').getAttribute('data-auth-stage'),
+    alert: await page.getByRole('alert').allTextContents(),
+  }));
   await expect(page).toHaveURL(/\/mfa$/);
   await page.getByLabel('Six-digit code').fill('123456');
   await page.getByRole('button', { name: 'Verify identity' }).click();
