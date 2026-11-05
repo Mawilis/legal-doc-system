@@ -60,6 +60,7 @@ from tools.eos.saas.auth.password_recovery_registry import (
     PasswordRecoveryCapabilityRegistry,
 )
 from tools.eos.saas.auth.password_reset_service import (
+    PasswordResetExecutionEvidenceError,
     PasswordResetExecutionGuardError,
     PasswordResetResult,
     PasswordResetService,
@@ -692,3 +693,74 @@ def test_system_services_execution_guard_denial_rolls_back_canonical_reset(bound
 
     _assert_rollback(bound_database, fixture)
     assert evidence.count_documents({"decision_id": "denied-response"}) == 0
+
+
+def test_response_execution_receipt_commits_with_canonical_reset(bound_database: MongoContext) -> None:
+    """Execution evidence and all R10 mutations share the same Mongo transaction."""
+    _prepare(bound_database)
+    fixture = _seed(bound_database, "response-completion")
+    service = _service(bound_database)
+    evidence = bound_database.database["response_execution_completion_evidence"]
+    seen_sessions: list[int] = []
+
+    def guard(session: Any, capability: PasswordRecoveryCapability) -> None:
+        assert session.in_transaction is True
+        assert capability.tenant_id == fixture.tenant_id
+        assert capability.principal_id == fixture.principal_id
+
+    def completion(session: Any, capability: PasswordRecoveryCapability, credential_revision: int) -> None:
+        assert session.in_transaction is True
+        assert capability.tenant_id == fixture.tenant_id
+        assert capability.principal_id == fixture.principal_id
+        seen_sessions.append(id(session))
+        evidence.insert_one(
+            {
+                "decision_id": "decision-response-completion",
+                "tenant_id": capability.tenant_id,
+                "target_principal_id": capability.principal_id,
+                "result_status": "PASSWORD_RESET_COMPLETED",
+                "result_revision": credential_revision,
+            },
+            session=session,
+        )
+
+    result = service.reset_password(
+        tenant_id=fixture.tenant_id,
+        recovery_token=fixture.token,
+        new_password=NEW_PASSWORD,
+        transaction_guard=guard,
+        transaction_completion=completion,
+    )
+
+    assert result == PasswordResetResult()
+    assert len(seen_sessions) == 1
+    receipt = evidence.find_one({"decision_id": "decision-response-completion"})
+    assert receipt is not None
+    assert receipt["result_revision"] == fixture.starting_revision + 1
+    assert _read_user(bound_database, fixture.principal_id, fixture.tenant_id)["credential_revision"] == fixture.starting_revision + 1
+    capability = bound_database.capabilities.find_one({"capability_id": fixture.capability_id})
+    assert capability is not None and capability["status"] == PasswordRecoveryCapabilityStatus.CONSUMED.value
+
+
+def test_response_execution_receipt_failure_rolls_back_canonical_reset(bound_database: MongoContext) -> None:
+    """A failed execution evidence write aborts the canonical credential mutation."""
+    _prepare(bound_database)
+    fixture = _seed(bound_database, "response-completion-failed")
+    service = _service(bound_database)
+    evidence = bound_database.database["response_execution_completion_failure_evidence"]
+
+    def completion(session: Any, capability: PasswordRecoveryCapability, credential_revision: int) -> None:
+        assert session.in_transaction is True
+        evidence.insert_one({"decision_id": "decision-response-completion-failed"}, session=session)
+        raise RuntimeError("synthetic response receipt failure")
+
+    with pytest.raises(PasswordResetExecutionEvidenceError):
+        service.reset_password(
+            tenant_id=fixture.tenant_id,
+            recovery_token=fixture.token,
+            new_password=NEW_PASSWORD,
+            transaction_completion=completion,
+        )
+
+    _assert_rollback(bound_database, fixture)
+    assert evidence.count_documents({"decision_id": "decision-response-completion-failed"}) == 0
