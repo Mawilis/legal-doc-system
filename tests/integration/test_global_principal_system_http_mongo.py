@@ -169,8 +169,9 @@ def system_http_mongo(monkeypatch: pytest.MonkeyPatch):
 
     verifier = GlobalPrincipalTotpVerifier(
         collection=factors,
-        decrypt_secret=lambda envelope, *, principal_id: (
-            SECRET if envelope == "test-envelope-only" and principal_id == principal_id else ""
+        decrypt_secret=lambda envelope, *, principal_id, credential_revision: (
+            SECRET if envelope == "test-envelope-only" and principal_id == principal_id
+            and credential_revision == 4 else ""
         ),
     )
 
