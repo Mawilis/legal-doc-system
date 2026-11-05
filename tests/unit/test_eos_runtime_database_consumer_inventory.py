@@ -46,15 +46,44 @@ def _relative(path: Path) -> str:
 
 
 def _constructs_mongo_client(tree: ast.AST) -> bool:
+    constructor_names = {"MongoClient", "AsyncMongoClient", "AsyncIOMotorClient"}
+    for node in ast.walk(tree):
+        if isinstance(node, ast.ImportFrom) and node.module in {"pymongo", "motor.motor_asyncio"}:
+            for imported in node.names:
+                if imported.name in constructor_names:
+                    constructor_names.add(imported.asname or imported.name)
+
     for node in ast.walk(tree):
         if not isinstance(node, ast.Call):
             continue
         function = node.func
-        if isinstance(function, ast.Name) and function.id in {"MongoClient", "AsyncMongoClient"}:
+        if isinstance(function, ast.Name) and function.id in constructor_names:
             return True
-        if isinstance(function, ast.Attribute) and function.attr in {"MongoClient", "AsyncMongoClient"}:
+        if isinstance(function, ast.Attribute) and function.attr in {
+            "MongoClient",
+            "AsyncMongoClient",
+            "AsyncIOMotorClient",
+        }:
             return True
     return False
+
+
+def test_mongo_client_ast_scan_detects_aliased_sync_and_async_constructors():
+    direct_alias = ast.parse(
+        "from pymongo import MongoClient as BusinessClient\n"
+        "client = BusinessClient(uri)\n"
+    )
+    motor_alias = ast.parse(
+        "from motor.motor_asyncio import AsyncIOMotorClient as AsyncBusinessClient\n"
+        "client = AsyncBusinessClient(uri)\n"
+    )
+    module_attribute = ast.parse(
+        "import pymongo\n"
+        "client = pymongo.MongoClient(uri)\n"
+    )
+    assert _constructs_mongo_client(direct_alias)
+    assert _constructs_mongo_client(motor_alias)
+    assert _constructs_mongo_client(module_attribute)
 
 
 def test_runtime_mongo_client_construction_is_confined_to_kernel_and_isolated_audit_sink():
