@@ -934,6 +934,49 @@ export const AuthProvider = ({ children }) => {
   }, [tenant, token, user?.email]);
 
   useEffect(() => {
+    if (!token || !user?.systemServicesWorkspace) return undefined;
+    let active = true;
+    let refreshing = false;
+    const refreshSystemSession = async () => {
+      if (refreshing) return;
+      const refreshToken = localStorage.getItem('wilsy_refresh_token');
+      if (!refreshToken) return;
+      refreshing = true;
+      try {
+        const response = await api.post(
+          '/auth/global/refresh',
+          { refresh_token: refreshToken },
+          { skipAuth: true, skipAuthRedirect: true },
+        );
+        const data = response?.data || {};
+        if (
+          !active
+          || data.status !== 'REFRESHED'
+          || data.scope !== 'SYSTEM'
+          || typeof data.access_token !== 'string'
+          || typeof data.refresh_token !== 'string'
+        ) throw new Error('SYSTEM_SESSION_REFRESH_PROJECTION_INVALID');
+        anchorCanonicalBearer(data.access_token);
+        localStorage.setItem('wilsy_auth_token', data.access_token);
+        localStorage.setItem('token', data.access_token);
+        localStorage.setItem('wilsy_refresh_token', data.refresh_token);
+        setToken(data.access_token);
+      } catch (refreshError) {
+        if (active) {
+          setError(refreshError?.response?.data?.detail || refreshError.message || 'SYSTEM_SESSION_REFRESH_FAILED');
+        }
+      } finally {
+        refreshing = false;
+      }
+    };
+    const interval = window.setInterval(refreshSystemSession, 10 * 60 * 1000);
+    return () => {
+      active = false;
+      window.clearInterval(interval);
+    };
+  }, [token, user?.systemServicesWorkspace]);
+
+  useEffect(() => {
     const handleBrandingAuthorityRefresh = () => {
       void refreshWorkspace().catch((refreshError) => {
         setError(refreshError?.message || 'AUTHENTICATED_WORKSPACE_REFRESH_FAILED');
@@ -1054,8 +1097,8 @@ export const AuthProvider = ({ children }) => {
           );
           localStorage.setItem('wilsy_auth_token', data.access_token);
           localStorage.setItem('token', data.access_token);
+          localStorage.setItem('wilsy_refresh_token', data.refresh_token);
           localStorage.setItem('wilsy_sovereign_user', JSON.stringify(projectedUser));
-          localStorage.removeItem('wilsy_refresh_token');
           localStorage.removeItem('wilsy_active_tenant');
           localStorage.removeItem('wilsy_tenant_id');
           localStorage.removeItem('tenantId');
