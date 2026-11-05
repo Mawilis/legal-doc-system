@@ -1,6 +1,9 @@
 name: EOS Billing and PayShap Webhook Persistence Certification
 
 on:
+  push:
+    branches:
+      - eos/tenant-discovery-iam-dashboard-roadmap
   pull_request:
     paths:
       - "tools/eos/api/billing_router.py"
