@@ -22,6 +22,7 @@ from fastapi import Depends, FastAPI
 from pymongo import MongoClient
 
 from tools.eos.api import global_principal_auth_router as auth_router
+from tools.eos.api.errors import register_error_handlers
 from tools.eos.auth.authentication import get_current_identity
 from tools.eos.auth.global_principal_system_session_authority import (
     CHALLENGE_COLLECTION,
@@ -196,6 +197,7 @@ def system_http_mongo(monkeypatch: pytest.MonkeyPatch):
     monkeypatch.setattr(authentication, "get_database", lambda: database)
 
     app = FastAPI()
+    register_error_handlers(app)
     app.include_router(auth_router.router)
     app.state.global_principal_auth_indexes_ready = True
     app.state.global_principal_session_indexes_ready = True
