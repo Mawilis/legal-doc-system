@@ -108,7 +108,7 @@ def test_processing_projection_is_caller_transactional_and_replay_safe(mongo_col
                 )
 
 
-def test_account_binding_is_opaque_unique_and_tenant_scoped(mongo_collections):
+def test_provider_account_binding_is_opaque_unique_and_destination_scoped(mongo_collections):
     client, _, bindings = mongo_collections
     fingerprint = "c" * 64
     with client.start_session() as session:
