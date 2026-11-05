@@ -262,6 +262,20 @@ def test_self_service_case_is_principal_bound_and_idempotent(mongo_case_registry
             )
     assert replay.case_id == created.case_id
     assert database[CASE_COLLECTION].count_documents({"case_id": created.case_id}) == 1
+    same_principal_other_tenant = SupportCaseActorContext(
+        principal_id="principal-self-service",
+        scope=SupportCaseScope.TENANT,
+        tenant_id="tenant-self-other",
+    )
+    with client.start_session() as session:
+        with session.start_transaction():
+            other_tenant_case = service.create_own_case(
+                actor=same_principal_other_tenant,
+                category=SupportCaseCategory.PASSWORD_RECOVERY,
+                idempotency_key="self-service-request-001",
+                session=session,
+            )
+    assert other_tenant_case.case_id != created.case_id
     own = service.list_own_cases(actor=actor)
     assert tuple(item.case_id for item in own) == (created.case_id,)
     other_actor = SupportCaseActorContext(
