@@ -25,8 +25,8 @@ from tools.eos.kennel.registry.electrum_payshap_completion_inbox_registry import
     ElectrumPayShapCompletionInboxEvent,
     ElectrumPayShapCompletionInboxRegistry,
 )
-from tools.eos.kennel.registry.electrum_provider_tenant_binding_registry import (
-    ElectrumProviderTenantBindingRegistry,
+from tools.eos.kennel.registry.electrum_provider_account_binding_registry import (
+    ElectrumProviderAccountBindingRegistry,
 )
 from tools.eos.kennel.registry.financial_settlement_observation_registry import (
     FinancialSettlementObservationRegistry,
@@ -56,7 +56,7 @@ def ensure_electrum_payshap_completion_indexes(
 ) -> None:
     """Provision provider inbox/binding and allocation indexes outside transactions."""
     ElectrumPayShapCompletionInboxRegistry.ensure_indexes(inbox_collection)
-    ElectrumProviderTenantBindingRegistry.ensure_indexes(binding_collection)
+    ElectrumProviderAccountBindingRegistry.ensure_indexes(binding_collection)
     FinancialSettlementObservationRegistry.ensure_indexes(observation_collection)
     platform_truth_collection.create_index(
         [("tenant_id", 1), ("provider_execution_reference", 1)],
@@ -130,19 +130,18 @@ def process_electrum_payshap_completion_event(
             "replayed": False,
         }
 
-    binding = ElectrumProviderTenantBindingRegistry.get_by_creditor_account_fingerprint(
+    binding = ElectrumProviderAccountBindingRegistry.get_by_creditor_account_fingerprint(
         event.creditor_account_fingerprint, binding_collection, session=session
     )
-    tenant_id = binding["tenant_id"]
+    # The provider account never supplies tenant authority. UETR must resolve
+    # to exactly one canonical tenant-scoped platform truth.
     truth_docs = list(platform_truth_collection.find(
-        {
-            "tenant_id": tenant_id,
-            "provider_execution_reference": event.uetr,
-        },
+        {"provider_execution_reference": event.uetr},
         session=session,
     ).limit(2))
-    if len(truth_docs) != 1:
+    if len(truth_docs) != 1 or not isinstance(truth_docs[0].get("tenant_id"), str):
         raise ElectrumPayShapCompletionProcessingError("ELECTRUM_EXECUTION_TRUTH_NOT_UNIQUE")
+    tenant_id = truth_docs[0]["tenant_id"]
     platform_truth = PlatformBillingFinancialExecutionTruthRegistry.get(
         tenant_id,
         truth_docs[0]["execution_truth_id"],
