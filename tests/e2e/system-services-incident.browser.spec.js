@@ -238,7 +238,7 @@ test('certifies initial tenant-neutral SYSTEM credentials, MFA and workspace boo
   expect(calls).toContain('global-login');
   console.log('[SYSTEM LOGIN AFTER SUBMIT]', JSON.stringify({
     url: page.url(),
-    authStage: await page.locator('[data-testid="login-panel"]').getAttribute('data-auth-stage'),
+    authStage: await page.locator('[data-testid="login-panel"]').count() ? await page.locator('[data-testid="login-panel"]').getAttribute('data-auth-stage') : 'LOGIN_ROUTE_EXITED',
     alert: await page.getByRole('alert').allTextContents(),
   }));
   await expect(page).toHaveURL(/\/mfa$/);
