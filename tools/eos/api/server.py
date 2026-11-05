@@ -321,6 +321,7 @@ class WilsyAPIServer:
         app.state.system_services_response_decision_registry = None
         app.state.system_services_response_decision_service = None
         app.state.system_services_response_executor = None
+        app.state.system_services_response_permission_assignments = None
         app.state.legal_evidence_provider_readonly_reconciliation_composition = None
         app.state.legal_evidence_provider_readonly_reconciliation_audit_client = None
         # C1E service is constructed lazily or by deployment composition; it
@@ -495,6 +496,7 @@ class WilsyAPIServer:
             app.state.system_services_response_decision_registry = None
             app.state.system_services_response_decision_service = None
             app.state.system_services_response_executor = None
+            app.state.system_services_response_permission_assignments = None
             app.state.telemetry_indexes_ready = False
             app.state.electrum_completion_indexes_ready = False
             app.state.electrum_settlement_worker_enabled = False
@@ -580,6 +582,7 @@ class WilsyAPIServer:
                         app.state.system_services_response_decision_registry = response_runtime.decision_registry
                         app.state.system_services_response_decision_service = response_runtime.decision_service
                         app.state.system_services_response_executor = response_runtime.canonical_executor
+                        app.state.system_services_response_permission_assignments = response_runtime.permission_assignment_registry
                         app.state.system_services_response_indexes_ready = True
                     except Exception as error:
                         # Response governance fails closed independently; the
@@ -588,6 +591,7 @@ class WilsyAPIServer:
                         app.state.system_services_response_decision_registry = None
                         app.state.system_services_response_decision_service = None
                         app.state.system_services_response_executor = None
+                        app.state.system_services_response_permission_assignments = None
                         code = getattr(error, "code", "SYSTEM_SERVICES_RESPONSE_COMPOSITION_UNAVAILABLE")
                         logger.warning("[SYSTEM_SERVICES] Response composition unavailable: %s", code)
                 # Global authentication and one-time challenge indexes are
