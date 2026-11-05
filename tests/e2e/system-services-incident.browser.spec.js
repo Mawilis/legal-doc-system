@@ -184,6 +184,7 @@ test('certifies initial tenant-neutral SYSTEM credentials, MFA and workspace boo
         status: 'AUTHENTICATED',
         scope: 'SYSTEM',
         access_token: 'synthetic-system-access-token',
+        refresh_token: 'sysrefresh-browser-token',
         principal_id: 'WILSYAUTH-browser-system-principal',
         workspace_id: 'SYSTEM_SERVICES',
       }),
@@ -237,6 +238,7 @@ test('certifies initial tenant-neutral SYSTEM credentials, MFA and workspace boo
       tenantId: localStorage.getItem('tenantId'),
       activeTenant: localStorage.getItem('wilsy_active_tenant'),
       bearer: localStorage.getItem('wilsy_auth_token'),
+      refresh: localStorage.getItem('wilsy_refresh_token'),
     };
   })).toEqual({
     principalId: 'WILSYAUTH-browser-system-principal',
@@ -245,6 +247,7 @@ test('certifies initial tenant-neutral SYSTEM credentials, MFA and workspace boo
     tenantId: null,
     activeTenant: null,
     bearer: 'synthetic-system-access-token',
+    refresh: 'sysrefresh-browser-token',
   });
   expect(calls.slice(0, 2)).toEqual(['global-login', 'global-mfa']);
   expect(calls.filter((value) => value === 'system-workspace').length).toBeGreaterThanOrEqual(1);
