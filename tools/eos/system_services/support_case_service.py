@@ -108,7 +108,7 @@ class SupportCaseApplicationService:
             raise SupportCaseApplicationError("CASE_IDEMPOTENCY_KEY_INVALID")
         now = self._clock()
         request_fingerprint = sha3_256(
-            (actor.principal_id + "\\0" + idempotency_key).encode("utf-8")
+            (actor.tenant_id + "\\0" + actor.principal_id + "\\0" + idempotency_key).encode("utf-8")
         ).hexdigest()
         stable_case_id = "case-" + request_fingerprint
         case = SupportCase(
