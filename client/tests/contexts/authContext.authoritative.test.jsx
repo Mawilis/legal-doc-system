@@ -229,7 +229,7 @@ describe('authoritative authentication state machine', () => {
           status: 'AUTHENTICATED',
           scope: 'SYSTEM',
           access_token: 'system-access-token',
-          refresh_token: 'sysrefresh-test-token',
+          refresh_token: 'sysrefresh_test-token',
           principal_id: 'WILSYAUTH-system-responder',
           workspace_id: 'SYSTEM_SERVICES',
         },
@@ -282,7 +282,7 @@ describe('authoritative authentication state machine', () => {
         principalId: 'WILSYAUTH-system-responder',
       },
     });
-    expect(window.localStorage.getItem('wilsy_refresh_token')).toBe('sysrefresh-test-token');
+    expect(window.localStorage.getItem('wilsy_refresh_token')).toBe('sysrefresh_test-token');
     expect(window.localStorage.getItem('wilsy_active_tenant')).toBeNull();
     expect(window.localStorage.getItem('tenantId')).toBeNull();
   });
