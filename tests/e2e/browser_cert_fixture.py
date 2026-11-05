@@ -893,6 +893,35 @@ def verify(state_path: Path) -> None:
         if screening_count != 1 or review_count != 1:
             raise RuntimeError("BROWSER_CERT_DURABLE_REVIEW_CARDINALITY_INVALID")
 
+        system_actors = state["system_actors"]
+        system_actor_ids = [system_actors[key]["principal_id"] for key in (
+            "system_requester", "system_approver", "system_executor",
+        )]
+        if len(set(system_actor_ids)) != 3 or set(system_actor_ids) & {
+            state["actors"]["partner"]["principal_id"],
+        }:
+            raise RuntimeError("BROWSER_CERT_RESPONSE_ACTOR_INDEPENDENCE_INVALID")
+        required_permissions = {
+            "system_requester": "system_services:incident:escalate",
+            "system_approver": "system_services:incident:response:decide",
+            "system_executor": "system_services:incident:response:execute",
+        }
+        for actor_key, permission_id in required_permissions.items():
+            principal_id = system_actors[actor_key]["principal_id"]
+            permission = database["system_permission_assignments"].find_one({
+                "principal_id": principal_id,
+                "permission_id": permission_id,
+                "status": "ACTIVE",
+            })
+            workforce = database["workforce_relationship_history"].find_one({
+                "principal_id": principal_id,
+                "scope_kind": "PLATFORM",
+                "scope_id": state["system_workforce_scope_id"],
+                "status": "ACTIVE",
+            })
+            if permission is None or workforce is None:
+                raise RuntimeError("BROWSER_CERT_RESPONSE_ACTOR_AUTHORITY_EVIDENCE_INVALID")
+
         response_request_key = "browser-response-request-" + state["database_name"]
         response_decision_id = "response-" + sha3_256(
             (
@@ -980,7 +1009,7 @@ if __name__ == "__main__":
 
 
 # ARTIFACT: browser_cert_fixture.py
-# VERSION: v1.3.0-OWNER-COMMERCIAL-BROWSER-FIXTURE
+# VERSION: v1.5.0-INDEPENDENT-RESPONSE-GOVERNANCE
 # AUTHORITY BOUNDARY: disposable synthetic browser-cert fixture only
 # TENANT POSTURE: authenticated tenant and unjoined foreign tenant in a runner-owned disposable database
 # FAIL-CLOSED POSTURE: wrong URI, unavailable replica set, and seed failures stop
