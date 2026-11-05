@@ -14,7 +14,6 @@ on:
       - "tools/eos/saas/employee/employee_registry.py"
       - "tests/unit/test_billing_registries_share_eos_mongo_runtime.py"
       - "tests/unit/test_order_number_service_runtime_binding.py"
-      - "tests/unit/test_financial_approval_aggregator_runtime_binding.py tests/unit/test_employee_registry_uses_kernel_database.py"
       - "tests/unit/test_employee_registry_uses_kernel_database.py"
       - "tools/eos/kennel/**"
       - "tests/unit/test_billing_registry.py"
