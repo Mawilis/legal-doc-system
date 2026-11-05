@@ -202,6 +202,17 @@ def test_canonical_eos_startup_registers_case_indexes_and_readiness(monkeypatch)
     try:
         with TestClient(app):
             assert app.state.system_services_case_indexes_ready is True
+            assert app.state.system_services_incident_indexes_ready is True
+            from tools.eos.system_services.security_incident_registry import (
+                COLLECTION as SECURITY_INCIDENT_COLLECTION,
+                EVENT_COLLECTION as SECURITY_INCIDENT_EVENT_COLLECTION,
+            )
+            incident_indexes = list(database[SECURITY_INCIDENT_COLLECTION].list_indexes())
+            incident_event_indexes = list(database[SECURITY_INCIDENT_EVENT_COLLECTION].list_indexes())
+            assert any(index.get("name") == "security_incident_identity_unique" for index in incident_indexes)
+            assert any(index.get("name") == "security_incident_reporter_idempotency_unique" for index in incident_indexes)
+            assert any(index.get("name") == "security_incident_event_identity_unique" for index in incident_event_indexes)
+            assert any(index.get("name") == "security_incident_initial_event_unique" for index in incident_event_indexes)
             case_indexes = list(database[CASE_COLLECTION].list_indexes())
             event_indexes = list(database[EVENT_COLLECTION].list_indexes())
             assert any(index.get("name") == "system_service_case_identity_unique" for index in case_indexes)
@@ -210,6 +221,7 @@ def test_canonical_eos_startup_registers_case_indexes_and_readiness(monkeypatch)
             assert any(index.get("name") == "system_service_case_event_idempotency_unique" for index in event_indexes)
             assert any(index.get("name") == "system_service_case_actor_idempotency_unique" for index in event_indexes)
         assert app.state.system_services_case_indexes_ready is False
+        assert app.state.system_services_incident_indexes_ready is False
     finally:
         client.drop_database(database_name)
         client.close()
