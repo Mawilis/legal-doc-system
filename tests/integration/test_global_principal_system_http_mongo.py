@@ -266,6 +266,18 @@ def test_real_http_system_login_mfa_access_refresh_replay_logout_and_tenant_head
         "consumed_at": None,
         "revoked_at": None,
     }) == 1
+    active_session = state["sessions"].find_one({
+        "principal_id": state["principal_id"],
+        "revoked_at": None,
+    })
+    active_refresh = state["refresh_tokens"].find_one({
+        "principal_id": state["principal_id"],
+        "consumed_at": None,
+        "revoked_at": None,
+    })
+    assert active_session is not None and active_refresh is not None
+    assert active_session["credential_revision"] == 4
+    assert active_refresh["session_reference"] == active_session["session_reference"]
 
     headers = {
         "Authorization": "Bearer " + tokens["access_token"],
