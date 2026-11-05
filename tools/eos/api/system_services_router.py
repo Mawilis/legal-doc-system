@@ -814,6 +814,8 @@ def decide_security_incident_response(
             )
             if not same_outcome:
                 raise HTTPException(status_code=409, detail="Response decision revision conflict.")
+            if not isinstance(current.decided_at, datetime):
+                raise HTTPException(status_code=409, detail="Persisted response decision timestamp is invalid.")
             decided_at = current.decided_at
         persisted = decision_service.decide(
             decision_id,
