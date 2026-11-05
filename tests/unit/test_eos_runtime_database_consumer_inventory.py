@@ -167,6 +167,16 @@ def test_active_bff_and_development_entrypoints_do_not_launch_legacy_mongoose_bu
     assert "mongoose" not in bff
     assert "database: 'NOT_CONNECTED_BY_BFF'" in bff
     assert "databaseAuthority: 'PYTHON_EOS'" in bff
+    assert "resolveEosWorkspaceIdentity" in bff
+    assert "requireEosWorkspaceIdentity, generateSovereignArtifactPdf" in bff
+
+    pdf_controller = (ROOT / "server/controllers/businessArtifactPdfController.js").read_text(encoding="utf-8")
+    assert "mongoose" not in pdf_controller
+    assert "findWilsyLiveUserProfileDocument" not in pdf_controller
+    assert "EOS_VERIFIED_WORKSPACE_BOOTSTRAP" in pdf_controller
+
+    identity_adapter = (ROOT / "server/services/eosWorkspaceIdentity.js").read_text(encoding="utf-8")
+    assert "/api/auth/workspace-bootstrap" in identity_adapter
 
     pm2 = (ROOT / "server/ecosystem.config.js").read_text(encoding="utf-8")
     assert "script: './server.js'" in pm2
