@@ -121,6 +121,22 @@ class SecurityIncidentAssignmentRegistry:
         except PyMongoError as error:
             raise IncidentAssignmentPersistenceError("INCIDENT_ASSIGNMENT_READ_FAILED") from error
 
+    def list_for_responder(
+        self, *, principal_id: str, session: Any, limit: int = 50
+    ) -> tuple[SecurityIncidentAssignment, ...]:
+        _require_transaction(session)
+        if not isinstance(principal_id, str) or not principal_id or principal_id != principal_id.strip():
+            raise IncidentAssignmentRegistryError("INCIDENT_ASSIGNMENT_RESPONDER_INVALID")
+        if isinstance(limit, bool) or not isinstance(limit, int) or not 1 <= limit <= 100:
+            raise IncidentAssignmentRegistryError("INCIDENT_ASSIGNMENT_LIMIT_INVALID")
+        try:
+            rows = self._assignments.find(
+                {"assigned_to_principal_id": principal_id}, session=session
+            ).sort([("created_at", -1), ("assignment_id", -1)]).limit(limit)
+            return tuple(_hydrate(dict(row)) for row in rows)
+        except PyMongoError as error:
+            raise IncidentAssignmentPersistenceError("INCIDENT_ASSIGNMENT_QUEUE_READ_FAILED") from error
+
     def create(self, value: SecurityIncidentAssignment, event: SecurityIncidentAssignmentEvent, *, session: Any) -> SecurityIncidentAssignment:
         _require_transaction(session)
         if (
