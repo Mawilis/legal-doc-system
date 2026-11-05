@@ -147,6 +147,7 @@ from tools.eos.auth.global_principal_session_authority import (
 from tools.eos.auth.global_principal_system_session_authority import (
     CHALLENGE_COLLECTION as GLOBAL_PRINCIPAL_SYSTEM_MFA_CHALLENGE_COLLECTION,
     SESSION_COLLECTION as GLOBAL_PRINCIPAL_SYSTEM_SESSION_COLLECTION,
+    REFRESH_COLLECTION as GLOBAL_PRINCIPAL_SYSTEM_REFRESH_COLLECTION,
     GlobalPrincipalSystemMfaChallengeService,
     GlobalPrincipalSystemSessionAuthority,
 )
@@ -619,7 +620,8 @@ class WilsyAPIServer:
                     database[GLOBAL_PRINCIPAL_SYSTEM_MFA_CHALLENGE_COLLECTION]
                 )
                 GlobalPrincipalSystemSessionAuthority.ensure_indexes(
-                    database[GLOBAL_PRINCIPAL_SYSTEM_SESSION_COLLECTION]
+                    database[GLOBAL_PRINCIPAL_SYSTEM_SESSION_COLLECTION],
+                    database[GLOBAL_PRINCIPAL_SYSTEM_REFRESH_COLLECTION],
                 )
                 app.state.global_principal_system_session_indexes_ready = client is not None
                 GlobalPrincipalTotpVerifier.ensure_indexes(
