@@ -886,7 +886,7 @@ const SovereignDashboardController = ({ user: propUser, onLogout }) => {
       const requestId = ++systemServicesRequestRef.current;
       setSystemServicesWorkspace(null);
       api.get('/system-services/workspace-bootstrap', { timeout: 12000 })
-        .then((response) => {
+        .then(async (response) => {
           if (requestId !== systemServicesRequestRef.current) return;
           const projection = response?.data;
           if (
