@@ -614,6 +614,10 @@ const SovereignDashboardController = ({ user: propUser, onLogout }) => {
   const { activeTenant } = useTenants();
   const [manualDashboardKey, setManualDashboardKey] = useState('');
   const [systemServicesWorkspace, setSystemServicesWorkspace] = useState(null);
+  const [systemServicesIncidents, setSystemServicesIncidents] = useState([]);
+  const [systemServicesAssignments, setSystemServicesAssignments] = useState([]);
+  const [systemServicesAssignmentDetail, setSystemServicesAssignmentDetail] = useState(null);
+  const [systemServicesActionState, setSystemServicesActionState] = useState('');
   const systemServicesRequestRef = useRef(0);
   const [isGlobalCommandSearchOpen, setIsGlobalCommandSearchOpen] = useState(false);
   const [kernelHealth, setKernelHealth] = useState({
@@ -644,6 +648,10 @@ const SovereignDashboardController = ({ user: propUser, onLogout }) => {
   useEffect(() => {
     systemServicesRequestRef.current += 1;
     setSystemServicesWorkspace(null);
+    setSystemServicesIncidents([]);
+    setSystemServicesAssignments([]);
+    setSystemServicesAssignmentDetail(null);
+    setSystemServicesActionState('');
     if (manualDashboardKey === DASHBOARD_KEYS.SYSTEM_SERVICES) {
       setManualDashboardKey('');
     }
@@ -808,7 +816,17 @@ const SovereignDashboardController = ({ user: propUser, onLogout }) => {
 
   let dashboardShard = null;
   if (dashboardKey === DASHBOARD_KEYS.SYSTEM_SERVICES) {
-    dashboardShard = <SystemServicesDashboard workspace={dashboardUser?.systemServicesWorkspace || null} />;
+    dashboardShard = (
+      <SystemServicesDashboard
+        workspace={dashboardUser?.systemServicesWorkspace || null}
+        incidents={systemServicesIncidents}
+        assignments={systemServicesAssignments}
+        assignmentDetail={systemServicesAssignmentDetail}
+        actionState={systemServicesActionState}
+        onOpenAssignment={handleOpenSystemServicesAssignment}
+        onDecideAssignment={handleSystemServicesAssignmentDecision}
+      />
+    );
   } else   if (dashboardKey === DASHBOARD_KEYS.FOUNDER) {
     dashboardShard = <FounderDashboard user={user} onSwitchDashboard={handleManualDashboardSwitch} />;
   } else if (dashboardKey === DASHBOARD_KEYS.EXECUTIVE) {
@@ -880,11 +898,26 @@ const SovereignDashboardController = ({ user: propUser, onLogout }) => {
           ) {
             setSystemServicesWorkspace(projection);
             setManualDashboardKey(DASHBOARD_KEYS.SYSTEM_SERVICES);
+            const incidentRead = api.get('/system-services/security-incidents', { timeout: 12000 })
+              .then((result) => Array.isArray(result?.data) ? result.data : [])
+              .catch(() => []);
+            const assignmentRead = projection.capabilities.includes('system_services:incident:escalate')
+              ? api.get('/system-services/security-incident-assignments/mine', { timeout: 12000 })
+                .then((result) => Array.isArray(result?.data) ? result.data : [])
+                .catch(() => [])
+              : Promise.resolve([]);
+            const [incidentRows, assignmentRows] = await Promise.all([incidentRead, assignmentRead]);
+            if (requestId !== systemServicesRequestRef.current) return;
+            setSystemServicesIncidents(incidentRows);
+            setSystemServicesAssignments(assignmentRows);
           }
         })
         .catch(() => {
           if (requestId === systemServicesRequestRef.current) {
             setSystemServicesWorkspace(null);
+            setSystemServicesIncidents([]);
+            setSystemServicesAssignments([]);
+            setSystemServicesAssignmentDetail(null);
             setManualDashboardKey('');
           }
         });
@@ -902,6 +935,49 @@ const SovereignDashboardController = ({ user: propUser, onLogout }) => {
         ...result,
         activatedAt: new Date().toISOString()
       }));
+    }
+  };
+
+
+  const handleOpenSystemServicesAssignment = async (assignmentId) => {
+    setSystemServicesActionState('Loading authorized incident detail…');
+    try {
+      const response = await api.get(
+        '/system-services/security-incident-assignments/' + encodeURIComponent(assignmentId),
+        { timeout: 12000, forceNetworkRetry: true },
+      );
+      setSystemServicesAssignmentDetail(response?.data || null);
+      setSystemServicesActionState('');
+    } catch {
+      setSystemServicesAssignmentDetail(null);
+      setSystemServicesActionState('Incident detail is unavailable or this assignment is no longer authorized.');
+    }
+  };
+
+  const handleSystemServicesAssignmentDecision = async (assignmentId, decision) => {
+    const assignment = systemServicesAssignments.find((item) => item.assignmentId === assignmentId);
+    if (!assignment || assignment.status !== 'PENDING_ACCEPTANCE' || !['accept', 'decline'].includes(decision)) return;
+    setSystemServicesActionState('Submitting responder decision to EOS…');
+    const nonce = window.crypto?.randomUUID?.()
+      || ('ss-' + Date.now().toString(36) + '-' + Math.random().toString(36).slice(2));
+    try {
+      await api.post(
+        '/system-services/security-incident-assignments/' + encodeURIComponent(assignmentId) + '/' + decision,
+        { expected_revision: assignment.revision },
+        { headers: { 'Idempotency-Key': nonce }, timeout: 12000 },
+      );
+      const refreshed = await api.get('/system-services/security-incident-assignments/mine', {
+        timeout: 12000, forceNetworkRetry: true,
+      });
+      setSystemServicesAssignments(Array.isArray(refreshed?.data) ? refreshed.data : []);
+      setSystemServicesActionState(decision === 'accept'
+        ? 'EOS recorded responder acceptance. No containment or account action was performed.'
+        : 'EOS recorded responder decline. No containment or account action was performed.');
+      if (systemServicesAssignmentDetail?.assignment?.assignmentId === assignmentId) {
+        await handleOpenSystemServicesAssignment(assignmentId);
+      }
+    } catch {
+      setSystemServicesActionState('EOS did not confirm this decision. Refresh the inbox before retrying.');
     }
   };
 
