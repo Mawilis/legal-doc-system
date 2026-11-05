@@ -129,6 +129,8 @@ class SecurityIncidentAssignmentRegistry:
             or event.assignment_id != value.assignment_id
             or event.from_status is not None
             or event.to_status is not SecurityIncidentAssignmentStatus.PENDING_ACCEPTANCE
+            or event.actor_principal_id != value.assigned_by_principal_id
+            or event.action != "INCIDENT_RESPONDER_ASSIGNED"
         ):
             raise IncidentAssignmentRegistryError("INCIDENT_ASSIGNMENT_EVENT_MISMATCH")
         try:
@@ -172,6 +174,20 @@ class SecurityIncidentAssignmentRegistry:
             or event.assignment_id != current.assignment_id
             or event.from_status is not current.status
             or event.to_status is not updated.status
+            or current.status is not SecurityIncidentAssignmentStatus.PENDING_ACCEPTANCE
+            or updated.status not in {
+                SecurityIncidentAssignmentStatus.ACCEPTED,
+                SecurityIncidentAssignmentStatus.DECLINED,
+            }
+            or updated.incident_id != current.incident_id
+            or updated.tenant_id != current.tenant_id
+            or updated.reporter_principal_id != current.reporter_principal_id
+            or updated.assigned_by_principal_id != current.assigned_by_principal_id
+            or updated.assigned_to_principal_id != current.assigned_to_principal_id
+            or updated.created_at != current.created_at
+            or updated.idempotency_fingerprint != current.idempotency_fingerprint
+            or updated.updated_at < current.updated_at
+            or event.actor_principal_id != current.assigned_to_principal_id
         ):
             raise IncidentAssignmentConflictError("INCIDENT_ASSIGNMENT_REVISION_OR_EVENT_INVALID")
         try:
