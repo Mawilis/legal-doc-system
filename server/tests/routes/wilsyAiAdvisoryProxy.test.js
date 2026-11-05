@@ -166,6 +166,21 @@ beforeEach(() => {
 });
 
 describe('fixed proxy route, path, query, and method contract', () => {
+  it('requires EOS-verified workspace identity before local PDF rendering', async () => {
+    const unauthenticated = await request(app)
+      .post('/api/generate/pdf')
+      .send({ type: 'billing-invoice' });
+    assert.equal(unauthenticated.status, 401);
+    assert.equal(unauthenticated.body.error, 'AUTHENTICATION_REQUIRED');
+
+    const unscoped = await request(app)
+      .post('/api/generate/pdf')
+      .set('Authorization', 'Bearer unverified-test-token')
+      .send({ type: 'billing-invoice' });
+    assert.equal(unscoped.status, 400);
+    assert.equal(unscoped.body.error, 'TENANT_SCOPE_REQUIRED');
+  });
+
   it('keeps the BFF transport-only with no direct MongoDB connection', async () => {
     const response = await request(app).get('/health').expect(200);
     assert.equal(response.body.database, 'NOT_CONNECTED_BY_BFF');
