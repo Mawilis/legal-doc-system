@@ -88,6 +88,7 @@ from .employee_router import router as employee_router
 from .errors import register_error_handlers
 from .kernel_routes import router as kernel_router
 from .payshap_webhook_router import router as payshap_webhook_router
+from .electrum_payshap_completion_router import router as electrum_payshap_completion_router
 from .plan_router import plan_router
 from .router import direct_router, router
 from .subscription_router import subscription_router
@@ -797,6 +798,7 @@ class WilsyAPIServer:
 
         # Provider evidence ingress is mounted once at its canonical route.
         app.include_router(payshap_webhook_router)
+        app.include_router(electrum_payshap_completion_router)
         app.include_router(hr_document_router)
 
         logger.info(
