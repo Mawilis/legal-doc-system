@@ -420,8 +420,9 @@ export const resolveDashboardKey = ({ user = {}, manualDashboardKey = '' } = {})
     requestedDashboard === DASHBOARD_KEYS.SYSTEM_SERVICES
     && systemWorkspace?.status === 'READY'
     && systemWorkspace?.authority === 'EOS_SYSTEM_SERVICES'
+    && systemWorkspace?.scope === 'SYSTEM'
     && typeof systemWorkspace?.principalId === 'string'
-    && systemWorkspace.principalId.length > 0
+    && systemWorkspace.principalId === user.id
     && Array.isArray(systemWorkspace?.capabilities)
     && systemWorkspace.capabilities.includes('system_services:queue:read')
   ) {
