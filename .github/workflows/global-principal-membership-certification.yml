@@ -74,6 +74,7 @@ on:
       - "tests/unit/test_principal_authentication_rate_limit.py"
       - "tests/integration/test_membership_selection_challenge_mongo.py"
       - "tests/integration/test_global_principal_session_authority_mongo.py"
+      - "tests/integration/test_global_principal_system_session_authority_mongo.py"
       - "tests/integration/test_global_principal_mfa_session_transition_mongo.py"
       - "tests/integration/test_principal_authentication_rate_limit_mongo.py"
       - "tests/integration/test_principal_credential_repository_mongo.py"
@@ -171,9 +172,11 @@ jobs:
             tests/unit/test_global_principal_access_token_currentness.py \
             tests/unit/test_global_principal_auth_router.py \
             tests/unit/test_principal_authentication_rate_limit.py \
+            tests/integration/test_global_principal_system_session_authority_mongo.py \
             tests/unit/test_auth_router_authoritative_mfa.py \
             tests/integration/test_membership_selection_challenge_mongo.py \
             tests/integration/test_global_principal_session_authority_mongo.py \
+            tests/integration/test_global_principal_system_session_authority_mongo.py \
             tests/integration/test_global_principal_mfa_session_transition_mongo.py \
             tests/integration/test_global_principal_totp_verifier_mongo.py \
             tests/integration/test_global_principal_mfa_enrollment_mongo.py \
