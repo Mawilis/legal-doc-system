@@ -22,6 +22,7 @@ from ..domain.billing import PlatformInvoice, InvoiceStatus
 from ..domain.platform_billing_commercial_settlement_projection import PlatformBillingCommercialSettlementProjection
 from .platform_billing_commercial_settlement_projection_registry import PlatformBillingCommercialSettlementProjectionRegistry, PlatformBillingCommercialSettlementProjectionNotFoundError
 from .platform_billing_release_authorization_registry import PlatformBillingReleaseAuthorizationRegistry
+from .subscription_registry import SubscriptionRegistry
 from tools.eos.kennel.registry.platform_billing_financial_settlement_evidence_registry import PlatformBillingFinancialSettlementEvidenceRegistry
 
 class PlatformBillingCommercialSettlementProjectionError(RuntimeError): pass
@@ -42,7 +43,7 @@ def _mongo_timestamp(value: datetime) -> datetime:
     value = value.astimezone(timezone.utc)
     return value.replace(microsecond=(value.microsecond // 1000) * 1000)
 
-def project_platform_billing_commercial_settlement(tenant_id:str,settlement_evidence_id:str,*,settlement_collection:Collection,release_authorization_collection:Collection,platform_invoice_collection:Collection,commercial_projection_collection:Collection,session=None,projected_at:datetime|None=None):
+def project_platform_billing_commercial_settlement(tenant_id:str,settlement_evidence_id:str,*,settlement_collection:Collection,release_authorization_collection:Collection,platform_invoice_collection:Collection,commercial_projection_collection:Collection,subscription_collection:Collection|None=None,session=None,projected_at:datetime|None=None):
     if session is None or not getattr(session, 'in_transaction', False): raise PlatformBillingCommercialSettlementProjectionError('R3F_SESSION_REQUIRED')
     settlement=PlatformBillingFinancialSettlementEvidenceRegistry.get(tenant_id,settlement_evidence_id,settlement_collection,session=session)
     authorization=PlatformBillingReleaseAuthorizationRegistry.get(tenant_id,settlement.release_authorization_id,release_authorization_collection,session=session)
@@ -51,6 +52,30 @@ def project_platform_billing_commercial_settlement(tenant_id:str,settlement_evid
     hydrated_doc = dict(doc)
     hydrated_doc['paid_at'] = _canonical_utc_datetime(hydrated_doc.get('paid_at'))
     invoice=PlatformInvoice.from_dict(hydrated_doc)
+    # A subscription-linked invoice may be settled only against canonical,
+    # tenant-scoped SubscriptionRegistry truth read in this same transaction.
+    # Invoices without a subscription link remain valid platform receivables.
+    subscription_id = doc.get('subscription_id')
+    if subscription_id is not None:
+        if not isinstance(subscription_id, str) or not subscription_id.strip():
+            raise PlatformBillingCommercialSettlementProjectionError('R3F_SUBSCRIPTION_LINK_INVALID')
+        if subscription_collection is None:
+            raise PlatformBillingCommercialSettlementProjectionError('R3F_SUBSCRIPTION_COLLECTION_REQUIRED')
+        try:
+            subscription = SubscriptionRegistry.get(
+                subscription_id,
+                tenant_id_header=tenant_id,
+                collection=subscription_collection,
+                session=session,
+            )
+        except Exception as error:
+            raise PlatformBillingCommercialSettlementProjectionError('R3F_SUBSCRIPTION_TRUTH_INVALID') from error
+        if (
+            subscription is None
+            or subscription.tenant_id != tenant_id
+            or subscription.subscription_id != subscription_id
+        ):
+            raise PlatformBillingCommercialSettlementProjectionError('R3F_SUBSCRIPTION_NOT_FOUND')
     if not (settlement.tenant_id==authorization.tenant_id==invoice.tenant_id==tenant_id and settlement.platform_invoice_id==authorization.platform_invoice_id==invoice.invoice_id and settlement.currency==authorization.currency==invoice.currency and settlement.settled_amount_minor==authorization.authorized_amount_minor==invoice.release_amount_minor and authorization.platform_invoice_evidence_fingerprint==invoice.commercial_release_evidence_fingerprint): raise PlatformBillingCommercialSettlementProjectionError('R3F_PROVENANCE_MISMATCH')
     projection_id = f'platform-commercial-settlement-{settlement_evidence_id}'
     try:
