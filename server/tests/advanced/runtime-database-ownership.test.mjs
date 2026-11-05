@@ -7,12 +7,27 @@ import { describe, it } from 'node:test';
 const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '../../..');
 
 describe('EOS runtime database ownership inventory', () => {
-  it('keeps the active Node BFF transport-only', async () => {
+  it('keeps the active Node BFF database-free and delegates PDF identity to EOS', async () => {
     const source = await readFile(resolve(ROOT, 'server/server.js'), 'utf8');
     assert.doesNotMatch(source, /mongoose/);
     assert.match(source, /database: 'NOT_CONNECTED_BY_BFF'/);
     assert.match(source, /databaseAuthority: 'PYTHON_EOS'/);
     assert.doesNotMatch(source, /MongoClient|MONGODB_URI|MONGO_URI/);
+
+    const pdfController = await readFile(
+      resolve(ROOT, 'server/controllers/businessArtifactPdfController.js'),
+      'utf8',
+    );
+    assert.doesNotMatch(pdfController, /mongoose|findWilsyLiveUserProfileDocument/);
+    assert.match(pdfController, /EOS_VERIFIED_WORKSPACE_BOOTSTRAP/);
+    assert.match(source, /resolveEosWorkspaceIdentity/);
+    assert.match(source, /requireEosWorkspaceIdentity, generateSovereignArtifactPdf/);
+
+    const identityAdapter = await readFile(
+      resolve(ROOT, 'server/services/eosWorkspaceIdentity.js'),
+      'utf8',
+    );
+    assert.match(identityAdapter, /\/api\/auth\/workspace-bootstrap/);
   });
 
   it('keeps PM2 and local development on the repository-defined EOS entrypoints', async () => {
