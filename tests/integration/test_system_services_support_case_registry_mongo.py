@@ -326,6 +326,7 @@ def test_authenticated_tenant_self_service_http_binds_current_membership_and_pri
         session_reference=None,
     )
     monkeypatch.setattr(system_services_router, "get_client", lambda: client)
+    monkeypatch.setattr("tools.eos.kernel.db.get_database", lambda: database)
     monkeypatch.setattr(
         system_services_router,
         "get_tenant_membership_repository",
