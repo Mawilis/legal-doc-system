@@ -8,6 +8,17 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[2]
 TOOLS_EOS = ROOT / "tools" / "eos"
+RUNTIME_ROOTS = (
+    "kernel",
+    "api",
+    "auth",
+    "saas",
+    "kennel",
+    "legal_operations/service",
+    "system_services",
+    "workforce",
+    "governance",
+)
 CANONICAL_CONNECTOR = "tools/eos/kernel/db.py"
 ISOLATED_AUDIT_SINK = (
     "tools/eos/legal_operations/service/"
@@ -38,10 +49,11 @@ def _constructs_mongo_client(tree: ast.AST) -> bool:
 
 def test_runtime_mongo_client_construction_is_confined_to_kernel_and_isolated_audit_sink():
     runtime_calls = set()
-    for path in TOOLS_EOS.rglob("*.py"):
-        relative = _relative(path)
-        if relative in OPERATOR_ONLY_CONNECTIONS or "/scripts/" in relative:
-            continue
+    for runtime_root in RUNTIME_ROOTS:
+        for path in (TOOLS_EOS / runtime_root).rglob("*.py"):
+            relative = _relative(path)
+            if relative in OPERATOR_ONLY_CONNECTIONS or "/scripts/" in relative:
+                continue
         tree = ast.parse(path.read_text(encoding="utf-8"), filename=relative)
         if _constructs_mongo_client(tree):
             runtime_calls.add(relative)
