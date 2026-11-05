@@ -671,3 +671,27 @@ def test_r3fc_rm09_atomic_duplicate_delivery_is_one_durable_settlement():
         assert db["billing_outbox_events"].count_documents({"tenant_id": tenant, "event_type": "PLATFORM_INVOICE_SETTLED"}) == 1
     finally:
         client.close()
+
+
+def test_r3fc_rm10_atomic_divergent_settlement_replay_is_rejected():
+    from dataclasses import replace
+    from tools.eos.saas.billing.atomic_platform_settlement import AtomicPlatformSettlementError
+
+    client, db, state = graph()
+    try:
+        evidence, fact_id, platform_id, created_at = _atomic_transport_for_existing_execution(client, db, state)
+        _run_atomic_settlement(client, db, state, evidence, fact_id, platform_id, created_at)
+        divergent = replace(
+            evidence,
+            provider_settlement_evidence_reference="different-provider-settlement-proof",
+        )
+        with pytest.raises(AtomicPlatformSettlementError):
+            _run_atomic_settlement(client, db, state, divergent, fact_id, platform_id, created_at)
+        tenant = state["tenant"]
+        assert db["financial_settlement_observations"].count_documents({"tenant_id": tenant}) == 1
+        assert db["platform_billing_financial_settlement_evidence"].count_documents({"tenant_id": tenant}) == 1
+        assert db["projections"].count_documents({"tenant_id": tenant}) == 1
+        assert db["billing_audit_events"].count_documents({"tenant_id": tenant, "event_type": "PLATFORM_INVOICE_SETTLED"}) == 1
+        assert db["billing_outbox_events"].count_documents({"tenant_id": tenant, "event_type": "PLATFORM_INVOICE_SETTLED"}) == 1
+    finally:
+        client.close()
