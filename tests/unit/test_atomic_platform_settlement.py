@@ -263,3 +263,72 @@ def test_outbox_delivery_state_is_mutable_without_rewriting_immutable_audit():
     assert replayed_outbox["delivery_status"] == "DELIVERED"
     audit.insert_one.assert_not_called()
     outbox.insert_one.assert_not_called()
+
+
+class _UnknownCommitResult(Exception):
+    def has_error_label(self, label: str) -> bool:
+        return label == "UnknownTransactionCommitResult"
+
+
+def test_unknown_commit_result_retries_commit_on_same_session_without_replaying_writes():
+    from tools.eos.saas.billing.atomic_platform_settlement import (
+        commit_atomic_settlement_transaction,
+    )
+
+    class Session:
+        def __init__(self) -> None:
+            self.calls = 0
+        def commit_transaction(self) -> None:
+            self.calls += 1
+            if self.calls == 1:
+                raise _UnknownCommitResult("acknowledgement lost")
+
+    session = Session()
+    readbacks: list[bool] = []
+    result = commit_atomic_settlement_transaction(
+        session,
+        verify_committed=lambda: readbacks.append(True) or True,
+    )
+    assert result == "COMMITTED"
+    assert session.calls == 2
+    assert readbacks == []
+
+
+def test_unknown_commit_result_exhaustion_uses_independent_positive_readback():
+    from tools.eos.saas.billing.atomic_platform_settlement import (
+        commit_atomic_settlement_transaction,
+    )
+
+    class Session:
+        def __init__(self) -> None:
+            self.calls = 0
+        def commit_transaction(self) -> None:
+            self.calls += 1
+            raise _UnknownCommitResult("acknowledgement remains unknown")
+
+    session = Session()
+    result = commit_atomic_settlement_transaction(
+        session,
+        verify_committed=lambda: True,
+        max_commit_attempts=2,
+    )
+    assert result == "COMMITTED_RECONCILED"
+    assert session.calls == 2
+
+
+def test_unknown_commit_result_never_treats_missing_readback_as_success():
+    from tools.eos.saas.billing.atomic_platform_settlement import (
+        AtomicPlatformSettlementCommitUncertainError,
+        commit_atomic_settlement_transaction,
+    )
+
+    class Session:
+        def commit_transaction(self) -> None:
+            raise _UnknownCommitResult("acknowledgement remains unknown")
+
+    with pytest.raises(AtomicPlatformSettlementCommitUncertainError):
+        commit_atomic_settlement_transaction(
+            Session(),
+            verify_committed=lambda: False,
+            max_commit_attempts=1,
+        )
