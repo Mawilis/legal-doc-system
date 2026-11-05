@@ -5,6 +5,8 @@ const CAPABILITIES = Object.freeze({
   cases: 'system_services:queue:read',
   identity: 'system_services:identity:read',
   recovery: 'system_services:recovery:request',
+  incidents: 'system_services:queue:read',
+  responder: 'system_services:incident:escalate',
   accessRequests: 'iam:access_request:read',
   assignments: 'iam:role_assignment:read',
   audit: 'system_services:audit:read',
@@ -40,7 +42,7 @@ function sourceValue(value) {
  * the authenticated EOS workspace-bootstrap projection. This component does
  * not infer authority from role labels or make direct API calls.
  */
-export default function SystemServicesDashboard({ workspace = null }) {
+export default function SystemServicesDashboard({ workspace = null, incidents = [], assignments = [], assignmentDetail = null, actionState = '', onOpenAssignment, onDecideAssignment }) {
   const ready = workspace?.status === 'READY'
     && workspace?.authority === 'EOS_SYSTEM_SERVICES'
     && typeof workspace?.principalId === 'string'
@@ -130,6 +132,78 @@ export default function SystemServicesDashboard({ workspace = null }) {
           ) : (
             <div style={styles.empty}>No case records were supplied by EOS. An empty response is not treated as an operational metric.</div>
           )}
+        </section>
+      )}
+
+
+      {hasCapability(workspace, CAPABILITIES.cases) && (
+        <section style={styles.section} aria-labelledby="incidents-title">
+          <h2 id="incidents-title" style={styles.sectionTitle}>Security incident queue</h2>
+          {incidents.length > 0 ? (
+            <div style={styles.card}>
+              {incidents.map((incident) => (
+                <div key={incident.incidentId} style={styles.row}>
+                  <span>
+                    <strong>{sourceValue(incident.category)}</strong>
+                    <span style={{ display: 'block', ...styles.muted }}>
+                      {sourceValue(incident.incidentId)} · observed {sourceValue(incident.observedAt)}
+                    </span>
+                  </span>
+                  <span style={styles.pill}>{sourceValue(incident.status)}</span>
+                </div>
+              ))}
+            </div>
+          ) : (
+            <div style={styles.empty}>No security incidents were returned by the authenticated EOS queue.</div>
+          )}
+        </section>
+      )}
+
+      {hasCapability(workspace, 'system_services:incident:escalate') && (
+        <section style={styles.section} aria-labelledby="responder-inbox-title">
+          <h2 id="responder-inbox-title" style={styles.sectionTitle}>My responder assignments</h2>
+          {assignments.length > 0 ? (
+            <div style={styles.card}>
+              {assignments.map((assignment) => (
+                <div key={assignment.assignmentId} style={styles.row}>
+                  <span>
+                    <strong>{sourceValue(assignment.incidentId)}</strong>
+                    <span style={{ display: 'block', ...styles.muted }}>
+                      {sourceValue(assignment.assignmentId)} · revision {sourceValue(assignment.revision)}
+                    </span>
+                  </span>
+                  <span style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
+                    <span style={styles.pill}>{sourceValue(assignment.status)}</span>
+                    <button type="button" onClick={() => onOpenAssignment?.(assignment.assignmentId)}>
+                      View incident
+                    </button>
+                    {assignment.status === 'PENDING_ACCEPTANCE' && (
+                      <>
+                        <button type="button" onClick={() => onDecideAssignment?.(assignment.assignmentId, 'accept')}>
+                          Accept
+                        </button>
+                        <button type="button" onClick={() => onDecideAssignment?.(assignment.assignmentId, 'decline')}>
+                          Decline
+                        </button>
+                      </>
+                    )}
+                  </span>
+                </div>
+              ))}
+            </div>
+          ) : (
+            <div style={styles.empty}>No responder assignments are currently addressed to this principal.</div>
+          )}
+          {assignmentDetail && (
+            <div style={{ ...styles.card, marginTop: 12 }} aria-label="Selected responder incident detail">
+              <h3 style={{ marginTop: 0 }}>Incident detail</h3>
+              <p style={styles.muted}>Assignment {sourceValue(assignmentDetail.assignment?.assignmentId)}</p>
+              <p>Category: {sourceValue(assignmentDetail.incident?.category)}</p>
+              <p>Status: {sourceValue(assignmentDetail.incident?.status)}</p>
+              <p>Observed: {sourceValue(assignmentDetail.incident?.observedAt)}</p>
+            </div>
+          )}
+          {actionState && <p role="status" style={styles.muted}>{actionState}</p>}
         </section>
       )}
 
