@@ -222,3 +222,20 @@ def test_completion_requires_original_message_identifiers():
     )
     with pytest.raises(ElectrumCompletionContractError, match="COMPLETION_FIELDS_INVALID"):
         normalize_electrum_payshap_completion(payload, verified_message=verified)
+
+
+def test_completion_requires_end_to_end_identifier_and_uses_it_as_reference_fallback():
+    verified = VerifiedElectrumMessage(
+        key_id="electrum-key-1",
+        issuer="electrum.co.za",
+        issued_at=int(NOW.timestamp()),
+        content_digest="a" * 64,
+    )
+    payload = _payload()
+    payload["transactionIdentifiers"].pop("transactionIdentification")
+    completion = normalize_electrum_payshap_completion(payload, verified_message=verified)
+    assert completion.transaction_reference == "e2e-reference-001"
+
+    payload["transactionIdentifiers"].pop("endToEndIdentification")
+    with pytest.raises(ElectrumCompletionContractError, match="END_TO_END_IDENTIFICATION"):
+        normalize_electrum_payshap_completion(payload, verified_message=verified)
