@@ -50,6 +50,40 @@ def executor_with_mocks():
     return value
 
 
+def test_password_reset_replay_authority_is_checked_before_receipt_lookup():
+    value = executor_with_mocks()
+    decision = approved(SecurityIncidentResponseAction.PASSWORD_RESET)
+
+    value.authorize_password_reset_replay(
+        decision,
+        actor_principal_id="independent-executor",
+        session="caller-owned-transaction",
+    )
+
+    value._authorizer.require.assert_called_once_with(
+        principal_id="independent-executor",
+        permission_id="system_services:incident:response:execute",
+        session="caller-owned-transaction",
+    )
+
+
+def test_password_reset_replay_authority_rejects_requester():
+    value = executor_with_mocks()
+    decision = approved(SecurityIncidentResponseAction.PASSWORD_RESET)
+
+    with pytest.raises(
+        SecurityIncidentResponseExecutionError,
+        match="INDEPENDENT_RESPONSE_EXECUTOR_REQUIRED",
+    ):
+        value.authorize_password_reset_replay(
+            decision,
+            actor_principal_id="requester-principal",
+            session="caller-owned-transaction",
+        )
+
+    value._authorizer.require.assert_not_called()
+
+
 def test_password_reset_delegates_only_approved_decision_to_canonical_service():
     value = executor_with_mocks()
     decision = approved(SecurityIncidentResponseAction.PASSWORD_RESET)
