@@ -21,6 +21,14 @@ NOW = datetime(2026, 11, 5, 12, 0, tzinfo=timezone.utc)
 SESSION = object()
 
 
+def test_response_decision_timestamps_match_mongodb_bson_precision():
+    value = datetime(2026, 11, 5, 12, 0, 0, 987654, tzinfo=timezone.utc)
+
+    assert routes._normalize_bson_utc_datetime(value) == datetime(
+        2026, 11, 5, 12, 0, 0, 987000, tzinfo=timezone.utc
+    )
+
+
 def _decision():
     return SecurityIncidentResponseDecision(
         decision_id="decision-password-reset-route",
