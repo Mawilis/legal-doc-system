@@ -70,6 +70,7 @@ from tools.eos.auth.principal_credential_repository import (
 from tools.eos.auth.global_principal_system_session_authority import (
     CHALLENGE_COLLECTION as SYSTEM_MFA_CHALLENGE_COLLECTION,
     SESSION_COLLECTION as SYSTEM_SESSION_COLLECTION,
+    REFRESH_COLLECTION as SYSTEM_REFRESH_COLLECTION,
     GlobalPrincipalSystemMfaChallengeService,
     GlobalPrincipalSystemSessionAuthority,
     GlobalPrincipalSystemSessionRejected,
@@ -440,6 +441,7 @@ async def verify_global_mfa(payload: GlobalMfaVerificationRequest, request: Requ
             )
             receipt = GlobalPrincipalSystemSessionAuthority(
                 sessions=database[SYSTEM_SESSION_COLLECTION],
+                refresh_tokens=database[SYSTEM_REFRESH_COLLECTION],
                 authorizer=getattr(request.app.state, "system_services_authorizer", None),
             ).issue_after_mfa(
                 factor_context.principal_id,
@@ -453,8 +455,10 @@ async def verify_global_mfa(payload: GlobalMfaVerificationRequest, request: Requ
                 "status": "AUTHENTICATED",
                 "scope": "SYSTEM",
                 "access_token": receipt.access_token,
+                "refresh_token": receipt.refresh_token,
                 "token_type": "Bearer",
                 "access_expires_at": receipt.access_expires_at.isoformat(),
+                "refresh_expires_at": receipt.refresh_expires_at.isoformat(),
                 "principal_id": receipt.principal_id,
                 "workspace_id": "SYSTEM_SERVICES",
             }
@@ -514,7 +518,43 @@ async def verify_global_mfa(payload: GlobalMfaVerificationRequest, request: Requ
 
 @router.post("/refresh")
 async def refresh_global_session(payload: GlobalRefreshRequest, request: Request) -> dict[str, Any]:
-    """Rotate one opaque global refresh bearer in a caller-owned transaction."""
+    """Rotate tenant or tenant-neutral SYSTEM refresh bearer atomically."""
+    if payload.refresh_token.startswith("sysrefresh_"):
+        _require_ready(request, "global_principal_system_session_indexes_ready")
+        session, database = _begin_transaction()
+        try:
+            receipt = GlobalPrincipalSystemSessionAuthority(
+                sessions=database[SYSTEM_SESSION_COLLECTION],
+                refresh_tokens=database[SYSTEM_REFRESH_COLLECTION],
+                authorizer=getattr(request.app.state, "system_services_authorizer", None),
+            ).rotate_refresh_token(
+                payload.refresh_token,
+                session=session,
+            )
+            session.commit_transaction()
+            return {
+                "status": "REFRESHED",
+                "scope": "SYSTEM",
+                "access_token": receipt.access_token,
+                "refresh_token": receipt.refresh_token,
+                "token_type": "Bearer",
+                "access_expires_at": receipt.access_expires_at.isoformat(),
+                "refresh_expires_at": receipt.refresh_expires_at.isoformat(),
+                "principal_id": receipt.principal_id,
+                "workspace_id": "SYSTEM_SERVICES",
+            }
+        except GlobalPrincipalSystemSessionRejected:
+            _abort_if_active(session)
+            raise HTTPException(status_code=401, detail="Refresh credential is invalid or expired") from None
+        except (GlobalPrincipalSystemSessionUnavailable, PyMongoError):
+            _abort_if_active(session)
+            raise HTTPException(status_code=503, detail="GLOBAL_AUTHENTICATION_UNAVAILABLE") from None
+        except Exception:
+            _abort_if_active(session)
+            raise
+        finally:
+            session.end_session()
+
     _require_ready(request, "global_principal_session_indexes_ready")
     session, _database = _begin_transaction()
     try:
@@ -562,6 +602,7 @@ async def logout_global_session(
         try:
             revoked = GlobalPrincipalSystemSessionAuthority(
                 sessions=database[SYSTEM_SESSION_COLLECTION],
+                refresh_tokens=database[SYSTEM_REFRESH_COLLECTION],
             ).revoke(
                 principal_id=principal_id,
                 session_reference=reference,
