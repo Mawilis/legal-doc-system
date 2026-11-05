@@ -16,7 +16,6 @@ The Python EOS kernel owns the business MongoDB client/database lifecycle throug
 | `npm run dev:kernel` | Python EOS API | Kernel-owned Mongo lifecycle |
 | `npm run prod:kernel` | Python EOS API | Kernel-owned Mongo lifecycle |
 | `server/ecosystem.config.js` and `server/package.json` → `server/server.js` | Production Node BFF + local PDF renderer | HTTP proxy and artifact rendering only; no Mongo client or Mongoose connection; PDF identity is verified by EOS workspace-bootstrap |
-| `server/deploy.sh` | PM2 deployment wrapper | Reloads the BFF entrypoint above |
 
 The active Node BFF health response now states `database: NOT_CONNECTED_BY_BFF` and `databaseAuthority: PYTHON_EOS`. It no longer opens a duplicate connection merely to report Mongoose connection state. Its local PDF renderer obtains the current user/profile from `GET /api/auth/workspace-bootstrap` using the caller's bearer token and tenant header; Python EOS validates the session, tenant membership and role. The PDF controller accepts only this EOS-verified request identity and contains no Mongoose model lookup or JWT-claim decoding.
 
@@ -38,6 +37,8 @@ The active Node BFF health response now states `database: NOT_CONNECTED_BY_BFF` 
 ## Dormant legacy/operator surfaces
 
 - `server/app.js`, `server/config/database.js` and `server/jobs/scheduler.js` retain legacy Mongoose-era code. They are not referenced by the repository's active PM2 BFF process definition or the current development stack. In particular, the scheduler's direct-start block is not part of the active PM2 app list.
+- `server/deploy.sh` is an explicit deployment operator script, not a runtime entrypoint: it sources `.env.production`, pulls `origin/main`, installs production dependencies, runs tests/build/migrations when available, reloads PM2, and performs health checks. It was not executed during this work and remains outside the PR's authorized development-only boundary.
+- The `server/package.json` `onboard`, `test:pipeline`, `investor-report`, `monitor`, and helper scripts are explicit task/maintenance commands; they are not started by the active PM2 app definition or `npm run dev`.
 - `tools/eos/reliability/high_availability/heartbeat.py` is a syntax-invalid legacy stub with an unfinished method signature; it is not importable as an active runtime module and is explicitly excluded from the AST database-consumer scan. It remains technical debt, not a certified failover service.
 - `tools/eos/mongodb/read_only_index_verifier.py` is an explicitly invoked, non-production-only read-only CLI. It requires an environment-injected URI and independently supplied target fingerprint, performs `hello`/`list_indexes` reads only, reports `mutations_performed: 0`, and closes its short-lived client. It is not part of request handling or application startup.
 - `tools/eos/scripts/update_platform_tenant.py`, `tools/eos/scripts/update_platform_tenant_direct.py`, and `tools/eos/tenancy/retire_legacy_root_aliases.py` are explicit operator/migration commands, not imported API runtime modules. Their direct connection behavior is excluded from the runtime-client scan and should remain manually invoked under separately approved operational controls.
