@@ -160,6 +160,19 @@ const SovereignRouter = () => {
     }
   }, [isAuthenticated, currentTenant, user, location.pathname, mesh?.meshHealth, dataStream?.version]);
 
+  // SYSTEM is a tenant-independent workforce session. Its exact EOS-issued
+  // workspace projection is the only client-side discriminator; it does not
+  // synthesize a tenant, membership, business capacity, or tenant permission.
+  const systemServicesSession = Boolean(
+    isAuthenticated
+    && user?.systemServicesWorkspace?.status === 'READY'
+    && user.systemServicesWorkspace.authority === 'EOS_SYSTEM_SERVICES'
+    && user.systemServicesWorkspace.scope === 'SYSTEM'
+    && user.systemServicesWorkspace.principalId === user.id
+    && Array.isArray(user.systemServicesWorkspace.capabilities)
+    && user.systemServicesWorkspace.capabilities.includes('system_services:queue:read')
+  );
+
   const unauthenticatedEntryPath = authTenant?.tenantId ? '/login' : '/discovery';
 
   // 🛡️ Deterministic navigation state-machine.
@@ -220,7 +233,7 @@ const SovereignRouter = () => {
     );
   }
 
-  if (isAuthenticated && (authorityMismatch || tenantError || !currentTenant)) {
+  if (isAuthenticated && !systemServicesSession && (authorityMismatch || tenantError || !currentTenant)) {
     return <WorkspaceBootstrapError message={authorityMismatch ? 'AUTHENTICATED_WORKSPACE_AUTHORITY_MISMATCH' : (tenantError || 'AUTHENTICATED_WORKSPACE_UNRESOLVED')} />;
   }
 
@@ -388,6 +401,21 @@ const AuthenticatedRuntimeComposition = () => {
 export const AuthenticatedTenantBoundary = ({ runtime }) => {
   const { isAuthenticated, tenant, user } = useAuth();
   if (!isAuthenticated) return <RuntimeComposition />;
+
+  // Global SYSTEM principals have no tenant membership by design. Mount the
+  // existing authenticated SYSTEM dashboard path without TenantProvider or
+  // tenant bootstrap; the EOS workspace projection above is still required
+  // before SovereignRouter treats the session as SYSTEM.
+  const systemServicesSession = Boolean(
+    user?.systemServicesWorkspace?.status === 'READY'
+    && user.systemServicesWorkspace.authority === 'EOS_SYSTEM_SERVICES'
+    && user.systemServicesWorkspace.scope === 'SYSTEM'
+    && user.systemServicesWorkspace.principalId === user.id
+    && Array.isArray(user.systemServicesWorkspace.capabilities)
+    && user.systemServicesWorkspace.capabilities.includes('system_services:queue:read')
+  );
+  if (systemServicesSession) return <RuntimeComposition />;
+
   return (
     <TenantProvider initialTenant={tenant} authenticatedTenantId={String(user?.tenantId || '')}>
       <AuthenticatedBootstrapBoundary runtime={runtime} />
