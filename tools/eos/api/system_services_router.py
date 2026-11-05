@@ -755,7 +755,8 @@ def decide_security_incident_response(
 ):
     """Approve or reject only through an independently authorized principal."""
     actor = _actor(identity)
-    decision_registry, decision_service, _, _ = _response_runtime(request)
+    decision_registry, decision_service, _, permission_assignments = _response_runtime(request)
+    incidents, _ = _assignment_runtime(request)
 
     def decide(session):
         current = decision_registry.get(decision_id, session=session)
@@ -764,6 +765,27 @@ def decide_security_incident_response(
                 status_code=409,
                 detail="This response action is not enabled for canonical execution.",
             )
+        incident = incidents.get_by_id(incident_id=current.incident_id, session=session)
+        if (
+            incident.tenant_id != current.tenant_id
+            or incident.reporter_principal_id != current.target_principal_id
+            or current.target_assignment_id is None
+            or current.target_permission_id is None
+        ):
+            raise HTTPException(status_code=409, detail="Response decision incident/target binding is invalid.")
+        history = permission_assignments.get_history(current.target_assignment_id, session=session)
+        if (
+            not history
+            or history[0].principal_id != current.target_principal_id
+            or history[0].permission_id != current.target_permission_id
+        ):
+            raise HTTPException(status_code=409, detail="Response decision assignment lineage is invalid.")
+        if (
+            current.revision == 0
+            and payload.approved
+            and history[-1].status is not SystemPermissionAssignmentStatus.ACTIVE
+        ):
+            raise HTTPException(status_code=409, detail="Cannot approve a response for an inactive target assignment.")
         decided_at = datetime.now(timezone.utc)
         if current.revision == 1:
             same_outcome = (
