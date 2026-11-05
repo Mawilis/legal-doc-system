@@ -178,7 +178,7 @@ const SovereignRouter = () => {
   // 🛡️ Deterministic navigation state-machine.
   const targetPath = useMemo(() => {
     if (authLoading) return null;
-    const isMfaChallenge = [AUTH_STATES.MFA_SETUP, AUTH_STATES.MFA_RECONCILIATION_REQUIRED, AUTH_STATES.MFA_REQUIRED, AUTH_STATES.MFA_VERIFYING].includes(authStage);
+    const isMfaChallenge = [AUTH_STATES.PRIMARY_AUTHENTICATING, AUTH_STATES.MFA_SETUP, AUTH_STATES.MFA_RECONCILIATION_REQUIRED, AUTH_STATES.MFA_REQUIRED, AUTH_STATES.MFA_VERIFYING].includes(authStage);
     if (location.pathname === '/mfa' || location.pathname === '/mfa-setup') return isMfaChallenge ? null : '/login';
     if (
       location.pathname === '/reset-password'
@@ -245,12 +245,16 @@ const SovereignRouter = () => {
       <Route path="/verify-recovery-contact" element={<RecoveryContactVerificationPortal />} />
       <Route path="/reset-password" element={<PasswordResetPortal />} />
       <Route path="/mfa" element={
-        [AUTH_STATES.MFA_SETUP, AUTH_STATES.MFA_RECONCILIATION_REQUIRED, AUTH_STATES.MFA_REQUIRED, AUTH_STATES.MFA_VERIFYING].includes(authStage)
-          ? <SovereignMfaPortal /> : <Navigate to="/login" replace />
+        authStage === AUTH_STATES.PRIMARY_AUTHENTICATING
+          ? <div role="status" data-testid="mfa-transition">Preparing secure MFA challenge…</div>
+          : [AUTH_STATES.MFA_SETUP, AUTH_STATES.MFA_RECONCILIATION_REQUIRED, AUTH_STATES.MFA_REQUIRED, AUTH_STATES.MFA_VERIFYING].includes(authStage)
+            ? <SovereignMfaPortal /> : <Navigate to="/login" replace />
       } />
       <Route path="/mfa-setup" element={
-        [AUTH_STATES.MFA_SETUP, AUTH_STATES.MFA_RECONCILIATION_REQUIRED, AUTH_STATES.MFA_REQUIRED, AUTH_STATES.MFA_VERIFYING].includes(authStage)
-          ? <SovereignMfaPortal /> : <Navigate to="/login" replace />
+        authStage === AUTH_STATES.PRIMARY_AUTHENTICATING
+          ? <div role="status" data-testid="mfa-transition">Preparing secure MFA challenge…</div>
+          : [AUTH_STATES.MFA_SETUP, AUTH_STATES.MFA_RECONCILIATION_REQUIRED, AUTH_STATES.MFA_REQUIRED, AUTH_STATES.MFA_VERIFYING].includes(authStage)
+            ? <SovereignMfaPortal /> : <Navigate to="/login" replace />
       } />
       <Route path="/covenant" element={<LegalAcceptanceGate onComplete={() => navigate('/', { replace: true })} />} />
       <Route path="/signature" element={<Navigate to="/covenant" replace />} />
