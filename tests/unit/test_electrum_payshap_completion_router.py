@@ -98,6 +98,7 @@ def _setup(monkeypatch, *, replay=False):
         lambda *args, **kwargs: (event, replay),
     )
     app = FastAPI()
+    app.state.electrum_completion_indexes_ready = True
     app.include_router(router_module.router)
     return TestClient(app), provider_private, wilsy_public, config
 
