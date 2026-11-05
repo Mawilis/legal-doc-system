@@ -124,7 +124,7 @@ class SupportCaseApplicationService:
             event_id="event-" + request_fingerprint,
             case_id=case.case_id,
             actor_principal_id=actor.principal_id,
-            idempotency_key=idempotency_key,
+            idempotency_key="idem-" + request_fingerprint,
             from_status=None,
             to_status=SupportCaseStatus.OPEN,
             action="SELF_SERVICE_CASE_CREATED",
