@@ -70,7 +70,7 @@ import { AlertCircle, ArrowLeft, Eye, EyeOff, Loader2 } from 'lucide-react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { AUTH_STATES, useAuth } from '../../contexts/authContext.jsx';
 import TenantIdentityCard from './TenantIdentityCard.jsx';
-import wilsyBrandAsset from '../../assets/logo/wilsy.jpeg';
+import wilsyBrandAsset from '../../assets/logo/wilsy-icon.svg';
 
 export default function SovereignLogin({ onLoginSuccess }) {
   const navigate = useNavigate();
