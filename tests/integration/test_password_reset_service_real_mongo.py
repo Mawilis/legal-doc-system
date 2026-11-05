@@ -760,8 +760,9 @@ def test_response_execution_receipt_failure_rolls_back_canonical_reset(bound_dat
     service = _service(bound_database)
     evidence = bound_database.database["response_execution_completion_failure_evidence"]
 
-    def completion(session: Any, capability: PasswordRecoveryCapability, credential_revision: int) -> None:
+    def completion(session: Any, tenant_id: str, principal_id: str, credential_revision: int) -> None:
         assert session.in_transaction is True
+        assert tenant_id == fixture.tenant_id and principal_id == fixture.principal_id
         evidence.insert_one({"decision_id": "decision-response-completion-failed"}, session=session)
         raise RuntimeError("synthetic response receipt failure")
 
