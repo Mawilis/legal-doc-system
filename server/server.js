@@ -36,7 +36,7 @@ import helmet from 'helmet';
 import fileUpload from 'express-fileupload';
 import { createServer } from 'node:http';
 import { generateSovereignArtifactPdf } from './controllers/businessArtifactPdfController.js';
-import { resolveEosWorkspaceIdentity } from './services/eosWorkspaceIdentity.js';
+import { resolveEosWorkspaceIdentity, resolveEosWorkspaceTenantScope } from './services/eosWorkspaceIdentity.js';
 import { createProxyServer } from 'httpxy';
 import { fileURLToPath } from 'node:url';
 import { resolve } from 'node:path';
@@ -218,7 +218,19 @@ async function requireEosWorkspaceIdentity(req, res, next) {
     });
   }
 
+  const tenantScope = resolveEosWorkspaceTenantScope({
+    requestedTenantId: tenantId,
+    workspace: result.workspace,
+  });
+  if (!tenantScope.ok) {
+    return res.status(tenantScope.status).json({
+      success: false,
+      error: tenantScope.code,
+    });
+  }
+
   req.user = result.user;
+  req.tenantId = tenantScope.tenantId;
   req.eosAuthenticatedIdentity = true;
   req.eosWorkspace = result.workspace;
   return next();
