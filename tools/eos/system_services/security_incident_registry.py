@@ -17,6 +17,9 @@ from tools.eos.system_services.security_incident import (
 
 COLLECTION = "system_security_incidents"
 EVENT_COLLECTION = "system_security_incident_events"
+PLATFORM_AUDIT_COLLECTION = "system_platform_audit_events"
+PLATFORM_OUTBOX_COLLECTION = "system_platform_audit_outbox"
+AUDIT_SCHEMA_VERSION = "WILSY-PLATFORM-AUDIT/V1"
 
 
 class SecurityIncidentRegistryError(RuntimeError):
@@ -99,6 +102,12 @@ class SecurityIncidentRegistry:
             raise SecurityIncidentRegistryError("SECURITY_INCIDENT_COLLECTION_REQUIRED")
         self._incidents = incidents
         self._events = events
+        try:
+            database = incidents.database
+            self._audit_events = database[PLATFORM_AUDIT_COLLECTION]
+            self._outbox = database[PLATFORM_OUTBOX_COLLECTION]
+        except Exception as error:
+            raise SecurityIncidentRegistryError("SECURITY_INCIDENT_AUDIT_STORAGE_REQUIRED") from error
 
     def ensure_indexes(self) -> None:
         self._incidents.create_index(
@@ -118,6 +127,69 @@ class SecurityIncidentRegistry:
             [("incident_id", ASCENDING), ("event_type", ASCENDING)],
             unique=True, name="security_incident_initial_event_unique",
         )
+        self._audit_events.create_index([("event_key", ASCENDING)], unique=True, name="system_platform_audit_event_key_unique")
+        self._outbox.create_index([("event_key", ASCENDING)], unique=True, name="system_platform_audit_outbox_event_key_unique")
+        self._outbox.create_index([("status", ASCENDING), ("created_at", ASCENDING)], name="system_platform_audit_outbox_pending")
+
+    @staticmethod
+    def _insert_or_verify(collection: Any, document: dict[str, object], *, session: Any) -> None:
+        key = document["event_key"]
+        try:
+            existing = collection.find_one({"event_key": key}, session=session)
+            if existing is not None:
+                for field, expected in document.items():
+                    if existing.get(field) != expected:
+                        raise SecurityIncidentConflictError("SECURITY_INCIDENT_AUDIT_EVIDENCE_CONFLICT")
+                return
+            collection.insert_one(document, session=session)
+        except SecurityIncidentRegistryError:
+            raise
+        except DuplicateKeyError as error:
+            raise SecurityIncidentConflictError("SECURITY_INCIDENT_AUDIT_CONCURRENT_DUPLICATE") from error
+        except PyMongoError as error:
+            raise SecurityIncidentPersistenceError("SECURITY_INCIDENT_AUDIT_WRITE_FAILED") from error
+
+    def record_platform_audit(self, *, incident: SecurityIncident, event: SecurityIncidentEvent, session: Any) -> None:
+        """Persist independent platform audit evidence and outbox intent in the caller transaction."""
+        _transaction(session)
+        if (
+            not isinstance(incident, SecurityIncident)
+            or not isinstance(event, SecurityIncidentEvent)
+            or event.incident_id != incident.incident_id
+            or event.tenant_id != incident.tenant_id
+            or event.actor_principal_id != incident.reporter_principal_id
+            or event.event_type != "INCIDENT_REPORTED"
+        ):
+            raise SecurityIncidentRegistryError("SECURITY_INCIDENT_AUDIT_INPUT_INVALID")
+        stored_event = self._events.find_one({"event_id": event.event_id}, session=session)
+        if (
+            stored_event is None
+            or stored_event.get("incident_id") != incident.incident_id
+            or stored_event.get("tenant_id") != incident.tenant_id
+            or stored_event.get("actor_principal_id") != incident.reporter_principal_id
+            or stored_event.get("fingerprint") != event.fingerprint
+            or stored_event.get("event_type") != "INCIDENT_REPORTED"
+        ):
+            raise SecurityIncidentRegistryError("SECURITY_INCIDENT_IMMUTABLE_EVENT_REQUIRED")
+        occurred_at_value = stored_event.get("occurred_at")
+        if not isinstance(occurred_at_value, datetime):
+            raise SecurityIncidentRegistryError("SECURITY_INCIDENT_IMMUTABLE_EVENT_INVALID")
+        if occurred_at_value.tzinfo is None:
+            occurred_at_value = occurred_at_value.replace(tzinfo=timezone.utc)
+        occurred_at = occurred_at_value.isoformat()
+        event_key = "system-services:" + event.event_id
+        common: dict[str, object] = {
+            "event_key": event_key,
+            "schema_version": AUDIT_SCHEMA_VERSION,
+            "event_type": event.event_type,
+            "tenant_id": incident.tenant_id,
+            "actor_principal_id": event.actor_principal_id,
+            "target_id": incident.incident_id,
+            "fingerprint": event.fingerprint,
+            "occurred_at": occurred_at,
+        }
+        self._insert_or_verify(self._audit_events, common, session=session)
+        self._insert_or_verify(self._outbox, {**common, "status": "PENDING", "attempts": 0, "created_at": occurred_at}, session=session)
 
     def create_or_replay(
         self, incident: SecurityIncident, event: SecurityIncidentEvent, *, session: Any
@@ -212,4 +284,5 @@ __all__ = [
     "COLLECTION", "EVENT_COLLECTION", "SecurityIncidentRegistry",
     "SecurityIncidentRegistryError", "SecurityIncidentConflictError",
     "SecurityIncidentNotFoundError", "SecurityIncidentPersistenceError",
+    "PLATFORM_AUDIT_COLLECTION", "PLATFORM_OUTBOX_COLLECTION",
 ]
