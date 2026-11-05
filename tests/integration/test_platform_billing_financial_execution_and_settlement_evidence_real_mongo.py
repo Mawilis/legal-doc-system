@@ -319,7 +319,9 @@ def setup_graph():
  with c.start_session() as issuance_session:
   PlatformBillingFinancialExecutionRequestRegistry.ensure_indexes(d["platform_billing_financial_execution_requests"])
   with issuance_session.start_transaction(): issue_platform_billing_financial_execution_request(c,d,'t','a',execution_request_id='r',requested_at=n,session=issuance_session)
- PlatformBillingFinancialExecutionTruthRegistry.ensure_indexes(d['platform_billing_financial_execution_truths']); PlatformBillingFinancialSettlementEvidenceRegistry.ensure_indexes(d['platform_billing_financial_settlement_evidence']); return c,d,a
+ PlatformBillingFinancialExecutionTruthRegistry.ensure_indexes(d['platform_billing_financial_execution_truths']); PlatformBillingFinancialSettlementEvidenceRegistry.ensure_indexes(d['platform_billing_financial_settlement_evidence']);
+ from tools.eos.kennel.registry.financial_settlement_observation_registry import FinancialSettlementObservationRegistry
+ FinancialSettlementObservationRegistry.ensure_indexes(d['financial_settlement_observations']); return c,d,a
 def truth(d, *, executed_at, created_at, provider_execution_reference='x', provider_evidence_reference='e'): return _canonical_execution_truth('t','r',request_collection=d['platform_billing_financial_execution_requests'],truth_collection=d['platform_billing_financial_execution_truths'],provider='P',provider_execution_reference=provider_execution_reference,execution_status=PlatformExecutionStatus.EXECUTED,executed_at=executed_at,provider_evidence_reference=provider_evidence_reference,created_at=created_at)
 def close(c): c.close()
 def test_r3f0_rm01():
