@@ -106,7 +106,7 @@ jobs:
         run: |
           npm ci --legacy-peer-deps
           npm --prefix client ci
-          npm --prefix server ci --legacy-peer-deps
+          # Current Vite configuration routes all application APIs directly to Python EOS; no BFF process is started.
 
       - name: Install Chromium for Playwright
         run: npx playwright install --with-deps chromium
