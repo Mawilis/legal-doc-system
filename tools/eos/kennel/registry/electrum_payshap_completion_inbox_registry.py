@@ -81,7 +81,7 @@ class ElectrumPayShapCompletionInboxEvent:
             "processed_at": None,
             "allocation_id": None,
             "attempt_count": 0,
-            "available_at": payload_received_at if (payload_received_at := payload.get("received_at")) else None,
+            "available_at": payload["received_at"],
             "last_error_code": None,
         })
         return payload
@@ -169,6 +169,8 @@ class ElectrumPayShapCompletionInboxRegistry:
             raise ElectrumCompletionInboxError("ELECTRUM_INBOX_CALLER_TRANSACTION_REQUIRED")
         if not isinstance(processed_at, datetime) or processed_at.tzinfo is None:
             raise ElectrumCompletionInboxError("ELECTRUM_INBOX_PROCESSED_AT_INVALID")
+        if isinstance(expected_revision, bool) or not isinstance(expected_revision, int) or expected_revision < 0:
+            raise ElectrumCompletionInboxError("ELECTRUM_INBOX_PROCESSING_REVISION_INVALID")
         if not ignored and (not isinstance(allocation_id, str) or not allocation_id.strip()):
             raise ElectrumCompletionInboxError("ELECTRUM_INBOX_ALLOCATION_ID_REQUIRED")
         status = "IGNORED" if ignored else "PROCESSED"
