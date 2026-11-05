@@ -1,0 +1,103 @@
+# EOS Account Protection and System Services Escalation — Gap Audit
+
+**Status:** ENGINEERING GAP AUDIT — NOT A SECURITY CERTIFICATION  
+**Scope:** PR #342 branch `eos/tenant-discovery-iam-dashboard-roadmap`  
+**Reviewed head:** `0c10b635f4e2053b0f06fae35046853cbd1fd768`  
+**Decision:** Continue implementation in development only. No production activation, credential reset authority, account unlock authority, or staff permission grant is implied.
+
+## 1. Existing controls verified in source
+
+The current branch contains:
+
+- A closed System Services agent workflow allowlist and explicit human-escalation reasons.
+- A forbidden-material field-name list covering passwords, OTPs, recovery tokens/capabilities, MFA seeds/secrets, private keys, session tokens and refresh tokens.
+- A support-case domain with tenant/system scope separation, a constrained status machine, immutable transition values and revision tracking.
+- A support-case registry with append-only events, idempotency uniqueness, revision-guarded transitions, and caller-owned Mongo transactions.
+- A tenant self-service application-service surface bound to the authenticated principal and exact tenant, including case creation, own-case listing and own-case history.
+- A SYSTEM queue application-service surface guarded by current SYSTEM permission possession and active platform-workforce relationship evidence in the same transaction.
+- A router that derives the actor from the verified EOS identity, ignores request-supplied actor/tenant authority, and fails closed when runtime dependencies or storage readiness are absent.
+- Disposable replica-set tests for case creation, transition, transaction abort, stale revision, replay, tenant isolation and startup index readiness.
+
+These are source-level findings. They do not establish deployed configuration, live incident response readiness, or production authorization.
+
+## 2. Material integration gaps
+
+### 2.1 Tenant self-service is not exposed by the inspected router
+
+The application service implements `create_own_case`, `list_own_cases` and `read_own_case_history`, but the inspected `tools/eos/api/system_services_router.py` exposes only SYSTEM workspace/queue, SYSTEM case history and SYSTEM transition routes.
+
+Consequences:
+- A tenant user cannot reach the implemented self-service case workflow through these inspected HTTP routes.
+- The agent allowlist names `SUPPORT_CASE_CREATE` and `OWN_CASE_STATUS`, but no corresponding tenant-facing route was found in this router.
+- Account-protection escalation therefore has a domain/service foundation but is not yet a complete authenticated user journey.
+
+Required closure:
+- Add authenticated tenant-scoped create/list/status/history routes.
+- Derive principal and tenant exclusively from canonical authenticated EOS context; never accept either from body, query or headers as authority.
+- Revalidate current tenant membership and exact operation permission in the same caller-owned transaction as each read/write.
+- Enforce principal ownership for case status/history; tenant scope alone must not expose another member's account case.
+- Add route-level negative tests for forged tenant/principal, cross-tenant, cross-principal, unauthenticated, stale membership, unavailable IAM and replay.
+
+### 2.2 Security incident intake and response are not yet a distinct governed workflow
+
+The case domain includes `SUSPECTED_COMPROMISE` and `ESCALATED_SECURITY_INCIDENT`, and the agent policy requires human escalation for suspected compromise. The inspected router does not expose a tenant incident-intake route, and the generic case lifecycle does not itself define incident evidence, containment decisions, incident ownership, notification delivery or independent closure approval.
+
+Required closure:
+- Provide a narrowly scoped suspected-compromise intake path that creates durable, sanitized evidence and escalates without waiting for an ordinary support queue action.
+- Keep incident facts append-only and separately attributable: source event/reference, observation time, reporter principal, affected principal/account reference, severity, correlation fingerprint, evidence provenance and disposition history. Do not store credentials, OTPs, recovery secrets or raw authentication tokens.
+- Define explicit incident states and authorized transitions, including triage, containment recommendation, containment execution evidence, recovery review and closure.
+- Treat containment actions (for example session revocation) as separate canonical EOS operations requiring their own current permission, target binding, approval policy and audit evidence. A support-case status must never execute them.
+- Require independent review for privileged accounts, suspected compromise, repeated recovery failures and any identity-proofing exception.
+- Preserve emergency deny/revoke capability only through its separately governed authority; support agents and the AI agent cannot self-authorize it.
+
+### 2.3 Human escalation is policy metadata, not a staffed operational process
+
+The agent policy identifies escalation reasons but the inspected implementation does not establish routing ownership, duty coverage, acknowledgement deadlines, escalation timers, secure evidence handoff, conflict-of-interest checks or a governed decision record.
+
+Required closure:
+- Define an attributable escalation assignment/acceptance record with current workforce scope, assigned responder, reason, evidence references, timestamps, SLA clocks and reassignment history.
+- Require a responder to possess the exact current SYSTEM permission and active PLATFORM workforce relationship at every sensitive read/write.
+- Prevent self-approval and requester/target conflicts; separate identity proofing, approval and execution where policy requires.
+- Record unavailable/out-of-hours escalation as an explicit fail-closed state with safe user guidance, not an implied approval or silent queue success.
+- Keep human escalation as a fallback after self-service is unavailable or policy requires it; do not make staff the default route for ordinary password recovery.
+
+### 2.4 Agent policy does not implement account operations
+
+The agent module is an allowlist and secret-field-name guard. It is not an identity verifier, recovery engine, incident detector, session authority, notification service or IAM adapter.
+
+Required closure:
+- Keep the agent limited to help content, initiating approved self-service workflows, reading the authenticated user's own non-secret status, and preparing a sanitized escalation.
+- All password reset, recovery-contact verification, MFA enrollment/recovery, session revocation and device trust changes must execute through their canonical EOS services and proof requirements.
+- Never expose secret values to the agent or persist them in support cases, event payloads, telemetry or prompts.
+- Escalate when proof fails, verified factors are unavailable, the account is privileged, compromise is suspected, dependencies are unavailable or policy requires approval.
+- Ensure agent outputs cannot mark identity verified, approve a recovery, execute an account action or grant a permission.
+
+## 3. Required end-to-end certification
+
+The next development tranche must add and certify:
+
+1. Authenticated tenant routes for self-service case create/list/status/history.
+2. Dedicated suspected-compromise intake and append-only incident evidence.
+3. Explicit SYSTEM incident queue permissions, responder assignment/acceptance and conflict-of-interest checks.
+4. Exact permission checks and current workforce checks at point of every sensitive read/write.
+5. Independent approval and execution boundaries for session revocation, recovery and other account-protection actions.
+6. Atomic case/incident state, immutable event and audit/outbox persistence in caller-owned replica-set transactions.
+7. Replay, duplicate delivery, unknown commit, concurrent transition, stale revision, transaction abort and recovery/reconciliation tests.
+8. Authenticated HTTP tests for tenant/principal spoofing, cross-tenant isolation, privilege escalation, denied SYSTEM actors, stale workforce/permission evidence, and unavailable dependencies.
+9. A full browser journey from failed self-service through escalation, responder acknowledgement, governed action, user confirmation and closure.
+10. Exact-commit CI evidence before any release or deployment consideration.
+
+## 4. Explicitly prohibited shortcuts
+
+- No password-only MFA reset for MFA-enabled accounts.
+- No support-case status or agent decision may grant identity, IAM, tenant, Legal, financial or platform authority.
+- No staff permission may be self-assigned or inferred from a job title, GitHub role, case assignment or UI capability.
+- No request-supplied tenant/principal/permission/workforce scope is authoritative.
+- No credential, OTP, recovery token, MFA secret, session token or private key may enter support-case or incident persistence.
+- No production credential changes, account operations, workforce assignments, subscription lifecycle changes or deployment are authorized by this audit.
+
+## 5. Exit decision
+
+**Current result: PARTIALLY IMPLEMENTED; NOT READY FOR OPERATIONAL CERTIFICATION.**
+
+The foundation is appropriately deny-first, but the missing tenant-facing routes and distinct incident/escalation operating controls are material. Close those gaps in the PR branch, then require authenticated route-level and real replica-set transaction certification on one exact commit. Keep PR #342 open and unmerged until its independent release gates are satisfied.
