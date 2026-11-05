@@ -279,3 +279,27 @@ can read their inbox and that a queue-only principal receives 403 from the
 responder inbox. The Playwright journey covers queue visibility, exact
 assignment detail, responder acceptance, and absence of containment side
 effects. This remains disposable development certification only.
+
+
+### Canonical execution adapter
+
+A narrow `SecurityIncidentResponseCanonicalExecutor` now provides the only
+approved-decision execution bridge:
+
+- `PASSWORD_RESET` delegates to the existing
+  `PasswordResetService.reset_password`. A valid durable, single-use recovery
+  capability is still mandatory; approval alone cannot reset credentials.
+- `SYSTEM_PERMISSION_REVOCATION` delegates to the existing
+  `SystemPermissionRevocationCommandService.revoke`, after binding the
+  approved decision to the exact target principal, assignment, permission,
+  decision evidence reference, and a distinct execution operator.
+- The canonical D12 service still independently checks current revocation
+  command possession, active target principal, and exact assignment lineage.
+- No custom password update, session revocation, or permission mutation code
+  exists in this adapter. It does not own the transaction; the caller supplies
+  the canonical service and transaction session.
+
+The adapter is not exposed through an authenticated route yet. Route activation
+remains gated on an independently issued governance permission and a verified
+approver workforce/assignment source. The record and adapter are therefore
+development foundations, not an operational containment switch.
