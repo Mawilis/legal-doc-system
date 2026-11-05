@@ -54,13 +54,16 @@ def _insert_or_verify_event(
     event_key: str,
     conflict_code: str,
     session: ClientSession,
+    mutable_fields: frozenset[str] = frozenset(),
 ) -> dict[str, Any]:
     existing = collection.find_one(
         {"tenant_id": tenant_id, "event_key": event_key}, session=session
     )
     if existing is not None:
         persisted = {key: value for key, value in existing.items() if key != "_id"}
-        if persisted != document:
+        comparable = {key: value for key, value in persisted.items() if key not in mutable_fields}
+        expected = {key: value for key, value in document.items() if key not in mutable_fields}
+        if comparable != expected:
             raise AtomicPlatformSettlementError(conflict_code)
         return persisted
     try:
@@ -116,6 +119,7 @@ def _persist_audit_and_outbox(
         event_key=event_key,
         conflict_code="ATOMIC_SETTLEMENT_OUTBOX_REPLAY_CONFLICT",
         session=session,
+        mutable_fields=frozenset({"delivery_status", "delivery_attempts", "available_at", "delivered_at", "last_error", "updated_at"}),
     )
     return persisted_audit, persisted_outbox
 
