@@ -343,7 +343,18 @@ class SecurityIncidentResponseDecisionRegistry:
         if (
             decision.status is not SecurityIncidentResponseDecisionStatus.APPROVED
             or decision.revision != 1
+            or decision.action is not SecurityIncidentResponseAction.SYSTEM_PERMISSION_REVOCATION
             or decision.decided_at is None
+            or not isinstance(actor_principal_id, str)
+            or not actor_principal_id
+            or actor_principal_id != actor_principal_id.strip()
+            or actor_principal_id in {
+                decision.requested_by_principal_id,
+                decision.decided_by_principal_id,
+                decision.target_principal_id,
+            }
+            or result_status != "REVOKED"
+            or result_revision != 2
             or not isinstance(occurred_at, datetime)
             or occurred_at.tzinfo is None
             or occurred_at.utcoffset() is None
