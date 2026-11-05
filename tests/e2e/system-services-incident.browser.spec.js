@@ -208,7 +208,7 @@ test('certifies initial tenant-neutral SYSTEM credentials, MFA and workspace boo
     });
   });
 
-  await page.route('**/api/system-services/security-incidents', (route) => route.fulfill({
+  await page.route('**/api/system-services/security-incidents*', (route) => route.fulfill({
     status: 200,
     contentType: 'application/json',
     body: '[]',
