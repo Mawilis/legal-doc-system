@@ -213,7 +213,7 @@ def test_signed_http_completion_to_real_inbox_empty_202_and_replay(mongo_collect
     )
     app = FastAPI()
     app.state.electrum_completion_indexes_ready = True
-    app.state.electrum_settlement_worker_enabled = True
+    app.state.electrum_settlement_worker_enabled = False
     app.include_router(router.router)
     http = TestClient(app)
 
