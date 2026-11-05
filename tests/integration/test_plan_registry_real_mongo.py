@@ -1785,6 +1785,7 @@ def test_real_mongo_independent_process_restart_durability(
     )
 
     environment["MONGODB_URI"] = mongo_context.database_uri
+    environment["WILSY_KENNEL_DB_TLS"] = "false"
     environment.pop("WILSY_PLAN_MONGO_URI", None)
 
     environment.pop(
