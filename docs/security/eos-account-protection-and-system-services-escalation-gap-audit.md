@@ -221,3 +221,61 @@ The audit/outbox foundation now covers incident intake, responder assignment and
 - Next safe containment increment is an immutable decision record bound to incident, target principal, exact canonical session reference, requesting principal, independent approving principal, decision evidence, and revision. Requester and approver must be distinct and neither may be the target. Execution must revalidate current permission/workforce evidence and invoke the existing canonical session authority in the same transaction as the decision event and independent platform audit/outbox record.
 - Password reset, MFA recovery, recovery-contact verification and account unlock remain with their existing canonical EOS proof and recovery services; this decision record must not reproduce those operations or accept their secrets.
 - No production session revocation, password/MFA mutation, device-trust change, duty-rota operation, notification delivery or outbox dispatch is enabled by this increment.
+
+
+## Independent containment and recovery decision record
+
+The System Services response-governance foundation now defines a separate decision
+record and caller-transaction-owned registry:
+
+- `SecurityIncidentResponseDecision` binds the incident, tenant, exact target
+  principal, proposed action, requesting responder, request evidence, and
+  independent decision-maker evidence.
+- The requester cannot approve or reject their own request.
+- Decisions are revision guarded and terminal at revision 1 (`APPROVED` or
+  `REJECTED`); stale or second decisions fail closed.
+- The registry persists the decision projection, immutable request/decision
+  events, independent platform audit evidence, and a PENDING outbox intent in
+  the same caller-owned transaction. It does not dispatch notifications.
+- Permission-revocation decisions must identify the exact existing assignment
+  and permission. This preserves the lineage required by
+  `SystemPermissionRevocationCommandService`; the decision registry does not
+  revoke anything itself.
+- Password-reset approval does not mint or replace a recovery capability.
+  Execution must still traverse the canonical
+  `PasswordResetService.reset_password` path, which validates and consumes a
+  durable single-use recovery capability and atomically updates credentials,
+  revokes sessions and refresh tokens, and persists its notification intent.
+
+The decision domain and real-replica-set registry tests are included in the
+System Services certification workflow. This is a governance evidence layer,
+not yet an authenticated decision route or an execution adapter. Before route
+activation, EOS still needs an independently issued decision permission,
+current platform workforce evidence for the approver, a governed approver
+assignment source, and a route-level test proving separation of requester,
+approver, and canonical action executor. No new permission is self-issued here.
+
+### Explicitly disabled
+
+- No containment or recovery action is executed by incident intake, assignment,
+  responder acceptance, or the decision registry.
+- No password-reset bypass, custom session revocation, principal suspension,
+  or parallel permission-revocation implementation is introduced.
+- No notification delivery, duty routing, or outbox dispatcher is enabled.
+- The outbox remains durable PENDING intent only.
+
+## Authenticated browser workspace increment
+
+The System Services dashboard now consumes the authenticated EOS incident queue
+and responder inbox projections. It supports exact assignment detail and
+revision-guarded accept/decline requests through the existing EOS routes. The
+responder confirmation explicitly states that acceptance performs no
+containment or account action.
+
+The browser certification fixture independently seeds synthetic SYSTEM
+principals with exact SYSTEM permission assignments and active PLATFORM
+workforce relationships. Its preflight checks that the authorized responder
+can read their inbox and that a queue-only principal receives 403 from the
+responder inbox. The Playwright journey covers queue visibility, exact
+assignment detail, responder acceptance, and absence of containment side
+effects. This remains disposable development certification only.
