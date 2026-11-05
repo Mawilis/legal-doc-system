@@ -74,7 +74,7 @@ export const DEFAULT_BRANDING = {
     compliance: 'SOVEREIGN COMPLIANCE AUDIT',
     forensics: 'FORENSIC CHAIN OF CUSTODY',
   },
-  logoPath: path.join(__dirname, '../../client/src/assets/logo/wilsy.jpeg'),
+  logoPath: path.join(__dirname, '../../client/src/assets/logo/wilsy-logo.svg'),
   logoBase64: null,
   address: 'Johannesburg, South Africa',
   vatNumber: 'Reg: 2024/617944/07 (VAT PENDING)',
