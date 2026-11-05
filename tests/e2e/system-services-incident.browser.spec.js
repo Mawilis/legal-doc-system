@@ -57,6 +57,22 @@ async function openSystemServices(browser, actorKey = 'system_responder') {
   // Tenant bootstrap must deny; the separate SYSTEM authority must succeed.
   expect(tenantBootstrapResponse.status()).toBe(403);
   expect(systemBootstrapResponse.status()).toBe(200);
+  await expect.poll(() => page.evaluate(() => {
+    const user = JSON.parse(localStorage.getItem('wilsy_sovereign_user') || 'null');
+    return {
+      tenantId: localStorage.getItem('tenantId'),
+      legacyTenantId: localStorage.getItem('wilsy_tenant_id'),
+      activeTenant: localStorage.getItem('wilsy_active_tenant'),
+      systemScope: user?.systemServicesWorkspace?.scope || null,
+      principalMatches: user?.id === user?.systemServicesWorkspace?.principalId,
+    };
+  })).toEqual({
+    tenantId: null,
+    legacyTenantId: null,
+    activeTenant: null,
+    systemScope: 'SYSTEM',
+    principalMatches: true,
+  });
   await page.keyboard.press('Control+k');
   const dialog = page.getByRole('dialog', { name: 'Wilsy OS Global Search' });
   await expect(dialog).toBeVisible();
