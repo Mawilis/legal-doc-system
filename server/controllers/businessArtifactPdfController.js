@@ -1114,6 +1114,13 @@ function buildCrmProofPackEnterpriseStorySections(proofPack = {}) {
     ...proofPack,
     tenantId,
     generatedBy,
+    generatedByDisplayName: generatedBy,
+    operatorDisplayName: generatedBy,
+    ownerDisplayName: generatedBy,
+    displayName: generatedBy,
+    userEmail: clean(identity.userEmail, 'UNRESOLVED_AUTHENTICATED_USER'),
+    liveUserIdentitySource: identity.liveUserIdentitySource,
+    liveUserId: identity.liveUserId,
   };
   const story = buildCrmProofPackEnterpriseStorySections(authoritativeProofPack);
   const generatedAt = clean(
@@ -1183,6 +1190,8 @@ function buildCrmProofPackEnterpriseStorySections(proofPack = {}) {
       operatorDisplayName: generatedBy,
       ownerDisplayName: generatedBy,
       displayName: generatedBy,
+      liveUserIdentitySource: identity.liveUserIdentitySource,
+      liveUserId: identity.liveUserId,
       sourcePosture,
       renderer: 'streamEnterpriseArtifactPdf',
       crmProofPackBridge: 'FG106N_ENTERPRISE_ENGINE_ADAPTER',
