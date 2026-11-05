@@ -104,7 +104,11 @@ class SecurityIncidentEscalationService:
             occurred_at=now,
         )
         try:
-            return self._assignments.create(value, event, session=session)
+            persisted = self._assignments.create(value, event, session=session)
+            self._assignments.record_platform_audit(
+                assignment=persisted, event=event, session=session,
+            )
+            return persisted
         except IncidentAssignmentConflictError as error:
             raise SecurityIncidentEscalationError("INCIDENT_ALREADY_ASSIGNED_OR_REPLAYED") from error
 
@@ -180,10 +184,14 @@ class SecurityIncidentEscalationService:
             occurred_at=now,
         )
         try:
-            return self._assignments.transition(
+            persisted = self._assignments.transition(
                 current=current, updated=updated, event=event,
                 expected_revision=expected_revision, session=session,
             )
+            self._assignments.record_platform_audit(
+                assignment=persisted, event=event, session=session,
+            )
+            return persisted
         except IncidentAssignmentConflictError:
             raise
 
