@@ -145,6 +145,10 @@ class SecurityIncidentResponseCanonicalExecutor:
         Secret values are passed transiently and are not retained on this adapter.
         """
         self._require_approved(decision, SecurityIncidentResponseAction.PASSWORD_RESET)
+        if not callable(transaction_completion):
+            raise SecurityIncidentResponseExecutionError(
+                "PASSWORD_RESET_EXECUTION_RECEIPT_CALLBACK_REQUIRED"
+            )
         self._validate_independent_executor(
             decision,
             actor_principal_id=actor_principal_id,
