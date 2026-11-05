@@ -112,6 +112,8 @@ async def get_current_identity(
     if not _valid_access_revision(token_revision):
         log_auth_event("JWT_AUTH", "unresolved", False, {"reason": "credential_revision_required"})
         raise UnauthorizedAccessException("Invalid or expired sovereign JWT token.")
+    if not isinstance(token_revision, int) or isinstance(token_revision, bool):
+        raise UnauthorizedAccessException("Invalid or expired sovereign JWT token.")
     principal_id = _claim(payload, "identity_id")
     if principal_id is None:
         log_auth_event("JWT_AUTH", "unresolved", False, {"reason": "missing_principal_reference"})
@@ -180,7 +182,7 @@ async def get_current_identity(
             tenant_id="SYSTEM",
             username=_claim(payload, "username"),
             email=_claim(payload, "email"),
-            roles=roles,
+            roles=["SYSTEM_SERVICES"],
             permissions=[],
             auth_method="JWT",
             status=authority.status,
