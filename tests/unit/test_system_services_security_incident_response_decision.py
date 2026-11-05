@@ -154,3 +154,20 @@ def test_target_principal_cannot_approve_or_reject_own_containment():
             decision_evidence_reference="target-self-approval",
             expected_revision=0,
         )
+
+
+def test_target_principal_cannot_request_own_containment():
+    with pytest.raises(
+        SecurityIncidentResponseDecisionError,
+        match="DECISION_TARGET_CANNOT_REQUEST_OWN_CONTAINMENT",
+    ):
+        SecurityIncidentResponseDecision(
+            decision_id="decision-self-request",
+            incident_id="incident-self-request",
+            tenant_id="tenant-1",
+            target_principal_id="same-principal",
+            action=SecurityIncidentResponseAction.PASSWORD_RESET,
+            requested_by_principal_id="same-principal",
+            requested_at=NOW,
+            request_evidence_reference="incident-evidence-self-request",
+        )
