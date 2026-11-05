@@ -114,6 +114,8 @@ class SecurityIncidentResponseDecision:
         )
         if self.decided_by_principal_id == self.requested_by_principal_id:
             raise SecurityIncidentResponseDecisionError("INDEPENDENT_DECISION_MAKER_REQUIRED")
+        if self.decided_by_principal_id == self.target_principal_id:
+            raise SecurityIncidentResponseDecisionError("DECISION_TARGET_CANNOT_APPROVE")
         if self.decided_at < self.requested_at:
             raise SecurityIncidentResponseDecisionError("DECISION_PRECEDES_REQUEST")
 
