@@ -224,6 +224,7 @@ test('certifies initial tenant-neutral SYSTEM credentials, MFA and workspace boo
   }));
 
   await page.goto('/login');
+  console.log('[SYSTEM LOGIN SURFACE]', JSON.stringify({ url: page.url(), bodyText: await page.locator('body').innerText() }));
   await page.getByLabel('Work email').fill('platform-responder@example.com');
   await page.getByRole('textbox', { name: 'Password' }).fill('Synthetic-Platform-Password-123!');
   await page.getByRole('button', { name: 'Continue securely' }).click();
