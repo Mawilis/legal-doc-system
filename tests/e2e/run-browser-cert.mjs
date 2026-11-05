@@ -49,6 +49,7 @@ const python = process.env.BROWSER_CERT_PYTHON
     ? join(repo, '.venv/bin/python')
     : 'python');
 const fixture = join(repo, 'tests/e2e/browser_cert_fixture.py');
+const scopeVerifier = join(repo, 'tests/e2e/browser_cert_scope_verify.py');
 const playwright = join(repo, 'node_modules/.bin/playwright');
 const serverDirectory = join(repo, 'server');
 const clientDirectory = join(repo, 'client');
@@ -709,9 +710,15 @@ try {
     'PLAYWRIGHT',
   );
   setPhase('browser_suite', 'durable_fixture_verification');
+  const browserTestArguments = process.argv.slice(2);
+  const systemSuite = browserTestArguments.length === 2
+    && browserTestArguments.includes('tests/e2e/system-services-incident.browser.spec.js')
+    && browserTestArguments.includes('tests/e2e/system-services-response.browser.spec.js');
+  const broadSuite = browserTestArguments.includes('--grep-invert');
+  const verificationScope = systemSuite ? 'system' : broadSuite ? 'broad' : 'combined';
   await runAndWait(
     python,
-    [fixture, 'verify', '--state', statePath],
+    [scopeVerifier, '--state', statePath, '--scope', verificationScope],
     { env: playwrightEnvironment, stdio: ['ignore', 'pipe', 'pipe'] },
     'FIXTURE_VERIFY',
   );
