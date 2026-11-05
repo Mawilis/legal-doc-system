@@ -34,6 +34,7 @@
 
 import crypto from 'node:crypto';
 import streamEnterpriseArtifactPdf from '../services/artifacts/wilsyEnterprisePdfRenderer.js';
+import { resolveEosWorkspaceTenantScope } from '../services/eosWorkspaceIdentity.js';
 
 /**
  * @function readHeader
@@ -684,14 +685,22 @@ async function buildArtifactIdentity(req) {
     'WILSY-ENTERPRISE-ARTIFACT'
   );
 
-  const tenantId = clean(
-    body.tenantId ||
-    metadata.tenantId ||
-    mergedPayloadData.tenantId ||
-    req.tenantId ||
-    req.user?.tenantId,
-    'MASTER'
-  );
+  const tenantScope = resolveEosWorkspaceTenantScope({
+    requestedTenantId: req.tenantId,
+    workspace: req.eosWorkspace,
+    suppliedTenantIds: [
+      body.tenantId,
+      metadata.tenantId,
+      mergedPayloadData.tenantId,
+    ],
+  });
+  if (!tenantScope.ok || req.eosAuthenticatedIdentity !== true) {
+    const error = new Error('PDF tenant scope does not match the authenticated EOS workspace.');
+    error.statusCode = 403;
+    error.code = 'WORKSPACE_SCOPE_MISMATCH';
+    throw error;
+  }
+  const tenantId = tenantScope.tenantId;
 
   const generatedAt = clean(
     body.generatedAt ||
