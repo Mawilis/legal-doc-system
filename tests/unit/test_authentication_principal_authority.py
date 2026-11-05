@@ -219,7 +219,7 @@ def test_system_session_authority_outage_is_503_not_invalid_credential(monkeypat
             _system_auth_request(),
             credentials(),
             None,
-            Repository(PrincipalStatus.ACTIVE),
+            cast(Any, Repository(PrincipalStatus.ACTIVE)),
         ))
     assert raised.value.status_code == 503
     assert session.aborted and session.ended
