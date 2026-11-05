@@ -591,15 +591,20 @@ def system_services_workspace_bootstrap(
     def project(session: ClientSession):
         cases = service.list_system_queue(actor=actor, limit=100, session=session)
         capabilities = ["system_services:queue:read"]
-        try:
-            authorizer.require(
-                principal_id=actor.principal_id,
-                permission_id="system_services:identity:read",
-                session=session,
-            )
-            capabilities.append("system_services:identity:read")
-        except SystemServicesAuthorizationError:
-            pass
+        for permission_id in (
+            "system_services:identity:read",
+            "system_services:incident:escalate",
+        ):
+            try:
+                authorizer.require(
+                    principal_id=actor.principal_id,
+                    permission_id=permission_id,
+                    session=session,
+                )
+                capabilities.append(permission_id)
+            except SystemServicesAuthorizationError:
+                # Capabilities are exact EOS permission projections, never role-label inference.
+                pass
         return {
             "status": "READY",
             "authority": "EOS_SYSTEM_SERVICES",
