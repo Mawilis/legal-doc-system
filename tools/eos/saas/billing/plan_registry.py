@@ -121,12 +121,14 @@ from dataclasses import dataclass
 from datetime import datetime, timezone
 from typing import Any, Dict, Mapping, Optional
 
-from pymongo import ASCENDING, MongoClient
+from pymongo import ASCENDING
 from pymongo.collection import Collection
 from pymongo.database import Database
-from pymongo.errors import ConfigurationError, DuplicateKeyError
+from pymongo.errors import DuplicateKeyError
 from pymongo.read_concern import ReadConcern
 from pymongo.write_concern import WriteConcern
+
+from tools.eos.kernel.db import get_database
 
 from ..domain.plan import (
     AuditAction,
@@ -170,61 +172,31 @@ def _debug_success(
             plan_id,
         )
 
-_MONGO_URI = (
-    os.getenv("WILSY_PLAN_MONGO_URI")
-    or os.getenv("MONGODB_URI")
-    or "mongodb://127.0.0.1:27017/wilsy"
-)
+class _CanonicalPlanCollection:
+    """Resolve catalogue persistence from the one EOS runtime Mongo authority.
 
-_MONGO_SERVER_SELECTION_MS = int(
-    os.getenv(
-        "WILSY_PLAN_MONGO_SERVER_SELECTION_MS",
-        "5000",
-    )
-)
+    Resolution is lazy so module import never creates an independent client,
+    performs network work, or invents a localhost fallback. Tests may continue
+    replacing the module-level collection with an isolated collection double.
+    """
 
+    _name = "plans"
 
-def _resolve_database(
-    client: MongoClient[Any],
-) -> Database[Any]:
-    configured = (
-        os.getenv("WILSY_PLAN_MONGO_DATABASE")
-        or ""
-    ).strip()
+    def _collection(self) -> Collection[dict[str, Any]]:
+        database = get_database()
+        if database is None:
+            raise RuntimeError("PLAN_REGISTRY_DATABASE_UNAVAILABLE")
+        return database.get_collection(
+            self._name,
+            write_concern=WriteConcern(w="majority", j=True),
+            read_concern=ReadConcern("majority"),
+        )
 
-    if configured:
-        return client[configured]
-
-    try:
-        return client.get_default_database()
-    except ConfigurationError:
-        return client["wilsy"]
+    def __getattr__(self, name: str) -> Any:
+        return getattr(self._collection(), name)
 
 
-_mongo_client: MongoClient[Any] = MongoClient(
-    _MONGO_URI,
-    serverSelectionTimeoutMS=
-        _MONGO_SERVER_SELECTION_MS,
-    retryWrites=True,
-    connect=False,
-)
-
-_mongo_database = _resolve_database(
-    _mongo_client
-)
-
-plans_collection: Collection[dict[str, Any]] = (
-    _mongo_database.get_collection(
-        "plans",
-        write_concern=WriteConcern(
-            w="majority",
-            j=True,
-        ),
-        read_concern=ReadConcern(
-            "majority"
-        ),
-    )
-)
+plans_collection: Collection[dict[str, Any]] = _CanonicalPlanCollection()  # type: ignore[assignment]
 
 _INDEX_CONTRACT: tuple[
     tuple[
