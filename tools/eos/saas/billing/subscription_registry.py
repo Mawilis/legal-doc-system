@@ -176,12 +176,12 @@ from collections.abc import Callable
 from datetime import datetime, timezone
 from typing import Any
 
-from pymongo import MongoClient
 from pymongo.collection import Collection
 from pymongo.errors import DuplicateKeyError, PyMongoError
 from pymongo.read_concern import ReadConcern
 from pymongo.write_concern import WriteConcern
 
+from tools.eos.kernel.db import get_database
 from .plan_registry import PlanRegistry
 from ..domain.subscription import (
     AuditAction,
@@ -201,44 +201,26 @@ VERSION = "v1.5.0-CATALOGUE-CHANGE-TRANSACTION-INJECTION"
 
 _SCHEMA_VERSION = "WILSY-SUBSCRIPTION-REGISTRY/V1"
 
-_MONGO_URI = (
-    os.getenv("WILSY_SUBSCRIPTION_MONGO_URI")
-    or os.getenv("MONGODB_URI")
-    or "mongodb://127.0.0.1:27017/wilsy"
-)
+class _CanonicalSubscriptionCollection:
+    """Resolve subscription storage from the sole EOS runtime Mongo authority."""
 
-_SERVER_SELECTION_TIMEOUT_MS = int(
-    os.getenv(
-        "WILSY_SUBSCRIPTION_MONGO_SERVER_SELECTION_MS",
-        "5000",
-    )
-)
+    _name = "subscriptions"
 
-logger = logging.getLogger(
-    "WilsyOS.SubscriptionRegistry"
-)
+    def _collection(self) -> Collection[dict[str, Any]]:
+        database = get_database()
+        if database is None:
+            raise SubscriptionRegistryError("SUBSCRIPTION_REGISTRY_UNAVAILABLE")
+        return database.get_collection(
+            self._name,
+            write_concern=WriteConcern(w="majority", j=True),
+            read_concern=ReadConcern("majority"),
+        )
 
-mongo_client = MongoClient(
-    _MONGO_URI,
-    connect=False,
-    retryWrites=True,
-    serverSelectionTimeoutMS=_SERVER_SELECTION_TIMEOUT_MS,
-)
+    def __getattr__(self, name: str) -> Any:
+        return getattr(self._collection(), name)
 
-mongo_database = mongo_client.get_default_database(
-    "wilsy"
-)
 
-subscriptions_collection: Collection[dict[str, Any]] = (
-    mongo_database.get_collection(
-        "subscriptions",
-        write_concern=WriteConcern(
-            w="majority",
-            j=True,
-        ),
-        read_concern=ReadConcern("majority"),
-    )
-)
+subscriptions_collection: Collection[dict[str, Any]] = _CanonicalSubscriptionCollection()  # type: ignore[assignment]
 
 _REQUIRED_PERSISTED_FIELDS = frozenset(
     {
