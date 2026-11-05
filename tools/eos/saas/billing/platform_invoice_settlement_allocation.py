@@ -43,8 +43,8 @@ def ensure_platform_invoice_settlement_allocation_indexes(
     """
     PlatformInvoiceSettlementAllocationRegistry.ensure_indexes(allocation_collection)
     for collection, name in (
-        (audit_collection, "uq_platform_invoice_allocation_audit_event"),
-        (outbox_collection, "uq_platform_invoice_allocation_outbox_event"),
+        (audit_collection, "uq_billing_settlement_audit_event"),
+        (outbox_collection, "uq_billing_settlement_outbox_event"),
     ):
         collection.create_index(
             [("tenant_id", 1), ("event_key", 1)],
