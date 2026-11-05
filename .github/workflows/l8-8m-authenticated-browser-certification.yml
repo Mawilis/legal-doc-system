@@ -23,7 +23,7 @@ name: L8-8M Authenticated Browser and D21B13 Branding Certification
 
 on:
   pull_request:
-    branches: [main]
+    branches: [main, eos/atomic-owner-genesis-integration]
     paths:
       - "tests/e2e/**"
       - "client/src/components/industry/LegalDashboard.jsx"
@@ -35,6 +35,8 @@ on:
       - "client/src/services/tenantBrandingAssetClient.js"
       - "tools/eos/api/auth_router.py"
       - "tools/eos/api/legal_operations_router.py"
+      - "tools/eos/api/system_services_router.py"
+      - "tools/eos/system_services/**"
       - "tools/eos/auth/roles.py"
       - "tools/eos/auth/workspace_bootstrap_projection.py"
       - "tools/eos/saas/billing/plan_registry.py"
