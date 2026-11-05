@@ -220,7 +220,7 @@ async def receive_electrum_payshap_completion(request: Request) -> Response:
         logger.exception("Electrum completion durable inbox write failed")
         return _error(503, "ELECTRUM_COMPLETION_INBOX_UNAVAILABLE", config, now)
 
-    # Electrum's completion contract requires a 2xx ACK with no response body.
+    # Electrum's completion contract requires HTTP 202 ACK with no response body.
     # The signed JWT is still mandatory; an empty-body JWT omits content-digest.
     token = sign_electrum_http_message(
         b"",
@@ -231,7 +231,7 @@ async def receive_electrum_payshap_completion(request: Request) -> Response:
     )
     return Response(
         content=b"",
-        status_code=204,
+        status_code=202,
         headers={"x-jwt-signature": token, "cache-control": "no-store"},
     )
 
