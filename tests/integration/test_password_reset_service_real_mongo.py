@@ -60,6 +60,7 @@ from tools.eos.saas.auth.password_recovery_registry import (
     PasswordRecoveryCapabilityRegistry,
 )
 from tools.eos.saas.auth.password_reset_service import (
+    PasswordResetExecutionGuardError,
     PasswordResetResult,
     PasswordResetService,
     PasswordResetServiceError,
@@ -636,3 +637,58 @@ def test_concurrent_double_use_has_one_durable_winner(bound_database: MongoConte
 # FAIL-CLOSED POSTURE: unavailable Mongo fails; no skip or xfail posture
 # FINANCIAL EXECUTION AUTHORITY: none; Kennel EOS remains exclusive
 # END OF WILSY OS SOVEREIGN ARTIFACT
+
+
+def test_system_services_execution_guard_is_atomic_with_canonical_reset(bound_database: MongoContext) -> None:
+    """The independent executor check runs on R10's own session before mutation."""
+    _prepare(bound_database)
+    fixture = _seed(bound_database, "response-guard")
+    service = _service(bound_database)
+    evidence = bound_database.database["response_execution_guard_evidence"]
+    seen_sessions: list[int] = []
+
+    def guard(session: Any, capability: PasswordRecoveryCapability) -> None:
+        assert session.in_transaction is True
+        assert capability.tenant_id == fixture.tenant_id
+        assert capability.principal_id == fixture.principal_id
+        seen_sessions.append(id(session))
+        evidence.insert_one(
+            {"decision_id": "decision-response-guard", "principal_id": capability.principal_id},
+            session=session,
+        )
+
+    result = service.reset_password(
+        tenant_id=fixture.tenant_id,
+        recovery_token=fixture.token,
+        new_password=NEW_PASSWORD,
+        transaction_guard=guard,
+    )
+
+    assert result == PasswordResetResult()
+    assert len(seen_sessions) == 1
+    assert evidence.count_documents({"decision_id": "decision-response-guard"}) == 1
+    assert _read_user(bound_database, fixture.principal_id, fixture.tenant_id)["credential_revision"] == fixture.starting_revision + 1
+
+
+def test_system_services_execution_guard_denial_rolls_back_canonical_reset(bound_database: MongoContext) -> None:
+    """A denied current-authority check aborts every canonical reset participant."""
+    _prepare(bound_database)
+    fixture = _seed(bound_database, "response-guard-denied")
+    service = _service(bound_database)
+    evidence = bound_database.database["response_execution_guard_denial_evidence"]
+
+    def deny(session: Any, capability: PasswordRecoveryCapability) -> None:
+        assert session.in_transaction is True
+        evidence.insert_one({"decision_id": "denied-response"}, session=session)
+        raise RuntimeError("synthetic current authority denial")
+
+    with pytest.raises(PasswordResetExecutionGuardError):
+        service.reset_password(
+            tenant_id=fixture.tenant_id,
+            recovery_token=fixture.token,
+            new_password=NEW_PASSWORD,
+            transaction_guard=deny,
+        )
+
+    _assert_rollback(bound_database, fixture)
+    assert evidence.count_documents({"decision_id": "denied-response"}) == 0
