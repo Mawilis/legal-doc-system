@@ -189,15 +189,99 @@ describe('authoritative authentication state machine', () => {
     expect(window.localStorage.getItem('discoveredTenant')).toContain('TENANT-ACME');
   });
 
-  it('refuses credential submission when no EOS-discovered tenant is selected', async () => {
+  it('starts tenant-neutral global authentication when no tenant is selected', async () => {
+    api.post.mockResolvedValueOnce({
+      data: {
+        status: AUTH_STATES.MFA_REQUIRED,
+        scope: 'SYSTEM',
+        mfa_challenge: 'sysmfa-one-time-challenge',
+        workspace_id: 'SYSTEM_SERVICES',
+      },
+    });
     renderHarness();
 
     fireEvent.click(screen.getByRole('button', { name: 'login-without-discovery' }));
 
     await waitFor(() => {
-      expect(screen.getByTestId('stage')).toHaveTextContent(AUTH_STATES.IDLE);
+      expect(screen.getByTestId('stage')).toHaveTextContent(AUTH_STATES.MFA_REQUIRED);
     });
-    expect(api.post).not.toHaveBeenCalled();
+    expect(api.post).toHaveBeenCalledWith('/auth/global/login', {
+      email: 'person@example.com',
+      password: 'password',
+    });
+    expect(screen.getByTestId('authenticated')).toHaveTextContent('false');
+    expect(window.localStorage.getItem('wilsy_auth_token')).toBeNull();
+  });
+
+  it('promotes a membership-free SYSTEM principal only after global MFA and EOS workspace revalidation', async () => {
+    api.post
+      .mockResolvedValueOnce({
+        data: {
+          status: AUTH_STATES.MFA_REQUIRED,
+          scope: 'SYSTEM',
+          mfa_challenge: 'sysmfa-one-time-challenge',
+          workspace_id: 'SYSTEM_SERVICES',
+        },
+      })
+      .mockResolvedValueOnce({
+        data: {
+          status: 'AUTHENTICATED',
+          scope: 'SYSTEM',
+          access_token: 'system-access-token',
+          principal_id: 'WILSYAUTH-system-responder',
+          workspace_id: 'SYSTEM_SERVICES',
+        },
+      });
+    api.get.mockResolvedValueOnce({
+      data: {
+        status: 'READY',
+        authority: 'EOS_SYSTEM_SERVICES',
+        principalId: 'WILSYAUTH-system-responder',
+        scope: 'SYSTEM',
+        capabilities: ['system_services:queue:read', 'system_services:incident:escalate'],
+        summary: { openCases: 2, securityEscalations: 1 },
+        cases: [{
+          caseId: 'CASE-SYSTEM-1',
+          reference: 'CASE-SYSTEM-1',
+          category: 'ACCOUNT_ACCESS',
+          status: 'OPEN',
+        }],
+      },
+    });
+    renderHarness();
+
+    fireEvent.click(screen.getByRole('button', { name: 'login-without-discovery' }));
+    await waitFor(() => expect(screen.getByTestId('stage')).toHaveTextContent(AUTH_STATES.MFA_REQUIRED));
+    fireEvent.click(screen.getByRole('button', { name: 'verify' }));
+
+    await waitFor(() => {
+      expect(screen.getByTestId('authenticated')).toHaveTextContent('true');
+      expect(screen.getByTestId('role')).toHaveTextContent('SYSTEM_SERVICES');
+    });
+    expect(api.post).toHaveBeenNthCalledWith(1, '/auth/global/login', {
+      email: 'person@example.com',
+      password: 'password',
+    });
+    expect(api.post).toHaveBeenNthCalledWith(2, '/auth/global/verify-mfa', {
+      mfa_challenge: 'sysmfa-one-time-challenge',
+      code: '123456',
+    });
+    expect(api.get).toHaveBeenCalledWith('/system-services/workspace-bootstrap');
+    expect(api.defaults.headers.common.Authorization).toBe('Bearer system-access-token');
+    expect(screen.getByTestId('tenant-id')).toBeEmptyDOMElement();
+    const projected = JSON.parse(window.localStorage.getItem('wilsy_sovereign_user'));
+    expect(projected).toMatchObject({
+      id: 'WILSYAUTH-system-responder',
+      role: 'SYSTEM_SERVICES',
+      workspaceId: 'SYSTEM_SERVICES',
+      systemServicesWorkspace: {
+        authority: 'EOS_SYSTEM_SERVICES',
+        scope: 'SYSTEM',
+        principalId: 'WILSYAUTH-system-responder',
+      },
+    });
+    expect(window.localStorage.getItem('wilsy_active_tenant')).toBeNull();
+    expect(window.localStorage.getItem('tenantId')).toBeNull();
   });
 
   it('projects reconciliation without QR and persists only authenticated response', async () => {
