@@ -129,7 +129,7 @@ test('certifies independent request, rejection, approval and canonical permissio
     },
     'browser-response-request-' + state.database_name,
   );
-  expect(requestReplay.status).toBe(201);
+  expect(requestReplay.status, JSON.stringify(requestReplay.body)).toBe(201);
   expect(requestReplay.body.decisionId).toBe(decisionId);
 
   const approved = await postAs(
