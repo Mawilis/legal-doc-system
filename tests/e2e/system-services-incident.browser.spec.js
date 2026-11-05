@@ -30,6 +30,7 @@ async function openSystemServices(browser, actorKey = 'system_responder') {
     localStorage.setItem('token', accessToken);
     localStorage.setItem('tenantId', tenantId);
     localStorage.setItem('wilsy_tenant_id', tenantId);
+    localStorage.setItem('wilsy_active_tenant', JSON.stringify({ tenantId, id: tenantId }));
     localStorage.setItem('wilsy_sovereign_user', JSON.stringify({
       id: principalId, email, tenantId,
     }));
