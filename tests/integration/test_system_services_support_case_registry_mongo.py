@@ -723,3 +723,14 @@ def test_incident_responder_assignment_requires_separate_permissions_and_accepta
     assert accepted.revision == 1
     assert database[ASSIGNMENTS].count_documents({"assignment_id": created.assignment_id}) == 1
     assert database[ASSIGNMENT_EVENTS].count_documents({"assignment_id": created.assignment_id}) == 2
+    from tools.eos.system_services.security_incident_assignment_registry import (
+        PLATFORM_AUDIT_COLLECTION, PLATFORM_OUTBOX_COLLECTION,
+    )
+    audit_rows = list(database[PLATFORM_AUDIT_COLLECTION].find({"target_id": created.assignment_id}))
+    outbox_rows = list(database[PLATFORM_OUTBOX_COLLECTION].find({"target_id": created.assignment_id}))
+    assert {row["event_type"] for row in audit_rows} == {
+        "INCIDENT_RESPONDER_ASSIGNED", "INCIDENT_ASSIGNMENT_ACCEPTED",
+    }
+    assert len(outbox_rows) == 2
+    assert all(row["status"] == "PENDING" and row["attempts"] == 0 for row in outbox_rows)
+    assert {row["event_key"] for row in audit_rows} == {row["event_key"] for row in outbox_rows}
