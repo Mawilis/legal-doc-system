@@ -207,6 +207,15 @@ def test_canonical_eos_startup_registers_case_indexes_and_readiness(monkeypatch)
                 COLLECTION as SECURITY_INCIDENT_COLLECTION,
                 EVENT_COLLECTION as SECURITY_INCIDENT_EVENT_COLLECTION,
             )
+            from tools.eos.system_services.security_incident_assignment_registry import (
+                COLLECTION as SECURITY_INCIDENT_ASSIGNMENT_COLLECTION,
+                EVENT_COLLECTION as SECURITY_INCIDENT_ASSIGNMENT_EVENT_COLLECTION,
+            )
+            assignment_indexes = list(database[SECURITY_INCIDENT_ASSIGNMENT_COLLECTION].list_indexes())
+            assignment_event_indexes = list(database[SECURITY_INCIDENT_ASSIGNMENT_EVENT_COLLECTION].list_indexes())
+            assert any(index.get("name") == "incident_assignment_identity_unique" for index in assignment_indexes)
+            assert any(index.get("name") == "incident_assignment_one_owner_unique" for index in assignment_indexes)
+            assert any(index.get("name") == "incident_assignment_event_identity_unique" for index in assignment_event_indexes)
             incident_indexes = list(database[SECURITY_INCIDENT_COLLECTION].list_indexes())
             incident_event_indexes = list(database[SECURITY_INCIDENT_EVENT_COLLECTION].list_indexes())
             assert any(index.get("name") == "security_incident_identity_unique" for index in incident_indexes)
@@ -222,6 +231,7 @@ def test_canonical_eos_startup_registers_case_indexes_and_readiness(monkeypatch)
             assert any(index.get("name") == "system_service_case_actor_idempotency_unique" for index in event_indexes)
         assert app.state.system_services_case_indexes_ready is False
         assert app.state.system_services_incident_indexes_ready is False
+        assert app.state.system_services_assignment_indexes_ready is False
     finally:
         client.drop_database(database_name)
         client.close()
@@ -574,3 +584,126 @@ def test_security_incident_registry_rolls_back_incident_and_event_together(
     assert database[EVENT_COLLECTION].count_documents(
         {"incident_id": incident.incident_id}
     ) == 0
+
+
+
+def test_incident_responder_assignment_requires_separate_permissions_and_acceptance(
+    mongo_case_registry,
+):
+    """Replica-set proof for independent assignment, replay and responder-only acceptance."""
+    from datetime import datetime, timezone
+    from tools.eos.system_services.security_incident import (
+        SecurityIncident, SecurityIncidentCategory, SecurityIncidentEvent,
+    )
+    from tools.eos.system_services.security_incident_registry import (
+        COLLECTION as INCIDENTS, EVENT_COLLECTION as INCIDENT_EVENTS,
+        SecurityIncidentRegistry,
+    )
+    from tools.eos.system_services.security_incident_assignment_registry import (
+        COLLECTION as ASSIGNMENTS, EVENT_COLLECTION as ASSIGNMENT_EVENTS,
+        SecurityIncidentAssignmentRegistry,
+    )
+    from tools.eos.system_services.security_incident_escalation_service import (
+        SecurityIncidentEscalationService,
+        SecurityIncidentEscalationError,
+    )
+
+    client, database, _ = mongo_case_registry
+    now = datetime(2026, 11, 5, 8, tzinfo=timezone.utc)
+    incidents = SecurityIncidentRegistry(
+        incidents=database[INCIDENTS], events=database[INCIDENT_EVENTS]
+    )
+    assignments = SecurityIncidentAssignmentRegistry(
+        assignments=database[ASSIGNMENTS], events=database[ASSIGNMENT_EVENTS]
+    )
+    incidents.ensure_indexes()
+    assignments.ensure_indexes()
+    reporter = "incident-reporter-001"
+    triage_actor = "incident-triage-001"
+    responder = "incident-responder-001"
+    incident = SecurityIncident(
+        incident_id="incident-assignment-certificate",
+        tenant_id="tenant-assignment-certificate",
+        reporter_principal_id=reporter,
+        idempotency_fingerprint="c" * 64,
+        category=SecurityIncidentCategory.SUSPECTED_ACCOUNT_COMPROMISE,
+        observed_at=now,
+        received_at=now,
+    )
+    incident_event = SecurityIncidentEvent(
+        event_id="incident-event-assignment-certificate",
+        incident_id=incident.incident_id,
+        tenant_id=incident.tenant_id,
+        actor_principal_id=reporter,
+        event_type="INCIDENT_REPORTED",
+        occurred_at=now,
+        fingerprint="d" * 64,
+    )
+    with client.start_session() as session:
+        with session.start_transaction():
+            incidents.create_or_replay(incident, incident_event, session=session)
+
+    class CurrentPermissionAuthorizer:
+        def __init__(self):
+            self.calls = []
+        def require(self, *, principal_id, permission_id, session):
+            self.calls.append((principal_id, permission_id))
+            allowed = {
+                (triage_actor, "system_services:case:triage"),
+                (responder, "system_services:incident:escalate"),
+            }
+            if (principal_id, permission_id) not in allowed:
+                raise PermissionError("CURRENT_SYSTEM_PERMISSION_REQUIRED")
+
+    authorizer = CurrentPermissionAuthorizer()
+    service = SecurityIncidentEscalationService(
+        incidents=incidents, assignments=assignments,
+        authorizer=authorizer, clock=lambda: now,
+    )
+    with client.start_session() as session:
+        with session.start_transaction():
+            created = service.assign(
+                actor_principal_id=triage_actor,
+                assigned_to_principal_id=responder,
+                incident_id=incident.incident_id,
+                idempotency_key="assignment-create-001",
+                session=session,
+            )
+    with client.start_session() as session:
+        with session.start_transaction():
+            replay = service.assign(
+                actor_principal_id=triage_actor,
+                assigned_to_principal_id=responder,
+                incident_id=incident.incident_id,
+                idempotency_key="assignment-create-001",
+                session=session,
+            )
+    assert replay.assignment_id == created.assignment_id
+    assert authorizer.calls.count((triage_actor, "system_services:case:triage")) == 2
+    assert authorizer.calls.count((responder, "system_services:incident:escalate")) == 2
+
+    with client.start_session() as session:
+        with session.start_transaction():
+            with pytest.raises(SecurityIncidentEscalationError, match="RESPONDER_ONLY"):
+                service.accept(
+                    actor_principal_id=triage_actor,
+                    assignment_id=created.assignment_id,
+                    expected_revision=0,
+                    idempotency_key="assignment-wrong-actor",
+                    session=session,
+                )
+            session.abort_transaction()
+
+    with client.start_session() as session:
+        with session.start_transaction():
+            accepted = service.accept(
+                actor_principal_id=responder,
+                assignment_id=created.assignment_id,
+                expected_revision=0,
+                idempotency_key="assignment-accept-001",
+                session=session,
+            )
+    assert accepted.status.value == "ACCEPTED"
+    assert accepted.revision == 1
+    assert database[ASSIGNMENTS].count_documents({"assignment_id": created.assignment_id}) == 1
+    assert database[ASSIGNMENT_EVENTS].count_documents({"assignment_id": created.assignment_id}) == 2
