@@ -29,6 +29,10 @@ class SecurityIncidentConflictError(SecurityIncidentRegistryError):
     pass
 
 
+class SecurityIncidentNotFoundError(SecurityIncidentRegistryError):
+    pass
+
+
 class SecurityIncidentPersistenceError(SecurityIncidentRegistryError):
     pass
 
@@ -168,7 +172,7 @@ class SecurityIncidentRegistry:
         try:
             row = self._incidents.find_one({"incident_id": incident_id}, session=session)
             if row is None:
-                raise SecurityIncidentRegistryError("SECURITY_INCIDENT_NOT_FOUND")
+                raise SecurityIncidentNotFoundError("SECURITY_INCIDENT_NOT_FOUND")
             return _hydrate(dict(row))
         except SecurityIncidentRegistryError:
             raise
@@ -207,5 +211,5 @@ class SecurityIncidentRegistry:
 __all__ = [
     "COLLECTION", "EVENT_COLLECTION", "SecurityIncidentRegistry",
     "SecurityIncidentRegistryError", "SecurityIncidentConflictError",
-    "SecurityIncidentPersistenceError",
+    "SecurityIncidentNotFoundError", "SecurityIncidentPersistenceError",
 ]
