@@ -30,7 +30,9 @@ Collaboration & Ownership:
 from __future__ import annotations
 
 from typing import Any, Optional
-from fastapi import Depends, Request, Security
+
+from pymongo.errors import PyMongoError
+from fastapi import Depends, HTTPException, Request, Security
 from fastapi.security import APIKeyHeader, HTTPAuthorizationCredentials, HTTPBearer
 from tools.eos.api.exceptions import UnauthorizedAccessException
 from tools.eos.auth.audit import log_auth_event
@@ -43,6 +45,8 @@ from tools.eos.auth.global_principal_session_authority import GlobalPrincipalSes
 from tools.eos.auth.global_principal_system_session_authority import (
     SESSION_COLLECTION as SYSTEM_SESSION_COLLECTION,
     GlobalPrincipalSystemSessionAuthority,
+    GlobalPrincipalSystemSessionRejected,
+    GlobalPrincipalSystemSessionUnavailable,
 )
 from tools.eos.kernel.db import get_client, get_database
 from tools.eos.saas.auth.auth_registry import AuthRegistry
@@ -135,7 +139,7 @@ async def get_current_identity(
         database = get_database()
         authorizer = getattr(request.app.state, "system_services_authorizer", None)
         if client is None or database is None or authorizer is None:
-            raise UnauthorizedAccessException("SYSTEM authentication authority is unavailable.")
+            raise HTTPException(status_code=503, detail="SYSTEM authentication authority is unavailable.")
         session = client.start_session()
         try:
             session.start_transaction()
@@ -154,11 +158,21 @@ async def get_current_identity(
             session.commit_transaction()
         except UnauthorizedAccessException:
             raise
+        except GlobalPrincipalSystemSessionRejected as error:
+            marker = getattr(session, "in_transaction", False)
+            if (marker() if callable(marker) else marker) is True:
+                session.abort_transaction()
+            raise UnauthorizedAccessException("Invalid or expired sovereign JWT token.") from error
+        except (GlobalPrincipalSystemSessionUnavailable, PyMongoError) as error:
+            marker = getattr(session, "in_transaction", False)
+            if (marker() if callable(marker) else marker) is True:
+                session.abort_transaction()
+            raise HTTPException(status_code=503, detail="SYSTEM authentication authority is unavailable.") from error
         except Exception as error:
             marker = getattr(session, "in_transaction", False)
             if (marker() if callable(marker) else marker) is True:
                 session.abort_transaction()
-            raise UnauthorizedAccessException("SYSTEM authentication authority is unavailable.") from error
+            raise HTTPException(status_code=503, detail="SYSTEM authentication authority is unavailable.") from error
         finally:
             session.end_session()
         identity = SovereignIdentity(
