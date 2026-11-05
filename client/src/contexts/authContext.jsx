@@ -403,6 +403,97 @@ const boundedWorkspaceBrandingProjection = (workspace, tenantId) => {
   };
 };
 
+const SYSTEM_SERVICES_CAPABILITY_SET = new Set([
+  'system_services:queue:read',
+  'system_services:identity:read',
+  'system_services:incident:escalate',
+]);
+
+const boundedSystemServicesWorkspaceProjection = (
+  value,
+  expectedPrincipalId = '',
+  fallbackEmail = '',
+) => {
+  const invalid = () => new Error('AUTHENTICATED_SYSTEM_SERVICES_WORKSPACE_INVALID');
+  const expectedKeys = [
+    'status', 'authority', 'principalId', 'scope',
+    'capabilities', 'summary', 'cases',
+  ];
+  if (
+    !value || typeof value !== 'object' || Array.isArray(value)
+    || Object.keys(value).length !== expectedKeys.length
+    || expectedKeys.some((key) => !Object.prototype.hasOwnProperty.call(value, key))
+    || value.status !== 'READY'
+    || value.authority !== 'EOS_SYSTEM_SERVICES'
+    || value.scope !== 'SYSTEM'
+    || typeof value.principalId !== 'string'
+    || !value.principalId
+    || value.principalId !== value.principalId.trim()
+    || (expectedPrincipalId && value.principalId !== expectedPrincipalId)
+    || !Array.isArray(value.capabilities)
+    || value.capabilities.length === 0
+    || new Set(value.capabilities).size !== value.capabilities.length
+    || value.capabilities.some((item) => (
+      typeof item !== 'string' || !SYSTEM_SERVICES_CAPABILITY_SET.has(item)
+    ))
+    || !value.capabilities.includes('system_services:queue:read')
+    || !value.summary || typeof value.summary !== 'object'
+    || Array.isArray(value.summary)
+    || Object.keys(value.summary).length !== 2
+    || !['openCases', 'securityEscalations'].every(
+      (key) => Object.prototype.hasOwnProperty.call(value.summary, key),
+    )
+    || !['openCases', 'securityEscalations'].every((key) => (
+      Number.isSafeInteger(value.summary[key]) && value.summary[key] >= 0
+    ))
+    || !Array.isArray(value.cases)
+  ) {
+    throw invalid();
+  }
+
+  const cases = value.cases.map((item) => {
+    const keys = ['caseId', 'reference', 'category', 'status'];
+    if (
+      !item || typeof item !== 'object' || Array.isArray(item)
+      || Object.keys(item).length !== keys.length
+      || keys.some((key) => !Object.prototype.hasOwnProperty.call(item, key))
+      || keys.some((key) => (
+        typeof item[key] !== 'string' || !item[key] || item[key] !== item[key].trim()
+      ))
+    ) {
+      throw invalid();
+    }
+    return {
+      caseId: item.caseId,
+      reference: item.reference,
+      category: item.category,
+      status: item.status,
+    };
+  });
+
+  return {
+    user: {
+      id: value.principalId,
+      email: typeof fallbackEmail === 'string' ? fallbackEmail : '',
+      role: 'SYSTEM_SERVICES',
+      workspaceId: 'SYSTEM_SERVICES',
+      systemServicesWorkspace: {
+        status: value.status,
+        authority: value.authority,
+        principalId: value.principalId,
+        scope: value.scope,
+        capabilities: [...value.capabilities],
+        summary: {
+          openCases: value.summary.openCases,
+          securityEscalations: value.summary.securityEscalations,
+        },
+        cases,
+      },
+    },
+    tenant: null,
+  };
+};
+
 const authenticatedTenantProjection = (
   tenantProjection,
   tenantId,
