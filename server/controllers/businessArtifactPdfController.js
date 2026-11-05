@@ -691,6 +691,8 @@ async function buildArtifactIdentity(req) {
     suppliedTenantIds: [
       body.tenantId,
       metadata.tenantId,
+      payload.tenantId,
+      payloadData.tenantId,
       mergedPayloadData.tenantId,
     ],
   });
