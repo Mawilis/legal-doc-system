@@ -1015,6 +1015,49 @@ def test_real_mongo_canonical_execution_evidence_audit_outbox_and_replay_are_ato
                 )
 
 
+def test_real_mongo_password_reset_execution_receipt_audit_and_outbox_are_atomic(mongo_case_registry):
+    client, database, _, registry = mongo_case_registry
+    request = _response_decision("decision-password-reset-execution")
+    approved = _persist_approved_decision(client, registry, request)
+    occurred_at = NOW + timedelta(minutes=2)
+
+    with client.start_session() as session:
+        with session.start_transaction():
+            receipt = registry.record_execution(
+                decision=approved,
+                actor_principal_id="principal-independent-executor",
+                idempotency_key="canonical-password-reset-execution",
+                occurred_at=occurred_at,
+                result_status="PASSWORD_RESET_COMPLETED",
+                result_revision=8,
+                session=session,
+            )
+            assert receipt["result_status"] == "PASSWORD_RESET_COMPLETED"
+
+    with client.start_session() as session:
+        with session.start_transaction():
+            replay = registry.find_execution(
+                decision=approved,
+                actor_principal_id="principal-independent-executor",
+                idempotency_key="canonical-password-reset-execution",
+                session=session,
+            )
+            assert replay is not None
+            assert replay["result_revision"] == 8
+
+    event_key = "system-services-response-execution:" + request.decision_id + ":revision:2"
+    assert database[RESPONSE_DECISION_EVENT_COLLECTION].count_documents({
+        "decision_id": request.decision_id,
+        "revision": 2,
+        "result_status": "PASSWORD_RESET_COMPLETED",
+        "result_revision": 8,
+    }) == 1
+    assert database[PLATFORM_AUDIT_COLLECTION].count_documents({"event_key": event_key}) == 1
+    assert database[PLATFORM_OUTBOX_COLLECTION].count_documents({
+        "event_key": event_key, "status": "PENDING", "attempts": 0,
+    }) == 1
+
+
 def test_real_mongo_execution_evidence_rollback_preserves_approved_decision(mongo_case_registry):
     client, database, _, registry = mongo_case_registry
     decision = _approved_revocation_decision("decision-execution-abort")
