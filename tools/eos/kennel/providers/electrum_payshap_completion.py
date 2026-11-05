@@ -76,8 +76,8 @@ def verify_electrum_http_message_signature(
     The algorithm is pinned in code; an untrusted JOSE alg header never chooses
     the verification algorithm. Multiple kid values are supported for rotation.
     """
-    if not isinstance(raw_body, bytes) or not raw_body:
-        raise ElectrumMessageAuthenticationError("ELECTRUM_BODY_REQUIRED")
+    if not isinstance(raw_body, bytes):
+        raise ElectrumMessageAuthenticationError("ELECTRUM_BODY_INVALID")
     if not isinstance(signature_header, str) or not signature_header.strip():
         raise ElectrumMessageAuthenticationError("ELECTRUM_SIGNATURE_REQUIRED")
     if not isinstance(verification_keys, Mapping) or not verification_keys:
