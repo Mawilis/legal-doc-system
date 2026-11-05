@@ -71,7 +71,15 @@ def test_password_reset_delegates_only_approved_decision_to_canonical_service():
     assert reset_kwargs["tenant_id"] == "tenant-1"
     assert reset_kwargs["recovery_token"] == "transient-single-use-capability"
     assert reset_kwargs["new_password"] == "Transient-Strong-Passphrase-2026!"
-    assert reset_kwargs["transaction_completion"] is completion
+    receipt_callback = reset_kwargs["transaction_completion"]
+    assert callable(receipt_callback)
+    receipt_callback("canonical-session", "tenant-1", "target-principal", 8)
+    completion.assert_called_once_with("canonical-session", "tenant-1", "target-principal", 8)
+    with pytest.raises(
+        SecurityIncidentResponseExecutionError,
+        match="PASSWORD_RESET_EXECUTION_RECEIPT_BINDING_INVALID",
+    ):
+        receipt_callback("canonical-session", "other-tenant", "target-principal", 8)
     assert reset_kwargs["context_terms"] == ("WILSY",)
     reset_kwargs["transaction_guard"](
         "caller-owned-transaction",
