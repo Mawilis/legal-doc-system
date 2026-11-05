@@ -21,6 +21,8 @@ AUTHORITY BOUNDARY: This certificate observes production authentication seams; i
 FINANCIAL AUTHORITY BOUNDARY: None; Kennel EOS exclusively owns financial execution.
 """
 import asyncio
+from types import SimpleNamespace
+from fastapi import HTTPException
 from fastapi.security import HTTPAuthorizationCredentials
 from starlette.requests import Request
 import pytest
@@ -128,6 +130,131 @@ def test_no_fallbacks_or_api_key_bypass(monkeypatch):
         )
     assert authority_calls == []
     assert durable_calls == []
+
+
+
+def _system_auth_request():
+    app = SimpleNamespace(
+        state=SimpleNamespace(system_services_authorizer=object())
+    )
+    return Request({
+        "type": "http",
+        "method": "GET",
+        "path": "/system-services/workspace-bootstrap",
+        "headers": [],
+        "app": app,
+    })
+
+
+class _SystemSession:
+    def __init__(self):
+        self.in_transaction = False
+        self.aborted = False
+        self.committed = False
+        self.ended = False
+
+    def start_transaction(self):
+        self.in_transaction = True
+
+    def abort_transaction(self):
+        self.aborted = True
+        self.in_transaction = False
+
+    def commit_transaction(self):
+        self.committed = True
+        self.in_transaction = False
+
+    def end_session(self):
+        self.ended = True
+
+
+class _SystemClient:
+    def __init__(self, session):
+        self.session = session
+
+    def start_session(self):
+        return self.session
+
+
+class _SystemDatabase:
+    def __getitem__(self, _name):
+        return object()
+
+
+def _system_access_payload():
+    return access_payload(
+        identity_id="system-principal",
+        tenant_id="SYSTEM",
+        principal_scope="SYSTEM",
+        session_reference="WILSYS-SYSTEM-SESSION-test",
+        workspace_id="SYSTEM_SERVICES",
+        roles=["SYSTEM_SERVICES"],
+        permissions=[],
+    )
+
+
+def test_system_session_authority_outage_is_503_not_invalid_credential(monkeypatch):
+    from tools.eos.auth.global_principal_system_session_authority import (
+        GlobalPrincipalSystemSessionAuthority,
+        GlobalPrincipalSystemSessionUnavailable,
+    )
+
+    session = _SystemSession()
+
+    class UnavailableAuthority:
+        def __init__(self, *, sessions, authorizer):
+            assert sessions is not None
+            assert authorizer is not None
+
+        def is_session_current(self, **_kwargs):
+            raise GlobalPrincipalSystemSessionUnavailable("SYSTEM_AUTHORITY_OFFLINE")
+
+    monkeypatch.setattr(authentication, "verify_access_token", lambda _: _system_access_payload())
+    monkeypatch.setattr(authentication, "get_client", lambda: _SystemClient(session))
+    monkeypatch.setattr(authentication, "get_database", lambda: _SystemDatabase())
+    monkeypatch.setattr(authentication, "GlobalPrincipalSystemSessionAuthority", UnavailableAuthority)
+
+    with pytest.raises(HTTPException) as raised:
+        asyncio.run(authentication.get_current_identity(
+            _system_auth_request(),
+            credentials(),
+            None,
+            Repository(PrincipalStatus.ACTIVE),
+        ))
+    assert raised.value.status_code == 503
+    assert session.aborted and session.ended
+    assert not session.committed
+
+
+def test_system_session_rejection_remains_401_and_aborts(monkeypatch):
+    from tools.eos.auth.global_principal_system_session_authority import (
+        GlobalPrincipalSystemSessionRejected,
+    )
+
+    session = _SystemSession()
+
+    class RejectedAuthority:
+        def __init__(self, *, sessions, authorizer):
+            assert sessions is not None
+            assert authorizer is not None
+
+        def is_session_current(self, **_kwargs):
+            raise GlobalPrincipalSystemSessionRejected("SYSTEM_SESSION_REVOKED")
+
+    monkeypatch.setattr(authentication, "verify_access_token", lambda _: _system_access_payload())
+    monkeypatch.setattr(authentication, "get_client", lambda: _SystemClient(session))
+    monkeypatch.setattr(authentication, "get_database", lambda: _SystemDatabase())
+    monkeypatch.setattr(authentication, "GlobalPrincipalSystemSessionAuthority", RejectedAuthority)
+
+    with pytest.raises(UnauthorizedAccessException):
+        asyncio.run(authentication.get_current_identity(
+            _system_auth_request(),
+            credentials(),
+            None,
+            Repository(PrincipalStatus.ACTIVE),
+        ))
+    assert session.aborted and session.ended
+    assert not session.committed
 
 # ARTIFACT: test_authentication_principal_authority.py
 # VERSION: v1.0.0-R10C2F9A-AUTHENTICATION-PRINCIPAL-AUTHORITY-CERT-RECONCILIATION
