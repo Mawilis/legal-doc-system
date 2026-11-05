@@ -99,10 +99,11 @@ describe('SovereignDashboardController EOS workspace contract', () => {
       status: 'READY',
       authority: 'EOS_SYSTEM_SERVICES',
       principalId: 'platform-staff-1',
+      scope: 'SYSTEM',
       capabilities: ['system_services:queue:read'],
     };
     expect(resolveDashboardKey({
-      user: { id: 'staff-1', role: 'TENANT_OWNER', workspaceId: 'EXECUTIVE_COMMAND_CENTRE', systemServicesWorkspace: workspace },
+      user: { id: 'platform-staff-1', role: 'SYSTEM_SERVICES', systemServicesWorkspace: workspace },
       manualDashboardKey: 'SYSTEM_SERVICES_DASHBOARD',
     })).toBe(DASHBOARD_KEYS.SYSTEM_SERVICES);
     expect(resolveDashboardKey({
@@ -113,9 +114,11 @@ describe('SovereignDashboardController EOS workspace contract', () => {
 
   it('rejects a malformed or capability-free System Services workspace projection', () => {
     for (const systemServicesWorkspace of [
-      { status: 'READY', authority: 'SYSTEM_ADMIN', principalId: 'staff-1', capabilities: ['system_services:queue:read'] },
-      { status: 'PENDING', authority: 'EOS_SYSTEM_SERVICES', principalId: 'staff-1', capabilities: ['system_services:queue:read'] },
-      { status: 'READY', authority: 'EOS_SYSTEM_SERVICES', principalId: 'staff-1', capabilities: [] },
+      { status: 'READY', authority: 'SYSTEM_ADMIN', principalId: 'staff-1', scope: 'SYSTEM', capabilities: ['system_services:queue:read'] },
+      { status: 'PENDING', authority: 'EOS_SYSTEM_SERVICES', principalId: 'staff-1', scope: 'SYSTEM', capabilities: ['system_services:queue:read'] },
+      { status: 'READY', authority: 'EOS_SYSTEM_SERVICES', principalId: 'staff-1', scope: 'SYSTEM', capabilities: [] },
+      { status: 'READY', authority: 'EOS_SYSTEM_SERVICES', principalId: 'foreign-staff', scope: 'SYSTEM', capabilities: ['system_services:queue:read'] },
+      { status: 'READY', authority: 'EOS_SYSTEM_SERVICES', principalId: 'staff-1', scope: 'TENANT', capabilities: ['system_services:queue:read'] },
     ]) {
       expect(resolveDashboardKey({
         user: { id: 'staff-1', role: 'SYSTEM_ADMIN', workspaceId: 'EXECUTIVE_COMMAND_CENTRE', systemServicesWorkspace },
