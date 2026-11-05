@@ -535,11 +535,43 @@ async def refresh_global_session(payload: GlobalRefreshRequest, request: Request
 
 
 @router.post("/logout")
-async def logout_global_session(identity: Any = Depends(get_current_identity)) -> dict[str, str]:
-    """Revoke the exact authenticated global session and all associated refresh bearers."""
+async def logout_global_session(
+    request: Request,
+    identity: Any = Depends(get_current_identity),
+) -> dict[str, str]:
+    """Revoke the exact global tenant or tenant-neutral SYSTEM session."""
     reference = getattr(identity, "session_reference", None)
     principal_id = getattr(identity, "identity_id", None)
     tenant_id = getattr(identity, "tenant_id", None)
+    if (
+        isinstance(reference, str)
+        and reference.startswith("WILSYS-SYSTEM-SESSION-")
+        and isinstance(principal_id, str)
+        and tenant_id == "SYSTEM"
+    ):
+        session, database = _begin_transaction()
+        try:
+            revoked = GlobalPrincipalSystemSessionAuthority(
+                sessions=database[SYSTEM_SESSION_COLLECTION],
+            ).revoke(
+                principal_id=principal_id,
+                session_reference=reference,
+                session=session,
+            )
+            if not revoked:
+                _abort_if_active(session)
+                raise HTTPException(status_code=401, detail="Session is no longer current")
+            session.commit_transaction()
+            return {"status": "SIGNED_OUT"}
+        except HTTPException:
+            _abort_if_active(session)
+            raise
+        except (GlobalPrincipalSystemSessionRejected, GlobalPrincipalSystemSessionUnavailable, PyMongoError):
+            _abort_if_active(session)
+            raise HTTPException(status_code=503, detail="GLOBAL_AUTHENTICATION_UNAVAILABLE") from None
+        finally:
+            session.end_session()
+
     if (
         not isinstance(reference, str)
         or not reference.startswith("WILSYGLOBALSESSION-")
