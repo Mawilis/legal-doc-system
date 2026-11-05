@@ -134,5 +134,9 @@ def test_system_permission_revocation_is_recorded_as_a_separate_canonical_action
         requested_by_principal_id="responder-2",
         requested_at=NOW,
         request_evidence_reference="incident-evidence-2",
+        target_assignment_id="assignment-2",
+        target_permission_id="privileged_activation:issue",
     )
     assert value.action is SecurityIncidentResponseAction.SYSTEM_PERMISSION_REVOCATION
+    assert value.target_assignment_id == "assignment-2"
+    assert value.target_permission_id == "privileged_activation:issue"
