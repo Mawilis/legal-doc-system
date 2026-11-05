@@ -448,6 +448,7 @@ async def verify_global_mfa(payload: GlobalMfaVerificationRequest, request: Requ
                 now=now,
             )
             session.commit_transaction()
+            rate_gate.record_success(email=credential.normalized_email, observed_at=now)
             return {
                 "status": "AUTHENTICATED",
                 "scope": "SYSTEM",
@@ -469,6 +470,7 @@ async def verify_global_mfa(payload: GlobalMfaVerificationRequest, request: Requ
             now=now,
         )
         session.commit_transaction()
+        rate_gate.record_success(email=credential.normalized_email, observed_at=now)
         return {
             "status": "AUTHENTICATED",
             "access_token": receipt.access_token,
