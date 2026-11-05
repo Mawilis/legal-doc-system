@@ -157,6 +157,8 @@ async def receive_electrum_payshap_completion(request: Request) -> Response:
         return Response(status_code=503, content=b"ELECTRUM_TRANSPORT_NOT_CONFIGURED")
     if getattr(request.app.state, "electrum_completion_indexes_ready", False) is not True:
         return _error(503, "ELECTRUM_INDEXES_NOT_READY", config, now)
+    if getattr(request.app.state, "electrum_settlement_worker_enabled", False) is not True:
+        return _error(503, "ELECTRUM_SETTLEMENT_WORKER_NOT_READY", config, now)
     runtime = _runtime()
     if runtime is None:
         return _error(503, "ELECTRUM_RUNTIME_UNAVAILABLE", config, now)
