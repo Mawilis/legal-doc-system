@@ -852,6 +852,9 @@ def test_response_decision_receipt_is_atomic_with_real_canonical_password_reset(
     assert event["event_type"] == "SECURITY_INCIDENT_RESPONSE_EXECUTED"
     assert event["result_status"] == "PASSWORD_RESET_COMPLETED"
     assert event["result_revision"] == fixture.starting_revision + 1
+    assert "token_digest" not in event
+    assert "recovery_token" not in event
+    assert "password_hash" not in event
     assert bound_database.database[PLATFORM_AUDIT_COLLECTION].count_documents({"event_key": event_key}) == 1
     assert bound_database.database[PLATFORM_OUTBOX_COLLECTION].count_documents({
         "event_key": event_key, "status": "PENDING", "attempts": 0,
