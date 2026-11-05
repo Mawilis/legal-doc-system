@@ -18,7 +18,7 @@ from hashlib import sha3_256
 from pymongo.client_session import ClientSession
 
 from fastapi import APIRouter, Depends, Header, HTTPException, Query, Request
-from pydantic import BaseModel, ConfigDict, Field, StrictInt
+from pydantic import BaseModel, ConfigDict, Field, StrictInt, StrictStr
 
 from tools.eos.auth.authentication import get_current_identity
 from tools.eos.auth.identity import SovereignIdentity
@@ -399,7 +399,7 @@ def read_own_support_case_events(
 
 class IncidentAssignmentRequest(BaseModel):
     model_config = ConfigDict(extra="forbid", frozen=True)
-    assigned_to_principal_id: str = Field(min_length=1, max_length=256)
+    assigned_to_principal_id: StrictStr = Field(min_length=1, max_length=256)
 
 
 class IncidentAssignmentDecisionRequest(BaseModel):
