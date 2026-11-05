@@ -40,6 +40,11 @@ from tools.eos.auth.principal_authority import PrincipalAuthority
 from tools.eos.auth.principal_authority_repository import PrincipalAuthorityNotFoundError, PrincipalAuthorityRepository, PrincipalAuthorityRepositoryError
 from tools.eos.auth.principal_status import PrincipalStatus
 from tools.eos.auth.global_principal_session_authority import GlobalPrincipalSessionAuthority
+from tools.eos.auth.global_principal_system_session_authority import (
+    SESSION_COLLECTION as SYSTEM_SESSION_COLLECTION,
+    GlobalPrincipalSystemSessionAuthority,
+)
+from tools.eos.kernel.db import get_client, get_database
 from tools.eos.saas.auth.auth_registry import AuthRegistry
 
 security_scheme = HTTPBearer(auto_error=False)
@@ -112,11 +117,69 @@ async def get_current_identity(
     if authority.status is not PrincipalStatus.ACTIVE:
         log_auth_event("JWT_AUTH", principal_id, False, {"reason": "principal_not_active"})
         raise UnauthorizedAccessException("Authentication principal is not active.")
+    principal_scope = payload.get("principal_scope")
+    if principal_scope == "SYSTEM":
+        tenant_scope = _claim(payload, "tenant_id")
+        session_reference = _claim(payload, "session_reference")
+        workspace_id = _claim(payload, "workspace_id")
+        roles = payload.get("roles")
+        permissions = payload.get("permissions")
+        if (
+            tenant_scope != "SYSTEM"
+            or session_reference is None
+            or workspace_id != "SYSTEM_SERVICES"
+            or roles != ["SYSTEM_SERVICES"]
+            or permissions != []
+        ):
+            raise UnauthorizedAccessException("Invalid or expired sovereign JWT token.")
+        client = get_client()
+        database = get_database()
+        authorizer = getattr(request.app.state, "system_services_authorizer", None)
+        if client is None or database is None or authorizer is None:
+            raise UnauthorizedAccessException("SYSTEM authentication authority is unavailable.")
+        session = client.start_session()
+        try:
+            session.start_transaction()
+            current = GlobalPrincipalSystemSessionAuthority(
+                sessions=database[SYSTEM_SESSION_COLLECTION],
+                authorizer=authorizer,
+            ).is_session_current(
+                principal_id=authority.principal_id,
+                session_reference=session_reference,
+                expected_credential_revision=token_revision,
+                session=session,
+            )
+            if not current:
+                session.abort_transaction()
+                raise UnauthorizedAccessException("Invalid or expired sovereign JWT token.")
+            session.commit_transaction()
+        except UnauthorizedAccessException:
+            raise
+        except Exception as error:
+            marker = getattr(session, "in_transaction", False)
+            if (marker() if callable(marker) else marker) is True:
+                session.abort_transaction()
+            raise UnauthorizedAccessException("SYSTEM authentication authority is unavailable.") from error
+        finally:
+            session.end_session()
+        identity = SovereignIdentity(
+            identity_id=authority.principal_id,
+            tenant_id="SYSTEM",
+            username=_claim(payload, "username"),
+            email=_claim(payload, "email"),
+            roles=roles,
+            permissions=[],
+            auth_method="JWT",
+            status=authority.status,
+            session_reference=session_reference,
+        )
+        log_auth_event("SYSTEM_JWT_AUTH", authority.principal_id, True, {"scope": "SYSTEM"})
+        return identity
+
     tenant_id = _claim(payload, "tenant_id")
     if tenant_id is None:
         raise UnauthorizedAccessException("Tenant context is required.")
 
-    principal_scope = payload.get("principal_scope")
     if principal_scope == "GLOBAL":
         session_reference = _claim(payload, "session_reference")
         workspace_id = _claim(payload, "workspace_id")
