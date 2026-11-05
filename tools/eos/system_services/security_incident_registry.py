@@ -160,6 +160,21 @@ class SecurityIncidentRegistry:
         except PyMongoError as error:
             raise SecurityIncidentPersistenceError("SECURITY_INCIDENT_INTAKE_FAILED") from error
 
+    def get_by_id(self, *, incident_id: str, session: Any) -> SecurityIncident:
+        """Read one exact incident for an independently authorized SYSTEM caller."""
+        _transaction(session)
+        if not isinstance(incident_id, str) or not incident_id:
+            raise SecurityIncidentRegistryError("SECURITY_INCIDENT_ID_INVALID")
+        try:
+            row = self._incidents.find_one({"incident_id": incident_id}, session=session)
+            if row is None:
+                raise SecurityIncidentRegistryError("SECURITY_INCIDENT_NOT_FOUND")
+            return _hydrate(dict(row))
+        except SecurityIncidentRegistryError:
+            raise
+        except PyMongoError as error:
+            raise SecurityIncidentPersistenceError("SECURITY_INCIDENT_READ_FAILED") from error
+
     def list_own(
         self, *, tenant_id: str, principal_id: str, session: Any, limit: int = 50
     ) -> tuple[SecurityIncident, ...]:
