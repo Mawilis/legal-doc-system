@@ -45,6 +45,7 @@ def executor_with_mocks():
     value = object.__new__(SecurityIncidentResponseCanonicalExecutor)
     value._password_reset = Mock()
     value._permission_revocation = Mock()
+    value._authorizer = Mock()
     return value
 
 
@@ -139,6 +140,11 @@ def test_permission_revocation_delegates_exact_approved_lineage_to_canonical_ser
     assert result == "canonical-revocation"
     value._permission_revocation.revoke.assert_called_once_with(
         evidence,
+        session="caller-owned-transaction",
+    )
+    value._authorizer.require.assert_called_once_with(
+        principal_id="authorized-revocation-operator",
+        permission_id="system_services:incident:response:execute",
         session="caller-owned-transaction",
     )
 
