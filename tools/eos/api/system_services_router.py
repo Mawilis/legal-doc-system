@@ -671,6 +671,7 @@ def _validate_response_idempotency_key(value: str) -> str:
         or not value
         or value != value.strip()
         or "*" in value
+        or any(ord(character) < 33 or ord(character) == 127 for character in value)
     ):
         raise HTTPException(status_code=422, detail="A valid idempotency key is required.")
     return value
