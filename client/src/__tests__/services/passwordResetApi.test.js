@@ -229,7 +229,7 @@ describe('R10D7 client password-reset API certificate', () => {
     expect(Object.keys(sealed.data).sort()).toEqual(Object.keys(body).sort());
     expect(sealed.data).not.toHaveProperty('timestamp');
     expect(sealed.headers.Authorization).toBeUndefined();
-    expect(sealed.headers['X-Tenant-ID']).toBe(RESET_INPUT.tenantId);
+    expect(sealed.headers['X-Tenant-ID']).toBeUndefined();
     expect(sealed.headers['x-request-seal']).toBeUndefined();
     expect(sealed.headers['x-forensic-timestamp']).toBeUndefined();
     expect(sealed.headers['x-cryptographic-nonce']).toBeUndefined();
