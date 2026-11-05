@@ -155,7 +155,7 @@ describe('premium tenant identity projection', () => {
       </MemoryRouter>,
     );
 
-    expect(screen.getByAltText('WILSY OS platform mark')).toHaveAttribute('src', expect.stringContaining('wilsy.jpeg'));
+    expect(screen.getByAltText('WILSY OS platform mark')).toHaveAttribute('src', expect.stringContaining('wilsy-icon.svg'));
     fireEvent.change(screen.getByLabelText('Organization / workspace'), { target: { value: 'acme' } });
     fireEvent.click(screen.getByRole('button', { name: /continue securely/i }));
 
@@ -174,7 +174,7 @@ describe('premium tenant identity projection', () => {
     );
 
     expect(screen.getAllByAltText('WILSY OS platform mark')).toHaveLength(1);
-    expect(screen.getAllByAltText('WILSY OS platform mark')[0]).toHaveAttribute('src', expect.stringContaining('wilsy.jpeg'));
+    expect(screen.getAllByAltText('WILSY OS platform mark')[0]).toHaveAttribute('src', expect.stringContaining('wilsy-icon.svg'));
     expect(screen.getByText('WILSY OS')).toBeInTheDocument();
     expect(screen.getByText('Acme Legal Holdings (Pty) Ltd')).toBeInTheDocument();
     expect(screen.getByText('Workspace: acme')).toBeInTheDocument();
