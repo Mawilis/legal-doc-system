@@ -140,3 +140,17 @@ def test_system_permission_revocation_is_recorded_as_a_separate_canonical_action
     assert value.action is SecurityIncidentResponseAction.SYSTEM_PERMISSION_REVOCATION
     assert value.target_assignment_id == "assignment-2"
     assert value.target_permission_id == "privileged_activation:issue"
+
+
+def test_target_principal_cannot_approve_or_reject_own_containment():
+    with pytest.raises(
+        SecurityIncidentResponseDecisionError,
+        match="DECISION_TARGET_CANNOT_APPROVE",
+    ):
+        pending().decide(
+            approved=True,
+            decided_by_principal_id="principal-target",
+            decided_at=NOW + timedelta(minutes=1),
+            decision_evidence_reference="target-self-approval",
+            expected_revision=0,
+        )
