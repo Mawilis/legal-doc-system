@@ -960,7 +960,7 @@ describe('authoritative authentication state machine', () => {
 
     renderHarness();
 
-    fireEvent.click(screen.getByRole('button', { name: 'login' }));
+    fireEvent.click(screen.getByRole('button', { name: 'login-without-discovery' }));
     await waitFor(() => {
       expect(screen.getByTestId('stage')).toHaveTextContent(
         AUTH_STATES.MFA_REQUIRED,
