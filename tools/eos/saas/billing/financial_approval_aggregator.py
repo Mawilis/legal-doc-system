@@ -67,7 +67,12 @@ class FinancialApprovalAggregator:
         return hashlib.sha3_512(json.dumps(payload, sort_keys=True, separators=(",", ":"), ensure_ascii=True).encode("utf-8")).hexdigest()
 
     def aggregate(self, tenant_id: str, evaluation_id: str, result_id: str, evaluated_at: datetime, created_at: datetime) -> FinancialApprovalEffectiveResult:
-        database = self._db(); client = self._client or database.client
+        database = self._db()
+        client = self._client or database.client
+        if getattr(database, "client", None) is not client:
+            raise FinancialApprovalAggregatorError(
+                "FINANCIAL_APPROVAL_AGGREGATOR_MIXED_CLIENT_GRAPH"
+            )
         decisions: list[FinancialApprovalDecision] = []; authorizations: list[Any] = []
         with client.start_session() as session:
             session.start_transaction(read_concern=ReadConcern("snapshot"))
