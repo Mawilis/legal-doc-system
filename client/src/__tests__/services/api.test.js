@@ -190,6 +190,27 @@ describe('api.js – Sovereign HTTP Client', () => {
       );
     });
 
+    it('preserves exact EOS responder decision bodies while retaining forensic headers', async () => {
+      expect(requestInterceptorCapture.fulfilled).toEqual(expect.any(Function));
+      bindAuthenticatedTransport();
+
+      for (const action of ['accept', 'decline']) {
+        const originalBody = { expected_revision: 1 };
+        const sealed = await requestInterceptorCapture.fulfilled({
+          url: '/system-services/security-incident-assignments/assignment-1/' + action,
+          method: 'post',
+          data: { ...originalBody },
+          headers: { 'Idempotency-Key': 'system-responder-test-1' },
+        });
+
+        expect(sealed.data).toEqual(originalBody);
+        expect(sealed.data).not.toHaveProperty('timestamp');
+        expect(sealed.headers['Idempotency-Key']).toBe('system-responder-test-1');
+        expect(sealed.headers['x-forensic-timestamp']).toEqual(expect.any(String));
+        expect(sealed.headers['x-request-seal']).toEqual(expect.any(String));
+      }
+    });
+
     it('does not promote discovery storage into authenticated tenant transport context', async () => {
       expect(requestInterceptorCapture.fulfilled).toEqual(expect.any(Function));
 
