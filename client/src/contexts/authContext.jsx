@@ -1067,7 +1067,7 @@ export const AuthProvider = ({ children }) => {
   const verifyOTP = useCallback(async (email, code, _biometricAssertion = null, _traceId = null, mfaSetup = false, discoveredTenantId = tenant?.tenantId) => {
     const targetEmail = email || pendingEmail;
     const targetCode = String(code || '').trim();
-    if (!/^\\d{6}$/.test(targetCode)) throw new Error('Enter the current six-digit code from your authenticator app.');
+    if (!/^\d{6}$/.test(targetCode)) throw new Error('Enter the current six-digit code from your authenticator app.');
     setLoading(true);
     setError(null);
     setAuthStage(AUTH_STATES.MFA_VERIFYING);
