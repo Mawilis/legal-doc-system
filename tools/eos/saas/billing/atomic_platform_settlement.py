@@ -26,6 +26,76 @@ from .platform_billing_commercial_settlement_projection import (
 )
 
 
+class AtomicPlatformSettlementCommitUncertainError(RuntimeError):
+    """Commit acknowledgement remained uncertain after bounded same-session retries."""
+
+
+def _has_error_label(error: BaseException, label: str) -> bool:
+    """Inspect a bounded causal chain for one exact Mongo error label."""
+    current: BaseException | None = error
+    seen: set[int] = set()
+    while current is not None and id(current) not in seen:
+        seen.add(id(current))
+        checker = getattr(current, "has_error_label", None)
+        if callable(checker):
+            try:
+                if checker(label) is True:
+                    return True
+            except Exception:
+                pass
+        current = current.__cause__ or current.__context__
+    return False
+
+
+def commit_atomic_settlement_transaction(
+    session: ClientSession,
+    *,
+    verify_committed: Any,
+    max_commit_attempts: int = 3,
+) -> str:
+    """Retry only commitTransaction on the same session after unknown acknowledgement.
+
+    This deliberately does not replay business writes, start a new transaction,
+    abort an uncertain commit, or transfer transaction ownership. If bounded
+    commit retries remain uncertain, the caller must provide an independent
+    durable read-back verifier. Only an exact positive read-back is success.
+    """
+    if session is None or not callable(getattr(session, "commit_transaction", None)):
+        raise AtomicPlatformSettlementError("ATOMIC_SETTLEMENT_SESSION_REQUIRED")
+    if (
+        not isinstance(max_commit_attempts, int)
+        or isinstance(max_commit_attempts, bool)
+        or max_commit_attempts < 1
+        or max_commit_attempts > 5
+    ):
+        raise AtomicPlatformSettlementError("ATOMIC_SETTLEMENT_COMMIT_ATTEMPTS_INVALID")
+    if not callable(verify_committed):
+        raise AtomicPlatformSettlementError("ATOMIC_SETTLEMENT_READBACK_REQUIRED")
+
+    last_unknown: BaseException | None = None
+    for attempt in range(max_commit_attempts):
+        try:
+            session.commit_transaction()
+            return "COMMITTED"
+        except Exception as error:
+            if not _has_error_label(error, "UnknownTransactionCommitResult"):
+                raise
+            last_unknown = error
+            if attempt + 1 < max_commit_attempts:
+                continue
+
+    try:
+        if verify_committed() is True:
+            return "COMMITTED_RECONCILED"
+    except Exception as error:
+        raise AtomicPlatformSettlementCommitUncertainError(
+            "ATOMIC_SETTLEMENT_COMMIT_OUTCOME_UNCERTAIN"
+        ) from error
+    raise AtomicPlatformSettlementCommitUncertainError(
+        "ATOMIC_SETTLEMENT_COMMIT_OUTCOME_UNCERTAIN"
+    ) from last_unknown
+
+
 class AtomicPlatformSettlementError(RuntimeError):
     """Fail-closed error for the composed settlement transaction."""
 
