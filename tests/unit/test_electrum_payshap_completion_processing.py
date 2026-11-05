@@ -92,7 +92,7 @@ def test_approved_completion_allocates_and_marks_inbox_in_same_session():
         "tools.eos.kennel.orchestration.electrum_payshap_completion_processing.ElectrumPayShapCompletionInboxRegistry.get",
         return_value=(event, raw),
     ), patch(
-        "tools.eos.kennel.orchestration.electrum_payshap_completion_processing.ElectrumProviderTenantBindingRegistry.get_by_creditor_account_fingerprint",
+        "tools.eos.kennel.orchestration.electrum_payshap_completion_processing.ElectrumProviderAccountBindingRegistry.get_by_creditor_account_fingerprint",
         return_value={"tenant_id": "tenant-a", "payment_destination_reference": "destination-1"},
     ), patch(
         "tools.eos.kennel.orchestration.electrum_payshap_completion_processing.PlatformBillingFinancialExecutionTruthRegistry.get",
