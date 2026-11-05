@@ -10,12 +10,12 @@
  * ║   ╚═════╝ ╚═╝╚══════╝╚══════╝╚═╝╚═╝  ╚═══╝ ╚═════╝     ╚═╝  ╚═╝ ╚═════╝  ╚═════╝    ╚═╝   ╚══════╝╚══════╝                       ║
  * ║                                                                                                                                        ║
  * ╚════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════╝
- * 🏛️ WILSY OS - BUSINESS ARTIFACT PDF CONTROLLER [V9.0.0‑INVOICE‑PAYLOAD‑ENRICHED]
+ * 🏛️ WILSY OS - BUSINESS ARTIFACT PDF CONTROLLER [V9.1.0‑EOS‑VERIFIED‑IDENTITY]
  * ╠════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════╣
  * ║ [FORENSIC PDF GENERATION | KNOWLEDGE BASE | CRM PROOF PACK | NDA | BILLING INVOICE]                                               ║
  * ║ [KENNEL EOS AWARE | TENANT ISOLATION | CRYPTOGRAPHIC SEALING]                                                                           ║
  * ╠════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════╣
- * ║ VERSION: 9.0.0‑INVOICE‑PAYLOAD‑ENRICHED | PRODUCTION READY | INSTITUTIONAL GRADE                                                     ║
+ * ║ VERSION: 9.1.0‑EOS‑VERIFIED‑IDENTITY | EOS AUTHORITY BOUNDARY | INSTITUTIONAL GRADE                                                     ║
  * ║ ABSOLUTE PATH: /Users/wilsonkhanyezi/legal-doc-system/server/controllers/businessArtifactPdfController.js                           ║
  * ╠════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════╣
  * ║ 👥 COLLABORATION & SOVEREIGN SIGN‑OFF:                                                                                              ║
@@ -23,11 +23,12 @@
  * ║ • AI Engineering – V9.0.0: Added `enrichBillingInvoiceIdentity` to normalise invoice fields for the enterprise renderer.           ║
  * ║ • Compliance: POPIA §19, GDPR §32, SOC2 §CC7.2, ISO 27001                                                                            ║
  * ╠════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════╣
- * ║ 🔧 CHANGES (v9.0.0‑INVOICE‑PAYLOAD‑ENRICHED):                                                                                        ║
+ * ║ 🔧 CHANGES (v9.1.0‑EOS‑VERIFIED‑IDENTITY):                                                                                        ║
  * ║   1. Added `enrichBillingInvoiceIdentity` – sets `type: 'billing-invoice'` and ensures all invoice fields are present.             ║
  * ║   2. Integrated enrichment into `generateSovereignArtifactPdf` before passing identity to renderer.                                 ║
  * ║   3. All existing Knowledge Base, CRM Proof Pack, NDA, and generic logic preserved unchanged.                                       ║
  * ║   4. Full JSDoc and compliance references.                                                                                           ║
+ * ║   5. Removed Mongoose profile reads and unverified JWT claim decoding; only EOS-verified workspace identity is accepted.           ║
  * ╚════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════╝
  */
 
