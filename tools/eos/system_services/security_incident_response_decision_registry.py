@@ -364,7 +364,10 @@ class SecurityIncidentResponseDecisionRegistry:
         if (
             decision.status is not SecurityIncidentResponseDecisionStatus.APPROVED
             or decision.revision != 1
-            or decision.action is not SecurityIncidentResponseAction.SYSTEM_PERMISSION_REVOCATION
+            or decision.action not in {
+                SecurityIncidentResponseAction.SYSTEM_PERMISSION_REVOCATION,
+                SecurityIncidentResponseAction.PASSWORD_RESET,
+            }
             or decision.decided_at is None
             or not isinstance(actor_principal_id, str)
             or not actor_principal_id
