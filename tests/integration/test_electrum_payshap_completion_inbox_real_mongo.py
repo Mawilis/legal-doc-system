@@ -26,7 +26,7 @@ def mongo_collections():
     client = MongoClient(URI, serverSelectionTimeoutMS=5000)
     assert client.admin.command("hello").get("isWritablePrimary") is True
     db = client[f"electrum_inbox_{uuid4().hex}"]
-    inbox = db["completion_inbox"]
+    inbox = db["electrum_payshap_completion_inbox"]
     bindings = db["account_bindings"]
     ElectrumPayShapCompletionInboxRegistry.ensure_indexes(inbox)
     ElectrumProviderAccountBindingRegistry.ensure_indexes(bindings)
