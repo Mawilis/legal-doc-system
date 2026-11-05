@@ -15,7 +15,7 @@ import { useSovereignStore } from '../../store/sovereignStore';
 import { revenueService } from '../../services/revenueService';
 import useSovereignAccess from '../../hooks/useSovereignAccess';
 import iconManifest from '../../assets/iconManifest';
-import wilsyLogo from '../../assets/logo/wilsy.jpeg';
+import wilsyLogo from '../../assets/logo/wilsy-logo.svg';
 import {
   LogOut, TrendingUp, Shield, Globe, Download,
   FileText, BarChart3, Lock, Activity, Zap, Award, Eye, User, Network, Cpu, Terminal, Fingerprint
