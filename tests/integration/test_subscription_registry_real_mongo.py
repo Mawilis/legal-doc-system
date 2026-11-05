@@ -1111,6 +1111,7 @@ print(entity.tenant_id)
 
     environment = os.environ.copy()
     environment["MONGODB_URI"] = mongo_context.database_uri
+    environment["WILSY_KENNEL_DB_TLS"] = "false"
     environment.pop("WILSY_SUBSCRIPTION_MONGO_URI", None)
     environment.pop("WILSY_PLAN_MONGO_URI", None)
 
