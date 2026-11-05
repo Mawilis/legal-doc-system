@@ -227,3 +227,41 @@ def test_operation_aware_selection_ignores_revoked_capacity_and_checks_scope():
         operation="crm_work_item_read",
     )
     assert denied.resolution is BusinessRoleResolution.TENANT_BUSINESS_ROLE_AUTHORITY_UNAVAILABLE
+
+
+def test_dual_capacity_selection_keeps_owner_and_legal_specialist_authorities_separate():
+    repo = MultiCapacityRepo([
+        _capacity("tenant_legal_partner"),
+        _capacity("tenant_owner"),
+    ])
+    owner_work = resolve_current_tenant_business_role(
+        principal_id="p", tenant_id="t", repository=repo,
+        operation="crm_work_item_create",
+    )
+    legal_deadline = resolve_current_tenant_business_role(
+        principal_id="p", tenant_id="t", repository=repo,
+        operation="legal_matter_deadline_read",
+    )
+    assert owner_work.role == "tenant_owner"
+    assert legal_deadline.role == "tenant_legal_partner"
+    assert owner_work.resolution is BusinessRoleResolution.RESOLVED
+    assert legal_deadline.resolution is BusinessRoleResolution.RESOLVED
+
+
+def test_revoked_owner_capacity_does_not_revoke_legal_specialist_capacity():
+    repo = MultiCapacityRepo([
+        _capacity("tenant_owner", TenantBusinessRoleStatus.REVOKED),
+        _capacity("tenant_legal_partner", TenantBusinessRoleStatus.ACTIVE),
+    ])
+    owner_work = resolve_current_tenant_business_role(
+        principal_id="p", tenant_id="t", repository=repo,
+        operation="crm_work_item_create",
+    )
+    legal_deadline = resolve_current_tenant_business_role(
+        principal_id="p", tenant_id="t", repository=repo,
+        operation="legal_matter_deadline_read",
+    )
+    assert owner_work.role is None
+    assert owner_work.resolution is BusinessRoleResolution.NO_ELIGIBLE_TENANT_BUSINESS_ROLE
+    assert legal_deadline.role == "tenant_legal_partner"
+    assert legal_deadline.resolution is BusinessRoleResolution.RESOLVED
