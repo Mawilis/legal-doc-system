@@ -257,7 +257,7 @@ def test_signed_http_completion_to_real_inbox_empty_204_and_replay(mongo_collect
         return http.post(router.ROUTE_PATH, content=body, headers={"x-jwt-signature": token})
 
     first = send(payload)
-    assert first.status_code == 204
+    assert first.status_code == 202
     assert first.content == b""
     verify_electrum_http_message_signature(
         b"", first.headers["x-jwt-signature"],
@@ -267,7 +267,7 @@ def test_signed_http_completion_to_real_inbox_empty_204_and_replay(mongo_collect
     assert inbox.count_documents({"message_id": "sandbox-completion-001"}) == 1
 
     replay = send(payload)
-    assert replay.status_code == 204
+    assert replay.status_code == 202
     assert replay.content == b""
     assert inbox.count_documents({"message_id": "sandbox-completion-001"}) == 1
 
