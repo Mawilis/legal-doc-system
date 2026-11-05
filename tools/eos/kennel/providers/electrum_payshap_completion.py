@@ -126,12 +126,15 @@ def verify_electrum_http_message_signature(
 
     expected_digest = hashlib.sha256(raw_body).hexdigest()
     supplied_digest = claims.get(CONTENT_DIGEST_CLAIM)
-    if (
-        not isinstance(supplied_digest, str)
-        or re.fullmatch(r"[0-9a-f]{64}", supplied_digest) is None
-        or not hmac.compare_digest(supplied_digest, expected_digest)
-    ):
-        raise ElectrumMessageAuthenticationError("ELECTRUM_CONTENT_DIGEST_MISMATCH")
+    if raw_body:
+        if (
+            not isinstance(supplied_digest, str)
+            or re.fullmatch(r"[0-9a-f]{64}", supplied_digest) is None
+            or not hmac.compare_digest(supplied_digest, expected_digest)
+        ):
+            raise ElectrumMessageAuthenticationError("ELECTRUM_CONTENT_DIGEST_MISMATCH")
+    elif supplied_digest is not None:
+        raise ElectrumMessageAuthenticationError("ELECTRUM_EMPTY_BODY_DIGEST_MUST_BE_OMITTED")
 
     return VerifiedElectrumMessage(
         key_id=key_id,
@@ -160,11 +163,9 @@ def sign_electrum_http_message(
         raise ElectrumMessageAuthenticationError("ELECTRUM_SIGNING_ISSUER_REQUIRED")
     if isinstance(issued_at, bool) or not isinstance(issued_at, int):
         raise ElectrumMessageAuthenticationError("ELECTRUM_IAT_INVALID")
-    claims = {
-        "iss": issuer,
-        "iat": issued_at,
-        CONTENT_DIGEST_CLAIM: hashlib.sha256(raw_body).hexdigest(),
-    }
+    claims = {"iss": issuer, "iat": issued_at}
+    if raw_body:
+        claims[CONTENT_DIGEST_CLAIM] = hashlib.sha256(raw_body).hexdigest()
     try:
         return jwt.encode(
             claims,
@@ -233,8 +234,11 @@ def normalize_electrum_payshap_completion(
     identifiers = payload.get("messageIdentifiers")
     transaction_ids = payload.get("transactionIdentifiers")
     payment_scheme = payload.get("paymentScheme")
+    original_identifiers = payload.get("originalMessageIdentifiers")
     original = payload.get("originalTransactionData")
-    if not all(isinstance(value, Mapping) for value in (status_data, identifiers, transaction_ids, payment_scheme, original)):
+    if not all(isinstance(value, Mapping) for value in (
+        status_data, identifiers, original_identifiers, transaction_ids, payment_scheme, original
+    )):
         raise ElectrumCompletionContractError("ELECTRUM_COMPLETION_FIELDS_INVALID")
 
     outcome = _required_text(status_data.get("outcome"), "ELECTRUM_OUTCOME_INVALID", maximum=32)
@@ -252,6 +256,15 @@ def normalize_electrum_payshap_completion(
     )
     message_created_at = _aware_timestamp(
         identifiers.get("creationDateTime"), "ELECTRUM_MESSAGE_TIMESTAMP_INVALID"
+    )
+    _required_text(
+        original_identifiers.get("messageIdentification"),
+        "ELECTRUM_ORIGINAL_MESSAGE_ID_INVALID",
+        maximum=35,
+    )
+    _aware_timestamp(
+        original_identifiers.get("creationDateTime"),
+        "ELECTRUM_ORIGINAL_MESSAGE_TIMESTAMP_INVALID",
     )
     uetr = _required_text(transaction_ids.get("uetr"), "ELECTRUM_UETR_INVALID", maximum=36)
     try:
