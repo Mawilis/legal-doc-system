@@ -50,6 +50,18 @@ from tools.eos.system_services.security_incident_registry import (
     SecurityIncidentRegistry,
     SecurityIncidentConflictError,
 )
+from tools.eos.system_services.security_incident_assignment import (
+    SecurityIncidentAssignment,
+)
+from tools.eos.system_services.security_incident_assignment_registry import (
+    SecurityIncidentAssignmentRegistry,
+    IncidentAssignmentConflictError,
+    IncidentAssignmentNotFoundError,
+)
+from tools.eos.system_services.security_incident_escalation_service import (
+    SecurityIncidentEscalationService,
+    SecurityIncidentEscalationError,
+)
 from tools.eos.system_services.support_case_registry import (
     SupportCaseConflictError,
     SupportCaseNotFoundError,
@@ -107,9 +119,13 @@ def _run_transaction(callback: Callable[[ClientSession], _Result]) -> _Result:
         raise HTTPException(status_code=403, detail="System Services access denied.") from error
     except SystemServicesAuthorizationUnavailable as error:
         raise HTTPException(status_code=503, detail="System Services authority is unavailable.") from error
-    except SupportCaseNotFoundError as error:
-        raise HTTPException(status_code=404, detail="Support case not found.") from error
-    except (SupportCaseConflictError, SupportCaseApplicationError, SecurityIncidentConflictError) as error:
+    except (SupportCaseNotFoundError, IncidentAssignmentNotFoundError) as error:
+        raise HTTPException(status_code=404, detail="System Services record not found.") from error
+    except (
+        SupportCaseConflictError, SupportCaseApplicationError,
+        SecurityIncidentConflictError, IncidentAssignmentConflictError,
+        SecurityIncidentEscalationError,
+    ) as error:
         raise HTTPException(status_code=409, detail="Support case operation conflicts with current state.") from error
     except Exception as error:
         # No exception text, Mongo detail, identity, or case content reaches the caller.
@@ -377,6 +393,135 @@ def read_own_support_case_events(
             tenant_id=tenant_id, session=session,
         )]
     return _run_transaction(read)
+
+
+
+class IncidentAssignmentRequest(BaseModel):
+    model_config = ConfigDict(extra="forbid", frozen=True)
+    assigned_to_principal_id: str = Field(min_length=1, max_length=256)
+
+
+class IncidentAssignmentDecisionRequest(BaseModel):
+    model_config = ConfigDict(extra="forbid", frozen=True)
+    expected_revision: StrictInt = Field(ge=0)
+
+
+def _assignment_runtime(request: Request) -> tuple[SecurityIncidentRegistry, SecurityIncidentAssignmentRegistry]:
+    if getattr(request.app.state, "system_services_incident_indexes_ready", False) is not True:
+        raise HTTPException(status_code=503, detail="Security incident storage is not ready.")
+    if getattr(request.app.state, "system_services_assignment_indexes_ready", False) is not True:
+        raise HTTPException(status_code=503, detail="Incident assignment storage is not ready.")
+    incidents = getattr(request.app.state, "system_services_incident_registry", None)
+    assignments = getattr(request.app.state, "system_services_assignment_registry", None)
+    if type(incidents) is not SecurityIncidentRegistry or type(assignments) is not SecurityIncidentAssignmentRegistry:
+        raise HTTPException(status_code=503, detail="Incident escalation is not configured.")
+    return incidents, assignments
+
+
+def _project_assignment(value: SecurityIncidentAssignment) -> dict[str, object]:
+    return {
+        "assignmentId": value.assignment_id,
+        "incidentId": value.incident_id,
+        "assignedToPrincipalId": value.assigned_to_principal_id,
+        "status": value.status.value,
+        "revision": value.revision,
+        "createdAt": value.created_at.isoformat(),
+        "updatedAt": value.updated_at.isoformat(),
+    }
+
+
+@router.get("/security-incidents")
+def list_system_security_incidents(
+    request: Request,
+    limit: Annotated[int, Query(ge=1, le=100)] = 50,
+    identity: SovereignIdentity = Depends(get_current_identity),
+):
+    """Read sanitized incident queue only with current SYSTEM queue permission."""
+    actor = _actor(identity)
+    incidents, _ = _assignment_runtime(request)
+    _, authorizer = _runtime(request)
+    def read(session):
+        authorizer.require(
+            principal_id=actor.principal_id,
+            permission_id="system_services:queue:read",
+            session=session,
+        )
+        return [_project_incident(item) for item in incidents.list_system_queue(
+            session=session, limit=limit
+        )]
+    return _run_transaction(read)
+
+
+@router.post("/security-incidents/{incident_id}/assign", status_code=201)
+def assign_security_incident_responder(
+    incident_id: str,
+    payload: IncidentAssignmentRequest,
+    request: Request,
+    idempotency_key: Annotated[str, Header(alias="Idempotency-Key", min_length=1, max_length=256)],
+    identity: SovereignIdentity = Depends(get_current_identity),
+):
+    """Assign a separately authorized platform responder with conflict checks."""
+    actor = _actor(identity)
+    incidents, assignments = _assignment_runtime(request)
+    _, authorizer = _runtime(request)
+    service = SecurityIncidentEscalationService(
+        incidents=incidents, assignments=assignments, authorizer=authorizer,
+    )
+    return _run_transaction(lambda session: _project_assignment(service.assign(
+        actor_principal_id=actor.principal_id,
+        assigned_to_principal_id=payload.assigned_to_principal_id,
+        incident_id=incident_id,
+        idempotency_key=idempotency_key,
+        session=session,
+    )))
+
+
+@router.post("/security-incident-assignments/{assignment_id}/accept")
+def accept_security_incident_assignment(
+    assignment_id: str,
+    payload: IncidentAssignmentDecisionRequest,
+    request: Request,
+    idempotency_key: Annotated[str, Header(alias="Idempotency-Key", min_length=1, max_length=256)],
+    identity: SovereignIdentity = Depends(get_current_identity),
+):
+    """Allow only the currently assigned, independently authorized responder to accept."""
+    actor = _actor(identity)
+    incidents, assignments = _assignment_runtime(request)
+    _, authorizer = _runtime(request)
+    service = SecurityIncidentEscalationService(
+        incidents=incidents, assignments=assignments, authorizer=authorizer,
+    )
+    return _run_transaction(lambda session: _project_assignment(service.accept(
+        actor_principal_id=actor.principal_id,
+        assignment_id=assignment_id,
+        expected_revision=payload.expected_revision,
+        idempotency_key=idempotency_key,
+        session=session,
+    )))
+
+
+@router.post("/security-incident-assignments/{assignment_id}/decline")
+def decline_security_incident_assignment(
+    assignment_id: str,
+    payload: IncidentAssignmentDecisionRequest,
+    request: Request,
+    idempotency_key: Annotated[str, Header(alias="Idempotency-Key", min_length=1, max_length=256)],
+    identity: SovereignIdentity = Depends(get_current_identity),
+):
+    """Allow only the currently assigned, independently authorized responder to decline."""
+    actor = _actor(identity)
+    incidents, assignments = _assignment_runtime(request)
+    _, authorizer = _runtime(request)
+    service = SecurityIncidentEscalationService(
+        incidents=incidents, assignments=assignments, authorizer=authorizer,
+    )
+    return _run_transaction(lambda session: _project_assignment(service.decline(
+        actor_principal_id=actor.principal_id,
+        assignment_id=assignment_id,
+        expected_revision=payload.expected_revision,
+        idempotency_key=idempotency_key,
+        session=session,
+    )))
 
 
 @router.get("/workspace-bootstrap")
