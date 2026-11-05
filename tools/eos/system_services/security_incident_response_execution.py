@@ -130,7 +130,7 @@ class SecurityIncidentResponseCanonicalExecutor:
         actor_principal_id: str,
         recovery_token: str,
         new_password: str,
-        transaction_completion: Callable[[Any, Any, int], None],
+        transaction_completion: Callable[[Any, str, str, int], None],
         context_terms: Iterable[str] | None = None,
     ) -> PasswordResetResult:
         """Delegate only to canonical R10 password reset with its durable capability.
