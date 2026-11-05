@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from datetime import datetime, timezone
 from unittest.mock import Mock
 
 import pytest
@@ -24,7 +25,7 @@ def test_financial_approval_aggregator_rejects_mixed_client_database_graph():
             tenant_id="tenant-1",
             evaluation_id="evaluation-1",
             result_id="result-1",
-            evaluated_at=__import__("datetime").datetime.now(__import__("datetime").timezone.utc),
+            evaluated_at=datetime.now(timezone.utc),
             created_at=__import__("datetime").datetime.now(__import__("datetime").timezone.utc),
         )
 
