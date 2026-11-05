@@ -693,6 +693,11 @@ def request_security_incident_response(
     """Create an incident-bound proposal; this route never performs containment."""
     actor = _actor(identity)
     idempotency_key = _validate_response_idempotency_key(idempotency_key)
+    if payload.action is not SecurityIncidentResponseAction.SYSTEM_PERMISSION_REVOCATION:
+        raise HTTPException(
+            status_code=409,
+            detail="Password-reset decisions remain unavailable until canonical execution receipt persistence is atomic.",
+        )
     decision_registry, decision_service, _, permission_assignments = _response_runtime(request)
     incidents, _ = _assignment_runtime(request)
 
@@ -754,6 +759,11 @@ def decide_security_incident_response(
 
     def decide(session):
         current = decision_registry.get(decision_id, session=session)
+        if current.action is not SecurityIncidentResponseAction.SYSTEM_PERMISSION_REVOCATION:
+            raise HTTPException(
+                status_code=409,
+                detail="This response action is not enabled for canonical execution.",
+            )
         decided_at = datetime.now(timezone.utc)
         if current.revision == 1:
             same_outcome = (
