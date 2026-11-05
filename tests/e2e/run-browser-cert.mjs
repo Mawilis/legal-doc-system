@@ -103,6 +103,7 @@ const environment = {
   BROWSER_CERT_STATE: statePath,
   MONGODB_URI: mongoUri,
   WILSY_JWT_SECRET: secret,
+  WILSY_PLATFORM_WORKFORCE_SCOPE_ID: 'browser-cert-platform-workforce',
   ENV: 'development',
   WILSY_KENNEL_DB_TLS: '0',
   PYTHONPATH: [repo, process.env.PYTHONPATH].filter(Boolean).join(':'),
@@ -461,6 +462,61 @@ async function preflightAuthenticatedEos(eosBaseUrl) {
   return results.slice(0, 2);
 }
 
+
+async function preflightSystemServices(eosBaseUrl) {
+  let state;
+  try {
+    state = JSON.parse(await readFile(statePath, 'utf-8'));
+  } catch {
+    throw new Error('BROWSER_CERT_FIXTURE_STATE_UNAVAILABLE');
+  }
+  const responder = state?.system_actors?.system_responder;
+  const triage = state?.system_actors?.system_triage;
+  if (!responder?.access_token || !triage?.access_token) {
+    throw new Error('BROWSER_CERT_SYSTEM_ACTOR_SESSIONS_UNAVAILABLE');
+  }
+  const request = async (path, token) => {
+    const response = await fetch(eosBaseUrl + '/api/system-services/' + path, {
+      headers: { Authorization: 'Bearer ' + token },
+      signal: AbortSignal.timeout(10_000),
+    });
+    return { status: response.status, payload: await readBoundedJson(response) };
+  };
+  const [bootstrap, queue, inbox, triageInbox] = await Promise.all([
+    request('workspace-bootstrap', responder.access_token),
+    request('security-incidents', responder.access_token),
+    request('security-incident-assignments/mine', responder.access_token),
+    request('security-incident-assignments/mine', triage.access_token),
+  ]);
+  console.info(
+    '[BROWSER-CERT-SYSTEM-SERVICES] bootstrap=' + bootstrap.status
+      + ' queue=' + queue.status + ' responder_inbox=' + inbox.status
+      + ' non_responder_inbox=' + triageInbox.status,
+  );
+  if (
+    bootstrap.status !== 200
+    || bootstrap.payload?.status !== 'READY'
+    || bootstrap.payload?.authority !== 'EOS_SYSTEM_SERVICES'
+    || !bootstrap.payload?.capabilities?.includes('system_services:incident:escalate')
+    || queue.status !== 200
+    || inbox.status !== 200
+    || triageInbox.status !== 403
+  ) {
+    throw new Error('BROWSER_CERT_SYSTEM_SERVICES_AUTHORIZATION_BOUNDARY_FAILED');
+  }
+  const incidents = queue.payload;
+  const assignments = inbox.payload;
+  if (
+    !Array.isArray(incidents)
+    || !incidents.some((item) => item.incidentId === state.system_incident_id)
+    || !Array.isArray(assignments)
+    || !assignments.some((item) => item.assignmentId === state.system_assignment_id)
+  ) {
+    throw new Error('BROWSER_CERT_SYSTEM_SERVICES_SEEDED_EVIDENCE_MISSING');
+  }
+}
+
+
 function missingBffDependencies() {
   const required = ['cors', 'dotenv', 'express', 'express-fileupload', 'helmet', 'httpxy', 'mongoose'];
   return required.filter(
@@ -565,6 +621,7 @@ try {
 
   setPhase('authenticated_preflights', 'partner_practice_and_owner_commercial_authority');
   const preflightResults = await preflightAuthenticatedEos(eosBaseUrl);
+  await preflightSystemServices(eosBaseUrl);
   const failedPreflights = preflightResults.filter((result) => result.status !== 200);
   if (failedPreflights.length > 0) {
     const summary = preflightResults.map(
