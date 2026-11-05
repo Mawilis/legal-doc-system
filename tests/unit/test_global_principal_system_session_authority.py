@@ -105,6 +105,7 @@ def test_system_session_issuance_requires_current_permission_and_platform_workfo
     )
     authority = GlobalPrincipalSystemSessionAuthority(
         sessions=sessions,
+        refresh_tokens=Mock(),
         principal_repository=principal_repository,
         credential_repository=credential_repository,
         authorizer=authorizer,
@@ -192,7 +193,7 @@ def test_system_session_currentness_revalidates_authority_and_revocation():
 def test_system_session_revocation_is_scoped_to_exact_principal_and_reference():
     sessions = Mock()
     sessions.update_one.return_value = SimpleNamespace(modified_count=1)
-    authority = GlobalPrincipalSystemSessionAuthority(sessions=sessions)
+    authority = GlobalPrincipalSystemSessionAuthority(sessions=sessions, refresh_tokens=Mock())
     session = SimpleNamespace(in_transaction=True)
     assert authority.revoke(
         principal_id="principal-system",
