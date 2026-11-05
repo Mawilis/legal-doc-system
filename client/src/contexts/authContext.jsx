@@ -679,14 +679,58 @@ export const AuthProvider = ({ children }) => {
         emitAuthState(AUTH_STATES.AUTHENTICATED);
       } catch {
         if (!active) return;
-        clearPersistedSessionAuthority();
-        setActiveTenantTransportId(null);
-        setToken(null);
-        setUser(null);
-        setTenant(readPersistedDiscoveredTenant());
-        setAuthStage(AUTH_STATES.IDLE);
-        setError(null);
-        emitAuthState(AUTH_STATES.IDLE);
+
+        // A tenant workspace denial may be a platform SYSTEM principal. It is
+        // never promoted from a role label: EOS must independently authorize
+        // and return the exact SYSTEM workspace projection. A selected tenant
+        // remains a hard boundary and cannot be bypassed by this fallback.
+        let systemWorkspace = null;
+        const discoveredTenant = readPersistedDiscoveredTenant();
+        const persistedUser = readPersistedUserProjection();
+        const persistedPrincipalId = String(persistedUser?.id || '').trim();
+        if (!discoveredTenant?.tenantId && persistedPrincipalId) {
+          try {
+            const response = await api.get('/system-services/workspace-bootstrap', {
+              headers: { Authorization: `Bearer ${candidateToken}` },
+            });
+            if (!active) return;
+            systemWorkspace = boundedSystemServicesWorkspaceProjection(
+              response?.data || {},
+              persistedPrincipalId,
+              persistedUser?.email || '',
+            );
+          } catch {
+            systemWorkspace = null;
+          }
+        }
+
+        if (systemWorkspace) {
+          anchorCanonicalBearer(candidateToken);
+          setActiveTenantTransportId(null);
+          localStorage.setItem('wilsy_auth_token', candidateToken);
+          localStorage.setItem('token', candidateToken);
+          localStorage.setItem(
+            'wilsy_sovereign_user',
+            JSON.stringify(systemWorkspace.user),
+          );
+          localStorage.removeItem('wilsy_active_tenant');
+          localStorage.removeItem('tenantId');
+          setToken(candidateToken);
+          setUser(systemWorkspace.user);
+          setTenant(null);
+          setAuthStage(AUTH_STATES.AUTHENTICATED);
+          setError(null);
+          emitAuthState(AUTH_STATES.AUTHENTICATED);
+        } else {
+          clearPersistedSessionAuthority();
+          setActiveTenantTransportId(null);
+          setToken(null);
+          setUser(null);
+          setTenant(readPersistedDiscoveredTenant());
+          setAuthStage(AUTH_STATES.IDLE);
+          setError(null);
+          emitAuthState(AUTH_STATES.IDLE);
+        }
       } finally {
         if (active) setLoading(false);
       }
