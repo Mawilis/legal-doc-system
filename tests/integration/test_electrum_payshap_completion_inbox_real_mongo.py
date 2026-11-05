@@ -37,13 +37,13 @@ def mongo_collections():
         client.close()
 
 
-def event(*, amount=4000, message_id="message-1", key_id="electrum-key-1", received_at=NOW):
+def event(*, amount=4000, message_id="message-1", transaction_reference="transaction-1", key_id="electrum-key-1", received_at=NOW):
     return ElectrumPayShapCompletionInboxEvent(
         provider_name="ELECTRUM",
         message_id=message_id,
         message_created_at=NOW,
         uetr="8f14e45f-ea5e-4f5f-9c5d-8f14e45fea5e",
-        transaction_reference="transaction-1",
+        transaction_reference=transaction_reference,
         outcome="APPROVED",
         payment_scheme="ZA_RPP",
         payment_method="CreditTransfer",
@@ -77,6 +77,10 @@ def test_divergent_message_and_duplicate_transaction_are_rejected(mongo_collecti
         ElectrumPayShapCompletionInboxRegistry.create(event(amount=5000), inbox)
     with pytest.raises(ElectrumCompletionInboxConflict, match="DIVERGENT_REPLAY"):
         ElectrumPayShapCompletionInboxRegistry.create(event(message_id="message-2"), inbox)
+    with pytest.raises(ElectrumCompletionInboxConflict, match="DIVERGENT_REPLAY"):
+        ElectrumPayShapCompletionInboxRegistry.create(
+            event(message_id="message-3", transaction_reference="transaction-2"), inbox
+        )
     assert inbox.count_documents({}) == 1
 
 
