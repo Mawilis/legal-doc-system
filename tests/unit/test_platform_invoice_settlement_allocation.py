@@ -155,3 +155,21 @@ def test_final_allocation_marks_invoice_paid_only_when_balance_reaches_zero(monk
     assert update["outstanding_amount"] == 0.0
     assert update["settlement_state"] == "SETTLED"
     assert update["paid_at"] == args["allocated_at"]
+
+
+def test_allocation_compare_and_set_binds_full_commercial_invoice_snapshot(monkeypatch):
+    module, args, invoices, allocations, audit, outbox = _orchestration_fixture(monkeypatch)
+    invoice_doc = dict(invoices.find_one.return_value)
+    invoice_doc.update({
+        "line_items": [{"description": "Subscription", "amount": 100.0}],
+        "tax_amount": 0.0,
+        "tax_type": "none",
+        "issued_at": "2026-11-01T00:00:00+00:00",
+        "payment_terms_days": 30,
+        "billing_mode": "PLATFORM",
+    })
+    invoices.find_one.return_value = invoice_doc
+    module.allocate_settlement_observation_to_platform_invoice(**args)
+    query = invoices.update_one.call_args.args[0]
+    for field in ("line_items", "tax_amount", "tax_type", "issued_at", "payment_terms_days", "billing_mode"):
+        assert query[field] == invoice_doc[field]
