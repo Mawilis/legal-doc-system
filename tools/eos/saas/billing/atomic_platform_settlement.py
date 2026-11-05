@@ -61,7 +61,7 @@ def _persist_audit_outbox_intent(
         "platform_execution_truth_id": settlement_evidence.platform_execution_truth_id,
         "platform_invoice_id": settlement_evidence.platform_invoice_id,
         "status": "PENDING",
-        "created_at": settlement_evidence.created_at,
+        "created_at": settlement_evidence.created_at.isoformat(),
     }
     existing = audit_collection.find_one(
         {"tenant_id": tenant_id, "event_key": event_key}, session=session
