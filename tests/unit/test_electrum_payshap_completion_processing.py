@@ -76,7 +76,7 @@ def test_approved_completion_allocates_and_marks_inbox_in_same_session():
     raw = {"processing_status": "PENDING", "processing_revision": 0}
     args = _args()
     args["platform_truth_collection"].find.return_value.limit.return_value = [
-        {"execution_truth_id": "platform-truth-1"}
+        {"tenant_id": "tenant-a", "execution_truth_id": "platform-truth-1"}
     ]
     platform_truth = SimpleNamespace(
         execution_status=PlatformExecutionStatus.EXECUTED,
@@ -93,7 +93,7 @@ def test_approved_completion_allocates_and_marks_inbox_in_same_session():
         return_value=(event, raw),
     ), patch(
         "tools.eos.kennel.orchestration.electrum_payshap_completion_processing.ElectrumProviderAccountBindingRegistry.get_by_creditor_account_fingerprint",
-        return_value={"tenant_id": "tenant-a", "payment_destination_reference": "destination-1"},
+        return_value={"payment_destination_reference": "destination-1"},
     ), patch(
         "tools.eos.kennel.orchestration.electrum_payshap_completion_processing.PlatformBillingFinancialExecutionTruthRegistry.get",
         return_value=platform_truth,
