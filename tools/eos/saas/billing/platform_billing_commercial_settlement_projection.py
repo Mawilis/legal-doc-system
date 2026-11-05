@@ -55,7 +55,9 @@ def project_platform_billing_commercial_settlement(tenant_id:str,settlement_evid
     # A subscription-linked invoice may be settled only against canonical,
     # tenant-scoped SubscriptionRegistry truth read in this same transaction.
     # Invoices without a subscription link remain valid platform receivables.
-    subscription_id = doc.get('subscription_id')
+    # PlatformInvoice.to_dict persists the canonical link as subscriptionId;
+    # older/imported records may use subscription_id. Read both spellings.
+    subscription_id = doc.get("subscription_id", doc.get("subscriptionId"))
     if subscription_id is not None:
         if not isinstance(subscription_id, str) or not subscription_id.strip():
             raise PlatformBillingCommercialSettlementProjectionError('R3F_SUBSCRIPTION_LINK_INVALID')
@@ -93,7 +95,7 @@ def project_platform_billing_commercial_settlement(tenant_id:str,settlement_evid
     if invoice.status is InvoiceStatus.PAID or invoice.paid_at is not None or invoice.amount_paid>0: raise PlatformBillingCommercialSettlementProjectionError('R3F_ARBITRARY_PAID_STATE')
     PlatformBillingCommercialSettlementProjectionRegistry.create(projection,commercial_projection_collection,session=session)
     cas={'tenant_id':tenant_id,'invoice_id':invoice.invoice_id,'status':{'$ne':'PAID'},'amount_paid':invoice.amount_paid,'outstanding_amount':invoice.outstanding_amount,'paid_at':doc.get('paid_at')}
-    for field in ('release_amount_minor','currency','amount','tax_amount','tax_type','line_items','issued_at','due_at','payment_terms_days','collection_method','billing_mode','seller_jurisdiction','customer_jurisdiction','subscription_id','plan_id','order_number','purchase_order'):
+    for field in ('release_amount_minor','currency','amount','tax_amount','tax_type','line_items','issued_at','due_at','payment_terms_days','collection_method','billing_mode','seller_jurisdiction','customer_jurisdiction','subscription_id','subscriptionId','plan_id','order_number','purchase_order'):
         if field in doc: cas[field]=doc[field]
     result=platform_invoice_collection.update_one(cas,{'$set':{'status':'PAID','amount_paid':invoice.total,'amountPaid':invoice.total,'outstanding_amount':0,'outstandingAmount':0,'paid_at':settlement.settled_at,'paidAt':settlement.settled_at}},session=session)
     if result.matched_count!=1: raise PlatformBillingCommercialSettlementProjectionError('R3F_INVOICE_CAS_FAILED')
