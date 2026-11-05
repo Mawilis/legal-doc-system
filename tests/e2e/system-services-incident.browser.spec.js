@@ -48,17 +48,18 @@ async function openSystemServices(browser, actorKey = 'system_responder') {
   await page.keyboard.press('Control+k');
   const dialog = page.getByRole('dialog', { name: 'Wilsy OS Global Search' });
   await expect(dialog).toBeVisible();
-  await dialog.getByPlaceholder(/Search Wilsy OS/).fill('System Services');
-  await dialog.getByRole('button', { name: /System Services/ }).click();
-  return { context, page };
-}
-
-test('certifies SYSTEM incident queue, principal-bound responder inbox and acceptance', async ({ browser }) => {
-  const { context, page } = await openSystemServices(browser);
-  const workspaceResponse = await page.waitForResponse((response) => (
+  const workspaceResponse = page.waitForResponse((response) => (
     new URL(response.url()).pathname === '/api/system-services/workspace-bootstrap'
     && response.request().method() === 'GET'
   ));
+  await dialog.getByPlaceholder(/Search Wilsy OS/).fill('System Services');
+  await dialog.getByRole('button', { name: /System Services/ }).click();
+  return { context, page, workspaceResponse };
+}
+
+test('certifies SYSTEM incident queue, principal-bound responder inbox and acceptance', async ({ browser }) => {
+  const { context, page, workspaceResponse } = await openSystemServices(browser);
+
   expect(workspaceResponse.status()).toBe(200);
   const workspace = await workspaceResponse.json();
   expect(workspace.status).toBe('READY');
@@ -96,19 +97,22 @@ test('certifies SYSTEM incident queue, principal-bound responder inbox and accep
 });
 
 test('does not expose responder inbox to an independently authorized triage-only principal', async ({ browser }) => {
-  const { context, page } = await openSystemServices(browser, 'system_triage');
-  const workspaceResponse = await page.waitForResponse((response) => (
-    new URL(response.url()).pathname === '/api/system-services/workspace-bootstrap'
-    && response.request().method() === 'GET'
-  ));
+  const { context, page, workspaceResponse } = await openSystemServices(browser, 'system_triage');
+
   expect(workspaceResponse.status()).toBe(200);
   const workspace = await workspaceResponse.json();
   expect(workspace.capabilities).toContain('system_services:queue:read');
   expect(workspace.capabilities).not.toContain('system_services:incident:escalate');
   await expect(page.getByRole('heading', { name: 'Security incident queue' })).toBeVisible();
   await expect(page.getByRole('heading', { name: 'My responder assignments' })).toHaveCount(0);
-  const denied = await page.request.get('/api/system-services/security-incident-assignments/mine');
-  expect(denied.status()).toBe(403);
+  const deniedStatus = await page.evaluate(async () => {
+    const token = localStorage.getItem('wilsy_auth_token');
+    const response = await fetch('/api/system-services/security-incident-assignments/mine', {
+      headers: { Authorization: 'Bearer ' + token },
+    });
+    return response.status;
+  });
+  expect(deniedStatus).toBe(403);
   await context.close();
 });
 
