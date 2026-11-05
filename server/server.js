@@ -33,7 +33,6 @@ import cors from 'cors';
 import helmet from 'helmet';
 import fileUpload from 'express-fileupload';
 import { createServer } from 'node:http';
-import mongoose from 'mongoose';
 import { generateSovereignArtifactPdf } from './controllers/businessArtifactPdfController.js';
 import { createProxyServer } from 'httpxy';
 import { fileURLToPath } from 'node:url';
@@ -222,14 +221,13 @@ function createApp() {
     })
   );
   app.get('/health', (req, res) => {
-    const dbState = mongoose.connection.readyState;
-    const statusMap = { 0: 'DISCONNECTED', 1: 'CONNECTED', 2: 'CONNECTING', 3: 'DISCONNECTING' };
     res.json({
       status: 'OPTIMAL',
       build: BUILD,
       version: BUILD,
       kennelAllTheWay: true,
-      database: statusMap[dbState] || 'UNKNOWN',
+      database: 'NOT_CONNECTED_BY_BFF',
+      databaseAuthority: 'PYTHON_EOS',
       kennel: KENNEL_TARGET,
       mounts: {
         billing: '/api/billing + /billing → Kennel /billing',
@@ -406,22 +404,7 @@ async function main() {
   const app = createApp();
   const httpServer = createServer(app);
 
-  const mongoUri = process.env.MONGODB_URI || process.env.MONGO_URI || '';
-  if (mongoUri) {
-    console.log('[WILSY] 📡 Connecting to MongoDB...');
-    try {
-      await mongoose.connect(mongoUri, {
-        maxPoolSize: 10,
-        serverSelectionTimeoutMS: 5000,
-      });
-      console.log('[WILSY] ✅ MongoDB connection established.');
-    } catch (err) {
-      console.warn(`[WILSY] ⚠️ MongoDB connection failed: ${err.message}`);
-      console.warn('[WILSY] BFF will continue in proxy‑only mode.');
-    }
-  } else {
-    console.warn('[WILSY] ⚠️ No MongoDB URI provided – /health will report UNKNOWN.');
-  }
+  // The BFF is transport-only. Python EOS owns the sole business Mongo graph.
 
   const configuredPort = Number(process.env.PORT) || 4000;
   let actualPort = configuredPort;
@@ -458,13 +441,13 @@ async function main() {
     }
   }
 
-  const dbStatus = mongoose.connection.readyState === 1 ? 'CONNECTED' : 'DEGRADED';
+  const dbStatus = 'NOT_CONNECTED_BY_BFF';
   console.log(`
 ╔══════════════════════════════════════════════════════════════════════════════════╗
 ║  ✅ WILSY OS SOVEREIGN RUNTIME                                                  ║
 ║  ──────────────────────────────────────────────────────────────────────────────── ║
 ║  Build:     ${BUILD}
-║  Database:  ${dbStatus}
+║  Database:  ${dbStatus} (authority: PYTHON_EOS)
 ║  HTTP:      http://localhost:${actualPort}
 ║  Health:    http://localhost:${actualPort}/health
 ║  Proxy:     ${KENNEL_TARGET}
@@ -479,13 +462,6 @@ async function main() {
   const shutdown = async (signal) => {
     console.log(`\n[WILSY] Received ${signal}. Shutting down gracefully...`);
     httpServer.close(async () => {
-      try {
-        if (mongoose.connection.readyState === 1) {
-          await mongoose.connection.close();
-        }
-      } catch (_) {
-        /* ignore */
-      }
       console.log('[WILSY] Shutdown complete.');
       process.exit(0);
     });
