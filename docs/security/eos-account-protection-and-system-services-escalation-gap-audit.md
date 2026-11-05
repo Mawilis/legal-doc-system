@@ -203,3 +203,21 @@ The audit/outbox foundation now covers incident intake, responder assignment and
 - No real duty roster, approved acknowledgement SLA, notification owner, or after-hours fallback has been supplied. The resolver remains non-operational; no timer or dispatch worker is activated. The platform audit outbox remains pending-only.
 
 **Current decision:** continue development with the authenticated incident/responder browser surface and a separately governed containment-decision contract. Do not treat #583 as browser, operational-duty, containment/recovery, notification-delivery or production certification. PR #342 remains open and unmerged; no deployment or production mutation is authorized.
+
+
+### Authenticated System Services browser integration increment (2026-11-05)
+
+- The React System Services workspace now consumes the existing EOS security-incident queue and principal-bound responder inbox/detail routes. Responder accept/decline calls use the server-projected assignment revision and an idempotency key; the UI never treats local state as authority.
+- The authenticated workspace bootstrap now projects `system_services:incident:escalate` only after the EOS authorizer confirms the exact permission. The responder inbox and controls render only when that exact capability is present.
+- The UI explicitly states that acknowledgement/decline is not containment or account mutation.
+- Added component tests for exact capability gating, queue and inbox projection, assignment detail/decision callbacks, and missing metrics. Exact-head System Services workflow #42007610523 on `eaced413b18d6c75aff425c39e22b2a0019aa52f` passed: Python compilation, Pyright (0 errors), component tests (6 passed), real MongoDB replica-set tests (61 passed), and clean-checkout checks — https://github.com/Mawilis/legal-doc-system/actions/runs/42007610523.
+- Added a disposable authenticated browser fixture with distinct synthetic triage and responder principals, explicit SYSTEM permission assignments, and active PLATFORM workforce relationship evidence. It seeds a synthetic tenant-reported incident and assigns it through the same EOS escalation service. Browser coverage exercises queue, inbox, detail, acceptance and the triage-only responder-inbox denial.
+- The full Playwright + real-Mongo browser run #42007610319 is in progress at the time of this update — https://github.com/Mawilis/legal-doc-system/actions/runs/42007610319. Do not treat the browser journey as certified until this exact-head run completes successfully.
+
+### Containment and recovery execution boundary (reaffirmed)
+
+- The canonical `GlobalPrincipalSessionAuthority.revoke_session` operation is the only session-revocation execution authority identified. It revokes one exact principal + tenant + session reference and associated refresh credentials inside a caller-owned transaction.
+- The inspected current authenticated System Services HTTP identity path does not yet establish a verified global-principal session reference for the target. Therefore the browser/UI increment deliberately does not add a session-revocation endpoint or infer a target session from browser, tenant or legacy session metadata.
+- Next safe containment increment is an immutable decision record bound to incident, target principal, exact canonical session reference, requesting principal, independent approving principal, decision evidence, and revision. Requester and approver must be distinct and neither may be the target. Execution must revalidate current permission/workforce evidence and invoke the existing canonical session authority in the same transaction as the decision event and independent platform audit/outbox record.
+- Password reset, MFA recovery, recovery-contact verification and account unlock remain with their existing canonical EOS proof and recovery services; this decision record must not reproduce those operations or accept their secrets.
+- No production session revocation, password/MFA mutation, device-trust change, duty-rota operation, notification delivery or outbox dispatch is enabled by this increment.
