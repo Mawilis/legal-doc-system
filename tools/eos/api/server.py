@@ -144,6 +144,12 @@ from tools.eos.auth.global_principal_session_authority import (
     REFRESH_COLLECTION as GLOBAL_PRINCIPAL_REFRESH_COLLECTION,
     GlobalPrincipalSessionAuthority,
 )
+from tools.eos.auth.global_principal_system_session_authority import (
+    CHALLENGE_COLLECTION as GLOBAL_PRINCIPAL_SYSTEM_MFA_CHALLENGE_COLLECTION,
+    SESSION_COLLECTION as GLOBAL_PRINCIPAL_SYSTEM_SESSION_COLLECTION,
+    GlobalPrincipalSystemMfaChallengeService,
+    GlobalPrincipalSystemSessionAuthority,
+)
 from tools.eos.auth.global_principal_mfa_kms_envelope import (
     GlobalMfaKeyManagementError,
     build_global_mfa_kms_envelope_from_environment,
@@ -303,6 +309,7 @@ class WilsyAPIServer:
         app.state.p12c_binding_indexes_ready = False
         app.state.global_principal_auth_indexes_ready = False
         app.state.global_principal_session_indexes_ready = False
+        app.state.global_principal_system_session_indexes_ready = False
         app.state.global_principal_mfa_factor_indexes_ready = False
         app.state.global_principal_mfa_enrollment_indexes_ready = False
         app.state.global_principal_totp_verifier = None
@@ -607,6 +614,13 @@ class WilsyAPIServer:
                     database[GLOBAL_PRINCIPAL_REFRESH_COLLECTION],
                 )
                 app.state.global_principal_session_indexes_ready = client is not None
+                GlobalPrincipalSystemMfaChallengeService.ensure_indexes(
+                    database[GLOBAL_PRINCIPAL_SYSTEM_MFA_CHALLENGE_COLLECTION]
+                )
+                GlobalPrincipalSystemSessionAuthority.ensure_indexes(
+                    database[GLOBAL_PRINCIPAL_SYSTEM_SESSION_COLLECTION]
+                )
+                app.state.global_principal_system_session_indexes_ready = client is not None
                 GlobalPrincipalTotpVerifier.ensure_indexes(
                     database[GLOBAL_PRINCIPAL_MFA_FACTOR_COLLECTION]
                 )
