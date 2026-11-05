@@ -404,9 +404,16 @@ class GlobalPrincipalSystemSessionAuthority:
         )
         if not isinstance(session_row, dict):
             raise GlobalPrincipalSystemSessionRejected("SYSTEM_REFRESH_SESSION_REVOKED")
+        session_expires_at = session_row.get("expires_at")
+        if not isinstance(session_expires_at, datetime):
+            raise GlobalPrincipalSystemSessionRejected("SYSTEM_REFRESH_SESSION_INVALID")
+        # PyMongo's default BSON datetime decoding is naive UTC. Normalize the
+        # persisted session boundary before comparing it with the aware UTC clock.
+        if session_expires_at.tzinfo is None:
+            session_expires_at = session_expires_at.replace(tzinfo=timezone.utc)
         self._revalidate_principal(principal_id, credential_revision, session=session)
         new_refresh = "sysrefresh_" + secrets.token_urlsafe(32)
-        refresh_expires_at = min(session_row["expires_at"], instant + timedelta(seconds=REFRESH_TTL_SECONDS))
+        refresh_expires_at = min(session_expires_at, instant + timedelta(seconds=REFRESH_TTL_SECONDS))
         access_expires_at = instant + timedelta(seconds=ACCESS_TTL_SECONDS)
         access = create_access_token(
             {
