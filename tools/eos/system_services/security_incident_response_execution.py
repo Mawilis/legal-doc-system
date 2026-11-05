@@ -17,6 +17,7 @@ from tools.eos.auth.system_permission_revocation_command_service import (
 )
 from tools.eos.system_services.eos_authorizer import SystemServicesEosAuthorizer
 from tools.eos.saas.auth.password_reset_service import (
+    PasswordResetExecutionGuardError,
     PasswordResetResult,
     PasswordResetService,
 )
@@ -66,12 +67,11 @@ class SecurityIncidentResponseCanonicalExecutor:
         if decision.action is not action or decision.decided_at is None:
             raise SecurityIncidentResponseExecutionError("RESPONSE_DECISION_ACTION_MISMATCH")
 
-    def _require_independent_executor(
-        self,
+    @staticmethod
+    def _validate_independent_executor(
         decision: SecurityIncidentResponseDecision,
         *,
         actor_principal_id: str,
-        session: Any,
     ) -> None:
         if (
             not isinstance(actor_principal_id, str)
@@ -86,6 +86,18 @@ class SecurityIncidentResponseCanonicalExecutor:
             raise SecurityIncidentResponseExecutionError(
                 "INDEPENDENT_RESPONSE_EXECUTOR_REQUIRED"
             )
+
+    def _require_independent_executor(
+        self,
+        decision: SecurityIncidentResponseDecision,
+        *,
+        actor_principal_id: str,
+        session: Any,
+    ) -> None:
+        self._validate_independent_executor(
+            decision,
+            actor_principal_id=actor_principal_id,
+        )
         self._authorizer.require(
             principal_id=actor_principal_id,
             permission_id="system_services:incident:response:execute",
@@ -97,7 +109,6 @@ class SecurityIncidentResponseCanonicalExecutor:
         decision: SecurityIncidentResponseDecision,
         *,
         actor_principal_id: str,
-        session: Any,
         recovery_token: str,
         new_password: str,
         context_terms: Iterable[str] | None = None,
@@ -109,17 +120,39 @@ class SecurityIncidentResponseCanonicalExecutor:
         Secret values are passed transiently and are not retained on this adapter.
         """
         self._require_approved(decision, SecurityIncidentResponseAction.PASSWORD_RESET)
-        self._require_independent_executor(
+        self._validate_independent_executor(
             decision,
             actor_principal_id=actor_principal_id,
-            session=session,
         )
-        return self._password_reset.reset_password(
-            tenant_id=decision.tenant_id,
-            recovery_token=recovery_token,
-            new_password=new_password,
-            context_terms=context_terms,
-        )
+
+        def authorize_inside_canonical_reset_transaction(session: Any, capability: Any) -> None:
+            if (
+                capability.tenant_id != decision.tenant_id
+                or capability.principal_id != decision.target_principal_id
+            ):
+                raise SecurityIncidentResponseExecutionError(
+                    "PASSWORD_RESET_TARGET_BINDING_INVALID"
+                )
+            self._require_independent_executor(
+                decision,
+                actor_principal_id=actor_principal_id,
+                session=session,
+            )
+
+        try:
+            return self._password_reset.reset_password(
+                tenant_id=decision.tenant_id,
+                recovery_token=recovery_token,
+                new_password=new_password,
+                context_terms=context_terms,
+                transaction_guard=authorize_inside_canonical_reset_transaction,
+            )
+        except PasswordResetExecutionGuardError as error:
+            if error.__cause__ is not None:
+                raise error.__cause__
+            raise SecurityIncidentResponseExecutionError(
+                "PASSWORD_RESET_EXECUTION_AUTHORIZATION_FAILED"
+            ) from error
 
     def execute_system_permission_revocation(
         self,
