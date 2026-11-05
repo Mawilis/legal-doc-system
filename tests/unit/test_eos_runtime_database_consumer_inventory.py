@@ -67,6 +67,11 @@ def test_runtime_mongo_client_construction_is_confined_to_kernel_and_isolated_au
     assert "require_tls_mongodb_uri(audit_uri)" in audit_source
     assert "audit_database.client is mongo_database.client" in audit_source
 
+    audit_provisioner = (ROOT / "tools/eos/legal_operations/service/legal_evidence_provider_readonly_reconciliation_audit_provisioner.py").read_text(encoding="utf-8")
+    assert "def main()" in audit_provisioner
+    assert 'if __name__ == "__main__":' in audit_provisioner
+    assert "client.close()" in audit_provisioner
+
     connector = (ROOT / CANONICAL_CONNECTOR).read_text(encoding="utf-8")
     assert "MongoClient(" in connector
     assert "def resolve_mongo_uri" in connector
