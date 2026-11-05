@@ -288,3 +288,41 @@ def test_permission_revocation_mismatch_fails_before_canonical_service():
             session="caller-owned-transaction",
         )
     value._permission_revocation.revoke.assert_not_called()
+
+
+def test_execution_authority_is_checked_before_any_replay_lookup():
+    value = executor_with_mocks()
+    decision = approved(
+        SecurityIncidentResponseAction.SYSTEM_PERMISSION_REVOCATION,
+        assignment_id="assignment-1",
+        permission_id="privileged_activation:issue",
+    )
+    value.authorize_execution(
+        decision,
+        actor_principal_id="independent-executor",
+        session="caller-owned-transaction",
+    )
+    value._authorizer.require.assert_called_once_with(
+        principal_id="independent-executor",
+        permission_id="system_services:incident:response:execute",
+        session="caller-owned-transaction",
+    )
+
+
+def test_execution_authority_rejects_requester_before_permission_or_replay():
+    value = executor_with_mocks()
+    decision = approved(
+        SecurityIncidentResponseAction.SYSTEM_PERMISSION_REVOCATION,
+        assignment_id="assignment-1",
+        permission_id="privileged_activation:issue",
+    )
+    with pytest.raises(
+        SecurityIncidentResponseExecutionError,
+        match="INDEPENDENT_RESPONSE_EXECUTOR_REQUIRED",
+    ):
+        value.authorize_execution(
+            decision,
+            actor_principal_id="requester-principal",
+            session="caller-owned-transaction",
+        )
+    value._authorizer.require.assert_not_called()
