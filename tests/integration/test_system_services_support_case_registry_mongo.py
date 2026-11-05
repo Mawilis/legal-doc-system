@@ -374,3 +374,103 @@ def test_authenticated_tenant_self_service_http_binds_current_membership_and_pri
     assert database[CASE_COLLECTION].count_documents(
         {"tenant_id": tenant_id, "principal_id": principal_id}
     ) == 1
+
+
+
+def test_authenticated_security_incident_intake_is_sanitized_append_only_and_idempotent(
+    mongo_case_registry, monkeypatch
+):
+    """Replica-set proof for distinct incident intake, ownership and durable event."""
+    client, database, case_registry = mongo_case_registry
+    principal_id = "principal-security-incident-http"
+    tenant_id = "tenant-security-incident-http"
+    PrincipalAuthorityRepository.create(
+        PrincipalAuthority(principal_id, PrincipalStatus.ACTIVE, 1),
+        collection=database["principal_authorities"],
+    )
+    TenantMembershipRepository.insert(
+        TenantMembershipAuthority(
+            principal_id, tenant_id, TenantMembershipStatus.ACTIVE, 1
+        ),
+        collection=database["tenant_memberships"],
+    )
+
+    class MembershipReader:
+        def resolve(self, requested_principal, requested_tenant, *, session=None):
+            return TenantMembershipRepository.resolve(
+                requested_principal, requested_tenant,
+                collection=database["tenant_memberships"], session=session,
+            )
+
+    from fastapi import FastAPI
+    from fastapi.testclient import TestClient
+    from tools.eos.api.auth_router import get_current_identity
+    from tools.eos.api import system_services_router
+    from tools.eos.auth.identity import SovereignIdentity
+    from tools.eos.system_services.security_incident_registry import (
+        COLLECTION, EVENT_COLLECTION, SecurityIncidentRegistry,
+    )
+
+    incident_registry = SecurityIncidentRegistry(
+        incidents=database[COLLECTION], events=database[EVENT_COLLECTION]
+    )
+    incident_registry.ensure_indexes()
+    app = FastAPI()
+    app.include_router(system_services_router.router, prefix="/api")
+    app.state.system_services_case_indexes_ready = True
+    app.state.system_services_case_registry = case_registry
+    app.state.system_services_incident_indexes_ready = True
+    app.state.system_services_incident_registry = incident_registry
+    app.dependency_overrides[get_current_identity] = lambda: SovereignIdentity(
+        identity_id=principal_id, tenant_id="untrusted-token-tenant",
+        username=None, email=None, auth_method="CERTIFICATION",
+        status=PrincipalStatus.ACTIVE, session_reference=None,
+    )
+    monkeypatch.setattr(system_services_router, "get_client", lambda: client)
+    monkeypatch.setattr("tools.eos.kernel.db.get_database", lambda: database)
+    monkeypatch.setattr(
+        system_services_router, "get_tenant_membership_repository",
+        lambda: MembershipReader(),
+    )
+
+    payload = {
+        "category": "SUSPECTED_ACCOUNT_COMPROMISE",
+        "observed_at": "2026-11-05T08:00:00+00:00",
+    }
+    headers = {
+        "X-Tenant-ID": tenant_id,
+        "Idempotency-Key": "security-incident-intake-001",
+    }
+    with TestClient(app) as http:
+        first = http.post(
+            "/api/system-services/self-service/security-incidents",
+            headers=headers, json=payload,
+        )
+        replay = http.post(
+            "/api/system-services/self-service/security-incidents",
+            headers=headers, json=payload,
+        )
+        own = http.get(
+            "/api/system-services/self-service/security-incidents",
+            headers={"X-Tenant-ID": tenant_id},
+        )
+        secret_attempt = http.post(
+            "/api/system-services/self-service/security-incidents",
+            headers={**headers, "Idempotency-Key": "security-incident-secret-001"},
+            json={**payload, "password": "must-never-be-accepted"},
+        )
+
+    assert first.status_code == 201
+    assert replay.status_code == 201
+    assert first.json()["incidentId"] == replay.json()["incidentId"]
+    assert own.status_code == 200 and len(own.json()) == 1
+    assert secret_attempt.status_code == 422
+    assert database[COLLECTION].count_documents(
+        {"tenant_id": tenant_id, "reporter_principal_id": principal_id}
+    ) == 1
+    assert database[EVENT_COLLECTION].count_documents(
+        {"event_type": "INCIDENT_REPORTED"}
+    ) == 1
+    persisted = database[COLLECTION].find_one({"tenant_id": tenant_id})
+    assert persisted is not None
+    assert "password" not in persisted and "secret" not in persisted
