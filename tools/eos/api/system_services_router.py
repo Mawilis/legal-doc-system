@@ -98,8 +98,6 @@ from tools.eos.system_services.support_case_registry import (
     SupportCaseRegistry,
 )
 from tools.eos.kernel.db import get_client
-from tools.eos.saas.auth.password_reset_service import PasswordResetResult, PasswordResetServiceError
-
 
 router = APIRouter(prefix="/system-services", tags=["System Services"])
 _Result = TypeVar("_Result")
@@ -779,53 +777,6 @@ def decide_security_incident_response(
         return _project_response_decision(persisted)
 
     return _run_transaction(decide)
-
-
-class SecurityIncidentPasswordResetExecutionRequest(BaseModel):
-    model_config = ConfigDict(extra="forbid", frozen=True)
-    expected_revision: StrictInt = Field(ge=1)
-    recovery_token: StrictStr = Field(min_length=1, max_length=4096)
-    new_password: StrictStr = Field(min_length=1, max_length=1024)
-    context_terms: list[StrictStr] | None = None
-
-
-@router.post("/security-response-decisions/{decision_id}/execute/password-reset")
-def execute_approved_security_incident_password_reset(
-    decision_id: str,
-    payload: SecurityIncidentPasswordResetExecutionRequest,
-    request: Request,
-    identity: SovereignIdentity = Depends(get_current_identity),
-):
-    """Hand approved recovery to canonical R10, which owns its own transaction."""
-    actor = _actor(identity)
-    decision_registry, _, executor, _ = _response_runtime(request)
-    decision = _run_transaction(
-        lambda session: decision_registry.get(decision_id, session=session)
-    )
-    if decision.revision != payload.expected_revision:
-        raise HTTPException(status_code=409, detail="Response decision revision conflict.")
-    try:
-        result = executor.execute_password_reset(
-            decision,
-            actor_principal_id=actor.principal_id,
-            recovery_token=payload.recovery_token,
-            new_password=payload.new_password,
-            context_terms=payload.context_terms,
-        )
-    except SystemServicesAuthorizationError as error:
-        raise HTTPException(status_code=403, detail="System Services access denied.") from error
-    except SystemServicesAuthorizationUnavailable as error:
-        raise HTTPException(status_code=503, detail="System Services authority is unavailable.") from error
-    except (SecurityIncidentResponseExecutionError, PasswordResetServiceError) as error:
-        raise HTTPException(status_code=409, detail="Canonical recovery could not be completed.") from error
-    if not isinstance(result, PasswordResetResult):
-        raise HTTPException(status_code=503, detail="Canonical recovery receipt is unavailable.")
-    return {
-        "decisionId": decision.decision_id,
-        "status": result.status,
-        "transactionAuthority": "CANONICAL_PASSWORD_RESET_SERVICE",
-        "notificationDelivery": "DISABLED",
-    }
 
 
 @router.post("/security-response-decisions/{decision_id}/execute/permission-revocation")
