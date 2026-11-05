@@ -772,7 +772,7 @@ def execute_approved_system_permission_revocation(
 ):
     """Execute one approved revocation through canonical D12 in this caller transaction."""
     actor = _actor(identity)
-    decision_registry, _, executor, _ = _response_runtime(request)
+    decision_registry, _, executor, permission_assignments = _response_runtime(request)
 
     def execute(session):
         decision = decision_registry.get(decision_id, session=session)
@@ -780,13 +780,32 @@ def execute_approved_system_permission_revocation(
             raise HTTPException(status_code=409, detail="Response decision revision conflict.")
         if decision.target_assignment_id is None or decision.target_permission_id is None:
             raise HTTPException(status_code=409, detail="Approved decision has no permission assignment binding.")
+        replay = permission_assignments.find_revocation_replay(
+            assignment_id=decision.target_assignment_id,
+            idempotency_key=idempotency_key,
+            session=session,
+        )
+        if replay is not None:
+            if (
+                replay.principal_id != decision.target_principal_id
+                or replay.permission_id != decision.target_permission_id
+                or replay.revoked_by_principal_id != actor.principal_id
+                or replay.revocation_evidence_reference != (
+                    "security-incident-response-decision:" + decision.decision_id
+                )
+                or replay.revoked_at is None
+            ):
+                raise HTTPException(status_code=409, detail="Revocation replay does not match the approved decision.")
+            execution_at = replay.revoked_at
+        else:
+            execution_at = datetime.now(timezone.utc)
         evidence = SystemPermissionCommandEvidence(
             operation=SystemPermissionCommandOperation.REVOKE,
             actor_principal_id=actor.principal_id,
             target_principal_id=decision.target_principal_id,
             permission_id=decision.target_permission_id,
             evidence_reference="security-incident-response-decision:" + decision.decision_id,
-            occurred_at=datetime.now(timezone.utc),
+            occurred_at=execution_at,
             idempotency_key=idempotency_key,
             assignment_id=decision.target_assignment_id,
         )
