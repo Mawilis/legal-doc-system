@@ -69,6 +69,8 @@ runtime through the deployment's secret-injection mechanism.
 
 ## Runtime configuration
 
+For this integration stage, set `WILSY_ELECTRUM_ENVIRONMENT=sandbox`. The receiver refuses to load transport keys unless this value is exactly `sandbox`; the worker also requires this sandbox gate plus explicit opt-in. Do not set the worker opt-in until Electrum has completed the sandbox handshake and the full end-to-end certification gate is green.
+
 The receiver currently reads:
 
 - `WILSY_ELECTRUM_VERIFICATION_KEYS_JSON`: JSON object mapping Electrum
