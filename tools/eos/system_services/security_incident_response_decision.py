@@ -63,6 +63,8 @@ class SecurityIncidentResponseDecision:
     requested_by_principal_id: str
     requested_at: datetime
     request_evidence_reference: str
+    target_assignment_id: str | None = None
+    target_permission_id: str | None = None
     status: SecurityIncidentResponseDecisionStatus = SecurityIncidentResponseDecisionStatus.PENDING
     revision: int = 0
     decided_by_principal_id: str | None = None
@@ -78,6 +80,17 @@ class SecurityIncidentResponseDecision:
         object.__setattr__(self, "requested_at", _aware_utc("REQUESTED_AT", self.requested_at))
         if not isinstance(self.action, SecurityIncidentResponseAction):
             raise SecurityIncidentResponseDecisionError("ACTION_INVALID")
+        if self.action is SecurityIncidentResponseAction.SYSTEM_PERMISSION_REVOCATION:
+            object.__setattr__(
+                self, "target_assignment_id",
+                _identifier("TARGET_ASSIGNMENT_ID", self.target_assignment_id),
+            )
+            object.__setattr__(
+                self, "target_permission_id",
+                _identifier("TARGET_PERMISSION_ID", self.target_permission_id),
+            )
+        elif self.target_assignment_id is not None or self.target_permission_id is not None:
+            raise SecurityIncidentResponseDecisionError("PERMISSION_REVOCATION_BINDING_FORBIDDEN")
         if not isinstance(self.status, SecurityIncidentResponseDecisionStatus):
             raise SecurityIncidentResponseDecisionError("STATUS_INVALID")
         if self.revision == 0 and self.status is SecurityIncidentResponseDecisionStatus.PENDING:
