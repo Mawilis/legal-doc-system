@@ -21,6 +21,7 @@ AUTHORITY BOUNDARY: This certificate observes production authentication seams; i
 FINANCIAL AUTHORITY BOUNDARY: None; Kennel EOS exclusively owns financial execution.
 """
 import asyncio
+from typing import Any, cast
 from types import SimpleNamespace
 from fastapi import HTTPException
 from fastapi.security import HTTPAuthorizationCredentials
@@ -251,7 +252,7 @@ def test_system_session_rejection_remains_401_and_aborts(monkeypatch):
             _system_auth_request(),
             credentials(),
             None,
-            Repository(PrincipalStatus.ACTIVE),
+            cast(Any, Repository(PrincipalStatus.ACTIVE)),
         ))
     assert session.aborted and session.ended
     assert not session.committed
