@@ -405,6 +405,7 @@ const WORKSPACE_DASHBOARD_MAP = Object.freeze({
   CLIENT_PORTAL: DASHBOARD_KEYS.LEGAL,
   PROCESS_SERVICE: DASHBOARD_KEYS.LEGAL,
   PEOPLE_OPERATIONS: DASHBOARD_KEYS.HR,
+  SYSTEM_SERVICES: DASHBOARD_KEYS.SYSTEM_SERVICES,
 });
 
 /**
@@ -647,7 +648,12 @@ const SovereignDashboardController = ({ user: propUser, onLogout }) => {
 
   useEffect(() => {
     systemServicesRequestRef.current += 1;
-    setSystemServicesWorkspace(null);
+    setSystemServicesWorkspace(
+      user?.systemServicesWorkspace?.status === 'READY'
+      && user.systemServicesWorkspace.authority === 'EOS_SYSTEM_SERVICES'
+        ? user.systemServicesWorkspace
+        : null,
+    );
     setSystemServicesIncidents([]);
     setSystemServicesAssignments([]);
     setSystemServicesAssignmentDetail(null);
@@ -656,6 +662,33 @@ const SovereignDashboardController = ({ user: propUser, onLogout }) => {
       setManualDashboardKey('');
     }
   }, [user?.id, user?.email]);
+  useEffect(() => {
+    const projection = user?.systemServicesWorkspace;
+    if (
+      projection?.status !== 'READY'
+      || projection?.authority !== 'EOS_SYSTEM_SERVICES'
+      || projection?.scope !== 'SYSTEM'
+      || projection?.principalId !== user?.id
+      || !projection?.capabilities?.includes('system_services:queue:read')
+    ) return undefined;
+
+    let active = true;
+    const incidentRead = api.get('/system-services/security-incidents', { timeout: 12000 })
+      .then((result) => Array.isArray(result?.data) ? result.data : [])
+      .catch(() => []);
+    const assignmentRead = projection.capabilities.includes('system_services:incident:escalate')
+      ? api.get('/system-services/security-incident-assignments/mine', { timeout: 12000 })
+        .then((result) => Array.isArray(result?.data) ? result.data : [])
+        .catch(() => [])
+      : Promise.resolve([]);
+    Promise.all([incidentRead, assignmentRead]).then(([incidents, assignments]) => {
+      if (!active) return;
+      setSystemServicesIncidents(incidents);
+      setSystemServicesAssignments(assignments);
+    });
+    return () => { active = false; };
+  }, [user?.id, user?.systemServicesWorkspace]);
+
   const traceId = localStorage.getItem('traceId') || 'SYSTEM_CORE_INIT';
 
   const dashboardUser = useMemo(() => (
