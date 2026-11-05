@@ -657,8 +657,7 @@ async function buildArtifactIdentity(req) {
   assertWilsyKnowledgeBaseLiveUserIdentity(isKnowledgeBaseRequest, liveAuthenticatedUserIdentity);
 
   const generatedByDisplayName =
-    liveAuthenticatedUserIdentity.generatedByDisplayName ||
-    resolveWilsyArtifactProfessionalGeneratedBy(req, body, metadata, payload, payloadData);
+    liveAuthenticatedUserIdentity.generatedByDisplayName || 'Authenticated WILSY User';
 
   const liveAuthenticatedUserEmail =
     liveAuthenticatedUserIdentity.email ||
@@ -1092,45 +1091,62 @@ function buildCrmProofPackEnterpriseStorySections(proofPack = {}) {
 }
 
 /**
- * @function buildCrmProofPackEnterpriseIdentity
- * @description Adapts CRM Proof Pack evidence into the existing tenant-branded enterprise PDF renderer identity.
- * @param {object} identity Existing artifact identity.
- * @param {object} proofPack CRM Proof Pack payload.
- * @returns {object} Enterprise renderer identity.
- * @collaboration businessArtifactPdfController, streamEnterpriseArtifactPdf, tenant branding, Merkle/SHA3 proof, and CRM evidence storytelling.
- */
-function buildCrmProofPackEnterpriseIdentity(identity = {}, proofPack = {}) {
-  const story = buildCrmProofPackEnterpriseStorySections(proofPack);
+ * @function buildCrmProofPackEnterpriseIdentity(identity = {}, proofPack = {}) {
+  const tenantId = clean(identity.tenantId, '');
+  const suppliedTenantId = clean(proofPack.tenantId, '');
+  const generatedBy = clean(
+    identity.generatedByDisplayName || identity.generatedBy,
+    'Authenticated WILSY User'
+  );
+  const suppliedGeneratedBy = clean(proofPack.generatedBy, '');
+  if (
+    !tenantId ||
+    (suppliedTenantId && suppliedTenantId !== tenantId) ||
+    (suppliedGeneratedBy && suppliedGeneratedBy !== generatedBy)
+  ) {
+    const error = new Error('CRM proof pack identity does not match the authenticated EOS workspace.');
+    error.statusCode = 403;
+    error.code = 'PDF_IDENTITY_SCOPE_MISMATCH';
+    throw error;
+  }
+
+  const authoritativeProofPack = {
+    ...proofPack,
+    tenantId,
+    generatedBy,
+  };
+  const story = buildCrmProofPackEnterpriseStorySections(authoritativeProofPack);
   const generatedAt = clean(
-    proofPack.generatedAt || identity.generatedAt,
+    authoritativeProofPack.generatedAt || identity.generatedAt,
     new Date().toISOString()
   );
-  const tenantId = clean(proofPack.tenantId || identity.tenantId, 'wilsy-sovereign-root');
-  const generatedBy = clean(
-    proofPack.generatedBy || identity.generatedBy || identity.userEmail,
-    'UNRESOLVED_AUTHENTICATED_USER'
-  );
-  const title = clean(proofPack.title || identity.title, 'Lead Evidence Ledger Proof Pack');
+  const title = clean(authoritativeProofPack.title || identity.title, 'Lead Evidence Ledger Proof Pack');
   const sourcePosture = clean(
-    proofPack.sourcePosture || identity.sourcePosture || 'SOURCE_LIVE',
+    authoritativeProofPack.sourcePosture || identity.sourcePosture || 'SOURCE_LIVE',
     'SOURCE_LIVE'
   );
 
   return {
     ...identity,
-    ...proofPack,
+    ...authoritativeProofPack,
     type: 'crm-lead-proof-pack',
     artifactType: 'crm-lead-proof-pack',
     title,
     tenantId,
     tenant: tenantId,
-    counterparty: clean(proofPack.counterparty || identity.counterparty || tenantId, tenantId),
+    counterparty: clean(authoritativeProofPack.counterparty || identity.counterparty || tenantId, tenantId),
     generatedAt,
     timestamp: generatedAt,
     generatedBy,
-    userEmail: clean(identity.userEmail || proofPack.userEmail || generatedBy, generatedBy),
+    generatedByDisplayName: generatedBy,
+    operatorDisplayName: generatedBy,
+    ownerDisplayName: generatedBy,
+    displayName: generatedBy,
+    userEmail: clean(identity.userEmail, 'UNRESOLVED_AUTHENTICATED_USER'),
+    liveUserIdentitySource: identity.liveUserIdentitySource,
+    liveUserId: identity.liveUserId,
     sourcePosture,
-    version: clean(identity.version || proofPack.version, 'WILSY-OS-ARTIFACT-v2.1-ENTERPRISE'),
+    version: clean(identity.version || authoritativeProofPack.version, 'WILSY-OS-ARTIFACT-v2.1-ENTERPRISE'),
     lifecycle: [
       'Proof target selected',
       'Saved view resolved',
@@ -1141,40 +1157,44 @@ function buildCrmProofPackEnterpriseIdentity(identity = {}, proofPack = {}) {
     approvals: ['Proof Ledger Access', 'Export Control', 'Tenant Authority'],
     clausePack: 'Wilsy CRM Proof Pack Enterprise Story v1',
     signatureRoute: 'Wilsy OS Proof Ledger / Artifact Vault',
-    crmProofPack: proofPack,
-    proofPackSections: proofPack,
-    proofSummaryRows: proofPack.proofSummaryRows || [],
-    authoritySealRows: proofPack.authoritySealRows || [],
-    proofChecks: proofPack.proofChecks || [],
-    operationalTimeline: proofPack.operationalTimeline || [],
-    scopedRecords: proofPack.scopedRecords || [],
-    metricsRows: proofPack.metricsRows || [],
+    crmProofPack: authoritativeProofPack,
+    proofPackSections: authoritativeProofPack,
+    proofSummaryRows: authoritativeProofPack.proofSummaryRows || [],
+    authoritySealRows: authoritativeProofPack.authoritySealRows || [],
+    proofChecks: authoritativeProofPack.proofChecks || [],
+    operationalTimeline: authoritativeProofPack.operationalTimeline || [],
+    scopedRecords: authoritativeProofPack.scopedRecords || [],
+    metricsRows: authoritativeProofPack.metricsRows || [],
     executivePurpose: story.executivePurpose,
     partiesOwnersAuthority: story.partiesOwnersAuthority,
     scopeControlsExceptions: story.scopeControlsExceptions,
     forensicProofRetention: story.forensicProofRetention,
     metadata: {
       ...(identity.metadata || {}),
-      ...(proofPack.metadata || {}),
+      ...(authoritativeProofPack.metadata || {}),
       type: 'crm-lead-proof-pack',
       artifactType: 'crm-lead-proof-pack',
       tenantId,
+      userEmail: clean(identity.userEmail, 'UNRESOLVED_AUTHENTICATED_USER'),
       timestamp: generatedAt,
       generatedAt,
       generatedBy,
+      generatedByDisplayName: generatedBy,
+      operatorDisplayName: generatedBy,
+      ownerDisplayName: generatedBy,
+      displayName: generatedBy,
       sourcePosture,
       renderer: 'streamEnterpriseArtifactPdf',
       crmProofPackBridge: 'FG106N_ENTERPRISE_ENGINE_ADAPTER',
     },
     payloadData: {
       ...(identity.payloadData || {}),
-      crmProofPack: proofPack,
-      proofPackSections: proofPack,
+      crmProofPack: authoritativeProofPack,
+      proofPackSections: authoritativeProofPack,
       story,
     },
   };
 }
-
 /**
  * @function generateSovereignArtifactPdf
  * @description Generates Wilsy OS enterprise business artifacts using the real enterprise renderer service.
