@@ -206,7 +206,7 @@ async def receive_electrum_payshap_completion(request: Request) -> Response:
             "outcome": event.outcome,
             "settlement_eligible": event.outcome == "APPROVED",
             "replayed": replayed,
-            "processing_status": "PENDING" if event.outcome == "APPROVED" else "PENDING_NON_SETTLEMENT",
+            "processing_status": "PENDING",
         },
         config=config,
         now=now,
