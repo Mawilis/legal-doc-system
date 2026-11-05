@@ -225,3 +225,41 @@ def test_settlement_observation_registry_rejects_divergent_replay_before_insert(
             divergent, collection, session=Mock(in_transaction=True)
         )
     collection.insert_one.assert_not_called()
+
+
+def test_outbox_delivery_state_is_mutable_without_rewriting_immutable_audit():
+    from tools.eos.saas.billing.atomic_platform_settlement import _persist_audit_and_outbox
+
+    session = Mock(in_transaction=True)
+    settlement = _args(session)["_settlement"]
+    audit = Mock()
+    outbox = Mock()
+    audit.find_one.return_value = None
+    outbox.find_one.return_value = None
+    first_audit, first_outbox = _persist_audit_and_outbox(
+        tenant_id="tenant-a",
+        settlement_evidence=settlement,
+        audit_collection=audit,
+        outbox_collection=outbox,
+        session=session,
+    )
+    audit.find_one.return_value = first_audit
+    outbox.find_one.return_value = {
+        **first_outbox,
+        "delivery_status": "DELIVERED",
+        "delivery_attempts": 1,
+        "delivered_at": "2026-01-01T00:00:00+00:00",
+    }
+    audit.insert_one.reset_mock()
+    outbox.insert_one.reset_mock()
+    replayed_audit, replayed_outbox = _persist_audit_and_outbox(
+        tenant_id="tenant-a",
+        settlement_evidence=settlement,
+        audit_collection=audit,
+        outbox_collection=outbox,
+        session=session,
+    )
+    assert replayed_audit == first_audit
+    assert replayed_outbox["delivery_status"] == "DELIVERED"
+    audit.insert_one.assert_not_called()
+    outbox.insert_one.assert_not_called()
