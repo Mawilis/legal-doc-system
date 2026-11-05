@@ -1209,7 +1209,9 @@ def test_real_mongo_canonical_revocation_and_execution_receipt_rollback_together
     history = assignment_registry.get_history(assignment_id)
     assert len(history) == 1
     assert history[0].status is SystemPermissionAssignmentStatus.ACTIVE
-    persisted_decision = decision_registry.get(decision_id, session=_read_only_session(client))
+    with client.start_session() as session:
+        with session.start_transaction():
+            persisted_decision = decision_registry.get(decision_id, session=session)
     assert persisted_decision.status is SecurityIncidentResponseDecisionStatus.APPROVED
     assert persisted_decision.revision == 1
     assert database[RESPONSE_DECISION_EVENT_COLLECTION].count_documents({
