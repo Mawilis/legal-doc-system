@@ -751,7 +751,8 @@ class WilsyAPIServer:
             enabled = os.getenv(
                 "WILSY_ELECTRUM_SETTLEMENT_WORKER_ENABLED", "false"
             ).strip().lower() in {"1", "true", "yes", "on"}
-            if enabled and getattr(app.state, "electrum_completion_indexes_ready", False) is True:
+            sandbox_only = os.getenv("WILSY_ELECTRUM_ENVIRONMENT", "").strip().lower() == "sandbox"
+            if enabled and sandbox_only and getattr(app.state, "electrum_completion_indexes_ready", False) is True:
                 app.state.electrum_settlement_worker_task = asyncio.create_task(
                     run_electrum_payshap_completion_worker()
                 )
