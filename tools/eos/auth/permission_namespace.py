@@ -577,6 +577,8 @@ _PERMISSIONS: Final = MappingProxyType(
         "crm:work_item:complete": _meta("crm:work_item:complete", "TENANT", "TENANT", "complete owner commercial work items", tenant=True),
         "tenant:commercial_agreement:read": _meta("tenant:commercial_agreement:read", "TENANT", "TENANT", "read tenant commercial agreements", tenant=True),
         "tenant:commercial_agreement:draft:create": _meta("tenant:commercial_agreement:draft:create", "TENANT", "TENANT", "create tenant commercial agreement drafts", tenant=True),
+        "tenant:commercial_agreement:execute": _meta("tenant:commercial_agreement:execute", "TENANT", "TENANT", "execute tenant commercial agreements after trusted signature verification", tenant=True),
+        "tenant:commercial_agreement:activate": _meta("tenant:commercial_agreement:activate", "TENANT", "TENANT", "activate tenant commercial bundles after verified execution", tenant=True),
         "crm:email_template:create": _meta(
             "crm:email_template:create",
             "TENANT",
