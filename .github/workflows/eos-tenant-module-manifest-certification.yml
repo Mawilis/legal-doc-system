@@ -17,6 +17,10 @@ on:
       - "client/src/components/os/WilsyOSDashboardChrome.test.jsx"
       - "client/package.json"
       - "client/package-lock.json"
+      - "tests/e2e/legal-productive-work.browser.spec.js"
+      - "client/src/components/executive/ExecutiveDashboard.module.css"
+      - "client/src/components/executive/ExecutiveDashboard.jsx"
+      - "client/src/utils/tenantModuleManifest.js"
       - ".github/workflows/eos-tenant-module-manifest-certification.yml"
   pull_request:
     paths:
