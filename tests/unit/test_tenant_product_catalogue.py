@@ -41,11 +41,12 @@ def test_exact_closed_product_catalogue() -> None:
         "LEGAL_OPERATIONS",
         "BILLING",
         "CRM",
+        "POS",
         "HR",
         "OPERATIONS",
         "INTELLIGENCE",
     ]
-    assert len(products) == len(TenantProductId) == 6
+    assert len(products) == len(TenantProductId) == 7
 
 
 def test_legal_operations_descriptor_is_exact_and_non_financial() -> None:
@@ -75,6 +76,15 @@ def test_operations_and_intelligence_workspace_keys_are_exact_and_distinct() -> 
 def test_crm_and_hr_workspace_keys_are_exact() -> None:
     assert get_tenant_product(TenantProductId.CRM).workspace_key == "CRM_DASHBOARD"
     assert get_tenant_product(TenantProductId.HR).workspace_key == "HR_DASHBOARD"
+
+
+def test_pos_is_an_independent_non_financial_product() -> None:
+    value = get_tenant_product(TenantProductId.POS)
+    assert value.label == "Point of Sale"
+    assert value.workspace_key == "POS_DASHBOARD"
+    assert value.required_products == ()
+    assert "kennel eos" in value.description.lower()
+    assert "financial execution remains" in value.description.lower()
 
 
 def test_vas_and_bundle_tokens_are_not_products() -> None:
