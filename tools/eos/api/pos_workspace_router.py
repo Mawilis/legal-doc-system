@@ -45,7 +45,7 @@ from tools.eos.saas.billing.pos_commercial_evidence_registry import (
     POSCommercialEvidenceConflict,
 )
 from tools.eos.saas.billing.pos_commercial_capacity_registry import (
-    COLLECTION_NAME as CAPACITY_COLLECTION, POSCommercialCapacityRegistry,
+    COLLECTION_NAME as CAPACITY_COLLECTION, POSCommercialCapacityRegistry,\n    POSCommercialCapacityError, POSCommercialCapacityConflict, POSCommercialCapacityExceeded,
 )
 from tools.eos.saas.billing.pos_location_assignment_registry import (
     CURRENT_COLLECTION as LOCATION_CURRENT,
@@ -187,11 +187,11 @@ def _transaction(callback):
         code = error.code
         status_code = 403 if code in {"POS_PRODUCT_NOT_ENTITLED", "POS_LOCATION_ACCESS_DENIED"} else 404 if code == "POS_SALE_NOT_FOUND_OR_CORRUPT" else 409 if "CONFLICT" in code or "REPLAY" in code else 503
         raise HTTPException(status_code=status_code, detail=code) from error
-    except (POSLocationAssignmentConflict, POSCommercialEvidenceConflict) as error:
+    except (POSLocationAssignmentConflict, POSCommercialEvidenceConflict, POSCommercialCapacityConflict, POSCommercialCapacityExceeded) as error:
         raise HTTPException(status_code=409, detail=str(error)) from error
     except (POSLocationAssignmentNotFound, POSRegistryError) as error:
         raise HTTPException(status_code=404, detail=str(error)) from error
-    except (POSLocationAssignmentRegistryError, POSCommercialEvidenceRegistryError) as error:
+    except (POSLocationAssignmentRegistryError, POSCommercialEvidenceRegistryError, POSCommercialCapacityError) as error:
         raise HTTPException(status_code=503, detail=str(error)) from error
     except HTTPException:
         raise
