@@ -47,10 +47,12 @@ export async function readTenantModuleWorkspace(moduleId) {
   });
 }
 
-export async function createTenantModuleWorkItem(moduleId, input) {
+export async function createTenantModuleWorkItem(moduleId, input, idempotencyKey = '') {
   const descriptor = moduleDescriptor(moduleId);
-  const key = globalThis.crypto?.randomUUID?.()
-    || `module-work-${Date.now()}-${Math.random().toString(16).slice(2)}`;
+  const key = typeof idempotencyKey === 'string' && idempotencyKey.trim()
+    ? idempotencyKey.trim()
+    : (globalThis.crypto?.randomUUID?.()
+      || `module-work-${Date.now()}-${Math.random().toString(16).slice(2)}`);
   const response = await api.post(
     `/tenant-modules/${descriptor.path}/workspace/work-items`,
     input,
