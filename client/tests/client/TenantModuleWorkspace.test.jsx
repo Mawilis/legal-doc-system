@@ -60,7 +60,7 @@ describe('independent tenant module daily-use workspace', () => {
   it('loads Operations from its own product API and exposes keyboard-accessible task controls', async () => {
     render(<TenantModuleWorkspace moduleId="OPERATIONS" />);
     expect(await screen.findByText('Publish operations runbook')).toBeInTheDocument();
-    expect(readTenantModuleWorkspace).toHaveBeenCalledWith('OPERATIONS');
+    expect(readTenantModuleWorkspace).toHaveBeenCalledWith('OPERATIONS', 'TENANT-OPS-1');
     expect(screen.getByRole('button', { name: 'Refresh EOS' })).toBeInTheDocument();
     const titleField = screen.getByLabelText('Action title');
     expect(titleField).toBeInTheDocument();
@@ -89,6 +89,6 @@ describe('independent tenant module daily-use workspace', () => {
     render(<TenantModuleWorkspace moduleId="INTELLIGENCE" />);
     expect(await screen.findByRole('alert')).toHaveTextContent('not currently admitted');
     expect(screen.queryByText('Publish operations runbook')).not.toBeInTheDocument();
-    expect(readTenantModuleWorkspace).toHaveBeenCalledWith('INTELLIGENCE');
+    expect(readTenantModuleWorkspace).toHaveBeenCalledWith('INTELLIGENCE', 'TENANT-OPS-1');
   });
 });
