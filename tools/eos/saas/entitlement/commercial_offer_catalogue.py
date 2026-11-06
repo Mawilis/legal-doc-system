@@ -69,6 +69,9 @@ class CommercialOfferId(StrEnum):
     BILLING = "BILLING_STANDALONE"
     CRM = "CRM_STANDALONE"
     HR = "HR_STANDALONE"
+    OPERATIONS = "OPERATIONS_STANDALONE"
+    INTELLIGENCE = "INTELLIGENCE_STANDALONE"
+    POS = "POS_STANDALONE"
     PROFESSIONAL_SERVICES = "PROFESSIONAL_SERVICES_BUNDLE"
     BUSINESS_OPERATIONS = "BUSINESS_OPERATIONS_BUNDLE"
     ENTERPRISE_OPERATIONS = "ENTERPRISE_OPERATIONS_BUNDLE"
@@ -100,6 +103,24 @@ _CANONICAL_OFFERS: Final[dict[CommercialOfferId, dict[str, object]]] = {
         "product_ids": (TenantProductId.HR,),
         "description": "Standalone HR product offer.",
     },
+    CommercialOfferId.OPERATIONS: {
+        "label": "Operations",
+        "kind": CommercialOfferKind.STANDALONE,
+        "product_ids": (TenantProductId.OPERATIONS,),
+        "description": "Standalone Operations product offer.",
+    },
+    CommercialOfferId.INTELLIGENCE: {
+        "label": "Intelligence",
+        "kind": CommercialOfferKind.STANDALONE,
+        "product_ids": (TenantProductId.INTELLIGENCE,),
+        "description": "Standalone Intelligence product offer.",
+    },
+    CommercialOfferId.POS: {
+        "label": "Point of Sale",
+        "kind": CommercialOfferKind.STANDALONE,
+        "product_ids": (TenantProductId.POS,),
+        "description": "Standalone Point of Sale product offer; not included in existing bundles.",
+    },
     CommercialOfferId.PROFESSIONAL_SERVICES: {
         "label": "Professional Services",
         "kind": CommercialOfferKind.BUNDLE,
@@ -129,7 +150,7 @@ _CANONICAL_OFFERS: Final[dict[CommercialOfferId, dict[str, object]]] = {
             TenantProductId.CRM,
             TenantProductId.HR,
         ),
-        "description": "Explicit composition of all four currently catalogued tenant products.",
+        "description": "Explicit Legal Operations, Billing, CRM and HR composition; POS remains a separately offered product.",
     },
 }
 

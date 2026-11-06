@@ -91,6 +91,7 @@ const canonicalBranding = (tenantId = 'TENANT-BROWSER') => ({
 const workspaceBootstrap = ({
   tenantId = 'TENANT-BROWSER',
   businessRole = 'tenant_auditor',
+  workspaceId,
   legalPermissions,
   firstName = 'Canonical',
   lastName = 'Principal',
@@ -109,9 +110,9 @@ const workspaceBootstrap = ({
     workspace: {
       tenantId,
       businessRole,
-      workspaceId: businessRole === 'tenant_owner'
+      workspaceId: workspaceId || (businessRole === 'tenant_owner'
         ? 'EXECUTIVE_COMMAND_CENTRE'
-        : (businessRole === 'tenant_legal_partner' ? 'LEGAL_PRACTICE' : 'AUDIT_REPORTING'),
+        : (businessRole === 'tenant_legal_partner' ? 'LEGAL_PRACTICE' : 'AUDIT_REPORTING')),
       workspaceContractVersion: 'v1.0.0-WILSY-EOS-WORKSPACE-RESOLUTION',
       membershipRevision: 7,
       businessRoleRevision: 11,
@@ -137,6 +138,7 @@ function Harness() {
       <span data-testid="authenticated">{String(auth.isAuthenticated)}</span>
       <span data-testid="qr">{auth.qrCodeData || ''}</span>
       <span data-testid="role">{auth.userRole || ''}</span>
+      <span data-testid="workspace-id">{auth.user?.workspaceId || ''}</span>
       <span data-testid="tenant-id">{auth.tenantId || ''}</span>
       <span data-testid="branding-tier">{
         auth.tenant?.branding === null
@@ -313,6 +315,31 @@ describe('authoritative authentication state machine', () => {
     expect(promotedUser.lastName).not.toBe('FORGED LOGIN LAST');
     expect(api.post).toHaveBeenNthCalledWith(1, '/auth/login', { email: 'person@example.com', password: 'password', tenant_id: 'TENANT-BROWSER' });
     expect(api.post).toHaveBeenNthCalledWith(2, '/auth/verify-otp', { email: 'person@example.com', code: '123456', tenant_id: 'TENANT-BROWSER' });
+  });
+
+  it('promotes the server-authorized POS operator workspace into authenticated browser state', async () => {
+    api.post
+      .mockResolvedValueOnce({ data: { status: AUTH_STATES.MFA_RECONCILIATION_REQUIRED, tempToken: 'temp-pos' } })
+      .mockResolvedValueOnce({ data: { status: AUTH_STATES.AUTHENTICATED, token: 'pos-session', user: authoritativeUser } });
+    api.get.mockResolvedValueOnce(workspaceBootstrap({
+      businessRole: 'tenant_pos_operator',
+      workspaceId: 'POINT_OF_SALE',
+    }));
+    renderHarness();
+
+    fireEvent.click(screen.getByRole('button', { name: 'login' }));
+    await waitFor(() => expect(screen.getByTestId('stage')).toHaveTextContent(AUTH_STATES.MFA_RECONCILIATION_REQUIRED));
+    fireEvent.click(screen.getByRole('button', { name: 'verify' }));
+
+    await waitFor(() => {
+      expect(screen.getByTestId('authenticated')).toHaveTextContent('true');
+      expect(screen.getByTestId('role')).toHaveTextContent('tenant_pos_operator');
+      expect(screen.getByTestId('workspace-id')).toHaveTextContent('POINT_OF_SALE');
+    });
+    expect(JSON.parse(window.localStorage.getItem('wilsy_sovereign_user'))).toMatchObject({
+      role: 'tenant_pos_operator',
+      workspaceId: 'POINT_OF_SALE',
+    });
   });
 
   it('fails closed when discovered and authenticated tenant identities diverge', async () => {

@@ -1,4 +1,4 @@
-name: Authenticated Legal Workspace Journey
+name: Authenticated Six-Module Workspace Journey
 
 on:
   pull_request:
@@ -7,11 +7,23 @@ on:
       - "client/src/components/crm/CRMDashboard.jsx"
       - "client/src/components/crm/OwnerCommercialWorkspace.jsx"
       - "client/src/components/crm/OwnerCommercialWorkspace.module.css"
+      - "client/src/components/os/TenantModuleWorkspace.*"
+      - "client/src/components/os/WilsyOSDashboardChrome.jsx"
+      - "client/src/components/operations/**"
+      - "client/src/components/intelligence/**"
+      - "client/src/components/sovereign/SovereignDashboardController.jsx"
+      - "client/src/services/tenantModuleWorkspaceService.js"
+      - "client/src/services/tenantModuleWorkspaceService.test.js"
+      - "client/src/services/hrService.test.js"
       - "client/src/services/ownerCommercialWorkspaceService.js"
+      - "client/src/services/api.js"
+      - "client/src/__tests__/services/api.test.js"
       - "client/vite.config.js"
       - "client/src/contexts/authContext.jsx"
       - "client/src/contexts/tenantContext.jsx"
       - "client/tests/client/App.authenticatedLegalWorkspaceJourney.test.jsx"
+      - "client/tests/client/TenantModuleWorkspace.test.jsx"
+      - "client/tests/client/SovereignDashboardController.test.js"
       - "client/tests/client/App.legalAcceptanceBarrier.test.jsx"
       - "client/tests/contexts/authContext.authoritative.test.jsx"
       - "client/tests/components/auth/TenantIdentityPremium.test.jsx"
@@ -23,7 +35,7 @@ permissions:
 
 jobs:
   authenticated-legal-workspace:
-    name: Browser auth, tenant bootstrap and Legal admission
+    name: Authenticated bootstrap, six-module workspaces and Legal admission
     runs-on: ubuntu-latest
     timeout-minutes: 15
     defaults:
@@ -47,8 +59,13 @@ jobs:
         run: >-
           npx vitest run --config vitest.config.js
           tests/client/App.authenticatedLegalWorkspaceJourney.test.jsx
+          tests/client/TenantModuleWorkspace.test.jsx
+          src/services/tenantModuleWorkspaceService.test.js
+          src/services/hrService.test.js
+          tests/client/SovereignDashboardController.test.js
           tests/client/App.legalAcceptanceBarrier.test.jsx
           tests/contexts/authContext.authoritative.test.jsx
+          src/__tests__/services/api.test.js
           tests/components/auth/TenantIdentityPremium.test.jsx
 
       - name: Verify client production build

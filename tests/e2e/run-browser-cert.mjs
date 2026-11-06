@@ -194,6 +194,18 @@ function attachSafeDiagnostics(record) {
     const lines = createInterface({ input: stream, crlfDelay: Infinity });
     lines.on('line', (line) => {
       if (record.label.startsWith('FIXTURE_')) captureSafeChildException(record, line);
+      if (record.label === 'EOS') {
+        const diagnostic = line.match(
+          /OWNER_WORK_TRANSACTION_FAILURE error_type=([A-Za-z_][A-Za-z0-9_.]{0,79}) error_code=([A-Za-z0-9_.-]{1,40}|None) cause_type=([A-Za-z_][A-Za-z0-9_.]{0,79}|None) cause_code=([A-Za-z0-9_.-]{1,40}|None) attribute_name=([A-Za-z_][A-Za-z0-9_]{0,79}|None) object_type=([A-Za-z_][A-Za-z0-9_.]{0,79}) location=([A-Za-z0-9_.:-]{1,160}|None)/,
+        );
+        if (diagnostic) {
+          printBoundedDiagnostic(
+            record,
+            'OWNER_WORK_TRANSACTION_FAILURE',
+            `error_type=${diagnostic[1]} error_code=${diagnostic[2]} cause_type=${diagnostic[3]} cause_code=${diagnostic[4]} attribute_name=${diagnostic[5]} object_type=${diagnostic[6]} location=${diagnostic[7]}`,
+          );
+        }
+      }
       if (record.label === 'BFF') {
         const match = line.match(/HTTP:\s+http:\/\/localhost:(\d+)/);
         if (match) record.listeningPort = Number(match[1]);

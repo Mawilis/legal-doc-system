@@ -1048,13 +1048,18 @@ const ExecutiveDashboard = ({
     const principalTenantId = typeof user?.tenantId === 'string'
       ? user.tenantId
       : '';
-    if (
-      principalTenantId
-      && authenticatedTenant?.tenantId === principalTenantId
-    ) {
-      return authenticatedTenant;
+    if (!principalTenantId) return {};
+    const authenticatedTenantId = authenticatedTenant?.tenantId || authenticatedTenant?.id || '';
+    if (authenticatedTenantId === principalTenantId) {
+      return { ...authenticatedTenant, tenantId: principalTenantId };
     }
-    return selectedTenant || {};
+    const selectedTenantId = selectedTenant?.tenantId || selectedTenant?.id || '';
+    if (selectedTenantId === principalTenantId) {
+      // A selected tenant can contribute display metadata only when its exact
+      // identifier matches the tenant already admitted by EOS workspace-bootstrap.
+      return { ...selectedTenant, tenantId: principalTenantId };
+    }
+    return {};
   }, [authenticatedTenant, selectedTenant, user?.tenantId]);
   const access = useSovereignAccess();
   const tenantId = activeTenant?.tenantId || null;

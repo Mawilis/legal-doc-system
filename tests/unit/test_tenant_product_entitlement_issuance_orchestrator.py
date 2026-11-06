@@ -199,16 +199,23 @@ def test_missing_invalid_or_inactive_identity_rejects(
 
 @pytest.mark.parametrize(
     "product",
-    [TenantProductId.CRM, TenantProductId.BILLING, TenantProductId.HR, "UNKNOWN"],
+    [TenantProductId.LEGAL_OPERATIONS, TenantProductId.BILLING, TenantProductId.CRM, TenantProductId.HR],
 )
-def test_only_legal_operations_has_positive_issuance(
-    monkeypatch: pytest.MonkeyPatch, product: object,
+def test_all_mapped_products_receive_identity_bound_authorization(
+    monkeypatch: pytest.MonkeyPatch, product: TenantProductId,
 ) -> None:
-    """Every non-Legal product rejects before authorization evidence."""
+    """Every mapped product receives exact authorization before composition."""
     issuer = Issuer()
-    with pytest.raises(orchestrator.TenantProductEntitlementIssuanceInputError):
-        invoke(monkeypatch, product_id=product, authorization_evidence_registry=issuer)
-    assert issuer.calls == []
+    result, returned_issuer, compose_calls = invoke(
+        monkeypatch, product_id=product, authorization_evidence_registry=issuer
+    )
+    assert returned_issuer is issuer
+    assert len(issuer.calls) == 1
+    assert issuer.calls[0]["tenant_id"] == "tenant-a"
+    assert f":{product.value}:" in issuer.calls[0]["subject_reference"]
+    assert len(compose_calls) == 1
+    assert compose_calls[0]["product_id"] is product
+    assert result.authorization_evidence is not None
 
 
 def test_exact_identity_crypto_namespace_session_and_composer_flow(

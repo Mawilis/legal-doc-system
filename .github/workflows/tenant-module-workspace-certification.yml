@@ -1,0 +1,132 @@
+name: Tenant module workspace certification
+
+on:
+  pull_request:
+    branches: [main, eos/atomic-owner-genesis-integration]
+    paths:
+      - "tools/eos/workspaces/**"
+      - "tools/eos/api/tenant_module_workspace_router.py"
+      - "tools/eos/api/server.py"
+      - "tools/eos/auth/permission_namespace.py"
+      - "tools/eos/auth/roles.py"
+      - "tools/eos/auth/tenant_authority_policy.py"
+      - "tools/eos/auth/tenant_authorization.py"
+      - "client/src/components/operations/**"
+      - "client/src/components/intelligence/**"
+      - "client/src/components/os/TenantModuleWorkspace.*"
+      - "client/src/components/os/WilsyOSDashboardChrome.jsx"
+      - "client/src/components/sovereign/SovereignDashboardController.jsx"
+      - "client/src/services/tenantModuleWorkspaceService.js"
+      - "client/src/services/tenantModuleWorkspaceService.test.js"
+      - "client/tests/client/TenantModuleWorkspace.test.jsx"
+      - "client/tests/client/SovereignDashboardController.test.js"
+      - "tests/unit/test_tenant_module_*.py"
+      - "tests/integration/test_tenant_module_*.py"
+      - ".github/workflows/tenant-module-workspace-certification.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: tenant-module-workspace-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  python-eos:
+    name: Python EOS module IAM, entitlement and real-Mongo queues
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    env:
+      TEST_VENDOR_MONGO_URI: mongodb://127.0.0.1:27017/?replicaSet=tenantModuleCertRS
+      PIP_DISABLE_PIP_VERSION_CHECK: "1"
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Install Python dependencies
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install -r requirements.txt pytest==9.1.1
+      - name: Start isolated Mongo replica set
+        run: |
+          docker run --detach --name tenant-module-cert-mongo --publish 27017:27017 mongo:7.0.37 mongod --replSet tenantModuleCertRS --bind_ip_all
+      - name: Initialize replica set
+        run: |
+          python - <<'PY'
+          import time
+          from pymongo import MongoClient
+          client = MongoClient("mongodb://127.0.0.1:27017", directConnection=True, serverSelectionTimeoutMS=2000)
+          deadline = time.monotonic() + 60
+          initiated = False
+          last_error = None
+          while True:
+              try:
+                  hello = client.admin.command("hello")
+                  if not initiated and not hello.get("setName"):
+                      client.admin.command({"replSetInitiate": {"_id": "tenantModuleCertRS", "members": [{"_id": 0, "host": "127.0.0.1:27017"}]}})
+                      initiated = True
+                  if client.admin.command("hello").get("isWritablePrimary"):
+                      break
+              except Exception as error:
+                  last_error = error
+              if time.monotonic() >= deadline:
+                  raise RuntimeError(f"TENANT_MODULE_MONGO_UNAVAILABLE: {last_error!r}") from last_error
+              time.sleep(1)
+          client.close()
+          PY
+      - name: Compile module workspace authority
+        run: |
+          python -m py_compile \
+            tools/eos/workspaces/domain/tenant_module_work_item.py \
+            tools/eos/workspaces/persistence/tenant_module_work_registry.py \
+            tools/eos/workspaces/service/tenant_module_workspace_service.py \
+            tools/eos/api/tenant_module_workspace_router.py \
+            tools/eos/auth/permission_namespace.py \
+            tools/eos/auth/roles.py \
+            tools/eos/auth/tenant_authority_policy.py \
+            tools/eos/auth/tenant_authorization.py \
+            tools/eos/api/server.py
+      - name: Run module IAM, domain, registry, service and real replica-set tests
+        run: |
+          python -m pytest -q \
+            tests/unit/test_tenant_module_work_authority.py \
+            tests/unit/test_tenant_module_work_item.py \
+            tests/unit/test_tenant_module_work_registry.py \
+            tests/unit/test_tenant_module_workspace_service.py \
+            tests/unit/test_tenant_module_workspace_server_mount.py \
+            tests/integration/test_tenant_module_work_registry_real_mongo.py \
+            tests/integration/test_tenant_module_workspace_real_mongo.py \
+            tests/unit/test_roles.py \
+            tests/unit/test_permission_namespace.py \
+            tests/unit/test_tenant_authority_policy.py \
+            tests/unit/test_tenant_authorization.py
+      - name: Stop isolated Mongo replica set
+        if: always()
+        run: docker rm -f tenant-module-cert-mongo 2>/dev/null || true
+
+  client-workspaces:
+    name: Operations and Intelligence authenticated workspaces
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    defaults:
+      run:
+        working-directory: client
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: npm
+          cache-dependency-path: client/package-lock.json
+      - name: Install locked client dependencies
+        run: npm ci
+      - name: Test independent module destinations and task controls
+        run: >-
+          npx vitest run --config vitest.config.js
+          tests/client/TenantModuleWorkspace.test.jsx
+          src/services/tenantModuleWorkspaceService.test.js
+          tests/client/SovereignDashboardController.test.js
+      - name: Verify production client build
+        run: npm run build

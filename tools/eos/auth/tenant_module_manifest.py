@@ -74,7 +74,10 @@ class TenantModuleId(StrEnum):
     LEGAL_OS = "LEGAL_OS"
     BILLING = "BILLING"
     CRM = "CRM"
+    POS = "POS"
     PEOPLE = "PEOPLE"
+    OPERATIONS = "OPERATIONS"
+    INTELLIGENCE = "INTELLIGENCE"
 
 
 @dataclass(frozen=True, slots=True)
@@ -134,6 +137,15 @@ _MODULES: Final[tuple[TenantModuleDescriptor, ...]] = (
         "Customer, account and relationship operations workspace.",
     ),
     TenantModuleDescriptor(
+        TenantModuleId.POS,
+        TenantProductId.POS,
+        "Point of Sale",
+        get_tenant_product(TenantProductId.POS).workspace_key,
+        "BUSINESS_OPERATIONS",
+        "shopping-cart",
+        "Point-of-sale sales, tender intents, returns and location-scoped operations; financial execution remains with Kennel EOS.",
+    ),
+    TenantModuleDescriptor(
         TenantModuleId.PEOPLE,
         TenantProductId.HR,
         "People",
@@ -141,6 +153,24 @@ _MODULES: Final[tuple[TenantModuleDescriptor, ...]] = (
         "PEOPLE_OPERATIONS",
         "users-round",
         "People and workforce operations workspace.",
+    ),
+    TenantModuleDescriptor(
+        TenantModuleId.OPERATIONS,
+        TenantProductId.OPERATIONS,
+        "Operations",
+        get_tenant_product(TenantProductId.OPERATIONS).workspace_key,
+        "BUSINESS_OPERATIONS",
+        "workflow",
+        "Operational workflows, work queues and process execution workspace.",
+    ),
+    TenantModuleDescriptor(
+        TenantModuleId.INTELLIGENCE,
+        TenantProductId.INTELLIGENCE,
+        "Intelligence",
+        get_tenant_product(TenantProductId.INTELLIGENCE).workspace_key,
+        "INTELLIGENCE",
+        "brain-circuit",
+        "Analytics, evidence-backed insights and decision-support workspace.",
     ),
 )
 _MODULE_BY_PRODUCT: Final[dict[TenantProductId, TenantModuleDescriptor]] = {

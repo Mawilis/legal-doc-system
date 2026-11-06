@@ -203,14 +203,26 @@ def test_public_composer_has_no_entitlement_or_subscription_identity_injection()
 
 
 @pytest.mark.parametrize(
-    "product_id",
-    [TenantProductId.CRM, TenantProductId.BILLING, TenantProductId.HR, "UNKNOWN"],
+    ("product_id", "feature_id"),
+    [
+        (TenantProductId.LEGAL_OPERATIONS, "legal.core"),
+        (TenantProductId.BILLING, "billing.core"),
+        (TenantProductId.CRM, "crm.core"),
+        (TenantProductId.HR, "hr.core"),
+    ],
 )
-def test_only_legal_operations_is_operationally_composable(product_id: object) -> None:
-    """CRM duplicate truth, Billing, HR and unknown products reject."""
-    Registry.items = (subscription(),)
-    with pytest.raises(composer.TenantProductEntitlementComposerInputError):
-        invoke(product_id=product_id)
+def test_every_mapped_product_composes_only_from_its_exact_plan_feature(
+    monkeypatch: pytest.MonkeyPatch, product_id: TenantProductId, feature_id: str,
+) -> None:
+    """All four product entitlements use their exact feature and durable lifecycle."""
+    Registry.items = (subscription(features=(feature_id,)),)
+    calls = install_flow(monkeypatch)
+    result = invoke(product_id=product_id)
+    assert result.entitlement.product_id is product_id
+    assert result.entitlement.lifecycle_state is TenantProductEntitlementState.ACTIVE
+    assert result.entitlement.lifecycle_revision == 1
+    assert calls[0][0] == "create"
+    assert calls[1][0] == "transition"
 
 
 @pytest.mark.parametrize(

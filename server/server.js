@@ -365,6 +365,24 @@ function createApp() {
     })
   );
 
+  // Operations and Intelligence are distinct tenant-product workspaces.
+  // Python EOS owns IAM, active product entitlement, queue lifecycle and storage.
+  app.use(
+    '/api/tenant-modules',
+    buildSelectiveLegalProxy({
+      mountPrefix: '/api/tenant-modules',
+      targetPrefix: '/api/tenant-modules',
+      allowed: (method, suffix) => {
+        const pathOnly = String(suffix || '/').split('?', 1)[0];
+        return (
+          (method === 'GET' && /^\/(operations|intelligence)\/workspace$/.test(pathOnly)) ||
+          (method === 'POST' && /^\/(operations|intelligence)\/workspace\/work-items$/.test(pathOnly)) ||
+          (method === 'POST' && /^\/(operations|intelligence)\/workspace\/work-items\/[^/]+\/complete$/.test(pathOnly))
+        );
+      },
+    })
+  );
+
   // C1C/C1E transport-only bridge.  These selective mounts deliberately sit
   // before body parsers so POST streams reach Python EOS byte-for-byte.  Node
   // forwards headers and responses but never interprets advisory semantics.

@@ -2,6 +2,7 @@
   display: grid;
   gap: 16px;
   min-width: 0;
+  min-height: 320px;
 }
 .heading, .columns { min-width: 0; }
 .heading {

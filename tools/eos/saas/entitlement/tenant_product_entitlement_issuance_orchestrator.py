@@ -4,7 +4,7 @@ TITLE: Tenant Product Entitlement Issuance Orchestrator
 VERSION: v1.0.0-D22B3-P25-POSITIVE-ISSUANCE-ORCHESTRATOR
 AUTHORITY: Wilsy OS Core Governance
 EPITOME: Bind an active sovereign identity to durable issuance authorization
-         evidence before invoking the sealed Legal Operations composer.
+         evidence before invoking the sealed mapped-product composer.
 ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/tools/eos/saas/entitlement/tenant_product_entitlement_issuance_orchestrator.py
 COLLABORATION / OWNERSHIP: SovereignIdentity owns authenticated tenant/principal
                             projection; IAM owns authorization evidence; D22B3
@@ -51,6 +51,10 @@ from tools.eos.auth.tenant_authorization_decision_evidence_registry import (
 )
 from tools.eos.saas.billing.subscription_registry import SubscriptionRegistry
 from tools.eos.saas.entitlement.product_catalogue import TenantProductId
+from tools.eos.saas.entitlement.product_commercial_feature import (
+    ProductCommercialFeatureMappingError,
+    get_product_commercial_feature,
+)
 from tools.eos.saas.entitlement.tenant_product_entitlement_composer import (
     TenantProductEntitlementComposerError,
     TenantProductEntitlementCompositionResult,
@@ -185,7 +189,7 @@ def _identity(identity: SovereignIdentity) -> tuple[str, str]:
 
 
 def _product(product_id: TenantProductId | str) -> TenantProductId:
-    """Accept only the frozen positive Legal Operations product."""
+    """Accept only a canonical product with a certified feature mapping."""
     try:
         product = TenantProductId(product_id)
     except (TypeError, ValueError) as error:
@@ -194,10 +198,13 @@ def _product(product_id: TenantProductId | str) -> TenantProductId:
             "D22B3_P25_PRODUCT_UNKNOWN",
             error,
         )
-    if product is not TenantProductId.LEGAL_OPERATIONS:
+    try:
+        get_product_commercial_feature(product)
+    except ProductCommercialFeatureMappingError as error:
         _raise(
             TenantProductEntitlementIssuanceInputError,
             "D22B3_P25_PRODUCT_NOT_AUTHORIZED",
+            error,
         )
     return product
 
@@ -271,7 +278,7 @@ def issue_tenant_product_entitlement(
     session: Any,
     subscription_registry: type[SubscriptionRegistry] = SubscriptionRegistry,
 ) -> TenantProductEntitlementIssuanceResult:
-    """Authorize then compose one positive Legal entitlement atomically.
+    """Authorize then compose one positive mapped-product entitlement atomically.
 
     Tenant/principal derive only from ``identity``. The caller supplies and owns
     the active transaction and all commit, abort, retry and unknown-commit

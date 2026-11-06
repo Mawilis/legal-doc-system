@@ -210,6 +210,20 @@ from tools.eos.legal_operations.registry.legal_operations_lifecycle_registry imp
 )
 from tools.eos.saas.auth.auth_registry import AuthRegistry
 from tools.eos.saas.entitlement import tenant_product_entitlement_registry as entitlement_registry
+from tools.eos.saas.domain.tenant_product_entitlement import (
+    TenantProductEntitlementState,
+    create_tenant_product_entitlement,
+)
+from tools.eos.saas.entitlement.product_catalogue import TenantProductId
+from tools.eos.saas.domain.pos_location_assignment import (
+    POSLocationAssignment, POSLocationAssignmentStatus,
+)
+from tools.eos.saas.billing.pos_location_assignment_registry import (
+    POSLocationAssignmentRegistry,
+)
+from tools.eos.saas.entitlement.tenant_product_entitlement_composer import (
+    derive_tenant_product_entitlement_id,
+)
 from tools.eos.saas.billing.plan_registry import PlanRegistry
 from tools.eos.saas.billing.subscription_active_entitlement_composition_service import (
     SubscriptionActiveEntitlementCompositionService,
@@ -783,6 +797,64 @@ def _seed_canonical_specialist_workflows(
     return seeded
 
 
+def _seed_independent_module_entitlements(
+    *,
+    client: MongoClient,
+    tenant_id: str,
+    now: datetime,
+    collections: dict[str, Any],
+) -> dict[str, str]:
+    """Activate independent module products with synthetic fixture evidence.
+
+    Legal Operations is provisioned by the existing Legal subscription composer.
+    Billing, HR, Operations, Intelligence and POS are separate D22B2 product
+    entitlements in this disposable browser database. CRM Core is derived from
+    the canonical active subscription feature snapshot, not a product flag.
+    """
+    fingerprint = "d" * 128
+    activated: dict[str, str] = {}
+    for product_id in (
+        TenantProductId.BILLING,
+        TenantProductId.HR,
+        TenantProductId.OPERATIONS,
+        TenantProductId.INTELLIGENCE,
+        TenantProductId.POS,
+    ):
+        entitlement_id = derive_tenant_product_entitlement_id(tenant_id, product_id)
+        pending = create_tenant_product_entitlement(
+            tenant_id=tenant_id,
+            entitlement_id=entitlement_id,
+            product_id=product_id,
+            source_evidence_reference=f"browser-cert-product-source:{product_id.value}:{tenant_id}",
+            source_evidence_fingerprint=fingerprint,
+        )
+
+        def activate(session: Any) -> None:
+            entitlement_registry.create_or_replay(
+                pending,
+                collections["entitlement_history"],
+                collections["entitlement_current"],
+                session=session,
+            )
+            entitlement_registry.transition(
+                tenant_id=tenant_id,
+                entitlement_id=entitlement_id,
+                target_state=TenantProductEntitlementState.ACTIVE,
+                expected_revision=0,
+                evidence_reference=f"browser-cert-product-activation:{product_id.value}:{tenant_id}",
+                evidence_fingerprint=fingerprint,
+                occurred_at=now,
+                history_collection=collections["entitlement_history"],
+                current_collection=collections["entitlement_current"],
+                session=session,
+            )
+
+        with client.start_session() as session:
+            session.with_transaction(activate)
+        activated[product_id.value] = entitlement_id
+    return activated
+
+
 def seed(state_path: Path) -> None:
     uri = _uri()
     client = MongoClient(uri, serverSelectionTimeoutMS=5000, tz_aware=True)
@@ -799,12 +871,14 @@ def seed(state_path: Path) -> None:
         tenant_id = f"browser-tenant-{suffix}"
         actor_specs = (
             ("tenant_owner", "TENANT_OWNER", "tenant_owner", "Owner"),
+            ("location_admin", "TENANT_OWNER", "tenant_owner", "LocationAdmin"),
             ("commercial_admin", "ENTERPRISE_ADMIN", "tenant_owner", "CommercialAdmin"),
             ("partner", "LEGAL_PARTNER", "tenant_legal_partner", "Partner"),
             ("attorney", "LEGAL_ATTORNEY", "tenant_legal_attorney", "Attorney"),
             ("paralegal", "LEGAL_PARALEGAL", "tenant_legal_paralegal", "Paralegal"),
             ("secretary", "LEGAL_SECRETARY", "tenant_legal_secretary", "Secretary"),
             ("finance", "LEGAL_FINANCE", "tenant_legal_finance", "Finance"),
+            ("pos_operator", "POS_OPERATOR", "tenant_pos_operator", "POSOperator"),
         )
         # BSON stores datetimes at millisecond precision; freeze fixture time
         # to that exact boundary so immutable screening correlation survives
@@ -897,6 +971,8 @@ def seed(state_path: Path) -> None:
             "deadline": database["legal_matter_deadlines"],
             "entitlement_history": database["tenant_product_entitlement_history"],
             "entitlement_current": database["tenant_product_entitlement_current"],
+            "pos_location_history": database["pos_location_assignment_history"],
+            "pos_location_current": database["pos_location_assignment_current"],
             "branding_entitlement_history": database[branding_entitlement_registry.HISTORY_COLLECTION],
             "branding_entitlement_current": database[branding_entitlement_registry.CURRENT_COLLECTION],
             "branding_profiles": database[branding_profile_registry.PROFILE_COLLECTION],
@@ -933,6 +1009,9 @@ def seed(state_path: Path) -> None:
         entitlement_registry.ensure_indexes(
             collections["entitlement_history"],
             collections["entitlement_current"],
+        )
+        POSLocationAssignmentRegistry.ensure_indexes(
+            collections["pos_location_history"], collections["pos_location_current"],
         )
         branding_entitlement_registry.ensure_indexes(
             collections["branding_entitlement_history"],
@@ -984,6 +1063,24 @@ def seed(state_path: Path) -> None:
                     ),
                     collections["roles"],
                     session=session,
+                )
+            for target_key in ("pos_operator", "tenant_owner"):
+                pos_assignment = POSLocationAssignment(
+                    tenant_id=tenant_id,
+                    location_id="browser-cert-store-01",
+                    principal_id=actors[target_key]["principal_id"],
+                    assignment_id=f"browser-pos-assignment-{target_key}-{suffix}",
+                    revision=0,
+                    status=POSLocationAssignmentStatus.ACTIVE,
+                    authority_reference=f"browser-cert-approved-pos-location:{target_key}:{suffix}",
+                    authority_fingerprint="e" * 128,
+                    idempotency_key=f"browser-pos-assignment:{target_key}:{suffix}",
+                    occurred_at=now,
+                    changed_by_principal_id=actors["location_admin"]["principal_id"],
+                )
+                POSLocationAssignmentRegistry.issue(
+                    pos_assignment, collections["pos_location_history"],
+                    collections["pos_location_current"], session=session,
                 )
             for actor in system_actors.values():
                 PrincipalAuthorityRepository.create(
@@ -1204,7 +1301,7 @@ def seed(state_path: Path) -> None:
                 "planType": "ENTERPRISE",
                 "idempotencyKey": f"browser-cert-plan-{tenant_id}",
                 "active": True,
-                "features": ["legal.core"],
+                "features": ["legal.core", "crm.core"],
                 "metadata": {"certificate": "WILSY-OWNER-BROWSER-CERT"},
                 "tags": ["wilsy-owner-browser-cert"],
                 "user": "WILSY-OWNER-BROWSER-CERT",
@@ -1239,6 +1336,12 @@ def seed(state_path: Path) -> None:
         if not commercial.legal_entitlement_applicable or commercial.entitlement_issuance_result is None:
             raise RuntimeError("BROWSER_CERT_LEGAL_COMMERCIAL_SEED_FAILED")
 
+        module_entitlements = _seed_independent_module_entitlements(
+            client=client,
+            tenant_id=tenant_id,
+            now=now,
+            collections=collections,
+        )
 
         for actor in actors.values():
             user = registry.get_user_by_id(actor["principal_id"])
@@ -1257,6 +1360,7 @@ def seed(state_path: Path) -> None:
                     "state_version": STATE_VERSION,
                     "database_name": database.name,
                     "tenant_id": tenant_id,
+                    "module_entitlements": module_entitlements,
                     "principal_id": partner["principal_id"],
                     "email": partner["email"],
                     "access_token": partner["access_token"],
@@ -1298,6 +1402,39 @@ def verify(state_path: Path) -> None:
     client = MongoClient(uri, serverSelectionTimeoutMS=5000)
     try:
         database = _owned_database(client)
+        module_entitlements = state.get("module_entitlements")
+        expected_module_products = {
+            "BILLING", "HR", "OPERATIONS", "INTELLIGENCE", "POS",
+        }
+        if (
+            not isinstance(module_entitlements, dict)
+            or set(module_entitlements) != expected_module_products
+        ):
+            raise RuntimeError("BROWSER_CERT_SIX_MODULE_ENTITLEMENT_STATE_INVALID")
+        history = database["tenant_product_entitlement_history"]
+        current = database["tenant_product_entitlement_current"]
+        legal_entitlement_id = derive_tenant_product_entitlement_id(
+            state["tenant_id"], TenantProductId.LEGAL_OPERATIONS,
+        )
+        expected_entitlements = {
+            **module_entitlements,
+            TenantProductId.LEGAL_OPERATIONS.value: legal_entitlement_id,
+        }
+        with client.start_session() as session:
+            session.start_transaction(read_concern=ReadConcern("snapshot"))
+            for product_key, entitlement_id in expected_entitlements.items():
+                entitlement = entitlement_registry.get_current(
+                    state["tenant_id"], entitlement_id, history, current, session=session,
+                )
+                if (
+                    entitlement.product_id.value != product_key
+                    or entitlement.lifecycle_state is not TenantProductEntitlementState.ACTIVE
+                    or entitlement.lifecycle_revision != 1
+                ):
+                    raise RuntimeError(
+                        f"BROWSER_CERT_MODULE_ENTITLEMENT_NOT_ACTIVE:{product_key}"
+                    )
+            session.commit_transaction()
         specialist_workflows = state.get("specialist_workflows")
         if not isinstance(specialist_workflows, dict) or set(specialist_workflows) != {
             "partner", "attorney", "paralegal", "secretary",
