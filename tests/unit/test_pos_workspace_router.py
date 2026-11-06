@@ -1,8 +1,11 @@
 import pytest
 from fastapi.routing import APIRoute
+from fastapi import HTTPException
+from types import SimpleNamespace
 
 from tools.eos.api.pos_workspace_router import (
     POSLocationAssignmentRequest, POSSaleCreateRequest, router,
+    require_pos_workspace_indexes_ready,
 )
 from tools.eos.auth.permission_namespace import permission_metadata
 from tools.eos.auth.roles import get_roles_granting_permission
@@ -77,3 +80,15 @@ def test_pos_permissions_are_exact_and_location_assignment_is_not_inherited():
     assert "POS_OPERATOR" not in get_roles_granting_permission("pos:financial_execution:authorize")
     assert tenant_role_operation_eligibility("tenant_owner", "pos_financial_execution_authorize") == "ELIGIBLE"
     assert tenant_role_operation_eligibility("tenant_pos_operator", "pos_financial_execution_authorize") == "DENY"
+
+
+
+def test_pos_workspace_fails_closed_until_canonical_startup_indexes_are_ready():
+    unavailable = SimpleNamespace(app=SimpleNamespace(state=SimpleNamespace(pos_workspace_indexes_ready=False)))
+    with pytest.raises(HTTPException) as error:
+        require_pos_workspace_indexes_ready(unavailable)
+    assert error.value.status_code == 503
+    assert error.value.detail == "POS_WORKSPACE_INDEXES_NOT_READY"
+
+    ready = SimpleNamespace(app=SimpleNamespace(state=SimpleNamespace(pos_workspace_indexes_ready=True)))
+    assert require_pos_workspace_indexes_ready(ready) is None
