@@ -179,8 +179,11 @@ def test_module_manifest_http_projection_rejects_foreign_tenant_evidence(monkeyp
     foreign = _active_legal("TENANT-FOREIGN")
     missing = registry.TenantProductEntitlementRegistryNotFoundError()
 
-    def get_current(_tenant_id, entitlement_id, *_args, **_kwargs):
-        if entitlement_id == foreign.entitlement_id:
+    calls = {"count": 0}
+
+    def get_current(_tenant_id, _entitlement_id, *_args, **_kwargs):
+        calls["count"] += 1
+        if calls["count"] == 1:
             return foreign
         raise missing
 
