@@ -9,6 +9,7 @@ from tools.eos.api.pos_workspace_router import (
 )
 from tools.eos.auth.permission_namespace import permission_metadata
 from tools.eos.auth.roles import get_roles_granting_permission
+from tools.eos.auth.tenant_authorization import _BINDINGS as TENANT_AUTHORIZATION_BINDINGS
 from tools.eos.auth.tenant_authority_policy import (
     permission_for_business_role_operation, tenant_role_operation_eligibility, TENANT_ROLES,
 )
@@ -52,6 +53,7 @@ def test_pos_request_contracts_forbid_browser_owned_tenant_and_actor_authority()
 
 def test_pos_permissions_are_exact_and_location_assignment_is_not_inherited():
     assert _EXECUTE.permission_id == "pos:payment:authorize"
+    assert TENANT_AUTHORIZATION_BINDINGS["pos_movement_authorize"] == "pos:payment:authorize"
     permissions = {
         "pos:location_assignment:manage": "pos_location_assignment_manage",
         "pos:sale:read": "pos_sale_read",
