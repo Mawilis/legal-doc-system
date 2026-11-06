@@ -11,7 +11,7 @@ COLLABORATION / OWNERSHIP: Direct pure-domain certificate for D22B3 metadata;
                             must obtain authoritative subscription truth.
 CERTIFICATION / UPDATE DATE: 2026-10-09
 CHANGELOG: v1.0.0-D22B3-PRODUCT-COMMERCIAL-FEATURE-CERT establishes adversarial
-           evidence for exact four-product mappings and unknown failures,
+           evidence for exact six-product mappings and unknown failures,
            immutability, uniqueness, catalogue binding and authority absence.
 COMPLIANCE: POPIA section 19; GDPR Article 32; SOC 2 CC7.2; ISO 27001.
 SECURITY / PRIVACY POSTURE: Pure synthetic assertions; no tenant or credentials.
