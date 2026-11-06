@@ -65,62 +65,6 @@ const MODULE_ICON_BY_KEY = Object.freeze({
   'users-round': UsersRound,
 });
 
-/**
- * Admit only the exact READY server-issued module projection for the active tenant.
- * This is presentation metadata; each destination and API independently authorizes.
- */
-export const validateWilsyModuleManifest = (payload, expectedTenantId) => {
-  const workspace = payload?.workspace;
-  if (
-    payload?.status !== 'READY'
-    || typeof expectedTenantId !== 'string'
-    || !expectedTenantId
-    || workspace?.tenantId !== expectedTenantId
-    || workspace?.moduleManifestVersion !== MODULE_MANIFEST_VERSION
-    || !Array.isArray(workspace.modules)
-    || workspace.modules.length > Object.keys(MODULE_PRESENTATION).length
-  ) {
-    throw new Error('MODULE_MANIFEST_RESPONSE_INVALID');
-  }
-
-  const seen = new Set();
-  return workspace.modules.map((module) => {
-    const canonical = MODULE_PRESENTATION[module?.moduleId];
-    const fields = [
-      'moduleId',
-      'productId',
-      'label',
-      'workspaceKey',
-      'navigationGroup',
-      'iconKey',
-      'entitlementId',
-      'entitlementRevision',
-      'entitlementFingerprint',
-    ];
-    if (
-      !canonical
-      || seen.has(module.moduleId)
-      || fields.some((field) => !Object.prototype.hasOwnProperty.call(module, field))
-      || fields.length !== Object.keys(module).length
-      || module.productId !== canonical.productId
-      || module.label !== canonical.label
-      || module.workspaceKey !== canonical.workspaceKey
-      || module.navigationGroup !== canonical.navigationGroup
-      || module.iconKey !== canonical.iconKey
-      || typeof module.entitlementId !== 'string'
-      || !module.entitlementId
-      || !Number.isInteger(module.entitlementRevision)
-      || module.entitlementRevision < 0
-      || typeof module.entitlementFingerprint !== 'string'
-      || !/^[0-9a-f]{128}$/.test(module.entitlementFingerprint)
-    ) {
-      throw new Error('MODULE_MANIFEST_ENTRY_INVALID');
-    }
-    seen.add(module.moduleId);
-    return Object.freeze({ ...module });
-  });
-};
-
 const TRUST_CENTER_STATES = Object.freeze({
   CLOSED: 'closed',
   SHEET: 'sheet',
