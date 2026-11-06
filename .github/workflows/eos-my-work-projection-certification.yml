@@ -9,6 +9,9 @@ on:
       - "tools/eos/api/tenant_authorization_http.py"
       - "tools/eos/api/unified_my_work_router.py"
       - "tools/eos/api/server.py"
+      - "client/src/App.jsx"
+      - "client/src/components/workspaces/MyWorkWorkspace.jsx"
+      - "client/src/__tests__/components/MyWorkWorkspace.test.jsx"
       - "tests/unit/test_unified_my_work_projection.py"
       - "tests/unit/test_optional_tenant_authorization.py"
       - "tests/unit/test_unified_my_work_router.py"
@@ -45,3 +48,14 @@ jobs:
           tests/unit/test_unified_my_work_projection.py
           tests/unit/test_optional_tenant_authorization.py
           tests/unit/test_unified_my_work_router.py
+
+      - name: Set up Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: npm
+          cache-dependency-path: client/package-lock.json
+      - name: Install client dependencies
+        run: npm ci --prefix client
+      - name: Run My Work interface tests
+        run: npm --prefix client run test:run -- src/__tests__/components/MyWorkWorkspace.test.jsx
