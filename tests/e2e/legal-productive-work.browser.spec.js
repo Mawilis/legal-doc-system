@@ -192,7 +192,8 @@ test(
       workbenchProbe,
       `Tenant Owner Executive workspace diagnostics:\n${diagnostic}`,
     ).toBeVisible();
-    await expect(page.getByRole('table', { name: 'Suggested executive work queue' })).toBeVisible();
+    await expect(page.getByRole('region', { name: 'Executive operational workbench' })).toBeVisible();
+    await expect(page.getByRole('heading', { name: 'Open work' })).toBeVisible();
     await expect(page.getByRole('button', { name: 'LEGAL OS', exact: true })).toBeVisible();
 
     const moduleManifestPromise = page.waitForResponse((response) => (
