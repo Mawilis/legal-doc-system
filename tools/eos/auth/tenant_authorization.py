@@ -254,6 +254,12 @@ _BINDINGS = MappingProxyType({
     "crm_work_item_read": "crm:work_item:read",
     "crm_work_item_create": "crm:work_item:create",
     "crm_work_item_complete": "crm:work_item:complete",
+    "operations_work_item_read": "operations:work_item:read",
+    "operations_work_item_create": "operations:work_item:create",
+    "operations_work_item_complete": "operations:work_item:complete",
+    "intelligence_work_item_read": "intelligence:work_item:read",
+    "intelligence_work_item_create": "intelligence:work_item:create",
+    "intelligence_work_item_complete": "intelligence:work_item:complete",
     "crm_email_template_create": "crm:email_template:create",
     "crm_email_template_read": "crm:email_template:read",
     "crm_email_template_revise": "crm:email_template:revise",
@@ -479,6 +485,15 @@ _BINDINGS = MappingProxyType({
     "legal_work_operational_matter_access_issue": "legal_operations:operational_matter_access:issue",
 })
 
+# Commercial agreement operations remain owner-commercial and tenant-scoped.
+_BINDINGS = MappingProxyType({
+    **_BINDINGS,
+    "commercial_agreement_read": "tenant:commercial_agreement:read",
+    "commercial_agreement_draft_create": "tenant:commercial_agreement:draft:create",
+    "commercial_agreement_execute": "tenant:commercial_agreement:execute",
+    "commercial_agreement_activate": "tenant:commercial_agreement:activate",
+})
+
 # ARTIFACT: tenant_authorization.py
 # VERSION: v1.47.0-R59-P9-REASSIGNMENT-IAM-INTEGRATION
 # AUTHORITY BOUNDARY: current-truth composition only; no mutation or transport
@@ -486,3 +501,18 @@ _BINDINGS = MappingProxyType({
 # FAIL-CLOSED POSTURE: unknown, inactive, missing, ambiguous, unavailable, mismatched, or financial requests deny
 # FINANCIAL EXECUTION AUTHORITY: Kennel EOS remains exclusive
 # END OF WILSY OS SOVEREIGN ARTIFACT
+
+
+# POS permissions bind to exact own-tenant operations. The POS service still
+# revalidates current product entitlement and location assignment per command.
+_BINDINGS = MappingProxyType({
+    **_BINDINGS,
+    "pos_location_assignment_manage": "pos:location_assignment:manage",
+    "pos_sale_read": "pos:sale:read",
+    "pos_sale_create": "pos:sale:create",
+    "pos_tender_create": "pos:tender:create",
+    "pos_cash_record": "pos:cash:record",
+    "pos_return_create": "pos:return:create",
+    "pos_refund_create": "pos:refund:create",
+    "pos_movement_authorize": "pos:payment:authorize",
+})

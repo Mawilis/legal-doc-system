@@ -48,6 +48,7 @@ import { useTenants } from '../../contexts/tenantContext.jsx';
 import { BusinessProvider } from '../../contexts/BusinessContext.jsx';
 import { broadcastTelemetry } from '../../utils/telemetryHelper.js';
 import api from '../../services/api.js';
+import { validateWilsyModuleManifest } from '../../utils/tenantModuleManifest.js';
 import ErrorBoundary from '../ErrorBoundary';
 import WilsyGlobalCommandSearch from './WilsyGlobalCommandSearch';
 
@@ -64,9 +65,12 @@ const SalesDashboard = React.lazy(() => import('../sales/SalesDashboard'));
 // 🆕 REPLACED legacy FinanceDashboard with the new Sovereign BillingHUD
 const BillingHUD = React.lazy(() => import('../billing/BillingHUD'));
 const HRDashboard = React.lazy(() => import('../hr/HrDashboard'));
+const OperationsDashboard = React.lazy(() => import('../operations/OperationsDashboard'));
+const IntelligenceDashboard = React.lazy(() => import('../intelligence/IntelligenceDashboard'));
 const ITDashboard = React.lazy(() => import('../it/ITDashboard'));
 const LegalDashboard = React.lazy(() => import('../industry/LegalDashboard'));
 const SystemServicesDashboard = React.lazy(() => import('../system-services/SystemServicesDashboard'));
+const POSDashboard = React.lazy(() => import('../pos/POSWorkspace.jsx'));
 
 
 export const DASHBOARD_KEYS = Object.freeze({
@@ -78,10 +82,44 @@ export const DASHBOARD_KEYS = Object.freeze({
   SALES: 'SALES_DASHBOARD',
   FINANCE: 'FINANCE_DASHBOARD',   // ⬅️ Now resolves to BillingHUD
   HR: 'HR_DASHBOARD',
+  OPERATIONS: 'OPERATIONS_DASHBOARD',
+  INTELLIGENCE: 'INTELLIGENCE_DASHBOARD',
+  POS: 'POS_DASHBOARD',
   IT: 'IT_DASHBOARD',
   LEGAL: 'LEGAL_DASHBOARD',
   SYSTEM_SERVICES: 'SYSTEM_SERVICES_DASHBOARD'
 });
+
+const TENANT_MODULE_DASHBOARD_ADMISSION = Object.freeze({
+  [DASHBOARD_KEYS.FINANCE]: Object.freeze({
+    moduleId: 'BILLING', productId: 'BILLING', workspaceKey: 'BILLING_HUB',
+  }),
+  [DASHBOARD_KEYS.CRM]: Object.freeze({
+    moduleId: 'CRM', productId: 'CRM', workspaceKey: 'CRM_DASHBOARD',
+  }),
+  [DASHBOARD_KEYS.HR]: Object.freeze({
+    moduleId: 'PEOPLE', productId: 'HR', workspaceKey: 'HR_DASHBOARD',
+  }),
+  [DASHBOARD_KEYS.OPERATIONS]: Object.freeze({
+    moduleId: 'OPERATIONS', productId: 'OPERATIONS', workspaceKey: 'OPERATIONS_DASHBOARD',
+  }),
+  [DASHBOARD_KEYS.INTELLIGENCE]: Object.freeze({
+    moduleId: 'INTELLIGENCE', productId: 'INTELLIGENCE', workspaceKey: 'INTELLIGENCE_DASHBOARD',
+  }),
+  [DASHBOARD_KEYS.POS]: Object.freeze({
+    moduleId: 'POS', productId: 'POS', workspaceKey: 'POS_DASHBOARD',
+  }),
+});
+
+export const hasTenantModuleManifestAdmission = (modules, dashboardKey) => {
+  const expected = TENANT_MODULE_DASHBOARD_ADMISSION[dashboardKey];
+  if (!expected || !Array.isArray(modules)) return false;
+  return modules.some((module) => (
+    module?.moduleId === expected.moduleId
+    && module?.productId === expected.productId
+    && module?.workspaceKey === expected.workspaceKey
+  ));
+};
 
 const DASHBOARD_LABELS = Object.freeze({
   [DASHBOARD_KEYS.FOUNDER]: 'Founder Dashboard',
@@ -92,6 +130,9 @@ const DASHBOARD_LABELS = Object.freeze({
   [DASHBOARD_KEYS.SALES]: 'Sales Dashboard',
   [DASHBOARD_KEYS.FINANCE]: 'Billing Hub',  // ⬅️ Updated label
   [DASHBOARD_KEYS.HR]: 'HR Dashboard',
+  [DASHBOARD_KEYS.OPERATIONS]: 'Operations OS',
+  [DASHBOARD_KEYS.INTELLIGENCE]: 'Intelligence OS',
+  [DASHBOARD_KEYS.POS]: 'Point of Sale',
   [DASHBOARD_KEYS.IT]: 'IT Dashboard',
   [DASHBOARD_KEYS.LEGAL]: 'WILSY Legal OS',
   [DASHBOARD_KEYS.SYSTEM_SERVICES]: 'System Services'
@@ -134,6 +175,10 @@ const DASHBOARD_ALIASES = Object.freeze({
   REVENUE_LEDGER: DASHBOARD_KEYS.FINANCE,
   HR: DASHBOARD_KEYS.HR,
   HR_DASHBOARD: DASHBOARD_KEYS.HR,
+  OPERATIONS_DASHBOARD: DASHBOARD_KEYS.OPERATIONS,
+  INTELLIGENCE_DASHBOARD: DASHBOARD_KEYS.INTELLIGENCE,
+  POS: DASHBOARD_KEYS.POS,
+  POS_DASHBOARD: DASHBOARD_KEYS.POS,
   PEOPLE: DASHBOARD_KEYS.HR,
   IT: DASHBOARD_KEYS.IT,
   IT_DASHBOARD: DASHBOARD_KEYS.IT,
@@ -404,6 +449,8 @@ const WORKSPACE_DASHBOARD_MAP = Object.freeze({
   CLIENT_PORTAL: DASHBOARD_KEYS.LEGAL,
   PROCESS_SERVICE: DASHBOARD_KEYS.LEGAL,
   PEOPLE_OPERATIONS: DASHBOARD_KEYS.HR,
+  POINT_OF_SALE: DASHBOARD_KEYS.POS,
+  POS_DASHBOARD: DASHBOARD_KEYS.POS,
 });
 
 /**
@@ -663,6 +710,27 @@ const SovereignDashboardController = ({ user: propUser, onLogout }) => {
 
     const role = normalizeDashboardToken(user?.role || user?.accountRole || user?.tenantRole);
 
+  const moduleManifestTenantId = activeTenant?.tenantId || activeTenant?._id || user?.tenantId || '';
+  const [moduleManifest, setModuleManifest] = useState({ status: 'idle', tenantId: '', modules: [] });
+
+  useEffect(() => {
+    let current = true;
+    if (!user || typeof moduleManifestTenantId !== 'string' || !moduleManifestTenantId) {
+      setModuleManifest({ status: 'unavailable', tenantId: moduleManifestTenantId, modules: [] });
+      return () => { current = false; };
+    }
+    setModuleManifest({ status: 'loading', tenantId: moduleManifestTenantId, modules: [] });
+    api.get('/auth/module-manifest')
+      .then(({ data }) => validateWilsyModuleManifest(data, moduleManifestTenantId))
+      .then((modules) => {
+        if (current) setModuleManifest({ status: 'ready', tenantId: moduleManifestTenantId, modules });
+      })
+      .catch(() => {
+        if (current) setModuleManifest({ status: 'unavailable', modules: [] });
+      });
+    return () => { current = false; };
+  }, [user?.id, user?.email, moduleManifestTenantId]);
+
   useEffect(() => {
     systemServicesRequestRef.current += 1;
     setSystemServicesWorkspace(
@@ -721,11 +789,22 @@ const SovereignDashboardController = ({ user: propUser, onLogout }) => {
     user && systemServicesWorkspace ? { ...user, systemServicesWorkspace } : user
   ), [systemServicesWorkspace, user]);
 
-  const dashboardKey = useMemo(() => (
+  const resolvedDashboardKey = useMemo(() => (
     dashboardUser ? resolveDashboardKey({ user: dashboardUser, manualDashboardKey }) : ''
   ), [dashboardUser, manualDashboardKey]);
+  const moduleDashboardRequested = Object.prototype.hasOwnProperty.call(
+    TENANT_MODULE_DASHBOARD_ADMISSION, manualDashboardKey,
+  );
+  const dashboardKey = useMemo(() => {
+    if (!moduleDashboardRequested) return resolvedDashboardKey;
+    return moduleManifest.status === 'ready'
+      && moduleManifest.tenantId === moduleManifestTenantId
+      && hasTenantModuleManifestAdmission(moduleManifest.modules, manualDashboardKey)
+      ? manualDashboardKey
+      : '';
+  }, [manualDashboardKey, moduleDashboardRequested, moduleManifest, resolvedDashboardKey]);
 
-  const dashboardLabel = getDashboardDisplayName(dashboardKey);
+  const dashboardLabel = getDashboardDisplayName(dashboardKey || (moduleDashboardRequested ? manualDashboardKey : ''));
   const canReturnToFounder = Boolean(
     user && dashboardKey && dashboardKey !== DASHBOARD_KEYS.FOUNDER && hasFounderReturnAuthority({ user, role })
   );
@@ -874,7 +953,11 @@ const SovereignDashboardController = ({ user: propUser, onLogout }) => {
   }
 
   let dashboardShard = null;
-  if (dashboardKey === DASHBOARD_KEYS.SYSTEM_SERVICES) {
+  if (moduleDashboardRequested && !dashboardKey) {
+    dashboardShard = moduleManifest.status === 'loading' || moduleManifest.status === 'idle'
+      ? <div role="status" aria-live="polite">Verifying the active tenant product entitlement with EOS…</div>
+      : <div role="alert">This module is not available in the current authenticated tenant product manifest. Refresh the workspace or contact an authorised administrator.</div>;
+  } else if (dashboardKey === DASHBOARD_KEYS.SYSTEM_SERVICES) {
     dashboardShard = (
       <SystemServicesDashboard
         workspace={dashboardUser?.systemServicesWorkspace || null}
@@ -920,6 +1003,12 @@ const SovereignDashboardController = ({ user: propUser, onLogout }) => {
     dashboardShard = <BillingHUD user={user} />;
   } else if (dashboardKey === DASHBOARD_KEYS.HR) {
     dashboardShard = <HRDashboard user={user} />;
+  } else if (dashboardKey === DASHBOARD_KEYS.OPERATIONS) {
+    dashboardShard = <OperationsDashboard user={user} activeTenant={activeTenant} />;
+  } else if (dashboardKey === DASHBOARD_KEYS.INTELLIGENCE) {
+    dashboardShard = <IntelligenceDashboard user={user} activeTenant={activeTenant} />;
+  } else if (dashboardKey === DASHBOARD_KEYS.POS) {
+    dashboardShard = <POSDashboard user={user} activeTenant={activeTenant} />;
   } else if (dashboardKey === DASHBOARD_KEYS.IT) {
     dashboardShard = <ITDashboard user={user} />;
   } else if (dashboardKey === DASHBOARD_KEYS.LEGAL) {
@@ -1040,12 +1129,78 @@ const SovereignDashboardController = ({ user: propUser, onLogout }) => {
     }
   }
 
+  // Product destinations without their own shared chrome receive a small
+  // controller-owned navigation rail. Its entries come only from the current
+  // EOS tenant module manifest; clicking an entry requests presentation routing
+  // and does not create workspace or API authority.
+  const needsControllerProductNavigation = [
+    DASHBOARD_KEYS.CRM,
+    DASHBOARD_KEYS.OPERATIONS,
+    DASHBOARD_KEYS.INTELLIGENCE,
+    DASHBOARD_KEYS.POS,
+  ].includes(dashboardKey);
+  const controllerProductNavigation = (
+    needsControllerProductNavigation
+    && moduleManifest.status === 'ready'
+    && moduleManifest.tenantId === moduleManifestTenantId
+  ) ? (
+    <nav
+      aria-label="Available WILSY OS products"
+      data-eos-controller-product-navigation="true"
+      style={{
+        display: 'flex',
+        flexWrap: 'wrap',
+        alignItems: 'center',
+        gap: 8,
+        padding: '10px 16px',
+        borderBottom: '1px solid var(--wilsy-border, rgba(128, 128, 128, .24))',
+        background: 'var(--wilsy-surface, #101820)',
+      }}
+    >
+      <span style={{ fontSize: 11, fontWeight: 800, letterSpacing: '.1em', opacity: .7 }}>
+        YOUR PRODUCTS
+      </span>
+      {moduleManifest.modules.map((module) => {
+        const isActive = module.workspaceKey === (
+          dashboardKey === DASHBOARD_KEYS.CRM ? 'CRM_DASHBOARD'
+            : dashboardKey === DASHBOARD_KEYS.OPERATIONS ? 'OPERATIONS_DASHBOARD'
+              : dashboardKey === DASHBOARD_KEYS.INTELLIGENCE ? 'INTELLIGENCE_DASHBOARD'
+                : 'POS_DASHBOARD'
+        );
+        return (
+          <button
+            key={module.moduleId}
+            type="button"
+            data-wilsy-module-entry={module.moduleId}
+            data-active={isActive ? 'true' : 'false'}
+            aria-current={isActive ? 'page' : undefined}
+            onClick={() => handleManualDashboardSwitch(module.workspaceKey)}
+            style={{
+              minHeight: 34,
+              padding: '6px 11px',
+              border: '1px solid var(--wilsy-border, rgba(128, 128, 128, .35))',
+              borderRadius: 8,
+              background: isActive ? 'var(--wilsy-accent-soft, rgba(96, 165, 250, .16))' : 'transparent',
+              color: 'var(--wilsy-text, inherit)',
+              font: 'inherit',
+              fontSize: 12,
+              fontWeight: 650,
+              cursor: 'pointer',
+            }}
+          >
+            {module.label}
+          </button>
+        );
+      })}
+    </nav>
+  ) : null;
+
   // ═══════════════════════════════════════════════════════════════════════════
-  // FIX: Wrap guardedShard in an overflow-enabled container to allow
-  // BillingHUD's padding-bottom:208px to expand without clipping.
+  // BillingHUD may expand vertically; preserve scroll without clipping.
   // ═══════════════════════════════════════════════════════════════════════════
   const guardedShard = (
     <div style={{ overflowX: 'hidden', overflowY: 'auto', minHeight: '100vh', width: '100%' }}>
+      {controllerProductNavigation}
       <ErrorBoundary>
         {dashboardShard}
       </ErrorBoundary>

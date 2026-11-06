@@ -38,12 +38,33 @@ export const MODULE_PRESENTATION = Object.freeze({
     navigationGroup: 'CUSTOMER_OPERATIONS',
     iconKey: 'users',
   }),
+  POS: Object.freeze({
+    productId: 'POS',
+    label: 'Point of Sale',
+    workspaceKey: 'POS_DASHBOARD',
+    navigationGroup: 'BUSINESS_OPERATIONS',
+    iconKey: 'shopping-cart',
+  }),
   PEOPLE: Object.freeze({
     productId: 'HR',
     label: 'People',
     workspaceKey: 'HR_DASHBOARD',
     navigationGroup: 'PEOPLE_OPERATIONS',
     iconKey: 'users-round',
+  }),
+  OPERATIONS: Object.freeze({
+    productId: 'OPERATIONS',
+    label: 'Operations',
+    workspaceKey: 'OPERATIONS_DASHBOARD',
+    navigationGroup: 'BUSINESS_OPERATIONS',
+    iconKey: 'workflow',
+  }),
+  INTELLIGENCE: Object.freeze({
+    productId: 'INTELLIGENCE',
+    label: 'Intelligence',
+    workspaceKey: 'INTELLIGENCE_DASHBOARD',
+    navigationGroup: 'INTELLIGENCE',
+    iconKey: 'brain-circuit',
   }),
 });
 

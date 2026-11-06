@@ -13,6 +13,8 @@ import {
   DASHBOARD_KEYS,
   getExecutiveRoleLabel,
   hasFounderReturnAuthority,
+  hasTenantModuleManifestAdmission,
+  resolveDashboardRequestSignal,
   mapDashboardAlias,
   resolveDashboardKey,
 } from '../../src/components/sovereign/SovereignDashboardController.jsx';
@@ -62,7 +64,7 @@ describe('SovereignDashboardController EOS workspace contract', () => {
     };
     expect(resolveDashboardKey({ user, manualDashboardKey: 'LEGAL_DASHBOARD' }))
       .toBe(DASHBOARD_KEYS.LEGAL);
-    for (const request of ['CRM_DASHBOARD', 'FOUNDER_DASHBOARD']) {
+    for (const request of ['CRM_DASHBOARD', 'BILLING_HUB', 'HR_DASHBOARD', 'OPERATIONS_DASHBOARD', 'INTELLIGENCE_DASHBOARD', 'POS_DASHBOARD', 'FOUNDER_DASHBOARD']) {
       expect(resolveDashboardKey({ user, manualDashboardKey: request }))
         .toBe(DASHBOARD_KEYS.EXECUTIVE);
     }
@@ -98,12 +100,63 @@ describe('SovereignDashboardController EOS workspace contract', () => {
       ['CLIENT_PORTAL', DASHBOARD_KEYS.LEGAL],
       ['PROCESS_SERVICE', DASHBOARD_KEYS.LEGAL],
       ['PEOPLE_OPERATIONS', DASHBOARD_KEYS.HR],
+      ['POINT_OF_SALE', DASHBOARD_KEYS.POS],
+      ['POS_DASHBOARD', DASHBOARD_KEYS.POS],
     ];
     for (const [workspaceId, dashboardKey] of cases) {
       expect(resolveDashboardKey({
         user: { id: workspaceId, role: 'UNTRUSTED_ROLE_LABEL', workspaceId },
       })).toBe(dashboardKey);
     }
+  });
+
+  it('mounts all seven tenant products on their real independent module destinations', () => {
+    const source = readFileSync(CONTROLLER_SOURCE, 'utf8');
+    const mounts = [
+      ['DASHBOARD_KEYS.LEGAL', '<LegalDashboard'],
+      ['DASHBOARD_KEYS.FINANCE', '<BillingHUD'],
+      ['DASHBOARD_KEYS.CRM', '<CRMDashboard'],
+      ['DASHBOARD_KEYS.HR', '<HRDashboard'],
+      ['DASHBOARD_KEYS.OPERATIONS', '<OperationsDashboard'],
+      ['DASHBOARD_KEYS.INTELLIGENCE', '<IntelligenceDashboard'],
+      ['DASHBOARD_KEYS.POS', '<POSDashboard'],
+    ];
+    for (const [key, component] of mounts) {
+      expect(source).toContain(`dashboardKey === ${key}`);
+      expect(source).toContain(component);
+    }
+  });
+
+  it('routes the new product workspace keys distinctly without changing the legacy Operations alias', () => {
+    expect(resolveDashboardRequestSignal('OPERATIONS_DASHBOARD')).toBe(DASHBOARD_KEYS.OPERATIONS);
+    expect(resolveDashboardRequestSignal('INTELLIGENCE_DASHBOARD')).toBe(DASHBOARD_KEYS.INTELLIGENCE);
+    expect(resolveDashboardRequestSignal('OPERATIONS')).toBe(DASHBOARD_KEYS.COO);
+  });
+
+  it('mounts every non-Legal product only from exact server-issued module/product/workspace evidence', () => {
+    const manifest = [
+      { moduleId: 'BILLING', productId: 'BILLING', workspaceKey: 'BILLING_HUB' },
+      { moduleId: 'CRM', productId: 'CRM', workspaceKey: 'CRM_DASHBOARD' },
+      { moduleId: 'PEOPLE', productId: 'HR', workspaceKey: 'HR_DASHBOARD' },
+      { moduleId: 'OPERATIONS', productId: 'OPERATIONS', workspaceKey: 'OPERATIONS_DASHBOARD' },
+      { moduleId: 'INTELLIGENCE', productId: 'INTELLIGENCE', workspaceKey: 'INTELLIGENCE_DASHBOARD' },
+      { moduleId: 'POS', productId: 'POS', workspaceKey: 'POS_DASHBOARD' },
+    ];
+    expect(hasTenantModuleManifestAdmission(manifest, DASHBOARD_KEYS.FINANCE)).toBe(true);
+    expect(hasTenantModuleManifestAdmission(manifest, DASHBOARD_KEYS.CRM)).toBe(true);
+    expect(hasTenantModuleManifestAdmission(manifest, DASHBOARD_KEYS.HR)).toBe(true);
+    expect(hasTenantModuleManifestAdmission(manifest, DASHBOARD_KEYS.OPERATIONS)).toBe(true);
+    expect(hasTenantModuleManifestAdmission(manifest, DASHBOARD_KEYS.INTELLIGENCE)).toBe(true);
+    expect(hasTenantModuleManifestAdmission(manifest, DASHBOARD_KEYS.POS)).toBe(true);
+    expect(hasTenantModuleManifestAdmission([], DASHBOARD_KEYS.FINANCE)).toBe(false);
+    expect(hasTenantModuleManifestAdmission([], DASHBOARD_KEYS.CRM)).toBe(false);
+    expect(hasTenantModuleManifestAdmission([], DASHBOARD_KEYS.HR)).toBe(false);
+    expect(hasTenantModuleManifestAdmission([], DASHBOARD_KEYS.OPERATIONS)).toBe(false);
+    expect(hasTenantModuleManifestAdmission([], DASHBOARD_KEYS.POS)).toBe(false);
+    expect(hasTenantModuleManifestAdmission([
+      { moduleId: 'OPERATIONS', productId: 'CRM', workspaceKey: 'OPERATIONS_DASHBOARD' },
+    ], DASHBOARD_KEYS.OPERATIONS)).toBe(false);
+    expect(hasTenantModuleManifestAdmission(manifest, DASHBOARD_KEYS.CRM)).toBe(true);
   });
 
   it('mounts System Services only from a READY EOS capability projection', () => {

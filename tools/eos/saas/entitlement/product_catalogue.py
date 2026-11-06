@@ -10,13 +10,15 @@ ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/tools/eos/saas/e
 COLLABORATION / OWNERSHIP: Python EOS owns product identity/catalogue truth.
                             PlanRegistry owns base commercial plan truth;
                             SubscriptionRegistry owns subscription lifecycle;
-                            tenant product entitlement is a separate future
-                            authority; WILSY AI and Tenant Branding remain
+                            D22B1/D22B2 own tenant product entitlement lifecycle;
+                            WILSY AI and Tenant Branding remain
                             separate VAS domains; IAM owns principal authority.
 CERTIFICATION / UPDATE DATE: 2026-09-24
 CHANGELOG: v1.0.0-D22A-TENANT-PRODUCT-CATALOGUE establishes the first closed
            tenant-selectable product catalogue for Legal Operations, Billing,
-           CRM and HR. It intentionally excludes WILSY AI and Tenant Branding
+           CRM, HR, Operations and Intelligence. The original four product
+           descriptors retain their exact identity, workspace keys and
+           fingerprints. It intentionally excludes WILSY AI and Tenant Branding
            because those are value-added-service authorities with independent
            commercial/entitlement lifecycles. "Full Enterprise" is not a
            product and no wildcard product exists.
@@ -62,7 +64,10 @@ class TenantProductId(str, Enum):
     LEGAL_OPERATIONS = "LEGAL_OPERATIONS"
     BILLING = "BILLING"
     CRM = "CRM"
+    POS = "POS"
     HR = "HR"
+    OPERATIONS = "OPERATIONS"
+    INTELLIGENCE = "INTELLIGENCE"
 
 
 _CANONICAL_INPUTS: Final[dict[TenantProductId, dict[str, object]]] = {
@@ -84,11 +89,29 @@ _CANONICAL_INPUTS: Final[dict[TenantProductId, dict[str, object]]] = {
         "required_products": (),
         "description": "Tenant customer, account, lead, deal and relationship operations workspace.",
     },
+    TenantProductId.POS: {
+        "label": "Point of Sale",
+        "workspace_key": "POS_DASHBOARD",
+        "required_products": (),
+        "description": "Tenant point-of-sale sales, tenders, returns and location operations workspace; financial execution remains with Kennel EOS.",
+    },
     TenantProductId.HR: {
         "label": "HR",
         "workspace_key": "HR_DASHBOARD",
         "required_products": (),
         "description": "Tenant people, workforce and human-resources operations workspace.",
+    },
+    TenantProductId.OPERATIONS: {
+        "label": "Operations",
+        "workspace_key": "OPERATIONS_DASHBOARD",
+        "required_products": (),
+        "description": "Tenant operational workflows, work queues and process execution workspace.",
+    },
+    TenantProductId.INTELLIGENCE: {
+        "label": "Intelligence",
+        "workspace_key": "INTELLIGENCE_DASHBOARD",
+        "required_products": (),
+        "description": "Tenant analytics, evidence-backed insights and decision-support workspace.",
     },
 }
 

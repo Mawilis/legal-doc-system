@@ -1,0 +1,94 @@
+.workspace {
+  min-height: 100vh;
+  padding: clamp(20px, 3vw, 44px);
+  color: #f4f5f7;
+  background: radial-gradient(ellipse at 12% 0%, rgba(61, 83, 126, .18), transparent 42%), #090d15;
+}
+.header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 24px;
+  max-width: 1440px;
+  margin: 0 auto 28px;
+}
+.eyebrow {
+  display: block;
+  color: #a7b7d3;
+  font: 700 10px/1.5 ui-monospace, SFMono-Regular, Menlo, monospace;
+  letter-spacing: .16em;
+  text-transform: uppercase;
+}
+.header h1 { margin: 9px 0 8px; font-size: clamp(28px, 3vw, 42px); letter-spacing: -.035em; }
+.header p { max-width: 720px; margin: 0; color: #aeb8c9; line-height: 1.6; }
+.refresh, .submit, .complete {
+  min-height: 42px; border: 1px solid #34435b; border-radius: 8px;
+  background: #141d2b; color: #f4f5f7; padding: 0 16px; font-weight: 650;
+}
+.refresh:hover, .submit:hover, .complete:hover { border-color: #88a9db; background: #1b2940; }
+.refresh:focus-visible, .submit:focus-visible, .complete:focus-visible, .field input:focus-visible, .field select:focus-visible {
+  outline: 2px solid #a9c7ff; outline-offset: 2px;
+}
+.metrics {
+  display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 14px;
+  max-width: 1440px; margin: 0 auto 20px;
+}
+.metric, .panel {
+  border: 1px solid #263247; border-radius: 12px;
+  background: linear-gradient(145deg, rgba(23, 33, 49, .96), rgba(13, 20, 31, .96));
+}
+.metric { padding: 17px 19px; }
+.metric span { color: #9eacc1; font-size: 12px; }
+.metric strong { display: block; margin-top: 7px; font-size: 27px; font-variant-numeric: tabular-nums; }
+.columns {
+  display: grid; grid-template-columns: minmax(0, 1.7fr) minmax(280px, .8fr);
+  gap: 18px; max-width: 1440px; margin: 0 auto;
+}
+.panel { padding: 22px; min-width: 0; }
+.sectionHeading { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-bottom: 16px; }
+.sectionHeading h2, .formTitle { margin: 5px 0 0; font-size: 20px; letter-spacing: -.02em; }
+.sectionHeading > span { color: #9eacc1; font-size: 12px; }
+.queueList { display: grid; gap: 10px; padding: 0; margin: 0; list-style: none; }
+.queueItem {
+  display: flex; align-items: flex-start; justify-content: space-between; gap: 16px;
+  padding: 15px; border: 1px solid #273449; border-radius: 9px; background: rgba(8, 13, 22, .55);
+}
+.itemTitle { display: flex; align-items: center; flex-wrap: wrap; gap: 9px; }
+.itemTitle strong { font-size: 14px; }
+.priority { color: #b8c7dc; font-size: 10px; letter-spacing: .08em; }
+.itemMeta { margin: 7px 0 0; color: #a3afc1; font-size: 12px; }
+.due { display: block; margin-top: 7px; color: #8997aa; font-size: 11px; }
+.itemActions { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; justify-content: flex-end; }
+.flag { color: #f2bd77; font-size: 11px; }
+.complete { min-height: 34px; padding: 0 12px; font-size: 12px; }
+.form { display: grid; gap: 13px; margin-top: 16px; }
+.field { display: grid; gap: 6px; color: #c2ccda; font-size: 12px; font-weight: 600; }
+.field input, .field select {
+  width: 100%; min-height: 42px; box-sizing: border-box; border: 1px solid #35445b;
+  border-radius: 7px; background: #0a111d; color: #f4f5f7; padding: 0 11px;
+}
+.submit { margin-top: 4px; background: #253957; border-color: #506b91; }
+.submit:disabled, .complete:disabled, .refresh:disabled { opacity: .55; cursor: not-allowed; }
+.note, .empty { color: #98a7bb; font-size: 12px; line-height: 1.6; }
+.note { margin: 14px 0 0; }
+.empty { padding: 22px 8px; text-align: center; }
+.error, .unavailable {
+  max-width: 1440px; margin: 0 auto 18px; padding: 13px 15px;
+  border: 1px solid rgba(217, 133, 113, .45); border-radius: 8px;
+  background: rgba(75, 31, 28, .25); color: #f0b6a9; font-size: 13px;
+}
+.status { max-width: 1440px; margin: 0 auto 16px; color: #a7b7d3; font-size: 12px; }
+@media (max-width: 900px) {
+  .columns { grid-template-columns: 1fr; }
+}
+@media (max-width: 620px) {
+  .workspace { padding: 18px 14px 28px; }
+  .header { flex-direction: column; }
+  .refresh { width: 100%; }
+  .metrics { gap: 8px; }
+  .metric { padding: 13px 12px; }
+  .metric strong { font-size: 22px; }
+  .panel { padding: 16px; }
+  .queueItem { flex-direction: column; }
+  .itemActions { justify-content: flex-start; }
+}

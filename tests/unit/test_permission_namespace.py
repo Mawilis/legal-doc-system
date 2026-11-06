@@ -9,7 +9,7 @@ ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/tests/unit/test_
 COLLABORATION / OWNERSHIP: Wilson Khanyezi / Wilsy Core Engineering.
 CERTIFICATION/UPDATE DATE: 2026-10-15.
 CHANGELOG:
-2026-11-05 v1.14.0-PERMISSION-CANON-COUNT-RECONCILIATION updates the direct namespace certificate to the current source canon: 142 canonical permissions and 145 total rows. This is a count-only certification correction; no permission metadata, role grants or authorization behavior changes.\n2026-11-03 v1.13.0-SYSTEM-SERVICES-AUDIT-READ-CERT certifies twelve exact SYSTEM-scoped System Services/IAM vocabulary entries as assignment-required, workforce-current, non-self-authorizing metadata only. Closed-canon cardinality is 138 canonical permissions / 141 total rows. No role grants or assignment allowlist changes are created.
+2026-11-05 v1.14.0-PERMISSION-CANON-COUNT-RECONCILIATION updates the direct namespace certificate to the current source canon: 144 canonical permissions and 147 total rows. This is a count-only certification correction; no permission metadata, role grants or authorization behavior changes.\n2026-11-03 v1.13.0-SYSTEM-SERVICES-AUDIT-READ-CERT certifies twelve exact SYSTEM-scoped System Services/IAM vocabulary entries as assignment-required, workforce-current, non-self-authorizing metadata only. Closed-canon cardinality is 138 canonical permissions / 141 total rows. No role grants or assignment allowlist changes are created.
 2026-10-20 v1.10.0-P47-R76-BINDING-PROVISION-PERMISSION-CERT certifies the
 exact own-tenant practitioner matter-binding provisioning permission, its
 non-self-authorizing and non-financial metadata, fail-closed aliases, and the
@@ -339,6 +339,20 @@ def test_permission_canon_properties() -> None:
         "plan:manage",
         "wilsy_ai:usage_capacity:read",
         "billing_intelligence:evidence:read",
+        "operations:work_item:read",
+        "operations:work_item:create",
+        "operations:work_item:complete",
+        "intelligence:work_item:read",
+        "intelligence:work_item:create",
+        "intelligence:work_item:complete",
+        "pos:location_assignment:manage",
+        "pos:sale:read",
+        "pos:sale:create",
+        "pos:tender:create",
+        "pos:cash:record",
+        "pos:return:create",
+        "pos:refund:create",
+        "pos:payment:authorize",
         "wilsy_ai:legal_tool:read",
         "wilsy_ai:legal_services:execute",
         "wilsy_ai:legal_advisory:generate",
@@ -408,9 +422,9 @@ def test_permission_canon_properties() -> None:
             for row in rows
             if row["disposition"] == "CANONICAL"
         ]
-    ) == 142
+    ) == 160
 
-    assert len(rows) == 145
+    assert len(rows) == 163
 
     for permission_id in tenant:
         metadata = permission_metadata(

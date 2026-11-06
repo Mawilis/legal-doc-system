@@ -96,6 +96,12 @@ export default defineConfig({
         changeOrigin: true,
         secure: false,
       },
+      // Python EOS owns independent Operations and Intelligence work queues.
+      '/api/tenant-modules': {
+        target: 'http://localhost:9095',
+        changeOrigin: true,
+        secure: false,
+      },
       // Python EOS owns authenticated Legal Operations read/command authority.
       // Preserve /api because the EOS router is mounted under /api.
       '/api/legal-operations': {

@@ -45,6 +45,9 @@ import {
   Receipt,
   Users,
   UsersRound,
+  Workflow,
+  BrainCircuit,
+  ShoppingCart,
   X
 } from 'lucide-react';
 import { useAuth } from '../../contexts/authContext';
@@ -63,6 +66,9 @@ const MODULE_ICON_BY_KEY = Object.freeze({
   receipt: Receipt,
   users: Users,
   'users-round': UsersRound,
+  workflow: Workflow,
+  'brain-circuit': BrainCircuit,
+  'shopping-cart': ShoppingCart,
 });
 
 const TRUST_CENTER_STATES = Object.freeze({
@@ -503,11 +509,15 @@ const WilsyOSDashboardChrome = ({
                         || (module.moduleId === 'BILLING' && (currentKey.includes('billing') || currentKey.includes('finance')))
                         || (module.moduleId === 'CRM' && currentKey.includes('crm'))
                         || (module.moduleId === 'PEOPLE' && currentKey.includes('hr'))
+                        || (module.moduleId === 'OPERATIONS' && currentKey.includes('operations'))
+                        || (module.moduleId === 'INTELLIGENCE' && currentKey.includes('intelligence'))
+                        || (module.moduleId === 'POS' && (currentKey.includes('pos') || currentKey.includes('retail')))
                       );
                       return (
                         <button
                           key={module.moduleId}
                           type="button"
+                          data-wilsy-module-entry={module.moduleId}
                           className="wilsyOsChromeModuleButton"
                           data-active={isActive ? 'true' : 'false'}
                           aria-current={isActive ? 'page' : undefined}
@@ -533,6 +543,7 @@ const WilsyOSDashboardChrome = ({
                     <button
                       key={module.moduleId}
                       type="button"
+                      data-wilsy-module-entry={module.moduleId}
                       className="wilsyOsChromeModuleIconButton"
                       title={module.label}
                       aria-label={module.label}

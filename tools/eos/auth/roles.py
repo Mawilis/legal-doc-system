@@ -270,6 +270,12 @@ ROLE_PERMISSIONS_MAP: dict[str, list[str]] = {
         "crm:email_template:copy",
         "crm:email_template:share",
         "legal_operations:workflow_activation:manage",
+        "operations:work_item:read",
+        "operations:work_item:create",
+        "operations:work_item:complete",
+        "intelligence:work_item:read",
+        "intelligence:work_item:create",
+        "intelligence:work_item:complete",
     ],
     "AUDITOR": [
         "kernel:read",
@@ -288,6 +294,8 @@ ROLE_PERMISSIONS_MAP: dict[str, list[str]] = {
         "tenant_branding:read",
         "crm:lead:read",
         "crm:email_template:read",
+        "operations:work_item:read",
+        "intelligence:work_item:read",
     ],
     # Tenant-scoped owner workspace authority only; never a platform administrator.
     # Business-role eligibility and ACTIVE membership remain separate conjuncts.
@@ -296,6 +304,12 @@ ROLE_PERMISSIONS_MAP: dict[str, list[str]] = {
         "crm:work_item:read",
         "crm:work_item:create",
         "crm:work_item:complete",
+        "operations:work_item:read",
+        "operations:work_item:create",
+        "operations:work_item:complete",
+        "intelligence:work_item:read",
+        "intelligence:work_item:create",
+        "intelligence:work_item:complete",
     ],
     "LEGAL_PARTNER": [
         "legal_operations:instruction:read",
@@ -604,3 +618,39 @@ ROLE_PERMISSIONS_MAP["ENTERPRISE_ADMIN"].extend([
     "crm:work_item:complete",
 ])
 ROLE_PERMISSIONS_MAP["AUDITOR"].append("crm:work_item:read")
+
+
+# Commercial agreement operations are owner-commercial only. Execution still
+# requires verified evidence and the authenticated principal to be the signatory;
+# activation remains a separate permission and product issuance authorization.
+ROLE_PERMISSIONS_MAP["TENANT_OWNER"].extend([
+    "tenant:commercial_agreement:read",
+    "tenant:commercial_agreement:draft:create",
+    "tenant:commercial_agreement:execute",
+    "tenant:commercial_agreement:activate",
+])
+ROLE_PERMISSIONS_MAP["ENTERPRISE_ADMIN"].extend([
+    "tenant:commercial_agreement:read",
+    "tenant:commercial_agreement:draft:create",
+    "tenant:commercial_agreement:execute",
+    "tenant:commercial_agreement:activate",
+])
+ROLE_PERMISSIONS_MAP["AUDITOR"].append("tenant:commercial_agreement:read")
+
+
+# POS static possession is deliberately limited to the canonical tenant-owner
+# authorization role. It does not create any per-location assignment.
+ROLE_PERMISSIONS_MAP["TENANT_OWNER"].extend((
+    "pos:location_assignment:manage", "pos:sale:read", "pos:sale:create",
+    "pos:tender:create", "pos:cash:record", "pos:return:create", "pos:refund:create",
+    "pos:payment:authorize",
+))
+
+
+# POS_OPERATOR is a tenant-scoped cashier/operator authorization role. It has
+# no authority to create or revoke location assignments and no financial
+# execution or settlement permissions.
+ROLE_PERMISSIONS_MAP["POS_OPERATOR"] = [
+    "pos:sale:read", "pos:sale:create", "pos:tender:create",
+    "pos:cash:record", "pos:return:create", "pos:refund:create",
+]

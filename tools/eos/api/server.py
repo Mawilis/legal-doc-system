@@ -97,6 +97,10 @@ from .subscription_router import subscription_router
 from .tenant_router import tenant_router
 from .legal_operations_router import router as legal_operations_router
 from .owner_commercial_workspace_router import router as owner_commercial_workspace_router
+from .tenant_module_workspace_router import router as tenant_module_workspace_router
+from .pos_workspace_router import router as pos_workspace_router, ensure_pos_workspace_indexes
+from .commercial_agreement_router import router as commercial_agreement_router
+from tools.eos.saas.entitlement.commercial_agreement_execution_verifier import CommercialAgreementExecutionVerifier
 from .legal_operations_command_router import router as legal_operations_command_router
 from .authorization_role_revocation_router import router as authorization_role_revocation_router
 from .legal_operations_billing_read_router import router as legal_operations_billing_read_router
@@ -267,6 +271,7 @@ class WilsyAPIServer:
         allowed_origins: Optional[List[str]] = None,
         reasoning_provider_binding: Any | None = None,
         global_principal_mfa_decrypt_secret: Callable[..., str] | None = None,
+        commercial_agreement_execution_verifier: CommercialAgreementExecutionVerifier | None = None,
     ) -> None:
         """Initialize immutable server configuration and build the FastAPI app."""
         self.title = title
@@ -289,6 +294,11 @@ class WilsyAPIServer:
                 reasoning_provider_binding = None
         self.reasoning_provider_binding = reasoning_provider_binding
         self.global_principal_mfa_decrypt_secret = global_principal_mfa_decrypt_secret
+        if commercial_agreement_execution_verifier is not None and not isinstance(
+            commercial_agreement_execution_verifier, CommercialAgreementExecutionVerifier
+        ):
+            raise TypeError("COMMERCIAL_AGREEMENT_EXECUTION_VERIFIER_CONFIGURATION_INVALID")
+        self.commercial_agreement_execution_verifier = commercial_agreement_execution_verifier
         self.app: FastAPI = self._build_app()
 
     def _build_app(self) -> FastAPI:
@@ -302,6 +312,9 @@ class WilsyAPIServer:
             redoc_url="/redoc" if (not self.production_mode or os.getenv("WILSY_API_DOCS_ENABLED", "").strip().lower() in {"1", "true", "yes", "on"}) else None,
         )
         app.state.wilsy_ai_reasoning_provider_binding = self.reasoning_provider_binding
+        # Missing PKI, trusted timestamp or signatory-mandate adapters leave
+        # agreement execution unavailable; no request payload can fill this slot.
+        app.state.commercial_agreement_execution_verifier = self.commercial_agreement_execution_verifier
         # Build one immutable server-owned C1C registry at composition time.
         # No request, model output, or caller payload can mutate membership.
         app.state.wilsy_ai_legal_tool_registry = ServerOwnedAIToolRegistry(build_legal_read_registrations())
@@ -506,6 +519,7 @@ class WilsyAPIServer:
             app.state.system_services_response_decision_service = None
             app.state.system_services_response_executor = None
             app.state.system_services_response_permission_assignments = None
+            app.state.pos_workspace_indexes_ready = False
             app.state.telemetry_indexes_ready = False
             app.state.electrum_completion_indexes_ready = False
             app.state.electrum_settlement_worker_enabled = False
@@ -520,6 +534,12 @@ class WilsyAPIServer:
             if database is None:
                 return
             if database is not None:
+                try:
+                    ensure_pos_workspace_indexes(database)
+                    app.state.pos_workspace_indexes_ready = True
+                except Exception as error:
+                    app.state.pos_workspace_indexes_ready = False
+                    logger.error("[POS_WORKSPACE] Canonical index bootstrap unavailable: %s", type(error).__name__)
                 try:
                     ensure_electrum_payshap_completion_indexes(
                         inbox_collection=database["electrum_payshap_completion_inbox"],
@@ -885,6 +905,9 @@ class WilsyAPIServer:
         app.include_router(tenant_router)
         app.include_router(legal_operations_router, prefix="/api")
         app.include_router(owner_commercial_workspace_router, prefix="/api")
+        app.include_router(tenant_module_workspace_router, prefix="/api")
+        app.include_router(pos_workspace_router, prefix="/api")
+        app.include_router(commercial_agreement_router, prefix="/api")
         app.include_router(legal_operations_command_router, prefix="/api")
         app.include_router(authorization_role_revocation_router, prefix="/api")
         app.include_router(legal_operations_billing_read_router, prefix="/api")

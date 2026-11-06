@@ -211,6 +211,50 @@ describe('api.js – Sovereign HTTP Client', () => {
       }
     });
 
+    it('preserves exact CRM, Operations and Intelligence work command bodies', async () => {
+      expect(requestInterceptorCapture.fulfilled).toEqual(expect.any(Function));
+      bindAuthenticatedTransport();
+
+      const commands = [
+        {
+          url: '/crm/owner-workspace/work-items',
+          data: {
+            title: 'CRM follow-up', description: '', kind: 'TASK', priority: 'NORMAL',
+            due_at: null, source_type: null, source_id: null,
+          },
+        },
+        {
+          url: '/crm/owner-workspace/work-items/work-1/complete',
+          data: { completion_note: 'Completed by the assigned owner.' },
+        },
+        ...['operations', 'intelligence'].flatMap(module => [
+          {
+            url: `/tenant-modules/${module}/workspace/work-items`,
+            data: { title: `${module} task`, description: '', kind: 'TASK', priority: 'NORMAL', due_at: null },
+          },
+          {
+            url: `/tenant-modules/${module}/workspace/work-items/work-1/complete`,
+            data: { completion_note: 'Completed in the module workspace.' },
+          },
+        ]),
+      ];
+
+      for (const command of commands) {
+        const originalBody = { ...command.data };
+        const sealed = await requestInterceptorCapture.fulfilled({
+          url: command.url,
+          method: 'post',
+          data: { ...command.data },
+          headers: {},
+        });
+        expect(sealed.data).toEqual(originalBody);
+        expect(sealed.data).not.toHaveProperty('timestamp');
+        expect(sealed.headers['x-forensic-timestamp']).toEqual(expect.any(String));
+        expect(sealed.headers['x-cryptographic-nonce']).toEqual(expect.any(String));
+        expect(sealed.headers['x-request-seal']).toEqual(expect.any(String));
+      }
+    });
+
     it('does not promote discovery storage into authenticated tenant transport context', async () => {
       expect(requestInterceptorCapture.fulfilled).toEqual(expect.any(Function));
 
