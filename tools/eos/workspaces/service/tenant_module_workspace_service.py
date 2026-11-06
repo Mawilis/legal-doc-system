@@ -84,7 +84,7 @@ class TenantModuleWorkspaceService:
         if not isinstance(idempotency_key, str) or not idempotency_key or idempotency_key != idempotency_key.strip():
             raise TenantModuleWorkspaceError("MODULE_WORK_IDEMPOTENCY_KEY_INVALID")
         stable_id = "tmw_" + sha3_256(
-            (tenant_id + "\\0" + self._product_id.value + "\\0" + idempotency_key).encode("utf-8")
+            (tenant_id + "\0" + self._product_id.value + "\0" + idempotency_key).encode("utf-8")
         ).hexdigest()[:32]
         item = TenantModuleWorkItem.create(
             tenant_id=tenant_id, title=title, description=description, kind=kind,
