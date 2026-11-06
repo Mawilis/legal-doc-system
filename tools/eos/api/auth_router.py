@@ -1,5 +1,5 @@
 """TITLE: Wilsy OS Authentication Router.
-VERSION: v1.17.0-REQUIRED-ASGI-REQUEST-FAILURE-THROTTLE
+VERSION: v1.18.0-EOS-TENANT-MODULE-MANIFEST-HTTP
 AUTHORITY: Wilsy OS Core Governance.
 EPITOME: Canonical authentication HTTP endpoints, including bounded token verification,
 MFA setup and verification, password-recovery request and reset completion, login,
@@ -7,7 +7,7 @@ discovery, and logout.
 ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/tools/eos/api/auth_router.py
 COLLABORATION / OWNERSHIP: Authentication service and FastAPI server consume this router;
 credential and identity authorities remain in tools.eos.auth.
-CERTIFICATION/UPDATE DATE: 2026-10-16.
+CERTIFICATION/UPDATE DATE: 2026-11-06.
 CHANGELOG:
   v1.18.0-EOS-TENANT-MODULE-MANIFEST-HTTP: Adds a separate authenticated module-manifest endpoint. It revalidates current principal, membership, business role and tenant before opening one bounded read-only transaction over canonical D22B2 product entitlement and CRM Core resolver evidence. The returned module list is presentation-only; no role, Legal Practice, G68, route or resource permission is projected. Existing workspace-bootstrap response remains unchanged.
   v1.17.0-REQUIRED-ASGI-REQUEST-FAILURE-THROTTLE: Requires FastAPI's concrete Request injection so the direct transport peer is always available and avoids unsupported optional-Request route signatures. All failure-only throttling, generic 429, fail-closed 503, and privacy-safe telemetry behavior is preserved.
