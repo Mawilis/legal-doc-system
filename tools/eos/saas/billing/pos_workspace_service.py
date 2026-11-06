@@ -66,8 +66,8 @@ class POSWorkspaceService:
         self._location_current = location_assignment_current_collection
 
     def _admit(self, *, tenant_id: str, principal_id: str, location_id: str, session: Any):
-        if session is None or not callable(getattr(session, "in_transaction", None)) or session.in_transaction() is not True:
-            raise POSWorkspaceServiceError("POS_WORKSPACE_ACTIVE_TRANSACTION_REQUIRED")
+        if session is None or not callable(getattr(session, "with_transaction", None)) or getattr(session, "has_ended", True):
+            raise POSWorkspaceServiceError("POS_WORKSPACE_LIVE_CALLER_SESSION_REQUIRED")
         try:
             entitlement_id = derive_tenant_product_entitlement_id(tenant_id, TenantProductId.POS)
             entitlement = get_current(

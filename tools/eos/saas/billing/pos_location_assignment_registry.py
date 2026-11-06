@@ -37,8 +37,8 @@ class POSLocationAssignmentUnavailable(POSLocationAssignmentRegistryError):
 
 
 def _transaction(session: Any) -> Any:
-    if session is None or not callable(getattr(session, "in_transaction", None)) or not session.in_transaction():
-        raise POSLocationAssignmentRegistryError("POS_LOCATION_ACTIVE_TRANSACTION_REQUIRED")
+    if session is None or not callable(getattr(session, "with_transaction", None)) or getattr(session, "has_ended", True):
+        raise POSLocationAssignmentRegistryError("POS_LOCATION_LIVE_CALLER_SESSION_REQUIRED")
     return session
 
 

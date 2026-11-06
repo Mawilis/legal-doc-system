@@ -32,8 +32,8 @@ class POSCommercialCapacityExceeded(POSCommercialCapacityError):
 
 
 def _tx(session: Any) -> Any:
-    if session is None or not callable(getattr(session, "in_transaction", None)) or session.in_transaction() is not True:
-        raise POSCommercialCapacityError("POS_CAPACITY_ACTIVE_TRANSACTION_REQUIRED")
+    if session is None or not callable(getattr(session, "with_transaction", None)) or getattr(session, "has_ended", True):
+        raise POSCommercialCapacityError("POS_CAPACITY_LIVE_CALLER_SESSION_REQUIRED")
     return session
 
 
