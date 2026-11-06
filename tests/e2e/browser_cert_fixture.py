@@ -215,6 +215,12 @@ from tools.eos.saas.domain.tenant_product_entitlement import (
     create_tenant_product_entitlement,
 )
 from tools.eos.saas.entitlement.product_catalogue import TenantProductId
+from tools.eos.saas.domain.pos_location_assignment import (
+    POSLocationAssignment, POSLocationAssignmentStatus,
+)
+from tools.eos.saas.billing.pos_location_assignment_registry import (
+    POSLocationAssignmentRegistry,
+)
 from tools.eos.saas.entitlement.tenant_product_entitlement_composer import (
     derive_tenant_product_entitlement_id,
 )
@@ -798,10 +804,10 @@ def _seed_independent_module_entitlements(
     now: datetime,
     collections: dict[str, Any],
 ) -> dict[str, str]:
-    """Activate five independent module products with synthetic fixture evidence.
+    """Activate six independent module products with synthetic fixture evidence.
 
     Legal Operations is provisioned by the existing Legal subscription composer.
-    Billing, CRM, HR, Operations and Intelligence are separate D22B2 product
+    Billing, CRM, HR, Operations, Intelligence and POS are separate D22B2 product
     entitlements in this disposable browser database; no bundle membership or
     browser claim creates them.
     """
@@ -813,6 +819,7 @@ def _seed_independent_module_entitlements(
         TenantProductId.HR,
         TenantProductId.OPERATIONS,
         TenantProductId.INTELLIGENCE,
+        TenantProductId.POS,
     ):
         entitlement_id = derive_tenant_product_entitlement_id(tenant_id, product_id)
         pending = create_tenant_product_entitlement(
@@ -871,6 +878,7 @@ def seed(state_path: Path) -> None:
             ("paralegal", "LEGAL_PARALEGAL", "tenant_legal_paralegal", "Paralegal"),
             ("secretary", "LEGAL_SECRETARY", "tenant_legal_secretary", "Secretary"),
             ("finance", "LEGAL_FINANCE", "tenant_legal_finance", "Finance"),
+            ("pos_operator", "POS_OPERATOR", "tenant_pos_operator", "POSOperator"),
         )
         # BSON stores datetimes at millisecond precision; freeze fixture time
         # to that exact boundary so immutable screening correlation survives
@@ -963,6 +971,8 @@ def seed(state_path: Path) -> None:
             "deadline": database["legal_matter_deadlines"],
             "entitlement_history": database["tenant_product_entitlement_history"],
             "entitlement_current": database["tenant_product_entitlement_current"],
+            "pos_location_history": database["pos_location_assignment_history"],
+            "pos_location_current": database["pos_location_assignment_current"],
             "branding_entitlement_history": database[branding_entitlement_registry.HISTORY_COLLECTION],
             "branding_entitlement_current": database[branding_entitlement_registry.CURRENT_COLLECTION],
             "branding_profiles": database[branding_profile_registry.PROFILE_COLLECTION],
@@ -999,6 +1009,9 @@ def seed(state_path: Path) -> None:
         entitlement_registry.ensure_indexes(
             collections["entitlement_history"],
             collections["entitlement_current"],
+        )
+        POSLocationAssignmentRegistry.ensure_indexes(
+            collections["pos_location_history"], collections["pos_location_current"],
         )
         branding_entitlement_registry.ensure_indexes(
             collections["branding_entitlement_history"],
@@ -1051,6 +1064,23 @@ def seed(state_path: Path) -> None:
                     collections["roles"],
                     session=session,
                 )
+            pos_assignment = POSLocationAssignment(
+                tenant_id=tenant_id,
+                location_id="browser-cert-store-01",
+                principal_id=actors["pos_operator"]["principal_id"],
+                assignment_id=f"browser-pos-assignment-{suffix}",
+                revision=0,
+                status=POSLocationAssignmentStatus.ACTIVE,
+                authority_reference=f"browser-cert-approved-pos-location:{suffix}",
+                authority_fingerprint="e" * 128,
+                idempotency_key=f"browser-pos-assignment:{suffix}",
+                occurred_at=now,
+                changed_by_principal_id=actors["tenant_owner"]["principal_id"],
+            )
+            POSLocationAssignmentRegistry.issue(
+                pos_assignment, collections["pos_location_history"],
+                collections["pos_location_current"], session=session,
+            )
             for actor in system_actors.values():
                 PrincipalAuthorityRepository.create(
                     PrincipalAuthority(actor["principal_id"], PrincipalStatus.ACTIVE, 0),
