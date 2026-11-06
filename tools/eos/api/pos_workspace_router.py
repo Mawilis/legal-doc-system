@@ -156,7 +156,7 @@ _TENDER = RequireTenantAuthorization("pos:tender:create", "pos_tender_create")
 _CASH = RequireTenantAuthorization("pos:cash:record", "pos_cash_record")
 _RETURN = RequireTenantAuthorization("pos:return:create", "pos_return_create")
 _REFUND = RequireTenantAuthorization("pos:refund:create", "pos_refund_create")
-_EXECUTE = RequireTenantAuthorization("pos:movement:authorize", "pos_movement_authorize")
+_EXECUTE = RequireTenantAuthorization("pos:payment:authorize", "pos_movement_authorize")
 
 
 def _collection(database: Any, name: str):
@@ -470,7 +470,7 @@ def _issue_execution_authority(*, collections: dict[str, Any], session: Any,
         tenant_id=context.tenant_id,
         principal_id=context.identity.identity_id,
         operation="pos_movement_authorize",
-        permission="pos:movement:authorize",
+        permission="pos:payment:authorize",
         subject_reference=f"pos:{direction.lower()}:{sale.sale_id}:{source_identity}",
         subject_evidence_fingerprint=source_fingerprint,
         idempotency_key=stable_key,
