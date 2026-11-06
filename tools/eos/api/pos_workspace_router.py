@@ -156,7 +156,7 @@ _TENDER = RequireTenantAuthorization("pos:tender:create", "pos_tender_create")
 _CASH = RequireTenantAuthorization("pos:cash:record", "pos_cash_record")
 _RETURN = RequireTenantAuthorization("pos:return:create", "pos_return_create")
 _REFUND = RequireTenantAuthorization("pos:refund:create", "pos_refund_create")
-_EXECUTE = RequireTenantAuthorization("pos:payment:authorize", "pos_movement_authorize")
+_EXECUTE = RequireTenantAuthorization("pos:movement:authorize", "pos_movement_authorize")
 
 
 def _collection(database: Any, name: str):
@@ -446,13 +446,16 @@ def _issue_execution_authority(*, collections: dict[str, Any], session: Any,
         role_assignment_repository=get_role_assignment_repository(),
         business_role_repository=TenantBusinessRoleRepository(),
     )
+    source_fingerprint = sha3_512(json.dumps(
+        source.to_dict(), sort_keys=True, separators=(",", ":"),
+    ).encode()).hexdigest()
     authority = authority_registry.issue(
         tenant_id=context.tenant_id,
         principal_id=context.identity.identity_id,
         operation="pos_movement_authorize",
-        permission="pos:payment:authorize",
+        permission="pos:movement:authorize",
         subject_reference=f"pos:{direction.lower()}:{sale.sale_id}:{source_identity}",
-        subject_evidence_fingerprint=source_row["fingerprint"],
+        subject_evidence_fingerprint=source_fingerprint,
         idempotency_key=stable_key,
         session=session,
     )
