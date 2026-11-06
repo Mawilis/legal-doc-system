@@ -405,6 +405,12 @@ class RequireTenantAuthorization:
             )
             raise ForbiddenOperationException("Tenant scope is required.")
 
+        selected_business_role = None
+        if identity.principal_scope == "GLOBAL":
+            if len(identity.roles) != 1:
+                raise ForbiddenOperationException("Tenant authorization denied.")
+            selected_business_role = identity.roles[0]
+
         workforce_required = False
         try:
             workforce_required = (
@@ -445,6 +451,7 @@ class RequireTenantAuthorization:
                             role_assignment_repository=role_assignment_repository,
                             session=session,
                             workforce_relationship_collection=workforce_collection,
+                            selected_business_role=selected_business_role,
                         )
             else:
                 decision = authorize_tenant_operation(
@@ -456,6 +463,7 @@ class RequireTenantAuthorization:
                     membership_repository=membership_repository,
                     business_role_repository=role_assignment_repository,
                     role_assignment_repository=role_assignment_repository,
+                    selected_business_role=selected_business_role,
                 )
         except (ForbiddenOperationException, WilsyAPIException):
             raise
