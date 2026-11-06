@@ -692,19 +692,19 @@ const SovereignDashboardController = ({ user: propUser, onLogout }) => {
     const role = normalizeDashboardToken(user?.role || user?.accountRole || user?.tenantRole);
 
   const moduleManifestTenantId = activeTenant?.tenantId || activeTenant?._id || user?.tenantId || '';
-  const [moduleManifest, setModuleManifest] = useState({ status: 'idle', modules: [] });
+  const [moduleManifest, setModuleManifest] = useState({ status: 'idle', tenantId: '', modules: [] });
 
   useEffect(() => {
     let current = true;
     if (!user || typeof moduleManifestTenantId !== 'string' || !moduleManifestTenantId) {
-      setModuleManifest({ status: 'unavailable', modules: [] });
+      setModuleManifest({ status: 'unavailable', tenantId: moduleManifestTenantId, modules: [] });
       return () => { current = false; };
     }
-    setModuleManifest({ status: 'loading', modules: [] });
+    setModuleManifest({ status: 'loading', tenantId: moduleManifestTenantId, modules: [] });
     api.get('/auth/module-manifest')
       .then(({ data }) => validateWilsyModuleManifest(data, moduleManifestTenantId))
       .then((modules) => {
-        if (current) setModuleManifest({ status: 'ready', modules });
+        if (current) setModuleManifest({ status: 'ready', tenantId: moduleManifestTenantId, modules });
       })
       .catch(() => {
         if (current) setModuleManifest({ status: 'unavailable', modules: [] });
@@ -779,6 +779,7 @@ const SovereignDashboardController = ({ user: propUser, onLogout }) => {
   const dashboardKey = useMemo(() => {
     if (!moduleDashboardRequested) return resolvedDashboardKey;
     return moduleManifest.status === 'ready'
+      && moduleManifest.tenantId === moduleManifestTenantId
       && hasTenantModuleManifestAdmission(moduleManifest.modules, manualDashboardKey)
       ? manualDashboardKey
       : '';
