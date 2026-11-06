@@ -81,6 +81,23 @@ def _active_legal(tenant_id=TENANT):
     )
 
 
+def _active_product(product_id, tenant_id=TENANT):
+    pending = create_tenant_product_entitlement(
+        tenant_id=tenant_id,
+        entitlement_id=derive_tenant_product_entitlement_id(tenant_id, product_id),
+        product_id=product_id,
+        source_evidence_reference="agreement:approved",
+        source_evidence_fingerprint=SOURCE,
+    )
+    return pending.transition(
+        TenantProductEntitlementState.ACTIVE,
+        expected_revision=0,
+        evidence_reference="subscription:active",
+        evidence_fingerprint=ACTIVATION,
+        occurred_at=NOW,
+    )
+
+
 def _active_crm(tenant_id=TENANT):
     pending = CrmCoreEntitlement(
         tenant_id=tenant_id,
@@ -128,6 +145,39 @@ def test_module_manifest_http_projection_reads_canonical_legal_evidence(monkeypa
 
     assert [item["moduleId"] for item in result] == [TenantModuleId.LEGAL_OS.value]
     assert result[0]["entitlementRevision"] == 1
+    assert client.sessions[0].aborted == 1
+    assert client.sessions[0].ended == 1
+
+
+def test_module_manifest_http_projection_reads_operations_and_intelligence_independently(monkeypatch):
+    client = _bind_runtime(monkeypatch)
+    operations = _active_product(TenantProductId.OPERATIONS)
+    intelligence = _active_product(TenantProductId.INTELLIGENCE)
+    evidence = {
+        operations.entitlement_id: operations,
+        intelligence.entitlement_id: intelligence,
+    }
+    missing = registry.TenantProductEntitlementRegistryNotFoundError()
+
+    def get_current(tenant_id, entitlement_id, *_args, session=None, **_kwargs):
+        assert tenant_id == TENANT
+        assert session is client.sessions[-1]
+        if entitlement_id in evidence:
+            return evidence[entitlement_id]
+        raise missing
+
+    monkeypatch.setattr(registry, "get_current", get_current)
+    result = auth_router._workspace_module_manifest_projection(TENANT)
+
+    assert [item["moduleId"] for item in result] == [
+        TenantModuleId.OPERATIONS.value,
+        TenantModuleId.INTELLIGENCE.value,
+    ]
+    assert [item["productId"] for item in result] == [
+        TenantProductId.OPERATIONS.value,
+        TenantProductId.INTELLIGENCE.value,
+    ]
+    assert len({item["entitlementId"] for item in result}) == 2
     assert client.sessions[0].aborted == 1
     assert client.sessions[0].ended == 1
 
