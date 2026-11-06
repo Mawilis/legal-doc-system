@@ -1,4 +1,6 @@
 import React from 'react';
+import { readFileSync } from 'node:fs';
+import { resolve } from 'node:path';
 import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
@@ -132,6 +134,29 @@ describe('independent tenant module daily-use workspace', () => {
     await waitFor(() => expect(readTenantModuleWorkspace).toHaveBeenLastCalledWith('OPERATIONS', 'TENANT-OPS-2'));
     expect(screen.queryByText('Publish operations runbook')).not.toBeInTheDocument();
     expect(await screen.findByRole('alert')).toHaveTextContent('valid module workspace');
+  });
+
+  it('explains unavailable and expired-session states without exposing cached tasks', async () => {
+    readTenantModuleWorkspace.mockRejectedValue({ response: { status: 503 } });
+    const { unmount } = render(<TenantModuleWorkspace moduleId="INTELLIGENCE" />);
+    expect(await screen.findByRole('alert')).toHaveTextContent('service or entitlement authority is unavailable');
+    expect(screen.queryByText('Publish operations runbook')).not.toBeInTheDocument();
+    unmount();
+
+    readTenantModuleWorkspace.mockRejectedValue({ response: { status: 401 } });
+    render(<TenantModuleWorkspace moduleId="INTELLIGENCE" />);
+    expect(await screen.findByRole('alert')).toHaveTextContent('authenticated session is unavailable');
+  });
+
+  it('preserves visible keyboard focus and responsive queue/form layouts', () => {
+    const css = readFileSync(
+      resolve(process.cwd(), 'src/components/os/TenantModuleWorkspace.module.css'),
+      'utf8',
+    );
+    expect(css).toContain(':focus-visible');
+    expect(css).toContain('@media (max-width: 900px)');
+    expect(css).toContain('@media (max-width: 620px)');
+    expect(css).toContain('.queueItem { flex-direction: column; }');
   });
 
   it('does not display cached/sample work when the module is denied or unavailable', async () => {
