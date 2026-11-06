@@ -202,7 +202,7 @@ test('owner completes the authenticated seven-module daily-use journey', async (
     await page.reload();
     await openModuleNavigation(page);
     const reentry = await switchModule(
-      page, 'Intelligence', '/api/tenant-modules/intelligence/workspace',
+      page, 'INTELLIGENCE', '/api/tenant-modules/intelligence/workspace',
     );
     expect(reentry.status()).toBe(200);
     await expect(page.getByRole('main', { name: 'Intelligence OS' }).getByRole('heading', { name: 'Intelligence OS' })).toBeVisible();
