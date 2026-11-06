@@ -5,7 +5,7 @@ import pytest
 from pydantic import ValidationError
 
 from tools.eos.api import server
-from tools.eos.api.tenant_module_workspace_router import ModuleWorkCompleteRequest, ModuleWorkCreateRequest, router
+from tools.eos.api.tenant_module_workspace_router import ModuleWorkCompleteRequest, ModuleWorkCreateRequest, _PRODUCTS, router
 from tools.eos.api.tenant_authorization_http import RequireTenantAuthorization
 
 
@@ -59,6 +59,18 @@ def test_module_workspace_transport_is_bounded_through_bff_and_dev_proxy():
     assert "'/api/tenant-modules'" in bff
     assert "operations|intelligence" in bff
     assert "'/api/tenant-modules': {" in vite
+
+
+def test_module_products_have_distinct_workspace_keys_and_persistence_collections():
+    operations = _PRODUCTS["operations"]
+    intelligence = _PRODUCTS["intelligence"]
+    assert operations[0].value == "OPERATIONS"
+    assert intelligence[0].value == "INTELLIGENCE"
+    assert operations[1] == "OPERATIONS_DASHBOARD"
+    assert intelligence[1] == "INTELLIGENCE_DASHBOARD"
+    assert operations[2] == "tenant_operations_work_items"
+    assert intelligence[2] == "tenant_intelligence_work_items"
+    assert operations[2] != intelligence[2]
 
 
 def test_each_module_command_has_separate_permission_operation_pair():
