@@ -1175,9 +1175,14 @@ const ExecutiveDashboard = ({
 
   useEffect(() => {
     let current = true;
+    // workspace-bootstrap's AuthContext tenant is the canonical fallback
+    // when the dashboard shell has not yet hydrated the legacy user prop.
+    // Never fall back to the independently selected tenant context here.
     const authenticatedTenantId = typeof user?.tenantId === 'string'
       ? user.tenantId
-      : '';
+      : typeof authenticatedTenant?.tenantId === 'string'
+        ? authenticatedTenant.tenantId
+        : '';
     if (!authenticatedTenantId) {
       setTenantModules([]);
       return () => { current = false; };
@@ -1195,7 +1200,7 @@ const ExecutiveDashboard = ({
       });
 
     return () => { current = false; };
-  }, [user?.tenantId]);
+  }, [authenticatedTenant?.tenantId, user?.tenantId]);
 
   const openLegalWorkspace = useCallback(async () => {
     if (typeof onSwitchDashboard !== 'function' || isOpeningLegalWorkspace) return;
