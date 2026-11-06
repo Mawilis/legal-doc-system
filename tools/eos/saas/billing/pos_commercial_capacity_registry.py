@@ -109,6 +109,10 @@ def _reserve(*, sale: POSSale, capacity_type: str, capacity_key: str,
     except DuplicateKeyError as error:
         raise POSCommercialCapacityConflict("POS_CAPACITY_INITIAL_INSERT_RACE") from error
     except PyMongoError as error:
+        # Preserve transaction retry labels so the caller-owned with_transaction
+        # can retry a transient write conflict against the latest capacity revision.
+        if callable(getattr(error, "has_error_label", None)) and error.has_error_label("TransientTransactionError"):
+            raise
         raise POSCommercialCapacityError("POS_CAPACITY_PERSISTENCE_UNAVAILABLE") from error
     persisted = _read(identity, collection, tx)
     if persisted is None or persisted != record:
