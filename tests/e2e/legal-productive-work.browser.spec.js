@@ -81,19 +81,11 @@ async function openAuthenticatedLegalWorkspace(
     new URL(response.url()).pathname === '/api/auth/workspace-bootstrap'
     && response.request().method() === 'GET'
   ));
-  const moduleManifest = page.waitForResponse((response) => (
-    new URL(response.url()).pathname === '/api/auth/module-manifest'
-    && response.request().method() === 'GET'
-  ));
-
   await page.goto('/');
 
   const bootstrapResponse = await bootstrap;
-  const moduleManifestResponse = await moduleManifest;
   expect(bootstrapResponse.status()).toBe(200);
-  expect(moduleManifestResponse.status()).toBe(200);
   const bootstrapPayload = await bootstrapResponse.json();
-  const moduleManifestPayload = await moduleManifestResponse.json();
 
   return {
     actor,
@@ -101,7 +93,6 @@ async function openAuthenticatedLegalWorkspace(
     page,
     observedRequests,
     bootstrapPayload,
-    moduleManifestPayload,
   };
 }
 
@@ -145,21 +136,28 @@ test(
       page,
       observedRequests,
       bootstrapPayload,
-      moduleManifestPayload,
     } = await openAuthenticatedLegalWorkspace(browser, 'tenant_owner');
 
     expect(String(bootstrapPayload.workspace?.businessRole || '').toUpperCase()).toBe('TENANT_OWNER');
-    expect(moduleManifestPayload.workspace?.tenantId).toBe(state.tenant_id);
-    expect(moduleManifestPayload.workspace?.modules?.some((module) => module.moduleId === 'LEGAL_OS')).toBe(true);
     await expect(page.locator('[data-active-workspace="workbench"]')).toBeVisible();
     await expect(page.getByRole('table', { name: 'Suggested executive work queue' })).toBeVisible();
     await expect(page.getByRole('button', { name: 'LEGAL OS', exact: true })).toBeVisible();
 
+    const moduleManifestPromise = page.waitForResponse((response) => (
+      new URL(response.url()).pathname === '/api/auth/module-manifest'
+      && response.request().method() === 'GET'
+    ));
     const commercialResponsePromise = page.waitForResponse((response) => (
       new URL(response.url()).pathname === '/api/legal-operations/commercial-context'
       && response.request().method() === 'GET'
     ));
     await page.getByRole('button', { name: 'LEGAL OS', exact: true }).click();
+
+    const moduleManifestResponse = await moduleManifestPromise;
+    expect(moduleManifestResponse.status()).toBe(200);
+    const moduleManifestPayload = await moduleManifestResponse.json();
+    expect(moduleManifestPayload.workspace?.tenantId).toBe(state.tenant_id);
+    expect(moduleManifestPayload.workspace?.modules?.some((module) => module.moduleId === 'LEGAL_OS')).toBe(true);
 
     const commercialResponse = await commercialResponsePromise;
     expect(commercialResponse.status()).toBe(200);
