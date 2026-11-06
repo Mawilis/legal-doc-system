@@ -728,9 +728,12 @@ def _seed_canonical_specialist_workflows(
                     )
                 assignment_ids: list[str] = []
                 for work_item in materialized.work_items:
+                    # Keep the durable assignment identity within the domain's
+                    # 160-character contract even when a work-item ID is maximal.
+                    # Actor + full work-item identity remain collision-resistant.
                     assignment_id = (
-                        f"browser-specialist-assignment-{actor_key}-"
-                        f"{work_item.work_item_id}"
+                        f"browser-specialist-{actor_key}-"
+                        f"{sha3_256(work_item.work_item_id.encode('utf-8')).hexdigest()}"
                     )
                     assignments.persist(
                         LegalWorkAssignment(
