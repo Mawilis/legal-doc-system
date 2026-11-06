@@ -150,7 +150,7 @@ _CANONICAL_OFFERS: Final[dict[CommercialOfferId, dict[str, object]]] = {
             TenantProductId.CRM,
             TenantProductId.HR,
         ),
-        "description": "Explicit composition of all four currently catalogued tenant products.",
+        "description": "Explicit Legal Operations, Billing, CRM and HR composition; POS remains a separately offered product.",
     },
 }
 
