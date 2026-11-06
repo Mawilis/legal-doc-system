@@ -1241,6 +1241,7 @@ const SovereignDashboardController = ({ user: propUser, onLogout }) => {
         </div>
       )}
 
+      {!systemServicesWorkspace && (
       <button
         type="button"
         onClick={() => navigate('/my-work')}
@@ -1259,6 +1260,7 @@ const SovereignDashboardController = ({ user: propUser, onLogout }) => {
       >
         <CheckCircle size={16} /> My Work
       </button>
+      )}
 
       <WilsyGlobalCommandSearch
         isOpen={isGlobalCommandSearchOpen}
