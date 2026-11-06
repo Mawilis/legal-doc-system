@@ -23,6 +23,15 @@ import tools.eos.api.commercial_agreement_router as agreement_api
 import tools.eos.api.tenant_authorization_http as authorization_http
 from tools.eos.api.errors import register_error_handlers
 from tools.eos.auth import authentication, tenant_access
+import tools.eos.auth.principal_authority_repository as principal_repository_module
+import tools.eos.auth.tenant_membership_repository as membership_repository_module
+import tools.eos.auth.role_assignment_repository as role_repository_module
+import tools.eos.auth.tenant_business_role_repository as business_role_repository_module
+import tools.eos.saas.entitlement.tenant_product_entitlement_registry as entitlement_registry_module
+import tools.eos.saas.billing.plan_registry as plan_registry_module
+import tools.eos.saas.billing.subscription_registry as subscription_registry_module
+from tools.eos.saas.billing.plan_registry import PlanRegistry
+from tools.eos.saas.billing.subscription_registry import SubscriptionRegistry
 from tools.eos.auth.identity import SovereignIdentity
 from tools.eos.auth.principal_authority import PrincipalAuthority
 from tools.eos.auth.principal_authority_repository import PrincipalAuthorityRepository
@@ -279,7 +288,7 @@ class _TrustedExecutionVerifier:
 
     def verify(self, *, agreement: Any, evidence_reference: str) -> VerifiedCommercialAgreementExecutionEvidence:
         assert evidence_reference == "evidence:trusted-test-provider:001"
-        signed_at = NOW + timedelta(minutes=1)
+        signed_at = datetime.now(timezone.utc) - timedelta(seconds=30)
         return VerifiedCommercialAgreementExecutionEvidence(
             tenant_id=agreement.tenant_id,
             agreement_id=agreement.agreement_id,
@@ -383,3 +392,103 @@ def test_legal_partner_cannot_execute_tenant_commercial_agreement(
             json={"execution_evidence_reference": "evidence:trusted-test-provider:001"},
         )
     assert denied.status_code == 403
+
+
+
+def test_authenticated_execution_activation_and_entitlement_readback_real_mongo(
+    mongo_context: dict[str, Any], monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    tenant, principal = f"tenant-{uuid4().hex}", f"principal-{uuid4().hex}"
+    database = mongo_context["database"]
+    now = datetime.now(timezone.utc)
+    plans = database.get_collection("plans")
+    subscriptions = database.get_collection(
+        "subscriptions",
+        write_concern=WriteConcern(w="majority", j=True),
+        read_concern=ReadConcern("majority"),
+    )
+    monkeypatch.setattr(plan_registry_module, "plans_collection", plans)
+    monkeypatch.setattr(subscription_registry_module, "subscriptions_collection", subscriptions)
+    for module in (
+        principal_repository_module,
+        membership_repository_module,
+        role_repository_module,
+        business_role_repository_module,
+        entitlement_registry_module,
+        subscription_registry_module,
+    ):
+        monkeypatch.setattr(module, "get_database", lambda database=database: database)
+    PlanRegistry.provision_indexes()
+    subscription_registry_module._ensure_indexes(subscriptions)
+
+    plan = PlanRegistry.create({
+        "name": f"Execution activation certificate {tenant}",
+        "price": 100.0,
+        "currency": "ZAR",
+        "billingFrequency": "monthly",
+        "planType": "PROFESSIONAL",
+        "idempotencyKey": f"plan-{tenant}",
+        "active": True,
+        "features": ["legal.core", "billing.core", "crm.core", "hr.core"],
+        "metadata": {"certificate": True},
+        "tags": ["commercial-bundle-activation"],
+        "user": "COMMERCIAL-BUNDLE-CERT",
+    })
+    assert plan["success"] is True
+    subscription = SubscriptionRegistry.create(
+        {
+            "tenantId": tenant,
+            "planId": plan["plan"].plan_id,
+            "startDate": (now - timedelta(days=1)).isoformat(),
+            "idempotencyKey": f"subscription-{tenant}",
+            "billingMode": "PLATFORM",
+            "onboardingRef": f"ONBOARD-{tenant}",
+            "metadata": {"certificate": True},
+        },
+        tenant_id_header=tenant,
+    )
+    assert subscription["success"] is True
+
+    _seed_actor(
+        mongo_context, tenant=tenant, principal=principal,
+        business_role="tenant_owner", grant_role="ENTERPRISE_ADMIN",
+    )
+    monkeypatch.setattr(
+        agreement_api, "_execution_verifier",
+        lambda _request: _TrustedExecutionVerifier(principal),
+    )
+    payload = _draft_payload("agreement-full-journey")
+    payload["offer_id"] = "ENTERPRISE_OPERATIONS"
+    payload["effective_at"] = (now - timedelta(days=1)).isoformat()
+    payload["expires_at"] = (now + timedelta(days=365)).isoformat()
+    headers = {"X-Tenant-ID": tenant}
+    with _client(mongo_context, monkeypatch, tenant=tenant, principal=principal) as http:
+        created = http.post("/api/commercial/agreements", headers=headers, json=payload)
+        assert created.status_code == 201, created.text
+        executed = http.post(
+            "/api/commercial/agreements/agreement-full-journey/execute",
+            headers=headers,
+            json={"execution_evidence_reference": "evidence:trusted-test-provider:001"},
+        )
+        assert executed.status_code == 200, executed.text
+        assert executed.json()["agreement"]["lifecycle_state"] == "EXECUTED"
+        activated = http.post(
+            "/api/commercial/agreements/agreement-full-journey/activate",
+            headers=headers,
+            json={"execution_evidence_reference": "evidence:trusted-test-provider:001"},
+        )
+        assert activated.status_code == 200, activated.text
+        assert activated.json()["outcome"] == "ACTIVATED"
+        readback = http.get(
+            "/api/commercial/agreements/agreement-full-journey/entitlements",
+            headers=headers,
+        )
+    assert readback.status_code == 200, readback.text
+    products = readback.json()["product_entitlements"]
+    assert {item["product_id"] for item in products} == {
+        "LEGAL_OPERATIONS", "BILLING", "CRM", "HR"
+    }
+    assert all(item["lifecycle_state"] == "ACTIVE" for item in products)
+    assert database["commercial_bundle_activation_receipts"].count_documents(
+        {"tenant_id": tenant, "agreement_id": "agreement-full-journey"}
+    ) == 1
