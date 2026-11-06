@@ -67,19 +67,35 @@ class _MembershipReader:
 
 
 class _RoleReader:
+    """Mirror the production split-store role reader against isolated collections."""
     def __init__(self, role_collection: Any, business_collection: Any) -> None:
         self.role_collection = role_collection
         self.business_collection = business_collection
 
-    def resolve(self, principal_id: str, tenant_id: str, role_id: str, *, session: Any = None) -> Any:
+    def resolve_current_business_role(
+        self, principal_id: str, tenant_id: str, *, session: Any = None
+    ) -> Any:
+        return TenantBusinessRoleRepository.resolve(
+            principal_id, tenant_id, self.business_collection, session=session
+        )
+
+    def resolve_all_business_roles(
+        self, principal_id: str, tenant_id: str, *, session: Any = None
+    ) -> tuple[Any, ...]:
+        return TenantBusinessRoleRepository.resolve_all(
+            principal_id, tenant_id, self.business_collection, session=session
+        )
+
+    def resolve(
+        self, principal_id: str, tenant_id: str, role_id: str, *, session: Any = None
+    ) -> Any:
         if role_id in TENANT_ROLES:
-            return TenantBusinessRoleRepository.resolve(
-                principal_id, tenant_id, self.business_collection, session=session
+            return TenantBusinessRoleRepository.resolve_business_role(
+                principal_id, tenant_id, role_id, self.business_collection, session=session
             )
         return RoleAssignmentRepository.resolve(
             principal_id, tenant_id, role_id, self.role_collection, session=session
         )
-
 
 @pytest.fixture
 def mongo_context() -> Iterator[dict[str, Any]]:
