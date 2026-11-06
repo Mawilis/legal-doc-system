@@ -71,6 +71,7 @@ class CommercialOfferId(StrEnum):
     HR = "HR_STANDALONE"
     OPERATIONS = "OPERATIONS_STANDALONE"
     INTELLIGENCE = "INTELLIGENCE_STANDALONE"
+    POS = "POS_STANDALONE"
     PROFESSIONAL_SERVICES = "PROFESSIONAL_SERVICES_BUNDLE"
     BUSINESS_OPERATIONS = "BUSINESS_OPERATIONS_BUNDLE"
     ENTERPRISE_OPERATIONS = "ENTERPRISE_OPERATIONS_BUNDLE"
@@ -113,6 +114,12 @@ _CANONICAL_OFFERS: Final[dict[CommercialOfferId, dict[str, object]]] = {
         "kind": CommercialOfferKind.STANDALONE,
         "product_ids": (TenantProductId.INTELLIGENCE,),
         "description": "Standalone Intelligence product offer.",
+    },
+    CommercialOfferId.POS: {
+        "label": "Point of Sale",
+        "kind": CommercialOfferKind.STANDALONE,
+        "product_ids": (TenantProductId.POS,),
+        "description": "Standalone Point of Sale product offer; not included in existing bundles.",
     },
     CommercialOfferId.PROFESSIONAL_SERVICES: {
         "label": "Professional Services",
