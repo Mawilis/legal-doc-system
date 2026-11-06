@@ -479,6 +479,13 @@ _BINDINGS = MappingProxyType({
     "legal_work_operational_matter_access_issue": "legal_operations:operational_matter_access:issue",
 })
 
+# Commercial agreement operations remain owner-commercial and tenant-scoped.
+_BINDINGS = MappingProxyType({
+    **_BINDINGS,
+    "commercial_agreement_read": "tenant:commercial_agreement:read",
+    "commercial_agreement_draft_create": "tenant:commercial_agreement:draft:create",
+})
+
 # ARTIFACT: tenant_authorization.py
 # VERSION: v1.47.0-R59-P9-REASSIGNMENT-IAM-INTEGRATION
 # AUTHORITY BOUNDARY: current-truth composition only; no mutation or transport
