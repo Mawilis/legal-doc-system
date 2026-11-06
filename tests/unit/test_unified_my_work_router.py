@@ -172,3 +172,30 @@ def test_http_route_does_not_turn_authorized_source_outage_into_empty_success(mo
         response = client.get("/api/my-work", headers={"X-Tenant-ID": "tenant-a"})
 
     assert response.status_code == 503
+
+
+
+def test_module_product_entitlement_denial_omits_only_that_source(monkeypatch):
+    def not_entitled(*_args, **_kwargs):
+        raise HTTPException(status_code=403, detail="MODULE_WORK_PRODUCT_NOT_ENTITLED")
+
+    monkeypatch.setattr(route.module_source, "_transaction", not_entitled)
+    assert route._read_module("operations", tenant_id="tenant-a") is None
+
+
+def test_crm_legal_entitlement_denial_omits_only_crm_source(monkeypatch):
+    def not_entitled(*_args, **_kwargs):
+        raise HTTPException(status_code=403, detail="OWNER_WORK_LEGAL_NOT_ENTITLED")
+
+    monkeypatch.setattr(route.crm_source, "_transaction", not_entitled)
+    assert route._read_crm(tenant_id="tenant-a") is None
+
+
+def test_unknown_source_forbidden_and_source_outage_are_not_silently_omitted(monkeypatch):
+    def forbidden(*_args, **_kwargs):
+        raise HTTPException(status_code=403, detail="UNCLASSIFIED_SOURCE_DENIAL")
+
+    monkeypatch.setattr(route.module_source, "_transaction", forbidden)
+    with pytest.raises(HTTPException) as error:
+        route._read_module("operations", tenant_id="tenant-a")
+    assert error.value.detail == "UNCLASSIFIED_SOURCE_DENIAL"
