@@ -23,7 +23,7 @@ name: L8-8M Authenticated Browser and D21B13 Branding Certification
 
 on:
   pull_request:
-    branches: [main, eos/atomic-owner-genesis-integration, eos/executive-command-workbench]
+    branches: [main, eos/atomic-owner-genesis-integration, eos/executive-command-workbench, cert/l8-8m-exact-head-20261106]
     paths:
       - "tests/e2e/browser_cert_fixture.py"
       - "tests/e2e/**"
@@ -47,6 +47,10 @@ on:
       - "tools/eos/api/legal_operations_router.py"
       - "tools/eos/api/system_services_router.py"
       - "tools/eos/api/tenant_module_workspace_router.py"
+      - "tools/eos/api/unified_my_work_router.py"
+      - "tools/eos/api/tenant_authorization_http.py"
+      - "tools/eos/api/server.py"
+      - "client/src/components/workspaces/**"
       - "tools/eos/workspaces/**"
       - "tools/eos/api/global_principal_auth_router.py"
       - "tools/eos/auth/authentication.py"
