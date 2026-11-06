@@ -643,7 +643,7 @@ ROLE_PERMISSIONS_MAP["AUDITOR"].append("tenant:commercial_agreement:read")
 ROLE_PERMISSIONS_MAP["TENANT_OWNER"].extend((
     "pos:location_assignment:manage", "pos:sale:read", "pos:sale:create",
     "pos:tender:create", "pos:cash:record", "pos:return:create", "pos:refund:create",
-    "pos:movement:authorize",
+    "pos:payment:authorize",
 ))
 
 

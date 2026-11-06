@@ -1121,7 +1121,7 @@ POS_MOVEMENT_AUTHORIZE = "pos_movement_authorize"
 OPERATIONS = frozenset((*OPERATIONS, POS_MOVEMENT_AUTHORIZE))
 BUSINESS_ROLE_OPERATION_PERMISSIONS = MappingProxyType({
     **BUSINESS_ROLE_OPERATION_PERMISSIONS,
-    POS_MOVEMENT_AUTHORIZE: "pos:movement:authorize",
+    POS_MOVEMENT_AUTHORIZE: "pos:payment:authorize",
 })
 _pos_eligibility = dict(ELIGIBILITY)
 _owner_row = dict(_pos_eligibility["tenant_owner"])
