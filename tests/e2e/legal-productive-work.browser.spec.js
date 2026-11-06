@@ -43,12 +43,10 @@ async function openAuthenticatedLegalWorkspace(
   });
 
   const page = await context.newPage();
-  const commercialResponsePromise = actorKey === 'tenant_owner'
-    ? page.waitForResponse((response) => (
-      new URL(response.url()).pathname === '/api/legal-operations/commercial-context'
-      && response.request().method() === 'GET'
-    ))
-    : null;
+  const observedRequests = [];
+  page.on('request', (request) => {
+    observedRequests.push(new URL(request.url()).pathname);
+  });
 
   await page.addInitScript(
     ({ accessToken, tenantId, principalId, email }) => {
@@ -87,13 +85,16 @@ async function openAuthenticatedLegalWorkspace(
 
   await page.goto('/');
 
-  expect((await bootstrap).status()).toBe(200);
+  const bootstrapResponse = await bootstrap;
+  expect(bootstrapResponse.status()).toBe(200);
+  const bootstrapPayload = await bootstrapResponse.json();
 
   return {
     actor,
     context,
     page,
-    commercialResponsePromise,
+    observedRequests,
+    bootstrapPayload,
   };
 }
 
@@ -130,20 +131,29 @@ async function openProductiveWork(page) {
 }
 
 test(
-  'certifies Tenant Owner Legal commercial workspace without practice access',
-  async ({ browser }) => {
+  'certifies Tenant Owner commercial read without changing the canonical tenant workspace',
+  async ({ browser, request }) => {
     const {
       actor,
       context,
       page,
-      commercialResponsePromise,
+      observedRequests,
+      bootstrapPayload,
     } = await openAuthenticatedLegalWorkspace(browser, 'tenant_owner');
 
-    await expect(
-      page.getByRole('heading', { name: 'Legal Product Command' }),
-    ).toBeVisible();
+    expect(bootstrapPayload.workspace?.businessRole).toBe('TENANT_OWNER');
+    await expect(page.getByRole('button', { name: 'Document Vault' })).toBeVisible();
+    await expect(page.getByRole('button', { name: 'Team Members' })).toBeVisible();
 
-    const commercialResponse = await commercialResponsePromise;
+    const commercialResponse = await request.get(
+      '/api/legal-operations/commercial-context',
+      {
+        headers: {
+          Authorization: `Bearer ${actor.access_token}`,
+          'X-Tenant-ID': state.tenant_id,
+        },
+      },
+    );
     expect(commercialResponse.status()).toBe(200);
     const payload = await commercialResponse.json();
     expect(payload).toMatchObject({
@@ -157,27 +167,15 @@ test(
       subscription: { status: 'active' },
     });
 
-    await expect(
-      page.getByRole('heading', { name: 'Legal Product Command' }),
-    ).toBeVisible();
-    await expect(page.getByText('Tenant owner · commercial authority only')).toBeVisible();
-    await expect(page.getByText('ROLE-GATED')).toBeVisible();
+    expect(observedRequests).not.toContain('/api/legal-operations/workspace');
+    expect(observedRequests).not.toContain('/api/legal-operations/productive-work');
+    expect(observedRequests).not.toContain('/api/legal-operations/conflict-screenings');
 
-    const forbiddenPracticeRequests = [];
-    page.on('request', (request) => {
-      const path = new URL(request.url()).pathname;
-      if (
-        path === '/api/legal-operations/workspace'
-        || path === '/api/legal-operations/productive-work'
-        || path === '/api/legal-operations/conflict-screenings'
-      ) forbiddenPracticeRequests.push(path);
-    });
     await page.reload();
-    await expect(
-      page.getByRole('heading', { name: 'Legal Product Command' }),
-    ).toBeVisible();
-    await expect(page.getByText('ROLE-GATED')).toBeVisible();
-    expect(forbiddenPracticeRequests).toEqual([]);
+    await expect(page.getByRole('button', { name: 'Document Vault' })).toBeVisible();
+    expect(observedRequests).not.toContain('/api/legal-operations/workspace');
+    expect(observedRequests).not.toContain('/api/legal-operations/productive-work');
+    expect(observedRequests).not.toContain('/api/legal-operations/conflict-screenings');
 
     await context.close();
   },
