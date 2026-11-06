@@ -118,7 +118,6 @@ def _transaction(callback):
 @router.post("", status_code=201)
 async def create_draft(
     body: CommercialAgreementDraftRequest,
-    idempotency_key: str = Header(alias="Idempotency-Key", min_length=1, max_length=160),
     context: TenantAuthorizationContext = Depends(_DRAFT_CREATE),
 ) -> dict[str, object]:
     """Create one exact-tenant draft; browser tenant and offer fingerprints are not trusted."""
