@@ -3,9 +3,96 @@ import json
 from hashlib import sha3_256
 from pathlib import Path
 from pymongo import MongoClient
-from browser_cert_fixture import _owned_database, _uri
+from browser_cert_fixture import (
+    _owned_database,
+    _uri,
+    LEGAL_WORKFLOW_INSTANCE_COLLECTION,
+    LEGAL_WORKFLOW_TRANSITION_COLLECTION,
+    LEGAL_WORK_MATERIALIZATION_RECEIPT_COLLECTION,
+    LEGAL_WORK_ITEM_COLLECTION,
+    LEGAL_WORK_DEPENDENCY_COLLECTION,
+    LEGAL_WORK_ASSIGNMENT_COLLECTION,
+)
+
+
+def verify_specialist_workflows(database, state):
+    """Verify canonical durable workflow, receipt, dependency and assignment lineage."""
+    workflows = state.get("specialist_workflows")
+    required_actors = {"partner", "attorney", "paralegal", "secretary"}
+    if not isinstance(workflows, dict) or set(workflows) != required_actors:
+        raise RuntimeError("BROWSER_CERT_SPECIALIST_WORKFLOW_STATE_INVALID")
+
+    for actor_key in sorted(required_actors):
+        evidence = workflows[actor_key]
+        actor = state["actors"][actor_key]
+        tenant_id = state["tenant_id"]
+        work_ids = evidence["work_item_ids"]
+        assignment_ids = evidence["assignment_ids"]
+        if len(work_ids) != 2 or len(assignment_ids) != 2:
+            raise RuntimeError("BROWSER_CERT_SPECIALIST_WORK_CARDINALITY_INVALID")
+
+        instance = database[LEGAL_WORKFLOW_INSTANCE_COLLECTION].find_one({
+            "tenant_id": tenant_id,
+            "workflow_instance_id": evidence["workflow_instance_id"],
+            "case_matter_id": evidence["matter_id"],
+            "workflow_definition_id": evidence["workflow_definition_id"],
+        })
+        transition = database[LEGAL_WORKFLOW_TRANSITION_COLLECTION].find_one({
+            "tenant_id": tenant_id,
+            "transition_id": evidence["transition_id"],
+            "workflow_instance_id": evidence["workflow_instance_id"],
+            "target_stage_definition_id": evidence["stage_definition_id"],
+        })
+        receipt = database[LEGAL_WORK_MATERIALIZATION_RECEIPT_COLLECTION].find_one({
+            "tenant_id": tenant_id,
+            "transition_id": evidence["transition_id"],
+            "receipt_id": evidence["materialization_receipt_id"],
+            "fingerprint": evidence["materialization_receipt_fingerprint"],
+        })
+        work_rows = list(database[LEGAL_WORK_ITEM_COLLECTION].find({
+            "tenant_id": tenant_id,
+            "work_item_id": {"$in": work_ids},
+        }))
+        dependency = database[LEGAL_WORK_DEPENDENCY_COLLECTION].find_one({
+            "tenant_id": tenant_id,
+            "source_materialization_receipt_id": evidence["materialization_receipt_id"],
+            "predecessor_work_item_id": evidence["predecessor_work_item_id"],
+            "successor_work_item_id": evidence["successor_work_item_id"],
+        })
+        assignment_rows = list(database[LEGAL_WORK_ASSIGNMENT_COLLECTION].find({
+            "tenant_id": tenant_id,
+            "assignment_id": {"$in": assignment_ids},
+            "work_item_id": {"$in": work_ids},
+            "assignee_principal_id": actor["principal_id"],
+        }))
+        foreign_assignee_rows = database[LEGAL_WORK_ASSIGNMENT_COLLECTION].count_documents({
+            "tenant_id": tenant_id,
+            "work_item_id": {"$in": work_ids},
+            "assignee_principal_id": {"$ne": actor["principal_id"]},
+        })
+        receipt_outputs = {
+            row.get("work_item_id"): row.get("work_item_fingerprint")
+            for row in (receipt or {}).get("outputs", [])
+        }
+        if (
+            instance is None
+            or transition is None
+            or receipt is None
+            or len(work_rows) != 2
+            or dependency is None
+            or len(assignment_rows) != 2
+            or foreign_assignee_rows != 0
+            or {row["work_item_id"] for row in assignment_rows} != set(work_ids)
+            or {row["work_item_id"] for row in work_rows} != set(work_ids)
+            or receipt_outputs != dict(zip(work_ids, evidence["work_item_fingerprints"]))
+            or any(row.get("tenant_id") != tenant_id for row in work_rows)
+        ):
+            raise RuntimeError(
+                "BROWSER_CERT_SPECIALIST_DURABLE_LINEAGE_INVALID:" + actor_key
+            )
 
 def verify_broad(database, state):
+    verify_specialist_workflows(database, state)
     screening_count = database["legal_conflict_screenings"].count_documents(
         {"tenant_id": state["tenant_id"], "screening_id": state["screening_id"]}
     )
