@@ -1,8 +1,6 @@
 from __future__ import annotations
 
-from dataclasses import replace
 from datetime import datetime, timedelta, timezone
-import hashlib
 
 import pytest
 from cryptography import x509
@@ -98,11 +96,12 @@ class _MandateResolver:
 
 
 class _TimestampVerifier:
-    def verify(self, **_kwargs):
+    def verify(self, **kwargs):
         return TrustedExecutionTimestamp(
             signed_at=NOW,
             evidence_reference="trusted-timestamp:commercial-signing",
             evidence_fingerprint="c" * 128,
+            signed_payload_fingerprint=kwargs["signed_payload_fingerprint"],
         )
 
 
