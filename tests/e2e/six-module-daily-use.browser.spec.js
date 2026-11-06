@@ -135,14 +135,17 @@ test('owner completes the authenticated seven-module daily-use journey', async (
 
     // Legal is a commercial-only presentation for the Tenant Owner.
     await page.getByRole('navigation', { name: 'Available WILSY OS products' })
-      .getByRole('button', { name: 'Legal OS', exact: true }).click();
+      .locator('[data-wilsy-module-entry="LEGAL_OS"]').click();
     await expect(page.getByRole('heading', { name: 'Legal Product Command' })).toBeVisible();
     await expect(page.getByText('Tenant owner · commercial authority only')).toBeVisible();
     await expect(page.getByText('ROLE-GATED')).toBeVisible();
 
     // Billing remains its own invoice/dunning product surface.
     await page.getByRole('navigation', { name: 'Available WILSY OS products' })
-      .getByRole('button', { name: 'Billing', exact: true }).click();
+      .locator('[data-wilsy-module-entry="BILLING"]').click();
+    await expect(page.getByRole('navigation', { name: 'Billing workspace modules' })).toBeVisible();
+    await page.getByRole('navigation', { name: 'Billing workspace modules' })
+      .getByRole('button', { name: 'Command', exact: true }).click();
     await expect(page.getByRole('heading', { name: 'Billing command center' })).toBeVisible();
 
     // CRM retains its own durable owner task queue and command service.
@@ -169,7 +172,7 @@ test('owner completes the authenticated seven-module daily-use journey', async (
 
     // People is the existing workforce/time-off workspace, not an alias for Operations.
     await page.getByRole('navigation', { name: 'Available WILSY OS products' })
-      .getByRole('button', { name: 'People', exact: true }).click();
+      .locator('[data-wilsy-module-entry="PEOPLE"]').click();
     await expect(page.getByRole('navigation', { name: 'HR workspace modules' })).toBeVisible();
 
     // Operations has its own product entitlement, task collection and permissions.
