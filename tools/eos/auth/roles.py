@@ -644,3 +644,12 @@ ROLE_PERMISSIONS_MAP["TENANT_OWNER"].extend((
     "pos:location_assignment:manage", "pos:sale:read", "pos:sale:create",
     "pos:tender:create", "pos:cash:record", "pos:return:create", "pos:refund:create",
 ))
+
+
+# POS_OPERATOR is a tenant-scoped cashier/operator authorization role. It has
+# no authority to create or revoke location assignments and no financial
+# execution or settlement permissions.
+ROLE_PERMISSIONS_MAP["POS_OPERATOR"] = [
+    "pos:sale:read", "pos:sale:create", "pos:tender:create",
+    "pos:cash:record", "pos:return:create", "pos:refund:create",
+]

@@ -1103,3 +1103,15 @@ for _role in ("tenant_owner",):
     _row.update({operation: ELIGIBLE for operation in POS_OPERATIONS})
     _pos_eligibility[_role] = MappingProxyType(_row)
 ELIGIBILITY = MappingProxyType(_pos_eligibility)
+
+
+# A POS operator must hold both the POS_OPERATOR authorization assignment and
+# the explicit tenant_pos_operator business role. Location assignment is a
+# separate per-principal/per-location conjunct.
+TENANT_ROLES = frozenset((*TENANT_ROLES, "tenant_pos_operator"))
+_pos_eligibility = dict(ELIGIBILITY)
+_pos_eligibility["tenant_pos_operator"] = MappingProxyType({
+    **{operation: DENY for operation in OPERATIONS},
+    **{operation: ELIGIBLE for operation in POS_OPERATIONS[1:]},
+})
+ELIGIBILITY = MappingProxyType(_pos_eligibility)

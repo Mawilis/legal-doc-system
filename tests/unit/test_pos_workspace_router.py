@@ -7,7 +7,7 @@ from tools.eos.api.pos_workspace_router import (
 from tools.eos.auth.permission_namespace import permission_metadata
 from tools.eos.auth.roles import get_roles_granting_permission
 from tools.eos.auth.tenant_authority_policy import (
-    permission_for_business_role_operation, tenant_role_operation_eligibility,
+    permission_for_business_role_operation, tenant_role_operation_eligibility, TENANT_ROLES,
 )
 
 
@@ -65,4 +65,8 @@ def test_pos_permissions_are_exact_and_location_assignment_is_not_inherited():
     assert tenant_role_operation_eligibility("tenant_manager", "pos_location_assignment_manage") == "DENY"
     assert tenant_role_operation_eligibility("tenant_manager", "pos_sale_create") == "DENY"
     assert tenant_role_operation_eligibility("tenant_auditor", "pos_sale_read") == "DENY"
+    assert "tenant_pos_operator" in TENANT_ROLES
+    assert "POS_OPERATOR" in get_roles_granting_permission("pos:sale:create")
+    assert tenant_role_operation_eligibility("tenant_pos_operator", "pos_sale_create") == "ELIGIBLE"
+    assert tenant_role_operation_eligibility("tenant_pos_operator", "pos_location_assignment_manage") == "DENY"
     assert tenant_role_operation_eligibility("tenant_auditor", "pos_sale_create") == "DENY"
