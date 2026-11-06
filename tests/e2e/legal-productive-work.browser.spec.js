@@ -1,11 +1,10 @@
 /**
  * TITLE: WILSY OS authenticated Legal productive-work browser certificate
- * VERSION: v1.1.0-OWNER-COMMERCIAL-AND-PRACTICE-BOUNDARY-BROWSER-CERT
+ * VERSION: v1.2.0-R67-DAILY-QUEUE-AND-OWNER-COMMERCIAL-CERT
  * AUTHORITY: Browser certification evidence only.
- * EPITOME: Prove Tenant Owner commercial workspace admission and practice denial,
- *          plus authenticated operator workspace bootstrap and productive-work HTTP,
- *          own-principal projection, canonical Legal dashboard rendering, and
- *          responsive narrow-viewport presentation without browser-owned authority.
+ * EPITOME: Prove the Tenant Owner commercial-only Legal entry, authenticated operator
+ *          workspace bootstrap, R67 daily-work response adaptation, own-principal scope,
+ *          specialist workflow projection, and responsive rendering without browser authority.
  * TENANT BOUNDARY: Exact disposable fixture tenant only.
  * AUTHORITY BOUNDARY: Browser observation only; server IAM remains authoritative.
  * FINANCIAL AUTHORITY BOUNDARY: None; Kennel EOS remains exclusive.
