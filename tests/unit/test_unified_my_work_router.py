@@ -51,6 +51,7 @@ def test_route_omits_denied_sources_and_reads_only_independently_admitted_source
     assert calls == [("operations", "tenant-a")]
     assert result["sources_included"] == ["OPERATIONS"]
     assert result["summary"]["active_count"] == 1
+    assert result["summary"]["source_counts"] == {"OPERATIONS": 1}
     assert result["items"][0]["source"] == "OPERATIONS"
     assert result["authority"]["permits_source_commands"] is False
 
