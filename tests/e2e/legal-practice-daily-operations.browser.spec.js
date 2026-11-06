@@ -110,7 +110,8 @@ for (const actorKey of ALL_PERSONAS) {
     // workspace authority exists; no client-side matter list is synthesized.
     await expect(page.getByRole('button', { name: 'Deadlines', exact: true })).toHaveCount(0);
     expect(observedPaths).toContain('/api/legal-operations/productive-work');
-    expect(observedPaths).toContain('/api/legal-operations/workspace');
+    // openPersona already proves the G68 workspace request returned 503 and
+    // rendered the deny state before this post-navigation observer was attached.
     expect(observedPaths.some((path) => /\/api\/legal-operations\/matters\/.*\/deadlines$/.test(path))).toBe(false);
 
     if (actorKey === 'secretary') {
