@@ -18,6 +18,7 @@ from tools.eos.saas.domain.tenant_product_entitlement import (
 from tools.eos.saas.entitlement import tenant_product_entitlement_registry as entitlement_registry
 from tools.eos.saas.entitlement.product_catalogue import TenantProductId
 from tools.eos.saas.entitlement.tenant_product_entitlement_composer import derive_tenant_product_entitlement_id
+from tools.eos.workspaces.domain.tenant_module_work_item import ModuleWorkKind, ModuleWorkPriority
 from tools.eos.workspaces.persistence.tenant_module_work_registry import (
     TenantModuleWorkRegistry, ensure_indexes as ensure_work_indexes,
 )
@@ -118,8 +119,8 @@ def test_real_replica_set_proves_module_entitlement_and_queue_isolation(mongo_co
     )
     created = transact(client, lambda session: operations.create(
         tenant_id=TENANT, principal_id="principal-owner", title="Publish weekly operating plan",
-        description="", kind=__import__("tools.eos.workspaces.domain.tenant_module_work_item", fromlist=["ModuleWorkKind"]).ModuleWorkKind.TASK,
-        priority=__import__("tools.eos.workspaces.domain.tenant_module_work_item", fromlist=["ModuleWorkPriority"]).ModuleWorkPriority.HIGH,
+        description="", kind=ModuleWorkKind.TASK,
+        priority=ModuleWorkPriority.HIGH,
         due_at=None, source_type=None, source_id=None, idempotency_key="operations-task-1",
         now=NOW, session=session,
     ))
