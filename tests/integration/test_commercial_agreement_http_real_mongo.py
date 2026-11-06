@@ -274,6 +274,9 @@ def test_foreign_tenant_scope_and_legal_partner_cannot_read_owner_commercial_agr
 class _TrustedExecutionVerifier:
     """Test-only verifier double; cryptographic behavior is covered by unit tests."""
 
+    def __init__(self, principal_id: str) -> None:
+        self.principal_id = principal_id
+
     def verify(self, *, agreement: Any, evidence_reference: str) -> VerifiedCommercialAgreementExecutionEvidence:
         assert evidence_reference == "evidence:trusted-test-provider:001"
         signed_at = NOW + timedelta(minutes=1)
@@ -285,7 +288,7 @@ class _TrustedExecutionVerifier:
             offer_fingerprint=agreement.offer_fingerprint,
             execution_evidence_reference=evidence_reference,
             execution_evidence_fingerprint="a" * 128,
-            signatory_principal_id=agreement.tenant_id.replace("tenant-", "principal-"),
+            signatory_principal_id=self.principal_id,
             signatory_authority_reference="board-mandate:test",
             signatory_authority_fingerprint="b" * 128,
             signed_at=signed_at,
@@ -306,7 +309,7 @@ def test_authenticated_signatory_can_execute_only_verified_server_evidence(
     )
     monkeypatch.setattr(
         agreement_api, "_execution_verifier",
-        lambda _request: _TrustedExecutionVerifier(),
+        lambda _request: _TrustedExecutionVerifier(principal),
     )
     headers = {"X-Tenant-ID": tenant}
     with _client(mongo_context, monkeypatch, tenant=tenant, principal=principal) as http:
