@@ -1013,6 +1013,8 @@ BUSINESS_ROLE_OPERATION_PERMISSIONS = MappingProxyType({
     **BUSINESS_ROLE_OPERATION_PERMISSIONS,
     "commercial_agreement_read": "tenant:commercial_agreement:read",
     "commercial_agreement_draft_create": "tenant:commercial_agreement:draft:create",
+    "commercial_agreement_execute": "tenant:commercial_agreement:execute",
+    "commercial_agreement_activate": "tenant:commercial_agreement:activate",
 })
 _agreement_eligibility = dict(ELIGIBILITY)
 for _agreement_role in ("tenant_owner", "tenant_admin"):
