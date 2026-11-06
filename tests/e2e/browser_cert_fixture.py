@@ -804,12 +804,12 @@ def _seed_independent_module_entitlements(
     now: datetime,
     collections: dict[str, Any],
 ) -> dict[str, str]:
-    """Activate six independent module products with synthetic fixture evidence.
+    """Activate independent module products with synthetic fixture evidence.
 
     Legal Operations is provisioned by the existing Legal subscription composer.
-    Billing, CRM, HR, Operations, Intelligence and POS are separate D22B2 product
-    entitlements in this disposable browser database; no bundle membership or
-    browser claim creates them.
+    Billing, HR, Operations, Intelligence and POS are separate D22B2 product
+    entitlements in this disposable browser database. CRM Core is derived from
+    the canonical active subscription feature snapshot, not a product flag.
     """
     fingerprint = "d" * 128
     activated: dict[str, str] = {}
