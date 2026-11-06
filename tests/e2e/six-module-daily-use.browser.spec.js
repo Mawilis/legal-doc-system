@@ -206,7 +206,7 @@ test('owner completes the authenticated seven-module daily-use journey', async (
       page, 'Intelligence', '/api/tenant-modules/intelligence/workspace',
     );
     expect(reentry.status()).toBe(200);
-    await expect(page.getByRole('heading', { name: 'Intelligence OS' })).toBeVisible();
+    await expect(page.getByRole('main', { name: 'Intelligence OS' }).getByRole('heading', { name: 'Intelligence OS' })).toBeVisible();
     expect(browserErrors).toEqual([]);
   } finally {
     await context.close();
@@ -245,12 +245,12 @@ test('Operations and Intelligence workspaces remain usable at a narrow viewport'
   try {
     await openModuleNavigation(page);
     await switchModule(page, 'OPERATIONS', '/api/tenant-modules/operations/workspace');
-    await expect(page.getByRole('heading', { name: 'Operations OS' })).toBeVisible();
+    await expect(page.getByRole('main', { name: 'Operations OS' }).getByRole('heading', { name: 'Operations OS' })).toBeVisible();
     await expect.poll(() => page.evaluate(() => (
       document.documentElement.scrollWidth <= window.innerWidth
     ))).toBe(true);
     await switchModule(page, 'INTELLIGENCE', '/api/tenant-modules/intelligence/workspace');
-    await expect(page.getByRole('heading', { name: 'Intelligence OS' })).toBeVisible();
+    await expect(page.getByRole('main', { name: 'Intelligence OS' }).getByRole('heading', { name: 'Intelligence OS' })).toBeVisible();
     await expect.poll(() => page.evaluate(() => (
       document.documentElement.scrollWidth <= window.innerWidth
     ))).toBe(true);
