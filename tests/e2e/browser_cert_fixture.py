@@ -815,7 +815,6 @@ def _seed_independent_module_entitlements(
     activated: dict[str, str] = {}
     for product_id in (
         TenantProductId.BILLING,
-        TenantProductId.CRM,
         TenantProductId.HR,
         TenantProductId.OPERATIONS,
         TenantProductId.INTELLIGENCE,
@@ -1302,7 +1301,7 @@ def seed(state_path: Path) -> None:
                 "planType": "ENTERPRISE",
                 "idempotencyKey": f"browser-cert-plan-{tenant_id}",
                 "active": True,
-                "features": ["legal.core"],
+                "features": ["legal.core", "crm.core"],
                 "metadata": {"certificate": "WILSY-OWNER-BROWSER-CERT"},
                 "tags": ["wilsy-owner-browser-cert"],
                 "user": "WILSY-OWNER-BROWSER-CERT",
@@ -1405,7 +1404,7 @@ def verify(state_path: Path) -> None:
         database = _owned_database(client)
         module_entitlements = state.get("module_entitlements")
         expected_module_products = {
-            "BILLING", "CRM", "HR", "OPERATIONS", "INTELLIGENCE", "POS",
+            "BILLING", "HR", "OPERATIONS", "INTELLIGENCE", "POS",
         }
         if (
             not isinstance(module_entitlements, dict)
