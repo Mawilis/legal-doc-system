@@ -9,7 +9,7 @@ def test_capacity_registry_exposes_revision_guarded_return_and_refund_reservatio
     assert callable(POSCommercialCapacityRegistry.reserve_refund)
 
 
-def test_capacity_registry_requires_caller_owned_transaction():
+def test_capacity_registry_requires_caller_owned_transaction_before_business_access():
     class NoTransaction:
         def in_transaction(self):
             return False

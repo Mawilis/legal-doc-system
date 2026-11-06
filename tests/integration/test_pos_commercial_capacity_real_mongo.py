@@ -1,7 +1,6 @@
 """Real replica-set certification of cumulative POS return/refund limits."""
 from __future__ import annotations
 
-from datetime import datetime, timezone
 import os
 import uuid
 
@@ -49,30 +48,28 @@ def _sale():
     )
 
 
+def _transaction(client, callback):
+    with client.start_session() as session:
+        return session.with_transaction(callback)
+
+
 def test_replica_set_enforces_cumulative_return_quantity(runtime):
     client, collection = runtime
     sale = _sale()
-    with client.start_session() as session:
-        with session.start_transaction():
-            first = POSCommercialCapacityRegistry.reserve_return(
-                sale=sale, sku="SKU-1", quantity=1, idempotency_key="return-1",
-                collection=collection, session=session,
-            )
-    with client.start_session() as session:
-        with session.start_transaction():
-            second = POSCommercialCapacityRegistry.reserve_return(
-                sale=sale, sku="SKU-1", quantity=1, idempotency_key="return-2",
-                collection=collection, session=session,
-            )
-    assert first["reserved_amount"] == 1
-    assert second["reserved_amount"] == 2
-    with client.start_session() as session:
-        with pytest.raises(POSCommercialCapacityExceeded):
-            with session.start_transaction():
-                POSCommercialCapacityRegistry.reserve_return(
-                    sale=sale, sku="SKU-1", quantity=1, idempotency_key="return-3",
-                    collection=collection, session=session,
-                )
+    first = _transaction(client, lambda tx: POSCommercialCapacityRegistry.reserve_return(
+        sale=sale, sku="SKU-1", quantity=1, idempotency_key="return-1",
+        collection=collection, session=tx,
+    ))
+    second = _transaction(client, lambda tx: POSCommercialCapacityRegistry.reserve_return(
+        sale=sale, sku="SKU-1", quantity=1, idempotency_key="return-2",
+        collection=collection, session=tx,
+    ))
+    assert first["reserved_amount"] == 1 and second["reserved_amount"] == 2
+    with pytest.raises(POSCommercialCapacityExceeded):
+        _transaction(client, lambda tx: POSCommercialCapacityRegistry.reserve_return(
+            sale=sale, sku="SKU-1", quantity=1, idempotency_key="return-3",
+            collection=collection, session=tx,
+        ))
     current = collection.find_one({"tenant_id": sale.tenant_id, "sale_id": sale.sale_id, "capacity_type": "RETURN_QUANTITY"})
     assert current["reserved_amount"] == 2 and current["revision"] == 1
 
@@ -80,26 +77,19 @@ def test_replica_set_enforces_cumulative_return_quantity(runtime):
 def test_replica_set_enforces_cumulative_refund_amount(runtime):
     client, collection = runtime
     sale = _sale()
-    with client.start_session() as session:
-        with session.start_transaction():
-            first = POSCommercialCapacityRegistry.reserve_refund(
-                sale=sale, amount_minor=100, idempotency_key="refund-1",
-                collection=collection, session=session,
-            )
-    with client.start_session() as session:
-        with session.start_transaction():
-            second = POSCommercialCapacityRegistry.reserve_refund(
-                sale=sale, amount_minor=100, idempotency_key="refund-2",
-                collection=collection, session=session,
-            )
-    assert first["reserved_amount"] == 100
-    assert second["reserved_amount"] == 200
-    with client.start_session() as session:
-        with pytest.raises(POSCommercialCapacityExceeded):
-            with session.start_transaction():
-                POSCommercialCapacityRegistry.reserve_refund(
-                    sale=sale, amount_minor=1, idempotency_key="refund-3",
-                    collection=collection, session=session,
-                )
+    first = _transaction(client, lambda tx: POSCommercialCapacityRegistry.reserve_refund(
+        sale=sale, amount_minor=100, idempotency_key="refund-1",
+        collection=collection, session=tx,
+    ))
+    second = _transaction(client, lambda tx: POSCommercialCapacityRegistry.reserve_refund(
+        sale=sale, amount_minor=100, idempotency_key="refund-2",
+        collection=collection, session=tx,
+    ))
+    assert first["reserved_amount"] == 100 and second["reserved_amount"] == 200
+    with pytest.raises(POSCommercialCapacityExceeded):
+        _transaction(client, lambda tx: POSCommercialCapacityRegistry.reserve_refund(
+            sale=sale, amount_minor=1, idempotency_key="refund-3",
+            collection=collection, session=tx,
+        ))
     current = collection.find_one({"tenant_id": sale.tenant_id, "sale_id": sale.sale_id, "capacity_type": "REFUND_AMOUNT"})
     assert current["reserved_amount"] == sale.total_minor and current["revision"] == 1

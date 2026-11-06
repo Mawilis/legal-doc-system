@@ -1,4 +1,4 @@
-"""Real replica-set certification for durable POS location assignment authority."""
+"""Real replica-set certificate for POS location assignment authority."""
 from __future__ import annotations
 
 from datetime import datetime, timezone
@@ -31,21 +31,11 @@ def mongo_context():
             hello = client.admin.command("hello")
         except PyMongoError as error:
             pytest.skip(f"host Mongo unavailable during hello: {type(error).__name__}")
-        if hello.get("setName") != EXPECTED_REPLICA_SET:
-            pytest.skip(f"wrong replica set: {hello.get('setName')!r}")
-        if hello.get("isWritablePrimary", hello.get("ismaster")) is not True:
-            pytest.skip("replica set has no writable primary")
+        if hello.get("setName") != EXPECTED_REPLICA_SET or not hello.get("isWritablePrimary"):
+            pytest.skip("expected writable wilsyVendorCertRS replica set")
         database = client[f"pos_location_rm_{uuid.uuid4().hex}"]
-        history = database.get_collection(
-            registry.HISTORY_COLLECTION,
-            write_concern=WriteConcern(w="majority", j=True),
-            read_concern=ReadConcern("majority"),
-        )
-        current = database.get_collection(
-            registry.CURRENT_COLLECTION,
-            write_concern=WriteConcern(w="majority", j=True),
-            read_concern=ReadConcern("majority"),
-        )
+        history = database.get_collection(registry.HISTORY_COLLECTION, write_concern=WriteConcern(w="majority", j=True), read_concern=ReadConcern("majority"))
+        current = database.get_collection(registry.CURRENT_COLLECTION, write_concern=WriteConcern(w="majority", j=True), read_concern=ReadConcern("majority"))
         registry.ensure_indexes(history, current)
         yield client, history, current
     finally:
@@ -59,66 +49,57 @@ def _assignment(tenant="tenant-a", location="store-a", principal="operator-a"):
         tenant_id=tenant, location_id=location, principal_id=principal,
         assignment_id=f"assignment-{uuid.uuid4().hex}", revision=0,
         status=POSLocationAssignmentStatus.ACTIVE,
-        authority_reference="governed-workforce-assignment:synthetic",
-        authority_fingerprint="a" * 128,
-        idempotency_key=f"issue-{uuid.uuid4().hex}", occurred_at=NOW,
-        changed_by_principal_id="issuer-principal",
+        authority_reference="workforce-assignment:123",
+        authority_fingerprint="a" * 128, idempotency_key=f"issue-{uuid.uuid4().hex}",
+        occurred_at=NOW, changed_by_principal_id="principal-issuer",
     )
+
+
+def _transaction(client, callback):
+    with client.start_session() as session:
+        return session.with_transaction(callback)
 
 
 def test_real_replica_set_issue_resolve_revoke_and_tenant_location_isolation(mongo_context):
     client, history, current = mongo_context
     value = _assignment()
-    with client.start_session() as session:
-        with session.start_transaction():
-            issued = registry.issue(value, history, current, session=session)
+    issued = _transaction(client, lambda tx: registry.issue(value, history, current, session=tx))
     assert issued.to_dict() == value.to_dict()
     assert history.count_documents({"tenant_id": value.tenant_id, "assignment_id": value.assignment_id}) == 1
 
-    with client.start_session() as session:
-        with session.start_transaction():
-            resolved = registry.resolve(value.tenant_id, value.location_id, value.principal_id, current, session=session)
-            with pytest.raises(registry.POSLocationAssignmentNotFound):
-                registry.resolve("tenant-b", value.location_id, value.principal_id, current, session=session)
-            with pytest.raises(registry.POSLocationAssignmentNotFound):
-                registry.resolve(value.tenant_id, "store-b", value.principal_id, current, session=session)
+    resolved = _transaction(client, lambda tx: registry.resolve(value.tenant_id, value.location_id, value.principal_id, current, session=tx))
     assert resolved.to_dict() == value.to_dict()
+    with pytest.raises(registry.POSLocationAssignmentNotFound):
+        _transaction(client, lambda tx: registry.resolve("tenant-b", value.location_id, value.principal_id, current, session=tx))
+    with pytest.raises(registry.POSLocationAssignmentNotFound):
+        _transaction(client, lambda tx: registry.resolve(value.tenant_id, "store-b", value.principal_id, current, session=tx))
 
-    with client.start_session() as session:
-        with session.start_transaction():
-            revoked = registry.revoke(
-                tenant_id=value.tenant_id, location_id=value.location_id,
-                principal_id=value.principal_id, assignment_id=value.assignment_id,
-                expected_revision=0, authority_reference="governed-revocation:synthetic",
-                authority_fingerprint="b" * 128, idempotency_key=f"revoke-{uuid.uuid4().hex}",
-                occurred_at=NOW, changed_by_principal_id="issuer-principal",
-                reason="assignment ended", history=history, current=current, session=session,
-            )
-    assert revoked.status is POSLocationAssignmentStatus.REVOKED
-    assert revoked.revision == 1
+    revoked = _transaction(client, lambda tx: registry.revoke(
+        tenant_id=value.tenant_id, location_id=value.location_id,
+        principal_id=value.principal_id, assignment_id=value.assignment_id,
+        expected_revision=0, authority_reference="governed-revocation:synthetic",
+        authority_fingerprint="b" * 128, idempotency_key=f"revoke-{uuid.uuid4().hex}",
+        occurred_at=NOW, changed_by_principal_id="principal-issuer",
+        reason="assignment ended", history=history, current=current, session=tx,
+    ))
+    assert revoked.status is POSLocationAssignmentStatus.REVOKED and revoked.revision == 1
     assert history.count_documents({"tenant_id": value.tenant_id, "assignment_id": value.assignment_id}) == 2
-    with client.start_session() as session:
-        with session.start_transaction():
-            with pytest.raises(registry.POSLocationAssignmentNotFound):
-                registry.resolve(value.tenant_id, value.location_id, value.principal_id, current, session=session)
+    with pytest.raises(registry.POSLocationAssignmentNotFound):
+        _transaction(client, lambda tx: registry.resolve(value.tenant_id, value.location_id, value.principal_id, current, session=tx))
 
 
-def test_real_replica_set_rejects_stale_revocation_and_rolls_back_history(mongo_context):
+def test_real_replica_set_rejects_stale_revocation_without_history_mutation(mongo_context):
     client, history, current = mongo_context
     value = _assignment()
-    with client.start_session() as session:
-        with session.start_transaction():
-            registry.issue(value, history, current, session=session)
-    with client.start_session() as session:
-        with session.start_transaction():
-            with pytest.raises(registry.POSLocationAssignmentConflict):
-                registry.revoke(
-                    tenant_id=value.tenant_id, location_id=value.location_id,
-                    principal_id=value.principal_id, assignment_id=value.assignment_id,
-                    expected_revision=9, authority_reference="governed-revocation:synthetic",
-                    authority_fingerprint="b" * 128, idempotency_key=f"revoke-{uuid.uuid4().hex}",
-                    occurred_at=NOW, changed_by_principal_id="issuer-principal",
-                    reason="stale command", history=history, current=current, session=session,
-                )
+    _transaction(client, lambda tx: registry.issue(value, history, current, session=tx))
+    with pytest.raises(registry.POSLocationAssignmentConflict):
+        _transaction(client, lambda tx: registry.revoke(
+            tenant_id=value.tenant_id, location_id=value.location_id,
+            principal_id=value.principal_id, assignment_id=value.assignment_id,
+            expected_revision=9, authority_reference="governed-revocation:synthetic",
+            authority_fingerprint="b" * 128, idempotency_key=f"revoke-{uuid.uuid4().hex}",
+            occurred_at=NOW, changed_by_principal_id="principal-issuer",
+            reason="stale command", history=history, current=current, session=tx,
+        ))
     assert history.count_documents({"tenant_id": value.tenant_id, "assignment_id": value.assignment_id}) == 1
     assert current.count_documents({"tenant_id": value.tenant_id, "location_id": value.location_id, "status": "ACTIVE"}) == 1

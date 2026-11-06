@@ -118,6 +118,7 @@ def _reserve(*, sale: POSSale, capacity_type: str, capacity_key: str,
 
 def reserve_return(*, sale: POSSale, sku: str, quantity: int,
                    idempotency_key: str, collection: Any, session: Any) -> dict:
+    _tx(session)
     line = next((item for item in sale.lines if item.sku == sku), None)
     if line is None:
         raise POSCommercialCapacityError("POS_RETURN_SKU_NOT_IN_SALE")
@@ -130,6 +131,7 @@ def reserve_return(*, sale: POSSale, sku: str, quantity: int,
 
 def reserve_refund(*, sale: POSSale, amount_minor: int,
                    idempotency_key: str, collection: Any, session: Any) -> dict:
+    _tx(session)
     return _reserve(
         sale=sale, capacity_type="REFUND_AMOUNT", capacity_key="SALE_TOTAL",
         amount=amount_minor, maximum=sale.total_minor,
