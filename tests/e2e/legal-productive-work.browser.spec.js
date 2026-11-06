@@ -140,6 +140,8 @@ test(
     } = await openAuthenticatedLegalWorkspace(browser, 'tenant_owner');
 
     expect(String(bootstrapPayload.workspace?.businessRole || '').toUpperCase()).toBe('TENANT_OWNER');
+    await expect(page.locator('[data-active-workspace="workbench"]')).toBeVisible();
+    await expect(page.getByRole('table', { name: 'Suggested executive work queue' })).toBeVisible();
     await expect(page.getByRole('button', { name: 'LEGAL OS', exact: true })).toBeVisible();
 
     const commercialResponsePromise = page.waitForResponse((response) => (
