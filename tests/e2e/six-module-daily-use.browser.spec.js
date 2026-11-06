@@ -1,5 +1,5 @@
 /**
- * TITLE: WILSY OS authenticated six-module daily-use browser certificate
+ * TITLE: WILSY OS authenticated seven-module daily-use browser certificate
  * AUTHORITY: Disposable authenticated browser evidence only.
  * EPITOME: Prove all six server-entitled module destinations, CRM/Operations/
  *          Intelligence task lifecycle, refresh/re-entry, People and Billing
@@ -55,7 +55,9 @@ async function openAuthenticated(browser, actorKey, viewport = { width: 1440, he
 }
 
 async function openModuleNavigation(page) {
-  await expect(page.locator('[data-active-workspace="workbench"]')).toBeVisible();
+  // Owner and Legal specialist dashboards intentionally differ; module navigation
+  // is shared, while the Executive workbench remains Owner-only.
+  await expect(page.getByRole('button', { name: /Legal OS/i }).first()).toBeVisible();
   const manifestPromise = page.waitForResponse(response => (
     new URL(response.url()).pathname === '/api/auth/module-manifest'
     && response.request().method() === 'GET'
@@ -108,7 +110,7 @@ async function createAndComplete(page, moduleId, title) {
   expect((await completed.json()).status).toBe('COMPLETED');
 }
 
-test('owner completes the authenticated six-module daily-use journey', async ({ browser }) => {
+test('owner completes the authenticated seven-module daily-use journey', async ({ browser }) => {
   const { context, page, browserErrors } = await openAuthenticated(browser, 'tenant_owner');
   try {
     const modules = await openModuleNavigation(page);
