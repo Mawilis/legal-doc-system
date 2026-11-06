@@ -7,6 +7,8 @@ on:
       - "tools/eos/saas/billing/pos_*.py"
       - "tools/eos/saas/billing/pos_workspace_service.py"
       - "tools/eos/api/pos_workspace_router.py"
+      - "client/src/components/pos/**"
+      - "client/src/__tests__/components/POSWorkspace.test.jsx"
       - "tools/eos/api/server.py"
       - "tools/eos/auth/permission_namespace.py"
       - "tools/eos/auth/roles.py"
@@ -87,6 +89,15 @@ jobs:
             tools/eos/auth/tenant_authorization.py \
             tools/eos/saas/billing/pos_financial_execution_authorization_registry.py \
             tools/eos/saas/billing/pos_financial_movement_execution.py
+      - name: Setup Node for POS workspace client certification
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: npm
+      - name: Install client dependencies
+        run: npm --prefix client ci
+      - name: Run authenticated POS workspace client tests
+        run: npm --prefix client run test:run -- src/__tests__/components/POSWorkspace.test.jsx
       - name: Run POS unit and real replica-set certification
         run: |
           python -m pytest -q \
