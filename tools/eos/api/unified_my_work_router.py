@@ -117,7 +117,7 @@ def _read_crm(*, tenant_id: str) -> dict[str, Any] | None:
 
 @router.get("")
 async def read_my_work(
-    tenant_id: str = Header(alias="X-Tenant-ID", min_length=1),
+    tenant_id: str | None = Header(default=None, alias="X-Tenant-ID"),
     identity: Any = Depends(get_current_identity),
     legal_context: TenantAuthorizationContext | None = Depends(_LEGAL_READ),
     operations_context: TenantAuthorizationContext | None = Depends(_OPERATIONS_READ),
@@ -126,7 +126,7 @@ async def read_my_work(
 ) -> dict[str, Any]:
     """Return only independently authorized work for the current principal/capacity."""
 
-    if not tenant_id or tenant_id != tenant_id.strip():
+    if not isinstance(tenant_id, str) or not tenant_id or tenant_id != tenant_id.strip():
         raise HTTPException(status_code=403, detail="TENANT_SCOPE_REQUIRED")
 
     principal_id = identity.identity_id
