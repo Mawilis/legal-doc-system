@@ -86,6 +86,7 @@ vi.mock('../../contexts/authContext', () => ({
       tenantId: 'tenant-law',
       permissions: [
         'legal_operations:productive_work:read',
+        'legal_operations:conflict_review:write',
       ],
       legalPermissionsAuthoritative: true,
     },
@@ -545,6 +546,45 @@ describe('PW-P11C canonical Legal dashboard productive work', () => {
     expect(
       mocks.getLegalProductiveWork,
     ).not.toHaveBeenCalled();
+  });
+
+  it('keeps separately authorized My Work and conflict review available when G68 denies the practice workspace', async () => {
+    mocks.getLegalPracticeWorkspace.mockRejectedValueOnce({
+      response: {
+        status: 503,
+        data: { detail: 'LEGAL_OPERATIONS_WORKSPACE_CONFIDENTIALITY_AUTHORITY_UNAVAILABLE' },
+      },
+    });
+    mocks.getLegalConflictScreenings.mockResolvedValueOnce({
+      schema: 'WILSY-LEGAL-CONFLICT-SCREENING-PRESENTATION/V1',
+      version: 'v1.9.0-L8-8N-CONFLICT-SCREENING-READ-API',
+      tenantId: 'tenant-law',
+      visibility: 'LEGAL_CONFLICT_SCREENING_REVIEW_QUEUE',
+      screenings: [{
+        screeningId: 'screening-independent-1',
+        sourceCaseMatterId: 'matter-reference-independent',
+        status: 'REVIEW_REQUIRED',
+        screenedAt: '2026-11-05T10:00:00+00:00',
+      }],
+    });
+
+    render(<LegalDashboard roleView="LEGAL_PARTNER" />);
+    expect(await screen.findByText('EVIDENCE_UNAVAILABLE')).toBeInTheDocument();
+    expect(await screen.findByText(
+      'LEGAL_OPERATIONS_WORKSPACE_CONFIDENTIALITY_AUTHORITY_UNAVAILABLE',
+    )).toBeInTheDocument();
+
+    fireEvent.click(await screen.findByRole('button', { name: 'My Work' }));
+    expect(await screen.findByText('Prepare governed filing')).toBeInTheDocument();
+
+    fireEvent.click(screen.getByRole('button', { name: 'Conflict Reviews' }));
+    expect(await screen.findByText('Conflict review queue')).toBeInTheDocument();
+    expect(screen.getByText('matter-reference-independent')).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Review Conflict' })).toBeInTheDocument();
+
+    expect(mocks.getLegalPracticeWorkspace).toHaveBeenCalledTimes(1);
+    expect(mocks.getLegalConflictScreenings).toHaveBeenCalledTimes(1);
+    expect(mocks.getLegalProductiveWork).toHaveBeenCalledTimes(1);
   });
 });
 
