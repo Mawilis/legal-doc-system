@@ -45,10 +45,70 @@ class TenantBusinessRoleResult:
 class RoleAssignmentReader(Protocol):
     def resolve(self, principal_id: str, tenant_id: str, role_id: str, *, session: Any = None) -> object: ...
 
-def resolve_current_tenant_business_role(*, principal_id: object, tenant_id: object, repository: Any, session: Any = None, operation: str | None = None) -> TenantBusinessRoleResult:
-    """Return current durable business-role evidence; membership and authorization remain separate."""
+def resolve_current_tenant_business_role(*, principal_id: object, tenant_id: object, repository: Any, session: Any = None, operation: str | None = None, selected_business_role: str | None = None) -> TenantBusinessRoleResult:
+    """Return current durable business-role evidence; membership and authorization remain separate.
+
+    A selected capacity is accepted only from a caller that has already verified
+    the principal-bound global session. It narrows the resolver to one exact
+    durable role; it never unions permissions or creates a grant.
+    """
     if not isinstance(principal_id, str) or not principal_id.strip() or principal_id != principal_id.strip() or not isinstance(tenant_id, str) or not tenant_id.strip() or tenant_id != tenant_id.strip():
         return TenantBusinessRoleResult(None, BusinessRoleResolution.INVALID_INPUT)
+    if selected_business_role is not None:
+        if (
+            not isinstance(selected_business_role, str)
+            or selected_business_role not in TENANT_ROLES
+            or selected_business_role != selected_business_role.strip()
+        ):
+            return TenantBusinessRoleResult(None, BusinessRoleResolution.INVALID_INPUT)
+        try:
+            assignment = (
+                repository.resolve(principal_id, tenant_id, selected_business_role)
+                if session is None
+                else repository.resolve(
+                    principal_id, tenant_id, selected_business_role, session=session
+                )
+            )
+        except (RoleAssignmentNotFoundError, TenantBusinessRoleNotFoundError):
+            return TenantBusinessRoleResult(
+                None, BusinessRoleResolution.NO_ACTIVE_TENANT_BUSINESS_ROLE
+            )
+        except (
+            RoleAssignmentRepositoryError,
+            TenantBusinessRoleRepositoryError,
+            AttributeError,
+            TypeError,
+        ):
+            return TenantBusinessRoleResult(
+                None, BusinessRoleResolution.TENANT_BUSINESS_ROLE_AUTHORITY_UNAVAILABLE
+            )
+        if (
+            getattr(assignment, "principal_id", None) != principal_id
+            or getattr(assignment, "tenant_id", None) != tenant_id
+            or getattr(assignment, "business_role", None) != selected_business_role
+        ):
+            return TenantBusinessRoleResult(
+                None, BusinessRoleResolution.TENANT_BUSINESS_ROLE_AUTHORITY_UNAVAILABLE
+            )
+        if (
+            getattr(getattr(assignment, "status", None), "value", None)
+            != TenantBusinessRoleStatus.ACTIVE.value
+        ):
+            return TenantBusinessRoleResult(
+                None, BusinessRoleResolution.NO_ACTIVE_TENANT_BUSINESS_ROLE
+            )
+        if (
+            operation is not None
+            and tenant_role_operation_eligibility(selected_business_role, operation) != ELIGIBLE
+        ):
+            return TenantBusinessRoleResult(
+                None,
+                BusinessRoleResolution.NO_ELIGIBLE_TENANT_BUSINESS_ROLE,
+                evidence_role=selected_business_role,
+            )
+        return TenantBusinessRoleResult(
+            selected_business_role, BusinessRoleResolution.RESOLVED
+        )
     if operation is not None:
         resolve_all = getattr(repository, "resolve_all_business_roles", None)
         if callable(resolve_all):
