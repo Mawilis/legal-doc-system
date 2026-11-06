@@ -30,6 +30,7 @@ const operationsSnapshot = {
   tenantId: 'TENANT-OPS-1',
   productId: 'OPERATIONS',
   workspaceKey: 'OPERATIONS_DASHBOARD',
+  entitlement: { id: 'tpe-operations', revision: 2, fingerprint: 'b'.repeat(128), state: 'ACTIVE' },
   generatedAt: '2026-11-06T10:00:00Z',
   items: [{
     schema: 'WILSY-TENANT-MODULE-WORK-ITEM/V1',
