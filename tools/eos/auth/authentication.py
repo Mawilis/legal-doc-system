@@ -236,6 +236,10 @@ async def get_current_identity(
             auth_method="JWT",
             status=authority.status,
             session_reference=session_reference,
+            principal_scope="GLOBAL",
+            workspace_id=workspace_id,
+            membership_revision=membership_revision,
+            capacity_revision=capacity_revision,
         )
         log_auth_event("GLOBAL_JWT_AUTH", authority.principal_id, True, {"tenant": tenant_id})
         return identity
