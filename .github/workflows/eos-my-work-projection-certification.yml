@@ -16,6 +16,7 @@ on:
       - "tests/unit/test_unified_my_work_projection.py"
       - "tests/unit/test_optional_tenant_authorization.py"
       - "tests/unit/test_unified_my_work_router.py"
+      - "tests/integration/test_unified_my_work_real_mongo.py"
       - ".github/workflows/eos-my-work-projection-certification.yml"
   push:
     branches:
@@ -60,3 +61,26 @@ jobs:
         run: npm ci --prefix client
       - name: Run My Work interface tests
         run: npm --prefix client run test:run -- src/__tests__/components/MyWorkWorkspace.test.jsx
+
+      - name: Start isolated Mongo replica set
+        run: |
+          docker run -d --name my-work-mongo -p 27017:27017 mongo:7 --replSet rs0 --bind_ip_all
+          for attempt in $(seq 1 30); do
+            if docker exec my-work-mongo mongosh --quiet --eval "db.adminCommand('ping').ok" | grep -q 1; then
+              break
+            fi
+            sleep 2
+          done
+          docker exec my-work-mongo mongosh --quiet --eval "rs.initiate({_id:'rs0',members:[{_id:0,host:'localhost:27017'}]})"
+          for attempt in $(seq 1 30); do
+            if docker exec my-work-mongo mongosh --quiet --eval "db.hello().isWritablePrimary" | grep -q true; then
+              exit 0
+            fi
+            sleep 2
+          done
+          echo "Mongo replica set did not elect a primary" >&2
+          exit 1
+      - name: Run real replica-set My Work HTTP certificate
+        env:
+          TEST_VENDOR_MONGO_URI: mongodb://127.0.0.1:27017/?replicaSet=rs0
+        run: python -m pytest -q tests/integration/test_unified_my_work_real_mongo.py
