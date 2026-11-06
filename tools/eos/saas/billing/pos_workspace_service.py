@@ -97,6 +97,37 @@ class POSWorkspaceService:
             raise POSWorkspaceServiceError("POS_LOCATION_ACCESS_DENIED")
         return entitlement, assignment
 
+    def list_locations(self, *, tenant_id: str, principal_id: str, session: Any) -> tuple[dict, ...]:
+        """List only active POS locations assigned to the authenticated principal."""
+        if session is None or not callable(getattr(session, "with_transaction", None)) or getattr(session, "has_ended", True):
+            raise POSWorkspaceServiceError("POS_WORKSPACE_LIVE_CALLER_SESSION_REQUIRED")
+        try:
+            entitlement_id = derive_tenant_product_entitlement_id(tenant_id, TenantProductId.POS)
+            entitlement = get_current(
+                tenant_id, entitlement_id, self._entitlement_history,
+                self._entitlement_current, session=session,
+            )
+        except TenantProductEntitlementRegistryNotFoundError as error:
+            raise POSWorkspaceServiceError("POS_PRODUCT_NOT_ENTITLED") from error
+        except (TenantProductEntitlementRegistryError, ValueError, TypeError) as error:
+            raise POSWorkspaceServiceError("POS_ENTITLEMENT_AUTHORITY_UNAVAILABLE") from error
+        if (entitlement.tenant_id != tenant_id
+                or entitlement.product_id is not TenantProductId.POS
+                or entitlement.lifecycle_state is not TenantProductEntitlementState.ACTIVE):
+            raise POSWorkspaceServiceError("POS_PRODUCT_NOT_ENTITLED")
+        try:
+            assignments = POSLocationAssignmentRegistry.list_active(
+                tenant_id, principal_id, self._location_current, session=session,
+            )
+        except Exception as error:
+            raise POSWorkspaceServiceError("POS_LOCATION_AUTHORITY_UNAVAILABLE") from error
+        return tuple({
+            "location_id": item.location_id,
+            "assignment_id": item.assignment_id,
+            "revision": item.revision,
+            "status": item.status.value,
+        } for item in assignments)
+
     def create_sale(self, *, tenant_id: str, principal_id: str, location_id: str,
                     sale_id: str, currency: str, lines: tuple[POSLineItem, ...],
                     idempotency_key: str, session: Any) -> POSSale:
