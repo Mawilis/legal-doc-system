@@ -48,6 +48,11 @@ export async function readTenantModuleWorkspace(moduleId) {
     value.product_id !== descriptor.productId ||
     value.workspace_key !== descriptor.workspaceKey ||
     typeof value.tenant_id !== 'string' ||
+    typeof value.entitlement_id !== 'string' ||
+    !Number.isInteger(value.entitlement_revision) ||
+    typeof value.entitlement_fingerprint !== 'string' ||
+    !/^[0-9a-f]{128}$/.test(value.entitlement_fingerprint) ||
+    value.entitlement_state !== 'ACTIVE' ||
     !validItems
   ) {
     throw new Error('TENANT_MODULE_WORKSPACE_RESPONSE_INVALID');
@@ -56,6 +61,12 @@ export async function readTenantModuleWorkspace(moduleId) {
     tenantId: value.tenant_id,
     productId: value.product_id,
     workspaceKey: value.workspace_key,
+    entitlement: Object.freeze({
+      id: value.entitlement_id,
+      revision: value.entitlement_revision,
+      fingerprint: value.entitlement_fingerprint,
+      state: value.entitlement_state,
+    }),
     generatedAt: value.generated_at,
     items: Object.freeze(value.items.map(item => Object.freeze({ ...item }))),
   });
