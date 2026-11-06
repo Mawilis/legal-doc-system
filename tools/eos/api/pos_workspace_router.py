@@ -44,6 +44,9 @@ from tools.eos.saas.billing.pos_commercial_evidence_registry import (
     POSCommercialEvidenceRegistry, POSCommercialEvidenceRegistryError,
     POSCommercialEvidenceConflict,
 )
+from tools.eos.saas.billing.pos_commercial_capacity_registry import (
+    COLLECTION_NAME as CAPACITY_COLLECTION, POSCommercialCapacityRegistry,
+)
 from tools.eos.saas.billing.pos_location_assignment_registry import (
     CURRENT_COLLECTION as LOCATION_CURRENT,
     HISTORY_COLLECTION as LOCATION_HISTORY,
@@ -141,13 +144,15 @@ def _collection(database: Any, name: str):
 def _prepare(database: Any) -> dict[str, Any]:
     sales = _collection(database, "pos_sales")
     evidence = _collection(database, "pos_commercial_evidence")
+    capacity = _collection(database, CAPACITY_COLLECTION)
     location_history = _collection(database, LOCATION_HISTORY)
     location_current = _collection(database, LOCATION_CURRENT)
     POSSaleRegistry.ensure_indexes(sales)
     POSCommercialEvidenceRegistry.ensure_indexes(evidence)
+    POSCommercialCapacityRegistry.ensure_indexes(capacity)
     POSLocationAssignmentRegistry.ensure_indexes(location_history, location_current)
     return {
-        "sales": sales, "evidence": evidence,
+        "sales": sales, "evidence": evidence, "capacity": capacity,
         "location_history": location_history, "location_current": location_current,
         "entitlement_history": _collection(database, ENTITLEMENT_HISTORY),
         "entitlement_current": _collection(database, ENTITLEMENT_CURRENT),
@@ -158,6 +163,7 @@ def _service(collections: dict[str, Any]) -> POSWorkspaceService:
     return POSWorkspaceService(
         sales_collection=collections["sales"],
         evidence_collection=collections["evidence"],
+        capacity_collection=collections["capacity"],
         entitlement_history_collection=collections["entitlement_history"],
         entitlement_current_collection=collections["entitlement_current"],
         location_assignment_current_collection=collections["location_current"],

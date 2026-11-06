@@ -44,7 +44,7 @@ class POSWorkspaceService:
     """Compose exact POS entitlement, location authority and durable M9 evidence."""
 
     __slots__ = (
-        "_sales", "_evidence", "_entitlement_history", "_entitlement_current",
+        "_sales", "_evidence", "_capacity", "_entitlement_history", "_entitlement_current",
         "_location_current",
     )
 
@@ -52,13 +52,15 @@ class POSWorkspaceService:
                  entitlement_history_collection: Any, entitlement_current_collection: Any,
                  location_assignment_current_collection: Any):
         dependencies = (
-            sales_collection, evidence_collection, entitlement_history_collection,
-            entitlement_current_collection, location_assignment_current_collection,
+            sales_collection, evidence_collection, capacity_collection,
+            entitlement_history_collection, entitlement_current_collection,
+            location_assignment_current_collection,
         )
         if any(value is None for value in dependencies):
             raise POSWorkspaceServiceError("POS_WORKSPACE_DEPENDENCIES_REQUIRED")
         self._sales = sales_collection
         self._evidence = evidence_collection
+        self._capacity = capacity_collection
         self._entitlement_history = entitlement_history_collection
         self._entitlement_current = entitlement_current_collection
         self._location_current = location_assignment_current_collection

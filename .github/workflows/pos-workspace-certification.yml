@@ -76,6 +76,7 @@ jobs:
             tools/eos/saas/domain/pos_financial_execution_authorization.py \
             tools/eos/saas/billing/pos_commercial_registry.py \
             tools/eos/saas/billing/pos_commercial_evidence_registry.py \
+            tools/eos/saas/billing/pos_commercial_capacity_registry.py \
             tools/eos/saas/billing/pos_location_assignment_registry.py \
             tools/eos/saas/billing/pos_workspace_service.py \
             tools/eos/api/pos_workspace_router.py \
@@ -95,6 +96,7 @@ jobs:
             tests/unit/test_pos_location_assignment.py \
             tests/unit/test_pos_location_assignment_registry.py \
             tests/unit/test_pos_commercial_evidence_registry.py \
+            tests/unit/test_pos_commercial_capacity_registry.py \
             tests/unit/test_pos_workspace_service.py \
             tests/unit/test_pos_workspace_router.py \
             tests/unit/test_pos_financial_execution_authorization.py \
@@ -104,6 +106,7 @@ jobs:
             tests/integration/test_pos_commercial_real_mongo.py \
             tests/integration/test_pos_location_assignment_real_mongo.py \
             tests/integration/test_pos_commercial_evidence_real_mongo.py \
+            tests/integration/test_pos_commercial_capacity_real_mongo.py \
             tests/integration/test_pos_financial_movement_execution_real_mongo.py
       - name: Stop isolated Mongo replica set
         if: always()

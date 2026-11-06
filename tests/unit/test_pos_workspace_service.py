@@ -9,6 +9,7 @@ def service():
     return POSWorkspaceService(
         sales_collection=object(),
         evidence_collection=object(),
+        capacity_collection=object(),
         entitlement_history_collection=object(),
         entitlement_current_collection=object(),
         location_assignment_current_collection=object(),
@@ -19,7 +20,7 @@ def test_pos_workspace_requires_all_durable_authority_dependencies():
     with pytest.raises(POSWorkspaceServiceError) as error:
         POSWorkspaceService(
             sales_collection=object(), evidence_collection=object(),
-            entitlement_history_collection=object(), entitlement_current_collection=object(),
+            capacity_collection=object(), entitlement_history_collection=object(), entitlement_current_collection=object(),
             location_assignment_current_collection=None,
         )
     assert error.value.code == "POS_WORKSPACE_DEPENDENCIES_REQUIRED"

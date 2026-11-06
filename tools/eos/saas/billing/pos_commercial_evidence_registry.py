@@ -127,6 +127,24 @@ def record_evidence(*, sale: POSSale, evidence: Any, evidence_id: str, idempoten
     return persisted
 
 
+def get_by_idempotency(*, tenant_id: str, location_id: str, evidence_type: str,
+                       idempotency_key: str, collection: Any, session: Any) -> dict | None:
+    """Resolve one exact immutable command replay before capacity mutation."""
+    tx = _tx(session)
+    row = collection.find_one({
+        "tenant_id": tenant_id, "location_id": location_id,
+        "evidence_type": evidence_type, "idempotency_key": idempotency_key,
+    }, session=tx)
+    if row is None:
+        return None
+    row.pop("_id", None)
+    fingerprint = row.pop("fingerprint", None)
+    if fingerprint != _canonical_digest(row):
+        raise POSCommercialEvidenceRegistryError("POS_EVIDENCE_PERSISTED_FINGERPRINT_INVALID")
+    row["fingerprint"] = fingerprint
+    return row
+
+
 def list_sale_evidence(*, tenant_id: str, location_id: str, sale_id: str, collection: Any, session: Any) -> tuple[dict, ...]:
     tx = _tx(session)
     rows = tuple(collection.find(
@@ -148,11 +166,12 @@ class POSCommercialEvidenceRegistry:
     ensure_indexes = staticmethod(ensure_indexes)
     record_evidence = staticmethod(record_evidence)
     list_sale_evidence = staticmethod(list_sale_evidence)
+    get_by_idempotency = staticmethod(get_by_idempotency)
 
 
 __all__ = [
     "COLLECTION_NAME", "POSCommercialEvidenceConflict",
     "POSCommercialEvidenceNotFound", "POSCommercialEvidenceRegistry",
     "POSCommercialEvidenceRegistryError", "ensure_indexes",
-    "list_sale_evidence", "record_evidence",
+    "get_by_idempotency", "list_sale_evidence", "record_evidence",
 ]
