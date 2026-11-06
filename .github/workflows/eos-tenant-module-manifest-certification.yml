@@ -12,6 +12,11 @@ on:
       - "tools/eos/saas/entitlement/product_catalogue.py"
       - "tests/unit/test_tenant_module_manifest.py"
       - "tests/unit/test_workspace_module_manifest_http.py"
+      - "client/src/components/os/WilsyOSDashboardChrome.jsx"
+      - "client/src/components/os/WilsyOSDashboardChrome.module.css"
+      - "client/src/components/os/WilsyOSDashboardChrome.test.jsx"
+      - "client/package.json"
+      - "client/package-lock.json"
       - ".github/workflows/eos-tenant-module-manifest-certification.yml"
   pull_request:
     paths:
@@ -59,3 +64,17 @@ jobs:
       - name: Enforce repository integrity
         run: |
           python tools/eos/governance/repository_integrity_guard.py --commit "$GITHUB_SHA"
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: npm
+          cache-dependency-path: client/package-lock.json
+
+      - name: Install client dependencies
+        run: npm ci --include=dev
+        working-directory: client
+
+      - name: Certify EOS-issued module navigation
+        run: npx vitest run src/components/os/WilsyOSDashboardChrome.test.jsx
+        working-directory: client
