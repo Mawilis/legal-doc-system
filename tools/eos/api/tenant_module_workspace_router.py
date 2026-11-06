@@ -42,8 +42,6 @@ class ModuleWorkCreateRequest(BaseModel):
     kind: Literal["TASK", "REMINDER", "FOLLOW_UP"] = "TASK"
     priority: Literal["CRITICAL", "HIGH", "NORMAL", "LOW"] = "NORMAL"
     due_at: datetime | None = None
-    source_type: str | None = Field(default=None, max_length=80)
-    source_id: str | None = Field(default=None, max_length=160)
 
 
 class ModuleWorkCompleteRequest(BaseModel):
@@ -136,8 +134,6 @@ def _register_module(slug: str, config: tuple, *, read_permission: str, create_p
         def create(service: TenantModuleWorkspaceService, session: Any):
             if body.due_at is not None and (body.due_at.tzinfo is None or body.due_at.utcoffset() is None):
                 raise HTTPException(status_code=422, detail="DUE_AT_MUST_BE_TIMEZONE_AWARE")
-            if (body.source_type is None) != (body.source_id is None):
-                raise HTTPException(status_code=422, detail="SOURCE_COORDINATE_INVALID")
             item = service.create(
                 tenant_id=context.tenant_id, principal_id=context.identity.identity_id,
                 title=body.title, description=body.description,
