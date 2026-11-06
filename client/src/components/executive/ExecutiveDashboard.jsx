@@ -1,10 +1,10 @@
 /* eslint-disable */
 /**
  * ╔════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════╗
- * ║ WILSY OS - SOVEREIGN EXECUTIVE SUITE [V56.5.0-AUTHENTICATED-TENANT-CONTEXT]                                                                      ║
+ * ║ WILSY OS - SOVEREIGN EXECUTIVE SUITE [V56.6.0-EOS-PRODUCT-MODULE-NAVIGATION]                                                                      ║
  * ║ [FINANCE-SOURCED KPIS | SHA3 EXECUTIVE MUTATIONS | TELEMETRY STREAM | SHARD PAGINATION | BOARDROOM PROOF]                             ║
  * ╠════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════╣
- * ║ VERSION: 56.5.0-AUTHENTICATED-TENANT-CONTEXT | SERVER-ISSUED TENANT OWNER COMMAND                                        ║
+ * ║ VERSION: 56.6.0-EOS-PRODUCT-MODULE-NAVIGATION | SERVER-ISSUED TENANT OWNER COMMAND                                        ║
  * ║ ABSOLUTE PATH: /Users/wilsonkhanyezi/legal-doc-system/client/src/components/executive/ExecutiveDashboard.jsx                            ║
  * ╠════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════╣
  * ║ 👥 COLLABORATION & SOVEREIGN SIGN-OFF:                                                                                                 ║
@@ -91,6 +91,7 @@ import {
 } from '../../services/ExecutiveTransformationEngine';
 import WilsyAccountCommandCenter from '../account/WilsyAccountCommandCenter';
 import api from '../../services/api.js';
+import { validateWilsyModuleManifest } from '../../utils/tenantModuleManifest.js';
 import useAuthenticatedTenantBrandingAsset from '../../hooks/useAuthenticatedTenantBrandingAsset.js';
 import BusinessArtifactStudio from '../artifacts/BusinessArtifactStudio';
 import styles from './ExecutiveDashboard.module.css';
@@ -1072,6 +1073,7 @@ const ExecutiveDashboard = ({
   const [accountThemeMode, setAccountThemeMode] = useState(() => readWilsyExecutiveThemePreference().mode);
   const [isOpeningLegalWorkspace, setIsOpeningLegalWorkspace] = useState(false);
   const [legalEntryError, setLegalEntryError] = useState('');
+  const [tenantModules, setTenantModules] = useState([]);
 
   const executiveThemeVars = useMemo(() => (
     buildWilsyExecutiveThemeVars(accountThemeId, accountThemeMode)
@@ -1170,6 +1172,30 @@ const ExecutiveDashboard = ({
   const { objectUrl: tenantLogoObjectUrl } = useAuthenticatedTenantBrandingAsset(
     tenantBranding.assetDescriptor,
   );
+
+  useEffect(() => {
+    let current = true;
+    const authenticatedTenantId = typeof user?.tenantId === 'string'
+      ? user.tenantId
+      : '';
+    if (!authenticatedTenantId) {
+      setTenantModules([]);
+      return () => { current = false; };
+    }
+
+    api.get('/auth/module-manifest')
+      .then(({ data }) => validateWilsyModuleManifest(data, authenticatedTenantId))
+      .then((modules) => {
+        if (current) setTenantModules(modules);
+      })
+      .catch(() => {
+        // Product navigation fails closed. Executive authentication and
+        // existing workspace authority are independent of this projection.
+        if (current) setTenantModules([]);
+      });
+
+    return () => { current = false; };
+  }, [user?.tenantId]);
 
   const openLegalWorkspace = useCallback(async () => {
     if (typeof onSwitchDashboard !== 'function' || isOpeningLegalWorkspace) return;
@@ -4126,18 +4152,6 @@ const ExecutiveDashboard = ({
           >
             <UserCog size={13} /> COMMAND CENTER
           </button>
-          {typeof onSwitchDashboard === 'function' && (
-            <button
-              type="button"
-              onClick={openLegalWorkspace}
-              disabled={isOpeningLegalWorkspace}
-              className={styles.secondaryButton}
-              title="Verify Legal commercial access and open WILSY Legal OS"
-              data-wilsy-legal-entry="commercial-context-gated"
-            >
-              <ShieldCheck size={13} /> {isOpeningLegalWorkspace ? 'VERIFYING LEGAL' : 'LEGAL OS'}
-            </button>
-          )}
           {legalEntryError && (
             <span role="alert" className={styles.sourceStatus}>
               {legalEntryError}
@@ -4165,6 +4179,24 @@ const ExecutiveDashboard = ({
 
       <section className={styles.workspaceFrame}>
         <nav className={styles.workspaceRail} aria-label="Executive operating workspaces">
+          {tenantModules.some((module) => module.moduleId === 'LEGAL_OS') && (
+            <section className={styles.productModuleNavigation} aria-label="Available WILSY OS products">
+              <span className={styles.productModuleNavigationLabel}>YOUR PRODUCTS</span>
+              <button
+                type="button"
+                className={styles.productModuleButton}
+                onClick={openLegalWorkspace}
+                disabled={isOpeningLegalWorkspace || typeof onSwitchDashboard !== 'function'}
+                data-wilsy-module-entry="LEGAL_OS"
+                aria-label={isOpeningLegalWorkspace ? 'Verifying Legal OS' : 'LEGAL OS'}
+              >
+                <ShieldCheck size={16} aria-hidden="true" />
+                <span>{isOpeningLegalWorkspace ? 'VERIFYING LEGAL' : 'LEGAL OS'}</span>
+                <small>Commercial access verified by EOS</small>
+              </button>
+              {legalEntryError && <span role="alert" className={styles.productModuleError}>{legalEntryError}</span>}
+            </section>
+          )}
           <label className={styles.workspaceSelect}>
             <span>WORKSPACE</span>
             <select value={activeWorkspace} onChange={event => setActiveWorkspace(event.target.value)}>
