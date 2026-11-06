@@ -26,9 +26,8 @@ from tools.eos.saas.billing.pos_commercial_orchestration import (
     create_tender_intent, record_cash_tender, create_return, create_refund_intent,
 )
 from tools.eos.saas.entitlement.product_catalogue import TenantProductId
-from tools.eos.saas.entitlement.tenant_product_entitlement import (
-    derive_tenant_product_entitlement_id, TenantProductEntitlementState,
-)
+from tools.eos.saas.entitlement.tenant_product_entitlement_composer import derive_tenant_product_entitlement_id
+from tools.eos.saas.domain.tenant_product_entitlement import TenantProductEntitlementState
 from tools.eos.saas.entitlement.tenant_product_entitlement_registry import (
     get_current, TenantProductEntitlementRegistryError,
     TenantProductEntitlementRegistryNotFoundError,
