@@ -15,6 +15,7 @@ from tools.eos.saas.domain.pos_commercial import (
 )
 from tools.eos.saas.domain.pos_location_assignment import POSLocationAssignmentStatus
 from tools.eos.saas.billing.pos_commercial_registry import POSSaleRegistry
+from tools.eos.saas.billing.pos_commercial_capacity_registry import POSCommercialCapacityRegistry
 from tools.eos.saas.billing.pos_commercial_evidence_registry import (
     POSCommercialEvidenceRegistry,
 )
