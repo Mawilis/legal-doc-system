@@ -16,7 +16,7 @@ import { readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { describe, expect, it } from 'vitest';
 import { resolveWilsyChromeIdentitySources } from './wilsyDashboardChromeConfig';
-import { validateWilsyModuleManifest } from './WilsyOSDashboardChrome.jsx';
+import { validateWilsyModuleManifest } from '../../utils/tenantModuleManifest.js';
 
 const chromeStyles = readFileSync(
   resolve(process.cwd(), 'src/components/os/WilsyOSDashboardChrome.module.css'),
