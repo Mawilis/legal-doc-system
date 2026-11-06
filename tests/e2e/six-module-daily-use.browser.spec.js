@@ -71,8 +71,8 @@ async function openModuleNavigation(page) {
   for (const moduleId of moduleIds) expect(actual).toContain(moduleId);
   const productNavigation = page.getByRole('navigation', { name: 'Available WILSY OS products' });
   await expect(productNavigation).toBeVisible();
-  for (const label of ['Legal OS', 'Billing', 'CRM', 'People', 'Operations', 'Intelligence', 'Point of Sale']) {
-    await expect(productNavigation.getByRole('button', { name: label, exact: true })).toBeVisible();
+  for (const moduleId of moduleIds) {
+    await expect(productNavigation.locator(`[data-wilsy-module-entry="${moduleId}"]`)).toBeVisible();
   }
   return payload.workspace.modules;
 }
