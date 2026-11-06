@@ -176,7 +176,7 @@ export default function MyWorkWorkspace() {
                     </div>
                   ) : (
                     <div className="mt-4 rounded-lg border border-white/10 bg-black/20 px-3 py-2 text-xs text-slate-400">
-                      Legal completion requires its own evidence-backed Legal workflow. Open the Legal workspace to complete this item.
+                      Legal completion must be recorded in the owning Legal workflow with its required evidence. This queue does not manufacture a completion command.
                     </div>
                   )}
                 </article>
@@ -186,7 +186,7 @@ export default function MyWorkWorkspace() {
         )}
 
         <footer className="mt-8 flex flex-wrap items-center justify-between gap-3 border-t border-white/10 pt-4 text-[11px] text-slate-500">
-          <span>Tenant {projection.tenant_id} · Principal {projection.principal_id}</span>
+          <span>Authenticated source projection · {projection.sources_included?.length || 0} sources admitted</span>
           <span>Commands remain owned by each source service.</span>
         </footer>
       </div>
