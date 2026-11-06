@@ -48,7 +48,7 @@ test('POS operator completes authenticated daily-use sale and evidence journey',
   const { context, page, actor } = await authenticatedPage(browser, 'pos_operator');
   try {
     await expect(page.getByRole('heading', { name: 'Point of Sale' })).toBeVisible();
-    await expect(page.getByRole('option', { name: 'browser-cert-store-01' })).toBeVisible();
+    await expect(page.getByLabel('Assigned location')).toHaveValue('browser-cert-store-01');
 
     const locations = await api(page, 'GET', '/api/pos/locations');
     expect(locations.status).toBe(200);
