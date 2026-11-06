@@ -67,6 +67,7 @@ const BillingHUD = React.lazy(() => import('../billing/BillingHUD'));
 const HRDashboard = React.lazy(() => import('../hr/HrDashboard'));
 const OperationsDashboard = React.lazy(() => import('../operations/OperationsDashboard'));
 const IntelligenceDashboard = React.lazy(() => import('../intelligence/IntelligenceDashboard'));
+const TenantModuleWorkspace = React.lazy(() => import('../os/TenantModuleWorkspace'));
 const ITDashboard = React.lazy(() => import('../it/ITDashboard'));
 const LegalDashboard = React.lazy(() => import('../industry/LegalDashboard'));
 const SystemServicesDashboard = React.lazy(() => import('../system-services/SystemServicesDashboard'));
@@ -985,9 +986,9 @@ const SovereignDashboardController = ({ user: propUser, onLogout }) => {
   } else if (dashboardKey === DASHBOARD_KEYS.HR) {
     dashboardShard = <HRDashboard user={user} />;
   } else if (dashboardKey === DASHBOARD_KEYS.OPERATIONS) {
-    dashboardShard = <OperationsDashboard user={user} activeTenant={activeTenant} />;
+    dashboardShard = <TenantModuleWorkspace moduleId="OPERATIONS" />;
   } else if (dashboardKey === DASHBOARD_KEYS.INTELLIGENCE) {
-    dashboardShard = <IntelligenceDashboard user={user} activeTenant={activeTenant} />;
+    dashboardShard = <TenantModuleWorkspace moduleId="INTELLIGENCE" />;
   } else if (dashboardKey === DASHBOARD_KEYS.IT) {
     dashboardShard = <ITDashboard user={user} />;
   } else if (dashboardKey === DASHBOARD_KEYS.LEGAL) {
