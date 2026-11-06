@@ -449,6 +449,8 @@ api.interceptors.request.use(
       const preservesCanonicalRequestBody = (
         /^\/legal-acceptance\/accept$/i.test(config.url)
         || /^\/system-services\/security-incident-assignments\/[^/]+\/(?:accept|decline)$/i.test(config.url)
+        || /^\/crm\/owner-workspace\/work-items(?:\/[^/]+\/complete)?$/i.test(config.url)
+        || /^\/tenant-modules\/(?:operations|intelligence)\/workspace\/work-items(?:\/[^/]+\/complete)?$/i.test(config.url)
       );
       const isMultipartBody = typeof FormData !== 'undefined'
         && config.data instanceof FormData;
