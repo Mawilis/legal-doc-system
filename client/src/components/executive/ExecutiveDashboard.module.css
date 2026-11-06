@@ -3379,3 +3379,74 @@
 .executiveShell[data-wilsy-resolved-mode="day"] .artifactCommandStack small {
   color: #53617f;
 }
+
+
+/* Server-issued tenant product navigation for the executive command workbench. */
+.productModuleNavigation {
+  display: flex;
+  flex-direction: column;
+  gap: 7px;
+  padding: 12px;
+  margin: 0 0 12px;
+  border-bottom: 1px solid var(--wilsy-border, rgba(255, 255, 255, 0.12));
+}
+
+.productModuleNavigationLabel {
+  color: var(--wilsy-muted, #a7a7a7);
+  font-size: 0.64rem;
+  font-weight: 800;
+  letter-spacing: 0.14em;
+}
+
+.productModuleButton {
+  display: grid;
+  grid-template-columns: 18px minmax(0, 1fr);
+  align-items: center;
+  gap: 4px 10px;
+  width: 100%;
+  min-height: 48px;
+  padding: 9px 11px;
+  border: 1px solid var(--wilsy-border-authority, rgba(212, 175, 55, 0.28));
+  border-radius: 8px;
+  background: rgba(212, 175, 55, 0.07);
+  color: var(--wilsy-text, #fffaf0);
+  text-align: left;
+  cursor: pointer;
+}
+
+.productModuleButton svg {
+  grid-row: span 2;
+  color: var(--wilsy-authority, #d4af37);
+}
+
+.productModuleButton span {
+  font-size: 0.78rem;
+  font-weight: 800;
+  letter-spacing: 0.06em;
+}
+
+.productModuleButton small {
+  color: var(--wilsy-muted, #a7a7a7);
+  font-size: 0.65rem;
+}
+
+.productModuleButton:hover:not(:disabled) {
+  background: rgba(212, 175, 55, 0.13);
+  border-color: var(--wilsy-authority, #d4af37);
+}
+
+.productModuleButton:focus-visible {
+  outline: 2px solid var(--wilsy-authority, #d4af37);
+  outline-offset: 2px;
+}
+
+.productModuleButton:disabled {
+  opacity: 0.62;
+  cursor: wait;
+}
+
+.productModuleError {
+  color: var(--wilsy-risk, #ff8a8a);
+  font-size: 0.7rem;
+  line-height: 1.4;
+}
