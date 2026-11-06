@@ -140,7 +140,8 @@ class POSWorkspaceService:
         intent = create_tender_intent(sale, tender_type, amount_minor, idempotency_key)
         return POSCommercialEvidenceRegistry.record_evidence(
             sale=sale, evidence=intent, evidence_id=evidence_id,
-            idempotency_key=idempotency_key, collection=self._evidence, session=session,
+            idempotency_key=idempotency_key, recorded_by_principal_id=principal_id,
+            collection=self._evidence, session=session,
         )
 
     def record_cash(self, *, tenant_id: str, principal_id: str, location_id: str,
@@ -153,7 +154,8 @@ class POSWorkspaceService:
         )
         return POSCommercialEvidenceRegistry.record_evidence(
             sale=sale, evidence=cash, evidence_id=evidence_id,
-            idempotency_key=idempotency_key, collection=self._evidence, session=session,
+            idempotency_key=idempotency_key, recorded_by_principal_id=principal_id,
+            collection=self._evidence, session=session,
         )
 
     def create_return(self, *, tenant_id: str, principal_id: str, location_id: str,
@@ -171,7 +173,8 @@ class POSWorkspaceService:
         intent = create_return(sale, sku, quantity, reason, return_id, idempotency_key, prior_returns)
         return POSCommercialEvidenceRegistry.record_evidence(
             sale=sale, evidence=intent, evidence_id=return_id,
-            idempotency_key=idempotency_key, collection=self._evidence, session=session,
+            idempotency_key=idempotency_key, recorded_by_principal_id=principal_id,
+            collection=self._evidence, session=session,
         )
 
     def create_refund(self, *, tenant_id: str, principal_id: str, location_id: str,
@@ -181,7 +184,8 @@ class POSWorkspaceService:
         intent = create_refund_intent(sale, amount_minor, basis, refund_intent_id, idempotency_key)
         return POSCommercialEvidenceRegistry.record_evidence(
             sale=sale, evidence=intent, evidence_id=refund_intent_id,
-            idempotency_key=idempotency_key, collection=self._evidence, session=session,
+            idempotency_key=idempotency_key, recorded_by_principal_id=principal_id,
+            collection=self._evidence, session=session,
         )
 
 

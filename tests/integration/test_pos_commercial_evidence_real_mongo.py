@@ -84,6 +84,8 @@ def test_real_replica_set_persists_all_four_commercial_evidence_types(mongo_cont
         "TENDER_INTENT", "CASH_TENDER", "RETURN_INTENT", "REFUND_INTENT",
     }
     assert all(row["sale_fingerprint"] == sale.fingerprint for row in stored)
+    assert all(row["recorded_by_principal_id"] == "operator-a" for row in stored)
+    assert all(row["recorded_at"] for row in stored)
     assert collection.count_documents({"tenant_id": sale.tenant_id, "location_id": sale.location_id, "sale_id": sale.sale_id}) == 4
 
     with client.start_session() as session:

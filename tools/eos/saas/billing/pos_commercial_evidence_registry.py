@@ -6,6 +6,7 @@ uses a caller-owned active transaction and binds tenant, location and sale.
 """
 from __future__ import annotations
 
+from datetime import datetime, timezone
 from hashlib import sha3_512
 import json
 from typing import Any, Final
@@ -68,7 +69,7 @@ def ensure_indexes(collection: Any) -> None:
 
 
 def record_evidence(*, sale: POSSale, evidence: Any, evidence_id: str, idempotency_key: str,
-                    collection: Any, session: Any) -> dict:
+                    recorded_by_principal_id: str, collection: Any, session: Any) -> dict:
     tx = _tx(session)
     if type(sale) is not POSSale or type(evidence) not in EVIDENCE_TYPES:
         raise POSCommercialEvidenceRegistryError("POS_EVIDENCE_CANONICAL_INPUT_REQUIRED")
@@ -76,6 +77,8 @@ def record_evidence(*, sale: POSSale, evidence: Any, evidence_id: str, idempoten
         raise POSCommercialEvidenceRegistryError("POS_EVIDENCE_ID_INVALID")
     if not isinstance(idempotency_key, str) or not idempotency_key or idempotency_key != idempotency_key.strip():
         raise POSCommercialEvidenceRegistryError("POS_EVIDENCE_IDEMPOTENCY_KEY_INVALID")
+    if not isinstance(recorded_by_principal_id, str) or not recorded_by_principal_id or recorded_by_principal_id != recorded_by_principal_id.strip():
+        raise POSCommercialEvidenceRegistryError("POS_EVIDENCE_ACTOR_INVALID")
     evidence_sale_id = getattr(evidence, "sale_id", getattr(evidence, "original_sale_id", None))
     if (
         evidence.tenant_id != sale.tenant_id
@@ -87,8 +90,8 @@ def record_evidence(*, sale: POSSale, evidence: Any, evidence_id: str, idempoten
         raise POSCommercialEvidenceRegistryError("POS_EVIDENCE_CURRENCY_MISMATCH")
     payload = evidence.to_dict()
     evidence_type = EVIDENCE_TYPES[type(evidence)]
-    occurred_at = getattr(evidence, "recorded_at", None)
-    record = {
+    occurred_at = getattr(evidence, "recorded_at", None) or datetime.now(timezone.utc).isoformat()
+    base_record = {
         "schema": "WILSY-POS-COMMERCIAL-EVIDENCE/V1",
         "version": "v1.0.0-POS-COMMERCIAL-EVIDENCE",
         "tenant_id": sale.tenant_id,
@@ -98,10 +101,10 @@ def record_evidence(*, sale: POSSale, evidence: Any, evidence_id: str, idempoten
         "evidence_type": evidence_type,
         "evidence_id": evidence_id,
         "idempotency_key": idempotency_key,
-        "occurred_at": occurred_at or "UNSPECIFIED_DOMAIN_TIME",
+        "recorded_by_principal_id": recorded_by_principal_id,
+        "occurred_at": occurred_at,
         "evidence": payload,
     }
-    record["fingerprint"] = _canonical_digest(record)
     identity = {
         "tenant_id": sale.tenant_id, "location_id": sale.location_id,
         "evidence_type": evidence_type, "evidence_id": evidence_id,
@@ -110,9 +113,14 @@ def record_evidence(*, sale: POSSale, evidence: Any, evidence_id: str, idempoten
         existing = collection.find_one(identity, session=tx)
         if existing is not None:
             existing.pop("_id", None)
-            if existing == record:
-                return existing
-            raise POSCommercialEvidenceConflict("POS_EVIDENCE_DIVERGENT_REPLAY")
+            fingerprint = existing.pop("fingerprint", None)
+            recorded_at = existing.pop("recorded_at", None)
+            expected = {**base_record, "recorded_at": recorded_at}
+            if existing != base_record or fingerprint != _canonical_digest(expected):
+                raise POSCommercialEvidenceConflict("POS_EVIDENCE_DIVERGENT_REPLAY")
+            return {**expected, "fingerprint": fingerprint}
+        record = {**base_record, "recorded_at": datetime.now(timezone.utc).isoformat()}
+        record["fingerprint"] = _canonical_digest(record)
         collection.insert_one(record, session=tx)
     except DuplicateKeyError as error:
         raise POSCommercialEvidenceConflict("POS_EVIDENCE_REPLAY_RACE_RETRY_TRANSACTION") from error
