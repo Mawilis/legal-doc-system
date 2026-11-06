@@ -88,4 +88,6 @@ jobs:
       - name: Run canonical Legal evidence-completion HTTP certificate
         env:
           TEST_VENDOR_MONGO_URI: mongodb://127.0.0.1:27017/?replicaSet=rs0
+          TEST_LEGAL_OPERATIONS_COMMAND_ROUTER_MONGO_URI: mongodb://127.0.0.1:27017/?replicaSet=rs0
+          TEST_LEGAL_OPERATIONS_COMMAND_ROUTER_REPLICA_SET: rs0
         run: python -m pytest -q tests/integration/test_legal_work_completion_http_real_mongo.py
