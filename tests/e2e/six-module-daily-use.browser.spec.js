@@ -57,12 +57,12 @@ async function openAuthenticated(browser, actorKey, viewport = { width: 1440, he
 async function openModuleNavigation(page) {
   // Executive exposes a single Legal entry. The shared product navigation
   // becomes available after the Legal workspace mounts its authenticated chrome.
-  await expect(page.locator('[data-wilsy-module-entry="LEGAL_OS"]')).toBeVisible();
+  await expect(page.locator('[data-wilsy-module-entry="LEGAL_OS"]').first()).toBeVisible();
   const manifestPromise = page.waitForResponse(response => (
     new URL(response.url()).pathname === '/api/auth/module-manifest'
     && response.request().method() === 'GET'
   ));
-  await page.locator('[data-wilsy-module-entry="LEGAL_OS"]').click();
+  await page.locator('[data-wilsy-module-entry="LEGAL_OS"]').first().click();
   const response = await manifestPromise;
   expect(response.status()).toBe(200);
   const payload = await response.json();
