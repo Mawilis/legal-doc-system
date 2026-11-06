@@ -167,7 +167,7 @@ def _collection(database: Any, name: str):
     )
 
 
-def _prepare(database: Any) -> dict[str, Any]:
+def _prepare(database: Any, *, provision_indexes: bool = False) -> dict[str, Any]:
     sales = _collection(database, "pos_sales")
     evidence = _collection(database, "pos_commercial_evidence")
     capacity = _collection(database, CAPACITY_COLLECTION)
@@ -175,19 +175,20 @@ def _prepare(database: Any) -> dict[str, Any]:
     movement_truths = _collection(database, "financial_movement_execution_truths")
     location_history = _collection(database, LOCATION_HISTORY)
     location_current = _collection(database, LOCATION_CURRENT)
-    POSSaleRegistry.ensure_indexes(sales)
-    POSCommercialEvidenceRegistry.ensure_indexes(evidence)
-    POSCommercialCapacityRegistry.ensure_indexes(capacity)
-    POSFinancialExecutionAuthorizationRegistry.ensure_indexes(execution_authorizations)
-    FinancialMovementExecutionRegistry.ensure_indexes(movement_truths)
-    POSLocationAssignmentRegistry.ensure_indexes(location_history, location_current)
-    TenantAuthorizationDecisionEvidenceRegistry(
-        _collection(database, AUTHORIZATION_EVIDENCE_COLLECTION),
-        principal_repository=get_principal_authority_repository(),
-        membership_repository=get_tenant_membership_repository(),
-        role_assignment_repository=get_role_assignment_repository(),
-        business_role_repository=TenantBusinessRoleRepository(),
-    ).ensure_indexes()
+    if provision_indexes:
+        POSSaleRegistry.ensure_indexes(sales)
+        POSCommercialEvidenceRegistry.ensure_indexes(evidence)
+        POSCommercialCapacityRegistry.ensure_indexes(capacity)
+        POSFinancialExecutionAuthorizationRegistry.ensure_indexes(execution_authorizations)
+        FinancialMovementExecutionRegistry.ensure_indexes(movement_truths)
+        POSLocationAssignmentRegistry.ensure_indexes(location_history, location_current)
+        TenantAuthorizationDecisionEvidenceRegistry(
+            _collection(database, AUTHORIZATION_EVIDENCE_COLLECTION),
+            principal_repository=get_principal_authority_repository(),
+            membership_repository=get_tenant_membership_repository(),
+            role_assignment_repository=get_role_assignment_repository(),
+            business_role_repository=TenantBusinessRoleRepository(),
+        ).ensure_indexes()
     return {
         "sales": sales, "evidence": evidence, "capacity": capacity,
         "location_history": location_history, "location_current": location_current,
@@ -585,7 +586,7 @@ async def execute_refund_intent(
 
 def ensure_pos_workspace_indexes(database: Any) -> None:
     """Provision POS registries and unique indexes during API startup."""
-    _prepare(database)
+    _prepare(database, provision_indexes=True)
 
 
 __all__ = ["router", "require_pos_workspace_indexes_ready", "ensure_pos_workspace_indexes"]
