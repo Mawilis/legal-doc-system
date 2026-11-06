@@ -3772,7 +3772,7 @@ function LegalPracticeWorkspace({
   const hasOperationalActivity = coreSignals.some((signal) => Number(signal.value) > 0);
 
   const navItems = LEGAL_PRACTICE_MODULE_REGISTRY.filter((module) => {
-    if (module.requiresWorkspace) return !error;
+    if (module.requiresWorkspace && error) return false;
     if (module.permission) {
       return presentationAllowsPermission({
         roleToken,
@@ -3780,11 +3780,14 @@ function LegalPracticeWorkspace({
         permission: module.permission,
       });
     }
-    return (module.anyPermissions || []).some((permission) => presentationAllowsPermission({
-      roleToken,
-      user,
-      permission,
-    }));
+    if (module.anyPermissions) {
+      return module.anyPermissions.some((permission) => presentationAllowsPermission({
+        roleToken,
+        user,
+        permission,
+      }));
+    }
+    return true;
   });
 
   const openMatter = (caseMatterId) => {
