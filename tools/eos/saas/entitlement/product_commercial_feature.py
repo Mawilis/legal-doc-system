@@ -12,9 +12,9 @@ COLLABORATION / OWNERSHIP: D22A owns product identity and catalogue integrity;
                             D22B1 owns lifecycle and D22B2 owns persistence.
 CERTIFICATION / UPDATE DATE: 2026-10-09
 CHANGELOG: v1.1.0-D22B3-ALL-CATALOGUED-PRODUCT-MAPPINGS adds exact Billing
-           <-> billing.core and HR <-> hr.core mappings alongside the existing
-           Legal Operations <-> legal.core and CRM <-> crm.core mappings. All
-           four mappings remain catalogue-bound metadata only; no IAM, route,
+           <-> billing.core and HR <-> hr.core mappings alongside Operations
+           <-> operations.core and Intelligence <-> intelligence.core. All six
+           mappings remain catalogue-bound metadata only; no IAM, route,
            financial execution or workspace action authority is introduced.
            v1.0.0 established exact Legal/CRM mappings and explicit Billing/HR
            unmapped failures.
