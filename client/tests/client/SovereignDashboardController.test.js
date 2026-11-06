@@ -115,8 +115,8 @@ describe('SovereignDashboardController EOS workspace contract', () => {
       ['DASHBOARD_KEYS.FINANCE', '<BillingHUD'],
       ['DASHBOARD_KEYS.CRM', '<CRMDashboard'],
       ['DASHBOARD_KEYS.HR', '<HRDashboard'],
-      ['DASHBOARD_KEYS.OPERATIONS', '<TenantModuleWorkspace moduleId="OPERATIONS"'],
-      ['DASHBOARD_KEYS.INTELLIGENCE', '<TenantModuleWorkspace moduleId="INTELLIGENCE"'],
+      ['DASHBOARD_KEYS.OPERATIONS', '<OperationsDashboard'],
+      ['DASHBOARD_KEYS.INTELLIGENCE', '<IntelligenceDashboard'],
     ];
     for (const [key, component] of mounts) {
       expect(source).toContain(`dashboardKey === ${key}`);
