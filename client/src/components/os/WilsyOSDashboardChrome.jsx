@@ -47,6 +47,7 @@ import {
   UsersRound,
   Workflow,
   BrainCircuit,
+  ShoppingCart,
   X
 } from 'lucide-react';
 import { useAuth } from '../../contexts/authContext';
@@ -67,6 +68,7 @@ const MODULE_ICON_BY_KEY = Object.freeze({
   'users-round': UsersRound,
   workflow: Workflow,
   'brain-circuit': BrainCircuit,
+  'shopping-cart': ShoppingCart,
 });
 
 const TRUST_CENTER_STATES = Object.freeze({
@@ -509,6 +511,7 @@ const WilsyOSDashboardChrome = ({
                         || (module.moduleId === 'PEOPLE' && currentKey.includes('hr'))
                         || (module.moduleId === 'OPERATIONS' && currentKey.includes('operations'))
                         || (module.moduleId === 'INTELLIGENCE' && currentKey.includes('intelligence'))
+                        || (module.moduleId === 'POS' && (currentKey.includes('pos') || currentKey.includes('retail')))
                       );
                       return (
                         <button
