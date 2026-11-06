@@ -59,16 +59,15 @@ async function openModuleNavigation(page) {
   // becomes available after the Legal workspace mounts its authenticated chrome.
   const legalEntry = page.locator('[data-wilsy-module-entry="LEGAL_OS"]:visible').first();
   await expect(legalEntry).toBeVisible();
-  const manifestPromise = page.waitForResponse(response => (
-    new URL(response.url()).pathname === '/api/auth/module-manifest'
-    && response.request().method() === 'GET'
-  ));
-  await legalEntry.click();
-  const response = await manifestPromise;
-  expect(response.status()).toBe(200);
-  const payload = await response.json();
+  // A full reload may complete the shell's manifest request before this
+  // helper is called. Read current server authority directly instead of
+  // waiting for an already-completed browser response event.
+  const manifest = await authenticatedApi(page, '/api/auth/module-manifest');
+  expect(manifest.status).toBe(200);
+  const payload = manifest.payload;
   expect(payload.workspace?.tenantId).toBe(state.tenant_id);
   const actual = payload.workspace?.modules?.map(module => module.moduleId) || [];
+  await legalEntry.click();
   for (const moduleId of moduleIds) expect(actual).toContain(moduleId);
   for (const moduleId of moduleIds) {
     await expect(page.locator(`[data-wilsy-module-entry="${moduleId}"]:visible`).first()).toBeVisible();
