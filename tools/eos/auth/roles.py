@@ -604,3 +604,16 @@ ROLE_PERMISSIONS_MAP["ENTERPRISE_ADMIN"].extend([
     "crm:work_item:complete",
 ])
 ROLE_PERMISSIONS_MAP["AUDITOR"].append("crm:work_item:read")
+
+
+# Commercial agreement draft/read permissions are owner-commercial only.
+# Contract execution and product activation are not granted by these permissions.
+ROLE_PERMISSIONS_MAP["TENANT_OWNER"].extend([
+    "tenant:commercial_agreement:read",
+    "tenant:commercial_agreement:draft:create",
+])
+ROLE_PERMISSIONS_MAP["ENTERPRISE_ADMIN"].extend([
+    "tenant:commercial_agreement:read",
+    "tenant:commercial_agreement:draft:create",
+])
+ROLE_PERMISSIONS_MAP["AUDITOR"].append("tenant:commercial_agreement:read")
