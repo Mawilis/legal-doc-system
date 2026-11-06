@@ -16,7 +16,9 @@ COLLABORATION / OWNERSHIP: Python EOS owns product identity/catalogue truth.
 CERTIFICATION / UPDATE DATE: 2026-09-24
 CHANGELOG: v1.0.0-D22A-TENANT-PRODUCT-CATALOGUE establishes the first closed
            tenant-selectable product catalogue for Legal Operations, Billing,
-           CRM and HR. It intentionally excludes WILSY AI and Tenant Branding
+           CRM, HR, Operations and Intelligence. The original four product
+           descriptors retain their exact identity, workspace keys and
+           fingerprints. It intentionally excludes WILSY AI and Tenant Branding
            because those are value-added-service authorities with independent
            commercial/entitlement lifecycles. "Full Enterprise" is not a
            product and no wildcard product exists.
