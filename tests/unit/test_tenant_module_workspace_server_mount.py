@@ -1,8 +1,11 @@
 import inspect
 from pathlib import Path
 
+import pytest
+from pydantic import ValidationError
+
 from tools.eos.api import server
-from tools.eos.api.tenant_module_workspace_router import router
+from tools.eos.api.tenant_module_workspace_router import ModuleWorkCompleteRequest, ModuleWorkCreateRequest, router
 from tools.eos.api.tenant_authorization_http import RequireTenantAuthorization
 
 
@@ -24,6 +27,30 @@ def test_operations_and_intelligence_workspace_routes_are_distinct_and_mounted_o
     source = inspect.getsource(server)
     assert source.count("app.include_router(tenant_module_workspace_router, prefix=\"/api\")") == 1
     assert "from .tenant_module_workspace_router import router as tenant_module_workspace_router" in source
+
+
+def test_browser_commands_cannot_author_tenant_product_principal_or_source_authority():
+    with pytest.raises(ValidationError):
+        ModuleWorkCreateRequest.model_validate({
+            "title": "Prepare operations plan",
+            "tenant_id": "FORGED-TENANT",
+        })
+    with pytest.raises(ValidationError):
+        ModuleWorkCreateRequest.model_validate({
+            "title": "Prepare operations plan",
+            "product_id": "INTELLIGENCE",
+        })
+    with pytest.raises(ValidationError):
+        ModuleWorkCreateRequest.model_validate({
+            "title": "Prepare operations plan",
+            "created_by_principal_id": "FORGED-PRINCIPAL",
+        })
+    with pytest.raises(ValidationError):
+        ModuleWorkCompleteRequest.model_validate({
+            "completion_note": "Done",
+            "tenant_id": "FORGED-TENANT",
+            "product_id": "OPERATIONS",
+        })
 
 
 def test_module_workspace_transport_is_bounded_through_bff_and_dev_proxy():
