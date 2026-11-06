@@ -1,7 +1,13 @@
 import inspect
 
+import pytest
+from pydantic import ValidationError
+
 from tools.eos.api import server
-from tools.eos.api.commercial_agreement_router import _DRAFT_CREATE, _READ, router
+from tools.eos.api.commercial_agreement_router import (
+    _ACTIVATE, _DRAFT_CREATE, _EXECUTE, _READ,
+    CommercialAgreementExecutionRequest, router,
+)
 from tools.eos.auth.permission_namespace import permission_metadata
 from tools.eos.auth.roles import ROLE_PERMISSIONS_MAP
 from tools.eos.auth.tenant_authority_policy import (
@@ -12,7 +18,7 @@ from tools.eos.auth.tenant_authority_policy import (
 )
 
 
-def test_commercial_agreement_routes_are_mounted_once_and_are_not_activation_routes():
+def test_commercial_agreement_routes_are_mounted_once_with_separate_authority_gates():
     routes = {
         (route.path, tuple(sorted(route.methods or ())))
         for route in router.routes
@@ -20,7 +26,9 @@ def test_commercial_agreement_routes_are_mounted_once_and_are_not_activation_rou
     assert ("/commercial/agreements", ("POST",)) in routes
     assert ("/commercial/agreements/{agreement_id}", ("GET",)) in routes
     assert ("/commercial/agreements/{agreement_id}/history", ("GET",)) in routes
-    assert not any("activate" in path or "execute" in path for path, _ in routes)
+    assert ("/commercial/agreements/{agreement_id}/execute", ("POST",)) in routes
+    assert ("/commercial/agreements/{agreement_id}/activate", ("POST",)) in routes
+    assert ("/commercial/agreements/{agreement_id}/entitlements", ("GET",)) in routes
     source = inspect.getsource(server)
     assert source.count('app.include_router(commercial_agreement_router, prefix="/api")') == 1
     assert "from .commercial_agreement_router import router as commercial_agreement_router" in source
@@ -35,12 +43,20 @@ def test_route_dependencies_use_distinct_exact_permission_operation_pairs():
         "tenant:commercial_agreement:draft:create",
         "commercial_agreement_draft_create",
     )
+    assert (_EXECUTE.permission_id, _EXECUTE.operation) == (
+        "tenant:commercial_agreement:execute", "commercial_agreement_execute"
+    )
+    assert (_ACTIVATE.permission_id, _ACTIVATE.operation) == (
+        "tenant:commercial_agreement:activate", "commercial_agreement_activate"
+    )
 
 
 def test_permission_metadata_is_tenant_scoped_and_never_financial():
     read = permission_metadata("tenant:commercial_agreement:read")
     create = permission_metadata("tenant:commercial_agreement:draft:create")
-    for item in (read, create):
+    execute = permission_metadata("tenant:commercial_agreement:execute")
+    activate = permission_metadata("tenant:commercial_agreement:activate")
+    for item in (read, create, execute, activate):
         assert item.namespace == "TENANT"
         assert item.tenant_membership_required is True
         assert item.cross_tenant_capable is False
@@ -58,6 +74,10 @@ def test_owner_admin_auditor_and_specialist_business_role_boundaries():
     assert tenant_role_operation_eligibility("tenant_owner", "commercial_agreement_read") == ELIGIBLE
     assert tenant_role_operation_eligibility("tenant_owner", "commercial_agreement_draft_create") == ELIGIBLE
     assert tenant_role_operation_eligibility("tenant_admin", "commercial_agreement_draft_create") == ELIGIBLE
+    assert tenant_role_operation_eligibility("tenant_owner", "commercial_agreement_execute") == ELIGIBLE
+    assert tenant_role_operation_eligibility("tenant_owner", "commercial_agreement_activate") == ELIGIBLE
+    assert tenant_role_operation_eligibility("tenant_admin", "commercial_agreement_execute") == ELIGIBLE
+    assert tenant_role_operation_eligibility("tenant_admin", "commercial_agreement_activate") == ELIGIBLE
     assert tenant_role_operation_eligibility("tenant_auditor", "commercial_agreement_read") == ELIGIBLE
     assert tenant_role_operation_eligibility("tenant_auditor", "commercial_agreement_draft_create") == DENY
     assert tenant_role_operation_eligibility("tenant_legal_partner", "commercial_agreement_read") == DENY
@@ -65,3 +85,18 @@ def test_owner_admin_auditor_and_specialist_business_role_boundaries():
     assert "tenant:commercial_agreement:draft:create" in ROLE_PERMISSIONS_MAP["TENANT_OWNER"]
     assert "tenant:commercial_agreement:read" in ROLE_PERMISSIONS_MAP["AUDITOR"]
     assert "tenant:commercial_agreement:draft:create" not in ROLE_PERMISSIONS_MAP["AUDITOR"]
+
+
+
+def test_execution_request_accepts_only_server_evidence_reference():
+    request = CommercialAgreementExecutionRequest(
+        execution_evidence_reference="evidence:trusted-provider:123"
+    )
+    assert request.execution_evidence_reference == "evidence:trusted-provider:123"
+    with pytest.raises(ValidationError):
+        CommercialAgreementExecutionRequest.model_validate({
+            "execution_evidence_reference": "evidence:trusted-provider:123",
+            "signature": "browser-supplied-signature",
+            "certificate_pem": "browser-supplied-certificate",
+            "signatory_principal_id": "browser-supplied-principal",
+        })
