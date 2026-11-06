@@ -1,7 +1,7 @@
 """Fail-closed readiness projection for explicit commercial product bundles.
 
 This is a read-only gate. It never issues entitlements or activates an offer.
-A bundle is eligible for the atomic activation service only when every product
+A bundle is eligible for bundle activation planning only when every product
 has an exact canonical commercial-feature mapping. Missing product authority is
 reported explicitly; no feature identifier is inferred from a product label.
 """
@@ -31,8 +31,8 @@ class CommercialBundleReadinessError(RuntimeError):
 
 
 class CommercialBundleReadinessState(StrEnum):
-    READY_FOR_ATOMIC_ACTIVATION = "READY_FOR_ATOMIC_ACTIVATION"
-    BLOCKED_MISSING_PRODUCT_AUTHORITY = "BLOCKED_MISSING_PRODUCT_AUTHORITY"
+    PRODUCT_MAPPING_COMPLETE = "READY_FOR_ATOMIC_ACTIVATION"
+    BLOCKED_MISSING_PRODUCT_MAPPING = "BLOCKED_MISSING_PRODUCT_AUTHORITY"
 
 
 @dataclass(frozen=True, slots=True)
@@ -67,7 +67,7 @@ def assess_commercial_bundle_readiness(
 ) -> CommercialBundleReadiness:
     """Resolve every exact offer product; never infer or partially authorize.
 
-    The returned READY state means only that mapping metadata exists for every
+    The returned PRODUCT_MAPPING_COMPLETE means only that mapping metadata exists for every
     offer product. It does not prove purchase, execution, subscription
     eligibility, entitlement currentness, IAM permission or workspace access.
     """
