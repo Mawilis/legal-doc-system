@@ -265,9 +265,9 @@ const SovereignRouter = () => {
       } />
       <Route path="/covenant" element={<LegalAcceptanceGate onComplete={() => navigate('/', { replace: true })} />} />
       <Route path="/my-work" element={
-        isAuthenticated && user
+        isAuthenticated && user && !systemServicesSession
           ? <ErrorBoundary><MyWorkWorkspace /></ErrorBoundary>
-          : <Navigate to={unauthenticatedEntryPath} replace />
+          : <Navigate to="/" replace />
       } />
       <Route path="/signature" element={<Navigate to="/covenant" replace />} />
       <Route path="/" element={isAuthenticated && user ? <ErrorBoundary><SovereignDashboardController user={user} onLogout={logout} /></ErrorBoundary> : <Navigate to={unauthenticatedEntryPath} replace />} />
