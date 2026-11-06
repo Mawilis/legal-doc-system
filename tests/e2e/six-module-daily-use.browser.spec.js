@@ -302,9 +302,36 @@ test('Tenant Owner My Work aggregates only owner-authorized sources and complete
     }, { tenantId: state.tenant_id, title });
     expect(created.status).toBe(201);
 
+    const [crmCreated, intelligenceCreated] = await page.evaluate(async ({ tenantId, databaseName }) => {
+      const token = localStorage.getItem('wilsy_auth_token') || localStorage.getItem('token') || '';
+      const send = async (path, title, key) => {
+        const response = await fetch(path, {
+          method: 'POST',
+          credentials: 'include',
+          headers: {
+            Authorization: `Bearer ${token}`,
+            'X-Tenant-ID': tenantId,
+            'Idempotency-Key': key,
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({ title, description: 'Created for the authenticated My Work source aggregation certificate.', kind: 'TASK', priority: 'NORMAL' }),
+        });
+        return { status: response.status, payload: await response.json().catch(() => ({})) };
+      };
+      const crm = await send('/api/crm/owner-workspace/work-items', `Browser My Work CRM task ${databaseName}`, `my-work-crm-${databaseName}`);
+      const intelligence = await send('/api/tenant-modules/intelligence/workspace/work-items', `Browser My Work Intelligence task ${databaseName}`, `my-work-intelligence-${databaseName}`);
+      return { crm, intelligence };
+    }, { tenantId: state.tenant_id, databaseName: state.database_name });
+    expect(crmCreated.status).toBe(201);
+    expect(intelligenceCreated.status).toBe(201);
+    const crmTitle = `Browser My Work CRM task ${state.database_name}`;
+    const intelligenceTitle = `Browser My Work Intelligence task ${state.database_name}`;
+
     await page.reload();
     await expect(page.getByRole('heading', { name: 'My Work' })).toBeVisible();
     await expect(page.getByText(title, { exact: true })).toBeVisible();
+    await expect(page.getByText(crmTitle, { exact: true })).toBeVisible();
+    await expect(page.getByText(intelligenceTitle, { exact: true })).toBeVisible();
 
     const completionPath = `/api/tenant-modules/operations/workspace/work-items/${encodeURIComponent(created.payload.work_item_id)}/complete`;
     const completion = page.waitForResponse(response => (
