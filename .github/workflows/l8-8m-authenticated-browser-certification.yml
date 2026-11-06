@@ -38,6 +38,7 @@ on:
       - "tests/e2e/system-services-incident.browser.spec.js"
       - "client/src/components/os/WilsyOSDashboardChrome.jsx"
       - "client/src/components/executive/ExecutiveDashboard.jsx"
+      - "client/src/__tests__/components/legalDashboardBrandingPresentation.test.jsx"
       - "client/src/components/os/wilsyDashboardChromeConfig.js"
       - "client/src/hooks/useAuthenticatedTenantBrandingAsset.js"
       - "client/src/services/tenantBrandingAssetClient.js"
