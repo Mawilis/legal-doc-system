@@ -8,11 +8,14 @@ trust providers fail closed with 503 and never accept browser-authored proofs.
 from __future__ import annotations
 
 from datetime import datetime, timezone
+import hashlib
 import hmac
+import json
 from typing import Any, Callable
 
 from fastapi import APIRouter, Depends, HTTPException, Request
 from pydantic import BaseModel, ConfigDict, Field
+from pymongo.errors import DuplicateKeyError, PyMongoError
 from pymongo.read_concern import ReadConcern
 from pymongo.read_preferences import ReadPreference
 from pymongo.write_concern import WriteConcern
@@ -163,6 +166,81 @@ def _assert_verified_agreement_binding(
         raise HTTPException(status_code=422, detail="COMMERCIAL_EXECUTION_VERIFIED_EVIDENCE_SCOPE_MISMATCH")
 
 
+_EXECUTION_VERIFICATION_COLLECTION = "commercial_agreement_execution_verification_receipts"
+_EXECUTION_VERIFICATION_SCHEMA = "WILSY-COMMERCIAL-AGREEMENT-EXECUTION-VERIFICATION/V1"
+
+
+def _sha3(payload: object) -> str:
+    return hashlib.sha3_512(
+        json.dumps(payload, sort_keys=True, ensure_ascii=False, allow_nan=False,
+                   separators=(",", ":")).encode("utf-8")
+    ).hexdigest()
+
+
+def _execution_verification_payload(
+    agreement: Any, verified: VerifiedCommercialAgreementExecutionEvidence,
+    recorded_at: datetime,
+) -> dict[str, object]:
+    return {
+        "schema": _EXECUTION_VERIFICATION_SCHEMA,
+        "tenant_id": agreement.tenant_id,
+        "agreement_id": agreement.agreement_id,
+        "contract_reference": agreement.contract_reference,
+        "contract_version": agreement.contract_version,
+        "offer_fingerprint": agreement.offer_fingerprint,
+        "execution_evidence_reference": verified.execution_evidence_reference,
+        "execution_evidence_fingerprint": verified.execution_evidence_fingerprint,
+        "signatory_principal_id": verified.signatory_principal_id,
+        "signatory_authority_reference": verified.signatory_authority_reference,
+        "signatory_authority_fingerprint": verified.signatory_authority_fingerprint,
+        "signed_at": verified.signed_at.astimezone(timezone.utc).isoformat().replace("+00:00", "Z"),
+        "verified_at": verified.verified_at.astimezone(timezone.utc).isoformat().replace("+00:00", "Z"),
+        "verifier_id": verified.verifier_id,
+        "verification_receipt_reference": verified.verification_receipt_reference,
+        "verification_receipt_fingerprint": verified.verification_receipt_fingerprint,
+        "recorded_at": recorded_at.astimezone(timezone.utc).isoformat().replace("+00:00", "Z"),
+    }
+
+
+def _ensure_execution_verification_indexes(collection: Any) -> None:
+    collection.create_index(
+        [("tenant_id", 1), ("agreement_id", 1)],
+        unique=True, name="commercial_execution_verification_tenant_agreement_unique",
+    )
+    collection.create_index(
+        [("tenant_id", 1), ("verification_receipt_reference", 1)],
+        unique=True, name="commercial_execution_verification_receipt_unique",
+    )
+
+
+def _verify_execution_verification_receipt(
+    row: Any, agreement: Any, verified: VerifiedCommercialAgreementExecutionEvidence,
+) -> None:
+    if not isinstance(row, dict):
+        raise HTTPException(status_code=503, detail="COMMERCIAL_EXECUTION_VERIFICATION_RECEIPT_INVALID")
+    raw = dict(row)
+    raw.pop("_id", None)
+    record_fingerprint = raw.pop("record_fingerprint", None)
+    if (
+        raw.get("schema") != _EXECUTION_VERIFICATION_SCHEMA
+        or record_fingerprint != _sha3(raw)
+        or raw.get("tenant_id") != agreement.tenant_id
+        or raw.get("agreement_id") != agreement.agreement_id
+        or raw.get("contract_reference") != agreement.contract_reference
+        or raw.get("contract_version") != agreement.contract_version
+        or raw.get("offer_fingerprint") != agreement.offer_fingerprint
+        or raw.get("execution_evidence_reference") != verified.execution_evidence_reference
+        or raw.get("execution_evidence_fingerprint") != verified.execution_evidence_fingerprint
+        or raw.get("signatory_principal_id") != verified.signatory_principal_id
+        or raw.get("signatory_authority_reference") != verified.signatory_authority_reference
+        or raw.get("signatory_authority_fingerprint") != verified.signatory_authority_fingerprint
+        or raw.get("verification_receipt_reference") != verified.verification_receipt_reference
+        or raw.get("verification_receipt_fingerprint") != verified.verification_receipt_fingerprint
+        or raw.get("verifier_id") != verified.verifier_id
+    ):
+        raise HTTPException(status_code=503, detail="COMMERCIAL_EXECUTION_VERIFICATION_RECEIPT_DIVERGENCE")
+
+
 def _transaction(callback: Callable[[Any, Any, Any], Any]) -> Any:
     client, database = get_client(), get_database()
     if client is None or database is None:
@@ -170,6 +248,12 @@ def _transaction(callback: Callable[[Any, Any, Any], Any]) -> Any:
     try:
         history, current = _collections(database)
         ensure_agreement_indexes(history, current)
+        execution_receipts = database.get_collection(
+            _EXECUTION_VERIFICATION_COLLECTION,
+            write_concern=WriteConcern(w="majority", j=True),
+            read_concern=ReadConcern("majority"),
+        )
+        _ensure_execution_verification_indexes(execution_receipts)
         with client.start_session() as session:
             return session.with_transaction(
                 lambda tx: callback(history, current, tx),
@@ -230,6 +314,12 @@ def _bundle_transaction(callback: Callable[..., Any]) -> Any:
         ensure_agreement_indexes(agreement_history, agreement_current)
         ensure_entitlement_indexes(entitlement_history, entitlement_current)
         ensure_bundle_activation_indexes(receipts)
+        execution_receipts = database.get_collection(
+            _EXECUTION_VERIFICATION_COLLECTION,
+            write_concern=WriteConcern(w="majority", j=True),
+            read_concern=ReadConcern("majority"),
+        )
+        _ensure_execution_verification_indexes(execution_receipts)
         issuer = TenantAuthorizationDecisionEvidenceRegistry(
             authorization,
             principal_repository=PrincipalAuthorityRepository,
@@ -357,15 +447,31 @@ async def execute_agreement(
         _assert_verified_agreement_binding(agreement, verified)
         if verified.signatory_principal_id != context.identity.identity_id:
             raise HTTPException(status_code=403, detail="COMMERCIAL_AGREEMENT_SIGNATORY_MUST_MATCH_AUTHENTICATED_PRINCIPAL")
+        database = get_database()
+        if database is None:
+            raise HTTPException(status_code=503, detail="COMMERCIAL_AGREEMENT_DATABASE_UNAVAILABLE")
+        execution_receipts = database.get_collection(
+            _EXECUTION_VERIFICATION_COLLECTION,
+            write_concern=WriteConcern(w="majority", j=True),
+            read_concern=ReadConcern("majority"),
+        )
+        existing_receipt = execution_receipts.find_one(
+            {"tenant_id": context.tenant_id, "agreement_id": agreement_id},
+            session=session,
+        )
         if agreement.lifecycle_state is CommercialAgreementState.EXECUTED:
             if (
                 agreement.execution_evidence_reference == verified.execution_evidence_reference
                 and agreement.execution_evidence_fingerprint == verified.execution_evidence_fingerprint
+                and existing_receipt is not None
             ):
+                _verify_execution_verification_receipt(existing_receipt, agreement, verified)
                 return {"outcome": "IDEMPOTENT_REPLAY", "agreement": agreement.to_dict()}
             raise HTTPException(status_code=409, detail="COMMERCIAL_AGREEMENT_EXECUTION_REPLAY_CONFLICT")
         if agreement.lifecycle_state is not CommercialAgreementState.DRAFT:
             raise HTTPException(status_code=409, detail="COMMERCIAL_AGREEMENT_NOT_EXECUTABLE")
+        if existing_receipt is not None:
+            raise HTTPException(status_code=503, detail="COMMERCIAL_EXECUTION_RECEIPT_WITHOUT_EXECUTION")
         _, persisted = transition_agreement(
             tenant_id=context.tenant_id,
             agreement_id=agreement_id,
@@ -378,6 +484,16 @@ async def execute_agreement(
             current_collection=current,
             session=session,
         )
+        payload = _execution_verification_payload(
+            agreement, verified, datetime.now(timezone.utc)
+        )
+        document = {**payload, "record_fingerprint": _sha3(payload)}
+        try:
+            execution_receipts.insert_one(document, session=session)
+        except DuplicateKeyError as error:
+            raise HTTPException(status_code=409, detail="COMMERCIAL_EXECUTION_VERIFICATION_RECEIPT_CONFLICT") from error
+        except PyMongoError as error:
+            raise HTTPException(status_code=503, detail="COMMERCIAL_EXECUTION_VERIFICATION_RECEIPT_PERSISTENCE_UNAVAILABLE") from error
         return {
             "outcome": "EXECUTED",
             "verification_receipt_reference": verified.verification_receipt_reference,
@@ -406,6 +522,21 @@ async def activate_agreement(
             evidence_reference=body.execution_evidence_reference,
         )
         _assert_verified_agreement_binding(agreement, verified)
+        database = get_database()
+        if database is None:
+            raise HTTPException(status_code=503, detail="COMMERCIAL_AGREEMENT_DATABASE_UNAVAILABLE")
+        execution_receipts = database.get_collection(
+            _EXECUTION_VERIFICATION_COLLECTION,
+            write_concern=WriteConcern(w="majority", j=True),
+            read_concern=ReadConcern("majority"),
+        )
+        verification_row = execution_receipts.find_one(
+            {"tenant_id": context.tenant_id, "agreement_id": agreement_id},
+            session=session,
+        )
+        if verification_row is None:
+            raise HTTPException(status_code=409, detail="COMMERCIAL_AGREEMENT_EXECUTION_VERIFICATION_RECEIPT_REQUIRED")
+        _verify_execution_verification_receipt(verification_row, agreement, verified)
         outcome, receipt = activate_commercial_bundle(
             identity=context.identity,
             agreement_id=agreement_id,
