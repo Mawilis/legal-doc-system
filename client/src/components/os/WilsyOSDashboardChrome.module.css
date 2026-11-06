@@ -980,3 +980,83 @@
  *   ✅ Fully responsive and accessible
  * ═══════════════════════════════════════════════════════════════════════════════
  */
+
+
+/* EOS-issued product navigation: flat, compact, and separate from permissions. */
+:global(.wilsyOsChromeProductModules) {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 8px 8px 12px;
+  margin: 0 0 8px;
+  border-bottom: 1px solid var(--wilsy-border-soft);
+}
+
+:global(.wilsyOsChromeModuleSectionLabel) {
+  display: block;
+  padding: 2px 9px 8px;
+  color: var(--wilsy-dim);
+  font-size: 0.62rem;
+  font-weight: 800;
+  letter-spacing: 0.14em;
+}
+
+:global(.wilsyOsChromeModuleButton),
+:global(.wilsyOsChromeModuleIconButton) {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  min-height: 40px;
+  padding: 0 10px;
+  border: 1px solid transparent;
+  border-radius: 8px;
+  background: transparent;
+  color: var(--wilsy-muted);
+  font: inherit;
+  font-size: 0.82rem;
+  font-weight: 600;
+  text-align: left;
+  cursor: pointer;
+  transition: background 140ms ease, color 140ms ease, border-color 140ms ease;
+}
+
+:global(.wilsyOsChromeModuleButton:hover),
+:global(.wilsyOsChromeModuleIconButton:hover) {
+  background: rgba(255, 255, 255, 0.055);
+  color: var(--wilsy-text);
+}
+
+:global(.wilsyOsChromeModuleButton[data-active="true"]) {
+  background: rgba(212, 175, 55, 0.095);
+  border-color: rgba(212, 175, 55, 0.22);
+  color: var(--wilsy-gold-hi);
+}
+
+:global(.wilsyOsChromeModuleButton:focus-visible),
+:global(.wilsyOsChromeModuleIconButton:focus-visible) {
+  outline: 2px solid var(--wilsy-gold-hi);
+  outline-offset: 2px;
+}
+
+:global(.wilsyOsChromeCollapsedModules) {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 4px;
+}
+
+:global(.wilsyOsChromeModuleIconButton) {
+  justify-content: center;
+  width: 40px;
+  min-height: 40px;
+  padding: 0;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  :global(.wilsyOsChromeModuleButton),
+  :global(.wilsyOsChromeModuleIconButton) {
+    transition: none;
+  }
+}
