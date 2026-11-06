@@ -76,6 +76,12 @@ test('POS operator completes authenticated daily-use sale and evidence journey',
     }, `tender:${saleId}`);
     expect(tender.status).toBe(201);
 
+    const insufficientCash = await api(page, 'POST', `/api/pos/locations/browser-cert-store-01/sales/${saleId}/cash-tenders`, {
+      cash_received_minor: 10000, evidence_id: `cash-insufficient-${saleId}`,
+    }, `cash-insufficient:${saleId}`);
+    expect(insufficientCash.status).toBe(422);
+    expect(insufficientCash.payload.detail).toBe('POS_CASH_TENDER_INVALID');
+
     const cash = await api(page, 'POST', `/api/pos/locations/browser-cert-store-01/sales/${saleId}/cash-tenders`, {
       cash_received_minor: 20000, evidence_id: `cash-${saleId}`,
     }, `cash:${saleId}`);
