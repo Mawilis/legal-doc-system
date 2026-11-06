@@ -52,42 +52,12 @@ import { useTenants } from '../../contexts/tenantContext';
 import { resolveWilsyChromeIdentitySources } from './wilsyDashboardChromeConfig';
 import { useAuthenticatedTenantBrandingAsset } from '../../hooks/useAuthenticatedTenantBrandingAsset.js';
 import api from '../../services/api.js';
+import { validateWilsyModuleManifest } from '../../utils/tenantModuleManifest.js';
 import './WilsyOSDashboardChrome.module.css';
 
 const WILSY_OS_DASHBOARD_CHROME_VERSION = 'V2.0.0-L10-P2C1-INTERACTIVE-COMMAND-CONTRACT';
 
 
-const MODULE_MANIFEST_VERSION = 'v1.0.0-EOS-TENANT-MODULE-MANIFEST';
-const MODULE_PRESENTATION = Object.freeze({
-  LEGAL_OS: Object.freeze({
-    productId: 'LEGAL_OPERATIONS',
-    label: 'Legal OS',
-    workspaceKey: 'LEGAL_DASHBOARD',
-    navigationGroup: 'PROFESSIONAL_SERVICES',
-    iconKey: 'scale',
-  }),
-  BILLING: Object.freeze({
-    productId: 'BILLING',
-    label: 'Billing',
-    workspaceKey: 'BILLING_HUB',
-    navigationGroup: 'BUSINESS_OPERATIONS',
-    iconKey: 'receipt',
-  }),
-  CRM: Object.freeze({
-    productId: 'CRM',
-    label: 'CRM',
-    workspaceKey: 'CRM_DASHBOARD',
-    navigationGroup: 'CUSTOMER_OPERATIONS',
-    iconKey: 'users',
-  }),
-  PEOPLE: Object.freeze({
-    productId: 'HR',
-    label: 'People',
-    workspaceKey: 'HR_DASHBOARD',
-    navigationGroup: 'PEOPLE_OPERATIONS',
-    iconKey: 'users-round',
-  }),
-});
 const MODULE_ICON_BY_KEY = Object.freeze({
   scale: Scale,
   receipt: Receipt,
