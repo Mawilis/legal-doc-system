@@ -279,6 +279,17 @@ jobs:
           BROWSER_CERT_MONGO_URI="mongodb://127.0.0.1:27017/wilsy_l8_8m_r3_broad_${browser_cert_database_suffix}?replicaSet=wilsyVendorCertRS" \
             node tests/e2e/run-browser-cert.mjs --grep-invert "certifies SYSTEM incident queue|does not expose responder inbox|certifies initial tenant-neutral SYSTEM credentials|certifies independent request, rejection, approval"
 
+      - name: Upload authenticated browser traces and diagnostics
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: l8-8m-browser-diagnostics-${{ github.run_id }}
+          path: |
+            test-results/
+            playwright-report/
+          if-no-files-found: ignore
+          retention-days: 7
+
       - name: Stop disposable Mongo replica sets
         if: always()
         run: |
