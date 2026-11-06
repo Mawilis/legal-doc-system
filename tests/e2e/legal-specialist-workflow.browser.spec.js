@@ -290,6 +290,20 @@ for (
         ),
       ).toBeVisible();
 
+      // Workflow context is intentionally a collapsed disclosure. Expand
+      // every visible row before asserting its explanatory contents.
+      const workflowContextSummaries = page.getByText(
+        'Workflow context',
+        { exact: true },
+      );
+      for (
+        let index = 0;
+        index < await workflowContextSummaries.count();
+        index += 1
+      ) {
+        await workflowContextSummaries.nth(index).click();
+      }
+
       await expect(
         page.getByText(
           `Workflow: ${blockedRow.stage_definition_id}`,
