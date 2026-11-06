@@ -27,17 +27,19 @@ export default function POSWorkspace() {
   const [sale, setSale] = useState(null);
   const [tenderType, setTenderType] = useState('CARD');
   const [tenderAmount, setTenderAmount] = useState('');
+  const [tenderEvidenceId, setTenderEvidenceId] = useState('');
   const [cashReceived, setCashReceived] = useState('');
   const [returnSku, setReturnSku] = useState('');
   const [returnQuantity, setReturnQuantity] = useState('1');
   const [returnReason, setReturnReason] = useState('');
   const [refundAmount, setRefundAmount] = useState('');
+  const [refundIntentId, setRefundIntentId] = useState('');
   const [refundBasis, setRefundBasis] = useState('');
   const [busy, setBusy] = useState(false);
   const [notice, setNotice] = useState({ kind: 'info', text: 'Select a location assigned to your authenticated account. The server verifies that assignment on every operation.' });
 
-  const request = useCallback(async (method, path, body) => {
-    const key = newId('poscmd');
+  const request = useCallback(async (method, path, body, commandKey) => {
+    const key = commandKey || newId('poscmd');
     const response = method === 'get'
       ? await api.get(path)
       : await api.post(path, body, { headers: { 'Idempotency-Key': key } });
@@ -54,7 +56,7 @@ export default function POSWorkspace() {
       const result = await operation();
       if (result?.sale) setSale(result);
       else if (result?.tenant_id && result?.sale_id) setSale({ sale: result, commercial_evidence: [] });
-      setNotice({ kind: 'success', text: 'Command accepted and durably recorded by EOS. Financial execution and settlement are not asserted by POS.' });
+      setNotice({ kind: 'success', text: result?.execution_truth ? 'Kennel EOS returned execution evidence. This is not settlement or paid-state confirmation.' : 'Command accepted and durably recorded by EOS. POS does not assert financial execution or settlement.' });
     } catch (error) {
       const code = error?.response?.data?.detail || error?.message || 'POS_COMMAND_UNAVAILABLE';
       setNotice({ kind: 'error', text: String(code) });
@@ -103,7 +105,7 @@ export default function POSWorkspace() {
         <button type="button" disabled={busy} style={buttonStyle} onClick={() => run(async () => {
           const id = saleId.trim() || newId('sale');
           setSaleId(id);
-          const created = await request('post', `${base}/sales`, { sale_id: id, currency, lines: [{ product_id: productId, sku, description, quantity: Number(quantity), unit_price_minor: Number(unitPrice), discount_minor: Number(discount), tax_minor: Number(tax), currency }] });
+          const created = await request('post', `${base}/sales`, { sale_id: id, currency, lines: [{ product_id: productId, sku, description, quantity: Number(quantity), unit_price_minor: Number(unitPrice), discount_minor: Number(discount), tax_minor: Number(tax), currency }] }, `sale:${id}`);
           return { sale: created, commercial_evidence: [] };
         })}>Create and record sale</button>
       </section>
@@ -126,7 +128,8 @@ export default function POSWorkspace() {
         <Field label="Sale reference" value={saleId} onChange={setSaleId} />
         <label style={{ display: 'grid', gap: 6, fontSize: 13, fontWeight: 600 }}>Tender type<select value={tenderType} onChange={(e) => setTenderType(e.target.value)} style={fieldStyle}>{['CARD', 'BANK', 'WALLET', 'VOUCHER', 'STORE_CREDIT', 'CASH'].map((item) => <option key={item}>{item}</option>)}</select></label>
         <Field label="Amount (minor units)" type="number" min="1" value={tenderAmount} onChange={setTenderAmount} />
-        <button type="button" disabled={busy || !saleId.trim() || Number(tenderAmount) <= 0} style={{ ...buttonStyle, marginTop: 12 }} onClick={() => run(() => request('post', `${base}/sales/${encodeURIComponent(saleId.trim())}/tenders`, { tender_type: tenderType, amount_minor: Number(tenderAmount), evidence_id: newId('tender') }))}>Record tender intent</button>
+        <button type="button" disabled={busy || !saleId.trim() || Number(tenderAmount) <= 0} style={{ ...buttonStyle, marginTop: 12 }} onClick={() => run(() => { const id = tenderEvidenceId || newId('tender'); setTenderEvidenceId(id); return request('post', `${base}/sales/${encodeURIComponent(saleId.trim())}/tenders`, { tender_type: tenderType, amount_minor: Number(tenderAmount), evidence_id: id }, `tender:${id}`); })}>Record tender intent</button>
+        {tenderEvidenceId && ['CARD', 'BANK', 'WALLET'].includes(tenderType) ? <button type="button" disabled={busy} style={{ ...buttonStyle, marginTop: 8, background: 'var(--success, #176b45)' }} onClick={() => run(() => request('post', `${base}/sales/${encodeURIComponent(saleId.trim())}/tenders/${encodeURIComponent(tenderEvidenceId)}/execute`, undefined, `execute-tender:${tenderEvidenceId}`))}>Authorize and send to Kennel EOS</button> : null}
         <p style={{ fontSize: 12, opacity: .65 }}>This records a request only. It does not mark the sale paid or settled.</p>
       </section>
 
@@ -151,7 +154,8 @@ export default function POSWorkspace() {
         <Field label="Sale reference" value={saleId} onChange={setSaleId} />
         <Field label="Amount (minor units)" type="number" min="1" value={refundAmount} onChange={setRefundAmount} />
         <Field label="Basis" value={refundBasis} onChange={setRefundBasis} />
-        <button type="button" disabled={busy || !saleId.trim() || Number(refundAmount) <= 0 || !refundBasis.trim()} style={{ ...buttonStyle, marginTop: 12 }} onClick={() => run(() => request('post', `${base}/sales/${encodeURIComponent(saleId.trim())}/refund-intents`, { amount_minor: Number(refundAmount), basis: refundBasis, refund_intent_id: newId('refund') }))}>Record refund intent</button>
+        <button type="button" disabled={busy || !saleId.trim() || Number(refundAmount) <= 0 || !refundBasis.trim()} style={{ ...buttonStyle, marginTop: 12 }} onClick={() => run(() => { const id = refundIntentId || newId('refund'); setRefundIntentId(id); return request('post', `${base}/sales/${encodeURIComponent(saleId.trim())}/refund-intents`, { amount_minor: Number(refundAmount), basis: refundBasis, refund_intent_id: id }, `refund:${id}`); })}>Record refund intent</button>
+        {refundIntentId ? <button type="button" disabled={busy} style={{ ...buttonStyle, marginTop: 8, background: 'var(--success, #176b45)' }} onClick={() => run(() => request('post', `${base}/sales/${encodeURIComponent(saleId.trim())}/refund-intents/${encodeURIComponent(refundIntentId)}/execute`, undefined, `execute-refund:${refundIntentId}`))}>Authorize and send refund to Kennel EOS</button> : null}
         <p style={{ fontSize: 12, opacity: .65 }}>Refund execution and settlement remain with Kennel EOS.</p>
       </section>
     </div>
