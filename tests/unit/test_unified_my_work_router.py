@@ -111,3 +111,64 @@ def test_route_rejects_whitespace_tenant_scope_before_source_reads():
         ))
     assert error.value.status_code == 403
     assert error.value.detail == "TENANT_SCOPE_REQUIRED"
+
+
+
+def test_http_route_omits_denied_source_and_returns_only_authorized_projection(monkeypatch):
+    from fastapi import FastAPI
+    from fastapi.testclient import TestClient
+    from tools.eos.api.errors import register_error_handlers
+
+    app = FastAPI()
+    register_error_handlers(app, debug=False)
+    app.include_router(route.router, prefix="/api")
+    app.dependency_overrides[route.get_current_identity] = _identity
+    app.dependency_overrides[route._LEGAL_READ] = lambda: None
+    app.dependency_overrides[route._OPERATIONS_READ] = _context()
+    app.dependency_overrides[route._INTELLIGENCE_READ] = lambda: None
+    app.dependency_overrides[route._CRM_READ] = lambda: None
+    monkeypatch.setattr(
+        route,
+        "_read_module",
+        lambda slug, *, tenant_id: {
+            "tenant_id": tenant_id,
+            "items": [{
+                "work_item_id": "http-ops-1",
+                "title": "HTTP operations task",
+                "status": "OPEN",
+                "priority": "NORMAL",
+            }],
+        },
+    )
+
+    with TestClient(app) as client:
+        response = client.get("/api/my-work", headers={"X-Tenant-ID": "tenant-a"})
+
+    assert response.status_code == 200
+    body = response.json()
+    assert body["sources_included"] == ["OPERATIONS"]
+    assert [item["title"] for item in body["items"]] == ["HTTP operations task"]
+
+
+def test_http_route_does_not_turn_authorized_source_outage_into_empty_success(monkeypatch):
+    from fastapi import FastAPI, HTTPException
+    from fastapi.testclient import TestClient
+    from tools.eos.api.errors import register_error_handlers
+
+    app = FastAPI()
+    register_error_handlers(app, debug=False)
+    app.include_router(route.router, prefix="/api")
+    app.dependency_overrides[route.get_current_identity] = _identity
+    app.dependency_overrides[route._LEGAL_READ] = lambda: None
+    app.dependency_overrides[route._OPERATIONS_READ] = _context()
+    app.dependency_overrides[route._INTELLIGENCE_READ] = lambda: None
+    app.dependency_overrides[route._CRM_READ] = lambda: None
+
+    def unavailable(*_args, **_kwargs):
+        raise HTTPException(status_code=503, detail="SOURCE_UNAVAILABLE")
+
+    monkeypatch.setattr(route, "_read_module", unavailable)
+    with TestClient(app) as client:
+        response = client.get("/api/my-work", headers={"X-Tenant-ID": "tenant-a"})
+
+    assert response.status_code == 503
