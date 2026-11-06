@@ -1,6 +1,6 @@
 /**
  * WILSY OS — ROLE-SCOPED LEGAL OPERATIONS COCKPIT
- * VERSION: v13.6.0-SPECIALIST-OPERATIONS-WORKBENCH
+ * VERSION: v13.7.0-G68-INDEPENDENT-PROJECTIONS
  * AUTHORITY: Presentation of authenticated Python-EOS Legal Operations truth.
  * EPITOME: One role-aware WILSY Legal OS surface for legal-practice operators,
  *          finance, sheriff, deputy and client personas. Law-firm roles receive
@@ -20,7 +20,8 @@
  *                            validation. This component owns responsive
  *                            presentation and deputy observation capture only.
  * CERTIFICATION / UPDATE DATE: 2026-10-24
- * CHANGELOG: 2026-10-30 v13.6.0-SPECIALIST-OPERATIONS-WORKBENCH removes placeholder specialist modules and presentation-only commercial/roadmap cards, gives Sheriff and Deputy only their current operational navigation, wires search across canonical queue rows, and replaces decorative metric cards with compact workload summaries. It preserves the existing tenant-queue and bound-principal data scopes and Python EOS command authority.\n *            2026-10-30 v13.2.0-AUTHORITATIVE-CAPABILITY-NAVIGATION removes role-baseline and legacy permission fallbacks and drives Legal Practice navigation from one module registry plus authoritative AuthContext permission projection.\n *            2026-10-24 v13.1.1-D21B12-SHARED-BRANDING-LIFECYCLE removes the mode-gated tenant descriptor from the LegalDashboard asset-hook call, keeping that parent hook authority-neutral while WilsyOSDashboardChrome alone consumes the authenticated descriptor and owns its validated asset lifecycle across every Legal mode. No authority or rendered behavior changes.
+ * CHANGELOG: 2026-11-06 v13.7.0-G68-INDEPENDENT-PROJECTIONS preserves separately authorized productive-work, conflict-screening/review and finance projections when the G68 practice workspace fails closed; matter-dependent navigation and primary actions remain gated. Python EOS continues to authorize every request; no authority expansion.
+ *            2026-10-30 v13.6.0-SPECIALIST-OPERATIONS-WORKBENCH removes placeholder specialist modules and presentation-only commercial/roadmap cards, gives Sheriff and Deputy only their current operational navigation, wires search across canonical queue rows, and replaces decorative metric cards with compact workload summaries. It preserves the existing tenant-queue and bound-principal data scopes and Python EOS command authority.\n *            2026-10-30 v13.2.0-AUTHORITATIVE-CAPABILITY-NAVIGATION removes role-baseline and legacy permission fallbacks and drives Legal Practice navigation from one module registry plus authoritative AuthContext permission projection.\n *            2026-10-24 v13.1.1-D21B12-SHARED-BRANDING-LIFECYCLE removes the mode-gated tenant descriptor from the LegalDashboard asset-hook call, keeping that parent hook authority-neutral while WilsyOSDashboardChrome alone consumes the authenticated descriptor and owns its validated asset lifecycle across every Legal mode. No authority or rendered behavior changes.
  *            2026-10-19 v13.1.0-P8-LEGAL-DAILY-WORKSTATION-PRESENTATION introduces a compact searchable Legal daily-work queue, server-projected workload filters, task-selected completion evidence inspector, strict browser completion command, authoritative EOS readback and persistent confirmation. Browser presentation creates no IAM, tenant, workflow-release, legal-outcome or financial authority.
  *            2026-10-16 v13.0.0-LEGAL-COMMERCIAL-CONTEXT-PRESENTATION adds one server-authorized commercial-context presentation plate. It consumes only the certified Legal commercial-context browser adapter; renders canonical plan, subscription and monthly-equivalent evidence only after HTTP authorization; renders denied commercial detail as visibly locked; preserves source failure as unavailable; performs no role/JWT/permission inference; and leaves authenticated tenant branding under the existing shared chrome.
  *            2026-10-16 v12.9.0-PRACTICE-CONFLICT-REVIEW-PRESENTATION-PARITY preserves the readable conflict-screening queue for every certified Practice persona while exposing the human review mutation only inside the canonical Partner/Attorney role envelope and allowing authoritative server permission projection to narrow it further. Python EOS remains the sole authorization authority.
@@ -175,7 +176,7 @@ import WilsyAccountCommandCenter from '../account/WilsyAccountCommandCenter.jsx'
 import { useAuth } from '../../contexts/authContext.jsx';
 import { useAuthenticatedTenantBrandingAsset } from '../../hooks/useAuthenticatedTenantBrandingAsset.js';
 
-const DASHBOARD_VERSION = 'v13.6.0-SPECIALIST-OPERATIONS-WORKBENCH';
+const DASHBOARD_VERSION = 'v13.7.0-G68-INDEPENDENT-PROJECTIONS';
 
 const EMPTY_QUEUES = Object.freeze({
   tenantId: '',
@@ -345,6 +346,7 @@ const PRACTICE_WORKSPACE_VIEWS = Object.freeze({
   DOCUMENTS: 'DOCUMENTS',
   SERVICE: 'SERVICE',
   RETURNS: 'RETURNS',
+  CONFLICT_REVIEW: 'CONFLICT_REVIEW',
   DEADLINES: 'DEADLINES',
   FINANCE: 'FINANCE',
   INTAKE: 'INTAKE',
@@ -357,10 +359,11 @@ const LEGAL_PRACTICE_MODULE_REGISTRY = Object.freeze([
   { id: PRACTICE_WORKSPACE_VIEWS.DOCUMENTS, label: 'Process Documents', icon: FileText, requiresWorkspace: true },
   { id: PRACTICE_WORKSPACE_VIEWS.SERVICE, label: 'Service Operations', icon: Clock3, requiresWorkspace: true },
   { id: PRACTICE_WORKSPACE_VIEWS.RETURNS, label: 'Returns of Service', icon: FileCheck2, requiresWorkspace: true },
+  { id: PRACTICE_WORKSPACE_VIEWS.CONFLICT_REVIEW, label: 'Conflict Reviews', icon: ShieldCheck, permission: PRESENTATION_PERMISSIONS.CONFLICT_REVIEW_WRITE },
   { id: 'PRODUCTIVE_WORK', label: 'My Work', icon: ClipboardList, permission: PRESENTATION_PERMISSIONS.PRODUCTIVE_WORK_READ },
-  { id: PRACTICE_WORKSPACE_VIEWS.DEADLINES, label: 'Deadlines', icon: Clock3, permission: PRESENTATION_PERMISSIONS.DEADLINE_READ },
+  { id: PRACTICE_WORKSPACE_VIEWS.DEADLINES, label: 'Deadlines', icon: Clock3, permission: PRESENTATION_PERMISSIONS.DEADLINE_READ, requiresWorkspace: true },
   { id: PRACTICE_WORKSPACE_VIEWS.FINANCE, label: 'Finance Evidence', icon: Landmark, anyPermissions: [PRESENTATION_PERMISSIONS.BILLING_READ, PRESENTATION_PERMISSIONS.INVOICE_READ] },
-  { id: PRACTICE_WORKSPACE_VIEWS.INTAKE, label: 'New Instruction', icon: FilePlus2, permission: PRESENTATION_PERMISSIONS.INSTRUCTION_WRITE },
+  { id: PRACTICE_WORKSPACE_VIEWS.INTAKE, label: 'New Instruction', icon: FilePlus2, permission: PRESENTATION_PERMISSIONS.INSTRUCTION_WRITE, requiresWorkspace: true },
 ]);
 
 const CLIENT_WORKSPACE_VIEWS = Object.freeze({
@@ -2656,7 +2659,7 @@ function ProductiveWorkPanel() {
   );
 }
 
-function ConflictReviewQueue({ canReview, screenings, onRefresh }) {
+function ConflictReviewQueue({ canReview, error, screenings, onRefresh }) {
   const [drafts, setDrafts] = useState({});
   const [reviewStates, setReviewStates] = useState({});
   const pendingIds = useRef(new Set());
@@ -2732,7 +2735,7 @@ function ConflictReviewQueue({ canReview, screenings, onRefresh }) {
     try {
       const result = await issueLegalConflictReview(command);
       const refreshed = await onRefresh();
-      if (!refreshed?.conflictScreenings) {
+      if (!refreshed?.conflictScreeningsAvailable) {
         throw new Error('LEGAL_OPERATIONS_CONFLICT_REVIEW_REFRESH_FAILED');
       }
       setReviewStates((current) => ({
@@ -2754,6 +2757,14 @@ function ConflictReviewQueue({ canReview, screenings, onRefresh }) {
       pendingIds.current.delete(screeningId);
     }
   }, [drafts, onRefresh]);
+
+  if (error) {
+    return (
+      <section aria-label="Conflict review queue unavailable" role="alert" className="rounded-2xl border border-red-900/40 bg-red-950/15 p-5 text-sm text-red-300">
+        {error}
+      </section>
+    );
+  }
 
   return (
     <QueuePanel
@@ -3628,6 +3639,7 @@ function LegalEvidenceUploadWorkspace({ documents, onCanonicalRefresh }) {
 
 function LegalPracticeWorkspace({
   conflictScreenings,
+  conflictScreeningError,
   error,
   lastUpdated,
   onLogout,
@@ -3761,7 +3773,7 @@ function LegalPracticeWorkspace({
   const hasOperationalActivity = coreSignals.some((signal) => Number(signal.value) > 0);
 
   const navItems = LEGAL_PRACTICE_MODULE_REGISTRY.filter((module) => {
-    if (module.requiresWorkspace) return !error;
+    if (module.requiresWorkspace && error) return false;
     if (module.permission) {
       return presentationAllowsPermission({
         roleToken,
@@ -3769,11 +3781,14 @@ function LegalPracticeWorkspace({
         permission: module.permission,
       });
     }
-    return (module.anyPermissions || []).some((permission) => presentationAllowsPermission({
-      roleToken,
-      user,
-      permission,
-    }));
+    if (module.anyPermissions) {
+      return module.anyPermissions.some((permission) => presentationAllowsPermission({
+        roleToken,
+        user,
+        permission,
+      }));
+    }
+    return true;
   });
 
   const openMatter = (caseMatterId) => {
@@ -3899,6 +3914,7 @@ function LegalPracticeWorkspace({
         )}
         <ConflictReviewQueue
           canReview={canReviewConflict}
+          error={conflictScreeningError}
           screenings={conflictScreenings}
           onRefresh={onRefresh}
         />
@@ -3912,8 +3928,17 @@ function LegalPracticeWorkspace({
         />
       </div>
     );
-  } else if (!error && activeView === 'PRODUCTIVE_WORK') {
+  } else if (activeView === 'PRODUCTIVE_WORK') {
     content = <ProductiveWorkPanel />;
+  } else if (activeView === PRACTICE_WORKSPACE_VIEWS.CONFLICT_REVIEW) {
+    content = (
+      <ConflictReviewQueue
+        canReview={canReviewConflict}
+        error={conflictScreeningError}
+        screenings={conflictScreenings}
+        onRefresh={onRefresh}
+      />
+    );
   } else if (!error && activeView === PRACTICE_WORKSPACE_VIEWS.MATTERS) {
     content = (
       <MatterOperationsPanel
@@ -3996,7 +4021,7 @@ function LegalPracticeWorkspace({
         workspace={workspace}
       />
     );
-  } else if (!error && activeView === PRACTICE_WORKSPACE_VIEWS.FINANCE) {
+  } else if (activeView === PRACTICE_WORKSPACE_VIEWS.FINANCE) {
     content = <LegalFinanceLookup roleToken={roleToken} user={user} />;
   } else if (!error && activeView === PRACTICE_WORKSPACE_VIEWS.INTAKE) {
     content = (
@@ -4081,8 +4106,10 @@ function LegalPracticeWorkspace({
         liveSyncLabel: 'Refresh truth',
         onLiveSync: onRefresh,
         isRefreshing: refreshing,
-        primaryActionLabel: canIntake ? 'New instruction' : 'Open instructions',
-        onPrimaryAction: () => setActiveView(
+        primaryActionLabel: error
+          ? undefined
+          : canIntake ? 'New instruction' : 'Open instructions',
+        onPrimaryAction: error ? undefined : () => setActiveView(
           canIntake
             ? PRACTICE_WORKSPACE_VIEWS.INTAKE
             : PRACTICE_WORKSPACE_VIEWS.INSTRUCTIONS,
@@ -4652,6 +4679,7 @@ export default function LegalDashboard({
   const [conflictScreenings, setConflictScreenings] = useState(
     EMPTY_CONFLICT_SCREENINGS,
   );
+  const [conflictScreeningError, setConflictScreeningError] = useState(null);
   const [deputyCapabilities, setDeputyCapabilities] = useState(
     EMPTY_DEPUTY_CAPABILITIES,
   );
@@ -4671,6 +4699,7 @@ export default function LegalDashboard({
     if (refresh) setRefreshing(true);
     else setLoading(true);
     setError(null);
+    setConflictScreeningError(null);
 
     if (roleMode === ROLE_MODES.TENANT_OWNER) {
       // Tenant owners receive commercial product status only. No matter,
@@ -4747,12 +4776,23 @@ export default function LegalDashboard({
       }
 
       if (roleMode === ROLE_MODES.LEGAL_PRACTICE) {
-        const [result, screeningResult] = await Promise.all([
+        // The G68 practice workspace and operation-specific projections have
+        // independent server authorization boundaries. A denied workspace
+        // must not erase separately authorized productive work or screening
+        // evidence, and a successful screening refresh must remain usable by
+        // the conflict-review command even while G68 stays deny-only.
+        const [workspaceResult, screeningResult] = await Promise.allSettled([
           getLegalPracticeWorkspace(),
           getLegalConflictScreenings(),
         ]);
-        setPracticeWorkspace(result);
-        setConflictScreenings(screeningResult);
+        const screeningAvailable = screeningResult.status === 'fulfilled';
+        const screeningPacket = screeningAvailable
+          ? screeningResult.value
+          : EMPTY_CONFLICT_SCREENINGS;
+        setConflictScreenings(screeningPacket);
+        setConflictScreeningError(screeningAvailable
+          ? null
+          : 'Conflict screening evidence is unavailable; no review queue is inferred.');
         setQueues(EMPTY_QUEUES);
         setDeputyWork(EMPTY_DEPUTY_WORK);
         setClientMatters(EMPTY_CLIENT_MATTERS);
@@ -4760,9 +4800,34 @@ export default function LegalDashboard({
         setCommandState(null);
         setObservationDrafts({});
         setLastUpdated(new Date());
+
+        if (workspaceResult.status === 'rejected') {
+          const caught = workspaceResult.reason;
+          const status = caught?.response?.status;
+          const detail = caught?.response?.data?.detail;
+          setPracticeWorkspace(EMPTY_PRACTICE_WORKSPACE);
+          setError({
+            kind: status === 503 ? 'EVIDENCE_UNAVAILABLE'
+              : status === 403 ? 'LEGAL_PRACTICE_WORKSPACE_DENIED'
+                : 'LEGAL_PRACTICE_WORKSPACE_READ_FAILED',
+            message: detail || 'The canonical Legal Practice workspace is unavailable; independently authorized Legal projections remain separately gated.',
+          });
+          return {
+            practiceWorkspace: null,
+            conflictScreenings: screeningPacket,
+            conflictScreeningsAvailable: screeningAvailable,
+            workspaceUnavailable: true,
+          };
+        }
+
+        const result = workspaceResult.value;
+        setPracticeWorkspace(result);
+        setError(null);
         return {
           practiceWorkspace: result,
-          conflictScreenings: screeningResult,
+          conflictScreenings: screeningPacket,
+          conflictScreeningsAvailable: screeningAvailable,
+          workspaceUnavailable: false,
         };
       }
 
@@ -4849,7 +4914,10 @@ export default function LegalDashboard({
       setDeputyWork(EMPTY_DEPUTY_WORK);
       setClientMatters(EMPTY_CLIENT_MATTERS);
       setPracticeWorkspace(EMPTY_PRACTICE_WORKSPACE);
-      setConflictScreenings(EMPTY_CONFLICT_SCREENINGS);
+      if (roleMode !== ROLE_MODES.LEGAL_PRACTICE) {
+        setConflictScreenings(EMPTY_CONFLICT_SCREENINGS);
+        setConflictScreeningError(null);
+      }
       setDeputyCapabilities(EMPTY_DEPUTY_CAPABILITIES);
       return null;
     } finally {
@@ -5292,6 +5360,7 @@ export default function LegalDashboard({
         user={currentUser}
         workspace={practiceWorkspace}
         conflictScreenings={conflictScreenings}
+        conflictScreeningError={conflictScreeningError}
       />
     );
   }

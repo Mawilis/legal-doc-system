@@ -45,7 +45,7 @@ import {
  * ════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════ */
 
 const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:5050';
-const DEFAULT_WILSY_LOGO = '/src/assets/logo/wilsy.jpeg';
+const DEFAULT_WILSY_LOGO = '/assets/images/superadmin/wilsy-logo.svg';
 
 // World Class Real Estate Standards (Source: JLL / CBRE 2024)
 const WORLD_CLASS_STANDARDS = {

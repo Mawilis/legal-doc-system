@@ -11,8 +11,13 @@
 name: Owner zero-rated Legal entitlement certification
 
 on:
+  push:
+    branches:
+      - eos/tenant-discovery-iam-dashboard-roadmap
   pull_request:
-    branches: [main]
+    branches:
+      - main
+      - eos/atomic-owner-genesis-integration
     paths:
       - "tools/eos/saas/entitlement/tenant_product_entitlement_composer.py"
       - "tools/eos/saas/entitlement/legal_commercial_context_projection.py"
@@ -20,6 +25,7 @@ on:
       - "tests/unit/test_legal_commercial_context_projection.py"
       - "tools/eos/saas/billing/plan_registry.py"
       - "tools/eos/saas/billing/subscription_registry.py"
+      - "tests/unit/test_billing_registries_share_eos_mongo_runtime.py"
       - "tools/eos/saas/billing/subscription_active_entitlement_composition_service.py"
       - "tools/eos/api/subscription_router.py"
       - "tests/unit/test_subscription_active_entitlement_composition_service.py"

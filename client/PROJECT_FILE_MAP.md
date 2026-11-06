@@ -498,8 +498,6 @@ Generated on: Sat Jul 25 08:22:57 UTC 2026
 │   │   │   ├── Sovereign_Forensic_Exporter.jsx
 │   │   │   ├── Sovereign_Global_Topography.jsx
 │   │   │   ├── Sovereign_Global_Topography.module.css
-│   │   │   ├── Sovereign_Identity_Auth.jsx
-│   │   │   ├── Sovereign_Identity_Auth.module.css
 │   │   │   ├── Sovereign_Identity_Hub.jsx
 │   │   │   ├── Sovereign_Identity_Hub.module.css
 │   │   │   ├── Sovereign_Legal_Analytics.jsx
@@ -974,7 +972,6 @@ Generated on: Sat Jul 25 08:22:57 UTC 2026
 | `./src/components/sovereign/Sovereign_Document_Vault.jsx` | Sovereign_Document_Vault.jsx | Production Ready |
 | `./src/components/sovereign/Sovereign_Forensic_Exporter.jsx` | Sovereign_Forensic_Exporter.jsx | Production Ready |
 | `./src/components/sovereign/Sovereign_Global_Topography.jsx` | Sovereign_Global_Topography.jsx | Production Ready |
-| `./src/components/sovereign/Sovereign_Identity_Auth.jsx` | Sovereign_Identity_Auth.jsx | Production Ready |
 | `./src/components/sovereign/Sovereign_Identity_Hub.jsx` | Sovereign_Identity_Hub.jsx | Production Ready |
 | `./src/components/sovereign/Sovereign_Legal_Analytics.jsx` | Sovereign_Legal_Analytics.jsx | Production Ready |
 | `./src/components/sovereign/Sovereign_Node_Registry.jsx` | Sovereign_Node_Registry.jsx | Production Ready |

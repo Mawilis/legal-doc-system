@@ -9,19 +9,22 @@
  * Compliance: POPIA §19 · GDPR §32 · SOC2 §CC7.2 · ISO 27001 · ECT Act §15
  */
 import sovereignClient from '../utils/sovereignClient';
+import { isCanonicalTenantTransportId } from './api';
 
 const IDEMPOTENCY_HEADER = 'X-Idempotency-Key';
 
 /**
  * Creates a unique idempotency key for a billing operation.
- * @param {string} [tenantId='GLOBAL_ROOT']
+ * @param {string} tenantId
  * @returns {string}
  */
-export function createIdempotencyKey(tenantId = 'GLOBAL_ROOT') {
+export function createIdempotencyKey(tenantId) {
+  const canonicalTenantId = String(tenantId || '').trim();
+  if (!isCanonicalTenantTransportId(canonicalTenantId)) throw new Error('TENANT_CONTEXT_REQUIRED');
   const entropy = globalThis.crypto?.randomUUID
     ? globalThis.crypto.randomUUID().slice(0, 12)
     : `${Date.now().toString(36)}${Math.random().toString(36).slice(2, 8)}`;
-  return `WILSY-BILL-${String(tenantId || 'GLOBAL_ROOT').toUpperCase()}-${entropy.toUpperCase()}`;
+  return `WILSY-BILL-${canonicalTenantId.toUpperCase()}-${entropy.toUpperCase()}`;
 }
 
 /**
@@ -83,7 +86,7 @@ export function buildKennelInvoicePayload(draft = {}, { mode = 'PLATFORM' } = {}
       proofHash: draft.proofHash,
       source: 'BILLING_HUD',
     },
-    idempotency_key: draft.idempotencyKey || createIdempotencyKey(draft.tenantId),
+    idempotency_key: draft.idempotencyKey || createIdempotencyKey(draft.tenantId || draft.tenant_id || draft.issuerTenantId || draft.issuer_tenant_id),
   };
 }
 
@@ -99,7 +102,8 @@ export async function createKennelInvoice(draft = {}, { mode = 'PLATFORM', tenan
   const isClient = String(mode).toUpperCase().includes('CLIENT');
   const path = isClient ? '/billing/client/invoices' : '/billing/platform/invoices';
   const body = buildKennelInvoicePayload(draft, { mode });
-  const tid = tenantId || body.tenant_id || 'GLOBAL_ROOT';
+  const tid = String(tenantId || body.tenant_id || '').trim();
+  if (!isCanonicalTenantTransportId(tid)) throw new Error('TENANT_CONTEXT_REQUIRED');
   const key = body.idempotency_key || createIdempotencyKey(tid);
 
   const res = await sovereignClient.post(path, body, {
@@ -115,7 +119,7 @@ export async function createKennelInvoice(draft = {}, { mode = 'PLATFORM', tenan
  * Retrieves a paginated list of invoices from Kennel.
  * @param {object} [params]
  * @param {string} [params.mode='PLATFORM']
- * @param {string} [params.tenantId='GLOBAL_ROOT']
+ * @param {string} params.tenantId
  * @param {number} [params.limit=20]
  * @param {number} [params.offset=0]
  * @param {string} [params.status]
@@ -126,7 +130,7 @@ export async function createKennelInvoice(draft = {}, { mode = 'PLATFORM', tenan
  */
 export async function listKennelInvoices({
   mode = 'PLATFORM',
-  tenantId = 'GLOBAL_ROOT',
+  tenantId,
   limit = 20,
   offset = 0,
   status,
@@ -136,8 +140,10 @@ export async function listKennelInvoices({
 } = {}) {
   const isClient = String(mode).toUpperCase().includes('CLIENT');
   const path = isClient ? '/billing/client/invoices' : '/billing/platform/invoices';
+  const canonicalTenantId = String(tenantId || '').trim();
+  if (!canonicalTenantId) throw new Error('TENANT_CONTEXT_REQUIRED');
   const params = {
-    tenantId,
+    tenantId: canonicalTenantId,
     limit,
     offset,
     status,
@@ -151,7 +157,7 @@ export async function listKennelInvoices({
 
   const res = await sovereignClient.get(path, {
     params,
-    headers: { 'X-Tenant-ID': tenantId },
+    headers: { 'X-Tenant-ID': canonicalTenantId },
   });
   const data = res?.data ?? res;
   if (Array.isArray(data)) return { items: data, total: data.length };

@@ -83,7 +83,7 @@ const SovereignHub = () => {
         <div className={styles.footerBranding}>
           <span>PQE-256 ENCRYPTED MASTER NODE</span>
           <span className={styles.divider}>|</span>
-          <span>WILSY_GLOBAL_ROOT_001</span>
+          <span>EOS VERIFIED PLATFORM</span>
         </div>
       </div>
     </div>

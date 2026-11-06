@@ -21,24 +21,18 @@
 """
 
 import logging
-import os
 import traceback
 from typing import Any, Dict, List, Optional
 
-from pymongo import MongoClient
 from pymongo.errors import PyMongoError
 
 from ..domain.employee import EmployeeEntity
+from ...kernel.db import get_database
 
-# ─── Configuration ──────────────────────────────────────────────────────────
+# ─── Canonical EOS persistence ───────────────────────────────────────────────
 
-MONGO_URI = os.getenv("MONGODB_URI", "mongodb://127.0.0.1:27017/wilsy")
-client = MongoClient(MONGO_URI, connect=False)
-db = client.get_database("wilsy")
-employees_coll = db["employees"]
-
-# Indexes are already created by the Node application – do not recreate them.
-# Attempting to recreate can cause conflicts (e.g., unique vs non-unique).
+# Indexes remain owned by the governed EOS startup/migration path. This registry
+# resolves only the process-owned kernel database and never creates a client.
 
 logger = logging.getLogger(__name__)
 
@@ -46,12 +40,20 @@ logger = logging.getLogger(__name__)
 class EmployeeRegistry:
     """
     Sovereign employee registry with MongoDB persistence.
-    Reads from the Node employees collection.
+    Reads the employees collection from the canonical EOS kernel database.
     """
 
     def __init__(self) -> None:
-        """Initialise the registry."""
+        """Initialise a connection-free registry facade."""
         pass
+
+    @staticmethod
+    def _collection():
+        """Resolve the process-owned kernel collection at operation time."""
+        database = get_database()
+        if database is None:
+            raise RuntimeError("EMPLOYEE_REGISTRY_DATABASE_UNAVAILABLE")
+        return database["employees"]
 
     def search_employees(
         self,
@@ -85,7 +87,7 @@ class EmployeeRegistry:
 
             # Execute query
             cursor = (
-                employees_coll.find(final_query)
+                self._collection().find(final_query)
                 .sort("displayName", 1)
                 .skip(offset)
                 .limit(limit)
@@ -112,7 +114,7 @@ class EmployeeRegistry:
             if tenant_id != "MASTER":
                 query["tenantId"] = tenant_id
 
-            doc = employees_coll.find_one(query)
+            doc = self._collection().find_one(query)
             if not doc:
                 return None
             return EmployeeEntity.from_dict(doc)
@@ -133,7 +135,7 @@ class EmployeeRegistry:
             if tenant_id != "MASTER":
                 query["tenantId"] = tenant_id
 
-            doc = employees_coll.find_one(query)
+            doc = self._collection().find_one(query)
             if not doc:
                 return None
             return EmployeeEntity.from_dict(doc)
@@ -158,7 +160,7 @@ class EmployeeRegistry:
                 query["isActive"] = True
 
             cursor = (
-                employees_coll.find(query)
+                self._collection().find(query)
                 .sort("displayName", 1)
                 .skip(offset)
                 .limit(limit)

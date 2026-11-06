@@ -1,7 +1,7 @@
 """WILSY OS sovereign Python API server composition root.
 
 TITLE: WILSY OS EOS Kernel API Server Factory
-VERSION: v1.34.0-L10A2R-C4D7-RECONCILIATION-RUNTIME-BOOTSTRAP
+VERSION: v1.36.0-GLOBAL-PRINCIPAL-AUTH-THROTTLE-INDEX-BOOTSTRAP
 AUTHORITY: Wilsy OS Core Governance
 EPITOME: Mount sovereign Python API authorities, including the authenticated
          practitioner-binding command transport, and hold that transport
@@ -12,7 +12,9 @@ EPITOME: Mount sovereign Python API authorities, including the authenticated
 ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/tools/eos/api/server.py
 COLLABORATION / OWNERSHIP: Wilson Khanyezi / Wilsy OS Core Engineering
 CERTIFICATION / UPDATE DATE: 2026-10-20
-CHANGELOG: 2026-10-25 v1.34.0-L10A2R-C4D7-RECONCILIATION-RUNTIME-BOOTSTRAP mounts the dedicated signed-workload reconciliation route and binds canonical P2/P4/P5 authorities, a distinct deployment audit target, and transaction-bound idempotent response replay during startup; missing configuration remains fail-closed.
+CHANGELOG: 2026-11-03 v1.39.0-GLOBAL-PRINCIPAL-AUTH-ROUTES-AND-MFA-FACTOR-BOOTSTRAP mounts the additive global login/selection/MFA/refresh/logout routes, installs global TOTP factor indexes, and accepts an injected platform KMS decryptor; absent KMS wiring keeps MFA completion unavailable.\n2026-11-03 v1.36.0-GLOBAL-PRINCIPAL-AUTH-THROTTLE-INDEX-BOOTSTRAP installs the durable tenant-neutral global authentication rate-limit indexes alongside global credential and one-time membership/MFA challenge indexes during canonical connected startup; readiness remains false until every required index succeeds.
+2026-11-03 v1.35.0-GLOBAL-PRINCIPAL-MFA-CHALLENGE-INDEX-BOOTSTRAP installs unique global-principal credential and single-use membership/MFA challenge indexes during canonical connected startup; no credentials, memberships, capacities, permissions, sessions, or identity authority are created.
+2026-10-25 v1.34.0-L10A2R-C4D7-RECONCILIATION-RUNTIME-BOOTSTRAP mounts the dedicated signed-workload reconciliation route and binds canonical P2/P4/P5 authorities, a distinct deployment audit target, and transaction-bound idempotent response replay during startup; missing configuration remains fail-closed.
 2026-10-20 v1.33.0-P12C-R4N-PRACTITIONER-BINDING-LIFECYCLE mounts the authenticated practitioner-binding command router exactly once, installs its access, binding and conflict-disposition indexes during connected startup, and denies commands until startup readiness completes while preserving router-owned tenant admission, transaction, Legal, ethical-wall, billing, settlement and Kennel EOS financial-execution boundaries.
 2026-10-18 v1.27.0-P3-R3G-S5-A2-IAM-SECURITY-EVIDENCE-FACTOR-INDEX-BOOTSTRAP moves the already-certified tenant-authorization decision-evidence, authorization-role-revocation evidence, and privileged factor-currentness registry index DDL into canonical connected application startup while preserving all current-main router composition, request-path semantics, tenant boundaries, caller-owned transaction authority, and Kennel EOS financial execution exclusivity.
 2026-10-18 v1.26.0-P1-R3E-AUTHORIZATION-ROLE-REVOCATION-RUNTIME-MOUNT mounts the certified ordinary authorization-role revocation router exactly once under /api while preserving router-owned authentication, tenant authorization, command, transaction, persistence, replay, root-lifecycle and financial boundaries; no privileged-security startup indexes are introduced.
@@ -79,12 +81,16 @@ from fastapi import Depends, FastAPI, HTTPException, Request, Response
 from fastapi.middleware.cors import CORSMiddleware
 
 from .auth_router import router as auth_router
+from .global_principal_auth_router import router as global_principal_auth_router
 from .authority_bridge_router import router as authority_bridge_router
 from .billing_router import evaluate_all_tenant_dunning_lifecycles, router as billing_router
 from .employee_router import router as employee_router
 from .errors import register_error_handlers
 from .kernel_routes import router as kernel_router
 from .payshap_webhook_router import router as payshap_webhook_router
+from .electrum_payshap_completion_router import router as electrum_payshap_completion_router
+from tools.eos.kennel.orchestration.electrum_payshap_completion_processing import ensure_electrum_payshap_completion_indexes
+from tools.eos.kennel.orchestration.electrum_payshap_completion_worker import run_electrum_payshap_completion_worker
 from .plan_router import plan_router
 from .router import direct_router, router
 from .subscription_router import subscription_router
@@ -125,6 +131,42 @@ from .hr_document_router import router as hr_document_router
 from tools.eos.auth.authentication import get_principal_authority_repository
 from tools.eos.auth.authorization import get_role_assignment_repository
 from tools.eos.auth.tenant_access import get_tenant_membership_repository
+from tools.eos.auth.principal_credential_repository import (
+    COLLECTION as PRINCIPAL_CREDENTIAL_COLLECTION,
+    PrincipalCredentialRepository,
+)
+from tools.eos.auth.membership_selection_challenge import (
+    COLLECTION as MEMBERSHIP_SELECTION_CHALLENGE_COLLECTION,
+    MembershipSelectionChallengeService,
+)
+from tools.eos.auth.global_principal_session_authority import (
+    SESSION_COLLECTION as GLOBAL_PRINCIPAL_SESSION_COLLECTION,
+    REFRESH_COLLECTION as GLOBAL_PRINCIPAL_REFRESH_COLLECTION,
+    GlobalPrincipalSessionAuthority,
+)
+from tools.eos.auth.global_principal_system_session_authority import (
+    CHALLENGE_COLLECTION as GLOBAL_PRINCIPAL_SYSTEM_MFA_CHALLENGE_COLLECTION,
+    SESSION_COLLECTION as GLOBAL_PRINCIPAL_SYSTEM_SESSION_COLLECTION,
+    REFRESH_COLLECTION as GLOBAL_PRINCIPAL_SYSTEM_REFRESH_COLLECTION,
+    GlobalPrincipalSystemMfaChallengeService,
+    GlobalPrincipalSystemSessionAuthority,
+)
+from tools.eos.auth.global_principal_mfa_kms_envelope import (
+    GlobalMfaKeyManagementError,
+    build_global_mfa_kms_envelope_from_environment,
+)
+from tools.eos.auth.global_principal_mfa_enrollment_service import (
+    CHALLENGE_COLLECTION as GLOBAL_PRINCIPAL_MFA_ENROLLMENT_CHALLENGE_COLLECTION,
+    GlobalPrincipalMfaEnrollmentService,
+)
+from tools.eos.auth.global_principal_totp_verifier import (
+    COLLECTION as GLOBAL_PRINCIPAL_MFA_FACTOR_COLLECTION,
+    GlobalPrincipalTotpVerifier,
+)
+from tools.eos.auth.principal_authentication_rate_limit import (
+    COLLECTION as PRINCIPAL_AUTH_RATE_LIMIT_COLLECTION,
+    PrincipalAuthenticationRateLimit,
+)
 from tools.eos.auth.tenant_authorization_decision_evidence_registry import (
     COLLECTION as TENANT_AUTHORIZATION_DECISION_EVIDENCE_COLLECTION,
     TenantAuthorizationDecisionEvidenceRegistry,
@@ -162,6 +204,23 @@ from tools.eos.intelligence.providers.reasoning_provider_runtime import (
     build_reasoning_provider_binding_from_environment,
 )
 from tools.eos.kernel.db import connect_db, disconnect_db, get_database, get_client
+from tools.eos.system_services.support_case_registry import SupportCaseRegistry
+from tools.eos.system_services.security_incident_registry import (
+    COLLECTION as SECURITY_INCIDENT_COLLECTION,
+    EVENT_COLLECTION as SECURITY_INCIDENT_EVENT_COLLECTION,
+    SecurityIncidentRegistry,
+)
+from tools.eos.system_services.security_incident_assignment_registry import (
+    COLLECTION as SECURITY_INCIDENT_ASSIGNMENT_COLLECTION,
+    EVENT_COLLECTION as SECURITY_INCIDENT_ASSIGNMENT_EVENT_COLLECTION,
+    SecurityIncidentAssignmentRegistry,
+)
+from tools.eos.system_services.runtime import (
+    PLATFORM_WORKFORCE_SCOPE_ENV,
+    build_system_services_runtime,
+    build_system_services_response_runtime,
+)
+from .system_services_router import router as system_services_router
 from tools.eos.intelligence.tools import ServerOwnedAIToolRegistry
 from tools.eos.intelligence.tools.legal_operations_read_tools import build_legal_read_registrations
 from tools.eos.intelligence.wilsy_ai_tool_orchestrator import WilsyAIToolOrchestrator
@@ -192,7 +251,7 @@ from tools.eos.legal_operations.service.legal_storefront_public_intent_rate_limi
     LegalStorefrontPublicIntentRateLimit,
 )
 
-VERSION = "v1.34.0-L10A2R-C4D7-RECONCILIATION-RUNTIME-BOOTSTRAP"
+VERSION = "v1.41.0-GLOBAL-MFA-ENROLLMENT-AND-LEGACY-MIGRATION"
 logger = logging.getLogger("WilsyOS.API.Server")
 
 
@@ -207,6 +266,7 @@ class WilsyAPIServer:
         debug: bool = False,
         allowed_origins: Optional[List[str]] = None,
         reasoning_provider_binding: Any | None = None,
+        global_principal_mfa_decrypt_secret: Callable[..., str] | None = None,
     ) -> None:
         """Initialize immutable server configuration and build the FastAPI app."""
         self.title = title
@@ -228,6 +288,7 @@ class WilsyAPIServer:
                 logger.error("[WILSY_AI_PROVIDER] binding unavailable: %s", code)
                 reasoning_provider_binding = None
         self.reasoning_provider_binding = reasoning_provider_binding
+        self.global_principal_mfa_decrypt_secret = global_principal_mfa_decrypt_secret
         self.app: FastAPI = self._build_app()
 
     def _build_app(self) -> FastAPI:
@@ -247,6 +308,28 @@ class WilsyAPIServer:
         app.state.wilsy_ai_legal_services_orchestrator = None
         # No binding command is ready before certified index startup.
         app.state.p12c_binding_indexes_ready = False
+        app.state.global_principal_auth_indexes_ready = False
+        app.state.global_principal_session_indexes_ready = False
+        app.state.global_principal_system_session_indexes_ready = False
+        app.state.global_principal_mfa_factor_indexes_ready = False
+        app.state.global_principal_mfa_enrollment_indexes_ready = False
+        app.state.global_principal_totp_verifier = None
+        app.state.global_principal_mfa_decrypt_secret = self.global_principal_mfa_decrypt_secret
+        app.state.global_principal_mfa_kms_envelope = None
+        # Case storage readiness is separate from IAM authorization readiness.
+        app.state.system_services_case_indexes_ready = False
+        app.state.system_services_authority_ready = False
+        app.state.system_services_authorizer = None
+        app.state.system_services_case_registry = None
+        app.state.system_services_incident_indexes_ready = False
+        app.state.system_services_incident_registry = None
+        app.state.system_services_assignment_indexes_ready = False
+        app.state.system_services_assignment_registry = None
+        app.state.system_services_response_indexes_ready = False
+        app.state.system_services_response_decision_registry = None
+        app.state.system_services_response_decision_service = None
+        app.state.system_services_response_executor = None
+        app.state.system_services_response_permission_assignments = None
         app.state.legal_evidence_provider_readonly_reconciliation_composition = None
         app.state.legal_evidence_provider_readonly_reconciliation_audit_client = None
         # C1E service is constructed lazily or by deployment composition; it
@@ -368,7 +451,7 @@ class WilsyAPIServer:
             response.headers["X-Content-Type-Options"] = "nosniff"
             response.headers["Referrer-Policy"] = "no-referrer"
             response.headers["X-Frame-Options"] = "DENY"
-            if request.url.path.startswith(("/api/legal-operations", "/api/wilsy-ai/reasoning", "/api/wilsy-ai/legal-next-actions")):
+            if request.url.path.startswith(("/api/legal-operations", "/api/wilsy-ai/reasoning", "/api/wilsy-ai/legal-next-actions", "/api/auth/global")):
                 response.headers["Cache-Control"] = "no-store"
             if "x-trace-id" not in response.headers and "x-trace-id" in request.headers:
                 response.headers["x-trace-id"] = request.headers["x-trace-id"]
@@ -403,7 +486,29 @@ class WilsyAPIServer:
         async def start_database() -> None:
             """Own explicit database bootstrap at application startup."""
             app.state.p12c_binding_indexes_ready = False
+            app.state.global_principal_auth_indexes_ready = False
+            app.state.global_principal_session_indexes_ready = False
+            app.state.global_principal_system_session_indexes_ready = False
+            app.state.global_principal_mfa_factor_indexes_ready = False
+            app.state.global_principal_mfa_enrollment_indexes_ready = False
+            app.state.global_principal_totp_verifier = None
+            app.state.global_principal_mfa_kms_envelope = None
+            app.state.system_services_case_indexes_ready = False
+            app.state.system_services_authority_ready = False
+            app.state.system_services_authorizer = None
+            app.state.system_services_case_registry = None
+            app.state.system_services_incident_indexes_ready = False
+            app.state.system_services_incident_registry = None
+            app.state.system_services_assignment_indexes_ready = False
+            app.state.system_services_assignment_registry = None
+            app.state.system_services_response_indexes_ready = False
+            app.state.system_services_response_decision_registry = None
+            app.state.system_services_response_decision_service = None
+            app.state.system_services_response_executor = None
+            app.state.system_services_response_permission_assignments = None
             app.state.telemetry_indexes_ready = False
+            app.state.electrum_completion_indexes_ready = False
+            app.state.electrum_settlement_worker_enabled = False
             connected, detail = connect_db()
             if not connected:
                 logger.error("[KENNEL_DB] Explicit startup bootstrap unavailable: %s", detail)
@@ -415,6 +520,147 @@ class WilsyAPIServer:
             if database is None:
                 return
             if database is not None:
+                try:
+                    ensure_electrum_payshap_completion_indexes(
+                        inbox_collection=database["electrum_payshap_completion_inbox"],
+                        binding_collection=database["electrum_provider_account_bindings"],
+                        observation_collection=database["financial_settlement_observations"],
+                        platform_truth_collection=database["platform_billing_financial_execution_truths"],
+                        allocation_collection=database["platform_invoice_settlement_allocations"],
+                        audit_collection=database["billing_audit_events"],
+                        outbox_collection=database["billing_outbox_events"],
+                    )
+                    app.state.electrum_completion_indexes_ready = True
+                except Exception as error:
+                    app.state.electrum_completion_indexes_ready = False
+                    logger.warning(
+                        "[ELECTRUM_SETTLEMENT] Index provisioning unavailable: %s",
+                        type(error).__name__,
+                    )
+                # Support-case storage indexes are canonical startup DDL.
+                # This flag signals storage readiness only; route admission
+                # must independently authorize every caller through EOS IAM.
+                case_registry = SupportCaseRegistry(
+                    cases=database["system_service_cases"],
+                    events=database["system_service_case_events"],
+                )
+                case_registry.ensure_indexes()
+                app.state.system_services_case_registry = case_registry
+                app.state.system_services_case_indexes_ready = client is not None
+                incident_registry = SecurityIncidentRegistry(
+                    incidents=database[SECURITY_INCIDENT_COLLECTION],
+                    events=database[SECURITY_INCIDENT_EVENT_COLLECTION],
+                )
+                incident_registry.ensure_indexes()
+                app.state.system_services_incident_registry = incident_registry
+                app.state.system_services_incident_indexes_ready = client is not None
+                assignment_registry = SecurityIncidentAssignmentRegistry(
+                    assignments=database[SECURITY_INCIDENT_ASSIGNMENT_COLLECTION],
+                    events=database[SECURITY_INCIDENT_ASSIGNMENT_EVENT_COLLECTION],
+                )
+                assignment_registry.ensure_indexes()
+                app.state.system_services_assignment_registry = assignment_registry
+                app.state.system_services_assignment_indexes_ready = client is not None
+                # SYSTEM Services authority is composed only from trusted
+                # deployment configuration and canonical EOS repositories.
+                # Missing scope configuration keeps staff APIs unavailable;
+                # it never falls back to a tenant ID or a source-code default.
+                platform_scope_id = os.getenv(PLATFORM_WORKFORCE_SCOPE_ENV, "")
+                try:
+                    case_registry, system_authorizer = build_system_services_runtime(
+                        database,
+                        platform_workforce_scope_id=platform_scope_id,
+                    )
+                    app.state.system_services_case_registry = case_registry
+                    app.state.system_services_authorizer = system_authorizer
+                    app.state.system_services_authority_ready = True
+                except Exception as error:
+                    # Tenant self-service remains available from the independent
+                    # case store; only the privileged SYSTEM queue stays unavailable.
+                    app.state.system_services_case_registry = case_registry
+                    app.state.system_services_authorizer = None
+                    app.state.system_services_authority_ready = False
+                    code = getattr(error, "code", "SYSTEM_SERVICES_AUTHORITY_CONFIGURATION_UNAVAILABLE")
+                    logger.warning("[SYSTEM_SERVICES] Authority composition unavailable: %s", code)
+                if (
+                    app.state.system_services_authority_ready is True
+                    and app.state.system_services_authorizer is not None
+                ):
+                    try:
+                        response_runtime = build_system_services_response_runtime(
+                            database,
+                            authorizer=app.state.system_services_authorizer,
+                        )
+                        app.state.system_services_response_decision_registry = response_runtime.decision_registry
+                        app.state.system_services_response_decision_service = response_runtime.decision_service
+                        app.state.system_services_response_executor = response_runtime.canonical_executor
+                        app.state.system_services_response_permission_assignments = response_runtime.permission_assignment_registry
+                        app.state.system_services_response_indexes_ready = True
+                    except Exception as error:
+                        # Response governance fails closed independently; the
+                        # existing queue and tenant intake retain their own readiness.
+                        app.state.system_services_response_indexes_ready = False
+                        app.state.system_services_response_decision_registry = None
+                        app.state.system_services_response_decision_service = None
+                        app.state.system_services_response_executor = None
+                        app.state.system_services_response_permission_assignments = None
+                        code = getattr(error, "code", "SYSTEM_SERVICES_RESPONSE_COMPOSITION_UNAVAILABLE")
+                        logger.warning("[SYSTEM_SERVICES] Response composition unavailable: %s", code)
+                # Global authentication and one-time challenge indexes are
+                # canonical startup DDL. Request handlers never create indexes.
+                PrincipalCredentialRepository.ensure_indexes(
+                    database[PRINCIPAL_CREDENTIAL_COLLECTION]
+                )
+                MembershipSelectionChallengeService.ensure_indexes(
+                    database[MEMBERSHIP_SELECTION_CHALLENGE_COLLECTION]
+                )
+                GlobalPrincipalSessionAuthority.ensure_indexes(
+                    database[GLOBAL_PRINCIPAL_SESSION_COLLECTION],
+                    database[GLOBAL_PRINCIPAL_REFRESH_COLLECTION],
+                )
+                app.state.global_principal_session_indexes_ready = client is not None
+                GlobalPrincipalSystemMfaChallengeService.ensure_indexes(
+                    database[GLOBAL_PRINCIPAL_SYSTEM_MFA_CHALLENGE_COLLECTION]
+                )
+                GlobalPrincipalSystemSessionAuthority.ensure_indexes(
+                    database[GLOBAL_PRINCIPAL_SYSTEM_SESSION_COLLECTION],
+                    database[GLOBAL_PRINCIPAL_SYSTEM_REFRESH_COLLECTION],
+                )
+                app.state.global_principal_system_session_indexes_ready = client is not None
+                GlobalPrincipalTotpVerifier.ensure_indexes(
+                    database[GLOBAL_PRINCIPAL_MFA_FACTOR_COLLECTION]
+                )
+                app.state.global_principal_mfa_factor_indexes_ready = client is not None
+                GlobalPrincipalMfaEnrollmentService.ensure_indexes(
+                    database[GLOBAL_PRINCIPAL_MFA_ENROLLMENT_CHALLENGE_COLLECTION]
+                )
+                app.state.global_principal_mfa_enrollment_indexes_ready = client is not None
+                decrypt_global_mfa_secret = cast(
+                    Callable[..., str] | None,
+                    getattr(app.state, "global_principal_mfa_decrypt_secret", None),
+                )
+                if not callable(decrypt_global_mfa_secret):
+                    try:
+                        kms_envelope = build_global_mfa_kms_envelope_from_environment()
+                        if kms_envelope is not None:
+                            kms_envelope.validate_access()
+                            app.state.global_principal_mfa_kms_envelope = kms_envelope
+                            decrypt_global_mfa_secret = kms_envelope.decrypt_secret
+                    except GlobalMfaKeyManagementError as error:
+                        app.state.global_principal_mfa_kms_envelope = None
+                        logger.warning(
+                            "[GLOBAL_PRINCIPAL_MFA] KMS composition unavailable: %s",
+                            str(error),
+                        )
+                if callable(decrypt_global_mfa_secret):
+                    app.state.global_principal_totp_verifier = GlobalPrincipalTotpVerifier(
+                        collection=database[GLOBAL_PRINCIPAL_MFA_FACTOR_COLLECTION],
+                        decrypt_secret=decrypt_global_mfa_secret,
+                    )
+                PrincipalAuthenticationRateLimit(
+                    database[PRINCIPAL_AUTH_RATE_LIMIT_COLLECTION]
+                ).ensure_indexes()
+                app.state.global_principal_auth_indexes_ready = client is not None
                 database["wilsy_sovereign_telemetry"].create_index(
                     "trace_id", unique=True, sparse=True, name="uq_telemetry_trace_id"
                 )
@@ -536,6 +782,21 @@ class WilsyAPIServer:
         async def stop_database() -> None:
             """Release the kernel database during controlled application shutdown."""
             app.state.p12c_binding_indexes_ready = False
+            app.state.global_principal_auth_indexes_ready = False
+            app.state.global_principal_session_indexes_ready = False
+            app.state.global_principal_system_session_indexes_ready = False
+            app.state.global_principal_mfa_factor_indexes_ready = False
+            app.state.global_principal_mfa_enrollment_indexes_ready = False
+            app.state.global_principal_totp_verifier = None
+            app.state.global_principal_mfa_kms_envelope = None
+            app.state.system_services_case_indexes_ready = False
+            app.state.system_services_authority_ready = False
+            app.state.system_services_authorizer = None
+            app.state.system_services_case_registry = None
+            app.state.system_services_incident_indexes_ready = False
+            app.state.system_services_incident_registry = None
+            app.state.system_services_assignment_indexes_ready = False
+            app.state.system_services_assignment_registry = None
             app.state.telemetry_indexes_ready = False
             audit_client = getattr(
                 app.state,
@@ -572,6 +833,34 @@ class WilsyAPIServer:
         async def stop_dunning_scheduler() -> None:
             """Cancel the scheduler cleanly during controlled API shutdown."""
             task = getattr(app.state, "dunning_scheduler_task", None)
+            if task:
+                task.cancel()
+                with suppress(asyncio.CancelledError):
+                    await task
+
+        @app.on_event("startup")
+        async def start_electrum_settlement_worker() -> None:
+            """Arm the settlement inbox worker only by explicit environment opt-in."""
+            enabled = os.getenv(
+                "WILSY_ELECTRUM_SETTLEMENT_WORKER_ENABLED", "false"
+            ).strip().lower() in {"1", "true", "yes", "on"}
+            sandbox_only = os.getenv("WILSY_ELECTRUM_ENVIRONMENT", "").strip().lower() == "sandbox"
+            if enabled and sandbox_only and getattr(app.state, "electrum_completion_indexes_ready", False) is True:
+                app.state.electrum_settlement_worker_task = asyncio.create_task(
+                    run_electrum_payshap_completion_worker()
+                )
+                app.state.electrum_settlement_worker_enabled = True
+                logger.info("[ELECTRUM_SETTLEMENT] Completion inbox worker explicitly enabled")
+            else:
+                app.state.electrum_settlement_worker_enabled = False
+                logger.info(
+                    "[ELECTRUM_SETTLEMENT] Completion inbox worker remains disabled"
+                )
+
+        @app.on_event("shutdown")
+        async def stop_electrum_settlement_worker() -> None:
+            """Cancel the opt-in inbox worker cleanly during API shutdown."""
+            task = getattr(app.state, "electrum_settlement_worker_task", None)
             if task:
                 task.cancel()
                 with suppress(asyncio.CancelledError):
@@ -640,6 +929,8 @@ class WilsyAPIServer:
         app.include_router(plan_router)
 
         app.include_router(auth_router, prefix="/api")
+        app.include_router(global_principal_auth_router, prefix="/api")
+        app.include_router(system_services_router, prefix="/api")
 
         app.include_router(billing_router)
         app.include_router(billing_router, prefix="/api")
@@ -649,6 +940,7 @@ class WilsyAPIServer:
 
         # Provider evidence ingress is mounted once at its canonical route.
         app.include_router(payshap_webhook_router)
+        app.include_router(electrum_payshap_completion_router)
         app.include_router(hr_document_router)
 
         logger.info(
@@ -667,7 +959,7 @@ class WilsyAPIServer:
 app = WilsyAPIServer().get_app()
 
 # ARTIFACT: server.py
-# VERSION: v1.34.0-L10A2R-C4D7-RECONCILIATION-RUNTIME-BOOTSTRAP
+# VERSION: v1.39.0-GLOBAL-PRINCIPAL-AUTH-ROUTES-AND-MFA-FACTOR-BOOTSTRAP
 # AUTHORITY BOUNDARY: HTTP application composition only; domain authorities remain separate.
 # TENANT POSTURE: Mounted routers retain their canonical tenant isolation and admission rules.
 # FAIL-CLOSED POSTURE: Unmounted or failed router composition is never represented as operational authority.

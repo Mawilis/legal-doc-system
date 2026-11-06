@@ -28,6 +28,8 @@ from unittest.mock import Mock
 from uuid import uuid4
 
 import pytest
+from fastapi import FastAPI
+from fastapi.testclient import TestClient
 from pymongo import MongoClient
 from pymongo.collection import Collection
 import tools.eos.api.payshap_webhook_router as router_module
@@ -330,3 +332,56 @@ def test_cross_tenant_and_ambiguous_attempts_fail_closed(runtime: dict[str, Any]
 # FAIL-CLOSED POSTURE: missing, ambiguous, and divergent host evidence rejects.
 # FINANCIAL EXECUTION AUTHORITY: Kennel EOS exclusively; EXECUTION != SETTLEMENT.
 # END OF WILSY OS SOVEREIGN ARTIFACT
+
+
+def test_authenticated_http_route_rejects_bad_signature_and_replays_exactly(
+    runtime: dict[str, Any],
+) -> None:
+    command, attempt_id = _seed(runtime, "AP", "http-route")
+    payload = _payload(command, "http-route")
+    app = FastAPI()
+    app.include_router(router_module.router)
+    app.dependency_overrides[router_module._runtime] = lambda: router_module.PayShapWebhookRuntime(
+        client=runtime["client"],
+        database=runtime["database"],
+    )
+    app.dependency_overrides[router_module._webhook_secret] = lambda: SECRET
+    client = TestClient(app)
+    try:
+        rejected = client.post(
+            router_module.ROUTE_PATH,
+            json=payload,
+            headers={"X-PayShap-Signature": "invalid"},
+        )
+        assert rejected.status_code == 401
+        assert runtime["payshap_collection"].count_documents({}) == 0
+
+        accepted = client.post(
+            router_module.ROUTE_PATH,
+            json=payload,
+            headers={"X-PayShap-Signature": _signature(payload)},
+        )
+        assert accepted.status_code == 200
+        assert accepted.json()["accepted"] is True
+        assert accepted.json()["replay"] is False
+        assert runtime["attempt_collection"].find_one(
+            {"execution_attempt_id": attempt_id}
+        )["state"] == "CONFIRMED_EXECUTED"
+        assert runtime["payshap_collection"].count_documents({}) == 1
+        assert runtime["observation_collection"].count_documents({}) == 1
+        assert runtime["fact_collection"].count_documents({}) == 1
+        assert runtime["ap_truth_collection"].count_documents({}) == 1
+
+        replay = client.post(
+            router_module.ROUTE_PATH,
+            json=payload,
+            headers={"X-PayShap-Signature": _signature(payload)},
+        )
+        assert replay.status_code == 200
+        assert replay.json()["replay"] is True
+        assert runtime["payshap_collection"].count_documents({}) == 1
+        assert runtime["observation_collection"].count_documents({}) == 1
+        assert runtime["fact_collection"].count_documents({}) == 1
+        assert runtime["ap_truth_collection"].count_documents({}) == 1
+    finally:
+        app.dependency_overrides.clear()

@@ -74,6 +74,7 @@ import styles from "./RevenueHUD.module.css";
  */
 const RevenueHUD = ({ embedded = false } = {}) => {
   const { activeTenant } = useTenants();
+  const tenantId = activeTenant?.tenantId || activeTenant?.id || null;
 
   // ----------------------------------------------------------------------
   // STATE
@@ -191,6 +192,13 @@ const RevenueHUD = ({ embedded = false } = {}) => {
    * @returns {Promise<void>}
    */
   const fetchRevenue = useCallback(async () => {
+    if (!tenantId) {
+      setError('TENANT_CONTEXT_REQUIRED');
+      setLoading(false);
+      setIsSyncing(false);
+      setRevenueData(null);
+      return;
+    }
     if (fetchAbortControllerRef.current) fetchAbortControllerRef.current.abort();
     fetchAbortControllerRef.current = new AbortController();
     setIsSyncing(true);
@@ -199,7 +207,7 @@ const RevenueHUD = ({ embedded = false } = {}) => {
 
     try {
       const response = await api.get('/revenue/ledger', {
-        params: { tenantId: activeTenant?.id || 'GLOBAL_ROOT' },
+        params: { tenantId },
         signal: fetchAbortControllerRef.current.signal
       });
 
@@ -247,7 +255,7 @@ const RevenueHUD = ({ embedded = false } = {}) => {
       setIsSyncing(false);
       setLoading(false);
     }
-  }, [activeTenant?.id]);
+  }, [tenantId]);
 
   // ----------------------------------------------------------------------
   // MEMOIZED COMPUTATIONS

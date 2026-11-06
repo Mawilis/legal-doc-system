@@ -36,6 +36,7 @@ import { useState, useEffect, useCallback, useRef, useMemo } from 'react';
 import { useTenantContext } from '../context/TenantContext';
 import sovereignClient from '../utils/sovereignClient';
 import { broadcastTelemetry } from '../utils/telemetryHelper';
+import { isCanonicalTenantTransportId } from '../services/api';
 
 /**
  * @constant DEFAULT_RETRY_CONFIG
@@ -165,8 +166,9 @@ const useBillingMetrics = (options = {}) => {
 
   // Resolve the effective tenant ID.
   const effectiveTenantId = useMemo(() => {
-    if (explicitTenantId) return explicitTenantId;
-    return currentTenant?.id || currentTenant?.tenantId || 'MASTER';
+    if (explicitTenantId) return isCanonicalTenantTransportId(explicitTenantId) ? explicitTenantId : null;
+    const candidate = currentTenant?.id || currentTenant?.tenantId || null;
+    return isCanonicalTenantTransportId(candidate) ? candidate : null;
   }, [explicitTenantId, currentTenant]);
 
   // ─── STATE ────────────────────────────────────────────────────────────────
@@ -188,7 +190,7 @@ const useBillingMetrics = (options = {}) => {
       if (!enableTelemetry) return;
       try {
         broadcastTelemetry(
-          effectiveTenantId || 'GLOBAL_ROOT',
+          effectiveTenantId,
           'BILLING_METRICS',
           event,
           'useBillingMetrics',
@@ -211,6 +213,11 @@ const useBillingMetrics = (options = {}) => {
     async (isRetry = false) => {
       // Guard against unmounted components.
       if (!mountedRef.current) return null;
+      if (!effectiveTenantId) {
+        setSource('TENANT_CONTEXT_REQUIRED');
+        setError(new Error('TENANT_CONTEXT_REQUIRED'));
+        return null;
+      }
 
       // Cancel any in‑flight request.
       if (abortControllerRef.current) {
@@ -342,7 +349,7 @@ const useBillingMetrics = (options = {}) => {
   useEffect(() => {
     mountedRef.current = true;
 
-    if (autoLoad && effectiveTenantId && effectiveTenantId !== 'MASTER') {
+    if (autoLoad && effectiveTenantId) {
       fetchMetrics(false);
     }
 

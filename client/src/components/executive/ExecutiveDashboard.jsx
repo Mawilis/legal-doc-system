@@ -1,15 +1,15 @@
 /* eslint-disable */
 /**
  * ╔════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════╗
- * ║ WILSY OS - SOVEREIGN EXECUTIVE SUITE [V56.4.0-PRODUCTION-EPITOME]                                                                      ║
+ * ║ WILSY OS - SOVEREIGN EXECUTIVE SUITE [V56.8.0-QUEUE-FIRST-EXECUTIVE-WORKBENCH]                                                                      ║
  * ║ [FINANCE-SOURCED KPIS | SHA3 EXECUTIVE MUTATIONS | TELEMETRY STREAM | SHARD PAGINATION | BOARDROOM PROOF]                             ║
  * ╠════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════╣
- * ║ VERSION: 56.4.0-PRODUCTION-EPITOME | PRODUCTION READY | BILLION-DOLLAR EXECUTIVE COMMAND ASSET                                        ║
+ * ║ VERSION: 56.8.0-QUEUE-FIRST-EXECUTIVE-WORKBENCH | SERVER-ISSUED PRODUCT NAVIGATION                                        ║
  * ║ ABSOLUTE PATH: /Users/wilsonkhanyezi/legal-doc-system/client/src/components/executive/ExecutiveDashboard.jsx                            ║
  * ╠════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════╣
  * ║ 👥 COLLABORATION & SOVEREIGN SIGN-OFF:                                                                                                 ║
  * ║ • Wilson Khanyezi (Founder/CEO) – Mandated unified executive dashboard with cryptographic audit and pagination.                        ║
- * ║ • AI Engineering (Codex) – ARCHITECTED: Elevated suite into forensic command surface with financeService KPI sourcing, SHA3 command    ║
+ * ║ • Engineering: executive access now binds to the exact authenticated tenant projection before rendering owner navigation.              ║
  * ║   envelopes, telemetry-backed mutations, source-state governance, and scalable shard pagination.                                      ║
  * ╚════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════╝
  */
@@ -45,6 +45,7 @@ import {
   X
 } from 'lucide-react';
 import { useTenants } from '../../contexts/tenantContext';
+import { useAuth } from '../../contexts/authContext';
 import useSovereignAccess from '../../hooks/useSovereignAccess';
 import { useTelemetryFeed } from '../../hooks/useTelemetryFeed';
 import { exportCSV } from '../../utils/exportHelpers';
@@ -90,9 +91,11 @@ import {
 } from '../../services/ExecutiveTransformationEngine';
 import WilsyAccountCommandCenter from '../account/WilsyAccountCommandCenter';
 import api from '../../services/api.js';
+import { validateWilsyModuleManifest } from '../../utils/tenantModuleManifest.js';
 import useAuthenticatedTenantBrandingAsset from '../../hooks/useAuthenticatedTenantBrandingAsset.js';
 import BusinessArtifactStudio from '../artifacts/BusinessArtifactStudio';
 import styles from './ExecutiveDashboard.module.css';
+import ExecutiveOperationalWorkbench from './ExecutiveOperationalWorkbench';
 
 
 const WILSY_EXEC_THEME_STORAGE_KEYS = Object.freeze({
@@ -593,9 +596,10 @@ const resolveExecutiveSourceCount = (payload = {}) => {
 const buildOperatingSourceRow = (descriptor = {}, { tenantId = 'MASTER', payload = null, error = null } = {}) => {
   const now = new Date().toISOString();
   const count = error ? null : resolveExecutiveSourceCount(payload);
+  const denied = error?.response?.status === 401 || error?.response?.status === 403;
   const live = !error;
   const status = error
-    ? `${descriptor.key?.toUpperCase()}_SOURCE_SILENT`
+    ? `${descriptor.key?.toUpperCase()}_${denied ? 'ACCESS_DENIED' : 'SOURCE_UNAVAILABLE'}`
     : count === 0
       ? `${descriptor.key?.toUpperCase()}_SOURCE_READY_EMPTY`
       : `${descriptor.key?.toUpperCase()}_SOURCE_LIVE`;
@@ -619,6 +623,7 @@ const buildOperatingSourceRow = (descriptor = {}, { tenantId = 'MASTER', payload
     count,
     lastSync: now,
     error: packet.error,
+    records: Array.isArray(payload) ? payload : Array.isArray(payload?.items) ? payload.items : Array.isArray(payload?.records) ? payload.records : Array.isArray(payload?.data) ? payload.data : Array.isArray(payload?.data?.items) ? payload.data.items : Array.isArray(payload?.data?.records) ? payload.data.records : [],
     proofHash: createExecutiveProofHash(packet)
   };
 };
@@ -1033,9 +1038,26 @@ const ExecutiveDashboard = ({
   founderReturnEnabled = false,
   onSwitchDashboard = null
 }) => {
-  const { activeTenant } = useTenants();
+  const { activeTenant: selectedTenant } = useTenants();
+  const { tenant: authenticatedTenant } = useAuth() || {};
+  const activeTenant = useMemo(() => {
+    // Executive entry must bind to the exact tenant already admitted by
+    // workspace-bootstrap. A stale tenant-context selection cannot hide or
+    // replace that authenticated projection, and a foreign selection remains
+    // non-authoritative.
+    const principalTenantId = typeof user?.tenantId === 'string'
+      ? user.tenantId
+      : '';
+    if (
+      principalTenantId
+      && authenticatedTenant?.tenantId === principalTenantId
+    ) {
+      return authenticatedTenant;
+    }
+    return selectedTenant || {};
+  }, [authenticatedTenant, selectedTenant, user?.tenantId]);
   const access = useSovereignAccess();
-  const tenantId = activeTenant?.tenantId || activeTenant?.id || access.tenantId || 'MASTER';
+  const tenantId = activeTenant?.tenantId || null;
   const accessDecision = useMemo(() => (
     buildExecutiveAccessDecision(access, activeTenant)
   ), [access.userRole, activeTenant]);
@@ -1045,7 +1067,7 @@ const ExecutiveDashboard = ({
   const [loading, setLoading] = useState(true);
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
-  const [activeWorkspace, setActiveWorkspace] = useState('overview');
+  const [activeWorkspace, setActiveWorkspace] = useState('workbench');
   const [businessModelOverride, setBusinessModelOverride] = useState('');
   const [executiveQuestion, setExecutiveQuestion] = useState('');
   const [executiveAnswer, setExecutiveAnswer] = useState(null);
@@ -1054,6 +1076,7 @@ const ExecutiveDashboard = ({
   const [accountThemeMode, setAccountThemeMode] = useState(() => readWilsyExecutiveThemePreference().mode);
   const [isOpeningLegalWorkspace, setIsOpeningLegalWorkspace] = useState(false);
   const [legalEntryError, setLegalEntryError] = useState('');
+  const [tenantModules, setTenantModules] = useState([]);
 
   const executiveThemeVars = useMemo(() => (
     buildWilsyExecutiveThemeVars(accountThemeId, accountThemeMode)
@@ -1152,6 +1175,35 @@ const ExecutiveDashboard = ({
   const { objectUrl: tenantLogoObjectUrl } = useAuthenticatedTenantBrandingAsset(
     tenantBranding.assetDescriptor,
   );
+
+  useEffect(() => {
+    let current = true;
+    // workspace-bootstrap's AuthContext tenant is the canonical fallback
+    // when the dashboard shell has not yet hydrated the legacy user prop.
+    // Never fall back to the independently selected tenant context here.
+    const authenticatedTenantId = typeof user?.tenantId === 'string'
+      ? user.tenantId
+      : typeof authenticatedTenant?.tenantId === 'string'
+        ? authenticatedTenant.tenantId
+        : '';
+    if (!authenticatedTenantId) {
+      setTenantModules([]);
+      return () => { current = false; };
+    }
+
+    api.get('/auth/module-manifest')
+      .then(({ data }) => validateWilsyModuleManifest(data, authenticatedTenantId))
+      .then((modules) => {
+        if (current) setTenantModules(modules);
+      })
+      .catch(() => {
+        // Product navigation fails closed. Executive authentication and
+        // existing workspace authority are independent of this projection.
+        if (current) setTenantModules([]);
+      });
+
+    return () => { current = false; };
+  }, [authenticatedTenant?.tenantId, user?.tenantId]);
 
   const openLegalWorkspace = useCallback(async () => {
     if (typeof onSwitchDashboard !== 'function' || isOpeningLegalWorkspace) return;
@@ -1442,7 +1494,7 @@ const ExecutiveDashboard = ({
   }, [access.isLoading, accessDecision.allowed, tenantId]);
 
   useEffect(() => {
-    if (access.isLoading || accessDecision.allowed) return;
+    if (access.isLoading || accessDecision.allowed || !tenantId) return;
     broadcastTelemetry(tenantId, 'EXEC_ACCESS_DENIED', 'DENIED', 'ExecutiveDashboard', {
       userRole: access.userRole || 'unknown',
       userEmail: access.userEmail || 'unknown',
@@ -3391,6 +3443,10 @@ const ExecutiveDashboard = ({
           </article>
         </section>
         {executiveCommandRail}
+        <ExecutiveOperationalWorkbench
+          sources={operatingSources}
+          onOpenFunction={(source) => executeFunctionCard({ key: source.functionKey, label: source.label, status: 'ENABLED', sourceStatus: source.status })}
+        />
       </div>
     ),
     sources: (
@@ -3772,32 +3828,64 @@ const ExecutiveDashboard = ({
               <div className={styles.emptyStream}>ACCEPT_A_DAILY_DUTY_TO_CREATE_A_WORK_ORDER...</div>
             )}
           </div>
-          <div className={styles.dutyList}>
-            {executiveOperatingSystem.dailyDuties.map(duty => (
-              <article key={duty.key} className={styles.dutyCard} data-status={duty.status} data-impact={duty.impact}>
-                <div>
-                  <span>{duty.lane} // {duty.cadence}</span>
-                  <h3>{duty.title}</h3>
-                  <p>{duty.reason}</p>
-                  <div className={styles.evidenceRail}>
-                    {(duty.evidenceRequired || []).slice(0, 4).map(evidence => (
-                      <i key={evidence}>{evidence}</i>
-                    ))}
-                  </div>
-                  {duty.blockedReason && <p className={styles.blockedReason}>{duty.blockedReason}</p>}
-                  <small title={duty.sourceStatus}>{compactExecutiveSignal(duty.sourceStatus)} // IMPACT {duty.impact}</small>
-                </div>
-                <button
-                  type="button"
-                  className={styles.secondaryButton}
-                  onClick={() => acceptDailyDuty(duty)}
-                  disabled={isRefreshing}
-                >
-                  {duty.commandLabel || 'ACCEPT'}
-                </button>
-              </article>
-            ))}
-          </div>
+          <section className={styles.dutyQueueSection} aria-label="Suggested executive work queue">
+            <header className={styles.dutyQueueHeader}>
+              <div>
+                <span>DAILY WORK QUEUE</span>
+                <h3>Recommended actions</h3>
+              </div>
+              <small>{executiveOperatingSystem.dailyDuties.length} source-aware duties</small>
+            </header>
+            <div className={styles.dutyQueueViewport}>
+              <table className={styles.dutyQueue} aria-label="Suggested executive work queue">
+                <thead>
+                  <tr>
+                    <th scope="col">Impact</th>
+                    <th scope="col">Workstream</th>
+                    <th scope="col">Recommended action</th>
+                    <th scope="col">Source and evidence</th>
+                    <th scope="col">Next step</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {executiveOperatingSystem.dailyDuties.map(duty => (
+                    <tr key={duty.key} data-status={duty.status} data-impact={duty.impact}>
+                      <td>
+                        <span className={styles.dutyQueueImpact}>{compactExecutiveSignal(duty.impact)}</span>
+                      </td>
+                      <td>
+                        <strong>{duty.lane}</strong>
+                        <small>{duty.cadence}</small>
+                      </td>
+                      <td>
+                        <strong>{duty.title}</strong>
+                        <p>{duty.reason}</p>
+                        {duty.blockedReason && <small className={styles.dutyQueueBlocked}>{duty.blockedReason}</small>}
+                      </td>
+                      <td>
+                        <strong>{compactExecutiveSignal(duty.sourceStatus)}</strong>
+                        <div className={styles.dutyQueueEvidence}>
+                          {(duty.evidenceRequired || []).slice(0, 4).map(evidence => (
+                            <span key={evidence}>{evidence}</span>
+                          ))}
+                        </div>
+                      </td>
+                      <td>
+                        <button
+                          type="button"
+                          className={styles.secondaryButton}
+                          onClick={() => acceptDailyDuty(duty)}
+                          disabled={isRefreshing}
+                        >
+                          {duty.commandLabel || 'ACCEPT'}
+                        </button>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </section>
         </article>
         {sourceRegistryPanel}
       </section>
@@ -3996,18 +4084,45 @@ const ExecutiveDashboard = ({
     access
   });
 
-  if (loading || access.isLoading) {
+  // Wait for the authoritative access decision, but do not block the
+  // executive workspace shell on every downstream source hydration request.
+  // Source reads remain gated by accessDecision.allowed and hydrate the visible
+  // workspace progressively; a slow optional service must not hide the shell.
+  if (access.isLoading) {
     return (
-      <div className={styles.loading}>
+      <div
+        className={styles.loading}
+        data-executive-access-state="loading"
+        data-executive-access-loading={String(access.isLoading)}
+        data-executive-access-allowed={String(accessDecision.allowed)}
+        data-executive-access-role={access.userRole || ''}
+        data-executive-access-principal-tenant={access.tenantId || ''}
+        data-executive-access-active-tenant={tenantId || ''}
+        data-executive-access-tenant-match={String(Boolean(
+          access.tenantId && tenantId && access.tenantId === tenantId
+        ))}
+      >
         <RefreshCw size={20} className={styles.spin} />
-        <span>Loading Executive Suite</span>
+        <span>Verifying Executive Access</span>
       </div>
     );
   }
 
   if (!accessDecision.allowed) {
     return (
-      <div className={styles.accessDenied}>
+      <div
+        className={styles.accessDenied}
+        data-executive-access-state="denied"
+        data-executive-access-loading={String(access.isLoading)}
+        data-executive-access-allowed={String(accessDecision.allowed)}
+        data-executive-access-reason={accessDecision.reason}
+        data-executive-access-role={access.userRole || ''}
+        data-executive-access-principal-tenant={access.tenantId || ''}
+        data-executive-access-active-tenant={tenantId || ''}
+        data-executive-access-tenant-match={String(Boolean(
+          access.tenantId && tenantId && access.tenantId === tenantId
+        ))}
+      >
         <div>
           <AlertTriangle size={28} />
           <span>EXECUTIVE ACCESS DENIED</span>
@@ -4025,6 +4140,8 @@ const ExecutiveDashboard = ({
     <div
       className={styles.executiveShell}
       data-refreshing={isRefreshing ? 'true' : 'false'}
+      data-executive-hydration={loading ? 'loading' : 'ready'}
+      aria-busy={loading}
       style={{ ...(tenantBranding.cssVars || {}), ...executiveThemeVars }}
       data-wilsy-theme={accountThemeId}
       data-wilsy-mode={accountThemeMode}
@@ -4108,18 +4225,6 @@ const ExecutiveDashboard = ({
           >
             <UserCog size={13} /> COMMAND CENTER
           </button>
-          {typeof onSwitchDashboard === 'function' && (
-            <button
-              type="button"
-              onClick={openLegalWorkspace}
-              disabled={isOpeningLegalWorkspace}
-              className={styles.secondaryButton}
-              title="Verify Legal commercial access and open WILSY Legal OS"
-              data-wilsy-legal-entry="commercial-context-gated"
-            >
-              <ShieldCheck size={13} /> {isOpeningLegalWorkspace ? 'VERIFYING LEGAL' : 'LEGAL OS'}
-            </button>
-          )}
           {legalEntryError && (
             <span role="alert" className={styles.sourceStatus}>
               {legalEntryError}
@@ -4147,6 +4252,24 @@ const ExecutiveDashboard = ({
 
       <section className={styles.workspaceFrame}>
         <nav className={styles.workspaceRail} aria-label="Executive operating workspaces">
+          {tenantModules.some((module) => module.moduleId === 'LEGAL_OS') && (
+            <section className={styles.productModuleNavigation} aria-label="Available WILSY OS products">
+              <span className={styles.productModuleNavigationLabel}>YOUR PRODUCTS</span>
+              <button
+                type="button"
+                className={styles.productModuleButton}
+                onClick={openLegalWorkspace}
+                disabled={isOpeningLegalWorkspace || typeof onSwitchDashboard !== 'function'}
+                data-wilsy-module-entry="LEGAL_OS"
+                aria-label={isOpeningLegalWorkspace ? 'Verifying Legal OS' : 'LEGAL OS'}
+              >
+                <ShieldCheck size={16} aria-hidden="true" />
+                <span>{isOpeningLegalWorkspace ? 'VERIFYING LEGAL' : 'LEGAL OS'}</span>
+                <small>Commercial access verified by EOS</small>
+              </button>
+              {legalEntryError && <span role="alert" className={styles.productModuleError}>{legalEntryError}</span>}
+            </section>
+          )}
           <label className={styles.workspaceSelect}>
             <span>WORKSPACE</span>
             <select value={activeWorkspace} onChange={event => setActiveWorkspace(event.target.value)}>
@@ -4174,7 +4297,7 @@ const ExecutiveDashboard = ({
           </div>
         </nav>
 
-        <main className={styles.workspaceViewport}>
+        <main className={styles.workspaceViewport} data-active-workspace={activeWorkspace}>
           <div className={styles.workspaceHeader}>
             <div>
               <span><ActiveWorkspaceIcon size={13} /> Workspace</span>
@@ -4941,28 +5064,7 @@ const ExecutiveDashboard = ({
         </article>
       </section>
 
-      <section className={styles.kpiGrid}>
-        <article>
-          <span>REVENUE_YTD_COUNTER</span>
-          <strong data-tone="green">{formatExecutiveKpiValue(financialKPIs.revenue, financialKPIs.currency || DEFAULT_OPERATING_CURRENCY)}</strong>
-        </article>
-        <article>
-          <span>ANNUAL_RECURRING_ARR</span>
-          <strong>{formatExecutiveKpiValue(financialKPIs.arr, financialKPIs.currency || DEFAULT_OPERATING_CURRENCY)}</strong>
-        </article>
-        <article>
-          <span>PROFIT_MARGIN_EFFICIENCY</span>
-          <strong>{formatExecutiveKpiValue(financialKPIs.profitMargin, '%')}</strong>
-        </article>
-        <article>
-          <span>NET_PROMOTER_INDEX</span>
-          <strong>{formatExecutiveKpiValue(financialKPIs.nps, 'score')}</strong>
-        </article>
-        <article>
-          <span>EMPLOYEE_SAT_COEFFICIENT</span>
-          <strong data-tone="green">{formatExecutiveKpiValue(financialKPIs.employeeSatisfaction, '%')}</strong>
-        </article>
-      </section>
+
 
       <section className={styles.currencyPanel}>
         <header>

@@ -51,7 +51,7 @@ import { exportCSV } from '../../utils/exportHelpers';
 import WilsyProfilePanel, { hydrateWilsyProfileRuntime } from '../shared/WilsyProfilePanel';
 import WilsyOSDashboardChrome from '../os/WilsyOSDashboardChrome';
 import WilsyAccountCommandCenter from '../account/WilsyAccountCommandCenter';
-import wilsyLogo from '../../assets/logo/wilsy.jpeg';
+import wilsyLogo from '../../assets/logo/wilsy-logo.svg';
 import styles from './HrDashboard.module.css';
 
 const DEFAULT_TENANT_ID = 'MASTER';

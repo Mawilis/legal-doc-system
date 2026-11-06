@@ -1,6 +1,6 @@
 /* eslint-disable */
 import { useEffect, useRef } from 'react';
-import wilsySeal from '../../assets/logo/wilsy.jpeg';
+import wilsySeal from '../../assets/logo/wilsy-icon.svg';
 import styles from './WilsyOSIntelligenceLauncher.module.css';
 
 const WILSY_AI_OPEN_EVENTS = ['wilsy-os-intelligence-open-request'];

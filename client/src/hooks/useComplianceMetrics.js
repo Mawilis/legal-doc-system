@@ -17,7 +17,7 @@
  */
 
 import { useEffect, useState, useCallback, useRef } from 'react';
-import api from '../services/api';
+import api, { isCanonicalTenantTransportId } from '../services/api';
 import { broadcastTelemetry } from '../utils/telemetryHelper.js';
 import { generateSovereignSeal } from '../utils/cryptoCore.js';
 
@@ -179,16 +179,13 @@ const DEFAULT_METRICS = {
 
 /**
  * @function normalizeTenantId
- * @description Sanitizes tenant ID, replacing placeholder values with 'GLOBAL_ROOT'.
+ * @description Accepts only an explicit canonical tenant selector; missing scope remains unresolved.
  * @param {string} id - Raw tenant identifier.
- * @returns {string} Normalized tenant ID.
+ * @returns {string|null} Canonical tenant ID or null when scope is unresolved.
  */
-const normalizeTenantId = (id) => {
-  if (!id || id === 'TENANT-ID' || id === 'TENANT_ID' || id === 'undefined' || id === 'null') {
-    return 'GLOBAL_ROOT';
-  }
-  return id;
-};
+const normalizeTenantId = (id) => (
+  isCanonicalTenantTransportId(id) ? id : null
+);
 
 /**
  * @function useComplianceMetrics
@@ -196,7 +193,7 @@ const normalizeTenantId = (id) => {
  * from the database with circuit breaker, adaptive polling, forensic headers, and telemetry throttling.
  *
  * @param {Object} options - Configuration options.
- * @param {string} [options.tenantId='GLOBAL_ROOT'] - Tenant identifier.
+ * @param {string} [options.tenantId] - Tenant identifier supplied by the authenticated EOS workspace.
  * @param {number} [options.refreshInterval=60000] - Base polling interval in milliseconds.
  * @param {number} [options.freshDuration=60000] - Time (ms) before data is considered stale (background refresh still shows cached).
  * @param {number} [options.staleDuration=300000] - Time (ms) after which cached data is unusable and triggers loading state.
@@ -242,7 +239,7 @@ const normalizeTenantId = (id) => {
  */
 export const useComplianceMetrics = (options = {}) => {
   const {
-    tenantId: rawTenantId = 'GLOBAL_ROOT',
+    tenantId: rawTenantId = null,
     refreshInterval = DEFAULT_BASE_INTERVAL,
     freshDuration = DEFAULT_FRESH_DURATION,
     staleDuration = DEFAULT_STALE_DURATION,
@@ -458,7 +455,11 @@ export const useComplianceMetrics = (options = {}) => {
 
   // Main effect: initial fetch + polling interval
   useEffect(() => {
-    if (!enabled) return;
+    if (!enabled || !tenantId) {
+      setIsSyncing(false);
+      if (!tenantId) setError('TENANT_CONTEXT_REQUIRED');
+      return undefined;
+    }
 
     fetchMetrics(false);
 
@@ -472,7 +473,7 @@ export const useComplianceMetrics = (options = {}) => {
       if (abortControllerRef.current) abortControllerRef.current.abort();
       pendingPromiseRef.current = null;
     };
-  }, [enabled, fetchMetrics]);
+  }, [enabled, tenantId, fetchMetrics]);
 
   const isFresh = !isStale && !isSyncing;
 

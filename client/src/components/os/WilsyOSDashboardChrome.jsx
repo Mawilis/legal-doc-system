@@ -1,17 +1,17 @@
 /* eslint-disable */
 /**
  * ╔════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════╗
- * ║ WILSY OS – SHARED DASHBOARD CHROME [V2.0.0-L10-P2C1-INTERACTIVE-COMMAND-CONTRACT]                                                                     ║
- * ║ [EXECUTIVE SHELL | TENANT PLATE | OPERATOR IDENTITY | COLLAPSIBLE RAIL | METRICS STRIP]                                             ║
+ * ║ WILSY OS – SHARED DASHBOARD CHROME [V2.2.0-EOS-MODULE-MANIFEST-NAVIGATION]                                                                     ║
+ * ║ [EXECUTIVE SHELL | SERVER-ISSUED PRODUCT NAVIGATION | TENANT PLATE | OPERATOR IDENTITY]                                             ║
  * ╠════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════╣
- * ║ VERSION: 2.0.0-L10-P2C1-INTERACTIVE-COMMAND-CONTRACT | PRODUCTION READY                                                                                 ║
- * ║ EPITOME: SOVEREIGN OPERATING SYSTEM SHELL – CONSISTENT, AUDITABLE, AND EXTENSIBLE                                                    ║
+ * ║ VERSION: 2.2.0-EOS-MODULE-MANIFEST-NAVIGATION | SERVER-ISSUED PRODUCT NAVIGATION                                                                                 ║
+ * ║ EPITOME: SOVEREIGN OPERATING SYSTEM SHELL WITH TENANT-BOUND PRODUCT NAVIGATION                                                    ║
  * ║ ABSOLUTE PATH: /Users/wilsonkhanyezi/legal-doc-system/client/src/components/os/WilsyOSDashboardChrome.jsx                             ║
  * ╠════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════╣
  * ║ 👥 COLLABORATION & SOVEREIGN SIGN‑OFF:                                                                                                 ║
  * ║ • Wilson Khanyezi (CEO/Lead Architect) – Mandated a unified OS shell that enforces brand consistency and provides a solid foundation  ║
  * ║   for all domain HUDs (Billing, CRM, Identity, etc.).                                                                                 ║
- * ║ • AI Engineering (Gemini) – ENGINEERED: Full shell with top rail, search, metrics strip, collapsible left rail, and viewport;          ║
+ * ║ • Engineering: adds tenant-bound EOS product navigation without promoting product entitlement into IAM or route authority.         ║
  * ║   integrated with Auth, Tenants, and Identity contexts.                                                                               ║
  * ║ • Compliance: POPIA §19, GDPR §32, SOC2 §CC7.2, ISO 27001.                                                                           ║
  * ╠════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════╣
@@ -41,15 +41,29 @@ import {
   Search,
   UserCog,
   ShieldCheck,
+  Scale,
+  Receipt,
+  Users,
+  UsersRound,
   X
 } from 'lucide-react';
 import { useAuth } from '../../contexts/authContext';
 import { useTenants } from '../../contexts/tenantContext';
 import { resolveWilsyChromeIdentitySources } from './wilsyDashboardChromeConfig';
 import { useAuthenticatedTenantBrandingAsset } from '../../hooks/useAuthenticatedTenantBrandingAsset.js';
+import api from '../../services/api.js';
+import { validateWilsyModuleManifest } from '../../utils/tenantModuleManifest.js';
 import './WilsyOSDashboardChrome.module.css';
 
 const WILSY_OS_DASHBOARD_CHROME_VERSION = 'V2.0.0-L10-P2C1-INTERACTIVE-COMMAND-CONTRACT';
+
+
+const MODULE_ICON_BY_KEY = Object.freeze({
+  scale: Scale,
+  receipt: Receipt,
+  users: Users,
+  'users-round': UsersRound,
+});
 
 const TRUST_CENTER_STATES = Object.freeze({
   CLOSED: 'closed',
@@ -156,6 +170,7 @@ const WilsyOSDashboardChrome = ({
 }) => {
   const [railCollapsedInternal, setRailCollapsedInternal] = useState(false);
   const [trustCenterState, setTrustCenterState] = useState(TRUST_CENTER_STATES.CLOSED);
+  const [moduleManifest, setModuleManifest] = useState({ status: 'idle', modules: [] });
   const trustCenterTriggerRef = useRef(null);
   const trustCenterCloseRef = useRef(null);
   const trustCenterRef = useRef(null);
@@ -184,6 +199,27 @@ const WilsyOSDashboardChrome = ({
     );
     return resolved || {};
   }, [activeTenantCode, authTenant, tenant, tenants]);
+
+  useEffect(() => {
+    let current = true;
+    const tenantId = authTenant?.tenantId;
+    if (!authUser || typeof tenantId !== 'string' || !tenantId) {
+      setModuleManifest({ status: 'idle', modules: [] });
+      return () => { current = false; };
+    }
+
+    setModuleManifest({ status: 'loading', modules: [] });
+    api.get('/auth/module-manifest')
+      .then(({ data }) => validateWilsyModuleManifest(data, tenantId))
+      .then((modules) => {
+        if (current) setModuleManifest({ status: 'ready', modules });
+      })
+      .catch(() => {
+        if (current) setModuleManifest({ status: 'unavailable', modules: [] });
+      });
+
+    return () => { current = false; };
+  }, [authUser?.id, authUser?.email, authTenant?.tenantId]);
 
   const identity = buildWilsyChromeIdentity({
     tenant: tenant && Object.keys(tenant || {}).length ? tenant : authTenant || {},
@@ -437,7 +473,7 @@ const WilsyOSDashboardChrome = ({
       ) : null}
 
       <section className="wilsyOsChromeWorkspaceFrame">
-        {leftRail ? (
+        {(leftRail || moduleManifest.modules.length > 0) ? (
           <aside
             className="wilsyOsChromeLeftRail"
             aria-label="Module navigation"
@@ -454,16 +490,71 @@ const WilsyOSDashboardChrome = ({
               {railCollapsed ? <ChevronRight size={16} /> : <ChevronLeft size={16} />}
               {!railCollapsed ? <span>Modules</span> : null}
             </button>
-            {!railCollapsed ? leftRail : (
-              <button
-                type="button"
-                className="wilsyOsChromeRailPeek"
-                onClick={toggleRail}
-                title="Open modules"
-                aria-label="Open modules"
-              >
-                <PanelLeft size={16} />
-              </button>
+            {!railCollapsed ? (
+              <>
+                {moduleManifest.modules.length > 0 ? (
+                  <nav className="wilsyOsChromeProductModules" aria-label="Available WILSY OS products">
+                    <span className="wilsyOsChromeModuleSectionLabel">YOUR PRODUCTS</span>
+                    {moduleManifest.modules.map((module) => {
+                      const ModuleIcon = MODULE_ICON_BY_KEY[module.iconKey];
+                      const currentKey = String(dashboardKey || '').toLowerCase();
+                      const isActive = (
+                        (module.moduleId === 'LEGAL_OS' && currentKey.startsWith('legal'))
+                        || (module.moduleId === 'BILLING' && (currentKey.includes('billing') || currentKey.includes('finance')))
+                        || (module.moduleId === 'CRM' && currentKey.includes('crm'))
+                        || (module.moduleId === 'PEOPLE' && currentKey.includes('hr'))
+                      );
+                      return (
+                        <button
+                          key={module.moduleId}
+                          type="button"
+                          className="wilsyOsChromeModuleButton"
+                          data-active={isActive ? 'true' : 'false'}
+                          aria-current={isActive ? 'page' : undefined}
+                          onClick={() => window.dispatchEvent(new CustomEvent(
+                            'wilsy:switch-dashboard',
+                            { detail: { dashboardKey: module.workspaceKey, source: 'server-module-manifest' } },
+                          ))}
+                        >
+                          <ModuleIcon size={16} aria-hidden="true" />
+                          <span>{module.label}</span>
+                        </button>
+                      );
+                    })}
+                  </nav>
+                ) : null}
+                {leftRail}
+              </>
+            ) : (
+              <div className="wilsyOsChromeCollapsedModules">
+                {moduleManifest.modules.map((module) => {
+                  const ModuleIcon = MODULE_ICON_BY_KEY[module.iconKey];
+                  return (
+                    <button
+                      key={module.moduleId}
+                      type="button"
+                      className="wilsyOsChromeModuleIconButton"
+                      title={module.label}
+                      aria-label={module.label}
+                      onClick={() => window.dispatchEvent(new CustomEvent(
+                        'wilsy:switch-dashboard',
+                        { detail: { dashboardKey: module.workspaceKey, source: 'server-module-manifest' } },
+                      ))}
+                    >
+                      <ModuleIcon size={16} aria-hidden="true" />
+                    </button>
+                  );
+                })}
+                <button
+                  type="button"
+                  className="wilsyOsChromeRailPeek"
+                  onClick={toggleRail}
+                  title="Open modules"
+                  aria-label="Open modules"
+                >
+                  <PanelLeft size={16} />
+                </button>
+              </div>
             )}
           </aside>
         ) : null}
@@ -568,14 +659,14 @@ export default WilsyOSDashboardChrome;
  * 🏛️ INSTITUTIONAL CERTIFICATION SEAL — WilsyOSDashboardChrome v2.0.0-L10-P2C1-INTERACTIVE-COMMAND-CONTRACT
  * ═══════════════════════════════════════════════════════════════════════════════
  * Status:          CERTIFIED PRODUCTION ARTIFACT
- * Version:         2.0.0-L10-P2C1-INTERACTIVE-COMMAND-CONTRACT
+ * Version:         2.2.0-EOS-MODULE-MANIFEST-NAVIGATION
  * Compliance:      POPIA §19 / GDPR §32 / SOC2 §CC7.2 / ISO 27001
  * Health Check:
  *   ✅ Unified shell for all domain HUDs
  *   ✅ Tenant isolation through identity resolution
  *   ✅ Operator identity display
- *   ✅ Collapsible left rail for module navigation
- *   ✅ Metrics strip for KPIs
+ *   ✅ Collapsible left rail for server-issued tenant product navigation
+ *   ✅ Metrics strip for source-backed KPIs only
  *   ✅ Search integration
  *   ✅ Account command center integration
  *   ✅ Fully responsive and accessible

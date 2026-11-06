@@ -209,6 +209,22 @@ def _service(orchestrations: Any, invocations: Any, advisories: _Advisories,
     )
 
 
+
+def test_advisory_reads_use_the_same_canonical_collections_as_l7a_l7c() -> None:
+    class _Database:
+        def __getitem__(self, name: str) -> str:
+            return name
+
+    service = WilsyAIAdvisoryService(database=_Database())
+    collections = service._collections()
+    assert collections == {
+        "lifecycle": "legal_operations_lifecycle_evidence",
+        "tariff": "process_service_tariff_assessments",
+        "eligibility": "process_service_billing_eligibility",
+        "invoice": "client_invoices",
+        "issuance": "issuance",
+    }
+
 def test_service_rejects_malformed_orchestration_without_opening_session() -> None:
     called = False
 

@@ -10,12 +10,12 @@
  * ║   ╚═════╝ ╚═╝╚══════╝╚══════╝╚═╝╚═╝  ╚═══╝ ╚═════╝     ╚═╝  ╚═╝ ╚═════╝  ╚═════╝    ╚═╝   ╚══════╝╚══════╝                       ║
  * ║                                                                                                                                        ║
  * ╚════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════╝
- * 🏛️ WILSY OS - BUSINESS ARTIFACT PDF CONTROLLER [V9.0.0‑INVOICE‑PAYLOAD‑ENRICHED]
+ * 🏛️ WILSY OS - BUSINESS ARTIFACT PDF CONTROLLER [V9.1.0‑EOS‑VERIFIED‑IDENTITY]
  * ╠════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════╣
  * ║ [FORENSIC PDF GENERATION | KNOWLEDGE BASE | CRM PROOF PACK | NDA | BILLING INVOICE]                                               ║
  * ║ [KENNEL EOS AWARE | TENANT ISOLATION | CRYPTOGRAPHIC SEALING]                                                                           ║
  * ╠════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════╣
- * ║ VERSION: 9.0.0‑INVOICE‑PAYLOAD‑ENRICHED | PRODUCTION READY | INSTITUTIONAL GRADE                                                     ║
+ * ║ VERSION: 9.1.0‑EOS‑VERIFIED‑IDENTITY | EOS AUTHORITY BOUNDARY | INSTITUTIONAL GRADE                                                     ║
  * ║ ABSOLUTE PATH: /Users/wilsonkhanyezi/legal-doc-system/server/controllers/businessArtifactPdfController.js                           ║
  * ╠════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════╣
  * ║ 👥 COLLABORATION & SOVEREIGN SIGN‑OFF:                                                                                              ║
@@ -23,17 +23,18 @@
  * ║ • AI Engineering – V9.0.0: Added `enrichBillingInvoiceIdentity` to normalise invoice fields for the enterprise renderer.           ║
  * ║ • Compliance: POPIA §19, GDPR §32, SOC2 §CC7.2, ISO 27001                                                                            ║
  * ╠════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════╣
- * ║ 🔧 CHANGES (v9.0.0‑INVOICE‑PAYLOAD‑ENRICHED):                                                                                        ║
+ * ║ 🔧 CHANGES (v9.1.0‑EOS‑VERIFIED‑IDENTITY):                                                                                        ║
  * ║   1. Added `enrichBillingInvoiceIdentity` – sets `type: 'billing-invoice'` and ensures all invoice fields are present.             ║
  * ║   2. Integrated enrichment into `generateSovereignArtifactPdf` before passing identity to renderer.                                 ║
  * ║   3. All existing Knowledge Base, CRM Proof Pack, NDA, and generic logic preserved unchanged.                                       ║
  * ║   4. Full JSDoc and compliance references.                                                                                           ║
+ * ║   5. Removed Mongoose profile reads and unverified JWT claim decoding; only EOS-verified workspace identity is accepted.           ║
  * ╚════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════╝
  */
 
 import crypto from 'node:crypto';
 import streamEnterpriseArtifactPdf from '../services/artifacts/wilsyEnterprisePdfRenderer.js';
-import mongoose from 'mongoose';
+import { resolveEosWorkspaceTenantScope } from '../services/eosWorkspaceIdentity.js';
 
 /**
  * @function readHeader
@@ -191,269 +192,50 @@ function resolveWilsyProfessionalDisplayNameCandidate(value = '') {
 }
 
 /**
- * @function resolveWilsyAuthorizationBearerToken
- * @description Extracts the Bearer token from request headers without logging or exposing token content.
- * @param {object} req Express request.
- * @returns {string} Bearer token without the Bearer prefix.
- * @collaboration Artifact PDF route authentication, live identity resolution, and no-secret logging discipline.
- */
-function resolveWilsyAuthorizationBearerToken(req = {}) {
-  const authorization = clean(req.headers?.authorization || req.headers?.Authorization, '');
-  const match = authorization.match(/^Bearer\s+(.+)$/i);
-
-  return match ? clean(match[1], '') : '';
-}
-
-/**
- * @function decodeWilsyBase64UrlJsonSegment
- * @description Decodes a JWT base64url JSON segment for identity claim discovery without logging token content.
- * @param {string} segment JWT segment.
- * @returns {object} Decoded JSON object or an empty object.
- * @collaboration Bearer token identity bridge, PDF live user resolver, and profile lookup.
- */
-function decodeWilsyBase64UrlJsonSegment(segment = '') {
-  try {
-    const normalized = clean(segment, '').replace(/-/g, '+').replace(/_/g, '/');
-    const padded = `${normalized}${'='.repeat((4 - (normalized.length % 4)) % 4)}`;
-    const decoded = Buffer.from(padded, 'base64').toString('utf8');
-    const parsed = JSON.parse(decoded);
-
-    return parsed && typeof parsed === 'object' ? parsed : {};
-  } catch {
-    return {};
-  }
-}
-
-/**
- * @function resolveWilsyBearerTokenClaims
- * @description Reads identity claims from the provided Bearer token so the controller can find the live database profile.
- * @param {object} req Express request.
- * @returns {object} Bearer token claims or an empty object.
- * @collaboration /api/generate/pdf, token-backed user identity, MongoDB profile lookup, and fail-closed Knowledge Base export.
- */
-function resolveWilsyBearerTokenClaims(req = {}) {
-  const token = resolveWilsyAuthorizationBearerToken(req);
-  const parts = token.split('.');
-
-  if (parts.length < 2) return {};
-
-  return decodeWilsyBase64UrlJsonSegment(parts[1]);
-}
-
-// WILSY_FG108O3M2D_BEARER_IDENTITY_BRIDGE
-
-/**
  * @function extractWilsyLiveUserProfileIdentity
- * @description Extracts live authenticated user/profile identity from request user objects and optional database user document.
- * @param {object} req Express request.
- * @param {object|null} profileDoc Optional database profile document.
- * @returns {object} Normalized live user identity.
- * @collaboration Auth middleware, Mongoose user profiles, account identity posture, and PDF document control.
+ * @description Accepts identity only after the BFF has verified the workspace through Python EOS.
+ * @param {object} req Express request enriched by the EOS workspace-bootstrap verifier.
+ * @returns {object} Normalized verified user identity.
  */
-function extractWilsyLiveUserProfileIdentity(req = {}, profileDoc = null) {
-  const user = req.user || {};
-  const profile = user.profile || {};
-  const tokenClaims = resolveWilsyBearerTokenClaims(req);
-  const tokenProfile = tokenClaims.profile || tokenClaims.user || tokenClaims.account || {};
-  const doc = profileDoc || {};
-  const docProfile = doc.profile || {};
-  const docAccount = doc.account || {};
+function extractWilsyLiveUserProfileIdentity(req = {}) {
+  if (req.eosAuthenticatedIdentity !== true) {
+    return {
+      userId: '',
+      email: '',
+      displayName: '',
+      source: 'EOS_AUTHORITY_UNVERIFIED',
+      hasProfessionalDisplayName: false,
+    };
+  }
 
-  const displayCandidates = [
+  const user = req.user || {};
+  const displayName = [
     user.displayName,
     user.fullName,
-    user.name,
     user.firstName && user.lastName ? `${user.firstName} ${user.lastName}` : '',
-    profile.displayName,
-    profile.fullName,
-    profile.name,
-    profile.firstName && profile.lastName ? `${profile.firstName} ${profile.lastName}` : '',
-    tokenClaims.displayName,
-    tokenClaims.fullName,
-    tokenClaims.name,
-    tokenClaims.given_name && tokenClaims.family_name
-      ? `${tokenClaims.given_name} ${tokenClaims.family_name}`
-      : '',
-    tokenProfile.displayName,
-    tokenProfile.fullName,
-    tokenProfile.name,
-    tokenProfile.firstName && tokenProfile.lastName
-      ? `${tokenProfile.firstName} ${tokenProfile.lastName}`
-      : '',
-    doc.displayName,
-    doc.fullName,
-    doc.name,
-    doc.firstName && doc.lastName ? `${doc.firstName} ${doc.lastName}` : '',
-    docProfile.displayName,
-    docProfile.fullName,
-    docProfile.name,
-    docProfile.firstName && docProfile.lastName
-      ? `${docProfile.firstName} ${docProfile.lastName}`
-      : '',
-    docAccount.displayName,
-    docAccount.fullName,
-    docAccount.name,
-  ];
-
-  const emailCandidates = [
-    user.email,
-    user.userEmail,
-    user.primaryEmail,
-    profile.email,
-    profile.userEmail,
-    tokenClaims.email,
-    tokenClaims.userEmail,
-    tokenClaims.primaryEmail,
-    tokenProfile.email,
-    tokenProfile.userEmail,
-    doc.email,
-    doc.userEmail,
-    doc.primaryEmail,
-    docProfile.email,
-    docProfile.userEmail,
-  ];
-
-  const idCandidates = [
-    user.id,
-    user._id,
-    user.userId,
-    user.sub,
-    tokenClaims.sub,
-    tokenClaims.id,
-    tokenClaims._id,
-    tokenClaims.userId,
-    tokenProfile.id,
-    tokenProfile._id,
-    tokenProfile.userId,
-    doc._id,
-    doc.id,
-    doc.userId,
-  ];
-
-  const displayName =
-    displayCandidates.map(resolveWilsyProfessionalDisplayNameCandidate).find(Boolean) || '';
-
-  const email =
-    emailCandidates.map((item) => clean(item, '')).find((item) => item && item.includes('@')) || '';
-
-  const userId = idCandidates.map((item) => clean(item, '')).find(Boolean) || '';
+  ]
+    .map(resolveWilsyProfessionalDisplayNameCandidate)
+    .find(Boolean) || '';
+  const email = clean(user.email, '');
+  const userId = clean(user.id, '');
 
   return {
     userId,
     email,
     displayName,
-    source: profileDoc
-      ? 'LIVE_DATABASE_PROFILE'
-      : Object.keys(tokenClaims || {}).length
-        ? 'LIVE_BEARER_TOKEN_CLAIMS'
-        : 'LIVE_REQUEST_USER',
+    source: 'EOS_VERIFIED_WORKSPACE_BOOTSTRAP',
     hasProfessionalDisplayName: Boolean(displayName),
   };
 }
 
 /**
- * @function findWilsyLiveUserProfileDocument
- * @description Looks up the authenticated user in registered Mongoose user/profile models without hard-coded user identifiers.
- * @param {object} req Express request.
- * @returns {Promise<object|null>} User/profile document or null.
- * @collaboration MongoDB, Mongoose models, auth middleware, tenant profile data, and live Generated By resolution.
- */
-async function findWilsyLiveUserProfileDocument(req = {}) {
-  if (!mongoose?.connection?.readyState) return null;
-
-  const user = req.user || {};
-  const profile = user.profile || {};
-  const tokenClaims = resolveWilsyBearerTokenClaims(req);
-  const tokenProfile = tokenClaims.profile || tokenClaims.user || tokenClaims.account || {};
-
-  const rawIds = [
-    user._id,
-    user.id,
-    user.userId,
-    user.sub,
-    tokenClaims.sub,
-    tokenClaims.id,
-    tokenClaims._id,
-    tokenClaims.userId,
-    tokenProfile.id,
-    tokenProfile._id,
-    tokenProfile.userId,
-  ]
-    .map((item) => clean(item, ''))
-    .filter(Boolean);
-
-  const emails = [
-    user.email,
-    user.userEmail,
-    user.primaryEmail,
-    profile.email,
-    profile.userEmail,
-    tokenClaims.email,
-    tokenClaims.userEmail,
-    tokenClaims.primaryEmail,
-    tokenProfile.email,
-    tokenProfile.userEmail,
-  ]
-    .map((item) => clean(item, ''))
-    .filter((item) => item && item.includes('@'));
-
-  const modelNames = Object.keys(mongoose.models || {}).filter((name) =>
-    /user|profile|account|operator|member/i.test(name)
-  );
-
-  for (const modelName of modelNames) {
-    const Model = mongoose.models[modelName];
-
-    for (const rawId of rawIds) {
-      if (!mongoose.Types.ObjectId.isValid(rawId)) continue;
-
-      try {
-        const found = await Model.findById(rawId).lean().exec();
-        if (found) return found;
-      } catch {
-        // Continue across models.
-      }
-    }
-
-    for (const email of emails) {
-      try {
-        const found = await Model.findOne({
-          $or: [
-            { email },
-            { userEmail: email },
-            { primaryEmail: email },
-            { 'profile.email': email },
-            { 'profile.userEmail': email },
-            { 'account.email': email },
-            { 'auth.email': email },
-            { 'local.email': email },
-            { 'contact.email': email },
-          ],
-        })
-          .lean()
-          .exec();
-
-        if (found) return found;
-      } catch {
-        // Continue across models.
-      }
-    }
-  }
-
-  return null;
-}
-
-/**
  * @function resolveWilsyLiveAuthenticatedUserIdentity
- * @description Resolves live backend authenticated user identity from req.user and registered database profile models without hard-coded names or emails.
- * @param {object} req Express request.
- * @returns {Promise<object>} Live authenticated user identity.
- * @collaboration PDF controller, auth middleware, MongoDB profile records, and no-hardcode Generated By governance.
+ * @description Resolves the exact user profile returned by EOS after token, session, tenant and membership checks.
+ * @param {object} req Express request enriched by the EOS workspace-bootstrap verifier.
+ * @returns {Promise<object>} Verified identity projection for PDF metadata.
  */
 async function resolveWilsyLiveAuthenticatedUserIdentity(req = {}) {
-  const profileDoc = await findWilsyLiveUserProfileDocument(req);
-  const identity = extractWilsyLiveUserProfileIdentity(req, profileDoc);
-
+  const identity = extractWilsyLiveUserProfileIdentity(req);
   return {
     ...identity,
     generatedByDisplayName: identity.displayName,
@@ -875,8 +657,7 @@ async function buildArtifactIdentity(req) {
   assertWilsyKnowledgeBaseLiveUserIdentity(isKnowledgeBaseRequest, liveAuthenticatedUserIdentity);
 
   const generatedByDisplayName =
-    liveAuthenticatedUserIdentity.generatedByDisplayName ||
-    resolveWilsyArtifactProfessionalGeneratedBy(req, body, metadata, payload, payloadData);
+    liveAuthenticatedUserIdentity.generatedByDisplayName || 'Authenticated WILSY User';
 
   const liveAuthenticatedUserEmail =
     liveAuthenticatedUserIdentity.email ||
@@ -903,14 +684,24 @@ async function buildArtifactIdentity(req) {
     'WILSY-ENTERPRISE-ARTIFACT'
   );
 
-  const tenantId = clean(
-    body.tenantId ||
-    metadata.tenantId ||
-    mergedPayloadData.tenantId ||
-    req.tenantId ||
-    req.user?.tenantId,
-    'MASTER'
-  );
+  const tenantScope = resolveEosWorkspaceTenantScope({
+    requestedTenantId: req.tenantId,
+    workspace: req.eosWorkspace,
+    suppliedTenantIds: [
+      body.tenantId,
+      metadata.tenantId,
+      payload.tenantId,
+      payloadData.tenantId,
+      mergedPayloadData.tenantId,
+    ],
+  });
+  if (!tenantScope.ok || req.eosAuthenticatedIdentity !== true) {
+    const error = new Error('PDF tenant scope does not match the authenticated EOS workspace.');
+    error.statusCode = 403;
+    error.code = 'WORKSPACE_SCOPE_MISMATCH';
+    throw error;
+  }
+  const tenantId = tenantScope.tenantId;
 
   const generatedAt = clean(
     body.generatedAt ||
@@ -1300,45 +1091,69 @@ function buildCrmProofPackEnterpriseStorySections(proofPack = {}) {
 }
 
 /**
- * @function buildCrmProofPackEnterpriseIdentity
- * @description Adapts CRM Proof Pack evidence into the existing tenant-branded enterprise PDF renderer identity.
- * @param {object} identity Existing artifact identity.
- * @param {object} proofPack CRM Proof Pack payload.
- * @returns {object} Enterprise renderer identity.
- * @collaboration businessArtifactPdfController, streamEnterpriseArtifactPdf, tenant branding, Merkle/SHA3 proof, and CRM evidence storytelling.
- */
-function buildCrmProofPackEnterpriseIdentity(identity = {}, proofPack = {}) {
-  const story = buildCrmProofPackEnterpriseStorySections(proofPack);
+ * @function buildCrmProofPackEnterpriseIdentity(identity = {}, proofPack = {}) {
+  const tenantId = clean(identity.tenantId, '');
+  const suppliedTenantId = clean(proofPack.tenantId, '');
+  const generatedBy = clean(
+    identity.generatedByDisplayName || identity.generatedBy,
+    'Authenticated WILSY User'
+  );
+  const suppliedGeneratedBy = clean(proofPack.generatedBy, '');
+  if (
+    !tenantId ||
+    (suppliedTenantId && suppliedTenantId !== tenantId) ||
+    (suppliedGeneratedBy && suppliedGeneratedBy !== generatedBy)
+  ) {
+    const error = new Error('CRM proof pack identity does not match the authenticated EOS workspace.');
+    error.statusCode = 403;
+    error.code = 'PDF_IDENTITY_SCOPE_MISMATCH';
+    throw error;
+  }
+
+  const authoritativeProofPack = {
+    ...proofPack,
+    tenantId,
+    generatedBy,
+    generatedByDisplayName: generatedBy,
+    operatorDisplayName: generatedBy,
+    ownerDisplayName: generatedBy,
+    displayName: generatedBy,
+    userEmail: clean(identity.userEmail, 'UNRESOLVED_AUTHENTICATED_USER'),
+    liveUserIdentitySource: identity.liveUserIdentitySource,
+    liveUserId: identity.liveUserId,
+  };
+  const story = buildCrmProofPackEnterpriseStorySections(authoritativeProofPack);
   const generatedAt = clean(
-    proofPack.generatedAt || identity.generatedAt,
+    authoritativeProofPack.generatedAt || identity.generatedAt,
     new Date().toISOString()
   );
-  const tenantId = clean(proofPack.tenantId || identity.tenantId, 'wilsy-sovereign-root');
-  const generatedBy = clean(
-    proofPack.generatedBy || identity.generatedBy || identity.userEmail,
-    'UNRESOLVED_AUTHENTICATED_USER'
-  );
-  const title = clean(proofPack.title || identity.title, 'Lead Evidence Ledger Proof Pack');
+  const title = clean(authoritativeProofPack.title || identity.title, 'Lead Evidence Ledger Proof Pack');
   const sourcePosture = clean(
-    proofPack.sourcePosture || identity.sourcePosture || 'SOURCE_LIVE',
+    authoritativeProofPack.sourcePosture || identity.sourcePosture || 'SOURCE_LIVE',
     'SOURCE_LIVE'
   );
 
   return {
     ...identity,
-    ...proofPack,
+    ...authoritativeProofPack,
     type: 'crm-lead-proof-pack',
     artifactType: 'crm-lead-proof-pack',
     title,
     tenantId,
     tenant: tenantId,
-    counterparty: clean(proofPack.counterparty || identity.counterparty || tenantId, tenantId),
+    counterparty: clean(authoritativeProofPack.counterparty || identity.counterparty || tenantId, tenantId),
     generatedAt,
     timestamp: generatedAt,
     generatedBy,
-    userEmail: clean(identity.userEmail || proofPack.userEmail || generatedBy, generatedBy),
+    generatedByDisplayName: generatedBy,
+    operatorDisplayName: generatedBy,
+    ownerDisplayName: generatedBy,
+    displayName: generatedBy,
+    userEmail: clean(identity.userEmail, 'UNRESOLVED_AUTHENTICATED_USER'),
+    liveUserIdentitySource: identity.liveUserIdentitySource,
+    liveUserId: identity.liveUserId,
     sourcePosture,
-    version: clean(identity.version || proofPack.version, 'WILSY-OS-ARTIFACT-v2.1-ENTERPRISE'),
+    version: clean(identity.version || authoritativeProofPack.version, 'WILSY-OS-ARTIFACT-v2.1-ENTERPRISE'),
     lifecycle: [
       'Proof target selected',
       'Saved view resolved',
@@ -1349,40 +1164,46 @@ function buildCrmProofPackEnterpriseIdentity(identity = {}, proofPack = {}) {
     approvals: ['Proof Ledger Access', 'Export Control', 'Tenant Authority'],
     clausePack: 'Wilsy CRM Proof Pack Enterprise Story v1',
     signatureRoute: 'Wilsy OS Proof Ledger / Artifact Vault',
-    crmProofPack: proofPack,
-    proofPackSections: proofPack,
-    proofSummaryRows: proofPack.proofSummaryRows || [],
-    authoritySealRows: proofPack.authoritySealRows || [],
-    proofChecks: proofPack.proofChecks || [],
-    operationalTimeline: proofPack.operationalTimeline || [],
-    scopedRecords: proofPack.scopedRecords || [],
-    metricsRows: proofPack.metricsRows || [],
+    crmProofPack: authoritativeProofPack,
+    proofPackSections: authoritativeProofPack,
+    proofSummaryRows: authoritativeProofPack.proofSummaryRows || [],
+    authoritySealRows: authoritativeProofPack.authoritySealRows || [],
+    proofChecks: authoritativeProofPack.proofChecks || [],
+    operationalTimeline: authoritativeProofPack.operationalTimeline || [],
+    scopedRecords: authoritativeProofPack.scopedRecords || [],
+    metricsRows: authoritativeProofPack.metricsRows || [],
     executivePurpose: story.executivePurpose,
     partiesOwnersAuthority: story.partiesOwnersAuthority,
     scopeControlsExceptions: story.scopeControlsExceptions,
     forensicProofRetention: story.forensicProofRetention,
     metadata: {
       ...(identity.metadata || {}),
-      ...(proofPack.metadata || {}),
+      ...(authoritativeProofPack.metadata || {}),
       type: 'crm-lead-proof-pack',
       artifactType: 'crm-lead-proof-pack',
       tenantId,
+      userEmail: clean(identity.userEmail, 'UNRESOLVED_AUTHENTICATED_USER'),
       timestamp: generatedAt,
       generatedAt,
       generatedBy,
+      generatedByDisplayName: generatedBy,
+      operatorDisplayName: generatedBy,
+      ownerDisplayName: generatedBy,
+      displayName: generatedBy,
+      liveUserIdentitySource: identity.liveUserIdentitySource,
+      liveUserId: identity.liveUserId,
       sourcePosture,
       renderer: 'streamEnterpriseArtifactPdf',
       crmProofPackBridge: 'FG106N_ENTERPRISE_ENGINE_ADAPTER',
     },
     payloadData: {
       ...(identity.payloadData || {}),
-      crmProofPack: proofPack,
-      proofPackSections: proofPack,
+      crmProofPack: authoritativeProofPack,
+      proofPackSections: authoritativeProofPack,
       story,
     },
   };
 }
-
 /**
  * @function generateSovereignArtifactPdf
  * @description Generates Wilsy OS enterprise business artifacts using the real enterprise renderer service.

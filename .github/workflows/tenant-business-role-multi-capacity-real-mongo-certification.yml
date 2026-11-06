@@ -2,7 +2,7 @@ name: Tenant business-role multi-capacity real-Mongo certification
 
 on:
   pull_request:
-    branches: [main]
+    branches: [main, eos/atomic-owner-genesis-integration]
     paths:
       - "tools/eos/auth/tenant_business_role.py"
       - "tools/eos/auth/tenant_business_role_repository.py"

@@ -1,7 +1,7 @@
 """TITLE: WILSY OS Permission Namespace Semantic Canon.
-VERSION: v1.55.0-L10A2R-C4D7-RECONCILIATION-READ-PERMISSION
+VERSION: v1.56.0-SYSTEM-SERVICES-IAM-VOCABULARY
 AUTHORITY: Immutable permission vocabulary and scope metadata only.
-EPITOME: Extends the canonical TENANT and SYSTEM permission vocabulary with dedicated
+EPITOME: Extends the canonical TENANT and SYSTEM permission vocabulary with dedicated WILSY OS System Services and IAM command metadata,
 inbound-collection, merchant-configuration, provider-policy, WILSY AI,
 billing-intelligence, Legal Operations lifecycle/client visibility, matter
 deadline read/write vocabulary, and explicit
@@ -243,7 +243,7 @@ from types import MappingProxyType
 from typing import Final
 
 
-VERSION = "v1.55.0-L10A2R-C4D7-RECONCILIATION-READ-PERMISSION"
+VERSION = "v1.57.0-SYSTEM-SERVICES-AUDIT-READ-PERMISSION"
 
 
 class PermissionDisposition(StrEnum):
@@ -374,6 +374,77 @@ _PERMISSIONS: Final = MappingProxyType(
             "SYSTEM",
             "read one trusted tenant/provider-scoped evidence reconciliation projection",
             system=True,
+        ),
+        # SYSTEM SERVICES vocabulary — metadata only; no role or grant is created.
+        "system_services:queue:read": _meta(
+            "system_services:queue:read", "SYSTEM", "SYSTEM",
+            "read sanitized platform support queue metadata",
+            system=True, workforce=True,
+        ),
+        "system_services:case:triage": _meta(
+            "system_services:case:triage", "SYSTEM", "SYSTEM",
+            "triage and route platform support cases within authorized queue partitions",
+            system=True, workforce=True,
+        ),
+        "system_services:identity:read": _meta(
+            "system_services:identity:read", "SYSTEM", "SYSTEM",
+            "read minimum case-bound identity and security posture",
+            system=True, workforce=True,
+        ),
+        "system_services:recovery:request": _meta(
+            "system_services:recovery:request", "SYSTEM", "SYSTEM",
+            "initiate a governed case-bound account recovery workflow",
+            system=True, workforce=True,
+        ),
+        "system_services:session:revoke": _meta(
+            "system_services:session:revoke", "SYSTEM", "SYSTEM",
+            "request case-bound session or device revocation under independent policy",
+            system=True, workforce=True,
+        ),
+        "system_services:audit:read": _meta(
+            "system_services:audit:read", "SYSTEM", "SYSTEM",
+            "read authorized System Services audit projections without secret material",
+            system=True, workforce=True,
+        ),
+        "system_services:incident:escalate": _meta(
+            "system_services:incident:escalate", "SYSTEM", "SYSTEM",
+            "escalate suspected identity compromise to security incident handling",
+            system=True, workforce=True,
+        ),
+        "system_services:incident:response:decide": _meta(
+            "system_services:incident:response:decide", "SYSTEM", "SYSTEM",
+            "approve or reject an incident response proposal under independent review",
+            system=True, workforce=True,
+        ),
+        "system_services:incident:response:execute": _meta(
+            "system_services:incident:response:execute", "SYSTEM", "SYSTEM",
+            "execute one independently approved incident response through a canonical EOS service",
+            system=True, workforce=True,
+        ),
+        "iam:access_request:read": _meta(
+            "iam:access_request:read", "SYSTEM", "SYSTEM",
+            "read access requests and their evidence",
+            system=True, workforce=True,
+        ),
+        "iam:access_request:decide": _meta(
+            "iam:access_request:decide", "SYSTEM", "SYSTEM",
+            "decide bounded access requests under independent approval policy",
+            system=True, workforce=True,
+        ),
+        "iam:role_assignment:read": _meta(
+            "iam:role_assignment:read", "SYSTEM", "SYSTEM",
+            "read role assignments within the actor's exact SYSTEM scope",
+            system=True, workforce=True,
+        ),
+        "iam:role_assignment:write": _meta(
+            "iam:role_assignment:write", "SYSTEM", "SYSTEM",
+            "request a separately governed role assignment within exact scope",
+            system=True, workforce=True,
+        ),
+        "iam:role_assignment:revoke": _meta(
+            "iam:role_assignment:revoke", "SYSTEM", "SYSTEM",
+            "request revocation of an exact role assignment within exact scope",
+            system=True, workforce=True,
         ),
         "artifacts:read": _meta(
             "artifacts:read",
@@ -625,6 +696,20 @@ _PERMISSIONS: Final = MappingProxyType(
             "TENANT",
             "TENANT",
             "read own-tenant canonical billing-intelligence evidence",
+            tenant=True,
+        ),
+        "billing_dunning:projection:read": _meta(
+            "billing_dunning:projection:read",
+            "TENANT",
+            "TENANT",
+            "read own-tenant collection workflow projections",
+            tenant=True,
+        ),
+        "billing_dunning:projection:evaluate": _meta(
+            "billing_dunning:projection:evaluate",
+            "TENANT",
+            "TENANT",
+            "evaluate own-tenant collection workflow projections",
             tenant=True,
         ),
         "hr:employee_relation:write": _meta(

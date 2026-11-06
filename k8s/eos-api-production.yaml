@@ -1,57 +1,15 @@
 # ==============================================================================
 # WILSY OS — DEDICATED PYTHON EOS KUBERNETES PRODUCTION WORKLOAD
 #
-# TITLE: Dedicated Python EOS Production Kubernetes Runtime
-# VERSION: v1.3.1-L10A2R-C4D7-POSTMERGE-IMAGE-PIN
-# AUTHORITY: Wilsy OS Core Governance
-# EPITOME: Run the certified sovereign Python EOS API as a dedicated,
-#          digest-pinned, non-root Kubernetes workload on port 9095.
-# ABSOLUTE CANONICAL PATH:
-#   /Users/wilsonkhanyezi/legal-doc-system/k8s/eos-api-production.yaml
-# COLLABORATION / OWNERSHIP:
-#   Python EOS owns sovereign business, authority, lifecycle, and evidence truth.
-#   Kubernetes owns workload scheduling only.
-# CERTIFICATION / UPDATE DATE: 2026-10-25
-# CHANGELOG:
-#   v1.3.1-L10A2R-C4D7-POSTMERGE-IMAGE-PIN
-#     - Pin the dedicated EOS workload to the immutable image published from
-#       merge commit 358823c0dd7bed1a9ade8f5180837c67494c18ec.
-#     - Preserve external provisioning requirements; this pin is not proof of
-#       deployment, secret provisioning, workload identity, or live readiness.
-#   v1.3.0-L10A2R-C4D7-READONLY-AWS-ROLE-CONFIG
-#     - Require an approved dedicated read-only reconciliation role ARN and
-#       bind it through the deployment-owned runtime ConfigMap.
-#   v1.2.0-L10A2R-C4D7-LEGAL-EVIDENCE-CONFIG-BINDINGS
-#     - Bind the fixed reconciliation tenant and canonical Legal Evidence
-#       S3 bucket/region/KMS settings consumed by production composition.
-#   v1.1.0-L10A2R-C4D7-RECONCILIATION-RUNTIME-CONFIG
-#     - Bind canonical internal-workload trust settings and a distinct audit
-#       MongoDB URI through deployment-owned Secret keys.
-#   v1.0.0-P0-C12F7C-EOS-K8S-PRODUCTION
-#     - Establish the first dedicated Python EOS Kubernetes workload.
-#     - Bind the certified immutable EOS image digest from main head
-#       150bbe9d5a72b6997e4a17b861cc8c4cbf73241e.
-#     - Preserve runtime-owned MongoDB, HR upload-policy, S3, and workload-
-#       identity configuration without embedding secrets or static AWS keys.
-#     - Expose EOS internally through ClusterIP only; no public ingress or
-#       cloud-specific workload identity is fabricated by this artifact.
-# COMPLIANCE:
-#   AGENTS.md v1.2.0-SOVEREIGN-LEGAL-OPERATIONS-CONSTITUTION.
-# SECURITY / PRIVACY POSTURE:
-#   Non-root, privilege escalation disabled, capabilities dropped, read-only
-#   root filesystem, digest-pinned image, and no credential material embedded.
-# TENANT BOUNDARY:
-#   Deployment creates no tenant truth. Canonical Python EOS retains tenant
-#   admission, authorization, isolation, and persisted-sensitivity authority.
-# AUTHORITY BOUNDARY:
-#   Kubernetes scheduling and internal service discovery only. This manifest
-#   does not grant AWS, IAM, S3 administration, MongoDB administration, legal,
-#   billing, HR business, provider, payment, settlement, or financial authority.
-# FINANCIAL AUTHORITY BOUNDARY:
-#   Kennel EOS remains the exclusive financial execution authority.
-# FAIL-CLOSED DECLARATION:
-#   Missing required Kubernetes ConfigMap/Secret bindings prevent the workload
-#   from receiving production runtime authority; values are never fabricated.
+# TITLE: Dedicated EOS Production Kubernetes Runtime
+# SECURITY: digest-pinned, non-root, read-only filesystem, no static AWS keys.
+# AUTHORITY: Python EOS owns business and authorization truth; Kubernetes only
+#            schedules the workload.
+# WORKLOAD IDENTITY: ServiceAccount exists; no AWS role is bound until the
+#                    actual cluster/provider identity is independently proven.
+# KMS: Optional deployment-owned references only. Empty/missing values keep
+#      global MFA KMS disabled. No key ARN, account, region or role is guessed.
+# NETWORK: Internal ClusterIP only.
 # ==============================================================================
 
 apiVersion: v1
@@ -109,12 +67,37 @@ spec:
           env:
             - name: WILSY_ENV
               value: production
+            # Global-principal MFA KMS is opt-in. These optional references
+            # deliberately leave the adapter disabled until the deployment
+            # owner provisions every approved value and workload identity.
+            - name: WILSY_GLOBAL_MFA_KMS_PROVIDER
+              valueFrom:
+                configMapKeyRef:
+                  name: wilsy-eos-runtime
+                  key: global-principal-mfa-kms-provider
+                  optional: true
+            - name: WILSY_GLOBAL_MFA_KMS_KEY_ID
+              valueFrom:
+                configMapKeyRef:
+                  name: wilsy-eos-runtime
+                  key: global-principal-mfa-kms-key-id
+                  optional: true
+            - name: WILSY_GLOBAL_MFA_KMS_DECRYPT_KEY_IDS
+              valueFrom:
+                configMapKeyRef:
+                  name: wilsy-eos-runtime
+                  key: global-principal-mfa-kms-decrypt-key-ids
+                  optional: true
+            - name: AWS_REGION
+              valueFrom:
+                configMapKeyRef:
+                  name: wilsy-eos-runtime
+                  key: global-principal-mfa-kms-region
+                  optional: true
             - name: WILSY_HR_DOCUMENT_S3_BUCKET
               value: wilsy-hr-documents-af-south-1-4a5acd714dc2
             - name: WILSY_HR_DOCUMENT_S3_REGION
               value: af-south-1
-            # Legal Evidence storage settings are shared by the existing
-            # upload authority and the read-only reconciliation provider.
             - name: WILSY_LEGAL_EVIDENCE_S3_BUCKET
               valueFrom:
                 configMapKeyRef:
@@ -157,9 +140,6 @@ spec:
                 secretKeyRef:
                   name: wilsy-eos-runtime-secrets
                   key: mongodb-uri
-            # The reconciliation route is enabled only when every canonical
-            # workload-trust and distinct audit-target input is provisioned.
-            # These are secret references, never repository-held credentials.
             - name: WILSY_INTERNAL_AUTH_SERVICE_ID
               valueFrom:
                 secretKeyRef:
@@ -235,25 +215,8 @@ spec:
       targetPort: http
 
 # ==============================================================================
-# WILSY OS SOVEREIGN ARTIFACT SEAL
-#
-# ARTIFACT: k8s/eos-api-production.yaml
-# VERSION: v1.3.1-L10A2R-C4D7-POSTMERGE-IMAGE-PIN
-# IMAGE AUTHORITY:
-#   Immutable EOS digest only; no mutable latest tag is admitted.
-# WORKLOAD IDENTITY:
-#   Dedicated Kubernetes ServiceAccount exists, but no AWS role annotation is
-#   authored until the concrete cluster/provider identity mechanism is proven.
-# RUNTIME CONFIGURATION:
-#   Business MongoDB, signed internal-workload trust, and the separate legal-
-#   evidence reconciliation audit target are Secret-owned; no values are
-#   embedded. Missing bindings prevent trusted reconciliation startup.
-# NETWORK EXPOSURE:
-#   ClusterIP only. Public ingress/load-balancer authority is not fabricated.
-# FAIL-CLOSED POSTURE:
-#   Missing production configuration or secret bindings must prevent valid
-#   runtime authority rather than silently substituting repository defaults.
-# FINANCIAL EXECUTION AUTHORITY:
-#   Kennel EOS exclusively.
-# END OF WILSY OS SOVEREIGN ARTIFACT
+# ARTIFACT SEAL
+# KMS values are deployment-owned; optional references do not activate KMS by
+# themselves. No AWS role annotation is present pending proof of EKS identity.
+# No production key, AWS account, region, credentials or role is fabricated.
 # ==============================================================================

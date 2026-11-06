@@ -49,6 +49,7 @@ const python = process.env.BROWSER_CERT_PYTHON
     ? join(repo, '.venv/bin/python')
     : 'python');
 const fixture = join(repo, 'tests/e2e/browser_cert_fixture.py');
+const scopeVerifier = join(repo, 'tests/e2e/browser_cert_scope_verify.py');
 const playwright = join(repo, 'node_modules/.bin/playwright');
 const serverDirectory = join(repo, 'server');
 const clientDirectory = join(repo, 'client');
@@ -103,6 +104,7 @@ const environment = {
   BROWSER_CERT_STATE: statePath,
   MONGODB_URI: mongoUri,
   WILSY_JWT_SECRET: secret,
+  WILSY_PLATFORM_WORKFORCE_SCOPE_ID: 'browser-cert-platform-workforce',
   ENV: 'development',
   WILSY_KENNEL_DB_TLS: '0',
   PYTHONPATH: [repo, process.env.PYTHONPATH].filter(Boolean).join(':'),
@@ -196,7 +198,7 @@ function attachSafeDiagnostics(record) {
         const match = line.match(/HTTP:\s+http:\/\/localhost:(\d+)/);
         if (match) record.listeningPort = Number(match[1]);
       } else if (record.label === 'VITE') {
-        const match = line.match(/Local:\s+http:\/\/127\.0\.0\.1:(\d+)/);
+        const match = line.match(/Local:\s+http:\/\/(?:127\.0\.0\.1|localhost):(\d+)/);
         if (match) record.listeningPort = Number(match[1]);
       }
       const event = classifyStartupLine(record.label, line);
@@ -461,6 +463,61 @@ async function preflightAuthenticatedEos(eosBaseUrl) {
   return results.slice(0, 2);
 }
 
+
+async function preflightSystemServices(eosBaseUrl) {
+  let state;
+  try {
+    state = JSON.parse(await readFile(statePath, 'utf-8'));
+  } catch {
+    throw new Error('BROWSER_CERT_FIXTURE_STATE_UNAVAILABLE');
+  }
+  const responder = state?.system_actors?.system_responder;
+  const triage = state?.system_actors?.system_triage;
+  if (!responder?.access_token || !triage?.access_token) {
+    throw new Error('BROWSER_CERT_SYSTEM_ACTOR_SESSIONS_UNAVAILABLE');
+  }
+  const request = async (path, token) => {
+    const response = await fetch(eosBaseUrl + '/api/system-services/' + path, {
+      headers: { Authorization: 'Bearer ' + token },
+      signal: AbortSignal.timeout(10_000),
+    });
+    return { status: response.status, payload: await readBoundedJson(response) };
+  };
+  const [bootstrap, queue, inbox, triageInbox] = await Promise.all([
+    request('workspace-bootstrap', responder.access_token),
+    request('security-incidents', responder.access_token),
+    request('security-incident-assignments/mine', responder.access_token),
+    request('security-incident-assignments/mine', triage.access_token),
+  ]);
+  console.info(
+    '[BROWSER-CERT-SYSTEM-SERVICES] bootstrap=' + bootstrap.status
+      + ' queue=' + queue.status + ' responder_inbox=' + inbox.status
+      + ' non_responder_inbox=' + triageInbox.status,
+  );
+  if (
+    bootstrap.status !== 200
+    || bootstrap.payload?.status !== 'READY'
+    || bootstrap.payload?.authority !== 'EOS_SYSTEM_SERVICES'
+    || !bootstrap.payload?.capabilities?.includes('system_services:incident:escalate')
+    || queue.status !== 200
+    || inbox.status !== 200
+    || triageInbox.status !== 403
+  ) {
+    throw new Error('BROWSER_CERT_SYSTEM_SERVICES_AUTHORIZATION_BOUNDARY_FAILED');
+  }
+  const incidents = queue.payload;
+  const assignments = inbox.payload;
+  if (
+    !Array.isArray(incidents)
+    || !incidents.some((item) => item.incidentId === state.system_incident_id)
+    || !Array.isArray(assignments)
+    || !assignments.some((item) => item.assignmentId === state.system_assignment_id)
+  ) {
+    throw new Error('BROWSER_CERT_SYSTEM_SERVICES_SEEDED_EVIDENCE_MISSING');
+  }
+}
+
+
 function missingBffDependencies() {
   const required = ['cors', 'dotenv', 'express', 'express-fileupload', 'helmet', 'httpxy', 'mongoose'];
   return required.filter(
@@ -565,6 +622,7 @@ try {
 
   setPhase('authenticated_preflights', 'partner_practice_and_owner_commercial_authority');
   const preflightResults = await preflightAuthenticatedEos(eosBaseUrl);
+  await preflightSystemServices(eosBaseUrl);
   const failedPreflights = preflightResults.filter((result) => result.status !== 200);
   if (failedPreflights.length > 0) {
     const summary = preflightResults.map(
@@ -573,39 +631,47 @@ try {
     throw new Error('BROWSER_CERT_EOS_PREFLIGHT_FAILED:' + summary);
   }
 
-  setPhase('startup', 'bff_dependency_check_and_launch');
-  const missingDependencies = missingBffDependencies();
-  if (missingDependencies.length > 0) {
-    throw new Error('BROWSER_CERT_BFF_DEPENDENCIES_MISSING:' + missingDependencies.join(','));
-  }
-  const bffEnvironment = {
-    ...environment,
-    PORT: String(bffPort),
-    MONGODB_URI: mongoUri,
-    MONGO_URI: mongoUri,
-    KENNEL_URL: eosBaseUrl,
-  };
-  console.info('[BROWSER-CERT-STARTUP] service=BFF action=starting port=' + bffPort);
-  const bffProcess = spawnOwned(
-    process.execPath,
-    ['--import', './preload-shield.js', 'server.js'],
-    { cwd: serverDirectory, env: bffEnvironment, stdio: ['ignore', 'pipe', 'pipe'] },
-    'BFF',
-  );
-  bffPort = await waitForOwnedPort(bffProcess);
-  const bffHealthResponse = await waitFor('http://127.0.0.1:' + bffPort + '/health', 'BFF');
-  if (bffProcess.closed) throw new Error('BROWSER_CERT_BFF_EXITED_DURING_STARTUP');
-  await verifyBffHealth(bffHealthResponse);
-
   const baseViteConfigPath = join(clientDirectory, 'vite.config.js');
   const baseViteConfig = await readFile(baseViteConfigPath, 'utf-8');
-  if (!baseViteConfig.includes('http://localhost:9095')
-    || !baseViteConfig.includes('http://localhost:4000')) {
-    throw new Error('BROWSER_CERT_VITE_PROXY_TARGETS_NOT_FOUND');
+  const hasEosProxy = baseViteConfig.includes('http://localhost:9095')
+    || baseViteConfig.includes('http://127.0.0.1:9095');
+  const usesBffProxy = baseViteConfig.includes('http://localhost:4000')
+    || baseViteConfig.includes('http://127.0.0.1:4000');
+  if (!hasEosProxy) {
+    throw new Error('BROWSER_CERT_VITE_EOS_PROXY_TARGET_NOT_FOUND');
+  }
+  if (usesBffProxy) {
+    setPhase('startup', 'bff_dependency_check_and_launch');
+    const missingDependencies = missingBffDependencies();
+    if (missingDependencies.length > 0) {
+      throw new Error('BROWSER_CERT_BFF_DEPENDENCIES_MISSING:' + missingDependencies.join(','));
+    }
+    const bffEnvironment = {
+      ...environment,
+      PORT: String(bffPort),
+      MONGODB_URI: mongoUri,
+      MONGO_URI: mongoUri,
+      KENNEL_URL: eosBaseUrl,
+    };
+    console.info('[BROWSER-CERT-STARTUP] service=BFF action=starting port=' + bffPort);
+    const bffProcess = spawnOwned(
+      process.execPath,
+      ['--import', './preload-shield.js', 'server.js'],
+      { cwd: serverDirectory, env: bffEnvironment, stdio: ['ignore', 'pipe', 'pipe'] },
+      'BFF',
+    );
+    bffPort = await waitForOwnedPort(bffProcess);
+    const bffHealthResponse = await waitFor('http://127.0.0.1:' + bffPort + '/health', 'BFF');
+    if (bffProcess.closed) throw new Error('BROWSER_CERT_BFF_EXITED_DURING_STARTUP');
+    await verifyBffHealth(bffHealthResponse);
+  } else {
+    console.info('[BROWSER-CERT-STARTUP] service=BFF action=skipped reason=EOS_OWNS_ALL_API_PROXY_ROUTES');
   }
   const configuredVite = baseViteConfig
     .replaceAll('http://localhost:9095', eosBaseUrl)
-    .replaceAll('http://localhost:4000', 'http://127.0.0.1:' + bffPort);
+    .replaceAll('http://127.0.0.1:9095', eosBaseUrl)
+    .replaceAll('http://localhost:4000', 'http://127.0.0.1:' + bffPort)
+    .replaceAll('http://127.0.0.1:4000', 'http://127.0.0.1:' + bffPort);
   await writeFile(viteConfigPath, configuredVite, { encoding: 'utf-8', mode: 0o600 });
 
   setPhase('startup', 'vite_startup');
@@ -617,16 +683,19 @@ try {
       '--config', viteConfigPath,
       '--host', '127.0.0.1',
       '--port', String(vitePort),
+      '--strictPort',
     ],
     { cwd: clientDirectory, stdio: ['ignore', 'pipe', 'pipe'] },
     'VITE',
   );
-  const viteListeningPort = await waitForOwnedPort(viteProcess);
+  // The selected ephemeral port is authoritative; certify it by HTTP rather
+  // than depending on Vite-version-specific console URL formatting.
+  await waitFor('http://127.0.0.1:' + vitePort + '/', 'VITE');
+  if (viteProcess.closed) throw new Error('BROWSER_CERT_VITE_EXITED_DURING_STARTUP');
+  const viteListeningPort = vitePort;
   if (viteListeningPort !== vitePort) {
     throw new Error('BROWSER_CERT_VITE_LISTEN_PORT_MISMATCH:' + viteListeningPort + ':' + vitePort);
   }
-  await waitFor('http://127.0.0.1:' + vitePort + '/', 'VITE');
-  if (viteProcess.closed) throw new Error('BROWSER_CERT_VITE_EXITED_DURING_STARTUP');
 
   setPhase('browser_suite', 'playwright_authenticated_journeys');
   const playwrightEnvironment = {
@@ -636,14 +705,20 @@ try {
   if (chrome) playwrightEnvironment.WILSY_BROWSER_EXECUTABLE = chrome;
   await runAndWait(
     playwright,
-    ['test', '--config', 'tests/e2e/playwright.config.js'],
+    ['test', '--config', 'tests/e2e/playwright.config.js', ...process.argv.slice(2)],
     { env: playwrightEnvironment, stdio: ['ignore', 'inherit', 'inherit'] },
     'PLAYWRIGHT',
   );
   setPhase('browser_suite', 'durable_fixture_verification');
+  const browserTestArguments = process.argv.slice(2);
+  const systemSuite = browserTestArguments.length === 2
+    && browserTestArguments.includes('tests/e2e/system-services-incident.browser.spec.js')
+    && browserTestArguments.includes('tests/e2e/system-services-response.browser.spec.js');
+  const broadSuite = browserTestArguments.includes('--grep-invert');
+  const verificationScope = systemSuite ? 'system' : broadSuite ? 'broad' : 'combined';
   await runAndWait(
     python,
-    [fixture, 'verify', '--state', statePath],
+    [scopeVerifier, '--state', statePath, '--scope', verificationScope],
     { env: playwrightEnvironment, stdio: ['ignore', 'pipe', 'pipe'] },
     'FIXTURE_VERIFY',
   );

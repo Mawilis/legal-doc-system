@@ -1,0 +1,84 @@
+name: EOS AI Legal Gateway and Advisory Persistence Certification
+
+on:
+  pull_request:
+    paths:
+      - "tools/eos/api/wilsy_ai_legal_gateway_router.py"
+      - "tools/eos/api/wilsy_ai_legal_services_router.py"
+      - "tools/eos/api/wilsy_ai_advisory_router.py"
+      - "tools/eos/api/wilsy_ai_reasoning_router.py"
+      - "tools/eos/intelligence/**"
+      - "tools/eos/saas/billing/wilsy_ai_*.py"
+      - "tools/eos/legal_operations/registry/legal_operations_lifecycle_registry.py"
+      - "tools/eos/legal_operations/registry/process_service_*registry.py"
+      - "tests/unit/test_wilsy_ai_advisory_service.py"
+      - "tests/unit/test_next_best_action_advisory.py"
+      - "tests/unit/test_wilsy_ai_legal_gateway.py"
+      - "tests/integration/test_wilsy_ai_advisory_real_mongo.py"
+      - "tests/integration/test_wilsy_ai_advisory_concurrent_real_mongo.py"
+      - "tests/integration/test_next_best_action_advisory_real_mongo.py"
+      - "tests/integration/test_wilsy_ai_legal_gateway_real_mongo.py"
+      - ".github/workflows/eos-ai-advisory-certification.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: eos-ai-advisory-certification-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  ai-advisory-persistence:
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    env:
+      C1E_MONGO_URI: mongodb://localhost:27017/?replicaSet=wilsyVendorCertRS
+      C1E_MONGO_REPLICA_SET: wilsyVendorCertRS
+      C1D_MONGO_URI: mongodb://localhost:27017/?replicaSet=wilsyVendorCertRS
+      TEST_VENDOR_MONGO_URI: mongodb://localhost:27017/?replicaSet=wilsyVendorCertRS
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Install repository dependencies and pytest
+        run: |
+          python -m pip install --disable-pip-version-check -r requirements.txt
+          python -m pip install --disable-pip-version-check pytest==9.1.1
+      - name: Start disposable MongoDB replica set
+        run: |
+          docker run --detach --name wilsy-ai-advisory-mongo --publish 27017:27017 mongo:7.0.37 mongod --replSet wilsyVendorCertRS --bind_ip_all
+          python - <<'PY'
+          import time
+          from pymongo import MongoClient
+          client = MongoClient("mongodb://localhost:27017", directConnection=True, serverSelectionTimeoutMS=2000)
+          deadline = time.monotonic() + 60
+          initiated = False
+          last_error = None
+          while True:
+              try:
+                  hello = client.admin.command("hello")
+                  if not initiated and not hello.get("setName"):
+                      client.admin.command({"replSetInitiate": {"_id": "wilsyVendorCertRS", "members": [{"_id": 0, "host": "localhost:27017"}]}})
+                      initiated = True
+                  if client.admin.command("hello").get("isWritablePrimary"):
+                      break
+              except Exception as error:
+                  last_error = error
+              if time.monotonic() >= deadline:
+                  raise RuntimeError(f"AI_ADVISORY_MONGO_UNAVAILABLE: {last_error!r}")
+              time.sleep(1)
+          client.close()
+          PY
+      - name: Compile AI gateway and advisory sources
+        run: |
+          python -m compileall -q tools/eos/api/wilsy_ai_legal_gateway_router.py tools/eos/api/wilsy_ai_legal_services_router.py tools/eos/api/wilsy_ai_advisory_router.py tools/eos/api/wilsy_ai_reasoning_router.py tools/eos/intelligence tools/eos/saas/billing/wilsy_ai_entitlement_registry.py tools/eos/saas/billing/wilsy_ai_usage_admission_registry.py tools/eos/saas/billing/wilsy_ai_usage_observation_registry.py
+      - name: Run focused AI unit certification
+        run: |
+          python -m pytest -q tests/unit/test_wilsy_ai_advisory_service.py tests/unit/test_next_best_action_advisory.py tests/unit/test_wilsy_ai_legal_gateway.py
+      - name: Run disposable replica-set certification
+        run: |
+          python -m pytest -q tests/integration/test_wilsy_ai_advisory_real_mongo.py tests/integration/test_wilsy_ai_advisory_concurrent_real_mongo.py tests/integration/test_next_best_action_advisory_real_mongo.py tests/integration/test_wilsy_ai_legal_gateway_real_mongo.py

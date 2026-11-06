@@ -86,16 +86,10 @@ class ErrorLogger {
     if (TELEMETRY_ENABLED && navigator.onLine) {
       // Retrieve forensic authentication tokens for secure backend transit
       const authToken = localStorage.getItem('wilsy_auth_token');
-      const tenantId = localStorage.getItem('discoveredTenant') || 'GLOBAL_ROOT';
-
-      const headers = {
-        'Content-Type': 'application/json',
-        'x-tenant-id': tenantId
-      };
-
-      if (authToken) {
-        headers['Authorization'] = `Bearer ${authToken}`;
-      }
+      // Error telemetry forwards the authenticated bearer only. A tenant
+      // selector from discovery storage is not authenticated session scope.
+      const headers = { 'Content-Type': 'application/json' };
+      if (authToken) headers.Authorization = `Bearer ${authToken}`;
 
       fetch(TELEMETRY_ENDPOINT, {
         method: 'POST',
@@ -306,7 +300,7 @@ class ErrorBoundary extends React.Component {
           <p>Wilsy OS encountered an unexpected error while rendering this dashboard.</p>
 
           {IS_DEVELOPMENT && error && (
-            <details style={{ marginTop: '1rem', whiteSpace: 'pre-wrap' }}>
+            <details open={IS_DEVELOPMENT} style={{ marginTop: '1rem', whiteSpace: 'pre-wrap' }}>
               <summary style={{ cursor: 'pointer', fontWeight: 'bold' }}>Technical details (development only)</summary>
               <pre style={{ overflow: 'auto', padding: '0.5rem', backgroundColor: '#f5f5f5' }}>
                 {error.stack || error.toString()}

@@ -233,7 +233,7 @@ class SovereignErrorBoundary extends Component {
 // ============================================================================
 import MetricCard from './MetricCard';
 import styles from './FounderDashboard.module.css';
-import wilsyLogo from '../../assets/logo/wilsy.jpeg';
+import wilsyLogo from '../../assets/logo/wilsy-logo.svg';
 import iconManifest from '../../assets/iconManifest';
 import CommandPalette from './CommandPalette';
 import QuickPanel from './QuickPanel';
@@ -484,9 +484,9 @@ const FounderDashboard = memo(({ onSwitchDashboard }) => {
   const [missionRun, setMissionRun] = useState({ activeMission: null, status: 'IDLE', progress: 0, log: [] });
 
   const { analytics, compliance, forensics, loading: dataLoading, error: dataError } = useSovereignData();
-  const { events: telemetryEvents, isSyncing: telemetrySyncing } = useTelemetryFeed(activeTenant?.tenantId || 'MASTER');
-  const { stats: telemetryStats } = useTelemetryStats(activeTenant?.tenantId || 'MASTER');
-  const { stats: trajectoryStats } = useTrajectoryWithEmails(activeTenant?.tenantId || 'MASTER');
+  const { events: telemetryEvents, isSyncing: telemetrySyncing } = useTelemetryFeed(activeTenant?.tenantId);
+  const { stats: telemetryStats } = useTelemetryStats(activeTenant?.tenantId);
+  const { stats: trajectoryStats } = useTrajectoryWithEmails(activeTenant?.tenantId);
   const chartRef = useRef(null);
 
   // ==========================================================================
@@ -708,7 +708,8 @@ const FounderDashboard = memo(({ onSwitchDashboard }) => {
     const fetchBilling = async () => {
       try {
         const token = localStorage.getItem('wilsy_auth_token')?.replace(/["']/g, '').trim();
-        const tenantId = activeTenant?.id || 'GLOBAL_ROOT';
+        const tenantId = activeTenant?.tenantId;
+        if (!tenantId) return;
         const response = await api.get('/billing/institutional/summary', {
           params: { tenantId },
           headers: { Authorization: `Bearer ${token}` }
@@ -747,7 +748,8 @@ const FounderDashboard = memo(({ onSwitchDashboard }) => {
     console.log(`[OMEGA-STRIKE] Initiating: ${actionId} | ${method} ${endpoint} | Trace: ${traceId}`);
     try {
       const token = localStorage.getItem('wilsy_auth_token')?.replace(/["']/g, '').trim();
-      const tenantContext = activeTenant?.id || 'GLOBAL_ROOT';
+      const tenantContext = activeTenant?.tenantId;
+      if (!tenantContext) throw new Error('TENANT_CONTEXT_REQUIRED');
       const finalEndpoint = endpoint.includes('tenantId') ? endpoint : `${endpoint}?tenantId=${tenantContext}`;
       if (!token) {
         console.error('[OMEGA-STRIKE] No token available.');
@@ -886,7 +888,7 @@ const FounderDashboard = memo(({ onSwitchDashboard }) => {
     const telemetryCount = Array.isArray(telemetryEvents) ? telemetryEvents.length : 0;
     const telemetryStatsCount = Array.isArray(telemetryStats) ? telemetryStats.length : 0;
     const feeds = [
-      { label: 'Tenant', status: activeTenant?.tenantId || activeTenant?.id || 'MASTER', ready: Boolean(activeTenant) },
+      { label: 'Tenant', status: activeTenant?.tenantId || null, ready: Boolean(activeTenant?.tenantId) },
       { label: 'Telemetry', status: telemetrySyncing ? 'Syncing' : `${telemetryCount} events`, ready: telemetryCount > 0 || !telemetrySyncing },
       { label: 'Revenue', status: billingMetrics ? 'Linked' : 'Pending', ready: Boolean(billingMetrics) },
       { label: 'Compliance', status: compliance ? 'Linked' : 'Pending', ready: Boolean(compliance) },
@@ -901,7 +903,7 @@ const FounderDashboard = memo(({ onSwitchDashboard }) => {
     const telemetryCount = Array.isArray(telemetryEvents) ? telemetryEvents.length : 0;
     const statsCount = Array.isArray(telemetryStats) ? telemetryStats.length : 0;
     const tenantLabel = activeTenant?.name || founderProfile.company || 'Wilsy (Pty) Ltd';
-    const tenantId = activeTenant?.tenantId || activeTenant?.id || 'MASTER';
+    const tenantId = activeTenant?.tenantId || null;
     return [
       { title: 'Business OS, Not CRM Add-On', claim: 'CRM, billing, compliance, courts, identity, revenue and audit share one founder command plane.', proof: `${osSpine.mounted} mounted modules / ${osSpine.commandCount} executable commands`, ready: osSpine.mounted >= 20, module: 'SINGULARITY_MATRIX', action: 'Open OS Matrix' },
       { title: 'Diligence-Ready Evidence', claim: 'Every critical executive claim can route to Audit Vault, Statement Engine or a forensic feed.', proof: forensics ? 'Forensic feed linked' : 'Forensic feed pending', ready: Boolean(forensics), module: 'AUDIT_VAULT', action: 'Open Audit Vault' },
@@ -1109,7 +1111,7 @@ const FounderDashboard = memo(({ onSwitchDashboard }) => {
                       <div><span>Mounted Modules</span><strong>{osSpine.mounted}</strong></div>
                       <div><span>Executable Commands</span><strong>{osSpine.commandCount}</strong></div>
                       <div><span>Real Data Readiness</span><strong>{osSpine.realDataRatio}%</strong></div>
-                      <div><span>Founder Tenant</span><strong>{activeTenant?.tenantId || activeTenant?.id || 'MASTER'}</strong></div>
+                      <div><span>Founder Tenant</span><strong>{activeTenant?.tenantId || null}</strong></div>
                     </div>
                   </div>
                   <div className={styles.proofGrid}>
@@ -1222,7 +1224,7 @@ const FounderDashboard = memo(({ onSwitchDashboard }) => {
                     <div className={styles.singularitySurfaceMount}>
                       <Suspense fallback={<div className={styles.loading}>HYDRATING {activeSingularitySurface.label}...</div>}>
                         {activeSingularitySurface.id === 'REVENUE' && <RevenueHUD metrics={billingMetrics} embedded />}
-                        {activeSingularitySurface.id === 'COMPLIANCE' && <ComplianceHUD metrics={compliance} embedded />}
+                        {activeSingularitySurface.id === 'COMPLIANCE' && <ComplianceHUD tenantId={activeTenant?.tenantId} metrics={compliance} embedded />}
                         {activeSingularitySurface.id === 'FORENSICS' && <ForensicsHUD embedded />}
                         {activeSingularitySurface.id === 'COMMAND' && <SingularityDashboard />}
                       </Suspense>
@@ -1391,7 +1393,7 @@ const FounderDashboard = memo(({ onSwitchDashboard }) => {
                   <div><span>Operating Mode</span><strong>{founderProfile.commandMode}</strong></div>
                   <div><span>Evidence Standard</span><strong>{founderProfile.evidenceMode}</strong></div>
                   <div><span>Operating Skin</span><strong>{founderProfile.theme}</strong></div>
-                  <div><span>Tenant Authority</span><strong>{activeTenant?.tenantId || 'MASTER'}</strong></div>
+                  <div><span>Tenant Authority</span><strong>{activeTenant?.tenantId || null}</strong></div>
                   <div><span>Landing Module</span><strong>{founderProfile.defaultModule?.replace(/_/g, ' ')}</strong></div>
                 </div>
                 <p className={styles.doctrineCopy}>{founderProfile.investorPromise}</p>
@@ -1430,7 +1432,7 @@ const FounderDashboard = memo(({ onSwitchDashboard }) => {
                 </div>
                 <div>
                   <div className={styles.brand} style={{ fontSize: '1.1rem', fontWeight: 900, letterSpacing: '0.08em', color: '#fff', textShadow: '0 0 20px rgba(212,175,55,0.15)' }}>{activeTenant?.name || 'WILSY OS'}</div>
-                  <div className={styles.subtitle} style={{ fontSize: '0.6rem', color: '#D4AF37', letterSpacing: '0.12em', textTransform: 'uppercase', marginTop: '2px' }}>SHARD: {activeTenant?.tenantId || 'SOVEREIGN_ROOT'}</div>
+                  <div className={styles.subtitle} style={{ fontSize: '0.6rem', color: '#D4AF37', letterSpacing: '0.12em', textTransform: 'uppercase', marginTop: '2px' }}>SHARD: {activeTenant?.tenantId || 'NO ACTIVE TENANT'}</div>
                   <div className={styles.brandSeal} style={{ marginTop: '6px', padding: '3px 10px', background: 'linear-gradient(90deg, rgba(212,175,55,0.2), rgba(212,175,55,0.05))', border: '1px solid rgba(212,175,55,0.25)', borderRadius: '4px', fontSize: '0.45rem', letterSpacing: '0.1em', color: '#D4AF37', display: 'inline-block' }}>LEGAL SOVEREIGN STANDARD</div>
                 </div>
               </div>

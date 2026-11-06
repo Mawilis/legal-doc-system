@@ -23,7 +23,7 @@
  */
 
 import { useEffect, useState, useCallback, useRef } from 'react';
-import api from '../services/api';
+import api, { isCanonicalTenantTransportId } from '../services/api';
 import { broadcastTelemetry } from '../utils/telemetryHelper.js';
 import { generateSovereignSeal } from '../utils/cryptoCore.js';
 
@@ -130,7 +130,7 @@ const MIN_INTERVAL = 30000; // 30s
  *
  * @param {Object} options – configuration
  * @param {number} [options.refreshInterval=300000] – polling interval in ms
- * @param {string} [options.tenantId='GLOBAL_ROOT'] – tenant scope
+ * @param {string} [options.tenantId] – tenant scope supplied by the authenticated EOS workspace
  * @param {boolean} [options.enabled=true] – whether to activate auto‑fetch
  * @param {number} [options.maxRetries=3] – max retry attempts on failure
  * @param {boolean} [options.useErrorBoundary=false] – throw error to boundary if true
@@ -146,11 +146,12 @@ export
 const useRevenueMetrics = (options = {}) => {
   const {
     refreshInterval = DEFAULT_BASE_INTERVAL,
-    tenantId = 'GLOBAL_ROOT',
+    tenantId: rawTenantId = null,
     enabled = true,
     maxRetries = 3,
     useErrorBoundary = false,
   } = options;
+  const tenantId = isCanonicalTenantTransportId(rawTenantId) ? rawTenantId : null;
 
   const [metrics, setMetrics] = useState({
     data: null,
@@ -192,7 +193,7 @@ const formatZAR = (val) => new Intl.NumberFormat('en-ZA', { style: 'currency', c
    * @returns {Promise<void>}
    */
   const fetchMetrics = useCallback(async (isBackground = false) => {
-    if (!enabled || !breakerRef.current.canProceed()) return;
+    if (!enabled || !tenantId || !breakerRef.current.canProceed()) return;
 
     // Abort any previous in‑flight request to prevent race conditions
     if (abortControllerRef.current) abortControllerRef.current.abort();
@@ -273,13 +274,17 @@ const formatZAR = (val) => new Intl.NumberFormat('en-ZA', { style: 'currency', c
    * Effect: initial fetch + polling interval.
    */
   useEffect(() => {
+    if (!enabled || !tenantId) {
+      setMetrics((previous) => ({ ...previous, isSyncing: false, error: 'TENANT_CONTEXT_REQUIRED' }));
+      return undefined;
+    }
     fetchMetrics(false);
     intervalRef.current = setInterval(() => fetchMetrics(true), currentIntervalRef.current);
     return () => {
       clearInterval(intervalRef.current);
       if (abortControllerRef.current) abortControllerRef.current.abort();
     };
-  }, [fetchMetrics]);
+  }, [enabled, tenantId, fetchMetrics]);
 
   return {
     ...metrics,

@@ -1,5 +1,5 @@
 """TITLE: WILSY OS Permission Namespace Canon Certification.
-VERSION: v1.11.0-L10A2R-C4D7-RECONCILIATION-READ-PERMISSION-CERT
+VERSION: v1.13.0-SYSTEM-SERVICES-AUDIT-READ-CERT
 AUTHORITY: Certification of immutable permission vocabulary semantics only.
 EPITOME: Proves bounded namespaces, fail-closed metadata, deterministic policy
 bytes, and exact own-tenant subscription/plan/WILSY AI capacity,
@@ -9,7 +9,7 @@ ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/tests/unit/test_
 COLLABORATION / OWNERSHIP: Wilson Khanyezi / Wilsy Core Engineering.
 CERTIFICATION/UPDATE DATE: 2026-10-15.
 CHANGELOG:
-2026-10-25 v1.11.0-L10A2R-C4D7-RECONCILIATION-READ-PERMISSION-CERT certifies the dedicated SYSTEM-scoped legal evidence provider reconciliation-read vocabulary, its non-self-authorizing metadata, and closed-canon cardinality of 123 canonical permissions / 126 total rows. It does not certify grants, runtime invocation, or provider access.
+2026-11-05 v1.14.0-PERMISSION-CANON-COUNT-RECONCILIATION updates the direct namespace certificate to the current source canon: 142 canonical permissions and 145 total rows. This is a count-only certification correction; no permission metadata, role grants or authorization behavior changes.\n2026-11-03 v1.13.0-SYSTEM-SERVICES-AUDIT-READ-CERT certifies twelve exact SYSTEM-scoped System Services/IAM vocabulary entries as assignment-required, workforce-current, non-self-authorizing metadata only. Closed-canon cardinality is 138 canonical permissions / 141 total rows. No role grants or assignment allowlist changes are created.
 2026-10-20 v1.10.0-P47-R76-BINDING-PROVISION-PERMISSION-CERT certifies the
 exact own-tenant practitioner matter-binding provisioning permission, its
 non-self-authorizing and non-financial metadata, fail-closed aliases, and the
@@ -287,7 +287,7 @@ def test_provider_reconciliation_read_permission_is_system_scoped_and_non_author
 
 
 def test_runtime_version_source_is_canonical() -> None:
-    assert POLICY_VERSION == "v1.55.0-L10A2R-C4D7-RECONCILIATION-READ-PERMISSION"
+    assert POLICY_VERSION == "v1.57.0-SYSTEM-SERVICES-AUDIT-READ-PERMISSION"
 
 
 def test_practitioner_binding_provision_permission_is_exact_and_bounded() -> None:
@@ -408,9 +408,9 @@ def test_permission_canon_properties() -> None:
             for row in rows
             if row["disposition"] == "CANONICAL"
         ]
-    ) == 126
+    ) == 142
 
-    assert len(rows) == 129
+    assert len(rows) == 145
 
     for permission_id in tenant:
         metadata = permission_metadata(
@@ -1003,8 +1003,46 @@ def test_deadline_namespace_owns_vocabulary_but_creates_no_role_grant() -> None:
             permission_metadata(invalid)
 
 
+
+def test_system_services_and_iam_vocabulary_is_system_scoped_and_non_authorizing() -> None:
+    permissions = (
+        "system_services:queue:read",
+        "system_services:case:triage",
+        "system_services:identity:read",
+        "system_services:recovery:request",
+        "system_services:session:revoke",
+        "system_services:incident:escalate",
+        "system_services:audit:read",
+        "iam:access_request:read",
+        "iam:access_request:decide",
+        "iam:role_assignment:read",
+        "iam:role_assignment:write",
+        "iam:role_assignment:revoke",
+    )
+    assert len(permissions) == 12
+    for permission in permissions:
+        metadata = permission_metadata(permission)
+        assert metadata.namespace == "SYSTEM"
+        assert metadata.scope_kind == "SYSTEM"
+        assert metadata.system_assignment_required is True
+        assert metadata.workforce_currentness_required is True
+        assert metadata.tenant_membership_required is False
+        assert metadata.cross_tenant_capable is False
+        assert metadata.financial_execution_capable is False
+        assert metadata.authorizes_by_itself is False
+        assert metadata.disposition.value == "CANONICAL"
+    for invalid in (
+        "system_services:*",
+        "system_services:recovery",
+        "system_services:password:reset",
+        "iam:role_assignment:*",
+        "iam:role_assignment:grant",
+    ):
+        with pytest.raises(ValueError):
+            permission_metadata(invalid)
+
 # ARTIFACT: test_permission_namespace.py
-# VERSION: v1.11.0-L10A2R-C4D7-RECONCILIATION-READ-PERMISSION-CERT
+# VERSION: v1.13.0-SYSTEM-SERVICES-AUDIT-READ-CERT
 # AUTHORITY BOUNDARY: permission semantic certification only
 # TENANT POSTURE: conflict-review, client-matter, client-visibility and other tenant permissions remain policy; exact ACTIVE membership remains separately governed
 # FAIL-CLOSED POSTURE: unknown and malformed values deny

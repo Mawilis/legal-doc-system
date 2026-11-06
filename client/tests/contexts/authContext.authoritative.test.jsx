@@ -41,7 +41,10 @@ const { api } = vi.hoisted(() => ({
   },
 }));
 
-vi.mock('@/services/api', () => ({ default: api }));
+vi.mock('@/services/api', () => ({
+  default: api,
+  setActiveTenantTransportId: vi.fn(),
+}));
 
 import { AUTH_STATES, AuthProvider, useAuth } from '../../src/contexts/authContext.jsx';
 
@@ -106,6 +109,10 @@ const workspaceBootstrap = ({
     workspace: {
       tenantId,
       businessRole,
+      workspaceId: businessRole === 'tenant_owner'
+        ? 'EXECUTIVE_COMMAND_CENTRE'
+        : (businessRole === 'tenant_legal_partner' ? 'LEGAL_PRACTICE' : 'AUDIT_REPORTING'),
+      workspaceContractVersion: 'v1.0.0-WILSY-EOS-WORKSPACE-RESOLUTION',
       membershipRevision: 7,
       businessRoleRevision: 11,
       ...(legalPermissions === undefined ? {} : { legalPermissions }),
@@ -126,6 +133,7 @@ function Harness() {
   return (
     <div>
       <span data-testid="stage">{auth.authStage}</span>
+      <span data-testid="error">{auth.error || ""}</span>
       <span data-testid="authenticated">{String(auth.isAuthenticated)}</span>
       <span data-testid="qr">{auth.qrCodeData || ''}</span>
       <span data-testid="role">{auth.userRole || ''}</span>
@@ -136,8 +144,9 @@ function Harness() {
           : (auth.tenant?.branding?.brandingTier || '')
       }</span>
       <button type="button" onClick={() => auth.discoverTenant('Acme Law')}>discover</button>
-      <button type="button" onClick={() => { void auth.login('person@example.com', 'password').catch(() => {}); }}>login</button>
-      <button type="button" onClick={() => { void auth.verifyOTP('person@example.com', '123456').catch(() => {}); }}>verify</button>
+      <button type="button" onClick={() => { void auth.login('person@example.com', 'password', 'TENANT-BROWSER').catch(() => {}); }}>login</button>
+      <button type="button" onClick={() => { void auth.login('person@example.com', 'password').catch(() => {}); }}>login-without-discovery</button>
+      <button type="button" onClick={() => { void auth.verifyOTP('person@example.com', '123456', null, null, false, 'TENANT-BROWSER').catch(() => {}); }}>verify</button>
       <button type="button" onClick={() => { void auth.logout(); }}>logout</button>
     </div>
   );
@@ -181,6 +190,103 @@ describe('authoritative authentication state machine', () => {
     expect(window.localStorage.getItem('discoveredTenant')).toContain('TENANT-ACME');
   });
 
+  it('starts tenant-neutral global authentication when no tenant is selected', async () => {
+    api.post.mockResolvedValueOnce({
+      data: {
+        status: AUTH_STATES.MFA_REQUIRED,
+        scope: 'SYSTEM',
+        mfa_challenge: 'sysmfa_one-time-challenge',
+        workspace_id: 'SYSTEM_SERVICES',
+      },
+    });
+    renderHarness();
+
+    fireEvent.click(screen.getByRole('button', { name: 'login-without-discovery' }));
+
+    await waitFor(() => {
+      expect(screen.getByTestId('stage')).toHaveTextContent(AUTH_STATES.MFA_REQUIRED);
+    });
+    expect(api.post).toHaveBeenCalledWith('/auth/global/login', {
+      email: 'person@example.com',
+      password: 'password',
+    });
+    expect(screen.getByTestId('authenticated')).toHaveTextContent('false');
+    expect(window.localStorage.getItem('wilsy_auth_token')).toBeNull();
+  });
+
+  it('promotes a membership-free SYSTEM principal only after global MFA and EOS workspace revalidation', async () => {
+    api.post
+      .mockResolvedValueOnce({
+        data: {
+          status: AUTH_STATES.MFA_REQUIRED,
+          scope: 'SYSTEM',
+          mfa_challenge: 'sysmfa_one-time-challenge',
+          workspace_id: 'SYSTEM_SERVICES',
+        },
+      })
+      .mockResolvedValueOnce({
+        data: {
+          status: 'AUTHENTICATED',
+          scope: 'SYSTEM',
+          access_token: 'system-access-token',
+          refresh_token: 'sysrefresh_test-token',
+          principal_id: 'WILSYAUTH-system-responder',
+          workspace_id: 'SYSTEM_SERVICES',
+        },
+      });
+    api.get.mockResolvedValueOnce({
+      data: {
+        status: 'READY',
+        authority: 'EOS_SYSTEM_SERVICES',
+        principalId: 'WILSYAUTH-system-responder',
+        scope: 'SYSTEM',
+        capabilities: ['system_services:queue:read', 'system_services:incident:escalate'],
+        summary: { openCases: 2, securityEscalations: 1 },
+        cases: [{
+          caseId: 'CASE-SYSTEM-1',
+          reference: 'CASE-SYSTEM-1',
+          category: 'ACCOUNT_ACCESS',
+          status: 'OPEN',
+        }],
+      },
+    });
+    renderHarness();
+
+    fireEvent.click(screen.getByRole('button', { name: 'login-without-discovery' }));
+    await waitFor(() => expect(screen.getByTestId('stage')).toHaveTextContent(AUTH_STATES.MFA_REQUIRED));
+    fireEvent.click(screen.getByRole('button', { name: 'verify' }));
+
+    await waitFor(() => {
+      expect(screen.getByTestId('authenticated')).toHaveTextContent('true');
+      expect(screen.getByTestId('role')).toHaveTextContent('SYSTEM_SERVICES');
+    });
+    expect(api.post).toHaveBeenNthCalledWith(1, '/auth/global/login', {
+      email: 'person@example.com',
+      password: 'password',
+    });
+    expect(api.post).toHaveBeenNthCalledWith(2, '/auth/global/verify-mfa', {
+      mfa_challenge: 'sysmfa_one-time-challenge',
+      code: '123456',
+    });
+    expect(api.get).toHaveBeenCalledWith('/system-services/workspace-bootstrap');
+    expect(api.defaults.headers.common.Authorization).toBe('Bearer system-access-token');
+    expect(screen.getByTestId('tenant-id')).toBeEmptyDOMElement();
+    const projected = JSON.parse(window.localStorage.getItem('wilsy_sovereign_user'));
+    expect(projected).toMatchObject({
+      id: 'WILSYAUTH-system-responder',
+      role: 'SYSTEM_SERVICES',
+      workspaceId: 'SYSTEM_SERVICES',
+      systemServicesWorkspace: {
+        authority: 'EOS_SYSTEM_SERVICES',
+        scope: 'SYSTEM',
+        principalId: 'WILSYAUTH-system-responder',
+      },
+    });
+    expect(window.localStorage.getItem('wilsy_refresh_token')).toBe('sysrefresh_test-token');
+    expect(window.localStorage.getItem('wilsy_active_tenant')).toBeNull();
+    expect(window.localStorage.getItem('tenantId')).toBeNull();
+  });
+
   it('projects reconciliation without QR and persists only authenticated response', async () => {
     api.post
       .mockResolvedValueOnce({ data: { status: AUTH_STATES.MFA_RECONCILIATION_REQUIRED, tempToken: 'temp' } })
@@ -205,7 +311,8 @@ describe('authoritative authentication state machine', () => {
     expect(promotedUser.lastName).toBe('Principal');
     expect(promotedUser.firstName).not.toBe('FORGED LOGIN FIRST');
     expect(promotedUser.lastName).not.toBe('FORGED LOGIN LAST');
-    expect(api.post).toHaveBeenNthCalledWith(2, '/auth/verify-otp', { email: 'person@example.com', code: '123456' });
+    expect(api.post).toHaveBeenNthCalledWith(1, '/auth/login', { email: 'person@example.com', password: 'password', tenant_id: 'TENANT-BROWSER' });
+    expect(api.post).toHaveBeenNthCalledWith(2, '/auth/verify-otp', { email: 'person@example.com', code: '123456', tenant_id: 'TENANT-BROWSER' });
   });
 
   it('fails closed when discovered and authenticated tenant identities diverge', async () => {
@@ -301,6 +408,93 @@ describe('authoritative authentication state machine', () => {
       'legal_operations:productive_work:read',
     ]);
     expect(persistedUser.legalPermissionsAuthoritative).toBe(true);
+  });
+
+  it('restores a SYSTEM principal only through the exact EOS System Services projection', async () => {
+    window.localStorage.setItem('wilsy_auth_token', 'stored-system-token');
+    window.localStorage.setItem('token', 'stored-system-token');
+    window.localStorage.setItem('wilsy_sovereign_user', JSON.stringify({
+      id: 'WILSYAUTH-system-responder',
+      email: 'responder@example.com',
+      role: 'FORGED_TENANT_OWNER',
+      tenantId: 'FORGED-TENANT',
+      permissions: ['*'],
+    }));
+    api.get
+      .mockRejectedValueOnce(new Error('tenant workspace unavailable'))
+      .mockResolvedValueOnce({
+        data: {
+          status: 'READY',
+          authority: 'EOS_SYSTEM_SERVICES',
+          principalId: 'WILSYAUTH-system-responder',
+          scope: 'SYSTEM',
+          capabilities: [
+            'system_services:queue:read',
+            'system_services:incident:escalate',
+          ],
+          summary: { openCases: 2, securityEscalations: 1 },
+          cases: [{
+            caseId: 'CASE-1',
+            reference: 'CASE-1',
+            category: 'ACCOUNT_ACCESS',
+            status: 'OPEN',
+          }],
+        },
+      });
+
+    renderHarness();
+
+    await waitFor(() => {
+      expect(screen.getByTestId('authenticated')).toHaveTextContent('true');
+    });
+    expect(api.get).toHaveBeenNthCalledWith(1, '/auth/workspace-bootstrap', {
+      headers: { Authorization: 'Bearer stored-system-token' },
+    });
+    expect(api.get).toHaveBeenNthCalledWith(2, '/system-services/workspace-bootstrap', {
+      headers: { Authorization: 'Bearer stored-system-token' },
+    });
+    expect(screen.getByTestId('role')).toHaveTextContent('SYSTEM_SERVICES');
+    expect(screen.getByTestId('tenant-id')).toBeEmptyDOMElement();
+    expect(api.defaults.headers.common.Authorization).toBe('Bearer stored-system-token');
+    expect(window.localStorage.getItem('wilsy_active_tenant')).toBeNull();
+    expect(window.localStorage.getItem('tenantId')).toBeNull();
+    expect(JSON.parse(window.localStorage.getItem('wilsy_sovereign_user'))).toMatchObject({
+      id: 'WILSYAUTH-system-responder',
+      role: 'SYSTEM_SERVICES',
+      workspaceId: 'SYSTEM_SERVICES',
+      systemServicesWorkspace: {
+        status: 'READY',
+        authority: 'EOS_SYSTEM_SERVICES',
+        scope: 'SYSTEM',
+        capabilities: ['system_services:queue:read', 'system_services:incident:escalate'],
+      },
+    });
+    expect(JSON.parse(window.localStorage.getItem('wilsy_sovereign_user')).permissions).toBeUndefined();
+  });
+
+  it('does not use SYSTEM workspace fallback when a tenant selection is present', async () => {
+    window.localStorage.setItem('wilsy_auth_token', 'stored-system-token');
+    window.localStorage.setItem('token', 'stored-system-token');
+    window.localStorage.setItem('discoveredTenant', JSON.stringify({
+      tenantId: 'TENANT-SELECTED',
+      alias: 'selected',
+      name: 'Selected Tenant',
+    }));
+    window.localStorage.setItem('wilsy_sovereign_user', JSON.stringify({
+      id: 'WILSYAUTH-system-responder',
+      email: 'responder@example.com',
+    }));
+    api.get
+      .mockRejectedValueOnce(new Error('tenant workspace unavailable'));
+
+    renderHarness();
+
+    await waitFor(() => {
+      expect(screen.getByTestId('authenticated')).toHaveTextContent('false');
+    });
+    expect(api.get).toHaveBeenCalledTimes(1);
+    expect(window.localStorage.getItem('wilsy_auth_token')).toBeNull();
+    expect(window.localStorage.getItem('discoveredTenant')).not.toBeNull();
   });
 
   it('projects only exact workspace branding and strips every legacy branding alias', async () => {
@@ -738,7 +932,7 @@ describe('authoritative authentication state machine', () => {
     expect(api.defaults.headers.common.Authorization).toBeUndefined();
   });
 
-  it('requires server workspace bootstrap before elevating an MFA session', async () => {
+  it('requires server SYSTEM workspace bootstrap before elevating an MFA session', async () => {
     let resolveBootstrap;
     const bootstrapPending = new Promise((resolve) => {
       resolveBootstrap = resolve;
@@ -748,21 +942,18 @@ describe('authoritative authentication state machine', () => {
       .mockResolvedValueOnce({
         data: {
           status: AUTH_STATES.MFA_REQUIRED,
-          tempToken: 'mfa-candidate',
+          scope: 'SYSTEM',
+          mfa_challenge: 'sysmfa_browser_candidate',
         },
       })
       .mockResolvedValueOnce({
         data: {
           status: AUTH_STATES.AUTHENTICATED,
-          token: 'candidate-session-token',
-          user: {
-            id: 'WILSYAUTH-browser-user',
-            email: 'person@example.com',
-            tenantId: 'FORGED-BROWSER-TENANT',
-            role: 'SUPER_ADMIN',
-            permissions: ['*'],
-            mfaRegistered: true,
-          },
+          scope: 'SYSTEM',
+          access_token: 'candidate-session-token',
+          refresh_token: 'sysrefresh_browser_candidate',
+          principal_id: 'WILSYAUTH-browser-user',
+          workspace_id: 'SYSTEM_SERVICES',
         },
       });
 
@@ -770,7 +961,7 @@ describe('authoritative authentication state machine', () => {
 
     renderHarness();
 
-    fireEvent.click(screen.getByRole('button', { name: 'login' }));
+    fireEvent.click(screen.getByRole('button', { name: 'login-without-discovery' }));
     await waitFor(() => {
       expect(screen.getByTestId('stage')).toHaveTextContent(
         AUTH_STATES.MFA_REQUIRED,
@@ -780,17 +971,11 @@ describe('authoritative authentication state machine', () => {
     fireEvent.click(screen.getByRole('button', { name: 'verify' }));
 
     await waitFor(() => {
-      expect(api.get).toHaveBeenCalledWith(
-        '/auth/workspace-bootstrap',
-        {
-          headers: {
-            Authorization: 'Bearer candidate-session-token',
-          },
-        },
-      );
+      expect(api.get).toHaveBeenCalledWith('/system-services/workspace-bootstrap');
     });
 
     // The MFA response and candidate bearer alone are never browser authority.
+    expect(api.defaults.headers.common.Authorization).toBe('Bearer candidate-session-token');
     expect(screen.getByTestId('authenticated')).toHaveTextContent('false');
     expect(screen.getByTestId('stage')).not.toHaveTextContent(
       AUTH_STATES.AUTHENTICATED,
@@ -801,23 +986,15 @@ describe('authoritative authentication state machine', () => {
     resolveBootstrap({
       data: {
         status: 'READY',
-        user: {
-          id: 'WILSYAUTH-browser-user',
-          email: 'person@example.com',
+        authority: 'EOS_SYSTEM_SERVICES',
+        scope: 'SYSTEM',
+        principalId: 'WILSYAUTH-browser-user',
+        capabilities: ['system_services:queue:read'],
+        summary: {
+          openCases: 0,
+          securityEscalations: 0,
         },
-        workspace: {
-          tenantId: 'TENANT-BROWSER',
-          businessRole: 'tenant_auditor',
-          membershipRevision: 7,
-          businessRoleRevision: 11,
-          branding: null,
-          tenant: {
-            tenantId: 'TENANT-BROWSER',
-            name: 'Canonical Browser Tenant',
-            legalName: 'Canonical Browser Tenant (Pty) Ltd',
-            status: 'ACTIVE',
-          },
-        },
+        cases: [],
       },
     });
 
@@ -825,19 +1002,18 @@ describe('authoritative authentication state machine', () => {
       expect(screen.getByTestId('authenticated')).toHaveTextContent('true');
     });
 
-    expect(screen.getByTestId('role')).toHaveTextContent('tenant_auditor');
-    expect(screen.getByTestId('tenant-id')).toHaveTextContent('TENANT-BROWSER');
-
+    expect(screen.getByTestId('role')).toHaveTextContent('SYSTEM_SERVICES');
+    expect(screen.getByTestId('tenant-id')).toHaveTextContent('');
     const persistedUser = JSON.parse(
       window.localStorage.getItem('wilsy_sovereign_user'),
     );
     expect(persistedUser).toMatchObject({
       id: 'WILSYAUTH-browser-user',
       email: 'person@example.com',
-      tenantId: 'TENANT-BROWSER',
-      role: 'tenant_auditor',
+      role: 'SYSTEM_SERVICES',
+      workspaceId: 'SYSTEM_SERVICES',
     });
-    expect(persistedUser.role).not.toBe('SUPER_ADMIN');
+    expect(persistedUser.tenantId).toBeUndefined();
     expect(persistedUser.permissions || []).not.toContain('*');
   });
 

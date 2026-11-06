@@ -1,7 +1,7 @@
 /* eslint-disable */
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { Crown, Search } from 'lucide-react';
-import wilsyLogo from '../../../assets/logo/wilsy.jpeg';
+import wilsyLogo from '../../../assets/logo/wilsy-logo.svg';
 import styles from './CrmSovereignSideRail.module.css';
 
 const WILSY_CRM_RAIL_ENGINE_VERSION = 'R65A-TRI-STATE-KINETIC-DOCKING-ENGINE';

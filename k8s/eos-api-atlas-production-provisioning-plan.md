@@ -274,6 +274,40 @@ S3-managed AES256 remains the certified default.
 KMS permissions must not be introduced unless a specific production KMS key is
 separately selected and certified.
 
+## Global-principal MFA KMS deployment bindings
+
+The EOS production Deployment now exposes optional, deployment-owned references
+from the `wilsy-eos-runtime` ConfigMap:
+
+| ConfigMap key | Process environment variable | Meaning |
+| --- | --- | --- |
+| `global-principal-mfa-kms-provider` | `WILSY_GLOBAL_MFA_KMS_PROVIDER` | Must be `AWS_KMS` to opt in |
+| `global-principal-mfa-kms-key-id` | `WILSY_GLOBAL_MFA_KMS_KEY_ID` | Exact symmetric KMS key ARN |
+| `global-principal-mfa-kms-decrypt-key-ids` | `WILSY_GLOBAL_MFA_KMS_DECRYPT_KEY_IDS` | Optional comma-separated previous full key ARNs for approved rotation |
+| `global-principal-mfa-kms-region` | `AWS_REGION` | Exact AWS region of the key and workload |
+
+These keys are optional references in the Deployment so an unprovisioned
+environment does not receive fabricated values. Leave provider and key blank
+until the actual production account, cluster identity, key ARN, region, key
+policy and workload role are independently verified. The example ConfigMap
+declares empty values only; it is not a production configuration.
+
+The dedicated EOS runtime role must receive only `kms:Encrypt` and
+`kms:Decrypt` on the exact MFA key ARN, with the key policy and IAM policy
+constraining `kms:EncryptionContext:purpose` to
+`GLOBAL_PRINCIPAL_TOTP`. Application encryption context additionally binds
+the exact principal ID and credential revision. Key administration remains a
+separate authority. Do not add a ServiceAccount role annotation until the live
+cluster's identity provider/OIDC issuer and the role trust relationship have
+been verified from the actual EKS account and cluster.
+
+The repository contains no verified production AWS account ID, KMS key ARN,
+cluster identity, OIDC provider, or dedicated MFA runtime role. The existing
+`af-south-1` HR S3 setting is not proof of the EOS workload's KMS region.
+Do not infer or reuse the legal-evidence reconciliation role, node role, or
+operator role for MFA. A successful deployment startup encrypt/decrypt probe
+with the real workload identity is mandatory before MFA activation.
+
 ## Kubernetes Workload Identity
 
 The dedicated Kubernetes ServiceAccount is `wilsy-eos-api`.

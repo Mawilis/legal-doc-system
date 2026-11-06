@@ -55,7 +55,7 @@ const TAB_TO_MODAL_MAP = Object.freeze({
  */
 const SalesDashboard = () => {
   const { activeTenant } = useTenants();
-  const tenantId = activeTenant?.tenantId || 'MASTER';
+  const tenantId = activeTenant?.tenantId || null;
 
   // ── UI State ──
   const [activeTab, setActiveTab] = useState('pipeline');
@@ -154,6 +154,10 @@ const SalesDashboard = () => {
    * @returns {Promise<void>}
    */
   const fetchTabData = useCallback(async (tabName, page) => {
+    if (!tenantId) {
+      setInitialLoadComplete(true);
+      return;
+    }
     try {
       let result = { items: [], total: 0, hasMore: false };
       const params = { limit: page.limit, offset: page.offset };
@@ -270,6 +274,7 @@ const SalesDashboard = () => {
    * @param {Object} formData - The data payload.
    */
   const handleSave = useCallback(async (formData = {}) => {
+    if (!tenantId) return;
     try {
       setIsRefreshing(true);
       if (modalType === 'deal') {
@@ -303,6 +308,7 @@ const SalesDashboard = () => {
    * @param {string} type - Record type.
    */
   const handleDelete = useCallback(async (id, type) => {
+    if (!tenantId) return;
     if (!window.confirm('Confirm deletion? This action is logged to the forensic ledger.')) return;
     try {
       setIsRefreshing(true);
@@ -322,6 +328,7 @@ const SalesDashboard = () => {
    * @description Exports the currently active tab's data (full dataset) to CSV.
    */
   const handleExport = useCallback(async () => {
+    if (!tenantId) return;
     try {
       setIsRefreshing(true);
       let dataset = [];

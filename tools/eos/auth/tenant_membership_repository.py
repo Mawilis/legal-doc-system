@@ -91,6 +91,79 @@ class TenantMembershipRepository:
         return _hydrate(row)
 
     @staticmethod
+    def list_for_principal(
+        principal_id: str,
+        collection: Optional[Collection] = None,
+        *,
+        after_tenant_id: str | None = None,
+        limit: int = 50,
+        session: Optional[ClientSession] = None,
+    ) -> tuple[tuple[TenantMembershipAuthority, ...], str | None]:
+        """Return a bounded, deterministic membership page for one principal.
+
+        This is a read-only directory primitive for authenticated membership
+        selection. It never resolves tenant aliases, creates membership, or
+        assigns business capacity. The caller must separately validate current
+        PrincipalAuthority and compose each selected tenant with its own
+        business-role and authorization authorities. The opaque continuation
+        value is the last returned canonical tenant_id; callers must not treat
+        it as proof of membership.
+        """
+        if (
+            not isinstance(principal_id, str)
+            or not principal_id
+            or principal_id != principal_id.strip()
+        ):
+            raise TenantMembershipNotFoundError("TENANT_MEMBERSHIP_NOT_FOUND")
+        if (
+            not isinstance(limit, int)
+            or isinstance(limit, bool)
+            or limit < 1
+            or limit > 100
+        ):
+            raise TenantMembershipRepositoryError("TENANT_MEMBERSHIP_PAGE_LIMIT_INVALID")
+        if after_tenant_id is not None and (
+            not isinstance(after_tenant_id, str)
+            or not after_tenant_id
+            or after_tenant_id != after_tenant_id.strip()
+        ):
+            raise TenantMembershipRepositoryError("TENANT_MEMBERSHIP_CURSOR_INVALID")
+
+        query: dict[str, object] = {"principal_id": principal_id}
+        if after_tenant_id is not None:
+            query["tenant_id"] = {"$gt": after_tenant_id}
+        try:
+            cursor = _target(collection).find(query, session=session)
+            cursor = cursor.sort("tenant_id", ASCENDING).limit(limit + 1)
+            rows = list(cursor)
+        except PyMongoError as error:
+            raise TenantMembershipRepositoryError(
+                "TENANT_MEMBERSHIP_LIST_FAILED"
+            ) from error
+
+        if len(rows) > limit:
+            rows = rows[:limit]
+            next_cursor = _hydrate(rows[-1]).tenant_id
+        else:
+            next_cursor = None
+
+        values: list[TenantMembershipAuthority] = []
+        seen_tenants: set[str] = set()
+        for row in rows:
+            value = _hydrate(row)
+            if value.principal_id != principal_id or value.tenant_id in seen_tenants:
+                raise TenantMembershipPersistedRecordInvalidError(
+                    "TENANT_MEMBERSHIP_LIST_CORRUPT"
+                )
+            if after_tenant_id is not None and value.tenant_id <= after_tenant_id:
+                raise TenantMembershipPersistedRecordInvalidError(
+                    "TENANT_MEMBERSHIP_LIST_ORDER_INVALID"
+                )
+            seen_tenants.add(value.tenant_id)
+            values.append(value)
+        return tuple(values), next_cursor
+
+    @staticmethod
     def compare_and_swap(value: TenantMembershipAuthority, expected_revision: int, collection: Optional[Collection] = None, *, session: Optional[ClientSession] = None) -> TenantMembershipAuthority:
         """Replace only matching natural key/revision with exactly revision+1."""
         if not isinstance(expected_revision, int) or isinstance(expected_revision, bool) or expected_revision < 0 or value.revision != expected_revision + 1: raise TenantMembershipRevisionConflictError("TENANT_MEMBERSHIP_REVISION_CONFLICT")

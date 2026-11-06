@@ -36,17 +36,24 @@ const ROLE_KEY = 'userRole';
 const OPERATOR_KEY = 'operatorName';
 
 /**
- * 🛰️ DYNAMIC RESOLUTION: Scalable to 1M+ Tenants
- * 🔧 RECTIFICATION: Anchored to 'wilsy' to match Sovereign Ledger.
+ * Resolve only the tenant projection returned by the EOS discovery endpoint.
+ * This is a request selector, never membership or authorization authority.
+ * No hostname, role, legacy storage key, or default tenant is accepted.
  */
 const getTenantContext = () => {
-  // Check URL subdomain first
-  const host = window.location.hostname;
-  const parts = host.split('.');
-  if (parts.length > 2 && parts[0] !== 'www') return parts[0];
-  // Check localStorage, then fallback to the Billion-Dollar Anchor 'wilsy'
-  // RECTIFIED: Removed 'wilsy-sovereign-root' fallback as it conflicts with DB slug
-  return localStorage.getItem(TENANT_KEY) || 'wilsy';
+  try {
+    const raw = localStorage.getItem('discoveredTenant');
+    if (!raw) return null;
+    const discovered = JSON.parse(raw);
+    const tenantId = discovered?.tenantId;
+    return (
+      typeof tenantId === 'string'
+      && tenantId === tenantId.trim()
+      && /^[A-Za-z0-9][A-Za-z0-9._:-]{0,199}$/.test(tenantId)
+    ) ? tenantId : null;
+  } catch {
+    return null;
+  }
 };
 
 const safePreview = (token) => {
@@ -133,10 +140,10 @@ export const authService = {
 
     // FORENSIC LOGGING TO PROVE CONTEXT TO GATEWAY
     console.info(`[SOVEREIGN] 🔍 Handshake: Resolving dynamic context for [${tenantId}]`);
+    if (!tenantId) throw new Error('Discover your organization before signing in.');
     const response = await api.post(
       '/api/auth/login',
-      { email: normalizedEmail, password, tenantId }, // Body Injection
-      { headers: { 'X-Tenant-ID': tenantId } } // Header Injection
+      { email: normalizedEmail, password, tenant_id: tenantId }
     );
     const data = response?.data || {};
     if (data.token) writeTokenAndUser(data.token, data.user || null);
@@ -152,7 +159,7 @@ export const authService = {
   logout: async () => {
     try {
       const tenantId = getTenantContext();
-      await api.post('/api/auth/logout', {}, { headers: { 'X-Tenant-ID': tenantId } });
+      await api.post('/api/auth/logout');
     } catch (e) {
       console.warn('[SOVEREIGN] logout request failed', e);
     } finally {
@@ -161,8 +168,7 @@ export const authService = {
   },
 
   getProfile: async () => {
-    const tenantId = getTenantContext();
-    const response = await api.get('/api/auth/me', { headers: { 'X-Tenant-ID': tenantId } });
+    const response = await api.get('/api/auth/workspace-bootstrap');
     return response.data;
   },
 
@@ -196,15 +202,15 @@ export const authService = {
     }
 
     const tenantId = getTenantContext();
+    if (!tenantId) throw new Error('Discover your organization before verifying identity.');
     const response = await api.post(
       '/api/auth/verify-3fa',
       {
         email,
         otp, // ← server expects this (was `code` only → 400)
         code: otp, // alias for any dual-field handlers
-        tenantId,
-      },
-      { headers: { 'X-Tenant-ID': tenantId } }
+        tenant_id: tenantId,
+      }
     );
     const data = response?.data || {};
     if (data.token) writeTokenAndUser(data.token, data.user || null);
@@ -214,10 +220,10 @@ export const authService = {
   refreshToken: async () => {
     try {
       const tenantId = getTenantContext();
+      if (!tenantId) return null;
       const response = await api.post(
         '/api/auth/refresh',
-        { tenantId },
-        { headers: { 'X-Tenant-ID': tenantId } }
+        { tenant_id: tenantId }
       );
       const data = response?.data || {};
       if (data?.token) {

@@ -49,7 +49,20 @@
  */
 
 import React, { createContext, useCallback, useContext, useEffect, useMemo, useState } from 'react';
-import api from '@/services/api';
+import api, { setActiveTenantTransportId } from '@/services/api';
+
+const WORKSPACE_CONTRACT_VERSION = 'v1.0.0-WILSY-EOS-WORKSPACE-RESOLUTION';
+const WORKSPACE_ID_SET = new Set([
+  'EXECUTIVE_COMMAND_CENTRE',
+  'TENANT_ADMINISTRATION',
+  'AUDIT_REPORTING',
+  'TENANT_OPERATIONS',
+  'LEGAL_PRACTICE',
+  'LEGAL_FINANCE',
+  'CLIENT_PORTAL',
+  'PROCESS_SERVICE',
+  'PEOPLE_OPERATIONS',
+]);
 
 const LEGAL_PRESENTATION_PERMISSION_SET = new Set([
   'legal_operations:conflict_review:write',
@@ -390,6 +403,97 @@ const boundedWorkspaceBrandingProjection = (workspace, tenantId) => {
   };
 };
 
+const SYSTEM_SERVICES_CAPABILITY_SET = new Set([
+  'system_services:queue:read',
+  'system_services:identity:read',
+  'system_services:incident:escalate',
+]);
+
+const boundedSystemServicesWorkspaceProjection = (
+  value,
+  expectedPrincipalId = '',
+  fallbackEmail = '',
+) => {
+  const invalid = () => new Error('AUTHENTICATED_SYSTEM_SERVICES_WORKSPACE_INVALID');
+  const expectedKeys = [
+    'status', 'authority', 'principalId', 'scope',
+    'capabilities', 'summary', 'cases',
+  ];
+  if (
+    !value || typeof value !== 'object' || Array.isArray(value)
+    || Object.keys(value).length !== expectedKeys.length
+    || expectedKeys.some((key) => !Object.prototype.hasOwnProperty.call(value, key))
+    || value.status !== 'READY'
+    || value.authority !== 'EOS_SYSTEM_SERVICES'
+    || value.scope !== 'SYSTEM'
+    || typeof value.principalId !== 'string'
+    || !value.principalId
+    || value.principalId !== value.principalId.trim()
+    || (expectedPrincipalId && value.principalId !== expectedPrincipalId)
+    || !Array.isArray(value.capabilities)
+    || value.capabilities.length === 0
+    || new Set(value.capabilities).size !== value.capabilities.length
+    || value.capabilities.some((item) => (
+      typeof item !== 'string' || !SYSTEM_SERVICES_CAPABILITY_SET.has(item)
+    ))
+    || !value.capabilities.includes('system_services:queue:read')
+    || !value.summary || typeof value.summary !== 'object'
+    || Array.isArray(value.summary)
+    || Object.keys(value.summary).length !== 2
+    || !['openCases', 'securityEscalations'].every(
+      (key) => Object.prototype.hasOwnProperty.call(value.summary, key),
+    )
+    || !['openCases', 'securityEscalations'].every((key) => (
+      Number.isSafeInteger(value.summary[key]) && value.summary[key] >= 0
+    ))
+    || !Array.isArray(value.cases)
+  ) {
+    throw invalid();
+  }
+
+  const cases = value.cases.map((item) => {
+    const keys = ['caseId', 'reference', 'category', 'status'];
+    if (
+      !item || typeof item !== 'object' || Array.isArray(item)
+      || Object.keys(item).length !== keys.length
+      || keys.some((key) => !Object.prototype.hasOwnProperty.call(item, key))
+      || keys.some((key) => (
+        typeof item[key] !== 'string' || !item[key] || item[key] !== item[key].trim()
+      ))
+    ) {
+      throw invalid();
+    }
+    return {
+      caseId: item.caseId,
+      reference: item.reference,
+      category: item.category,
+      status: item.status,
+    };
+  });
+
+  return {
+    user: {
+      id: value.principalId,
+      email: typeof fallbackEmail === 'string' ? fallbackEmail : '',
+      role: 'SYSTEM_SERVICES',
+      workspaceId: 'SYSTEM_SERVICES',
+      systemServicesWorkspace: {
+        status: value.status,
+        authority: value.authority,
+        principalId: value.principalId,
+        scope: value.scope,
+        capabilities: [...value.capabilities],
+        summary: {
+          openCases: value.summary.openCases,
+          securityEscalations: value.summary.securityEscalations,
+        },
+        cases,
+      },
+    },
+    tenant: null,
+  };
+};
+
 const authenticatedTenantProjection = (
   tenantProjection,
   tenantId,
@@ -417,6 +521,8 @@ const boundedWorkspaceProjection = (data, fallbackEmail = '') => {
   const tenantId = String(workspace?.tenantId || '').trim();
   const tenantProjectionId = String(tenantProjection?.tenantId || '').trim();
   const businessRole = String(workspace?.businessRole || '').trim();
+  const workspaceId = String(workspace?.workspaceId || '').trim();
+  const workspaceContractVersion = String(workspace?.workspaceContractVersion || '').trim();
   const membershipRevision = workspace?.membershipRevision;
   const businessRoleRevision = workspace?.businessRoleRevision;
   const branding = boundedWorkspaceBrandingProjection(workspace, tenantId);
@@ -452,6 +558,8 @@ const boundedWorkspaceProjection = (data, fallbackEmail = '') => {
     || !tenantProjection
     || tenantProjectionId !== tenantId
     || !businessRole
+    || workspaceContractVersion !== WORKSPACE_CONTRACT_VERSION
+    || !WORKSPACE_ID_SET.has(workspaceId)
     || !Number.isInteger(membershipRevision)
     || membershipRevision < 0
     || !Number.isInteger(businessRoleRevision)
@@ -468,6 +576,8 @@ const boundedWorkspaceProjection = (data, fallbackEmail = '') => {
       lastName,
       tenantId,
       role: businessRole,
+      workspaceId,
+      workspaceContractVersion,
       permissions: [...legalPermissions],
       legalPermissionsAuthoritative: hasLegalPermissionProjection,
       membershipRevision,
@@ -482,6 +592,68 @@ const boundedWorkspaceProjection = (data, fallbackEmail = '') => {
   };
 };
 
+const authenticatedSystemServicesUser = (projection, principalId, email) => {
+  if (
+    !projection
+    || projection.status !== 'READY'
+    || projection.authority !== 'EOS_SYSTEM_SERVICES'
+    || projection.scope !== 'SYSTEM'
+    || projection.principalId !== principalId
+    || !Array.isArray(projection.capabilities)
+    || projection.capabilities.length > 16
+    || new Set(projection.capabilities).size !== projection.capabilities.length
+    || !projection.capabilities.includes('system_services:queue:read')
+    || !projection.capabilities.every((value) => [
+      'system_services:queue:read',
+      'system_services:identity:read',
+      'system_services:incident:escalate',
+    ].includes(value))
+    || !projection.summary
+    || !Number.isInteger(projection.summary.openCases)
+    || projection.summary.openCases < 0
+    || !Number.isInteger(projection.summary.securityEscalations)
+    || projection.summary.securityEscalations < 0
+    || !Array.isArray(projection.cases)
+    || projection.cases.length > 100
+  ) {
+    throw new Error('SYSTEM_WORKSPACE_PROJECTION_INVALID');
+  }
+  const cases = projection.cases.map((item) => {
+    if (
+      !item
+      || typeof item.caseId !== 'string'
+      || !item.caseId
+      || item.reference !== item.caseId
+      || typeof item.category !== 'string'
+      || typeof item.status !== 'string'
+    ) throw new Error('SYSTEM_WORKSPACE_CASE_PROJECTION_INVALID');
+    return {
+      caseId: item.caseId,
+      reference: item.reference,
+      category: item.category,
+      status: item.status,
+    };
+  });
+  return {
+    id: principalId,
+    email,
+    role: 'SYSTEM_SERVICES',
+    workspaceId: 'SYSTEM_SERVICES',
+    systemServicesWorkspace: {
+      status: projection.status,
+      authority: projection.authority,
+      scope: projection.scope,
+      principalId: projection.principalId,
+      capabilities: [...projection.capabilities],
+      summary: {
+        openCases: projection.summary.openCases,
+        securityEscalations: projection.summary.securityEscalations,
+      },
+      cases,
+    },
+  };
+};
+
 export const AuthProvider = ({ children }) => {
   const [user, setUser] = useState(null);
   // Persisted bearer material is only a candidate. It remains unanchored until
@@ -492,6 +664,7 @@ export const AuthProvider = ({ children }) => {
   const [pendingEmail, setPendingEmail] = useState('');
   const [qrCodeData, setQrCodeData] = useState(null);
   const [mfaTempToken, setMfaTempToken] = useState(null);
+  const [globalMfaChallenge, setGlobalMfaChallenge] = useState(null);
   const [loading, setLoading] = useState(
     () => Boolean(readPersistedAccessTokenCandidate()),
   );
@@ -506,6 +679,7 @@ export const AuthProvider = ({ children }) => {
 
     if (!candidateToken) {
       anchorCanonicalBearer(null);
+      setActiveTenantTransportId(null);
       setLoading(false);
       return () => { active = false; };
     }
@@ -549,6 +723,7 @@ export const AuthProvider = ({ children }) => {
 
         // Only the revalidated READY server projection may restore authority.
         anchorCanonicalBearer(candidateToken);
+        setActiveTenantTransportId(authoritative.user.tenantId);
         localStorage.setItem('wilsy_auth_token', candidateToken);
         localStorage.setItem('token', candidateToken);
         localStorage.setItem(
@@ -567,13 +742,59 @@ export const AuthProvider = ({ children }) => {
         emitAuthState(AUTH_STATES.AUTHENTICATED);
       } catch {
         if (!active) return;
-        clearPersistedSessionAuthority();
-        setToken(null);
-        setUser(null);
-        setTenant(readPersistedDiscoveredTenant());
-        setAuthStage(AUTH_STATES.IDLE);
-        setError(null);
-        emitAuthState(AUTH_STATES.IDLE);
+
+        // A tenant workspace denial may be a platform SYSTEM principal. It is
+        // never promoted from a role label: EOS must independently authorize
+        // and return the exact SYSTEM workspace projection. A selected tenant
+        // remains a hard boundary and cannot be bypassed by this fallback.
+        let systemWorkspace = null;
+        const discoveredTenant = readPersistedDiscoveredTenant();
+        const persistedUser = readPersistedUserProjection();
+        const persistedPrincipalId = String(persistedUser?.id || '').trim();
+        if (!discoveredTenant?.tenantId && persistedPrincipalId) {
+          try {
+            const response = await api.get('/system-services/workspace-bootstrap', {
+              headers: { Authorization: `Bearer ${candidateToken}` },
+            });
+            if (!active) return;
+            systemWorkspace = boundedSystemServicesWorkspaceProjection(
+              response?.data || {},
+              persistedPrincipalId,
+              persistedUser?.email || '',
+            );
+          } catch {
+            systemWorkspace = null;
+          }
+        }
+
+        if (systemWorkspace) {
+          anchorCanonicalBearer(candidateToken);
+          setActiveTenantTransportId(null);
+          localStorage.setItem('wilsy_auth_token', candidateToken);
+          localStorage.setItem('token', candidateToken);
+          localStorage.setItem(
+            'wilsy_sovereign_user',
+            JSON.stringify(systemWorkspace.user),
+          );
+          localStorage.removeItem('wilsy_active_tenant');
+          localStorage.removeItem('tenantId');
+          localStorage.removeItem('wilsy_tenant_id');
+          setToken(candidateToken);
+          setUser(systemWorkspace.user);
+          setTenant(null);
+          setAuthStage(AUTH_STATES.AUTHENTICATED);
+          setError(null);
+          emitAuthState(AUTH_STATES.AUTHENTICATED);
+        } else {
+          clearPersistedSessionAuthority();
+          setActiveTenantTransportId(null);
+          setToken(null);
+          setUser(null);
+          setTenant(readPersistedDiscoveredTenant());
+          setAuthStage(AUTH_STATES.IDLE);
+          setError(null);
+          emitAuthState(AUTH_STATES.IDLE);
+        }
       } finally {
         if (active) setLoading(false);
       }
@@ -586,15 +807,15 @@ export const AuthProvider = ({ children }) => {
   useEffect(() => {
     if (token) api.defaults.headers.common.Authorization = `Bearer ${token}`;
     else delete api.defaults.headers.common.Authorization;
-    if (tenant?.tenantId) api.defaults.headers.common['x-tenant-id'] = tenant.tenantId;
-    else delete api.defaults.headers.common['x-tenant-id'];
-  }, [token, tenant]);
+    setActiveTenantTransportId(token && user?.tenantId ? user.tenantId : null);
+  }, [token, user?.tenantId]);
 
   const discoverTenant = useCallback(async (tenantAlias) => {
     const alias = String(tenantAlias || '').trim().toLowerCase();
     if (!alias) throw new Error('Enter an organization or workspace identifier.');
     setLoading(true);
     setError(null);
+    setActiveTenantTransportId(null);
     try {
       const response = await fetch('/api/auth/discover', {
         method: 'POST',
@@ -659,6 +880,7 @@ export const AuthProvider = ({ children }) => {
 
     // Only the READY server-owned projection may establish browser authority.
     anchorCanonicalBearer(candidateToken);
+    setActiveTenantTransportId(authoritative.user.tenantId);
 
     localStorage.setItem('wilsy_auth_token', candidateToken);
     localStorage.setItem('token', candidateToken);
@@ -705,10 +927,54 @@ export const AuthProvider = ({ children }) => {
     }
     setUser(authoritative.user);
     setTenant(authoritative.tenant);
+    setActiveTenantTransportId(authoritative.user.tenantId);
     localStorage.setItem('wilsy_sovereign_user', JSON.stringify(authoritative.user));
     localStorage.setItem('wilsy_active_tenant', JSON.stringify(authoritative.tenant));
     return authoritative;
   }, [tenant, token, user?.email]);
+
+  useEffect(() => {
+    if (!token || !user?.systemServicesWorkspace) return undefined;
+    let active = true;
+    let refreshing = false;
+    const refreshSystemSession = async () => {
+      if (refreshing) return;
+      const refreshToken = localStorage.getItem('wilsy_refresh_token');
+      if (!refreshToken) return;
+      refreshing = true;
+      try {
+        const response = await api.post(
+          '/auth/global/refresh',
+          { refresh_token: refreshToken },
+          { skipAuth: true, skipAuthRedirect: true },
+        );
+        const data = response?.data || {};
+        if (
+          !active
+          || data.status !== 'REFRESHED'
+          || data.scope !== 'SYSTEM'
+          || typeof data.access_token !== 'string'
+          || typeof data.refresh_token !== 'string'
+        ) throw new Error('SYSTEM_SESSION_REFRESH_PROJECTION_INVALID');
+        anchorCanonicalBearer(data.access_token);
+        localStorage.setItem('wilsy_auth_token', data.access_token);
+        localStorage.setItem('token', data.access_token);
+        localStorage.setItem('wilsy_refresh_token', data.refresh_token);
+        setToken(data.access_token);
+      } catch (refreshError) {
+        if (active) {
+          setError(refreshError?.response?.data?.detail || refreshError.message || 'SYSTEM_SESSION_REFRESH_FAILED');
+        }
+      } finally {
+        refreshing = false;
+      }
+    };
+    const interval = window.setInterval(refreshSystemSession, 10 * 60 * 1000);
+    return () => {
+      active = false;
+      window.clearInterval(interval);
+    };
+  }, [token, user?.systemServicesWorkspace]);
 
   useEffect(() => {
     const handleBrandingAuthorityRefresh = () => {
@@ -723,12 +989,37 @@ export const AuthProvider = ({ children }) => {
     return undefined;
   }, [refreshWorkspace]);
 
-  const login = useCallback(async (email, password) => {
+  const login = useCallback(async (email, password, discoveredTenantId = tenant?.tenantId) => {
+    const tenantId = String(discoveredTenantId || '').trim();
     setLoading(true);
     setError(null);
     setAuthStage(AUTH_STATES.PRIMARY_AUTHENTICATING);
     try {
-      const response = await api.post('/auth/login', { email, password });
+      if (!tenantId) {
+        anchorCanonicalBearer(null);
+        setActiveTenantTransportId(null);
+        localStorage.removeItem('wilsy_active_tenant');
+        localStorage.removeItem('wilsy_tenant_id');
+        localStorage.removeItem('tenantId');
+        const response = await api.post('/auth/global/login', { email, password });
+        const data = response.data || {};
+        if (
+          data.status !== AUTH_STATES.MFA_REQUIRED
+          || data.scope !== 'SYSTEM'
+          || typeof data.mfa_challenge !== 'string'
+          || !data.mfa_challenge.startsWith('sysmfa_')
+        ) {
+          throw new Error('Global sign-in did not return an authorized SYSTEM MFA challenge.');
+        }
+        setPendingEmail(email);
+        setGlobalMfaChallenge(data.mfa_challenge);
+        setMfaTempToken(null);
+        setQrCodeData(null);
+        setAuthStage(AUTH_STATES.MFA_REQUIRED);
+        return { ...data, status: AUTH_STATES.MFA_REQUIRED };
+      }
+
+      const response = await api.post('/auth/login', { email, password, tenant_id: tenantId });
       const data = response.data || {};
       const currentStatus = data.status;
       if (![AUTH_STATES.MFA_SETUP, AUTH_STATES.MFA_RECONCILIATION_REQUIRED, AUTH_STATES.MFA_REQUIRED, 'AUTHENTICATED'].includes(currentStatus)) {
@@ -736,6 +1027,7 @@ export const AuthProvider = ({ children }) => {
       }
       setPendingEmail(email);
       setMfaTempToken(data.tempToken || null);
+      setGlobalMfaChallenge(null);
       if (currentStatus === AUTH_STATES.MFA_SETUP) {
         if (!data.qrCode) throw new Error('First-time MFA setup did not return a provisioning QR.');
         setQrCodeData(data.qrCode);
@@ -770,9 +1062,9 @@ export const AuthProvider = ({ children }) => {
     } finally {
       setLoading(false);
     }
-  }, [persistSession]);
+  }, [persistSession, tenant]);
 
-  const verifyOTP = useCallback(async (email, code, _biometricAssertion = null, _traceId = null, mfaSetup = false) => {
+  const verifyOTP = useCallback(async (email, code, _biometricAssertion = null, _traceId = null, mfaSetup = false, discoveredTenantId = tenant?.tenantId) => {
     const targetEmail = email || pendingEmail;
     const targetCode = String(code || '').trim();
     if (!/^\d{6}$/.test(targetCode)) throw new Error('Enter the current six-digit code from your authenticator app.');
@@ -780,8 +1072,60 @@ export const AuthProvider = ({ children }) => {
     setError(null);
     setAuthStage(AUTH_STATES.MFA_VERIFYING);
     try {
+      if (globalMfaChallenge) {
+        const response = await api.post('/auth/global/verify-mfa', {
+          mfa_challenge: globalMfaChallenge,
+          code: targetCode,
+        });
+        const data = response.data || {};
+        if (
+          data.status !== 'AUTHENTICATED'
+          || data.scope !== 'SYSTEM'
+          || typeof data.access_token !== 'string'
+          || typeof data.refresh_token !== 'string'
+          || !data.refresh_token.startsWith('sysrefresh_')
+          || typeof data.principal_id !== 'string'
+          || data.workspace_id !== 'SYSTEM_SERVICES'
+        ) throw new Error('EOS did not issue a valid SYSTEM session.');
+
+        anchorCanonicalBearer(data.access_token);
+        setActiveTenantTransportId(null);
+        try {
+          const workspaceResponse = await api.get('/system-services/workspace-bootstrap');
+          const projectedUser = authenticatedSystemServicesUser(
+            workspaceResponse?.data || {},
+            data.principal_id,
+            targetEmail,
+          );
+          localStorage.setItem('wilsy_auth_token', data.access_token);
+          localStorage.setItem('token', data.access_token);
+          localStorage.setItem('wilsy_refresh_token', data.refresh_token);
+          localStorage.setItem('wilsy_sovereign_user', JSON.stringify(projectedUser));
+          localStorage.removeItem('wilsy_active_tenant');
+          localStorage.removeItem('wilsy_tenant_id');
+          localStorage.removeItem('tenantId');
+          localStorage.removeItem('discoveredTenant');
+          setToken(data.access_token);
+          setUser(projectedUser);
+          setTenant(null);
+          setGlobalMfaChallenge(null);
+          setPendingEmail('');
+          setQrCodeData(null);
+          setMfaTempToken(null);
+          setAuthStage(AUTH_STATES.AUTHENTICATED);
+          emitAuthState(AUTH_STATES.AUTHENTICATED);
+          return { ...data, success: true, token: data.access_token, user: projectedUser };
+        } catch (projectionError) {
+          anchorCanonicalBearer(null);
+          setActiveTenantTransportId(null);
+          throw projectionError;
+        }
+      }
+
+      const tenantId = String(discoveredTenantId || '').trim();
+      if (!tenantId) throw new Error('Discover your organization before verifying identity.');
       const endpoint = mfaSetup || authStage === AUTH_STATES.MFA_SETUP ? '/auth/validate-mfa-setup' : '/auth/verify-otp';
-      const response = await api.post(endpoint, { email: targetEmail, code: targetCode });
+      const response = await api.post(endpoint, { email: targetEmail, code: targetCode, tenant_id: tenantId });
       const data = response.data || {};
       const candidate = candidateSessionProjection(data, targetEmail);
       const promoted = await persistSession(
@@ -804,7 +1148,7 @@ export const AuthProvider = ({ children }) => {
     } finally {
       setLoading(false);
     }
-  }, [authStage, pendingEmail, persistSession]);
+  }, [authStage, globalMfaChallenge, pendingEmail, persistSession, tenant]);
 
   const updateSovereignIdentity = useCallback(async (updates) => {
     if (!user) throw new Error('No authenticated identity is available.');
@@ -816,11 +1160,12 @@ export const AuthProvider = ({ children }) => {
 
   const logout = useCallback(async () => {
     try {
-      if (token) await api.post('/auth/logout');
+      if (token) await api.post(user?.systemServicesWorkspace ? '/auth/global/logout' : '/auth/logout');
     } catch {
       // Local purge is still required; server logout is best-effort.
     } finally {
       anchorCanonicalBearer(null);
+      setActiveTenantTransportId(null);
       setToken(null);
       setUser(null);
       setTenant(null);
@@ -828,6 +1173,7 @@ export const AuthProvider = ({ children }) => {
       setPendingEmail('');
       setQrCodeData(null);
       setMfaTempToken(null);
+      setGlobalMfaChallenge(null);
       localStorage.removeItem('wilsy_auth_token');
       localStorage.removeItem('token');
       localStorage.removeItem('wilsy_sovereign_user');
@@ -836,7 +1182,7 @@ export const AuthProvider = ({ children }) => {
       localStorage.removeItem('wilsy_active_tenant');
       emitAuthState(AUTH_STATES.IDLE);
     }
-  }, [token]);
+  }, [token, user]);
 
   const value = useMemo(() => ({
     user,
@@ -850,18 +1196,19 @@ export const AuthProvider = ({ children }) => {
     pendingEmail,
     qrCodeData,
     mfaTempToken,
+    globalMfaChallenge,
     loading,
     error,
     discoverTenant,
     login,
     verifyOTP,
-    verify3FA: (code) => verifyOTP(pendingEmail, code),
+    verify3FA: (code) => verifyOTP(pendingEmail, code, null, null, false, tenant?.tenantId),
     logout,
     updateSovereignIdentity,
     refreshWorkspace,
     setAuthStage,
     publicAuthPaths,
-  }), [user, token, isAuthenticated, tenant, authStage, mfaRequired, pendingEmail, qrCodeData, mfaTempToken, loading, error, discoverTenant, login, verifyOTP, logout, updateSovereignIdentity, refreshWorkspace]);
+  }), [user, token, isAuthenticated, tenant, authStage, mfaRequired, pendingEmail, qrCodeData, mfaTempToken, globalMfaChallenge, loading, error, discoverTenant, login, verifyOTP, logout, updateSovereignIdentity, refreshWorkspace]);
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 };

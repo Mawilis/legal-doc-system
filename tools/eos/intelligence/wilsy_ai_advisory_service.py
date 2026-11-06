@@ -44,6 +44,10 @@ from tools.eos.intelligence.adapters.legal_operations_advisory_adapter import (
 from tools.eos.intelligence.domain.ai_tool_orchestration import OrchestrationPhase
 from tools.eos.intelligence.domain.legal_ai_gateway import TOOL_CONTRACTS
 from tools.eos.intelligence.domain.legal_ai_read_adapter import LegalAIReadAdapter
+from tools.eos.api import legal_operations_billing_read_router as l7c
+from tools.eos.legal_operations.registry.legal_operations_lifecycle_registry import COLLECTION as LIFECYCLE_COLLECTION
+from tools.eos.legal_operations.registry.process_service_billing_eligibility_registry import COLLECTION as ELIGIBILITY_COLLECTION
+from tools.eos.legal_operations.registry.process_service_tariff_registry import ASSESSMENT_COLLECTION
 from tools.eos.intelligence.domain.next_best_action_advisory import NextBestActionAdvisory
 from tools.eos.intelligence.registry.ai_tool_orchestration_registry import (
     AIToolOrchestrationRegistry,
@@ -224,7 +228,7 @@ class WilsyAIAdvisoryService:
     def _collections(self) -> dict[str, Any]:
         if self._database is None:
             return {}
-        return {"lifecycle": self._database["legal_operations_lifecycle_facts"], "tariff": self._database["process_service_tariff_assessments"], "eligibility": self._database["process_service_billing_eligibilities"], "invoice": self._database["client_invoices"], "issuance": self._database["process_service_client_invoice_issuances"]}
+        return {"lifecycle": self._database[LIFECYCLE_COLLECTION], "tariff": self._database[ASSESSMENT_COLLECTION], "eligibility": self._database[ELIGIBILITY_COLLECTION], "invoice": self._database[l7c.INVOICE_COLLECTION], "issuance": self._database[l7c.ISSUANCE_COLLECTION]}
 
     async def generate(self, *, orchestration_id: str, context: TenantAuthorizationContext, generated_at: datetime | str | None = None) -> AdvisoryServiceResult:
         """Generate or exactly replay a tenant-scoped advisory from current evidence."""

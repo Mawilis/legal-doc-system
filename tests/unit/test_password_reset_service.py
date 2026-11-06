@@ -55,6 +55,7 @@ from tools.eos.saas.auth.password_reset_notification_registry import (
 )
 from tools.eos.saas.auth.password_reset_service import (
     PasswordResetCode,
+    PasswordResetExecutionGuardError,
     PasswordResetResult,
     PasswordResetService,
     PasswordResetServiceError,
@@ -468,6 +469,60 @@ def test_success_order_and_public_receipt() -> None:
     assert dispatcher.committed_at_call == [True]
     assert client.session is not None and notice_session is client.session
     assert client.session.committed
+
+
+
+
+def test_transaction_completion_persists_receipt_after_canonical_mutations_on_same_session() -> None:
+    service, recovery, auth, client = _service()
+    completion_calls: list[tuple[object, str, str, int]] = []
+
+    def completion(session: object, tenant_id: str, principal_id: str, revision: int) -> None:
+        assert client.session is session
+        assert auth.events == ["hash", "revision", "cas", "sessions", "refresh"]
+        assert _notification_registry(service).create_calls[0][1] is session
+        completion_calls.append((session, tenant_id, principal_id, revision))
+
+    result = service.reset_password(
+        tenant_id=TENANT,
+        recovery_token=RECOVERY_TOKEN,
+        new_password=NEW_PASSWORD,
+        transaction_completion=completion,
+    )
+
+    assert result == PasswordResetResult()
+    assert len(completion_calls) == 1
+    assert completion_calls[0] == (client.session, TENANT, PRINCIPAL, 8)
+    assert client.session is not None and client.session.committed
+    assert _notification_dispatcher(service).committed_at_call == [True]
+
+
+def test_transaction_guard_runs_inside_canonical_transaction_before_any_mutation() -> None:
+    """Current System Services authority is re-proven on the reset's own session."""
+    service, recovery, auth, client = _service()
+    guard_calls: list[tuple[object, str, str]] = []
+
+    def guard(session: object, capability: PasswordRecoveryCapability) -> None:
+        guard_calls.append((session, capability.tenant_id, capability.principal_id))
+        raise RuntimeError("synthetic current-authority denial")
+
+    with pytest.raises(PasswordResetExecutionGuardError):
+        service.reset_password(
+            tenant_id=TENANT,
+            recovery_token=RECOVERY_TOKEN,
+            new_password=NEW_PASSWORD,
+            transaction_guard=guard,
+        )
+
+    assert client.session is not None and client.session.aborted
+    assert guard_calls == [(client.session, TENANT, PRINCIPAL)]
+    assert auth.revision_calls == []
+    assert auth.cas_calls == []
+    assert auth.session_calls == []
+    assert auth.refresh_calls == []
+    assert recovery.consume_calls == []
+    assert _notification_registry(service).create_calls == []
+    assert not client.session.committed
 
 
 def test_policy_rejection_starts_no_transaction() -> None:

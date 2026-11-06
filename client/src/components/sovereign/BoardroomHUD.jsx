@@ -33,6 +33,7 @@ import { useSovereignMesh } from './SovereignOrchestrator.jsx';
 import { useSovereignData } from './DataOrchestrator.jsx';
 import CoverPage from './CoverPage.jsx';
 import sovereignClient from '../../utils/sovereignClient.js';
+import { useAuth } from '../../contexts/authContext.jsx';
 
 // Register Chart.js components
 ChartJS.register(CategoryScale, LinearScale, PointElement, LineElement, BarElement, ArcElement, Title, Tooltip, Legend);
@@ -89,6 +90,8 @@ const extractPayload = (response) => response?.data?.data || response?.data || n
  * @returns {any} Matrix runtime feedback data context output
  */
 const BoardroomHUD = () => {
+  const { user } = useAuth();
+  const tenantId = user?.tenantId || null;
   const mesh = useSovereignMesh();
   const sovereignData = useSovereignData(); // Reserved for future consistency checks
 
@@ -172,11 +175,10 @@ const BoardroomHUD = () => {
    *   This function is now reused by boardroom protocols as an executable sync.
    */
   const hydrateFinancialSnapshot = useCallback(async () => {
-    const tenantId = (
-      localStorage.getItem('tenantId') ||
-      localStorage.getItem('wilsy_tenant_id') ||
-      'GLOBAL_ROOT'
-    );
+    if (!tenantId) {
+      setFinancialSnapshot((prev) => ({ ...prev, status: 'error', error: 'TENANT_CONTEXT_REQUIRED' }));
+      return;
+    }
 
     setFinancialSnapshot(prev => ({ ...prev, status: prev.metrics ? 'refreshing' : 'syncing', error: null }));
 
@@ -226,7 +228,7 @@ const BoardroomHUD = () => {
       error: null,
       lastSync: new Date().toISOString()
     });
-  }, []);
+  }, [tenantId]);
 
   /**
    * @function connectWebSocket
@@ -237,7 +239,7 @@ const BoardroomHUD = () => {
    */
   const connectWebSocket = useCallback(() => {
     const token = getAuthToken();
-    if (!token) {
+    if (!token || !tenantId) {
       console.warn('[BOARDROOM-HUD] No authentication token – cannot connect to mesh.');
       setWsConnectionStatus('error');
       return;
@@ -253,10 +255,10 @@ const BoardroomHUD = () => {
       setWsConnectionStatus('open');
       reconnectAttempts.current = 0;
       telemetrySuppressedUntilRef.current = 0;
-      broadcastTelemetry('BOARDROOM_WS_CONNECTED', { tenantId: 'GLOBAL_ROOT' });
+      broadcastTelemetry('BOARDROOM_WS_CONNECTED', { tenantId });
       ws.send(JSON.stringify({
         type: 'BOARDROOM_ACTIVE',
-        payload: { tenantId: 'GLOBAL_ROOT', component: 'BoardroomHUD', status: 'ACTIVE' }
+        payload: { tenantId, component: 'BoardroomHUD', status: 'ACTIVE' }
       }));
     };
 
@@ -304,7 +306,7 @@ const BoardroomHUD = () => {
         setWsConnectionStatus('error');
       }
     };
-  }, [getAuthToken, broadcastTelemetry, warnMeshOnce]);
+  }, [getAuthToken, broadcastTelemetry, warnMeshOnce, tenantId]);
 
   useEffect(() => {
     connectWebSocket();
@@ -312,7 +314,7 @@ const BoardroomHUD = () => {
       if (wsRef.current && wsRef.current.readyState === WebSocket.OPEN) {
         wsRef.current.send(JSON.stringify({
           type: 'BOARDROOM_INACTIVE',
-          payload: { tenantId: 'GLOBAL_ROOT', component: 'BoardroomHUD', status: 'INACTIVE' }
+          payload: { tenantId, component: 'BoardroomHUD', status: 'INACTIVE' }
         }));
         wsRef.current.close();
       }
@@ -385,7 +387,7 @@ const triggerBiometric = async () => {
           console.log('[SOVEREIGN-HUD] ✅ Executive biometric override anchored in ledger.');
           broadcastTelemetry('BIOMETRIC_OVERRIDE_SUCCESS', { integrityIndex, refreshFailure });
           if (mesh && typeof mesh.propagate === 'function') {
-            mesh.propagate('GLOBAL_ROOT', { integrityIndex, refreshFailure }, 'BIOMETRIC_OVERRIDE_SUCCESS')
+            mesh.propagate(tenantId, { integrityIndex, refreshFailure }, 'BIOMETRIC_OVERRIDE_SUCCESS')
               .catch(err => console.warn('[Mesh] Broadcast failed:', err));
           }
           setBiometricPending(false);
@@ -393,7 +395,7 @@ const triggerBiometric = async () => {
           console.error('[SOVEREIGN-HUD] ❌ Biometric acknowledgment failed:', err);
           broadcastTelemetry('BIOMETRIC_OVERRIDE_FAILED', { error: err.message });
           if (mesh && typeof mesh.propagate === 'function') {
-            mesh.propagate('GLOBAL_ROOT', { error: err.message }, 'BIOMETRIC_OVERRIDE_FAILED')
+            mesh.propagate(tenantId, { error: err.message }, 'BIOMETRIC_OVERRIDE_FAILED')
               .catch(e => console.warn(e));
           }
           // System remains locked until the executive authenticates
@@ -666,7 +668,7 @@ const formatLivePercent = (value) => value === null ? 'NO LIVE DATA' : `${value}
         title: 'Availability',
         value: 'GLOBAL',
         copy: 'Multi-tenant availability status is visible across root, jurisdiction, telemetry and billing surfaces.',
-        rows: [['Gateway', '5050'], ['WebSocket', connectionLabel], ['Tenant', 'GLOBAL_ROOT']]
+        rows: [['Gateway', '5050'], ['WebSocket', connectionLabel], ['Tenant', tenantId || 'UNRESOLVED']]
       },
       performance: {
         title: 'Performance',
@@ -967,3 +969,4 @@ const formatLivePercent = (value) => value === null ? 'NO LIVE DATA' : `${value}
 };
 
 export default BoardroomHUD;
+

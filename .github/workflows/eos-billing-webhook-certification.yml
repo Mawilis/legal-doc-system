@@ -1,0 +1,103 @@
+name: EOS Billing and PayShap Webhook Persistence Certification
+
+on:
+  push:
+    branches:
+      - eos/tenant-discovery-iam-dashboard-roadmap
+  pull_request:
+    paths:
+      - "tools/eos/api/billing_router.py"
+      - "tools/eos/api/payshap_webhook_router.py"
+      - "tools/eos/api/electrum_payshap_completion_router.py"
+      - "tools/eos/api/server.py"
+      - "tools/eos/saas/billing/**"
+      - "tools/eos/saas/employee/employee_registry.py"
+      - "tests/unit/test_billing_registries_share_eos_mongo_runtime.py"
+      - "tests/unit/test_order_number_service_runtime_binding.py"
+      - "tests/unit/test_employee_registry_uses_kernel_database.py"
+      - "tools/eos/kennel/**"
+      - "tests/unit/test_billing_registry.py"
+      - "tests/unit/test_commercial_receivable_dunning.py"
+      - "tests/unit/test_payshap_webhook_router_host_runtime.py"
+      - "tests/unit/test_authenticated_settlement_observation_ingestion.py"
+      - "tests/unit/test_settlement_observation_to_platform_settlement_evidence.py"
+      - "tests/unit/test_platform_billing_commercial_settlement_projection_orchestration.py"
+      - "tests/unit/test_atomic_platform_settlement.py"
+      - "tests/unit/test_platform_settlement_outbox.py"
+      - "tests/unit/test_platform_invoice_settlement_allocation.py"
+      - "tests/unit/test_electrum_payshap_completion.py"
+      - "tests/unit/test_electrum_payshap_completion_router.py"
+      - "tests/unit/test_electrum_payshap_completion_processing.py"
+      - "tests/integration/test_platform_settlement_outbox_real_mongo.py"
+      - "tests/integration/test_electrum_payshap_completion_inbox_real_mongo.py"
+      - "tests/integration/test_billing_registry_real_mongo.py"
+      - "tests/integration/test_billing_registry_financial_truth_firewall_real_mongo.py"
+      - "tests/integration/test_financial_execution_reconciliation_mongo.py"
+      - "tests/integration/test_payshap_webhook_evidence_mongo.py"
+      - "tests/integration/test_platform_billing_commercial_settlement_projection_real_mongo.py"
+      - "tests/integration/test_platform_billing_financial_execution_and_settlement_evidence_real_mongo.py"
+      - "tests/integration/test_platform_settlement_outbox_real_mongo.py"
+      - "tests/integration/test_subscription_registry_real_mongo.py"
+      - "tests/integration/test_subscription_registry_transaction_injection_real_mongo.py"
+      - ".github/workflows/eos-billing-webhook-certification.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: eos-billing-webhook-certification-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  billing-and-webhook:
+    runs-on: ubuntu-latest
+    timeout-minutes: 35
+    env:
+      TEST_VENDOR_MONGO_URI: mongodb://127.0.0.1:27027/?replicaSet=wilsyVendorCertRS
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Install repository dependencies and pytest
+        run: |
+          python -m pip install --disable-pip-version-check -r requirements.txt
+          python -m pip install --disable-pip-version-check pytest==9.1.1
+      - name: Start disposable MongoDB replica set
+        run: |
+          docker run --detach --name wilsy-billing-webhook-mongo --network host mongo:7.0.37 mongod --port 27027 --replSet wilsyVendorCertRS --bind_ip_all --setParameter enableTestCommands=1
+          python - <<'PY'
+          import time
+          from pymongo import MongoClient
+          uri = "mongodb://127.0.0.1:27027"
+          client = MongoClient(uri, directConnection=True, serverSelectionTimeoutMS=2000)
+          deadline = time.monotonic() + 60
+          initiated = False
+          last_error = None
+          while True:
+              try:
+                  hello = client.admin.command("hello")
+                  if not hello.get("setName") and not initiated:
+                      client.admin.command({"replSetInitiate": {"_id": "wilsyVendorCertRS", "members": [{"_id": 0, "host": "127.0.0.1:27027"}]}})
+                      initiated = True
+                  if client.admin.command("hello").get("isWritablePrimary"):
+                      break
+              except Exception as error:
+                  last_error = error
+              if time.monotonic() >= deadline:
+                  raise RuntimeError(f"BILLING_WEBHOOK_MONGO_UNAVAILABLE: {last_error!r}")
+              time.sleep(1)
+          client.close()
+          PY
+      - name: Compile billing and webhook sources
+        run: |
+          python -m compileall -q tools/eos/api/billing_router.py tools/eos/api/payshap_webhook_router.py tools/eos/api/electrum_payshap_completion_router.py tools/eos/api/server.py tools/eos/saas/billing tools/eos/saas/employee/employee_registry.py tools/eos/kennel
+      - name: Run billing unit certification
+        run: |
+          python -m pytest -q tests/unit/test_billing_registries_share_eos_mongo_runtime.py tests/unit/test_order_number_service_runtime_binding.py tests/unit/test_financial_approval_aggregator_runtime_binding.py tests/unit/test_billing_registry.py tests/unit/test_commercial_receivable_dunning.py tests/unit/test_payshap_webhook_router_host_runtime.py tests/unit/test_authenticated_settlement_observation_ingestion.py tests/unit/test_settlement_observation_to_platform_settlement_evidence.py tests/unit/test_platform_billing_commercial_settlement_projection_orchestration.py tests/unit/test_atomic_platform_settlement.py tests/unit/test_platform_settlement_outbox.py tests/unit/test_platform_invoice_settlement_allocation.py tests/unit/test_electrum_payshap_completion.py tests/unit/test_electrum_payshap_completion_router.py tests/unit/test_electrum_payshap_completion_processing.py
+      - name: Run billing, subscription and financial-truth replica-set certification
+        run: |
+          python -m pytest -q tests/integration/test_billing_registry_real_mongo.py tests/integration/test_billing_registry_financial_truth_firewall_real_mongo.py tests/integration/test_subscription_registry_real_mongo.py tests/integration/test_subscription_registry_transaction_injection_real_mongo.py tests/integration/test_financial_execution_reconciliation_mongo.py tests/integration/test_payshap_webhook_evidence_mongo.py tests/integration/test_payshap_webhook_reconciliation_host_mongo.py tests/integration/test_platform_billing_commercial_settlement_projection_real_mongo.py tests/integration/test_platform_billing_financial_execution_and_settlement_evidence_real_mongo.py tests/integration/test_platform_settlement_outbox_real_mongo.py tests/integration/test_platform_invoice_settlement_allocation_real_mongo.py tests/integration/test_electrum_payshap_completion_inbox_real_mongo.py

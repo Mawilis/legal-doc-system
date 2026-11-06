@@ -3379,3 +3379,236 @@
 .executiveShell[data-wilsy-resolved-mode="day"] .artifactCommandStack small {
   color: #53617f;
 }
+
+
+/* Server-issued tenant product navigation for the executive command workbench. */
+.productModuleNavigation {
+  display: flex;
+  flex-direction: column;
+  gap: 7px;
+  padding: 12px;
+  margin: 0 0 12px;
+  border-bottom: 1px solid var(--wilsy-border, rgba(255, 255, 255, 0.12));
+}
+
+.productModuleNavigationLabel {
+  color: var(--wilsy-muted, #a7a7a7);
+  font-size: 0.64rem;
+  font-weight: 800;
+  letter-spacing: 0.14em;
+}
+
+.productModuleButton {
+  display: grid;
+  grid-template-columns: 18px minmax(0, 1fr);
+  align-items: center;
+  gap: 4px 10px;
+  width: 100%;
+  min-height: 48px;
+  padding: 9px 11px;
+  border: 1px solid var(--wilsy-border-authority, rgba(212, 175, 55, 0.28));
+  border-radius: 8px;
+  background: rgba(212, 175, 55, 0.07);
+  color: var(--wilsy-text, #fffaf0);
+  text-align: left;
+  cursor: pointer;
+}
+
+.productModuleButton svg {
+  grid-row: span 2;
+  color: var(--wilsy-authority, #d4af37);
+}
+
+.productModuleButton span {
+  font-size: 0.78rem;
+  font-weight: 800;
+  letter-spacing: 0.06em;
+}
+
+.productModuleButton small {
+  color: var(--wilsy-muted, #a7a7a7);
+  font-size: 0.65rem;
+}
+
+.productModuleButton:hover:not(:disabled) {
+  background: rgba(212, 175, 55, 0.13);
+  border-color: var(--wilsy-authority, #d4af37);
+}
+
+.productModuleButton:focus-visible {
+  outline: 2px solid var(--wilsy-authority, #d4af37);
+  outline-offset: 2px;
+}
+
+.productModuleButton:disabled {
+  opacity: 0.62;
+  cursor: wait;
+}
+
+.productModuleError {
+  color: var(--wilsy-risk, #ff8a8a);
+  font-size: 0.7rem;
+  line-height: 1.4;
+}
+
+
+/* Queue-first executive workbench: operational rows replace decorative duty cards. */
+.dutyQueueSection {
+  min-width: 0;
+  margin-top: 18px;
+  border-top: 1px solid var(--wilsy-border, rgba(255, 255, 255, 0.12));
+}
+
+.dutyQueueHeader {
+  display: flex;
+  align-items: end;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 16px 0 10px;
+}
+
+.dutyQueueHeader span {
+  color: var(--wilsy-muted, #a7a7a7);
+  font-size: 0.64rem;
+  font-weight: 800;
+  letter-spacing: 0.14em;
+}
+
+.dutyQueueHeader h3 {
+  margin: 4px 0 0;
+  color: var(--wilsy-text, #fffaf0);
+  font-size: 1rem;
+  font-weight: 700;
+}
+
+.dutyQueueHeader small {
+  color: var(--wilsy-muted, #a7a7a7);
+  font-size: 0.72rem;
+}
+
+.dutyQueueViewport {
+  width: 100%;
+  overflow-x: auto;
+  overscroll-behavior-inline: contain;
+  scrollbar-width: thin;
+}
+
+.dutyQueue {
+  width: 100%;
+  min-width: 760px;
+  border-collapse: collapse;
+  table-layout: fixed;
+  color: var(--wilsy-text, #fffaf0);
+}
+
+.dutyQueue th {
+  padding: 10px 12px;
+  border-bottom: 1px solid var(--wilsy-border, rgba(255, 255, 255, 0.16));
+  color: var(--wilsy-muted, #a7a7a7);
+  font-size: 0.62rem;
+  font-weight: 800;
+  letter-spacing: 0.1em;
+  text-align: left;
+  text-transform: uppercase;
+}
+
+.dutyQueue td {
+  padding: 14px 12px;
+  border-bottom: 1px solid var(--wilsy-border, rgba(255, 255, 255, 0.09));
+  vertical-align: top;
+  font-size: 0.78rem;
+  line-height: 1.45;
+}
+
+.dutyQueue tbody tr:hover {
+  background: rgba(255, 255, 255, 0.025);
+}
+
+.dutyQueue th:nth-child(1),
+.dutyQueue td:nth-child(1) {
+  width: 86px;
+}
+
+.dutyQueue th:nth-child(2),
+.dutyQueue td:nth-child(2) {
+  width: 130px;
+}
+
+.dutyQueue th:nth-child(4),
+.dutyQueue td:nth-child(4) {
+  width: 180px;
+}
+
+.dutyQueue th:nth-child(5),
+.dutyQueue td:nth-child(5) {
+  width: 112px;
+}
+
+.dutyQueue td strong {
+  display: block;
+  color: var(--wilsy-text, #fffaf0);
+  font-size: 0.78rem;
+  font-weight: 700;
+}
+
+.dutyQueue td small {
+  display: block;
+  margin-top: 4px;
+  color: var(--wilsy-muted, #a7a7a7);
+  font-size: 0.67rem;
+}
+
+.dutyQueue td p {
+  margin: 5px 0 0;
+  color: var(--wilsy-muted, #a7a7a7);
+  font-size: 0.73rem;
+  line-height: 1.5;
+}
+
+.dutyQueueImpact {
+  display: inline-block;
+  padding: 3px 7px;
+  border: 1px solid var(--wilsy-border, rgba(255, 255, 255, 0.18));
+  border-radius: 4px;
+  color: var(--wilsy-text, #fffaf0);
+  font-size: 0.63rem;
+  font-weight: 800;
+  letter-spacing: 0.06em;
+}
+
+.dutyQueueEvidence {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  margin-top: 7px;
+}
+
+.dutyQueueEvidence span {
+  padding: 2px 5px;
+  border: 1px solid var(--wilsy-border, rgba(255, 255, 255, 0.12));
+  border-radius: 3px;
+  color: var(--wilsy-muted, #a7a7a7);
+  font-size: 0.61rem;
+}
+
+.dutyQueueBlocked {
+  color: var(--wilsy-risk, #ff8a8a) !important;
+}
+
+@media (max-width: 760px) {
+  .dutyQueueHeader {
+    align-items: start;
+    flex-direction: column;
+    gap: 5px;
+  }
+
+  .dutyQueue {
+    min-width: 720px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .dutyQueue tbody tr {
+    transition: none;
+  }
+}

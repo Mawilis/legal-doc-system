@@ -75,6 +75,7 @@ def _identity(*, status: PrincipalStatus = PrincipalStatus.ACTIVE) -> SovereignI
         permissions=[],
         auth_method="jwt",
         status=status,
+        session_reference="WILSYS-SESSION-VERIFY-REQUEST",
     )
 
 

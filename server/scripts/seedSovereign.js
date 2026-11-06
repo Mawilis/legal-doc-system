@@ -57,10 +57,10 @@ async function seedCitadel() {
           postalCode: '2196'
         },
         branding: {
-          primaryColor: '#ffd700',
-          secondaryColor: '#10b981',
-          accentColor: '#3b82f6',
-          logo: '/assets/images/superadmin/wilsy.jpeg',
+          primaryColor: '#D9A83E',
+          secondaryColor: '#071B3C',
+          accentColor: '#F7F8FC',
+          logo: '/assets/images/superadmin/wilsy-logo.svg',
           favicon: '/favicon.ico',
           theme: 'dark'
         },

@@ -23,18 +23,33 @@ name: L8-8M Authenticated Browser and D21B13 Branding Certification
 
 on:
   pull_request:
-    branches: [main]
+    branches: [main, eos/atomic-owner-genesis-integration]
     paths:
+      - "tests/e2e/browser_cert_fixture.py"
       - "tests/e2e/**"
       - "client/src/components/industry/LegalDashboard.jsx"
       - "client/src/components/sovereign/SovereignDashboardController.jsx"
+      - "client/src/contexts/authContext.jsx"
+      - "client/src/App.jsx"
+      - "client/src/components/auth/SovereignLogin.jsx"
+      - "client/src/services/api.js"
+      - "client/src/components/auth/SovereignMfaPortal.jsx"
       - "client/tests/client/SovereignDashboardController.test.js"
+      - "client/tests/contexts/authContext.authoritative.test.jsx"
+      - "tests/e2e/system-services-incident.browser.spec.js"
       - "client/src/components/os/WilsyOSDashboardChrome.jsx"
+      - "client/src/components/executive/ExecutiveDashboard.jsx"
+      - "client/src/__tests__/components/legalDashboardBrandingPresentation.test.jsx"
       - "client/src/components/os/wilsyDashboardChromeConfig.js"
       - "client/src/hooks/useAuthenticatedTenantBrandingAsset.js"
       - "client/src/services/tenantBrandingAssetClient.js"
       - "tools/eos/api/auth_router.py"
       - "tools/eos/api/legal_operations_router.py"
+      - "tools/eos/api/system_services_router.py"
+      - "tools/eos/api/global_principal_auth_router.py"
+      - "tools/eos/auth/authentication.py"
+      - "tools/eos/auth/global_principal_system_session_authority.py"
+      - "tools/eos/system_services/**"
       - "tools/eos/auth/roles.py"
       - "tools/eos/auth/workspace_bootstrap_projection.py"
       - "tools/eos/saas/billing/plan_registry.py"
@@ -104,7 +119,7 @@ jobs:
         run: |
           npm ci --legacy-peer-deps
           npm --prefix client ci
-          npm --prefix server ci --legacy-peer-deps
+          # Current Vite configuration routes all application APIs directly to Python EOS; no BFF process is started.
 
       - name: Install Chromium for Playwright
         run: npx playwright install --with-deps chromium
@@ -204,7 +219,7 @@ jobs:
           PY
 
       - name: Compile browser fixture
-        run: python -m py_compile tests/e2e/browser_cert_fixture.py
+        run: python -m py_compile tests/e2e/browser_cert_fixture.py tests/e2e/browser_cert_scope_verify.py
 
       - name: Run focused D21B12 client lifecycle regressions
         run: >-
@@ -212,6 +227,11 @@ jobs:
           src/__tests__/components/legalDashboardBrandingPresentation.test.jsx
           tests/services/tenantBrandingAssetClient.test.js
           tests/hooks/useAuthenticatedTenantBrandingAsset.test.jsx
+          tests/contexts/authContext.authoritative.test.jsx
+          tests/client/SovereignDashboardController.test.js
+
+      - name: Run exact EOS API transport contract tests
+        run: npm --prefix client run test:run -- src/__tests__/services/api.test.js
 
       - name: Run D21B10 real-Mongo branding delivery certificate
         env:
@@ -245,11 +265,17 @@ jobs:
           print(f"D21B13 real-Mongo branding tests executed: {tests}; skipped: 0")
           PY
 
-      - name: Run authenticated browser certificate
+      - name: Run critical SYSTEM browser certification
         run: |
           browser_cert_database_suffix="$(python -c 'import uuid; print(uuid.uuid4().hex)')"
-          BROWSER_CERT_MONGO_URI="mongodb://127.0.0.1:27017/wilsy_l8_8m_r3_${browser_cert_database_suffix}?replicaSet=wilsyVendorCertRS" \
-            node tests/e2e/run-browser-cert.mjs
+          BROWSER_CERT_MONGO_URI="mongodb://127.0.0.1:27017/wilsy_l8_8m_r3_system_${browser_cert_database_suffix}?replicaSet=wilsyVendorCertRS" \
+            node tests/e2e/run-browser-cert.mjs tests/e2e/system-services-incident.browser.spec.js tests/e2e/system-services-response.browser.spec.js
+
+      - name: Run broader authenticated browser certification
+        run: |
+          browser_cert_database_suffix="$(python -c 'import uuid; print(uuid.uuid4().hex)')"
+          BROWSER_CERT_MONGO_URI="mongodb://127.0.0.1:27017/wilsy_l8_8m_r3_broad_${browser_cert_database_suffix}?replicaSet=wilsyVendorCertRS" \
+            node tests/e2e/run-browser-cert.mjs --grep-invert "certifies SYSTEM incident queue|does not expose responder inbox|certifies initial tenant-neutral SYSTEM credentials|certifies independent request, rejection, approval"
 
       - name: Stop disposable Mongo replica sets
         if: always()

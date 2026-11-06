@@ -1,11 +1,10 @@
 /**
  * TITLE: WILSY OS authenticated Legal productive-work browser certificate
- * VERSION: v1.1.0-OWNER-COMMERCIAL-AND-PRACTICE-BOUNDARY-BROWSER-CERT
+ * VERSION: v1.2.0-R67-DAILY-QUEUE-AND-OWNER-COMMERCIAL-CERT
  * AUTHORITY: Browser certification evidence only.
- * EPITOME: Prove Tenant Owner commercial workspace admission and practice denial,
- *          plus authenticated operator workspace bootstrap and productive-work HTTP,
- *          own-principal projection, canonical Legal dashboard rendering, and
- *          responsive narrow-viewport presentation without browser-owned authority.
+ * EPITOME: Prove the Tenant Owner commercial-only Legal entry, authenticated operator
+ *          workspace bootstrap, R67 daily-work response adaptation, own-principal scope,
+ *          specialist workflow projection, and responsive rendering without browser authority.
  * TENANT BOUNDARY: Exact disposable fixture tenant only.
  * AUTHORITY BOUNDARY: Browser observation only; server IAM remains authoritative.
  * FINANCIAL AUTHORITY BOUNDARY: None; Kennel EOS remains exclusive.
@@ -43,6 +42,15 @@ async function openAuthenticatedLegalWorkspace(
   });
 
   const page = await context.newPage();
+  const observedRequests = [];
+  const browserErrors = [];
+  page.on('pageerror', (error) => browserErrors.push(error.message));
+  page.on('console', (message) => {
+    if (message.type() === 'error') browserErrors.push(message.text());
+  });
+  page.on('request', (request) => {
+    observedRequests.push(new URL(request.url()).pathname);
+  });
 
   await page.addInitScript(
     ({ accessToken, tenantId, principalId, email }) => {
@@ -78,15 +86,19 @@ async function openAuthenticatedLegalWorkspace(
     new URL(response.url()).pathname === '/api/auth/workspace-bootstrap'
     && response.request().method() === 'GET'
   ));
-
   await page.goto('/');
 
-  expect((await bootstrap).status()).toBe(200);
+  const bootstrapResponse = await bootstrap;
+  expect(bootstrapResponse.status()).toBe(200);
+  const bootstrapPayload = await bootstrapResponse.json();
 
   return {
     actor,
     context,
     page,
+    observedRequests,
+    bootstrapPayload,
+    browserErrors,
   };
 }
 
@@ -125,19 +137,79 @@ async function openProductiveWork(page) {
 test(
   'certifies Tenant Owner Legal commercial workspace without practice access',
   async ({ browser }) => {
-    const { actor, context, page } = await openAuthenticatedLegalWorkspace(
-      browser,
-      'tenant_owner',
-    );
+    const {
+      context,
+      page,
+      observedRequests,
+      bootstrapPayload,
+      browserErrors,
+    } = await openAuthenticatedLegalWorkspace(browser, 'tenant_owner');
+
+    expect(String(bootstrapPayload.workspace?.businessRole || '').toUpperCase()).toBe('TENANT_OWNER');
+    expect(bootstrapPayload.workspace?.workspaceId).toBe('EXECUTIVE_COMMAND_CENTRE');
+
+    const accessProbe = page.locator('[data-executive-access-state]');
+    const workbenchProbe = page.locator('[data-active-workspace="workbench"]');
+    // Wait for the UI to settle without throwing before evidence is captured.
+    await accessProbe.or(workbenchProbe).first().waitFor({
+      state: 'visible',
+      timeout: 10000,
+    }).catch(() => undefined);
+    const executiveAccess = await accessProbe.count()
+      ? await accessProbe.first().evaluate((element) => ({
+        state: element.dataset.executiveAccessState,
+        isLoading: element.dataset.executiveAccessLoading,
+        allowed: element.dataset.executiveAccessAllowed,
+        reason: element.dataset.executiveAccessReason || null,
+        role: element.dataset.executiveAccessRole,
+        principalTenantId: element.dataset.executiveAccessPrincipalTenant,
+        activeTenantId: element.dataset.executiveAccessActiveTenant,
+        tenantMatch: element.dataset.executiveAccessTenantMatch,
+      }))
+      : { state: 'executive-shell-not-mounted' };
+    const renderedSurface = await page.locator('body').innerText().catch(() => '');
+    const documentState = await page.evaluate(() => ({
+      readyState: document.readyState,
+      title: document.title,
+      rootChildren: Array.from(document.body?.children || []).map((node) => ({
+        tag: node.tagName,
+        id: node.id || null,
+        className: typeof node.className === 'string' ? node.className : null,
+        text: (node.innerText || '').slice(0, 500),
+      })),
+    })).catch((error) => ({ evaluationError: error.message }));
+    const diagnostic = JSON.stringify({
+      url: page.url(),
+      workspaceId: bootstrapPayload.workspace?.workspaceId,
+      businessRole: bootstrapPayload.workspace?.businessRole,
+      executiveAccess,
+      documentState,
+      renderedSurface: renderedSurface.slice(0, 5000),
+      observedRequests: observedRequests.slice(-80),
+      browserErrors: browserErrors.slice(0, 50),
+    }, null, 2);
+    await expect(
+      workbenchProbe,
+      `Tenant Owner Executive workspace diagnostics:\n${diagnostic}`,
+    ).toBeVisible();
+    await expect(page.getByRole('table', { name: 'Suggested executive work queue' })).toBeVisible();
+    await expect(page.getByRole('button', { name: 'LEGAL OS', exact: true })).toBeVisible();
+
+    const moduleManifestPromise = page.waitForResponse((response) => (
+      new URL(response.url()).pathname === '/api/auth/module-manifest'
+      && response.request().method() === 'GET'
+    ));
     const commercialResponsePromise = page.waitForResponse((response) => (
       new URL(response.url()).pathname === '/api/legal-operations/commercial-context'
       && response.request().method() === 'GET'
     ));
+    await page.getByRole('button', { name: 'LEGAL OS', exact: true }).click();
 
-    await expect(
-      page.getByRole('button', { name: 'LEGAL OS' }),
-    ).toBeVisible();
-    await page.getByRole('button', { name: 'LEGAL OS' }).click();
+    const moduleManifestResponse = await moduleManifestPromise;
+    expect(moduleManifestResponse.status()).toBe(200);
+    const moduleManifestPayload = await moduleManifestResponse.json();
+    expect(moduleManifestPayload.workspace?.tenantId).toBe(state.tenant_id);
+    expect(moduleManifestPayload.workspace?.modules?.some((module) => module.moduleId === 'LEGAL_OS')).toBe(true);
 
     const commercialResponse = await commercialResponsePromise;
     expect(commercialResponse.status()).toBe(200);
@@ -159,21 +231,18 @@ test(
     await expect(page.getByText('Tenant owner · commercial authority only')).toBeVisible();
     await expect(page.getByText('ROLE-GATED')).toBeVisible();
 
-    const forbiddenPracticeRequests = [];
-    page.on('request', (request) => {
-      const path = new URL(request.url()).pathname;
-      if (
-        path === '/api/legal-operations/workspace'
-        || path === '/api/legal-operations/productive-work'
-        || path === '/api/legal-operations/conflict-screenings'
-      ) forbiddenPracticeRequests.push(path);
-    });
+    expect(observedRequests).not.toContain('/api/legal-operations/workspace');
+    expect(observedRequests).not.toContain('/api/legal-operations/productive-work');
+    expect(observedRequests).not.toContain('/api/legal-operations/conflict-screenings');
+
     await page.reload();
     await expect(
       page.getByRole('heading', { name: 'Legal Product Command' }),
     ).toBeVisible();
     await expect(page.getByText('ROLE-GATED')).toBeVisible();
-    expect(forbiddenPracticeRequests).toEqual([]);
+    expect(observedRequests).not.toContain('/api/legal-operations/workspace');
+    expect(observedRequests).not.toContain('/api/legal-operations/productive-work');
+    expect(observedRequests).not.toContain('/api/legal-operations/conflict-screenings');
 
     await context.close();
   },

@@ -1,6 +1,6 @@
 /* eslint-disable */
 import React, { useEffect, useMemo, useState } from 'react';
-import WILSY_SOURCE_REPAIR_LOGO_URL from '../../assets/logo/wilsy.jpeg';
+import WILSY_SOURCE_REPAIR_LOGO_URL from '../../assets/logo/wilsy-logo.svg';
 import {
   AlignmentType,
   Document,

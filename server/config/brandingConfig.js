@@ -54,7 +54,7 @@ const SOVEREIGN_BRAND = Object.freeze({
   fontFamily: "'JetBrains Mono', 'IBM Plex Mono', monospace",
   tagline: 'Touching Lives',
   mission: 'ANCHORING ASSETS WITH MATHEMATICAL CERTAINTY',
-  logoFileName: 'wilsy.jpeg',
+  logoFileName: 'wilsy-logo.svg',
   logoSubdirectory: 'assets/logo',
   tenantId: 'WILSYTENANT-4CD2FZ4O'
 });

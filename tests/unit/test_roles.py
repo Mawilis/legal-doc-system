@@ -231,8 +231,8 @@ TENANT_PERMISSIONS = {
 
 def test_exact_role_vocabulary_and_grant_matrix() -> None:
     """The closed role map grants only the explicitly approved capabilities."""
-    assert ROLE_PERMISSIONS_MAP["ENTERPRISE_ADMIN"] == EXPECTED_ROLE_PERMISSIONS["ENTERPRISE_ADMIN"] + ["subscription:read", "subscription:manage", "plan:read", "plan:manage", "wilsy_ai:usage_capacity:read", "billing_intelligence:evidence:read", "platform_billing:release", "tenant:business_role:read", "tenant:business_role:write", "telemetry:event:write", "tenant_branding:read", "tenant_branding:profile:manage", "tenant_branding:asset:manage", "legal_operations:operating_model:manage", "crm:lead:create", "crm:lead:read", "crm:email_template:create", "crm:email_template:read", "crm:email_template:revise", "crm:email_template:archive", "crm:email_template:copy", "crm:email_template:share", "legal_operations:workflow_activation:manage", "wilsy_ai:reasoning:execute", "tenant_product_entitlement:issue", "wilsy_ai:legal_services:execute", "crm:work_item:read", "crm:work_item:create", "crm:work_item:complete"]
-    assert ROLE_PERMISSIONS_MAP["AUDITOR"] == EXPECTED_ROLE_PERMISSIONS["AUDITOR"] + ["subscription:read", "plan:read", "wilsy_ai:usage_capacity:read", "billing_intelligence:evidence:read", "tenant:business_role:read", "tenant_branding:read", "crm:lead:read", "crm:email_template:read", "crm:work_item:read"]
+    assert ROLE_PERMISSIONS_MAP["ENTERPRISE_ADMIN"] == EXPECTED_ROLE_PERMISSIONS["ENTERPRISE_ADMIN"] + ["subscription:read", "subscription:manage", "plan:read", "plan:manage", "wilsy_ai:usage_capacity:read", "billing_intelligence:evidence:read", "billing_dunning:projection:read", "billing_dunning:projection:evaluate", "platform_billing:release", "tenant:business_role:read", "tenant:business_role:write", "telemetry:event:write", "tenant_branding:read", "tenant_branding:profile:manage", "tenant_branding:asset:manage", "legal_operations:operating_model:manage", "crm:lead:create", "crm:lead:read", "crm:email_template:create", "crm:email_template:read", "crm:email_template:revise", "crm:email_template:archive", "crm:email_template:copy", "crm:email_template:share", "legal_operations:workflow_activation:manage", "wilsy_ai:reasoning:execute", "tenant_product_entitlement:issue", "wilsy_ai:legal_services:execute", "crm:work_item:read", "crm:work_item:create", "crm:work_item:complete"]
+    assert ROLE_PERMISSIONS_MAP["AUDITOR"] == EXPECTED_ROLE_PERMISSIONS["AUDITOR"] + ["subscription:read", "plan:read", "wilsy_ai:usage_capacity:read", "billing_intelligence:evidence:read", "billing_dunning:projection:read", "tenant:business_role:read", "tenant_branding:read", "crm:lead:read", "crm:email_template:read", "crm:work_item:read"]
 
 
 def test_tenant_owner_has_commercial_read_without_practice_or_subscription_mutation() -> None:
@@ -554,6 +554,8 @@ def test_permission_expansion_is_explicit_deterministic_and_fail_closed() -> Non
         ("plan:manage", ("ENTERPRISE_ADMIN",)),
         ("wilsy_ai:usage_capacity:read", ("AUDITOR", "ENTERPRISE_ADMIN")),
         ("billing_intelligence:evidence:read", ("AUDITOR", "ENTERPRISE_ADMIN")),
+        ("billing_dunning:projection:read", ("AUDITOR", "ENTERPRISE_ADMIN")),
+        ("billing_dunning:projection:evaluate", ("ENTERPRISE_ADMIN",)),
         ("legal_operations:directory:write", ("SHERIFF",)),
         ("legal_operations:receipt:write", ("SHERIFF",)),
         ("legal_operations:queue:read", ("SHERIFF",)),

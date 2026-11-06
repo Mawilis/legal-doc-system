@@ -1,21 +1,23 @@
 /* eslint-disable */
 /**
  * ╔════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════╗
- * ║ 🏛️ WILSY OS – SOVEREIGN RUNTIME BOOTSTRAPPER [v5.5.0-P0-C4E4]                                                                    ║
- * ║ TITLE: Selective legal-acceptance browser-to-Python BFF transport                                                                  ║
- * ║ AUTHORITY: Wilsy OS Core Governance; Node transport only                                                                           ║
+ * ║ 🏛️ WILSY OS – SOVEREIGN RUNTIME BOOTSTRAPPER [v5.6.0-P0-C4E5-EOS-PDF-IDENTITY]                                                                    ║
+ * ║ TITLE: EOS workspace-authorized PDF renderer and browser-to-Python BFF transport                                                                  ║
+ * ║ AUTHORITY: Node transport/PDF rendering only; Python EOS owns identity and business data                                                                           ║
  * ║ TENANT BOUNDARY: Forward authenticated tenant scope without deriving membership                                                   ║
  * ║ AUTHORITY BOUNDARY: No C1C/C1E/legal/financial authority is interpreted or created                                                ║
  * ║ FINANCIAL AUTHORITY BOUNDARY: Kennel EOS exclusively owns financial execution                                                      ║
  * ║ EPITOME: Production BFF with CORRECT middleware order – proxies run BEFORE body parsers.                                            ║
  * ║          Uses direct httpxy transport for all Kennel routes, including billing.                                                       ║
- * ║          Raw request streams are forwarded – no body consumption issues.                                                            ║
+ * ║          Raw request streams are forwarded; PDF identity is verified by EOS workspace-bootstrap.                                                            ║
  * ║ COMPLIANCE: POPIA §19 · GDPR §32 · SOC2 §CC7.2 · ISO 27001 · ECT Act §15                                                           ║
  * ╠════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════╣
- * ║ VERSION: v5.5.0-P0-C4E4 | PRODUCTION READY                                                                                        ║
+ * ║ VERSION: v5.6.0-P0-C4E5-EOS-PDF-IDENTITY | PRODUCTION READY                                                                                        ║
  * ║ ABSOLUTE PATH: /Users/wilsonkhanyezi/legal-doc-system/server/server.js                                                               ║
  * ╠════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════╣
- * ║ 🔧 CHANGE LOG (v5.5.0-P0-C4E4):                                                                                                     ║
+ * ║ 🔧 CHANGE LOG (v5.6.0-P0-C4E5-EOS-PDF-IDENTITY):                                                                                                     ║
+ * ║   2026-11-05 – PDF rendering accepts only identity returned by EOS workspace-bootstrap; Mongoose profile lookup is removed.           ║
+ * ║   2026-11-05 – Removed the BFF Mongo connection; Python EOS owns the business database graph.                                      ║
  * ║   2026-10-03 – Replaced http-proxy-middleware runtime transport with direct httpxy while preserving the certified proxy contract.     ║
  * ║   2026-10-03 – Redacted raw upstream connection exceptions from the public proxy-unavailable response.                             ║
  * ║   2026-09-17 – Added bounded legal-acceptance status/document/accept transport; Node remains transport-only.                         ║
@@ -23,7 +25,7 @@
  * ║   2026-09-17 – Added deterministic application-factory export and direct-execution bootstrap guard.                                 ║
  * ║   2026-08-24 – Preserved raw-stream proxy ordering before body parsers.                                                             ║
  * ╠════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════╣
- * ║ CERTIFICATION SEAL: PRODUCTION_READY_v5.5.0-P0-C4E4                                                                             ║
+ * ║ CERTIFICATION SEAL: EOS_VERIFIED_IDENTITY_v5.6.0-P0-C4E5                                                                             ║
  * ╚════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════╝
  */
 
@@ -33,8 +35,8 @@ import cors from 'cors';
 import helmet from 'helmet';
 import fileUpload from 'express-fileupload';
 import { createServer } from 'node:http';
-import mongoose from 'mongoose';
 import { generateSovereignArtifactPdf } from './controllers/businessArtifactPdfController.js';
+import { resolveEosWorkspaceIdentity, resolveEosWorkspaceTenantScope } from './services/eosWorkspaceIdentity.js';
 import { createProxyServer } from 'httpxy';
 import { fileURLToPath } from 'node:url';
 import { resolve } from 'node:path';
@@ -46,7 +48,7 @@ const KENNEL_TARGET = (
   'http://127.0.0.1:9095'
 ).replace(/\/$/, '');
 const PROXY_LOG_LEVEL = process.env.WILSY_PROXY_DEBUG === '1' ? 'debug' : 'info';
-const VERSION = 'v5.5.0-P0-C4E4';
+const VERSION = 'v5.6.0-P0-C4E5-EOS-PDF-IDENTITY';
 const BUILD = VERSION;
 const BILLING_PROXY_TIMEOUT_MS = Number(process.env.KENNEL_BILLING_TIMEOUT_MS || 60000);
 const DEFAULT_PROXY_TIMEOUT_MS = Number(process.env.KENNEL_PROXY_TIMEOUT_MS || 30000);
@@ -187,6 +189,53 @@ function buildSelectiveLegalProxy({ mountPrefix, targetPrefix, allowed }) {
   };
 }
 
+/**
+ * Resolve the PDF renderer's user identity through EOS. The BFF never decodes
+ * bearer claims or queries a Mongoose model to establish a person or tenant.
+ */
+async function requireEosWorkspaceIdentity(req, res, next) {
+  const tenantId =
+    req.headers['x-tenant-id'] ||
+    req.headers['x-wilsy-tenant'] ||
+    req.headers['x-tenant'] ||
+    req.headers['x-wilsy-tenant-id'] ||
+    '';
+  let result;
+  try {
+    result = await resolveEosWorkspaceIdentity({
+      baseUrl: KENNEL_TARGET,
+      authorization: req.headers.authorization || '',
+      tenantId,
+    });
+  } catch {
+    return res.status(503).json({ success: false, error: 'AUTHORITY_UNAVAILABLE' });
+  }
+
+  if (!result?.ok) {
+    return res.status(result?.status || 503).json({
+      success: false,
+      error: result?.code || 'AUTHORITY_UNAVAILABLE',
+    });
+  }
+
+  const tenantScope = resolveEosWorkspaceTenantScope({
+    requestedTenantId: tenantId,
+    workspace: result.workspace,
+  });
+  if (!tenantScope.ok) {
+    return res.status(tenantScope.status).json({
+      success: false,
+      error: tenantScope.code,
+    });
+  }
+
+  req.user = result.user;
+  req.tenantId = tenantScope.tenantId;
+  req.eosAuthenticatedIdentity = true;
+  req.eosWorkspace = result.workspace;
+  return next();
+}
+
 // ─── EXPRESS APP FACTORY ──────────────────────────────────────────────────
 
 function createApp() {
@@ -222,14 +271,13 @@ function createApp() {
     })
   );
   app.get('/health', (req, res) => {
-    const dbState = mongoose.connection.readyState;
-    const statusMap = { 0: 'DISCONNECTED', 1: 'CONNECTED', 2: 'CONNECTING', 3: 'DISCONNECTING' };
     res.json({
       status: 'OPTIMAL',
       build: BUILD,
       version: BUILD,
       kennelAllTheWay: true,
-      database: statusMap[dbState] || 'UNKNOWN',
+      database: 'NOT_CONNECTED_BY_BFF',
+      databaseAuthority: 'PYTHON_EOS',
       kennel: KENNEL_TARGET,
       mounts: {
         billing: '/api/billing + /billing → Kennel /billing',
@@ -371,7 +419,7 @@ function createApp() {
    * @description Preserves the tenant-branded, sealed Node PDF renderer while the money surface is proxied to Kennel EOS.
    * @collaboration Keeps binary artifact ownership in the BFF and billing lifecycle ownership in Kennel without routing conflicts.
    */
-  app.post('/api/generate/pdf', generateSovereignArtifactPdf);
+  app.post('/api/generate/pdf', requireEosWorkspaceIdentity, generateSovereignArtifactPdf);
 
   // ─── CATCH‑ALL FOR UNPROXIED /api ROUTES ──────────────────────────────
   app.use('/api', (req, res) => {
@@ -406,22 +454,7 @@ async function main() {
   const app = createApp();
   const httpServer = createServer(app);
 
-  const mongoUri = process.env.MONGODB_URI || process.env.MONGO_URI || '';
-  if (mongoUri) {
-    console.log('[WILSY] 📡 Connecting to MongoDB...');
-    try {
-      await mongoose.connect(mongoUri, {
-        maxPoolSize: 10,
-        serverSelectionTimeoutMS: 5000,
-      });
-      console.log('[WILSY] ✅ MongoDB connection established.');
-    } catch (err) {
-      console.warn(`[WILSY] ⚠️ MongoDB connection failed: ${err.message}`);
-      console.warn('[WILSY] BFF will continue in proxy‑only mode.');
-    }
-  } else {
-    console.warn('[WILSY] ⚠️ No MongoDB URI provided – /health will report UNKNOWN.');
-  }
+  // The BFF is transport-only. Python EOS owns the sole business Mongo graph.
 
   const configuredPort = Number(process.env.PORT) || 4000;
   let actualPort = configuredPort;
@@ -458,13 +491,13 @@ async function main() {
     }
   }
 
-  const dbStatus = mongoose.connection.readyState === 1 ? 'CONNECTED' : 'DEGRADED';
+  const dbStatus = 'NOT_CONNECTED_BY_BFF';
   console.log(`
 ╔══════════════════════════════════════════════════════════════════════════════════╗
 ║  ✅ WILSY OS SOVEREIGN RUNTIME                                                  ║
 ║  ──────────────────────────────────────────────────────────────────────────────── ║
 ║  Build:     ${BUILD}
-║  Database:  ${dbStatus}
+║  Database:  ${dbStatus} (authority: PYTHON_EOS)
 ║  HTTP:      http://localhost:${actualPort}
 ║  Health:    http://localhost:${actualPort}/health
 ║  Proxy:     ${KENNEL_TARGET}
@@ -479,13 +512,6 @@ async function main() {
   const shutdown = async (signal) => {
     console.log(`\n[WILSY] Received ${signal}. Shutting down gracefully...`);
     httpServer.close(async () => {
-      try {
-        if (mongoose.connection.readyState === 1) {
-          await mongoose.connection.close();
-        }
-      } catch (_) {
-        /* ignore */
-      }
       console.log('[WILSY] Shutdown complete.');
       process.exit(0);
     });

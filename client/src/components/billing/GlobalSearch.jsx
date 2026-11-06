@@ -67,7 +67,7 @@ function highlightText(text, query) {
  */
 const GlobalSearch = ({
   query = '',
-  tenantId = 'GLOBAL_ROOT',
+  tenantId = null,
   invoices = [],
   courts = [],
   onSelectResult,
@@ -81,6 +81,11 @@ const GlobalSearch = ({
 
   // Fetch subscriptions if not already loaded
   useEffect(() => {
+    if (!tenantId) {
+      setSubscriptions([]);
+      setLoadingSubs(false);
+      return undefined;
+    }
     if (subscriptionHook?.subscriptions && subscriptionHook.subscriptions.length > 0) {
       setSubscriptions(subscriptionHook.subscriptions);
     } else {
@@ -95,8 +100,8 @@ const GlobalSearch = ({
           } else {
             // Fallback: try sovereignClient directly
             const response = await sovereignClient.get('/subscriptions', {
-              headers: { 'X-Tenant-ID': tenantId || 'GLOBAL_ROOT' },
-              params: { tenantId: tenantId || 'GLOBAL_ROOT' }
+              headers: { 'X-Tenant-ID': tenantId },
+              params: { tenantId }
             });
             const data = response?.data || {};
             const items = data.items || data || [];

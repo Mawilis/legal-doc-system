@@ -65,9 +65,9 @@ export default function SovereignMfaPortal({ onVerificationSuccess }) {
     if (!/^\d{6}$/.test(otp) || loading) return;
     setError('');
     try {
-      const result = await verifyOTP(pendingEmail, otp, null, null, setup);
+      const result = await verifyOTP(pendingEmail, otp, null, null, setup, tenant?.tenantId);
       onVerificationSuccess?.(result.user);
-      navigate(result.user?.hasSignedCovenant ? '/' : '/covenant', { replace: true });
+      navigate(result.user?.systemServicesWorkspace || result.user?.hasSignedCovenant ? '/' : '/covenant', { replace: true });
     } catch (verificationError) {
       setError(verificationError?.response?.data?.detail || verificationError?.response?.data?.message || verificationError.message || 'Identity verification failed.');
     }

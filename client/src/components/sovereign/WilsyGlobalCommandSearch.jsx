@@ -166,6 +166,7 @@ const WILSY_SEARCH_REGISTRY = Object.freeze([
   { id: 'legal', label: 'Legal and Compliance', type: 'Legal System', route: '/legal', keywords: 'legal compliance popia forensic evidence risk contracts', icon: ShieldCheck },
   { id: 'client-portal', label: 'Client Portal', type: 'Client System', route: '/client-portal', keywords: 'client portal messages matters invoices documents activity', icon: Building2 },
   { id: 'settings', label: 'Account Settings', type: 'Command', command: 'OPEN_ACCOUNT_SETTINGS', route: '/account', keywords: 'settings account theme security compliance profile mfa sessions', icon: Terminal },
+  { id: 'system-services', label: 'System Services', type: 'Platform Operations', command: 'OPEN_SYSTEM_SERVICES', keywords: 'system services support queue account recovery identity governance iam platform staff', icon: ShieldCheck },
   { id: 'theme', label: 'Change Operating Skin', type: 'Command', command: 'OPEN_THEME_SETTINGS', route: '/account/theme', keywords: 'theme skin day night auto aurora forensic cobalt pearl gold quantum', icon: Terminal },
   { id: 'export', label: 'Export Current View', type: 'Command', command: 'EXPORT_CURRENT_VIEW', keywords: 'export pdf csv json view artifact', icon: Terminal },
   { id: 'resync', label: 'Resync Sources', type: 'Command', command: 'RESYNC_SOURCES', keywords: 'resync refresh sources telemetry finance fx crm hr', icon: Terminal }

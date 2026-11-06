@@ -70,12 +70,12 @@ import { AlertCircle, ArrowLeft, Eye, EyeOff, Loader2 } from 'lucide-react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { AUTH_STATES, useAuth } from '../../contexts/authContext.jsx';
 import TenantIdentityCard from './TenantIdentityCard.jsx';
-import wilsyBrandAsset from '../../assets/logo/wilsy.jpeg';
+import wilsyBrandAsset from '../../assets/logo/wilsy-icon.svg';
 
 export default function SovereignLogin({ onLoginSuccess }) {
   const navigate = useNavigate();
   const location = useLocation();
-  const { login, loading, error: authError, tenant } = useAuth();
+  const { login, loading, error: authError, tenant, authStage } = useAuth();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
@@ -87,7 +87,7 @@ export default function SovereignLogin({ onLoginSuccess }) {
     event.preventDefault();
     setError('');
     try {
-      const result = await login(email.trim(), password);
+      const result = await login(email.trim(), password, resolvedTenant?.tenantId);
       if ([AUTH_STATES.MFA_SETUP, AUTH_STATES.MFA_RECONCILIATION_REQUIRED, AUTH_STATES.MFA_REQUIRED].includes(result.status)) {
         navigate('/mfa', { replace: true, state: { tenant: resolvedTenant } });
         return;
@@ -103,7 +103,7 @@ export default function SovereignLogin({ onLoginSuccess }) {
 
   return (
     <main style={pageStyle}>
-      <section style={panelStyle} aria-labelledby="login-title" data-testid="login-panel">
+      <section style={panelStyle} aria-labelledby="login-title" data-testid="login-panel" data-auth-stage={authStage}>
         <header style={brandRow}>
           <img src={wilsyBrandAsset} alt="WILSY OS platform mark" style={platformMarkStyle} />
           <div style={brandCopyStyle}><strong>WILSY OS</strong><span>Institutional access</span></div>

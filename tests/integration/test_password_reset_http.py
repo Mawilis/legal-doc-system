@@ -12,7 +12,8 @@ COLLABORATION / OWNERSHIP: Exercises the canonical ``tools.eos.api.server``
                            the reset transaction remains owned by the frozen
                            PasswordResetService.
 CERTIFICATION / UPDATE DATE: 2026-09-24
-CHANGELOG: v1.2.0-R10E76-PASSWORD-POLICY-DEPENDENCY-HTTP-CERT certifies policy-dependency failure as bounded 503
+CHANGELOG: v1.3.0-R10E78-TRANSACTION-BOUNDARY-HTTP-CERT refreshes the exact R10D byte freeze after adding caller-owned transaction guard and completion evidence to the canonical reset service, with direct and real-replica-set certificates.
+           v1.2.0-R10E76-PASSWORD-POLICY-DEPENDENCY-HTTP-CERT certifies policy-dependency failure as bounded 503
            while preserving user-correctable password-policy rejection as 400,
            and refreshes the exact reset-service/direct-certificate byte freeze.
            v1.1.0-R10E53-R10D-RESET-FREEZE-BOUNDARY narrows the historical R10D byte-freeze to the
@@ -59,10 +60,10 @@ from tools.eos.saas.auth.password_reset_service import (
 )
 
 
-VERSION = "v1.2.0-R10E76-PASSWORD-POLICY-DEPENDENCY-HTTP-CERT"
-R10D1_SHA3_512 = "f2004eb77ad55a4905faf2bf62fd0a80932ba4ba95f03161f328a33c204e554a45d85929635e60223f098e899ba18eb7b1bb2880e62bf49dde3df2cff8528950"
-R10D2_SHA3_512 = "941b5d1eb33061cc5244f74419dfc1671ba0d17d5853c6b5f7cc8873e5845d3e691f595e6870cb4d7684946f41391fa1eaedff27375cb5c937f135208e0c9aa5"
-R10D3_SHA3_512 = "de89a1382b8734b660bf30ac63ee3dd3aaf60382674bb04656db4a142db109772bc679815a2ddf34f916b77282c3c4550ff5d5ca2a539c1e7a5b29494f89cee7"
+VERSION = "v1.3.0-R10E78-TRANSACTION-BOUNDARY-HTTP-CERT"
+R10D1_SHA3_512 = "d949c364262efc88adfbea02828b232c4df53c6f415b5b4dfaa9376e7cf6ea44401deb924c794f82fa492bee69b324d434640ba445898785ddf15f0488a86067"
+R10D2_SHA3_512 = "62864cafaa147dcfd5b56f333dcfa3bb302bd6f7b1300ea4cffba64aba90f1e536e7867dc4c08589bcfc229e834fd495bb72dbfbbebde3a614c7c762f6fc333a"
+R10D3_SHA3_512 = "defb0c27261e3afcb197194fef3d1fabb2cf0df3bb9a9880924f2ed51dab6f5be6ae352e27f577f36ba48f7fee962f36eec91f337fad99f3ad7d78ea968df3db"
 PUBLIC_PATH = "/api/auth/reset-password"
 DOUBLE_API_PATH = "/api/api/auth/reset-password"
 RAW_ROUTER_PATH = "/auth/reset-password"
@@ -565,7 +566,7 @@ def test_frozen_r10d_reset_service_and_certificates_remain_exact() -> None:
 
 
 # ARTIFACT: test_password_reset_http.py
-# VERSION: v1.2.0-R10E76-PASSWORD-POLICY-DEPENDENCY-HTTP-CERT
+# VERSION: v1.3.0-R10E78-TRANSACTION-BOUNDARY-HTTP-CERT
 # AUTHORITY BOUNDARY: mounted ASGI transport evidence only; no production authority
 # TENANT POSTURE: tenant selector forwarding is tested without trusting it as reset authority
 # FAIL-CLOSED POSTURE: malformed, unusable, policy, internal, and unexpected cases never pass

@@ -286,12 +286,14 @@ const PRODUCTIVE_WORK_SCHEMA =
 const PRODUCTIVE_WORK_VERSION =
   'v1.0.1-PW-P2-PROFILE-PRODUCTIVE-WORK-COMPOSITION';
 const PRODUCTIVE_WORK_HTTP_VERSION =
-  'v1.0.0-PW-P11B-AUTHENTICATED-PRODUCTIVE-WORK-READ-API';
+  'v1.1.0-R67-ENTERPRISE-DAILY-WORK-EXECUTION-READ-API';
 
 const PRODUCTIVE_WORK_RESPONSE_KEYS = Object.freeze([
   'schema',
   'version',
   'http_version',
+  'workday_summary',
+  'daily_execution_queue',
   'tenant_id',
   'principal_id',
   'as_of',
@@ -301,6 +303,54 @@ const PRODUCTIVE_WORK_RESPONSE_KEYS = Object.freeze([
   'supervised_work_items',
   'overdue_work_items',
   'due_soon_work_items',
+]);
+
+const PRODUCTIVE_WORK_SUMMARY_KEYS = Object.freeze([
+  'assigned_count',
+  'supervised_count',
+  'overdue_count',
+  'due_soon_count',
+  'execution_authority',
+  'permits_execution',
+  'permits_confidential_matter_access',
+]);
+
+const DAILY_EXECUTION_QUEUE_KEYS = Object.freeze([
+  'fact_classification',
+  'as_of',
+  'unique_active_count',
+  'assignment_supervision_overlap_count',
+  'items',
+  'projection_fingerprint',
+  'execution_authority',
+  'permits_execution',
+  'permits_assignment_mutation',
+  'permits_confidential_matter_access',
+]);
+
+const DAILY_EXECUTION_QUEUE_ITEM_KEYS = Object.freeze([
+  'queue_position',
+  'work_item_id',
+  'case_matter_id',
+  'status',
+  'due_at',
+  'urgency',
+  'visibility_sources',
+  'work_evidence_fingerprint',
+]);
+
+const DAILY_EXECUTION_URGENCY = Object.freeze([
+  'OVERDUE',
+  'DUE_SOON',
+  'BLOCKED',
+  'SCHEDULED',
+  'UNSCHEDULED',
+]);
+
+const DAILY_EXECUTION_VISIBILITY_SOURCES = Object.freeze([
+  'ASSIGNMENT',
+  'SUPERVISION',
+  'PRODUCTIVE_WORK_PRIORITY',
 ]);
 
 const PRODUCTIVE_WORK_CONTEXT_KEYS = Object.freeze([
@@ -1265,6 +1315,8 @@ function assertCanonicalProductiveWorkPayload(value) {
     PRODUCTIVE_WORK_RESPONSE_KEYS,
     errorCode,
   );
+  assertExactKeys(value.workday_summary, PRODUCTIVE_WORK_SUMMARY_KEYS, errorCode);
+  assertExactKeys(value.daily_execution_queue, DAILY_EXECUTION_QUEUE_KEYS, errorCode);
 
   if (
     value.schema !== PRODUCTIVE_WORK_SCHEMA
@@ -1278,6 +1330,78 @@ function assertCanonicalProductiveWorkPayload(value) {
   ) {
     throw new Error(errorCode);
   }
+
+  const summary = value.workday_summary;
+  const queue = value.daily_execution_queue;
+  const summaryCounts = [
+    summary.assigned_count,
+    summary.supervised_count,
+    summary.overdue_count,
+    summary.due_soon_count,
+  ];
+  if (
+    summaryCounts.some((count) => !Number.isInteger(count) || count < 0)
+    || summary.execution_authority !== 'NOT_EVALUATED'
+    || summary.permits_execution !== false
+    || summary.permits_confidential_matter_access !== false
+    || !Array.isArray(value.assigned_work_items)
+    || !Array.isArray(value.supervised_work_items)
+    || !Array.isArray(value.overdue_work_items)
+    || !Array.isArray(value.due_soon_work_items)
+    || summary.assigned_count !== value.assigned_work_items.length
+    || summary.supervised_count !== value.supervised_work_items.length
+    || summary.overdue_count !== value.overdue_work_items.length
+    || summary.due_soon_count !== value.due_soon_work_items.length
+  ) {
+    throw new Error(errorCode);
+  }
+
+  if (
+    queue.fact_classification !== 'DERIVED_OPERATIONAL_PROJECTION'
+    || queue.as_of !== value.as_of
+    || !Number.isInteger(queue.unique_active_count)
+    || queue.unique_active_count < 0
+    || !Number.isInteger(queue.assignment_supervision_overlap_count)
+    || queue.assignment_supervision_overlap_count < 0
+    || queue.assignment_supervision_overlap_count > queue.unique_active_count
+    || !Array.isArray(queue.items)
+    || queue.unique_active_count !== queue.items.length
+    || !SHA3_512_PATTERN.test(queue.projection_fingerprint)
+    || queue.execution_authority !== 'NOT_EVALUATED'
+    || queue.permits_execution !== false
+    || queue.permits_assignment_mutation !== false
+    || queue.permits_confidential_matter_access !== false
+  ) {
+    throw new Error(errorCode);
+  }
+
+  const queueItems = queue.items.map((entry, index) => {
+    assertExactKeys(entry, DAILY_EXECUTION_QUEUE_ITEM_KEYS, errorCode);
+    if (
+      entry.queue_position !== index + 1
+      || !isCanonicalText(entry.work_item_id)
+      || !isCanonicalText(entry.case_matter_id)
+      || !PRODUCTIVE_WORK_OPEN_STATES.includes(entry.status)
+      || (entry.due_at !== null && !isCanonicalTimestamp(entry.due_at))
+      || !DAILY_EXECUTION_URGENCY.includes(entry.urgency)
+      || !Array.isArray(entry.visibility_sources)
+      || entry.visibility_sources.length === 0
+      || entry.visibility_sources.some((source) => !DAILY_EXECUTION_VISIBILITY_SOURCES.includes(source))
+      || !SHA3_512_PATTERN.test(entry.work_evidence_fingerprint)
+    ) {
+      throw new Error(errorCode);
+    }
+    return Object.freeze({
+      queuePosition: entry.queue_position,
+      workItemId: entry.work_item_id,
+      caseMatterId: entry.case_matter_id,
+      status: entry.status,
+      dueAt: entry.due_at,
+      urgency: entry.urgency,
+      visibilitySources: Object.freeze([...entry.visibility_sources]),
+      workEvidenceFingerprint: entry.work_evidence_fingerprint,
+    });
+  });
 
   const contexts = value.operating_contexts.map((entry) => {
     assertExactKeys(
@@ -1384,6 +1508,19 @@ function assertCanonicalProductiveWorkPayload(value) {
     tenantId: value.tenant_id,
     principalId: value.principal_id,
     asOf: value.as_of,
+    workdaySummary: Object.freeze({
+      assignedCount: summary.assigned_count,
+      supervisedCount: summary.supervised_count,
+      overdueCount: summary.overdue_count,
+      dueSoonCount: summary.due_soon_count,
+    }),
+    dailyExecutionQueue: Object.freeze({
+      asOf: queue.as_of,
+      uniqueActiveCount: queue.unique_active_count,
+      assignmentSupervisionOverlapCount: queue.assignment_supervision_overlap_count,
+      items: Object.freeze(queueItems),
+      projectionFingerprint: queue.projection_fingerprint,
+    }),
     operatingContexts: Object.freeze(contexts),
     capabilityIds,
     assignedWorkItems: adaptItems(value.assigned_work_items),

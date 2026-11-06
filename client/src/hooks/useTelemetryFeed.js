@@ -81,12 +81,12 @@ const sealTelemetryPacket = async (payload) => {
  *   1) **Titan‑Pulse Ingestion** – Polls `/api/v1/events`; if that fails, falls back to `/api/telemetry/boardroom`.
  *   2) **Throttled Telemetry Emission** – Buffers outgoing events, seals forensically, POSTs to `/api/telemetry/event`.
  *
- * @param {string} tenantId - The institutional tenant ID (defaults to 'WILSY_GLOBAL_ROOT').
+ * @param {string} tenantId - The authenticated tenant identifier; required for tenant-scoped polling.
  * @param {number} baseInterval - Baseline polling interval in ms (default 2500).
  *
  * @returns {Object} Hook interface
  */
-export const useTelemetryFeed = (tenantId = 'WILSY_GLOBAL_ROOT', baseInterval = 2500) => {
+export const useTelemetryFeed = (tenantId, baseInterval = 2500) => {
   const [events, setEvents] = useState([]);
   const [isSyncing, setIsSyncing] = useState(true);
   const [lastStrike, setLastStrike] = useState(null);
@@ -96,15 +96,23 @@ export const useTelemetryFeed = (tenantId = 'WILSY_GLOBAL_ROOT', baseInterval = 
   const failCount = useRef(0);
   const lastErrorLogRef = useRef({ message: null, at: 0 });
 
-  const resolvedId = (!tenantId || tenantId === 'TENANT-ID' || tenantId === 'TENANT_ID')
-    ? 'WILSY_GLOBAL_ROOT'
-    : tenantId;
+  const resolvedId = typeof tenantId === 'string' && tenantId.trim() === tenantId && tenantId.length > 0
+    ? tenantId
+    : null;
+  const tenantIdRef = useRef(resolvedId);
+  tenantIdRef.current = resolvedId;
 
   /**
    * 🚀 TITAN-PULSE FETCH ENGINE with fallback to boardroom
    */
   const fetchEvents = useCallback(async (options = {}) => {
     const { signal } = options;
+    if (!resolvedId) {
+      setEvents([]);
+      setIsSyncing(false);
+      setError('TENANT_CONTEXT_REQUIRED');
+      return;
+    }
 
     try {
       const cleanToken = getSanitizedToken();
@@ -226,7 +234,12 @@ export const useTelemetryFeed = (tenantId = 'WILSY_GLOBAL_ROOT', baseInterval = 
       }
 
       try {
-        const sealedEvent = await sealTelemetryPacket(eventPayload);
+        const activeTenantId = tenantIdRef.current;
+      if (!activeTenantId) {
+        console.warn('[TELEMETRY_EMIT] No authenticated tenant context; dropping packet.');
+        return;
+      }
+      const sealedEvent = await sealTelemetryPacket({ ...eventPayload, tenantId: activeTenantId });
         await api.post('/api/telemetry/event', sealedEvent, {
           headers: {
             Authorization: `Bearer ${cleanToken}`,
@@ -251,6 +264,12 @@ export const useTelemetryFeed = (tenantId = 'WILSY_GLOBAL_ROOT', baseInterval = 
    * ⚡ LIFECYCLE CONTROLLER
    */
   useEffect(() => {
+    if (!resolvedId) {
+      setEvents([]);
+      setIsSyncing(false);
+      setError('TENANT_CONTEXT_REQUIRED');
+      return undefined;
+    }
     let isMounted = true;
     const controller = new AbortController();
 

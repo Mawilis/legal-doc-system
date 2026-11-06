@@ -111,31 +111,7 @@ export const sovereignAuth = {
   /**
    * Get current tenant ID
    */
-  getTenantId: () => {
-    // Try legacy location
-    let tenantId = localStorage.getItem(LEGACY_TENANT_ID_KEY);
-    if (tenantId) return tenantId;
-
-    // Try current location
-    tenantId = localStorage.getItem(CURRENT_TENANT_KEY);
-    if (tenantId) return tenantId;
-
-    // Try from user data
-    const userData = localStorage.getItem(CURRENT_USER_KEY);
-    if (userData) {
-      try {
-        const parsed = JSON.parse(userData);
-        return parsed.tenantId || null;
-      } catch (e) {}
-    }
-
-    // Try from superadmin
-    const storedTenant = authService.getStoredTenant();
-    if (storedTenant) return storedTenant;
-
-    // Default tenant for development
-    return '69cb49e30276ea90ea1a0961';
-  },
+  getTenantId: () => authService.getStoredTenant() || null,
 
   /**
    * Set unified auth data (called after successful login/3FA)

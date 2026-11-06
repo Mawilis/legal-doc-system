@@ -740,6 +740,33 @@ class SystemPermissionAssignmentRegistry:
 
         return assignment
 
+    def find_revocation_replay(
+        self,
+        *,
+        assignment_id: str,
+        idempotency_key: str,
+        session: object,
+    ) -> SystemPermissionAssignment | None:
+        """Resolve the exact durable revocation receipt for deterministic replay."""
+        tx = _active_transaction(session)
+        assignment = _identifier("ASSIGNMENT_ID", assignment_id)
+        key = _identifier("REVOCATION_IDEMPOTENCY_KEY", idempotency_key)
+        row = self._find_one(
+            {
+                "assignment_id": assignment,
+                "_operation_idempotency_key": key,
+            },
+            session=tx,
+        )
+        if row is None:
+            return None
+        if row.get("_operation_kind") != _REVOKE:
+            raise SystemPermissionAssignmentConflictError("IDEMPOTENCY_KEY_OPERATION_MISMATCH")
+        value = _hydrate(row)
+        if value.status is not SystemPermissionAssignmentStatus.REVOKED:
+            raise SystemPermissionAssignmentConflictError("REVOCATION_REPLAY_STATE_INVALID")
+        return value
+
     def resolve_current(
         self,
         *,
