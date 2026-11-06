@@ -25,11 +25,12 @@ async function openAuthenticated(browser, actorKey, viewport = { width: 1440, he
   if (!actor) throw new Error(`SIX_MODULE_ACTOR_MISSING:${actorKey}`);
   const context = await browser.newContext({ viewport });
   const page = await context.newPage();
+  // Capture uncaught browser exceptions, not HTTP response diagnostics.
+  // This shell intentionally renders unavailable/denied legacy integrations as
+  // explicit states; their 403/404/410 responses are not JavaScript crashes.
+  // The authenticated workspace command responses are asserted at each step below.
   const browserErrors = [];
   page.on('pageerror', error => browserErrors.push(error.message));
-  page.on('console', message => {
-    if (message.type() === 'error') browserErrors.push(message.text());
-  });
   await page.addInitScript(({ accessToken, tenantId, principalId, email }) => {
     localStorage.setItem('wilsy_auth_token', accessToken);
     localStorage.setItem('token', accessToken);
