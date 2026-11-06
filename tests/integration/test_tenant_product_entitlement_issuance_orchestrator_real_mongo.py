@@ -24,7 +24,7 @@ FAIL-CLOSED DECLARATION: Wrong topology, denial, divergence, corrupt evidence,
 from __future__ import annotations
 
 from concurrent.futures import ThreadPoolExecutor
-from datetime import datetime, timezone
+from datetime import datetime, timedelta, timezone
 import os
 from threading import Barrier
 from typing import Any, Iterator
@@ -83,9 +83,6 @@ from tools.eos.saas.entitlement.commercial_offer_catalogue import (
     get_commercial_offer,
 )
 from tools.eos.saas.entitlement.tenant_product_entitlement_registry import (
-    CURRENT_COLLECTION as PRODUCT_ENTITLEMENT_CURRENT_COLLECTION,
-    HISTORY_COLLECTION as PRODUCT_ENTITLEMENT_HISTORY_COLLECTION,
-    ensure_indexes as ensure_product_entitlement_indexes,
     get_current as get_current_product_entitlement,
 )
 from tools.eos.saas.billing.plan_registry import PlanRegistry
@@ -239,7 +236,6 @@ def mongo_context() -> Iterator[tuple[MongoClient[Any], Any, dict[str, Any]]]:
         _issuer(collections).ensure_indexes()
         ensure_indexes(collections["history"], collections["current"])
         ensure_agreement_indexes(collections["agreement_history"], collections["agreement_current"])
-        ensure_product_entitlement_indexes(collections["history"], collections["current"])
         ensure_bundle_activation_indexes(collections["bundle_receipts"])
         yield client, database, collections
     finally:
