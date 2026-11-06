@@ -33,4 +33,4 @@ def test_pos_workspace_rejects_missing_caller_transaction_before_business_access
             sale_id="sale-1", currency="ZAR", lines=(), idempotency_key="sale-idem",
             session=None,
         )
-    assert error.value.code == "POS_WORKSPACE_ACTIVE_TRANSACTION_REQUIRED"
+    assert error.value.code == "POS_WORKSPACE_LIVE_CALLER_SESSION_REQUIRED"

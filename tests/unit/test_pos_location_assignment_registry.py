@@ -18,6 +18,6 @@ def test_registry_requires_caller_owned_active_transaction():
     try:
         POSLocationAssignmentRegistry.resolve("t", "l", "p", object(), session=NoTransaction())
     except POSLocationAssignmentRegistryError as error:
-        assert str(error) == "POS_LOCATION_ACTIVE_TRANSACTION_REQUIRED"
+        assert str(error) == "POS_LOCATION_LIVE_CALLER_SESSION_REQUIRED"
     else:
         raise AssertionError("registry must reject absent caller transaction")

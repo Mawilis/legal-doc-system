@@ -20,6 +20,6 @@ def test_capacity_registry_requires_caller_owned_transaction_before_business_acc
             collection=object(), session=NoTransaction(),
         )
     except POSCommercialCapacityError as error:
-        assert str(error) == "POS_CAPACITY_ACTIVE_TRANSACTION_REQUIRED"
+        assert str(error) == "POS_CAPACITY_LIVE_CALLER_SESSION_REQUIRED"
     else:
         raise AssertionError("capacity registry must reject absent caller transaction")

@@ -20,6 +20,6 @@ def test_evidence_registry_requires_caller_owned_active_transaction():
             collection=object(), session=NoTransaction(),
         )
     except POSCommercialEvidenceRegistryError as error:
-        assert str(error) == "POS_EVIDENCE_ACTIVE_TRANSACTION_REQUIRED"
+        assert str(error) == "POS_EVIDENCE_LIVE_CALLER_SESSION_REQUIRED"
     else:
         raise AssertionError("evidence registry must reject absent caller transaction")
