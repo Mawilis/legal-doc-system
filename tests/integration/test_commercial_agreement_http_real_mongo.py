@@ -23,6 +23,7 @@ import tools.eos.api.commercial_agreement_router as agreement_api
 import tools.eos.api.tenant_authorization_http as authorization_http
 from tools.eos.api.errors import register_error_handlers
 from tools.eos.auth import authentication, tenant_access
+import tools.eos.kernel.db as kernel_db_module
 import tools.eos.auth.principal_authority_repository as principal_repository_module
 import tools.eos.auth.tenant_membership_repository as membership_repository_module
 import tools.eos.auth.role_assignment_repository as role_repository_module
@@ -412,6 +413,7 @@ def test_authenticated_execution_activation_and_entitlement_readback_real_mongo(
     )
     monkeypatch.setattr(plan_registry_module, "plans_collection", plans)
     monkeypatch.setattr(subscription_registry_module, "subscriptions_collection", subscriptions)
+    monkeypatch.setattr(kernel_db_module, "get_database", lambda: database)
     for module in (
         principal_repository_module,
         membership_repository_module,
@@ -420,7 +422,9 @@ def test_authenticated_execution_activation_and_entitlement_readback_real_mongo(
         entitlement_registry_module,
         subscription_registry_module,
     ):
-        monkeypatch.setattr(module, "get_database", lambda database=database: database)
+        monkeypatch.setattr(
+            module, "get_database", lambda database=database: database, raising=False
+        )
     PlanRegistry.provision_indexes()
     subscription_registry_module._ensure_indexes(subscriptions)
 
