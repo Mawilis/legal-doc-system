@@ -11,6 +11,7 @@ on:
       - "tools/eos/api/server.py"
       - "client/src/App.jsx"
       - "client/src/components/workspaces/MyWorkWorkspace.jsx"
+      - "client/src/components/sovereign/SovereignDashboardController.jsx"
       - "client/src/__tests__/components/MyWorkWorkspace.test.jsx"
       - "tests/unit/test_unified_my_work_projection.py"
       - "tests/unit/test_optional_tenant_authorization.py"
