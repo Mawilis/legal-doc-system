@@ -92,7 +92,7 @@ describe('authenticated My Work workspace', () => {
     const reference = screen.getByLabelText('Legal completion evidence reference for Review matter evidence');
     const fingerprint = screen.getByLabelText('Legal completion evidence fingerprint for Review matter evidence');
     const submit = screen.getByRole('button', { name: 'Submit evidenced Legal completion' });
-    expect(submit).toBeDisabled();
+    expect(submit.disabled).toBe(true);
     fireEvent.change(reference, { target: { value: 'evidence:verified-source:legal-1' } });
     fireEvent.change(fingerprint, { target: { value: 'a'.repeat(128) } });
     fireEvent.click(submit);
