@@ -64,6 +64,7 @@ class TenantProductId(str, Enum):
     LEGAL_OPERATIONS = "LEGAL_OPERATIONS"
     BILLING = "BILLING"
     CRM = "CRM"
+    POS = "POS"
     HR = "HR"
     OPERATIONS = "OPERATIONS"
     INTELLIGENCE = "INTELLIGENCE"
@@ -87,6 +88,12 @@ _CANONICAL_INPUTS: Final[dict[TenantProductId, dict[str, object]]] = {
         "workspace_key": "CRM_DASHBOARD",
         "required_products": (),
         "description": "Tenant customer, account, lead, deal and relationship operations workspace.",
+    },
+    TenantProductId.POS: {
+        "label": "Point of Sale",
+        "workspace_key": "POS_DASHBOARD",
+        "required_products": (),
+        "description": "Tenant point-of-sale sales, tenders, returns and location operations workspace; financial execution remains with Kennel EOS.",
     },
     TenantProductId.HR: {
         "label": "HR",
