@@ -37,13 +37,15 @@ from tools.eos.saas.entitlement.product_catalogue import (
 )
 
 
-def test_all_four_catalogued_products_have_exact_d22a_bound_mappings() -> None:
+def test_all_six_catalogued_products_have_exact_d22a_bound_mappings() -> None:
     """Every selectable product maps to one explicit canonical feature identity."""
     expected = {
         TenantProductId.LEGAL_OPERATIONS: "legal.core",
         TenantProductId.BILLING: "billing.core",
         TenantProductId.CRM: "crm.core",
         TenantProductId.HR: "hr.core",
+        TenantProductId.OPERATIONS: "operations.core",
+        TenantProductId.INTELLIGENCE: "intelligence.core",
     }
     for product_id, feature_id in expected.items():
         descriptor = mapping.get_product_commercial_feature(product_id)
@@ -137,7 +139,7 @@ def test_catalogue_drift_and_stored_fingerprint_drift_reject() -> None:
 
 
 def test_mapping_is_immutable_and_listing_is_exact_deterministic_unique() -> None:
-    """Listing exposes all four products in canonical D22A order."""
+    """Listing exposes all six products in canonical D22A order."""
     first = mapping.list_product_commercial_features()
     second = mapping.list_product_commercial_features()
     assert first == second
@@ -146,9 +148,12 @@ def test_mapping_is_immutable_and_listing_is_exact_deterministic_unique() -> Non
         TenantProductId.BILLING,
         TenantProductId.CRM,
         TenantProductId.HR,
+        TenantProductId.OPERATIONS,
+        TenantProductId.INTELLIGENCE,
     )
     assert tuple(item.feature_id for item in first) == (
-        "legal.core", "billing.core", "crm.core", "hr.core"
+        "legal.core", "billing.core", "crm.core", "hr.core",
+        "operations.core", "intelligence.core"
     )
     assert len({item.product_id for item in first}) == len(first)
     assert len({item.feature_id for item in first}) == len(first)
