@@ -118,7 +118,9 @@ def resolve_current_tenant_business_role(*, principal_id: object, tenant_id: obj
                 return TenantBusinessRoleResult(None, BusinessRoleResolution.NO_ACTIVE_TENANT_BUSINESS_ROLE)
             except (TenantBusinessRoleRepositoryError, RoleAssignmentRepositoryError, AttributeError, TypeError):
                 return TenantBusinessRoleResult(None, BusinessRoleResolution.TENANT_BUSINESS_ROLE_AUTHORITY_UNAVAILABLE)
-            active: dict[str, object] = {}
+            active_by_role: dict[str, object] = {}
+            if not isinstance(values, (tuple, list)):
+                return TenantBusinessRoleResult(None, BusinessRoleResolution.TENANT_BUSINESS_ROLE_AUTHORITY_UNAVAILABLE)
             for value in values:
                 if getattr(value, "principal_id", None) != principal_id or getattr(value, "tenant_id", None) != tenant_id:
                     return TenantBusinessRoleResult(None, BusinessRoleResolution.TENANT_BUSINESS_ROLE_AUTHORITY_UNAVAILABLE)
@@ -126,18 +128,18 @@ def resolve_current_tenant_business_role(*, principal_id: object, tenant_id: obj
                 if role not in TENANT_ROLES:
                     return TenantBusinessRoleResult(None, BusinessRoleResolution.TENANT_BUSINESS_ROLE_AUTHORITY_UNAVAILABLE)
                 if getattr(getattr(value, "status", None), "value", None) == TenantBusinessRoleStatus.ACTIVE.value:
-                    active[role] = value
-            eligible = [role for role in active if tenant_role_operation_eligibility(role, operation) == ELIGIBLE]
+                    active_by_role[role] = value
+            eligible = [role for role in active_by_role if tenant_role_operation_eligibility(role, operation) == ELIGIBLE]
             if len(eligible) == 1:
                 return TenantBusinessRoleResult(eligible[0], BusinessRoleResolution.RESOLVED)
             if len(eligible) > 1:
                 return TenantBusinessRoleResult(None, BusinessRoleResolution.MULTIPLE_ACTIVE_TENANT_BUSINESS_ROLES)
-            if active:
+            if active_by_role:
                 # Retain one exact active role as denial evidence. This does
                 # not select it for authorization: resolution remains
                 # NO_ELIGIBLE_TENANT_BUSINESS_ROLE and the permission lookup
                 # must not run. Multiple active roles remain non-singular.
-                sole_active = next(iter(active)) if len(active) == 1 else None
+                sole_active = next(iter(active_by_role)) if len(active_by_role) == 1 else None
                 return TenantBusinessRoleResult(
                     None,
                     BusinessRoleResolution.NO_ELIGIBLE_TENANT_BUSINESS_ROLE,
