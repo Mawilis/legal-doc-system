@@ -17,7 +17,6 @@ from pymongo.write_concern import WriteConcern
 
 from tools.eos.api.tenant_authorization_http import RequireTenantAuthorization, TenantAuthorizationContext
 from tools.eos.kernel.db import get_client, get_database
-from tools.eos.saas.domain.tenant_product_entitlement import TenantProductEntitlementState
 from tools.eos.saas.entitlement.product_catalogue import TenantProductId
 from tools.eos.saas.entitlement.tenant_product_entitlement_registry import (
     CURRENT_COLLECTION, HISTORY_COLLECTION,
@@ -98,8 +97,10 @@ def _transaction(product_id: TenantProductId, collection_name: str, callback):
         raise HTTPException(status_code=409, detail=error.code) from error
     except ModuleWorkRegistryNotFound as error:
         raise HTTPException(status_code=404, detail=error.code) from error
-    except (ModuleWorkRegistryError, ModuleWorkItemError) as error:
-        raise HTTPException(status_code=503, detail=getattr(error, "code", "MODULE_WORK_UNAVAILABLE")) from error
+    except ModuleWorkItemError as error:
+        raise HTTPException(status_code=422, detail=error.code) from error
+    except ModuleWorkRegistryError as error:
+        raise HTTPException(status_code=503, detail=error.code) from error
     except HTTPException:
         raise
     except Exception as error:
