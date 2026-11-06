@@ -430,6 +430,20 @@ export const resolveDashboardKey = ({ user = {}, manualDashboardKey = '' } = {})
   ) {
     return DASHBOARD_KEYS.SYSTEM_SERVICES;
   }
+  const roleToken = normalizeDashboardToken(
+    user.role || user.accountRole || user.tenantRole,
+  );
+  // Tenant Owners may open the Legal presentation only as a commercial-read
+  // surface. LegalDashboard resolves TENANT_OWNER before every practice role,
+  // mounts no practice provider, and the commercial endpoint independently
+  // revalidates subscription:read. This is a presentation route, not authority.
+  if (
+    ['TENANT_OWNER', 'OWNER'].includes(roleToken)
+    && requestedDashboard === DASHBOARD_KEYS.LEGAL
+  ) {
+    return DASHBOARD_KEYS.LEGAL;
+  }
+
   const workspaceDashboard = WORKSPACE_DASHBOARD_MAP[user.workspaceId] || '';
   if (!workspaceDashboard) return '';
   return requestedDashboard === workspaceDashboard
