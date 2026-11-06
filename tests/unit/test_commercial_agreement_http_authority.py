@@ -113,3 +113,9 @@ def test_execution_request_accepts_only_server_evidence_reference():
             "certificate_pem": "browser-supplied-certificate",
             "signatory_principal_id": "browser-supplied-principal",
         })
+
+
+
+def test_server_composition_rejects_untrusted_verifier_object():
+    with pytest.raises(TypeError, match="COMMERCIAL_AGREEMENT_EXECUTION_VERIFIER_CONFIGURATION_INVALID"):
+        server.WilsyAPIServer(commercial_agreement_execution_verifier=object())
