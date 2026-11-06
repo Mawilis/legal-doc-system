@@ -115,8 +115,15 @@ def record_evidence(*, sale: POSSale, evidence: Any, evidence_id: str, idempoten
             existing.pop("_id", None)
             fingerprint = existing.pop("fingerprint", None)
             recorded_at = existing.pop("recorded_at", None)
-            expected = {**base_record, "recorded_at": recorded_at}
-            if existing != base_record or fingerprint != _canonical_digest(expected):
+            expected = {
+                **base_record,
+                "occurred_at": existing.get("occurred_at"),
+                "recorded_at": recorded_at,
+            }
+            expected_without_recorded_at = {
+                key: value for key, value in expected.items() if key != "recorded_at"
+            }
+            if existing != expected_without_recorded_at or fingerprint != _canonical_digest(expected):
                 raise POSCommercialEvidenceConflict("POS_EVIDENCE_DIVERGENT_REPLAY")
             return {**expected, "fingerprint": fingerprint}
         record = {**base_record, "recorded_at": datetime.now(timezone.utc).isoformat()}
