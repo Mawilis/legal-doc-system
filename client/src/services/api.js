@@ -449,6 +449,11 @@ api.interceptors.request.use(
       const preservesCanonicalRequestBody = (
         /^\/legal-acceptance\/accept$/i.test(config.url)
         || /^\/system-services\/security-incident-assignments\/[^/]+\/(?:accept|decline)$/i.test(config.url)
+        // EOS work-item commands have strict server-owned schemas. Forensic
+        // timestamps stay in the transport header and must never become
+        // caller-controlled domain fields in these signed command bodies.
+        || /^\/crm\/owner-workspace\/work-items(?:\/[^/]+\/complete)?$/i.test(config.url)
+        || /^\/tenant-modules\/(?:operations|intelligence)\/workspace\/work-items(?:\/[^/]+\/complete)?$/i.test(config.url)
       );
       const isMultipartBody = typeof FormData !== 'undefined'
         && config.data instanceof FormData;
