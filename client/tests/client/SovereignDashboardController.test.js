@@ -106,6 +106,21 @@ describe('SovereignDashboardController EOS workspace contract', () => {
     }
   });
 
+  it('maps Operations and Intelligence product workspace keys to their own dashboard shards', () => {
+    expect(resolveDashboardKey({
+      user: { id: 'owner-ops', role: 'TENANT_OWNER', workspaceId: 'EXECUTIVE_COMMAND_CENTRE' },
+      manualDashboardKey: 'OPERATIONS_DASHBOARD',
+    })).toBe(DASHBOARD_KEYS.OPERATIONS);
+    expect(resolveDashboardKey({
+      user: { id: 'owner-intel', role: 'TENANT_OWNER', workspaceId: 'EXECUTIVE_COMMAND_CENTRE' },
+      manualDashboardKey: 'INTELLIGENCE_DASHBOARD',
+    })).toBe(DASHBOARD_KEYS.INTELLIGENCE);
+    expect(resolveDashboardKey({
+      user: { id: 'owner-legacy-ops', role: 'TENANT_OWNER', workspaceId: 'EXECUTIVE_COMMAND_CENTRE' },
+      manualDashboardKey: 'OPERATIONS',
+    })).toBe(DASHBOARD_KEYS.COO);
+  });
+
   it('mounts System Services only from a READY EOS capability projection', () => {
     const workspace = {
       status: 'READY',
