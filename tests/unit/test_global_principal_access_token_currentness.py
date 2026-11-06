@@ -55,7 +55,7 @@ def test_global_access_token_requires_exact_current_session_claims(monkeypatch: 
     assert identity.workspace_id == "EXECUTIVE_COMMAND_CENTRE"
     assert identity.membership_revision == 3
     assert identity.capacity_revision == 5
-    observed == {
+    assert observed == {
         "principal_id": "principal-global",
         "tenant_id": "tenant-exact",
         "session_reference": "WILSYGLOBALSESSION-abc",
