@@ -25,6 +25,7 @@ on:
   pull_request:
     branches: [main, eos/atomic-owner-genesis-integration]
     paths:
+      - "tests/e2e/browser_cert_fixture.py"
       - "tests/e2e/**"
       - "client/src/components/industry/LegalDashboard.jsx"
       - "client/src/components/sovereign/SovereignDashboardController.jsx"
