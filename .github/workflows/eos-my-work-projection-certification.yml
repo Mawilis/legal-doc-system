@@ -1,0 +1,38 @@
+name: EOS My Work Projection Certification
+
+on:
+  pull_request:
+    branches:
+      - cert/l8-8m-exact-head-20261106
+    paths:
+      - "tools/eos/workspaces/service/unified_my_work_projection.py"
+      - "tests/unit/test_unified_my_work_projection.py"
+      - ".github/workflows/eos-my-work-projection-certification.yml"
+  push:
+    branches:
+      - eos/my-work-unified-daily-work-20261106
+
+permissions:
+  contents: read
+
+concurrency:
+  group: eos-my-work-projection-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  focused-unit-certification:
+    name: Unified My Work projection unit tests
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Checkout exact commit
+        uses: actions/checkout@v4
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: "pip"
+      - name: Install test runner
+        run: python -m pip install --disable-pip-version-check pytest
+      - name: Run focused projection certification
+        run: python -m pytest -q tests/unit/test_unified_my_work_projection.py
