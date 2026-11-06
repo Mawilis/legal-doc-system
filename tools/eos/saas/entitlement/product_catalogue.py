@@ -10,8 +10,8 @@ ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/tools/eos/saas/e
 COLLABORATION / OWNERSHIP: Python EOS owns product identity/catalogue truth.
                             PlanRegistry owns base commercial plan truth;
                             SubscriptionRegistry owns subscription lifecycle;
-                            tenant product entitlement is a separate future
-                            authority; WILSY AI and Tenant Branding remain
+                            D22B1/D22B2 own tenant product entitlement lifecycle;
+                            WILSY AI and Tenant Branding remain
                             separate VAS domains; IAM owns principal authority.
 CERTIFICATION / UPDATE DATE: 2026-09-24
 CHANGELOG: v1.0.0-D22A-TENANT-PRODUCT-CATALOGUE establishes the first closed
