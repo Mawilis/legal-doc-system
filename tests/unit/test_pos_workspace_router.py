@@ -5,7 +5,7 @@ from types import SimpleNamespace
 
 from tools.eos.api.pos_workspace_router import (
     POSLocationAssignmentRequest, POSSaleCreateRequest, router,
-    require_pos_workspace_indexes_ready,
+    require_pos_workspace_indexes_ready, _EXECUTE,
 )
 from tools.eos.auth.permission_namespace import permission_metadata
 from tools.eos.auth.roles import get_roles_granting_permission
@@ -51,6 +51,7 @@ def test_pos_request_contracts_forbid_browser_owned_tenant_and_actor_authority()
 
 
 def test_pos_permissions_are_exact_and_location_assignment_is_not_inherited():
+    assert _EXECUTE.permission_id == "pos:payment:authorize"
     permissions = {
         "pos:location_assignment:manage": "pos_location_assignment_manage",
         "pos:sale:read": "pos_sale_read",
