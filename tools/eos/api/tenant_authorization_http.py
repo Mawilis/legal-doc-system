@@ -286,7 +286,12 @@ class _TenantAuthorityRoleReader:
         try:
             resolver = getattr(self._business_repository, "resolve_all", None)
             if callable(resolver):
-                return resolver(principal_id, tenant_id, session=session)
+                values = resolver(principal_id, tenant_id, session=session)
+                if not isinstance(values, tuple):
+                    raise TenantBusinessRoleRepositoryError(
+                        "TENANT_BUSINESS_ROLE_COLLECTION_INVALID"
+                    )
+                return values
             # Existing injected adapters remain single-capacity until migrated.
             legacy = self.resolve_current_business_role(
                 principal_id, tenant_id, session=session
