@@ -409,8 +409,9 @@ const WORKSPACE_DASHBOARD_MAP = Object.freeze({
 /**
  * Resolve the presentation shard from the versioned workspace contract
  * returned by EOS after current identity, membership and IAM verification.
- * Role labels, browser preferences and manual dashboard requests cannot
- * override the canonical workspace identifier.
+ * The sole presentation exception is a durable Tenant Owner selecting the
+ * Legal commercial-only shell; that branch never mounts practice authority and
+ * the commercial endpoint independently revalidates subscription:read.
  */
 export const resolveDashboardKey = ({ user = {}, manualDashboardKey = '' } = {}) => {
   const requestedDashboard = mapDashboardAlias(manualDashboardKey);
