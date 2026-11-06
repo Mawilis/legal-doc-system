@@ -617,5 +617,7 @@ ROLE_PERMISSIONS_MAP["TENANT_OWNER"].extend([
 ROLE_PERMISSIONS_MAP["ENTERPRISE_ADMIN"].extend([
     "tenant:commercial_agreement:read",
     "tenant:commercial_agreement:draft:create",
+    "tenant:commercial_agreement:execute",
+    "tenant:commercial_agreement:activate",
 ])
 ROLE_PERMISSIONS_MAP["AUDITOR"].append("tenant:commercial_agreement:read")
