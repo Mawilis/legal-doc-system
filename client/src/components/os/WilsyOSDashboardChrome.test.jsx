@@ -1,13 +1,13 @@
 /**
  * TITLE: WILSY OS Shared Dashboard Chrome Branding Presentation Certificate
- * VERSION: v2.1.0-L10-P2C1-SHARED-INTERACTION-CONTRACT-CERT
+ * VERSION: v2.2.0-EOS-MODULE-MANIFEST-NAVIGATION-CERT
  * AUTHORITY: Wilsy OS Core Governance
  * EPITOME: Certify that shared dashboard chrome accepts tenant branding only
  *          from the authenticated D21B8 tenant projection and never promotes
  *          legacy logo/path/browser fields into presentation authority.
  * ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/client/src/components/os/WilsyOSDashboardChrome.test.jsx
  * CERTIFICATION / UPDATE DATE: 2026-09-28
- * CHANGELOG: 2026-09-28 v2.1.0-L10-P2C1-SHARED-INTERACTION-CONTRACT-CERT certifies one reusable command-pill interaction contract across Account, Trust Center, Refresh, primary actions and actionable rail controls, including semantic active states, keyboard focus, pressed/disabled behavior and reduced-motion parity. No tenant, subscription, entitlement or financial authority is created.
+ * CHANGELOG: 2026-11-06 v2.2.0-EOS-MODULE-MANIFEST-NAVIGATION-CERT certifies exact-tenant server-issued product navigation, strict module/product/workspace binding, rejection of forged entitlement fields, and canonical dashboard-switch events.\n *            2026-09-28 v2.1.0-L10-P2C1-SHARED-INTERACTION-CONTRACT-CERT certifies one reusable command-pill interaction contract across Account, Trust Center, Refresh, primary actions and actionable rail controls, including semantic active states, keyboard focus, pressed/disabled behavior and reduced-motion parity. No tenant, subscription, entitlement or financial authority is created.
  * AUTHORITY BOUNDARY: Browser presentation only; Python EOS/D21B2B-D21B8 own branding truth.
  * FINANCIAL AUTHORITY BOUNDARY: None; Kennel EOS exclusively owns execution.
  */
@@ -267,3 +267,11 @@ describe('EOS-issued tenant product navigation', () => {
     expect(chromeSource).toContain('Available WILSY OS products');
   });
 });
+
+// ARTIFACT: WilsyOSDashboardChrome.test.jsx
+// VERSION: v2.2.0-EOS-MODULE-MANIFEST-NAVIGATION-CERT
+// AUTHORITY BOUNDARY: browser presentation certificate only
+// TENANT POSTURE: module navigation binds to exact authenticated tenant
+// FAIL-CLOSED POSTURE: malformed, duplicate, foreign or forged module evidence rejects
+// FINANCIAL EXECUTION AUTHORITY: Kennel EOS remains exclusive
+// END OF WILSY OS SOVEREIGN ARTIFACT
