@@ -1275,6 +1275,63 @@ def verify(state_path: Path) -> None:
     client = MongoClient(uri, serverSelectionTimeoutMS=5000)
     try:
         database = _owned_database(client)
+        specialist_workflows = state.get("specialist_workflows")
+        if not isinstance(specialist_workflows, dict) or set(specialist_workflows) != {
+            "partner", "attorney", "paralegal", "secretary",
+        }:
+            raise RuntimeError("BROWSER_CERT_SPECIALIST_WORKFLOW_STATE_INVALID")
+        for actor_key, evidence in specialist_workflows.items():
+            tenant_id = state["tenant_id"]
+            actor = state["actors"][actor_key]
+            work_ids = evidence["work_item_ids"]
+            assignment_ids = evidence["assignment_ids"]
+            instance = database[LEGAL_WORKFLOW_INSTANCE_COLLECTION].find_one({
+                "tenant_id": tenant_id,
+                "workflow_instance_id": evidence["workflow_instance_id"],
+            })
+            transition = database[LEGAL_WORKFLOW_TRANSITION_COLLECTION].find_one({
+                "tenant_id": tenant_id,
+                "transition_id": evidence["transition_id"],
+                "workflow_instance_id": evidence["workflow_instance_id"],
+                "target_stage_definition_id": evidence["stage_definition_id"],
+            })
+            receipt = database[LEGAL_WORK_MATERIALIZATION_RECEIPT_COLLECTION].find_one({
+                "tenant_id": tenant_id,
+                "transition_id": evidence["transition_id"],
+                "receipt_id": evidence["materialization_receipt_id"],
+                "fingerprint": evidence["materialization_receipt_fingerprint"],
+            })
+            work_rows = list(database[LEGAL_WORK_ITEM_COLLECTION].find({
+                "tenant_id": tenant_id,
+                "work_item_id": {"$in": work_ids},
+            }))
+            dependency = database[LEGAL_WORK_DEPENDENCY_COLLECTION].find_one({
+                "tenant_id": tenant_id,
+                "source_materialization_receipt_id": evidence["materialization_receipt_id"],
+                "predecessor_work_item_id": evidence["predecessor_work_item_id"],
+                "successor_work_item_id": evidence["successor_work_item_id"],
+            })
+            assignment_rows = list(database[LEGAL_WORK_ASSIGNMENT_COLLECTION].find({
+                "tenant_id": tenant_id,
+                "assignment_id": {"$in": assignment_ids},
+                "work_item_id": {"$in": work_ids},
+                "assignee_principal_id": actor["principal_id"],
+            }))
+            if (
+                instance is None
+                or transition is None
+                or receipt is None
+                or len(work_rows) != 2
+                or dependency is None
+                or len(assignment_rows) != 2
+                or {row["work_item_id"] for row in assignment_rows} != set(work_ids)
+                or any(row.get("tenant_id") != tenant_id for row in work_rows)
+                or any(row.get("assignee_principal_id") != actor["principal_id"] for row in assignment_rows)
+            ):
+                raise RuntimeError(
+                    f"BROWSER_CERT_SPECIALIST_DURABLE_LINEAGE_INVALID:{actor_key}"
+                )
+
         screening_count = database["legal_conflict_screenings"].count_documents(
             {"tenant_id": state["tenant_id"], "screening_id": state["screening_id"]}
         )
