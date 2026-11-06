@@ -21,6 +21,7 @@ def test_pos_http_surface_contains_location_and_daily_commercial_operations():
         for method in route.methods or ()
     }
     expected = {
+        ("/pos/locations", "GET"),
         ("/pos/locations/{location_id}/assignments", "POST"),
         ("/pos/locations/{location_id}/assignments/{principal_id}/revoke", "POST"),
         ("/pos/locations/{location_id}/sales", "POST"),
