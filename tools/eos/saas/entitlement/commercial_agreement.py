@@ -249,6 +249,12 @@ class CommercialAgreement:
         if state is CommercialAgreementState.SUSPENDED:
             if suspended is None or suspension_ref is None or suspension_fp is None:
                 raise CommercialAgreementError("COMMERCIAL_AGREEMENT_SUSPENSION_EVIDENCE_REQUIRED")
+        elif state in (CommercialAgreementState.TERMINATED, CommercialAgreementState.EXPIRED):
+            suspension_values = (suspended, suspension_ref, suspension_fp)
+            if any(value is not None for value in suspension_values) and not all(
+                value is not None for value in suspension_values
+            ):
+                raise CommercialAgreementError("COMMERCIAL_AGREEMENT_SUSPENSION_SHAPE_INVALID")
         elif any((suspended, suspension_ref, suspension_fp)):
             raise CommercialAgreementError("COMMERCIAL_AGREEMENT_SUSPENSION_SHAPE_INVALID")
 
@@ -268,9 +274,15 @@ class CommercialAgreement:
             raise CommercialAgreementError("COMMERCIAL_AGREEMENT_ACTIVATION_CHRONOLOGY_INVALID")
         if suspended is not None and (activated is None or suspended < activated):
             raise CommercialAgreementError("COMMERCIAL_AGREEMENT_SUSPENSION_CHRONOLOGY_INVALID")
-        if terminated is not None and (activated is None or terminated < activated):
+        if terminated is not None and (
+            activated is None or terminated < activated
+            or (suspended is not None and terminated < suspended)
+        ):
             raise CommercialAgreementError("COMMERCIAL_AGREEMENT_TERMINATION_CHRONOLOGY_INVALID")
-        if expired is not None and (expires is None or expired < expires):
+        if expired is not None and (
+            expires is None or expired < expires
+            or (suspended is not None and expired < suspended)
+        ):
             raise CommercialAgreementError("COMMERCIAL_AGREEMENT_EXPIRY_CHRONOLOGY_INVALID")
 
         object.__setattr__(self, "tenant_id", tenant)
