@@ -41,15 +41,115 @@ import {
   Search,
   UserCog,
   ShieldCheck,
+  Scale,
+  Receipt,
+  Users,
+  UsersRound,
   X
 } from 'lucide-react';
 import { useAuth } from '../../contexts/authContext';
 import { useTenants } from '../../contexts/tenantContext';
 import { resolveWilsyChromeIdentitySources } from './wilsyDashboardChromeConfig';
 import { useAuthenticatedTenantBrandingAsset } from '../../hooks/useAuthenticatedTenantBrandingAsset.js';
+import api from '../../services/api.js';
 import './WilsyOSDashboardChrome.module.css';
 
 const WILSY_OS_DASHBOARD_CHROME_VERSION = 'V2.0.0-L10-P2C1-INTERACTIVE-COMMAND-CONTRACT';
+
+
+const MODULE_MANIFEST_VERSION = 'v1.0.0-EOS-TENANT-MODULE-MANIFEST';
+const MODULE_PRESENTATION = Object.freeze({
+  LEGAL_OS: Object.freeze({
+    productId: 'LEGAL_OPERATIONS',
+    label: 'Legal OS',
+    workspaceKey: 'LEGAL_DASHBOARD',
+    navigationGroup: 'PROFESSIONAL_SERVICES',
+    iconKey: 'scale',
+  }),
+  BILLING: Object.freeze({
+    productId: 'BILLING',
+    label: 'Billing',
+    workspaceKey: 'BILLING_HUB',
+    navigationGroup: 'BUSINESS_OPERATIONS',
+    iconKey: 'receipt',
+  }),
+  CRM: Object.freeze({
+    productId: 'CRM',
+    label: 'CRM',
+    workspaceKey: 'CRM_DASHBOARD',
+    navigationGroup: 'CUSTOMER_OPERATIONS',
+    iconKey: 'users',
+  }),
+  PEOPLE: Object.freeze({
+    productId: 'HR',
+    label: 'People',
+    workspaceKey: 'HR_DASHBOARD',
+    navigationGroup: 'PEOPLE_OPERATIONS',
+    iconKey: 'users-round',
+  }),
+});
+const MODULE_ICON_BY_KEY = Object.freeze({
+  scale: Scale,
+  receipt: Receipt,
+  users: Users,
+  'users-round': UsersRound,
+});
+
+/**
+ * Admit only the exact READY server-issued module projection for the active tenant.
+ * This is presentation metadata; each destination and API independently authorizes.
+ */
+export const validateWilsyModuleManifest = (payload, expectedTenantId) => {
+  const workspace = payload?.workspace;
+  if (
+    payload?.status !== 'READY'
+    || typeof expectedTenantId !== 'string'
+    || !expectedTenantId
+    || workspace?.tenantId !== expectedTenantId
+    || workspace?.moduleManifestVersion !== MODULE_MANIFEST_VERSION
+    || !Array.isArray(workspace.modules)
+    || workspace.modules.length > Object.keys(MODULE_PRESENTATION).length
+  ) {
+    throw new Error('MODULE_MANIFEST_RESPONSE_INVALID');
+  }
+
+  const seen = new Set();
+  return workspace.modules.map((module) => {
+    const canonical = MODULE_PRESENTATION[module?.moduleId];
+    const fields = [
+      'moduleId',
+      'productId',
+      'label',
+      'workspaceKey',
+      'navigationGroup',
+      'iconKey',
+      'entitlementId',
+      'entitlementRevision',
+      'entitlementFingerprint',
+    ];
+    if (
+      !canonical
+      || seen.has(module.moduleId)
+      || fields.some((field) => !Object.prototype.hasOwnProperty.call(module, field))
+      || fields.length !== Object.keys(module).length
+      || module.productId !== canonical.productId
+      || module.label !== canonical.label
+      || module.workspaceKey !== canonical.workspaceKey
+      || module.navigationGroup !== canonical.navigationGroup
+      || module.iconKey !== canonical.iconKey
+      || typeof module.entitlementId !== 'string'
+      || !module.entitlementId
+      || !Number.isInteger(module.entitlementRevision)
+      || module.entitlementRevision < 0
+      || typeof module.entitlementFingerprint !== 'string'
+      || !/^[0-9a-f]{128}$/.test(module.entitlementFingerprint)
+    ) {
+      throw new Error('MODULE_MANIFEST_ENTRY_INVALID');
+    }
+    seen.add(module.moduleId);
+    return Object.freeze({ ...module });
+  });
+};
 
 const TRUST_CENTER_STATES = Object.freeze({
   CLOSED: 'closed',
@@ -156,6 +256,7 @@ const WilsyOSDashboardChrome = ({
 }) => {
   const [railCollapsedInternal, setRailCollapsedInternal] = useState(false);
   const [trustCenterState, setTrustCenterState] = useState(TRUST_CENTER_STATES.CLOSED);
+  const [moduleManifest, setModuleManifest] = useState({ status: 'idle', modules: [] });
   const trustCenterTriggerRef = useRef(null);
   const trustCenterCloseRef = useRef(null);
   const trustCenterRef = useRef(null);
@@ -184,6 +285,27 @@ const WilsyOSDashboardChrome = ({
     );
     return resolved || {};
   }, [activeTenantCode, authTenant, tenant, tenants]);
+
+  useEffect(() => {
+    let current = true;
+    const tenantId = authTenant?.tenantId;
+    if (!authUser || typeof tenantId !== 'string' || !tenantId) {
+      setModuleManifest({ status: 'idle', modules: [] });
+      return () => { current = false; };
+    }
+
+    setModuleManifest({ status: 'loading', modules: [] });
+    api.get('/auth/module-manifest')
+      .then(({ data }) => validateWilsyModuleManifest(data, tenantId))
+      .then((modules) => {
+        if (current) setModuleManifest({ status: 'ready', modules });
+      })
+      .catch(() => {
+        if (current) setModuleManifest({ status: 'unavailable', modules: [] });
+      });
+
+    return () => { current = false; };
+  }, [authUser?.id, authUser?.email, authTenant?.tenantId]);
 
   const identity = buildWilsyChromeIdentity({
     tenant: tenant && Object.keys(tenant || {}).length ? tenant : authTenant || {},
@@ -454,16 +576,71 @@ const WilsyOSDashboardChrome = ({
               {railCollapsed ? <ChevronRight size={16} /> : <ChevronLeft size={16} />}
               {!railCollapsed ? <span>Modules</span> : null}
             </button>
-            {!railCollapsed ? leftRail : (
-              <button
-                type="button"
-                className="wilsyOsChromeRailPeek"
-                onClick={toggleRail}
-                title="Open modules"
-                aria-label="Open modules"
-              >
-                <PanelLeft size={16} />
-              </button>
+            {!railCollapsed ? (
+              <>
+                {moduleManifest.modules.length > 0 ? (
+                  <nav className="wilsyOsChromeProductModules" aria-label="Available WILSY OS products">
+                    <span className="wilsyOsChromeModuleSectionLabel">YOUR PRODUCTS</span>
+                    {moduleManifest.modules.map((module) => {
+                      const ModuleIcon = MODULE_ICON_BY_KEY[module.iconKey];
+                      const currentKey = String(dashboardKey || '').toLowerCase();
+                      const isActive = (
+                        (module.moduleId === 'LEGAL_OS' && currentKey.startsWith('legal'))
+                        || (module.moduleId === 'BILLING' && (currentKey.includes('billing') || currentKey.includes('finance')))
+                        || (module.moduleId === 'CRM' && currentKey.includes('crm'))
+                        || (module.moduleId === 'PEOPLE' && currentKey.includes('hr'))
+                      );
+                      return (
+                        <button
+                          key={module.moduleId}
+                          type="button"
+                          className="wilsyOsChromeModuleButton"
+                          data-active={isActive ? 'true' : 'false'}
+                          aria-current={isActive ? 'page' : undefined}
+                          onClick={() => window.dispatchEvent(new CustomEvent(
+                            'wilsy:switch-dashboard',
+                            { detail: { dashboardKey: module.workspaceKey, source: 'server-module-manifest' } },
+                          ))}
+                        >
+                          <ModuleIcon size={16} aria-hidden="true" />
+                          <span>{module.label}</span>
+                        </button>
+                      );
+                    })}
+                  </nav>
+                ) : null}
+                {leftRail}
+              </>
+            ) : (
+              <div className="wilsyOsChromeCollapsedModules">
+                {moduleManifest.modules.map((module) => {
+                  const ModuleIcon = MODULE_ICON_BY_KEY[module.iconKey];
+                  return (
+                    <button
+                      key={module.moduleId}
+                      type="button"
+                      className="wilsyOsChromeModuleIconButton"
+                      title={module.label}
+                      aria-label={module.label}
+                      onClick={() => window.dispatchEvent(new CustomEvent(
+                        'wilsy:switch-dashboard',
+                        { detail: { dashboardKey: module.workspaceKey, source: 'server-module-manifest' } },
+                      ))}
+                    >
+                      <ModuleIcon size={16} aria-hidden="true" />
+                    </button>
+                  );
+                })}
+                <button
+                  type="button"
+                  className="wilsyOsChromeRailPeek"
+                  onClick={toggleRail}
+                  title="Open modules"
+                  aria-label="Open modules"
+                >
+                  <PanelLeft size={16} />
+                </button>
+              </div>
             )}
           </aside>
         ) : null}
