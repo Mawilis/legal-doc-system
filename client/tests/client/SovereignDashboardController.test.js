@@ -100,6 +100,8 @@ describe('SovereignDashboardController EOS workspace contract', () => {
       ['CLIENT_PORTAL', DASHBOARD_KEYS.LEGAL],
       ['PROCESS_SERVICE', DASHBOARD_KEYS.LEGAL],
       ['PEOPLE_OPERATIONS', DASHBOARD_KEYS.HR],
+      ['POINT_OF_SALE', DASHBOARD_KEYS.POS],
+      ['POS_DASHBOARD', DASHBOARD_KEYS.POS],
     ];
     for (const [workspaceId, dashboardKey] of cases) {
       expect(resolveDashboardKey({
@@ -108,7 +110,7 @@ describe('SovereignDashboardController EOS workspace contract', () => {
     }
   });
 
-  it('mounts all six tenant products on their real independent module destinations', () => {
+  it('mounts all seven tenant products on their real independent module destinations', () => {
     const source = readFileSync(CONTROLLER_SOURCE, 'utf8');
     const mounts = [
       ['DASHBOARD_KEYS.LEGAL', '<LegalDashboard'],
@@ -117,6 +119,7 @@ describe('SovereignDashboardController EOS workspace contract', () => {
       ['DASHBOARD_KEYS.HR', '<HRDashboard'],
       ['DASHBOARD_KEYS.OPERATIONS', '<OperationsDashboard'],
       ['DASHBOARD_KEYS.INTELLIGENCE', '<IntelligenceDashboard'],
+      ['DASHBOARD_KEYS.POS', '<POSDashboard'],
     ];
     for (const [key, component] of mounts) {
       expect(source).toContain(`dashboardKey === ${key}`);
