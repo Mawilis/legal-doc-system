@@ -191,12 +191,67 @@ def build_workspace_bootstrap_projection(
         else TenantBusinessRoleRepository()
     )
 
-    try:
-        business_role_authority = business_role_source.resolve(
-            principal_id,
-            tenant_id,
-            session=session,
+    principal_scope = getattr(identity, "principal_scope", None)
+    selected_business_role: str | None = None
+    selected_workspace_id: str | None = None
+    selected_capacity_revision: int | None = None
+    selected_membership_revision: int | None = None
+
+    if principal_scope == "GLOBAL":
+        roles = getattr(identity, "roles", None)
+        selected_business_role = (
+            roles[0]
+            if isinstance(roles, list)
+            and len(roles) == 1
+            and isinstance(roles[0], str)
+            and roles[0]
+            and roles[0] == roles[0].strip()
+            else None
         )
+        selected_workspace_id = _exact_text(getattr(identity, "workspace_id", None))
+        selected_capacity_revision = getattr(identity, "capacity_revision", None)
+        selected_membership_revision = getattr(identity, "membership_revision", None)
+        if (
+            selected_business_role is None
+            or selected_workspace_id is None
+            or not isinstance(selected_capacity_revision, int)
+            or isinstance(selected_capacity_revision, bool)
+            or selected_capacity_revision < 0
+            or not isinstance(selected_membership_revision, int)
+            or isinstance(selected_membership_revision, bool)
+            or selected_membership_revision < 0
+        ):
+            raise WorkspaceBootstrapProjectionError(
+                "WORKSPACE_BOOTSTRAP_SELECTED_CAPACITY_INVALID"
+            )
+        if selected_membership_revision != membership_revision:
+            raise WorkspaceBootstrapProjectionError(
+                "WORKSPACE_BOOTSTRAP_MEMBERSHIP_REVISION_STALE"
+            )
+
+    try:
+        if principal_scope == "GLOBAL":
+            resolver = getattr(business_role_source, "resolve_business_role", None)
+            if not callable(resolver):
+                raise TenantBusinessRoleRepositoryError(
+                    "TENANT_BUSINESS_ROLE_EXACT_RESOLVER_REQUIRED"
+                )
+            business_role_authority = resolver(
+                principal_id,
+                tenant_id,
+                selected_business_role,
+                session=session,
+            )
+        elif principal_scope in (None, "TENANT"):
+            business_role_authority = business_role_source.resolve(
+                principal_id,
+                tenant_id,
+                session=session,
+            )
+        else:
+            raise WorkspaceBootstrapProjectionError(
+                "WORKSPACE_BOOTSTRAP_PRINCIPAL_SCOPE_INVALID"
+            )
     except TenantBusinessRoleNotFoundError as error:
         raise WorkspaceBootstrapProjectionError(
             "WORKSPACE_BOOTSTRAP_BUSINESS_ROLE_REQUIRED"
@@ -243,6 +298,15 @@ def build_workspace_bootstrap_projection(
         raise WorkspaceBootstrapProjectionError(
             "WORKSPACE_BOOTSTRAP_BUSINESS_ROLE_AUTHORITY_INVALID"
         )
+    if principal_scope == "GLOBAL":
+        if (
+            business_role != selected_business_role
+            or business_role_revision != selected_capacity_revision
+            or resolve_workspace_id(business_role) != selected_workspace_id
+        ):
+            raise WorkspaceBootstrapProjectionError(
+                "WORKSPACE_BOOTSTRAP_SELECTED_CAPACITY_STALE"
+            )
 
     resolver = (
         tenant_resolver
