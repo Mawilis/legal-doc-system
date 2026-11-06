@@ -15,9 +15,24 @@ const isStale = (lastSync) => {
 
 export default function ExecutiveOperationalWorkbench({ sources = [], onOpenFunction }) {
   const [selectedId, setSelectedId] = useState('');
+  const [searchTerm, setSearchTerm] = useState('');
+  const [statusFilter, setStatusFilter] = useState('ALL');
+  const [page, setPage] = useState(0);
   const queue = useMemo(() => buildOperationalQueue(sources), [sources]);
   const exceptions = useMemo(() => buildDecisionExceptions(queue), [queue]);
-  const selected = queue.find((item) => item.id === selectedId) || queue[0] || null;
+  const statuses = useMemo(() => Array.from(new Set(queue.map((item) => item.status))).sort(), [queue]);
+  const filteredQueue = useMemo(() => {
+    const needle = searchTerm.trim().toLowerCase();
+    return queue.filter((item) => {
+      const matchesStatus = statusFilter === 'ALL' || item.status === statusFilter;
+      const searchable = [item.title, item.sourceLabel, item.owner, item.recordId, item.status].join(' ').toLowerCase();
+      return matchesStatus && (!needle || searchable.includes(needle));
+    });
+  }, [queue, searchTerm, statusFilter]);
+  const pageSize = 12;
+  const pageCount = Math.max(1, Math.ceil(filteredQueue.length / pageSize));
+  const visibleQueue = filteredQueue.slice(page * pageSize, (page + 1) * pageSize);
+  const selected = filteredQueue.find((item) => item.id === selectedId) || filteredQueue[0] || null;
   const selectedSource = selected
     ? sources.find((source) => source.key === selected.sourceKey)
     : null;
@@ -44,11 +59,28 @@ export default function ExecutiveOperationalWorkbench({ sources = [], onOpenFunc
         <section className={styles.queuePanel} aria-labelledby="executive-queue-title">
           <header>
             <div><span>OPERATIONAL QUEUE</span><h3 id="executive-queue-title">Open work</h3></div>
-            <strong>{queue.length}</strong>
+            <strong>{filteredQueue.length} / {queue.length}</strong>
           </header>
-          {queue.length ? (
+          <div className={styles.queueControls}>
+            <input
+              type="search"
+              aria-label="Search operational work"
+              placeholder="Search work, owner or reference"
+              value={searchTerm}
+              onChange={(event) => { setSearchTerm(event.target.value); setPage(0); }}
+            />
+            <select
+              aria-label="Filter operational work by status"
+              value={statusFilter}
+              onChange={(event) => { setStatusFilter(event.target.value); setPage(0); }}
+            >
+              <option value="ALL">All actionable statuses</option>
+              {statuses.map((status) => <option key={status} value={status}>{status.replace(/_/g, ' ')}</option>)}
+            </select>
+          </div>
+          {visibleQueue.length ? (
             <ul className={styles.queueList}>
-              {queue.map((item) => (
+              {visibleQueue.map((item) => (
                 <li key={item.id}>
                   <button
                     type="button"
@@ -69,9 +101,16 @@ export default function ExecutiveOperationalWorkbench({ sources = [], onOpenFunc
             </ul>
           ) : (
             <div className={styles.empty}>
-              <strong>No actionable records returned</strong>
-              <p>This is not a zero-work assertion. Check source availability and freshness before concluding the queue is clear.</p>
+              <strong>{queue.length ? 'No records match these filters' : 'No actionable records returned'}</strong>
+              <p>{queue.length ? 'Change the search or status filter to broaden the current view.' : 'This is not a zero-work assertion. Check source availability and freshness before concluding the queue is clear.'}</p>
             </div>
+          )}
+          {filteredQueue.length > pageSize && (
+            <footer className={styles.pagination}>
+              <button type="button" onClick={() => setPage((value) => Math.max(0, value - 1))} disabled={page === 0}>Previous</button>
+              <span>Page {page + 1} of {pageCount}</span>
+              <button type="button" onClick={() => setPage((value) => Math.min(pageCount - 1, value + 1))} disabled={page >= pageCount - 1}>Next</button>
+            </footer>
           )}
         </section>
 
@@ -84,7 +123,7 @@ export default function ExecutiveOperationalWorkbench({ sources = [], onOpenFunc
             <ul className={styles.exceptionList}>
               {exceptions.map((item) => (
                 <li key={item.id}>
-                  <button type="button" onClick={() => setSelectedId(item.id)}>
+                  <button type="button" onClick={() => { setSearchTerm(''); setStatusFilter('ALL'); setPage(0); setSelectedId(item.id); }}>
                     <ShieldAlert size={14} />
                     <span><strong>{item.title}</strong><small>{item.sourceLabel} · {item.status.replace(/_/g, ' ')}</small></span>
                     <ArrowUpRight size={13} />
