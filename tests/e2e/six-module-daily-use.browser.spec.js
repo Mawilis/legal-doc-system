@@ -364,6 +364,11 @@ test('Legal Partner My Work excludes owner CRM, Operations and Intelligence sour
     expect(projection.tenant_id).toBe(state.tenant_id);
     expect(projection.principal_id).toBe(state.actors.partner.principal_id);
     expect(projection.sources_included).toContain('LEGAL');
+    const partnerWorkIds = state.specialist_workflows?.partner?.work_item_ids || [];
+    expect(partnerWorkIds.length).toBeGreaterThan(0);
+    expect(projection.items.map(item => item.work_item_id)).toEqual(
+      expect.arrayContaining(partnerWorkIds),
+    );
     expect(projection.sources_included).not.toContain('CRM');
     expect(projection.sources_included).not.toContain('OPERATIONS');
     expect(projection.sources_included).not.toContain('INTELLIGENCE');
