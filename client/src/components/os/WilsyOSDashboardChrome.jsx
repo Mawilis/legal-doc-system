@@ -1,17 +1,17 @@
 /* eslint-disable */
 /**
  * ╔════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════╗
- * ║ WILSY OS – SHARED DASHBOARD CHROME [V2.0.0-L10-P2C1-INTERACTIVE-COMMAND-CONTRACT]                                                                     ║
- * ║ [EXECUTIVE SHELL | TENANT PLATE | OPERATOR IDENTITY | COLLAPSIBLE RAIL | METRICS STRIP]                                             ║
+ * ║ WILSY OS – SHARED DASHBOARD CHROME [V2.2.0-EOS-MODULE-MANIFEST-NAVIGATION]                                                                     ║
+ * ║ [EXECUTIVE SHELL | SERVER-ISSUED PRODUCT NAVIGATION | TENANT PLATE | OPERATOR IDENTITY]                                             ║
  * ╠════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════╣
- * ║ VERSION: 2.0.0-L10-P2C1-INTERACTIVE-COMMAND-CONTRACT | PRODUCTION READY                                                                                 ║
+ * ║ VERSION: 2.2.0-EOS-MODULE-MANIFEST-NAVIGATION | SERVER-ISSUED PRODUCT NAVIGATION                                                                                 ║
  * ║ EPITOME: SOVEREIGN OPERATING SYSTEM SHELL – CONSISTENT, AUDITABLE, AND EXTENSIBLE                                                    ║
  * ║ ABSOLUTE PATH: /Users/wilsonkhanyezi/legal-doc-system/client/src/components/os/WilsyOSDashboardChrome.jsx                             ║
  * ╠════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════╣
  * ║ 👥 COLLABORATION & SOVEREIGN SIGN‑OFF:                                                                                                 ║
  * ║ • Wilson Khanyezi (CEO/Lead Architect) – Mandated a unified OS shell that enforces brand consistency and provides a solid foundation  ║
  * ║   for all domain HUDs (Billing, CRM, Identity, etc.).                                                                                 ║
- * ║ • AI Engineering (Gemini) – ENGINEERED: Full shell with top rail, search, metrics strip, collapsible left rail, and viewport;          ║
+ * ║ • Engineering: adds tenant-bound EOS product navigation without promoting product entitlement into IAM or route authority.         ║
  * ║   integrated with Auth, Tenants, and Identity contexts.                                                                               ║
  * ║ • Compliance: POPIA §19, GDPR §32, SOC2 §CC7.2, ISO 27001.                                                                           ║
  * ╠════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════╣
