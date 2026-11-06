@@ -95,3 +95,30 @@ describe('authenticated My Work workspace', () => {
     expect(screen.getByText('MY_WORK_SOURCE_UNAVAILABLE')).toBeTruthy();
   });
 });
+
+
+
+describe.each([
+  ['CRM', 'crm-1', '/crm/owner-workspace/work-items/crm-1/complete'],
+  ['INTELLIGENCE', 'intel-1', '/tenant-modules/intelligence/workspace/work-items/intel-1/complete'],
+])('%s source command ownership', (source, workItemId, expectedPath) => {
+  it('routes completion to the owning source service', async () => {
+    const item = {
+      ...payload.items[0],
+      source,
+      source_key: `${source}:${workItemId}`,
+      work_item_id: workItemId,
+      title: `${source} action`,
+      is_overdue: false,
+    };
+    api.get.mockResolvedValue({ data: { ...payload, items: [item], summary: { active_count: 1, overdue_count: 0 } } });
+    renderWorkspace();
+    const note = await screen.findByLabelText(`Completion note for ${item.title}`);
+    fireEvent.change(note, { target: { value: `Verified ${source} completion.` } });
+    fireEvent.click(screen.getByRole('button', { name: 'Complete' }));
+    await waitFor(() => expect(api.post).toHaveBeenCalledWith(
+      expectedPath,
+      { completion_note: `Verified ${source} completion.` },
+    ));
+  });
+});
