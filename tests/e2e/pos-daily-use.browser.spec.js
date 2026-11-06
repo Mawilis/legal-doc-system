@@ -114,9 +114,11 @@ test('POS operator completes authenticated daily-use sale and evidence journey',
 
   const approver = await authenticatedPage(browser, 'tenant_owner');
   try {
+    const approverLocations = await api(approver.page, 'GET', '/api/pos/locations');
+    expect(approverLocations.status, JSON.stringify(approverLocations.payload)).toBe(200);
     const providerUnavailable = await api(approver.page, 'POST',
       `/api/pos/locations/browser-cert-store-01/sales/${saleId}/tenders/tender-${saleId}/execute`);
-    expect(providerUnavailable.status).toBe(503);
+    expect(providerUnavailable.status, JSON.stringify(providerUnavailable.payload)).toBe(503);
     expect(providerUnavailable.payload.detail).toBe('KENNEL_FINANCIAL_MOVEMENT_PROVIDER_UNBOUND');
     const refundUnavailable = await api(approver.page, 'POST',
       `/api/pos/locations/browser-cert-store-01/sales/${saleId}/refund-intents/refund-${saleId}/execute`);
