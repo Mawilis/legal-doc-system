@@ -106,7 +106,7 @@ def assess_commercial_bundle_readiness(
         )
 
     state = (
-        CommercialBundleReadinessState.READY_FOR_ATOMIC_ACTIVATION
+        CommercialBundleReadinessState.PRODUCT_MAPPING_COMPLETE
         if all(item.ready for item in products)
         else CommercialBundleReadinessState.BLOCKED_MISSING_PRODUCT_MAPPING
     )
