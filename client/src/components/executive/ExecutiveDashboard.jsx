@@ -4077,11 +4077,15 @@ const ExecutiveDashboard = ({
     access
   });
 
-  if (loading || access.isLoading) {
+  // Wait for the authoritative access decision, but do not block the
+  // executive workspace shell on every downstream source hydration request.
+  // Source reads remain gated by accessDecision.allowed and hydrate the visible
+  // workspace progressively; a slow optional service must not hide the shell.
+  if (access.isLoading) {
     return (
       <div className={styles.loading}>
         <RefreshCw size={20} className={styles.spin} />
-        <span>Loading Executive Suite</span>
+        <span>Verifying Executive Access</span>
       </div>
     );
   }
@@ -4106,6 +4110,8 @@ const ExecutiveDashboard = ({
     <div
       className={styles.executiveShell}
       data-refreshing={isRefreshing ? 'true' : 'false'}
+      data-executive-hydration={loading ? 'loading' : 'ready'}
+      aria-busy={loading}
       style={{ ...(tenantBranding.cssVars || {}), ...executiveThemeVars }}
       data-wilsy-theme={accountThemeId}
       data-wilsy-mode={accountThemeMode}
