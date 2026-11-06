@@ -121,6 +121,17 @@ def _fingerprint(value: object, code: str) -> str:
     return value
 
 
+def _certificate_fingerprint(value: object) -> str:
+    """Validate the X.509 SHA-256 certificate pin (32 bytes, not SHA3-512)."""
+    if not isinstance(value, str) or len(value) != 64 or any(
+        char not in "0123456789abcdef" for char in value
+    ):
+        raise CommercialAgreementExecutionVerificationError(
+            "COMMERCIAL_EXECUTION_CERTIFICATE_FINGERPRINT_INVALID"
+        )
+    return value
+
+
 def canonical_execution_document(agreement: CommercialAgreement) -> bytes:
     """Return the exact immutable agreement terms that the signatory must sign."""
     payload = {
@@ -227,9 +238,8 @@ class CommercialAgreementExecutionVerifier:
             raise CommercialAgreementExecutionVerificationError(
                 "COMMERCIAL_EXECUTION_DOCUMENT_BINDING_INVALID"
             )
-        cert_fp = _fingerprint(
-            evidence.signing_certificate_fingerprint,
-            "COMMERCIAL_EXECUTION_CERTIFICATE_FINGERPRINT_INVALID",
+        cert_fp = _certificate_fingerprint(
+            evidence.signing_certificate_fingerprint
         )
         payload_fp = hashlib.sha3_512(evidence.signed_document).hexdigest()
         try:
