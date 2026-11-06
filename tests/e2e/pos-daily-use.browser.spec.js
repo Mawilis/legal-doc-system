@@ -46,6 +46,10 @@ async function api(page, method, path, body, key, tenantId = state.tenant_id) {
 test('POS operator completes authenticated daily-use sale and evidence journey', async ({ browser }) => {
   const { context, page, actor } = await authenticatedPage(browser, 'pos_operator');
   try {
+    await page.getByRole('button', { name: /Point of Sale/i }).first().click();
+    await expect(page.getByRole('heading', { name: 'Point of Sale' })).toBeVisible();
+    await expect(page.getByRole('option', { name: 'browser-cert-store-01' })).toBeVisible();
+
     const locations = await api(page, 'GET', '/api/pos/locations');
     expect(locations.status).toBe(200);
     expect(locations.payload.principal_id).toBe(actor.principal_id);
