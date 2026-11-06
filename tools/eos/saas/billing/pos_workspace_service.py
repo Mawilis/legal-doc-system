@@ -178,10 +178,13 @@ class POSWorkspaceService:
                     sale_id: str, cash_received_minor: int, idempotency_key: str,
                     evidence_id: str, session: Any, occurred_at: datetime | None = None) -> dict:
         sale = self._sale(tenant_id=tenant_id, principal_id=principal_id, location_id=location_id, sale_id=sale_id, session=session)
-        cash = record_cash_tender(
-            sale, cash_received_minor, principal_id,
-            (occurred_at or datetime.now(timezone.utc)).isoformat(),
-        )
+        try:
+            cash = record_cash_tender(
+                sale, cash_received_minor, principal_id,
+                (occurred_at or datetime.now(timezone.utc)).isoformat(),
+            )
+        except (ValueError, TypeError) as error:
+            raise POSWorkspaceServiceError("POS_CASH_TENDER_INVALID") from error
         return POSCommercialEvidenceRegistry.record_evidence(
             sale=sale, evidence=cash, evidence_id=evidence_id,
             idempotency_key=idempotency_key, recorded_by_principal_id=principal_id,
