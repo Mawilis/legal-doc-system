@@ -130,8 +130,9 @@ const industryLoaders = {
 };
 
 const roleLoaders = {
-  // POS is a product workspace, not an IAM role; each API independently authorizes every operation.
+  // POS is a product workspace, not financial authority; each API independently authorizes every operation.
   pos_dashboard: () => lazy(() => import('../components/pos/POSWorkspace')),
+  pos_operator: () => lazy(() => import('../components/pos/POSWorkspace')),
   // Executive & Management
   executive: () => lazy(() => import('../components/executive/ExecutiveDashboard')),
   ceo: () => lazy(() => import('../components/executive/ExecutiveDashboard')),
