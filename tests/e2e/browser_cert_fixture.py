@@ -1371,6 +1371,39 @@ def verify(state_path: Path) -> None:
     client = MongoClient(uri, serverSelectionTimeoutMS=5000)
     try:
         database = _owned_database(client)
+        module_entitlements = state.get("module_entitlements")
+        expected_module_products = {
+            "BILLING", "CRM", "HR", "OPERATIONS", "INTELLIGENCE",
+        }
+        if (
+            not isinstance(module_entitlements, dict)
+            or set(module_entitlements) != expected_module_products
+        ):
+            raise RuntimeError("BROWSER_CERT_SIX_MODULE_ENTITLEMENT_STATE_INVALID")
+        history = database["tenant_product_entitlement_history"]
+        current = database["tenant_product_entitlement_current"]
+        legal_entitlement_id = derive_tenant_product_entitlement_id(
+            state["tenant_id"], TenantProductId.LEGAL_OPERATIONS,
+        )
+        expected_entitlements = {
+            **module_entitlements,
+            TenantProductId.LEGAL_OPERATIONS.value: legal_entitlement_id,
+        }
+        with client.start_session() as session:
+            session.start_transaction(read_concern=ReadConcern("snapshot"))
+            for product_key, entitlement_id in expected_entitlements.items():
+                entitlement = entitlement_registry.get_current(
+                    state["tenant_id"], entitlement_id, history, current, session=session,
+                )
+                if (
+                    entitlement.product_id.value != product_key
+                    or entitlement.lifecycle_state is not TenantProductEntitlementState.ACTIVE
+                    or entitlement.lifecycle_revision != 1
+                ):
+                    raise RuntimeError(
+                        f"BROWSER_CERT_MODULE_ENTITLEMENT_NOT_ACTIVE:{product_key}"
+                    )
+            session.commit_transaction()
         specialist_workflows = state.get("specialist_workflows")
         if not isinstance(specialist_workflows, dict) or set(specialist_workflows) != {
             "partner", "attorney", "paralegal", "secretary",
