@@ -1129,12 +1129,78 @@ const SovereignDashboardController = ({ user: propUser, onLogout }) => {
     }
   }
 
+  // Product destinations without their own shared chrome receive a small
+  // controller-owned navigation rail. Its entries come only from the current
+  // EOS tenant module manifest; clicking an entry requests presentation routing
+  // and does not create workspace or API authority.
+  const needsControllerProductNavigation = [
+    DASHBOARD_KEYS.CRM,
+    DASHBOARD_KEYS.OPERATIONS,
+    DASHBOARD_KEYS.INTELLIGENCE,
+    DASHBOARD_KEYS.POS,
+  ].includes(dashboardKey);
+  const controllerProductNavigation = (
+    needsControllerProductNavigation
+    && moduleManifest.status === 'ready'
+    && moduleManifest.tenantId === moduleManifestTenantId
+  ) ? (
+    <nav
+      aria-label="Available WILSY OS products"
+      data-eos-controller-product-navigation="true"
+      style={{
+        display: 'flex',
+        flexWrap: 'wrap',
+        alignItems: 'center',
+        gap: 8,
+        padding: '10px 16px',
+        borderBottom: '1px solid var(--wilsy-border, rgba(128, 128, 128, .24))',
+        background: 'var(--wilsy-surface, #101820)',
+      }}
+    >
+      <span style={{ fontSize: 11, fontWeight: 800, letterSpacing: '.1em', opacity: .7 }}>
+        YOUR PRODUCTS
+      </span>
+      {moduleManifest.modules.map((module) => {
+        const isActive = module.workspaceKey === (
+          dashboardKey === DASHBOARD_KEYS.CRM ? 'CRM_DASHBOARD'
+            : dashboardKey === DASHBOARD_KEYS.OPERATIONS ? 'OPERATIONS_DASHBOARD'
+              : dashboardKey === DASHBOARD_KEYS.INTELLIGENCE ? 'INTELLIGENCE_DASHBOARD'
+                : 'POS_DASHBOARD'
+        );
+        return (
+          <button
+            key={module.moduleId}
+            type="button"
+            data-wilsy-module-entry={module.moduleId}
+            data-active={isActive ? 'true' : 'false'}
+            aria-current={isActive ? 'page' : undefined}
+            onClick={() => handleManualDashboardSwitch(module.workspaceKey)}
+            style={{
+              minHeight: 34,
+              padding: '6px 11px',
+              border: '1px solid var(--wilsy-border, rgba(128, 128, 128, .35))',
+              borderRadius: 8,
+              background: isActive ? 'var(--wilsy-accent-soft, rgba(96, 165, 250, .16))' : 'transparent',
+              color: 'var(--wilsy-text, inherit)',
+              font: 'inherit',
+              fontSize: 12,
+              fontWeight: 650,
+              cursor: 'pointer',
+            }}
+          >
+            {module.label}
+          </button>
+        );
+      })}
+    </nav>
+  ) : null;
+
   // ═══════════════════════════════════════════════════════════════════════════
-  // FIX: Wrap guardedShard in an overflow-enabled container to allow
-  // BillingHUD's padding-bottom:208px to expand without clipping.
+  // BillingHUD may expand vertically; preserve scroll without clipping.
   // ═══════════════════════════════════════════════════════════════════════════
   const guardedShard = (
     <div style={{ overflowX: 'hidden', overflowY: 'auto', minHeight: '100vh', width: '100%' }}>
+      {controllerProductNavigation}
       <ErrorBoundary>
         {dashboardShard}
       </ErrorBoundary>
