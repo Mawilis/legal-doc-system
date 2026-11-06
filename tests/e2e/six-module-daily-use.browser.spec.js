@@ -55,10 +55,8 @@ async function openAuthenticated(browser, actorKey, viewport = { width: 1440, he
 }
 
 async function openModuleNavigation(page) {
-  // The shared product rail is intentionally collapsed on first render.
-  // Open it explicitly; module navigation remains a server-issued projection.
-  const openRail = page.getByRole('button', { name: 'Open workspace modules' });
-  if (await openRail.isVisible()) await openRail.click();
+  // The Executive workspace exposes its exact server-entitled module manifest
+  // in the controller navigation; Legal specialists do not receive this rail.
   await expect(page.getByRole('navigation', { name: 'Available WILSY OS products' })).toBeVisible();
   await expect(page.locator('[data-wilsy-module-entry="LEGAL_OS"]')).toBeVisible();
   const manifestPromise = page.waitForResponse(response => (
