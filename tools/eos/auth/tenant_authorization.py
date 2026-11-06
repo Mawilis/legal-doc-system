@@ -514,4 +514,5 @@ _BINDINGS = MappingProxyType({
     "pos_cash_record": "pos:cash:record",
     "pos_return_create": "pos:return:create",
     "pos_refund_create": "pos:refund:create",
+    "pos_movement_authorize": "pos:payment:authorize",
 })
