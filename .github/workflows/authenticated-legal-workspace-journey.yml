@@ -7,11 +7,19 @@ on:
       - "client/src/components/crm/CRMDashboard.jsx"
       - "client/src/components/crm/OwnerCommercialWorkspace.jsx"
       - "client/src/components/crm/OwnerCommercialWorkspace.module.css"
+      - "client/src/components/os/TenantModuleWorkspace.*"
+      - "client/src/components/os/WilsyOSDashboardChrome.jsx"
+      - "client/src/components/operations/**"
+      - "client/src/components/intelligence/**"
+      - "client/src/components/sovereign/SovereignDashboardController.jsx"
+      - "client/src/services/tenantModuleWorkspaceService.js"
       - "client/src/services/ownerCommercialWorkspaceService.js"
       - "client/vite.config.js"
       - "client/src/contexts/authContext.jsx"
       - "client/src/contexts/tenantContext.jsx"
       - "client/tests/client/App.authenticatedLegalWorkspaceJourney.test.jsx"
+      - "client/tests/client/TenantModuleWorkspace.test.jsx"
+      - "client/tests/client/SovereignDashboardController.test.js"
       - "client/tests/client/App.legalAcceptanceBarrier.test.jsx"
       - "client/tests/contexts/authContext.authoritative.test.jsx"
       - "client/tests/components/auth/TenantIdentityPremium.test.jsx"
@@ -47,6 +55,8 @@ jobs:
         run: >-
           npx vitest run --config vitest.config.js
           tests/client/App.authenticatedLegalWorkspaceJourney.test.jsx
+          tests/client/TenantModuleWorkspace.test.jsx
+          tests/client/SovereignDashboardController.test.js
           tests/client/App.legalAcceptanceBarrier.test.jsx
           tests/contexts/authContext.authoritative.test.jsx
           tests/components/auth/TenantIdentityPremium.test.jsx
