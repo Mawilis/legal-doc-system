@@ -2,6 +2,7 @@ import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { AlertTriangle, CheckCircle2, Circle, Clock3, Loader2, RefreshCw, ShieldCheck } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import api from '../../services/api.js';
+import { completeLegalWorkItem } from '../../services/legalOperationsService.js';
 
 const SOURCE_LABELS = Object.freeze({
   LEGAL: 'Legal',
@@ -34,6 +35,7 @@ export default function MyWorkWorkspace() {
   const [refreshing, setRefreshing] = useState(false);
   const [error, setError] = useState('');
   const [notes, setNotes] = useState({});
+  const [legalEvidence, setLegalEvidence] = useState({});
   const [completing, setCompleting] = useState('');
   const [actionError, setActionError] = useState('');
 
@@ -62,12 +64,20 @@ export default function MyWorkWorkspace() {
   const complete = async (item) => {
     const path = completionPath(item);
     const note = String(notes[item.source_key] || '').trim();
-    if (!path || !note) return;
+    const evidence = legalEvidence[item.source_key] || {};
+    if (item.source === 'LEGAL') {
+      if (!String(evidence.reference || '').trim() || !/^[a-f0-9]{128}$/.test(String(evidence.fingerprint || ''))) return;
+    } else if (!path || !note) return;
     setCompleting(item.source_key);
     setActionError('');
     try {
-      await api.post(path, { completion_note: note });
-      setNotes((current) => ({ ...current, [item.source_key]: '' }));
+      if (item.source === 'LEGAL') {
+        await completeLegalWorkItem({ workItemId: item.work_item_id, completionEvidenceReference: String(evidence.reference).trim(), completionEvidenceFingerprint: String(evidence.fingerprint).trim() });
+        setLegalEvidence((current) => ({ ...current, [item.source_key]: { reference: '', fingerprint: '' } }));
+      } else {
+        await api.post(path, { completion_note: note });
+        setNotes((current) => ({ ...current, [item.source_key]: '' }));
+      }
       await load({ quiet: true });
     } catch (requestError) {
       setActionError(requestError?.response?.data?.detail || 'WORK_ITEM_COMPLETION_UNAVAILABLE');
@@ -155,10 +165,57 @@ export default function MyWorkWorkspace() {
                     <span className="inline-flex items-center gap-1.5"><Circle size={10} /> {item.status}</span>
                     {item.visibility_provenance?.length > 0 && <span>Visibility: {item.visibility_provenance.join(' / ')}</span>}
                   </div>
-                  {path ? (
+                  {item.source === 'LEGAL' ? (
+                    <div className="mt-4 grid gap-2 sm:grid-cols-2" data-legal-completion-evidence="required">
+                      <label className="grid gap-1 text-xs text-slate-400">
+                        Completion evidence reference
+                        <input
+                          aria-label={'Legal completion evidence reference for ' + item.title}
+                          value={legalEvidence[item.source_key]?.reference || ''}
+                          onChange={(event) => setLegalEvidence((current) => ({
+                            ...current,
+                            [item.source_key]: { ...current[item.source_key], reference: event.target.value },
+                          }))}
+                          placeholder="Exact source evidence reference"
+                          maxLength={500}
+                          className="min-w-0 rounded-lg border border-white/10 bg-black/25 px-3 py-2 text-sm text-white outline-none focus:border-amber-400/60"
+                        />
+                      </label>
+                      <label className="grid gap-1 text-xs text-slate-400">
+                        SHA3-512 evidence fingerprint (128 lowercase hex)
+                        <input
+                          aria-label={'Legal completion evidence fingerprint for ' + item.title}
+                          value={legalEvidence[item.source_key]?.fingerprint || ''}
+                          onChange={(event) => setLegalEvidence((current) => ({
+                            ...current,
+                            [item.source_key]: { ...current[item.source_key], fingerprint: event.target.value },
+                          }))}
+                          placeholder="Fingerprint from the evidence source"
+                          maxLength={128}
+                          pattern="[a-f0-9]{128}"
+                          className="min-w-0 rounded-lg border border-white/10 bg-black/25 px-3 py-2 font-mono text-xs text-white outline-none focus:border-amber-400/60"
+                        />
+                      </label>
+                      <p className="sm:col-span-2 text-xs text-slate-500">
+                        The canonical Legal command verifies and records this evidence. My Work does not generate, infer or substitute it.
+                      </p>
+                      <button
+                        onClick={() => complete(item)}
+                        disabled={
+                          !String(legalEvidence[item.source_key]?.reference || '').trim()
+                          || !/^[a-f0-9]{128}$/.test(String(legalEvidence[item.source_key]?.fingerprint || ''))
+                          || completing === item.source_key
+                        }
+                        className="sm:col-span-2 inline-flex items-center justify-center gap-2 rounded-lg bg-amber-400 px-4 py-2 text-sm font-semibold text-slate-950 hover:bg-amber-300 disabled:cursor-not-allowed disabled:opacity-40"
+                      >
+                        {completing === item.source_key ? <Loader2 size={15} className="animate-spin" /> : <CheckCircle2 size={15} />}
+                        Submit evidenced Legal completion
+                      </button>
+                    </div>
+                  ) : path ? (
                     <div className="mt-4 flex flex-col gap-2 sm:flex-row">
                       <input
-                        aria-label={`Completion note for ${item.title}`}
+                        aria-label={'Completion note for ' + item.title}
                         value={notes[item.source_key] || ''}
                         onChange={(event) => setNotes((current) => ({ ...current, [item.source_key]: event.target.value }))}
                         placeholder="Record what was completed…"
@@ -176,9 +233,9 @@ export default function MyWorkWorkspace() {
                     </div>
                   ) : (
                     <div className="mt-4 rounded-lg border border-white/10 bg-black/20 px-3 py-2 text-xs text-slate-400">
-                      Legal completion must be recorded in the owning Legal workflow with its required evidence. This queue does not manufacture a completion command.
+                      No generic completion command is available for this source.
                     </div>
-                  )}
+                  )}}
                 </article>
               );
             })}
