@@ -2,8 +2,9 @@
 // @vitest-environment node
 /**
  * WILSY OS dashboard contract certificate.
- * Dashboard selection is presentation-only and consumes the validated EOS
- * workspace identifier. Role labels and browser preferences are non-authoritative.
+ * Dashboard selection consumes the validated EOS workspace identifier. The
+ * sole exception is a durable Tenant Owner selecting a commercial-only Legal
+ * shell; every commercial read remains server-authorized and practice access stays absent.
  */
 import { readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
