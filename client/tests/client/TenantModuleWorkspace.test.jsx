@@ -127,7 +127,7 @@ describe('independent tenant module daily-use workspace', () => {
     const { rerender } = render(<TenantModuleWorkspace moduleId="OPERATIONS" />);
     expect(await screen.findByText('Publish operations runbook')).toBeInTheDocument();
     tenantContext.activeTenant = { tenantId: 'TENANT-OPS-2', name: 'Second Tenant' };
-    readTenantModuleWorkspace.mockResolvedValue(operationsSnapshot);
+    readTenantModuleWorkspace.mockRejectedValue(new Error('TENANT_MODULE_WORKSPACE_RESPONSE_INVALID'));
     rerender(<TenantModuleWorkspace moduleId="OPERATIONS" />);
     await waitFor(() => expect(readTenantModuleWorkspace).toHaveBeenLastCalledWith('OPERATIONS', 'TENANT-OPS-2'));
     expect(screen.queryByText('Publish operations runbook')).not.toBeInTheDocument();
