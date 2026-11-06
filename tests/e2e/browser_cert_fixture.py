@@ -706,7 +706,9 @@ def _seed_canonical_specialist_workflows(
                     workflow_instance_id=instance_id,
                     target_stage_definition_id=target_stage.stage_definition_id,
                     gate_satisfaction_ids=(),
-                    branch_selection_evidence_reference=None,
+                    branch_selection_evidence_reference=(
+                        f"browser-cert-specialist-branch-selection:{actor_key}:{tenant_id}"
+                    ),
                     transitioned_at=now + timedelta(minutes=1),
                     transition_authorization_evidence_reference=(
                         f"browser-cert-transition-authorization:{actor_key}:{tenant_id}"
