@@ -2,17 +2,18 @@ import React from 'react';
 import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
-const { readTenantModuleWorkspace, createTenantModuleWorkItem, completeTenantModuleWorkItem } = vi.hoisted(() => ({
+const { readTenantModuleWorkspace, createTenantModuleWorkItem, completeTenantModuleWorkItem, tenantContext } = vi.hoisted(() => ({
   readTenantModuleWorkspace: vi.fn(),
   createTenantModuleWorkItem: vi.fn(),
   completeTenantModuleWorkItem: vi.fn(),
+  tenantContext: { activeTenant: { tenantId: 'TENANT-OPS-1', name: 'Test Tenant' } },
 }));
 
 vi.mock('../../src/contexts/authContext.jsx', () => ({
   useAuth: () => ({ user: { id: 'principal-module-test', role: 'TENANT_OWNER', tenantId: 'TENANT-OPS-1' }, tenant: { tenantId: 'TENANT-OPS-1' } }),
 }));
 vi.mock('../../src/contexts/tenantContext.jsx', () => ({
-  useTenants: () => ({ activeTenant: { tenantId: 'TENANT-OPS-1', name: 'Test Tenant' } }),
+  useTenants: () => tenantContext,
 }));
 vi.mock('../../src/components/os/WilsyOSDashboardChrome.jsx', () => ({
   default: ({ children }) => <div data-testid="authenticated-os-chrome">{children}</div>,
@@ -49,6 +50,7 @@ const operationsSnapshot = {
 
 describe('independent tenant module daily-use workspace', () => {
   beforeEach(() => {
+    tenantContext.activeTenant = { tenantId: 'TENANT-OPS-1', name: 'Test Tenant' };
     readTenantModuleWorkspace.mockReset();
     createTenantModuleWorkItem.mockReset();
     completeTenantModuleWorkItem.mockReset();
@@ -82,6 +84,54 @@ describe('independent tenant module daily-use workspace', () => {
     await waitFor(() => expect(completeTenantModuleWorkItem).toHaveBeenCalledWith(
       'OPERATIONS', 'tmw-ops-1', expect.any(String),
     ));
+  });
+
+  it('refreshes from EOS and re-reads on workspace re-entry', async () => {
+    const { unmount } = render(<TenantModuleWorkspace moduleId="OPERATIONS" />);
+    expect(await screen.findByText('Publish operations runbook')).toBeInTheDocument();
+    fireEvent.click(screen.getByRole('button', { name: 'Refresh EOS' }));
+    await waitFor(() => expect(readTenantModuleWorkspace).toHaveBeenCalledTimes(2));
+    unmount();
+    render(<TenantModuleWorkspace moduleId="OPERATIONS" />);
+    expect(await screen.findByText('Publish operations runbook')).toBeInTheDocument();
+    await waitFor(() => expect(readTenantModuleWorkspace).toHaveBeenCalledTimes(3));
+  });
+
+  it('creates and completes Intelligence work only through its own EOS queue', async () => {
+    const intelligenceSnapshot = {
+      ...operationsSnapshot,
+      productId: 'INTELLIGENCE',
+      workspaceKey: 'INTELLIGENCE_DASHBOARD',
+      items: [{
+        ...operationsSnapshot.items[0],
+        work_item_id: 'tmw-intel-1',
+        title: 'Validate quarterly insight',
+      }],
+    };
+    readTenantModuleWorkspace.mockResolvedValue(intelligenceSnapshot);
+    render(<TenantModuleWorkspace moduleId="INTELLIGENCE" />);
+    expect(await screen.findByText('Validate quarterly insight')).toBeInTheDocument();
+    fireEvent.change(screen.getByLabelText('Action title'), { target: { value: 'Review decision evidence' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Create action' }));
+    await waitFor(() => expect(createTenantModuleWorkItem).toHaveBeenCalledWith('INTELLIGENCE', expect.objectContaining({
+      title: 'Review decision evidence',
+      kind: 'TASK',
+    }), expect.any(String)));
+    fireEvent.click(await screen.findByRole('button', { name: 'Complete' }));
+    await waitFor(() => expect(completeTenantModuleWorkItem).toHaveBeenCalledWith(
+      'INTELLIGENCE', 'tmw-intel-1', expect.any(String),
+    ));
+  });
+
+  it('never displays the previous tenant queue after active tenant changes', async () => {
+    const { rerender } = render(<TenantModuleWorkspace moduleId="OPERATIONS" />);
+    expect(await screen.findByText('Publish operations runbook')).toBeInTheDocument();
+    tenantContext.activeTenant = { tenantId: 'TENANT-OPS-2', name: 'Second Tenant' };
+    readTenantModuleWorkspace.mockResolvedValue(operationsSnapshot);
+    rerender(<TenantModuleWorkspace moduleId="OPERATIONS" />);
+    await waitFor(() => expect(readTenantModuleWorkspace).toHaveBeenLastCalledWith('OPERATIONS', 'TENANT-OPS-2'));
+    expect(screen.queryByText('Publish operations runbook')).not.toBeInTheDocument();
+    expect(await screen.findByRole('alert')).toHaveTextContent('valid module workspace');
   });
 
   it('does not display cached/sample work when the module is denied or unavailable', async () => {
