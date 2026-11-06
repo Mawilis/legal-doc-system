@@ -89,7 +89,7 @@ def test_route_rejects_context_from_a_different_tenant_or_principal():
 def test_route_registers_four_independent_optional_iam_dependencies():
     endpoint = next(
         item.endpoint for item in route.router.routes
-        if getattr(item, "path", None) == ""
+        if getattr(item, "name", None) == "read_my_work"
     )
     names = set(endpoint.__annotations__)
     assert "legal_context" in names
