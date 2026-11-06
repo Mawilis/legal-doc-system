@@ -140,7 +140,41 @@ test(
 
     expect(String(bootstrapPayload.workspace?.businessRole || '').toUpperCase()).toBe('TENANT_OWNER');
     expect(bootstrapPayload.workspace?.workspaceId).toBe('EXECUTIVE_COMMAND_CENTRE');
-    await expect(page.locator('[data-active-workspace="workbench"]')).toBeVisible();
+
+    const browserErrors = [];
+    page.on('pageerror', (error) => browserErrors.push(error.message));
+    page.on('console', (message) => {
+      if (message.type() === 'error') browserErrors.push(message.text());
+    });
+    const accessProbe = page.locator('[data-executive-access-state]');
+    await expect(accessProbe.or(page.locator('[data-active-workspace="workbench"]'))).toBeVisible({
+      timeout: 10000,
+    });
+    const executiveAccess = await accessProbe.count()
+      ? await accessProbe.first().evaluate((element) => ({
+        state: element.dataset.executiveAccessState,
+        isLoading: element.dataset.executiveAccessLoading,
+        allowed: element.dataset.executiveAccessAllowed,
+        reason: element.dataset.executiveAccessReason || null,
+        role: element.dataset.executiveAccessRole,
+        principalTenantId: element.dataset.executiveAccessPrincipalTenant,
+        activeTenantId: element.dataset.executiveAccessActiveTenant,
+        tenantMatch: element.dataset.executiveAccessTenantMatch,
+      }))
+      : { state: 'executive-shell-not-mounted' };
+    const renderedSurface = await page.locator('body').innerText().catch(() => '');
+    const diagnostic = JSON.stringify({
+      url: page.url(),
+      workspaceId: bootstrapPayload.workspace?.workspaceId,
+      businessRole: bootstrapPayload.workspace?.businessRole,
+      executiveAccess,
+      renderedSurface: renderedSurface.slice(0, 5000),
+      browserErrors: browserErrors.slice(0, 30),
+    }, null, 2);
+    await expect(
+      page.locator('[data-active-workspace="workbench"]'),
+      `Tenant Owner Executive workspace diagnostics:\\n${diagnostic}`,
+    ).toBeVisible();
     await expect(page.getByRole('table', { name: 'Suggested executive work queue' })).toBeVisible();
     await expect(page.getByRole('button', { name: 'LEGAL OS', exact: true })).toBeVisible();
 
