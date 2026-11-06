@@ -4105,8 +4105,10 @@ function LegalPracticeWorkspace({
         liveSyncLabel: 'Refresh truth',
         onLiveSync: onRefresh,
         isRefreshing: refreshing,
-        primaryActionLabel: canIntake ? 'New instruction' : 'Open instructions',
-        onPrimaryAction: () => setActiveView(
+        primaryActionLabel: error
+          ? undefined
+          : canIntake ? 'New instruction' : 'Open instructions',
+        onPrimaryAction: error ? undefined : () => setActiveView(
           canIntake
             ? PRACTICE_WORKSPACE_VIEWS.INTAKE
             : PRACTICE_WORKSPACE_VIEWS.INSTRUCTIONS,
