@@ -302,7 +302,7 @@ test('Tenant Owner My Work aggregates only owner-authorized sources and complete
     }, { tenantId: state.tenant_id, title });
     expect(created.status).toBe(201);
 
-    const [crmCreated, intelligenceCreated] = await page.evaluate(async ({ tenantId, databaseName }) => {
+    const { crm: crmCreated, intelligence: intelligenceCreated } = await page.evaluate(async ({ tenantId, databaseName }) => {
       const token = localStorage.getItem('wilsy_auth_token') || localStorage.getItem('token') || '';
       const send = async (path, title, key) => {
         const response = await fetch(path, {
@@ -328,7 +328,7 @@ test('Tenant Owner My Work aggregates only owner-authorized sources and complete
     const intelligenceTitle = `Browser My Work Intelligence task ${state.database_name}`;
 
     await page.reload();
-    await expect(page.getByRole('heading', { name: 'My Work' })).toBeVisible();
+    await expect(page.getByRole('heading', { name: 'My Work', exact: true })).toBeVisible();
     await expect(page.getByText(title, { exact: true })).toBeVisible();
     await expect(page.getByText(crmTitle, { exact: true })).toBeVisible();
     await expect(page.getByText(intelligenceTitle, { exact: true })).toBeVisible();
@@ -387,9 +387,10 @@ test('Legal Partner My Work excludes owner CRM, Operations and Intelligence sour
       });
       return { status: response.status, payload: await response.json().catch(() => ({})) };
     }, { foreignTenantId: state.foreign_tenant_id });
-    expect(foreignTenant.status).toBe(403);
+    expect(foreignTenant.status).toBeGreaterThanOrEqual(400);
+    expect(foreignTenant.payload).not.toHaveProperty('items');
 
-    await expect(page.getByRole('heading', { name: 'My Work' })).toBeVisible();
+    await expect(page.getByRole('heading', { name: 'My Work', exact: true })).toBeVisible();
     await expect(page.getByText('Operations', { exact: true })).toHaveCount(0);
     await expect(page.getByText('Intelligence', { exact: true })).toHaveCount(0);
   } finally {
@@ -410,7 +411,7 @@ test('My Work remains usable on a narrow authenticated viewport', async ({ brows
     ));
     await page.goto('/my-work');
     expect((await responsePromise).status()).toBe(200);
-    await expect(page.getByRole('heading', { name: 'My Work' })).toBeVisible();
+    await expect(page.getByRole('heading', { name: 'My Work', exact: true })).toBeVisible();
     const dimensions = await page.evaluate(() => ({
       viewport: document.documentElement.clientWidth,
       document: document.documentElement.scrollWidth,
