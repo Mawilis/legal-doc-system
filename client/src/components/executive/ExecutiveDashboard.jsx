@@ -4083,7 +4083,18 @@ const ExecutiveDashboard = ({
   // workspace progressively; a slow optional service must not hide the shell.
   if (access.isLoading) {
     return (
-      <div className={styles.loading}>
+      <div
+        className={styles.loading}
+        data-executive-access-state="loading"
+        data-executive-access-loading={String(access.isLoading)}
+        data-executive-access-allowed={String(accessDecision.allowed)}
+        data-executive-access-role={access.userRole || ''}
+        data-executive-access-principal-tenant={access.tenantId || ''}
+        data-executive-access-active-tenant={tenantId || ''}
+        data-executive-access-tenant-match={String(Boolean(
+          access.tenantId && tenantId && access.tenantId === tenantId
+        ))}
+      >
         <RefreshCw size={20} className={styles.spin} />
         <span>Verifying Executive Access</span>
       </div>
@@ -4092,7 +4103,19 @@ const ExecutiveDashboard = ({
 
   if (!accessDecision.allowed) {
     return (
-      <div className={styles.accessDenied}>
+      <div
+        className={styles.accessDenied}
+        data-executive-access-state="denied"
+        data-executive-access-loading={String(access.isLoading)}
+        data-executive-access-allowed={String(accessDecision.allowed)}
+        data-executive-access-reason={accessDecision.reason}
+        data-executive-access-role={access.userRole || ''}
+        data-executive-access-principal-tenant={access.tenantId || ''}
+        data-executive-access-active-tenant={tenantId || ''}
+        data-executive-access-tenant-match={String(Boolean(
+          access.tenantId && tenantId && access.tenantId === tenantId
+        ))}
+      >
         <div>
           <AlertTriangle size={28} />
           <span>EXECUTIVE ACCESS DENIED</span>
