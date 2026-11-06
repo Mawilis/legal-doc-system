@@ -1,7 +1,7 @@
 """Direct certificate for the D22B3 product commercial feature mapping.
 
 TITLE: Product Commercial Feature Mapping Direct Certificate
-VERSION: v1.0.0-D22B3-PRODUCT-COMMERCIAL-FEATURE-CERT
+VERSION: v1.1.0-D22B3-ALL-CATALOGUED-PRODUCT-MAPPINGS-CERT
 AUTHORITY: Wilsy OS Core Governance
 EPITOME: Prove exact immutable product/feature mappings, D22A catalogue binding,
          deterministic integrity, uniqueness and absence of runtime authority.
@@ -11,7 +11,7 @@ COLLABORATION / OWNERSHIP: Direct pure-domain certificate for D22B3 metadata;
                             must obtain authoritative subscription truth.
 CERTIFICATION / UPDATE DATE: 2026-10-09
 CHANGELOG: v1.0.0-D22B3-PRODUCT-COMMERCIAL-FEATURE-CERT establishes adversarial
-           evidence for exact Legal/CRM mappings, unmapped/unknown failures,
+           evidence for exact four-product mappings and unknown failures,
            immutability, uniqueness, catalogue binding and authority absence.
 COMPLIANCE: POPIA section 19; GDPR Article 32; SOC 2 CC7.2; ISO 27001.
 SECURITY / PRIVACY POSTURE: Pure synthetic assertions; no tenant or credentials.
@@ -37,26 +37,20 @@ from tools.eos.saas.entitlement.product_catalogue import (
 )
 
 
-def test_exact_legal_and_crm_mappings_bind_d22a() -> None:
-    """Legal and CRM map exactly and carry their current D22A fingerprints."""
-    legal = mapping.get_product_commercial_feature(TenantProductId.LEGAL_OPERATIONS)
-    crm = mapping.get_product_commercial_feature(TenantProductId.CRM)
-    assert legal.feature_id == "legal.core"
-    assert crm.feature_id == "crm.core"
-    assert legal.product_catalogue_fingerprint == get_tenant_product(
-        TenantProductId.LEGAL_OPERATIONS
-    ).fingerprint
-    assert crm.product_catalogue_fingerprint == get_tenant_product(
-        TenantProductId.CRM
-    ).fingerprint
-
-
-@pytest.mark.parametrize("product_id", [TenantProductId.BILLING, TenantProductId.HR])
-def test_known_unmapped_products_fail_closed(product_id: TenantProductId) -> None:
-    """Billing and HR remain explicitly unmapped without invented identities."""
-    with pytest.raises(mapping.ProductCommercialFeatureMappingError) as raised:
-        mapping.get_product_commercial_feature(product_id)
-    assert raised.value.code == "PRODUCT_COMMERCIAL_FEATURE_UNMAPPED"
+def test_all_four_catalogued_products_have_exact_d22a_bound_mappings() -> None:
+    """Every selectable product maps to one explicit canonical feature identity."""
+    expected = {
+        TenantProductId.LEGAL_OPERATIONS: "legal.core",
+        TenantProductId.BILLING: "billing.core",
+        TenantProductId.CRM: "crm.core",
+        TenantProductId.HR: "hr.core",
+    }
+    for product_id, feature_id in expected.items():
+        descriptor = mapping.get_product_commercial_feature(product_id)
+        assert descriptor.feature_id == feature_id
+        assert descriptor.product_catalogue_fingerprint == get_tenant_product(
+            product_id
+        ).fingerprint
 
 
 def test_unknown_product_fails_distinctly() -> None:
@@ -143,15 +137,19 @@ def test_catalogue_drift_and_stored_fingerprint_drift_reject() -> None:
 
 
 def test_mapping_is_immutable_and_listing_is_exact_deterministic_unique() -> None:
-    """Listing exposes only Legal then CRM with bijective identities."""
+    """Listing exposes all four products in canonical D22A order."""
     first = mapping.list_product_commercial_features()
     second = mapping.list_product_commercial_features()
     assert first == second
     assert tuple(item.product_id for item in first) == (
         TenantProductId.LEGAL_OPERATIONS,
+        TenantProductId.BILLING,
         TenantProductId.CRM,
+        TenantProductId.HR,
     )
-    assert tuple(item.feature_id for item in first) == ("legal.core", "crm.core")
+    assert tuple(item.feature_id for item in first) == (
+        "legal.core", "billing.core", "crm.core", "hr.core"
+    )
     assert len({item.product_id for item in first}) == len(first)
     assert len({item.feature_id for item in first}) == len(first)
     with pytest.raises(FrozenInstanceError):
