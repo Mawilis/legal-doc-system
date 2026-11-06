@@ -21,6 +21,7 @@ on:
       - "tests/unit/test_commercial_agreement_http_authority.py"
       - "tests/unit/test_commercial_agreement.py"
       - "tests/integration/test_commercial_agreement_registry_real_mongo.py"
+      - "tests/integration/test_commercial_agreement_http_real_mongo.py"
       - ".github/workflows/eos-commercial-agreement-certification.yml"
   pull_request:
     paths:
@@ -90,7 +91,7 @@ jobs:
           python -m pytest -q tests/unit/test_commercial_agreement.py tests/unit/test_commercial_offer_catalogue.py tests/unit/test_commercial_agreement_http_authority.py tests/unit/test_commercial_bundle_readiness.py tests/unit/test_permission_namespace.py tests/unit/test_roles.py
       - name: Run commercial agreement real replica-set tests
         run: |
-          python -m pytest -q tests/integration/test_commercial_agreement_registry_real_mongo.py
+          python -m pytest -q tests/integration/test_commercial_agreement_registry_real_mongo.py tests/integration/test_commercial_agreement_http_real_mongo.py
       - name: Enforce repository integrity
         run: |
           python tools/eos/governance/repository_integrity_guard.py --commit "$GITHUB_SHA"
