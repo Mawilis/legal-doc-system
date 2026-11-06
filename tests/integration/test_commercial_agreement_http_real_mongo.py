@@ -286,10 +286,11 @@ class _TrustedExecutionVerifier:
 
     def __init__(self, principal_id: str) -> None:
         self.principal_id = principal_id
+        self.signed_at = datetime.now(timezone.utc) - timedelta(seconds=30)
 
     def verify(self, *, agreement: Any, evidence_reference: str) -> VerifiedCommercialAgreementExecutionEvidence:
         assert evidence_reference == "evidence:trusted-test-provider:001"
-        signed_at = datetime.now(timezone.utc) - timedelta(seconds=30)
+        signed_at = self.signed_at
         return VerifiedCommercialAgreementExecutionEvidence(
             tenant_id=agreement.tenant_id,
             agreement_id=agreement.agreement_id,
@@ -460,9 +461,10 @@ def test_authenticated_execution_activation_and_entitlement_readback_real_mongo(
         mongo_context, tenant=tenant, principal=principal,
         business_role="tenant_owner", grant_role="ENTERPRISE_ADMIN",
     )
+    trusted_verifier = _TrustedExecutionVerifier(principal)
     monkeypatch.setattr(
         agreement_api, "_execution_verifier",
-        lambda _request: _TrustedExecutionVerifier(principal),
+        lambda _request: trusted_verifier,
     )
     payload = _draft_payload("agreement-full-journey")
     payload["offer_id"] = "ENTERPRISE_OPERATIONS_BUNDLE"
