@@ -465,7 +465,7 @@ def test_authenticated_execution_activation_and_entitlement_readback_real_mongo(
         lambda _request: _TrustedExecutionVerifier(principal),
     )
     payload = _draft_payload("agreement-full-journey")
-    payload["offer_id"] = "ENTERPRISE_OPERATIONS"
+    payload["offer_id"] = "ENTERPRISE_OPERATIONS_BUNDLE"
     payload["effective_at"] = (now - timedelta(days=1)).isoformat()
     payload["expires_at"] = (now + timedelta(days=365)).isoformat()
     headers = {"X-Tenant-ID": tenant}
