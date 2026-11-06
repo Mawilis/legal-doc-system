@@ -53,6 +53,8 @@ LEGAL_OPERATIONS_COMMERCIAL_FEATURE_ID: Final[str] = "legal.core"
 CRM_COMMERCIAL_FEATURE_ID: Final[str] = "crm.core"
 BILLING_COMMERCIAL_FEATURE_ID: Final[str] = "billing.core"
 HR_COMMERCIAL_FEATURE_ID: Final[str] = "hr.core"
+OPERATIONS_COMMERCIAL_FEATURE_ID: Final[str] = "operations.core"
+INTELLIGENCE_COMMERCIAL_FEATURE_ID: Final[str] = "intelligence.core"
 
 
 class ProductCommercialFeatureMappingError(ValueError):
@@ -69,6 +71,8 @@ _FEATURE_BY_PRODUCT: Final[dict[TenantProductId, str]] = {
     TenantProductId.BILLING: BILLING_COMMERCIAL_FEATURE_ID,
     TenantProductId.CRM: CRM_COMMERCIAL_FEATURE_ID,
     TenantProductId.HR: HR_COMMERCIAL_FEATURE_ID,
+    TenantProductId.OPERATIONS: OPERATIONS_COMMERCIAL_FEATURE_ID,
+    TenantProductId.INTELLIGENCE: INTELLIGENCE_COMMERCIAL_FEATURE_ID,
 }
 
 
@@ -242,6 +246,8 @@ __all__ = [
     "BILLING_COMMERCIAL_FEATURE_ID",
     "CRM_COMMERCIAL_FEATURE_ID",
     "HR_COMMERCIAL_FEATURE_ID",
+    "OPERATIONS_COMMERCIAL_FEATURE_ID",
+    "INTELLIGENCE_COMMERCIAL_FEATURE_ID",
     "LEGAL_OPERATIONS_COMMERCIAL_FEATURE_ID",
     "ProductCommercialFeatureDescriptor",
     "ProductCommercialFeatureMappingError",
