@@ -1080,6 +1080,26 @@ ELIGIBILITY = MappingProxyType(_agreement_eligibility)
 # END OF WILSY OS SOVEREIGN ARTIFACT
 
 
+# Tenant Owner may read the tenant's platform dunning projection and emit
+# allowlisted telemetry. Neither operation grants dunning evaluation or lifecycle
+# authority; all writes remain bounded by the telemetry event schema.
+OPERATIONS = frozenset((*OPERATIONS, "billing_dunning_projection_read", "telemetry_event_write"))
+BUSINESS_ROLE_OPERATION_PERMISSIONS = MappingProxyType({
+    **BUSINESS_ROLE_OPERATION_PERMISSIONS,
+    "billing_dunning_projection_read": "billing_dunning:projection:read",
+    "telemetry_event_write": "telemetry:event:write",
+})
+_dunning_telemetry_eligibility = dict(ELIGIBILITY)
+for _read_role in ("tenant_owner", "tenant_admin", "tenant_manager", "tenant_auditor"):
+    _read_row = dict(_dunning_telemetry_eligibility[_read_role])
+    _read_row["billing_dunning_projection_read"] = ELIGIBLE
+    _dunning_telemetry_eligibility[_read_role] = MappingProxyType(_read_row)
+for _telemetry_role in ("tenant_owner", "tenant_admin", "tenant_manager"):
+    _telemetry_row = dict(_dunning_telemetry_eligibility[_telemetry_role])
+    _telemetry_row["telemetry_event_write"] = ELIGIBLE
+    _dunning_telemetry_eligibility[_telemetry_role] = MappingProxyType(_telemetry_row)
+ELIGIBILITY = MappingProxyType(_dunning_telemetry_eligibility)
+
 # POS business eligibility is separate from permission possession and the
 # independently persisted principal/location assignment.
 POS_OPERATIONS = (
