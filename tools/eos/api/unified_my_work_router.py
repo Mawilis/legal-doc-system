@@ -90,10 +90,15 @@ def _read_module(slug: str, *, tenant_id: str) -> dict[str, Any]:
             "items": list(readback["items"]),
         }
 
-    return module_source._transaction(product_id, collection_name, read)
+    try:
+        return module_source._transaction(product_id, collection_name, read)
+    except HTTPException as error:
+        if error.status_code == 403 and error.detail == "MODULE_WORK_PRODUCT_NOT_ENTITLED":
+            return None
+        raise
 
 
-def _read_crm(*, tenant_id: str) -> dict[str, Any]:
+def _read_crm(*, tenant_id: str) -> dict[str, Any] | None:
     def read(service: Any, session: Any) -> dict[str, Any]:
         queue = service.daily_queue(
             tenant_id=tenant_id,
@@ -102,7 +107,12 @@ def _read_crm(*, tenant_id: str) -> dict[str, Any]:
         )
         return {"tenant_id": tenant_id, "items": list(queue)}
 
-    return crm_source._transaction(read)
+    try:
+        return crm_source._transaction(read)
+    except HTTPException as error:
+        if error.status_code == 403 and error.detail == "OWNER_WORK_LEGAL_NOT_ENTITLED":
+            return None
+        raise
 
 
 @router.get("")
@@ -162,12 +172,12 @@ async def read_my_work(
         ) from error
 
     result["sources_included"] = [
-        source for source, context in (
-            ("LEGAL", legal_context),
-            ("OPERATIONS", operations_context),
-            ("INTELLIGENCE", intelligence_context),
-            ("CRM", crm_context),
-        ) if context is not None
+        source for source, payload in (
+            ("LEGAL", legal),
+            ("OPERATIONS", operations),
+            ("INTELLIGENCE", intelligence),
+            ("CRM", crm),
+        ) if payload is not None
     ]
     result["authority"]["permits_source_commands"] = False
     result["authority"]["source_read_transactions"] = "INDEPENDENT_OWNER_BOUNDARIES"
