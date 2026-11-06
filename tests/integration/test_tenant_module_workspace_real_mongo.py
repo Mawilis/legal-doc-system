@@ -8,6 +8,9 @@ from typing import Any, Iterator
 from urllib.parse import parse_qs, urlparse
 
 import pytest
+from fastapi import FastAPI
+from fastapi.testclient import TestClient
+from types import SimpleNamespace
 from pymongo import MongoClient
 from pymongo.errors import PyMongoError
 from pymongo.read_concern import ReadConcern
@@ -23,6 +26,7 @@ from tools.eos.workspaces.domain.tenant_module_work_item import ModuleWorkKind, 
 from tools.eos.workspaces.persistence.tenant_module_work_registry import (
     TenantModuleWorkRegistry, ensure_indexes as ensure_work_indexes,
 )
+from tools.eos.api import tenant_module_workspace_router as module_router
 from tools.eos.workspaces.service.tenant_module_workspace_service import (
     TenantModuleWorkspaceError, TenantModuleWorkspaceService,
 )
@@ -167,3 +171,84 @@ def test_real_replica_set_proves_module_entitlement_and_queue_isolation(mongo_co
         transact(client, lambda session: missing.daily_queue(
             tenant_id="OTHER-TENANT", now=NOW, session=session,
         ))
+
+
+
+def test_authenticated_module_http_commands_enforce_entitlement_and_isolated_collections(
+    mongo_context, monkeypatch,
+):
+    client, database, history, current = mongo_context
+    activate_product(client, TENANT, TenantProductId.OPERATIONS, history, current)
+    activate_product(client, TENANT, TenantProductId.INTELLIGENCE, history, current)
+
+    app = FastAPI()
+    app.include_router(module_router.router)
+    operations_context = SimpleNamespace(
+        tenant_id=TENANT,
+        identity=SimpleNamespace(identity_id="principal-operations-owner"),
+    )
+    intelligence_context = SimpleNamespace(
+        tenant_id=TENANT,
+        identity=SimpleNamespace(identity_id="principal-intelligence-owner"),
+    )
+    dependencies = {}
+    for route in module_router.router.routes:
+        dependency = route.dependant.dependencies[0].call
+        dependencies[route.path] = dependency
+        context = intelligence_context if "/intelligence/" in route.path else operations_context
+        app.dependency_overrides[dependency] = lambda context=context: context
+
+    monkeypatch.setattr(module_router, "get_client", lambda: client)
+    monkeypatch.setattr(module_router, "get_database", lambda: database)
+
+    with TestClient(app) as http:
+        created_ops = http.post(
+            "/tenant-modules/operations/workspace/work-items",
+            headers={"Idempotency-Key": "http-operations-1"},
+            json={"title": "Approve operating cadence", "kind": "TASK", "priority": "HIGH"},
+        )
+        assert created_ops.status_code == 201
+        assert created_ops.json()["tenant_id"] == TENANT
+        assert created_ops.json()["created_by_principal_id"] == "principal-operations-owner"
+
+        created_intel = http.post(
+            "/tenant-modules/intelligence/workspace/work-items",
+            headers={"Idempotency-Key": "http-intelligence-1"},
+            json={"title": "Validate quarterly insight", "kind": "TASK", "priority": "NORMAL"},
+        )
+        assert created_intel.status_code == 201
+        assert created_intel.json()["created_by_principal_id"] == "principal-intelligence-owner"
+
+        operations_queue = http.get("/tenant-modules/operations/workspace")
+        intelligence_queue = http.get("/tenant-modules/intelligence/workspace")
+        assert operations_queue.status_code == intelligence_queue.status_code == 200
+        assert operations_queue.json()["product_id"] == "OPERATIONS"
+        assert operations_queue.json()["workspace_key"] == "OPERATIONS_DASHBOARD"
+        assert [item["title"] for item in operations_queue.json()["items"]] == ["Approve operating cadence"]
+        assert intelligence_queue.json()["product_id"] == "INTELLIGENCE"
+        assert intelligence_queue.json()["workspace_key"] == "INTELLIGENCE_DASHBOARD"
+        assert [item["title"] for item in intelligence_queue.json()["items"]] == ["Validate quarterly insight"]
+
+        forged = http.post(
+            "/tenant-modules/operations/workspace/work-items",
+            headers={"Idempotency-Key": "http-operations-forged"},
+            json={"title": "Forged", "tenant_id": "OTHER-TENANT", "product_id": "INTELLIGENCE"},
+        )
+        assert forged.status_code == 422
+
+        completed = http.post(
+            f"/tenant-modules/operations/workspace/work-items/{created_ops.json()['work_item_id']}/complete",
+            json={"completion_note": "Cadence approved"},
+        )
+        assert completed.status_code == 200
+        assert completed.json()["status"] == "COMPLETED"
+
+        other_tenant = SimpleNamespace(
+            tenant_id="OTHER-TENANT",
+            identity=SimpleNamespace(identity_id="principal-other-tenant"),
+        )
+        app.dependency_overrides[dependencies["/tenant-modules/operations/workspace"]] = (
+            lambda: other_tenant
+        )
+        denied = http.get("/tenant-modules/operations/workspace")
+        assert denied.status_code == 403
