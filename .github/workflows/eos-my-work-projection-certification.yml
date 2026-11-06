@@ -6,7 +6,12 @@ on:
       - cert/l8-8m-exact-head-20261106
     paths:
       - "tools/eos/workspaces/service/unified_my_work_projection.py"
+      - "tools/eos/api/tenant_authorization_http.py"
+      - "tools/eos/api/unified_my_work_router.py"
+      - "tools/eos/api/server.py"
       - "tests/unit/test_unified_my_work_projection.py"
+      - "tests/unit/test_optional_tenant_authorization.py"
+      - "tests/unit/test_unified_my_work_router.py"
       - ".github/workflows/eos-my-work-projection-certification.yml"
   push:
     branches:
@@ -32,7 +37,11 @@ jobs:
         with:
           python-version: "3.12"
           cache: "pip"
-      - name: Install test runner
-        run: python -m pip install --disable-pip-version-check pytest
-      - name: Run focused projection certification
-        run: python -m pytest -q tests/unit/test_unified_my_work_projection.py
+      - name: Install runtime and test dependencies
+        run: python -m pip install --disable-pip-version-check -r requirements.txt pytest
+      - name: Run authenticated My Work certification
+        run: >-
+          python -m pytest -q
+          tests/unit/test_unified_my_work_projection.py
+          tests/unit/test_optional_tenant_authorization.py
+          tests/unit/test_unified_my_work_router.py
