@@ -30,7 +30,7 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 30
     env:
-      TEST_VENDOR_MONGO_URI: mongodb://127.0.0.1:27017/?replicaSet=posWorkspaceCertRS
+      TEST_VENDOR_MONGO_URI: mongodb://127.0.0.1:27017/?replicaSet=wilsyVendorCertRS
       PIP_DISABLE_PIP_VERSION_CHECK: "1"
     steps:
       - uses: actions/checkout@v4
@@ -43,7 +43,7 @@ jobs:
           python -m pip install -r requirements.txt pytest==9.1.1
       - name: Start isolated Mongo replica set
         run: |
-          docker run --detach --name pos-workspace-cert-mongo --publish 27017:27017 mongo:7.0.37 mongod --replSet posWorkspaceCertRS --bind_ip_all
+          docker run --detach --name pos-workspace-cert-mongo --publish 27017:27017 mongo:7.0.37 mongod --replSet wilsyVendorCertRS --bind_ip_all
       - name: Initialize writable replica set
         run: |
           python - <<'PY'
@@ -57,7 +57,7 @@ jobs:
               try:
                   hello = client.admin.command("hello")
                   if not initiated and not hello.get("setName"):
-                      client.admin.command({"replSetInitiate": {"_id": "posWorkspaceCertRS", "members": [{"_id": 0, "host": "127.0.0.1:27017"}]}})
+                      client.admin.command({"replSetInitiate": {"_id": "wilsyVendorCertRS", "members": [{"_id": 0, "host": "127.0.0.1:27017"}]}})
                       initiated = True
                   if client.admin.command("hello").get("isWritablePrimary"):
                       break
