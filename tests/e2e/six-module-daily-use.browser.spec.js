@@ -17,7 +17,7 @@ if (!statePath) throw new Error('BROWSER_CERT_STATE_REQUIRED');
 const state = JSON.parse(fs.readFileSync(statePath, 'utf8'));
 
 const moduleIds = Object.freeze([
-  'LEGAL_OS', 'BILLING', 'CRM', 'PEOPLE', 'OPERATIONS', 'INTELLIGENCE',
+  'LEGAL_OS', 'BILLING', 'CRM', 'PEOPLE', 'OPERATIONS', 'INTELLIGENCE', 'POS',
 ]);
 
 async function openAuthenticated(browser, actorKey, viewport = { width: 1440, height: 1000 }) {
@@ -67,7 +67,7 @@ async function openModuleNavigation(page) {
   expect(payload.workspace?.tenantId).toBe(state.tenant_id);
   const actual = payload.workspace?.modules?.map(module => module.moduleId) || [];
   for (const moduleId of moduleIds) expect(actual).toContain(moduleId);
-  for (const label of ['Legal OS', 'Billing', 'CRM', 'People', 'Operations', 'Intelligence']) {
+  for (const label of ['Legal OS', 'Billing', 'CRM', 'People', 'Operations', 'Intelligence', 'Point of Sale']) {
     await expect(page.getByRole('button', { name: new RegExp(label, 'i') }).first()).toBeVisible();
   }
   return payload.workspace.modules;
@@ -112,7 +112,7 @@ test('owner completes the authenticated six-module daily-use journey', async ({ 
   const { context, page, browserErrors } = await openAuthenticated(browser, 'tenant_owner');
   try {
     const modules = await openModuleNavigation(page);
-    expect(modules).toHaveLength(6);
+    expect(modules).toHaveLength(7);
 
     // Legal is a commercial-only presentation for the Tenant Owner.
     await page.getByRole('button', { name: /Legal OS/i }).click();
