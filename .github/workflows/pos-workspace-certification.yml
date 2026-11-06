@@ -1,0 +1,97 @@
+name: POS authenticated workspace and evidence certification
+
+on:
+  pull_request:
+    paths:
+      - "tools/eos/saas/domain/pos_*.py"
+      - "tools/eos/saas/billing/pos_*.py"
+      - "tools/eos/saas/billing/pos_workspace_service.py"
+      - "tests/unit/test_pos_*.py"
+      - "tests/integration/test_pos_*.py"
+      - ".github/workflows/pos-workspace-certification.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: pos-workspace-certification-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  pos-evidence:
+    name: POS domain, authority, durable evidence and real replica set
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    env:
+      TEST_VENDOR_MONGO_URI: mongodb://127.0.0.1:27017/?replicaSet=posWorkspaceCertRS
+      PIP_DISABLE_PIP_VERSION_CHECK: "1"
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Install Python dependencies
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install -r requirements.txt pytest==9.1.1
+      - name: Start isolated Mongo replica set
+        run: |
+          docker run --detach --name pos-workspace-cert-mongo --publish 27017:27017 mongo:7.0.37 mongod --replSet posWorkspaceCertRS --bind_ip_all
+      - name: Initialize writable replica set
+        run: |
+          python - <<'PY'
+          import time
+          from pymongo import MongoClient
+          client = MongoClient("mongodb://127.0.0.1:27017", directConnection=True, serverSelectionTimeoutMS=2000)
+          deadline = time.monotonic() + 60
+          initiated = False
+          last_error = None
+          while True:
+              try:
+                  hello = client.admin.command("hello")
+                  if not initiated and not hello.get("setName"):
+                      client.admin.command({"replSetInitiate": {"_id": "posWorkspaceCertRS", "members": [{"_id": 0, "host": "127.0.0.1:27017"}]}})
+                      initiated = True
+                  if client.admin.command("hello").get("isWritablePrimary"):
+                      break
+              except Exception as error:
+                  last_error = error
+              if time.monotonic() >= deadline:
+                  raise RuntimeError(f"POS_MONGO_UNAVAILABLE: {last_error!r}") from last_error
+              time.sleep(1)
+          client.close()
+          PY
+      - name: Compile POS authorities
+        run: |
+          python -m py_compile \
+            tools/eos/saas/domain/pos_commercial.py \
+            tools/eos/saas/domain/pos_location_assignment.py \
+            tools/eos/saas/domain/pos_financial_execution_authorization.py \
+            tools/eos/saas/billing/pos_commercial_registry.py \
+            tools/eos/saas/billing/pos_commercial_evidence_registry.py \
+            tools/eos/saas/billing/pos_location_assignment_registry.py \
+            tools/eos/saas/billing/pos_workspace_service.py \
+            tools/eos/saas/billing/pos_financial_execution_authorization_registry.py \
+            tools/eos/saas/billing/pos_financial_movement_execution.py
+      - name: Run POS unit and real replica-set certification
+        run: |
+          python -m pytest -q \
+            tests/unit/test_pos_commercial.py \
+            tests/unit/test_pos_commercial_orchestration.py \
+            tests/unit/test_pos_commercial_registry.py \
+            tests/unit/test_pos_location_assignment.py \
+            tests/unit/test_pos_location_assignment_registry.py \
+            tests/unit/test_pos_commercial_evidence_registry.py \
+            tests/unit/test_pos_workspace_service.py \
+            tests/unit/test_pos_financial_execution_authorization.py \
+            tests/unit/test_pos_financial_execution_authorization_issuance.py \
+            tests/unit/test_pos_financial_execution_authorization_registry.py \
+            tests/unit/test_pos_financial_movement_execution.py \
+            tests/integration/test_pos_commercial_real_mongo.py \
+            tests/integration/test_pos_location_assignment_real_mongo.py \
+            tests/integration/test_pos_commercial_evidence_real_mongo.py \
+            tests/integration/test_pos_financial_movement_execution_real_mongo.py
+      - name: Stop isolated Mongo replica set
+        if: always()
+        run: docker rm -f pos-workspace-cert-mongo 2>/dev/null || true
