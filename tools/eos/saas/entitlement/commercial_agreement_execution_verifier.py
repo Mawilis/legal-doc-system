@@ -79,6 +79,7 @@ class TrustedExecutionTimestamp:
     signed_at: datetime
     evidence_reference: str
     evidence_fingerprint: str
+    signed_payload_fingerprint: str
 
 
 class ExecutionEvidenceStore(Protocol):
@@ -253,6 +254,12 @@ class CommercialAgreementExecutionVerifier:
             timestamp.evidence_fingerprint,
             "COMMERCIAL_EXECUTION_TIMESTAMP_FINGERPRINT_INVALID",
         )
+        if not hmac.compare_digest(
+            timestamp.signed_payload_fingerprint, payload_fp
+        ):
+            raise CommercialAgreementExecutionVerificationError(
+                "COMMERCIAL_EXECUTION_TIMESTAMP_PAYLOAD_DIVERGENCE"
+            )
         if not timestamp.evidence_reference:
             raise CommercialAgreementExecutionVerificationError(
                 "COMMERCIAL_EXECUTION_TIMESTAMP_REFERENCE_INVALID"
@@ -270,6 +277,7 @@ class CommercialAgreementExecutionVerifier:
             ) from error
         if (
             type(trust) is not TrustedSigningCertificate
+            or trust.certificate_fingerprint != cert_fp
             or not trust.chain_valid
             or trust.revocation_status != "GOOD"
             or not trust.trust_anchor_reference
