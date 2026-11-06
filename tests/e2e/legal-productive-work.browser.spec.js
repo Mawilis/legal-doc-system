@@ -43,6 +43,12 @@ async function openAuthenticatedLegalWorkspace(
   });
 
   const page = await context.newPage();
+  const commercialResponsePromise = actorKey === 'tenant_owner'
+    ? page.waitForResponse((response) => (
+      new URL(response.url()).pathname === '/api/legal-operations/commercial-context'
+      && response.request().method() === 'GET'
+    ))
+    : null;
 
   await page.addInitScript(
     ({ accessToken, tenantId, principalId, email }) => {
@@ -87,6 +93,7 @@ async function openAuthenticatedLegalWorkspace(
     actor,
     context,
     page,
+    commercialResponsePromise,
   };
 }
 
@@ -125,14 +132,12 @@ async function openProductiveWork(page) {
 test(
   'certifies Tenant Owner Legal commercial workspace without practice access',
   async ({ browser }) => {
-    const { actor, context, page } = await openAuthenticatedLegalWorkspace(
-      browser,
-      'tenant_owner',
-    );
-    const commercialResponsePromise = page.waitForResponse((response) => (
-      new URL(response.url()).pathname === '/api/legal-operations/commercial-context'
-      && response.request().method() === 'GET'
-    ));
+    const {
+      actor,
+      context,
+      page,
+      commercialResponsePromise,
+    } = await openAuthenticatedLegalWorkspace(browser, 'tenant_owner');
 
     await expect(
       page.getByRole('heading', { name: 'Legal Product Command' }),
