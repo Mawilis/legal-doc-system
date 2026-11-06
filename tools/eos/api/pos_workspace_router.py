@@ -544,8 +544,6 @@ async def execute_refund_intent(
 ):
     """Authorize and delegate one refund disbursement to the Kennel bridge."""
     orchestrator = getattr(request.app.state, "pos_financial_movement_orchestrator", None)
-    if orchestrator is None:
-        raise HTTPException(status_code=503, detail="KENNEL_FINANCIAL_MOVEMENT_PROVIDER_UNBOUND")
     def authorize(collections, session):
         projection = _service(collections).read_sale(
             tenant_id=context.tenant_id, principal_id=context.identity.identity_id,
