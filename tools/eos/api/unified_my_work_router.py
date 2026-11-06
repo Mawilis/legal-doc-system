@@ -139,6 +139,12 @@ async def read_my_work(
     for context in contexts:
         _assert_context(context, tenant_id=tenant_id, principal_id=principal_id)
 
+    # A partial source set is valid, but a tenant scope with no independently
+    # authorized source is not a workspace. In particular, caller-supplied
+    # foreign tenant identifiers must never produce a successful empty view.
+    if not any(context is not None for context in contexts):
+        raise HTTPException(status_code=403, detail="MY_WORK_NO_AUTHORIZED_SOURCE")
+
     # None means a canonical 403 for that source only. A 503 or any unexpected
     # authorization failure is raised by the dependency and never becomes empty.
     legal = (
