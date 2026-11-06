@@ -43,6 +43,11 @@ async function openAuthenticatedLegalWorkspace(
 
   const page = await context.newPage();
   const observedRequests = [];
+  const browserErrors = [];
+  page.on('pageerror', (error) => browserErrors.push(error.message));
+  page.on('console', (message) => {
+    if (message.type() === 'error') browserErrors.push(message.text());
+  });
   page.on('request', (request) => {
     observedRequests.push(new URL(request.url()).pathname);
   });
@@ -93,6 +98,7 @@ async function openAuthenticatedLegalWorkspace(
     page,
     observedRequests,
     bootstrapPayload,
+    browserErrors,
   };
 }
 
@@ -136,16 +142,12 @@ test(
       page,
       observedRequests,
       bootstrapPayload,
+      browserErrors,
     } = await openAuthenticatedLegalWorkspace(browser, 'tenant_owner');
 
     expect(String(bootstrapPayload.workspace?.businessRole || '').toUpperCase()).toBe('TENANT_OWNER');
     expect(bootstrapPayload.workspace?.workspaceId).toBe('EXECUTIVE_COMMAND_CENTRE');
 
-    const browserErrors = [];
-    page.on('pageerror', (error) => browserErrors.push(error.message));
-    page.on('console', (message) => {
-      if (message.type() === 'error') browserErrors.push(message.text());
-    });
     const accessProbe = page.locator('[data-executive-access-state]');
     await expect(accessProbe.or(page.locator('[data-active-workspace="workbench"]'))).toBeVisible({
       timeout: 10000,
