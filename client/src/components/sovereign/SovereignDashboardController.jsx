@@ -1134,7 +1134,6 @@ const SovereignDashboardController = ({ user: propUser, onLogout }) => {
   // EOS tenant module manifest; clicking an entry requests presentation routing
   // and does not create workspace or API authority.
   const needsControllerProductNavigation = [
-    DASHBOARD_KEYS.EXECUTIVE,
     DASHBOARD_KEYS.CRM,
     DASHBOARD_KEYS.OPERATIONS,
     DASHBOARD_KEYS.INTELLIGENCE,
