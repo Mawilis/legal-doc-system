@@ -1,15 +1,15 @@
 /* eslint-disable */
 /**
  * ╔════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════╗
- * ║ WILSY OS - SOVEREIGN EXECUTIVE SUITE [V56.4.0-PRODUCTION-EPITOME]                                                                      ║
+ * ║ WILSY OS - SOVEREIGN EXECUTIVE SUITE [V56.5.0-AUTHENTICATED-TENANT-CONTEXT]                                                                      ║
  * ║ [FINANCE-SOURCED KPIS | SHA3 EXECUTIVE MUTATIONS | TELEMETRY STREAM | SHARD PAGINATION | BOARDROOM PROOF]                             ║
  * ╠════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════╣
- * ║ VERSION: 56.4.0-PRODUCTION-EPITOME | PRODUCTION READY | BILLION-DOLLAR EXECUTIVE COMMAND ASSET                                        ║
+ * ║ VERSION: 56.5.0-AUTHENTICATED-TENANT-CONTEXT | SERVER-ISSUED TENANT OWNER COMMAND                                        ║
  * ║ ABSOLUTE PATH: /Users/wilsonkhanyezi/legal-doc-system/client/src/components/executive/ExecutiveDashboard.jsx                            ║
  * ╠════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════╣
  * ║ 👥 COLLABORATION & SOVEREIGN SIGN-OFF:                                                                                                 ║
  * ║ • Wilson Khanyezi (Founder/CEO) – Mandated unified executive dashboard with cryptographic audit and pagination.                        ║
- * ║ • AI Engineering (Codex) – ARCHITECTED: Elevated suite into forensic command surface with financeService KPI sourcing, SHA3 command    ║
+ * ║ • Engineering: executive access now binds to the exact authenticated tenant projection before rendering owner navigation.              ║
  * ║   envelopes, telemetry-backed mutations, source-state governance, and scalable shard pagination.                                      ║
  * ╚════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════╝
  */
@@ -45,6 +45,7 @@ import {
   X
 } from 'lucide-react';
 import { useTenants } from '../../contexts/tenantContext';
+import { useAuth } from '../../contexts/authContext';
 import useSovereignAccess from '../../hooks/useSovereignAccess';
 import { useTelemetryFeed } from '../../hooks/useTelemetryFeed';
 import { exportCSV } from '../../utils/exportHelpers';
@@ -1033,7 +1034,24 @@ const ExecutiveDashboard = ({
   founderReturnEnabled = false,
   onSwitchDashboard = null
 }) => {
-  const { activeTenant } = useTenants();
+  const { activeTenant: selectedTenant } = useTenants();
+  const { tenant: authenticatedTenant } = useAuth() || {};
+  const activeTenant = useMemo(() => {
+    // Executive entry must bind to the exact tenant already admitted by
+    // workspace-bootstrap. A stale tenant-context selection cannot hide or
+    // replace that authenticated projection, and a foreign selection remains
+    // non-authoritative.
+    const principalTenantId = typeof user?.tenantId === 'string'
+      ? user.tenantId
+      : '';
+    if (
+      principalTenantId
+      && authenticatedTenant?.tenantId === principalTenantId
+    ) {
+      return authenticatedTenant;
+    }
+    return selectedTenant || {};
+  }, [authenticatedTenant, selectedTenant, user?.tenantId]);
   const access = useSovereignAccess();
   const tenantId = activeTenant?.tenantId || null;
   const accessDecision = useMemo(() => (
