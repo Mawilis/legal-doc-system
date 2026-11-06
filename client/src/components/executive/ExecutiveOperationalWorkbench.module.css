@@ -48,6 +48,14 @@
 }
 .queuePanel h3, .exceptionPanel h3, .inspector h3 { margin: 5px 0 0; color: var(--wilsy-text, #fff); font-size: .95rem; overflow-wrap: anywhere; }
 .queuePanel header > strong, .exceptionPanel header > strong { color: var(--wilsy-text, #fff); font-size: 1.3rem; font-variant-numeric: tabular-nums; }
+
+.queueControls { display: grid; grid-template-columns: minmax(0,1fr) minmax(140px,.7fr); gap: 8px; padding: 10px 12px; border-bottom: 1px solid var(--wilsy-border, rgba(255,255,255,.08)); }
+.queueControls input, .queueControls select { width: 100%; min-width: 0; min-height: 36px; padding: 0 10px; border: 1px solid var(--wilsy-border, rgba(255,255,255,.18)); border-radius: 8px; color: var(--wilsy-text, #fff); background: rgba(0,0,0,.16); font: inherit; font-size: .68rem; }
+.queueControls input::placeholder { color: var(--wilsy-muted, #aab4c5); }
+.pagination { display: flex; align-items: center; justify-content: space-between; gap: 8px; padding: 10px 12px; border-top: 1px solid var(--wilsy-border, rgba(255,255,255,.08)); color: var(--wilsy-muted, #aab4c5); font-size: .65rem; }
+.pagination button { min-height: 32px; padding: 0 10px; border: 1px solid var(--wilsy-border, rgba(255,255,255,.18)); border-radius: 8px; color: var(--wilsy-text, #fff); background: rgba(255,255,255,.06); font: inherit; cursor: pointer; }
+.pagination button:disabled { opacity: .4; cursor: not-allowed; }
+
 .queueList, .exceptionList { display: grid; gap: 1px; margin: 0; padding: 0; list-style: none; }
 .queueRow, .selectedRow {
   width: 100%; display: grid; gap: 6px; padding: 13px 15px; border: 0; border-bottom: 1px solid var(--wilsy-border, rgba(255,255,255,.07));
@@ -83,5 +91,5 @@
 .emptyCompact { padding: 18px; }
 button:focus-visible { outline: 2px solid var(--wilsy-accent, #9bc8ff); outline-offset: 2px; }
 @media (max-width: 1100px) { .columns { grid-template-columns: minmax(0,1fr) minmax(220px,.8fr); } .inspector { grid-column: 1 / -1; } }
-@media (max-width: 680px) { .heading { align-items: flex-start; flex-direction: column; } .freshness { justify-items: start; } .columns { grid-template-columns: minmax(0,1fr); } .inspector { grid-column: auto; } }
+@media (max-width: 680px) { .heading { align-items: flex-start; flex-direction: column; } .freshness { justify-items: start; } .columns { grid-template-columns: minmax(0,1fr); } .inspector { grid-column: auto; } .queueControls { grid-template-columns: minmax(0,1fr); } }
 @media (prefers-reduced-motion: reduce) { .workbench * { scroll-behavior: auto !important; transition-duration: .01ms !important; animation-duration: .01ms !important; } }

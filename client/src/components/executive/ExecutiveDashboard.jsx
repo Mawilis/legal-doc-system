@@ -359,15 +359,15 @@ const DEFAULT_FINANCIAL_KPIS = Object.freeze({
 });
 
 const EXECUTIVE_OPERATING_SOURCE_PLAYBOOK = Object.freeze([
-  { key: 'hr', label: 'HR / People', lane: 'People', functionKey: 'hr', loader: (tenantId) => hrService.getEmployees(tenantId, { limit: 5, offset: 0 }) },
+  { key: 'hr', label: 'HR / People', lane: 'People', functionKey: 'hr', loader: (tenantId) => hrService.getEmployees(tenantId, { limit: 25, offset: 0 }) },
   { key: 'crm', label: 'CRM / Customer Graph', lane: 'Sales', functionKey: 'crm', loader: (tenantId) => crmService.getCrmSummary(tenantId) },
-  { key: 'sales', label: 'Sales Pipeline', lane: 'Revenue', functionKey: 'sales', loader: (tenantId) => salesService.getPipeline(tenantId, { limit: 5, offset: 0 }) },
-  { key: 'customerSuccess', label: 'Customer Success', lane: 'Customer', functionKey: 'customer_success', loader: (tenantId) => customerSuccessService.getTickets(tenantId, { limit: 5, offset: 0 }) },
-  { key: 'product', label: 'Product / Roadmap', lane: 'Delivery', functionKey: 'product', loader: (tenantId) => productService.getProductMetrics(tenantId, { limit: 5, offset: 0 }) },
-  { key: 'marketing', label: 'Marketing Demand', lane: 'Growth', functionKey: 'marketing', loader: (tenantId) => marketingService.getAnalytics(tenantId, { limit: 5, offset: 0 }) },
-  { key: 'procurement', label: 'Procurement / Supply', lane: 'Supply', functionKey: 'procurement', loader: (tenantId) => procurementService.getPurchaseOrders(tenantId, { limit: 5, offset: 0 }) },
-  { key: 'security', label: 'Security / Risk', lane: 'Risk', functionKey: 'security', loader: (tenantId) => securityService.getIncidents(tenantId, { limit: 5, offset: 0 }) },
-  { key: 'it', label: 'IT / Reliability', lane: 'Technology', functionKey: 'it', loader: (tenantId) => itService.getIncidents(tenantId, { limit: 5, offset: 0 }) }
+  { key: 'sales', label: 'Sales Pipeline', lane: 'Revenue', functionKey: 'sales', loader: (tenantId) => salesService.getPipeline(tenantId, { limit: 25, offset: 0 }) },
+  { key: 'customerSuccess', label: 'Customer Success', lane: 'Customer', functionKey: 'customer_success', loader: (tenantId) => customerSuccessService.getTickets(tenantId, { limit: 25, offset: 0 }) },
+  { key: 'product', label: 'Product / Roadmap', lane: 'Delivery', functionKey: 'product', loader: (tenantId) => productService.getProductMetrics(tenantId, { limit: 25, offset: 0 }) },
+  { key: 'marketing', label: 'Marketing Demand', lane: 'Growth', functionKey: 'marketing', loader: (tenantId) => marketingService.getAnalytics(tenantId, { limit: 25, offset: 0 }) },
+  { key: 'procurement', label: 'Procurement / Supply', lane: 'Supply', functionKey: 'procurement', loader: (tenantId) => procurementService.getPurchaseOrders(tenantId, { limit: 25, offset: 0 }) },
+  { key: 'security', label: 'Security / Risk', lane: 'Risk', functionKey: 'security', loader: (tenantId) => securityService.getIncidents(tenantId, { limit: 25, offset: 0 }) },
+  { key: 'it', label: 'IT / Reliability', lane: 'Technology', functionKey: 'it', loader: (tenantId) => itService.getIncidents(tenantId, { limit: 25, offset: 0 }) }
 ]);
 
 
@@ -3443,10 +3443,6 @@ const ExecutiveDashboard = ({
           </article>
         </section>
         {executiveCommandRail}
-        <ExecutiveOperationalWorkbench
-          sources={operatingSources}
-          onOpenFunction={(source) => executeFunctionCard({ key: source.functionKey, label: source.label, status: 'ENABLED', sourceStatus: source.status })}
-        />
       </div>
     ),
     sources: (
@@ -3707,188 +3703,16 @@ const ExecutiveDashboard = ({
       </div>
     ),
     workbench: (
-      <section className={styles.operatingGrid}>
-        <article className={styles.dailyDutyPanel}>
-          <header>
-            <div>
-              <span><ClipboardCheck size={13} /> DAILY_EXECUTIVE_WORKBENCH</span>
-              <h2>{executiveOperatingSystem.profile.name}</h2>
-            </div>
-            <small title={executiveOperatingSystem.profile.sourceStatus}>{compactExecutiveSignal(executiveOperatingSystem.profile.sourceStatus)}</small>
-          </header>
-          <div className={styles.profileStrip}>
-            <div>
-              <small>Business Model</small>
-              <strong>{executiveOperatingSystem.profile.industryLabel}</strong>
-            </div>
-            <div>
-              <small>MODEL_SELECTOR</small>
-              <label className={styles.modelSelector}>
-                <select
-                  value={businessModelOverride || ''}
-                  onChange={event => updateBusinessModelOverride(event.target.value)}
-                >
-                  <option value="">Tenant auto-detect</option>
-                  {executiveOperatingSystem.businessModels.map(model => (
-                    <option key={model.key} value={model.key}>{model.label}</option>
-                  ))}
-                </select>
-              </label>
-              <button
-                type="button"
-                className={styles.inlineAction}
-                onClick={persistBusinessModelCommand}
-                disabled={isRefreshing}
-              >
-                <Settings size={12} /> Persist Model
-              </button>
-            </div>
-            <div>
-              <small>BUSINESS_FAMILY</small>
-              <strong>{executiveOperatingSystem.profile.naicsFamily || 'General operating model'}</strong>
-            </div>
-            <div>
-              <small>CONFIDENCE</small>
-              <strong>{Math.round((executiveOperatingSystem.profile.confidence || 0) * 100)}% // {compactExecutiveSignal(executiveOperatingSystem.profile.sourceStatus)}</strong>
-            </div>
-            <div>
-              <small>PROFILE_EVIDENCE</small>
-              <strong>{executiveOperatingSystem.profile.sourceEvidence}</strong>
-            </div>
-          </div>
-          <div className={styles.functionMatrix}>
-            {executiveOperatingSystem.functionMatrix.map(item => (
-              <article key={item.key} data-status={item.status}>
-                <div>
-                  <small>{item.label}</small>
-                  <strong>{compactExecutiveSignal(item.status)}</strong>
-                </div>
-                <button
-                  type="button"
-                  className={isFunctionExecutable(item) ? styles.iconButton : `${styles.iconButton} ${styles.dangerButton}`}
-                  onClick={() => executeFunctionCard(item)}
-                  title={isFunctionExecutable(item) ? `Open ${item.label}` : `Request access to ${item.label}`}
-                  disabled={isRefreshing}
-                >
-                  {isFunctionExecutable(item) ? <Route size={13} /> : <Lock size={13} />}
-                </button>
-              </article>
-            ))}
-          </div>
-          <div className={styles.workOrderPanel}>
-            <header>
-              <div>
-                <span><PlayCircle size={13} /> EXECUTIVE_WORK_ORDER</span>
-                <h2>{selectedWorkOrder?.title || 'No accepted work order yet'}</h2>
-              </div>
-              <small>{selectedWorkOrder ? compactExecutiveSignal(selectedWorkOrder.status) : 'AWAITING_DUTY_ACCEPTANCE'}</small>
-            </header>
-            {selectedWorkOrder ? (
-              <div className={styles.workOrderBody}>
-                <div className={styles.workOrderMeta}>
-                  <div>
-                    <small>MODULE</small>
-                    <strong>{selectedWorkOrder.functionKey}</strong>
-                  </div>
-                  <div>
-                    <small>ROUTE</small>
-                    <strong>{selectedWorkOrder.route?.route || '/executive'}</strong>
-                  </div>
-                  <div>
-                    <small>PROOF</small>
-                    <strong>{selectedWorkOrder.proofHash?.slice(0, 18)}</strong>
-                  </div>
-                </div>
-                <ol className={styles.workSteps}>
-                  {(selectedWorkOrder.workflowSteps || []).map(step => (
-                    <li key={step}>{step}</li>
-                  ))}
-                </ol>
-                {selectedWorkOrder.blockedReason && <p className={styles.blockedReason}>{selectedWorkOrder.blockedReason}</p>}
-                <div className={styles.workOrderActions}>
-                  <button
-                    type="button"
-                    className={styles.primaryButton}
-                    onClick={() => runExecutiveWorkOrder(selectedWorkOrder)}
-                    disabled={isRefreshing}
-                  >
-                    {selectedWorkOrder.blocked ? 'REVIEW GATES' : 'RUN WORK ORDER'}
-                  </button>
-                  <select
-                    value={selectedWorkOrder.workOrderId}
-                    onChange={event => setSelectedWorkOrderId(event.target.value)}
-                  >
-                    {executiveWorkOrders.map(order => (
-                      <option key={order.workOrderId} value={order.workOrderId}>{order.title}</option>
-                    ))}
-                  </select>
-                </div>
-              </div>
-            ) : (
-              <div className={styles.emptyStream}>ACCEPT_A_DAILY_DUTY_TO_CREATE_A_WORK_ORDER...</div>
-            )}
-          </div>
-          <section className={styles.dutyQueueSection} aria-label="Suggested executive work queue">
-            <header className={styles.dutyQueueHeader}>
-              <div>
-                <span>DAILY WORK QUEUE</span>
-                <h3>Recommended actions</h3>
-              </div>
-              <small>{executiveOperatingSystem.dailyDuties.length} source-aware duties</small>
-            </header>
-            <div className={styles.dutyQueueViewport}>
-              <table className={styles.dutyQueue} aria-label="Suggested executive work queue">
-                <thead>
-                  <tr>
-                    <th scope="col">Impact</th>
-                    <th scope="col">Workstream</th>
-                    <th scope="col">Recommended action</th>
-                    <th scope="col">Source and evidence</th>
-                    <th scope="col">Next step</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {executiveOperatingSystem.dailyDuties.map(duty => (
-                    <tr key={duty.key} data-status={duty.status} data-impact={duty.impact}>
-                      <td>
-                        <span className={styles.dutyQueueImpact}>{compactExecutiveSignal(duty.impact)}</span>
-                      </td>
-                      <td>
-                        <strong>{duty.lane}</strong>
-                        <small>{duty.cadence}</small>
-                      </td>
-                      <td>
-                        <strong>{duty.title}</strong>
-                        <p>{duty.reason}</p>
-                        {duty.blockedReason && <small className={styles.dutyQueueBlocked}>{duty.blockedReason}</small>}
-                      </td>
-                      <td>
-                        <strong>{compactExecutiveSignal(duty.sourceStatus)}</strong>
-                        <div className={styles.dutyQueueEvidence}>
-                          {(duty.evidenceRequired || []).slice(0, 4).map(evidence => (
-                            <span key={evidence}>{evidence}</span>
-                          ))}
-                        </div>
-                      </td>
-                      <td>
-                        <button
-                          type="button"
-                          className={styles.secondaryButton}
-                          onClick={() => acceptDailyDuty(duty)}
-                          disabled={isRefreshing}
-                        >
-                          {duty.commandLabel || 'ACCEPT'}
-                        </button>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          </section>
-        </article>
+      <div className={styles.overviewWorkspace}>
+        <ExecutiveOperationalWorkbench
+          sources={operatingSources}
+          onOpenFunction={(source) => {
+            const functionRow = executiveOperatingSystem.functionMatrix.find((item) => item.key === source?.functionKey);
+            if (functionRow) executeFunctionCard(functionRow);
+          }}
+        />
         {sourceRegistryPanel}
-      </section>
+      </div>
     ),
     finance: (
       <div className={styles.financeWorkspace}>
