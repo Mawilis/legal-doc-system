@@ -52,6 +52,8 @@ def active_entitlement(tenant_id, product_id):
         entitlement_id=derive_tenant_product_entitlement_id(tenant_id, product_id),
         product_id=product_id,
         lifecycle_state=TenantProductEntitlementState.ACTIVE,
+        lifecycle_revision=2,
+        fingerprint="c" * 128,
     )
 
 
