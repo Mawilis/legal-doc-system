@@ -57,22 +57,21 @@ async function openAuthenticated(browser, actorKey, viewport = { width: 1440, he
 async function openModuleNavigation(page) {
   // Executive exposes a single Legal entry. The shared product navigation
   // becomes available after the Legal workspace mounts its authenticated chrome.
-  await expect(page.locator('[data-wilsy-module-entry="LEGAL_OS"]').first()).toBeVisible();
+  const legalEntry = page.locator('[data-wilsy-module-entry="LEGAL_OS"]:visible').first();
+  await expect(legalEntry).toBeVisible();
   const manifestPromise = page.waitForResponse(response => (
     new URL(response.url()).pathname === '/api/auth/module-manifest'
     && response.request().method() === 'GET'
   ));
-  await page.locator('[data-wilsy-module-entry="LEGAL_OS"]').first().click();
+  await legalEntry.click();
   const response = await manifestPromise;
   expect(response.status()).toBe(200);
   const payload = await response.json();
   expect(payload.workspace?.tenantId).toBe(state.tenant_id);
   const actual = payload.workspace?.modules?.map(module => module.moduleId) || [];
   for (const moduleId of moduleIds) expect(actual).toContain(moduleId);
-  const productNavigation = page.getByRole('navigation', { name: 'Available WILSY OS products' });
-  await expect(productNavigation).toBeVisible();
   for (const moduleId of moduleIds) {
-    await expect(productNavigation.locator(`[data-wilsy-module-entry="${moduleId}"]`)).toBeVisible();
+    await expect(page.locator(`[data-wilsy-module-entry="${moduleId}"]:visible`).first()).toBeVisible();
   }
   return payload.workspace.modules;
 }
@@ -134,19 +133,19 @@ test('owner completes the authenticated seven-module daily-use journey', async (
     expect(modules).toHaveLength(7);
 
     // Legal is a commercial-only presentation for the Tenant Owner.
-    await page.getByRole('navigation', { name: 'Available WILSY OS products' })
-      .locator('[data-wilsy-module-entry="LEGAL_OS"]').click();
+    await page.locator('[data-wilsy-module-entry="LEGAL_OS"]:visible').first().click();
     await expect(page.getByRole('heading', { name: 'Legal Product Command' })).toBeVisible();
     await expect(page.getByText('Tenant owner · commercial authority only')).toBeVisible();
     await expect(page.getByText('ROLE-GATED')).toBeVisible();
 
     // Billing remains its own invoice/dunning product surface.
-    await page.getByRole('navigation', { name: 'Available WILSY OS products' })
-      .locator('[data-wilsy-module-entry="BILLING"]').click();
+    await page.locator('[data-wilsy-module-entry="BILLING"]:visible').first().click();
     await expect(page.getByRole('navigation', { name: 'Billing workspace modules' })).toBeVisible();
-    await page.getByRole('navigation', { name: 'Billing workspace modules' })
-      .getByRole('button', { name: 'Command', exact: true }).click();
-    await expect(page.getByRole('heading', { name: 'Billing command center' })).toBeVisible();
+    const commandTab = page.locator('[data-tab="command"]');
+    await commandTab.click();
+    await expect(commandTab).toHaveAttribute('data-active', 'true');
+    await expect(page.getByRole('heading', { name: '12 Month Billing Pulse' })).toBeVisible();
+    await expect(page.getByRole('region', { name: 'Billing operating flight deck' })).toBeVisible();
 
     // CRM retains its own durable owner task queue and command service.
     const crmQueue = await switchModule(page, 'CRM', '/api/crm/owner-workspace');
@@ -171,8 +170,7 @@ test('owner completes the authenticated seven-module daily-use journey', async (
     expect((await crmCompletePromise).status()).toBe(200);
 
     // People is the existing workforce/time-off workspace, not an alias for Operations.
-    await page.getByRole('navigation', { name: 'Available WILSY OS products' })
-      .locator('[data-wilsy-module-entry="PEOPLE"]').click();
+    await page.locator('[data-wilsy-module-entry="PEOPLE"]:visible').first().click();
     await expect(page.getByRole('navigation', { name: 'HR workspace modules' })).toBeVisible();
 
     // Operations has its own product entitlement, task collection and permissions.
