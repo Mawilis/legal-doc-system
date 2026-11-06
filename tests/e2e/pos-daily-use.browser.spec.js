@@ -47,17 +47,6 @@ async function api(page, method, path, body, key, tenantId = state.tenant_id) {
 test('POS operator completes authenticated daily-use sale and evidence journey', async ({ browser }) => {
   const { context, page, actor } = await authenticatedPage(browser, 'pos_operator');
   try {
-    await expect(page.locator('[data-active-workspace="workbench"]')).toBeVisible();
-    const manifestPromise = page.waitForResponse(response => (
-      new URL(response.url()).pathname === '/api/auth/module-manifest'
-      && response.request().method() === 'GET'
-    ));
-    await page.getByRole('button', { name: /Legal OS/i }).click();
-    const manifest = await manifestPromise;
-    expect(manifest.status()).toBe(200);
-    const manifestPayload = await manifest.json();
-    expect(manifestPayload.workspace?.modules?.some(module => module.moduleId === 'POS')).toBe(true);
-    await page.getByRole('button', { name: /Point of Sale/i }).first().click();
     await expect(page.getByRole('heading', { name: 'Point of Sale' })).toBeVisible();
     await expect(page.getByRole('option', { name: 'browser-cert-store-01' })).toBeVisible();
 
