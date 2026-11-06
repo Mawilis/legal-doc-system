@@ -149,9 +149,12 @@ test(
     expect(bootstrapPayload.workspace?.workspaceId).toBe('EXECUTIVE_COMMAND_CENTRE');
 
     const accessProbe = page.locator('[data-executive-access-state]');
-    await expect(accessProbe.or(page.locator('[data-active-workspace="workbench"]'))).toBeVisible({
+    const workbenchProbe = page.locator('[data-active-workspace="workbench"]');
+    // Wait for the UI to settle without throwing before evidence is captured.
+    await accessProbe.or(workbenchProbe).first().waitFor({
+      state: 'visible',
       timeout: 10000,
-    });
+    }).catch(() => undefined);
     const executiveAccess = await accessProbe.count()
       ? await accessProbe.first().evaluate((element) => ({
         state: element.dataset.executiveAccessState,
@@ -165,17 +168,29 @@ test(
       }))
       : { state: 'executive-shell-not-mounted' };
     const renderedSurface = await page.locator('body').innerText().catch(() => '');
+    const documentState = await page.evaluate(() => ({
+      readyState: document.readyState,
+      title: document.title,
+      rootChildren: Array.from(document.body?.children || []).map((node) => ({
+        tag: node.tagName,
+        id: node.id || null,
+        className: typeof node.className === 'string' ? node.className : null,
+        text: (node.innerText || '').slice(0, 500),
+      })),
+    })).catch((error) => ({ evaluationError: error.message }));
     const diagnostic = JSON.stringify({
       url: page.url(),
       workspaceId: bootstrapPayload.workspace?.workspaceId,
       businessRole: bootstrapPayload.workspace?.businessRole,
       executiveAccess,
+      documentState,
       renderedSurface: renderedSurface.slice(0, 5000),
-      browserErrors: browserErrors.slice(0, 30),
+      observedRequests: observedRequests.slice(-80),
+      browserErrors: browserErrors.slice(0, 50),
     }, null, 2);
     await expect(
-      page.locator('[data-active-workspace="workbench"]'),
-      `Tenant Owner Executive workspace diagnostics:\\n${diagnostic}`,
+      workbenchProbe,
+      `Tenant Owner Executive workspace diagnostics:\n${diagnostic}`,
     ).toBeVisible();
     await expect(page.getByRole('table', { name: 'Suggested executive work queue' })).toBeVisible();
     await expect(page.getByRole('button', { name: 'LEGAL OS', exact: true })).toBeVisible();
