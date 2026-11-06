@@ -8,9 +8,10 @@ trust providers fail closed with 503 and never accept browser-authored proofs.
 from __future__ import annotations
 
 from datetime import datetime, timezone
+import hmac
 from typing import Any, Callable
 
-from fastapi import APIRouter, Depends, Header, HTTPException, Request
+from fastapi import APIRouter, Depends, HTTPException, Request
 from pydantic import BaseModel, ConfigDict, Field
 from pymongo.read_concern import ReadConcern
 from pymongo.read_preferences import ReadPreference
@@ -61,6 +62,7 @@ from tools.eos.saas.entitlement.commercial_bundle_activation import (
     CommercialBundleActivationPersistenceError,
     CommercialBundleActivationOutcome,
     CommercialBundleReconciliationState,
+    VerifiedCommercialAgreementExecutionEvidence,
     activate_commercial_bundle,
     ensure_indexes as ensure_bundle_activation_indexes,
     reconcile_commercial_bundle_activation,
@@ -142,6 +144,23 @@ def _execution_verifier(request: Request) -> CommercialAgreementExecutionVerifie
             detail="COMMERCIAL_AGREEMENT_TRUSTED_EXECUTION_VERIFIER_UNAVAILABLE",
         )
     return verifier
+
+
+def _assert_verified_agreement_binding(
+    agreement: Any, verified: VerifiedCommercialAgreementExecutionEvidence
+) -> None:
+    """Recheck every immutable contract binding at the HTTP authority boundary."""
+    if type(verified) is not VerifiedCommercialAgreementExecutionEvidence:
+        raise HTTPException(status_code=503, detail="COMMERCIAL_EXECUTION_VERIFIER_CONTRACT_INVALID")
+    exact = (
+        verified.tenant_id == agreement.tenant_id
+        and verified.agreement_id == agreement.agreement_id
+        and verified.contract_reference == agreement.contract_reference
+        and verified.contract_version == agreement.contract_version
+        and hmac.compare_digest(verified.offer_fingerprint, agreement.offer_fingerprint)
+    )
+    if not exact:
+        raise HTTPException(status_code=422, detail="COMMERCIAL_EXECUTION_VERIFIED_EVIDENCE_SCOPE_MISMATCH")
 
 
 def _transaction(callback: Callable[[Any, Any, Any], Any]) -> Any:
@@ -335,6 +354,7 @@ async def execute_agreement(
             agreement=agreement,
             evidence_reference=body.execution_evidence_reference,
         )
+        _assert_verified_agreement_binding(agreement, verified)
         if verified.signatory_principal_id != context.identity.identity_id:
             raise HTTPException(status_code=403, detail="COMMERCIAL_AGREEMENT_SIGNATORY_MUST_MATCH_AUTHENTICATED_PRINCIPAL")
         if agreement.lifecycle_state is CommercialAgreementState.EXECUTED:
@@ -385,6 +405,7 @@ async def activate_agreement(
             agreement=agreement,
             evidence_reference=body.execution_evidence_reference,
         )
+        _assert_verified_agreement_binding(agreement, verified)
         outcome, receipt = activate_commercial_bundle(
             identity=context.identity,
             agreement_id=agreement_id,
