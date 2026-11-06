@@ -507,6 +507,8 @@ const WilsyOSDashboardChrome = ({
                         || (module.moduleId === 'BILLING' && (currentKey.includes('billing') || currentKey.includes('finance')))
                         || (module.moduleId === 'CRM' && currentKey.includes('crm'))
                         || (module.moduleId === 'PEOPLE' && currentKey.includes('hr'))
+                        || (module.moduleId === 'OPERATIONS' && currentKey.includes('operations'))
+                        || (module.moduleId === 'INTELLIGENCE' && currentKey.includes('intelligence'))
                       );
                       return (
                         <button
