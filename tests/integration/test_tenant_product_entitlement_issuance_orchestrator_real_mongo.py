@@ -214,7 +214,7 @@ def mongo_context() -> Iterator[tuple[MongoClient[Any], Any, dict[str, Any]]]:
 
 
 def _seed(client: MongoClient[Any], collections: dict[str, Any], tenant: str, principal: str) -> None:
-    """Persist canonical IAM and ACTIVE legal.core subscription sources."""
+    """Persist canonical IAM and one subscription with all four exact product features."""
     plan_result = PlanRegistry.create(
         {
             "name": f"D22B3 P26 {tenant}",
@@ -224,7 +224,7 @@ def _seed(client: MongoClient[Any], collections: dict[str, Any], tenant: str, pr
             "planType": "PROFESSIONAL",
             "idempotencyKey": f"plan-{tenant}",
             "active": True,
-            "features": ["legal.core"],
+            "features": ["legal.core", "billing.core", "crm.core", "hr.core"],
             "metadata": {"certificate": True},
             "tags": ["d22b3-p26"],
             "user": "D22B3-P26-CERT",
@@ -278,13 +278,14 @@ def _seed(client: MongoClient[Any], collections: dict[str, Any], tenant: str, pr
 def _issue(
     client: MongoClient[Any], collections: dict[str, Any], tenant: str,
     principal: str, *, idempotency_key: str = "issue-one",
+    product_id: TenantProductId = TenantProductId.LEGAL_OPERATIONS,
 ) -> Any:
     """Commit one issuance under caller-owned transaction lifecycle."""
     with client.start_session() as session:
         with session.start_transaction():
             return issue_tenant_product_entitlement(
                 identity=_identity(tenant, principal),
-                product_id=TenantProductId.LEGAL_OPERATIONS,
+                product_id=product_id,
                 idempotency_key=idempotency_key,
                 occurred_at=NOW,
                 subscription_collection=collections["subscriptions"],
@@ -293,6 +294,45 @@ def _issue(
                 authorization_evidence_registry=_issuer(collections),
                 session=session,
             )
+
+
+def test_real_four_product_bundle_issuance_commits_atomically(
+    mongo_context: tuple[MongoClient[Any], Any, dict[str, Any]],
+) -> None:
+    """All four mapped product entitlements and authorization receipts share one commit."""
+    client, _database, collections = mongo_context
+    tenant, principal = f"tenant-{uuid4().hex}", f"principal-{uuid4().hex}"
+    _seed(client, collections, tenant, principal)
+    products = (
+        TenantProductId.LEGAL_OPERATIONS,
+        TenantProductId.BILLING,
+        TenantProductId.CRM,
+        TenantProductId.HR,
+    )
+    with client.start_session() as session:
+        with session.start_transaction():
+            results = tuple(
+                issue_tenant_product_entitlement(
+                    identity=_identity(tenant, principal),
+                    product_id=product,
+                    idempotency_key=f"bundle-{product.value.lower()}",
+                    occurred_at=NOW,
+                    subscription_collection=collections["subscriptions"],
+                    entitlement_history_collection=collections["history"],
+                    entitlement_current_collection=collections["current"],
+                    authorization_evidence_registry=_issuer(collections),
+                    session=session,
+                )
+                for product in products
+            )
+    assert tuple(item.composition.entitlement.product_id for item in results) == products
+    assert all(
+        item.composition.entitlement.lifecycle_state.value == "ACTIVE"
+        for item in results
+    )
+    assert collections["authorization"].count_documents({"tenant_id": tenant}) == 4
+    assert collections["history"].count_documents({"tenant_id": tenant}) == 8
+    assert collections["current"].count_documents({"tenant_id": tenant}) == 4
 
 
 def test_real_commit_atomicity_indexes_and_exact_replay(
