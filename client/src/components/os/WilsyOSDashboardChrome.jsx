@@ -45,6 +45,8 @@ import {
   Receipt,
   Users,
   UsersRound,
+  Workflow,
+  BrainCircuit,
   X
 } from 'lucide-react';
 import { useAuth } from '../../contexts/authContext';
@@ -63,6 +65,8 @@ const MODULE_ICON_BY_KEY = Object.freeze({
   receipt: Receipt,
   users: Users,
   'users-round': UsersRound,
+  workflow: Workflow,
+  'brain-circuit': BrainCircuit,
 });
 
 const TRUST_CENTER_STATES = Object.freeze({
