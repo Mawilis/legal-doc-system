@@ -360,9 +360,9 @@ const LEGAL_PRACTICE_MODULE_REGISTRY = Object.freeze([
   { id: PRACTICE_WORKSPACE_VIEWS.RETURNS, label: 'Returns of Service', icon: FileCheck2, requiresWorkspace: true },
   { id: PRACTICE_WORKSPACE_VIEWS.CONFLICT_REVIEW, label: 'Conflict Reviews', icon: ShieldCheck, permission: PRESENTATION_PERMISSIONS.CONFLICT_REVIEW_WRITE },
   { id: 'PRODUCTIVE_WORK', label: 'My Work', icon: ClipboardList, permission: PRESENTATION_PERMISSIONS.PRODUCTIVE_WORK_READ },
-  { id: PRACTICE_WORKSPACE_VIEWS.DEADLINES, label: 'Deadlines', icon: Clock3, permission: PRESENTATION_PERMISSIONS.DEADLINE_READ },
+  { id: PRACTICE_WORKSPACE_VIEWS.DEADLINES, label: 'Deadlines', icon: Clock3, permission: PRESENTATION_PERMISSIONS.DEADLINE_READ, requiresWorkspace: true },
   { id: PRACTICE_WORKSPACE_VIEWS.FINANCE, label: 'Finance Evidence', icon: Landmark, anyPermissions: [PRESENTATION_PERMISSIONS.BILLING_READ, PRESENTATION_PERMISSIONS.INVOICE_READ] },
-  { id: PRACTICE_WORKSPACE_VIEWS.INTAKE, label: 'New Instruction', icon: FilePlus2, permission: PRESENTATION_PERMISSIONS.INSTRUCTION_WRITE },
+  { id: PRACTICE_WORKSPACE_VIEWS.INTAKE, label: 'New Instruction', icon: FilePlus2, permission: PRESENTATION_PERMISSIONS.INSTRUCTION_WRITE, requiresWorkspace: true },
 ]);
 
 const CLIENT_WORKSPACE_VIEWS = Object.freeze({
@@ -4006,7 +4006,7 @@ function LegalPracticeWorkspace({
         workspace={workspace}
       />
     );
-  } else if (!error && activeView === PRACTICE_WORKSPACE_VIEWS.FINANCE) {
+  } else if (activeView === PRACTICE_WORKSPACE_VIEWS.FINANCE) {
     content = <LegalFinanceLookup roleToken={roleToken} user={user} />;
   } else if (!error && activeView === PRACTICE_WORKSPACE_VIEWS.INTAKE) {
     content = (
