@@ -100,3 +100,42 @@ Commits:
 6. Begin the visual workbench migration module by module; no blanket redesign that changes authorization or fabricates operational truth.
 
 **Release decision:** Not ready for merge or deployment. This ledger records implementation and evidence status, not release approval.
+
+
+## 6 November 2026 — EOS tenant module manifest tranche
+
+- [x] Added `tools/eos/auth/tenant_module_manifest.py`.
+- [x] Added `tests/unit/test_tenant_module_manifest.py`.
+- [x] Added `.github/workflows/eos-tenant-module-manifest-certification.yml`.
+- [x] Reused D22A product identity/workspace keys; no duplicate product IDs.
+- [x] Projected Legal OS only from typed ACTIVE D22B1 tenant-product entitlement evidence.
+- [x] Projected CRM only from typed ACTIVE `crm.core` entitlement evidence.
+- [x] Pending/suspended/revoked entitlements are omitted.
+- [x] Unknown object types, foreign-tenant evidence, duplicate product evidence, malformed revisions/fingerprints and pseudo-tenants fail closed.
+- [x] Billing and HR remain absent unless their own positive canonical entitlement evidence is supplied.
+- [x] Manifest is explicitly presentation-only: no principal role, IAM permission, route admission, Legal Practice, G68, matter or financial execution authority.
+
+Commits:
+- Manifest source: `d1073c66e4c559631f3ca93bb0c139fb2b8f6d5d`
+- Direct certificate: `7a1c09bca50fc170cd0da62b6e87c2a8c8d8808a`
+- Dedicated CI workflow: `d1b99d36e69fa965437dbb2e9205e483753c6ed7`
+- Sovereign header/end-seal correction: `93ecd0c16851b13e3de4d11bb6b9b7756239cc38`
+
+Certification evidence:
+- Dedicated workflow run `42151936696` completed **success** on source/test commit `d1b99d36e69fa965437dbb2e9205e483753c6ed7`.
+- Compilation, direct module manifest + workspace bootstrap + product catalogue tests, and repository integrity all passed.
+- A second exact-head workflow run `42151980898` was pending on `93ecd0c16851b13e3de4d11bb6b9b7756239cc38` at ledger update. Its only source change relative to the tested manifest was the required governance header/end seal.
+
+Codex second-pass review:
+- Requested one constrained `@codex review` on PR #342, scoped to the new commercial offer and module manifest files plus directly used entitlement domains.
+- Codex bot reported that the review could not complete and then reported the account's Codex code-review usage limit had been reached. No Codex findings or approval are claimed. Do not burn additional Codex review attempts until the usage window resets; use the existing AGENTS.md contract and focused CI in the meantime.
+
+## Updated remaining work
+
+1. Exact-head rerun of the module-manifest certificate after the header correction.
+2. Wire typed entitlement authorities into authenticated workspace-bootstrap under a bounded caller-owned read transaction; do not accept client-supplied entitlement objects.
+3. Extend AuthContext to admit only the READY server-issued module projection.
+4. Render entitlement-backed module navigation in the shared OS shell; ensure Tenant Owner commercial visibility does not grant Legal Practice or G68 access.
+5. Replace the executive landing page's generic KPI-card composition with a task-first command workbench using real API-backed queues and record inspectors.
+6. Fix the three authenticated browser failure clusters and obtain exact-head green browser certification.
+7. Run the full client test/build, Python focused suite, and real-replica-set isolation tests after wiring.
