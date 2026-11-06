@@ -70,7 +70,7 @@ describe('independent tenant module daily-use workspace', () => {
     await waitFor(() => expect(createTenantModuleWorkItem).toHaveBeenCalledWith('OPERATIONS', expect.objectContaining({
       title: 'Review operating procedure',
       kind: 'TASK',
-    })));
+    }), expect.any(String)));
     fireEvent.click(await screen.findByRole('button', { name: 'Complete' }));
     await waitFor(() => expect(completeTenantModuleWorkItem).toHaveBeenCalledWith(
       'OPERATIONS', 'tmw-ops-1', expect.any(String),
