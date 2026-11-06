@@ -20,10 +20,10 @@ from tools.eos.saas.entitlement.commercial_offer_catalogue import (
 from tools.eos.saas.entitlement.product_catalogue import TenantProductId
 
 
-def test_catalogue_contains_six_standalone_offers_and_three_explicit_bundles() -> None:
+def test_catalogue_contains_seven_standalone_offers_and_three_explicit_bundles() -> None:
     offers = list_commercial_offers()
-    assert len(offers) == 9
-    assert sum(item.kind is CommercialOfferKind.STANDALONE for item in offers) == 6
+    assert len(offers) == 10
+    assert sum(item.kind is CommercialOfferKind.STANDALONE for item in offers) == 7
     assert sum(item.kind is CommercialOfferKind.BUNDLE for item in offers) == 3
 
     standalone = {
@@ -32,6 +32,17 @@ def test_catalogue_contains_six_standalone_offers_and_three_explicit_bundles() -
         if item.kind is CommercialOfferKind.STANDALONE
     }
     assert standalone == set(TenantProductId)
+
+
+def test_pos_is_standalone_and_excluded_from_every_existing_bundle() -> None:
+    offer = get_commercial_offer(CommercialOfferId.POS)
+    assert offer.kind is CommercialOfferKind.STANDALONE
+    assert offer.product_ids == (TenantProductId.POS,)
+    assert offer.offer_id not in {
+        product for item in list_commercial_offers()
+        if item.kind is CommercialOfferKind.BUNDLE
+        for product in item.product_ids
+    }
 
 
 def test_bundle_composition_is_explicit_and_uses_only_catalogued_products() -> None:
