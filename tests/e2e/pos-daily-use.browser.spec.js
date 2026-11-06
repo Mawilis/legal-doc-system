@@ -77,7 +77,7 @@ test('POS operator completes authenticated daily-use sale and evidence journey',
     expect(tender.status).toBe(201);
 
     const cash = await api(page, 'POST', `/api/pos/locations/browser-cert-store-01/sales/${saleId}/cash-tenders`, {
-      cash_received_minor: 10000, evidence_id: `cash-${saleId}`,
+      cash_received_minor: 20000, evidence_id: `cash-${saleId}`,
     }, `cash:${saleId}`);
     expect(cash.status).toBe(201);
 
