@@ -70,6 +70,12 @@ from tools.eos.saas.entitlement.commercial_offer_catalogue import (
     CommercialOfferCatalogueError,
     get_commercial_offer,
 )
+from tools.eos.saas.entitlement.tenant_product_entitlement_issuance_orchestrator import (
+    TenantProductEntitlementIssuanceAuthorizationError,
+    TenantProductEntitlementIssuanceCompositionError,
+    TenantProductEntitlementIssuanceEvidenceError,
+    TenantProductEntitlementIssuanceInputError,
+)
 from tools.eos.saas.entitlement.tenant_product_entitlement_registry import (
     CURRENT_COLLECTION as ENTITLEMENT_CURRENT_COLLECTION,
     HISTORY_COLLECTION as ENTITLEMENT_HISTORY_COLLECTION,
@@ -234,6 +240,14 @@ def _bundle_transaction(callback: Callable[..., Any]) -> Any:
         raise HTTPException(status_code=status, detail=code) from error
     except (CommercialBundleActivationPersistenceError, CommercialAgreementRegistryPersistenceUnavailableError) as error:
         raise HTTPException(status_code=503, detail=getattr(error, "code", "COMMERCIAL_BUNDLE_PERSISTENCE_UNAVAILABLE")) from error
+    except TenantProductEntitlementIssuanceAuthorizationError as error:
+        raise HTTPException(status_code=403, detail=error.code) from error
+    except TenantProductEntitlementIssuanceInputError as error:
+        raise HTTPException(status_code=422, detail=error.code) from error
+    except TenantProductEntitlementIssuanceCompositionError as error:
+        raise HTTPException(status_code=422, detail=error.code) from error
+    except TenantProductEntitlementIssuanceEvidenceError as error:
+        raise HTTPException(status_code=503, detail=error.code) from error
     except (CommercialBundleActivationError, CommercialAgreementRegistryError, TenantProductEntitlementRegistryError) as error:
         raise HTTPException(status_code=503, detail=getattr(error, "code", "COMMERCIAL_BUNDLE_OPERATION_UNAVAILABLE")) from error
     except HTTPException:
