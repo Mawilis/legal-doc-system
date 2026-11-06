@@ -282,6 +282,7 @@ def _workspace_legal_presentation_permissions(
             membership_repository=membership_repository,
             business_role_repository=role_assignment_repository,
             role_assignment_repository=role_assignment_repository,
+            selected_business_role=projection.business_role,
         )
         return permission_id, decision
 
