@@ -320,10 +320,17 @@ class CommercialAgreementExecutionVerifier:
             mandate.authority_fingerprint,
             "COMMERCIAL_EXECUTION_SIGNATORY_AUTHORITY_FINGERPRINT_INVALID",
         )
+        trust_anchor_fp = _fingerprint(
+            trust.trust_anchor_fingerprint,
+            "COMMERCIAL_EXECUTION_TRUST_ANCHOR_FINGERPRINT_INVALID",
+        )
+        if not isinstance(mandate.authority_reference, str) or not mandate.authority_reference.strip():
+            raise CommercialAgreementExecutionVerificationError(
+                "COMMERCIAL_EXECUTION_SIGNATORY_AUTHORITY_REFERENCE_INVALID"
+            )
         execution_fp = hashlib.sha3_512(
             evidence.signed_document + evidence.signature + bytes.fromhex(cert_fp)
-            + timestamp.timestamp_token if hasattr(timestamp, "timestamp_token") else
-            evidence.signed_document + evidence.signature + bytes.fromhex(cert_fp)
+            + evidence.timestamp_token
         ).hexdigest()
         receipt_payload = {
             "tenant_id": agreement.tenant_id,
@@ -336,7 +343,7 @@ class CommercialAgreementExecutionVerifier:
             "timestamp_reference": timestamp.evidence_reference,
             "timestamp_fingerprint": timestamp_fp,
             "trust_anchor_reference": trust.trust_anchor_reference,
-            "trust_anchor_fingerprint": trust.trust_anchor_fingerprint,
+            "trust_anchor_fingerprint": trust_anchor_fp,
             "verifier_id": self._verifier_id,
             "signed_at": signed_at.isoformat(),
         }
