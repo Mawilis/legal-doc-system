@@ -89,7 +89,19 @@ test('certifies authenticated conflict review through browser, API, and durable 
     email: state.email,
   });
 
+  const workspaceDenial = page.waitForResponse((response) => (
+    new URL(response.url()).pathname === '/api/legal-operations/workspace'
+    && response.request().method() === 'GET'
+  ));
+  const screeningRead = page.waitForResponse((response) => (
+    new URL(response.url()).pathname === '/api/legal-operations/conflict-screenings'
+    && response.request().method() === 'GET'
+  ));
   await page.goto('/');
+  expect((await workspaceDenial).status()).toBe(503);
+  expect((await screeningRead).status()).toBe(200);
+  await expect(page.getByText('LEGAL_OPERATIONS_WORKSPACE_CONFIDENTIALITY_AUTHORITY_UNAVAILABLE')).toBeVisible();
+  await page.getByRole('button', { name: 'Conflict Reviews', exact: true }).click();
   try {
     await expect(page.getByText('Conflict review queue', { exact: true })).toBeVisible();
   } catch (error) {
@@ -196,7 +208,8 @@ test('certifies authenticated conflict review through browser, API, and durable 
     ['GET', '/api/legal-operations/conflict-screenings'],
   ];
   for (const [method, path] of requiredRequests) {
-    expect(observed).toContainEqual(expect.objectContaining({ method, path, status: 200 }));
+    const expectedStatus = path === '/api/legal-operations/workspace' ? 503 : 200;
+    expect(observed).toContainEqual(expect.objectContaining({ method, path, status: expectedStatus }));
   }
   expect(observed).toContainEqual(expect.objectContaining({
     method: 'POST', path: '/api/legal-operations/conflict-reviews', status: 200,
