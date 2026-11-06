@@ -1,0 +1,59 @@
+name: EOS Tenant Module Manifest Certification
+
+on:
+  push:
+    branches:
+      - eos/tenant-discovery-iam-dashboard-roadmap
+    paths:
+      - "tools/eos/auth/tenant_module_manifest.py"
+      - "tools/eos/crm/domain/crm_core_entitlement.py"
+      - "tools/eos/saas/domain/tenant_product_entitlement.py"
+      - "tools/eos/saas/entitlement/product_catalogue.py"
+      - "tests/unit/test_tenant_module_manifest.py"
+      - ".github/workflows/eos-tenant-module-manifest-certification.yml"
+  pull_request:
+    paths:
+      - "tools/eos/auth/tenant_module_manifest.py"
+      - "tools/eos/crm/domain/crm_core_entitlement.py"
+      - "tools/eos/saas/domain/tenant_product_entitlement.py"
+      - "tools/eos/saas/entitlement/product_catalogue.py"
+      - "tests/unit/test_tenant_module_manifest.py"
+      - ".github/workflows/eos-tenant-module-manifest-certification.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: eos-tenant-module-manifest-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  tenant-module-manifest:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 2
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install repository dependencies and pytest
+        run: |
+          python -m pip install --disable-pip-version-check -r requirements.txt
+          python -m pip install --disable-pip-version-check pytest==9.1.1
+
+      - name: Compile module manifest and canonical entitlement domains
+        run: |
+          python -m compileall -q tools/eos/auth/tenant_module_manifest.py tools/eos/crm/domain/crm_core_entitlement.py tools/eos/saas/domain/tenant_product_entitlement.py tools/eos/saas/entitlement/product_catalogue.py
+
+      - name: Run direct module manifest and entitlement certificates
+        run: |
+          python -m pytest -q tests/unit/test_tenant_module_manifest.py tests/unit/test_workspace_bootstrap_projection.py tests/unit/test_tenant_product_catalogue.py
+
+      - name: Enforce repository integrity
+        run: |
+          python tools/eos/governance/repository_integrity_guard.py --commit "$GITHUB_SHA"
