@@ -3,7 +3,7 @@ from pathlib import Path
 
 from tools.eos.api import server
 from tools.eos.api.tenant_module_workspace_router import router
-from tools.eos.auth.tenant_authorization import RequireTenantAuthorization
+from tools.eos.api.tenant_authorization_http import RequireTenantAuthorization
 
 
 def test_operations_and_intelligence_workspace_routes_are_distinct_and_mounted_once():
