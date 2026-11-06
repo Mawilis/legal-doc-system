@@ -55,8 +55,11 @@ async function openAuthenticated(browser, actorKey, viewport = { width: 1440, he
 }
 
 async function openModuleNavigation(page) {
-  // Owner and Legal specialist dashboards intentionally differ; module navigation
-  // is shared, while the Executive workbench remains Owner-only.
+  // The shared product rail is intentionally collapsed on first render.
+  // Open it explicitly; module navigation remains a server-issued projection.
+  const openRail = page.getByRole('button', { name: 'Open workspace modules' });
+  if (await openRail.isVisible()) await openRail.click();
+  await expect(page.getByRole('navigation', { name: 'Available WILSY OS products' })).toBeVisible();
   await expect(page.getByRole('button', { name: /Legal OS/i }).first()).toBeVisible();
   const manifestPromise = page.waitForResponse(response => (
     new URL(response.url()).pathname === '/api/auth/module-manifest'
