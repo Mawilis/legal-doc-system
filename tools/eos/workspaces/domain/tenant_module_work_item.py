@@ -1,8 +1,8 @@
 """WILSY OS tenant-module work item domain.
 
-TITLE: Owner Commercial Work Item
-VERSION: v1.0.0-OWNER-COMMERCIAL-WORK-ITEM
-AUTHORITY: Python EOS commercial operations.
+TITLE: Tenant Module Work Item
+VERSION: v1.0.0-TENANT-MODULE-WORK-ITEM
+AUTHORITY: Python EOS tenant-module operations.
 PURPOSE:
     Model tenant-owned operational tasks, reminders and follow-ups without
     creating Legal practice, matter, client-confidentiality, IAM or financial
@@ -20,7 +20,7 @@ import re
 from typing import Final
 from uuid import uuid4
 
-VERSION: Final[str] = "v1.0.0-OWNER-COMMERCIAL-WORK-ITEM"
+VERSION: Final[str] = "v1.0.0-TENANT-MODULE-WORK-ITEM"
 SCHEMA: Final[str] = "WILSY-TENANT-MODULE-WORK-ITEM/V1"
 _FORBIDDEN_TENANTS: Final[frozenset[str]] = frozenset({
     "MASTER", "GLOBAL_ROOT", "WILSY_ROOT", "WILSY_MASTER",
@@ -30,7 +30,7 @@ _HEX = re.compile(r"^[0-9a-f]{128}$")
 
 
 class ModuleWorkItemError(ValueError):
-    """Stable fail-closed owner-work validation error."""
+    """Stable fail-closed tenant-module work validation error."""
 
     def __init__(self, code: str) -> None:
         self.code = code
@@ -97,7 +97,7 @@ class TenantModuleWorkItem:
         _text(self.work_item_id, "WORK_ITEM_ID_INVALID")
         _text(self.title, "TITLE_INVALID")
         _text(self.description, "DESCRIPTION_INVALID", allow_empty=True)
-        _text(self.created_by_principal_id, "OWNER_PRINCIPAL_ID_INVALID")
+        _text(self.created_by_principal_id, "CREATED_BY_PRINCIPAL_ID_INVALID")
         if not isinstance(self.kind, ModuleWorkKind) or not isinstance(self.status, ModuleWorkStatus) or not isinstance(self.priority, ModuleWorkPriority):
             raise ModuleWorkItemError("CLASSIFICATION_INVALID")
         created = _time(self.created_at, "CREATED_AT_INVALID")
@@ -131,7 +131,7 @@ class TenantModuleWorkItem:
     ) -> "TenantModuleWorkItem":
         instant = _time(now, "CREATED_AT_INVALID")
         return cls(
-            work_item_id="owk_" + uuid4().hex,
+            work_item_id="tmw_" + uuid4().hex,
             tenant_id=tenant_id, title=title, description=description,
             kind=kind, status=ModuleWorkStatus.OPEN, priority=priority,
             created_by_principal_id=created_by_principal_id, due_at=due_at,
