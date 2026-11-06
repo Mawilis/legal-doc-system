@@ -408,9 +408,9 @@ def test_permission_canon_properties() -> None:
             for row in rows
             if row["disposition"] == "CANONICAL"
         ]
-    ) == 144
+    ) == 146
 
-    assert len(rows) == 147
+    assert len(rows) == 149
 
     for permission_id in tenant:
         metadata = permission_metadata(
