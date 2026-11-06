@@ -207,6 +207,14 @@ class CommercialBundleActivationReceipt:
     activation_evidence_fingerprint: str
     execution_evidence_reference: str
     execution_evidence_fingerprint: str
+    contract_reference: str
+    contract_version: str
+    signatory_principal_id: str
+    signatory_authority_reference: str
+    signatory_authority_fingerprint: str
+    verifier_id: str
+    verification_receipt_reference: str
+    verification_receipt_fingerprint: str
     activated_at: datetime
     product_entitlements: tuple[dict[str, str], ...]
     schema: str = SCHEMA
@@ -227,6 +235,14 @@ class CommercialBundleActivationReceipt:
             "activation_evidence_fingerprint": self.activation_evidence_fingerprint,
             "execution_evidence_reference": self.execution_evidence_reference,
             "execution_evidence_fingerprint": self.execution_evidence_fingerprint,
+            "contract_reference": self.contract_reference,
+            "contract_version": self.contract_version,
+            "signatory_principal_id": self.signatory_principal_id,
+            "signatory_authority_reference": self.signatory_authority_reference,
+            "signatory_authority_fingerprint": self.signatory_authority_fingerprint,
+            "verifier_id": self.verifier_id,
+            "verification_receipt_reference": self.verification_receipt_reference,
+            "verification_receipt_fingerprint": self.verification_receipt_fingerprint,
             "activated_at": self.activated_at.astimezone(timezone.utc).isoformat().replace("+00:00", "Z"),
             "product_entitlements": [dict(item) for item in self.product_entitlements],
         }
@@ -311,6 +327,14 @@ def _hydrate_receipt(row: Mapping[str, Any]) -> CommercialBundleActivationReceip
             activation_evidence_fingerprint=str(raw["activation_evidence_fingerprint"]),
             execution_evidence_reference=str(raw["execution_evidence_reference"]),
             execution_evidence_fingerprint=str(raw["execution_evidence_fingerprint"]),
+            contract_reference=str(raw["contract_reference"]),
+            contract_version=str(raw["contract_version"]),
+            signatory_principal_id=str(raw["signatory_principal_id"]),
+            signatory_authority_reference=str(raw["signatory_authority_reference"]),
+            signatory_authority_fingerprint=str(raw["signatory_authority_fingerprint"]),
+            verifier_id=str(raw["verifier_id"]),
+            verification_receipt_reference=str(raw["verification_receipt_reference"]),
+            verification_receipt_fingerprint=str(raw["verification_receipt_fingerprint"]),
             activated_at=activated_at,
             product_entitlements=tuple(dict(item) for item in products),
             schema=str(raw["schema"]),
@@ -403,6 +427,14 @@ def _verify_existing_receipt(
         or receipt.offer_fingerprint != offer.fingerprint
         or receipt.execution_evidence_reference != evidence.execution_evidence_reference
         or receipt.execution_evidence_fingerprint != evidence.execution_evidence_fingerprint
+        or receipt.contract_reference != evidence.contract_reference
+        or receipt.contract_version != evidence.contract_version
+        or receipt.signatory_principal_id != evidence.signatory_principal_id
+        or receipt.signatory_authority_reference != evidence.signatory_authority_reference
+        or receipt.signatory_authority_fingerprint != evidence.signatory_authority_fingerprint
+        or receipt.verifier_id != evidence.verifier_id
+        or receipt.verification_receipt_reference != evidence.verification_receipt_reference
+        or receipt.verification_receipt_fingerprint != evidence.verification_receipt_fingerprint
     ):
         raise CommercialBundleActivationConflictError(
             "COMMERCIAL_BUNDLE_EXISTING_RECEIPT_DIVERGENCE"
@@ -569,6 +601,14 @@ def activate_commercial_bundle(
         activation_evidence_fingerprint=activation_fp,
         execution_evidence_reference=verified_execution_evidence.execution_evidence_reference,
         execution_evidence_fingerprint=verified_execution_evidence.execution_evidence_fingerprint,
+        contract_reference=verified_execution_evidence.contract_reference,
+        contract_version=verified_execution_evidence.contract_version,
+        signatory_principal_id=verified_execution_evidence.signatory_principal_id,
+        signatory_authority_reference=verified_execution_evidence.signatory_authority_reference,
+        signatory_authority_fingerprint=verified_execution_evidence.signatory_authority_fingerprint,
+        verifier_id=verified_execution_evidence.verifier_id,
+        verification_receipt_reference=verified_execution_evidence.verification_receipt_reference,
+        verification_receipt_fingerprint=verified_execution_evidence.verification_receipt_fingerprint,
         activated_at=when,
         product_entitlements=product_tuple,
     )
