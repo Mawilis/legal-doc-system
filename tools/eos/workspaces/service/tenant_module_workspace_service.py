@@ -50,7 +50,7 @@ class TenantModuleWorkspaceService:
         self._registry, self._product_id = registry, product_id
         self._history, self._current = history_collection, current_collection
 
-    def _require_product(self, tenant_id: str, session: Any) -> None:
+    def _require_product(self, tenant_id: str, session: Any):
         try:
             descriptor = get_tenant_product(self._product_id)
             entitlement_id = derive_tenant_product_entitlement_id(tenant_id, self._product_id)
@@ -69,10 +69,20 @@ class TenantModuleWorkspaceService:
             or entitlement.lifecycle_state is not TenantProductEntitlementState.ACTIVE
         ):
             raise TenantModuleWorkspaceError("MODULE_WORK_PRODUCT_NOT_ENTITLED")
+        return entitlement
+
+    def read_workspace(self, *, tenant_id: str, now: datetime, session: Any) -> dict[str, Any]:
+        entitlement = self._require_product(tenant_id, session)
+        return {
+            "entitlement_id": entitlement.entitlement_id,
+            "entitlement_revision": entitlement.lifecycle_revision,
+            "entitlement_fingerprint": entitlement.fingerprint,
+            "entitlement_state": entitlement.lifecycle_state.value,
+            "items": self._registry.daily_queue(tenant_id=tenant_id, now=now, session=session),
+        }
 
     def daily_queue(self, *, tenant_id: str, now: datetime, session: Any):
-        self._require_product(tenant_id, session)
-        return self._registry.daily_queue(tenant_id=tenant_id, now=now, session=session)
+        return self.read_workspace(tenant_id=tenant_id, now=now, session=session)["items"]
 
     def create(
         self, *, tenant_id: str, principal_id: str, title: str, description: str,
