@@ -1,7 +1,7 @@
 """WILSY OS canonical product-to-commercial-feature mapping.
 
 TITLE: Product Commercial Feature Mapping Domain
-VERSION: v1.0.0-D22B3-PRODUCT-COMMERCIAL-FEATURE
+VERSION: v1.1.0-D22B3-ALL-CATALOGUED-PRODUCT-MAPPINGS
 AUTHORITY: Wilsy OS Core Governance
 EPITOME: Bind selected D22A tenant-product identities to exact commercial
          subscription feature identities without deciding tenant ownership.
@@ -11,9 +11,13 @@ COLLABORATION / OWNERSHIP: D22A owns product identity and catalogue integrity;
                             SubscriptionRegistry remains subscription authority;
                             D22B1 owns lifecycle and D22B2 owns persistence.
 CERTIFICATION / UPDATE DATE: 2026-10-09
-CHANGELOG: v1.0.0-D22B3-PRODUCT-COMMERCIAL-FEATURE establishes exact Legal
-           Operations <-> legal.core and CRM <-> crm.core mappings, explicit
-           Billing/HR unmapped failures, catalogue binding and SHA3-512 seals.
+CHANGELOG: v1.1.0-D22B3-ALL-CATALOGUED-PRODUCT-MAPPINGS adds exact Billing
+           <-> billing.core and HR <-> hr.core mappings alongside the existing
+           Legal Operations <-> legal.core and CRM <-> crm.core mappings. All
+           four mappings remain catalogue-bound metadata only; no IAM, route,
+           financial execution or workspace action authority is introduced.
+           v1.0.0 established exact Legal/CRM mappings and explicit Billing/HR
+           unmapped failures.
 COMPLIANCE: POPIA section 19; GDPR Article 32; SOC 2 CC7.2; ISO 27001.
 SECURITY / PRIVACY POSTURE: Pure immutable global metadata; no tenant, principal,
                              credential, network, filesystem or persistence data.
@@ -43,10 +47,12 @@ from tools.eos.saas.entitlement.product_catalogue import (
 )
 
 
-VERSION: Final[str] = "v1.0.0-D22B3-PRODUCT-COMMERCIAL-FEATURE"
+VERSION: Final[str] = "v1.1.0-D22B3-ALL-CATALOGUED-PRODUCT-MAPPINGS"
 SCHEMA: Final[str] = "WILSY-PRODUCT-COMMERCIAL-FEATURE/V1"
 LEGAL_OPERATIONS_COMMERCIAL_FEATURE_ID: Final[str] = "legal.core"
 CRM_COMMERCIAL_FEATURE_ID: Final[str] = "crm.core"
+BILLING_COMMERCIAL_FEATURE_ID: Final[str] = "billing.core"
+HR_COMMERCIAL_FEATURE_ID: Final[str] = "hr.core"
 
 
 class ProductCommercialFeatureMappingError(ValueError):
@@ -60,7 +66,9 @@ class ProductCommercialFeatureMappingError(ValueError):
 
 _FEATURE_BY_PRODUCT: Final[dict[TenantProductId, str]] = {
     TenantProductId.LEGAL_OPERATIONS: LEGAL_OPERATIONS_COMMERCIAL_FEATURE_ID,
+    TenantProductId.BILLING: BILLING_COMMERCIAL_FEATURE_ID,
     TenantProductId.CRM: CRM_COMMERCIAL_FEATURE_ID,
+    TenantProductId.HR: HR_COMMERCIAL_FEATURE_ID,
 }
 
 
@@ -231,7 +239,9 @@ def list_product_commercial_features() -> tuple[ProductCommercialFeatureDescript
 
 
 __all__ = [
+    "BILLING_COMMERCIAL_FEATURE_ID",
     "CRM_COMMERCIAL_FEATURE_ID",
+    "HR_COMMERCIAL_FEATURE_ID",
     "LEGAL_OPERATIONS_COMMERCIAL_FEATURE_ID",
     "ProductCommercialFeatureDescriptor",
     "ProductCommercialFeatureMappingError",
@@ -242,7 +252,7 @@ __all__ = [
 ]
 
 # ARTIFACT: product_commercial_feature.py
-# VERSION: v1.0.0-D22B3-PRODUCT-COMMERCIAL-FEATURE
+# VERSION: v1.1.0-D22B3-ALL-CATALOGUED-PRODUCT-MAPPINGS
 # AUTHORITY BOUNDARY: static D22A product-to-commercial-feature metadata only; no subscription, entitlement, IAM, route or classification authority
 # TENANT POSTURE: global mapping facts only; no tenant identity is accepted, inferred or mutated
 # FAIL-CLOSED POSTURE: unknown/unmapped products, feature drift, duplicate identities, catalogue drift and fingerprint drift reject
