@@ -21,7 +21,7 @@ function moduleDescriptor(moduleId) {
   return descriptor;
 }
 
-export async function readTenantModuleWorkspace(moduleId) {
+export async function readTenantModuleWorkspace(moduleId, expectedTenantId = '') {
   const descriptor = moduleDescriptor(moduleId);
   const response = await api.get(`/tenant-modules/${descriptor.path}/workspace`, {
     timeout: 12000,
@@ -48,6 +48,7 @@ export async function readTenantModuleWorkspace(moduleId) {
     value.product_id !== descriptor.productId ||
     value.workspace_key !== descriptor.workspaceKey ||
     typeof value.tenant_id !== 'string' ||
+    (expectedTenantId && value.tenant_id !== expectedTenantId) ||
     typeof value.entitlement_id !== 'string' ||
     !Number.isInteger(value.entitlement_revision) ||
     typeof value.entitlement_fingerprint !== 'string' ||
