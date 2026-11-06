@@ -342,6 +342,9 @@ def test_authenticated_signatory_can_execute_only_verified_server_evidence(
         )
     assert replay.status_code == 200, replay.text
     assert replay.json()["outcome"] == "IDEMPOTENT_REPLAY"
+    assert mongo_context["database"]["commercial_agreement_execution_verification_receipts"].count_documents(
+        {"tenant_id": tenant, "agreement_id": "agreement-execute-http"}
+    ) == 1
 
 
 def test_execution_route_fails_closed_without_trusted_verifier_and_rejects_browser_proof(
@@ -490,5 +493,8 @@ def test_authenticated_execution_activation_and_entitlement_readback_real_mongo(
     }
     assert all(item["lifecycle_state"] == "ACTIVE" for item in products)
     assert database["commercial_bundle_activation_receipts"].count_documents(
+        {"tenant_id": tenant, "agreement_id": "agreement-full-journey"}
+    ) == 1
+    assert database["commercial_agreement_execution_verification_receipts"].count_documents(
         {"tenant_id": tenant, "agreement_id": "agreement-full-journey"}
     ) == 1
