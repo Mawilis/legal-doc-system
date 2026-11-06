@@ -1258,7 +1258,7 @@ const SovereignDashboardController = ({ user: propUser, onLogout }) => {
           textTransform: 'uppercase', cursor: 'pointer',
         }}
       >
-        <CheckCircle size={16} /> My Work
+        <Crown size={16} /> My Work
       </button>
       )}
 
