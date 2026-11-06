@@ -16,6 +16,7 @@ import { readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { describe, expect, it } from 'vitest';
 import { resolveWilsyChromeIdentitySources } from './wilsyDashboardChromeConfig';
+import { validateWilsyModuleManifest } from './WilsyOSDashboardChrome.jsx';
 
 const chromeStyles = readFileSync(
   resolve(process.cwd(), 'src/components/os/WilsyOSDashboardChrome.module.css'),
@@ -215,3 +216,54 @@ describe('L10-P2C1 shared clickable-pill interaction contract', () => {
 // FAIL-CLOSED POSTURE: legacy/foreign/browser branding is suppressed
 // FINANCIAL EXECUTION AUTHORITY: none; Kennel EOS exclusively
 // END OF WILSY OS SOVEREIGN ARTIFACT
+
+
+describe('EOS-issued tenant product navigation', () => {
+  const manifest = {
+    status: 'READY',
+    workspace: {
+      tenantId: 'ACME-001',
+      moduleManifestVersion: 'v1.0.0-EOS-TENANT-MODULE-MANIFEST',
+      modules: [{
+        moduleId: 'LEGAL_OS',
+        productId: 'LEGAL_OPERATIONS',
+        label: 'Legal OS',
+        workspaceKey: 'LEGAL_DASHBOARD',
+        navigationGroup: 'PROFESSIONAL_SERVICES',
+        iconKey: 'scale',
+        entitlementId: 'legal-entitlement-1',
+        entitlementRevision: 4,
+        entitlementFingerprint: fingerprint('d'),
+      }],
+    },
+  };
+
+  it('admits only the READY manifest bound to the exact authenticated tenant', () => {
+    const result = validateWilsyModuleManifest(manifest, 'ACME-001');
+    expect(result).toHaveLength(1);
+    expect(result[0].moduleId).toBe('LEGAL_OS');
+    expect(result[0].workspaceKey).toBe('LEGAL_DASHBOARD');
+    expect(Object.isFrozen(result[0])).toBe(true);
+  });
+
+  it('rejects foreign tenant, unknown module, duplicate and extra authority fields', () => {
+    expect(() => validateWilsyModuleManifest(manifest, 'FOREIGN-999')).toThrow();
+    const unknown = structuredClone(manifest);
+    unknown.workspace.modules[0].moduleId = 'SUPER_ADMIN';
+    expect(() => validateWilsyModuleManifest(unknown, 'ACME-001')).toThrow();
+    const duplicate = structuredClone(manifest);
+    duplicate.workspace.modules.push({ ...duplicate.workspace.modules[0] });
+    expect(() => validateWilsyModuleManifest(duplicate, 'ACME-001')).toThrow();
+    const forged = structuredClone(manifest);
+    forged.workspace.modules[0].permissions = ['*'];
+    expect(() => validateWilsyModuleManifest(forged, 'ACME-001')).toThrow();
+  });
+
+  it('loads modules from the authenticated server endpoint and navigates using the canonical workspace key', () => {
+    expect(chromeSource).toContain("api.get('/auth/module-manifest')");
+    expect(chromeSource).toContain("validateWilsyModuleManifest(data, tenantId)");
+    expect(chromeSource).toContain("'wilsy:switch-dashboard'");
+    expect(chromeSource).toContain("source: 'server-module-manifest'");
+    expect(chromeSource).toContain('Available WILSY OS products');
+  });
+});
