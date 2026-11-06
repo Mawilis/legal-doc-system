@@ -340,6 +340,23 @@ test('Legal Partner My Work excludes owner CRM, Operations and Intelligence sour
     expect(projection.sources_included).not.toContain('CRM');
     expect(projection.sources_included).not.toContain('OPERATIONS');
     expect(projection.sources_included).not.toContain('INTELLIGENCE');
+
+    // The same live IAM boundary must reject an unjoined foreign tenant even
+    // when the caller supplies its identifier explicitly.
+    const foreignTenant = await page.evaluate(async ({ foreignTenantId }) => {
+      const token = localStorage.getItem('wilsy_auth_token') || localStorage.getItem('token') || '';
+      const response = await fetch('/api/my-work', {
+        method: 'GET',
+        credentials: 'include',
+        headers: {
+          Authorization: `Bearer ${token}`,
+          'X-Tenant-ID': foreignTenantId,
+        },
+      });
+      return { status: response.status, payload: await response.json().catch(() => ({})) };
+    }, { foreignTenantId: state.foreign_tenant_id });
+    expect(foreignTenant.status).toBe(403);
+
     await expect(page.getByRole('heading', { name: 'My Work' })).toBeVisible();
     await expect(page.getByText('Operations', { exact: true })).toHaveCount(0);
     await expect(page.getByText('Intelligence', { exact: true })).toHaveCount(0);
