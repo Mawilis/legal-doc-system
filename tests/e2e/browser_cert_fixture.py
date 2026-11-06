@@ -40,7 +40,7 @@ import argparse
 import json
 import os
 import struct
-from datetime import datetime, timezone
+from datetime import datetime, timezone, timedelta
 from pathlib import Path
 from uuid import uuid4
 from typing import Any
@@ -115,6 +115,78 @@ from tools.eos.legal_operations.domain.legal_conflict_screening import (
     LegalConflictScreeningStatus,
 )
 from tools.eos.legal_operations.domain.legal_operations_lifecycle import CaseMatter
+
+from tools.eos.legal_operations.domain.legal_operating_catalogue import CATALOGUE_FINGERPRINT
+from tools.eos.legal_operations.domain.tenant_legal_operating_model import TenantLegalOperatingModel
+from tools.eos.legal_operations.domain.tenant_legal_workflow_activation import TenantLegalWorkflowActivation
+from tools.eos.legal_operations.domain.legal_workflow_definition import LegalWorkflowDefinition
+from tools.eos.legal_operations.domain.legal_workflow_stage import LegalWorkflowStage
+from tools.eos.legal_operations.domain.legal_workflow_topology import LegalWorkflowTopology
+from tools.eos.legal_operations.domain.legal_matter_workflow_instance import LegalMatterWorkflowInstance
+from tools.eos.legal_operations.domain.legal_work_materialization_policy import (
+    LegalOperationalDueRule,
+    LegalWorkMaterializationPolicy,
+    LegalWorkMaterializationTemplate,
+)
+from tools.eos.legal_operations.domain.legal_work_assignment import LegalWorkAssignment
+from tools.eos.legal_operations.registry.tenant_legal_operating_model_registry import (
+    COLLECTION_NAME as LEGAL_OPERATING_MODEL_COLLECTION,
+    TenantLegalOperatingModelRegistry,
+)
+from tools.eos.legal_operations.registry.tenant_legal_workflow_activation_registry import (
+    COLLECTION_NAME as LEGAL_WORKFLOW_ACTIVATION_COLLECTION,
+    TenantLegalWorkflowActivationRegistry,
+)
+from tools.eos.legal_operations.registry.legal_workflow_definition_registry import (
+    COLLECTION_NAME as LEGAL_WORKFLOW_DEFINITION_COLLECTION,
+    LegalWorkflowDefinitionRegistry,
+)
+from tools.eos.legal_operations.registry.legal_workflow_topology_registry import (
+    COLLECTION_NAME as LEGAL_WORKFLOW_TOPOLOGY_COLLECTION,
+    LegalWorkflowTopologyRegistry,
+)
+from tools.eos.legal_operations.registry.legal_workflow_stage_registry import (
+    COLLECTION_NAME as LEGAL_WORKFLOW_STAGE_COLLECTION,
+    LegalWorkflowStageRegistry,
+)
+from tools.eos.legal_operations.registry.legal_matter_workflow_instance_registry import (
+    COLLECTION_NAME as LEGAL_WORKFLOW_INSTANCE_COLLECTION,
+    LegalMatterWorkflowInstanceRegistry,
+)
+from tools.eos.legal_operations.registry.legal_workflow_gate_satisfaction_registry import (
+    COLLECTION_NAME as LEGAL_WORKFLOW_GATE_COLLECTION,
+    LegalWorkflowGateSatisfactionRegistry,
+)
+from tools.eos.legal_operations.registry.legal_matter_workflow_transition_registry import (
+    COLLECTION_NAME as LEGAL_WORKFLOW_TRANSITION_COLLECTION,
+    LegalMatterWorkflowTransitionRegistry,
+)
+from tools.eos.legal_operations.registry.legal_work_materialization_policy_registry import (
+    COLLECTION_NAME as LEGAL_WORK_MATERIALIZATION_POLICY_COLLECTION,
+    LegalWorkMaterializationPolicyRegistry,
+)
+from tools.eos.legal_operations.registry.legal_work_item_registry import (
+    COLLECTION_NAME as LEGAL_WORK_ITEM_COLLECTION,
+    LegalWorkItemRegistry,
+)
+from tools.eos.legal_operations.registry.legal_transition_work_materialization_receipt_registry import (
+    COLLECTION_NAME as LEGAL_WORK_MATERIALIZATION_RECEIPT_COLLECTION,
+    LegalTransitionWorkMaterializationReceiptRegistry,
+)
+from tools.eos.legal_operations.registry.legal_work_dependency_edge_registry import (
+    COLLECTION_NAME as LEGAL_WORK_DEPENDENCY_COLLECTION,
+    LegalWorkDependencyEdgeRegistry,
+)
+from tools.eos.legal_operations.registry.legal_work_assignment_registry import (
+    COLLECTION_NAME as LEGAL_WORK_ASSIGNMENT_COLLECTION,
+    LegalWorkAssignmentRegistry,
+)
+from tools.eos.legal_operations.service.legal_matter_workflow_transition_command_service import (
+    LegalMatterWorkflowTransitionCommandService,
+)
+from tools.eos.legal_operations.service.legal_transition_work_materialization_service import (
+    LegalTransitionWorkMaterializationService,
+)
 from tools.eos.legal_operations.registry.legal_acceptance_registry import (
     LegalAcceptanceRegistry,
 )
@@ -387,6 +459,316 @@ def _seed_branding_chain(
         "favicon_reference": favicon_reference,
         "favicon_fingerprint": favicon_asset.content_fingerprint,
     }
+
+
+
+def _seed_canonical_specialist_workflows(
+    *,
+    client: MongoClient[Any],
+    database: Any,
+    tenant_id: str,
+    actors: dict[str, dict[str, str]],
+    now: datetime,
+) -> dict[str, dict[str, Any]]:
+    """Seed durable workflow → transition → materialization → assignment evidence.
+
+    Every specialist receives two canonical materialized work items. The second
+    has a receipt-bound predecessor edge and remains blocked by the deliberately
+    unsatisfied stage gate. No browser-only rows or role-derived permissions are
+    created.
+    """
+    operating_models = TenantLegalOperatingModelRegistry(
+        database[LEGAL_OPERATING_MODEL_COLLECTION]
+    )
+    activations = TenantLegalWorkflowActivationRegistry(
+        database[LEGAL_WORKFLOW_ACTIVATION_COLLECTION]
+    )
+    definitions = LegalWorkflowDefinitionRegistry(
+        database[LEGAL_WORKFLOW_DEFINITION_COLLECTION]
+    )
+    topologies = LegalWorkflowTopologyRegistry(
+        database[LEGAL_WORKFLOW_TOPOLOGY_COLLECTION],
+        definition_registry=definitions,
+    )
+    stages = LegalWorkflowStageRegistry(
+        database[LEGAL_WORKFLOW_STAGE_COLLECTION],
+        definition_registry=definitions,
+        topology_registry=topologies,
+    )
+    instances = LegalMatterWorkflowInstanceRegistry(
+        database[LEGAL_WORKFLOW_INSTANCE_COLLECTION]
+    )
+    gates = LegalWorkflowGateSatisfactionRegistry(
+        database[LEGAL_WORKFLOW_GATE_COLLECTION],
+        instance_registry=instances,
+        topology_registry=topologies,
+        stage_registry=stages,
+    )
+    transitions = LegalMatterWorkflowTransitionRegistry(
+        database[LEGAL_WORKFLOW_TRANSITION_COLLECTION]
+    )
+    policies = LegalWorkMaterializationPolicyRegistry(
+        database[LEGAL_WORK_MATERIALIZATION_POLICY_COLLECTION]
+    )
+    work_items = LegalWorkItemRegistry(
+        database[LEGAL_WORK_ITEM_COLLECTION]
+    )
+    receipts = LegalTransitionWorkMaterializationReceiptRegistry(
+        database[LEGAL_WORK_MATERIALIZATION_RECEIPT_COLLECTION]
+    )
+    dependencies = LegalWorkDependencyEdgeRegistry(
+        database[LEGAL_WORK_DEPENDENCY_COLLECTION]
+    )
+    assignments = LegalWorkAssignmentRegistry(
+        database[LEGAL_WORK_ASSIGNMENT_COLLECTION]
+    )
+
+    for registry_value in (
+        operating_models,
+        activations,
+        definitions,
+        topologies,
+        stages,
+        instances,
+        gates,
+        transitions,
+        policies,
+        work_items,
+        receipts,
+        dependencies,
+        assignments,
+    ):
+        registry_value.ensure_indexes()
+
+    definition = LegalWorkflowDefinition(
+        workflow_definition_id="browser-cert-specialist-workflow",
+        definition_revision=1,
+        owner="PLATFORM",
+        owner_tenant_id=None,
+        name="Browser Certification Specialist Workflow",
+        description_reference="browser-cert-specialist-workflow-description",
+        required_operating_item_ids=("PRACTICE_DISPUTES",),
+        jurisdiction_references=("ZA",),
+        catalogue_fingerprint=CATALOGUE_FINGERPRINT,
+    )
+    target_stage_ids = {
+        key: f"stage-review-{key}"
+        for key in ("partner", "attorney", "paralegal", "secretary")
+    }
+    source = LegalWorkflowStage.from_workflow_definition(
+        workflow_definition=definition,
+        stage_definition_id="stage-intake",
+        name="Matter Intake",
+        description_reference="browser-cert-stage-intake",
+        is_entry_stage=True,
+        is_terminal_stage=False,
+        successor_stage_ids=tuple(target_stage_ids.values()),
+        work_requirement_references=(),
+        completion_gate_references=(),
+        automation_references=(),
+    )
+    target_stages = {
+        key: LegalWorkflowStage.from_workflow_definition(
+            workflow_definition=definition,
+            stage_definition_id=stage_id,
+            name=f"{key.title()} Review",
+            description_reference=f"browser-cert-stage-review:{key}",
+            is_entry_stage=False,
+            is_terminal_stage=True,
+            successor_stage_ids=(),
+            work_requirement_references=(),
+            completion_gate_references=("gate:review",),
+            automation_references=(),
+        )
+        for key, stage_id in target_stage_ids.items()
+    }
+    topology = LegalWorkflowTopology.from_definition_and_stages(
+        workflow_definition=definition,
+        stages=(source, *target_stages.values()),
+    )
+    operating_model = TenantLegalOperatingModel(
+        tenant_id=tenant_id,
+        operating_model_id="browser-cert-specialist-operating-model",
+        revision=1,
+        activated_item_ids=("PRACTICE_DISPUTES",),
+        effective_from=now,
+        supersedes_operating_model_id=None,
+        catalogue_fingerprint=CATALOGUE_FINGERPRINT,
+    )
+    activation = TenantLegalWorkflowActivation.from_authorities(
+        activation_id="browser-cert-specialist-workflow-activation",
+        activation_revision=1,
+        operating_model=operating_model,
+        workflow_definition=definition,
+        workflow_topology=topology,
+        commercial_eligibility_evidence_reference="browser-cert-commercial-eligibility",
+        activation_reason_reference="browser-cert-specialist-workflow-activation",
+        effective_from=now,
+    )
+
+    transition_service = LegalMatterWorkflowTransitionCommandService(
+        definition_registry=definitions,
+        instance_registry=instances,
+        topology_registry=topologies,
+        stage_registry=stages,
+        gate_registry=gates,
+        transition_registry=transitions,
+    )
+    materializer = LegalTransitionWorkMaterializationService(
+        transition_registry=transitions,
+        workflow_instance_registry=instances,
+        policy_registry=policies,
+        work_item_registry=work_items,
+        receipt_registry=receipts,
+        dependency_registry=dependencies,
+    )
+
+    with client.start_session() as session:
+        with session.start_transaction():
+            operating_models.create_or_replay(operating_model, session=session)
+            activations.create_or_replay(activation, session=session)
+            definitions.create_or_replay(definition, session=session)
+            topologies.create_or_replay(
+                topology,
+                owner="PLATFORM",
+                owner_tenant_id=None,
+                session=session,
+            )
+            stages.create_or_replay(
+                source,
+                owner="PLATFORM",
+                owner_tenant_id=None,
+                session=session,
+            )
+            for target_stage in target_stages.values():
+                stages.create_or_replay(
+                    target_stage,
+                    owner="PLATFORM",
+                    owner_tenant_id=None,
+                    session=session,
+                )
+
+    seeded: dict[str, dict[str, Any]] = {}
+    assignment_authority_principal = actors["tenant_owner"]["principal_id"]
+    for actor_key, target_stage in target_stages.items():
+        actor = actors[actor_key]
+        matter_id = f"browser-specialist-matter-{actor_key}-{tenant_id}"
+        instance_id = f"browser-specialist-instance-{actor_key}-{tenant_id}"
+        transition_id = f"browser-specialist-transition-{actor_key}-{tenant_id}"
+        policy_id = f"browser-specialist-policy-{actor_key}-{tenant_id}"
+        instance = LegalMatterWorkflowInstance.from_authorities(
+            workflow_instance_id=instance_id,
+            case_matter_id=matter_id,
+            activation=activation,
+            workflow_definition=definition,
+            workflow_topology=topology,
+            started_at=now,
+            started_by_principal_id=actor["principal_id"],
+            start_authorization_evidence_reference=f"browser-cert-workflow-start:{actor_key}:{tenant_id}",
+        )
+        first_template_id = f"template-predecessor-{actor_key}"
+        second_template_id = f"template-successor-{actor_key}"
+        policy = LegalWorkMaterializationPolicy(
+            tenant_id=tenant_id,
+            policy_id=policy_id,
+            policy_revision=1,
+            workflow_definition_id=definition.workflow_definition_id,
+            workflow_definition_fingerprint=definition.fingerprint,
+            target_stage_definition_id=target_stage.stage_definition_id,
+            target_stage_fingerprint=target_stage.fingerprint,
+            templates=(
+                LegalWorkMaterializationTemplate(
+                    work_template_id=first_template_id,
+                    title=f"{actor_key.title()} predecessor evidence review",
+                    due_rule=LegalOperationalDueRule.NONE,
+                    due_offset_seconds=None,
+                    dependency_template_ids=(),
+                    condition_references=(),
+                ),
+                LegalWorkMaterializationTemplate(
+                    work_template_id=second_template_id,
+                    title=f"{actor_key.title()} specialist review",
+                    due_rule=LegalOperationalDueRule.NONE,
+                    due_offset_seconds=None,
+                    dependency_template_ids=(first_template_id,),
+                    condition_references=(),
+                ),
+            ),
+        )
+
+        with client.start_session() as session:
+            with session.start_transaction():
+                instances.create_or_replay(instance, session=session)
+                transition = transition_service.execute(
+                    tenant_id=tenant_id,
+                    transitioned_by_principal_id=actor["principal_id"],
+                    transition_id=transition_id,
+                    workflow_instance_id=instance_id,
+                    target_stage_definition_id=target_stage.stage_definition_id,
+                    gate_satisfaction_ids=(),
+                    branch_selection_evidence_reference=None,
+                    transitioned_at=now + timedelta(minutes=1),
+                    transition_authorization_evidence_reference=(
+                        f"browser-cert-transition-authorization:{actor_key}:{tenant_id}"
+                    ),
+                    session=session,
+                )
+                policies.create_or_replay(policy, session=session)
+                materialized = materializer.materialize(
+                    tenant_id,
+                    instance_id,
+                    transition.transition_id,
+                    session=session,
+                )
+                if materialized.receipt is None or len(materialized.work_items) != 2:
+                    raise RuntimeError(
+                        f"BROWSER_CERT_SPECIALIST_MATERIALIZATION_INVALID:{actor_key}"
+                    )
+                assignment_ids: list[str] = []
+                for work_item in materialized.work_items:
+                    assignment_id = (
+                        f"browser-specialist-assignment-{actor_key}-"
+                        f"{work_item.work_item_id}"
+                    )
+                    assignments.persist(
+                        LegalWorkAssignment(
+                            assignment_id=assignment_id,
+                            tenant_id=tenant_id,
+                            case_matter_id=matter_id,
+                            work_item_id=work_item.work_item_id,
+                            assignee_principal_id=actor["principal_id"],
+                            assigned_by_principal_id=assignment_authority_principal,
+                            assigned_at=now + timedelta(minutes=2),
+                            assignment_reason_reference=(
+                                f"browser-cert-specialist-responsibility:{actor_key}"
+                            ),
+                            authorization_evidence_reference=(
+                                f"browser-cert-specialist-assignment-evidence:{actor_key}"
+                            ),
+                            supersedes_assignment_id=None,
+                        ),
+                        session=session,
+                    )
+                    assignment_ids.append(assignment_id)
+
+        seeded[actor_key] = {
+            "principal_id": actor["principal_id"],
+            "matter_id": matter_id,
+            "workflow_instance_id": instance_id,
+            "workflow_definition_id": definition.workflow_definition_id,
+            "workflow_topology_fingerprint": topology.fingerprint,
+            "stage_definition_id": target_stage.stage_definition_id,
+            "transition_id": transition_id,
+            "materialization_receipt_id": materialized.receipt.receipt_id,
+            "materialization_receipt_fingerprint": materialized.receipt.fingerprint,
+            "work_item_ids": [value.work_item_id for value in materialized.work_items],
+            "work_item_fingerprints": [value.fingerprint for value in materialized.work_items],
+            "assignment_ids": assignment_ids,
+            "predecessor_work_item_id": materialized.work_items[0].work_item_id,
+            "successor_work_item_id": materialized.work_items[1].work_item_id,
+        }
+
+    return seeded
 
 
 def seed(state_path: Path) -> None:
@@ -781,6 +1163,14 @@ def seed(state_path: Path) -> None:
             )
             session.commit_transaction()
 
+        specialist_workflows = _seed_canonical_specialist_workflows(
+            client=client,
+            database=database,
+            tenant_id=tenant_id,
+            actors=actors,
+            now=now,
+        )
+
         PlanRegistry.provision_indexes()
         plan = PlanRegistry.create(
             {
@@ -859,6 +1249,7 @@ def seed(state_path: Path) -> None:
                     "foreign_tenant_id": foreign_tenant_id,
                     "branding": branding,
                     "foreign_branding": foreign_branding,
+                    "specialist_workflows": specialist_workflows,
                 },
                 sort_keys=True,
             ),
