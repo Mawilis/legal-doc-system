@@ -1,5 +1,5 @@
 """TITLE: WILSY OS Role Definition Policy.
-VERSION: v1.49.0-R59-P9-REASSIGNMENT-IAM-INTEGRATION
+VERSION: v1.52.0-TENANT-OWNER-DUNNING-TELEMETRY-READ
 AUTHORITY: Canonical Python role identifiers and explicit permission grants.
 EPITOME: Defines current tenant-scoped authorization roles, including
 least-privilege subscription/plan-catalogue grants, read-only WILSY AI
@@ -224,7 +224,7 @@ from __future__ import annotations
 from collections.abc import Iterable
 
 
-VERSION = "v1.51.0-TENANT-OWNER-LEGAL-COMMERCIAL-READ"
+VERSION = "v1.52.0-TENANT-OWNER-DUNNING-TELEMETRY-READ"
 
 
 ROLE_PERMISSIONS_MAP: dict[str, list[str]] = {
@@ -301,6 +301,8 @@ ROLE_PERMISSIONS_MAP: dict[str, list[str]] = {
     # Business-role eligibility and ACTIVE membership remain separate conjuncts.
     "TENANT_OWNER": [
         "subscription:read",
+        "billing_dunning:projection:read",
+        "telemetry:event:write",
         "crm:work_item:read",
         "crm:work_item:create",
         "crm:work_item:complete",
