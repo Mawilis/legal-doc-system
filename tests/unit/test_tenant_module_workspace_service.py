@@ -61,7 +61,7 @@ def build_service(product_id, collection, monkeypatch, entitlements):
     monkeypatch.setattr(
         service_module,
         "get_current",
-        lambda tenant, entitlement_id, *_args, **_kwargs: entitlements[entitlement_id],
+        lambda tenant, entitlement_id, *_args, **_kwargs: entitlements.get(entitlement_id),
     )
     return service_module.TenantModuleWorkspaceService(
         TenantModuleWorkRegistry(collection),
