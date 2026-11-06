@@ -37,6 +37,7 @@ from tools.eos.auth.tenant_business_role import (
 from tools.eos.auth.tenant_business_role_repository import TenantBusinessRoleRepository
 from tools.eos.auth.tenant_membership import TenantMembershipAuthority, TenantMembershipStatus
 from tools.eos.auth.tenant_membership_repository import TenantMembershipRepository
+from tools.eos.saas.entitlement.commercial_bundle_activation import VerifiedCommercialAgreementExecutionEvidence
 from tools.eos.saas.entitlement.commercial_agreement_registry import (
     CURRENT_COLLECTION,
     HISTORY_COLLECTION,
@@ -267,3 +268,115 @@ def test_foreign_tenant_scope_and_legal_partner_cannot_read_owner_commercial_agr
             headers={"X-Tenant-ID": partner},
         )
     assert denied_role.status_code == 403
+
+
+
+class _TrustedExecutionVerifier:
+    """Test-only verifier double; cryptographic behavior is covered by unit tests."""
+
+    def verify(self, *, agreement: Any, evidence_reference: str) -> VerifiedCommercialAgreementExecutionEvidence:
+        assert evidence_reference == "evidence:trusted-test-provider:001"
+        signed_at = NOW + timedelta(minutes=1)
+        return VerifiedCommercialAgreementExecutionEvidence(
+            tenant_id=agreement.tenant_id,
+            agreement_id=agreement.agreement_id,
+            contract_reference=agreement.contract_reference,
+            contract_version=agreement.contract_version,
+            offer_fingerprint=agreement.offer_fingerprint,
+            execution_evidence_reference=evidence_reference,
+            execution_evidence_fingerprint="a" * 128,
+            signatory_principal_id=agreement.tenant_id.replace("tenant-", "principal-"),
+            signatory_authority_reference="board-mandate:test",
+            signatory_authority_fingerprint="b" * 128,
+            signed_at=signed_at,
+            verified_at=signed_at + timedelta(seconds=1),
+            verifier_id="test-only-trusted-verifier",
+            verification_receipt_reference="verification-receipt:test",
+            verification_receipt_fingerprint="c" * 128,
+        )
+
+
+def test_authenticated_signatory_can_execute_only_verified_server_evidence(
+    mongo_context: dict[str, Any], monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    tenant, principal = f"tenant-{uuid4().hex}", f"principal-{uuid4().hex}"
+    _seed_actor(
+        mongo_context, tenant=tenant, principal=principal,
+        business_role="tenant_owner", grant_role="ENTERPRISE_ADMIN",
+    )
+    monkeypatch.setattr(
+        agreement_api, "_execution_verifier",
+        lambda _request: _TrustedExecutionVerifier(),
+    )
+    headers = {"X-Tenant-ID": tenant}
+    with _client(mongo_context, monkeypatch, tenant=tenant, principal=principal) as http:
+        created = http.post(
+            "/api/commercial/agreements", headers=headers,
+            json=_draft_payload("agreement-execute-http"),
+        )
+        assert created.status_code == 201, created.text
+        executed = http.post(
+            "/api/commercial/agreements/agreement-execute-http/execute",
+            headers=headers,
+            json={"execution_evidence_reference": "evidence:trusted-test-provider:001"},
+        )
+        assert executed.status_code == 200, executed.text
+        assert executed.json()["outcome"] == "EXECUTED"
+        assert executed.json()["agreement"]["lifecycle_state"] == "EXECUTED"
+        replay = http.post(
+            "/api/commercial/agreements/agreement-execute-http/execute",
+            headers=headers,
+            json={"execution_evidence_reference": "evidence:trusted-test-provider:001"},
+        )
+    assert replay.status_code == 200, replay.text
+    assert replay.json()["outcome"] == "IDEMPOTENT_REPLAY"
+
+
+def test_execution_route_fails_closed_without_trusted_verifier_and_rejects_browser_proof(
+    mongo_context: dict[str, Any], monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    tenant, principal = f"tenant-{uuid4().hex}", f"principal-{uuid4().hex}"
+    _seed_actor(
+        mongo_context, tenant=tenant, principal=principal,
+        business_role="tenant_owner", grant_role="ENTERPRISE_ADMIN",
+    )
+    headers = {"X-Tenant-ID": tenant}
+    with _client(mongo_context, monkeypatch, tenant=tenant, principal=principal) as http:
+        created = http.post(
+            "/api/commercial/agreements", headers=headers,
+            json=_draft_payload("agreement-no-verifier"),
+        )
+        assert created.status_code == 201, created.text
+        unavailable = http.post(
+            "/api/commercial/agreements/agreement-no-verifier/execute",
+            headers=headers,
+            json={"execution_evidence_reference": "evidence:trusted-test-provider:001"},
+        )
+        browser_proof = http.post(
+            "/api/commercial/agreements/agreement-no-verifier/execute",
+            headers=headers,
+            json={
+                "execution_evidence_reference": "evidence:trusted-test-provider:001",
+                "signature": "browser-supplied-signature",
+                "certificate_pem": "browser-supplied-certificate",
+            },
+        )
+    assert unavailable.status_code == 503
+    assert browser_proof.status_code == 422
+
+
+def test_legal_partner_cannot_execute_tenant_commercial_agreement(
+    mongo_context: dict[str, Any], monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    tenant, principal = f"tenant-{uuid4().hex}", f"principal-{uuid4().hex}"
+    _seed_actor(
+        mongo_context, tenant=tenant, principal=principal,
+        business_role="tenant_legal_partner", grant_role="LEGAL_PARTNER",
+    )
+    with _client(mongo_context, monkeypatch, tenant=tenant, principal=principal) as http:
+        denied = http.post(
+            "/api/commercial/agreements/agreement-any/execute",
+            headers={"X-Tenant-ID": tenant},
+            json={"execution_evidence_reference": "evidence:trusted-test-provider:001"},
+        )
+    assert denied.status_code == 403
