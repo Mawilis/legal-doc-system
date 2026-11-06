@@ -46,10 +46,28 @@ class FinancialSettlementObservationRegistry:
     @staticmethod
     def create(value:FinancialSettlementObservation,collection:Collection,*,session:ClientSession|None=None):
         document={**value.to_dict(),'observation_fingerprint':value.fingerprint}
-        try: collection.insert_one(document,session=session); return 'CREATED',value
+        identity={'tenant_id':value.tenant_id,'observation_id':value.observation_id}
+        existing=collection.find_one(identity,session=session)
+        if existing is not None:
+            if FinancialSettlementObservationRegistry._hydrate(existing)==value:return 'IDEMPOTENT_REPLAY',value
+            raise FinancialSettlementObservationConflictError('M11E2D4_SETTLEMENT_OBSERVATION_CONFLICT')
+        natural_identity={
+            'tenant_id':value.tenant_id,
+            'provider_name':value.provider_name,
+            'provider_execution_reference':value.provider_execution_reference,
+            'settlement_reference':value.settlement_reference,
+        }
+        existing=collection.find_one(natural_identity,session=session)
+        if existing is not None:
+            if FinancialSettlementObservationRegistry._hydrate(existing)==value:return 'IDEMPOTENT_REPLAY',value
+            raise FinancialSettlementObservationConflictError('M11E2D4_SETTLEMENT_OBSERVATION_CONFLICT')
+        try:
+            collection.insert_one(document,session=session)
+            return 'CREATED',value
         except DuplicateKeyError as e:
-            existing=collection.find_one({'tenant_id':value.tenant_id,'observation_id':value.observation_id},session=session)
-            if existing is not None and FinancialSettlementObservationRegistry._hydrate(existing)==value:return 'IDEMPOTENT_REPLAY',value
+            # A concurrent winner may have committed after the preflight read.
+            # Do not read again in a possibly-aborted transaction; the caller
+            # retries the whole transaction and the next preflight proves replay.
             raise FinancialSettlementObservationConflictError('M11E2D4_SETTLEMENT_OBSERVATION_CONFLICT') from e
     @staticmethod
     def get(tenant_id:str,observation_id:str,collection:Collection,*,session:ClientSession|None=None):

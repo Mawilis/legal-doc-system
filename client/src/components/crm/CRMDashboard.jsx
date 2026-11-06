@@ -72,7 +72,7 @@ import {
   subscribeWilsyThemeRuntime
 } from '../account/wilsyAccountThemeTokens';
 import { useTenants } from '../../contexts/tenantContext';
-import wilsyLogo from '../../assets/logo/wilsy.jpeg';
+import wilsyLogo from '../../assets/logo/wilsy-logo.svg';
 import styles from './CRMDashboard.module.css';
 import WilsyContactOperatingRoom from './contact/WilsyContactOperatingRoom.jsx';
 import WilsyAccountOperatingRoom from './account/WilsyAccountOperatingRoom.jsx';

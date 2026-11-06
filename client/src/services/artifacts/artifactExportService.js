@@ -12,7 +12,7 @@ import {
   TextRun,
   WidthType
 } from 'docx';
-import wilsyDocxLogoUrl from '../../assets/logo/wilsy.jpeg';
+import wilsyDocxLogoUrl from '../../assets/logo/wilsy-logo.svg';
 
 const DOCX_MIME = 'application/vnd.openxmlformats-officedocument.wordprocessingml.document';
 const PDF_ENDPOINT = '/api/generate/pdf';

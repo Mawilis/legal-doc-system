@@ -147,7 +147,7 @@ const SovereignRouter = () => {
         path: location.pathname
       });
 
-      broadcastTelemetry("GLOBAL_ROOT", "NAV_EVENT", "ROUTE_CHANGE", "App", {
+      broadcastTelemetry(user?.tenantId || currentTenant?.tenantId || "unresolved", "NAV_EVENT", "ROUTE_CHANGE", "App", {
         path: location.pathname,
         userId: user?.id,
         tenant: currentTenant,
@@ -160,13 +160,30 @@ const SovereignRouter = () => {
     }
   }, [isAuthenticated, currentTenant, user, location.pathname, mesh?.meshHealth, dataStream?.version]);
 
+  // SYSTEM is a tenant-independent workforce session. Its exact EOS-issued
+  // workspace projection is the only client-side discriminator; it does not
+  // synthesize a tenant, membership, business capacity, or tenant permission.
+  const systemServicesSession = Boolean(
+    isAuthenticated
+    && user?.systemServicesWorkspace?.status === 'READY'
+    && user.systemServicesWorkspace.authority === 'EOS_SYSTEM_SERVICES'
+    && user.systemServicesWorkspace.scope === 'SYSTEM'
+    && user.systemServicesWorkspace.principalId === user.id
+    && Array.isArray(user.systemServicesWorkspace.capabilities)
+    && user.systemServicesWorkspace.capabilities.includes('system_services:queue:read')
+  );
+
   const unauthenticatedEntryPath = authTenant?.tenantId ? '/login' : '/discovery';
 
   // 🛡️ Deterministic navigation state-machine.
   const targetPath = useMemo(() => {
     if (authLoading) return null;
-    const isMfaChallenge = [AUTH_STATES.MFA_SETUP, AUTH_STATES.MFA_RECONCILIATION_REQUIRED, AUTH_STATES.MFA_REQUIRED, AUTH_STATES.MFA_VERIFYING].includes(authStage);
-    if (location.pathname === '/mfa' || location.pathname === '/mfa-setup') return isMfaChallenge ? null : '/login';
+    const isMfaReady = [AUTH_STATES.MFA_SETUP, AUTH_STATES.MFA_RECONCILIATION_REQUIRED, AUTH_STATES.MFA_REQUIRED, AUTH_STATES.MFA_VERIFYING].includes(authStage);
+    const isMfaPending = authStage === AUTH_STATES.PRIMARY_AUTHENTICATING
+      || (Boolean(location.state?.pendingPrimaryAuth) && authStage !== AUTH_STATES.FAILED);
+    if (location.pathname === '/mfa' || location.pathname === '/mfa-setup') {
+      return (isMfaReady || isMfaPending) ? null : '/login';
+    }
     if (
       location.pathname === '/reset-password'
       || location.pathname === '/forgot-password'
@@ -220,7 +237,7 @@ const SovereignRouter = () => {
     );
   }
 
-  if (isAuthenticated && (authorityMismatch || tenantError || !currentTenant)) {
+  if (isAuthenticated && !systemServicesSession && (authorityMismatch || tenantError || !currentTenant)) {
     return <WorkspaceBootstrapError message={authorityMismatch ? 'AUTHENTICATED_WORKSPACE_AUTHORITY_MISMATCH' : (tenantError || 'AUTHENTICATED_WORKSPACE_UNRESOLVED')} />;
   }
 
@@ -233,11 +250,17 @@ const SovereignRouter = () => {
       <Route path="/reset-password" element={<PasswordResetPortal />} />
       <Route path="/mfa" element={
         [AUTH_STATES.MFA_SETUP, AUTH_STATES.MFA_RECONCILIATION_REQUIRED, AUTH_STATES.MFA_REQUIRED, AUTH_STATES.MFA_VERIFYING].includes(authStage)
-          ? <SovereignMfaPortal /> : <Navigate to="/login" replace />
+          ? <SovereignMfaPortal />
+          : ((authStage === AUTH_STATES.PRIMARY_AUTHENTICATING || (location.state?.pendingPrimaryAuth && authStage !== AUTH_STATES.FAILED))
+            ? <div role="status" data-testid="mfa-transition">Preparing secure MFA challenge…</div>
+            : <Navigate to="/login" replace />)
       } />
       <Route path="/mfa-setup" element={
         [AUTH_STATES.MFA_SETUP, AUTH_STATES.MFA_RECONCILIATION_REQUIRED, AUTH_STATES.MFA_REQUIRED, AUTH_STATES.MFA_VERIFYING].includes(authStage)
-          ? <SovereignMfaPortal /> : <Navigate to="/login" replace />
+          ? <SovereignMfaPortal />
+          : ((authStage === AUTH_STATES.PRIMARY_AUTHENTICATING || (location.state?.pendingPrimaryAuth && authStage !== AUTH_STATES.FAILED))
+            ? <div role="status" data-testid="mfa-transition">Preparing secure MFA challenge…</div>
+            : <Navigate to="/login" replace />)
       } />
       <Route path="/covenant" element={<LegalAcceptanceGate onComplete={() => navigate('/', { replace: true })} />} />
       <Route path="/signature" element={<Navigate to="/covenant" replace />} />
@@ -388,6 +411,21 @@ const AuthenticatedRuntimeComposition = () => {
 export const AuthenticatedTenantBoundary = ({ runtime }) => {
   const { isAuthenticated, tenant, user } = useAuth();
   if (!isAuthenticated) return <RuntimeComposition />;
+
+  // Global SYSTEM principals have no tenant membership by design. Mount the
+  // existing authenticated SYSTEM dashboard path without TenantProvider or
+  // tenant bootstrap; the EOS workspace projection above is still required
+  // before SovereignRouter treats the session as SYSTEM.
+  const systemServicesSession = Boolean(
+    user?.systemServicesWorkspace?.status === 'READY'
+    && user.systemServicesWorkspace.authority === 'EOS_SYSTEM_SERVICES'
+    && user.systemServicesWorkspace.scope === 'SYSTEM'
+    && user.systemServicesWorkspace.principalId === user.id
+    && Array.isArray(user.systemServicesWorkspace.capabilities)
+    && user.systemServicesWorkspace.capabilities.includes('system_services:queue:read')
+  );
+  if (systemServicesSession) return <RuntimeComposition />;
+
   return (
     <TenantProvider initialTenant={tenant} authenticatedTenantId={String(user?.tenantId || '')}>
       <AuthenticatedBootstrapBoundary runtime={runtime} />

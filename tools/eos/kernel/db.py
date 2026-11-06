@@ -8,9 +8,11 @@ File:           tools/eos/kernel/db.py
 Version:        v2.2.0-R1D-B0F-B3B-R0-CANONICAL-URI
 Authority:      Wilsy OS Core Governance
 Classification: Production Artifact (Zero-Downtime Architecture)
-CHANGELOG: v2.2.0-R1D-B0F-B3B-R0-CANONICAL-URI makes MONGODB_URI the sole
-            database authority, blocks repository dotenv rescue in production,
-            and preserves explicit caller-owned lifecycle semantics.
+CHANGELOG: v2.3.0-EOS-PRODUCTION-ENV-ALIAS-ALIGNMENT recognizes both WILSY_ENV
+            and ENV as deployment environment markers so the canonical EOS
+            Kubernetes manifest cannot be misclassified as development;
+            v2.2.0 makes MONGODB_URI the sole database authority and blocks
+            repository dotenv rescue in production.
 
 COLLABORATION COMMENTS:
 - @Wilson: Added conditional TLS options for development to bypass SSL
@@ -42,8 +44,17 @@ _REPOSITORY_ENV_PATH = Path(__file__).resolve().parents[3] / ".env"
 
 
 def _is_production_environment() -> bool:
-    """Return whether deployment configuration is explicitly production."""
-    return os.getenv("ENV", "").strip().lower() in {"production", "prod"}
+    """Fail safe when either supported deployment marker declares production.
+
+    The canonical EOS Kubernetes manifest sets WILSY_ENV=production. Older
+    deployments may set ENV=production. Treat either marker as authoritative
+    so an unset ENV cannot silently downgrade a production EOS process.
+    """
+    production_values = {"production", "prod"}
+    return any(
+        os.getenv(name, "").strip().lower() in production_values
+        for name in ("WILSY_ENV", "ENV")
+    )
 
 
 def _load_nonproduction_dotenv() -> None:
@@ -264,7 +275,7 @@ __all__ = [
 ]
 
 # ARTIFACT: tools/eos/kernel/db.py
-# VERSION: v2.2.0-R1D-B0F-B3B-R0-CANONICAL-URI
+# VERSION: v2.3.0-EOS-PRODUCTION-ENV-ALIAS-ALIGNMENT
 # AUTHORITY BOUNDARY: Explicit database lifecycle only; no business authority.
 # TENANT POSTURE: Database accessors do not bypass caller tenant predicates.
 # FAIL-CLOSED POSTURE: Unavailable persistence is reported explicitly.

@@ -31,18 +31,22 @@ const getSanitizedToken = () => {
  * @description Aggregates behavioral trends via the Unified Sovereign Bridge.
  * Now fetches from /api/v1/dashboard and maps high-level metrics to a stat array.
  */
-export const useTelemetryStats = (tenantId = 'WILSY_GLOBAL_ROOT', refreshInterval = 30000) => {
+export const useTelemetryStats = (tenantId, refreshInterval = 30000) => {
   const [stats, setStats] = useState([]);
   const [isSyncing, setIsSyncing] = useState(true);
   const [error, setError] = useState(null);
   const lastErrorLogRef = useRef({ message: null, at: 0 });
   const cooldownUntilRef = useRef(0);
 
-  const resolvedId = (!tenantId || tenantId === 'TENANT-ID' || tenantId === 'TENANT_ID')
-    ? 'WILSY_GLOBAL_ROOT'
-    : tenantId;
+  const hasTenantContext = typeof tenantId === 'string' && tenantId.trim() === tenantId && tenantId.length > 0;
 
   const fetchStats = useCallback(async () => {
+    if (!hasTenantContext) {
+      setStats([]);
+      setIsSyncing(false);
+      setError('TENANT_CONTEXT_REQUIRED');
+      return;
+    }
     if (Date.now() < cooldownUntilRef.current) return;
     if (stats.length === 0) setIsSyncing(true);
     setError(null);
@@ -52,6 +56,7 @@ export const useTelemetryStats = (tenantId = 'WILSY_GLOBAL_ROOT', refreshInterva
 
       // 🚀 RE-ANCHORED: Use /api/v1/dashboard to get health and metrics
       const response = await api.get('/api/v1/dashboard', {
+        params: { tenantId },
         headers: {
           'Authorization': `Bearer ${cleanToken}`
         }
@@ -124,13 +129,19 @@ export const useTelemetryStats = (tenantId = 'WILSY_GLOBAL_ROOT', refreshInterva
       }
       setIsSyncing(false);
     }
-  }, [stats.length]);
+  }, [stats.length, hasTenantContext, tenantId]);
 
   useEffect(() => {
+    if (!hasTenantContext) {
+      setStats([]);
+      setIsSyncing(false);
+      setError('TENANT_CONTEXT_REQUIRED');
+      return undefined;
+    }
     fetchStats();
     const interval = setInterval(fetchStats, refreshInterval);
     return () => clearInterval(interval);
-  }, [fetchStats, refreshInterval]);
+  }, [fetchStats, refreshInterval, hasTenantContext]);
 
   return { stats, isSyncing, error, refresh: fetchStats };
 };

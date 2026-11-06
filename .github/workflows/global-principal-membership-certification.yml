@@ -1,0 +1,337 @@
+# TITLE: WILSY OS Global Principal and Membership Selection Certification
+# VERSION: v1.7.0-SYSTEM-HTTP-REAL-MONGO-CERTIFICATION
+# AUTHORITY: CI orchestration for global principal, membership and MFA challenge tests.
+# EPITOME: Compile and execute focused unit and real-Mongo certification suites.
+# ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/.github/workflows/global-principal-membership-certification.yml
+# COLLABORATION / OWNERSHIP: Wilsy Core Engineering.
+# CERTIFICATION / UPDATE DATE: 2026-11-03.
+# CHANGELOG: v1.7.0-SYSTEM-HTTP-REAL-MONGO-CERTIFICATION adds the actual HTTP-to-replica-set SYSTEM login, MFA, session, refresh, replay and logout journey.
+#           v1.4.0-GLOBAL-PRINCIPAL-MEMBERSHIP-CHALLENGE-CI certifies HTTP login throttle integration and adversarial router tests.
+#           v1.3.2-GLOBAL-PRINCIPAL-MEMBERSHIP-CHALLENGE-CI includes the failure-throttle unit test in compile, Pyright and pytest exactly once.
+#           v1.3.1-GLOBAL-PRINCIPAL-MEMBERSHIP-CHALLENGE-CI begins failure-throttle unit certification.
+#           v1.3.0-GLOBAL-PRINCIPAL-MEMBERSHIP-CHALLENGE-CI begins failure-throttle unit certification.
+#           v1.2.9-GLOBAL-PRINCIPAL-MEMBERSHIP-CHALLENGE-CI certifies global authentication rate-limit source, unit and real-Mongo paths.
+#           v1.2.8-GLOBAL-PRINCIPAL-MEMBERSHIP-CHALLENGE-CI certifies canonical server startup index wiring and readiness.
+#           v1.2.7-GLOBAL-PRINCIPAL-MEMBERSHIP-CHALLENGE-CI type-checks and whitespace-checks the real-Mongo challenge test.
+#           v1.2.6-GLOBAL-PRINCIPAL-MEMBERSHIP-CHALLENGE-CI adds real-Mongo challenge transaction certification.
+#           v1.2.5-GLOBAL-PRINCIPAL-MEMBERSHIP-CHALLENGE-CI fixes the scoped diff-check shell command.
+#           v1.2.4-GLOBAL-PRINCIPAL-MEMBERSHIP-CHALLENGE-CI aligns the current changelog version with the artifact version.
+#           v1.2.3 scopes whitespace certification to this governed delivery's files.
+#           v1.2.2 aligns the complete changelog version with the artifact version.
+#           v1.2.1 corrects Node setup inputs so the pinned Pyright gate executes.
+#           v1.2.0 adds pinned Pyright, diff whitespace and clean-checkout verification.
+#           v1.1.0 adds membership-selection challenge source and adversarial unit tests.
+# COMPLIANCE: CI evidence only; does not grant runtime authority.
+# SECURITY / PRIVACY POSTURE: Uses disposable MongoDB replica-set data; no production secrets.
+# TENANT BOUNDARY: Tests principal-scoped membership and exact selected-tenant capacity.
+# AUTHORITY BOUNDARY: Verification orchestration only; no identity or access decisions.
+# FINANCIAL AUTHORITY BOUNDARY: No financial execution authority; Kennel EOS remains exclusive.
+name: EOS Global Principal and Membership Selection Certification
+on:
+  pull_request:
+    paths:
+      - "tools/eos/auth/principal_credential.py"
+      - "tools/eos/auth/principal_credential_repository.py"
+      - "tools/eos/auth/principal_credential_authentication.py"
+      - "tools/eos/auth/principal_credential_migration_assessment.py"
+      - "tools/eos/auth/tenant_membership_repository.py"
+      - "tools/eos/auth/membership_selection_projection.py"
+      - "tools/eos/auth/tenant_business_role_repository.py"
+      - "tools/eos/auth/workspace_bootstrap_projection.py"
+      - "tools/eos/auth/membership_selection_challenge.py"
+      - "tools/eos/auth/global_principal_session_authority.py"
+      - "tools/eos/auth/global_principal_system_session_authority.py"
+      - "tools/eos/auth/global_principal_totp_verifier.py"
+      - "tools/eos/auth/global_principal_mfa_kms_envelope.py"
+      - "tools/eos/auth/global_principal_mfa_enrollment_service.py"
+      - "tools/eos/auth/global_principal_mfa_legacy_migration_service.py"
+      - "tools/eos/auth/global_principal_mfa_session_transition.py"
+      - "tools/eos/auth/principal_authentication_rate_limit.py"
+      - "tools/eos/api/server.py"
+      - "tools/eos/kernel/db.py"
+      - "tests/unit/test_kernel_db_configuration_authority.py"
+      - "tools/eos/api/auth_router.py"
+      - "tools/eos/api/global_principal_auth_router.py"
+      - "tools/eos/auth/authentication.py"
+      - "tools/eos/auth/identity.py"
+      - "tools/eos/auth/tenant_business_role_authority.py"
+      - "tools/eos/auth/tenant_authorization.py"
+      - "tools/eos/api/tenant_authorization_http.py"
+      - "tests/unit/test_tenant_authorization.py"
+      - "tests/unit/test_workspace_bootstrap_projection.py"
+      - "tests/unit/test_principal_credential_repository.py"
+      - "tests/unit/test_principal_credential_authentication.py"
+      - "tests/unit/test_principal_credential_migration_assessment.py"
+      - "tests/unit/test_tenant_membership_repository.py"
+      - "tests/unit/test_membership_selection_projection.py"
+      - "tests/unit/test_membership_selection_challenge.py"
+      - "tests/unit/test_global_principal_session_authority.py"
+      - "tests/unit/test_global_principal_totp_verifier.py"
+      - "tests/unit/test_global_principal_mfa_kms_envelope.py"
+      - "tests/unit/test_global_principal_mfa_enrollment_service.py"
+      - "tests/integration/test_global_principal_mfa_enrollment_mongo.py"
+      - "tests/unit/test_global_principal_mfa_legacy_migration_service.py"
+      - "tests/integration/test_global_principal_mfa_legacy_migration_mongo.py"
+      - "tests/integration/test_global_principal_totp_verifier_mongo.py"
+      - "tests/unit/test_global_principal_mfa_session_transition.py"
+      - "tests/unit/test_global_principal_auth_challenge_startup.py"
+      - "tests/unit/test_auth_router_authoritative_mfa.py"
+      - "tests/unit/test_global_principal_access_token_currentness.py"
+      - "tests/unit/test_authentication_principal_authority.py"
+      - "tests/unit/test_global_principal_auth_router.py"
+      - "tests/unit/test_principal_authentication_rate_limit.py"
+      - "tests/integration/test_membership_selection_challenge_mongo.py"
+      - "tests/integration/test_global_principal_session_authority_mongo.py"
+      - "tests/integration/test_global_principal_system_session_authority_mongo.py"
+      - "tests/integration/test_global_principal_system_http_mongo.py"
+      - "tests/integration/test_global_principal_mfa_session_transition_mongo.py"
+      - "tests/integration/test_principal_authentication_rate_limit_mongo.py"
+      - "tests/integration/test_principal_credential_repository_mongo.py"
+      - ".github/workflows/global-principal-membership-certification.yml"
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  global-principal-membership:
+    name: Global credential, migration assessment and membership projection
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    env:
+      TEST_GLOBAL_PRINCIPAL_MONGO_URI: mongodb://localhost:27017/?replicaSet=wilsyGlobalPrincipalCertRS
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Set up Node for pinned Pyright
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+      - name: Install repository Python dependencies and pytest
+        run: |
+          python -m pip install --disable-pip-version-check -r requirements.txt
+          python -m pip install --disable-pip-version-check pytest==9.1.1 httpx==0.28.1
+      - name: Start disposable MongoDB replica set
+        run: |
+          docker run --detach --name wilsy-global-principal-mongo --publish 27017:27017 mongo:7.0.37 mongod --replSet wilsyGlobalPrincipalCertRS --bind_ip_all
+          python - <<'PY'
+          import time
+          from pymongo import MongoClient
+          client = MongoClient("mongodb://localhost:27017", directConnection=True, serverSelectionTimeoutMS=2000)
+          deadline = time.monotonic() + 60
+          initiated = False
+          last_error = None
+          while True:
+              try:
+                  hello = client.admin.command("hello")
+                  if not initiated and not hello.get("setName"):
+                      client.admin.command({"replSetInitiate": {"_id": "wilsyGlobalPrincipalCertRS", "members": [{"_id": 0, "host": "localhost:27017"}]}})
+                      initiated = True
+                  if client.admin.command("hello").get("isWritablePrimary"):
+                      break
+              except Exception as error:
+                  last_error = error
+              if time.monotonic() >= deadline:
+                  raise RuntimeError(f"GLOBAL_PRINCIPAL_MONGO_UNAVAILABLE: {last_error!r}")
+              time.sleep(1)
+          client.close()
+          PY
+      - name: Compile global principal, membership and challenge contracts
+        run: |
+          python -m py_compile \
+            tools/eos/auth/principal_credential.py \
+            tools/eos/auth/principal_credential_repository.py \
+            tools/eos/auth/principal_credential_authentication.py \
+            tools/eos/auth/principal_credential_migration_assessment.py \
+            tools/eos/auth/tenant_membership_repository.py \
+            tools/eos/auth/membership_selection_projection.py \
+            tools/eos/auth/membership_selection_challenge.py \
+            tools/eos/auth/global_principal_session_authority.py \
+            tools/eos/auth/global_principal_system_session_authority.py \
+            tools/eos/auth/global_principal_totp_verifier.py \
+            tools/eos/auth/global_principal_mfa_kms_envelope.py \
+            tools/eos/auth/global_principal_mfa_enrollment_service.py \
+            tools/eos/auth/global_principal_mfa_legacy_migration_service.py \
+            tools/eos/auth/global_principal_mfa_session_transition.py \
+            tools/eos/auth/principal_authentication_rate_limit.py \
+            tools/eos/api/server.py \
+            tools/eos/kernel/db.py \
+            tests/unit/test_kernel_db_configuration_authority.py \
+            tests/unit/test_eos_runtime_database_consumer_inventory.py \
+            tests/unit/test_eos_runtime_database_consumer_inventory.py \
+            tests/unit/test_eos_runtime_database_consumer_inventory.py \
+            tools/eos/api/auth_router.py \
+            tools/eos/api/global_principal_auth_router.py \
+            tools/eos/auth/authentication.py \
+            tools/eos/auth/identity.py \
+            tests/unit/test_workspace_bootstrap_projection.py \
+            tests/unit/test_principal_credential_repository.py \
+            tests/unit/test_principal_credential_authentication.py \
+            tests/unit/test_principal_credential_migration_assessment.py \
+            tests/unit/test_tenant_membership_repository.py \
+            tests/unit/test_workspace_bootstrap_projection.py \
+            tests/unit/test_tenant_authorization.py \
+            tests/unit/test_membership_selection_projection.py \
+            tests/unit/test_membership_selection_challenge.py \
+            tests/unit/test_global_principal_session_authority.py \
+            tests/unit/test_eos_runtime_database_consumer_inventory.py \
+            tests/unit/test_global_principal_system_session_authority.py \
+            tests/unit/test_global_principal_totp_verifier.py \
+            tests/unit/test_global_principal_mfa_kms_envelope.py \
+            tests/unit/test_global_principal_mfa_enrollment_service.py \
+            tests/unit/test_global_principal_mfa_legacy_migration_service.py \
+            tests/unit/test_global_principal_mfa_session_transition.py \
+            tests/unit/test_global_principal_auth_challenge_startup.py \
+            tests/unit/test_global_principal_access_token_currentness.py \
+            tests/unit/test_authentication_principal_authority.py \
+            tests/unit/test_global_principal_auth_router.py \
+            tests/unit/test_principal_authentication_rate_limit.py \
+            tests/unit/test_auth_router_authoritative_mfa.py \
+            tests/integration/test_membership_selection_challenge_mongo.py \
+            tests/integration/test_global_principal_session_authority_mongo.py \
+            tests/integration/test_global_principal_system_session_authority_mongo.py \
+            tests/integration/test_global_principal_system_http_mongo.py \
+            tests/integration/test_global_principal_mfa_session_transition_mongo.py \
+            tests/integration/test_global_principal_totp_verifier_mongo.py \
+            tests/integration/test_global_principal_mfa_enrollment_mongo.py \
+            tests/integration/test_global_principal_mfa_legacy_migration_mongo.py \
+            tests/integration/test_principal_authentication_rate_limit_mongo.py \
+            tests/integration/test_principal_credential_repository_mongo.py
+      - name: Type-check global principal and membership challenge contracts
+        run: |
+          npx --yes pyright@1.1.413 \
+            --pythonpath "$(command -v python)" \
+            tools/eos/auth/membership_selection_challenge.py \
+            tools/eos/auth/global_principal_session_authority.py \
+            tools/eos/auth/global_principal_system_session_authority.py \
+            tools/eos/auth/global_principal_totp_verifier.py \
+            tools/eos/auth/global_principal_mfa_kms_envelope.py \
+            tools/eos/auth/global_principal_mfa_enrollment_service.py \
+            tools/eos/auth/global_principal_mfa_legacy_migration_service.py \
+            tools/eos/auth/global_principal_mfa_session_transition.py \
+            tools/eos/auth/principal_authentication_rate_limit.py \
+            tools/eos/api/server.py \
+            tools/eos/kernel/db.py \
+            tests/unit/test_kernel_db_configuration_authority.py \
+            tools/eos/api/auth_router.py \
+            tools/eos/api/global_principal_auth_router.py \
+            tools/eos/auth/authentication.py \
+            tools/eos/auth/identity.py \
+            tests/unit/test_workspace_bootstrap_projection.py \
+            tools/eos/auth/tenant_business_role_authority.py \
+            tools/eos/auth/tenant_authorization.py \
+            tools/eos/api/tenant_authorization_http.py \
+            tests/unit/test_tenant_authorization.py \
+            tests/unit/test_membership_selection_challenge.py \
+            tests/unit/test_global_principal_session_authority.py \
+            tests/unit/test_global_principal_system_session_authority.py \
+            tests/unit/test_global_principal_totp_verifier.py \
+            tests/unit/test_global_principal_mfa_kms_envelope.py \
+            tests/unit/test_global_principal_mfa_enrollment_service.py \
+            tests/unit/test_global_principal_mfa_legacy_migration_service.py \
+            tests/unit/test_global_principal_mfa_session_transition.py \
+            tests/unit/test_global_principal_auth_challenge_startup.py \
+            tests/unit/test_auth_router_authoritative_mfa.py \
+            tests/unit/test_global_principal_access_token_currentness.py \
+            tests/unit/test_authentication_principal_authority.py \
+            tests/unit/test_global_principal_auth_router.py \
+            tests/unit/test_principal_authentication_rate_limit.py \
+            tests/integration/test_global_principal_system_http_mongo.py
+      - name: Verify diff whitespace and clean checkout
+        run: |
+          git diff --check "origin/${{ github.base_ref }}...HEAD" -- \
+            tools/eos/auth/membership_selection_challenge.py \
+            tools/eos/auth/global_principal_session_authority.py \
+            tools/eos/auth/global_principal_system_session_authority.py \
+            tools/eos/auth/global_principal_totp_verifier.py \
+            tools/eos/auth/global_principal_mfa_kms_envelope.py \
+            tools/eos/auth/global_principal_mfa_enrollment_service.py \
+            tools/eos/auth/global_principal_mfa_legacy_migration_service.py \
+            tools/eos/auth/global_principal_mfa_session_transition.py \
+            tools/eos/auth/principal_authentication_rate_limit.py \
+            tools/eos/auth/authentication.py \
+            tools/eos/auth/identity.py \
+            tests/unit/test_workspace_bootstrap_projection.py \
+            tools/eos/auth/tenant_business_role_authority.py \
+            tools/eos/auth/tenant_authorization.py \
+            tools/eos/api/tenant_authorization_http.py \
+            tests/unit/test_tenant_authorization.py \
+            tools/eos/api/server.py \
+            tools/eos/kernel/db.py \
+            tests/unit/test_kernel_db_configuration_authority.py \
+            tools/eos/api/auth_router.py \
+            tools/eos/api/global_principal_auth_router.py \
+            tests/unit/test_membership_selection_challenge.py \
+            tests/unit/test_global_principal_session_authority.py \
+            tests/unit/test_global_principal_system_session_authority.py \
+            tests/unit/test_global_principal_totp_verifier.py \
+            tests/unit/test_global_principal_mfa_kms_envelope.py \
+            tests/unit/test_global_principal_mfa_enrollment_service.py \
+            tests/unit/test_global_principal_mfa_legacy_migration_service.py \
+            tests/unit/test_global_principal_mfa_session_transition.py \
+            tests/unit/test_global_principal_auth_challenge_startup.py \
+            tests/unit/test_auth_router_authoritative_mfa.py \
+            tests/unit/test_global_principal_access_token_currentness.py \
+            tests/unit/test_authentication_principal_authority.py \
+            tests/unit/test_global_principal_auth_router.py \
+            tests/unit/test_principal_authentication_rate_limit.py \
+            tests/integration/test_membership_selection_challenge_mongo.py \
+            tests/integration/test_global_principal_session_authority_mongo.py \
+            tests/integration/test_global_principal_system_session_authority_mongo.py \
+            tests/integration/test_global_principal_system_http_mongo.py \
+            tests/integration/test_global_principal_mfa_session_transition_mongo.py \
+            tests/integration/test_global_principal_totp_verifier_mongo.py \
+            tests/integration/test_global_principal_mfa_enrollment_mongo.py \
+            tests/integration/test_global_principal_mfa_legacy_migration_mongo.py \
+            tests/integration/test_principal_authentication_rate_limit_mongo.py \
+            tests/integration/test_principal_credential_repository_mongo.py \
+            .github/workflows/global-principal-membership-certification.yml
+          test -z "$(git status --short)"
+      - name: Run focused global principal and membership tests
+        run: |
+          python -m pytest -q \
+            tests/unit/test_principal_credential_repository.py \
+            tests/unit/test_principal_credential_authentication.py \
+            tests/unit/test_principal_credential_migration_assessment.py \
+            tests/unit/test_tenant_membership_repository.py \
+            tests/unit/test_workspace_bootstrap_projection.py \
+            tests/unit/test_tenant_authorization.py \
+            tests/unit/test_membership_selection_projection.py \
+            tests/unit/test_membership_selection_challenge.py \
+            tests/unit/test_global_principal_session_authority.py \
+            tests/unit/test_global_principal_system_session_authority.py \
+            tests/unit/test_global_principal_totp_verifier.py \
+            tests/unit/test_global_principal_mfa_kms_envelope.py \
+            tests/unit/test_global_principal_mfa_enrollment_service.py \
+            tests/unit/test_global_principal_mfa_legacy_migration_service.py \
+            tests/unit/test_global_principal_mfa_session_transition.py \
+            tests/unit/test_global_principal_auth_challenge_startup.py \
+            tests/unit/test_global_principal_access_token_currentness.py \
+            tests/unit/test_authentication_principal_authority.py \
+            tests/unit/test_global_principal_auth_router.py \
+            tests/unit/test_principal_authentication_rate_limit.py \
+            tests/unit/test_auth_router_authoritative_mfa.py \
+            tests/integration/test_membership_selection_challenge_mongo.py \
+            tests/integration/test_global_principal_session_authority_mongo.py \
+            tests/integration/test_global_principal_system_session_authority_mongo.py \
+            tests/integration/test_global_principal_system_http_mongo.py \
+            tests/integration/test_global_principal_mfa_session_transition_mongo.py \
+            tests/integration/test_global_principal_totp_verifier_mongo.py \
+            tests/integration/test_global_principal_mfa_enrollment_mongo.py \
+            tests/integration/test_global_principal_mfa_legacy_migration_mongo.py \
+            tests/integration/test_principal_authentication_rate_limit_mongo.py \
+            tests/integration/test_principal_credential_repository_mongo.py
+      - name: Stop disposable MongoDB replica set
+        if: always()
+        run: docker rm -f wilsy-global-principal-mongo 2>/dev/null || true
+# ARTIFACT: global-principal-membership-certification.yml
+# VERSION: v1.5.0-GLOBAL-PRINCIPAL-SESSION-CERTIFICATION-CI
+# AUTHORITY BOUNDARY: focused CI execution only
+# TENANT POSTURE: synthetic principal-scoped and tenant-scoped certification data
+# FAIL-CLOSED POSTURE: compile, unit or replica-set failures fail the job
+# FINANCIAL EXECUTION AUTHORITY: Kennel EOS remains exclusive
+# END OF WILSY OS SOVEREIGN ARTIFACT

@@ -113,13 +113,14 @@ const payload = () => ({
 
 const commercialContextPayload = () => ({
   schema: 'WILSY-LEGAL-OPERATIONS-COMMERCIAL-CONTEXT/V1',
-  version: 'v1.0.0-LEGAL-COMMERCIAL-CONTEXT-HTTP',
+  version: 'v1.1.0-FOUNDER-PERPETUAL-ACCESS-BASIS',
   tenant_id: 'tenant-law',
   visibility: 'LEGAL_COMMERCIAL_CONTEXT_SUBSCRIPTION_READ',
   product: {
     product_id: 'LEGAL_OPERATIONS',
     workspace_key: 'LEGAL_DASHBOARD',
     available: true,
+    access_basis: 'LEGAL_PLAN_FEATURE',
     entitlement_state: 'ACTIVE',
   },
   subscription: {
@@ -1567,6 +1568,7 @@ describe('L8-7D7 role-scoped Legal Operations client adapter', () => {
       productId: 'LEGAL_OPERATIONS',
       workspaceKey: 'LEGAL_DASHBOARD',
       available: true,
+      accessBasis: 'LEGAL_PLAN_FEATURE',
       entitlementState: 'ACTIVE',
     });
     expect(result.context.subscription.subscriptionId)
@@ -1593,6 +1595,42 @@ describe('L8-7D7 role-scoped Legal Operations client adapter', () => {
     expect(Object.isFrozen(result.context.plan)).toBe(true);
     expect(Object.isFrozen(result.context.plan.features)).toBe(true);
     expect(Object.isFrozen(result.context.commercial)).toBe(true);
+  });
+
+  it('accepts the server-certified perpetual Founder basis without rewriting plan features', async () => {
+    const founder = commercialContextPayload();
+    founder.product.access_basis = 'PERPETUAL_PLATFORM_OWNER';
+    founder.subscription.subscription_id = 'WILSYSUB-FOUNDER-1';
+    founder.plan.plan_id = 'WILSYPLAN-37B8164F';
+    founder.plan.name = 'Founder Enterprise';
+    founder.plan.features = ['tenant.branding'];
+    founder.commercial.amount = 0;
+    founder.commercial.monthly_equivalent_amount = 0;
+
+    mockGet.mockResolvedValueOnce({ data: founder });
+
+    const result = await getLegalCommercialContext();
+
+    expect(result.access).toBe('AUTHORIZED');
+    expect(result.context.product.accessBasis)
+      .toBe('PERPETUAL_PLATFORM_OWNER');
+    expect(result.context.plan.features).toEqual(['tenant.branding']);
+    expect(result.context.commercial.amount).toBe(0);
+    expect(result.context.commercial.monthlyEquivalentAmount).toBe(0);
+  });
+
+  it('rejects a perpetual Founder basis carrying a nonzero commercial amount', async () => {
+    const malformed = commercialContextPayload();
+    malformed.product.access_basis = 'PERPETUAL_PLATFORM_OWNER';
+    malformed.plan.features = ['tenant.branding'];
+    malformed.commercial.amount = 1200;
+    malformed.commercial.monthly_equivalent_amount = 1200;
+
+    mockGet.mockResolvedValueOnce({ data: malformed });
+
+    await expect(getLegalCommercialContext()).rejects.toThrow(
+      'LEGAL_COMMERCIAL_CONTEXT_FOUNDER_BASIS_INVALID',
+    );
   });
 
   it.each([401, 403])(

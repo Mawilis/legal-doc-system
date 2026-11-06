@@ -37,13 +37,16 @@ from tools.eos.saas.entitlement.product_catalogue import (
 
 def test_exact_closed_product_catalogue() -> None:
     products = list_tenant_products()
-    assert [item.product_id for item in products] == [
+    assert [item.product_id.value for item in products] == [
         "LEGAL_OPERATIONS",
         "BILLING",
         "CRM",
+        "POS",
         "HR",
+        "OPERATIONS",
+        "INTELLIGENCE",
     ]
-    assert len(products) == len(TenantProductId) == 4
+    assert len(products) == len(TenantProductId) == 7
 
 
 def test_legal_operations_descriptor_is_exact_and_non_financial() -> None:
@@ -61,9 +64,27 @@ def test_billing_descriptor_preserves_financial_execution_boundary() -> None:
     assert "no financial execution authority" in value.description.lower()
 
 
+def test_operations_and_intelligence_workspace_keys_are_exact_and_distinct() -> None:
+    operations = get_tenant_product(TenantProductId.OPERATIONS)
+    intelligence = get_tenant_product(TenantProductId.INTELLIGENCE)
+    assert operations.workspace_key == "OPERATIONS_DASHBOARD"
+    assert intelligence.workspace_key == "INTELLIGENCE_DASHBOARD"
+    assert operations.workspace_key != intelligence.workspace_key
+    assert operations.required_products == intelligence.required_products == ()
+
+
 def test_crm_and_hr_workspace_keys_are_exact() -> None:
     assert get_tenant_product(TenantProductId.CRM).workspace_key == "CRM_DASHBOARD"
     assert get_tenant_product(TenantProductId.HR).workspace_key == "HR_DASHBOARD"
+
+
+def test_pos_is_an_independent_non_financial_product() -> None:
+    value = get_tenant_product(TenantProductId.POS)
+    assert value.label == "Point of Sale"
+    assert value.workspace_key == "POS_DASHBOARD"
+    assert value.required_products == ()
+    assert "kennel eos" in value.description.lower()
+    assert "financial execution remains" in value.description.lower()
 
 
 def test_vas_and_bundle_tokens_are_not_products() -> None:

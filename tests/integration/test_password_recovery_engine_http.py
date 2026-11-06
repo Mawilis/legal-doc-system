@@ -191,6 +191,7 @@ def identity() -> SovereignIdentity:
         permissions=[],
         auth_method="jwt",
         status=PrincipalStatus.ACTIVE,
+        session_reference="WILSYS-SESSION-R10E34",
     )
 
 

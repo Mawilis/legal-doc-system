@@ -1,0 +1,49 @@
+name: EOS Runtime Database Consumer Inventory Certification
+
+on:
+  pull_request:
+    paths:
+      - "tools/eos/**"
+      - "server/server.js"
+      - "server/ecosystem.config.js"
+      - "server/tests/advanced/runtime-database-ownership.test.mjs"
+      - "server/tests/advanced/eos-workspace-identity.test.mjs"
+      - "server/controllers/businessArtifactPdfController.js"
+      - "server/services/eosWorkspaceIdentity.js"
+      - "server/tests/routes/wilsyAiAdvisoryProxy.test.js"
+      - "scripts/start-dev-stack.sh"
+      - "package.json"
+      - "tests/unit/test_eos_runtime_database_consumer_inventory.py"
+      - "docs/architecture/eos-runtime-database-consumer-inventory.md"
+      - ".github/workflows/eos-runtime-database-consumer-inventory.yml"
+
+permissions:
+  contents: read
+
+jobs:
+  runtime-database-ownership:
+    name: Runtime database ownership and BFF boundary
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install focused test runner
+        run: python -m pip install --disable-pip-version-check pytest
+
+      - name: Certify Python EOS runtime database ownership
+        run: python -m pytest -q tests/unit/test_eos_runtime_database_consumer_inventory.py
+
+      - name: Set up Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+
+      - name: Certify Node BFF transport-only database boundary
+        run: node --test server/tests/advanced/runtime-database-ownership.test.mjs server/tests/advanced/eos-workspace-identity.test.mjs

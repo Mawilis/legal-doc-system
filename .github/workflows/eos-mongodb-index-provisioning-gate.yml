@@ -1,0 +1,81 @@
+name: EOS MongoDB Index Provisioning Gate
+
+on:
+  push:
+    branches:
+      - eos/tenant-discovery-iam-dashboard-roadmap
+    paths:
+      - "infra/mongodb/eos-index-manifest-v1.json"
+      - ".github/workflows/eos-mongodb-index-provisioning-gate.yml"
+      - "tools/eos/mongodb/read_only_index_verifier.py"
+      - "tests/unit/test_eos_read_only_index_verifier.py"
+  pull_request:
+    paths:
+      - "infra/mongodb/eos-index-manifest-v1.json"
+      - "tools/eos/mongodb/index_provisioning_harness.py"
+      - ".github/workflows/eos-mongodb-index-provisioning-gate.yml"
+      - "tools/eos/mongodb/read_only_index_verifier.py"
+      - "tests/unit/test_eos_read_only_index_verifier.py"
+  workflow_dispatch:
+    inputs:
+      target:
+        description: "Must be nonproduction. Production is intentionally unsupported."
+        required: true
+        type: choice
+        options:
+          - nonproduction
+      action:
+        description: "Validation and non-mutating plan only. Apply is not implemented."
+        required: true
+        type: choice
+        options:
+          - validate
+          - plan
+
+permissions:
+  contents: read
+
+concurrency:
+  group: eos-mongodb-index-provisioning-gate-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  validate-provisioning-manifest:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Validate and plan without database access
+        env:
+          WILSY_EOS_INDEX_TARGET_ENV: ${{ github.event.inputs.target || 'nonproduction' }}
+          WILSY_EOS_INDEX_APPROVED_TARGET_FINGERPRINT: ${{ vars.WILSY_EOS_INDEX_APPROVED_TARGET_FINGERPRINT }}
+          WILSY_EOS_INDEX_OBSERVED_TARGET_FINGERPRINT: ${{ vars.WILSY_EOS_INDEX_OBSERVED_TARGET_FINGERPRINT }}
+        run: |
+          if [ "${{ github.event.inputs.action || 'validate' }}" = "plan" ]; then
+            python tools/eos/mongodb/index_provisioning_harness.py --plan
+          else
+            python tools/eos/mongodb/index_provisioning_harness.py
+          fi
+      - name: Run provisioning harness unit tests
+        run: python -m unittest tests.unit.test_eos_index_provisioning_harness
+      - name: Exercise non-production harness safety tests
+        run: |
+          python -m unittest tests.unit.test_eos_index_provisioning_harness
+          python -m unittest tests.unit.test_eos_read_only_index_verifier
+          set +e
+          python tools/eos/mongodb/index_provisioning_harness.py --apply
+          apply_status=$?
+          set -e
+          test "$apply_status" -eq 3
+          echo "Apply refusal verified (exit 3)."
+      - name: Enforce fail-closed execution gate
+        run: |
+          echo "The manifest remains inventory-incomplete."
+          echo "The harness has no MongoDB client and cannot create or alter indexes."
+          echo "A future apply stage requires verified nonproduction target ownership,"
+          echo "complete source/index parity, duplicate-data preflight, backup/rollback,"
+          echo "and a separately provisioned identity."

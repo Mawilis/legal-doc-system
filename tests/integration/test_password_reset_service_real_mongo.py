@@ -60,11 +60,24 @@ from tools.eos.saas.auth.password_recovery_registry import (
     PasswordRecoveryCapabilityRegistry,
 )
 from tools.eos.saas.auth.password_reset_service import (
+    PasswordResetExecutionEvidenceError,
+    PasswordResetExecutionGuardError,
     PasswordResetResult,
     PasswordResetService,
     PasswordResetServiceError,
 )
 from tools.eos.saas.tenancy import tenant_registry as tenant_registry_module
+from tools.eos.system_services.security_incident_response_decision import (
+    SecurityIncidentResponseAction,
+    SecurityIncidentResponseDecision,
+)
+from tools.eos.system_services.security_incident_response_decision_registry import (
+    COLLECTION as RESPONSE_DECISION_COLLECTION,
+    EVENT_COLLECTION as RESPONSE_DECISION_EVENT_COLLECTION,
+    PLATFORM_AUDIT_COLLECTION,
+    PLATFORM_OUTBOX_COLLECTION,
+    SecurityIncidentResponseDecisionRegistry,
+)
 
 
 VERSION = "v1.0.0-R10D3-PASSWORD-RESET-SERVICE-REAL-MONGO-CERT"
@@ -636,3 +649,261 @@ def test_concurrent_double_use_has_one_durable_winner(bound_database: MongoConte
 # FAIL-CLOSED POSTURE: unavailable Mongo fails; no skip or xfail posture
 # FINANCIAL EXECUTION AUTHORITY: none; Kennel EOS remains exclusive
 # END OF WILSY OS SOVEREIGN ARTIFACT
+
+
+def test_system_services_execution_guard_is_atomic_with_canonical_reset(bound_database: MongoContext) -> None:
+    """The independent executor check runs on R10's own session before mutation."""
+    _prepare(bound_database)
+    fixture = _seed(bound_database, "response-guard")
+    service = _service(bound_database)
+    evidence = bound_database.database["response_execution_guard_evidence"]
+    seen_sessions: list[int] = []
+
+    def guard(session: Any, capability: PasswordRecoveryCapability) -> None:
+        assert session.in_transaction is True
+        assert capability.tenant_id == fixture.tenant_id
+        assert capability.principal_id == fixture.principal_id
+        seen_sessions.append(id(session))
+        evidence.insert_one(
+            {"decision_id": "decision-response-guard", "principal_id": capability.principal_id},
+            session=session,
+        )
+
+    result = service.reset_password(
+        tenant_id=fixture.tenant_id,
+        recovery_token=fixture.token,
+        new_password=NEW_PASSWORD,
+        transaction_guard=guard,
+    )
+
+    assert result == PasswordResetResult()
+    assert len(seen_sessions) == 1
+    assert evidence.count_documents({"decision_id": "decision-response-guard"}) == 1
+    assert _read_user(bound_database, fixture.principal_id, fixture.tenant_id)["credential_revision"] == fixture.starting_revision + 1
+
+
+def test_system_services_execution_guard_denial_rolls_back_canonical_reset(bound_database: MongoContext) -> None:
+    """A denied current-authority check aborts every canonical reset participant."""
+    _prepare(bound_database)
+    fixture = _seed(bound_database, "response-guard-denied")
+    service = _service(bound_database)
+    evidence = bound_database.database["response_execution_guard_denial_evidence"]
+
+    def deny(session: Any, capability: PasswordRecoveryCapability) -> None:
+        assert session.in_transaction is True
+        evidence.insert_one({"decision_id": "denied-response"}, session=session)
+        raise RuntimeError("synthetic current authority denial")
+
+    with pytest.raises(PasswordResetExecutionGuardError):
+        service.reset_password(
+            tenant_id=fixture.tenant_id,
+            recovery_token=fixture.token,
+            new_password=NEW_PASSWORD,
+            transaction_guard=deny,
+        )
+
+    _assert_rollback(bound_database, fixture)
+    assert evidence.count_documents({"decision_id": "denied-response"}) == 0
+
+
+def test_response_execution_receipt_commits_with_canonical_reset(bound_database: MongoContext) -> None:
+    """Execution evidence and all R10 mutations share the same Mongo transaction."""
+    _prepare(bound_database)
+    fixture = _seed(bound_database, "response-completion")
+    service = _service(bound_database)
+    evidence = bound_database.database["response_execution_completion_evidence"]
+    seen_sessions: list[int] = []
+
+    def guard(session: Any, capability: PasswordRecoveryCapability) -> None:
+        assert session.in_transaction is True
+        assert capability.tenant_id == fixture.tenant_id
+        assert capability.principal_id == fixture.principal_id
+
+    def completion(session: Any, tenant_id: str, principal_id: str, credential_revision: int) -> None:
+        assert session.in_transaction is True
+        assert tenant_id == fixture.tenant_id
+        assert principal_id == fixture.principal_id
+        seen_sessions.append(id(session))
+        evidence.insert_one(
+            {
+                "decision_id": "decision-response-completion",
+                "tenant_id": tenant_id,
+                "target_principal_id": principal_id,
+                "result_status": "PASSWORD_RESET_COMPLETED",
+                "result_revision": credential_revision,
+            },
+            session=session,
+        )
+
+    result = service.reset_password(
+        tenant_id=fixture.tenant_id,
+        recovery_token=fixture.token,
+        new_password=NEW_PASSWORD,
+        transaction_guard=guard,
+        transaction_completion=completion,
+    )
+
+    assert result == PasswordResetResult()
+    assert len(seen_sessions) == 1
+    receipt = evidence.find_one({"decision_id": "decision-response-completion"})
+    assert receipt is not None
+    assert receipt["result_revision"] == fixture.starting_revision + 1
+    assert _read_user(bound_database, fixture.principal_id, fixture.tenant_id)["credential_revision"] == fixture.starting_revision + 1
+    capability = bound_database.capabilities.find_one({"capability_id": fixture.capability_id})
+    assert capability is not None and capability["status"] == PasswordRecoveryCapabilityStatus.CONSUMED.value
+
+
+def test_response_execution_receipt_failure_rolls_back_canonical_reset(bound_database: MongoContext) -> None:
+    """A failed execution evidence write aborts the canonical credential mutation."""
+    _prepare(bound_database)
+    fixture = _seed(bound_database, "response-completion-failed")
+    service = _service(bound_database)
+    evidence = bound_database.database["response_execution_completion_failure_evidence"]
+
+    def completion(session: Any, tenant_id: str, principal_id: str, credential_revision: int) -> None:
+        assert session.in_transaction is True
+        assert tenant_id == fixture.tenant_id and principal_id == fixture.principal_id
+        evidence.insert_one({"decision_id": "decision-response-completion-failed"}, session=session)
+        raise RuntimeError("synthetic response receipt failure")
+
+    with pytest.raises(PasswordResetExecutionEvidenceError):
+        service.reset_password(
+            tenant_id=fixture.tenant_id,
+            recovery_token=fixture.token,
+            new_password=NEW_PASSWORD,
+            transaction_completion=completion,
+        )
+
+    _assert_rollback(bound_database, fixture)
+    assert evidence.count_documents({"decision_id": "decision-response-completion-failed"}) == 0
+
+
+def _approved_password_reset_decision(
+    context: MongoContext,
+    fixture: Fixture,
+    decision_id: str,
+) -> tuple[SecurityIncidentResponseDecisionRegistry, Any]:
+    registry = SecurityIncidentResponseDecisionRegistry(
+        decisions=context.database[RESPONSE_DECISION_COLLECTION],
+        events=context.database[RESPONSE_DECISION_EVENT_COLLECTION],
+        audit_events=context.database[PLATFORM_AUDIT_COLLECTION],
+        outbox=context.database[PLATFORM_OUTBOX_COLLECTION],
+    )
+    registry.ensure_indexes()
+    request = SecurityIncidentResponseDecision(
+        decision_id=decision_id,
+        incident_id="incident-" + decision_id,
+        tenant_id=fixture.tenant_id,
+        target_principal_id=fixture.principal_id,
+        action=SecurityIncidentResponseAction.PASSWORD_RESET,
+        requested_by_principal_id="independent-requester-" + decision_id,
+        requested_at=BASE_TIME,
+        request_evidence_reference="request-evidence-" + decision_id,
+    )
+    with context.client.start_session() as session:
+        with session.start_transaction():
+            registry.create(request, session=session)
+            approved = registry.decide(
+                decision_id,
+                approved=True,
+                decided_by_principal_id="independent-approver-" + decision_id,
+                decided_at=BASE_TIME + timedelta(minutes=1),
+                decision_evidence_reference="approval-evidence-" + decision_id,
+                expected_revision=0,
+                session=session,
+            )
+    return registry, approved
+
+
+def test_response_decision_receipt_is_atomic_with_real_canonical_password_reset(bound_database: MongoContext) -> None:
+    _prepare(bound_database)
+    fixture = _seed(bound_database, "response-receipt-commit")
+    service = _service(bound_database)
+    registry, approved = _approved_password_reset_decision(
+        bound_database, fixture, "decision-r10-response-commit",
+    )
+    event_key = "system-services-response-execution:" + approved.decision_id + ":revision:2"
+
+    def completion(session: Any, tenant_id: str, principal_id: str, credential_revision: int) -> None:
+        assert tenant_id == fixture.tenant_id and principal_id == fixture.principal_id
+        registry.record_execution(
+            decision=approved,
+            actor_principal_id="independent-executor-decision-r10-response-commit",
+            idempotency_key="r10-response-execution-commit",
+            occurred_at=BASE_TIME + timedelta(minutes=2),
+            result_status="PASSWORD_RESET_COMPLETED",
+            result_revision=credential_revision,
+            session=session,
+        )
+
+    result = service.reset_password(
+        tenant_id=fixture.tenant_id,
+        recovery_token=fixture.token,
+        new_password=NEW_PASSWORD,
+        transaction_completion=completion,
+    )
+
+    assert result == PasswordResetResult()
+    event = bound_database.database[RESPONSE_DECISION_EVENT_COLLECTION].find_one({
+        "decision_id": approved.decision_id,
+        "revision": 2,
+    })
+    assert event is not None
+    assert event["event_type"] == "SECURITY_INCIDENT_RESPONSE_EXECUTED"
+    assert event["result_status"] == "PASSWORD_RESET_COMPLETED"
+    assert event["result_revision"] == fixture.starting_revision + 1
+    assert "token_digest" not in event
+    assert "recovery_token" not in event
+    assert "password_hash" not in event
+    assert bound_database.database[PLATFORM_AUDIT_COLLECTION].count_documents({"event_key": event_key}) == 1
+    assert bound_database.database[PLATFORM_OUTBOX_COLLECTION].count_documents({
+        "event_key": event_key, "status": "PENDING", "attempts": 0,
+    }) == 1
+    with bound_database.client.start_session() as session:
+        with session.start_transaction():
+            replay = registry.find_execution(
+                decision=approved,
+                actor_principal_id="independent-executor-decision-r10-response-commit",
+                idempotency_key="r10-response-execution-commit",
+                session=session,
+            )
+            assert replay == event
+    assert _read_user(bound_database, fixture.principal_id, fixture.tenant_id)["credential_revision"] == fixture.starting_revision + 1
+
+
+def test_response_decision_receipt_rollback_aborts_real_canonical_password_reset(bound_database: MongoContext) -> None:
+    _prepare(bound_database)
+    fixture = _seed(bound_database, "response-receipt-rollback")
+    service = _service(bound_database)
+    registry, approved = _approved_password_reset_decision(
+        bound_database, fixture, "decision-r10-response-rollback",
+    )
+    event_key = "system-services-response-execution:" + approved.decision_id + ":revision:2"
+
+    def completion(session: Any, tenant_id: str, principal_id: str, credential_revision: int) -> None:
+        assert tenant_id == fixture.tenant_id and principal_id == fixture.principal_id
+        registry.record_execution(
+            decision=approved,
+            actor_principal_id="independent-executor-decision-r10-response-rollback",
+            idempotency_key="r10-response-execution-rollback",
+            occurred_at=BASE_TIME + timedelta(minutes=2),
+            result_status="PASSWORD_RESET_COMPLETED",
+            result_revision=credential_revision,
+            session=session,
+        )
+        raise RuntimeError("synthetic post-receipt failure")
+
+    with pytest.raises(PasswordResetExecutionEvidenceError):
+        service.reset_password(
+            tenant_id=fixture.tenant_id,
+            recovery_token=fixture.token,
+            new_password=NEW_PASSWORD,
+            transaction_completion=completion,
+        )
+
+    _assert_rollback(bound_database, fixture)
+    assert bound_database.database[RESPONSE_DECISION_EVENT_COLLECTION].count_documents({
+        "decision_id": approved.decision_id, "revision": 2,
+    }) == 0
+    assert bound_database.database[PLATFORM_AUDIT_COLLECTION].count_documents({"event_key": event_key}) == 0
+    assert bound_database.database[PLATFORM_OUTBOX_COLLECTION].count_documents({"event_key": event_key}) == 0

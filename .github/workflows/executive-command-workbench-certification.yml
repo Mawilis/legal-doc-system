@@ -1,0 +1,44 @@
+name: Executive Command Workbench Certification
+
+on:
+  pull_request:
+    branches:
+      - eos/tenant-discovery-iam-dashboard-roadmap
+    paths:
+      - 'client/src/components/executive/**'
+      - 'client/src/services/executiveOperationalQueue.js'
+      - 'client/src/services/__tests__/executiveOperationalQueue.test.js'
+      - 'client/package.json'
+      - 'client/package-lock.json'
+      - '.github/workflows/executive-command-workbench-certification.yml'
+  push:
+    branches:
+      - eos/executive-command-workbench
+
+permissions:
+  contents: read
+
+concurrency:
+  group: executive-command-workbench-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  client:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+          cache-dependency-path: client/package-lock.json
+      - name: Install client dependencies
+        working-directory: client
+        run: npm ci
+      - name: Test operational queue projection
+        working-directory: client
+        run: npx vitest run --config vitest.config.js src/services/__tests__/executiveOperationalQueue.test.js
+      - name: Build production client bundle
+        working-directory: client
+        run: npm run build

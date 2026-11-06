@@ -133,15 +133,8 @@ function generateSeal(traceId, timestamp, payload, nonce) {
 function buildForensicHeaders(event) {
   const traceId = event.metadata?.traceId || `TRC-${Date.now()}-${Math.random().toString(36).substring(2, 8)}`;
   
-  let storedTenantId = 'wilsy';
-  try {
-    if (typeof localStorage !== 'undefined') {
-      storedTenantId = localStorage.getItem('tenantId') || 'wilsy';
-    }
-  } catch (e) {
-    // Fallback for restricted storage environments
-  }
-  const tenantId = event.tenantId || storedTenantId;
+  const tenantId = event?.tenantId;
+  if (!hasCanonicalTenantScope(tenantId)) return null;
   const timestamp = new Date().toISOString();
   
   let nonce = `NONCE-${Date.now()}-${Math.random().toString(36)}`;
@@ -360,6 +353,25 @@ async function removeQueuedEvents(ids) {
 let isSending = false;
 let retryTimer = null;
 let transportPausedUntil = 0;
+
+const RESERVED_TENANT_SCOPE_VALUES = new Set([
+  'WILSY_GLOBAL_ROOT',
+  'GLOBAL_ROOT',
+  'MASTER',
+  'WILSY_SOVEREIGN_ROOT',
+  'WILSY_GLOBAL_ROOT_001',
+  'WILSY',
+  'WILSYTENANT',
+  'WILSY_TENANT',
+]);
+
+const hasCanonicalTenantScope = (tenantId) => (
+  typeof tenantId === 'string'
+  && tenantId === tenantId.trim()
+  && tenantId.length > 0
+  && !RESERVED_TENANT_SCOPE_VALUES.has(tenantId.toUpperCase())
+  && /^[A-Za-z0-9][A-Za-z0-9._:-]{0,199}$/.test(tenantId)
+);
 let transportFailureCount = 0;
 let lastTransportWarningAt = 0;
 
@@ -399,11 +411,14 @@ async function sendBatch(events) {
   if (!events || !events.length) return { success: true };
   if (Date.now() < transportPausedUntil) return { success: false, failedIds: events.map(ev => ev.id) };
 
-  const firstEvent = events[0];
+  const scopedEvents = events.filter((ev) => hasCanonicalTenantScope(ev?.tenantId));
+  if (!scopedEvents.length) return { success: true, failedIds: [] };
+  const firstEvent = scopedEvents[0];
   const headers = buildForensicHeaders(firstEvent);
+  if (!headers) return { success: true, failedIds: [] };
   let failedIds = [];
 
-  for (const ev of events) {
+  for (const ev of scopedEvents) {
     try {
       const base = api.defaults?.baseURL || 'http://localhost:5050/api';
       const url = `${base.replace(/\/$/, '')}/telemetry/event`;
@@ -527,6 +542,11 @@ export function generateTraceAnchor() {
  * @epitome "Telemetry without proof is noise."
  */
 export async function broadcastTelemetry(tenantId, category, event, source, metadata = {}, startTime = null) {
+  // Browser telemetry is tenant-scoped; discovery aliases and synthetic roots
+  // are never substituted for a verified tenant identifier.
+  if (!hasCanonicalTenantScope(tenantId)) {
+    return { success: false, traceId: null, queued: false, dropped: true, reason: 'TENANT_CONTEXT_REQUIRED' };
+  }
   // 🛡️ INSTITUTIONAL DEV GUARD: Silences telemetry entirely during local development to prevent 404 floods.
   if (import.meta.env.DEV) return { success: true, traceId: 'DEV_MODE_SUPPRESSED', queued: false, dropped: true };
 
@@ -545,7 +565,7 @@ export async function broadcastTelemetry(tenantId, category, event, source, meta
   const userAgent = (typeof navigator !== 'undefined' && navigator.userAgent) ? navigator.userAgent : 'Wilsy-Sovereign-Runtime';
 
   const telemetryEvent = {
-    tenantId: tenantId || 'wilsy',
+    tenantId,
     eventType: category,
     event,
     source,
@@ -566,6 +586,7 @@ export async function broadcastTelemetry(tenantId, category, event, source, meta
       const base = api.defaults?.baseURL || 'http://localhost:5050/api';
       const url = `${base.replace(/\/$/, '')}/telemetry/event`;
       const headers = buildForensicHeaders(telemetryEvent);
+      if (!headers) return { success: false, traceId, queued: false, dropped: true, reason: 'TENANT_CONTEXT_REQUIRED' };
       const response = await fetch(url, {
         method: 'POST',
         headers,
@@ -606,17 +627,11 @@ export async function broadcastTelemetry(tenantId, category, event, source, meta
  * @collaboration Backward‑compatible wrapper for legacy components.
  */
 export async function broadcastTelemetrySimple(event, data) {
-  // 🛡️ INSTITUTIONAL DEV GUARD: Silences telemetry entirely during local development to prevent 404 floods.
-  if (import.meta.env.DEV) return;
-
-  if (isSpam('simple', 'simple', event, 'simple')) return;
-  let tenantId = 'wilsy';
-  try {
-    if (typeof localStorage !== 'undefined') {
-      tenantId = localStorage.getItem('tenantId') || 'wilsy';
-    }
-  } catch (e) {}
-  await broadcastTelemetry(tenantId, 'SIMPLE', event, 'LegacyComponent', { data });
+  const tenantId = data && typeof data.tenantId === 'string' ? data.tenantId : null;
+  if (!hasCanonicalTenantScope(tenantId)) {
+    return { success: false, queued: false, dropped: true, reason: 'TENANT_CONTEXT_REQUIRED' };
+  }
+  return broadcastTelemetry(tenantId, 'SIMPLE', event, 'LegacyComponent', { data });
 }
 
 /**

@@ -29,6 +29,7 @@ from tools.eos.auth.tenant_membership_repository import (
     TenantMembershipNotFoundError,
     TenantMembershipRepositoryError,
 )
+from tools.eos.auth.tenant_authority_policy import TENANT_ROLES
 
 
 def _contract() -> Any:
@@ -109,6 +110,7 @@ class _ExactRepository:
         self.value = value
         self.error = error
         self.calls: list[tuple[str, str]] = []
+        self.selected_calls: list[tuple[str, str, str]] = []
 
     def resolve(
         self,
@@ -121,6 +123,22 @@ class _ExactRepository:
         self.calls.append((principal_id, tenant_id))
         if self.error is not None:
             raise self.error
+        return self.value
+
+    def resolve_business_role(
+        self,
+        principal_id: str,
+        tenant_id: str,
+        business_role: str,
+        *,
+        session: Any = None,
+    ) -> Any:
+        del session
+        self.selected_calls.append((principal_id, tenant_id, business_role))
+        if self.error is not None:
+            raise self.error
+        if getattr(self.value, "business_role", None) != business_role:
+            raise TenantBusinessRoleNotFoundError("TENANT_BUSINESS_ROLE_NOT_FOUND")
         return self.value
 
 
@@ -187,6 +205,7 @@ def test_workspace_bootstrap_uses_only_current_durable_workspace_authorities() -
     assert projection.email == "principal@example.com"
     assert projection.tenant_id == "TENANT-A"
     assert projection.business_role == "tenant_auditor"
+    assert projection.workspace_id == "AUDIT_REPORTING"
     assert projection.membership_revision == 7
     assert projection.business_role_revision == 11
     assert projection.tenant.tenant_id == "TENANT-A"
@@ -312,3 +331,115 @@ def test_workspace_bootstrap_requires_exact_canonical_tenant() -> None:
     with pytest.raises(contract.WorkspaceBootstrapProjectionError) as unavailable:
         _build(tenant_error=RuntimeError("TENANT_REGISTRY_UNAVAILABLE"))
     assert _error_code(unavailable.value) == "WORKSPACE_BOOTSTRAP_TENANT_UNAVAILABLE"
+
+
+
+def test_workspace_resolution_maps_owner_and_legal_practice_to_distinct_workspaces() -> None:
+    contract = _contract()
+
+    assert contract.resolve_workspace_id("tenant_owner") == "EXECUTIVE_COMMAND_CENTRE"
+    assert contract.resolve_workspace_id("tenant_legal_partner") == "LEGAL_PRACTICE"
+    assert contract.resolve_workspace_id("tenant_legal_attorney") == "LEGAL_PRACTICE"
+    assert contract.resolve_workspace_id("tenant_sheriff") == "PROCESS_SERVICE"
+
+
+def test_every_published_tenant_business_role_has_one_workspace_mapping() -> None:
+    contract = _contract()
+
+    resolved = {
+        role: contract.resolve_workspace_id(role)
+        for role in TENANT_ROLES
+    }
+
+    assert resolved["tenant_owner"] == "EXECUTIVE_COMMAND_CENTRE"
+    assert resolved["tenant_legal_partner"] == "LEGAL_PRACTICE"
+    assert all(isinstance(workspace_id, str) and workspace_id for workspace_id in resolved.values())
+
+
+def test_unknown_workspace_role_fails_closed() -> None:
+    contract = _contract()
+
+    with pytest.raises(contract.WorkspaceBootstrapProjectionError) as raised:
+        contract.resolve_workspace_id("tenant_unpublished_role")
+
+    assert _error_code(raised.value) == "WORKSPACE_BOOTSTRAP_WORKSPACE_UNMAPPED"
+
+
+def _global_identity(
+    *,
+    business_role: str = "tenant_owner",
+    workspace_id: str = "EXECUTIVE_COMMAND_CENTRE",
+    membership_revision: int = 7,
+    capacity_revision: int = 11,
+) -> SimpleNamespace:
+    return SimpleNamespace(
+        identity_id="principal-1",
+        tenant_id="TENANT-A",
+        email="principal@example.com",
+        status=PrincipalStatus.ACTIVE,
+        roles=[business_role],
+        permissions=[],
+        principal_scope="GLOBAL",
+        workspace_id=workspace_id,
+        membership_revision=membership_revision,
+        capacity_revision=capacity_revision,
+    )
+
+
+def test_global_workspace_bootstrap_uses_exact_session_selected_capacity() -> None:
+    projection, memberships, roles, tenants = _build(
+        identity=_global_identity(),
+        business_role=_business_role(business_role="tenant_owner"),
+    )
+
+    assert projection.business_role == "tenant_owner"
+    assert projection.workspace_id == "EXECUTIVE_COMMAND_CENTRE"
+    assert projection.membership_revision == 7
+    assert projection.business_role_revision == 11
+    assert roles.calls == []
+    assert roles.selected_calls == [
+        ("principal-1", "TENANT-A", "tenant_owner")
+    ]
+    assert memberships.calls == [("principal-1", "TENANT-A")]
+    assert tenants.calls == ["TENANT-A"]
+
+
+@pytest.mark.parametrize(
+    ("identity", "business_role", "expected"),
+    [
+        (
+            _global_identity(capacity_revision=10),
+            _business_role(business_role="tenant_owner"),
+            "WORKSPACE_BOOTSTRAP_SELECTED_CAPACITY_STALE",
+        ),
+        (
+            _global_identity(workspace_id="LEGAL_PRACTICE"),
+            _business_role(business_role="tenant_owner"),
+            "WORKSPACE_BOOTSTRAP_SELECTED_CAPACITY_STALE",
+        ),
+        (
+            _global_identity(membership_revision=6),
+            _business_role(business_role="tenant_owner"),
+            "WORKSPACE_BOOTSTRAP_MEMBERSHIP_REVISION_STALE",
+        ),
+    ],
+)
+def test_global_workspace_bootstrap_rejects_stale_selected_capacity_context(
+    identity: Any,
+    business_role: Any,
+    expected: str,
+) -> None:
+    contract = _contract()
+    with pytest.raises(contract.WorkspaceBootstrapProjectionError) as raised:
+        _build(identity=identity, business_role=business_role)
+    assert _error_code(raised.value) == expected
+
+
+def test_global_workspace_bootstrap_does_not_fall_back_to_another_active_capacity() -> None:
+    contract = _contract()
+    with pytest.raises(contract.WorkspaceBootstrapProjectionError) as raised:
+        _build(
+            identity=_global_identity(business_role="tenant_legal_partner"),
+            business_role=_business_role(business_role="tenant_owner"),
+        )
+    assert _error_code(raised.value) == "WORKSPACE_BOOTSTRAP_BUSINESS_ROLE_REQUIRED"

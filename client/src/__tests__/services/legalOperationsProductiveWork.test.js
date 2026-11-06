@@ -50,7 +50,37 @@ const workItem = (id, dueAt = null) => ({
 const payload = () => ({
   schema: 'WILSY-LEGAL-PROFILE-PRODUCTIVE-WORK/V1',
   version: 'v1.0.1-PW-P2-PROFILE-PRODUCTIVE-WORK-COMPOSITION',
-  http_version: 'v1.0.0-PW-P11B-AUTHENTICATED-PRODUCTIVE-WORK-READ-API',
+  http_version: 'v1.1.0-R67-ENTERPRISE-DAILY-WORK-EXECUTION-READ-API',
+  workday_summary: {
+    assigned_count: 1,
+    supervised_count: 0,
+    overdue_count: 0,
+    due_soon_count: 1,
+    execution_authority: 'NOT_EVALUATED',
+    permits_execution: false,
+    permits_confidential_matter_access: false,
+  },
+  daily_execution_queue: {
+    fact_classification: 'DERIVED_OPERATIONAL_PROJECTION',
+    as_of: '2026-10-16T01:00:00+00:00',
+    unique_active_count: 1,
+    assignment_supervision_overlap_count: 0,
+    items: [{
+      queue_position: 1,
+      work_item_id: 'work-1',
+      case_matter_id: 'matter-1',
+      status: 'OPEN',
+      due_at: '2026-10-16T08:00:00+00:00',
+      urgency: 'DUE_SOON',
+      visibility_sources: ['ASSIGNMENT'],
+      work_evidence_fingerprint: 'b'.repeat(128),
+    }],
+    projection_fingerprint: 'c'.repeat(128),
+    execution_authority: 'NOT_EVALUATED',
+    permits_execution: false,
+    permits_assignment_mutation: false,
+    permits_confidential_matter_access: false,
+  },
   tenant_id: 'tenant-law',
   principal_id: 'principal-law',
   as_of: '2026-10-16T01:00:00+00:00',
@@ -96,6 +126,23 @@ describe('PW-P11C productive-work client adapter', () => {
 
     expect(result.tenantId).toBe('tenant-law');
     expect(result.principalId).toBe('principal-law');
+    expect(result.httpVersion).toBe(
+      'v1.1.0-R67-ENTERPRISE-DAILY-WORK-EXECUTION-READ-API',
+    );
+    expect(result.workdaySummary).toEqual({
+      assignedCount: 1,
+      supervisedCount: 0,
+      overdueCount: 0,
+      dueSoonCount: 1,
+    });
+    expect(result.dailyExecutionQueue.items).toEqual([
+      expect.objectContaining({
+        queuePosition: 1,
+        workItemId: 'work-1',
+        urgency: 'DUE_SOON',
+        visibilitySources: ['ASSIGNMENT'],
+      }),
+    ]);
 
     expect(result.assignedWorkItems).toEqual([
       expect.objectContaining({

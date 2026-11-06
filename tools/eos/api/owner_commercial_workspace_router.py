@@ -6,6 +6,7 @@ client-confidential records, professional work items or practitioner commands.
 from __future__ import annotations
 
 from datetime import datetime, timezone
+import logging
 from typing import Any, Literal
 
 from fastapi import APIRouter, Depends, Header, HTTPException, status
@@ -31,6 +32,8 @@ from tools.eos.saas.entitlement.tenant_product_entitlement_registry import (
 import tools.eos.saas.billing.subscription_registry as subscription_registry_module
 
 router = APIRouter(prefix="/crm/owner-workspace", tags=["Owner Commercial Workspace"])
+
+logger = logging.getLogger("WilsyOS.API.OwnerCommercialWorkspace")
 
 _READ = RequireTenantAuthorization("crm:work_item:read", "crm_work_item_read")
 _CREATE = RequireTenantAuthorization("crm:work_item:create", "crm_work_item_create")
@@ -93,6 +96,25 @@ def _transaction(callback):
     except HTTPException:
         raise
     except Exception as error:
+        cause = error.__cause__
+        traceback = error.__traceback__
+        while traceback is not None and traceback.tb_next is not None:
+            traceback = traceback.tb_next
+        frame = traceback.tb_frame if traceback is not None else None
+        location = (
+            f"{frame.f_code.co_filename.rsplit('/', 1)[-1]}:{traceback.tb_lineno}:{frame.f_code.co_name}"
+            if frame is not None and traceback is not None else None
+        )
+        logger.error(
+            "OWNER_WORK_TRANSACTION_FAILURE error_type=%s error_code=%s cause_type=%s cause_code=%s attribute_name=%s object_type=%s location=%s",
+            type(error).__name__,
+            getattr(error, "code", None),
+            type(cause).__name__ if cause is not None else None,
+            getattr(cause, "code", None) if cause is not None else None,
+            getattr(error, "name", None),
+            type(getattr(error, "obj", None)).__name__,
+            location,
+        )
         raise HTTPException(status_code=503, detail="OWNER_WORK_TRANSACTION_UNAVAILABLE") from error
 
 

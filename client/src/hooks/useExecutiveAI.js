@@ -29,7 +29,6 @@ import api from '../services/api'; // Sovereign HTTP client with forensic sealin
 // -----------------------------------------------------------------------------
 
 const DEFAULT_OPTIONS = {
-  tenantId: 'GLOBAL_ROOT', // Will be overridden by api interceptor if set
   autoTrace: true,
   timeout: 30000,
 };
@@ -45,7 +44,7 @@ const DEFAULT_OPTIONS = {
  * query submission.
  *
  * @param {Object} options - Configuration options.
- * @param {string} options.tenantId - Tenant context (default: 'GLOBAL_ROOT').
+ * @param {string} [options.tenantId] - Optional UI context; EOS tenant scope is supplied by the verified API session.
  * @param {boolean} options.autoTrace - Auto‑generate trace IDs (default: true) – handled by api.
  * @param {number} options.timeout - Request timeout in ms (default: 30000).
  * @returns {Object} { data, loading, error, execute, reset, lastResponse }

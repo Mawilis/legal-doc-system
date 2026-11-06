@@ -115,6 +115,14 @@ class PasswordResetCode(StrEnum):
     TRANSACTION_FAILURE = "PASSWORD_RESET_TRANSACTION_FAILURE"
 
 
+class PasswordResetExecutionGuardError(RuntimeError):
+    """Preserve a caller's current-authority denial across canonical rollback."""
+
+
+class PasswordResetExecutionEvidenceError(RuntimeError):
+    """Preserve failure to persist caller-owned evidence across canonical rollback."""
+
+
 class PasswordResetServiceError(RuntimeError):
     """Bounded reset failure without password, token, identity, or revision data.
 
@@ -374,6 +382,8 @@ class PasswordResetService:
         recovery_token: str,
         new_password: str,
         context_terms: Iterable[str] | None = None,
+        transaction_guard: Callable[[Any, PasswordRecoveryCapability], None] | None = None,
+        transaction_completion: Callable[[Any, str, str, int], None] | None = None,
     ) -> PasswordResetResult:
         """Reset one capability-bound principal and atomically persist notice intent.
 
@@ -387,10 +397,12 @@ class PasswordResetService:
         notification state or the returned receipt.
 
         Transaction semantics: password CAS, session revocation, refresh
-        revocation, capability consumption, and pristine PENDING notification
-        creation all share one Mongo session and transaction callback. PyMongo
-        owns whole-callback retry. notification_id/event time are created once
-        outside the callback so transaction retries refer to one logical event.
+        revocation, capability consumption, pristine PENDING notification
+        creation, and optional caller-owned transaction_completion evidence (tenant/principal identifiers
+        and the resulting credential revision only) all share one Mongo session and transaction callback. A completion failure
+        aborts every canonical reset participant. PyMongo owns whole-callback
+        retry. notification_id/event time are created once outside the callback
+        so transaction retries refer to one logical event.
 
         Post-commit semantics: when a dispatcher was injected, it runs only after
         with_transaction returns. A stable dispatch failure cannot roll back the
@@ -400,6 +412,8 @@ class PasswordResetService:
         :param recovery_token: One transient bearer capability value.
         :param new_password: Complete prospective password text.
         :param context_terms: Optional exact policy context terms.
+        :param transaction_guard: Optional current-authority check on the canonical session.
+        :param transaction_completion: Optional caller evidence writer on that same session.
         :returns: A non-sensitive committed receipt.
         :raises PasswordResetServiceError: For invalid/conflicting/unavailable
             pre-commit reset or notification-intent state.
@@ -476,13 +490,20 @@ class PasswordResetService:
                     or current.token_digest != capability.token_digest
                 ):
                     raise PasswordResetServiceError(PasswordResetCode.RECOVERY_INVALID)
+                if transaction_guard is not None:
+                    try:
+                        transaction_guard(session, current)
+                    except Exception as error:
+                        raise PasswordResetExecutionGuardError(
+                            "PASSWORD_RESET_EXECUTION_GUARD_REJECTED"
+                        ) from error
 
                 expected_revision = auth.get_credential_revision(
                     current.tenant_id,
                     current.principal_id,
                     session=session,
                 )
-                auth.compare_and_swap_password_hash(
+                new_credential_revision = auth.compare_and_swap_password_hash(
                     current.tenant_id,
                     current.principal_id,
                     expected_revision,
@@ -501,8 +522,24 @@ class PasswordResetService:
                 )
                 registry.consume(current, self._clock(), session=session)
                 notification_registry.create(notification, session=session)
+                if transaction_completion is not None:
+                    try:
+                        transaction_completion(
+                            session,
+                            current.tenant_id,
+                            current.principal_id,
+                            new_credential_revision,
+                        )
+                    except Exception as error:
+                        raise PasswordResetExecutionEvidenceError(
+                            "PASSWORD_RESET_EXECUTION_EVIDENCE_REJECTED"
+                        ) from error
                 holder["result"] = PasswordResetResult()
-            except PasswordResetServiceError:
+            except (
+                PasswordResetServiceError,
+                PasswordResetExecutionGuardError,
+                PasswordResetExecutionEvidenceError,
+            ):
                 raise
             except (
                 PasswordRecoveryCapabilityLifecycleConflictError,
@@ -532,7 +569,11 @@ class PasswordResetService:
         try:
             with client.start_session() as session:
                 session.with_transaction(callback)
-        except PasswordResetServiceError:
+        except (
+            PasswordResetServiceError,
+            PasswordResetExecutionGuardError,
+            PasswordResetExecutionEvidenceError,
+        ):
             raise
         except Exception:
             raise PasswordResetServiceError(
@@ -560,6 +601,8 @@ __all__ = [
     "PasswordResetResult",
     "PasswordResetService",
     "PasswordResetServiceError",
+    "PasswordResetExecutionGuardError",
+    "PasswordResetExecutionEvidenceError",
     "VERSION",
 ]
 

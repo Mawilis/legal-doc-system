@@ -44,7 +44,7 @@
  */
 
 import React, { useState, useEffect, useCallback, useRef, useMemo } from 'react';
-import wilsyLogo from '../assets/logo/wilsy.jpeg';
+import wilsyLogo from '../assets/logo/wilsy-logo.svg';
 import './SingularityDashboard.css';
 import api from '../services/api';
 import { broadcastTelemetry } from '../utils/telemetryHelper';

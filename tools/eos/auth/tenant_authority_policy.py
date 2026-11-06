@@ -236,6 +236,12 @@ BUSINESS_ROLE_OPERATION_PERMISSIONS: Final = MappingProxyType({
     "crm_work_item_read": "crm:work_item:read",
     "crm_work_item_create": "crm:work_item:create",
     "crm_work_item_complete": "crm:work_item:complete",
+    "operations_work_item_read": "operations:work_item:read",
+    "operations_work_item_create": "operations:work_item:create",
+    "operations_work_item_complete": "operations:work_item:complete",
+    "intelligence_work_item_read": "intelligence:work_item:read",
+    "intelligence_work_item_create": "intelligence:work_item:create",
+    "intelligence_work_item_complete": "intelligence:work_item:complete",
     "crm_email_template_create": "crm:email_template:create",
     "crm_email_template_read": "crm:email_template:read",
     "crm_email_template_revise": "crm:email_template:revise",
@@ -944,6 +950,39 @@ _auditor_work_row["crm_work_item_read"] = ELIGIBLE
 _owner_work_eligibility["tenant_auditor"] = MappingProxyType(_auditor_work_row)
 ELIGIBILITY = MappingProxyType(_owner_work_eligibility)
 
+# Operations and Intelligence queues are independent module commands. Only
+# tenant owner/admin/manager capacities may create or complete; auditor is
+# read-only. IAM possession, active product entitlement and tenant scope remain
+# separate mandatory authorization conjuncts.
+_module_work_operations = (
+    "operations_work_item_read", "operations_work_item_create",
+    "operations_work_item_complete", "intelligence_work_item_read",
+    "intelligence_work_item_create", "intelligence_work_item_complete",
+)
+OPERATIONS = frozenset((*OPERATIONS, *_module_work_operations))
+_module_work_permissions = {
+    **BUSINESS_ROLE_OPERATION_PERMISSIONS,
+    "operations_work_item_read": "operations:work_item:read",
+    "operations_work_item_create": "operations:work_item:create",
+    "operations_work_item_complete": "operations:work_item:complete",
+    "intelligence_work_item_read": "intelligence:work_item:read",
+    "intelligence_work_item_create": "intelligence:work_item:create",
+    "intelligence_work_item_complete": "intelligence:work_item:complete",
+}
+BUSINESS_ROLE_OPERATION_PERMISSIONS = MappingProxyType(_module_work_permissions)
+_module_work_eligibility = dict(ELIGIBILITY)
+for _module_work_role in ("tenant_owner", "tenant_admin", "tenant_manager"):
+    _module_work_row = dict(_module_work_eligibility[_module_work_role])
+    _module_work_row.update({operation: ELIGIBLE for operation in _module_work_operations})
+    _module_work_eligibility[_module_work_role] = MappingProxyType(_module_work_row)
+_module_auditor_row = dict(_module_work_eligibility["tenant_auditor"])
+_module_auditor_row.update({
+    "operations_work_item_read": ELIGIBLE,
+    "intelligence_work_item_read": ELIGIBLE,
+})
+_module_work_eligibility["tenant_auditor"] = MappingProxyType(_module_auditor_row)
+ELIGIBILITY = MappingProxyType(_module_work_eligibility)
+
 
 def tenant_role_operation_eligibility(role: object, operation: object) -> str:
     """Return business eligibility only; ELIGIBLE is never an authorization grant."""
@@ -1004,6 +1043,34 @@ for _assignment_business_role in (
 ELIGIBILITY = MappingProxyType(_assignment_roles)
 
 
+# Commercial agreement access is owner-commercial authority, not Legal Practice.
+# Tenant Owner/Admin may read, create drafts, execute with trusted signatory
+# evidence, and activate verified bundles; Auditor remains read-only.
+# Provider availability and signatory mandate are independent runtime gates.
+OPERATIONS = frozenset((*OPERATIONS, "commercial_agreement_read", "commercial_agreement_draft_create", "commercial_agreement_execute", "commercial_agreement_activate"))
+BUSINESS_ROLE_OPERATION_PERMISSIONS = MappingProxyType({
+    **BUSINESS_ROLE_OPERATION_PERMISSIONS,
+    "commercial_agreement_read": "tenant:commercial_agreement:read",
+    "commercial_agreement_draft_create": "tenant:commercial_agreement:draft:create",
+    "commercial_agreement_execute": "tenant:commercial_agreement:execute",
+    "commercial_agreement_activate": "tenant:commercial_agreement:activate",
+})
+_agreement_eligibility = dict(ELIGIBILITY)
+for _agreement_role in ("tenant_owner", "tenant_admin"):
+    _agreement_row = dict(_agreement_eligibility[_agreement_role])
+    _agreement_row.update({
+        "commercial_agreement_read": ELIGIBLE,
+        "commercial_agreement_draft_create": ELIGIBLE,
+        "commercial_agreement_execute": ELIGIBLE,
+        "commercial_agreement_activate": ELIGIBLE,
+    })
+    _agreement_eligibility[_agreement_role] = MappingProxyType(_agreement_row)
+_agreement_auditor = dict(_agreement_eligibility["tenant_auditor"])
+_agreement_auditor["commercial_agreement_read"] = ELIGIBLE
+_agreement_eligibility["tenant_auditor"] = MappingProxyType(_agreement_auditor)
+ELIGIBILITY = MappingProxyType(_agreement_eligibility)
+
+
 # ARTIFACT: tenant_authority_policy.py
 # VERSION: v1.51.0-R59-P9-REASSIGNMENT-IAM-INTEGRATION
 # AUTHORITY BOUNDARY: business eligibility facts only; no authorization or mutation
@@ -1011,3 +1078,53 @@ ELIGIBILITY = MappingProxyType(_assignment_roles)
 # FAIL-CLOSED POSTURE: unknown roles and operations deny; ELIGIBLE never grants access
 # FINANCIAL EXECUTION AUTHORITY: Kennel EOS remains exclusive
 # END OF WILSY OS SOVEREIGN ARTIFACT
+
+
+# POS business eligibility is separate from permission possession and the
+# independently persisted principal/location assignment.
+POS_OPERATIONS = (
+    "pos_location_assignment_manage", "pos_sale_read", "pos_sale_create",
+    "pos_tender_create", "pos_cash_record", "pos_return_create", "pos_refund_create",
+)
+OPERATIONS = frozenset((*OPERATIONS, *POS_OPERATIONS))
+BUSINESS_ROLE_OPERATION_PERMISSIONS = MappingProxyType({
+    **BUSINESS_ROLE_OPERATION_PERMISSIONS,
+    "pos_location_assignment_manage": "pos:location_assignment:manage",
+    "pos_sale_read": "pos:sale:read",
+    "pos_sale_create": "pos:sale:create",
+    "pos_tender_create": "pos:tender:create",
+    "pos_cash_record": "pos:cash:record",
+    "pos_return_create": "pos:return:create",
+    "pos_refund_create": "pos:refund:create",
+})
+_pos_eligibility = dict(ELIGIBILITY)
+for _role in ("tenant_owner",):
+    _row = dict(_pos_eligibility[_role])
+    _row.update({operation: ELIGIBLE for operation in POS_OPERATIONS})
+    _pos_eligibility[_role] = MappingProxyType(_row)
+ELIGIBILITY = MappingProxyType(_pos_eligibility)
+
+
+# A POS operator must hold both the POS_OPERATOR authorization assignment and
+# the explicit tenant_pos_operator business role. Location assignment is a
+# separate per-principal/per-location conjunct.
+TENANT_ROLES = frozenset((*TENANT_ROLES, "tenant_pos_operator"))
+_pos_eligibility = dict(ELIGIBILITY)
+_pos_eligibility["tenant_pos_operator"] = MappingProxyType({
+    **{operation: DENY for operation in OPERATIONS},
+    **{operation: ELIGIBLE for operation in POS_OPERATIONS[1:]},
+})
+ELIGIBILITY = MappingProxyType(_pos_eligibility)
+
+
+POS_MOVEMENT_AUTHORIZE = "pos_movement_authorize"
+OPERATIONS = frozenset((*OPERATIONS, POS_MOVEMENT_AUTHORIZE))
+BUSINESS_ROLE_OPERATION_PERMISSIONS = MappingProxyType({
+    **BUSINESS_ROLE_OPERATION_PERMISSIONS,
+    POS_MOVEMENT_AUTHORIZE: "pos:payment:authorize",
+})
+_pos_eligibility = dict(ELIGIBILITY)
+_owner_row = dict(_pos_eligibility["tenant_owner"])
+_owner_row[POS_MOVEMENT_AUTHORIZE] = ELIGIBLE
+_pos_eligibility["tenant_owner"] = MappingProxyType(_owner_row)
+ELIGIBILITY = MappingProxyType(_pos_eligibility)

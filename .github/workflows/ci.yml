@@ -264,6 +264,62 @@ jobs:
   # Broad client certification is excluded from production CI until
   # its runtime surface is separately classified RETAIN/SOVEREIGN.
 
+  tenant-owner-genesis-unit-certification:
+    name: EOS Tenant Owner Genesis Transaction Certification
+    runs-on: ubuntu-latest
+    env:
+      TEST_TENANT_OWNER_MONGO_URI: mongodb://localhost:27017/?replicaSet=wilsyOwnerGenesisRS
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Install focused Python test dependencies
+        run: |
+          python -m pip install --disable-pip-version-check \
+            pymongo==4.18.2 pytest==9.1.1 pydantic==2.13.4 \
+            pydantic_core==2.46.4 python-dotenv==1.2.3
+      - name: Start disposable MongoDB replica set
+        run: |
+          docker run --detach --name wilsy-owner-genesis-mongo --publish 27017:27017 mongo:7.0.37 mongod --replSet wilsyOwnerGenesisRS --bind_ip_all
+          python - <<'PY'
+          import time
+          from pymongo import MongoClient
+          client = MongoClient("mongodb://localhost:27017", directConnection=True, serverSelectionTimeoutMS=2000)
+          deadline = time.monotonic() + 60
+          initiated = False
+          last_error = None
+          while True:
+              try:
+                  hello = client.admin.command("hello")
+                  if not initiated and not hello.get("setName"):
+                      client.admin.command({"replSetInitiate": {"_id": "wilsyOwnerGenesisRS", "members": [{"_id": 0, "host": "localhost:27017"}]}})
+                      initiated = True
+                  if client.admin.command("hello").get("isWritablePrimary"):
+                      break
+              except Exception as exc:
+                  last_error = exc
+              if time.monotonic() >= deadline:
+                  raise RuntimeError(f"OWNER_GENESIS_MONGO_REPLICA_SET_UNAVAILABLE: {last_error!r}")
+              time.sleep(1)
+          client.close()
+          PY
+      - name: Compile EOS genesis contracts and tests
+        run: |
+          python -m py_compile \
+            tools/eos/auth/tenant_owner_genesis_provisioning.py \
+            tests/unit/test_tenant_owner_genesis_provisioning.py
+      - name: Run EOS tenant-owner genesis unit and real-Mongo certification
+        run: |
+          python -m pytest -q \
+            tests/unit/test_tenant_owner_genesis_provisioning.py \
+            tests/integration/test_tenant_owner_genesis_provisioning_real_mongo.py
+      - name: Stop disposable MongoDB replica set
+        if: always()
+        run: docker rm -f wilsy-owner-genesis-mongo 2>/dev/null || true
+
   # Final governed production gate
   final-verification:
     name: ✅ Retained Production Gates Passed
@@ -273,6 +329,7 @@ jobs:
         security-scan,
         vendor-bill-r2a-certification,
         vendor-bill-r2b-release-certification,
+        tenant-owner-genesis-unit-certification,
       ]
     if: always()
     steps:
@@ -281,7 +338,8 @@ jobs:
           echo "Retained and sovereign production gates have completed."
           if [ "${{ needs.security-scan.result }}" != "success" ] || \
              [ "${{ needs.vendor-bill-r2a-certification.result }}" != "success" ] || \
-             [ "${{ needs.vendor-bill-r2b-release-certification.result }}" != "success" ]; then
+             [ "${{ needs.vendor-bill-r2b-release-certification.result }}" != "success" ] || \
+             [ "${{ needs['tenant-owner-genesis-unit-certification'].result }}" != "success" ]; then
             echo "❌ A retained or sovereign production gate failed."
             exit 1
           fi

@@ -207,12 +207,12 @@ const exportJsonArtifact = (filenamePrefix, payload) => {
  * @description The Compliance Sentinel dashboard – displays regulatory intelligence,
  * breach radar, remediation playbooks, source provenance, and compliance-only operating actions.
  * @param {Object} props
- * @param {string} [props.tenantId="WILSY_GLOBAL_ROOT"] - The tenant ID for data isolation.
+ * @param {string} [props.tenantId] - The authenticated tenant ID for data isolation; required for live reads.
  * @param {boolean} [props.embedded=false] - True when mounted inside the Founder Singularity Matrix.
  * @returns {JSX.Element}
  * @collaboration Wilson Khanyezi mandated OS-grade embedded behavior so Compliance menus never clip inside the Matrix viewport.
  */
-const ComplianceHUD = ({ tenantId = "WILSY_GLOBAL_ROOT", embedded = false }) => {
+const ComplianceHUD = ({ tenantId = null, embedded = false }) => {
   // ==========================================================================
   // STATE — Institutional Tracking Ledger
   // ==========================================================================
@@ -307,6 +307,13 @@ const ComplianceHUD = ({ tenantId = "WILSY_GLOBAL_ROOT", embedded = false }) => 
    */
   const fetchCompliance = useCallback(async () => {
     if (!isMountedRef.current) return;
+    if (typeof tenantId !== 'string' || !tenantId.trim()) {
+      setSourceEvidence([]);
+      setHasError(true);
+      setIsSyncing(false);
+      setLoading(false);
+      return;
+    }
     if (isAnyProcessing) return;
     setIsSyncing(true);
     setHasError(false);
@@ -471,6 +478,10 @@ const ComplianceHUD = ({ tenantId = "WILSY_GLOBAL_ROOT", embedded = false }) => 
   }, [fetchCompliance, recordOperatorAction]);
 
   const syncSovereignLedger = useCallback(async () => {
+    if (typeof tenantId !== 'string' || !tenantId.trim()) {
+      showToast('TENANT_CONTEXT_REQUIRED', 'error');
+      return;
+    }
     if (isAnyProcessing) {
       showToast('SYSTEM_BUSY: Please wait for current operation to complete.', 'error');
       return;

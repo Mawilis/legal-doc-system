@@ -15,7 +15,7 @@ import { render, screen, waitFor } from '@testing-library/react';
 import { MemoryRouter } from 'react-router-dom';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
-const { api, sovereignClient } = vi.hoisted(() => ({
+const { api, sovereignClient, setActiveTenantTransportId } = vi.hoisted(() => ({
   api: {
     get: vi.fn(),
     post: vi.fn(),
@@ -24,9 +24,13 @@ const { api, sovereignClient } = vi.hoisted(() => ({
   sovereignClient: {
     get: vi.fn(),
   },
+  setActiveTenantTransportId: vi.fn(),
 }));
 
-vi.mock('../../src/services/api', () => ({ default: api }));
+vi.mock('../../src/services/api', () => ({
+  default: api,
+  setActiveTenantTransportId,
+}));
 vi.mock('../../src/utils/sovereignClient', () => ({ default: sovereignClient }));
 
 import { AuthProvider } from '../../src/contexts/authContext.jsx';
@@ -47,6 +51,8 @@ const readyWorkspace = {
   workspace: {
     tenantId,
     businessRole: 'tenant_legal_partner',
+    workspaceId: 'LEGAL_PRACTICE',
+    workspaceContractVersion: 'v1.0.0-WILSY-EOS-WORKSPACE-RESOLUTION',
     membershipRevision: 4,
     businessRoleRevision: 9,
     legalPermissions: [
@@ -84,6 +90,7 @@ describe('authenticated Legal workspace journey', () => {
     delete api.defaults.headers.common.Authorization;
     delete api.defaults.headers.common['x-tenant-id'];
     sovereignClient.get.mockReset().mockResolvedValue({ data: {} });
+    setActiveTenantTransportId.mockReset();
   });
 
   it('revalidates the session and exact tenant before releasing the Legal workspace after server COMPLETE', async () => {
@@ -109,7 +116,7 @@ describe('authenticated Legal workspace journey', () => {
     });
     expect(api.get).toHaveBeenCalledWith('/legal-acceptance/status');
     expect(api.defaults.headers.common.Authorization).toBe('Bearer synthetic-session-token');
-    expect(api.defaults.headers.common['x-tenant-id']).toBe(tenantId);
+    expect(setActiveTenantTransportId).toHaveBeenCalledWith(tenantId);
     expect(sovereignClient.get).toHaveBeenCalledWith('/billing/dunning/state', {
       headers: { 'X-Tenant-ID': tenantId },
     });

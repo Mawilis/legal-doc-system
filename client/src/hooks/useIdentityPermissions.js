@@ -27,6 +27,7 @@ import { useState, useEffect, useCallback, useRef, useMemo } from 'react';
 import { useTenantContext } from '../context/TenantContext';
 import sovereignClient from '../utils/sovereignClient';
 import { broadcastTelemetry } from '../utils/telemetryHelper';
+import { isCanonicalTenantTransportId } from '../services/api';
 
 /**
  * @constant DEFAULT_RETRY_CONFIG
@@ -132,8 +133,9 @@ const useIdentityPermissions = (options = {}) => {
 
   // Resolve effective tenant ID.
   const effectiveTenantId = useMemo(() => {
-    if (explicitTenantId) return explicitTenantId;
-    return currentTenant?.id || currentTenant?.tenantId || 'MASTER';
+    if (explicitTenantId) return isCanonicalTenantTransportId(explicitTenantId) ? explicitTenantId : null;
+    const candidate = currentTenant?.id || currentTenant?.tenantId || null;
+    return isCanonicalTenantTransportId(candidate) ? candidate : null;
   }, [explicitTenantId, currentTenant]);
 
   // ─── STATE ────────────────────────────────────────────────────────────────
@@ -153,7 +155,7 @@ const useIdentityPermissions = (options = {}) => {
       if (!enableTelemetry) return;
       try {
         broadcastTelemetry(
-          effectiveTenantId || 'GLOBAL_ROOT',
+          effectiveTenantId,
           'IDENTITY_PERMISSIONS',
           event,
           'useIdentityPermissions',
@@ -188,7 +190,12 @@ const useIdentityPermissions = (options = {}) => {
       setError(null);
 
       // Check cache first.
-      const cacheKey = effectiveTenantId || 'GLOBAL_ROOT';
+      if (!effectiveTenantId) {
+        setSource('TENANT_CONTEXT_REQUIRED');
+        setError(new Error('TENANT_CONTEXT_REQUIRED'));
+        return null;
+      }
+      const cacheKey = effectiveTenantId;
       const cached = PERMISSION_CACHE.get(cacheKey);
       if (cached && Date.now() - cached.timestamp < cacheTTL) {
         setPermissions(cached.permissions);
@@ -290,7 +297,8 @@ const useIdentityPermissions = (options = {}) => {
   // ─── REFETCH ──────────────────────────────────────────────────────────────
   const refetch = useCallback(() => {
     // Clear cache for this tenant to force fresh fetch.
-    const cacheKey = effectiveTenantId || 'GLOBAL_ROOT';
+    if (!effectiveTenantId) return null;
+    const cacheKey = effectiveTenantId;
     PERMISSION_CACHE.delete(cacheKey);
     retryCountRef.current = 0;
     return fetchPermissions(false);

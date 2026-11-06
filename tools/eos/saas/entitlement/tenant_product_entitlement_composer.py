@@ -1,10 +1,11 @@
 """WILSY OS positive tenant-product entitlement composition authority.
 
 TITLE: Tenant Product Entitlement Composer
-VERSION: v1.2.0-D22B3-FOUNDER-PERPETUAL-LEGAL-ENTITLEMENT
+VERSION: v1.3.0-D22B3-ALL-PRODUCT-COMPOSITION
 AUTHORITY: Wilsy OS Core Governance
-EPITOME: Derive and persist one Legal Operations entitlement lineage from either
-         a canonical legal.core subscription or the exact perpetual Founder grant.
+EPITOME: Derive and persist one tenant-product entitlement lineage from an
+         exact canonical subscription feature mapping; preserve the exact
+         perpetual Founder exception for Legal Operations only.
 ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/tools/eos/saas/entitlement/tenant_product_entitlement_composer.py
 COLLABORATION / OWNERSHIP: SubscriptionRegistry owns subscription truth; D22A
                             owns product identity; Product Commercial Feature
@@ -15,7 +16,7 @@ CHANGELOG: v1.1.0-D22B3-SUBSCRIPTION-TERM-ENFORCEMENT applies the shared
            Founder-perpetual versus ordinary finite billing-period decision
            before entitlement reads or writes. v1.0.0-D22B3 establishes stable
            tenant/product lineage IDs, server-derived source/activation evidence,
-           exact ACTIVE subscription cardinality, positive Legal composition,
+           exact ACTIVE subscription cardinality, positive mapped-product composition,
            pending/active replay and terminal-lifecycle rejection.
 COMPLIANCE: POPIA section 19; GDPR Article 32; SOC 2 CC7.2; ISO 27001.
 SECURITY / PRIVACY POSTURE: Persists only opaque canonical evidence coordinates;
@@ -62,6 +63,7 @@ from tools.eos.saas.domain.tenant_product_entitlement import (
 )
 from tools.eos.saas.entitlement.product_catalogue import TenantProductId
 from tools.eos.saas.entitlement.product_commercial_feature import (
+    ProductCommercialFeatureMappingError,
     get_product_commercial_feature,
 )
 from tools.eos.saas.entitlement.tenant_product_entitlement_registry import (
@@ -75,7 +77,7 @@ from tools.eos.saas.entitlement.tenant_product_entitlement_registry import (
 )
 
 
-VERSION: Final[str] = "v1.2.0-D22B3-FOUNDER-PERPETUAL-LEGAL-ENTITLEMENT"
+VERSION: Final[str] = "v1.3.0-D22B3-ALL-PRODUCT-COMPOSITION"
 ENTITLEMENT_ID_NAMESPACE: Final[str] = "WILSY-TENANT-PRODUCT-ENTITLEMENT-ID/V1"
 SOURCE_EVIDENCE_SCHEMA: Final[str] = "WILSY-TENANT-PRODUCT-ENTITLEMENT-SOURCE/V1"
 ACTIVATION_EVIDENCE_SCHEMA: Final[str] = (
@@ -420,7 +422,7 @@ def compose_tenant_product_entitlement(
     session: Any,
     subscription_registry: type[SubscriptionRegistry] = SubscriptionRegistry,
 ) -> TenantProductEntitlementCompositionResult:
-    """Compose exact positive Legal entitlement truth in caller transaction.
+    """Compose exact positive mapped-product entitlement truth in caller transaction.
 
     The caller cannot provide subscription identity, entitlement identity or
     evidence. This function never starts, commits, aborts or retries a Mongo
@@ -437,13 +439,14 @@ def compose_tenant_product_entitlement(
             "D22B3_PRODUCT_UNKNOWN",
             error,
         )
-    if product is not TenantProductId.LEGAL_OPERATIONS:
+    try:
+        mapping = get_product_commercial_feature(product)
+    except ProductCommercialFeatureMappingError as error:
         _raise(
             TenantProductEntitlementComposerInputError,
-            "D22B3_PRODUCT_NOT_AUTHORIZED",
+            "D22B3_PRODUCT_COMMERCIAL_FEATURE_UNMAPPED",
+            error,
         )
-
-    mapping = get_product_commercial_feature(product)
     subscription = _subscription(
         tenant,
         when,
@@ -452,7 +455,10 @@ def compose_tenant_product_entitlement(
         subscription_registry,
     )
     term = evaluate_subscription_term(subscription, evaluated_at=when)
-    founder_perpetual = term.kind is SubscriptionTermKind.PERPETUAL_PLATFORM_OWNER
+    founder_perpetual = (
+        product is TenantProductId.LEGAL_OPERATIONS
+        and term.kind is SubscriptionTermKind.PERPETUAL_PLATFORM_OWNER
+    )
     if mapping.feature_id not in subscription.plan_features and not founder_perpetual:
         _raise(
             TenantProductEntitlementComposerCommercialError,
@@ -640,7 +646,7 @@ __all__ = [
 ]
 
 # ARTIFACT: tenant_product_entitlement_composer.py
-# VERSION: v1.2.0-D22B3-FOUNDER-PERPETUAL-LEGAL-ENTITLEMENT
+# VERSION: v1.3.0-D22B3-ALL-PRODUCT-COMPOSITION
 # AUTHORITY BOUNDARY: positive Legal Operations subscription-to-entitlement composition only; no commercial mutation, reconciliation, IAM, route or classification authority
 # TENANT POSTURE: exact tenant-scoped subscription read and entitlement lineage inside one caller-owned transaction
 # FAIL-CLOSED POSTURE: invalid/ambiguous commercial proof, divergent evidence, terminal lifecycle, stale CAS and persistence failures reject

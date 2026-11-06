@@ -44,7 +44,7 @@ const MAX_ALERTS = 50;
  * @property {string} severity - 'warning' or 'critical'.
  * @property {string} title - Alert headline.
  * @property {string} message - Human‑readable detail.
- * @property {string} [tenantId] - Tenant ID (falls back to global).
+ * @property {string} [tenantId] - Authenticated tenant ID; missing scope suppresses telemetry.
  * @property {Object} [details] - Forensic metadata.
  * @property {Array<Object>} [actions] - Action buttons.
  * @property {string} [timestamp] - ISO timestamp.
@@ -118,7 +118,7 @@ function getAlertKey(alert) {
  *   severity: 'critical',
  *   title: 'Database Lag',
  *   message: 'Replication lag > 5s',
- *   tenantId: 'GLOBAL_ROOT',
+ *   tenantId: 'TENANT-EXAMPLE',
  *   actions: [{ type: 'biometric', label: 'Acknowledge' }]
  * };
  * window.dispatchEvent(new CustomEvent('SOVEREIGN_ESCALATION', { detail: alert }));
@@ -138,7 +138,7 @@ const SovereignAlertProvider = ({ children }) => {
     if (alerts.length > 0) {
       const lastAlert = alerts[alerts.length - 1];
       broadcastTelemetry(
-        lastAlert.tenantId || 'GLOBAL_ROOT',
+        lastAlert.tenantId || null,
         'ALERT_CONTEXT',
         'STACK_UPDATED',
         'SovereignAlertProvider',
@@ -150,7 +150,7 @@ const SovereignAlertProvider = ({ children }) => {
   const addAlert = useCallback((alert, force = false) => {
     if (!alert) return;
 
-    const effectiveTenant = alert.tenantId || 'GLOBAL_ROOT';
+    const effectiveTenant = alert.tenantId || null;
     const alertKey = getAlertKey(alert);
 
     if (!force) {
@@ -204,7 +204,7 @@ const SovereignAlertProvider = ({ children }) => {
 
     if (indexToRemove === -1 || !alertToRemove) return;
 
-    const effectiveTenant = alertToRemove.tenantId || 'GLOBAL_ROOT';
+    const effectiveTenant = alertToRemove.tenantId || null;
     broadcastTelemetry(effectiveTenant, 'ALERT_CONTEXT', 'ALERT_DISMISSED', 'SovereignAlertProvider', {
       alertId: alertToRemove.alertId,
       correlationId: alertToRemove.correlationId,
@@ -230,7 +230,7 @@ const SovereignAlertProvider = ({ children }) => {
 
   const clearAllAlerts = useCallback(() => {
     if (alerts.length === 0) return;
-    const tenant = alerts[0]?.tenantId || 'GLOBAL_ROOT';
+    const tenant = alerts[0]?.tenantId || null;
     broadcastTelemetry(tenant, 'ALERT_CONTEXT', 'ALL_ALERTS_CLEARED', 'SovereignAlertProvider', {
       count: alerts.length
     }).catch(console.error);

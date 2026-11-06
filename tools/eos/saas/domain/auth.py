@@ -26,7 +26,7 @@
 ╚══════════════════════════════════════════════════════════════════════════════╝
 """
 
-from pydantic import BaseModel, EmailStr, Field, validator
+from pydantic import BaseModel, EmailStr, Field, StrictStr, validator
 from typing import Optional, List
 from datetime import datetime
 
@@ -62,6 +62,8 @@ class Session(BaseModel):
 class AuthRequest(BaseModel):
     email: EmailStr
     password: str
+    # Exact tenant returned by EOS discovery; never a client default.
+    tenant_id: Optional[StrictStr] = None
 
     @validator('email')
     def normalise_email(cls, v):
@@ -70,6 +72,8 @@ class AuthRequest(BaseModel):
 
 class VerifyOTPRequest(BaseModel):
     email: EmailStr
+    # Carries the discovered tenant selector through the MFA boundary.
+    tenant_id: Optional[str] = None
     # code is optional at schema level to support both "code" and "otp" fields;
     # the router enforces that at least one contains a six‑digit TOTP.
     code: Optional[str] = None

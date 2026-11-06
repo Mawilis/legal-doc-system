@@ -129,7 +129,7 @@ def test_server_version_and_authority_surfaces_are_aligned() -> None:
     """Certify one current version across header, runtime, changelog, and seal."""
     source = SERVER.read_text(encoding="utf-8")
     current = server_api.VERSION
-    assert current == "v1.34.0-L10A2R-C4D7-RECONCILIATION-RUNTIME-BOOTSTRAP"
+    assert current == "v1.41.0-GLOBAL-MFA-ENROLLMENT-AND-LEGACY-MIGRATION"
     assert f"VERSION: {current}" in source
     assert f'VERSION = "{current}"' in source
     assert f"# VERSION: {current}" in source

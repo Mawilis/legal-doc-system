@@ -24,7 +24,7 @@ FAIL-CLOSED DECLARATION: Wrong topology, denial, divergence, corrupt evidence,
 from __future__ import annotations
 
 from concurrent.futures import ThreadPoolExecutor
-from datetime import datetime, timezone
+from datetime import datetime, timedelta, timezone
 import os
 from threading import Barrier
 from typing import Any, Iterator
@@ -57,6 +57,34 @@ from tools.eos.auth.tenant_membership import (
     TenantMembershipStatus,
 )
 from tools.eos.auth.tenant_membership_repository import TenantMembershipRepository
+from tools.eos.saas.entitlement.commercial_agreement import (
+    CommercialAgreement,
+    CommercialAgreementState,
+    CommercialRenewalMode,
+)
+from tools.eos.saas.entitlement.commercial_agreement_registry import (
+    CURRENT_COLLECTION as AGREEMENT_CURRENT_COLLECTION,
+    HISTORY_COLLECTION as AGREEMENT_HISTORY_COLLECTION,
+    create_or_replay as create_agreement_or_replay,
+    ensure_indexes as ensure_agreement_indexes,
+    get_current as get_current_agreement,
+)
+from tools.eos.saas.entitlement.commercial_bundle_activation import (
+    COLLECTION as BUNDLE_ACTIVATION_COLLECTION,
+    CommercialBundleActivationOutcome,
+    CommercialBundleReconciliationState,
+    VerifiedCommercialAgreementExecutionEvidence,
+    activate_commercial_bundle,
+    ensure_indexes as ensure_bundle_activation_indexes,
+    reconcile_commercial_bundle_activation,
+)
+from tools.eos.saas.entitlement.commercial_offer_catalogue import (
+    CommercialOfferId,
+    get_commercial_offer,
+)
+from tools.eos.saas.entitlement.tenant_product_entitlement_registry import (
+    get_current as get_current_product_entitlement,
+)
 from tools.eos.saas.billing.plan_registry import PlanRegistry
 from tools.eos.saas.billing.subscription_registry import SubscriptionRegistry
 from tools.eos.saas.domain.tenant_product_entitlement import (
@@ -150,6 +178,9 @@ def _collections(database: Any) -> dict[str, Any]:
         "authorization": collection("tenant_authorization_decision_evidence"),
         "history": collection(HISTORY_COLLECTION),
         "current": collection(CURRENT_COLLECTION),
+        "agreement_history": collection(AGREEMENT_HISTORY_COLLECTION),
+        "agreement_current": collection(AGREEMENT_CURRENT_COLLECTION),
+        "bundle_receipts": collection(BUNDLE_ACTIVATION_COLLECTION),
     }
 
 
@@ -204,6 +235,8 @@ def mongo_context() -> Iterator[tuple[MongoClient[Any], Any, dict[str, Any]]]:
         TenantBusinessRoleRepository.ensure_indexes(collections["business_role"])
         _issuer(collections).ensure_indexes()
         ensure_indexes(collections["history"], collections["current"])
+        ensure_agreement_indexes(collections["agreement_history"], collections["agreement_current"])
+        ensure_bundle_activation_indexes(collections["bundle_receipts"])
         yield client, database, collections
     finally:
         plan_registry_module.plans_collection = original_plans
@@ -214,7 +247,7 @@ def mongo_context() -> Iterator[tuple[MongoClient[Any], Any, dict[str, Any]]]:
 
 
 def _seed(client: MongoClient[Any], collections: dict[str, Any], tenant: str, principal: str) -> None:
-    """Persist canonical IAM and ACTIVE legal.core subscription sources."""
+    """Persist canonical IAM and one subscription with all four exact product features."""
     plan_result = PlanRegistry.create(
         {
             "name": f"D22B3 P26 {tenant}",
@@ -224,7 +257,7 @@ def _seed(client: MongoClient[Any], collections: dict[str, Any], tenant: str, pr
             "planType": "PROFESSIONAL",
             "idempotencyKey": f"plan-{tenant}",
             "active": True,
-            "features": ["legal.core"],
+            "features": ["legal.core", "billing.core", "crm.core", "hr.core"],
             "metadata": {"certificate": True},
             "tags": ["d22b3-p26"],
             "user": "D22B3-P26-CERT",
@@ -278,13 +311,14 @@ def _seed(client: MongoClient[Any], collections: dict[str, Any], tenant: str, pr
 def _issue(
     client: MongoClient[Any], collections: dict[str, Any], tenant: str,
     principal: str, *, idempotency_key: str = "issue-one",
+    product_id: TenantProductId = TenantProductId.LEGAL_OPERATIONS,
 ) -> Any:
     """Commit one issuance under caller-owned transaction lifecycle."""
     with client.start_session() as session:
         with session.start_transaction():
             return issue_tenant_product_entitlement(
                 identity=_identity(tenant, principal),
-                product_id=TenantProductId.LEGAL_OPERATIONS,
+                product_id=product_id,
                 idempotency_key=idempotency_key,
                 occurred_at=NOW,
                 subscription_collection=collections["subscriptions"],
@@ -293,6 +327,243 @@ def _issue(
                 authorization_evidence_registry=_issuer(collections),
                 session=session,
             )
+
+
+def _create_enterprise_agreement(
+    client: MongoClient[Any], collections: dict[str, Any], tenant: str
+) -> CommercialAgreement:
+    """Persist one enterprise bundle draft against the exact offer fingerprint."""
+    offer = get_commercial_offer(CommercialOfferId.ENTERPRISE_OPERATIONS)
+    agreement = CommercialAgreement(
+        tenant_id=tenant,
+        agreement_id=f"agreement-{uuid4().hex}",
+        offer_id=offer.offer_id,
+        offer_fingerprint=offer.fingerprint,
+        contract_reference=f"contract-{tenant}",
+        contract_version="2026-10-01",
+        counterparty_legal_name="Synthetic Enterprise Counterparty (Pty) Ltd",
+        effective_at=NOW - timedelta(days=1),
+        expires_at=NOW + timedelta(days=365),
+        renewal_mode=CommercialRenewalMode.MANUAL,
+        notice_days=30,
+        termination_terms_reference=f"terms-{tenant}",
+    )
+    with client.start_session() as session:
+        with session.start_transaction():
+            create_agreement_or_replay(
+                agreement,
+                collections["agreement_history"],
+                collections["agreement_current"],
+                session=session,
+            )
+    return agreement
+
+
+def _verified_execution_evidence(
+    agreement: CommercialAgreement, principal: str
+) -> VerifiedCommercialAgreementExecutionEvidence:
+    """Synthetic verifier output for the service's trusted-evidence contract."""
+    signed_at = NOW + timedelta(minutes=1)
+    return VerifiedCommercialAgreementExecutionEvidence(
+        tenant_id=agreement.tenant_id,
+        agreement_id=agreement.agreement_id,
+        contract_reference=agreement.contract_reference,
+        contract_version=agreement.contract_version,
+        offer_fingerprint=agreement.offer_fingerprint,
+        execution_evidence_reference=f"signature-evidence:{agreement.agreement_id}",
+        execution_evidence_fingerprint="a" * 128,
+        signatory_principal_id=principal,
+        signatory_authority_reference=f"board-mandate:{agreement.tenant_id}",
+        signatory_authority_fingerprint="b" * 128,
+        signed_at=signed_at,
+        verified_at=signed_at + timedelta(minutes=1),
+        verifier_id="synthetic-signature-evidence-verifier",
+        verification_receipt_reference=f"verification-receipt:{agreement.agreement_id}",
+        verification_receipt_fingerprint="c" * 128,
+    )
+
+
+def test_real_enterprise_bundle_activation_and_unknown_commit_reconciliation(
+    mongo_context: tuple[MongoClient[Any], Any, dict[str, Any]],
+) -> None:
+    """Agreement execution, four product entitlements and receipt share one commit."""
+    client, _database, collections = mongo_context
+    tenant, principal = f"tenant-{uuid4().hex}", f"principal-{uuid4().hex}"
+    _seed(client, collections, tenant, principal)
+    agreement = _create_enterprise_agreement(client, collections, tenant)
+    evidence = _verified_execution_evidence(agreement, principal)
+    occurred_at = evidence.verified_at + timedelta(minutes=1)
+
+    with client.start_session() as session:
+        with session.start_transaction():
+            outcome, receipt = activate_commercial_bundle(
+                identity=_identity(tenant, principal),
+                agreement_id=agreement.agreement_id,
+                verified_execution_evidence=evidence,
+                occurred_at=occurred_at,
+                agreement_history_collection=collections["agreement_history"],
+                agreement_current_collection=collections["agreement_current"],
+                subscription_collection=collections["subscriptions"],
+                entitlement_history_collection=collections["history"],
+                entitlement_current_collection=collections["current"],
+                authorization_evidence_registry=_issuer(collections),
+                receipt_collection=collections["bundle_receipts"],
+                session=session,
+            )
+    assert outcome is CommercialBundleActivationOutcome.ACTIVATED
+    assert tuple(item["product_id"] for item in receipt.product_entitlements) == (
+        "LEGAL_OPERATIONS", "BILLING", "CRM", "HR"
+    )
+    assert collections["agreement_history"].count_documents({"tenant_id": tenant}) == 3
+    assert collections["agreement_current"].count_documents({"tenant_id": tenant}) == 1
+    assert collections["authorization"].count_documents({"tenant_id": tenant}) == 4
+    assert collections["history"].count_documents({"tenant_id": tenant}) == 8
+    assert collections["current"].count_documents({"tenant_id": tenant}) == 4
+    assert collections["bundle_receipts"].count_documents({"tenant_id": tenant}) == 1
+
+    with client.start_session() as session:
+        with session.start_transaction():
+            active_agreement = get_current_agreement(
+                tenant, agreement.agreement_id,
+                collections["agreement_history"], collections["agreement_current"],
+                session=session,
+            )
+            assert active_agreement.lifecycle_state is CommercialAgreementState.ACTIVE
+            assert active_agreement.lifecycle_revision == 2
+            for item in receipt.product_entitlements:
+                current = get_current_product_entitlement(
+                    tenant, item["entitlement_id"],
+                    collections["history"], collections["current"],
+                    session=session,
+                )
+                assert current.lifecycle_state is TenantProductEntitlementState.ACTIVE
+                assert current.fingerprint == item["entitlement_fingerprint"]
+            reconciled, recovered = reconcile_commercial_bundle_activation(
+                tenant_id=tenant,
+                agreement_id=agreement.agreement_id,
+                agreement_history_collection=collections["agreement_history"],
+                agreement_current_collection=collections["agreement_current"],
+                entitlement_history_collection=collections["history"],
+                entitlement_current_collection=collections["current"],
+                receipt_collection=collections["bundle_receipts"],
+                session=session,
+            )
+            assert reconciled is CommercialBundleReconciliationState.COMMITTED
+            assert recovered is not None
+            assert recovered.fingerprint == receipt.fingerprint
+
+    with client.start_session() as session:
+        with session.start_transaction():
+            replay, replay_receipt = activate_commercial_bundle(
+                identity=_identity(tenant, principal),
+                agreement_id=agreement.agreement_id,
+                verified_execution_evidence=evidence,
+                occurred_at=occurred_at,
+                agreement_history_collection=collections["agreement_history"],
+                agreement_current_collection=collections["agreement_current"],
+                subscription_collection=collections["subscriptions"],
+                entitlement_history_collection=collections["history"],
+                entitlement_current_collection=collections["current"],
+                authorization_evidence_registry=_issuer(collections),
+                receipt_collection=collections["bundle_receipts"],
+                session=session,
+            )
+    assert replay is CommercialBundleActivationOutcome.IDEMPOTENT_REPLAY
+    assert replay_receipt.fingerprint == receipt.fingerprint
+
+
+def test_real_bundle_activation_abort_leaves_no_execution_or_product_writes(
+    mongo_context: tuple[MongoClient[Any], Any, dict[str, Any]],
+) -> None:
+    """Caller abort rolls back agreement, all entitlements, auth evidence and receipt."""
+    client, _database, collections = mongo_context
+    tenant, principal = f"tenant-{uuid4().hex}", f"principal-{uuid4().hex}"
+    _seed(client, collections, tenant, principal)
+    agreement = _create_enterprise_agreement(client, collections, tenant)
+    evidence = _verified_execution_evidence(agreement, principal)
+
+    with client.start_session() as session:
+        session.start_transaction()
+        activate_commercial_bundle(
+            identity=_identity(tenant, principal),
+            agreement_id=agreement.agreement_id,
+            verified_execution_evidence=evidence,
+            occurred_at=evidence.verified_at + timedelta(minutes=1),
+            agreement_history_collection=collections["agreement_history"],
+            agreement_current_collection=collections["agreement_current"],
+            subscription_collection=collections["subscriptions"],
+            entitlement_history_collection=collections["history"],
+            entitlement_current_collection=collections["current"],
+            authorization_evidence_registry=_issuer(collections),
+            receipt_collection=collections["bundle_receipts"],
+            session=session,
+        )
+        session.abort_transaction()
+
+    with client.start_session() as session:
+        with session.start_transaction():
+            current = get_current_agreement(
+                tenant, agreement.agreement_id,
+                collections["agreement_history"], collections["agreement_current"],
+                session=session,
+            )
+            assert current.lifecycle_state is CommercialAgreementState.DRAFT
+            reconciled, receipt = reconcile_commercial_bundle_activation(
+                tenant_id=tenant,
+                agreement_id=agreement.agreement_id,
+                agreement_history_collection=collections["agreement_history"],
+                agreement_current_collection=collections["agreement_current"],
+                entitlement_history_collection=collections["history"],
+                entitlement_current_collection=collections["current"],
+                receipt_collection=collections["bundle_receipts"],
+                session=session,
+            )
+            assert reconciled is CommercialBundleReconciliationState.NOT_COMMITTED
+            assert receipt is None
+    assert collections["agreement_history"].count_documents({"tenant_id": tenant}) == 1
+    assert collections["authorization"].count_documents({"tenant_id": tenant}) == 0
+    assert collections["history"].count_documents({"tenant_id": tenant}) == 0
+    assert collections["current"].count_documents({"tenant_id": tenant}) == 0
+    assert collections["bundle_receipts"].count_documents({"tenant_id": tenant}) == 0
+
+
+def test_real_four_product_bundle_issuance_commits_atomically(
+    mongo_context: tuple[MongoClient[Any], Any, dict[str, Any]],
+) -> None:
+    """All four mapped product entitlements and authorization receipts share one commit."""
+    client, _database, collections = mongo_context
+    tenant, principal = f"tenant-{uuid4().hex}", f"principal-{uuid4().hex}"
+    _seed(client, collections, tenant, principal)
+    products = (
+        TenantProductId.LEGAL_OPERATIONS,
+        TenantProductId.BILLING,
+        TenantProductId.CRM,
+        TenantProductId.HR,
+    )
+    with client.start_session() as session:
+        with session.start_transaction():
+            results = tuple(
+                issue_tenant_product_entitlement(
+                    identity=_identity(tenant, principal),
+                    product_id=product,
+                    idempotency_key=f"bundle-{product.value.lower()}",
+                    occurred_at=NOW,
+                    subscription_collection=collections["subscriptions"],
+                    entitlement_history_collection=collections["history"],
+                    entitlement_current_collection=collections["current"],
+                    authorization_evidence_registry=_issuer(collections),
+                    session=session,
+                )
+                for product in products
+            )
+    assert tuple(item.composition.entitlement.product_id for item in results) == products
+    assert all(
+        item.composition.entitlement.lifecycle_state.value == "ACTIVE"
+        for item in results
+    )
+    assert collections["authorization"].count_documents({"tenant_id": tenant}) == 4
+    assert collections["history"].count_documents({"tenant_id": tenant}) == 8
+    assert collections["current"].count_documents({"tenant_id": tenant}) == 4
 
 
 def test_real_commit_atomicity_indexes_and_exact_replay(

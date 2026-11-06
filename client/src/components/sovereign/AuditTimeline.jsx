@@ -18,7 +18,6 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { ShieldCheck, ShieldAlert, Clock, Fingerprint, Link as LinkIcon, Cpu, Activity } from 'lucide-react';
 import api from '../../services/api';
-import { broadcastTelemetry } from '../../utils/telemetryHelper';
 import styles from './AuditTimeline.module.css';
 
 
@@ -48,7 +47,6 @@ const AuditTimeline = ({ traceIds }) => {
  * @returns {any} Matrix runtime feedback data context output
  */
 const fetchForensicData = async () => {
-      const startTime = performance.now();
       try {
         // 🛡️ Executing the Sovereign Batch Verification Strike
         const response = await api.post('/audit/batch', { traceIds });
@@ -63,18 +61,10 @@ const fetchForensicData = async () => {
           setChainVerified(response.data.chainVerified);
         }
 
-        // 📡 TELEMETRY: Feeding the Grafana Performance Dashboard
-        const latency = (performance.now() - startTime).toFixed(2);
-        broadcastTelemetry('WILSY_GLOBAL_ROOT', 'FORENSIC_STRIKE', 'SUCCESS', 'AuditTimeline', {
-          batchSize: traceIds.length,
-          latencyMs: latency,
-          chainStatus: response.data.chainVerified ? 'VERIFIED' : 'UNSTABLE'
-        });
 
       } catch (err) {
         console.error("[AUDIT_FRACTURE] Validation Strike Failed:", err);
         setChainVerified(false);
-        broadcastTelemetry('WILSY_GLOBAL_ROOT', 'FORENSIC_STRIKE', 'FRACTURE', 'AuditTimeline', { error: err.message });
       } finally {
         setLoading(false);
       }

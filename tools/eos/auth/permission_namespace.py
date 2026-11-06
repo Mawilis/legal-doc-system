@@ -1,7 +1,7 @@
 """TITLE: WILSY OS Permission Namespace Semantic Canon.
-VERSION: v1.55.0-L10A2R-C4D7-RECONCILIATION-READ-PERMISSION
+VERSION: v1.56.0-SYSTEM-SERVICES-IAM-VOCABULARY
 AUTHORITY: Immutable permission vocabulary and scope metadata only.
-EPITOME: Extends the canonical TENANT and SYSTEM permission vocabulary with dedicated
+EPITOME: Extends the canonical TENANT and SYSTEM permission vocabulary with dedicated WILSY OS System Services and IAM command metadata,
 inbound-collection, merchant-configuration, provider-policy, WILSY AI,
 billing-intelligence, Legal Operations lifecycle/client visibility, matter
 deadline read/write vocabulary, and explicit
@@ -243,7 +243,7 @@ from types import MappingProxyType
 from typing import Final
 
 
-VERSION = "v1.55.0-L10A2R-C4D7-RECONCILIATION-READ-PERMISSION"
+VERSION = "v1.57.0-SYSTEM-SERVICES-AUDIT-READ-PERMISSION"
 
 
 class PermissionDisposition(StrEnum):
@@ -375,6 +375,77 @@ _PERMISSIONS: Final = MappingProxyType(
             "read one trusted tenant/provider-scoped evidence reconciliation projection",
             system=True,
         ),
+        # SYSTEM SERVICES vocabulary — metadata only; no role or grant is created.
+        "system_services:queue:read": _meta(
+            "system_services:queue:read", "SYSTEM", "SYSTEM",
+            "read sanitized platform support queue metadata",
+            system=True, workforce=True,
+        ),
+        "system_services:case:triage": _meta(
+            "system_services:case:triage", "SYSTEM", "SYSTEM",
+            "triage and route platform support cases within authorized queue partitions",
+            system=True, workforce=True,
+        ),
+        "system_services:identity:read": _meta(
+            "system_services:identity:read", "SYSTEM", "SYSTEM",
+            "read minimum case-bound identity and security posture",
+            system=True, workforce=True,
+        ),
+        "system_services:recovery:request": _meta(
+            "system_services:recovery:request", "SYSTEM", "SYSTEM",
+            "initiate a governed case-bound account recovery workflow",
+            system=True, workforce=True,
+        ),
+        "system_services:session:revoke": _meta(
+            "system_services:session:revoke", "SYSTEM", "SYSTEM",
+            "request case-bound session or device revocation under independent policy",
+            system=True, workforce=True,
+        ),
+        "system_services:audit:read": _meta(
+            "system_services:audit:read", "SYSTEM", "SYSTEM",
+            "read authorized System Services audit projections without secret material",
+            system=True, workforce=True,
+        ),
+        "system_services:incident:escalate": _meta(
+            "system_services:incident:escalate", "SYSTEM", "SYSTEM",
+            "escalate suspected identity compromise to security incident handling",
+            system=True, workforce=True,
+        ),
+        "system_services:incident:response:decide": _meta(
+            "system_services:incident:response:decide", "SYSTEM", "SYSTEM",
+            "approve or reject an incident response proposal under independent review",
+            system=True, workforce=True,
+        ),
+        "system_services:incident:response:execute": _meta(
+            "system_services:incident:response:execute", "SYSTEM", "SYSTEM",
+            "execute one independently approved incident response through a canonical EOS service",
+            system=True, workforce=True,
+        ),
+        "iam:access_request:read": _meta(
+            "iam:access_request:read", "SYSTEM", "SYSTEM",
+            "read access requests and their evidence",
+            system=True, workforce=True,
+        ),
+        "iam:access_request:decide": _meta(
+            "iam:access_request:decide", "SYSTEM", "SYSTEM",
+            "decide bounded access requests under independent approval policy",
+            system=True, workforce=True,
+        ),
+        "iam:role_assignment:read": _meta(
+            "iam:role_assignment:read", "SYSTEM", "SYSTEM",
+            "read role assignments within the actor's exact SYSTEM scope",
+            system=True, workforce=True,
+        ),
+        "iam:role_assignment:write": _meta(
+            "iam:role_assignment:write", "SYSTEM", "SYSTEM",
+            "request a separately governed role assignment within exact scope",
+            system=True, workforce=True,
+        ),
+        "iam:role_assignment:revoke": _meta(
+            "iam:role_assignment:revoke", "SYSTEM", "SYSTEM",
+            "request revocation of an exact role assignment within exact scope",
+            system=True, workforce=True,
+        ),
         "artifacts:read": _meta(
             "artifacts:read",
             "TENANT",
@@ -504,6 +575,24 @@ _PERMISSIONS: Final = MappingProxyType(
         "crm:work_item:read": _meta("crm:work_item:read", "TENANT", "TENANT", "read owner commercial work items", tenant=True),
         "crm:work_item:create": _meta("crm:work_item:create", "TENANT", "TENANT", "create owner commercial work items", tenant=True),
         "crm:work_item:complete": _meta("crm:work_item:complete", "TENANT", "TENANT", "complete owner commercial work items", tenant=True),
+        "operations:work_item:read": _meta("operations:work_item:read", "TENANT", "TENANT", "read Operations work items", tenant=True),
+        "operations:work_item:create": _meta("operations:work_item:create", "TENANT", "TENANT", "create Operations work items", tenant=True),
+        "operations:work_item:complete": _meta("operations:work_item:complete", "TENANT", "TENANT", "complete Operations work items", tenant=True),
+        "intelligence:work_item:read": _meta("intelligence:work_item:read", "TENANT", "TENANT", "read Intelligence work items", tenant=True),
+        "intelligence:work_item:create": _meta("intelligence:work_item:create", "TENANT", "TENANT", "create Intelligence work items", tenant=True),
+        "intelligence:work_item:complete": _meta("intelligence:work_item:complete", "TENANT", "TENANT", "complete Intelligence work items", tenant=True),
+        "pos:location_assignment:manage": _meta("pos:location_assignment:manage", "TENANT", "TENANT", "assign and revoke exact tenant POS location access", tenant=True),
+        "pos:sale:read": _meta("pos:sale:read", "TENANT", "TENANT", "read sales at an explicitly assigned POS location", tenant=True),
+        "pos:sale:create": _meta("pos:sale:create", "TENANT", "TENANT", "create commercial sales at an explicitly assigned POS location", tenant=True),
+        "pos:tender:create": _meta("pos:tender:create", "TENANT", "TENANT", "record a tender intent without payment execution", tenant=True),
+        "pos:cash:record": _meta("pos:cash:record", "TENANT", "TENANT", "record cash tender evidence without settlement authority", tenant=True),
+        "pos:return:create": _meta("pos:return:create", "TENANT", "TENANT", "create commercial return intents", tenant=True),
+        "pos:refund:create": _meta("pos:refund:create", "TENANT", "TENANT", "create refund intents without executing refunds", tenant=True),
+        "pos:payment:authorize": _meta("pos:payment:authorize", "TENANT", "TENANT", "authorize one exact POS electronic collection or refund intent for Kennel EOS execution", tenant=True),
+        "tenant:commercial_agreement:read": _meta("tenant:commercial_agreement:read", "TENANT", "TENANT", "read tenant commercial agreements", tenant=True),
+        "tenant:commercial_agreement:draft:create": _meta("tenant:commercial_agreement:draft:create", "TENANT", "TENANT", "create tenant commercial agreement drafts", tenant=True),
+        "tenant:commercial_agreement:execute": _meta("tenant:commercial_agreement:execute", "TENANT", "TENANT", "execute tenant commercial agreements after trusted signature verification", tenant=True),
+        "tenant:commercial_agreement:activate": _meta("tenant:commercial_agreement:activate", "TENANT", "TENANT", "activate tenant commercial bundles after verified execution", tenant=True),
         "crm:email_template:create": _meta(
             "crm:email_template:create",
             "TENANT",
@@ -625,6 +714,20 @@ _PERMISSIONS: Final = MappingProxyType(
             "TENANT",
             "TENANT",
             "read own-tenant canonical billing-intelligence evidence",
+            tenant=True,
+        ),
+        "billing_dunning:projection:read": _meta(
+            "billing_dunning:projection:read",
+            "TENANT",
+            "TENANT",
+            "read own-tenant collection workflow projections",
+            tenant=True,
+        ),
+        "billing_dunning:projection:evaluate": _meta(
+            "billing_dunning:projection:evaluate",
+            "TENANT",
+            "TENANT",
+            "evaluate own-tenant collection workflow projections",
             tenant=True,
         ),
         "hr:employee_relation:write": _meta(

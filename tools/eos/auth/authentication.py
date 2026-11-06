@@ -30,7 +30,9 @@ Collaboration & Ownership:
 from __future__ import annotations
 
 from typing import Any, Optional
-from fastapi import Depends, Request, Security
+
+from pymongo.errors import PyMongoError
+from fastapi import Depends, HTTPException, Request, Security
 from fastapi.security import APIKeyHeader, HTTPAuthorizationCredentials, HTTPBearer
 from tools.eos.api.exceptions import UnauthorizedAccessException
 from tools.eos.auth.audit import log_auth_event
@@ -39,6 +41,14 @@ from tools.eos.auth.jwt_provider import CREDENTIAL_REVISION_MAX, TokenPurpose, v
 from tools.eos.auth.principal_authority import PrincipalAuthority
 from tools.eos.auth.principal_authority_repository import PrincipalAuthorityNotFoundError, PrincipalAuthorityRepository, PrincipalAuthorityRepositoryError
 from tools.eos.auth.principal_status import PrincipalStatus
+from tools.eos.auth.global_principal_session_authority import GlobalPrincipalSessionAuthority
+from tools.eos.auth.global_principal_system_session_authority import (
+    SESSION_COLLECTION as SYSTEM_SESSION_COLLECTION,
+    GlobalPrincipalSystemSessionAuthority,
+    GlobalPrincipalSystemSessionRejected,
+    GlobalPrincipalSystemSessionUnavailable,
+)
+from tools.eos.kernel.db import get_client, get_database
 from tools.eos.saas.auth.auth_registry import AuthRegistry
 
 security_scheme = HTTPBearer(auto_error=False)
@@ -85,7 +95,6 @@ async def get_current_identity(
     legacy-purpose, stale, future, malformed, missing, and unavailable states
     fail closed without exposing revision values or owning persistence.
     """
-    del request
     if api_key:
         log_auth_event("API_KEY_AUTH", "unresolved", False, {"reason": "principal_resolution_required"})
         raise UnauthorizedAccessException("API-key principal is not mapped to durable authority.")
@@ -103,6 +112,8 @@ async def get_current_identity(
     if not _valid_access_revision(token_revision):
         log_auth_event("JWT_AUTH", "unresolved", False, {"reason": "credential_revision_required"})
         raise UnauthorizedAccessException("Invalid or expired sovereign JWT token.")
+    if not isinstance(token_revision, int) or isinstance(token_revision, bool):
+        raise UnauthorizedAccessException("Invalid or expired sovereign JWT token.")
     principal_id = _claim(payload, "identity_id")
     if principal_id is None:
         log_auth_event("JWT_AUTH", "unresolved", False, {"reason": "missing_principal_reference"})
@@ -111,9 +122,134 @@ async def get_current_identity(
     if authority.status is not PrincipalStatus.ACTIVE:
         log_auth_event("JWT_AUTH", principal_id, False, {"reason": "principal_not_active"})
         raise UnauthorizedAccessException("Authentication principal is not active.")
+    principal_scope = payload.get("principal_scope")
+    if principal_scope == "SYSTEM":
+        tenant_scope = _claim(payload, "tenant_id")
+        session_reference = _claim(payload, "session_reference")
+        workspace_id = _claim(payload, "workspace_id")
+        roles = payload.get("roles")
+        permissions = payload.get("permissions")
+        if (
+            tenant_scope != "SYSTEM"
+            or session_reference is None
+            or workspace_id != "SYSTEM_SERVICES"
+            or roles != ["SYSTEM_SERVICES"]
+            or permissions != []
+        ):
+            raise UnauthorizedAccessException("Invalid or expired sovereign JWT token.")
+        client = get_client()
+        database = get_database()
+        authorizer = getattr(request.app.state, "system_services_authorizer", None)
+        if client is None or database is None or authorizer is None:
+            raise HTTPException(status_code=503, detail="SYSTEM authentication authority is unavailable.")
+        session = client.start_session()
+        try:
+            session.start_transaction()
+            current = GlobalPrincipalSystemSessionAuthority(
+                sessions=database[SYSTEM_SESSION_COLLECTION],
+                authorizer=authorizer,
+            ).is_session_current(
+                principal_id=authority.principal_id,
+                session_reference=session_reference,
+                expected_credential_revision=token_revision,
+                session=session,
+            )
+            if not current:
+                session.abort_transaction()
+                raise UnauthorizedAccessException("Invalid or expired sovereign JWT token.")
+            session.commit_transaction()
+        except UnauthorizedAccessException:
+            raise
+        except GlobalPrincipalSystemSessionRejected as error:
+            marker = getattr(session, "in_transaction", False)
+            if (marker() if callable(marker) else marker) is True:
+                session.abort_transaction()
+            raise UnauthorizedAccessException("Invalid or expired sovereign JWT token.") from error
+        except (GlobalPrincipalSystemSessionUnavailable, PyMongoError) as error:
+            marker = getattr(session, "in_transaction", False)
+            if (marker() if callable(marker) else marker) is True:
+                session.abort_transaction()
+            raise HTTPException(status_code=503, detail="SYSTEM authentication authority is unavailable.") from error
+        except Exception as error:
+            marker = getattr(session, "in_transaction", False)
+            if (marker() if callable(marker) else marker) is True:
+                session.abort_transaction()
+            raise HTTPException(status_code=503, detail="SYSTEM authentication authority is unavailable.") from error
+        finally:
+            session.end_session()
+        identity = SovereignIdentity(
+            identity_id=authority.principal_id,
+            tenant_id="SYSTEM",
+            username=_claim(payload, "username"),
+            email=_claim(payload, "email"),
+            roles=["SYSTEM_SERVICES"],
+            permissions=[],
+            auth_method="JWT",
+            status=authority.status,
+            session_reference=session_reference,
+            principal_scope="SYSTEM",
+            workspace_id=workspace_id,
+            membership_revision=None,
+            capacity_revision=None,
+        )
+        log_auth_event("SYSTEM_JWT_AUTH", authority.principal_id, True, {"scope": "SYSTEM"})
+        return identity
+
     tenant_id = _claim(payload, "tenant_id")
     if tenant_id is None:
         raise UnauthorizedAccessException("Tenant context is required.")
+
+    if principal_scope == "GLOBAL":
+        session_reference = _claim(payload, "session_reference")
+        workspace_id = _claim(payload, "workspace_id")
+        roles = payload.get("roles")
+        permissions = payload.get("permissions")
+        membership_revision = payload.get("membership_revision")
+        capacity_revision = payload.get("capacity_revision")
+        if (
+            session_reference is None
+            or workspace_id is None
+            or not isinstance(roles, list)
+            or len(roles) != 1
+            or not isinstance(roles[0], str)
+            or not roles[0].strip()
+            or permissions != []
+            or not _valid_access_revision(membership_revision)
+            or not _valid_access_revision(capacity_revision)
+        ):
+            raise UnauthorizedAccessException("Invalid or expired sovereign JWT token.")
+        current = GlobalPrincipalSessionAuthority().is_session_current(
+            principal_id=authority.principal_id,
+            tenant_id=tenant_id,
+            session_reference=session_reference,
+            expected_business_role=roles[0],
+            expected_workspace_id=workspace_id,
+            expected_credential_revision=token_revision,
+            expected_membership_revision=membership_revision,
+            expected_capacity_revision=capacity_revision,
+        )
+        if not current:
+            raise UnauthorizedAccessException("Invalid or expired sovereign JWT token.")
+        identity = SovereignIdentity(
+            identity_id=authority.principal_id,
+            tenant_id=tenant_id,
+            username=_claim(payload, "username"),
+            email=_claim(payload, "email"),
+            roles=roles,
+            permissions=[],
+            auth_method="JWT",
+            status=authority.status,
+            session_reference=session_reference,
+            principal_scope="GLOBAL",
+            workspace_id=workspace_id,
+            membership_revision=membership_revision,
+            capacity_revision=capacity_revision,
+        )
+        log_auth_event("GLOBAL_JWT_AUTH", authority.principal_id, True, {"tenant": tenant_id})
+        return identity
+    if principal_scope not in (None, "TENANT"):
+        raise UnauthorizedAccessException("Invalid or expired sovereign JWT token.")
+
     try:
         durable_revision = AuthRegistry().get_credential_revision(
             tenant_id,
@@ -145,6 +281,10 @@ async def get_current_identity(
         auth_method="JWT",
         status=authority.status,
         session_reference=_claim(payload, "session_reference"),
+        principal_scope=principal_scope,
+        workspace_id=None,
+        membership_revision=None,
+        capacity_revision=None,
     )
     log_auth_event("JWT_AUTH", authority.principal_id, True, {"tenant": tenant_id})
     return identity

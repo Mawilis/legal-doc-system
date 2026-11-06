@@ -1,13 +1,13 @@
 /**
  * TITLE: WILSY OS Shared Dashboard Chrome Branding Presentation Certificate
- * VERSION: v2.1.0-L10-P2C1-SHARED-INTERACTION-CONTRACT-CERT
+ * VERSION: v2.2.0-EOS-MODULE-MANIFEST-NAVIGATION-CERT
  * AUTHORITY: Wilsy OS Core Governance
  * EPITOME: Certify that shared dashboard chrome accepts tenant branding only
  *          from the authenticated D21B8 tenant projection and never promotes
  *          legacy logo/path/browser fields into presentation authority.
  * ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/client/src/components/os/WilsyOSDashboardChrome.test.jsx
  * CERTIFICATION / UPDATE DATE: 2026-09-28
- * CHANGELOG: 2026-09-28 v2.1.0-L10-P2C1-SHARED-INTERACTION-CONTRACT-CERT certifies one reusable command-pill interaction contract across Account, Trust Center, Refresh, primary actions and actionable rail controls, including semantic active states, keyboard focus, pressed/disabled behavior and reduced-motion parity. No tenant, subscription, entitlement or financial authority is created.
+ * CHANGELOG: 2026-11-06 v2.2.0-EOS-MODULE-MANIFEST-NAVIGATION-CERT certifies exact-tenant server-issued product navigation, strict module/product/workspace binding, rejection of forged entitlement fields, and canonical dashboard-switch events.\n *            2026-09-28 v2.1.0-L10-P2C1-SHARED-INTERACTION-CONTRACT-CERT certifies one reusable command-pill interaction contract across Account, Trust Center, Refresh, primary actions and actionable rail controls, including semantic active states, keyboard focus, pressed/disabled behavior and reduced-motion parity. No tenant, subscription, entitlement or financial authority is created.
  * AUTHORITY BOUNDARY: Browser presentation only; Python EOS/D21B2B-D21B8 own branding truth.
  * FINANCIAL AUTHORITY BOUNDARY: None; Kennel EOS exclusively owns execution.
  */
@@ -16,6 +16,7 @@ import { readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { describe, expect, it } from 'vitest';
 import { resolveWilsyChromeIdentitySources } from './wilsyDashboardChromeConfig';
+import { validateWilsyModuleManifest } from '../../utils/tenantModuleManifest.js';
 
 const chromeStyles = readFileSync(
   resolve(process.cwd(), 'src/components/os/WilsyOSDashboardChrome.module.css'),
@@ -214,4 +215,97 @@ describe('L10-P2C1 shared clickable-pill interaction contract', () => {
 // TENANT POSTURE: branding accepted only from exact authenticated tenant projection
 // FAIL-CLOSED POSTURE: legacy/foreign/browser branding is suppressed
 // FINANCIAL EXECUTION AUTHORITY: none; Kennel EOS exclusively
+// END OF WILSY OS SOVEREIGN ARTIFACT
+
+
+describe('EOS-issued tenant product navigation', () => {
+  const manifest = {
+    status: 'READY',
+    workspace: {
+      tenantId: 'ACME-001',
+      moduleManifestVersion: 'v1.0.0-EOS-TENANT-MODULE-MANIFEST',
+      modules: [{
+        moduleId: 'LEGAL_OS',
+        productId: 'LEGAL_OPERATIONS',
+        label: 'Legal OS',
+        workspaceKey: 'LEGAL_DASHBOARD',
+        navigationGroup: 'PROFESSIONAL_SERVICES',
+        iconKey: 'scale',
+        entitlementId: 'legal-entitlement-1',
+        entitlementRevision: 4,
+        entitlementFingerprint: fingerprint('d'),
+      }],
+    },
+  };
+
+  it('admits only the READY manifest bound to the exact authenticated tenant', () => {
+    const result = validateWilsyModuleManifest(manifest, 'ACME-001');
+    expect(result).toHaveLength(1);
+    expect(result[0].moduleId).toBe('LEGAL_OS');
+    expect(result[0].workspaceKey).toBe('LEGAL_DASHBOARD');
+    expect(Object.isFrozen(result[0])).toBe(true);
+  });
+
+  it('rejects foreign tenant, unknown module, duplicate and extra authority fields', () => {
+    expect(() => validateWilsyModuleManifest(manifest, 'FOREIGN-999')).toThrow();
+    const unknown = structuredClone(manifest);
+    unknown.workspace.modules[0].moduleId = 'SUPER_ADMIN';
+    expect(() => validateWilsyModuleManifest(unknown, 'ACME-001')).toThrow();
+    const duplicate = structuredClone(manifest);
+    duplicate.workspace.modules.push({ ...duplicate.workspace.modules[0] });
+    expect(() => validateWilsyModuleManifest(duplicate, 'ACME-001')).toThrow();
+    const forged = structuredClone(manifest);
+    forged.workspace.modules[0].permissions = ['*'];
+    expect(() => validateWilsyModuleManifest(forged, 'ACME-001')).toThrow();
+  });
+
+  it('admits all six independently entitled modules without adding client authority', () => {
+    const entries = [
+      ['LEGAL_OS', 'LEGAL_OPERATIONS', 'Legal OS', 'LEGAL_DASHBOARD', 'PROFESSIONAL_SERVICES', 'scale'],
+      ['BILLING', 'BILLING', 'Billing', 'BILLING_HUB', 'BUSINESS_OPERATIONS', 'receipt'],
+      ['CRM', 'CRM', 'CRM', 'CRM_DASHBOARD', 'CUSTOMER_OPERATIONS', 'users'],
+      ['PEOPLE', 'HR', 'People', 'HR_DASHBOARD', 'PEOPLE_OPERATIONS', 'users-round'],
+      ['OPERATIONS', 'OPERATIONS', 'Operations', 'OPERATIONS_DASHBOARD', 'BUSINESS_OPERATIONS', 'workflow'],
+      ['INTELLIGENCE', 'INTELLIGENCE', 'Intelligence', 'INTELLIGENCE_DASHBOARD', 'INTELLIGENCE', 'brain-circuit'],
+    ];
+    const sixModuleManifest = {
+      ...manifest,
+      workspace: {
+        ...manifest.workspace,
+        modules: entries.map(([moduleId, productId, label, workspaceKey, navigationGroup, iconKey], index) => ({
+          moduleId,
+          productId,
+          label,
+          workspaceKey,
+          navigationGroup,
+          iconKey,
+          entitlementId: `entitlement-${moduleId.toLowerCase()}`,
+          entitlementRevision: index + 1,
+          entitlementFingerprint: fingerprint(String(index + 1)),
+        })),
+      },
+    };
+    const result = validateWilsyModuleManifest(sixModuleManifest, 'ACME-001');
+    expect(result.map((item) => item.moduleId)).toEqual(entries.map(([moduleId]) => moduleId));
+    expect(new Set(result.map((item) => item.productId)).size).toBe(6);
+    expect(result.every((item) => !('permissions' in item) && !('businessRole' in item))).toBe(true);
+    expect(chromeSource).toContain('workflow: Workflow');
+    expect(chromeSource).toContain("'brain-circuit': BrainCircuit");
+  });
+
+  it('loads modules from the authenticated server endpoint and navigates using the canonical workspace key', () => {
+    expect(chromeSource).toContain("api.get('/auth/module-manifest')");
+    expect(chromeSource).toContain("validateWilsyModuleManifest(data, tenantId)");
+    expect(chromeSource).toContain("'wilsy:switch-dashboard'");
+    expect(chromeSource).toContain("source: 'server-module-manifest'");
+    expect(chromeSource).toContain('Available WILSY OS products');
+  });
+});
+
+// ARTIFACT: WilsyOSDashboardChrome.test.jsx
+// VERSION: v2.2.0-EOS-MODULE-MANIFEST-NAVIGATION-CERT
+// AUTHORITY BOUNDARY: browser presentation certificate only
+// TENANT POSTURE: module navigation binds to exact authenticated tenant
+// FAIL-CLOSED POSTURE: malformed, duplicate, foreign or forged module evidence rejects
+// FINANCIAL EXECUTION AUTHORITY: Kennel EOS remains exclusive
 // END OF WILSY OS SOVEREIGN ARTIFACT

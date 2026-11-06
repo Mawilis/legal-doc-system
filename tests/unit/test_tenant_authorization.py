@@ -233,6 +233,16 @@ class _MembershipReader:
     archive = _write_forbidden
 
 
+class _BusinessRoleRecord:
+    """Exact durable business-role fixture for selected-capacity decisions."""
+
+    def __init__(self, business_role: str) -> None:
+        self.principal_id = _PID
+        self.tenant_id = _TENANT
+        self.business_role = business_role
+        self.status = RoleAssignmentStatus.ACTIVE
+
+
 class _AssignmentReader:
     """Resolve-only assignment reader with explicit outage and mutation controls."""
 
@@ -287,7 +297,16 @@ def _membership(
 
 def _business(role: str) -> _AssignmentReader:
     return _AssignmentReader(
-        {(_PID, _TENANT, role): _StatusRecord(RoleAssignmentStatus.ACTIVE)}
+        {(_PID, _TENANT, role): _BusinessRoleRecord(role)}
+    )
+
+
+def _business_roles(*active_roles: str) -> _AssignmentReader:
+    return _AssignmentReader(
+        {
+            (_PID, _TENANT, role): _BusinessRoleRecord(role)
+            for role in active_roles
+        }
     )
 
 
@@ -322,6 +341,7 @@ def _decision(
     membership_repository: _MembershipReader | None = None,
     principal_id: object = _PID,
     tenant_id: object = _TENANT,
+    selected_business_role: object = None,
 ) -> TenantAuthorizationDecision:
     return authorize_tenant_operation(
         principal_id=principal_id,
@@ -332,6 +352,7 @@ def _decision(
         membership_repository=membership_repository or _membership(),
         business_role_repository=business_repository,
         role_assignment_repository=assignment_repository,
+        selected_business_role=selected_business_role,
     )
 
 
@@ -2679,3 +2700,29 @@ def test_p47_r94_work_assignment_binding_is_current_exact_and_distinct() -> None
 # FAIL-CLOSED POSTURE: missing, inactive, ambiguous, unavailable, mismatched, projected, cross-tenant, system, and financial paths deny
 # FINANCIAL EXECUTION AUTHORITY: Kennel EOS remains exclusive
 # END OF WILSY OS SOVEREIGN ARTIFACT
+
+
+def test_verified_selected_capacity_narrows_authorization_without_permission_union() -> None:
+    business = _business_roles("tenant_owner", "tenant_admin")
+    decision = _decision(
+        permission_id="subscription:read",
+        operation="subscription_read",
+        business_repository=business,
+        assignment_repository=_assignments("ENTERPRISE_ADMIN"),
+        selected_business_role="tenant_owner",
+    )
+    assert decision.authorized is True
+    assert decision.business_role == "tenant_owner"
+
+
+def test_selected_ineligible_capacity_does_not_fall_back_to_another_active_capacity() -> None:
+    decision = _decision(
+        permission_id="subscription:manage",
+        operation="subscription_create",
+        business_repository=_business_roles("tenant_owner", "tenant_auditor"),
+        assignment_repository=_assignments("ENTERPRISE_ADMIN"),
+        selected_business_role="tenant_auditor",
+    )
+    assert decision.authorized is False
+    assert decision.reason is TenantAuthorizationReason.BUSINESS_ROLE_INELIGIBLE
+    assert decision.business_role == "tenant_auditor"

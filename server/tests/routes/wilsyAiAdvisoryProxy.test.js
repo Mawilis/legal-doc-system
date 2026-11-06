@@ -6,7 +6,9 @@
  * ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/server/tests/routes/wilsyAiAdvisoryProxy.test.js
  * COLLABORATION / OWNERSHIP: Node BFF fixed mounts, selective Legal routes, Python Kennel EOS.
  * CERTIFICATION / UPDATE DATE: 2026-10-03
- * CHANGELOG: v2.0.0-P0-C4E1 expands v1.1.0 into route, path, query, method,
+ * CHANGELOG: v2.1.0-P0-C4E5 certifies the transport-only BFF has no Mongo client or
+ *            business database connection; /health reports Python EOS ownership.
+ *            v2.0.0-P0-C4E1 expands v1.1.0 into route, path, query, method,
  *            byte-stream, header, no-fabrication, timeout, and failure evidence.
  * COMPLIANCE: POPIA section 19; GDPR Article 32; SOC 2 CC7.2.
  * SECURITY / PRIVACY POSTURE: Synthetic loopback evidence only; no external services or secrets.
@@ -164,6 +166,31 @@ beforeEach(() => {
 });
 
 describe('fixed proxy route, path, query, and method contract', () => {
+  it('requires EOS-verified workspace identity before local PDF rendering', async () => {
+    const unauthenticated = await request(app)
+      .post('/api/generate/pdf')
+      .send({ type: 'billing-invoice' });
+    assert.equal(unauthenticated.status, 401);
+    assert.equal(unauthenticated.body.error, 'AUTHENTICATION_REQUIRED');
+
+    const unscoped = await request(app)
+      .post('/api/generate/pdf')
+      .set('Authorization', 'Bearer unverified-test-token')
+      .send({ type: 'billing-invoice' });
+    assert.equal(unscoped.status, 400);
+    assert.equal(unscoped.body.error, 'TENANT_SCOPE_REQUIRED');
+  });
+
+  it('reports EOS-owned database authority without opening a BFF Mongo connection', async () => {
+    const response = await request(app).get('/health').expect(200);
+    assert.equal(response.body.database, 'NOT_CONNECTED_BY_BFF');
+    assert.equal(response.body.databaseAuthority, 'PYTHON_EOS');
+
+    const source = await readFile(SERVER_SOURCE_URL, 'utf8');
+    assert.doesNotMatch(source, /from ['"]mongoose['"]/);
+    assert.doesNotMatch(source, /mongoose\\.(connect|connection)/);
+  });
+
   it('maps every broad mount to its exact upstream prefix', async () => {
     const mappings = [
       ['/api/auth/session', '/api/auth/session'],

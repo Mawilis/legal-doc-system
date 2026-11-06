@@ -48,6 +48,7 @@ import { useTenants } from '../../contexts/tenantContext.jsx';
 import { BusinessProvider } from '../../contexts/BusinessContext.jsx';
 import { broadcastTelemetry } from '../../utils/telemetryHelper.js';
 import api from '../../services/api.js';
+import { validateWilsyModuleManifest } from '../../utils/tenantModuleManifest.js';
 import ErrorBoundary from '../ErrorBoundary';
 import WilsyGlobalCommandSearch from './WilsyGlobalCommandSearch';
 
@@ -64,8 +65,13 @@ const SalesDashboard = React.lazy(() => import('../sales/SalesDashboard'));
 // 🆕 REPLACED legacy FinanceDashboard with the new Sovereign BillingHUD
 const BillingHUD = React.lazy(() => import('../billing/BillingHUD'));
 const HRDashboard = React.lazy(() => import('../hr/HrDashboard'));
+const OperationsDashboard = React.lazy(() => import('../operations/OperationsDashboard'));
+const IntelligenceDashboard = React.lazy(() => import('../intelligence/IntelligenceDashboard'));
 const ITDashboard = React.lazy(() => import('../it/ITDashboard'));
 const LegalDashboard = React.lazy(() => import('../industry/LegalDashboard'));
+const SystemServicesDashboard = React.lazy(() => import('../system-services/SystemServicesDashboard'));
+const POSDashboard = React.lazy(() => import('../pos/POSWorkspace.jsx'));
+
 
 export const DASHBOARD_KEYS = Object.freeze({
   FOUNDER: 'FOUNDER_DASHBOARD',
@@ -76,9 +82,44 @@ export const DASHBOARD_KEYS = Object.freeze({
   SALES: 'SALES_DASHBOARD',
   FINANCE: 'FINANCE_DASHBOARD',   // ⬅️ Now resolves to BillingHUD
   HR: 'HR_DASHBOARD',
+  OPERATIONS: 'OPERATIONS_DASHBOARD',
+  INTELLIGENCE: 'INTELLIGENCE_DASHBOARD',
+  POS: 'POS_DASHBOARD',
   IT: 'IT_DASHBOARD',
-  LEGAL: 'LEGAL_DASHBOARD'
+  LEGAL: 'LEGAL_DASHBOARD',
+  SYSTEM_SERVICES: 'SYSTEM_SERVICES_DASHBOARD'
 });
+
+const TENANT_MODULE_DASHBOARD_ADMISSION = Object.freeze({
+  [DASHBOARD_KEYS.FINANCE]: Object.freeze({
+    moduleId: 'BILLING', productId: 'BILLING', workspaceKey: 'BILLING_HUB',
+  }),
+  [DASHBOARD_KEYS.CRM]: Object.freeze({
+    moduleId: 'CRM', productId: 'CRM', workspaceKey: 'CRM_DASHBOARD',
+  }),
+  [DASHBOARD_KEYS.HR]: Object.freeze({
+    moduleId: 'PEOPLE', productId: 'HR', workspaceKey: 'HR_DASHBOARD',
+  }),
+  [DASHBOARD_KEYS.OPERATIONS]: Object.freeze({
+    moduleId: 'OPERATIONS', productId: 'OPERATIONS', workspaceKey: 'OPERATIONS_DASHBOARD',
+  }),
+  [DASHBOARD_KEYS.INTELLIGENCE]: Object.freeze({
+    moduleId: 'INTELLIGENCE', productId: 'INTELLIGENCE', workspaceKey: 'INTELLIGENCE_DASHBOARD',
+  }),
+  [DASHBOARD_KEYS.POS]: Object.freeze({
+    moduleId: 'POS', productId: 'POS', workspaceKey: 'POS_DASHBOARD',
+  }),
+});
+
+export const hasTenantModuleManifestAdmission = (modules, dashboardKey) => {
+  const expected = TENANT_MODULE_DASHBOARD_ADMISSION[dashboardKey];
+  if (!expected || !Array.isArray(modules)) return false;
+  return modules.some((module) => (
+    module?.moduleId === expected.moduleId
+    && module?.productId === expected.productId
+    && module?.workspaceKey === expected.workspaceKey
+  ));
+};
 
 const DASHBOARD_LABELS = Object.freeze({
   [DASHBOARD_KEYS.FOUNDER]: 'Founder Dashboard',
@@ -89,8 +130,12 @@ const DASHBOARD_LABELS = Object.freeze({
   [DASHBOARD_KEYS.SALES]: 'Sales Dashboard',
   [DASHBOARD_KEYS.FINANCE]: 'Billing Hub',  // ⬅️ Updated label
   [DASHBOARD_KEYS.HR]: 'HR Dashboard',
+  [DASHBOARD_KEYS.OPERATIONS]: 'Operations OS',
+  [DASHBOARD_KEYS.INTELLIGENCE]: 'Intelligence OS',
+  [DASHBOARD_KEYS.POS]: 'Point of Sale',
   [DASHBOARD_KEYS.IT]: 'IT Dashboard',
-  [DASHBOARD_KEYS.LEGAL]: 'WILSY Legal OS'
+  [DASHBOARD_KEYS.LEGAL]: 'WILSY Legal OS',
+  [DASHBOARD_KEYS.SYSTEM_SERVICES]: 'System Services'
 });
 
 const DASHBOARD_ALIASES = Object.freeze({
@@ -130,6 +175,10 @@ const DASHBOARD_ALIASES = Object.freeze({
   REVENUE_LEDGER: DASHBOARD_KEYS.FINANCE,
   HR: DASHBOARD_KEYS.HR,
   HR_DASHBOARD: DASHBOARD_KEYS.HR,
+  OPERATIONS_DASHBOARD: DASHBOARD_KEYS.OPERATIONS,
+  INTELLIGENCE_DASHBOARD: DASHBOARD_KEYS.INTELLIGENCE,
+  POS: DASHBOARD_KEYS.POS,
+  POS_DASHBOARD: DASHBOARD_KEYS.POS,
   PEOPLE: DASHBOARD_KEYS.HR,
   IT: DASHBOARD_KEYS.IT,
   IT_DASHBOARD: DASHBOARD_KEYS.IT,
@@ -137,55 +186,8 @@ const DASHBOARD_ALIASES = Object.freeze({
   TECHNOLOGY: DASHBOARD_KEYS.IT,
   LEGAL: DASHBOARD_KEYS.LEGAL,
   LEGAL_DASHBOARD: DASHBOARD_KEYS.LEGAL,
-  LEGAL_OS: DASHBOARD_KEYS.LEGAL
-});
-
-const ROLE_DASHBOARD_MAP = Object.freeze({
-  FOUNDER_ARCHITECT: DASHBOARD_KEYS.FOUNDER,
-  SUPER_ADMIN: DASHBOARD_KEYS.FOUNDER,
-  SUPERADMIN: DASHBOARD_KEYS.FOUNDER,
-  ACCOUNT_EXECUTIVE: DASHBOARD_KEYS.SALES,
-  ACCOUNTANT: DASHBOARD_KEYS.FINANCE,
-  ADMIN: DASHBOARD_KEYS.GENERAL,
-  BOARD_MEMBER: DASHBOARD_KEYS.EXECUTIVE,
-  BUSINESS_DEVELOPMENT: DASHBOARD_KEYS.SALES,
-  CEO: DASHBOARD_KEYS.EXECUTIVE,
-  CFO: DASHBOARD_KEYS.FINANCE,
-  COO: DASHBOARD_KEYS.COO,
-  CRM: DASHBOARD_KEYS.CRM,
-  CUSTOMER_SUCCESS: DASHBOARD_KEYS.CRM,
-  EXECUTIVE: DASHBOARD_KEYS.EXECUTIVE,
-  FINANCE: DASHBOARD_KEYS.FINANCE,
-  FINANCE_MANAGER: DASHBOARD_KEYS.FINANCE,
-  HR: DASHBOARD_KEYS.HR,
-  HR_MANAGER: DASHBOARD_KEYS.HR,
-  IT: DASHBOARD_KEYS.IT,
-  IT_ADMIN: DASHBOARD_KEYS.IT,
-  MANAGER: DASHBOARD_KEYS.GENERAL,
-  OWNER: DASHBOARD_KEYS.CRM,
-  SALES: DASHBOARD_KEYS.SALES,
-  SALES_MANAGER: DASHBOARD_KEYS.SALES,
-  SALES_REP: DASHBOARD_KEYS.SALES,
-  SALES_REPRESENTATIVE: DASHBOARD_KEYS.SALES,
-  TENANT_ADMIN: DASHBOARD_KEYS.GENERAL,
-  TENANT_OWNER: DASHBOARD_KEYS.CRM,
-  LEGAL_PARTNER: DASHBOARD_KEYS.LEGAL,
-  TENANT_LEGAL_PARTNER: DASHBOARD_KEYS.LEGAL,
-  LEGAL_ATTORNEY: DASHBOARD_KEYS.LEGAL,
-  TENANT_LEGAL_ATTORNEY: DASHBOARD_KEYS.LEGAL,
-  LEGAL_PARALEGAL: DASHBOARD_KEYS.LEGAL,
-  TENANT_LEGAL_PARALEGAL: DASHBOARD_KEYS.LEGAL,
-  LEGAL_SECRETARY: DASHBOARD_KEYS.LEGAL,
-  TENANT_LEGAL_SECRETARY: DASHBOARD_KEYS.LEGAL,
-  LEGAL_FINANCE: DASHBOARD_KEYS.LEGAL,
-  TENANT_LEGAL_FINANCE: DASHBOARD_KEYS.LEGAL,
-  LEGAL_CLIENT: DASHBOARD_KEYS.LEGAL,
-  TENANT_LEGAL_CLIENT: DASHBOARD_KEYS.LEGAL,
-  SHERIFF: DASHBOARD_KEYS.LEGAL,
-  TENANT_SHERIFF: DASHBOARD_KEYS.LEGAL,
-  DEPUTY: DASHBOARD_KEYS.LEGAL,
-  TENANT_DEPUTY: DASHBOARD_KEYS.LEGAL,
-  USER: DASHBOARD_KEYS.GENERAL
+  LEGAL_OS: DASHBOARD_KEYS.LEGAL,
+  SYSTEM_SERVICES_DASHBOARD: DASHBOARD_KEYS.SYSTEM_SERVICES
 });
 
 const FOUNDER_AUTHORITY_TOKENS = Object.freeze([
@@ -437,41 +439,64 @@ export const hasFounderReturnAuthority = ({ user = {}, role = '' } = {}) => {
  * @function resolveDashboardKey
  * @description Resolves canonical dashboard key from override, intent, role and tenant.
  */
+const WORKSPACE_DASHBOARD_MAP = Object.freeze({
+  EXECUTIVE_COMMAND_CENTRE: DASHBOARD_KEYS.EXECUTIVE,
+  TENANT_ADMINISTRATION: DASHBOARD_KEYS.GENERAL,
+  AUDIT_REPORTING: DASHBOARD_KEYS.GENERAL,
+  TENANT_OPERATIONS: DASHBOARD_KEYS.GENERAL,
+  LEGAL_PRACTICE: DASHBOARD_KEYS.LEGAL,
+  LEGAL_FINANCE: DASHBOARD_KEYS.FINANCE,
+  CLIENT_PORTAL: DASHBOARD_KEYS.LEGAL,
+  PROCESS_SERVICE: DASHBOARD_KEYS.LEGAL,
+  PEOPLE_OPERATIONS: DASHBOARD_KEYS.HR,
+  POINT_OF_SALE: DASHBOARD_KEYS.POS,
+  POS_DASHBOARD: DASHBOARD_KEYS.POS,
+});
+
+/**
+ * Resolve the presentation shard from the versioned workspace contract
+ * returned by EOS after current identity, membership and IAM verification.
+ * The sole presentation exception is a durable Tenant Owner selecting the
+ * Legal commercial-only shell; that branch never mounts practice authority and
+ * the commercial endpoint independently revalidates subscription:read.
+ */
 export const resolveDashboardKey = ({ user = {}, manualDashboardKey = '' } = {}) => {
-  const roleToken = normalizeDashboardToken(user.role || user.accountRole || user.tenantRole);
-  const roleDashboard = (
-    roleToken.includes('FOUNDER') ||
-    roleToken.includes('SOVEREIGN') ||
-    roleToken === 'SUPER_ADMIN' ||
-    roleToken === 'SUPERADMIN' ||
-    roleToken === 'OMEGA' ||
-    roleToken === 'GLOBAL_ROOT'
-  )
-    ? DASHBOARD_KEYS.FOUNDER
-    : (ROLE_DASHBOARD_MAP[roleToken] || DASHBOARD_KEYS.GENERAL);
-
   const requestedDashboard = mapDashboardAlias(manualDashboardKey);
-  if (requestedDashboard === roleDashboard) return roleDashboard;
-
-  // Legal OS is an explicit product surface, not a role escalation. A caller
-  // may navigate to its shell; Python EOS independently authorizes every
-  // commercial-context and workspace request and the shell fails closed for
-  // unsupported business roles. The Executive entry button performs a
-  // server commercial-context preflight before requesting this presentation.
-  if (requestedDashboard === DASHBOARD_KEYS.LEGAL) return DASHBOARD_KEYS.LEGAL;
-
-  // The only cross-shard return retained is the existing Founder return
-  // affordance, and only for identities carrying its explicit return signal.
+  const systemWorkspace = user.systemServicesWorkspace;
+  // A fully verified EOS SYSTEM projection is itself the canonical workspace
+  // selector. Requiring a second, client-originated dashboard request creates
+  // a first-render race and can redirect a valid SYSTEM principal before the
+  // post-mount effect has a chance to set manualDashboardKey.
   if (
-    requestedDashboard === DASHBOARD_KEYS.FOUNDER &&
-    hasFounderReturnAuthority({ user, role: roleToken })
+    systemWorkspace?.status === 'READY'
+    && systemWorkspace?.authority === 'EOS_SYSTEM_SERVICES'
+    && systemWorkspace?.scope === 'SYSTEM'
+    && typeof systemWorkspace?.principalId === 'string'
+    && systemWorkspace.principalId === user.id
+    && Array.isArray(systemWorkspace?.capabilities)
+    && systemWorkspace.capabilities.includes('system_services:queue:read')
   ) {
-    return DASHBOARD_KEYS.FOUNDER;
+    return DASHBOARD_KEYS.SYSTEM_SERVICES;
+  }
+  const roleToken = normalizeDashboardToken(
+    user.role || user.accountRole || user.tenantRole,
+  );
+  // Tenant Owners may open the Legal presentation only as a commercial-read
+  // surface. LegalDashboard resolves TENANT_OWNER before every practice role,
+  // mounts no practice provider, and the commercial endpoint independently
+  // revalidates subscription:read. This is a presentation route, not authority.
+  if (
+    ['TENANT_OWNER', 'OWNER'].includes(roleToken)
+    && requestedDashboard === DASHBOARD_KEYS.LEGAL
+  ) {
+    return DASHBOARD_KEYS.LEGAL;
   }
 
-  // Dashboard preferences, tenant metadata and browser storage cannot choose
-  // a different role workspace. Python EOS remains the authorization authority.
-  return roleDashboard;
+  const workspaceDashboard = WORKSPACE_DASHBOARD_MAP[user.workspaceId] || '';
+  if (!workspaceDashboard) return '';
+  return requestedDashboard === workspaceDashboard
+    ? requestedDashboard
+    : workspaceDashboard;
 };
 
 /**
@@ -653,6 +678,12 @@ const FounderReturnFrame = ({ dashboardLabel, onReturn, children }) => {
 const SovereignDashboardController = ({ user: propUser, onLogout }) => {
   const { activeTenant } = useTenants();
   const [manualDashboardKey, setManualDashboardKey] = useState('');
+  const [systemServicesWorkspace, setSystemServicesWorkspace] = useState(null);
+  const [systemServicesIncidents, setSystemServicesIncidents] = useState([]);
+  const [systemServicesAssignments, setSystemServicesAssignments] = useState([]);
+  const [systemServicesAssignmentDetail, setSystemServicesAssignmentDetail] = useState(null);
+  const [systemServicesActionState, setSystemServicesActionState] = useState('');
+  const systemServicesRequestRef = useRef(0);
   const [isGlobalCommandSearchOpen, setIsGlobalCommandSearchOpen] = useState(false);
   const [kernelHealth, setKernelHealth] = useState({
     status: 'UNKNOWN',
@@ -678,13 +709,102 @@ const SovereignDashboardController = ({ user: propUser, onLogout }) => {
   }, [propUser]);
 
     const role = normalizeDashboardToken(user?.role || user?.accountRole || user?.tenantRole);
+
+  const moduleManifestTenantId = activeTenant?.tenantId || activeTenant?._id || user?.tenantId || '';
+  const [moduleManifest, setModuleManifest] = useState({ status: 'idle', tenantId: '', modules: [] });
+
+  useEffect(() => {
+    let current = true;
+    if (!user || typeof moduleManifestTenantId !== 'string' || !moduleManifestTenantId) {
+      setModuleManifest({ status: 'unavailable', tenantId: moduleManifestTenantId, modules: [] });
+      return () => { current = false; };
+    }
+    setModuleManifest({ status: 'loading', tenantId: moduleManifestTenantId, modules: [] });
+    api.get('/auth/module-manifest')
+      .then(({ data }) => validateWilsyModuleManifest(data, moduleManifestTenantId))
+      .then((modules) => {
+        if (current) setModuleManifest({ status: 'ready', tenantId: moduleManifestTenantId, modules });
+      })
+      .catch(() => {
+        if (current) setModuleManifest({ status: 'unavailable', modules: [] });
+      });
+    return () => { current = false; };
+  }, [user?.id, user?.email, moduleManifestTenantId]);
+
+  useEffect(() => {
+    systemServicesRequestRef.current += 1;
+    setSystemServicesWorkspace(
+      user?.systemServicesWorkspace?.status === 'READY'
+      && user.systemServicesWorkspace.authority === 'EOS_SYSTEM_SERVICES'
+        ? user.systemServicesWorkspace
+        : null,
+    );
+    setSystemServicesIncidents([]);
+    setSystemServicesAssignments([]);
+    setSystemServicesAssignmentDetail(null);
+    setSystemServicesActionState('');
+    if (
+      user?.systemServicesWorkspace?.status === 'READY'
+      && user.systemServicesWorkspace.authority === 'EOS_SYSTEM_SERVICES'
+      && user.systemServicesWorkspace.scope === 'SYSTEM'
+      && user.systemServicesWorkspace.principalId === user.id
+      && Array.isArray(user.systemServicesWorkspace.capabilities)
+      && user.systemServicesWorkspace.capabilities.includes('system_services:queue:read')
+    ) {
+      setManualDashboardKey(DASHBOARD_KEYS.SYSTEM_SERVICES);
+    } else if (manualDashboardKey === DASHBOARD_KEYS.SYSTEM_SERVICES) {
+      setManualDashboardKey('');
+    }
+  }, [user?.id, user?.email]);
+  useEffect(() => {
+    const projection = user?.systemServicesWorkspace;
+    if (
+      projection?.status !== 'READY'
+      || projection?.authority !== 'EOS_SYSTEM_SERVICES'
+      || projection?.scope !== 'SYSTEM'
+      || projection?.principalId !== user?.id
+      || !projection?.capabilities?.includes('system_services:queue:read')
+    ) return undefined;
+
+    let active = true;
+    const incidentRead = api.get('/system-services/security-incidents', { timeout: 12000 })
+      .then((result) => Array.isArray(result?.data) ? result.data : [])
+      .catch(() => []);
+    const assignmentRead = projection.capabilities.includes('system_services:incident:escalate')
+      ? api.get('/system-services/security-incident-assignments/mine', { timeout: 12000 })
+        .then((result) => Array.isArray(result?.data) ? result.data : [])
+        .catch(() => [])
+      : Promise.resolve([]);
+    Promise.all([incidentRead, assignmentRead]).then(([incidents, assignments]) => {
+      if (!active) return;
+      setSystemServicesIncidents(incidents);
+      setSystemServicesAssignments(assignments);
+    });
+    return () => { active = false; };
+  }, [user?.id, user?.systemServicesWorkspace]);
+
   const traceId = localStorage.getItem('traceId') || 'SYSTEM_CORE_INIT';
 
-  const dashboardKey = useMemo(() => (
-    user ? resolveDashboardKey({ user, manualDashboardKey }) : ''
-  ), [manualDashboardKey, user]);
+  const dashboardUser = useMemo(() => (
+    user && systemServicesWorkspace ? { ...user, systemServicesWorkspace } : user
+  ), [systemServicesWorkspace, user]);
 
-  const dashboardLabel = getDashboardDisplayName(dashboardKey);
+  const resolvedDashboardKey = useMemo(() => (
+    dashboardUser ? resolveDashboardKey({ user: dashboardUser, manualDashboardKey }) : ''
+  ), [dashboardUser, manualDashboardKey]);
+  const moduleDashboardRequested = Object.prototype.hasOwnProperty.call(
+    TENANT_MODULE_DASHBOARD_ADMISSION, manualDashboardKey,
+  );
+  const dashboardKey = useMemo(() => {
+    if (!moduleDashboardRequested) return resolvedDashboardKey;
+    return moduleManifest.status === 'ready'
+      && moduleManifest.tenantId === moduleManifestTenantId
+      && hasTenantModuleManifestAdmission(moduleManifest.modules, manualDashboardKey)
+      ? manualDashboardKey
+      : '';
+  }, [manualDashboardKey, moduleDashboardRequested, moduleManifest, resolvedDashboardKey]);
+
+  const dashboardLabel = getDashboardDisplayName(dashboardKey || (moduleDashboardRequested ? manualDashboardKey : ''));
   const canReturnToFounder = Boolean(
     user && dashboardKey && dashboardKey !== DASHBOARD_KEYS.FOUNDER && hasFounderReturnAuthority({ user, role })
   );
@@ -797,13 +917,13 @@ const SovereignDashboardController = ({ user: propUser, onLogout }) => {
   // Mount telemetry once per identity+dashboard (not on every kernel poll)
   const mountLoggedRef = useRef('');
   useEffect(() => {
-    if (!user || !role || !dashboardKey) return;
+    if (!user || !user.tenantId || !role || !dashboardKey) return;
     const mountKey = `${user.email || user.id || ''}|${dashboardKey}|${role}`;
     if (mountLoggedRef.current === mountKey) return;
     mountLoggedRef.current = mountKey;
 
     broadcastTelemetry(
-      user.tenantAlias || user.tenantId || 'GLOBAL_ROOT',
+      user.tenantId,
       'DASHBOARD_EVENT',
       'DASHBOARD_MOUNT_SUCCESS',
       user.email || user.id,
@@ -833,7 +953,23 @@ const SovereignDashboardController = ({ user: propUser, onLogout }) => {
   }
 
   let dashboardShard = null;
-  if (dashboardKey === DASHBOARD_KEYS.FOUNDER) {
+  if (moduleDashboardRequested && !dashboardKey) {
+    dashboardShard = moduleManifest.status === 'loading' || moduleManifest.status === 'idle'
+      ? <div role="status" aria-live="polite">Verifying the active tenant product entitlement with EOS…</div>
+      : <div role="alert">This module is not available in the current authenticated tenant product manifest. Refresh the workspace or contact an authorised administrator.</div>;
+  } else if (dashboardKey === DASHBOARD_KEYS.SYSTEM_SERVICES) {
+    dashboardShard = (
+      <SystemServicesDashboard
+        workspace={dashboardUser?.systemServicesWorkspace || null}
+        incidents={systemServicesIncidents}
+        assignments={systemServicesAssignments}
+        assignmentDetail={systemServicesAssignmentDetail}
+        actionState={systemServicesActionState}
+        onOpenAssignment={handleOpenSystemServicesAssignment}
+        onDecideAssignment={handleSystemServicesAssignmentDecision}
+      />
+    );
+  } else   if (dashboardKey === DASHBOARD_KEYS.FOUNDER) {
     dashboardShard = <FounderDashboard user={user} onSwitchDashboard={handleManualDashboardSwitch} />;
   } else if (dashboardKey === DASHBOARD_KEYS.EXECUTIVE) {
     dashboardShard = (
@@ -867,6 +1003,12 @@ const SovereignDashboardController = ({ user: propUser, onLogout }) => {
     dashboardShard = <BillingHUD user={user} />;
   } else if (dashboardKey === DASHBOARD_KEYS.HR) {
     dashboardShard = <HRDashboard user={user} />;
+  } else if (dashboardKey === DASHBOARD_KEYS.OPERATIONS) {
+    dashboardShard = <OperationsDashboard user={user} activeTenant={activeTenant} />;
+  } else if (dashboardKey === DASHBOARD_KEYS.INTELLIGENCE) {
+    dashboardShard = <IntelligenceDashboard user={user} activeTenant={activeTenant} />;
+  } else if (dashboardKey === DASHBOARD_KEYS.POS) {
+    dashboardShard = <POSDashboard user={user} activeTenant={activeTenant} />;
   } else if (dashboardKey === DASHBOARD_KEYS.IT) {
     dashboardShard = <ITDashboard user={user} />;
   } else if (dashboardKey === DASHBOARD_KEYS.LEGAL) {
@@ -888,6 +1030,47 @@ const SovereignDashboardController = ({ user: propUser, onLogout }) => {
   }
 
   const handleGlobalSearchNavigate = (result = {}) => {
+    if (result.command === 'OPEN_SYSTEM_SERVICES') {
+      const requestId = ++systemServicesRequestRef.current;
+      setSystemServicesWorkspace(null);
+      api.get('/system-services/workspace-bootstrap', { timeout: 12000 })
+        .then(async (response) => {
+          if (requestId !== systemServicesRequestRef.current) return;
+          const projection = response?.data;
+          if (
+            projection?.status === 'READY'
+            && projection?.authority === 'EOS_SYSTEM_SERVICES'
+            && typeof projection?.principalId === 'string'
+            && Array.isArray(projection?.capabilities)
+            && projection.capabilities.includes('system_services:queue:read')
+          ) {
+            setSystemServicesWorkspace(projection);
+            setManualDashboardKey(DASHBOARD_KEYS.SYSTEM_SERVICES);
+            const incidentRead = api.get('/system-services/security-incidents', { timeout: 12000 })
+              .then((result) => Array.isArray(result?.data) ? result.data : [])
+              .catch(() => []);
+            const assignmentRead = projection.capabilities.includes('system_services:incident:escalate')
+              ? api.get('/system-services/security-incident-assignments/mine', { timeout: 12000 })
+                .then((result) => Array.isArray(result?.data) ? result.data : [])
+                .catch(() => [])
+              : Promise.resolve([]);
+            const [incidentRows, assignmentRows] = await Promise.all([incidentRead, assignmentRead]);
+            if (requestId !== systemServicesRequestRef.current) return;
+            setSystemServicesIncidents(incidentRows);
+            setSystemServicesAssignments(assignmentRows);
+          }
+        })
+        .catch(() => {
+          if (requestId === systemServicesRequestRef.current) {
+            setSystemServicesWorkspace(null);
+            setSystemServicesIncidents([]);
+            setSystemServicesAssignments([]);
+            setSystemServicesAssignmentDetail(null);
+            setManualDashboardKey('');
+          }
+        });
+      return;
+    }
     if (result.dashboardKey) handleManualDashboardSwitch(result.dashboardKey);
     if (typeof window !== 'undefined') {
       window.dispatchEvent(new CustomEvent('wilsy:global-search-activate', {
@@ -903,12 +1086,121 @@ const SovereignDashboardController = ({ user: propUser, onLogout }) => {
     }
   };
 
+
+  async function handleOpenSystemServicesAssignment(assignmentId) {
+    setSystemServicesActionState('Loading authorized incident detail…');
+    try {
+      const response = await api.get(
+        '/system-services/security-incident-assignments/' + encodeURIComponent(assignmentId),
+        { timeout: 12000, forceNetworkRetry: true },
+      );
+      setSystemServicesAssignmentDetail(response?.data || null);
+      setSystemServicesActionState('');
+    } catch {
+      setSystemServicesAssignmentDetail(null);
+      setSystemServicesActionState('Incident detail is unavailable or this assignment is no longer authorized.');
+    }
+  }
+
+  async function handleSystemServicesAssignmentDecision(assignmentId, decision) {
+    const assignment = systemServicesAssignments.find((item) => item.assignmentId === assignmentId);
+    if (!assignment || assignment.status !== 'PENDING_ACCEPTANCE' || !['accept', 'decline'].includes(decision)) return;
+    setSystemServicesActionState('Submitting responder decision to EOS…');
+    const nonce = window.crypto?.randomUUID?.()
+      || ('ss-' + Date.now().toString(36) + '-' + Math.random().toString(36).slice(2));
+    try {
+      await api.post(
+        '/system-services/security-incident-assignments/' + encodeURIComponent(assignmentId) + '/' + decision,
+        { expected_revision: assignment.revision },
+        { headers: { 'Idempotency-Key': nonce }, timeout: 12000 },
+      );
+      const refreshed = await api.get('/system-services/security-incident-assignments/mine', {
+        timeout: 12000, forceNetworkRetry: true,
+      });
+      setSystemServicesAssignments(Array.isArray(refreshed?.data) ? refreshed.data : []);
+      if (systemServicesAssignmentDetail?.assignment?.assignmentId === assignmentId) {
+        await handleOpenSystemServicesAssignment(assignmentId);
+      }
+      setSystemServicesActionState(decision === 'accept'
+        ? 'EOS recorded responder acceptance. No containment or account action was performed.'
+        : 'EOS recorded responder decline. No containment or account action was performed.');
+    } catch {
+      setSystemServicesActionState('EOS did not confirm this decision. Refresh the inbox before retrying.');
+    }
+  }
+
+  // Product destinations without their own shared chrome receive a small
+  // controller-owned navigation rail. Its entries come only from the current
+  // EOS tenant module manifest; clicking an entry requests presentation routing
+  // and does not create workspace or API authority.
+  const needsControllerProductNavigation = [
+    DASHBOARD_KEYS.CRM,
+    DASHBOARD_KEYS.OPERATIONS,
+    DASHBOARD_KEYS.INTELLIGENCE,
+    DASHBOARD_KEYS.POS,
+  ].includes(dashboardKey);
+  const controllerProductNavigation = (
+    needsControllerProductNavigation
+    && moduleManifest.status === 'ready'
+    && moduleManifest.tenantId === moduleManifestTenantId
+  ) ? (
+    <nav
+      aria-label="Available WILSY OS products"
+      data-eos-controller-product-navigation="true"
+      style={{
+        display: 'flex',
+        flexWrap: 'wrap',
+        alignItems: 'center',
+        gap: 8,
+        padding: '10px 16px',
+        borderBottom: '1px solid var(--wilsy-border, rgba(128, 128, 128, .24))',
+        background: 'var(--wilsy-surface, #101820)',
+      }}
+    >
+      <span style={{ fontSize: 11, fontWeight: 800, letterSpacing: '.1em', opacity: .7 }}>
+        YOUR PRODUCTS
+      </span>
+      {moduleManifest.modules.map((module) => {
+        const isActive = module.workspaceKey === (
+          dashboardKey === DASHBOARD_KEYS.CRM ? 'CRM_DASHBOARD'
+            : dashboardKey === DASHBOARD_KEYS.OPERATIONS ? 'OPERATIONS_DASHBOARD'
+              : dashboardKey === DASHBOARD_KEYS.INTELLIGENCE ? 'INTELLIGENCE_DASHBOARD'
+                : 'POS_DASHBOARD'
+        );
+        return (
+          <button
+            key={module.moduleId}
+            type="button"
+            data-wilsy-module-entry={module.moduleId}
+            data-active={isActive ? 'true' : 'false'}
+            aria-current={isActive ? 'page' : undefined}
+            onClick={() => handleManualDashboardSwitch(module.workspaceKey)}
+            style={{
+              minHeight: 34,
+              padding: '6px 11px',
+              border: '1px solid var(--wilsy-border, rgba(128, 128, 128, .35))',
+              borderRadius: 8,
+              background: isActive ? 'var(--wilsy-accent-soft, rgba(96, 165, 250, .16))' : 'transparent',
+              color: 'var(--wilsy-text, inherit)',
+              font: 'inherit',
+              fontSize: 12,
+              fontWeight: 650,
+              cursor: 'pointer',
+            }}
+          >
+            {module.label}
+          </button>
+        );
+      })}
+    </nav>
+  ) : null;
+
   // ═══════════════════════════════════════════════════════════════════════════
-  // FIX: Wrap guardedShard in an overflow-enabled container to allow
-  // BillingHUD's padding-bottom:208px to expand without clipping.
+  // BillingHUD may expand vertically; preserve scroll without clipping.
   // ═══════════════════════════════════════════════════════════════════════════
   const guardedShard = (
     <div style={{ overflowX: 'hidden', overflowY: 'auto', minHeight: '100vh', width: '100%' }}>
+      {controllerProductNavigation}
       <ErrorBoundary>
         {dashboardShard}
       </ErrorBoundary>

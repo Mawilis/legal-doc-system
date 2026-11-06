@@ -57,7 +57,7 @@ export const TenantContext = createContext({
   resolveTenant: async () => null,
   switchTenant: async () => {},
   refreshTenants: async () => {},
-  accessPosture: { state: 'ACTIVE', source: 'UNRESOLVED', updatedAt: null },
+  accessPosture: { state: 'UNKNOWN', source: 'SUBSCRIPTION_LIFECYCLE_NOT_PROVIDED', updatedAt: null },
   isReadOnly: false,
   refreshAccessPosture: async () => {},
   setActiveTenant: () => {},
@@ -72,7 +72,7 @@ export const TenantProvider = ({ children, initialTenant = null, authenticatedTe
   const [error, setError] = useState(null);
   const [bootstrapReady, setBootstrapReady] = useState(false);
   const [authorityMismatch, setAuthorityMismatch] = useState(false);
-  const [accessPosture, setAccessPosture] = useState({ state: 'ACTIVE', source: 'UNRESOLVED', updatedAt: null });
+  const [accessPosture, setAccessPosture] = useState({ state: 'UNKNOWN', source: 'SUBSCRIPTION_LIFECYCLE_NOT_PROVIDED', updatedAt: null });
 
   /**
    * @function tenantIdentifier
@@ -95,7 +95,7 @@ export const TenantProvider = ({ children, initialTenant = null, authenticatedTe
   const refreshAccessPosture = useCallback(async (tenant = activeTenant) => {
     const tenantId = tenantIdentifier(tenant);
     if (!tenantId) {
-      const unresolved = { state: 'ACTIVE', source: 'UNRESOLVED', updatedAt: null };
+      const unresolved = { state: 'UNKNOWN', source: 'SUBSCRIPTION_LIFECYCLE_NOT_PROVIDED', updatedAt: null };
       setAccessPosture(unresolved);
       return unresolved;
     }
@@ -104,19 +104,20 @@ export const TenantProvider = ({ children, initialTenant = null, authenticatedTe
         headers: { 'X-Tenant-ID': tenantId },
       });
       const payload = response?.data?.data || response?.data || {};
-      const states = Array.isArray(payload.states) ? payload.states : [];
-      const newest = states[0] || {};
+      // Dunning projections are collection evidence only. They cannot grant
+      // or remove subscription access; that decision must come from the
+      // canonical SubscriptionRegistry lifecycle authority.
+      const lifecycle = payload.subscription_lifecycle || {};
       const resolved = {
-        state: String(newest.state || 'ACTIVE').toUpperCase(),
-        source: states.length ? 'KENNEL_DUNNING_LEDGER' : 'KENNEL_NO_DUNNING_CASE',
-        updatedAt: newest.updated_at || newest.evaluated_at || null,
-        invoiceId: newest.invoice_id || null,
-        subscriptionId: newest.subscription_id || null,
+        state: lifecycle.state ? String(lifecycle.state).toUpperCase() : 'UNKNOWN',
+        source: lifecycle.source || 'SUBSCRIPTION_LIFECYCLE_NOT_PROVIDED',
+        updatedAt: lifecycle.updated_at || null,
+        subscriptionId: lifecycle.subscription_id || null,
       };
       setAccessPosture(resolved);
       return resolved;
     } catch (requestError) {
-      const unavailable = { state: 'ACTIVE', source: 'SOURCE_UNAVAILABLE', updatedAt: null, error: requestError.message };
+      const unavailable = { state: 'UNKNOWN', source: 'SUBSCRIPTION_LIFECYCLE_UNAVAILABLE', updatedAt: null, error: requestError.message };
       setAccessPosture(unavailable);
       return unavailable;
     }
@@ -237,33 +238,23 @@ export const TenantProvider = ({ children, initialTenant = null, authenticatedTe
   const switchTenant = useCallback(async (tenantId) => {
     const requestedId = String(tenantId || '').trim();
     if (!requestedId) throw new Error('A canonical tenant identifier is required.');
-    if (tenantIdentifier(activeTenant).toLowerCase() === requestedId.toLowerCase()) return activeTenant;
-    setLoading(true);
-    setError(null);
-    try {
-      let tenant = tenants.find(t => tenantIdentifier(t).toLowerCase() === requestedId.toLowerCase());
-      if (!tenant) {
-        const response = await tenantApi.getTenant(requestedId);
-        tenant = response?.data;
-        if (!tenant) throw new Error('Tenant not found.');
-        setTenants((prev) => prev.some((item) => tenantIdentifier(item) === tenantIdentifier(tenant)) ? prev : [...prev, tenant]);
-      }
-      const resolvedId = tenantIdentifier(tenant);
-      if (authenticatedTenantId && resolvedId !== String(authenticatedTenantId).trim()) {
-        setAuthorityMismatch(true);
-        throw new Error('AUTHENTICATED_WORKSPACE_AUTHORITY_MISMATCH');
-      }
-      if (tenantIdentifier(activeTenant) !== resolvedId) setActiveTenant(tenant);
-      localStorage.setItem('wilsy_active_tenant', JSON.stringify(tenant));
-      setAuthorityMismatch(false);
-      return tenant;
-    } catch (err) {
-      const message = err.response?.data?.message || err.message || 'Failed to switch tenant.';
-      setError(message);
-    } finally {
-      setLoading(false);
+
+    const authenticatedId = String(authenticatedTenantId || '').trim();
+    if (!authenticatedId) {
+      throw new Error('TENANT_SWITCH_REQUIRES_AUTHENTICATED_WORKSPACE');
     }
-  }, [activeTenant, authenticatedTenantId, tenantIdentifier, tenants]);
+    if (requestedId !== authenticatedId) {
+      // Cross-tenant changes require a fresh EOS membership decision and
+      // session issuance. A client directory lookup cannot switch authority.
+      throw new Error('TENANT_SWITCH_REQUIRES_EOS_MEMBERSHIP_SELECTION');
+    }
+
+    const activeId = tenantIdentifier(activeTenant);
+    if (activeId !== authenticatedId) {
+      throw new Error('AUTHENTICATED_WORKSPACE_AUTHORITY_MISMATCH');
+    }
+    return activeTenant;
+  }, [activeTenant, authenticatedTenantId, tenantIdentifier]);
 
   // ─── Exposed context value ────────────────────────────────────────────────
   const contextValue = useMemo(() => ({

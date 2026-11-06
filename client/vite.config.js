@@ -1,34 +1,11 @@
 /* eslint-disable */
 /**
- * ╔════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════╗
- * ║ WILSY OS - VITE CLIENT CONFIGURATION RUNTIME [V2.4.1-L10-P2C7B-TENANT-BRANDING-ROUTER]                                                            ║
- * ║ AUTHORITY: WILSY OS CORE INFRASTRUCTURE | TERMINAL WORKFLOW COMPLIANT                                                                ║
- * ╠════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════╣
- * ║ VERSION: 2.4.1-L10-P2C7B-TENANT-BRANDING-ROUTER | PRODUCTION READY                                                                               ║
- * ║ ABSOLUTE PATH: /Users/wilsonkhanyezi/legal-doc-system/client/vite.config.js                                                          ║
- * ╠════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════╣
- * ║ EPITOME:                                                                                                                             ║
- * ║ Routes Python-EOS-owned auth, legal-acceptance, Legal Operations, kernel, and governed billing paths to port 9095 while preserving   ║
- * ║ the Node BFF catch-all for Node-owned /api traffic.                                                                                  ║
- * ╠════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════╣
- * ║ 🔧 CHANGE LOG (v2.4.1):
- * ║   1. Routes Python-EOS-owned /api/legal-operations directly to port 9095 so L8-6A sheriff queue reads cannot fall through Node.      ║
- * ║   2. Preserves the /api prefix because the Legal Operations router is mounted under /api.                                             ║
- * ║   3. Routes Python-EOS-owned /api/tenant-branding directly to port 9095 so governed branding activation cannot fall through Node.     ║
- * ║ 🔧 PRIOR CHANGE LOG (v2.3.9):
- * ║   1. Routes Python-EOS-owned /api/legal-acceptance directly to port 9095 so authenticated legal gating cannot fall through Node.
- * ║ 🔧 PRIOR CHANGE LOG (v2.3.8):                                                                                                               ║
- * ║   1. Routed /api/auth directly to the verified Kennel auth router; the live Node bootstrap was proxying it as /auth/login.         ║
- * ║ 🔧 PRIOR CHANGE LOG (v2.3.7):                                                                                                        ║
- * ║   1. Routed Kennel billing read models through /api/billing/* with the required /api removal only at the EOS boundary.             ║
- * ║   2. Preserved the /api catch-all for Node-owned auth, business, telemetry, v1, treasury, subscriptions and partial payments.     ║
- * ║ 🔧 PRIOR CHANGE LOG (v2.3.6):                                                                                                        ║
- * ║   1. Preserved /api/auth → Node without rewriting.                                                                                  ║
- * ║   2. Routed /api/billing/platform|client/invoices → Kennel /billing/* (Kennel has no /api prefix).                                 ║
- * ║   3. Routed all remaining /api calls → Node, including /api/billing/invoices/:id/partial-payment.                                  ║
- * ╚════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════╝
+ * WILSY OS — React/Vite frontend development configuration.
+ * Application API authority: Python EOS only.
+ * Browser responsibility: presentation and transport; EOS owns identity,
+ * tenant membership, IAM, business operations and durable application state.
+ * Vite is a frontend development/build tool, not an application backend.
  */
-
 import { defineConfig } from 'vite';
 import react from '@vitejs/plugin-react';
 import path from 'path';
@@ -44,7 +21,7 @@ export default defineConfig({
     strictPort: true,
     open: true,
     proxy: {
-      // Kennel owns the live /api/auth router. Preserve its /api prefix.
+      // Python EOS owns the canonical /api/auth router. Preserve its /api prefix.
       '/api/auth': {
         target: 'http://localhost:9095',
         changeOrigin: true,
@@ -62,41 +39,23 @@ export default defineConfig({
               res.writeHead(502, { 'Content-Type': 'application/json' });
               res.end(JSON.stringify({
                 success: false,
-                message: 'Auth backend unreachable – verify Kennel server on port 9095 is active.',
+                message: 'Auth backend unreachable – verify EOS API on port 9095 is active.',
                 error: err.message
               }));
             }
           });
         }
       },
-      // 👇 Fallback for /auth (without /api) – also to Node
+      // Compatibility path: send legacy /auth callers to the canonical EOS auth router.
       '/auth': {
-        target: 'http://localhost:4000',
+        target: 'http://127.0.0.1:9095',
         changeOrigin: true,
         secure: false,
-        configure: (proxy, options) => {
-          proxy.on('proxyReq', (proxyReq, req, res) => {
-            console.info(`[WILSY-PROXY-DISPATCH-AUTH] ${req.method} ${req.url}`);
-          });
-          proxy.on('proxyRes', (proxyRes, req, res) => {
-            console.info(`[WILSY-PROXY-RETURN-AUTH] ${proxyRes.statusCode} ${req.url}`);
-          });
-          proxy.on('error', (err, req, res) => {
-            console.error('[WILSY-PROXY-FATAL-AUTH]', err.message);
-            if (!res.headersSent) {
-              res.writeHead(502, { 'Content-Type': 'application/json' });
-              res.end(JSON.stringify({
-                success: false,
-                message: 'Auth backend unreachable – verify Node server on port 4000 is active.',
-                error: err.message
-              }));
-            }
-          });
-        }
+        rewrite: (path) => path.replace(/^\/auth/, '/api/auth'),
       },
-      // Kennel invoice lifecycle endpoints are mounted at /billing/*, not /api/billing/*.
-      // Keep these rules before the general /api BFF rule so compose/list reach EOS,
-      // while Node-owned actions (partial pay, PDF, audit) retain their correct owner.
+      // EOS billing lifecycle routes are mounted at /billing/* and /api/billing/*.
+      // Keep these rules before the general /api EOS rule so compose/list reach EOS,
+      // while EOS-owned application routes retain their canonical owner.
       '/api/billing/platform': {
         target: 'http://localhost:9095',
         changeOrigin: true,
@@ -109,8 +68,8 @@ export default defineConfig({
         secure: false,
         rewrite: (path) => path.replace(/^\/api/, ''),
       },
-      // Kennel billing read models are mounted at /billing/*, not /api/billing/*.
-      // This explicit rule must remain ahead of /api so Node-only routes retain Node ownership.
+      // EOS billing read models are mounted at /billing/*.
+      // This explicit rule must remain ahead of /api so EOS routes retain their canonical ownership.
       '^/api/billing/(plans|summary|analytics|credit-scores|forensic-status)(?:/|$)': {
         target: 'http://localhost:9095',
         changeOrigin: true,
@@ -133,6 +92,12 @@ export default defineConfig({
       // Python EOS owns the tenant-owner commercial Legal workspace.
       // Preserve /api; this is transport only, never browser-side business logic.
       '/api/crm/owner-workspace': {
+        target: 'http://localhost:9095',
+        changeOrigin: true,
+        secure: false,
+      },
+      // Python EOS owns independent Operations and Intelligence work queues.
+      '/api/tenant-modules': {
         target: 'http://localhost:9095',
         changeOrigin: true,
         secure: false,
@@ -203,7 +168,7 @@ export default defineConfig({
         },
       },
 
-      // Kennel owns the tenant and employee directories used by BillingHUD typeaheads.
+      // EOS owns the tenant and employee directories used by workspace typeaheads.
       '/api/tenants': {
         target: 'http://localhost:9095',
         changeOrigin: true,
@@ -214,31 +179,12 @@ export default defineConfig({
         changeOrigin: true,
         secure: false,
       },
-      // All remaining API traffic belongs to the Node BFF (port 4000).
+      // All remaining application API traffic is sent directly to Python EOS.
       '/api': {
-        target: 'http://localhost:4000',
+        target: 'http://127.0.0.1:9095',
         changeOrigin: true,
         secure: false,
         ws: true,
-        configure: (proxy, options) => {
-          proxy.on('proxyReq', (proxyReq, req, res) => {
-            console.info(`[WILSY-PROXY-DISPATCH] ${req.method} ${req.url} -> ${proxyReq.path}`);
-          });
-          proxy.on('proxyRes', (proxyRes, req, res) => {
-            console.info(`[WILSY-PROXY-RETURN] ${proxyRes.statusCode} ${req.url}`);
-          });
-          proxy.on('error', (err, req, res) => {
-            console.error('[WILSY-PROXY-FATAL]', err.message);
-            if (!res.headersSent) {
-              res.writeHead(502, { 'Content-Type': 'application/json' });
-              res.end(JSON.stringify({
-                success: false,
-                message: 'Node BFF unreachable – verify port 4000 is active.',
-                error: err.message
-              }));
-            }
-          });
-        }
       }
     }
   },
@@ -257,7 +203,7 @@ export default defineConfig({
  * Compliance: POPIA §19, GDPR §32, SOC2 §CC7.2
  * Proxy Rules:
  *   /api/auth → http://localhost:9095 (Kennel auth router) – no rewrite
- *   /auth      → http://localhost:4000 (Node backend)
+ *   /auth      → http://127.0.0.1:9095/api/auth (Python EOS)
  *   /api/billing/platform|client → http://localhost:9095/billing/platform|client
  *   /api/billing/plans|summary|analytics|credit-scores|forensic-status → http://localhost:9095/billing/*
  *   /api/kernel → http://localhost:9095/api/kernel
@@ -265,6 +211,6 @@ export default defineConfig({
  *   /api/legal-operations → http://localhost:9095/api/legal-operations
  *   /api/legal-acceptance → http://localhost:9095/api/legal-acceptance
  *   /api/tenants, /api/employees → http://localhost:9095
- *   /api       → http://localhost:4000 (Node BFF)
+ *   /api       → http://127.0.0.1:9095 (Python EOS)
  * ═══════════════════════════════════════════════════════════════════════════════════
  */

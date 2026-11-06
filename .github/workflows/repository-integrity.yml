@@ -5,6 +5,11 @@ on:
   pull_request:
   workflow_dispatch:
 
+# Keep only the newest certification for this source branch; superseded pending runs are cancelled.
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event.pull_request.head.ref || github.ref_name }}
+  cancel-in-progress: true
+
 permissions:
   contents: read
 
