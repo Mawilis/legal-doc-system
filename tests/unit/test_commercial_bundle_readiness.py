@@ -79,5 +79,6 @@ def test_readiness_source_has_no_persistence_or_activation_authority() -> None:
     source = inspect.getsource(assess_commercial_bundle_readiness)
     assert "insert_one" not in source
     assert "update_one" not in source
-    assert "activate" not in source.casefold()
+    assert "issue_tenant_product_entitlement" not in source
+    assert "transition(" not in source
     assert "session" not in source.casefold()
