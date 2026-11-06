@@ -577,7 +577,7 @@ def activate_commercial_bundle(
             "entitlement_id": entitlement.entitlement_id,
             "entitlement_fingerprint": entitlement.fingerprint,
             "authorization_decision_id": result.authorization_evidence.authorization_decision_id,
-            "authorization_evidence_fingerprint": result.authorization_evidence.fingerprint,
+            "authorization_evidence_fingerprint": result.authorization_evidence.authorization_evidence_fingerprint,
         })
 
     activation_reference = f"bundle-act-{_sha3([tenant_id, agreement_id])[:48]}"
