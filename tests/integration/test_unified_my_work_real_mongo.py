@@ -87,13 +87,17 @@ def mongo_context() -> Iterator[tuple[MongoClient[Any], Any]]:
         client.close()
 
 
-def _activate_operations(client: MongoClient[Any], database: Any) -> None:
-    entitlement_id = derive_tenant_product_entitlement_id(TENANT, TenantProductId.OPERATIONS)
+def _activate_operations(
+    client: MongoClient[Any],
+    database: Any,
+    product_id: TenantProductId = TenantProductId.OPERATIONS,
+) -> None:
+    entitlement_id = derive_tenant_product_entitlement_id(TENANT, product_id)
     pending = create_tenant_product_entitlement(
         tenant_id=TENANT,
         entitlement_id=entitlement_id,
-        product_id=TenantProductId.OPERATIONS,
-        source_evidence_reference="my-work-operations-entitlement",
+        product_id=product_id,
+        source_evidence_reference=f"my-work-{product_id.value.lower()}-entitlement",
         source_evidence_fingerprint=FINGERPRINT,
     )
     history = database.get_collection(entitlement_registry.HISTORY_COLLECTION)
@@ -106,7 +110,7 @@ def _activate_operations(client: MongoClient[Any], database: Any) -> None:
                 entitlement_id=entitlement_id,
                 target_state=TenantProductEntitlementState.ACTIVE,
                 expected_revision=0,
-                evidence_reference="my-work-operations-active",
+                evidence_reference=f"my-work-{product_id.value.lower()}-active",
                 evidence_fingerprint=FINGERPRINT,
                 occurred_at=NOW,
                 history_collection=history,
@@ -129,7 +133,8 @@ def test_authenticated_my_work_http_reads_real_operations_queue_inside_owner_tra
     monkeypatch: Any,
 ) -> None:
     client, database = mongo_context
-    _activate_operations(client, database)
+    _activate_operations(client, database, TenantProductId.OPERATIONS)
+    _activate_operations(client, database, TenantProductId.INTELLIGENCE)
 
     module_source = my_work.module_source
     monkeypatch.setattr(module_source, "get_client", lambda: client)
@@ -153,6 +158,24 @@ def test_authenticated_my_work_http_reads_real_operations_queue_inside_owner_tra
             session=active,
         ))
 
+    intelligence_product, intelligence_workspace, intelligence_collection, _ = module_source._PRODUCTS["intelligence"]
+    intelligence_service = module_source._service(database, intelligence_product, intelligence_collection)
+    with client.start_session() as session:
+        intelligence_created = session.with_transaction(lambda active: intelligence_service.create(
+            tenant_id=TENANT,
+            principal_id=PRINCIPAL,
+            title="Validate independent intelligence source queue",
+            description="Read from its own registry and entitlement.",
+            kind=ModuleWorkKind.TASK,
+            priority=ModuleWorkPriority.NORMAL,
+            due_at=None,
+            source_type=None,
+            source_id=None,
+            idempotency_key="my-work-real-mongo-intelligence-1",
+            now=NOW,
+            session=active,
+        ))
+
     app = FastAPI()
     register_error_handlers(app, debug=False)
     app.include_router(my_work.router, prefix="/api")
@@ -169,7 +192,7 @@ def test_authenticated_my_work_http_reads_real_operations_queue_inside_owner_tra
     app.dependency_overrides[my_work.get_current_identity] = lambda: identity
     app.dependency_overrides[my_work._LEGAL_READ] = lambda: None
     app.dependency_overrides[my_work._OPERATIONS_READ] = _context
-    app.dependency_overrides[my_work._INTELLIGENCE_READ] = lambda: None
+    app.dependency_overrides[my_work._INTELLIGENCE_READ] = _context
     app.dependency_overrides[my_work._CRM_READ] = lambda: None
 
     with TestClient(app) as browser:
@@ -177,9 +200,9 @@ def test_authenticated_my_work_http_reads_real_operations_queue_inside_owner_tra
 
     assert response.status_code == 200, response.text
     payload = response.json()
-    assert payload["sources_included"] == ["OPERATIONS"]
-    assert payload["summary"]["active_count"] == 1
-    assert payload["items"][0]["work_item_id"] == created.work_item_id
-    assert payload["items"][0]["title"] == "Prepare verified daily operating report"
+    assert payload["sources_included"] == ["OPERATIONS", "INTELLIGENCE"]
+    assert payload["summary"]["active_count"] == 2
+    assert {item["work_item_id"] for item in payload["items"]} == {created.work_item_id, intelligence_created.work_item_id}
+    assert {item["source"] for item in payload["items"]} == {"OPERATIONS", "INTELLIGENCE"}
     assert payload["items"][0]["action_authority"] == "SOURCE_SERVICE_ONLY"
     assert payload["authority"]["permits_completion"] is False
