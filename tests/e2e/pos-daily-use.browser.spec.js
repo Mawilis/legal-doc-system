@@ -103,12 +103,22 @@ test('POS operator completes authenticated daily-use sale and evidence journey',
     const wrongLocation = await api(page, 'GET', `/api/pos/locations/another-store/sales/${saleId}`);
     expect(wrongLocation.status).toBe(403);
 
-    const providerUnavailable = await api(page, 'POST',
+  } finally {
+    await context.close();
+  }
+
+  const approver = await authenticatedPage(browser, 'tenant_owner');
+  try {
+    const providerUnavailable = await api(approver.page, 'POST',
       `/api/pos/locations/browser-cert-store-01/sales/${saleId}/tenders/tender-${saleId}/execute`);
     expect(providerUnavailable.status).toBe(503);
     expect(providerUnavailable.payload.detail).toBe('KENNEL_FINANCIAL_MOVEMENT_PROVIDER_UNBOUND');
+    const refundUnavailable = await api(approver.page, 'POST',
+      `/api/pos/locations/browser-cert-store-01/sales/${saleId}/refund-intents/refund-${saleId}/execute`);
+    expect(refundUnavailable.status).toBe(503);
+    expect(refundUnavailable.payload.detail).toBe('KENNEL_FINANCIAL_MOVEMENT_PROVIDER_UNBOUND');
   } finally {
-    await context.close();
+    await approver.context.close();
   }
 });
 
