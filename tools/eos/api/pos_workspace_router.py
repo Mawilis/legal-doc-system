@@ -225,7 +225,7 @@ def _transaction(callback):
             )
     except POSWorkspaceServiceError as error:
         code = error.code
-        status_code = 403 if code in {"POS_PRODUCT_NOT_ENTITLED", "POS_LOCATION_ACCESS_DENIED"} else 404 if code == "POS_SALE_NOT_FOUND_OR_CORRUPT" else 409 if "CONFLICT" in code or "REPLAY" in code else 503
+        status_code = 422 if code == "POS_CASH_TENDER_INVALID" else 403 if code in {"POS_PRODUCT_NOT_ENTITLED", "POS_LOCATION_ACCESS_DENIED"} else 404 if code == "POS_SALE_NOT_FOUND_OR_CORRUPT" else 409 if "CONFLICT" in code or "REPLAY" in code else 503
         raise HTTPException(status_code=status_code, detail=code) from error
     except (POSLocationAssignmentConflict, POSCommercialEvidenceConflict, POSCommercialCapacityConflict, POSCommercialCapacityExceeded) as error:
         raise HTTPException(status_code=409, detail=str(error)) from error
