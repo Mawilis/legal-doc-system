@@ -1004,6 +1004,30 @@ for _assignment_business_role in (
 ELIGIBILITY = MappingProxyType(_assignment_roles)
 
 
+# Commercial agreement access is owner-commercial authority, not Legal Practice.
+# Tenant Owner/Admin may read and create drafts; Auditor is read-only.
+# Execution/activation remains unavailable until an independent evidence verifier
+# and product entitlement lifecycle coordinator are mounted.
+OPERATIONS = frozenset((*OPERATIONS, "commercial_agreement_read", "commercial_agreement_draft_create"))
+BUSINESS_ROLE_OPERATION_PERMISSIONS = MappingProxyType({
+    **BUSINESS_ROLE_OPERATION_PERMISSIONS,
+    "commercial_agreement_read": "tenant:commercial_agreement:read",
+    "commercial_agreement_draft_create": "tenant:commercial_agreement:draft:create",
+})
+_agreement_eligibility = dict(ELIGIBILITY)
+for _agreement_role in ("tenant_owner", "tenant_admin"):
+    _agreement_row = dict(_agreement_eligibility[_agreement_role])
+    _agreement_row.update({
+        "commercial_agreement_read": ELIGIBLE,
+        "commercial_agreement_draft_create": ELIGIBLE,
+    })
+    _agreement_eligibility[_agreement_role] = MappingProxyType(_agreement_row)
+_agreement_auditor = dict(_agreement_eligibility["tenant_auditor"])
+_agreement_auditor["commercial_agreement_read"] = ELIGIBLE
+_agreement_eligibility["tenant_auditor"] = MappingProxyType(_agreement_auditor)
+ELIGIBILITY = MappingProxyType(_agreement_eligibility)
+
+
 # ARTIFACT: tenant_authority_policy.py
 # VERSION: v1.51.0-R59-P9-REASSIGNMENT-IAM-INTEGRATION
 # AUTHORITY BOUNDARY: business eligibility facts only; no authorization or mutation
