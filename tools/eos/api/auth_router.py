@@ -485,10 +485,15 @@ def _workspace_module_manifest_projection(
                             database["subscriptions"],
                             session,
                         )
-                    except CrmCoreEntitlementResolverError as error:
-                        raise WorkspaceModuleManifestProjectionError(
-                            "WORKSPACE_MODULE_MANIFEST_CRM_AUTHORITY_INVALID"
-                        ) from error
+                    except CrmCoreEntitlementResolverError:
+                        # CRM is an independent product authority. Ambiguous or
+                        # unavailable CRM evidence must hide CRM only; it must
+                        # not suppress an otherwise valid Legal/Billing/People
+                        # tenant module projection.
+                        logger.warning(
+                            "[WORKSPACE_MODULE_MANIFEST] CRM entitlement unavailable; CRM omitted"
+                        )
+                        continue
                     if crm_entitlement is not None:
                         entitlements.append(crm_entitlement)
                     continue
