@@ -17,6 +17,7 @@ on:
       - "client/src/components/os/WilsyOSDashboardChrome.jsx"
       - "client/src/components/sovereign/SovereignDashboardController.jsx"
       - "client/src/services/tenantModuleWorkspaceService.js"
+      - "client/src/services/tenantModuleWorkspaceService.test.js"
       - "client/tests/client/TenantModuleWorkspace.test.jsx"
       - "client/tests/client/SovereignDashboardController.test.js"
       - "tests/unit/test_tenant_module_*.py"
@@ -125,6 +126,7 @@ jobs:
         run: >-
           npx vitest run --config vitest.config.js
           tests/client/TenantModuleWorkspace.test.jsx
+          src/services/tenantModuleWorkspaceService.test.js
           tests/client/SovereignDashboardController.test.js
       - name: Verify production client build
         run: npm run build
