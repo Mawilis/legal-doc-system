@@ -97,12 +97,23 @@ def _transaction(callback):
         raise
     except Exception as error:
         cause = error.__cause__
+        traceback = error.__traceback__
+        while traceback is not None and traceback.tb_next is not None:
+            traceback = traceback.tb_next
+        frame = traceback.tb_frame if traceback is not None else None
+        location = (
+            f"{frame.f_code.co_filename.rsplit('/', 1)[-1]}:{traceback.tb_lineno}:{frame.f_code.co_name}"
+            if frame is not None and traceback is not None else None
+        )
         logger.error(
-            "OWNER_WORK_TRANSACTION_FAILURE error_type=%s error_code=%s cause_type=%s cause_code=%s",
+            "OWNER_WORK_TRANSACTION_FAILURE error_type=%s error_code=%s cause_type=%s cause_code=%s attribute_name=%s object_type=%s location=%s",
             type(error).__name__,
             getattr(error, "code", None),
             type(cause).__name__ if cause is not None else None,
             getattr(cause, "code", None) if cause is not None else None,
+            getattr(error, "name", None),
+            type(getattr(error, "obj", None)).__name__,
+            location,
         )
         raise HTTPException(status_code=503, detail="OWNER_WORK_TRANSACTION_UNAVAILABLE") from error
 
