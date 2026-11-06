@@ -193,6 +193,15 @@ class CommercialAgreementExecutionVerifier:
     ) -> None:
         if not isinstance(verifier_id, str) or not verifier_id.strip():
             raise ValueError("COMMERCIAL_EXECUTION_VERIFIER_ID_REQUIRED")
+        required_adapters = (
+            ("EVIDENCE_STORE", evidence_store, "load"),
+            ("CERTIFICATE_TRUST_RESOLVER", certificate_trust, "resolve"),
+            ("SIGNATORY_MANDATE_RESOLVER", mandate_resolver, "resolve"),
+            ("TRUSTED_TIMESTAMP_VERIFIER", timestamp_verifier, "verify"),
+        )
+        for label, adapter, method in required_adapters:
+            if adapter is None or not callable(getattr(adapter, method, None)):
+                raise ValueError(f"COMMERCIAL_EXECUTION_{label}_REQUIRED")
         self._evidence_store = evidence_store
         self._certificate_trust = certificate_trust
         self._mandate_resolver = mandate_resolver
