@@ -210,6 +210,14 @@ from tools.eos.legal_operations.registry.legal_operations_lifecycle_registry imp
 )
 from tools.eos.saas.auth.auth_registry import AuthRegistry
 from tools.eos.saas.entitlement import tenant_product_entitlement_registry as entitlement_registry
+from tools.eos.saas.domain.tenant_product_entitlement import (
+    TenantProductEntitlementState,
+    create_tenant_product_entitlement,
+)
+from tools.eos.saas.entitlement.product_catalogue import TenantProductId
+from tools.eos.saas.entitlement.tenant_product_entitlement_composer import (
+    derive_tenant_product_entitlement_id,
+)
 from tools.eos.saas.billing.plan_registry import PlanRegistry
 from tools.eos.saas.billing.subscription_active_entitlement_composition_service import (
     SubscriptionActiveEntitlementCompositionService,
@@ -783,6 +791,64 @@ def _seed_canonical_specialist_workflows(
     return seeded
 
 
+def _seed_independent_module_entitlements(
+    *,
+    client: MongoClient,
+    tenant_id: str,
+    now: datetime,
+    collections: dict[str, Any],
+) -> dict[str, str]:
+    """Activate five independent module products with synthetic fixture evidence.
+
+    Legal Operations is provisioned by the existing Legal subscription composer.
+    Billing, CRM, HR, Operations and Intelligence are separate D22B2 product
+    entitlements in this disposable browser database; no bundle membership or
+    browser claim creates them.
+    """
+    fingerprint = "d" * 128
+    activated: dict[str, str] = {}
+    for product_id in (
+        TenantProductId.BILLING,
+        TenantProductId.CRM,
+        TenantProductId.HR,
+        TenantProductId.OPERATIONS,
+        TenantProductId.INTELLIGENCE,
+    ):
+        entitlement_id = derive_tenant_product_entitlement_id(tenant_id, product_id)
+        pending = create_tenant_product_entitlement(
+            tenant_id=tenant_id,
+            entitlement_id=entitlement_id,
+            product_id=product_id,
+            source_evidence_reference=f"browser-cert-product-source:{product_id.value}:{tenant_id}",
+            source_evidence_fingerprint=fingerprint,
+        )
+
+        def activate(session: Any) -> None:
+            entitlement_registry.create_or_replay(
+                pending,
+                collections["entitlement_history"],
+                collections["entitlement_current"],
+                session=session,
+            )
+            entitlement_registry.transition(
+                tenant_id=tenant_id,
+                entitlement_id=entitlement_id,
+                target_state=TenantProductEntitlementState.ACTIVE,
+                expected_revision=0,
+                evidence_reference=f"browser-cert-product-activation:{product_id.value}:{tenant_id}",
+                evidence_fingerprint=fingerprint,
+                occurred_at=now,
+                history_collection=collections["entitlement_history"],
+                current_collection=collections["entitlement_current"],
+                session=session,
+            )
+
+        with client.start_session() as session:
+            session.with_transaction(activate)
+        activated[product_id.value] = entitlement_id
+    return activated
+
+
 def seed(state_path: Path) -> None:
     uri = _uri()
     client = MongoClient(uri, serverSelectionTimeoutMS=5000, tz_aware=True)
@@ -1239,6 +1305,12 @@ def seed(state_path: Path) -> None:
         if not commercial.legal_entitlement_applicable or commercial.entitlement_issuance_result is None:
             raise RuntimeError("BROWSER_CERT_LEGAL_COMMERCIAL_SEED_FAILED")
 
+        module_entitlements = _seed_independent_module_entitlements(
+            client=client,
+            tenant_id=tenant_id,
+            now=now,
+            collections=collections,
+        )
 
         for actor in actors.values():
             user = registry.get_user_by_id(actor["principal_id"])
@@ -1257,6 +1329,7 @@ def seed(state_path: Path) -> None:
                     "state_version": STATE_VERSION,
                     "database_name": database.name,
                     "tenant_id": tenant_id,
+                    "module_entitlements": module_entitlements,
                     "principal_id": partner["principal_id"],
                     "email": partner["email"],
                     "access_token": partner["access_token"],
