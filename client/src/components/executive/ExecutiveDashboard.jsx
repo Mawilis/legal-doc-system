@@ -1,10 +1,10 @@
 /* eslint-disable */
 /**
  * ╔════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════╗
- * ║ WILSY OS - SOVEREIGN EXECUTIVE SUITE [V56.6.0-EOS-PRODUCT-MODULE-NAVIGATION]                                                                      ║
+ * ║ WILSY OS - SOVEREIGN EXECUTIVE SUITE [V56.7.0-WORK-FIRST-EXECUTIVE-WORKBENCH]                                                                      ║
  * ║ [FINANCE-SOURCED KPIS | SHA3 EXECUTIVE MUTATIONS | TELEMETRY STREAM | SHARD PAGINATION | BOARDROOM PROOF]                             ║
  * ╠════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════╣
- * ║ VERSION: 56.6.0-EOS-PRODUCT-MODULE-NAVIGATION | SERVER-ISSUED TENANT OWNER COMMAND                                        ║
+ * ║ VERSION: 56.7.0-WORK-FIRST-EXECUTIVE-WORKBENCH | SERVER-ISSUED PRODUCT NAVIGATION                                        ║
  * ║ ABSOLUTE PATH: /Users/wilsonkhanyezi/legal-doc-system/client/src/components/executive/ExecutiveDashboard.jsx                            ║
  * ╠════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════╣
  * ║ 👥 COLLABORATION & SOVEREIGN SIGN-OFF:                                                                                                 ║
@@ -1064,7 +1064,7 @@ const ExecutiveDashboard = ({
   const [loading, setLoading] = useState(true);
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
-  const [activeWorkspace, setActiveWorkspace] = useState('overview');
+  const [activeWorkspace, setActiveWorkspace] = useState('workbench');
   const [businessModelOverride, setBusinessModelOverride] = useState('');
   const [executiveQuestion, setExecutiveQuestion] = useState('');
   const [executiveAnswer, setExecutiveAnswer] = useState(null);
