@@ -58,7 +58,10 @@ describe('independent tenant module daily-use workspace', () => {
     expect(await screen.findByText('Publish operations runbook')).toBeInTheDocument();
     expect(readTenantModuleWorkspace).toHaveBeenCalledWith('OPERATIONS');
     expect(screen.getByRole('button', { name: 'Refresh EOS' })).toBeInTheDocument();
-    expect(screen.getByLabelText('Action title')).toBeInTheDocument();
+    const titleField = screen.getByLabelText('Action title');
+    expect(titleField).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Create action' })).toBeDisabled();
+    fireEvent.change(titleField, { target: { value: 'Create first operations action' } });
     expect(screen.getByRole('button', { name: 'Create action' })).toBeEnabled();
   });
 
