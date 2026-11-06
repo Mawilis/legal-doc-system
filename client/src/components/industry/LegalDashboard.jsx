@@ -345,6 +345,7 @@ const PRACTICE_WORKSPACE_VIEWS = Object.freeze({
   DOCUMENTS: 'DOCUMENTS',
   SERVICE: 'SERVICE',
   RETURNS: 'RETURNS',
+  CONFLICT_REVIEW: 'CONFLICT_REVIEW',
   DEADLINES: 'DEADLINES',
   FINANCE: 'FINANCE',
   INTAKE: 'INTAKE',
@@ -357,6 +358,7 @@ const LEGAL_PRACTICE_MODULE_REGISTRY = Object.freeze([
   { id: PRACTICE_WORKSPACE_VIEWS.DOCUMENTS, label: 'Process Documents', icon: FileText, requiresWorkspace: true },
   { id: PRACTICE_WORKSPACE_VIEWS.SERVICE, label: 'Service Operations', icon: Clock3, requiresWorkspace: true },
   { id: PRACTICE_WORKSPACE_VIEWS.RETURNS, label: 'Returns of Service', icon: FileCheck2, requiresWorkspace: true },
+  { id: PRACTICE_WORKSPACE_VIEWS.CONFLICT_REVIEW, label: 'Conflict Reviews', icon: ShieldCheck, permission: PRESENTATION_PERMISSIONS.CONFLICT_REVIEW_WRITE },
   { id: 'PRODUCTIVE_WORK', label: 'My Work', icon: ClipboardList, permission: PRESENTATION_PERMISSIONS.PRODUCTIVE_WORK_READ },
   { id: PRACTICE_WORKSPACE_VIEWS.DEADLINES, label: 'Deadlines', icon: Clock3, permission: PRESENTATION_PERMISSIONS.DEADLINE_READ },
   { id: PRACTICE_WORKSPACE_VIEWS.FINANCE, label: 'Finance Evidence', icon: Landmark, anyPermissions: [PRESENTATION_PERMISSIONS.BILLING_READ, PRESENTATION_PERMISSIONS.INVOICE_READ] },
@@ -3912,8 +3914,16 @@ function LegalPracticeWorkspace({
         />
       </div>
     );
-  } else if (!error && activeView === 'PRODUCTIVE_WORK') {
+  } else if (activeView === 'PRODUCTIVE_WORK') {
     content = <ProductiveWorkPanel />;
+  } else if (activeView === PRACTICE_WORKSPACE_VIEWS.CONFLICT_REVIEW) {
+    content = (
+      <ConflictReviewQueue
+        canReview={canReviewConflict}
+        screenings={conflictScreenings}
+        onRefresh={onRefresh}
+      />
+    );
   } else if (!error && activeView === PRACTICE_WORKSPACE_VIEWS.MATTERS) {
     content = (
       <MatterOperationsPanel
@@ -4747,12 +4757,19 @@ export default function LegalDashboard({
       }
 
       if (roleMode === ROLE_MODES.LEGAL_PRACTICE) {
-        const [result, screeningResult] = await Promise.all([
+        // The G68 practice workspace and operation-specific projections have
+        // independent server authorization boundaries. A denied workspace
+        // must not erase separately authorized productive work or screening
+        // evidence, and a successful screening refresh must remain usable by
+        // the conflict-review command even while G68 stays deny-only.
+        const [workspaceResult, screeningResult] = await Promise.allSettled([
           getLegalPracticeWorkspace(),
           getLegalConflictScreenings(),
         ]);
-        setPracticeWorkspace(result);
-        setConflictScreenings(screeningResult);
+        const screeningPacket = screeningResult.status === 'fulfilled'
+          ? screeningResult.value
+          : EMPTY_CONFLICT_SCREENINGS;
+        setConflictScreenings(screeningPacket);
         setQueues(EMPTY_QUEUES);
         setDeputyWork(EMPTY_DEPUTY_WORK);
         setClientMatters(EMPTY_CLIENT_MATTERS);
@@ -4760,9 +4777,32 @@ export default function LegalDashboard({
         setCommandState(null);
         setObservationDrafts({});
         setLastUpdated(new Date());
+
+        if (workspaceResult.status === 'rejected') {
+          const caught = workspaceResult.reason;
+          const status = caught?.response?.status;
+          const detail = caught?.response?.data?.detail;
+          setPracticeWorkspace(EMPTY_PRACTICE_WORKSPACE);
+          setError({
+            kind: status === 503 ? 'EVIDENCE_UNAVAILABLE'
+              : status === 403 ? 'LEGAL_PRACTICE_WORKSPACE_DENIED'
+                : 'LEGAL_PRACTICE_WORKSPACE_READ_FAILED',
+            message: detail || 'The canonical Legal Practice workspace is unavailable; independently authorized Legal projections remain separately gated.',
+          });
+          return {
+            practiceWorkspace: null,
+            conflictScreenings: screeningPacket,
+            workspaceUnavailable: true,
+          };
+        }
+
+        const result = workspaceResult.value;
+        setPracticeWorkspace(result);
+        setError(null);
         return {
           practiceWorkspace: result,
-          conflictScreenings: screeningResult,
+          conflictScreenings: screeningPacket,
+          workspaceUnavailable: false,
         };
       }
 
@@ -4849,7 +4889,9 @@ export default function LegalDashboard({
       setDeputyWork(EMPTY_DEPUTY_WORK);
       setClientMatters(EMPTY_CLIENT_MATTERS);
       setPracticeWorkspace(EMPTY_PRACTICE_WORKSPACE);
-      setConflictScreenings(EMPTY_CONFLICT_SCREENINGS);
+      if (roleMode !== ROLE_MODES.LEGAL_PRACTICE) {
+        setConflictScreenings(EMPTY_CONFLICT_SCREENINGS);
+      }
       setDeputyCapabilities(EMPTY_DEPUTY_CAPABILITIES);
       return null;
     } finally {
