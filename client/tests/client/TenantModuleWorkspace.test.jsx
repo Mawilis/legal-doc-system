@@ -8,6 +8,16 @@ const { readTenantModuleWorkspace, createTenantModuleWorkItem, completeTenantMod
   completeTenantModuleWorkItem: vi.fn(),
 }));
 
+vi.mock('../../src/contexts/authContext.jsx', () => ({
+  useAuth: () => ({ user: { id: 'principal-module-test', role: 'TENANT_OWNER', tenantId: 'TENANT-OPS-1' }, tenant: { tenantId: 'TENANT-OPS-1' } }),
+}));
+vi.mock('../../src/contexts/tenantContext.jsx', () => ({
+  useTenants: () => ({ activeTenant: { tenantId: 'TENANT-OPS-1', name: 'Test Tenant' } }),
+}));
+vi.mock('../../src/components/os/WilsyOSDashboardChrome.jsx', () => ({
+  default: ({ children }) => <div data-testid="authenticated-os-chrome">{children}</div>,
+}));
+
 vi.mock('../../src/services/tenantModuleWorkspaceService.js', () => ({
   readTenantModuleWorkspace,
   createTenantModuleWorkItem,
