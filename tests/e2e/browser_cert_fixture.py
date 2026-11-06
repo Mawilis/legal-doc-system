@@ -872,6 +872,7 @@ def seed(state_path: Path) -> None:
         tenant_id = f"browser-tenant-{suffix}"
         actor_specs = (
             ("tenant_owner", "TENANT_OWNER", "tenant_owner", "Owner"),
+            ("location_admin", "TENANT_OWNER", "tenant_owner", "LocationAdmin"),
             ("commercial_admin", "ENTERPRISE_ADMIN", "tenant_owner", "CommercialAdmin"),
             ("partner", "LEGAL_PARTNER", "tenant_legal_partner", "Partner"),
             ("attorney", "LEGAL_ATTORNEY", "tenant_legal_attorney", "Attorney"),
@@ -1064,23 +1065,24 @@ def seed(state_path: Path) -> None:
                     collections["roles"],
                     session=session,
                 )
-            pos_assignment = POSLocationAssignment(
-                tenant_id=tenant_id,
-                location_id="browser-cert-store-01",
-                principal_id=actors["pos_operator"]["principal_id"],
-                assignment_id=f"browser-pos-assignment-{suffix}",
-                revision=0,
-                status=POSLocationAssignmentStatus.ACTIVE,
-                authority_reference=f"browser-cert-approved-pos-location:{suffix}",
-                authority_fingerprint="e" * 128,
-                idempotency_key=f"browser-pos-assignment:{suffix}",
-                occurred_at=now,
-                changed_by_principal_id=actors["tenant_owner"]["principal_id"],
-            )
-            POSLocationAssignmentRegistry.issue(
-                pos_assignment, collections["pos_location_history"],
-                collections["pos_location_current"], session=session,
-            )
+            for target_key in ("pos_operator", "tenant_owner"):
+                pos_assignment = POSLocationAssignment(
+                    tenant_id=tenant_id,
+                    location_id="browser-cert-store-01",
+                    principal_id=actors[target_key]["principal_id"],
+                    assignment_id=f"browser-pos-assignment-{target_key}-{suffix}",
+                    revision=0,
+                    status=POSLocationAssignmentStatus.ACTIVE,
+                    authority_reference=f"browser-cert-approved-pos-location:{target_key}:{suffix}",
+                    authority_fingerprint="e" * 128,
+                    idempotency_key=f"browser-pos-assignment:{target_key}:{suffix}",
+                    occurred_at=now,
+                    changed_by_principal_id=actors["location_admin"]["principal_id"],
+                )
+                POSLocationAssignmentRegistry.issue(
+                    pos_assignment, collections["pos_location_history"],
+                    collections["pos_location_current"], session=session,
+                )
             for actor in system_actors.values():
                 PrincipalAuthorityRepository.create(
                     PrincipalAuthority(actor["principal_id"], PrincipalStatus.ACTIVE, 0),
