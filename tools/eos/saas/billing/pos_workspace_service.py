@@ -8,7 +8,6 @@ before every read or command. The location selector never proves authority.
 from __future__ import annotations
 
 from datetime import datetime, timezone
-from types import SimpleNamespace
 from typing import Any
 
 from tools.eos.saas.domain.pos_commercial import (
@@ -162,15 +161,20 @@ class POSWorkspaceService:
                       sale_id: str, sku: str, quantity: int, reason: str,
                       return_id: str, idempotency_key: str, session: Any) -> dict:
         sale = self._sale(tenant_id=tenant_id, principal_id=principal_id, location_id=location_id, sale_id=sale_id, session=session)
-        history = POSCommercialEvidenceRegistry.list_sale_evidence(
-            tenant_id=tenant_id, location_id=location_id, sale_id=sale_id,
+        intent = create_return(sale, sku, quantity, reason, return_id, idempotency_key, ())
+        existing = POSCommercialEvidenceRegistry.get_by_idempotency(
+            tenant_id=tenant_id, location_id=location_id,
+            evidence_type="RETURN_INTENT", idempotency_key=idempotency_key,
             collection=self._evidence, session=session,
         )
-        prior_returns = tuple(
-            SimpleNamespace(**{"sku": row["evidence"]["sku"], "quantity": row["evidence"]["quantity"]})
-            for row in history if row["evidence_type"] == "RETURN_INTENT"
+        if existing is not None:
+            if existing.get("sale_fingerprint") != sale.fingerprint or existing.get("evidence") != intent.to_dict() or existing.get("recorded_by_principal_id") != principal_id:
+                raise POSCommercialEvidenceConflict("POS_EVIDENCE_DIVERGENT_REPLAY")
+            return existing
+        POSCommercialCapacityRegistry.reserve_return(
+            sale=sale, sku=sku, quantity=quantity,
+            idempotency_key=idempotency_key, collection=self._capacity, session=session,
         )
-        intent = create_return(sale, sku, quantity, reason, return_id, idempotency_key, prior_returns)
         return POSCommercialEvidenceRegistry.record_evidence(
             sale=sale, evidence=intent, evidence_id=return_id,
             idempotency_key=idempotency_key, recorded_by_principal_id=principal_id,
@@ -182,6 +186,19 @@ class POSWorkspaceService:
                       idempotency_key: str, session: Any) -> dict:
         sale = self._sale(tenant_id=tenant_id, principal_id=principal_id, location_id=location_id, sale_id=sale_id, session=session)
         intent = create_refund_intent(sale, amount_minor, basis, refund_intent_id, idempotency_key)
+        existing = POSCommercialEvidenceRegistry.get_by_idempotency(
+            tenant_id=tenant_id, location_id=location_id,
+            evidence_type="REFUND_INTENT", idempotency_key=idempotency_key,
+            collection=self._evidence, session=session,
+        )
+        if existing is not None:
+            if existing.get("sale_fingerprint") != sale.fingerprint or existing.get("evidence") != intent.to_dict() or existing.get("recorded_by_principal_id") != principal_id:
+                raise POSCommercialEvidenceConflict("POS_EVIDENCE_DIVERGENT_REPLAY")
+            return existing
+        POSCommercialCapacityRegistry.reserve_refund(
+            sale=sale, amount_minor=amount_minor,
+            idempotency_key=idempotency_key, collection=self._capacity, session=session,
+        )
         return POSCommercialEvidenceRegistry.record_evidence(
             sale=sale, evidence=intent, evidence_id=refund_intent_id,
             idempotency_key=idempotency_key, recorded_by_principal_id=principal_id,
