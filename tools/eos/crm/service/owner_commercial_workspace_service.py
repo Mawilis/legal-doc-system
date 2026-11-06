@@ -31,7 +31,7 @@ class OwnerCommercialWorkspaceError(RuntimeError):
 class OwnerCommercialWorkspaceService:
     """Compose active CRM entitlement with tenant-owned commercial work."""
 
-    __slots__ = ("_registry", "_subscriptions")
+    __slots__ = ("_registry", "_subscriptions", "_entitlement_history", "_entitlement_current")
 
     def __init__(
         self, registry: OwnerCommercialWorkRegistry, subscription_collection: Any,
