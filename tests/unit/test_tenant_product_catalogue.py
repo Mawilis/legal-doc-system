@@ -45,7 +45,7 @@ def test_exact_closed_product_catalogue() -> None:
         "OPERATIONS",
         "INTELLIGENCE",
     ]
-    assert len(products) == len(TenantProductId) == 4
+    assert len(products) == len(TenantProductId) == 6
 
 
 def test_legal_operations_descriptor_is_exact_and_non_financial() -> None:
@@ -61,6 +61,15 @@ def test_billing_descriptor_preserves_financial_execution_boundary() -> None:
     value = get_tenant_product(TenantProductId.BILLING)
     assert value.workspace_key == "BILLING_HUB"
     assert "no financial execution authority" in value.description.lower()
+
+
+def test_operations_and_intelligence_workspace_keys_are_exact_and_distinct() -> None:
+    operations = get_tenant_product(TenantProductId.OPERATIONS)
+    intelligence = get_tenant_product(TenantProductId.INTELLIGENCE)
+    assert operations.workspace_key == "OPERATIONS_DASHBOARD"
+    assert intelligence.workspace_key == "INTELLIGENCE_DASHBOARD"
+    assert operations.workspace_key != intelligence.workspace_key
+    assert operations.required_products == intelligence.required_products == ()
 
 
 def test_crm_and_hr_workspace_keys_are_exact() -> None:
