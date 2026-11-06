@@ -20,10 +20,10 @@ from tools.eos.saas.entitlement.commercial_offer_catalogue import (
 from tools.eos.saas.entitlement.product_catalogue import TenantProductId
 
 
-def test_catalogue_contains_four_standalone_offers_and_three_explicit_bundles() -> None:
+def test_catalogue_contains_six_standalone_offers_and_three_explicit_bundles() -> None:
     offers = list_commercial_offers()
-    assert len(offers) == 7
-    assert sum(item.kind is CommercialOfferKind.STANDALONE for item in offers) == 4
+    assert len(offers) == 9
+    assert sum(item.kind is CommercialOfferKind.STANDALONE for item in offers) == 6
     assert sum(item.kind is CommercialOfferKind.BUNDLE for item in offers) == 3
 
     standalone = {
