@@ -112,6 +112,7 @@ jobs:
         run: |
           python -m pytest -q \
             tests/unit/test_owner_commercial_work_authority.py \
+            tests/unit/test_owner_commercial_workspace_service.py \
             tests/unit/test_tenant_module_work_authority.py \
             tests/unit/test_tenant_module_work_item.py \
             tests/unit/test_tenant_module_work_registry.py \
