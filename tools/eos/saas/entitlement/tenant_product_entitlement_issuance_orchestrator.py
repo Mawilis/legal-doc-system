@@ -51,6 +51,10 @@ from tools.eos.auth.tenant_authorization_decision_evidence_registry import (
 )
 from tools.eos.saas.billing.subscription_registry import SubscriptionRegistry
 from tools.eos.saas.entitlement.product_catalogue import TenantProductId
+from tools.eos.saas.entitlement.product_commercial_feature import (
+    ProductCommercialFeatureMappingError,
+    get_product_commercial_feature,
+)
 from tools.eos.saas.entitlement.tenant_product_entitlement_composer import (
     TenantProductEntitlementComposerError,
     TenantProductEntitlementCompositionResult,
@@ -195,10 +199,6 @@ def _product(product_id: TenantProductId | str) -> TenantProductId:
             error,
         )
     try:
-        from tools.eos.saas.entitlement.product_commercial_feature import (
-            get_product_commercial_feature,
-            ProductCommercialFeatureMappingError,
-        )
         get_product_commercial_feature(product)
     except ProductCommercialFeatureMappingError as error:
         _raise(
