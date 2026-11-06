@@ -59,6 +59,13 @@ def test_static_role_grants_are_narrow_and_nonpossessory():
         "tenant:commercial_agreement:draft:create",
         "tenant:commercial_agreement:execute",
         "tenant:commercial_agreement:activate",
+        "pos:location_assignment:manage",
+        "pos:sale:read",
+        "pos:sale:create",
+        "pos:tender:create",
+        "pos:cash:record",
+        "pos:return:create",
+        "pos:refund:create",
     ]
     assert get_roles_granting_permission("crm:work_item:read") == ("AUDITOR", "ENTERPRISE_ADMIN", "TENANT_OWNER")
     assert get_roles_granting_permission("crm:work_item:create") == ("ENTERPRISE_ADMIN", "TENANT_OWNER")

@@ -121,7 +121,7 @@ def record_evidence(*, sale: POSSale, evidence: Any, evidence_id: str, idempoten
             return {**expected, "fingerprint": fingerprint}
         record = {**base_record, "recorded_at": datetime.now(timezone.utc).isoformat()}
         record["fingerprint"] = _canonical_digest(record)
-        collection.insert_one(record, session=tx)
+        collection.insert_one(dict(record), session=tx)
     except DuplicateKeyError as error:
         raise POSCommercialEvidenceConflict("POS_EVIDENCE_REPLAY_RACE_RETRY_TRANSACTION") from error
     except PyMongoError as error:

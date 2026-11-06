@@ -76,6 +76,7 @@ _WORKSPACE_BY_BUSINESS_ROLE = MappingProxyType({
     "tenant_legal_client": "CLIENT_PORTAL",
     "tenant_sheriff": "PROCESS_SERVICE",
     "tenant_deputy": "PROCESS_SERVICE",
+    "tenant_pos_operator": "POINT_OF_SALE",
 })
 
 

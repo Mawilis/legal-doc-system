@@ -98,7 +98,7 @@ def _reserve(*, sale: POSSale, capacity_type: str, capacity_key: str,
     record = {**payload, "fingerprint": _fingerprint(payload)}
     try:
         if current is None:
-            collection.insert_one(record, session=tx)
+            collection.insert_one(dict(record), session=tx)
         else:
             result = collection.replace_one(
                 {**identity, "revision": current["revision"], "fingerprint": current["fingerprint"]},
