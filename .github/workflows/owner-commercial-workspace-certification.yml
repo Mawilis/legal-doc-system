@@ -12,6 +12,10 @@ on:
       - "tools/eos/auth/roles.py"
       - "tools/eos/auth/tenant_authority_policy.py"
       - "tools/eos/auth/tenant_authorization.py"
+      - "tools/eos/workspaces/**"
+      - "tools/eos/api/tenant_module_workspace_router.py"
+      - "tests/unit/test_tenant_module_*.py"
+      - "tests/integration/test_tenant_module_*.py"
       - "tests/unit/test_owner_commercial_*.py"
       - "tests/integration/test_owner_commercial_work_registry_real_mongo.py"
       - ".github/workflows/owner-commercial-workspace-certification.yml"
@@ -98,16 +102,27 @@ jobs:
             tools/eos/auth/permission_namespace.py \
             tools/eos/auth/roles.py \
             tools/eos/auth/tenant_authority_policy.py \
-            tools/eos/auth/tenant_authorization.py
+            tools/eos/auth/tenant_authorization.py \
+            tools/eos/workspaces/domain/tenant_module_work_item.py \
+            tools/eos/workspaces/persistence/tenant_module_work_registry.py \
+            tools/eos/workspaces/service/tenant_module_workspace_service.py \
+            tools/eos/api/tenant_module_workspace_router.py
 
       - name: Run focused unit and real-Mongo tests
         run: |
           python -m pytest -q \
             tests/unit/test_owner_commercial_work_authority.py \
+            tests/unit/test_tenant_module_work_authority.py \
+            tests/unit/test_tenant_module_work_item.py \
+            tests/unit/test_tenant_module_work_registry.py \
+            tests/unit/test_tenant_module_workspace_service.py \
+            tests/unit/test_tenant_module_workspace_server_mount.py \
             tests/unit/test_owner_commercial_work_item.py \
             tests/unit/test_owner_commercial_work_registry.py \
             tests/unit/test_owner_commercial_workspace_server_mount.py \
             tests/integration/test_owner_commercial_work_registry_real_mongo.py \
+            tests/integration/test_tenant_module_work_registry_real_mongo.py \
+            tests/integration/test_tenant_module_workspace_real_mongo.py \
             tests/unit/test_permission_namespace.py \
             tests/unit/test_roles.py \
             tests/unit/test_crm_lead_authority_substrate.py
