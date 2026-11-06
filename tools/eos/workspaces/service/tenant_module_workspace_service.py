@@ -62,7 +62,8 @@ class TenantModuleWorkspaceService:
         except (TenantProductEntitlementRegistryError, ValueError, TypeError) as error:
             raise TenantModuleWorkspaceError("MODULE_WORK_ENTITLEMENT_UNAVAILABLE") from error
         if (
-            descriptor.product_id is not self._product_id
+            entitlement is None
+            or descriptor.product_id is not self._product_id
             or entitlement.tenant_id != tenant_id
             or entitlement.entitlement_id != entitlement_id
             or entitlement.product_id is not self._product_id
