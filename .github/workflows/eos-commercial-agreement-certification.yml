@@ -9,6 +9,8 @@ on:
       - "tools/eos/saas/entitlement/commercial_agreement_registry.py"
       - "tools/eos/saas/entitlement/commercial_bundle_readiness.py"
       - "tests/unit/test_commercial_bundle_readiness.py"
+      - "tests/unit/test_roles.py"
+      - "tests/unit/test_permission_namespace.py"
       - "tools/eos/saas/entitlement/commercial_offer_catalogue.py"
       - "tools/eos/api/commercial_agreement_router.py"
       - "tools/eos/api/server.py"
@@ -85,7 +87,7 @@ jobs:
           python -m compileall -q tools/eos/saas/entitlement/commercial_agreement.py tools/eos/saas/entitlement/commercial_agreement_registry.py tools/eos/saas/entitlement/commercial_bundle_readiness.py tools/eos/saas/entitlement/commercial_offer_catalogue.py tools/eos/api/commercial_agreement_router.py tools/eos/api/server.py tools/eos/auth/permission_namespace.py tools/eos/auth/tenant_authority_policy.py tools/eos/auth/tenant_authorization.py tools/eos/auth/roles.py
       - name: Run commercial agreement domain and offer tests
         run: |
-          python -m pytest -q tests/unit/test_commercial_agreement.py tests/unit/test_commercial_offer_catalogue.py tests/unit/test_commercial_agreement_http_authority.py tests/unit/test_commercial_bundle_readiness.py
+          python -m pytest -q tests/unit/test_commercial_agreement.py tests/unit/test_commercial_offer_catalogue.py tests/unit/test_commercial_agreement_http_authority.py tests/unit/test_commercial_bundle_readiness.py tests/unit/test_permission_namespace.py tests/unit/test_roles.py
       - name: Run commercial agreement real replica-set tests
         run: |
           python -m pytest -q tests/integration/test_commercial_agreement_registry_real_mongo.py
