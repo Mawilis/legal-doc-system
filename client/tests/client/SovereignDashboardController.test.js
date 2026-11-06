@@ -64,7 +64,7 @@ describe('SovereignDashboardController EOS workspace contract', () => {
     };
     expect(resolveDashboardKey({ user, manualDashboardKey: 'LEGAL_DASHBOARD' }))
       .toBe(DASHBOARD_KEYS.LEGAL);
-    for (const request of ['CRM_DASHBOARD', 'FOUNDER_DASHBOARD']) {
+    for (const request of ['CRM_DASHBOARD', 'BILLING_HUB', 'HR_DASHBOARD', 'OPERATIONS_DASHBOARD', 'INTELLIGENCE_DASHBOARD', 'POS_DASHBOARD', 'FOUNDER_DASHBOARD']) {
       expect(resolveDashboardKey({ user, manualDashboardKey: request }))
         .toBe(DASHBOARD_KEYS.EXECUTIVE);
     }
@@ -133,21 +133,30 @@ describe('SovereignDashboardController EOS workspace contract', () => {
     expect(resolveDashboardRequestSignal('OPERATIONS')).toBe(DASHBOARD_KEYS.COO);
   });
 
-  it('mounts Operations, Intelligence and POS only from exact server-issued module/product/workspace evidence', () => {
+  it('mounts every non-Legal product only from exact server-issued module/product/workspace evidence', () => {
     const manifest = [
+      { moduleId: 'BILLING', productId: 'BILLING', workspaceKey: 'BILLING_HUB' },
+      { moduleId: 'CRM', productId: 'CRM', workspaceKey: 'CRM_DASHBOARD' },
+      { moduleId: 'PEOPLE', productId: 'HR', workspaceKey: 'HR_DASHBOARD' },
       { moduleId: 'OPERATIONS', productId: 'OPERATIONS', workspaceKey: 'OPERATIONS_DASHBOARD' },
       { moduleId: 'INTELLIGENCE', productId: 'INTELLIGENCE', workspaceKey: 'INTELLIGENCE_DASHBOARD' },
       { moduleId: 'POS', productId: 'POS', workspaceKey: 'POS_DASHBOARD' },
     ];
+    expect(hasTenantModuleManifestAdmission(manifest, DASHBOARD_KEYS.FINANCE)).toBe(true);
+    expect(hasTenantModuleManifestAdmission(manifest, DASHBOARD_KEYS.CRM)).toBe(true);
+    expect(hasTenantModuleManifestAdmission(manifest, DASHBOARD_KEYS.HR)).toBe(true);
     expect(hasTenantModuleManifestAdmission(manifest, DASHBOARD_KEYS.OPERATIONS)).toBe(true);
     expect(hasTenantModuleManifestAdmission(manifest, DASHBOARD_KEYS.INTELLIGENCE)).toBe(true);
     expect(hasTenantModuleManifestAdmission(manifest, DASHBOARD_KEYS.POS)).toBe(true);
+    expect(hasTenantModuleManifestAdmission([], DASHBOARD_KEYS.FINANCE)).toBe(false);
+    expect(hasTenantModuleManifestAdmission([], DASHBOARD_KEYS.CRM)).toBe(false);
+    expect(hasTenantModuleManifestAdmission([], DASHBOARD_KEYS.HR)).toBe(false);
     expect(hasTenantModuleManifestAdmission([], DASHBOARD_KEYS.OPERATIONS)).toBe(false);
     expect(hasTenantModuleManifestAdmission([], DASHBOARD_KEYS.POS)).toBe(false);
     expect(hasTenantModuleManifestAdmission([
       { moduleId: 'OPERATIONS', productId: 'CRM', workspaceKey: 'OPERATIONS_DASHBOARD' },
     ], DASHBOARD_KEYS.OPERATIONS)).toBe(false);
-    expect(hasTenantModuleManifestAdmission(manifest, DASHBOARD_KEYS.CRM)).toBe(false);
+    expect(hasTenantModuleManifestAdmission(manifest, DASHBOARD_KEYS.CRM)).toBe(true);
   });
 
   it('mounts System Services only from a READY EOS capability projection', () => {
