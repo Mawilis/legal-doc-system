@@ -3,6 +3,8 @@ from __future__ import annotations
 
 import os
 import uuid
+from concurrent.futures import ThreadPoolExecutor
+from threading import Barrier
 
 import pytest
 from pymongo import MongoClient
@@ -93,3 +95,67 @@ def test_replica_set_enforces_cumulative_refund_amount(runtime):
         ))
     current = collection.find_one({"tenant_id": sale.tenant_id, "sale_id": sale.sale_id, "capacity_type": "REFUND_AMOUNT"})
     assert current["reserved_amount"] == sale.total_minor and current["revision"] == 1
+
+
+
+def _concurrent_capacity_attempts(client, reserve, count=3):
+    barrier = Barrier(count)
+
+    def attempt(index):
+        barrier.wait(timeout=10)
+        for retry in range(5):
+            try:
+                _transaction(client, lambda tx: reserve(index, tx))
+                return "reserved"
+            except POSCommercialCapacityExceeded:
+                return "exceeded"
+            except Exception as error:
+                if type(error).__name__ not in {"POSCommercialCapacityConflict", "DuplicateKeyError"}:
+                    raise
+        return "conflict"
+
+    with ThreadPoolExecutor(max_workers=count) as executor:
+        return list(executor.map(attempt, range(count)))
+
+
+def test_replica_set_concurrent_return_reservations_never_exceed_sold_quantity(runtime):
+    client, collection = runtime
+    sale = _sale()
+    outcomes = _concurrent_capacity_attempts(
+        client,
+        lambda index, tx: POSCommercialCapacityRegistry.reserve_return(
+            sale=sale, sku="SKU-1", quantity=1,
+            idempotency_key=f"concurrent-return-{index}",
+            collection=collection, session=tx,
+        ),
+    )
+    assert outcomes.count("reserved") == 2
+    assert outcomes.count("exceeded") == 1
+    assert "conflict" not in outcomes
+    current = collection.find_one({
+        "tenant_id": sale.tenant_id, "location_id": sale.location_id,
+        "sale_id": sale.sale_id, "capacity_type": "RETURN_QUANTITY",
+    })
+    assert current["reserved_amount"] == 2
+    assert current["reserved_amount"] <= current["maximum_amount"]
+
+
+def test_replica_set_concurrent_refund_reservations_never_exceed_sale_total(runtime):
+    client, collection = runtime
+    sale = _sale()
+    outcomes = _concurrent_capacity_attempts(
+        client,
+        lambda index, tx: POSCommercialCapacityRegistry.reserve_refund(
+            sale=sale, amount_minor=100, idempotency_key=f"concurrent-refund-{index}",
+            collection=collection, session=tx,
+        ),
+    )
+    assert outcomes.count("reserved") == 2
+    assert outcomes.count("exceeded") == 1
+    assert "conflict" not in outcomes
+    current = collection.find_one({
+        "tenant_id": sale.tenant_id, "location_id": sale.location_id,
+        "sale_id": sale.sale_id, "capacity_type": "REFUND_AMOUNT",
+    })
+    assert current["reserved_amount"] == sale.total_minor
+    assert current["reserved_amount"] <= current["maximum_amount"]
