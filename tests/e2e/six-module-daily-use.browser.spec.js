@@ -55,9 +55,8 @@ async function openAuthenticated(browser, actorKey, viewport = { width: 1440, he
 }
 
 async function openModuleNavigation(page) {
-  // The Executive workspace exposes its exact server-entitled module manifest
-  // in the controller navigation; Legal specialists do not receive this rail.
-  await expect(page.getByRole('navigation', { name: 'Available WILSY OS products' })).toBeVisible();
+  // Executive exposes a single Legal entry. The shared product navigation
+  // becomes available after the Legal workspace mounts its authenticated chrome.
   await expect(page.locator('[data-wilsy-module-entry="LEGAL_OS"]')).toBeVisible();
   const manifestPromise = page.waitForResponse(response => (
     new URL(response.url()).pathname === '/api/auth/module-manifest'
@@ -70,9 +69,10 @@ async function openModuleNavigation(page) {
   expect(payload.workspace?.tenantId).toBe(state.tenant_id);
   const actual = payload.workspace?.modules?.map(module => module.moduleId) || [];
   for (const moduleId of moduleIds) expect(actual).toContain(moduleId);
+  const productNavigation = page.getByRole('navigation', { name: 'Available WILSY OS products' });
+  await expect(productNavigation).toBeVisible();
   for (const label of ['Legal OS', 'Billing', 'CRM', 'People', 'Operations', 'Intelligence', 'Point of Sale']) {
-    await expect(page.getByRole('navigation', { name: 'Available WILSY OS products' })
-      .getByRole('button', { name: label, exact: true })).toBeVisible();
+    await expect(productNavigation.getByRole('button', { name: label, exact: true })).toBeVisible();
   }
   return payload.workspace.modules;
 }
