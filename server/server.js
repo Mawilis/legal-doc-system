@@ -375,9 +375,9 @@ function createApp() {
       allowed: (method, suffix) => {
         const pathOnly = String(suffix || '/').split('?', 1)[0];
         return (
-          (method === 'GET' && /^\\/(operations|intelligence)\\/workspace$/.test(pathOnly)) ||
-          (method === 'POST' && /^\\/(operations|intelligence)\\/workspace\\/work-items$/.test(pathOnly)) ||
-          (method === 'POST' && /^\\/(operations|intelligence)\\/workspace\\/work-items\\/[^/]+\\/complete$/.test(pathOnly))
+          (method === 'GET' && /^\/(operations|intelligence)\/workspace$/.test(pathOnly)) ||
+          (method === 'POST' && /^\/(operations|intelligence)\/workspace\/work-items$/.test(pathOnly)) ||
+          (method === 'POST' && /^\/(operations|intelligence)\/workspace\/work-items\/[^/]+\/complete$/.test(pathOnly))
         );
       },
     })
