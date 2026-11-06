@@ -359,15 +359,15 @@ const DEFAULT_FINANCIAL_KPIS = Object.freeze({
 });
 
 const EXECUTIVE_OPERATING_SOURCE_PLAYBOOK = Object.freeze([
-  { key: 'hr', label: 'HR / People', lane: 'People', functionKey: 'hr', loader: (tenantId) => hrService.getEmployees(tenantId, { limit: 5, offset: 0 }) },
+  { key: 'hr', label: 'HR / People', lane: 'People', functionKey: 'hr', loader: (tenantId) => hrService.getEmployees(tenantId, { limit: 25, offset: 0 }) },
   { key: 'crm', label: 'CRM / Customer Graph', lane: 'Sales', functionKey: 'crm', loader: (tenantId) => crmService.getCrmSummary(tenantId) },
-  { key: 'sales', label: 'Sales Pipeline', lane: 'Revenue', functionKey: 'sales', loader: (tenantId) => salesService.getPipeline(tenantId, { limit: 5, offset: 0 }) },
-  { key: 'customerSuccess', label: 'Customer Success', lane: 'Customer', functionKey: 'customer_success', loader: (tenantId) => customerSuccessService.getTickets(tenantId, { limit: 5, offset: 0 }) },
-  { key: 'product', label: 'Product / Roadmap', lane: 'Delivery', functionKey: 'product', loader: (tenantId) => productService.getProductMetrics(tenantId, { limit: 5, offset: 0 }) },
-  { key: 'marketing', label: 'Marketing Demand', lane: 'Growth', functionKey: 'marketing', loader: (tenantId) => marketingService.getAnalytics(tenantId, { limit: 5, offset: 0 }) },
-  { key: 'procurement', label: 'Procurement / Supply', lane: 'Supply', functionKey: 'procurement', loader: (tenantId) => procurementService.getPurchaseOrders(tenantId, { limit: 5, offset: 0 }) },
-  { key: 'security', label: 'Security / Risk', lane: 'Risk', functionKey: 'security', loader: (tenantId) => securityService.getIncidents(tenantId, { limit: 5, offset: 0 }) },
-  { key: 'it', label: 'IT / Reliability', lane: 'Technology', functionKey: 'it', loader: (tenantId) => itService.getIncidents(tenantId, { limit: 5, offset: 0 }) }
+  { key: 'sales', label: 'Sales Pipeline', lane: 'Revenue', functionKey: 'sales', loader: (tenantId) => salesService.getPipeline(tenantId, { limit: 25, offset: 0 }) },
+  { key: 'customerSuccess', label: 'Customer Success', lane: 'Customer', functionKey: 'customer_success', loader: (tenantId) => customerSuccessService.getTickets(tenantId, { limit: 25, offset: 0 }) },
+  { key: 'product', label: 'Product / Roadmap', lane: 'Delivery', functionKey: 'product', loader: (tenantId) => productService.getProductMetrics(tenantId, { limit: 25, offset: 0 }) },
+  { key: 'marketing', label: 'Marketing Demand', lane: 'Growth', functionKey: 'marketing', loader: (tenantId) => marketingService.getAnalytics(tenantId, { limit: 25, offset: 0 }) },
+  { key: 'procurement', label: 'Procurement / Supply', lane: 'Supply', functionKey: 'procurement', loader: (tenantId) => procurementService.getPurchaseOrders(tenantId, { limit: 25, offset: 0 }) },
+  { key: 'security', label: 'Security / Risk', lane: 'Risk', functionKey: 'security', loader: (tenantId) => securityService.getIncidents(tenantId, { limit: 25, offset: 0 }) },
+  { key: 'it', label: 'IT / Reliability', lane: 'Technology', functionKey: 'it', loader: (tenantId) => itService.getIncidents(tenantId, { limit: 25, offset: 0 }) }
 ]);
 
 
