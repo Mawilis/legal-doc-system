@@ -488,6 +488,13 @@ def test_authenticated_execution_activation_and_entitlement_readback_real_mongo(
         )
         assert activated.status_code == 200, activated.text
         assert activated.json()["outcome"] == "ACTIVATED"
+        activation_replay = http.post(
+            "/api/commercial/agreements/agreement-full-journey/activate",
+            headers=headers,
+            json={"execution_evidence_reference": "evidence:trusted-test-provider:001"},
+        )
+        assert activation_replay.status_code == 200, activation_replay.text
+        assert activation_replay.json()["outcome"] == "IDEMPOTENT_REPLAY"
         readback = http.get(
             "/api/commercial/agreements/agreement-full-journey/entitlements",
             headers=headers,
@@ -504,3 +511,44 @@ def test_authenticated_execution_activation_and_entitlement_readback_real_mongo(
     assert database["commercial_agreement_execution_verification_receipts"].count_documents(
         {"tenant_id": tenant, "agreement_id": "agreement-full-journey"}
     ) == 1
+
+
+
+def test_execution_receipt_and_lifecycle_transition_abort_atomically_on_receipt_failure(
+    mongo_context: dict[str, Any], monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    tenant, principal = f"tenant-{uuid4().hex}", f"principal-{uuid4().hex}"
+    _seed_actor(
+        mongo_context, tenant=tenant, principal=principal,
+        business_role="tenant_owner", grant_role="ENTERPRISE_ADMIN",
+    )
+    trusted_verifier = _TrustedExecutionVerifier(principal)
+    monkeypatch.setattr(
+        agreement_api, "_execution_verifier",
+        lambda _request: trusted_verifier,
+    )
+    def fail_receipt_payload(*_args, **_kwargs):
+        raise RuntimeError("injected verification receipt persistence failure")
+    monkeypatch.setattr(agreement_api, "_execution_verification_payload", fail_receipt_payload)
+    headers = {"X-Tenant-ID": tenant}
+    with _client(mongo_context, monkeypatch, tenant=tenant, principal=principal) as http:
+        created = http.post(
+            "/api/commercial/agreements", headers=headers,
+            json=_draft_payload("agreement-execution-atomicity"),
+        )
+        assert created.status_code == 201, created.text
+        failed = http.post(
+            "/api/commercial/agreements/agreement-execution-atomicity/execute",
+            headers=headers,
+            json={"execution_evidence_reference": "evidence:trusted-test-provider:001"},
+        )
+        current = http.get(
+            "/api/commercial/agreements/agreement-execution-atomicity",
+            headers=headers,
+        )
+    assert failed.status_code == 503
+    assert current.status_code == 200, current.text
+    assert current.json()["agreement"]["lifecycle_state"] == "DRAFT"
+    assert mongo_context["database"]["commercial_agreement_execution_verification_receipts"].count_documents(
+        {"tenant_id": tenant, "agreement_id": "agreement-execution-atomicity"}
+    ) == 0
