@@ -12,7 +12,7 @@ from typing import Any
 from pymongo import ASCENDING
 from pymongo.errors import DuplicateKeyError, PyMongoError
 
-from tools.eos.crm.domain.owner_commercial_work_item import (
+from tools.eos.workspaces.domain.tenant_module_work_item import (
     TenantModuleWorkItem,
     ModuleWorkItemError, ModuleWorkStatus,
     build_daily_queue,
