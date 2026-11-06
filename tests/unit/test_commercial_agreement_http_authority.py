@@ -71,6 +71,12 @@ def test_owner_admin_auditor_and_specialist_business_role_boundaries():
     assert permission_for_business_role_operation("commercial_agreement_draft_create") == (
         "tenant:commercial_agreement:draft:create"
     )
+    assert permission_for_business_role_operation("commercial_agreement_execute") == (
+        "tenant:commercial_agreement:execute"
+    )
+    assert permission_for_business_role_operation("commercial_agreement_activate") == (
+        "tenant:commercial_agreement:activate"
+    )
     assert tenant_role_operation_eligibility("tenant_owner", "commercial_agreement_read") == ELIGIBLE
     assert tenant_role_operation_eligibility("tenant_owner", "commercial_agreement_draft_create") == ELIGIBLE
     assert tenant_role_operation_eligibility("tenant_admin", "commercial_agreement_draft_create") == ELIGIBLE
@@ -81,10 +87,17 @@ def test_owner_admin_auditor_and_specialist_business_role_boundaries():
     assert tenant_role_operation_eligibility("tenant_auditor", "commercial_agreement_read") == ELIGIBLE
     assert tenant_role_operation_eligibility("tenant_auditor", "commercial_agreement_draft_create") == DENY
     assert tenant_role_operation_eligibility("tenant_legal_partner", "commercial_agreement_read") == DENY
+    assert tenant_role_operation_eligibility("tenant_legal_partner", "commercial_agreement_execute") == DENY
+    assert tenant_role_operation_eligibility("tenant_legal_partner", "commercial_agreement_activate") == DENY
     assert "tenant:commercial_agreement:read" in ROLE_PERMISSIONS_MAP["TENANT_OWNER"]
     assert "tenant:commercial_agreement:draft:create" in ROLE_PERMISSIONS_MAP["TENANT_OWNER"]
     assert "tenant:commercial_agreement:read" in ROLE_PERMISSIONS_MAP["AUDITOR"]
     assert "tenant:commercial_agreement:draft:create" not in ROLE_PERMISSIONS_MAP["AUDITOR"]
+    for role in ("TENANT_OWNER", "ENTERPRISE_ADMIN"):
+        assert "tenant:commercial_agreement:execute" in ROLE_PERMISSIONS_MAP[role]
+        assert "tenant:commercial_agreement:activate" in ROLE_PERMISSIONS_MAP[role]
+    assert "tenant:commercial_agreement:execute" not in ROLE_PERMISSIONS_MAP["LEGAL_PARTNER"]
+    assert "tenant:commercial_agreement:activate" not in ROLE_PERMISSIONS_MAP["LEGAL_PARTNER"]
 
 
 
