@@ -60,7 +60,7 @@ describe('authenticated My Work workspace', () => {
     expect(await screen.findByRole('heading', { name: 'My Work' })).toBeTruthy();
     expect(screen.getByText('Prepare daily operations report')).toBeTruthy();
     expect(screen.getByText('Review matter evidence')).toBeTruthy();
-    expect(screen.getByText('Overdue')).toBeTruthy();
+    expect(screen.getAllByText('Overdue').length).toBeGreaterThan(0);
     expect(api.get).toHaveBeenCalledWith('/my-work', { forceNetworkRetry: true });
   });
 
@@ -83,7 +83,7 @@ describe('authenticated My Work workspace', () => {
   it('does not invent a generic Legal completion command', async () => {
     renderWorkspace();
     expect(await screen.findByText('Review matter evidence')).toBeTruthy();
-    expect(screen.getByText(/Legal completion requires its own evidence-backed Legal workflow/i)).toBeTruthy();
+    expect(screen.getByText(/Legal completion must be recorded in the owning Legal workflow/i)).toBeTruthy();
     expect(api.post).not.toHaveBeenCalled();
   });
 
