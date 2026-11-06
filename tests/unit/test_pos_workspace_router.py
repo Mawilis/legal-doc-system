@@ -58,7 +58,7 @@ def test_pos_permissions_are_exact_and_location_assignment_is_not_inherited():
         "pos:cash:record": "pos_cash_record",
         "pos:return:create": "pos_return_create",
         "pos:refund:create": "pos_refund_create",
-        "pos:payment:authorize": "pos_payment_authorize",
+        "pos:movement:authorize": "pos_movement_authorize",
     }
     for permission, operation in permissions.items():
         metadata = permission_metadata(permission)
@@ -76,10 +76,10 @@ def test_pos_permissions_are_exact_and_location_assignment_is_not_inherited():
     assert tenant_role_operation_eligibility("tenant_pos_operator", "pos_sale_create") == "ELIGIBLE"
     assert tenant_role_operation_eligibility("tenant_pos_operator", "pos_location_assignment_manage") == "DENY"
     assert tenant_role_operation_eligibility("tenant_auditor", "pos_sale_create") == "DENY"
-    assert "TENANT_OWNER" in get_roles_granting_permission("pos:payment:authorize")
-    assert "POS_OPERATOR" not in get_roles_granting_permission("pos:payment:authorize")
-    assert tenant_role_operation_eligibility("tenant_owner", "pos_payment_authorize") == "ELIGIBLE"
-    assert tenant_role_operation_eligibility("tenant_pos_operator", "pos_payment_authorize") == "DENY"
+    assert "TENANT_OWNER" in get_roles_granting_permission("pos:financial_execution:authorize")
+    assert "POS_OPERATOR" not in get_roles_granting_permission("pos:financial_execution:authorize")
+    assert tenant_role_operation_eligibility("tenant_owner", "pos_financial_execution_authorize") == "ELIGIBLE"
+    assert tenant_role_operation_eligibility("tenant_pos_operator", "pos_financial_execution_authorize") == "DENY"
 
 
 

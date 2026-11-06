@@ -82,7 +82,12 @@ from tools.eos.saas.entitlement.tenant_product_entitlement_registry import (
     HISTORY_COLLECTION as ENTITLEMENT_HISTORY,
 )
 
-router = APIRouter(prefix="/pos", tags=["Point of Sale"])
+def require_pos_workspace_indexes_ready(request: Request) -> None:
+    if getattr(request.app.state, "pos_workspace_indexes_ready", False) is not True:
+        raise HTTPException(status_code=503, detail="POS_WORKSPACE_INDEXES_NOT_READY")
+
+
+router = APIRouter(prefix="/pos", tags=["Point of Sale"], dependencies=[Depends(require_pos_workspace_indexes_ready)])
 
 
 class POSLocationAssignmentRequest(BaseModel):
@@ -150,7 +155,7 @@ _TENDER = RequireTenantAuthorization("pos:tender:create", "pos_tender_create")
 _CASH = RequireTenantAuthorization("pos:cash:record", "pos_cash_record")
 _RETURN = RequireTenantAuthorization("pos:return:create", "pos_return_create")
 _REFUND = RequireTenantAuthorization("pos:refund:create", "pos_refund_create")
-_EXECUTE = RequireTenantAuthorization("pos:payment:authorize", "pos_payment_authorize")
+_EXECUTE = RequireTenantAuthorization("pos:movement:authorize", "pos_movement_authorize")
 
 
 def _collection(database: Any, name: str):
@@ -183,14 +188,6 @@ def _prepare(database: Any) -> dict[str, Any]:
         "entitlement_history": _collection(database, ENTITLEMENT_HISTORY),
         "entitlement_current": _collection(database, ENTITLEMENT_CURRENT),
     }
-
-
-
-def require_pos_workspace_indexes_ready(request: Request) -> None:
-    """Fail closed until POS authority/evidence indexes are established."""
-    if not bool(getattr(request.app.state, "pos_workspace_indexes_ready", False)):
-        raise HTTPException(status_code=503, detail="POS_WORKSPACE_INDEXES_NOT_READY")
-
 
 
 def _service(collections: dict[str, Any]) -> POSWorkspaceService:
@@ -559,4 +556,9 @@ async def execute_refund_intent(
     return {"provider_invoked": result.provider_invoked, "execution_truth": result.execution_truth.to_dict()}
 
 
-__all__ = ["router"]
+def ensure_pos_workspace_indexes(database: Any) -> None:
+    """Provision POS registries and unique indexes during API startup."""
+    _prepare(database)
+
+
+__all__ = ["router", "require_pos_workspace_indexes_ready", "ensure_pos_workspace_indexes"]

@@ -98,7 +98,7 @@ from .tenant_router import tenant_router
 from .legal_operations_router import router as legal_operations_router
 from .owner_commercial_workspace_router import router as owner_commercial_workspace_router
 from .tenant_module_workspace_router import router as tenant_module_workspace_router
-from .pos_workspace_router import router as pos_workspace_router
+from .pos_workspace_router import router as pos_workspace_router, ensure_pos_workspace_indexes
 from .commercial_agreement_router import router as commercial_agreement_router
 from tools.eos.saas.entitlement.commercial_agreement_execution_verifier import CommercialAgreementExecutionVerifier
 from .legal_operations_command_router import router as legal_operations_command_router
@@ -519,6 +519,7 @@ class WilsyAPIServer:
             app.state.system_services_response_decision_service = None
             app.state.system_services_response_executor = None
             app.state.system_services_response_permission_assignments = None
+            app.state.pos_workspace_indexes_ready = False
             app.state.telemetry_indexes_ready = False
             app.state.electrum_completion_indexes_ready = False
             app.state.electrum_settlement_worker_enabled = False
@@ -533,6 +534,12 @@ class WilsyAPIServer:
             if database is None:
                 return
             if database is not None:
+                try:
+                    ensure_pos_workspace_indexes(database)
+                    app.state.pos_workspace_indexes_ready = True
+                except Exception as error:
+                    app.state.pos_workspace_indexes_ready = False
+                    logger.error("[POS_WORKSPACE] Canonical index bootstrap unavailable: %s", type(error).__name__)
                 try:
                     ensure_electrum_payshap_completion_indexes(
                         inbox_collection=database["electrum_payshap_completion_inbox"],
