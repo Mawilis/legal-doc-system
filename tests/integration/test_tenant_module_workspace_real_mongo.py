@@ -224,6 +224,9 @@ def test_authenticated_module_http_commands_enforce_entitlement_and_isolated_col
         assert operations_queue.status_code == intelligence_queue.status_code == 200
         assert operations_queue.json()["product_id"] == "OPERATIONS"
         assert operations_queue.json()["workspace_key"] == "OPERATIONS_DASHBOARD"
+        assert operations_queue.json()["entitlement_state"] == "ACTIVE"
+        assert operations_queue.json()["entitlement_revision"] == 1
+        assert len(operations_queue.json()["entitlement_fingerprint"]) == 128
         assert [item["title"] for item in operations_queue.json()["items"]] == ["Approve operating cadence"]
         assert intelligence_queue.json()["product_id"] == "INTELLIGENCE"
         assert intelligence_queue.json()["workspace_key"] == "INTELLIGENCE_DASHBOARD"
