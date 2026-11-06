@@ -150,15 +150,37 @@ def revoke(*, tenant_id: str, location_id: str, principal_id: str, assignment_id
     return persisted
 
 
+def list_active(tenant_id: str, principal_id: str, current: Any, *, session: Any) -> tuple[POSLocationAssignment, ...]:
+    """Return only the authenticated principal's ACTIVE assignments for one tenant."""
+    tx = _transaction(session)
+    try:
+        cursor = current.find(
+            {"tenant_id": tenant_id, "principal_id": principal_id,
+             "status": POSLocationAssignmentStatus.ACTIVE.value},
+            session=tx,
+        ).sort([("location_id", 1)])
+        values = tuple(_hydrate(row) for row in cursor)
+    except (AttributeError, PyMongoError) as error:
+        raise POSLocationAssignmentUnavailable("POS_LOCATION_LIST_UNAVAILABLE") from error
+    if any(
+        item.tenant_id != tenant_id or item.principal_id != principal_id
+        or item.status is not POSLocationAssignmentStatus.ACTIVE
+        for item in values
+    ):
+        raise POSLocationAssignmentRegistryError("POS_LOCATION_LIST_SCOPE_INVALID")
+    return values
+
+
 class POSLocationAssignmentRegistry:
     ensure_indexes = staticmethod(ensure_indexes)
     issue = staticmethod(issue)
     resolve = staticmethod(resolve)
+    list_active = staticmethod(list_active)
     revoke = staticmethod(revoke)
 
 
 __all__ = [
     "CURRENT_COLLECTION", "HISTORY_COLLECTION", "POSLocationAssignmentConflict",
-    "POSLocationAssignmentNotFound", "POSLocationAssignmentRegistry",
+    "POSLocationAssignmentNotFound", "POSLocationAssignmentRegistry", "list_active",
     "POSLocationAssignmentRegistryError", "POSLocationAssignmentUnavailable",
 ]
