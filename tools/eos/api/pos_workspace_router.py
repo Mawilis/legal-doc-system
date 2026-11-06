@@ -22,6 +22,11 @@ from pymongo.write_concern import WriteConcern
 from tools.eos.api.tenant_authorization_http import (
     RequireTenantAuthorization, TenantAuthorizationContext,
 )
+from tools.eos.auth.authentication import get_principal_authority_repository
+from tools.eos.auth.principal_status import PrincipalStatus
+from tools.eos.auth.principal_authority_repository import (
+    PrincipalAuthorityNotFoundError, PrincipalAuthorityRepositoryError,
+)
 from tools.eos.auth.tenant_membership import TenantMembershipStatus
 from tools.eos.auth.tenant_membership_repository import (
     TenantMembershipNotFoundError, TenantMembershipRepository,
@@ -214,11 +219,18 @@ async def assign_location(
     body: POSLocationAssignmentRequest,
     idempotency_key: str = Header(alias="Idempotency-Key", min_length=1, max_length=160),
     context: TenantAuthorizationContext = Depends(_ASSIGN),
+    principal_repository: Any = Depends(get_principal_authority_repository),
 ):
-    """Grant one explicit location assignment to another active tenant member."""
-    if body.principal_id == context.identity.identity_id:
-        raise HTTPException(status_code=403, detail="POS_LOCATION_SELF_ASSIGNMENT_PROHIBITED")
+    """Grant one explicit location assignment to an ACTIVE tenant principal."""
     def command(collections, session):
+        try:
+            target_principal = principal_repository.resolve(body.principal_id, session=session)
+        except PrincipalAuthorityNotFoundError as error:
+            raise HTTPException(status_code=404, detail="POS_TARGET_PRINCIPAL_NOT_FOUND") from error
+        except PrincipalAuthorityRepositoryError as error:
+            raise HTTPException(status_code=503, detail="POS_TARGET_PRINCIPAL_AUTHORITY_UNAVAILABLE") from error
+        if target_principal.status is not PrincipalStatus.ACTIVE:
+            raise HTTPException(status_code=403, detail="POS_TARGET_PRINCIPAL_INACTIVE")
         try:
             membership = TenantMembershipRepository().resolve(
                 body.principal_id, context.tenant_id, session=session,
@@ -263,8 +275,6 @@ async def revoke_location(
     context: TenantAuthorizationContext = Depends(_ASSIGN),
 ):
     """Revoke one exact current assignment through revision-guarded authority."""
-    if principal_id == context.identity.identity_id:
-        raise HTTPException(status_code=403, detail="POS_LOCATION_SELF_REVOCATION_PROHIBITED")
     def command(collections, session):
         prior = POSLocationAssignmentRegistry.resolve(
             context.tenant_id, location_id, principal_id,
