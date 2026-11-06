@@ -109,6 +109,12 @@ def build_unified_my_work(
         for provenance, raw in _source_items(source, payload, tenant_id):
             if not isinstance(raw, Mapping):
                 raise UnifiedMyWorkProjectionError("SOURCE_ITEM_INVALID")
+            # Payload-level tenant binding is necessary but not sufficient:
+            # reject any row that carries a conflicting tenant coordinate.
+            # Rows without tenant_id remain valid only because the source
+            # adapter is responsible for exact-tenant filtering before return.
+            if "tenant_id" in raw and raw.get("tenant_id") != tenant_id:
+                raise UnifiedMyWorkProjectionError("SOURCE_ITEM_TENANT_MISMATCH")
             item_id = raw.get("work_item_id")
             title = raw.get("title")
             status = raw.get("status")
