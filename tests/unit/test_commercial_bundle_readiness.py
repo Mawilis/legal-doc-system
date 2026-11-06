@@ -12,37 +12,23 @@ from tools.eos.saas.entitlement.product_catalogue import TenantProductId
 
 
 @pytest.mark.parametrize(
-    ("offer_id", "expected_products", "blocked_products"),
+    ("offer_id", "expected_products"),
     [
-        (
-            CommercialOfferId.PROFESSIONAL_SERVICES,
-            ("LEGAL_OPERATIONS", "CRM", "BILLING"),
-            ("BILLING",),
-        ),
-        (
-            CommercialOfferId.BUSINESS_OPERATIONS,
-            ("CRM", "HR", "BILLING"),
-            ("HR", "BILLING"),
-        ),
-        (
-            CommercialOfferId.ENTERPRISE_OPERATIONS,
-            ("LEGAL_OPERATIONS", "BILLING", "CRM", "HR"),
-            ("BILLING", "HR"),
-        ),
+        (CommercialOfferId.PROFESSIONAL_SERVICES, ("LEGAL_OPERATIONS", "CRM", "BILLING")),
+        (CommercialOfferId.BUSINESS_OPERATIONS, ("CRM", "HR", "BILLING")),
+        (CommercialOfferId.ENTERPRISE_OPERATIONS, ("LEGAL_OPERATIONS", "BILLING", "CRM", "HR")),
     ],
 )
-def test_every_catalogued_bundle_fails_closed_until_all_product_authorities_exist(
-    offer_id: CommercialOfferId,
-    expected_products: tuple[str, ...],
-    blocked_products: tuple[str, ...],
+def test_every_catalogued_bundle_has_exact_mapping_for_each_product(
+    offer_id: CommercialOfferId, expected_products: tuple[str, ...],
 ) -> None:
-    """A single unmapped product blocks the entire explicit offer composition."""
+    """All bundle products map explicitly; this does not prove entitlement or access."""
     result = assess_commercial_bundle_readiness(offer_id)
     assert tuple(item.product_id.value for item in result.products) == expected_products
-    assert result.state is CommercialBundleReadinessState.BLOCKED_MISSING_PRODUCT_AUTHORITY
-    assert result.ready is False
-    assert tuple(item.product_id.value for item in result.products if not item.ready) == blocked_products
-    assert all(item.mapping is None for item in result.products if not item.ready)
+    assert result.state is CommercialBundleReadinessState.PRODUCT_MAPPING_COMPLETE
+    assert result.ready is True
+    assert result.blockers == ()
+    assert all(item.mapping is not None for item in result.products)
 
 
 @pytest.mark.parametrize(
@@ -58,7 +44,7 @@ def test_standalone_offer_is_ready_only_at_mapping_metadata_layer(
 ) -> None:
     """Known Legal/CRM mappings are present without claiming entitlement."""
     result = assess_commercial_bundle_readiness(offer_id)
-    assert result.state is CommercialBundleReadinessState.READY_FOR_ATOMIC_ACTIVATION
+    assert result.state is CommercialBundleReadinessState.PRODUCT_MAPPING_COMPLETE
     assert result.ready is True
     assert len(result.products) == 1
     assert result.products[0].product_id is product_id
