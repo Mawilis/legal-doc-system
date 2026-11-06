@@ -139,7 +139,7 @@ def _register_module(slug: str, config: tuple, *, read_permission: str, create_p
                 tenant_id=context.tenant_id, principal_id=context.identity.identity_id,
                 title=body.title, description=body.description,
                 kind=ModuleWorkKind(body.kind), priority=ModuleWorkPriority(body.priority),
-                due_at=body.due_at, source_type=body.source_type, source_id=body.source_id,
+                due_at=body.due_at, source_type=None, source_id=None,
                 idempotency_key=idempotency_key, now=datetime.now(timezone.utc), session=session,
             )
             return item.to_dict()
