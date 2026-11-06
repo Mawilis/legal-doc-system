@@ -60,6 +60,13 @@ describe('tenant module workspace API contract', () => {
     expect(result.items[0].tenant_id).toBe('TENANT-OPS-1');
   });
 
+  it('rejects a valid server response for a different active tenant', async () => {
+    get.mockResolvedValue({ data: workspace });
+    await expect(readTenantModuleWorkspace('OPERATIONS', 'OTHER-TENANT')).rejects.toThrow(
+      'TENANT_MODULE_WORKSPACE_RESPONSE_INVALID',
+    );
+  });
+
   it('rejects an item whose tenant differs from the authenticated workspace tenant', async () => {
     get.mockResolvedValue({
       data: { ...workspace, items: [{ ...workspace.items[0], tenant_id: 'OTHER-TENANT' }] },
