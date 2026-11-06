@@ -1,10 +1,10 @@
 /* eslint-disable */
 /**
  * ╔════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════╗
- * ║ WILSY OS - SOVEREIGN EXECUTIVE SUITE [V56.7.0-WORK-FIRST-EXECUTIVE-WORKBENCH]                                                                      ║
+ * ║ WILSY OS - SOVEREIGN EXECUTIVE SUITE [V56.8.0-QUEUE-FIRST-EXECUTIVE-WORKBENCH]                                                                      ║
  * ║ [FINANCE-SOURCED KPIS | SHA3 EXECUTIVE MUTATIONS | TELEMETRY STREAM | SHARD PAGINATION | BOARDROOM PROOF]                             ║
  * ╠════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════╣
- * ║ VERSION: 56.7.0-WORK-FIRST-EXECUTIVE-WORKBENCH | SERVER-ISSUED PRODUCT NAVIGATION                                        ║
+ * ║ VERSION: 56.8.0-QUEUE-FIRST-EXECUTIVE-WORKBENCH | SERVER-ISSUED PRODUCT NAVIGATION                                        ║
  * ║ ABSOLUTE PATH: /Users/wilsonkhanyezi/legal-doc-system/client/src/components/executive/ExecutiveDashboard.jsx                            ║
  * ╠════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════╣
  * ║ 👥 COLLABORATION & SOVEREIGN SIGN-OFF:                                                                                                 ║
@@ -3816,32 +3816,64 @@ const ExecutiveDashboard = ({
               <div className={styles.emptyStream}>ACCEPT_A_DAILY_DUTY_TO_CREATE_A_WORK_ORDER...</div>
             )}
           </div>
-          <div className={styles.dutyList}>
-            {executiveOperatingSystem.dailyDuties.map(duty => (
-              <article key={duty.key} className={styles.dutyCard} data-status={duty.status} data-impact={duty.impact}>
-                <div>
-                  <span>{duty.lane} // {duty.cadence}</span>
-                  <h3>{duty.title}</h3>
-                  <p>{duty.reason}</p>
-                  <div className={styles.evidenceRail}>
-                    {(duty.evidenceRequired || []).slice(0, 4).map(evidence => (
-                      <i key={evidence}>{evidence}</i>
-                    ))}
-                  </div>
-                  {duty.blockedReason && <p className={styles.blockedReason}>{duty.blockedReason}</p>}
-                  <small title={duty.sourceStatus}>{compactExecutiveSignal(duty.sourceStatus)} // IMPACT {duty.impact}</small>
-                </div>
-                <button
-                  type="button"
-                  className={styles.secondaryButton}
-                  onClick={() => acceptDailyDuty(duty)}
-                  disabled={isRefreshing}
-                >
-                  {duty.commandLabel || 'ACCEPT'}
-                </button>
-              </article>
-            ))}
-          </div>
+          <section className={styles.dutyQueueSection} aria-label="Suggested executive work queue">
+            <header className={styles.dutyQueueHeader}>
+              <div>
+                <span>DAILY WORK QUEUE</span>
+                <h3>Recommended actions</h3>
+              </div>
+              <small>{executiveOperatingSystem.dailyDuties.length} source-aware duties</small>
+            </header>
+            <div className={styles.dutyQueueViewport}>
+              <table className={styles.dutyQueue}>
+                <thead>
+                  <tr>
+                    <th scope="col">Impact</th>
+                    <th scope="col">Workstream</th>
+                    <th scope="col">Recommended action</th>
+                    <th scope="col">Source and evidence</th>
+                    <th scope="col">Next step</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {executiveOperatingSystem.dailyDuties.map(duty => (
+                    <tr key={duty.key} data-status={duty.status} data-impact={duty.impact}>
+                      <td>
+                        <span className={styles.dutyQueueImpact}>{compactExecutiveSignal(duty.impact)}</span>
+                      </td>
+                      <td>
+                        <strong>{duty.lane}</strong>
+                        <small>{duty.cadence}</small>
+                      </td>
+                      <td>
+                        <strong>{duty.title}</strong>
+                        <p>{duty.reason}</p>
+                        {duty.blockedReason && <small className={styles.dutyQueueBlocked}>{duty.blockedReason}</small>}
+                      </td>
+                      <td>
+                        <strong>{compactExecutiveSignal(duty.sourceStatus)}</strong>
+                        <div className={styles.dutyQueueEvidence}>
+                          {(duty.evidenceRequired || []).slice(0, 4).map(evidence => (
+                            <span key={evidence}>{evidence}</span>
+                          ))}
+                        </div>
+                      </td>
+                      <td>
+                        <button
+                          type="button"
+                          className={styles.secondaryButton}
+                          onClick={() => acceptDailyDuty(duty)}
+                          disabled={isRefreshing}
+                        >
+                          {duty.commandLabel || 'ACCEPT'}
+                        </button>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </section>
         </article>
         {sourceRegistryPanel}
       </section>
