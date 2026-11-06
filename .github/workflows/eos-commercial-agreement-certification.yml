@@ -139,7 +139,7 @@ jobs:
             tests/unit/test_tenant_module_work_item.py \
             tests/unit/test_tenant_module_work_registry.py \
             tests/unit/test_tenant_module_workspace_service.py \
-            tests/unit/test_tenant_module_workspace_server_mount.py
+            tests/unit/test_tenant_module_workspace_server_mount.py \
             tests/unit/test_owner_commercial_work_authority.py \
             tests/unit/test_legal_productive_work_http_router.py
       - name: Run commercial agreement and module workspace real replica-set tests
@@ -149,7 +149,7 @@ jobs:
             tests/integration/test_commercial_agreement_http_real_mongo.py \
             tests/integration/test_tenant_product_entitlement_issuance_orchestrator_real_mongo.py \
             tests/integration/test_tenant_module_work_registry_real_mongo.py \
-            tests/integration/test_tenant_module_workspace_real_mongo.py
+            tests/integration/test_tenant_module_workspace_real_mongo.py \
             tests/integration/test_owner_commercial_work_registry_real_mongo.py
       - name: Enforce repository integrity
         run: |
