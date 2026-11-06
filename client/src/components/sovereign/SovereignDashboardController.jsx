@@ -70,6 +70,7 @@ const IntelligenceDashboard = React.lazy(() => import('../intelligence/Intellige
 const ITDashboard = React.lazy(() => import('../it/ITDashboard'));
 const LegalDashboard = React.lazy(() => import('../industry/LegalDashboard'));
 const SystemServicesDashboard = React.lazy(() => import('../system-services/SystemServicesDashboard'));
+const POSDashboard = React.lazy(() => import('../pos/POSWorkspace.jsx'));
 
 
 export const DASHBOARD_KEYS = Object.freeze({
@@ -83,6 +84,7 @@ export const DASHBOARD_KEYS = Object.freeze({
   HR: 'HR_DASHBOARD',
   OPERATIONS: 'OPERATIONS_DASHBOARD',
   INTELLIGENCE: 'INTELLIGENCE_DASHBOARD',
+  POS: 'POS_DASHBOARD',
   IT: 'IT_DASHBOARD',
   LEGAL: 'LEGAL_DASHBOARD',
   SYSTEM_SERVICES: 'SYSTEM_SERVICES_DASHBOARD'
@@ -94,6 +96,9 @@ const TENANT_MODULE_DASHBOARD_ADMISSION = Object.freeze({
   }),
   [DASHBOARD_KEYS.INTELLIGENCE]: Object.freeze({
     moduleId: 'INTELLIGENCE', productId: 'INTELLIGENCE', workspaceKey: 'INTELLIGENCE_DASHBOARD',
+  }),
+  [DASHBOARD_KEYS.POS]: Object.freeze({
+    moduleId: 'POS', productId: 'POS', workspaceKey: 'POS_DASHBOARD',
   }),
 });
 
@@ -118,6 +123,7 @@ const DASHBOARD_LABELS = Object.freeze({
   [DASHBOARD_KEYS.HR]: 'HR Dashboard',
   [DASHBOARD_KEYS.OPERATIONS]: 'Operations OS',
   [DASHBOARD_KEYS.INTELLIGENCE]: 'Intelligence OS',
+  [DASHBOARD_KEYS.POS]: 'Point of Sale',
   [DASHBOARD_KEYS.IT]: 'IT Dashboard',
   [DASHBOARD_KEYS.LEGAL]: 'WILSY Legal OS',
   [DASHBOARD_KEYS.SYSTEM_SERVICES]: 'System Services'
@@ -988,6 +994,8 @@ const SovereignDashboardController = ({ user: propUser, onLogout }) => {
     dashboardShard = <OperationsDashboard user={user} activeTenant={activeTenant} />;
   } else if (dashboardKey === DASHBOARD_KEYS.INTELLIGENCE) {
     dashboardShard = <IntelligenceDashboard user={user} activeTenant={activeTenant} />;
+  } else if (dashboardKey === DASHBOARD_KEYS.POS) {
+    dashboardShard = <POSDashboard user={user} activeTenant={activeTenant} />;
   } else if (dashboardKey === DASHBOARD_KEYS.IT) {
     dashboardShard = <ITDashboard user={user} />;
   } else if (dashboardKey === DASHBOARD_KEYS.LEGAL) {

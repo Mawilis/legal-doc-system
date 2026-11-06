@@ -230,6 +230,8 @@ async def assign_location(
 ):
     """Grant one explicit location assignment to an ACTIVE tenant principal."""
     def command(collections, session):
+        if body.principal_id == context.identity.identity_id:
+            raise HTTPException(status_code=403, detail="POS_SELF_LOCATION_ASSIGNMENT_FORBIDDEN")
         try:
             target_principal = principal_repository.resolve(body.principal_id, session=session)
         except PrincipalAuthorityNotFoundError as error:

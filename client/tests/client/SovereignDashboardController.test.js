@@ -130,14 +130,17 @@ describe('SovereignDashboardController EOS workspace contract', () => {
     expect(resolveDashboardRequestSignal('OPERATIONS')).toBe(DASHBOARD_KEYS.COO);
   });
 
-  it('mounts Operations and Intelligence only from exact server-issued module/product/workspace evidence', () => {
+  it('mounts Operations, Intelligence and POS only from exact server-issued module/product/workspace evidence', () => {
     const manifest = [
       { moduleId: 'OPERATIONS', productId: 'OPERATIONS', workspaceKey: 'OPERATIONS_DASHBOARD' },
       { moduleId: 'INTELLIGENCE', productId: 'INTELLIGENCE', workspaceKey: 'INTELLIGENCE_DASHBOARD' },
+      { moduleId: 'POS', productId: 'POS', workspaceKey: 'POS_DASHBOARD' },
     ];
     expect(hasTenantModuleManifestAdmission(manifest, DASHBOARD_KEYS.OPERATIONS)).toBe(true);
     expect(hasTenantModuleManifestAdmission(manifest, DASHBOARD_KEYS.INTELLIGENCE)).toBe(true);
+    expect(hasTenantModuleManifestAdmission(manifest, DASHBOARD_KEYS.POS)).toBe(true);
     expect(hasTenantModuleManifestAdmission([], DASHBOARD_KEYS.OPERATIONS)).toBe(false);
+    expect(hasTenantModuleManifestAdmission([], DASHBOARD_KEYS.POS)).toBe(false);
     expect(hasTenantModuleManifestAdmission([
       { moduleId: 'OPERATIONS', productId: 'CRM', workspaceKey: 'OPERATIONS_DASHBOARD' },
     ], DASHBOARD_KEYS.OPERATIONS)).toBe(false);

@@ -345,6 +345,13 @@ def test_permission_canon_properties() -> None:
         "intelligence:work_item:read",
         "intelligence:work_item:create",
         "intelligence:work_item:complete",
+        "pos:location_assignment:manage",
+        "pos:sale:read",
+        "pos:sale:create",
+        "pos:tender:create",
+        "pos:cash:record",
+        "pos:return:create",
+        "pos:refund:create",
         "wilsy_ai:legal_tool:read",
         "wilsy_ai:legal_services:execute",
         "wilsy_ai:legal_advisory:generate",
@@ -414,9 +421,9 @@ def test_permission_canon_properties() -> None:
             for row in rows
             if row["disposition"] == "CANONICAL"
         ]
-    ) == 152
+    ) == 159
 
-    assert len(rows) == 155
+    assert len(rows) == 162
 
     for permission_id in tenant:
         metadata = permission_metadata(
