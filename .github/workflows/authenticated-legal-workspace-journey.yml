@@ -13,6 +13,7 @@ on:
       - "client/src/components/intelligence/**"
       - "client/src/components/sovereign/SovereignDashboardController.jsx"
       - "client/src/services/tenantModuleWorkspaceService.js"
+      - "client/src/services/tenantModuleWorkspaceService.test.js"
       - "client/src/services/ownerCommercialWorkspaceService.js"
       - "client/vite.config.js"
       - "client/src/contexts/authContext.jsx"
@@ -56,6 +57,7 @@ jobs:
           npx vitest run --config vitest.config.js
           tests/client/App.authenticatedLegalWorkspaceJourney.test.jsx
           tests/client/TenantModuleWorkspace.test.jsx
+          src/services/tenantModuleWorkspaceService.test.js
           tests/client/SovereignDashboardController.test.js
           tests/client/App.legalAcceptanceBarrier.test.jsx
           tests/contexts/authContext.authoritative.test.jsx
