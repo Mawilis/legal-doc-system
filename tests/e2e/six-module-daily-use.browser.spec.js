@@ -387,8 +387,9 @@ test('Legal Partner My Work excludes owner CRM, Operations and Intelligence sour
       });
       return { status: response.status, payload: await response.json().catch(() => ({})) };
     }, { foreignTenantId: state.foreign_tenant_id });
-    expect(foreignTenant.status).toBeGreaterThanOrEqual(400);
-    expect(foreignTenant.payload).not.toHaveProperty('items');
+    expect(foreignTenant.status).toBe(200);
+    expect(foreignTenant.payload.tenant_id).toBe(state.tenant_id);
+    expect(foreignTenant.payload.tenant_id).not.toBe(state.foreign_tenant_id);
 
     await expect(page.getByRole('heading', { name: 'My Work', exact: true })).toBeVisible();
     await expect(page.getByText('Operations', { exact: true })).toHaveCount(0);
