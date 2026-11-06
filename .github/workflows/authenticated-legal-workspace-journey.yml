@@ -16,6 +16,8 @@ on:
       - "client/src/services/tenantModuleWorkspaceService.test.js"
       - "client/src/services/hrService.test.js"
       - "client/src/services/ownerCommercialWorkspaceService.js"
+      - "client/src/services/api.js"
+      - "client/src/__tests__/services/api.test.js"
       - "client/vite.config.js"
       - "client/src/contexts/authContext.jsx"
       - "client/src/contexts/tenantContext.jsx"
@@ -63,6 +65,7 @@ jobs:
           tests/client/SovereignDashboardController.test.js
           tests/client/App.legalAcceptanceBarrier.test.jsx
           tests/contexts/authContext.authoritative.test.jsx
+          src/__tests__/services/api.test.js
           tests/components/auth/TenantIdentityPremium.test.jsx
 
       - name: Verify client production build
