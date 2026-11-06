@@ -2658,7 +2658,7 @@ function ProductiveWorkPanel() {
   );
 }
 
-function ConflictReviewQueue({ canReview, screenings, onRefresh }) {
+function ConflictReviewQueue({ canReview, error, screenings, onRefresh }) {
   const [drafts, setDrafts] = useState({});
   const [reviewStates, setReviewStates] = useState({});
   const pendingIds = useRef(new Set());
@@ -2734,7 +2734,7 @@ function ConflictReviewQueue({ canReview, screenings, onRefresh }) {
     try {
       const result = await issueLegalConflictReview(command);
       const refreshed = await onRefresh();
-      if (!refreshed?.conflictScreenings) {
+      if (!refreshed?.conflictScreeningsAvailable) {
         throw new Error('LEGAL_OPERATIONS_CONFLICT_REVIEW_REFRESH_FAILED');
       }
       setReviewStates((current) => ({
@@ -2756,6 +2756,14 @@ function ConflictReviewQueue({ canReview, screenings, onRefresh }) {
       pendingIds.current.delete(screeningId);
     }
   }, [drafts, onRefresh]);
+
+  if (error) {
+    return (
+      <section aria-label="Conflict review queue unavailable" role="alert" className="rounded-2xl border border-red-900/40 bg-red-950/15 p-5 text-sm text-red-300">
+        {error}
+      </section>
+    );
+  }
 
   return (
     <QueuePanel
@@ -3630,6 +3638,7 @@ function LegalEvidenceUploadWorkspace({ documents, onCanonicalRefresh }) {
 
 function LegalPracticeWorkspace({
   conflictScreenings,
+  conflictScreeningError,
   error,
   lastUpdated,
   onLogout,
@@ -3901,6 +3910,7 @@ function LegalPracticeWorkspace({
         )}
         <ConflictReviewQueue
           canReview={canReviewConflict}
+          error={conflictScreeningError}
           screenings={conflictScreenings}
           onRefresh={onRefresh}
         />
@@ -3920,6 +3930,7 @@ function LegalPracticeWorkspace({
     content = (
       <ConflictReviewQueue
         canReview={canReviewConflict}
+        error={conflictScreeningError}
         screenings={conflictScreenings}
         onRefresh={onRefresh}
       />
@@ -4662,6 +4673,7 @@ export default function LegalDashboard({
   const [conflictScreenings, setConflictScreenings] = useState(
     EMPTY_CONFLICT_SCREENINGS,
   );
+  const [conflictScreeningError, setConflictScreeningError] = useState(null);
   const [deputyCapabilities, setDeputyCapabilities] = useState(
     EMPTY_DEPUTY_CAPABILITIES,
   );
@@ -4681,6 +4693,7 @@ export default function LegalDashboard({
     if (refresh) setRefreshing(true);
     else setLoading(true);
     setError(null);
+    setConflictScreeningError(null);
 
     if (roleMode === ROLE_MODES.TENANT_OWNER) {
       // Tenant owners receive commercial product status only. No matter,
@@ -4766,10 +4779,14 @@ export default function LegalDashboard({
           getLegalPracticeWorkspace(),
           getLegalConflictScreenings(),
         ]);
-        const screeningPacket = screeningResult.status === 'fulfilled'
+        const screeningAvailable = screeningResult.status === 'fulfilled';
+        const screeningPacket = screeningAvailable
           ? screeningResult.value
           : EMPTY_CONFLICT_SCREENINGS;
         setConflictScreenings(screeningPacket);
+        setConflictScreeningError(screeningAvailable
+          ? null
+          : 'Conflict screening evidence is unavailable; no review queue is inferred.');
         setQueues(EMPTY_QUEUES);
         setDeputyWork(EMPTY_DEPUTY_WORK);
         setClientMatters(EMPTY_CLIENT_MATTERS);
@@ -4792,6 +4809,7 @@ export default function LegalDashboard({
           return {
             practiceWorkspace: null,
             conflictScreenings: screeningPacket,
+            conflictScreeningsAvailable: screeningAvailable,
             workspaceUnavailable: true,
           };
         }
@@ -4802,6 +4820,7 @@ export default function LegalDashboard({
         return {
           practiceWorkspace: result,
           conflictScreenings: screeningPacket,
+          conflictScreeningsAvailable: screeningAvailable,
           workspaceUnavailable: false,
         };
       }
@@ -4891,6 +4910,7 @@ export default function LegalDashboard({
       setPracticeWorkspace(EMPTY_PRACTICE_WORKSPACE);
       if (roleMode !== ROLE_MODES.LEGAL_PRACTICE) {
         setConflictScreenings(EMPTY_CONFLICT_SCREENINGS);
+        setConflictScreeningError(null);
       }
       setDeputyCapabilities(EMPTY_DEPUTY_CAPABILITIES);
       return null;
@@ -5334,6 +5354,7 @@ export default function LegalDashboard({
         user={currentUser}
         workspace={practiceWorkspace}
         conflictScreenings={conflictScreenings}
+        conflictScreeningError={conflictScreeningError}
       />
     );
   }
