@@ -36,6 +36,7 @@ These are distinct failures. Repair must follow actual server contracts and the 
 
 - [x] Added `tools/eos/saas/entitlement/commercial_offer_catalogue.py`.
 - [x] Added `tests/unit/test_commercial_offer_catalogue.py`.
+- [x] Added `.github/workflows/eos-commercial-offer-catalogue-certification.yml` to compile and run both direct product/offer catalogue certificates and enforce repository integrity.
 - [x] Defined four standalone offer identities.
 - [x] Defined three explicit bundle compositions.
 - [x] Defined five supported commercial packaging model descriptors.
@@ -47,8 +48,9 @@ These are distinct failures. Repair must follow actual server contracts and the 
 Commits:
 - Catalogue: `c6e6f0d7a44dfbc848b04f30c060ab453f534608`
 - Direct certificate: `74a867e2f7ebc31559db9e9989b583e9218674e9`
+- Focused certification workflow: `51284aebf07d52249a0b5096dfe8613d1b430886`
 
-**Certification status:** source and test added; execution has not yet been run in a repository checkout. Do not report test pass until CI executes against the exact head.
+**Certification status:** source, direct tests and a dedicated CI workflow are committed. Workflow execution has not yet been observed for the latest head; do not report a test pass until the exact-head run completes.
 
 ## Three EOS reports produced
 
@@ -66,6 +68,10 @@ Commits:
 - [x] No IAM grant or role mutation.
 - [x] No G68 confidentiality relaxation.
 - [x] No Legal Practice access inferred from Tenant Owner commercial entitlement.
+
+## Latest branch head after this work package
+
+`51284aebf07d52249a0b5096dfe8613d1b430886` (workflow addition; exact-head CI was not yet visible at ledger refresh).
 
 ## Remaining engineering gates
 
