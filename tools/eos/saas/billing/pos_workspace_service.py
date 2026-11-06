@@ -49,7 +49,8 @@ class POSWorkspaceService:
     )
 
     def __init__(self, *, sales_collection: Any, evidence_collection: Any,
-                 entitlement_history_collection: Any, entitlement_current_collection: Any,
+                 capacity_collection: Any, entitlement_history_collection: Any,
+                 entitlement_current_collection: Any,
                  location_assignment_current_collection: Any):
         dependencies = (
             sales_collection, evidence_collection, capacity_collection,
