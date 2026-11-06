@@ -517,6 +517,7 @@ const WilsyOSDashboardChrome = ({
                         <button
                           key={module.moduleId}
                           type="button"
+                          data-wilsy-module-entry={module.moduleId}
                           className="wilsyOsChromeModuleButton"
                           data-active={isActive ? 'true' : 'false'}
                           aria-current={isActive ? 'page' : undefined}
