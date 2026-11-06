@@ -130,9 +130,6 @@ const industryLoaders = {
 };
 
 const roleLoaders = {
-  // POS is a product workspace, not financial authority; each API independently authorizes every operation.
-  pos_dashboard: () => lazy(() => import('../components/pos/POSWorkspace')),
-  pos_operator: () => lazy(() => import('../components/pos/POSWorkspace')),
   // Executive & Management
   executive: () => lazy(() => import('../components/executive/ExecutiveDashboard')),
   ceo: () => lazy(() => import('../components/executive/ExecutiveDashboard')),
@@ -368,10 +365,7 @@ export function resolveDashboard(user, tenant, options = {}) {
   if (forcedDashboardKey && roleLoaders[forcedDashboardKey]) {
     DashboardComponent = roleLoaders[forcedDashboardKey]();
     resolutionTrace.push(`forced:${forcedDashboardKey}`);
-    if (
-      forcedDashboardKey !== 'pos_dashboard'
-      && !hasDashboardAccess(user, tenant, 'role', forcedDashboardKey)
-    ) {
+    if (!hasDashboardAccess(user, tenant, 'role', forcedDashboardKey)) {
       permissionDenied = true;
       DashboardComponent = SingularityDashboard;
       resolutionTrace.push('permission-denied→fallback');
