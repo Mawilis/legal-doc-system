@@ -4,6 +4,11 @@ import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { MemoryRouter } from 'react-router-dom';
 import MyWorkWorkspace from '../../components/workspaces/MyWorkWorkspace.jsx';
 import api from '../../services/api.js';
+import { completeLegalWorkItem } from '../../services/legalOperationsService.js';
+
+vi.mock('../../services/legalOperationsService.js', () => ({
+  completeLegalWorkItem: vi.fn(),
+}));
 
 vi.mock('../../services/api.js', () => ({
   default: { get: vi.fn(), post: vi.fn() },
@@ -53,6 +58,7 @@ describe('authenticated My Work workspace', () => {
     vi.clearAllMocks();
     api.get.mockResolvedValue({ data: payload });
     api.post.mockResolvedValue({ data: { status: 'COMPLETED' } });
+    completeLegalWorkItem.mockResolvedValue({ work_item_id: 'legal-1', status: 'COMPLETED' });
   });
 
   it('loads and presents only the server-projected authorized queue', async () => {
@@ -80,10 +86,21 @@ describe('authenticated My Work workspace', () => {
     await waitFor(() => expect(screen.queryByText('Prepare daily operations report')).toBeNull());
   });
 
-  it('does not invent a generic Legal completion command', async () => {
+  it('routes Legal completion through the canonical evidence-bound command', async () => {
     renderWorkspace();
     expect(await screen.findByText('Review matter evidence')).toBeTruthy();
-    expect(screen.getByText(/Legal completion must be recorded in the owning Legal workflow/i)).toBeTruthy();
+    const reference = screen.getByLabelText('Legal completion evidence reference for Review matter evidence');
+    const fingerprint = screen.getByLabelText('Legal completion evidence fingerprint for Review matter evidence');
+    const submit = screen.getByRole('button', { name: 'Submit evidenced Legal completion' });
+    expect(submit).toBeDisabled();
+    fireEvent.change(reference, { target: { value: 'evidence:verified-source:legal-1' } });
+    fireEvent.change(fingerprint, { target: { value: 'a'.repeat(128) } });
+    fireEvent.click(submit);
+    await waitFor(() => expect(completeLegalWorkItem).toHaveBeenCalledWith({
+      workItemId: 'legal-1',
+      completionEvidenceReference: 'evidence:verified-source:legal-1',
+      completionEvidenceFingerprint: 'a'.repeat(128),
+    }));
     expect(api.post).not.toHaveBeenCalled();
   });
 
