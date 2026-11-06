@@ -338,7 +338,7 @@ _BINDINGS = MappingProxyType({
     "legal_work_item_reassign": "legal_operations:work_item:reassign",
 })
 
-def authorize_tenant_operation(*, principal_id: object, tenant_id: object, permission_id: object, operation: object, principal_repository: Any, membership_repository: Any, role_assignment_repository: Any, business_role_repository: Any, session: Any = None, workforce_relationship_collection: Any = None) -> TenantAuthorizationDecision:
+def authorize_tenant_operation(*, principal_id: object, tenant_id: object, permission_id: object, operation: object, principal_repository: Any, membership_repository: Any, role_assignment_repository: Any, business_role_repository: Any, session: Any = None, workforce_relationship_collection: Any = None, selected_business_role: object = None) -> TenantAuthorizationDecision:
     """Compose current truth; ELIGIBLE is only one conjunct and never authorization alone."""
     if not all(isinstance(v, str) and v and v == v.strip() for v in (principal_id, tenant_id, permission_id, operation)):
         return TenantAuthorizationDecision(False, TenantAuthorizationReason.INVALID_INPUT)
@@ -360,7 +360,8 @@ def authorize_tenant_operation(*, principal_id: object, tenant_id: object, permi
     if metadata.disposition is not PermissionDisposition.CANONICAL: return TenantAuthorizationDecision(False, TenantAuthorizationReason.PERMISSION_NOT_CANONICAL)
     if metadata.namespace != "TENANT" or not metadata.tenant_membership_required or metadata.cross_tenant_capable or metadata.financial_execution_capable: return TenantAuthorizationDecision(False, TenantAuthorizationReason.PERMISSION_NAMESPACE_MISMATCH)
     if _BINDINGS.get(op) != perm: return TenantAuthorizationDecision(False, TenantAuthorizationReason.PERMISSION_OPERATION_MISMATCH)
-    role_result = resolve_current_tenant_business_role(principal_id=pid, tenant_id=tid, repository=business_role_repository, session=session, operation=op)
+    if selected_business_role is not None and (not isinstance(selected_business_role, str) or selected_business_role not in TENANT_ROLES or selected_business_role != selected_business_role.strip()): return TenantAuthorizationDecision(False, TenantAuthorizationReason.INVALID_INPUT)
+    role_result = resolve_current_tenant_business_role(principal_id=pid, tenant_id=tid, repository=business_role_repository, session=session, operation=op, selected_business_role=selected_business_role)
     if role_result.resolution is not BusinessRoleResolution.RESOLVED:
         if role_result.resolution is BusinessRoleResolution.NO_ELIGIBLE_TENANT_BUSINESS_ROLE:
             return TenantAuthorizationDecision(False, TenantAuthorizationReason.BUSINESS_ROLE_INELIGIBLE, role_result.evidence_role or role_result.role)
