@@ -529,8 +529,9 @@ async def activate_agreement(
 
     def activate(history, current, entitlement_history, entitlement_current, receipts, issuer, session):
         agreement = get_current(context.tenant_id, agreement_id, history, current, session=session)
-        if agreement.lifecycle_state is not CommercialAgreementState.EXECUTED:
-            raise HTTPException(status_code=409, detail="COMMERCIAL_AGREEMENT_MUST_BE_EXECUTED_BEFORE_ACTIVATION")
+        # Do not reject ACTIVE before checking the durable activation receipt:
+        # the activation service owns exact replay validation and reconciliation.
+        # It still rejects non-executable states when no matching receipt exists.
         verified = verifier.verify(
             agreement=agreement,
             evidence_reference=body.execution_evidence_reference,
