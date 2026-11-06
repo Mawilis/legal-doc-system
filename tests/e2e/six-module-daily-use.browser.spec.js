@@ -60,12 +60,12 @@ async function openModuleNavigation(page) {
   const openRail = page.getByRole('button', { name: 'Open workspace modules' });
   if (await openRail.isVisible()) await openRail.click();
   await expect(page.getByRole('navigation', { name: 'Available WILSY OS products' })).toBeVisible();
-  await expect(page.getByRole('button', { name: /Legal OS/i }).first()).toBeVisible();
+  await expect(page.locator('[data-wilsy-module-entry="LEGAL_OS"]')).toBeVisible();
   const manifestPromise = page.waitForResponse(response => (
     new URL(response.url()).pathname === '/api/auth/module-manifest'
     && response.request().method() === 'GET'
   ));
-  await page.getByRole('button', { name: /Legal OS/i }).click();
+  await page.locator('[data-wilsy-module-entry="LEGAL_OS"]').click();
   const response = await manifestPromise;
   expect(response.status()).toBe(200);
   const payload = await response.json();
@@ -97,7 +97,8 @@ async function switchModule(page, label, workspacePath, method = 'GET', expected
     new URL(response.url()).pathname.endsWith(workspacePath)
     && response.request().method() === method
   ));
-  await page.getByRole('button', { name: new RegExp(label, 'i') }).first().click();
+  await page.getByRole('navigation', { name: 'Available WILSY OS products' })
+    .getByRole('button', { name: label, exact: true }).click();
   const response = await responsePromise;
   expect(response.status()).toBe(expectedStatus);
   return response;
@@ -216,13 +217,15 @@ test('Legal specialist cannot use Owner Operations or Intelligence queues', asyn
       page, '/api/tenant-modules/operations/workspace',
     );
     expect(deniedOperations.status).toBe(403);
-    expect(deniedOperations.payload.detail).toBe('TENANT_PERMISSION_DENIED');
+    expect(deniedOperations.payload.error_code).toBe('FORBIDDEN');
+    expect(deniedOperations.payload.details).toEqual([]);
 
     const deniedIntelligence = await authenticatedApi(
       page, '/api/tenant-modules/intelligence/workspace',
     );
     expect(deniedIntelligence.status).toBe(403);
-    expect(deniedIntelligence.payload.detail).toBe('TENANT_PERMISSION_DENIED');
+    expect(deniedIntelligence.payload.error_code).toBe('FORBIDDEN');
+    expect(deniedIntelligence.payload.details).toEqual([]);
 
     // The Legal specialist's UI does not expose the Owner-only queue controls.
     await expect(page.getByText(/Browser Operations action/)).toHaveCount(0);
