@@ -1,4 +1,4 @@
-name: EOS Commercial Agreement Domain Certification
+name: EOS Commercial Agreement Authority Certification
 
 on:
   push:
@@ -6,14 +6,18 @@ on:
       - eos/commercial-agreement-bundle-activation
     paths:
       - "tools/eos/saas/entitlement/commercial_agreement.py"
+      - "tools/eos/saas/entitlement/commercial_agreement_registry.py"
       - "tools/eos/saas/entitlement/commercial_offer_catalogue.py"
       - "tests/unit/test_commercial_agreement.py"
+      - "tests/integration/test_commercial_agreement_registry_real_mongo.py"
       - ".github/workflows/eos-commercial-agreement-certification.yml"
   pull_request:
     paths:
       - "tools/eos/saas/entitlement/commercial_agreement.py"
+      - "tools/eos/saas/entitlement/commercial_agreement_registry.py"
       - "tools/eos/saas/entitlement/commercial_offer_catalogue.py"
       - "tests/unit/test_commercial_agreement.py"
+      - "tests/integration/test_commercial_agreement_registry_real_mongo.py"
       - ".github/workflows/eos-commercial-agreement-certification.yml"
   workflow_dispatch:
 
@@ -25,9 +29,11 @@ concurrency:
   cancel-in-progress: false
 
 jobs:
-  commercial-agreement-domain:
+  commercial-agreement-authority:
     runs-on: ubuntu-latest
-    timeout-minutes: 15
+    timeout-minutes: 25
+    env:
+      TEST_VENDOR_MONGO_URI: mongodb://127.0.0.1:27027/?replicaSet=wilsyVendorCertRS
     steps:
       - uses: actions/checkout@v4
         with:
@@ -39,12 +45,41 @@ jobs:
         run: |
           python -m pip install --disable-pip-version-check -r requirements.txt
           python -m pip install --disable-pip-version-check pytest==9.1.1
+      - name: Start disposable MongoDB replica set
+        run: |
+          docker run --detach --name wilsy-commercial-agreement-mongo --network host mongo:7.0.37 mongod --port 27027 --replSet wilsyVendorCertRS --bind_ip_all --setParameter enableTestCommands=1
+          python - <<'PY'
+          import time
+          from pymongo import MongoClient
+          uri = "mongodb://127.0.0.1:27027"
+          client = MongoClient(uri, directConnection=True, serverSelectionTimeoutMS=2000)
+          deadline = time.monotonic() + 60
+          initiated = False
+          last_error = None
+          while True:
+              try:
+                  hello = client.admin.command("hello")
+                  if not hello.get("setName") and not initiated:
+                      client.admin.command({"replSetInitiate": {"_id": "wilsyVendorCertRS", "members": [{"_id": 0, "host": "127.0.0.1:27027"}]}})
+                      initiated = True
+                  if client.admin.command("hello").get("isWritablePrimary"):
+                      break
+              except Exception as error:
+                  last_error = error
+              if time.monotonic() >= deadline:
+                  raise RuntimeError(f"COMMERCIAL_AGREEMENT_MONGO_UNAVAILABLE: {last_error!r}")
+              time.sleep(1)
+          client.close()
+          PY
       - name: Compile commercial agreement authority
         run: |
-          python -m compileall -q tools/eos/saas/entitlement/commercial_agreement.py tools/eos/saas/entitlement/commercial_offer_catalogue.py
-      - name: Run commercial agreement domain tests
+          python -m compileall -q tools/eos/saas/entitlement/commercial_agreement.py tools/eos/saas/entitlement/commercial_agreement_registry.py tools/eos/saas/entitlement/commercial_offer_catalogue.py
+      - name: Run commercial agreement domain and offer tests
         run: |
           python -m pytest -q tests/unit/test_commercial_agreement.py tests/unit/test_commercial_offer_catalogue.py
+      - name: Run commercial agreement real replica-set tests
+        run: |
+          python -m pytest -q tests/integration/test_commercial_agreement_registry_real_mongo.py
       - name: Enforce repository integrity
         run: |
           python tools/eos/governance/repository_integrity_guard.py --commit "$GITHUB_SHA"
