@@ -1,4 +1,4 @@
-"""Real-Mongo certification for tenant tenant module work persistence."""
+"""Real-Mongo certification for tenant module work persistence."""
 from __future__ import annotations
 
 import os
