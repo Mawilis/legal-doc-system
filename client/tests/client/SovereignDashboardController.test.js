@@ -13,6 +13,8 @@ import {
   DASHBOARD_KEYS,
   getExecutiveRoleLabel,
   hasFounderReturnAuthority,
+  hasTenantModuleManifestAdmission,
+  resolveDashboardRequestSignal,
   mapDashboardAlias,
   resolveDashboardKey,
 } from '../../src/components/sovereign/SovereignDashboardController.jsx';
@@ -106,19 +108,24 @@ describe('SovereignDashboardController EOS workspace contract', () => {
     }
   });
 
-  it('maps Operations and Intelligence product workspace keys to their own dashboard shards', () => {
-    expect(resolveDashboardKey({
-      user: { id: 'owner-ops', role: 'TENANT_OWNER', workspaceId: 'EXECUTIVE_COMMAND_CENTRE' },
-      manualDashboardKey: 'OPERATIONS_DASHBOARD',
-    })).toBe(DASHBOARD_KEYS.OPERATIONS);
-    expect(resolveDashboardKey({
-      user: { id: 'owner-intel', role: 'TENANT_OWNER', workspaceId: 'EXECUTIVE_COMMAND_CENTRE' },
-      manualDashboardKey: 'INTELLIGENCE_DASHBOARD',
-    })).toBe(DASHBOARD_KEYS.INTELLIGENCE);
-    expect(resolveDashboardKey({
-      user: { id: 'owner-legacy-ops', role: 'TENANT_OWNER', workspaceId: 'EXECUTIVE_COMMAND_CENTRE' },
-      manualDashboardKey: 'OPERATIONS',
-    })).toBe(DASHBOARD_KEYS.COO);
+  it('routes the new product workspace keys distinctly without changing the legacy Operations alias', () => {
+    expect(resolveDashboardRequestSignal('OPERATIONS_DASHBOARD')).toBe(DASHBOARD_KEYS.OPERATIONS);
+    expect(resolveDashboardRequestSignal('INTELLIGENCE_DASHBOARD')).toBe(DASHBOARD_KEYS.INTELLIGENCE);
+    expect(resolveDashboardRequestSignal('OPERATIONS')).toBe(DASHBOARD_KEYS.COO);
+  });
+
+  it('mounts Operations and Intelligence only from exact server-issued module/product/workspace evidence', () => {
+    const manifest = [
+      { moduleId: 'OPERATIONS', productId: 'OPERATIONS', workspaceKey: 'OPERATIONS_DASHBOARD' },
+      { moduleId: 'INTELLIGENCE', productId: 'INTELLIGENCE', workspaceKey: 'INTELLIGENCE_DASHBOARD' },
+    ];
+    expect(hasTenantModuleManifestAdmission(manifest, DASHBOARD_KEYS.OPERATIONS)).toBe(true);
+    expect(hasTenantModuleManifestAdmission(manifest, DASHBOARD_KEYS.INTELLIGENCE)).toBe(true);
+    expect(hasTenantModuleManifestAdmission([], DASHBOARD_KEYS.OPERATIONS)).toBe(false);
+    expect(hasTenantModuleManifestAdmission([
+      { moduleId: 'OPERATIONS', productId: 'CRM', workspaceKey: 'OPERATIONS_DASHBOARD' },
+    ], DASHBOARD_KEYS.OPERATIONS)).toBe(false);
+    expect(hasTenantModuleManifestAdmission(manifest, DASHBOARD_KEYS.CRM)).toBe(false);
   });
 
   it('mounts System Services only from a READY EOS capability projection', () => {
