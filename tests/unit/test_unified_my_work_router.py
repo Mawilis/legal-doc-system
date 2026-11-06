@@ -125,7 +125,7 @@ def test_http_route_omits_denied_source_and_returns_only_authorized_projection(m
     app.include_router(route.router, prefix="/api")
     app.dependency_overrides[route.get_current_identity] = _identity
     app.dependency_overrides[route._LEGAL_READ] = lambda: None
-    app.dependency_overrides[route._OPERATIONS_READ] = _context()
+    app.dependency_overrides[route._OPERATIONS_READ] = lambda: _context()
     app.dependency_overrides[route._INTELLIGENCE_READ] = lambda: None
     app.dependency_overrides[route._CRM_READ] = lambda: None
     monkeypatch.setattr(
@@ -161,7 +161,7 @@ def test_http_route_does_not_turn_authorized_source_outage_into_empty_success(mo
     app.include_router(route.router, prefix="/api")
     app.dependency_overrides[route.get_current_identity] = _identity
     app.dependency_overrides[route._LEGAL_READ] = lambda: None
-    app.dependency_overrides[route._OPERATIONS_READ] = _context()
+    app.dependency_overrides[route._OPERATIONS_READ] = lambda: _context()
     app.dependency_overrides[route._INTELLIGENCE_READ] = lambda: None
     app.dependency_overrides[route._CRM_READ] = lambda: None
 
