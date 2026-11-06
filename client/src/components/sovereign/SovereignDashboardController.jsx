@@ -91,6 +91,15 @@ export const DASHBOARD_KEYS = Object.freeze({
 });
 
 const TENANT_MODULE_DASHBOARD_ADMISSION = Object.freeze({
+  [DASHBOARD_KEYS.FINANCE]: Object.freeze({
+    moduleId: 'BILLING', productId: 'BILLING', workspaceKey: 'BILLING_HUB',
+  }),
+  [DASHBOARD_KEYS.CRM]: Object.freeze({
+    moduleId: 'CRM', productId: 'CRM', workspaceKey: 'CRM_DASHBOARD',
+  }),
+  [DASHBOARD_KEYS.HR]: Object.freeze({
+    moduleId: 'PEOPLE', productId: 'HR', workspaceKey: 'HR_DASHBOARD',
+  }),
   [DASHBOARD_KEYS.OPERATIONS]: Object.freeze({
     moduleId: 'OPERATIONS', productId: 'OPERATIONS', workspaceKey: 'OPERATIONS_DASHBOARD',
   }),
