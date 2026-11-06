@@ -1,13 +1,14 @@
 /* eslint-disable */
 /**
  * WILSY OS — GENERAL TENANT COMMAND CENTER
- * VERSION: v16.6.0-D14-LEGAL-LANE-CLEANUP
+ * VERSION: v16.7.0-TENANT-OWNER-LEGAL-COMMERCIAL-ENTRY
  * AUTHORITY: General tenant presentation/orchestration only.
  * EPITOME: General tenant Document Vault and Team Members workspace; Legal roles route only through canonical Legal OS.
  * ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/client/src/components/sovereign/GeneralDashboard.jsx
  * COLLABORATION / OWNERSHIP: Wilsy OS Core Governance.
- * CERTIFICATION / UPDATE DATE: 2026-09-24
- * CHANGELOG: 2026-09-24 v16.6.0-D14-LEGAL-LANE-CLEANUP removes the obsolete nested Legal Engine lane and stale Sovereign_Legal_Analytics dependency.
+ * CERTIFICATION / UPDATE DATE: 2026-11-06
+ * CHANGELOG: 2026-11-06 v16.7.0-TENANT-OWNER-LEGAL-COMMERCIAL-ENTRY exposes a Tenant Owner-only presentation link to the Legal commercial shell. EOS revalidates subscription:read; the Legal dashboard keeps the owner in commercial-only mode and never grants practice authority.
+ *            2026-09-24 v16.6.0-D14-LEGAL-LANE-CLEANUP removes the obsolete nested Legal Engine lane and stale Sovereign_Legal_Analytics dependency.
  * COMPLIANCE: POPIA section 19; GDPR Article 32; SOC 2 CC7.2; ISO 27001.
  * SECURITY / PRIVACY POSTURE: Presentation only; no legal or financial truth is inferred here.
  * TENANT BOUNDARY: Authenticated tenant context only.
@@ -68,7 +69,7 @@ const renderModule = () => {
           <div className={styles.logoPulse}>
             <img src={'/assets/images/superadmin/wilsy-logo.svg'} alt="Wilsy" />
           </div>
-          <h1 className={styles.osTitle}>{activeTenant?.name?.toUpperCase() || 'TENANT'} <span className={styles.version}>v16.6</span></h1>
+          <h1 className={styles.osTitle}>{activeTenant?.name?.toUpperCase() || 'TENANT'} <span className={styles.version}>v16.7</span></h1>
         </div>
 
         <nav className={styles.mainNav}>
@@ -162,7 +163,7 @@ export default GeneralDashboard;
 
 /**
  * ARTIFACT: GeneralDashboard.jsx
- * VERSION: v16.6.0-D14-LEGAL-LANE-CLEANUP
+ * VERSION: v16.7.0-TENANT-OWNER-LEGAL-COMMERCIAL-ENTRY
  * AUTHORITY BOUNDARY: General tenant presentation/orchestration only; no Legal authority
  * TENANT POSTURE: Authenticated tenant context only
  * FAIL-CLOSED POSTURE: No nested or fallback Legal module is exposed
