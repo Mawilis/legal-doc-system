@@ -57,6 +57,37 @@ from tools.eos.auth.tenant_membership import (
     TenantMembershipStatus,
 )
 from tools.eos.auth.tenant_membership_repository import TenantMembershipRepository
+from tools.eos.saas.entitlement.commercial_agreement import (
+    CommercialAgreement,
+    CommercialAgreementState,
+    CommercialRenewalMode,
+)
+from tools.eos.saas.entitlement.commercial_agreement_registry import (
+    CURRENT_COLLECTION as AGREEMENT_CURRENT_COLLECTION,
+    HISTORY_COLLECTION as AGREEMENT_HISTORY_COLLECTION,
+    create_or_replay as create_agreement_or_replay,
+    ensure_indexes as ensure_agreement_indexes,
+    get_current as get_current_agreement,
+)
+from tools.eos.saas.entitlement.commercial_bundle_activation import (
+    COLLECTION as BUNDLE_ACTIVATION_COLLECTION,
+    CommercialBundleActivationOutcome,
+    CommercialBundleReconciliationState,
+    VerifiedCommercialAgreementExecutionEvidence,
+    activate_commercial_bundle,
+    ensure_indexes as ensure_bundle_activation_indexes,
+    reconcile_commercial_bundle_activation,
+)
+from tools.eos.saas.entitlement.commercial_offer_catalogue import (
+    CommercialOfferId,
+    get_commercial_offer,
+)
+from tools.eos.saas.entitlement.tenant_product_entitlement_registry import (
+    CURRENT_COLLECTION as PRODUCT_ENTITLEMENT_CURRENT_COLLECTION,
+    HISTORY_COLLECTION as PRODUCT_ENTITLEMENT_HISTORY_COLLECTION,
+    ensure_indexes as ensure_product_entitlement_indexes,
+    get_current as get_current_product_entitlement,
+)
 from tools.eos.saas.billing.plan_registry import PlanRegistry
 from tools.eos.saas.billing.subscription_registry import SubscriptionRegistry
 from tools.eos.saas.domain.tenant_product_entitlement import (
@@ -150,6 +181,9 @@ def _collections(database: Any) -> dict[str, Any]:
         "authorization": collection("tenant_authorization_decision_evidence"),
         "history": collection(HISTORY_COLLECTION),
         "current": collection(CURRENT_COLLECTION),
+        "agreement_history": collection(AGREEMENT_HISTORY_COLLECTION),
+        "agreement_current": collection(AGREEMENT_CURRENT_COLLECTION),
+        "bundle_receipts": collection(BUNDLE_ACTIVATION_COLLECTION),
     }
 
 
@@ -204,6 +238,9 @@ def mongo_context() -> Iterator[tuple[MongoClient[Any], Any, dict[str, Any]]]:
         TenantBusinessRoleRepository.ensure_indexes(collections["business_role"])
         _issuer(collections).ensure_indexes()
         ensure_indexes(collections["history"], collections["current"])
+        ensure_agreement_indexes(collections["agreement_history"], collections["agreement_current"])
+        ensure_product_entitlement_indexes(collections["history"], collections["current"])
+        ensure_bundle_activation_indexes(collections["bundle_receipts"])
         yield client, database, collections
     finally:
         plan_registry_module.plans_collection = original_plans
