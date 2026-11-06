@@ -564,7 +564,7 @@ class OptionalTenantAuthorization:
         tenant_id: str | None = Header(default=None, alias="X-Tenant-ID"),
         principal_repository: Any = Depends(get_principal_authority_repository),
         membership_repository: Any = Depends(get_tenant_membership_repository),
-        role_assignment_repository: Any = Depends(_get_role_assignment_repository),
+        role_assignment_repository: Any = Depends(get_role_assignment_repository),
     ) -> TenantAuthorizationContext | None:
         try:
             return await self._required(
