@@ -108,6 +108,22 @@ describe('SovereignDashboardController EOS workspace contract', () => {
     }
   });
 
+  it('mounts all six tenant products on their real independent module destinations', () => {
+    const source = readFileSync(CONTROLLER_SOURCE, 'utf8');
+    const mounts = [
+      ['DASHBOARD_KEYS.LEGAL', '<LegalDashboard'],
+      ['DASHBOARD_KEYS.FINANCE', '<BillingHUD'],
+      ['DASHBOARD_KEYS.CRM', '<CRMDashboard'],
+      ['DASHBOARD_KEYS.HR', '<HRDashboard'],
+      ['DASHBOARD_KEYS.OPERATIONS', '<OperationsDashboard'],
+      ['DASHBOARD_KEYS.INTELLIGENCE', '<IntelligenceDashboard'],
+    ];
+    for (const [key, component] of mounts) {
+      expect(source).toContain(`dashboardKey === ${key}`);
+      expect(source).toContain(component);
+    }
+  });
+
   it('routes the new product workspace keys distinctly without changing the legacy Operations alias', () => {
     expect(resolveDashboardRequestSignal('OPERATIONS_DASHBOARD')).toBe(DASHBOARD_KEYS.OPERATIONS);
     expect(resolveDashboardRequestSignal('INTELLIGENCE_DASHBOARD')).toBe(DASHBOARD_KEYS.INTELLIGENCE);
