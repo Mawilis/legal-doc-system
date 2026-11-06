@@ -131,10 +131,9 @@ async function openProductiveWork(page) {
 }
 
 test(
-  'certifies Tenant Owner commercial read without changing the canonical tenant workspace',
-  async ({ browser, request }) => {
+  'certifies Tenant Owner Legal commercial workspace without practice access',
+  async ({ browser }) => {
     const {
-      actor,
       context,
       page,
       observedRequests,
@@ -142,18 +141,15 @@ test(
     } = await openAuthenticatedLegalWorkspace(browser, 'tenant_owner');
 
     expect(bootstrapPayload.workspace?.businessRole).toBe('TENANT_OWNER');
-    await expect(page.getByRole('button', { name: 'Document Vault' })).toBeVisible();
-    await expect(page.getByRole('button', { name: 'Team Members' })).toBeVisible();
+    await expect(page.getByRole('button', { name: 'LEGAL OS', exact: true })).toBeVisible();
 
-    const commercialResponse = await request.get(
-      '/api/legal-operations/commercial-context',
-      {
-        headers: {
-          Authorization: `Bearer ${actor.access_token}`,
-          'X-Tenant-ID': state.tenant_id,
-        },
-      },
-    );
+    const commercialResponsePromise = page.waitForResponse((response) => (
+      new URL(response.url()).pathname === '/api/legal-operations/commercial-context'
+      && response.request().method() === 'GET'
+    ));
+    await page.getByRole('button', { name: 'LEGAL OS', exact: true }).click();
+
+    const commercialResponse = await commercialResponsePromise;
     expect(commercialResponse.status()).toBe(200);
     const payload = await commercialResponse.json();
     expect(payload).toMatchObject({
@@ -167,12 +163,21 @@ test(
       subscription: { status: 'active' },
     });
 
+    await expect(
+      page.getByRole('heading', { name: 'Legal Product Command' }),
+    ).toBeVisible();
+    await expect(page.getByText('Tenant owner · commercial authority only')).toBeVisible();
+    await expect(page.getByText('ROLE-GATED')).toBeVisible();
+
     expect(observedRequests).not.toContain('/api/legal-operations/workspace');
     expect(observedRequests).not.toContain('/api/legal-operations/productive-work');
     expect(observedRequests).not.toContain('/api/legal-operations/conflict-screenings');
 
     await page.reload();
-    await expect(page.getByRole('button', { name: 'Document Vault' })).toBeVisible();
+    await expect(
+      page.getByRole('heading', { name: 'Legal Product Command' }),
+    ).toBeVisible();
+    await expect(page.getByText('ROLE-GATED')).toBeVisible();
     expect(observedRequests).not.toContain('/api/legal-operations/workspace');
     expect(observedRequests).not.toContain('/api/legal-operations/productive-work');
     expect(observedRequests).not.toContain('/api/legal-operations/conflict-screenings');
