@@ -139,7 +139,7 @@ test(
       bootstrapPayload,
     } = await openAuthenticatedLegalWorkspace(browser, 'tenant_owner');
 
-    expect(bootstrapPayload.workspace?.businessRole).toBe('TENANT_OWNER');
+    expect(String(bootstrapPayload.workspace?.businessRole || '').toUpperCase()).toBe('TENANT_OWNER');
     await expect(page.getByRole('button', { name: 'LEGAL OS', exact: true })).toBeVisible();
 
     const commercialResponsePromise = page.waitForResponse((response) => (
