@@ -116,6 +116,9 @@ async def read_my_work(
 ) -> dict[str, Any]:
     """Return only independently authorized work for the current principal/capacity."""
 
+    if not tenant_id or tenant_id != tenant_id.strip():
+        raise HTTPException(status_code=403, detail="TENANT_SCOPE_REQUIRED")
+
     principal_id = identity.identity_id
     contexts = (
         legal_context,
