@@ -152,8 +152,8 @@ export default function MyWorkWorkspace() {
                         <span className="text-[11px] uppercase tracking-wider text-slate-500">{item.kind || 'TASK'}</span>
                         {item.is_overdue && <span className="rounded-md bg-red-500/15 px-2 py-1 text-[10px] font-semibold uppercase text-red-200">Overdue</span>}
                       </div>
-                      <h2 className="mt-3 text-base font-semibold text-white sm:text-lg">{item.title}</h2>
-                      {item.description && <p className="mt-1 whitespace-pre-wrap text-sm text-slate-400">{item.description}</p>}
+                      <h2 className="mt-3 break-words text-base font-semibold text-white sm:text-lg">{item.title}</h2>
+                      {item.description && <p className="mt-1 break-words whitespace-pre-wrap text-sm text-slate-400">{item.description}</p>}
                     </div>
                     <div className="text-right">
                       <div className="text-xs uppercase tracking-wider text-slate-500">Priority</div>
