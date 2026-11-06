@@ -228,6 +228,11 @@ export default function TenantModuleWorkspace({ moduleId }) {
             </label>
             <button className={styles.submit} type="submit" disabled={saving || !title.trim()}>{saving ? 'Submitting to EOS…' : 'Create action'}</button>
           </form>
+          {snapshot?.entitlement ? (
+            <p className={styles.note}>
+              Active entitlement r{snapshot.entitlement.revision} · {snapshot.entitlement.id.slice(0, 12)}… · verified from EOS
+            </p>
+          ) : null}
           <p className={styles.note}>Commands are checked against this module's own tenant permission and active product entitlement. EOS is the only task lifecycle authority.</p>
         </aside>
       </section>
