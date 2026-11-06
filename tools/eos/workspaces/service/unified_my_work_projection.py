@@ -182,9 +182,12 @@ def build_unified_my_work(
         "summary": {
             "active_count": len(rows),
             "overdue_count": overdue_count,
+            # Do not emit zero-count entries for sources that were not
+            # admitted; an omitted source is not equivalent to an empty queue.
             "source_counts": {
                 source: sum(1 for item in rows if item["source"] == source)
                 for source in _SOURCE_ORDER
+                if payloads[source] is not None
             },
         },
         "authority": {
