@@ -63,6 +63,8 @@ class TenantProductId(str, Enum):
     BILLING = "BILLING"
     CRM = "CRM"
     HR = "HR"
+    OPERATIONS = "OPERATIONS"
+    INTELLIGENCE = "INTELLIGENCE"
 
 
 _CANONICAL_INPUTS: Final[dict[TenantProductId, dict[str, object]]] = {
@@ -89,6 +91,18 @@ _CANONICAL_INPUTS: Final[dict[TenantProductId, dict[str, object]]] = {
         "workspace_key": "HR_DASHBOARD",
         "required_products": (),
         "description": "Tenant people, workforce and human-resources operations workspace.",
+    },
+    TenantProductId.OPERATIONS: {
+        "label": "Operations",
+        "workspace_key": "OPERATIONS_DASHBOARD",
+        "required_products": (),
+        "description": "Tenant operational workflows, work queues and process execution workspace.",
+    },
+    TenantProductId.INTELLIGENCE: {
+        "label": "Intelligence",
+        "workspace_key": "INTELLIGENCE_DASHBOARD",
+        "required_products": (),
+        "description": "Tenant analytics, evidence-backed insights and decision-support workspace.",
     },
 }
 
