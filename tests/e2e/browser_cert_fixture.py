@@ -1403,7 +1403,7 @@ def verify(state_path: Path) -> None:
         database = _owned_database(client)
         module_entitlements = state.get("module_entitlements")
         expected_module_products = {
-            "BILLING", "CRM", "HR", "OPERATIONS", "INTELLIGENCE",
+            "BILLING", "CRM", "HR", "OPERATIONS", "INTELLIGENCE", "POS",
         }
         if (
             not isinstance(module_entitlements, dict)
