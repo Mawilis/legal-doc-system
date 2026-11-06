@@ -69,6 +69,16 @@ def test_real_replica_set_issue_resolve_revoke_and_tenant_location_isolation(mon
 
     resolved = _transaction(client, lambda tx: registry.resolve(value.tenant_id, value.location_id, value.principal_id, current, session=tx))
     assert resolved.to_dict() == value.to_dict()
+    active = _transaction(client, lambda tx: registry.list_active(
+        value.tenant_id, value.principal_id, current, session=tx,
+    ))
+    assert [item.location_id for item in active] == [value.location_id]
+    assert _transaction(client, lambda tx: registry.list_active(
+        value.tenant_id, "other-principal", current, session=tx,
+    )) == ()
+    assert _transaction(client, lambda tx: registry.list_active(
+        "tenant-b", value.principal_id, current, session=tx,
+    )) == ()
     with pytest.raises(registry.POSLocationAssignmentNotFound):
         _transaction(client, lambda tx: registry.resolve("tenant-b", value.location_id, value.principal_id, current, session=tx))
     with pytest.raises(registry.POSLocationAssignmentNotFound):
