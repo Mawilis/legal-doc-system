@@ -1,4 +1,7 @@
-import React, { useCallback, useEffect, useMemo, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { useAuth } from '../../contexts/authContext.jsx';
+import { useTenants } from '../../contexts/tenantContext.jsx';
+import WilsyOSDashboardChrome from './WilsyOSDashboardChrome.jsx';
 import {
   completeTenantModuleWorkItem,
   createTenantModuleWorkItem,
@@ -37,6 +40,9 @@ function failureMessage(error) {
 
 export default function TenantModuleWorkspace({ moduleId }) {
   const config = MODULES[moduleId];
+  const { user } = useAuth() || {};
+  const { activeTenant } = useTenants() || {};
+  const titleInputRef = useRef(null);
   const [snapshot, setSnapshot] = useState(null);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -115,7 +121,31 @@ export default function TenantModuleWorkspace({ moduleId }) {
 
   if (!config) return <main className={styles.workspace}><div role="alert">Unsupported tenant module.</div></main>;
 
+  const tenantIdentity = {
+    ...(activeTenant && typeof activeTenant === 'object' ? activeTenant : {}),
+    tenantId: snapshot?.tenantId || activeTenant?.tenantId || activeTenant?._id || user?.tenantId || '',
+  };
+
   return (
+    <WilsyOSDashboardChrome
+      dashboardKey={moduleId === 'OPERATIONS' ? 'operations' : 'intelligence'}
+      commandLabel={`WILSY OS ${config.label}`}
+      title={config.label}
+      role={user?.role || user?.accountRole || 'TENANT_OPERATOR'}
+      posture={snapshot ? 'LIVE' : error ? 'SOURCE_GAPS' : 'SOURCE_REQUIRED'}
+      storyMessages={[config.subtitle]}
+      tenant={tenantIdentity}
+      operator={user || {}}
+      actions={{
+        liveSyncLabel: loading ? 'SYNCING' : 'LIVE SYNC',
+        onLiveSync: refresh,
+        isRefreshing: loading,
+        primaryActionLabel: 'NEW ACTION',
+        onPrimaryAction: () => titleInputRef.current?.focus(),
+        primaryDisabled: saving,
+      }}
+      metrics={[]}
+    >
     <main className={styles.workspace} aria-label={config.label}>
       <header className={styles.header}>
         <div>
@@ -168,7 +198,7 @@ export default function TenantModuleWorkspace({ moduleId }) {
           <h2 className={styles.formTitle} id="module-create-title">New action</h2>
           <form className={styles.form} onSubmit={submit}>
             <label className={styles.field}>Action title
-              <input value={title} onChange={event => setTitle(event.target.value)} maxLength={240} required placeholder="Describe the next action" />
+              <input ref={titleInputRef} value={title} onChange={event => setTitle(event.target.value)} maxLength={240} required placeholder="Describe the next action" />
             </label>
             <label className={styles.field}>Type
               <select value={kind} onChange={event => setKind(event.target.value)}>
@@ -189,5 +219,6 @@ export default function TenantModuleWorkspace({ moduleId }) {
         </aside>
       </section>
     </main>
+    </WilsyOSDashboardChrome>
   );
 }
