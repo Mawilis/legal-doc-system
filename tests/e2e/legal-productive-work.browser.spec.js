@@ -135,9 +135,8 @@ test(
     ));
 
     await expect(
-      page.getByRole('button', { name: 'LEGAL OS' }),
+      page.getByRole('heading', { name: 'Legal Product Command' }),
     ).toBeVisible();
-    await page.getByRole('button', { name: 'LEGAL OS' }).click();
 
     const commercialResponse = await commercialResponsePromise;
     expect(commercialResponse.status()).toBe(200);
