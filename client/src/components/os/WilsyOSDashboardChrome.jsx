@@ -543,6 +543,7 @@ const WilsyOSDashboardChrome = ({
                     <button
                       key={module.moduleId}
                       type="button"
+                      data-wilsy-module-entry={module.moduleId}
                       className="wilsyOsChromeModuleIconButton"
                       title={module.label}
                       aria-label={module.label}
