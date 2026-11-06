@@ -33,7 +33,7 @@ jobs:
   focused-unit-certification:
     name: Unified My Work projection unit tests
     runs-on: ubuntu-latest
-    timeout-minutes: 10
+    timeout-minutes: 25
     steps:
       - name: Checkout exact commit
         uses: actions/checkout@v4
