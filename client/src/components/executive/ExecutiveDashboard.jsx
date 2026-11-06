@@ -596,9 +596,10 @@ const resolveExecutiveSourceCount = (payload = {}) => {
 const buildOperatingSourceRow = (descriptor = {}, { tenantId = 'MASTER', payload = null, error = null } = {}) => {
   const now = new Date().toISOString();
   const count = error ? null : resolveExecutiveSourceCount(payload);
+  const denied = error?.response?.status === 401 || error?.response?.status === 403;
   const live = !error;
   const status = error
-    ? `${descriptor.key?.toUpperCase()}_SOURCE_SILENT`
+    ? `${descriptor.key?.toUpperCase()}_${denied ? 'ACCESS_DENIED' : 'SOURCE_UNAVAILABLE'}`
     : count === 0
       ? `${descriptor.key?.toUpperCase()}_SOURCE_READY_EMPTY`
       : `${descriptor.key?.toUpperCase()}_SOURCE_LIVE`;
@@ -622,7 +623,7 @@ const buildOperatingSourceRow = (descriptor = {}, { tenantId = 'MASTER', payload
     count,
     lastSync: now,
     error: packet.error,
-    records: Array.isArray(payload) ? payload : Array.isArray(payload?.items) ? payload.items : Array.isArray(payload?.data?.items) ? payload.data.items : Array.isArray(payload?.records) ? payload.records : Array.isArray(payload?.data?.records) ? payload.data.records : [],
+    records: Array.isArray(payload) ? payload : Array.isArray(payload?.items) ? payload.items : Array.isArray(payload?.records) ? payload.records : Array.isArray(payload?.data) ? payload.data : Array.isArray(payload?.data?.items) ? payload.data.items : Array.isArray(payload?.data?.records) ? payload.data.records : [],
     proofHash: createExecutiveProofHash(packet)
   };
 };
