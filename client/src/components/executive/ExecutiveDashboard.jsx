@@ -3445,7 +3445,10 @@ const ExecutiveDashboard = ({
         {executiveCommandRail}
         <ExecutiveOperationalWorkbench
           sources={operatingSources}
-          onOpenFunction={(source) => executeFunctionCard({ key: source.functionKey, label: source.label, status: 'ENABLED', sourceStatus: source.status })}
+          onOpenFunction={(source) => {
+            const functionRow = executiveOperatingSystem.functionMatrix.find((item) => item.key === source?.functionKey);
+            if (functionRow) executeFunctionCard(functionRow);
+          }}
         />
       </div>
     ),
