@@ -6,10 +6,12 @@ on:
       - eos/tenant-discovery-iam-dashboard-roadmap
     paths:
       - "tools/eos/auth/tenant_module_manifest.py"
+      - "tools/eos/api/auth_router.py"
       - "tools/eos/crm/domain/crm_core_entitlement.py"
       - "tools/eos/saas/domain/tenant_product_entitlement.py"
       - "tools/eos/saas/entitlement/product_catalogue.py"
       - "tests/unit/test_tenant_module_manifest.py"
+      - "tests/unit/test_workspace_module_manifest_http.py"
       - ".github/workflows/eos-tenant-module-manifest-certification.yml"
   pull_request:
     paths:
@@ -48,11 +50,11 @@ jobs:
 
       - name: Compile module manifest and canonical entitlement domains
         run: |
-          python -m compileall -q tools/eos/auth/tenant_module_manifest.py tools/eos/crm/domain/crm_core_entitlement.py tools/eos/saas/domain/tenant_product_entitlement.py tools/eos/saas/entitlement/product_catalogue.py
+          python -m compileall -q tools/eos/api/auth_router.py tools/eos/auth/tenant_module_manifest.py tools/eos/crm/domain/crm_core_entitlement.py tools/eos/saas/domain/tenant_product_entitlement.py tools/eos/saas/entitlement/product_catalogue.py
 
       - name: Run direct module manifest and entitlement certificates
         run: |
-          python -m pytest -q tests/unit/test_tenant_module_manifest.py tests/unit/test_workspace_bootstrap_projection.py tests/unit/test_tenant_product_catalogue.py
+          python -m pytest -q tests/unit/test_tenant_module_manifest.py tests/unit/test_workspace_module_manifest_http.py tests/unit/test_workspace_bootstrap_projection.py tests/unit/test_tenant_product_catalogue.py
 
       - name: Enforce repository integrity
         run: |
