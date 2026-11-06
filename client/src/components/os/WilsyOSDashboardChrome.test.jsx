@@ -259,6 +259,40 @@ describe('EOS-issued tenant product navigation', () => {
     expect(() => validateWilsyModuleManifest(forged, 'ACME-001')).toThrow();
   });
 
+  it('admits all six independently entitled modules without adding client authority', () => {
+    const entries = [
+      ['LEGAL_OS', 'LEGAL_OPERATIONS', 'Legal OS', 'LEGAL_DASHBOARD', 'PROFESSIONAL_SERVICES', 'scale'],
+      ['BILLING', 'BILLING', 'Billing', 'BILLING_HUB', 'BUSINESS_OPERATIONS', 'receipt'],
+      ['CRM', 'CRM', 'CRM', 'CRM_DASHBOARD', 'CUSTOMER_OPERATIONS', 'users'],
+      ['PEOPLE', 'HR', 'People', 'HR_DASHBOARD', 'PEOPLE_OPERATIONS', 'users-round'],
+      ['OPERATIONS', 'OPERATIONS', 'Operations', 'OPERATIONS_DASHBOARD', 'BUSINESS_OPERATIONS', 'workflow'],
+      ['INTELLIGENCE', 'INTELLIGENCE', 'Intelligence', 'INTELLIGENCE_DASHBOARD', 'INTELLIGENCE', 'brain-circuit'],
+    ];
+    const sixModuleManifest = {
+      ...manifest,
+      workspace: {
+        ...manifest.workspace,
+        modules: entries.map(([moduleId, productId, label, workspaceKey, navigationGroup, iconKey], index) => ({
+          moduleId,
+          productId,
+          label,
+          workspaceKey,
+          navigationGroup,
+          iconKey,
+          entitlementId: `entitlement-${moduleId.toLowerCase()}`,
+          entitlementRevision: index + 1,
+          entitlementFingerprint: fingerprint(String(index + 1)),
+        })),
+      },
+    };
+    const result = validateWilsyModuleManifest(sixModuleManifest, 'ACME-001');
+    expect(result.map((item) => item.moduleId)).toEqual(entries.map(([moduleId]) => moduleId));
+    expect(new Set(result.map((item) => item.productId)).size).toBe(6);
+    expect(result.every((item) => !('permissions' in item) && !('businessRole' in item))).toBe(true);
+    expect(chromeSource).toContain('workflow: Workflow');
+    expect(chromeSource).toContain("'brain-circuit': BrainCircuit");
+  });
+
   it('loads modules from the authenticated server endpoint and navigates using the canonical workspace key', () => {
     expect(chromeSource).toContain("api.get('/auth/module-manifest')");
     expect(chromeSource).toContain("validateWilsyModuleManifest(data, tenantId)");
