@@ -43,6 +43,7 @@ export default function TenantModuleWorkspace({ moduleId }) {
   const { user } = useAuth() || {};
   const { activeTenant } = useTenants() || {};
   const titleInputRef = useRef(null);
+  const pendingCreateRef = useRef(null);
   const [snapshot, setSnapshot] = useState(null);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -60,9 +61,11 @@ export default function TenantModuleWorkspace({ moduleId }) {
       setSnapshot(next);
       setError('');
       setActionMessage('Workspace refreshed from current EOS records.');
+      return true;
     } catch (failure) {
       setSnapshot(null);
       setError(failureMessage(failure));
+      return false;
     } finally {
       setLoading(false);
     }
@@ -83,20 +86,30 @@ export default function TenantModuleWorkspace({ moduleId }) {
     setSaving(true);
     setError('');
     setActionMessage('');
+    const command = {
+      title: title.trim(),
+      description: '',
+      kind,
+      priority,
+      due_at: dueAt ? new Date(dueAt).toISOString() : null,
+      source_type: null,
+      source_id: null,
+    };
+    const fingerprint = JSON.stringify(command);
+    if (!pendingCreateRef.current || pendingCreateRef.current.fingerprint !== fingerprint) {
+      const key = window.crypto?.randomUUID?.()
+        || `module-work-${Date.now()}-${Math.random().toString(16).slice(2)}`;
+      pendingCreateRef.current = { fingerprint, key };
+    }
     try {
-      await createTenantModuleWorkItem(moduleId, {
-        title: title.trim(),
-        description: '',
-        kind,
-        priority,
-        due_at: dueAt ? new Date(dueAt).toISOString() : null,
-        source_type: null,
-        source_id: null,
-      });
+      await createTenantModuleWorkItem(moduleId, command, pendingCreateRef.current.key);
+      pendingCreateRef.current = null;
       setTitle('');
       setDueAt('');
-      await refresh();
-      setActionMessage('EOS accepted the action and the queue was refreshed.');
+      const refreshed = await refresh();
+      setActionMessage(refreshed
+        ? 'EOS accepted the action and the queue readback is current.'
+        : 'EOS accepted the action, but the queue readback is unavailable. Refresh before retrying.');
     } catch (failure) {
       setError(failureMessage(failure));
     } finally {
@@ -110,8 +123,10 @@ export default function TenantModuleWorkspace({ moduleId }) {
     setActionMessage('');
     try {
       await completeTenantModuleWorkItem(moduleId, item.work_item_id, config.completionNote);
-      await refresh();
-      setActionMessage('EOS confirmed completion and the queue was refreshed.');
+      const refreshed = await refresh();
+      setActionMessage(refreshed
+        ? 'EOS confirmed completion and the queue readback is current.'
+        : 'EOS confirmed completion, but the queue readback is unavailable. Refresh before relying on the view.');
     } catch (failure) {
       setError(failureMessage(failure));
     } finally {
