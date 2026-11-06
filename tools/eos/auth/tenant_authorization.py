@@ -484,6 +484,8 @@ _BINDINGS = MappingProxyType({
     **_BINDINGS,
     "commercial_agreement_read": "tenant:commercial_agreement:read",
     "commercial_agreement_draft_create": "tenant:commercial_agreement:draft:create",
+    "commercial_agreement_execute": "tenant:commercial_agreement:execute",
+    "commercial_agreement_activate": "tenant:commercial_agreement:activate",
 })
 
 # ARTIFACT: tenant_authorization.py
