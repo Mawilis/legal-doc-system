@@ -339,7 +339,8 @@ test('Tenant Owner My Work aggregates only owner-authorized sources and complete
       && response.request().method() === 'POST'
     ));
     await page.getByLabel(`Completion note for ${title}`).fill('Verified and completed from the authenticated My Work queue.');
-    await page.getByRole('button', { name: 'Complete' }).click();
+    const operationsCard = page.locator('article').filter({ hasText: title });
+    await operationsCard.getByRole('button', { name: 'Complete', exact: true }).click();
     const completed = await completion;
     expect(completed.status()).toBe(200);
     expect((await completed.json()).status).toBe('COMPLETED');
