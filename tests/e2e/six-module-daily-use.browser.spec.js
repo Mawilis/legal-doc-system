@@ -259,3 +259,115 @@ test('Operations and Intelligence workspaces remain usable at a narrow viewport'
     await context.close();
   }
 });
+
+
+test('Tenant Owner My Work aggregates only owner-authorized sources and completes through Operations', async ({ browser }) => {
+  const { context, page, browserErrors } = await openAuthenticated(browser, 'tenant_owner');
+  try {
+    const responsePromise = page.waitForResponse(response => (
+      new URL(response.url()).pathname === '/api/my-work'
+      && response.request().method() === 'GET'
+    ));
+    await page.goto('/my-work');
+    const response = await responsePromise;
+    expect(response.status()).toBe(200);
+    const projection = await response.json();
+    expect(projection.tenant_id).toBe(state.tenant_id);
+    expect(projection.principal_id).toBe(state.actors.tenant_owner.principal_id);
+    expect(projection.sources_included).toContain('OPERATIONS');
+    expect(projection.sources_included).toContain('INTELLIGENCE');
+    expect(projection.sources_included).toContain('CRM');
+    expect(projection.sources_included).not.toContain('LEGAL');
+
+    const title = `Browser My Work Operations task ${state.database_name}`;
+    const created = await page.evaluate(async ({ tenantId, title }) => {
+      const token = localStorage.getItem('wilsy_auth_token') || localStorage.getItem('token') || '';
+      const response = await fetch('/api/tenant-modules/operations/workspace/work-items', {
+        method: 'POST',
+        credentials: 'include',
+        headers: {
+          Authorization: `Bearer ${token}`,
+          'X-Tenant-ID': tenantId,
+          'Idempotency-Key': `my-work-${title}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          title,
+          description: 'Created by the authenticated My Work browser certificate.',
+          kind: 'TASK',
+          priority: 'HIGH',
+        }),
+      });
+      return { status: response.status, payload: await response.json() };
+    }, { tenantId: state.tenant_id, title });
+    expect(created.status).toBe(201);
+
+    await page.reload();
+    await expect(page.getByRole('heading', { name: 'My Work' })).toBeVisible();
+    await expect(page.getByText(title, { exact: true })).toBeVisible();
+
+    const completionPath = `/api/tenant-modules/operations/workspace/work-items/${encodeURIComponent(created.payload.work_item_id)}/complete`;
+    const completion = page.waitForResponse(response => (
+      new URL(response.url()).pathname === completionPath
+      && response.request().method() === 'POST'
+    ));
+    await page.getByLabel(`Completion note for ${title}`).fill('Verified and completed from the authenticated My Work queue.');
+    await page.getByRole('button', { name: 'Complete' }).click();
+    const completed = await completion;
+    expect(completed.status()).toBe(200);
+    expect((await completed.json()).status).toBe('COMPLETED');
+    await expect(page.getByText(title, { exact: true })).toHaveCount(0);
+    expect(browserErrors, browserErrors.join('\\n')).toEqual([]);
+  } finally {
+    await context.close();
+  }
+});
+
+test('Legal Partner My Work excludes owner CRM, Operations and Intelligence sources', async ({ browser }) => {
+  const { context, page } = await openAuthenticated(browser, 'partner');
+  try {
+    const responsePromise = page.waitForResponse(response => (
+      new URL(response.url()).pathname === '/api/my-work'
+      && response.request().method() === 'GET'
+    ));
+    await page.goto('/my-work');
+    const response = await responsePromise;
+    expect(response.status()).toBe(200);
+    const projection = await response.json();
+    expect(projection.tenant_id).toBe(state.tenant_id);
+    expect(projection.principal_id).toBe(state.actors.partner.principal_id);
+    expect(projection.sources_included).toContain('LEGAL');
+    expect(projection.sources_included).not.toContain('CRM');
+    expect(projection.sources_included).not.toContain('OPERATIONS');
+    expect(projection.sources_included).not.toContain('INTELLIGENCE');
+    await expect(page.getByRole('heading', { name: 'My Work' })).toBeVisible();
+    await expect(page.getByText('Operations', { exact: true })).toHaveCount(0);
+    await expect(page.getByText('Intelligence', { exact: true })).toHaveCount(0);
+  } finally {
+    await context.close();
+  }
+});
+
+test('My Work remains usable on a narrow authenticated viewport', async ({ browser }) => {
+  const { context, page } = await openAuthenticated(
+    browser,
+    'tenant_owner',
+    { width: 390, height: 844 },
+  );
+  try {
+    const responsePromise = page.waitForResponse(response => (
+      new URL(response.url()).pathname === '/api/my-work'
+      && response.request().method() === 'GET'
+    ));
+    await page.goto('/my-work');
+    expect((await responsePromise).status()).toBe(200);
+    await expect(page.getByRole('heading', { name: 'My Work' })).toBeVisible();
+    const dimensions = await page.evaluate(() => ({
+      viewport: document.documentElement.clientWidth,
+      document: document.documentElement.scrollWidth,
+    }));
+    expect(dimensions.document).toBeLessThanOrEqual(dimensions.viewport + 1);
+  } finally {
+    await context.close();
+  }
+});
