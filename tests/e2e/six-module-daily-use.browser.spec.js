@@ -95,8 +95,7 @@ async function switchModule(page, moduleId, workspacePath, method = 'GET', expec
     new URL(response.url()).pathname.endsWith(workspacePath)
     && response.request().method() === method
   ));
-  await page.getByRole('navigation', { name: 'Available WILSY OS products' })
-    .locator(`[data-wilsy-module-entry="${moduleId}"]`).click();
+  await page.locator(`[data-wilsy-module-entry="${moduleId}"]:visible`).first().click();
   const response = await responsePromise;
   expect(response.status()).toBe(expectedStatus);
   return response;
