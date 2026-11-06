@@ -300,7 +300,11 @@ def _hydrate_receipt(row: Mapping[str, Any]) -> CommercialBundleActivationReceip
         "offer_fingerprint", "agreement_fingerprint", "agreement_revision",
         "activation_evidence_reference", "activation_evidence_fingerprint",
         "execution_evidence_reference", "execution_evidence_fingerprint",
-        "activated_at", "product_entitlements", "fingerprint",
+        "contract_reference", "contract_version", "signatory_principal_id",
+        "signatory_authority_reference", "signatory_authority_fingerprint",
+        "verifier_id", "verification_receipt_reference",
+        "verification_receipt_fingerprint", "activated_at",
+        "product_entitlements", "fingerprint",
     }
     if set(raw) != expected or raw.get("schema") != SCHEMA or raw.get("version") != VERSION:
         raise CommercialBundleActivationPersistenceError(
@@ -483,7 +487,6 @@ def activate_commercial_bundle(
     if not isinstance(identity, SovereignIdentity) or identity.status is not PrincipalStatus.ACTIVE:
         raise CommercialBundleActivationError("COMMERCIAL_BUNDLE_ACTIVE_IDENTITY_REQUIRED")
     tenant_id = _text(identity.tenant_id, "COMMERCIAL_BUNDLE_TENANT_INVALID")
-    principal_id = _text(identity.identity_id, "COMMERCIAL_BUNDLE_PRINCIPAL_INVALID")
     agreement_id = _text(agreement_id, "COMMERCIAL_BUNDLE_AGREEMENT_ID_INVALID")
     when = _timestamp(occurred_at, "COMMERCIAL_BUNDLE_OCCURRED_AT_INVALID")
     if type(verified_execution_evidence) is not VerifiedCommercialAgreementExecutionEvidence:
