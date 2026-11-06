@@ -496,8 +496,6 @@ async def execute_electronic_tender(
 ):
     """Authorize and delegate one electronic collection to the Kennel bridge."""
     orchestrator = getattr(request.app.state, "pos_financial_movement_orchestrator", None)
-    if orchestrator is None:
-        raise HTTPException(status_code=503, detail="KENNEL_FINANCIAL_MOVEMENT_PROVIDER_UNBOUND")
     def authorize(collections, session):
         projection = _service(collections).read_sale(
             tenant_id=context.tenant_id, principal_id=context.identity.identity_id,
@@ -508,6 +506,8 @@ async def execute_electronic_tender(
                     if item.get("evidence_type") == "TENDER_INTENT" and item.get("evidence_id") == evidence_id), None)
         if row is None:
             raise HTTPException(status_code=404, detail="POS_TENDER_EVIDENCE_NOT_FOUND")
+        if orchestrator is None:
+            raise HTTPException(status_code=503, detail="KENNEL_FINANCIAL_MOVEMENT_PROVIDER_UNBOUND")
         data = row["evidence"]
         source = POSTenderIntent(
             tenant_id=data["tenant_id"], location_id=data["location_id"], sale_id=data["sale_id"],
@@ -556,6 +556,8 @@ async def execute_refund_intent(
                     if item.get("evidence_type") == "REFUND_INTENT" and item.get("evidence_id") == evidence_id), None)
         if row is None:
             raise HTTPException(status_code=404, detail="POS_REFUND_EVIDENCE_NOT_FOUND")
+        if orchestrator is None:
+            raise HTTPException(status_code=503, detail="KENNEL_FINANCIAL_MOVEMENT_PROVIDER_UNBOUND")
         data = row["evidence"]
         source = POSRefundIntent(
             tenant_id=data["tenant_id"], location_id=data["location_id"],
