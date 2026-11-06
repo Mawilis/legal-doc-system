@@ -1008,7 +1008,7 @@ ELIGIBILITY = MappingProxyType(_assignment_roles)
 # Tenant Owner/Admin may read and create drafts; Auditor is read-only.
 # Execution/activation remains unavailable until an independent evidence verifier
 # and product entitlement lifecycle coordinator are mounted.
-OPERATIONS = frozenset((*OPERATIONS, "commercial_agreement_read", "commercial_agreement_draft_create"))
+OPERATIONS = frozenset((*OPERATIONS, "commercial_agreement_read", "commercial_agreement_draft_create", "commercial_agreement_execute", "commercial_agreement_activate"))
 BUSINESS_ROLE_OPERATION_PERMISSIONS = MappingProxyType({
     **BUSINESS_ROLE_OPERATION_PERMISSIONS,
     "commercial_agreement_read": "tenant:commercial_agreement:read",
