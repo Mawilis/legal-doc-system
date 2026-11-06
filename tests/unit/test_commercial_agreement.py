@@ -56,7 +56,7 @@ def test_agreement_binds_exact_canonical_offer_fingerprint():
 
 @pytest.mark.parametrize("tenant", ["global", "root", "master", "*", "default"])
 def test_pseudo_tenant_is_rejected(tenant):
-    with pytest.raises(CommercialAgreementError, match="TENANT_INVALID"):
+    with pytest.raises(CommercialAgreementError, match="TENANT_(?:ID_)?INVALID"):
         draft(tenant_id=tenant)
 
 
