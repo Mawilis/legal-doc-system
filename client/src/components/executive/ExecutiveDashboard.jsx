@@ -3825,7 +3825,7 @@ const ExecutiveDashboard = ({
               <small>{executiveOperatingSystem.dailyDuties.length} source-aware duties</small>
             </header>
             <div className={styles.dutyQueueViewport}>
-              <table className={styles.dutyQueue}>
+              <table className={styles.dutyQueue} aria-label="Suggested executive work queue">
                 <thead>
                   <tr>
                     <th scope="col">Impact</th>
@@ -4256,7 +4256,7 @@ const ExecutiveDashboard = ({
           </div>
         </nav>
 
-        <main className={styles.workspaceViewport}>
+        <main className={styles.workspaceViewport} data-active-workspace={activeWorkspace}>
           <div className={styles.workspaceHeader}>
             <div>
               <span><ActiveWorkspaceIcon size={13} /> Workspace</span>
