@@ -1022,6 +1022,8 @@ for _agreement_role in ("tenant_owner", "tenant_admin"):
     _agreement_row.update({
         "commercial_agreement_read": ELIGIBLE,
         "commercial_agreement_draft_create": ELIGIBLE,
+        "commercial_agreement_execute": ELIGIBLE,
+        "commercial_agreement_activate": ELIGIBLE,
     })
     _agreement_eligibility[_agreement_role] = MappingProxyType(_agreement_row)
 _agreement_auditor = dict(_agreement_eligibility["tenant_auditor"])
