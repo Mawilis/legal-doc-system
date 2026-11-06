@@ -63,6 +63,6 @@ def test_pos_permissions_are_exact_and_location_assignment_is_not_inherited():
     assert "TENANT_ADMIN" not in get_roles_granting_permission("pos:location_assignment:manage")
     assert "TENANT_MANAGER" not in get_roles_granting_permission("pos:location_assignment:manage")
     assert tenant_role_operation_eligibility("tenant_manager", "pos_location_assignment_manage") == "DENY"
-    assert tenant_role_operation_eligibility("tenant_manager", "pos_sale_create") == "ELIGIBLE"
-    assert tenant_role_operation_eligibility("tenant_auditor", "pos_sale_read") == "ELIGIBLE"
+    assert tenant_role_operation_eligibility("tenant_manager", "pos_sale_create") == "DENY"
+    assert tenant_role_operation_eligibility("tenant_auditor", "pos_sale_read") == "DENY"
     assert tenant_role_operation_eligibility("tenant_auditor", "pos_sale_create") == "DENY"
