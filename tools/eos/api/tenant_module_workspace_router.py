@@ -113,7 +113,7 @@ def _register_module(slug: str, config: tuple, *, read_permission: str, create_p
 
     async def read_workspace(context: TenantAuthorizationContext = Depends(read_auth)):
         def read(service: TenantModuleWorkspaceService, session: Any):
-            items = service.daily_queue(
+            readback = service.read_workspace(
                 tenant_id=context.tenant_id, now=datetime.now(timezone.utc), session=session,
             )
             return {
@@ -122,7 +122,8 @@ def _register_module(slug: str, config: tuple, *, read_permission: str, create_p
                 "product_id": product_id.value,
                 "workspace_key": workspace_key,
                 "generated_at": datetime.now(timezone.utc).isoformat(),
-                "items": list(items),
+                **readback,
+                "items": list(readback["items"]),
             }
         return _transaction(product_id, collection_name, read)
 
