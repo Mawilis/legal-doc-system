@@ -43,7 +43,7 @@ VERSION = (
 )
 
 EXPECTED_SERVER_VERSION = (
-    "v1.34.0-L10A2R-C4D7-RECONCILIATION-RUNTIME-BOOTSTRAP"
+    "v1.41.0-GLOBAL-MFA-ENROLLMENT-AND-LEGACY-MIGRATION"
 )
 
 EXPECTED_PATH = "/api/legal-storefront/public-intents"
@@ -143,7 +143,7 @@ def test_server_bootstraps_both_storefront_index_contracts_once() -> None:
 
 
 def test_server_version_surfaces_are_exactly_aligned() -> None:
-    """Certify v1.24 runtime, sovereign header and end-seal alignment."""
+    """Certify canonical runtime, sovereign header and end-seal alignment."""
     assert server_api.VERSION == EXPECTED_SERVER_VERSION
 
     source = _server_source()
@@ -152,7 +152,7 @@ def test_server_version_surfaces_are_exactly_aligned() -> None:
     assert f'VERSION = "{EXPECTED_SERVER_VERSION}"' in source
     assert f"# VERSION: {EXPECTED_SERVER_VERSION}" in source
 
-    assert source.count(EXPECTED_SERVER_VERSION) == 4
+    assert source.count(EXPECTED_SERVER_VERSION) == 3
 
 
 def test_server_composition_does_not_copy_storefront_authority() -> None:
