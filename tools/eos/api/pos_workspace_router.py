@@ -1,0 +1,377 @@
+"""Authenticated tenant POS HTTP authority.
+
+Every POS business operation requires exact IAM permission, active POS product
+entitlement and a server-resolved active location assignment. Location IDs in
+URLs are selectors only. Location assignment issuance/revocation is a separate
+owner/admin command and cannot target the acting principal.
+"""
+from __future__ import annotations
+
+from datetime import datetime, timezone
+from hashlib import sha3_512
+import json
+from typing import Any, Literal
+import uuid
+
+from fastapi import APIRouter, Depends, Header, HTTPException, status
+from pydantic import BaseModel, ConfigDict, Field
+from pymongo.read_concern import ReadConcern
+from pymongo.read_preferences import ReadPreference
+from pymongo.write_concern import WriteConcern
+
+from tools.eos.api.tenant_authorization_http import (
+    RequireTenantAuthorization, TenantAuthorizationContext,
+)
+from tools.eos.auth.tenant_membership import TenantMembershipStatus
+from tools.eos.auth.tenant_membership_repository import (
+    TenantMembershipNotFoundError, TenantMembershipRepository,
+    TenantMembershipRepositoryError,
+)
+from tools.eos.kernel.db import get_client, get_database
+from tools.eos.saas.domain.pos_commercial import POSLineItem, POSTenderType
+from tools.eos.saas.domain.pos_location_assignment import (
+    POSLocationAssignment, POSLocationAssignmentStatus,
+)
+from tools.eos.saas.billing.pos_commercial_registry import (
+    POSSaleRegistry, POSRegistryError,
+)
+from tools.eos.saas.billing.pos_commercial_evidence_registry import (
+    POSCommercialEvidenceRegistry, POSCommercialEvidenceRegistryError,
+    POSCommercialEvidenceConflict,
+)
+from tools.eos.saas.billing.pos_location_assignment_registry import (
+    CURRENT_COLLECTION as LOCATION_CURRENT,
+    HISTORY_COLLECTION as LOCATION_HISTORY,
+    POSLocationAssignmentRegistry,
+    POSLocationAssignmentRegistryError,
+    POSLocationAssignmentConflict,
+    POSLocationAssignmentNotFound,
+)
+from tools.eos.saas.billing.pos_workspace_service import (
+    POSWorkspaceService, POSWorkspaceServiceError,
+)
+from tools.eos.saas.entitlement.tenant_product_entitlement_registry import (
+    CURRENT_COLLECTION as ENTITLEMENT_CURRENT,
+    HISTORY_COLLECTION as ENTITLEMENT_HISTORY,
+)
+
+router = APIRouter(prefix="/pos", tags=["Point of Sale"])
+
+
+class POSLocationAssignmentRequest(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+    principal_id: str = Field(min_length=1, max_length=160)
+
+
+class POSLocationRevocationRequest(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+    expected_revision: int = Field(ge=0)
+    reason: str = Field(min_length=3, max_length=500)
+
+
+class POSLineRequest(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+    product_id: str = Field(min_length=1, max_length=160)
+    sku: str = Field(min_length=1, max_length=160)
+    description: str = Field(min_length=1, max_length=500)
+    quantity: int = Field(gt=0, le=100000)
+    unit_price_minor: int = Field(ge=0)
+    discount_minor: int = Field(ge=0)
+    tax_minor: int = Field(ge=0)
+    currency: str = Field(min_length=3, max_length=3)
+
+
+class POSSaleCreateRequest(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+    sale_id: str = Field(min_length=1, max_length=160)
+    currency: str = Field(min_length=3, max_length=3)
+    lines: list[POSLineRequest] = Field(min_length=1, max_length=100)
+
+
+class POSTenderRequest(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+    tender_type: POSTenderType
+    amount_minor: int = Field(gt=0)
+    evidence_id: str = Field(min_length=1, max_length=160)
+
+
+class POSCashRequest(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+    cash_received_minor: int = Field(gt=0)
+    evidence_id: str = Field(min_length=1, max_length=160)
+
+
+class POSReturnRequest(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+    sku: str = Field(min_length=1, max_length=160)
+    quantity: int = Field(gt=0)
+    reason: str = Field(min_length=3, max_length=500)
+    return_id: str = Field(min_length=1, max_length=160)
+
+
+class POSRefundRequest(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+    amount_minor: int = Field(gt=0)
+    basis: str = Field(min_length=3, max_length=500)
+    refund_intent_id: str = Field(min_length=1, max_length=160)
+
+
+_ASSIGN = RequireTenantAuthorization("pos:location_assignment:manage", "pos_location_assignment_manage")
+_READ = RequireTenantAuthorization("pos:sale:read", "pos_sale_read")
+_CREATE = RequireTenantAuthorization("pos:sale:create", "pos_sale_create")
+_TENDER = RequireTenantAuthorization("pos:tender:create", "pos_tender_create")
+_CASH = RequireTenantAuthorization("pos:cash:record", "pos_cash_record")
+_RETURN = RequireTenantAuthorization("pos:return:create", "pos_return_create")
+_REFUND = RequireTenantAuthorization("pos:refund:create", "pos_refund_create")
+
+
+def _collection(database: Any, name: str):
+    return database.get_collection(
+        name,
+        write_concern=WriteConcern(w="majority", j=True),
+        read_concern=ReadConcern("majority"),
+    )
+
+
+def _prepare(database: Any) -> dict[str, Any]:
+    sales = _collection(database, "pos_sales")
+    evidence = _collection(database, "pos_commercial_evidence")
+    location_history = _collection(database, LOCATION_HISTORY)
+    location_current = _collection(database, LOCATION_CURRENT)
+    POSSaleRegistry.ensure_indexes(sales)
+    POSCommercialEvidenceRegistry.ensure_indexes(evidence)
+    POSLocationAssignmentRegistry.ensure_indexes(location_history, location_current)
+    return {
+        "sales": sales, "evidence": evidence,
+        "location_history": location_history, "location_current": location_current,
+        "entitlement_history": _collection(database, ENTITLEMENT_HISTORY),
+        "entitlement_current": _collection(database, ENTITLEMENT_CURRENT),
+    }
+
+
+def _service(collections: dict[str, Any]) -> POSWorkspaceService:
+    return POSWorkspaceService(
+        sales_collection=collections["sales"],
+        evidence_collection=collections["evidence"],
+        entitlement_history_collection=collections["entitlement_history"],
+        entitlement_current_collection=collections["entitlement_current"],
+        location_assignment_current_collection=collections["location_current"],
+    )
+
+
+def _transaction(callback):
+    client, database = get_client(), get_database()
+    if client is None or database is None:
+        raise HTTPException(status_code=503, detail="POS_DATABASE_UNAVAILABLE")
+    try:
+        collections = _prepare(database)
+        with client.start_session() as session:
+            return session.with_transaction(
+                lambda tx: callback(collections, tx),
+                read_concern=ReadConcern("snapshot"),
+                write_concern=WriteConcern("majority", j=True),
+                read_preference=ReadPreference.PRIMARY,
+            )
+    except POSWorkspaceServiceError as error:
+        code = error.code
+        status_code = 403 if code in {"POS_PRODUCT_NOT_ENTITLED", "POS_LOCATION_ACCESS_DENIED"} else 404 if code == "POS_SALE_NOT_FOUND_OR_CORRUPT" else 409 if "CONFLICT" in code or "REPLAY" in code else 503
+        raise HTTPException(status_code=status_code, detail=code) from error
+    except (POSLocationAssignmentConflict, POSCommercialEvidenceConflict) as error:
+        raise HTTPException(status_code=409, detail=str(error)) from error
+    except (POSLocationAssignmentNotFound, POSRegistryError) as error:
+        raise HTTPException(status_code=404, detail=str(error)) from error
+    except (POSLocationAssignmentRegistryError, POSCommercialEvidenceRegistryError) as error:
+        raise HTTPException(status_code=503, detail=str(error)) from error
+    except HTTPException:
+        raise
+    except Exception as error:
+        raise HTTPException(status_code=503, detail="POS_TRANSACTION_UNAVAILABLE") from error
+
+
+def _authority_evidence(context: TenantAuthorizationContext, *, tenant_id: str,
+                        location_id: str, target_principal_id: str,
+                        idempotency_key: str, command: str, occurred_at: datetime) -> tuple[str, str]:
+    payload = {
+        "schema": "WILSY-POS-LOCATION-AUTHORITY-COMMAND/V1",
+        "command": command,
+        "tenant_id": tenant_id,
+        "location_id": location_id,
+        "target_principal_id": target_principal_id,
+        "actor_principal_id": context.identity.identity_id,
+        "business_role": context.decision.business_role,
+        "authorization_role": context.decision.authorization_role,
+        "permission": "pos:location_assignment:manage",
+        "idempotency_key": idempotency_key,
+        "occurred_at": occurred_at.isoformat(),
+    }
+    digest = sha3_512(json.dumps(payload, sort_keys=True, separators=(",", ":")).encode()).hexdigest()
+    return f"pos-location-authority-command:{digest[:32]}", digest
+
+
+@router.post("/locations/{location_id}/assignments", status_code=status.HTTP_201_CREATED)
+async def assign_location(
+    location_id: str,
+    body: POSLocationAssignmentRequest,
+    idempotency_key: str = Header(alias="Idempotency-Key", min_length=1, max_length=160),
+    context: TenantAuthorizationContext = Depends(_ASSIGN),
+):
+    """Grant one explicit location assignment to another active tenant member."""
+    if body.principal_id == context.identity.identity_id:
+        raise HTTPException(status_code=403, detail="POS_LOCATION_SELF_ASSIGNMENT_PROHIBITED")
+    def command(collections, session):
+        try:
+            membership = TenantMembershipRepository().resolve(
+                body.principal_id, context.tenant_id, session=session,
+            )
+        except TenantMembershipNotFoundError as error:
+            raise HTTPException(status_code=404, detail="POS_TARGET_MEMBERSHIP_NOT_FOUND") from error
+        except TenantMembershipRepositoryError as error:
+            raise HTTPException(status_code=503, detail="POS_TARGET_MEMBERSHIP_UNAVAILABLE") from error
+        if membership.status is not TenantMembershipStatus.ACTIVE:
+            raise HTTPException(status_code=403, detail="POS_TARGET_MEMBERSHIP_INACTIVE")
+        now = datetime.now(timezone.utc)
+        reference, fingerprint = _authority_evidence(
+            context, tenant_id=context.tenant_id, location_id=location_id,
+            target_principal_id=body.principal_id, idempotency_key=idempotency_key,
+            command="ISSUE", occurred_at=now,
+        )
+        assignment_id = "posloc_" + sha3_512(
+            f"{context.tenant_id}\0{location_id}\0{body.principal_id}\0{idempotency_key}".encode()
+        ).hexdigest()[:32]
+        assignment = POSLocationAssignment(
+            tenant_id=context.tenant_id, location_id=location_id,
+            principal_id=body.principal_id, assignment_id=assignment_id,
+            revision=0, status=POSLocationAssignmentStatus.ACTIVE,
+            authority_reference=reference, authority_fingerprint=fingerprint,
+            idempotency_key=idempotency_key, occurred_at=now,
+            changed_by_principal_id=context.identity.identity_id,
+        )
+        value = POSLocationAssignmentRegistry.issue(
+            assignment, collections["location_history"], collections["location_current"],
+            session=session,
+        )
+        return value.to_dict()
+    return _transaction(command)
+
+
+@router.post("/locations/{location_id}/assignments/{principal_id}/revoke")
+async def revoke_location(
+    location_id: str,
+    principal_id: str,
+    body: POSLocationRevocationRequest,
+    idempotency_key: str = Header(alias="Idempotency-Key", min_length=1, max_length=160),
+    context: TenantAuthorizationContext = Depends(_ASSIGN),
+):
+    """Revoke one exact current assignment through revision-guarded authority."""
+    if principal_id == context.identity.identity_id:
+        raise HTTPException(status_code=403, detail="POS_LOCATION_SELF_REVOCATION_PROHIBITED")
+    def command(collections, session):
+        prior = POSLocationAssignmentRegistry.resolve(
+            context.tenant_id, location_id, principal_id,
+            collections["location_current"], session=session,
+        )
+        now = datetime.now(timezone.utc)
+        reference, fingerprint = _authority_evidence(
+            context, tenant_id=context.tenant_id, location_id=location_id,
+            target_principal_id=principal_id, idempotency_key=idempotency_key,
+            command="REVOKE", occurred_at=now,
+        )
+        value = POSLocationAssignmentRegistry.revoke(
+            tenant_id=context.tenant_id, location_id=location_id,
+            principal_id=principal_id, assignment_id=prior.assignment_id,
+            expected_revision=body.expected_revision,
+            authority_reference=reference, authority_fingerprint=fingerprint,
+            idempotency_key=idempotency_key, occurred_at=now,
+            changed_by_principal_id=context.identity.identity_id,
+            reason=body.reason, history=collections["location_history"],
+            current=collections["location_current"], session=session,
+        )
+        return value.to_dict()
+    return _transaction(command)
+
+
+@router.post("/locations/{location_id}/sales", status_code=status.HTTP_201_CREATED)
+async def create_sale(
+    location_id: str,
+    body: POSSaleCreateRequest,
+    idempotency_key: str = Header(alias="Idempotency-Key", min_length=1, max_length=160),
+    context: TenantAuthorizationContext = Depends(_CREATE),
+):
+    def command(collections, session):
+        return _service(collections).create_sale(
+            tenant_id=context.tenant_id, principal_id=context.identity.identity_id,
+            location_id=location_id, sale_id=body.sale_id, currency=body.currency,
+            lines=tuple(POSLineItem(**line.model_dump()) for line in body.lines),
+            idempotency_key=idempotency_key, session=session,
+        ).to_dict()
+    return _transaction(command)
+
+
+@router.get("/locations/{location_id}/sales/{sale_id}")
+async def read_sale(
+    location_id: str, sale_id: str,
+    context: TenantAuthorizationContext = Depends(_READ),
+):
+    return _transaction(lambda collections, session: _service(collections).read_sale(
+        tenant_id=context.tenant_id, principal_id=context.identity.identity_id,
+        location_id=location_id, sale_id=sale_id, session=session,
+    ))
+
+
+@router.post("/locations/{location_id}/sales/{sale_id}/tenders", status_code=status.HTTP_201_CREATED)
+async def create_tender(
+    location_id: str, sale_id: str, body: POSTenderRequest,
+    idempotency_key: str = Header(alias="Idempotency-Key", min_length=1, max_length=160),
+    context: TenantAuthorizationContext = Depends(_TENDER),
+):
+    return _transaction(lambda collections, session: _service(collections).record_tender(
+        tenant_id=context.tenant_id, principal_id=context.identity.identity_id,
+        location_id=location_id, sale_id=sale_id, tender_type=body.tender_type,
+        amount_minor=body.amount_minor, idempotency_key=idempotency_key,
+        evidence_id=body.evidence_id, session=session,
+    ))
+
+
+@router.post("/locations/{location_id}/sales/{sale_id}/cash-tenders", status_code=status.HTTP_201_CREATED)
+async def record_cash(
+    location_id: str, sale_id: str, body: POSCashRequest,
+    idempotency_key: str = Header(alias="Idempotency-Key", min_length=1, max_length=160),
+    context: TenantAuthorizationContext = Depends(_CASH),
+):
+    return _transaction(lambda collections, session: _service(collections).record_cash(
+        tenant_id=context.tenant_id, principal_id=context.identity.identity_id,
+        location_id=location_id, sale_id=sale_id,
+        cash_received_minor=body.cash_received_minor, idempotency_key=idempotency_key,
+        evidence_id=body.evidence_id, session=session,
+    ))
+
+
+@router.post("/locations/{location_id}/sales/{sale_id}/returns", status_code=status.HTTP_201_CREATED)
+async def create_return(
+    location_id: str, sale_id: str, body: POSReturnRequest,
+    idempotency_key: str = Header(alias="Idempotency-Key", min_length=1, max_length=160),
+    context: TenantAuthorizationContext = Depends(_RETURN),
+):
+    return _transaction(lambda collections, session: _service(collections).create_return(
+        tenant_id=context.tenant_id, principal_id=context.identity.identity_id,
+        location_id=location_id, sale_id=sale_id, sku=body.sku,
+        quantity=body.quantity, reason=body.reason, return_id=body.return_id,
+        idempotency_key=idempotency_key, session=session,
+    ))
+
+
+@router.post("/locations/{location_id}/sales/{sale_id}/refund-intents", status_code=status.HTTP_201_CREATED)
+async def create_refund(
+    location_id: str, sale_id: str, body: POSRefundRequest,
+    idempotency_key: str = Header(alias="Idempotency-Key", min_length=1, max_length=160),
+    context: TenantAuthorizationContext = Depends(_REFUND),
+):
+    return _transaction(lambda collections, session: _service(collections).create_refund(
+        tenant_id=context.tenant_id, principal_id=context.identity.identity_id,
+        location_id=location_id, sale_id=sale_id, amount_minor=body.amount_minor,
+        basis=body.basis, refund_intent_id=body.refund_intent_id,
+        idempotency_key=idempotency_key, session=session,
+    ))
+
+
+__all__ = ["router"]
