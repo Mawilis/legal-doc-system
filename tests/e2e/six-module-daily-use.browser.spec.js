@@ -97,7 +97,8 @@ async function switchModule(page, moduleId, workspacePath, method = 'GET', expec
   ));
   await page.locator(`[data-wilsy-module-entry="${moduleId}"]:visible`).first().click();
   const response = await responsePromise;
-  expect(response.status()).toBe(expectedStatus);
+  const responseBody = await response.text();
+  expect(response.status(), `${workspacePath}: ${responseBody}`).toBe(expectedStatus);
   return response;
 }
 
@@ -174,20 +175,20 @@ test('owner completes the authenticated seven-module daily-use journey', async (
 
     // Operations has its own product entitlement, task collection and permissions.
     const operationsQueue = await switchModule(
-      page, 'Operations', '/api/tenant-modules/operations/workspace',
+      page, 'OPERATIONS', '/api/tenant-modules/operations/workspace',
     );
     expect((await operationsQueue.json()).product_id).toBe('OPERATIONS');
-    await expect(page.getByRole('heading', { name: 'Operations OS' })).toBeVisible();
+    await expect(page.getByRole('main', { name: 'Operations OS' }).getByRole('heading', { name: 'Operations OS' })).toBeVisible();
     await createAndComplete(
       page, 'OPERATIONS', `Browser Operations action ${state.database_name}`,
     );
 
     // Intelligence has an independent entitlement and queue; it is not a read-only Operations alias.
     const intelligenceQueue = await switchModule(
-      page, 'Intelligence', '/api/tenant-modules/intelligence/workspace',
+      page, 'INTELLIGENCE', '/api/tenant-modules/intelligence/workspace',
     );
     expect((await intelligenceQueue.json()).product_id).toBe('INTELLIGENCE');
-    await expect(page.getByRole('heading', { name: 'Intelligence OS' })).toBeVisible();
+    await expect(page.getByRole('main', { name: 'Intelligence OS' }).getByRole('heading', { name: 'Intelligence OS' })).toBeVisible();
     await createAndComplete(
       page, 'INTELLIGENCE', `Browser Intelligence action ${state.database_name}`,
     );
