@@ -303,6 +303,25 @@ describe('api.js – Sovereign HTTP Client', () => {
       }
     });
 
+    it.each([
+      '/crm/owner-workspace/work-items',
+      '/crm/owner-workspace/work-items/owk_example/complete',
+      '/tenant-modules/operations/workspace/work-items',
+      '/tenant-modules/intelligence/workspace/work-items/tmw_example/complete',
+    ])('preserves strict EOS work command body for %s', async (url) => {
+      const payload = { title: 'Quarterly review', completion_note: 'Reviewed' };
+      mockAdapter.mockImplementation(async config => ({
+        data: {}, status: 200, statusText: 'OK', headers: {}, config,
+      }));
+
+      await api.post(url, payload);
+      const sealed = mockAdapter.mock.calls.at(-1)[0];
+      expect(sealed.data).toEqual(payload);
+      expect(sealed.data).not.toHaveProperty('timestamp');
+      expect(sealed.headers['x-forensic-timestamp']).toEqual(expect.any(String));
+      expect(sealed.headers['x-request-seal']).toEqual(expect.any(String));
+    });
+
     it('preserves historical timestamp body injection for unrelated mutation routes', async () => {
       expect(requestInterceptorCapture.fulfilled).toEqual(expect.any(Function));
 
