@@ -125,14 +125,27 @@ def test_real_replica_set_proves_module_entitlement_and_queue_isolation(mongo_co
         due_at=None, source_type=None, source_id=None, idempotency_key="operations-task-1",
         now=NOW, session=session,
     ))
+    replayed = transact(client, lambda session: operations.create(
+        tenant_id=TENANT, principal_id="principal-owner", title="Publish weekly operating plan",
+        description="", kind=ModuleWorkKind.TASK, priority=ModuleWorkPriority.HIGH,
+        due_at=None, source_type=None, source_id=None, idempotency_key="operations-task-1",
+        now=NOW, session=session,
+    ))
+    intelligence_created = transact(client, lambda session: intelligence.create(
+        tenant_id=TENANT, principal_id="principal-owner", title="Review quarterly insight pack",
+        description="", kind=ModuleWorkKind.TASK, priority=ModuleWorkPriority.NORMAL,
+        due_at=None, source_type=None, source_id=None, idempotency_key="intelligence-task-1",
+        now=NOW, session=session,
+    ))
     ops_queue = transact(client, lambda session: operations.daily_queue(
         tenant_id=TENANT, now=NOW, session=session,
     ))
     intel_queue = transact(client, lambda session: intelligence.daily_queue(
         tenant_id=TENANT, now=NOW, session=session,
     ))
+    assert replayed.work_item_id == created.work_item_id
     assert [item["work_item_id"] for item in ops_queue] == [created.work_item_id]
-    assert intel_queue == ()
+    assert [item["work_item_id"] for item in intel_queue] == [intelligence_created.work_item_id]
 
     completed = transact(client, lambda session: operations.complete(
         tenant_id=TENANT, work_item_id=created.work_item_id,
@@ -142,6 +155,9 @@ def test_real_replica_set_proves_module_entitlement_and_queue_isolation(mongo_co
     assert transact(client, lambda session: operations.daily_queue(
         tenant_id=TENANT, now=NOW, session=session,
     )) == ()
+    assert [item["work_item_id"] for item in transact(client, lambda session: intelligence.daily_queue(
+        tenant_id=TENANT, now=NOW, session=session,
+    ))] == [intelligence_created.work_item_id]
 
     missing = build_service(
         database, TenantProductId.INTELLIGENCE, "tenant_intelligence_work_items",
