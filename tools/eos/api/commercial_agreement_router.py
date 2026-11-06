@@ -1,14 +1,16 @@
-"""Authenticated tenant commercial agreement HTTP surface.
+"""Authenticated tenant commercial agreement execution and bundle authority.
 
-Draft creation and readback only. Execution and activation require a separately
-verified contract-evidence authority and are intentionally not exposed here.
+Draft/read access, execution, activation and entitlement readback are separate
+IAM operations. Execution evidence is loaded and verified by server-configured
+trusted adapters; HTTP bodies can supply only an evidence reference. Missing
+trust providers fail closed with 503 and never accept browser-authored proofs.
 """
 from __future__ import annotations
 
 from datetime import datetime, timezone
-from typing import Any
+from typing import Any, Callable
 
-from fastapi import APIRouter, Depends, Header, HTTPException
+from fastapi import APIRouter, Depends, Header, HTTPException, Request
 from pydantic import BaseModel, ConfigDict, Field
 from pymongo.read_concern import ReadConcern
 from pymongo.read_preferences import ReadPreference
@@ -18,30 +20,62 @@ from tools.eos.api.tenant_authorization_http import (
     RequireTenantAuthorization,
     TenantAuthorizationContext,
 )
+from tools.eos.auth.principal_authority_repository import PrincipalAuthorityRepository
+from tools.eos.auth.role_assignment_repository import RoleAssignmentRepository
+from tools.eos.auth.tenant_authorization_decision_evidence_registry import (
+    COLLECTION as AUTHORIZATION_EVIDENCE_COLLECTION,
+    TenantAuthorizationDecisionEvidenceRegistry,
+)
+from tools.eos.auth.tenant_business_role_repository import TenantBusinessRoleRepository
+from tools.eos.auth.tenant_membership_repository import TenantMembershipRepository
 from tools.eos.kernel.db import get_client, get_database
+from tools.eos.saas.billing.subscription_registry import subscriptions_collection
 from tools.eos.saas.entitlement.commercial_agreement import (
     CommercialAgreement,
     CommercialAgreementError,
     CommercialAgreementState,
     CommercialRenewalMode,
 )
+from tools.eos.saas.entitlement.commercial_agreement_execution_verifier import (
+    CommercialAgreementExecutionVerificationError,
+    CommercialAgreementExecutionVerifier,
+)
 from tools.eos.saas.entitlement.commercial_agreement_registry import (
-    CURRENT_COLLECTION,
-    HISTORY_COLLECTION,
+    CURRENT_COLLECTION as AGREEMENT_CURRENT_COLLECTION,
+    HISTORY_COLLECTION as AGREEMENT_HISTORY_COLLECTION,
     CommercialAgreementRegistryConflictError,
     CommercialAgreementRegistryError,
     CommercialAgreementRegistryNotFoundError,
     CommercialAgreementRegistryPersistenceUnavailableError,
     CommercialAgreementRegistryPersistedRecordInvalidError,
     create_or_replay,
-    ensure_indexes,
+    ensure_indexes as ensure_agreement_indexes,
     get_current,
     get_history,
+    transition as transition_agreement,
+)
+from tools.eos.saas.entitlement.commercial_bundle_activation import (
+    CommercialBundleActivationConflictError,
+    CommercialBundleActivationError,
+    CommercialBundleActivationEvidenceError,
+    CommercialBundleActivationPersistenceError,
+    CommercialBundleActivationOutcome,
+    CommercialBundleReconciliationState,
+    activate_commercial_bundle,
+    ensure_indexes as ensure_bundle_activation_indexes,
+    reconcile_commercial_bundle_activation,
 )
 from tools.eos.saas.entitlement.commercial_offer_catalogue import (
     CommercialOfferId,
     CommercialOfferCatalogueError,
     get_commercial_offer,
+)
+from tools.eos.saas.entitlement.tenant_product_entitlement_registry import (
+    CURRENT_COLLECTION as ENTITLEMENT_CURRENT_COLLECTION,
+    HISTORY_COLLECTION as ENTITLEMENT_HISTORY_COLLECTION,
+    TenantProductEntitlementRegistryError,
+    ensure_indexes as ensure_entitlement_indexes,
+    get_current as get_current_product_entitlement,
 )
 
 router = APIRouter(prefix="/commercial/agreements", tags=["Commercial Agreements"])
@@ -50,6 +84,12 @@ _READ = RequireTenantAuthorization(
 )
 _DRAFT_CREATE = RequireTenantAuthorization(
     "tenant:commercial_agreement:draft:create", "commercial_agreement_draft_create"
+)
+_EXECUTE = RequireTenantAuthorization(
+    "tenant:commercial_agreement:execute", "commercial_agreement_execute"
+)
+_ACTIVATE = RequireTenantAuthorization(
+    "tenant:commercial_agreement:activate", "commercial_agreement_activate"
 )
 
 
@@ -67,27 +107,44 @@ class CommercialAgreementDraftRequest(BaseModel):
     termination_terms_reference: str = Field(min_length=1, max_length=160)
 
 
+class CommercialAgreementExecutionRequest(BaseModel):
+    """Only a reference to server-held execution evidence is requestable."""
+
+    model_config = ConfigDict(extra="forbid")
+    execution_evidence_reference: str = Field(min_length=1, max_length=256)
+
+
 def _collections(database: Any) -> tuple[Any, Any]:
     history = database.get_collection(
-        HISTORY_COLLECTION,
+        AGREEMENT_HISTORY_COLLECTION,
         write_concern=WriteConcern(w="majority", j=True),
         read_concern=ReadConcern("majority"),
     )
     current = database.get_collection(
-        CURRENT_COLLECTION,
+        AGREEMENT_CURRENT_COLLECTION,
         write_concern=WriteConcern(w="majority", j=True),
         read_concern=ReadConcern("majority"),
     )
     return history, current
 
 
-def _transaction(callback):
+def _execution_verifier(request: Request) -> CommercialAgreementExecutionVerifier:
+    verifier = getattr(request.app.state, "commercial_agreement_execution_verifier", None)
+    if not isinstance(verifier, CommercialAgreementExecutionVerifier):
+        raise HTTPException(
+            status_code=503,
+            detail="COMMERCIAL_AGREEMENT_TRUSTED_EXECUTION_VERIFIER_UNAVAILABLE",
+        )
+    return verifier
+
+
+def _transaction(callback: Callable[[Any, Any, Any], Any]) -> Any:
     client, database = get_client(), get_database()
     if client is None or database is None:
         raise HTTPException(status_code=503, detail="COMMERCIAL_AGREEMENT_DATABASE_UNAVAILABLE")
     try:
         history, current = _collections(database)
-        ensure_indexes(history, current)
+        ensure_agreement_indexes(history, current)
         with client.start_session() as session:
             return session.with_transaction(
                 lambda tx: callback(history, current, tx),
@@ -103,6 +160,9 @@ def _transaction(callback):
         raise HTTPException(status_code=422, detail=str(error)) from error
     except CommercialOfferCatalogueError as error:
         raise HTTPException(status_code=422, detail=str(error)) from error
+    except CommercialAgreementExecutionVerificationError as error:
+        status = 503 if any(word in error.code for word in ("UNAVAILABLE", "UNTRUSTED")) else 422
+        raise HTTPException(status_code=status, detail=error.code) from error
     except CommercialAgreementRegistryPersistedRecordInvalidError as error:
         raise HTTPException(status_code=503, detail=error.code) from error
     except CommercialAgreementRegistryPersistenceUnavailableError as error:
@@ -113,6 +173,73 @@ def _transaction(callback):
         raise
     except Exception as error:
         raise HTTPException(status_code=503, detail="COMMERCIAL_AGREEMENT_TRANSACTION_UNAVAILABLE") from error
+
+
+def _bundle_transaction(callback: Callable[..., Any]) -> Any:
+    """Open one transaction and inject every canonical bundle participant."""
+    client, database = get_client(), get_database()
+    if client is None or database is None:
+        raise HTTPException(status_code=503, detail="COMMERCIAL_BUNDLE_DATABASE_UNAVAILABLE")
+    try:
+        agreement_history, agreement_current = _collections(database)
+        entitlement_history = database.get_collection(
+            ENTITLEMENT_HISTORY_COLLECTION,
+            write_concern=WriteConcern(w="majority", j=True),
+            read_concern=ReadConcern("majority"),
+        )
+        entitlement_current = database.get_collection(
+            ENTITLEMENT_CURRENT_COLLECTION,
+            write_concern=WriteConcern(w="majority", j=True),
+            read_concern=ReadConcern("majority"),
+        )
+        receipts = database.get_collection(
+            "commercial_bundle_activation_receipts",
+            write_concern=WriteConcern(w="majority", j=True),
+            read_concern=ReadConcern("majority"),
+        )
+        authorization = database.get_collection(
+            AUTHORIZATION_EVIDENCE_COLLECTION,
+            write_concern=WriteConcern(w="majority", j=True),
+            read_concern=ReadConcern("majority"),
+        )
+        ensure_agreement_indexes(agreement_history, agreement_current)
+        ensure_entitlement_indexes(entitlement_history, entitlement_current)
+        ensure_bundle_activation_indexes(receipts)
+        issuer = TenantAuthorizationDecisionEvidenceRegistry(
+            authorization,
+            principal_repository=PrincipalAuthorityRepository,
+            membership_repository=TenantMembershipRepository,
+            role_assignment_repository=RoleAssignmentRepository,
+            business_role_repository=TenantBusinessRoleRepository,
+        )
+        issuer.ensure_indexes()
+        with client.start_session() as session:
+            return session.with_transaction(
+                lambda tx: callback(
+                    agreement_history, agreement_current,
+                    entitlement_history, entitlement_current,
+                    receipts, issuer, tx,
+                ),
+                read_concern=ReadConcern("snapshot"),
+                write_concern=WriteConcern(w="majority", j=True),
+                read_preference=ReadPreference.PRIMARY,
+            )
+    except CommercialAgreementRegistryNotFoundError as error:
+        raise HTTPException(status_code=404, detail=error.code) from error
+    except (CommercialAgreementRegistryConflictError, CommercialBundleActivationConflictError) as error:
+        raise HTTPException(status_code=409, detail=getattr(error, "code", "COMMERCIAL_BUNDLE_CONFLICT")) from error
+    except (CommercialBundleActivationEvidenceError, CommercialAgreementExecutionVerificationError) as error:
+        code = getattr(error, "code", "COMMERCIAL_BUNDLE_EVIDENCE_INVALID")
+        status = 503 if any(word in code for word in ("UNAVAILABLE", "UNTRUSTED")) else 422
+        raise HTTPException(status_code=status, detail=code) from error
+    except (CommercialBundleActivationPersistenceError, CommercialAgreementRegistryPersistenceUnavailableError) as error:
+        raise HTTPException(status_code=503, detail=getattr(error, "code", "COMMERCIAL_BUNDLE_PERSISTENCE_UNAVAILABLE")) from error
+    except (CommercialBundleActivationError, CommercialAgreementRegistryError, TenantProductEntitlementRegistryError) as error:
+        raise HTTPException(status_code=503, detail=getattr(error, "code", "COMMERCIAL_BUNDLE_OPERATION_UNAVAILABLE")) from error
+    except HTTPException:
+        raise
+    except Exception as error:
+        raise HTTPException(status_code=503, detail="COMMERCIAL_BUNDLE_TRANSACTION_UNAVAILABLE") from error
 
 
 @router.post("", status_code=201)
@@ -178,4 +305,144 @@ async def read_history(
     return _transaction(read)
 
 
-__all__ = ["router", "CommercialAgreementDraftRequest"]
+@router.post("/{agreement_id}/execute")
+async def execute_agreement(
+    agreement_id: str,
+    body: CommercialAgreementExecutionRequest,
+    request: Request,
+    context: TenantAuthorizationContext = Depends(_EXECUTE),
+) -> dict[str, object]:
+    """Record execution only after server-side signature, mandate and timestamp verification."""
+    verifier = _execution_verifier(request)
+
+    def execute(history, current, session):
+        agreement = get_current(context.tenant_id, agreement_id, history, current, session=session)
+        verified = verifier.verify(
+            agreement=agreement,
+            evidence_reference=body.execution_evidence_reference,
+        )
+        if verified.signatory_principal_id != context.identity.identity_id:
+            raise HTTPException(status_code=403, detail="COMMERCIAL_AGREEMENT_SIGNATORY_MUST_MATCH_AUTHENTICATED_PRINCIPAL")
+        if agreement.lifecycle_state is CommercialAgreementState.EXECUTED:
+            if (
+                agreement.execution_evidence_reference == verified.execution_evidence_reference
+                and agreement.execution_evidence_fingerprint == verified.execution_evidence_fingerprint
+            ):
+                return {"outcome": "IDEMPOTENT_REPLAY", "agreement": agreement.to_dict()}
+            raise HTTPException(status_code=409, detail="COMMERCIAL_AGREEMENT_EXECUTION_REPLAY_CONFLICT")
+        if agreement.lifecycle_state is not CommercialAgreementState.DRAFT:
+            raise HTTPException(status_code=409, detail="COMMERCIAL_AGREEMENT_NOT_EXECUTABLE")
+        _, persisted = transition_agreement(
+            tenant_id=context.tenant_id,
+            agreement_id=agreement_id,
+            target_state=CommercialAgreementState.EXECUTED,
+            expected_revision=agreement.lifecycle_revision,
+            evidence_reference=verified.execution_evidence_reference,
+            evidence_fingerprint=verified.execution_evidence_fingerprint,
+            occurred_at=verified.signed_at,
+            history_collection=history,
+            current_collection=current,
+            session=session,
+        )
+        return {
+            "outcome": "EXECUTED",
+            "verification_receipt_reference": verified.verification_receipt_reference,
+            "verification_receipt_fingerprint": verified.verification_receipt_fingerprint,
+            "agreement": persisted.to_dict(),
+        }
+    return _transaction(execute)
+
+
+@router.post("/{agreement_id}/activate")
+async def activate_agreement(
+    agreement_id: str,
+    body: CommercialAgreementExecutionRequest,
+    request: Request,
+    context: TenantAuthorizationContext = Depends(_ACTIVATE),
+) -> dict[str, object]:
+    """Atomically activate the verified agreement and issue every mapped product."""
+    verifier = _execution_verifier(request)
+
+    def activate(history, current, entitlement_history, entitlement_current, receipts, issuer, session):
+        agreement = get_current(context.tenant_id, agreement_id, history, current, session=session)
+        if agreement.lifecycle_state is not CommercialAgreementState.EXECUTED:
+            raise HTTPException(status_code=409, detail="COMMERCIAL_AGREEMENT_MUST_BE_EXECUTED_BEFORE_ACTIVATION")
+        verified = verifier.verify(
+            agreement=agreement,
+            evidence_reference=body.execution_evidence_reference,
+        )
+        outcome, receipt = activate_commercial_bundle(
+            identity=context.identity,
+            agreement_id=agreement_id,
+            verified_execution_evidence=verified,
+            occurred_at=datetime.now(timezone.utc),
+            agreement_history_collection=history,
+            agreement_current_collection=current,
+            subscription_collection=subscriptions_collection,
+            entitlement_history_collection=entitlement_history,
+            entitlement_current_collection=entitlement_current,
+            authorization_evidence_registry=issuer,
+            receipt_collection=receipts,
+            session=session,
+        )
+        return {"outcome": outcome.value, "activation_receipt": receipt.to_document()}
+    return _bundle_transaction(activate)
+
+
+@router.get("/{agreement_id}/entitlements")
+async def read_activated_entitlements(
+    agreement_id: str,
+    context: TenantAuthorizationContext = Depends(_READ),
+) -> dict[str, object]:
+    """Read receipt-correlated active product entitlements for the authenticated tenant."""
+    def read(history, current, session):
+        database = get_database()
+        if database is None:
+            raise HTTPException(status_code=503, detail="COMMERCIAL_BUNDLE_DATABASE_UNAVAILABLE")
+        entitlement_history = database.get_collection(ENTITLEMENT_HISTORY_COLLECTION)
+        entitlement_current = database.get_collection(ENTITLEMENT_CURRENT_COLLECTION)
+        receipts = database.get_collection("commercial_bundle_activation_receipts")
+        state, receipt = reconcile_commercial_bundle_activation(
+            tenant_id=context.tenant_id,
+            agreement_id=agreement_id,
+            agreement_history_collection=history,
+            agreement_current_collection=current,
+            entitlement_history_collection=entitlement_history,
+            entitlement_current_collection=entitlement_current,
+            receipt_collection=receipts,
+            session=session,
+        )
+        if state is not CommercialBundleReconciliationState.COMMITTED or receipt is None:
+            raise HTTPException(status_code=404, detail="COMMERCIAL_BUNDLE_ACTIVATION_NOT_COMMITTED")
+        products = []
+        for item in receipt.product_entitlements:
+            entitlement = get_current_product_entitlement(
+                context.tenant_id, item["entitlement_id"],
+                entitlement_history, entitlement_current, session=session,
+            )
+            if (
+                entitlement.lifecycle_state.value != "ACTIVE"
+                or entitlement.fingerprint != item["entitlement_fingerprint"]
+                or entitlement.product_id.value != item["product_id"]
+            ):
+                raise HTTPException(status_code=503, detail="COMMERCIAL_BUNDLE_ENTITLEMENT_READBACK_DIVERGENCE")
+            products.append({
+                "product_id": entitlement.product_id.value,
+                "entitlement_id": entitlement.entitlement_id,
+                "lifecycle_state": entitlement.lifecycle_state.value,
+                "fingerprint": entitlement.fingerprint,
+            })
+        return {
+            "tenant_id": context.tenant_id,
+            "agreement_id": agreement_id,
+            "activation_receipt_fingerprint": receipt.fingerprint,
+            "product_entitlements": products,
+        }
+    return _transaction(read)
+
+
+__all__ = [
+    "router",
+    "CommercialAgreementDraftRequest",
+    "CommercialAgreementExecutionRequest",
+]
