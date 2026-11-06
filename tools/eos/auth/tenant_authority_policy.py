@@ -236,6 +236,12 @@ BUSINESS_ROLE_OPERATION_PERMISSIONS: Final = MappingProxyType({
     "crm_work_item_read": "crm:work_item:read",
     "crm_work_item_create": "crm:work_item:create",
     "crm_work_item_complete": "crm:work_item:complete",
+    "operations_work_item_read": "operations:work_item:read",
+    "operations_work_item_create": "operations:work_item:create",
+    "operations_work_item_complete": "operations:work_item:complete",
+    "intelligence_work_item_read": "intelligence:work_item:read",
+    "intelligence_work_item_create": "intelligence:work_item:create",
+    "intelligence_work_item_complete": "intelligence:work_item:complete",
     "crm_email_template_create": "crm:email_template:create",
     "crm_email_template_read": "crm:email_template:read",
     "crm_email_template_revise": "crm:email_template:revise",
@@ -943,6 +949,39 @@ _auditor_work_row = dict(_owner_work_eligibility["tenant_auditor"])
 _auditor_work_row["crm_work_item_read"] = ELIGIBLE
 _owner_work_eligibility["tenant_auditor"] = MappingProxyType(_auditor_work_row)
 ELIGIBILITY = MappingProxyType(_owner_work_eligibility)
+
+# Operations and Intelligence queues are independent module commands. Only
+# tenant owner/admin/manager capacities may create or complete; auditor is
+# read-only. IAM possession, active product entitlement and tenant scope remain
+# separate mandatory authorization conjuncts.
+_module_work_operations = (
+    "operations_work_item_read", "operations_work_item_create",
+    "operations_work_item_complete", "intelligence_work_item_read",
+    "intelligence_work_item_create", "intelligence_work_item_complete",
+)
+OPERATIONS = frozenset((*OPERATIONS, *_module_work_operations))
+_module_work_permissions = {
+    **BUSINESS_ROLE_OPERATION_PERMISSIONS,
+    "operations_work_item_read": "operations:work_item:read",
+    "operations_work_item_create": "operations:work_item:create",
+    "operations_work_item_complete": "operations:work_item:complete",
+    "intelligence_work_item_read": "intelligence:work_item:read",
+    "intelligence_work_item_create": "intelligence:work_item:create",
+    "intelligence_work_item_complete": "intelligence:work_item:complete",
+}
+BUSINESS_ROLE_OPERATION_PERMISSIONS = MappingProxyType(_module_work_permissions)
+_module_work_eligibility = dict(ELIGIBILITY)
+for _module_work_role in ("tenant_owner", "tenant_admin", "tenant_manager"):
+    _module_work_row = dict(_module_work_eligibility[_module_work_role])
+    _module_work_row.update({operation: ELIGIBLE for operation in _module_work_operations})
+    _module_work_eligibility[_module_work_role] = MappingProxyType(_module_work_row)
+_module_auditor_row = dict(_module_work_eligibility["tenant_auditor"])
+_module_auditor_row.update({
+    "operations_work_item_read": ELIGIBLE,
+    "intelligence_work_item_read": ELIGIBLE,
+})
+_module_work_eligibility["tenant_auditor"] = MappingProxyType(_module_auditor_row)
+ELIGIBILITY = MappingProxyType(_module_work_eligibility)
 
 
 def tenant_role_operation_eligibility(role: object, operation: object) -> str:
