@@ -1,0 +1,1 @@
+"""Tenant workspace domain contracts."""
