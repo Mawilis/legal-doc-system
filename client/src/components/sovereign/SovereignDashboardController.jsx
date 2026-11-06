@@ -1257,7 +1257,7 @@ const SovereignDashboardController = ({ user: propUser, onLogout }) => {
           textTransform: 'uppercase', cursor: 'pointer',
         }}
       >
-        <CheckCircle2 size={16} /> My Work
+        <CheckCircle size={16} /> My Work
       </button>
 
       <WilsyGlobalCommandSearch
