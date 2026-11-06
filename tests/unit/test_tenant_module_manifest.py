@@ -65,7 +65,7 @@ def _active_crm(tenant_id: str = "TENANT-A"):
 
 def test_global_module_catalogue_is_closed_and_uses_canonical_product_keys():
     descriptors = list_tenant_module_descriptors()
-    assert len(descriptors) == 4
+    assert len(descriptors) == 6
     assert {item.product_id for item in descriptors} == set(TenantProductId)
     assert {item.module_id for item in descriptors} == set(TenantModuleId)
 
@@ -162,3 +162,21 @@ def test_billing_and_hr_are_not_exposed_without_positive_entitlement_evidence():
         entitlements=[_active_product(TenantProductId.LEGAL_OPERATIONS)],
     )
     assert {item.product_id for item in result} == {TenantProductId.LEGAL_OPERATIONS}
+
+
+def test_operations_and_intelligence_require_separate_active_product_evidence():
+    operations = build_tenant_module_manifest(
+        tenant_id="TENANT-A",
+        entitlements=[_active_product(TenantProductId.OPERATIONS)],
+    )
+    intelligence = build_tenant_module_manifest(
+        tenant_id="TENANT-A",
+        entitlements=[_active_product(TenantProductId.INTELLIGENCE)],
+    )
+    assert len(operations) == len(intelligence) == 1
+    assert operations[0].module_id is TenantModuleId.OPERATIONS
+    assert operations[0].workspace_key == "OPERATIONS_DASHBOARD"
+    assert intelligence[0].module_id is TenantModuleId.INTELLIGENCE
+    assert intelligence[0].workspace_key == "INTELLIGENCE_DASHBOARD"
+    assert operations[0].product_id is not intelligence[0].product_id
+    assert operations[0].entitlement_id != intelligence[0].entitlement_id
