@@ -150,7 +150,7 @@ _TENDER = RequireTenantAuthorization("pos:tender:create", "pos_tender_create")
 _CASH = RequireTenantAuthorization("pos:cash:record", "pos_cash_record")
 _RETURN = RequireTenantAuthorization("pos:return:create", "pos_return_create")
 _REFUND = RequireTenantAuthorization("pos:refund:create", "pos_refund_create")
-_EXECUTE = RequireTenantAuthorization("pos:financial_execution:authorize", "pos_financial_execution_authorize")
+_EXECUTE = RequireTenantAuthorization("pos:payment:authorize", "pos_payment_authorize")
 
 
 def _collection(database: Any, name: str):
@@ -183,6 +183,14 @@ def _prepare(database: Any) -> dict[str, Any]:
         "entitlement_history": _collection(database, ENTITLEMENT_HISTORY),
         "entitlement_current": _collection(database, ENTITLEMENT_CURRENT),
     }
+
+
+
+def require_pos_workspace_indexes_ready(request: Request) -> None:
+    """Fail closed until POS authority/evidence indexes are established."""
+    if not bool(getattr(request.app.state, "pos_workspace_indexes_ready", False)):
+        raise HTTPException(status_code=503, detail="POS_WORKSPACE_INDEXES_NOT_READY")
+
 
 
 def _service(collections: dict[str, Any]) -> POSWorkspaceService:

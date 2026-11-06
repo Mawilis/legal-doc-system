@@ -1117,11 +1117,11 @@ _pos_eligibility["tenant_pos_operator"] = MappingProxyType({
 ELIGIBILITY = MappingProxyType(_pos_eligibility)
 
 
-POS_FINANCIAL_EXECUTION_AUTHORIZE = "pos_financial_execution_authorize"
+POS_FINANCIAL_EXECUTION_AUTHORIZE = "pos_payment_authorize"
 OPERATIONS = frozenset((*OPERATIONS, POS_FINANCIAL_EXECUTION_AUTHORIZE))
 BUSINESS_ROLE_OPERATION_PERMISSIONS = MappingProxyType({
     **BUSINESS_ROLE_OPERATION_PERMISSIONS,
-    POS_FINANCIAL_EXECUTION_AUTHORIZE: "pos:financial_execution:authorize",
+    POS_FINANCIAL_EXECUTION_AUTHORIZE: "pos:payment:authorize",
 })
 _pos_eligibility = dict(ELIGIBILITY)
 _owner_row = dict(_pos_eligibility["tenant_owner"])

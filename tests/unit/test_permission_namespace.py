@@ -352,7 +352,7 @@ def test_permission_canon_properties() -> None:
         "pos:cash:record",
         "pos:return:create",
         "pos:refund:create",
-        "pos:financial_execution:authorize",
+        "pos:payment:authorize",
         "wilsy_ai:legal_tool:read",
         "wilsy_ai:legal_services:execute",
         "wilsy_ai:legal_advisory:generate",
