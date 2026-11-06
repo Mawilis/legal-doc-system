@@ -3,7 +3,7 @@
  * WILSY OS — GENERAL TENANT COMMAND CENTER
  * VERSION: v16.7.0-TENANT-OWNER-LEGAL-COMMERCIAL-ENTRY
  * AUTHORITY: General tenant presentation/orchestration only.
- * EPITOME: General tenant Document Vault and Team Members workspace; Legal roles route only through canonical Legal OS.
+ * EPITOME: General tenant Document Vault and Team Members workspace; Tenant Owners may select a separate commercial-only Legal shell.
  * ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/client/src/components/sovereign/GeneralDashboard.jsx
  * COLLABORATION / OWNERSHIP: Wilsy OS Core Governance.
  * CERTIFICATION / UPDATE DATE: 2026-11-06
@@ -12,7 +12,7 @@
  * COMPLIANCE: POPIA section 19; GDPR Article 32; SOC 2 CC7.2; ISO 27001.
  * SECURITY / PRIVACY POSTURE: Presentation only; no legal or financial truth is inferred here.
  * TENANT BOUNDARY: Authenticated tenant context only.
- * AUTHORITY BOUNDARY: Published Legal roles are resolved by SovereignDashboardController to canonical LegalDashboard.
+ * AUTHORITY BOUNDARY: Tenant Owner Legal selection is presentation-only; subscription:read is revalidated by EOS and practice authority is never mounted.
  * FINANCIAL AUTHORITY BOUNDARY: Kennel EOS exclusively owns payment execution and settlement.
  */
 
