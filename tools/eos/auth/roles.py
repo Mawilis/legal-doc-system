@@ -270,6 +270,12 @@ ROLE_PERMISSIONS_MAP: dict[str, list[str]] = {
         "crm:email_template:copy",
         "crm:email_template:share",
         "legal_operations:workflow_activation:manage",
+        "operations:work_item:read",
+        "operations:work_item:create",
+        "operations:work_item:complete",
+        "intelligence:work_item:read",
+        "intelligence:work_item:create",
+        "intelligence:work_item:complete",
     ],
     "AUDITOR": [
         "kernel:read",
@@ -288,6 +294,8 @@ ROLE_PERMISSIONS_MAP: dict[str, list[str]] = {
         "tenant_branding:read",
         "crm:lead:read",
         "crm:email_template:read",
+        "operations:work_item:read",
+        "intelligence:work_item:read",
     ],
     # Tenant-scoped owner workspace authority only; never a platform administrator.
     # Business-role eligibility and ACTIVE membership remain separate conjuncts.
@@ -296,6 +304,12 @@ ROLE_PERMISSIONS_MAP: dict[str, list[str]] = {
         "crm:work_item:read",
         "crm:work_item:create",
         "crm:work_item:complete",
+        "operations:work_item:read",
+        "operations:work_item:create",
+        "operations:work_item:complete",
+        "intelligence:work_item:read",
+        "intelligence:work_item:create",
+        "intelligence:work_item:complete",
     ],
     "LEGAL_PARTNER": [
         "legal_operations:instruction:read",
