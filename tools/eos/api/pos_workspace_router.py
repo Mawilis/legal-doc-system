@@ -258,6 +258,22 @@ def _authority_evidence(context: TenantAuthorizationContext, *, tenant_id: str,
     return f"pos-location-authority-command:{digest[:32]}", digest
 
 
+@router.get("/locations")
+async def list_assigned_locations(
+    context: TenantAuthorizationContext = Depends(_READ),
+):
+    """List only current ACTIVE locations assigned to this authenticated principal."""
+    return _transaction(lambda collections, session: {
+        "tenant_id": context.tenant_id,
+        "principal_id": context.identity.identity_id,
+        "locations": list(_service(collections).list_locations(
+            tenant_id=context.tenant_id,
+            principal_id=context.identity.identity_id,
+            session=session,
+        )),
+    })
+
+
 @router.post("/locations/{location_id}/assignments", status_code=status.HTTP_201_CREATED)
 async def assign_location(
     location_id: str,
