@@ -48,6 +48,7 @@ import { useTenants } from '../../contexts/tenantContext.jsx';
 import { BusinessProvider } from '../../contexts/BusinessContext.jsx';
 import { broadcastTelemetry } from '../../utils/telemetryHelper.js';
 import api from '../../services/api.js';
+import { validateWilsyModuleManifest } from '../../utils/tenantModuleManifest.js';
 import ErrorBoundary from '../ErrorBoundary';
 import WilsyGlobalCommandSearch from './WilsyGlobalCommandSearch';
 
@@ -86,6 +87,25 @@ export const DASHBOARD_KEYS = Object.freeze({
   LEGAL: 'LEGAL_DASHBOARD',
   SYSTEM_SERVICES: 'SYSTEM_SERVICES_DASHBOARD'
 });
+
+const TENANT_MODULE_DASHBOARD_ADMISSION = Object.freeze({
+  [DASHBOARD_KEYS.OPERATIONS]: Object.freeze({
+    moduleId: 'OPERATIONS', productId: 'OPERATIONS', workspaceKey: 'OPERATIONS_DASHBOARD',
+  }),
+  [DASHBOARD_KEYS.INTELLIGENCE]: Object.freeze({
+    moduleId: 'INTELLIGENCE', productId: 'INTELLIGENCE', workspaceKey: 'INTELLIGENCE_DASHBOARD',
+  }),
+});
+
+export const hasTenantModuleManifestAdmission = (modules, dashboardKey) => {
+  const expected = TENANT_MODULE_DASHBOARD_ADMISSION[dashboardKey];
+  if (!expected || !Array.isArray(modules)) return false;
+  return modules.some((module) => (
+    module?.moduleId === expected.moduleId
+    && module?.productId === expected.productId
+    && module?.workspaceKey === expected.workspaceKey
+  ));
+};
 
 const DASHBOARD_LABELS = Object.freeze({
   [DASHBOARD_KEYS.FOUNDER]: 'Founder Dashboard',
@@ -671,6 +691,27 @@ const SovereignDashboardController = ({ user: propUser, onLogout }) => {
 
     const role = normalizeDashboardToken(user?.role || user?.accountRole || user?.tenantRole);
 
+  const moduleManifestTenantId = activeTenant?.tenantId || activeTenant?._id || user?.tenantId || '';
+  const [moduleManifest, setModuleManifest] = useState({ status: 'idle', modules: [] });
+
+  useEffect(() => {
+    let current = true;
+    if (!user || typeof moduleManifestTenantId !== 'string' || !moduleManifestTenantId) {
+      setModuleManifest({ status: 'unavailable', modules: [] });
+      return () => { current = false; };
+    }
+    setModuleManifest({ status: 'loading', modules: [] });
+    api.get('/auth/module-manifest')
+      .then(({ data }) => validateWilsyModuleManifest(data, moduleManifestTenantId))
+      .then((modules) => {
+        if (current) setModuleManifest({ status: 'ready', modules });
+      })
+      .catch(() => {
+        if (current) setModuleManifest({ status: 'unavailable', modules: [] });
+      });
+    return () => { current = false; };
+  }, [user?.id, user?.email, moduleManifestTenantId]);
+
   useEffect(() => {
     systemServicesRequestRef.current += 1;
     setSystemServicesWorkspace(
@@ -729,11 +770,21 @@ const SovereignDashboardController = ({ user: propUser, onLogout }) => {
     user && systemServicesWorkspace ? { ...user, systemServicesWorkspace } : user
   ), [systemServicesWorkspace, user]);
 
-  const dashboardKey = useMemo(() => (
+  const resolvedDashboardKey = useMemo(() => (
     dashboardUser ? resolveDashboardKey({ user: dashboardUser, manualDashboardKey }) : ''
   ), [dashboardUser, manualDashboardKey]);
+  const moduleDashboardRequested = Object.prototype.hasOwnProperty.call(
+    TENANT_MODULE_DASHBOARD_ADMISSION, manualDashboardKey,
+  );
+  const dashboardKey = useMemo(() => {
+    if (!moduleDashboardRequested) return resolvedDashboardKey;
+    return moduleManifest.status === 'ready'
+      && hasTenantModuleManifestAdmission(moduleManifest.modules, manualDashboardKey)
+      ? manualDashboardKey
+      : '';
+  }, [manualDashboardKey, moduleDashboardRequested, moduleManifest, resolvedDashboardKey]);
 
-  const dashboardLabel = getDashboardDisplayName(dashboardKey);
+  const dashboardLabel = getDashboardDisplayName(dashboardKey || (moduleDashboardRequested ? manualDashboardKey : ''));
   const canReturnToFounder = Boolean(
     user && dashboardKey && dashboardKey !== DASHBOARD_KEYS.FOUNDER && hasFounderReturnAuthority({ user, role })
   );
@@ -882,7 +933,11 @@ const SovereignDashboardController = ({ user: propUser, onLogout }) => {
   }
 
   let dashboardShard = null;
-  if (dashboardKey === DASHBOARD_KEYS.SYSTEM_SERVICES) {
+  if (moduleDashboardRequested && !dashboardKey) {
+    dashboardShard = moduleManifest.status === 'loading' || moduleManifest.status === 'idle'
+      ? <div role="status" aria-live="polite">Verifying the active tenant product entitlement with EOS…</div>
+      : <div role="alert">This module is not available in the current authenticated tenant product manifest. Refresh the workspace or contact an authorised administrator.</div>;
+  } else if (dashboardKey === DASHBOARD_KEYS.SYSTEM_SERVICES) {
     dashboardShard = (
       <SystemServicesDashboard
         workspace={dashboardUser?.systemServicesWorkspace || null}
