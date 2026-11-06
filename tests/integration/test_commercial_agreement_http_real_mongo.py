@@ -100,7 +100,7 @@ def mongo_context() -> Iterator[dict[str, Any]]:
         if hello.get("logicalSessionTimeoutMinutes") is None:
             pytest.fail("replica set does not support logical sessions")
         database = client.get_database(
-            f"wilsy_commercial_agreement_http_{uuid4().hex}",
+            f"ca_http_{uuid4().hex}",
             read_concern=ReadConcern("majority"),
             write_concern=WriteConcern(w="majority", j=True),
         )
