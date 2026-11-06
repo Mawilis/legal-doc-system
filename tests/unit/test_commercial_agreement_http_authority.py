@@ -10,6 +10,7 @@ from tools.eos.api.commercial_agreement_router import (
 )
 from tools.eos.auth.permission_namespace import permission_metadata
 from tools.eos.auth.roles import ROLE_PERMISSIONS_MAP
+from tools.eos.auth import tenant_authorization
 from tools.eos.auth.tenant_authority_policy import (
     DENY,
     ELIGIBLE,
@@ -119,3 +120,13 @@ def test_execution_request_accepts_only_server_evidence_reference():
 def test_server_composition_rejects_untrusted_verifier_object():
     with pytest.raises(TypeError, match="COMMERCIAL_AGREEMENT_EXECUTION_VERIFIER_CONFIGURATION_INVALID"):
         server.WilsyAPIServer(commercial_agreement_execution_verifier=object())
+
+
+
+def test_canonical_tenant_authorization_binds_execute_and_activate_exactly():
+    assert tenant_authorization._BINDINGS["commercial_agreement_execute"] == (
+        "tenant:commercial_agreement:execute"
+    )
+    assert tenant_authorization._BINDINGS["commercial_agreement_activate"] == (
+        "tenant:commercial_agreement:activate"
+    )
