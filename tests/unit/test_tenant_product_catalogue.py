@@ -37,11 +37,13 @@ from tools.eos.saas.entitlement.product_catalogue import (
 
 def test_exact_closed_product_catalogue() -> None:
     products = list_tenant_products()
-    assert [item.product_id for item in products] == [
+    assert [item.product_id.value for item in products] == [
         "LEGAL_OPERATIONS",
         "BILLING",
         "CRM",
         "HR",
+        "OPERATIONS",
+        "INTELLIGENCE",
     ]
     assert len(products) == len(TenantProductId) == 4
 
