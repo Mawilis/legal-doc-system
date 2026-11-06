@@ -155,3 +155,87 @@ def test_execution_cannot_postdate_activation():
 def test_supplied_fingerprint_must_match_canonical_snapshot():
     with pytest.raises(CommercialAgreementError, match="FINGERPRINT_MISMATCH"):
         draft(fingerprint="f" * 128)
+
+
+def test_lifecycle_transitions_are_immutable_revisioned_and_evidence_bound():
+    draft_agreement = draft()
+    executed = draft_agreement.transition(
+        CommercialAgreementState.EXECUTED,
+        expected_revision=0,
+        evidence_reference="SIGNATURE-EVIDENCE-1",
+        evidence_fingerprint="a" * 128,
+        occurred_at=NOW,
+    )
+    active = executed.transition(
+        CommercialAgreementState.ACTIVE,
+        expected_revision=1,
+        evidence_reference="ACTIVATION-APPROVAL-1",
+        evidence_fingerprint="b" * 128,
+        occurred_at=NOW + timedelta(minutes=1),
+    )
+    suspended = active.transition(
+        CommercialAgreementState.SUSPENDED,
+        expected_revision=2,
+        evidence_reference="SUSPENSION-DECISION-1",
+        evidence_fingerprint="c" * 128,
+        occurred_at=NOW + timedelta(minutes=2),
+    )
+    terminated = suspended.transition(
+        CommercialAgreementState.TERMINATED,
+        expected_revision=3,
+        evidence_reference="TERMINATION-DECISION-1",
+        evidence_fingerprint="d" * 128,
+        occurred_at=NOW + timedelta(minutes=3),
+    )
+    assert [item.lifecycle_revision for item in (draft_agreement, executed, active, suspended, terminated)] == [0, 1, 2, 3, 4]
+    assert draft_agreement.lifecycle_state is CommercialAgreementState.DRAFT
+    assert terminated.lifecycle_state is CommercialAgreementState.TERMINATED
+    assert len({item.fingerprint for item in (draft_agreement, executed, active, suspended, terminated)}) == 5
+
+
+def test_stale_revision_and_illegal_lifecycle_transition_reject():
+    agreement = draft()
+    with pytest.raises(CommercialAgreementError, match="STALE_REVISION"):
+        agreement.transition(
+            CommercialAgreementState.EXECUTED,
+            expected_revision=1,
+            evidence_reference="SIGNATURE-EVIDENCE-1",
+            evidence_fingerprint="a" * 128,
+            occurred_at=NOW,
+        )
+    with pytest.raises(CommercialAgreementError, match="TRANSITION_NOT_ALLOWED"):
+        agreement.transition(
+            CommercialAgreementState.ACTIVE,
+            expected_revision=0,
+            evidence_reference="ACTIVATION-APPROVAL-1",
+            evidence_fingerprint="b" * 128,
+            occurred_at=NOW,
+        )
+
+
+def test_expiry_requires_elapsed_contract_term_and_independent_evidence():
+    active = draft(
+        lifecycle_state=CommercialAgreementState.ACTIVE,
+        executed_at=NOW,
+        execution_evidence_reference="SIGNATURE-EVIDENCE-1",
+        execution_evidence_fingerprint="a" * 128,
+        activated_at=NOW + timedelta(minutes=1),
+        activation_evidence_reference="ACTIVATION-APPROVAL-1",
+        activation_evidence_fingerprint="b" * 128,
+    )
+    with pytest.raises(CommercialAgreementError, match="EXPIRY_CHRONOLOGY_INVALID"):
+        active.transition(
+            CommercialAgreementState.EXPIRED,
+            expected_revision=0,
+            evidence_reference="EXPIRY-DECISION-1",
+            evidence_fingerprint="c" * 128,
+            occurred_at=NOW + timedelta(days=1),
+        )
+    expired = active.transition(
+        CommercialAgreementState.EXPIRED,
+        expected_revision=0,
+        evidence_reference="EXPIRY-DECISION-1",
+        evidence_fingerprint="c" * 128,
+        occurred_at=NOW + timedelta(days=366),
+    )
+    assert expired.lifecycle_state is CommercialAgreementState.EXPIRED
