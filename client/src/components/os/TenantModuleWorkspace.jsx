@@ -43,6 +43,7 @@ export default function TenantModuleWorkspace({ moduleId }) {
   const { user } = useAuth() || {};
   const { activeTenant } = useTenants() || {};
   const titleInputRef = useRef(null);
+  const activeTenantId = activeTenant?.tenantId || activeTenant?._id || user?.tenantId || '';
   const pendingCreateRef = useRef(null);
   const [snapshot, setSnapshot] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -57,7 +58,8 @@ export default function TenantModuleWorkspace({ moduleId }) {
   const refresh = useCallback(async () => {
     setLoading(true);
     try {
-      const next = await readTenantModuleWorkspace(moduleId);
+      if (!activeTenantId) throw new Error('AUTHENTICATED_TENANT_UNAVAILABLE');
+      const next = await readTenantModuleWorkspace(moduleId, activeTenantId);
       setSnapshot(next);
       setError('');
       setActionMessage('Workspace refreshed from current EOS records.');
@@ -69,11 +71,15 @@ export default function TenantModuleWorkspace({ moduleId }) {
     } finally {
       setLoading(false);
     }
-  }, [moduleId]);
+  }, [moduleId, activeTenantId]);
 
-  useEffect(() => { refresh(); }, [refresh]);
+  useEffect(() => {
+    setSnapshot(null);
+    refresh();
+  }, [refresh]);
 
-  const items = snapshot?.items || [];
+  const visibleSnapshot = snapshot?.tenantId === activeTenantId ? snapshot : null;
+  const items = visibleSnapshot?.items || [];
   const counts = useMemo(() => ({
     open: items.length,
     today: items.filter(item => item.is_due_today).length,
@@ -136,7 +142,7 @@ export default function TenantModuleWorkspace({ moduleId }) {
 
   const tenantIdentity = {
     ...(activeTenant && typeof activeTenant === 'object' ? activeTenant : {}),
-    tenantId: snapshot?.tenantId || activeTenant?.tenantId || activeTenant?._id || user?.tenantId || '',
+    tenantId: visibleSnapshot?.tenantId || activeTenantId,
   };
 
   return (
@@ -145,7 +151,7 @@ export default function TenantModuleWorkspace({ moduleId }) {
       commandLabel={`WILSY OS ${config.label}`}
       title={config.label}
       role={user?.role || user?.accountRole || 'TENANT_OPERATOR'}
-      posture={snapshot ? 'LIVE' : error ? 'SOURCE_GAPS' : 'SOURCE_REQUIRED'}
+      posture={visibleSnapshot ? 'LIVE' : error ? 'SOURCE_GAPS' : 'SOURCE_REQUIRED'}
       storyMessages={[config.subtitle]}
       tenant={tenantIdentity}
       operator={user || {}}
@@ -173,9 +179,9 @@ export default function TenantModuleWorkspace({ moduleId }) {
       {actionMessage ? <p className={styles.status} role="status" aria-live="polite">{actionMessage}</p> : null}
 
       <section className={styles.metrics} aria-label="Current module priorities">
-        <article className={styles.metric}><span>Open actions</span><strong>{loading ? '—' : snapshot ? counts.open : '—'}</strong></article>
-        <article className={styles.metric}><span>Due today</span><strong>{loading ? '—' : snapshot ? counts.today : '—'}</strong></article>
-        <article className={styles.metric}><span>Overdue</span><strong>{loading ? '—' : snapshot ? counts.overdue : '—'}</strong></article>
+        <article className={styles.metric}><span>Open actions</span><strong>{loading ? '—' : visibleSnapshot ? counts.open : '—'}</strong></article>
+        <article className={styles.metric}><span>Due today</span><strong>{loading ? '—' : visibleSnapshot ? counts.today : '—'}</strong></article>
+        <article className={styles.metric}><span>Overdue</span><strong>{loading ? '—' : visibleSnapshot ? counts.overdue : '—'}</strong></article>
       </section>
 
       <section className={styles.columns}>
@@ -185,7 +191,7 @@ export default function TenantModuleWorkspace({ moduleId }) {
             <span>{loading ? 'Loading' : snapshot ? `${items.length} active` : 'Unavailable'}</span>
           </div>
           {loading ? <p className={styles.empty} role="status">Loading tenant-scoped queue…</p> :
-            !snapshot ? <p className={styles.empty}>The queue is unavailable. Retry after the authenticated module service recovers.</p> :
+            !visibleSnapshot ? <p className={styles.empty}>The queue is unavailable. Retry after the authenticated module service recovers.</p> :
             items.length === 0 ? <div className={styles.empty}><strong>No open actions</strong><p>Create a task or reminder to begin. No sample records are used.</p></div> :
             <ol className={styles.queueList}>
               {items.map(item => (
@@ -226,11 +232,11 @@ export default function TenantModuleWorkspace({ moduleId }) {
             <label className={styles.field}>Due date and time
               <input type="datetime-local" value={dueAt} onChange={event => setDueAt(event.target.value)} />
             </label>
-            <button className={styles.submit} type="submit" disabled={saving || !title.trim()}>{saving ? 'Submitting to EOS…' : 'Create action'}</button>
+            <button className={styles.submit} type="submit" disabled={saving || !title.trim() || !visibleSnapshot}>{saving ? 'Submitting to EOS…' : 'Create action'}</button>
           </form>
-          {snapshot?.entitlement ? (
+          {visibleSnapshot?.entitlement ? (
             <p className={styles.note}>
-              Active entitlement r{snapshot.entitlement.revision} · {snapshot.entitlement.id.slice(0, 12)}… · verified from EOS
+              Active entitlement r{visibleSnapshot.entitlement.revision} · {visibleSnapshot.entitlement.id.slice(0, 12)}… · verified from EOS
             </p>
           ) : null}
           <p className={styles.note}>Commands are checked against this module's own tenant permission and active product entitlement. EOS is the only task lifecycle authority.</p>
