@@ -1,4 +1,4 @@
-import React, { useCallback, useState } from 'react';
+import React, { useCallback, useEffect, useState } from 'react';
 import api from '../../services/api.js';
 
 const fieldStyle = { width: '100%', minWidth: 0, padding: '0.65rem 0.75rem', border: '1px solid var(--border, #cbd5e1)', borderRadius: 8, background: 'var(--surface, #fff)', color: 'var(--text, #0f172a)' };
@@ -15,6 +15,8 @@ function Field({ label, value, onChange, type = 'text', ...props }) {
 
 export default function POSWorkspace() {
   const [locationId, setLocationId] = useState('');
+  const [assignedLocations, setAssignedLocations] = useState([]);
+  const [locationsLoading, setLocationsLoading] = useState(true);
   const [saleId, setSaleId] = useState('');
   const [currency, setCurrency] = useState('ZAR');
   const [productId, setProductId] = useState('');
@@ -38,6 +40,28 @@ export default function POSWorkspace() {
   const [busy, setBusy] = useState(false);
   const [notice, setNotice] = useState({ kind: 'info', text: 'Select a location assigned to your authenticated account. The server verifies that assignment on every operation.' });
 
+  useEffect(() => {
+    let active = true;
+    api.get('/pos/locations').then((response) => {
+      if (!active) return;
+      const locations = Array.isArray(response.data?.locations) ? response.data.locations : [];
+      setAssignedLocations(locations);
+      setLocationId((current) => locations.some((item) => item.location_id === current)
+        ? current : locations[0]?.location_id || '');
+      setNotice(locations.length
+        ? { kind: 'info', text: 'Your current assigned locations were resolved by EOS. Each operation revalidates this authority.' }
+        : { kind: 'info', text: 'No active POS location assignment is available for this account.' });
+    }).catch((error) => {
+      if (!active) return;
+      const code = error?.response?.data?.detail || error?.message || 'POS_LOCATION_LIST_UNAVAILABLE';
+      setNotice({ kind: 'error', text: String(code) });
+      setAssignedLocations([]);
+    }).finally(() => {
+      if (active) setLocationsLoading(false);
+    });
+    return () => { active = false; };
+  }, []);
+
   const request = useCallback(async (method, path, body, commandKey) => {
     const key = commandKey || newId('poscmd');
     const response = method === 'get'
@@ -48,7 +72,7 @@ export default function POSWorkspace() {
 
   const run = useCallback(async (operation) => {
     if (!locationId.trim()) {
-      setNotice({ kind: 'error', text: 'Enter a location ID. It is only a selector; EOS must independently verify your active assignment.' });
+      setNotice({ kind: 'error', text: 'Choose an active location assigned to your authenticated account.' });
       return;
     }
     setBusy(true);
@@ -77,8 +101,14 @@ export default function POSWorkspace() {
         <p style={{ margin: 0, opacity: .72 }}>Sales, tender evidence, returns and refund intent — with Kennel EOS retaining financial execution.</p>
       </div>
       <div style={{ width: 'min(100%, 320px)' }}>
-        <Field label="Location ID" value={locationId} onChange={setLocationId} placeholder="Enter your assigned store/location" />
-        <small style={{ display: 'block', marginTop: 5, opacity: .65 }}>Location input is never treated as access authority.</small>
+        <label style={{ display: 'grid', gap: 6, fontSize: 13, fontWeight: 600 }}>
+          Assigned location
+          <select aria-label="Assigned location" value={locationId} onChange={(event) => setLocationId(event.target.value)} disabled={locationsLoading || assignedLocations.length === 0} style={fieldStyle}>
+            <option value="">{locationsLoading ? 'Loading assigned locations…' : 'No active assigned locations'}</option>
+            {assignedLocations.map((item) => <option key={item.location_id} value={item.location_id}>{item.location_id}</option>)}
+          </select>
+        </label>
+        <small style={{ display: 'block', marginTop: 5, opacity: .65 }}>Options come from the authenticated EOS assignment registry; this selector is not authority.</small>
       </div>
     </header>
 
