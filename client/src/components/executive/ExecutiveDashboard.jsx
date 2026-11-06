@@ -95,6 +95,7 @@ import { validateWilsyModuleManifest } from '../../utils/tenantModuleManifest.js
 import useAuthenticatedTenantBrandingAsset from '../../hooks/useAuthenticatedTenantBrandingAsset.js';
 import BusinessArtifactStudio from '../artifacts/BusinessArtifactStudio';
 import styles from './ExecutiveDashboard.module.css';
+import ExecutiveOperationalWorkbench from './ExecutiveOperationalWorkbench';
 
 
 const WILSY_EXEC_THEME_STORAGE_KEYS = Object.freeze({
@@ -621,6 +622,7 @@ const buildOperatingSourceRow = (descriptor = {}, { tenantId = 'MASTER', payload
     count,
     lastSync: now,
     error: packet.error,
+    records: Array.isArray(payload) ? payload : Array.isArray(payload?.items) ? payload.items : Array.isArray(payload?.data?.items) ? payload.data.items : Array.isArray(payload?.records) ? payload.records : Array.isArray(payload?.data?.records) ? payload.data.records : [],
     proofHash: createExecutiveProofHash(packet)
   };
 };
@@ -3440,6 +3442,10 @@ const ExecutiveDashboard = ({
           </article>
         </section>
         {executiveCommandRail}
+        <ExecutiveOperationalWorkbench
+          sources={operatingSources}
+          onOpenFunction={(source) => executeFunctionCard({ key: source.functionKey, label: source.label, status: 'ENABLED', sourceStatus: source.status })}
+        />
       </div>
     ),
     sources: (
@@ -5057,28 +5063,7 @@ const ExecutiveDashboard = ({
         </article>
       </section>
 
-      <section className={styles.kpiGrid}>
-        <article>
-          <span>REVENUE_YTD_COUNTER</span>
-          <strong data-tone="green">{formatExecutiveKpiValue(financialKPIs.revenue, financialKPIs.currency || DEFAULT_OPERATING_CURRENCY)}</strong>
-        </article>
-        <article>
-          <span>ANNUAL_RECURRING_ARR</span>
-          <strong>{formatExecutiveKpiValue(financialKPIs.arr, financialKPIs.currency || DEFAULT_OPERATING_CURRENCY)}</strong>
-        </article>
-        <article>
-          <span>PROFIT_MARGIN_EFFICIENCY</span>
-          <strong>{formatExecutiveKpiValue(financialKPIs.profitMargin, '%')}</strong>
-        </article>
-        <article>
-          <span>NET_PROMOTER_INDEX</span>
-          <strong>{formatExecutiveKpiValue(financialKPIs.nps, 'score')}</strong>
-        </article>
-        <article>
-          <span>EMPLOYEE_SAT_COEFFICIENT</span>
-          <strong data-tone="green">{formatExecutiveKpiValue(financialKPIs.employeeSatisfaction, '%')}</strong>
-        </article>
-      </section>
+
 
       <section className={styles.currencyPanel}>
         <header>
