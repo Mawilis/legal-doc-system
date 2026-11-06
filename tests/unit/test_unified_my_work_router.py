@@ -96,3 +96,18 @@ def test_route_registers_four_independent_optional_iam_dependencies():
     assert "operations_context" in names
     assert "intelligence_context" in names
     assert "crm_context" in names
+
+
+
+def test_route_rejects_whitespace_tenant_scope_before_source_reads():
+    with pytest.raises(HTTPException) as error:
+        asyncio.run(route.read_my_work(
+            tenant_id=" tenant-a ",
+            identity=_identity(),
+            legal_context=None,
+            operations_context=None,
+            intelligence_context=None,
+            crm_context=None,
+        ))
+    assert error.value.status_code == 403
+    assert error.value.detail == "TENANT_SCOPE_REQUIRED"
