@@ -208,7 +208,7 @@ test('owner completes the authenticated seven-module daily-use journey', async (
     );
     expect(reentry.status()).toBe(200);
     await expect(page.getByRole('main', { name: 'Intelligence OS' }).getByRole('heading', { name: 'Intelligence OS' })).toBeVisible();
-    expect(browserErrors).toEqual([]);
+    expect(browserErrors, browserErrors.join('\n')).toEqual([]);
   } finally {
     await context.close();
   }
