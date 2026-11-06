@@ -9,7 +9,7 @@ receipt are committed or aborted together.
 from __future__ import annotations
 
 from collections.abc import Mapping
-from dataclasses import dataclass
+from dataclasses import dataclass, replace
 from datetime import datetime, timezone
 from enum import StrEnum
 import hashlib
@@ -336,17 +336,23 @@ def _verify_execution_evidence(
         raise CommercialBundleActivationEvidenceError(
             "COMMERCIAL_BUNDLE_VERIFIED_EXECUTION_EVIDENCE_REQUIRED"
         )
+    execution_binding_matches = (
+        agreement.lifecycle_state is CommercialAgreementState.DRAFT
+        or (
+            evidence.execution_evidence_reference == agreement.execution_evidence_reference
+            and hmac.compare_digest(
+                evidence.execution_evidence_fingerprint,
+                agreement.execution_evidence_fingerprint or "",
+            )
+        )
+    )
     exact = (
         evidence.tenant_id == agreement.tenant_id
         and evidence.agreement_id == agreement.agreement_id
         and evidence.contract_reference == agreement.contract_reference
         and evidence.contract_version == agreement.contract_version
         and hmac.compare_digest(evidence.offer_fingerprint, agreement.offer_fingerprint)
-        and evidence.execution_evidence_reference == agreement.execution_evidence_reference
-        and hmac.compare_digest(
-            evidence.execution_evidence_fingerprint,
-            agreement.execution_evidence_fingerprint or "",
-        )
+        and execution_binding_matches
     )
     if not exact:
         raise CommercialBundleActivationEvidenceError(
@@ -448,9 +454,15 @@ def activate_commercial_bundle(
     principal_id = _text(identity.identity_id, "COMMERCIAL_BUNDLE_PRINCIPAL_INVALID")
     agreement_id = _text(agreement_id, "COMMERCIAL_BUNDLE_AGREEMENT_ID_INVALID")
     when = _timestamp(occurred_at, "COMMERCIAL_BUNDLE_OCCURRED_AT_INVALID")
+    if type(verified_execution_evidence) is not VerifiedCommercialAgreementExecutionEvidence:
+        raise CommercialBundleActivationEvidenceError("COMMERCIAL_BUNDLE_VERIFIED_EXECUTION_EVIDENCE_REQUIRED")
     if verified_execution_evidence.tenant_id != tenant_id or verified_execution_evidence.agreement_id != agreement_id:
         raise CommercialBundleActivationEvidenceError(
             "COMMERCIAL_BUNDLE_VERIFIED_EVIDENCE_SCOPE_MISMATCH"
+        )
+    if when < verified_execution_evidence.verified_at:
+        raise CommercialBundleActivationEvidenceError(
+            "COMMERCIAL_BUNDLE_ACTIVATION_PRECEDES_VERIFICATION"
         )
 
     agreement = get_current_agreement(
@@ -560,12 +572,7 @@ def activate_commercial_bundle(
         activated_at=when,
         product_entitlements=product_tuple,
     )
-    receipt = CommercialBundleActivationReceipt(
-        **{
-            **receipt.__dict__,
-            "fingerprint": _sha3(receipt.payload()),
-        }
-    )
+    receipt = replace(receipt, fingerprint=_sha3(receipt.payload()))
     try:
         _receipt_collection(receipt_collection).insert_one(
             receipt.to_document(), session=tx
