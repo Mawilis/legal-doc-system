@@ -221,8 +221,18 @@ def _verify_execution_verification_receipt(
     raw = dict(row)
     raw.pop("_id", None)
     record_fingerprint = raw.pop("record_fingerprint", None)
+    expected_fields = {
+        "schema", "tenant_id", "agreement_id", "contract_reference",
+        "contract_version", "offer_fingerprint", "execution_evidence_reference",
+        "execution_evidence_fingerprint", "signatory_principal_id",
+        "signatory_authority_reference", "signatory_authority_fingerprint",
+        "signed_at", "verified_at", "verifier_id",
+        "verification_receipt_reference", "verification_receipt_fingerprint",
+        "recorded_at",
+    }
     if (
-        raw.get("schema") != _EXECUTION_VERIFICATION_SCHEMA
+        set(raw) != expected_fields
+        or raw.get("schema") != _EXECUTION_VERIFICATION_SCHEMA
         or record_fingerprint != _sha3(raw)
         or raw.get("tenant_id") != agreement.tenant_id
         or raw.get("agreement_id") != agreement.agreement_id
@@ -231,6 +241,10 @@ def _verify_execution_verification_receipt(
         or raw.get("offer_fingerprint") != agreement.offer_fingerprint
         or raw.get("execution_evidence_reference") != verified.execution_evidence_reference
         or raw.get("execution_evidence_fingerprint") != verified.execution_evidence_fingerprint
+        or raw.get("signed_at") != (
+            agreement.executed_at.astimezone(timezone.utc).isoformat().replace("+00:00", "Z")
+            if agreement.executed_at is not None else None
+        )
         or raw.get("signatory_principal_id") != verified.signatory_principal_id
         or raw.get("signatory_authority_reference") != verified.signatory_authority_reference
         or raw.get("signatory_authority_fingerprint") != verified.signatory_authority_fingerprint
