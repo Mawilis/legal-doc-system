@@ -92,8 +92,6 @@ export default function TenantModuleWorkspace({ moduleId }) {
       kind,
       priority,
       due_at: dueAt ? new Date(dueAt).toISOString() : null,
-      source_type: null,
-      source_id: null,
     };
     const fingerprint = JSON.stringify(command);
     if (!pendingCreateRef.current || pendingCreateRef.current.fingerprint !== fingerprint) {
