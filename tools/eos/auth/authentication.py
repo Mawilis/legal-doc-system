@@ -187,6 +187,10 @@ async def get_current_identity(
             auth_method="JWT",
             status=authority.status,
             session_reference=session_reference,
+            principal_scope="SYSTEM",
+            workspace_id=workspace_id,
+            membership_revision=None,
+            capacity_revision=None,
         )
         log_auth_event("SYSTEM_JWT_AUTH", authority.principal_id, True, {"scope": "SYSTEM"})
         return identity
@@ -277,6 +281,10 @@ async def get_current_identity(
         auth_method="JWT",
         status=authority.status,
         session_reference=_claim(payload, "session_reference"),
+        principal_scope=principal_scope,
+        workspace_id=None,
+        membership_revision=None,
+        capacity_revision=None,
     )
     log_auth_event("JWT_AUTH", authority.principal_id, True, {"tenant": tenant_id})
     return identity
