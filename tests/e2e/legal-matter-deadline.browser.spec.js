@@ -57,10 +57,24 @@ async function openAuthenticatedPractice(browser, actorKey) {
 }
 
 for (const actorKey of ['partner', 'attorney', 'paralegal', 'secretary']) {
-  test(`keeps ${actorKey} matter deadlines behind the G68 workspace boundary`, async ({ browser }) => {
-    const { context, page } = await openAuthenticatedPractice(browser, actorKey);
+  test(`keeps ${actorKey} matter deadlines behind the G68 workspace boundary`, async ({ browser, request }) => {
+    const { actor, context, page } = await openAuthenticatedPractice(browser, actorKey);
     await expect(page.getByText('Legal Operations Command Center', { exact: true })).toBeVisible();
     await expect(page.getByRole('button', { name: 'My Work', exact: true })).toBeVisible();
+
+    // The matter-dependent browser navigation stays hidden without G68
+    // workspace context, while the independently authorized read route
+    // continues to enforce its own actor permission and tenant scope.
+    const deadlineRead = await request.get(
+      `/api/legal-operations/matters/${state.matter_id}/deadlines`,
+      {
+        headers: {
+          Authorization: `Bearer ${actor.access_token}`,
+          'X-Tenant-ID': state.tenant_id,
+        },
+      },
+    );
+    expect(deadlineRead.status()).toBe(200);
     await context.close();
   });
 }
