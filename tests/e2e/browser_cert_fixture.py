@@ -108,6 +108,9 @@ from tools.eos.legal_operations.domain.legal_acceptance import (
     LegalDocumentVersion,
     canonical_document_digest,
 )
+from tools.eos.legal_operations.service.legal_acceptance_service import (
+    ADMIN_RESPONSIBILITY_BUSINESS_ROLES,
+)
 from tools.eos.legal_operations.domain.legal_conflict_screening import (
     LegalConflictMatchKind,
     LegalConflictMatchSignal,
@@ -291,6 +294,10 @@ def _approved_documents(now: datetime) -> tuple[LegalDocumentVersion, ...]:
         (LegalAgreementType.ACCEPTABLE_USE, "WILSY-OS-ACCEPTABLE-USE"),
         (LegalAgreementType.PRIVACY_NOTICE, "WILSY-OS-PRIVACY-NOTICE"),
         (LegalAgreementType.AI_ASSISTANCE_NOTICE, "WILSY-OS-AI-ASSISTANCE-NOTICE"),
+        (
+            LegalAgreementType.ADMIN_RESPONSIBILITY_NOTICE,
+            "WILSY-OS-ADMIN-RESPONSIBILITY-NOTICE",
+        ),
     )
     result: list[LegalDocumentVersion] = []
     for agreement_type, document_id in values:
@@ -1066,6 +1073,17 @@ def seed(state_path: Path) -> None:
             for actor in actors.values():
                 principal_id = actor["principal_id"]
                 for document in documents:
+                    # The server policy requires this sixth document only for
+                    # principals whose durable business role carries tenant
+                    # administration responsibility. Do not fabricate an
+                    # acknowledgement for ordinary Legal practitioners.
+                    if (
+                        document.agreement_type
+                        is LegalAgreementType.ADMIN_RESPONSIBILITY_NOTICE
+                        and actor["business_role"]
+                        not in ADMIN_RESPONSIBILITY_BUSINESS_ROLES
+                    ):
+                        continue
                     acceptance_method = (
                         AcceptanceMethod.ACKNOWLEDGEMENT
                         if document.agreement_type is LegalAgreementType.INSTITUTIONAL_CHARTER
