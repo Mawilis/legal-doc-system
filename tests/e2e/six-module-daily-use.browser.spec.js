@@ -73,7 +73,8 @@ async function openModuleNavigation(page) {
   const actual = payload.workspace?.modules?.map(module => module.moduleId) || [];
   for (const moduleId of moduleIds) expect(actual).toContain(moduleId);
   for (const label of ['Legal OS', 'Billing', 'CRM', 'People', 'Operations', 'Intelligence', 'Point of Sale']) {
-    await expect(page.getByRole('button', { name: new RegExp(label, 'i') }).first()).toBeVisible();
+    await expect(page.getByRole('navigation', { name: 'Available WILSY OS products' })
+      .getByRole('button', { name: label, exact: true })).toBeVisible();
   }
   return payload.workspace.modules;
 }
@@ -135,13 +136,15 @@ test('owner completes the authenticated seven-module daily-use journey', async (
     expect(modules).toHaveLength(7);
 
     // Legal is a commercial-only presentation for the Tenant Owner.
-    await page.getByRole('button', { name: /Legal OS/i }).click();
+    await page.getByRole('navigation', { name: 'Available WILSY OS products' })
+      .getByRole('button', { name: 'Legal OS', exact: true }).click();
     await expect(page.getByRole('heading', { name: 'Legal Product Command' })).toBeVisible();
     await expect(page.getByText('Tenant owner · commercial authority only')).toBeVisible();
     await expect(page.getByText('ROLE-GATED')).toBeVisible();
 
     // Billing remains its own invoice/dunning product surface.
-    await page.getByRole('button', { name: /Billing/i }).click();
+    await page.getByRole('navigation', { name: 'Available WILSY OS products' })
+      .getByRole('button', { name: 'Billing', exact: true }).click();
     await expect(page.getByRole('heading', { name: 'Billing command center' })).toBeVisible();
 
     // CRM retains its own durable owner task queue and command service.
@@ -167,7 +170,8 @@ test('owner completes the authenticated seven-module daily-use journey', async (
     expect((await crmCompletePromise).status()).toBe(200);
 
     // People is the existing workforce/time-off workspace, not an alias for Operations.
-    await page.getByRole('button', { name: /People/i }).click();
+    await page.getByRole('navigation', { name: 'Available WILSY OS products' })
+      .getByRole('button', { name: 'People', exact: true }).click();
     await expect(page.getByRole('navigation', { name: 'HR workspace modules' })).toBeVisible();
 
     // Operations has its own product entitlement, task collection and permissions.
