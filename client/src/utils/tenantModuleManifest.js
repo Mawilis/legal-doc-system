@@ -45,6 +45,20 @@ export const MODULE_PRESENTATION = Object.freeze({
     navigationGroup: 'PEOPLE_OPERATIONS',
     iconKey: 'users-round',
   }),
+  OPERATIONS: Object.freeze({
+    productId: 'OPERATIONS',
+    label: 'Operations',
+    workspaceKey: 'OPERATIONS_DASHBOARD',
+    navigationGroup: 'BUSINESS_OPERATIONS',
+    iconKey: 'workflow',
+  }),
+  INTELLIGENCE: Object.freeze({
+    productId: 'INTELLIGENCE',
+    label: 'Intelligence',
+    workspaceKey: 'INTELLIGENCE_DASHBOARD',
+    navigationGroup: 'INTELLIGENCE',
+    iconKey: 'brain-circuit',
+  }),
 });
 
 /**
