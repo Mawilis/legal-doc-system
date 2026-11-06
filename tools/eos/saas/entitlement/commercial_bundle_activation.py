@@ -505,6 +505,12 @@ def activate_commercial_bundle(
         agreement_current_collection, session=tx,
     )
     _verify_execution_evidence(agreement, verified_execution_evidence)
+    if when < agreement.effective_at or (
+        agreement.expires_at is not None and when >= agreement.expires_at
+    ):
+        raise CommercialBundleActivationError(
+            "COMMERCIAL_BUNDLE_OUTSIDE_AGREEMENT_TERM"
+        )
     offer = get_commercial_offer(agreement.offer_id)
     if offer.kind is not CommercialOfferKind.BUNDLE:
         raise CommercialBundleActivationError("COMMERCIAL_BUNDLE_OFFER_REQUIRED")
