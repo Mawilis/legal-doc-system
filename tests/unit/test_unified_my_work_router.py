@@ -114,6 +114,44 @@ def test_route_rejects_whitespace_tenant_scope_before_source_reads():
     assert error.value.detail == "TENANT_SCOPE_REQUIRED"
 
 
+def test_route_rejects_tenant_scope_when_no_source_is_authorized():
+    with pytest.raises(HTTPException) as error:
+        asyncio.run(route.read_my_work(
+            tenant_id="foreign-tenant",
+            identity=_identity(),
+            legal_context=None,
+            operations_context=None,
+            intelligence_context=None,
+            crm_context=None,
+        ))
+    assert error.value.status_code == 403
+    assert error.value.detail == "MY_WORK_NO_AUTHORIZED_SOURCE"
+
+
+def test_http_route_does_not_return_empty_success_for_unjoined_foreign_tenant():
+    from fastapi import FastAPI
+    from fastapi.testclient import TestClient
+    from tools.eos.api.errors import register_error_handlers
+
+    app = FastAPI()
+    register_error_handlers(app, debug=False)
+    app.include_router(route.router, prefix="/api")
+    app.dependency_overrides[route.get_current_identity] = _identity
+    app.dependency_overrides[route._LEGAL_READ] = lambda: None
+    app.dependency_overrides[route._OPERATIONS_READ] = lambda: None
+    app.dependency_overrides[route._INTELLIGENCE_READ] = lambda: None
+    app.dependency_overrides[route._CRM_READ] = lambda: None
+
+    with TestClient(app) as client:
+        response = client.get(
+            "/api/my-work",
+            headers={"X-Tenant-ID": "foreign-tenant"},
+        )
+
+    assert response.status_code == 403
+    assert response.json()["detail"] == "MY_WORK_NO_AUTHORIZED_SOURCE"
+
+
 
 def test_http_route_omits_denied_source_and_returns_only_authorized_projection(monkeypatch):
     from fastapi import FastAPI
