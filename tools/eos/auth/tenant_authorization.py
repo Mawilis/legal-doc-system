@@ -203,7 +203,7 @@ from tools.eos.auth.principal_authority_repository import PrincipalAuthorityNotF
 from tools.eos.auth.tenant_membership_repository import TenantMembershipNotFoundError, TenantMembershipRepositoryError
 from tools.eos.auth.role_assignment_repository import RoleAssignmentNotFoundError, RoleAssignmentRepositoryError
 from tools.eos.auth.tenant_business_role_authority import BusinessRoleResolution, resolve_current_tenant_business_role
-from tools.eos.auth.tenant_authority_policy import ELIGIBLE, tenant_role_operation_eligibility, requires_system_authority, SystemAuthorityClassification
+from tools.eos.auth.tenant_authority_policy import ELIGIBLE, TENANT_ROLES, tenant_role_operation_eligibility, requires_system_authority, SystemAuthorityClassification
 
 from tools.eos.auth.workforce_admission_policy import (
     WorkforceAdmissionDisposition,
