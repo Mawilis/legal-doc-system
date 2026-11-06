@@ -12,7 +12,7 @@ FINANCIAL: No invoice, payment, settlement or execution authority; Kennel EOS
 """
 from __future__ import annotations
 
-from dataclasses import dataclass
+from dataclasses import dataclass, replace
 from datetime import datetime, timezone
 from enum import StrEnum
 import hashlib
@@ -310,6 +310,83 @@ class CommercialAgreement:
         ):
             raise CommercialAgreementError("COMMERCIAL_AGREEMENT_FINGERPRINT_MISMATCH")
         object.__setattr__(self, "fingerprint", digest)
+
+    def transition(
+        self,
+        target_state: CommercialAgreementState | str,
+        *,
+        expected_revision: int,
+        evidence_reference: str,
+        evidence_fingerprint: str,
+        occurred_at: datetime,
+    ) -> "CommercialAgreement":
+        """Derive one evidence-bound lifecycle transition from this snapshot."""
+        if (
+            isinstance(expected_revision, bool)
+            or not isinstance(expected_revision, int)
+            or expected_revision != self.lifecycle_revision
+        ):
+            raise CommercialAgreementError("COMMERCIAL_AGREEMENT_STALE_REVISION")
+        try:
+            target = CommercialAgreementState(target_state)
+        except (TypeError, ValueError) as error:
+            raise CommercialAgreementError("COMMERCIAL_AGREEMENT_TARGET_STATE_INVALID") from error
+        when = _when("TRANSITION_OCCURRED_AT", occurred_at, required=True)
+        reference = _identity("TRANSITION_EVIDENCE_REFERENCE", evidence_reference)
+        fingerprint = _fingerprint("TRANSITION_EVIDENCE_FINGERPRINT", evidence_fingerprint)
+        allowed = {
+            CommercialAgreementState.DRAFT: {CommercialAgreementState.EXECUTED},
+            CommercialAgreementState.EXECUTED: {CommercialAgreementState.ACTIVE},
+            CommercialAgreementState.ACTIVE: {
+                CommercialAgreementState.SUSPENDED,
+                CommercialAgreementState.TERMINATED,
+                CommercialAgreementState.EXPIRED,
+            },
+            CommercialAgreementState.SUSPENDED: {
+                CommercialAgreementState.TERMINATED,
+                CommercialAgreementState.EXPIRED,
+            },
+            CommercialAgreementState.TERMINATED: set(),
+            CommercialAgreementState.EXPIRED: set(),
+        }
+        if target not in allowed[self.lifecycle_state]:
+            raise CommercialAgreementError("COMMERCIAL_AGREEMENT_TRANSITION_NOT_ALLOWED")
+        changes: dict[str, object] = {
+            "lifecycle_state": target,
+            "lifecycle_revision": self.lifecycle_revision + 1,
+            "fingerprint": "",
+        }
+        if target is CommercialAgreementState.EXECUTED:
+            changes.update(
+                executed_at=when,
+                execution_evidence_reference=reference,
+                execution_evidence_fingerprint=fingerprint,
+            )
+        elif target is CommercialAgreementState.ACTIVE:
+            changes.update(
+                activated_at=when,
+                activation_evidence_reference=reference,
+                activation_evidence_fingerprint=fingerprint,
+            )
+        elif target is CommercialAgreementState.SUSPENDED:
+            changes.update(
+                suspended_at=when,
+                suspension_evidence_reference=reference,
+                suspension_evidence_fingerprint=fingerprint,
+            )
+        elif target is CommercialAgreementState.TERMINATED:
+            changes.update(
+                terminated_at=when,
+                termination_evidence_reference=reference,
+                termination_evidence_fingerprint=fingerprint,
+            )
+        elif target is CommercialAgreementState.EXPIRED:
+            changes.update(
+                expired_at=when,
+                expiry_evidence_reference=reference,
+                expiry_evidence_fingerprint=fingerprint,
+            )
+        return replace(self, **changes)
 
     def _payload(self) -> dict[str, object]:
         return {
