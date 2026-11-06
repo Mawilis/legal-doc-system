@@ -65,7 +65,7 @@ def _active_crm(tenant_id: str = "TENANT-A"):
 
 def test_global_module_catalogue_is_closed_and_uses_canonical_product_keys():
     descriptors = list_tenant_module_descriptors()
-    assert len(descriptors) == 6
+    assert len(descriptors) == 7
     assert {item.product_id for item in descriptors} == set(TenantProductId)
     assert {item.module_id for item in descriptors} == set(TenantModuleId)
 
@@ -79,6 +79,18 @@ def test_only_exact_active_legal_product_entitlement_projects_legal_os():
     assert result[0].module_id is TenantModuleId.LEGAL_OS
     assert result[0].workspace_key == "LEGAL_DASHBOARD"
     assert result[0].entitlement_revision == 1
+
+
+def test_pos_requires_its_own_active_product_entitlement():
+    result = build_tenant_module_manifest(
+        tenant_id="TENANT-A",
+        entitlements=[_active_product(TenantProductId.POS)],
+    )
+    assert len(result) == 1
+    assert result[0].module_id is TenantModuleId.POS
+    assert result[0].product_id is TenantProductId.POS
+    assert result[0].workspace_key == "POS_DASHBOARD"
+    assert result[0].entitlement_id == "entitlement:TENANT-A:POS"
 
 
 def test_crm_core_entitlement_projects_crm_without_role_or_permission_claims():
