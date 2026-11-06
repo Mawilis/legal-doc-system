@@ -53,15 +53,26 @@ describe('SovereignDashboardController EOS workspace contract', () => {
     })).toBe('');
   });
 
-  it('does not let the tenant owner switch into CRM, Legal Practice or Founder dashboards', () => {
+  it('allows Tenant Owner to open only the Legal commercial presentation, never practice or Founder dashboards', () => {
     const user = {
       id: 'owner-3',
       role: 'TENANT_OWNER',
       workspaceId: 'EXECUTIVE_COMMAND_CENTRE',
     };
-    for (const request of ['CRM_DASHBOARD', 'LEGAL_DASHBOARD', 'FOUNDER_DASHBOARD']) {
+    expect(resolveDashboardKey({ user, manualDashboardKey: 'LEGAL_DASHBOARD' }))
+      .toBe(DASHBOARD_KEYS.LEGAL);
+    for (const request of ['CRM_DASHBOARD', 'FOUNDER_DASHBOARD']) {
       expect(resolveDashboardKey({ user, manualDashboardKey: request }))
         .toBe(DASHBOARD_KEYS.EXECUTIVE);
+    }
+  });
+
+  it('does not allow non-owner roles to select Legal outside the EOS workspace projection', () => {
+    for (const role of ['LEGAL_PARTNER', 'LEGAL_FINANCE', 'TENANT_ADMIN']) {
+      expect(resolveDashboardKey({
+        user: { id: `principal-${role}`, role, workspaceId: 'EXECUTIVE_COMMAND_CENTRE' },
+        manualDashboardKey: 'LEGAL_DASHBOARD',
+      })).toBe(DASHBOARD_KEYS.EXECUTIVE);
     }
   });
 
