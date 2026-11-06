@@ -226,7 +226,11 @@ describe('D21B13 Legal authenticated tenant branding presentation', () => {
     );
 
     expect(mocks.brandingHook).toHaveBeenCalledWith(null);
-    const mark = container.querySelector('[data-wilsy-legal-tenant-logo]');
+    let mark = null;
+    await waitFor(() => {
+      mark = container.querySelector('[data-wilsy-legal-tenant-logo]');
+      expect(mark).not.toBeNull();
+    });
     expect(mark.querySelector('img')).toBeNull();
     expect(mark).toHaveTextContent('AL');
     expect(container.innerHTML).not.toContain('evil.invalid');
