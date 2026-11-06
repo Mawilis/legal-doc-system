@@ -5,6 +5,7 @@ from datetime import datetime, timezone
 import os
 import uuid
 from typing import Any, Iterator
+from urllib.parse import parse_qs, urlparse
 
 import pytest
 from pymongo import MongoClient
@@ -27,7 +28,7 @@ from tools.eos.workspaces.service.tenant_module_workspace_service import (
 )
 
 URI = os.getenv("TEST_VENDOR_MONGO_URI")
-EXPECTED_REPLICA_SET = "tenantModuleCertRS"
+EXPECTED_REPLICA_SET = parse_qs(urlparse(URI or "").query).get("replicaSet", [None])[0]
 NOW = datetime(2026, 11, 6, 10, tzinfo=timezone.utc)
 FP = "b" * 128
 TENANT = "WILSYTENANT-4CD2FZ4O"
@@ -47,7 +48,7 @@ def mongo_context() -> Iterator[tuple[MongoClient[Any], Any, Any, Any]]:
             hello = client.admin.command("hello")
         except PyMongoError as error:
             pytest.skip(f"module-work Mongo unavailable before yield: {type(error).__name__}")
-        if hello.get("setName") != EXPECTED_REPLICA_SET:
+        if not EXPECTED_REPLICA_SET or hello.get("setName") != EXPECTED_REPLICA_SET:
             pytest.skip(f"wrong replica set: {hello.get('setName')!r}")
         if hello.get("isWritablePrimary", hello.get("ismaster")) is not True:
             pytest.skip("module-work replica set has no writable primary")
