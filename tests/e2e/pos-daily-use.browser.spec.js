@@ -33,6 +33,7 @@ async function api(page, method, path, body, key, tenantId = state.tenant_id) {
       credentials: 'include',
       headers: {
         'Content-Type': 'application/json',
+        'Authorization': `Bearer ${localStorage.getItem('wilsy_auth_token') || localStorage.getItem('token') || ''}`,
         'X-Tenant-ID': tenantId,
         ...(key ? { 'Idempotency-Key': key } : {}),
       },
