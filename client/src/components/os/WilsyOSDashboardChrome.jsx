@@ -559,7 +559,7 @@ const WilsyOSDashboardChrome = ({
       ) : null}
 
       <section className="wilsyOsChromeWorkspaceFrame">
-        {leftRail ? (
+        {(leftRail || moduleManifest.modules.length > 0) ? (
           <aside
             className="wilsyOsChromeLeftRail"
             aria-label="Module navigation"
