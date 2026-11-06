@@ -25,6 +25,7 @@ from tools.eos.api.tenant_authorization_http import (
 from tools.eos.auth.authentication import get_principal_authority_repository
 from tools.eos.auth.authorization import get_role_assignment_repository
 from tools.eos.auth.tenant_access import get_tenant_membership_repository
+from tools.eos.auth.tenant_business_role_repository import TenantBusinessRoleRepository
 from tools.eos.auth.tenant_authorization_decision_evidence_registry import (
     COLLECTION as AUTHORIZATION_EVIDENCE_COLLECTION,
     TenantAuthorizationDecisionEvidenceRegistry,
@@ -180,6 +181,13 @@ def _prepare(database: Any) -> dict[str, Any]:
     POSFinancialExecutionAuthorizationRegistry.ensure_indexes(execution_authorizations)
     FinancialMovementExecutionRegistry.ensure_indexes(movement_truths)
     POSLocationAssignmentRegistry.ensure_indexes(location_history, location_current)
+    TenantAuthorizationDecisionEvidenceRegistry(
+        _collection(database, AUTHORIZATION_EVIDENCE_COLLECTION),
+        principal_repository=get_principal_authority_repository(),
+        membership_repository=get_tenant_membership_repository(),
+        role_assignment_repository=get_role_assignment_repository(),
+        business_role_repository=TenantBusinessRoleRepository(),
+    ).ensure_indexes()
     return {
         "sales": sales, "evidence": evidence, "capacity": capacity,
         "location_history": location_history, "location_current": location_current,
@@ -436,7 +444,7 @@ def _issue_execution_authority(*, collections: dict[str, Any], session: Any,
         principal_repository=get_principal_authority_repository(),
         membership_repository=get_tenant_membership_repository(),
         role_assignment_repository=get_role_assignment_repository(),
-        business_role_repository=get_role_assignment_repository(),
+        business_role_repository=TenantBusinessRoleRepository(),
     )
     authority = authority_registry.issue(
         tenant_id=context.tenant_id,
