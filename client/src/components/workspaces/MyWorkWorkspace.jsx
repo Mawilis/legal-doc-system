@@ -235,7 +235,7 @@ export default function MyWorkWorkspace() {
                     <div className="mt-4 rounded-lg border border-white/10 bg-black/20 px-3 py-2 text-xs text-slate-400">
                       No generic completion command is available for this source.
                     </div>
-                  )}}
+                  )}
                 </article>
               );
             })}
