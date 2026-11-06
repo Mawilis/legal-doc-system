@@ -31,8 +31,8 @@ class CommercialBundleReadinessError(RuntimeError):
 
 
 class CommercialBundleReadinessState(StrEnum):
-    PRODUCT_MAPPING_COMPLETE = "READY_FOR_ATOMIC_ACTIVATION"
-    BLOCKED_MISSING_PRODUCT_MAPPING = "BLOCKED_MISSING_PRODUCT_AUTHORITY"
+    PRODUCT_MAPPING_COMPLETE = "PRODUCT_MAPPING_COMPLETE"
+    BLOCKED_MISSING_PRODUCT_MAPPING = "BLOCKED_MISSING_PRODUCT_MAPPING"
 
 
 @dataclass(frozen=True, slots=True)
@@ -51,7 +51,7 @@ class CommercialBundleReadiness:
 
     @property
     def ready(self) -> bool:
-        return self.state is CommercialBundleReadinessState.READY_FOR_ATOMIC_ACTIVATION
+        return self.state is CommercialBundleReadinessState.PRODUCT_MAPPING_COMPLETE
 
     @property
     def blockers(self) -> tuple[str, ...]:
@@ -108,7 +108,7 @@ def assess_commercial_bundle_readiness(
     state = (
         CommercialBundleReadinessState.READY_FOR_ATOMIC_ACTIVATION
         if all(item.ready for item in products)
-        else CommercialBundleReadinessState.BLOCKED_MISSING_PRODUCT_AUTHORITY
+        else CommercialBundleReadinessState.BLOCKED_MISSING_PRODUCT_MAPPING
     )
     return CommercialBundleReadiness(
         offer=offer,
