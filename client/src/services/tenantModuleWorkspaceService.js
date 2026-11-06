@@ -28,13 +28,27 @@ export async function readTenantModuleWorkspace(moduleId) {
     forceNetworkRetry: true,
   });
   const value = response?.data;
+  const validItems = Array.isArray(value?.items) && value.items.every(item => (
+    item &&
+    item.schema === 'WILSY-TENANT-MODULE-WORK-ITEM/V1' &&
+    item.tenant_id === value.tenant_id &&
+    typeof item.work_item_id === 'string' &&
+    typeof item.title === 'string' &&
+    ['TASK', 'REMINDER', 'FOLLOW_UP'].includes(item.kind) &&
+    ['OPEN', 'IN_PROGRESS', 'BLOCKED'].includes(item.status) &&
+    ['CRITICAL', 'HIGH', 'NORMAL', 'LOW'].includes(item.priority) &&
+    (item.due_at === null || typeof item.due_at === 'string') &&
+    Number.isInteger(item.queue_position) &&
+    typeof item.is_overdue === 'boolean' &&
+    typeof item.is_due_today === 'boolean'
+  ));
   if (
     !value ||
     value.schema !== 'WILSY-TENANT-MODULE-WORKSPACE/V1' ||
     value.product_id !== descriptor.productId ||
     value.workspace_key !== descriptor.workspaceKey ||
     typeof value.tenant_id !== 'string' ||
-    !Array.isArray(value.items)
+    !validItems
   ) {
     throw new Error('TENANT_MODULE_WORKSPACE_RESPONSE_INVALID');
   }
