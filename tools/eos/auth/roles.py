@@ -636,3 +636,11 @@ ROLE_PERMISSIONS_MAP["ENTERPRISE_ADMIN"].extend([
     "tenant:commercial_agreement:activate",
 ])
 ROLE_PERMISSIONS_MAP["AUDITOR"].append("tenant:commercial_agreement:read")
+
+
+// POS static possession is deliberately limited to the canonical tenant-owner
+// authorization role. It does not create any per-location assignment.
+ROLE_PERMISSIONS_MAP["TENANT_OWNER"].extend((
+    "pos:location_assignment:manage", "pos:sale:read", "pos:sale:create",
+    "pos:tender:create", "pos:cash:record", "pos:return:create", "pos:refund:create",
+))

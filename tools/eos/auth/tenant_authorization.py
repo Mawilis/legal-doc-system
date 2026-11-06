@@ -501,3 +501,17 @@ _BINDINGS = MappingProxyType({
 # FAIL-CLOSED POSTURE: unknown, inactive, missing, ambiguous, unavailable, mismatched, or financial requests deny
 # FINANCIAL EXECUTION AUTHORITY: Kennel EOS remains exclusive
 # END OF WILSY OS SOVEREIGN ARTIFACT
+
+
+# POS permissions bind to exact own-tenant operations. The POS service still
+# revalidates current product entitlement and location assignment per command.
+_BINDINGS = MappingProxyType({
+    **_BINDINGS,
+    "pos_location_assignment_manage": "pos:location_assignment:manage",
+    "pos_sale_read": "pos:sale:read",
+    "pos_sale_create": "pos:sale:create",
+    "pos_tender_create": "pos:tender:create",
+    "pos_cash_record": "pos:cash:record",
+    "pos_return_create": "pos:return:create",
+    "pos_refund_create": "pos:refund:create",
+})

@@ -1078,3 +1078,28 @@ ELIGIBILITY = MappingProxyType(_agreement_eligibility)
 # FAIL-CLOSED POSTURE: unknown roles and operations deny; ELIGIBLE never grants access
 # FINANCIAL EXECUTION AUTHORITY: Kennel EOS remains exclusive
 # END OF WILSY OS SOVEREIGN ARTIFACT
+
+
+# POS business eligibility is separate from permission possession and the
+# independently persisted principal/location assignment.
+POS_OPERATIONS = (
+    "pos_location_assignment_manage", "pos_sale_read", "pos_sale_create",
+    "pos_tender_create", "pos_cash_record", "pos_return_create", "pos_refund_create",
+)
+OPERATIONS = frozenset((*OPERATIONS, *POS_OPERATIONS))
+BUSINESS_ROLE_OPERATION_PERMISSIONS = MappingProxyType({
+    **BUSINESS_ROLE_OPERATION_PERMISSIONS,
+    "pos_location_assignment_manage": "pos:location_assignment:manage",
+    "pos_sale_read": "pos:sale:read",
+    "pos_sale_create": "pos:sale:create",
+    "pos_tender_create": "pos:tender:create",
+    "pos_cash_record": "pos:cash:record",
+    "pos_return_create": "pos:return:create",
+    "pos_refund_create": "pos:refund:create",
+})
+_pos_eligibility = dict(ELIGIBILITY)
+for _role in ("tenant_owner",):
+    _row = dict(_pos_eligibility[_role])
+    _row.update({operation: ELIGIBLE for operation in POS_OPERATIONS})
+    _pos_eligibility[_role] = MappingProxyType(_row)
+ELIGIBILITY = MappingProxyType(_pos_eligibility)
