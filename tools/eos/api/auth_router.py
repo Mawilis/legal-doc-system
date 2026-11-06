@@ -9,6 +9,7 @@ COLLABORATION / OWNERSHIP: Authentication service and FastAPI server consume thi
 credential and identity authorities remain in tools.eos.auth.
 CERTIFICATION/UPDATE DATE: 2026-10-16.
 CHANGELOG:
+  v1.18.0-EOS-TENANT-MODULE-MANIFEST-HTTP: Adds a separate authenticated module-manifest endpoint. It revalidates current principal, membership, business role and tenant before opening one bounded read-only transaction over canonical D22B2 product entitlement and CRM Core resolver evidence. The returned module list is presentation-only; no role, Legal Practice, G68, route or resource permission is projected. Existing workspace-bootstrap response remains unchanged.
   v1.17.0-REQUIRED-ASGI-REQUEST-FAILURE-THROTTLE: Requires FastAPI's concrete Request injection so the direct transport peer is always available and avoids unsupported optional-Request route signatures. All failure-only throttling, generic 429, fail-closed 503, and privacy-safe telemetry behavior is preserved.
   v1.16.0-GLOBAL-PRINCIPAL-FAILURE-THROTTLE-HTTP-ADMISSION: Applies EOS-owned dual-dimension failure-only throttling before legacy credential verification. Failed passwords increment normalized-email and direct transport-peer buckets; successful credential verification clears only the email bucket. Exhaustion returns generic 429 with bounded Retry-After; throttle persistence uncertainty returns 503. No raw email is included in login-failure telemetry. The route remains tenant-bound until the global principal/membership/MFA session flow is wired.
   v1.15.0-P3-R3G-S5-A2-FACTOR-CURRENTNESS-ATOMIC-SESSION-WIRING: Atomically binds successful MFA setup and OTP verification session creation to one privileged factor-currentness evidence write in the same caller-owned Mongo transaction. Canonical application startup owns factor-currentness index DDL; request paths perform no index creation. All current-main Legal presentation, tenant discovery, branding, recovery, IAM, billing, and financial boundaries are preserved.
@@ -92,7 +93,7 @@ FINANCIAL AUTHORITY BOUNDARY: Kennel EOS exclusively owns financial execution.
 
 from __future__ import annotations
 
-VERSION = "v1.17.0-REQUIRED-ASGI-REQUEST-FAILURE-THROTTLE"
+VERSION = "v1.18.0-EOS-TENANT-MODULE-MANIFEST-HTTP"
 
 from fastapi import APIRouter, Depends, HTTPException, Request, Response, status
 from datetime import datetime, timezone
@@ -408,6 +409,189 @@ def _workspace_principal_profile(
     )
 
 
+class WorkspaceModuleManifestProjectionError(RuntimeError):
+    """Canonical module availability could not be established safely."""
+
+
+class WorkspaceModuleManifestRetryRequiredError(
+    WorkspaceModuleManifestProjectionError
+):
+    """The complete read transaction must restart from fresh state."""
+
+
+def _workspace_module_manifest_projection(
+    tenant_id: str,
+) -> tuple[dict[str, object], ...]:
+    """Resolve tenant modules from canonical D22B2 and CRM Core evidence.
+
+    Each attempt owns one fresh read transaction. Product identity and
+    entitlement identity are derived server-side. The exact session is
+    forwarded to every registry/resolver read and is always aborted after the
+    read-only snapshot. Only explicit transient transaction evidence retries.
+    """
+    try:
+        from tools.eos.kernel.db import get_client, get_database
+        from tools.eos.crm.service.crm_core_entitlement_resolver import (
+            CrmCoreEntitlementResolverError,
+            resolve_crm_core_entitlement,
+        )
+        from tools.eos.saas.entitlement.product_catalogue import TenantProductId
+        from tools.eos.saas.entitlement.tenant_product_entitlement_composer import (
+            derive_tenant_product_entitlement_id,
+        )
+        from tools.eos.saas.entitlement.tenant_product_entitlement_registry import (
+            CURRENT_COLLECTION,
+            HISTORY_COLLECTION,
+            TenantProductEntitlementRegistryError,
+            TenantProductEntitlementRegistryNotFoundError,
+            TenantProductEntitlementRegistryRetryRequiredError,
+            get_current,
+        )
+        from tools.eos.auth.tenant_module_manifest import (
+            TenantModuleManifestError,
+            build_tenant_module_manifest,
+        )
+    except Exception as error:
+        raise WorkspaceModuleManifestProjectionError(
+            "WORKSPACE_MODULE_MANIFEST_AUTHORITY_UNAVAILABLE"
+        ) from error
+
+    try:
+        client = get_client()
+        database = get_database()
+    except Exception as error:
+        raise WorkspaceModuleManifestProjectionError(
+            "WORKSPACE_MODULE_MANIFEST_PERSISTENCE_UNAVAILABLE"
+        ) from error
+
+    if client is None or database is None:
+        raise WorkspaceModuleManifestProjectionError(
+            "WORKSPACE_MODULE_MANIFEST_PERSISTENCE_UNAVAILABLE"
+        )
+
+    last_retry: BaseException | None = None
+    for attempt in range(3):
+        session: Any = None
+        try:
+            session = client.start_session()
+            session.start_transaction()
+            entitlements: list[Any] = []
+
+            for product_id in TenantProductId:
+                if product_id is TenantProductId.CRM:
+                    try:
+                        crm_entitlement = resolve_crm_core_entitlement(
+                            tenant_id,
+                            database["subscriptions"],
+                            session,
+                        )
+                    except CrmCoreEntitlementResolverError as error:
+                        raise WorkspaceModuleManifestProjectionError(
+                            "WORKSPACE_MODULE_MANIFEST_CRM_AUTHORITY_INVALID"
+                        ) from error
+                    if crm_entitlement is not None:
+                        entitlements.append(crm_entitlement)
+                    continue
+
+                entitlement_id = derive_tenant_product_entitlement_id(
+                    tenant_id,
+                    product_id,
+                )
+                try:
+                    entitlement = get_current(
+                        tenant_id,
+                        entitlement_id,
+                        database[HISTORY_COLLECTION],
+                        database[CURRENT_COLLECTION],
+                        session=session,
+                    )
+                except TenantProductEntitlementRegistryNotFoundError:
+                    continue
+                except TenantProductEntitlementRegistryRetryRequiredError as error:
+                    raise WorkspaceModuleManifestRetryRequiredError(
+                        "WORKSPACE_MODULE_MANIFEST_RETRY_REQUIRED"
+                    ) from error
+                except TenantProductEntitlementRegistryError as error:
+                    raise WorkspaceModuleManifestProjectionError(
+                        "WORKSPACE_MODULE_MANIFEST_PRODUCT_AUTHORITY_UNAVAILABLE"
+                    ) from error
+
+                entitlements.append(entitlement)
+
+            manifest = build_tenant_module_manifest(
+                tenant_id=tenant_id,
+                entitlements=entitlements,
+            )
+            result = tuple(
+                {
+                    "moduleId": item.module_id.value,
+                    "productId": item.product_id.value,
+                    "label": item.label,
+                    "workspaceKey": item.workspace_key,
+                    "navigationGroup": item.navigation_group,
+                    "iconKey": item.icon_key,
+                    "entitlementId": item.entitlement_id,
+                    "entitlementRevision": item.entitlement_revision,
+                    "entitlementFingerprint": item.entitlement_fingerprint,
+                }
+                for item in manifest
+            )
+            marker = getattr(session, "in_transaction", False)
+            active = marker() if callable(marker) else marker
+            if active is True:
+                session.abort_transaction()
+            return result
+        except WorkspaceModuleManifestRetryRequiredError as error:
+            last_retry = error
+            if attempt < 2:
+                continue
+            raise WorkspaceModuleManifestProjectionError(
+                "WORKSPACE_MODULE_MANIFEST_RETRY_EXHAUSTED"
+            ) from error
+        except PyMongoError as error:
+            if error.has_error_label("TransientTransactionError"):
+                last_retry = error
+                if attempt < 2:
+                    continue
+                raise WorkspaceModuleManifestProjectionError(
+                    "WORKSPACE_MODULE_MANIFEST_RETRY_EXHAUSTED"
+                ) from error
+            raise WorkspaceModuleManifestProjectionError(
+                "WORKSPACE_MODULE_MANIFEST_PERSISTENCE_UNAVAILABLE"
+            ) from error
+        except WorkspaceModuleManifestProjectionError:
+            raise
+        except TenantModuleManifestError as error:
+            raise WorkspaceModuleManifestProjectionError(
+                "WORKSPACE_MODULE_MANIFEST_EVIDENCE_INVALID"
+            ) from error
+        except Exception as error:
+            raise WorkspaceModuleManifestProjectionError(
+                "WORKSPACE_MODULE_MANIFEST_RUNTIME_UNAVAILABLE"
+            ) from error
+        finally:
+            if session is not None:
+                try:
+                    marker = getattr(session, "in_transaction", False)
+                    active = marker() if callable(marker) else marker
+                    if active is True:
+                        session.abort_transaction()
+                except Exception:
+                    logger.exception(
+                        "[WORKSPACE_MODULE_MANIFEST] transaction cleanup failed"
+                    )
+                try:
+                    session.end_session()
+                except Exception:
+                    logger.exception(
+                        "[WORKSPACE_MODULE_MANIFEST] session cleanup failed"
+                    )
+
+    raise WorkspaceModuleManifestProjectionError(
+        "WORKSPACE_MODULE_MANIFEST_RETRY_EXHAUSTED"
+    ) from last_retry
+
+
 def _workspace_branding_projection(
     tenant_id: str,
 ) -> dict[str, object] | None:
@@ -703,6 +887,43 @@ async def workspace_bootstrap(
                 "sector": sector,
                 "status": tenant_status,
             },
+        },
+    }
+
+
+@router.get("/module-manifest")
+async def workspace_module_manifest(
+    identity: SovereignIdentity = Depends(get_current_identity),
+) -> dict[str, object]:
+    """Return the exact tenant's product-eligible module navigation projection.
+
+    Current principal, ACTIVE membership, dedicated business role and canonical
+    tenant are revalidated first. Module availability is then read from canonical
+    product entitlement authorities. This response grants no principal role,
+    Legal Practice capacity, route access or resource permission; every module
+    API remains independently authorized.
+    """
+    try:
+        projection = build_workspace_bootstrap_projection(identity=identity)
+    except WorkspaceBootstrapProjectionError as error:
+        raise _workspace_bootstrap_http_error(error) from error
+
+    try:
+        from tools.eos.auth.tenant_module_manifest import VERSION
+
+        modules = _workspace_module_manifest_projection(projection.tenant_id)
+    except WorkspaceModuleManifestProjectionError as error:
+        raise HTTPException(
+            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+            detail="Workspace module availability is unavailable.",
+        ) from error
+
+    return {
+        "status": "READY",
+        "workspace": {
+            "tenantId": projection.tenant_id,
+            "moduleManifestVersion": VERSION,
+            "modules": list(modules),
         },
     }
 
@@ -1685,8 +1906,8 @@ async def logout():
 
 
 # ARTIFACT: auth_router.py
-# VERSION: v1.17.0-REQUIRED-ASGI-REQUEST-FAILURE-THROTTLE
-# AUTHORITY BOUNDARY: Authentication/recovery/contact-verification HTTP routing and bounded projections only; D21B11 serves only exact current logo/favicon bytes after workspace revalidation plus D21B10/D21B6/D21B5B proof, D21B7 workspace branding is a read-only D21B6 projection after current durable entitlement/profile/asset correlation, D24A names are descriptive durable rereads, workspace legalPermissions remain authorization-compositor presentation outputs, and D19 practice fields remain descriptive; none creates credential, membership, role, permission, entitlement, asset-upload, legal-command, operating-model, billing, payment, execution, settlement, or financial authority.
+# VERSION: v1.18.0-EOS-TENANT-MODULE-MANIFEST-HTTP
+# AUTHORITY BOUNDARY: Authentication/recovery/contact-verification HTTP routing and bounded projections only; D21B11 serves only exact current logo/favicon bytes after workspace revalidation plus D21B10/D21B6/D21B5B proof, D21B7 workspace branding is a read-only D21B6 projection after current durable entitlement/profile/asset correlation, D24A names are descriptive durable rereads, workspace legalPermissions remain authorization-compositor presentation outputs, D19 practice fields remain descriptive, and the module manifest exposes only tenant product availability; none creates credential, membership, role, permission, route admission, Legal Practice, G68, asset-upload, legal-command, operating-model, billing, payment, execution, settlement, or financial authority.
 # TENANT POSTURE: workspace branding and D21B11 asset bytes are resolved only for the exact server-revalidated tenant under tenant-scoped D21B2B/D21B4B/D21B5B reads; recovery tenant remains lookup scope only and no caller tenant authority is created.
 # FAIL-CLOSED POSTURE: auth fails closed; D21B11 invalid/missing asset returns bounded absence while current-branding outage/corruption fails closed; workspace permission, durable-principal-profile, or configured-branding authority outage/inconsistency fails closed; lawful no-branding is explicit null, never legacy/browser fallback; D24A never infers person names from email/browser state; D19 never infers missing tenant profile values or operating-model authority; recovery initiation is enumeration-safe generic acceptance.
 # FINANCIAL EXECUTION AUTHORITY: Kennel EOS remains exclusive.
