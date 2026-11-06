@@ -126,6 +126,23 @@ describe('PW-P11C productive-work client adapter', () => {
 
     expect(result.tenantId).toBe('tenant-law');
     expect(result.principalId).toBe('principal-law');
+    expect(result.httpVersion).toBe(
+      'v1.1.0-R67-ENTERPRISE-DAILY-WORK-EXECUTION-READ-API',
+    );
+    expect(result.workdaySummary).toEqual({
+      assignedCount: 1,
+      supervisedCount: 0,
+      overdueCount: 0,
+      dueSoonCount: 1,
+    });
+    expect(result.dailyExecutionQueue.items).toEqual([
+      expect.objectContaining({
+        queuePosition: 1,
+        workItemId: 'work-1',
+        urgency: 'DUE_SOON',
+        visibilitySources: ['ASSIGNMENT'],
+      }),
+    ]);
 
     expect(result.assignedWorkItems).toEqual([
       expect.objectContaining({
