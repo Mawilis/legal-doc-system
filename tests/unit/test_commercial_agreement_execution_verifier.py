@@ -118,8 +118,8 @@ def _harness(*, chain_valid=True, revocation="GOOD", mandate_active=True, tamper
         .issuer_name(name)
         .public_key(private_key.public_key())
         .serial_number(x509.random_serial_number())
-        .not_valid_before(NOW - timedelta(days=2))
-        .not_valid_after(NOW + timedelta(days=365))
+        .not_valid_before(NOW.replace(tzinfo=None) - timedelta(days=2))
+        .not_valid_after(NOW.replace(tzinfo=None) + timedelta(days=365))
         .add_extension(
             x509.KeyUsage(
                 digital_signature=True, content_commitment=True,
