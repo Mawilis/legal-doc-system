@@ -91,7 +91,7 @@ test('POS operator completes authenticated daily-use sale and evidence journey',
       sku: 'SKU-POS-01', quantity: 1, reason: 'Synthetic browser certification return',
       return_id: `return-${saleId}`,
     }, `return:${saleId}`);
-    expect(returned.status).toBe(201);
+    expect(returned.status, JSON.stringify(returned.payload)).toBe(201);
 
     const refund = await api(page, 'POST', `/api/pos/locations/browser-cert-store-01/sales/${saleId}/refund-intents`, {
       amount_minor: 5000, basis: 'Synthetic browser certification refund',
