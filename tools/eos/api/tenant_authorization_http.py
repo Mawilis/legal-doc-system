@@ -545,7 +545,49 @@ class RequireTenantAuthorization:
         )
 
 
-__all__ = ["VERSION", "TenantAuthorizationContext", "RequireTenantAuthorization"]
+class OptionalTenantAuthorization:
+    """Resolve one source's existing IAM decision without failing unrelated sources.
+
+    Only a canonical authorization denial is represented as None so the
+    caller can omit that source. Authentication failures and authorization
+    dependency outages remain exceptions and therefore fail the whole request.
+    This adapter creates no permission, role, membership, or capacity authority.
+    """
+
+    def __init__(self, permission_id: str, operation: str) -> None:
+        self._required = RequireTenantAuthorization(permission_id, operation)
+
+    async def __call__(
+        self,
+        request: Request,
+        identity: SovereignIdentity = Depends(get_current_identity),
+        tenant_id: str | None = Header(default=None, alias="X-Tenant-ID"),
+        principal_repository: Any = Depends(get_principal_authority_repository),
+        membership_repository: Any = Depends(get_tenant_membership_repository),
+        role_assignment_repository: Any = Depends(get_role_assignment_repository),
+    ) -> TenantAuthorizationContext | None:
+        try:
+            return await self._required(
+                request,
+                identity,
+                tenant_id,
+                principal_repository,
+                membership_repository,
+                role_assignment_repository,
+            )
+        except ForbiddenOperationException:
+            # A source denial is intentionally non-disclosing and does not
+            # prevent the principal from seeing other independently admitted
+            # work sources. WilsyAPIException (including 503) is not swallowed.
+            return None
+
+
+__all__ = [
+    "VERSION",
+    "TenantAuthorizationContext",
+    "RequireTenantAuthorization",
+    "OptionalTenantAuthorization",
+]
 
 
 # ARTIFACT: tenant_authorization_http.py

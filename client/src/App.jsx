@@ -56,6 +56,7 @@ import SovereignDashboardController from './components/sovereign/SovereignDashbo
 import SovereignMfaPortal from './components/auth/SovereignMfaPortal.jsx';
 import Sovereign_TenantManager from './components/sovereign/Sovereign_TenantManager.jsx';
 import LedgerExplorer from './components/billing/LedgerExplorer.jsx';
+import MyWorkWorkspace from './components/workspaces/MyWorkWorkspace.jsx';
 import api from './services/api';
 import WilsyOSIntelligenceDockRuntime from './components/intelligence/WilsyOSIntelligenceDockRuntime.jsx';
 
@@ -206,7 +207,7 @@ const SovereignRouter = () => {
     // Versioned legal acceptance is server-derived; the gate owns its own
     // status read and remains reachable at the compatibility /covenant path.
     if (location.pathname === '/covenant') return null;
-    return ['/', '/dashboard'].includes(location.pathname) ? null : '/';
+    return ['/', '/dashboard', '/my-work'].includes(location.pathname) ? null : '/';
   }, [
     location.pathname,
     isAuthenticated,
@@ -263,6 +264,11 @@ const SovereignRouter = () => {
             : <Navigate to="/login" replace />)
       } />
       <Route path="/covenant" element={<LegalAcceptanceGate onComplete={() => navigate('/', { replace: true })} />} />
+      <Route path="/my-work" element={
+        isAuthenticated && user && !systemServicesSession
+          ? <ErrorBoundary><MyWorkWorkspace /></ErrorBoundary>
+          : <Navigate to="/" replace />
+      } />
       <Route path="/signature" element={<Navigate to="/covenant" replace />} />
       <Route path="/" element={isAuthenticated && user ? <ErrorBoundary><SovereignDashboardController user={user} onLogout={logout} /></ErrorBoundary> : <Navigate to={unauthenticatedEntryPath} replace />} />
       {/* Explicit /dashboard route for soft navigation */}
