@@ -489,8 +489,8 @@ def _workspace_module_manifest_projection(
                     except CrmCoreEntitlementResolverError:
                         # CRM is an independent product authority. Ambiguous or
                         # unavailable CRM evidence must hide CRM only; it must
-                        # not suppress an otherwise valid Legal/Billing/People
-                        # tenant module projection.
+                        # not suppress other valid independent product module
+                        # projections, including Legal, Billing, People, Operations and Intelligence.
                         logger.warning(
                             "[WORKSPACE_MODULE_MANIFEST] CRM entitlement unavailable; CRM omitted"
                         )
