@@ -64,6 +64,8 @@ const SalesDashboard = React.lazy(() => import('../sales/SalesDashboard'));
 // 🆕 REPLACED legacy FinanceDashboard with the new Sovereign BillingHUD
 const BillingHUD = React.lazy(() => import('../billing/BillingHUD'));
 const HRDashboard = React.lazy(() => import('../hr/HrDashboard'));
+const OperationsDashboard = React.lazy(() => import('../operations/OperationsDashboard'));
+const IntelligenceDashboard = React.lazy(() => import('../intelligence/IntelligenceDashboard'));
 const ITDashboard = React.lazy(() => import('../it/ITDashboard'));
 const LegalDashboard = React.lazy(() => import('../industry/LegalDashboard'));
 const SystemServicesDashboard = React.lazy(() => import('../system-services/SystemServicesDashboard'));
@@ -78,6 +80,8 @@ export const DASHBOARD_KEYS = Object.freeze({
   SALES: 'SALES_DASHBOARD',
   FINANCE: 'FINANCE_DASHBOARD',   // ⬅️ Now resolves to BillingHUD
   HR: 'HR_DASHBOARD',
+  OPERATIONS: 'OPERATIONS_DASHBOARD',
+  INTELLIGENCE: 'INTELLIGENCE_DASHBOARD',
   IT: 'IT_DASHBOARD',
   LEGAL: 'LEGAL_DASHBOARD',
   SYSTEM_SERVICES: 'SYSTEM_SERVICES_DASHBOARD'
@@ -92,6 +96,8 @@ const DASHBOARD_LABELS = Object.freeze({
   [DASHBOARD_KEYS.SALES]: 'Sales Dashboard',
   [DASHBOARD_KEYS.FINANCE]: 'Billing Hub',  // ⬅️ Updated label
   [DASHBOARD_KEYS.HR]: 'HR Dashboard',
+  [DASHBOARD_KEYS.OPERATIONS]: 'Operations OS',
+  [DASHBOARD_KEYS.INTELLIGENCE]: 'Intelligence OS',
   [DASHBOARD_KEYS.IT]: 'IT Dashboard',
   [DASHBOARD_KEYS.LEGAL]: 'WILSY Legal OS',
   [DASHBOARD_KEYS.SYSTEM_SERVICES]: 'System Services'
@@ -134,6 +140,8 @@ const DASHBOARD_ALIASES = Object.freeze({
   REVENUE_LEDGER: DASHBOARD_KEYS.FINANCE,
   HR: DASHBOARD_KEYS.HR,
   HR_DASHBOARD: DASHBOARD_KEYS.HR,
+  OPERATIONS_DASHBOARD: DASHBOARD_KEYS.OPERATIONS,
+  INTELLIGENCE_DASHBOARD: DASHBOARD_KEYS.INTELLIGENCE,
   PEOPLE: DASHBOARD_KEYS.HR,
   IT: DASHBOARD_KEYS.IT,
   IT_DASHBOARD: DASHBOARD_KEYS.IT,
@@ -920,6 +928,10 @@ const SovereignDashboardController = ({ user: propUser, onLogout }) => {
     dashboardShard = <BillingHUD user={user} />;
   } else if (dashboardKey === DASHBOARD_KEYS.HR) {
     dashboardShard = <HRDashboard user={user} />;
+  } else if (dashboardKey === DASHBOARD_KEYS.OPERATIONS) {
+    dashboardShard = <OperationsDashboard user={user} activeTenant={activeTenant} />;
+  } else if (dashboardKey === DASHBOARD_KEYS.INTELLIGENCE) {
+    dashboardShard = <IntelligenceDashboard user={user} activeTenant={activeTenant} />;
   } else if (dashboardKey === DASHBOARD_KEYS.IT) {
     dashboardShard = <ITDashboard user={user} />;
   } else if (dashboardKey === DASHBOARD_KEYS.LEGAL) {
