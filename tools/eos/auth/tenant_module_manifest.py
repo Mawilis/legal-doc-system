@@ -5,6 +5,26 @@ VERSION: v1.0.0-EOS-TENANT-MODULE-MANIFEST
 AUTHORITY: Read-only presentation projection over canonical product entitlements.
 PURPOSE: Describe stable WILSY OS modules and expose only modules backed by
          exact ACTIVE tenant-product entitlement evidence.
+ABSOLUTE CANONICAL PATH:
+    /Users/wilsonkhanyezi/legal-doc-system/tools/eos/auth/tenant_module_manifest.py
+COLLABORATION / OWNERSHIP:
+    D22A owns product identity; D22B1/D22B2 own product entitlement domain and
+    persistence; CRM Core entitlement authority owns crm.core evidence; this
+    artifact composes browser-safe module availability only.
+CERTIFICATION / UPDATE DATE: 2026-11-06
+CHANGELOG:
+    v1.0.0-EOS-TENANT-MODULE-MANIFEST establishes a closed product-to-module
+    presentation catalogue and exact typed ACTIVE entitlement projection.
+COMPLIANCE: POPIA section 19; GDPR Article 32; SOC 2 CC7.2; ISO 27001.
+SECURITY / PRIVACY POSTURE:
+    Accepts canonical server-side immutable entitlement domain objects only;
+    no browser-supplied entitlement JSON, credentials, persistence or network.
+TENANT BOUNDARY:
+    Every projected entitlement must match the exact requested tenant; pseudo-
+    tenants and foreign evidence reject.
+FINANCIAL AUTHORITY BOUNDARY:
+    No price, payment, execution or settlement authority; Kennel EOS remains
+    exclusive financial execution authority.
 
 SECURITY BOUNDARY:
     Product entitlement proves tenant product availability only. This manifest
@@ -49,6 +69,8 @@ class TenantModuleManifestError(ValueError):
 
 
 class TenantModuleId(StrEnum):
+    """Closed identifiers for stable WILSY OS product workspaces."""
+
     LEGAL_OS = "LEGAL_OS"
     BILLING = "BILLING"
     CRM = "CRM"
@@ -274,7 +296,11 @@ __all__ = [
     "list_tenant_module_descriptors",
 ]
 
-# PRESENTATION ONLY: no IAM, route, matter, payment or execution authority
+# ARTIFACT: tenant_module_manifest.py
+# VERSION: v1.0.0-EOS-TENANT-MODULE-MANIFEST
+# AUTHORITY BOUNDARY: read-only module availability projection; no IAM or route admission
+# TENANT POSTURE: exact tenant-bound canonical entitlement evidence only
+# FAIL-CLOSED POSTURE: unknown types, foreign tenants, duplicates and malformed evidence reject
 # LEGAL OS: tenant entitlement does not imply Legal Practice capacity or G68 clearance
-# COMMERCIAL STATE: only typed canonical product-entitlement objects are accepted
-# END OF WILSY OS TENANT MODULE MANIFEST
+# FINANCIAL EXECUTION AUTHORITY: Kennel EOS remains exclusive
+# END OF WILSY OS SOVEREIGN ARTIFACT
