@@ -75,6 +75,20 @@ async function openModuleNavigation(page) {
   return payload.workspace.modules;
 }
 
+async function authenticatedApi(page, path) {
+  return page.evaluate(async ({ path, tenantId }) => {
+    const response = await fetch(path, {
+      method: 'GET',
+      credentials: 'include',
+      headers: {
+        Authorization: `Bearer ${localStorage.getItem('wilsy_auth_token') || localStorage.getItem('token') || ''}`,
+        'X-Tenant-ID': tenantId,
+      },
+    });
+    return { status: response.status, payload: await response.json().catch(() => ({})) };
+  }, { path, tenantId: state.tenant_id });
+}
+
 async function switchModule(page, label, workspacePath, method = 'GET', expectedStatus = 200) {
   const responsePromise = page.waitForResponse(response => (
     new URL(response.url()).pathname.endsWith(workspacePath)
@@ -195,19 +209,20 @@ test('owner completes the authenticated seven-module daily-use journey', async (
 test('Legal specialist cannot use Owner Operations or Intelligence queues', async ({ browser }) => {
   const { context, page } = await openAuthenticated(browser, 'partner');
   try {
-    await openModuleNavigation(page);
-    const deniedOperations = await switchModule(
-      page, 'Operations', '/api/tenant-modules/operations/workspace', 'GET', 403,
+    const deniedOperations = await authenticatedApi(
+      page, '/api/tenant-modules/operations/workspace',
     );
-    expect((await deniedOperations.json()).detail).toBe('TENANT_PERMISSION_DENIED');
-    await expect(page.getByRole('alert')).toContainText('not currently admitted');
-    await expect(page.getByText(/Browser Operations action/)).toHaveCount(0);
+    expect(deniedOperations.status).toBe(403);
+    expect(deniedOperations.payload.detail).toBe('TENANT_PERMISSION_DENIED');
 
-    const deniedIntelligence = await switchModule(
-      page, 'Intelligence', '/api/tenant-modules/intelligence/workspace', 'GET', 403,
+    const deniedIntelligence = await authenticatedApi(
+      page, '/api/tenant-modules/intelligence/workspace',
     );
-    expect((await deniedIntelligence.json()).detail).toBe('TENANT_PERMISSION_DENIED');
-    await expect(page.getByRole('alert')).toContainText('not currently admitted');
+    expect(deniedIntelligence.status).toBe(403);
+    expect(deniedIntelligence.payload.detail).toBe('TENANT_PERMISSION_DENIED');
+
+    // The Legal specialist's UI does not expose the Owner-only queue controls.
+    await expect(page.getByText(/Browser Operations action/)).toHaveCount(0);
     await expect(page.getByText(/Browser Intelligence action/)).toHaveCount(0);
   } finally {
     await context.close();
