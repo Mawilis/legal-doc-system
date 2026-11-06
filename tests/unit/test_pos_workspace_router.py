@@ -60,7 +60,7 @@ def test_pos_permissions_are_exact_and_location_assignment_is_not_inherited():
         assert metadata.authorizes_by_itself is False
         assert permission_for_business_role_operation(operation) == permission
     assert "TENANT_OWNER" in get_roles_granting_permission("pos:location_assignment:manage")
-    assert "TENANT_ADMIN" in get_roles_granting_permission("pos:location_assignment:manage")
+    assert "TENANT_ADMIN" not in get_roles_granting_permission("pos:location_assignment:manage")
     assert "TENANT_MANAGER" not in get_roles_granting_permission("pos:location_assignment:manage")
     assert tenant_role_operation_eligibility("tenant_manager", "pos_location_assignment_manage") == "DENY"
     assert tenant_role_operation_eligibility("tenant_manager", "pos_sale_create") == "ELIGIBLE"
