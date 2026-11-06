@@ -6,8 +6,8 @@ AUTHORITY: Python EOS tenant-module operations.
 PURPOSE:
     Model tenant-owned operational tasks, reminders and follow-ups without
     creating Legal practice, matter, client-confidentiality, IAM or financial
-    execution authority. Opportunities remain CRM Lead evidence until a
-    separately governed opportunity domain exists.
+    execution authority. Business records remain owned by their respective
+    module domains and are never inferred from a task description.
 """
 from __future__ import annotations
 
