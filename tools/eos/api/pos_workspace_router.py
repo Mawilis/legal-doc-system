@@ -45,7 +45,8 @@ from tools.eos.saas.billing.pos_commercial_evidence_registry import (
     POSCommercialEvidenceConflict,
 )
 from tools.eos.saas.billing.pos_commercial_capacity_registry import (
-    COLLECTION_NAME as CAPACITY_COLLECTION, POSCommercialCapacityRegistry,\n    POSCommercialCapacityError, POSCommercialCapacityConflict, POSCommercialCapacityExceeded,
+    COLLECTION_NAME as CAPACITY_COLLECTION, POSCommercialCapacityRegistry,
+    POSCommercialCapacityError, POSCommercialCapacityConflict, POSCommercialCapacityExceeded,
 )
 from tools.eos.saas.billing.pos_location_assignment_registry import (
     CURRENT_COLLECTION as LOCATION_CURRENT,
