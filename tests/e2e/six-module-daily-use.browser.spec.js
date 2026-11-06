@@ -91,13 +91,13 @@ async function authenticatedApi(page, path) {
   }, { path, tenantId: state.tenant_id });
 }
 
-async function switchModule(page, label, workspacePath, method = 'GET', expectedStatus = 200) {
+async function switchModule(page, moduleId, workspacePath, method = 'GET', expectedStatus = 200) {
   const responsePromise = page.waitForResponse(response => (
     new URL(response.url()).pathname.endsWith(workspacePath)
     && response.request().method() === method
   ));
   await page.getByRole('navigation', { name: 'Available WILSY OS products' })
-    .getByRole('button', { name: label, exact: true }).click();
+    .locator(`[data-wilsy-module-entry="${moduleId}"]`).click();
   const response = await responsePromise;
   expect(response.status()).toBe(expectedStatus);
   return response;
@@ -246,12 +246,12 @@ test('Operations and Intelligence workspaces remain usable at a narrow viewport'
   );
   try {
     await openModuleNavigation(page);
-    await switchModule(page, 'Operations', '/api/tenant-modules/operations/workspace');
+    await switchModule(page, 'OPERATIONS', '/api/tenant-modules/operations/workspace');
     await expect(page.getByRole('heading', { name: 'Operations OS' })).toBeVisible();
     await expect.poll(() => page.evaluate(() => (
       document.documentElement.scrollWidth <= window.innerWidth
     ))).toBe(true);
-    await switchModule(page, 'Intelligence', '/api/tenant-modules/intelligence/workspace');
+    await switchModule(page, 'INTELLIGENCE', '/api/tenant-modules/intelligence/workspace');
     await expect(page.getByRole('heading', { name: 'Intelligence OS' })).toBeVisible();
     await expect.poll(() => page.evaluate(() => (
       document.documentElement.scrollWidth <= window.innerWidth
