@@ -71,7 +71,7 @@ def _read_legal(*, tenant_id: str, principal_id: str) -> dict[str, Any]:
     }
 
 
-def _read_module(slug: str, *, tenant_id: str) -> dict[str, Any]:
+def _read_module(slug: str, *, tenant_id: str) -> dict[str, Any] | None:
     product_id, workspace_key, collection_name, _operation_prefix = (
         module_source._PRODUCTS[slug]
     )
