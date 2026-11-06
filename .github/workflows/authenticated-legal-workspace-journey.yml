@@ -1,4 +1,4 @@
-name: Authenticated Legal Workspace Journey
+name: Authenticated Six-Module Workspace Journey
 
 on:
   pull_request:
@@ -32,7 +32,7 @@ permissions:
 
 jobs:
   authenticated-legal-workspace:
-    name: Browser auth, tenant bootstrap and Legal admission
+    name: Authenticated bootstrap, six-module workspaces and Legal admission
     runs-on: ubuntu-latest
     timeout-minutes: 15
     defaults:
