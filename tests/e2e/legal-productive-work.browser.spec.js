@@ -139,8 +139,12 @@ test(
     } = await openAuthenticatedLegalWorkspace(browser, 'tenant_owner');
 
     expect(String(bootstrapPayload.workspace?.businessRole || '').toUpperCase()).toBe('TENANT_OWNER');
-    await expect(page.locator('[data-active-workspace="workbench"]')).toBeVisible();
-    await expect(page.getByRole('table', { name: 'Suggested executive work queue' })).toBeVisible();
+    // Tenant Owner's canonical landing workspace is the tenant command
+    // center (Document Vault + Team Members). The Legal commercial shell is
+    // a separate, explicit presentation selection and must not mount practice
+    // workspace or productive-work authority on the landing route.
+    await expect(page.getByRole('button', { name: 'Document Vault', exact: true })).toBeVisible();
+    await expect(page.getByRole('button', { name: 'Team Members', exact: true })).toBeVisible();
     await expect(page.getByRole('button', { name: 'LEGAL OS', exact: true })).toBeVisible();
 
     const moduleManifestPromise = page.waitForResponse((response) => (
