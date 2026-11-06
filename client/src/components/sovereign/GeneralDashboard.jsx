@@ -84,6 +84,26 @@ const renderModule = () => {
           >
             <Users size={18} /> <span>Team Members</span>
           </button>
+          {['TENANT_OWNER', 'OWNER'].includes(
+            String(user?.role || user?.accountRole || user?.tenantRole || '').toUpperCase(),
+          ) && (
+            <button
+              type="button"
+              aria-label="LEGAL OS"
+              onClick={() => {
+                window.localStorage.setItem('wilsy:requested-dashboard', JSON.stringify({
+                  dashboardKey: 'LEGAL_DASHBOARD',
+                  requestedAt: new Date().toISOString(),
+                  source: 'TenantOwnerCommercialWorkspace',
+                }));
+                window.dispatchEvent(new CustomEvent('wilsy:navigate-dashboard', {
+                  detail: { dashboardKey: 'LEGAL_DASHBOARD' },
+                }));
+              }}
+            >
+              <ShieldCheck size={18} /> <span>LEGAL OS</span>
+            </button>
+          )}
         </nav>
 
         <div className={styles.footerSection}>
