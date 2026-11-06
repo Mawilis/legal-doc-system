@@ -164,6 +164,34 @@ def _harness(*, chain_valid=True, revocation="GOOD", mandate_active=True, tamper
     return agreement, verifier
 
 
+@pytest.mark.parametrize(
+    ("field", "expected"),
+    [
+        ("evidence_store", "COMMERCIAL_EXECUTION_EVIDENCE_STORE_REQUIRED"),
+        ("certificate_trust", "COMMERCIAL_EXECUTION_CERTIFICATE_TRUST_RESOLVER_REQUIRED"),
+        ("mandate_resolver", "COMMERCIAL_EXECUTION_SIGNATORY_MANDATE_RESOLVER_REQUIRED"),
+        ("timestamp_verifier", "COMMERCIAL_EXECUTION_TRUSTED_TIMESTAMP_VERIFIER_REQUIRED"),
+    ],
+)
+def test_verifier_cannot_be_composed_without_each_trust_provider(field, expected):
+    _, verifier = _harness()
+    adapters = {
+        "evidence_store": verifier._evidence_store,
+        "certificate_trust": verifier._certificate_trust,
+        "mandate_resolver": verifier._mandate_resolver,
+        "timestamp_verifier": verifier._timestamp_verifier,
+    }
+    adapters[field] = None
+    with pytest.raises(ValueError, match=expected):
+        CommercialAgreementExecutionVerifier(
+            evidence_store=adapters["evidence_store"],
+            certificate_trust=adapters["certificate_trust"],
+            mandate_resolver=adapters["mandate_resolver"],
+            timestamp_verifier=adapters["timestamp_verifier"],
+            verifier_id="wilsy-commercial-execution-verifier-v1",
+        )
+
+
 def test_verifier_cryptographically_verifies_exact_document_and_authority():
     agreement, verifier = _harness()
     result = verifier.verify(
