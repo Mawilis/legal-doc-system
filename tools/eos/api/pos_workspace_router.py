@@ -13,7 +13,7 @@ import json
 from typing import Any, Literal
 import uuid
 
-from fastapi import APIRouter, Depends, Header, HTTPException, status
+from fastapi import APIRouter, Depends, Header, HTTPException, Request, status
 from pydantic import BaseModel, ConfigDict, Field
 from pymongo.read_concern import ReadConcern
 from pymongo.read_preferences import ReadPreference
@@ -23,6 +23,12 @@ from tools.eos.api.tenant_authorization_http import (
     RequireTenantAuthorization, TenantAuthorizationContext,
 )
 from tools.eos.auth.authentication import get_principal_authority_repository
+from tools.eos.auth.authorization import get_role_assignment_repository
+from tools.eos.auth.tenant_access import get_tenant_membership_repository
+from tools.eos.auth.tenant_authorization_decision_evidence_registry import (
+    COLLECTION as AUTHORIZATION_EVIDENCE_COLLECTION,
+    TenantAuthorizationDecisionEvidenceRegistry,
+)
 from tools.eos.auth.principal_status import PrincipalStatus
 from tools.eos.auth.principal_authority_repository import (
     PrincipalAuthorityNotFoundError, PrincipalAuthorityRepositoryError,
@@ -33,7 +39,19 @@ from tools.eos.auth.tenant_membership_repository import (
     TenantMembershipRepositoryError,
 )
 from tools.eos.kernel.db import get_client, get_database
-from tools.eos.saas.domain.pos_commercial import POSLineItem, POSTenderType
+from tools.eos.saas.domain.pos_commercial import (
+    POSLineItem, POSSale, POSTenderIntent, POSRefundIntent, POSTenderType,
+)
+from tools.eos.saas.domain.pos_financial_execution_authorization import POSFinancialExecutionAuthorization
+from tools.eos.saas.billing.pos_financial_execution_authorization_issuance import (
+    issue_pos_collection_execution_authorization,
+    issue_pos_refund_execution_authorization,
+)
+from tools.eos.saas.billing.pos_financial_execution_authorization_registry import POSFinancialExecutionAuthorizationRegistry
+from tools.eos.saas.billing.pos_financial_movement_execution import (
+    execute_pos_collection, execute_pos_refund,
+)
+from tools.eos.kennel.registry.financial_movement_execution_registry import FinancialMovementExecutionRegistry
 from tools.eos.saas.domain.pos_location_assignment import (
     POSLocationAssignment, POSLocationAssignmentStatus,
 )
@@ -132,6 +150,7 @@ _TENDER = RequireTenantAuthorization("pos:tender:create", "pos_tender_create")
 _CASH = RequireTenantAuthorization("pos:cash:record", "pos_cash_record")
 _RETURN = RequireTenantAuthorization("pos:return:create", "pos_return_create")
 _REFUND = RequireTenantAuthorization("pos:refund:create", "pos_refund_create")
+_EXECUTE = RequireTenantAuthorization("pos:financial_execution:authorize", "pos_financial_execution_authorize")
 
 
 def _collection(database: Any, name: str):
@@ -146,15 +165,21 @@ def _prepare(database: Any) -> dict[str, Any]:
     sales = _collection(database, "pos_sales")
     evidence = _collection(database, "pos_commercial_evidence")
     capacity = _collection(database, CAPACITY_COLLECTION)
+    execution_authorizations = _collection(database, "pos_financial_execution_authorizations")
+    movement_truths = _collection(database, "financial_movement_execution_truths")
     location_history = _collection(database, LOCATION_HISTORY)
     location_current = _collection(database, LOCATION_CURRENT)
     POSSaleRegistry.ensure_indexes(sales)
     POSCommercialEvidenceRegistry.ensure_indexes(evidence)
     POSCommercialCapacityRegistry.ensure_indexes(capacity)
+    POSFinancialExecutionAuthorizationRegistry.ensure_indexes(execution_authorizations)
+    FinancialMovementExecutionRegistry.ensure_indexes(movement_truths)
     POSLocationAssignmentRegistry.ensure_indexes(location_history, location_current)
     return {
         "sales": sales, "evidence": evidence, "capacity": capacity,
         "location_history": location_history, "location_current": location_current,
+        "execution_authorizations": execution_authorizations, "movement_truths": movement_truths,
+        "authorization_evidence": _collection(database, AUTHORIZATION_EVIDENCE_COLLECTION),
         "entitlement_history": _collection(database, ENTITLEMENT_HISTORY),
         "entitlement_current": _collection(database, ENTITLEMENT_CURRENT),
     }
@@ -391,6 +416,139 @@ async def create_refund(
         basis=body.basis, refund_intent_id=body.refund_intent_id,
         idempotency_key=idempotency_key, session=session,
     ))
+
+
+def _issue_execution_authority(*, collections: dict[str, Any], session: Any,
+                               context: TenantAuthorizationContext, sale: POSSale,
+                               source: POSTenderIntent | POSRefundIntent,
+                               source_row: dict[str, Any], direction: str) -> POSFinancialExecutionAuthorization:
+    source_identity = source.idempotency_key if isinstance(source, POSTenderIntent) else source.refund_intent_id
+    stable_key = "pos-financial-execution:" + sha3_512(
+        f"{context.tenant_id}\\0{sale.location_id}\\0{sale.sale_id}\\0{direction}\\0{source_identity}".encode()
+    ).hexdigest()
+    authority_registry = TenantAuthorizationDecisionEvidenceRegistry(
+        collections["authorization_evidence"],
+        principal_repository=get_principal_authority_repository(),
+        membership_repository=get_tenant_membership_repository(),
+        role_assignment_repository=get_role_assignment_repository(),
+        business_role_repository=get_role_assignment_repository(),
+    )
+    authority = authority_registry.issue(
+        tenant_id=context.tenant_id,
+        principal_id=context.identity.identity_id,
+        operation="pos_financial_execution_authorize",
+        permission="pos:financial_execution:authorize",
+        subject_reference=f"pos:{direction.lower()}:{sale.sale_id}:{source_identity}",
+        subject_evidence_fingerprint=source_row["fingerprint"],
+        idempotency_key=stable_key,
+        session=session,
+    )
+    authorization_id = "posauth_" + sha3_512(stable_key.encode()).hexdigest()[:32]
+    if isinstance(source, POSTenderIntent):
+        return issue_pos_collection_execution_authorization(
+            sale, source, authority, collections["execution_authorizations"],
+            authorization_id=authorization_id, idempotency_key=stable_key, session=session,
+        )
+    return issue_pos_refund_execution_authorization(
+        sale, source, authority, collections["execution_authorizations"],
+        authorization_id=authorization_id, idempotency_key=stable_key, session=session,
+    )
+
+
+@router.post("/locations/{location_id}/sales/{sale_id}/tenders/{evidence_id}/execute")
+async def execute_electronic_tender(
+    location_id: str, sale_id: str, evidence_id: str,
+    request: Request,
+    context: TenantAuthorizationContext = Depends(_EXECUTE),
+):
+    """Authorize and delegate one electronic collection to the Kennel bridge."""
+    orchestrator = getattr(request.app.state, "pos_financial_movement_orchestrator", None)
+    if orchestrator is None:
+        raise HTTPException(status_code=503, detail="KENNEL_FINANCIAL_MOVEMENT_PROVIDER_UNBOUND")
+    def authorize(collections, session):
+        projection = _service(collections).read_sale(
+            tenant_id=context.tenant_id, principal_id=context.identity.identity_id,
+            location_id=location_id, sale_id=sale_id, session=session,
+        )
+        sale = POSSale.from_dict(projection["sale"])
+        row = next((item for item in projection["commercial_evidence"]
+                    if item.get("evidence_type") == "TENDER_INTENT" and item.get("evidence_id") == evidence_id), None)
+        if row is None:
+            raise HTTPException(status_code=404, detail="POS_TENDER_EVIDENCE_NOT_FOUND")
+        data = row["evidence"]
+        source = POSTenderIntent(
+            tenant_id=data["tenant_id"], location_id=data["location_id"], sale_id=data["sale_id"],
+            tender_type=POSTenderType(data["tender_type"]), requested_amount_minor=data["requested_amount_minor"],
+            currency=data["currency"], idempotency_key=data["idempotency_key"],
+        )
+        if source.tender_type not in (POSTenderType.CARD, POSTenderType.BANK, POSTenderType.WALLET) or source.requested_amount_minor != sale.total_minor:
+            raise HTTPException(status_code=409, detail="POS_ELECTRONIC_TENDER_NOT_EXECUTABLE")
+        authorization = _issue_execution_authority(
+            collections=collections, session=session, context=context, sale=sale,
+            source=source, source_row=row, direction="COLLECTION",
+        )
+        return sale.to_dict(), source.to_dict(), authorization.to_dict()
+    sale_data, source_data, authorization_data = _transaction(authorize)
+    sale = POSSale.from_dict(sale_data)
+    source = POSTenderIntent(
+        tenant_id=source_data["tenant_id"], location_id=source_data["location_id"], sale_id=source_data["sale_id"],
+        tender_type=POSTenderType(source_data["tender_type"]), requested_amount_minor=source_data["requested_amount_minor"],
+        currency=source_data["currency"], idempotency_key=source_data["idempotency_key"],
+    )
+    authorization = POSFinancialExecutionAuthorization.from_dict(authorization_data)
+    result = execute_pos_collection(
+        sale, source, authorization,
+        _collection(get_database(), "financial_movement_execution_truths"), orchestrator,
+    )
+    return {"provider_invoked": result.provider_invoked, "execution_truth": result.execution_truth.to_dict()}
+
+
+@router.post("/locations/{location_id}/sales/{sale_id}/refund-intents/{evidence_id}/execute")
+async def execute_refund_intent(
+    location_id: str, sale_id: str, evidence_id: str,
+    request: Request,
+    context: TenantAuthorizationContext = Depends(_EXECUTE),
+):
+    """Authorize and delegate one refund disbursement to the Kennel bridge."""
+    orchestrator = getattr(request.app.state, "pos_financial_movement_orchestrator", None)
+    if orchestrator is None:
+        raise HTTPException(status_code=503, detail="KENNEL_FINANCIAL_MOVEMENT_PROVIDER_UNBOUND")
+    def authorize(collections, session):
+        projection = _service(collections).read_sale(
+            tenant_id=context.tenant_id, principal_id=context.identity.identity_id,
+            location_id=location_id, sale_id=sale_id, session=session,
+        )
+        sale = POSSale.from_dict(projection["sale"])
+        row = next((item for item in projection["commercial_evidence"]
+                    if item.get("evidence_type") == "REFUND_INTENT" and item.get("evidence_id") == evidence_id), None)
+        if row is None:
+            raise HTTPException(status_code=404, detail="POS_REFUND_EVIDENCE_NOT_FOUND")
+        data = row["evidence"]
+        source = POSRefundIntent(
+            tenant_id=data["tenant_id"], location_id=data["location_id"],
+            refund_intent_id=data["refund_intent_id"], sale_id=data["sale_id"],
+            amount_minor=data["amount_minor"], currency=data["currency"],
+            basis=data["basis"], idempotency_key=data["idempotency_key"],
+        )
+        authorization = _issue_execution_authority(
+            collections=collections, session=session, context=context, sale=sale,
+            source=source, source_row=row, direction="DISBURSEMENT",
+        )
+        return sale.to_dict(), source.to_dict(), authorization.to_dict()
+    sale_data, source_data, authorization_data = _transaction(authorize)
+    sale = POSSale.from_dict(sale_data)
+    source = POSRefundIntent(
+        tenant_id=source_data["tenant_id"], location_id=source_data["location_id"],
+        refund_intent_id=source_data["refund_intent_id"], sale_id=source_data["sale_id"],
+        amount_minor=source_data["amount_minor"], currency=source_data["currency"],
+        basis=source_data["basis"], idempotency_key=source_data["idempotency_key"],
+    )
+    authorization = POSFinancialExecutionAuthorization.from_dict(authorization_data)
+    result = execute_pos_refund(
+        sale, source, authorization,
+        _collection(get_database(), "financial_movement_execution_truths"), orchestrator,
+    )
+    return {"provider_invoked": result.provider_invoked, "execution_truth": result.execution_truth.to_dict()}
 
 
 __all__ = ["router"]

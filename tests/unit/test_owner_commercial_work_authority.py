@@ -66,6 +66,7 @@ def test_static_role_grants_are_narrow_and_nonpossessory():
         "pos:cash:record",
         "pos:return:create",
         "pos:refund:create",
+        "pos:financial_execution:authorize",
     ]
     assert get_roles_granting_permission("crm:work_item:read") == ("AUDITOR", "ENTERPRISE_ADMIN", "TENANT_OWNER")
     assert get_roles_granting_permission("crm:work_item:create") == ("ENTERPRISE_ADMIN", "TENANT_OWNER")
