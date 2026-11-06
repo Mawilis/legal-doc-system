@@ -94,6 +94,17 @@ def test_rejects_foreign_tenant_source_before_projection():
         )
 
 
+def test_rejects_item_level_foreign_tenant_even_when_source_envelope_matches():
+    foreign = {**item(), "tenant_id": "FOREIGN-TENANT"}
+    with pytest.raises(UnifiedMyWorkProjectionError, match="SOURCE_ITEM_TENANT_MISMATCH"):
+        build_unified_my_work(
+            tenant_id=TENANT,
+            principal_id=PRINCIPAL,
+            now=NOW,
+            operations={"tenant_id": TENANT, "items": [foreign]},
+        )
+
+
 def test_rejects_divergent_duplicate_from_same_authorized_source():
     with pytest.raises(UnifiedMyWorkProjectionError, match="SOURCE_ITEM_DIVERGENCE"):
         build_unified_my_work(
