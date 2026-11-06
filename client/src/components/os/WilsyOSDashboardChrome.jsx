@@ -5,7 +5,7 @@
  * ║ [EXECUTIVE SHELL | SERVER-ISSUED PRODUCT NAVIGATION | TENANT PLATE | OPERATOR IDENTITY]                                             ║
  * ╠════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════╣
  * ║ VERSION: 2.2.0-EOS-MODULE-MANIFEST-NAVIGATION | SERVER-ISSUED PRODUCT NAVIGATION                                                                                 ║
- * ║ EPITOME: SOVEREIGN OPERATING SYSTEM SHELL – CONSISTENT, AUDITABLE, AND EXTENSIBLE                                                    ║
+ * ║ EPITOME: SOVEREIGN OPERATING SYSTEM SHELL WITH TENANT-BOUND PRODUCT NAVIGATION                                                    ║
  * ║ ABSOLUTE PATH: /Users/wilsonkhanyezi/legal-doc-system/client/src/components/os/WilsyOSDashboardChrome.jsx                             ║
  * ╠════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════╣
  * ║ 👥 COLLABORATION & SOVEREIGN SIGN‑OFF:                                                                                                 ║
@@ -745,14 +745,14 @@ export default WilsyOSDashboardChrome;
  * 🏛️ INSTITUTIONAL CERTIFICATION SEAL — WilsyOSDashboardChrome v2.0.0-L10-P2C1-INTERACTIVE-COMMAND-CONTRACT
  * ═══════════════════════════════════════════════════════════════════════════════
  * Status:          CERTIFIED PRODUCTION ARTIFACT
- * Version:         2.0.0-L10-P2C1-INTERACTIVE-COMMAND-CONTRACT
+ * Version:         2.2.0-EOS-MODULE-MANIFEST-NAVIGATION
  * Compliance:      POPIA §19 / GDPR §32 / SOC2 §CC7.2 / ISO 27001
  * Health Check:
  *   ✅ Unified shell for all domain HUDs
  *   ✅ Tenant isolation through identity resolution
  *   ✅ Operator identity display
- *   ✅ Collapsible left rail for module navigation
- *   ✅ Metrics strip for KPIs
+ *   ✅ Collapsible left rail for server-issued tenant product navigation
+ *   ✅ Metrics strip for source-backed KPIs only
  *   ✅ Search integration
  *   ✅ Account command center integration
  *   ✅ Fully responsive and accessible
