@@ -40,6 +40,7 @@ def _record(registry, *, session=object(), **overrides):
         "evidence_id": "EVD-001",
         "evidence_version_id": "VER-001",
         "evidence_digest_sha3_512": "a" * 128,
+        "signed_manifest_digest_sha3_512": "f" * 128,
         "signer_certificate_sha256": "b" * 64,
         "signer_serial_number_hex": "abc123",
         "trust_root_sha256": "c" * 64,
@@ -62,7 +63,7 @@ def test_verified_signature_receipt_is_append_only_and_idempotent():
     assert first == replay
     assert len(records.rows) == 1
     assert len(events.rows) == 1
-    assert first["schema"] == "wilsy.institutional.document_signature_verification.v1"
+    assert first["schema"] == "wilsy.institutional.document_signature_verification.v2"
     assert first["signer_certificate_sha256"] == "b" * 64
 
 
