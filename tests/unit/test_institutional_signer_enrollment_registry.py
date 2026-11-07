@@ -59,6 +59,7 @@ def request(registry, session, **overrides):
         "certificate_serial_number_hex": "abc123",
         "subject_common_name": "Approved Wilsy Signatory",
         "issuer_common_name": "WILSY Intermediate CA",
+        "issuer_subject_sha256": "c" * 64,
         "trust_root_sha256": "b" * 64,
         "identity_proofing_evidence_reference": "proofing://case/verified-001",
         "signatory_mandate_evidence_reference": "mandate://board-resolution/001",
@@ -143,6 +144,7 @@ def test_signer_enrollment_requires_distinct_owner_approval_and_revocation_is_im
             tenant_id="WILSYTENANT-4CD2FZ4O",
             certificate_fingerprint_sha256="a" * 64,
             certificate_serial_number_hex="abc123",
+            issuer_subject_sha256="c" * 64,
             trust_root_sha256="b" * 64,
             session=tx,
         )
