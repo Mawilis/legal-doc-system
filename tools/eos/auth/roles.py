@@ -442,6 +442,12 @@ ROLE_PERMISSIONS_MAP: dict[str, list[str]] = {
         "inbound_provider_credential_security:compromise",
         "inbound_provider_credential_security:rotate",
     ],
+    # Separate, explicitly assigned authority for institutional trust anchors.
+    "INSTITUTIONAL_SOURCE_KEY_ADMIN": [
+        "security:institutional_source_key:propose",
+        "security:institutional_source_key:approve",
+        "security:institutional_source_key:revoke",
+    ],
     "INBOUND_PROVIDER_POLICY_ADMIN": [
         "inbound_provider_policy:author",
     ],
@@ -690,13 +696,7 @@ ROLE_PERMISSIONS_MAP["TENANT_OWNER"].extend((
     "security:institutional_signer:approve",
     "security:institutional_signer:revoke",
 ))
-# Source-key trust changes require authoritative proofing/mandate and a distinct
-# approver whose independent approval is verified inside the same transaction.
-ROLE_PERMISSIONS_MAP["TENANT_OWNER"].extend((
-    "security:institutional_source_key:propose",
-    "security:institutional_source_key:approve",
-    "security:institutional_source_key:revoke",
-))
+
 
 
 # The tenant owner may request a signature manifest; cryptographic signature
