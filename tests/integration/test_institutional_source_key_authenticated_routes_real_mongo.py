@@ -117,7 +117,7 @@ def test_authenticated_propose_approve_revoke_is_atomic_and_maker_checker_enforc
                     database[KEY_COLLECTION], database[EVENT_COLLECTION],
                 )
                 with pytest.raises(SourceSigningKeyRegistryConflict, match="NOT_INDEPENDENTLY_APPROVED"):
-                    registry.resolve(
+                    registry.resolve_historical(
                         source_system_id="synthetic-http-source",
                         key_id="synthetic-http-key-v1",
                         evaluated_at=now, session=session,
@@ -147,7 +147,7 @@ def test_authenticated_propose_approve_revoke_is_atomic_and_maker_checker_enforc
                 registry = InstitutionalSourceSigningKeyLifecycleRegistry(
                     database[KEY_COLLECTION], database[EVENT_COLLECTION],
                 )
-                assert registry.resolve(
+                assert registry.resolve_current(
                     source_system_id="synthetic-http-source",
                     key_id="synthetic-http-key-v1",
                     evaluated_at=datetime.now(timezone.utc),
@@ -195,7 +195,7 @@ def test_authenticated_propose_approve_revoke_is_atomic_and_maker_checker_enforc
                 database[KEY_COLLECTION], database[EVENT_COLLECTION],
             )
             with pytest.raises(SourceSigningKeyRegistryConflict, match="REVOKED"):
-                registry.resolve(
+                registry.resolve_current(
                     source_system_id="synthetic-http-source",
                     key_id="synthetic-http-key-v1",
                     evaluated_at=datetime.now(timezone.utc),
