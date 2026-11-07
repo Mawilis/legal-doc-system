@@ -35,6 +35,7 @@ from tools.eos.saas.hr.candidate_evidence_registry import (
     CandidateEvidenceRegistryError,
 )
 from tools.eos.saas.hr.candidate_evidence_s3_storage_adapter import (
+    CandidateEvidenceS3Error,
     CandidateEvidenceS3Configuration,
     CandidateEvidenceS3StorageAdapter,
 )
@@ -194,7 +195,8 @@ async def upload_candidate_evidence(
     except HiringLifecycleNotFound as error:
         raise HTTPException(status_code=404, detail=error.code) from error
 
-    intent = CandidateEvidenceWriteIntent(
+    try:
+        intent = CandidateEvidenceWriteIntent(
         tenant_id=tenant_id,
         candidate_id=candidate_id,
         evidence_id=evidence_id,
@@ -202,8 +204,10 @@ async def upload_candidate_evidence(
         ingestion_reference="ING-" + uuid.uuid4().hex,
         media_type=media_type,
         original_filename=original_filename,
-        admitted_max_content_length=content_length,
-    )
+            admitted_max_content_length=content_length,
+        )
+    except ValueError as error:
+        raise HTTPException(status_code=422, detail=str(error)) from error
     storage = _storage()
 
     def transaction(callback):
@@ -227,6 +231,9 @@ async def upload_candidate_evidence(
         verified = await asyncio.to_thread(storage.inspect, intent, provider_evidence)
     except CandidateEvidenceUploadOrchestrationError as error:
         status = 202 if error.uncertain else 422
+        raise HTTPException(status_code=status, detail=error.code) from error
+    except CandidateEvidenceS3Error as error:
+        status = 202 if error.uncertain else 503
         raise HTTPException(status_code=status, detail=error.code) from error
 
     metadata = CandidateEvidenceObjectMetadata(
