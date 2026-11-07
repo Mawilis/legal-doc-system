@@ -61,7 +61,7 @@ def test_enrollment_expiry_revocation_and_rotation_are_transactional():
                 valid_from=now - timedelta(hours=2), valid_until=now + timedelta(hours=4),
                 proposed_by_principal_id="test-requester", proposal_reference="proposal-001",
                 identity_proofing_evidence_reference="identity-evidence-001",
-                signatory_mandate_evidence_reference="mandate-evidence-001",
+                source_authority_evidence_reference="source-authority-evidence-001",
                 proposed_at=now - timedelta(minutes=2), idempotency_key="propose-1", session=session,
             )
             with pytest.raises(SourceSigningKeyRegistryConflict, match="NOT_INDEPENDENTLY_APPROVED"):
@@ -101,7 +101,7 @@ def test_enrollment_expiry_revocation_and_rotation_are_transactional():
                 valid_from=now - timedelta(hours=1), valid_until=now + timedelta(hours=8),
                 proposed_by_principal_id="test-rotator", proposal_reference="proposal-002",
                 identity_proofing_evidence_reference="identity-evidence-002",
-                signatory_mandate_evidence_reference="mandate-evidence-002",
+                source_authority_evidence_reference="source-authority-evidence-002",
                 proposed_at=now - timedelta(minutes=2), idempotency_key="propose-2", session=session,
                 rotation_id="rotation-001", supersedes_key_id="key-1",
                 overlap_until=now + timedelta(hours=2),
@@ -152,7 +152,7 @@ def test_enrollment_expiry_revocation_and_rotation_are_transactional():
                 valid_from=now - timedelta(hours=2), valid_until=now + timedelta(hours=4),
                 proposed_by_principal_id="test-requester", proposal_reference="proposal-001",
                 identity_proofing_evidence_reference="identity-evidence-001",
-                signatory_mandate_evidence_reference="mandate-evidence-001",
+                source_authority_evidence_reference="source-authority-evidence-001",
                 proposed_at=now - timedelta(minutes=2), idempotency_key="propose-1", session=session,
             )
             assert replay["key_id"] == "key-1"
@@ -195,7 +195,7 @@ def test_registry_backed_authenticator_observes_immediate_revocation():
                 valid_from=now - timedelta(minutes=5), valid_until=now + timedelta(hours=1),
                 proposed_by_principal_id="synthetic-requester", proposal_reference="synthetic-proposal",
                 identity_proofing_evidence_reference="synthetic-identity-evidence",
-                signatory_mandate_evidence_reference="synthetic-mandate-evidence",
+                source_authority_evidence_reference="synthetic-source-authority-evidence",
                 proposed_at=now - timedelta(minutes=2), idempotency_key="propose-revocable", session=session,
             )
             registry.approve(
