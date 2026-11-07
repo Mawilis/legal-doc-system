@@ -204,6 +204,8 @@ async def approve_source_signing_key(
         )
         if record is None:
             raise SourceSigningKeyRegistryConflict("SOURCE_SIGNING_KEY_NOT_FOUND")
+        if record["proposed_by_principal_id"] == context.identity.identity_id:
+            raise HTTPException(status_code=409, detail="SOURCE_SIGNING_KEY_MAKER_CHECKER_VIOLATION")
         now = datetime.now(timezone.utc)
         verifier.verify_approval(
             tenant_id=context.tenant_id,
@@ -258,6 +260,8 @@ async def revoke_source_signing_key(
         )
         if record is None:
             raise SourceSigningKeyRegistryConflict("SOURCE_SIGNING_KEY_NOT_FOUND")
+        if record["proposed_by_principal_id"] == context.identity.identity_id:
+            raise HTTPException(status_code=409, detail="SOURCE_SIGNING_KEY_MAKER_CHECKER_VIOLATION")
         now = datetime.now(timezone.utc)
         verifier.verify_revocation(
             tenant_id=context.tenant_id,
