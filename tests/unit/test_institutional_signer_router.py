@@ -139,7 +139,10 @@ def test_signer_route_builds_complete_identity_and_mandate_provenance():
     snapshot, digest = router._enrollment_provenance(
         result, tenant_id="WILSYTENANT-4CD2FZ4O",
         certificate_fingerprint_sha256="a" * 64,
-        subject_principal_id="PRINCIPAL-1", evaluated_at=now,
+        subject_principal_id="PRINCIPAL-1",
+        identity_proofing_reference="evidence://source/record-001",
+        signatory_mandate_reference="evidence://source/record-001",
+        evaluated_at=now,
     )
     assert snapshot["identity_proofing"]["source_system_id"] == "dha-npr-verification"
     assert snapshot["signatory_mandate"]["source_record_id"] == "board-resolution-009"
@@ -177,6 +180,24 @@ def test_signer_provenance_persists_assurance_and_legal_mandate_scope():
     assert snapshot["identity_proofing"]["identity_assurance_level"] == "SUBSTANTIAL"
     assert snapshot["signatory_mandate"]["legal_entity_reference"] == "WILSY-PTY-LTD"
     assert snapshot["signatory_mandate"]["mandate_scope"] == "INSTITUTIONAL_SIGNER"
+
+
+def test_signer_provenance_rejects_adapter_record_for_a_different_lookup_reference():
+    now = datetime.now(timezone.utc)
+    result = SimpleNamespace(
+        identity_proofing=_evidence_record(evidence_kind="IDENTITY_PROOFING"),
+        signatory_mandate=_evidence_record(evidence_kind="SIGNATORY_MANDATE"),
+    )
+    with pytest.raises(HTTPException) as error:
+        router._enrollment_provenance(
+            result, tenant_id="WILSYTENANT-4CD2FZ4O",
+            certificate_fingerprint_sha256="a" * 64,
+            subject_principal_id="PRINCIPAL-1",
+            identity_proofing_reference="evidence://identity/expected",
+            signatory_mandate_reference="evidence://mandate/expected",
+            evaluated_at=now,
+        )
+    assert error.value.detail == "INSTITUTIONAL_SIGNER_EVIDENCE_PROVENANCE_INVALID"
 
 
 def test_signer_registry_rejects_caller_supplied_provenance_digest_mismatch():
