@@ -2,6 +2,7 @@ from datetime import datetime, timezone
 from io import BytesIO
 import hashlib
 
+from tools.eos.saas.domain.candidate_evidence import CandidateEvidenceKind, CandidateEvidenceObjectMetadata
 from tools.eos.saas.hr.candidate_evidence_s3_storage_adapter import (
     CandidateEvidenceS3Configuration,
     CandidateEvidenceS3StorageAdapter,
@@ -104,3 +105,34 @@ def test_recovers_completed_version_only_after_scope_kms_and_digest_readback():
     assert evidence.byte_length == len(PAYLOAD)
     assert evidence.content_digest_sha3_512 == hashlib.sha3_512(PAYLOAD).hexdigest()
     assert evidence.provider_integrity_reference == '"provider-etag"'
+
+ 
+
+def test_read_returns_bytes_only_after_exact_version_digest_and_kms_verification():
+    client = FakeS3()
+    storage = adapter(client)
+    client.kms_key_id = storage._config.kms_key_id
+    key = storage.object_key_for_scope(
+        tenant_id="tenant-1", candidate_id="candidate-1",
+        evidence_id="evidence-1", evidence_version_id="version-1",
+        ingestion_reference="ingestion-1",
+    )
+    metadata = CandidateEvidenceObjectMetadata(
+        tenant_id="tenant-1", candidate_id="candidate-1",
+        evidence_id="evidence-1", evidence_version_id="version-1",
+        evidence_kind=CandidateEvidenceKind.CANDIDATE_PROFILE,
+        media_type="application/pdf", original_filename="profile.pdf",
+        byte_length=len(PAYLOAD),
+        content_digest_sha3_512=hashlib.sha3_512(PAYLOAD).hexdigest(),
+        storage_provider_id="aws_s3",
+        storage_object_reference=component(key),
+        object_version_reference="version-opaque",
+        provider_integrity_reference='"provider-etag"',
+        ingestion_reference="ingestion-1",
+        created_at=NOW, created_by_principal_id="principal-1",
+    )
+    verified = storage.read_verified_object(metadata)
+    try:
+        assert verified.read() == PAYLOAD
+    finally:
+        verified.close()
