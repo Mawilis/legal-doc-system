@@ -266,7 +266,7 @@ def test_authenticated_propose_approve_revoke_is_atomic_and_maker_checker_enforc
                 registry.resolve_current(
                     source_system_id="synthetic-http-source",
                     key_id="synthetic-http-key-v1",
-                    evaluated_at=datetime.now(timezone.utc),
+
                     session=session,
                 )
     finally:
