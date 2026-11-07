@@ -54,7 +54,7 @@ describe('WILSY Headquarters authenticated shell', () => {
     fireEvent.click(screen.getByRole('button', { name: /Organisation & People/ }));
     expect(await screen.findByText('Authorised workforce directory')).toBeTruthy();
     expect(await screen.findByText('Test Directory Person')).toBeTruthy();
-    expect(screen.getByText('test@example.invalid')).toBeTruthy();
+    expect(screen.getByText(/test@example\\.invalid/)).toBeTruthy();
   });
 
   it('searches the authorised workforce source without supplying tenant authority', async () => {
