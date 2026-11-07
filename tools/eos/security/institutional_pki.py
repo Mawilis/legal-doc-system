@@ -16,7 +16,7 @@ import os
 from pathlib import Path
 import re
 from threading import RLock
-from typing import Iterable
+from typing import Callable, Iterable, Mapping
 
 from cryptography import x509
 from cryptography.hazmat.primitives import hashes, serialization
@@ -185,6 +185,7 @@ class InstitutionalPKIVerifier:
         self._crl_bundle_path = settings.crl_bundle_pem
         self._crls_lock = RLock()
         self._crl_number_high_water: dict[str, tuple[int, str]] = {}
+        self._crl_currentness_recorder: Callable[[Mapping[str, tuple[int, str]]], None] | None = None
         self._anchors = tuple(anchors)
         self._issuer_certificates = tuple(issuer_certificates) + self._anchors
         self._crls = tuple(crls)
@@ -237,9 +238,22 @@ class InstitutionalPKIVerifier:
                 current = parent
             else:
                 raise InstitutionalPKIError("INSTITUTIONAL_PKI_CONFIGURED_ISSUER_CHAIN_DEPTH_EXCEEDED")
-        self._validate_crls(self._crls)
+        initial_observations = self._validate_crls(self._crls)
+        self._crl_number_high_water.update(initial_observations)
 
-    def _validate_crls(self, crls: tuple[x509.CertificateRevocationList, ...]) -> None:
+    def bind_crl_currentness_recorder(
+        self,
+        recorder: Callable[[Mapping[str, tuple[int, str]]], None],
+    ) -> None:
+        """Bind the durable EOS currentness authority exactly once."""
+        if not callable(recorder) or self._crl_currentness_recorder is not None:
+            raise InstitutionalPKIError("INSTITUTIONAL_PKI_CRL_CURRENTNESS_RECORDER_INVALID")
+        self._crl_currentness_recorder = recorder
+
+    def _validate_crls(
+        self,
+        crls: tuple[x509.CertificateRevocationList, ...],
+    ) -> dict[str, tuple[int, str]]:
         if not crls:
             raise InstitutionalPKIError("INSTITUTIONAL_PKI_CRL_BUNDLE_EMPTY")
         observed: dict[str, tuple[int, str]] = {}
@@ -297,7 +311,7 @@ class InstitutionalPKIVerifier:
                 number < previous[0] or (number == previous[0] and fingerprint != previous[1])
             ):
                 raise InstitutionalPKIError("INSTITUTIONAL_PKI_CRL_ROLLBACK_OR_NUMBER_REUSE")
-        self._crl_number_high_water.update(observed)
+        return observed
 
     def refresh_crls(self) -> tuple[x509.CertificateRevocationList, ...]:
         """Atomically reload the externally published CRL bundle on each use."""
@@ -307,8 +321,11 @@ class InstitutionalPKIVerifier:
             current = _pem_crls(self._crl_bundle_path.read_bytes())
         except OSError as error:
             raise InstitutionalPKIError("INSTITUTIONAL_PKI_CRL_BUNDLE_UNAVAILABLE") from error
-        self._validate_crls(current)
+        observed = self._validate_crls(current)
+        if self._crl_currentness_recorder is not None:
+            self._crl_currentness_recorder(observed)
         with self._crls_lock:
+            self._crl_number_high_water.update(observed)
             self._crls = current
             return self._crls
 
