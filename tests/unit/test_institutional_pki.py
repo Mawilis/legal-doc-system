@@ -69,7 +69,7 @@ def _crl(issuer, signer, revoked_serials=(), *, last_update=NOW - timedelta(minu
     return builder.sign(signer, hashes.SHA256())
 
 
-def _fixture(tmp_path: Path, *, revoked_leaf=False, stale_crl=False, eku=SIGNING_EKU):
+def _fixture(tmp_path: Path, *, revoked_leaf=False, stale_crl=False, eku=SIGNING_EKU, critical_extension=False):
     root_key = rsa.generate_private_key(public_exponent=65537, key_size=2048)
     intermediate_key = rsa.generate_private_key(public_exponent=65537, key_size=2048)
     leaf_key = rsa.generate_private_key(public_exponent=65537, key_size=2048)
@@ -97,6 +97,11 @@ def _fixture(tmp_path: Path, *, revoked_leaf=False, stale_crl=False, eku=SIGNING
         ), critical=True)
         .add_extension(x509.ExtendedKeyUsage([ObjectIdentifier(eku)]), critical=False)
     )
+    if critical_extension:
+        leaf_builder = leaf_builder.add_extension(
+            x509.UnrecognizedExtension(ObjectIdentifier("1.2.3.4.5"), b"\\x05\\x00"),
+            critical=True,
+        )
     leaf = leaf_builder.sign(intermediate_key, hashes.SHA256())
     crl_last = NOW - timedelta(days=2) if stale_crl else NOW - timedelta(minutes=1)
     crl_next = NOW - timedelta(days=1) if stale_crl else NOW + timedelta(hours=12)
@@ -348,3 +353,14 @@ def test_offline_ca_ceremony_creates_encrypted_root_intermediate_and_signed_crl(
     crl = x509.load_pem_x509_crl(crl_path.read_bytes())
     assert crl.issuer == intermediate.subject
     assert crl.extensions.get_extension_for_class(x509.CRLNumber).value.crl_number == 1
+
+
+
+def test_rejects_unhandled_critical_certificate_extension(tmp_path):
+    verifier, leaf, intermediate, _ = _fixture(tmp_path, critical_extension=True)
+    with pytest.raises(InstitutionalPKIError, match="UNHANDLED_CRITICAL_CERTIFICATE_EXTENSION"):
+        verifier.verify(
+            leaf_pem=leaf.public_bytes(serialization.Encoding.PEM),
+            intermediate_pems=[intermediate.public_bytes(serialization.Encoding.PEM)],
+            verified_at=NOW,
+        )
