@@ -385,6 +385,10 @@ class RegistryBackedEd25519InstitutionalSignerSourceResponseAuthenticator:
         )
         from cryptography.hazmat.primitives.asymmetric.ed25519 import Ed25519PublicKey
 
+        if response.source_system_id != expected_source_system_id:
+            raise InstitutionalSignerSourceAdapterError(
+                "INSTITUTIONAL_SIGNER_SOURCE_SIGNING_KEY_UNTRUSTED"
+            )
         try:
             trust = self._registry.resolve(
                 source_system_id=expected_source_system_id,
