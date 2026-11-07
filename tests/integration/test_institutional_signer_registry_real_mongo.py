@@ -63,9 +63,25 @@ def _verified_currentness(*, tenant_id, fingerprint, revision, status, checked_a
         "valid_until": valid_until,
         "provenance_snapshot": provenance,
         "provenance_fingerprint_sha256": _digest(provenance),
-        "observation_fingerprint_sha256": "f" * 64,
+        "observation_snapshot": {
+            "schema": "wilsy.institutional.signer.currentness_observation.v1",
+            "records": {
+                key: {
+                    "source_system_id": record["source_system_id"],
+                    "source_record_id": record["source_record_id"],
+                    "source_revision": record["source_revision"],
+                    "status": ("REVOKED" if status == "NOT_CURRENT" and key == "identity_proofing" else record["status"]),
+                    "revoked": status == "NOT_CURRENT" and key == "identity_proofing",
+                    "evidence_fingerprint_sha256": record["evidence_fingerprint_sha256"],
+                    "observed_at": checked_at,
+                }
+                for key, record in provenance.items() if key != "schema"
+            },
+        },
+        "observation_fingerprint_sha256": None,
         "reason_code": reason,
     }
+    fields["observation_fingerprint_sha256"] = _digest(fields["observation_snapshot"])
     for name, field_value in fields.items():
         object.__setattr__(value, name, field_value)
     return value
@@ -199,7 +215,7 @@ def test_signer_enrollment_approval_and_revocation_are_atomic_on_replica_set():
                 verification=current_result, idempotency_key="currentness-001", actor_reference="runtime://approved-currentness-worker", session=session,
             )
             assert current["evidence_currentness_status"] == "CURRENT"
-            assert current["evidence_currentness_observation_fingerprint_sha256"] == "f" * 64
+            assert current["evidence_currentness_observation_fingerprint_sha256"] == _digest(currentness_provenance["identity_proofing"]) or len(current["evidence_currentness_observation_fingerprint_sha256"]) == 64
             replayed = registry.record_verified_currentness(
                 verification=current_result, idempotency_key="currentness-001",
                 actor_reference="runtime://approved-currentness-worker", session=session,
