@@ -343,7 +343,9 @@ class InstitutionalSourceSigningKeyLifecycleRegistry:
         decision = _identifier("governance_decision_reference", governance_decision_reference)
         idem = _identifier("idempotency_key", idempotency_key)
         occurred = _instant("revoked_at", revoked_at)
-        record = self._keys.find_one({"source_system_id": source, "key_id": key}, session=session)
+        record = self._keys.find_one(
+            {"source_system_id": source, "key_id": key}, session=session,
+        )
         if record is None:
             raise SourceSigningKeyRegistryConflict("SOURCE_SIGNING_KEY_NOT_FOUND")
         if actor == record["proposed_by_principal_id"]:
@@ -355,7 +357,13 @@ class InstitutionalSourceSigningKeyLifecycleRegistry:
             "governance_decision_reference": decision,
             "record_fingerprint_sha256": record["public_key_fingerprint_sha256"],
         })).hexdigest()
-
+        prior = self._events.find_one(
+            {"source_system_id": source, "idempotency_key": idem}, session=session,
+        )
+        if prior is not None:
+            if prior.get("event_type") != "REVOKED" or prior.get("command_fingerprint_sha256") != command_fingerprint:
+                raise SourceSigningKeyRegistryConflict("SOURCE_SIGNING_KEY_DIVERGENT_REPLAY")
+            return prior
         if occurred > datetime.now(timezone.utc):
             raise SourceSigningKeyRegistryError("SOURCE_SIGNING_KEY_REVOCATION_CANNOT_BE_FUTURE_DATED")
         approval_event = self._events.find_one(
@@ -364,7 +372,13 @@ class InstitutionalSourceSigningKeyLifecycleRegistry:
         )
         if approval_event is None or occurred < approval_event["occurred_at"]:
             raise SourceSigningKeyRegistryConflict("SOURCE_SIGNING_KEY_NOT_APPROVED")
-        event = {            "schema": EVENT_SCHEMA, "event_type": "REVOKED",
+        if self._events.find_one(
+            {"source_system_id": source, "key_id": key, "event_type": "REVOKED"},
+            session=session,
+        ) is not None:
+            raise SourceSigningKeyRegistryConflict("SOURCE_SIGNING_KEY_ALREADY_REVOKED")
+        event = {
+            "schema": EVENT_SCHEMA, "event_type": "REVOKED",
             "source_system_id": source, "key_id": key,
             "idempotency_key": idem, "occurred_at": occurred,
             "actor_principal_id": actor, "reason_reference": reason,
@@ -373,17 +387,6 @@ class InstitutionalSourceSigningKeyLifecycleRegistry:
             "record_fingerprint_sha256": record["public_key_fingerprint_sha256"],
             "command_fingerprint_sha256": command_fingerprint, "event_sequence": 3,
         }
-        prior = self._events.find_one(
-            {"source_system_id": source, "idempotency_key": idem}, session=session
-        )
-        if prior is not None:
-            if prior.get("event_type") != "REVOKED" or prior.get("command_fingerprint_sha256") != command_fingerprint:
-                raise SourceSigningKeyRegistryConflict("SOURCE_SIGNING_KEY_DIVERGENT_REPLAY")
-            return prior
-        if self._events.find_one(
-            {"source_system_id": source, "key_id": key, "event_type": "REVOKED"}, session=session
-        ):
-            raise SourceSigningKeyRegistryConflict("SOURCE_SIGNING_KEY_ALREADY_REVOKED")
         try:
             self._events.insert_one(event, session=session)
         except DuplicateKeyError as error:
