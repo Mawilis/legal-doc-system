@@ -188,7 +188,7 @@ def test_signer_enrollment_approval_and_revocation_are_atomic_on_replica_set():
             )
             with pytest.raises(InstitutionalSignerRegistryConflict, match="CURRENTNESS_REVISION_CONFLICT"):
                 registry.record_verified_currentness(
-                    verification=stale_result, idempotency_key="currentness-stale-revision", session=session,
+                    verification=stale_result, idempotency_key="currentness-stale-revision", actor_reference="runtime://approved-currentness-worker", session=session,
                 )
             current_result = _verified_currentness(
                 tenant_id="WILSYTENANT-4CD2FZ4O", fingerprint="a" * 64,
@@ -196,7 +196,7 @@ def test_signer_enrollment_approval_and_revocation_are_atomic_on_replica_set():
                 valid_until=now + timedelta(minutes=5), provenance=currentness_provenance,
             )
             current = registry.record_verified_currentness(
-                verification=current_result, idempotency_key="currentness-001", session=session,
+                verification=current_result, idempotency_key="currentness-001", actor_reference="runtime://approved-currentness-worker", session=session,
             )
             assert current["evidence_currentness_status"] == "CURRENT"
             assert current["evidence_currentness_observation_fingerprint_sha256"] == "f" * 64
@@ -212,7 +212,7 @@ def test_signer_enrollment_approval_and_revocation_are_atomic_on_replica_set():
                 reason="SOURCE_RECORD_REVOKED",
             )
             denied = registry.record_verified_currentness(
-                verification=not_current_result, idempotency_key="currentness-revoked", session=session,
+                verification=not_current_result, idempotency_key="currentness-revoked", actor_reference="runtime://approved-currentness-worker", session=session,
             )
             assert denied["evidence_currentness_status"] == "NOT_CURRENT"
             with pytest.raises(InstitutionalSignerRegistryConflict) as currentness_error:
