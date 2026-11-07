@@ -200,6 +200,7 @@ def test_public_crl_distribution_route_serves_only_the_loaded_issuer_crl(tmp_pat
     app = FastAPI()
     app.include_router(institutional_pki_router, prefix="/api")
     app.state.institutional_pki_verifier = verifier
+    app.state.institutional_pki_ready = True
     with TestClient(app) as client:
         response = client.get(f"/api/security/pki/crl/{issuer_reference}")
     assert response.status_code == 200
