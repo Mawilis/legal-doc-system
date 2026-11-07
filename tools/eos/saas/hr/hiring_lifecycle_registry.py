@@ -90,7 +90,8 @@ class HiringLifecycleRegistry:
     def _append(self, *, tenant_id: str, aggregate_type: str, aggregate_id: str,
                 revision: int, actor_principal_id: str, action: str,
                 fingerprint: str, snapshot: dict[str, object],
-                occurred_at: object, session: object, idempotency_key: str | None = None,\n                command_fingerprint: str | None = None) -> None:
+                occurred_at: object, session: object, idempotency_key: str | None = None,
+                command_fingerprint: str | None = None) -> None:
         tx = _tx(session)
         event = {
             "tenant_id": tenant_id,
@@ -102,6 +103,8 @@ class HiringLifecycleRegistry:
         }
         if idempotency_key is not None:
             event["idempotency_key"] = _scope(idempotency_key, "HIRING_IDEMPOTENCY_KEY_INVALID")
+        if command_fingerprint is not None:
+            event["command_fingerprint"] = _scope(command_fingerprint, "HIRING_COMMAND_FINGERPRINT_INVALID")
         try:
             self._events.insert_one(event, session=tx)
         except DuplicateKeyError as error:
@@ -219,7 +222,8 @@ class HiringLifecycleRegistry:
     def _transition(self, *, collection: Any, aggregate_type: str, identity_field: str,
                     current: Any, updated: Any, actor_principal_id: str, action: str,
                     occurred_at: object, expected_revision: int, session: object,
-                    hydrate: Any) -> Any:
+                    hydrate: Any, idempotency_key: str | None = None,
+                    command_fingerprint: str | None = None) -> Any:
         tx = _tx(session)
         if current.tenant_id != updated.tenant_id or getattr(current, identity_field) != getattr(updated, identity_field):
             raise HiringLifecycleRegistryConflict("HIRING_SCOPE_IMMUTABLE")
@@ -257,7 +261,8 @@ class HiringLifecycleRegistry:
                 aggregate_id=getattr(updated, identity_field), revision=updated.revision,
                 actor_principal_id=actor_principal_id, action=action,
                 fingerprint=updated.fingerprint, snapshot=updated.to_dict(),
-                occurred_at=occurred_at, session=tx,
+                occurred_at=occurred_at, session=tx, idempotency_key=key,
+                command_fingerprint=command_hash,
             )
             return updated
         except HiringLifecycleRegistryConflict:
