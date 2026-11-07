@@ -223,6 +223,11 @@ def test_canonical_eos_startup_registers_case_indexes_and_readiness(monkeypatch)
     monkeypatch.setattr(server, "connect_db", lambda: (True, "CERT"))
     monkeypatch.setattr(server, "get_database", lambda: database)
     monkeypatch.setattr(server, "get_client", lambda: client)
+    # The candidate-evidence router owns its startup index hook and resolves
+    # persistence through its own canonical database accessors.
+    from tools.eos.api import candidate_evidence_upload_router
+    monkeypatch.setattr(candidate_evidence_upload_router, "get_database", lambda: database)
+    monkeypatch.setattr(candidate_evidence_upload_router, "get_client", lambda: client)
     monkeypatch.setattr(server, "disconnect_db", lambda: None)
     monkeypatch.setenv("WILSY_DUNNING_SCHEDULER_ENABLED", "false")
     app = server.WilsyAPIServer(reasoning_provider_binding=None).get_app()
