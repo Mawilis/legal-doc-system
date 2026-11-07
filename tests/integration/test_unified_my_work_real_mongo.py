@@ -120,7 +120,7 @@ def _activate_operations(
         def activate(active: Any) -> None:
             entitlement_registry.create_or_replay(pending, history, current, session=active)
             entitlement_registry.transition(
-                tenant_id=TENANT,
+                tenant_id=tenant_id,
                 entitlement_id=entitlement_id,
                 target_state=TenantProductEntitlementState.ACTIVE,
                 expected_revision=0,
@@ -147,8 +147,8 @@ def test_authenticated_my_work_http_reads_real_operations_queue_inside_owner_tra
     monkeypatch: Any,
 ) -> None:
     client, database = mongo_context
-    _activate_operations(client, database, TenantProductId.OPERATIONS, tenant_id=tenant_id)
-    _activate_operations(client, database, TenantProductId.INTELLIGENCE, tenant_id=tenant_id)
+    _activate_operations(client, database, TenantProductId.OPERATIONS)
+    _activate_operations(client, database, TenantProductId.INTELLIGENCE)
 
     module_source = my_work.module_source
     monkeypatch.setattr(module_source, "get_client", lambda: client)
