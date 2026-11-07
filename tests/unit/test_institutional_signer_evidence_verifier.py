@@ -94,7 +94,6 @@ def test_unavailable_authoritative_adapter_fails_closed_for_currentness_rechecks
             enrollment_provenance_snapshot={},
             approval_provenance_snapshot={},
             evaluated_at=datetime.now(timezone.utc),
-            session=object(),
         )
     assert error.value.code == "INSTITUTIONAL_SIGNER_CURRENTNESS_AUTHORITY_UNAVAILABLE"
 
