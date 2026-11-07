@@ -1,0 +1,187 @@
+"""Governed WILSY workforce headcount requisition domain.
+
+This domain models headcount approval only. It does not create candidates,
+offers, employee records, global principals, tenant memberships, capacities,
+IAM grants, payroll commitments, or financial execution.
+"""
+from __future__ import annotations
+
+from dataclasses import dataclass
+from datetime import datetime, timezone
+from enum import StrEnum
+import hashlib
+import hmac
+import json
+import re
+from typing import Final
+
+
+VERSION: Final[str] = "v1.0.0-HR-HEADCOUNT-REQUISITION"
+SCHEMA: Final[str] = "wilsy.hr.headcount_requisition.v1"
+_HEX_512 = re.compile(r"^[0-9a-f]{128}$")
+
+
+class RequisitionError(ValueError):
+    """Invalid requisition state or transition."""
+
+
+class RequisitionStatus(StrEnum):
+    DRAFT = "DRAFT"
+    SUBMITTED = "SUBMITTED"
+    APPROVED = "APPROVED"
+    REJECTED = "REJECTED"
+    CANCELLED = "CANCELLED"
+
+
+class RequisitionDecision(StrEnum):
+    APPROVE = "APPROVE"
+    REJECT = "REJECT"
+
+
+def _required(name: str, value: object, *, maximum: int = 180) -> str:
+    if not isinstance(value, str) or not value or value != value.strip() or len(value) > maximum:
+        raise RequisitionError(f"REQUISITION_{name.upper()}_INVALID")
+    return value
+
+
+def _timestamp(value: datetime) -> datetime:
+    if not isinstance(value, datetime) or value.tzinfo is None or value.utcoffset() is None:
+        raise RequisitionError("REQUISITION_TIMESTAMP_MUST_BE_TIMEZONE_AWARE")
+    return value.astimezone(timezone.utc)
+
+
+@dataclass(frozen=True, slots=True)
+class HeadcountApproval:
+    decision_id: str
+    actor_principal_id: str
+    decision: RequisitionDecision | str
+    reason: str
+    decided_at: datetime
+
+    def __post_init__(self) -> None:
+        object.__setattr__(self, "decision_id", _required("decision_id", self.decision_id))
+        object.__setattr__(self, "actor_principal_id", _required("approver", self.actor_principal_id))
+        object.__setattr__(self, "reason", _required("decision_reason", self.reason, maximum=2000))
+        try:
+            decision = RequisitionDecision(self.decision)
+        except (TypeError, ValueError) as error:
+            raise RequisitionError("REQUISITION_DECISION_INVALID") from error
+        object.__setattr__(self, "decision", decision)
+        object.__setattr__(self, "decided_at", _timestamp(self.decided_at))
+
+
+@dataclass(frozen=True, slots=True)
+class HeadcountRequisition:
+    tenant_id: str
+    requisition_id: str
+    department_id: str
+    position_title: str
+    employment_type: str
+    work_location: str
+    headcount: int
+    business_justification: str
+    requested_by_principal_id: str
+    status: RequisitionStatus | str = RequisitionStatus.DRAFT
+    approval: HeadcountApproval | None = None
+    revision: int = 1
+    schema: str = SCHEMA
+    version: str = VERSION
+    fingerprint: str = ""
+
+    def __post_init__(self) -> None:
+        for name in ("tenant_id", "requisition_id", "department_id", "position_title",
+                     "employment_type", "work_location", "requested_by_principal_id"):
+            object.__setattr__(self, name, _required(name, getattr(self, name)))
+        object.__setattr__(self, "business_justification",
+                           _required("business_justification", self.business_justification, maximum=4000))
+        if isinstance(self.headcount, bool) or not isinstance(self.headcount, int) or not 1 <= self.headcount <= 50:
+            raise RequisitionError("REQUISITION_HEADCOUNT_OUT_OF_RANGE")
+        if isinstance(self.revision, bool) or not isinstance(self.revision, int) or self.revision < 1:
+            raise RequisitionError("REQUISITION_REVISION_INVALID")
+        try:
+            status = RequisitionStatus(self.status)
+        except (TypeError, ValueError) as error:
+            raise RequisitionError("REQUISITION_STATUS_INVALID") from error
+        object.__setattr__(self, "status", status)
+        if self.schema != SCHEMA or self.version != VERSION:
+            raise RequisitionError("REQUISITION_SCHEMA_VERSION_INVALID")
+        if status in {RequisitionStatus.APPROVED, RequisitionStatus.REJECTED}:
+            if self.approval is None:
+                raise RequisitionError("REQUISITION_DECISION_EVIDENCE_REQUIRED")
+            if self.approval.actor_principal_id == self.requested_by_principal_id:
+                raise RequisitionError("REQUISITION_MAKER_CHECKER_VIOLATION")
+            expected = RequisitionDecision.APPROVE if status is RequisitionStatus.APPROVED else RequisitionDecision.REJECT
+            if self.approval.decision is not expected:
+                raise RequisitionError("REQUISITION_DECISION_STATUS_MISMATCH")
+        elif self.approval is not None:
+            raise RequisitionError("REQUISITION_DECISION_NOT_VALID_FOR_STATUS")
+        digest = self._digest()
+        if self.fingerprint and (not _HEX_512.fullmatch(self.fingerprint) or not hmac.compare_digest(self.fingerprint, digest)):
+            raise RequisitionError("REQUISITION_FINGERPRINT_MISMATCH")
+        object.__setattr__(self, "fingerprint", digest)
+
+    def _payload(self) -> dict[str, object]:
+        approval = None if self.approval is None else {
+            "decision_id": self.approval.decision_id,
+            "actor_principal_id": self.approval.actor_principal_id,
+            "decision": self.approval.decision.value,
+            "reason": self.approval.reason,
+            "decided_at": self.approval.decided_at.isoformat(),
+        }
+        return {
+            "tenant_id": self.tenant_id, "requisition_id": self.requisition_id,
+            "department_id": self.department_id, "position_title": self.position_title,
+            "employment_type": self.employment_type, "work_location": self.work_location,
+            "headcount": self.headcount, "business_justification": self.business_justification,
+            "requested_by_principal_id": self.requested_by_principal_id,
+            "status": self.status.value, "approval": approval, "revision": self.revision,
+            "schema": self.schema, "version": self.version,
+        }
+
+    def _digest(self) -> str:
+        return hashlib.sha3_512(json.dumps(self._payload(), sort_keys=True, separators=(",", ":")).encode()).hexdigest()
+
+    def submit(self, *, expected_revision: int) -> "HeadcountRequisition":
+        self._expect_revision(expected_revision)
+        if self.status is not RequisitionStatus.DRAFT:
+            raise RequisitionError("REQUISITION_ONLY_DRAFT_CAN_BE_SUBMITTED")
+        return HeadcountRequisition(**{**self._payload(), "status": RequisitionStatus.SUBMITTED,
+                                       "approval": None, "revision": self.revision + 1})
+
+    def decide(self, approval: HeadcountApproval, *, expected_revision: int) -> "HeadcountRequisition":
+        self._expect_revision(expected_revision)
+        if self.status is not RequisitionStatus.SUBMITTED:
+            raise RequisitionError("REQUISITION_ONLY_SUBMITTED_CAN_BE_DECIDED")
+        if approval.actor_principal_id == self.requested_by_principal_id:
+            raise RequisitionError("REQUISITION_MAKER_CHECKER_VIOLATION")
+        status = RequisitionStatus.APPROVED if approval.decision is RequisitionDecision.APPROVE else RequisitionStatus.REJECTED
+        return HeadcountRequisition(
+            tenant_id=self.tenant_id, requisition_id=self.requisition_id,
+            department_id=self.department_id, position_title=self.position_title,
+            employment_type=self.employment_type, work_location=self.work_location,
+            headcount=self.headcount, business_justification=self.business_justification,
+            requested_by_principal_id=self.requested_by_principal_id, status=status,
+            approval=approval, revision=self.revision + 1,
+        )
+
+    def cancel(self, *, actor_principal_id: str, expected_revision: int) -> "HeadcountRequisition":
+        self._expect_revision(expected_revision)
+        _required("cancelling_actor", actor_principal_id)
+        if self.status not in {RequisitionStatus.DRAFT, RequisitionStatus.SUBMITTED, RequisitionStatus.REJECTED}:
+            raise RequisitionError("REQUISITION_CANNOT_BE_CANCELLED")
+        return HeadcountRequisition(
+            tenant_id=self.tenant_id, requisition_id=self.requisition_id,
+            department_id=self.department_id, position_title=self.position_title,
+            employment_type=self.employment_type, work_location=self.work_location,
+            headcount=self.headcount, business_justification=self.business_justification,
+            requested_by_principal_id=self.requested_by_principal_id,
+            status=RequisitionStatus.CANCELLED, revision=self.revision + 1,
+        )
+
+    def _expect_revision(self, expected_revision: int) -> None:
+        if expected_revision != self.revision:
+            raise RequisitionError("REQUISITION_REVISION_CONFLICT")
+
+
+__all__ = ["VERSION", "SCHEMA", "HeadcountApproval", "HeadcountRequisition",
+           "RequisitionDecision", "RequisitionError", "RequisitionStatus"]
