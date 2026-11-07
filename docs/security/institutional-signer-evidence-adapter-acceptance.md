@@ -99,3 +99,6 @@ The new orchestration function performs a short transactional enrollment read, c
 
 
 The enrollment registry also provisions a compound index over tenant, lifecycle status, currentness status and lease expiry so a future governed worker can efficiently discover pending and expired-currentness candidates. This index is not a scheduler: no polling interval or automatic retry cadence is assumed. `NOT_CURRENT` records are deliberately excluded from automatic promotion and require a new authoritative check under the approved governance process.
+
+
+Currentness rechecks must preserve the previously approved identity-assurance level, legal-entity reference, mandate scope and independent-approval scope. Any change to those authority-bearing fields is not silently accepted as routine freshness: it is rejected for a new governance decision and re-enrollment/approval as applicable.
