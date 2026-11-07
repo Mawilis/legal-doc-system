@@ -92,6 +92,8 @@ def main() -> int:
         return 0
     except InstitutionalPKIKMSError as error:
         print(error.code, file=sys.stderr)
+        if error.key_arn:
+            print(f"created_kms_key_requires_reconciliation={error.key_arn}", file=sys.stderr)
         return 2
     except (OSError, ValueError, BotoCoreError, ClientError) as error:
         del error
