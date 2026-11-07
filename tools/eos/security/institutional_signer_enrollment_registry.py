@@ -595,6 +595,8 @@ class InstitutionalSignerEnrollmentRegistry:
                 or item["revoked"]
                 or item["status"] != source_record.get("status")
                 or item["evidence_fingerprint_sha256"] != source_record.get("evidence_fingerprint_sha256")
+                or valid_from != _stored_instant(source_record.get("valid_from"))
+                or valid_until != (_stored_instant(source_record.get("valid_until")) if source_record.get("valid_until") is not None else None)
             ):
                 raise InstitutionalSignerRegistryError("INSTITUTIONAL_SIGNER_CURRENTNESS_OBSERVATION_STATUS_MISMATCH")
             observation_expired = valid_from > checked_at or (valid_until is not None and valid_until <= checked_at)
