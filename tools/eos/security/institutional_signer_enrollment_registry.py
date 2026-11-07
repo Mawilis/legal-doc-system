@@ -446,6 +446,41 @@ class InstitutionalSignerEnrollmentRegistry:
         return row
 
 
+
+    def list_currentness_candidates(
+        self, *, tenant_id: str, as_of: datetime, limit: int, session: object,
+    ) -> list[dict[str, Any]]:
+        """Read ACTIVE enrollments awaiting first check or whose currentness lease expired.
+
+        NOT_CURRENT records are intentionally excluded; they require a new
+        governed decision rather than automatic retry or silent promotion.
+        """
+        if session is None:
+            raise InstitutionalSignerRegistryError("INSTITUTIONAL_SIGNER_CALLER_TRANSACTION_REQUIRED")
+        tenant = _tenant(tenant_id)
+        instant = _instant(as_of)
+        if type(limit) is not int or limit < 1 or limit > 100:
+            raise InstitutionalSignerRegistryError("INSTITUTIONAL_SIGNER_CURRENTNESS_LIMIT_INVALID")
+        query = {
+            "tenant_id": tenant,
+            "status": "ACTIVE",
+            "$or": [
+                {"evidence_currentness_status": {"$in": ["PENDING_VERIFICATION", None]}},
+                {"evidence_currentness_status": "CURRENT", "evidence_currentness_valid_until": {"$lte": instant}},
+            ],
+        }
+        try:
+            rows = list(self._records.find(query, session=session))
+            rows.sort(key=lambda row: (
+                _stored_instant(row.get("approved_at") or row.get("requested_at")),
+                row.get("certificate_fingerprint_sha256", ""),
+            ))
+            for row in rows:
+                row.pop("_id", None)
+            return rows[:limit]
+        except PyMongoError as error:
+            raise InstitutionalSignerRegistryError("INSTITUTIONAL_SIGNER_CURRENTNESS_CANDIDATE_READ_UNAVAILABLE") from error
+
     def record_verified_currentness(
         self, *, verification: VerifiedSignerEvidenceCurrentness,
         idempotency_key: str, actor_reference: str, session: object,
