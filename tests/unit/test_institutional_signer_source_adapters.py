@@ -284,9 +284,9 @@ def test_authenticated_adapter_set_keeps_three_governance_channels_separate():
         independent_approval=approval,
         authenticator=authenticator,
     )
-    assert sources.read_identity_proofing(lookup()).evidence_kind == "IDENTITY_PROOFING"
-    assert sources.read_signatory_mandate(lookup(evidence_kind="SIGNATORY_MANDATE")).evidence_kind == "SIGNATORY_MANDATE"
-    assert sources.read_independent_approval(lookup(evidence_kind="INDEPENDENT_APPROVAL")).evidence_kind == "INDEPENDENT_APPROVAL"
+    assert sources.read_identity_proofing(lookup=lookup()).evidence_kind == "IDENTITY_PROOFING"
+    assert sources.read_signatory_mandate(lookup=lookup(evidence_kind="SIGNATORY_MANDATE")).evidence_kind == "SIGNATORY_MANDATE"
+    assert sources.read_independent_approval(lookup=lookup(evidence_kind="INDEPENDENT_APPROVAL")).evidence_kind == "INDEPENDENT_APPROVAL"
     assert len(authenticator.calls) == 3
 
 
