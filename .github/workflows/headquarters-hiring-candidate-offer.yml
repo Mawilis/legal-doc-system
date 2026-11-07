@@ -15,6 +15,7 @@ on:
       - "tests/integration/test_hiring_lifecycle_registry_real_mongo.py"
       - "tests/integration/test_hiring_lifecycle_authenticated_http.py"
       - "tests/integration/test_hiring_lifecycle_durable_iam_real_mongo.py"
+      - "tests/integration/test_hiring_lifecycle_authenticated_real_http.py"
       - ".github/workflows/headquarters-hiring-candidate-offer.yml"
 
 permissions:
@@ -67,9 +68,10 @@ jobs:
             tests/unit/test_hiring_lifecycle_domain.py \
             tests/integration/test_hiring_lifecycle_authenticated_http.py \
             tests/integration/test_hiring_lifecycle_durable_iam_real_mongo.py \
+            tests/integration/test_hiring_lifecycle_authenticated_real_http.py \
             tests/integration/test_hiring_lifecycle_registry_real_mongo.py
       - name: Run lifecycle, authenticated denial, IAM and real replica-set tests
-        run: python -m pytest -q tests/unit/test_hiring_lifecycle_domain.py tests/integration/test_hiring_lifecycle_authenticated_http.py tests/integration/test_hiring_lifecycle_durable_iam_real_mongo.py tests/integration/test_hiring_lifecycle_registry_real_mongo.py
+        run: python -m pytest -q tests/unit/test_hiring_lifecycle_domain.py tests/integration/test_hiring_lifecycle_authenticated_http.py tests/integration/test_hiring_lifecycle_durable_iam_real_mongo.py tests/integration/test_hiring_lifecycle_authenticated_real_http.py tests/integration/test_hiring_lifecycle_registry_real_mongo.py
       - name: Stop MongoDB replica-set container
         if: always()
         run: docker rm --force hiring-mongo || true
