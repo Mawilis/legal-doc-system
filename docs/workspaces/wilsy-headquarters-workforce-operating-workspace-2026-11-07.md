@@ -197,3 +197,25 @@ Payroll, remuneration, employee relations, health information and identity docum
 - No blanket administrator access for the founder or workforce by bypassing IAM.
 - No shadow HR, finance, procurement, product, CRM or customer databases.
 - No production deployment in this change.
+
+
+## 13. Additional workforce API audit — quarantine before headquarters admission
+
+A deeper inspection of the same baseline found legacy employee/HR routes that must not be connected to the headquarters:
+
+- `tools/eos/api/employee_router.py` exposes `/api/employees/search` and `/api/employees/{employee_id}`. It resolves tenant scope from query parameter or `X-Tenant-ID`, defaults to `GLOBAL_ROOT`, and invokes the employee registry without the canonical `RequireTenantAuthorization` dependency. Its telemetry helper is logging, not authorization or durable audit evidence.
+- `server/routes/hr.js` resolves tenant from query/body/header and defaults to `MASTER`. Its employee reads query legacy Mongoose model names directly. Candidate, job-opening, payroll, benefits, performance, time-off, activity, relations and artifact endpoints return successful empty responses from stub handlers.
+- `client/src/services/hrService.js` explicitly converts HR read failures and open-circuit states into empty paginated datasets. This hides source outages and cannot be used for a truthful headquarters operating queue.
+- The HR dashboard itself declares `DEFAULT_TENANT_ID = 'MASTER'`.
+
+These are concrete legacy containment findings, not proof that all HR records or commands are unavailable. The canonical employee router and Express HR ledger must be removed from the headquarters request path until replaced or independently certified. Do not simply add a new header or patch the default constant: the complete route must derive tenant and principal from the authenticated current session, authorize every operation, and use the correct source-owned persistence contract.
+
+### Required remediation gate
+
+1. Inventory every consumer of `/api/employees/*` and `/api/hr/*`; distinguish current certified consumers from legacy UI paths.
+2. Replace the legacy employee router with an authenticated EOS route using current principal, membership, capacity, HR permission and object-level checks. No query/header fallback may establish tenant scope.
+3. Remove or unmount Express HR stubs from the certified headquarters path. A source outage or unimplemented domain must return an explicit unavailable/unsupported response, not HTTP 200 with an empty list.
+4. Change HR read services to preserve and surface authorization, source-unavailable and malformed-response failures. Never turn them into a successful empty queue.
+5. Keep the existing certified HR document route as a separate capability; it does not imply employee directory, payroll, hiring or lifecycle command certification.
+6. Add real replica-set tests for cross-tenant denial, forged scope, role/capacity denial, stale session, source outage, malformed persisted records, and durable audit for each activated command.
+7. Only then admit HR routes into the WILSY Headquarters navigation and workforce daily-use journey.
