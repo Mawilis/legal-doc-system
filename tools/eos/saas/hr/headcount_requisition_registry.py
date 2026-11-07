@@ -181,6 +181,28 @@ class HeadcountRequisitionRegistry:
         except PyMongoError as error:
             raise HeadcountRequisitionRegistryError("HEADCOUNT_PERSISTENCE_UNAVAILABLE") from error
 
+    def replay_transition(
+        self, *, tenant_id: str, idempotency_key: str,
+        request_fingerprint: str, session: Any,
+    ) -> HeadcountRequisition | None:
+        tenant = _exact(tenant_id, "HEADCOUNT_TENANT_INVALID")
+        key = _exact(idempotency_key, "HEADCOUNT_IDEMPOTENCY_KEY_INVALID")
+        tx = _session(session)
+        try:
+            prior = self._events.find_one(
+                {"tenant_id": tenant, "idempotency_key": key}, session=tx,
+            )
+        except PyMongoError as error:
+            raise HeadcountRequisitionRegistryError("HEADCOUNT_PERSISTENCE_UNAVAILABLE") from error
+        if prior is None:
+            return None
+        if prior.get("request_fingerprint") != request_fingerprint:
+            raise HeadcountRequisitionRegistryConflict("HEADCOUNT_DIVERGENT_TRANSITION_REPLAY")
+        snapshot = prior.get("result_snapshot")
+        if not isinstance(snapshot, dict):
+            raise HeadcountRequisitionRegistryError("HEADCOUNT_EVENT_SNAPSHOT_CORRUPT")
+        return HeadcountRequisition.from_dict(snapshot)
+
     def transition(
         self, *, tenant_id: str, requisition_id: str,
         expected_revision: int, updated: HeadcountRequisition,
