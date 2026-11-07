@@ -99,6 +99,21 @@ class InstitutionalSignerEnrollmentRegistry:
         proofing = _text(identity_proofing_evidence_reference, "INSTITUTIONAL_SIGNER_PROOFING_EVIDENCE_REQUIRED")
         mandate = _text(signatory_mandate_evidence_reference, "INSTITUTIONAL_SIGNER_MANDATE_EVIDENCE_REQUIRED")
         now = _instant(requested_at)
+        prior_event = self._events.find_one({
+            "tenant_id": tenant, "idempotency_key": key,
+        }, session=session)
+        if prior_event is not None:
+            snapshot = prior_event.get("snapshot")
+            if (
+                prior_event.get("action") != "SIGNER_ENROLLMENT_REQUESTED"
+                or not isinstance(snapshot, dict)
+                or snapshot.get("certificate_fingerprint_sha256") != fingerprint
+                or snapshot.get("requested_by_principal_id") != requester
+                or snapshot.get("identity_proofing_evidence_reference") != proofing
+                or snapshot.get("signatory_mandate_evidence_reference") != mandate
+            ):
+                raise InstitutionalSignerRegistryConflict("INSTITUTIONAL_SIGNER_DIVERGENT_REPLAY")
+            return snapshot
         record = {
             "tenant_id": tenant,
             "certificate_fingerprint_sha256": fingerprint,
@@ -153,6 +168,18 @@ class InstitutionalSignerEnrollmentRegistry:
         attestation = _text(approval_attestation_reference, "INSTITUTIONAL_SIGNER_APPROVAL_ATTESTATION_REQUIRED")
         now = _instant(approved_at)
         key = _text(idempotency_key, "INSTITUTIONAL_SIGNER_IDEMPOTENCY_INVALID", 200)
+        prior_event = self._events.find_one({"tenant_id": tenant, "idempotency_key": key}, session=session)
+        if prior_event is not None:
+            snapshot = prior_event.get("snapshot")
+            if (
+                prior_event.get("action") != "SIGNER_ENROLLMENT_APPROVED"
+                or prior_event.get("actor_principal_id") != approver
+                or not isinstance(snapshot, dict)
+                or snapshot.get("certificate_fingerprint_sha256") != fingerprint
+                or snapshot.get("approval_attestation_reference") != attestation
+            ):
+                raise InstitutionalSignerRegistryConflict("INSTITUTIONAL_SIGNER_DIVERGENT_REPLAY")
+            return snapshot
         try:
             current = self._records.find_one({
                 "tenant_id": tenant, "certificate_fingerprint_sha256": fingerprint,
@@ -205,6 +232,18 @@ class InstitutionalSignerEnrollmentRegistry:
         now = _instant(revoked_at)
         reason = _text(reason, "INSTITUTIONAL_SIGNER_REVOCATION_REASON_REQUIRED", 2000)
         key = _text(idempotency_key, "INSTITUTIONAL_SIGNER_IDEMPOTENCY_INVALID", 200)
+        prior_event = self._events.find_one({"tenant_id": tenant, "idempotency_key": key}, session=session)
+        if prior_event is not None:
+            snapshot = prior_event.get("snapshot")
+            if (
+                prior_event.get("action") != "SIGNER_ENROLLMENT_REVOKED"
+                or prior_event.get("actor_principal_id") != actor
+                or not isinstance(snapshot, dict)
+                or snapshot.get("certificate_fingerprint_sha256") != fingerprint
+                or snapshot.get("revocation_reason") != reason
+            ):
+                raise InstitutionalSignerRegistryConflict("INSTITUTIONAL_SIGNER_DIVERGENT_REPLAY")
+            return snapshot
         try:
             current = self._records.find_one({
                 "tenant_id": tenant, "certificate_fingerprint_sha256": fingerprint,
