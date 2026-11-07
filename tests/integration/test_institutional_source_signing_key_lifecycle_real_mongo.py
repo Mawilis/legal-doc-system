@@ -108,6 +108,11 @@ def test_enrollment_expiry_revocation_and_rotation_are_transactional():
                 rotation_id="rotation-001", supersedes_key_id="key-1",
                 overlap_until=now + timedelta(hours=2),
             )
+            # A pending successor proposal cannot shorten the predecessor's trust.
+            assert registry.resolve(
+                source_system_id=source, key_id="key-1",
+                evaluated_at=now + timedelta(hours=2, minutes=30), session=session,
+            )["key_id"] == "key-1"
             registry.approve(
                 source_system_id=source, key_id="key-2", approved_by_principal_id="test-approver",
                 governance_decision_reference="test-governance-rotation-002",
@@ -123,6 +128,11 @@ def test_enrollment_expiry_revocation_and_rotation_are_transactional():
                 source_system_id=source, key_id="key-2",
                 evaluated_at=now + timedelta(hours=3), session=session,
             )["key_id"] == "key-2"
+            with pytest.raises(SourceSigningKeyRegistryConflict, match="ROTATION_OVERLAP_ENDED"):
+                registry.resolve(
+                    source_system_id=source, key_id="key-1",
+                    evaluated_at=now + timedelta(hours=2, minutes=30), session=session,
+                )
             with pytest.raises(SourceSigningKeyRegistryConflict, match="ROTATION_OVERLAP_ENDED"):
                 registry.resolve(
                     source_system_id=source, key_id="key-1",
