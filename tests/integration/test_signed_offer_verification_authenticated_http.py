@@ -193,7 +193,6 @@ def test_authenticated_signed_offer_verification_is_required_before_acceptance(m
                     "expected_revision": 4,
                     "evidence_reference": evidence_id,
                     "evidence_fingerprint": digest,
-                    "accepted_at": signed_at.isoformat(),
                     "evidence_version_id": version_id,
                 },
             )
