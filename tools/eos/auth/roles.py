@@ -224,7 +224,7 @@ from __future__ import annotations
 from collections.abc import Iterable
 
 
-VERSION = "v1.51.0-TENANT-OWNER-LEGAL-COMMERCIAL-READ"
+VERSION = "v1.52.0-INSTITUTIONAL-SOURCE-KEY-ADMIN"
 
 
 ROLE_PERMISSIONS_MAP: dict[str, list[str]] = {
