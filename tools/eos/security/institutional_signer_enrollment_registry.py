@@ -155,6 +155,12 @@ class InstitutionalSignerEnrollmentRegistry:
                 [("tenant_id", ASCENDING), ("status", ASCENDING), ("subject_common_name", ASCENDING)],
                 name="ix_institutional_signer_status_subject",
             )
+            records.create_index(
+                [("tenant_id", ASCENDING), ("status", ASCENDING),
+                 ("evidence_currentness_status", ASCENDING),
+                 ("evidence_currentness_valid_until", ASCENDING)],
+                name="ix_institutional_signer_currentness_due",
+            )
             events.create_index(
                 [("tenant_id", ASCENDING), ("idempotency_key", ASCENDING)],
                 unique=True, name="uq_institutional_signer_event_idempotency",
