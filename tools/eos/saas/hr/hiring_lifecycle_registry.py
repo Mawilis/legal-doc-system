@@ -81,7 +81,8 @@ class HiringLifecycleRegistry:
             )
             events.create_index(
                 [("tenant_id", ASCENDING), ("idempotency_key", ASCENDING)],
-                unique=True, sparse=True, name="uq_hiring_event_idempotency",
+                unique=True, partialFilterExpression={"idempotency_key": {"$exists": True}},
+                name="uq_hiring_event_idempotency",
             )
         except PyMongoError as error:
             raise HiringLifecycleRegistryError("HIRING_INDEX_UNAVAILABLE") from error
