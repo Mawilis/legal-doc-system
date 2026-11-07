@@ -76,6 +76,7 @@ def test_signer_enrollment_requires_distinct_owner_approval_and_revocation_is_im
     tx = object()
     pending = request(registry, tx)
     assert pending["status"] == "PENDING_APPROVAL"
+    assert request(registry, tx) == pending
     assert len(events.rows) == 1
 
     with pytest.raises(InstitutionalSignerRegistryConflict, match="MAKER_CHECKER_REQUIRED"):
@@ -100,6 +101,15 @@ def test_signer_enrollment_requires_distinct_owner_approval_and_revocation_is_im
     )
     assert active["status"] == "ACTIVE"
     assert active["requested_by_principal_id"] != active["approved_by_principal_id"]
+    assert registry.approve_enrollment(
+        tenant_id="WILSYTENANT-4CD2FZ4O",
+        certificate_fingerprint_sha256="a" * 64,
+        approver_principal_id="owner-approver",
+        approval_attestation_reference="attestation://independent-review/001",
+        approved_at=datetime(2026, 11, 7, 13, tzinfo=timezone.utc),
+        idempotency_key="approve-independent",
+        session=tx,
+    ) == active
     assert registry.require_active(
         tenant_id="WILSYTENANT-4CD2FZ4O",
         certificate_fingerprint_sha256="a" * 64,
@@ -119,6 +129,15 @@ def test_signer_enrollment_requires_distinct_owner_approval_and_revocation_is_im
     )
     assert revoked["status"] == "REVOKED"
     assert revoked["crl_revocation_publication_status"] == "PENDING"
+    assert registry.revoke(
+        tenant_id="WILSYTENANT-4CD2FZ4O",
+        certificate_fingerprint_sha256="a" * 64,
+        revoked_by_principal_id="owner-revoker",
+        revoked_at=datetime(2026, 11, 7, 14, tzinfo=timezone.utc),
+        reason="Signatory mandate withdrawn",
+        idempotency_key="revoke-001",
+        session=tx,
+    ) == revoked
     with pytest.raises(InstitutionalSignerRegistryConflict, match="ACTIVE_ENROLLMENT_REQUIRED"):
         registry.require_active(
             tenant_id="WILSYTENANT-4CD2FZ4O",
