@@ -101,6 +101,8 @@ def test_source_envelope_rejects_invalid_validity_interval():
             revoked=False,
             observed_at=NOW,
             response_signature_reference="signature://response/123",
+            response_signing_key_id="dha-response-key-2026",
+            response_signature_base64=base64.b64encode(b"0" * 64).decode("ascii"),
         )
     assert error.value.code == "INSTITUTIONAL_SIGNER_SOURCE_VALIDITY_INTERVAL_INVALID"
 
