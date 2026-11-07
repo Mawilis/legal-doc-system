@@ -1,5 +1,3 @@
-            tests/unit/test_tenant_authorization.py \\
-            tests/unit/test_tenant_authorization.py \\
 name: WILSY EOS Institutional Signed-Offer Verification
 on:
   pull_request:
@@ -25,10 +23,6 @@ on:
       - "tools/eos/auth/tenant_authorization.py"
       - "tools/eos/auth/tenant_authority_policy.py"
       - "tools/eos/auth/tenant_business_role.py"
-      - "tests/unit/test_roles.py"
-      - "tests/unit/test_tenant_authority_policy.py"
-      - "tests/unit/test_tenant_business_role.py"
-      - "tests/unit/test_tenant_authorization.py"
       - "tests/unit/test_institutional_source_key_governance_evidence.py"
       - "tests/unit/test_institutional_pki.py"
       - "tests/unit/test_institutional_pki_kms.py"
@@ -38,6 +32,10 @@ on:
       - "tests/unit/test_institutional_signer_currentness.py"
       - "tests/unit/test_institutional_signer_source_adapters.py"
       - "tests/unit/test_permission_namespace.py"
+      - "tests/unit/test_roles.py"
+      - "tests/unit/test_tenant_authority_policy.py"
+      - "tests/unit/test_tenant_business_role.py"
+      - "tests/unit/test_tenant_authorization.py"
       - "tests/unit/test_hiring_signed_offer_manifest.py"
       - "tests/integration/test_institutional_signer_registry_real_mongo.py"
       - "tests/integration/test_institutional_source_signing_key_lifecycle_real_mongo.py"
@@ -102,9 +100,6 @@ jobs:
             tools/eos/auth/tenant_authorization.py \
             tools/eos/auth/tenant_authority_policy.py \
             tools/eos/auth/tenant_business_role.py \
-            tests/unit/test_roles.py \
-            tests/unit/test_tenant_authority_policy.py \
-            tests/unit/test_tenant_business_role.py \
             tools/eos/api/server.py \
             tools/eos/saas/hr/candidate_evidence_registry.py \
             tools/eos/saas/hr/candidate_evidence_s3_storage_adapter.py \
@@ -120,6 +115,7 @@ jobs:
             tests/unit/test_roles.py \
             tests/unit/test_tenant_authority_policy.py \
             tests/unit/test_tenant_business_role.py \
+            tests/unit/test_tenant_authorization.py \
             tests/unit/test_hiring_signed_offer_manifest.py \
             tests/integration/test_institutional_signer_registry_real_mongo.py \
             tests/integration/test_institutional_source_signing_key_lifecycle_real_mongo.py \
@@ -134,6 +130,10 @@ jobs:
             tests/unit/test_institutional_signer_enrollment_registry.py \
             tests/unit/test_institutional_signer_source_adapters.py \
             tests/unit/test_permission_namespace.py \
+            tests/unit/test_roles.py \
+            tests/unit/test_tenant_authority_policy.py \
+            tests/unit/test_tenant_business_role.py \
+            tests/unit/test_tenant_authorization.py \
             tests/unit/test_hiring_signed_offer_manifest.py \
             tests/integration/test_institutional_signer_registry_real_mongo.py \
             tests/integration/test_institutional_source_signing_key_lifecycle_real_mongo.py \
