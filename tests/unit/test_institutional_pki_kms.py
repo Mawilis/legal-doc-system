@@ -3,6 +3,7 @@ import json
 from cryptography import x509
 from cryptography.hazmat.primitives import hashes, serialization
 from cryptography.hazmat.primitives.asymmetric import padding, rsa
+from cryptography.hazmat.primitives.asymmetric.utils import Prehashed
 
 from tools.eos.security.institutional_pki_provisioning import (
     create_offline_root, issue_intermediate_from_kms_csr,
@@ -43,7 +44,7 @@ class FakeKMS:
         signature = self.private_key.sign(
             digest,
             padding.PSS(mgf=padding.MGF1(hashes.SHA384()), salt_length=48),
-            __import__("cryptography").hazmat.primitives.asymmetric.utils.Prehashed(hashes.SHA384()),
+            Prehashed(hashes.SHA384()),
         )
         return {"Signature": signature}
 
@@ -103,7 +104,7 @@ def test_kms_subordinate_key_rejects_wildcard_principal_before_key_creation():
             country_code="ZA",
         )
     except InstitutionalPKIKMSError as error:
-        assert error.code == "INSTITUTIONAL_KMS_EXPLICIT_PRINCIPAL_REQUIRED"
+        assert error.code == "INSTITUTIONAL_KMS_WILDCARD_OR_INVALID_PRINCIPAL"
     else:
         raise AssertionError("Wildcard KMS principal must be rejected")
     assert not kms.create_calls
