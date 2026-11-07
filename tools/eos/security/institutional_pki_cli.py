@@ -17,6 +17,7 @@ from .institutional_pki_provisioning import (
     create_offline_root,
     issue_crl,
     issue_intermediate,
+    issue_intermediate_from_kms_csr,
 )
 
 
@@ -60,6 +61,24 @@ def _intermediate(args: argparse.Namespace) -> None:
     print(f"intermediate_sha256={fingerprint}")
     print("STORE THE ROOT KEY OFFLINE; DEPLOY ONLY THE APPROVED INTERMEDIATE KEY TO AN HSM/KEY SERVICE.")
 
+
+def _intermediate_from_kms_csr(args: argparse.Namespace) -> None:
+    password = getpass("Offline root-key passphrase: ").encode("utf-8")
+    cert, fingerprint = issue_intermediate_from_kms_csr(
+        root_certificate_pem=Path(args.root_certificate),
+        root_private_key_pem=Path(args.root_private_key),
+        root_passphrase=password,
+        csr_pem=Path(args.csr).read_bytes(),
+        output_directory=Path(args.output_dir),
+        expected_common_name=args.common_name,
+        organization=args.organization,
+        crl_distribution_base_url=args.crl_base_url,
+        validity_days=args.validity_days,
+    )
+    print(f"intermediate_certificate={cert}")
+    print(f"intermediate_sha256={fingerprint}")
+    print("THE SUBORDINATE PRIVATE KEY REMAINS NON-EXPORTABLE IN KMS; DO NOT COPY PRIVATE KEY MATERIAL.")
+    
 
 def _crl(args: argparse.Namespace) -> None:
     password = getpass("Issuer private-key passphrase: ").encode("utf-8")
@@ -107,6 +126,20 @@ def build_parser() -> argparse.ArgumentParser:
     intermediate.add_argument("--crl-base-url", required=True)
     intermediate.add_argument("--validity-days", type=int, default=1825)
     intermediate.set_defaults(run=_intermediate)
+
+    kms_intermediate = commands.add_parser(
+        "issue-intermediate-kms-csr",
+        help="Offline-sign a CSR from a non-exportable KMS subordinate CA key",
+    )
+    kms_intermediate.add_argument("--root-certificate", required=True)
+    kms_intermediate.add_argument("--root-private-key", required=True)
+    kms_intermediate.add_argument("--csr", required=True)
+    kms_intermediate.add_argument("--output-dir", required=True)
+    kms_intermediate.add_argument("--common-name", required=True)
+    kms_intermediate.add_argument("--organization", required=True)
+    kms_intermediate.add_argument("--crl-base-url", required=True)
+    kms_intermediate.add_argument("--validity-days", type=int, default=1825)
+    kms_intermediate.set_defaults(run=_intermediate_from_kms_csr)
 
     crl = commands.add_parser("publish-crl", help="Issue or renew one issuer's signed CRL")
     crl.add_argument("--issuer-certificate", required=True)
