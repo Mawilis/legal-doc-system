@@ -2,7 +2,7 @@
 
 ## Status
 
-**NOT CONFIGURED — positive enrollment and approval remain denied.**
+**NOT CONFIGURED — positive enrollment and approval remain denied. Full source-snapshot persistence is implemented; no positive adapter is approved.**
 
 The EOS route composition installs `UnavailableInstitutionalSignerEvidenceVerifier`. This is intentional. No adapter may be substituted until governance names and approves the authoritative systems and their accountable owners.
 
@@ -42,17 +42,17 @@ Every adapter must be read-only and must:
 - Never create a signer, IAM membership, role, mandate, approval or certificate as a side effect.
 - Expose a documented reconciliation path for later source corrections and revocations.
 
-The adapter must produce a signed or otherwise independently verifiable evidence snapshot. MongoDB transaction atomicity covers EOS persistence only; it does not make a remote source transaction atomic. The implementation must therefore persist the complete source snapshot identity/revision and verification time, enforce a governance-approved maximum age, and reconcile revocations or superseding revisions. A fingerprint alone is not a complete audit record.
+The adapter must produce a signed or otherwise independently verifiable evidence snapshot. MongoDB transaction atomicity covers EOS persistence only; it does not make a remote source transaction atomic. EOS now persists complete source-system, record ID/revision, status, evidence fingerprint, validity interval, revocation state, verification time, evaluation time and exact subject/certificate/request scope in the enrollment/approval records and append-only event snapshots. Canonical digests are recomputed and checked at the registry boundary. This closes the fingerprint-only persistence gap; it does not itself prove that a source is authoritative or that a remote source remained current after the read. The governance-approved maximum evidence age, source revision recheck/reconciliation policy and pre-use revocation check remain unconfigured and must be approved before positive adapters can be enabled.
 
 ## Persistence and route gates
 
 Before enabling a positive verifier:
 
-1. Persist complete identity, mandate and approval provenance in the enrollment record and append-only event snapshots, including source system, record ID, revision, evidence fingerprint, status, validity and verification time.
-2. Bind provenance to the canonical tenant, principal, certificate fingerprint and exact request/approval scope.
-3. Ensure provenance and lifecycle state are written in the same caller-owned Mongo transaction; abort must leave neither state nor audit event.
-4. Re-check source currentness at approval and before any use of the signer certificate, according to the approved freshness/revocation policy.
-5. Prove duplicate/replay behavior, source revision changes, revocation races, requester/reviewer separation and outage fail-closed behavior on a real replica set.
+1. **Implemented in the provenance-snapshot branch:** persist complete identity, mandate and approval provenance in enrollment records and append-only event snapshots; reject incomplete, expired, revoked or malformed snapshots; recompute and compare canonical SHA-256 digests at the registry boundary.
+2. **Implemented in route contract:** bind provenance to the canonical tenant, principal, certificate fingerprint and exact evidence/request scope; require distinct requester and reviewer.
+3. **Implemented in transaction composition; certification pending:** provenance and lifecycle state are written through the same caller-owned Mongo transaction as the append-only event; real replica-set abort/retry proof remains required.
+4. **Partially implemented:** authoritative verification is invoked at enrollment and again at approval. A governance-approved maximum age, source revision reconciliation and pre-use source-currentness/revocation check remain unconfigured.
+5. Prove duplicate/replay behavior, source revision changes, revocation races, requester/reviewer separation, digest tampering, forced abort and outage fail-closed behavior on a real replica set.
 6. Keep revocation independent and immediately effective in EOS; CRL publication remains a separate durable obligation.
 
 ## Independent institutional review package
