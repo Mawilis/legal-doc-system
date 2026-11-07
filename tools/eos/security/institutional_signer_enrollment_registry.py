@@ -320,6 +320,8 @@ class InstitutionalSignerEnrollmentRegistry:
                 "approval_attestation_reference": attestation,
                 "approval_evidence_provenance_fingerprint_sha256": provenance,
                 "approval_evidence_provenance_snapshot": provenance_snapshot,
+                "evidence_currentness_status": "PENDING_VERIFICATION",
+                "evidence_currentness_checked_at": None,
                 "approved_at": now, "revision": current["revision"] + 1,
             })
             result = self._records.update_one({
@@ -446,6 +448,8 @@ class InstitutionalSignerEnrollmentRegistry:
             raise InstitutionalSignerRegistryError("INSTITUTIONAL_SIGNER_READ_UNAVAILABLE") from error
         if row is None:
             raise InstitutionalSignerRegistryConflict("INSTITUTIONAL_SIGNER_ACTIVE_ENROLLMENT_REQUIRED")
+        if row.get("evidence_currentness_status") != "CURRENT":
+            raise InstitutionalSignerRegistryConflict("INSTITUTIONAL_SIGNER_EVIDENCE_CURRENTNESS_NOT_VERIFIED")
         row.pop("_id", None)
         return row
 
