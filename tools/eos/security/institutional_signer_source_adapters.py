@@ -386,10 +386,9 @@ class RegistryBackedEd25519InstitutionalSignerSourceResponseAuthenticator:
         from cryptography.hazmat.primitives.asymmetric.ed25519 import Ed25519PublicKey
 
         try:
-            trust = self._registry.resolve(
+            trust = self._registry.resolve_current(
                 source_system_id=expected_source_system_id,
                 key_id=response.response_signing_key_id,
-                evaluated_at=datetime.now(timezone.utc),
                 session=self._session,
             )
         except SourceSigningKeyRegistryConflict as error:
