@@ -109,6 +109,12 @@ def test_decision_evidence_is_required_for_approved_record():
         )
 
 
+def test_requisition_round_trips_through_strict_persistence_shape():
+    value = submit().decide(approval(), expected_revision=2)
+    restored = HeadcountRequisition.from_dict(value.to_dict())
+    assert restored.to_dict() == value.to_dict()
+
+
 def test_fingerprint_detects_tampering():
     value = requisition()
     with pytest.raises(RequisitionError, match="FINGERPRINT_MISMATCH"):
