@@ -96,3 +96,6 @@ No lease duration, maximum evidence age, source polling cadence, positive adapte
 ## Reconciliation execution boundary
 
 The new orchestration function performs a short transactional enrollment read, closes that transaction, calls the authoritative source verifier outside MongoDB, then opens a separate caller-owned transaction to persist the result using the revision captured before the source call. This prevents slow or unavailable external systems from holding MongoDB transactions open. If the enrollment changes while source checks are in flight, the compare-and-set fails and the worker must restart from a fresh read; it must not retry the old verification result against a newer revision. The default verifier is unavailable, so orchestration cannot create a positive currentness result today.
+
+
+The enrollment registry also provisions a compound index over tenant, lifecycle status, currentness status and lease expiry so a future governed worker can efficiently discover pending and expired-currentness candidates. This index is not a scheduler: no polling interval or automatic retry cadence is assumed. `NOT_CURRENT` records are deliberately excluded from automatic promotion and require a new authoritative check under the approved governance process.
