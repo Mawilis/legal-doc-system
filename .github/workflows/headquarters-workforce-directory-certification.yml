@@ -26,17 +26,6 @@ jobs:
     name: Workforce directory policy, API and replica-set certification
     runs-on: ubuntu-latest
     timeout-minutes: 25
-    services:
-      mongodb:
-        image: mongo:7.0.37
-        ports:
-          - 27017:27017
-        options: >-
-          --health-cmd "mongosh --eval 'db.runCommand({ ping: 1 })'"
-          --health-interval 10s
-          --health-timeout 5s
-          --health-retries 10
-        command: mongod --replSet wilsyVendorCertRS --bind_ip_all
     env:
       TEST_VENDOR_MONGO_URI: mongodb://localhost:27017/?replicaSet=wilsyVendorCertRS
       PIP_DISABLE_PIP_VERSION_CHECK: "1"
@@ -51,11 +40,18 @@ jobs:
         run: |
           python -m pip install --upgrade pip
           python -m pip install -r requirements.txt pytest==9.1.1
-      - name: Initialise disposable MongoDB replica set
+      - name: Start and initialise disposable MongoDB replica set
         run: |
-          mongosh "mongodb://localhost:27017" --eval 'rs.initiate({_id:"wilsyVendorCertRS",members:[{_id:0,host:"localhost:27017"}]})'
+          docker run -d --name wilsy-workforce-mongo -p 27017:27017 mongo:7.0.37 mongod --replSet wilsyVendorCertRS --bind_ip_all
           for attempt in $(seq 1 30); do
-            if mongosh "mongodb://localhost:27017/?replicaSet=wilsyVendorCertRS" --quiet --eval 'db.hello().isWritablePrimary' | grep -q true; then
+            if docker exec wilsy-workforce-mongo mongosh --quiet --eval 'db.runCommand({ping:1}).ok' | grep -q 1; then
+              break
+            fi
+            sleep 2
+          done
+          docker exec wilsy-workforce-mongo mongosh --eval 'rs.initiate({_id:"wilsyVendorCertRS",members:[{_id:0,host:"localhost:27017"}]})'
+          for attempt in $(seq 1 30); do
+            if docker exec wilsy-workforce-mongo mongosh --quiet --eval 'db.hello().isWritablePrimary' | grep -q true; then
               exit 0
             fi
             sleep 2
