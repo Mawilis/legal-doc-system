@@ -350,12 +350,13 @@ class InstitutionalSourceSigningKeyLifecycleRegistry:
             raise SourceSigningKeyRegistryConflict("SOURCE_SIGNING_KEY_NOT_FOUND")
         if actor == record["proposed_by_principal_id"]:
             raise SourceSigningKeyRegistryConflict("SOURCE_SIGNING_KEY_MAKER_CHECKER_VIOLATION")
+        record_fingerprint = _record_fingerprint(record)
         command_fingerprint = sha256(_canonical({
             "source_system_id": source, "key_id": key,
             "revoked_by_principal_id": actor, "reason_reference": reason,
             "approval_evidence_reference": approval_evidence,
             "governance_decision_reference": decision,
-            "record_fingerprint_sha256": record["public_key_fingerprint_sha256"],
+            "record_fingerprint_sha256": record_fingerprint,
         })).hexdigest()
         prior = self._events.find_one(
             {"source_system_id": source, "idempotency_key": idem}, session=session,
@@ -384,7 +385,8 @@ class InstitutionalSourceSigningKeyLifecycleRegistry:
             "actor_principal_id": actor, "reason_reference": reason,
             "approval_evidence_reference": approval_evidence,
             "governance_decision_reference": decision,
-            "record_fingerprint_sha256": record["public_key_fingerprint_sha256"],
+            "record_fingerprint_sha256": record_fingerprint,
+            "public_key_fingerprint_sha256": record["public_key_fingerprint_sha256"],
             "command_fingerprint_sha256": command_fingerprint, "event_sequence": 3,
         }
         try:
