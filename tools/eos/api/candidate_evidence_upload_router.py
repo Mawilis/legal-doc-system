@@ -100,6 +100,18 @@ def _transaction(callback):
         raise HTTPException(status_code=503, detail="CANDIDATE_EVIDENCE_TRANSACTION_UNAVAILABLE") from error
 
 
+@router.on_event("startup")
+def ensure_candidate_evidence_upload_indexes() -> None:
+    """Install durable upload and custody indexes before accepting commands."""
+    _, database = _database()
+    CandidateEvidenceUploadAttemptRegistry.ensure_indexes(
+        database[ATTEMPT_COLLECTION], database[ATTEMPT_EVENT_COLLECTION],
+    )
+    CandidateEvidenceRegistry.ensure_indexes(
+        database[EVIDENCE_COLLECTION], database[EVIDENCE_EVENT_COLLECTION],
+    )
+
+
 def _storage() -> CandidateEvidenceS3StorageAdapter:
     bucket = os.getenv("WILSY_HR_CANDIDATE_EVIDENCE_S3_BUCKET", "").strip()
     region = os.getenv("WILSY_HR_CANDIDATE_EVIDENCE_S3_REGION", "").strip()
