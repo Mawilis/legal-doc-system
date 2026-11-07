@@ -377,3 +377,18 @@ def test_trust_key_requires_a_finite_validity_window():
     with pytest.raises(InstitutionalSignerSourceAdapterError) as error:
         _trust_key(public_key, valid_until=datetime(2025, 1, 1, tzinfo=timezone.utc))
     assert error.value.code == "INSTITUTIONAL_SIGNER_SOURCE_TRUSTED_KEY_VALIDITY_INVALID"
+
+
+def test_expired_key_cannot_be_resurrected_by_backdating_lookup_evaluation():
+    response, public_key = _signed_source_response()
+    authenticator = Ed25519InstitutionalSignerSourceResponseAuthenticator([
+        _trust_key(public_key, valid_until=datetime(2026, 11, 8, tzinfo=timezone.utc))
+    ])
+    historical_lookup = lookup(evaluated_at=datetime(2026, 11, 7, tzinfo=timezone.utc))
+    with pytest.raises(InstitutionalSignerSourceAdapterError) as error:
+        authenticator.authenticate_response(
+            expected_source_system_id="DHA-NPR-VERIFICATION",
+            lookup=historical_lookup,
+            response=response,
+        )
+    assert error.value.code == "INSTITUTIONAL_SIGNER_SOURCE_SIGNING_KEY_OUTSIDE_VALIDITY"
