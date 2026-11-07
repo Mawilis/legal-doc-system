@@ -2,7 +2,7 @@
 
 ## Status
 
-**NOT CONFIGURED — positive enrollment and approval remain denied.**
+**NOT CONFIGURED — positive enrollment and approval remain denied. Full source-snapshot persistence is implemented; no positive adapter is approved.**
 
 The EOS route composition installs `UnavailableInstitutionalSignerEvidenceVerifier`. This is intentional. No adapter may be substituted until governance names and approves the authoritative systems and their accountable owners.
 
@@ -28,6 +28,16 @@ Governance must identify three independently controlled evidence authorities. Th
    - Reviewer must be distinct from the requester and must possess independently established approval authority.
    - Attestation must bind the exact enrollment evidence snapshot, not merely the certificate common name or a mutable URI.
 
+## South African source-system selection notes
+
+These are candidate source authorities, not approved adapters or proof that WILSY has access:
+
+- **Natural-person identity:** the Department of Home Affairs states that its National Population Register verification service is available to private-sector clients as well as government users. WILSY must complete DHA's formal client onboarding and confirm the permitted verification purpose, assurance level, data minimisation and service terms; do not assume an unauthenticated public API. See [South African Government — DHA identity verification service, 6 July 2025](https://www.gov.za/news/media-statements/home-affairs-launch-world-class-new-identity-verification-service-and-cost).
+- **Corporate mandate:** CIPC states that company records include the Memorandum of Incorporation, director records, meeting notices/minutes and resolutions. Use CIPC records to corroborate the legal entity and director status, then verify the actual signing power and scope against the current MOI and valid company/board resolutions. A director listing alone is not evidence of authority to sign this particular institutional instrument. See [CIPC — Company Records](https://www.cipc.co.za/?page_id=2683).
+- **Independent approval:** no external government register is assumed to confer WILSY's internal approval authority. The proposed WILSY-appointed governance function and any external legal reviewer remain subject to explicit institutional appointment, separation-of-duties rules and documented approval. No committee or reviewer is configured by this implementation.
+
+The DHA and CIPC references above identify candidate authorities only. Formal access, source ownership, service contracts, legal basis, source authentication and field-level response semantics must be verified before adapter implementation.
+
 ## Adapter acceptance contract
 
 Every adapter must be read-only and must:
@@ -42,17 +52,17 @@ Every adapter must be read-only and must:
 - Never create a signer, IAM membership, role, mandate, approval or certificate as a side effect.
 - Expose a documented reconciliation path for later source corrections and revocations.
 
-The adapter must produce a signed or otherwise independently verifiable evidence snapshot. MongoDB transaction atomicity covers EOS persistence only; it does not make a remote source transaction atomic. The implementation must therefore persist the complete source snapshot identity/revision and verification time, enforce a governance-approved maximum age, and reconcile revocations or superseding revisions. A fingerprint alone is not a complete audit record.
+The adapter must produce a signed or otherwise independently verifiable evidence snapshot. MongoDB transaction atomicity covers EOS persistence only; it does not make a remote source transaction atomic. EOS now persists complete source-system, record ID/revision, original evidence reference, status, evidence fingerprint, validity interval, revocation state, verification/evaluation times, identity assurance level, legal-entity and mandate scope, approval scope, and exact tenant/principal/certificate/requester/reviewer bindings in the enrollment/approval records and append-only event snapshots. Canonical digests are recomputed and checked at the registry boundary. This closes the fingerprint-only persistence gap; it does not itself prove that a source is authoritative or that a remote source remained current after the read. The governance-approved maximum evidence age, source revision recheck/reconciliation policy and pre-use revocation check remain unconfigured and must be approved before positive adapters can be enabled.
 
 ## Persistence and route gates
 
 Before enabling a positive verifier:
 
-1. Persist complete identity, mandate and approval provenance in the enrollment record and append-only event snapshots, including source system, record ID, revision, evidence fingerprint, status, validity and verification time.
-2. Bind provenance to the canonical tenant, principal, certificate fingerprint and exact request/approval scope.
-3. Ensure provenance and lifecycle state are written in the same caller-owned Mongo transaction; abort must leave neither state nor audit event.
-4. Re-check source currentness at approval and before any use of the signer certificate, according to the approved freshness/revocation policy.
-5. Prove duplicate/replay behavior, source revision changes, revocation races, requester/reviewer separation and outage fail-closed behavior on a real replica set.
+1. **Implemented in the provenance-snapshot branch:** persist complete identity, mandate and approval provenance in enrollment records and append-only event snapshots; reject incomplete, expired, revoked or malformed snapshots; recompute and compare canonical SHA-256 digests at the registry boundary.
+2. **Implemented in route contract:** bind provenance to the canonical tenant, principal, certificate fingerprint and exact evidence/request scope; require distinct requester and reviewer.
+3. **Implemented in transaction composition; certification pending:** provenance and lifecycle state are written through the same caller-owned Mongo transaction as the append-only event; real replica-set abort/retry proof remains required.
+4. **Partially implemented:** authoritative verification is invoked at enrollment and again at approval. A governance-approved maximum age, source revision reconciliation and pre-use source-currentness/revocation check remain unconfigured.
+5. Prove duplicate/replay behavior, source revision changes, revocation races, requester/reviewer separation, digest tampering, forced abort and outage fail-closed behavior on a real replica set.
 6. Keep revocation independent and immediately effective in EOS; CRL publication remains a separate durable obligation.
 
 ## Independent institutional review package

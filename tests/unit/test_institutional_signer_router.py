@@ -10,6 +10,7 @@ from fastapi import HTTPException
 from tools.eos.api import institutional_signer_router as router
 from tools.eos.security.institutional_signer_enrollment_registry import (
     InstitutionalSignerEnrollmentRegistry,
+    InstitutionalSignerRegistryError,
 )
 
 
@@ -97,8 +98,139 @@ def test_signer_evidence_verifier_is_unavailable_by_default_and_denies_enrollmen
     assert error.value.detail == "INSTITUTIONAL_SIGNER_EVIDENCE_AUTHORITY_UNAVAILABLE"
 
 
-def test_signer_evidence_verifier_requires_a_canonical_provenance_fingerprint():
+def _evidence_record(**overrides):
+    now = datetime.now(timezone.utc)
+    values = {
+        "source_system_id": "dha-npr-verification",
+        "source_record_id": "record-001",
+        "source_revision": "revision-7",
+        "evidence_reference": "evidence://source/record-001",
+        "status": "ACTIVE",
+        "evidence_fingerprint_sha256": "e" * 64,
+        "valid_from": now.replace(year=now.year - 1),
+        "valid_until": None,
+        "revoked": False,
+        "verified_at": now,
+        "tenant_id": "WILSYTENANT-4CD2FZ4O",
+        "subject_principal_id": "PRINCIPAL-1",
+        "certificate_fingerprint_sha256": "a" * 64,
+        "identity_assurance_level": "SUBSTANTIAL",
+        "legal_entity_reference": "WILSY-PTY-LTD",
+        "mandate_scope": "INSTITUTIONAL_SIGNER",
+        "approval_scope": "INSTITUTIONAL_SIGNER_ENROLLMENT",
+    }
+    values.update(overrides)
+    return SimpleNamespace(**values)
+
+
+def test_signer_route_builds_complete_identity_and_mandate_provenance():
+    now = datetime.now(timezone.utc)
+    result = SimpleNamespace(
+        identity_proofing=_evidence_record(),
+        signatory_mandate=_evidence_record(
+            source_system_id="wilsy-company-secretarial-register",
+            source_record_id="board-resolution-009",
+            evidence_kind="SIGNATORY_MANDATE",
+            legal_entity_reference="WILSY-PTY-LTD",
+            mandate_scope="INSTITUTIONAL_SIGNER",
+        ),
+    )
+    result.identity_proofing.evidence_kind = "IDENTITY_PROOFING"
+    snapshot, digest = router._enrollment_provenance(
+        result, tenant_id="WILSYTENANT-4CD2FZ4O",
+        certificate_fingerprint_sha256="a" * 64,
+        subject_principal_id="PRINCIPAL-1",
+        identity_proofing_reference="evidence://source/record-001",
+        signatory_mandate_reference="evidence://source/record-001",
+        evaluated_at=now,
+    )
+    assert snapshot["identity_proofing"]["source_system_id"] == "dha-npr-verification"
+    assert snapshot["signatory_mandate"]["source_record_id"] == "board-resolution-009"
+    assert len(digest) == 64
+
+
+def test_signer_route_rejects_expired_or_revoked_evidence_provenance():
+    now = datetime.now(timezone.utc)
+    expired = _evidence_record(valid_until=now.replace(year=now.year - 1))
     with pytest.raises(HTTPException) as error:
-        router._provenance_fingerprint(SimpleNamespace(provenance_fingerprint_sha256="unverified"))
-    assert error.value.status_code == 503
+        router._record_provenance_snapshot(expired, evaluated_at=now, expected_bindings={})
+    assert error.value.detail == "INSTITUTIONAL_SIGNER_EVIDENCE_NOT_CURRENT"
+    revoked = _evidence_record(revoked=True)
+    with pytest.raises(HTTPException) as error:
+        router._record_provenance_snapshot(revoked, evaluated_at=now, expected_bindings={})
+    assert error.value.detail == "INSTITUTIONAL_SIGNER_EVIDENCE_NOT_CURRENT"
+
+
+
+def test_signer_provenance_persists_assurance_and_legal_mandate_scope():
+    now = datetime.now(timezone.utc)
+    result = SimpleNamespace(
+        identity_proofing=_evidence_record(evidence_kind="IDENTITY_PROOFING"),
+        signatory_mandate=_evidence_record(
+            evidence_kind="SIGNATORY_MANDATE",
+            legal_entity_reference="WILSY-PTY-LTD",
+            mandate_scope="INSTITUTIONAL_SIGNER",
+        ),
+    )
+    snapshot, _digest = router._enrollment_provenance(
+        result, tenant_id="WILSYTENANT-4CD2FZ4O",
+        certificate_fingerprint_sha256="a" * 64,
+        subject_principal_id="PRINCIPAL-1", evaluated_at=now,
+    )
+    assert snapshot["identity_proofing"]["identity_assurance_level"] == "SUBSTANTIAL"
+    assert snapshot["signatory_mandate"]["legal_entity_reference"] == "WILSY-PTY-LTD"
+    assert snapshot["signatory_mandate"]["mandate_scope"] == "INSTITUTIONAL_SIGNER"
+
+
+def test_signer_provenance_rejects_adapter_record_for_a_different_lookup_reference():
+    now = datetime.now(timezone.utc)
+    result = SimpleNamespace(
+        identity_proofing=_evidence_record(evidence_kind="IDENTITY_PROOFING"),
+        signatory_mandate=_evidence_record(evidence_kind="SIGNATORY_MANDATE"),
+    )
+    with pytest.raises(HTTPException) as error:
+        router._enrollment_provenance(
+            result, tenant_id="WILSYTENANT-4CD2FZ4O",
+            certificate_fingerprint_sha256="a" * 64,
+            subject_principal_id="PRINCIPAL-1",
+            identity_proofing_reference="evidence://identity/expected",
+            signatory_mandate_reference="evidence://mandate/expected",
+            evaluated_at=now,
+        )
     assert error.value.detail == "INSTITUTIONAL_SIGNER_EVIDENCE_PROVENANCE_INVALID"
+
+
+def test_signer_registry_rejects_caller_supplied_provenance_digest_mismatch():
+    now = datetime.now(timezone.utc)
+    result = SimpleNamespace(
+        identity_proofing=_evidence_record(evidence_kind="IDENTITY_PROOFING"),
+        signatory_mandate=_evidence_record(evidence_kind="SIGNATORY_MANDATE"),
+    )
+    snapshot, _digest = router._enrollment_provenance(
+        result, tenant_id="WILSYTENANT-4CD2FZ4O",
+        certificate_fingerprint_sha256="a" * 64,
+        subject_principal_id="PRINCIPAL-1", evaluated_at=now,
+    )
+
+    class _NeverRead:
+        def find_one(self, *_args, **_kwargs):
+            raise AssertionError("digest mismatch must fail before any database read")
+
+    registry = InstitutionalSignerEnrollmentRegistry(_NeverRead(), _NeverRead())
+    with pytest.raises(InstitutionalSignerRegistryError) as error:
+        registry.request_enrollment(
+            tenant_id="WILSYTENANT-4CD2FZ4O",
+            certificate_fingerprint_sha256="a" * 64,
+            certificate_serial_number_hex="abc123",
+            subject_common_name="WILSY Authorised Signatory",
+            issuer_common_name="WILSY Intermediate CA",
+            issuer_subject_sha256="c" * 64,
+            trust_root_sha256="b" * 64,
+            identity_proofing_evidence_reference="evidence://identity/1",
+            signatory_mandate_evidence_reference="evidence://mandate/1",
+            requested_by_principal_id="PRINCIPAL-1",
+            requested_at=now, idempotency_key="request-digest-mismatch",
+            session=object(), evidence_provenance_fingerprint_sha256="0" * 64,
+            evidence_provenance_snapshot=snapshot,
+        )
+    assert error.value.code == "INSTITUTIONAL_SIGNER_EVIDENCE_PROVENANCE_DIGEST_MISMATCH"

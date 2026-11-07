@@ -8,6 +8,8 @@ All writes require a caller-owned Mongo transaction.
 from __future__ import annotations
 
 from datetime import datetime, timezone
+from hashlib import sha256
+import json
 import re
 from typing import Any
 
@@ -58,6 +60,70 @@ def _instant(value: datetime) -> datetime:
     return value.astimezone(timezone.utc)
 
 
+def _provenance_digest(value: dict[str, Any]) -> str:
+    canonical = json.dumps(
+        value, sort_keys=True, separators=(",", ":"),
+        default=lambda item: item.isoformat() if isinstance(item, datetime) else item,
+    )
+    return sha256(canonical.encode("utf-8")).hexdigest()
+
+
+def _validated_provenance_snapshot(value: object) -> dict[str, Any] | None:
+    """Accept only complete, bounded source snapshots from the verifier boundary."""
+    if value is None:
+        return None
+    if not isinstance(value, dict):
+        raise InstitutionalSignerRegistryError("INSTITUTIONAL_SIGNER_EVIDENCE_PROVENANCE_INVALID")
+    schema = value.get("schema")
+    if schema == "wilsy.institutional.signer.enrollment_provenance.v1":
+        identity = _validated_provenance_snapshot(value.get("identity_proofing"))
+        mandate = _validated_provenance_snapshot(value.get("signatory_mandate"))
+        if identity is None or mandate is None:
+            raise InstitutionalSignerRegistryError("INSTITUTIONAL_SIGNER_EVIDENCE_PROVENANCE_INCOMPLETE")
+        if identity.get("tenant_id") != mandate.get("tenant_id") or identity.get("certificate_fingerprint_sha256") != mandate.get("certificate_fingerprint_sha256") or identity.get("subject_principal_id") != mandate.get("subject_principal_id"):
+            raise InstitutionalSignerRegistryError("INSTITUTIONAL_SIGNER_EVIDENCE_SCOPE_MISMATCH")
+        return {"schema": schema, "identity_proofing": identity, "signatory_mandate": mandate}
+    if schema != "wilsy.institutional.signer.evidence_provenance.v1":
+        raise InstitutionalSignerRegistryError("INSTITUTIONAL_SIGNER_EVIDENCE_PROVENANCE_INVALID")
+    required = ("source_system_id", "source_record_id", "source_revision", "evidence_reference", "status",
+                "evidence_fingerprint_sha256", "verified_at", "valid_from", "valid_until",
+                "revoked", "evaluated_at", "tenant_id", "certificate_fingerprint_sha256",
+                "evidence_kind")
+    for field in required:
+        if field not in value:
+            raise InstitutionalSignerRegistryError("INSTITUTIONAL_SIGNER_EVIDENCE_PROVENANCE_INCOMPLETE")
+    for field in ("source_system_id", "source_record_id", "source_revision", "evidence_reference", "status",
+                  "tenant_id", "evidence_kind"):
+        _text(value[field], "INSTITUTIONAL_SIGNER_EVIDENCE_PROVENANCE_INVALID", 512)
+    _fingerprint(value["evidence_fingerprint_sha256"])
+    _fingerprint(value["certificate_fingerprint_sha256"])
+    for field in ("verified_at", "valid_from", "evaluated_at"):
+        _instant(value[field])
+    if value["valid_until"] is not None:
+        _instant(value["valid_until"])
+    if type(value["revoked"]) is not bool or value["revoked"] is not False:
+        raise InstitutionalSignerRegistryError("INSTITUTIONAL_SIGNER_EVIDENCE_REVOKED")
+    if value["status"] not in ("ACTIVE", "VERIFIED"):
+        raise InstitutionalSignerRegistryError("INSTITUTIONAL_SIGNER_EVIDENCE_NOT_CURRENT")
+    if value["valid_from"] > value["evaluated_at"] or (
+        value["valid_until"] is not None and value["valid_until"] <= value["evaluated_at"]
+    ) or value["verified_at"] > value["evaluated_at"]:
+        raise InstitutionalSignerRegistryError("INSTITUTIONAL_SIGNER_EVIDENCE_NOT_CURRENT")
+    kind = value["evidence_kind"]
+    scope_fields = {
+        "IDENTITY_PROOFING": ("subject_principal_id", "identity_assurance_level"),
+        "SIGNATORY_MANDATE": ("subject_principal_id", "legal_entity_reference", "mandate_scope"),
+        "INDEPENDENT_APPROVAL": ("enrollment_requester_principal_id", "reviewer_principal_id", "approval_scope"),
+    }.get(kind)
+    if scope_fields is None:
+        raise InstitutionalSignerRegistryError("INSTITUTIONAL_SIGNER_EVIDENCE_KIND_INVALID")
+    for field in scope_fields:
+        _text(value.get(field), "INSTITUTIONAL_SIGNER_EVIDENCE_SCOPE_INCOMPLETE", 512)
+    if kind == "INDEPENDENT_APPROVAL" and value["enrollment_requester_principal_id"] == value["reviewer_principal_id"]:
+        raise InstitutionalSignerRegistryError("INSTITUTIONAL_SIGNER_MAKER_CHECKER_REQUIRED")
+    return dict(value)
+
+
 class InstitutionalSignerEnrollmentRegistry:
     """Persist pending, active and revoked signer authority with append-only events."""
 
@@ -97,6 +163,7 @@ class InstitutionalSignerEnrollmentRegistry:
         requested_by_principal_id: str, requested_at: datetime,
         idempotency_key: str, session: object,
         evidence_provenance_fingerprint_sha256: str | None = None,
+        evidence_provenance_snapshot: dict[str, Any] | None = None,
     ) -> dict[str, Any]:
         if session is None:
             raise InstitutionalSignerRegistryError("INSTITUTIONAL_SIGNER_CALLER_TRANSACTION_REQUIRED")
@@ -112,6 +179,22 @@ class InstitutionalSignerEnrollmentRegistry:
             _fingerprint(evidence_provenance_fingerprint_sha256)
             if evidence_provenance_fingerprint_sha256 is not None else None
         )
+        provenance_snapshot = _validated_provenance_snapshot(evidence_provenance_snapshot)
+        if (provenance is None) != (provenance_snapshot is None):
+            raise InstitutionalSignerRegistryError("INSTITUTIONAL_SIGNER_EVIDENCE_PROVENANCE_INCOMPLETE")
+        if provenance_snapshot is not None and _provenance_digest(provenance_snapshot) != provenance:
+            raise InstitutionalSignerRegistryError("INSTITUTIONAL_SIGNER_EVIDENCE_PROVENANCE_DIGEST_MISMATCH")
+        if provenance_snapshot is not None:
+            identity = provenance_snapshot["identity_proofing"]
+            mandate_snapshot = provenance_snapshot["signatory_mandate"]
+            if (identity.get("tenant_id") != tenant or mandate_snapshot.get("tenant_id") != tenant
+                or identity.get("certificate_fingerprint_sha256") != fingerprint
+                or mandate_snapshot.get("certificate_fingerprint_sha256") != fingerprint
+                or identity.get("subject_principal_id") != requester
+                or mandate_snapshot.get("subject_principal_id") != requester
+                or identity.get("evidence_kind") != "IDENTITY_PROOFING"
+                or mandate_snapshot.get("evidence_kind") != "SIGNATORY_MANDATE"):
+                raise InstitutionalSignerRegistryError("INSTITUTIONAL_SIGNER_EVIDENCE_SCOPE_MISMATCH")
         prior_event = self._events.find_one({
             "tenant_id": tenant, "idempotency_key": key,
         }, session=session)
@@ -126,6 +209,7 @@ class InstitutionalSignerEnrollmentRegistry:
                 or snapshot.get("identity_proofing_evidence_reference") != proofing
                 or snapshot.get("signatory_mandate_evidence_reference") != mandate
                 or snapshot.get("evidence_provenance_fingerprint_sha256") != provenance
+                or snapshot.get("evidence_provenance_snapshot") != provenance_snapshot
             ):
                 raise InstitutionalSignerRegistryConflict("INSTITUTIONAL_SIGNER_DIVERGENT_REPLAY")
             return snapshot
@@ -140,6 +224,7 @@ class InstitutionalSignerEnrollmentRegistry:
             "identity_proofing_evidence_reference": proofing,
             "signatory_mandate_evidence_reference": mandate,
             "evidence_provenance_fingerprint_sha256": provenance,
+            "evidence_provenance_snapshot": provenance_snapshot,
             "requested_by_principal_id": requester,
             "requested_at": now,
             "approved_by_principal_id": None,
@@ -177,6 +262,7 @@ class InstitutionalSignerEnrollmentRegistry:
         approver_principal_id: str, approval_attestation_reference: str,
         approved_at: datetime, idempotency_key: str, session: object,
         evidence_provenance_fingerprint_sha256: str | None = None,
+        approval_evidence_provenance_snapshot: dict[str, Any] | None = None,
     ) -> dict[str, Any]:
         if session is None:
             raise InstitutionalSignerRegistryError("INSTITUTIONAL_SIGNER_CALLER_TRANSACTION_REQUIRED")
@@ -189,6 +275,17 @@ class InstitutionalSignerEnrollmentRegistry:
             _fingerprint(evidence_provenance_fingerprint_sha256)
             if evidence_provenance_fingerprint_sha256 is not None else None
         )
+        provenance_snapshot = _validated_provenance_snapshot(approval_evidence_provenance_snapshot)
+        if (provenance is None) != (provenance_snapshot is None):
+            raise InstitutionalSignerRegistryError("INSTITUTIONAL_SIGNER_EVIDENCE_PROVENANCE_INCOMPLETE")
+        if provenance_snapshot is not None and _provenance_digest(provenance_snapshot) != provenance:
+            raise InstitutionalSignerRegistryError("INSTITUTIONAL_SIGNER_EVIDENCE_PROVENANCE_DIGEST_MISMATCH")
+        if provenance_snapshot is not None:
+            if (provenance_snapshot.get("tenant_id") != tenant
+                or provenance_snapshot.get("certificate_fingerprint_sha256") != fingerprint
+                or provenance_snapshot.get("reviewer_principal_id") != approver
+                or provenance_snapshot.get("evidence_kind") != "INDEPENDENT_APPROVAL"):
+                raise InstitutionalSignerRegistryError("INSTITUTIONAL_SIGNER_EVIDENCE_SCOPE_MISMATCH")
         key = _text(idempotency_key, "INSTITUTIONAL_SIGNER_IDEMPOTENCY_INVALID", 200)
         prior_event = self._events.find_one({"tenant_id": tenant, "idempotency_key": key}, session=session)
         if prior_event is not None:
@@ -200,6 +297,7 @@ class InstitutionalSignerEnrollmentRegistry:
                 or snapshot.get("certificate_fingerprint_sha256") != fingerprint
                 or snapshot.get("approval_attestation_reference") != attestation
                 or snapshot.get("approval_evidence_provenance_fingerprint_sha256") != provenance
+                or snapshot.get("approval_evidence_provenance_snapshot") != provenance_snapshot
             ):
                 raise InstitutionalSignerRegistryConflict("INSTITUTIONAL_SIGNER_DIVERGENT_REPLAY")
             return snapshot
@@ -211,6 +309,8 @@ class InstitutionalSignerEnrollmentRegistry:
                 raise InstitutionalSignerRegistryNotFound("INSTITUTIONAL_SIGNER_ENROLLMENT_NOT_FOUND")
             if current.get("status") != "PENDING_APPROVAL":
                 raise InstitutionalSignerRegistryConflict("INSTITUTIONAL_SIGNER_NOT_PENDING_APPROVAL")
+            if provenance_snapshot is not None and provenance_snapshot.get("enrollment_requester_principal_id") != current.get("requested_by_principal_id"):
+                raise InstitutionalSignerRegistryError("INSTITUTIONAL_SIGNER_EVIDENCE_SCOPE_MISMATCH")
             if current.get("requested_by_principal_id") == approver:
                 raise InstitutionalSignerRegistryConflict("INSTITUTIONAL_SIGNER_MAKER_CHECKER_REQUIRED")
             updated = dict(current)
@@ -219,6 +319,7 @@ class InstitutionalSignerEnrollmentRegistry:
                 "status": "ACTIVE", "approved_by_principal_id": approver,
                 "approval_attestation_reference": attestation,
                 "approval_evidence_provenance_fingerprint_sha256": provenance,
+                "approval_evidence_provenance_snapshot": provenance_snapshot,
                 "approved_at": now, "revision": current["revision"] + 1,
             })
             result = self._records.update_one({
