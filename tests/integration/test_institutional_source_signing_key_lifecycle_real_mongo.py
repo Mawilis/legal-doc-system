@@ -58,7 +58,7 @@ def test_enrollment_expiry_revocation_and_rotation_are_transactional():
         def transaction(session):
             first = registry.enroll(
                 source_system_id=source, key_id="key-1", public_key_bytes=first_key,
-                valid_from=now, valid_until=now + timedelta(hours=4),
+                valid_from=now - timedelta(hours=2), valid_until=now + timedelta(hours=4),
                 governance_decision_reference="test-governance-001",
                 approved_by_principal_id="test-approver",
                 enrolled_at=now, idempotency_key="enroll-1", session=session,
@@ -82,7 +82,7 @@ def test_enrollment_expiry_revocation_and_rotation_are_transactional():
 
             successor = registry.enroll(
                 source_system_id=source, key_id="key-2", public_key_bytes=second_key,
-                valid_from=now + timedelta(hours=1),
+                valid_from=now - timedelta(hours=1),
                 valid_until=now + timedelta(hours=8),
                 governance_decision_reference="test-governance-rotation-002",
                 approved_by_principal_id="test-approver",
@@ -107,7 +107,7 @@ def test_enrollment_expiry_revocation_and_rotation_are_transactional():
 
             revoked = registry.revoke(
                 source_system_id=source, key_id="key-2",
-                revoked_at=now + timedelta(hours=3),
+                revoked_at=now,
                 reason_reference="test-revocation-003",
                 revoked_by_principal_id="test-revoker",
                 governance_decision_reference="test-governance-revocation-003",
@@ -117,12 +117,12 @@ def test_enrollment_expiry_revocation_and_rotation_are_transactional():
             with pytest.raises(SourceSigningKeyRegistryConflict, match="REVOKED"):
                 registry.resolve(
                     source_system_id=source, key_id="key-2",
-                    evaluated_at=now + timedelta(hours=3), session=session,
+                    evaluated_at=now, session=session,
                 )
             # Historical evaluation before the revocation remains reproducible.
             assert registry.resolve(
                 source_system_id=source, key_id="key-2",
-                evaluated_at=now + timedelta(hours=2, minutes=30), session=session,
+                evaluated_at=now - timedelta(minutes=1), session=session,
             )["key_id"] == "key-2"
 
             replay = registry.enroll(
