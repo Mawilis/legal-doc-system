@@ -143,3 +143,20 @@ The first vertical slice should prove Vehicle Imports end-to-end. The domain cap
 ## Consequences
 
 This adds a small platform layer for pack schema, compatibility and configuration governance. It avoids a customer-by-customer codebase while preserving independently owned business domains. The up-front discipline is intentional: a workflow is reusable only after its authority, evidence, persistence and lifecycle semantics are defined.
+
+
+## Existing EOS catalogue alignment — important implementation constraint
+
+The current canonical `TenantProductId` catalogue is a closed set: Legal Operations, Billing, CRM, POS, HR, Operations and Intelligence. The server-issued tenant module manifest is derived from canonical entitlement evidence and is explicitly not principal authorization.
+
+Therefore an industry pack is **not** a tenant product, module entitlement, permission bundle or shortcut into the module manifest. Do not add `VEHICLE_IMPORTS` as a product merely because Royal needs a Vehicle Imports workspace.
+
+The first Vehicle Imports capability should be delivered under an existing entitled product boundary (most naturally Operations, subject to the actual catalogue/permission design) with its own domain registry, route permissions and scoped reads/commands. A separately sellable product can be considered only after a deliberate product-catalogue, subscription/entitlement lifecycle, manifest, permission metadata and certification change. Pack selection alone must never make it appear as an entitled module.
+
+This preserves the current distinction:
+- **Product/module:** commercial entitlement and workspace discovery.
+- **Capability:** independently owned business-domain behavior and source of truth.
+- **Industry pack:** declarative composition of capabilities and workflow templates.
+- **Tenant configuration:** validated settings and staff/location bindings, never authority.
+
+The first reusable platform release should not expand the closed product catalogue or change existing product fingerprints.
