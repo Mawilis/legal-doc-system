@@ -12,6 +12,7 @@ from pathlib import Path
 import sys
 
 import boto3
+from botocore.exceptions import BotoCoreError, ClientError
 
 from .institutional_pki_kms import (
     InstitutionalPKIKMSError,
@@ -92,7 +93,7 @@ def main() -> int:
     except InstitutionalPKIKMSError as error:
         print(error.code, file=sys.stderr)
         return 2
-    except (OSError, ValueError, boto3.exceptions.Boto3Error) as error:
+    except (OSError, ValueError, BotoCoreError, ClientError) as error:
         del error
         print("INSTITUTIONAL_KMS_PROVISIONING_FAILED", file=sys.stderr)
         return 2
