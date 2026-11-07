@@ -85,7 +85,7 @@ def test_enrollment_expiry_revocation_and_rotation_are_transactional():
                 source_system_id=source, key_id="key-1", approved_by_principal_id="test-approver",
                 governance_decision_reference="test-governance-001",
                 approval_evidence_reference="approval-evidence-001",
-                approved_at=now - timedelta(seconds=45), idempotency_key="approve-1", session=session,
+                approved_at=now + timedelta(hours=5), idempotency_key="approve-1", session=session,
             )
             assert approval_replay["occurred_at"] == now - timedelta(minutes=1)
             assert first["key_id"] == "key-1"
@@ -159,7 +159,7 @@ def test_enrollment_expiry_revocation_and_rotation_are_transactional():
             assert revoked["approval_evidence_reference"] == "test-revocation-approval-evidence"
             revocation_replay = registry.revoke(
                 source_system_id=source, key_id="key-2",
-                revoked_at=now - timedelta(seconds=1),
+                revoked_at=now + timedelta(hours=5),
                 reason_reference="test-revocation-003",
                 approval_evidence_reference="test-revocation-approval-evidence",
                 revoked_by_principal_id="test-revoker",
@@ -184,7 +184,7 @@ def test_enrollment_expiry_revocation_and_rotation_are_transactional():
                 proposed_by_principal_id="test-requester", proposal_reference="proposal-001",
                 identity_proofing_evidence_reference="identity-evidence-001",
                 source_authority_evidence_reference="source-authority-evidence-001",
-                proposed_at=now - timedelta(minutes=3), idempotency_key="propose-1", session=session,
+                proposed_at=now + timedelta(hours=5), idempotency_key="propose-1", session=session,
             )
             assert replay["key_id"] == "key-1"
             assert events.count_documents({"source_system_id": source}, session=session) == 5
