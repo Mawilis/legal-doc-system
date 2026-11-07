@@ -1,4 +1,5 @@
 from datetime import datetime, timedelta, timezone
+from dataclasses import replace
 
 import pytest
 
@@ -38,7 +39,7 @@ def test_candidate_profile_metadata_is_immutable_and_round_trips_without_binary_
     assert hydrated == value
     assert "content_bytes" not in value.to_dict()
     assert "candidate_name" not in value.to_dict()
-    assert value.fingerprint == "a" * 128 or len(value.fingerprint) == 128
+    assert len(value.fingerprint) == 128
 
 
 def test_signed_offer_evidence_requires_exact_offer_scope():
@@ -55,13 +56,7 @@ def test_profile_evidence_cannot_be_mislabelled_as_offer_evidence():
 
 def test_retention_cannot_precede_custody_creation():
     with pytest.raises(CandidateEvidenceError, match="RETENTION_INVALID"):
-        CandidateEvidenceObjectMetadata(
-            **{
-                **evidence().to_dict(),
-                "created_at": NOW.isoformat(),
-                "retention_until": (NOW - timedelta(days=1)).isoformat(),
-            }
-        )
+        replace(evidence(), retention_until=NOW - timedelta(days=1))
 
 
 def test_metadata_fingerprint_detects_tampering():
