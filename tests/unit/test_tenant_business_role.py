@@ -1,5 +1,5 @@
 """TITLE: WILSY OS Tenant Business-Role Authority Certificate.
-VERSION: v1.1.0-M11-R8-R3B-P8-P3A-CERT
+VERSION: v1.2.0-INSTITUTIONAL-SOURCE-KEY-ADMIN-CERT
 AUTHORITY: Pure value-contract certification only.
 EPITOME: Certifies immutable, explicit, scope-bound business-role evidence.
 ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/tests/unit/test_tenant_business_role.py
