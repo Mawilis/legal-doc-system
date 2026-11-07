@@ -520,3 +520,14 @@ _BINDINGS = MappingProxyType({
     "pos_refund_create": "pos:refund:create",
     "pos_movement_authorize": "pos:payment:authorize",
 })
+\n# Candidate and offer commands have independent exact tenant IAM bindings.\n_BINDINGS = MappingProxyType({**_BINDINGS,
+    "hr_hiring_candidate_read": "hr:hiring_candidate:read",
+    "hr_hiring_candidate_create": "hr:hiring_candidate:create",
+    "hr_hiring_candidate_transition": "hr:hiring_candidate:transition",
+    "hr_hiring_offer_read": "hr:hiring_offer:read",
+    "hr_hiring_offer_create": "hr:hiring_offer:create",
+    "hr_hiring_offer_submit": "hr:hiring_offer:submit",
+    "hr_hiring_offer_decide": "hr:hiring_offer:decide",
+    "hr_hiring_offer_send": "hr:hiring_offer:send",
+    "hr_hiring_offer_accept": "hr:hiring_offer:accept",
+})\n
