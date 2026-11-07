@@ -5,7 +5,7 @@ import os
 import json
 from hashlib import sha256
 import uuid
-from datetime import datetime, timezone
+from datetime import datetime, timedelta, timezone
 
 import pytest
 from pymongo import MongoClient
@@ -183,7 +183,7 @@ def test_signer_enrollment_approval_and_revocation_are_atomic_on_replica_set():
             stale_result = _verified_currentness(
                 tenant_id="WILSYTENANT-4CD2FZ4O", fingerprint="a" * 64,
                 revision=active["revision"] - 1, status="CURRENT", checked_at=now,
-                valid_until=now.replace(minute=now.minute + 5), provenance=currentness_provenance,
+                valid_until=now + timedelta(minutes=5), provenance=currentness_provenance,
             )
             with pytest.raises(InstitutionalSignerRegistryConflict, match="CURRENTNESS_REVISION_CONFLICT"):
                 registry.record_verified_currentness(
