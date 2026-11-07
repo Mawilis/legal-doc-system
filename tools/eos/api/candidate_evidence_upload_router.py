@@ -14,6 +14,8 @@ from typing import Any, AsyncIterable
 
 import boto3
 from fastapi import APIRouter, Depends, Header, HTTPException, Request
+from fastapi.responses import StreamingResponse
+from starlette.background import BackgroundTask
 from pymongo.read_concern import ReadConcern
 from pymongo.read_preferences import ReadPreference
 from pymongo.write_concern import WriteConcern
@@ -68,6 +70,10 @@ router = APIRouter(prefix="/hr/hiring", tags=["Candidate Evidence"])
 _UPLOAD = RequireTenantAuthorization(
     "hr:hiring_candidate_evidence:upload",
     "hr_hiring_candidate_evidence_upload",
+)
+_READ = RequireTenantAuthorization(
+    "hr:hiring_candidate_evidence:read",
+    "hr_hiring_candidate_evidence_read",
 )
 
 _ALLOWED_MEDIA_PREFIXES = ("application/pdf", "image/", "application/msword",
@@ -307,4 +313,47 @@ async def upload_candidate_evidence(
     }
 
 
-__all__ = ["router", "upload_candidate_evidence"]
+@router.get("/candidates/{candidate_id}/evidence/{evidence_id}/{evidence_version_id}")
+async def read_candidate_evidence(
+    candidate_id: str,
+    evidence_id: str,
+    evidence_version_id: str,
+    context: TenantAuthorizationContext = Depends(_READ),
+):
+    """Read exact-version evidence only after tenant-scoped custody and byte verification."""
+    _, database = _database()
+    _, _, custody = _registries(database)
+
+    def load(tx):
+        try:
+            return custody.get(
+                tenant_id=context.tenant_id,
+                candidate_id=candidate_id,
+                evidence_id=evidence_id,
+                evidence_version_id=evidence_version_id,
+                session=tx,
+            )
+        except CandidateEvidenceRegistryNotFound as error:
+            raise HTTPException(status_code=404, detail="CANDIDATE_EVIDENCE_NOT_FOUND") from error
+
+    metadata = _transaction(load)
+    storage = _storage()
+    try:
+        verified_file = await asyncio.to_thread(storage.read_verified_object, metadata)
+    except CandidateEvidenceS3Error as error:
+        raise HTTPException(status_code=503, detail=error.code) from error
+
+    return StreamingResponse(
+        iter(lambda: verified_file.read(64 * 1024), b""),
+        media_type=metadata.media_type,
+        headers={
+            "Content-Length": str(metadata.byte_length),
+            "Content-Disposition": "attachment",
+            "Cache-Control": "no-store",
+            "X-Content-Digest-SHA3-512": metadata.content_digest_sha3_512,
+        },
+        background=BackgroundTask(verified_file.close),
+    )
+
+
+__all__ = ["router", "upload_candidate_evidence", "read_candidate_evidence"]
