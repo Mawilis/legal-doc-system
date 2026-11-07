@@ -16,6 +16,10 @@ from pymongo.write_concern import WriteConcern
 from tools.eos.api.tenant_authorization_http import RequireTenantAuthorization, TenantAuthorizationContext
 from tools.eos.kernel.db import get_client, get_database
 from tools.eos.security.institutional_pki import InstitutionalPKIError, InstitutionalPKIVerifier
+from tools.eos.security.institutional_signer_evidence_verifier import (
+    InstitutionalSignerEvidenceVerificationError,
+    UnavailableInstitutionalSignerEvidenceVerifier,
+)
 from tools.eos.security.institutional_signer_enrollment_registry import (
     COLLECTION, EVENT_COLLECTION, INSTITUTIONAL_TENANT_ID, InstitutionalSignerEnrollmentRegistry,
     InstitutionalSignerRegistryConflict, InstitutionalSignerRegistryError,
@@ -81,6 +85,44 @@ def _verifier(request) -> InstitutionalPKIVerifier:
     return verifier
 
 
+
+def _evidence_verifier(request):
+    verifier = getattr(request.app.state, "institutional_signer_evidence_verifier", None)
+    if verifier is None or not callable(getattr(verifier, "verify_enrollment", None)) or not callable(getattr(verifier, "verify_approval", None)):
+        raise HTTPException(status_code=503, detail="INSTITUTIONAL_SIGNER_EVIDENCE_VERIFIER_UNAVAILABLE")
+    return verifier
+
+
+def _verify_enrollment_evidence(verifier, *, tenant_id, certificate_fingerprint_sha256, subject_principal_id, identity_proofing_reference, signatory_mandate_reference, evaluated_at, session):
+    try:
+        return verifier.verify_enrollment(
+            tenant_id=tenant_id,
+            certificate_fingerprint_sha256=certificate_fingerprint_sha256,
+            subject_principal_id=subject_principal_id,
+            identity_proofing_reference=identity_proofing_reference,
+            signatory_mandate_reference=signatory_mandate_reference,
+            evaluated_at=evaluated_at,
+            session=session,
+        )
+    except InstitutionalSignerEvidenceVerificationError as error:
+        raise HTTPException(status_code=503, detail=error.code) from error
+
+
+def _verify_approval_evidence(verifier, *, tenant_id, certificate_fingerprint_sha256, enrollment_requester_principal_id, reviewer_principal_id, approval_attestation_reference, evaluated_at, session):
+    try:
+        return verifier.verify_approval(
+            tenant_id=tenant_id,
+            certificate_fingerprint_sha256=certificate_fingerprint_sha256,
+            enrollment_requester_principal_id=enrollment_requester_principal_id,
+            reviewer_principal_id=reviewer_principal_id,
+            approval_attestation_reference=approval_attestation_reference,
+            evaluated_at=evaluated_at,
+            session=session,
+        )
+    except InstitutionalSignerEvidenceVerificationError as error:
+        raise HTTPException(status_code=503, detail=error.code) from error
+
+
 def _transaction(callback):
     client, database = get_client(), get_database()
     if client is None or database is None:
@@ -117,6 +159,7 @@ async def request_signer_enrollment(
 ):
     _require_institutional_tenant(context)
     verifier = _verifier(request)
+    evidence_verifier = _evidence_verifier(request)
     leaf_pem, intermediates = _decode_chain(body)
     now = datetime.now(timezone.utc)
     try:
@@ -141,7 +184,18 @@ async def request_signer_enrollment(
         raise HTTPException(status_code=status, detail=error.code) from error
     except Exception as error:
         raise HTTPException(status_code=422, detail="INSTITUTIONAL_SIGNER_CERTIFICATE_INVALID") from error
-    return _transaction(lambda registry, tx: registry.request_enrollment(
+    def persist_enrollment(registry, tx):
+        _verify_enrollment_evidence(
+            evidence_verifier,
+            tenant_id=context.tenant_id,
+            certificate_fingerprint_sha256=receipt.leaf_fingerprint_sha256,
+            subject_principal_id=context.identity.identity_id,
+            identity_proofing_reference=body.identity_proofing_evidence_reference,
+            signatory_mandate_reference=body.signatory_mandate_evidence_reference,
+            evaluated_at=now,
+            session=tx,
+        )
+        return registry.request_enrollment(
         tenant_id=context.tenant_id,
         certificate_fingerprint_sha256=receipt.leaf_fingerprint_sha256,
         certificate_serial_number_hex=receipt.serial_number_hex,
@@ -153,7 +207,9 @@ async def request_signer_enrollment(
         signatory_mandate_evidence_reference=body.signatory_mandate_evidence_reference,
         requested_by_principal_id=context.identity.identity_id,
         requested_at=now, idempotency_key=idempotency_key, session=tx,
-    ))
+        )
+
+    return _transaction(persist_enrollment)
 
 
 @router.post("/enrollments/{certificate_fingerprint_sha256}/approve")
@@ -166,6 +222,7 @@ async def approve_signer_enrollment(
 ):
     _require_institutional_tenant(context)
     verifier = _verifier(request)
+    evidence_verifier = _evidence_verifier(request)
     leaf_pem, intermediates = _decode_chain(body)
     try:
         receipt = verifier.verify(
@@ -177,14 +234,32 @@ async def approve_signer_enrollment(
         raise HTTPException(status_code=status, detail=error.code) from error
     if receipt.leaf_fingerprint_sha256 != certificate_fingerprint_sha256:
         raise HTTPException(status_code=409, detail="INSTITUTIONAL_SIGNER_CERTIFICATE_FINGERPRINT_MISMATCH")
-    return _transaction(lambda registry, tx: registry.approve_enrollment(
+    def persist_approval(registry, tx):
+        enrollment = registry.get_enrollment(
+            tenant_id=context.tenant_id,
+            certificate_fingerprint_sha256=certificate_fingerprint_sha256,
+            session=tx,
+        )
+        _verify_approval_evidence(
+            evidence_verifier,
+            tenant_id=context.tenant_id,
+            certificate_fingerprint_sha256=certificate_fingerprint_sha256,
+            enrollment_requester_principal_id=enrollment["requested_by_principal_id"],
+            reviewer_principal_id=context.identity.identity_id,
+            approval_attestation_reference=body.approval_attestation_reference,
+            evaluated_at=datetime.now(timezone.utc),
+            session=tx,
+        )
+        return registry.approve_enrollment(
         tenant_id=context.tenant_id,
         certificate_fingerprint_sha256=certificate_fingerprint_sha256,
         approver_principal_id=context.identity.identity_id,
         approval_attestation_reference=body.approval_attestation_reference,
         approved_at=datetime.now(timezone.utc),
         idempotency_key=idempotency_key, session=tx,
-    ))
+        )
+
+    return _transaction(persist_approval)
 
 
 @router.post("/enrollments/{certificate_fingerprint_sha256}/revoke")
