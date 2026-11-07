@@ -67,7 +67,7 @@ def test_enrollment_expiry_revocation_and_rotation_are_transactional():
                 proposed_at=now - timedelta(minutes=4), idempotency_key="propose-1", session=session,
             )
             with pytest.raises(SourceSigningKeyRegistryConflict, match="NOT_INDEPENDENTLY_APPROVED"):
-                registry.resolve(source_system_id=source, key_id="key-1", evaluated_at=now, session=session)
+                registry.resolve_historical(source_system_id=source, key_id="key-1", evaluated_at=now, session=session)
             with pytest.raises(SourceSigningKeyRegistryConflict, match="MAKER_CHECKER_VIOLATION"):
                 registry.approve(
                     source_system_id=source, key_id="key-1", approved_by_principal_id="test-requester",
@@ -82,18 +82,18 @@ def test_enrollment_expiry_revocation_and_rotation_are_transactional():
                 approved_at=now - timedelta(minutes=1), idempotency_key="approve-1", session=session,
             )
             assert first["key_id"] == "key-1"
-            assert registry.resolve(
+            assert registry.resolve_historical(
                 source_system_id=source, key_id="key-1", evaluated_at=now,
                 session=session,
             )["public_key_bytes"] == first_key
 
             with pytest.raises(SourceSigningKeyRegistryConflict, match="OUTSIDE_VALIDITY"):
-                registry.resolve(
+                registry.resolve_historical(
                     source_system_id=source, key_id="key-1",
                     evaluated_at=now - timedelta(hours=3), session=session,
                 )
             with pytest.raises(SourceSigningKeyRegistryConflict, match="OUTSIDE_VALIDITY"):
-                registry.resolve(
+                registry.resolve_historical(
                     source_system_id=source, key_id="key-1",
                     evaluated_at=now + timedelta(hours=4), session=session,
                 )
@@ -109,7 +109,7 @@ def test_enrollment_expiry_revocation_and_rotation_are_transactional():
                 overlap_until=now + timedelta(hours=2),
             )
             # A pending successor proposal cannot shorten the predecessor's trust.
-            assert registry.resolve(
+            assert registry.resolve_historical(
                 source_system_id=source, key_id="key-1",
                 evaluated_at=now + timedelta(hours=2, minutes=30), session=session,
             )["key_id"] == "key-1"
@@ -120,21 +120,21 @@ def test_enrollment_expiry_revocation_and_rotation_are_transactional():
                 approved_at=now - timedelta(seconds=15), idempotency_key="approve-2", session=session,
             )
             assert successor["rotation"]["supersedes_key_id"] == "key-1"
-            assert registry.resolve(
+            assert registry.resolve_historical(
                 source_system_id=source, key_id="key-1",
                 evaluated_at=now + timedelta(hours=1, minutes=30), session=session,
             )["key_id"] == "key-1"
-            assert registry.resolve(
+            assert registry.resolve_historical(
                 source_system_id=source, key_id="key-2",
                 evaluated_at=now + timedelta(hours=3), session=session,
             )["key_id"] == "key-2"
             with pytest.raises(SourceSigningKeyRegistryConflict, match="ROTATION_OVERLAP_ENDED"):
-                registry.resolve(
+                registry.resolve_historical(
                     source_system_id=source, key_id="key-1",
                     evaluated_at=now + timedelta(hours=2, minutes=30), session=session,
                 )
             with pytest.raises(SourceSigningKeyRegistryConflict, match="ROTATION_OVERLAP_ENDED"):
-                registry.resolve(
+                registry.resolve_historical(
                     source_system_id=source, key_id="key-1",
                     evaluated_at=now + timedelta(hours=2), session=session,
                 )
@@ -151,12 +151,12 @@ def test_enrollment_expiry_revocation_and_rotation_are_transactional():
             assert revoked["event_type"] == "REVOKED"
             assert revoked["approval_evidence_reference"] == "test-revocation-approval-evidence"
             with pytest.raises(SourceSigningKeyRegistryConflict, match="REVOKED"):
-                registry.resolve(
+                registry.resolve_historical(
                     source_system_id=source, key_id="key-2",
                     evaluated_at=now, session=session,
                 )
             # Historical evaluation before the revocation remains reproducible.
-            assert registry.resolve(
+            assert registry.resolve_historical(
                 source_system_id=source, key_id="key-2",
                 evaluated_at=now - timedelta(seconds=10), session=session,
             )["key_id"] == "key-2"
@@ -271,6 +271,17 @@ def test_registry_backed_authenticator_observes_immediate_revocation():
                     expected_source_system_id=source, lookup=lookup, response=response,
                 )
             assert error.value.code == "INSTITUTIONAL_SIGNER_SOURCE_SIGNING_KEY_NOT_CURRENT"
+            # Historical signature-time verification remains available for audit,
+            # while the authenticator above has no caller-controlled time input.
+            historical = registry.resolve_historical(
+                source_system_id=source, key_id="key-revocable",
+                evaluated_at=now - timedelta(seconds=30), session=session,
+            )
+            assert historical["key_id"] == "key-revocable"
+            with pytest.raises(SourceSigningKeyRegistryConflict, match="REVOKED"):
+                registry.resolve_current(
+                    source_system_id=source, key_id="key-revocable", session=session,
+                )
 
         with client.start_session() as session:
             session.with_transaction(
