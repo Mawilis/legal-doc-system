@@ -252,6 +252,7 @@ BUSINESS_ROLE_OPERATION_PERMISSIONS: Final = MappingProxyType({
     "legal_evidence_cleanup_authorize": "legal_operations:evidence_cleanup:authorize",
     "legal_notification_recipient_binding_write": "legal_operations:notification_recipient_binding:write",
     "hr_employee_relation_write": "hr:employee_relation:write",
+    "hr_employee_directory_read": "hr:employee_directory:read",
     "hr_document_standard_employment_write": "hr:document:standard_employment:write",
     "hr_document_standard_employment_read": "hr:document:standard_employment:read",
     "hr_document_employee_relations_restricted_write": "hr:document:employee_relations_restricted:write",
@@ -435,7 +436,7 @@ ELIGIBILITY = MappingProxyType(
 # tenant-business-role vocabulary. Exactly five are eligible
 # for formal EmployeeRelation write; every other HR role denies.
 OPERATIONS: FrozenSet[str] = frozenset(
-    (*OPERATIONS, "hr_employee_relation_write")
+    (*OPERATIONS, "hr_employee_relation_write", "hr_employee_directory_read")
 )
 
 _hr_relation_eligibility_updates = dict(ELIGIBILITY)
@@ -453,6 +454,9 @@ for _hr_business_role in (
     }
     _hr_role_eligibility[
         "hr_employee_relation_write"
+    ] = ELIGIBLE
+    _hr_role_eligibility[
+        "hr_employee_directory_read"
     ] = ELIGIBLE
 
     _hr_relation_eligibility_updates[

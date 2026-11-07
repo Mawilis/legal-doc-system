@@ -7,6 +7,27 @@ import WilsyHeadquartersWorkspace from '../../components/workspaces/WilsyHeadqua
 vi.mock('../../components/workspaces/MyWorkWorkspace.jsx', () => ({
   default: () => <section><h2>My Work certified task centre</h2></section>,
 }));
+vi.mock('../../services/api.js', () => ({
+  default: {
+    get: vi.fn().mockResolvedValue({
+      data: {
+        items: [{
+          employeeId: 'EMP-TEST-1',
+          displayName: 'Test Directory Person',
+          jobTitle: 'Engineer',
+          department: 'Engineering',
+          employmentStatus: 'ACTIVE',
+          workEmail: 'test@example.invalid',
+          workLocation: 'Remote',
+        }],
+        total: 1,
+        limit: 50,
+        offset: 0,
+        hasMore: false,
+      },
+    }),
+  },
+}));
 
 const renderHeadquarters = () => render(
   <MemoryRouter><WilsyHeadquartersWorkspace /></MemoryRouter>,
@@ -26,11 +47,12 @@ describe('WILSY Headquarters authenticated shell', () => {
     expect(screen.getByRole('heading', { name: 'My Work certified task centre' })).toBeTruthy();
   });
 
-  it('keeps workforce records unavailable until the HR source is certified', () => {
+  it('renders authorised workforce records from the HR directory service', async () => {
     renderHeadquarters();
     fireEvent.click(screen.getByRole('button', { name: /Organisation & People/ }));
-    expect(screen.getByText('Workforce directory is not yet connected')).toBeTruthy();
-    expect(screen.getByText(/legacy employee and HR routes have caller-controlled tenant scope/)).toBeTruthy();
+    expect(await screen.findByText('Authorised workforce directory')).toBeTruthy();
+    expect(await screen.findByText('Test Directory Person')).toBeTruthy();
+    expect(screen.getByText('test@example.invalid')).toBeTruthy();
   });
 
   it('separates supported business models from actual customer records', () => {

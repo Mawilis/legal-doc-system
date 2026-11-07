@@ -703,7 +703,7 @@ def test_future_suspension_does_not_apply_early(
         status=WorkforceRelationshipStatus.SUSPENDED,
         effective_from=active.effective_from,
         effective_until=None,
-        status_effective_at=NOW + timedelta(days=2),
+        status_effective_at=datetime.now(timezone.utc) + timedelta(days=2),
         supersedes_fingerprint=active.fingerprint,
     )
 
