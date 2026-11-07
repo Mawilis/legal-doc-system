@@ -97,7 +97,7 @@ from .subscription_router import subscription_router
 from .tenant_router import tenant_router
 from .legal_operations_router import router as legal_operations_router
 from .owner_commercial_workspace_router import router as owner_commercial_workspace_router
-from .headcount_requisition_router import router as headcount_requisition_router
+from .headcount_requisition_router import router as headcount_requisition_router\nfrom .hiring_lifecycle_router import router as hiring_lifecycle_router
 from .tenant_module_workspace_router import router as tenant_module_workspace_router
 from .unified_my_work_router import router as unified_my_work_router
 from .pos_workspace_router import router as pos_workspace_router, ensure_pos_workspace_indexes
@@ -908,7 +908,7 @@ class WilsyAPIServer:
         app.include_router(tenant_router)
         app.include_router(legal_operations_router, prefix="/api")
         app.include_router(owner_commercial_workspace_router, prefix="/api")
-        app.include_router(headcount_requisition_router, prefix="/api")
+        app.include_router(headcount_requisition_router, prefix="/api")\n        app.include_router(hiring_lifecycle_router, prefix="/api")
         app.include_router(tenant_module_workspace_router, prefix="/api")
         app.include_router(unified_my_work_router, prefix="/api")
         app.include_router(pos_workspace_router, prefix="/api")
