@@ -94,11 +94,17 @@ from .employee_router import router as employee_router
 from .errors import register_error_handlers
 from .institutional_pki_router import router as institutional_pki_router
 from .institutional_signer_router import router as institutional_signer_router
+from .institutional_source_key_router import router as institutional_source_key_router
 from .kernel_routes import router as kernel_router
 from .payshap_webhook_router import router as payshap_webhook_router
 from .electrum_payshap_completion_router import router as electrum_payshap_completion_router
 from tools.eos.security.institutional_pki import InstitutionalPKIError, InstitutionalPKIVerifier
 from tools.eos.security.institutional_signer_evidence_verifier import UnavailableInstitutionalSignerEvidenceVerifier
+from tools.eos.security.institutional_source_signing_key_registry import (
+    KEY_COLLECTION as INSTITUTIONAL_SOURCE_KEY_COLLECTION,
+    EVENT_COLLECTION as INSTITUTIONAL_SOURCE_KEY_EVENT_COLLECTION,
+    InstitutionalSourceSigningKeyLifecycleRegistry,
+)
 from tools.eos.security.institutional_signer_enrollment_registry import (
     COLLECTION as INSTITUTIONAL_SIGNER_COLLECTION,
     EVENT_COLLECTION as INSTITUTIONAL_SIGNER_EVENT_COLLECTION,
@@ -527,6 +533,7 @@ class WilsyAPIServer:
             app.state.institutional_pki_ready = False
             app.state.institutional_pki_verifier = None
             app.state.institutional_signer_registry_ready = False
+            app.state.institutional_source_key_registry_ready = False
             app.state.institutional_signer_evidence_verifier = UnavailableInstitutionalSignerEvidenceVerifier()
             app.state.institutional_pki_crl_registry = None
             try:
@@ -580,6 +587,19 @@ class WilsyAPIServer:
                 app.state.institutional_signer_registry_ready = False
                 logger.warning(
                     "[INSTITUTIONAL_SIGNER] Enrollment registry unavailable: %s",
+                    type(error).__name__,
+                )
+            try:
+                InstitutionalSourceSigningKeyLifecycleRegistry.ensure_indexes(
+                    database[INSTITUTIONAL_SOURCE_KEY_COLLECTION],
+                    database[INSTITUTIONAL_SOURCE_KEY_EVENT_COLLECTION],
+                )
+                app.state.institutional_source_key_registry_ready = True
+                logger.info("[INSTITUTIONAL_SOURCE_KEYS] Lifecycle indexes ready")
+            except Exception as error:
+                app.state.institutional_source_key_registry_ready = False
+                logger.warning(
+                    "[INSTITUTIONAL_SOURCE_KEYS] Lifecycle registry unavailable: %s",
                     type(error).__name__,
                 )
             configured_pki_verifier = app.state.institutional_pki_verifier
@@ -936,6 +956,7 @@ class WilsyAPIServer:
             app.state.institutional_pki_verifier = None
             app.state.institutional_pki_crl_registry = None
             app.state.institutional_signer_registry_ready = False
+            app.state.institutional_source_key_registry_ready = False
             app.state.institutional_signer_evidence_verifier = None
             app.state.p12c_binding_indexes_ready = False
             app.state.global_principal_auth_indexes_ready = False
@@ -1037,6 +1058,7 @@ class WilsyAPIServer:
         app.include_router(kernel_router, prefix="/api")
         app.include_router(institutional_pki_router, prefix="/api")
         app.include_router(institutional_signer_router, prefix="/api")
+        app.include_router(institutional_source_key_router, prefix="/api")
 
         app.include_router(direct_router)
         app.include_router(router)
