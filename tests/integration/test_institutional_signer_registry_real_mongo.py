@@ -5,7 +5,7 @@ import os
 import json
 from hashlib import sha256
 import uuid
-from datetime import datetime, timezone
+from datetime import datetime, timedelta, timezone
 
 import pytest
 from pymongo import MongoClient
@@ -15,7 +15,7 @@ from pymongo.write_concern import WriteConcern
 
 from tools.eos.security.institutional_signer_enrollment_registry import (
     COLLECTION, EVENT_COLLECTION, InstitutionalSignerEnrollmentRegistry,
-    InstitutionalSignerRegistryConflict,
+    InstitutionalSignerRegistryConflict, InstitutionalSignerRegistryError,
 )
 
 def _provenance_record(*, kind: str, now: datetime, **scope):
@@ -50,6 +50,49 @@ def _digest(value):
     return sha256(canonical.encode("utf-8")).hexdigest()
 
 
+def _verified_currentness(*, tenant_id, fingerprint, revision, status, checked_at, valid_until, provenance, reason=None):
+    """Test-only stand-in for the opaque value emitted by an approved source adapter."""
+    from tools.eos.security.institutional_signer_evidence_verifier import VerifiedSignerEvidenceCurrentness
+    value = object.__new__(VerifiedSignerEvidenceCurrentness)
+    fields = {
+        "tenant_id": tenant_id,
+        "certificate_fingerprint_sha256": fingerprint,
+        "expected_enrollment_revision": revision,
+        "result_status": status,
+        "checked_at": checked_at,
+        "valid_until": valid_until,
+        "provenance_snapshot": provenance,
+        "provenance_fingerprint_sha256": _digest(provenance),
+        "observation_snapshot": {
+            "schema": "wilsy.institutional.signer.currentness_observation.v1",
+            "records": {
+                key: {
+                    "evidence_kind": record["evidence_kind"],
+                    "tenant_id": record["tenant_id"],
+                    "certificate_fingerprint_sha256": record["certificate_fingerprint_sha256"],
+                    "evidence_reference": record["evidence_reference"],
+                    "source_system_id": record["source_system_id"],
+                    "source_record_id": record["source_record_id"],
+                    "source_revision": ("revision-2" if status == "NOT_CURRENT" and reason == "SOURCE_RECORD_REVOKED" and key == "identity_proofing" else record["source_revision"]),
+                    "status": ("REVOKED" if status == "NOT_CURRENT" and reason == "SOURCE_RECORD_REVOKED" and key == "identity_proofing" else record["status"]),
+                    "revoked": status == "NOT_CURRENT" and reason == "SOURCE_RECORD_REVOKED" and key == "identity_proofing",
+                    "evidence_fingerprint_sha256": ("d" * 64 if status == "NOT_CURRENT" and reason == "SOURCE_RECORD_REVOKED" and key == "identity_proofing" else record["evidence_fingerprint_sha256"]),
+                    "valid_from": record["valid_from"],
+                    "valid_until": (checked_at - timedelta(seconds=1) if status == "NOT_CURRENT" and key == "identity_proofing" and reason == "SOURCE_EVIDENCE_EXPIRED" else record["valid_until"]),
+                    "observed_at": checked_at,
+                }
+                for key, record in provenance.items() if key != "schema"
+            },
+        },
+        "observation_fingerprint_sha256": None,
+        "reason_code": reason,
+    }
+    fields["observation_fingerprint_sha256"] = _digest(fields["observation_snapshot"])
+    for name, field_value in fields.items():
+        object.__setattr__(value, name, field_value)
+    return value
+
+
 URI = os.getenv("INSTITUTIONAL_PKI_TEST_MONGODB_URI")
 pytestmark = pytest.mark.skipif(not URI, reason="INSTITUTIONAL_PKI_TEST_MONGODB_URI is not configured")
 
@@ -67,8 +110,8 @@ def test_signer_enrollment_approval_and_revocation_are_atomic_on_replica_set():
         now = datetime.now(timezone.utc)
 
         def lifecycle(session):
-            identity = _provenance_record(kind="IDENTITY_PROOFING", now=now, subject_principal_id="owner-requester")
-            mandate = _provenance_record(kind="SIGNATORY_MANDATE", now=now, subject_principal_id="owner-requester")
+            identity = _provenance_record(kind="IDENTITY_PROOFING", now=now, subject_principal_id="owner-requester", evidence_reference="proofing://institutional/case-001")
+            mandate = _provenance_record(kind="SIGNATORY_MANDATE", now=now, subject_principal_id="owner-requester", evidence_reference="mandate://institutional/resolution-001")
             enrollment_provenance = {
                 "schema": "wilsy.institutional.signer.enrollment_provenance.v1",
                 "identity_proofing": identity,
@@ -123,6 +166,7 @@ def test_signer_enrollment_approval_and_revocation_are_atomic_on_replica_set():
             assert pending["evidence_provenance_snapshot"] == enrollment_provenance
             approval_provenance = _provenance_record(
                 kind="INDEPENDENT_APPROVAL", now=now,
+                evidence_reference="attestation://proofing-and-mandate/review-001",
                 enrollment_requester_principal_id="owner-requester",
                 reviewer_principal_id="owner-independent-approver",
             )
@@ -138,6 +182,95 @@ def test_signer_enrollment_approval_and_revocation_are_atomic_on_replica_set():
             assert active["status"] == "ACTIVE"
             assert active["approval_evidence_provenance_snapshot"] == approval_provenance
             assert active["evidence_currentness_status"] == "PENDING_VERIFICATION"
+            pending_candidates = registry.list_currentness_candidates(
+                tenant_id="WILSYTENANT-4CD2FZ4O", as_of=now, limit=10, session=session,
+            )
+            assert [candidate["certificate_fingerprint_sha256"] for candidate in pending_candidates] == ["a" * 64]
+            current_identity = _provenance_record(
+                kind="IDENTITY_PROOFING", now=now, subject_principal_id="owner-requester",
+                evidence_reference="proofing://institutional/case-001",
+            )
+            current_mandate = _provenance_record(
+                kind="SIGNATORY_MANDATE", now=now, subject_principal_id="owner-requester",
+                evidence_reference="mandate://institutional/resolution-001",
+            )
+            current_approval = _provenance_record(
+                kind="INDEPENDENT_APPROVAL", now=now,
+                evidence_reference="attestation://proofing-and-mandate/review-001",
+                enrollment_requester_principal_id="owner-requester",
+                reviewer_principal_id="owner-independent-approver",
+            )
+            currentness_provenance = {
+                "schema": "wilsy.institutional.signer.currentness_provenance.v1",
+                "identity_proofing": current_identity,
+                "signatory_mandate": current_mandate,
+                "approval_attestation": current_approval,
+            }
+            # Stale revision must not overwrite the approved enrollment.
+            stale_result = _verified_currentness(
+                tenant_id="WILSYTENANT-4CD2FZ4O", fingerprint="a" * 64,
+                revision=active["revision"] - 1, status="CURRENT", checked_at=now,
+                valid_until=now + timedelta(minutes=5), provenance=currentness_provenance,
+            )
+            with pytest.raises(InstitutionalSignerRegistryConflict, match="CURRENTNESS_REVISION_CONFLICT"):
+                registry.record_verified_currentness(
+                    verification=stale_result, idempotency_key="currentness-stale-revision", actor_reference="runtime://approved-currentness-worker", session=session,
+                )
+            current_result = _verified_currentness(
+                tenant_id="WILSYTENANT-4CD2FZ4O", fingerprint="a" * 64,
+                revision=active["revision"], status="CURRENT", checked_at=now,
+                valid_until=now + timedelta(minutes=5), provenance=currentness_provenance,
+            )
+            current = registry.record_verified_currentness(
+                verification=current_result, idempotency_key="currentness-001", actor_reference="runtime://approved-currentness-worker", session=session,
+            )
+            assert current["evidence_currentness_status"] == "CURRENT"
+            assert len(current["evidence_currentness_observation_fingerprint_sha256"]) == 64
+            replayed = registry.record_verified_currentness(
+                verification=current_result, idempotency_key="currentness-001",
+                actor_reference="runtime://approved-currentness-worker", session=session,
+            )
+            assert replayed["revision"] == current["revision"]
+            assert replayed["evidence_currentness_status"] == current["evidence_currentness_status"]
+            assert replayed["evidence_currentness_provenance_fingerprint_sha256"] == current["evidence_currentness_provenance_fingerprint_sha256"]
+            divergent_replay = _verified_currentness(
+                tenant_id="WILSYTENANT-4CD2FZ4O", fingerprint="a" * 64,
+                revision=active["revision"], status="NOT_CURRENT", checked_at=now,
+                valid_until=None, provenance=currentness_provenance, reason="SOURCE_RECORD_REVOKED",
+            )
+            with pytest.raises(InstitutionalSignerRegistryConflict, match="DIVERGENT_REPLAY"):
+                registry.record_verified_currentness(
+                    verification=divergent_replay, idempotency_key="currentness-001",
+                    actor_reference="runtime://approved-currentness-worker", session=session,
+                )
+            assert registry.list_currentness_candidates(
+                tenant_id="WILSYTENANT-4CD2FZ4O", as_of=now, limit=10, session=session,
+            ) == []
+            assert registry.require_active(
+                tenant_id="WILSYTENANT-4CD2FZ4O", certificate_fingerprint_sha256="a" * 64,
+                certificate_serial_number_hex="abc123", issuer_subject_sha256="c" * 64,
+                trust_root_sha256="b" * 64, session=session,
+            )["status"] == "ACTIVE"
+            expired_result = _verified_currentness(
+                tenant_id="WILSYTENANT-4CD2FZ4O", fingerprint="a" * 64,
+                revision=current["revision"], status="NOT_CURRENT", checked_at=now,
+                valid_until=None, provenance=currentness_provenance,
+                reason="SOURCE_EVIDENCE_EXPIRED",
+            )
+            expired = registry.record_verified_currentness(
+                verification=expired_result, idempotency_key="currentness-expired", actor_reference="runtime://approved-currentness-worker", session=session,
+            )
+            assert expired["evidence_currentness_status"] == "NOT_CURRENT"
+            not_current_result = _verified_currentness(
+                tenant_id="WILSYTENANT-4CD2FZ4O", fingerprint="a" * 64,
+                revision=expired["revision"], status="NOT_CURRENT", checked_at=now,
+                valid_until=None, provenance=currentness_provenance,
+                reason="SOURCE_RECORD_REVOKED",
+            )
+            denied = registry.record_verified_currentness(
+                verification=not_current_result, idempotency_key="currentness-revoked", actor_reference="runtime://approved-currentness-worker", session=session,
+            )
+            assert denied["evidence_currentness_status"] == "NOT_CURRENT"
             with pytest.raises(InstitutionalSignerRegistryConflict) as currentness_error:
                 registry.require_active(
                     tenant_id="WILSYTENANT-4CD2FZ4O",
@@ -192,10 +325,13 @@ def test_signer_enrollment_approval_and_revocation_are_atomic_on_replica_set():
             )
         assert final["status"] == "REVOKED"
         assert records.count_documents({"tenant_id": "WILSYTENANT-4CD2FZ4O"}) == 1
-        assert events.count_documents({"tenant_id": "WILSYTENANT-4CD2FZ4O"}) == 4
+        assert events.count_documents({"tenant_id": "WILSYTENANT-4CD2FZ4O"}) == 7
         assert [row["action"] for row in events.find({"tenant_id": "WILSYTENANT-4CD2FZ4O"}).sort("revision", 1)] == [
             "SIGNER_ENROLLMENT_REQUESTED",
             "SIGNER_ENROLLMENT_APPROVED",
+            "SIGNER_EVIDENCE_CURRENTNESS_RECONCILED",
+            "SIGNER_EVIDENCE_CURRENTNESS_RECONCILED",
+            "SIGNER_EVIDENCE_CURRENTNESS_RECONCILED",
             "SIGNER_ENROLLMENT_REVOKED",
             "SIGNER_REVOCATION_CRL_PUBLISHED",
         ]

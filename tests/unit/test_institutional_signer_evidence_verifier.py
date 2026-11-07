@@ -82,3 +82,24 @@ def test_unavailable_authoritative_adapter_fails_closed(method, kwargs):
     with pytest.raises(InstitutionalSignerEvidenceVerificationError) as error:
         getattr(verifier, method)(**kwargs)
     assert error.value.code == "INSTITUTIONAL_SIGNER_EVIDENCE_AUTHORITY_UNAVAILABLE"
+
+
+def test_unavailable_authoritative_adapter_fails_closed_for_currentness_rechecks():
+    verifier = UnavailableInstitutionalSignerEvidenceVerifier()
+    with pytest.raises(InstitutionalSignerEvidenceVerificationError) as error:
+        verifier.verify_currentness(
+            tenant_id=TENANT_ID,
+            certificate_fingerprint_sha256="a" * 64,
+            expected_enrollment_revision=2,
+            enrollment_provenance_snapshot={},
+            approval_provenance_snapshot={},
+            evaluated_at=datetime.now(timezone.utc),
+        )
+    assert error.value.code == "INSTITUTIONAL_SIGNER_CURRENTNESS_AUTHORITY_UNAVAILABLE"
+
+
+def test_currentness_success_result_cannot_be_constructed_by_route_callers():
+    from tools.eos.security.institutional_signer_evidence_verifier import VerifiedSignerEvidenceCurrentness
+    with pytest.raises(InstitutionalSignerEvidenceVerificationError) as error:
+        VerifiedSignerEvidenceCurrentness()
+    assert error.value.code == "INSTITUTIONAL_SIGNER_CURRENTNESS_AUTHORITY_UNAVAILABLE"

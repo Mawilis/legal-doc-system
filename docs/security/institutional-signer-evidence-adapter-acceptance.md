@@ -82,3 +82,34 @@ No single engineer, tenant owner, CI workflow or EOS service may self-approve th
 ## Exit decision
 
 Until the source authorities are selected, adapters independently assessed, full provenance persistence implemented, replica-set certification green and institutional reviewers have signed the evidence package, the verifier remains unavailable and the signer enrollment/approval routes remain fail-closed.
+
+
+## Post-approval currentness reconciliation contract
+
+The registry now accepts only a verifier-issued opaque currentness result. The verifier contract includes a separate `verify_currentness` operation that must re-read the identity, mandate and independent approval source records. Reconciliation is bound to the enrollment's expected revision, exact evidence references, source-system and immutable source-record identities, canonical tenant/certificate/principal/requester/reviewer scope, and a digest of all three current snapshots. A source revision may advance only for the same source system and immutable record identity; a changed source identity is denied for governance review.
+
+The currentness result carries two distinct digests: the canonical digest of the verified provenance snapshot and the fingerprint of a persisted, bounded, non-PII source-observation snapshot. The observation snapshot records each evidence kind, source system, immutable record ID/revision, status, revocation flag, evidence fingerprint and observation time, including the negative source state when a record is withdrawn or revoked. The caller-owned Mongo transaction atomically writes the currentness projection, enrollment revision and append-only event. Stale revisions, divergent idempotency replay, scope changes and digest mismatches fail closed. `CURRENT` requires an adapter-issued finite `valid_until` lease; signer use is denied when that lease expires, even if no reconciliation worker has yet marked the record stale. `NOT_CURRENT` records a reason and observation fingerprint and immediately makes the signer unusable.
+
+No lease duration, maximum evidence age, source polling cadence, positive adapter or external source credentials are configured by this change. The approved adapter must derive the finite lease from a separately approved governance policy and authoritative source semantics. The current default verifier rejects currentness verification, so no record can be promoted to `CURRENT` through production runtime today. The replica-set test uses a test-only opaque result fixture to exercise the registry contract; it is not a live source adapter or evidence of institutional authority.
+
+
+## Reconciliation execution boundary
+
+The new orchestration function performs a short transactional enrollment read, closes that transaction, calls the authoritative source verifier outside MongoDB, then opens a separate caller-owned transaction to persist the result using the revision captured before the source call. This prevents slow or unavailable external systems from holding MongoDB transactions open. If the enrollment changes while source checks are in flight, the compare-and-set fails and the worker must restart from a fresh read; it must not retry the old verification result against a newer revision. The default verifier is unavailable, so orchestration cannot create a positive currentness result today.
+
+
+The enrollment registry also provisions a compound index over tenant, lifecycle status, currentness status and lease expiry so a future governed worker can efficiently discover pending and expired-currentness candidates. This index is not a scheduler: no polling interval or automatic retry cadence is assumed. `NOT_CURRENT` records are deliberately excluded from automatic promotion and require a new authoritative check under the approved governance process.
+
+
+Currentness rechecks must preserve the previously approved identity-assurance level, legal-entity reference, mandate scope and independent-approval scope. Any change to those authority-bearing fields is not silently accepted as routine freshness: it is rejected for a new governance decision and re-enrollment/approval as applicable.
+
+
+## Candidate discovery
+
+`list_currentness_candidates` provides a bounded, caller-transaction read for ACTIVE enrollments that are awaiting first verification (including legacy ACTIVE records with no currentness status) or whose finite CURRENT lease has expired. Results are ordered deterministically by request time and certificate fingerprint. `NOT_CURRENT` and revoked enrollments are not automatically requeued. The compound index supports this query, but the code intentionally defines no background schedule, polling cadence, retry budget or actor identity; those remain governed operational settings.
+
+
+A negative source observation may legitimately report a newer source revision and changed evidence fingerprint (for example, an authority record transitions from active to revoked). The reconciliation contract therefore requires stable source-system and immutable record identity for all observations, but requires exact revision/fingerprint equality with the provenance snapshot only for a `CURRENT` result. For `NOT_CURRENT`, the new observed revision, status, revocation flag and fingerprint are persisted as the negative observation while the last verified-good provenance snapshot remains available for audit.
+
+
+The source-observation snapshot also carries `valid_from` and `valid_until`. A record can therefore be classified `NOT_CURRENT` because it is revoked/withdrawn/superseded or because its validity interval has expired or has not yet begun, even when the source's status string remains ACTIVE. A CURRENT result is accepted only when each observation's validity interval covers the exact observation time.

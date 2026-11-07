@@ -1,4 +1,4 @@
-from datetime import datetime, timezone
+from datetime import datetime, timedelta, timezone
 
 import pytest
 
@@ -24,8 +24,14 @@ class MemoryCollection:
 
     def _matches(self, row, query):
         for key, value in query.items():
-            if isinstance(value, dict) and "$in" in value:
+            if key == "$or":
+                if not any(self._matches(row, clause) for clause in value):
+                    return False
+            elif isinstance(value, dict) and "$in" in value:
                 if row.get(key) not in value["$in"]:
+                    return False
+            elif isinstance(value, dict) and "$lte" in value:
+                if row.get(key) is None or row.get(key) > value["$lte"]:
                     return False
             elif row.get(key) != value:
                 return False
@@ -249,3 +255,117 @@ def test_revocation_publication_closes_only_when_verified_crl_contains_exact_iss
         actor_reference="runtime://institutional-pki",
         session=tx,
     ) == 0
+
+
+def test_registry_refuses_unverified_currentness_objects_before_database_access():
+    from tools.eos.security.institutional_signer_evidence_verifier import UnavailableInstitutionalSignerEvidenceVerifier
+    registry, _records, _events = setup_registry()
+    with pytest.raises(InstitutionalSignerRegistryError, match="CURRENTNESS_VERIFICATION_REQUIRED"):
+        registry.record_verified_currentness(
+            verification=object(), idempotency_key="currentness-001",
+            actor_reference="runtime://approved-currentness-worker", session=object()
+        )
+
+
+def test_currentness_verifier_has_no_success_path_until_authoritative_adapter_is_approved():
+    from tools.eos.security.institutional_signer_evidence_verifier import UnavailableInstitutionalSignerEvidenceVerifier
+    verifier = UnavailableInstitutionalSignerEvidenceVerifier()
+    with pytest.raises(Exception, match="CURRENTNESS_AUTHORITY_UNAVAILABLE"):
+        verifier.verify_currentness(
+            tenant_id="WILSYTENANT-4CD2FZ4O",
+            certificate_fingerprint_sha256="a" * 64,
+            expected_enrollment_revision=2,
+            enrollment_provenance_snapshot={}, approval_provenance_snapshot={},
+            evaluated_at=datetime.now(timezone.utc), session=object(),
+        )
+
+
+def test_signer_use_is_denied_when_currentness_lease_has_expired():
+    registry, records, _events = setup_registry()
+    tx = object()
+    request(registry, tx)
+    registry.approve_enrollment(
+        tenant_id="WILSYTENANT-4CD2FZ4O",
+        certificate_fingerprint_sha256="a" * 64,
+        approver_principal_id="owner-approver",
+        approval_attestation_reference="attestation://independent-review/001",
+        approved_at=datetime.now(timezone.utc),
+        idempotency_key="approve-lease-test", session=tx,
+    )
+    row = records.rows[0]
+    row.update({
+        "evidence_currentness_status": "CURRENT",
+        "evidence_currentness_valid_until": datetime(2020, 1, 1, tzinfo=timezone.utc),
+    })
+    with pytest.raises(InstitutionalSignerRegistryConflict, match="CURRENTNESS_LEASE_EXPIRED"):
+        registry.require_active(
+            tenant_id="WILSYTENANT-4CD2FZ4O",
+            certificate_fingerprint_sha256="a" * 64,
+            certificate_serial_number_hex="abc123",
+            issuer_subject_sha256="c" * 64,
+            trust_root_sha256="b" * 64,
+            session=tx,
+        )
+
+
+def test_signer_use_accepts_valid_utc_lease_decoded_as_naive_bson_datetime():
+    registry, records, _events = setup_registry()
+    tx = object()
+    request(registry, tx)
+    registry.approve_enrollment(
+        tenant_id="WILSYTENANT-4CD2FZ4O",
+        certificate_fingerprint_sha256="a" * 64,
+        approver_principal_id="owner-approver",
+        approval_attestation_reference="attestation://independent-review/001",
+        approved_at=datetime.now(timezone.utc),
+        idempotency_key="approve-naive-lease-test", session=tx,
+    )
+    records.rows[0].update({
+        "evidence_currentness_status": "CURRENT",
+        "evidence_currentness_valid_until": (datetime.now(timezone.utc) + timedelta(minutes=5)).replace(tzinfo=None),
+    })
+    assert registry.require_active(
+        tenant_id="WILSYTENANT-4CD2FZ4O",
+        certificate_fingerprint_sha256="a" * 64,
+        certificate_serial_number_hex="abc123",
+        issuer_subject_sha256="c" * 64,
+        trust_root_sha256="b" * 64,
+        session=tx,
+    )["status"] == "ACTIVE"
+
+
+def test_currentness_candidate_query_returns_only_pending_or_expired_active_enrollments():
+    registry, records, _events = setup_registry()
+    tx = object()
+    request(registry, tx)
+    now = datetime.now(timezone.utc)
+    registry.approve_enrollment(
+        tenant_id="WILSYTENANT-4CD2FZ4O",
+        certificate_fingerprint_sha256="a" * 64,
+        approver_principal_id="owner-approver",
+        approval_attestation_reference="attestation://independent-review/001",
+        approved_at=now, idempotency_key="approve-candidate-test", session=tx,
+    )
+    candidates = registry.list_currentness_candidates(
+        tenant_id="WILSYTENANT-4CD2FZ4O", as_of=now, limit=10, session=tx,
+    )
+    assert len(candidates) == 1
+    assert candidates[0]["evidence_currentness_status"] == "PENDING_VERIFICATION"
+
+    records.rows[0].update({
+        "evidence_currentness_status": "CURRENT",
+        "evidence_currentness_valid_until": now + timedelta(minutes=5),
+    })
+    assert registry.list_currentness_candidates(
+        tenant_id="WILSYTENANT-4CD2FZ4O", as_of=now, limit=10, session=tx,
+    ) == []
+
+    records.rows[0]["evidence_currentness_valid_until"] = now - timedelta(seconds=1)
+    assert len(registry.list_currentness_candidates(
+        tenant_id="WILSYTENANT-4CD2FZ4O", as_of=now, limit=10, session=tx,
+    )) == 1
+
+    records.rows[0]["evidence_currentness_status"] = "NOT_CURRENT"
+    assert registry.list_currentness_candidates(
+        tenant_id="WILSYTENANT-4CD2FZ4O", as_of=now, limit=10, session=tx,
+    ) == []

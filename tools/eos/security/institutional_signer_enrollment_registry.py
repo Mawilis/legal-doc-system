@@ -16,6 +16,8 @@ from typing import Any
 from pymongo import ASCENDING
 from pymongo.errors import DuplicateKeyError, PyMongoError
 
+from tools.eos.security.institutional_signer_evidence_verifier import VerifiedSignerEvidenceCurrentness
+
 COLLECTION = "wilsy_institutional_signer_enrollments"
 EVENT_COLLECTION = "wilsy_institutional_signer_enrollment_events"
 INSTITUTIONAL_TENANT_ID = "WILSYTENANT-4CD2FZ4O"
@@ -58,6 +60,16 @@ def _instant(value: datetime) -> datetime:
     if type(value) is not datetime or value.tzinfo is None or value.utcoffset() is None:
         raise InstitutionalSignerRegistryError("INSTITUTIONAL_SIGNER_TIME_INVALID")
     return value.astimezone(timezone.utc)
+
+
+
+
+def _stored_instant(value: object) -> datetime:
+    """MongoDB BSON datetimes are UTC but PyMongo may decode them as naive."""
+    if type(value) is not datetime:
+        raise InstitutionalSignerRegistryError("INSTITUTIONAL_SIGNER_STORED_TIME_INVALID")
+    normalized = value.replace(tzinfo=timezone.utc) if value.tzinfo is None else value
+    return _instant(normalized)
 
 
 def _provenance_digest(value: dict[str, Any]) -> str:
@@ -142,6 +154,14 @@ class InstitutionalSignerEnrollmentRegistry:
             records.create_index(
                 [("tenant_id", ASCENDING), ("status", ASCENDING), ("subject_common_name", ASCENDING)],
                 name="ix_institutional_signer_status_subject",
+            )
+            records.create_index(
+                [("tenant_id", ASCENDING), ("status", ASCENDING),
+                 ("evidence_currentness_status", ASCENDING),
+                 ("evidence_currentness_valid_until", ASCENDING),
+                 ("requested_at", ASCENDING),
+                 ("certificate_fingerprint_sha256", ASCENDING)],
+                name="ix_institutional_signer_currentness_due",
             )
             events.create_index(
                 [("tenant_id", ASCENDING), ("idempotency_key", ASCENDING)],
@@ -427,6 +447,275 @@ class InstitutionalSignerEnrollmentRegistry:
         row.pop("_id", None)
         return row
 
+
+
+    def list_currentness_candidates(
+        self, *, tenant_id: str, as_of: datetime, limit: int, session: object,
+    ) -> list[dict[str, Any]]:
+        """Read ACTIVE enrollments awaiting first check or whose currentness lease expired.
+
+        NOT_CURRENT records are intentionally excluded; they require a new
+        governed decision rather than automatic retry or silent promotion.
+        """
+        if session is None:
+            raise InstitutionalSignerRegistryError("INSTITUTIONAL_SIGNER_CALLER_TRANSACTION_REQUIRED")
+        tenant = _tenant(tenant_id)
+        instant = _instant(as_of)
+        if type(limit) is not int or limit < 1 or limit > 100:
+            raise InstitutionalSignerRegistryError("INSTITUTIONAL_SIGNER_CURRENTNESS_LIMIT_INVALID")
+        query = {
+            "tenant_id": tenant,
+            "status": "ACTIVE",
+            "$or": [
+                {"evidence_currentness_status": {"$in": ["PENDING_VERIFICATION", None]}},
+                {"evidence_currentness_status": "CURRENT", "evidence_currentness_valid_until": {"$lte": instant}},
+            ],
+        }
+        try:
+            cursor = self._records.find(query, session=session)
+            if callable(getattr(cursor, "sort", None)) and callable(getattr(cursor, "limit", None)):
+                rows = list(cursor.sort([
+                    ("requested_at", ASCENDING),
+                    ("certificate_fingerprint_sha256", ASCENDING),
+                ]).limit(limit))
+            else:
+                rows = list(cursor)
+                rows.sort(key=lambda row: (
+                    _stored_instant(row.get("requested_at")),
+                    row.get("certificate_fingerprint_sha256", ""),
+                ))
+                rows = rows[:limit]
+            for row in rows:
+                row.pop("_id", None)
+            return rows
+        except PyMongoError as error:
+            raise InstitutionalSignerRegistryError("INSTITUTIONAL_SIGNER_CURRENTNESS_CANDIDATE_READ_UNAVAILABLE") from error
+
+    def record_verified_currentness(
+        self, *, verification: VerifiedSignerEvidenceCurrentness,
+        idempotency_key: str, actor_reference: str, session: object,
+    ) -> dict[str, Any]:
+        """Persist a verifier-issued, bounded source recheck and audit it atomically."""
+        if session is None:
+            raise InstitutionalSignerRegistryError("INSTITUTIONAL_SIGNER_CALLER_TRANSACTION_REQUIRED")
+        if not isinstance(verification, VerifiedSignerEvidenceCurrentness):
+            raise InstitutionalSignerRegistryError("INSTITUTIONAL_SIGNER_CURRENTNESS_VERIFICATION_REQUIRED")
+        tenant = _tenant(verification.tenant_id)
+        fingerprint = _fingerprint(verification.certificate_fingerprint_sha256)
+        if type(verification.expected_enrollment_revision) is not int or verification.expected_enrollment_revision < 1:
+            raise InstitutionalSignerRegistryError("INSTITUTIONAL_SIGNER_CURRENTNESS_REVISION_INVALID")
+        checked_at = _instant(verification.checked_at)
+        now = datetime.now(timezone.utc)
+        if checked_at > now:
+            raise InstitutionalSignerRegistryError("INSTITUTIONAL_SIGNER_CURRENTNESS_TIME_INVALID")
+        status = verification.result_status
+        if status not in ("CURRENT", "NOT_CURRENT"):
+            raise InstitutionalSignerRegistryError("INSTITUTIONAL_SIGNER_CURRENTNESS_STATUS_INVALID")
+        valid_until = verification.valid_until
+        if status == "CURRENT":
+            if valid_until is None:
+                raise InstitutionalSignerRegistryError("INSTITUTIONAL_SIGNER_CURRENTNESS_LEASE_REQUIRED")
+            valid_until = _instant(valid_until)
+            if valid_until <= checked_at or valid_until <= now:
+                raise InstitutionalSignerRegistryError("INSTITUTIONAL_SIGNER_CURRENTNESS_LEASE_INVALID")
+        elif valid_until is not None:
+            raise InstitutionalSignerRegistryError("INSTITUTIONAL_SIGNER_CURRENTNESS_LEASE_INVALID")
+        reason = verification.reason_code
+        if status == "NOT_CURRENT":
+            reason = _text(reason, "INSTITUTIONAL_SIGNER_CURRENTNESS_REASON_REQUIRED", 256)
+        elif reason is not None:
+            raise InstitutionalSignerRegistryError("INSTITUTIONAL_SIGNER_CURRENTNESS_REASON_INVALID")
+        snapshot = verification.provenance_snapshot
+        if not isinstance(snapshot, dict) or snapshot.get("schema") != "wilsy.institutional.signer.currentness_provenance.v1":
+            raise InstitutionalSignerRegistryError("INSTITUTIONAL_SIGNER_CURRENTNESS_PROVENANCE_INVALID")
+        identity = _validated_provenance_snapshot(snapshot.get("identity_proofing"))
+        mandate = _validated_provenance_snapshot(snapshot.get("signatory_mandate"))
+        approval = _validated_provenance_snapshot(snapshot.get("approval_attestation"))
+        if identity is None or mandate is None or approval is None:
+            raise InstitutionalSignerRegistryError("INSTITUTIONAL_SIGNER_CURRENTNESS_PROVENANCE_INCOMPLETE")
+        if not (
+            identity.get("tenant_id") == mandate.get("tenant_id") == approval.get("tenant_id") == tenant
+            and identity.get("certificate_fingerprint_sha256") == mandate.get("certificate_fingerprint_sha256") == approval.get("certificate_fingerprint_sha256") == fingerprint
+            and identity.get("subject_principal_id") == mandate.get("subject_principal_id")
+            and approval.get("enrollment_requester_principal_id") == identity.get("subject_principal_id")
+            and approval.get("reviewer_principal_id") != approval.get("enrollment_requester_principal_id")
+        ):
+            raise InstitutionalSignerRegistryError("INSTITUTIONAL_SIGNER_CURRENTNESS_SCOPE_MISMATCH")
+        canonical = {
+            "schema": "wilsy.institutional.signer.currentness_provenance.v1",
+            "identity_proofing": identity,
+            "signatory_mandate": mandate,
+            "approval_attestation": approval,
+        }
+        digest = _fingerprint(verification.provenance_fingerprint_sha256)
+        observation_digest = _fingerprint(verification.observation_fingerprint_sha256)
+        if _provenance_digest(canonical) != digest:
+            raise InstitutionalSignerRegistryError("INSTITUTIONAL_SIGNER_CURRENTNESS_DIGEST_MISMATCH")
+        observation = verification.observation_snapshot
+        if not isinstance(observation, dict) or observation.get("schema") != "wilsy.institutional.signer.currentness_observation.v1":
+            raise InstitutionalSignerRegistryError("INSTITUTIONAL_SIGNER_CURRENTNESS_OBSERVATION_INVALID")
+        observed_records = observation.get("records")
+        if not isinstance(observed_records, dict):
+            raise InstitutionalSignerRegistryError("INSTITUTIONAL_SIGNER_CURRENTNESS_OBSERVATION_INCOMPLETE")
+        observation_kinds = {
+            "identity_proofing": ("IDENTITY_PROOFING", identity),
+            "signatory_mandate": ("SIGNATORY_MANDATE", mandate),
+            "approval_attestation": ("INDEPENDENT_APPROVAL", approval),
+        }
+        normalized_observations = {}
+        negative_observation = False
+        for observation_key, (kind, source_record) in observation_kinds.items():
+            item = observed_records.get(observation_key)
+            if not isinstance(item, dict):
+                raise InstitutionalSignerRegistryError("INSTITUTIONAL_SIGNER_CURRENTNESS_OBSERVATION_INCOMPLETE")
+            for field in ("source_system_id", "source_record_id", "source_revision", "status"):
+                _text(item.get(field), "INSTITUTIONAL_SIGNER_CURRENTNESS_OBSERVATION_INVALID", 512)
+            if status == "CURRENT" and (
+                item.get("source_system_id") != source_record.get("source_system_id")
+                or item.get("source_record_id") != source_record.get("source_record_id")
+                or item.get("source_revision") != source_record.get("source_revision")
+            ):
+                raise InstitutionalSignerRegistryError("INSTITUTIONAL_SIGNER_CURRENTNESS_OBSERVATION_SOURCE_MISMATCH")
+            observed_at = _stored_instant(item.get("observed_at"))
+            if observed_at != checked_at:
+                raise InstitutionalSignerRegistryError("INSTITUTIONAL_SIGNER_CURRENTNESS_OBSERVATION_TIME_MISMATCH")
+            valid_from = _stored_instant(item.get("valid_from"))
+            source_valid_until = _stored_instant(item.get("valid_until")) if item.get("valid_until") is not None else None
+            _fingerprint(item.get("evidence_fingerprint_sha256"))
+            if type(item.get("revoked")) is not bool:
+                raise InstitutionalSignerRegistryError("INSTITUTIONAL_SIGNER_CURRENTNESS_OBSERVATION_INVALID")
+            if item["status"] not in ("ACTIVE", "VERIFIED", "REVOKED", "WITHDRAWN", "SUSPENDED", "SUPERSEDED", "EXPIRED", "INACTIVE", "NOT_FOUND"):
+                raise InstitutionalSignerRegistryError("INSTITUTIONAL_SIGNER_CURRENTNESS_OBSERVATION_STATUS_INVALID")
+            if (item.get("tenant_id") != tenant
+                or item.get("certificate_fingerprint_sha256") != fingerprint
+                or item.get("evidence_reference") != source_record.get("evidence_reference")):
+                raise InstitutionalSignerRegistryError("INSTITUTIONAL_SIGNER_CURRENTNESS_OBSERVATION_SCOPE_MISMATCH")
+            if status == "CURRENT" and (
+                item["status"] not in ("ACTIVE", "VERIFIED")
+                or item["revoked"]
+                or item["status"] != source_record.get("status")
+                or item["evidence_fingerprint_sha256"] != source_record.get("evidence_fingerprint_sha256")
+                or valid_from != _stored_instant(source_record.get("valid_from"))
+                or source_valid_until != (_stored_instant(source_record.get("valid_until")) if source_record.get("valid_until") is not None else None)
+            ):
+                raise InstitutionalSignerRegistryError("INSTITUTIONAL_SIGNER_CURRENTNESS_OBSERVATION_STATUS_MISMATCH")
+            observation_expired = valid_from > checked_at or (source_valid_until is not None and source_valid_until <= checked_at)
+            if item["status"] not in ("ACTIVE", "VERIFIED") or item["revoked"] or observation_expired:
+                negative_observation = True
+            if status == "CURRENT" and observation_expired:
+                raise InstitutionalSignerRegistryError("INSTITUTIONAL_SIGNER_CURRENTNESS_OBSERVATION_STATUS_MISMATCH")
+            normalized_observations[observation_key] = {
+                "evidence_kind": kind,
+                "tenant_id": tenant,
+                "certificate_fingerprint_sha256": fingerprint,
+                "evidence_reference": source_record["evidence_reference"],
+                "source_system_id": item["source_system_id"],
+                "source_record_id": item["source_record_id"],
+                "source_revision": item["source_revision"],
+                "status": item["status"],
+                "revoked": item["revoked"],
+                "evidence_fingerprint_sha256": item["evidence_fingerprint_sha256"],
+                "valid_from": valid_from,
+                "valid_until": source_valid_until,
+                "observed_at": observed_at,
+            }
+        canonical_observation = {
+            "schema": "wilsy.institutional.signer.currentness_observation.v1",
+            "records": normalized_observations,
+        }
+        if _provenance_digest(canonical_observation) != observation_digest:
+            raise InstitutionalSignerRegistryError("INSTITUTIONAL_SIGNER_CURRENTNESS_OBSERVATION_DIGEST_MISMATCH")
+        if (status == "CURRENT" and negative_observation) or (status == "NOT_CURRENT" and not negative_observation):
+            raise InstitutionalSignerRegistryError("INSTITUTIONAL_SIGNER_CURRENTNESS_OBSERVATION_STATUS_MISMATCH")
+        key = _text(idempotency_key, "INSTITUTIONAL_SIGNER_IDEMPOTENCY_INVALID", 200)
+        actor = _text(actor_reference, "INSTITUTIONAL_SIGNER_CURRENTNESS_ACTOR_REQUIRED", 256)
+        try:
+            prior = self._events.find_one({"tenant_id": tenant, "idempotency_key": key}, session=session)
+            if prior is not None:
+                prior_snapshot = prior.get("snapshot")
+                if (prior.get("action") != "SIGNER_EVIDENCE_CURRENTNESS_RECONCILED"
+                    or prior.get("actor_principal_id") != actor
+                    or not isinstance(prior_snapshot, dict)
+                    or prior_snapshot.get("certificate_fingerprint_sha256") != fingerprint
+                    or prior_snapshot.get("evidence_currentness_provenance_fingerprint_sha256") != digest
+                    or prior_snapshot.get("evidence_currentness_status") != status
+                    or prior_snapshot.get("evidence_currentness_observation_fingerprint_sha256") != observation_digest):
+                    raise InstitutionalSignerRegistryConflict("INSTITUTIONAL_SIGNER_DIVERGENT_REPLAY")
+                return prior_snapshot
+            current = self._records.find_one({
+                "tenant_id": tenant, "certificate_fingerprint_sha256": fingerprint,
+                "status": "ACTIVE", "revision": verification.expected_enrollment_revision,
+            }, session=session)
+            if current is None:
+                raise InstitutionalSignerRegistryConflict("INSTITUTIONAL_SIGNER_CURRENTNESS_REVISION_CONFLICT")
+            if (current.get("requested_by_principal_id") != identity.get("subject_principal_id")
+                or current.get("approved_by_principal_id") != approval.get("reviewer_principal_id")
+                or current.get("identity_proofing_evidence_reference") != identity.get("evidence_reference")
+                or current.get("signatory_mandate_evidence_reference") != mandate.get("evidence_reference")
+                or current.get("approval_attestation_reference") != approval.get("evidence_reference")):
+                raise InstitutionalSignerRegistryError("INSTITUTIONAL_SIGNER_CURRENTNESS_SCOPE_MISMATCH")
+            previous_enrollment = current.get("evidence_provenance_snapshot") or {}
+            previous_approval = current.get("approval_evidence_provenance_snapshot") or {}
+            previous_identity = previous_enrollment.get("identity_proofing", {})
+            previous_mandate = previous_enrollment.get("signatory_mandate", {})
+            if (identity.get("identity_assurance_level") != previous_identity.get("identity_assurance_level")
+                or mandate.get("legal_entity_reference") != previous_mandate.get("legal_entity_reference")
+                or mandate.get("mandate_scope") != previous_mandate.get("mandate_scope")
+                or approval.get("approval_scope") != previous_approval.get("approval_scope")):
+                raise InstitutionalSignerRegistryError("INSTITUTIONAL_SIGNER_CURRENTNESS_AUTHORITY_SCOPE_CHANGED")
+            for key_name, previous_group, new_group in (
+                ("identity_proofing", previous_enrollment, identity),
+                ("signatory_mandate", previous_enrollment, mandate),
+                ("approval_attestation", previous_approval, approval),
+            ):
+                previous = previous_group.get(key_name) if key_name != "approval_attestation" else previous_group
+                if (not isinstance(previous, dict)
+                    or previous.get("source_system_id") != new_group.get("source_system_id")
+                    or previous.get("source_record_id") != new_group.get("source_record_id")):
+                    raise InstitutionalSignerRegistryError("INSTITUTIONAL_SIGNER_CURRENTNESS_SOURCE_IDENTITY_CHANGED")
+            if any(record.get("evaluated_at") != checked_at for record in (identity, mandate, approval)):
+                raise InstitutionalSignerRegistryError("INSTITUTIONAL_SIGNER_CURRENTNESS_EVALUATION_TIME_MISMATCH")
+            previous_checked_at = current.get("evidence_currentness_checked_at")
+            if previous_checked_at is not None and checked_at < _stored_instant(previous_checked_at):
+                raise InstitutionalSignerRegistryConflict("INSTITUTIONAL_SIGNER_CURRENTNESS_TIME_REGRESSION")
+            updated = dict(current)
+            updated.pop("_id", None)
+            updated.update({
+                "evidence_currentness_status": status,
+                "evidence_currentness_checked_at": checked_at,
+                "evidence_currentness_valid_until": valid_until,
+                "evidence_currentness_reason_code": reason,
+                "evidence_currentness_provenance_fingerprint_sha256": digest,
+                "evidence_currentness_observation_fingerprint_sha256": observation_digest,
+                "evidence_currentness_observation_snapshot": canonical_observation,
+                "evidence_currentness_provenance_snapshot": canonical,
+                "revision": current["revision"] + 1,
+            })
+            result = self._records.update_one({
+                "_id": current["_id"], "revision": current["revision"], "status": "ACTIVE",
+            }, {"$set": updated}, session=session)
+            if result.modified_count != 1:
+                raise InstitutionalSignerRegistryConflict("INSTITUTIONAL_SIGNER_CURRENTNESS_REVISION_CONFLICT")
+            self._events.insert_one({
+                "tenant_id": tenant, "certificate_fingerprint_sha256": fingerprint,
+                "revision": updated["revision"], "idempotency_key": key,
+                "actor_principal_id": actor,
+                "action": "SIGNER_EVIDENCE_CURRENTNESS_RECONCILED",
+                "occurred_at": checked_at, "snapshot": updated,
+                "evidence_currentness_status": status,
+                "evidence_currentness_provenance_fingerprint_sha256": digest,
+                "evidence_currentness_observation_fingerprint_sha256": observation_digest,
+                "schema": "wilsy.institutional.signer_event.v1",
+            }, session=session)
+            updated.pop("_id", None)
+            return updated
+        except (InstitutionalSignerRegistryError, InstitutionalSignerRegistryConflict, InstitutionalSignerRegistryNotFound):
+            raise
+        except DuplicateKeyError as error:
+            raise InstitutionalSignerRegistryConflict("INSTITUTIONAL_SIGNER_CURRENTNESS_EVENT_CONFLICT") from error
+        except PyMongoError as error:
+            raise InstitutionalSignerRegistryError("INSTITUTIONAL_SIGNER_CURRENTNESS_RECONCILIATION_UNAVAILABLE") from error
+
     def require_active(
         self, *, tenant_id: str, certificate_fingerprint_sha256: str,
         certificate_serial_number_hex: str, issuer_subject_sha256: str,
@@ -450,6 +739,13 @@ class InstitutionalSignerEnrollmentRegistry:
             raise InstitutionalSignerRegistryConflict("INSTITUTIONAL_SIGNER_ACTIVE_ENROLLMENT_REQUIRED")
         if row.get("evidence_currentness_status") != "CURRENT":
             raise InstitutionalSignerRegistryConflict("INSTITUTIONAL_SIGNER_EVIDENCE_CURRENTNESS_NOT_VERIFIED")
+        lease_until = row.get("evidence_currentness_valid_until")
+        try:
+            normalized_lease_until = _stored_instant(lease_until)
+        except InstitutionalSignerRegistryError as error:
+            raise InstitutionalSignerRegistryConflict("INSTITUTIONAL_SIGNER_EVIDENCE_CURRENTNESS_LEASE_EXPIRED") from error
+        if normalized_lease_until <= datetime.now(timezone.utc):
+            raise InstitutionalSignerRegistryConflict("INSTITUTIONAL_SIGNER_EVIDENCE_CURRENTNESS_LEASE_EXPIRED")
         row.pop("_id", None)
         return row
 

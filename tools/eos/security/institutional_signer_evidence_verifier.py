@@ -123,6 +123,30 @@ class VerifiedInstitutionalSignerEvidence:
         )
 
 
+
+
+@dataclass(frozen=True, slots=True, init=False)
+class VerifiedSignerEvidenceCurrentness:
+    """Opaque source recheck result; only an approved verifier may issue it."""
+    tenant_id: str
+    certificate_fingerprint_sha256: str
+    expected_enrollment_revision: int
+    result_status: str
+    checked_at: datetime
+    valid_until: datetime | None
+    provenance_snapshot: dict[str, object]
+    provenance_fingerprint_sha256: str
+    observation_snapshot: dict[str, object]
+    observation_fingerprint_sha256: str
+    reason_code: str | None
+
+    def __init__(self, *args: object, **kwargs: object) -> None:
+        del args, kwargs
+        raise InstitutionalSignerEvidenceVerificationError(
+            "INSTITUTIONAL_SIGNER_CURRENTNESS_AUTHORITY_UNAVAILABLE"
+        )
+
+
 @runtime_checkable
 class InstitutionalSignerEvidenceVerifier(Protocol):
     """Read-only authoritative verifier; never creates signer or IAM authority."""
@@ -143,6 +167,14 @@ class InstitutionalSignerEvidenceVerifier(Protocol):
     ) -> VerifiedSignerApprovalAttestation:
         """Verify authoritative approval and enforce reviewer/requester separation."""
         ...
+    def verify_currentness(
+        self, *, tenant_id: str, certificate_fingerprint_sha256: str,
+        expected_enrollment_revision: int, enrollment_provenance_snapshot: dict[str, object],
+        approval_provenance_snapshot: dict[str, object], evaluated_at: datetime,
+    ) -> VerifiedSignerEvidenceCurrentness:
+        """Re-read all three authoritative records and return a bounded lease."""
+        ...
+
 
 
 class UnavailableInstitutionalSignerEvidenceVerifier:
@@ -157,6 +189,11 @@ class UnavailableInstitutionalSignerEvidenceVerifier:
             "INSTITUTIONAL_SIGNER_EVIDENCE_AUTHORITY_UNAVAILABLE"
         )
 
+    def verify_currentness(self, **_kwargs: object) -> VerifiedSignerEvidenceCurrentness:
+        raise InstitutionalSignerEvidenceVerificationError(
+            "INSTITUTIONAL_SIGNER_CURRENTNESS_AUTHORITY_UNAVAILABLE"
+        )
+
 
 __all__ = [
     "VERSION", "TENANT_ID",
@@ -168,5 +205,5 @@ __all__ = [
     "VerifiedInstitutionalEvidenceRecord",
     "VerifiedSignerIdentityProofing",
     "VerifiedSignerMandate",
-    "VerifiedSignerApprovalAttestation",
+    "VerifiedSignerApprovalAttestation", "VerifiedSignerEvidenceCurrentness",
 ]
