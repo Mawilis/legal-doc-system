@@ -15,7 +15,8 @@ from pymongo import ASCENDING
 from pymongo.errors import DuplicateKeyError, PyMongoError
 
 COLLECTION = "wilsy_institutional_signer_enrollments"
-EVENT_COLLECTION = "wilsy_institutional_signer_enrollment_events"\nINSTITUTIONAL_TENANT_ID = "WILSYTENANT-4CD2FZ4O"
+EVENT_COLLECTION = "wilsy_institutional_signer_enrollment_events"
+INSTITUTIONAL_TENANT_ID = "WILSYTENANT-4CD2FZ4O"
 
 
 class InstitutionalSignerRegistryError(RuntimeError):
