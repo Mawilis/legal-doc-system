@@ -18,6 +18,7 @@ import tools.eos.kernel.db as kernel_db
 import tools.eos.saas.auth.auth_registry as auth_registry_module
 import tools.eos.saas.tenancy.tenant_registry as tenant_registry_module
 from tools.eos.api.errors import register_error_handlers
+from tools.eos.saas.auth.auth_registry import AuthRegistry
 from tools.eos.auth.jwt_provider import TokenPurpose, create_access_token
 from tools.eos.auth.principal_authority import PrincipalAuthority
 from tools.eos.auth.principal_authority_repository import PrincipalAuthorityRepository
@@ -108,6 +109,7 @@ def test_authenticated_hiring_http_uses_durable_iam_and_rejects_wrong_tenant_and
         monkeypatch.setattr(http_subject, "get_database", lambda: db)
         monkeypatch.setattr(hiring_router, "get_client", lambda: client)
         monkeypatch.setattr(hiring_router, "get_database", lambda: db)
+        assert AuthRegistry().get_credential_revision(tenant, manager) == 0
 
         app = FastAPI()
         app.include_router(hiring_router.router, prefix="/api")
