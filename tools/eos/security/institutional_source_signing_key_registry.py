@@ -93,6 +93,14 @@ class InstitutionalSourceSigningKeyLifecycleRegistry:
                 [("public_key_fingerprint_sha256", 1)],
                 unique=True, name="uq_source_signing_key_fingerprint",
             )
+            keys.create_index(
+                [("source_system_id", 1), ("rotation.supersedes_key_id", 1)],
+                unique=True, sparse=True, name="uq_source_signing_key_rotation_predecessor",
+            )
+            keys.create_index(
+                [("source_system_id", 1), ("rotation.rotation_id", 1)],
+                unique=True, sparse=True, name="uq_source_signing_key_rotation_id",
+            )
             events.create_index(
                 [("source_system_id", 1), ("idempotency_key", 1)],
                 unique=True, name="uq_source_signing_key_event_idempotency",
@@ -145,6 +153,11 @@ class InstitutionalSourceSigningKeyLifecycleRegistry:
             predecessor = self._keys.find_one(
                 {"source_system_id": source, "key_id": predecessor_id}, session=session
             )
+            if self._keys.find_one(
+                {"source_system_id": source, "rotation.supersedes_key_id": predecessor_id},
+                session=session,
+            ) is not None:
+                raise SourceSigningKeyRegistryConflict("SOURCE_SIGNING_KEY_ROTATION_ALREADY_REPLACED")
             if predecessor is None:
                 raise SourceSigningKeyRegistryConflict("SOURCE_SIGNING_KEY_ROTATION_PREDECESSOR_MISSING")
             if not (start < overlap <= predecessor["valid_until"] and start < end):
@@ -213,6 +226,8 @@ class InstitutionalSourceSigningKeyLifecycleRegistry:
         decision = _identifier("governance_decision_reference", governance_decision_reference)
         idem = _identifier("idempotency_key", idempotency_key)
         occurred = _instant("revoked_at", revoked_at)
+        if occurred > datetime.now(timezone.utc):
+            raise SourceSigningKeyRegistryError("SOURCE_SIGNING_KEY_REVOCATION_CANNOT_BE_FUTURE_DATED")
         record = self._keys.find_one({"source_system_id": source, "key_id": key}, session=session)
         if record is None:
             raise SourceSigningKeyRegistryConflict("SOURCE_SIGNING_KEY_NOT_FOUND")
