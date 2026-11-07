@@ -70,6 +70,7 @@ def test_static_role_grants_are_narrow_and_nonpossessory():
         "security:institutional_signer:enroll",
         "security:institutional_signer:approve",
         "security:institutional_signer:revoke",
+        "hr:hiring_offer:sign",
     ]
     assert get_roles_granting_permission("crm:work_item:read") == ("AUDITOR", "ENTERPRISE_ADMIN", "TENANT_OWNER")
     assert get_roles_granting_permission("crm:work_item:create") == ("ENTERPRISE_ADMIN", "TENANT_OWNER")
