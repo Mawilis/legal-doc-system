@@ -95,11 +95,15 @@ class InstitutionalSourceSigningKeyLifecycleRegistry:
             )
             keys.create_index(
                 [("source_system_id", 1), ("rotation.supersedes_key_id", 1)],
-                unique=True, sparse=True, name="uq_source_signing_key_rotation_predecessor",
+                unique=True,
+                partialFilterExpression={"rotation.supersedes_key_id": {"$exists": True}},
+                name="uq_source_signing_key_rotation_predecessor",
             )
             keys.create_index(
                 [("source_system_id", 1), ("rotation.rotation_id", 1)],
-                unique=True, sparse=True, name="uq_source_signing_key_rotation_id",
+                unique=True,
+                partialFilterExpression={"rotation.rotation_id": {"$exists": True}},
+                name="uq_source_signing_key_rotation_id",
             )
             events.create_index(
                 [("source_system_id", 1), ("idempotency_key", 1)],
