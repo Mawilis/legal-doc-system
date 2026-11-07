@@ -38,7 +38,7 @@ NOW = datetime.now(timezone.utc)
 
 def _seed_user(db, principal_id, tenant_id):
     db["users"].insert_one({
-        "user_id": principal_id, "email": f"{principal_id}@example.invalid",
+        "user_id": principal_id, "email": f"{principal_id}@example.com",
         "firstName": "Hiring", "lastName": "Test", "role": "USER",
         "permissions": [], "tenantId": tenant_id, "passwordHash": "test-only",
         "credential_revision": 0, "mfaRegistered": False, "hasSignedCovenant": False,
