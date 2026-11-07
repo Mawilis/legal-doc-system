@@ -2,6 +2,8 @@ import hashlib
 import json
 from types import SimpleNamespace
 
+import pytest
+
 from tools.eos.api.hiring_lifecycle_router import _signed_offer_manifest
 
 
