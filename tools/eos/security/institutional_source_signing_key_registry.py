@@ -193,7 +193,7 @@ class InstitutionalSourceSigningKeyLifecycleRegistry:
         }
         prior = self._events.find_one({"source_system_id": source, "idempotency_key": idem}, session=session)
         if prior is not None:
-            if prior.get("record_fingerprint_sha256") != fingerprint_of_record:
+            if prior.get("event_type") != "PROPOSED" or prior.get("record_fingerprint_sha256") != fingerprint_of_record:
                 raise SourceSigningKeyRegistryConflict("SOURCE_SIGNING_KEY_DIVERGENT_REPLAY")
             existing = self._keys.find_one({"source_system_id": source, "key_id": key}, session=session)
             if existing is None:
@@ -306,6 +306,11 @@ class InstitutionalSourceSigningKeyLifecycleRegistry:
             raise SourceSigningKeyRegistryConflict("SOURCE_SIGNING_KEY_NOT_FOUND")
         if actor == record["proposed_by_principal_id"]:
             raise SourceSigningKeyRegistryConflict("SOURCE_SIGNING_KEY_MAKER_CHECKER_VIOLATION")
+        if self._events.find_one(
+            {"source_system_id": source, "key_id": key, "event_type": "APPROVED"},
+            session=session,
+        ) is None:
+            raise SourceSigningKeyRegistryConflict("SOURCE_SIGNING_KEY_NOT_APPROVED")
         event = {
             "schema": EVENT_SCHEMA, "event_type": "REVOKED",
             "source_system_id": source, "key_id": key,
