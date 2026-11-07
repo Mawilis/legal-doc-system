@@ -255,3 +255,14 @@ def test_rejects_tampered_institutional_document_signature(tmp_path):
             signature=signature,
             verified_at=NOW,
         )
+
+
+
+def test_crl_refresh_requires_and_invokes_durable_currentness_binding(tmp_path):
+    verifier, _, _, _ = _fixture(tmp_path)
+    observations = []
+    verifier.bind_crl_currentness_recorder(lambda value: observations.append(dict(value)))
+    verifier.refresh_crls()
+    assert len(observations) == 1
+    assert len(observations[0]) == 2
+    assert all(number == 1 for number, _ in observations[0].values())
