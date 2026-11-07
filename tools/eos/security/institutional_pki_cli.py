@@ -72,6 +72,8 @@ def _intermediate_from_kms_csr(args: argparse.Namespace) -> None:
         output_directory=Path(args.output_dir),
         expected_common_name=args.common_name,
         organization=args.organization,
+        expected_organizational_unit=args.organizational_unit,
+        expected_country_code=args.country_code,
         crl_distribution_base_url=args.crl_base_url,
         validity_days=args.validity_days,
     )
@@ -137,6 +139,8 @@ def build_parser() -> argparse.ArgumentParser:
     kms_intermediate.add_argument("--output-dir", required=True)
     kms_intermediate.add_argument("--common-name", required=True)
     kms_intermediate.add_argument("--organization", required=True)
+    kms_intermediate.add_argument("--organizational-unit", required=True)
+    kms_intermediate.add_argument("--country-code", required=True)
     kms_intermediate.add_argument("--crl-base-url", required=True)
     kms_intermediate.add_argument("--validity-days", type=int, default=1825)
     kms_intermediate.set_defaults(run=_intermediate_from_kms_csr)
