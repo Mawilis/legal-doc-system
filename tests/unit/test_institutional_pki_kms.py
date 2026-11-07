@@ -11,6 +11,7 @@ from tools.eos.security.institutional_pki_provisioning import (
 from tools.eos.security.institutional_pki_kms import (
     InstitutionalPKIKMSError,
     create_nonexportable_subordinate_ca_key_and_csr,
+    issue_crl_with_kms,
 )
 
 
@@ -28,10 +29,17 @@ class FakeKMS:
             "Origin": "AWS_KMS", "KeyState": "Enabled", "MultiRegion": False,
         }}
 
+    def describe_key(self, **kwargs):
+        return {"KeyMetadata": {
+            "Arn": kwargs["KeyId"],
+            "KeySpec": "RSA_3072", "KeyUsage": "SIGN_VERIFY",
+            "Origin": "AWS_KMS", "KeyState": "Enabled", "MultiRegion": False,
+        }}
+
     def get_public_key(self, **kwargs):
         return {
             "KeySpec": "RSA_3072", "KeyUsage": "SIGN_VERIFY",
-            "SigningAlgorithms": ["RSASSA_PSS_SHA_384"],
+            "SigningAlgorithms": ["RSASSA_PSS_SHA_384", "RSASSA_PKCS1_V1_5_SHA_384"],
             "PublicKey": self.private_key.public_key().public_bytes(
                 serialization.Encoding.DER,
                 serialization.PublicFormat.SubjectPublicKeyInfo,
@@ -41,11 +49,16 @@ class FakeKMS:
     def sign(self, **kwargs):
         self.sign_calls.append(kwargs)
         digest = kwargs["Message"]
-        signature = self.private_key.sign(
-            digest,
-            padding.PSS(mgf=padding.MGF1(hashes.SHA384()), salt_length=48),
-            Prehashed(hashes.SHA384()),
-        )
+        if kwargs["SigningAlgorithm"] == "RSASSA_PSS_SHA_384":
+            signature = self.private_key.sign(
+                digest,
+                padding.PSS(mgf=padding.MGF1(hashes.SHA384()), salt_length=48),
+                Prehashed(hashes.SHA384()),
+            )
+        else:
+            signature = self.private_key.sign(
+                digest, padding.PKCS1v15(), Prehashed(hashes.SHA384()),
+            )
         return {"Signature": signature}
 
 
@@ -148,3 +161,55 @@ def test_offline_root_can_issue_kms_csr_without_exporting_subordinate_private_ke
     assert certificate.extensions.get_extension_for_class(x509.BasicConstraints).value.path_length == 0
     assert len(fingerprint) == 64
     assert list((tmp_path / "issued-intermediate").glob("*-key.pem")) == []
+
+
+
+def test_kms_subordinate_key_signs_current_revocation_crl_without_exporting_private_key(tmp_path):
+    kms = FakeKMS()
+    result = create_nonexportable_subordinate_ca_key_and_csr(
+        kms, region="af-south-1", key_policy_json=policy(),
+        common_name="WILSY EOS Intermediate CA",
+        organization="Wilsy (Pty) Ltd",
+        organizational_unit="Institutional PKI",
+        country_code="ZA",
+    )
+    passphrase = b"test-offline-root-passphrase-2026"
+    root_key, root_cert, _ = create_offline_root(
+        output_directory=tmp_path / "offline-root",
+        common_name="WILSY EOS Test Root CA",
+        organization="Wilsy (Pty) Ltd",
+        passphrase=passphrase,
+        crl_distribution_base_url="https://pki.example.test/api/security/pki/crl",
+        validity_days=365,
+    )
+    certificate_path, _ = issue_intermediate_from_kms_csr(
+        root_certificate_pem=root_cert,
+        root_private_key_pem=root_key,
+        root_passphrase=passphrase,
+        csr_pem=result.csr_pem,
+        output_directory=tmp_path / "issued-intermediate",
+        expected_common_name="WILSY EOS Intermediate CA",
+        organization="Wilsy (Pty) Ltd",
+        expected_organizational_unit="Institutional PKI",
+        expected_country_code="ZA",
+        crl_distribution_base_url="https://pki.example.test/api/security/pki/crl",
+        validity_days=180,
+    )
+    issuer = x509.load_pem_x509_certificate(certificate_path.read_bytes())
+    crl_path, fingerprint = issue_crl_with_kms(
+        kms, key_arn=result.key_arn,
+        issuer_certificate_pem=certificate_path.read_bytes(),
+        output_path=tmp_path / "intermediate.crl.pem",
+        revoked_serial_numbers=[0xABCDEF],
+        crl_number=7,
+        validity_hours=24,
+    )
+    crl = x509.load_pem_x509_crl(crl_path.read_bytes())
+    assert crl.issuer == issuer.subject
+    assert crl.extensions.get_extension_for_class(x509.CRLNumber).value.crl_number == 7
+    assert crl.get_revoked_certificate_by_serial_number(0xABCDEF) is not None
+    issuer.public_key().verify(
+        crl.signature, crl.tbs_certlist_bytes,
+        padding.PKCS1v15(), crl.signature_hash_algorithm,
+    )
+    assert len(fingerprint) == 64
