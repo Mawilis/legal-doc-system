@@ -44,13 +44,13 @@ def test_requisition_must_be_submitted_before_approval():
 
 
 def test_maker_cannot_approve_own_headcount_request():
-    submitted = requisition().submit(expected_revision=1)
+    submitted = requisition().submit(actor_principal_id="principal-requester", submitted_at=datetime(2026, 11, 7, tzinfo=timezone.utc), expected_revision=1)
     with pytest.raises(RequisitionError, match="MAKER_CHECKER"):
         submitted.decide(approval(actor="principal-requester"), expected_revision=2)
 
 
 def test_independent_approval_advances_revision_and_preserves_scope():
-    submitted = requisition().submit(expected_revision=1)
+    submitted = requisition().submit(actor_principal_id="principal-requester", submitted_at=datetime(2026, 11, 7, tzinfo=timezone.utc), expected_revision=1)
     approved = submitted.decide(approval(), expected_revision=2)
     assert approved.status is RequisitionStatus.APPROVED
     assert approved.revision == 3
@@ -60,7 +60,7 @@ def test_independent_approval_advances_revision_and_preserves_scope():
 
 
 def test_rejection_is_a_distinct_terminal_decision():
-    rejected = requisition().submit(expected_revision=1).decide(
+    rejected = requisition().submit(actor_principal_id="principal-requester", submitted_at=datetime(2026, 11, 7, tzinfo=timezone.utc), expected_revision=1).decide(
         approval(decision=RequisitionDecision.REJECT),
         expected_revision=2,
     )
@@ -70,7 +70,7 @@ def test_rejection_is_a_distinct_terminal_decision():
 
 
 def test_stale_revision_cannot_overwrite_requisition():
-    submitted = requisition().submit(expected_revision=1)
+    submitted = requisition().submit(actor_principal_id="principal-requester", submitted_at=datetime(2026, 11, 7, tzinfo=timezone.utc), expected_revision=1)
     with pytest.raises(RequisitionError, match="REVISION_CONFLICT"):
         submitted.decide(approval(), expected_revision=1)
 
@@ -90,3 +90,24 @@ def test_fingerprint_detects_tampering():
     value = requisition()
     with pytest.raises(RequisitionError, match="FINGERPRINT_MISMATCH"):
         requisition(business_justification="Tampered", fingerprint=value.fingerprint)
+
+
+def test_submitter_must_be_the_requisition_requester():
+    with pytest.raises(RequisitionError, match="SUBMISSION_ACTOR_MISMATCH"):
+        requisition().submit(
+            actor_principal_id="different-principal",
+            submitted_at=datetime(2026, 11, 7, tzinfo=timezone.utc),
+            expected_revision=1,
+        )
+
+
+def test_approver_must_differ_from_requester_and_submitter():
+    submitted = requisition().submit(
+        actor_principal_id="principal-requester",
+        submitted_at=datetime(2026, 11, 7, tzinfo=timezone.utc),
+        expected_revision=1,
+    )
+    with pytest.raises(RequisitionError, match="MAKER_CHECKER"):
+        submitted.decide(approval(actor="principal-requester"), expected_revision=2)
+    with pytest.raises(RequisitionError, match="MAKER_CHECKER"):
+        submitted.decide(approval(actor="principal-requester"), expected_revision=2)
