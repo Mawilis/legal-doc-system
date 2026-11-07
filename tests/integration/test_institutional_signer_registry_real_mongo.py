@@ -34,6 +34,10 @@ def _provenance_record(*, kind: str, now: datetime, **scope):
         "tenant_id": "WILSYTENANT-4CD2FZ4O",
         "certificate_fingerprint_sha256": "a" * 64,
         "evidence_kind": kind,
+        "identity_assurance_level": "SUBSTANTIAL",
+        "legal_entity_reference": "WILSY-PTY-LTD",
+        "mandate_scope": "INSTITUTIONAL_SIGNER",
+        "approval_scope": "INSTITUTIONAL_SIGNER_ENROLLMENT",
     }
     record.update(scope)
     return record
