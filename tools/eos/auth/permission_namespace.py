@@ -737,6 +737,13 @@ _PERMISSIONS: Final = MappingProxyType(
             "record own-tenant employee relations evidence",
             tenant=True, workforce=True,
         ),
+        "hr:employee_directory:read": _meta(
+            "hr:employee_directory:read",
+            "TENANT",
+            "TENANT",
+            "read limited own-tenant workforce directory fields",
+            tenant=True, workforce=True,
+        ),
         "hr:document:standard_employment:write": _meta(
             "hr:document:standard_employment:write",
             "TENANT", "TENANT",
