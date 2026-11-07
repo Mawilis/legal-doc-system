@@ -4,7 +4,7 @@
 - **Date:** 2026-11-07
 - **Decision owner:** WILSY EOS platform architecture
 - **First proving customer:** CMHL Royal Logistics and Supplies Co. Ltd (Tanzania)
-- **Parent customer discovery:** [Royal workspace contract](./royal-logistics-tanzania-workspace-contract-2026-11-07.md)
+- **Parent customer discovery:** [Royal workspace contract](../customer-workspaces/royal-logistics-tanzania-workspace-contract-2026-11-07.md)
 
 ## Context
 
