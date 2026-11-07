@@ -82,3 +82,12 @@ No single engineer, tenant owner, CI workflow or EOS service may self-approve th
 ## Exit decision
 
 Until the source authorities are selected, adapters independently assessed, full provenance persistence implemented, replica-set certification green and institutional reviewers have signed the evidence package, the verifier remains unavailable and the signer enrollment/approval routes remain fail-closed.
+
+
+## Post-approval currentness reconciliation contract
+
+The registry now accepts only a verifier-issued opaque currentness result. The verifier contract includes a separate `verify_currentness` operation that must re-read the identity, mandate and independent approval source records. Reconciliation is bound to the enrollment's expected revision, exact evidence references, source-system and immutable source-record identities, canonical tenant/certificate/principal/requester/reviewer scope, and a digest of all three current snapshots. A source revision may advance only for the same source system and immutable record identity; a changed source identity is denied for governance review.
+
+The currentness result carries two distinct digests: the canonical digest of the verified provenance snapshot and the fingerprint of the source observation/response used for the recheck. The caller-owned Mongo transaction atomically writes the currentness projection, enrollment revision and append-only event. Stale revisions, divergent idempotency replay, scope changes and digest mismatches fail closed. `CURRENT` requires an adapter-issued finite `valid_until` lease; signer use is denied when that lease expires, even if no reconciliation worker has yet marked the record stale. `NOT_CURRENT` records a reason and observation fingerprint and immediately makes the signer unusable.
+
+No lease duration, maximum evidence age, source polling cadence, positive adapter or external source credentials are configured by this change. The approved adapter must derive the finite lease from a separately approved governance policy and authoritative source semantics. The current default verifier rejects currentness verification, so no record can be promoted to `CURRENT` through production runtime today. The replica-set test uses a test-only opaque result fixture to exercise the registry contract; it is not a live source adapter or evidence of institutional authority.
