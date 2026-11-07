@@ -151,7 +151,7 @@ def test_approval_maker_checker_and_event_revision_are_preserved():
     registry.transition(
         tenant_id=TENANT, requisition_id=item.requisition_id, expected_revision=1,
         updated=submitted, action="SUBMITTED", actor_principal_id="principal-requester",
-        idempotency_key="submit-1", occurred_at=NOW, session=object(),
+        idempotency_key="submit-1", request_fingerprint="d" * 128, occurred_at=NOW, session=object(),
     )
     approved = submitted.decide(
         HeadcountApproval(
