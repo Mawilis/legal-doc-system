@@ -97,8 +97,56 @@ def test_signer_evidence_verifier_is_unavailable_by_default_and_denies_enrollmen
     assert error.value.detail == "INSTITUTIONAL_SIGNER_EVIDENCE_AUTHORITY_UNAVAILABLE"
 
 
-def test_signer_evidence_verifier_requires_a_canonical_provenance_fingerprint():
+def _evidence_record(**overrides):
+    now = datetime.now(timezone.utc)
+    values = {
+        "source_system_id": "dha-npr-verification",
+        "source_record_id": "record-001",
+        "source_revision": "revision-7",
+        "status": "ACTIVE",
+        "evidence_fingerprint_sha256": "e" * 64,
+        "valid_from": now.replace(year=now.year - 1),
+        "valid_until": None,
+        "revoked": False,
+        "verified_at": now,
+        "tenant_id": "WILSYTENANT-4CD2FZ4O",
+        "subject_principal_id": "PRINCIPAL-1",
+        "certificate_fingerprint_sha256": "a" * 64,
+    }
+    values.update(overrides)
+    return SimpleNamespace(**values)
+
+
+def test_signer_route_builds_complete_identity_and_mandate_provenance():
+    now = datetime.now(timezone.utc)
+    result = SimpleNamespace(
+        identity_proofing=_evidence_record(),
+        signatory_mandate=_evidence_record(
+            source_system_id="wilsy-company-secretarial-register",
+            source_record_id="board-resolution-009",
+            evidence_kind="SIGNATORY_MANDATE",
+            legal_entity_reference="WILSY-PTY-LTD",
+            mandate_scope="INSTITUTIONAL_SIGNER",
+        ),
+    )
+    result.identity_proofing.evidence_kind = "IDENTITY_PROOFING"
+    snapshot, digest = router._enrollment_provenance(
+        result, tenant_id="WILSYTENANT-4CD2FZ4O",
+        certificate_fingerprint_sha256="a" * 64,
+        subject_principal_id="PRINCIPAL-1", evaluated_at=now,
+    )
+    assert snapshot["identity_proofing"]["source_system_id"] == "dha-npr-verification"
+    assert snapshot["signatory_mandate"]["source_record_id"] == "board-resolution-009"
+    assert len(digest) == 64
+
+
+def test_signer_route_rejects_expired_or_revoked_evidence_provenance():
+    now = datetime.now(timezone.utc)
+    expired = _evidence_record(valid_until=now.replace(year=now.year - 1))
     with pytest.raises(HTTPException) as error:
-        router._provenance_fingerprint(SimpleNamespace(provenance_fingerprint_sha256="unverified"))
-    assert error.value.status_code == 503
-    assert error.value.detail == "INSTITUTIONAL_SIGNER_EVIDENCE_PROVENANCE_INVALID"
+        router._record_provenance_snapshot(expired, evaluated_at=now, expected_bindings={})
+    assert error.value.detail == "INSTITUTIONAL_SIGNER_EVIDENCE_NOT_CURRENT"
+    revoked = _evidence_record(revoked=True)
+    with pytest.raises(HTTPException) as error:
+        router._record_provenance_snapshot(revoked, evaluated_at=now, expected_bindings={})
+    assert error.value.detail == "INSTITUTIONAL_SIGNER_EVIDENCE_NOT_CURRENT"
