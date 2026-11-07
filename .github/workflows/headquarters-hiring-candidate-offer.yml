@@ -9,6 +9,7 @@ on:
       - "tools/eos/auth/tenant_authorization.py"
       - "tools/eos/auth/roles.py"
       - "tools/eos/auth/tenant_authority_policy.py"
+      - "tools/eos/auth/tenant_authority_policy.py"
       - "tools/eos/saas/domain/hiring_lifecycle.py"
       - "tools/eos/saas/hr/hiring_lifecycle_registry.py"
       - "tests/unit/test_hiring_lifecycle_domain.py"
@@ -60,6 +61,7 @@ jobs:
             tools/eos/auth/permission_namespace.py \
             tools/eos/auth/tenant_authorization.py \
             tools/eos/auth/roles.py \
+            tools/eos/auth/tenant_authority_policy.py \
             tools/eos/saas/domain/hiring_lifecycle.py \
             tools/eos/saas/hr/hiring_lifecycle_registry.py \
             tests/unit/test_hiring_lifecycle_domain.py \
