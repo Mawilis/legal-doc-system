@@ -170,7 +170,6 @@ class InstitutionalSignerEvidenceVerifier(Protocol):
         self, *, tenant_id: str, certificate_fingerprint_sha256: str,
         expected_enrollment_revision: int, enrollment_provenance_snapshot: dict[str, object],
         approval_provenance_snapshot: dict[str, object], evaluated_at: datetime,
-        session: object,
     ) -> VerifiedSignerEvidenceCurrentness:
         """Re-read all three authoritative records and return a bounded lease."""
         ...
