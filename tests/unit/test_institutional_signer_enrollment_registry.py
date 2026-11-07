@@ -22,12 +22,25 @@ class MemoryCollection:
     def create_index(self, *args, **kwargs):
         return kwargs.get("name")
 
+    def _matches(self, row, query):
+        for key, value in query.items():
+            if isinstance(value, dict) and "$in" in value:
+                if row.get(key) not in value["$in"]:
+                    return False
+            elif row.get(key) != value:
+                return False
+        return True
+
     def find_one(self, query, session=None):
         assert session is not None
         for row in self.rows:
-            if all(row.get(key) == value for key, value in query.items()):
+            if self._matches(row, query):
                 return dict(row)
         return None
+
+    def find(self, query, session=None):
+        assert session is not None
+        return [dict(row) for row in self.rows if self._matches(row, query)]
 
     def insert_one(self, value, session=None):
         assert session is not None
@@ -39,7 +52,7 @@ class MemoryCollection:
     def update_one(self, query, update, session=None):
         assert session is not None
         for row in self.rows:
-            if all(row.get(key) == value for key, value in query.items()):
+            if self._matches(row, query):
                 row.update(update["$set"])
                 return Result(1)
         return Result(0)
@@ -172,3 +185,50 @@ def test_wilsy_institutional_signer_registry_rejects_other_tenant_scopes():
     with pytest.raises(InstitutionalSignerRegistryConflict, match="TENANT_SCOPE_INVALID"):
         request(registry, object(), tenant_id="CUSTOMER-TENANT-001")
     assert not records.rows and not events.rows
+
+
+
+def test_revocation_publication_closes_only_when_verified_crl_contains_exact_issuer_and_serial():
+    registry, records, events = setup_registry()
+    tx = object()
+    request(registry, tx)
+    registry.approve_enrollment(
+        tenant_id="WILSYTENANT-4CD2FZ4O",
+        certificate_fingerprint_sha256="a" * 64,
+        approver_principal_id="owner-approver",
+        approval_attestation_reference="attestation://independent-review/001",
+        approved_at=datetime(2026, 11, 7, 13, tzinfo=timezone.utc),
+        idempotency_key="approve-independent",
+        session=tx,
+    )
+    registry.revoke(
+        tenant_id="WILSYTENANT-4CD2FZ4O",
+        certificate_fingerprint_sha256="a" * 64,
+        revoked_by_principal_id="owner-revoker",
+        revoked_at=datetime(2026, 11, 7, 14, tzinfo=timezone.utc),
+        reason="Mandate withdrawn",
+        idempotency_key="revoke-001",
+        session=tx,
+    )
+    observed = ({
+        "issuer_subject_sha256": "c" * 64,
+        "crl_number": 9,
+        "crl_fingerprint_sha256": "d" * 64,
+        "revoked_serial_numbers_hex": ("abc123",),
+    },)
+    assert registry.reconcile_crl_publications(
+        verified_crls=observed,
+        reconciled_at=datetime(2026, 11, 7, 15, tzinfo=timezone.utc),
+        actor_reference="runtime://institutional-pki",
+        session=tx,
+    ) == 1
+    record = records.rows[0]
+    assert record["crl_revocation_publication_status"] == "PUBLISHED"
+    assert record["crl_published_number"] == 9
+    assert events.rows[-1]["action"] == "SIGNER_REVOCATION_CRL_PUBLISHED"
+    assert registry.reconcile_crl_publications(
+        verified_crls=observed,
+        reconciled_at=datetime(2026, 11, 7, 16, tzinfo=timezone.utc),
+        actor_reference="runtime://institutional-pki",
+        session=tx,
+    ) == 0
