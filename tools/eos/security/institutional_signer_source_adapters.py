@@ -236,6 +236,7 @@ def _canonical_source_response_payload(
         "enrollment_requester_principal_id": response.enrollment_requester_principal_id,
         "legal_entity_reference": response.legal_entity_reference,
         "observed_at": response.observed_at.isoformat(),
+        "response_signature_reference": response.response_signature_reference,
         "response_signing_key_id": response.response_signing_key_id,
         "reviewer_principal_id": response.reviewer_principal_id,
         "revoked": response.revoked,
