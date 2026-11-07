@@ -175,6 +175,31 @@ def test_authenticated_signed_offer_verification_is_required_before_acceptance(m
         app.dependency_overrides[hiring_router._OFFER_ACCEPT] = lambda: context
 
         with TestClient(app, raise_server_exceptions=False) as http:
+            premature_acceptance = http.post(
+                f"/api/hr/hiring/offers/{offer_id}/accept",
+                headers={"Idempotency-Key": "signed-offer-accept-before-verification"},
+                json={
+                    "expected_revision": 4,
+                    "evidence_reference": evidence_id,
+                    "evidence_fingerprint": digest,
+                    "evidence_version_id": version_id,
+                },
+            )
+            assert premature_acceptance.status_code == 409
+
+            tampered_signature = signature[:-1] + ("A" if signature[-1] != "A" else "B")
+            rejected = http.post(
+                f"/api/hr/hiring/offers/{offer_id}/evidence/{evidence_id}/{version_id}/verify",
+                headers={"Idempotency-Key": "signed-offer-verify-tampered"},
+                json={
+                    "signer_key_id": signer_key_id,
+                    "signed_at": signed_at.isoformat(),
+                    "signature_b64url": tampered_signature,
+                },
+            )
+            assert rejected.status_code == 409
+            assert db["wilsy_hr_signed_offer_verifications"].count_documents({"tenant_id": tenant}) == 0
+
             verified = http.post(
                 f"/api/hr/hiring/offers/{offer_id}/evidence/{evidence_id}/{version_id}/verify",
                 headers={"Idempotency-Key": "signed-offer-verify"},
