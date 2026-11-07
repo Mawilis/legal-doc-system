@@ -56,6 +56,11 @@ def _decode_chain(body: CertificateChain) -> tuple[bytes, tuple[bytes, ...]]:
         raise HTTPException(status_code=422, detail="INSTITUTIONAL_SIGNER_CERTIFICATE_INPUT_INVALID") from error
 
 
+def _require_institutional_tenant(context: TenantAuthorizationContext) -> None:
+    if context.tenant_id != INSTITUTIONAL_TENANT_ID:
+        raise HTTPException(status_code=403, detail="INSTITUTIONAL_SIGNER_TENANT_SCOPE_INVALID")
+
+
 def _verifier(request) -> InstitutionalPKIVerifier:
     if getattr(request.app.state, "institutional_pki_ready", False) is not True:
         raise HTTPException(status_code=503, detail="INSTITUTIONAL_PKI_NOT_READY")
@@ -109,6 +114,7 @@ async def request_signer_enrollment(
     idempotency_key: str = Header(alias="Idempotency-Key", min_length=1, max_length=200),
     context: TenantAuthorizationContext = Depends(_ENROLL),
 ):
+    _require_institutional_tenant(context)
     verifier = _verifier(request)
     leaf_pem, intermediates = _decode_chain(body)
     now = datetime.now(timezone.utc)
@@ -152,6 +158,7 @@ async def approve_signer_enrollment(
     idempotency_key: str = Header(alias="Idempotency-Key", min_length=1, max_length=200),
     context: TenantAuthorizationContext = Depends(_APPROVE),
 ):
+    _require_institutional_tenant(context)
     verifier = _verifier(request)
     leaf_pem, intermediates = _decode_chain(body)
     try:
