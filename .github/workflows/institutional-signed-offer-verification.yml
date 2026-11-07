@@ -8,12 +8,17 @@ on:
       - "tools/eos/security/institutional_signature_evidence_registry.py"
       - "tools/eos/security/institutional_signer_enrollment_registry.py"
       - "tools/eos/security/institutional_pki.py"
+      - "tools/eos/security/institutional_pki_kms.py"
+      - "tools/eos/security/institutional_pki_kms_cli.py"
+      - "tools/eos/security/institutional_pki_provisioning.py"
+      - "tools/eos/security/institutional_pki_cli.py"
       - "tools/eos/saas/hr/candidate_evidence_s3_storage_adapter.py"
       - "tools/eos/auth/permission_namespace.py"
       - "tools/eos/auth/roles.py"
       - "tools/eos/auth/tenant_authorization.py"
       - "tools/eos/auth/tenant_authority_policy.py"
       - "tests/unit/test_institutional_pki.py"
+      - "tests/unit/test_institutional_pki_kms.py"
       - "tests/unit/test_institutional_signature_evidence_registry.py"
       - "tests/unit/test_institutional_signer_enrollment_registry.py"
       - "tests/unit/test_permission_namespace.py"
@@ -61,6 +66,10 @@ jobs:
             tools/eos/api/hiring_lifecycle_router.py \
             tools/eos/api/institutional_signer_router.py \
             tools/eos/security/institutional_pki.py \
+            tools/eos/security/institutional_pki_kms.py \
+            tools/eos/security/institutional_pki_kms_cli.py \
+            tools/eos/security/institutional_pki_provisioning.py \
+            tools/eos/security/institutional_pki_cli.py \
             tools/eos/security/institutional_signature_evidence_registry.py \
             tools/eos/security/institutional_signer_enrollment_registry.py \
             tools/eos/auth/permission_namespace.py \
@@ -71,6 +80,7 @@ jobs:
             tools/eos/saas/hr/candidate_evidence_registry.py \
             tools/eos/saas/hr/candidate_evidence_s3_storage_adapter.py \
             tests/unit/test_institutional_pki.py \
+            tests/unit/test_institutional_pki_kms.py \
             tests/unit/test_institutional_signature_evidence_registry.py \
             tests/unit/test_institutional_signer_enrollment_registry.py \
             tests/unit/test_permission_namespace.py \
@@ -80,6 +90,7 @@ jobs:
         run: |
           python -m pytest -q \
             tests/unit/test_institutional_pki.py \
+            tests/unit/test_institutional_pki_kms.py \
             tests/unit/test_institutional_signature_evidence_registry.py \
             tests/unit/test_institutional_signer_enrollment_registry.py \
             tests/unit/test_permission_namespace.py \
