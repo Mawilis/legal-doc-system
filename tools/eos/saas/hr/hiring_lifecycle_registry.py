@@ -90,7 +90,7 @@ class HiringLifecycleRegistry:
     def _append(self, *, tenant_id: str, aggregate_type: str, aggregate_id: str,
                 revision: int, actor_principal_id: str, action: str,
                 fingerprint: str, snapshot: dict[str, object],
-                occurred_at: object, session: object, idempotency_key: str | None = None) -> None:
+                occurred_at: object, session: object, idempotency_key: str | None = None,\n                command_fingerprint: str | None = None) -> None:
         tx = _tx(session)
         event = {
             "tenant_id": tenant_id,
@@ -225,6 +225,25 @@ class HiringLifecycleRegistry:
             raise HiringLifecycleRegistryConflict("HIRING_SCOPE_IMMUTABLE")
         if current.revision != expected_revision or updated.revision != expected_revision + 1:
             raise HiringLifecycleRegistryConflict("HIRING_REVISION_CONFLICT")
+        key = _scope(idempotency_key, "HIRING_IDEMPOTENCY_KEY_INVALID") if idempotency_key is not None else None
+        command_hash = _scope(command_fingerprint, "HIRING_COMMAND_FINGERPRINT_INVALID") if command_fingerprint is not None else None
+        if (key is None) != (command_hash is None):
+            raise HiringLifecycleRegistryError("HIRING_IDEMPOTENCY_CONTRACT_INVALID")
+        if key is not None:
+            try:
+                prior = self._events.find_one({"tenant_id": current.tenant_id, "idempotency_key": key}, session=tx)
+            except PyMongoError as error:
+                raise HiringLifecycleRegistryError("HIRING_REPLAY_READ_UNAVAILABLE") from error
+            if prior is not None:
+                if (prior.get("aggregate_type") != aggregate_type
+                    or prior.get("aggregate_id") != getattr(current, identity_field)
+                    or prior.get("action") != action
+                    or prior.get("command_fingerprint") != command_hash):
+                    raise HiringLifecycleRegistryConflict("HIRING_DIVERGENT_COMMAND_REPLAY")
+                try:
+                    return hydrate({k: v for k, v in prior["snapshot"].items() if k != "_id"})
+                except Exception as error:
+                    raise HiringLifecycleRegistryError("HIRING_REPLAY_SNAPSHOT_INVALID") from error
         try:
             result = collection.update_one(
                 {"tenant_id": current.tenant_id, identity_field: getattr(current, identity_field),
