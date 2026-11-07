@@ -24,8 +24,14 @@ class MemoryCollection:
 
     def _matches(self, row, query):
         for key, value in query.items():
-            if isinstance(value, dict) and "$in" in value:
+            if key == "$or":
+                if not any(self._matches(row, clause) for clause in value):
+                    return False
+            elif isinstance(value, dict) and "$in" in value:
                 if row.get(key) not in value["$in"]:
+                    return False
+            elif isinstance(value, dict) and "$lte" in value:
+                if row.get(key) is None or row.get(key) > value["$lte"]:
                     return False
             elif row.get(key) != value:
                 return False
@@ -326,3 +332,40 @@ def test_signer_use_accepts_valid_utc_lease_decoded_as_naive_bson_datetime():
         trust_root_sha256="b" * 64,
         session=tx,
     )["status"] == "ACTIVE"
+
+
+def test_currentness_candidate_query_returns_only_pending_or_expired_active_enrollments():
+    registry, records, _events = setup_registry()
+    tx = object()
+    request(registry, tx)
+    now = datetime.now(timezone.utc)
+    registry.approve_enrollment(
+        tenant_id="WILSYTENANT-4CD2FZ4O",
+        certificate_fingerprint_sha256="a" * 64,
+        approver_principal_id="owner-approver",
+        approval_attestation_reference="attestation://independent-review/001",
+        approved_at=now, idempotency_key="approve-candidate-test", session=tx,
+    )
+    candidates = registry.list_currentness_candidates(
+        tenant_id="WILSYTENANT-4CD2FZ4O", as_of=now, limit=10, session=tx,
+    )
+    assert len(candidates) == 1
+    assert candidates[0]["evidence_currentness_status"] == "PENDING_VERIFICATION"
+
+    records.rows[0].update({
+        "evidence_currentness_status": "CURRENT",
+        "evidence_currentness_valid_until": now + timedelta(minutes=5),
+    })
+    assert registry.list_currentness_candidates(
+        tenant_id="WILSYTENANT-4CD2FZ4O", as_of=now, limit=10, session=tx,
+    ) == []
+
+    records.rows[0]["evidence_currentness_valid_until"] = now - timedelta(seconds=1)
+    assert len(registry.list_currentness_candidates(
+        tenant_id="WILSYTENANT-4CD2FZ4O", as_of=now, limit=10, session=tx,
+    )) == 1
+
+    records.rows[0]["evidence_currentness_status"] = "NOT_CURRENT"
+    assert registry.list_currentness_candidates(
+        tenant_id="WILSYTENANT-4CD2FZ4O", as_of=now, limit=10, session=tx,
+    ) == []
