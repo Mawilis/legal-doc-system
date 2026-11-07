@@ -71,3 +71,33 @@ def test_signer_registry_readiness_is_independent_of_pki_verifier_readiness():
         router._verifier(request)
     assert error.value.status_code == 503
     assert error.value.detail == "INSTITUTIONAL_PKI_NOT_READY"
+
+
+def test_signer_evidence_verifier_is_unavailable_by_default_and_denies_enrollment():
+    from tools.eos.security.institutional_signer_evidence_verifier import (
+        UnavailableInstitutionalSignerEvidenceVerifier,
+    )
+    request = SimpleNamespace(app=SimpleNamespace(state=SimpleNamespace(
+        institutional_signer_evidence_verifier=UnavailableInstitutionalSignerEvidenceVerifier()
+    )))
+    verifier = router._evidence_verifier(request)
+    with pytest.raises(HTTPException) as error:
+        router._verify_enrollment_evidence(
+            verifier,
+            tenant_id="WILSYTENANT-4CD2FZ4O",
+            certificate_fingerprint_sha256="a" * 64,
+            subject_principal_id="PRINCIPAL-1",
+            identity_proofing_reference="evidence://identity/123",
+            signatory_mandate_reference="evidence://mandate/456",
+            evaluated_at=__import__("datetime").datetime.now(__import__("datetime").timezone.utc),
+            session=object(),
+        )
+    assert error.value.status_code == 503
+    assert error.value.detail == "INSTITUTIONAL_SIGNER_EVIDENCE_AUTHORITY_UNAVAILABLE"
+
+
+def test_signer_evidence_verifier_requires_a_canonical_provenance_fingerprint():
+    with pytest.raises(HTTPException) as error:
+        router._provenance_fingerprint(SimpleNamespace(provenance_fingerprint_sha256="unverified"))
+    assert error.value.status_code == 503
+    assert error.value.detail == "INSTITUTIONAL_SIGNER_EVIDENCE_PROVENANCE_INVALID"
