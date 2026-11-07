@@ -8,6 +8,8 @@ All writes require a caller-owned Mongo transaction.
 from __future__ import annotations
 
 from datetime import datetime, timezone
+from hashlib import sha256
+import json
 import re
 from typing import Any
 
@@ -56,6 +58,14 @@ def _instant(value: datetime) -> datetime:
     if type(value) is not datetime or value.tzinfo is None or value.utcoffset() is None:
         raise InstitutionalSignerRegistryError("INSTITUTIONAL_SIGNER_TIME_INVALID")
     return value.astimezone(timezone.utc)
+
+
+def _provenance_digest(value: dict[str, Any]) -> str:
+    canonical = json.dumps(
+        value, sort_keys=True, separators=(",", ":"),
+        default=lambda item: item.isoformat() if isinstance(item, datetime) else item,
+    )
+    return sha256(canonical.encode("utf-8")).hexdigest()
 
 
 def _validated_provenance_snapshot(value: object) -> dict[str, Any] | None:
@@ -160,6 +170,8 @@ class InstitutionalSignerEnrollmentRegistry:
         provenance_snapshot = _validated_provenance_snapshot(evidence_provenance_snapshot)
         if (provenance is None) != (provenance_snapshot is None):
             raise InstitutionalSignerRegistryError("INSTITUTIONAL_SIGNER_EVIDENCE_PROVENANCE_INCOMPLETE")
+        if provenance_snapshot is not None and _provenance_digest(provenance_snapshot) != provenance:
+            raise InstitutionalSignerRegistryError("INSTITUTIONAL_SIGNER_EVIDENCE_PROVENANCE_DIGEST_MISMATCH")
         prior_event = self._events.find_one({
             "tenant_id": tenant, "idempotency_key": key,
         }, session=session)
@@ -243,6 +255,8 @@ class InstitutionalSignerEnrollmentRegistry:
         provenance_snapshot = _validated_provenance_snapshot(approval_evidence_provenance_snapshot)
         if (provenance is None) != (provenance_snapshot is None):
             raise InstitutionalSignerRegistryError("INSTITUTIONAL_SIGNER_EVIDENCE_PROVENANCE_INCOMPLETE")
+        if provenance_snapshot is not None and _provenance_digest(provenance_snapshot) != provenance:
+            raise InstitutionalSignerRegistryError("INSTITUTIONAL_SIGNER_EVIDENCE_PROVENANCE_DIGEST_MISMATCH")
         key = _text(idempotency_key, "INSTITUTIONAL_SIGNER_IDEMPOTENCY_INVALID", 200)
         prior_event = self._events.find_one({"tenant_id": tenant, "idempotency_key": key}, session=session)
         if prior_event is not None:
