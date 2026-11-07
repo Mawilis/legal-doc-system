@@ -202,6 +202,18 @@ def test_authenticated_stream_upload_registers_verified_custody_and_denies_direc
             assert result["custody_registered"] is True
             assert result["byte_length"] == len(body)
 
+            duplicate = http.put(
+                "/api/hr/hiring/candidates/CAN-EVIDENCE-HTTP-1/evidence/EVD-HTTP-1/VER-HTTP-1",
+                headers={
+                    **_headers(manager, tenant),
+                    "X-Evidence-Media-Type": "application/pdf",
+                    "X-Evidence-Filename": "profile.pdf",
+                    "X-Evidence-Kind": "CANDIDATE_PROFILE",
+                },
+                content=body,
+            )
+            assert duplicate.status_code == 409
+
             denied = http.put(
                 "/api/hr/hiring/candidates/CAN-EVIDENCE-HTTP-1/evidence/EVD-DENIED/VER-1",
                 headers={
