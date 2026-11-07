@@ -122,3 +122,27 @@ Maker-checker controls must be enforced server-side for configured thresholds an
 - No automated customs declarations, tax calculations or regulatory decisions without validated jurisdictional rules and authorized integrations.
 - No replacement of accounting, payment, customs, carrier or document authorities by a dashboard.
 - No production tenant creation, entitlement grant, external integration or deployment under this contract.
+
+
+## 10. Repository capability audit — first engineering blockers
+
+A source inspection at the certified My Work baseline found a legacy Procurement UI and service that must not be treated as a certified Royal-ready source:
+
+- `client/src/components/procurement/ProcurementDashboard.jsx` falls back to the literal tenant identifier `MASTER` when no active tenant is present.
+- The same component initializes vendor, open-purchase-order and inventory-value metrics with hard-coded values (`24`, `8`, `125000`) and its metric loader simply restores those values. They are not live measurements.
+- `client/src/services/procurementService.js` passes a browser-provided tenant ID in query parameters and an `X-Tenant-ID` header. That is caller context, not proof of tenant membership or authority.
+- Its generic read helper catches failures and returns an empty collection after telemetry. This can turn a source outage into a misleading empty state.
+- The component exposes create, update, delete and purchase-order approval controls through this legacy service path. Those commands must not be assumed to satisfy current EOS principal/capacity authorization, revision guards, maker-checker policy or atomic audit requirements merely because the UI renders them.
+- The current tree also contains a separately implemented tenant module workspace for Operations and Intelligence, and an authenticated POS workspace with assigned-location revalidation. These are useful existing foundations, but they do not establish a certified Vehicle Imports or inventory movement domain.
+
+### Required remediation before reusing Procurement
+
+1. Remove the `MASTER` fallback and require a server-confirmed authenticated tenant projection; never issue a request when the exact tenant context is absent.
+2. Remove hard-coded operational metrics. Every displayed metric must be computed from a named authoritative source and include an as-of time; otherwise show unavailable.
+3. Replace caller-supplied tenant scoping with server-derived authenticated tenant context. Any supplied tenant hint must be checked against that context and cannot switch it.
+4. Propagate source errors distinctly from valid empty results; do not convert provider failures into zero records.
+5. Inventory the mounted backend routes and their dependencies. Verify principal, membership, capacity, permission, entitlement, revision, transaction and audit behavior before exposing any procurement command.
+6. Add real replica-set tests for foreign-tenant denial, unauthorized read/write, provider outage, concurrent revision conflict, audit atomicity, replay/idempotency and source deletion/retention.
+7. Only after the above gates pass may verified procurement capabilities be composed into the Royal workspace.
+
+**Decision:** Royal Vehicle Imports must not be built on the legacy Procurement dashboard as-is. First establish a secure source-owned domain service or certify and repair the existing procurement service. Reuse is conditional on evidence, not on component names or UI presence.
