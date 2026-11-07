@@ -1,5 +1,5 @@
 """TITLE: WILSY OS Tenant Business-Role Authority.
-VERSION: v1.1.0-M11-R8-R3B-P8-P3A
+VERSION: v1.2.0-INSTITUTIONAL-SOURCE-KEY-ADMIN
 AUTHORITY: Immutable tenant business-role fact only; no authorization.
 EPITOME: Defines explicit, revisioned, scope-bound business-role evidence.
 ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/tools/eos/auth/tenant_business_role.py
