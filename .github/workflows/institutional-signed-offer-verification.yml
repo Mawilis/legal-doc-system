@@ -10,7 +10,6 @@ on:
       - "tools/eos/security/institutional_signer_evidence_verifier.py"
       - "tools/eos/security/institutional_signer_currentness.py"
       - "tools/eos/security/institutional_signer_source_adapters.py"
-            tools/eos/security/institutional_source_signing_key_registry.py \
       - "tools/eos/security/institutional_source_signing_key_registry.py"
       - "tests/integration/test_institutional_source_signing_key_lifecycle_real_mongo.py"
       - "tools/eos/security/institutional_pki.py"
@@ -33,8 +32,6 @@ on:
       - "tests/unit/test_permission_namespace.py"
       - "tests/unit/test_hiring_signed_offer_manifest.py"
       - "tests/integration/test_institutional_signer_registry_real_mongo.py"
-            tests/integration/test_institutional_source_signing_key_lifecycle_real_mongo.py \
-            tests/integration/test_institutional_source_signing_key_lifecycle_real_mongo.py \
       - "tests/integration/test_hiring_lifecycle_authenticated_http.py"
       - ".github/workflows/institutional-signed-offer-verification.yml"
 permissions:
@@ -45,6 +42,7 @@ jobs:
     timeout-minutes: 25
     env:
       INSTITUTIONAL_PKI_TEST_MONGODB_URI: mongodb://localhost:27017/?replicaSet=rs0&directConnection=true
+      INSTITUTIONAL_SOURCE_KEY_TEST_MONGODB_URI: mongodb://localhost:27017/?replicaSet=rs0&directConnection=true
       INSTITUTIONAL_SOURCE_KEY_TEST_MONGODB_URI: mongodb://localhost:27017/?replicaSet=rs0&directConnection=true
       HIRING_TEST_MONGODB_URI: mongodb://localhost:27017/?replicaSet=rs0&directConnection=true
     steps:
@@ -87,6 +85,7 @@ jobs:
             tools/eos/security/institutional_signer_evidence_verifier.py \
             tools/eos/security/institutional_signer_currentness.py \
             tools/eos/security/institutional_signer_source_adapters.py \
+            tools/eos/security/institutional_source_signing_key_registry.py \
             tools/eos/auth/permission_namespace.py \
             tools/eos/auth/roles.py \
             tools/eos/auth/tenant_authorization.py \
@@ -104,6 +103,7 @@ jobs:
             tests/unit/test_permission_namespace.py \
             tests/unit/test_hiring_signed_offer_manifest.py \
             tests/integration/test_institutional_signer_registry_real_mongo.py
+            tests/integration/test_institutional_source_signing_key_lifecycle_real_mongo.py \
       - name: Run institutional signature, signer governance, PKI and authenticated hiring tests
         run: |
           python -m pytest -q \
