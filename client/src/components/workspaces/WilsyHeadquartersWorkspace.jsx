@@ -124,6 +124,11 @@ export default function WilsyHeadquartersWorkspace() {
               <SourceBoundary title="Workforce directory is not yet connected" description="The legacy employee and HR routes have caller-controlled tenant scope and success-empty behaviour. Headquarters will not use them. The directory remains unavailable until an authenticated, tenant-authorised HR read contract and its replica-set tests are certified."/>
               <div className="mt-5 grid gap-3 sm:grid-cols-2"><ActionCard title="Hiring" detail="Approved headcount and requisitions" onClick={() => setSection('hiring')} icon={BriefcaseBusiness}/><ActionCard title="Employee onboarding" detail="Employment record, then separately governed identity and access admission" onClick={() => setSection('onboarding')} icon={Users}/></div>
             </>
+          ) : section === 'hiring' || section === 'onboarding' ? (
+            <>
+              <PageHeading eyebrow="People lifecycle" title={section === 'hiring' ? 'Hiring & requisitions' : 'Employee onboarding'} subtitle="Hiring approval, employment records and identity admission are separate governed stages."/>
+              <SourceBoundary title={section === 'hiring' ? 'Hiring workflow not yet connected' : 'Employee onboarding workflow not yet connected'} description="No candidate, employee, payroll, account or access record is fabricated here. The workflow will be connected only after the HR command authority, approval chain, identity provisioning boundary and atomic audit evidence are certified."/>
+            </>
           ) : selectedDepartment ? (
             <>
               <PageHeading eyebrow="Department workspace" title={selectedDepartment.label} subtitle={selectedDepartment.description}/>
