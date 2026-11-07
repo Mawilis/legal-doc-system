@@ -30,7 +30,6 @@ class RequisitionStatus(StrEnum):
     SUBMITTED = "SUBMITTED"
     APPROVED = "APPROVED"
     REJECTED = "REJECTED"
-    CANCELLED = "CANCELLED"
 
 
 class RequisitionDecision(StrEnum):
@@ -83,6 +82,8 @@ class HeadcountRequisition:
     requested_by_principal_id: str
     status: RequisitionStatus | str = RequisitionStatus.DRAFT
     approval: HeadcountApproval | None = None
+    submitted_by_principal_id: str | None = None
+    submitted_at: datetime | None = None
     revision: int = 1
     schema: str = SCHEMA
     version: str = VERSION
@@ -105,10 +106,19 @@ class HeadcountRequisition:
         object.__setattr__(self, "status", status)
         if self.schema != SCHEMA or self.version != VERSION:
             raise RequisitionError("REQUISITION_SCHEMA_VERSION_INVALID")
+        if status is RequisitionStatus.SUBMITTED and (self.submitted_by_principal_id is None or self.submitted_at is None):
+            raise RequisitionError("REQUISITION_SUBMISSION_EVIDENCE_REQUIRED")
+        if status is RequisitionStatus.DRAFT and (self.submitted_by_principal_id is not None or self.submitted_at is not None):
+            raise RequisitionError("REQUISITION_SUBMISSION_EVIDENCE_NOT_ALLOWED")
+        if self.submitted_by_principal_id is not None:
+            object.__setattr__(self, "submitted_by_principal_id", _required("submitter", self.submitted_by_principal_id))
+            object.__setattr__(self, "submitted_at", _timestamp(self.submitted_at))
         if status in {RequisitionStatus.APPROVED, RequisitionStatus.REJECTED}:
+            if self.submitted_by_principal_id is None or self.submitted_at is None:
+                raise RequisitionError("REQUISITION_SUBMISSION_EVIDENCE_REQUIRED")
             if self.approval is None:
                 raise RequisitionError("REQUISITION_DECISION_EVIDENCE_REQUIRED")
-            if self.approval.actor_principal_id == self.requested_by_principal_id:
+            if self.approval.actor_principal_id in {self.requested_by_principal_id, self.submitted_by_principal_id}:
                 raise RequisitionError("REQUISITION_MAKER_CHECKER_VIOLATION")
             expected = RequisitionDecision.APPROVE if status is RequisitionStatus.APPROVED else RequisitionDecision.REJECT
             if self.approval.decision is not expected:
@@ -134,25 +144,38 @@ class HeadcountRequisition:
             "employment_type": self.employment_type, "work_location": self.work_location,
             "headcount": self.headcount, "business_justification": self.business_justification,
             "requested_by_principal_id": self.requested_by_principal_id,
-            "status": self.status.value, "approval": approval, "revision": self.revision,
+            "status": self.status.value, "approval": approval,
+            "submitted_by_principal_id": self.submitted_by_principal_id,
+            "submitted_at": self.submitted_at.isoformat() if self.submitted_at else None,
+            "revision": self.revision,
             "schema": self.schema, "version": self.version,
         }
 
     def _digest(self) -> str:
         return hashlib.sha3_512(json.dumps(self._payload(), sort_keys=True, separators=(",", ":")).encode()).hexdigest()
 
-    def submit(self, *, expected_revision: int) -> "HeadcountRequisition":
+    def submit(self, *, actor_principal_id: str, submitted_at: datetime, expected_revision: int) -> "HeadcountRequisition":
         self._expect_revision(expected_revision)
         if self.status is not RequisitionStatus.DRAFT:
             raise RequisitionError("REQUISITION_ONLY_DRAFT_CAN_BE_SUBMITTED")
-        return HeadcountRequisition(**{**self._payload(), "status": RequisitionStatus.SUBMITTED,
-                                       "approval": None, "revision": self.revision + 1})
+        actor = _required("submitter", actor_principal_id)
+        if actor != self.requested_by_principal_id:
+            raise RequisitionError("REQUISITION_SUBMISSION_ACTOR_MISMATCH")
+        return HeadcountRequisition(
+            tenant_id=self.tenant_id, requisition_id=self.requisition_id,
+            department_id=self.department_id, position_title=self.position_title,
+            employment_type=self.employment_type, work_location=self.work_location,
+            headcount=self.headcount, business_justification=self.business_justification,
+            requested_by_principal_id=self.requested_by_principal_id,
+            status=RequisitionStatus.SUBMITTED, submitted_by_principal_id=actor,
+            submitted_at=submitted_at, revision=self.revision + 1,
+        )
 
     def decide(self, approval: HeadcountApproval, *, expected_revision: int) -> "HeadcountRequisition":
         self._expect_revision(expected_revision)
         if self.status is not RequisitionStatus.SUBMITTED:
             raise RequisitionError("REQUISITION_ONLY_SUBMITTED_CAN_BE_DECIDED")
-        if approval.actor_principal_id == self.requested_by_principal_id:
+        if approval.actor_principal_id in {self.requested_by_principal_id, self.submitted_by_principal_id}:
             raise RequisitionError("REQUISITION_MAKER_CHECKER_VIOLATION")
         status = RequisitionStatus.APPROVED if approval.decision is RequisitionDecision.APPROVE else RequisitionStatus.REJECTED
         return HeadcountRequisition(
@@ -161,21 +184,8 @@ class HeadcountRequisition:
             employment_type=self.employment_type, work_location=self.work_location,
             headcount=self.headcount, business_justification=self.business_justification,
             requested_by_principal_id=self.requested_by_principal_id, status=status,
-            approval=approval, revision=self.revision + 1,
-        )
-
-    def cancel(self, *, actor_principal_id: str, expected_revision: int) -> "HeadcountRequisition":
-        self._expect_revision(expected_revision)
-        _required("cancelling_actor", actor_principal_id)
-        if self.status not in {RequisitionStatus.DRAFT, RequisitionStatus.SUBMITTED, RequisitionStatus.REJECTED}:
-            raise RequisitionError("REQUISITION_CANNOT_BE_CANCELLED")
-        return HeadcountRequisition(
-            tenant_id=self.tenant_id, requisition_id=self.requisition_id,
-            department_id=self.department_id, position_title=self.position_title,
-            employment_type=self.employment_type, work_location=self.work_location,
-            headcount=self.headcount, business_justification=self.business_justification,
-            requested_by_principal_id=self.requested_by_principal_id,
-            status=RequisitionStatus.CANCELLED, revision=self.revision + 1,
+            approval=approval, submitted_by_principal_id=self.submitted_by_principal_id,
+            submitted_at=self.submitted_at, revision=self.revision + 1,
         )
 
     def _expect_revision(self, expected_revision: int) -> None:
