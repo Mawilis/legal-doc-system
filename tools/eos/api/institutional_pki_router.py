@@ -19,7 +19,7 @@ def get_institutional_crl(issuer_subject_sha256: str, request: Request) -> Respo
     if not isinstance(verifier, InstitutionalPKIVerifier):
         raise HTTPException(status_code=503, detail="INSTITUTIONAL_PKI_REVOCATION_PUBLICATION_UNAVAILABLE")
     try:
-        body = verifier.crl_pem_for_issuer_subject_sha256(issuer_subject_sha256)
+        body = verifier.crl_der_for_issuer_subject_sha256(issuer_subject_sha256)
     except InstitutionalPKIError as error:
         if error.code == "INSTITUTIONAL_PKI_CRL_ISSUER_NOT_FOUND_OR_AMBIGUOUS":
             raise HTTPException(status_code=404, detail="PKI_CRL_NOT_FOUND") from error
