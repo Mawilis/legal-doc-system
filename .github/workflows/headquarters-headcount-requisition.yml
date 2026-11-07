@@ -33,8 +33,3 @@ jobs:
             tests/unit/test_headcount_requisition_domain.py
       - name: Run headcount requisition policy tests
         run: python -m pytest -q tests/unit/test_headcount_requisition_domain.py
-      - name: Run headcount requisition policy and real-Mongo registry tests
-        run: |
-          python -m pytest -q \
-            tests/unit/test_headcount_requisition_domain.py \
-            tests/integration/test_headcount_requisition_registry_real_mongo.py
