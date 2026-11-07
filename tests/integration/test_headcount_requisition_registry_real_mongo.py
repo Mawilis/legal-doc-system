@@ -8,6 +8,7 @@ from pymongo import MongoClient
 from tools.eos.saas.domain.headcount_requisition import HeadcountRequisition
 from tools.eos.saas.hr.headcount_requisition_registry import (
     HeadcountRequisitionRegistryConflict,
+    HeadcountRequisitionRegistryNotFound,
     HeadcountRequisitionRegistryTransactionRequired,
     COLLECTION,
     create_requisition,
@@ -90,5 +91,5 @@ def test_headcount_registry_requires_transaction_and_guards_tenant_revision(mong
                     collection=collection,
                     session=session,
                 )
-            with pytest.raises(Exception):
+            with pytest.raises(HeadcountRequisitionRegistryNotFound):
                 get_requisition("OTHER-TENANT", value.requisition_id, collection, session=session)
