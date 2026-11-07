@@ -1,0 +1,93 @@
+name: EOS My Work Projection Certification
+
+on:
+  pull_request:
+    branches:
+      - cert/l8-8m-exact-head-20261106
+    paths:
+      - "tools/eos/workspaces/service/unified_my_work_projection.py"
+      - "tools/eos/api/tenant_authorization_http.py"
+      - "tools/eos/api/unified_my_work_router.py"
+      - "tools/eos/api/server.py"
+      - "client/src/App.jsx"
+      - "client/src/components/workspaces/MyWorkWorkspace.jsx"
+      - "client/src/components/sovereign/SovereignDashboardController.jsx"
+      - "client/src/__tests__/components/MyWorkWorkspace.test.jsx"
+      - "tests/unit/test_unified_my_work_projection.py"
+      - "tests/unit/test_optional_tenant_authorization.py"
+      - "tests/unit/test_unified_my_work_router.py"
+      - "tests/integration/test_unified_my_work_real_mongo.py"
+      - ".github/workflows/eos-my-work-projection-certification.yml"
+  push:
+    branches:
+      - eos/my-work-unified-daily-work-20261106
+
+permissions:
+  contents: read
+
+concurrency:
+  group: eos-my-work-projection-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  focused-unit-certification:
+    name: Unified My Work projection unit tests
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - name: Checkout exact commit
+        uses: actions/checkout@v4
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: "pip"
+      - name: Install runtime and test dependencies
+        run: python -m pip install --disable-pip-version-check -r requirements.txt pytest httpx
+      - name: Run authenticated My Work certification
+        run: >-
+          python -m pytest -q
+          tests/unit/test_unified_my_work_projection.py
+          tests/unit/test_optional_tenant_authorization.py
+          tests/unit/test_unified_my_work_router.py
+
+      - name: Set up Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: npm
+          cache-dependency-path: client/package-lock.json
+      - name: Install client dependencies
+        run: npm ci --prefix client
+      - name: Run My Work interface tests
+        run: npm --prefix client run test:run -- src/__tests__/components/MyWorkWorkspace.test.jsx
+
+      - name: Start isolated Mongo replica set
+        run: |
+          docker run -d --name my-work-mongo -p 27017:27017 mongo:7 --replSet rs0 --bind_ip_all
+          for attempt in $(seq 1 30); do
+            if docker exec my-work-mongo mongosh --quiet --eval "db.adminCommand('ping').ok" | grep -q 1; then
+              break
+            fi
+            sleep 2
+          done
+          docker exec my-work-mongo mongosh --quiet --eval "rs.initiate({_id:'rs0',members:[{_id:0,host:'localhost:27017'}]})"
+          for attempt in $(seq 1 30); do
+            if docker exec my-work-mongo mongosh --quiet --eval "db.hello().isWritablePrimary" | grep -q true; then
+              exit 0
+            fi
+            sleep 2
+          done
+          echo "Mongo replica set did not elect a primary" >&2
+          exit 1
+      - name: Run real replica-set My Work HTTP certificate
+        env:
+          TEST_VENDOR_MONGO_URI: mongodb://127.0.0.1:27017/?replicaSet=rs0
+        run: python -m pytest -q tests/integration/test_unified_my_work_real_mongo.py
+
+      - name: Run canonical Legal evidence-completion HTTP certificate
+        env:
+          TEST_VENDOR_MONGO_URI: mongodb://127.0.0.1:27017/?replicaSet=rs0
+          TEST_LEGAL_OPERATIONS_COMMAND_ROUTER_MONGO_URI: mongodb://127.0.0.1:27017/?replicaSet=rs0
+          TEST_LEGAL_OPERATIONS_COMMAND_ROUTER_REPLICA_SET: rs0
+        run: python -m pytest -q tests/integration/test_legal_work_completion_http_real_mongo.py

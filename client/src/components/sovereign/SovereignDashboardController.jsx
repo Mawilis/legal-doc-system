@@ -42,7 +42,7 @@
 
 
 import React, { Suspense, useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { Navigate } from 'react-router-dom';
+import { Navigate, useNavigate } from 'react-router-dom';
 import { ArrowLeft, Crown, Loader2, ShieldAlert } from 'lucide-react';
 import { useTenants } from '../../contexts/tenantContext.jsx';
 import { BusinessProvider } from '../../contexts/BusinessContext.jsx';
@@ -677,6 +677,7 @@ const FounderReturnFrame = ({ dashboardLabel, onReturn, children }) => {
  */
 const SovereignDashboardController = ({ user: propUser, onLogout }) => {
   const { activeTenant } = useTenants();
+  const navigate = useNavigate();
   const [manualDashboardKey, setManualDashboardKey] = useState('');
   const [systemServicesWorkspace, setSystemServicesWorkspace] = useState(null);
   const [systemServicesIncidents, setSystemServicesIncidents] = useState([]);
@@ -1238,6 +1239,27 @@ const SovereignDashboardController = ({ user: propUser, onLogout }) => {
           <span>Kernel {kernelHealth.status}</span>
           {kernelHealth.latencyMs > 0 && <span>· {kernelHealth.latencyMs}ms</span>}
         </div>
+      )}
+
+      {!systemServicesWorkspace && (
+      <button
+        type="button"
+        onClick={() => navigate('/my-work')}
+        aria-label="Open My Work"
+        data-testid="my-work-global-entry"
+        style={{
+          position: 'fixed', right: 22, bottom: 22, zIndex: 2400,
+          display: 'inline-flex', alignItems: 'center', gap: 9,
+          minHeight: 46, padding: '0 17px', borderRadius: 999,
+          border: '1px solid rgba(212,175,55,0.55)',
+          background: 'rgba(15,18,24,0.96)', color: '#F4D77A',
+          boxShadow: '0 12px 34px rgba(0,0,0,0.4)',
+          fontSize: 12, fontWeight: 700, letterSpacing: '0.08em',
+          textTransform: 'uppercase', cursor: 'pointer',
+        }}
+      >
+        <Crown size={16} /> My Work
+      </button>
       )}
 
       <WilsyGlobalCommandSearch

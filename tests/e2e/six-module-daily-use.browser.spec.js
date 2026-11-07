@@ -259,3 +259,166 @@ test('Operations and Intelligence workspaces remain usable at a narrow viewport'
     await context.close();
   }
 });
+
+
+test('Tenant Owner My Work aggregates only owner-authorized sources and completes through Operations', async ({ browser }) => {
+  const { context, page, browserErrors } = await openAuthenticated(browser, 'tenant_owner');
+  try {
+    const responsePromise = page.waitForResponse(response => (
+      new URL(response.url()).pathname === '/api/my-work'
+      && response.request().method() === 'GET'
+    ));
+    await page.goto('/my-work');
+    const response = await responsePromise;
+    expect(response.status()).toBe(200);
+    const projection = await response.json();
+    expect(projection.tenant_id).toBe(state.tenant_id);
+    expect(projection.principal_id).toBe(state.actors.tenant_owner.principal_id);
+    expect(projection.sources_included).toContain('OPERATIONS');
+    expect(projection.sources_included).toContain('INTELLIGENCE');
+    expect(projection.sources_included).toContain('CRM');
+    expect(projection.sources_included).not.toContain('LEGAL');
+
+    const title = `Browser My Work Operations task ${state.database_name}`;
+    const created = await page.evaluate(async ({ tenantId, title }) => {
+      const token = localStorage.getItem('wilsy_auth_token') || localStorage.getItem('token') || '';
+      const response = await fetch('/api/tenant-modules/operations/workspace/work-items', {
+        method: 'POST',
+        credentials: 'include',
+        headers: {
+          Authorization: `Bearer ${token}`,
+          'X-Tenant-ID': tenantId,
+          'Idempotency-Key': `my-work-${title}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          title,
+          description: 'Created by the authenticated My Work browser certificate.',
+          kind: 'TASK',
+          priority: 'HIGH',
+        }),
+      });
+      return { status: response.status, payload: await response.json() };
+    }, { tenantId: state.tenant_id, title });
+    expect(created.status).toBe(201);
+
+    const { crm: crmCreated, intelligence: intelligenceCreated } = await page.evaluate(async ({ tenantId, databaseName }) => {
+      const token = localStorage.getItem('wilsy_auth_token') || localStorage.getItem('token') || '';
+      const send = async (path, title, key) => {
+        const response = await fetch(path, {
+          method: 'POST',
+          credentials: 'include',
+          headers: {
+            Authorization: `Bearer ${token}`,
+            'X-Tenant-ID': tenantId,
+            'Idempotency-Key': key,
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({ title, description: 'Created for the authenticated My Work source aggregation certificate.', kind: 'TASK', priority: 'NORMAL' }),
+        });
+        return { status: response.status, payload: await response.json().catch(() => ({})) };
+      };
+      const crm = await send('/api/crm/owner-workspace/work-items', `Browser My Work CRM task ${databaseName}`, `my-work-crm-${databaseName}`);
+      const intelligence = await send('/api/tenant-modules/intelligence/workspace/work-items', `Browser My Work Intelligence task ${databaseName}`, `my-work-intelligence-${databaseName}`);
+      return { crm, intelligence };
+    }, { tenantId: state.tenant_id, databaseName: state.database_name });
+    expect(crmCreated.status).toBe(201);
+    expect(intelligenceCreated.status).toBe(201);
+    const crmTitle = `Browser My Work CRM task ${state.database_name}`;
+    const intelligenceTitle = `Browser My Work Intelligence task ${state.database_name}`;
+
+    await page.reload();
+    await expect(page.getByRole('heading', { name: 'My Work', exact: true })).toBeVisible();
+    await expect(page.getByText(title, { exact: true })).toBeVisible();
+    await expect(page.getByText(crmTitle, { exact: true })).toBeVisible();
+    await expect(page.getByText(intelligenceTitle, { exact: true })).toBeVisible();
+
+    const completionPath = `/api/tenant-modules/operations/workspace/work-items/${encodeURIComponent(created.payload.work_item_id)}/complete`;
+    const completion = page.waitForResponse(response => (
+      new URL(response.url()).pathname === completionPath
+      && response.request().method() === 'POST'
+    ));
+    await page.getByLabel(`Completion note for ${title}`).fill('Verified and completed from the authenticated My Work queue.');
+    const operationsCard = page.locator('article').filter({ hasText: title });
+    await operationsCard.getByRole('button', { name: 'Complete', exact: true }).click();
+    const completed = await completion;
+    expect(completed.status()).toBe(200);
+    expect((await completed.json()).status).toBe('COMPLETED');
+    await expect(page.getByText(title, { exact: true })).toHaveCount(0);
+    expect(browserErrors, browserErrors.join('\\n')).toEqual([]);
+  } finally {
+    await context.close();
+  }
+});
+
+test('Legal Partner My Work excludes owner CRM, Operations and Intelligence sources', async ({ browser }) => {
+  const { context, page } = await openAuthenticated(browser, 'partner');
+  try {
+    const responsePromise = page.waitForResponse(response => (
+      new URL(response.url()).pathname === '/api/my-work'
+      && response.request().method() === 'GET'
+    ));
+    await page.goto('/my-work');
+    const response = await responsePromise;
+    expect(response.status()).toBe(200);
+    const projection = await response.json();
+    expect(projection.tenant_id).toBe(state.tenant_id);
+    expect(projection.principal_id).toBe(state.actors.partner.principal_id);
+    expect(projection.sources_included).toContain('LEGAL');
+    const partnerWorkIds = state.specialist_workflows?.partner?.work_item_ids || [];
+    expect(partnerWorkIds.length).toBeGreaterThan(0);
+    expect(projection.items.map(item => item.work_item_id)).toEqual(
+      expect.arrayContaining(partnerWorkIds),
+    );
+    expect(projection.sources_included).not.toContain('CRM');
+    expect(projection.sources_included).not.toContain('OPERATIONS');
+    expect(projection.sources_included).not.toContain('INTELLIGENCE');
+
+    // The same live IAM boundary must reject an unjoined foreign tenant even
+    // when the caller supplies its identifier explicitly.
+    const foreignTenant = await page.evaluate(async ({ foreignTenantId }) => {
+      const token = localStorage.getItem('wilsy_auth_token') || localStorage.getItem('token') || '';
+      const response = await fetch('/api/my-work', {
+        method: 'GET',
+        credentials: 'include',
+        headers: {
+          Authorization: `Bearer ${token}`,
+          'X-Tenant-ID': foreignTenantId,
+        },
+      });
+      return { status: response.status, payload: await response.json().catch(() => ({})) };
+    }, { foreignTenantId: state.foreign_tenant_id });
+    expect(foreignTenant.status).toBe(403);
+    expect(foreignTenant.payload.detail).toBe('MY_WORK_NO_AUTHORIZED_SOURCE');
+
+    await expect(page.getByRole('heading', { name: 'My Work', exact: true })).toBeVisible();
+    await expect(page.getByText('Operations', { exact: true })).toHaveCount(0);
+    await expect(page.getByText('Intelligence', { exact: true })).toHaveCount(0);
+  } finally {
+    await context.close();
+  }
+});
+
+test('My Work remains usable on a narrow authenticated viewport', async ({ browser }) => {
+  const { context, page } = await openAuthenticated(
+    browser,
+    'tenant_owner',
+    { width: 390, height: 844 },
+  );
+  try {
+    const responsePromise = page.waitForResponse(response => (
+      new URL(response.url()).pathname === '/api/my-work'
+      && response.request().method() === 'GET'
+    ));
+    await page.goto('/my-work');
+    expect((await responsePromise).status()).toBe(200);
+    await expect(page.getByRole('heading', { name: 'My Work', exact: true })).toBeVisible();
+    const dimensions = await page.evaluate(() => ({
+      viewport: document.documentElement.clientWidth,
+      document: document.documentElement.scrollWidth,
+    }));
+    expect(dimensions.document).toBeLessThanOrEqual(dimensions.viewport + 1);
+  } finally {
+    await context.close();
+  }
+});
