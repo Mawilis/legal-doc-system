@@ -22,8 +22,8 @@ from tools.eos.api.tenant_authorization_http import (
     TenantAuthorizationContext,
 )
 from tools.eos.kernel.db import get_client, get_database
-from tools.eos.security.institutional_signer_evidence_verifier import (
-    InstitutionalSignerEvidenceVerificationError,
+from tools.eos.security.institutional_source_key_governance_evidence import (
+    InstitutionalSourceKeyGovernanceEvidenceError,
 )
 from tools.eos.security.institutional_source_signing_key_registry import (
     KEY_COLLECTION,
@@ -61,7 +61,7 @@ class SourceKeyProposal(StrictModel):
     valid_until: datetime
     proposal_reference: str = Field(min_length=1, max_length=256)
     identity_proofing_evidence_reference: str = Field(min_length=1, max_length=512)
-    signatory_mandate_evidence_reference: str = Field(min_length=1, max_length=512)
+    source_authority_evidence_reference: str = Field(min_length=1, max_length=512)
     rotation_id: str | None = Field(default=None, max_length=256)
     supersedes_key_id: str | None = Field(default=None, max_length=256)
     overlap_until: datetime | None = None
@@ -89,7 +89,7 @@ def _registry(request: Request):
     verifier = getattr(request.app.state, "institutional_signer_evidence_verifier", None)
     if verifier is None or not all(
         callable(getattr(verifier, name, None))
-        for name in ("verify_enrollment", "verify_approval")
+        for name in ("verify_proposal", "verify_approval", "verify_revocation")
     ):
         raise HTTPException(status_code=503, detail="INSTITUTIONAL_SOURCE_KEY_GOVERNANCE_VERIFIER_UNAVAILABLE")
     return verifier
@@ -128,7 +128,7 @@ def _transaction(callback):
         raise HTTPException(status_code=409, detail=error.code) from error
     except SourceSigningKeyRegistryError as error:
         raise HTTPException(status_code=503, detail=error.code) from error
-    except InstitutionalSignerEvidenceVerificationError as error:
+    except InstitutionalSourceKeyGovernanceEvidenceError as error:
         raise HTTPException(status_code=503, detail=error.code) from error
     except HTTPException:
         raise
@@ -154,12 +154,13 @@ async def propose_source_signing_key(
     now = datetime.now(timezone.utc)
 
     def persist(registry, session):
-        verifier.verify_enrollment(
+        verifier.verify_proposal(
             tenant_id=context.tenant_id,
-            certificate_fingerprint_sha256=sha256(public_key).hexdigest(),
-            subject_principal_id=context.identity.identity_id,
-            identity_proofing_reference=body.identity_proofing_evidence_reference,
-            signatory_mandate_reference=body.signatory_mandate_evidence_reference,
+            source_system_id=body.source_system_id,
+            public_key_fingerprint_sha256=sha256(public_key).hexdigest(),
+            proposer_principal_id=context.identity.identity_id,
+            identity_proofing_evidence_reference=body.identity_proofing_evidence_reference,
+            source_authority_evidence_reference=body.source_authority_evidence_reference,
             evaluated_at=now,
             session=session,
         )
@@ -172,7 +173,7 @@ async def propose_source_signing_key(
             proposed_by_principal_id=context.identity.identity_id,
             proposal_reference=body.proposal_reference,
             identity_proofing_evidence_reference=body.identity_proofing_evidence_reference,
-            signatory_mandate_evidence_reference=body.signatory_mandate_evidence_reference,
+            source_authority_evidence_reference=body.source_authority_evidence_reference,
             proposed_at=now,
             idempotency_key=idempotency_key,
             session=session,
@@ -206,10 +207,14 @@ async def approve_source_signing_key(
         now = datetime.now(timezone.utc)
         verifier.verify_approval(
             tenant_id=context.tenant_id,
-            certificate_fingerprint_sha256=record["public_key_fingerprint_sha256"],
-            enrollment_requester_principal_id=record["proposed_by_principal_id"],
-            reviewer_principal_id=context.identity.identity_id,
-            approval_attestation_reference=body.approval_evidence_reference,
+            source_system_id=source_system_id,
+            key_id=key_id,
+            public_key_fingerprint_sha256=record["public_key_fingerprint_sha256"],
+            proposer_principal_id=record["proposed_by_principal_id"],
+            approver_principal_id=context.identity.identity_id,
+            proposal_reference=record["proposal_reference"],
+            governance_decision_reference=body.governance_decision_reference,
+            approval_evidence_reference=body.approval_evidence_reference,
             evaluated_at=now,
             session=session,
         )
@@ -254,12 +259,16 @@ async def revoke_source_signing_key(
         if record is None:
             raise SourceSigningKeyRegistryConflict("SOURCE_SIGNING_KEY_NOT_FOUND")
         now = datetime.now(timezone.utc)
-        verifier.verify_approval(
+        verifier.verify_revocation(
             tenant_id=context.tenant_id,
-            certificate_fingerprint_sha256=record["public_key_fingerprint_sha256"],
-            enrollment_requester_principal_id=record["proposed_by_principal_id"],
-            reviewer_principal_id=context.identity.identity_id,
-            approval_attestation_reference=body.approval_evidence_reference,
+            source_system_id=source_system_id,
+            key_id=key_id,
+            public_key_fingerprint_sha256=record["public_key_fingerprint_sha256"],
+            proposer_principal_id=record["proposed_by_principal_id"],
+            revoker_principal_id=context.identity.identity_id,
+            reason_reference=body.reason_reference,
+            governance_decision_reference=body.governance_decision_reference,
+            approval_evidence_reference=body.approval_evidence_reference,
             evaluated_at=now,
             session=session,
         )
