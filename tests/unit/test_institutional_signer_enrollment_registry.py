@@ -124,14 +124,18 @@ def test_signer_enrollment_requires_distinct_owner_approval_and_revocation_is_im
         idempotency_key="approve-independent",
         session=tx,
     ) == active
-    assert registry.require_active(
-        tenant_id="WILSYTENANT-4CD2FZ4O",
-        certificate_fingerprint_sha256="a" * 64,
-        certificate_serial_number_hex="abc123",
-        issuer_subject_sha256="c" * 64,
-        trust_root_sha256="b" * 64,
-        session=tx,
-    )["status"] == "ACTIVE"
+    with pytest.raises(
+        InstitutionalSignerRegistryConflict,
+        match="EVIDENCE_CURRENTNESS_NOT_VERIFIED",
+    ):
+        registry.require_active(
+            tenant_id="WILSYTENANT-4CD2FZ4O",
+            certificate_fingerprint_sha256="a" * 64,
+            certificate_serial_number_hex="abc123",
+            issuer_subject_sha256="c" * 64,
+            trust_root_sha256="b" * 64,
+            session=tx,
+        )
 
     revoked = registry.revoke(
         tenant_id="WILSYTENANT-4CD2FZ4O",
