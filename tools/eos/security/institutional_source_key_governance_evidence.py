@@ -13,6 +13,35 @@ from typing import Protocol, runtime_checkable
 
 
 @dataclass(frozen=True)
+class VerifiedSourceKeyProposalAuthority:
+    """Provider-verified identity and source authority for one exact proposal."""
+
+    tenant_id: str
+    source_system_id: str
+    public_key_fingerprint_sha256: str
+    proposer_principal_id: str
+    identity_proofing_evidence_reference: str
+    source_authority_evidence_reference: str
+    evidence_fingerprint_sha256: str
+
+
+@dataclass(frozen=True)
+class VerifiedSourceKeyApproval:
+    """Provider-verified independent approval of one exact immutable proposal."""
+
+    tenant_id: str
+    source_system_id: str
+    key_id: str
+    public_key_fingerprint_sha256: str
+    proposer_principal_id: str
+    approver_principal_id: str
+    proposal_reference: str
+    governance_decision_reference: str
+    approval_evidence_reference: str
+    evidence_fingerprint_sha256: str
+
+
+@dataclass(frozen=True)
 class VerifiedSourceKeyRevocationApproval:
     """Provider-verified approval of one exact key revocation command."""
 
@@ -39,7 +68,7 @@ class InstitutionalSourceKeyGovernanceEvidenceVerifier(Protocol):
         identity_proofing_evidence_reference: str,
         source_authority_evidence_reference: str,
         evaluated_at: datetime, session: object,
-    ) -> object:
+    ) -> VerifiedSourceKeyProposalAuthority:
         """Verify proposer identity and source-specific authority to nominate this key."""
         ...
 
@@ -49,7 +78,7 @@ class InstitutionalSourceKeyGovernanceEvidenceVerifier(Protocol):
         approver_principal_id: str, proposal_reference: str,
         governance_decision_reference: str, approval_evidence_reference: str,
         evaluated_at: datetime, session: object,
-    ) -> object:
+    ) -> VerifiedSourceKeyApproval:
         """Verify independent governance approval of this exact immutable proposal."""
         ...
 
@@ -72,10 +101,10 @@ class UnavailableInstitutionalSourceKeyGovernanceEvidenceVerifier:
             "INSTITUTIONAL_SOURCE_KEY_GOVERNANCE_EVIDENCE_AUTHORITY_UNAVAILABLE"
         )
 
-    def verify_proposal(self, **_kwargs: object) -> object:
+    def verify_proposal(self, **_kwargs: object) -> VerifiedSourceKeyProposalAuthority:
         self._unavailable()
 
-    def verify_approval(self, **_kwargs: object) -> object:
+    def verify_approval(self, **_kwargs: object) -> VerifiedSourceKeyApproval:
         self._unavailable()
 
     def verify_revocation(self, **_kwargs: object) -> object:
@@ -85,6 +114,7 @@ class UnavailableInstitutionalSourceKeyGovernanceEvidenceVerifier:
 __all__ = [
     "InstitutionalSourceKeyGovernanceEvidenceError",
     "InstitutionalSourceKeyGovernanceEvidenceVerifier",
+    "VerifiedSourceKeyProposalAuthority", "VerifiedSourceKeyApproval",
     "VerifiedSourceKeyRevocationApproval",
     "UnavailableInstitutionalSourceKeyGovernanceEvidenceVerifier",
 ]
