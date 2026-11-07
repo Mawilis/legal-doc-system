@@ -15,6 +15,7 @@ from hashlib import sha256
 import os
 from pathlib import Path
 import re
+from threading import RLock
 from typing import Iterable
 
 from cryptography import x509
@@ -168,6 +169,8 @@ class InstitutionalPKIVerifier:
         issuer_certificates: Iterable[x509.Certificate] = (),
     ) -> None:
         self._settings = settings
+        self._crl_bundle_path = settings.crl_bundle_pem
+        self._crls_lock = RLock()
         self._anchors = tuple(anchors)
         self._issuer_certificates = tuple(issuer_certificates) + self._anchors
         self._crls = tuple(crls)
@@ -219,11 +222,51 @@ class InstitutionalPKIVerifier:
                 current = parent
             else:
                 raise InstitutionalPKIError("INSTITUTIONAL_PKI_CONFIGURED_ISSUER_CHAIN_DEPTH_EXCEEDED")
-        for crl in self._crls:
+        self._validate_crls(self._crls)
+
+    def _validate_crls(self, crls: tuple[x509.CertificateRevocationList, ...]) -> None:
+        if not crls:
+            raise InstitutionalPKIError("INSTITUTIONAL_PKI_CRL_BUNDLE_EMPTY")
+        for crl in crls:
             issuers = [item for item in self._issuer_certificates if item.subject == crl.issuer]
             if len(issuers) != 1:
                 raise InstitutionalPKIError("INSTITUTIONAL_PKI_CRL_ISSUER_NOT_FOUND_OR_AMBIGUOUS")
-            _verify_signature(crl, issuers[0].public_key())
+            issuer = issuers[0]
+            try:
+                crl.extensions.get_extension_for_class(x509.DeltaCRLIndicator)
+                raise InstitutionalPKIError("INSTITUTIONAL_PKI_DELTA_CRL_NOT_SUPPORTED")
+            except x509.ExtensionNotFound:
+                pass
+            try:
+                distribution = crl.extensions.get_extension_for_class(x509.IssuingDistributionPoint).value
+                if distribution.indirect_crl:
+                    raise InstitutionalPKIError("INSTITUTIONAL_PKI_INDIRECT_CRL_NOT_SUPPORTED")
+            except x509.ExtensionNotFound:
+                pass
+            _verify_signature(crl, issuer.public_key())
+            try:
+                crl_authority_key_id = crl.extensions.get_extension_for_class(x509.AuthorityKeyIdentifier).value.key_identifier
+            except x509.ExtensionNotFound:
+                crl_authority_key_id = None
+            try:
+                issuer_subject_key_id = issuer.extensions.get_extension_for_class(x509.SubjectKeyIdentifier).value.digest
+            except x509.ExtensionNotFound:
+                issuer_subject_key_id = None
+            if crl_authority_key_id is not None and issuer_subject_key_id is not None and crl_authority_key_id != issuer_subject_key_id:
+                raise InstitutionalPKIError("INSTITUTIONAL_PKI_CRL_AUTHORITY_KEY_IDENTIFIER_MISMATCH")
+
+    def refresh_crls(self) -> tuple[x509.CertificateRevocationList, ...]:
+        """Atomically reload the externally published CRL bundle on each use."""
+        if self._crl_bundle_path is None:
+            return self._crls
+        try:
+            current = _pem_crls(self._crl_bundle_path.read_bytes())
+        except OSError as error:
+            raise InstitutionalPKIError("INSTITUTIONAL_PKI_CRL_BUNDLE_UNAVAILABLE") from error
+        self._validate_crls(current)
+        with self._crls_lock:
+            self._crls = current
+            return self._crls
 
     @classmethod
     def from_settings(cls, settings: InstitutionalPKISettings) -> "InstitutionalPKIVerifier":
@@ -260,12 +303,13 @@ class InstitutionalPKIVerifier:
             max_crl_age_seconds=max_crl_age_seconds,
         ))
 
-    def crl_pem_for_issuer_subject_sha256(self, issuer_subject_sha256: str) -> bytes:
+    def crl_der_for_issuer_subject_sha256(self, issuer_subject_sha256: str) -> bytes:
         """Return one public PEM CRL selected by the issuer subject fingerprint."""
         if not re.fullmatch(r"[0-9a-f]{64}", issuer_subject_sha256):
             raise InstitutionalPKIError("INSTITUTIONAL_PKI_CRL_ISSUER_REFERENCE_INVALID")
+        crls = self.refresh_crls()
         matches = [
-            crl for crl in self._crls
+            crl for crl in crls
             if sha256(crl.issuer.public_bytes()).hexdigest() == issuer_subject_sha256
         ]
         if len(matches) != 1:
@@ -280,7 +324,7 @@ class InstitutionalPKIVerifier:
         now = datetime.now(timezone.utc)
         if next_update is None or this_update > now or next_update <= now:
             raise InstitutionalPKIError("INSTITUTIONAL_PKI_CRL_NOT_CURRENT")
-        return crl.public_bytes(serialization.Encoding.PEM)
+        return crl.public_bytes(serialization.Encoding.DER)
 
     def verify(
         self,
@@ -290,6 +334,7 @@ class InstitutionalPKIVerifier:
         verified_at: datetime,
     ) -> InstitutionalCertificateVerification:
         instant = _utc(verified_at)
+        current_crls = self.refresh_crls()
         try:
             leaf = x509.load_pem_x509_certificate(leaf_pem)
             supplied = tuple(x509.load_pem_x509_certificate(item) for item in intermediate_pems)
@@ -366,7 +411,7 @@ class InstitutionalPKIVerifier:
         revocation_sources: list[str] = []
         for child, issuer in zip(chain[:-1], chain[1:]):
             matching = [
-                crl for crl in self._crls
+                crl for crl in current_crls
                 if crl.issuer == issuer.subject
             ]
             if len(matching) != 1:
