@@ -7,6 +7,7 @@ from __future__ import annotations
 
 from datetime import date, datetime, timezone
 import hashlib
+import json
 from typing import Any
 
 from fastapi import APIRouter, Depends, Header, HTTPException
@@ -126,6 +127,11 @@ def _transaction(callback):
         raise HTTPException(status_code=503, detail="HIRING_TRANSACTION_UNAVAILABLE") from error
 
 
+def _command_fingerprint(*, tenant_id: str, actor_id: str, aggregate_id: str, action: str, payload: dict[str, Any]) -> str:
+    canonical = json.dumps({"tenant_id": tenant_id, "actor_id": actor_id, "aggregate_id": aggregate_id, "action": action, "payload": payload}, sort_keys=True, separators=(",", ":"), default=str)
+    return hashlib.sha3_512(canonical.encode("utf-8")).hexdigest()
+
+
 def _idempotent_id(tenant_id: str, key: str, prefix: str) -> str:
     digest = hashlib.sha3_256(f"{tenant_id}:{key}".encode()).hexdigest()[:24].upper()
     return f"{prefix}-{digest}"
@@ -161,6 +167,7 @@ async def read_candidate(candidate_id: str, context: TenantAuthorizationContext 
 @router.post("/candidates/{candidate_id}/transition")
 async def transition_candidate(
     candidate_id: str, body: CandidateTransition,
+    idempotency_key: str = Header(alias="Idempotency-Key", min_length=1, max_length=160),
     context: TenantAuthorizationContext = Depends(_CANDIDATE_TRANSITION),
 ):
     now = datetime.now(timezone.utc)
@@ -177,6 +184,8 @@ async def transition_candidate(
             current=current, updated=updated, actor_principal_id=context.identity.identity_id,
             action=f"CANDIDATE_{body.target_stage.value}", occurred_at=now,
             expected_revision=body.expected_revision, session=tx,
+            idempotency_key=idempotency_key,
+            command_fingerprint=_command_fingerprint(tenant_id=context.tenant_id, actor_id=context.identity.identity_id, aggregate_id=candidate_id, action=f"CANDIDATE_{body.target_stage.value}", payload=body.model_dump(mode="json")),
         )
     return _transaction(command).to_dict()
 
@@ -221,6 +230,7 @@ async def read_offer(offer_id: str, context: TenantAuthorizationContext = Depend
 @router.post("/offers/{offer_id}/submit")
 async def submit_offer(
     offer_id: str, expected_revision: int = Header(alias="Expected-Revision", ge=1),
+    idempotency_key: str = Header(alias="Idempotency-Key", min_length=1, max_length=160),
     context: TenantAuthorizationContext = Depends(_OFFER_SUBMIT),
 ):
     now = datetime.now(timezone.utc)
@@ -230,6 +240,8 @@ async def submit_offer(
         return registry.transition_offer(
             current=current, updated=updated, actor_principal_id=context.identity.identity_id,
             action="OFFER_SUBMITTED", occurred_at=now, expected_revision=expected_revision, session=tx,
+            idempotency_key=idempotency_key,
+            command_fingerprint=_command_fingerprint(tenant_id=context.tenant_id, actor_id=context.identity.identity_id, aggregate_id=offer_id, action="OFFER_SUBMITTED", payload={"expected_revision": expected_revision}),
         )
     return _transaction(command).to_dict()
 
@@ -237,6 +249,7 @@ async def submit_offer(
 @router.post("/offers/{offer_id}/decision")
 async def decide_offer(
     offer_id: str, body: OfferDecisionRequest,
+    idempotency_key: str = Header(alias="Idempotency-Key", min_length=1, max_length=160),
     context: TenantAuthorizationContext = Depends(_OFFER_DECIDE),
 ):
     now = datetime.now(timezone.utc)
@@ -252,6 +265,8 @@ async def decide_offer(
             current=current, updated=updated, actor_principal_id=context.identity.identity_id,
             action="OFFER_APPROVED" if body.approved else "OFFER_REJECTED",
             occurred_at=now, expected_revision=body.expected_revision, session=tx,
+            idempotency_key=idempotency_key,
+            command_fingerprint=_command_fingerprint(tenant_id=context.tenant_id, actor_id=context.identity.identity_id, aggregate_id=offer_id, action="OFFER_APPROVED" if body.approved else "OFFER_REJECTED", payload=body.model_dump(mode="json")),
         )
     return _transaction(command).to_dict()
 
@@ -259,6 +274,7 @@ async def decide_offer(
 @router.post("/offers/{offer_id}/send")
 async def send_offer(
     offer_id: str, expected_revision: int = Header(alias="Expected-Revision", ge=1),
+    idempotency_key: str = Header(alias="Idempotency-Key", min_length=1, max_length=160),
     context: TenantAuthorizationContext = Depends(_OFFER_SEND),
 ):
     now = datetime.now(timezone.utc)
@@ -268,6 +284,8 @@ async def send_offer(
         return registry.transition_offer(
             current=current, updated=updated, actor_principal_id=context.identity.identity_id,
             action="OFFER_SENT", occurred_at=now, expected_revision=expected_revision, session=tx,
+            idempotency_key=idempotency_key,
+            command_fingerprint=_command_fingerprint(tenant_id=context.tenant_id, actor_id=context.identity.identity_id, aggregate_id=offer_id, action="OFFER_SENT", payload={"expected_revision": expected_revision}),
         )
     return _transaction(command).to_dict()
 
@@ -275,6 +293,7 @@ async def send_offer(
 @router.post("/offers/{offer_id}/accept")
 async def accept_offer(
     offer_id: str, body: OfferAcceptanceRequest,
+    idempotency_key: str = Header(alias="Idempotency-Key", min_length=1, max_length=160),
     context: TenantAuthorizationContext = Depends(_OFFER_ACCEPT),
 ):
     def command(registry, tx):
@@ -287,6 +306,8 @@ async def accept_offer(
             current=current, updated=updated, actor_principal_id=context.identity.identity_id,
             action="OFFER_ACCEPTED_CONSENT_ONLY", occurred_at=datetime.now(timezone.utc),
             expected_revision=body.expected_revision, session=tx,
+            idempotency_key=idempotency_key,
+            command_fingerprint=_command_fingerprint(tenant_id=context.tenant_id, actor_id=context.identity.identity_id, aggregate_id=offer_id, action="OFFER_ACCEPTED_CONSENT_ONLY", payload=body.model_dump(mode="json")),
         )
     return _transaction(command).to_dict()
 
