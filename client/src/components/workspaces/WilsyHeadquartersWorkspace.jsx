@@ -1,4 +1,5 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
+import api from '../../services/api.js';
 import {
   ArrowUpRight, BriefcaseBusiness, Building2, CheckCircle2, ChevronRight,
   CircleAlert, Code2, FileText, Globe2, Headphones, LockKeyhole, RefreshCw,
@@ -39,6 +40,29 @@ function SourceBoundary({ title, description }) {
 export default function WilsyHeadquartersWorkspace() {
   const [section, setSection] = useState('overview');
   const [showMyWork, setShowMyWork] = useState(false);
+  const [workforce, setWorkforce] = useState(null);
+  const [workforceLoading, setWorkforceLoading] = useState(false);
+  const [workforceError, setWorkforceError] = useState('');
+  useEffect(() => {
+    if (section !== 'people') return undefined;
+    let current = true;
+    setWorkforceLoading(true);
+    setWorkforceError('');
+    api.get('/hr/workforce', { params: { limit: 50, offset: 0 }, forceNetworkRetry: true })
+      .then((response) => {
+        if (current) setWorkforce(response.data);
+      })
+      .catch((error) => {
+        if (current) {
+          setWorkforce(null);
+          setWorkforceError(error?.response?.data?.detail || 'WORKFORCE_DIRECTORY_UNAVAILABLE');
+        }
+      })
+      .finally(() => {
+        if (current) setWorkforceLoading(false);
+      });
+    return () => { current = false; };
+  }, [section]);
   const selectedDepartment = departments.find((item) => item.id === section);
 
   return (
@@ -119,7 +143,35 @@ export default function WilsyHeadquartersWorkspace() {
           ) : section === 'people' ? (
             <>
               <PageHeading eyebrow="People & organisation" title="Organisation and workforce" subtitle="Employee records must come from the authorised HR source. Employment does not itself create a login, tenant membership or IAM permission."/>
-              <SourceBoundary title="Workforce directory is not yet connected" description="The legacy employee and HR routes have caller-controlled tenant scope and success-empty behaviour. Headquarters will not use them. The directory remains unavailable until an authenticated, tenant-authorised HR read contract and its replica-set tests are certified."/>
+              {workforceLoading ? (
+                <section role="status" className="rounded-2xl border border-white/10 bg-[#101a2a] p-6 text-sm text-amber-200">Loading authorised workforce records…</section>
+              ) : workforceError ? (
+                <section role="alert" className="rounded-2xl border border-red-400/20 bg-[#101a2a] p-6">
+                  <h2 className="font-semibold text-red-200">Workforce directory unavailable</h2>
+                  <p className="mt-2 text-sm text-slate-300">The HR source could not verify or return the directory. No empty-state or cached employee list is substituted.</p>
+                  <p className="mt-3 font-mono text-xs text-slate-500">{workforceError}</p>
+                  <button onClick={() => setSection('overview')} className="mt-4 rounded-lg border border-white/15 px-3 py-2 text-xs">Return to Headquarters</button>
+                </section>
+              ) : (
+                <section className="rounded-2xl border border-white/10 bg-[#101a2a] p-5">
+                  <div className="flex flex-wrap items-center justify-between gap-3">
+                    <div><h2 className="text-lg font-semibold">Authorised workforce directory</h2><p className="mt-1 text-xs text-slate-400">Limited directory fields from the tenant-authorised HR employee registry.</p></div>
+                    <span className="text-xs text-slate-400">{workforce?.total ?? 0} records in returned page context</span>
+                  </div>
+                  {(workforce?.items || []).length === 0 ? (
+                    <p className="mt-5 rounded-xl border border-white/10 p-5 text-sm text-slate-300">No active workforce records were returned by the authorised HR source.</p>
+                  ) : (
+                    <div className="mt-4 divide-y divide-white/10">
+                      {workforce.items.map((person) => (
+                        <article key={person.employeeId} className="flex flex-wrap items-center justify-between gap-3 py-4">
+                          <div><h3 className="font-medium text-white">{person.displayName || person.preferredName || person.employeeId}</h3><p className="mt-1 text-sm text-slate-400">{person.jobTitle || 'Role not recorded'} · {person.department || 'Department not recorded'}</p><p className="mt-1 text-xs text-slate-500">{person.workEmail || 'Work email not recorded'} · {person.workLocation || 'Location not recorded'}</p></div>
+                          <span className="rounded-full border border-emerald-300/20 px-3 py-1 text-xs text-emerald-200">{person.employmentStatus || 'Status not recorded'}</span>
+                        </article>
+                      ))}
+                    </div>
+                  )}
+                </section>
+              )}
               <div className="mt-5 grid gap-3 sm:grid-cols-2"><ActionCard title="Hiring" detail="Approved headcount and requisitions" onClick={() => setSection('hiring')} icon={BriefcaseBusiness}/><ActionCard title="Employee onboarding" detail="Employment record, then separately governed identity and access admission" onClick={() => setSection('onboarding')} icon={Users}/></div>
             </>
           ) : section === 'hiring' || section === 'onboarding' ? (
