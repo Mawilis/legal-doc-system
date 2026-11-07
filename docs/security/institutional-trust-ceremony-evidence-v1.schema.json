@@ -1,0 +1,134 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://wilsy.example/schemas/institutional-trust-ceremony-evidence-v1.schema.json",
+  "title": "WILSY EOS Institutional Trust Ceremony Evidence Manifest",
+  "description": "Public metadata and evidence references for an approved institutional PKI ceremony. Never include private keys, credentials, bearer tokens, secret key material, or unredacted identity documents.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema",
+    "ceremony_id",
+    "tenant_id",
+    "change_reference",
+    "profile",
+    "region",
+    "custody",
+    "kms_subordinate",
+    "offline_root",
+    "crl_distribution",
+    "independent_verifications",
+    "approvals",
+    "evidence"
+  ],
+  "properties": {
+    "schema": { "const": "wilsy.eos.institutional_trust_ceremony_evidence.v1" },
+    "ceremony_id": { "type": "string", "minLength": 8, "maxLength": 128, "pattern": "^[A-Za-z0-9._:-]+$" },
+    "tenant_id": { "const": "WILSYTENANT-4CD2FZ4O" },
+    "change_reference": { "type": "string", "minLength": 1, "maxLength": 256 },
+    "profile": { "const": "WILSY-EOS-INSTITUTIONAL-CA-RSA3072-V1" },
+    "region": { "const": "af-south-1" },
+    "custody": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["root_custodians", "online_key_administrators", "online_signing_operators", "dual_control_attested"],
+      "properties": {
+        "root_custodians": { "$ref": "#/$defs/distinctActors" },
+        "online_key_administrators": { "$ref": "#/$defs/distinctActors" },
+        "online_signing_operators": { "$ref": "#/$defs/distinctActors" },
+        "dual_control_attested": { "const": true },
+        "custody_procedure_evidence": { "$ref": "#/$defs/evidenceReference" },
+        "recovery_procedure_evidence": { "$ref": "#/$defs/evidenceReference" }
+      }
+    },
+    "kms_subordinate": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["key_arn", "key_spec", "key_usage", "origin", "multi_region", "public_key_sha256", "key_policy_review_evidence"],
+      "properties": {
+        "key_arn": { "type": "string", "pattern": "^arn:aws:kms:af-south-1:[0-9]{12}:key/[A-Za-z0-9-]+$" },
+        "key_spec": { "const": "RSA_3072" },
+        "key_usage": { "const": "SIGN_VERIFY" },
+        "origin": { "const": "AWS_KMS" },
+        "multi_region": { "const": false },
+        "public_key_sha256": { "$ref": "#/$defs/sha256" },
+        "key_policy_review_evidence": { "$ref": "#/$defs/evidenceReference" },
+        "kms_audit_configuration_evidence": { "$ref": "#/$defs/evidenceReference" }
+      }
+    },
+    "offline_root": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["root_certificate_sha256", "intermediate_certificate_sha256", "csr_sha256", "offline_signing_attestation"],
+      "properties": {
+        "root_certificate_sha256": { "$ref": "#/$defs/sha256" },
+        "intermediate_certificate_sha256": { "$ref": "#/$defs/sha256" },
+        "csr_sha256": { "$ref": "#/$defs/sha256" },
+        "offline_signing_attestation": { "$ref": "#/$defs/evidenceReference" },
+        "root_backup_recovery_test": { "$ref": "#/$defs/evidenceReference" }
+      }
+    },
+    "crl_distribution": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["https_base_url", "dns_tls_evidence", "root_crl_sha256", "intermediate_crl_sha256", "bundle_sha256", "publication_probe_evidence"],
+      "properties": {
+        "https_base_url": { "type": "string", "format": "uri", "pattern": "^https://" },
+        "dns_tls_evidence": { "$ref": "#/$defs/evidenceReference" },
+        "root_crl_sha256": { "$ref": "#/$defs/sha256" },
+        "intermediate_crl_sha256": { "$ref": "#/$defs/sha256" },
+        "bundle_sha256": { "$ref": "#/$defs/sha256" },
+        "publication_probe_evidence": { "$ref": "#/$defs/evidenceReference" },
+        "monitoring_recovery_evidence": { "$ref": "#/$defs/evidenceReference" }
+      }
+    },
+    "independent_verifications": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["kms_public_key_matches_intermediate", "root_crl_signature_valid", "intermediate_crl_signature_valid", "crl_bundle_complete", "revocation_denial_test", "all_checks_independently_witnessed"],
+      "properties": {
+        "kms_public_key_matches_intermediate": { "const": true },
+        "root_crl_signature_valid": { "const": true },
+        "intermediate_crl_signature_valid": { "const": true },
+        "crl_bundle_complete": { "const": true },
+        "revocation_denial_test": { "const": true },
+        "all_checks_independently_witnessed": { "const": true },
+        "verification_report": { "$ref": "#/$defs/evidenceReference" }
+      }
+    },
+    "approvals": {
+      "type": "array",
+      "minItems": 2,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["actor_reference", "capacity_reference", "approval_type", "approval_evidence", "approved_at"],
+        "properties": {
+          "actor_reference": { "type": "string", "minLength": 1, "maxLength": 256 },
+          "capacity_reference": { "type": "string", "minLength": 1, "maxLength": 256 },
+          "approval_type": { "enum": ["GOVERNANCE", "SECURITY", "ROOT_CUSTODY", "KMS_POLICY", "RUNTIME_ACTIVATION"] },
+          "approval_evidence": { "$ref": "#/$defs/evidenceReference" },
+          "approved_at": { "type": "string", "format": "date-time" }
+        }
+      }
+    },
+    "evidence": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["kind", "reference", "sha256"],
+        "properties": {
+          "kind": { "enum": ["CHANGE_APPROVAL", "CUSTODY_LOG", "KMS_KEY_POLICY", "KMS_AUDIT", "CSR", "ROOT_CERTIFICATE", "INTERMEDIATE_CERTIFICATE", "ROOT_CRL", "INTERMEDIATE_CRL", "CRL_BUNDLE", "DNS_TLS_PROBE", "REVOCATION_TEST", "RECOVERY_TEST", "INDEPENDENT_VERIFICATION"] },
+          "reference": { "$ref": "#/$defs/evidenceReference" },
+          "sha256": { "$ref": "#/$defs/sha256" }
+        }
+      }
+    }
+  },
+  "$defs": {
+    "sha256": { "type": "string", "pattern": "^[0-9a-f]{64}$" },
+    "evidenceReference": { "type": "string", "minLength": 1, "maxLength": 1024, "pattern": "^(https://|evidence://|vault://|case://)[^\\s]+$" },
+    "distinctActors": { "type": "array", "minItems": 2, "uniqueItems": true, "items": { "type": "string", "minLength": 1, "maxLength": 256 } }
+  }
+}
