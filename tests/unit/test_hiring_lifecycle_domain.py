@@ -137,6 +137,7 @@ def test_offer_acceptance_requires_sent_offer_and_valid_acceptance_evidence():
     evidence = OfferAcceptanceEvidence(
         evidence_reference="hr-document://signed-offer/opaque-001",
         evidence_fingerprint=EVIDENCE, accepted_at=NOW,
+        signature_verification_reference="SOV-TEST-VERIFICATION-001",
     )
     with pytest.raises(HiringLifecycleError, match="MUST_BE_SENT"):
         value.accept(evidence, expected_revision=1)
@@ -159,6 +160,7 @@ def test_offer_acceptance_requires_sent_offer_and_valid_acceptance_evidence():
             evidence_reference="hr-document://signed-offer/opaque-001",
             evidence_fingerprint=EVIDENCE,
             accepted_at=NOW + timedelta(hours=2),
+            signature_verification_reference="SOV-TEST-VERIFICATION-001",
         ),
         expected_revision=4,
     )
