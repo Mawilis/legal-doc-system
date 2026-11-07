@@ -151,6 +151,15 @@ def test_authenticated_propose_approve_revoke_is_atomic_and_maker_checker_enforc
             assert cross_tenant.status_code == 403
 
             app.dependency_overrides[source_key_api._PROPOSE] = lambda: _context("synthetic-maker")
+            evidence.invalid_proposal_result = True
+            invalid_proposal_evidence = http.post(
+                "/security/institutional-source-keys/proposals",
+                json=body,
+                headers={"Idempotency-Key": "http-propose-invalid-evidence"},
+            )
+            assert invalid_proposal_evidence.status_code == 503
+            assert database[EVENT_COLLECTION].count_documents({}) == 0
+            evidence.invalid_proposal_result = False
             proposed = http.post(
                 "/security/institutional-source-keys/proposals",
                 json=body,
@@ -201,6 +210,16 @@ def test_authenticated_propose_approve_revoke_is_atomic_and_maker_checker_enforc
                 {"source_system_id": "synthetic-http-source"},
             ) == 1
             evidence.fail_approval = False
+            evidence.invalid_approval_result = True
+            invalid_approval_evidence = http.post(
+                "/security/institutional-source-keys/synthetic-http-source/synthetic-http-key-v1/approve",
+                json=approval_body, headers={"Idempotency-Key": "http-approval-invalid-evidence"},
+            )
+            assert invalid_approval_evidence.status_code == 503
+            assert database[EVENT_COLLECTION].count_documents(
+                {"source_system_id": "synthetic-http-source"},
+            ) == 1
+            evidence.invalid_approval_result = False
             approved = http.post(
                 "/security/institutional-source-keys/synthetic-http-source/synthetic-http-key-v1/approve",
                 json=approval_body, headers={"Idempotency-Key": "http-approve-1"},
@@ -276,8 +295,8 @@ def test_authenticated_propose_approve_revoke_is_atomic_and_maker_checker_enforc
             assert revocation_replay.status_code == 200
             assert revocation_replay.json()["occurred_at"] == revoked.json()["occurred_at"]
 
-        assert len(evidence.proposal_calls) == 2
-        assert len(evidence.approval_calls) == 3
+        assert len(evidence.proposal_calls) == 3
+        assert len(evidence.approval_calls) == 4
         assert len(evidence.revocation_calls) == 3
         assert database[EVENT_COLLECTION].count_documents(
             {"source_system_id": "synthetic-http-source"},
