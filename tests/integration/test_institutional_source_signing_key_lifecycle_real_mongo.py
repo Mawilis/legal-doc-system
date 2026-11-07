@@ -463,8 +463,9 @@ def test_concurrent_rotation_revocation_and_idempotent_replay_are_serialized():
                     replay_results.append(("success", future.result()))
                 except SourceSigningKeyRegistryConflict as error:
                     replay_results.append(("conflict", error.code))
-        assert sum(outcome == "success" for outcome, _ in replay_results) == 1
-        assert sum(outcome == "conflict" for outcome, _ in replay_results) == 1
+        assert sum(outcome == "success" for outcome, _ in replay_results) == 2
+        assert sum(outcome == "conflict" for outcome, _ in replay_results) == 0
+        assert replay_results[0][1]["public_key_fingerprint_sha256"] == replay_results[1][1]["public_key_fingerprint_sha256"]
 
         # A retry after the winning transaction must resolve to the original proposal.
         with client.start_session() as session:
