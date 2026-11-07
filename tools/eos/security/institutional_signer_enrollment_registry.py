@@ -291,6 +291,25 @@ class InstitutionalSignerEnrollmentRegistry:
         except PyMongoError as error:
             raise InstitutionalSignerRegistryError("INSTITUTIONAL_SIGNER_WRITE_UNAVAILABLE") from error
 
+    def get_enrollment(
+        self, *, tenant_id: str, certificate_fingerprint_sha256: str,
+        session: object,
+    ) -> dict[str, Any]:
+        """Read the pending enrollment within the caller-owned transaction."""
+        if session is None:
+            raise InstitutionalSignerRegistryError("INSTITUTIONAL_SIGNER_CALLER_TRANSACTION_REQUIRED")
+        try:
+            row = self._records.find_one({
+                "tenant_id": _tenant(tenant_id),
+                "certificate_fingerprint_sha256": _fingerprint(certificate_fingerprint_sha256),
+            }, session=session)
+        except PyMongoError as error:
+            raise InstitutionalSignerRegistryError("INSTITUTIONAL_SIGNER_READ_UNAVAILABLE") from error
+        if row is None:
+            raise InstitutionalSignerRegistryNotFound("INSTITUTIONAL_SIGNER_ENROLLMENT_NOT_FOUND")
+        row.pop("_id", None)
+        return row
+
     def require_active(
         self, *, tenant_id: str, certificate_fingerprint_sha256: str,
         certificate_serial_number_hex: str, issuer_subject_sha256: str,
