@@ -34,8 +34,8 @@ def _required(value: object, code: str, limit: int = 256) -> str:
     return value
 
 
-def _hex(value: object, code: str) -> str:
-    if not isinstance(value, str) or re.fullmatch(r"[0-9a-f]{64}", value) is None:
+def _hex(value: object, code: str, length: int = 64) -> str:
+    if not isinstance(value, str) or re.fullmatch(rf"[0-9a-f]{{{length}}}", value) is None:
         raise InstitutionalSignatureEvidenceError(code)
     return value
 
@@ -105,7 +105,7 @@ class InstitutionalSignatureEvidenceRegistry:
             "pki_verification_fingerprint": pki_verification_fingerprint,
         }
         for field, value in digests.items():
-            _hex(value, f"INSTITUTIONAL_SIGNATURE_{field.upper()}_INVALID")
+            _hex(value, f"INSTITUTIONAL_SIGNATURE_{field.upper()}_INVALID", 128 if field == "evidence_digest_sha3_512" else 64)
         serial = _required(signer_serial_number_hex, "INSTITUTIONAL_SIGNATURE_SERIAL_INVALID", 128)
         algorithm = _required(signature_algorithm, "INSTITUTIONAL_SIGNATURE_ALGORITHM_INVALID", 40)
         actor = _required(actor_principal_id, "INSTITUTIONAL_SIGNATURE_ACTOR_INVALID")
