@@ -259,6 +259,26 @@ class InstitutionalSourceSigningKeyLifecycleRegistry:
             raise SourceSigningKeyRegistryError("SOURCE_SIGNING_KEY_APPROVAL_PERSISTENCE_FAILED") from error
         return event
 
+    def get_proposal(
+        self, *, source_system_id: str, key_id: str, session: ClientSession,
+    ) -> dict[str, Any]:
+        """Read one exact immutable proposal within the caller's transaction."""
+        if session is None:
+            raise SourceSigningKeyRegistryError("SOURCE_SIGNING_KEY_SESSION_REQUIRED")
+        source = _identifier("source_system_id", source_system_id)
+        key = _identifier("key_id", key_id)
+        try:
+            record = self._keys.find_one(
+                {"source_system_id": source, "key_id": key}, session=session,
+            )
+            if record is None:
+                raise SourceSigningKeyRegistryConflict("SOURCE_SIGNING_KEY_NOT_FOUND")
+            return record
+        except SourceSigningKeyRegistryError:
+            raise
+        except PyMongoError as error:
+            raise SourceSigningKeyRegistryError("SOURCE_SIGNING_KEY_READ_UNAVAILABLE") from error
+
     def revoke(
         self, *, source_system_id: str, key_id: str, revoked_at: datetime,
         reason_reference: str, revoked_by_principal_id: str,
