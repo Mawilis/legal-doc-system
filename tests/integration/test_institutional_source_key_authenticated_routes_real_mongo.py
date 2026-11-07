@@ -32,6 +32,7 @@ class _VerifiedGovernanceEvidence:
     def __init__(self):
         self.proposal_calls = []
         self.approval_calls = []
+        self.revocation_calls = []
 
     def verify_proposal(self, **kwargs):
         self.proposal_calls.append(kwargs)
@@ -42,7 +43,7 @@ class _VerifiedGovernanceEvidence:
         return object()
 
     def verify_revocation(self, **kwargs):
-        self.approval_calls.append(kwargs)
+        self.revocation_calls.append(kwargs)
         return object()
 
 
@@ -180,7 +181,8 @@ def test_authenticated_propose_approve_revoke_is_atomic_and_maker_checker_enforc
             assert revoked.json()["event_type"] == "REVOKED"
 
         assert len(evidence.proposal_calls) == 1
-        assert len(evidence.approval_calls) == 2
+        assert len(evidence.approval_calls) == 1
+        assert len(evidence.revocation_calls) == 1
         assert database[EVENT_COLLECTION].count_documents(
             {"source_system_id": "synthetic-http-source"},
         ) == 3
