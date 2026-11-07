@@ -5,6 +5,8 @@ from datetime import datetime, timedelta, timezone
 import base64
 from dataclasses import replace
 import uuid
+from concurrent.futures import ThreadPoolExecutor
+from threading import Barrier
 
 import pytest
 from cryptography.hazmat.primitives import serialization
@@ -264,6 +266,160 @@ def test_registry_backed_authenticator_observes_immediate_revocation():
                 write_concern=WriteConcern("majority", j=True),
                 read_preference=ReadPreference.PRIMARY,
             )
+    finally:
+        client.drop_database(db_name)
+        client.close()
+
+
+
+def test_concurrent_rotation_revocation_and_idempotent_replay_are_serialized():
+    client = MongoClient(URI, serverSelectionTimeoutMS=5000, tz_aware=True, retryWrites=True)
+    db_name = f"source_key_concurrency_{uuid.uuid4().hex}"
+    db = client[db_name]
+    try:
+        hello = client.admin.command("hello")
+        assert hello.get("setName") and hello.get("isWritablePrimary") is True
+        keys, events = db[KEY_COLLECTION], db[EVENT_COLLECTION]
+        InstitutionalSourceSigningKeyLifecycleRegistry.ensure_indexes(keys, events)
+        registry = InstitutionalSourceSigningKeyLifecycleRegistry(keys, events)
+        now = datetime.now(timezone.utc).replace(microsecond=0)
+        source = "synthetic-concurrency-source"
+        base_public = _public_key()
+
+        def seed(session):
+            registry.propose(
+                source_system_id=source, key_id="base-key", public_key_bytes=base_public,
+                valid_from=now - timedelta(minutes=5), valid_until=now + timedelta(hours=2),
+                proposed_by_principal_id="synthetic-maker", proposal_reference="base-proposal",
+                identity_proofing_evidence_reference="identity-base",
+                source_authority_evidence_reference="authority-base",
+                proposed_at=now - timedelta(minutes=3), idempotency_key="base-propose",
+                session=session,
+            )
+            registry.approve(
+                source_system_id=source, key_id="base-key",
+                approved_by_principal_id="synthetic-approver",
+                governance_decision_reference="base-approval",
+                approval_evidence_reference="base-approval-evidence",
+                approved_at=now - timedelta(minutes=2), idempotency_key="base-approve",
+                session=session,
+            )
+
+        with client.start_session() as session:
+            session.with_transaction(seed)
+
+        rotation_barrier = Barrier(2)
+
+        def rotate(key_id: str):
+            public = _public_key()
+            def callback(session):
+                rotation_barrier.wait(timeout=10)
+                return registry.propose(
+                    source_system_id=source, key_id=key_id, public_key_bytes=public,
+                    valid_from=now - timedelta(seconds=1), valid_until=now + timedelta(hours=1),
+                    proposed_by_principal_id=f"rotator-{key_id}",
+                    proposal_reference=f"proposal-{key_id}",
+                    identity_proofing_evidence_reference=f"identity-{key_id}",
+                    source_authority_evidence_reference=f"authority-{key_id}",
+                    proposed_at=now, idempotency_key=f"propose-{key_id}",
+                    session=session,
+                    rotation_id=f"rotation-{key_id}", supersedes_key_id="base-key",
+                    overlap_until=now + timedelta(minutes=30),
+                )
+            with client.start_session() as session:
+                return session.with_transaction(callback)
+
+        rotation_results = []
+        with ThreadPoolExecutor(max_workers=2) as pool:
+            futures = [pool.submit(rotate, "successor-a"), pool.submit(rotate, "successor-b")]
+            for future in futures:
+                try:
+                    rotation_results.append(("success", future.result()))
+                except SourceSigningKeyRegistryConflict as error:
+                    rotation_results.append(("conflict", error.code))
+        assert sum(outcome == "success" for outcome, _ in rotation_results) == 1
+        assert sum(outcome == "conflict" for outcome, _ in rotation_results) == 1
+        assert keys.count_documents({
+            "source_system_id": source, "rotation.supersedes_key_id": "base-key",
+        }) == 1
+
+        revoke_barrier = Barrier(2)
+
+        def revoke(revoker: str):
+            def callback(session):
+                revoke_barrier.wait(timeout=10)
+                return registry.revoke(
+                    source_system_id=source, key_id="base-key", revoked_at=datetime.now(timezone.utc),
+                    reason_reference=f"reason-{revoker}", revoked_by_principal_id=revoker,
+                    governance_decision_reference=f"decision-{revoker}",
+                    idempotency_key=f"revoke-{revoker}", session=session,
+                )
+            with client.start_session() as session:
+                return session.with_transaction(callback)
+
+        revoke_results = []
+        with ThreadPoolExecutor(max_workers=2) as pool:
+            futures = [pool.submit(revoke, "revoker-a"), pool.submit(revoke, "revoker-b")]
+            for future in futures:
+                try:
+                    revoke_results.append(("success", future.result()))
+                except SourceSigningKeyRegistryConflict as error:
+                    revoke_results.append(("conflict", error.code))
+        assert sum(outcome == "success" for outcome, _ in revoke_results) == 1
+        assert sum(outcome == "conflict" for outcome, _ in revoke_results) == 1
+        assert events.count_documents({
+            "source_system_id": source, "key_id": "base-key", "event_type": "REVOKED",
+        }) == 1
+
+        replay_source = "synthetic-concurrent-replay-source"
+        replay_public = _public_key()
+        replay_barrier = Barrier(2)
+
+        def replay_proposal():
+            def callback(session):
+                replay_barrier.wait(timeout=10)
+                return registry.propose(
+                    source_system_id=replay_source, key_id="replayed-key",
+                    public_key_bytes=replay_public,
+                    valid_from=now - timedelta(minutes=1), valid_until=now + timedelta(hours=1),
+                    proposed_by_principal_id="replay-maker",
+                    proposal_reference="same-proposal-reference",
+                    identity_proofing_evidence_reference="replay-identity",
+                    source_authority_evidence_reference="replay-authority",
+                    proposed_at=now, idempotency_key="same-idempotency-key",
+                    session=session,
+                )
+            with client.start_session() as session:
+                return session.with_transaction(callback)
+
+        replay_results = []
+        with ThreadPoolExecutor(max_workers=2) as pool:
+            futures = [pool.submit(replay_proposal), pool.submit(replay_proposal)]
+            for future in futures:
+                try:
+                    replay_results.append(("success", future.result()))
+                except SourceSigningKeyRegistryConflict as error:
+                    replay_results.append(("conflict", error.code))
+        assert sum(outcome == "success" for outcome, _ in replay_results) == 1
+        assert sum(outcome == "conflict" for outcome, _ in replay_results) == 1
+
+        # A retry after the winning transaction must resolve to the original proposal.
+        with client.start_session() as session:
+            replay = registry.propose(
+                source_system_id=replay_source, key_id="replayed-key",
+                public_key_bytes=replay_public,
+                valid_from=now - timedelta(minutes=1), valid_until=now + timedelta(hours=1),
+                proposed_by_principal_id="replay-maker",
+                proposal_reference="same-proposal-reference",
+                identity_proofing_evidence_reference="replay-identity",
+                source_authority_evidence_reference="replay-authority",
+                proposed_at=now, idempotency_key="same-idempotency-key",
+                session=session,
+            )
+        assert replay["key_id"] == "replayed-key"
+        assert events.count_documents({
+            "source_system_id": replay_source, "event_type": "PROPOSED",
+        }) == 1
     finally:
         client.drop_database(db_name)
         client.close()
