@@ -64,12 +64,18 @@ def _provision(args: argparse.Namespace) -> int:
         "private_key_exportable": False,
         "private_key_material_included": False,
     }
-    _write_once(
-        reference_path,
-        (json.dumps(reference, sort_keys=True, indent=2) + "\n").encode("utf-8"),
-        0o600,
-    )
-    _write_once(csr_path, result.csr_pem, 0o644)
+    try:
+        _write_once(
+            reference_path,
+            (json.dumps(reference, sort_keys=True, indent=2) + "\n").encode("utf-8"),
+            0o600,
+        )
+        _write_once(csr_path, result.csr_pem, 0o644)
+    except OSError as error:
+        raise InstitutionalPKIKMSError(
+            "INSTITUTIONAL_KMS_PROVISIONING_OUTPUT_FAILED",
+            key_arn=result.key_arn,
+        ) from error
     print(f"kms_key_arn={result.key_arn}")
     print(f"kms_key_reference={reference_path}")
     print(f"subordinate_csr={csr_path}")
