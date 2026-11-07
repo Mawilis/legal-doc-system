@@ -59,6 +59,21 @@ def _id(value: object, code: str) -> str:
     return value
 
 
+def _provider_token(value: object) -> str:
+    # AWS multipart UploadId values are opaque provider tokens, not WILSY
+    # identifiers. Preserve the exact token for recovery while rejecting
+    # whitespace/control characters and unbounded provider responses.
+    if (
+        not isinstance(value, str)
+        or not value
+        or value != value.strip()
+        or len(value) > 2048
+        or any(ord(character) < 33 or ord(character) > 126 for character in value)
+    ):
+        raise UploadAttemptError("UPLOAD_ATTEMPT_PROVIDER_UPLOAD_INVALID")
+    return value
+
+
 def _utc(value: datetime) -> datetime:
     if not isinstance(value, datetime) or value.tzinfo is None or value.utcoffset() is None:
         raise UploadAttemptError("UPLOAD_ATTEMPT_UTC_REQUIRED")
@@ -99,9 +114,9 @@ class CandidateEvidenceUploadAttempt:
             (self.evidence_version_id, "UPLOAD_ATTEMPT_VERSION_INVALID"),
             (self.ingestion_reference, "UPLOAD_ATTEMPT_INGESTION_INVALID"),
             (self.provider_id, "UPLOAD_ATTEMPT_PROVIDER_INVALID"),
-            (self.provider_upload_id, "UPLOAD_ATTEMPT_PROVIDER_UPLOAD_INVALID"),
         ):
             _id(field, code)
+        _provider_token(self.provider_upload_id)
         if self.offer_id is not None:
             _id(self.offer_id, "UPLOAD_ATTEMPT_OFFER_INVALID")
         for value in (self.intent_fingerprint, self.content_digest_sha3_512):
