@@ -269,9 +269,13 @@ class InstitutionalSourceSigningKeyLifecycleRegistry:
             )
             if revocation is not None:
                 raise SourceSigningKeyRegistryConflict("SOURCE_SIGNING_KEY_REVOKED")
-            rotation = record.get("rotation")
-            if rotation is not None:
-                if at >= rotation["overlap_until"]:
+            successor = self._keys.find_one(
+                {"source_system_id": source, "rotation.supersedes_key_id": key},
+                session=session,
+            )
+            if successor is not None:
+                overlap = successor.get("rotation", {}).get("overlap_until")
+                if overlap is None or at >= overlap:
                     raise SourceSigningKeyRegistryConflict("SOURCE_SIGNING_KEY_ROTATION_OVERLAP_ENDED")
             return record
         except SourceSigningKeyRegistryError:
