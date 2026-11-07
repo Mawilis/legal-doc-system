@@ -5,6 +5,7 @@ on:
       - "tools/eos/api/candidate_evidence_upload_router.py"
       - "tools/eos/api/server.py"
       - "tools/eos/auth/roles.py"
+      - "tools/eos/auth/tenant_authorization.py"
       - "tools/eos/auth/tenant_authority_policy.py"
       - "tools/eos/saas/hr/candidate_evidence_upload_orchestrator.py"
       - "tools/eos/saas/hr/candidate_evidence_upload_attempt_registry.py"
@@ -65,6 +66,7 @@ jobs:
             tools/eos/api/hiring_lifecycle_router.py \
             tools/eos/api/server.py \
             tools/eos/auth/roles.py \
+            tools/eos/auth/tenant_authorization.py \
             tools/eos/saas/hr/candidate_evidence_upload_orchestrator.py \
             tools/eos/saas/hr/candidate_evidence_upload_attempt_registry.py \
             tools/eos/saas/hr/candidate_evidence_upload_reconciliation.py \
