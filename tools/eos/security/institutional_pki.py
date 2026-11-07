@@ -50,6 +50,10 @@ class InstitutionalPKISettings:
                 raise InstitutionalPKIError("INSTITUTIONAL_PKI_ROOT_FINGERPRINT_INVALID")
         if not re.fullmatch(r"[0-2](?:\.(?:0|[1-9][0-9]*))+", self.required_eku_oid):
             raise InstitutionalPKIError("INSTITUTIONAL_PKI_REQUIRED_EKU_INVALID")
+        try:
+            ObjectIdentifier(self.required_eku_oid)
+        except ValueError as error:
+            raise InstitutionalPKIError("INSTITUTIONAL_PKI_REQUIRED_EKU_INVALID") from error
         if type(self.max_chain_depth) is not int or not 1 <= self.max_chain_depth <= 16:
             raise InstitutionalPKIError("INSTITUTIONAL_PKI_CHAIN_DEPTH_INVALID")
         if type(self.max_crl_age_seconds) is not int or not 60 <= self.max_crl_age_seconds <= 604800:
