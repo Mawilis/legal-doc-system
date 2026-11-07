@@ -91,7 +91,7 @@ class InstitutionalSignerEnrollmentRegistry:
     def request_enrollment(
         self, *, tenant_id: str, certificate_fingerprint_sha256: str,
         certificate_serial_number_hex: str, subject_common_name: str,
-        issuer_common_name: str, trust_root_sha256: str,
+        issuer_common_name: str, issuer_subject_sha256: str, trust_root_sha256: str,
         identity_proofing_evidence_reference: str,
         signatory_mandate_evidence_reference: str,
         requested_by_principal_id: str, requested_at: datetime,
@@ -117,6 +117,7 @@ class InstitutionalSignerEnrollmentRegistry:
                 or not isinstance(snapshot, dict)
                 or snapshot.get("certificate_fingerprint_sha256") != fingerprint
                 or snapshot.get("requested_by_principal_id") != requester
+                or snapshot.get("issuer_subject_sha256") != _fingerprint(issuer_subject_sha256)
                 or snapshot.get("identity_proofing_evidence_reference") != proofing
                 or snapshot.get("signatory_mandate_evidence_reference") != mandate
             ):
@@ -128,6 +129,7 @@ class InstitutionalSignerEnrollmentRegistry:
             "certificate_serial_number_hex": _text(certificate_serial_number_hex, "INSTITUTIONAL_SIGNER_SERIAL_INVALID", 128),
             "subject_common_name": _text(subject_common_name, "INSTITUTIONAL_SIGNER_SUBJECT_INVALID", 256),
             "issuer_common_name": _text(issuer_common_name, "INSTITUTIONAL_SIGNER_ISSUER_INVALID", 256),
+            "issuer_subject_sha256": _fingerprint(issuer_subject_sha256),
             "trust_root_sha256": root,
             "identity_proofing_evidence_reference": proofing,
             "signatory_mandate_evidence_reference": mandate,
@@ -291,7 +293,8 @@ class InstitutionalSignerEnrollmentRegistry:
 
     def require_active(
         self, *, tenant_id: str, certificate_fingerprint_sha256: str,
-        certificate_serial_number_hex: str, trust_root_sha256: str,
+        certificate_serial_number_hex: str, issuer_subject_sha256: str,
+        trust_root_sha256: str,
         session: object,
     ) -> dict[str, Any]:
         if session is None:
@@ -301,6 +304,7 @@ class InstitutionalSignerEnrollmentRegistry:
                 "tenant_id": _tenant(tenant_id),
                 "certificate_fingerprint_sha256": _fingerprint(certificate_fingerprint_sha256),
                 "certificate_serial_number_hex": _text(certificate_serial_number_hex, "INSTITUTIONAL_SIGNER_SERIAL_INVALID", 128),
+                "issuer_subject_sha256": _fingerprint(issuer_subject_sha256),
                 "trust_root_sha256": _fingerprint(trust_root_sha256),
                 "status": "ACTIVE",
             }, session=session)
@@ -310,6 +314,77 @@ class InstitutionalSignerEnrollmentRegistry:
             raise InstitutionalSignerRegistryConflict("INSTITUTIONAL_SIGNER_ACTIVE_ENROLLMENT_REQUIRED")
         row.pop("_id", None)
         return row
+
+
+    def reconcile_crl_publications(
+        self, *, verified_crls: tuple[dict[str, Any], ...],
+        reconciled_at: datetime, actor_reference: str, session: object,
+    ) -> int:
+        """Close revocation publication obligations only from PKI-verified CRLs."""
+        if session is None:
+            raise InstitutionalSignerRegistryError("INSTITUTIONAL_SIGNER_CALLER_TRANSACTION_REQUIRED")
+        instant = _instant(reconciled_at)
+        actor = _text(actor_reference, "INSTITUTIONAL_SIGNER_CRL_ACTOR_INVALID")
+        reconciled = 0
+        try:
+            for snapshot in verified_crls:
+                issuer = _fingerprint(snapshot.get("issuer_subject_sha256"))
+                crl_fingerprint = _fingerprint(snapshot.get("crl_fingerprint_sha256"))
+                crl_number = snapshot.get("crl_number")
+                serials = snapshot.get("revoked_serial_numbers_hex")
+                if type(crl_number) is not int or crl_number < 0 or not isinstance(serials, tuple):
+                    raise InstitutionalSignerRegistryError("INSTITUTIONAL_SIGNER_CRL_OBSERVATION_INVALID")
+                normalized_serials = {
+                    _text(value, "INSTITUTIONAL_SIGNER_CRL_SERIAL_INVALID", 128).lower()
+                    for value in serials
+                }
+                if not normalized_serials:
+                    continue
+                pending = self._records.find({
+                    "tenant_id": INSTITUTIONAL_TENANT_ID,
+                    "issuer_subject_sha256": issuer,
+                    "certificate_serial_number_hex": {"$in": list(normalized_serials)},
+                    "status": "REVOKED",
+                    "crl_revocation_publication_status": "PENDING",
+                }, session=session)
+                for current in pending:
+                    updated = dict(current)
+                    updated.pop("_id", None)
+                    updated.update({
+                        "crl_revocation_publication_status": "PUBLISHED",
+                        "crl_published_number": crl_number,
+                        "crl_published_fingerprint_sha256": crl_fingerprint,
+                        "crl_published_at": instant,
+                        "crl_publication_actor_reference": actor,
+                        "revision": current["revision"] + 1,
+                    })
+                    result = self._records.update_one({
+                        "_id": current["_id"], "revision": current["revision"],
+                        "status": "REVOKED", "crl_revocation_publication_status": "PENDING",
+                    }, {"$set": updated}, session=session)
+                    if result.modified_count != 1:
+                        raise InstitutionalSignerRegistryConflict("INSTITUTIONAL_SIGNER_CRL_REVISION_CONFLICT")
+                    event_key = f"crl-published:{current['certificate_fingerprint_sha256']}:{crl_fingerprint}"
+                    self._events.insert_one({
+                        "tenant_id": INSTITUTIONAL_TENANT_ID,
+                        "certificate_fingerprint_sha256": current["certificate_fingerprint_sha256"],
+                        "revision": updated["revision"], "idempotency_key": event_key,
+                        "actor_principal_id": actor,
+                        "action": "SIGNER_REVOCATION_CRL_PUBLISHED",
+                        "occurred_at": instant, "snapshot": updated,
+                        "crl_number": crl_number,
+                        "crl_fingerprint_sha256": crl_fingerprint,
+                        "schema": "wilsy.institutional.signer_event.v1",
+                    }, session=session)
+                    reconciled += 1
+            return reconciled
+        except (InstitutionalSignerRegistryError, InstitutionalSignerRegistryConflict):
+            raise
+        except DuplicateKeyError as error:
+            raise InstitutionalSignerRegistryConflict("INSTITUTIONAL_SIGNER_CRL_EVENT_CONFLICT") from error
+        except PyMongoError as error:
+            raise InstitutionalSignerRegistryError("INSTITUTIONAL_SIGNER_CRL_RECONCILIATION_UNAVAILABLE") from error
+
 
 
 __all__ = [
