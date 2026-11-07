@@ -69,6 +69,7 @@ FAIL-CLOSED DECLARATION: Router import/composition failures prevent the affected
 from __future__ import annotations
 
 import asyncio
+from collections.abc import Mapping
 import hashlib
 import logging
 import os
@@ -577,10 +578,12 @@ class WilsyAPIServer:
                     if not pki_actor_reference:
                         raise InstitutionalPKIError("INSTITUTIONAL_PKI_RUNTIME_ACTOR_REFERENCE_REQUIRED")
 
-                    def record_institutional_pki_crl_currentness(observations):
+                    def record_institutional_pki_crl_currentness(
+                        observations: Mapping[str, tuple[int, str]],
+                    ) -> None:
                         observed_at = datetime.now(timezone.utc)
                         with client.start_session() as pki_session:
-                            return pki_session.with_transaction(
+                            pki_session.with_transaction(
                                 lambda transaction: pki_crl_registry.observe_bundle(
                                     observations,
                                     actor_reference=pki_actor_reference,
@@ -600,7 +603,9 @@ class WilsyAPIServer:
                         record_institutional_pki_crl_currentness
                     )
 
-                    def reconcile_institutional_signer_crl_publications(verified_crls):
+                    def reconcile_institutional_signer_crl_publications(
+                        verified_crls: tuple[Any, ...],
+                    ) -> None:
                         from cryptography import x509
                         from cryptography.hazmat.primitives import hashes
 
@@ -620,7 +625,7 @@ class WilsyAPIServer:
                             database[INSTITUTIONAL_SIGNER_EVENT_COLLECTION],
                         )
                         with client.start_session() as signer_session:
-                            return signer_session.with_transaction(
+                            signer_session.with_transaction(
                                 lambda transaction: signer_registry.reconcile_crl_publications(
                                     verified_crls=tuple(verified_observations),
                                     reconciled_at=datetime.now(timezone.utc),
