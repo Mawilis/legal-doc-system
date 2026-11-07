@@ -59,20 +59,34 @@ def _instant(value: datetime) -> datetime:
 
 
 def _validated_provenance_snapshot(value: object) -> dict[str, Any] | None:
-    """Accept only a complete, bounded source snapshot from the verifier boundary."""
+    """Accept only complete, bounded source snapshots from the verifier boundary."""
     if value is None:
         return None
-    if not isinstance(value, dict) or value.get("schema") != "wilsy.institutional.signer.evidence_provenance.v1":
+    if not isinstance(value, dict):
+        raise InstitutionalSignerRegistryError("INSTITUTIONAL_SIGNER_EVIDENCE_PROVENANCE_INVALID")
+    schema = value.get("schema")
+    if schema == "wilsy.institutional.signer.enrollment_provenance.v1":
+        identity = _validated_provenance_snapshot(value.get("identity_proofing"))
+        mandate = _validated_provenance_snapshot(value.get("signatory_mandate"))
+        if identity is None or mandate is None:
+            raise InstitutionalSignerRegistryError("INSTITUTIONAL_SIGNER_EVIDENCE_PROVENANCE_INCOMPLETE")
+        if identity.get("tenant_id") != mandate.get("tenant_id") or identity.get("certificate_fingerprint_sha256") != mandate.get("certificate_fingerprint_sha256") or identity.get("subject_principal_id") != mandate.get("subject_principal_id"):
+            raise InstitutionalSignerRegistryError("INSTITUTIONAL_SIGNER_EVIDENCE_SCOPE_MISMATCH")
+        return {"schema": schema, "identity_proofing": identity, "signatory_mandate": mandate}
+    if schema != "wilsy.institutional.signer.evidence_provenance.v1":
         raise InstitutionalSignerRegistryError("INSTITUTIONAL_SIGNER_EVIDENCE_PROVENANCE_INVALID")
     required = ("source_system_id", "source_record_id", "source_revision", "status",
                 "evidence_fingerprint_sha256", "verified_at", "valid_from", "valid_until",
-                "revoked", "evaluated_at")
+                "revoked", "evaluated_at", "tenant_id", "certificate_fingerprint_sha256",
+                "evidence_kind")
     for field in required:
         if field not in value:
             raise InstitutionalSignerRegistryError("INSTITUTIONAL_SIGNER_EVIDENCE_PROVENANCE_INCOMPLETE")
-    for field in ("source_system_id", "source_record_id", "source_revision", "status"):
+    for field in ("source_system_id", "source_record_id", "source_revision", "status",
+                  "tenant_id", "evidence_kind"):
         _text(value[field], "INSTITUTIONAL_SIGNER_EVIDENCE_PROVENANCE_INVALID", 512)
     _fingerprint(value["evidence_fingerprint_sha256"])
+    _fingerprint(value["certificate_fingerprint_sha256"])
     for field in ("verified_at", "valid_from", "evaluated_at"):
         _instant(value[field])
     if value["valid_until"] is not None:
@@ -127,7 +141,6 @@ class InstitutionalSignerEnrollmentRegistry:
         requested_by_principal_id: str, requested_at: datetime,
         idempotency_key: str, session: object,
         evidence_provenance_fingerprint_sha256: str | None = None,
-        approval_evidence_provenance_snapshot: dict[str, Any] | None = None,
         evidence_provenance_snapshot: dict[str, Any] | None = None,
     ) -> dict[str, Any]:
         if session is None:
@@ -214,6 +227,7 @@ class InstitutionalSignerEnrollmentRegistry:
         approver_principal_id: str, approval_attestation_reference: str,
         approved_at: datetime, idempotency_key: str, session: object,
         evidence_provenance_fingerprint_sha256: str | None = None,
+        approval_evidence_provenance_snapshot: dict[str, Any] | None = None,
     ) -> dict[str, Any]:
         if session is None:
             raise InstitutionalSignerRegistryError("INSTITUTIONAL_SIGNER_CALLER_TRANSACTION_REQUIRED")
