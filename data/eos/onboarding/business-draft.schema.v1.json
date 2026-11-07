@@ -1,0 +1,161 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://wilsy.os/schemas/onboarding/business-draft.v1.json",
+  "title": "WILSY OS Universal Business Onboarding Draft",
+  "description": "Non-authoritative pre-genesis business draft. A valid draft is not a tenant, membership, ownership proof, entitlement, or permission grant.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "draft_id",
+    "principal_reference",
+    "business",
+    "onboarding_state",
+    "authority"
+  ],
+  "properties": {
+    "schema_version": {
+      "const": "1.0.0"
+    },
+    "draft_id": {
+      "type": "string",
+      "minLength": 16,
+      "maxLength": 128,
+      "pattern": "^[A-Za-z0-9_-]+$"
+    },
+    "principal_reference": {
+      "type": "string",
+      "minLength": 8,
+      "maxLength": 256,
+      "description": "Reference to a canonical global principal; never an email address or browser-supplied identity claim."
+    },
+    "business": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "display_name",
+        "jurisdiction",
+        "organisation_form",
+        "industry_profile"
+      ],
+      "properties": {
+        "display_name": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 240
+        },
+        "jurisdiction": {
+          "type": "string",
+          "minLength": 2,
+          "maxLength": 32,
+          "description": "ISO 3166-1 alpha-2 country code or governed jurisdiction identifier."
+        },
+        "organisation_form": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 96,
+          "description": "Open vocabulary; examples include company, partnership, sole_practitioner, nonprofit, public_body, and other."
+        },
+        "industry_profile": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "description"
+          ],
+          "properties": {
+            "suggested_category": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 128,
+              "description": "Optional open-vocabulary discovery hint; not a closed enum and not an authorization fact."
+            },
+            "suggested_pack_id": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 160,
+              "description": "Optional reference to a published industry pack; does not activate or entitle it."
+            },
+            "description": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 2000,
+              "description": "Customer's plain-language description; supports unlisted business models."
+            },
+            "taxonomy_version": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 64
+            }
+          }
+        },
+        "contact": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "business_email": {
+              "type": "string",
+              "format": "email",
+              "maxLength": 320
+            },
+            "business_phone": {
+              "type": "string",
+              "maxLength": 48
+            }
+          }
+        }
+      }
+    },
+    "onboarding_state": {
+      "enum": [
+        "DRAFT",
+        "IDENTITY_VERIFICATION_PENDING",
+        "OWNERSHIP_VERIFICATION_PENDING",
+        "REVIEW_REQUIRED",
+        "READY_FOR_GOVERNED_GENESIS",
+        "EXPIRED",
+        "WITHDRAWN"
+      ]
+    },
+    "idempotency_key": {
+      "type": "string",
+      "minLength": 16,
+      "maxLength": 256
+    },
+    "created_at": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "updated_at": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "authority": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "is_tenant",
+        "grants_membership",
+        "grants_owner_authority",
+        "activates_entitlements",
+        "grants_permissions"
+      ],
+      "properties": {
+        "is_tenant": {
+          "const": false
+        },
+        "grants_membership": {
+          "const": false
+        },
+        "grants_owner_authority": {
+          "const": false
+        },
+        "activates_entitlements": {
+          "const": false
+        },
+        "grants_permissions": {
+          "const": false
+        }
+      }
+    }
+  }
+}
