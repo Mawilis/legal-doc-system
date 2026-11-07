@@ -287,7 +287,7 @@ def test_provider_reconciliation_read_permission_is_system_scoped_and_non_author
 
 
 def test_runtime_version_source_is_canonical() -> None:
-    assert POLICY_VERSION == "v1.57.0-SYSTEM-SERVICES-AUDIT-READ-PERMISSION"
+    assert POLICY_VERSION == "v1.58.0-INSTITUTIONAL-SIGNER-GOVERNANCE"
 
 
 def test_practitioner_binding_provision_permission_is_exact_and_bounded() -> None:
