@@ -27,7 +27,6 @@ from tools.eos.saas.domain.candidate_evidence import (
     CandidateEvidenceKind,
     CandidateEvidenceObjectMetadata,
 )
-from tools.eos.saas.domain.hiring_lifecycle import CandidateStage
 from tools.eos.saas.hr.candidate_evidence_registry import (
     COLLECTION as EVIDENCE_COLLECTION,
     EVENT_COLLECTION as EVIDENCE_EVENT_COLLECTION,
@@ -58,6 +57,7 @@ from tools.eos.saas.hr.hiring_lifecycle_registry import (
     OFFER_COLLECTION,
     HiringLifecycleRegistry,
     HiringLifecycleNotFound,
+    EVENT_COLLECTION as HIRING_EVENT_COLLECTION,
 )
 
 router = APIRouter(prefix="/hr/hiring", tags=["Candidate Evidence"])
@@ -88,6 +88,8 @@ def _transaction(callback):
                 write_concern=WriteConcern(w="majority", j=True),
                 read_preference=ReadPreference.PRIMARY,
             )
+    except HiringLifecycleNotFound as error:
+        raise HTTPException(status_code=404, detail=error.code) from error
     except CandidateEvidenceRegistryConflict as error:
         raise HTTPException(status_code=409, detail=error.code) from error
     except CandidateEvidenceRegistryError as error:
@@ -117,7 +119,7 @@ def _registries(database: Any):
     hiring = HiringLifecycleRegistry(
         database[CANDIDATE_COLLECTION],
         database[OFFER_COLLECTION],
-        database["wilsy_hr_hiring_lifecycle_events"],
+        database[HIRING_EVENT_COLLECTION],
     )
     attempts = CandidateEvidenceUploadAttemptRegistry(
         database[ATTEMPT_COLLECTION], database[ATTEMPT_EVENT_COLLECTION],
@@ -128,11 +130,17 @@ def _registries(database: Any):
     return hiring, attempts, custody
 
 
-async def _request_chunks(request: Request) -> AsyncIterable[bytes]:
+async def _request_chunks(request: Request, expected_length: int) -> AsyncIterable[bytes]:
+    observed = 0
     async for chunk in request.stream():
         # Starlette emits a final empty sentinel; it is not an object part.
         if chunk:
+            observed += len(chunk)
+            if observed > expected_length:
+                raise ValueError("CANDIDATE_EVIDENCE_CONTENT_LENGTH_EXCEEDED")
             yield chunk
+    if observed != expected_length:
+        raise ValueError("CANDIDATE_EVIDENCE_CONTENT_LENGTH_MISMATCH")
 
 
 @router.put("/candidates/{candidate_id}/evidence/{evidence_id}/{evidence_version_id}", status_code=201)
@@ -197,12 +205,10 @@ async def upload_candidate_evidence(
     try:
         attempt_id, provider_evidence = await orchestrator.upload(
             intent=intent,
-            chunks=_request_chunks(request),
+            chunks=_request_chunks(request, content_length),
             actor_principal_id=actor_id,
             offer_id=offer_id,
         )
-        if provider_evidence.byte_length != content_length:
-            raise HTTPException(status_code=422, detail="CANDIDATE_EVIDENCE_CONTENT_LENGTH_MISMATCH")
         # Re-inspect the exact provider object version outside Mongo. A HEAD
         # failure leaves PROVIDER_VERIFIED evidence unregistered for recovery.
         verified = await asyncio.to_thread(storage.inspect, intent, provider_evidence)
