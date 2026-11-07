@@ -110,3 +110,6 @@ Currentness rechecks must preserve the previously approved identity-assurance le
 
 
 A negative source observation may legitimately report a newer source revision and changed evidence fingerprint (for example, an authority record transitions from active to revoked). The reconciliation contract therefore requires stable source-system and immutable record identity for all observations, but requires exact revision/fingerprint equality with the provenance snapshot only for a `CURRENT` result. For `NOT_CURRENT`, the new observed revision, status, revocation flag and fingerprint are persisted as the negative observation while the last verified-good provenance snapshot remains available for audit.
+
+
+The source-observation snapshot also carries `valid_from` and `valid_until`. A record can therefore be classified `NOT_CURRENT` because it is revoked/withdrawn/superseded or because its validity interval has expired or has not yet begun, even when the source's status string remains ACTIVE. A CURRENT result is accepted only when each observation's validity interval covers the exact observation time.
