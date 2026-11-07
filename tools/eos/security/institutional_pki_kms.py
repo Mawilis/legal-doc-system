@@ -107,33 +107,50 @@ def _validate_key_policy(policy: str) -> str:
     statements = document.get("Statement")
     if not isinstance(statements, list) or not statements:
         raise InstitutionalPKIKMSError("INSTITUTIONAL_KMS_KEY_POLICY_INVALID")
-    required_actions = {"kms:Sign", "kms:GetPublicKey", "kms:DescribeKey"}
-    allowed_actions: set[str] = set()
+    signer_actions = {"kms:Sign", "kms:GetPublicKey", "kms:DescribeKey"}
+    administrator_actions = {
+        "kms:PutKeyPolicy", "kms:ScheduleKeyDeletion",
+        "kms:CancelKeyDeletion", "kms:EnableKey", "kms:DisableKey",
+        "kms:DescribeKey", "kms:TagResource", "kms:UntagResource",
+        "kms:ListResourceTags",
+    }
+    allowed_actions = signer_actions | administrator_actions
+    signer_principals: set[str] = set()
+    administrator_principals: set[str] = set()
     for statement in statements:
         if not isinstance(statement, dict):
             raise InstitutionalPKIKMSError("INSTITUTIONAL_KMS_KEY_POLICY_INVALID")
+        if statement.get("Effect") != "Allow":
+            continue
         principal = statement.get("Principal")
         aws_principals = principal.get("AWS") if isinstance(principal, dict) else None
         principals = [aws_principals] if isinstance(aws_principals, str) else aws_principals
-        if statement.get("Effect") == "Allow":
-            if not isinstance(principals, list) or not principals:
-                raise InstitutionalPKIKMSError("INSTITUTIONAL_KMS_EXPLICIT_PRINCIPAL_REQUIRED")
-            if any(
-                not isinstance(value, str)
-                or value == "*"
-                or not re.fullmatch(r"arn:aws[a-zA-Z-]*:iam::[0-9]{12}:(?:root|role/[A-Za-z0-9+=,.@_/-]+|user/[A-Za-z0-9+=,.@_/-]+)", value)
-                for value in principals
-            ):
-                raise InstitutionalPKIKMSError("INSTITUTIONAL_KMS_WILDCARD_OR_INVALID_PRINCIPAL")
-            action = statement.get("Action")
-            actions = [action] if isinstance(action, str) else action
-            if not isinstance(actions, list):
-                raise InstitutionalPKIKMSError("INSTITUTIONAL_KMS_KEY_POLICY_ACTION_INVALID")
-            if "*" in actions or "kms:*" in actions:
-                raise InstitutionalPKIKMSError("INSTITUTIONAL_KMS_WILDCARD_ACTION_FORBIDDEN")
-            allowed_actions.update(value for value in actions if isinstance(value, str))
-    if not required_actions.issubset(allowed_actions):
-        raise InstitutionalPKIKMSError("INSTITUTIONAL_KMS_KEY_POLICY_REQUIRED_ACTIONS_MISSING")
+        if not isinstance(principals, list) or not principals:
+            raise InstitutionalPKIKMSError("INSTITUTIONAL_KMS_EXPLICIT_PRINCIPAL_REQUIRED")
+        if any(
+            not isinstance(value, str)
+            or value == "*"
+            or re.fullmatch(r"arn:aws[a-zA-Z-]*:iam::[0-9]{12}:(?:root|role/[A-Za-z0-9+=,.@_/-]+|user/[A-Za-z0-9+=,.@_/-]+)", value) is None
+            for value in principals
+        ):
+            raise InstitutionalPKIKMSError("INSTITUTIONAL_KMS_WILDCARD_OR_INVALID_PRINCIPAL")
+        action = statement.get("Action")
+        actions = [action] if isinstance(action, str) else action
+        if not isinstance(actions, list) or not actions or any(not isinstance(item, str) for item in actions):
+            raise InstitutionalPKIKMSError("INSTITUTIONAL_KMS_KEY_POLICY_ACTION_INVALID")
+        if "*" in actions or "kms:*" in actions or not set(actions).issubset(allowed_actions):
+            raise InstitutionalPKIKMSError("INSTITUTIONAL_KMS_WILDCARD_OR_UNEXPECTED_ACTION")
+        action_set = set(actions)
+        if signer_actions.issubset(action_set):
+            signer_principals.update(principals)
+        if administrator_actions.issubset(action_set):
+            administrator_principals.update(principals)
+    if not signer_principals:
+        raise InstitutionalPKIKMSError("INSTITUTIONAL_KMS_SIGNER_POLICY_REQUIRED")
+    if not administrator_principals:
+        raise InstitutionalPKIKMSError("INSTITUTIONAL_KMS_KEY_ADMINISTRATOR_POLICY_REQUIRED")
+    if not (administrator_principals - signer_principals):
+        raise InstitutionalPKIKMSError("INSTITUTIONAL_KMS_SIGNER_ADMIN_SEPARATION_REQUIRED")
     return json.dumps(document, sort_keys=True, separators=(",", ":"))
 
 
