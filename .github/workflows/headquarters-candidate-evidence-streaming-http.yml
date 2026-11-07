@@ -18,6 +18,7 @@ on:
       - "tests/unit/test_candidate_evidence_s3_reconciliation.py"
       - "tests/unit/test_candidate_evidence_iam_policy.py"
       - "tests/integration/test_candidate_evidence_upload_authenticated_http.py"
+      - "tests/integration/test_candidate_evidence_upload_reconciliation_real_mongo.py"
       - ".github/workflows/headquarters-candidate-evidence-streaming-http.yml"
 permissions:
   contents: read
@@ -72,7 +73,8 @@ jobs:
             tests/unit/test_candidate_evidence_upload_reconciliation.py \
             tests/unit/test_candidate_evidence_s3_reconciliation.py \
             tests/unit/test_candidate_evidence_iam_policy.py \
-            tests/integration/test_candidate_evidence_upload_authenticated_http.py
+            tests/integration/test_candidate_evidence_upload_authenticated_http.py \
+            tests/integration/test_candidate_evidence_upload_reconciliation_real_mongo.py
       - name: Test durable multipart orchestration and authenticated HTTP custody
         run: |
           python -m pytest -q \
@@ -80,4 +82,5 @@ jobs:
             tests/unit/test_candidate_evidence_upload_reconciliation.py \
             tests/unit/test_candidate_evidence_s3_reconciliation.py \
             tests/unit/test_candidate_evidence_iam_policy.py \
-            tests/integration/test_candidate_evidence_upload_authenticated_http.py
+            tests/integration/test_candidate_evidence_upload_authenticated_http.py \
+            tests/integration/test_candidate_evidence_upload_reconciliation_real_mongo.py
