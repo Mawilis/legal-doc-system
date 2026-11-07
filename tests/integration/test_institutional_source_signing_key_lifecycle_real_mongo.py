@@ -2,11 +2,20 @@
 from __future__ import annotations
 
 from datetime import datetime, timedelta, timezone
+import base64
+from dataclasses import replace
 import uuid
 
 import pytest
 from cryptography.hazmat.primitives import serialization
 from cryptography.hazmat.primitives.asymmetric.ed25519 import Ed25519PrivateKey
+from tools.eos.security.institutional_signer_source_adapters import (
+    InstitutionalSignerSourceEvidence,
+    InstitutionalSignerSourceLookup,
+    InstitutionalSignerSourceAdapterError,
+    RegistryBackedEd25519InstitutionalSignerSourceResponseAuthenticator,
+    _canonical_source_response_payload,
+)
 from pymongo import MongoClient
 from pymongo.read_concern import ReadConcern
 from pymongo.read_preferences import ReadPreference
@@ -125,6 +134,100 @@ def test_enrollment_expiry_revocation_and_rotation_are_transactional():
             )
             assert replay["key_id"] == "key-1"
             assert events.count_documents({"source_system_id": source}, session=session) == 3
+
+        with client.start_session() as session:
+            session.with_transaction(
+                transaction,
+                read_concern=ReadConcern("snapshot"),
+                write_concern=WriteConcern("majority", j=True),
+                read_preference=ReadPreference.PRIMARY,
+            )
+    finally:
+        client.drop_database(db_name)
+        client.close()
+
+
+
+def test_registry_backed_authenticator_observes_immediate_revocation():
+    client = MongoClient(URI, serverSelectionTimeoutMS=5000)
+    db_name = f"source_key_revocation_{uuid.uuid4().hex}"
+    db = client[db_name]
+    try:
+        hello = client.admin.command("hello")
+        assert hello.get("setName") and hello.get("isWritablePrimary") is True
+        keys, events = db[KEY_COLLECTION], db[EVENT_COLLECTION]
+        InstitutionalSourceSigningKeyLifecycleRegistry.ensure_indexes(keys, events)
+        registry = InstitutionalSourceSigningKeyLifecycleRegistry(keys, events)
+        now = datetime.now(timezone.utc).replace(microsecond=0)
+        private = Ed25519PrivateKey.generate()
+        public = private.public_key().public_bytes(
+            encoding=serialization.Encoding.Raw,
+            format=serialization.PublicFormat.Raw,
+        )
+        source = "synthetic-revocation-test-source"
+
+        def transaction(session):
+            registry.enroll(
+                source_system_id=source, key_id="key-revocable",
+                public_key_bytes=public,
+                valid_from=now - timedelta(minutes=5),
+                valid_until=now + timedelta(hours=1),
+                governance_decision_reference="synthetic-governance-enroll",
+                approved_by_principal_id="synthetic-approver",
+                enrolled_at=now, idempotency_key="enroll-revocable",
+                session=session,
+            )
+            lookup = InstitutionalSignerSourceLookup(
+                tenant_id="WILSYTENANT-4CD2FZ4O",
+                evidence_kind="IDENTITY_PROOFING",
+                evidence_reference="synthetic://identity/record-1",
+                subject_principal_id="synthetic-principal",
+                certificate_fingerprint_sha256="a" * 64,
+                evaluated_at=now,
+            )
+            response = InstitutionalSignerSourceEvidence(
+                evidence_kind="IDENTITY_PROOFING",
+                evidence_reference="synthetic://identity/record-1",
+                tenant_id="WILSYTENANT-4CD2FZ4O",
+                source_system_id=source,
+                source_record_id="synthetic-record-1",
+                source_revision="revision-1",
+                subject_principal_id="synthetic-principal",
+                certificate_fingerprint_sha256="a" * 64,
+                evidence_fingerprint_sha256="b" * 64,
+                status="ACTIVE",
+                valid_from=now - timedelta(minutes=1),
+                valid_until=now + timedelta(minutes=30),
+                revoked=False,
+                observed_at=now,
+                response_signature_reference="synthetic://signature/1",
+                response_signing_key_id="key-revocable",
+                response_signature_base64=base64.b64encode(b"0" * 64).decode("ascii"),
+            )
+            response = replace(
+                response,
+                response_signature_base64=base64.b64encode(
+                    private.sign(_canonical_source_response_payload(response))
+                ).decode("ascii"),
+            )
+            authenticator = RegistryBackedEd25519InstitutionalSignerSourceResponseAuthenticator(
+                registry=registry, session=session,
+            )
+            authenticator.authenticate_response(
+                expected_source_system_id=source, lookup=lookup, response=response,
+            )
+            registry.revoke(
+                source_system_id=source, key_id="key-revocable", revoked_at=now,
+                reason_reference="synthetic://revocation/1",
+                revoked_by_principal_id="synthetic-revoker",
+                governance_decision_reference="synthetic-governance-revoke",
+                idempotency_key="revoke-immediately", session=session,
+            )
+            with pytest.raises(InstitutionalSignerSourceAdapterError) as error:
+                authenticator.authenticate_response(
+                    expected_source_system_id=source, lookup=lookup, response=response,
+                )
+            assert error.value.code == "INSTITUTIONAL_SIGNER_SOURCE_SIGNING_KEY_NOT_CURRENT"
 
         with client.start_session() as session:
             session.with_transaction(
