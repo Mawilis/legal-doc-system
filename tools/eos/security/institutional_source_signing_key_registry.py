@@ -61,6 +61,8 @@ def _canonical(value: Mapping[str, Any]) -> bytes:
     def encode(item: object) -> object:
         if isinstance(item, datetime):
             return item.astimezone(timezone.utc).isoformat()
+        if isinstance(item, bytes):
+            return item.hex()
         raise TypeError("unsupported canonical value")
     return json.dumps(value, sort_keys=True, separators=(",", ":"), default=encode).encode("utf-8")
 
