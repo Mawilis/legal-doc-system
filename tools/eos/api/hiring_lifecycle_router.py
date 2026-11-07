@@ -41,7 +41,7 @@ from tools.eos.saas.hr.candidate_evidence_s3_storage_adapter import (
 )
 from tools.eos.security.institutional_pki import InstitutionalPKIError, InstitutionalPKIVerifier
 from tools.eos.security.institutional_signer_enrollment_registry import (
-    COLLECTION as INSTITUTIONAL_SIGNER_COLLECTION,
+    COLLECTION as INSTITUTIONAL_SIGNER_COLLECTION,\n    INSTITUTIONAL_TENANT_ID,
     EVENT_COLLECTION as INSTITUTIONAL_SIGNER_EVENT_COLLECTION,
     InstitutionalSignerEnrollmentRegistry,
     InstitutionalSignerRegistryConflict,
@@ -363,6 +363,8 @@ async def accept_offer(
     idempotency_key: str = Header(alias="Idempotency-Key", min_length=1, max_length=160),
     context: TenantAuthorizationContext = Depends(_OFFER_ACCEPT),
 ):
+    if context.tenant_id != INSTITUTIONAL_TENANT_ID:
+        raise HTTPException(status_code=403, detail="INSTITUTIONAL_PKI_TENANT_SCOPE_INVALID")
     action = "OFFER_ACCEPTED_CONSENT_ONLY"
     command_hash = _command_fingerprint(
         tenant_id=context.tenant_id, actor_id=context.identity.identity_id,
