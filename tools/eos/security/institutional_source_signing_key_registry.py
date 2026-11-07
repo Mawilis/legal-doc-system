@@ -145,6 +145,7 @@ class InstitutionalSourceSigningKeyLifecycleRegistry:
             _instant("valid_from", valid_from), _instant("valid_until", valid_until),
             _instant("proposed_at", proposed_at),
         )
+        occurred = occurred.replace(microsecond=(occurred.microsecond // 1000) * 1000)
         if type(public_key_bytes) is not bytes or len(public_key_bytes) != 32:
             raise SourceSigningKeyRegistryError("SOURCE_SIGNING_KEY_PUBLIC_KEY_INVALID")
         fingerprint = sha256(public_key_bytes).hexdigest()
@@ -233,6 +234,8 @@ class InstitutionalSourceSigningKeyLifecycleRegistry:
         except DuplicateKeyError as error:
             raise SourceSigningKeyRegistryConflict("SOURCE_SIGNING_KEY_IDENTITY_OR_FINGERPRINT_EXISTS") from error
         except PyMongoError as error:
+            if error.has_error_label("TransientTransactionError"):
+                raise
             raise SourceSigningKeyRegistryError("SOURCE_SIGNING_KEY_PROPOSAL_PERSISTENCE_FAILED") from error
         return record
 
@@ -252,6 +255,7 @@ class InstitutionalSourceSigningKeyLifecycleRegistry:
         evidence = _identifier("approval_evidence_reference", approval_evidence_reference)
         idem = _identifier("idempotency_key", idempotency_key)
         occurred = _instant("approved_at", approved_at)
+        occurred = occurred.replace(microsecond=(occurred.microsecond // 1000) * 1000)
         record = self._keys.find_one({"source_system_id": source, "key_id": key}, session=session)
         if record is None:
             raise SourceSigningKeyRegistryConflict("SOURCE_SIGNING_KEY_NOT_FOUND")
@@ -349,6 +353,7 @@ class InstitutionalSourceSigningKeyLifecycleRegistry:
         decision = _identifier("governance_decision_reference", governance_decision_reference)
         idem = _identifier("idempotency_key", idempotency_key)
         occurred = _instant("revoked_at", revoked_at)
+        occurred = occurred.replace(microsecond=(occurred.microsecond // 1000) * 1000)
         record = self._keys.find_one(
             {"source_system_id": source, "key_id": key}, session=session,
         )
