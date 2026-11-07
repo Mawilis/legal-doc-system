@@ -1226,3 +1226,18 @@ _signer_owner = dict(_signer_eligibility["tenant_owner"])
 _signer_owner.update({operation: ELIGIBLE for operation in INSTITUTIONAL_SIGNER_OPERATIONS})
 _signer_eligibility["tenant_owner"] = MappingProxyType(_signer_owner)
 ELIGIBILITY = MappingProxyType(_signer_eligibility)
+
+
+# The institutional owner may prepare the exact signed-offer manifest. This
+# command does not itself sign, send, accept, or activate an employment offer.
+OFFER_SIGNATURE_OPERATION = "hr_hiring_offer_sign"
+OPERATIONS = frozenset((*OPERATIONS, OFFER_SIGNATURE_OPERATION))
+BUSINESS_ROLE_OPERATION_PERMISSIONS = MappingProxyType({
+    **BUSINESS_ROLE_OPERATION_PERMISSIONS,
+    OFFER_SIGNATURE_OPERATION: "hr:hiring_offer:sign",
+})
+_offer_sign_eligibility = dict(ELIGIBILITY)
+_offer_sign_owner = dict(_offer_sign_eligibility["tenant_owner"])
+_offer_sign_owner[OFFER_SIGNATURE_OPERATION] = ELIGIBLE
+_offer_sign_eligibility["tenant_owner"] = MappingProxyType(_offer_sign_owner)
+ELIGIBILITY = MappingProxyType(_offer_sign_eligibility)
