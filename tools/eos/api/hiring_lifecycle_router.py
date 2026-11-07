@@ -101,7 +101,6 @@ class OfferAcceptanceRequest(StrictModel):
     expected_revision: int = Field(ge=1, strict=True)
     evidence_reference: str = Field(min_length=1, max_length=240)
     evidence_fingerprint: str = Field(pattern=r"^[0-9a-f]{128}$")
-    accepted_at: datetime
     evidence_version_id: str = Field(min_length=1, max_length=256)
 
 
@@ -365,7 +364,11 @@ async def verify_signed_offer(
             signed_at=body.signed_at,
             signature_b64url=body.signature_b64url,
         )
-        if envelope.signed_at < current.sent_at or envelope.signed_at > current.terms.expires_at:
+        if (
+            envelope.signed_at < current.sent_at
+            or envelope.signed_at > current.terms.expires_at
+            or verified_at >= current.terms.expires_at
+        ):
             raise HTTPException(status_code=409, detail="SIGNED_OFFER_SIGNATURE_OUTSIDE_OFFER_WINDOW")
         database = get_database()
         if database is None:
@@ -475,13 +478,14 @@ async def accept_offer(
             or current.sent_at is None
             or verification.signed_at < current.sent_at
             or verification.signed_at > current.terms.expires_at
-            or body.accepted_at != verification.signed_at
+            or accepted_now < verification.verified_at
+            or accepted_now >= current.terms.expires_at
         ):
             raise HTTPException(status_code=409, detail="HIRING_SIGNED_OFFER_CRYPTOGRAPHIC_VERIFICATION_INVALID")
         updated = current.accept(OfferAcceptanceEvidence(
             evidence_reference=body.evidence_reference,
             evidence_fingerprint=body.evidence_fingerprint,
-            accepted_at=verification.signed_at,
+            accepted_at=accepted_now,
             signature_verification_reference=verification.verification_reference,
         ), expected_revision=body.expected_revision)
         return registry.transition_offer(
