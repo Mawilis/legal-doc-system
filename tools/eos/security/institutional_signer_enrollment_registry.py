@@ -507,6 +507,7 @@ class InstitutionalSignerEnrollmentRegistry:
             if prior is not None:
                 prior_snapshot = prior.get("snapshot")
                 if (prior.get("action") != "SIGNER_EVIDENCE_CURRENTNESS_RECONCILED"
+                    or prior.get("actor_principal_id") != actor
                     or not isinstance(prior_snapshot, dict)
                     or prior_snapshot.get("certificate_fingerprint_sha256") != fingerprint
                     or prior_snapshot.get("evidence_currentness_provenance_fingerprint_sha256") != digest
