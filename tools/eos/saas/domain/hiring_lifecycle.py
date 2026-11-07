@@ -391,6 +391,12 @@ class EmploymentOffer:
         object.__setattr__(self, "fingerprint", digest)
 
     def _payload(self) -> dict[str, object]:
+        acceptance = self.acceptance.to_dict() if self.acceptance else None
+        # Preserve the V1 fingerprint of historical accepted offers that
+        # predate the cryptographic-verification reference. New accept()
+        # commands reject a missing reference, so this is read compatibility only.
+        if acceptance is not None and acceptance.get("signature_verification_reference") is None:
+            acceptance.pop("signature_verification_reference", None)
         return {
             "tenant_id": self.tenant_id, "offer_id": self.offer_id,
             "requisition_id": self.requisition_id, "candidate_id": self.candidate_id,
@@ -399,7 +405,7 @@ class EmploymentOffer:
             "submitted_at": self.submitted_at.isoformat() if self.submitted_at else None,
             "decision": self.decision.to_dict() if self.decision else None,
             "sent_at": self.sent_at.isoformat() if self.sent_at else None,
-            "acceptance": self.acceptance.to_dict() if self.acceptance else None,
+            "acceptance": acceptance,
             "decline_evidence": self.decline_evidence.to_dict() if self.decline_evidence else None,
             "revision": self.revision, "schema": self.schema, "version": self.version,
         }
