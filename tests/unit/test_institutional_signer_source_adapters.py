@@ -13,6 +13,7 @@ from tools.eos.security.institutional_signer_source_adapters import (
     InstitutionalSignerSourceLookup,
     UnavailableInstitutionalSignerSourceAdapterSet,
     Ed25519InstitutionalSignerSourceResponseAuthenticator,
+    AuthenticatedInstitutionalSignerSourceAdapterSet,
     _canonical_source_response_payload,
 )
 from tools.eos.security.institutional_signer_evidence_verifier import TENANT_ID
@@ -266,3 +267,34 @@ def test_ed25519_authenticator_rejects_empty_trust_configuration():
             expected_source_system_id="DHA-NPR-VERIFICATION", lookup=lookup(), response=response
         )
     assert error.value.code == "INSTITUTIONAL_SIGNER_SOURCE_SIGNING_KEY_UNTRUSTED"
+
+
+def test_authenticated_adapter_set_keeps_three_governance_channels_separate():
+    authenticator = _FakeAuthenticator()
+    identity = _FakeAdapter(source_response())
+    mandate = _FakeAdapter(source_response(evidence_kind="SIGNATORY_MANDATE"))
+    approval = _FakeAdapter(source_response(evidence_kind="INDEPENDENT_APPROVAL"))
+    mandate.supported_evidence_kind = "SIGNATORY_MANDATE"
+    approval.supported_evidence_kind = "INDEPENDENT_APPROVAL"
+    sources = AuthenticatedInstitutionalSignerSourceAdapterSet(
+        identity_proofing=identity,
+        signatory_mandate=mandate,
+        independent_approval=approval,
+        authenticator=authenticator,
+    )
+    assert sources.read_identity_proofing(lookup()).evidence_kind == "IDENTITY_PROOFING"
+    assert sources.read_signatory_mandate(lookup(evidence_kind="SIGNATORY_MANDATE")).evidence_kind == "SIGNATORY_MANDATE"
+    assert sources.read_independent_approval(lookup(evidence_kind="INDEPENDENT_APPROVAL")).evidence_kind == "INDEPENDENT_APPROVAL"
+    assert len(authenticator.calls) == 3
+
+
+def test_authenticated_adapter_set_rejects_reusing_one_adapter_for_all_authorities():
+    adapter = _FakeAdapter(source_response())
+    with pytest.raises(InstitutionalSignerSourceAdapterError) as error:
+        AuthenticatedInstitutionalSignerSourceAdapterSet(
+            identity_proofing=adapter,
+            signatory_mandate=adapter,
+            independent_approval=adapter,
+            authenticator=_FakeAuthenticator(),
+        )
+    assert error.value.code == "INSTITUTIONAL_SIGNER_SOURCE_ADAPTERS_MUST_BE_DISTINCT"
