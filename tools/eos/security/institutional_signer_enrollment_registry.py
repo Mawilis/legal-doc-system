@@ -85,14 +85,14 @@ def _validated_provenance_snapshot(value: object) -> dict[str, Any] | None:
         return {"schema": schema, "identity_proofing": identity, "signatory_mandate": mandate}
     if schema != "wilsy.institutional.signer.evidence_provenance.v1":
         raise InstitutionalSignerRegistryError("INSTITUTIONAL_SIGNER_EVIDENCE_PROVENANCE_INVALID")
-    required = ("source_system_id", "source_record_id", "source_revision", "status",
+    required = ("source_system_id", "source_record_id", "source_revision", "evidence_reference", "status",
                 "evidence_fingerprint_sha256", "verified_at", "valid_from", "valid_until",
                 "revoked", "evaluated_at", "tenant_id", "certificate_fingerprint_sha256",
                 "evidence_kind")
     for field in required:
         if field not in value:
             raise InstitutionalSignerRegistryError("INSTITUTIONAL_SIGNER_EVIDENCE_PROVENANCE_INCOMPLETE")
-    for field in ("source_system_id", "source_record_id", "source_revision", "status",
+    for field in ("source_system_id", "source_record_id", "source_revision", "evidence_reference", "status",
                   "tenant_id", "evidence_kind"):
         _text(value[field], "INSTITUTIONAL_SIGNER_EVIDENCE_PROVENANCE_INVALID", 512)
     _fingerprint(value["evidence_fingerprint_sha256"])
