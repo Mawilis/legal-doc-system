@@ -77,6 +77,7 @@ class InstitutionalSignatureEvidenceRegistry:
         evidence_id: str,
         evidence_version_id: str,
         evidence_digest_sha3_512: str,
+        signed_manifest_digest_sha3_512: str,
         signer_certificate_sha256: str,
         signer_serial_number_hex: str,
         trust_root_sha256: str,
@@ -99,6 +100,7 @@ class InstitutionalSignatureEvidenceRegistry:
         }
         digests = {
             "evidence_digest_sha3_512": evidence_digest_sha3_512,
+            "signed_manifest_digest_sha3_512": signed_manifest_digest_sha3_512,
             "signer_certificate_sha256": signer_certificate_sha256,
             "trust_root_sha256": trust_root_sha256,
             "signature_sha256": signature_sha256,
@@ -120,7 +122,7 @@ class InstitutionalSignatureEvidenceRegistry:
             "signature_algorithm": algorithm,
             "verified_at": instant,
             "actor_principal_id": actor,
-            "schema": "wilsy.institutional.document_signature_verification.v1",
+            "schema": "wilsy.institutional.document_signature_verification.v2",
         }
         try:
             existing = self._records.find_one(scope, session=session)
