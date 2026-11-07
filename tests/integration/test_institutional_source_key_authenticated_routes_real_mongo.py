@@ -120,6 +120,13 @@ def test_authenticated_propose_approve_revoke_is_atomic_and_maker_checker_enforc
             assert proposed.status_code == 201
             assert proposed.json()["lifecycle_state"] == "PENDING"
             fingerprint = proposed.json()["public_key_fingerprint_sha256"]
+            proposed_replay = http.post(
+                "/security/institutional-source-keys/proposals",
+                json=body,
+                headers={"Idempotency-Key": "http-propose-1"},
+            )
+            assert proposed_replay.status_code == 201
+            assert proposed_replay.json()["public_key_fingerprint_sha256"] == fingerprint
 
             with client.start_session() as session:
                 registry = InstitutionalSourceSigningKeyLifecycleRegistry(
@@ -161,6 +168,12 @@ def test_authenticated_propose_approve_revoke_is_atomic_and_maker_checker_enforc
             )
             assert approved.status_code == 200
             assert approved.json()["event_type"] == "APPROVED"
+            approval_replay = http.post(
+                "/security/institutional-source-keys/synthetic-http-source/synthetic-http-key-v1/approve",
+                json=approval_body, headers={"Idempotency-Key": "http-approve-1"},
+            )
+            assert approval_replay.status_code == 200
+            assert approval_replay.json()["occurred_at"] == approved.json()["occurred_at"]
 
             with client.start_session() as session:
                 registry = InstitutionalSourceSigningKeyLifecycleRegistry(
@@ -213,10 +226,21 @@ def test_authenticated_propose_approve_revoke_is_atomic_and_maker_checker_enforc
             )
             assert revoked.status_code == 200
             assert revoked.json()["event_type"] == "REVOKED"
+            revocation_replay = http.post(
+                "/security/institutional-source-keys/synthetic-http-source/synthetic-http-key-v1/revoke",
+                json={
+                    "reason_reference": "synthetic://compromise/1",
+                    "governance_decision_reference": "synthetic-governance-revocation-1",
+                    "approval_evidence_reference": "synthetic://independent-revocation/1",
+                },
+                headers={"Idempotency-Key": "http-revoke-1"},
+            )
+            assert revocation_replay.status_code == 200
+            assert revocation_replay.json()["occurred_at"] == revoked.json()["occurred_at"]
 
-        assert len(evidence.proposal_calls) == 1
-        assert len(evidence.approval_calls) == 2
-        assert len(evidence.revocation_calls) == 2
+        assert len(evidence.proposal_calls) == 2
+        assert len(evidence.approval_calls) == 3
+        assert len(evidence.revocation_calls) == 3
         assert database[EVENT_COLLECTION].count_documents(
             {"source_system_id": "synthetic-http-source"},
         ) == 3
