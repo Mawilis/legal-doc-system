@@ -59,6 +59,7 @@ def test_signer_enrollment_approval_and_revocation_are_atomic_on_replica_set():
                 tenant_id="WILSYTENANT-4CD2FZ4O",
                 certificate_fingerprint_sha256="a" * 64,
                 certificate_serial_number_hex="abc123",
+                issuer_subject_sha256="c" * 64,
                 trust_root_sha256="b" * 64,
                 session=session,
             )["status"] == "ACTIVE"
