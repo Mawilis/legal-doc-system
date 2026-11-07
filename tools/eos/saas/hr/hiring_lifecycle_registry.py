@@ -199,24 +199,24 @@ class HiringLifecycleRegistry:
 
     def transition_candidate(self, *, current: CandidateApplication, updated: CandidateApplication,
                              actor_principal_id: str, action: str, occurred_at: object,
-                             expected_revision: int, session: object) -> CandidateApplication:
+                             expected_revision: int, session: object, idempotency_key: str | None = None,\n                             command_fingerprint: str | None = None) -> CandidateApplication:
         return self._transition(
             collection=self._candidates, aggregate_type="CANDIDATE",
             identity_field="candidate_id", current=current, updated=updated,
             actor_principal_id=actor_principal_id, action=action,
             occurred_at=occurred_at, expected_revision=expected_revision,
-            session=session, hydrate=CandidateApplication.from_dict,
+            session=session, hydrate=CandidateApplication.from_dict,\n            idempotency_key=idempotency_key, command_fingerprint=command_fingerprint,
         )
 
     def transition_offer(self, *, current: EmploymentOffer, updated: EmploymentOffer,
                          actor_principal_id: str, action: str, occurred_at: object,
-                         expected_revision: int, session: object) -> EmploymentOffer:
+                         expected_revision: int, session: object, idempotency_key: str | None = None,\n                         command_fingerprint: str | None = None) -> EmploymentOffer:
         return self._transition(
             collection=self._offers, aggregate_type="OFFER",
             identity_field="offer_id", current=current, updated=updated,
             actor_principal_id=actor_principal_id, action=action,
             occurred_at=occurred_at, expected_revision=expected_revision,
-            session=session, hydrate=EmploymentOffer.from_dict,
+            session=session, hydrate=EmploymentOffer.from_dict,\n            idempotency_key=idempotency_key, command_fingerprint=command_fingerprint,
         )
 
     def _transition(self, *, collection: Any, aggregate_type: str, identity_field: str,
