@@ -7,6 +7,7 @@ private keys, raw certificates, signatures, or document bytes.
 from __future__ import annotations
 
 from datetime import datetime, timezone
+from hashlib import sha3_256
 import re
 from typing import Any
 
@@ -114,7 +115,7 @@ class InstitutionalSignatureEvidenceRegistry:
         instant = verified_at.astimezone(timezone.utc)
         record = {
             **scope, **digests,
-            "verification_id": "ISV-" + pki_verification_fingerprint[:32].upper(),
+            "verification_id": "ISV-" + sha3_256("|".join((scope["tenant_id"], scope["offer_id"], scope["evidence_id"], scope["evidence_version_id"], pki_verification_fingerprint)).encode()).hexdigest()[:32].upper(),
             "signer_serial_number_hex": serial,
             "signature_algorithm": algorithm,
             "verified_at": instant,
@@ -125,6 +126,9 @@ class InstitutionalSignatureEvidenceRegistry:
             existing = self._records.find_one(scope, session=session)
             if existing is not None:
                 existing.pop("_id", None)
+                stored_time = existing.get("verified_at")
+                if isinstance(stored_time, datetime) and stored_time.tzinfo is None:
+                    existing["verified_at"] = stored_time.replace(tzinfo=timezone.utc)
                 comparable = {key: value for key, value in existing.items() if key != "verification_id"}
                 expected = {key: value for key, value in record.items() if key != "verification_id"}
                 if comparable != expected:
