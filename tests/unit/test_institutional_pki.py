@@ -9,7 +9,7 @@ from fastapi import FastAPI
 from fastapi.testclient import TestClient
 from cryptography import x509
 from cryptography.hazmat.primitives import hashes, serialization
-from cryptography.hazmat.primitives.asymmetric import rsa
+from cryptography.hazmat.primitives.asymmetric import padding, rsa
 from cryptography.x509.oid import ExtendedKeyUsageOID, NameOID, ObjectIdentifier
 
 from tools.eos.security.institutional_pki import (
@@ -215,3 +215,42 @@ def test_public_crl_distribution_route_fails_closed_without_runtime():
     with TestClient(app) as client:
         response = client.get("/api/security/pki/crl/" + "0" * 64)
     assert response.status_code == 503
+
+
+
+def test_verifies_detached_institutional_document_signature(tmp_path):
+    verifier, leaf, intermediate, leaf_key = _fixture(tmp_path)
+    payload = b"canonical WILSY signed-offer verification payload"
+    signature = leaf_key.sign(
+        payload,
+        padding.PSS(mgf=padding.MGF1(hashes.SHA384()), salt_length=hashes.SHA384().digest_size),
+        hashes.SHA384(),
+    )
+    result = verifier.verify_signed_payload(
+        leaf_pem=leaf.public_bytes(serialization.Encoding.PEM),
+        intermediate_pems=[intermediate.public_bytes(serialization.Encoding.PEM)],
+        signed_payload=payload,
+        signature=signature,
+        verified_at=NOW,
+    )
+    assert result.signature_algorithm == "RSA-PSS-SHA384"
+    assert result.payload_digest_sha3_512
+    assert result.certificate_verification.chain_depth == 2
+
+
+def test_rejects_tampered_institutional_document_signature(tmp_path):
+    verifier, leaf, intermediate, leaf_key = _fixture(tmp_path)
+    payload = b"canonical WILSY signed-offer verification payload"
+    signature = leaf_key.sign(
+        payload,
+        padding.PSS(mgf=padding.MGF1(hashes.SHA384()), salt_length=hashes.SHA384().digest_size),
+        hashes.SHA384(),
+    )
+    with pytest.raises(InstitutionalPKIError, match="DOCUMENT_SIGNATURE_INVALID"):
+        verifier.verify_signed_payload(
+            leaf_pem=leaf.public_bytes(serialization.Encoding.PEM),
+            intermediate_pems=[intermediate.public_bytes(serialization.Encoding.PEM)],
+            signed_payload=payload + b"tampered",
+            signature=signature,
+            verified_at=NOW,
+        )
