@@ -127,7 +127,7 @@ def test_enrollment_expiry_revocation_and_rotation_are_transactional():
 
             replay = registry.enroll(
                 source_system_id=source, key_id="key-1", public_key_bytes=first_key,
-                valid_from=now, valid_until=now + timedelta(hours=4),
+                valid_from=now - timedelta(hours=2), valid_until=now + timedelta(hours=4),
                 governance_decision_reference="test-governance-001",
                 approved_by_principal_id="test-approver",
                 enrolled_at=now, idempotency_key="enroll-1", session=session,
