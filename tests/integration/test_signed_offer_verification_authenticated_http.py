@@ -88,7 +88,7 @@ def test_authenticated_signed_offer_verification_is_required_before_acceptance(m
         draft = EmploymentOffer(
             tenant_id=tenant, offer_id=offer_id, requisition_id="REQ-SIGNED-1",
             candidate_id=candidate_id, terms=terms,
-            prepared_by_principal_id=manager, created_at=now,
+            prepared_by_principal_id=manager, created_at=now - timedelta(minutes=5),
         )
         def create_and_send(session):
             hiring_registry.create_offer(
@@ -96,14 +96,14 @@ def test_authenticated_signed_offer_verification_is_required_before_acceptance(m
                 session=session, idempotency_key="offer-create",
             )
             current = hiring_registry.get_offer(tenant_id=tenant, offer_id=offer_id, session=session)
-            submitted_at = now + timedelta(minutes=1)
+            submitted_at = now - timedelta(minutes=4)
             updated = current.submit(actor_principal_id=manager, submitted_at=submitted_at, expected_revision=1)
             current = hiring_registry.transition_offer(
                 current=current, updated=updated, actor_principal_id=manager,
                 action="OFFER_SUBMITTED", occurred_at=submitted_at,
                 expected_revision=1, session=session, idempotency_key="offer-submit",
             )
-            decision_at = now + timedelta(minutes=2)
+            decision_at = now - timedelta(minutes=3)
             updated = current.decide(
                 OfferDecision(
                     decision_id="decision-signed-1", actor_principal_id=director,
@@ -116,7 +116,7 @@ def test_authenticated_signed_offer_verification_is_required_before_acceptance(m
                 action="OFFER_APPROVED", occurred_at=decision_at,
                 expected_revision=2, session=session, idempotency_key="offer-approve",
             )
-            sent_at = now + timedelta(minutes=3)
+            sent_at = now - timedelta(minutes=2)
             updated = current.send(actor_principal_id=manager, sent_at=sent_at, expected_revision=3)
             return hiring_registry.transition_offer(
                 current=current, updated=updated, actor_principal_id=manager,
@@ -154,7 +154,7 @@ def test_authenticated_signed_offer_verification_is_required_before_acceptance(m
             valid_from=now - timedelta(days=1), valid_until=now + timedelta(days=30),
         )
         db[TRUST_COLLECTION].insert_one(trust.to_dict())
-        signed_at = now + timedelta(minutes=4)
+        signed_at = now - timedelta(minutes=1)
         signed_payload = canonical_signature_payload(
             tenant_id=tenant, candidate_id=candidate_id, offer_id=offer_id,
             evidence_id=evidence_id, evidence_version_id=version_id,
