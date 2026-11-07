@@ -180,6 +180,7 @@ class InstitutionalPKIVerifier:
         fingerprints = {item.fingerprint(hashes.SHA256()).hex() for item in self._anchors}
         if fingerprints != set(settings.trusted_root_sha256):
             raise InstitutionalPKIError("INSTITUTIONAL_PKI_ROOT_PIN_SET_MISMATCH")
+        anchor_fingerprints = {item.fingerprint(hashes.SHA256()) for item in self._anchors}
         for anchor in self._anchors:
             _valid_at(anchor, datetime.now(timezone.utc))
             _is_ca(anchor)
