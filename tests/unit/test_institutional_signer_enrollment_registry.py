@@ -162,3 +162,11 @@ def test_signer_enrollment_requires_transaction_and_proofing_and_mandate_evidenc
     with pytest.raises(InstitutionalSignerRegistryError, match="MANDATE_EVIDENCE_REQUIRED"):
         request(registry, object(), signatory_mandate_evidence_reference="")
     assert not records.rows and not events.rows
+
+
+
+def test_wilsy_institutional_signer_registry_rejects_other_tenant_scopes():
+    registry, records, events = setup_registry()
+    with pytest.raises(InstitutionalSignerRegistryConflict, match="TENANT_SCOPE_INVALID"):
+        request(registry, object(), tenant_id="CUSTOMER-TENANT-001")
+    assert not records.rows and not events.rows
