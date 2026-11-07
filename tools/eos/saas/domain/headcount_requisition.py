@@ -49,6 +49,17 @@ def _timestamp(value: datetime) -> datetime:
     return value.astimezone(timezone.utc)
 
 
+def _parse_timestamp(value: object) -> datetime:
+    if isinstance(value, datetime):
+        return _timestamp(value)
+    if isinstance(value, str):
+        try:
+            return _timestamp(datetime.fromisoformat(value))
+        except ValueError as error:
+            raise RequisitionError("REQUISITION_TIMESTAMP_INVALID") from error
+    raise RequisitionError("REQUISITION_TIMESTAMP_INVALID")
+
+
 @dataclass(frozen=True, slots=True)
 class HeadcountApproval:
     decision_id: str
@@ -153,6 +164,37 @@ class HeadcountRequisition:
 
     def _digest(self) -> str:
         return hashlib.sha3_512(json.dumps(self._payload(), sort_keys=True, separators=(",", ":")).encode()).hexdigest()
+
+    def to_dict(self) -> dict[str, object]:
+        return {**self._payload(), "fingerprint": self.fingerprint}
+
+    @classmethod
+    def from_dict(cls, payload: dict[str, object]) -> "HeadcountRequisition":
+        expected = {
+            "tenant_id", "requisition_id", "department_id", "position_title",
+            "employment_type", "work_location", "headcount", "business_justification",
+            "requested_by_principal_id", "status", "approval",
+            "submitted_by_principal_id", "submitted_at", "revision",
+            "schema", "version", "fingerprint",
+        }
+        if not isinstance(payload, dict) or set(payload) != expected:
+            raise RequisitionError("REQUISITION_PERSISTED_SCHEMA_INVALID")
+        values = dict(payload)
+        approval_data = values.pop("approval")
+        if approval_data is not None:
+            if not isinstance(approval_data, dict) or set(approval_data) != {
+                "decision_id", "actor_principal_id", "decision", "reason", "decided_at"
+            }:
+                raise RequisitionError("REQUISITION_APPROVAL_SCHEMA_INVALID")
+            approval_values = dict(approval_data)
+            approval_values["decided_at"] = _parse_timestamp(approval_values["decided_at"])
+            values["approval"] = HeadcountApproval(**approval_values)
+        submitted_at = values.get("submitted_at")
+        values["submitted_at"] = None if submitted_at is None else _parse_timestamp(submitted_at)
+        try:
+            return cls(**values)
+        except TypeError as error:
+            raise RequisitionError("REQUISITION_PERSISTED_SCHEMA_INVALID") from error
 
     def submit(self, *, actor_principal_id: str, submitted_at: datetime, expected_revision: int) -> "HeadcountRequisition":
         self._expect_revision(expected_revision)
