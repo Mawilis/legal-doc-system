@@ -16,6 +16,9 @@ from tools.eos.auth.identity import SovereignIdentity
 from tools.eos.auth.principal_status import PrincipalStatus
 from tools.eos.api.tenant_authorization_http import TenantAuthorizationContext
 from tools.eos.api import institutional_source_key_router as source_key_api
+from tools.eos.security.institutional_source_key_governance_evidence import (
+    InstitutionalSourceKeyGovernanceEvidenceError,
+)
 from tools.eos.security.institutional_source_signing_key_registry import (
     KEY_COLLECTION,
     EVENT_COLLECTION,
@@ -33,6 +36,8 @@ class _VerifiedGovernanceEvidence:
         self.proposal_calls = []
         self.approval_calls = []
         self.revocation_calls = []
+        self.fail_approval = False
+        self.fail_revocation = False
 
     def verify_proposal(self, **kwargs):
         self.proposal_calls.append(kwargs)
@@ -40,10 +45,14 @@ class _VerifiedGovernanceEvidence:
 
     def verify_approval(self, **kwargs):
         self.approval_calls.append(kwargs)
+        if self.fail_approval:
+            raise InstitutionalSourceKeyGovernanceEvidenceError("SYNTHETIC_APPROVAL_EVIDENCE_DENIED")
         return object()
 
     def verify_revocation(self, **kwargs):
         self.revocation_calls.append(kwargs)
+        if self.fail_revocation:
+            raise InstitutionalSourceKeyGovernanceEvidenceError("SYNTHETIC_REVOCATION_EVIDENCE_DENIED")
         return object()
 
 
@@ -136,6 +145,16 @@ def test_authenticated_propose_approve_revoke_is_atomic_and_maker_checker_enforc
             assert self_approval.json()["detail"] == "SOURCE_SIGNING_KEY_MAKER_CHECKER_VIOLATION"
 
             app.dependency_overrides[source_key_api._APPROVE] = lambda: _context("synthetic-reviewer")
+            evidence.fail_approval = True
+            denied_approval = http.post(
+                "/security/institutional-source-keys/synthetic-http-source/synthetic-http-key-v1/approve",
+                json=approval_body, headers={"Idempotency-Key": "http-approval-denied"},
+            )
+            assert denied_approval.status_code == 503
+            assert database[EVENT_COLLECTION].count_documents(
+                {"source_system_id": "synthetic-http-source"},
+            ) == 1
+            evidence.fail_approval = False
             approved = http.post(
                 "/security/institutional-source-keys/synthetic-http-source/synthetic-http-key-v1/approve",
                 json=approval_body, headers={"Idempotency-Key": "http-approve-1"},
@@ -168,6 +187,21 @@ def test_authenticated_propose_approve_revoke_is_atomic_and_maker_checker_enforc
             assert self_revocation.json()["detail"] == "SOURCE_SIGNING_KEY_MAKER_CHECKER_VIOLATION"
 
             app.dependency_overrides[source_key_api._REVOKE] = lambda: _context("synthetic-reviewer")
+            evidence.fail_revocation = True
+            denied_revocation = http.post(
+                "/security/institutional-source-keys/synthetic-http-source/synthetic-http-key-v1/revoke",
+                json={
+                    "reason_reference": "synthetic://compromise/denied",
+                    "governance_decision_reference": "synthetic-governance-revocation-denied",
+                    "approval_evidence_reference": "synthetic://independent-revocation-denied",
+                },
+                headers={"Idempotency-Key": "http-revocation-denied"},
+            )
+            assert denied_revocation.status_code == 503
+            assert database[EVENT_COLLECTION].count_documents(
+                {"source_system_id": "synthetic-http-source"},
+            ) == 2
+            evidence.fail_revocation = False
             revoked = http.post(
                 "/security/institutional-source-keys/synthetic-http-source/synthetic-http-key-v1/revoke",
                 json={
@@ -181,8 +215,8 @@ def test_authenticated_propose_approve_revoke_is_atomic_and_maker_checker_enforc
             assert revoked.json()["event_type"] == "REVOKED"
 
         assert len(evidence.proposal_calls) == 1
-        assert len(evidence.approval_calls) == 1
-        assert len(evidence.revocation_calls) == 1
+        assert len(evidence.approval_calls) == 2
+        assert len(evidence.revocation_calls) == 2
         assert database[EVENT_COLLECTION].count_documents(
             {"source_system_id": "synthetic-http-source"},
         ) == 3
