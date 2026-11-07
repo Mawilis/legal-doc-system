@@ -17,6 +17,7 @@ from botocore.exceptions import BotoCoreError, ClientError
 from .institutional_pki_kms import (
     InstitutionalPKIKMSError,
     create_nonexportable_subordinate_ca_key_and_csr,
+    issue_crl_with_kms,
 )
 
 
@@ -32,6 +33,24 @@ def _write_once(path: Path, payload: bytes, mode: int) -> None:
         raise
 
 
+def _publish_crl(args: argparse.Namespace) -> int:
+    session = boto3.Session(profile_name=args.profile, region_name=args.region)
+    client = session.client("kms", region_name=args.region)
+    path, fingerprint = issue_crl_with_kms(
+        client,
+        key_arn=args.key_arn,
+        issuer_certificate_pem=Path(args.issuer_certificate).read_bytes(),
+        output_path=Path(args.output),
+        revoked_serial_numbers=args.revoke_serial,
+        crl_number=args.crl_number,
+        validity_hours=args.validity_hours,
+    )
+    print(f"crl={path}")
+    print(f"crl_sha256={fingerprint}")
+    print("CRL SIGNED BY THE NON-EXPORTABLE KMS SUBORDINATE KEY; REVIEW AND PUBLISH THE COMPLETE ISSUER BUNDLE.")
+    return 0
+
+
 def main() -> int:
     parser = argparse.ArgumentParser(
         prog="python -m tools.eos.security.institutional_pki_kms_cli",
@@ -45,7 +64,42 @@ def main() -> int:
     parser.add_argument("--organization", required=True)
     parser.add_argument("--organizational-unit", required=True)
     parser.add_argument("--country-code", required=True)
+    subcommands = parser.add_subparsers(dest="command", required=True)
+    provision = subcommands.add_parser("provision-subordinate-csr")
+    provision.add_argument("--region", required=True)
+    provision.add_argument("--profile")
+    provision.add_argument("--key-policy", required=True)
+    provision.add_argument("--output-dir", required=True)
+    provision.add_argument("--common-name", required=True)
+    provision.add_argument("--organization", required=True)
+    provision.add_argument("--organizational-unit", required=True)
+    provision.add_argument("--country-code", required=True)
+    provision.set_defaults(handler=None)
+
+    publish = subcommands.add_parser("publish-crl")
+    publish.add_argument("--region", required=True)
+    publish.add_argument("--profile")
+    publish.add_argument("--key-arn", required=True)
+    publish.add_argument("--issuer-certificate", required=True)
+    publish.add_argument("--output", required=True)
+    publish.add_argument("--revoke-serial", type=lambda value: int(value, 0), action="append", default=[])
+    publish.add_argument("--crl-number", type=int, required=True)
+    publish.add_argument("--validity-hours", type=int, default=24)
+    publish.set_defaults(handler=_publish_crl)
+
     args = parser.parse_args()
+    if args.command == "publish-crl":
+        try:
+            return args.handler(args)
+        except InstitutionalPKIKMSError as error:
+            print(error.code, file=sys.stderr)
+            if error.key_arn:
+                print(f"created_kms_key_requires_reconciliation={error.key_arn}", file=sys.stderr)
+            return 2
+        except (OSError, ValueError, BotoCoreError, ClientError) as error:
+            del error
+            print("INSTITUTIONAL_KMS_CRL_PUBLICATION_FAILED", file=sys.stderr)
+            return 2
     output = Path(args.output_dir).expanduser().resolve()
     output.mkdir(mode=0o700, parents=True, exist_ok=True)
     os.chmod(output, 0o700)
