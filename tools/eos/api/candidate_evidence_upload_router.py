@@ -197,13 +197,13 @@ async def upload_candidate_evidence(
 
     try:
         intent = CandidateEvidenceWriteIntent(
-        tenant_id=tenant_id,
-        candidate_id=candidate_id,
-        evidence_id=evidence_id,
-        evidence_version_id=evidence_version_id,
-        ingestion_reference="ING-" + uuid.uuid4().hex,
-        media_type=media_type,
-        original_filename=original_filename,
+            tenant_id=tenant_id,
+            candidate_id=candidate_id,
+            evidence_id=evidence_id,
+            evidence_version_id=evidence_version_id,
+            ingestion_reference="ING-" + uuid.uuid4().hex,
+            media_type=media_type,
+            original_filename=original_filename,
             admitted_max_content_length=content_length,
         )
     except ValueError as error:
