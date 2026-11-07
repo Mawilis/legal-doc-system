@@ -80,6 +80,8 @@ class InstitutionalPKICRLCurrentnessRegistry:
                 {"issuer_subject_sha256": issuer_reference},
                 session=session,
             )
+            previous_number = None
+            previous_fingerprint = None
             if current is not None:
                 previous_number = current["crl_number"]
                 previous_fingerprint = current["crl_fingerprint"]
