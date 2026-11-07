@@ -115,11 +115,30 @@ def _pem_crls(raw: bytes) -> tuple[x509.CertificateRevocationList, ...]:
         raise InstitutionalPKIError("INSTITUTIONAL_PKI_CRL_BUNDLE_INVALID") from error
 
 
+def _validate_public_key_strength(public_key: object) -> None:
+    if isinstance(public_key, rsa.RSAPublicKey):
+        if public_key.key_size < 2048:
+            raise InstitutionalPKIError("INSTITUTIONAL_PKI_RSA_KEY_TOO_SMALL")
+    elif isinstance(public_key, ec.EllipticCurvePublicKey):
+        if public_key.key_size < 256:
+            raise InstitutionalPKIError("INSTITUTIONAL_PKI_EC_KEY_TOO_SMALL")
+    elif isinstance(public_key, dsa.DSAPublicKey):
+        if public_key.key_size < 2048:
+            raise InstitutionalPKIError("INSTITUTIONAL_PKI_DSA_KEY_TOO_SMALL")
+    elif not isinstance(public_key, (ed25519.Ed25519PublicKey, ed448.Ed448PublicKey)):
+        raise InstitutionalPKIError("INSTITUTIONAL_PKI_KEY_ALGORITHM_UNSUPPORTED")
+
+
 def _verify_signature(signed_object: object, issuer_key: object) -> None:
     try:
         signature = signed_object.signature
         data = signed_object.tbs_certificate_bytes if isinstance(signed_object, x509.Certificate) else signed_object.tbs_certlist_bytes
         algorithm = signed_object.signature_hash_algorithm
+        _validate_public_key_strength(issuer_key)
+        if not isinstance(issuer_key, (ed25519.Ed25519PublicKey, ed448.Ed448PublicKey)) and (
+            algorithm is None or getattr(algorithm, "digest_size", 0) < 32
+        ):
+            raise InstitutionalPKIError("INSTITUTIONAL_PKI_SIGNATURE_HASH_TOO_WEAK")
         if isinstance(issuer_key, rsa.RSAPublicKey):
             oid = signed_object.signature_algorithm_oid.dotted_string
             # RSA-PSS requires parameter-aware verification; reject rather than
@@ -551,6 +570,7 @@ class InstitutionalPKIVerifier:
         try:
             leaf = x509.load_pem_x509_certificate(leaf_pem)
             public_key = leaf.public_key()
+            _validate_public_key_strength(public_key)
             if isinstance(public_key, rsa.RSAPublicKey):
                 public_key.verify(
                     signature,
