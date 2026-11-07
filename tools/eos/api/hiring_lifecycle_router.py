@@ -40,6 +40,12 @@ from tools.eos.saas.hr.candidate_evidence_s3_storage_adapter import (
     CandidateEvidenceS3StorageAdapter,
 )
 from tools.eos.security.institutional_pki import InstitutionalPKIError, InstitutionalPKIVerifier
+from tools.eos.security.institutional_signer_enrollment_registry import (
+    COLLECTION as INSTITUTIONAL_SIGNER_COLLECTION,
+    EVENT_COLLECTION as INSTITUTIONAL_SIGNER_EVENT_COLLECTION,
+    InstitutionalSignerEnrollmentRegistry,
+    InstitutionalSignerRegistryError,
+)
 from tools.eos.security.institutional_signature_evidence_registry import (
     COLLECTION as INSTITUTIONAL_SIGNATURE_COLLECTION,
     EVENT_COLLECTION as INSTITUTIONAL_SIGNATURE_EVENT_COLLECTION,
@@ -142,6 +148,10 @@ def _transaction(callback):
             db[INSTITUTIONAL_SIGNATURE_COLLECTION],
             db[INSTITUTIONAL_SIGNATURE_EVENT_COLLECTION],
         )
+        InstitutionalSignerEnrollmentRegistry.ensure_indexes(
+            db[INSTITUTIONAL_SIGNER_COLLECTION],
+            db[INSTITUTIONAL_SIGNER_EVENT_COLLECTION],
+        )
         with client.start_session() as session:
             return session.with_transaction(
                 lambda tx: callback(registry, tx),
@@ -154,7 +164,7 @@ def _transaction(callback):
     except HiringLifecycleRegistryConflict as error:
         raise HTTPException(status_code=409, detail=error.code) from error
     except (HiringLifecycleRegistryError, CandidateEvidenceRegistryError,
-            InstitutionalSignatureEvidenceError) as error:
+            InstitutionalSignatureEvidenceError, InstitutionalSignerRegistryError) as error:
         raise HTTPException(status_code=503, detail=error.code) from error
     except HTTPException:
         raise
@@ -474,6 +484,17 @@ async def accept_offer(
             or signed_offer.fingerprint != observed["evidence"].fingerprint
         ):
             raise HTTPException(status_code=409, detail="HIRING_SIGNED_OFFER_EVIDENCE_CHANGED")
+        signer_registry = InstitutionalSignerEnrollmentRegistry(
+            database[INSTITUTIONAL_SIGNER_COLLECTION],
+            database[INSTITUTIONAL_SIGNER_EVENT_COLLECTION],
+        )
+        signer_registry.require_active(
+            tenant_id=context.tenant_id,
+            certificate_fingerprint_sha256=verification.certificate_verification.leaf_fingerprint_sha256,
+            certificate_serial_number_hex=verification.certificate_verification.serial_number_hex,
+            trust_root_sha256=verification.certificate_verification.root_fingerprint_sha256,
+            session=tx,
+        )
         signature_registry = InstitutionalSignatureEvidenceRegistry(
             database[INSTITUTIONAL_SIGNATURE_COLLECTION],
             database[INSTITUTIONAL_SIGNATURE_EVENT_COLLECTION],
