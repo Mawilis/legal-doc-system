@@ -3,6 +3,7 @@ from __future__ import annotations
 
 import base64
 import binascii
+import re
 from hashlib import sha256
 from datetime import datetime, timezone
 from typing import Annotated
@@ -123,6 +124,14 @@ def _verify_approval_evidence(verifier, *, tenant_id, certificate_fingerprint_sh
         raise HTTPException(status_code=503, detail=error.code) from error
 
 
+
+def _provenance_fingerprint(result) -> str:
+    fingerprint = getattr(result, "provenance_fingerprint_sha256", None)
+    if not isinstance(fingerprint, str) or re.fullmatch(r"[0-9a-f]{64}", fingerprint) is None:
+        raise HTTPException(status_code=503, detail="INSTITUTIONAL_SIGNER_EVIDENCE_PROVENANCE_INVALID")
+    return fingerprint
+
+
 def _transaction(callback):
     client, database = get_client(), get_database()
     if client is None or database is None:
@@ -185,7 +194,7 @@ async def request_signer_enrollment(
     except Exception as error:
         raise HTTPException(status_code=422, detail="INSTITUTIONAL_SIGNER_CERTIFICATE_INVALID") from error
     def persist_enrollment(registry, tx):
-        _verify_enrollment_evidence(
+        verified_evidence = _verify_enrollment_evidence(
             evidence_verifier,
             tenant_id=context.tenant_id,
             certificate_fingerprint_sha256=receipt.leaf_fingerprint_sha256,
@@ -207,6 +216,7 @@ async def request_signer_enrollment(
         signatory_mandate_evidence_reference=body.signatory_mandate_evidence_reference,
         requested_by_principal_id=context.identity.identity_id,
         requested_at=now, idempotency_key=idempotency_key, session=tx,
+        evidence_provenance_fingerprint_sha256=_provenance_fingerprint(verified_evidence),
         )
 
     return _transaction(persist_enrollment)
@@ -240,7 +250,7 @@ async def approve_signer_enrollment(
             certificate_fingerprint_sha256=certificate_fingerprint_sha256,
             session=tx,
         )
-        _verify_approval_evidence(
+        verified_approval = _verify_approval_evidence(
             evidence_verifier,
             tenant_id=context.tenant_id,
             certificate_fingerprint_sha256=certificate_fingerprint_sha256,
@@ -257,6 +267,7 @@ async def approve_signer_enrollment(
         approval_attestation_reference=body.approval_attestation_reference,
         approved_at=datetime.now(timezone.utc),
         idempotency_key=idempotency_key, session=tx,
+        evidence_provenance_fingerprint_sha256=_provenance_fingerprint(verified_approval),
         )
 
     return _transaction(persist_approval)
