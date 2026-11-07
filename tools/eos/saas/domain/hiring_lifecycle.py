@@ -280,18 +280,25 @@ class OfferAcceptanceEvidence:
     evidence_reference: str
     evidence_fingerprint: str
     accepted_at: datetime
+    signature_verification_reference: str | None = None
 
     def __post_init__(self) -> None:
         object.__setattr__(self, "evidence_reference", _required("offer_acceptance_reference", self.evidence_reference))
         if not isinstance(self.evidence_fingerprint, str) or not _HEX_512.fullmatch(self.evidence_fingerprint):
             raise HiringLifecycleError("HIRING_OFFER_ACCEPTANCE_FINGERPRINT_INVALID")
         object.__setattr__(self, "accepted_at", _aware(self.accepted_at))
+        if self.signature_verification_reference is not None:
+            object.__setattr__(
+                self, "signature_verification_reference",
+                _required("offer_acceptance_signature_verification_reference", self.signature_verification_reference),
+            )
 
     def to_dict(self) -> dict[str, object]:
         return {
             "evidence_reference": self.evidence_reference,
             "evidence_fingerprint": self.evidence_fingerprint,
             "accepted_at": self.accepted_at.isoformat(),
+            "signature_verification_reference": self.signature_verification_reference,
         }
 
 
@@ -384,6 +391,12 @@ class EmploymentOffer:
         object.__setattr__(self, "fingerprint", digest)
 
     def _payload(self) -> dict[str, object]:
+        acceptance = self.acceptance.to_dict() if self.acceptance else None
+        # Preserve the V1 fingerprint of historical accepted offers that
+        # predate the cryptographic-verification reference. New accept()
+        # commands reject a missing reference, so this is read compatibility only.
+        if acceptance is not None and acceptance.get("signature_verification_reference") is None:
+            acceptance.pop("signature_verification_reference", None)
         return {
             "tenant_id": self.tenant_id, "offer_id": self.offer_id,
             "requisition_id": self.requisition_id, "candidate_id": self.candidate_id,
@@ -392,7 +405,7 @@ class EmploymentOffer:
             "submitted_at": self.submitted_at.isoformat() if self.submitted_at else None,
             "decision": self.decision.to_dict() if self.decision else None,
             "sent_at": self.sent_at.isoformat() if self.sent_at else None,
-            "acceptance": self.acceptance.to_dict() if self.acceptance else None,
+            "acceptance": acceptance,
             "decline_evidence": self.decline_evidence.to_dict() if self.decline_evidence else None,
             "revision": self.revision, "schema": self.schema, "version": self.version,
         }
@@ -537,6 +550,8 @@ class EmploymentOffer:
             raise HiringLifecycleError("HIRING_OFFER_REVISION_CONFLICT")
         if self.status is not OfferStatus.SENT:
             raise HiringLifecycleError("HIRING_OFFER_MUST_BE_SENT_BEFORE_ACCEPTANCE")
+        if not evidence.signature_verification_reference:
+            raise HiringLifecycleError("HIRING_OFFER_CRYPTOGRAPHIC_SIGNATURE_VERIFICATION_REQUIRED")
         if evidence.accepted_at >= self.terms.expires_at:
             raise HiringLifecycleError("HIRING_OFFER_ACCEPTANCE_AFTER_EXPIRY")
         return EmploymentOffer(
