@@ -3,10 +3,16 @@ name: WILSY Headquarters Candidate and Offer Lifecycle
 on:
   pull_request:
     paths:
+      - "tools/eos/api/hiring_lifecycle_router.py"
+      - "tools/eos/api/server.py"
+      - "tools/eos/auth/permission_namespace.py"
+      - "tools/eos/auth/tenant_authorization.py"
+      - "tools/eos/auth/roles.py"
       - "tools/eos/saas/domain/hiring_lifecycle.py"
       - "tools/eos/saas/hr/hiring_lifecycle_registry.py"
       - "tests/unit/test_hiring_lifecycle_domain.py"
       - "tests/integration/test_hiring_lifecycle_registry_real_mongo.py"
+      - "tests/integration/test_hiring_lifecycle_authenticated_http.py"
       - ".github/workflows/headquarters-hiring-candidate-offer.yml"
 
 permissions:
@@ -14,7 +20,7 @@ permissions:
 
 jobs:
   candidate-offer-domain:
-    name: Candidate and offer lifecycle with real MongoDB transactions
+    name: Hiring IAM, HTTP and real MongoDB transaction certification
     runs-on: ubuntu-latest
     timeout-minutes: 20
     env:
@@ -45,15 +51,21 @@ jobs:
         run: |
           python -m pip install --upgrade pip
           python -m pip install -r requirements.txt pytest==9.1.1
-      - name: Compile hiring domain, registry and certification
+      - name: Compile hiring command, IAM and persistence modules
         run: |
           python -m py_compile \
+            tools/eos/api/hiring_lifecycle_router.py \
+            tools/eos/api/server.py \
+            tools/eos/auth/permission_namespace.py \
+            tools/eos/auth/tenant_authorization.py \
+            tools/eos/auth/roles.py \
             tools/eos/saas/domain/hiring_lifecycle.py \
             tools/eos/saas/hr/hiring_lifecycle_registry.py \
             tests/unit/test_hiring_lifecycle_domain.py \
+            tests/integration/test_hiring_lifecycle_authenticated_http.py \
             tests/integration/test_hiring_lifecycle_registry_real_mongo.py
-      - name: Run candidate, offer and real replica-set persistence tests
-        run: python -m pytest -q tests/unit/test_hiring_lifecycle_domain.py tests/integration/test_hiring_lifecycle_registry_real_mongo.py
+      - name: Run lifecycle, authenticated denial, IAM and real replica-set tests
+        run: python -m pytest -q tests/unit/test_hiring_lifecycle_domain.py tests/integration/test_hiring_lifecycle_authenticated_http.py tests/integration/test_hiring_lifecycle_registry_real_mongo.py
       - name: Stop MongoDB replica-set container
         if: always()
         run: docker rm --force hiring-mongo || true

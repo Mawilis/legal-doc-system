@@ -305,6 +305,16 @@ def _meta(
 
 _PERMISSIONS: Final = MappingProxyType(
     {
+        "hr:hiring_candidate:read": _meta("hr:hiring_candidate:read", "TENANT", "TENANT", "read own-tenant candidate lifecycle evidence", tenant=True),
+        "hr:hiring_candidate:create": _meta("hr:hiring_candidate:create", "TENANT", "TENANT", "create own-tenant candidate applications", tenant=True),
+        "hr:hiring_candidate:transition": _meta("hr:hiring_candidate:transition", "TENANT", "TENANT", "advance own-tenant candidate lifecycle with evidence", tenant=True),
+        "hr:hiring_offer:read": _meta("hr:hiring_offer:read", "TENANT", "TENANT", "read own-tenant employment offer evidence", tenant=True),
+        "hr:hiring_offer:create": _meta("hr:hiring_offer:create", "TENANT", "TENANT", "prepare own-tenant employment offers", tenant=True),
+        "hr:hiring_offer:submit": _meta("hr:hiring_offer:submit", "TENANT", "TENANT", "submit own-tenant offers for independent approval", tenant=True),
+        "hr:hiring_offer:decide": _meta("hr:hiring_offer:decide", "TENANT", "TENANT", "independently approve or reject own-tenant offers", tenant=True),
+        "hr:hiring_offer:send": _meta("hr:hiring_offer:send", "TENANT", "TENANT", "send independently approved own-tenant offers", tenant=True),
+        "hr:hiring_offer:accept": _meta("hr:hiring_offer:accept", "TENANT", "TENANT", "record evidenced candidate offer acceptance", tenant=True),
+
         "kernel:read": _meta(
             "kernel:read",
             "SYSTEM",

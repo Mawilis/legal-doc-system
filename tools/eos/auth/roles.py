@@ -473,6 +473,15 @@ for _hr_role_name in (
 # Headcount governance separates requisition initiation from decision authority.
 ROLE_PERMISSIONS_MAP["HR_MANAGER"].append("hr:headcount_requisition:create")
 ROLE_PERMISSIONS_MAP["HR_MANAGER"].append("hr:headcount_requisition:read")
+ROLE_PERMISSIONS_MAP["HR_MANAGER"].extend([
+    "hr:hiring_candidate:read", "hr:hiring_candidate:create",
+    "hr:hiring_candidate:transition", "hr:hiring_offer:read",
+    "hr:hiring_offer:create", "hr:hiring_offer:submit", "hr:hiring_offer:send",
+])
+ROLE_PERMISSIONS_MAP["HR_DIRECTOR"].extend([
+    "hr:hiring_candidate:read", "hr:hiring_offer:read",
+    "hr:hiring_offer:decide", "hr:hiring_offer:accept",
+])
 ROLE_PERMISSIONS_MAP["HR_DIRECTOR"].extend([
     "hr:headcount_requisition:read",
     "hr:headcount_requisition:decide",
