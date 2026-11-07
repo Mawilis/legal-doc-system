@@ -239,7 +239,7 @@ class InstitutionalSourceSigningKeyLifecycleRegistry:
         )
         if proposal_event is None or occurred < proposal_event["occurred_at"]:
             raise SourceSigningKeyRegistryConflict("SOURCE_SIGNING_KEY_PROPOSAL_NOT_CURRENT")
-        fingerprint = sha256(_canonical(record)).hexdigest()
+        fingerprint = _record_fingerprint(record)
         event = {
             "schema": EVENT_SCHEMA, "event_type": "APPROVED",
             "source_system_id": source, "key_id": key,
@@ -372,7 +372,7 @@ class InstitutionalSourceSigningKeyLifecycleRegistry:
                  "occurred_at": {"$lte": at}},
                 session=session,
             )
-            if approval is None or approval.get("record_fingerprint_sha256") != sha256(_canonical(record)).hexdigest():
+            if approval is None or approval.get("record_fingerprint_sha256") != _record_fingerprint(record):
                 raise SourceSigningKeyRegistryConflict("SOURCE_SIGNING_KEY_NOT_INDEPENDENTLY_APPROVED")
             revocation = self._events.find_one(
                 {"source_system_id": source, "key_id": key, "event_type": "REVOKED",
