@@ -10,7 +10,6 @@ from datetime import datetime
 from typing import Any, Callable
 
 from tools.eos.security.institutional_signer_evidence_verifier import (
-    InstitutionalSignerEvidenceVerificationError,
     InstitutionalSignerEvidenceVerifier,
 )
 from tools.eos.security.institutional_signer_enrollment_registry import (
@@ -28,6 +27,7 @@ def reconcile_institutional_signer_currentness(
     certificate_fingerprint_sha256: str,
     evaluated_at: datetime,
     idempotency_key: str,
+    actor_reference: str,
     read_transaction: Callable[[Callable[[object], Any]], Any],
     write_transaction: Callable[[Callable[[object], Any]], Any],
 ) -> dict[str, Any]:
@@ -73,6 +73,7 @@ def reconcile_institutional_signer_currentness(
         lambda session: registry.record_verified_currentness(
             verification=verification,
             idempotency_key=idempotency_key,
+            actor_reference=actor_reference,
             session=session,
         )
     )
