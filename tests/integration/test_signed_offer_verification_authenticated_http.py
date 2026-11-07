@@ -102,6 +102,7 @@ def test_authenticated_signed_offer_verification_is_required_before_acceptance(m
                 current=current, updated=updated, actor_principal_id=manager,
                 action="OFFER_SUBMITTED", occurred_at=submitted_at,
                 expected_revision=1, session=session, idempotency_key="offer-submit",
+                command_fingerprint=hashlib.sha3_512(b"offer-submit").hexdigest(),
             )
             decision_at = now - timedelta(minutes=3)
             updated = current.decide(
@@ -115,6 +116,7 @@ def test_authenticated_signed_offer_verification_is_required_before_acceptance(m
                 current=current, updated=updated, actor_principal_id=director,
                 action="OFFER_APPROVED", occurred_at=decision_at,
                 expected_revision=2, session=session, idempotency_key="offer-approve",
+                command_fingerprint=hashlib.sha3_512(b"offer-approve").hexdigest(),
             )
             sent_at = now - timedelta(minutes=2)
             updated = current.send(actor_principal_id=manager, sent_at=sent_at, expected_revision=3)
@@ -122,6 +124,7 @@ def test_authenticated_signed_offer_verification_is_required_before_acceptance(m
                 current=current, updated=updated, actor_principal_id=manager,
                 action="OFFER_SENT", occurred_at=sent_at,
                 expected_revision=3, session=session, idempotency_key="offer-send",
+                command_fingerprint=hashlib.sha3_512(b"offer-send").hexdigest(),
             )
         sent_offer = transaction(create_and_send)
         assert sent_offer.status is OfferStatus.SENT
