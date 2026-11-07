@@ -24,6 +24,8 @@ from tools.eos.api.tenant_authorization_http import (
 from tools.eos.kernel.db import get_client, get_database
 from tools.eos.security.institutional_source_key_governance_evidence import (
     InstitutionalSourceKeyGovernanceEvidenceError,
+    VerifiedSourceKeyProposalAuthority,
+    VerifiedSourceKeyApproval,
     VerifiedSourceKeyRevocationApproval,
 )
 from tools.eos.security.institutional_source_signing_key_registry import (
@@ -82,6 +84,14 @@ class SourceKeyRevocation(StrictModel):
 def _tenant(context: TenantAuthorizationContext) -> None:
     if context.tenant_id != TENANT_ID:
         raise HTTPException(status_code=403, detail="INSTITUTIONAL_SOURCE_KEY_TENANT_SCOPE_INVALID")
+
+
+def _valid_fingerprint(value: object) -> bool:
+    return (
+        isinstance(value, str)
+        and len(value) == 64
+        and all(ch in "0123456789abcdef" for ch in value)
+    )
 
 
 def _registry(request: Request):
@@ -155,7 +165,7 @@ async def propose_source_signing_key(
     now = datetime.now(timezone.utc)
 
     def persist(registry, session):
-        verifier.verify_proposal(
+        verified = verifier.verify_proposal(
             tenant_id=context.tenant_id,
             source_system_id=body.source_system_id,
             public_key_fingerprint_sha256=sha256(public_key).hexdigest(),
@@ -165,6 +175,18 @@ async def propose_source_signing_key(
             evaluated_at=now,
             session=session,
         )
+        if not isinstance(verified, VerifiedSourceKeyProposalAuthority) or (
+            verified.tenant_id != context.tenant_id
+            or verified.source_system_id != body.source_system_id
+            or verified.public_key_fingerprint_sha256 != sha256(public_key).hexdigest()
+            or verified.proposer_principal_id != context.identity.identity_id
+            or verified.identity_proofing_evidence_reference != body.identity_proofing_evidence_reference
+            or verified.source_authority_evidence_reference != body.source_authority_evidence_reference
+            or not _valid_fingerprint(verified.evidence_fingerprint_sha256)
+        ):
+            raise InstitutionalSourceKeyGovernanceEvidenceError(
+                "INSTITUTIONAL_SOURCE_KEY_PROPOSAL_EVIDENCE_BINDING_INVALID"
+            )
         record = registry.propose(
             source_system_id=body.source_system_id,
             key_id=body.key_id,
@@ -208,7 +230,7 @@ async def approve_source_signing_key(
         if record["proposed_by_principal_id"] == context.identity.identity_id:
             raise HTTPException(status_code=409, detail="SOURCE_SIGNING_KEY_MAKER_CHECKER_VIOLATION")
         now = datetime.now(timezone.utc)
-        verifier.verify_approval(
+        verified = verifier.verify_approval(
             tenant_id=context.tenant_id,
             source_system_id=source_system_id,
             key_id=key_id,
@@ -221,6 +243,22 @@ async def approve_source_signing_key(
             evaluated_at=now,
             session=session,
         )
+        if not isinstance(verified, VerifiedSourceKeyApproval) or (
+            verified.tenant_id != context.tenant_id
+            or verified.source_system_id != source_system_id
+            or verified.key_id != key_id
+            or verified.public_key_fingerprint_sha256 != record["public_key_fingerprint_sha256"]
+            or verified.proposer_principal_id != record["proposed_by_principal_id"]
+            or verified.approver_principal_id != context.identity.identity_id
+            or verified.approver_principal_id == verified.proposer_principal_id
+            or verified.proposal_reference != record["proposal_reference"]
+            or verified.governance_decision_reference != body.governance_decision_reference
+            or verified.approval_evidence_reference != body.approval_evidence_reference
+            or not _valid_fingerprint(verified.evidence_fingerprint_sha256)
+        ):
+            raise InstitutionalSourceKeyGovernanceEvidenceError(
+                "INSTITUTIONAL_SOURCE_KEY_APPROVAL_EVIDENCE_BINDING_INVALID"
+            )
         event = registry.approve(
             source_system_id=source_system_id,
             key_id=key_id,
@@ -290,8 +328,7 @@ async def revoke_source_signing_key(
             or verified_approval.approver_principal_id in {
                 context.identity.identity_id, record["proposed_by_principal_id"],
             }
-            or len(verified_approval.evidence_fingerprint_sha256) != 64
-            or any(ch not in "0123456789abcdef" for ch in verified_approval.evidence_fingerprint_sha256)
+            or not _valid_fingerprint(verified_approval.evidence_fingerprint_sha256)
         ):
             raise InstitutionalSourceKeyGovernanceEvidenceError(
                 "INSTITUTIONAL_SOURCE_KEY_REVOCATION_APPROVAL_BINDING_INVALID"
