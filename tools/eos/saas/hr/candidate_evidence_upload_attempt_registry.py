@@ -254,6 +254,21 @@ class CandidateEvidenceUploadAttemptRegistry:
         try:
             attempts.create_index([("tenant_id", ASCENDING), ("upload_attempt_id", ASCENDING)], unique=True, name="uq_hr_evidence_upload_attempt")
             attempts.create_index([("tenant_id", ASCENDING), ("status", ASCENDING), ("updated_at", ASCENDING)], name="ix_hr_evidence_upload_reconciliation")
+            attempts.create_index(
+                [
+                    ("tenant_id", ASCENDING), ("candidate_id", ASCENDING),
+                    ("evidence_id", ASCENDING), ("evidence_version_id", ASCENDING),
+                ],
+                unique=True,
+                partialFilterExpression={"status": {"$in": [
+                    UploadAttemptStatus.INITIATING.value,
+                    UploadAttemptStatus.INITIATED.value,
+                    UploadAttemptStatus.PARTS_UPLOADED.value,
+                    UploadAttemptStatus.COMPLETION_UNCERTAIN.value,
+                    UploadAttemptStatus.PROVIDER_VERIFIED.value,
+                ]}},
+                name="uq_hr_evidence_upload_active_scope",
+            )
             events.create_index([("tenant_id", ASCENDING), ("upload_attempt_id", ASCENDING), ("revision", ASCENDING)], unique=True, name="uq_hr_evidence_upload_attempt_event")
         except PyMongoError as error:
             raise UploadAttemptError("UPLOAD_ATTEMPT_INDEX_UNAVAILABLE") from error
