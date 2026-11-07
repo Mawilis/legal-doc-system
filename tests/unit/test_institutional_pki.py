@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from datetime import datetime, timedelta, timezone
+from hashlib import sha256
 from pathlib import Path
 
 import pytest
@@ -108,8 +109,8 @@ def _fixture(tmp_path: Path, *, revoked_leaf=False, stale_crl=False, eku=SIGNING
     anchor_path.write_bytes(root.public_bytes(serialization.Encoding.PEM))
     issuer_path.write_bytes(intermediate.public_bytes(serialization.Encoding.PEM))
     crl_path.write_bytes(
-        root_crl.public_bytes(__import__("cryptography").hazmat.primitives.serialization.Encoding.PEM)
-        + intermediate_crl.public_bytes(__import__("cryptography").hazmat.primitives.serialization.Encoding.PEM)
+        root_crl.public_bytes(serialization.Encoding.PEM)
+        + intermediate_crl.public_bytes(serialization.Encoding.PEM)
     )
     settings = InstitutionalPKISettings(
         trust_anchors_pem=anchor_path,
@@ -128,8 +129,8 @@ def _fixture(tmp_path: Path, *, revoked_leaf=False, stale_crl=False, eku=SIGNING
 def test_verifies_exact_chain_and_fresh_crls(tmp_path):
     verifier, leaf, intermediate = _fixture(tmp_path)
     result = verifier.verify(
-        leaf_pem=leaf.public_bytes(__import__("cryptography").hazmat.primitives.serialization.Encoding.PEM),
-        intermediate_pems=[intermediate.public_bytes(__import__("cryptography").hazmat.primitives.serialization.Encoding.PEM)],
+        leaf_pem=leaf.public_bytes(serialization.Encoding.PEM),
+        intermediate_pems=[intermediate.public_bytes(serialization.Encoding.PEM)],
         verified_at=NOW,
     )
     assert result.chain_depth == 2
@@ -199,9 +200,7 @@ def test_environment_composition_fails_closed_without_explicit_trust_material(mo
 
 def test_public_crl_distribution_route_serves_only_the_loaded_issuer_crl(tmp_path):
     verifier, _, _ = _fixture(tmp_path)
-    issuer_reference = __import__("hashlib").sha256(
-        verifier._anchors[0].subject.public_bytes()
-    ).hexdigest()
+    issuer_reference = sha256(verifier._anchors[0].subject.public_bytes()).hexdigest()
     app = FastAPI()
     app.include_router(institutional_pki_router, prefix="/api")
     app.state.institutional_pki_verifier = verifier
@@ -210,7 +209,8 @@ def test_public_crl_distribution_route_serves_only_the_loaded_issuer_crl(tmp_pat
     assert response.status_code == 200
     assert response.headers["content-type"].startswith("application/pkix-crl")
     assert response.headers["cache-control"] == "public, max-age=300, must-revalidate"
-    assert b"BEGIN X509 CRL" in response.content
+    parsed_crl = x509.load_der_x509_crl(response.content)
+    assert parsed_crl.issuer == verifier._anchors[0].subject
 
 
 def test_public_crl_distribution_route_fails_closed_without_runtime():
