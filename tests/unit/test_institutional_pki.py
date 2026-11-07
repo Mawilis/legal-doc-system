@@ -124,11 +124,11 @@ def _fixture(tmp_path: Path, *, revoked_leaf=False, stale_crl=False, eku=SIGNING
         anchors=[root], crls=[root_crl, intermediate_crl], settings=settings,
         issuer_certificates=[intermediate],
     )
-    return verifier, leaf, intermediate
+    return verifier, leaf, intermediate, leaf_key
 
 
 def test_verifies_exact_chain_and_fresh_crls(tmp_path):
-    verifier, leaf, intermediate = _fixture(tmp_path)
+    verifier, leaf, intermediate, leaf_key = _fixture(tmp_path)
     result = verifier.verify(
         leaf_pem=leaf.public_bytes(serialization.Encoding.PEM),
         intermediate_pems=[intermediate.public_bytes(serialization.Encoding.PEM)],
@@ -141,7 +141,7 @@ def test_verifies_exact_chain_and_fresh_crls(tmp_path):
 
 
 def test_rejects_revoked_signer_certificate(tmp_path):
-    verifier, leaf, intermediate = _fixture(tmp_path, revoked_leaf=True)
+    verifier, leaf, intermediate, _ = _fixture(tmp_path, revoked_leaf=True)
     with pytest.raises(InstitutionalPKIError, match="CERTIFICATE_REVOKED"):
         verifier.verify(
             leaf_pem=leaf.public_bytes(__import__("cryptography").hazmat.primitives.serialization.Encoding.PEM),
@@ -156,7 +156,7 @@ def test_rejects_stale_crl_even_when_signature_is_valid(tmp_path):
 
 
 def test_rejects_wrong_signing_eku(tmp_path):
-    verifier, leaf, intermediate = _fixture(tmp_path, eku=ExtendedKeyUsageOID.CLIENT_AUTH.dotted_string)
+    verifier, leaf, intermediate, _ = _fixture(tmp_path, eku=ExtendedKeyUsageOID.CLIENT_AUTH.dotted_string)
     with pytest.raises(InstitutionalPKIError, match="SIGNING_EKU_MISMATCH"):
         verifier.verify(
             leaf_pem=leaf.public_bytes(__import__("cryptography").hazmat.primitives.serialization.Encoding.PEM),
@@ -166,7 +166,7 @@ def test_rejects_wrong_signing_eku(tmp_path):
 
 
 def test_rejects_untrusted_root_pin_set(tmp_path):
-    verifier, _, _ = _fixture(tmp_path)
+    verifier, _, _, _ = _fixture(tmp_path)
     wrong = InstitutionalPKISettings(
         trust_anchors_pem=tmp_path / "anchors.pem",
         issuer_certificates_pem=tmp_path / "issuers.pem",
@@ -195,7 +195,7 @@ def test_environment_composition_fails_closed_without_explicit_trust_material(mo
 
 
 def test_public_crl_distribution_route_serves_only_the_loaded_issuer_crl(tmp_path):
-    verifier, _, _ = _fixture(tmp_path)
+    verifier, _, _, _ = _fixture(tmp_path)
     issuer_reference = sha256(verifier._anchors[0].subject.public_bytes()).hexdigest()
     app = FastAPI()
     app.include_router(institutional_pki_router, prefix="/api")
