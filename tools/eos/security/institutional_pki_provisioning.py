@@ -269,6 +269,8 @@ def issue_intermediate_from_kms_csr(
     output_directory: Path,
     expected_common_name: str,
     organization: str,
+    expected_organizational_unit: str,
+    expected_country_code: str,
     crl_distribution_base_url: str,
     validity_days: int = 1825,
 ) -> tuple[Path, str]:
@@ -294,11 +296,16 @@ def issue_intermediate_from_kms_csr(
     public_key = csr.public_key()
     if not isinstance(public_key, rsa.RSAPublicKey) or public_key.key_size != 3072 or public_key.public_numbers().e != 65537:
         raise InstitutionalPKIError("INSTITUTIONAL_PKI_KMS_CSR_PUBLIC_KEY_INVALID")
-    common_names = csr.subject.get_attributes_for_oid(NameOID.COMMON_NAME)
-    organizations = csr.subject.get_attributes_for_oid(NameOID.ORGANIZATION_NAME)
+    expected_subject = x509.Name([
+        x509.NameAttribute(NameOID.COUNTRY_NAME, expected_country_code),
+        x509.NameAttribute(NameOID.ORGANIZATION_NAME, organization),
+        x509.NameAttribute(NameOID.ORGANIZATIONAL_UNIT_NAME, expected_organizational_unit),
+        x509.NameAttribute(NameOID.COMMON_NAME, expected_common_name),
+    ])
+    root_organizations = root.subject.get_attributes_for_oid(NameOID.ORGANIZATION_NAME)
     if (
-        len(common_names) != 1 or common_names[0].value != expected_common_name
-        or len(organizations) != 1 or organizations[0].value != organization
+        csr.subject != expected_subject or len(root_organizations) != 1
+        or root_organizations[0].value != organization or len(csr.extensions) != 0
     ):
         raise InstitutionalPKIError("INSTITUTIONAL_PKI_KMS_CSR_SUBJECT_NOT_APPROVED")
     directory = output_directory.expanduser().resolve()
