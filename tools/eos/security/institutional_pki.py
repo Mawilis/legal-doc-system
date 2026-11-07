@@ -48,7 +48,7 @@ class InstitutionalPKISettings:
         for value in self.trusted_root_sha256:
             if not re.fullmatch(r"[0-9a-f]{64}", value):
                 raise InstitutionalPKIError("INSTITUTIONAL_PKI_ROOT_FINGERPRINT_INVALID")
-        if not re.fullmatch(r"[0-2](?:\\.(?:0|[1-9][0-9]*))+", self.required_eku_oid):
+        if not re.fullmatch(r"[0-2](?:\.(?:0|[1-9][0-9]*))+", self.required_eku_oid):
             raise InstitutionalPKIError("INSTITUTIONAL_PKI_REQUIRED_EKU_INVALID")
         if type(self.max_chain_depth) is not int or not 1 <= self.max_chain_depth <= 16:
             raise InstitutionalPKIError("INSTITUTIONAL_PKI_CHAIN_DEPTH_INVALID")
