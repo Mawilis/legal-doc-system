@@ -98,6 +98,7 @@ from .kernel_routes import router as kernel_router
 from .payshap_webhook_router import router as payshap_webhook_router
 from .electrum_payshap_completion_router import router as electrum_payshap_completion_router
 from tools.eos.security.institutional_pki import InstitutionalPKIError, InstitutionalPKIVerifier
+from tools.eos.security.institutional_signer_evidence_verifier import UnavailableInstitutionalSignerEvidenceVerifier
 from tools.eos.security.institutional_signer_enrollment_registry import (
     COLLECTION as INSTITUTIONAL_SIGNER_COLLECTION,
     EVENT_COLLECTION as INSTITUTIONAL_SIGNER_EVENT_COLLECTION,
@@ -526,6 +527,7 @@ class WilsyAPIServer:
             app.state.institutional_pki_ready = False
             app.state.institutional_pki_verifier = None
             app.state.institutional_signer_registry_ready = False
+            app.state.institutional_signer_evidence_verifier = UnavailableInstitutionalSignerEvidenceVerifier()
             app.state.institutional_pki_crl_registry = None
             try:
                 app.state.institutional_pki_verifier = InstitutionalPKIVerifier.from_environment()
@@ -934,6 +936,7 @@ class WilsyAPIServer:
             app.state.institutional_pki_verifier = None
             app.state.institutional_pki_crl_registry = None
             app.state.institutional_signer_registry_ready = False
+            app.state.institutional_signer_evidence_verifier = None
             app.state.p12c_binding_indexes_ready = False
             app.state.global_principal_auth_indexes_ready = False
             app.state.global_principal_session_indexes_ready = False

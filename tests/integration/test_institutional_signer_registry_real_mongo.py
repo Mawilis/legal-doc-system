@@ -45,16 +45,20 @@ def test_signer_enrollment_approval_and_revocation_are_atomic_on_replica_set():
                 signatory_mandate_evidence_reference="mandate://institutional/resolution-001",
                 requested_by_principal_id="owner-requester",
                 requested_at=now, idempotency_key="request-001", session=session,
+                evidence_provenance_fingerprint_sha256="e" * 64,
             )
             assert pending["status"] == "PENDING_APPROVAL"
+            assert pending["evidence_provenance_fingerprint_sha256"] == "e" * 64
             active = registry.approve_enrollment(
                 tenant_id="WILSYTENANT-4CD2FZ4O",
                 certificate_fingerprint_sha256="a" * 64,
                 approver_principal_id="owner-independent-approver",
                 approval_attestation_reference="attestation://proofing-and-mandate/review-001",
                 approved_at=now, idempotency_key="approve-001", session=session,
+                evidence_provenance_fingerprint_sha256="f" * 64,
             )
             assert active["status"] == "ACTIVE"
+            assert active["approval_evidence_provenance_fingerprint_sha256"] == "f" * 64
             assert registry.require_active(
                 tenant_id="WILSYTENANT-4CD2FZ4O",
                 certificate_fingerprint_sha256="a" * 64,
