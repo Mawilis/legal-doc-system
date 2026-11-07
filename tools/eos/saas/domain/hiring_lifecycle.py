@@ -280,18 +280,24 @@ class OfferAcceptanceEvidence:
     evidence_reference: str
     evidence_fingerprint: str
     accepted_at: datetime
+    signature_verification_reference: str
 
     def __post_init__(self) -> None:
         object.__setattr__(self, "evidence_reference", _required("offer_acceptance_reference", self.evidence_reference))
         if not isinstance(self.evidence_fingerprint, str) or not _HEX_512.fullmatch(self.evidence_fingerprint):
             raise HiringLifecycleError("HIRING_OFFER_ACCEPTANCE_FINGERPRINT_INVALID")
         object.__setattr__(self, "accepted_at", _aware(self.accepted_at))
+        object.__setattr__(
+            self, "signature_verification_reference",
+            _required("offer_acceptance_signature_verification_reference", self.signature_verification_reference),
+        )
 
     def to_dict(self) -> dict[str, object]:
         return {
             "evidence_reference": self.evidence_reference,
             "evidence_fingerprint": self.evidence_fingerprint,
             "accepted_at": self.accepted_at.isoformat(),
+            "signature_verification_reference": self.signature_verification_reference,
         }
 
 
