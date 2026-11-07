@@ -80,3 +80,19 @@ def test_hiring_operations_are_known_and_business_role_eligibility_is_separate_f
         assert tenant_role_operation_eligibility("tenant_hr_director", operation) == ELIGIBLE
     assert tenant_role_operation_eligibility("tenant_hr_manager", "hr_hiring_offer_decide") != ELIGIBLE
     assert tenant_role_operation_eligibility("tenant_hr_director", "hr_hiring_offer_create") != ELIGIBLE
+
+
+
+def test_institutional_signer_governance_routes_require_authenticated_owner_context():
+    with TestClient(_app()) as client:
+        response = client.post(
+            "/api/security/institutional-signers/enrollments",
+            headers={"X-Tenant-ID": "WILSYTENANT-4CD2FZ4O", "Idempotency-Key": "signer-enroll-unauth"},
+            json={
+                "signer_certificate_pem_base64": "Y2VydA==",
+                "intermediate_certificate_pems_base64": ["aW50ZXJtZWRpYXRl"],
+                "identity_proofing_evidence_reference": "proofing://opaque/1",
+                "signatory_mandate_evidence_reference": "mandate://opaque/1",
+            },
+        )
+    assert response.status_code == 401
