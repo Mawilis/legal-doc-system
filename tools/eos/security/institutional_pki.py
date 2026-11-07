@@ -171,6 +171,7 @@ class InstitutionalPKIVerifier:
         self._settings = settings
         self._crl_bundle_path = settings.crl_bundle_pem
         self._crls_lock = RLock()
+        self._crl_number_high_water: dict[str, tuple[int, str]] = {}
         self._anchors = tuple(anchors)
         self._issuer_certificates = tuple(issuer_certificates) + self._anchors
         self._crls = tuple(crls)
@@ -227,11 +228,16 @@ class InstitutionalPKIVerifier:
     def _validate_crls(self, crls: tuple[x509.CertificateRevocationList, ...]) -> None:
         if not crls:
             raise InstitutionalPKIError("INSTITUTIONAL_PKI_CRL_BUNDLE_EMPTY")
+        observed: dict[str, tuple[int, str]] = {}
+        now = datetime.now(timezone.utc)
         for crl in crls:
             issuers = [item for item in self._issuer_certificates if item.subject == crl.issuer]
             if len(issuers) != 1:
                 raise InstitutionalPKIError("INSTITUTIONAL_PKI_CRL_ISSUER_NOT_FOUND_OR_AMBIGUOUS")
             issuer = issuers[0]
+            issuer_reference = sha256(issuer.subject.public_bytes()).hexdigest()
+            if issuer_reference in observed:
+                raise InstitutionalPKIError("INSTITUTIONAL_PKI_CRL_DUPLICATE_ISSUER")
             try:
                 crl.extensions.get_extension_for_class(x509.DeltaCRLIndicator)
                 raise InstitutionalPKIError("INSTITUTIONAL_PKI_DELTA_CRL_NOT_SUPPORTED")
@@ -254,6 +260,30 @@ class InstitutionalPKIVerifier:
                 issuer_subject_key_id = None
             if crl_authority_key_id is not None and issuer_subject_key_id is not None and crl_authority_key_id != issuer_subject_key_id:
                 raise InstitutionalPKIError("INSTITUTIONAL_PKI_CRL_AUTHORITY_KEY_IDENTIFIER_MISMATCH")
+            try:
+                number = crl.extensions.get_extension_for_class(x509.CRLNumber).value.crl_number
+            except x509.ExtensionNotFound as error:
+                raise InstitutionalPKIError("INSTITUTIONAL_PKI_CRL_NUMBER_REQUIRED") from error
+            this_update = crl.last_update_utc if hasattr(crl, "last_update_utc") else crl.last_update.replace(tzinfo=timezone.utc)
+            next_update = crl.next_update_utc if hasattr(crl, "next_update_utc") else crl.next_update.replace(tzinfo=timezone.utc) if crl.next_update else None
+            if next_update is None or this_update > now or next_update <= now:
+                raise InstitutionalPKIError("INSTITUTIONAL_PKI_CRL_NOT_CURRENT")
+            if (now - this_update).total_seconds() > self._settings.max_crl_age_seconds:
+                raise InstitutionalPKIError("INSTITUTIONAL_PKI_CRL_TOO_OLD")
+            observed[issuer_reference] = (number, crl.fingerprint(hashes.SHA256()).hex())
+        expected_issuers = {
+            sha256(item.subject.public_bytes()).hexdigest()
+            for item in self._issuer_certificates
+        }
+        if set(observed) != expected_issuers:
+            raise InstitutionalPKIError("INSTITUTIONAL_PKI_CRL_SET_INCOMPLETE")
+        for issuer_reference, (number, fingerprint) in observed.items():
+            previous = self._crl_number_high_water.get(issuer_reference)
+            if previous is not None and (
+                number < previous[0] or (number == previous[0] and fingerprint != previous[1])
+            ):
+                raise InstitutionalPKIError("INSTITUTIONAL_PKI_CRL_ROLLBACK_OR_NUMBER_REUSE")
+        self._crl_number_high_water.update(observed)
 
     def refresh_crls(self) -> tuple[x509.CertificateRevocationList, ...]:
         """Atomically reload the externally published CRL bundle on each use."""
