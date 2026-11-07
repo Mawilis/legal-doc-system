@@ -3,6 +3,7 @@ from __future__ import annotations
 
 import os
 import uuid
+from datetime import datetime, timezone
 
 import pytest
 from pymongo import MongoClient
@@ -19,6 +20,7 @@ from tools.eos.auth.role_assignment_repository import RoleAssignmentRepository
 from tools.eos.auth.tenant_authorization import authorize_tenant_operation, TenantAuthorizationReason
 
 URI = os.getenv("HIRING_TEST_MONGODB_URI")
+NOW = datetime.now(timezone.utc)
 pytestmark = pytest.mark.skipif(not URI, reason="HIRING_TEST_MONGODB_URI is not configured")
 
 
@@ -65,7 +67,7 @@ def test_real_mongo_hiring_authorization_requires_current_principal_membership_b
             TenantMembershipRepository.insert(TenantMembershipAuthority(pid, tenant, TenantMembershipStatus.ACTIVE, 0), memberships)
             TenantBusinessRoleRepository.insert(TenantBusinessRoleAuthority(
                 principal_id=pid, tenant_id=tenant, business_role=business_role,
-                status=TenantBusinessRoleStatus.ACTIVE, revision=0,
+                status=TenantBusinessRoleStatus.ACTIVE, revision=0, effective_at=NOW, revoked_at=None,
             ), business)
             RoleAssignmentRepository.insert(RoleAssignmentAuthority(
                 pid, tenant, authorization_role, RoleAssignmentStatus.ACTIVE, 0,
