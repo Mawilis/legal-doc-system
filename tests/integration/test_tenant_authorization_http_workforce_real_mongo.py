@@ -672,11 +672,13 @@ def test_authenticated_hr_director_reads_only_own_tenant_directory_from_real_mon
     assert "financial" not in body["items"][0]
     assert "identification" not in body["items"][0]
 
+    # The access token itself is tenant-bound; selecting another tenant
+    # fails authentication before any workforce record can be disclosed.
     denied = _client().get(
         "/api/hr/workforce",
         headers=_headers(WORKFORCE_PRINCIPAL, OTHER_TENANT),
     )
-    assert denied.status_code == 403
+    assert denied.status_code == 401
 
 
 def test_absent_workforce_history_is_403_not_outage(
