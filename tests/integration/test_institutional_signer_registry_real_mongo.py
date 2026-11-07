@@ -180,6 +180,10 @@ def test_signer_enrollment_approval_and_revocation_are_atomic_on_replica_set():
             assert active["status"] == "ACTIVE"
             assert active["approval_evidence_provenance_snapshot"] == approval_provenance
             assert active["evidence_currentness_status"] == "PENDING_VERIFICATION"
+            pending_candidates = registry.list_currentness_candidates(
+                tenant_id="WILSYTENANT-4CD2FZ4O", as_of=now, limit=10, session=session,
+            )
+            assert [candidate["certificate_fingerprint_sha256"] for candidate in pending_candidates] == ["a" * 64]
             current_identity = _provenance_record(
                 kind="IDENTITY_PROOFING", now=now, subject_principal_id="owner-requester",
                 evidence_reference="proofing://institutional/case-001",
@@ -237,6 +241,9 @@ def test_signer_enrollment_approval_and_revocation_are_atomic_on_replica_set():
                     verification=divergent_replay, idempotency_key="currentness-001",
                     actor_reference="runtime://approved-currentness-worker", session=session,
                 )
+            assert registry.list_currentness_candidates(
+                tenant_id="WILSYTENANT-4CD2FZ4O", as_of=now, limit=10, session=session,
+            ) == []
             assert registry.require_active(
                 tenant_id="WILSYTENANT-4CD2FZ4O", certificate_fingerprint_sha256="a" * 64,
                 certificate_serial_number_hex="abc123", issuer_subject_sha256="c" * 64,
