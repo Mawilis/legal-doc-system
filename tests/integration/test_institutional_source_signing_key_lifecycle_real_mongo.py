@@ -139,6 +139,7 @@ def test_enrollment_expiry_revocation_and_rotation_are_transactional():
                 idempotency_key="revoke-2", session=session,
             )
             assert revoked["event_type"] == "REVOKED"
+            assert revoked["approval_evidence_reference"] == "test-revocation-approval-evidence"
             with pytest.raises(SourceSigningKeyRegistryConflict, match="REVOKED"):
                 registry.resolve(
                     source_system_id=source, key_id="key-2",
