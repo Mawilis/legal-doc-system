@@ -237,7 +237,7 @@ class InstitutionalSourceSigningKeyLifecycleRegistry:
         proposal_event = self._events.find_one(
             {"source_system_id": source, "key_id": key, "event_type": "PROPOSED"}, session=session
         )
-        if proposal_event is None or occurred < proposal_event["occurred_at"]:
+        if proposal_event is None or occurred < proposal_event["occurred_at"] or occurred >= record["valid_until"]:
             raise SourceSigningKeyRegistryConflict("SOURCE_SIGNING_KEY_PROPOSAL_NOT_CURRENT")
         fingerprint = _record_fingerprint(record)
         event = {
@@ -313,10 +313,11 @@ class InstitutionalSourceSigningKeyLifecycleRegistry:
             raise SourceSigningKeyRegistryConflict("SOURCE_SIGNING_KEY_NOT_FOUND")
         if actor == record["proposed_by_principal_id"]:
             raise SourceSigningKeyRegistryConflict("SOURCE_SIGNING_KEY_MAKER_CHECKER_VIOLATION")
-        if self._events.find_one(
+        approval_event = self._events.find_one(
             {"source_system_id": source, "key_id": key, "event_type": "APPROVED"},
             session=session,
-        ) is None:
+        )
+        if approval_event is None or occurred < approval_event["occurred_at"]:
             raise SourceSigningKeyRegistryConflict("SOURCE_SIGNING_KEY_NOT_APPROVED")
         event = {
             "schema": EVENT_SCHEMA, "event_type": "REVOKED",
