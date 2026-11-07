@@ -580,7 +580,7 @@ class InstitutionalSignerEnrollmentRegistry:
             if observed_at != checked_at:
                 raise InstitutionalSignerRegistryError("INSTITUTIONAL_SIGNER_CURRENTNESS_OBSERVATION_TIME_MISMATCH")
             valid_from = _stored_instant(item.get("valid_from"))
-            valid_until = _stored_instant(item.get("valid_until")) if item.get("valid_until") is not None else None
+            source_valid_until = _stored_instant(item.get("valid_until")) if item.get("valid_until") is not None else None
             _fingerprint(item.get("evidence_fingerprint_sha256"))
             if type(item.get("revoked")) is not bool:
                 raise InstitutionalSignerRegistryError("INSTITUTIONAL_SIGNER_CURRENTNESS_OBSERVATION_INVALID")
@@ -596,10 +596,10 @@ class InstitutionalSignerEnrollmentRegistry:
                 or item["status"] != source_record.get("status")
                 or item["evidence_fingerprint_sha256"] != source_record.get("evidence_fingerprint_sha256")
                 or valid_from != _stored_instant(source_record.get("valid_from"))
-                or valid_until != (_stored_instant(source_record.get("valid_until")) if source_record.get("valid_until") is not None else None)
+                or source_valid_until != (_stored_instant(source_record.get("valid_until")) if source_record.get("valid_until") is not None else None)
             ):
                 raise InstitutionalSignerRegistryError("INSTITUTIONAL_SIGNER_CURRENTNESS_OBSERVATION_STATUS_MISMATCH")
-            observation_expired = valid_from > checked_at or (valid_until is not None and valid_until <= checked_at)
+            observation_expired = valid_from > checked_at or (source_valid_until is not None and source_valid_until <= checked_at)
             if item["status"] not in ("ACTIVE", "VERIFIED") or item["revoked"] or observation_expired:
                 negative_observation = True
             if status == "CURRENT" and observation_expired:
@@ -616,7 +616,7 @@ class InstitutionalSignerEnrollmentRegistry:
                 "revoked": item["revoked"],
                 "evidence_fingerprint_sha256": item["evidence_fingerprint_sha256"],
                 "valid_from": valid_from,
-                "valid_until": valid_until,
+                "valid_until": source_valid_until,
                 "observed_at": observed_at,
             }
         canonical_observation = {
