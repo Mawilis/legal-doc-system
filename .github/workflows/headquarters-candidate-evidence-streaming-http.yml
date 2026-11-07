@@ -1,0 +1,79 @@
+name: WILSY Headquarters Authenticated Candidate Evidence Streaming
+on:
+  pull_request:
+    paths:
+      - "tools/eos/api/candidate_evidence_upload_router.py"
+      - "tools/eos/api/server.py"
+      - "tools/eos/saas/hr/candidate_evidence_upload_orchestrator.py"
+      - "tools/eos/saas/hr/candidate_evidence_upload_attempt_registry.py"
+      - "tools/eos/saas/hr/candidate_evidence_s3_storage_adapter.py"
+      - "tools/eos/saas/hr/candidate_evidence_storage.py"
+      - "tools/eos/saas/hr/candidate_evidence_registry.py"
+      - "tools/eos/saas/domain/candidate_evidence.py"
+      - "tests/unit/test_candidate_evidence_upload_orchestrator.py"
+      - "tests/integration/test_candidate_evidence_upload_authenticated_http.py"
+      - ".github/workflows/headquarters-candidate-evidence-streaming-http.yml"
+permissions:
+  contents: read
+jobs:
+  authenticated-streaming:
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    services:
+      mongodb:
+        image: mongo:7.0
+        ports:
+          - 27017:27017
+        options: >-
+          --health-cmd "mongosh --quiet --eval 'db.adminCommand({ ping: 1 }).ok' || exit 1"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 30
+        command: mongod --replSet rs0 --bind_ip_all
+    env:
+      HIRING_TEST_MONGODB_URI: mongodb://localhost:27017/?replicaSet=rs0&directConnection=true
+      WILSY_JWT_SECRET: CANDIDATE-EVIDENCE-HTTP-REPLICA-SET-TEST-SECRET
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+          cache-dependency-path: requirements.txt
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install -r requirements.txt pytest==9.1.1
+      - name: Initialize MongoDB replica set
+        run: |
+          for attempt in $(seq 1 30); do
+            if mongosh "mongodb://localhost:27017" --quiet --eval 'db.adminCommand({ ping: 1 }).ok' >/dev/null 2>&1; then
+              break
+            fi
+            sleep 2
+          done
+          mongosh "mongodb://localhost:27017" --quiet --eval 'rs.initiate({_id:"rs0",members:[{_id:0,host:"localhost:27017"}]})' || true
+          for attempt in $(seq 1 30); do
+            if mongosh "mongodb://localhost:27017/?replicaSet=rs0" --quiet --eval 'db.hello().isWritablePrimary' | grep -q true; then
+              exit 0
+            fi
+            sleep 2
+          done
+          echo "MongoDB replica set did not elect a primary" >&2
+          exit 1
+      - name: Compile upload, custody and route modules
+        run: |
+          python -m py_compile \
+            tools/eos/api/candidate_evidence_upload_router.py \
+            tools/eos/api/hiring_lifecycle_router.py \
+            tools/eos/api/server.py \
+            tools/eos/saas/hr/candidate_evidence_upload_orchestrator.py \
+            tools/eos/saas/hr/candidate_evidence_upload_attempt_registry.py \
+            tools/eos/saas/hr/candidate_evidence_s3_storage_adapter.py \
+            tests/unit/test_candidate_evidence_upload_orchestrator.py \
+            tests/integration/test_candidate_evidence_upload_authenticated_http.py
+      - name: Test durable multipart orchestration and authenticated HTTP custody
+        run: |
+          python -m pytest -q \
+            tests/unit/test_candidate_evidence_upload_orchestrator.py \
+            tests/integration/test_candidate_evidence_upload_authenticated_http.py
