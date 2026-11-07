@@ -70,6 +70,7 @@ _OFFER_SUBMIT = RequireTenantAuthorization("hr:hiring_offer:submit", "hr_hiring_
 _OFFER_DECIDE = RequireTenantAuthorization("hr:hiring_offer:decide", "hr_hiring_offer_decide")
 _OFFER_SEND = RequireTenantAuthorization("hr:hiring_offer:send", "hr_hiring_offer_send")
 _OFFER_ACCEPT = RequireTenantAuthorization("hr:hiring_offer:accept", "hr_hiring_offer_accept")
+_OFFER_SIGN = RequireTenantAuthorization("hr:hiring_offer:sign", "hr_hiring_offer_sign")
 
 
 class StrictModel(BaseModel):
@@ -387,7 +388,7 @@ async def send_offer(
 async def get_offer_signature_manifest(
     offer_id: str,
     body: OfferSignatureManifestRequest,
-    context: TenantAuthorizationContext = Depends(_OFFER_READ),
+    context: TenantAuthorizationContext = Depends(_OFFER_SIGN),
 ):
     if context.tenant_id != INSTITUTIONAL_TENANT_ID:
         raise HTTPException(status_code=403, detail="INSTITUTIONAL_PKI_TENANT_SCOPE_INVALID")
