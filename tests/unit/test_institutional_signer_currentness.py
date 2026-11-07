@@ -63,6 +63,7 @@ def _run(registry, verifier, calls):
         certificate_fingerprint_sha256="a" * 64,
         evaluated_at=datetime.now(timezone.utc),
         idempotency_key="currentness-reconcile-7",
+        actor_reference="runtime://approved-currentness-worker",
         read_transaction=read_transaction,
         write_transaction=write_transaction,
     )
