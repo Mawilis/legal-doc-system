@@ -352,6 +352,7 @@ def test_legal_role_grants_are_explicit_and_least_authority() -> None:
         "INBOUND_COLLECTION_AUTHORIZATION_ADMIN",
         "INBOUND_MERCHANT_CONFIGURATION_ADMIN",
         "INBOUND_PROVIDER_SECURITY_ADMIN",
+        "INSTITUTIONAL_SOURCE_KEY_ADMIN",
         "INBOUND_PROVIDER_POLICY_ADMIN",
         "INBOUND_PROVIDER_POLICY_ACTIVATION_ADMIN",
     ):
@@ -755,6 +756,19 @@ def test_inbound_collection_role_is_least_privilege() -> None:
     assert "platform_billing:provider_policy:admin" not in ROLE_PERMISSIONS_MAP["INBOUND_COLLECTION_AUTHORIZATION_ADMIN"]
     assert "platform_billing:release" not in ROLE_PERMISSIONS_MAP["INBOUND_COLLECTION_AUTHORIZATION_ADMIN"]
     assert "accounts_payable:provider_policy:admin" not in ROLE_PERMISSIONS_MAP["INBOUND_COLLECTION_AUTHORIZATION_ADMIN"]
+
+
+def test_institutional_source_key_admin_is_a_dedicated_least_privilege_role() -> None:
+    expected = [
+        "security:institutional_source_key:propose",
+        "security:institutional_source_key:approve",
+        "security:institutional_source_key:revoke",
+    ]
+    assert ROLE_PERMISSIONS_MAP["INSTITUTIONAL_SOURCE_KEY_ADMIN"] == expected
+    assert get_permissions_for_roles(["INSTITUTIONAL_SOURCE_KEY_ADMIN"]) == expected
+    for permission in expected:
+        assert get_roles_granting_permission(permission) == ("INSTITUTIONAL_SOURCE_KEY_ADMIN",)
+    assert "security:institutional_source_key:approve" not in ROLE_PERMISSIONS_MAP["TENANT_OWNER"]
 
 
 def test_inbound_provider_roles_are_narrow_and_separated() -> None:
