@@ -592,6 +592,10 @@ class WilsyAPIServer:
                                 read_preference=ReadPreference.PRIMARY,
                             )
 
+                    InstitutionalSignerEnrollmentRegistry.ensure_indexes(
+                        database[INSTITUTIONAL_SIGNER_COLLECTION],
+                        database[INSTITUTIONAL_SIGNER_EVENT_COLLECTION],
+                    )
                     configured_pki_verifier.bind_crl_currentness_recorder(
                         record_institutional_pki_crl_currentness
                     )
