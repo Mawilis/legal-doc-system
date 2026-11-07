@@ -143,6 +143,7 @@ def test_verifies_exact_chain_and_fresh_crls(tmp_path):
     )
     assert result.chain_depth == 2
     assert result.serial_number_hex == "12c"
+    assert result.issuer_subject_sha256 == sha256(intermediate.subject.public_bytes()).hexdigest()
     assert len(result.revocation_sources) == 2
     assert len(result.verification_fingerprint) == 64
 
