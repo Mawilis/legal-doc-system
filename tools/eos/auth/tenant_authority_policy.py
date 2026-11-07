@@ -1,5 +1,5 @@
 """TITLE: WILSY OS Tenant Business Authority Policy Canon.
-VERSION: v1.51.0-R59-P9-REASSIGNMENT-IAM-INTEGRATION
+VERSION: v1.52.0-INSTITUTIONAL-SOURCE-KEY-ADMIN
 AUTHORITY: Canonical business eligibility facts only; this module does not authorize.
 EPITOME: Defines bounded tenant-role eligibility and field boundaries, including
 own-tenant WILSY AI usage-capacity and billing-intelligence evidence read eligibility and dedicated
