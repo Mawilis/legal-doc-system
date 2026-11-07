@@ -1142,3 +1142,19 @@ def test_institutional_source_key_governance_permissions_are_exact_and_non_self_
         with pytest.raises(ValueError, match="UNKNOWN_PERMISSION"):
             permission_metadata(invalid)
 
+
+
+def test_source_key_commands_are_possessed_only_by_explicit_tenant_owner_role() -> None:
+    from tools.eos.auth.roles import ROLE_PERMISSIONS_MAP
+
+    expected = {
+        "security:institutional_source_key:propose",
+        "security:institutional_source_key:approve",
+        "security:institutional_source_key:revoke",
+    }
+    assert expected <= set(ROLE_PERMISSIONS_MAP["TENANT_OWNER"])
+    assert all(
+        not expected.intersection(permissions)
+        for role, permissions in ROLE_PERMISSIONS_MAP.items()
+        if role != "TENANT_OWNER"
+    )
