@@ -409,6 +409,9 @@ def test_permission_canon_properties() -> None:
         "inbound_provider_policy:activate",
         "inbound_provider_policy:deactivate",
         "inbound_provider_policy:emergency_disable",
+        "security:institutional_source_key:propose",
+        "security:institutional_source_key:approve",
+        "security:institutional_source_key:revoke",
     }
 
     assert tenant <= {
@@ -424,7 +427,7 @@ def test_permission_canon_properties() -> None:
         ]
     ) == 179
 
-    assert len(rows) == 182
+    assert len(rows) == 185
 
     for permission_id in tenant:
         metadata = permission_metadata(
@@ -1114,3 +1117,28 @@ def test_institutional_offer_signature_manifest_is_owner_only_and_non_authorizin
     assert tenant_role_operation_eligibility("tenant_owner", operation) == ELIGIBLE
     assert tenant_role_operation_eligibility("tenant_hr_manager", operation) != ELIGIBLE
     assert tenant_role_operation_eligibility("tenant_hr_director", operation) != ELIGIBLE
+
+
+def test_institutional_source_key_governance_permissions_are_exact_and_non_self_authorizing() -> None:
+    permissions = (
+        "security:institutional_source_key:propose",
+        "security:institutional_source_key:approve",
+        "security:institutional_source_key:revoke",
+    )
+    for permission in permissions:
+        metadata = permission_metadata(permission)
+        assert metadata.namespace == "TENANT"
+        assert metadata.scope_kind == "TENANT"
+        assert metadata.tenant_membership_required is True
+        assert metadata.cross_tenant_capable is False
+        assert metadata.financial_execution_capable is False
+        assert metadata.authorizes_by_itself is False
+        assert metadata.disposition is PermissionDisposition.CANONICAL
+    for invalid in (
+        "security:institutional_source_key:*",
+        "security:institutional_source_key:rotate",
+        "security:institutional_source_key:approve ",
+    ):
+        with pytest.raises(ValueError, match="UNKNOWN_PERMISSION"):
+            permission_metadata(invalid)
+
