@@ -109,3 +109,57 @@ def test_attempt_scope_and_fingerprint_are_immutable():
             status=value.status, revision=value.revision, created_at=value.created_at,
             updated_at=value.updated_at, offer_id=value.offer_id, fingerprint="f" * 128,
         )
+
+def test_intent_is_durable_before_provider_multipart_initiation():
+    pending = CandidateEvidenceUploadAttempt(
+        tenant_id="WILSYTENANT-4CD2FZ4O",
+        upload_attempt_id="UPL-PENDING",
+        candidate_id="CAN-001",
+        evidence_id="EVD-001",
+        evidence_version_id="VER-001",
+        ingestion_reference="ING-PENDING",
+        intent_fingerprint=HEX,
+        provider_id="AWS_S3_KMS",
+        provider_upload_id=None,
+        provider_object_reference=None,
+        status=UploadAttemptStatus.INITIATING,
+        revision=1,
+        created_at=NOW,
+        updated_at=NOW,
+    )
+    initiated = pending.advance(
+        status=UploadAttemptStatus.INITIATED,
+        expected_revision=1,
+        occurred_at=NOW + timedelta(seconds=1),
+        provider_upload_id="opaque/provider+upload==token",
+        provider_object_reference="hashed-object-reference",
+    )
+    assert initiated.status is UploadAttemptStatus.INITIATED
+    assert initiated.provider_upload_id == "opaque/provider+upload==token"
+    assert initiated.revision == 2
+
+
+def test_pending_provider_initiation_can_be_reconciled_as_orphaned():
+    pending = CandidateEvidenceUploadAttempt(
+        tenant_id="WILSYTENANT-4CD2FZ4O",
+        upload_attempt_id="UPL-PENDING-2",
+        candidate_id="CAN-001",
+        evidence_id="EVD-001",
+        evidence_version_id="VER-001",
+        ingestion_reference="ING-PENDING-2",
+        intent_fingerprint=HEX,
+        provider_id="AWS_S3_KMS",
+        provider_upload_id=None,
+        provider_object_reference=None,
+        status=UploadAttemptStatus.INITIATING,
+        revision=1,
+        created_at=NOW,
+        updated_at=NOW,
+    )
+    orphaned = pending.advance(
+        status=UploadAttemptStatus.ORPHANED,
+        expected_revision=1,
+        occurred_at=NOW + timedelta(minutes=5),
+        failure_code="PROVIDER_INITIATION_OUTCOME_UNKNOWN",
+    )
+    assert orphaned.status is UploadAttemptStatus.ORPHANED
