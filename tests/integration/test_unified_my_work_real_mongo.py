@@ -599,5 +599,5 @@ def test_legal_partner_my_work_reads_live_assigned_legal_work_from_replica_set(
     assert payload["sources_included"] == ["LEGAL"]
     assert [row["work_item_id"] for row in payload["items"]] == [expected_work_item_id]
     assert payload["items"][0]["source"] == "LEGAL"
-    assert payload["items"][0]["visibility_provenance"] == ["ASSIGNED"]
+    assert payload["items"][0]["visibility_provenance"] == ["LEGAL_ASSIGNED"]
     assert payload["authority"]["permits_completion"] is False
