@@ -112,3 +112,89 @@ def test_unavailable_source_adapter_set_denies_all_authorities(method, kind):
             lookup=lookup()
         )
     assert error.value.code == f"INSTITUTIONAL_SIGNER_SOURCE_{kind}_AUTHORITY_UNAVAILABLE"
+
+
+
+class _FakeAdapter:
+    source_system_id = "DHA-NPR-VERIFICATION"
+    supported_evidence_kind = "IDENTITY_PROOFING"
+
+    def __init__(self, response):
+        self.response = response
+
+    def read_evidence(self, *, lookup):
+        return self.response
+
+
+class _FakeAuthenticator:
+    def __init__(self):
+        self.calls = []
+
+    def authenticate_response(self, *, expected_source_system_id, lookup, response):
+        self.calls.append((expected_source_system_id, lookup, response))
+
+
+def source_response(**overrides):
+    values = {
+        "evidence_kind": "IDENTITY_PROOFING",
+        "evidence_reference": "evidence://identity/record-1",
+        "tenant_id": TENANT_ID,
+        "source_system_id": "DHA-NPR-VERIFICATION",
+        "source_record_id": "record-1",
+        "source_revision": "revision-7",
+        "subject_principal_id": "PRINCIPAL-1",
+        "certificate_fingerprint_sha256": "a" * 64,
+        "evidence_fingerprint_sha256": "b" * 64,
+        "status": "ACTIVE",
+        "valid_from": NOW,
+        "valid_until": datetime(2027, 1, 1, tzinfo=timezone.utc),
+        "revoked": False,
+        "observed_at": NOW,
+        "response_signature_reference": "signature://response/123",
+    }
+    values.update(overrides)
+    return InstitutionalSignerSourceEvidence(**values)
+
+
+def test_authenticated_read_verifies_source_and_exact_scope():
+    from tools.eos.security.institutional_signer_source_adapters import read_authenticated_source_evidence
+    request = lookup()
+    response = source_response()
+    authenticator = _FakeAuthenticator()
+    result = read_authenticated_source_evidence(
+        adapter=_FakeAdapter(response), authenticator=authenticator, lookup=request
+    )
+    assert result is response
+    assert authenticator.calls == [("DHA-NPR-VERIFICATION", request, response)]
+
+
+def test_authenticated_read_rejects_scope_mismatch_after_source_authentication():
+    from tools.eos.security.institutional_signer_source_adapters import read_authenticated_source_evidence
+    request = lookup()
+    response = source_response(subject_principal_id="PRINCIPAL-OTHER")
+    with pytest.raises(InstitutionalSignerSourceAdapterError) as error:
+        read_authenticated_source_evidence(
+            adapter=_FakeAdapter(response), authenticator=_FakeAuthenticator(), lookup=request
+        )
+    assert error.value.code == "INSTITUTIONAL_SIGNER_SOURCE_SUBJECT_PRINCIPAL_ID_MISMATCH"
+
+
+def test_authenticated_read_preserves_negative_source_state_for_reconciliation():
+    from tools.eos.security.institutional_signer_source_adapters import read_authenticated_source_evidence
+    response = source_response(status="REVOKED", revoked=True)
+    result = read_authenticated_source_evidence(
+        adapter=_FakeAdapter(response), authenticator=_FakeAuthenticator(), lookup=lookup()
+    )
+    assert result.status == "REVOKED"
+    assert result.revoked is True
+
+
+def test_authenticated_read_rejects_adapter_kind_mismatch_before_provider_io():
+    from tools.eos.security.institutional_signer_source_adapters import read_authenticated_source_evidence
+    adapter = _FakeAdapter(source_response())
+    adapter.supported_evidence_kind = "SIGNATORY_MANDATE"
+    with pytest.raises(InstitutionalSignerSourceAdapterError) as error:
+        read_authenticated_source_evidence(
+            adapter=adapter, authenticator=_FakeAuthenticator(), lookup=lookup()
+        )
+    assert error.value.code == "INSTITUTIONAL_SIGNER_SOURCE_ADAPTER_EVIDENCE_KIND_MISMATCH"
