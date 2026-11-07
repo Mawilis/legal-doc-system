@@ -7,7 +7,7 @@ authority remain separate systems and are not created by these commands.
 from __future__ import annotations
 
 from datetime import datetime, timezone
-import uuid
+import hashlib
 from typing import Any, Literal
 
 from fastapi import APIRouter, Depends, Header, HTTPException, status
@@ -48,13 +48,13 @@ class RequisitionCreateRequest(BaseModel):
     position_title: str = Field(min_length=1, max_length=180)
     employment_type: str = Field(min_length=1, max_length=180)
     work_location: str = Field(min_length=1, max_length=180)
-    headcount: int = Field(ge=1, le=50)
+    headcount: int = Field(ge=1, le=50, strict=True)
     business_justification: str = Field(min_length=1, max_length=4000)
 
 
 class RequisitionSubmitRequest(BaseModel):
     model_config = ConfigDict(extra="forbid")
-    expected_revision: int = Field(ge=1)
+    expected_revision: int = Field(ge=1, strict=True)
 
 
 class RequisitionDecisionRequest(BaseModel):
@@ -75,7 +75,6 @@ def _registry(database: Any) -> HeadcountRequisitionRegistry:
         write_concern=WriteConcern(w="majority", j=True),
         read_concern=ReadConcern("majority"),
     )
-    HeadcountRequisitionRegistry.ensure_indexes(current, events)
     return HeadcountRequisitionRegistry(current, events)
 
 
@@ -84,6 +83,9 @@ def _transaction(callback):
     if client is None or database is None:
         raise HTTPException(status_code=503, detail="HEADCOUNT_DATABASE_UNAVAILABLE")
     try:
+        current = database.get_collection(COLLECTION, write_concern=WriteConcern(w="majority", j=True), read_concern=ReadConcern("majority"))
+        events = database.get_collection(EVENT_COLLECTION, write_concern=WriteConcern(w="majority", j=True), read_concern=ReadConcern("majority"))
+        HeadcountRequisitionRegistry.ensure_indexes(current, events)
         with client.start_session() as session:
             return session.with_transaction(
                 lambda current: callback(_registry(database), current),
@@ -128,9 +130,12 @@ async def create_headcount_requisition(
     context: TenantAuthorizationContext = Depends(_CREATE),
 ) -> dict[str, object]:
     now = datetime.now(timezone.utc)
+    stable_id = hashlib.sha3_256(
+        f"{context.tenant_id}:{idempotency_key}".encode("utf-8")
+    ).hexdigest()[:24].upper()
     requisition = HeadcountRequisition(
         tenant_id=context.tenant_id,
-        requisition_id=f"REQ-{uuid.uuid4().hex.upper()}",
+        requisition_id=f"REQ-{stable_id}",
         department_id=body.department_id,
         position_title=body.position_title,
         employment_type=body.employment_type,
