@@ -136,6 +136,7 @@ class VerifiedSignerEvidenceCurrentness:
     valid_until: datetime | None
     provenance_snapshot: dict[str, object]
     provenance_fingerprint_sha256: str
+    observation_snapshot: dict[str, object]
     observation_fingerprint_sha256: str
     reason_code: str | None
 
