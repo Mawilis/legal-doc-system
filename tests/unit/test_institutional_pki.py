@@ -151,13 +151,8 @@ def test_rejects_revoked_signer_certificate(tmp_path):
 
 
 def test_rejects_stale_crl_even_when_signature_is_valid(tmp_path):
-    verifier, leaf, intermediate = _fixture(tmp_path, stale_crl=True)
     with pytest.raises(InstitutionalPKIError, match="CRL_NOT_CURRENT"):
-        verifier.verify(
-            leaf_pem=leaf.public_bytes(__import__("cryptography").hazmat.primitives.serialization.Encoding.PEM),
-            intermediate_pems=[intermediate.public_bytes(__import__("cryptography").hazmat.primitives.serialization.Encoding.PEM)],
-            verified_at=NOW,
-        )
+        _fixture(tmp_path, stale_crl=True)
 
 
 def test_rejects_wrong_signing_eku(tmp_path):
