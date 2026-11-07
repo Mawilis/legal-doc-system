@@ -159,7 +159,7 @@ class InstitutionalSignerEnrollmentRegistry:
                 [("tenant_id", ASCENDING), ("status", ASCENDING),
                  ("evidence_currentness_status", ASCENDING),
                  ("evidence_currentness_valid_until", ASCENDING),
-                 ("approved_at", ASCENDING),
+                 ("requested_at", ASCENDING),
                  ("certificate_fingerprint_sha256", ASCENDING)],
                 name="ix_institutional_signer_currentness_due",
             )
@@ -475,7 +475,7 @@ class InstitutionalSignerEnrollmentRegistry:
             cursor = self._records.find(query, session=session)
             if callable(getattr(cursor, "sort", None)) and callable(getattr(cursor, "limit", None)):
                 rows = list(cursor.sort([
-                    ("approved_at", ASCENDING),
+                    ("requested_at", ASCENDING),
                     ("certificate_fingerprint_sha256", ASCENDING),
                 ]).limit(limit))
             else:
