@@ -481,7 +481,7 @@ class InstitutionalSignerEnrollmentRegistry:
             else:
                 rows = list(cursor)
                 rows.sort(key=lambda row: (
-                    _stored_instant(row.get("approved_at") or row.get("requested_at")),
+                    _stored_instant(row.get("requested_at")),
                     row.get("certificate_fingerprint_sha256", ""),
                 ))
                 rows = rows[:limit]
