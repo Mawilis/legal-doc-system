@@ -337,6 +337,7 @@ class CandidateEvidenceS3StorageAdapter:
                     metadata = head.get("Metadata") or {}
                     if (
                         metadata.get("wilsy-intent-fingerprint") != intent_fingerprint
+                        or head.get("VersionId") != version_id
                         or (media_type is not None and head.get("ContentType") != media_type)
                         or metadata.get("wilsy-tenant-sha3-256") != _component(tenant_id)
                         or metadata.get("wilsy-candidate-sha3-256") != _component(candidate_id)
@@ -408,7 +409,8 @@ class CandidateEvidenceS3StorageAdapter:
             )
             observed_metadata = head.get("Metadata") or {}
             if (
-                head.get("ContentLength") != metadata.byte_length
+                head.get("VersionId") != metadata.object_version_reference
+                or head.get("ContentLength") != metadata.byte_length
                 or head.get("ContentType") != metadata.media_type
                 or str(head.get("ETag", "")) != metadata.provider_integrity_reference
                 or observed_metadata.get("wilsy-tenant-sha3-256") != _component(metadata.tenant_id)
