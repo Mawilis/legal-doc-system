@@ -129,7 +129,7 @@ def test_authenticated_hiring_http_uses_durable_iam_and_rejects_wrong_tenant_and
 
             wrong_tenant = http.post(
                 "/api/hr/hiring/candidates",
-                headers={**_headers(manager, other_tenant), "Idempotency-Key": "http-candidate-wrong-tenant"},
+                headers={"Authorization": f"Bearer {_token(manager, tenant)}", "X-Tenant-ID": other_tenant, "Idempotency-Key": "http-candidate-wrong-tenant"},
                 json={
                     "candidate_id": "CAN-HTTP-OTHER", "requisition_id": "REQ-HTTP-1",
                     "candidate_profile_reference": "candidate-profile://opaque/http-other",
