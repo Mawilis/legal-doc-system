@@ -170,3 +170,28 @@ def test_unresolved_initiating_attempt_can_be_marked_orphaned_without_provider_i
     assert orphan.status is UploadAttemptStatus.ORPHANED
     assert orphan.provider_upload_id is None
     assert result["attempts_orphaned"] == 1
+
+
+
+def test_stale_multipart_attached_to_durable_attempt_is_aborted():
+    pending = attempt(UploadAttemptStatus.PARTS_UPLOADED, old=True)
+    key = "hr-candidate-evidence/v1/WILSYTENANT-4CD2FZ4O/ING-001"
+    storage = FakeStorage(uploads=[{
+        "key": key, "upload_id": "opaque-upload-id",
+        "initiated_at": NOW - timedelta(hours=3),
+    }])
+    registry = MemoryRegistry([pending])
+    result = reconciler(registry, storage, MemoryCustody()).run_once()
+    assert registry.values[pending.upload_attempt_id].status is UploadAttemptStatus.ABORTED
+    assert storage.aborted == [(key, "opaque-upload-id")]
+    assert result["uploads_aborted"] == 1
+
+
+def test_unknown_provider_upload_without_initiation_time_is_not_aborted():
+    storage = FakeStorage(uploads=[{
+        "key": "hr-candidate-evidence/v1/unowned",
+        "upload_id": "unknown-time-upload",
+    }])
+    result = reconciler(MemoryRegistry([]), storage, MemoryCustody()).run_once()
+    assert storage.aborted == []
+    assert result["uploads_aborted"] == 0
