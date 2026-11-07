@@ -295,8 +295,33 @@ def _seed_live_owner_iam(database: Any, principal_id: str, tenant_id: str) -> No
 
 
 
+
+def _seed_live_commercial_issuer(database: Any, tenant_id: str, principal_id: str) -> None:
+    principals = database["principal_authorities"]
+    memberships = database["tenant_memberships"]
+    business = database["tenant_business_roles"]
+    assignments = database["role_assignments"]
+    PrincipalAuthorityRepository.create(
+        PrincipalAuthority(principal_id, PrincipalStatus.ACTIVE, 0), principals
+    )
+    TenantMembershipRepository.insert(
+        TenantMembershipAuthority(principal_id, tenant_id, TenantMembershipStatus.ACTIVE, 0),
+        memberships,
+    )
+    TenantBusinessRoleRepository.insert(
+        TenantBusinessRoleAuthority(
+            principal_id, tenant_id, "tenant_owner", TenantBusinessRoleStatus.ACTIVE, 0, NOW, None
+        ),
+        business,
+    )
+    RoleAssignmentRepository.insert(
+        RoleAssignmentAuthority(principal_id, tenant_id, "ENTERPRISE_ADMIN", RoleAssignmentStatus.ACTIVE, 0),
+        assignments,
+    )
+
+
 def _seed_live_legal_subscription(
-    client: MongoClient[Any], database: Any, tenant_id: str, principal_id: str,
+    client: MongoClient[Any], database: Any, tenant_id: str, issuer_principal_id: str,
     monkeypatch: Any,
 ) -> None:
     subscriptions = database["subscriptions"]
@@ -329,7 +354,7 @@ def _seed_live_legal_subscription(
     })
     assert plan["success"] is True
     identity = SovereignIdentity(
-        identity_id=principal_id,
+        identity_id=issuer_principal_id,
         tenant_id=tenant_id,
         username=None,
         email=None,
@@ -362,6 +387,8 @@ def test_authenticated_my_work_uses_live_mongo_iam_and_rejects_foreign_scope(
     foreign_tenant = TENANT + "-foreign"
     principal_id = PRINCIPAL + "-live-iam"
     _seed_live_owner_iam(database, principal_id, tenant_id)
+    issuer_principal_id = principal_id + "-commercial-issuer"
+    _seed_live_commercial_issuer(database, tenant_id, issuer_principal_id)
     _activate_operations(client, database, TenantProductId.OPERATIONS, tenant_id=tenant_id)
     _activate_operations(client, database, TenantProductId.INTELLIGENCE, tenant_id=tenant_id)
 
@@ -370,7 +397,7 @@ def test_authenticated_my_work_uses_live_mongo_iam_and_rejects_foreign_scope(
     monkeypatch.setattr(module_source, "get_database", lambda: database)
     monkeypatch.setattr(my_work.crm_source, "get_client", lambda: client)
     monkeypatch.setattr(my_work.crm_source, "get_database", lambda: database)
-    _seed_live_legal_subscription(client, database, tenant_id, principal_id, monkeypatch)
+    _seed_live_legal_subscription(client, database, tenant_id, issuer_principal_id, monkeypatch)
     monkeypatch.setattr(
         my_work.crm_source.subscription_registry_module,
         "subscriptions_collection",
