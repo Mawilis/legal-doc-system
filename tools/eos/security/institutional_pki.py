@@ -11,7 +11,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 from datetime import datetime, timezone
-from hashlib import sha256
+from hashlib import sha256, sha3_512
 import os
 from pathlib import Path
 import re
@@ -69,6 +69,15 @@ class InstitutionalCertificateVerification:
     verified_at: datetime
     chain_depth: int
     revocation_sources: tuple[str, ...]
+    verification_fingerprint: str
+
+
+@dataclass(frozen=True, slots=True)
+class InstitutionalDocumentSignatureVerification:
+    certificate_verification: InstitutionalCertificateVerification
+    payload_digest_sha3_512: str
+    signature_fingerprint_sha256: str
+    signature_algorithm: str
     verification_fingerprint: str
 
 
@@ -499,6 +508,71 @@ class InstitutionalPKIVerifier:
             verified_at=instant,
             chain_depth=len(chain) - 1,
             revocation_sources=tuple(revocation_sources),
+            verification_fingerprint=sha256(material).hexdigest(),
+        )
+
+
+    def verify_signed_payload(
+        self,
+        *,
+        leaf_pem: bytes,
+        intermediate_pems: Iterable[bytes],
+        signed_payload: bytes,
+        signature: bytes,
+        verified_at: datetime,
+    ) -> InstitutionalDocumentSignatureVerification:
+        """Verify a detached document signature under a currently trusted signer certificate."""
+        if type(signed_payload) is not bytes or not signed_payload or len(signed_payload) > 1_048_576:
+            raise InstitutionalPKIError("INSTITUTIONAL_PKI_SIGNED_PAYLOAD_INVALID")
+        if type(signature) is not bytes or not signature or len(signature) > 16_384:
+            raise InstitutionalPKIError("INSTITUTIONAL_PKI_SIGNATURE_BYTES_INVALID")
+        certificate_receipt = self.verify(
+            leaf_pem=leaf_pem,
+            intermediate_pems=intermediate_pems,
+            verified_at=verified_at,
+        )
+        try:
+            leaf = x509.load_pem_x509_certificate(leaf_pem)
+            public_key = leaf.public_key()
+            if isinstance(public_key, rsa.RSAPublicKey):
+                public_key.verify(
+                    signature,
+                    signed_payload,
+                    padding.PSS(
+                        mgf=padding.MGF1(hashes.SHA384()),
+                        salt_length=hashes.SHA384().digest_size,
+                    ),
+                    hashes.SHA384(),
+                )
+                algorithm = "RSA-PSS-SHA384"
+            elif isinstance(public_key, ec.EllipticCurvePublicKey):
+                public_key.verify(signature, signed_payload, ec.ECDSA(hashes.SHA384()))
+                algorithm = "ECDSA-SHA384"
+            elif isinstance(public_key, ed25519.Ed25519PublicKey):
+                public_key.verify(signature, signed_payload)
+                algorithm = "Ed25519"
+            elif isinstance(public_key, ed448.Ed448PublicKey):
+                public_key.verify(signature, signed_payload)
+                algorithm = "Ed448"
+            else:
+                raise InstitutionalPKIError("INSTITUTIONAL_PKI_DOCUMENT_SIGNING_KEY_UNSUPPORTED")
+        except InstitutionalPKIError:
+            raise
+        except Exception as error:
+            raise InstitutionalPKIError("INSTITUTIONAL_PKI_DOCUMENT_SIGNATURE_INVALID") from error
+        payload_digest = sha3_512(signed_payload).hexdigest()
+        signature_fingerprint = sha256(signature).hexdigest()
+        material = "|".join((
+            certificate_receipt.verification_fingerprint,
+            payload_digest,
+            signature_fingerprint,
+            algorithm,
+        )).encode()
+        return InstitutionalDocumentSignatureVerification(
+            certificate_verification=certificate_receipt,
+            payload_digest_sha3_512=payload_digest,
+            signature_fingerprint_sha256=signature_fingerprint,
+            signature_algorithm=algorithm,
             verification_fingerprint=sha256(material).hexdigest(),
         )
 
