@@ -28,6 +28,16 @@ Governance must identify three independently controlled evidence authorities. Th
    - Reviewer must be distinct from the requester and must possess independently established approval authority.
    - Attestation must bind the exact enrollment evidence snapshot, not merely the certificate common name or a mutable URI.
 
+## South African source-system selection notes
+
+These are candidate source authorities, not approved adapters or proof that WILSY has access:
+
+- **Natural-person identity:** the Department of Home Affairs states that its National Population Register verification service is available to private-sector clients as well as government users. WILSY must complete DHA's formal client onboarding and confirm the permitted verification purpose, assurance level, data minimisation and service terms; do not assume an unauthenticated public API. See [South African Government — DHA identity verification service, 6 July 2025](https://www.gov.za/news/media-statements/home-affairs-launch-world-class-new-identity-verification-service-and-cost).
+- **Corporate mandate:** CIPC states that company records include the Memorandum of Incorporation, director records, meeting notices/minutes and resolutions. Use CIPC records to corroborate the legal entity and director status, then verify the actual signing power and scope against the current MOI and valid company/board resolutions. A director listing alone is not evidence of authority to sign this particular institutional instrument. See [CIPC — Company Records](https://www.cipc.co.za/?page_id=2683).
+- **Independent approval:** no external government register is assumed to confer WILSY's internal approval authority. The proposed WILSY-appointed governance function and any external legal reviewer remain subject to explicit institutional appointment, separation-of-duties rules and documented approval. No committee or reviewer is configured by this implementation.
+
+The DHA and CIPC references above identify candidate authorities only. Formal access, source ownership, service contracts, legal basis, source authentication and field-level response semantics must be verified before adapter implementation.
+
 ## Adapter acceptance contract
 
 Every adapter must be read-only and must:
