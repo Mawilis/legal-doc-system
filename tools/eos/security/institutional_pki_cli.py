@@ -45,6 +45,8 @@ def _root(args: argparse.Namespace) -> None:
 
 
 def _intermediate(args: argparse.Namespace) -> None:
+    if not args.allow_software_key:
+        raise InstitutionalPKIError("INSTITUTIONAL_PKI_NONEXPORTABLE_KMS_KEY_REQUIRED")
     password = getpass("Offline root-key passphrase: ").encode("utf-8")
     key, cert, fingerprint = issue_intermediate(
         root_certificate_pem=Path(args.root_certificate),
@@ -119,7 +121,14 @@ def build_parser() -> argparse.ArgumentParser:
     root.add_argument("--validity-days", type=int, default=3650)
     root.set_defaults(run=_root)
 
-    intermediate = commands.add_parser("issue-intermediate", help="Issue a subordinate RSA-3072 CA")
+    intermediate = commands.add_parser(
+        "issue-intermediate",
+        help="DEVELOPMENT ONLY: issue a software-held subordinate CA key (requires explicit opt-in)",
+    )
+    intermediate.add_argument(
+        "--allow-software-key", action="store_true",
+        help="Explicitly permit a local software-held intermediate key; never use for production",
+    )
     intermediate.add_argument("--root-certificate", required=True)
     intermediate.add_argument("--root-private-key", required=True)
     intermediate.add_argument("--output-dir", required=True)
