@@ -7,6 +7,9 @@ from datetime import datetime, timezone
 
 import pytest
 from pymongo import MongoClient
+from pymongo.read_concern import ReadConcern
+from pymongo.read_preferences import ReadPreference
+from pymongo.write_concern import WriteConcern
 
 from tools.eos.security.institutional_signer_enrollment_registry import (
     COLLECTION, EVENT_COLLECTION, InstitutionalSignerEnrollmentRegistry,
@@ -78,7 +81,12 @@ def test_signer_enrollment_approval_and_revocation_are_atomic_on_replica_set():
             return revoked
 
         with client.start_session() as session:
-            final = session.with_transaction(lifecycle)
+            final = session.with_transaction(
+                lifecycle,
+                read_concern=ReadConcern("snapshot"),
+                write_concern=WriteConcern("majority", j=True),
+                read_preference=ReadPreference.PRIMARY,
+            )
         assert final["status"] == "REVOKED"
         assert records.count_documents({"tenant_id": "WILSYTENANT-4CD2FZ4O"}) == 1
         assert events.count_documents({"tenant_id": "WILSYTENANT-4CD2FZ4O"}) == 3
