@@ -245,14 +245,19 @@ class InstitutionalPKIVerifier:
         if not all((anchors_path, issuer_path, crl_path, fingerprints, eku)):
             raise InstitutionalPKIError("INSTITUTIONAL_PKI_RUNTIME_CONFIGURATION_INCOMPLETE")
         pins = frozenset(value.strip().lower() for value in fingerprints.split(",") if value.strip())
+        try:
+            max_chain_depth = int(os.getenv("WILSY_EOS_PKI_MAX_CHAIN_DEPTH", "8"))
+            max_crl_age_seconds = int(os.getenv("WILSY_EOS_PKI_MAX_CRL_AGE_SECONDS", "86400"))
+        except ValueError as error:
+            raise InstitutionalPKIError("INSTITUTIONAL_PKI_NUMERIC_POLICY_CONFIGURATION_INVALID") from error
         return cls.from_settings(InstitutionalPKISettings(
             trust_anchors_pem=Path(anchors_path),
             issuer_certificates_pem=Path(issuer_path),
             crl_bundle_pem=Path(crl_path),
             trusted_root_sha256=pins,
             required_eku_oid=eku,
-            max_chain_depth=int(os.getenv("WILSY_EOS_PKI_MAX_CHAIN_DEPTH", "8")),
-            max_crl_age_seconds=int(os.getenv("WILSY_EOS_PKI_MAX_CRL_AGE_SECONDS", "86400")),
+            max_chain_depth=max_chain_depth,
+            max_crl_age_seconds=max_crl_age_seconds,
         ))
 
     def crl_pem_for_issuer_subject_sha256(self, issuer_subject_sha256: str) -> bytes:
