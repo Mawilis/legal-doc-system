@@ -2,6 +2,8 @@
 from __future__ import annotations
 
 import os
+import json
+from hashlib import sha256
 import uuid
 from datetime import datetime, timezone
 
@@ -15,6 +17,33 @@ from tools.eos.security.institutional_signer_enrollment_registry import (
     COLLECTION, EVENT_COLLECTION, InstitutionalSignerEnrollmentRegistry,
     InstitutionalSignerRegistryConflict,
 )
+
+def _provenance_record(*, kind: str, now: datetime, **scope):
+    record = {
+        "schema": "wilsy.institutional.signer.evidence_provenance.v1",
+        "source_system_id": "governed-test-source",
+        "source_record_id": f"record-{kind.lower()}",
+        "source_revision": "revision-1",
+        "status": "ACTIVE",
+        "evidence_fingerprint_sha256": "e" * 64,
+        "verified_at": now,
+        "valid_from": now.replace(year=now.year - 1),
+        "valid_until": None,
+        "revoked": False,
+        "evaluated_at": now,
+        "tenant_id": "WILSYTENANT-4CD2FZ4O",
+        "certificate_fingerprint_sha256": "a" * 64,
+        "evidence_kind": kind,
+    }
+    record.update(scope)
+    return record
+
+
+def _digest(value):
+    canonical = json.dumps(value, sort_keys=True, separators=(",", ":"),
+                           default=lambda item: item.isoformat() if isinstance(item, datetime) else item)
+    return sha256(canonical.encode("utf-8")).hexdigest()
+
 
 URI = os.getenv("INSTITUTIONAL_PKI_TEST_MONGODB_URI")
 pytestmark = pytest.mark.skipif(not URI, reason="INSTITUTIONAL_PKI_TEST_MONGODB_URI is not configured")
@@ -33,6 +62,13 @@ def test_signer_enrollment_approval_and_revocation_are_atomic_on_replica_set():
         now = datetime.now(timezone.utc)
 
         def lifecycle(session):
+            identity = _provenance_record(kind="IDENTITY_PROOFING", now=now, subject_principal_id="owner-requester")
+            mandate = _provenance_record(kind="SIGNATORY_MANDATE", now=now, subject_principal_id="owner-requester")
+            enrollment_provenance = {
+                "schema": "wilsy.institutional.signer.enrollment_provenance.v1",
+                "identity_proofing": identity,
+                "signatory_mandate": mandate,
+            }
             pending = registry.request_enrollment(
                 tenant_id="WILSYTENANT-4CD2FZ4O",
                 certificate_fingerprint_sha256="a" * 64,
@@ -45,20 +81,27 @@ def test_signer_enrollment_approval_and_revocation_are_atomic_on_replica_set():
                 signatory_mandate_evidence_reference="mandate://institutional/resolution-001",
                 requested_by_principal_id="owner-requester",
                 requested_at=now, idempotency_key="request-001", session=session,
-                evidence_provenance_fingerprint_sha256="e" * 64,
+                evidence_provenance_fingerprint_sha256=_digest(enrollment_provenance),
+                evidence_provenance_snapshot=enrollment_provenance,
             )
             assert pending["status"] == "PENDING_APPROVAL"
-            assert pending["evidence_provenance_fingerprint_sha256"] == "e" * 64
+            assert pending["evidence_provenance_snapshot"] == enrollment_provenance
+            approval_provenance = _provenance_record(
+                kind="INDEPENDENT_APPROVAL", now=now,
+                enrollment_requester_principal_id="owner-requester",
+                reviewer_principal_id="owner-independent-approver",
+            )
             active = registry.approve_enrollment(
                 tenant_id="WILSYTENANT-4CD2FZ4O",
                 certificate_fingerprint_sha256="a" * 64,
                 approver_principal_id="owner-independent-approver",
                 approval_attestation_reference="attestation://proofing-and-mandate/review-001",
                 approved_at=now, idempotency_key="approve-001", session=session,
-                evidence_provenance_fingerprint_sha256="f" * 64,
+                evidence_provenance_fingerprint_sha256=_digest(approval_provenance),
+                approval_evidence_provenance_snapshot=approval_provenance,
             )
             assert active["status"] == "ACTIVE"
-            assert active["approval_evidence_provenance_fingerprint_sha256"] == "f" * 64
+            assert active["approval_evidence_provenance_snapshot"] == approval_provenance
             assert registry.require_active(
                 tenant_id="WILSYTENANT-4CD2FZ4O",
                 certificate_fingerprint_sha256="a" * 64,
