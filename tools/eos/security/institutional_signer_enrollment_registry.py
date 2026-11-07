@@ -432,7 +432,7 @@ class InstitutionalSignerEnrollmentRegistry:
 
     def record_verified_currentness(
         self, *, verification: VerifiedSignerEvidenceCurrentness,
-        idempotency_key: str, session: object,
+        idempotency_key: str, actor_reference: str, session: object,
     ) -> dict[str, Any]:
         """Persist a verifier-issued, bounded source recheck and audit it atomically."""
         if session is None:
@@ -491,6 +491,7 @@ class InstitutionalSignerEnrollmentRegistry:
         if _provenance_digest(canonical) != digest:
             raise InstitutionalSignerRegistryError("INSTITUTIONAL_SIGNER_CURRENTNESS_DIGEST_MISMATCH")
         key = _text(idempotency_key, "INSTITUTIONAL_SIGNER_IDEMPOTENCY_INVALID", 200)
+        actor = _text(actor_reference, "INSTITUTIONAL_SIGNER_CURRENTNESS_ACTOR_REQUIRED", 256)
         try:
             prior = self._events.find_one({"tenant_id": tenant, "idempotency_key": key}, session=session)
             if prior is not None:
@@ -498,7 +499,9 @@ class InstitutionalSignerEnrollmentRegistry:
                 if (prior.get("action") != "SIGNER_EVIDENCE_CURRENTNESS_RECONCILED"
                     or not isinstance(prior_snapshot, dict)
                     or prior_snapshot.get("certificate_fingerprint_sha256") != fingerprint
-                    or prior_snapshot.get("evidence_currentness_provenance_fingerprint_sha256") != digest):
+                    or prior_snapshot.get("evidence_currentness_provenance_fingerprint_sha256") != digest
+                    or prior_snapshot.get("evidence_currentness_status") != status
+                    or prior_snapshot.get("evidence_currentness_observation_fingerprint_sha256") != observation_digest):
                     raise InstitutionalSignerRegistryConflict("INSTITUTIONAL_SIGNER_DIVERGENT_REPLAY")
                 return prior_snapshot
             current = self._records.find_one({
@@ -527,6 +530,9 @@ class InstitutionalSignerEnrollmentRegistry:
                     raise InstitutionalSignerRegistryError("INSTITUTIONAL_SIGNER_CURRENTNESS_SOURCE_IDENTITY_CHANGED")
             if any(record.get("evaluated_at") != checked_at for record in (identity, mandate, approval)):
                 raise InstitutionalSignerRegistryError("INSTITUTIONAL_SIGNER_CURRENTNESS_EVALUATION_TIME_MISMATCH")
+            previous_checked_at = current.get("evidence_currentness_checked_at")
+            if isinstance(previous_checked_at, datetime) and checked_at < _instant(previous_checked_at):
+                raise InstitutionalSignerRegistryConflict("INSTITUTIONAL_SIGNER_CURRENTNESS_TIME_REGRESSION")
             updated = dict(current)
             updated.pop("_id", None)
             updated.update({
@@ -547,7 +553,7 @@ class InstitutionalSignerEnrollmentRegistry:
             self._events.insert_one({
                 "tenant_id": tenant, "certificate_fingerprint_sha256": fingerprint,
                 "revision": updated["revision"], "idempotency_key": key,
-                "actor_principal_id": "institutional-signer-currentness-verifier",
+                "actor_principal_id": actor,
                 "action": "SIGNER_EVIDENCE_CURRENTNESS_RECONCILED",
                 "occurred_at": checked_at, "snapshot": updated,
                 "evidence_currentness_status": status,
