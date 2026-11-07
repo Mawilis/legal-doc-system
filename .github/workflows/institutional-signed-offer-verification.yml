@@ -101,11 +101,8 @@ jobs:
             tests/unit/test_institutional_signer_source_adapters.py \
             tests/unit/test_permission_namespace.py \
             tests/unit/test_hiring_signed_offer_manifest.py \
-            tests/integration/test_institutional_signer_registry_real_mongo.py \\
-            tests/integration/test_institutional_source_signing_key_lifecycle_real_mongo.py \\
-            tests/integration/test_institutional_source_signing_key_lifecycle_real_mongo.py \
-      - name: Run institutional signature, signer governance, PKI and authenticated hiring tests
-        run: |
+            tests/integration/test_institutional_signer_registry_real_mongo.py  \
+            tests/integration/test_institutional_source_signing_key_lifecycle_real_mongo.py
           python -m pytest -q \
             tests/unit/test_institutional_pki.py \
             tests/unit/test_institutional_pki_kms.py \
@@ -115,6 +112,7 @@ jobs:
             tests/unit/test_permission_namespace.py \
             tests/unit/test_hiring_signed_offer_manifest.py \
             tests/integration/test_institutional_signer_registry_real_mongo.py \
+            tests/integration/test_institutional_source_signing_key_lifecycle_real_mongo.py \
             tests/unit/test_hiring_lifecycle_domain.py \
             tests/integration/test_hiring_lifecycle_authenticated_http.py \
             tests/integration/test_hiring_lifecycle_authenticated_real_http.py
