@@ -26,10 +26,11 @@ jobs:
         run: |
           python -m pip install --upgrade pip
           python -m pip install -r requirements.txt pytest==9.1.1
-      - name: Compile candidate and offer lifecycle domains
+      - name: Compile candidate, offer and persistence registry
         run: |
           python -m py_compile \
             tools/eos/saas/domain/hiring_lifecycle.py \
+            tools/eos/saas/hr/hiring_lifecycle_registry.py \
             tests/unit/test_hiring_lifecycle_domain.py
       - name: Run candidate and offer lifecycle policy tests
         run: python -m pytest -q tests/unit/test_hiring_lifecycle_domain.py
