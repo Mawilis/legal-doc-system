@@ -198,8 +198,8 @@ async def approve_source_signing_key(
     verifier = _registry(request)
 
     def persist(registry, session):
-        record = registry._keys.find_one(
-            {"source_system_id": source_system_id, "key_id": key_id}, session=session,
+        record = registry.get_proposal(
+            source_system_id=source_system_id, key_id=key_id, session=session,
         )
         if record is None:
             raise SourceSigningKeyRegistryConflict("SOURCE_SIGNING_KEY_NOT_FOUND")
