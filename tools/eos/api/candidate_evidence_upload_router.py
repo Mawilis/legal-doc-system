@@ -220,6 +220,7 @@ async def upload_candidate_evidence(
             chunks=_request_chunks(request, content_length),
             actor_principal_id=actor_id,
             offer_id=offer_id,
+            evidence_kind=evidence_kind.value,
         )
         # Re-inspect the exact provider object version outside Mongo. A HEAD
         # failure leaves PROVIDER_VERIFIED evidence unregistered for recovery.
