@@ -18,6 +18,8 @@ from tools.eos.api.tenant_authorization_http import TenantAuthorizationContext
 from tools.eos.api import institutional_source_key_router as source_key_api
 from tools.eos.security.institutional_source_key_governance_evidence import (
     InstitutionalSourceKeyGovernanceEvidenceError,
+    VerifiedSourceKeyProposalAuthority,
+    VerifiedSourceKeyApproval,
     VerifiedSourceKeyRevocationApproval,
 )
 from tools.eos.security.institutional_source_signing_key_registry import (
@@ -37,18 +39,46 @@ class _VerifiedGovernanceEvidence:
         self.proposal_calls = []
         self.approval_calls = []
         self.revocation_calls = []
+        self.fail_proposal = False
         self.fail_approval = False
         self.fail_revocation = False
+        self.invalid_proposal_result = False
+        self.invalid_approval_result = False
 
     def verify_proposal(self, **kwargs):
         self.proposal_calls.append(kwargs)
-        return object()
+        if self.fail_proposal:
+            raise InstitutionalSourceKeyGovernanceEvidenceError("SYNTHETIC_PROPOSAL_EVIDENCE_DENIED")
+        if self.invalid_proposal_result:
+            return object()
+        return VerifiedSourceKeyProposalAuthority(
+            tenant_id=kwargs["tenant_id"],
+            source_system_id=kwargs["source_system_id"],
+            public_key_fingerprint_sha256=kwargs["public_key_fingerprint_sha256"],
+            proposer_principal_id=kwargs["proposer_principal_id"],
+            identity_proofing_evidence_reference=kwargs["identity_proofing_evidence_reference"],
+            source_authority_evidence_reference=kwargs["source_authority_evidence_reference"],
+            evidence_fingerprint_sha256="a" * 64,
+        )
 
     def verify_approval(self, **kwargs):
         self.approval_calls.append(kwargs)
         if self.fail_approval:
             raise InstitutionalSourceKeyGovernanceEvidenceError("SYNTHETIC_APPROVAL_EVIDENCE_DENIED")
-        return object()
+        if self.invalid_approval_result:
+            return object()
+        return VerifiedSourceKeyApproval(
+            tenant_id=kwargs["tenant_id"],
+            source_system_id=kwargs["source_system_id"],
+            key_id=kwargs["key_id"],
+            public_key_fingerprint_sha256=kwargs["public_key_fingerprint_sha256"],
+            proposer_principal_id=kwargs["proposer_principal_id"],
+            approver_principal_id=kwargs["approver_principal_id"],
+            proposal_reference=kwargs["proposal_reference"],
+            governance_decision_reference=kwargs["governance_decision_reference"],
+            approval_evidence_reference=kwargs["approval_evidence_reference"],
+            evidence_fingerprint_sha256="b" * 64,
+        )
 
     def verify_revocation(self, **kwargs):
         self.revocation_calls.append(kwargs)
