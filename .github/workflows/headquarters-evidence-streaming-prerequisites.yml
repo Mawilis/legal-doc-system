@@ -1,0 +1,35 @@
+name: WILSY Candidate Evidence Streaming Prerequisites
+
+on:
+  pull_request:
+    paths:
+      - "tools/eos/saas/hr/candidate_evidence_upload_attempt_registry.py"
+      - "tests/unit/test_candidate_evidence_upload_attempt_registry.py"
+      - ".github/workflows/headquarters-evidence-streaming-prerequisites.yml"
+
+permissions:
+  contents: read
+
+jobs:
+  upload-attempt-state:
+    name: Durable pre-provider upload intent and attempt state tests
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+          cache-dependency-path: requirements.txt
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install -r requirements.txt pytest==9.1.1
+      - name: Compile registry and tests
+        run: |
+          python -m py_compile \
+            tools/eos/saas/hr/candidate_evidence_upload_attempt_registry.py \
+            tests/unit/test_candidate_evidence_upload_attempt_registry.py
+      - name: Run attempt state tests
+        run: python -m pytest -q tests/unit/test_candidate_evidence_upload_attempt_registry.py
