@@ -120,6 +120,8 @@ class InstitutionalSourceSigningKeyLifecycleRegistry:
         self, *, source_system_id: str, key_id: str, public_key_bytes: bytes,
         valid_from: datetime, valid_until: datetime,
         proposed_by_principal_id: str, proposal_reference: str,
+        identity_proofing_evidence_reference: str,
+        signatory_mandate_evidence_reference: str,
         proposed_at: datetime, idempotency_key: str, session: ClientSession,
         rotation_id: str | None = None, supersedes_key_id: str | None = None,
         overlap_until: datetime | None = None,
@@ -131,6 +133,8 @@ class InstitutionalSourceSigningKeyLifecycleRegistry:
         key = _identifier("key_id", key_id)
         proposer = _identifier("proposed_by_principal_id", proposed_by_principal_id)
         proposal = _identifier("proposal_reference", proposal_reference)
+        identity_reference = _identifier("identity_proofing_evidence_reference", identity_proofing_evidence_reference)
+        mandate_reference = _identifier("signatory_mandate_evidence_reference", signatory_mandate_evidence_reference)
         idem = _identifier("idempotency_key", idempotency_key)
         start, end, occurred = (
             _instant("valid_from", valid_from), _instant("valid_until", valid_until),
@@ -170,6 +174,8 @@ class InstitutionalSourceSigningKeyLifecycleRegistry:
             "public_key_fingerprint_sha256": fingerprint,
             "valid_from": start, "valid_until": end,
             "proposal_reference": proposal, "proposed_by_principal_id": proposer,
+            "identity_proofing_evidence_reference": identity_reference,
+            "signatory_mandate_evidence_reference": mandate_reference,
             "proposed_at": occurred, "lifecycle_state": "PENDING",
             "rotation": rotation,
         }
