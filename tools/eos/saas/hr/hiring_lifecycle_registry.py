@@ -187,6 +187,9 @@ class HiringLifecycleRegistry:
         if row is None:
             raise HiringLifecycleNotFound(f"HIRING_{kind}_NOT_FOUND")
         try:
+            # MongoDB adds its storage-only _id field; domain hydration accepts
+            # only the canonical, fingerprinted aggregate schema.
+            row.pop("_id", None)
             return hydrate(row)
         except (TypeError, ValueError, HiringLifecycleError) as error:
             raise HiringLifecycleRegistryError(f"HIRING_{kind}_DOCUMENT_CORRUPT") from error
