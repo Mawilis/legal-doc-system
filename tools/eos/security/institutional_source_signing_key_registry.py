@@ -356,11 +356,22 @@ class InstitutionalSourceSigningKeyLifecycleRegistry:
             raise SourceSigningKeyRegistryError("SOURCE_SIGNING_KEY_REVOCATION_PERSISTENCE_FAILED") from error
         return event
 
-    def resolve(
+    def resolve_current(
+        self, *, source_system_id: str, key_id: str, session: ClientSession,
+    ) -> dict[str, Any]:
+        """Resolve current authority using verifier time; callers cannot backdate."""
+        return self.resolve_historical(
+            source_system_id=source_system_id,
+            key_id=key_id,
+            evaluated_at=datetime.now(timezone.utc),
+            session=session,
+        )
+
+    def resolve_historical(
         self, *, source_system_id: str, key_id: str, evaluated_at: datetime,
         session: ClientSession,
     ) -> dict[str, Any]:
-        """Return a usable public key only when lifecycle evidence permits it."""
+        """Resolve historical signature-time trust for audit only, never current authorization."""
         if session is None:
             raise SourceSigningKeyRegistryError("SOURCE_SIGNING_KEY_SESSION_REQUIRED")
         source = _identifier("source_system_id", source_system_id)
