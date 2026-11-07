@@ -1990,6 +1990,33 @@ def test_inbound_provider_operation_mappings_are_exact(
     )
 
 
+@pytest.mark.parametrize(
+    ("operation", "permission"),
+    (
+        ("institutional_source_key_propose", "security:institutional_source_key:propose"),
+        ("institutional_source_key_approve", "security:institutional_source_key:approve"),
+        ("institutional_source_key_revoke", "security:institutional_source_key:revoke"),
+    ),
+)
+def test_institutional_source_key_commands_require_dedicated_security_role(
+    operation: str, permission: str,
+) -> None:
+    authorized = _decision(
+        permission_id=permission,
+        operation=operation,
+        business_repository=_business("tenant_institutional_source_key_admin"),
+        assignment_repository=_assignments("INSTITUTIONAL_SOURCE_KEY_ADMIN"),
+    )
+    assert authorized.authorized is True
+    owner = _decision(
+        permission_id=permission,
+        operation=operation,
+        business_repository=_business("tenant_owner"),
+        assignment_repository=_assignments("TENANT_OWNER"),
+    )
+    assert owner.authorized is False
+
+
 def test_inbound_provider_privileges_do_not_cross_grant() -> None:
     result = _decision(
         permission_id="inbound_provider_policy:activate",
