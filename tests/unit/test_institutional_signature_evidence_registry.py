@@ -39,7 +39,7 @@ def _record(registry, *, session=object(), **overrides):
         "candidate_id": "CAN-001",
         "evidence_id": "EVD-001",
         "evidence_version_id": "VER-001",
-        "evidence_digest_sha3_512": "a" * 64,
+        "evidence_digest_sha3_512": "a" * 128,
         "signer_certificate_sha256": "b" * 64,
         "signer_serial_number_hex": "abc123",
         "trust_root_sha256": "c" * 64,
