@@ -73,10 +73,10 @@ def _verified_currentness(*, tenant_id, fingerprint, revision, status, checked_a
                     "evidence_reference": record["evidence_reference"],
                     "source_system_id": record["source_system_id"],
                     "source_record_id": record["source_record_id"],
-                    "source_revision": ("revision-2" if status == "NOT_CURRENT" and key == "identity_proofing" else record["source_revision"]),
-                    "status": ("REVOKED" if status == "NOT_CURRENT" and key == "identity_proofing" else record["status"]),
-                    "revoked": status == "NOT_CURRENT" and key == "identity_proofing",
-                    "evidence_fingerprint_sha256": ("d" * 64 if status == "NOT_CURRENT" and key == "identity_proofing" else record["evidence_fingerprint_sha256"]),
+                    "source_revision": ("revision-2" if status == "NOT_CURRENT" and reason == "SOURCE_RECORD_REVOKED" and key == "identity_proofing" else record["source_revision"]),
+                    "status": ("REVOKED" if status == "NOT_CURRENT" and reason == "SOURCE_RECORD_REVOKED" and key == "identity_proofing" else record["status"]),
+                    "revoked": status == "NOT_CURRENT" and reason == "SOURCE_RECORD_REVOKED" and key == "identity_proofing",
+                    "evidence_fingerprint_sha256": ("d" * 64 if status == "NOT_CURRENT" and reason == "SOURCE_RECORD_REVOKED" and key == "identity_proofing" else record["evidence_fingerprint_sha256"]),
                     "valid_from": record["valid_from"],
                     "valid_until": (checked_at - timedelta(seconds=1) if status == "NOT_CURRENT" and key == "identity_proofing" and reason == "SOURCE_EVIDENCE_EXPIRED" else record["valid_until"]),
                     "observed_at": checked_at,
@@ -251,9 +251,19 @@ def test_signer_enrollment_approval_and_revocation_are_atomic_on_replica_set():
                 certificate_serial_number_hex="abc123", issuer_subject_sha256="c" * 64,
                 trust_root_sha256="b" * 64, session=session,
             )["status"] == "ACTIVE"
-            not_current_result = _verified_currentness(
+            expired_result = _verified_currentness(
                 tenant_id="WILSYTENANT-4CD2FZ4O", fingerprint="a" * 64,
                 revision=current["revision"], status="NOT_CURRENT", checked_at=now,
+                valid_until=None, provenance=currentness_provenance,
+                reason="SOURCE_EVIDENCE_EXPIRED",
+            )
+            expired = registry.record_verified_currentness(
+                verification=expired_result, idempotency_key="currentness-expired", actor_reference="runtime://approved-currentness-worker", session=session,
+            )
+            assert expired["evidence_currentness_status"] == "NOT_CURRENT"
+            not_current_result = _verified_currentness(
+                tenant_id="WILSYTENANT-4CD2FZ4O", fingerprint="a" * 64,
+                revision=expired["revision"], status="NOT_CURRENT", checked_at=now,
                 valid_until=None, provenance=currentness_provenance,
                 reason="SOURCE_RECORD_REVOKED",
             )
@@ -315,10 +325,11 @@ def test_signer_enrollment_approval_and_revocation_are_atomic_on_replica_set():
             )
         assert final["status"] == "REVOKED"
         assert records.count_documents({"tenant_id": "WILSYTENANT-4CD2FZ4O"}) == 1
-        assert events.count_documents({"tenant_id": "WILSYTENANT-4CD2FZ4O"}) == 6
+        assert events.count_documents({"tenant_id": "WILSYTENANT-4CD2FZ4O"}) == 7
         assert [row["action"] for row in events.find({"tenant_id": "WILSYTENANT-4CD2FZ4O"}).sort("revision", 1)] == [
             "SIGNER_ENROLLMENT_REQUESTED",
             "SIGNER_ENROLLMENT_APPROVED",
+            "SIGNER_EVIDENCE_CURRENTNESS_RECONCILED",
             "SIGNER_EVIDENCE_CURRENTNESS_RECONCILED",
             "SIGNER_EVIDENCE_CURRENTNESS_RECONCILED",
             "SIGNER_ENROLLMENT_REVOKED",
