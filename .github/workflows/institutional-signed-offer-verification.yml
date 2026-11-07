@@ -6,6 +6,7 @@ on:
       - "tools/eos/api/server.py"
       - "tools/eos/api/institutional_signer_router.py"
       - "tools/eos/api/institutional_source_key_router.py"
+      - "tests/integration/test_institutional_source_key_authenticated_routes_real_mongo.py"
       - "tools/eos/security/institutional_source_signing_key_registry.py"
       - "tools/eos/security/institutional_signature_evidence_registry.py"
       - "tools/eos/security/institutional_signer_enrollment_registry.py"
@@ -47,6 +48,7 @@ jobs:
     timeout-minutes: 25
     env:
       INSTITUTIONAL_PKI_TEST_MONGODB_URI: mongodb://localhost:27017/?replicaSet=rs0&directConnection=true
+      INSTITUTIONAL_SOURCE_KEY_TEST_MONGODB_URI: mongodb://localhost:27017/?replicaSet=rs0&directConnection=true
       INSTITUTIONAL_SOURCE_KEY_TEST_MONGODB_URI: mongodb://localhost:27017/?replicaSet=rs0&directConnection=true
       HIRING_TEST_MONGODB_URI: mongodb://localhost:27017/?replicaSet=rs0&directConnection=true
     steps:
