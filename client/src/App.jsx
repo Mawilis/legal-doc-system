@@ -208,7 +208,7 @@ const SovereignRouter = () => {
     // Versioned legal acceptance is server-derived; the gate owns its own
     // status read and remains reachable at the compatibility /covenant path.
     if (location.pathname === '/covenant') return null;
-    return ['/', '/dashboard', '/my-work'].includes(location.pathname) ? null : '/';
+    return ['/', '/dashboard', '/my-work', '/headquarters'].includes(location.pathname) ? null : '/';
   }, [
     location.pathname,
     isAuthenticated,
