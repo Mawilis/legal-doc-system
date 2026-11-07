@@ -127,6 +127,8 @@ def _verify_approval_evidence(verifier, *, tenant_id, certificate_fingerprint_sh
 
 def _provenance_fingerprint(result) -> str:
     fingerprint = getattr(result, "provenance_fingerprint_sha256", None)
+    if fingerprint is None:
+        fingerprint = getattr(result, "evidence_fingerprint_sha256", None)
     if not isinstance(fingerprint, str) or re.fullmatch(r"[0-9a-f]{64}", fingerprint) is None:
         raise HTTPException(status_code=503, detail="INSTITUTIONAL_SIGNER_EVIDENCE_PROVENANCE_INVALID")
     return fingerprint
