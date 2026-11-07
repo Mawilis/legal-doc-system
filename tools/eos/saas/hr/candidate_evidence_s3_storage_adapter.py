@@ -10,6 +10,7 @@ from datetime import datetime, timezone
 import hashlib
 import re
 from typing import Any, NoReturn
+from tempfile import SpooledTemporaryFile
 
 import boto3
 from botocore.client import BaseClient
@@ -386,6 +387,69 @@ class CandidateEvidenceS3StorageAdapter:
             raise
         except (BotoCoreError, ClientError, KeyError, OSError) as error:
             _fail("CANDIDATE_EVIDENCE_S3_COMPLETED_OBJECT_RECOVERY_UNAVAILABLE", error)
+
+    def read_verified_object(self, metadata: Any):
+        """Return a bounded spool only after exact-version integrity verification."""
+        key = _storage_key_for_scope(
+            metadata.tenant_id, metadata.candidate_id, metadata.evidence_id,
+            metadata.evidence_version_id, metadata.ingestion_reference,
+        )
+        if (
+            metadata.storage_provider_id != PROVIDER_ID
+            or _component(key) != metadata.storage_object_reference
+        ):
+            _fail("CANDIDATE_EVIDENCE_S3_READ_SCOPE_MISMATCH")
+        spool = SpooledTemporaryFile(max_size=8 * 1024 * 1024, mode="w+b")
+        body = None
+        try:
+            head = self._client.head_object(
+                Bucket=self._config.bucket, Key=key,
+                VersionId=metadata.object_version_reference,
+            )
+            observed_metadata = head.get("Metadata") or {}
+            if (
+                head.get("ContentLength") != metadata.byte_length
+                or head.get("ContentType") != metadata.media_type
+                or str(head.get("ETag", "")) != metadata.provider_integrity_reference
+                or observed_metadata.get("wilsy-tenant-sha3-256") != _component(metadata.tenant_id)
+                or observed_metadata.get("wilsy-candidate-sha3-256") != _component(metadata.candidate_id)
+                or observed_metadata.get("wilsy-evidence-sha3-256") != _component(metadata.evidence_id)
+                or observed_metadata.get("wilsy-version-sha3-256") != _component(metadata.evidence_version_id)
+                or head.get("ServerSideEncryption") != "aws:kms"
+                or head.get("SSEKMSKeyId") != self._config.kms_key_id
+            ):
+                _fail("CANDIDATE_EVIDENCE_S3_READ_OBSERVATION_MISMATCH")
+            if type(metadata.byte_length) is not int or not 1 <= metadata.byte_length <= 100 * 1024 * 1024:
+                _fail("CANDIDATE_EVIDENCE_S3_READ_LENGTH_INVALID")
+            response = self._client.get_object(
+                Bucket=self._config.bucket, Key=key,
+                VersionId=metadata.object_version_reference,
+            )
+            body = response["Body"]
+            hasher = hashlib.sha3_512()
+            observed = 0
+            while True:
+                chunk = body.read(8 * 1024 * 1024)
+                if not chunk:
+                    break
+                observed += len(chunk)
+                if observed > metadata.byte_length:
+                    _fail("CANDIDATE_EVIDENCE_S3_READ_LENGTH_MISMATCH")
+                hasher.update(chunk)
+                spool.write(chunk)
+            if observed != metadata.byte_length or hasher.hexdigest() != metadata.content_digest_sha3_512:
+                _fail("CANDIDATE_EVIDENCE_S3_READ_DIGEST_MISMATCH")
+            spool.seek(0)
+            return spool
+        except CandidateEvidenceS3Error:
+            spool.close()
+            raise
+        except (BotoCoreError, ClientError, KeyError, OSError) as error:
+            spool.close()
+            _fail("CANDIDATE_EVIDENCE_S3_READ_UNAVAILABLE", error)
+        finally:
+            if body is not None:
+                body.close()
 
     def abort(self, session: CandidateEvidenceWriteSession) -> None:
         if type(session) is not CandidateEvidenceWriteSession or session.closed:
