@@ -64,7 +64,7 @@ def test_authenticated_propose_approve_revoke_is_atomic_and_maker_checker_enforc
     app.include_router(source_key_api.router)
     app.state.institutional_source_key_registry_ready = True
     evidence = _VerifiedGovernanceEvidence()
-    app.state.institutional_signer_evidence_verifier = evidence
+    app.state.institutional_source_key_governance_evidence_verifier = evidence
     monkeypatch.setattr(source_key_api, "get_client", lambda: client)
     monkeypatch.setattr(source_key_api, "get_database", lambda: database)
 
