@@ -1,6 +1,7 @@
 """Institutional signer HTTP runtime readiness and request-path DDL boundaries."""
 from __future__ import annotations
 
+from datetime import datetime, timezone
 from types import SimpleNamespace
 
 import pytest
@@ -89,7 +90,7 @@ def test_signer_evidence_verifier_is_unavailable_by_default_and_denies_enrollmen
             subject_principal_id="PRINCIPAL-1",
             identity_proofing_reference="evidence://identity/123",
             signatory_mandate_reference="evidence://mandate/456",
-            evaluated_at=__import__("datetime").datetime.now(__import__("datetime").timezone.utc),
+            evaluated_at=datetime.now(timezone.utc),
             session=object(),
         )
     assert error.value.status_code == 503
