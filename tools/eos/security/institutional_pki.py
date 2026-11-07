@@ -160,6 +160,17 @@ def _verify_signature(signed_object: object, issuer_key: object) -> None:
         raise InstitutionalPKIError("INSTITUTIONAL_PKI_CERTIFICATE_SIGNATURE_INVALID") from error
 
 
+def _reject_unhandled_critical_certificate_extensions(cert: x509.Certificate) -> None:
+    understood = {
+        ExtensionOID.BASIC_CONSTRAINTS,
+        ExtensionOID.KEY_USAGE,
+        ExtensionOID.EXTENDED_KEY_USAGE,
+    }
+    for extension in cert.extensions:
+        if extension.critical and extension.oid not in understood:
+            raise InstitutionalPKIError("INSTITUTIONAL_PKI_UNHANDLED_CRITICAL_CERTIFICATE_EXTENSION")
+
+
 def _extension(cert: x509.Certificate, oid: x509.ObjectIdentifier, code: str):
     try:
         return cert.extensions.get_extension_for_oid(oid).value
@@ -215,6 +226,7 @@ class InstitutionalPKIVerifier:
             raise InstitutionalPKIError("INSTITUTIONAL_PKI_ROOT_PIN_SET_MISMATCH")
         anchor_fingerprints = {item.fingerprint(hashes.SHA256()) for item in self._anchors}
         for anchor in self._anchors:
+            _reject_unhandled_critical_certificate_extensions(anchor)
             _valid_at(anchor, datetime.now(timezone.utc))
             _is_ca(anchor)
             if anchor.subject != anchor.issuer:
@@ -228,6 +240,7 @@ class InstitutionalPKIVerifier:
             if item.fingerprint(hashes.SHA256()) not in anchor_fingerprints
         )
         for issuer_certificate in configured_intermediates:
+            _reject_unhandled_critical_certificate_extensions(issuer_certificate)
             _valid_at(issuer_certificate, datetime.now(timezone.utc))
             _is_ca(issuer_certificate)
             current = issuer_certificate
@@ -278,6 +291,8 @@ class InstitutionalPKIVerifier:
         observed: dict[str, tuple[int, str]] = {}
         now = datetime.now(timezone.utc)
         for crl in crls:
+            if any(extension.critical for extension in crl.extensions):
+                raise InstitutionalPKIError("INSTITUTIONAL_PKI_UNHANDLED_CRITICAL_CRL_EXTENSION")
             issuers = [item for item in self._issuer_certificates if item.subject == crl.issuer]
             if len(issuers) != 1:
                 raise InstitutionalPKIError("INSTITUTIONAL_PKI_CRL_ISSUER_NOT_FOUND_OR_AMBIGUOUS")
@@ -420,6 +435,7 @@ class InstitutionalPKIVerifier:
             supplied = tuple(x509.load_pem_x509_certificate(item) for item in intermediate_pems)
         except Exception as error:
             raise InstitutionalPKIError("INSTITUTIONAL_PKI_PRESENTED_CERTIFICATE_INVALID") from error
+        _reject_unhandled_critical_certificate_extensions(leaf)
         _valid_at(leaf, instant)
         eku = _extension(leaf, ExtensionOID.EXTENDED_KEY_USAGE, "INSTITUTIONAL_PKI_SIGNING_EKU_MISSING")
         required_oid = ObjectIdentifier(self._settings.required_eku_oid)
