@@ -4,6 +4,7 @@ from __future__ import annotations
 import base64
 import binascii
 import re
+import json
 from hashlib import sha256
 from datetime import datetime, timezone
 from typing import Annotated
@@ -125,13 +126,85 @@ def _verify_approval_evidence(verifier, *, tenant_id, certificate_fingerprint_sh
 
 
 
-def _provenance_fingerprint(result) -> str:
-    fingerprint = getattr(result, "provenance_fingerprint_sha256", None)
-    if fingerprint is None:
-        fingerprint = getattr(result, "evidence_fingerprint_sha256", None)
-    if not isinstance(fingerprint, str) or re.fullmatch(r"[0-9a-f]{64}", fingerprint) is None:
+def _record_provenance_snapshot(record, *, evaluated_at, expected_bindings):
+    required = ("source_system_id", "source_record_id", "source_revision", "status",
+                "evidence_fingerprint_sha256", "valid_from", "valid_until", "revoked", "verified_at")
+    snapshot = {"schema": "wilsy.institutional.signer.evidence_provenance.v1"}
+    for field in required:
+        value = getattr(record, field, None)
+        if field in ("valid_from", "valid_until", "verified_at"):
+            if value is not None and (not isinstance(value, datetime) or value.tzinfo is None or value.utcoffset() is None):
+                raise HTTPException(status_code=503, detail="INSTITUTIONAL_SIGNER_EVIDENCE_PROVENANCE_INVALID")
+            snapshot[field] = value.astimezone(timezone.utc) if value is not None else None
+        else:
+            snapshot[field] = value
+    for field in ("source_system_id", "source_record_id", "source_revision", "status"):
+        if not isinstance(snapshot[field], str) or not snapshot[field] or len(snapshot[field]) > 512:
+            raise HTTPException(status_code=503, detail="INSTITUTIONAL_SIGNER_EVIDENCE_PROVENANCE_INVALID")
+    if not isinstance(snapshot["evidence_fingerprint_sha256"], str) or re.fullmatch(r"[0-9a-f]{64}", snapshot["evidence_fingerprint_sha256"]) is None:
         raise HTTPException(status_code=503, detail="INSTITUTIONAL_SIGNER_EVIDENCE_PROVENANCE_INVALID")
-    return fingerprint
+    if snapshot["status"] not in ("ACTIVE", "VERIFIED") or snapshot["revoked"] is not False:
+        raise HTTPException(status_code=503, detail="INSTITUTIONAL_SIGNER_EVIDENCE_NOT_CURRENT")
+    instant = evaluated_at.astimezone(timezone.utc)
+    if (snapshot["valid_from"] is None or snapshot["verified_at"] is None
+        or snapshot["valid_from"] > instant or snapshot["verified_at"] > instant
+        or (snapshot["valid_until"] is not None and snapshot["valid_until"] <= instant)):
+        raise HTTPException(status_code=503, detail="INSTITUTIONAL_SIGNER_EVIDENCE_NOT_CURRENT")
+    snapshot["evaluated_at"] = instant
+    snapshot.update(expected_bindings)
+    return snapshot
+
+
+def _enrollment_provenance(result, *, tenant_id, certificate_fingerprint_sha256, subject_principal_id, evaluated_at):
+    try:
+        identity = _record_provenance_snapshot(
+            result.identity_proofing, evaluated_at=evaluated_at,
+            expected_bindings={"tenant_id": tenant_id, "subject_principal_id": subject_principal_id,
+                               "certificate_fingerprint_sha256": certificate_fingerprint_sha256,
+                               "evidence_kind": "IDENTITY_PROOFING"},
+        )
+        mandate = _record_provenance_snapshot(
+            result.signatory_mandate, evaluated_at=evaluated_at,
+            expected_bindings={"tenant_id": tenant_id, "subject_principal_id": subject_principal_id,
+                               "certificate_fingerprint_sha256": certificate_fingerprint_sha256,
+                               "evidence_kind": "SIGNATORY_MANDATE"},
+        )
+        if getattr(result.identity_proofing, "tenant_id", None) != tenant_id or getattr(result.signatory_mandate, "tenant_id", None) != tenant_id:
+            raise ValueError("tenant")
+        if getattr(result.identity_proofing, "subject_principal_id", None) != subject_principal_id or getattr(result.signatory_mandate, "subject_principal_id", None) != subject_principal_id:
+            raise ValueError("principal")
+        if getattr(result.identity_proofing, "certificate_fingerprint_sha256", None) != certificate_fingerprint_sha256 or getattr(result.signatory_mandate, "certificate_fingerprint_sha256", None) != certificate_fingerprint_sha256:
+            raise ValueError("certificate")
+        snapshot = {"schema": "wilsy.institutional.signer.enrollment_provenance.v1",
+                    "identity_proofing": identity, "signatory_mandate": mandate}
+        canonical = json.dumps(snapshot, sort_keys=True, separators=(",", ":"),
+                               default=lambda value: value.isoformat() if isinstance(value, datetime) else value)
+        return snapshot, sha256(canonical.encode("utf-8")).hexdigest()
+    except HTTPException:
+        raise
+    except Exception as error:
+        raise HTTPException(status_code=503, detail="INSTITUTIONAL_SIGNER_EVIDENCE_PROVENANCE_INVALID") from error
+
+
+def _approval_provenance(record, *, tenant_id, certificate_fingerprint_sha256,
+                         requester_principal_id, reviewer_principal_id, evaluated_at):
+    snapshot = _record_provenance_snapshot(
+        record, evaluated_at=evaluated_at,
+        expected_bindings={"tenant_id": tenant_id,
+                           "certificate_fingerprint_sha256": certificate_fingerprint_sha256,
+                           "enrollment_requester_principal_id": requester_principal_id,
+                           "reviewer_principal_id": reviewer_principal_id,
+                           "evidence_kind": "INDEPENDENT_APPROVAL"},
+    )
+    if (getattr(record, "tenant_id", None) != tenant_id
+        or getattr(record, "certificate_fingerprint_sha256", None) != certificate_fingerprint_sha256
+        or getattr(record, "enrollment_requester_principal_id", None) != requester_principal_id
+        or getattr(record, "reviewer_principal_id", None) != reviewer_principal_id
+        or reviewer_principal_id == requester_principal_id):
+        raise HTTPException(status_code=503, detail="INSTITUTIONAL_SIGNER_EVIDENCE_SCOPE_MISMATCH")
+    canonical = json.dumps(snapshot, sort_keys=True, separators=(",", ":"),
+                           default=lambda value: value.isoformat() if isinstance(value, datetime) else value)
+    return snapshot, sha256(canonical.encode("utf-8")).hexdigest()
 
 
 def _transaction(callback):
@@ -206,6 +279,11 @@ async def request_signer_enrollment(
             evaluated_at=now,
             session=tx,
         )
+        provenance_snapshot, provenance_fingerprint = _enrollment_provenance(
+            verified_evidence, tenant_id=context.tenant_id,
+            certificate_fingerprint_sha256=receipt.leaf_fingerprint_sha256,
+            subject_principal_id=context.identity.identity_id, evaluated_at=now,
+        )
         return registry.request_enrollment(
         tenant_id=context.tenant_id,
         certificate_fingerprint_sha256=receipt.leaf_fingerprint_sha256,
@@ -218,7 +296,8 @@ async def request_signer_enrollment(
         signatory_mandate_evidence_reference=body.signatory_mandate_evidence_reference,
         requested_by_principal_id=context.identity.identity_id,
         requested_at=now, idempotency_key=idempotency_key, session=tx,
-        evidence_provenance_fingerprint_sha256=_provenance_fingerprint(verified_evidence),
+        evidence_provenance_fingerprint_sha256=provenance_fingerprint,
+        evidence_provenance_snapshot=provenance_snapshot,
         )
 
     return _transaction(persist_enrollment)
@@ -262,14 +341,23 @@ async def approve_signer_enrollment(
             evaluated_at=datetime.now(timezone.utc),
             session=tx,
         )
+        approved_at = datetime.now(timezone.utc)
+        provenance_snapshot, provenance_fingerprint = _approval_provenance(
+            verified_approval, tenant_id=context.tenant_id,
+            certificate_fingerprint_sha256=certificate_fingerprint_sha256,
+            requester_principal_id=enrollment["requested_by_principal_id"],
+            reviewer_principal_id=context.identity.identity_id,
+            evaluated_at=approved_at,
+        )
         return registry.approve_enrollment(
         tenant_id=context.tenant_id,
         certificate_fingerprint_sha256=certificate_fingerprint_sha256,
         approver_principal_id=context.identity.identity_id,
         approval_attestation_reference=body.approval_attestation_reference,
-        approved_at=datetime.now(timezone.utc),
+        approved_at=approved_at,
         idempotency_key=idempotency_key, session=tx,
-        evidence_provenance_fingerprint_sha256=_provenance_fingerprint(verified_approval),
+        evidence_provenance_fingerprint_sha256=provenance_fingerprint,
+        approval_evidence_provenance_snapshot=provenance_snapshot,
         )
 
     return _transaction(persist_approval)
