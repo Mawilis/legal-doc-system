@@ -13,7 +13,7 @@ from typing import Final, Protocol, runtime_checkable
 
 VERSION: Final[str] = "v1.0.0-INSTITUTIONAL-SIGNER-EVIDENCE-VERIFIER-CONTRACT"
 TENANT_ID: Final[str] = "WILSYTENANT-4CD2FZ4O"
-_IDENTIFIER = re.compile(r"[A-Za-z0-9][A-Za-z0-9._:/@+-]{0,255}\\Z")
+_IDENTIFIER = re.compile(r"[A-Za-z0-9][A-Za-z0-9._:/@+-]{0,255}\Z")
 
 
 class InstitutionalSignerEvidenceVerificationError(RuntimeError):
