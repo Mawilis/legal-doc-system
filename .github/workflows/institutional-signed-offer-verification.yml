@@ -3,10 +3,18 @@ on:
   pull_request:
     paths:
       - "tools/eos/api/hiring_lifecycle_router.py"
+      - "tools/eos/api/institutional_signer_router.py"
       - "tools/eos/security/institutional_signature_evidence_registry.py"
+      - "tools/eos/security/institutional_signer_enrollment_registry.py"
       - "tools/eos/security/institutional_pki.py"
       - "tools/eos/saas/hr/candidate_evidence_s3_storage_adapter.py"
+      - "tools/eos/auth/permission_namespace.py"
+      - "tools/eos/auth/roles.py"
+      - "tools/eos/auth/tenant_authorization.py"
+      - "tools/eos/auth/tenant_authority_policy.py"
       - "tests/unit/test_institutional_signature_evidence_registry.py"
+      - "tests/unit/test_institutional_signer_enrollment_registry.py"
+      - "tests/unit/test_permission_namespace.py"
       - "tests/integration/test_hiring_lifecycle_authenticated_http.py"
       - ".github/workflows/institutional-signed-offer-verification.yml"
 permissions:
@@ -43,21 +51,31 @@ jobs:
           done
           echo "MongoDB replica set did not elect a primary" >&2
           exit 1
-      - name: Compile authenticated signing and custody runtime
+      - name: Compile authenticated signing, signer governance and IAM runtime
         run: |
           python -m py_compile \
             tools/eos/api/hiring_lifecycle_router.py \
+            tools/eos/api/institutional_signer_router.py \
             tools/eos/security/institutional_pki.py \
             tools/eos/security/institutional_signature_evidence_registry.py \
+            tools/eos/security/institutional_signer_enrollment_registry.py \
+            tools/eos/auth/permission_namespace.py \
+            tools/eos/auth/roles.py \
+            tools/eos/auth/tenant_authorization.py \
+            tools/eos/auth/tenant_authority_policy.py \
+            tools/eos/api/server.py \
             tools/eos/saas/hr/candidate_evidence_registry.py \
             tools/eos/saas/hr/candidate_evidence_s3_storage_adapter.py \
             tests/unit/test_institutional_signature_evidence_registry.py \
-            tests/integration/test_hiring_lifecycle_authenticated_http.py
-      - name: Run institutional signature, PKI and authenticated hiring tests
+            tests/unit/test_institutional_signer_enrollment_registry.py \
+            tests/unit/test_permission_namespace.py
+      - name: Run institutional signature, signer governance, PKI and authenticated hiring tests
         run: |
           python -m pytest -q \
             tests/unit/test_institutional_pki.py \
             tests/unit/test_institutional_signature_evidence_registry.py \
+            tests/unit/test_institutional_signer_enrollment_registry.py \
+            tests/unit/test_permission_namespace.py \
             tests/unit/test_hiring_lifecycle_domain.py \
             tests/integration/test_hiring_lifecycle_authenticated_http.py \
             tests/integration/test_hiring_lifecycle_authenticated_real_http.py
