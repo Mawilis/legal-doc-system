@@ -4,6 +4,8 @@ from datetime import datetime, timedelta, timezone
 from pathlib import Path
 
 import pytest
+from fastapi import FastAPI
+from fastapi.testclient import TestClient
 from cryptography import x509
 from cryptography.hazmat.primitives import hashes, serialization
 from cryptography.hazmat.primitives.asymmetric import rsa
@@ -14,6 +16,7 @@ from tools.eos.security.institutional_pki import (
     InstitutionalPKISettings,
     InstitutionalPKIVerifier,
 )
+from tools.eos.api.institutional_pki_router import router as institutional_pki_router
 
 NOW = datetime(2026, 11, 7, 20, 0, tzinfo=timezone.utc)
 SIGNING_EKU = "1.3.6.1.4.1.55555.1.1"
@@ -185,3 +188,28 @@ def test_environment_composition_fails_closed_without_explicit_trust_material(mo
         monkeypatch.delenv(key, raising=False)
     with pytest.raises(InstitutionalPKIError, match="RUNTIME_CONFIGURATION_INCOMPLETE"):
         InstitutionalPKIVerifier.from_environment()
+
+
+
+def test_public_crl_distribution_route_serves_only_the_loaded_issuer_crl(tmp_path):
+    verifier, _, _ = _fixture(tmp_path)
+    issuer_reference = __import__("hashlib").sha256(
+        verifier._anchors[0].subject.public_bytes()
+    ).hexdigest()
+    app = FastAPI()
+    app.include_router(institutional_pki_router, prefix="/api")
+    app.state.institutional_pki_verifier = verifier
+    with TestClient(app) as client:
+        response = client.get(f"/api/security/pki/crl/{issuer_reference}")
+    assert response.status_code == 200
+    assert response.headers["content-type"].startswith("application/pkix-crl")
+    assert response.headers["cache-control"] == "public, max-age=300, must-revalidate"
+    assert b"BEGIN X509 CRL" in response.content
+
+
+def test_public_crl_distribution_route_fails_closed_without_runtime():
+    app = FastAPI()
+    app.include_router(institutional_pki_router, prefix="/api")
+    with TestClient(app) as client:
+        response = client.get("/api/security/pki/crl/" + "0" * 64)
+    assert response.status_code == 503
