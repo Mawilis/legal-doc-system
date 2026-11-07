@@ -16,7 +16,10 @@ def get_institutional_crl(issuer_subject_sha256: str, request: Request) -> Respo
     if len(issuer_subject_sha256) != 64:
         raise HTTPException(status_code=404, detail="PKI_CRL_NOT_FOUND")
     verifier = getattr(request.app.state, "institutional_pki_verifier", None)
-    if not isinstance(verifier, InstitutionalPKIVerifier):
+    if (
+        getattr(request.app.state, "institutional_pki_ready", False) is not True
+        or not isinstance(verifier, InstitutionalPKIVerifier)
+    ):
         raise HTTPException(status_code=503, detail="INSTITUTIONAL_PKI_REVOCATION_PUBLICATION_UNAVAILABLE")
     try:
         body = verifier.crl_der_for_issuer_subject_sha256(issuer_subject_sha256)
