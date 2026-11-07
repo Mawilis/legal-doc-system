@@ -1132,3 +1132,52 @@ _owner_row = dict(_pos_eligibility["tenant_owner"])
 _owner_row[POS_MOVEMENT_AUTHORIZE] = ELIGIBLE
 _pos_eligibility["tenant_owner"] = MappingProxyType(_owner_row)
 ELIGIBILITY = MappingProxyType(_pos_eligibility)
+
+# Candidate and offer workflow business eligibility is distinct from possession
+# of the corresponding HR authorization-role assignment.
+HIRING_OPERATIONS = (
+    "hr_hiring_candidate_read",
+    "hr_hiring_candidate_create",
+    "hr_hiring_candidate_transition",
+    "hr_hiring_offer_read",
+    "hr_hiring_offer_create",
+    "hr_hiring_offer_submit",
+    "hr_hiring_offer_decide",
+    "hr_hiring_offer_send",
+    "hr_hiring_offer_accept",
+)
+OPERATIONS = frozenset((*OPERATIONS, *HIRING_OPERATIONS))
+BUSINESS_ROLE_OPERATION_PERMISSIONS = MappingProxyType({
+    **BUSINESS_ROLE_OPERATION_PERMISSIONS,
+    "hr_hiring_candidate_read": "hr:hiring_candidate:read",
+    "hr_hiring_candidate_create": "hr:hiring_candidate:create",
+    "hr_hiring_candidate_transition": "hr:hiring_candidate:transition",
+    "hr_hiring_offer_read": "hr:hiring_offer:read",
+    "hr_hiring_offer_create": "hr:hiring_offer:create",
+    "hr_hiring_offer_submit": "hr:hiring_offer:submit",
+    "hr_hiring_offer_decide": "hr:hiring_offer:decide",
+    "hr_hiring_offer_send": "hr:hiring_offer:send",
+    "hr_hiring_offer_accept": "hr:hiring_offer:accept",
+})
+_hiring_eligibility = dict(ELIGIBILITY)
+_hiring_manager = dict(_hiring_eligibility["tenant_hr_manager"])
+_hiring_manager.update({
+    "hr_hiring_candidate_read": ELIGIBLE,
+    "hr_hiring_candidate_create": ELIGIBLE,
+    "hr_hiring_candidate_transition": ELIGIBLE,
+    "hr_hiring_offer_read": ELIGIBLE,
+    "hr_hiring_offer_create": ELIGIBLE,
+    "hr_hiring_offer_submit": ELIGIBLE,
+    "hr_hiring_offer_send": ELIGIBLE,
+})
+_hiring_eligibility["tenant_hr_manager"] = MappingProxyType(_hiring_manager)
+_hiring_director = dict(_hiring_eligibility["tenant_hr_director"])
+_hiring_director.update({
+    "hr_hiring_candidate_read": ELIGIBLE,
+    "hr_hiring_offer_read": ELIGIBLE,
+    "hr_hiring_offer_decide": ELIGIBLE,
+    "hr_hiring_offer_accept": ELIGIBLE,
+})
+_hiring_eligibility["tenant_hr_director"] = MappingProxyType(_hiring_director)
+ELIGIBILITY = MappingProxyType(_hiring_eligibility)
+

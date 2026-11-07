@@ -119,7 +119,23 @@ def test_replica_set_candidate_offer_commit_replay_rollback_revision_and_tenant_
             current=candidate, updated=advanced, actor_principal_id="hr-manager",
             action="CANDIDATE_SCREENING", occurred_at=NOW,
             expected_revision=1, session=tx,
+            idempotency_key="candidate-screening-transition",
+            command_fingerprint="b" * 128,
         ))
+        replay = _run(client, lambda tx: registry.get_transition_replay(
+            tenant_id=tenant, aggregate_type="CANDIDATE",
+            aggregate_id=candidate.candidate_id, action="CANDIDATE_SCREENING",
+            idempotency_key="candidate-screening-transition",
+            command_fingerprint="b" * 128, session=tx,
+        ))
+        assert replay == advanced
+        with pytest.raises(HiringLifecycleRegistryConflict):
+            _run(client, lambda tx: registry.get_transition_replay(
+                tenant_id=tenant, aggregate_type="CANDIDATE",
+                aggregate_id=candidate.candidate_id, action="CANDIDATE_SCREENING",
+                idempotency_key="candidate-screening-transition",
+                command_fingerprint="c" * 128, session=tx,
+            ))
         assert candidates.find_one({"tenant_id": tenant, "candidate_id": candidate.candidate_id})["revision"] == 2
         assert events.count_documents({"tenant_id": tenant, "aggregate_id": candidate.candidate_id}) == 2
 

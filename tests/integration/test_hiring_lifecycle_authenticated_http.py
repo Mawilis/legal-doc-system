@@ -8,6 +8,7 @@ from tools.eos.api.errors import register_error_handlers
 from tools.eos.api.hiring_lifecycle_router import router
 from tools.eos.auth.permission_namespace import permission_metadata
 from tools.eos.auth.roles import get_roles_granting_permission
+from tools.eos.auth.tenant_authority_policy import ELIGIBLE, OPERATIONS, tenant_role_operation_eligibility
 
 
 def _app() -> FastAPI:
@@ -61,3 +62,21 @@ def test_hiring_routes_do_not_accept_tenant_identity_or_permission_from_body():
     assert "tenant_id" not in OfferCreate.model_fields
     assert "principal_id" not in OfferCreate.model_fields
     assert "permissions" not in OfferCreate.model_fields
+
+def test_hiring_operations_are_known_and_business_role_eligibility_is_separate_from_iam():
+    manager = {
+        "hr_hiring_candidate_read", "hr_hiring_candidate_create",
+        "hr_hiring_candidate_transition", "hr_hiring_offer_read",
+        "hr_hiring_offer_create", "hr_hiring_offer_submit", "hr_hiring_offer_send",
+    }
+    director = {
+        "hr_hiring_candidate_read", "hr_hiring_offer_read",
+        "hr_hiring_offer_decide", "hr_hiring_offer_accept",
+    }
+    assert manager | director <= OPERATIONS
+    for operation in manager:
+        assert tenant_role_operation_eligibility("tenant_hr_manager", operation) == ELIGIBLE
+    for operation in director:
+        assert tenant_role_operation_eligibility("tenant_hr_director", operation) == ELIGIBLE
+    assert tenant_role_operation_eligibility("tenant_hr_manager", "hr_hiring_offer_decide") != ELIGIBLE
+    assert tenant_role_operation_eligibility("tenant_hr_director", "hr_hiring_offer_create") != ELIGIBLE

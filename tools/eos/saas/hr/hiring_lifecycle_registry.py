@@ -90,7 +90,8 @@ class HiringLifecycleRegistry:
     def _append(self, *, tenant_id: str, aggregate_type: str, aggregate_id: str,
                 revision: int, actor_principal_id: str, action: str,
                 fingerprint: str, snapshot: dict[str, object],
-                occurred_at: object, session: object, idempotency_key: str | None = None) -> None:
+                occurred_at: object, session: object, idempotency_key: str | None = None,
+                command_fingerprint: str | None = None) -> None:
         tx = _tx(session)
         event = {
             "tenant_id": tenant_id,
@@ -102,6 +103,8 @@ class HiringLifecycleRegistry:
         }
         if idempotency_key is not None:
             event["idempotency_key"] = _scope(idempotency_key, "HIRING_IDEMPOTENCY_KEY_INVALID")
+        if command_fingerprint is not None:
+            event["command_fingerprint"] = _scope(command_fingerprint, "HIRING_COMMAND_FINGERPRINT_INVALID")
         try:
             self._events.insert_one(event, session=tx)
         except DuplicateKeyError as error:
@@ -194,37 +197,86 @@ class HiringLifecycleRegistry:
         except (TypeError, ValueError, HiringLifecycleError) as error:
             raise HiringLifecycleRegistryError(f"HIRING_{kind}_DOCUMENT_CORRUPT") from error
 
+    def get_transition_replay(self, *, tenant_id: str, aggregate_type: str,
+                              aggregate_id: str, action: str,
+                              idempotency_key: str, command_fingerprint: str,
+                              session: object) -> CandidateApplication | EmploymentOffer | None:
+        tx = _tx(session)
+        tenant = _scope(tenant_id, "HIRING_TENANT_INVALID")
+        key = _scope(idempotency_key, "HIRING_IDEMPOTENCY_KEY_INVALID")
+        command_hash = _scope(command_fingerprint, "HIRING_COMMAND_FINGERPRINT_INVALID")
+        try:
+            prior = self._events.find_one({"tenant_id": tenant, "idempotency_key": key}, session=tx)
+        except PyMongoError as error:
+            raise HiringLifecycleRegistryError("HIRING_REPLAY_READ_UNAVAILABLE") from error
+        if prior is None:
+            return None
+        if (prior.get("aggregate_type") != aggregate_type
+            or prior.get("aggregate_id") != _scope(aggregate_id, "HIRING_ID_INVALID")
+            or prior.get("action") != _scope(action, "HIRING_ACTION_INVALID")
+            or prior.get("command_fingerprint") != command_hash):
+            raise HiringLifecycleRegistryConflict("HIRING_DIVERGENT_COMMAND_REPLAY")
+        try:
+            snapshot = {k: v for k, v in prior["snapshot"].items() if k != "_id"}
+            return CandidateApplication.from_dict(snapshot) if aggregate_type == "CANDIDATE" else EmploymentOffer.from_dict(snapshot)
+        except Exception as error:
+            raise HiringLifecycleRegistryError("HIRING_REPLAY_SNAPSHOT_INVALID") from error
+
     def transition_candidate(self, *, current: CandidateApplication, updated: CandidateApplication,
                              actor_principal_id: str, action: str, occurred_at: object,
-                             expected_revision: int, session: object) -> CandidateApplication:
+                             expected_revision: int, session: object, idempotency_key: str | None = None,
+                             command_fingerprint: str | None = None) -> CandidateApplication:
         return self._transition(
             collection=self._candidates, aggregate_type="CANDIDATE",
             identity_field="candidate_id", current=current, updated=updated,
             actor_principal_id=actor_principal_id, action=action,
             occurred_at=occurred_at, expected_revision=expected_revision,
             session=session, hydrate=CandidateApplication.from_dict,
+            idempotency_key=idempotency_key, command_fingerprint=command_fingerprint,
         )
 
     def transition_offer(self, *, current: EmploymentOffer, updated: EmploymentOffer,
                          actor_principal_id: str, action: str, occurred_at: object,
-                         expected_revision: int, session: object) -> EmploymentOffer:
+                         expected_revision: int, session: object, idempotency_key: str | None = None,
+                         command_fingerprint: str | None = None) -> EmploymentOffer:
         return self._transition(
             collection=self._offers, aggregate_type="OFFER",
             identity_field="offer_id", current=current, updated=updated,
             actor_principal_id=actor_principal_id, action=action,
             occurred_at=occurred_at, expected_revision=expected_revision,
             session=session, hydrate=EmploymentOffer.from_dict,
+            idempotency_key=idempotency_key, command_fingerprint=command_fingerprint,
         )
 
     def _transition(self, *, collection: Any, aggregate_type: str, identity_field: str,
                     current: Any, updated: Any, actor_principal_id: str, action: str,
                     occurred_at: object, expected_revision: int, session: object,
-                    hydrate: Any) -> Any:
+                    hydrate: Any, idempotency_key: str | None = None,
+                    command_fingerprint: str | None = None) -> Any:
         tx = _tx(session)
         if current.tenant_id != updated.tenant_id or getattr(current, identity_field) != getattr(updated, identity_field):
             raise HiringLifecycleRegistryConflict("HIRING_SCOPE_IMMUTABLE")
         if current.revision != expected_revision or updated.revision != expected_revision + 1:
             raise HiringLifecycleRegistryConflict("HIRING_REVISION_CONFLICT")
+        key = _scope(idempotency_key, "HIRING_IDEMPOTENCY_KEY_INVALID") if idempotency_key is not None else None
+        command_hash = _scope(command_fingerprint, "HIRING_COMMAND_FINGERPRINT_INVALID") if command_fingerprint is not None else None
+        if (key is None) != (command_hash is None):
+            raise HiringLifecycleRegistryError("HIRING_IDEMPOTENCY_CONTRACT_INVALID")
+        if key is not None:
+            try:
+                prior = self._events.find_one({"tenant_id": current.tenant_id, "idempotency_key": key}, session=tx)
+            except PyMongoError as error:
+                raise HiringLifecycleRegistryError("HIRING_REPLAY_READ_UNAVAILABLE") from error
+            if prior is not None:
+                if (prior.get("aggregate_type") != aggregate_type
+                    or prior.get("aggregate_id") != getattr(current, identity_field)
+                    or prior.get("action") != action
+                    or prior.get("command_fingerprint") != command_hash):
+                    raise HiringLifecycleRegistryConflict("HIRING_DIVERGENT_COMMAND_REPLAY")
+                try:
+                    return hydrate({k: v for k, v in prior["snapshot"].items() if k != "_id"})
+                except Exception as error:
+                    raise HiringLifecycleRegistryError("HIRING_REPLAY_SNAPSHOT_INVALID") from error
         try:
             result = collection.update_one(
                 {"tenant_id": current.tenant_id, identity_field: getattr(current, identity_field),
@@ -238,7 +290,8 @@ class HiringLifecycleRegistry:
                 aggregate_id=getattr(updated, identity_field), revision=updated.revision,
                 actor_principal_id=actor_principal_id, action=action,
                 fingerprint=updated.fingerprint, snapshot=updated.to_dict(),
-                occurred_at=occurred_at, session=tx,
+                occurred_at=occurred_at, session=tx, idempotency_key=key,
+                command_fingerprint=command_hash,
             )
             return updated
         except HiringLifecycleRegistryConflict:

@@ -8,11 +8,14 @@ on:
       - "tools/eos/auth/permission_namespace.py"
       - "tools/eos/auth/tenant_authorization.py"
       - "tools/eos/auth/roles.py"
+      - "tools/eos/auth/tenant_authority_policy.py"
       - "tools/eos/saas/domain/hiring_lifecycle.py"
       - "tools/eos/saas/hr/hiring_lifecycle_registry.py"
       - "tests/unit/test_hiring_lifecycle_domain.py"
       - "tests/integration/test_hiring_lifecycle_registry_real_mongo.py"
       - "tests/integration/test_hiring_lifecycle_authenticated_http.py"
+      - "tests/integration/test_hiring_lifecycle_durable_iam_real_mongo.py"
+      - "tests/integration/test_hiring_lifecycle_authenticated_real_http.py"
       - ".github/workflows/headquarters-hiring-candidate-offer.yml"
 
 permissions:
@@ -59,13 +62,16 @@ jobs:
             tools/eos/auth/permission_namespace.py \
             tools/eos/auth/tenant_authorization.py \
             tools/eos/auth/roles.py \
+            tools/eos/auth/tenant_authority_policy.py \
             tools/eos/saas/domain/hiring_lifecycle.py \
             tools/eos/saas/hr/hiring_lifecycle_registry.py \
             tests/unit/test_hiring_lifecycle_domain.py \
             tests/integration/test_hiring_lifecycle_authenticated_http.py \
+            tests/integration/test_hiring_lifecycle_durable_iam_real_mongo.py \
+            tests/integration/test_hiring_lifecycle_authenticated_real_http.py \
             tests/integration/test_hiring_lifecycle_registry_real_mongo.py
       - name: Run lifecycle, authenticated denial, IAM and real replica-set tests
-        run: python -m pytest -q tests/unit/test_hiring_lifecycle_domain.py tests/integration/test_hiring_lifecycle_authenticated_http.py tests/integration/test_hiring_lifecycle_registry_real_mongo.py
+        run: python -m pytest -q tests/unit/test_hiring_lifecycle_domain.py tests/integration/test_hiring_lifecycle_authenticated_http.py tests/integration/test_hiring_lifecycle_durable_iam_real_mongo.py tests/integration/test_hiring_lifecycle_authenticated_real_http.py tests/integration/test_hiring_lifecycle_registry_real_mongo.py
       - name: Stop MongoDB replica-set container
         if: always()
         run: docker rm --force hiring-mongo || true
