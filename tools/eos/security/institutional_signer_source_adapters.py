@@ -18,8 +18,8 @@ EVIDENCE_KINDS: Final[frozenset[str]] = frozenset({
     "SIGNATORY_MANDATE",
     "INDEPENDENT_APPROVAL",
 })
-_IDENTIFIER = re.compile(r"[A-Za-z0-9][A-Za-z0-9._:/@+-]{0,255}\\Z")
-_FINGERPRINT = re.compile(r"[0-9a-f]{64}\\Z")
+_IDENTIFIER = re.compile(r"[A-Za-z0-9][A-Za-z0-9._:/@+-]{0,255}\Z")
+_FINGERPRINT = re.compile(r"[0-9a-f]{64}\Z")
 
 
 class InstitutionalSignerSourceAdapterError(RuntimeError):
