@@ -1,0 +1,100 @@
+name: WILSY Headquarters Workforce Directory Certification
+
+on:
+  pull_request:
+    paths:
+      - "tools/eos/api/hr_workforce_directory_router.py"
+      - "tools/eos/api/server.py"
+      - "tools/eos/auth/permission_namespace.py"
+      - "tools/eos/auth/roles.py"
+      - "tools/eos/auth/tenant_authorization.py"
+      - "tools/eos/auth/tenant_authority_policy.py"
+      - "tests/unit/test_hr_workforce_directory_router.py"
+      - "tests/unit/test_hr_workforce_directory_authority.py"
+      - "tests/unit/test_permission_namespace.py"
+      - "tests/unit/test_tenant_authorization_http_workforce.py"
+      - "tests/integration/test_tenant_authorization_http_workforce_real_mongo.py"
+      - "client/src/components/workspaces/WilsyHeadquartersWorkspace.jsx"
+      - "client/src/__tests__/components/WilsyHeadquartersWorkspace.test.jsx"
+      - ".github/workflows/headquarters-workforce-directory-certification.yml"
+
+permissions:
+  contents: read
+
+jobs:
+  workforce-directory:
+    name: Workforce directory policy, API and replica-set certification
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    services:
+      mongodb:
+        image: mongo:7.0.37
+        ports:
+          - 27017:27017
+        options: >-
+          --health-cmd "mongosh --eval 'db.runCommand({ ping: 1 })'"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 10
+        command: mongod --replSet wilsyVendorCertRS --bind_ip_all
+    env:
+      TEST_VENDOR_MONGO_URI: mongodb://localhost:27017/?replicaSet=wilsyVendorCertRS
+      PIP_DISABLE_PIP_VERSION_CHECK: "1"
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+          cache-dependency-path: requirements.txt
+      - name: Install governed Python dependencies
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install -r requirements.txt pytest==9.1.1
+      - name: Initialise disposable MongoDB replica set
+        run: |
+          mongosh "mongodb://localhost:27017" --eval 'rs.initiate({_id:"wilsyVendorCertRS",members:[{_id:0,host:"localhost:27017"}]})'
+          for attempt in $(seq 1 30); do
+            if mongosh "mongodb://localhost:27017/?replicaSet=wilsyVendorCertRS" --quiet --eval 'db.hello().isWritablePrimary' | grep -q true; then
+              exit 0
+            fi
+            sleep 2
+          done
+          echo "Disposable replica set did not become writable"
+          exit 1
+      - name: Compile workforce authorization and route contracts
+        run: |
+          python -m py_compile \
+            tools/eos/api/hr_workforce_directory_router.py \
+            tools/eos/api/server.py \
+            tools/eos/auth/permission_namespace.py \
+            tools/eos/auth/roles.py \
+            tools/eos/auth/tenant_authorization.py \
+            tools/eos/auth/tenant_authority_policy.py \
+            tests/unit/test_hr_workforce_directory_router.py \
+            tests/unit/test_hr_workforce_directory_authority.py
+      - name: Run focused workforce policy, HTTP and real-Mongo authorization tests
+        run: |
+          python -m pytest -q \
+            tests/unit/test_hr_workforce_directory_router.py \
+            tests/unit/test_hr_workforce_directory_authority.py \
+            tests/unit/test_permission_namespace.py \
+            tests/unit/test_roles.py \
+            tests/unit/test_tenant_authority_policy.py \
+            tests/unit/test_tenant_authorization.py \
+            tests/unit/test_tenant_authorization_http_workforce.py \
+            tests/integration/test_tenant_authorization_http_workforce_real_mongo.py
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: npm
+          cache-dependency-path: client/package-lock.json
+      - name: Install client dependencies
+        working-directory: client
+        run: npm ci --include=dev
+      - name: Run Headquarters authenticated workspace component tests
+        working-directory: client
+        run: npx vitest run --config vitest.config.js src/__tests__/components/WilsyHeadquartersWorkspace.test.jsx
+      - name: Build authenticated client
+        working-directory: client
+        run: npm run build
