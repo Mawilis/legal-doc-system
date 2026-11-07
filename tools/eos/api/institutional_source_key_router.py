@@ -86,7 +86,7 @@ def _tenant(context: TenantAuthorizationContext) -> None:
 def _registry(request: Request):
     if getattr(request.app.state, "institutional_source_key_registry_ready", False) is not True:
         raise HTTPException(status_code=503, detail="INSTITUTIONAL_SOURCE_KEY_REGISTRY_NOT_READY")
-    verifier = getattr(request.app.state, "institutional_signer_evidence_verifier", None)
+    verifier = getattr(request.app.state, "institutional_source_key_governance_evidence_verifier", None)
     if verifier is None or not all(
         callable(getattr(verifier, name, None))
         for name in ("verify_proposal", "verify_approval", "verify_revocation")
