@@ -137,14 +137,17 @@ def test_signer_enrollment_approval_and_revocation_are_atomic_on_replica_set():
             )
             assert active["status"] == "ACTIVE"
             assert active["approval_evidence_provenance_snapshot"] == approval_provenance
-            assert registry.require_active(
-                tenant_id="WILSYTENANT-4CD2FZ4O",
-                certificate_fingerprint_sha256="a" * 64,
-                certificate_serial_number_hex="abc123",
-                issuer_subject_sha256="c" * 64,
-                trust_root_sha256="b" * 64,
-                session=session,
-            )["status"] == "ACTIVE"
+            assert active["evidence_currentness_status"] == "PENDING_VERIFICATION"
+            with pytest.raises(InstitutionalSignerRegistryConflict) as currentness_error:
+                registry.require_active(
+                    tenant_id="WILSYTENANT-4CD2FZ4O",
+                    certificate_fingerprint_sha256="a" * 64,
+                    certificate_serial_number_hex="abc123",
+                    issuer_subject_sha256="c" * 64,
+                    trust_root_sha256="b" * 64,
+                    session=session,
+                )
+            assert currentness_error.value.code == "INSTITUTIONAL_SIGNER_EVIDENCE_CURRENTNESS_NOT_VERIFIED"
             revoked = registry.revoke(
                 tenant_id="WILSYTENANT-4CD2FZ4O",
                 certificate_fingerprint_sha256="a" * 64,
