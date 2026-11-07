@@ -340,6 +340,56 @@ def read_authenticated_source_evidence(
     return response
 
 
+class AuthenticatedInstitutionalSignerSourceAdapterSet:
+    """Compose three separately configured, authenticated read-only source adapters.
+
+    This returns untrusted source envelopes after cryptographic origin and exact
+    scope checks. It does not construct any opaque verifier-issued success result.
+    """
+
+    def __init__(
+        self, *,
+        identity_proofing: InstitutionalSignerEvidenceSourceAdapter,
+        signatory_mandate: InstitutionalSignerEvidenceSourceAdapter,
+        independent_approval: InstitutionalSignerEvidenceSourceAdapter,
+        authenticator: InstitutionalSignerSourceResponseAuthenticator,
+    ) -> None:
+        adapters = {
+            "IDENTITY_PROOFING": identity_proofing,
+            "SIGNATORY_MANDATE": signatory_mandate,
+            "INDEPENDENT_APPROVAL": independent_approval,
+        }
+        if len({id(adapter) for adapter in adapters.values()}) != len(adapters):
+            raise InstitutionalSignerSourceAdapterError(
+                "INSTITUTIONAL_SIGNER_SOURCE_ADAPTERS_MUST_BE_DISTINCT"
+            )
+        for kind, adapter in adapters.items():
+            if adapter.supported_evidence_kind != kind:
+                raise InstitutionalSignerSourceAdapterError(
+                    "INSTITUTIONAL_SIGNER_SOURCE_ADAPTER_EVIDENCE_KIND_MISMATCH"
+                )
+        self._adapters = adapters
+        self._authenticator = authenticator
+
+    def _read(self, *, kind: str, lookup: InstitutionalSignerSourceLookup) -> InstitutionalSignerSourceEvidence:
+        if lookup.evidence_kind != kind:
+            raise InstitutionalSignerSourceAdapterError(
+                "INSTITUTIONAL_SIGNER_SOURCE_EVIDENCE_KIND_INVALID"
+            )
+        return read_authenticated_source_evidence(
+            adapter=self._adapters[kind], authenticator=self._authenticator, lookup=lookup
+        )
+
+    def read_identity_proofing(self, *, lookup: InstitutionalSignerSourceLookup) -> InstitutionalSignerSourceEvidence:
+        return self._read(kind="IDENTITY_PROOFING", lookup=lookup)
+
+    def read_signatory_mandate(self, *, lookup: InstitutionalSignerSourceLookup) -> InstitutionalSignerSourceEvidence:
+        return self._read(kind="SIGNATORY_MANDATE", lookup=lookup)
+
+    def read_independent_approval(self, *, lookup: InstitutionalSignerSourceLookup) -> InstitutionalSignerSourceEvidence:
+        return self._read(kind="INDEPENDENT_APPROVAL", lookup=lookup)
+
+
 class UnavailableInstitutionalSignerSourceAdapterSet:
     """Default-deny source set until providers and governance are approved."""
 
@@ -377,5 +427,6 @@ __all__ = [
     "Ed25519InstitutionalSignerSourceResponseAuthenticator",
     "InstitutionalSignerSourceAdapterSet",
     "UnavailableInstitutionalSignerSourceAdapterSet",
+    "AuthenticatedInstitutionalSignerSourceAdapterSet",
     "read_authenticated_source_evidence",
 ]
