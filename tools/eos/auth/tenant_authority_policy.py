@@ -219,7 +219,7 @@ from types import MappingProxyType
 from typing import Final, FrozenSet
 from tools.eos.auth.hr_business_role_catalog import ALL_HR_BUSINESS_ROLES
 
-VERSION = "v1.51.0-R59-P9-REASSIGNMENT-IAM-INTEGRATION"
+VERSION = "v1.52.0-INSTITUTIONAL-SOURCE-KEY-ADMIN"
 class SystemAuthorityClassification(StrEnum):
     SYSTEM_REQUIRED = "SYSTEM_REQUIRED"
     SYSTEM_NOT_INHERENTLY_REQUIRED = "SYSTEM_NOT_INHERENTLY_REQUIRED"
@@ -1080,7 +1080,7 @@ ELIGIBILITY = MappingProxyType(_agreement_eligibility)
 
 
 # ARTIFACT: tenant_authority_policy.py
-# VERSION: v1.51.0-R59-P9-REASSIGNMENT-IAM-INTEGRATION
+# VERSION: v1.52.0-INSTITUTIONAL-SOURCE-KEY-ADMIN
 # AUTHORITY BOUNDARY: business eligibility facts only; no authorization or mutation
 # TENANT POSTURE: own-tenant eligibility requires separate ACTIVE membership, current role assignment, matter scope and exact permission binding
 # FAIL-CLOSED POSTURE: unknown roles and operations deny; ELIGIBLE never grants access
