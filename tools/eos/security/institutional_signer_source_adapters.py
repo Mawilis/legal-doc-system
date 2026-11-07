@@ -336,7 +336,11 @@ class Ed25519InstitutionalSignerSourceResponseAuthenticator:
             raise InstitutionalSignerSourceAdapterError(
                 "INSTITUTIONAL_SIGNER_SOURCE_SIGNING_KEY_REVOKED"
             )
-        if not (trust.valid_from <= lookup.evaluated_at < trust.valid_until):
+        # Trust authority is evaluated at verifier time, never at a caller-
+        # supplied evidence timestamp. Otherwise a caller could backdate the
+        # lookup and resurrect an expired or withdrawn signing key.
+        trust_evaluated_at = datetime.now(timezone.utc)
+        if not (trust.valid_from <= trust_evaluated_at < trust.valid_until):
             raise InstitutionalSignerSourceAdapterError(
                 "INSTITUTIONAL_SIGNER_SOURCE_SIGNING_KEY_OUTSIDE_VALIDITY"
             )
