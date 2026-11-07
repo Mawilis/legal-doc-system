@@ -33,6 +33,7 @@ class UploadAttemptConflict(UploadAttemptError):
 
 
 class UploadAttemptStatus(str, Enum):
+    INITIATING = "INITIATING"
     INITIATED = "INITIATED"
     PARTS_UPLOADED = "PARTS_UPLOADED"
     COMPLETION_UNCERTAIN = "COMPLETION_UNCERTAIN"
@@ -43,7 +44,8 @@ class UploadAttemptStatus(str, Enum):
 
 
 _ALLOWED = {
-    UploadAttemptStatus.INITIATED: {UploadAttemptStatus.PARTS_UPLOADED, UploadAttemptStatus.COMPLETION_UNCERTAIN, UploadAttemptStatus.ABORTED},
+    UploadAttemptStatus.INITIATING: {UploadAttemptStatus.INITIATED, UploadAttemptStatus.ORPHANED},
+    UploadAttemptStatus.INITIATED: {UploadAttemptStatus.PARTS_UPLOADED, UploadAttemptStatus.COMPLETION_UNCERTAIN, UploadAttemptStatus.ABORTED, UploadAttemptStatus.ORPHANED},
     UploadAttemptStatus.PARTS_UPLOADED: {UploadAttemptStatus.PARTS_UPLOADED, UploadAttemptStatus.COMPLETION_UNCERTAIN, UploadAttemptStatus.PROVIDER_VERIFIED, UploadAttemptStatus.ABORTED},
     UploadAttemptStatus.COMPLETION_UNCERTAIN: {UploadAttemptStatus.PROVIDER_VERIFIED, UploadAttemptStatus.ABORTED, UploadAttemptStatus.ORPHANED},
     UploadAttemptStatus.PROVIDER_VERIFIED: {UploadAttemptStatus.CUSTODY_REGISTERED, UploadAttemptStatus.ORPHANED},
@@ -90,8 +92,8 @@ class CandidateEvidenceUploadAttempt:
     ingestion_reference: str
     intent_fingerprint: str
     provider_id: str
-    provider_upload_id: str
-    provider_object_reference: str
+    provider_upload_id: str | None
+    provider_object_reference: str | None
     status: UploadAttemptStatus
     revision: int
     created_at: datetime
@@ -116,7 +118,13 @@ class CandidateEvidenceUploadAttempt:
             (self.provider_id, "UPLOAD_ATTEMPT_PROVIDER_INVALID"),
         ):
             _id(field, code)
-        _provider_token(self.provider_upload_id)
+        if self.status is UploadAttemptStatus.INITIATING:
+            if self.provider_upload_id is not None or self.provider_object_reference is not None:
+                raise UploadAttemptError("UPLOAD_ATTEMPT_PROVIDER_MUST_BE_PENDING")
+        else:
+            _provider_token(self.provider_upload_id)
+            if not isinstance(self.provider_object_reference, str) or not self.provider_object_reference.strip():
+                raise UploadAttemptError("UPLOAD_ATTEMPT_PROVIDER_OBJECT_INVALID")
         if self.offer_id is not None:
             _id(self.offer_id, "UPLOAD_ATTEMPT_OFFER_INVALID")
         for value in (self.intent_fingerprint, self.content_digest_sha3_512):
@@ -155,7 +163,8 @@ class CandidateEvidenceUploadAttempt:
     def advance(self, *, status: UploadAttemptStatus, expected_revision: int, occurred_at: datetime,
                 parts: tuple[Mapping[str, Any], ...] | None = None, byte_length: int | None = None,
                 object_version_reference: str | None = None, content_digest_sha3_512: str | None = None,
-                provider_integrity_reference: str | None = None, failure_code: str | None = None):
+                provider_integrity_reference: str | None = None, failure_code: str | None = None,
+                provider_upload_id: str | None = None, provider_object_reference: str | None = None):
         if expected_revision != self.revision or status not in _ALLOWED[self.status]:
             raise UploadAttemptConflict("UPLOAD_ATTEMPT_TRANSITION_CONFLICT")
         return CandidateEvidenceUploadAttempt(
@@ -163,7 +172,8 @@ class CandidateEvidenceUploadAttempt:
             candidate_id=self.candidate_id, evidence_id=self.evidence_id,
             evidence_version_id=self.evidence_version_id, ingestion_reference=self.ingestion_reference,
             intent_fingerprint=self.intent_fingerprint, provider_id=self.provider_id,
-            provider_upload_id=self.provider_upload_id, provider_object_reference=self.provider_object_reference,
+            provider_upload_id=provider_upload_id if provider_upload_id is not None else self.provider_upload_id,
+            provider_object_reference=provider_object_reference if provider_object_reference is not None else self.provider_object_reference,
             status=status, revision=self.revision + 1, created_at=self.created_at,
             updated_at=_utc(occurred_at), offer_id=self.offer_id,
             parts=self.parts if parts is None else parts,
@@ -211,7 +221,7 @@ class CandidateEvidenceUploadAttemptRegistry:
         try:
             self._attempts.insert_one(value.to_dict(), session=session)
             self._events.insert_one({"tenant_id": value.tenant_id, "upload_attempt_id": value.upload_attempt_id,
-                "revision": value.revision, "action": "UPLOAD_ATTEMPT_INITIATED",
+                "revision": value.revision, "action": value.status.value,
                 "fingerprint": value.fingerprint, "snapshot": value.to_dict()}, session=session)
             return value
         except DuplicateKeyError as error:
