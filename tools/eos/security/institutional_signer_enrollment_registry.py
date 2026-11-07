@@ -158,7 +158,9 @@ class InstitutionalSignerEnrollmentRegistry:
             records.create_index(
                 [("tenant_id", ASCENDING), ("status", ASCENDING),
                  ("evidence_currentness_status", ASCENDING),
-                 ("evidence_currentness_valid_until", ASCENDING)],
+                 ("evidence_currentness_valid_until", ASCENDING),
+                 ("approved_at", ASCENDING),
+                 ("certificate_fingerprint_sha256", ASCENDING)],
                 name="ix_institutional_signer_currentness_due",
             )
             events.create_index(
@@ -470,14 +472,22 @@ class InstitutionalSignerEnrollmentRegistry:
             ],
         }
         try:
-            rows = list(self._records.find(query, session=session))
-            rows.sort(key=lambda row: (
-                _stored_instant(row.get("approved_at") or row.get("requested_at")),
-                row.get("certificate_fingerprint_sha256", ""),
-            ))
+            cursor = self._records.find(query, session=session)
+            if callable(getattr(cursor, "sort", None)) and callable(getattr(cursor, "limit", None)):
+                rows = list(cursor.sort([
+                    ("approved_at", ASCENDING),
+                    ("certificate_fingerprint_sha256", ASCENDING),
+                ]).limit(limit))
+            else:
+                rows = list(cursor)
+                rows.sort(key=lambda row: (
+                    _stored_instant(row.get("approved_at") or row.get("requested_at")),
+                    row.get("certificate_fingerprint_sha256", ""),
+                ))
+                rows = rows[:limit]
             for row in rows:
                 row.pop("_id", None)
-            return rows[:limit]
+            return rows
         except PyMongoError as error:
             raise InstitutionalSignerRegistryError("INSTITUTIONAL_SIGNER_CURRENTNESS_CANDIDATE_READ_UNAVAILABLE") from error
 
