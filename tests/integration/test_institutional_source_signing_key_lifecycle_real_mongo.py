@@ -62,7 +62,7 @@ def test_enrollment_expiry_revocation_and_rotation_are_transactional():
                 proposed_by_principal_id="test-requester", proposal_reference="proposal-001",
                 identity_proofing_evidence_reference="identity-evidence-001",
                 signatory_mandate_evidence_reference="mandate-evidence-001",
-                proposed_at=now, idempotency_key="propose-1", session=session,
+                proposed_at=now - timedelta(minutes=2), idempotency_key="propose-1", session=session,
             )
             with pytest.raises(SourceSigningKeyRegistryConflict, match="NOT_INDEPENDENTLY_APPROVED"):
                 registry.resolve(source_system_id=source, key_id="key-1", evaluated_at=now, session=session)
@@ -71,13 +71,13 @@ def test_enrollment_expiry_revocation_and_rotation_are_transactional():
                     source_system_id=source, key_id="key-1", approved_by_principal_id="test-requester",
                     governance_decision_reference="test-governance-001",
                     approval_evidence_reference="approval-evidence-001",
-                    approved_at=now, idempotency_key="approve-self", session=session,
+                    approved_at=now - timedelta(minutes=1), idempotency_key="approve-self", session=session,
                 )
             registry.approve(
                 source_system_id=source, key_id="key-1", approved_by_principal_id="test-approver",
                 governance_decision_reference="test-governance-001",
                 approval_evidence_reference="approval-evidence-001",
-                approved_at=now, idempotency_key="approve-1", session=session,
+                approved_at=now - timedelta(minutes=1), idempotency_key="approve-1", session=session,
             )
             assert first["key_id"] == "key-1"
             assert registry.resolve(
@@ -102,7 +102,7 @@ def test_enrollment_expiry_revocation_and_rotation_are_transactional():
                 proposed_by_principal_id="test-rotator", proposal_reference="proposal-002",
                 identity_proofing_evidence_reference="identity-evidence-002",
                 signatory_mandate_evidence_reference="mandate-evidence-002",
-                proposed_at=now, idempotency_key="propose-2", session=session,
+                proposed_at=now - timedelta(minutes=2), idempotency_key="propose-2", session=session,
                 rotation_id="rotation-001", supersedes_key_id="key-1",
                 overlap_until=now + timedelta(hours=2),
             )
@@ -110,7 +110,7 @@ def test_enrollment_expiry_revocation_and_rotation_are_transactional():
                 source_system_id=source, key_id="key-2", approved_by_principal_id="test-approver",
                 governance_decision_reference="test-governance-rotation-002",
                 approval_evidence_reference="approval-evidence-002",
-                approved_at=now, idempotency_key="approve-2", session=session,
+                approved_at=now - timedelta(minutes=1), idempotency_key="approve-2", session=session,
             )
             assert successor["rotation"]["supersedes_key_id"] == "key-1"
             assert registry.resolve(
@@ -144,7 +144,7 @@ def test_enrollment_expiry_revocation_and_rotation_are_transactional():
             # Historical evaluation before the revocation remains reproducible.
             assert registry.resolve(
                 source_system_id=source, key_id="key-2",
-                evaluated_at=now - timedelta(minutes=1), session=session,
+                evaluated_at=now - timedelta(seconds=30), session=session,
             )["key_id"] == "key-2"
 
             replay = registry.propose(
@@ -153,7 +153,7 @@ def test_enrollment_expiry_revocation_and_rotation_are_transactional():
                 proposed_by_principal_id="test-requester", proposal_reference="proposal-001",
                 identity_proofing_evidence_reference="identity-evidence-001",
                 signatory_mandate_evidence_reference="mandate-evidence-001",
-                proposed_at=now, idempotency_key="propose-1", session=session,
+                proposed_at=now - timedelta(minutes=2), idempotency_key="propose-1", session=session,
             )
             assert replay["key_id"] == "key-1"
             assert events.count_documents({"source_system_id": source}, session=session) == 5
@@ -196,14 +196,14 @@ def test_registry_backed_authenticator_observes_immediate_revocation():
                 proposed_by_principal_id="synthetic-requester", proposal_reference="synthetic-proposal",
                 identity_proofing_evidence_reference="synthetic-identity-evidence",
                 signatory_mandate_evidence_reference="synthetic-mandate-evidence",
-                proposed_at=now, idempotency_key="propose-revocable", session=session,
+                proposed_at=now - timedelta(minutes=2), idempotency_key="propose-revocable", session=session,
             )
             registry.approve(
                 source_system_id=source, key_id="key-revocable",
                 approved_by_principal_id="synthetic-approver",
                 governance_decision_reference="synthetic-governance-enroll",
                 approval_evidence_reference="synthetic-approval-evidence",
-                approved_at=now, idempotency_key="approve-revocable", session=session,
+                approved_at=now - timedelta(minutes=1), idempotency_key="approve-revocable", session=session,
             )
             lookup = InstitutionalSignerSourceLookup(
                 tenant_id="WILSYTENANT-4CD2FZ4O",
