@@ -44,16 +44,24 @@ def _component(value: str) -> str:
     return hashlib.sha3_256(value.encode("utf-8")).hexdigest()
 
 
+def _storage_key_for_scope(tenant_id: str, candidate_id: str, evidence_id: str,
+                           evidence_version_id: str, ingestion_reference: str) -> str:
+    return (
+        "hr-candidate-evidence/v1/t/" + _component(tenant_id)
+        + "/c/" + _component(candidate_id)
+        + "/e/" + _component(evidence_id)
+        + "/v/" + _component(evidence_version_id)
+        + "/i/" + _component(ingestion_reference)
+        + "/content"
+    )
+
+
 def _storage_key(intent: CandidateEvidenceWriteIntent) -> str:
     if type(intent) is not CandidateEvidenceWriteIntent:
         _fail("CANDIDATE_EVIDENCE_S3_WRITE_INTENT_REQUIRED")
-    return (
-        "hr-candidate-evidence/v1/t/" + _component(intent.tenant_id)
-        + "/c/" + _component(intent.candidate_id)
-        + "/e/" + _component(intent.evidence_id)
-        + "/v/" + _component(intent.evidence_version_id)
-        + "/i/" + _component(intent.ingestion_reference)
-        + "/content"
+    return _storage_key_for_scope(
+        intent.tenant_id, intent.candidate_id, intent.evidence_id,
+        intent.evidence_version_id, intent.ingestion_reference,
     )
 
 
@@ -209,6 +217,154 @@ class CandidateEvidenceS3StorageAdapter:
             raise
         except (BotoCoreError, ClientError) as error:
             _fail("CANDIDATE_EVIDENCE_S3_INSPECTION_UNAVAILABLE", error)
+
+    def list_multipart_uploads(self) -> list[dict[str, Any]]:
+        """Enumerate this subsystem's multipart namespace with provider pagination."""
+        uploads: list[dict[str, Any]] = []
+        key_marker = None
+        upload_marker = None
+        try:
+            while True:
+                args: dict[str, Any] = {
+                    "Bucket": self._config.bucket,
+                    "Prefix": "hr-candidate-evidence/v1/",
+                }
+                if key_marker is not None:
+                    args["KeyMarker"] = key_marker
+                if upload_marker is not None:
+                    args["UploadIdMarker"] = upload_marker
+                response = self._client.list_multipart_uploads(**args)
+                for item in response.get("Uploads", []):
+                    key, upload_id = item.get("Key"), item.get("UploadId")
+                    if isinstance(key, str) and isinstance(upload_id, str):
+                        uploads.append({
+                            "key": key, "upload_id": upload_id,
+                            "initiated_at": item.get("Initiated"),
+                        })
+                if not response.get("IsTruncated"):
+                    return uploads
+                key_marker = response.get("NextKeyMarker")
+                upload_marker = response.get("NextUploadIdMarker")
+                if not key_marker or not upload_marker:
+                    _fail("CANDIDATE_EVIDENCE_S3_MULTIPART_PAGINATION_INVALID")
+        except CandidateEvidenceS3Error:
+            raise
+        except (BotoCoreError, ClientError) as error:
+            _fail("CANDIDATE_EVIDENCE_S3_MULTIPART_DISCOVERY_UNAVAILABLE", error)
+
+    def list_uploaded_parts(self, *, key: str, upload_id: str) -> list[dict[str, Any]]:
+        """Read provider-confirmed part receipts for one exact multipart upload."""
+        result: list[dict[str, Any]] = []
+        marker = None
+        try:
+            while True:
+                args: dict[str, Any] = {
+                    "Bucket": self._config.bucket, "Key": key, "UploadId": upload_id,
+                }
+                if marker is not None:
+                    args["PartNumberMarker"] = marker
+                response = self._client.list_parts(**args)
+                for item in response.get("Parts", []):
+                    result.append({
+                        "PartNumber": item["PartNumber"],
+                        "ETag": item["ETag"],
+                        "length": item["Size"],
+                    })
+                if not response.get("IsTruncated"):
+                    return result
+                marker = response.get("NextPartNumberMarker")
+                if marker is None:
+                    _fail("CANDIDATE_EVIDENCE_S3_PART_PAGINATION_INVALID")
+        except CandidateEvidenceS3Error:
+            raise
+        except (BotoCoreError, ClientError) as error:
+            _fail("CANDIDATE_EVIDENCE_S3_PART_DISCOVERY_UNAVAILABLE", error)
+
+    def abort_provider_upload(self, *, key: str, upload_id: str) -> None:
+        """Abort a provider upload discovered as an unowned stale orphan."""
+        try:
+            self._client.abort_multipart_upload(
+                Bucket=self._config.bucket, Key=key, UploadId=upload_id,
+            )
+        except (BotoCoreError, ClientError) as error:
+            _fail("CANDIDATE_EVIDENCE_S3_ORPHAN_ABORT_UNCERTAIN", error, uncertain=True)
+
+    def inspect_completed_attempt(
+        self, *, tenant_id: str, candidate_id: str, evidence_id: str,
+        evidence_version_id: str, ingestion_reference: str,
+        intent_fingerprint: str,
+    ) -> CandidateEvidenceBinaryObjectEvidence | None:
+        """Recover a completed exact-version object after a lost completion response."""
+        key = _storage_key_for_scope(
+            tenant_id, candidate_id, evidence_id, evidence_version_id, ingestion_reference,
+        )
+        key_marker = None
+        version_marker = None
+        try:
+            while True:
+                args: dict[str, Any] = {"Bucket": self._config.bucket, "Prefix": key}
+                if key_marker is not None:
+                    args["KeyMarker"] = key_marker
+                if version_marker is not None:
+                    args["VersionIdMarker"] = version_marker
+                response = self._client.list_object_versions(**args)
+                for item in response.get("Versions", []):
+                    if item.get("Key") != key or not isinstance(item.get("VersionId"), str):
+                        continue
+                    version_id = item["VersionId"]
+                    head = self._client.head_object(
+                        Bucket=self._config.bucket, Key=key, VersionId=version_id,
+                    )
+                    metadata = head.get("Metadata") or {}
+                    if metadata.get("wilsy-intent-fingerprint") != intent_fingerprint:
+                        continue
+                    if (
+                        metadata.get("wilsy-tenant-sha3-256") != _component(tenant_id)
+                        or metadata.get("wilsy-candidate-sha3-256") != _component(candidate_id)
+                        or metadata.get("wilsy-evidence-sha3-256") != _component(evidence_id)
+                        or metadata.get("wilsy-version-sha3-256") != _component(evidence_version_id)
+                        or head.get("ServerSideEncryption") != "aws:kms"
+                        or head.get("SSEKMSKeyId") != self._config.kms_key_id
+                    ):
+                        _fail("CANDIDATE_EVIDENCE_S3_RECOVERY_OBSERVATION_MISMATCH")
+                    length = head.get("ContentLength")
+                    if type(length) is not int or not 1 <= length <= 100 * 1024 * 1024:
+                        _fail("CANDIDATE_EVIDENCE_S3_RECOVERY_LENGTH_INVALID")
+                    response_object = self._client.get_object(
+                        Bucket=self._config.bucket, Key=key, VersionId=version_id,
+                    )
+                    body = response_object["Body"]
+                    hasher = hashlib.sha3_512()
+                    observed = 0
+                    while True:
+                        chunk = body.read(8 * 1024 * 1024)
+                        if not chunk:
+                            break
+                        observed += len(chunk)
+                        if observed > length:
+                            _fail("CANDIDATE_EVIDENCE_S3_RECOVERY_LENGTH_MISMATCH")
+                        hasher.update(chunk)
+                    if observed != length:
+                        _fail("CANDIDATE_EVIDENCE_S3_RECOVERY_LENGTH_MISMATCH")
+                    return CandidateEvidenceBinaryObjectEvidence(
+                        intent_fingerprint=intent_fingerprint,
+                        storage_object_reference=_component(key),
+                        object_version_reference=version_id,
+                        provider_integrity_reference=str(head.get("ETag", "")),
+                        byte_length=length,
+                        content_digest_sha3_512=hasher.hexdigest(),
+                        completed_at=item.get("LastModified") or datetime.now(timezone.utc),
+                    )
+                if not response.get("IsTruncated"):
+                    return None
+                key_marker = response.get("NextKeyMarker")
+                version_marker = response.get("NextVersionIdMarker")
+                if not key_marker:
+                    _fail("CANDIDATE_EVIDENCE_S3_VERSION_PAGINATION_INVALID")
+        except CandidateEvidenceS3Error:
+            raise
+        except (BotoCoreError, ClientError, KeyError, OSError) as error:
+            _fail("CANDIDATE_EVIDENCE_S3_COMPLETED_OBJECT_RECOVERY_UNAVAILABLE", error)
 
     def abort(self, session: CandidateEvidenceWriteSession) -> None:
         if type(session) is not CandidateEvidenceWriteSession or session.closed:
