@@ -149,6 +149,8 @@ class InstitutionalSourceSigningKeyLifecycleRegistry:
             raise SourceSigningKeyRegistryError("SOURCE_SIGNING_KEY_PUBLIC_KEY_INVALID")
         if end <= start or occurred >= end:
             raise SourceSigningKeyRegistryError("SOURCE_SIGNING_KEY_VALIDITY_INTERVAL_INVALID")
+        if occurred > datetime.now(timezone.utc):
+            raise SourceSigningKeyRegistryError("SOURCE_SIGNING_KEY_PROPOSAL_CANNOT_BE_FUTURE_DATED")
         fingerprint = sha256(public_key_bytes).hexdigest()
         if (supersedes_key_id is None) != (rotation_id is None) or (supersedes_key_id is None) != (overlap_until is None):
             raise SourceSigningKeyRegistryError("SOURCE_SIGNING_KEY_ROTATION_FIELDS_INCOMPLETE")
@@ -237,7 +239,11 @@ class InstitutionalSourceSigningKeyLifecycleRegistry:
         proposal_event = self._events.find_one(
             {"source_system_id": source, "key_id": key, "event_type": "PROPOSED"}, session=session
         )
-        if proposal_event is None or occurred < proposal_event["occurred_at"] or occurred >= record["valid_until"]:
+        if (
+            proposal_event is None or occurred < proposal_event["occurred_at"]
+            or occurred >= record["valid_until"]
+            or occurred > datetime.now(timezone.utc)
+        ):
             raise SourceSigningKeyRegistryConflict("SOURCE_SIGNING_KEY_PROPOSAL_NOT_CURRENT")
         fingerprint = _record_fingerprint(record)
         event = {
