@@ -10,6 +10,7 @@ from fastapi import HTTPException
 from tools.eos.api import institutional_signer_router as router
 from tools.eos.security.institutional_signer_enrollment_registry import (
     InstitutionalSignerEnrollmentRegistry,
+    InstitutionalSignerRegistryError,
 )
 
 
@@ -155,3 +156,60 @@ def test_signer_route_rejects_expired_or_revoked_evidence_provenance():
     with pytest.raises(HTTPException) as error:
         router._record_provenance_snapshot(revoked, evaluated_at=now, expected_bindings={})
     assert error.value.detail == "INSTITUTIONAL_SIGNER_EVIDENCE_NOT_CURRENT"
+
+
+
+def test_signer_provenance_persists_assurance_and_legal_mandate_scope():
+    now = datetime.now(timezone.utc)
+    result = SimpleNamespace(
+        identity_proofing=_evidence_record(evidence_kind="IDENTITY_PROOFING"),
+        signatory_mandate=_evidence_record(
+            evidence_kind="SIGNATORY_MANDATE",
+            legal_entity_reference="WILSY-PTY-LTD",
+            mandate_scope="INSTITUTIONAL_SIGNER",
+        ),
+    )
+    snapshot, _digest = router._enrollment_provenance(
+        result, tenant_id="WILSYTENANT-4CD2FZ4O",
+        certificate_fingerprint_sha256="a" * 64,
+        subject_principal_id="PRINCIPAL-1", evaluated_at=now,
+    )
+    assert snapshot["identity_proofing"]["identity_assurance_level"] == "SUBSTANTIAL"
+    assert snapshot["signatory_mandate"]["legal_entity_reference"] == "WILSY-PTY-LTD"
+    assert snapshot["signatory_mandate"]["mandate_scope"] == "INSTITUTIONAL_SIGNER"
+
+
+def test_signer_registry_rejects_caller_supplied_provenance_digest_mismatch():
+    now = datetime.now(timezone.utc)
+    result = SimpleNamespace(
+        identity_proofing=_evidence_record(evidence_kind="IDENTITY_PROOFING"),
+        signatory_mandate=_evidence_record(evidence_kind="SIGNATORY_MANDATE"),
+    )
+    snapshot, _digest = router._enrollment_provenance(
+        result, tenant_id="WILSYTENANT-4CD2FZ4O",
+        certificate_fingerprint_sha256="a" * 64,
+        subject_principal_id="PRINCIPAL-1", evaluated_at=now,
+    )
+
+    class _NeverRead:
+        def find_one(self, *_args, **_kwargs):
+            raise AssertionError("digest mismatch must fail before any database read")
+
+    registry = InstitutionalSignerEnrollmentRegistry(_NeverRead(), _NeverRead())
+    with pytest.raises(InstitutionalSignerRegistryError) as error:
+        registry.request_enrollment(
+            tenant_id="WILSYTENANT-4CD2FZ4O",
+            certificate_fingerprint_sha256="a" * 64,
+            certificate_serial_number_hex="abc123",
+            subject_common_name="WILSY Authorised Signatory",
+            issuer_common_name="WILSY Intermediate CA",
+            issuer_subject_sha256="c" * 64,
+            trust_root_sha256="b" * 64,
+            identity_proofing_evidence_reference="evidence://identity/1",
+            signatory_mandate_evidence_reference="evidence://mandate/1",
+            requested_by_principal_id="PRINCIPAL-1",
+            requested_at=now, idempotency_key="request-digest-mismatch",
+            session=object(), evidence_provenance_fingerprint_sha256="0" * 64,
+            evidence_provenance_snapshot=snapshot,
+        )
+    assert error.value.code == "INSTITUTIONAL_SIGNER_EVIDENCE_PROVENANCE_DIGEST_MISMATCH"
