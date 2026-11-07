@@ -102,3 +102,8 @@ The enrollment registry also provisions a compound index over tenant, lifecycle 
 
 
 Currentness rechecks must preserve the previously approved identity-assurance level, legal-entity reference, mandate scope and independent-approval scope. Any change to those authority-bearing fields is not silently accepted as routine freshness: it is rejected for a new governance decision and re-enrollment/approval as applicable.
+
+
+## Candidate discovery
+
+`list_currentness_candidates` provides a bounded, caller-transaction read for ACTIVE enrollments that are awaiting first verification (including legacy ACTIVE records with no currentness status) or whose finite CURRENT lease has expired. Results are ordered deterministically by approval/request time and certificate fingerprint. `NOT_CURRENT` and revoked enrollments are not automatically requeued. The compound index supports this query, but the code intentionally defines no background schedule, polling cadence, retry budget or actor identity; those remain governed operational settings.
