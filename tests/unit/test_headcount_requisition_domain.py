@@ -83,7 +83,11 @@ def test_headcount_is_bounded_and_rejects_boolean(headcount):
 
 def test_decision_evidence_is_required_for_approved_record():
     with pytest.raises(RequisitionError, match="DECISION_EVIDENCE"):
-        requisition(status=RequisitionStatus.APPROVED)
+        requisition(
+            status=RequisitionStatus.APPROVED,
+            submitted_by_principal_id="principal-requester",
+            submitted_at=datetime(2026, 11, 7, tzinfo=timezone.utc),
+        )
 
 
 def test_fingerprint_detects_tampering():
@@ -107,7 +111,5 @@ def test_approver_must_differ_from_requester_and_submitter():
         submitted_at=datetime(2026, 11, 7, tzinfo=timezone.utc),
         expected_revision=1,
     )
-    with pytest.raises(RequisitionError, match="MAKER_CHECKER"):
-        submitted.decide(approval(actor="principal-requester"), expected_revision=2)
     with pytest.raises(RequisitionError, match="MAKER_CHECKER"):
         submitted.decide(approval(actor="principal-requester"), expected_revision=2)
