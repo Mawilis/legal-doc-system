@@ -123,3 +123,10 @@ The default adapter set denies all three channels. This change intentionally sup
 
 
 The framework now includes a shared authenticated-read boundary. It checks that the adapter supports the requested evidence kind, authenticates the provider response through a separately supplied response authenticator, and then enforces exact equality for tenant, principal, certificate fingerprint, evidence kind/reference, legal entity, requester, reviewer and required authority scope. It intentionally preserves negative status and revocation observations for the currentness reconciler rather than converting them to transport errors. This is contract/conformance code only: no production authenticator or provider implementation is present.
+
+
+## Cryptographic response authentication
+
+A concrete provider-neutral Ed25519 authenticator is available for independent source-response verification. Its trust map is keyed by the exact pair (source-system ID, response-signing key ID), and an empty map denies all responses. The canonical signed payload binds the tenant, evidence kind/reference, subject principal, certificate fingerprint, legal entity, requester/reviewer, authority scope, source record/revision, evidence fingerprint, status, validity interval, revocation flag, observation time, signing-key ID and signature reference. Tampering with the source revision or using a key pinned to a different source is rejected. Key issuance, custody, rotation, revocation and source trust onboarding remain external governance gates; this implementation does not pin any live institutional key.
+
+The Ed25519 authenticator is a cryptographic primitive, not proof that a purported DHA/CIPC/governance endpoint is genuine. Source identity and exact lookup binding still require the separately governed adapter/authenticator configuration and independent review. No production trust configuration is present.
