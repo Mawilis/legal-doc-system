@@ -535,10 +535,25 @@ class InstitutionalSignerEnrollmentRegistry:
             _fingerprint(item.get("evidence_fingerprint_sha256"))
             if type(item.get("revoked")) is not bool:
                 raise InstitutionalSignerRegistryError("INSTITUTIONAL_SIGNER_CURRENTNESS_OBSERVATION_INVALID")
+            if item["status"] not in ("ACTIVE", "VERIFIED", "REVOKED", "WITHDRAWN", "SUSPENDED", "SUPERSEDED", "EXPIRED", "INACTIVE", "NOT_FOUND"):
+                raise InstitutionalSignerRegistryError("INSTITUTIONAL_SIGNER_CURRENTNESS_OBSERVATION_STATUS_INVALID")
+            if (item.get("tenant_id") != tenant
+                or item.get("certificate_fingerprint_sha256") != fingerprint
+                or item.get("evidence_reference") != source_record.get("evidence_reference")):
+                raise InstitutionalSignerRegistryError("INSTITUTIONAL_SIGNER_CURRENTNESS_OBSERVATION_SCOPE_MISMATCH")
+            if status == "CURRENT" and (
+                item["status"] not in ("ACTIVE", "VERIFIED")
+                or item["revoked"]
+                or item["evidence_fingerprint_sha256"] != source_record.get("evidence_fingerprint_sha256")
+            ):
+                raise InstitutionalSignerRegistryError("INSTITUTIONAL_SIGNER_CURRENTNESS_OBSERVATION_STATUS_MISMATCH")
             if item["status"] not in ("ACTIVE", "VERIFIED") or item["revoked"]:
                 negative_observation = True
             normalized_observations[observation_key] = {
                 "evidence_kind": kind,
+                "tenant_id": tenant,
+                "certificate_fingerprint_sha256": fingerprint,
+                "evidence_reference": source_record["evidence_reference"],
                 "source_system_id": item["source_system_id"],
                 "source_record_id": item["source_record_id"],
                 "source_revision": item["source_revision"],
