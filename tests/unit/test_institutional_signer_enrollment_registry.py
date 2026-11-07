@@ -271,3 +271,31 @@ def test_currentness_verifier_has_no_success_path_until_authoritative_adapter_is
             enrollment_provenance_snapshot={}, approval_provenance_snapshot={},
             evaluated_at=datetime.now(timezone.utc), session=object(),
         )
+
+
+def test_signer_use_is_denied_when_currentness_lease_has_expired():
+    registry, records, _events = setup_registry()
+    tx = object()
+    request(registry, tx)
+    registry.approve_enrollment(
+        tenant_id="WILSYTENANT-4CD2FZ4O",
+        certificate_fingerprint_sha256="a" * 64,
+        approver_principal_id="owner-approver",
+        approval_attestation_reference="attestation://independent-review/001",
+        approved_at=datetime.now(timezone.utc),
+        idempotency_key="approve-lease-test", session=tx,
+    )
+    row = records.rows[0]
+    row.update({
+        "evidence_currentness_status": "CURRENT",
+        "evidence_currentness_valid_until": datetime(2020, 1, 1, tzinfo=timezone.utc),
+    })
+    with pytest.raises(InstitutionalSignerRegistryConflict, match="CURRENTNESS_LEASE_EXPIRED"):
+        registry.require_active(
+            tenant_id="WILSYTENANT-4CD2FZ4O",
+            certificate_fingerprint_sha256="a" * 64,
+            certificate_serial_number_hex="abc123",
+            issuer_subject_sha256="c" * 64,
+            trust_root_sha256="b" * 64,
+            session=tx,
+        )
