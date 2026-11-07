@@ -87,6 +87,7 @@ from .authority_bridge_router import router as authority_bridge_router
 from .billing_router import evaluate_all_tenant_dunning_lifecycles, router as billing_router
 from .employee_router import router as employee_router
 from .errors import register_error_handlers
+from .institutional_pki_router import router as institutional_pki_router
 from .kernel_routes import router as kernel_router
 from .payshap_webhook_router import router as payshap_webhook_router
 from .electrum_payshap_completion_router import router as electrum_payshap_completion_router
@@ -918,6 +919,7 @@ class WilsyAPIServer:
         # Sovereign mounting order.
         app.include_router(kernel_router)
         app.include_router(kernel_router, prefix="/api")
+        app.include_router(institutional_pki_router, prefix="/api")
 
         app.include_router(direct_router)
         app.include_router(router)
