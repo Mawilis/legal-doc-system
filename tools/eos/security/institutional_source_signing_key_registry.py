@@ -233,7 +233,7 @@ class InstitutionalSourceSigningKeyLifecycleRegistry:
             "governance_decision_reference": decision,
             "approval_evidence_reference": evidence,
             "proposal_reference": record["proposal_reference"],
-            "record_fingerprint_sha256": fingerprint, "event_sequence": 3,
+            "record_fingerprint_sha256": fingerprint, "event_sequence": 2,
         }
         prior = self._events.find_one({"source_system_id": source, "idempotency_key": idem}, session=session)
         if prior is not None:
