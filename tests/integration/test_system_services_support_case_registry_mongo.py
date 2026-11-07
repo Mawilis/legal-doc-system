@@ -234,6 +234,15 @@ def test_canonical_eos_startup_registers_case_indexes_and_readiness(monkeypatch)
 
     try:
         with TestClient(app):
+            assert app.state.institutional_signer_registry_ready is True
+            from tools.eos.security.institutional_signer_enrollment_registry import (
+                COLLECTION as SIGNER_COLLECTION,
+                EVENT_COLLECTION as SIGNER_EVENT_COLLECTION,
+            )
+            signer_indexes = list(database[SIGNER_COLLECTION].list_indexes())
+            signer_event_indexes = list(database[SIGNER_EVENT_COLLECTION].list_indexes())
+            assert any(index.get("name") == "uq_institutional_signer_tenant_certificate" for index in signer_indexes)
+            assert any(index.get("name") == "uq_institutional_signer_event_idempotency" for index in signer_event_indexes)
             assert app.state.system_services_case_indexes_ready is True
             assert app.state.system_services_incident_indexes_ready is True
             from tools.eos.system_services.security_incident_registry import (

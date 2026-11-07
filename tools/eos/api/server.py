@@ -525,6 +525,7 @@ class WilsyAPIServer:
             """Own explicit database bootstrap at application startup."""
             app.state.institutional_pki_ready = False
             app.state.institutional_pki_verifier = None
+            app.state.institutional_signer_registry_ready = False
             app.state.institutional_pki_crl_registry = None
             try:
                 app.state.institutional_pki_verifier = InstitutionalPKIVerifier.from_environment()
@@ -566,6 +567,19 @@ class WilsyAPIServer:
             database, client = get_database(), get_client()
             if database is None:
                 return
+            try:
+                InstitutionalSignerEnrollmentRegistry.ensure_indexes(
+                    database[INSTITUTIONAL_SIGNER_COLLECTION],
+                    database[INSTITUTIONAL_SIGNER_EVENT_COLLECTION],
+                )
+                app.state.institutional_signer_registry_ready = True
+                logger.info("[INSTITUTIONAL_SIGNER] Enrollment registry indexes ready")
+            except Exception as error:
+                app.state.institutional_signer_registry_ready = False
+                logger.warning(
+                    "[INSTITUTIONAL_SIGNER] Enrollment registry unavailable: %s",
+                    type(error).__name__,
+                )
             configured_pki_verifier = app.state.institutional_pki_verifier
             if configured_pki_verifier is not None and client is not None:
                 try:
@@ -595,10 +609,6 @@ class WilsyAPIServer:
                                 read_preference=ReadPreference.PRIMARY,
                             )
 
-                    InstitutionalSignerEnrollmentRegistry.ensure_indexes(
-                        database[INSTITUTIONAL_SIGNER_COLLECTION],
-                        database[INSTITUTIONAL_SIGNER_EVENT_COLLECTION],
-                    )
                     configured_pki_verifier.bind_crl_currentness_recorder(
                         record_institutional_pki_crl_currentness
                     )
@@ -923,6 +933,7 @@ class WilsyAPIServer:
             app.state.institutional_pki_ready = False
             app.state.institutional_pki_verifier = None
             app.state.institutional_pki_crl_registry = None
+            app.state.institutional_signer_registry_ready = False
             app.state.p12c_binding_indexes_ready = False
             app.state.global_principal_auth_indexes_ready = False
             app.state.global_principal_session_indexes_ready = False
