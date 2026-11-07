@@ -1,6 +1,6 @@
 import React from 'react';
 import { describe, expect, it, vi } from 'vitest';
-import { fireEvent, render, screen } from '@testing-library/react';
+import { fireEvent, render, screen, within } from '@testing-library/react';
 import { MemoryRouter } from 'react-router-dom';
 import WilsyHeadquartersWorkspace from '../../components/workspaces/WilsyHeadquartersWorkspace.jsx';
 
@@ -66,7 +66,8 @@ describe('WILSY Headquarters authenticated shell', () => {
 
   it('does not represent unconnected department services as operational', () => {
     renderHeadquarters();
-    fireEvent.click(screen.getByRole('button', { name: /Engineering/ }));
+    const navigation = screen.getByRole('navigation', { name: 'Headquarters navigation' });
+    fireEvent.click(within(navigation).getByRole('button', { name: /Engineering/ }));
     expect(screen.getByText('Engineering source is not yet connected')).toBeTruthy();
     expect(screen.getByText('Source integration not yet certified')).toBeTruthy();
   });
