@@ -243,7 +243,7 @@ from types import MappingProxyType
 from typing import Final
 
 
-VERSION = "v1.59.0-INSTITUTIONAL-OFFER-SIGNATURE-AUTHORITY"
+VERSION = "v1.60.0-INSTITUTIONAL-SOURCE-KEY-GOVERNANCE"
 
 
 class PermissionDisposition(StrEnum):
