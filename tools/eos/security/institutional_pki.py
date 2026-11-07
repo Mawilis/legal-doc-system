@@ -207,6 +207,18 @@ class InstitutionalPKIVerifier:
             max_crl_age_seconds=int(os.getenv("WILSY_EOS_PKI_MAX_CRL_AGE_SECONDS", "86400")),
         ))
 
+    def crl_pem_for_issuer_subject_sha256(self, issuer_subject_sha256: str) -> bytes:
+        """Return one public PEM CRL selected by the issuer subject fingerprint."""
+        if not re.fullmatch(r"[0-9a-f]{64}", issuer_subject_sha256):
+            raise InstitutionalPKIError("INSTITUTIONAL_PKI_CRL_ISSUER_REFERENCE_INVALID")
+        matches = [
+            crl for crl in self._crls
+            if sha256(crl.issuer.public_bytes()).hexdigest() == issuer_subject_sha256
+        ]
+        if len(matches) != 1:
+            raise InstitutionalPKIError("INSTITUTIONAL_PKI_CRL_ISSUER_NOT_FOUND_OR_AMBIGUOUS")
+        return matches[0].public_bytes(__import__("cryptography").hazmat.primitives.serialization.Encoding.PEM)
+
     def verify(
         self,
         *,
