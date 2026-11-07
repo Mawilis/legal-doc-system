@@ -4,6 +4,7 @@ from tools.eos.auth.tenant_authority_policy import (
 )
 from tools.eos.auth.permission_namespace import permission_metadata
 from tools.eos.auth.roles import ROLE_PERMISSIONS_MAP
+from tools.eos.auth.tenant_authorization import _BINDINGS
 
 
 def test_candidate_evidence_upload_and_read_are_distinct_canonical_operations():
@@ -37,3 +38,9 @@ def test_candidate_evidence_static_role_grants_match_business_eligibility():
     assert "hr:hiring_candidate_evidence:upload" not in ROLE_PERMISSIONS_MAP["HR_DIRECTOR"]
     assert "hr:hiring_candidate_evidence:upload" not in ROLE_PERMISSIONS_MAP["TENANT_OWNER"]
     assert "hr:hiring_candidate_evidence:read" not in ROLE_PERMISSIONS_MAP["LEGAL_PARTNER"]
+
+
+
+def test_candidate_evidence_operations_bind_exactly_to_canonical_permissions():
+    assert _BINDINGS["hr_hiring_candidate_evidence_upload"] == "hr:hiring_candidate_evidence:upload"
+    assert _BINDINGS["hr_hiring_candidate_evidence_read"] == "hr:hiring_candidate_evidence:read"
