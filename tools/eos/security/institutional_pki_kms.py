@@ -18,6 +18,7 @@ from cryptography import x509
 from cryptography.hazmat.primitives import hashes, serialization
 from cryptography.hazmat.primitives.asymmetric import padding, rsa
 from cryptography.hazmat.primitives.asymmetric.utils import Prehashed
+from cryptography.hazmat.primitives.asymmetric.utils import Prehashed
 from cryptography.x509.oid import NameOID
 
 KEY_SPEC = "RSA_3072"
@@ -98,7 +99,9 @@ def _validate_key_policy(policy: str) -> str:
         document = json.loads(policy)
     except (TypeError, ValueError) as error:
         raise InstitutionalPKIKMSError("INSTITUTIONAL_KMS_KEY_POLICY_INVALID") from error
-    statements = document.get("Statement") if isinstance(document, dict) else None
+    if not isinstance(document, dict) or document.get("Version") != "2012-10-17":
+        raise InstitutionalPKIKMSError("INSTITUTIONAL_KMS_KEY_POLICY_INVALID")
+    statements = document.get("Statement")
     if not isinstance(statements, list) or not statements:
         raise InstitutionalPKIKMSError("INSTITUTIONAL_KMS_KEY_POLICY_INVALID")
     required_actions = {"kms:Sign", "kms:GetPublicKey", "kms:DescribeKey"}
@@ -168,7 +171,7 @@ def create_nonexportable_subordinate_ca_key_and_csr(
         key_arn = metadata.get("Arn")
         if (
             not isinstance(key_arn, str)
-            or not key_arn.startswith(f"arn:aws:kms:{region}:")
+            or re.fullmatch(rf"arn:aws(?:-[a-z]+)?:kms:{re.escape(region)}:[0-9]{{12}}:key/[A-Za-z0-9-]+", key_arn) is None
             or metadata.get("KeySpec") != KEY_SPEC
             or metadata.get("KeyUsage") != KEY_USAGE
             or metadata.get("Origin") != "AWS_KMS"
