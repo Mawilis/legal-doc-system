@@ -6,6 +6,7 @@ from fastapi.testclient import TestClient
 
 from tools.eos.api.errors import register_error_handlers
 from tools.eos.api.hiring_lifecycle_router import router
+from tools.eos.api.institutional_signer_router import router as institutional_signer_router
 from tools.eos.auth.permission_namespace import permission_metadata
 from tools.eos.auth.roles import get_roles_granting_permission
 from tools.eos.auth.tenant_authority_policy import ELIGIBLE, OPERATIONS, tenant_role_operation_eligibility
@@ -15,6 +16,7 @@ def _app() -> FastAPI:
     app = FastAPI()
     register_error_handlers(app, debug=False)
     app.include_router(router, prefix="/api")
+    app.include_router(institutional_signer_router, prefix="/api")
     return app
 
 
@@ -80,3 +82,39 @@ def test_hiring_operations_are_known_and_business_role_eligibility_is_separate_f
         assert tenant_role_operation_eligibility("tenant_hr_director", operation) == ELIGIBLE
     assert tenant_role_operation_eligibility("tenant_hr_manager", "hr_hiring_offer_decide") != ELIGIBLE
     assert tenant_role_operation_eligibility("tenant_hr_director", "hr_hiring_offer_create") != ELIGIBLE
+
+
+
+def test_institutional_signer_governance_routes_require_authenticated_owner_context():
+    with TestClient(_app()) as client:
+        response = client.post(
+            "/api/security/institutional-signers/enrollments",
+            headers={"X-Tenant-ID": "WILSYTENANT-4CD2FZ4O", "Idempotency-Key": "signer-enroll-unauth"},
+            json={
+                "signer_certificate_pem_base64": "Y2VydA==",
+                "intermediate_certificate_pems_base64": ["aW50ZXJtZWRpYXRl"],
+                "identity_proofing_evidence_reference": "proofing://opaque/1",
+                "signatory_mandate_evidence_reference": "mandate://opaque/1",
+            },
+        )
+    assert response.status_code == 401
+
+    signing_body = {
+        "expected_revision": 1,
+        "evidence_reference": "EVD-001",
+        "evidence_fingerprint": "a" * 128,
+        "evidence_version_id": "VER-001",
+    }
+    with TestClient(_app()) as client:
+        document_response = client.post(
+            "/api/hr/hiring/offers/OFFER-001/signing-document",
+            headers={"X-Tenant-ID": "WILSYTENANT-4CD2FZ4O"},
+            json=signing_body,
+        )
+        manifest_response = client.post(
+            "/api/hr/hiring/offers/OFFER-001/signature-manifest",
+            headers={"X-Tenant-ID": "WILSYTENANT-4CD2FZ4O"},
+            json=signing_body,
+        )
+    assert document_response.status_code == 401
+    assert manifest_response.status_code == 401

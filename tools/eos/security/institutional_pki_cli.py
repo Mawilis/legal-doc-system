@@ -17,6 +17,7 @@ from .institutional_pki_provisioning import (
     create_offline_root,
     issue_crl,
     issue_intermediate,
+    issue_intermediate_from_kms_csr,
 )
 
 
@@ -44,6 +45,8 @@ def _root(args: argparse.Namespace) -> None:
 
 
 def _intermediate(args: argparse.Namespace) -> None:
+    if not args.allow_software_key:
+        raise InstitutionalPKIError("INSTITUTIONAL_PKI_NONEXPORTABLE_KMS_KEY_REQUIRED")
     password = getpass("Offline root-key passphrase: ").encode("utf-8")
     key, cert, fingerprint = issue_intermediate(
         root_certificate_pem=Path(args.root_certificate),
@@ -60,6 +63,26 @@ def _intermediate(args: argparse.Namespace) -> None:
     print(f"intermediate_sha256={fingerprint}")
     print("STORE THE ROOT KEY OFFLINE; DEPLOY ONLY THE APPROVED INTERMEDIATE KEY TO AN HSM/KEY SERVICE.")
 
+
+def _intermediate_from_kms_csr(args: argparse.Namespace) -> None:
+    password = getpass("Offline root-key passphrase: ").encode("utf-8")
+    cert, fingerprint = issue_intermediate_from_kms_csr(
+        root_certificate_pem=Path(args.root_certificate),
+        root_private_key_pem=Path(args.root_private_key),
+        root_passphrase=password,
+        csr_pem=Path(args.csr).read_bytes(),
+        output_directory=Path(args.output_dir),
+        expected_common_name=args.common_name,
+        organization=args.organization,
+        expected_organizational_unit=args.organizational_unit,
+        expected_country_code=args.country_code,
+        crl_distribution_base_url=args.crl_base_url,
+        validity_days=args.validity_days,
+    )
+    print(f"intermediate_certificate={cert}")
+    print(f"intermediate_sha256={fingerprint}")
+    print("THE SUBORDINATE PRIVATE KEY REMAINS NON-EXPORTABLE IN KMS; DO NOT COPY PRIVATE KEY MATERIAL.")
+    
 
 def _crl(args: argparse.Namespace) -> None:
     password = getpass("Issuer private-key passphrase: ").encode("utf-8")
@@ -98,7 +121,14 @@ def build_parser() -> argparse.ArgumentParser:
     root.add_argument("--validity-days", type=int, default=3650)
     root.set_defaults(run=_root)
 
-    intermediate = commands.add_parser("issue-intermediate", help="Issue a subordinate RSA-3072 CA")
+    intermediate = commands.add_parser(
+        "issue-intermediate",
+        help="DEVELOPMENT ONLY: issue a software-held subordinate CA key (requires explicit opt-in)",
+    )
+    intermediate.add_argument(
+        "--allow-software-key", action="store_true",
+        help="Explicitly permit a local software-held intermediate key; never use for production",
+    )
     intermediate.add_argument("--root-certificate", required=True)
     intermediate.add_argument("--root-private-key", required=True)
     intermediate.add_argument("--output-dir", required=True)
@@ -107,6 +137,22 @@ def build_parser() -> argparse.ArgumentParser:
     intermediate.add_argument("--crl-base-url", required=True)
     intermediate.add_argument("--validity-days", type=int, default=1825)
     intermediate.set_defaults(run=_intermediate)
+
+    kms_intermediate = commands.add_parser(
+        "issue-intermediate-kms-csr",
+        help="Offline-sign a CSR from a non-exportable KMS subordinate CA key",
+    )
+    kms_intermediate.add_argument("--root-certificate", required=True)
+    kms_intermediate.add_argument("--root-private-key", required=True)
+    kms_intermediate.add_argument("--csr", required=True)
+    kms_intermediate.add_argument("--output-dir", required=True)
+    kms_intermediate.add_argument("--common-name", required=True)
+    kms_intermediate.add_argument("--organization", required=True)
+    kms_intermediate.add_argument("--organizational-unit", required=True)
+    kms_intermediate.add_argument("--country-code", required=True)
+    kms_intermediate.add_argument("--crl-base-url", required=True)
+    kms_intermediate.add_argument("--validity-days", type=int, default=1825)
+    kms_intermediate.set_defaults(run=_intermediate_from_kms_csr)
 
     crl = commands.add_parser("publish-crl", help="Issue or renew one issuer's signed CRL")
     crl.add_argument("--issuer-certificate", required=True)

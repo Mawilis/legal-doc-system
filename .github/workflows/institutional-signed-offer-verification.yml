@@ -1,0 +1,104 @@
+name: WILSY EOS Institutional Signed-Offer Verification
+on:
+  pull_request:
+    paths:
+      - "tools/eos/api/hiring_lifecycle_router.py"
+      - "tools/eos/api/server.py"
+      - "tools/eos/api/institutional_signer_router.py"
+      - "tools/eos/security/institutional_signature_evidence_registry.py"
+      - "tools/eos/security/institutional_signer_enrollment_registry.py"
+      - "tools/eos/security/institutional_pki.py"
+      - "tools/eos/security/institutional_pki_kms.py"
+      - "tools/eos/security/institutional_pki_kms_cli.py"
+      - "tools/eos/security/institutional_pki_provisioning.py"
+      - "tools/eos/security/institutional_pki_cli.py"
+      - "tools/eos/saas/hr/candidate_evidence_s3_storage_adapter.py"
+      - "tools/eos/auth/permission_namespace.py"
+      - "tools/eos/auth/roles.py"
+      - "tools/eos/auth/tenant_authorization.py"
+      - "tools/eos/auth/tenant_authority_policy.py"
+      - "tests/unit/test_institutional_pki.py"
+      - "tests/unit/test_institutional_pki_kms.py"
+      - "tests/unit/test_institutional_signature_evidence_registry.py"
+      - "tests/unit/test_institutional_signer_enrollment_registry.py"
+      - "tests/unit/test_permission_namespace.py"
+      - "tests/unit/test_hiring_signed_offer_manifest.py"
+      - "tests/integration/test_institutional_signer_registry_real_mongo.py"
+      - "tests/integration/test_hiring_lifecycle_authenticated_http.py"
+      - ".github/workflows/institutional-signed-offer-verification.yml"
+permissions:
+  contents: read
+jobs:
+  signed-offer-verification:
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    env:
+      INSTITUTIONAL_PKI_TEST_MONGODB_URI: mongodb://localhost:27017/?replicaSet=rs0&directConnection=true
+      HIRING_TEST_MONGODB_URI: mongodb://localhost:27017/?replicaSet=rs0&directConnection=true
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+          cache-dependency-path: requirements.txt
+      - name: Install Python dependencies
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install -r requirements.txt pytest==9.1.1
+      - name: Start and initialize MongoDB replica set
+        run: |
+          docker run --detach --name signed-offer-mongo -p 27017:27017 mongo:7.0 mongod --replSet rs0 --bind_ip_all
+          for attempt in $(seq 1 30); do
+            if docker exec signed-offer-mongo mongosh --quiet --eval 'db.adminCommand({ ping: 1 }).ok' >/dev/null 2>&1; then break; fi
+            sleep 2
+          done
+          docker exec signed-offer-mongo mongosh --quiet --eval 'rs.initiate({_id:"rs0",members:[{_id:0,host:"localhost:27017"}]})' || true
+          for attempt in $(seq 1 30); do
+            if docker exec signed-offer-mongo mongosh --quiet --eval 'db.hello().isWritablePrimary' | grep -q true; then exit 0; fi
+            sleep 2
+          done
+          echo "MongoDB replica set did not elect a primary" >&2
+          exit 1
+      - name: Compile authenticated signing, signer governance and IAM runtime
+        run: |
+          python -m py_compile \
+            tools/eos/api/hiring_lifecycle_router.py \
+            tools/eos/api/institutional_signer_router.py \
+            tools/eos/security/institutional_pki.py \
+            tools/eos/security/institutional_pki_kms.py \
+            tools/eos/security/institutional_pki_kms_cli.py \
+            tools/eos/security/institutional_pki_provisioning.py \
+            tools/eos/security/institutional_pki_cli.py \
+            tools/eos/security/institutional_signature_evidence_registry.py \
+            tools/eos/security/institutional_signer_enrollment_registry.py \
+            tools/eos/auth/permission_namespace.py \
+            tools/eos/auth/roles.py \
+            tools/eos/auth/tenant_authorization.py \
+            tools/eos/auth/tenant_authority_policy.py \
+            tools/eos/api/server.py \
+            tools/eos/saas/hr/candidate_evidence_registry.py \
+            tools/eos/saas/hr/candidate_evidence_s3_storage_adapter.py \
+            tests/unit/test_institutional_pki.py \
+            tests/unit/test_institutional_pki_kms.py \
+            tests/unit/test_institutional_signature_evidence_registry.py \
+            tests/unit/test_institutional_signer_enrollment_registry.py \
+            tests/unit/test_permission_namespace.py \
+            tests/unit/test_hiring_signed_offer_manifest.py \
+            tests/integration/test_institutional_signer_registry_real_mongo.py
+      - name: Run institutional signature, signer governance, PKI and authenticated hiring tests
+        run: |
+          python -m pytest -q \
+            tests/unit/test_institutional_pki.py \
+            tests/unit/test_institutional_pki_kms.py \
+            tests/unit/test_institutional_signature_evidence_registry.py \
+            tests/unit/test_institutional_signer_enrollment_registry.py \
+            tests/unit/test_permission_namespace.py \
+            tests/unit/test_hiring_signed_offer_manifest.py \
+            tests/integration/test_institutional_signer_registry_real_mongo.py \
+            tests/unit/test_hiring_lifecycle_domain.py \
+            tests/integration/test_hiring_lifecycle_authenticated_http.py \
+            tests/integration/test_hiring_lifecycle_authenticated_real_http.py
+      - name: Stop MongoDB replica set
+        if: always()
+        run: docker rm --force signed-offer-mongo || true

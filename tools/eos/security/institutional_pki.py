@@ -65,6 +65,7 @@ class InstitutionalCertificateVerification:
     leaf_fingerprint_sha256: str
     root_fingerprint_sha256: str
     issuer_common_name: str
+    issuer_subject_sha256: str
     serial_number_hex: str
     verified_at: datetime
     chain_depth: int
@@ -216,6 +217,7 @@ class InstitutionalPKIVerifier:
         self._crls_lock = RLock()
         self._crl_number_high_water: dict[str, tuple[int, str]] = {}
         self._crl_currentness_recorder: Callable[[Mapping[str, tuple[int, str]]], None] | None = None
+        self._crl_revocation_recorder: Callable[[tuple[x509.CertificateRevocationList, ...]], None] | None = None
         self._anchors = tuple(anchors)
         self._issuer_certificates = tuple(issuer_certificates) + self._anchors
         self._crls = tuple(crls)
@@ -272,6 +274,13 @@ class InstitutionalPKIVerifier:
                 raise InstitutionalPKIError("INSTITUTIONAL_PKI_CONFIGURED_ISSUER_CHAIN_DEPTH_EXCEEDED")
         initial_observations = self._validate_crls(self._crls)
         self._crl_number_high_water.update(initial_observations)
+
+    def bind_crl_revocation_recorder(
+        self, recorder: Callable[[tuple[x509.CertificateRevocationList, ...]], None],
+    ) -> None:
+        if not callable(recorder) or self._crl_revocation_recorder is not None:
+            raise InstitutionalPKIError("INSTITUTIONAL_PKI_CRL_REVOCATION_RECORDER_INVALID")
+        self._crl_revocation_recorder = recorder
 
     def bind_crl_currentness_recorder(
         self,
@@ -358,6 +367,8 @@ class InstitutionalPKIVerifier:
         observed = self._validate_crls(current)
         if self._crl_currentness_recorder is not None:
             self._crl_currentness_recorder(observed)
+        if self._crl_revocation_recorder is not None:
+            self._crl_revocation_recorder(current)
         with self._crls_lock:
             self._crl_number_high_water.update(observed)
             self._crls = current
@@ -556,6 +567,7 @@ class InstitutionalPKIVerifier:
             leaf_fingerprint_sha256=leaf_fingerprint,
             root_fingerprint_sha256=root_fingerprint,
             issuer_common_name=issuer_name,
+            issuer_subject_sha256=sha256(chain[1].subject.public_bytes()).hexdigest(),
             serial_number_hex=format(leaf.serial_number, "x"),
             verified_at=instant,
             chain_depth=len(chain) - 1,

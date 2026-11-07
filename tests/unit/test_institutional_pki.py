@@ -143,6 +143,7 @@ def test_verifies_exact_chain_and_fresh_crls(tmp_path):
     )
     assert result.chain_depth == 2
     assert result.serial_number_hex == "12c"
+    assert result.issuer_subject_sha256 == sha256(intermediate.subject.public_bytes()).hexdigest()
     assert len(result.revocation_sources) == 2
     assert len(result.verification_fingerprint) == 64
 
@@ -268,11 +269,16 @@ def test_rejects_tampered_institutional_document_signature(tmp_path):
 def test_crl_refresh_requires_and_invokes_durable_currentness_binding(tmp_path):
     verifier, _, _, _ = _fixture(tmp_path)
     observations = []
+    verified_bundles = []
     verifier.bind_crl_currentness_recorder(lambda value: observations.append(dict(value)))
+    verifier.bind_crl_revocation_recorder(lambda value: verified_bundles.append(tuple(value)))
     verifier.refresh_crls()
     assert len(observations) == 1
     assert len(observations[0]) == 2
     assert all(number == 1 for number, _ in observations[0].values())
+    assert len(verified_bundles) == 1
+    assert len(verified_bundles[0]) == 2
+    assert all(crl.get_revoked_certificate_by_serial_number(0xABCDEF) is None for crl in verified_bundles[0])
 
 
 

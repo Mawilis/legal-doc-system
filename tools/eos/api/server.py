@@ -69,6 +69,8 @@ FAIL-CLOSED DECLARATION: Router import/composition failures prevent the affected
 from __future__ import annotations
 
 import asyncio
+from collections.abc import Mapping
+import hashlib
 import logging
 import os
 import time
@@ -91,10 +93,16 @@ from .billing_router import evaluate_all_tenant_dunning_lifecycles, router as bi
 from .employee_router import router as employee_router
 from .errors import register_error_handlers
 from .institutional_pki_router import router as institutional_pki_router
+from .institutional_signer_router import router as institutional_signer_router
 from .kernel_routes import router as kernel_router
 from .payshap_webhook_router import router as payshap_webhook_router
 from .electrum_payshap_completion_router import router as electrum_payshap_completion_router
 from tools.eos.security.institutional_pki import InstitutionalPKIError, InstitutionalPKIVerifier
+from tools.eos.security.institutional_signer_enrollment_registry import (
+    COLLECTION as INSTITUTIONAL_SIGNER_COLLECTION,
+    EVENT_COLLECTION as INSTITUTIONAL_SIGNER_EVENT_COLLECTION,
+    InstitutionalSignerEnrollmentRegistry,
+)
 from tools.eos.security.institutional_pki_crl_registry import (
     CURRENTNESS_COLLECTION as INSTITUTIONAL_PKI_CRL_CURRENTNESS_COLLECTION,
     EVENT_COLLECTION as INSTITUTIONAL_PKI_CRL_EVENT_COLLECTION,
@@ -570,10 +578,12 @@ class WilsyAPIServer:
                     if not pki_actor_reference:
                         raise InstitutionalPKIError("INSTITUTIONAL_PKI_RUNTIME_ACTOR_REFERENCE_REQUIRED")
 
-                    def record_institutional_pki_crl_currentness(observations):
+                    def record_institutional_pki_crl_currentness(
+                        observations: Mapping[str, tuple[int, str]],
+                    ) -> None:
                         observed_at = datetime.now(timezone.utc)
                         with client.start_session() as pki_session:
-                            return pki_session.with_transaction(
+                            pki_session.with_transaction(
                                 lambda transaction: pki_crl_registry.observe_bundle(
                                     observations,
                                     actor_reference=pki_actor_reference,
@@ -585,8 +595,50 @@ class WilsyAPIServer:
                                 read_preference=ReadPreference.PRIMARY,
                             )
 
+                    InstitutionalSignerEnrollmentRegistry.ensure_indexes(
+                        database[INSTITUTIONAL_SIGNER_COLLECTION],
+                        database[INSTITUTIONAL_SIGNER_EVENT_COLLECTION],
+                    )
                     configured_pki_verifier.bind_crl_currentness_recorder(
                         record_institutional_pki_crl_currentness
+                    )
+
+                    def reconcile_institutional_signer_crl_publications(
+                        verified_crls: tuple[Any, ...],
+                    ) -> None:
+                        from cryptography import x509
+                        from cryptography.hazmat.primitives import hashes
+
+                        verified_observations = []
+                        for crl in verified_crls:
+                            number = crl.extensions.get_extension_for_class(x509.CRLNumber).value.crl_number
+                            verified_observations.append({
+                                "issuer_subject_sha256": hashlib.sha256(crl.issuer.public_bytes()).hexdigest(),
+                                "crl_number": number,
+                                "crl_fingerprint_sha256": crl.fingerprint(hashes.SHA256()).hex(),
+                                "revoked_serial_numbers_hex": tuple(
+                                    format(item.serial_number, "x") for item in crl
+                                ),
+                            })
+                        signer_registry = InstitutionalSignerEnrollmentRegistry(
+                            database[INSTITUTIONAL_SIGNER_COLLECTION],
+                            database[INSTITUTIONAL_SIGNER_EVENT_COLLECTION],
+                        )
+                        with client.start_session() as signer_session:
+                            signer_session.with_transaction(
+                                lambda transaction: signer_registry.reconcile_crl_publications(
+                                    verified_crls=tuple(verified_observations),
+                                    reconciled_at=datetime.now(timezone.utc),
+                                    actor_reference=pki_actor_reference,
+                                    session=transaction,
+                                ),
+                                read_concern=ReadConcern("snapshot"),
+                                write_concern=WriteConcern(w="majority", j=True),
+                                read_preference=ReadPreference.PRIMARY,
+                            )
+
+                    configured_pki_verifier.bind_crl_revocation_recorder(
+                        reconcile_institutional_signer_crl_publications
                     )
                     configured_pki_verifier.refresh_crls()
                     app.state.institutional_pki_crl_registry = pki_crl_registry
@@ -970,6 +1022,7 @@ class WilsyAPIServer:
         app.include_router(kernel_router)
         app.include_router(kernel_router, prefix="/api")
         app.include_router(institutional_pki_router, prefix="/api")
+        app.include_router(institutional_signer_router, prefix="/api")
 
         app.include_router(direct_router)
         app.include_router(router)
