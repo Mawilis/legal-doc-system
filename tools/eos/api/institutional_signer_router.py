@@ -124,11 +124,8 @@ async def request_signer_enrollment(
         )
         from cryptography import x509
         leaf = x509.load_pem_x509_certificate(leaf_pem)
-        issuers = [
-            x509.load_pem_x509_certificate(value)
-            for value in intermediates
-            if x509.load_pem_x509_certificate(value).subject == leaf.issuer
-        ]
+        parsed_intermediates = tuple(x509.load_pem_x509_certificate(value) for value in intermediates)
+        issuers = [candidate for candidate in parsed_intermediates if candidate.subject == leaf.issuer]
         common_names = leaf.subject.get_attributes_for_oid(x509.NameOID.COMMON_NAME)
         issuer_names = (
             issuers[0].subject.get_attributes_for_oid(x509.NameOID.COMMON_NAME)
