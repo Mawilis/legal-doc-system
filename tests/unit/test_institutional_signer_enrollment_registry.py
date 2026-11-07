@@ -249,3 +249,25 @@ def test_revocation_publication_closes_only_when_verified_crl_contains_exact_iss
         actor_reference="runtime://institutional-pki",
         session=tx,
     ) == 0
+
+
+def test_registry_refuses_unverified_currentness_objects_before_database_access():
+    from tools.eos.security.institutional_signer_evidence_verifier import UnavailableInstitutionalSignerEvidenceVerifier
+    registry, _records, _events = setup_registry()
+    with pytest.raises(InstitutionalSignerRegistryError, match="CURRENTNESS_VERIFICATION_REQUIRED"):
+        registry.record_verified_currentness(
+            verification=object(), idempotency_key="currentness-001", session=object()
+        )
+
+
+def test_currentness_verifier_has_no_success_path_until_authoritative_adapter_is_approved():
+    from tools.eos.security.institutional_signer_evidence_verifier import UnavailableInstitutionalSignerEvidenceVerifier
+    verifier = UnavailableInstitutionalSignerEvidenceVerifier()
+    with pytest.raises(Exception, match="CURRENTNESS_AUTHORITY_UNAVAILABLE"):
+        verifier.verify_currentness(
+            tenant_id="WILSYTENANT-4CD2FZ4O",
+            certificate_fingerprint_sha256="a" * 64,
+            expected_enrollment_revision=2,
+            enrollment_provenance_snapshot={}, approval_provenance_snapshot={},
+            evaluated_at=datetime.now(timezone.utc), session=object(),
+        )
