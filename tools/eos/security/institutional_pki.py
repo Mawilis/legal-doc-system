@@ -21,7 +21,7 @@ from typing import Iterable
 from cryptography import x509
 from cryptography.hazmat.primitives import hashes, serialization
 from cryptography.hazmat.primitives.asymmetric import dsa, ec, ed25519, ed448, padding, rsa
-from cryptography.x509.oid import ExtensionOID, ExtendedKeyUsageOID
+from cryptography.x509.oid import ExtensionOID, ExtendedKeyUsageOID, ObjectIdentifier
 
 
 class InstitutionalPKIError(RuntimeError):
@@ -372,7 +372,7 @@ class InstitutionalPKIVerifier:
             raise InstitutionalPKIError("INSTITUTIONAL_PKI_PRESENTED_CERTIFICATE_INVALID") from error
         _valid_at(leaf, instant)
         eku = _extension(leaf, ExtensionOID.EXTENDED_KEY_USAGE, "INSTITUTIONAL_PKI_SIGNING_EKU_MISSING")
-        required_oid = x509.ObjectIdentifier(self._settings.required_eku_oid)
+        required_oid = ObjectIdentifier(self._settings.required_eku_oid)
         if required_oid not in eku:
             raise InstitutionalPKIError("INSTITUTIONAL_PKI_SIGNING_EKU_MISMATCH")
         usage = _extension(leaf, ExtensionOID.KEY_USAGE, "INSTITUTIONAL_PKI_LEAF_KEY_USAGE_MISSING")
