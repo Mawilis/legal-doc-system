@@ -1,7 +1,6 @@
 import React from 'react';
 import { describe, expect, it, vi } from 'vitest';
-import { fireEvent, render, screen, within } from '@testing-library/react';
-import { waitFor } from '@testing-library/react';
+import { fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 import api from '../../services/api.js';
 import { MemoryRouter } from 'react-router-dom';
 import WilsyHeadquartersWorkspace from '../../components/workspaces/WilsyHeadquartersWorkspace.jsx';
@@ -39,13 +38,15 @@ describe('WILSY Headquarters authenticated shell', () => {
   it('presents the company operating environment and daily task centre entry', () => {
     renderHeadquarters();
     expect(screen.getByRole('heading', { name: 'WILSY Headquarters' })).toBeTruthy();
-    expect(screen.getByRole('button', { name: /My Work/ })).toBeTruthy();
+    const navigation = screen.getByRole('navigation', { name: 'Headquarters navigation' });
+    expect(within(navigation).getByRole('button', { name: /My Work/ })).toBeTruthy();
     expect(screen.getByText(/does not invent headcount, revenue, customer totals/)).toBeTruthy();
   });
 
   it('mounts the existing My Work workspace rather than a duplicate task projection', () => {
     renderHeadquarters();
-    fireEvent.click(screen.getByRole('button', { name: /My Work/ }));
+    const navigation = screen.getByRole('navigation', { name: 'Headquarters navigation' });
+    fireEvent.click(within(navigation).getByRole('button', { name: /My Work/ }));
     expect(screen.getByRole('heading', { name: 'My Work certified task centre' })).toBeTruthy();
   });
 
@@ -54,7 +55,7 @@ describe('WILSY Headquarters authenticated shell', () => {
     fireEvent.click(screen.getByRole('button', { name: /Organisation & People/ }));
     expect(await screen.findByText('Authorised workforce directory')).toBeTruthy();
     expect(await screen.findByText('Test Directory Person')).toBeTruthy();
-    expect(screen.getByText(/test@example\\.invalid/)).toBeTruthy();
+    expect(screen.getByText(/test@example\.invalid/)).toBeTruthy();
   });
 
   it('searches the authorised workforce source without supplying tenant authority', async () => {
