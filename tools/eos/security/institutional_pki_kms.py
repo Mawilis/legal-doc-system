@@ -31,8 +31,9 @@ KEY_TAGS = (
 
 
 class InstitutionalPKIKMSError(RuntimeError):
-    def __init__(self, code: str) -> None:
+    def __init__(self, code: str, *, key_arn: str | None = None) -> None:
         self.code = code
+        self.key_arn = key_arn
         super().__init__(code)
 
 
@@ -156,6 +157,7 @@ def create_nonexportable_subordinate_ca_key_and_csr(
     if not isinstance(country_code, str) or re.fullmatch(r"[A-Z]{2}", country_code) is None:
         raise InstitutionalPKIKMSError("INSTITUTIONAL_KMS_COUNTRY_INVALID")
     policy = _validate_key_policy(key_policy_json)
+    created_key_arn: str | None = None
     try:
         created = kms_client.create_key(
             Description="WILSY EOS non-exportable institutional subordinate CA signing key",
@@ -168,6 +170,7 @@ def create_nonexportable_subordinate_ca_key_and_csr(
         )
         metadata = created.get("KeyMetadata") or {}
         key_arn = metadata.get("Arn")
+        created_key_arn = key_arn if isinstance(key_arn, str) else None
         if (
             not isinstance(key_arn, str)
             or re.fullmatch(rf"arn:aws(?:-[a-z]+)?:kms:{re.escape(region)}:[0-9]{{12}}:key/[A-Za-z0-9-]+", key_arn) is None
@@ -235,10 +238,15 @@ def create_nonexportable_subordinate_ca_key_and_csr(
             signing_algorithm=SIGNING_ALGORITHM,
             created_at=datetime.now(timezone.utc),
         )
-    except InstitutionalPKIKMSError:
+    except InstitutionalPKIKMSError as error:
+        if created_key_arn and error.key_arn is None:
+            raise InstitutionalPKIKMSError(error.code, key_arn=created_key_arn) from error
         raise
     except Exception as error:
-        raise InstitutionalPKIKMSError("INSTITUTIONAL_KMS_SUBORDINATE_KEY_PROVISIONING_FAILED") from error
+        raise InstitutionalPKIKMSError(
+            "INSTITUTIONAL_KMS_SUBORDINATE_KEY_PROVISIONING_FAILED",
+            key_arn=created_key_arn,
+        ) from error
 
 
 __all__ = [
