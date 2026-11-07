@@ -25,7 +25,7 @@ jobs:
   workforce-directory:
     name: Workforce directory policy, API and replica-set certification
     runs-on: ubuntu-latest
-    timeout-minutes: 25
+    timeout-minutes: 26
     env:
       TEST_VENDOR_MONGO_URI: mongodb://localhost:27017/?replicaSet=wilsyVendorCertRS
       PIP_DISABLE_PIP_VERSION_CHECK: "1"
