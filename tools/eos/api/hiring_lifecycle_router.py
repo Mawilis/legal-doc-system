@@ -130,7 +130,7 @@ def _transaction(callback):
         raise HTTPException(status_code=404, detail=error.code) from error
     except HiringLifecycleRegistryConflict as error:
         raise HTTPException(status_code=409, detail=error.code) from error
-    except HiringLifecycleRegistryError as error:
+    except (HiringLifecycleRegistryError, CandidateEvidenceRegistryError) as error:
         raise HTTPException(status_code=503, detail=error.code) from error
     except HTTPException:
         raise
@@ -332,9 +332,12 @@ async def accept_offer(
         if replay is not None:
             return replay
         current = registry.get_offer(tenant_id=context.tenant_id, offer_id=offer_id, session=tx)
+        evidence_database = get_database()
+        if evidence_database is None:
+            raise HTTPException(status_code=503, detail="CANDIDATE_EVIDENCE_DATABASE_UNAVAILABLE")
         evidence_registry = CandidateEvidenceRegistry(
-            get_database()[CANDIDATE_EVIDENCE_COLLECTION],
-            get_database()[CANDIDATE_EVIDENCE_EVENT_COLLECTION],
+            evidence_database[CANDIDATE_EVIDENCE_COLLECTION],
+            evidence_database[CANDIDATE_EVIDENCE_EVENT_COLLECTION],
         )
         try:
             signed_offer = evidence_registry.get(
