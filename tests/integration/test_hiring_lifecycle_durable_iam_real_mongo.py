@@ -75,10 +75,11 @@ def test_real_mongo_hiring_authorization_requires_current_principal_membership_b
                 pid, tenant, authorization_role, RoleAssignmentStatus.ACTIVE, 0,
             ), assignments)
 
-        manager_id, director_id = f"manager-{uuid.uuid4().hex}", f"director-{uuid.uuid4().hex}"
+        manager_id, director_id, mismatch_id = f"manager-{uuid.uuid4().hex}", f"director-{uuid.uuid4().hex}", f"mismatch-{uuid.uuid4().hex}"
         tenant, other_tenant = f"tenant-{uuid.uuid4().hex}", f"other-{uuid.uuid4().hex}"
         seed(manager_id, tenant, "tenant_hr_manager", "HR_MANAGER")
         seed(director_id, tenant, "tenant_hr_director", "HR_DIRECTOR")
+        seed(mismatch_id, tenant, "tenant_hr_manager", "HR_DIRECTOR")
         readers = (
             PrincipalReader(principals), MembershipReader(memberships),
             BusinessRoleReader(business), AuthorizationRoleReader(assignments),
@@ -103,7 +104,11 @@ def test_real_mongo_hiring_authorization_requires_current_principal_membership_b
 
         insufficient = authorize(director_id, tenant, "hr:hiring_candidate:create", "hr_hiring_candidate_create")
         assert insufficient.authorized is False
-        assert insufficient.reason is TenantAuthorizationReason.PERMISSION_NOT_GRANTED
+        assert insufficient.reason is TenantAuthorizationReason.BUSINESS_ROLE_INELIGIBLE
+
+        wrong_grant = authorize(mismatch_id, tenant, "hr:hiring_candidate:create", "hr_hiring_candidate_create")
+        assert wrong_grant.authorized is False
+        assert wrong_grant.reason is TenantAuthorizationReason.PERMISSION_NOT_GRANTED
 
         director_decision = authorize(director_id, tenant, "hr:hiring_offer:decide", "hr_hiring_offer_decide")
         assert director_decision.authorized is True
