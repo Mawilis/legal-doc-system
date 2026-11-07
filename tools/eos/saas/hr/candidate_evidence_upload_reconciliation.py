@@ -223,17 +223,26 @@ class CandidateEvidenceUploadReconciler:
                             parts=normalized, byte_length=total,
                         )
                         counters["parts_reconciled"] += 1
-                # A multipart session is still provider-live. Do not abort it
-                # merely because the request is slow; updated_at is the stale
-                # progress lease and only the uncertain terminal path is reaped.
-                if attempt.status is UploadAttemptStatus.COMPLETION_UNCERTAIN:
-                    if self._clock() - attempt.updated_at >= self._stale_after:
-                        self._storage.abort_provider_upload(
-                            key=key, upload_id=provider["upload_id"],
-                        )
-                        self._advance(attempt, UploadAttemptStatus.ABORTED,
-                                      failure_code="RECONCILIATION_ABORTED_STALE_UNCERTAIN_UPLOAD")
-                        counters["uploads_aborted"] += 1
+                # updated_at is the durable progress lease. Any multipart
+                # attempt with no progress beyond the configured grace period
+                # is aborted, including a request process that disappeared
+                # while INITIATED or PARTS_UPLOADED.
+                if (
+                    attempt.status in {
+                        UploadAttemptStatus.INITIATED,
+                        UploadAttemptStatus.PARTS_UPLOADED,
+                        UploadAttemptStatus.COMPLETION_UNCERTAIN,
+                    }
+                    and self._clock() - attempt.updated_at >= self._stale_after
+                ):
+                    self._storage.abort_provider_upload(
+                        key=key, upload_id=provider["upload_id"],
+                    )
+                    self._advance(
+                        attempt, UploadAttemptStatus.ABORTED,
+                        failure_code="RECONCILIATION_ABORTED_STALE_PROVIDER_UPLOAD",
+                    )
+                    counters["uploads_aborted"] += 1
                 continue
 
             # No active multipart upload: inspect versioned objects before
@@ -289,7 +298,11 @@ class CandidateEvidenceUploadReconciler:
                 if pair in known_pairs:
                     continue
                 initiated = upload.get("initiated_at")
-                if isinstance(initiated, datetime) and self._clock() - initiated < self._stale_after:
+                if (
+                    not isinstance(initiated, datetime)
+                    or initiated.tzinfo is None
+                    or self._clock() - initiated < self._stale_after
+                ):
                     continue
                 self._storage.abort_provider_upload(key=upload["key"], upload_id=upload["upload_id"])
                 counters["uploads_aborted"] += 1
