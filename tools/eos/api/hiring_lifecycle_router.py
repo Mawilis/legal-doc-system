@@ -20,7 +20,7 @@ from tools.eos.api.tenant_authorization_http import RequireTenantAuthorization, 
 from tools.eos.kernel.db import get_client, get_database
 from tools.eos.saas.domain.hiring_lifecycle import (
     CandidateApplication, CandidateStage, CandidateStageEvidence,
-    EmploymentOffer, OfferTerms, OfferDecision, OfferAcceptanceEvidence,
+    EmploymentOffer, OfferTerms, OfferDecision, OfferAcceptanceEvidence, OfferStatus,
 )
 from tools.eos.saas.domain.candidate_evidence import CandidateEvidenceKind
 from tools.eos.saas.hr.candidate_evidence_registry import (
@@ -29,6 +29,16 @@ from tools.eos.saas.hr.candidate_evidence_registry import (
     CandidateEvidenceRegistry,
     CandidateEvidenceRegistryNotFound,
     CandidateEvidenceRegistryError,
+)
+from tools.eos.saas.hr.signed_offer_cryptographic_verification import (
+    TRUST_COLLECTION as SIGNER_TRUST_COLLECTION,
+    VERIFICATION_COLLECTION as SIGNED_OFFER_VERIFICATION_COLLECTION,
+    VERIFICATION_EVENT_COLLECTION as SIGNED_OFFER_VERIFICATION_EVENT_COLLECTION,
+    CandidateSignerKeyTrustRegistry,
+    SignedOfferSignatureEnvelope,
+    SignedOfferVerificationError,
+    SignedOfferVerificationRegistry,
+    verify_signed_offer_signature,
 )
 from tools.eos.saas.hr.hiring_lifecycle_registry import (
     CANDIDATE_COLLECTION, OFFER_COLLECTION, EVENT_COLLECTION,
@@ -95,6 +105,12 @@ class OfferAcceptanceRequest(StrictModel):
     evidence_version_id: str = Field(min_length=1, max_length=256)
 
 
+class SignedOfferVerificationRequest(StrictModel):
+    signer_key_id: str = Field(min_length=1, max_length=180)
+    signed_at: datetime
+    signature_b64url: str = Field(min_length=1, max_length=128)
+
+
 def _registry(db: Any) -> HiringLifecycleRegistry:
     opts = {"write_concern": WriteConcern(w="majority", j=True), "read_concern": ReadConcern("majority")}
     return HiringLifecycleRegistry(
@@ -118,6 +134,13 @@ def _transaction(callback):
         CandidateEvidenceRegistry.ensure_indexes(
             db.get_collection(CANDIDATE_EVIDENCE_COLLECTION),
             db.get_collection(CANDIDATE_EVIDENCE_EVENT_COLLECTION),
+        )
+        CandidateSignerKeyTrustRegistry.ensure_indexes(
+            db.get_collection(SIGNER_TRUST_COLLECTION),
+        )
+        SignedOfferVerificationRegistry.ensure_indexes(
+            db.get_collection(SIGNED_OFFER_VERIFICATION_COLLECTION),
+            db.get_collection(SIGNED_OFFER_VERIFICATION_EVENT_COLLECTION),
         )
         with client.start_session() as session:
             return session.with_transaction(
@@ -317,6 +340,73 @@ async def send_offer(
             idempotency_key=idempotency_key,
             command_fingerprint=command_hash,
         )
+    return _transaction(command).to_dict()
+
+
+@router.post("/offers/{offer_id}/evidence/{evidence_id}/{evidence_version_id}/verify")
+async def verify_signed_offer(
+    offer_id: str,
+    evidence_id: str,
+    evidence_version_id: str,
+    body: SignedOfferVerificationRequest,
+    idempotency_key: str = Header(alias="Idempotency-Key", min_length=1, max_length=160),
+    context: TenantAuthorizationContext = Depends(_OFFER_ACCEPT),
+):
+    verified_at = datetime.now(timezone.utc)
+
+    def command(registry, tx):
+        current = registry.get_offer(
+            tenant_id=context.tenant_id, offer_id=offer_id, session=tx,
+        )
+        if current.status is not OfferStatus.SENT or current.sent_at is None:
+            raise HTTPException(status_code=409, detail="SIGNED_OFFER_NOT_SENT")
+        envelope = SignedOfferSignatureEnvelope(
+            signer_key_id=body.signer_key_id,
+            signed_at=body.signed_at,
+            signature_b64url=body.signature_b64url,
+        )
+        if envelope.signed_at < current.sent_at or envelope.signed_at > current.terms.expires_at:
+            raise HTTPException(status_code=409, detail="SIGNED_OFFER_SIGNATURE_OUTSIDE_OFFER_WINDOW")
+        database = get_database()
+        if database is None:
+            raise HTTPException(status_code=503, detail="SIGNED_OFFER_VERIFICATION_DATABASE_UNAVAILABLE")
+        evidence_registry = CandidateEvidenceRegistry(
+            database[CANDIDATE_EVIDENCE_COLLECTION],
+            database[CANDIDATE_EVIDENCE_EVENT_COLLECTION],
+        )
+        trust_registry = CandidateSignerKeyTrustRegistry(database[SIGNER_TRUST_COLLECTION])
+        verification_registry = SignedOfferVerificationRegistry(
+            database[SIGNED_OFFER_VERIFICATION_COLLECTION],
+            database[SIGNED_OFFER_VERIFICATION_EVENT_COLLECTION],
+        )
+        try:
+            signed_offer = evidence_registry.get(
+                tenant_id=context.tenant_id, candidate_id=current.candidate_id,
+                evidence_id=evidence_id, evidence_version_id=evidence_version_id,
+                session=tx,
+            )
+            if signed_offer.evidence_kind is not CandidateEvidenceKind.SIGNED_OFFER or signed_offer.offer_id != offer_id:
+                raise HTTPException(status_code=409, detail="SIGNED_OFFER_CUSTODY_SCOPE_INVALID")
+            trust = trust_registry.get(
+                tenant_id=context.tenant_id, candidate_id=current.candidate_id,
+                signer_key_id=envelope.signer_key_id, session=tx,
+            )
+            record = verify_signed_offer_signature(
+                tenant_id=context.tenant_id, candidate_id=current.candidate_id,
+                offer_id=offer_id, evidence_id=evidence_id,
+                evidence_version_id=evidence_version_id,
+                content_digest_sha3_512=signed_offer.content_digest_sha3_512,
+                envelope=envelope, trust=trust, verified_at=verified_at,
+            )
+            return verification_registry.register(
+                record, actor_principal_id=context.identity.identity_id,
+                idempotency_key=idempotency_key, session=tx,
+            )
+        except SignedOfferVerificationError as error:
+            raise HTTPException(status_code=409, detail=error.code) from error
+        except CandidateEvidenceRegistryNotFound as error:
+            raise HTTPException(status_code=409, detail="SIGNED_OFFER_CUSTODY_REQUIRED") from error
+
     return _transaction(command).to_dict()
 
 
