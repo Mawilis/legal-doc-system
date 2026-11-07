@@ -50,6 +50,7 @@ from pymongo import MongoClient, monitoring
 from pymongo.errors import PyMongoError
 
 import tools.eos.api.tenant_authorization_http as http_subject
+import tools.eos.api.hr_workforce_directory_router as hr_directory_router
 import tools.eos.kernel.db as kernel_db
 import tools.eos.saas.auth.auth_registry as auth_registry_module
 import tools.eos.saas.tenancy.tenant_registry as tenant_registry_module
@@ -421,6 +422,7 @@ NON_WORKFORCE_DEPENDENCY = RequireTenantAuthorization(
 
 def _build_app() -> FastAPI:
     app = FastAPI()
+    app.include_router(hr_directory_router.router)
     register_error_handlers(
         app,
         debug=False,
@@ -507,6 +509,13 @@ def context(
         )
         monkeypatch.setattr(
             kernel_db,
+            "get_database",
+            lambda: database,
+        )
+
+        # The directory router shares the same UUID-isolated real Mongo database.
+        monkeypatch.setattr(
+            hr_directory_router,
             "get_database",
             lambda: database,
         )
@@ -609,6 +618,65 @@ def test_active_workforce_plus_current_iam_authorizes_real_http(
     assert response.status_code == 200
     assert response.json()["authorized"] is True
     assert context.counter.start_session_calls == 1
+
+
+def test_authenticated_hr_director_reads_only_own_tenant_directory_from_real_mongo(
+    context: Context,
+) -> None:
+    _persist(
+        context,
+        _relationship(
+            status=WorkforceRelationshipStatus.ACTIVE,
+        ),
+    )
+    context.database["employees"].insert_many([
+        {
+            "tenantId": TENANT,
+            "employeeId": "EMP-DIR-OWN",
+            "displayName": "Own Tenant Employee",
+            "preferredName": "Own Employee",
+            "isActive": True,
+            "deletedAt": None,
+            "employment": {
+                "jobTitle": "Engineer",
+                "department": "Engineering",
+                "managerId": None,
+                "status": "ACTIVE",
+                "workLocation": "Remote",
+            },
+            "contact": {"workEmail": "own@example.invalid"},
+            "financial": {"basicSalary": 999999, "bankAccount": "never-return"},
+            "identification": {"nationalId": "never-return"},
+        },
+        {
+            "tenantId": OTHER_TENANT,
+            "employeeId": "EMP-DIR-OTHER",
+            "displayName": "Other Tenant Employee",
+            "isActive": True,
+            "deletedAt": None,
+            "employment": {"jobTitle": "Director", "department": "Finance"},
+        },
+    ])
+
+    response = _client().get(
+        "/api/hr/workforce",
+        params={"tenantId": OTHER_TENANT},
+        headers=_headers(WORKFORCE_PRINCIPAL, TENANT),
+    )
+
+    assert response.status_code == 200
+    body = response.json()
+    assert body["total"] == 1
+    assert [item["employeeId"] for item in body["items"]] == ["EMP-DIR-OWN"]
+    assert body["items"][0]["workEmail"] == "own@example.invalid"
+    assert "financial" not in body["items"][0]
+    assert "identification" not in body["items"][0]
+
+    denied = _client().get(
+        "/api/hr/workforce",
+        headers=_headers(WORKFORCE_PRINCIPAL, OTHER_TENANT),
+    )
+    assert denied.status_code == 403
 
 
 def test_absent_workforce_history_is_403_not_outage(
