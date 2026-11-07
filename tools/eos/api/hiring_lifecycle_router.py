@@ -582,6 +582,7 @@ async def accept_offer(
             tenant_id=context.tenant_id,
             certificate_fingerprint_sha256=verification.certificate_verification.leaf_fingerprint_sha256,
             certificate_serial_number_hex=verification.certificate_verification.serial_number_hex,
+            issuer_subject_sha256=verification.certificate_verification.issuer_subject_sha256,
             trust_root_sha256=verification.certificate_verification.root_fingerprint_sha256,
             session=tx,
         )
