@@ -112,6 +112,7 @@ def test_read_returns_bytes_only_after_exact_version_digest_and_kms_verification
     client = FakeS3()
     storage = adapter(client)
     client.kms_key_id = storage._config.kms_key_id
+    client.intent_fingerprint = hashlib.sha3_512(b"read-only-head-metadata").hexdigest()
     key = storage.object_key_for_scope(
         tenant_id="tenant-1", candidate_id="candidate-1",
         evidence_id="evidence-1", evidence_version_id="version-1",
