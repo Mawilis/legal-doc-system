@@ -43,7 +43,6 @@ jobs:
     env:
       INSTITUTIONAL_PKI_TEST_MONGODB_URI: mongodb://localhost:27017/?replicaSet=rs0&directConnection=true
       INSTITUTIONAL_SOURCE_KEY_TEST_MONGODB_URI: mongodb://localhost:27017/?replicaSet=rs0&directConnection=true
-      INSTITUTIONAL_SOURCE_KEY_TEST_MONGODB_URI: mongodb://localhost:27017/?replicaSet=rs0&directConnection=true
       HIRING_TEST_MONGODB_URI: mongodb://localhost:27017/?replicaSet=rs0&directConnection=true
     steps:
       - uses: actions/checkout@v4
@@ -102,7 +101,8 @@ jobs:
             tests/unit/test_institutional_signer_source_adapters.py \
             tests/unit/test_permission_namespace.py \
             tests/unit/test_hiring_signed_offer_manifest.py \
-            tests/integration/test_institutional_signer_registry_real_mongo.py
+            tests/integration/test_institutional_signer_registry_real_mongo.py \\
+            tests/integration/test_institutional_source_signing_key_lifecycle_real_mongo.py \\
             tests/integration/test_institutional_source_signing_key_lifecycle_real_mongo.py \
       - name: Run institutional signature, signer governance, PKI and authenticated hiring tests
         run: |
