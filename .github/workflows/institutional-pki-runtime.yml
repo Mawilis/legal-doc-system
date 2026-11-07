@@ -8,13 +8,17 @@ on:
       - "tools/eos/api/institutional_pki_router.py"
       - "tools/eos/api/server.py"
       - "tests/unit/test_institutional_pki.py"
+      - "tools/eos/security/institutional_pki_crl_registry.py"
+      - "tests/integration/test_institutional_pki_crl_registry_real_mongo.py"
       - ".github/workflows/institutional-pki-runtime.yml"
 permissions:
   contents: read
 jobs:
   institutional-pki:
     runs-on: ubuntu-latest
-    timeout-minutes: 20
+    timeout-minutes: 25
+    env:
+      INSTITUTIONAL_PKI_TEST_MONGODB_URI: mongodb://localhost:27017/?replicaSet=rs0&directConnection=true
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
@@ -26,14 +30,37 @@ jobs:
         run: |
           python -m pip install --upgrade pip
           python -m pip install -r requirements.txt pytest==9.1.1
+      - name: Start and initialize MongoDB replica set
+        run: |
+          docker run --detach --name institutional-pki-mongo -p 27017:27017 mongo:7.0 mongod --replSet rs0 --bind_ip_all
+          for attempt in $(seq 1 30); do
+            if docker exec institutional-pki-mongo mongosh --quiet --eval 'db.adminCommand({ ping: 1 }).ok' >/dev/null 2>&1; then
+              break
+            fi
+            sleep 2
+          done
+          docker exec institutional-pki-mongo mongosh --quiet --eval 'rs.initiate({_id:"rs0",members:[{_id:0,host:"localhost:27017"}]})' || true
+          for attempt in $(seq 1 30); do
+            if docker exec institutional-pki-mongo mongosh --quiet --eval 'db.hello().isWritablePrimary' | grep -q true; then
+              exit 0
+            fi
+            sleep 2
+          done
+          echo "MongoDB replica set did not elect a primary" >&2
+          exit 1
       - name: Compile canonical PKI runtime and server composition
         run: |
           python -m py_compile \
             tools/eos/security/institutional_pki.py \
             tools/eos/security/institutional_pki_provisioning.py \
             tools/eos/security/institutional_pki_cli.py \
+            tools/eos/security/institutional_pki_crl_registry.py \
             tools/eos/api/institutional_pki_router.py \
             tools/eos/api/server.py \
-            tests/unit/test_institutional_pki.py
-      - name: Run institutional PKI verification and CRL publication tests
-        run: python -m pytest -q tests/unit/test_institutional_pki.py
+            tests/unit/test_institutional_pki.py \
+            tests/integration/test_institutional_pki_crl_registry_real_mongo.py
+      - name: Run institutional PKI, CRL publication and real replica-set tests
+        run: |
+          python -m pytest -q \
+            tests/unit/test_institutional_pki.py \
+            tests/integration/test_institutional_pki_crl_registry_real_mongo.py
