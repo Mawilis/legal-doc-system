@@ -256,7 +256,8 @@ def test_registry_refuses_unverified_currentness_objects_before_database_access(
     registry, _records, _events = setup_registry()
     with pytest.raises(InstitutionalSignerRegistryError, match="CURRENTNESS_VERIFICATION_REQUIRED"):
         registry.record_verified_currentness(
-            verification=object(), idempotency_key="currentness-001", session=object()
+            verification=object(), idempotency_key="currentness-001",
+            actor_reference="runtime://approved-currentness-worker", session=object()
         )
 
 
