@@ -387,9 +387,20 @@ class InstitutionalSourceSigningKeyLifecycleRegistry:
                 session=session,
             )
             if successor is not None:
-                overlap = successor.get("rotation", {}).get("overlap_until")
-                if overlap is None or at >= overlap:
-                    raise SourceSigningKeyRegistryConflict("SOURCE_SIGNING_KEY_ROTATION_OVERLAP_ENDED")
+                successor_approval = self._events.find_one(
+                    {"source_system_id": source, "key_id": successor["key_id"],
+                     "event_type": "APPROVED", "occurred_at": {"$lte": at}},
+                    session=session,
+                )
+                successor_is_approved = (
+                    successor_approval is not None
+                    and successor_approval.get("record_fingerprint_sha256")
+                    == _record_fingerprint(successor)
+                )
+                if successor_is_approved:
+                    overlap = successor.get("rotation", {}).get("overlap_until")
+                    if overlap is None or at >= overlap:
+                        raise SourceSigningKeyRegistryConflict("SOURCE_SIGNING_KEY_ROTATION_OVERLAP_ENDED")
             return record
         except SourceSigningKeyRegistryError:
             raise
