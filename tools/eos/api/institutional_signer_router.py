@@ -126,7 +126,7 @@ def _verify_approval_evidence(verifier, *, tenant_id, certificate_fingerprint_sh
 
 
 
-def _record_provenance_snapshot(record, *, evaluated_at, expected_bindings):
+def _record_provenance_snapshot(record, *, evaluated_at, expected_bindings, scope_fields=()):
     required = ("source_system_id", "source_record_id", "source_revision", "status",
                 "evidence_fingerprint_sha256", "valid_from", "valid_until", "revoked", "verified_at")
     snapshot = {"schema": "wilsy.institutional.signer.evidence_provenance.v1"}
@@ -151,6 +151,11 @@ def _record_provenance_snapshot(record, *, evaluated_at, expected_bindings):
         or (snapshot["valid_until"] is not None and snapshot["valid_until"] <= instant)):
         raise HTTPException(status_code=503, detail="INSTITUTIONAL_SIGNER_EVIDENCE_NOT_CURRENT")
     snapshot["evaluated_at"] = instant
+    for field in scope_fields:
+        value = getattr(record, field, None)
+        if not isinstance(value, str) or not value or len(value) > 512:
+            raise HTTPException(status_code=503, detail="INSTITUTIONAL_SIGNER_EVIDENCE_SCOPE_INVALID")
+        snapshot[field] = value
     snapshot.update(expected_bindings)
     return snapshot
 
@@ -162,12 +167,14 @@ def _enrollment_provenance(result, *, tenant_id, certificate_fingerprint_sha256,
             expected_bindings={"tenant_id": tenant_id, "subject_principal_id": subject_principal_id,
                                "certificate_fingerprint_sha256": certificate_fingerprint_sha256,
                                "evidence_kind": "IDENTITY_PROOFING"},
+            scope_fields=("identity_assurance_level",),
         )
         mandate = _record_provenance_snapshot(
             result.signatory_mandate, evaluated_at=evaluated_at,
             expected_bindings={"tenant_id": tenant_id, "subject_principal_id": subject_principal_id,
                                "certificate_fingerprint_sha256": certificate_fingerprint_sha256,
                                "evidence_kind": "SIGNATORY_MANDATE"},
+            scope_fields=("legal_entity_reference", "mandate_scope"),
         )
         if getattr(result.identity_proofing, "tenant_id", None) != tenant_id or getattr(result.signatory_mandate, "tenant_id", None) != tenant_id:
             raise ValueError("tenant")
@@ -195,6 +202,7 @@ def _approval_provenance(record, *, tenant_id, certificate_fingerprint_sha256,
                            "enrollment_requester_principal_id": requester_principal_id,
                            "reviewer_principal_id": reviewer_principal_id,
                            "evidence_kind": "INDEPENDENT_APPROVAL"},
+        scope_fields=("approval_scope",),
     )
     if (getattr(record, "tenant_id", None) != tenant_id
         or getattr(record, "certificate_fingerprint_sha256", None) != certificate_fingerprint_sha256
