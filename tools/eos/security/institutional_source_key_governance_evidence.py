@@ -7,8 +7,22 @@ certificate enrollment evidence.
 """
 from __future__ import annotations
 
+from dataclasses import dataclass
 from datetime import datetime
 from typing import Protocol, runtime_checkable
+
+
+@dataclass(frozen=True)
+class VerifiedSourceKeyRevocationApproval:
+    """Provider-verified approval of one exact key revocation command."""
+
+    source_system_id: str
+    key_id: str
+    public_key_fingerprint_sha256: str
+    governance_decision_reference: str
+    approval_evidence_reference: str
+    approver_principal_id: str
+    evidence_fingerprint_sha256: str
 
 
 class InstitutionalSourceKeyGovernanceEvidenceError(RuntimeError):
@@ -45,8 +59,8 @@ class InstitutionalSourceKeyGovernanceEvidenceVerifier(Protocol):
         revoker_principal_id: str, reason_reference: str,
         governance_decision_reference: str, approval_evidence_reference: str,
         evaluated_at: datetime, session: object,
-    ) -> object:
-        """Verify independently approved revocation of this exact key revision."""
+    ) -> VerifiedSourceKeyRevocationApproval:
+        """Verify independent approval; approver must differ from proposer and revoker."""
         ...
 
 
@@ -71,5 +85,6 @@ class UnavailableInstitutionalSourceKeyGovernanceEvidenceVerifier:
 __all__ = [
     "InstitutionalSourceKeyGovernanceEvidenceError",
     "InstitutionalSourceKeyGovernanceEvidenceVerifier",
+    "VerifiedSourceKeyRevocationApproval",
     "UnavailableInstitutionalSourceKeyGovernanceEvidenceVerifier",
 ]
