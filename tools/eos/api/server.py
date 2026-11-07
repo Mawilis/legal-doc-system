@@ -90,6 +90,7 @@ from .errors import register_error_handlers
 from .kernel_routes import router as kernel_router
 from .payshap_webhook_router import router as payshap_webhook_router
 from .electrum_payshap_completion_router import router as electrum_payshap_completion_router
+from tools.eos.security.institutional_pki import InstitutionalPKIError, InstitutionalPKIVerifier
 from tools.eos.kennel.orchestration.electrum_payshap_completion_processing import ensure_electrum_payshap_completion_indexes
 from tools.eos.kennel.orchestration.electrum_payshap_completion_worker import run_electrum_payshap_completion_worker
 from .plan_router import plan_router
@@ -504,6 +505,16 @@ class WilsyAPIServer:
         @app.on_event("startup")
         async def start_database() -> None:
             """Own explicit database bootstrap at application startup."""
+            app.state.institutional_pki_ready = False
+            app.state.institutional_pki_verifier = None
+            try:
+                app.state.institutional_pki_verifier = InstitutionalPKIVerifier.from_environment()
+                app.state.institutional_pki_ready = True
+                logger.info("[INSTITUTIONAL_PKI] Explicit pinned trust anchors and current CRL bundle loaded")
+            except InstitutionalPKIError as error:
+                app.state.institutional_pki_verifier = None
+                app.state.institutional_pki_ready = False
+                logger.warning("[INSTITUTIONAL_PKI] Verification unavailable: %s", error.code)
             app.state.p12c_binding_indexes_ready = False
             app.state.global_principal_auth_indexes_ready = False
             app.state.global_principal_session_indexes_ready = False
@@ -807,6 +818,8 @@ class WilsyAPIServer:
         @app.on_event("shutdown")
         async def stop_database() -> None:
             """Release the kernel database during controlled application shutdown."""
+            app.state.institutional_pki_ready = False
+            app.state.institutional_pki_verifier = None
             app.state.p12c_binding_indexes_ready = False
             app.state.global_principal_auth_indexes_ready = False
             app.state.global_principal_session_indexes_ready = False
