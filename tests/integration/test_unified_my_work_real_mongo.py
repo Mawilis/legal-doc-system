@@ -294,14 +294,19 @@ def test_authenticated_my_work_uses_live_mongo_iam_and_rejects_foreign_scope(
     foreign_tenant = TENANT + "-foreign"
     principal_id = PRINCIPAL + "-live-iam"
     _seed_live_owner_iam(database, principal_id, tenant_id)
-    _activate_operations(client, database, TenantProductId.OPERATIONS)
-    _activate_operations(client, database, TenantProductId.INTELLIGENCE)
+    _activate_operations(client, database, TenantProductId.OPERATIONS, tenant_id=tenant_id)
+    _activate_operations(client, database, TenantProductId.INTELLIGENCE, tenant_id=tenant_id)
 
     module_source = my_work.module_source
     monkeypatch.setattr(module_source, "get_client", lambda: client)
     monkeypatch.setattr(module_source, "get_database", lambda: database)
     monkeypatch.setattr(my_work.crm_source, "get_client", lambda: client)
     monkeypatch.setattr(my_work.crm_source, "get_database", lambda: database)
+    monkeypatch.setattr(
+        my_work.crm_source.subscription_registry_module,
+        "subscriptions_collection",
+        database["subscriptions"],
+    )
 
     for slug in ("operations", "intelligence"):
         product_id, _workspace, collection_name, _prefix = module_source._PRODUCTS[slug]
@@ -345,6 +350,9 @@ def test_authenticated_my_work_uses_live_mongo_iam_and_rejects_foreign_scope(
     app.dependency_overrides[authorization_http.get_role_assignment_repository] = (
         lambda: _LiveRoleReader(database["role_assignments"], database["tenant_business_roles"])
     )
+    # CRM is admitted by live IAM, then independently denied by its own
+    # Legal subscription/entitlement projection in the real Mongo transaction.
+    app.dependency_overrides[my_work._CRM_READ] = lambda: _context()
 
     with TestClient(app) as api:
         admitted = api.get("/api/my-work", headers={"X-Tenant-ID": tenant_id})
