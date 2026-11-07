@@ -287,7 +287,7 @@ def test_provider_reconciliation_read_permission_is_system_scoped_and_non_author
 
 
 def test_runtime_version_source_is_canonical() -> None:
-    assert POLICY_VERSION == "v1.58.0-INSTITUTIONAL-SIGNER-GOVERNANCE"
+    assert POLICY_VERSION == "v1.59.0-INSTITUTIONAL-OFFER-SIGNATURE-AUTHORITY"
 
 
 def test_practitioner_binding_provision_permission_is_exact_and_bounded() -> None:
@@ -422,9 +422,9 @@ def test_permission_canon_properties() -> None:
             for row in rows
             if row["disposition"] == "CANONICAL"
         ]
-    ) == 178
+    ) == 179
 
-    assert len(rows) == 181
+    assert len(rows) == 182
 
     for permission_id in tenant:
         metadata = permission_metadata(
@@ -1089,3 +1089,28 @@ def test_institutional_signer_governance_permissions_are_owner_scoped_and_non_au
         assert "HR_DIRECTOR" not in get_roles_granting_permission(permission)
         assert tenant_role_operation_eligibility("tenant_owner", operation) == ELIGIBLE
         assert tenant_role_operation_eligibility("tenant_hr_director", operation) != ELIGIBLE
+
+
+
+def test_institutional_offer_signature_manifest_is_owner_only_and_non_authorizing() -> None:
+    from tools.eos.auth.roles import get_roles_granting_permission
+    from tools.eos.auth.tenant_authority_policy import (
+        ELIGIBLE, OPERATIONS, tenant_role_operation_eligibility,
+    )
+
+    permission = "hr:hiring_offer:sign"
+    operation = "hr_hiring_offer_sign"
+    metadata = permission_metadata(permission)
+    assert metadata.namespace == "TENANT"
+    assert metadata.scope_kind == "TENANT"
+    assert metadata.tenant_membership_required is True
+    assert metadata.cross_tenant_capable is False
+    assert metadata.financial_execution_capable is False
+    assert metadata.authorizes_by_itself is False
+    assert operation in OPERATIONS
+    assert "TENANT_OWNER" in get_roles_granting_permission(permission)
+    assert "HR_MANAGER" not in get_roles_granting_permission(permission)
+    assert "HR_DIRECTOR" not in get_roles_granting_permission(permission)
+    assert tenant_role_operation_eligibility("tenant_owner", operation) == ELIGIBLE
+    assert tenant_role_operation_eligibility("tenant_hr_manager", operation) != ELIGIBLE
+    assert tenant_role_operation_eligibility("tenant_hr_director", operation) != ELIGIBLE
