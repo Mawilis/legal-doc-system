@@ -506,6 +506,55 @@ class InstitutionalSignerEnrollmentRegistry:
         observation_digest = _fingerprint(verification.observation_fingerprint_sha256)
         if _provenance_digest(canonical) != digest:
             raise InstitutionalSignerRegistryError("INSTITUTIONAL_SIGNER_CURRENTNESS_DIGEST_MISMATCH")
+        observation = verification.observation_snapshot
+        if not isinstance(observation, dict) or observation.get("schema") != "wilsy.institutional.signer.currentness_observation.v1":
+            raise InstitutionalSignerRegistryError("INSTITUTIONAL_SIGNER_CURRENTNESS_OBSERVATION_INVALID")
+        observed_records = observation.get("records")
+        if not isinstance(observed_records, dict):
+            raise InstitutionalSignerRegistryError("INSTITUTIONAL_SIGNER_CURRENTNESS_OBSERVATION_INCOMPLETE")
+        observation_kinds = {
+            "identity_proofing": ("IDENTITY_PROOFING", identity),
+            "signatory_mandate": ("SIGNATORY_MANDATE", mandate),
+            "approval_attestation": ("INDEPENDENT_APPROVAL", approval),
+        }
+        normalized_observations = {}
+        negative_observation = False
+        for observation_key, (kind, source_record) in observation_kinds.items():
+            item = observed_records.get(observation_key)
+            if not isinstance(item, dict):
+                raise InstitutionalSignerRegistryError("INSTITUTIONAL_SIGNER_CURRENTNESS_OBSERVATION_INCOMPLETE")
+            for field in ("source_system_id", "source_record_id", "source_revision", "status"):
+                _text(item.get(field), "INSTITUTIONAL_SIGNER_CURRENTNESS_OBSERVATION_INVALID", 512)
+            if (item.get("source_system_id") != source_record.get("source_system_id")
+                or item.get("source_record_id") != source_record.get("source_record_id")
+                or item.get("source_revision") != source_record.get("source_revision")):
+                raise InstitutionalSignerRegistryError("INSTITUTIONAL_SIGNER_CURRENTNESS_OBSERVATION_SOURCE_MISMATCH")
+            observed_at = _stored_instant(item.get("observed_at"))
+            if observed_at != checked_at:
+                raise InstitutionalSignerRegistryError("INSTITUTIONAL_SIGNER_CURRENTNESS_OBSERVATION_TIME_MISMATCH")
+            _fingerprint(item.get("evidence_fingerprint_sha256"))
+            if type(item.get("revoked")) is not bool:
+                raise InstitutionalSignerRegistryError("INSTITUTIONAL_SIGNER_CURRENTNESS_OBSERVATION_INVALID")
+            if item["status"] not in ("ACTIVE", "VERIFIED") or item["revoked"]:
+                negative_observation = True
+            normalized_observations[observation_key] = {
+                "evidence_kind": kind,
+                "source_system_id": item["source_system_id"],
+                "source_record_id": item["source_record_id"],
+                "source_revision": item["source_revision"],
+                "status": item["status"],
+                "revoked": item["revoked"],
+                "evidence_fingerprint_sha256": item["evidence_fingerprint_sha256"],
+                "observed_at": observed_at,
+            }
+        canonical_observation = {
+            "schema": "wilsy.institutional.signer.currentness_observation.v1",
+            "records": normalized_observations,
+        }
+        if _provenance_digest(canonical_observation) != observation_digest:
+            raise InstitutionalSignerRegistryError("INSTITUTIONAL_SIGNER_CURRENTNESS_OBSERVATION_DIGEST_MISMATCH")
+        if (status == "CURRENT" and negative_observation) or (status == "NOT_CURRENT" and not negative_observation):
+            raise InstitutionalSignerRegistryError("INSTITUTIONAL_SIGNER_CURRENTNESS_OBSERVATION_STATUS_MISMATCH")
         key = _text(idempotency_key, "INSTITUTIONAL_SIGNER_IDEMPOTENCY_INVALID", 200)
         actor = _text(actor_reference, "INSTITUTIONAL_SIGNER_CURRENTNESS_ACTOR_REQUIRED", 256)
         try:
@@ -559,6 +608,7 @@ class InstitutionalSignerEnrollmentRegistry:
                 "evidence_currentness_reason_code": reason,
                 "evidence_currentness_provenance_fingerprint_sha256": digest,
                 "evidence_currentness_observation_fingerprint_sha256": observation_digest,
+                "evidence_currentness_observation_snapshot": canonical_observation,
                 "evidence_currentness_provenance_snapshot": canonical,
                 "revision": current["revision"] + 1,
             })
