@@ -6,6 +6,7 @@ from fastapi.testclient import TestClient
 
 from tools.eos.api.errors import register_error_handlers
 from tools.eos.api.hiring_lifecycle_router import router
+from tools.eos.api.institutional_signer_router import router as institutional_signer_router
 from tools.eos.auth.permission_namespace import permission_metadata
 from tools.eos.auth.roles import get_roles_granting_permission
 from tools.eos.auth.tenant_authority_policy import ELIGIBLE, OPERATIONS, tenant_role_operation_eligibility
@@ -15,6 +16,7 @@ def _app() -> FastAPI:
     app = FastAPI()
     register_error_handlers(app, debug=False)
     app.include_router(router, prefix="/api")
+    app.include_router(institutional_signer_router, prefix="/api")
     return app
 
 
