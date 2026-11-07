@@ -127,7 +127,7 @@ def _verify_approval_evidence(verifier, *, tenant_id, certificate_fingerprint_sh
 
 
 def _record_provenance_snapshot(record, *, evaluated_at, expected_bindings, scope_fields=()):
-    required = ("source_system_id", "source_record_id", "source_revision", "status",
+    required = ("source_system_id", "source_record_id", "source_revision", "evidence_reference", "status",
                 "evidence_fingerprint_sha256", "valid_from", "valid_until", "revoked", "verified_at")
     snapshot = {"schema": "wilsy.institutional.signer.evidence_provenance.v1"}
     for field in required:
@@ -138,7 +138,7 @@ def _record_provenance_snapshot(record, *, evaluated_at, expected_bindings, scop
             snapshot[field] = value.astimezone(timezone.utc) if value is not None else None
         else:
             snapshot[field] = value
-    for field in ("source_system_id", "source_record_id", "source_revision", "status"):
+    for field in ("source_system_id", "source_record_id", "source_revision", "evidence_reference", "status"):
         if not isinstance(snapshot[field], str) or not snapshot[field] or len(snapshot[field]) > 512:
             raise HTTPException(status_code=503, detail="INSTITUTIONAL_SIGNER_EVIDENCE_PROVENANCE_INVALID")
     if not isinstance(snapshot["evidence_fingerprint_sha256"], str) or re.fullmatch(r"[0-9a-f]{64}", snapshot["evidence_fingerprint_sha256"]) is None:
