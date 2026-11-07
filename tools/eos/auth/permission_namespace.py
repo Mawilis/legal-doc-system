@@ -737,6 +737,24 @@ _PERMISSIONS: Final = MappingProxyType(
             "record own-tenant employee relations evidence",
             tenant=True, workforce=True,
         ),
+        "hr:headcount_requisition:read": _meta(
+            "hr:headcount_requisition:read",
+            "TENANT", "TENANT",
+            "read own-tenant headcount requisitions",
+            tenant=True, workforce=True,
+        ),
+        "hr:headcount_requisition:create": _meta(
+            "hr:headcount_requisition:create",
+            "TENANT", "TENANT",
+            "create and submit own-tenant headcount requisitions",
+            tenant=True, workforce=True,
+        ),
+        "hr:headcount_requisition:decide": _meta(
+            "hr:headcount_requisition:decide",
+            "TENANT", "TENANT",
+            "approve or reject submitted own-tenant headcount requisitions",
+            tenant=True, workforce=True,
+        ),
         "hr:employee_directory:read": _meta(
             "hr:employee_directory:read",
             "TENANT",

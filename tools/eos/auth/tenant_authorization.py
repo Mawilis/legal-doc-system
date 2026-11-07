@@ -269,6 +269,9 @@ _BINDINGS = MappingProxyType({
     **_BINDINGS,
     "hr_employee_relation_write": "hr:employee_relation:write",
     "hr_employee_directory_read": "hr:employee_directory:read",
+    "hr_headcount_requisition_read": "hr:headcount_requisition:read",
+    "hr_headcount_requisition_create": "hr:headcount_requisition:create",
+    "hr_headcount_requisition_decide": "hr:headcount_requisition:decide",
 })
 
 
