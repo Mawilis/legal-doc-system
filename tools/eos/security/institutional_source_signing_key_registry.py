@@ -66,6 +66,11 @@ def _canonical(value: Mapping[str, Any]) -> bytes:
         raise TypeError("unsupported canonical value")
     return json.dumps(value, sort_keys=True, separators=(",", ":"), default=encode).encode("utf-8")
 
+def _record_fingerprint(record: Mapping[str, Any]) -> str:
+    """Fingerprint immutable domain fields, excluding MongoDB's storage _id."""
+    canonical_record = {key: value for key, value in record.items() if key != "_id"}
+    return sha256(_canonical(canonical_record)).hexdigest()
+
 
 class InstitutionalSourceSigningKeyLifecycleRegistry:
     """Persist immutable source-key records and append-only lifecycle events.
@@ -183,7 +188,7 @@ class InstitutionalSourceSigningKeyLifecycleRegistry:
             "proposed_at": occurred, "lifecycle_state": "PENDING",
             "rotation": rotation,
         }
-        fingerprint_of_record = sha256(_canonical(record)).hexdigest()
+        fingerprint_of_record = _record_fingerprint(record)
         event = {
             "schema": EVENT_SCHEMA, "event_type": "PROPOSED",
             "source_system_id": source, "key_id": key,
