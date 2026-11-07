@@ -96,6 +96,7 @@ class InstitutionalSignerEnrollmentRegistry:
         signatory_mandate_evidence_reference: str,
         requested_by_principal_id: str, requested_at: datetime,
         idempotency_key: str, session: object,
+        evidence_provenance_fingerprint_sha256: str | None = None,
     ) -> dict[str, Any]:
         if session is None:
             raise InstitutionalSignerRegistryError("INSTITUTIONAL_SIGNER_CALLER_TRANSACTION_REQUIRED")
@@ -107,6 +108,10 @@ class InstitutionalSignerEnrollmentRegistry:
         proofing = _text(identity_proofing_evidence_reference, "INSTITUTIONAL_SIGNER_PROOFING_EVIDENCE_REQUIRED")
         mandate = _text(signatory_mandate_evidence_reference, "INSTITUTIONAL_SIGNER_MANDATE_EVIDENCE_REQUIRED")
         now = _instant(requested_at)
+        provenance = (
+            _fingerprint(evidence_provenance_fingerprint_sha256)
+            if evidence_provenance_fingerprint_sha256 is not None else None
+        )
         prior_event = self._events.find_one({
             "tenant_id": tenant, "idempotency_key": key,
         }, session=session)
@@ -120,6 +125,7 @@ class InstitutionalSignerEnrollmentRegistry:
                 or snapshot.get("issuer_subject_sha256") != _fingerprint(issuer_subject_sha256)
                 or snapshot.get("identity_proofing_evidence_reference") != proofing
                 or snapshot.get("signatory_mandate_evidence_reference") != mandate
+                or snapshot.get("evidence_provenance_fingerprint_sha256") != provenance
             ):
                 raise InstitutionalSignerRegistryConflict("INSTITUTIONAL_SIGNER_DIVERGENT_REPLAY")
             return snapshot
@@ -133,6 +139,7 @@ class InstitutionalSignerEnrollmentRegistry:
             "trust_root_sha256": root,
             "identity_proofing_evidence_reference": proofing,
             "signatory_mandate_evidence_reference": mandate,
+            "evidence_provenance_fingerprint_sha256": provenance,
             "requested_by_principal_id": requester,
             "requested_at": now,
             "approved_by_principal_id": None,
@@ -169,6 +176,7 @@ class InstitutionalSignerEnrollmentRegistry:
         self, *, tenant_id: str, certificate_fingerprint_sha256: str,
         approver_principal_id: str, approval_attestation_reference: str,
         approved_at: datetime, idempotency_key: str, session: object,
+        evidence_provenance_fingerprint_sha256: str | None = None,
     ) -> dict[str, Any]:
         if session is None:
             raise InstitutionalSignerRegistryError("INSTITUTIONAL_SIGNER_CALLER_TRANSACTION_REQUIRED")
@@ -177,6 +185,10 @@ class InstitutionalSignerEnrollmentRegistry:
         approver = _text(approver_principal_id, "INSTITUTIONAL_SIGNER_APPROVER_INVALID")
         attestation = _text(approval_attestation_reference, "INSTITUTIONAL_SIGNER_APPROVAL_ATTESTATION_REQUIRED")
         now = _instant(approved_at)
+        provenance = (
+            _fingerprint(evidence_provenance_fingerprint_sha256)
+            if evidence_provenance_fingerprint_sha256 is not None else None
+        )
         key = _text(idempotency_key, "INSTITUTIONAL_SIGNER_IDEMPOTENCY_INVALID", 200)
         prior_event = self._events.find_one({"tenant_id": tenant, "idempotency_key": key}, session=session)
         if prior_event is not None:
@@ -187,6 +199,7 @@ class InstitutionalSignerEnrollmentRegistry:
                 or not isinstance(snapshot, dict)
                 or snapshot.get("certificate_fingerprint_sha256") != fingerprint
                 or snapshot.get("approval_attestation_reference") != attestation
+                or snapshot.get("approval_evidence_provenance_fingerprint_sha256") != provenance
             ):
                 raise InstitutionalSignerRegistryConflict("INSTITUTIONAL_SIGNER_DIVERGENT_REPLAY")
             return snapshot
@@ -205,6 +218,7 @@ class InstitutionalSignerEnrollmentRegistry:
             updated.update({
                 "status": "ACTIVE", "approved_by_principal_id": approver,
                 "approval_attestation_reference": attestation,
+                "approval_evidence_provenance_fingerprint_sha256": provenance,
                 "approved_at": now, "revision": current["revision"] + 1,
             })
             result = self._records.update_one({
