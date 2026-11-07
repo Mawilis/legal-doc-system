@@ -67,16 +67,6 @@ class InstitutionalSignerSourceLookup:
     required_scope: str | None = None
 
     def __post_init__(self) -> None:
-        try:
-            signature = base64.b64decode(self.response_signature_base64, validate=True)
-        except (ValueError, TypeError):
-            raise InstitutionalSignerSourceAdapterError(
-                "INSTITUTIONAL_SIGNER_SOURCE_SIGNATURE_ENCODING_INVALID"
-            ) from None
-        if len(signature) != 64:
-            raise InstitutionalSignerSourceAdapterError(
-                "INSTITUTIONAL_SIGNER_SOURCE_SIGNATURE_LENGTH_INVALID"
-            )
         if self.tenant_id != TENANT_ID:
             raise InstitutionalSignerSourceAdapterError(
                 "INSTITUTIONAL_SIGNER_SOURCE_TENANT_SCOPE_INVALID"
@@ -130,6 +120,16 @@ class InstitutionalSignerSourceEvidence:
     authority_scope: str | None = None
 
     def __post_init__(self) -> None:
+        try:
+            signature = base64.b64decode(self.response_signature_base64, validate=True)
+        except (ValueError, TypeError):
+            raise InstitutionalSignerSourceAdapterError(
+                "INSTITUTIONAL_SIGNER_SOURCE_SIGNATURE_ENCODING_INVALID"
+            ) from None
+        if len(signature) != 64:
+            raise InstitutionalSignerSourceAdapterError(
+                "INSTITUTIONAL_SIGNER_SOURCE_SIGNATURE_LENGTH_INVALID"
+            )
         if self.evidence_kind not in EVIDENCE_KINDS:
             raise InstitutionalSignerSourceAdapterError(
                 "INSTITUTIONAL_SIGNER_SOURCE_EVIDENCE_KIND_INVALID"
