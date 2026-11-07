@@ -470,6 +470,15 @@ for _hr_role_name in (
     ]
 
 
+# Headcount governance separates requisition initiation from decision authority.
+ROLE_PERMISSIONS_MAP["HR_MANAGER"].append("hr:headcount_requisition:create")
+ROLE_PERMISSIONS_MAP["HR_MANAGER"].append("hr:headcount_requisition:read")
+ROLE_PERMISSIONS_MAP["HR_DIRECTOR"].extend([
+    "hr:headcount_requisition:read",
+    "hr:headcount_requisition:decide",
+])
+
+
 # P0-C12F7B sensitivity-specific single-purpose HR document grants.
 _HR_DOCUMENT_AUTH_ROLE_PERMISSIONS = {
     "HR_DOCUMENT_STANDARD_EMPLOYMENT_WRITE":
