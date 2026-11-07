@@ -33,6 +33,7 @@ from tools.eos.saas.hr.candidate_evidence_registry import (
     CandidateEvidenceRegistry,
     CandidateEvidenceRegistryConflict,
     CandidateEvidenceRegistryError,
+    CandidateEvidenceRegistryNotFound,
 )
 from tools.eos.saas.hr.candidate_evidence_s3_storage_adapter import (
     CandidateEvidenceS3Error,
@@ -48,6 +49,8 @@ from tools.eos.saas.hr.candidate_evidence_upload_attempt_registry import (
     EVENT_COLLECTION as ATTEMPT_EVENT_COLLECTION,
     CandidateEvidenceUploadAttemptRegistry,
     UploadAttemptStatus,
+    UploadAttemptConflict,
+    UploadAttemptError,
 )
 from tools.eos.saas.hr.candidate_evidence_upload_orchestrator import (
     CandidateEvidenceUploadOrchestrationError,
@@ -91,6 +94,10 @@ def _transaction(callback):
             )
     except HiringLifecycleNotFound as error:
         raise HTTPException(status_code=404, detail=error.code) from error
+    except UploadAttemptConflict as error:
+        raise HTTPException(status_code=409, detail=error.code) from error
+    except UploadAttemptError as error:
+        raise HTTPException(status_code=503, detail=error.code) from error
     except CandidateEvidenceRegistryConflict as error:
         raise HTTPException(status_code=409, detail=error.code) from error
     except CandidateEvidenceRegistryError as error:
@@ -184,6 +191,16 @@ async def upload_candidate_evidence(
 
     def admit(tx):
         candidate = hiring.get_candidate(tenant_id=tenant_id, candidate_id=candidate_id, session=tx)
+        try:
+            custody.get(
+                tenant_id=tenant_id, candidate_id=candidate_id,
+                evidence_id=evidence_id, evidence_version_id=evidence_version_id,
+                session=tx,
+            )
+        except CandidateEvidenceRegistryNotFound:
+            pass
+        else:
+            raise HTTPException(status_code=409, detail="CANDIDATE_EVIDENCE_VERSION_ALREADY_REGISTERED")
         if evidence_kind is CandidateEvidenceKind.SIGNED_OFFER:
             offer = hiring.get_offer(tenant_id=tenant_id, offer_id=offer_id, session=tx)
             if offer.candidate_id != candidate_id:
