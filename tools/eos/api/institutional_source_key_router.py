@@ -281,6 +281,7 @@ async def revoke_source_signing_key(
             key_id=key_id,
             revoked_at=now,
             reason_reference=body.reason_reference,
+            approval_evidence_reference=body.approval_evidence_reference,
             revoked_by_principal_id=context.identity.identity_id,
             governance_decision_reference=body.governance_decision_reference,
             idempotency_key=idempotency_key,
