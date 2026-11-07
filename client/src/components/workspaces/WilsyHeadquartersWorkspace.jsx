@@ -1,5 +1,4 @@
 import React, { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
 import {
   ArrowUpRight, BriefcaseBusiness, Building2, CheckCircle2, ChevronRight,
   CircleAlert, Code2, FileText, Globe2, Headphones, LockKeyhole, RefreshCw,
@@ -38,7 +37,6 @@ function SourceBoundary({ title, description }) {
 }
 
 export default function WilsyHeadquartersWorkspace() {
-  const navigate = useNavigate();
   const [section, setSection] = useState('overview');
   const [showMyWork, setShowMyWork] = useState(false);
   const selectedDepartment = departments.find((item) => item.id === section);
