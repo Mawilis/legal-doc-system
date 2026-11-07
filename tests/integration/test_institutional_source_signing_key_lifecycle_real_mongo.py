@@ -312,8 +312,8 @@ def test_concurrent_rotation_revocation_and_idempotent_replay_are_serialized():
 
         def rotate(key_id: str):
             public = _public_key()
+            rotation_barrier.wait(timeout=10)
             def callback(session):
-                rotation_barrier.wait(timeout=10)
                 return registry.propose(
                     source_system_id=source, key_id=key_id, public_key_bytes=public,
                     valid_from=now - timedelta(seconds=1), valid_until=now + timedelta(hours=1),
@@ -346,8 +346,8 @@ def test_concurrent_rotation_revocation_and_idempotent_replay_are_serialized():
         revoke_barrier = Barrier(2)
 
         def revoke(revoker: str):
+            revoke_barrier.wait(timeout=10)
             def callback(session):
-                revoke_barrier.wait(timeout=10)
                 return registry.revoke(
                     source_system_id=source, key_id="base-key", revoked_at=datetime.now(timezone.utc),
                     reason_reference=f"reason-{revoker}", revoked_by_principal_id=revoker,
@@ -376,8 +376,8 @@ def test_concurrent_rotation_revocation_and_idempotent_replay_are_serialized():
         replay_barrier = Barrier(2)
 
         def replay_proposal():
+            replay_barrier.wait(timeout=10)
             def callback(session):
-                replay_barrier.wait(timeout=10)
                 return registry.propose(
                     source_system_id=replay_source, key_id="replayed-key",
                     public_key_bytes=replay_public,
