@@ -55,6 +55,7 @@ def _crl(issuer, signer, revoked_serials=(), *, last_update=NOW - timedelta(minu
         .issuer_name(issuer)
         .last_update(last_update)
         .next_update(next_update)
+        .add_extension(x509.CRLNumber(1), critical=False)
     )
     for serial in revoked_serials:
         builder = builder.add_revoked_certificate(
