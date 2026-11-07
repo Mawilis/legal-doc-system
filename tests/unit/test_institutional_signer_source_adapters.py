@@ -1,4 +1,9 @@
 from datetime import datetime, timezone
+import base64
+from dataclasses import replace
+
+from cryptography.hazmat.primitives import serialization
+from cryptography.hazmat.primitives.asymmetric.ed25519 import Ed25519PrivateKey
 
 import pytest
 
@@ -7,6 +12,8 @@ from tools.eos.security.institutional_signer_source_adapters import (
     InstitutionalSignerSourceEvidence,
     InstitutionalSignerSourceLookup,
     UnavailableInstitutionalSignerSourceAdapterSet,
+    Ed25519InstitutionalSignerSourceResponseAuthenticator,
+    _canonical_source_response_payload,
 )
 from tools.eos.security.institutional_signer_evidence_verifier import TENANT_ID
 
@@ -151,6 +158,8 @@ def source_response(**overrides):
         "revoked": False,
         "observed_at": NOW,
         "response_signature_reference": "signature://response/123",
+        "response_signing_key_id": "dha-response-key-2026",
+        "response_signature_base64": base64.b64encode(b"0" * 64).decode("ascii"),
     }
     values.update(overrides)
     return InstitutionalSignerSourceEvidence(**values)
@@ -198,3 +207,60 @@ def test_authenticated_read_rejects_adapter_kind_mismatch_before_provider_io():
             adapter=adapter, authenticator=_FakeAuthenticator(), lookup=lookup()
         )
     assert error.value.code == "INSTITUTIONAL_SIGNER_SOURCE_ADAPTER_EVIDENCE_KIND_MISMATCH"
+
+
+def _signed_source_response(private_key=None, **overrides):
+    private_key = private_key or Ed25519PrivateKey.generate()
+    response = source_response(**overrides)
+    signature = private_key.sign(_canonical_source_response_payload(response))
+    response = replace(response, response_signature_base64=base64.b64encode(signature).decode("ascii"))
+    public_key = private_key.public_key().public_bytes(
+        encoding=serialization.Encoding.Raw,
+        format=serialization.PublicFormat.Raw,
+    )
+    return response, public_key
+
+
+def test_ed25519_authenticator_accepts_signature_from_pinned_source_key():
+    response, public_key = _signed_source_response()
+    authenticator = Ed25519InstitutionalSignerSourceResponseAuthenticator({
+        ("DHA-NPR-VERIFICATION", "dha-response-key-2026"): public_key
+    })
+    authenticator.authenticate_response(
+        expected_source_system_id="DHA-NPR-VERIFICATION", lookup=lookup(), response=response
+    )
+
+
+def test_ed25519_authenticator_rejects_tampered_source_revision():
+    response, public_key = _signed_source_response()
+    authenticator = Ed25519InstitutionalSignerSourceResponseAuthenticator({
+        ("DHA-NPR-VERIFICATION", "dha-response-key-2026"): public_key
+    })
+    tampered = replace(response, source_revision="revision-8")
+    with pytest.raises(InstitutionalSignerSourceAdapterError) as error:
+        authenticator.authenticate_response(
+            expected_source_system_id="DHA-NPR-VERIFICATION", lookup=lookup(), response=tampered
+        )
+    assert error.value.code == "INSTITUTIONAL_SIGNER_SOURCE_RESPONSE_SIGNATURE_INVALID"
+
+
+def test_ed25519_authenticator_rejects_key_reuse_for_another_source():
+    response, public_key = _signed_source_response()
+    authenticator = Ed25519InstitutionalSignerSourceResponseAuthenticator({
+        ("UNRELATED-SOURCE", "dha-response-key-2026"): public_key
+    })
+    with pytest.raises(InstitutionalSignerSourceAdapterError) as error:
+        authenticator.authenticate_response(
+            expected_source_system_id="DHA-NPR-VERIFICATION", lookup=lookup(), response=response
+        )
+    assert error.value.code == "INSTITUTIONAL_SIGNER_SOURCE_SIGNING_KEY_UNTRUSTED"
+
+
+def test_ed25519_authenticator_rejects_empty_trust_configuration():
+    response, _ = _signed_source_response()
+    authenticator = Ed25519InstitutionalSignerSourceResponseAuthenticator({})
+    with pytest.raises(InstitutionalSignerSourceAdapterError) as error:
+        authenticator.authenticate_response(
+            expected_source_system_id="DHA-NPR-VERIFICATION", lookup=lookup(), response=response
+        )
+    assert error.value.code == "INSTITUTIONAL_SIGNER_SOURCE_SIGNING_KEY_UNTRUSTED"
