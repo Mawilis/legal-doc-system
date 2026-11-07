@@ -413,6 +413,8 @@ class InstitutionalSourceSigningKeyLifecycleRegistry:
         except DuplicateKeyError as error:
             raise SourceSigningKeyRegistryConflict("SOURCE_SIGNING_KEY_REVOCATION_CONFLICT") from error
         except PyMongoError as error:
+            if error.has_error_label("TransientTransactionError"):
+                raise
             raise SourceSigningKeyRegistryError("SOURCE_SIGNING_KEY_REVOCATION_PERSISTENCE_FAILED") from error
         return event
 
