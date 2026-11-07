@@ -1204,3 +1204,25 @@ _evidence_director = dict(_evidence_eligibility["tenant_hr_director"])
 _evidence_director["hr_hiring_candidate_evidence_read"] = ELIGIBLE
 _evidence_eligibility["tenant_hr_director"] = MappingProxyType(_evidence_director)
 ELIGIBILITY = MappingProxyType(_evidence_eligibility)
+
+
+# Institutional signer governance is an explicit owner-only command family.
+# Each command still requires independent current IAM and tenant membership;
+# enrollment approval is additionally maker-checker enforced in the registry.
+INSTITUTIONAL_SIGNER_OPERATIONS = (
+    "institutional_signer_enroll",
+    "institutional_signer_approve",
+    "institutional_signer_revoke",
+)
+OPERATIONS = frozenset((*OPERATIONS, *INSTITUTIONAL_SIGNER_OPERATIONS))
+BUSINESS_ROLE_OPERATION_PERMISSIONS = MappingProxyType({
+    **BUSINESS_ROLE_OPERATION_PERMISSIONS,
+    "institutional_signer_enroll": "security:institutional_signer:enroll",
+    "institutional_signer_approve": "security:institutional_signer:approve",
+    "institutional_signer_revoke": "security:institutional_signer:revoke",
+})
+_signer_eligibility = dict(ELIGIBILITY)
+_signer_owner = dict(_signer_eligibility["tenant_owner"])
+_signer_owner.update({operation: ELIGIBLE for operation in INSTITUTIONAL_SIGNER_OPERATIONS})
+_signer_eligibility["tenant_owner"] = MappingProxyType(_signer_owner)
+ELIGIBILITY = MappingProxyType(_signer_eligibility)
