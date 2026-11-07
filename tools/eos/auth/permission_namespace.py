@@ -316,6 +316,9 @@ _PERMISSIONS: Final = MappingProxyType(
         "hr:hiring_offer:accept": _meta("hr:hiring_offer:accept", "TENANT", "TENANT", "record evidenced candidate offer acceptance", tenant=True),
         "hr:hiring_candidate_evidence:upload": _meta("hr:hiring_candidate_evidence:upload", "TENANT", "TENANT", "upload own-tenant candidate and offer evidence bytes", tenant=True),
         "hr:hiring_candidate_evidence:read": _meta("hr:hiring_candidate_evidence:read", "TENANT", "TENANT", "read own-tenant candidate and offer evidence bytes", tenant=True),
+        "security:institutional_signer:enroll": _meta("security:institutional_signer:enroll", "TENANT", "TENANT", "request own-tenant institutional signer enrollment with proofing and mandate evidence", tenant=True),
+        "security:institutional_signer:approve": _meta("security:institutional_signer:approve", "TENANT", "TENANT", "independently approve a pending own-tenant institutional signer enrollment", tenant=True),
+        "security:institutional_signer:revoke": _meta("security:institutional_signer:revoke", "TENANT", "TENANT", "revoke an active own-tenant institutional signer enrollment", tenant=True),
 
         "kernel:read": _meta(
             "kernel:read",
