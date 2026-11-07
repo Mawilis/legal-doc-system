@@ -112,6 +112,10 @@ def _evidence_record(**overrides):
         "tenant_id": "WILSYTENANT-4CD2FZ4O",
         "subject_principal_id": "PRINCIPAL-1",
         "certificate_fingerprint_sha256": "a" * 64,
+        "identity_assurance_level": "SUBSTANTIAL",
+        "legal_entity_reference": "WILSY-PTY-LTD",
+        "mandate_scope": "INSTITUTIONAL_SIGNER",
+        "approval_scope": "INSTITUTIONAL_SIGNER_ENROLLMENT",
     }
     values.update(overrides)
     return SimpleNamespace(**values)
