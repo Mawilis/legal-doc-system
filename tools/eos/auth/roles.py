@@ -465,7 +465,8 @@ for _hr_role_name in (
     "EMPLOYEE_RELATIONS_SPECIALIST",
 ):
     ROLE_PERMISSIONS_MAP[_hr_role_name] = [
-        "hr:employee_relation:write"
+        "hr:employee_relation:write",
+        "hr:employee_directory:read",
     ]
 
 

@@ -1,11 +1,33 @@
 import React from 'react';
 import { describe, expect, it, vi } from 'vitest';
-import { fireEvent, render, screen } from '@testing-library/react';
+import { fireEvent, render, screen, waitFor, within } from '@testing-library/react';
+import api from '../../services/api.js';
 import { MemoryRouter } from 'react-router-dom';
 import WilsyHeadquartersWorkspace from '../../components/workspaces/WilsyHeadquartersWorkspace.jsx';
 
 vi.mock('../../components/workspaces/MyWorkWorkspace.jsx', () => ({
   default: () => <section><h2>My Work certified task centre</h2></section>,
+}));
+vi.mock('../../services/api.js', () => ({
+  default: {
+    get: vi.fn().mockResolvedValue({
+      data: {
+        items: [{
+          employeeId: 'EMP-TEST-1',
+          displayName: 'Test Directory Person',
+          jobTitle: 'Engineer',
+          department: 'Engineering',
+          employmentStatus: 'ACTIVE',
+          workEmail: 'test@example.invalid',
+          workLocation: 'Remote',
+        }],
+        total: 1,
+        limit: 50,
+        offset: 0,
+        hasMore: false,
+      },
+    }),
+  },
 }));
 
 const renderHeadquarters = () => render(
@@ -16,21 +38,39 @@ describe('WILSY Headquarters authenticated shell', () => {
   it('presents the company operating environment and daily task centre entry', () => {
     renderHeadquarters();
     expect(screen.getByRole('heading', { name: 'WILSY Headquarters' })).toBeTruthy();
-    expect(screen.getByRole('button', { name: /My Work/ })).toBeTruthy();
+    const navigation = screen.getByRole('navigation', { name: 'Headquarters navigation' });
+    expect(within(navigation).getByRole('button', { name: /My Work/ })).toBeTruthy();
     expect(screen.getByText(/does not invent headcount, revenue, customer totals/)).toBeTruthy();
   });
 
   it('mounts the existing My Work workspace rather than a duplicate task projection', () => {
     renderHeadquarters();
-    fireEvent.click(screen.getByRole('button', { name: /My Work/ }));
+    const navigation = screen.getByRole('navigation', { name: 'Headquarters navigation' });
+    fireEvent.click(within(navigation).getByRole('button', { name: /My Work/ }));
     expect(screen.getByRole('heading', { name: 'My Work certified task centre' })).toBeTruthy();
   });
 
-  it('keeps workforce records unavailable until the HR source is certified', () => {
+  it('renders authorised workforce records from the HR directory service', async () => {
     renderHeadquarters();
     fireEvent.click(screen.getByRole('button', { name: /Organisation & People/ }));
-    expect(screen.getByText('Workforce directory is not yet connected')).toBeTruthy();
-    expect(screen.getByText(/legacy employee and HR routes have caller-controlled tenant scope/)).toBeTruthy();
+    expect(await screen.findByText('Authorised workforce directory')).toBeTruthy();
+    expect(await screen.findByText('Test Directory Person')).toBeTruthy();
+    expect(screen.getByText(/test@example\.invalid/)).toBeTruthy();
+  });
+
+  it('searches the authorised workforce source without supplying tenant authority', async () => {
+    renderHeadquarters();
+    fireEvent.click(screen.getByRole('button', { name: /Organisation & People/ }));
+    await screen.findByText('Test Directory Person');
+    fireEvent.change(screen.getByRole('textbox', { name: 'Search workforce directory' }), {
+      target: { value: 'Engineering' },
+    });
+    await waitFor(() => {
+      expect(api.get).toHaveBeenLastCalledWith('/hr/workforce', expect.objectContaining({
+        params: expect.objectContaining({ limit: 50, offset: 0, q: 'Engineering' }),
+        forceNetworkRetry: true,
+      }));
+    });
   });
 
   it('separates supported business models from actual customer records', () => {
@@ -44,7 +84,8 @@ describe('WILSY Headquarters authenticated shell', () => {
 
   it('does not represent unconnected department services as operational', () => {
     renderHeadquarters();
-    fireEvent.click(screen.getByRole('button', { name: /Engineering/ }));
+    const navigation = screen.getByRole('navigation', { name: 'Headquarters navigation' });
+    fireEvent.click(within(navigation).getByRole('button', { name: /Engineering/ }));
     expect(screen.getByText('Engineering source is not yet connected')).toBeTruthy();
     expect(screen.getByText('Source integration not yet certified')).toBeTruthy();
   });

@@ -133,6 +133,7 @@ from tools.eos.legal_operations.service.legal_evidence_provider_readonly_reconci
 from .wilsy_ai_legal_gateway_router import MODULE_ID as WILSY_AI_LEGAL_MODULE_ID, _canonical_underlying_context
 from .tenant_authorization_http import TenantAuthorizationContext
 from .hr_document_router import router as hr_document_router
+from .hr_workforce_directory_router import router as hr_workforce_directory_router
 from tools.eos.auth.authentication import get_principal_authority_repository
 from tools.eos.auth.authorization import get_role_assignment_repository
 from tools.eos.auth.tenant_access import get_tenant_membership_repository
@@ -967,6 +968,7 @@ class WilsyAPIServer:
         app.include_router(payshap_webhook_router)
         app.include_router(electrum_payshap_completion_router)
         app.include_router(hr_document_router)
+        app.include_router(hr_workforce_directory_router)
 
         logger.info(
             "WilsyAPIServer [%s v%s] initialized with sovereign routers "

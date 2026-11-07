@@ -106,6 +106,7 @@ def _identity() -> SovereignIdentity:
         SovereignIdentity,
         SimpleNamespace(
             identity_id="principal-r8c",
+            principal_scope="TENANT",
         ),
     )
 
