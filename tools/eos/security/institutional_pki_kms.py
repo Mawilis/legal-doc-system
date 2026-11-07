@@ -9,9 +9,11 @@ from __future__ import annotations
 import json
 import re
 from dataclasses import dataclass
-from datetime import datetime, timezone
+from datetime import datetime, timedelta, timezone
 from hashlib import sha256, sha384
-from typing import Any
+import os
+from pathlib import Path
+from typing import Any, Iterable
 
 from cryptography import x509
 from cryptography.hazmat.primitives import hashes, serialization
@@ -23,6 +25,7 @@ from cryptography.x509.oid import NameOID
 KEY_SPEC = "RSA_3072"
 KEY_USAGE = "SIGN_VERIFY"
 SIGNING_ALGORITHM = "RSASSA_PSS_SHA_384"
+CRL_SIGNING_ALGORITHM = "RSASSA_PKCS1_V1_5_SHA_384"
 KEY_TAGS = (
     {"TagKey": "System", "TagValue": "WILSY-EOS"},
     {"TagKey": "Purpose", "TagValue": "Institutional-Subordinate-CA"},
@@ -185,7 +188,7 @@ def create_nonexportable_subordinate_ca_key_and_csr(
         if (
             public.get("KeySpec") != KEY_SPEC
             or public.get("KeyUsage") != KEY_USAGE
-            or SIGNING_ALGORITHM not in public.get("SigningAlgorithms", ())
+            or not {SIGNING_ALGORITHM, CRL_SIGNING_ALGORITHM}.issubset(set(public.get("SigningAlgorithms", ())))
         ):
             raise InstitutionalPKIKMSError("INSTITUTIONAL_KMS_PUBLIC_KEY_PROFILE_MISMATCH")
         public_key_der = public.get("PublicKey")
@@ -249,8 +252,137 @@ def create_nonexportable_subordinate_ca_key_and_csr(
         ) from error
 
 
+def _utc_time(value: datetime) -> bytes:
+    if value.tzinfo is None or value.utcoffset() is None:
+        raise InstitutionalPKIKMSError("INSTITUTIONAL_KMS_CRL_TIME_INVALID")
+    return _tlv(0x17, value.astimezone(timezone.utc).strftime("%y%m%d%H%M%SZ").encode("ascii"))
+
+
+def _sha384_pkcs1_algorithm_identifier() -> bytes:
+    return _sequence(bytes.fromhex("06092a864886f70d01010c") + _NULL)
+
+
+def _write_public_once(path: Path, payload: bytes) -> None:
+    path.parent.mkdir(mode=0o700, parents=True, exist_ok=True)
+    descriptor = os.open(path, os.O_WRONLY | os.O_CREAT | os.O_EXCL, 0o644)
+    try:
+        with os.fdopen(descriptor, "wb") as stream:
+            stream.write(payload)
+            stream.flush()
+            os.fsync(stream.fileno())
+    except Exception:
+        path.unlink(missing_ok=True)
+        raise
+
+
+def issue_crl_with_kms(
+    kms_client: Any,
+    *,
+    key_arn: str,
+    issuer_certificate_pem: bytes,
+    output_path: Path,
+    revoked_serial_numbers: Iterable[int] = (),
+    crl_number: int,
+    validity_hours: int = 24,
+) -> tuple[Path, str]:
+    """Create a current X.509 CRL signed by the non-exportable KMS CA key."""
+    if type(crl_number) is not int or crl_number < 1:
+        raise InstitutionalPKIKMSError("INSTITUTIONAL_KMS_CRL_NUMBER_INVALID")
+    if type(validity_hours) is not int or not 1 <= validity_hours <= 168:
+        raise InstitutionalPKIKMSError("INSTITUTIONAL_KMS_CRL_VALIDITY_INVALID")
+    if not isinstance(key_arn, str) or re.fullmatch(
+        r"arn:aws(?:-[a-z]+)?:kms:[a-z]{2}(?:-gov)?-[a-z]+-\\d:[0-9]{12}:key/[A-Za-z0-9-]+",
+        key_arn,
+    ) is None:
+        raise InstitutionalPKIKMSError("INSTITUTIONAL_KMS_KEY_ARN_INVALID")
+    try:
+        issuer = x509.load_pem_x509_certificate(issuer_certificate_pem)
+        metadata = kms_client.describe_key(KeyId=key_arn).get("KeyMetadata") or {}
+        public = kms_client.get_public_key(KeyId=key_arn)
+        if (
+            metadata.get("Arn") != key_arn
+            or metadata.get("KeySpec") != KEY_SPEC
+            or metadata.get("KeyUsage") != KEY_USAGE
+            or metadata.get("Origin") != "AWS_KMS"
+            or metadata.get("KeyState") != "Enabled"
+            or metadata.get("MultiRegion") is not False
+            or public.get("KeySpec") != KEY_SPEC
+            or public.get("KeyUsage") != KEY_USAGE
+            or CRL_SIGNING_ALGORITHM not in public.get("SigningAlgorithms", ())
+        ):
+            raise InstitutionalPKIKMSError("INSTITUTIONAL_KMS_CRL_SIGNER_PROFILE_MISMATCH")
+        kms_public_key = serialization.load_der_public_key(public["PublicKey"])
+        issuer_public_key = issuer.public_key()
+        if (
+            not isinstance(kms_public_key, rsa.RSAPublicKey)
+            or not isinstance(issuer_public_key, rsa.RSAPublicKey)
+            or kms_public_key.key_size != 3072
+            or kms_public_key.public_numbers() != issuer_public_key.public_numbers()
+        ):
+            raise InstitutionalPKIKMSError("INSTITUTIONAL_KMS_CRL_SIGNER_CERTIFICATE_KEY_MISMATCH")
+        constraints = issuer.extensions.get_extension_for_class(x509.BasicConstraints).value
+        usage = issuer.extensions.get_extension_for_class(x509.KeyUsage).value
+        if not constraints.ca or not usage.key_cert_sign or not usage.crl_sign:
+            raise InstitutionalPKIKMSError("INSTITUTIONAL_KMS_CRL_ISSUER_PROFILE_INVALID")
+        serials = tuple(revoked_serial_numbers)
+        if any(type(value) is not int or value < 1 for value in serials) or len(set(serials)) != len(serials):
+            raise InstitutionalPKIKMSError("INSTITUTIONAL_KMS_CRL_REVOKED_SERIAL_INVALID")
+        now = datetime.now(timezone.utc).replace(microsecond=0)
+        next_update = now + timedelta(hours=validity_hours)
+        key_identifier = x509.SubjectKeyIdentifier.from_public_key(issuer_public_key).digest
+        algorithm = _sha384_pkcs1_algorithm_identifier()
+        revoked_der = b"".join(
+            _sequence(_integer(serial) + _utc_time(now))
+            for serial in sorted(serials)
+        )
+        revoked_sequence = _sequence(revoked_der) if revoked_der else b""
+        crl_number_extension = _sequence(
+            bytes.fromhex("0603551d14") + _tlv(0x04, _integer(crl_number))
+        )
+        authority_key_extension = _sequence(
+            bytes.fromhex("0603551d23")
+            + _tlv(0x04, _sequence(_tlv(0x80, key_identifier)))
+        )
+        extensions = _tlv(0xA0, _sequence(crl_number_extension + authority_key_extension))
+        tbs = _sequence(
+            _integer(1) + algorithm + issuer.subject.public_bytes()
+            + _utc_time(now) + _utc_time(next_update)
+            + revoked_sequence + extensions
+        )
+        digest = sha384(tbs).digest()
+        signed = kms_client.sign(
+            KeyId=key_arn, Message=digest, MessageType="DIGEST",
+            SigningAlgorithm=CRL_SIGNING_ALGORITHM,
+        )
+        signature = signed.get("Signature")
+        if not isinstance(signature, bytes) or not signature:
+            raise InstitutionalPKIKMSError("INSTITUTIONAL_KMS_CRL_SIGNATURE_UNAVAILABLE")
+        kms_public_key.verify(
+            signature, digest, padding.PKCS1v15(), Prehashed(hashes.SHA384()),
+        )
+        der = _sequence(tbs + algorithm + _tlv(0x03, b"\\x00" + signature))
+        crl = x509.load_der_x509_crl(der)
+        if (
+            crl.issuer != issuer.subject
+            or crl.extensions.get_extension_for_class(x509.CRLNumber).value.crl_number != crl_number
+            or {item.serial_number for item in crl} != set(serials)
+        ):
+            raise InstitutionalPKIKMSError("INSTITUTIONAL_KMS_CRL_SELF_VERIFICATION_FAILED")
+        output = Path(output_path).expanduser().resolve()
+        pem = crl.public_bytes(serialization.Encoding.PEM)
+        _write_public_once(output, pem)
+        return output, sha256(pem).hexdigest()
+    except InstitutionalPKIKMSError:
+        raise
+    except Exception as error:
+        raise InstitutionalPKIKMSError("INSTITUTIONAL_KMS_CRL_PUBLICATION_FAILED", key_arn=key_arn) from error
+
+
+
 __all__ = [
     "InstitutionalPKIKMSError",
     "InstitutionalKMSSubordinateCSR",
     "create_nonexportable_subordinate_ca_key_and_csr",
+    "issue_crl_with_kms",
+    "CRL_SIGNING_ALGORITHM",
 ]
