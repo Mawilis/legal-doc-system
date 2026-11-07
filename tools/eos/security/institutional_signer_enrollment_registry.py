@@ -487,6 +487,7 @@ class InstitutionalSignerEnrollmentRegistry:
             "approval_attestation": approval,
         }
         digest = _fingerprint(verification.provenance_fingerprint_sha256)
+        observation_digest = _fingerprint(verification.observation_fingerprint_sha256)
         if _provenance_digest(canonical) != digest:
             raise InstitutionalSignerRegistryError("INSTITUTIONAL_SIGNER_CURRENTNESS_DIGEST_MISMATCH")
         key = _text(idempotency_key, "INSTITUTIONAL_SIGNER_IDEMPOTENCY_INVALID", 200)
@@ -507,8 +508,25 @@ class InstitutionalSignerEnrollmentRegistry:
             if current is None:
                 raise InstitutionalSignerRegistryConflict("INSTITUTIONAL_SIGNER_CURRENTNESS_REVISION_CONFLICT")
             if (current.get("requested_by_principal_id") != identity.get("subject_principal_id")
-                or current.get("approved_by_principal_id") != approval.get("reviewer_principal_id")):
+                or current.get("approved_by_principal_id") != approval.get("reviewer_principal_id")
+                or current.get("identity_proofing_evidence_reference") != identity.get("evidence_reference")
+                or current.get("signatory_mandate_evidence_reference") != mandate.get("evidence_reference")
+                or current.get("approval_attestation_reference") != approval.get("evidence_reference")):
                 raise InstitutionalSignerRegistryError("INSTITUTIONAL_SIGNER_CURRENTNESS_SCOPE_MISMATCH")
+            previous_enrollment = current.get("evidence_provenance_snapshot") or {}
+            previous_approval = current.get("approval_evidence_provenance_snapshot") or {}
+            for key_name, previous_group, new_group in (
+                ("identity_proofing", previous_enrollment, identity),
+                ("signatory_mandate", previous_enrollment, mandate),
+                ("approval_attestation", previous_approval, approval),
+            ):
+                previous = previous_group.get(key_name) if key_name != "approval_attestation" else previous_group
+                if (not isinstance(previous, dict)
+                    or previous.get("source_system_id") != new_group.get("source_system_id")
+                    or previous.get("source_record_id") != new_group.get("source_record_id")):
+                    raise InstitutionalSignerRegistryError("INSTITUTIONAL_SIGNER_CURRENTNESS_SOURCE_IDENTITY_CHANGED")
+            if any(record.get("evaluated_at") != checked_at for record in (identity, mandate, approval)):
+                raise InstitutionalSignerRegistryError("INSTITUTIONAL_SIGNER_CURRENTNESS_EVALUATION_TIME_MISMATCH")
             updated = dict(current)
             updated.pop("_id", None)
             updated.update({
@@ -517,6 +535,7 @@ class InstitutionalSignerEnrollmentRegistry:
                 "evidence_currentness_valid_until": valid_until,
                 "evidence_currentness_reason_code": reason,
                 "evidence_currentness_provenance_fingerprint_sha256": digest,
+                "evidence_currentness_observation_fingerprint_sha256": observation_digest,
                 "evidence_currentness_provenance_snapshot": canonical,
                 "revision": current["revision"] + 1,
             })
@@ -533,6 +552,7 @@ class InstitutionalSignerEnrollmentRegistry:
                 "occurred_at": checked_at, "snapshot": updated,
                 "evidence_currentness_status": status,
                 "evidence_currentness_provenance_fingerprint_sha256": digest,
+                "evidence_currentness_observation_fingerprint_sha256": observation_digest,
                 "schema": "wilsy.institutional.signer_event.v1",
             }, session=session)
             updated.pop("_id", None)
