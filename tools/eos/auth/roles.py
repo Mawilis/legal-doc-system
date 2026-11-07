@@ -1,5 +1,5 @@
 """TITLE: WILSY OS Role Definition Policy.
-VERSION: v1.49.0-R59-P9-REASSIGNMENT-IAM-INTEGRATION
+VERSION: v1.52.0-INSTITUTIONAL-SOURCE-KEY-ADMIN
 AUTHORITY: Canonical Python role identifiers and explicit permission grants.
 EPITOME: Defines current tenant-scoped authorization roles, including
 least-privilege subscription/plan-catalogue grants, read-only WILSY AI
@@ -634,7 +634,7 @@ ROLE_PERMISSIONS_MAP["LEGAL_PARTNER"].append(
 )
 
 # ARTIFACT: tools/eos/auth/roles.py
-# VERSION: v1.49.0-R59-P9-REASSIGNMENT-IAM-INTEGRATION
+# VERSION: v1.52.0-INSTITUTIONAL-SOURCE-KEY-ADMIN
 # AUTHORITY BOUNDARY: role identifiers and deterministic permission definitions only; current assignment is separate authority
 # TENANT POSTURE: role definitions never establish tenant membership or role possession; assignment write is Partner/Attorney-only static policy
 # FAIL-CLOSED POSTURE: unknown roles and permissions never manufacture grants
