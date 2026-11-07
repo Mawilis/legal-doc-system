@@ -1,3 +1,5 @@
+            tests/unit/test_tenant_authorization.py \\
+            tests/unit/test_tenant_authorization.py \\
 name: WILSY EOS Institutional Signed-Offer Verification
 on:
   pull_request:
@@ -26,6 +28,7 @@ on:
       - "tests/unit/test_roles.py"
       - "tests/unit/test_tenant_authority_policy.py"
       - "tests/unit/test_tenant_business_role.py"
+      - "tests/unit/test_tenant_authorization.py"
       - "tests/unit/test_institutional_source_key_governance_evidence.py"
       - "tests/unit/test_institutional_pki.py"
       - "tests/unit/test_institutional_pki_kms.py"
