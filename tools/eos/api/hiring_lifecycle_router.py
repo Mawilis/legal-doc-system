@@ -172,6 +172,10 @@ async def transition_candidate(
 ):
     now = datetime.now(timezone.utc)
     def command(registry, tx):
+        command_hash = _command_fingerprint(tenant_id=context.tenant_id, actor_id=context.identity.identity_id, aggregate_id=candidate_id, action=f"CANDIDATE_{body.target_stage.value}", payload=body.model_dump(mode="json"))
+        replay = registry.get_transition_replay(tenant_id=context.tenant_id, aggregate_type="CANDIDATE", aggregate_id=candidate_id, action=f"CANDIDATE_{body.target_stage.value}", idempotency_key=idempotency_key, command_fingerprint=command_hash, session=tx)
+        if replay is not None:
+            return replay
         current = registry.get_candidate(tenant_id=context.tenant_id, candidate_id=candidate_id, session=tx)
         evidence = CandidateStageEvidence(
             actor_principal_id=context.identity.identity_id,
@@ -185,7 +189,7 @@ async def transition_candidate(
             action=f"CANDIDATE_{body.target_stage.value}", occurred_at=now,
             expected_revision=body.expected_revision, session=tx,
             idempotency_key=idempotency_key,
-            command_fingerprint=_command_fingerprint(tenant_id=context.tenant_id, actor_id=context.identity.identity_id, aggregate_id=candidate_id, action=f"CANDIDATE_{body.target_stage.value}", payload=body.model_dump(mode="json")),
+            command_fingerprint=command_hash,
         )
     return _transaction(command).to_dict()
 
@@ -235,13 +239,17 @@ async def submit_offer(
 ):
     now = datetime.now(timezone.utc)
     def command(registry, tx):
+        command_hash = _command_fingerprint(tenant_id=context.tenant_id, actor_id=context.identity.identity_id, aggregate_id=offer_id, action="OFFER_SUBMITTED", payload={"expected_revision": expected_revision})
+        replay = registry.get_transition_replay(tenant_id=context.tenant_id, aggregate_type="OFFER", aggregate_id=offer_id, action="OFFER_SUBMITTED", idempotency_key=idempotency_key, command_fingerprint=command_hash, session=tx)
+        if replay is not None:
+            return replay
         current = registry.get_offer(tenant_id=context.tenant_id, offer_id=offer_id, session=tx)
         updated = current.submit(actor_principal_id=context.identity.identity_id, submitted_at=now, expected_revision=expected_revision)
         return registry.transition_offer(
             current=current, updated=updated, actor_principal_id=context.identity.identity_id,
             action="OFFER_SUBMITTED", occurred_at=now, expected_revision=expected_revision, session=tx,
             idempotency_key=idempotency_key,
-            command_fingerprint=_command_fingerprint(tenant_id=context.tenant_id, actor_id=context.identity.identity_id, aggregate_id=offer_id, action="OFFER_SUBMITTED", payload={"expected_revision": expected_revision}),
+            command_fingerprint=command_hash,
         )
     return _transaction(command).to_dict()
 
@@ -254,6 +262,11 @@ async def decide_offer(
 ):
     now = datetime.now(timezone.utc)
     def command(registry, tx):
+        action = "OFFER_APPROVED" if body.approved else "OFFER_REJECTED"
+        command_hash = _command_fingerprint(tenant_id=context.tenant_id, actor_id=context.identity.identity_id, aggregate_id=offer_id, action=action, payload=body.model_dump(mode="json"))
+        replay = registry.get_transition_replay(tenant_id=context.tenant_id, aggregate_type="OFFER", aggregate_id=offer_id, action=action, idempotency_key=idempotency_key, command_fingerprint=command_hash, session=tx)
+        if replay is not None:
+            return replay
         current = registry.get_offer(tenant_id=context.tenant_id, offer_id=offer_id, session=tx)
         decision = OfferDecision(
             decision_id=_idempotent_id(context.tenant_id, f"{offer_id}:{body.expected_revision}", "HOD"),
@@ -266,7 +279,7 @@ async def decide_offer(
             action="OFFER_APPROVED" if body.approved else "OFFER_REJECTED",
             occurred_at=now, expected_revision=body.expected_revision, session=tx,
             idempotency_key=idempotency_key,
-            command_fingerprint=_command_fingerprint(tenant_id=context.tenant_id, actor_id=context.identity.identity_id, aggregate_id=offer_id, action="OFFER_APPROVED" if body.approved else "OFFER_REJECTED", payload=body.model_dump(mode="json")),
+            command_fingerprint=command_hash,
         )
     return _transaction(command).to_dict()
 
@@ -279,13 +292,17 @@ async def send_offer(
 ):
     now = datetime.now(timezone.utc)
     def command(registry, tx):
+        command_hash = _command_fingerprint(tenant_id=context.tenant_id, actor_id=context.identity.identity_id, aggregate_id=offer_id, action="OFFER_SENT", payload={"expected_revision": expected_revision})
+        replay = registry.get_transition_replay(tenant_id=context.tenant_id, aggregate_type="OFFER", aggregate_id=offer_id, action="OFFER_SENT", idempotency_key=idempotency_key, command_fingerprint=command_hash, session=tx)
+        if replay is not None:
+            return replay
         current = registry.get_offer(tenant_id=context.tenant_id, offer_id=offer_id, session=tx)
         updated = current.send(actor_principal_id=context.identity.identity_id, sent_at=now, expected_revision=expected_revision)
         return registry.transition_offer(
             current=current, updated=updated, actor_principal_id=context.identity.identity_id,
             action="OFFER_SENT", occurred_at=now, expected_revision=expected_revision, session=tx,
             idempotency_key=idempotency_key,
-            command_fingerprint=_command_fingerprint(tenant_id=context.tenant_id, actor_id=context.identity.identity_id, aggregate_id=offer_id, action="OFFER_SENT", payload={"expected_revision": expected_revision}),
+            command_fingerprint=command_hash,
         )
     return _transaction(command).to_dict()
 
@@ -297,6 +314,10 @@ async def accept_offer(
     context: TenantAuthorizationContext = Depends(_OFFER_ACCEPT),
 ):
     def command(registry, tx):
+        command_hash = _command_fingerprint(tenant_id=context.tenant_id, actor_id=context.identity.identity_id, aggregate_id=offer_id, action="OFFER_ACCEPTED_CONSENT_ONLY", payload=body.model_dump(mode="json"))
+        replay = registry.get_transition_replay(tenant_id=context.tenant_id, aggregate_type="OFFER", aggregate_id=offer_id, action="OFFER_ACCEPTED_CONSENT_ONLY", idempotency_key=idempotency_key, command_fingerprint=command_hash, session=tx)
+        if replay is not None:
+            return replay
         current = registry.get_offer(tenant_id=context.tenant_id, offer_id=offer_id, session=tx)
         updated = current.accept(OfferAcceptanceEvidence(
             evidence_reference=body.evidence_reference,
@@ -307,7 +328,7 @@ async def accept_offer(
             action="OFFER_ACCEPTED_CONSENT_ONLY", occurred_at=datetime.now(timezone.utc),
             expected_revision=body.expected_revision, session=tx,
             idempotency_key=idempotency_key,
-            command_fingerprint=_command_fingerprint(tenant_id=context.tenant_id, actor_id=context.identity.identity_id, aggregate_id=offer_id, action="OFFER_ACCEPTED_CONSENT_ONLY", payload=body.model_dump(mode="json")),
+            command_fingerprint=command_hash,
         )
     return _transaction(command).to_dict()
 
