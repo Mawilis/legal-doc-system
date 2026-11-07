@@ -220,3 +220,40 @@ def test_offer_domain_rejects_acceptance_without_cryptographic_verification_refe
     )
     with pytest.raises(HiringLifecycleError, match="CRYPTOGRAPHIC_SIGNATURE_VERIFICATION_REQUIRED"):
         sent.accept(evidence, expected_revision=4)
+
+
+
+def test_legacy_accepted_offer_without_verification_reference_remains_readable_only():
+    prepared = offer()
+    submitted = prepared.submit(actor_principal_id="hr-manager", submitted_at=NOW, expected_revision=1)
+    approved = submitted.decide(
+        OfferDecision(
+            decision_id="legacy-approval", actor_principal_id="hr-director",
+            approved=True, reason="Approved", decided_at=NOW,
+        ),
+        expected_revision=2,
+    )
+    sent = approved.send(
+        actor_principal_id="hr-manager", sent_at=NOW + timedelta(hours=1),
+        expected_revision=3,
+    )
+    legacy = EmploymentOffer(
+        tenant_id=sent.tenant_id, offer_id=sent.offer_id,
+        requisition_id=sent.requisition_id, candidate_id=sent.candidate_id,
+        terms=sent.terms, prepared_by_principal_id=sent.prepared_by_principal_id,
+        created_at=sent.created_at, status=OfferStatus.ACCEPTED,
+        submitted_at=sent.submitted_at, decision=sent.decision,
+        sent_at=sent.sent_at,
+        acceptance=OfferAcceptanceEvidence(
+            evidence_reference="hr-document://legacy/signed-offer",
+            evidence_fingerprint=EVIDENCE,
+            accepted_at=NOW + timedelta(hours=2),
+        ),
+        revision=5,
+    )
+    payload = legacy.to_dict()
+    assert "signature_verification_reference" not in payload["acceptance"]
+    restored = EmploymentOffer.from_dict(payload)
+    assert restored.fingerprint == legacy.fingerprint
+    assert restored.acceptance is not None
+    assert restored.acceptance.signature_verification_reference is None
