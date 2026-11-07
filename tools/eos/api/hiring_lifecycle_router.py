@@ -22,6 +22,14 @@ from tools.eos.saas.domain.hiring_lifecycle import (
     CandidateApplication, CandidateStage, CandidateStageEvidence,
     EmploymentOffer, OfferTerms, OfferDecision, OfferAcceptanceEvidence,
 )
+from tools.eos.saas.domain.candidate_evidence import CandidateEvidenceKind
+from tools.eos.saas.hr.candidate_evidence_registry import (
+    COLLECTION as CANDIDATE_EVIDENCE_COLLECTION,
+    EVENT_COLLECTION as CANDIDATE_EVIDENCE_EVENT_COLLECTION,
+    CandidateEvidenceRegistry,
+    CandidateEvidenceRegistryNotFound,
+    CandidateEvidenceRegistryError,
+)
 from tools.eos.saas.hr.hiring_lifecycle_registry import (
     CANDIDATE_COLLECTION, OFFER_COLLECTION, EVENT_COLLECTION,
     HiringLifecycleRegistry, HiringLifecycleNotFound,
@@ -84,6 +92,7 @@ class OfferAcceptanceRequest(StrictModel):
     evidence_reference: str = Field(min_length=1, max_length=240)
     evidence_fingerprint: str = Field(pattern=r"^[0-9a-f]{128}$")
     accepted_at: datetime
+    evidence_version_id: str = Field(min_length=1, max_length=256)
 
 
 def _registry(db: Any) -> HiringLifecycleRegistry:
@@ -105,6 +114,10 @@ def _transaction(callback):
             db.get_collection(CANDIDATE_COLLECTION),
             db.get_collection(OFFER_COLLECTION),
             db.get_collection(EVENT_COLLECTION),
+        )
+        CandidateEvidenceRegistry.ensure_indexes(
+            db.get_collection(CANDIDATE_EVIDENCE_COLLECTION),
+            db.get_collection(CANDIDATE_EVIDENCE_EVENT_COLLECTION),
         )
         with client.start_session() as session:
             return session.with_transaction(
@@ -319,6 +332,27 @@ async def accept_offer(
         if replay is not None:
             return replay
         current = registry.get_offer(tenant_id=context.tenant_id, offer_id=offer_id, session=tx)
+        evidence_registry = CandidateEvidenceRegistry(
+            get_database()[CANDIDATE_EVIDENCE_COLLECTION],
+            get_database()[CANDIDATE_EVIDENCE_EVENT_COLLECTION],
+        )
+        try:
+            signed_offer = evidence_registry.get(
+                tenant_id=context.tenant_id,
+                candidate_id=current.candidate_id,
+                evidence_id=body.evidence_reference,
+                evidence_version_id=body.evidence_version_id,
+                session=tx,
+            )
+        except CandidateEvidenceRegistryNotFound as error:
+            raise HTTPException(status_code=409, detail="HIRING_SIGNED_OFFER_CUSTODY_REQUIRED") from error
+        if (
+            signed_offer.evidence_kind is not CandidateEvidenceKind.SIGNED_OFFER
+            or signed_offer.offer_id != offer_id
+            or signed_offer.content_digest_sha3_512 != body.evidence_fingerprint
+            or not signed_offer.signature_verification_reference
+        ):
+            raise HTTPException(status_code=409, detail="HIRING_SIGNED_OFFER_EVIDENCE_INVALID")
         updated = current.accept(OfferAcceptanceEvidence(
             evidence_reference=body.evidence_reference,
             evidence_fingerprint=body.evidence_fingerprint, accepted_at=body.accepted_at,
