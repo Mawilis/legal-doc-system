@@ -443,12 +443,44 @@ async def accept_offer(
             signed_offer.evidence_kind is not CandidateEvidenceKind.SIGNED_OFFER
             or signed_offer.offer_id != offer_id
             or signed_offer.content_digest_sha3_512 != body.evidence_fingerprint
-            or not signed_offer.signature_verification_reference
         ):
             raise HTTPException(status_code=409, detail="HIRING_SIGNED_OFFER_EVIDENCE_INVALID")
+        trust_registry = CandidateSignerKeyTrustRegistry(
+            evidence_database[SIGNER_TRUST_COLLECTION],
+        )
+        verification_registry = SignedOfferVerificationRegistry(
+            evidence_database[SIGNED_OFFER_VERIFICATION_COLLECTION],
+            evidence_database[SIGNED_OFFER_VERIFICATION_EVENT_COLLECTION],
+        )
+        try:
+            verification = verification_registry.get(
+                tenant_id=context.tenant_id, offer_id=offer_id,
+                evidence_id=body.evidence_reference,
+                evidence_version_id=body.evidence_version_id, session=tx,
+            )
+            trust = trust_registry.get(
+                tenant_id=context.tenant_id, candidate_id=current.candidate_id,
+                signer_key_id=verification.signer_key_id, session=tx,
+            )
+        except SignedOfferVerificationError as error:
+            raise HTTPException(status_code=409, detail=error.code) from error
+        accepted_now = datetime.now(timezone.utc)
+        if (
+            verification.status.value != "VERIFIED"
+            or verification.content_digest_sha3_512 != body.evidence_fingerprint
+            or verification.signer_key_fingerprint != trust.key_fingerprint
+            or not trust.active_at(accepted_now)
+            or current.sent_at is None
+            or verification.signed_at < current.sent_at
+            or verification.signed_at > current.terms.expires_at
+            or body.accepted_at != verification.signed_at
+        ):
+            raise HTTPException(status_code=409, detail="HIRING_SIGNED_OFFER_CRYPTOGRAPHIC_VERIFICATION_INVALID")
         updated = current.accept(OfferAcceptanceEvidence(
             evidence_reference=body.evidence_reference,
-            evidence_fingerprint=body.evidence_fingerprint, accepted_at=body.accepted_at,
+            evidence_fingerprint=body.evidence_fingerprint,
+            accepted_at=verification.signed_at,
+            signature_verification_reference=verification.verification_reference,
         ), expected_revision=body.expected_revision)
         return registry.transition_offer(
             current=current, updated=updated, actor_principal_id=context.identity.identity_id,
