@@ -68,6 +68,7 @@ def _crl(args: argparse.Namespace) -> None:
         issuer_passphrase=password,
         output_path=Path(args.output),
         revoked_serial_numbers=args.revoke_serial,
+        crl_number=args.crl_number,
         validity_hours=args.validity_hours,
     )
     print(f"crl_bundle={path}")
@@ -101,6 +102,7 @@ def build_parser() -> argparse.ArgumentParser:
     crl.add_argument("--issuer-private-key", required=True)
     crl.add_argument("--output", required=True)
     crl.add_argument("--revoke-serial", type=lambda value: int(value, 0), action="append", default=[])
+    crl.add_argument("--crl-number", type=int, required=True)
     crl.add_argument("--validity-hours", type=int, default=24)
     crl.set_defaults(run=_crl)
     return parser
