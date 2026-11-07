@@ -30,14 +30,18 @@ pytestmark = pytest.mark.skipif(not URI, reason="INSTITUTIONAL_SOURCE_KEY_TEST_M
 
 class _VerifiedGovernanceEvidence:
     def __init__(self):
-        self.enrollment_calls = []
+        self.proposal_calls = []
         self.approval_calls = []
 
-    def verify_enrollment(self, **kwargs):
-        self.enrollment_calls.append(kwargs)
+    def verify_proposal(self, **kwargs):
+        self.proposal_calls.append(kwargs)
         return object()
 
     def verify_approval(self, **kwargs):
+        self.approval_calls.append(kwargs)
+        return object()
+
+    def verify_revocation(self, **kwargs):
         self.approval_calls.append(kwargs)
         return object()
 
@@ -84,7 +88,7 @@ def test_authenticated_propose_approve_revoke_is_atomic_and_maker_checker_enforc
             "valid_until": (now + timedelta(hours=1)).isoformat(),
             "proposal_reference": "synthetic-http-proposal-1",
             "identity_proofing_evidence_reference": "synthetic://identity/1",
-            "signatory_mandate_evidence_reference": "synthetic://mandate/1",
+            "source_authority_evidence_reference": "synthetic://source-authority/1",
         }
         with TestClient(app) as http:
             app.dependency_overrides[source_key_api._PROPOSE] = lambda: _context("synthetic-maker")
@@ -152,7 +156,7 @@ def test_authenticated_propose_approve_revoke_is_atomic_and_maker_checker_enforc
             assert revoked.status_code == 200
             assert revoked.json()["event_type"] == "REVOKED"
 
-        assert len(evidence.enrollment_calls) == 1
+        assert len(evidence.proposal_calls) == 1
         assert len(evidence.approval_calls) == 2
         assert database[EVENT_COLLECTION].count_documents(
             {"source_system_id": "synthetic-http-source"},
