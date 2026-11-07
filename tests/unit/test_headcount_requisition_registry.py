@@ -115,16 +115,26 @@ def test_submit_transition_uses_revision_cas_and_appends_immutable_event():
     saved = registry.transition(
         tenant_id=TENANT, requisition_id=item.requisition_id, expected_revision=1,
         updated=submitted, action="SUBMITTED", actor_principal_id="principal-requester",
-        idempotency_key="submit-1", occurred_at=NOW, session=object(),
+        idempotency_key="submit-1", request_fingerprint="a" * 128, occurred_at=NOW, session=object(),
     )
     assert saved == submitted
     assert current.rows[0]["revision"] == 2
     assert len(events.rows) == 2
+    replay = registry.replay_transition(
+        tenant_id=TENANT, idempotency_key="submit-1",
+        request_fingerprint="a" * 128, session=object(),
+    )
+    assert replay == submitted
+    with pytest.raises(HeadcountRequisitionRegistryConflict, match="DIVERGENT"):
+        registry.replay_transition(
+            tenant_id=TENANT, idempotency_key="submit-1",
+            request_fingerprint="z" * 128, session=object(),
+        )
     with pytest.raises(HeadcountRequisitionRegistryConflict, match="REVISION_CONFLICT"):
         registry.transition(
             tenant_id=TENANT, requisition_id=item.requisition_id, expected_revision=1,
             updated=submitted, action="SUBMITTED", actor_principal_id="principal-requester",
-            idempotency_key="submit-2", occurred_at=NOW, session=object(),
+            idempotency_key="submit-2", request_fingerprint="b" * 128, occurred_at=NOW, session=object(),
         )
 
 
@@ -154,7 +164,7 @@ def test_approval_maker_checker_and_event_revision_are_preserved():
     registry.transition(
         tenant_id=TENANT, requisition_id=item.requisition_id, expected_revision=2,
         updated=approved, action="APPROVED", actor_principal_id="independent-approver",
-        idempotency_key="approve-1", occurred_at=NOW, session=object(),
+        idempotency_key="approve-1", request_fingerprint="c" * 128, occurred_at=NOW, session=object(),
     )
     assert events.rows[-1]["revision"] == 3
     assert events.rows[-1]["prior_fingerprint"] == submitted.fingerprint
