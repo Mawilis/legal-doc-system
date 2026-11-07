@@ -205,6 +205,57 @@ class InstitutionalSignerSourceAdapterSet(Protocol):
     ) -> InstitutionalSignerSourceEvidence: ...
 
 
+def read_authenticated_source_evidence(
+    *,
+    adapter: InstitutionalSignerEvidenceSourceAdapter,
+    authenticator: InstitutionalSignerSourceResponseAuthenticator,
+    lookup: InstitutionalSignerSourceLookup,
+) -> InstitutionalSignerSourceEvidence:
+    """Read one source record and authenticate its response and exact scope.
+
+    Negative status/revocation/expiry are intentionally returned intact so the
+    verifier can persist a NOT_CURRENT observation. This function authenticates
+    origin and binding; it does not turn a source response into legal authority.
+    """
+    expected_kind = lookup.evidence_kind
+    source_system_id = _identifier("source_system_id", adapter.source_system_id)
+    if adapter.supported_evidence_kind != expected_kind:
+        raise InstitutionalSignerSourceAdapterError(
+            "INSTITUTIONAL_SIGNER_SOURCE_ADAPTER_EVIDENCE_KIND_MISMATCH"
+        )
+    response = adapter.read_evidence(lookup=lookup)
+    if type(response) is not InstitutionalSignerSourceEvidence:
+        raise InstitutionalSignerSourceAdapterError(
+            "INSTITUTIONAL_SIGNER_SOURCE_RESPONSE_TYPE_INVALID"
+        )
+    authenticator.authenticate_response(
+        expected_source_system_id=source_system_id,
+        lookup=lookup,
+        response=response,
+    )
+    if response.source_system_id != source_system_id:
+        raise InstitutionalSignerSourceAdapterError(
+            "INSTITUTIONAL_SIGNER_SOURCE_SYSTEM_MISMATCH"
+        )
+    expected_bindings = {
+        "evidence_kind": lookup.evidence_kind,
+        "evidence_reference": lookup.evidence_reference,
+        "tenant_id": lookup.tenant_id,
+        "subject_principal_id": lookup.subject_principal_id,
+        "certificate_fingerprint_sha256": lookup.certificate_fingerprint_sha256,
+        "legal_entity_reference": lookup.legal_entity_reference,
+        "enrollment_requester_principal_id": lookup.enrollment_requester_principal_id,
+        "reviewer_principal_id": lookup.reviewer_principal_id,
+        "authority_scope": lookup.required_scope,
+    }
+    for field, expected in expected_bindings.items():
+        if getattr(response, field) != expected:
+            raise InstitutionalSignerSourceAdapterError(
+                f"INSTITUTIONAL_SIGNER_SOURCE_{field.upper()}_MISMATCH"
+            )
+    return response
+
+
 class UnavailableInstitutionalSignerSourceAdapterSet:
     """Default-deny source set until providers and governance are approved."""
 
@@ -241,4 +292,5 @@ __all__ = [
     "InstitutionalSignerSourceResponseAuthenticator",
     "InstitutionalSignerSourceAdapterSet",
     "UnavailableInstitutionalSignerSourceAdapterSet",
+    "read_authenticated_source_evidence",
 ]
