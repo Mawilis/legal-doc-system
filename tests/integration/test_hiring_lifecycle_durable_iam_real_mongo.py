@@ -40,6 +40,8 @@ class BusinessRoleReader:
     def __init__(self, collection): self.collection = collection
     def resolve(self, principal_id, tenant_id, *, session=None):
         return TenantBusinessRoleRepository.resolve(principal_id, tenant_id, collection=self.collection, session=session)
+    def resolve_all_business_roles(self, principal_id, tenant_id, *, session=None):
+        return TenantBusinessRoleRepository.resolve_all(principal_id, tenant_id, collection=self.collection, session=session)
 
 
 class AuthorizationRoleReader:
