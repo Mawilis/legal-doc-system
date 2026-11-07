@@ -197,6 +197,31 @@ class HiringLifecycleRegistry:
         except (TypeError, ValueError, HiringLifecycleError) as error:
             raise HiringLifecycleRegistryError(f"HIRING_{kind}_DOCUMENT_CORRUPT") from error
 
+    def get_transition_replay(self, *, tenant_id: str, aggregate_type: str,
+                              aggregate_id: str, action: str,
+                              idempotency_key: str, command_fingerprint: str,
+                              session: object) -> CandidateApplication | EmploymentOffer | None:
+        tx = _tx(session)
+        tenant = _scope(tenant_id, "HIRING_TENANT_INVALID")
+        key = _scope(idempotency_key, "HIRING_IDEMPOTENCY_KEY_INVALID")
+        command_hash = _scope(command_fingerprint, "HIRING_COMMAND_FINGERPRINT_INVALID")
+        try:
+            prior = self._events.find_one({"tenant_id": tenant, "idempotency_key": key}, session=tx)
+        except PyMongoError as error:
+            raise HiringLifecycleRegistryError("HIRING_REPLAY_READ_UNAVAILABLE") from error
+        if prior is None:
+            return None
+        if (prior.get("aggregate_type") != aggregate_type
+            or prior.get("aggregate_id") != _scope(aggregate_id, "HIRING_ID_INVALID")
+            or prior.get("action") != _scope(action, "HIRING_ACTION_INVALID")
+            or prior.get("command_fingerprint") != command_hash):
+            raise HiringLifecycleRegistryConflict("HIRING_DIVERGENT_COMMAND_REPLAY")
+        try:
+            snapshot = {k: v for k, v in prior["snapshot"].items() if k != "_id"}
+            return CandidateApplication.from_dict(snapshot) if aggregate_type == "CANDIDATE" else EmploymentOffer.from_dict(snapshot)
+        except Exception as error:
+            raise HiringLifecycleRegistryError("HIRING_REPLAY_SNAPSHOT_INVALID") from error
+
     def transition_candidate(self, *, current: CandidateApplication, updated: CandidateApplication,
                              actor_principal_id: str, action: str, occurred_at: object,
                              expected_revision: int, session: object, idempotency_key: str | None = None,
