@@ -765,7 +765,7 @@ def test_institutional_source_key_admin_is_a_dedicated_least_privilege_role() ->
         "security:institutional_source_key:revoke",
     ]
     assert ROLE_PERMISSIONS_MAP["INSTITUTIONAL_SOURCE_KEY_ADMIN"] == expected
-    assert get_permissions_for_roles(["INSTITUTIONAL_SOURCE_KEY_ADMIN"]) == expected
+    assert get_permissions_for_roles(["INSTITUTIONAL_SOURCE_KEY_ADMIN"]) == sorted(expected)
     for permission in expected:
         assert get_roles_granting_permission(permission) == ("INSTITUTIONAL_SOURCE_KEY_ADMIN",)
     assert "security:institutional_source_key:approve" not in ROLE_PERMISSIONS_MAP["TENANT_OWNER"]
