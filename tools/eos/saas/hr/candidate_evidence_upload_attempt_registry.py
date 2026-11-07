@@ -81,6 +81,16 @@ def _utc(value: datetime) -> datetime:
         raise UploadAttemptError("UPLOAD_ATTEMPT_UTC_REQUIRED")
     return value.astimezone(timezone.utc)
 
+def _stored_utc(value: object) -> datetime:
+    if isinstance(value, str):
+        try:
+            value = datetime.fromisoformat(value)
+        except ValueError as error:
+            raise UploadAttemptError("UPLOAD_ATTEMPT_UTC_REQUIRED") from error
+    return _utc(value)
+
+
+
 
 @dataclass(frozen=True, slots=True)
 class CandidateEvidenceUploadAttempt:
@@ -338,8 +348,8 @@ class CandidateEvidenceUploadAttemptRegistry:
         for row in rows:
             row.pop("_id", None)
             row.pop("fingerprint", None)
-            row["created_at"] = row["created_at"] if isinstance(row["created_at"], str) else row["created_at"].isoformat()
-            row["updated_at"] = row["updated_at"] if isinstance(row["updated_at"], str) else row["updated_at"].isoformat()
+            row["created_at"] = _stored_utc(row["created_at"])
+            row["updated_at"] = _stored_utc(row["updated_at"])
             row["status"] = UploadAttemptStatus(row["status"])
             result.append(CandidateEvidenceUploadAttempt(**row))
         return tuple(result)
