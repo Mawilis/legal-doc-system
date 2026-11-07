@@ -84,6 +84,9 @@ def _transaction(callback):
         with client.start_session() as session:
             return session.with_transaction(
                 lambda tx: callback(registry, tx),
+                read_concern=ReadConcern("snapshot"),
+                write_concern=WriteConcern("majority", j=True),
+                read_preference=ReadPreference.PRIMARY,
             )
     except InstitutionalSignerRegistryNotFound as error:
         raise HTTPException(status_code=404, detail=error.code) from error
