@@ -65,13 +65,27 @@ class FakeKMS:
 def policy():
     return json.dumps({
         "Version": "2012-10-17",
-        "Statement": [{
-            "Sid": "ExplicitSubordinateCASigner",
-            "Effect": "Allow",
-            "Principal": {"AWS": "arn:aws:iam::123456789012:role/WilsyPkiOperator"},
-            "Action": ["kms:Sign", "kms:GetPublicKey", "kms:DescribeKey"],
-            "Resource": "*",
-        }],
+        "Statement": [
+            {
+                "Sid": "ExplicitSubordinateCASigner",
+                "Effect": "Allow",
+                "Principal": {"AWS": "arn:aws:iam::123456789012:role/WilsyPkiSigner"},
+                "Action": ["kms:Sign", "kms:GetPublicKey", "kms:DescribeKey"],
+                "Resource": "*",
+            },
+            {
+                "Sid": "IndependentKeyCustodian",
+                "Effect": "Allow",
+                "Principal": {"AWS": "arn:aws:iam::123456789012:role/WilsyPkiKeyCustodian"},
+                "Action": [
+                    "kms:PutKeyPolicy", "kms:ScheduleKeyDeletion",
+                    "kms:CancelKeyDeletion", "kms:EnableKey", "kms:DisableKey",
+                    "kms:DescribeKey", "kms:TagResource", "kms:UntagResource",
+                    "kms:ListResourceTags",
+                ],
+                "Resource": "*",
+            },
+        ],
     })
 
 
@@ -213,3 +227,35 @@ def test_kms_subordinate_key_signs_current_revocation_crl_without_exporting_priv
         padding.PKCS1v15(), crl.signature_hash_algorithm,
     )
     assert len(fingerprint) == 64
+
+
+
+def test_kms_key_policy_rejects_signer_and_administrator_principal_overlap():
+    kms = FakeKMS()
+    shared = json.dumps({
+        "Version": "2012-10-17",
+        "Statement": [{
+            "Effect": "Allow",
+            "Principal": {"AWS": "arn:aws:iam::123456789012:role/OneRole"},
+            "Action": [
+                "kms:Sign", "kms:GetPublicKey", "kms:DescribeKey",
+                "kms:PutKeyPolicy", "kms:ScheduleKeyDeletion",
+                "kms:CancelKeyDeletion", "kms:EnableKey", "kms:DisableKey",
+                "kms:TagResource", "kms:UntagResource", "kms:ListResourceTags",
+            ],
+            "Resource": "*",
+        }],
+    })
+    try:
+        create_nonexportable_subordinate_ca_key_and_csr(
+            kms, region="af-south-1", key_policy_json=shared,
+            common_name="WILSY EOS Intermediate CA",
+            organization="Wilsy (Pty) Ltd",
+            organizational_unit="Institutional PKI",
+            country_code="ZA",
+        )
+    except InstitutionalPKIKMSError as error:
+        assert error.code == "INSTITUTIONAL_KMS_SIGNER_ADMIN_SEPARATION_REQUIRED"
+    else:
+        raise AssertionError("KMS signer and key administrator must be separate principals")
+    assert not kms.create_calls
