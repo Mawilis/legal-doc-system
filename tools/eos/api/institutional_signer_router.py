@@ -160,7 +160,7 @@ def _record_provenance_snapshot(record, *, evaluated_at, expected_bindings, scop
     return snapshot
 
 
-def _enrollment_provenance(result, *, tenant_id, certificate_fingerprint_sha256, subject_principal_id, evaluated_at):
+def _enrollment_provenance(result, *, tenant_id, certificate_fingerprint_sha256, subject_principal_id, identity_proofing_reference, signatory_mandate_reference, evaluated_at):
     try:
         identity = _record_provenance_snapshot(
             result.identity_proofing, evaluated_at=evaluated_at,
@@ -176,6 +176,8 @@ def _enrollment_provenance(result, *, tenant_id, certificate_fingerprint_sha256,
                                "evidence_kind": "SIGNATORY_MANDATE"},
             scope_fields=("legal_entity_reference", "mandate_scope"),
         )
+        if getattr(result.identity_proofing, "evidence_reference", None) != identity_proofing_reference or getattr(result.signatory_mandate, "evidence_reference", None) != signatory_mandate_reference:
+            raise ValueError("evidence reference")
         if getattr(result.identity_proofing, "tenant_id", None) != tenant_id or getattr(result.signatory_mandate, "tenant_id", None) != tenant_id:
             raise ValueError("tenant")
         if getattr(result.identity_proofing, "subject_principal_id", None) != subject_principal_id or getattr(result.signatory_mandate, "subject_principal_id", None) != subject_principal_id:
@@ -194,7 +196,8 @@ def _enrollment_provenance(result, *, tenant_id, certificate_fingerprint_sha256,
 
 
 def _approval_provenance(record, *, tenant_id, certificate_fingerprint_sha256,
-                         requester_principal_id, reviewer_principal_id, evaluated_at):
+                         requester_principal_id, reviewer_principal_id,
+                         approval_attestation_reference, evaluated_at):
     snapshot = _record_provenance_snapshot(
         record, evaluated_at=evaluated_at,
         expected_bindings={"tenant_id": tenant_id,
@@ -204,7 +207,8 @@ def _approval_provenance(record, *, tenant_id, certificate_fingerprint_sha256,
                            "evidence_kind": "INDEPENDENT_APPROVAL"},
         scope_fields=("approval_scope",),
     )
-    if (getattr(record, "tenant_id", None) != tenant_id
+    if (getattr(record, "evidence_reference", None) != approval_attestation_reference
+        or getattr(record, "tenant_id", None) != tenant_id
         or getattr(record, "certificate_fingerprint_sha256", None) != certificate_fingerprint_sha256
         or getattr(record, "enrollment_requester_principal_id", None) != requester_principal_id
         or getattr(record, "reviewer_principal_id", None) != reviewer_principal_id
@@ -290,7 +294,10 @@ async def request_signer_enrollment(
         provenance_snapshot, provenance_fingerprint = _enrollment_provenance(
             verified_evidence, tenant_id=context.tenant_id,
             certificate_fingerprint_sha256=receipt.leaf_fingerprint_sha256,
-            subject_principal_id=context.identity.identity_id, evaluated_at=now,
+            subject_principal_id=context.identity.identity_id,
+            identity_proofing_reference=body.identity_proofing_evidence_reference,
+            signatory_mandate_reference=body.signatory_mandate_evidence_reference,
+            evaluated_at=now,
         )
         return registry.request_enrollment(
         tenant_id=context.tenant_id,
@@ -355,6 +362,7 @@ async def approve_signer_enrollment(
             certificate_fingerprint_sha256=certificate_fingerprint_sha256,
             requester_principal_id=enrollment["requested_by_principal_id"],
             reviewer_principal_id=context.identity.identity_id,
+            approval_attestation_reference=body.approval_attestation_reference,
             evaluated_at=approved_at,
         )
         return registry.approve_enrollment(
