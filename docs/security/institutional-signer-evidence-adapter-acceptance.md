@@ -113,3 +113,10 @@ A negative source observation may legitimately report a newer source revision an
 
 
 The source-observation snapshot also carries `valid_from` and `valid_until`. A record can therefore be classified `NOT_CURRENT` because it is revoked/withdrawn/superseded or because its validity interval has expired or has not yet begun, even when the source's status string remains ACTIVE. A CURRENT result is accepted only when each observation's validity interval covers the exact observation time.
+
+
+## Provider adapter framework (contract only)
+
+The source-adapter framework defines three distinct read-only evidence channels: identity proofing, corporate signatory mandate and independent approval. Each lookup is tenant-, principal-, certificate-, evidence-kind- and evaluation-time-bound. Returned source envelopes carry immutable source-system/record/revision identity, exact evidence references and scope bindings, evidence fingerprint, status, validity interval, revocation state, observation time and a source-response signature reference. Provider response authenticity is a separate protocol from parsing or field validation; a provider response is untrusted until an independently configured authenticator validates source identity, signature/integrity and exact request binding.
+
+The default adapter set denies all three channels. This change intentionally supplies no DHA, CIPC, company-secretarial or internal governance network client, credentials, trust anchors, provider URLs, or positive verifier. The framework is not connected to the enrollment route and cannot issue VerifiedInstitutionalSignerEvidence or VerifiedSignerEvidenceCurrentness. Provider-specific adapters may only be implemented after formal source onboarding, legal-purpose confirmation, workload-identity approval, source-response trust configuration, field mapping review and independent security assessment. Provider I/O must remain outside MongoDB transactions; a timeout, invalid signature, source mismatch or outage is a denial, not an empty record.
