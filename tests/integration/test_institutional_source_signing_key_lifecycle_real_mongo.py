@@ -133,6 +133,7 @@ def test_enrollment_expiry_revocation_and_rotation_are_transactional():
                 source_system_id=source, key_id="key-2",
                 revoked_at=now,
                 reason_reference="test-revocation-003",
+                approval_evidence_reference="test-revocation-approval-evidence",
                 revoked_by_principal_id="test-revoker",
                 governance_decision_reference="test-governance-revocation-003",
                 idempotency_key="revoke-2", session=session,
@@ -249,6 +250,7 @@ def test_registry_backed_authenticator_observes_immediate_revocation():
             registry.revoke(
                 source_system_id=source, key_id="key-revocable", revoked_at=now,
                 reason_reference="synthetic://revocation/1",
+                approval_evidence_reference="synthetic://revocation-approval/1",
                 revoked_by_principal_id="synthetic-revoker",
                 governance_decision_reference="synthetic-governance-revoke",
                 idempotency_key="revoke-immediately", session=session,
@@ -350,7 +352,8 @@ def test_concurrent_rotation_revocation_and_idempotent_replay_are_serialized():
             def callback(session):
                 return registry.revoke(
                     source_system_id=source, key_id="base-key", revoked_at=datetime.now(timezone.utc),
-                    reason_reference=f"reason-{revoker}", revoked_by_principal_id=revoker,
+                    reason_reference=f"reason-{revoker}",
+                    approval_evidence_reference=f"approval-{revoker}", revoked_by_principal_id=revoker,
                     governance_decision_reference=f"decision-{revoker}",
                     idempotency_key=f"revoke-{revoker}", session=session,
                 )
