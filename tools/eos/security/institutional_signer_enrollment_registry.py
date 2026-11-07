@@ -572,7 +572,7 @@ class InstitutionalSignerEnrollmentRegistry:
                 _text(item.get(field), "INSTITUTIONAL_SIGNER_CURRENTNESS_OBSERVATION_INVALID", 512)
             if (item.get("source_system_id") != source_record.get("source_system_id")
                 or item.get("source_record_id") != source_record.get("source_record_id")
-                or item.get("source_revision") != source_record.get("source_revision")):
+                or (status == "CURRENT" and item.get("source_revision") != source_record.get("source_revision"))):
                 raise InstitutionalSignerRegistryError("INSTITUTIONAL_SIGNER_CURRENTNESS_OBSERVATION_SOURCE_MISMATCH")
             observed_at = _stored_instant(item.get("observed_at"))
             if observed_at != checked_at:
