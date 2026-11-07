@@ -71,6 +71,21 @@ def test_signer_enrollment_approval_and_revocation_are_atomic_on_replica_set():
             )
             assert revoked["status"] == "REVOKED"
             assert revoked["crl_revocation_publication_status"] == "PENDING"
+            reconciled = registry.reconcile_crl_publications(
+                verified_crls=({
+                    "issuer_subject_sha256": "c" * 64,
+                    "crl_number": 9,
+                    "crl_fingerprint_sha256": "d" * 64,
+                    "revoked_serial_numbers_hex": ("abc123",),
+                },),
+                reconciled_at=now, actor_reference="runtime://institutional-pki",
+                session=session,
+            )
+            assert reconciled == 1
+            assert records.find_one({
+                "tenant_id": "WILSYTENANT-4CD2FZ4O",
+                "certificate_fingerprint_sha256": "a" * 64,
+            }, session=session)["crl_revocation_publication_status"] == "PUBLISHED"
             with pytest.raises(InstitutionalSignerRegistryConflict):
                 registry.require_active(
                     tenant_id="WILSYTENANT-4CD2FZ4O",
@@ -91,11 +106,12 @@ def test_signer_enrollment_approval_and_revocation_are_atomic_on_replica_set():
             )
         assert final["status"] == "REVOKED"
         assert records.count_documents({"tenant_id": "WILSYTENANT-4CD2FZ4O"}) == 1
-        assert events.count_documents({"tenant_id": "WILSYTENANT-4CD2FZ4O"}) == 3
+        assert events.count_documents({"tenant_id": "WILSYTENANT-4CD2FZ4O"}) == 4
         assert [row["action"] for row in events.find({"tenant_id": "WILSYTENANT-4CD2FZ4O"}).sort("revision", 1)] == [
             "SIGNER_ENROLLMENT_REQUESTED",
             "SIGNER_ENROLLMENT_APPROVED",
             "SIGNER_ENROLLMENT_REVOKED",
+            "SIGNER_REVOCATION_CRL_PUBLISHED",
         ]
     finally:
         client.drop_database(db_name)
