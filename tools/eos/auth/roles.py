@@ -690,3 +690,8 @@ ROLE_PERMISSIONS_MAP["TENANT_OWNER"].extend((
     "security:institutional_signer:approve",
     "security:institutional_signer:revoke",
 ))
+
+
+# The tenant owner may request a signature manifest; cryptographic signature
+# verification and active signer enrollment remain mandatory at acceptance.
+ROLE_PERMISSIONS_MAP["TENANT_OWNER"].append("hr:hiring_offer:sign")
