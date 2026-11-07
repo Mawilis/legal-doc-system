@@ -310,7 +310,7 @@ class CandidateEvidenceS3StorageAdapter:
     def inspect_completed_attempt(
         self, *, tenant_id: str, candidate_id: str, evidence_id: str,
         evidence_version_id: str, ingestion_reference: str,
-        intent_fingerprint: str,
+        intent_fingerprint: str, media_type: str,
     ) -> CandidateEvidenceBinaryObjectEvidence | None:
         """Recover a completed exact-version object after a lost completion response."""
         key = _storage_key_for_scope(
@@ -334,9 +334,9 @@ class CandidateEvidenceS3StorageAdapter:
                         Bucket=self._config.bucket, Key=key, VersionId=version_id,
                     )
                     metadata = head.get("Metadata") or {}
-                    if metadata.get("wilsy-intent-fingerprint") != intent_fingerprint:
-                        continue
                     if (
+                        metadata.get("wilsy-intent-fingerprint") != intent_fingerprint
+                        or head.get("ContentType") != media_type
                         metadata.get("wilsy-tenant-sha3-256") != _component(tenant_id)
                         or metadata.get("wilsy-candidate-sha3-256") != _component(candidate_id)
                         or metadata.get("wilsy-evidence-sha3-256") != _component(evidence_id)
@@ -354,14 +354,17 @@ class CandidateEvidenceS3StorageAdapter:
                     body = response_object["Body"]
                     hasher = hashlib.sha3_512()
                     observed = 0
-                    while True:
-                        chunk = body.read(8 * 1024 * 1024)
-                        if not chunk:
-                            break
-                        observed += len(chunk)
-                        if observed > length:
-                            _fail("CANDIDATE_EVIDENCE_S3_RECOVERY_LENGTH_MISMATCH")
-                        hasher.update(chunk)
+                    try:
+                        while True:
+                            chunk = body.read(8 * 1024 * 1024)
+                            if not chunk:
+                                break
+                            observed += len(chunk)
+                            if observed > length:
+                                _fail("CANDIDATE_EVIDENCE_S3_RECOVERY_LENGTH_MISMATCH")
+                            hasher.update(chunk)
+                    finally:
+                        body.close()
                     if observed != length:
                         _fail("CANDIDATE_EVIDENCE_S3_RECOVERY_LENGTH_MISMATCH")
                     return CandidateEvidenceBinaryObjectEvidence(
