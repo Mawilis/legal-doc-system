@@ -170,7 +170,7 @@ class InstitutionalSignerEnrollmentRegistry:
     ) -> dict[str, Any]:
         if session is None:
             raise InstitutionalSignerRegistryError("INSTITUTIONAL_SIGNER_CALLER_TRANSACTION_REQUIRED")
-        tenant = _text(tenant_id, "INSTITUTIONAL_SIGNER_TENANT_INVALID")
+        tenant = _tenant(tenant_id)
         fingerprint = _fingerprint(certificate_fingerprint_sha256)
         approver = _text(approver_principal_id, "INSTITUTIONAL_SIGNER_APPROVER_INVALID")
         attestation = _text(approval_attestation_reference, "INSTITUTIONAL_SIGNER_APPROVAL_ATTESTATION_REQUIRED")
@@ -234,7 +234,7 @@ class InstitutionalSignerEnrollmentRegistry:
     ) -> dict[str, Any]:
         if session is None:
             raise InstitutionalSignerRegistryError("INSTITUTIONAL_SIGNER_CALLER_TRANSACTION_REQUIRED")
-        tenant = _text(tenant_id, "INSTITUTIONAL_SIGNER_TENANT_INVALID")
+        tenant = _tenant(tenant_id)
         fingerprint = _fingerprint(certificate_fingerprint_sha256)
         actor = _text(revoked_by_principal_id, "INSTITUTIONAL_SIGNER_REVOKER_INVALID")
         now = _instant(revoked_at)
@@ -298,7 +298,7 @@ class InstitutionalSignerEnrollmentRegistry:
             raise InstitutionalSignerRegistryError("INSTITUTIONAL_SIGNER_CALLER_TRANSACTION_REQUIRED")
         try:
             row = self._records.find_one({
-                "tenant_id": _text(tenant_id, "INSTITUTIONAL_SIGNER_TENANT_INVALID"),
+                "tenant_id": _tenant(tenant_id),
                 "certificate_fingerprint_sha256": _fingerprint(certificate_fingerprint_sha256),
                 "certificate_serial_number_hex": _text(certificate_serial_number_hex, "INSTITUTIONAL_SIGNER_SERIAL_INVALID", 128),
                 "trust_root_sha256": _fingerprint(trust_root_sha256),
