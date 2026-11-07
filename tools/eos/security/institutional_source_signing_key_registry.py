@@ -29,8 +29,8 @@ KEY_COLLECTION: Final[str] = "eos_institutional_source_signing_keys"
 EVENT_COLLECTION: Final[str] = "eos_institutional_source_signing_key_events"
 SCHEMA: Final[str] = "wilsy.eos.institutional_source_signing_key.v1"
 EVENT_SCHEMA: Final[str] = "wilsy.eos.institutional_source_signing_key_event.v1"
-_IDENTIFIER = re.compile(r"[A-Za-z0-9][A-Za-z0-9._:/@+-]{0,255}\\Z")
-_FINGERPRINT = re.compile(r"[0-9a-f]{64}\\Z")
+_IDENTIFIER = re.compile(r"[A-Za-z0-9][A-Za-z0-9._:/@+-]{0,255}\Z")
+_FINGERPRINT = re.compile(r"[0-9a-f]{64}\Z")
 
 
 class SourceSigningKeyRegistryError(RuntimeError):
