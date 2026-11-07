@@ -98,3 +98,23 @@ def test_institutional_signer_governance_routes_require_authenticated_owner_cont
             },
         )
     assert response.status_code == 401
+
+    signing_body = {
+        "expected_revision": 1,
+        "evidence_reference": "EVD-001",
+        "evidence_fingerprint": "a" * 128,
+        "evidence_version_id": "VER-001",
+    }
+    with TestClient(_app()) as client:
+        document_response = client.post(
+            "/api/hr/hiring/offers/OFFER-001/signing-document",
+            headers={"X-Tenant-ID": "WILSYTENANT-4CD2FZ4O"},
+            json=signing_body,
+        )
+        manifest_response = client.post(
+            "/api/hr/hiring/offers/OFFER-001/signature-manifest",
+            headers={"X-Tenant-ID": "WILSYTENANT-4CD2FZ4O"},
+            json=signing_body,
+        )
+    assert document_response.status_code == 401
+    assert manifest_response.status_code == 401
