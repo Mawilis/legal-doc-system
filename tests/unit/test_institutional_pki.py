@@ -19,6 +19,7 @@ from tools.eos.security.institutional_pki import (
 )
 from tools.eos.api.institutional_pki_router import router as institutional_pki_router
 from tools.eos.security.institutional_pki_provisioning import assemble_crl_bundle
+from tools.eos.security.institutional_pki_provisioning import create_offline_root, issue_crl, issue_intermediate
 
 NOW = datetime.now(timezone.utc)
 SIGNING_EKU = "1.3.6.1.4.1.55555.1.1"
@@ -293,3 +294,57 @@ def test_crl_bundle_assembly_rejects_duplicate_issuer(tmp_path):
     path.write_bytes(verifier._crls[0].public_bytes(serialization.Encoding.PEM))
     with pytest.raises(InstitutionalPKIError, match="BUNDLE_DUPLICATE_ISSUER"):
         assemble_crl_bundle(crl_paths=[path, path], output_path=tmp_path / "bundle.pem")
+
+
+
+def test_offline_ca_ceremony_creates_encrypted_root_intermediate_and_signed_crl(tmp_path):
+    passphrase = b"unit-test-offline-ca-passphrase-2026"
+    crl_base = "https://pki.example.test/api/security/pki/crl"
+    root_key_path, root_cert_path, root_fingerprint = create_offline_root(
+        output_directory=tmp_path / "offline-root",
+        common_name="WILSY EOS Test Root CA",
+        organization="WILSY EOS",
+        passphrase=passphrase,
+        crl_distribution_base_url=crl_base,
+        validity_days=365,
+    )
+    assert len(root_fingerprint) == 64
+    assert root_key_path.stat().st_mode & 0o777 == 0o600
+    assert root_key_path.parent.stat().st_mode & 0o777 == 0o700
+    root = x509.load_pem_x509_certificate(root_cert_path.read_bytes())
+    root_key = serialization.load_pem_private_key(root_key_path.read_bytes(), password=passphrase)
+    root_dp = root.extensions.get_extension_for_class(x509.CRLDistributionPoints).value
+    assert root_dp[0].full_name[0].value.startswith(crl_base + "/")
+
+    intermediate_key_path, intermediate_cert_path, intermediate_fingerprint = issue_intermediate(
+        root_certificate_pem=root_cert_path,
+        root_private_key_pem=root_key_path,
+        root_passphrase=passphrase,
+        output_directory=tmp_path / "intermediate",
+        common_name="WILSY EOS Test Signing CA",
+        organization="WILSY EOS",
+        crl_distribution_base_url=crl_base,
+        validity_days=365,
+    )
+    assert len(intermediate_fingerprint) == 64
+    intermediate = x509.load_pem_x509_certificate(intermediate_cert_path.read_bytes())
+    intermediate_key = serialization.load_pem_private_key(
+        intermediate_key_path.read_bytes(), password=passphrase,
+    )
+    assert intermediate.issuer == root.subject
+    assert intermediate.extensions.get_extension_for_class(x509.BasicConstraints).value.path_length == 0
+    assert intermediate.extensions.get_extension_for_class(x509.CRLDistributionPoints).value[0].full_name[0].value.startswith(
+        crl_base + "/" + sha256(root.subject.public_bytes()).hexdigest()
+    )
+
+    crl_path, crl_fingerprint = issue_crl(
+        issuer_certificate_pem=intermediate_cert_path,
+        issuer_private_key_pem=intermediate_key_path,
+        issuer_passphrase=passphrase,
+        output_path=tmp_path / "crls" / "intermediate.crl.pem",
+        crl_number=1,
+    )
+    assert len(crl_fingerprint) == 64
+    crl = x509.load_pem_x509_crl(crl_path.read_bytes())
+    assert crl.issuer == intermediate.subject
+    assert crl.extensions.get_extension_for_class(x509.CRLNumber).value.crl_number == 1
