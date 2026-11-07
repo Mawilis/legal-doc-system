@@ -60,8 +60,8 @@ class SourceKeyProposal(StrictModel):
     valid_from: datetime
     valid_until: datetime
     proposal_reference: str = Field(min_length=1, max_length=256)
-    identity_proofing_evidence_reference: str = Field(min_length=1, max_length=512)
-    source_authority_evidence_reference: str = Field(min_length=1, max_length=512)
+    identity_proofing_evidence_reference: str = Field(min_length=1, max_length=256)
+    source_authority_evidence_reference: str = Field(min_length=1, max_length=256)
     rotation_id: str | None = Field(default=None, max_length=256)
     supersedes_key_id: str | None = Field(default=None, max_length=256)
     overlap_until: datetime | None = None
@@ -69,13 +69,13 @@ class SourceKeyProposal(StrictModel):
 
 class SourceKeyApproval(StrictModel):
     governance_decision_reference: str = Field(min_length=1, max_length=256)
-    approval_evidence_reference: str = Field(min_length=1, max_length=512)
+    approval_evidence_reference: str = Field(min_length=1, max_length=256)
 
 
 class SourceKeyRevocation(StrictModel):
-    reason_reference: str = Field(min_length=1, max_length=512)
+    reason_reference: str = Field(min_length=1, max_length=256)
     governance_decision_reference: str = Field(min_length=1, max_length=256)
-    approval_evidence_reference: str = Field(min_length=1, max_length=512)
+    approval_evidence_reference: str = Field(min_length=1, max_length=256)
 
 
 def _tenant(context: TenantAuthorizationContext) -> None:
