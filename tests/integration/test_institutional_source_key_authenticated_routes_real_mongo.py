@@ -191,7 +191,6 @@ def test_authenticated_propose_approve_revoke_is_atomic_and_maker_checker_enforc
                 assert registry.resolve_current(
                     source_system_id="synthetic-http-source",
                     key_id="synthetic-http-key-v1",
-                    evaluated_at=datetime.now(timezone.utc),
                     session=session,
                 )["public_key_fingerprint_sha256"] == fingerprint
 
