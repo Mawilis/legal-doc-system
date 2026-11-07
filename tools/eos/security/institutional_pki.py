@@ -304,7 +304,7 @@ class InstitutionalPKIVerifier:
         ))
 
     def crl_der_for_issuer_subject_sha256(self, issuer_subject_sha256: str) -> bytes:
-        """Return one public PEM CRL selected by the issuer subject fingerprint."""
+        """Return one currently valid DER CRL selected by issuer subject fingerprint."""
         if not re.fullmatch(r"[0-9a-f]{64}", issuer_subject_sha256):
             raise InstitutionalPKIError("INSTITUTIONAL_PKI_CRL_ISSUER_REFERENCE_INVALID")
         crls = self.refresh_crls()
