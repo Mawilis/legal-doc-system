@@ -18,7 +18,7 @@ from typing import Iterable
 
 from cryptography import x509
 from cryptography.hazmat.primitives import hashes, serialization
-from cryptography.hazmat.primitives.asymmetric import rsa
+from cryptography.hazmat.primitives.asymmetric import padding, rsa
 from cryptography.x509.oid import NameOID
 
 from .institutional_pki import InstitutionalPKIError
@@ -79,6 +79,37 @@ def _replace_public(path: Path, data: bytes) -> None:
     except Exception:
         temporary.unlink(missing_ok=True)
         raise
+
+
+def _validate_ca_keypair(
+    certificate: x509.Certificate,
+    private_key: object,
+    *,
+    require_self_signed: bool = False,
+) -> None:
+    if not isinstance(private_key, rsa.RSAPrivateKey):
+        raise InstitutionalPKIError("INSTITUTIONAL_PKI_CA_KEY_ALGORITHM_INVALID")
+    if certificate.public_key().public_numbers() != private_key.public_key().public_numbers():
+        raise InstitutionalPKIError("INSTITUTIONAL_PKI_CA_KEY_MISMATCH")
+    now = datetime.now(timezone.utc)
+    if now < certificate.not_valid_before_utc or now >= certificate.not_valid_after_utc:
+        raise InstitutionalPKIError("INSTITUTIONAL_PKI_CA_CERTIFICATE_OUTSIDE_VALIDITY")
+    constraints = certificate.extensions.get_extension_for_class(x509.BasicConstraints).value
+    usage = certificate.extensions.get_extension_for_class(x509.KeyUsage).value
+    if not constraints.ca or not usage.key_cert_sign or not usage.crl_sign:
+        raise InstitutionalPKIError("INSTITUTIONAL_PKI_CA_PROFILE_INVALID")
+    if require_self_signed:
+        if certificate.subject != certificate.issuer:
+            raise InstitutionalPKIError("INSTITUTIONAL_PKI_ROOT_NOT_SELF_ISSUED")
+        try:
+            private_key.public_key().verify(
+                certificate.signature,
+                certificate.tbs_certificate_bytes,
+                padding.PKCS1v15(),
+                certificate.signature_hash_algorithm,
+            )
+        except Exception as error:
+            raise InstitutionalPKIError("INSTITUTIONAL_PKI_ROOT_SELF_SIGNATURE_INVALID") from error
 
 
 def _name(common_name: str, organization: str) -> x509.Name:
@@ -174,12 +205,9 @@ def issue_intermediate(
         )
     except Exception as error:
         raise InstitutionalPKIError("INSTITUTIONAL_PKI_ROOT_KEY_OR_CERTIFICATE_INVALID") from error
-    if not isinstance(root_key, rsa.RSAPrivateKey):
-        raise InstitutionalPKIError("INSTITUTIONAL_PKI_ROOT_KEY_ALGORITHM_INVALID")
-    if root.public_key().public_numbers() != root_key.public_key().public_numbers():
-        raise InstitutionalPKIError("INSTITUTIONAL_PKI_ROOT_KEY_MISMATCH")
+    _validate_ca_keypair(root, root_key, require_self_signed=True)
     root_constraints = root.extensions.get_extension_for_class(x509.BasicConstraints).value
-    if not root_constraints.ca or root_constraints.path_length != 1:
+    if root_constraints.path_length != 1:
         raise InstitutionalPKIError("INSTITUTIONAL_PKI_ROOT_CA_PROFILE_INVALID")
     directory = output_directory.expanduser().resolve()
     directory.mkdir(mode=0o700, parents=True, exist_ok=True)
@@ -282,12 +310,7 @@ def issue_crl(
         )
     except Exception as error:
         raise InstitutionalPKIError("INSTITUTIONAL_PKI_ISSUER_KEY_OR_CERTIFICATE_INVALID") from error
-    if not isinstance(key, rsa.RSAPrivateKey) or issuer.public_key().public_numbers() != key.public_key().public_numbers():
-        raise InstitutionalPKIError("INSTITUTIONAL_PKI_ISSUER_KEY_MISMATCH")
-    constraints = issuer.extensions.get_extension_for_class(x509.BasicConstraints).value
-    usage = issuer.extensions.get_extension_for_class(x509.KeyUsage).value
-    if not constraints.ca or not usage.crl_sign:
-        raise InstitutionalPKIError("INSTITUTIONAL_PKI_ISSUER_CANNOT_SIGN_CRL")
+    _validate_ca_keypair(issuer, key)
     now = datetime.now(timezone.utc)
     builder = (
         x509.CertificateRevocationListBuilder()
