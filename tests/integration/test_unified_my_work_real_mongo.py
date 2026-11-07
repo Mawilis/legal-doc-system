@@ -323,7 +323,7 @@ def _seed_live_legal_partner_iam(database: Any, tenant_id: str, principal_id: st
     )
 
 
-def _seed_live_legal_work(database: Any, tenant_id: str, principal_id: str) -> str:
+def _seed_live_legal_work(client: MongoClient[Any], database: Any, tenant_id: str, principal_id: str) -> str:
     work = LegalWorkItem(
         work_item_id="my-work-live-legal-assigned-1",
         tenant_id=tenant_id,
@@ -361,8 +361,10 @@ def _seed_live_legal_work(database: Any, tenant_id: str, principal_id: str) -> s
     )
     work_registry.ensure_indexes()
     assignment_registry.ensure_indexes()
-    work_registry.create_or_replay(work)
-    assignment_registry.persist(assignment)
+    with client.start_session() as session:
+        with session.start_transaction():
+            work_registry.create_or_replay(work, session=session)
+            assignment_registry.persist(assignment, session=session)
     return work.work_item_id
 
 
@@ -557,7 +559,7 @@ def test_legal_partner_my_work_reads_live_assigned_legal_work_from_replica_set(
     tenant_id = TENANT + "-legal-partner"
     principal_id = PRINCIPAL + "-legal-partner"
     _seed_live_legal_partner_iam(database, tenant_id, principal_id)
-    expected_work_item_id = _seed_live_legal_work(database, tenant_id, principal_id)
+    expected_work_item_id = _seed_live_legal_work(client, database, tenant_id, principal_id)
     monkeypatch.setattr(
         my_work.legal_source,
         "_db_handles",
