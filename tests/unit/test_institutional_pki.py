@@ -5,7 +5,7 @@ from pathlib import Path
 
 import pytest
 from cryptography import x509
-from cryptography.hazmat.primitives import hashes
+from cryptography.hazmat.primitives import hashes, serialization
 from cryptography.hazmat.primitives.asymmetric import rsa
 from cryptography.x509.oid import ExtendedKeyUsageOID, NameOID
 
@@ -93,7 +93,7 @@ def _fixture(tmp_path: Path, *, revoked_leaf=False, stale_crl=False, eku=SIGNING
     leaf = leaf_builder.sign(intermediate_key, hashes.SHA256())
     crl_last = NOW - timedelta(days=2) if stale_crl else NOW - timedelta(minutes=1)
     crl_next = NOW - timedelta(days=1) if stale_crl else NOW + timedelta(hours=12)
-    root_crl = _crl(root.subject, root_key, [intermediate.serial_number], last_update=crl_last, next_update=crl_next)
+    root_crl = _crl(root.subject, root_key, (), last_update=crl_last, next_update=crl_next)
     intermediate_crl = _crl(
         intermediate.subject, intermediate_key,
         [leaf.serial_number] if revoked_leaf else (),
@@ -101,7 +101,7 @@ def _fixture(tmp_path: Path, *, revoked_leaf=False, stale_crl=False, eku=SIGNING
     )
     anchor_path = tmp_path / "anchors.pem"
     crl_path = tmp_path / "crls.pem"
-    anchor_path.write_bytes(root.public_bytes(__import__("cryptography").hazmat.primitives.serialization.Encoding.PEM))
+    anchor_path.write_bytes(root.public_bytes(serialization.Encoding.PEM))
     crl_path.write_bytes(
         root_crl.public_bytes(__import__("cryptography").hazmat.primitives.serialization.Encoding.PEM)
         + intermediate_crl.public_bytes(__import__("cryptography").hazmat.primitives.serialization.Encoding.PEM)
