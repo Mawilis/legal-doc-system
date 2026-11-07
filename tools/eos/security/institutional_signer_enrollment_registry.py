@@ -15,7 +15,7 @@ from pymongo import ASCENDING
 from pymongo.errors import DuplicateKeyError, PyMongoError
 
 COLLECTION = "wilsy_institutional_signer_enrollments"
-EVENT_COLLECTION = "wilsy_institutional_signer_enrollment_events"
+EVENT_COLLECTION = "wilsy_institutional_signer_enrollment_events"\nINSTITUTIONAL_TENANT_ID = "WILSYTENANT-4CD2FZ4O"
 
 
 class InstitutionalSignerRegistryError(RuntimeError):
@@ -36,6 +36,13 @@ def _text(value: object, code: str, maximum: int = 512) -> str:
     if not isinstance(value, str) or not value or value != value.strip() or len(value) > maximum:
         raise InstitutionalSignerRegistryError(code)
     return value
+
+
+def _tenant(value: object) -> str:
+    tenant = _text(value, "INSTITUTIONAL_SIGNER_TENANT_INVALID")
+    if tenant != INSTITUTIONAL_TENANT_ID:
+        raise InstitutionalSignerRegistryConflict("INSTITUTIONAL_SIGNER_TENANT_SCOPE_INVALID")
+    return tenant
 
 
 def _fingerprint(value: object) -> str:
@@ -91,7 +98,7 @@ class InstitutionalSignerEnrollmentRegistry:
     ) -> dict[str, Any]:
         if session is None:
             raise InstitutionalSignerRegistryError("INSTITUTIONAL_SIGNER_CALLER_TRANSACTION_REQUIRED")
-        tenant = _text(tenant_id, "INSTITUTIONAL_SIGNER_TENANT_INVALID")
+        tenant = _tenant(tenant_id)
         fingerprint = _fingerprint(certificate_fingerprint_sha256)
         root = _fingerprint(trust_root_sha256)
         requester = _text(requested_by_principal_id, "INSTITUTIONAL_SIGNER_REQUESTER_INVALID")
@@ -305,7 +312,7 @@ class InstitutionalSignerEnrollmentRegistry:
 
 
 __all__ = [
-    "COLLECTION", "EVENT_COLLECTION", "InstitutionalSignerEnrollmentRegistry",
+    "COLLECTION", "EVENT_COLLECTION", "INSTITUTIONAL_TENANT_ID", "InstitutionalSignerEnrollmentRegistry",
     "InstitutionalSignerRegistryError", "InstitutionalSignerRegistryConflict",
     "InstitutionalSignerRegistryNotFound",
 ]
