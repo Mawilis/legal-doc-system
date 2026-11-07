@@ -186,6 +186,10 @@ def test_authenticated_propose_approve_revoke_is_atomic_and_maker_checker_enforc
         assert database[EVENT_COLLECTION].count_documents(
             {"source_system_id": "synthetic-http-source"},
         ) == 3
+        persisted_revocation = database[EVENT_COLLECTION].find_one({
+            "source_system_id": "synthetic-http-source", "event_type": "REVOKED",
+        })
+        assert persisted_revocation["approval_evidence_reference"] == "synthetic://independent-revocation/1"
         with client.start_session() as session:
             registry = InstitutionalSourceSigningKeyLifecycleRegistry(
                 database[KEY_COLLECTION], database[EVENT_COLLECTION],
