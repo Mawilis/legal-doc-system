@@ -144,7 +144,7 @@ def test_enrollment_expiry_revocation_and_rotation_are_transactional():
             # Historical evaluation before the revocation remains reproducible.
             assert registry.resolve(
                 source_system_id=source, key_id="key-2",
-                evaluated_at=now - timedelta(seconds=30), session=session,
+                evaluated_at=now - timedelta(seconds=10), session=session,
             )["key_id"] == "key-2"
 
             replay = registry.propose(
