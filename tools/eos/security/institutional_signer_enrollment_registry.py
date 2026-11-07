@@ -62,6 +62,16 @@ def _instant(value: datetime) -> datetime:
     return value.astimezone(timezone.utc)
 
 
+
+
+def _stored_instant(value: object) -> datetime:
+    """MongoDB BSON datetimes are UTC but PyMongo may decode them as naive."""
+    if type(value) is not datetime:
+        raise InstitutionalSignerRegistryError("INSTITUTIONAL_SIGNER_STORED_TIME_INVALID")
+    normalized = value.replace(tzinfo=timezone.utc) if value.tzinfo is None else value
+    return _instant(normalized)
+
+
 def _provenance_digest(value: dict[str, Any]) -> str:
     canonical = json.dumps(
         value, sort_keys=True, separators=(",", ":"),
@@ -531,7 +541,7 @@ class InstitutionalSignerEnrollmentRegistry:
             if any(record.get("evaluated_at") != checked_at for record in (identity, mandate, approval)):
                 raise InstitutionalSignerRegistryError("INSTITUTIONAL_SIGNER_CURRENTNESS_EVALUATION_TIME_MISMATCH")
             previous_checked_at = current.get("evidence_currentness_checked_at")
-            if isinstance(previous_checked_at, datetime) and checked_at < _instant(previous_checked_at):
+            if previous_checked_at is not None and checked_at < _stored_instant(previous_checked_at):
                 raise InstitutionalSignerRegistryConflict("INSTITUTIONAL_SIGNER_CURRENTNESS_TIME_REGRESSION")
             updated = dict(current)
             updated.pop("_id", None)
@@ -594,7 +604,11 @@ class InstitutionalSignerEnrollmentRegistry:
         if row.get("evidence_currentness_status") != "CURRENT":
             raise InstitutionalSignerRegistryConflict("INSTITUTIONAL_SIGNER_EVIDENCE_CURRENTNESS_NOT_VERIFIED")
         lease_until = row.get("evidence_currentness_valid_until")
-        if not isinstance(lease_until, datetime) or lease_until.tzinfo is None or lease_until.utcoffset() is None or lease_until.astimezone(timezone.utc) <= datetime.now(timezone.utc):
+        try:
+            normalized_lease_until = _stored_instant(lease_until)
+        except InstitutionalSignerRegistryError as error:
+            raise InstitutionalSignerRegistryConflict("INSTITUTIONAL_SIGNER_EVIDENCE_CURRENTNESS_LEASE_EXPIRED") from error
+        if normalized_lease_until <= datetime.now(timezone.utc):
             raise InstitutionalSignerRegistryConflict("INSTITUTIONAL_SIGNER_EVIDENCE_CURRENTNESS_LEASE_EXPIRED")
         row.pop("_id", None)
         return row
