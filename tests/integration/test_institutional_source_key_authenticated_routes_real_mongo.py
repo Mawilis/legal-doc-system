@@ -91,6 +91,16 @@ def test_authenticated_propose_approve_revoke_is_atomic_and_maker_checker_enforc
             "source_authority_evidence_reference": "synthetic://source-authority/1",
         }
         with TestClient(app) as http:
+            app.dependency_overrides[source_key_api._PROPOSE] = lambda: _context(
+                "synthetic-outsider", tenant_id="WILSYTENANT-OTHER",
+            )
+            cross_tenant = http.post(
+                "/security/institutional-source-keys/proposals",
+                json=body,
+                headers={"Idempotency-Key": "http-cross-tenant"},
+            )
+            assert cross_tenant.status_code == 403
+
             app.dependency_overrides[source_key_api._PROPOSE] = lambda: _context("synthetic-maker")
             proposed = http.post(
                 "/security/institutional-source-keys/proposals",
@@ -142,6 +152,19 @@ def test_authenticated_propose_approve_revoke_is_atomic_and_maker_checker_enforc
                     evaluated_at=datetime.now(timezone.utc),
                     session=session,
                 )["public_key_fingerprint_sha256"] == fingerprint
+
+            app.dependency_overrides[source_key_api._REVOKE] = lambda: _context("synthetic-maker")
+            self_revocation = http.post(
+                "/security/institutional-source-keys/synthetic-http-source/synthetic-http-key-v1/revoke",
+                json={
+                    "reason_reference": "synthetic://compromise/self-attempt",
+                    "governance_decision_reference": "synthetic-governance-self-revocation",
+                    "approval_evidence_reference": "synthetic://independent-self-revocation",
+                },
+                headers={"Idempotency-Key": "http-self-revoke"},
+            )
+            assert self_revocation.status_code == 409
+            assert self_revocation.json()["detail"] == "SOURCE_SIGNING_KEY_MAKER_CHECKER_VIOLATION"
 
             app.dependency_overrides[source_key_api._REVOKE] = lambda: _context("synthetic-reviewer")
             revoked = http.post(
