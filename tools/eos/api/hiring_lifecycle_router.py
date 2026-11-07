@@ -44,6 +44,7 @@ from tools.eos.security.institutional_signer_enrollment_registry import (
     COLLECTION as INSTITUTIONAL_SIGNER_COLLECTION,
     EVENT_COLLECTION as INSTITUTIONAL_SIGNER_EVENT_COLLECTION,
     InstitutionalSignerEnrollmentRegistry,
+    InstitutionalSignerRegistryConflict,
     InstitutionalSignerRegistryError,
 )
 from tools.eos.security.institutional_signature_evidence_registry import (
@@ -162,6 +163,8 @@ def _transaction(callback):
     except HiringLifecycleNotFound as error:
         raise HTTPException(status_code=404, detail=error.code) from error
     except HiringLifecycleRegistryConflict as error:
+        raise HTTPException(status_code=409, detail=error.code) from error
+    except InstitutionalSignerRegistryConflict as error:
         raise HTTPException(status_code=409, detail=error.code) from error
     except (HiringLifecycleRegistryError, CandidateEvidenceRegistryError,
             InstitutionalSignatureEvidenceError, InstitutionalSignerRegistryError) as error:
