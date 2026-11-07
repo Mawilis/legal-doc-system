@@ -182,6 +182,8 @@ class InstitutionalSignerEnrollmentRegistry:
         provenance_snapshot = _validated_provenance_snapshot(evidence_provenance_snapshot)
         if (provenance is None) != (provenance_snapshot is None):
             raise InstitutionalSignerRegistryError("INSTITUTIONAL_SIGNER_EVIDENCE_PROVENANCE_INCOMPLETE")
+        if provenance_snapshot is not None and _provenance_digest(provenance_snapshot) != provenance:
+            raise InstitutionalSignerRegistryError("INSTITUTIONAL_SIGNER_EVIDENCE_PROVENANCE_DIGEST_MISMATCH")
         if provenance_snapshot is not None:
             identity = provenance_snapshot["identity_proofing"]
             mandate_snapshot = provenance_snapshot["signatory_mandate"]
@@ -276,6 +278,8 @@ class InstitutionalSignerEnrollmentRegistry:
         provenance_snapshot = _validated_provenance_snapshot(approval_evidence_provenance_snapshot)
         if (provenance is None) != (provenance_snapshot is None):
             raise InstitutionalSignerRegistryError("INSTITUTIONAL_SIGNER_EVIDENCE_PROVENANCE_INCOMPLETE")
+        if provenance_snapshot is not None and _provenance_digest(provenance_snapshot) != provenance:
+            raise InstitutionalSignerRegistryError("INSTITUTIONAL_SIGNER_EVIDENCE_PROVENANCE_DIGEST_MISMATCH")
         if provenance_snapshot is not None:
             if (provenance_snapshot.get("tenant_id") != tenant
                 or provenance_snapshot.get("certificate_fingerprint_sha256") != fingerprint
