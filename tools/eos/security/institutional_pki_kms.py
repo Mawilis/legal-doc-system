@@ -392,7 +392,7 @@ def issue_crl_with_kms(
     except InstitutionalPKIKMSError:
         raise
     except Exception as error:
-        raise InstitutionalPKIKMSError("INSTITUTIONAL_KMS_CRL_PUBLICATION_FAILED", key_arn=key_arn) from error
+        raise InstitutionalPKIKMSError("INSTITUTIONAL_KMS_CRL_PUBLICATION_FAILED") from error
 
 
 
