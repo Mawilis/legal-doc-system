@@ -348,6 +348,14 @@ _BINDINGS = MappingProxyType({
     "legal_work_item_reassign": "legal_operations:work_item:reassign",
 })
 
+# Institutional source-key lifecycle: explicit operation/permission bindings.
+_BINDINGS = MappingProxyType({
+    **_BINDINGS,
+    "institutional_source_key_propose": "security:institutional_source_key:propose",
+    "institutional_source_key_approve": "security:institutional_source_key:approve",
+    "institutional_source_key_revoke": "security:institutional_source_key:revoke",
+})
+
 def authorize_tenant_operation(*, principal_id: object, tenant_id: object, permission_id: object, operation: object, principal_repository: Any, membership_repository: Any, role_assignment_repository: Any, business_role_repository: Any, session: Any = None, workforce_relationship_collection: Any = None, selected_business_role: object = None) -> TenantAuthorizationDecision:
     """Compose current truth; ELIGIBLE is only one conjunct and never authorization alone."""
     if not all(isinstance(v, str) and v and v == v.strip() for v in (principal_id, tenant_id, permission_id, operation)):
