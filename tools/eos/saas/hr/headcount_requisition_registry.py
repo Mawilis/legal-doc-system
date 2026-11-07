@@ -185,27 +185,32 @@ class HeadcountRequisitionRegistry:
         self, *, tenant_id: str, requisition_id: str,
         expected_revision: int, updated: HeadcountRequisition,
         action: str, actor_principal_id: str, idempotency_key: str,
-        occurred_at: Any, session: Any,
+        request_fingerprint: str, occurred_at: Any, session: Any,
     ) -> HeadcountRequisition:
         tenant = _exact(tenant_id, "HEADCOUNT_TENANT_INVALID")
         identity = _exact(requisition_id, "HEADCOUNT_REQUISITION_ID_INVALID")
         actor = _exact(actor_principal_id, "HEADCOUNT_ACTOR_INVALID")
         key = _exact(idempotency_key, "HEADCOUNT_IDEMPOTENCY_KEY_INVALID")
         tx = _session(session)
-        current = self.get(tenant_id=tenant, requisition_id=identity, session=tx)
-        if updated.tenant_id != tenant or updated.requisition_id != identity:
-            raise HeadcountRequisitionRegistryConflict("HEADCOUNT_SCOPE_IMMUTABLE")
-        if current.revision != expected_revision or updated.revision != expected_revision + 1:
-            raise HeadcountRequisitionRegistryConflict("HEADCOUNT_REVISION_CONFLICT")
-        fingerprint = _command_fingerprint(updated, key, action)
+        if not isinstance(request_fingerprint, str) or len(request_fingerprint) != 128:
+            raise HeadcountRequisitionRegistryError("HEADCOUNT_REQUEST_FINGERPRINT_INVALID")
         try:
             prior = self._events.find_one(
                 {"tenant_id": tenant, "idempotency_key": key}, session=tx,
             )
             if prior is not None:
-                if prior.get("command_fingerprint") != fingerprint:
+                if prior.get("request_fingerprint") != request_fingerprint:
                     raise HeadcountRequisitionRegistryConflict("HEADCOUNT_DIVERGENT_TRANSITION_REPLAY")
-                return self.get(tenant_id=tenant, requisition_id=identity, session=tx)
+                snapshot = prior.get("result_snapshot")
+                if not isinstance(snapshot, dict):
+                    raise HeadcountRequisitionRegistryError("HEADCOUNT_EVENT_SNAPSHOT_CORRUPT")
+                return HeadcountRequisition.from_dict(snapshot)
+            current = self.get(tenant_id=tenant, requisition_id=identity, session=tx)
+            if updated.tenant_id != tenant or updated.requisition_id != identity:
+                raise HeadcountRequisitionRegistryConflict("HEADCOUNT_SCOPE_IMMUTABLE")
+            if current.revision != expected_revision or updated.revision != expected_revision + 1:
+                raise HeadcountRequisitionRegistryConflict("HEADCOUNT_REVISION_CONFLICT")
+            fingerprint = _command_fingerprint(updated, key, action)
             result = self._collection.update_one(
                 {"tenant_id": tenant, "requisition_id": identity, "revision": expected_revision,
                  "fingerprint": current.fingerprint},
@@ -224,6 +229,8 @@ class HeadcountRequisitionRegistry:
                 "prior_fingerprint": current.fingerprint,
                 "result_fingerprint": updated.fingerprint,
                 "command_fingerprint": fingerprint,
+                "request_fingerprint": request_fingerprint,
+                "result_snapshot": updated.to_dict(),
                 "idempotency_key": key,
                 "occurred_at": occurred_at,
                 "schema": "wilsy.hr.headcount_requisition_event.v1",
