@@ -143,6 +143,7 @@ class HeadcountRequisitionRegistry:
                 "prior_fingerprint": None,
                 "result_fingerprint": requisition.fingerprint,
                 "idempotency_key": key,
+                "command_fingerprint": fingerprint,
                 "occurred_at": occurred_at,
                 "schema": "wilsy.hr.headcount_requisition_event.v1",
             }, session=tx)
@@ -166,6 +167,19 @@ class HeadcountRequisitionRegistry:
         if row is None:
             raise HeadcountRequisitionNotFound("HEADCOUNT_REQUISITION_NOT_FOUND")
         return _hydrate(row)
+
+    def list_for_tenant(self, *, tenant_id: str, session: Any, limit: int = 200) -> tuple[HeadcountRequisition, ...]:
+        tenant = _exact(tenant_id, "HEADCOUNT_TENANT_INVALID")
+        tx = _session(session)
+        if type(limit) is not int or not 1 <= limit <= 500:
+            raise HeadcountRequisitionRegistryError("HEADCOUNT_LIMIT_INVALID")
+        try:
+            cursor = self._collection.find({"tenant_id": tenant}, session=tx).sort(
+                [("revision", -1), ("requisition_id", ASCENDING)]
+            ).limit(limit)
+            return tuple(_hydrate(row) for row in cursor)
+        except PyMongoError as error:
+            raise HeadcountRequisitionRegistryError("HEADCOUNT_PERSISTENCE_UNAVAILABLE") from error
 
     def transition(
         self, *, tenant_id: str, requisition_id: str,
