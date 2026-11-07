@@ -142,14 +142,15 @@ class InstitutionalSignerEnrollmentRegistry:
 
     def approve_enrollment(
         self, *, tenant_id: str, certificate_fingerprint_sha256: str,
-        approver_principal_id: str, approved_at: datetime,
-        idempotency_key: str, session: object,
+        approver_principal_id: str, approval_attestation_reference: str,
+        approved_at: datetime, idempotency_key: str, session: object,
     ) -> dict[str, Any]:
         if session is None:
             raise InstitutionalSignerRegistryError("INSTITUTIONAL_SIGNER_CALLER_TRANSACTION_REQUIRED")
         tenant = _text(tenant_id, "INSTITUTIONAL_SIGNER_TENANT_INVALID")
         fingerprint = _fingerprint(certificate_fingerprint_sha256)
         approver = _text(approver_principal_id, "INSTITUTIONAL_SIGNER_APPROVER_INVALID")
+        attestation = _text(approval_attestation_reference, "INSTITUTIONAL_SIGNER_APPROVAL_ATTESTATION_REQUIRED")
         now = _instant(approved_at)
         key = _text(idempotency_key, "INSTITUTIONAL_SIGNER_IDEMPOTENCY_INVALID", 200)
         try:
@@ -166,6 +167,7 @@ class InstitutionalSignerEnrollmentRegistry:
             updated.pop("_id", None)
             updated.update({
                 "status": "ACTIVE", "approved_by_principal_id": approver,
+                "approval_attestation_reference": attestation,
                 "approved_at": now, "revision": current["revision"] + 1,
             })
             result = self._records.update_one({
