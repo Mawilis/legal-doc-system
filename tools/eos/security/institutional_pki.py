@@ -34,6 +34,7 @@ class InstitutionalPKIError(RuntimeError):
 @dataclass(frozen=True, slots=True)
 class InstitutionalPKISettings:
     trust_anchors_pem: Path
+    issuer_certificates_pem: Path
     crl_bundle_pem: Path
     trusted_root_sha256: frozenset[str]
     required_eku_oid: str
@@ -164,9 +165,11 @@ class InstitutionalPKIVerifier:
         anchors: Iterable[x509.Certificate],
         crls: Iterable[x509.CertificateRevocationList],
         settings: InstitutionalPKISettings,
+        issuer_certificates: Iterable[x509.Certificate] = (),
     ) -> None:
         self._settings = settings
         self._anchors = tuple(anchors)
+        self._issuer_certificates = tuple(issuer_certificates) + self._anchors
         self._crls = tuple(crls)
         if not self._anchors or not self._crls:
             raise InstitutionalPKIError("INSTITUTIONAL_PKI_TRUST_AND_CRL_REQUIRED")
@@ -179,27 +182,40 @@ class InstitutionalPKIVerifier:
             if anchor.subject != anchor.issuer:
                 raise InstitutionalPKIError("INSTITUTIONAL_PKI_ROOT_NOT_SELF_ISSUED")
             _verify_signature(anchor, anchor.public_key())
+        issuer_fingerprints = {item.fingerprint(hashes.SHA256()) for item in self._issuer_certificates}
+        if len(issuer_fingerprints) != len(self._issuer_certificates):
+            raise InstitutionalPKIError("INSTITUTIONAL_PKI_ISSUER_CERTIFICATE_DUPLICATE")
+        for issuer_certificate in self._issuer_certificates:
+            _is_ca(issuer_certificate)
+        for crl in self._crls:
+            issuers = [item for item in self._issuer_certificates if item.subject == crl.issuer]
+            if len(issuers) != 1:
+                raise InstitutionalPKIError("INSTITUTIONAL_PKI_CRL_ISSUER_NOT_FOUND_OR_AMBIGUOUS")
+            _verify_signature(crl, issuers[0].public_key())
 
     @classmethod
     def from_settings(cls, settings: InstitutionalPKISettings) -> "InstitutionalPKIVerifier":
         try:
             anchors = _pem_certificates(settings.trust_anchors_pem.read_bytes())
+            issuers = _pem_certificates(settings.issuer_certificates_pem.read_bytes())
             crls = _pem_crls(settings.crl_bundle_pem.read_bytes())
         except OSError as error:
             raise InstitutionalPKIError("INSTITUTIONAL_PKI_TRUST_MATERIAL_UNAVAILABLE") from error
-        return cls(anchors=anchors, crls=crls, settings=settings)
+        return cls(anchors=anchors, crls=crls, settings=settings, issuer_certificates=issuers)
 
     @classmethod
     def from_environment(cls) -> "InstitutionalPKIVerifier":
         anchors_path = os.getenv("WILSY_EOS_PKI_TRUST_ANCHORS_PEM", "").strip()
+        issuer_path = os.getenv("WILSY_EOS_PKI_ISSUER_CERTIFICATES_PEM", "").strip()
         crl_path = os.getenv("WILSY_EOS_PKI_CRL_BUNDLE_PEM", "").strip()
         fingerprints = os.getenv("WILSY_EOS_PKI_TRUSTED_ROOT_SHA256", "").strip()
         eku = os.getenv("WILSY_EOS_PKI_REQUIRED_SIGNING_EKU_OID", "").strip()
-        if not all((anchors_path, crl_path, fingerprints, eku)):
+        if not all((anchors_path, issuer_path, crl_path, fingerprints, eku)):
             raise InstitutionalPKIError("INSTITUTIONAL_PKI_RUNTIME_CONFIGURATION_INCOMPLETE")
         pins = frozenset(value.strip().lower() for value in fingerprints.split(",") if value.strip())
         return cls.from_settings(InstitutionalPKISettings(
             trust_anchors_pem=Path(anchors_path),
+            issuer_certificates_pem=Path(issuer_path),
             crl_bundle_pem=Path(crl_path),
             trusted_root_sha256=pins,
             required_eku_oid=eku,
@@ -217,7 +233,17 @@ class InstitutionalPKIVerifier:
         ]
         if len(matches) != 1:
             raise InstitutionalPKIError("INSTITUTIONAL_PKI_CRL_ISSUER_NOT_FOUND_OR_AMBIGUOUS")
-        return matches[0].public_bytes(serialization.Encoding.PEM)
+        crl = matches[0]
+        issuer = next((item for item in self._issuer_certificates if item.subject == crl.issuer), None)
+        if issuer is None:
+            raise InstitutionalPKIError("INSTITUTIONAL_PKI_CRL_ISSUER_NOT_FOUND_OR_AMBIGUOUS")
+        _verify_signature(crl, issuer.public_key())
+        this_update = crl.last_update_utc if hasattr(crl, "last_update_utc") else crl.last_update.replace(tzinfo=timezone.utc)
+        next_update = crl.next_update_utc if hasattr(crl, "next_update_utc") else crl.next_update.replace(tzinfo=timezone.utc) if crl.next_update else None
+        now = datetime.now(timezone.utc)
+        if next_update is None or this_update > now or next_update <= now:
+            raise InstitutionalPKIError("INSTITUTIONAL_PKI_CRL_NOT_CURRENT")
+        return crl.public_bytes(serialization.Encoding.PEM)
 
     def verify(
         self,
