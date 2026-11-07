@@ -121,7 +121,7 @@ class InstitutionalSourceSigningKeyLifecycleRegistry:
         valid_from: datetime, valid_until: datetime,
         proposed_by_principal_id: str, proposal_reference: str,
         identity_proofing_evidence_reference: str,
-        signatory_mandate_evidence_reference: str,
+        source_authority_evidence_reference: str,
         proposed_at: datetime, idempotency_key: str, session: ClientSession,
         rotation_id: str | None = None, supersedes_key_id: str | None = None,
         overlap_until: datetime | None = None,
@@ -134,7 +134,7 @@ class InstitutionalSourceSigningKeyLifecycleRegistry:
         proposer = _identifier("proposed_by_principal_id", proposed_by_principal_id)
         proposal = _identifier("proposal_reference", proposal_reference)
         identity_reference = _identifier("identity_proofing_evidence_reference", identity_proofing_evidence_reference)
-        mandate_reference = _identifier("signatory_mandate_evidence_reference", signatory_mandate_evidence_reference)
+        source_authority_reference = _identifier("source_authority_evidence_reference", source_authority_evidence_reference)
         idem = _identifier("idempotency_key", idempotency_key)
         start, end, occurred = (
             _instant("valid_from", valid_from), _instant("valid_until", valid_until),
@@ -179,7 +179,7 @@ class InstitutionalSourceSigningKeyLifecycleRegistry:
             "valid_from": start, "valid_until": end,
             "proposal_reference": proposal, "proposed_by_principal_id": proposer,
             "identity_proofing_evidence_reference": identity_reference,
-            "signatory_mandate_evidence_reference": mandate_reference,
+            "source_authority_evidence_reference": source_authority_reference,
             "proposed_at": occurred, "lifecycle_state": "PENDING",
             "rotation": rotation,
         }
@@ -304,6 +304,8 @@ class InstitutionalSourceSigningKeyLifecycleRegistry:
         record = self._keys.find_one({"source_system_id": source, "key_id": key}, session=session)
         if record is None:
             raise SourceSigningKeyRegistryConflict("SOURCE_SIGNING_KEY_NOT_FOUND")
+        if actor == record["proposed_by_principal_id"]:
+            raise SourceSigningKeyRegistryConflict("SOURCE_SIGNING_KEY_MAKER_CHECKER_VIOLATION")
         event = {
             "schema": EVENT_SCHEMA, "event_type": "REVOKED",
             "source_system_id": source, "key_id": key,
