@@ -3,6 +3,7 @@ from tools.eos.auth.tenant_authority_policy import (
     tenant_role_operation_eligibility,
 )
 from tools.eos.auth.permission_namespace import permission_metadata
+from tools.eos.auth.roles import ROLE_PERMISSIONS_MAP
 
 
 def test_candidate_evidence_upload_and_read_are_distinct_canonical_operations():
@@ -26,3 +27,13 @@ def test_candidate_evidence_business_eligibility_is_least_privilege():
     assert tenant_role_operation_eligibility("tenant_hr_director", "hr_hiring_candidate_evidence_read") == ELIGIBLE
     assert tenant_role_operation_eligibility("tenant_owner", "hr_hiring_candidate_evidence_upload") == DENY
     assert tenant_role_operation_eligibility("tenant_legal_partner", "hr_hiring_candidate_evidence_read") == DENY
+
+
+
+def test_candidate_evidence_static_role_grants_match_business_eligibility():
+    assert "hr:hiring_candidate_evidence:upload" in ROLE_PERMISSIONS_MAP["HR_MANAGER"]
+    assert "hr:hiring_candidate_evidence:read" in ROLE_PERMISSIONS_MAP["HR_MANAGER"]
+    assert "hr:hiring_candidate_evidence:read" in ROLE_PERMISSIONS_MAP["HR_DIRECTOR"]
+    assert "hr:hiring_candidate_evidence:upload" not in ROLE_PERMISSIONS_MAP["HR_DIRECTOR"]
+    assert "hr:hiring_candidate_evidence:upload" not in ROLE_PERMISSIONS_MAP["TENANT_OWNER"]
+    assert "hr:hiring_candidate_evidence:read" not in ROLE_PERMISSIONS_MAP["LEGAL_PARTNER"]
