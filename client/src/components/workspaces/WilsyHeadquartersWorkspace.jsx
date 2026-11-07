@@ -43,12 +43,23 @@ export default function WilsyHeadquartersWorkspace() {
   const [workforce, setWorkforce] = useState(null);
   const [workforceLoading, setWorkforceLoading] = useState(false);
   const [workforceError, setWorkforceError] = useState('');
+  const [workforceSearch, setWorkforceSearch] = useState('');
+  const [workforceOffset, setWorkforceOffset] = useState(0);
+  const [workforceRefresh, setWorkforceRefresh] = useState(0);
   useEffect(() => {
     if (section !== 'people') return undefined;
     let current = true;
     setWorkforceLoading(true);
     setWorkforceError('');
-    api.get('/hr/workforce', { params: { limit: 50, offset: 0 }, forceNetworkRetry: true })
+    const query = workforceSearch.trim();
+    api.get('/hr/workforce', {
+      params: {
+        limit: 50,
+        offset: workforceOffset,
+        ...(query.length >= 2 ? { q: query } : {}),
+      },
+      forceNetworkRetry: true,
+    })
       .then((response) => {
         if (current) setWorkforce(response.data);
       })
@@ -62,7 +73,7 @@ export default function WilsyHeadquartersWorkspace() {
         if (current) setWorkforceLoading(false);
       });
     return () => { current = false; };
-  }, [section]);
+  }, [section, workforceSearch, workforceOffset, workforceRefresh]);
   const selectedDepartment = departments.find((item) => item.id === section);
 
   return (
@@ -156,8 +167,22 @@ export default function WilsyHeadquartersWorkspace() {
                 <section className="rounded-2xl border border-white/10 bg-[#101a2a] p-5">
                   <div className="flex flex-wrap items-center justify-between gap-3">
                     <div><h2 className="text-lg font-semibold">Authorised workforce directory</h2><p className="mt-1 text-xs text-slate-400">Limited directory fields from the tenant-authorised HR employee registry.</p></div>
-                    <span className="text-xs text-slate-400">{workforce?.total ?? 0} records in returned page context</span>
+                    <span className="text-xs text-slate-400">{workforce?.total ?? 0} matching records</span>
                   </div>
+                  <div className="mt-4 grid gap-2 sm:grid-cols-[minmax(0,1fr)_auto]">
+                    <label className="grid gap-1 text-xs text-slate-400">
+                      Search workforce
+                      <input
+                        aria-label="Search workforce directory"
+                        value={workforceSearch}
+                        onChange={(event) => { setWorkforceSearch(event.target.value); setWorkforceOffset(0); }}
+                        placeholder="Name, employee ID, role or department"
+                        className="rounded-lg border border-white/15 bg-[#080f1d] px-3 py-2 text-sm text-white outline-none focus:border-amber-300/50"
+                      />
+                    </label>
+                    <button onClick={() => setWorkforceRefresh((value) => value + 1)} className="self-end rounded-lg border border-white/15 px-4 py-2 text-xs text-slate-200">Refresh</button>
+                  </div>
+                  {workforceSearch.trim().length === 1 && <p className="mt-2 text-xs text-amber-200">Enter at least two characters to filter the directory.</p>}
                   {(workforce?.items || []).length === 0 ? (
                     <p className="mt-5 rounded-xl border border-white/10 p-5 text-sm text-slate-300">No active workforce records were returned by the authorised HR source.</p>
                   ) : (
@@ -168,6 +193,21 @@ export default function WilsyHeadquartersWorkspace() {
                           <span className="rounded-full border border-emerald-300/20 px-3 py-1 text-xs text-emerald-200">{person.employmentStatus || 'Status not recorded'}</span>
                         </article>
                       ))}
+                    </div>
+                  )}
+                  {(workforce?.items || []).length > 0 && (
+                    <div className="mt-4 flex items-center justify-between border-t border-white/10 pt-4">
+                      <button
+                        disabled={workforceOffset === 0}
+                        onClick={() => setWorkforceOffset((value) => Math.max(0, value - 50))}
+                        className="rounded-lg border border-white/15 px-3 py-2 text-xs disabled:opacity-40"
+                      >Previous</button>
+                      <span className="text-xs text-slate-500">Showing {workforceOffset + 1}–{workforceOffset + (workforce.items?.length || 0)} of {workforce.total}</span>
+                      <button
+                        disabled={!workforce.hasMore}
+                        onClick={() => setWorkforceOffset((value) => value + 50)}
+                        className="rounded-lg border border-white/15 px-3 py-2 text-xs disabled:opacity-40"
+                      >Next</button>
                     </div>
                   )}
                 </section>
