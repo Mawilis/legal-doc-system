@@ -68,6 +68,9 @@ def _verified_currentness(*, tenant_id, fingerprint, revision, status, checked_a
             "records": {
                 key: {
                     "evidence_kind": record["evidence_kind"],
+                    "tenant_id": record["tenant_id"],
+                    "certificate_fingerprint_sha256": record["certificate_fingerprint_sha256"],
+                    "evidence_reference": record["evidence_reference"],
                     "source_system_id": record["source_system_id"],
                     "source_record_id": record["source_record_id"],
                     "source_revision": record["source_revision"],
