@@ -116,35 +116,29 @@ class InstitutionalSourceSigningKeyLifecycleRegistry:
         except PyMongoError as error:
             raise SourceSigningKeyRegistryError("SOURCE_SIGNING_KEY_INDEX_UNAVAILABLE") from error
 
-    def enroll(
+    def propose(
         self, *, source_system_id: str, key_id: str, public_key_bytes: bytes,
         valid_from: datetime, valid_until: datetime,
-        governance_decision_reference: str, approved_by_principal_id: str,
-        enrolled_at: datetime, idempotency_key: str, session: ClientSession,
+        proposed_by_principal_id: str, proposal_reference: str,
+        proposed_at: datetime, idempotency_key: str, session: ClientSession,
         rotation_id: str | None = None, supersedes_key_id: str | None = None,
         overlap_until: datetime | None = None,
     ) -> dict[str, Any]:
-        """Insert an immutable public-key record and its enrollment event.
-
-        A replacement key must identify its predecessor and an explicit overlap
-        end no later than the predecessor's expiry. Approval evidence and actor
-        are required but are not independently validated here.
-        """
+        """Persist an immutable PENDING proposal; it is not yet resolvable."""
         if session is None:
             raise SourceSigningKeyRegistryError("SOURCE_SIGNING_KEY_SESSION_REQUIRED")
         source = _identifier("source_system_id", source_system_id)
         key = _identifier("key_id", key_id)
-        decision = _identifier("governance_decision_reference", governance_decision_reference)
-        approver = _identifier("approved_by_principal_id", approved_by_principal_id)
+        proposer = _identifier("proposed_by_principal_id", proposed_by_principal_id)
+        proposal = _identifier("proposal_reference", proposal_reference)
         idem = _identifier("idempotency_key", idempotency_key)
         start, end, occurred = (
-            _instant("valid_from", valid_from),
-            _instant("valid_until", valid_until),
-            _instant("enrolled_at", enrolled_at),
+            _instant("valid_from", valid_from), _instant("valid_until", valid_until),
+            _instant("proposed_at", proposed_at),
         )
         if type(public_key_bytes) is not bytes or len(public_key_bytes) != 32:
             raise SourceSigningKeyRegistryError("SOURCE_SIGNING_KEY_PUBLIC_KEY_INVALID")
-        if end <= start:
+        if end <= start or occurred >= end:
             raise SourceSigningKeyRegistryError("SOURCE_SIGNING_KEY_VALIDITY_INTERVAL_INVALID")
         fingerprint = sha256(public_key_bytes).hexdigest()
         if (supersedes_key_id is None) != (rotation_id is None) or (supersedes_key_id is None) != (overlap_until is None):
@@ -157,62 +151,107 @@ class InstitutionalSourceSigningKeyLifecycleRegistry:
             predecessor = self._keys.find_one(
                 {"source_system_id": source, "key_id": predecessor_id}, session=session
             )
+            if predecessor is None or self._events.find_one(
+                {"source_system_id": source, "key_id": predecessor_id, "event_type": "APPROVED"},
+                session=session,
+            ) is None:
+                raise SourceSigningKeyRegistryConflict("SOURCE_SIGNING_KEY_ROTATION_PREDECESSOR_NOT_APPROVED")
             if self._keys.find_one(
                 {"source_system_id": source, "rotation.supersedes_key_id": predecessor_id},
                 session=session,
             ) is not None:
                 raise SourceSigningKeyRegistryConflict("SOURCE_SIGNING_KEY_ROTATION_ALREADY_REPLACED")
-            if predecessor is None:
-                raise SourceSigningKeyRegistryConflict("SOURCE_SIGNING_KEY_ROTATION_PREDECESSOR_MISSING")
             if not (start < overlap <= predecessor["valid_until"] and start < end):
                 raise SourceSigningKeyRegistryError("SOURCE_SIGNING_KEY_ROTATION_OVERLAP_INVALID")
-            rotation = {
-                "rotation_id": rotation_name,
-                "supersedes_key_id": predecessor_id,
-                "overlap_until": overlap,
-            }
+            rotation = {"rotation_id": rotation_name, "supersedes_key_id": predecessor_id, "overlap_until": overlap}
         record = {
-            "schema": SCHEMA,
-            "source_system_id": source,
-            "key_id": key,
+            "schema": SCHEMA, "source_system_id": source, "key_id": key,
             "public_key_bytes": public_key_bytes,
             "public_key_fingerprint_sha256": fingerprint,
-            "valid_from": start,
-            "valid_until": end,
-            "governance_decision_reference": decision,
-            "approved_by_principal_id": approver,
-            "enrolled_at": occurred,
+            "valid_from": start, "valid_until": end,
+            "proposal_reference": proposal, "proposed_by_principal_id": proposer,
+            "proposed_at": occurred, "lifecycle_state": "PENDING",
             "rotation": rotation,
         }
-        event_payload = {
-            "schema": EVENT_SCHEMA, "event_type": "ENROLLED",
+        fingerprint_of_record = sha256(_canonical(record)).hexdigest()
+        event = {
+            "schema": EVENT_SCHEMA, "event_type": "PROPOSED",
             "source_system_id": source, "key_id": key,
             "idempotency_key": idem, "occurred_at": occurred,
-            "actor_principal_id": approver,
-            "governance_decision_reference": decision,
-            "record_fingerprint_sha256": sha256(_canonical(record)).hexdigest(),
+            "actor_principal_id": proposer, "proposal_reference": proposal,
+            "record_fingerprint_sha256": fingerprint_of_record, "event_sequence": 1,
         }
-        prior = self._events.find_one(
-            {"source_system_id": source, "idempotency_key": idem}, session=session
-        )
+        prior = self._events.find_one({"source_system_id": source, "idempotency_key": idem}, session=session)
         if prior is not None:
-            if prior.get("record_fingerprint_sha256") != event_payload["record_fingerprint_sha256"]:
+            if prior.get("record_fingerprint_sha256") != fingerprint_of_record:
                 raise SourceSigningKeyRegistryConflict("SOURCE_SIGNING_KEY_DIVERGENT_REPLAY")
-            existing = self._keys.find_one(
-                {"source_system_id": source, "key_id": key}, session=session
-            )
+            existing = self._keys.find_one({"source_system_id": source, "key_id": key}, session=session)
             if existing is None:
                 raise SourceSigningKeyRegistryError("SOURCE_SIGNING_KEY_REPLAY_RECORD_MISSING")
             return existing
         try:
             self._keys.insert_one(record, session=session)
-            event_payload["event_sequence"] = 1
-            self._events.insert_one(event_payload, session=session)
+            self._events.insert_one(event, session=session)
         except DuplicateKeyError as error:
             raise SourceSigningKeyRegistryConflict("SOURCE_SIGNING_KEY_IDENTITY_OR_FINGERPRINT_EXISTS") from error
         except PyMongoError as error:
-            raise SourceSigningKeyRegistryError("SOURCE_SIGNING_KEY_ENROLLMENT_PERSISTENCE_FAILED") from error
+            raise SourceSigningKeyRegistryError("SOURCE_SIGNING_KEY_PROPOSAL_PERSISTENCE_FAILED") from error
         return record
+
+    def approve(
+        self, *, source_system_id: str, key_id: str,
+        approved_by_principal_id: str, governance_decision_reference: str,
+        approval_evidence_reference: str, approved_at: datetime,
+        idempotency_key: str, session: ClientSession,
+    ) -> dict[str, Any]:
+        """Append independent approval bound to the exact immutable proposal."""
+        if session is None:
+            raise SourceSigningKeyRegistryError("SOURCE_SIGNING_KEY_SESSION_REQUIRED")
+        source = _identifier("source_system_id", source_system_id)
+        key = _identifier("key_id", key_id)
+        approver = _identifier("approved_by_principal_id", approved_by_principal_id)
+        decision = _identifier("governance_decision_reference", governance_decision_reference)
+        evidence = _identifier("approval_evidence_reference", approval_evidence_reference)
+        idem = _identifier("idempotency_key", idempotency_key)
+        occurred = _instant("approved_at", approved_at)
+        record = self._keys.find_one({"source_system_id": source, "key_id": key}, session=session)
+        if record is None:
+            raise SourceSigningKeyRegistryConflict("SOURCE_SIGNING_KEY_NOT_FOUND")
+        if approver == record["proposed_by_principal_id"]:
+            raise SourceSigningKeyRegistryConflict("SOURCE_SIGNING_KEY_MAKER_CHECKER_VIOLATION")
+        proposal_event = self._events.find_one(
+            {"source_system_id": source, "key_id": key, "event_type": "PROPOSED"}, session=session
+        )
+        if proposal_event is None or occurred < proposal_event["occurred_at"]:
+            raise SourceSigningKeyRegistryConflict("SOURCE_SIGNING_KEY_PROPOSAL_NOT_CURRENT")
+        fingerprint = sha256(_canonical(record)).hexdigest()
+        event = {
+            "schema": EVENT_SCHEMA, "event_type": "APPROVED",
+            "source_system_id": source, "key_id": key,
+            "idempotency_key": idem, "occurred_at": occurred,
+            "actor_principal_id": approver,
+            "governance_decision_reference": decision,
+            "approval_evidence_reference": evidence,
+            "proposal_reference": record["proposal_reference"],
+            "record_fingerprint_sha256": fingerprint, "event_sequence": 3,
+        }
+        prior = self._events.find_one({"source_system_id": source, "idempotency_key": idem}, session=session)
+        if prior is not None:
+            comparable = {k: v for k, v in prior.items() if k != "_id"}
+            if comparable != event:
+                raise SourceSigningKeyRegistryConflict("SOURCE_SIGNING_KEY_DIVERGENT_REPLAY")
+            return prior
+        if self._events.find_one(
+            {"source_system_id": source, "key_id": key, "event_type": "APPROVED"}, session=session
+        ) is not None:
+            raise SourceSigningKeyRegistryConflict("SOURCE_SIGNING_KEY_ALREADY_APPROVED")
+        try:
+            self._events.insert_one(event, session=session)
+        except DuplicateKeyError as error:
+            raise SourceSigningKeyRegistryConflict("SOURCE_SIGNING_KEY_APPROVAL_CONFLICT") from error
+        except PyMongoError as error:
+            raise SourceSigningKeyRegistryError("SOURCE_SIGNING_KEY_APPROVAL_PERSISTENCE_FAILED") from error
+        return event
 
     def revoke(
         self, *, source_system_id: str, key_id: str, revoked_at: datetime,
@@ -242,7 +281,7 @@ class InstitutionalSourceSigningKeyLifecycleRegistry:
             "actor_principal_id": actor, "reason_reference": reason,
             "governance_decision_reference": decision,
             "record_fingerprint_sha256": record["public_key_fingerprint_sha256"],
-            "event_sequence": 2,
+            "event_sequence": 3,
         }
         prior = self._events.find_one(
             {"source_system_id": source, "idempotency_key": idem}, session=session
@@ -283,6 +322,13 @@ class InstitutionalSourceSigningKeyLifecycleRegistry:
                 raise SourceSigningKeyRegistryConflict("SOURCE_SIGNING_KEY_UNTRUSTED")
             if not (record["valid_from"] <= at < record["valid_until"]):
                 raise SourceSigningKeyRegistryConflict("SOURCE_SIGNING_KEY_OUTSIDE_VALIDITY")
+            approval = self._events.find_one(
+                {"source_system_id": source, "key_id": key, "event_type": "APPROVED",
+                 "occurred_at": {"$lte": at}},
+                session=session,
+            )
+            if approval is None or approval.get("record_fingerprint_sha256") != sha256(_canonical(record)).hexdigest():
+                raise SourceSigningKeyRegistryConflict("SOURCE_SIGNING_KEY_NOT_INDEPENDENTLY_APPROVED")
             revocation = self._events.find_one(
                 {"source_system_id": source, "key_id": key, "event_type": "REVOKED",
                  "occurred_at": {"$lte": at}},
