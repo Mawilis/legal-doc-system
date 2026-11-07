@@ -570,13 +570,17 @@ class InstitutionalSignerEnrollmentRegistry:
                 raise InstitutionalSignerRegistryError("INSTITUTIONAL_SIGNER_CURRENTNESS_OBSERVATION_INCOMPLETE")
             for field in ("source_system_id", "source_record_id", "source_revision", "status"):
                 _text(item.get(field), "INSTITUTIONAL_SIGNER_CURRENTNESS_OBSERVATION_INVALID", 512)
-            if (item.get("source_system_id") != source_record.get("source_system_id")
+            if status == "CURRENT" and (
+                item.get("source_system_id") != source_record.get("source_system_id")
                 or item.get("source_record_id") != source_record.get("source_record_id")
-                or (status == "CURRENT" and item.get("source_revision") != source_record.get("source_revision"))):
+                or item.get("source_revision") != source_record.get("source_revision")
+            ):
                 raise InstitutionalSignerRegistryError("INSTITUTIONAL_SIGNER_CURRENTNESS_OBSERVATION_SOURCE_MISMATCH")
             observed_at = _stored_instant(item.get("observed_at"))
             if observed_at != checked_at:
                 raise InstitutionalSignerRegistryError("INSTITUTIONAL_SIGNER_CURRENTNESS_OBSERVATION_TIME_MISMATCH")
+            valid_from = _stored_instant(item.get("valid_from"))
+            valid_until = _stored_instant(item.get("valid_until")) if item.get("valid_until") is not None else None
             _fingerprint(item.get("evidence_fingerprint_sha256"))
             if type(item.get("revoked")) is not bool:
                 raise InstitutionalSignerRegistryError("INSTITUTIONAL_SIGNER_CURRENTNESS_OBSERVATION_INVALID")
@@ -593,8 +597,11 @@ class InstitutionalSignerEnrollmentRegistry:
                 or item["evidence_fingerprint_sha256"] != source_record.get("evidence_fingerprint_sha256")
             ):
                 raise InstitutionalSignerRegistryError("INSTITUTIONAL_SIGNER_CURRENTNESS_OBSERVATION_STATUS_MISMATCH")
-            if item["status"] not in ("ACTIVE", "VERIFIED") or item["revoked"]:
+            observation_expired = valid_from > checked_at or (valid_until is not None and valid_until <= checked_at)
+            if item["status"] not in ("ACTIVE", "VERIFIED") or item["revoked"] or observation_expired:
                 negative_observation = True
+            if status == "CURRENT" and observation_expired:
+                raise InstitutionalSignerRegistryError("INSTITUTIONAL_SIGNER_CURRENTNESS_OBSERVATION_STATUS_MISMATCH")
             normalized_observations[observation_key] = {
                 "evidence_kind": kind,
                 "tenant_id": tenant,
@@ -606,6 +613,8 @@ class InstitutionalSignerEnrollmentRegistry:
                 "status": item["status"],
                 "revoked": item["revoked"],
                 "evidence_fingerprint_sha256": item["evidence_fingerprint_sha256"],
+                "valid_from": valid_from,
+                "valid_until": valid_until,
                 "observed_at": observed_at,
             }
         canonical_observation = {
