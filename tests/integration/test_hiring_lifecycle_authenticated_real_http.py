@@ -90,6 +90,7 @@ def test_authenticated_hiring_http_uses_durable_iam_and_rejects_wrong_tenant_and
 
         tenant, other_tenant = f"tenant-{uuid.uuid4().hex}", f"other-{uuid.uuid4().hex}"
         manager, mismatch = f"hr-manager-{uuid.uuid4().hex}", f"hr-mismatch-{uuid.uuid4().hex}"
+        monkeypatch.setattr(tenant_registry_module, "tenants_collection", db["tenants"])
         TenantRegistry.create({"name": "Hiring HTTP certification", "tenant_id": tenant})
         TenantRegistry.create({"name": "Hiring HTTP other tenant", "tenant_id": other_tenant})
         _seed_user(db, manager, tenant)
