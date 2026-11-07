@@ -107,3 +107,6 @@ Currentness rechecks must preserve the previously approved identity-assurance le
 ## Candidate discovery
 
 `list_currentness_candidates` provides a bounded, caller-transaction read for ACTIVE enrollments that are awaiting first verification (including legacy ACTIVE records with no currentness status) or whose finite CURRENT lease has expired. Results are ordered deterministically by request time and certificate fingerprint. `NOT_CURRENT` and revoked enrollments are not automatically requeued. The compound index supports this query, but the code intentionally defines no background schedule, polling cadence, retry budget or actor identity; those remain governed operational settings.
+
+
+A negative source observation may legitimately report a newer source revision and changed evidence fingerprint (for example, an authority record transitions from active to revoked). The reconciliation contract therefore requires stable source-system and immutable record identity for all observations, but requires exact revision/fingerprint equality with the provenance snapshot only for a `CURRENT` result. For `NOT_CURRENT`, the new observed revision, status, revocation flag and fingerprint are persisted as the negative observation while the last verified-good provenance snapshot remains available for audit.
