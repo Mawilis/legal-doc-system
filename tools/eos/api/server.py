@@ -80,6 +80,9 @@ from zoneinfo import ZoneInfo
 
 from fastapi import Depends, FastAPI, HTTPException, Request, Response
 from fastapi.middleware.cors import CORSMiddleware
+from pymongo.read_concern import ReadConcern
+from pymongo.read_preferences import ReadPreference
+from pymongo.write_concern import WriteConcern
 
 from .auth_router import router as auth_router
 from .global_principal_auth_router import router as global_principal_auth_router
@@ -92,6 +95,12 @@ from .kernel_routes import router as kernel_router
 from .payshap_webhook_router import router as payshap_webhook_router
 from .electrum_payshap_completion_router import router as electrum_payshap_completion_router
 from tools.eos.security.institutional_pki import InstitutionalPKIError, InstitutionalPKIVerifier
+from tools.eos.security.institutional_pki_crl_registry import (
+    CURRENTNESS_COLLECTION as INSTITUTIONAL_PKI_CRL_CURRENTNESS_COLLECTION,
+    EVENT_COLLECTION as INSTITUTIONAL_PKI_CRL_EVENT_COLLECTION,
+    InstitutionalPKICRLCurrentnessRegistry,
+    InstitutionalPKICRLRegistryError,
+)
 from tools.eos.kennel.orchestration.electrum_payshap_completion_processing import ensure_electrum_payshap_completion_indexes
 from tools.eos.kennel.orchestration.electrum_payshap_completion_worker import run_electrum_payshap_completion_worker
 from .plan_router import plan_router
@@ -508,13 +517,11 @@ class WilsyAPIServer:
             """Own explicit database bootstrap at application startup."""
             app.state.institutional_pki_ready = False
             app.state.institutional_pki_verifier = None
+            app.state.institutional_pki_crl_registry = None
             try:
                 app.state.institutional_pki_verifier = InstitutionalPKIVerifier.from_environment()
-                app.state.institutional_pki_ready = True
-                logger.info("[INSTITUTIONAL_PKI] Explicit pinned trust anchors and current CRL bundle loaded")
+                logger.info("[INSTITUTIONAL_PKI] Trust material loaded; awaiting durable CRL currentness binding")
             except InstitutionalPKIError as error:
-                app.state.institutional_pki_verifier = None
-                app.state.institutional_pki_ready = False
                 logger.warning("[INSTITUTIONAL_PKI] Verification unavailable: %s", error.code)
             app.state.p12c_binding_indexes_ready = False
             app.state.global_principal_auth_indexes_ready = False
@@ -551,6 +558,48 @@ class WilsyAPIServer:
             database, client = get_database(), get_client()
             if database is None:
                 return
+            configured_pki_verifier = app.state.institutional_pki_verifier
+            if configured_pki_verifier is not None and client is not None:
+                try:
+                    pki_crl_registry = InstitutionalPKICRLCurrentnessRegistry(
+                        database[INSTITUTIONAL_PKI_CRL_CURRENTNESS_COLLECTION],
+                        database[INSTITUTIONAL_PKI_CRL_EVENT_COLLECTION],
+                    )
+                    pki_crl_registry.ensure_indexes()
+                    pki_actor_reference = os.getenv("WILSY_EOS_PKI_RUNTIME_ACTOR_REFERENCE", "").strip()
+                    if not pki_actor_reference:
+                        raise InstitutionalPKIError("INSTITUTIONAL_PKI_RUNTIME_ACTOR_REFERENCE_REQUIRED")
+
+                    def record_institutional_pki_crl_currentness(observations):
+                        observed_at = datetime.now(timezone.utc)
+                        with client.start_session() as pki_session:
+                            return pki_session.with_transaction(
+                                lambda transaction: pki_crl_registry.observe_bundle(
+                                    observations,
+                                    actor_reference=pki_actor_reference,
+                                    observed_at=observed_at,
+                                    session=transaction,
+                                ),
+                                read_concern=ReadConcern("snapshot"),
+                                write_concern=WriteConcern(w="majority", j=True),
+                                read_preference=ReadPreference.PRIMARY,
+                            )
+
+                    configured_pki_verifier.bind_crl_currentness_recorder(
+                        record_institutional_pki_crl_currentness
+                    )
+                    configured_pki_verifier.refresh_crls()
+                    app.state.institutional_pki_crl_registry = pki_crl_registry
+                    app.state.institutional_pki_ready = True
+                    logger.info("[INSTITUTIONAL_PKI] Durable CRL currentness registry ready")
+                except (InstitutionalPKIError, InstitutionalPKICRLRegistryError) as error:
+                    app.state.institutional_pki_verifier = None
+                    app.state.institutional_pki_ready = False
+                    logger.warning("[INSTITUTIONAL_PKI] Durable currentness unavailable: %s", error.code)
+                except Exception as error:
+                    app.state.institutional_pki_verifier = None
+                    app.state.institutional_pki_ready = False
+                    logger.warning("[INSTITUTIONAL_PKI] Durable currentness bootstrap unavailable: %s", type(error).__name__)
             if database is not None:
                 try:
                     ensure_pos_workspace_indexes(database)
@@ -821,6 +870,7 @@ class WilsyAPIServer:
             """Release the kernel database during controlled application shutdown."""
             app.state.institutional_pki_ready = False
             app.state.institutional_pki_verifier = None
+            app.state.institutional_pki_crl_registry = None
             app.state.p12c_binding_indexes_ready = False
             app.state.global_principal_auth_indexes_ready = False
             app.state.global_principal_session_indexes_ready = False
