@@ -1,0 +1,92 @@
+from datetime import datetime, timezone
+
+import pytest
+
+from tools.eos.saas.domain.headcount_requisition import (
+    HeadcountApproval,
+    HeadcountRequisition,
+    RequisitionDecision,
+    RequisitionError,
+    RequisitionStatus,
+)
+
+
+def requisition(**changes):
+    values = {
+        "tenant_id": "WILSYTENANT-4CD2FZ4O",
+        "requisition_id": "REQ-WIL-0001",
+        "department_id": "ENGINEERING",
+        "position_title": "Senior Platform Engineer",
+        "employment_type": "PERMANENT",
+        "work_location": "HYBRID",
+        "headcount": 1,
+        "business_justification": "Approved roadmap capacity for platform reliability.",
+        "requested_by_principal_id": "principal-requester",
+    }
+    values.update(changes)
+    return HeadcountRequisition(**values)
+
+
+def approval(actor="principal-approver", decision=RequisitionDecision.APPROVE):
+    return HeadcountApproval(
+        decision_id="DECISION-0001",
+        actor_principal_id=actor,
+        decision=decision,
+        reason="Independent headcount review completed.",
+        decided_at=datetime(2026, 11, 7, tzinfo=timezone.utc),
+    )
+
+
+def test_requisition_must_be_submitted_before_approval():
+    draft = requisition()
+    with pytest.raises(RequisitionError, match="ONLY_SUBMITTED"):
+        draft.decide(approval(), expected_revision=1)
+
+
+def test_maker_cannot_approve_own_headcount_request():
+    submitted = requisition().submit(expected_revision=1)
+    with pytest.raises(RequisitionError, match="MAKER_CHECKER"):
+        submitted.decide(approval(actor="principal-requester"), expected_revision=2)
+
+
+def test_independent_approval_advances_revision_and_preserves_scope():
+    submitted = requisition().submit(expected_revision=1)
+    approved = submitted.decide(approval(), expected_revision=2)
+    assert approved.status is RequisitionStatus.APPROVED
+    assert approved.revision == 3
+    assert approved.tenant_id == "WILSYTENANT-4CD2FZ4O"
+    assert approved.requested_by_principal_id == "principal-requester"
+    assert approved.approval.actor_principal_id == "principal-approver"
+
+
+def test_rejection_is_a_distinct_terminal_decision():
+    rejected = requisition().submit(expected_revision=1).decide(
+        approval(decision=RequisitionDecision.REJECT),
+        expected_revision=2,
+    )
+    assert rejected.status is RequisitionStatus.REJECTED
+    with pytest.raises(RequisitionError, match="ONLY_SUBMITTED"):
+        rejected.decide(approval(), expected_revision=3)
+
+
+def test_stale_revision_cannot_overwrite_requisition():
+    submitted = requisition().submit(expected_revision=1)
+    with pytest.raises(RequisitionError, match="REVISION_CONFLICT"):
+        submitted.decide(approval(), expected_revision=1)
+
+
+@pytest.mark.parametrize("headcount", [0, -1, 51, True, 1.5])
+def test_headcount_is_bounded_and_rejects_boolean(headcount):
+    with pytest.raises(RequisitionError, match="HEADCOUNT"):
+        requisition(headcount=headcount)
+
+
+def test_decision_evidence_is_required_for_approved_record():
+    with pytest.raises(RequisitionError, match="DECISION_EVIDENCE"):
+        requisition(status=RequisitionStatus.APPROVED)
+
+
+def test_fingerprint_detects_tampering():
+    value = requisition()
+    with pytest.raises(RequisitionError, match="FINGERPRINT_MISMATCH"):
+        requisition(business_justification="Tampered", fingerprint=value.fingerprint)
