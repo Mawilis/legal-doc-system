@@ -285,8 +285,9 @@ class InstitutionalSourceSigningKeyLifecycleRegistry:
 
     def revoke(
         self, *, source_system_id: str, key_id: str, revoked_at: datetime,
-        reason_reference: str, revoked_by_principal_id: str,
-        governance_decision_reference: str, idempotency_key: str,
+        reason_reference: str, approval_evidence_reference: str,
+        revoked_by_principal_id: str, governance_decision_reference: str,
+        idempotency_key: str,
         session: ClientSession,
     ) -> dict[str, Any]:
         """Append an immediate, revision-specific revocation event."""
@@ -295,6 +296,7 @@ class InstitutionalSourceSigningKeyLifecycleRegistry:
         source = _identifier("source_system_id", source_system_id)
         key = _identifier("key_id", key_id)
         reason = _identifier("reason_reference", reason_reference)
+        approval_evidence = _identifier("approval_evidence_reference", approval_evidence_reference)
         actor = _identifier("revoked_by_principal_id", revoked_by_principal_id)
         decision = _identifier("governance_decision_reference", governance_decision_reference)
         idem = _identifier("idempotency_key", idempotency_key)
@@ -316,6 +318,7 @@ class InstitutionalSourceSigningKeyLifecycleRegistry:
             "source_system_id": source, "key_id": key,
             "idempotency_key": idem, "occurred_at": occurred,
             "actor_principal_id": actor, "reason_reference": reason,
+            "approval_evidence_reference": approval_evidence,
             "governance_decision_reference": decision,
             "record_fingerprint_sha256": record["public_key_fingerprint_sha256"],
             "event_sequence": 3,
