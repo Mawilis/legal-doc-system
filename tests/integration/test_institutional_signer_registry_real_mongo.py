@@ -67,6 +67,7 @@ def _verified_currentness(*, tenant_id, fingerprint, revision, status, checked_a
             "schema": "wilsy.institutional.signer.currentness_observation.v1",
             "records": {
                 key: {
+                    "evidence_kind": record["evidence_kind"],
                     "source_system_id": record["source_system_id"],
                     "source_record_id": record["source_record_id"],
                     "source_revision": record["source_revision"],
@@ -215,7 +216,7 @@ def test_signer_enrollment_approval_and_revocation_are_atomic_on_replica_set():
                 verification=current_result, idempotency_key="currentness-001", actor_reference="runtime://approved-currentness-worker", session=session,
             )
             assert current["evidence_currentness_status"] == "CURRENT"
-            assert current["evidence_currentness_observation_fingerprint_sha256"] == _digest(currentness_provenance["identity_proofing"]) or len(current["evidence_currentness_observation_fingerprint_sha256"]) == 64
+            assert len(current["evidence_currentness_observation_fingerprint_sha256"]) == 64
             replayed = registry.record_verified_currentness(
                 verification=current_result, idempotency_key="currentness-001",
                 actor_reference="runtime://approved-currentness-worker", session=session,
