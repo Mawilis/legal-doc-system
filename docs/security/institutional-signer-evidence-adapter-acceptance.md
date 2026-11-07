@@ -113,3 +113,25 @@ A negative source observation may legitimately report a newer source revision an
 
 
 The source-observation snapshot also carries `valid_from` and `valid_until`. A record can therefore be classified `NOT_CURRENT` because it is revoked/withdrawn/superseded or because its validity interval has expired or has not yet begun, even when the source's status string remains ACTIVE. A CURRENT result is accepted only when each observation's validity interval covers the exact observation time.
+
+
+## Provider adapter framework (contract only)
+
+The source-adapter framework defines three distinct read-only evidence channels: identity proofing, corporate signatory mandate and independent approval. Each lookup is tenant-, principal-, certificate-, evidence-kind- and evaluation-time-bound. Returned source envelopes carry immutable source-system/record/revision identity, exact evidence references and scope bindings, evidence fingerprint, status, validity interval, revocation state, observation time and a source-response signature reference. Provider response authenticity is a separate protocol from parsing or field validation; a provider response is untrusted until an independently configured authenticator validates source identity, signature/integrity and exact request binding.
+
+The default adapter set denies all three channels. This change intentionally supplies no DHA, CIPC, company-secretarial or internal governance network client, credentials, trust anchors, provider URLs, or positive verifier. The framework is not connected to the enrollment route and cannot issue VerifiedInstitutionalSignerEvidence or VerifiedSignerEvidenceCurrentness. Provider-specific adapters may only be implemented after formal source onboarding, legal-purpose confirmation, workload-identity approval, source-response trust configuration, field mapping review and independent security assessment. Provider I/O must remain outside MongoDB transactions; a timeout, invalid signature, source mismatch or outage is a denial, not an empty record.
+
+
+The framework now includes a shared authenticated-read boundary. It checks that the adapter supports the requested evidence kind, authenticates the provider response through a separately supplied response authenticator, and then enforces exact equality for tenant, principal, certificate fingerprint, evidence kind/reference, legal entity, requester, reviewer and required authority scope. It intentionally preserves negative status and revocation observations for the currentness reconciler rather than converting them to transport errors. This is contract/conformance code only: no production authenticator or provider implementation is present.
+
+
+## Cryptographic response authentication
+
+A concrete provider-neutral Ed25519 authenticator is available for independent source-response verification. Its trust map is keyed by the exact pair (source-system ID, response-signing key ID), and an empty map denies all responses. The canonical signed payload binds the tenant, evidence kind/reference, subject principal, certificate fingerprint, legal entity, requester/reviewer, authority scope, source record/revision, evidence fingerprint, status, validity interval, revocation flag, observation time, signing-key ID and signature reference. Tampering with the source revision or using a key pinned to a different source is rejected. Key issuance, custody, rotation, revocation and source trust onboarding remain external governance gates; this implementation does not pin any live institutional key.
+
+The Ed25519 authenticator is a cryptographic primitive, not proof that a purported DHA/CIPC/governance endpoint is genuine. Source identity and exact lookup binding still require the separately governed adapter/authenticator configuration and independent review. No production trust configuration is present.
+
+
+## Three-channel authenticated adapter composition
+
+`AuthenticatedInstitutionalSignerSourceAdapterSet` composes three distinct adapter instances and one response authenticator. It rejects reuse of the same adapter instance across identity, mandate and approval channels, checks each adapter's declared evidence kind at construction, and enforces the matching lookup kind at read time. Each read passes through cryptographic response authentication and exact request/response scope equality. This composition returns source evidence envelopes only; it does not create verifier-issued positive results and is not installed into the live enrollment/currentness route.

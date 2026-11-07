@@ -9,6 +9,7 @@ on:
       - "tools/eos/security/institutional_signer_enrollment_registry.py"
       - "tools/eos/security/institutional_signer_evidence_verifier.py"
       - "tools/eos/security/institutional_signer_currentness.py"
+      - "tools/eos/security/institutional_signer_source_adapters.py"
       - "tools/eos/security/institutional_pki.py"
       - "tools/eos/security/institutional_pki_kms.py"
       - "tools/eos/security/institutional_pki_kms_cli.py"
@@ -25,6 +26,7 @@ on:
       - "tests/unit/test_institutional_signer_enrollment_registry.py"
       - "tests/unit/test_institutional_signer_evidence_verifier.py"
       - "tests/unit/test_institutional_signer_currentness.py"
+      - "tests/unit/test_institutional_signer_source_adapters.py"
       - "tests/unit/test_permission_namespace.py"
       - "tests/unit/test_hiring_signed_offer_manifest.py"
       - "tests/integration/test_institutional_signer_registry_real_mongo.py"
@@ -78,6 +80,7 @@ jobs:
             tools/eos/security/institutional_signer_enrollment_registry.py \
             tools/eos/security/institutional_signer_evidence_verifier.py \
             tools/eos/security/institutional_signer_currentness.py \
+            tools/eos/security/institutional_signer_source_adapters.py \
             tools/eos/auth/permission_namespace.py \
             tools/eos/auth/roles.py \
             tools/eos/auth/tenant_authorization.py \
@@ -91,6 +94,7 @@ jobs:
             tests/unit/test_institutional_signer_enrollment_registry.py \
             tests/unit/test_institutional_signer_evidence_verifier.py \
             tests/unit/test_institutional_signer_currentness.py \
+            tests/unit/test_institutional_signer_source_adapters.py \
             tests/unit/test_permission_namespace.py \
             tests/unit/test_hiring_signed_offer_manifest.py \
             tests/integration/test_institutional_signer_registry_real_mongo.py
@@ -101,6 +105,7 @@ jobs:
             tests/unit/test_institutional_pki_kms.py \
             tests/unit/test_institutional_signature_evidence_registry.py \
             tests/unit/test_institutional_signer_enrollment_registry.py \
+            tests/unit/test_institutional_signer_source_adapters.py \
             tests/unit/test_permission_namespace.py \
             tests/unit/test_hiring_signed_offer_manifest.py \
             tests/integration/test_institutional_signer_registry_real_mongo.py \
