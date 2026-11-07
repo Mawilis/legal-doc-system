@@ -13,6 +13,7 @@ import sys
 
 from .institutional_pki import InstitutionalPKIError
 from .institutional_pki_provisioning import (
+    assemble_crl_bundle,
     create_offline_root,
     issue_crl,
     issue_intermediate,
@@ -76,6 +77,16 @@ def _crl(args: argparse.Namespace) -> None:
     print("PUBLISH ONLY AFTER REVIEWING THE REVOCATION CHANGE AND VERIFYING THE ISSUER SCOPE.")
 
 
+def _assemble_crl_bundle(args: argparse.Namespace) -> None:
+    path, fingerprint = assemble_crl_bundle(
+        crl_paths=[Path(value) for value in args.crl],
+        output_path=Path(args.output),
+    )
+    print(f"crl_bundle={path}")
+    print(f"crl_bundle_sha256={fingerprint}")
+    print("DEPLOY THIS COMPLETE BUNDLE AT WILSY_EOS_PKI_CRL_BUNDLE_PEM.")
+
+
 def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(prog="python -m tools.eos.security.institutional_pki_cli")
     commands = parser.add_subparsers(dest="command", required=True)
@@ -105,6 +116,12 @@ def build_parser() -> argparse.ArgumentParser:
     crl.add_argument("--crl-number", type=int, required=True)
     crl.add_argument("--validity-hours", type=int, default=24)
     crl.set_defaults(run=_crl)
+
+    bundle = commands.add_parser("assemble-crl-bundle", help="Assemble the complete root and intermediate CRL bundle")
+    bundle.add_argument("--crl", required=True, action="append", help="One issuer CRL PEM; repeat once per issuer")
+    bundle.add_argument("--output", required=True)
+    bundle.set_defaults(run=_assemble_crl_bundle)
+
     return parser
 
 
