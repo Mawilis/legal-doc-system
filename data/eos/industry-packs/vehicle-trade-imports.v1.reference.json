@@ -1,0 +1,124 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "schema_id": "wilsy.industry-pack",
+  "schema_version": "1.0.0",
+  "pack_id": "vehicle-trade-imports",
+  "pack_version": "1.0.0",
+  "display_name": "Vehicle Trade & Imports",
+  "description": "Reusable workflow composition for vehicle sourcing, import, clearance, receipt and customer handover.",
+  "status": "REFERENCE_TEMPLATE_NOT_ENTITLED",
+  "capability_dependencies": [
+    {
+      "capability_id": "party.relationships",
+      "minimum_version": "1.0.0"
+    },
+    {
+      "capability_id": "procurement.commitments",
+      "minimum_version": "1.0.0"
+    },
+    {
+      "capability_id": "logistics.shipment-milestones",
+      "minimum_version": "1.0.0"
+    },
+    {
+      "capability_id": "documents.evidence-references",
+      "minimum_version": "1.0.0"
+    },
+    {
+      "capability_id": "workflow.revisioned-lifecycle",
+      "minimum_version": "1.0.0"
+    }
+  ],
+  "workflow_templates": [
+    {
+      "workflow_id": "vehicle-import-case",
+      "version": "1.0.0",
+      "owner_capability": "vehicle-imports.case-lifecycle",
+      "stages": [
+        {
+          "stage_id": "customer_instruction",
+          "required_evidence": []
+        },
+        {
+          "stage_id": "sourcing_review",
+          "required_evidence": [
+            "supplier_quote_reference"
+          ]
+        },
+        {
+          "stage_id": "purchase_commitment",
+          "required_evidence": [
+            "approved_purchase_commitment"
+          ]
+        },
+        {
+          "stage_id": "vehicle_identity_verified",
+          "required_evidence": [
+            "vehicle_identity_evidence"
+          ]
+        },
+        {
+          "stage_id": "shipment_in_transit",
+          "required_evidence": [
+            "shipment_reference"
+          ]
+        },
+        {
+          "stage_id": "clearance_review",
+          "required_evidence": [
+            "clearance_dossier_reference"
+          ]
+        },
+        {
+          "stage_id": "received_and_inspected",
+          "required_evidence": [
+            "receipt_evidence",
+            "inspection_evidence"
+          ]
+        },
+        {
+          "stage_id": "customer_handover",
+          "required_evidence": [
+            "customer_handover_evidence"
+          ]
+        },
+        {
+          "stage_id": "closed",
+          "required_evidence": [
+            "closure_reconciliation_reference"
+          ]
+        }
+      ]
+    }
+  ],
+  "suggested_capacities": [
+    "MANAGEMENT",
+    "VEHICLE_IMPORT_OPERATOR",
+    "CLEARANCE_COORDINATOR",
+    "SALES_OPERATIONS",
+    "FINANCE_REVIEWER",
+    "AUDIT_READ_ONLY"
+  ],
+  "configuration_schema_refs": [
+    "tenant.locale",
+    "tenant.timezone",
+    "tenant.currency_policy",
+    "tenant.branches",
+    "tenant.approval_policy",
+    "tenant.document_templates"
+  ],
+  "authority_constraints": {
+    "may_grant_permissions": false,
+    "may_activate_entitlements": false,
+    "may_define_principal_capacity": false,
+    "may_override_tenant_scope": false,
+    "may_execute_arbitrary_code": false,
+    "may_replace_capability_source_of_truth": false
+  },
+  "notes": [
+    "Reference template only; it does not activate any product or entitlement.",
+    "Evidence IDs are references to authoritative evidence records, not user-asserted proof.",
+    "Every command must re-authorize and validate expected revision in the owning capability service.",
+    "Customs and carrier statuses require verified provider observations; no status is inferred from workflow progression."
+  ]
+}
