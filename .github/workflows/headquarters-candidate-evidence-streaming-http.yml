@@ -15,6 +15,7 @@ on:
       - "tools/eos/saas/domain/candidate_evidence.py"
       - "tests/unit/test_candidate_evidence_upload_orchestrator.py"
       - "tests/unit/test_candidate_evidence_upload_reconciliation.py"
+      - "tests/unit/test_candidate_evidence_s3_reconciliation.py"
       - "tests/unit/test_candidate_evidence_iam_policy.py"
       - "tests/integration/test_candidate_evidence_upload_authenticated_http.py"
       - ".github/workflows/headquarters-candidate-evidence-streaming-http.yml"
@@ -69,6 +70,7 @@ jobs:
             tools/eos/saas/hr/candidate_evidence_s3_storage_adapter.py \
             tests/unit/test_candidate_evidence_upload_orchestrator.py \
             tests/unit/test_candidate_evidence_upload_reconciliation.py \
+            tests/unit/test_candidate_evidence_s3_reconciliation.py \
             tests/unit/test_candidate_evidence_iam_policy.py \
             tests/integration/test_candidate_evidence_upload_authenticated_http.py
       - name: Test durable multipart orchestration and authenticated HTTP custody
@@ -76,5 +78,6 @@ jobs:
           python -m pytest -q \
             tests/unit/test_candidate_evidence_upload_orchestrator.py \
             tests/unit/test_candidate_evidence_upload_reconciliation.py \
+            tests/unit/test_candidate_evidence_s3_reconciliation.py \
             tests/unit/test_candidate_evidence_iam_policy.py \
             tests/integration/test_candidate_evidence_upload_authenticated_http.py
