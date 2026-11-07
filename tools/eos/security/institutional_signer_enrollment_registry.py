@@ -109,6 +109,18 @@ def _validated_provenance_snapshot(value: object) -> dict[str, Any] | None:
         value["valid_until"] is not None and value["valid_until"] <= value["evaluated_at"]
     ) or value["verified_at"] > value["evaluated_at"]:
         raise InstitutionalSignerRegistryError("INSTITUTIONAL_SIGNER_EVIDENCE_NOT_CURRENT")
+    kind = value["evidence_kind"]
+    scope_fields = {
+        "IDENTITY_PROOFING": ("subject_principal_id", "identity_assurance_level"),
+        "SIGNATORY_MANDATE": ("subject_principal_id", "legal_entity_reference", "mandate_scope"),
+        "INDEPENDENT_APPROVAL": ("enrollment_requester_principal_id", "reviewer_principal_id", "approval_scope"),
+    }.get(kind)
+    if scope_fields is None:
+        raise InstitutionalSignerRegistryError("INSTITUTIONAL_SIGNER_EVIDENCE_KIND_INVALID")
+    for field in scope_fields:
+        _text(value.get(field), "INSTITUTIONAL_SIGNER_EVIDENCE_SCOPE_INCOMPLETE", 512)
+    if kind == "INDEPENDENT_APPROVAL" and value["enrollment_requester_principal_id"] == value["reviewer_principal_id"]:
+        raise InstitutionalSignerRegistryError("INSTITUTIONAL_SIGNER_MAKER_CHECKER_REQUIRED")
     return dict(value)
 
 
