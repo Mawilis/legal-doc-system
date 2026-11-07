@@ -3,6 +3,7 @@ from __future__ import annotations
 
 import base64
 import binascii
+from hashlib import sha256
 from datetime import datetime, timezone
 
 from fastapi import APIRouter, Depends, Header, HTTPException, Request
@@ -152,6 +153,7 @@ async def request_signer_enrollment(
         certificate_serial_number_hex=receipt.serial_number_hex,
         subject_common_name=common_names[0].value,
         issuer_common_name=issuer_names[0].value,
+        issuer_subject_sha256=sha256(issuers[0].subject.public_bytes()).hexdigest(),
         trust_root_sha256=receipt.root_fingerprint_sha256,
         identity_proofing_evidence_reference=body.identity_proofing_evidence_reference,
         signatory_mandate_evidence_reference=body.signatory_mandate_evidence_reference,
