@@ -137,6 +137,7 @@ def test_offer_acceptance_requires_sent_offer_and_valid_acceptance_evidence():
     evidence = OfferAcceptanceEvidence(
         evidence_reference="hr-document://signed-offer/opaque-001",
         evidence_fingerprint=EVIDENCE, accepted_at=NOW,
+        signature_verification_reference="SOV-TEST-VERIFICATION-001",
     )
     with pytest.raises(HiringLifecycleError, match="MUST_BE_SENT"):
         value.accept(evidence, expected_revision=1)
@@ -159,6 +160,7 @@ def test_offer_acceptance_requires_sent_offer_and_valid_acceptance_evidence():
             evidence_reference="hr-document://signed-offer/opaque-001",
             evidence_fingerprint=EVIDENCE,
             accepted_at=NOW + timedelta(hours=2),
+            signature_verification_reference="SOV-TEST-VERIFICATION-001",
         ),
         expected_revision=4,
     )
@@ -195,3 +197,26 @@ def test_offer_strict_hydration_and_fingerprint_tamper_detection():
     changed["candidate_id"] = "CAN-TAMPERED"
     with pytest.raises(HiringLifecycleError, match="FINGERPRINT_MISMATCH"):
         EmploymentOffer.from_dict(changed)
+
+
+
+def test_offer_domain_rejects_acceptance_without_cryptographic_verification_reference():
+    sent = offer().submit(
+        actor_principal_id="hr-manager", submitted_at=NOW, expected_revision=1,
+    ).decide(
+        OfferDecision(
+            decision_id="decision-no-signature-proof", actor_principal_id="hr-director",
+            approved=True, reason="Approved", decided_at=NOW,
+        ),
+        expected_revision=2,
+    ).send(
+        actor_principal_id="hr-manager", sent_at=NOW + timedelta(hours=1),
+        expected_revision=3,
+    )
+    evidence = OfferAcceptanceEvidence(
+        evidence_reference="hr-document://signed-offer/unverified",
+        evidence_fingerprint=EVIDENCE,
+        accepted_at=NOW + timedelta(hours=2),
+    )
+    with pytest.raises(HiringLifecycleError, match="CRYPTOGRAPHIC_SIGNATURE_VERIFICATION_REQUIRED"):
+        sent.accept(evidence, expected_revision=4)
