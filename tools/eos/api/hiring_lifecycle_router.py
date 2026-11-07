@@ -44,7 +44,6 @@ from tools.eos.security.institutional_signer_enrollment_registry import (
     COLLECTION as INSTITUTIONAL_SIGNER_COLLECTION,
     EVENT_COLLECTION as INSTITUTIONAL_SIGNER_EVENT_COLLECTION,
     INSTITUTIONAL_TENANT_ID,
-    EVENT_COLLECTION as INSTITUTIONAL_SIGNER_EVENT_COLLECTION,
     InstitutionalSignerEnrollmentRegistry,
     InstitutionalSignerRegistryConflict,
     InstitutionalSignerRegistryError,
