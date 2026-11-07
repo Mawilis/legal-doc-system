@@ -5,7 +5,7 @@ import base64
 import binascii
 from datetime import datetime, timezone
 
-from fastapi import APIRouter, Depends, Header, HTTPException, Request, Request
+from fastapi import APIRouter, Depends, Header, HTTPException, Request
 from pydantic import BaseModel, ConfigDict, Field
 
 from tools.eos.api.tenant_authorization_http import RequireTenantAuthorization, TenantAuthorizationContext
