@@ -544,6 +544,7 @@ class InstitutionalSignerEnrollmentRegistry:
             if status == "CURRENT" and (
                 item["status"] not in ("ACTIVE", "VERIFIED")
                 or item["revoked"]
+                or item["status"] != source_record.get("status")
                 or item["evidence_fingerprint_sha256"] != source_record.get("evidence_fingerprint_sha256")
             ):
                 raise InstitutionalSignerRegistryError("INSTITUTIONAL_SIGNER_CURRENTNESS_OBSERVATION_STATUS_MISMATCH")
@@ -599,6 +600,13 @@ class InstitutionalSignerEnrollmentRegistry:
                 raise InstitutionalSignerRegistryError("INSTITUTIONAL_SIGNER_CURRENTNESS_SCOPE_MISMATCH")
             previous_enrollment = current.get("evidence_provenance_snapshot") or {}
             previous_approval = current.get("approval_evidence_provenance_snapshot") or {}
+            previous_identity = previous_enrollment.get("identity_proofing", {})
+            previous_mandate = previous_enrollment.get("signatory_mandate", {})
+            if (identity.get("identity_assurance_level") != previous_identity.get("identity_assurance_level")
+                or mandate.get("legal_entity_reference") != previous_mandate.get("legal_entity_reference")
+                or mandate.get("mandate_scope") != previous_mandate.get("mandate_scope")
+                or approval.get("approval_scope") != previous_approval.get("approval_scope")):
+                raise InstitutionalSignerRegistryError("INSTITUTIONAL_SIGNER_CURRENTNESS_AUTHORITY_SCOPE_CHANGED")
             for key_name, previous_group, new_group in (
                 ("identity_proofing", previous_enrollment, identity),
                 ("signatory_mandate", previous_enrollment, mandate),
