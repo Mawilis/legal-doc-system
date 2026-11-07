@@ -370,11 +370,29 @@ def test_authenticated_my_work_uses_live_mongo_iam_and_rejects_foreign_scope(
     monkeypatch.setattr(module_source, "get_database", lambda: database)
     monkeypatch.setattr(my_work.crm_source, "get_client", lambda: client)
     monkeypatch.setattr(my_work.crm_source, "get_database", lambda: database)
+    _seed_live_legal_subscription(client, database, tenant_id, principal_id, monkeypatch)
     monkeypatch.setattr(
         my_work.crm_source.subscription_registry_module,
         "subscriptions_collection",
         database["subscriptions"],
     )
+
+    crm_service = my_work.crm_source._service(database)
+    with client.start_session() as session:
+        session.with_transaction(lambda active: crm_service.create(
+            tenant_id=tenant_id,
+            principal_id=principal_id,
+            title="Live IAM CRM owner follow-up",
+            description="Persisted in the CRM-owned registry.",
+            kind=OwnerWorkKind.TASK,
+            priority=OwnerWorkPriority.HIGH,
+            due_at=None,
+            source_type=None,
+            source_id=None,
+            idempotency_key="live-iam-crm",
+            now=NOW,
+            session=active,
+        ))
 
     for slug in ("operations", "intelligence"):
         product_id, _workspace, collection_name, _prefix = module_source._PRODUCTS[slug]
@@ -418,8 +436,8 @@ def test_authenticated_my_work_uses_live_mongo_iam_and_rejects_foreign_scope(
     app.dependency_overrides[authorization_http.get_role_assignment_repository] = (
         lambda: _LiveRoleReader(database["role_assignments"], database["tenant_business_roles"])
     )
-    # CRM uses the same live IAM dependencies; its own Legal subscription /
-    # entitlement projection then denies the source in its Mongo transaction.
+    # CRM uses the same live IAM dependencies and its canonical Legal
+    # subscription / entitlement conjunction in the CRM-owned transaction.
     with TestClient(app) as api:
         admitted = api.get("/api/my-work", headers={"X-Tenant-ID": tenant_id})
         foreign = api.get("/api/my-work", headers={"X-Tenant-ID": foreign_tenant})
@@ -427,8 +445,9 @@ def test_authenticated_my_work_uses_live_mongo_iam_and_rejects_foreign_scope(
     assert admitted.status_code == 200, admitted.text
     payload = admitted.json()
     assert payload["tenant_id"] == tenant_id
-    assert payload["sources_included"] == ["OPERATIONS", "INTELLIGENCE"]
-    assert payload["summary"]["active_count"] == 2
-    assert {row["source"] for row in payload["items"]} == {"OPERATIONS", "INTELLIGENCE"}
+    assert payload["sources_included"] == ["OPERATIONS", "INTELLIGENCE", "CRM"]
+    assert payload["summary"]["active_count"] == 3
+    assert {row["source"] for row in payload["items"]} == {"OPERATIONS", "INTELLIGENCE", "CRM"}
+    assert any(row["title"] == "Live IAM CRM owner follow-up" for row in payload["items"])
     assert foreign.status_code == 403
     assert foreign.json()["detail"] == "MY_WORK_NO_AUTHORIZED_SOURCE"
