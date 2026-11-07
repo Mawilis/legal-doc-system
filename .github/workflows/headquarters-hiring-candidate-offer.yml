@@ -1,0 +1,36 @@
+name: WILSY Headquarters Candidate and Offer Lifecycle Domain
+
+on:
+  pull_request:
+    paths:
+      - "tools/eos/saas/domain/hiring_lifecycle.py"
+      - "tests/unit/test_hiring_lifecycle_domain.py"
+      - ".github/workflows/headquarters-hiring-candidate-offer.yml"
+
+permissions:
+  contents: read
+
+jobs:
+  candidate-offer-domain:
+    name: Candidate pipeline and governed offer state machine
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+          cache-dependency-path: requirements.txt
+      - name: Install governed Python dependencies
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install -r requirements.txt pytest==9.1.1
+      - name: Compile candidate, offer and persistence registry
+        run: |
+          python -m py_compile \
+            tools/eos/saas/domain/hiring_lifecycle.py \
+            tools/eos/saas/hr/hiring_lifecycle_registry.py \
+            tests/unit/test_hiring_lifecycle_domain.py
+      - name: Run candidate and offer lifecycle policy tests
+        run: python -m pytest -q tests/unit/test_hiring_lifecycle_domain.py
