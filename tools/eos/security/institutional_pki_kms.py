@@ -123,6 +123,8 @@ def _validate_key_policy(policy: str) -> str:
         if statement.get("Effect") != "Allow":
             continue
         principal = statement.get("Principal")
+        if principal == "*":
+            raise InstitutionalPKIKMSError("INSTITUTIONAL_KMS_WILDCARD_OR_INVALID_PRINCIPAL")
         aws_principals = principal.get("AWS") if isinstance(principal, dict) else None
         principals = [aws_principals] if isinstance(aws_principals, str) else aws_principals
         if not isinstance(principals, list) or not principals:
@@ -377,7 +379,7 @@ def issue_crl_with_kms(
         kms_public_key.verify(
             signature, digest, padding.PKCS1v15(), Prehashed(hashes.SHA384()),
         )
-        der = _sequence(tbs + algorithm + _tlv(0x03, b"\\x00" + signature))
+        der = _sequence(tbs + algorithm + _tlv(0x03, b"\x00" + signature))
         crl = x509.load_der_x509_crl(der)
         if (
             crl.issuer != issuer.subject
