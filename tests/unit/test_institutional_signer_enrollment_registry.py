@@ -1,4 +1,4 @@
-from datetime import datetime, timezone
+from datetime import datetime, timedelta, timezone
 
 import pytest
 
@@ -299,3 +299,29 @@ def test_signer_use_is_denied_when_currentness_lease_has_expired():
             trust_root_sha256="b" * 64,
             session=tx,
         )
+
+
+def test_signer_use_accepts_valid_utc_lease_decoded_as_naive_bson_datetime():
+    registry, records, _events = setup_registry()
+    tx = object()
+    request(registry, tx)
+    registry.approve_enrollment(
+        tenant_id="WILSYTENANT-4CD2FZ4O",
+        certificate_fingerprint_sha256="a" * 64,
+        approver_principal_id="owner-approver",
+        approval_attestation_reference="attestation://independent-review/001",
+        approved_at=datetime.now(timezone.utc),
+        idempotency_key="approve-naive-lease-test", session=tx,
+    )
+    records.rows[0].update({
+        "evidence_currentness_status": "CURRENT",
+        "evidence_currentness_valid_until": (datetime.now(timezone.utc) + timedelta(minutes=5)).replace(tzinfo=None),
+    })
+    assert registry.require_active(
+        tenant_id="WILSYTENANT-4CD2FZ4O",
+        certificate_fingerprint_sha256="a" * 64,
+        certificate_serial_number_hex="abc123",
+        issuer_subject_sha256="c" * 64,
+        trust_root_sha256="b" * 64,
+        session=tx,
+    )["status"] == "ACTIVE"
