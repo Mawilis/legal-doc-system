@@ -8,9 +8,11 @@ software; legal/governance approval and operational key custody are separate.
 from __future__ import annotations
 
 from datetime import datetime, timedelta, timezone
+from hashlib import sha256
 from pathlib import Path
 import os
 import re
+from urllib.parse import urlsplit
 from typing import Iterable
 
 from cryptography import x509
@@ -52,6 +54,17 @@ def _write_public(path: Path, data: bytes) -> None:
         raise
 
 
+def _crl_distribution_url(base_url: str, issuer_name: x509.Name) -> str:
+    parsed = urlsplit(base_url)
+    if (
+        parsed.scheme != "https" or not parsed.hostname
+        or parsed.username or parsed.password or parsed.query or parsed.fragment
+    ):
+        raise InstitutionalPKIError("INSTITUTIONAL_PKI_CRL_PUBLICATION_URL_INVALID")
+    issuer_reference = sha256(issuer_name.public_bytes()).hexdigest()
+    return base_url.rstrip("/") + "/" + issuer_reference
+
+
 def _name(common_name: str, organization: str) -> x509.Name:
     return x509.Name([
         x509.NameAttribute(NameOID.ORGANIZATION_NAME, organization),
@@ -65,6 +78,7 @@ def create_offline_root(
     common_name: str,
     organization: str,
     passphrase: bytes,
+    crl_distribution_base_url: str,
     validity_days: int = 3650,
 ) -> tuple[Path, Path, str]:
     """Create an encrypted RSA-4096 root key and self-signed CA certificate."""
@@ -98,6 +112,13 @@ def create_offline_root(
             crl_sign=True, encipher_only=False, decipher_only=False,
         ), critical=True)
         .add_extension(x509.SubjectKeyIdentifier.from_public_key(key.public_key()), critical=False)
+        .add_extension(
+            x509.CRLDistributionPoints([x509.DistributionPoint(
+                full_name=[x509.UniformResourceIdentifier(_crl_distribution_url(crl_distribution_base_url, name))],
+                relative_name=None, reasons=None, crl_issuer=None,
+            )]),
+            critical=False,
+        )
         .sign(key, hashes.SHA384())
     )
     encrypted = key.private_bytes(
@@ -124,6 +145,7 @@ def issue_intermediate(
     output_directory: Path,
     common_name: str,
     organization: str,
+    crl_distribution_base_url: str,
     validity_days: int = 1825,
 ) -> tuple[Path, Path, str]:
     """Issue an encrypted RSA-3072 subordinate CA from the offline root."""
@@ -169,6 +191,13 @@ def issue_intermediate(
         ), critical=True)
         .add_extension(x509.SubjectKeyIdentifier.from_public_key(key.public_key()), critical=False)
         .add_extension(x509.AuthorityKeyIdentifier.from_issuer_public_key(root_key.public_key()), critical=False)
+        .add_extension(
+            x509.CRLDistributionPoints([x509.DistributionPoint(
+                full_name=[x509.UniformResourceIdentifier(_crl_distribution_url(crl_distribution_base_url, root.subject))],
+                relative_name=None, reasons=None, crl_issuer=None,
+            )]),
+            critical=False,
+        )
         .sign(root_key, hashes.SHA384())
     )
     encrypted = key.private_bytes(
