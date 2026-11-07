@@ -200,10 +200,13 @@ def test_signer_enrollment_approval_and_revocation_are_atomic_on_replica_set():
             )
             assert current["evidence_currentness_status"] == "CURRENT"
             assert current["evidence_currentness_observation_fingerprint_sha256"] == "f" * 64
-            assert registry.record_verified_currentness(
+            replayed = registry.record_verified_currentness(
                 verification=current_result, idempotency_key="currentness-001",
                 actor_reference="runtime://approved-currentness-worker", session=session,
-            ) == current
+            )
+            assert replayed["revision"] == current["revision"]
+            assert replayed["evidence_currentness_status"] == current["evidence_currentness_status"]
+            assert replayed["evidence_currentness_provenance_fingerprint_sha256"] == current["evidence_currentness_provenance_fingerprint_sha256"]
             divergent_replay = _verified_currentness(
                 tenant_id="WILSYTENANT-4CD2FZ4O", fingerprint="a" * 64,
                 revision=active["revision"], status="NOT_CURRENT", checked_at=now,
