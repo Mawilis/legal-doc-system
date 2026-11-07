@@ -133,6 +133,8 @@ class InstitutionalPKICRLCurrentnessRegistry:
                     "issuer_subject_sha256": issuer_reference,
                     "crl_number": crl_number,
                     "crl_fingerprint": crl_fingerprint,
+                    "previous_crl_number": previous_number,
+                    "previous_crl_fingerprint": previous_fingerprint,
                     "revision": revision,
                     "event_type": "CRL_CURRENTNESS_ADVANCED",
                     "actor_reference": actor_reference.strip(),
