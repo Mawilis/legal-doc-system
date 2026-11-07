@@ -422,9 +422,9 @@ def test_permission_canon_properties() -> None:
             for row in rows
             if row["disposition"] == "CANONICAL"
         ]
-    ) == 175
+    ) == 178
 
-    assert len(rows) == 178
+    assert len(rows) == 181
 
     for permission_id in tenant:
         metadata = permission_metadata(
@@ -1062,3 +1062,30 @@ def test_system_services_and_iam_vocabulary_is_system_scoped_and_non_authorizing
 # FAIL-CLOSED POSTURE: unknown and malformed values deny
 # FINANCIAL EXECUTION AUTHORITY: Kennel EOS remains exclusive
 # END OF WILSY OS SOVEREIGN ARTIFACT
+
+
+
+def test_institutional_signer_governance_permissions_are_owner_scoped_and_non_authorizing() -> None:
+    from tools.eos.auth.roles import get_roles_granting_permission
+    from tools.eos.auth.tenant_authority_policy import (
+        ELIGIBLE, OPERATIONS, tenant_role_operation_eligibility,
+    )
+
+    expected = {
+        "security:institutional_signer:enroll": "institutional_signer_enroll",
+        "security:institutional_signer:approve": "institutional_signer_approve",
+        "security:institutional_signer:revoke": "institutional_signer_revoke",
+    }
+    assert set(expected.values()) <= OPERATIONS
+    for permission, operation in expected.items():
+        metadata = permission_metadata(permission)
+        assert metadata.namespace == "TENANT"
+        assert metadata.scope_kind == "TENANT"
+        assert metadata.tenant_membership_required is True
+        assert metadata.cross_tenant_capable is False
+        assert metadata.financial_execution_capable is False
+        assert metadata.authorizes_by_itself is False
+        assert "TENANT_OWNER" in get_roles_granting_permission(permission)
+        assert "HR_DIRECTOR" not in get_roles_granting_permission(permission)
+        assert tenant_role_operation_eligibility("tenant_owner", operation) == ELIGIBLE
+        assert tenant_role_operation_eligibility("tenant_hr_director", operation) != ELIGIBLE
