@@ -147,20 +147,49 @@ class InstitutionalSourceSigningKeyLifecycleRegistry:
         )
         if type(public_key_bytes) is not bytes or len(public_key_bytes) != 32:
             raise SourceSigningKeyRegistryError("SOURCE_SIGNING_KEY_PUBLIC_KEY_INVALID")
-        if end <= start or occurred >= end:
-            raise SourceSigningKeyRegistryError("SOURCE_SIGNING_KEY_VALIDITY_INTERVAL_INVALID")
-        if occurred > datetime.now(timezone.utc):
-            raise SourceSigningKeyRegistryError("SOURCE_SIGNING_KEY_PROPOSAL_CANNOT_BE_FUTURE_DATED")
         fingerprint = sha256(public_key_bytes).hexdigest()
         if (supersedes_key_id is None) != (rotation_id is None) or (supersedes_key_id is None) != (overlap_until is None):
             raise SourceSigningKeyRegistryError("SOURCE_SIGNING_KEY_ROTATION_FIELDS_INCOMPLETE")
         rotation = None
+        predecessor_id = None
+        overlap = None
         if supersedes_key_id is not None:
             predecessor_id = _identifier("supersedes_key_id", supersedes_key_id)
             rotation_name = _identifier("rotation_id", rotation_id)
             overlap = _instant("overlap_until", overlap_until)
+            rotation = {
+                "rotation_id": rotation_name,
+                "supersedes_key_id": predecessor_id,
+                "overlap_until": overlap,
+            }
+        command_fingerprint = sha256(_canonical({
+            "source_system_id": source, "key_id": key,
+            "public_key_fingerprint_sha256": fingerprint,
+            "valid_from": start, "valid_until": end,
+            "proposed_by_principal_id": proposer, "proposal_reference": proposal,
+            "identity_proofing_evidence_reference": identity_reference,
+            "source_authority_evidence_reference": source_authority_reference,
+            "rotation": rotation,
+        })).hexdigest()
+        prior = self._events.find_one(
+            {"source_system_id": source, "idempotency_key": idem}, session=session,
+        )
+        if prior is not None:
+            if prior.get("event_type") != "PROPOSED" or prior.get("command_fingerprint_sha256") != command_fingerprint:
+                raise SourceSigningKeyRegistryConflict("SOURCE_SIGNING_KEY_DIVERGENT_REPLAY")
+            existing = self._keys.find_one(
+                {"source_system_id": source, "key_id": key}, session=session,
+            )
+            if existing is None:
+                raise SourceSigningKeyRegistryError("SOURCE_SIGNING_KEY_REPLAY_RECORD_MISSING")
+            return existing
+        if end <= start or occurred >= end:
+            raise SourceSigningKeyRegistryError("SOURCE_SIGNING_KEY_VALIDITY_INTERVAL_INVALID")
+        if occurred > datetime.now(timezone.utc):
+            raise SourceSigningKeyRegistryError("SOURCE_SIGNING_KEY_PROPOSAL_CANNOT_BE_FUTURE_DATED")
+        if predecessor_id is not None:
             predecessor = self._keys.find_one(
-                {"source_system_id": source, "key_id": predecessor_id}, session=session
+                {"source_system_id": source, "key_id": predecessor_id}, session=session,
             )
             predecessor_approval = self._events.find_one(
                 {"source_system_id": source, "key_id": predecessor_id, "event_type": "APPROVED"},
@@ -178,7 +207,6 @@ class InstitutionalSourceSigningKeyLifecycleRegistry:
                 raise SourceSigningKeyRegistryConflict("SOURCE_SIGNING_KEY_ROTATION_ALREADY_REPLACED")
             if not (start < overlap <= predecessor["valid_until"] and start < end):
                 raise SourceSigningKeyRegistryError("SOURCE_SIGNING_KEY_ROTATION_OVERLAP_INVALID")
-            rotation = {"rotation_id": rotation_name, "supersedes_key_id": predecessor_id, "overlap_until": overlap}
         record = {
             "schema": SCHEMA, "source_system_id": source, "key_id": key,
             "public_key_bytes": public_key_bytes,
@@ -191,15 +219,6 @@ class InstitutionalSourceSigningKeyLifecycleRegistry:
             "rotation": rotation,
         }
         fingerprint_of_record = _record_fingerprint(record)
-        command_fingerprint = sha256(_canonical({
-            "source_system_id": source, "key_id": key,
-            "public_key_fingerprint_sha256": fingerprint,
-            "valid_from": start, "valid_until": end,
-            "proposed_by_principal_id": proposer, "proposal_reference": proposal,
-            "identity_proofing_evidence_reference": identity_reference,
-            "source_authority_evidence_reference": source_authority_reference,
-            "rotation": rotation,
-        })).hexdigest()
         event = {
             "schema": EVENT_SCHEMA, "event_type": "PROPOSED",
             "source_system_id": source, "key_id": key,
@@ -208,14 +227,6 @@ class InstitutionalSourceSigningKeyLifecycleRegistry:
             "record_fingerprint_sha256": fingerprint_of_record,
             "command_fingerprint_sha256": command_fingerprint, "event_sequence": 1,
         }
-        prior = self._events.find_one({"source_system_id": source, "idempotency_key": idem}, session=session)
-        if prior is not None:
-            if prior.get("event_type") != "PROPOSED" or prior.get("command_fingerprint_sha256") != command_fingerprint:
-                raise SourceSigningKeyRegistryConflict("SOURCE_SIGNING_KEY_DIVERGENT_REPLAY")
-            existing = self._keys.find_one({"source_system_id": source, "key_id": key}, session=session)
-            if existing is None:
-                raise SourceSigningKeyRegistryError("SOURCE_SIGNING_KEY_REPLAY_RECORD_MISSING")
-            return existing
         try:
             self._keys.insert_one(record, session=session)
             self._events.insert_one(event, session=session)
@@ -246,15 +257,6 @@ class InstitutionalSourceSigningKeyLifecycleRegistry:
             raise SourceSigningKeyRegistryConflict("SOURCE_SIGNING_KEY_NOT_FOUND")
         if approver == record["proposed_by_principal_id"]:
             raise SourceSigningKeyRegistryConflict("SOURCE_SIGNING_KEY_MAKER_CHECKER_VIOLATION")
-        proposal_event = self._events.find_one(
-            {"source_system_id": source, "key_id": key, "event_type": "PROPOSED"}, session=session
-        )
-        if (
-            proposal_event is None or occurred < proposal_event["occurred_at"]
-            or occurred >= record["valid_until"]
-            or occurred > datetime.now(timezone.utc)
-        ):
-            raise SourceSigningKeyRegistryConflict("SOURCE_SIGNING_KEY_PROPOSAL_NOT_CURRENT")
         fingerprint = _record_fingerprint(record)
         command_fingerprint = sha256(_canonical({
             "source_system_id": source, "key_id": key,
@@ -264,6 +266,22 @@ class InstitutionalSourceSigningKeyLifecycleRegistry:
             "proposal_reference": record["proposal_reference"],
             "record_fingerprint_sha256": fingerprint,
         })).hexdigest()
+        prior = self._events.find_one(
+            {"source_system_id": source, "idempotency_key": idem}, session=session,
+        )
+        if prior is not None:
+            if prior.get("event_type") != "APPROVED" or prior.get("command_fingerprint_sha256") != command_fingerprint:
+                raise SourceSigningKeyRegistryConflict("SOURCE_SIGNING_KEY_DIVERGENT_REPLAY")
+            return prior
+        proposal_event = self._events.find_one(
+            {"source_system_id": source, "key_id": key, "event_type": "PROPOSED"}, session=session,
+        )
+        if (
+            proposal_event is None or occurred < proposal_event["occurred_at"]
+            or occurred >= record["valid_until"]
+            or occurred > datetime.now(timezone.utc)
+        ):
+            raise SourceSigningKeyRegistryConflict("SOURCE_SIGNING_KEY_PROPOSAL_NOT_CURRENT")
         event = {
             "schema": EVENT_SCHEMA, "event_type": "APPROVED",
             "source_system_id": source, "key_id": key,
@@ -275,11 +293,6 @@ class InstitutionalSourceSigningKeyLifecycleRegistry:
             "record_fingerprint_sha256": fingerprint,
             "command_fingerprint_sha256": command_fingerprint, "event_sequence": 2,
         }
-        prior = self._events.find_one({"source_system_id": source, "idempotency_key": idem}, session=session)
-        if prior is not None:
-            if prior.get("event_type") != "APPROVED" or prior.get("command_fingerprint_sha256") != command_fingerprint:
-                raise SourceSigningKeyRegistryConflict("SOURCE_SIGNING_KEY_DIVERGENT_REPLAY")
-            return prior
         if self._events.find_one(
             {"source_system_id": source, "key_id": key, "event_type": "APPROVED"}, session=session
         ) is not None:
