@@ -231,6 +231,35 @@ def issue_intermediate(
     return key_path, cert_path, cert.fingerprint(hashes.SHA256()).hex()
 
 
+def assemble_crl_bundle(
+    *,
+    crl_paths: Iterable[Path],
+    output_path: Path,
+) -> tuple[Path, str]:
+    """Atomically assemble one PEM bundle containing exactly one CRL per issuer."""
+    paths = tuple(Path(item).expanduser().resolve() for item in crl_paths)
+    if not paths:
+        raise InstitutionalPKIError("INSTITUTIONAL_PKI_CRL_BUNDLE_INPUTS_REQUIRED")
+    pieces: list[bytes] = []
+    issuer_references: set[str] = set()
+    for path in paths:
+        try:
+            raw = path.read_bytes()
+            crl = x509.load_pem_x509_crl(raw)
+        except Exception as error:
+            raise InstitutionalPKIError("INSTITUTIONAL_PKI_CRL_BUNDLE_INPUT_INVALID") from error
+        issuer_reference = sha256(crl.issuer.public_bytes()).hexdigest()
+        if issuer_reference in issuer_references:
+            raise InstitutionalPKIError("INSTITUTIONAL_PKI_CRL_BUNDLE_DUPLICATE_ISSUER")
+        issuer_references.add(issuer_reference)
+        pieces.append(crl.public_bytes(serialization.Encoding.PEM))
+    bundle = b"\n".join(pieces)
+    target = output_path.expanduser().resolve()
+    target.parent.mkdir(mode=0o700, parents=True, exist_ok=True)
+    _replace_public(target, bundle)
+    return target, sha256(bundle).hexdigest()
+
+
 def issue_crl(
     *,
     issuer_certificate_pem: Path,
