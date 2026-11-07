@@ -1181,3 +1181,26 @@ _hiring_director.update({
 _hiring_eligibility["tenant_hr_director"] = MappingProxyType(_hiring_director)
 ELIGIBILITY = MappingProxyType(_hiring_eligibility)
 
+
+
+# Candidate evidence binary commands are distinct from candidate/offer lifecycle
+# commands. Upload and read eligibility never implies candidate stage or offer
+# decision authority; provider verification and custody remain separate gates.
+EVIDENCE_OPERATIONS = (
+    "hr_hiring_candidate_evidence_upload",
+    "hr_hiring_candidate_evidence_read",
+)
+OPERATIONS = frozenset((*OPERATIONS, *EVIDENCE_OPERATIONS))
+BUSINESS_ROLE_OPERATION_PERMISSIONS = MappingProxyType({
+    **BUSINESS_ROLE_OPERATION_PERMISSIONS,
+    "hr_hiring_candidate_evidence_upload": "hr:hiring_candidate_evidence:upload",
+    "hr_hiring_candidate_evidence_read": "hr:hiring_candidate_evidence:read",
+})
+_evidence_eligibility = dict(ELIGIBILITY)
+_evidence_manager = dict(_evidence_eligibility["tenant_hr_manager"])
+_evidence_manager.update({operation: ELIGIBLE for operation in EVIDENCE_OPERATIONS})
+_evidence_eligibility["tenant_hr_manager"] = MappingProxyType(_evidence_manager)
+_evidence_director = dict(_evidence_eligibility["tenant_hr_director"])
+_evidence_director["hr_hiring_candidate_evidence_read"] = ELIGIBLE
+_evidence_eligibility["tenant_hr_director"] = MappingProxyType(_evidence_director)
+ELIGIBILITY = MappingProxyType(_evidence_eligibility)
