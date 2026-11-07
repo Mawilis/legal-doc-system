@@ -24,7 +24,7 @@ from enum import Enum
 from tools.eos.auth.tenant_authority_policy import TENANT_ROLES
 
 
-VERSION = "v1.1.0-M11-R8-R3B-P8-P3A"
+VERSION = "v1.2.0-INSTITUTIONAL-SOURCE-KEY-ADMIN"
 
 
 class TenantBusinessRoleStatus(str, Enum):
@@ -34,8 +34,9 @@ class TenantBusinessRoleStatus(str, Enum):
     REVOKED = "REVOKED"
 
 
-@dataclass(frozen=True, slots=True)
+@dataclass(frozen=True)
 class TenantBusinessRoleAuthority:
+    __slots__ = ("principal_id", "tenant_id", "business_role", "status", "revision", "effective_at", "revoked_at")
     """Immutable business-role fact with independent revision and lifecycle evidence."""
 
     principal_id: str
@@ -73,7 +74,7 @@ class TenantBusinessRoleAuthority:
 __all__ = ["VERSION", "TenantBusinessRoleStatus", "TenantBusinessRoleAuthority"]
 
 # ARTIFACT: tenant_business_role.py
-# VERSION: v1.1.0-M11-R8-R3B-P8-P3A
+# VERSION: v1.2.0-INSTITUTIONAL-SOURCE-KEY-ADMIN
 # AUTHORITY BOUNDARY: immutable business-role fact only; no authorization or persistence
 # TENANT POSTURE: explicit principal/tenant scope; no inference or cross-tenant authority
 # FAIL-CLOSED POSTURE: malformed identifiers, roles, revisions, timestamps, and lifecycle states reject
