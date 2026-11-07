@@ -77,6 +77,8 @@ def _verified_currentness(*, tenant_id, fingerprint, revision, status, checked_a
                     "status": ("REVOKED" if status == "NOT_CURRENT" and key == "identity_proofing" else record["status"]),
                     "revoked": status == "NOT_CURRENT" and key == "identity_proofing",
                     "evidence_fingerprint_sha256": ("d" * 64 if status == "NOT_CURRENT" and key == "identity_proofing" else record["evidence_fingerprint_sha256"]),
+                    "valid_from": record["valid_from"],
+                    "valid_until": (checked_at - timedelta(seconds=1) if status == "NOT_CURRENT" and key == "identity_proofing" and reason == "SOURCE_EVIDENCE_EXPIRED" else record["valid_until"]),
                     "observed_at": checked_at,
                 }
                 for key, record in provenance.items() if key != "schema"
