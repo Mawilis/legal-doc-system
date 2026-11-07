@@ -681,3 +681,12 @@ ROLE_PERMISSIONS_MAP["POS_OPERATOR"] = [
     "pos:sale:read", "pos:sale:create", "pos:tender:create",
     "pos:cash:record", "pos:return:create", "pos:refund:create",
 ]
+
+
+# Institutional signer governance is restricted to the tenant-owner authorization
+# role. Two-person approval is enforced by the durable signer registry.
+ROLE_PERMISSIONS_MAP["TENANT_OWNER"].extend((
+    "security:institutional_signer:enroll",
+    "security:institutional_signer:approve",
+    "security:institutional_signer:revoke",
+))
