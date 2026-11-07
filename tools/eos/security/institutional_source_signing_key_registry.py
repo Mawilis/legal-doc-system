@@ -191,16 +191,26 @@ class InstitutionalSourceSigningKeyLifecycleRegistry:
             "rotation": rotation,
         }
         fingerprint_of_record = _record_fingerprint(record)
+        command_fingerprint = sha256(_canonical({
+            "source_system_id": source, "key_id": key,
+            "public_key_fingerprint_sha256": fingerprint,
+            "valid_from": start, "valid_until": end,
+            "proposed_by_principal_id": proposer, "proposal_reference": proposal,
+            "identity_proofing_evidence_reference": identity_reference,
+            "source_authority_evidence_reference": source_authority_reference,
+            "rotation": rotation,
+        })).hexdigest()
         event = {
             "schema": EVENT_SCHEMA, "event_type": "PROPOSED",
             "source_system_id": source, "key_id": key,
             "idempotency_key": idem, "occurred_at": occurred,
             "actor_principal_id": proposer, "proposal_reference": proposal,
-            "record_fingerprint_sha256": fingerprint_of_record, "event_sequence": 1,
+            "record_fingerprint_sha256": fingerprint_of_record,
+            "command_fingerprint_sha256": command_fingerprint, "event_sequence": 1,
         }
         prior = self._events.find_one({"source_system_id": source, "idempotency_key": idem}, session=session)
         if prior is not None:
-            if prior.get("event_type") != "PROPOSED" or prior.get("record_fingerprint_sha256") != fingerprint_of_record:
+            if prior.get("event_type") != "PROPOSED" or prior.get("command_fingerprint_sha256") != command_fingerprint:
                 raise SourceSigningKeyRegistryConflict("SOURCE_SIGNING_KEY_DIVERGENT_REPLAY")
             existing = self._keys.find_one({"source_system_id": source, "key_id": key}, session=session)
             if existing is None:
@@ -246,6 +256,14 @@ class InstitutionalSourceSigningKeyLifecycleRegistry:
         ):
             raise SourceSigningKeyRegistryConflict("SOURCE_SIGNING_KEY_PROPOSAL_NOT_CURRENT")
         fingerprint = _record_fingerprint(record)
+        command_fingerprint = sha256(_canonical({
+            "source_system_id": source, "key_id": key,
+            "approved_by_principal_id": approver,
+            "governance_decision_reference": decision,
+            "approval_evidence_reference": evidence,
+            "proposal_reference": record["proposal_reference"],
+            "record_fingerprint_sha256": fingerprint,
+        })).hexdigest()
         event = {
             "schema": EVENT_SCHEMA, "event_type": "APPROVED",
             "source_system_id": source, "key_id": key,
@@ -254,12 +272,12 @@ class InstitutionalSourceSigningKeyLifecycleRegistry:
             "governance_decision_reference": decision,
             "approval_evidence_reference": evidence,
             "proposal_reference": record["proposal_reference"],
-            "record_fingerprint_sha256": fingerprint, "event_sequence": 2,
+            "record_fingerprint_sha256": fingerprint,
+            "command_fingerprint_sha256": command_fingerprint, "event_sequence": 2,
         }
         prior = self._events.find_one({"source_system_id": source, "idempotency_key": idem}, session=session)
         if prior is not None:
-            comparable = {k: v for k, v in prior.items() if k != "_id"}
-            if comparable != event:
+            if prior.get("event_type") != "APPROVED" or prior.get("command_fingerprint_sha256") != command_fingerprint:
                 raise SourceSigningKeyRegistryConflict("SOURCE_SIGNING_KEY_DIVERGENT_REPLAY")
             return prior
         if self._events.find_one(
@@ -325,6 +343,13 @@ class InstitutionalSourceSigningKeyLifecycleRegistry:
         )
         if approval_event is None or occurred < approval_event["occurred_at"]:
             raise SourceSigningKeyRegistryConflict("SOURCE_SIGNING_KEY_NOT_APPROVED")
+        command_fingerprint = sha256(_canonical({
+            "source_system_id": source, "key_id": key,
+            "revoked_by_principal_id": actor, "reason_reference": reason,
+            "approval_evidence_reference": approval_evidence,
+            "governance_decision_reference": decision,
+            "record_fingerprint_sha256": record["public_key_fingerprint_sha256"],
+        })).hexdigest()
         event = {
             "schema": EVENT_SCHEMA, "event_type": "REVOKED",
             "source_system_id": source, "key_id": key,
@@ -333,16 +358,14 @@ class InstitutionalSourceSigningKeyLifecycleRegistry:
             "approval_evidence_reference": approval_evidence,
             "governance_decision_reference": decision,
             "record_fingerprint_sha256": record["public_key_fingerprint_sha256"],
-            "event_sequence": 3,
+            "command_fingerprint_sha256": command_fingerprint, "event_sequence": 3,
         }
         prior = self._events.find_one(
             {"source_system_id": source, "idempotency_key": idem}, session=session
         )
         if prior is not None:
-            if prior != event:
-                comparable = {k: v for k, v in prior.items() if k != "_id"}
-                if comparable != event:
-                    raise SourceSigningKeyRegistryConflict("SOURCE_SIGNING_KEY_DIVERGENT_REPLAY")
+            if prior.get("event_type") != "REVOKED" or prior.get("command_fingerprint_sha256") != command_fingerprint:
+                raise SourceSigningKeyRegistryConflict("SOURCE_SIGNING_KEY_DIVERGENT_REPLAY")
             return prior
         if self._events.find_one(
             {"source_system_id": source, "key_id": key, "event_type": "REVOKED"}, session=session
