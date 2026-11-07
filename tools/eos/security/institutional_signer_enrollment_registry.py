@@ -163,6 +163,7 @@ class InstitutionalSignerEnrollmentRegistry:
             if current.get("requested_by_principal_id") == approver:
                 raise InstitutionalSignerRegistryConflict("INSTITUTIONAL_SIGNER_MAKER_CHECKER_REQUIRED")
             updated = dict(current)
+            updated.pop("_id", None)
             updated.update({
                 "status": "ACTIVE", "approved_by_principal_id": approver,
                 "approved_at": now, "revision": current["revision"] + 1,
@@ -211,9 +212,11 @@ class InstitutionalSignerEnrollmentRegistry:
             if current.get("status") != "ACTIVE":
                 raise InstitutionalSignerRegistryConflict("INSTITUTIONAL_SIGNER_NOT_ACTIVE")
             updated = dict(current)
+            updated.pop("_id", None)
             updated.update({
                 "status": "REVOKED", "revoked_by_principal_id": actor,
                 "revoked_at": now, "revocation_reason": reason,
+                "crl_revocation_publication_status": "PENDING",
                 "revision": current["revision"] + 1,
             })
             result = self._records.update_one({
