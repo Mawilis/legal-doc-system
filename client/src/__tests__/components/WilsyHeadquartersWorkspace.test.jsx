@@ -47,7 +47,7 @@ describe('WILSY Headquarters authenticated shell', () => {
     expect(screen.getByRole('heading', { name: 'My Work certified task centre' })).toBeTruthy();
   });
 
-  it('keeps workforce records unavailable until the HR source is certified', () => {
+  it('renders authorised workforce records from the HR directory service', async () => {
     renderHeadquarters();
     fireEvent.click(screen.getByRole('button', { name: /Organisation & People/ }));
     expect(await screen.findByText('Authorised workforce directory')).toBeTruthy();
