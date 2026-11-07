@@ -320,6 +320,9 @@ _PERMISSIONS: Final = MappingProxyType(
         "security:institutional_signer:enroll": _meta("security:institutional_signer:enroll", "TENANT", "TENANT", "request own-tenant institutional signer enrollment with proofing and mandate evidence", tenant=True),
         "security:institutional_signer:approve": _meta("security:institutional_signer:approve", "TENANT", "TENANT", "independently approve a pending own-tenant institutional signer enrollment", tenant=True),
         "security:institutional_signer:revoke": _meta("security:institutional_signer:revoke", "TENANT", "TENANT", "revoke an active own-tenant institutional signer enrollment", tenant=True),
+        "security:institutional_source_key:propose": _meta("security:institutional_source_key:propose", "TENANT", "TENANT", "propose a finite source-bound institutional verification key with proofing and mandate evidence; proposal alone grants no trust", tenant=True),
+        "security:institutional_source_key:approve": _meta("security:institutional_source_key:approve", "TENANT", "TENANT", "independently approve a source signing-key proposal after authoritative approval evidence; maker-checker enforced", tenant=True),
+        "security:institutional_source_key:revoke": _meta("security:institutional_source_key:revoke", "TENANT", "TENANT", "revoke an institutional source signing key with independent approval evidence", tenant=True),
 
         "kernel:read": _meta(
             "kernel:read",
