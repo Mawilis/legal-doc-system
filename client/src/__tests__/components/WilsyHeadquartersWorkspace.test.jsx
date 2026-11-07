@@ -1,6 +1,8 @@
 import React from 'react';
 import { describe, expect, it, vi } from 'vitest';
 import { fireEvent, render, screen, within } from '@testing-library/react';
+import { waitFor } from '@testing-library/react';
+import api from '../../services/api.js';
 import { MemoryRouter } from 'react-router-dom';
 import WilsyHeadquartersWorkspace from '../../components/workspaces/WilsyHeadquartersWorkspace.jsx';
 
@@ -53,6 +55,21 @@ describe('WILSY Headquarters authenticated shell', () => {
     expect(await screen.findByText('Authorised workforce directory')).toBeTruthy();
     expect(await screen.findByText('Test Directory Person')).toBeTruthy();
     expect(screen.getByText('test@example.invalid')).toBeTruthy();
+  });
+
+  it('searches the authorised workforce source without supplying tenant authority', async () => {
+    renderHeadquarters();
+    fireEvent.click(screen.getByRole('button', { name: /Organisation & People/ }));
+    await screen.findByText('Test Directory Person');
+    fireEvent.change(screen.getByRole('textbox', { name: 'Search workforce directory' }), {
+      target: { value: 'Engineering' },
+    });
+    await waitFor(() => {
+      expect(api.get).toHaveBeenLastCalledWith('/hr/workforce', expect.objectContaining({
+        params: expect.objectContaining({ limit: 50, offset: 0, q: 'Engineering' }),
+        forceNetworkRetry: true,
+      }));
+    });
   });
 
   it('separates supported business models from actual customer records', () => {
