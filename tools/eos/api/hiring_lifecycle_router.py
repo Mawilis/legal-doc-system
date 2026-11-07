@@ -11,7 +11,7 @@ import binascii
 import hashlib
 import json
 import os
-from typing import Any
+from typing import Annotated, Any
 
 import boto3
 from fastapi import APIRouter, Depends, Header, HTTPException, Request
@@ -24,7 +24,7 @@ from tools.eos.api.tenant_authorization_http import RequireTenantAuthorization, 
 from tools.eos.kernel.db import get_client, get_database
 from tools.eos.saas.domain.hiring_lifecycle import (
     CandidateApplication, CandidateStage, CandidateStageEvidence,
-    EmploymentOffer, OfferTerms, OfferDecision, OfferAcceptanceEvidence,
+    EmploymentOffer, OfferTerms, OfferDecision, OfferAcceptanceEvidence, OfferStatus,
 )
 from tools.eos.saas.domain.candidate_evidence import CandidateEvidenceKind
 from tools.eos.saas.hr.candidate_evidence_registry import (
@@ -111,15 +111,37 @@ class OfferDecisionRequest(StrictModel):
     reason: str = Field(min_length=1, max_length=2000)
 
 
-class OfferAcceptanceRequest(StrictModel):
+class OfferSignatureManifestRequest(StrictModel):
     expected_revision: int = Field(ge=1, strict=True)
     evidence_reference: str = Field(min_length=1, max_length=240)
     evidence_fingerprint: str = Field(pattern=r"^[0-9a-f]{128}$")
-    accepted_at: datetime
     evidence_version_id: str = Field(min_length=1, max_length=256)
+
+
+class OfferAcceptanceRequest(OfferSignatureManifestRequest):
+    accepted_at: datetime
     signer_certificate_pem_base64: str = Field(min_length=1, max_length=65536)
-    intermediate_certificate_pems_base64: list[str] = Field(min_length=1, max_length=8)
+    intermediate_certificate_pems_base64: list[Annotated[str, Field(min_length=1, max_length=65536)]] = Field(min_length=1, max_length=8)
     detached_signature_base64: str = Field(min_length=1, max_length=32768)
+
+
+def _signed_offer_manifest(*, tenant_id: str, offer: EmploymentOffer, evidence: Any) -> bytes:
+    """Canonical signer input commits to exact offer terms and immutable document bytes."""
+    manifest = {
+        "schema": "wilsy.hr.signed_offer_signature_manifest.v1",
+        "tenant_id": tenant_id,
+        "offer_id": offer.offer_id,
+        "candidate_id": offer.candidate_id,
+        "offer_revision": offer.revision,
+        "offer_terms_fingerprint": offer.fingerprint,
+        "evidence_id": evidence.evidence_id,
+        "evidence_version_id": evidence.evidence_version_id,
+        "evidence_kind": CandidateEvidenceKind.SIGNED_OFFER.value,
+        "evidence_digest_sha3_512": evidence.content_digest_sha3_512,
+    }
+    return json.dumps(
+        manifest, sort_keys=True, separators=(",", ":"), ensure_ascii=False,
+    ).encode("utf-8")
 
 
 def _registry(db: Any) -> HiringLifecycleRegistry:
@@ -358,6 +380,56 @@ async def send_offer(
     return _transaction(command).to_dict()
 
 
+@router.post("/offers/{offer_id}/signature-manifest")
+async def get_offer_signature_manifest(
+    offer_id: str,
+    body: OfferSignatureManifestRequest,
+    context: TenantAuthorizationContext = Depends(_OFFER_READ),
+):
+    if context.tenant_id != INSTITUTIONAL_TENANT_ID:
+        raise HTTPException(status_code=403, detail="INSTITUTIONAL_PKI_TENANT_SCOPE_INVALID")
+
+    def query(registry, tx):
+        current = registry.get_offer(tenant_id=context.tenant_id, offer_id=offer_id, session=tx)
+        if current.status is not OfferStatus.SENT or current.revision != body.expected_revision:
+            raise HTTPException(status_code=409, detail="HIRING_OFFER_NOT_CURRENTLY_SIGNABLE")
+        database = get_database()
+        if database is None:
+            raise HTTPException(status_code=503, detail="CANDIDATE_EVIDENCE_DATABASE_UNAVAILABLE")
+        evidence_registry = CandidateEvidenceRegistry(
+            database[CANDIDATE_EVIDENCE_COLLECTION],
+            database[CANDIDATE_EVIDENCE_EVENT_COLLECTION],
+        )
+        try:
+            signed_offer = evidence_registry.get(
+                tenant_id=context.tenant_id, candidate_id=current.candidate_id,
+                evidence_id=body.evidence_reference,
+                evidence_version_id=body.evidence_version_id, session=tx,
+            )
+        except CandidateEvidenceRegistryNotFound as error:
+            raise HTTPException(status_code=409, detail="HIRING_SIGNED_OFFER_CUSTODY_REQUIRED") from error
+        if (
+            signed_offer.evidence_kind is not CandidateEvidenceKind.SIGNED_OFFER
+            or signed_offer.offer_id != offer_id
+            or signed_offer.content_digest_sha3_512 != body.evidence_fingerprint
+        ):
+            raise HTTPException(status_code=409, detail="HIRING_SIGNED_OFFER_EVIDENCE_INVALID")
+        manifest = _signed_offer_manifest(
+            tenant_id=context.tenant_id, offer=current, evidence=signed_offer,
+        )
+        return {
+            "manifest_base64": base64.b64encode(manifest).decode("ascii"),
+            "manifest_sha3_512": hashlib.sha3_512(manifest).hexdigest(),
+            "offer_id": current.offer_id,
+            "offer_revision": current.revision,
+            "evidence_id": signed_offer.evidence_id,
+            "evidence_version_id": signed_offer.evidence_version_id,
+            "evidence_digest_sha3_512": signed_offer.content_digest_sha3_512,
+        }
+
+    return _transaction(query)
+
+
 @router.post("/offers/{offer_id}/accept")
 async def accept_offer(
     offer_id: str, body: OfferAcceptanceRequest, request: Request,
@@ -400,7 +472,9 @@ async def accept_offer(
         except CandidateEvidenceRegistryNotFound as error:
             raise HTTPException(status_code=409, detail="HIRING_SIGNED_OFFER_CUSTODY_REQUIRED") from error
         if (
-            signed_offer.evidence_kind is not CandidateEvidenceKind.SIGNED_OFFER
+            current.status is not OfferStatus.SENT
+            or current.revision != body.expected_revision
+            or signed_offer.evidence_kind is not CandidateEvidenceKind.SIGNED_OFFER
             or signed_offer.offer_id != offer_id
             or signed_offer.content_digest_sha3_512 != body.evidence_fingerprint
         ):
@@ -427,12 +501,15 @@ async def accept_offer(
             CandidateEvidenceS3Configuration(bucket=bucket, region=region, kms_key_id=kms_key_id),
             client=boto3.client("s3", region_name=region),
         )
-        with storage.read_verified_object(observed["evidence"]) as payload_stream:
-            signed_payload = payload_stream.read(1_048_577)
-        if not signed_payload or len(signed_payload) > 1_048_576:
-            raise HTTPException(status_code=422, detail="INSTITUTIONAL_SIGNED_OFFER_PAYLOAD_SIZE_INVALID")
-        if hashlib.sha3_512(signed_payload).hexdigest() != observed["evidence"].content_digest_sha3_512:
-            raise HTTPException(status_code=409, detail="INSTITUTIONAL_SIGNED_OFFER_PAYLOAD_DIGEST_MISMATCH")
+        # The adapter streams the exact S3 object version, verifies KMS metadata,
+        # length and SHA3-512, and returns only after the entire object is checked.
+        with storage.read_verified_object(observed["evidence"]):
+            pass
+        signed_payload = _signed_offer_manifest(
+            tenant_id=context.tenant_id,
+            offer=observed["offer"],
+            evidence=observed["evidence"],
+        )
         leaf_pem = base64.b64decode(body.signer_certificate_pem_base64, validate=True)
         intermediate_pems = tuple(base64.b64decode(value, validate=True) for value in body.intermediate_certificate_pems_base64)
         signature = base64.b64decode(body.detached_signature_base64, validate=True)
@@ -488,6 +565,9 @@ async def accept_offer(
             or signed_offer.offer_id != offer_id
             or signed_offer.content_digest_sha3_512 != body.evidence_fingerprint
             or signed_offer.fingerprint != observed["evidence"].fingerprint
+            or current.revision != observed["offer"].revision
+            or current.fingerprint != observed["offer"].fingerprint
+            or current.status is not OfferStatus.SENT
         ):
             raise HTTPException(status_code=409, detail="HIRING_SIGNED_OFFER_EVIDENCE_CHANGED")
         signer_registry = InstitutionalSignerEnrollmentRegistry(
@@ -511,7 +591,8 @@ async def accept_offer(
             candidate_id=current.candidate_id,
             evidence_id=body.evidence_reference,
             evidence_version_id=body.evidence_version_id,
-            evidence_digest_sha3_512=verification.payload_digest_sha3_512,
+            evidence_digest_sha3_512=signed_offer.content_digest_sha3_512,
+            signed_manifest_digest_sha3_512=verification.payload_digest_sha3_512,
             signer_certificate_sha256=verification.certificate_verification.leaf_fingerprint_sha256,
             signer_serial_number_hex=verification.certificate_verification.serial_number_hex,
             trust_root_sha256=verification.certificate_verification.root_fingerprint_sha256,
