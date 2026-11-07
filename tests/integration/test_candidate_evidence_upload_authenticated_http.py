@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 import hashlib
+from io import BytesIO
 import os
 import uuid
 from datetime import datetime, timezone
@@ -80,6 +81,9 @@ class FakeStorage:
     def inspect(self, intent, evidence):
         assert evidence.intent_fingerprint == intent.fingerprint
         return evidence
+
+    def read_verified_object(self, metadata):
+        return BytesIO(b"authenticated streamed evidence payload")
 
     def abort(self, session):
         session.closed = True
@@ -213,6 +217,21 @@ def test_authenticated_stream_upload_registers_verified_custody_and_denies_direc
                 content=body,
             )
             assert duplicate.status_code == 409
+
+            read_manager = http.get(
+                "/api/hr/hiring/candidates/CAN-EVIDENCE-HTTP-1/evidence/EVD-HTTP-1/VER-HTTP-1",
+                headers=_headers(manager, tenant),
+            )
+            assert read_manager.status_code == 200, read_manager.text
+            assert read_manager.content == body
+            assert read_manager.headers["cache-control"] == "no-store"
+
+            read_director = http.get(
+                "/api/hr/hiring/candidates/CAN-EVIDENCE-HTTP-1/evidence/EVD-HTTP-1/VER-HTTP-1",
+                headers=_headers(director, tenant),
+            )
+            assert read_director.status_code == 200, read_director.text
+            assert read_director.content == body
 
             denied = http.put(
                 "/api/hr/hiring/candidates/CAN-EVIDENCE-HTTP-1/evidence/EVD-DENIED/VER-1",
