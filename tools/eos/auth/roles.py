@@ -487,6 +487,14 @@ ROLE_PERMISSIONS_MAP["HR_DIRECTOR"].extend([
     "hr:headcount_requisition:decide",
 ])
 
+# Candidate evidence bytes are a separate permission boundary from lifecycle
+# commands: HR Manager uploads/reads; HR Director reads only.
+ROLE_PERMISSIONS_MAP["HR_MANAGER"].extend([
+    "hr:hiring_candidate_evidence:upload",
+    "hr:hiring_candidate_evidence:read",
+])
+ROLE_PERMISSIONS_MAP["HR_DIRECTOR"].append("hr:hiring_candidate_evidence:read")
+
 
 # P0-C12F7B sensitivity-specific single-purpose HR document grants.
 _HR_DOCUMENT_AUTH_ROLE_PERMISSIONS = {

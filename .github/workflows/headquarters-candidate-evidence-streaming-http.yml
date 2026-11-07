@@ -4,14 +4,22 @@ on:
     paths:
       - "tools/eos/api/candidate_evidence_upload_router.py"
       - "tools/eos/api/server.py"
+      - "tools/eos/auth/roles.py"
+      - "tools/eos/auth/tenant_authorization.py"
+      - "tools/eos/auth/tenant_authority_policy.py"
       - "tools/eos/saas/hr/candidate_evidence_upload_orchestrator.py"
       - "tools/eos/saas/hr/candidate_evidence_upload_attempt_registry.py"
+      - "tools/eos/saas/hr/candidate_evidence_upload_reconciliation.py"
       - "tools/eos/saas/hr/candidate_evidence_s3_storage_adapter.py"
       - "tools/eos/saas/hr/candidate_evidence_storage.py"
       - "tools/eos/saas/hr/candidate_evidence_registry.py"
       - "tools/eos/saas/domain/candidate_evidence.py"
       - "tests/unit/test_candidate_evidence_upload_orchestrator.py"
+      - "tests/unit/test_candidate_evidence_upload_reconciliation.py"
+      - "tests/unit/test_candidate_evidence_s3_reconciliation.py"
+      - "tests/unit/test_candidate_evidence_iam_policy.py"
       - "tests/integration/test_candidate_evidence_upload_authenticated_http.py"
+      - "tests/integration/test_candidate_evidence_upload_reconciliation_real_mongo.py"
       - ".github/workflows/headquarters-candidate-evidence-streaming-http.yml"
 permissions:
   contents: read
@@ -57,13 +65,24 @@ jobs:
             tools/eos/api/candidate_evidence_upload_router.py \
             tools/eos/api/hiring_lifecycle_router.py \
             tools/eos/api/server.py \
+            tools/eos/auth/roles.py \
+            tools/eos/auth/tenant_authorization.py \
             tools/eos/saas/hr/candidate_evidence_upload_orchestrator.py \
             tools/eos/saas/hr/candidate_evidence_upload_attempt_registry.py \
+            tools/eos/saas/hr/candidate_evidence_upload_reconciliation.py \
             tools/eos/saas/hr/candidate_evidence_s3_storage_adapter.py \
             tests/unit/test_candidate_evidence_upload_orchestrator.py \
-            tests/integration/test_candidate_evidence_upload_authenticated_http.py
+            tests/unit/test_candidate_evidence_upload_reconciliation.py \
+            tests/unit/test_candidate_evidence_s3_reconciliation.py \
+            tests/unit/test_candidate_evidence_iam_policy.py \
+            tests/integration/test_candidate_evidence_upload_authenticated_http.py \
+            tests/integration/test_candidate_evidence_upload_reconciliation_real_mongo.py
       - name: Test durable multipart orchestration and authenticated HTTP custody
         run: |
           python -m pytest -q \
             tests/unit/test_candidate_evidence_upload_orchestrator.py \
-            tests/integration/test_candidate_evidence_upload_authenticated_http.py
+            tests/unit/test_candidate_evidence_upload_reconciliation.py \
+            tests/unit/test_candidate_evidence_s3_reconciliation.py \
+            tests/unit/test_candidate_evidence_iam_policy.py \
+            tests/integration/test_candidate_evidence_upload_authenticated_http.py \
+            tests/integration/test_candidate_evidence_upload_reconciliation_real_mongo.py

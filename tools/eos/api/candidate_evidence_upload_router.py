@@ -14,6 +14,8 @@ from typing import Any, AsyncIterable
 
 import boto3
 from fastapi import APIRouter, Depends, Header, HTTPException, Request
+from fastapi.responses import StreamingResponse
+from starlette.background import BackgroundTask
 from pymongo.read_concern import ReadConcern
 from pymongo.read_preferences import ReadPreference
 from pymongo.write_concern import WriteConcern
@@ -33,8 +35,10 @@ from tools.eos.saas.hr.candidate_evidence_registry import (
     CandidateEvidenceRegistry,
     CandidateEvidenceRegistryConflict,
     CandidateEvidenceRegistryError,
+    CandidateEvidenceRegistryNotFound,
 )
 from tools.eos.saas.hr.candidate_evidence_s3_storage_adapter import (
+    CandidateEvidenceS3Error,
     CandidateEvidenceS3Configuration,
     CandidateEvidenceS3StorageAdapter,
 )
@@ -47,6 +51,8 @@ from tools.eos.saas.hr.candidate_evidence_upload_attempt_registry import (
     EVENT_COLLECTION as ATTEMPT_EVENT_COLLECTION,
     CandidateEvidenceUploadAttemptRegistry,
     UploadAttemptStatus,
+    UploadAttemptConflict,
+    UploadAttemptError,
 )
 from tools.eos.saas.hr.candidate_evidence_upload_orchestrator import (
     CandidateEvidenceUploadOrchestrationError,
@@ -64,6 +70,10 @@ router = APIRouter(prefix="/hr/hiring", tags=["Candidate Evidence"])
 _UPLOAD = RequireTenantAuthorization(
     "hr:hiring_candidate_evidence:upload",
     "hr_hiring_candidate_evidence_upload",
+)
+_READ = RequireTenantAuthorization(
+    "hr:hiring_candidate_evidence:read",
+    "hr_hiring_candidate_evidence_read",
 )
 
 _ALLOWED_MEDIA_PREFIXES = ("application/pdf", "image/", "application/msword",
@@ -90,6 +100,10 @@ def _transaction(callback):
             )
     except HiringLifecycleNotFound as error:
         raise HTTPException(status_code=404, detail=error.code) from error
+    except UploadAttemptConflict as error:
+        raise HTTPException(status_code=409, detail=error.code) from error
+    except UploadAttemptError as error:
+        raise HTTPException(status_code=503, detail=error.code) from error
     except CandidateEvidenceRegistryConflict as error:
         raise HTTPException(status_code=409, detail=error.code) from error
     except CandidateEvidenceRegistryError as error:
@@ -183,6 +197,16 @@ async def upload_candidate_evidence(
 
     def admit(tx):
         candidate = hiring.get_candidate(tenant_id=tenant_id, candidate_id=candidate_id, session=tx)
+        try:
+            custody.get(
+                tenant_id=tenant_id, candidate_id=candidate_id,
+                evidence_id=evidence_id, evidence_version_id=evidence_version_id,
+                session=tx,
+            )
+        except CandidateEvidenceRegistryNotFound:
+            pass
+        else:
+            raise HTTPException(status_code=409, detail="CANDIDATE_EVIDENCE_VERSION_ALREADY_REGISTERED")
         if evidence_kind is CandidateEvidenceKind.SIGNED_OFFER:
             offer = hiring.get_offer(tenant_id=tenant_id, offer_id=offer_id, session=tx)
             if offer.candidate_id != candidate_id:
@@ -194,16 +218,19 @@ async def upload_candidate_evidence(
     except HiringLifecycleNotFound as error:
         raise HTTPException(status_code=404, detail=error.code) from error
 
-    intent = CandidateEvidenceWriteIntent(
-        tenant_id=tenant_id,
-        candidate_id=candidate_id,
-        evidence_id=evidence_id,
-        evidence_version_id=evidence_version_id,
-        ingestion_reference="ING-" + uuid.uuid4().hex,
-        media_type=media_type,
-        original_filename=original_filename,
-        admitted_max_content_length=content_length,
-    )
+    try:
+        intent = CandidateEvidenceWriteIntent(
+            tenant_id=tenant_id,
+            candidate_id=candidate_id,
+            evidence_id=evidence_id,
+            evidence_version_id=evidence_version_id,
+            ingestion_reference="ING-" + uuid.uuid4().hex,
+            media_type=media_type,
+            original_filename=original_filename,
+            admitted_max_content_length=content_length,
+        )
+    except ValueError as error:
+        raise HTTPException(status_code=422, detail=str(error)) from error
     storage = _storage()
 
     def transaction(callback):
@@ -220,12 +247,16 @@ async def upload_candidate_evidence(
             chunks=_request_chunks(request, content_length),
             actor_principal_id=actor_id,
             offer_id=offer_id,
+            evidence_kind=evidence_kind.value,
         )
         # Re-inspect the exact provider object version outside Mongo. A HEAD
         # failure leaves PROVIDER_VERIFIED evidence unregistered for recovery.
         verified = await asyncio.to_thread(storage.inspect, intent, provider_evidence)
     except CandidateEvidenceUploadOrchestrationError as error:
         status = 202 if error.uncertain else 422
+        raise HTTPException(status_code=status, detail=error.code) from error
+    except CandidateEvidenceS3Error as error:
+        status = 202 if error.uncertain else 503
         raise HTTPException(status_code=status, detail=error.code) from error
 
     metadata = CandidateEvidenceObjectMetadata(
@@ -282,4 +313,47 @@ async def upload_candidate_evidence(
     }
 
 
-__all__ = ["router", "upload_candidate_evidence"]
+@router.get("/candidates/{candidate_id}/evidence/{evidence_id}/{evidence_version_id}")
+async def read_candidate_evidence(
+    candidate_id: str,
+    evidence_id: str,
+    evidence_version_id: str,
+    context: TenantAuthorizationContext = Depends(_READ),
+):
+    """Read exact-version evidence only after tenant-scoped custody and byte verification."""
+    _, database = _database()
+    _, _, custody = _registries(database)
+
+    def load(tx):
+        try:
+            return custody.get(
+                tenant_id=context.tenant_id,
+                candidate_id=candidate_id,
+                evidence_id=evidence_id,
+                evidence_version_id=evidence_version_id,
+                session=tx,
+            )
+        except CandidateEvidenceRegistryNotFound as error:
+            raise HTTPException(status_code=404, detail="CANDIDATE_EVIDENCE_NOT_FOUND") from error
+
+    metadata = _transaction(load)
+    storage = _storage()
+    try:
+        verified_file = await asyncio.to_thread(storage.read_verified_object, metadata)
+    except CandidateEvidenceS3Error as error:
+        raise HTTPException(status_code=503, detail=error.code) from error
+
+    return StreamingResponse(
+        iter(lambda: verified_file.read(64 * 1024), b""),
+        media_type=metadata.media_type,
+        headers={
+            "Content-Length": str(metadata.byte_length),
+            "Content-Disposition": "attachment",
+            "Cache-Control": "no-store",
+            "X-Content-Digest-SHA3-512": metadata.content_digest_sha3_512,
+        },
+        background=BackgroundTask(verified_file.close),
+    )
+
+
+__all__ = ["router", "upload_candidate_evidence", "read_candidate_evidence"]
