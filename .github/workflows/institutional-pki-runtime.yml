@@ -1,0 +1,39 @@
+name: WILSY EOS Institutional PKI Runtime
+on:
+  pull_request:
+    paths:
+      - "tools/eos/security/institutional_pki.py"
+      - "tools/eos/security/institutional_pki_provisioning.py"
+      - "tools/eos/security/institutional_pki_cli.py"
+      - "tools/eos/api/institutional_pki_router.py"
+      - "tools/eos/api/server.py"
+      - "tests/unit/test_institutional_pki.py"
+      - ".github/workflows/institutional-pki-runtime.yml"
+permissions:
+  contents: read
+jobs:
+  institutional-pki:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+          cache-dependency-path: requirements.txt
+      - name: Install Python dependencies
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install -r requirements.txt pytest==9.1.1
+      - name: Compile canonical PKI runtime and server composition
+        run: |
+          python -m py_compile \
+            tools/eos/security/institutional_pki.py \
+            tools/eos/security/institutional_pki_provisioning.py \
+            tools/eos/security/institutional_pki_cli.py \
+            tools/eos/api/institutional_pki_router.py \
+            tools/eos/api/server.py \
+            tests/unit/test_institutional_pki.py
+      - name: Run institutional PKI verification and CRL publication tests
+        run: python -m pytest -q tests/unit/test_institutional_pki.py
