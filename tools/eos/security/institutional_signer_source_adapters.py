@@ -9,8 +9,13 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 from datetime import datetime, timezone
+import base64
+import json
 import re
-from typing import Final, Protocol, runtime_checkable
+from typing import Final, Mapping, Protocol, runtime_checkable
+
+from cryptography.exceptions import InvalidSignature
+from cryptography.hazmat.primitives.asymmetric.ed25519 import Ed25519PublicKey
 
 TENANT_ID: Final[str] = "WILSYTENANT-4CD2FZ4O"
 EVIDENCE_KINDS: Final[frozenset[str]] = frozenset({
@@ -62,6 +67,16 @@ class InstitutionalSignerSourceLookup:
     required_scope: str | None = None
 
     def __post_init__(self) -> None:
+        try:
+            signature = base64.b64decode(self.response_signature_base64, validate=True)
+        except (ValueError, TypeError):
+            raise InstitutionalSignerSourceAdapterError(
+                "INSTITUTIONAL_SIGNER_SOURCE_SIGNATURE_ENCODING_INVALID"
+            ) from None
+        if len(signature) != 64:
+            raise InstitutionalSignerSourceAdapterError(
+                "INSTITUTIONAL_SIGNER_SOURCE_SIGNATURE_LENGTH_INVALID"
+            )
         if self.tenant_id != TENANT_ID:
             raise InstitutionalSignerSourceAdapterError(
                 "INSTITUTIONAL_SIGNER_SOURCE_TENANT_SCOPE_INVALID"
@@ -107,6 +122,8 @@ class InstitutionalSignerSourceEvidence:
     revoked: bool
     observed_at: datetime
     response_signature_reference: str
+    response_signing_key_id: str
+    response_signature_base64: str
     legal_entity_reference: str | None = None
     enrollment_requester_principal_id: str | None = None
     reviewer_principal_id: str | None = None
@@ -120,6 +137,7 @@ class InstitutionalSignerSourceEvidence:
         for name in (
             "evidence_reference", "source_system_id", "source_record_id",
             "source_revision", "subject_principal_id", "response_signature_reference",
+            "response_signing_key_id",
         ):
             _identifier(name, getattr(self, name))
         if self.tenant_id != TENANT_ID:
@@ -203,6 +221,71 @@ class InstitutionalSignerSourceAdapterSet(Protocol):
     def read_independent_approval(
         self, *, lookup: InstitutionalSignerSourceLookup
     ) -> InstitutionalSignerSourceEvidence: ...
+
+
+def _canonical_source_response_payload(
+    response: InstitutionalSignerSourceEvidence,
+) -> bytes:
+    """Canonical bytes signed by an institutional source response key."""
+    payload = {
+        "authority_scope": response.authority_scope,
+        "certificate_fingerprint_sha256": response.certificate_fingerprint_sha256,
+        "evidence_fingerprint_sha256": response.evidence_fingerprint_sha256,
+        "evidence_kind": response.evidence_kind,
+        "evidence_reference": response.evidence_reference,
+        "enrollment_requester_principal_id": response.enrollment_requester_principal_id,
+        "legal_entity_reference": response.legal_entity_reference,
+        "observed_at": response.observed_at.isoformat(),
+        "response_signing_key_id": response.response_signing_key_id,
+        "reviewer_principal_id": response.reviewer_principal_id,
+        "revoked": response.revoked,
+        "source_record_id": response.source_record_id,
+        "source_revision": response.source_revision,
+        "source_system_id": response.source_system_id,
+        "status": response.status,
+        "subject_principal_id": response.subject_principal_id,
+        "tenant_id": response.tenant_id,
+        "valid_from": response.valid_from.isoformat(),
+        "valid_until": response.valid_until.isoformat() if response.valid_until else None,
+    }
+    return json.dumps(payload, sort_keys=True, separators=(",", ":"), ensure_ascii=True).encode("ascii")
+
+
+class Ed25519InstitutionalSignerSourceResponseAuthenticator:
+    """Verify source responses against explicitly pinned, source-bound Ed25519 keys.
+
+    Key provisioning, rotation and revocation are external governance responsibilities.
+    Empty trust configuration denies every response.
+    """
+
+    def __init__(self, trusted_public_keys: Mapping[tuple[str, str], bytes]) -> None:
+        self._trusted_public_keys: dict[tuple[str, str], Ed25519PublicKey] = {}
+        for (source_system_id, key_id), raw_key in trusted_public_keys.items():
+            source_id = _identifier("source_system_id", source_system_id)
+            trusted_key_id = _identifier("response_signing_key_id", key_id)
+            if type(raw_key) is not bytes or len(raw_key) != 32:
+                raise InstitutionalSignerSourceAdapterError(
+                    "INSTITUTIONAL_SIGNER_SOURCE_TRUSTED_KEY_INVALID"
+                )
+            self._trusted_public_keys[(source_id, trusted_key_id)] = Ed25519PublicKey.from_public_bytes(raw_key)
+
+    def authenticate_response(
+        self, *, expected_source_system_id: str,
+        lookup: InstitutionalSignerSourceLookup,
+        response: InstitutionalSignerSourceEvidence,
+    ) -> None:
+        del lookup  # Exact request/response field binding is enforced by the caller.
+        key = self._trusted_public_keys.get((expected_source_system_id, response.response_signing_key_id))
+        if key is None or response.source_system_id != expected_source_system_id:
+            raise InstitutionalSignerSourceAdapterError(
+                "INSTITUTIONAL_SIGNER_SOURCE_SIGNING_KEY_UNTRUSTED"
+            )
+        try:
+            key.verify(base64.b64decode(response.response_signature_base64, validate=True), _canonical_source_response_payload(response))
+        except (InvalidSignature, ValueError):
+            raise InstitutionalSignerSourceAdapterError(
+                "INSTITUTIONAL_SIGNER_SOURCE_RESPONSE_SIGNATURE_INVALID"
+            ) from None
 
 
 def read_authenticated_source_evidence(
@@ -290,6 +373,7 @@ __all__ = [
     "InstitutionalSignerSourceEvidence",
     "InstitutionalSignerEvidenceSourceAdapter",
     "InstitutionalSignerSourceResponseAuthenticator",
+    "Ed25519InstitutionalSignerSourceResponseAuthenticator",
     "InstitutionalSignerSourceAdapterSet",
     "UnavailableInstitutionalSignerSourceAdapterSet",
     "read_authenticated_source_evidence",
