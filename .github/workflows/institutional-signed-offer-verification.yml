@@ -7,6 +7,7 @@ on:
       - "tools/eos/api/institutional_signer_router.py"
       - "tools/eos/api/institutional_source_key_router.py"
       - "tools/eos/security/institutional_source_signing_key_registry.py"
+            tools/eos/security/institutional_source_key_governance_evidence.py \
       - "tools/eos/security/institutional_source_key_governance_evidence.py"
       - "tools/eos/security/institutional_signature_evidence_registry.py"
       - "tools/eos/security/institutional_signer_enrollment_registry.py"
