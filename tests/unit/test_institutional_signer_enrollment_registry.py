@@ -211,6 +211,18 @@ def test_revocation_publication_closes_only_when_verified_crl_contains_exact_iss
         idempotency_key="revoke-001",
         session=tx,
     )
+    wrong_issuer = ({
+        "issuer_subject_sha256": "e" * 64,
+        "crl_number": 9,
+        "crl_fingerprint_sha256": "d" * 64,
+        "revoked_serial_numbers_hex": ("abc123",),
+    },)
+    assert registry.reconcile_crl_publications(
+        verified_crls=wrong_issuer,
+        reconciled_at=datetime(2026, 11, 7, 15, tzinfo=timezone.utc),
+        actor_reference="runtime://institutional-pki",
+        session=tx,
+    ) == 0
     observed = ({
         "issuer_subject_sha256": "c" * 64,
         "crl_number": 9,
