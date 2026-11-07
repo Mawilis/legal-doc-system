@@ -61,7 +61,7 @@ class CandidateEvidenceUploadOrchestrator:
         self._id_factory = id_factory
 
     def _create_pending(self, intent: CandidateEvidenceWriteIntent, attempt_id: str,
-                        actor_id: str, offer_id: str | None) -> CandidateEvidenceUploadAttempt:
+                        actor_id: str, offer_id: str | None, evidence_kind: str | None) -> CandidateEvidenceUploadAttempt:
         now = self._clock()
         pending = CandidateEvidenceUploadAttempt(
             tenant_id=intent.tenant_id,
@@ -79,6 +79,11 @@ class CandidateEvidenceUploadOrchestrator:
             created_at=now,
             updated_at=now,
             offer_id=offer_id,
+            actor_principal_id=actor_id,
+            evidence_kind=evidence_kind,
+            media_type=intent.media_type,
+            original_filename=intent.original_filename,
+            admitted_max_content_length=intent.admitted_max_content_length,
         )
         return self._transaction(lambda session: self._registry.create(pending, session=session))
 
@@ -105,13 +110,14 @@ class CandidateEvidenceUploadOrchestrator:
         chunks: AsyncIterable[bytes],
         actor_principal_id: str,
         offer_id: str | None = None,
+        evidence_kind: str | None = None,
     ) -> tuple[str, CandidateEvidenceBinaryObjectEvidence]:
         if not actor_principal_id or actor_principal_id != actor_principal_id.strip():
             raise CandidateEvidenceUploadOrchestrationError("UPLOAD_ACTOR_REQUIRED")
         attempt_id = self._id_factory()
         # Commit this record before S3 is contacted. A process crash from this
         # point forward leaves a durable item for reconciliation.
-        self._create_pending(intent, attempt_id, actor_principal_id, offer_id)
+        self._create_pending(intent, attempt_id, actor_principal_id, offer_id, evidence_kind)
 
         try:
             session = await asyncio.to_thread(self._storage.begin, intent)
