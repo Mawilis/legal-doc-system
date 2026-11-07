@@ -259,6 +259,88 @@ def issue_intermediate(
     return key_path, cert_path, cert.fingerprint(hashes.SHA256()).hex()
 
 
+
+def issue_intermediate_from_kms_csr(
+    *,
+    root_certificate_pem: Path,
+    root_private_key_pem: Path,
+    root_passphrase: bytes,
+    csr_pem: bytes,
+    output_directory: Path,
+    expected_common_name: str,
+    organization: str,
+    crl_distribution_base_url: str,
+    validity_days: int = 1825,
+) -> tuple[Path, str]:
+    """Offline-sign a CSR whose RSA private key remains non-exportable in KMS."""
+    if type(validity_days) is not int or not 90 <= validity_days <= 3650:
+        raise InstitutionalPKIError("INSTITUTIONAL_PKI_INTERMEDIATE_VALIDITY_INVALID")
+    if not isinstance(csr_pem, bytes) or not csr_pem:
+        raise InstitutionalPKIError("INSTITUTIONAL_PKI_KMS_CSR_REQUIRED")
+    try:
+        root = x509.load_pem_x509_certificate(root_certificate_pem.read_bytes())
+        root_key = serialization.load_pem_private_key(
+            root_private_key_pem.read_bytes(), password=root_passphrase
+        )
+        csr = x509.load_pem_x509_csr(csr_pem)
+    except Exception as error:
+        raise InstitutionalPKIError("INSTITUTIONAL_PKI_ROOT_OR_KMS_CSR_INVALID") from error
+    _validate_ca_keypair(root, root_key, require_self_signed=True)
+    constraints = root.extensions.get_extension_for_class(x509.BasicConstraints).value
+    if constraints.path_length != 1:
+        raise InstitutionalPKIError("INSTITUTIONAL_PKI_ROOT_CA_PROFILE_INVALID")
+    if not csr.is_signature_valid:
+        raise InstitutionalPKIError("INSTITUTIONAL_PKI_KMS_CSR_SIGNATURE_INVALID")
+    public_key = csr.public_key()
+    if not isinstance(public_key, rsa.RSAPublicKey) or public_key.key_size != 3072 or public_key.public_numbers().e != 65537:
+        raise InstitutionalPKIError("INSTITUTIONAL_PKI_KMS_CSR_PUBLIC_KEY_INVALID")
+    common_names = csr.subject.get_attributes_for_oid(NameOID.COMMON_NAME)
+    organizations = csr.subject.get_attributes_for_oid(NameOID.ORGANIZATION_NAME)
+    if (
+        len(common_names) != 1 or common_names[0].value != expected_common_name
+        or len(organizations) != 1 or organizations[0].value != organization
+    ):
+        raise InstitutionalPKIError("INSTITUTIONAL_PKI_KMS_CSR_SUBJECT_NOT_APPROVED")
+    directory = output_directory.expanduser().resolve()
+    directory.mkdir(mode=0o700, parents=True, exist_ok=True)
+    os.chmod(directory, 0o700)
+    cert_path = directory / f"{_safe_component(expected_common_name)}-intermediate-cert.pem"
+    if cert_path.exists():
+        raise InstitutionalPKIError("INSTITUTIONAL_PKI_OUTPUT_ALREADY_EXISTS")
+    now = datetime.now(timezone.utc)
+    cert = (
+        x509.CertificateBuilder()
+        .subject_name(csr.subject)
+        .issuer_name(root.subject)
+        .public_key(public_key)
+        .serial_number(x509.random_serial_number())
+        .not_valid_before(now - timedelta(minutes=5))
+        .not_valid_after(min(now + timedelta(days=validity_days), root.not_valid_after_utc))
+        .add_extension(x509.BasicConstraints(ca=True, path_length=0), critical=True)
+        .add_extension(x509.KeyUsage(
+            digital_signature=False, content_commitment=False, key_encipherment=False,
+            data_encipherment=False, key_agreement=False, key_cert_sign=True,
+            crl_sign=True, encipher_only=False, decipher_only=False,
+        ), critical=True)
+        .add_extension(x509.SubjectKeyIdentifier.from_public_key(public_key), critical=False)
+        .add_extension(x509.AuthorityKeyIdentifier.from_issuer_public_key(root_key.public_key()), critical=False)
+        .add_extension(
+            x509.CRLDistributionPoints([x509.DistributionPoint(
+                full_name=[x509.UniformResourceIdentifier(_crl_distribution_url(crl_distribution_base_url, root.subject))],
+                relative_name=None, reasons=None, crl_issuer=None,
+            )]),
+            critical=False,
+        )
+        .sign(root_key, hashes.SHA384())
+    )
+    try:
+        _write_public(cert_path, cert.public_bytes(serialization.Encoding.PEM))
+    except Exception:
+        cert_path.unlink(missing_ok=True)
+        raise
+    return cert_path, cert.fingerprint(hashes.SHA256()).hex()
+
+
 def assemble_crl_bundle(
     *,
     crl_paths: Iterable[Path],
