@@ -37,6 +37,10 @@ class SignerEnrollmentRequest(CertificateChain):
     signatory_mandate_evidence_reference: str = Field(min_length=1, max_length=512)
 
 
+class SignerEnrollmentApproval(CertificateChain):
+    approval_attestation_reference: str = Field(min_length=1, max_length=512)
+
+
 class SignerRevocationRequest(StrictModel):
     reason: str = Field(min_length=1, max_length=2000)
 
@@ -140,7 +144,7 @@ async def request_signer_enrollment(
 @router.post("/enrollments/{certificate_fingerprint_sha256}/approve")
 async def approve_signer_enrollment(
     certificate_fingerprint_sha256: str,
-    body: CertificateChain,
+    body: SignerEnrollmentApproval,
     request: Request,
     idempotency_key: str = Header(alias="Idempotency-Key", min_length=1, max_length=200),
     context: TenantAuthorizationContext = Depends(_APPROVE),
@@ -161,6 +165,7 @@ async def approve_signer_enrollment(
         tenant_id=context.tenant_id,
         certificate_fingerprint_sha256=certificate_fingerprint_sha256,
         approver_principal_id=context.identity.identity_id,
+        approval_attestation_reference=body.approval_attestation_reference,
         approved_at=datetime.now(timezone.utc),
         idempotency_key=idempotency_key, session=tx,
     ))
