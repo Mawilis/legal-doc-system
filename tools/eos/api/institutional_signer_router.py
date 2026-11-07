@@ -181,6 +181,7 @@ async def revoke_signer_enrollment(
     idempotency_key: str = Header(alias="Idempotency-Key", min_length=1, max_length=200),
     context: TenantAuthorizationContext = Depends(_REVOKE),
 ):
+    _require_institutional_tenant(context)
     return _transaction(lambda registry, tx: registry.revoke(
         tenant_id=context.tenant_id,
         certificate_fingerprint_sha256=certificate_fingerprint_sha256,
