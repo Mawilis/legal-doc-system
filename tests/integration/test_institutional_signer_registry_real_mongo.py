@@ -74,6 +74,36 @@ def test_signer_enrollment_approval_and_revocation_are_atomic_on_replica_set():
                 "identity_proofing": identity,
                 "signatory_mandate": mandate,
             }
+
+            def abort_after_enrollment(abort_session):
+                registry.request_enrollment(
+                    tenant_id="WILSYTENANT-4CD2FZ4O",
+                    certificate_fingerprint_sha256="a" * 64,
+                    certificate_serial_number_hex="abc123",
+                    subject_common_name="WILSY Authorised Signatory",
+                    issuer_common_name="WILSY Intermediate CA",
+                    issuer_subject_sha256="c" * 64,
+                    trust_root_sha256="b" * 64,
+                    identity_proofing_evidence_reference="proofing://institutional/case-001",
+                    signatory_mandate_evidence_reference="mandate://institutional/resolution-001",
+                    requested_by_principal_id="owner-requester",
+                    requested_at=now, idempotency_key="request-aborted", session=abort_session,
+                    evidence_provenance_fingerprint_sha256=_digest(enrollment_provenance),
+                    evidence_provenance_snapshot=enrollment_provenance,
+                )
+                raise RuntimeError("force transaction abort after provenance and event writes")
+
+            with pytest.raises(RuntimeError, match="force transaction abort"):
+                with client.start_session() as abort_session:
+                    abort_session.with_transaction(
+                        abort_after_enrollment,
+                        read_concern=ReadConcern("snapshot"),
+                        write_concern=WriteConcern("majority", j=True),
+                        read_preference=ReadPreference.PRIMARY,
+                    )
+            assert records.count_documents({"tenant_id": "WILSYTENANT-4CD2FZ4O"}) == 0
+            assert events.count_documents({"tenant_id": "WILSYTENANT-4CD2FZ4O"}) == 0
+
             pending = registry.request_enrollment(
                 tenant_id="WILSYTENANT-4CD2FZ4O",
                 certificate_fingerprint_sha256="a" * 64,
