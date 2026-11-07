@@ -25,7 +25,7 @@ STAMP = datetime(2026, 9, 1, tzinfo=timezone.utc)
 
 
 def test_runtime_version_source_is_canonical() -> None:
-    assert POLICY_VERSION == "v1.1.0-M11-R8-R3B-P8-P3A"
+    assert POLICY_VERSION == "v1.2.0-INSTITUTIONAL-SOURCE-KEY-ADMIN"
 
 
 def make(**overrides: object) -> TenantBusinessRoleAuthority:
