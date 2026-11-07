@@ -104,10 +104,11 @@ def _activate_operations(
     client: MongoClient[Any],
     database: Any,
     product_id: TenantProductId = TenantProductId.OPERATIONS,
+    tenant_id: str = TENANT,
 ) -> None:
-    entitlement_id = derive_tenant_product_entitlement_id(TENANT, product_id)
+    entitlement_id = derive_tenant_product_entitlement_id(tenant_id, product_id)
     pending = create_tenant_product_entitlement(
-        tenant_id=TENANT,
+        tenant_id=tenant_id,
         entitlement_id=entitlement_id,
         product_id=product_id,
         source_evidence_reference=f"my-work-{product_id.value.lower()}-entitlement",
@@ -146,8 +147,8 @@ def test_authenticated_my_work_http_reads_real_operations_queue_inside_owner_tra
     monkeypatch: Any,
 ) -> None:
     client, database = mongo_context
-    _activate_operations(client, database, TenantProductId.OPERATIONS)
-    _activate_operations(client, database, TenantProductId.INTELLIGENCE)
+    _activate_operations(client, database, TenantProductId.OPERATIONS, tenant_id=tenant_id)
+    _activate_operations(client, database, TenantProductId.INTELLIGENCE, tenant_id=tenant_id)
 
     module_source = my_work.module_source
     monkeypatch.setattr(module_source, "get_client", lambda: client)
