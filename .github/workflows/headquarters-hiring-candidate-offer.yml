@@ -3,7 +3,7 @@ name: WILSY Headquarters Candidate and Offer Lifecycle
 on:
   pull_request:
     paths:
-      - "tools/eos/saas/domain/hiring_lifecycle.py"
+      - "tools/eos/api/hiring_lifecycle_router.py"\n      - "tools/eos/api/server.py"\n      - "tools/eos/auth/permission_namespace.py"\n      - "tools/eos/auth/tenant_authorization.py"\n      - "tools/eos/auth/roles.py"\n      - "tests/integration/test_hiring_lifecycle_authenticated_http.py"\n      - "tools/eos/saas/domain/hiring_lifecycle.py"
       - "tools/eos/saas/hr/hiring_lifecycle_registry.py"
       - "tests/unit/test_hiring_lifecycle_domain.py"
       - "tests/integration/test_hiring_lifecycle_registry_real_mongo.py"
@@ -53,7 +53,7 @@ jobs:
             tests/unit/test_hiring_lifecycle_domain.py \
             tests/integration/test_hiring_lifecycle_registry_real_mongo.py
       - name: Run candidate, offer and real replica-set persistence tests
-        run: python -m pytest -q tests/unit/test_hiring_lifecycle_domain.py tests/integration/test_hiring_lifecycle_registry_real_mongo.py
+        run: python -m pytest -q tests/unit/test_hiring_lifecycle_domain.py tests/integration/test_hiring_lifecycle_registry_real_mongo.py tests/integration/test_hiring_lifecycle_authenticated_http.py
       - name: Stop MongoDB replica-set container
         if: always()
         run: docker rm --force hiring-mongo || true
