@@ -280,17 +280,18 @@ class OfferAcceptanceEvidence:
     evidence_reference: str
     evidence_fingerprint: str
     accepted_at: datetime
-    signature_verification_reference: str
+    signature_verification_reference: str | None = None
 
     def __post_init__(self) -> None:
         object.__setattr__(self, "evidence_reference", _required("offer_acceptance_reference", self.evidence_reference))
         if not isinstance(self.evidence_fingerprint, str) or not _HEX_512.fullmatch(self.evidence_fingerprint):
             raise HiringLifecycleError("HIRING_OFFER_ACCEPTANCE_FINGERPRINT_INVALID")
         object.__setattr__(self, "accepted_at", _aware(self.accepted_at))
-        object.__setattr__(
-            self, "signature_verification_reference",
-            _required("offer_acceptance_signature_verification_reference", self.signature_verification_reference),
-        )
+        if self.signature_verification_reference is not None:
+            object.__setattr__(
+                self, "signature_verification_reference",
+                _required("offer_acceptance_signature_verification_reference", self.signature_verification_reference),
+            )
 
     def to_dict(self) -> dict[str, object]:
         return {
@@ -543,6 +544,8 @@ class EmploymentOffer:
             raise HiringLifecycleError("HIRING_OFFER_REVISION_CONFLICT")
         if self.status is not OfferStatus.SENT:
             raise HiringLifecycleError("HIRING_OFFER_MUST_BE_SENT_BEFORE_ACCEPTANCE")
+        if not evidence.signature_verification_reference:
+            raise HiringLifecycleError("HIRING_OFFER_CRYPTOGRAPHIC_SIGNATURE_VERIFICATION_REQUIRED")
         if evidence.accepted_at >= self.terms.expires_at:
             raise HiringLifecycleError("HIRING_OFFER_ACCEPTANCE_AFTER_EXPIRY")
         return EmploymentOffer(
