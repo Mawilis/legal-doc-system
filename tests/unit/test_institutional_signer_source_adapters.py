@@ -349,8 +349,8 @@ def test_source_key_rotation_accepts_new_key_and_rejects_old_key_after_cutover()
         private_key=new_private_key, response_signing_key_id="dha-response-key-2027"
     )
     authenticator = Ed25519InstitutionalSignerSourceResponseAuthenticator([
-        _trust_key(old_public_key, valid_until=datetime(2026, 11, 8, tzinfo=timezone.utc)),
-        _trust_key(new_public_key, key_id="dha-response-key-2027", valid_from=datetime(2026, 11, 8, tzinfo=timezone.utc)),
+        _trust_key(old_public_key, valid_until=datetime(2026, 11, 7, tzinfo=timezone.utc)),
+        _trust_key(new_public_key, key_id="dha-response-key-2027", valid_from=datetime(2026, 11, 6, 23, 0, tzinfo=timezone.utc)),
     ])
     authenticator.authenticate_response(
         expected_source_system_id="DHA-NPR-VERIFICATION", lookup=lookup(), response=new_response
@@ -382,9 +382,9 @@ def test_trust_key_requires_a_finite_validity_window():
 def test_expired_key_cannot_be_resurrected_by_backdating_lookup_evaluation():
     response, public_key = _signed_source_response()
     authenticator = Ed25519InstitutionalSignerSourceResponseAuthenticator([
-        _trust_key(public_key, valid_until=datetime(2026, 11, 8, tzinfo=timezone.utc))
+        _trust_key(public_key, valid_until=datetime(2026, 11, 7, tzinfo=timezone.utc))
     ])
-    historical_lookup = lookup(evaluated_at=datetime(2026, 11, 7, tzinfo=timezone.utc))
+    historical_lookup = lookup(evaluated_at=datetime(2026, 11, 6, 23, 0, tzinfo=timezone.utc))
     with pytest.raises(InstitutionalSignerSourceAdapterError) as error:
         authenticator.authenticate_response(
             expected_source_system_id="DHA-NPR-VERIFICATION",
