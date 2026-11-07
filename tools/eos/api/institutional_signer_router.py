@@ -12,7 +12,7 @@ from tools.eos.api.tenant_authorization_http import RequireTenantAuthorization, 
 from tools.eos.kernel.db import get_client, get_database
 from tools.eos.security.institutional_pki import InstitutionalPKIError, InstitutionalPKIVerifier
 from tools.eos.security.institutional_signer_enrollment_registry import (
-    COLLECTION, EVENT_COLLECTION, InstitutionalSignerEnrollmentRegistry,
+    COLLECTION, EVENT_COLLECTION, INSTITUTIONAL_TENANT_ID, InstitutionalSignerEnrollmentRegistry,
     InstitutionalSignerRegistryConflict, InstitutionalSignerRegistryError,
     InstitutionalSignerRegistryNotFound,
 )
@@ -70,6 +70,9 @@ def _transaction(callback):
     if client is None or database is None:
         raise HTTPException(status_code=503, detail="INSTITUTIONAL_SIGNER_DATABASE_UNAVAILABLE")
     try:
+        InstitutionalSignerEnrollmentRegistry.ensure_indexes(
+            database[COLLECTION], database[EVENT_COLLECTION],
+        )
         registry = InstitutionalSignerEnrollmentRegistry(
             database[COLLECTION], database[EVENT_COLLECTION],
         )
