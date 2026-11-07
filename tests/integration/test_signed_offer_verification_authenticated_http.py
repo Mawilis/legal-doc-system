@@ -44,7 +44,8 @@ def test_authenticated_signed_offer_verification_is_required_before_acceptance(m
     db = client[database_name]
     now = datetime.now(timezone.utc)
     tenant = f"tenant-{uuid.uuid4().hex}"
-    director = f"principal-{uuid.uuid4().hex}"
+    director = f"principal-director-{uuid.uuid4().hex}"
+    manager = f"principal-manager-{uuid.uuid4().hex}"
     candidate_id = f"candidate-{uuid.uuid4().hex}"
     offer_id = f"offer-{uuid.uuid4().hex}"
     evidence_id = f"evidence-{uuid.uuid4().hex}"
@@ -87,18 +88,18 @@ def test_authenticated_signed_offer_verification_is_required_before_acceptance(m
         draft = EmploymentOffer(
             tenant_id=tenant, offer_id=offer_id, requisition_id="REQ-SIGNED-1",
             candidate_id=candidate_id, terms=terms,
-            prepared_by_principal_id=director, created_at=now,
+            prepared_by_principal_id=manager, created_at=now,
         )
         def create_and_send(session):
             hiring_registry.create_offer(
-                draft, actor_principal_id=director, occurred_at=now,
+                draft, actor_principal_id=manager, occurred_at=now,
                 session=session, idempotency_key="offer-create",
             )
             current = hiring_registry.get_offer(tenant_id=tenant, offer_id=offer_id, session=session)
             submitted_at = now + timedelta(minutes=1)
-            updated = current.submit(actor_principal_id=director, submitted_at=submitted_at, expected_revision=1)
+            updated = current.submit(actor_principal_id=manager, submitted_at=submitted_at, expected_revision=1)
             current = hiring_registry.transition_offer(
-                current=current, updated=updated, actor_principal_id=director,
+                current=current, updated=updated, actor_principal_id=manager,
                 action="OFFER_SUBMITTED", occurred_at=submitted_at,
                 expected_revision=1, session=session, idempotency_key="offer-submit",
             )
@@ -116,9 +117,9 @@ def test_authenticated_signed_offer_verification_is_required_before_acceptance(m
                 expected_revision=2, session=session, idempotency_key="offer-approve",
             )
             sent_at = now + timedelta(minutes=3)
-            updated = current.send(actor_principal_id=director, sent_at=sent_at, expected_revision=3)
+            updated = current.send(actor_principal_id=manager, sent_at=sent_at, expected_revision=3)
             return hiring_registry.transition_offer(
-                current=current, updated=updated, actor_principal_id=director,
+                current=current, updated=updated, actor_principal_id=manager,
                 action="OFFER_SENT", occurred_at=sent_at,
                 expected_revision=3, session=session, idempotency_key="offer-send",
             )
@@ -134,7 +135,7 @@ def test_authenticated_signed_offer_verification_is_required_before_acceptance(m
             object_version_reference="opaque-version-reference",
             provider_integrity_reference="opaque-provider-etag",
             ingestion_reference=f"ING-{uuid.uuid4().hex}",
-            created_at=now, created_by_principal_id=director, offer_id=offer_id,
+            created_at=now, created_by_principal_id=manager, offer_id=offer_id,
         )
         transaction(lambda session: evidence_registry.register(
             evidence, actor_principal_id=director,
