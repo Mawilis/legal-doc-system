@@ -238,11 +238,14 @@ def issue_crl(
     issuer_passphrase: bytes,
     output_path: Path,
     revoked_serial_numbers: Iterable[int] = (),
+    crl_number: int,
     validity_hours: int = 24,
 ) -> tuple[Path, str]:
     """Publish a bounded-lifetime CRL signed by the exact configured issuer."""
     if type(validity_hours) is not int or not 1 <= validity_hours <= 168:
         raise InstitutionalPKIError("INSTITUTIONAL_PKI_CRL_VALIDITY_INVALID")
+    if type(crl_number) is not int or crl_number < 1:
+        raise InstitutionalPKIError("INSTITUTIONAL_PKI_CRL_NUMBER_INVALID")
     try:
         issuer = x509.load_pem_x509_certificate(issuer_certificate_pem.read_bytes())
         key = serialization.load_pem_private_key(
@@ -250,7 +253,7 @@ def issue_crl(
         )
     except Exception as error:
         raise InstitutionalPKIError("INSTITUTIONAL_PKI_ISSUER_KEY_OR_CERTIFICATE_INVALID") from error
-    if issuer.public_key().public_numbers() != key.public_key().public_numbers():
+    if not isinstance(key, rsa.RSAPrivateKey) or issuer.public_key().public_numbers() != key.public_key().public_numbers():
         raise InstitutionalPKIError("INSTITUTIONAL_PKI_ISSUER_KEY_MISMATCH")
     constraints = issuer.extensions.get_extension_for_class(x509.BasicConstraints).value
     usage = issuer.extensions.get_extension_for_class(x509.KeyUsage).value
@@ -262,6 +265,7 @@ def issue_crl(
         .issuer_name(issuer.subject)
         .last_update(now - timedelta(minutes=1))
         .next_update(now + timedelta(hours=validity_hours))
+        .add_extension(x509.CRLNumber(crl_number), critical=False)
     )
     seen: set[int] = set()
     for serial in revoked_serial_numbers:
