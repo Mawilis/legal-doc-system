@@ -137,6 +137,8 @@ def test_offline_root_can_issue_kms_csr_without_exporting_subordinate_private_ke
         output_directory=tmp_path / "issued-intermediate",
         expected_common_name="WILSY EOS Intermediate CA",
         organization="Wilsy (Pty) Ltd",
+        expected_organizational_unit="Institutional PKI",
+        expected_country_code="ZA",
         crl_distribution_base_url="https://pki.example.test/api/security/pki/crl",
         validity_days=180,
     )
