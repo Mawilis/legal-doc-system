@@ -124,9 +124,16 @@ async def request_signer_enrollment(
         )
         from cryptography import x509
         leaf = x509.load_pem_x509_certificate(leaf_pem)
-        issuer = x509.load_pem_x509_certificate(intermediates[0])
+        issuers = [
+            x509.load_pem_x509_certificate(value)
+            for value in intermediates
+            if x509.load_pem_x509_certificate(value).subject == leaf.issuer
+        ]
         common_names = leaf.subject.get_attributes_for_oid(x509.NameOID.COMMON_NAME)
-        issuer_names = issuer.subject.get_attributes_for_oid(x509.NameOID.COMMON_NAME)
+        issuer_names = (
+            issuers[0].subject.get_attributes_for_oid(x509.NameOID.COMMON_NAME)
+            if len(issuers) == 1 else []
+        )
         if not common_names or not issuer_names:
             raise HTTPException(status_code=422, detail="INSTITUTIONAL_SIGNER_CERTIFICATE_SUBJECT_REQUIRED")
     except HTTPException:
