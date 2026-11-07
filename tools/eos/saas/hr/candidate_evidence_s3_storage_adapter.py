@@ -336,7 +336,7 @@ class CandidateEvidenceS3StorageAdapter:
                     metadata = head.get("Metadata") or {}
                     if (
                         metadata.get("wilsy-intent-fingerprint") != intent_fingerprint
-                        or head.get("ContentType") != media_type
+                        or (media_type is not None and head.get("ContentType") != media_type)
                         or metadata.get("wilsy-tenant-sha3-256") != _component(tenant_id)
                         or metadata.get("wilsy-candidate-sha3-256") != _component(candidate_id)
                         or metadata.get("wilsy-evidence-sha3-256") != _component(evidence_id)
