@@ -185,8 +185,40 @@ class InstitutionalPKIVerifier:
         issuer_fingerprints = {item.fingerprint(hashes.SHA256()) for item in self._issuer_certificates}
         if len(issuer_fingerprints) != len(self._issuer_certificates):
             raise InstitutionalPKIError("INSTITUTIONAL_PKI_ISSUER_CERTIFICATE_DUPLICATE")
-        for issuer_certificate in self._issuer_certificates:
+        configured_intermediates = tuple(
+            item for item in self._issuer_certificates
+            if item.fingerprint(hashes.SHA256()) not in anchor_fingerprints
+        )
+        for issuer_certificate in configured_intermediates:
+            _valid_at(issuer_certificate, datetime.now(timezone.utc))
             _is_ca(issuer_certificate)
+            current = issuer_certificate
+            visited = {current.fingerprint(hashes.SHA256())}
+            for _ in range(settings.max_chain_depth):
+                parents = [
+                    item for item in self._issuer_certificates
+                    if current.issuer == item.subject
+                    and item.fingerprint(hashes.SHA256()) not in visited
+                ]
+                if len(parents) != 1:
+                    raise InstitutionalPKIError("INSTITUTIONAL_PKI_CONFIGURED_ISSUER_CHAIN_INVALID")
+                parent = parents[0]
+                _valid_at(parent, datetime.now(timezone.utc))
+                constraints = _is_ca(parent)
+                _verify_signature(current, parent.public_key())
+                visited.add(parent.fingerprint(hashes.SHA256()))
+                if parent.fingerprint(hashes.SHA256()) in anchor_fingerprints:
+                    break
+                if constraints.path_length is not None:
+                    subordinate_count = sum(
+                        1 for fingerprint in visited
+                        if fingerprint not in anchor_fingerprints
+                    )
+                    if subordinate_count > constraints.path_length:
+                        raise InstitutionalPKIError("INSTITUTIONAL_PKI_CONFIGURED_ISSUER_PATH_LENGTH_EXCEEDED")
+                current = parent
+            else:
+                raise InstitutionalPKIError("INSTITUTIONAL_PKI_CONFIGURED_ISSUER_CHAIN_DEPTH_EXCEEDED")
         for crl in self._crls:
             issuers = [item for item in self._issuer_certificates if item.subject == crl.issuer]
             if len(issuers) != 1:
@@ -271,8 +303,16 @@ class InstitutionalPKIVerifier:
 
         anchor_fingerprints = {item.fingerprint(hashes.SHA256()) for item in self._anchors}
         supplied_fingerprints = {item.fingerprint(hashes.SHA256()) for item in supplied}
-        if len(supplied_fingerprints) != len(supplied) or supplied_fingerprints & anchor_fingerprints:
-            raise InstitutionalPKIError("INSTITUTIONAL_PKI_PRESENTED_CHAIN_DUPLICATE_OR_ROOT_INCLUDED")
+        configured_intermediate_fingerprints = {
+            item.fingerprint(hashes.SHA256()) for item in self._issuer_certificates
+            if item.fingerprint(hashes.SHA256()) not in anchor_fingerprints
+        }
+        if (
+            len(supplied_fingerprints) != len(supplied)
+            or supplied_fingerprints & anchor_fingerprints
+            or not supplied_fingerprints.issubset(configured_intermediate_fingerprints)
+        ):
+            raise InstitutionalPKIError("INSTITUTIONAL_PKI_PRESENTED_CHAIN_NOT_IN_CONFIGURED_ISSUERS")
         candidates = supplied + self._anchors
         chain = [leaf]
         current = leaf
