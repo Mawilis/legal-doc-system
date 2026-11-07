@@ -467,9 +467,11 @@ async def accept_offer(
         accepted_now = datetime.now(timezone.utc)
         if (
             verification.status.value != "VERIFIED"
+            or verification.candidate_id != current.candidate_id
             or verification.content_digest_sha3_512 != body.evidence_fingerprint
             or verification.signer_key_fingerprint != trust.key_fingerprint
             or not trust.active_at(accepted_now)
+            or verification.verified_at > accepted_now
             or current.sent_at is None
             or verification.signed_at < current.sent_at
             or verification.signed_at > current.terms.expires_at
