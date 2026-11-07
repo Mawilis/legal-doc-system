@@ -24,6 +24,7 @@ def _provenance_record(*, kind: str, now: datetime, **scope):
         "source_system_id": "governed-test-source",
         "source_record_id": f"record-{kind.lower()}",
         "source_revision": "revision-1",
+        "evidence_reference": f"evidence://source/{kind.lower()}",
         "status": "ACTIVE",
         "evidence_fingerprint_sha256": "e" * 64,
         "verified_at": now,
