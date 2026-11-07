@@ -328,6 +328,8 @@ class InstitutionalSourceSigningKeyLifecycleRegistry:
     def revoke(
         self, *, source_system_id: str, key_id: str, revoked_at: datetime,
         reason_reference: str, approval_evidence_reference: str,
+        revocation_approved_by_principal_id: str,
+        approval_evidence_fingerprint_sha256: str,
         revoked_by_principal_id: str, governance_decision_reference: str,
         idempotency_key: str,
         session: ClientSession,
@@ -339,6 +341,10 @@ class InstitutionalSourceSigningKeyLifecycleRegistry:
         key = _identifier("key_id", key_id)
         reason = _identifier("reason_reference", reason_reference)
         approval_evidence = _identifier("approval_evidence_reference", approval_evidence_reference)
+        approval_principal = _identifier("revocation_approved_by_principal_id", revocation_approved_by_principal_id)
+        approval_fingerprint = _identifier("approval_evidence_fingerprint_sha256", approval_evidence_fingerprint_sha256)
+        if len(approval_fingerprint) != 64 or any(ch not in "0123456789abcdef" for ch in approval_fingerprint):
+            raise SourceSigningKeyRegistryError("SOURCE_SIGNING_KEY_APPROVAL_FINGERPRINT_INVALID")
         actor = _identifier("revoked_by_principal_id", revoked_by_principal_id)
         decision = _identifier("governance_decision_reference", governance_decision_reference)
         idem = _identifier("idempotency_key", idempotency_key)
@@ -348,13 +354,18 @@ class InstitutionalSourceSigningKeyLifecycleRegistry:
         )
         if record is None:
             raise SourceSigningKeyRegistryConflict("SOURCE_SIGNING_KEY_NOT_FOUND")
-        if actor == record["proposed_by_principal_id"]:
+        if actor == record["proposed_by_principal_id"] or approval_principal in {
+            actor, record["proposed_by_principal_id"],
+        }:
             raise SourceSigningKeyRegistryConflict("SOURCE_SIGNING_KEY_MAKER_CHECKER_VIOLATION")
         record_fingerprint = _record_fingerprint(record)
         command_fingerprint = sha256(_canonical({
             "source_system_id": source, "key_id": key,
-            "revoked_by_principal_id": actor, "reason_reference": reason,
+            "revoked_by_principal_id": actor,
+            "revocation_approved_by_principal_id": approval_principal,
+            "reason_reference": reason,
             "approval_evidence_reference": approval_evidence,
+            "approval_evidence_fingerprint_sha256": approval_fingerprint,
             "governance_decision_reference": decision,
             "record_fingerprint_sha256": record_fingerprint,
         })).hexdigest()
@@ -382,8 +393,11 @@ class InstitutionalSourceSigningKeyLifecycleRegistry:
             "schema": EVENT_SCHEMA, "event_type": "REVOKED",
             "source_system_id": source, "key_id": key,
             "idempotency_key": idem, "occurred_at": occurred,
-            "actor_principal_id": actor, "reason_reference": reason,
+            "actor_principal_id": actor,
+            "revocation_approved_by_principal_id": approval_principal,
+            "reason_reference": reason,
             "approval_evidence_reference": approval_evidence,
+            "approval_evidence_fingerprint_sha256": approval_fingerprint,
             "governance_decision_reference": decision,
             "record_fingerprint_sha256": record_fingerprint,
             "public_key_fingerprint_sha256": record["public_key_fingerprint_sha256"],
