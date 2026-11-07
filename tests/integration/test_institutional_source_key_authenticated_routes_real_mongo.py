@@ -18,6 +18,7 @@ from tools.eos.api.tenant_authorization_http import TenantAuthorizationContext
 from tools.eos.api import institutional_source_key_router as source_key_api
 from tools.eos.security.institutional_source_key_governance_evidence import (
     InstitutionalSourceKeyGovernanceEvidenceError,
+    VerifiedSourceKeyRevocationApproval,
 )
 from tools.eos.security.institutional_source_signing_key_registry import (
     KEY_COLLECTION,
@@ -53,7 +54,15 @@ class _VerifiedGovernanceEvidence:
         self.revocation_calls.append(kwargs)
         if self.fail_revocation:
             raise InstitutionalSourceKeyGovernanceEvidenceError("SYNTHETIC_REVOCATION_EVIDENCE_DENIED")
-        return object()
+        return VerifiedSourceKeyRevocationApproval(
+            source_system_id=kwargs["source_system_id"],
+            key_id=kwargs["key_id"],
+            public_key_fingerprint_sha256=kwargs["public_key_fingerprint_sha256"],
+            governance_decision_reference=kwargs["governance_decision_reference"],
+            approval_evidence_reference=kwargs["approval_evidence_reference"],
+            approver_principal_id="synthetic-revocation-approver",
+            evidence_fingerprint_sha256="c" * 64,
+        )
 
 
 def _context(principal_id: str, tenant_id: str = TENANT_ID):
@@ -248,6 +257,8 @@ def test_authenticated_propose_approve_revoke_is_atomic_and_maker_checker_enforc
             "source_system_id": "synthetic-http-source", "event_type": "REVOKED",
         })
         assert persisted_revocation["approval_evidence_reference"] == "synthetic://independent-revocation/1"
+        assert persisted_revocation["revocation_approved_by_principal_id"] == "synthetic-revocation-approver"
+        assert persisted_revocation["approval_evidence_fingerprint_sha256"] == "c" * 64
         with client.start_session() as session:
             registry = InstitutionalSourceSigningKeyLifecycleRegistry(
                 database[KEY_COLLECTION], database[EVENT_COLLECTION],
