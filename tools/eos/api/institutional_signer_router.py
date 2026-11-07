@@ -5,6 +5,7 @@ import base64
 import binascii
 from hashlib import sha256
 from datetime import datetime, timezone
+from typing import Annotated
 
 from fastapi import APIRouter, Depends, Header, HTTPException, Request
 from pydantic import BaseModel, ConfigDict, Field
@@ -33,7 +34,7 @@ class StrictModel(BaseModel):
 
 class CertificateChain(StrictModel):
     signer_certificate_pem_base64: str = Field(min_length=1, max_length=65536)
-    intermediate_certificate_pems_base64: list[str] = Field(min_length=1, max_length=8)
+    intermediate_certificate_pems_base64: list[Annotated[str, Field(min_length=1, max_length=65536)]] = Field(min_length=1, max_length=8)
 
 
 class SignerEnrollmentRequest(CertificateChain):
