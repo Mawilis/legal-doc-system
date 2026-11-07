@@ -532,6 +532,7 @@ _BINDINGS = MappingProxyType({**_BINDINGS,
     "hr_hiring_offer_decide": "hr:hiring_offer:decide",
     "hr_hiring_offer_send": "hr:hiring_offer:send",
     "hr_hiring_offer_accept": "hr:hiring_offer:accept",
+    "hr_hiring_offer_sign": "hr:hiring_offer:sign",
     "hr_hiring_candidate_evidence_upload": "hr:hiring_candidate_evidence:upload",
     "hr_hiring_candidate_evidence_read": "hr:hiring_candidate_evidence:read",
 })
