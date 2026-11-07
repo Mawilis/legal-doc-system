@@ -8,6 +8,7 @@ on:
       - "tests/unit/test_hiring_lifecycle_domain.py"
       - "tests/unit/test_signed_offer_cryptographic_verification.py"
       - "tests/integration/test_signed_offer_verification_real_mongo.py"
+      - "tests/integration/test_signed_offer_verification_authenticated_http.py"
       - ".github/workflows/headquarters-signed-offer-cryptographic-verification.yml"
 permissions:
   contents: read
@@ -53,10 +54,12 @@ jobs:
             tools/eos/saas/domain/hiring_lifecycle.py \
             tools/eos/saas/hr/signed_offer_cryptographic_verification.py \
             tests/unit/test_signed_offer_cryptographic_verification.py \
-            tests/integration/test_signed_offer_verification_real_mongo.py
+            tests/integration/test_signed_offer_verification_real_mongo.py \
+            tests/integration/test_signed_offer_verification_authenticated_http.py
       - name: Run cryptographic, acceptance-domain and replica-set tests
         run: |
           python -m pytest -q \
             tests/unit/test_hiring_lifecycle_domain.py \
             tests/unit/test_signed_offer_cryptographic_verification.py \
-            tests/integration/test_signed_offer_verification_real_mongo.py
+            tests/integration/test_signed_offer_verification_real_mongo.py \
+            tests/integration/test_signed_offer_verification_authenticated_http.py
