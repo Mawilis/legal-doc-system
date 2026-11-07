@@ -72,7 +72,7 @@ def test_enrollment_expiry_revocation_and_rotation_are_transactional():
             with pytest.raises(SourceSigningKeyRegistryConflict, match="OUTSIDE_VALIDITY"):
                 registry.resolve(
                     source_system_id=source, key_id="key-1",
-                    evaluated_at=now - timedelta(seconds=1), session=session,
+                    evaluated_at=now - timedelta(hours=3), session=session,
                 )
             with pytest.raises(SourceSigningKeyRegistryConflict, match="OUTSIDE_VALIDITY"):
                 registry.resolve(
