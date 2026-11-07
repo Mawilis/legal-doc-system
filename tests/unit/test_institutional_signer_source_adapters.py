@@ -79,6 +79,8 @@ def test_source_envelope_requires_authenticated_response_reference_and_validity(
         revoked=False,
         observed_at=NOW,
         response_signature_reference="signature://response/123",
+        response_signing_key_id="dha-response-key-2026",
+        response_signature_base64=base64.b64encode(b"0" * 64).decode("ascii"),
     )
     assert response.source_revision == "revision-7"
     assert response.response_signature_reference.startswith("signature://")
