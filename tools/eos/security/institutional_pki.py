@@ -18,7 +18,7 @@ import re
 from typing import Iterable
 
 from cryptography import x509
-from cryptography.hazmat.primitives import hashes
+from cryptography.hazmat.primitives import hashes, serialization
 from cryptography.hazmat.primitives.asymmetric import dsa, ec, ed25519, ed448, padding, rsa
 from cryptography.x509.oid import ExtensionOID, ExtendedKeyUsageOID
 
@@ -217,7 +217,7 @@ class InstitutionalPKIVerifier:
         ]
         if len(matches) != 1:
             raise InstitutionalPKIError("INSTITUTIONAL_PKI_CRL_ISSUER_NOT_FOUND_OR_AMBIGUOUS")
-        return matches[0].public_bytes(__import__("cryptography").hazmat.primitives.serialization.Encoding.PEM)
+        return matches[0].public_bytes(serialization.Encoding.PEM)
 
     def verify(
         self,
