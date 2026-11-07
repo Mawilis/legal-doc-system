@@ -8,6 +8,7 @@ from __future__ import annotations
 
 from datetime import datetime, timezone
 import hashlib
+import json
 from typing import Any, Literal
 
 from fastapi import APIRouter, Depends, Header, HTTPException, status
@@ -76,6 +77,22 @@ def _registry(database: Any) -> HeadcountRequisitionRegistry:
         read_concern=ReadConcern("majority"),
     )
     return HeadcountRequisitionRegistry(current, events)
+
+
+def _request_fingerprint(
+    *, tenant_id: str, requisition_id: str, actor_principal_id: str,
+    action: str, idempotency_key: str, payload: dict[str, object],
+) -> str:
+    command = {
+        "tenant_id": tenant_id,
+        "requisition_id": requisition_id,
+        "actor_principal_id": actor_principal_id,
+        "action": action,
+        "idempotency_key": idempotency_key,
+        "payload": payload,
+    }
+    raw = json.dumps(command, sort_keys=True, separators=(",", ":"), ensure_ascii=False).encode("utf-8")
+    return hashlib.sha3_512(raw).hexdigest()
 
 
 def _transaction(callback):
@@ -160,7 +177,18 @@ async def submit_headcount_requisition(
     context: TenantAuthorizationContext = Depends(_CREATE),
 ) -> dict[str, object]:
     now = datetime.now(timezone.utc)
+    request_fingerprint = _request_fingerprint(
+        tenant_id=context.tenant_id, requisition_id=requisition_id,
+        actor_principal_id=context.identity.identity_id, action="SUBMITTED",
+        idempotency_key=idempotency_key, payload=body.model_dump(),
+    )
     def submit(registry: HeadcountRequisitionRegistry, session: Any):
+        replay = registry.replay_transition(
+            tenant_id=context.tenant_id, idempotency_key=idempotency_key,
+            request_fingerprint=request_fingerprint, session=session,
+        )
+        if replay is not None:
+            return replay
         current = registry.get(
             tenant_id=context.tenant_id, requisition_id=requisition_id, session=session,
         )
@@ -172,7 +200,8 @@ async def submit_headcount_requisition(
             tenant_id=context.tenant_id, requisition_id=requisition_id,
             expected_revision=body.expected_revision, updated=updated,
             action="SUBMITTED", actor_principal_id=context.identity.identity_id,
-            idempotency_key=idempotency_key, occurred_at=now, session=session,
+            idempotency_key=idempotency_key, request_fingerprint=request_fingerprint,
+            occurred_at=now, session=session,
         )
     return _transaction(submit).to_dict()
 
@@ -185,7 +214,18 @@ async def decide_headcount_requisition(
     context: TenantAuthorizationContext = Depends(_DECIDE),
 ) -> dict[str, object]:
     now = datetime.now(timezone.utc)
+    request_fingerprint = _request_fingerprint(
+        tenant_id=context.tenant_id, requisition_id=requisition_id,
+        actor_principal_id=context.identity.identity_id, action=body.decision,
+        idempotency_key=idempotency_key, payload=body.model_dump(),
+    )
     def decide(registry: HeadcountRequisitionRegistry, session: Any):
+        replay = registry.replay_transition(
+            tenant_id=context.tenant_id, idempotency_key=idempotency_key,
+            request_fingerprint=request_fingerprint, session=session,
+        )
+        if replay is not None:
+            return replay
         current = registry.get(
             tenant_id=context.tenant_id, requisition_id=requisition_id, session=session,
         )
@@ -201,7 +241,8 @@ async def decide_headcount_requisition(
             tenant_id=context.tenant_id, requisition_id=requisition_id,
             expected_revision=body.expected_revision, updated=updated,
             action=body.decision, actor_principal_id=context.identity.identity_id,
-            idempotency_key=idempotency_key, occurred_at=now, session=session,
+            idempotency_key=idempotency_key, request_fingerprint=request_fingerprint,
+            occurred_at=now, session=session,
         )
     return _transaction(decide).to_dict()
 
