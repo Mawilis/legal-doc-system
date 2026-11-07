@@ -15,6 +15,7 @@ from typing import Annotated, Any
 
 import boto3
 from fastapi import APIRouter, Depends, Header, HTTPException, Request
+from fastapi.responses import StreamingResponse
 from pydantic import BaseModel, ConfigDict, Field
 from pymongo.read_concern import ReadConcern
 from pymongo.read_preferences import ReadPreference
@@ -382,6 +383,84 @@ async def send_offer(
             command_fingerprint=command_hash,
         )
     return _transaction(command).to_dict()
+
+
+@router.post("/offers/{offer_id}/signing-document")
+async def download_offer_signing_document(
+    offer_id: str,
+    body: OfferSignatureManifestRequest,
+    context: TenantAuthorizationContext = Depends(_OFFER_SIGN),
+):
+    """Stream the exact custody version for the authorised institutional signatory."""
+    if context.tenant_id != INSTITUTIONAL_TENANT_ID:
+        raise HTTPException(status_code=403, detail="INSTITUTIONAL_PKI_TENANT_SCOPE_INVALID")
+
+    def query(registry, tx):
+        current = registry.get_offer(tenant_id=context.tenant_id, offer_id=offer_id, session=tx)
+        if current.status not in {OfferStatus.APPROVED, OfferStatus.SENT} or current.revision != body.expected_revision:
+            raise HTTPException(status_code=409, detail="HIRING_OFFER_NOT_CURRENTLY_SIGNABLE")
+        database = get_database()
+        if database is None:
+            raise HTTPException(status_code=503, detail="CANDIDATE_EVIDENCE_DATABASE_UNAVAILABLE")
+        evidence_registry = CandidateEvidenceRegistry(
+            database[CANDIDATE_EVIDENCE_COLLECTION],
+            database[CANDIDATE_EVIDENCE_EVENT_COLLECTION],
+        )
+        try:
+            signed_offer = evidence_registry.get(
+                tenant_id=context.tenant_id, candidate_id=current.candidate_id,
+                evidence_id=body.evidence_reference,
+                evidence_version_id=body.evidence_version_id, session=tx,
+            )
+        except CandidateEvidenceRegistryNotFound as error:
+            raise HTTPException(status_code=409, detail="HIRING_SIGNED_OFFER_CUSTODY_REQUIRED") from error
+        if (
+            signed_offer.evidence_kind is not CandidateEvidenceKind.SIGNED_OFFER
+            or signed_offer.offer_id != offer_id
+            or signed_offer.content_digest_sha3_512 != body.evidence_fingerprint
+            or signed_offer.media_type != "application/pdf"
+        ):
+            raise HTTPException(status_code=409, detail="HIRING_SIGNED_OFFER_EVIDENCE_INVALID")
+        return signed_offer
+
+    metadata = _transaction(query)
+    bucket = os.getenv("WILSY_HR_CANDIDATE_EVIDENCE_S3_BUCKET", "").strip()
+    region = os.getenv("WILSY_HR_CANDIDATE_EVIDENCE_S3_REGION", "").strip()
+    kms_key_id = os.getenv("WILSY_HR_CANDIDATE_EVIDENCE_S3_KMS_KEY_ID", "").strip()
+    if not bucket or not region or not kms_key_id:
+        raise HTTPException(status_code=503, detail="CANDIDATE_EVIDENCE_PROVIDER_NOT_CONFIGURED")
+    try:
+        storage = CandidateEvidenceS3StorageAdapter(
+            CandidateEvidenceS3Configuration(bucket=bucket, region=region, kms_key_id=kms_key_id),
+            client=boto3.client("s3", region_name=region),
+        )
+        spool = storage.read_verified_object(metadata)
+    except CandidateEvidenceS3Error as error:
+        raise HTTPException(status_code=503, detail=error.code) from error
+    except Exception as error:
+        raise HTTPException(status_code=503, detail="CANDIDATE_EVIDENCE_SIGNING_DOCUMENT_UNAVAILABLE") from error
+
+    def chunks():
+        try:
+            while True:
+                chunk = spool.read(8 * 1024 * 1024)
+                if not chunk:
+                    break
+                yield chunk
+        finally:
+            spool.close()
+
+    return StreamingResponse(
+        chunks(),
+        media_type="application/pdf",
+        headers={
+            "Content-Disposition": 'attachment; filename="wilsy-signed-offer.pdf"',
+            "Content-Length": str(metadata.byte_length),
+            "Cache-Control": "private, no-store",
+            "X-Wilsy-Evidence-Version": metadata.evidence_version_id,
+            "X-Wilsy-Content-Digest-SHA3-512": metadata.content_digest_sha3_512,
+        },
+    )
 
 
 @router.post("/offers/{offer_id}/signature-manifest")
