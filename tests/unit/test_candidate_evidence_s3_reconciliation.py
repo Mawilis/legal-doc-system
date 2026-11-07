@@ -47,6 +47,7 @@ class FakeS3:
 
     def head_object(self, **kwargs):
         return {
+            "VersionId": "version-opaque",
             "ContentLength": len(PAYLOAD),
             "ContentType": "application/pdf",
             "Metadata": {
