@@ -127,13 +127,16 @@ class OfferAcceptanceRequest(OfferSignatureManifestRequest):
 
 def _signed_offer_manifest(*, tenant_id: str, offer: EmploymentOffer, evidence: Any) -> bytes:
     """Canonical signer input commits to exact offer terms and immutable document bytes."""
+    terms_bytes = json.dumps(
+        offer.terms.to_dict(), sort_keys=True, separators=(",", ":"), ensure_ascii=False,
+    ).encode("utf-8")
     manifest = {
         "schema": "wilsy.hr.signed_offer_signature_manifest.v1",
         "tenant_id": tenant_id,
         "offer_id": offer.offer_id,
+        "requisition_id": offer.requisition_id,
         "candidate_id": offer.candidate_id,
-        "offer_revision": offer.revision,
-        "offer_terms_fingerprint": offer.fingerprint,
+        "offer_terms_sha3_512": hashlib.sha3_512(terms_bytes).hexdigest(),
         "evidence_id": evidence.evidence_id,
         "evidence_version_id": evidence.evidence_version_id,
         "evidence_kind": CandidateEvidenceKind.SIGNED_OFFER.value,
@@ -391,7 +394,7 @@ async def get_offer_signature_manifest(
 
     def query(registry, tx):
         current = registry.get_offer(tenant_id=context.tenant_id, offer_id=offer_id, session=tx)
-        if current.status is not OfferStatus.SENT or current.revision != body.expected_revision:
+        if current.status not in {OfferStatus.APPROVED, OfferStatus.SENT} or current.revision != body.expected_revision:
             raise HTTPException(status_code=409, detail="HIRING_OFFER_NOT_CURRENTLY_SIGNABLE")
         database = get_database()
         if database is None:
