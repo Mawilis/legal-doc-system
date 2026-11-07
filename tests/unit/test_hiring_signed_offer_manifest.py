@@ -8,8 +8,10 @@ def test_signed_offer_manifest_is_canonical_and_commits_to_exact_offer_and_docum
     offer = SimpleNamespace(
         offer_id="OFFER-001",
         candidate_id="CAN-001",
+        requisition_id="REQ-001",
         revision=7,
         fingerprint="f" * 64,
+        terms=SimpleNamespace(to_dict=lambda: {"position_title": "Engineer", "currency": "ZAR"}),
     )
     evidence = SimpleNamespace(
         evidence_id="EVD-001",
@@ -29,8 +31,10 @@ def test_signed_offer_manifest_is_canonical_and_commits_to_exact_offer_and_docum
         "tenant_id": "WILSYTENANT-4CD2FZ4O",
         "offer_id": "OFFER-001",
         "candidate_id": "CAN-001",
-        "offer_revision": 7,
-        "offer_terms_fingerprint": "f" * 64,
+        "requisition_id": "REQ-001",
+        "offer_terms_sha3_512": __import__("hashlib").sha3_512(
+            b'{"currency":"ZAR","position_title":"Engineer"}'
+        ).hexdigest(),
         "evidence_id": "EVD-001",
         "evidence_version_id": "VER-003",
         "evidence_kind": "SIGNED_OFFER",
@@ -40,8 +44,9 @@ def test_signed_offer_manifest_is_canonical_and_commits_to_exact_offer_and_docum
 
 def test_signed_offer_manifest_changes_when_offer_revision_terms_or_evidence_changes():
     offer = SimpleNamespace(
-        offer_id="OFFER-001", candidate_id="CAN-001",
+        offer_id="OFFER-001", candidate_id="CAN-001", requisition_id="REQ-001",
         revision=7, fingerprint="f" * 64,
+        terms=SimpleNamespace(to_dict=lambda: {"position_title": "Engineer", "currency": "ZAR"}),
     )
     evidence = SimpleNamespace(
         evidence_id="EVD-001", evidence_version_id="VER-003",
