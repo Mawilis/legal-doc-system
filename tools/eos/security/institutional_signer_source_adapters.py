@@ -9,10 +9,11 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 from datetime import datetime, timezone
+import hashlib
 import base64
 import json
 import re
-from typing import Final, Mapping, Protocol, runtime_checkable
+from typing import Final, Iterable, Protocol, runtime_checkable
 
 from cryptography.exceptions import InvalidSignature
 from cryptography.hazmat.primitives.asymmetric.ed25519 import Ed25519PublicKey
@@ -252,38 +253,163 @@ def _canonical_source_response_payload(
     return json.dumps(payload, sort_keys=True, separators=(",", ":"), ensure_ascii=True).encode("ascii")
 
 
-class Ed25519InstitutionalSignerSourceResponseAuthenticator:
-    """Verify source responses against explicitly pinned, source-bound Ed25519 keys.
+@dataclass(frozen=True, slots=True)
+class InstitutionalSignerSourceTrustKey:
+    """Governed source-response key pin with explicit lifecycle bounds."""
 
-    Key provisioning, rotation and revocation are external governance responsibilities.
-    Empty trust configuration denies every response.
+    source_system_id: str
+    key_id: str
+    public_key_bytes: bytes
+    valid_from: datetime
+    valid_until: datetime
+    revoked: bool = False
+
+    def __post_init__(self) -> None:
+        _identifier("source_system_id", self.source_system_id)
+        _identifier("response_signing_key_id", self.key_id)
+        if type(self.public_key_bytes) is not bytes or len(self.public_key_bytes) != 32:
+            raise InstitutionalSignerSourceAdapterError(
+                "INSTITUTIONAL_SIGNER_SOURCE_TRUSTED_KEY_INVALID"
+            )
+        valid_from = _instant("trusted_key_valid_from", self.valid_from)
+        valid_until = _instant("trusted_key_valid_until", self.valid_until)
+        if valid_until <= valid_from:
+            raise InstitutionalSignerSourceAdapterError(
+                "INSTITUTIONAL_SIGNER_SOURCE_TRUSTED_KEY_VALIDITY_INVALID"
+            )
+        if type(self.revoked) is not bool:
+            raise InstitutionalSignerSourceAdapterError(
+                "INSTITUTIONAL_SIGNER_SOURCE_TRUSTED_KEY_REVOCATION_INVALID"
+            )
+        object.__setattr__(self, "valid_from", valid_from)
+        object.__setattr__(self, "valid_until", valid_until)
+
+    @property
+    def public_key_fingerprint_sha256(self) -> str:
+        return hashlib.sha256(self.public_key_bytes).hexdigest()
+
+
+class Ed25519InstitutionalSignerSourceResponseAuthenticator:
+    """Verify source responses against time-bounded, source-bound Ed25519 pins.
+
+    Multiple key IDs for one source permit an explicitly bounded rotation overlap.
+    A key cannot be reused across source identities. Empty trust configuration
+    denies every response. Revocation is immediate and overrides validity dates.
     """
 
-    def __init__(self, trusted_public_keys: Mapping[tuple[str, str], bytes]) -> None:
-        self._trusted_public_keys: dict[tuple[str, str], Ed25519PublicKey] = {}
-        for (source_system_id, key_id), raw_key in trusted_public_keys.items():
-            source_id = _identifier("source_system_id", source_system_id)
-            trusted_key_id = _identifier("response_signing_key_id", key_id)
-            if type(raw_key) is not bytes or len(raw_key) != 32:
+    def __init__(self, trusted_keys: Iterable[InstitutionalSignerSourceTrustKey]) -> None:
+        self._trusted_public_keys: dict[tuple[str, str], tuple[Ed25519PublicKey, InstitutionalSignerSourceTrustKey]] = {}
+        seen_fingerprints: dict[str, str] = {}
+        for trust_key in trusted_keys:
+            if type(trust_key) is not InstitutionalSignerSourceTrustKey:
                 raise InstitutionalSignerSourceAdapterError(
-                    "INSTITUTIONAL_SIGNER_SOURCE_TRUSTED_KEY_INVALID"
+                    "INSTITUTIONAL_SIGNER_SOURCE_TRUST_KEY_TYPE_INVALID"
                 )
-            self._trusted_public_keys[(source_id, trusted_key_id)] = Ed25519PublicKey.from_public_bytes(raw_key)
+            identity = (trust_key.source_system_id, trust_key.key_id)
+            if identity in self._trusted_public_keys:
+                raise InstitutionalSignerSourceAdapterError(
+                    "INSTITUTIONAL_SIGNER_SOURCE_TRUST_KEY_ID_DUPLICATE"
+                )
+            fingerprint = trust_key.public_key_fingerprint_sha256
+            prior_source = seen_fingerprints.get(fingerprint)
+            if prior_source is not None:
+                raise InstitutionalSignerSourceAdapterError(
+                    "INSTITUTIONAL_SIGNER_SOURCE_TRUST_KEY_REUSED"
+                )
+            seen_fingerprints[fingerprint] = trust_key.source_system_id
+            self._trusted_public_keys[identity] = (
+                Ed25519PublicKey.from_public_bytes(trust_key.public_key_bytes), trust_key
+            )
 
     def authenticate_response(
         self, *, expected_source_system_id: str,
         lookup: InstitutionalSignerSourceLookup,
         response: InstitutionalSignerSourceEvidence,
     ) -> None:
-        del lookup  # Exact request/response field binding is enforced by the caller.
-        key = self._trusted_public_keys.get((expected_source_system_id, response.response_signing_key_id))
-        if key is None or response.source_system_id != expected_source_system_id:
+        entry = self._trusted_public_keys.get((expected_source_system_id, response.response_signing_key_id))
+        if entry is None or response.source_system_id != expected_source_system_id:
+            raise InstitutionalSignerSourceAdapterError(
+                "INSTITUTIONAL_SIGNER_SOURCE_SIGNING_KEY_UNTRUSTED"
+            )
+        key, trust = entry
+        if trust.revoked:
+            raise InstitutionalSignerSourceAdapterError(
+                "INSTITUTIONAL_SIGNER_SOURCE_SIGNING_KEY_REVOKED"
+            )
+        # Trust authority is evaluated at verifier time, never at a caller-
+        # supplied evidence timestamp. Otherwise a caller could backdate the
+        # lookup and resurrect an expired or withdrawn signing key.
+        trust_evaluated_at = datetime.now(timezone.utc)
+        if not (trust.valid_from <= trust_evaluated_at < trust.valid_until):
+            raise InstitutionalSignerSourceAdapterError(
+                "INSTITUTIONAL_SIGNER_SOURCE_SIGNING_KEY_OUTSIDE_VALIDITY"
+            )
+        try:
+            key.verify(
+                base64.b64decode(response.response_signature_base64, validate=True),
+                _canonical_source_response_payload(response),
+            )
+        except (InvalidSignature, ValueError):
+            raise InstitutionalSignerSourceAdapterError(
+                "INSTITUTIONAL_SIGNER_SOURCE_RESPONSE_SIGNATURE_INVALID"
+            ) from None
+
+
+
+class RegistryBackedEd25519InstitutionalSignerSourceResponseAuthenticator:
+    """Resolve every source key from the canonical lifecycle registry per request.
+
+    The caller supplies an already-authorized, caller-owned MongoDB session.
+    This adapter performs no transaction control. Every verification observes
+    current key expiry and append-only revocation evidence; it cannot cache a
+    prior ACTIVE decision across revocation. The registry remains non-authorizing:
+    enrollment and governance approval must be enforced by the calling service.
+    """
+
+    def __init__(self, *, registry, session) -> None:
+        if registry is None or session is None:
+            raise InstitutionalSignerSourceAdapterError(
+                "INSTITUTIONAL_SIGNER_SOURCE_TRUST_REGISTRY_UNAVAILABLE"
+            )
+        self._registry = registry
+        self._session = session
+
+    def authenticate_response(
+        self, *, expected_source_system_id: str,
+        lookup: InstitutionalSignerSourceLookup,
+        response: InstitutionalSignerSourceEvidence,
+    ) -> None:
+        from tools.eos.security.institutional_source_signing_key_registry import (
+            SourceSigningKeyRegistryConflict,
+            SourceSigningKeyRegistryError,
+        )
+        from cryptography.hazmat.primitives.asymmetric.ed25519 import Ed25519PublicKey
+
+        try:
+            trust = self._registry.resolve(
+                source_system_id=expected_source_system_id,
+                key_id=response.response_signing_key_id,
+                evaluated_at=datetime.now(timezone.utc),
+                session=self._session,
+            )
+        except SourceSigningKeyRegistryConflict as error:
+            raise InstitutionalSignerSourceAdapterError(
+                "INSTITUTIONAL_SIGNER_SOURCE_SIGNING_KEY_NOT_CURRENT"
+            ) from error
+        except SourceSigningKeyRegistryError as error:
+            raise InstitutionalSignerSourceAdapterError(
+                "INSTITUTIONAL_SIGNER_SOURCE_TRUST_REGISTRY_UNAVAILABLE"
+            ) from error
+        if response.source_system_id != expected_source_system_id:
             raise InstitutionalSignerSourceAdapterError(
                 "INSTITUTIONAL_SIGNER_SOURCE_SIGNING_KEY_UNTRUSTED"
             )
         try:
-            key.verify(base64.b64decode(response.response_signature_base64, validate=True), _canonical_source_response_payload(response))
-        except (InvalidSignature, ValueError):
+            Ed25519PublicKey.from_public_bytes(trust["public_key_bytes"]).verify(
+                base64.b64decode(response.response_signature_base64, validate=True),
+                _canonical_source_response_payload(response),
+            )
+        except (InvalidSignature, ValueError, KeyError, TypeError):
             raise InstitutionalSignerSourceAdapterError(
                 "INSTITUTIONAL_SIGNER_SOURCE_RESPONSE_SIGNATURE_INVALID"
             ) from None
@@ -425,6 +551,8 @@ __all__ = [
     "InstitutionalSignerEvidenceSourceAdapter",
     "InstitutionalSignerSourceResponseAuthenticator",
     "Ed25519InstitutionalSignerSourceResponseAuthenticator",
+    "RegistryBackedEd25519InstitutionalSignerSourceResponseAuthenticator",
+    "InstitutionalSignerSourceTrustKey",
     "InstitutionalSignerSourceAdapterSet",
     "UnavailableInstitutionalSignerSourceAdapterSet",
     "AuthenticatedInstitutionalSignerSourceAdapterSet",

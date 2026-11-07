@@ -14,6 +14,7 @@ from tools.eos.security.institutional_signer_source_adapters import (
     UnavailableInstitutionalSignerSourceAdapterSet,
     Ed25519InstitutionalSignerSourceResponseAuthenticator,
     AuthenticatedInstitutionalSignerSourceAdapterSet,
+    InstitutionalSignerSourceTrustKey,
     _canonical_source_response_payload,
 )
 from tools.eos.security.institutional_signer_evidence_verifier import TENANT_ID
@@ -226,11 +227,18 @@ def _signed_source_response(private_key=None, **overrides):
     return response, public_key
 
 
+def _trust_key(public_key, *, key_id="dha-response-key-2026", source="DHA-NPR-VERIFICATION", valid_from=datetime(2026, 1, 1, tzinfo=timezone.utc), valid_until=datetime(2027, 1, 1, tzinfo=timezone.utc), revoked=False):
+    return InstitutionalSignerSourceTrustKey(
+        source_system_id=source, key_id=key_id, public_key_bytes=public_key,
+        valid_from=valid_from, valid_until=valid_until, revoked=revoked,
+    )
+
+
 def test_ed25519_authenticator_accepts_signature_from_pinned_source_key():
     response, public_key = _signed_source_response()
-    authenticator = Ed25519InstitutionalSignerSourceResponseAuthenticator({
-        ("DHA-NPR-VERIFICATION", "dha-response-key-2026"): public_key
-    })
+    authenticator = Ed25519InstitutionalSignerSourceResponseAuthenticator([
+        _trust_key(public_key)
+    ])
     authenticator.authenticate_response(
         expected_source_system_id="DHA-NPR-VERIFICATION", lookup=lookup(), response=response
     )
@@ -238,9 +246,7 @@ def test_ed25519_authenticator_accepts_signature_from_pinned_source_key():
 
 def test_ed25519_authenticator_rejects_tampered_source_revision():
     response, public_key = _signed_source_response()
-    authenticator = Ed25519InstitutionalSignerSourceResponseAuthenticator({
-        ("DHA-NPR-VERIFICATION", "dha-response-key-2026"): public_key
-    })
+    authenticator = Ed25519InstitutionalSignerSourceResponseAuthenticator([_trust_key(public_key)])
     tampered = replace(response, source_revision="revision-8")
     with pytest.raises(InstitutionalSignerSourceAdapterError) as error:
         authenticator.authenticate_response(
@@ -251,9 +257,7 @@ def test_ed25519_authenticator_rejects_tampered_source_revision():
 
 def test_ed25519_authenticator_rejects_key_reuse_for_another_source():
     response, public_key = _signed_source_response()
-    authenticator = Ed25519InstitutionalSignerSourceResponseAuthenticator({
-        ("UNRELATED-SOURCE", "dha-response-key-2026"): public_key
-    })
+    authenticator = Ed25519InstitutionalSignerSourceResponseAuthenticator([_trust_key(public_key, source="UNRELATED-SOURCE")])
     with pytest.raises(InstitutionalSignerSourceAdapterError) as error:
         authenticator.authenticate_response(
             expected_source_system_id="DHA-NPR-VERIFICATION", lookup=lookup(), response=response
@@ -263,7 +267,7 @@ def test_ed25519_authenticator_rejects_key_reuse_for_another_source():
 
 def test_ed25519_authenticator_rejects_empty_trust_configuration():
     response, _ = _signed_source_response()
-    authenticator = Ed25519InstitutionalSignerSourceResponseAuthenticator({})
+    authenticator = Ed25519InstitutionalSignerSourceResponseAuthenticator([])
     with pytest.raises(InstitutionalSignerSourceAdapterError) as error:
         authenticator.authenticate_response(
             expected_source_system_id="DHA-NPR-VERIFICATION", lookup=lookup(), response=response
@@ -300,3 +304,91 @@ def test_authenticated_adapter_set_rejects_reusing_one_adapter_for_all_authoriti
             authenticator=_FakeAuthenticator(),
         )
     assert error.value.code == "INSTITUTIONAL_SIGNER_SOURCE_ADAPTERS_MUST_BE_DISTINCT"
+
+
+def test_source_signing_key_is_rejected_after_expiry():
+    response, public_key = _signed_source_response()
+    authenticator = Ed25519InstitutionalSignerSourceResponseAuthenticator([
+        _trust_key(public_key, valid_until=datetime(2026, 11, 7, tzinfo=timezone.utc))
+    ])
+    with pytest.raises(InstitutionalSignerSourceAdapterError) as error:
+        authenticator.authenticate_response(
+            expected_source_system_id="DHA-NPR-VERIFICATION", lookup=lookup(), response=response
+        )
+    assert error.value.code == "INSTITUTIONAL_SIGNER_SOURCE_SIGNING_KEY_OUTSIDE_VALIDITY"
+
+
+def test_source_signing_key_is_rejected_before_activation():
+    response, public_key = _signed_source_response()
+    authenticator = Ed25519InstitutionalSignerSourceResponseAuthenticator([
+        _trust_key(public_key, valid_from=datetime(2026, 11, 9, tzinfo=timezone.utc))
+    ])
+    with pytest.raises(InstitutionalSignerSourceAdapterError) as error:
+        authenticator.authenticate_response(
+            expected_source_system_id="DHA-NPR-VERIFICATION", lookup=lookup(), response=response
+        )
+    assert error.value.code == "INSTITUTIONAL_SIGNER_SOURCE_SIGNING_KEY_OUTSIDE_VALIDITY"
+
+
+def test_source_signing_key_revocation_overrides_validity_window():
+    response, public_key = _signed_source_response()
+    authenticator = Ed25519InstitutionalSignerSourceResponseAuthenticator([
+        _trust_key(public_key, revoked=True)
+    ])
+    with pytest.raises(InstitutionalSignerSourceAdapterError) as error:
+        authenticator.authenticate_response(
+            expected_source_system_id="DHA-NPR-VERIFICATION", lookup=lookup(), response=response
+        )
+    assert error.value.code == "INSTITUTIONAL_SIGNER_SOURCE_SIGNING_KEY_REVOKED"
+
+
+def test_source_key_rotation_accepts_new_key_and_rejects_old_key_after_cutover():
+    old_response, old_public_key = _signed_source_response()
+    new_private_key = Ed25519PrivateKey.generate()
+    new_response, new_public_key = _signed_source_response(
+        private_key=new_private_key, response_signing_key_id="dha-response-key-2027"
+    )
+    authenticator = Ed25519InstitutionalSignerSourceResponseAuthenticator([
+        _trust_key(old_public_key, valid_until=datetime(2026, 11, 7, tzinfo=timezone.utc)),
+        _trust_key(new_public_key, key_id="dha-response-key-2027", valid_from=datetime(2026, 11, 6, 23, 0, tzinfo=timezone.utc)),
+    ])
+    authenticator.authenticate_response(
+        expected_source_system_id="DHA-NPR-VERIFICATION", lookup=lookup(), response=new_response
+    )
+    with pytest.raises(InstitutionalSignerSourceAdapterError) as error:
+        authenticator.authenticate_response(
+            expected_source_system_id="DHA-NPR-VERIFICATION", lookup=lookup(), response=old_response
+        )
+    assert error.value.code == "INSTITUTIONAL_SIGNER_SOURCE_SIGNING_KEY_OUTSIDE_VALIDITY"
+
+
+def test_trust_store_rejects_same_public_key_pinned_to_two_sources():
+    _, public_key = _signed_source_response()
+    with pytest.raises(InstitutionalSignerSourceAdapterError) as error:
+        Ed25519InstitutionalSignerSourceResponseAuthenticator([
+            _trust_key(public_key),
+            _trust_key(public_key, key_id="other-source-key", source="CIPC-COMPANY-RECORDS"),
+        ])
+    assert error.value.code == "INSTITUTIONAL_SIGNER_SOURCE_TRUST_KEY_REUSED"
+
+
+def test_trust_key_requires_a_finite_validity_window():
+    _, public_key = _signed_source_response()
+    with pytest.raises(InstitutionalSignerSourceAdapterError) as error:
+        _trust_key(public_key, valid_until=datetime(2025, 1, 1, tzinfo=timezone.utc))
+    assert error.value.code == "INSTITUTIONAL_SIGNER_SOURCE_TRUSTED_KEY_VALIDITY_INVALID"
+
+
+def test_expired_key_cannot_be_resurrected_by_backdating_lookup_evaluation():
+    response, public_key = _signed_source_response()
+    authenticator = Ed25519InstitutionalSignerSourceResponseAuthenticator([
+        _trust_key(public_key, valid_until=datetime(2026, 11, 7, tzinfo=timezone.utc))
+    ])
+    historical_lookup = lookup(evaluated_at=datetime(2026, 11, 6, 23, 0, tzinfo=timezone.utc))
+    with pytest.raises(InstitutionalSignerSourceAdapterError) as error:
+        authenticator.authenticate_response(
+            expected_source_system_id="DHA-NPR-VERIFICATION",
+            lookup=historical_lookup,
+            response=response,
+        )
+    assert error.value.code == "INSTITUTIONAL_SIGNER_SOURCE_SIGNING_KEY_OUTSIDE_VALIDITY"
