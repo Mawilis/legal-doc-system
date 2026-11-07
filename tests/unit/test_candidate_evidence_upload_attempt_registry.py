@@ -5,6 +5,7 @@ import pytest
 from tools.eos.saas.hr.candidate_evidence_upload_attempt_registry import (
     CandidateEvidenceUploadAttempt,
     UploadAttemptConflict,
+    UploadAttemptError,
     UploadAttemptStatus,
 )
 
@@ -98,7 +99,7 @@ def test_stale_revision_and_terminal_state_are_rejected():
 
 def test_attempt_scope_and_fingerprint_are_immutable():
     value = attempt()
-    with pytest.raises(ValueError, match="UPLOAD_ATTEMPT_FINGERPRINT_MISMATCH"):
+    with pytest.raises(UploadAttemptError, match="UPLOAD_ATTEMPT_FINGERPRINT_MISMATCH"):
         CandidateEvidenceUploadAttempt(
             tenant_id=value.tenant_id, upload_attempt_id=value.upload_attempt_id,
             candidate_id=value.candidate_id, evidence_id=value.evidence_id,
