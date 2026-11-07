@@ -36,8 +36,9 @@ class TenantBusinessRoleStatus(str, Enum):
 
 @dataclass(frozen=True)
 class TenantBusinessRoleAuthority:
-    __slots__ = ("principal_id", "tenant_id", "business_role", "status", "revision", "effective_at", "revoked_at")
     """Immutable business-role fact with independent revision and lifecycle evidence."""
+
+    __slots__ = ("principal_id", "tenant_id", "business_role", "status", "revision", "effective_at", "revoked_at")
 
     principal_id: str
     tenant_id: str
