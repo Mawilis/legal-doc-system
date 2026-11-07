@@ -69,6 +69,12 @@ def test_real_replica_set_persists_crl_high_water_and_append_only_events_atomica
         assert current["crl_fingerprint"] == fingerprint_a_2
         assert current["revision"] == 2
         assert database[EVENT_COLLECTION].count_documents({"issuer_subject_sha256": issuer_a}) == 2
+        advanced_event = database[EVENT_COLLECTION].find_one({
+            "issuer_subject_sha256": issuer_a,
+            "crl_number": 2,
+        })
+        assert advanced_event["previous_crl_number"] == 1
+        assert advanced_event["previous_crl_fingerprint"] == fingerprint_a_1
 
         with pytest.raises(InstitutionalPKICRLRegistryError, match="ROLLBACK_REJECTED"):
             transact(lambda session: registry.observe_bundle(
