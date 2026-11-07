@@ -3,6 +3,7 @@ on:
   pull_request:
     paths:
       - "tools/eos/api/hiring_lifecycle_router.py"
+      - "tools/eos/api/server.py"
       - "tools/eos/api/institutional_signer_router.py"
       - "tools/eos/security/institutional_signature_evidence_registry.py"
       - "tools/eos/security/institutional_signer_enrollment_registry.py"
@@ -12,6 +13,7 @@ on:
       - "tools/eos/auth/roles.py"
       - "tools/eos/auth/tenant_authorization.py"
       - "tools/eos/auth/tenant_authority_policy.py"
+      - "tests/unit/test_institutional_pki.py"
       - "tests/unit/test_institutional_signature_evidence_registry.py"
       - "tests/unit/test_institutional_signer_enrollment_registry.py"
       - "tests/unit/test_permission_namespace.py"
@@ -68,6 +70,7 @@ jobs:
             tools/eos/api/server.py \
             tools/eos/saas/hr/candidate_evidence_registry.py \
             tools/eos/saas/hr/candidate_evidence_s3_storage_adapter.py \
+            tests/unit/test_institutional_pki.py \
             tests/unit/test_institutional_signature_evidence_registry.py \
             tests/unit/test_institutional_signer_enrollment_registry.py \
             tests/unit/test_permission_namespace.py \
