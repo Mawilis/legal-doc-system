@@ -425,7 +425,7 @@ def test_permission_canon_properties() -> None:
             for row in rows
             if row["disposition"] == "CANONICAL"
         ]
-    ) == 179
+    ) == 182
 
     assert len(rows) == 185
 
