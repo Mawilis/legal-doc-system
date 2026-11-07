@@ -154,6 +154,36 @@ class CandidateApplication:
     def to_dict(self) -> dict[str, object]:
         return {**self._payload(), "fingerprint": self.fingerprint}
 
+    @classmethod
+    def from_dict(cls, payload: dict[str, object]) -> "CandidateApplication":
+        expected = {
+            "tenant_id", "candidate_id", "requisition_id", "candidate_profile_reference",
+            "source", "created_by_principal_id", "created_at", "stage", "history",
+            "revision", "schema", "version", "fingerprint",
+        }
+        if not isinstance(payload, dict) or set(payload) != expected:
+            raise HiringLifecycleError("HIRING_CANDIDATE_PERSISTED_SCHEMA_INVALID")
+        raw_history = payload["history"]
+        if not isinstance(raw_history, list):
+            raise HiringLifecycleError("HIRING_CANDIDATE_HISTORY_INVALID")
+        history = []
+        for raw in raw_history:
+            if not isinstance(raw, dict) or set(raw) != {
+                "actor_principal_id", "target_stage", "reason", "evidence_reference",
+                "evidence_fingerprint", "occurred_at",
+            }:
+                raise HiringLifecycleError("HIRING_CANDIDATE_EVIDENCE_SCHEMA_INVALID")
+            values = dict(raw)
+            values["occurred_at"] = datetime.fromisoformat(str(values["occurred_at"]))
+            history.append(CandidateStageEvidence(**values))
+        values = dict(payload)
+        values["created_at"] = datetime.fromisoformat(str(values["created_at"]))
+        values["history"] = tuple(history)
+        try:
+            return cls(**values)
+        except TypeError as error:
+            raise HiringLifecycleError("HIRING_CANDIDATE_PERSISTED_SCHEMA_INVALID") from error
+
     def advance(
         self, target_stage: CandidateStage | str, evidence: CandidateStageEvidence,
         *, expected_revision: int,
@@ -342,6 +372,53 @@ class EmploymentOffer:
 
     def to_dict(self) -> dict[str, object]:
         return {**self._payload(), "fingerprint": self.fingerprint}
+
+    @classmethod
+    def from_dict(cls, payload: dict[str, object]) -> "EmploymentOffer":
+        expected = {
+            "tenant_id", "offer_id", "requisition_id", "candidate_id", "terms",
+            "prepared_by_principal_id", "created_at", "status", "submitted_at",
+            "decision", "sent_at", "acceptance", "revision", "schema", "version",
+            "fingerprint",
+        }
+        if not isinstance(payload, dict) or set(payload) != expected:
+            raise HiringLifecycleError("HIRING_OFFER_PERSISTED_SCHEMA_INVALID")
+        values = dict(payload)
+        terms = values.pop("terms")
+        if not isinstance(terms, dict) or set(terms) != {
+            "position_title", "employment_type", "work_location", "currency",
+            "gross_compensation_minor", "pay_frequency", "start_date", "expires_at",
+        }:
+            raise HiringLifecycleError("HIRING_OFFER_TERMS_SCHEMA_INVALID")
+        terms_values = dict(terms)
+        terms_values["start_date"] = date.fromisoformat(str(terms_values["start_date"]))
+        terms_values["expires_at"] = datetime.fromisoformat(str(terms_values["expires_at"]))
+        values["terms"] = OfferTerms(**terms_values)
+        values["created_at"] = datetime.fromisoformat(str(values["created_at"]))
+        values["submitted_at"] = None if values["submitted_at"] is None else datetime.fromisoformat(str(values["submitted_at"]))
+        values["sent_at"] = None if values["sent_at"] is None else datetime.fromisoformat(str(values["sent_at"]))
+        decision = values["decision"]
+        if decision is not None:
+            if not isinstance(decision, dict) or set(decision) != {
+                "decision_id", "actor_principal_id", "approved", "reason", "decided_at",
+            }:
+                raise HiringLifecycleError("HIRING_OFFER_DECISION_SCHEMA_INVALID")
+            decision_values = dict(decision)
+            decision_values["decided_at"] = datetime.fromisoformat(str(decision_values["decided_at"]))
+            values["decision"] = OfferDecision(**decision_values)
+        acceptance = values["acceptance"]
+        if acceptance is not None:
+            if not isinstance(acceptance, dict) or set(acceptance) != {
+                "evidence_reference", "evidence_fingerprint", "accepted_at",
+            }:
+                raise HiringLifecycleError("HIRING_OFFER_ACCEPTANCE_SCHEMA_INVALID")
+            acceptance_values = dict(acceptance)
+            acceptance_values["accepted_at"] = datetime.fromisoformat(str(acceptance_values["accepted_at"]))
+            values["acceptance"] = OfferAcceptanceEvidence(**acceptance_values)
+        try:
+            return cls(**values)
+        except TypeError as error:
+            raise HiringLifecycleError("HIRING_OFFER_PERSISTED_SCHEMA_INVALID") from error
 
     def submit(self, *, actor_principal_id: str, submitted_at: datetime, expected_revision: int) -> "EmploymentOffer":
         if expected_revision != self.revision:
