@@ -87,6 +87,24 @@ class CandidateEvidenceS3StorageAdapter:
         self._config = config
         self._client = client or boto3.client("s3", region_name=config.region)
 
+    def object_key_for_scope(
+        self, *, tenant_id: str, candidate_id: str, evidence_id: str,
+        evidence_version_id: str, ingestion_reference: str,
+    ) -> str:
+        """Derive the opaque provider key for one durable attempt scope."""
+        return _storage_key_for_scope(
+            tenant_id, candidate_id, evidence_id, evidence_version_id, ingestion_reference,
+        )
+
+    def storage_reference_for_scope(
+        self, *, tenant_id: str, candidate_id: str, evidence_id: str,
+        evidence_version_id: str, ingestion_reference: str,
+    ) -> str:
+        return _component(self.object_key_for_scope(
+            tenant_id=tenant_id, candidate_id=candidate_id, evidence_id=evidence_id,
+            evidence_version_id=evidence_version_id, ingestion_reference=ingestion_reference,
+        ))
+
     def begin(self, intent: CandidateEvidenceWriteIntent) -> CandidateEvidenceWriteSession:
         key = _storage_key(intent)
         try:
