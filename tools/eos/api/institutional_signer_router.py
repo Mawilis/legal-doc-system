@@ -5,7 +5,7 @@ import base64
 import binascii
 from datetime import datetime, timezone
 
-from fastapi import APIRouter, Depends, Header, HTTPException, Request
+from fastapi import APIRouter, Depends, Header, HTTPException, Request, Request
 from pydantic import BaseModel, ConfigDict, Field
 
 from tools.eos.api.tenant_authorization_http import RequireTenantAuthorization, TenantAuthorizationContext
@@ -98,7 +98,7 @@ def ensure_institutional_signer_indexes() -> None:
 @router.post("/enrollments", status_code=201)
 async def request_signer_enrollment(
     body: SignerEnrollmentRequest,
-    request,
+    request: Request,
     idempotency_key: str = Header(alias="Idempotency-Key", min_length=1, max_length=200),
     context: TenantAuthorizationContext = Depends(_ENROLL),
 ):
@@ -141,7 +141,7 @@ async def request_signer_enrollment(
 async def approve_signer_enrollment(
     certificate_fingerprint_sha256: str,
     body: CertificateChain,
-    request,
+    request: Request,
     idempotency_key: str = Header(alias="Idempotency-Key", min_length=1, max_length=200),
     context: TenantAuthorizationContext = Depends(_APPROVE),
 ):
