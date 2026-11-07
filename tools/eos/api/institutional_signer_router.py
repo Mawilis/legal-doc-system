@@ -66,7 +66,13 @@ def _require_institutional_tenant(context: TenantAuthorizationContext) -> None:
         raise HTTPException(status_code=403, detail="INSTITUTIONAL_SIGNER_TENANT_SCOPE_INVALID")
 
 
+def _require_registry_ready(request) -> None:
+    if getattr(request.app.state, "institutional_signer_registry_ready", False) is not True:
+        raise HTTPException(status_code=503, detail="INSTITUTIONAL_SIGNER_REGISTRY_NOT_READY")
+
+
 def _verifier(request) -> InstitutionalPKIVerifier:
+    _require_registry_ready(request)
     if getattr(request.app.state, "institutional_pki_ready", False) is not True:
         raise HTTPException(status_code=503, detail="INSTITUTIONAL_PKI_NOT_READY")
     verifier = getattr(request.app.state, "institutional_pki_verifier", None)
@@ -80,9 +86,6 @@ def _transaction(callback):
     if client is None or database is None:
         raise HTTPException(status_code=503, detail="INSTITUTIONAL_SIGNER_DATABASE_UNAVAILABLE")
     try:
-        InstitutionalSignerEnrollmentRegistry.ensure_indexes(
-            database[COLLECTION], database[EVENT_COLLECTION],
-        )
         registry = InstitutionalSignerEnrollmentRegistry(
             database[COLLECTION], database[EVENT_COLLECTION],
         )
@@ -103,16 +106,6 @@ def _transaction(callback):
         raise
     except Exception as error:
         raise HTTPException(status_code=503, detail="INSTITUTIONAL_SIGNER_TRANSACTION_UNAVAILABLE") from error
-
-
-@router.on_event("startup")
-def ensure_institutional_signer_indexes() -> None:
-    database = get_database()
-    if database is None:
-        return
-    InstitutionalSignerEnrollmentRegistry.ensure_indexes(
-        database[COLLECTION], database[EVENT_COLLECTION],
-    )
 
 
 @router.post("/enrollments", status_code=201)
@@ -198,10 +191,12 @@ async def approve_signer_enrollment(
 async def revoke_signer_enrollment(
     certificate_fingerprint_sha256: str,
     body: SignerRevocationRequest,
+    request: Request,
     idempotency_key: str = Header(alias="Idempotency-Key", min_length=1, max_length=200),
     context: TenantAuthorizationContext = Depends(_REVOKE),
 ):
     _require_institutional_tenant(context)
+    _require_registry_ready(request)
     return _transaction(lambda registry, tx: registry.revoke(
         tenant_id=context.tenant_id,
         certificate_fingerprint_sha256=certificate_fingerprint_sha256,
