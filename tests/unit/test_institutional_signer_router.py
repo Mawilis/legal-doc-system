@@ -103,6 +103,7 @@ def _evidence_record(**overrides):
         "source_system_id": "dha-npr-verification",
         "source_record_id": "record-001",
         "source_revision": "revision-7",
+        "evidence_reference": "evidence://source/record-001",
         "status": "ACTIVE",
         "evidence_fingerprint_sha256": "e" * 64,
         "valid_from": now.replace(year=now.year - 1),
