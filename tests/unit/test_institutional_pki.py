@@ -18,7 +18,7 @@ from tools.eos.security.institutional_pki import (
 )
 from tools.eos.api.institutional_pki_router import router as institutional_pki_router
 
-NOW = datetime(2026, 11, 7, 20, 0, tzinfo=timezone.utc)
+NOW = datetime.now(timezone.utc)
 SIGNING_EKU = "1.3.6.1.4.1.55555.1.1"
 
 
@@ -103,20 +103,24 @@ def _fixture(tmp_path: Path, *, revoked_leaf=False, stale_crl=False, eku=SIGNING
         last_update=crl_last, next_update=crl_next,
     )
     anchor_path = tmp_path / "anchors.pem"
+    issuer_path = tmp_path / "issuers.pem"
     crl_path = tmp_path / "crls.pem"
     anchor_path.write_bytes(root.public_bytes(serialization.Encoding.PEM))
+    issuer_path.write_bytes(intermediate.public_bytes(serialization.Encoding.PEM))
     crl_path.write_bytes(
         root_crl.public_bytes(__import__("cryptography").hazmat.primitives.serialization.Encoding.PEM)
         + intermediate_crl.public_bytes(__import__("cryptography").hazmat.primitives.serialization.Encoding.PEM)
     )
     settings = InstitutionalPKISettings(
         trust_anchors_pem=anchor_path,
+        issuer_certificates_pem=issuer_path,
         crl_bundle_pem=crl_path,
         trusted_root_sha256=frozenset({root.fingerprint(hashes.SHA256()).hex()}),
         required_eku_oid=SIGNING_EKU,
     )
     verifier = InstitutionalPKIVerifier(
         anchors=[root], crls=[root_crl, intermediate_crl], settings=settings,
+        issuer_certificates=[intermediate],
     )
     return verifier, leaf, intermediate
 
@@ -168,6 +172,7 @@ def test_rejects_untrusted_root_pin_set(tmp_path):
     verifier, _, _ = _fixture(tmp_path)
     wrong = InstitutionalPKISettings(
         trust_anchors_pem=tmp_path / "anchors.pem",
+        issuer_certificates_pem=tmp_path / "issuers.pem",
         crl_bundle_pem=tmp_path / "crls.pem",
         trusted_root_sha256=frozenset({"0" * 64}),
         required_eku_oid=SIGNING_EKU,
@@ -181,6 +186,7 @@ def test_rejects_untrusted_root_pin_set(tmp_path):
 def test_environment_composition_fails_closed_without_explicit_trust_material(monkeypatch):
     for key in (
         "WILSY_EOS_PKI_TRUST_ANCHORS_PEM",
+        "WILSY_EOS_PKI_ISSUER_CERTIFICATES_PEM",
         "WILSY_EOS_PKI_CRL_BUNDLE_PEM",
         "WILSY_EOS_PKI_TRUSTED_ROOT_SHA256",
         "WILSY_EOS_PKI_REQUIRED_SIGNING_EKU_OID",
