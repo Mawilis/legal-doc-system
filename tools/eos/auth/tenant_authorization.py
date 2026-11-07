@@ -268,6 +268,7 @@ _BINDINGS = MappingProxyType({
     "crm_email_template_share": "crm:email_template:share",
     **_BINDINGS,
     "hr_employee_relation_write": "hr:employee_relation:write",
+    "hr_employee_directory_read": "hr:employee_directory:read",
 })
 
 
