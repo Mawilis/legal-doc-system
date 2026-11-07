@@ -155,11 +155,15 @@ class InstitutionalSourceSigningKeyLifecycleRegistry:
             predecessor = self._keys.find_one(
                 {"source_system_id": source, "key_id": predecessor_id}, session=session
             )
-            if predecessor is None or self._events.find_one(
+            predecessor_approval = self._events.find_one(
                 {"source_system_id": source, "key_id": predecessor_id, "event_type": "APPROVED"},
                 session=session,
-            ) is None:
-                raise SourceSigningKeyRegistryConflict("SOURCE_SIGNING_KEY_ROTATION_PREDECESSOR_NOT_APPROVED")
+            )
+            if (
+                predecessor is None or predecessor_approval is None
+                or predecessor_approval["occurred_at"] > occurred
+            ):
+                raise SourceSigningKeyRegistryConflict("SOURCE_SIGNING_KEY_ROTATION_PREDECESSOR_NOT_APPROVED_AT_PROPOSAL")
             if self._keys.find_one(
                 {"source_system_id": source, "rotation.supersedes_key_id": predecessor_id},
                 session=session,
