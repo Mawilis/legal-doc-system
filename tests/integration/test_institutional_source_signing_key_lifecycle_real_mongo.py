@@ -41,7 +41,7 @@ def _public_key():
 
 
 def test_enrollment_expiry_revocation_and_rotation_are_transactional():
-    client = MongoClient(URI, serverSelectionTimeoutMS=5000)
+    client = MongoClient(URI, serverSelectionTimeoutMS=5000, tz_aware=True)
     db_name = f"source_key_lifecycle_{uuid.uuid4().hex}"
     db = client[db_name]
     try:
@@ -149,7 +149,7 @@ def test_enrollment_expiry_revocation_and_rotation_are_transactional():
 
 
 def test_registry_backed_authenticator_observes_immediate_revocation():
-    client = MongoClient(URI, serverSelectionTimeoutMS=5000)
+    client = MongoClient(URI, serverSelectionTimeoutMS=5000, tz_aware=True)
     db_name = f"source_key_revocation_{uuid.uuid4().hex}"
     db = client[db_name]
     try:
