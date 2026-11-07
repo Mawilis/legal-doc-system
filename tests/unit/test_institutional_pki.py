@@ -18,6 +18,7 @@ from tools.eos.security.institutional_pki import (
     InstitutionalPKIVerifier,
 )
 from tools.eos.api.institutional_pki_router import router as institutional_pki_router
+from tools.eos.security.institutional_pki_provisioning import assemble_crl_bundle
 
 NOW = datetime.now(timezone.utc)
 SIGNING_EKU = "1.3.6.1.4.1.55555.1.1"
@@ -266,3 +267,29 @@ def test_crl_refresh_requires_and_invokes_durable_currentness_binding(tmp_path):
     assert len(observations) == 1
     assert len(observations[0]) == 2
     assert all(number == 1 for number, _ in observations[0].values())
+
+
+
+def test_assembles_complete_multi_issuer_crl_bundle_atomically(tmp_path):
+    verifier, _, _, _ = _fixture(tmp_path)
+    crl_paths = []
+    for index, crl in enumerate(verifier.refresh_crls()):
+        path = tmp_path / f"issuer-{index}.crl.pem"
+        path.write_bytes(crl.public_bytes(serialization.Encoding.PEM))
+        crl_paths.append(path)
+    output = tmp_path / "deployment" / "crl-bundle.pem"
+    bundle_path, fingerprint = assemble_crl_bundle(
+        crl_paths=crl_paths,
+        output_path=output,
+    )
+    assert bundle_path == output
+    assert len(fingerprint) == 64
+    assert bundle_path.read_bytes().count(b"-----BEGIN X509 CRL-----") == 2
+
+
+def test_crl_bundle_assembly_rejects_duplicate_issuer(tmp_path):
+    verifier, _, _, _ = _fixture(tmp_path)
+    path = tmp_path / "root.crl.pem"
+    path.write_bytes(verifier._crls[0].public_bytes(serialization.Encoding.PEM))
+    with pytest.raises(InstitutionalPKIError, match="BUNDLE_DUPLICATE_ISSUER"):
+        assemble_crl_bundle(crl_paths=[path, path], output_path=tmp_path / "bundle.pem")
