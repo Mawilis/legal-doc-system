@@ -291,7 +291,7 @@ def issue_crl_with_kms(
     if type(validity_hours) is not int or not 1 <= validity_hours <= 168:
         raise InstitutionalPKIKMSError("INSTITUTIONAL_KMS_CRL_VALIDITY_INVALID")
     if not isinstance(key_arn, str) or re.fullmatch(
-        r"arn:aws(?:-[a-z]+)?:kms:[a-z]{2}(?:-gov)?-[a-z]+-\\d:[0-9]{12}:key/[A-Za-z0-9-]+",
+        r"arn:aws(?:-[a-z-]+)?:kms:[a-z]{2}(?:-gov)?-[a-z]+-\d:[0-9]{12}:key/[A-Za-z0-9-]+",
         key_arn,
     ) is None:
         raise InstitutionalPKIKMSError("INSTITUTIONAL_KMS_KEY_ARN_INVALID")
