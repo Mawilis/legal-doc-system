@@ -111,8 +111,6 @@ class CandidateEvidenceS3StorageAdapter:
             _fail("CANDIDATE_EVIDENCE_S3_SESSION_INVALID")
         if not isinstance(chunk, bytes) or not chunk or len(chunk) > MAX_CHUNK_BYTES:
             _fail("CANDIDATE_EVIDENCE_S3_CHUNK_INVALID")
-        if session.parts and len(session.parts[-1]["_length"]) if False else False:
-            _fail("CANDIDATE_EVIDENCE_S3_PART_INVALID")
         if session.parts and session.parts[-1]["length"] < MIN_NONFINAL_PART_BYTES:
             _fail("CANDIDATE_EVIDENCE_S3_NONFINAL_PART_TOO_SMALL")
         if session.bytes_written + len(chunk) > session.intent.admitted_max_content_length:
@@ -165,6 +163,7 @@ class CandidateEvidenceS3StorageAdapter:
                 or metadata.get("wilsy-evidence-sha3-256") != _component(session.intent.evidence_id)
                 or metadata.get("wilsy-version-sha3-256") != _component(session.intent.evidence_version_id)
                 or head.get("ServerSideEncryption") != "aws:kms"
+                or head.get("SSEKMSKeyId") != self._config.kms_key_id
             ):
                 _fail("CANDIDATE_EVIDENCE_S3_OBJECT_OBSERVATION_MISMATCH", uncertain=True)
             session.closed = True
@@ -196,7 +195,12 @@ class CandidateEvidenceS3StorageAdapter:
             if (
                 head.get("ContentLength") != evidence.byte_length
                 or metadata.get("wilsy-intent-fingerprint") != intent.fingerprint
+                or metadata.get("wilsy-tenant-sha3-256") != _component(intent.tenant_id)
+                or metadata.get("wilsy-candidate-sha3-256") != _component(intent.candidate_id)
+                or metadata.get("wilsy-evidence-sha3-256") != _component(intent.evidence_id)
+                or metadata.get("wilsy-version-sha3-256") != _component(intent.evidence_version_id)
                 or head.get("ServerSideEncryption") != "aws:kms"
+                or head.get("SSEKMSKeyId") != self._config.kms_key_id
                 or str(head.get("ETag", "")) != evidence.provider_integrity_reference
             ):
                 _fail("CANDIDATE_EVIDENCE_S3_INSPECTION_MISMATCH")
