@@ -107,6 +107,7 @@ class CandidateEvidenceUploadReconciler:
             evidence_version_id=attempt.evidence_version_id,
             ingestion_reference=attempt.ingestion_reference,
             intent_fingerprint=attempt.intent_fingerprint,
+            media_type=attempt.media_type,
         )
 
     def _register_custody(self, attempt: CandidateEvidenceUploadAttempt, evidence: Any) -> bool:
@@ -239,6 +240,8 @@ class CandidateEvidenceUploadReconciler:
             # considering the attempt abandoned or orphaned.
             evidence = self._inspect_completed(attempt)
             if evidence is not None:
+                if attempt.admitted_max_content_length is not None and evidence.byte_length > attempt.admitted_max_content_length:
+                    raise CandidateEvidenceUploadReconciliationError("RECONCILIATION_OBJECT_EXCEEDS_ADMITTED_LENGTH")
                 if attempt.status is not UploadAttemptStatus.PROVIDER_VERIFIED:
                     attempt = self._advance(
                         attempt, UploadAttemptStatus.PROVIDER_VERIFIED,
