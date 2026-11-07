@@ -99,6 +99,11 @@ class CandidateEvidenceUploadAttempt:
     created_at: datetime
     updated_at: datetime
     offer_id: str | None = None
+    actor_principal_id: str | None = None
+    evidence_kind: str | None = None
+    media_type: str | None = None
+    original_filename: str | None = None
+    admitted_max_content_length: int | None = None
     parts: tuple[Mapping[str, Any], ...] = ()
     byte_length: int = 0
     object_version_reference: str | None = None
@@ -127,6 +132,24 @@ class CandidateEvidenceUploadAttempt:
                 raise UploadAttemptError("UPLOAD_ATTEMPT_PROVIDER_OBJECT_INVALID")
         if self.offer_id is not None:
             _id(self.offer_id, "UPLOAD_ATTEMPT_OFFER_INVALID")
+        if self.actor_principal_id is not None:
+            _id(self.actor_principal_id, "UPLOAD_ATTEMPT_ACTOR_INVALID")
+        if self.evidence_kind is not None and self.evidence_kind not in {"CANDIDATE_PROFILE", "SIGNED_OFFER"}:
+            raise UploadAttemptError("UPLOAD_ATTEMPT_EVIDENCE_KIND_INVALID")
+        for name, value, maximum in (
+            ("media_type", self.media_type, 128),
+            ("original_filename", self.original_filename, 255),
+        ):
+            if value is not None and (
+                not isinstance(value, str) or not value or value != value.strip()
+                or len(value) > maximum or any(ord(c) < 32 for c in value)
+            ):
+                raise UploadAttemptError(f"UPLOAD_ATTEMPT_{name.upper()}_INVALID")
+        if self.admitted_max_content_length is not None and (
+            type(self.admitted_max_content_length) is not int
+            or not 1 <= self.admitted_max_content_length <= 100 * 1024 * 1024
+        ):
+            raise UploadAttemptError("UPLOAD_ATTEMPT_MAX_LENGTH_INVALID")
         for value in (self.intent_fingerprint, self.content_digest_sha3_512):
             if value is not None and (not isinstance(value, str) or len(value) != 128 or any(c not in "0123456789abcdef" for c in value)):
                 raise UploadAttemptError("UPLOAD_ATTEMPT_DIGEST_INVALID")
@@ -152,6 +175,15 @@ class CandidateEvidenceUploadAttempt:
             "content_digest_sha3_512": self.content_digest_sha3_512,
             "provider_integrity_reference": self.provider_integrity_reference, "failure_code": self.failure_code,
         }
+        recovery_context = {
+            "actor_principal_id": self.actor_principal_id,
+            "evidence_kind": self.evidence_kind,
+            "media_type": self.media_type,
+            "original_filename": self.original_filename,
+            "admitted_max_content_length": self.admitted_max_content_length,
+        }
+        if any(value is not None for value in recovery_context.values()):
+            payload.update(recovery_context)
         fp = hashlib.sha3_512(json.dumps(payload, sort_keys=True, separators=(",", ":"), default=str).encode()).hexdigest()
         if self.fingerprint and self.fingerprint != fp:
             raise UploadAttemptError("UPLOAD_ATTEMPT_FINGERPRINT_MISMATCH")
@@ -176,6 +208,10 @@ class CandidateEvidenceUploadAttempt:
             provider_object_reference=provider_object_reference if provider_object_reference is not None else self.provider_object_reference,
             status=status, revision=self.revision + 1, created_at=self.created_at,
             updated_at=_utc(occurred_at), offer_id=self.offer_id,
+            actor_principal_id=self.actor_principal_id,
+            evidence_kind=self.evidence_kind, media_type=self.media_type,
+            original_filename=self.original_filename,
+            admitted_max_content_length=self.admitted_max_content_length,
             parts=self.parts if parts is None else parts,
             byte_length=self.byte_length if byte_length is None else byte_length,
             object_version_reference=object_version_reference or self.object_version_reference,
@@ -192,8 +228,12 @@ class CandidateEvidenceUploadAttempt:
             "intent_fingerprint": self.intent_fingerprint, "provider_id": self.provider_id,
             "provider_upload_id": self.provider_upload_id, "provider_object_reference": self.provider_object_reference,
             "status": self.status.value, "revision": self.revision, "created_at": self.created_at.isoformat(),
-            "updated_at": self.updated_at.isoformat(), "offer_id": self.offer_id, "parts": list(self.parts),
-            "byte_length": self.byte_length, "object_version_reference": self.object_version_reference,
+            "updated_at": self.updated_at.isoformat(), "offer_id": self.offer_id,
+            "actor_principal_id": self.actor_principal_id, "evidence_kind": self.evidence_kind,
+            "media_type": self.media_type, "original_filename": self.original_filename,
+            "admitted_max_content_length": self.admitted_max_content_length,
+            "parts": list(self.parts), "byte_length": self.byte_length,
+            "object_version_reference": self.object_version_reference,
             "content_digest_sha3_512": self.content_digest_sha3_512,
             "provider_integrity_reference": self.provider_integrity_reference,
             "failure_code": self.failure_code, "fingerprint": self.fingerprint,
@@ -256,6 +296,35 @@ class CandidateEvidenceUploadAttemptRegistry:
             raise UploadAttemptConflict("UPLOAD_ATTEMPT_EVENT_CONFLICT") from error
         except PyMongoError as error:
             raise UploadAttemptError("UPLOAD_ATTEMPT_TRANSITION_UNAVAILABLE") from error
+
+    def list_reconcilable(self, *, session: object, limit: int = 500):
+        if session is None:
+            raise UploadAttemptError("UPLOAD_ATTEMPT_TRANSACTION_REQUIRED")
+        if type(limit) is not int or not 1 <= limit <= 1000:
+            raise UploadAttemptError("UPLOAD_ATTEMPT_LIMIT_INVALID")
+        statuses = [
+            UploadAttemptStatus.INITIATING.value,
+            UploadAttemptStatus.INITIATED.value,
+            UploadAttemptStatus.PARTS_UPLOADED.value,
+            UploadAttemptStatus.COMPLETION_UNCERTAIN.value,
+            UploadAttemptStatus.PROVIDER_VERIFIED.value,
+        ]
+        try:
+            rows = list(
+                self._attempts.find({"status": {"$in": statuses}}, session=session)
+                .sort("updated_at", ASCENDING).limit(limit)
+            )
+        except PyMongoError as error:
+            raise UploadAttemptError("UPLOAD_ATTEMPT_RECONCILIATION_READ_UNAVAILABLE") from error
+        result = []
+        for row in rows:
+            row.pop("_id", None)
+            row.pop("fingerprint", None)
+            row["created_at"] = row["created_at"] if isinstance(row["created_at"], str) else row["created_at"].isoformat()
+            row["updated_at"] = row["updated_at"] if isinstance(row["updated_at"], str) else row["updated_at"].isoformat()
+            row["status"] = UploadAttemptStatus(row["status"])
+            result.append(CandidateEvidenceUploadAttempt(**row))
+        return tuple(result)
 
     def get(self, *, tenant_id: str, upload_attempt_id: str, session: object):
         if session is None:
