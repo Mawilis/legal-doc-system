@@ -24,6 +24,7 @@ from tools.eos.api.tenant_authorization_http import (
 from tools.eos.kernel.db import get_client, get_database
 from tools.eos.security.institutional_source_key_governance_evidence import (
     InstitutionalSourceKeyGovernanceEvidenceError,
+    VerifiedSourceKeyRevocationApproval,
 )
 from tools.eos.security.institutional_source_signing_key_registry import (
     KEY_COLLECTION,
@@ -263,7 +264,7 @@ async def revoke_source_signing_key(
         if record["proposed_by_principal_id"] == context.identity.identity_id:
             raise HTTPException(status_code=409, detail="SOURCE_SIGNING_KEY_MAKER_CHECKER_VIOLATION")
         now = datetime.now(timezone.utc)
-        verifier.verify_revocation(
+        verified_approval = verifier.verify_revocation(
             tenant_id=context.tenant_id,
             source_system_id=source_system_id,
             key_id=key_id,
@@ -276,12 +277,33 @@ async def revoke_source_signing_key(
             evaluated_at=now,
             session=session,
         )
+        if not isinstance(verified_approval, VerifiedSourceKeyRevocationApproval):
+            raise InstitutionalSourceKeyGovernanceEvidenceError(
+                "INSTITUTIONAL_SOURCE_KEY_REVOCATION_APPROVAL_UNVERIFIED"
+            )
+        if (
+            verified_approval.source_system_id != source_system_id
+            or verified_approval.key_id != key_id
+            or verified_approval.public_key_fingerprint_sha256 != record["public_key_fingerprint_sha256"]
+            or verified_approval.governance_decision_reference != body.governance_decision_reference
+            or verified_approval.approval_evidence_reference != body.approval_evidence_reference
+            or verified_approval.approver_principal_id in {
+                context.identity.identity_id, record["proposed_by_principal_id"],
+            }
+            or len(verified_approval.evidence_fingerprint_sha256) != 64
+            or any(ch not in "0123456789abcdef" for ch in verified_approval.evidence_fingerprint_sha256)
+        ):
+            raise InstitutionalSourceKeyGovernanceEvidenceError(
+                "INSTITUTIONAL_SOURCE_KEY_REVOCATION_APPROVAL_BINDING_INVALID"
+            )
         return registry.revoke(
             source_system_id=source_system_id,
             key_id=key_id,
             revoked_at=now,
             reason_reference=body.reason_reference,
             approval_evidence_reference=body.approval_evidence_reference,
+            revocation_approved_by_principal_id=verified_approval.approver_principal_id,
+            approval_evidence_fingerprint_sha256=verified_approval.evidence_fingerprint_sha256,
             revoked_by_principal_id=context.identity.identity_id,
             governance_decision_reference=body.governance_decision_reference,
             idempotency_key=idempotency_key,
