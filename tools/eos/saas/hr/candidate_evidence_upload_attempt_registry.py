@@ -123,8 +123,11 @@ class CandidateEvidenceUploadAttempt:
             (self.provider_id, "UPLOAD_ATTEMPT_PROVIDER_INVALID"),
         ):
             _id(field, code)
-        if self.status is UploadAttemptStatus.INITIATING:
-            if self.provider_upload_id is not None or self.provider_object_reference is not None:
+        provider_absent = self.provider_upload_id is None and self.provider_object_reference is None
+        if self.status is UploadAttemptStatus.INITIATING or (
+            self.status is UploadAttemptStatus.ORPHANED and provider_absent
+        ):
+            if not provider_absent:
                 raise UploadAttemptError("UPLOAD_ATTEMPT_PROVIDER_MUST_BE_PENDING")
         else:
             _provider_token(self.provider_upload_id)
