@@ -144,8 +144,8 @@ def _is_ca(cert: x509.Certificate) -> x509.BasicConstraints:
 
 
 def _valid_at(cert: x509.Certificate, instant: datetime) -> None:
-    not_before = getattr(cert, "not_valid_before_utc", cert.not_valid_before.replace(tzinfo=timezone.utc))
-    not_after = getattr(cert, "not_valid_after_utc", cert.not_valid_after.replace(tzinfo=timezone.utc))
+    not_before = cert.not_valid_before_utc if hasattr(cert, "not_valid_before_utc") else cert.not_valid_before.replace(tzinfo=timezone.utc)
+    not_after = cert.not_valid_after_utc if hasattr(cert, "not_valid_after_utc") else cert.not_valid_after.replace(tzinfo=timezone.utc)
     if instant < not_before or instant >= not_after:
         raise InstitutionalPKIError("INSTITUTIONAL_PKI_CERTIFICATE_OUTSIDE_VALIDITY")
 
@@ -243,20 +243,34 @@ class InstitutionalPKIVerifier:
         if _is_ca_leaf(leaf):
             raise InstitutionalPKIError("INSTITUTIONAL_PKI_SIGNER_CERTIFICATE_IS_CA")
 
+        anchor_fingerprints = {item.fingerprint(hashes.SHA256()) for item in self._anchors}
+        supplied_fingerprints = {item.fingerprint(hashes.SHA256()) for item in supplied}
+        if len(supplied_fingerprints) != len(supplied) or supplied_fingerprints & anchor_fingerprints:
+            raise InstitutionalPKIError("INSTITUTIONAL_PKI_PRESENTED_CHAIN_DUPLICATE_OR_ROOT_INCLUDED")
         candidates = supplied + self._anchors
         chain = [leaf]
         current = leaf
         seen = {leaf.fingerprint(hashes.SHA256())}
         root: x509.Certificate | None = None
         for _ in range(self._settings.max_chain_depth):
-            issuer = next(
-                (candidate for candidate in candidates
-                 if current.issuer == candidate.subject
-                 and candidate.fingerprint(hashes.SHA256()) not in seen),
-                None,
-            )
-            if issuer is None:
-                raise InstitutionalPKIError("INSTITUTIONAL_PKI_CHAIN_ISSUER_NOT_TRUSTED")
+            matching_issuers = [
+                candidate for candidate in candidates
+                if current.issuer == candidate.subject
+                and candidate.fingerprint(hashes.SHA256()) not in seen
+            ]
+            if len(matching_issuers) != 1:
+                raise InstitutionalPKIError("INSTITUTIONAL_PKI_CHAIN_ISSUER_NOT_FOUND_OR_AMBIGUOUS")
+            issuer = matching_issuers[0]
+            try:
+                authority_key_id = current.extensions.get_extension_for_class(x509.AuthorityKeyIdentifier).value.key_identifier
+            except x509.ExtensionNotFound:
+                authority_key_id = None
+            try:
+                subject_key_id = issuer.extensions.get_extension_for_class(x509.SubjectKeyIdentifier).value.digest
+            except x509.ExtensionNotFound:
+                subject_key_id = None
+            if authority_key_id is not None and subject_key_id is not None and authority_key_id != subject_key_id:
+                raise InstitutionalPKIError("INSTITUTIONAL_PKI_AUTHORITY_KEY_IDENTIFIER_MISMATCH")
             _valid_at(issuer, instant)
             constraints = _is_ca(issuer)
             _verify_signature(current, issuer.public_key())
@@ -275,6 +289,8 @@ class InstitutionalPKIVerifier:
             current = issuer
         if root is None:
             raise InstitutionalPKIError("INSTITUTIONAL_PKI_CHAIN_DEPTH_EXCEEDED")
+        if not supplied_fingerprints.issubset(seen):
+            raise InstitutionalPKIError("INSTITUTIONAL_PKI_UNRELATED_CHAIN_CERTIFICATE_PRESENTED")
 
         revocation_sources: list[str] = []
         for child, issuer in zip(chain[:-1], chain[1:]):
@@ -285,9 +301,30 @@ class InstitutionalPKIVerifier:
             if len(matching) != 1:
                 raise InstitutionalPKIError("INSTITUTIONAL_PKI_ISSUER_CRL_MISSING_OR_AMBIGUOUS")
             crl = matching[0]
+            try:
+                crl.extensions.get_extension_for_class(x509.DeltaCRLIndicator)
+                raise InstitutionalPKIError("INSTITUTIONAL_PKI_DELTA_CRL_NOT_SUPPORTED")
+            except x509.ExtensionNotFound:
+                pass
+            try:
+                distribution = crl.extensions.get_extension_for_class(x509.IssuingDistributionPoint).value
+                if distribution.indirect_crl:
+                    raise InstitutionalPKIError("INSTITUTIONAL_PKI_INDIRECT_CRL_NOT_SUPPORTED")
+            except x509.ExtensionNotFound:
+                pass
+            try:
+                crl_authority_key_id = crl.extensions.get_extension_for_class(x509.AuthorityKeyIdentifier).value.key_identifier
+            except x509.ExtensionNotFound:
+                crl_authority_key_id = None
+            try:
+                issuer_subject_key_id = issuer.extensions.get_extension_for_class(x509.SubjectKeyIdentifier).value.digest
+            except x509.ExtensionNotFound:
+                issuer_subject_key_id = None
+            if crl_authority_key_id is not None and issuer_subject_key_id is not None and crl_authority_key_id != issuer_subject_key_id:
+                raise InstitutionalPKIError("INSTITUTIONAL_PKI_CRL_AUTHORITY_KEY_IDENTIFIER_MISMATCH")
             _verify_signature(crl, issuer.public_key())
-            this_update = getattr(crl, "last_update_utc", crl.last_update.replace(tzinfo=timezone.utc))
-            next_update = getattr(crl, "next_update_utc", crl.next_update.replace(tzinfo=timezone.utc) if crl.next_update else None)
+            this_update = crl.last_update_utc if hasattr(crl, "last_update_utc") else crl.last_update.replace(tzinfo=timezone.utc)
+            next_update = crl.next_update_utc if hasattr(crl, "next_update_utc") else crl.next_update.replace(tzinfo=timezone.utc) if crl.next_update else None
             if next_update is None or this_update > instant or next_update <= instant:
                 raise InstitutionalPKIError("INSTITUTIONAL_PKI_CRL_NOT_CURRENT")
             if (instant - this_update).total_seconds() > self._settings.max_crl_age_seconds:
