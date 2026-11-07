@@ -1,3 +1,4 @@
+import hashlib
 import json
 from types import SimpleNamespace
 
@@ -32,7 +33,7 @@ def test_signed_offer_manifest_is_canonical_and_commits_to_exact_offer_and_docum
         "offer_id": "OFFER-001",
         "candidate_id": "CAN-001",
         "requisition_id": "REQ-001",
-        "offer_terms_sha3_512": __import__("hashlib").sha3_512(
+        "offer_terms_sha3_512": hashlib.sha3_512(
             b'{"currency":"ZAR","position_title":"Engineer"}'
         ).hexdigest(),
         "evidence_id": "EVD-001",
@@ -55,16 +56,27 @@ def test_signed_offer_manifest_changes_when_offer_revision_terms_or_evidence_cha
     baseline = _signed_offer_manifest(
         tenant_id="WILSYTENANT-4CD2FZ4O", offer=offer, evidence=evidence,
     )
-    changed_offer = SimpleNamespace(
-        offer_id="OFFER-001", candidate_id="CAN-001",
+    changed_revision = SimpleNamespace(
+        offer_id="OFFER-001", candidate_id="CAN-001", requisition_id="REQ-001",
         revision=8, fingerprint="e" * 64,
+        terms=SimpleNamespace(to_dict=lambda: {"position_title": "Engineer", "currency": "ZAR"}),
+    )
+    changed_terms = SimpleNamespace(
+        offer_id="OFFER-001", candidate_id="CAN-001", requisition_id="REQ-001",
+        revision=8, fingerprint="e" * 64,
+        terms=SimpleNamespace(to_dict=lambda: {"position_title": "Director", "currency": "ZAR"}),
     )
     changed_evidence = SimpleNamespace(
         evidence_id="EVD-001", evidence_version_id="VER-004",
         content_digest_sha3_512="b" * 128,
     )
+    # Lifecycle revision changes on APPROVED -> SENT; it must not invalidate
+    # a signature over unchanged, already-approved commercial terms.
+    assert baseline == _signed_offer_manifest(
+        tenant_id="WILSYTENANT-4CD2FZ4O", offer=changed_revision, evidence=evidence,
+    )
     assert baseline != _signed_offer_manifest(
-        tenant_id="WILSYTENANT-4CD2FZ4O", offer=changed_offer, evidence=evidence,
+        tenant_id="WILSYTENANT-4CD2FZ4O", offer=changed_terms, evidence=evidence,
     )
     assert baseline != _signed_offer_manifest(
         tenant_id="WILSYTENANT-4CD2FZ4O", offer=offer, evidence=changed_evidence,
