@@ -356,6 +356,65 @@ class Ed25519InstitutionalSignerSourceResponseAuthenticator:
 
 
 
+class RegistryBackedEd25519InstitutionalSignerSourceResponseAuthenticator:
+    """Resolve every source key from the canonical lifecycle registry per request.
+
+    The caller supplies an already-authorized, caller-owned MongoDB session.
+    This adapter performs no transaction control. Every verification observes
+    current key expiry and append-only revocation evidence; it cannot cache a
+    prior ACTIVE decision across revocation. The registry remains non-authorizing:
+    enrollment and governance approval must be enforced by the calling service.
+    """
+
+    def __init__(self, *, registry, session) -> None:
+        if registry is None or session is None:
+            raise InstitutionalSignerSourceAdapterError(
+                "INSTITUTIONAL_SIGNER_SOURCE_TRUST_REGISTRY_UNAVAILABLE"
+            )
+        self._registry = registry
+        self._session = session
+
+    def authenticate_response(
+        self, *, expected_source_system_id: str,
+        lookup: InstitutionalSignerSourceLookup,
+        response: InstitutionalSignerSourceEvidence,
+    ) -> None:
+        from tools.eos.security.institutional_source_signing_key_registry import (
+            SourceSigningKeyRegistryConflict,
+            SourceSigningKeyRegistryError,
+        )
+        from cryptography.hazmat.primitives.asymmetric.ed25519 import Ed25519PublicKey
+
+        try:
+            trust = self._registry.resolve(
+                source_system_id=expected_source_system_id,
+                key_id=response.response_signing_key_id,
+                evaluated_at=datetime.now(timezone.utc),
+                session=self._session,
+            )
+        except SourceSigningKeyRegistryConflict as error:
+            raise InstitutionalSignerSourceAdapterError(
+                "INSTITUTIONAL_SIGNER_SOURCE_SIGNING_KEY_NOT_CURRENT"
+            ) from error
+        except SourceSigningKeyRegistryError as error:
+            raise InstitutionalSignerSourceAdapterError(
+                "INSTITUTIONAL_SIGNER_SOURCE_TRUST_REGISTRY_UNAVAILABLE"
+            ) from error
+        if response.source_system_id != expected_source_system_id:
+            raise InstitutionalSignerSourceAdapterError(
+                "INSTITUTIONAL_SIGNER_SOURCE_SIGNING_KEY_UNTRUSTED"
+            )
+        try:
+            Ed25519PublicKey.from_public_bytes(trust["public_key_bytes"]).verify(
+                base64.b64decode(response.response_signature_base64, validate=True),
+                _canonical_source_response_payload(response),
+            )
+        except (InvalidSignature, ValueError, KeyError, TypeError):
+            raise InstitutionalSignerSourceAdapterError(
+                "INSTITUTIONAL_SIGNER_SOURCE_RESPONSE_SIGNATURE_INVALID"
+            ) from None
+
+
 def read_authenticated_source_evidence(
     *,
     adapter: InstitutionalSignerEvidenceSourceAdapter,
@@ -492,6 +551,7 @@ __all__ = [
     "InstitutionalSignerEvidenceSourceAdapter",
     "InstitutionalSignerSourceResponseAuthenticator",
     "Ed25519InstitutionalSignerSourceResponseAuthenticator",
+    "RegistryBackedEd25519InstitutionalSignerSourceResponseAuthenticator",
     "InstitutionalSignerSourceTrustKey",
     "InstitutionalSignerSourceAdapterSet",
     "UnavailableInstitutionalSignerSourceAdapterSet",
