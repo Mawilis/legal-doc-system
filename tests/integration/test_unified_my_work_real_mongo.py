@@ -38,6 +38,10 @@ from tools.eos.auth.tenant_business_role_repository import TenantBusinessRoleRep
 from tools.eos.auth.role_assignment import RoleAssignmentAuthority, RoleAssignmentStatus
 from tools.eos.auth.role_assignment_repository import RoleAssignmentRepository, RoleAssignmentNotFoundError
 from tools.eos.auth.tenant_authority_policy import TENANT_ROLES
+from tools.eos.legal_operations.domain.legal_work_assignment import LegalWorkAssignment
+from tools.eos.legal_operations.domain.legal_work_item import LegalWorkItem
+from tools.eos.legal_operations.registry.legal_work_assignment_registry import LegalWorkAssignmentRegistry
+from tools.eos.legal_operations.registry.legal_work_item_registry import LegalWorkItemRegistry
 from tools.eos.crm.domain.owner_commercial_work_item import OwnerWorkKind, OwnerWorkPriority
 import tools.eos.kernel.db as kernel_db
 import tools.eos.saas.billing.plan_registry as plan_registry_module
@@ -296,6 +300,72 @@ def _seed_live_owner_iam(database: Any, principal_id: str, tenant_id: str) -> No
 
 
 
+
+def _seed_live_legal_partner_iam(database: Any, tenant_id: str, principal_id: str) -> None:
+    PrincipalAuthorityRepository.create(
+        PrincipalAuthority(principal_id, PrincipalStatus.ACTIVE, 0),
+        database["principal_authorities"],
+    )
+    TenantMembershipRepository.insert(
+        TenantMembershipAuthority(principal_id, tenant_id, TenantMembershipStatus.ACTIVE, 0),
+        database["tenant_memberships"],
+    )
+    TenantBusinessRoleRepository.insert(
+        TenantBusinessRoleAuthority(
+            principal_id, tenant_id, "tenant_legal_attorney",
+            TenantBusinessRoleStatus.ACTIVE, 0, NOW, None,
+        ),
+        database["tenant_business_roles"],
+    )
+    RoleAssignmentRepository.insert(
+        RoleAssignmentAuthority(principal_id, tenant_id, "LEGAL_ATTORNEY", RoleAssignmentStatus.ACTIVE, 0),
+        database["role_assignments"],
+    )
+
+
+def _seed_live_legal_work(database: Any, tenant_id: str, principal_id: str) -> str:
+    work = LegalWorkItem(
+        work_item_id="my-work-live-legal-assigned-1",
+        tenant_id=tenant_id,
+        case_matter_id="my-work-live-legal-matter-1",
+        title="Prepare evidence-backed Legal filing",
+        source_kind="LEGAL_WORKFLOW_STAGE",
+        source_reference="stage:my-work-live-legal-1",
+        source_evidence_fingerprint="a" * 128,
+        status="OPEN",
+        created_at=NOW,
+        due_at=None,
+        completion_evidence_reference=None,
+        completion_evidence_fingerprint=None,
+        completed_at=None,
+        cancellation_reason_reference=None,
+        cancelled_at=None,
+    )
+    assignment = LegalWorkAssignment(
+        assignment_id="my-work-live-legal-assignment-1",
+        tenant_id=tenant_id,
+        case_matter_id="my-work-live-legal-matter-1",
+        work_item_id="my-work-live-legal-assigned-1",
+        assignee_principal_id=principal_id,
+        assigned_by_principal_id="my-work-live-legal-assigner",
+        assigned_at=NOW,
+        assignment_reason_reference="reason:my-work-live-legal",
+        authorization_evidence_reference="authz:my-work-live-legal",
+        supersedes_assignment_id=None,
+    )
+    work_registry = LegalWorkItemRegistry(
+        database[my_work.legal_source.LEGAL_WORK_ITEM_COLLECTION]
+    )
+    assignment_registry = LegalWorkAssignmentRegistry(
+        database[my_work.legal_source.LEGAL_WORK_ASSIGNMENT_COLLECTION]
+    )
+    work_registry.ensure_indexes()
+    assignment_registry.ensure_indexes()
+    work_registry.create_or_replay(work)
+    assignment_registry.persist(assignment)
+    return work.work_item_id
+
+
 def _seed_live_commercial_issuer(database: Any, tenant_id: str, principal_id: str) -> None:
     principals = database["principal_authorities"]
     memberships = database["tenant_memberships"]
@@ -478,3 +548,54 @@ def test_authenticated_my_work_uses_live_mongo_iam_and_rejects_foreign_scope(
     assert any(row["title"] == "Live IAM CRM owner follow-up" for row in payload["items"])
     assert foreign.status_code == 403
     assert foreign.json()["detail"] == "MY_WORK_NO_AUTHORIZED_SOURCE"
+
+
+def test_legal_partner_my_work_reads_live_assigned_legal_work_from_replica_set(
+    mongo_context, monkeypatch: Any
+) -> None:
+    client, database = mongo_context
+    tenant_id = TENANT + "-legal-partner"
+    principal_id = PRINCIPAL + "-legal-partner"
+    _seed_live_legal_partner_iam(database, tenant_id, principal_id)
+    expected_work_item_id = _seed_live_legal_work(database, tenant_id, principal_id)
+    monkeypatch.setattr(
+        my_work.legal_source,
+        "_db_handles",
+        lambda: (client, database),
+    )
+
+    app = FastAPI()
+    register_error_handlers(app, debug=False)
+    app.include_router(my_work.router, prefix="/api")
+    identity = SovereignIdentity(
+        identity_id=principal_id,
+        tenant_id="untrusted-token-tenant",
+        username="live-legal-partner",
+        email="live-legal-partner@example.test",
+        roles=["tenant_legal_attorney"],
+        permissions=[],
+        auth_method="TEST",
+        status=PrincipalStatus.ACTIVE,
+    )
+    app.dependency_overrides[my_work.get_current_identity] = lambda: identity
+    app.dependency_overrides[authentication.get_principal_authority_repository] = (
+        lambda: _LivePrincipalReader(database["principal_authorities"])
+    )
+    app.dependency_overrides[tenant_access.get_tenant_membership_repository] = (
+        lambda: _LiveMembershipReader(database["tenant_memberships"])
+    )
+    app.dependency_overrides[authorization_http.get_role_assignment_repository] = (
+        lambda: _LiveRoleReader(database["role_assignments"], database["tenant_business_roles"])
+    )
+
+    with TestClient(app) as api:
+        response = api.get("/api/my-work", headers={"X-Tenant-ID": tenant_id})
+
+    assert response.status_code == 200, response.text
+    payload = response.json()
+    assert payload["tenant_id"] == tenant_id
+    assert payload["sources_included"] == ["LEGAL"]
+    assert [row["work_item_id"] for row in payload["items"]] == [expected_work_item_id]
+    assert payload["items"][0]["source"] == "LEGAL"
+    assert payload["items"][0]["visibility_provenance"] == ["ASSIGNED"]
+    assert payload["authority"]["permits_completion"] is False
