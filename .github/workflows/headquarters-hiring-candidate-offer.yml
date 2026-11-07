@@ -3,7 +3,13 @@ name: WILSY Headquarters Candidate and Offer Lifecycle
 on:
   pull_request:
     paths:
-      - "tools/eos/api/hiring_lifecycle_router.py"\n      - "tools/eos/api/server.py"\n      - "tools/eos/auth/permission_namespace.py"\n      - "tools/eos/auth/tenant_authorization.py"\n      - "tools/eos/auth/roles.py"\n      - "tests/integration/test_hiring_lifecycle_authenticated_http.py"\n      - "tools/eos/saas/domain/hiring_lifecycle.py"
+      - "tools/eos/api/hiring_lifecycle_router.py"
+      - "tools/eos/api/server.py"
+      - "tools/eos/auth/permission_namespace.py"
+      - "tools/eos/auth/tenant_authorization.py"
+      - "tools/eos/auth/roles.py"
+      - "tests/integration/test_hiring_lifecycle_authenticated_http.py"
+      - "tools/eos/saas/domain/hiring_lifecycle.py"
       - "tools/eos/saas/hr/hiring_lifecycle_registry.py"
       - "tests/unit/test_hiring_lifecycle_domain.py"
       - "tests/integration/test_hiring_lifecycle_registry_real_mongo.py"
