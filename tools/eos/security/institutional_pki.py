@@ -488,7 +488,7 @@ class InstitutionalPKIVerifier:
         root_fingerprint = root.fingerprint(hashes.SHA256()).hex()
         issuer_name = _subject_common_name(chain[1])
         material = "|".join((
-            leaf_fingerprint, root_fingerprint, leaf.serial_number,
+            leaf_fingerprint, root_fingerprint, format(leaf.serial_number, "x"),
             instant.isoformat(), *revocation_sources,
         )).encode()
         return InstitutionalCertificateVerification(
