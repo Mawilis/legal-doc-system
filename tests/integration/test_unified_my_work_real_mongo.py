@@ -38,6 +38,14 @@ from tools.eos.auth.tenant_business_role_repository import TenantBusinessRoleRep
 from tools.eos.auth.role_assignment import RoleAssignmentAuthority, RoleAssignmentStatus
 from tools.eos.auth.role_assignment_repository import RoleAssignmentRepository, RoleAssignmentNotFoundError
 from tools.eos.auth.tenant_authority_policy import TENANT_ROLES
+from tools.eos.crm.domain.owner_commercial_work_item import OwnerWorkKind, OwnerWorkPriority
+import tools.eos.kernel.db as kernel_db
+import tools.eos.saas.billing.plan_registry as plan_registry_module
+import tools.eos.saas.billing.subscription_registry as subscription_registry_module
+import tools.eos.saas.billing.subscription_active_entitlement_composition_service as subscription_composition_module
+from tools.eos.saas.billing.plan_registry import PlanRegistry
+from tools.eos.saas.billing.subscription_active_entitlement_composition_service import SubscriptionActiveEntitlementCompositionService
+from tools.eos.saas.entitlement.tenant_product_entitlement_registry import ensure_indexes as ensure_entitlement_indexes
 from tools.eos.saas.domain.tenant_product_entitlement import (
     TenantProductEntitlementState,
     create_tenant_product_entitlement,
@@ -284,6 +292,66 @@ def _seed_live_owner_iam(database: Any, principal_id: str, tenant_id: str) -> No
         RoleAssignmentAuthority(principal_id, tenant_id, "TENANT_OWNER", RoleAssignmentStatus.ACTIVE, 0),
         assignments,
     )
+
+
+
+def _seed_live_legal_subscription(
+    client: MongoClient[Any], database: Any, tenant_id: str, principal_id: str,
+    monkeypatch: Any,
+) -> None:
+    subscriptions = database["subscriptions"]
+    plans = database["plans"]
+    monkeypatch.setattr(subscription_registry_module, "subscriptions_collection", subscriptions)
+    monkeypatch.setattr(plan_registry_module, "plans_collection", plans)
+    monkeypatch.setattr(kernel_db, "get_client", lambda: client)
+    monkeypatch.setattr(kernel_db, "get_database", lambda: database)
+    monkeypatch.setattr(subscription_composition_module, "get_client", lambda: client)
+    monkeypatch.setattr(subscription_composition_module, "get_database", lambda: database)
+    PlanRegistry.provision_indexes()
+    subscription_registry_module._ensure_indexes()
+    subscription_composition_module._authorization_registry(database).ensure_indexes()
+    ensure_entitlement_indexes(
+        database[entitlement_registry.HISTORY_COLLECTION],
+        database[entitlement_registry.CURRENT_COLLECTION],
+    )
+    plan = PlanRegistry.create({
+        "name": "WILSY My Work Certification Legal Enterprise",
+        "price": 14400.0,
+        "currency": "ZAR",
+        "billingFrequency": "annual",
+        "planType": "ENTERPRISE",
+        "idempotencyKey": f"my-work-plan-{tenant_id}",
+        "active": True,
+        "features": ["legal.core"],
+        "metadata": {"certificate": "MY-WORK-CRM-REAL-MONGO"},
+        "tags": ["my-work-real-mongo"],
+        "user": "MY-WORK-REAL-MONGO-CERT",
+    })
+    assert plan["success"] is True
+    identity = SovereignIdentity(
+        identity_id=principal_id,
+        tenant_id=tenant_id,
+        username=None,
+        email=None,
+        roles=[],
+        permissions=[],
+        auth_method="MY-WORK-REAL-MONGO-CERT",
+        status=PrincipalStatus.ACTIVE,
+    )
+    result = SubscriptionActiveEntitlementCompositionService.create(
+        {
+            "tenantId": tenant_id,
+            "planId": plan["plan"].plan_id,
+            "startDate": NOW.isoformat(),
+            "idempotencyKey": f"my-work-subscription-{tenant_id}",
+            "billingMode": "PLATFORM",
+            "onboardingRef": f"MY-WORK-{tenant_id}",
+            "metadata": {"certificate": "MY-WORK-CRM-REAL-MONGO"},
+        },
+        identity,
+    )
+    assert result.legal_entitlement_applicable is True
+    assert result.entitlement_issuance_result is not None
 
 
 def test_authenticated_my_work_uses_live_mongo_iam_and_rejects_foreign_scope(
