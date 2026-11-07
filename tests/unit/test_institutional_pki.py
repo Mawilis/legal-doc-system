@@ -10,7 +10,7 @@ from fastapi.testclient import TestClient
 from cryptography import x509
 from cryptography.hazmat.primitives import hashes, serialization
 from cryptography.hazmat.primitives.asymmetric import rsa
-from cryptography.x509.oid import ExtendedKeyUsageOID, NameOID
+from cryptography.x509.oid import ExtendedKeyUsageOID, NameOID, ObjectIdentifier
 
 from tools.eos.security.institutional_pki import (
     InstitutionalPKIError,
@@ -93,7 +93,7 @@ def _fixture(tmp_path: Path, *, revoked_leaf=False, stale_crl=False, eku=SIGNING
             data_encipherment=False, key_agreement=False, key_cert_sign=False,
             crl_sign=False, encipher_only=False, decipher_only=False,
         ), critical=True)
-        .add_extension(x509.ExtendedKeyUsage([x509.ObjectIdentifier(eku)]), critical=False)
+        .add_extension(x509.ExtendedKeyUsage([ObjectIdentifier(eku)]), critical=False)
     )
     leaf = leaf_builder.sign(intermediate_key, hashes.SHA256())
     crl_last = NOW - timedelta(days=2) if stale_crl else NOW - timedelta(minutes=1)
