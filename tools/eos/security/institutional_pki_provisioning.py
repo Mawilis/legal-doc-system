@@ -12,6 +12,7 @@ from hashlib import sha256
 from pathlib import Path
 import os
 import re
+import tempfile
 from urllib.parse import urlsplit
 from typing import Iterable
 
@@ -63,6 +64,21 @@ def _crl_distribution_url(base_url: str, issuer_name: x509.Name) -> str:
         raise InstitutionalPKIError("INSTITUTIONAL_PKI_CRL_PUBLICATION_URL_INVALID")
     issuer_reference = sha256(issuer_name.public_bytes()).hexdigest()
     return base_url.rstrip("/") + "/" + issuer_reference
+
+
+def _replace_public(path: Path, data: bytes) -> None:
+    descriptor, temporary_name = tempfile.mkstemp(prefix=".crl-", dir=path.parent)
+    temporary = Path(temporary_name)
+    try:
+        os.fchmod(descriptor, 0o644)
+        with os.fdopen(descriptor, "wb") as stream:
+            stream.write(data)
+            stream.flush()
+            os.fsync(stream.fileno())
+        os.replace(temporary, path)
+    except Exception:
+        temporary.unlink(missing_ok=True)
+        raise
 
 
 def _name(common_name: str, organization: str) -> x509.Name:
@@ -262,5 +278,5 @@ def issue_crl(
     crl = builder.sign(private_key=key, algorithm=hashes.SHA384())
     target = output_path.expanduser().resolve()
     target.parent.mkdir(mode=0o700, parents=True, exist_ok=True)
-    _write_public(target, crl.public_bytes(serialization.Encoding.PEM))
+    _replace_public(target, crl.public_bytes(serialization.Encoding.PEM))
     return target, crl.fingerprint(hashes.SHA256()).hex()
