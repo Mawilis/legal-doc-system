@@ -760,8 +760,8 @@ def test_inbound_collection_role_is_least_privilege() -> None:
 
 def test_institutional_source_key_admin_is_a_dedicated_least_privilege_role() -> None:
     expected = [
-        "security:institutional_source_key:propose",
         "security:institutional_source_key:approve",
+        "security:institutional_source_key:propose",
         "security:institutional_source_key:revoke",
     ]
     assert ROLE_PERMISSIONS_MAP["INSTITUTIONAL_SOURCE_KEY_ADMIN"] == expected
