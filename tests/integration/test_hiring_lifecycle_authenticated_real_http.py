@@ -6,6 +6,8 @@ import uuid
 from datetime import datetime, timezone
 
 import pytest
+os.environ.setdefault("WILSY_JWT_SECRET", "HIRING-HTTP-REPLICA-SET-CERT-ONLY-SECRET")
+
 from fastapi import FastAPI
 from fastapi.testclient import TestClient
 from pymongo import MongoClient
