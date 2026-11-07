@@ -15,6 +15,7 @@ on:
       - "tests/unit/test_institutional_signature_evidence_registry.py"
       - "tests/unit/test_institutional_signer_enrollment_registry.py"
       - "tests/unit/test_permission_namespace.py"
+      - "tests/integration/test_institutional_signer_registry_real_mongo.py"
       - "tests/integration/test_hiring_lifecycle_authenticated_http.py"
       - ".github/workflows/institutional-signed-offer-verification.yml"
 permissions:
@@ -68,7 +69,8 @@ jobs:
             tools/eos/saas/hr/candidate_evidence_s3_storage_adapter.py \
             tests/unit/test_institutional_signature_evidence_registry.py \
             tests/unit/test_institutional_signer_enrollment_registry.py \
-            tests/unit/test_permission_namespace.py
+            tests/unit/test_permission_namespace.py \
+            tests/integration/test_institutional_signer_registry_real_mongo.py
       - name: Run institutional signature, signer governance, PKI and authenticated hiring tests
         run: |
           python -m pytest -q \
@@ -76,6 +78,7 @@ jobs:
             tests/unit/test_institutional_signature_evidence_registry.py \
             tests/unit/test_institutional_signer_enrollment_registry.py \
             tests/unit/test_permission_namespace.py \
+            tests/integration/test_institutional_signer_registry_real_mongo.py \
             tests/unit/test_hiring_lifecycle_domain.py \
             tests/integration/test_hiring_lifecycle_authenticated_http.py \
             tests/integration/test_hiring_lifecycle_authenticated_real_http.py
