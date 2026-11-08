@@ -363,6 +363,18 @@ def test_authenticated_propose_approve_revoke_is_atomic_and_maker_checker_enforc
         assert len(evidence.proposal_calls) == 3
         assert len(evidence.approval_calls) == 4
         assert len(evidence.revocation_calls) == 4
+        denial_records = list(database[DENIAL_COLLECTION].find({
+            "tenant_id": TENANT_ID,
+        }))
+        assert len(denial_records) == 7
+        assert all(
+            "approval_evidence_reference" not in denial
+            and "identity_proofing_evidence_reference" not in denial
+            and "source_authority_evidence_reference" not in denial
+            and "evidence_fingerprint_sha256" not in denial
+            and "request_body" not in denial
+            for denial in denial_records
+        )
         assert database[EVENT_COLLECTION].count_documents(
             {"source_system_id": "synthetic-http-source"},
         ) == 3
