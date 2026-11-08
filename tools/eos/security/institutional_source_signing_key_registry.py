@@ -8,7 +8,8 @@ CERTIFICATION / UPDATE DATE: 2026-11-08
 CHANGELOG:
 - v1.0.0: Introduce immutable key enrollment, append-only revocation and bounded rotation events.
 - 2026-11-08: Bind proposal/approval evidence fingerprints, derive lifecycle projections
-  from events, and add transactionally anchored per-key audit hash chains.
+  from events, add transactionally anchored per-key audit hash chains, and create
+  a separate indexed collection for bounded governance-denial evidence.
 COMPLIANCE: Caller-owned MongoDB transaction; deterministic fingerprints; unique source/key and public-key identities.
 SECURITY / PRIVACY POSTURE: Public keys only; no private material, secrets, provider credentials or fabricated institutional trust anchors.
 TENANT BOUNDARY: Source trust is source-system scoped, not tenant-issued authority.
