@@ -1,6 +1,6 @@
 # WILSY OS — sovereign runtime/database inventory certification workflow
 # TITLE: Kennel EOS Runtime Database Ownership and Legacy Runtime Guard
-# VERSION: v1.1.0-EOS-RUNTIME-DATABASE-INVENTORY-CERTIFICATION
+# VERSION: v1.2.0-EOS-RUNTIME-DATABASE-INVENTORY-CERTIFICATION
 # AUTHORITY: Wilsy OS Core Governance
 # EPITOME: Certifies canonical Python EOS database ownership and runs the
 #          sovereign artifact-contract regression guard on relevant pull requests.
@@ -8,8 +8,10 @@
 # COLLABORATION / OWNERSHIP: Repository governance; Python EOS runtime owners.
 # CERTIFICATION / UPDATE DATE: 2026-11-08
 # CHANGELOG:
-#   v1.1.0-EOS-RUNTIME-DATABASE-INVENTORY-CERTIFICATION adds runbook compilation
-#   and sovereign artifact-contract tests to the inventory certification gate.
+#   v1.2.0-EOS-RUNTIME-DATABASE-INVENTORY-CERTIFICATION adds root services,
+#   launchers, orchestrators, deployment manifests, documentation and server
+#   test trees to the trigger scope.
+#   v1.1.0 adds runbook compilation and sovereign artifact-contract tests.
 #   v1.0.0 established the Python EOS database-owner certification.
 # COMPLIANCE: AGENTS.md v1.2.0; ENGINEERING_CONSTITUTION.md v1.1.0.
 # SECURITY / PRIVACY POSTURE: Read-only CI checks; no production credentials or deployment.
@@ -28,7 +30,24 @@ on:
     paths:
       - "tools/eos/**"
       - "server/**"
+      - "services/**"
       - "scripts/start-dev-stack.sh"
+      - "start_all.sh"
+      - "start_wilsy_os.sh"
+      - "GlobalLaunchSequence.sh"
+      - "Genesis_Ignition.sh"
+      - "Sovereign_Deployment_Automation.sh"
+      - "repair_launcher.js"
+      - "build_orchestrator.js"
+      - "update_orchestrator.js"
+      - "bootstrap_wilsy_os.js"
+      - "nginx.conf"
+      - "infra/nginx/**"
+      - "k8s/**"
+      - "charts/legal-os/**"
+      - "DEPLOYMENT.md"
+      - "server/README.md"
+      - "package-lock.json"
       - "package.json"
       - "runbook_diagnostic.py"
       - "tests/unit/test_eos_runtime_database_consumer_inventory.py"
@@ -70,7 +89,7 @@ jobs:
             tests/unit/test_sovereign_artifact_contract.py
 
 # ARTIFACT: eos-runtime-database-consumer-inventory.yml
-# VERSION: v1.1.0-EOS-RUNTIME-DATABASE-INVENTORY-CERTIFICATION
+# VERSION: v1.2.0-EOS-RUNTIME-DATABASE-INVENTORY-CERTIFICATION
 # AUTHORITY BOUNDARY: CI certification only.
 # TENANT POSTURE: no tenant data access or mutation.
 # FAIL-CLOSED POSTURE: compilation and test failures fail the workflow.
