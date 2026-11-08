@@ -1,0 +1,52 @@
+services:
+  wilsy-eos:
+    build:
+      context: .
+      dockerfile: Dockerfile.eos
+    image: wilsy-os-python:${BUILD_VERSION:-candidate}
+    container_name: wilsy-eos-python
+    restart: unless-stopped
+    init: true
+    environment:
+      ENV: ${ENV:-staging}
+      WILSY_ENV: ${WILSY_ENV:-staging}
+      MONGODB_URI: ${MONGODB_URI:?Set MONGODB_URI for the selected environment}
+      MONGO_URI: ${MONGO_URI:-}
+      REDIS_URL: ${REDIS_URL:-}
+      REDIS_URI: ${REDIS_URI:-}
+      AWS_REGION: ${AWS_REGION:-af-south-1}
+      PORT: "9095"
+      HOST: "0.0.0.0"
+    ports:
+      - "${EOS_PORT:-9095}:9095"
+    volumes:
+      - eos_data:/app/data
+      - eos_reports:/app/reports
+      - eos_logs:/var/log/wilsy-os
+    healthcheck:
+      test:
+        - CMD
+        - python
+        - -c
+        - "import urllib.request; urllib.request.urlopen('http://127.0.0.1:9095/', timeout=3).read()"
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 45s
+    stop_grace_period: 30s
+    security_opt:
+      - no-new-privileges:true
+    read_only: true
+    tmpfs:
+      - /tmp:size=64m,mode=1777
+    networks:
+      - wilsy-eos
+
+networks:
+  wilsy-eos:
+    driver: bridge
+
+volumes:
+  eos_data:
+  eos_reports:
+  eos_logs:
