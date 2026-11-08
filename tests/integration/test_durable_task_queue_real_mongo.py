@@ -13,6 +13,7 @@ from tools.eos.runtime.durable_task_queue import (
     complete_task,
     enqueue_task,
     ensure_task_queue_indexes,
+    renew_task_lease,
     fail_task,
 )
 
@@ -87,3 +88,18 @@ def test_replica_set_retry_and_dead_letter_are_durable(queue_collections):
     assert saved["status"] == "DEAD_LETTER"
     assert saved["attempts"] == 2
     assert audit.count_documents({"task_id": "task-a"}) == 2
+
+
+def test_replica_set_lease_renewal_prevents_premature_reclaim(queue_collections):
+    _, tasks, _ = queue_collections
+    _enqueue(tasks)
+    claim_next_task(tasks, worker_id="worker-a", lease_token="lease-a",
+                    now=NOW, lease_seconds=5)
+    assert renew_task_lease(tasks, tenant_id="tenant-a", task_id="task-a",
+                            worker_id="worker-a", lease_token="lease-a",
+                            now=NOW + timedelta(seconds=4), lease_seconds=10)
+    assert claim_next_task(tasks, worker_id="worker-b", lease_token="lease-b",
+                           now=NOW + timedelta(seconds=6), lease_seconds=5) is None
+    reclaimed = claim_next_task(tasks, worker_id="worker-b", lease_token="lease-b",
+                                now=NOW + timedelta(seconds=15), lease_seconds=5)
+    assert reclaimed["lease_token"] == "lease-b"
