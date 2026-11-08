@@ -55,13 +55,30 @@ printf '%s\n' "$REGIONS" | tr '\t' '\n' | while IFS= read -r region; do
   echo
   echo "===== REGION: $region ====="
 
-  echo "[EKS CLUSTERS]"
-  aws_read eks list-clusters --region "$region" \
-    --query 'clusters' --output table || echo "EKS_INVENTORY=UNAVAILABLE"
+  echo "[EKS CLUSTERS AND OIDC ISSUERS]"
+  EKS_CLUSTERS="$(aws_read eks list-clusters --region "$region" --query 'clusters' --output text)" || {
+    echo "EKS_INVENTORY=UNAVAILABLE"
+    EKS_CLUSTERS=""
+  }
+  if [[ -n "$EKS_CLUSTERS" && "$EKS_CLUSTERS" != "None" ]]; then
+    printf '%s\n' "$EKS_CLUSTERS" | tr '\t' '\n' | while IFS= read -r cluster; do
+      [[ -n "$cluster" ]] || continue
+      aws_read eks describe-cluster --name "$cluster" --region "$region" \
+        --query 'cluster.{Name:name,Arn:arn,Status:status,Version:version,Endpoint:endpoint,OidcIssuer:identity.oidc.issuer}' \
+        --output json || echo "EKS_CLUSTER_DETAIL_UNAVAILABLE=$cluster"
+    done
+  else
+    echo "EKS_CLUSTERS=NONE_REPORTED"
+  fi
 
   echo "[ECS CLUSTERS]"
   aws_read ecs list-clusters --region "$region" \
     --query 'clusterArns' --output table || echo "ECS_INVENTORY=UNAVAILABLE"
+
+  echo "[LAMBDA FUNCTIONS]"
+  aws_read lambda list-functions --region "$region" \
+    --query 'Functions[].{Name:FunctionName,Runtime:Runtime,Handler:Handler,Modified:LastModified}' \
+    --output table || echo "LAMBDA_INVENTORY=UNAVAILABLE"
 
   echo "[APP RUNNER SERVICES]"
   aws_read apprunner list-services --region "$region" \
