@@ -97,6 +97,10 @@ def test_legacy_node_backend_has_no_supported_runtime_entrypoint():
     assert "apps: []" in pm2
     assert "server.js" not in pm2
 
+    bff = (ROOT / "server/server.js").read_text(encoding="utf-8")
+    assert "Legacy Node BFF runtime is retired" in bff
+    assert "process.exitCode = 1" in bff
+
     deploy = (ROOT / "server/deploy.sh").read_text(encoding="utf-8")
     assert "exit 1" in deploy
     assert "legacy Node deployment path has been retired" in deploy
