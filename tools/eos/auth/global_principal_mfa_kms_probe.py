@@ -12,6 +12,7 @@ from tools.eos.auth.global_principal_mfa_kms_envelope import (
 )
 
 
+EXPECTED_ACCOUNT_ID = "121014832643"
 EXPECTED_ROLE_NAME = "wilsy-eos-global-mfa-local-development"
 
 
@@ -21,6 +22,8 @@ def main() -> int:
 
         identity = boto3.client("sts").get_caller_identity()
         arn = identity.get("Arn", "")
+        if identity.get("Account") != EXPECTED_ACCOUNT_ID:
+            raise RuntimeError("LOCAL_EOS_MFA_AWS_ACCOUNT_MISMATCH")
         if f":assumed-role/{EXPECTED_ROLE_NAME}/" not in arn:
             raise RuntimeError("LOCAL_EOS_MFA_ROLE_IDENTITY_REQUIRED")
         envelope = build_global_mfa_kms_envelope_from_environment()
