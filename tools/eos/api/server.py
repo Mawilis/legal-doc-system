@@ -91,6 +91,7 @@ from .global_principal_auth_router import router as global_principal_auth_router
 from .authority_bridge_router import router as authority_bridge_router
 from .billing_router import evaluate_all_tenant_dunning_lifecycles, router as billing_router
 from .forensic_merkle_router import router as forensic_merkle_router
+from .artifact_pdf_router import router as artifact_pdf_router
 from .employee_router import router as employee_router
 from .errors import register_error_handlers
 from .institutional_pki_router import router as institutional_pki_router
@@ -1092,6 +1093,7 @@ class WilsyAPIServer:
         app.include_router(tenant_branding_router, prefix="/api")
         app.include_router(telemetry_ingestion_router, prefix="/api")
         app.include_router(forensic_merkle_router, prefix="/api")
+        app.include_router(artifact_pdf_router, prefix="/api")
         app.include_router(subscription_router)
         app.include_router(plan_router)
 
