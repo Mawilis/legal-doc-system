@@ -531,8 +531,8 @@ function normalizeWilsyChainStatus(snapshot) {
 
   const warning = chain.warning || run.warning || snapshot?.errors?.[0] || '';
   const algorithm = receiptContract.algorithm || chain.algorithm || run.algorithm || status.algorithm || 'SHA3-512';
-  const anchorMode = receiptContract.anchorMode || status.anchorMode || run.anchorMode || chain.anchorMode || 'LOCAL_APPEND_ONLY_PENDING_WORM';
-  const anchorProvider = receiptContract.anchorProvider || status.anchorProvider || run.anchorProvider || chain.anchorProvider || 'LOCAL_APPEND_ONLY';
+  const anchorMode = receiptContract.anchorMode || status.anchorMode || run.anchorMode || chain.anchorMode || 'NOT_CONFIGURED';
+  const anchorProvider = receiptContract.anchorProvider || status.anchorProvider || run.anchorProvider || chain.anchorProvider || 'NONE';
   const qldbStatus = receiptContract.qldbStatus || chain.qldbStatus || run.qldbStatus || status.qldbStatus || 'RETIRED_NOT_USED';
   const qldbEndOfSupport = receiptContract.qldbEndOfSupport || chain.qldbEndOfSupport || run.qldbEndOfSupport || status.qldbEndOfSupport || '2025-07-31';
   const chainLength = Number(receiptSummary.receiptCount || chain.chainLength || chain.leafCount || chain.totalLeaves || chain.recordsVerified || chain.result?.leafCount || run.chainLength || 0);
@@ -541,14 +541,16 @@ function normalizeWilsyChainStatus(snapshot) {
   const activeSessions = Number(status.activeSessions ?? chain.activeSessions ?? run.activeSessions ?? telemetry.activeSessions ?? 0);
   const receiptsLogged = Number(receiptSummary.receiptCount || status.receiptsLogged || chain.receiptsLogged || run.receiptsLogged || telemetry.receiptsLogged || receiptRows.length || anchors.length || 0);
   const clausesAnchored = Number(receiptSummary.clausesAnchored || status.clausesAnchored || chain.clausesAnchored || run.clausesAnchored || telemetry.clausesAnchored || 0);
-  const verified = Boolean(merkleRoot || receiptMerkleRoot);
+  const evidenceCount = Number(chain.evidenceCount ?? run.evidenceCount ?? chain.chainLength ?? run.chainLength ?? 0);
+  const verified = chain.verified === true || run.verified === true || status.verified === true;
   const reviewRequired = receiptSummary.posture.includes('REVIEW')
     || receiptRows.some(receipt => String(receipt?.status || '').toUpperCase().includes('REVIEW'))
-    || driftCount > 0;
+    || driftCount > 0
+    || (evidenceCount > 0 && !verified);
 
   const operationalState = reviewRequired
     ? 'REVIEW_REQUIRED'
-    : merkleRoot || receiptMerkleRoot
+    : verified
       ? 'ROOT_VERIFIED'
       : integrity === 'DB_OFFLINE' || sourceStatus === 'DB_OFFLINE'
         ? 'FORENSIC_DB_OFFLINE'
@@ -579,7 +581,7 @@ function normalizeWilsyChainStatus(snapshot) {
       : (status.workerStatus || status.mode || receiptSummary.mode || 'Linked');
 
   return {
-    tenantId: chain.tenantId || run.tenantId || snapshot?.tenantId || 'GLOBAL_ROOT',
+    tenantId: chain.tenantId || run.tenantId || snapshot?.tenantId || '',
     verified,
     merkleRoot,
     receiptMerkleRoot,
