@@ -340,6 +340,8 @@ jobs:
           set -eu
           test -s certification-diagnostics/manifest.txt
           test -s certification-diagnostics/evidence-validation.txt
+          test "$(git rev-parse HEAD)" = "$GITHUB_SHA"
+          grep -Fqx "commit_sha=$GITHUB_SHA" certification-diagnostics/manifest.txt
           if grep -q '^MISSING ' certification-diagnostics/evidence-validation.txt; then
             cat certification-diagnostics/evidence-validation.txt
             echo "CERTIFICATION_EVIDENCE_INCOMPLETE"
