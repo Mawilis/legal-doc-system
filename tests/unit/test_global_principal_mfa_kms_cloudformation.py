@@ -1,11 +1,11 @@
 # TITLE: WILSY EOS Production Global Principal MFA KMS CloudFormation Contract Test
-# VERSION: v1.0.0-PRODUCTION-MFA-KMS-CLOUDFORMATION-CONTRACT
+# VERSION: v1.0.1-PRODUCTION-MFA-KMS-CLOUDFORMATION-CONTRACT
 # AUTHORITY: Static production infrastructure safety certification only.
 # EPITOME: Verify EKS OIDC trust and exact-role MFA KMS data-plane authority.
 # ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/tests/unit/test_global_principal_mfa_kms_cloudformation.py
 # COLLABORATION / OWNERSHIP: Wilsy Core Engineering.
 # CERTIFICATION OR UPDATE DATE: 2026-11-08.
-# CHANGELOG: v1.0.0 certifies exact EKS OIDC issuer constraints, role-first key creation, and direct KMS policy grants to the exact production EOS role.
+# CHANGELOG: v1.0.1 corrects literal newline and regex matching in the static assertions; v1.0.0 certifies exact EKS OIDC constraints, role-first key creation, and direct KMS policy grants.
 # COMPLIANCE: Static test evidence only; does not provision AWS or certify a production hosting target.
 # SECURITY / PRIVACY POSTURE: Reads infrastructure source only; no credentials, network, or live AWS resources.
 # TENANT BOUNDARY: No tenant data or identity is created or modified.
@@ -37,7 +37,7 @@ def _oidc_issuer_host_path_pattern() -> str:
     parameter = source.split("  EosEksOidcIssuerHostPath:", 1)[1].split(
         "  EosServiceAccountSubject:", 1
     )[0]
-    match = re.search(r"AllowedPattern:\\s*'([^']+)'", parameter)
+    match = re.search(r"AllowedPattern:\s*'([^']+)', parameter)
     assert match is not None, "EKS OIDC issuer host/path must have an explicit constraint"
     return match.group(1)
 
@@ -69,8 +69,8 @@ def test_eks_oidc_issuer_host_path_rejects_scheme_and_untrusted_suffixes():
 
 def test_production_key_policy_grants_data_plane_use_only_to_exact_eos_role():
     source = _template_source()
-    key = source.split("  GlobalPrincipalMfaKey:\\n", 1)[1].split(
-        "\\n  GlobalPrincipalMfaKeyAlias:", 1
+    key = source.split("  GlobalPrincipalMfaKey:\n", 1)[1].split(
+        "\n  GlobalPrincipalMfaKeyAlias:", 1
     )[0]
     assert "DependsOn: EosGlobalMfaRuntimeRole" in key
     role_grant = key.split("Sid: DedicatedEosRuntimeMfaEnvelopeUse", 1)[1].split(
@@ -90,8 +90,8 @@ def test_production_key_policy_grants_data_plane_use_only_to_exact_eos_role():
 
 def test_production_runtime_role_has_exact_oidc_trust_and_no_broader_policy():
     source = _template_source()
-    role = source.split("  EosGlobalMfaRuntimeRole:\\n", 1)[1].split(
-        "\\nOutputs:", 1
+    role = source.split("  EosGlobalMfaRuntimeRole:\n", 1)[1].split(
+        "\nOutputs:", 1
     )[0]
     assert "RoleName: wilsy-eos-global-mfa-runtime" in role
     assert "sts:AssumeRoleWithWebIdentity" in role
@@ -106,7 +106,7 @@ def test_production_eks_stack_has_no_local_development_identity_or_grant():
 
 
 # ARTIFACT: test_global_principal_mfa_kms_cloudformation.py
-# VERSION: v1.0.0-PRODUCTION-MFA-KMS-CLOUDFORMATION-CONTRACT
+# VERSION: v1.0.1-PRODUCTION-MFA-KMS-CLOUDFORMATION-CONTRACT
 # AUTHORITY BOUNDARY: static production KMS infrastructure assertions only
 # TENANT POSTURE: no tenant data or identity is created or modified
 # FAIL-CLOSED POSTURE: broadened OIDC or KMS authority fails tests
