@@ -1,5 +1,5 @@
 """TITLE: WILSY EOS Institutional Source Signing-Key Lifecycle Registry
-VERSION: v1.2.0
+VERSION: v1.3.0
 AUTHORITY: WILSY EOS Security Engineering; persistence authority only
 EPITOME: Append-only, source-bound Ed25519 public-key enrollment, revocation and rotation evidence.
 ABSOLUTE CANONICAL PATH: tools/eos/security/institutional_source_signing_key_registry.py
@@ -12,6 +12,8 @@ CHANGELOG:
   hash chains and an indexed governance-denial evidence collection.
 - v1.2.0: Verify the complete existing event chain and audit head inside the
   registry append boundary before every lifecycle mutation.
+- v1.3.0: Add tenant-partitioned, hash-chained denial records and audit heads
+  with full-chain verification before every denial append.
 COMPLIANCE: Caller-owned MongoDB transaction; deterministic fingerprints; unique source/key and public-key identities.
 SECURITY / PRIVACY POSTURE: Public keys only; no private material, secrets, provider credentials or fabricated institutional trust anchors.
 TENANT BOUNDARY: Source trust is source-system scoped, not tenant-issued authority.
@@ -34,6 +36,7 @@ KEY_COLLECTION: Final[str] = "eos_institutional_source_signing_keys"
 EVENT_COLLECTION: Final[str] = "eos_institutional_source_signing_key_events"
 AUDIT_HEAD_COLLECTION: Final[str] = "eos_institutional_source_signing_key_audit_heads"
 DENIAL_COLLECTION: Final[str] = "eos_institutional_source_signing_key_denials"
+DENIAL_HEAD_COLLECTION: Final[str] = "eos_institutional_source_signing_key_denial_audit_heads"
 SCHEMA: Final[str] = "wilsy.eos.institutional_source_signing_key.v1"
 EVENT_SCHEMA: Final[str] = "wilsy.eos.institutional_source_signing_key_event.v1"
 _IDENTIFIER = re.compile(r"[A-Za-z0-9][A-Za-z0-9._:/@+-]{0,255}\Z")
@@ -102,6 +105,8 @@ class InstitutionalSourceSigningKeyLifecycleRegistry:
         self._keys = keys
         self._events = events
         self._heads = events.database[AUDIT_HEAD_COLLECTION]
+        self._denials = events.database[DENIAL_COLLECTION]
+        self._denial_heads = events.database[DENIAL_HEAD_COLLECTION]
 
     def _seal_event(self, event: dict[str, Any], session: ClientSession) -> None:
         """Verify the complete chain, then link the next event to its current head."""
@@ -206,6 +211,94 @@ class InstitutionalSourceSigningKeyLifecycleRegistry:
         except PyMongoError as error:
             raise SourceSigningKeyRegistryError("SOURCE_SIGNING_KEY_AUDIT_CHAIN_UNAVAILABLE") from error
 
+    def _verify_denial_chain(self, *, tenant_id: str, session: ClientSession) -> None:
+        """Reject edited, missing, reordered or head-inconsistent tenant denial records."""
+        expected_previous = "0" * 64
+        expected_sequence = 1
+        try:
+            events = self._denials.find(
+                {"tenant_id": tenant_id}, session=session,
+            ).sort("event_sequence", 1)
+            for event in events:
+                if (
+                    event.get("event_sequence") != expected_sequence
+                    or event.get("previous_event_hash_sha256") != expected_previous
+                    or event.get("event_hash_sha256") != _event_fingerprint(event)
+                ):
+                    raise SourceSigningKeyRegistryConflict("SOURCE_SIGNING_KEY_DENIAL_AUDIT_CHAIN_INVALID")
+                expected_previous = event["event_hash_sha256"]
+                expected_sequence += 1
+            head = self._denial_heads.find_one({"tenant_id": tenant_id}, session=session)
+            if expected_sequence == 1:
+                if head is not None:
+                    raise SourceSigningKeyRegistryConflict("SOURCE_SIGNING_KEY_DENIAL_AUDIT_HEAD_INVALID")
+            elif (
+                head is None
+                or head.get("event_sequence") != expected_sequence - 1
+                or head.get("event_hash_sha256") != expected_previous
+            ):
+                raise SourceSigningKeyRegistryConflict("SOURCE_SIGNING_KEY_DENIAL_AUDIT_HEAD_INVALID")
+        except SourceSigningKeyRegistryError:
+            raise
+        except PyMongoError as error:
+            raise SourceSigningKeyRegistryError("SOURCE_SIGNING_KEY_DENIAL_AUDIT_UNAVAILABLE") from error
+        except (KeyError, TypeError, ValueError) as error:
+            raise SourceSigningKeyRegistryConflict("SOURCE_SIGNING_KEY_DENIAL_AUDIT_CHAIN_INVALID") from error
+
+    def record_denial(
+        self, *, record: Mapping[str, Any], session: ClientSession,
+    ) -> dict[str, Any]:
+        """Append a bounded denial fact to the tenant's tamper-evident audit chain."""
+        if session is None:
+            raise SourceSigningKeyRegistryError("SOURCE_SIGNING_KEY_SESSION_REQUIRED")
+        event = dict(record)
+        tenant = _identifier("tenant_id", event.get("tenant_id"))
+        if event.get("event_type") != "DENIED":
+            raise SourceSigningKeyRegistryError("SOURCE_SIGNING_KEY_DENIAL_EVENT_INVALID")
+        self._verify_denial_chain(tenant_id=tenant, session=session)
+        head_filter = {"tenant_id": tenant}
+        head = self._denial_heads.find_one(head_filter, session=session)
+        if head is None:
+            sequence = 1
+            previous_hash = "0" * 64
+        else:
+            sequence = head["event_sequence"] + 1
+            previous_hash = head["event_hash_sha256"]
+        event["event_sequence"] = sequence
+        event["previous_event_hash_sha256"] = previous_hash
+        event_hash = _event_fingerprint(event)
+        event["event_hash_sha256"] = event_hash
+        if head is None:
+            self._denial_heads.insert_one({
+                **head_filter,
+                "event_sequence": sequence,
+                "event_hash_sha256": event_hash,
+            }, session=session)
+        else:
+            result = self._denial_heads.update_one(
+                {
+                    **head_filter,
+                    "event_sequence": head["event_sequence"],
+                    "event_hash_sha256": previous_hash,
+                },
+                {"$set": {
+                    "event_sequence": sequence,
+                    "event_hash_sha256": event_hash,
+                }},
+                session=session,
+            )
+            if result.matched_count != 1:
+                raise SourceSigningKeyRegistryConflict("SOURCE_SIGNING_KEY_DENIAL_AUDIT_HEAD_CONFLICT")
+        try:
+            self._denials.insert_one(event, session=session)
+        except DuplicateKeyError as error:
+            raise SourceSigningKeyRegistryConflict("SOURCE_SIGNING_KEY_DENIAL_AUDIT_DUPLICATE") from error
+        except PyMongoError as error:
+            if error.has_error_label("TransientTransactionError"):
+                raise
+            raise SourceSigningKeyRegistryError("SOURCE_SIGNING_KEY_DENIAL_AUDIT_PERSISTENCE_FAILED") from error
+        return event
+
     @staticmethod
     def ensure_indexes(keys: Collection, events: Collection) -> None:
         """Create deterministic unique indexes; caller controls deployment."""
@@ -249,6 +342,14 @@ class InstitutionalSourceSigningKeyLifecycleRegistry:
             events.database[DENIAL_COLLECTION].create_index(
                 [("source_system_id", 1), ("key_id", 1), ("occurred_at", 1)],
                 name="ix_source_signing_key_denial_history",
+            )
+            events.database[DENIAL_COLLECTION].create_index(
+                [("tenant_id", 1), ("event_sequence", 1)],
+                unique=True, name="uq_source_signing_key_denial_tenant_sequence",
+            )
+            events.database[DENIAL_HEAD_COLLECTION].create_index(
+                [("tenant_id", 1)],
+                unique=True, name="uq_source_signing_key_denial_audit_tenant",
             )
         except PyMongoError as error:
             raise SourceSigningKeyRegistryError("SOURCE_SIGNING_KEY_INDEX_UNAVAILABLE") from error
@@ -665,7 +766,7 @@ __all__ = [
 ]
 
 # ARTIFACT: WILSY OS Institutional Source Signing-Key Lifecycle Registry
-# VERSION: v1.2.0
+# VERSION: v1.3.0
 # AUTHORITY BOUNDARY: Durable public-key lifecycle evidence only; no caller authorization or verifier-result issuance.
 # TENANT POSTURE: Source-system scoped; no tenant-issued trust.
 # FAIL-CLOSED POSTURE: Missing, invalid, expired, revoked, or unavailable trust is denied.
