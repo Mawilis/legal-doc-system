@@ -2,12 +2,14 @@
 from __future__ import annotations
 
 import os
+import asyncio
 from datetime import datetime, timedelta, timezone
 from uuid import uuid4
 
 import pytest
 from pymongo import MongoClient
 
+from tools.eos.runtime.compliance_scan_worker import ComplianceScanWorker, provision_compliance_scan_indexes
 from tools.eos.runtime.durable_task_queue import (
     claim_next_task,
     complete_task,
@@ -103,3 +105,40 @@ def test_replica_set_lease_renewal_prevents_premature_reclaim(queue_collections)
     reclaimed = claim_next_task(tasks, worker_id="worker-b", lease_token="lease-b",
                                 now=NOW + timedelta(seconds=15), lease_seconds=5)
     assert reclaimed["lease_token"] == "lease-b"
+
+
+
+def test_replica_set_compliance_scan_atomically_persists_finding_and_notification_intent():
+    client = MongoClient(URI, serverSelectionTimeoutMS=5000)
+    assert client.admin.command("hello").get("isWritablePrimary") is True
+    db = client[f"eos_compliance_scan_{uuid4().hex}"]
+    clients, findings, outbox = db["clients"], db["findings"], db["notification_outbox"]
+    provision_compliance_scan_indexes(findings=findings, notification_outbox=outbox)
+    clients.insert_one({
+        "tenantId": "tenant-a",
+        "idExpiryDate": datetime(2026, 1, 1),
+        "complianceStatus": "VERIFIED",
+        "name": "must-not-be-copied",
+    })
+    worker = ComplianceScanWorker(
+        clients=clients, findings=findings, notification_outbox=outbox,
+        mongo_client=client,
+    )
+    task = {
+        "__eos_task_context": {"tenant_id": "tenant-a", "task_id": "compliance-a"},
+        "data": {"observed_at": NOW.isoformat()},
+    }
+    try:
+        first = asyncio.run(worker.execute("compliance-a", task))
+        second = asyncio.run(worker.execute("compliance-a", task))
+        assert first.status.value == "SUCCESS"
+        assert second.status.value == "SUCCESS"
+        assert findings.count_documents({"tenant_id": "tenant-a"}) == 1
+        assert outbox.count_documents({"tenant_id": "tenant-a"}) == 1
+        persisted = findings.find_one({"tenant_id": "tenant-a"})
+        assert "name" not in persisted
+        assert persisted["rule_code"] == "FICA_ID_EXPIRED"
+        assert outbox.find_one({"tenant_id": "tenant-a"})["delivery_status"] == "PENDING"
+    finally:
+        client.drop_database(db.name)
+        client.close()
