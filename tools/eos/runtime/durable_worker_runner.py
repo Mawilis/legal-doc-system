@@ -110,6 +110,8 @@ class DurableWorkerRunner:
                         "tenant_id": tenant_id,
                         "task_id": task_id,
                         "task_type": task["task_type"],
+                        "worker_id": self.worker_id,
+                        "lease_token": lease_token,
                     },
                     "data": dict(task.get("payload") or {}),
                 },
