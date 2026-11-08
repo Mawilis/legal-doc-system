@@ -1,12 +1,13 @@
 /**
  * TITLE: WILSY EOS Authenticated Forensic Tenant Scope
- * VERSION: v1.0.0
+ * VERSION: v1.0.1
  * AUTHORITY: WILSY EOS Security Engineering; request-scope validation only
  * EPITOME: Binds every forensic route to the tenant already established by canonical authentication and tenant middleware.
  * ABSOLUTE PATH: server/middleware/forensicTenantScope.js
  * COLLABORATION: WILSY EOS API Engineering; consumed by forensicRoutes.
  * CHANGELOG:
  * - v1.0.0: Reject caller-selected tenant scope and expose only authenticated request tenant.
+ * - v1.0.1: Add the mandatory sovereign artifact end seal.
  * TENANT BOUNDARY: Caller parameters, query, body and headers can never establish tenant authority.
  * SECURITY POSTURE: Missing, inconsistent or mismatched scope fails closed with HTTP 403.
  * AUTHORITY BOUNDARY: This module grants no role or permission; upstream authentication and IAM remain authoritative.
@@ -58,3 +59,13 @@ export function requireForensicTenantScope(request, response, next) {
   request.forensicTenantId = tenantId;
   return next();
 }
+
+/*
+ * ARTIFACT: WILSY EOS Authenticated Forensic Tenant Scope
+ * VERSION: v1.0.1
+ * AUTHORITY BOUNDARY: Validates scope only; canonical authentication and IAM remain authoritative.
+ * TENANT POSTURE: Uses the middleware-established tenant and rejects mismatched path/query/body/header hints.
+ * FAIL-CLOSED POSTURE: Missing, inconsistent or caller-selected tenant scope returns HTTP 403.
+ * FINANCIAL EXECUTION AUTHORITY: None.
+ * END OF WILSY OS SOVEREIGN ARTIFACT
+ */
