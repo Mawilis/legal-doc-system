@@ -22,6 +22,8 @@ on:
       - "tests/unit/test_compliance_scan_scheduler.py"
       - "tests/integration/test_durable_task_queue_real_mongo.py"
       - "tests/unit/test_python_eos_runtime_deployment.py"
+      - "server/**"
+      - "docs/architecture/eos-runtime-database-consumer-inventory.md"
       - ".github/workflows/eos-python-runtime-deployment-certification.yml"
   pull_request:
     paths:
