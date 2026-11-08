@@ -1,19 +1,20 @@
 /* eslint-disable */
 import mongoose from 'mongoose';
 /**
- * ╔════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════╗
- * ║ WILSY OS - FORENSIC MERKLE AUDITOR [V57.1.0-REVIEW-SAFE-RECEIPTS]                                                                         ║
- * ║ [NIST SHA-3 | HASH-CHAIN REPLAY | MERKLE ROOTS | SEALED RECEIPTS | COMPLIANCE BINDINGS | WORM READY]                               ║
- * ╠════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════╣
- * ║ VERSION: 57.1.0-REVIEW-SAFE-RECEIPTS | PRODUCTION READY | INSTITUTIONAL NON-REPUDIATION                                                  ║
- * ║ ABSOLUTE PATH: /Users/wilsonkhanyezi/legal-doc-system/server/services/ForensicMerkleAuditor.js                                      ║
- * ╠════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════╣
- * ║ COLLABORATION & SOVEREIGN SIGN-OFF:                                                                                                  ║
- * ║ • Wilson Khanyezi (CEO/Lead Architect) - Required continuous cryptographic proof, external immutable anchoring, and production       ║
- * ║   readiness beyond prototype UI features.                                                                                            ║
- * ║ • AI Engineering (Codex) - ARCHITECTED: Replaced retired QLDB assumptions with current WORM-ready anchoring, deterministic replay,   ║
- * ║   and Revenue Ledger compatible status packets.                                                                                      ║
- * ╚════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════╝
+ * TITLE: WILSY EOS Forensic Merkle Auditor
+ * VERSION: v57.2.0
+ * AUTHORITY: WILSY EOS Security Engineering; forensic verification and anchor orchestration only
+ * EPITOME: Replays tenant-bound forensic chains, computes Merkle roots and exposes bounded receipt evidence.
+ * ABSOLUTE CANONICAL PATH: server/services/ForensicMerkleAuditor.js
+ * COLLABORATION / OWNERSHIP: WILSY EOS Forensic Services; called by authenticated forensic routes and governed workers.
+ * CERTIFICATION / UPDATE DATE: 2026-11-08
+ * CHANGELOG:
+ * - v57.2.0: Require tenant scope when listing local anchors and return only exact-tenant records.
+ * COMPLIANCE: Tenant-scoped evidence retrieval; deterministic chain replay; explicit anchor-provider posture.
+ * SECURITY / PRIVACY POSTURE: Local JSONL anchors are diagnostic only, not WORM or independently protected storage.
+ * TENANT BOUNDARY: Anchor listing requires an explicit tenant identifier established by authenticated middleware.
+ * AUTHORITY BOUNDARY: This service verifies evidence and records anchor outcomes; it does not authenticate principals or grant IAM authority.
+ * FINANCIAL AUTHORITY BOUNDARY: No financial execution authority.
  */
 
 import crypto from 'node:crypto';
@@ -1300,3 +1301,13 @@ const forensicMerkleAuditor = new ForensicMerkleAuditor();
 
 export { ForensicMerkleAuditor };
 export default forensicMerkleAuditor;
+
+/*
+ * ARTIFACT: WILSY EOS Forensic Merkle Auditor
+ * VERSION: v57.2.0
+ * AUTHORITY BOUNDARY: Evidence verification and anchor orchestration only.
+ * TENANT POSTURE: Local anchor listings require exact tenant scope and exclude unscoped records.
+ * FAIL-CLOSED POSTURE: Missing tenant scope rejects local anchor listing; local append files are never represented as WORM.
+ * FINANCIAL EXECUTION AUTHORITY: None.
+ * END OF WILSY OS SOVEREIGN ARTIFACT
+ */
