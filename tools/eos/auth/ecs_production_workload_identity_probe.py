@@ -1,11 +1,13 @@
 # TITLE: WILSY EOS Production ECS Workload Identity Probe
-# VERSION: v1.0.0-ECS-PRODUCTION-WORKLOAD-IDENTITY-PROBE
+# VERSION: v1.0.1-ECS-PRODUCTION-CLUSTER-PIN
 # AUTHORITY: Python EOS infrastructure verification; no IAM, factor or session authority.
 # EPITOME: Independently verify the actual ECS task metadata identity, STS task-role identity, production account/region and task-local MFA KMS encrypt/decrypt capability.
 # ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/tools/eos/auth/ecs_production_workload_identity_probe.py
 # COLLABORATION / OWNERSHIP: Wilsy OS Core Engineering; production platform identity remains AWS ECS.
 # CERTIFICATION OR UPDATE DATE: 2026-11-09
 # CHANGELOG:
+#   v1.0.1 pins metadata verification to the approved ECS cluster and task
+#   family and requires a positive task-definition revision.
 #   v1.0.0 establishes a fail-closed ECS metadata, STS role and production KMS
 #   workload probe. It is an operator-invoked verifier and does not provision,
 #   launch, enroll, authenticate or mutate business records.
@@ -164,7 +166,7 @@ if __name__ == "__main__":
 
 
 # ARTIFACT: tools/eos/auth/ecs_production_workload_identity_probe.py
-# VERSION: v1.0.0-ECS-PRODUCTION-WORKLOAD-IDENTITY-PROBE
+# VERSION: v1.0.1-ECS-PRODUCTION-CLUSTER-PIN
 # AUTHORITY BOUNDARY: Verifies existing ECS task metadata, STS role and KMS capability only.
 # TENANT POSTURE: Synthetic KMS probe only; no tenant, principal, membership or session records are changed.
 # FAIL-CLOSED POSTURE: Missing or mismatched task metadata, account, region, task role or KMS capability exits nonzero.
