@@ -218,7 +218,7 @@ development process environment using the full key ARN from the stack output:
 export AWS_PROFILE=wilsy-eos-mfa-local
 export AWS_REGION=af-south-1
 export WILSY_GLOBAL_MFA_KMS_PROVIDER=AWS_KMS
-export WILSY_GLOBAL_MFA_KMS_KEY_ID=<full-local-development-key-arn>
+export WILSY_GLOBAL_MFA_KMS_KEY_ID="$(aws cloudformation describe-stacks \\\n  --stack-name wilsy-eos-global-principal-mfa-local-dev \\\n  --query "Stacks[0].Outputs[?OutputKey==\u0027LocalGlobalPrincipalMfaKeyArn\u0027].OutputValue | [0]" \\\n  --output text --region af-south-1 --profile wilsy-legal-cert)"
 unset WILSY_GLOBAL_MFA_KMS_DECRYPT_KEY_IDS
 python -m tools.eos.auth.global_principal_mfa_kms_probe
 ```
