@@ -118,7 +118,7 @@ def test_replica_set_compliance_scan_atomically_persists_finding_and_notificatio
     tasks.insert_one({
         "tenant_id": "tenant-a", "task_id": "compliance-a", "status": "CLAIMED",
         "claimed_by": "worker-a", "lease_token": "lease-a",
-        "lease_until": NOW + timedelta(minutes=5),
+        "lease_until": datetime.now(timezone.utc) + timedelta(minutes=5),
     })
     clients.insert_one({
         "tenantId": "tenant-a",
