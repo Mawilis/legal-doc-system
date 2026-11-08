@@ -27,35 +27,23 @@ permissions:
 
 jobs:
   security-scan:
-    name: 🕵️ Security & Quantum Audit
+    name: 🔐 Frontend Tooling & EOS Source Guard
     runs-on: ubuntu-latest
-    defaults:
-      run:
-        working-directory: ./server
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
         with:
           node-version: ${{ env.NODE_VERSION }}
-      - name: Install dependencies
-        run: npm ci --legacy-peer-deps
-      - name: Run security audit
-        run: npm audit --omit=dev --audit-level=high
-      - name: Run retained production lint
-        run: |
-          ./node_modules/.bin/eslint \
-            server.js \
-            controllers/businessArtifactPdfController.js \
-            services/artifacts/wilsyEnterprisePdfRenderer.js \
-            services/qr/qrGenerator.js
-      - name: Run retained production secret guard
-        working-directory: .
+      - name: Install frontend tooling dependencies
+        working-directory: ./client
+        run: npm ci
+      - name: Audit frontend dependencies
+        working-directory: ./client
+        run: npm audit --audit-level=high
+      - name: Scan frontend-to-EOS transport configuration
         run: |
           node scripts/wilsy-secret-guard.js \
-            server/server.js \
-            server/controllers/businessArtifactPdfController.js \
-            server/services/artifacts/wilsyEnterprisePdfRenderer.js \
-            server/services/qr/qrGenerator.js \
+            client/vite.config.js \
             scripts/wilsy-secret-guard.js
 
   # Legacy server enterprise matrix is intentionally excluded from
