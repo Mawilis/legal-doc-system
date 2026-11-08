@@ -107,7 +107,6 @@ def claim_next_task(
     if lease_seconds < 1:
         raise DurableTaskQueueError("TASK_QUEUE_LEASE_DURATION_INVALID")
     query = {
-        "attempts": {"$lt": "$max_attempts"},
         "$or": [
             {"status": {"$in": ["PENDING", "RETRY"]}, "available_at": {"$lte": now}},
             {"status": "CLAIMED", "lease_until": {"$lte": now}},
@@ -147,6 +146,8 @@ def complete_task(
 ) -> bool:
     """Complete only the current lease owner; audit and state share caller transaction."""
     now = _utc(now)
+    if session is None:
+        raise DurableTaskQueueError("TASK_QUEUE_AUDIT_TRANSACTION_REQUIRED")
     identity = {
         "tenant_id": _required(tenant_id, "TASK_QUEUE_TENANT_REQUIRED"),
         "task_id": _required(task_id, "TASK_QUEUE_TASK_ID_REQUIRED"),
@@ -182,6 +183,8 @@ def fail_task(
 ) -> str:
     """Record bounded failure evidence and retry or dead-letter the task."""
     now = _utc(now)
+    if session is None:
+        raise DurableTaskQueueError("TASK_QUEUE_AUDIT_TRANSACTION_REQUIRED")
     if not re.fullmatch(r"[A-Z0-9_]{1,96}", error_code or ""):
         raise DurableTaskQueueError("TASK_QUEUE_ERROR_CODE_INVALID")
     identity = {
