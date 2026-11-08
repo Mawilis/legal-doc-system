@@ -1,5 +1,5 @@
 """TITLE: WILSY EOS Institutional Source Signing-Key Lifecycle Registry
-VERSION: v1.3.0
+VERSION: v1.4.0
 AUTHORITY: WILSY EOS Security Engineering; persistence authority only
 EPITOME: Append-only, source-bound Ed25519 public-key enrollment, revocation and rotation evidence.
 ABSOLUTE CANONICAL PATH: tools/eos/security/institutional_source_signing_key_registry.py
@@ -14,6 +14,7 @@ CHANGELOG:
   registry append boundary before every lifecycle mutation.
 - v1.3.0: Add tenant-partitioned, hash-chained denial records and audit heads
   with full-chain verification before every denial append.
+- v1.4.0: Normalize denial timestamps to MongoDB millisecond precision before hashing.
 COMPLIANCE: Caller-owned MongoDB transaction; deterministic fingerprints; unique source/key and public-key identities.
 SECURITY / PRIVACY POSTURE: Public keys only; no private material, secrets, provider credentials or fabricated institutional trust anchors.
 TENANT BOUNDARY: Source trust is source-system scoped, not tenant-issued authority.
@@ -255,6 +256,10 @@ class InstitutionalSourceSigningKeyLifecycleRegistry:
         tenant = _identifier("tenant_id", event.get("tenant_id"))
         if event.get("event_type") != "DENIED":
             raise SourceSigningKeyRegistryError("SOURCE_SIGNING_KEY_DENIAL_EVENT_INVALID")
+        occurred = _instant("occurred_at", event.get("occurred_at"))
+        event["occurred_at"] = occurred.replace(
+            microsecond=(occurred.microsecond // 1000) * 1000,
+        )
         self._verify_denial_chain(tenant_id=tenant, session=session)
         head_filter = {"tenant_id": tenant}
         head = self._denial_heads.find_one(head_filter, session=session)
@@ -766,7 +771,7 @@ __all__ = [
 ]
 
 # ARTIFACT: WILSY OS Institutional Source Signing-Key Lifecycle Registry
-# VERSION: v1.3.0
+# VERSION: v1.4.0
 # AUTHORITY BOUNDARY: Durable public-key lifecycle evidence only; no caller authorization or verifier-result issuance.
 # TENANT POSTURE: Source-system scoped; no tenant-issued trust.
 # FAIL-CLOSED POSTURE: Missing, invalid, expired, revoked, or unavailable trust is denied.
