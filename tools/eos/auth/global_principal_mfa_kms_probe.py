@@ -8,7 +8,6 @@ from __future__ import annotations
 import sys
 
 from tools.eos.auth.global_principal_mfa_kms_envelope import (
-    GlobalMfaKeyManagementError,
     build_global_mfa_kms_envelope_from_environment,
 )
 
