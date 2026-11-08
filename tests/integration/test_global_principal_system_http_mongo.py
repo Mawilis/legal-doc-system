@@ -208,9 +208,56 @@ def system_http_mongo(monkeypatch: pytest.MonkeyPatch):
     monkeypatch.setattr(auth_router, "get_client", lambda: client)
     monkeypatch.setattr(auth_router, "get_database", lambda: database)
 
+    # Keep HTTP certification isolated to this fixture's UUID-suffixed
+    # principal and credential collections while exercising real auth logic.
+    from tools.eos.auth.principal_credential_authentication import (
+        authenticate_global_principal as _authenticate_global_principal,
+    )
+
+    class _CredentialRepository:
+        def get_by_email(self, email, *, session=None):
+            return PrincipalCredentialRepository.get_by_email(
+                email, credentials, session=session
+            )
+
+    class _PrincipalRepository:
+        def get(self, requested_principal_id, *, session=None):
+            return PrincipalAuthorityRepository.get(
+                requested_principal_id, principals, session=session
+            )
+
+    def _authenticate_isolated(**kwargs):
+        return _authenticate_global_principal(
+            **kwargs,
+            credential_repository=_CredentialRepository(),
+            principal_repository=_PrincipalRepository(),
+        )
+
+    monkeypatch.setattr(
+        auth_router, "authenticate_global_principal", _authenticate_isolated
+    )
+
+    # Route all MFA and SYSTEM session persistence through this fixture's
+    # isolated collections; do not change production collection names.
+    monkeypatch.setattr(
+        auth_router, "GLOBAL_PRINCIPAL_MFA_FACTOR_COLLECTION", factors.name
+    )
+    monkeypatch.setattr(
+        auth_router, "SYSTEM_MFA_CHALLENGE_COLLECTION", challenges.name
+    )
+    monkeypatch.setattr(
+        auth_router, "SYSTEM_SESSION_COLLECTION", sessions.name
+    )
+    monkeypatch.setattr(
+        auth_router, "SYSTEM_REFRESH_COLLECTION", refresh_tokens.name
+    )
+
     from tools.eos.auth import authentication
     monkeypatch.setattr(authentication, "get_client", lambda: client)
     monkeypatch.setattr(authentication, "get_database", lambda: database)
+    monkeypatch.setattr(
+        authentication, "SYSTEM_SESSION_COLLECTION", sessions.name
+    )
 
     app = FastAPI()
     register_error_handlers(app)
