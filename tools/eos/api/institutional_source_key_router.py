@@ -1,8 +1,17 @@
-"""Authenticated, independently approved institutional source-key governance commands.
-
-The router is a development control plane. It stores public keys only, uses
-caller-owned replica-set transactions, and fails closed while independent
-institutional evidence verification or lifecycle indexes are unavailable.
+"""TITLE: WILSY EOS Institutional Source-Key Governance API
+VERSION: v1.0.0
+AUTHORITY: WILSY EOS Security Engineering; authenticated command boundary only
+EPITOME: Exposes tenant-authorized proposal, approval and revocation commands for source-bound Ed25519 public keys.
+ABSOLUTE CANONICAL PATH: tools/eos/api/institutional_source_key_router.py
+COLLABORATION / OWNERSHIP: WILSY EOS Core Engineering; evidence verification is delegated to an explicitly configured verifier.
+CERTIFICATION / UPDATE DATE: 2026-11-08
+CHANGELOG:
+- v1.0.0: Introduce authenticated, independently evidenced source-key governance commands.
+COMPLIANCE: Caller-owned MongoDB replica-set transactions; canonical tenant IAM; deterministic idempotency.
+SECURITY / PRIVACY POSTURE: Development control plane; public keys and bounded evidence references only; provider verification fails closed when unavailable.
+TENANT BOUNDARY: WILSY canonical tenant only; tenant identity is resolved by the canonical authorization dependency.
+AUTHORITY BOUNDARY: Commands persist provider-verified governance evidence; this router does not establish institutional authority or issue verifier success.
+FINANCIAL AUTHORITY BOUNDARY: No financial execution authority; Kennel EOS remains exclusive.
 """
 from __future__ import annotations
 
@@ -58,10 +67,14 @@ _REVOKE = RequireTenantAuthorization(
 
 
 class StrictModel(BaseModel):
+    """Base request contract rejecting undeclared governance-command fields."""
+
     model_config = ConfigDict(extra="forbid")
 
 
 class SourceKeyProposal(StrictModel):
+    """Exact source-key proposal request; references are not proof by themselves."""
+
     source_system_id: str = Field(min_length=1, max_length=256)
     key_id: str = Field(min_length=1, max_length=256)
     public_key_base64: str = Field(min_length=1, max_length=128)
@@ -76,11 +89,15 @@ class SourceKeyProposal(StrictModel):
 
 
 class SourceKeyApproval(StrictModel):
+    """Independent approval decision and evidence references for one proposal."""
+
     governance_decision_reference: str = Field(min_length=1, max_length=256)
     approval_evidence_reference: str = Field(min_length=1, max_length=256)
 
 
 class SourceKeyRevocation(StrictModel):
+    """Revocation reason and independent governance evidence references."""
+
     reason_reference: str = Field(min_length=1, max_length=256)
     governance_decision_reference: str = Field(min_length=1, max_length=256)
     approval_evidence_reference: str = Field(min_length=1, max_length=256)
@@ -212,6 +229,7 @@ async def propose_source_signing_key(
     idempotency_key: str = Header(alias="Idempotency-Key", min_length=1, max_length=200),
     context: TenantAuthorizationContext = Depends(_PROPOSE),
 ):
+    """Authorize, independently verify and persist one immutable source-key proposal."""
     _tenant(context)
     verifier = _registry(request)
     try:
@@ -284,6 +302,7 @@ async def approve_source_signing_key(
     idempotency_key: str = Header(alias="Idempotency-Key", min_length=1, max_length=200),
     context: TenantAuthorizationContext = Depends(_APPROVE),
 ):
+    """Authorize and persist independent approval for an existing proposal."""
     _tenant(context)
     verifier = _registry(request)
 
@@ -366,6 +385,7 @@ async def revoke_source_signing_key(
     idempotency_key: str = Header(alias="Idempotency-Key", min_length=1, max_length=200),
     context: TenantAuthorizationContext = Depends(_REVOKE),
 ):
+    """Authorize and persist an independently approved, revision-specific revocation."""
     _tenant(context)
     verifier = _registry(request)
 
@@ -447,3 +467,10 @@ async def revoke_source_signing_key(
 
 
 __all__ = ["router"]
+# ARTIFACT: WILSY EOS Institutional Source-Key Governance API
+# VERSION: v1.0.0
+# AUTHORITY BOUNDARY: Authenticated command orchestration only; provider evidence and registry own their respective proofs.
+# TENANT POSTURE: Canonical WILSY tenant authorization is mandatory.
+# FAIL-CLOSED POSTURE: Missing verifier, invalid bindings, transaction failures and unavailable registry are denied.
+# FINANCIAL EXECUTION AUTHORITY: None; Kennel EOS remains exclusive.
+# END OF WILSY OS SOVEREIGN ARTIFACT
