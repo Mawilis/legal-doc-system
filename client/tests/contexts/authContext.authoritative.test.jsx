@@ -11,7 +11,7 @@
  * workspace identifier is accepted only from READY EOS workspace bootstrap.
  * Customer tenant owner routing remains unchanged and browser projections do
  * not create IAM authority.
- *            v1.5.0-D21B8-TENANT-BRANDING-AUTHCONTEXT-PROJECTION-CERT certifies that tenant branding enters authenticated browser state only from explicit READY workspace.branding, with null as authoritative absence and configured values constrained to the exact D21B6/D21B7 schema. It proves foreign/malformed/extra branding fails closed, legacy tenant aliases are stripped, and discovery/login/MFA/persisted branding candidates cannot override the server projection.
+ *            v1.6.0-WILSY-HEADQUARTERS-WORKSPACE-PROJECTION-CERT certifies that tenant branding enters authenticated browser state only from explicit READY workspace.branding, with null as authoritative absence and configured values constrained to the exact D21B6/D21B7 schema. It proves foreign/malformed/extra branding fails closed, legacy tenant aliases are stripped, and discovery/login/MFA/persisted branding candidates cannot override the server projection.
  *            v1.4.0-D24B-AUTHENTICATED-PRINCIPAL-NAME-PROJECTION-CERT certifies that firstName/lastName enter browser auth state only from READY workspace-bootstrap, overwrite forged login/MFA and persisted-browser name candidates, allow explicit null optional names without inference, and reject malformed server name values before session promotion. Person names remain descriptive and create no role, permission, tenant, entitlement, Legal command, billing, payment, execution or settlement authority.
  *            v1.3.0-D17-SERVER-LEGAL-PERMISSION-PROJECTION-CERT certifies bounded consumption of the server-owned
  *            workspace.legalPermissions projection: exact permissions and
@@ -319,6 +319,19 @@ describe('authoritative authentication state machine', () => {
     expect(promotedUser.lastName).not.toBe('FORGED LOGIN LAST');
     expect(api.post).toHaveBeenNthCalledWith(1, '/auth/login', { email: 'person@example.com', password: 'password', tenant_id: 'TENANT-BROWSER' });
     expect(api.post).toHaveBeenNthCalledWith(2, '/auth/verify-otp', { email: 'person@example.com', code: '123456', tenant_id: 'TENANT-BROWSER' });
+  });
+
+  it('promotes WILSY Headquarters only from the exact READY EOS workspace projection', async () => {
+    api.get.mockResolvedValueOnce(workspaceBootstrap({
+      tenantId: 'WILSYTENANT-4CD2FZ4O',
+      businessRole: 'tenant_owner',
+      workspaceId: 'WILSY_HEADQUARTERS',
+    }));
+    render(<AuthHarness />);
+    await waitFor(() => {
+      expect(screen.getByTestId('auth-state')).toHaveTextContent(AUTH_STATES.AUTHENTICATED);
+      expect(screen.getByTestId('workspace-id')).toHaveTextContent('WILSY_HEADQUARTERS');
+    });
   });
 
   it('promotes WILSY Headquarters only from the exact READY EOS workspace projection', async () => {
@@ -1079,11 +1092,3 @@ describe('authoritative authentication state machine', () => {
  * FINANCIAL EXECUTION AUTHORITY: none; Kennel EOS remains exclusive
  * END OF WILSY OS SOVEREIGN ARTIFACT
  */
-
- * ARTIFACT: authContext.authoritative.test.jsx
- * VERSION: v1.6.0-WILSY-HEADQUARTERS-WORKSPACE-PROJECTION-CERT
- * AUTHORITY BOUNDARY: browser projection certification only; Python EOS remains authentication and authorization authority
- * TENANT POSTURE: exact canonical WILSY Headquarters and ordinary tenant projections remain separately scoped
- * FAIL-CLOSED POSTURE: malformed or unrecognized workspace projections prevent authenticated session promotion
- * FINANCIAL EXECUTION AUTHORITY: Kennel EOS exclusively
- * END OF WILSY OS SOVEREIGN ARTIFACT
