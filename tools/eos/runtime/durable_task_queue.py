@@ -114,9 +114,10 @@ def claim_next_task(
     lease_token: str,
     now: datetime,
     lease_seconds: int = 60,
+    engine_names: tuple[str, ...] | None = None,
     session: Any = None,
 ) -> dict[str, Any] | None:
-    """Atomically claim due work or reclaim an expired lease."""
+    """Atomically claim due work for registered engines or reclaim an expired lease."""
     worker_id = _required(worker_id, "TASK_QUEUE_WORKER_REQUIRED")
     lease_token = _required(lease_token, "TASK_QUEUE_LEASE_REQUIRED")
     now = _utc(now)
@@ -128,6 +129,10 @@ def claim_next_task(
             {"status": "CLAIMED", "lease_until": {"$lte": now}},
         ],
     }
+    if engine_names is not None:
+        if not engine_names or any(not isinstance(name, str) or not name.strip() for name in engine_names):
+            raise DurableTaskQueueError("TASK_QUEUE_ENGINE_FILTER_INVALID")
+        query["engine_name"] = {"$in": list(engine_names)}
     # Mongo query expressions compare the two attempt fields without client-side races.
     query["$expr"] = {"$lt": ["$attempts", "$max_attempts"]}
     return tasks.find_one_and_update(
