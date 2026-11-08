@@ -1,14 +1,14 @@
 # WILSY OS — Kennel EOS runtime and legacy Node forensic inventory
 
 **TITLE:** Kennel EOS Runtime and Legacy Node Forensic Inventory  
-**VERSION:** v2.3.0-KENNEL-EOS-LEGACY-NODE-FORENSIC-INVENTORY  
+**VERSION:** v2.4.0-KENNEL-EOS-LEGACY-NODE-FORENSIC-INVENTORY  
 **AUTHORITY:** Wilsy OS Core Governance  
 **EPITOME:** Evidence-based inventory of the supported Python runtime and the remaining Express, route, middleware, worker, scheduler, persistence, and integration surfaces that must be mapped before legacy retirement.  
 **ABSOLUTE CANONICAL PATH:** /Users/wilsonkhanyezi/legal-doc-system/docs/architecture/eos-runtime-database-consumer-inventory.md  
 **COLLABORATION / OWNERSHIP:** Wilson Khanyezi (Founder); Codex (AI Engineering)  
 **CERTIFICATION / UPDATE DATE:** 2026-11-08  
 **CHANGELOG:**
-- v2.3.0-KENNEL-EOS-LEGACY-NODE-FORENSIC-INVENTORY: Adds checked-in Nginx, Helm, Kubernetes and Node deployment-automation findings that prevent direct-Kennel-ingress certification.
+- v2.4.0-KENNEL-EOS-LEGACY-NODE-FORENSIC-INVENTORY: Adds checked-in Nginx, Helm, Kubernetes and Node deployment-automation findings that prevent direct-Kennel-ingress certification.
 - v2.2.0-KENNEL-EOS-LEGACY-NODE-FORENSIC-INVENTORY: Records mounted routes, middleware, callable scheduler activation, queue workers, Mongoose/Redis consumers and explicit parity gaps.
 - v2.1.0-KENNEL-EOS-LEGACY-NODE-FORENSIC-INVENTORY: Establishes the first corrected legacy runtime forensic inventory.
 - v2.0.0-KENNEL-EOS-CANONICAL-RUNTIME: Established the Python EOS deployment and database-owner inventory.
@@ -130,7 +130,47 @@ The direct Lead recovery handler is particularly sensitive: it selects among can
 
 The router also imports `wilsyAiRoutes.js` without a corresponding `router.use` mount in the inspected source, and imports an AI ledger-query controller. The AI router is mounted directly by `server/app.js` at `/api/wilsy/ai`. Exact handler semantics, authorization, persistence, audit and client callers for each mounted module remain to be mapped. No parity is inferred from matching route names.
 
-### 3.3 Route, controller and middleware source trees
+### 3.3 Python EOS candidate crosswalk — candidates are not parity
+
+The canonical FastAPI composition in `tools/eos/api/server.py` includes the following relevant Python routers. These are candidate authorities based on domain and API composition only; route-level request/response, authorization, persistence, audit, client, and lifecycle parity have not been proven.
+
+| Legacy Express surface | Python EOS candidate / authority | Classification | Parity status |
+|---|---|---|---|
+| `authRoutes.js` | `auth_router.py`, `global_principal_auth_router.py` | CANONICAL candidate | Not proven endpoint-by-endpoint; global principal, explicit membership/capacity, MFA and session-currentness contracts must be compared |
+| `tenantRoutes.js` | `tenant_router.py` | CANONICAL candidate | Not proven; legacy tenant discovery and administration flows require exact mapping |
+| `billingRoutes.js` | `billing_router.py` | CANONICAL financial application boundary | Python exposes platform/client invoice, payment, statement, audit and dunning routes; exact legacy parity is unverified and HTTP cannot invent execution/paid/settlement truth |
+| `subscriptionRoutes.js` | `subscription_router.py`, `plan_router.py`, billing registries | CANONICAL candidate | Not proven; entitlement and lifecycle authority must be mapped |
+| `employees.js` | `employee_router.py`, `hr_workforce_directory_router.py` | CANONICAL candidate | Not proven; workforce identity and authorization parity required |
+| `legal/index.js` | `legal_operations_router.py` plus specialized legal operations routers | CANONICAL candidate | Not proven; complete legal lifecycle/client/mobile/evidence parity required |
+| `brandingRoutes.js` | `tenant_branding_router.py` | CANONICAL candidate | Not proven; tenant ownership, asset delivery and cache invalidation must be compared |
+| `telemetryRoutes.js` | `telemetry_ingestion_router.py` | CANONICAL candidate | Not proven; event identity, tenant scope and delivery semantics must be compared |
+| `wilsyAiRoutes.js` | `wilsy_ai_legal_gateway_router.py`, `wilsy_ai_reasoning_router.py`, `wilsy_ai_legal_services_router.py`, `wilsy_ai_advisory_router.py` | CANONICAL candidate | Not proven; entitlement, evidence, model-provider and audit boundaries must be compared |
+| `contractRoutes.js` | `commercial_agreement_router.py` | CANONICAL candidate | Not proven; signing, acceptance and immutable evidence contracts must be compared |
+| `crmCommandRoutes.js`, `wilsyCrmLiveRoutes.js`, `wilsyCrmIntelligenceRoutes.js` | `owner_commercial_workspace_router.py` and `tools/eos/crm/**` | CANONICAL partial candidate | Owner workspace endpoints are certified separately; this does not establish parity for the full legacy CRM route surface |
+| `assetRoutes.js` | `candidate_evidence_upload_router.py`, `legal_evidence_upload_router.py`, `artifact_pdf_router.py` | CANONICAL partial candidate | Upload, evidence and artifact capabilities differ; no blanket parity |
+| `qrRoutes.js` | No dedicated Python QR router found. `billing_router.py` exposes invoice/statement operations and `forensic_merkle_router.py` verifies forensic chains, but neither establishes the legacy QR contract | UNKNOWN / MISSING PARITY | Missing/unverified signed-payload QR verification, trace lookup, verify-and-persist and offline/online reconciliation routes |
+| `financeRoutes.js`, `revenueRoutes.js`, `ledgerRoutes.js`, `treasuryRoutes.js`, `paymentRoutes.js`, `invoiceRoutes.js`, `statements.routes.js`, `dunningRoutes.js` | `billing_router.py`, SaaS billing registries and Kennel EOS financial execution boundary | CANONICAL candidate | Not proven per endpoint; do not retain or reintroduce Node financial truth |
+| `complianceRoutes.js`, `analyticsRoutes.js`, `lpcRoutes.js`, `courtRoutes.js`, `jurisdictionRoutes.js`, `nodeRoutes.js`, `sovereignSeizureRoutes.js` | No exact one-to-one Python router mapping established in this pass | UNKNOWN / REQUIRES FORENSICS | Missing or unverified until exact routes, controllers, data and callers are traced |
+
+### 3.4 QR verification and offline reconciliation — identified parity gap
+
+The legacy QR router is mounted both directly at `/api/qr` in `server/app.js` and as `/qr` inside `server/routes/api.js`, which is itself mounted under `/api`. Its three declared operations are:
+
+- `GET /api/qr/audit/:traceId`: authenticated read-only invoice/statement verification.
+- `POST /api/qr/audit/:traceId/verify`: authenticated verify-and-persist operation that sets verification state and appends audit/reconciliation evidence.
+- `GET /api/qr/verify/:payload`: authenticated signed QR payload verification.
+
+The legacy controller resolves tenant context from user, header, query, or middleware state and falls back to `MASTER`; it recognizes legacy sovereign roles and tenant aliases. It also contains optional audit/anomaly imports that fall back to no-op implementations, and a missing PKI public key disables PKI verification. These behaviors are not an acceptable migration contract and must not be copied into EOS.
+
+The legacy `Invoice` and `Statement` Mongoose schemas persist `traceId`, `qrVerified`, and `qrVerifiedAt`; invoices additionally persist `verificationLog` entries with local/server timestamps and a resolution. The old reconciliation service appends to the Mongoose invoice document and calls `save()` without an explicit caller-owned session/transaction parameter. Its tenant fallback includes `GLOBAL_ROOT`.
+
+The old scheduler aggregates invoices whose latest verification entry is `LocalOnly`, then loads and updates each invoice by ID. The aggregate is not visibly tenant-filtered, and the operation has no explicit caller-owned transaction/session boundary. It is invoked immediately and on a 60-second interval when `initializeSovereignJobs()` is called.
+
+Python EOS currently has canonical client invoice issuance/read operations in `billing_router.py`, a commercial statement domain/registry, and forensic Merkle verification. These are related authorities, not proof that QR signing, trace lookup, QR verification persistence, or offline timestamp reconciliation has been implemented. No Python QR router or equivalent offline reconciliation worker was found in the inspected `tools/eos/**` path inventory.
+
+**Migration decision:** treat the legacy QR and offline reconciliation feature as a missing/unverified capability. Before retiring its source or claiming parity, define a Python-owned, tenant-scoped evidence contract; use canonical EOS invoice/statement identities and approved signing/trust material; persist append-only verification evidence with deterministic idempotency and caller-owned transaction/session semantics; add authenticated routes and exact IAM permissions; and certify cross-tenant denial, signature failure, replay, concurrency and real replica-set recovery. No legacy fallback tenant, no-op audit fallback, or scheduler-owned lifecycle authority may be carried forward.
+
+### 3.4 Route, controller and middleware source trees
 
 Repository directory enumeration at this revision found these top-level source counts; nested directories exist in each of several trees and must also be traversed:
 
@@ -296,7 +336,7 @@ The route mount inventory is established for `server/app.js` and `server/routes/
 **END OF INVENTORY — PARITY AND RETIREMENT NOT YET CERTIFIED**
 
 ARTIFACT: eos-runtime-database-consumer-inventory.md
-VERSION: v2.3.0-KENNEL-EOS-LEGACY-NODE-FORENSIC-INVENTORY
+VERSION: v2.4.0-KENNEL-EOS-LEGACY-NODE-FORENSIC-INVENTORY
 AUTHORITY BOUNDARY: forensic inventory only; Kennel EOS owns business authority.
 TENANT POSTURE: no tenant data access or authority granted; legacy isolation remains under review.
 FAIL-CLOSED POSTURE: UNKNOWN parity is not treated as certified or safe to retire.
