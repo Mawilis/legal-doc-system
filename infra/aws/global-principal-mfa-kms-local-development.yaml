@@ -1,0 +1,111 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Description: >-
+  WILSY EOS local-development Global Principal MFA KMS key and dedicated
+  assumed role. This stack creates no production workload identity.
+
+Parameters:
+  LocalDeveloperPrincipalArn:
+    Type: String
+    Description: Exact IAM user ARN permitted to assume the local EOS MFA role.
+    AllowedPattern: '^arn:[a-z0-9-]+:iam::[0-9]{12}:user/.+$'
+  KeyAdministratorPrincipalArn:
+    Type: String
+    Description: Exact IAM user ARN permitted to administer this dedicated key.
+    AllowedPattern: '^arn:[a-z0-9-]+:iam::[0-9]{12}:user/.+$'
+
+Resources:
+  LocalGlobalPrincipalMfaKey:
+    Type: AWS::KMS::Key
+    Properties:
+      Description: WILSY EOS local-development Global Principal TOTP envelope encryption
+      Enabled: true
+      EnableKeyRotation: true
+      KeySpec: SYMMETRIC_DEFAULT
+      KeyUsage: ENCRYPT_DECRYPT
+      MultiRegion: false
+      PendingWindowInDays: 30
+      Tags:
+        - Key: Application
+          Value: WILSY-EOS
+        - Key: Purpose
+          Value: GLOBAL_PRINCIPAL_TOTP
+        - Key: Environment
+          Value: local-development
+        - Key: DataClassification
+          Value: AuthenticationSecret
+        - Key: ManagedBy
+          Value: CloudFormation
+      KeyPolicy:
+        Version: '2012-10-17'
+        Statement:
+          - Sid: EnableAccountIamDelegation
+            Effect: Allow
+            Principal:
+              AWS: !Sub 'arn:${AWS::Partition}:iam::${AWS::AccountId}:root'
+            Action: 'kms:*'
+            Resource: '*'
+          - Sid: DedicatedLocalKeyAdministration
+            Effect: Allow
+            Principal:
+              AWS: !Ref KeyAdministratorPrincipalArn
+            Action:
+              - kms:CancelKeyDeletion
+              - kms:DescribeKey
+              - kms:DisableKey
+              - kms:EnableKey
+              - kms:GetKeyPolicy
+              - kms:GetKeyRotationStatus
+              - kms:ListResourceTags
+              - kms:PutKeyPolicy
+              - kms:ScheduleKeyDeletion
+              - kms:TagResource
+              - kms:UntagResource
+              - kms:UpdateKeyDescription
+            Resource: '*'
+
+  LocalGlobalPrincipalMfaKeyAlias:
+    Type: AWS::KMS::Alias
+    Properties:
+      AliasName: alias/wilsy/local-development/global-principal-mfa
+      TargetKeyId: !Ref LocalGlobalPrincipalMfaKey
+
+  LocalGlobalPrincipalMfaRole:
+    Type: AWS::IAM::Role
+    Properties:
+      RoleName: wilsy-eos-global-mfa-local-development
+      Description: Local Python EOS KMS use only; never a production workload role.
+      MaxSessionDuration: 3600
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Sid: ExactLocalDeveloperAssumption
+            Effect: Allow
+            Principal:
+              AWS: !Ref LocalDeveloperPrincipalArn
+            Action: sts:AssumeRole
+      Policies:
+        - PolicyName: LocalGlobalPrincipalMfaKmsUseOnly
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+              - Sid: EncryptDecryptGlobalPrincipalTotpOnly
+                Effect: Allow
+                Action:
+                  - kms:Encrypt
+                  - kms:Decrypt
+                Resource: !GetAtt LocalGlobalPrincipalMfaKey.Arn
+                Condition:
+                  StringEquals:
+                    kms:EncryptionContext:purpose: GLOBAL_PRINCIPAL_TOTP
+
+Outputs:
+  LocalGlobalPrincipalMfaKeyArn:
+    Description: Full ARN for WILSY_GLOBAL_MFA_KMS_KEY_ID in local development only.
+    Value: !GetAtt LocalGlobalPrincipalMfaKey.Arn
+  LocalGlobalPrincipalMfaKeyId:
+    Value: !Ref LocalGlobalPrincipalMfaKey
+  LocalGlobalPrincipalMfaKeyAlias:
+    Value: !Ref LocalGlobalPrincipalMfaKeyAlias
+  LocalGlobalPrincipalMfaRoleArn:
+    Description: Configure the local AWS profile to assume this role.
+    Value: !GetAtt LocalGlobalPrincipalMfaRole.Arn
