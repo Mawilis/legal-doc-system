@@ -1,11 +1,13 @@
 # TITLE: WILSY EOS ECS Fargate Production Foundation Contract Tests
-# VERSION: v1.0.2-EOS-ECS-WRITABLE-TASK-VOLUMES
+# VERSION: v1.0.3-EOS-ECS-IDENTITY-VERIFIER-CONTRACT
 # AUTHORITY: Static infrastructure safety certification; no provisioning authority.
 # EPITOME: Assert the inactive ECS foundation's service boundary, immutable image and secret references, role separation, purpose-scoped MFA KMS access, and non-root writable task-volume contract.
 # ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/tests/unit/test_eos_production_ecs_foundation.py
 # COLLABORATION / OWNERSHIP: Wilsy OS Core Engineering; Python EOS and infrastructure governance.
 # CERTIFICATION OR UPDATE DATE: 2026-11-09
 # CHANGELOG:
+#   v1.0.3 adds assertions that the task definition injects the exact expected
+#   task-role ARN used by the production ECS metadata/STS/KMS verifier.
 #   v1.0.2-EOS-ECS-WRITABLE-TASK-VOLUMES asserts that the published Python EOS
 #   image prepares UID/GID 10001-owned task-volume mount points and that ECS
 #   mounts task-scoped /tmp while retaining a read-only root filesystem.
@@ -98,6 +100,8 @@ def test_production_task_definition_enforces_python_eos_and_startup_kms_probe():
     assert "AWS_KMS" in source
     assert "WILSY_GLOBAL_MFA_KMS_KEY_ID" in source
     assert "WILSY_GLOBAL_MFA_KMS_REGION" in source
+    assert "WILSY_ECS_EXPECTED_TASK_ROLE_ARN" in source
+    assert "Value: !GetAtt EosProductionTaskRole.Arn" in source
     assert "MONGODB_URI" in source
     assert "9095" in source
     assert "User: '10001'" in source
@@ -134,7 +138,7 @@ def test_production_stack_does_not_invent_networking_or_ingress():
 
 
 # ARTIFACT: tests/unit/test_eos_production_ecs_foundation.py
-# VERSION: v1.0.2-EOS-ECS-WRITABLE-TASK-VOLUMES
+# VERSION: v1.0.3-EOS-ECS-IDENTITY-VERIFIER-CONTRACT
 # AUTHORITY BOUNDARY: Static template and image-build assertions only; no provisioning or task activation.
 # TENANT POSTURE: No tenant, identity, session or database records are accessed or mutated.
 # FAIL-CLOSED POSTURE: Missing or weakened infrastructure and image-volume invariants fail the focused test suite.
