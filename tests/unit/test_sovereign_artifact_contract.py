@@ -1,7 +1,7 @@
 """WILSY OS sovereign artifact-contract regression tests.
 
 TITLE: Sovereign Artifact Header, Version, Changelog and Seal Guard
-VERSION: v1.0.6-WILSY-SOVEREIGN-ARTIFACT-CONTRACT-GUARD
+VERSION: v1.0.7-WILSY-SOVEREIGN-ARTIFACT-CONTRACT-GUARD
 AUTHORITY: Wilsy OS Core Governance
 EPITOME: Prevents the corrected Kennel EOS runbook and forensic inventory from
          losing their required sovereign header, version agreement, changelog,
@@ -12,8 +12,9 @@ COLLABORATION / OWNERSHIP:
     Python EOS governance tests; artifact owners retain source authority.
 CERTIFICATION / UPDATE DATE: 2026-11-08
 CHANGELOG:
-    v1.0.6-WILSY-SOVEREIGN-ARTIFACT-CONTRACT-GUARD certifies the five retired
-    root launchers are fail-closed and includes their artifact seals in self-audit.
+    v1.0.7-WILSY-SOVEREIGN-ARTIFACT-CONTRACT-GUARD verifies that runtime
+    inventory changes trigger CI across root services, launchers and manifests.
+    v1.0.6-WILSY-SOVEREIGN-ARTIFACT-CONTRACT-GUARD certified retired launchers.
     v1.0.5-WILSY-SOVEREIGN-ARTIFACT-CONTRACT-GUARD tracked the expanded inventory.
     v1.0.4-WILSY-SOVEREIGN-ARTIFACT-CONTRACT-GUARD audited deployment documentation.
     v1.0.3-WILSY-SOVEREIGN-ARTIFACT-CONTRACT-GUARD added self-audit coverage.
@@ -44,7 +45,7 @@ ROOT = Path(__file__).resolve().parents[2]
 ARTIFACTS = (
     (
         ROOT / "tests/unit/test_sovereign_artifact_contract.py",
-        "v1.0.6-WILSY-SOVEREIGN-ARTIFACT-CONTRACT-GUARD",
+        "v1.0.7-WILSY-SOVEREIGN-ARTIFACT-CONTRACT-GUARD",
     ),
     (
         ROOT / "DEPLOYMENT.md",
@@ -56,7 +57,7 @@ ARTIFACTS = (
     ),
     (
         ROOT / ".github/workflows/eos-runtime-database-consumer-inventory.yml",
-        "v1.1.0-EOS-RUNTIME-DATABASE-INVENTORY-CERTIFICATION",
+        "v1.2.0-EOS-RUNTIME-DATABASE-INVENTORY-CERTIFICATION",
     ),
     (
         ROOT / "start_all.sh",
@@ -209,8 +210,42 @@ def test_legacy_node_launchers_are_fail_closed() -> None:
             assert command not in source, f"{filename} can still invoke {command}"
 
 
+def test_runtime_inventory_workflow_covers_legacy_service_and_deployment_surfaces() -> None:
+    """Require CI to run when any legacy runtime or ingress surface changes.
+
+    Tenant scope: none. Mutation and persistence: none. Idempotency and
+    transaction ownership: not applicable. Fail-closed: missing path filters
+    or governance tests fail this assertion. Financial authority: none.
+    """
+    path = ROOT / ".github/workflows/eos-runtime-database-consumer-inventory.yml"
+    content = path.read_text(encoding="utf-8")
+    required_paths = (
+        '      - "services/**"',
+        '      - "start_all.sh"',
+        '      - "start_wilsy_os.sh"',
+        '      - "GlobalLaunchSequence.sh"',
+        '      - "Genesis_Ignition.sh"',
+        '      - "Sovereign_Deployment_Automation.sh"',
+        '      - "repair_launcher.js"',
+        '      - "build_orchestrator.js"',
+        '      - "update_orchestrator.js"',
+        '      - "bootstrap_wilsy_os.js"',
+        '      - "nginx.conf"',
+        '      - "infra/nginx/**"',
+        '      - "k8s/**"',
+        '      - "charts/legal-os/**"',
+        '      - "server/tests/test"',
+        "tests/unit/test_sovereign_artifact_contract.py",
+    )
+    for required in required_paths:
+        if required == '      - "server/tests/test"':
+            assert '      - "server/**"' in content
+        else:
+            assert required in content, f"Runtime inventory workflow omits {required}"
+
+
 # ARTIFACT: test_sovereign_artifact_contract.py
-# VERSION: v1.0.6-WILSY-SOVEREIGN-ARTIFACT-CONTRACT-GUARD
+# VERSION: v1.0.7-WILSY-SOVEREIGN-ARTIFACT-CONTRACT-GUARD
 # AUTHORITY BOUNDARY: structural governance tests only.
 # TENANT POSTURE: no tenant access or authority.
 # FAIL-CLOSED POSTURE: missing, divergent, or unsealed artifact metadata fails.
