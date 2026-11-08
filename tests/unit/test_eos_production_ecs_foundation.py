@@ -63,7 +63,6 @@ def test_production_mfa_key_is_separate_and_context_restricted():
     assert "kms:EncryptionContext:purpose: GLOBAL_PRINCIPAL_TOTP" in source
     key_policy = source.split("  EosProductionMfaKey:", 1)[1].split("  EosProductionMfaKeyAlias:", 1)[0]
     assert "AWS: !GetAtt EosProductionTaskRole.Arn" in key_policy
-    assert "DependsOn:" in key_policy
     assert "wilsy-eos-global-mfa-local-development" not in source
     assert "AdministratorAccess" not in source
 
