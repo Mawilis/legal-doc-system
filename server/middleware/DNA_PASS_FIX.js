@@ -1,10 +1,10 @@
 /* eslint-disable */
 /**
  * ╔════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════╗
- * ║ WILSY OS — DNA_PASS PUBLIC ALLOWLIST [V1.1.0-PING-PUBLIC]                                                                            ║
+ * ║ WILSY OS — DNA_PASS PUBLIC ALLOWLIST [V1.2.0-FORENSIC-PROTECTED]                                                                            ║
  * ║ AUTHORITY: WILSY OS CORE GOVERNANCE | TERMINAL WORKFLOW COMPLIANT                                                                    ║
  * ╠════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════╣
- * ║ VERSION: 1.1.0-PING-PUBLIC | PRODUCTION‑GRADE | TRILLION‑DOLLAR SPEC                                                                 ║
+ * ║ VERSION: 1.2.0-FORENSIC-PROTECTED | PRODUCTION‑GRADE | TRILLION‑DOLLAR SPEC                                                                 ║
  * ║ EPITOME: Canonical DNA_PASS list for ProductionHardening integrityShield.                                                             ║
  * ║          Paths matching these tokens skip institutional header seals.                                                                 ║
  * ║ ABSOLUTE PATH: /Users/wilsonkhanyezi/legal-doc-system/server/middleware/DNA_PASS_FIX.js                                               ║
@@ -14,6 +14,7 @@
  * ║ • AI Engineering (DeepSeek) – ARCHITECTED: Unified DNA_PASS list for ProductionHardening middleware.                                  ║
  * ╠════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════╣
  * ║ CHANGE LOG:                                                                                                                            ║
+ * ║ • 2026‑11‑08 v1.2.0‑FORENSIC‑PROTECTED — Removed broad 'forensics' bypass; forensic APIs require authenticated tenant scope.         ║
  * ║ • 2026‑08‑01 v1.1.0‑PING‑PUBLIC — Added 'ping' and '/api/ping' to allow public ops probes.                                            ║
  * ║ • 2026‑07‑31 v1.0.0‑INSTITUTIONAL — Baseline creation with core public paths.                                                          ║
  * ╚════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════╝
@@ -38,7 +39,6 @@ export const DNA_PASS = [
   'refresh-token',
   'revenue',
   'compliance',
-  'forensics',
   'health',
   'breaker-status',
   'billing',
