@@ -1426,8 +1426,14 @@ def verify(state_path: Path) -> None:
                 entitlement = entitlement_registry.get_current(
                     state["tenant_id"], entitlement_id, history, current, session=session,
                 )
+                product_id = entitlement.product_id
+                product_id_value = (
+                    product_id.value
+                    if isinstance(product_id, TenantProductId)
+                    else product_id
+                )
                 if (
-                    entitlement.product_id.value != product_key
+                    product_id_value != product_key
                     or entitlement.lifecycle_state is not TenantProductEntitlementState.ACTIVE
                     or entitlement.lifecycle_revision != 1
                 ):
