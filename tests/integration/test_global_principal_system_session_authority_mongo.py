@@ -1,3 +1,20 @@
+# TITLE: WILSY EOS Global Principal SYSTEM Session Authority Real-Mongo Certificate
+# VERSION: v1.0.1-GLOBAL-PRINCIPAL-SYSTEM-SESSION-MONGO
+# AUTHORITY: Disposable replica-set integration certification only.
+# EPITOME: Verify tenant-neutral SYSTEM MFA challenge, session issuance, refresh rotation, revocation and transaction atomicity against a real MongoDB replica set.
+# ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/tests/integration/test_global_principal_system_session_authority_mongo.py
+# COLLABORATION / OWNERSHIP: Wilsy OS Core Engineering; Python EOS SYSTEM authentication and session authority.
+# CERTIFICATION OR UPDATE DATE: 2026-11-09
+# CHANGELOG:
+#   v1.0.1-GLOBAL-PRINCIPAL-SYSTEM-SESSION-MONGO adds the mandatory sovereign
+#   artifact contract; integration assertions and fixture behavior are unchanged.
+#   v1.0.0 established real-replica-set SYSTEM session certification.
+# COMPLIANCE: AGENTS.md v1.2.0-SOVEREIGN-LEGAL-OPERATIONS-CONSTITUTION.
+# SECURITY / PRIVACY POSTURE: Synthetic SYSTEM principals and disposable MongoDB fixtures only; no production secrets.
+# TENANT BOUNDARY: Tenant-neutral SYSTEM scope; no canonical tenant records are accessed or mutated.
+# AUTHORITY BOUNDARY: Integration evidence only; cannot issue production SYSTEM sessions or MFA factors.
+# FINANCIAL AUTHORITY BOUNDARY: No financial execution authority; Kennel EOS remains exclusive.
+
 """Real replica-set certificate for tenant-neutral SYSTEM MFA/session atomicity."""
 from __future__ import annotations
 
@@ -247,3 +264,11 @@ def test_system_mfa_challenge_and_session_issue_revoke_and_rollback_are_atomic(m
         for collection in (principals, credentials, challenges, sessions, refresh_tokens):
             collection.drop()
         client.close()
+
+# ARTIFACT: tests/integration/test_global_principal_system_session_authority_mongo.py
+# VERSION: v1.0.1-GLOBAL-PRINCIPAL-SYSTEM-SESSION-MONGO
+# AUTHORITY BOUNDARY: Disposable SYSTEM session/refresh integration test only.
+# TENANT POSTURE: Synthetic tenant-neutral SYSTEM identity only; no production state is changed.
+# FAIL-CLOSED POSTURE: Transaction, currentness, replay and revocation divergences fail the integration suite.
+# FINANCIAL EXECUTION AUTHORITY: Kennel EOS exclusively.
+# END OF WILSY OS SOVEREIGN ARTIFACT
