@@ -1,11 +1,11 @@
 # TITLE: WILSY EOS Local Global Principal MFA KMS CloudFormation Contract Test
-# VERSION: v1.0.0-LOCAL-MFA-KMS-CLOUDFORMATION-CONTRACT
+# VERSION: v1.0.1-LOCAL-MFA-KMS-CLOUDFORMATION-CONTRACT
 # AUTHORITY: Static infrastructure safety certification only.
 # EPITOME: Verify the isolated local-development KMS stack without undeclared parser dependencies.
 # ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/tests/unit/test_global_principal_mfa_kms_local_development_cloudformation.py
 # COLLABORATION / OWNERSHIP: Wilsy Core Engineering.
 # CERTIFICATION OR UPDATE DATE: 2026-11-08.
-# CHANGELOG: v1.0.0 establishes standard-library-only structural checks for the local-development MFA KMS template.
+# CHANGELOG: v1.0.1 scopes resource discovery to the CloudFormation Resources section; v1.0.0 establishes standard-library-only structural checks.
 # COMPLIANCE: Test evidence only; does not provision AWS resources or grant runtime authority.
 # SECURITY / PRIVACY POSTURE: Reads infrastructure source; uses no credentials, secrets, network, or live AWS resources.
 # TENANT BOUNDARY: No tenant data or tenant authority is created or modified.
