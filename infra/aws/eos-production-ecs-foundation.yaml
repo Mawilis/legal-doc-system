@@ -1,11 +1,14 @@
 # TITLE: WILSY EOS Production ECS Fargate Foundation
-# VERSION: v1.0.2-ECS-PRODUCTION-WRITABLE-TASK-VOLUMES
+# VERSION: v1.0.3-ECS-PRODUCTION-IDENTITY-VERIFIER
 # AUTHORITY: Wilsy OS Core Governance; production infrastructure definition only.
 # EPITOME: Define the isolated ECS runtime identity, purpose-scoped MFA KMS key, cluster, logs and immutable Python EOS task definition without launching a service or task.
 # ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/infra/aws/eos-production-ecs-foundation.yaml
 # COLLABORATION / OWNERSHIP: Wilsy OS Core Engineering; Python EOS owns application, identity, tenant and business truth.
 # CERTIFICATION OR UPDATE DATE: 2026-11-09
 # CHANGELOG:
+#   v1.0.3-ECS-PRODUCTION-IDENTITY-VERIFIER injects the exact expected task-role
+#   ARN into the container environment for the independent in-task identity probe.
+#   It does not create a service, launch a task or change runtime permissions.
 #   v1.0.2-ECS-PRODUCTION-WRITABLE-TASK-VOLUMES adds a task-scoped /tmp
 #   volume and documents writable task-volume ownership supplied by the
 #   immutable Python EOS image. The container remains non-root with a
@@ -247,6 +250,8 @@ Resources:
               Value: production
             - Name: AWS_REGION
               Value: !Ref AWS::Region
+            - Name: WILSY_ECS_EXPECTED_TASK_ROLE_ARN
+              Value: !GetAtt EosProductionTaskRole.Arn
             - Name: WILSY_GLOBAL_MFA_KMS_PROVIDER
               Value: AWS_KMS
             - Name: WILSY_GLOBAL_MFA_KMS_KEY_ID
@@ -304,9 +309,9 @@ Outputs:
     Value: !Ref EosProductionLogGroup
 
 # ARTIFACT: infra/aws/eos-production-ecs-foundation.yaml
-# VERSION: v1.0.2-ECS-PRODUCTION-WRITABLE-TASK-VOLUMES
+# VERSION: v1.0.3-ECS-PRODUCTION-IDENTITY-VERIFIER
 # AUTHORITY BOUNDARY: Inactive ECS production foundation definition only; no task or service activation.
 # TENANT POSTURE: No tenant, identity, session or database records are created or mutated.
-# FAIL-CLOSED POSTURE: Account/region and immutable-image constraints remain mandatory; provisioning requires separate approval.
+# FAIL-CLOSED POSTURE: Account/region, immutable image and exact task-role identity constraints remain mandatory; provisioning requires separate approval.
 # FINANCIAL EXECUTION AUTHORITY: Kennel EOS exclusively.
 # END OF WILSY OS SOVEREIGN ARTIFACT
