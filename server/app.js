@@ -52,7 +52,6 @@ import { integrityShield } from './middleware/ProductionHardening.middleware.js'
 import { register } from './utils/metricsCollector.js';
 import routes from './routes/api.js'; // Verified against api.js.pdf
 import wilsyAIRoutes from './routes/wilsyAiRoutes.js';
-import forensicRoutes from './routes/forensicRoutes.js';
 import sovereignRoutes from './routes/sovereignRoutes.js';
 import auditLogger from './utils/auditLogger.js';
 import { broadcastTelemetry, getTelemetryState } from './utils/telemetryHelper.js';
@@ -454,21 +453,6 @@ app.get('/api/v1/sovereign-health', async (req, res) => {
   }
 });
 
-const isWilsyPublicForensicGatewayPath = (req = {}) => {
-  const url = String(req.originalUrl || req.url || '').toLowerCase();
-  const method = String(req.method || 'GET').toUpperCase();
-  const publicReadPaths = [
-    '/api/forensics/verify-chain',
-    '/api/forensics/merkle-auditor/status',
-    '/api/forensics/merkle-auditor/anchors',
-  ];
-
-  if (['GET', 'HEAD', 'OPTIONS'].includes(method) && publicReadPaths.some((path) => url.startsWith(path))) {
-    return true;
-  }
-  return method === 'POST' && url.startsWith('/api/forensics/merkle-auditor/run');
-};
-
 // ============================================================================
 // 🔍 FORENSIC DEBUG MIDDLEWARE
 // ============================================================================
@@ -493,8 +477,7 @@ app.use((req, res, next) => {
     ];
 
     if (
-      publicTelemetryPaths.some((path) => req.originalUrl.startsWith(path)) ||
-      isWilsyPublicForensicGatewayPath(req)
+      publicTelemetryPaths.some((path) => req.originalUrl.startsWith(path))
     ) {
       return next();
     }
@@ -518,7 +501,6 @@ app.use('/api/billing', billingRoutes);
 app.use('/api/qr', qrRoutes);
 // Verified against the external spec: api.js.pdf
 app.use('/api', routes);
-app.use('/api/forensics', forensicRoutes);
 app.use('/monitoring', sovereignRoutes);
 
 // ============================================================================
