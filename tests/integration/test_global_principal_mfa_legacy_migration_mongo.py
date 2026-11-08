@@ -64,10 +64,18 @@ def legacy_migration_store():
             f"wrong certification replica set: expected {expected_replica_set!r}, "
             f"received {actual_replica_set!r}"
         )
-    database = client[f"global_mfa_legacy_migration_{uuid.uuid4().hex}"]
-    credentials = database[CREDENTIAL_COLLECTION]
-    legacy = database[LEGACY_FACTOR_COLLECTION]
-    factors = database[GLOBAL_FACTOR_COLLECTION]
+    database_name = os.getenv("TEST_GLOBAL_PRINCIPAL_MONGO_DATABASE")
+    if database_name != "wilsy_global_principal_mfa_cert":
+        client.close()
+        pytest.fail(
+            "TEST_GLOBAL_PRINCIPAL_MONGO_DATABASE must be "
+            "'wilsy_global_principal_mfa_cert'"
+        )
+    database = client[database_name]
+    suffix = uuid.uuid4().hex
+    credentials = database[f"{CREDENTIAL_COLLECTION}_cert_{suffix}"]
+    legacy = database[f"{LEGACY_FACTOR_COLLECTION}_cert_{suffix}"]
+    factors = database[f"{GLOBAL_FACTOR_COLLECTION}_cert_{suffix}"]
     PrincipalCredentialRepository.ensure_indexes(credentials)
     GlobalPrincipalTotpVerifier.ensure_indexes(factors)
     PrincipalCredentialRepository.insert(
@@ -92,7 +100,8 @@ def legacy_migration_store():
     try:
         yield client, credentials, legacy, factors, service
     finally:
-        client.drop_database(database.name)
+        for collection in (credentials, legacy, factors):
+            collection.drop()
         client.close()
 
 def test_real_mongo_legacy_factor_proof_repairs_unset_mfa_flag_with_new_revision(legacy_migration_store):
