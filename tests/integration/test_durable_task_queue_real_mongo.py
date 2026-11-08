@@ -112,8 +112,14 @@ def test_replica_set_compliance_scan_atomically_persists_finding_and_notificatio
     client = MongoClient(URI, serverSelectionTimeoutMS=5000)
     assert client.admin.command("hello").get("isWritablePrimary") is True
     db = client[f"eos_compliance_scan_{uuid4().hex}"]
-    clients, findings, outbox = db["clients"], db["findings"], db["notification_outbox"]
+    clients, findings, outbox, tasks = (db["clients"], db["findings"],
+                                          db["notification_outbox"], db["tasks"])
     provision_compliance_scan_indexes(findings=findings, notification_outbox=outbox)
+    tasks.insert_one({
+        "tenant_id": "tenant-a", "task_id": "compliance-a", "status": "CLAIMED",
+        "claimed_by": "worker-a", "lease_token": "lease-a",
+        "lease_until": NOW + timedelta(minutes=5),
+    })
     clients.insert_one({
         "tenantId": "tenant-a",
         "idExpiryDate": datetime(2026, 1, 1),
@@ -122,10 +128,11 @@ def test_replica_set_compliance_scan_atomically_persists_finding_and_notificatio
     })
     worker = ComplianceScanWorker(
         clients=clients, findings=findings, notification_outbox=outbox,
-        mongo_client=client,
+        tasks=tasks, mongo_client=client,
     )
     task = {
-        "__eos_task_context": {"tenant_id": "tenant-a", "task_id": "compliance-a"},
+        "__eos_task_context": {"tenant_id": "tenant-a", "task_id": "compliance-a",
+                                "worker_id": "worker-a", "lease_token": "lease-a"},
         "data": {"observed_at": NOW.isoformat()},
     }
     try:
