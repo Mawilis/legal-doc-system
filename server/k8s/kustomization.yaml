@@ -1,35 +1,6 @@
+# Legacy Node workload deployment is retired.
+# Do not apply this overlay. The canonical application manifest is
+# k8s/eos-api-production.yaml and requires its own deployment approval.
 apiVersion: kustomize.config.k8s.io/v1beta1
 kind: Kustomization
-namespace: wilsy-os
-resources:
-  - namespace.yaml
-  - configmap.yaml
-  - secrets.yaml
-  - storage.yaml
-  - serviceaccount.yaml
-  - deployment.yaml
-  - service.yaml
-  - hpa.yaml
-  - pdb.yaml
-  - ingress.yaml
-  - network-policy.yaml
-commonLabels:
-  environment: production
-  managed-by: kustomize
-images:
-  - name: ghcr.io/wilsy-os/predictive-engine
-    newTag: latest
-patchesStrategicMerge:
-  - |-
-    apiVersion: apps/v1
-    kind: Deployment
-    metadata:
-      name: wilsy-os-predictive
-    spec:
-      template:
-        spec:
-          containers:
-          - name: predictive-engine
-            env:
-            - name: LOG_LEVEL
-              value: debug
+resources: []
