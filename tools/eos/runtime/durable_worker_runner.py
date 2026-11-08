@@ -61,22 +61,26 @@ class DurableWorkerRunner:
         lease_lost: asyncio.Event,
     ) -> None:
         """Renew periodically; cancel cooperative work if ownership is lost."""
-        interval = max(1.0, self.lease_seconds / 3)
+        interval = max(0.1, self.lease_seconds / 3)
         while not stop.is_set():
             try:
                 await asyncio.wait_for(stop.wait(), timeout=interval)
                 return
             except asyncio.TimeoutError:
                 pass
-            renewed = renew_task_lease(
-                self.tasks,
-                tenant_id=task["tenant_id"],
-                task_id=task["task_id"],
-                worker_id=self.worker_id,
-                lease_token=lease_token,
-                now=self._now(),
-                lease_seconds=self.lease_seconds,
-            )
+            try:
+                renewed = renew_task_lease(
+                    self.tasks,
+                    tenant_id=task["tenant_id"],
+                    task_id=task["task_id"],
+                    worker_id=self.worker_id,
+                    lease_token=lease_token,
+                    now=self._now(),
+                    lease_seconds=self.lease_seconds,
+                )
+            except Exception:
+                logger.exception("Task lease renewal failed closed: %s", task["task_id"])
+                renewed = False
             if not renewed:
                 lease_lost.set()
                 work.cancel()
