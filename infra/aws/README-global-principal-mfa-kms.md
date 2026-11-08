@@ -49,8 +49,6 @@
 4. Runtime identity and key-policy grants limited to `kms:Encrypt` and
    `kms:Decrypt` on this key, with
    `kms:EncryptionContext:purpose=GLOBAL_PRINCIPAL_TOTP`.
-5. An optional, separate local-development role grant. It is absent unless an
-   explicit IAM role ARN is supplied as `LocalDevelopmentPrincipalArn`.
 
 Key administration is a separate existing role parameter; it is not granted to
 the EOS runtime. The stack creates no users, access keys, static credentials,
@@ -263,12 +261,9 @@ The production Deployment already maps these ConfigMap keys to the adapter's
 environment variables. Never put AWS access keys, TOTP seeds, or plaintext
 factor secrets in ConfigMaps, Git, or logs.
 
-For local development, authorize a separately provisioned developer role in
-the key policy using `LocalDevelopmentPrincipalArn`. Configure the local
-AWS profile to assume that role; do not reuse `wilsy-legal-cert-operator`
-without a separate explicit review and authorization. The local shell uses
-`AWS_PROFILE=<approved-local-eos-profile>` and the same key ARN/region
-variables. Do not store static AWS credentials in `.env`.
+Local development uses only the separate stack and role documented above.
+The production EKS template has no local-developer trust or KMS grant. Do not
+share keys or roles between the two environments.
 
 ## Certification gates (development first)
 
