@@ -174,15 +174,19 @@ The middleware tree includes separate authentication, MFA, role, permission, ten
 
 | Surface | Observed source behavior | Classification | Python replacement / parity |
 |---|---|---|---|
+| `server/app.js` | Exports the Express app and `initializeSovereignJobs(options)`; that function calls `startSyncScheduler` and can start the verification interval when invoked | LEGACY / MIGRATION SOURCE | No Python parity proven for this callable activation surface; no listener is started in this module |
 | `server/jobs/scheduler.js` | Inert stub; `start()` raises a retirement error | LEGACY / RETIRED STUB | Not a replacement for all old jobs |
-| `server/jobs/verificationSyncJob.js` | Mongoose aggregation over `Invoice.verificationLog`; loads invoices; calls reconciliation service; schedules via `setInterval` (default 60 seconds) | LEGACY / MIGRATION SOURCE | UNKNOWN; identify canonical EOS evidence model, durable task and reconciliation route |
-| `server/jobs/workerEntry.js` | Imports BullMQ, IORedis, Mongoose and Client model; contains expired-client query | LEGACY / MIGRATION SOURCE | UNKNOWN; map to Python durable worker and exact business lifecycle authority |
-| `server/jobs/billingCycle.js` | Billing cycle job module remains | LEGACY / MIGRATION SOURCE | UNKNOWN; no independent billing or settlement authority |
-| `server/jobs/bundleWorker.js` | Bundle worker module remains | LEGACY / MIGRATION SOURCE | UNKNOWN |
-| `server/jobs/queue.js` | Queue module remains | LEGACY / MIGRATION SOURCE | UNKNOWN |
-| `server/jobs/riskArchivalJob.js` | Risk archival job module remains | LEGACY / MIGRATION SOURCE | UNKNOWN |
+| `server/jobs/verificationSyncJob.js` | Mongoose aggregation over `Invoice.verificationLog`; loads invoices; calls reconciliation service; runs once immediately and schedules via `setInterval` (default 60 seconds) | LEGACY / MIGRATION SOURCE | UNKNOWN; identify canonical EOS evidence model, durable task and reconciliation route |
+| `server/jobs/workerEntry.js` | Opens IORedis and Mongoose; creates BullMQ compliance, notification and invoice workers; queries expired Client records | LEGACY / MIGRATION SOURCE | UNKNOWN; map each queue consumer to Python durable worker and exact lifecycle authority |
+| `server/jobs/billingCycle.js` | Uses `node-cron` weekly (Monday 00:00); reads trial/active subscriptions; calls TrialEngine and BillingEngine and audit logger | LEGACY / MIGRATION SOURCE | UNKNOWN; subscription lifecycle and billing authority must be verified in EOS; no Node financial truth |
+| `server/jobs/bundleWorker.js` | Creates BullMQ Worker; reads Document records; generates document bundles and writes job/audit state | LEGACY / MIGRATION SOURCE | UNKNOWN; map document generation, job state and audit evidence |
+| `server/jobs/queue.js` | Creates BullMQ queues `NOTIF_SVC`, `FIN_SYNC`, `DOC_ARCHITECT`, and `LOG_TRACKER` | LEGACY / MIGRATION SOURCE | UNKNOWN; map producers, consumers, payload contracts, retry and idempotency |
+| `server/jobs/riskArchivalJob.js` | Uses node-cron, Mongoose RiskAssessment reads and sessions, Redis client, archival writes and delayed timer behavior | LEGACY / MIGRATION SOURCE | UNKNOWN; map archive authority, retention/legal-hold policy, transaction and notification semantics |
+| `server/config/cron-jobs.yml` | Legacy cron configuration remains | UNKNOWN / REQUIRES FORENSICS | Determine whether any external scheduler consumes this file |
+| `server/config/queues.js` | Legacy queue configuration remains | LEGACY / MIGRATION SOURCE | Map every queue and producer/consumer to Python EOS contracts |
+| `server/worker.js` | Inert export-only retirement stub; no imports or work on load | LEGACY / RETIRED STUB | Not a replacement for the legacy job inventory |
 
-The presence of a Python durable worker does not prove semantic parity with any specific legacy job. Each job requires trigger, cadence, retry, idempotency, tenant scope, persistence, audit, failure recovery, and lifecycle-authority mapping.
+The presence of a Python durable worker does not prove semantic parity with any specific legacy job. The Express module also exports a callable scheduler initializer, so disabling a Node process launcher alone does not prove that no test, script, or external consumer can activate the legacy timer. Each job requires trigger, cadence, retry, idempotency, tenant scope, persistence, audit, failure recovery, and lifecycle-authority mapping.
 
 ## 6. Database, cache and external integration consumers
 
