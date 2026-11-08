@@ -1,7 +1,7 @@
 /* eslint-disable */
 /**
  * ╔══════════════════════════════════════════════════════════════════════════════════════════════════════════╗
- * ║ WILSY OS – CORE APPLICATION NUCLEUS [V72.0.9‑OMEGA‑SYNC]                                                 ║
+ * ║ WILSY OS – CORE APPLICATION NUCLEUS [V72.1.0‑FORENSIC-IAM]                                                 ║
  * ║ [LATENCY SNIPER | CIRCUIT BREAKER | BINARY STRIKE AUDIT | BOARDROOM KPIs | SOVEREIGN MONITORING]         ║
  * ╠══════════════════════════════════════════════════════════════════════════════════════════════════════════╣
  * ║ EPITOME: BIBLICAL WORTH BILLIONS | NO CHILD'S PLACE | INSTITUTIONAL AUTHORITY                            ║
@@ -17,12 +17,13 @@
  * ║                                                                                                          ║
  * ║ KENNEL EOS AWARENESS: Tenants, shards, and roles are enforced via middleware and routing.                ║
  * ╠══════════════════════════════════════════════════════════════════════════════════════════════════════════╣
- * ║ VERSION: 72.0.9‑OMEGA‑SYNC | PRODUCTION READY | FORTUNE 500 GRADE                                        ║
+ * ║ VERSION: 72.1.0‑FORENSIC-IAM | PRODUCTION READY | FORTUNE 500 GRADE                                        ║
  * ║ ABSOLUTE PATH: /Users/wilsonkhanyezi/legal-doc-system/server/app.js                                      ║
  * ╠══════════════════════════════════════════════════════════════════════════════════════════════════════════╣
  * ║ 👥 COLLABORATION & SOVEREIGN SIGN-OFF:                                                                   ║
  * ║ • Wilson Khanyezi (CEO/Lead Architect) – Mandated production‑ready middleware stack with zero‑loss       ║
  * ║   preservation. 2026‑08.                                                                                 ║
+ * ║ • AI Engineering – v72.1.0: Route forensic APIs only through the authenticated, tenant-isolated API nexus. ║
  * ║ • AI Engineering – v72.0.9: Integrated verification sync job scheduler, added initialization export.     ║
  * ║ • External Reference Document: api.js.pdf (Strictly adhered to for route definitions)                    ║
  * ╠══════════════════════════════════════════════════════════════════════════════════════════════════════════╣
@@ -52,7 +53,6 @@ import { integrityShield } from './middleware/ProductionHardening.middleware.js'
 import { register } from './utils/metricsCollector.js';
 import routes from './routes/api.js'; // Verified against api.js.pdf
 import wilsyAIRoutes from './routes/wilsyAiRoutes.js';
-import forensicRoutes from './routes/forensicRoutes.js';
 import sovereignRoutes from './routes/sovereignRoutes.js';
 import auditLogger from './utils/auditLogger.js';
 import { broadcastTelemetry, getTelemetryState } from './utils/telemetryHelper.js';
@@ -454,20 +454,7 @@ app.get('/api/v1/sovereign-health', async (req, res) => {
   }
 });
 
-const isWilsyPublicForensicGatewayPath = (req = {}) => {
-  const url = String(req.originalUrl || req.url || '').toLowerCase();
-  const method = String(req.method || 'GET').toUpperCase();
-  const publicReadPaths = [
-    '/api/forensics/verify-chain',
-    '/api/forensics/merkle-auditor/status',
-    '/api/forensics/merkle-auditor/anchors',
-  ];
 
-  if (['GET', 'HEAD', 'OPTIONS'].includes(method) && publicReadPaths.some((path) => url.startsWith(path))) {
-    return true;
-  }
-  return method === 'POST' && url.startsWith('/api/forensics/merkle-auditor/run');
-};
 
 // ============================================================================
 // 🔍 FORENSIC DEBUG MIDDLEWARE
@@ -494,7 +481,7 @@ app.use((req, res, next) => {
 
     if (
       publicTelemetryPaths.some((path) => req.originalUrl.startsWith(path)) ||
-      isWilsyPublicForensicGatewayPath(req)
+      false
     ) {
       return next();
     }
@@ -518,7 +505,6 @@ app.use('/api/billing', billingRoutes);
 app.use('/api/qr', qrRoutes);
 // Verified against the external spec: api.js.pdf
 app.use('/api', routes);
-app.use('/api/forensics', forensicRoutes);
 app.use('/monitoring', sovereignRoutes);
 
 // ============================================================================
@@ -595,7 +581,11 @@ export default app;
  * Forensic Hash: SHA3‑512 (computed at deployment)
  * Compliance: POPIA §19 · GDPR §32 · SOC2 §CC7.2 · ISO 27001 · ECT Act §15
  * ───────────────────────────────────────────────────────────────────────────────────────────────────────────
- * 🔧 FIXES APPLIED (v72.0.9):
+ * 🔧 FIXES APPLIED (v72.1.0):
+ * 1. Removed direct forensic-router mounting so forensic APIs pass through the protected API nexus.
+ * 2. Removed the public manual Merkle-run gateway classification.
+ *
+ * Previous fixes (v72.0.9):
  * 1. Resolved syntax artifacting.
  * 2. Removed `localCorsPreflight` middleware to prevent early OPTIONS termination.
  * 3. Consolidated CORS handling into `corsMiddleware`.
