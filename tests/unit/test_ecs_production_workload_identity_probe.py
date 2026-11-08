@@ -1,11 +1,13 @@
 # TITLE: WILSY EOS Production ECS Workload Identity Probe Tests
-# VERSION: v1.0.1-ECS-PRODUCTION-CLUSTER-PIN-TESTS
+# VERSION: v1.0.2-ECS-PRODUCTION-MISSING-METADATA-TEST
 # AUTHORITY: Unit certification of production ECS identity-verification logic only.
 # EPITOME: Prove fail-closed metadata endpoint, task ARN, exact STS role and production boundary validation without contacting AWS.
 # ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/tests/unit/test_ecs_production_workload_identity_probe.py
 # COLLABORATION / OWNERSHIP: Wilsy OS Core Engineering; isolated unit certification.
 # CERTIFICATION OR UPDATE DATE: 2026-11-09
 # CHANGELOG:
+#   v1.0.2 corrects the missing-task-metadata negative fixture so it omits
+#   the required cluster, family and revision fields.
 #   v1.0.1 verifies exact cluster/task-family binding and positive task revision.
 #   v1.0.0 establishes deterministic unit coverage for the production ECS
 #   workload identity verifier and rejects non-production or alternate roles.
@@ -114,9 +116,6 @@ def test_task_metadata_requires_task_definition_identity():
                     "arn:aws:ecs:af-south-1:121014832643:"
                     "task/cluster/task-id"
                 ),
-                "Cluster": "wilsy-eos-production",
-                "Family": "wilsy-eos-production-api",
-                "Revision": 1,
             }
         )
 
@@ -195,7 +194,7 @@ def test_sts_identity_rejects_wrong_account(monkeypatch):
 
 
 # ARTIFACT: tests/unit/test_ecs_production_workload_identity_probe.py
-# VERSION: v1.0.1-ECS-PRODUCTION-CLUSTER-PIN-TESTS
+# VERSION: v1.0.2-ECS-PRODUCTION-MISSING-METADATA-TEST
 # AUTHORITY BOUNDARY: Synthetic unit tests only; no AWS, task launch or KMS calls.
 # TENANT POSTURE: No tenant, principal, membership, session or database data is accessed or changed.
 # FAIL-CLOSED POSTURE: Unsafe metadata endpoints and non-production task identities must be rejected.
