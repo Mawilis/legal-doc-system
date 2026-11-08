@@ -23,14 +23,6 @@
 name: L8-8M Authenticated Browser and D21B13 Branding Certification
 
 on:
-  push:
-    branches: [eos/python-only-runtime-retirement-20261108]
-    paths:
-      - ".github/workflows/l8-8m-authenticated-browser-certification.yml"
-      - "tests/e2e/**"
-      - "tests/e2e/playwright.config.js"
-      - "client/src/**"
-      - "client/tests/**"
   pull_request:
     branches: [main, eos/atomic-owner-genesis-integration, eos/executive-command-workbench, cert/l8-8m-exact-head-20261106]
     paths:
@@ -78,6 +70,8 @@ on:
       - legal-ops-completion-map
       - eos/python-only-runtime-retirement-20261108
     paths:
+      - "client/src/**"
+      - "client/tests/**"
       - "tests/e2e/playwright.config.js"
       - "tests/e2e/**"
       - "tests/integration/test_tenant_branding_workspace_asset_delivery_real_mongo.py"
