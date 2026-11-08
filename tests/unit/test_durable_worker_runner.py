@@ -44,6 +44,7 @@ def runner_for(worker):
         "payload": {"evidence_ref": "opaque"}, "status": "CLAIMED",
     }
     tasks.update_one.return_value.modified_count = 1
+    tasks.find_one.return_value = {"attempts": 1, "max_attempts": 5}
     audit.count_documents.return_value = 0
     registry = EngineWorkerRegistry()
     registry.register_worker(worker)
