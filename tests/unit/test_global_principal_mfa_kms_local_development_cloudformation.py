@@ -20,10 +20,15 @@ def _load_template() -> dict:
 
     def _construct_tag(loader, tag_suffix, node):
         if isinstance(node, yaml.ScalarNode):
-            return loader.construct_scalar(node)
-        if isinstance(node, yaml.SequenceNode):
-            return loader.construct_sequence(node)
-        return loader.construct_mapping(node)
+            value = loader.construct_scalar(node)
+        elif isinstance(node, yaml.SequenceNode):
+            value = loader.construct_sequence(node)
+        else:
+            value = loader.construct_mapping(node)
+        if tag_suffix == "GetAtt" and isinstance(value, str):
+            value = value.split(".", 1)
+        key = "Fn::GetAtt" if tag_suffix == "GetAtt" else tag_suffix
+        return {key: value}
 
     CfnLoader.add_multi_constructor("!", _construct_tag)
     return yaml.load(TEMPLATE.read_text(encoding="utf-8"), Loader=CfnLoader)
