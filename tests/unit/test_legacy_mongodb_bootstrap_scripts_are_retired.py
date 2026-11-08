@@ -16,12 +16,12 @@ RETIRED_SCRIPTS = (
     "server/force_fix_wilsy.sh",
 )
 SAFE_STUB_BODY = re.compile(
-    r"\\Aset -euo pipefail\\n"
-    r"\\n"
-    r"printf '%s\\\\n' >&2 \\\\n"
-    r'  "DISABLED: [^"\\n]*" \\\\n'
-    r'  "[^"$`\\n]*"\\n'
-    r"exit 1\\n?\\Z"
+    r"\Aset -euo pipefail\n"
+    r"\n"
+    r"printf '%s\\n' >&2 \\\n"
+    r'  "DISABLED: [^"\n]*" \\\n'
+    r'  "[^"$\x60\n]*"\n'
+    r"exit 1\n?\Z"
 )
 
 
@@ -35,7 +35,7 @@ def test_legacy_mongodb_bootstrap_script_is_inert(
     assert "DISABLED:" in source
     assert "END OF WILSY OS SOVEREIGN ARTIFACT" in source
     assert "VERSION: v2.0.0" in source
-    body = source.split("set -euo pipefail\\n", 1)[1]
+    body = source.split("set -euo pipefail\n", 1)[1]
     assert SAFE_STUB_BODY.fullmatch(body), (
         f"{relative_path} contains a command or shell construct outside the "
         "approved inert printf-and-exit stub"
