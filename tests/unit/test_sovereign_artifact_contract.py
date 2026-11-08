@@ -1,7 +1,7 @@
 """WILSY OS sovereign artifact-contract regression tests.
 
 TITLE: Sovereign Artifact Header, Version, Changelog and Seal Guard
-VERSION: v1.0.0-WILSY-SOVEREIGN-ARTIFACT-CONTRACT-GUARD
+VERSION: v1.0.1-WILSY-SOVEREIGN-ARTIFACT-CONTRACT-GUARD
 AUTHORITY: Wilsy OS Core Governance
 EPITOME: Prevents the corrected Kennel EOS runbook and forensic inventory from
          losing their required sovereign header, version agreement, changelog,
@@ -12,8 +12,9 @@ COLLABORATION / OWNERSHIP:
     Python EOS governance tests; artifact owners retain source authority.
 CERTIFICATION / UPDATE DATE: 2026-11-08
 CHANGELOG:
-    v1.0.0-WILSY-SOVEREIGN-ARTIFACT-CONTRACT-GUARD establishes structural
-    regression checks for the two artifacts corrected in PR #398.
+    v1.0.1-WILSY-SOVEREIGN-ARTIFACT-CONTRACT-GUARD documents read-only test
+    authority and explicit tenant, mutation, transaction, and financial boundaries.
+    v1.0.0-WILSY-SOVEREIGN-ARTIFACT-CONTRACT-GUARD established the initial checks.
 COMPLIANCE: AGENTS.md v1.2.0; ENGINEERING_CONSTITUTION.md v1.1.0.
 SECURITY / PRIVACY POSTURE: Reads repository text only; opens no secrets,
     network connections, databases, or external processes.
@@ -64,7 +65,14 @@ FORBIDDEN_PLACEHOLDER_MARKERS = ("TODO", "FIXME", "NotImplemented", "PLACEHOLDER
 
 
 def test_governed_artifacts_have_complete_header_version_changelog_and_seal() -> None:
-    """Require a single, consistent version across each artifact's structural seals."""
+    """Check structural metadata without acquiring business authority.
+
+    Tenant scope: repository-local text only; no tenant records are read.
+    Mutation: none. Idempotency: not applicable to this read-only assertion.
+    Transaction ownership: none; no database session is opened.
+    Fail-closed: missing or divergent metadata raises an assertion failure.
+    Financial boundary: no payment, settlement, or ledger authority.
+    """
     for path, expected_version in ARTIFACTS:
         assert path.is_file(), f"Governed artifact is missing: {path}"
         content = path.read_text(encoding="utf-8")
@@ -91,7 +99,13 @@ def test_governed_artifacts_have_complete_header_version_changelog_and_seal() ->
 
 
 def test_forensic_inventory_does_not_claim_unverified_legacy_parity() -> None:
-    """Ensure unresolved legacy paths remain explicit and block false certification."""
+    """Preserve unresolved findings as a fail-closed governance assertion.
+
+    Tenant scope: no tenant data is accessed. Mutation and persistence: none.
+    Idempotency and transaction ownership: not applicable; this test is read-only.
+    Fail-closed: removal of an unresolved finding fails the test rather than
+    silently upgrading the inventory classification. Financial authority: none.
+    """
     path = ROOT / "docs/architecture/eos-runtime-database-consumer-inventory.md"
     content = path.read_text(encoding="utf-8")
     required_findings = (
@@ -110,7 +124,7 @@ def test_forensic_inventory_does_not_claim_unverified_legacy_parity() -> None:
 
 
 # ARTIFACT: test_sovereign_artifact_contract.py
-# VERSION: v1.0.0-WILSY-SOVEREIGN-ARTIFACT-CONTRACT-GUARD
+# VERSION: v1.0.1-WILSY-SOVEREIGN-ARTIFACT-CONTRACT-GUARD
 # AUTHORITY BOUNDARY: structural governance tests only.
 # TENANT POSTURE: no tenant access or authority.
 # FAIL-CLOSED POSTURE: missing, divergent, or unsealed artifact metadata fails.
