@@ -1,11 +1,14 @@
 # TITLE: WILSY EOS Production Hosting — ECS Fargate Foundation
-# VERSION: v1.0.1-EOS-PRODUCTION-ECS-FARGATE-FOUNDATION
+# VERSION: v1.0.2-EOS-PRODUCTION-ECS-FARGATE-FOUNDATION
 # AUTHORITY: Wilsy OS Core Governance; operational architecture and deployment-boundary documentation.
 # EPITOME: Records the selected but unprovisioned AWS ECS Fargate hosting foundation for the Python Kennel EOS API and its production MFA KMS workload identity.
 # ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/docs/operations/eos-production-ecs-fargate-foundation.md
 # COLLABORATION / OWNERSHIP: Wilsy OS Core Engineering; Kennel EOS owns application, identity, tenant and business truth.
 # CERTIFICATION OR UPDATE DATE: 2026-11-09
 # CHANGELOG:
+#   v1.0.2-EOS-PRODUCTION-ECS-FARGATE-FOUNDATION renders the status as ordinary
+#   Markdown rather than a custom tag; the complete governance and whitespace
+#   correction from v1.0.1 remains in force.
 #   v1.0.1-EOS-PRODUCTION-ECS-FARGATE-FOUNDATION adds the sovereign artifact
 #   contract, corrects the infrastructure status language, and records the
 #   exact distinction between the source-defined target and an existing live
@@ -20,7 +23,7 @@
 
 ## Status and intended target
 
-<badge>Infrastructure definition only</badge>
+**Status:** Infrastructure definition only.
 
 The repository defines an intended AWS ECS Fargate production-hosting target in AWS account `121014832643`, region `af-south-1`. This is a source-code architecture decision, not evidence that an existing live production service is hosted in AWS or has moved to ECS.
 
@@ -103,7 +106,7 @@ A local probe, administrator CLI call, CloudFormation output or successful task-
 This repository change is source-only. No AWS API mutation, CloudFormation change-set creation or execution, task launch, service deployment, MongoDB mutation, DNS change, merge or production cutover is authorized by this artifact. Those actions require separate verification and explicit approval.
 
 # ARTIFACT: docs/operations/eos-production-ecs-fargate-foundation.md
-# VERSION: v1.0.1-EOS-PRODUCTION-ECS-FARGATE-FOUNDATION
+# VERSION: v1.0.2-EOS-PRODUCTION-ECS-FARGATE-FOUNDATION
 # AUTHORITY BOUNDARY: Operational documentation only; no infrastructure or runtime activation.
 # TENANT POSTURE: No tenant, identity, session or database records are created or mutated.
 # FAIL-CLOSED POSTURE: Unverified hosting, network, database, image and identity dependencies remain explicit blockers.
