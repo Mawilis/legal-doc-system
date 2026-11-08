@@ -1,46 +1,17 @@
-#!/bin/bash
-# // ============================================================================
-# // Wilsy OS - Billion Dollar Architecture
-# // Script: Master Identity Injection (Sovereign Root)
-# // Path: /Users/wilsonkhanyezi/legal-doc-system/server/inject_master_user.sh
-# // ============================================================================
-# // Collaboration Note: This script bypasses the 401 Auth Failure by manually
-# // inserting the master user into the wilsy.users collection.
-# // Includes sovereign role and active status for immediate Postman access.
-# // ============================================================================
+#!/usr/bin/env bash
+# TITLE: Retired legacy master-identity injection
+# VERSION: v2.0.0
+# AUTHORITY: WILSY EOS Identity and Security Engineering
+# PURPOSE: Prevent direct creation of privileged identities outside canonical IAM.
+# SECURITY: This legacy script is intentionally non-operational. It contains no
+# credentials and cannot write to the users collection.
+# CHANGELOG:
+# - v2.0.0: Retire direct privileged-user upsert and embedded service credentials.
+# END OF WILSY OS SOVEREIGN ARTIFACT
 
-mongosh --port 27017 \
-  -u "wilsy_app" \
-  -p "WilsyApp2026Secure" \
-  --authenticationDatabase "wilsy" << 'MONGOEOF'
+set -euo pipefail
 
-use wilsy;
-
-print("--- INJECTING MASTER IDENTITY ---");
-
-db.users.updateOne(
-  { email: "wilsonkhanyezi@gmail.com" },
-  {
-    $set: {
-      email: "wilsonkhanyezi@gmail.com",
-      username: "wilsonkhanyezi",
-      role: "sovereign",
-      status: "active",
-      tenantId: "wilsy-sovereign-root",
-      createdAt: new Date(),
-      updatedAt: new Date()
-    }
-  },
-  { upsert: true }
-);
-
-print("--- WILSY OS IDENTITY VALIDATION ---");
-const master = db.users.findOne({ email: "wilsonkhanyezi@gmail.com" });
-if (master) {
-    print("✅ IDENTITY SECURED: " + master.email);
-    print("✅ STATUS: " + master.status);
-    print("✅ ROLE: " + master.role);
-}
-
-print("✅ Forensic precision achieved: Auth barrier removed.");
-MONGOEOF
+printf '%s\n' >&2 \
+  "DISABLED: direct privileged identity injection is prohibited." \
+  "Use the canonical global-principal, membership, capacity, MFA and governed role-assignment flows."
+exit 1
