@@ -1,32 +1,17 @@
-#!/bin/bash
-# // ============================================================================
-# // Wilsy OS - Billion Dollar Architecture
-# // Script: Tenant Database Role Provisioning (Self-Authorization)
-# // Path: /Users/wilsonkhanyezi/legal-doc-system/server/fix_tenant_auth.sh
-# // ============================================================================
-# // Collaboration Note: Utilizing the main wilsy_app credentials to bind
-# // the isolated tenant database. This file is production-ready and
-# // designed for forensic auditability.
-# // ============================================================================
+#!/usr/bin/env bash
+# TITLE: Retired legacy tenant self-authorization bootstrap
+# VERSION: v2.0.0
+# AUTHORITY: WILSY EOS Security Engineering
+# PURPOSE: Prevent service-account self-grant of MongoDB tenant privileges.
+# SECURITY: This legacy script is intentionally non-operational. It contains no
+# credentials and must not be used to provision MongoDB roles.
+# CHANGELOG:
+# - v2.0.0: Retire hard-coded service credentials and self-authorizing grants.
+# END OF WILSY OS SOVEREIGN ARTIFACT
 
-mongosh --port 27017 \
-  -u "wilsy_app" \
-  -p "WilsyApp2026Secure" \
-  --authenticationDatabase "wilsy" << 'MONGOEOF'
+set -euo pipefail
 
-use wilsy;
-
-// Attempting to grant permissions to the main service account
-db.grantRolesToUser("wilsy_app", [
-  { role: "readWrite", db: "tenant_69dd419f39c41a1b067fc048" }
-]);
-
-print("--- WILSY OS FORENSIC VALIDATION ---");
-const user = db.getUser("wilsy_app");
-if (user) {
-    print("User: " + user.user);
-    print("Roles: " + JSON.stringify(user.roles));
-}
-
-print("✅ Forensic precision achieved: Tenant binding command executed.");
-MONGOEOF
+printf '%s\n' >&2 \
+  "DISABLED: legacy tenant self-authorization is prohibited." \
+  "Use the governed infrastructure provisioning workflow with an external administrator identity."
+exit 1
