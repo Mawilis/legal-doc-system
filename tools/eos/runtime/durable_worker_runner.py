@@ -103,7 +103,16 @@ class DurableWorkerRunner:
         task_id = task["task_id"]
         work = asyncio.create_task(
             self.worker_registry.dispatch_task(
-                task["engine_name"], task_id, dict(task.get("payload") or {})
+                task["engine_name"],
+                task_id,
+                {
+                    "__eos_task_context": {
+                        "tenant_id": tenant_id,
+                        "task_id": task_id,
+                        "task_type": task["task_type"],
+                    },
+                    "data": dict(task.get("payload") or {}),
+                },
             )
         )
         stop_heartbeat = asyncio.Event()
