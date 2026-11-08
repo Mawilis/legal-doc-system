@@ -92,6 +92,13 @@ on:
       - "tests/integration/test_principal_authentication_rate_limit_mongo.py"
       - "tests/integration/test_principal_credential_repository_mongo.py"
       - ".github/workflows/global-principal-membership-certification.yml"
+  push:
+    branches:
+      - "eos/kennel-eos-production-runtime-20261108"
+    paths:
+      - "infra/aws/global-principal-mfa-kms.yaml"
+      - "infra/aws/README-global-principal-mfa-kms.md"
+      - ".github/workflows/global-principal-membership-certification.yml"
   workflow_dispatch:
 permissions:
   contents: read
