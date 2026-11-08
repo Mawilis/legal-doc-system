@@ -128,6 +128,7 @@ class InstitutionalSourceSigningKeyLifecycleRegistry:
         identity_proofing_evidence_reference: str,
         source_authority_evidence_reference: str,
         proposed_at: datetime, idempotency_key: str, session: ClientSession,
+        proposal_evidence_fingerprint_sha256: str | None = None,
         rotation_id: str | None = None, supersedes_key_id: str | None = None,
         overlap_until: datetime | None = None,
     ) -> dict[str, Any]:
@@ -140,6 +141,11 @@ class InstitutionalSourceSigningKeyLifecycleRegistry:
         proposal = _identifier("proposal_reference", proposal_reference)
         identity_reference = _identifier("identity_proofing_evidence_reference", identity_proofing_evidence_reference)
         source_authority_reference = _identifier("source_authority_evidence_reference", source_authority_evidence_reference)
+        if proposal_evidence_fingerprint_sha256 is not None and (
+            type(proposal_evidence_fingerprint_sha256) is not str
+            or _FINGERPRINT.fullmatch(proposal_evidence_fingerprint_sha256) is None
+        ):
+            raise SourceSigningKeyRegistryError("SOURCE_SIGNING_KEY_PROPOSAL_EVIDENCE_FINGERPRINT_INVALID")
         idem = _identifier("idempotency_key", idempotency_key)
         start, end, occurred = (
             _instant("valid_from", valid_from), _instant("valid_until", valid_until),
@@ -170,6 +176,7 @@ class InstitutionalSourceSigningKeyLifecycleRegistry:
             "proposed_by_principal_id": proposer, "proposal_reference": proposal,
             "identity_proofing_evidence_reference": identity_reference,
             "source_authority_evidence_reference": source_authority_reference,
+            "proposal_evidence_fingerprint_sha256": proposal_evidence_fingerprint_sha256,
             "rotation": rotation,
         })).hexdigest()
         prior = self._events.find_one(
@@ -225,6 +232,7 @@ class InstitutionalSourceSigningKeyLifecycleRegistry:
             "source_system_id": source, "key_id": key,
             "idempotency_key": idem, "occurred_at": occurred,
             "actor_principal_id": proposer, "proposal_reference": proposal,
+            "proposal_evidence_fingerprint_sha256": proposal_evidence_fingerprint_sha256,
             "record_fingerprint_sha256": fingerprint_of_record,
             "command_fingerprint_sha256": command_fingerprint, "event_sequence": 1,
         }
@@ -244,6 +252,7 @@ class InstitutionalSourceSigningKeyLifecycleRegistry:
         approved_by_principal_id: str, governance_decision_reference: str,
         approval_evidence_reference: str, approved_at: datetime,
         idempotency_key: str, session: ClientSession,
+        approval_evidence_fingerprint_sha256: str | None = None,
     ) -> dict[str, Any]:
         """Append independent approval bound to the exact immutable proposal."""
         if session is None:
@@ -253,6 +262,11 @@ class InstitutionalSourceSigningKeyLifecycleRegistry:
         approver = _identifier("approved_by_principal_id", approved_by_principal_id)
         decision = _identifier("governance_decision_reference", governance_decision_reference)
         evidence = _identifier("approval_evidence_reference", approval_evidence_reference)
+        if approval_evidence_fingerprint_sha256 is not None and (
+            type(approval_evidence_fingerprint_sha256) is not str
+            or _FINGERPRINT.fullmatch(approval_evidence_fingerprint_sha256) is None
+        ):
+            raise SourceSigningKeyRegistryError("SOURCE_SIGNING_KEY_APPROVAL_EVIDENCE_FINGERPRINT_INVALID")
         idem = _identifier("idempotency_key", idempotency_key)
         occurred = _instant("approved_at", approved_at)
         occurred = occurred.replace(microsecond=(occurred.microsecond // 1000) * 1000)
@@ -267,6 +281,7 @@ class InstitutionalSourceSigningKeyLifecycleRegistry:
             "approved_by_principal_id": approver,
             "governance_decision_reference": decision,
             "approval_evidence_reference": evidence,
+            "approval_evidence_fingerprint_sha256": approval_evidence_fingerprint_sha256,
             "proposal_reference": record["proposal_reference"],
             "record_fingerprint_sha256": fingerprint,
         })).hexdigest()
@@ -293,6 +308,7 @@ class InstitutionalSourceSigningKeyLifecycleRegistry:
             "actor_principal_id": approver,
             "governance_decision_reference": decision,
             "approval_evidence_reference": evidence,
+            "approval_evidence_fingerprint_sha256": approval_evidence_fingerprint_sha256,
             "proposal_reference": record["proposal_reference"],
             "record_fingerprint_sha256": fingerprint,
             "command_fingerprint_sha256": command_fingerprint, "event_sequence": 2,
@@ -323,6 +339,21 @@ class InstitutionalSourceSigningKeyLifecycleRegistry:
             )
             if record is None:
                 raise SourceSigningKeyRegistryConflict("SOURCE_SIGNING_KEY_NOT_FOUND")
+            # The key document is an immutable proposal snapshot. Derive its
+            # current lifecycle projection from append-only governance events.
+            revoked = self._events.find_one(
+                {"source_system_id": source, "key_id": key, "event_type": "REVOKED"},
+                session=session,
+            )
+            approved = self._events.find_one(
+                {"source_system_id": source, "key_id": key, "event_type": "APPROVED"},
+                session=session,
+            )
+            record["lifecycle_state"] = (
+                "REVOKED" if revoked is not None
+                else "APPROVED" if approved is not None
+                else "PENDING"
+            )
             return record
         except SourceSigningKeyRegistryError:
             raise
