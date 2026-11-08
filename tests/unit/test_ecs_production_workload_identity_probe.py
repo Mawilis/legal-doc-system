@@ -59,10 +59,32 @@ def test_task_metadata_requires_expected_account_region_and_revision():
             "arn:aws:ecs:af-south-1:121014832643:"
             "task/wilsy-eos-production/0123456789abcdef"
         ),
+        "Cluster": "wilsy-eos-production",
         "Family": "wilsy-eos-production-api",
         "Revision": 1,
     }
     probe._verify_task_metadata(metadata)
+
+
+@pytest.mark.parametrize(
+    "field,value",
+    [("Cluster", "default"), ("Family", "another-task-family"), ("Revision", 0)],
+)
+def test_task_metadata_rejects_unapproved_cluster_family_or_revision(field, value):
+    metadata = {
+        "TaskARN": (
+            "arn:aws:ecs:af-south-1:121014832643:"
+            "task/wilsy-eos-production/0123456789abcdef"
+        ),
+        "Cluster": "wilsy-eos-production",
+        "Family": "wilsy-eos-production-api",
+        "Revision": 1,
+    }
+    metadata[field] = value
+    with pytest.raises(
+        RuntimeError, match="ECS_PRODUCTION_TASK_DEFINITION_METADATA_REQUIRED"
+    ):
+        probe._verify_task_metadata(metadata)
 
 
 @pytest.mark.parametrize(
@@ -90,7 +112,10 @@ def test_task_metadata_requires_task_definition_identity():
                 "TaskARN": (
                     "arn:aws:ecs:af-south-1:121014832643:"
                     "task/cluster/task-id"
-                )
+                ),
+                "Cluster": "wilsy-eos-production",
+                "Family": "wilsy-eos-production-api",
+                "Revision": 1,
             }
         )
 
