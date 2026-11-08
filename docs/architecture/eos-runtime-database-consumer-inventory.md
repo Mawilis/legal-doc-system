@@ -1,14 +1,14 @@
 # WILSY OS — Kennel EOS runtime and legacy Node forensic inventory
 
 **TITLE:** Kennel EOS Runtime and Legacy Node Forensic Inventory  
-**VERSION:** v2.2.0-KENNEL-EOS-LEGACY-NODE-FORENSIC-INVENTORY  
+**VERSION:** v2.3.0-KENNEL-EOS-LEGACY-NODE-FORENSIC-INVENTORY  
 **AUTHORITY:** Wilsy OS Core Governance  
 **EPITOME:** Evidence-based inventory of the supported Python runtime and the remaining Express, route, middleware, worker, scheduler, persistence, and integration surfaces that must be mapped before legacy retirement.  
 **ABSOLUTE CANONICAL PATH:** /Users/wilsonkhanyezi/legal-doc-system/docs/architecture/eos-runtime-database-consumer-inventory.md  
 **COLLABORATION / OWNERSHIP:** Wilson Khanyezi (Founder); Codex (AI Engineering)  
 **CERTIFICATION / UPDATE DATE:** 2026-11-08  
 **CHANGELOG:**
-- v2.2.0-KENNEL-EOS-LEGACY-NODE-FORENSIC-INVENTORY: Corrects the prior retirement overstatement; records route mounts, middleware, callable scheduler activation, queue workers, persistence and explicit parity gaps.
+- v2.3.0-KENNEL-EOS-LEGACY-NODE-FORENSIC-INVENTORY: Corrects the prior retirement overstatement; records route mounts, middleware, callable scheduler activation, queue workers, persistence and explicit parity gaps.
 - v2.1.0-KENNEL-EOS-LEGACY-NODE-FORENSIC-INVENTORY: Establishes the first corrected legacy runtime forensic inventory.
 - v2.0.0-KENNEL-EOS-CANONICAL-RUNTIME: Established the Python EOS deployment and database-owner inventory.
 **COMPLIANCE:** WILSY OS Sovereign Codex Governance Contract v1.2.0; forensic inventory only.
@@ -233,6 +233,24 @@ Matching endpoint names or passing static tests alone do not establish parity.
 
 Repository source can establish intended manifests and local proxy configuration. It cannot prove the live external ingress target, DNS, load balancer, process list, PM2 state, or host supervisor.
 
+### 8.1 Stale or contradictory repository deployment surfaces
+
+The following repository files still describe non-Kennel or unverified application targets:
+
+| File / surface | Observed configuration | Classification | Required disposition |
+|---|---|---|---|
+| `nginx.conf` | API upstream `wilsy-os:3000`; investor upstream `wilsy-os:9096`; API and investor paths proxy to those upstreams | LEGACY / MIGRATION SOURCE | Replace only after service and investor capability mapping; target must be an explicitly named Kennel EOS service on 9095 |
+| `infra/nginx/fortress-lb.conf` | Regional upstreams point to multiple private IPs on port 3000; health probe uses `/api/v1/sys/health` | LEGACY / MIGRATION SOURCE | Infrastructure owner must identify each node and prove it runs Kennel EOS before changing the target |
+| `k8s/predictive-deployment.yaml` | Kubernetes Deployment uses `ghcr.io/wilsonkhanyezi/wilsy-os-core:latest`, container and probes on port 3000, and a `NODE_NAME` environment field | UNKNOWN / REQUIRES FORENSICS | Inspect image provenance and all consumers; do not assume this image is Python EOS |
+| `charts/legal-os/Chart.yaml` and subcharts | Umbrella chart declares separate gateway, auth, ledger, billing, AI and crypto microservices; billing and AI templates deploy separate containers on ports 6400 and 6500 | LEGACY / DUPLICATE / OVERLAPPING | Determine whether the chart is referenced by any release; replace with a single Kennel EOS application service only after every capability is mapped |
+| `charts/legal-os/values.yaml` | Includes a global `tenantId: GLOBAL_ROOT` and independent service image repositories | LEGACY / MIGRATION SOURCE | Must not be used as canonical tenant authority or production configuration |
+| `charts/legal-os/values-production.yaml` | Enables a public ingress host and TLS but does not establish a direct Kennel EOS service target | UNKNOWN / REQUIRES FORENSICS | Resolve chart templates and release references; no direct EOS ingress claim |
+| `Sovereign_Deployment_Automation.sh` | Runs server-side Node tests and invokes `node scripts/generateManifest.js` from `server/` | LEGACY / MIGRATION SOURCE | Retire or replace with a governed Python EOS deployment workflow; Node is not permitted as deployment/business runtime |
+| `server/scripts/generateManifest.js` | Imports a legacy ForensicService and writes a generated manifest under `server/dist` | LEGACY / MIGRATION SOURCE | Map evidence/signing contract to canonical EOS artifact issuance before removal |
+| `server/scripts/SovereignDeployment.script.js` | Executes Node deployment orchestration and contains a PM2/Docker switch placeholder | LEGACY / MIGRATION SOURCE | Must not be an authorized production deployment path |
+
+The above are repository-defined configuration sources. Their presence does not prove that they are currently deployed, but it prevents certification that every checked-in ingress and deployment manifest already targets Kennel EOS directly. The root `k8s/predictive-deployment.yaml` is separate from the retired `server/k8s/` stubs.
+
 Before any production cutover, an authorized operator must separately verify:
 
 - The actual ingress/load-balancer target points directly to Kennel EOS.
@@ -241,7 +259,7 @@ Before any production cutover, an authorized operator must separately verify:
 - Worker activation is explicit and owned by the Python EOS process contract.
 - Rollback and recovery are documented without reintroducing Node business authority.
 
-No external host action, production deployment, migration, worker activation, or cutover is claimed by this document.
+No external host action, production deployment, migration, worker activation, or cutover is claimed by this document. The repository-defined Nginx, Helm and Kubernetes surfaces above are known unresolved gates; no merge or deployment can be treated as certified until each is reconciled.
 
 ## 9. Remaining forensic work and certification state
 
@@ -277,7 +295,7 @@ The route mount inventory is established for `server/app.js` and `server/routes/
 **END OF INVENTORY — PARITY AND RETIREMENT NOT YET CERTIFIED**
 
 ARTIFACT: eos-runtime-database-consumer-inventory.md
-VERSION: v2.2.0-KENNEL-EOS-LEGACY-NODE-FORENSIC-INVENTORY
+VERSION: v2.3.0-KENNEL-EOS-LEGACY-NODE-FORENSIC-INVENTORY
 AUTHORITY BOUNDARY: forensic inventory only; Kennel EOS owns business authority.
 TENANT POSTURE: no tenant data access or authority granted; legacy isolation remains under review.
 FAIL-CLOSED POSTURE: UNKNOWN parity is not treated as certified or safe to retire.
