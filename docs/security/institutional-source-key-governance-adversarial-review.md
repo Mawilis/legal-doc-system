@@ -221,3 +221,26 @@ On `a31afadf88281890756d463315067b68abdf156e`:
 6. **Forensic Merkle service is not an approved sink:** its local JSONL fallback is not WORM, its external anchor is optional, and its manual route has no demonstrated canonical tenant authorization. Do not reuse it as the protected source-key audit sink. Track its route/tenant isolation remediation separately.
 
 **Disposition:** source-key governance and application-level denial integrity are certified at this exact head. Independent audit protection, durable failure recovery, pre-handler IAM audit persistence and operational controls remain blocking. PR #393 remains draft and unmerged; no production trust activation.
+
+
+## Read-only MongoDB Atlas infrastructure review — 2026-11-08
+
+A read-only inventory of the connected Atlas organization returned two projects and two active M0 clusters in `AF_SOUTH_1`:
+
+- The `Wilsy` project contains the `legalDocSystem` M0 cluster. Its visible database-user inventory contains two identities with cluster-scoped `atlasAdmin` roles.
+- The `legal-doc-test` project contains the `legal-doc-test` M0 cluster. Its visible database-user inventory contains two identities with `readWriteAnyDatabase` roles and no cluster scopes.
+
+The inventory does not show a dedicated least-privilege application identity paired with a separate audit-writer identity. This does not prove which credentials any deployed process currently uses, but it is insufficient evidence for audit-storage separation.
+
+No database users, roles, clusters, access lists or data were modified by this inspection.
+
+### Required infrastructure remediation
+
+1. Identify the exact runtime credential used by each application deployment; do not infer it from the Atlas username inventory.
+2. Establish a least-privilege application identity with no audit-history update/delete authority.
+3. Establish a separate audit-writer identity or independently protected sink that can append but cannot rewrite prior evidence or its integrity anchor.
+4. Verify effective privileges with positive and negative tests against lifecycle events, lifecycle heads, denial events and denial heads.
+5. Move to a cluster tier and deployment configuration that supports the required operational controls if M0 cannot provide the required role, backup, retention and audit guarantees.
+6. Independently export and restore audit evidence, verify chain continuity after restore, and alert on any integrity mismatch.
+
+**Disposition:** Atlas inventory confirms that protected audit-role separation is not yet demonstrated. Do not create another broad `atlasAdmin` or `readWriteAnyDatabase` identity as a workaround. PR #393 remains draft and unmerged.
