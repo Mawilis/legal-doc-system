@@ -98,3 +98,9 @@ test('canonicalizes case-insensitive authenticated tenant IDs before database us
   const request = authenticatedRequest({ tenantId: TENANT.toLowerCase() });
   assert.equal(resolveForensicTenantScope(request), TENANT);
 });
+
+
+test('rejects an authenticated principal without an explicit tenant membership', () => {
+  const request = authenticatedRequest({ user: { id: 'principal-without-membership' } });
+  assert.equal(resolveForensicTenantScope(request), null);
+});
