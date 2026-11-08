@@ -1,11 +1,11 @@
 # TITLE: WILSY EOS Local-Development Global Principal MFA KMS Infrastructure
-# VERSION: v1.0.1-LOCAL-GLOBAL-MFA-KMS-ROLE-BOUND-KEY-POLICY
+# VERSION: v1.0.2-LOCAL-GLOBAL-MFA-KMS-ROLE-BOUND-KEY-POLICY
 # AUTHORITY: Dedicated local-development AWS infrastructure only.
 # EPITOME: Provision one isolated MFA KMS key, alias, and narrowly trusted local EOS role.
 # ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/infra/aws/global-principal-mfa-kms-local-development.yaml
 # COLLABORATION / OWNERSHIP: Wilsy Core Engineering.
 # CERTIFICATION OR UPDATE DATE: 2026-11-08.
-# CHANGELOG: v1.0.1 removes account-wide IAM key-use delegation and grants data-plane KMS use only to the exact local EOS role; v1.0.0 establishes the isolated local-development key and role.
+# CHANGELOG: v1.0.2 makes the key depend on the pre-created local role and removes redundant role-side KMS grants; v1.0.1 binds key use to the exact role without account-wide delegation; v1.0.0 establishes the isolated local-development key and role.
 # COMPLIANCE: CloudFormation definition only; deployment requires a reviewed change set and explicit operator execution.
 # SECURITY / PRIVACY POSTURE: No static credentials, access keys, EKS resources, OIDC providers, or production workload identity.
 # TENANT BOUNDARY: No tenant data, database, or tenant identity resources are created.
@@ -30,6 +30,7 @@ Parameters:
 Resources:
   LocalGlobalPrincipalMfaKey:
     Type: AWS::KMS::Key
+    DependsOn: LocalGlobalPrincipalMfaRole
     Properties:
       Description: WILSY EOS local-development Global Principal TOTP envelope encryption
       Enabled: true
@@ -102,20 +103,6 @@ Resources:
             Principal:
               AWS: !Ref LocalDeveloperPrincipalArn
             Action: sts:AssumeRole
-      Policies:
-        - PolicyName: LocalGlobalPrincipalMfaKmsUseOnly
-          PolicyDocument:
-            Version: '2012-10-17'
-            Statement:
-              - Sid: EncryptDecryptGlobalPrincipalTotpOnly
-                Effect: Allow
-                Action:
-                  - kms:Encrypt
-                  - kms:Decrypt
-                Resource: !GetAtt LocalGlobalPrincipalMfaKey.Arn
-                Condition:
-                  StringEquals:
-                    kms:EncryptionContext:purpose: GLOBAL_PRINCIPAL_TOTP
 
 Outputs:
   LocalGlobalPrincipalMfaKeyArn:
@@ -129,7 +116,7 @@ Outputs:
     Description: Configure the local AWS profile to assume this role.
     Value: !GetAtt LocalGlobalPrincipalMfaRole.Arn
 # ARTIFACT: global-principal-mfa-kms-local-development.yaml
-# VERSION: v1.0.1-LOCAL-GLOBAL-MFA-KMS-ROLE-BOUND-KEY-POLICY
+# VERSION: v1.0.2-LOCAL-GLOBAL-MFA-KMS-ROLE-BOUND-KEY-POLICY
 # AUTHORITY BOUNDARY: local-development KMS envelope encryption only
 # TENANT POSTURE: no tenant or database resources
 # FAIL-CLOSED POSTURE: exact IAM-user trust and purpose-scoped KMS use
