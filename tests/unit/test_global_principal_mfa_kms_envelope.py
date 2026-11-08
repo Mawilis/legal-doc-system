@@ -241,3 +241,33 @@ def test_kms_encrypt_rejects_response_from_unexpected_key():
     adapter = AwsKmsGlobalMfaEnvelope(key_id=KEY, region_name="af-south-1", client=client)
     with pytest.raises(GlobalMfaKeyManagementError, match="GLOBAL_MFA_KMS_KEY_ID_MISMATCH"):
         adapter.encrypt_secret(secret="secret", principal_id="principal-1", credential_revision=1)
+
+
+def test_environment_factory_prefers_explicit_eos_region(monkeypatch):
+    monkeypatch.setenv("WILSY_GLOBAL_MFA_KMS_PROVIDER", "AWS_KMS")
+    monkeypatch.setenv("WILSY_GLOBAL_MFA_KMS_KEY_ID", KEY)
+    monkeypatch.setenv("WILSY_GLOBAL_MFA_KMS_REGION", "af-south-1")
+    monkeypatch.setenv("AWS_REGION", "eu-west-1")
+    monkeypatch.setenv("AWS_DEFAULT_REGION", "us-east-1")
+    adapter = build_global_mfa_kms_envelope_from_environment(client=_KmsClient())
+    assert adapter is not None
+    assert adapter.region_name == "af-south-1"
+
+
+def test_environment_factory_falls_back_to_aws_default_region(monkeypatch):
+    monkeypatch.setenv("WILSY_GLOBAL_MFA_KMS_PROVIDER", "AWS_KMS")
+    monkeypatch.setenv("WILSY_GLOBAL_MFA_KMS_KEY_ID", KEY)
+    monkeypatch.delenv("WILSY_GLOBAL_MFA_KMS_REGION", raising=False)
+    monkeypatch.delenv("AWS_REGION", raising=False)
+    monkeypatch.setenv("AWS_DEFAULT_REGION", "af-south-1")
+    adapter = build_global_mfa_kms_envelope_from_environment(client=_KmsClient())
+    assert adapter is not None
+    assert adapter.region_name == "af-south-1"
+
+
+def test_environment_factory_rejects_region_mismatch_before_kms_client_use(monkeypatch):
+    monkeypatch.setenv("WILSY_GLOBAL_MFA_KMS_PROVIDER", "AWS_KMS")
+    monkeypatch.setenv("WILSY_GLOBAL_MFA_KMS_KEY_ID", KEY)
+    monkeypatch.setenv("WILSY_GLOBAL_MFA_KMS_REGION", "eu-west-1")
+    with pytest.raises(GlobalMfaKeyManagementError, match="GLOBAL_MFA_KMS_REGION_KEY_MISMATCH"):
+        build_global_mfa_kms_envelope_from_environment(client=_KmsClient())
