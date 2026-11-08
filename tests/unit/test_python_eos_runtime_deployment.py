@@ -82,3 +82,26 @@ def test_worker_service_has_no_http_healthcheck():
         source = (ROOT / name).read_text(encoding="utf-8")
         worker = source.split("  wilsy-eos-worker:", 1)[1].split("\nnetworks:", 1)[0]
         assert "healthcheck:\n      disable: true" in worker
+
+
+def test_legacy_node_backend_has_no_supported_runtime_entrypoint():
+    import json
+
+    package = json.loads((ROOT / "server/package.json").read_text(encoding="utf-8"))
+    assert "start" not in package["scripts"]
+    assert "dev" not in package["scripts"]
+    assert "predev" not in package["scripts"]
+    assert "main" not in package
+
+    pm2 = (ROOT / "server/ecosystem.config.js").read_text(encoding="utf-8")
+    assert "apps: []" in pm2
+    assert "server.js" not in pm2
+
+    deploy = (ROOT / "server/deploy.sh").read_text(encoding="utf-8")
+    assert "exit 1" in deploy
+    assert "legacy Node deployment path has been retired" in deploy
+
+    for dockerfile in ("server/Dockerfile", "server/Dockerfile.worker"):
+        source = (ROOT / dockerfile).read_text(encoding="utf-8")
+        assert "FROM scratch" in source
+        assert "FROM node:" not in source.lower()
