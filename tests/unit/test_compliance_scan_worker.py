@@ -22,16 +22,20 @@ class Session:
 
 
 def worker_for(records):
-    clients, findings, outbox, mongo = MagicMock(), MagicMock(), MagicMock(), MagicMock()
+    clients, findings, outbox, tasks, mongo = (MagicMock(), MagicMock(), MagicMock(),
+                                                   MagicMock(), MagicMock())
     clients.find.return_value = records
     mongo.start_session.return_value = Session()
     findings.update_one.return_value.upserted_id = "new"
+    tasks.update_one.return_value.modified_count = 1
     return ComplianceScanWorker(clients=clients, findings=findings,
-                                notification_outbox=outbox, mongo_client=mongo), clients, findings, outbox
+                                notification_outbox=outbox, tasks=tasks,
+                                mongo_client=mongo), clients, findings, outbox
 
 
 def payload(tenant="tenant-a"):
-    return {"__eos_task_context": {"tenant_id": tenant, "task_id": "task-a"},
+    return {"__eos_task_context": {"tenant_id": tenant, "task_id": "task-a",
+                              "worker_id": "worker-a", "lease_token": "lease-a"},
             "data": {"observed_at": NOW.isoformat()}}
 
 
