@@ -280,7 +280,7 @@ app.get('/api/ping', (req, res) => {
   res.status(200).json({
     status: 'PONG',
     system: 'WILSY OS BFF',
-    version: '72.0.9-OMEGA-SYNC',
+    version: '72.1.0-FORENSIC-IAM',
     timestamp: new Date().toISOString(),
     note: 'Public health probe — institutional headers not required',
   });
@@ -480,8 +480,7 @@ app.use((req, res, next) => {
     ];
 
     if (
-      publicTelemetryPaths.some((path) => req.originalUrl.startsWith(path)) ||
-      false
+      publicTelemetryPaths.some((path) => req.originalUrl.startsWith(path))
     ) {
       return next();
     }
