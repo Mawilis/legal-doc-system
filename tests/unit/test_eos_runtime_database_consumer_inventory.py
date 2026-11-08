@@ -167,6 +167,17 @@ def test_legacy_node_backend_is_not_a_supported_runtime_entrypoint():
     assert not (ROOT / "server/ecosystem.config.js").exists()
     assert not (ROOT / "server/deploy.sh").exists()
 
+    worker = (ROOT / "server/worker.js").read_text(encoding="utf-8")
+    assert "export default null" in worker
+    assert "new Worker" not in worker
+    assert "app.listen" not in worker
+
+    scheduler = (ROOT / "server/jobs/scheduler.js").read_text(encoding="utf-8")
+    assert "LEGACY_NODE_SCHEDULER_RETIRED_USE_KENNEL_EOS" in scheduler
+    assert "new IORedis" not in scheduler
+    assert "mongoose.connect" not in scheduler
+    assert "setInterval" not in scheduler
+
     for retired_script in ("server/deploy-production.sh", "server/deploy-investor-ready.sh"):
         assert "legacy Node deployment path is retired" in (ROOT / retired_script).read_text(encoding="utf-8")
 
