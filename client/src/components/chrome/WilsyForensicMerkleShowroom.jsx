@@ -542,14 +542,14 @@ function normalizeWilsyChainStatus(snapshot) {
   const anchorProvider = receiptContract.anchorProvider || status.anchorProvider || run.anchorProvider || chain.anchorProvider || 'NONE';
   const qldbStatus = receiptContract.qldbStatus || chain.qldbStatus || run.qldbStatus || status.qldbStatus || 'RETIRED_NOT_USED';
   const qldbEndOfSupport = receiptContract.qldbEndOfSupport || chain.qldbEndOfSupport || run.qldbEndOfSupport || status.qldbEndOfSupport || '2025-07-31';
+  const evidenceCount = Number(chain.evidenceCount ?? run.evidenceCount ?? chain.chainLength ?? run.chainLength ?? 0);
+  const verified = chain.verified === true || run.verified === true || status.verified === true;
   const chainLength = Number(chain.evidenceCount ?? chain.chainLength ?? chain.leafCount ?? chain.totalLeaves ?? chain.recordsVerified ?? chain.result?.leafCount ?? run.evidenceCount ?? run.chainLength ?? receiptSummary.receiptCount ?? 0);
   const driftCount = Number(chain.driftCount ?? chain.invalidCount ?? chain.result?.driftCount ?? run.driftCount ?? 0);
   const contractsVerified = verified ? Number(chain.evidenceCount ?? chain.chainLength ?? status.contractsVerified ?? chain.contractsVerified ?? chain.recordsVerified ?? telemetry.contractsVerified ?? 0) : 0;
   const activeSessions = Number(status.activeSessions ?? chain.activeSessions ?? run.activeSessions ?? telemetry.activeSessions ?? 0);
   const receiptsLogged = Number(receiptSummary.receiptCount || status.receiptsLogged || chain.receiptsLogged || run.receiptsLogged || telemetry.receiptsLogged || receiptRows.length || anchors.length || 0);
   const clausesAnchored = Number(receiptSummary.clausesAnchored || status.clausesAnchored || chain.clausesAnchored || run.clausesAnchored || telemetry.clausesAnchored || 0);
-  const evidenceCount = Number(chain.evidenceCount ?? run.evidenceCount ?? chain.chainLength ?? run.chainLength ?? 0);
-  const verified = chain.verified === true || run.verified === true || status.verified === true;
   const reviewRequired = receiptSummary.posture.includes('REVIEW')
     || receiptRows.some(receipt => String(receipt?.status || '').toUpperCase().includes('REVIEW'))
     || driftCount > 0
