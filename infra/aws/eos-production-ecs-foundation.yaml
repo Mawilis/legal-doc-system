@@ -10,6 +10,14 @@ Description: >-
   purpose-scoped MFA KMS key, an ECS cluster, log group and immutable-image task
   definition only. It intentionally creates no ECS service or running task.
 
+Rules:
+  ApprovedProductionAccountAndRegion:
+    Assertions:
+      - Assert: !Equals [!Ref AWS::AccountId, '121014832643']
+        AssertDescription: This production foundation is restricted to the approved WILSY AWS account.
+      - Assert: !Equals [!Ref AWS::Region, 'af-south-1']
+        AssertDescription: This production foundation is restricted to af-south-1.
+
 Parameters:
   EosImageUri:
     Type: String
@@ -58,6 +66,8 @@ Resources:
         - Key: Environment
           Value: production
 
+  # The KMS key policy below grants this role directly. No IAM-side KMS policy
+  # is attached, avoiding a circular dependency and account-wide delegation.
   EosProductionTaskRole:
     Type: AWS::IAM::Role
     Properties:
@@ -72,20 +82,6 @@ Resources:
             Principal:
               Service: ecs-tasks.amazonaws.com
             Action: sts:AssumeRole
-      Policies:
-        - PolicyName: EosProductionMfaKmsUse
-          PolicyDocument:
-            Version: '2012-10-17'
-            Statement:
-              - Sid: EncryptDecryptOnlyForGlobalPrincipalMfa
-                Effect: Allow
-                Action:
-                  - kms:Encrypt
-                  - kms:Decrypt
-                Resource: !GetAtt EosProductionMfaKey.Arn
-                Condition:
-                  StringEquals:
-                    kms:EncryptionContext:purpose: GLOBAL_PRINCIPAL_TOTP
 
   EosProductionExecutionRole:
     Type: AWS::IAM::Role
@@ -176,6 +172,7 @@ Resources:
       AliasName: alias/wilsy/production/global-principal-mfa
       TargetKeyId: !Ref EosProductionMfaKey
 
+  # No ECS::Service or desired count is defined: this stack cannot launch tasks.
   EosProductionTaskDefinition:
     Type: AWS::ECS::TaskDefinition
     DependsOn:
