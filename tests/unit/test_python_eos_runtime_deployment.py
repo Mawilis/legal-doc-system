@@ -13,12 +13,14 @@ def test_canonical_container_image_runs_python_eos_without_node_runtime():
     assert "node " not in source
 
 
-def test_python_eos_compose_is_a_single_python_application_runtime():
+def test_python_eos_compose_runs_api_and_durable_worker_as_python_services():
     source = (ROOT / "docker-compose.eos.yml").read_text(encoding="utf-8")
     assert "dockerfile: Dockerfile.eos" in source
     assert "MONGODB_URI:" in source
     assert '"${EOS_PORT:-9095}:9095"' in source
     assert "wilsy-eos:" in source
+    assert "wilsy-eos-worker:" in source
+    assert "tools.eos.runtime.worker_process" in source
     assert "node:" not in source.lower()
     assert "server/Dockerfile" not in source
     assert "server/Dockerfile.worker" not in source
