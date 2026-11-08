@@ -31,3 +31,40 @@
 - A real Mongo replica set proves database transaction behavior only for the exercised path; it does not prove production IAM configuration, infrastructure permissions or institutional authority.
 - Provider verification may execute inside a retryable MongoDB callback only while the provider adapter obeys the documented read-only/idempotent retry contract.
 - Keep PR #393 draft and unmerged until all required controls are closed and the resulting exact head has fresh certification.
+
+
+## AI code-review addendum — repository contract and denial integrity
+
+Reviewed against the mandatory `AGENTS.md` Sovereign Codex Governance Contract at the same branch.
+
+### Findings
+
+1. **Blocking — source artifact contract nonconformance.**
+   - `tools/eos/api/institutional_source_key_router.py` lacks the required institutional versioned header, changelog, authority/tenant/security boundaries and sovereign end seal.
+   - `tools/eos/security/institutional_source_key_governance_evidence.py` lacks the same required artifact metadata and end seal.
+   - `tools/eos/security/institutional_source_signing_key_registry.py` records behavioral changes in its changelog but remains at `v1.0.0`; the header and end-seal version were not incremented.
+   - Required contract: `AGENTS.md` sections 5–7 and 17–20. These are code-governance certification failures even though the runtime test workflow passed.
+
+2. **High — denial evidence is outside the lifecycle integrity chain.**
+   - The denial collection is indexed but denial documents have no event sequence/hash, chained checkpoint or independently protected export in this PR.
+   - Include the denial collection in the protected storage policy and add integrity verification/reconciliation.
+
+3. **Medium — denial-audit persistence failure is insufficiently observable.**
+   - `_record_denial` catches all exceptions and emits only a fixed log string. Preserve the original HTTP denial, but add structured, durable operational evidence and a reconciliation path for audit-write failure.
+
+4. **Medium — denial coverage begins too late in the request path.**
+   - Authentication/authorization failures rejected before handler execution and validation/readiness failures before the guarded transaction are not captured in the new denial collection.
+   - Integrate with the canonical IAM audit/outbox boundary; do not duplicate authorization or create a parallel authority path.
+
+### Required remediation sequence
+
+1. Bring each affected production source artifact into compliance with the repository contract, one primary file per certified delivery, using full-file review and exact version alignment.
+2. Extend tamper evidence and protected-storage policy to denial records.
+3. Add durable structured audit-failure telemetry and reconciliation.
+4. Wire pre-handler authorization denials through the canonical IAM audit/outbox.
+5. Add tests for event and denial mutation/deletion, audit-head rollback, storage outage and denial reconciliation.
+6. Re-run all relevant checks after each file change and all applicable workflows on the final exact head.
+
+These findings supersede any earlier implication that the prior 446-test/16-workflow result closed the complete security review. That result remains evidence for its exact commit only.
+
+**Disposition: remediation continues; do not approve, merge, or activate production trust.**
