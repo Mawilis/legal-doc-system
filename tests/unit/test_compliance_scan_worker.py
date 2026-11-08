@@ -84,8 +84,9 @@ def test_compliance_scan_requires_explicit_aware_observation_time():
 
 
 def test_compliance_indexes_are_explicit_and_unique():
-    findings, outbox = MagicMock(), MagicMock()
-    provision_compliance_scan_indexes(findings=findings, notification_outbox=outbox)
+    clients, findings, outbox = MagicMock(), MagicMock(), MagicMock()
+    provision_compliance_scan_indexes(clients=clients, findings=findings, notification_outbox=outbox)
+    assert clients.create_index.call_args.kwargs["name"] == "ix_compliance_expired_identity_scan"
     assert findings.create_index.call_args.kwargs["unique"] is True
     assert outbox.create_index.call_count == 2
 
