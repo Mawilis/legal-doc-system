@@ -62,7 +62,13 @@ def enqueue_task(
     task_type = _required(task_type, "TASK_QUEUE_TYPE_REQUIRED")
     engine_name = _required(engine_name or task_type, "TASK_QUEUE_ENGINE_REQUIRED")
     now = _utc(now)
-    if not isinstance(payload, Mapping) or max_attempts < 1 or not isinstance(priority, int):
+    if (
+        not isinstance(payload, Mapping)
+        or "__eos_task_context" in payload
+        or max_attempts < 1
+        or not isinstance(priority, int)
+        or isinstance(priority, bool)
+    ):
         raise DurableTaskQueueError("TASK_QUEUE_ENQUEUE_ARGUMENT_INVALID")
     try:
         encoded = json.dumps(payload, sort_keys=True, separators=(",", ":"), default=None)
@@ -89,7 +95,14 @@ def enqueue_task(
         return document
     except DuplicateKeyError:
         existing = tasks.find_one({"tenant_id": tenant_id, "task_id": task_id}, session=session)
-        if existing is None or existing.get("payload_sha256") != digest or existing.get("task_type") != task_type or existing.get("engine_name", task_type) != engine_name:
+        if (
+            existing is None
+            or existing.get("payload_sha256") != digest
+            or existing.get("task_type") != task_type
+            or existing.get("engine_name", task_type) != engine_name
+            or existing.get("priority", 10) != priority
+            or existing.get("max_attempts", 5) != max_attempts
+        ):
             raise DurableTaskQueueError("TASK_QUEUE_IDEMPOTENCY_CONFLICT")
         return existing
 
