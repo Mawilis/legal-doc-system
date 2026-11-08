@@ -17,6 +17,7 @@
  * FINANCIAL AUTHORITY BOUNDARY: None; Kennel EOS remains exclusive.
  */
 
+import { resolve } from 'node:path';
 import { defineConfig, devices } from '@playwright/test';
 
 export default defineConfig({
@@ -30,8 +31,8 @@ export default defineConfig({
   reporter: process.env.CI
     ? [
       ['line'],
-      ['html', { outputFolder: 'playwright-report', open: 'never' }],
-      ['junit', { outputFile: 'test-results/playwright-junit.xml' }],
+      ['html', { outputFolder: resolve(process.cwd(), process.env.PLAYWRIGHT_HTML_OUTPUT_DIR || 'playwright-report'), open: 'never' }],
+      ['junit', { outputFile: resolve(process.cwd(), process.env.PLAYWRIGHT_JUNIT_OUTPUT_NAME || 'test-results/playwright-junit.xml') }],
     ]
     : [['list']],
   use: {
