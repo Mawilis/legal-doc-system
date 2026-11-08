@@ -47,7 +47,12 @@ jobs:
       - name: Validate JavaScript syntax
         run: |
           node --check server/middleware/DNA_PASS_FIX.js
+          node --check server/middleware/forensicTenantScope.js
+          node --check server/routes/forensicRoutes.js
+          node --check server/services/ForensicMerkleAuditor.js
           node --check server/routes/api.js
           node --check server/app.js
       - name: Prove forensic route IAM composition
         run: python -m pytest -q tests/unit/test_forensic_routes_require_iam.py
+      - name: Prove authenticated tenant-scope binding
+        run: node --test tests/unit/forensic_tenant_scope.test.mjs
