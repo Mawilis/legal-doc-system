@@ -11,6 +11,7 @@ from cryptography.hazmat.primitives.asymmetric.ed25519 import Ed25519PrivateKey
 from fastapi import FastAPI
 from fastapi.testclient import TestClient
 from pymongo import MongoClient
+from pymongo.errors import OperationFailure
 
 from tools.eos.auth.identity import SovereignIdentity
 from tools.eos.auth.principal_status import PrincipalStatus
@@ -57,9 +58,17 @@ class _VerifiedGovernanceEvidence:
         self.invalid_proposal_result = False
         self.invalid_approval_result = False
         self.invalid_revocation_result = False
+        self.retry_proposal_once = False
 
     def verify_proposal(self, **kwargs):
         self.proposal_calls.append(kwargs)
+        if self.retry_proposal_once:
+            self.retry_proposal_once = False
+            raise OperationFailure(
+                "synthetic transient transaction conflict",
+                code=112,
+                details={"errorLabels": ["TransientTransactionError"]},
+            )
         if self.fail_proposal:
             raise InstitutionalSourceKeyGovernanceEvidenceError("SYNTHETIC_PROPOSAL_EVIDENCE_DENIED")
         if self.invalid_proposal_result:
@@ -507,6 +516,64 @@ def test_production_tenant_iam_dependency_chain_gates_source_key_route(monkeypat
             assert database[EVENT_COLLECTION].count_documents({
                 "source_system_id": "synthetic-live-iam-source",
             }) == 1
+    finally:
+        client.drop_database(db_name)
+        client.close()
+
+
+def test_provider_verification_is_retry_safe_inside_mongo_transaction(monkeypatch):
+    """A transient transaction retry may repeat verification without side effects."""
+    client = MongoClient(URI, serverSelectionTimeoutMS=5000, tz_aware=True)
+    db_name = f"source_key_retry_contract_{uuid.uuid4().hex}"
+    database = client[db_name]
+    app = FastAPI()
+    app.include_router(source_key_api.router)
+    app.state.institutional_source_key_registry_ready = True
+    evidence = _VerifiedGovernanceEvidence()
+    evidence.retry_proposal_once = True
+    app.state.institutional_source_key_governance_evidence_verifier = evidence
+    app.dependency_overrides[source_key_api._PROPOSE] = lambda: _context("retry-maker")
+    monkeypatch.setattr(source_key_api, "get_client", lambda: client)
+    monkeypatch.setattr(source_key_api, "get_database", lambda: database)
+
+    try:
+        hello = client.admin.command("hello")
+        assert hello.get("setName") and hello.get("isWritablePrimary") is True
+        InstitutionalSourceSigningKeyLifecycleRegistry.ensure_indexes(
+            database[KEY_COLLECTION], database[EVENT_COLLECTION],
+        )
+        private = Ed25519PrivateKey.generate()
+        public = private.public_key().public_bytes(
+            encoding=serialization.Encoding.Raw,
+            format=serialization.PublicFormat.Raw,
+        )
+        now = datetime.now(timezone.utc)
+        body = {
+            "source_system_id": "synthetic-retry-source",
+            "key_id": "synthetic-retry-key",
+            "public_key_base64": base64.b64encode(public).decode("ascii"),
+            "valid_from": (now - timedelta(minutes=1)).isoformat(),
+            "valid_until": (now + timedelta(hours=1)).isoformat(),
+            "proposal_reference": "synthetic-retry-proposal",
+            "identity_proofing_evidence_reference": "synthetic://retry/identity",
+            "source_authority_evidence_reference": "synthetic://retry/source-authority",
+        }
+        with TestClient(app) as http:
+            response = http.post(
+                "/security/institutional-source-keys/proposals",
+                json=body,
+                headers={"Idempotency-Key": "synthetic-retry-proposal"},
+            )
+        assert response.status_code == 201
+        assert len(evidence.proposal_calls) == 2
+        assert database[EVENT_COLLECTION].count_documents({
+            "source_system_id": "synthetic-retry-source",
+        }) == 1
+        head = database["eos_institutional_source_signing_key_audit_heads"].find_one({
+            "source_system_id": "synthetic-retry-source",
+            "key_id": "synthetic-retry-key",
+        })
+        assert head["event_sequence"] == 1
     finally:
         client.drop_database(db_name)
         client.close()
