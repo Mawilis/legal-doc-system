@@ -7,7 +7,8 @@
 # COLLABORATION / OWNERSHIP: EOS owns auth, tenant and asset truth; CI owns only
 #                            disposable setup, test orchestration and teardown.
 # CERTIFICATION / UPDATE DATE: 2026-10-24
-# CHANGELOG: v1.0.4 installs the server BFF lockfile before the browser runner starts its owned BFF.
+# CHANGELOG: v1.1.2 enables exact-branch authenticated browser certification for the
+#            Python EOS runtime-retirement development branch and removes stale runtime notes.
 #            v1.0.3 installs the repository-pinned pytest runner required by the real-Mongo
 #            branding integration step after CI confirmed it was absent from runtime deps.
 #            v1.0.2 aligns branding Mongo listener/member ports; v1.0.1 adds isolated Mongo,
@@ -67,6 +68,7 @@ on:
   push:
     branches:
       - legal-ops-completion-map
+      - eos/python-only-runtime-retirement-20261108
     paths:
       - "tests/e2e/playwright.config.js"
       - "tests/e2e/**"
@@ -125,7 +127,6 @@ jobs:
         run: |
           npm ci --legacy-peer-deps
           npm --prefix client ci
-          # Current Vite configuration routes all application APIs directly to Python EOS; no BFF process is started.
 
       - name: Install Chromium for Playwright
         run: npx playwright install --with-deps chromium
