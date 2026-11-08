@@ -1,3 +1,17 @@
+# TITLE: WILSY EOS Production Global Principal MFA KMS Infrastructure
+# VERSION: v1.0.0-PRODUCTION-EKS-GLOBAL-MFA-KMS
+# AUTHORITY: Production KMS infrastructure definition for the verified EOS EKS workload only.
+# EPITOME: Define the MFA envelope key and an EKS OIDC role restricted to the exact EOS ServiceAccount.
+# ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/infra/aws/global-principal-mfa-kms.yaml
+# COLLABORATION / OWNERSHIP: Wilsy Core Engineering.
+# CERTIFICATION OR UPDATE DATE: 2026-11-08.
+# CHANGELOG: v1.0.0 isolates production KMS trust to the supplied EKS OIDC provider and exact ServiceAccount; local-development identities and grants are excluded.
+# COMPLIANCE: Infrastructure definition only; deployment is blocked until the actual hosting target and OIDC identity are verified.
+# SECURITY / PRIVACY POSTURE: No static credentials or local-development principal; runtime KMS use is limited to Encrypt/Decrypt on this key with the MFA purpose context.
+# TENANT BOUNDARY: No tenant, principal, session, or database records are created.
+# AUTHORITY BOUNDARY: EKS workload identity only; key administration is assigned to a separate approved IAM role.
+# FINANCIAL AUTHORITY BOUNDARY: No financial execution authority; Kennel EOS remains exclusive.
+
 AWSTemplateFormatVersion: '2010-09-09'
 Description: >-
   WILSY Python EOS Global Principal MFA KMS key and dedicated EKS workload
@@ -127,3 +141,10 @@ Outputs:
   EosGlobalMfaRuntimeRoleArn:
     Description: Bind this role to the wilsy-eos-api ServiceAccount using the verified EKS IRSA annotation.
     Value: !GetAtt EosGlobalMfaRuntimeRole.Arn
+# ARTIFACT: global-principal-mfa-kms.yaml
+# VERSION: v1.0.0-PRODUCTION-EKS-GLOBAL-MFA-KMS
+# AUTHORITY BOUNDARY: verified production EOS EKS MFA KMS capability only
+# TENANT POSTURE: no tenant or database resources
+# FAIL-CLOSED POSTURE: exact OIDC provider and ServiceAccount trust; no local identity grants
+# FINANCIAL EXECUTION AUTHORITY: Kennel EOS remains exclusive
+# END OF WILSY OS SOVEREIGN ARTIFACT
