@@ -1,3 +1,21 @@
+# TITLE: WILSY EOS Global Principal MFA AWS KMS Envelope Adapter
+# VERSION: v1.0.0-GLOBAL-MFA-KMS-ENVELOPE
+# AUTHORITY: Python EOS cryptographic adapter; no identity, factor or session authority.
+# EPITOME: Encrypt and decrypt Global Principal TOTP secrets with AWS KMS using ambient workload identity and principal/revision-bound encryption context; fail closed when configured KMS access is unavailable.
+# ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/tools/eos/auth/global_principal_mfa_kms_envelope.py
+# COLLABORATION / OWNERSHIP: Wilsy OS Core Engineering; Global Principal MFA factor authority remains in canonical EOS services.
+# CERTIFICATION OR UPDATE DATE: 2026-11-09
+# CHANGELOG:
+#   v1.0.0-GLOBAL-MFA-KMS-ENVELOPE establishes the AWS KMS envelope adapter,
+#   full key-ARN and explicit-region validation, workload-identity credential
+#   use, principal/revision encryption context and synthetic startup probe.
+# COMPLIANCE: AGENTS.md v1.2.0-SOVEREIGN-LEGAL-OPERATIONS-CONSTITUTION.
+# SECURITY / PRIVACY POSTURE: No static credentials, plaintext factor persistence, local-key fallback or secret logging.
+# TENANT BOUNDARY: Ciphertext is bound to principal and credential revision; no tenant or membership truth is created.
+# AUTHORITY BOUNDARY: Cryptographic envelope protection only; factor enrollment, verification and session issuance remain owned by Python EOS.
+# FINANCIAL AUTHORITY BOUNDARY: No financial execution authority; Kennel EOS remains the exclusive financial execution authority.
+# FAIL-CLOSED DECLARATION: Invalid key ARN, region, envelope, encryption context or KMS operation raises a bounded KMS error; no fallback is attempted.
+
 """Platform KMS envelope encryption for global-principal MFA factors.
 
 AWS KMS is an opt-in deployment adapter, not a default provider. It uses the
@@ -215,3 +233,12 @@ __all__ = [
     "AwsKmsGlobalMfaEnvelope",
     "build_global_mfa_kms_envelope_from_environment",
 ]
+
+
+# ARTIFACT: tools/eos/auth/global_principal_mfa_kms_envelope.py
+# VERSION: v1.0.0-GLOBAL-MFA-KMS-ENVELOPE
+# AUTHORITY BOUNDARY: KMS envelope cryptography only; no factor, identity or session authority.
+# TENANT POSTURE: No tenant, membership or session records are created or mutated.
+# FAIL-CLOSED POSTURE: Missing or mismatched provider configuration and failed KMS operations deny the cryptographic operation.
+# FINANCIAL EXECUTION AUTHORITY: Kennel EOS exclusively.
+# END OF WILSY OS SOVEREIGN ARTIFACT
