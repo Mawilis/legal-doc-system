@@ -162,26 +162,28 @@ def test_business_registry_consumers_use_kernel_or_caller_owned_same_client_grap
     assert "FINANCIAL_APPROVAL_AGGREGATOR_MIXED_CLIENT_GRAPH" in approvals
 
 
-def test_active_bff_and_development_entrypoints_do_not_launch_legacy_mongoose_business_runtime():
+def test_legacy_node_backend_is_not_a_supported_runtime_entrypoint():
     bff = (ROOT / "server/server.js").read_text(encoding="utf-8")
-    assert "mongoose" not in bff
-    assert "database: 'NOT_CONNECTED_BY_BFF'" in bff
-    assert "databaseAuthority: 'PYTHON_EOS'" in bff
-    assert "resolveEosWorkspaceIdentity" in bff
-    assert "requireEosWorkspaceIdentity, generateSovereignArtifactPdf" in bff
-
-    pdf_controller = (ROOT / "server/controllers/businessArtifactPdfController.js").read_text(encoding="utf-8")
-    assert "mongoose" not in pdf_controller
-    assert "findWilsyLiveUserProfileDocument" not in pdf_controller
-    assert "EOS_VERIFIED_WORKSPACE_BOOTSTRAP" in pdf_controller
-
-    identity_adapter = (ROOT / "server/services/eosWorkspaceIdentity.js").read_text(encoding="utf-8")
-    assert "/api/auth/workspace-bootstrap" in identity_adapter
+    assert "Legacy Node BFF runtime is retired" in bff
+    assert "process.exitCode = 1" in bff
 
     pm2 = (ROOT / "server/ecosystem.config.js").read_text(encoding="utf-8")
-    assert "script: './server.js'" in pm2
-    assert "app.js" not in pm2
-    assert "scheduler.js" not in pm2
+    assert "apps: []" in pm2
+    assert "script:" not in pm2
+
+    deploy = (ROOT / "server/deploy.sh").read_text(encoding="utf-8")
+    assert "legacy Node deployment path has been retired" in deploy
+    assert "exit 1" in deploy
+
+    server_package = json.loads((ROOT / "server/package.json").read_text(encoding="utf-8"))
+    assert not {"start", "dev", "predev"}.intersection(server_package["scripts"])
+    assert "main" not in server_package
+
+    for dockerfile in ("server/Dockerfile", "server/Dockerfile.worker"):
+        source = (ROOT / dockerfile).read_text(encoding="utf-8")
+        assert "FROM scratch" in source
+        assert "LEGACY_NODE_BACKEND_RETIRED" in source
+        assert "FROM node:" not in source.lower()
 
     dev_stack = (ROOT / "scripts/start-dev-stack.sh").read_text(encoding="utf-8")
     assert "uvicorn tools.eos.api.server:app" in dev_stack
