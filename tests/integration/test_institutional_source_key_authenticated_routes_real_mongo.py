@@ -453,11 +453,15 @@ def test_production_tenant_iam_dependency_chain_gates_source_key_route(monkeypat
     RoleAssignmentRepository.ensure_indexes(authorization_roles)
 
     admin_id = f"source-key-admin-{uuid.uuid4().hex}"
+    reviewer_id = f"source-key-reviewer-{uuid.uuid4().hex}"
+    revoker_id = f"source-key-revoker-{uuid.uuid4().hex}"
     owner_id = f"ordinary-owner-{uuid.uuid4().hex}"
     now = datetime.now(timezone.utc)
 
     for principal_id, business_role in (
         (admin_id, "tenant_institutional_source_key_admin"),
+        (reviewer_id, "tenant_institutional_source_key_admin"),
+        (revoker_id, "tenant_institutional_source_key_admin"),
         (owner_id, "tenant_owner"),
     ):
         PrincipalAuthorityRepository.create(
@@ -474,13 +478,14 @@ def test_production_tenant_iam_dependency_chain_gates_source_key_route(monkeypat
             ),
             business_roles,
         )
-    RoleAssignmentRepository.insert(
-        RoleAssignmentAuthority(
-            admin_id, TENANT_ID, "INSTITUTIONAL_SOURCE_KEY_ADMIN",
-            RoleAssignmentStatus.ACTIVE, 0,
-        ),
-        authorization_roles,
-    )
+    for principal_id in (admin_id, reviewer_id, revoker_id):
+        RoleAssignmentRepository.insert(
+            RoleAssignmentAuthority(
+                principal_id, TENANT_ID, "INSTITUTIONAL_SOURCE_KEY_ADMIN",
+                RoleAssignmentStatus.ACTIVE, 0,
+            ),
+            authorization_roles,
+        )
 
     app.dependency_overrides[authorization_http.get_current_identity] = lambda: SovereignIdentity(
         identity_id=admin_id, tenant_id=TENANT_ID, auth_method="TEST_CERTIFICATION",
@@ -526,6 +531,45 @@ def test_production_tenant_iam_dependency_chain_gates_source_key_route(monkeypat
             )
             assert allowed.status_code == 201
 
+            approval_body = {
+                "governance_decision_reference": "synthetic-live-iam-approval",
+                "approval_evidence_reference": "synthetic://live-iam/approval",
+            }
+            approve_route = (
+                "/security/institutional-source-keys/"
+                "synthetic-live-iam-source/synthetic-live-iam-key/approve"
+            )
+            self_approval = http.post(
+                approve_route, json=approval_body,
+                headers={"X-Tenant-ID": TENANT_ID, "Idempotency-Key": "live-iam-self-approve"},
+            )
+            assert self_approval.status_code == 409
+
+            app.dependency_overrides[authorization_http.get_current_identity] = lambda: SovereignIdentity(
+                identity_id=reviewer_id, tenant_id=TENANT_ID, auth_method="TEST_CERTIFICATION",
+                status=PrincipalStatus.ACTIVE,
+            )
+            approved = http.post(
+                approve_route, json=approval_body,
+                headers={"X-Tenant-ID": TENANT_ID, "Idempotency-Key": "live-iam-independent-approve"},
+            )
+            assert approved.status_code == 200
+
+            app.dependency_overrides[authorization_http.get_current_identity] = lambda: SovereignIdentity(
+                identity_id=revoker_id, tenant_id=TENANT_ID, auth_method="TEST_CERTIFICATION",
+                status=PrincipalStatus.ACTIVE,
+            )
+            revoked = http.post(
+                "/security/institutional-source-keys/synthetic-live-iam-source/synthetic-live-iam-key/revoke",
+                json={
+                    "reason_reference": "synthetic://live-iam/revocation",
+                    "governance_decision_reference": "synthetic-live-iam-revocation",
+                    "approval_evidence_reference": "synthetic://live-iam/revocation-approval",
+                },
+                headers={"X-Tenant-ID": TENANT_ID, "Idempotency-Key": "live-iam-revoke"},
+            )
+            assert revoked.status_code == 200
+
             app.dependency_overrides[authorization_http.get_current_identity] = lambda: SovereignIdentity(
                 identity_id=owner_id, tenant_id=TENANT_ID, auth_method="TEST_CERTIFICATION",
                 status=PrincipalStatus.ACTIVE,
@@ -537,6 +581,11 @@ def test_production_tenant_iam_dependency_chain_gates_source_key_route(monkeypat
             assert denied.status_code == 403
             assert database[EVENT_COLLECTION].count_documents({
                 "source_system_id": "synthetic-live-iam-source",
+            }) == 3
+            assert database[DENIAL_COLLECTION].count_documents({
+                "source_system_id": "synthetic-live-iam-source",
+                "action": "APPROVE",
+                "reason_code": "SOURCE_SIGNING_KEY_MAKER_CHECKER_VIOLATION",
             }) == 1
     finally:
         client.drop_database(db_name)
