@@ -111,7 +111,6 @@ import analyticsRoutes from './analyticsRoutes.js';
 import crmRoutes from './crmRoutes.js';
 import telemetryRoutes from './telemetryRoutes.js';
 import compliance from './complianceRoutes.js';
-import forensics from './forensicRoutes.js';
 import legalRoutes from './legal/index.js';
 import jurisdictionRoutes from './jurisdictionRoutes.js';
 import ledgerRoutes from './ledgerRoutes.js';
@@ -511,7 +510,6 @@ router.get('/status', async (req, res) => {
 
 router.use('/auth', auth);
 router.use('/telemetry', telemetryRoutes);
-router.use('/forensics', forensics);
 
 // ============================================================================
 // 🏛️ 2. SOVEREIGN PROTECTED ZONE (Auth Mandatory)
