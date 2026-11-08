@@ -167,6 +167,24 @@ def test_legacy_node_backend_is_not_a_supported_runtime_entrypoint():
     assert not (ROOT / "server/ecosystem.config.js").exists()
     assert not (ROOT / "server/deploy.sh").exists()
 
+    for retired_script in ("server/deploy-production.sh", "server/deploy-investor-ready.sh"):
+        assert "legacy Node deployment path is retired" in (ROOT / retired_script).read_text(encoding="utf-8")
+
+    retired_k8s = (
+        "server/k8s/deployment.yaml",
+        "server/k8s/service.yaml",
+        "server/k8s/ingress.yaml",
+        "server/k8s/predictive-deployment.yaml",
+    )
+    for manifest in retired_k8s:
+        source = (ROOT / manifest).read_text(encoding="utf-8")
+        assert "Retired legacy Node workload manifest" in source
+        assert "kind: Deployment" not in source
+        assert "kind: Ingress" not in source
+
+    kustomization = (ROOT / "server/k8s/kustomization.yaml").read_text(encoding="utf-8")
+    assert "resources: []" in kustomization
+
     for pm2_path in ("server/pm2.config.js", "server/pm2.config.mjs"):
         pm2 = (ROOT / pm2_path).read_text(encoding="utf-8")
         assert "apps: []" in pm2
