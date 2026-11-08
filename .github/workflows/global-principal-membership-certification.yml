@@ -5,7 +5,8 @@
 # ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/.github/workflows/global-principal-membership-certification.yml
 # COLLABORATION / OWNERSHIP: Wilsy Core Engineering.
 # CERTIFICATION / UPDATE DATE: 2026-11-03.
-# CHANGELOG: v1.8.0-GLOBAL-MFA-KMS-INFRASTRUCTURE-CERTIFICATION lints the dedicated KMS CloudFormation key, least-privilege policies and EKS workload trust on infrastructure changes.\n#           v1.7.1-SYSTEM-HTTP-REAL-MONGO-CERTIFICATION-ENVIRONMENT-CONTRACT supplies the exact database and replica-set environment required by all real-Mongo fixtures.
+# CHANGELOG: v1.8.0-GLOBAL-MFA-KMS-INFRASTRUCTURE-CERTIFICATION lints the dedicated KMS CloudFormation key, least-privilege policies and EKS workload trust on infrastructure changes.
+#           v1.7.1-SYSTEM-HTTP-REAL-MONGO-CERTIFICATION-ENVIRONMENT-CONTRACT supplies the exact database and replica-set environment required by all real-Mongo fixtures.
 #           v1.7.0-SYSTEM-HTTP-REAL-MONGO-CERTIFICATION adds the actual HTTP-to-replica-set SYSTEM login, MFA, session, refresh, replay and logout journey.
 #           v1.4.0-GLOBAL-PRINCIPAL-MEMBERSHIP-CHALLENGE-CI certifies HTTP login throttle integration and adversarial router tests.
 #           v1.3.2-GLOBAL-PRINCIPAL-MEMBERSHIP-CHALLENGE-CI includes the failure-throttle unit test in compile, Pyright and pytest exactly once.
@@ -43,7 +44,9 @@ on:
       - "tools/eos/auth/global_principal_session_authority.py"
       - "tools/eos/auth/global_principal_system_session_authority.py"
       - "tools/eos/auth/global_principal_totp_verifier.py"
-      - "tools/eos/auth/global_principal_mfa_kms_envelope.py"\n      - "infra/aws/global-principal-mfa-kms.yaml"\n      - "infra/aws/README-global-principal-mfa-kms.md"
+      - "tools/eos/auth/global_principal_mfa_kms_envelope.py"
+      - "infra/aws/global-principal-mfa-kms.yaml"
+      - "infra/aws/README-global-principal-mfa-kms.md"
       - "tools/eos/auth/global_principal_mfa_enrollment_service.py"
       - "tools/eos/auth/global_principal_mfa_legacy_migration_service.py"
       - "tools/eos/auth/global_principal_mfa_session_transition.py"
@@ -341,7 +344,7 @@ jobs:
         if: always()
         run: docker rm -f wilsy-global-principal-mongo 2>/dev/null || true
 # ARTIFACT: global-principal-membership-certification.yml
-# VERSION: v1.7.1-SYSTEM-HTTP-REAL-MONGO-CERTIFICATION-ENVIRONMENT-CONTRACT
+# VERSION: v1.8.0-GLOBAL-MFA-KMS-INFRASTRUCTURE-CERTIFICATION
 # AUTHORITY BOUNDARY: focused CI execution only
 # TENANT POSTURE: synthetic principal-scoped and tenant-scoped certification data
 # FAIL-CLOSED POSTURE: compile, unit or replica-set failures fail the job
