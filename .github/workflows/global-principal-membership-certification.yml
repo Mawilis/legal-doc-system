@@ -182,6 +182,7 @@ jobs:
             tools/eos/auth/global_principal_system_session_authority.py \
             tools/eos/auth/global_principal_totp_verifier.py \
             tools/eos/auth/global_principal_mfa_kms_envelope.py \
+            tools/eos/auth/global_principal_mfa_kms_probe.py \
             tools/eos/auth/global_principal_mfa_enrollment_service.py \
             tools/eos/auth/global_principal_mfa_legacy_migration_service.py \
             tools/eos/auth/global_principal_mfa_session_transition.py \
@@ -211,7 +212,6 @@ jobs:
             tests/unit/test_global_principal_totp_verifier.py \
             tests/unit/test_global_principal_mfa_kms_envelope.py \
             tests/unit/test_global_principal_mfa_kms_cloudformation.py \
-            tests/unit/test_global_principal_mfa_kms_local_development_cloudformation.py \
             tests/unit/test_global_principal_mfa_kms_local_development_cloudformation.py \
             tests/unit/test_global_principal_mfa_enrollment_service.py \
             tests/unit/test_global_principal_mfa_legacy_migration_service.py \
@@ -327,9 +327,9 @@ jobs:
             tests/integration/test_principal_credential_repository_mongo.py \
             infra/aws/global-principal-mfa-kms.yaml \
             infra/aws/global-principal-mfa-kms-local-development.yaml \
+            tools/eos/auth/global_principal_mfa_kms_probe.py \
             infra/aws/README-global-principal-mfa-kms.md \
             tests/unit/test_global_principal_mfa_kms_cloudformation.py \
-            tests/unit/test_global_principal_mfa_kms_local_development_cloudformation.py \
             tests/unit/test_global_principal_mfa_kms_local_development_cloudformation.py \
             .github/workflows/global-principal-membership-certification.yml
           test -z "$(git status --short)"
@@ -349,7 +349,6 @@ jobs:
             tests/unit/test_global_principal_totp_verifier.py \
             tests/unit/test_global_principal_mfa_kms_envelope.py \
             tests/unit/test_global_principal_mfa_kms_cloudformation.py \
-            tests/unit/test_global_principal_mfa_kms_local_development_cloudformation.py \
             tests/unit/test_global_principal_mfa_kms_local_development_cloudformation.py \
             tests/unit/test_global_principal_mfa_enrollment_service.py \
             tests/unit/test_global_principal_mfa_legacy_migration_service.py \
