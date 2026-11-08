@@ -172,3 +172,23 @@ Implemented controls:
 The separate legacy bootstrap hardening is tracked in draft PR #394. It disables four self-authorizing/privileged bootstrap scripts and has a dedicated fail-closed test workflow. The exposed historical credential still requires environment-by-environment rotation/revocation and authentication-log investigation; repository edits do not erase Git history or change live database users.
 
 **Disposition:** denial records are now tamper-evident within the application-level chain and fully route-tested. Protected storage, independent recovery and pre-handler IAM audit persistence remain production blockers. PR #393 stays draft and unmerged.
+
+
+## Additional blocker — existing forensic Merkle auditor is not a protected WORM sink
+
+The repository's legacy forensic Merkle service was inspected as a possible independent audit anchor. It is **not** accepted as proof of protected audit storage:
+
+- `server/services/ForensicMerkleAuditor.js` uses an external WORM endpoint only when `WILSY_WORM_ANCHOR_URL` is configured. Otherwise `anchorVerifiedRoot` calls `appendLocalAnchor`, writes a local JSONL file and reports `LOCAL_APPEND_ONLY_PENDING_WORM`. The source itself warns that an external WORM-compatible sink must be configured.
+- `server/middleware/DNA_PASS_FIX.js` includes the broad `forensics` token in the public bypass list. `ProductionHardening.middleware.js` bypasses the integrity shield when a URL contains any DNA_PASS token.
+- `server/routes/forensicRoutes.js` installs no route-level authentication or tenant-authorization middleware. The manual `POST /merkle-auditor/run` handler derives `tenantId` from request body, query or header.
+- `server/app.js` explicitly treats the manual Merkle run endpoint as a public forensic gateway path in its secondary auth-observation middleware.
+
+Therefore the legacy auditor must not be reused as the source-key governance audit sink until its route authorization, tenant binding, external anchor configuration, integrity protection and failure semantics are independently corrected and certified. A local file append is not WORM storage, and a caller-selected tenant identifier is not authenticated tenant scope.
+
+This is a separate, high-priority forensic-route security remediation. It is not silently folded into PR #393 because route-wide authorization requires its own exact operation policy and browser/API regression suite.
+
+### Final AI-review disposition
+
+At `2fdcaaee2f4914b2ebc099b19e96e1d2afb39624`, source-key governance and denial-chain code passed **448 tests, 12 warnings, 0 failures** on a real replica set; all 16 applicable workflows succeeded. This does not close the independent audit-sink, forensic-route authorization, durable failure recovery, or deployment role/retention gates.
+
+PR #393 remains draft and unmerged. Production trust activation remains prohibited.
