@@ -1,11 +1,15 @@
 # TITLE: WILSY EOS ECS Fargate Production Foundation Certification Workflow
-# VERSION: v1.0.2-EOS-ECS-IMAGE-AND-TASK-VOLUME-CERTIFICATION
+# VERSION: v1.0.3-EOS-ECS-PRODUCTION-KMS-DOCUMENTATION-CERTIFICATION
 # AUTHORITY: Repository CI certification only; no infrastructure provisioning or deployment authority.
 # EPITOME: Lint the ECS CloudFormation, build the exact published Python EOS image, test the task identity and writable-volume contract, and verify exact-diff whitespace.
 # ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/.github/workflows/eos-ecs-production-foundation-certification.yml
 # COLLABORATION / OWNERSHIP: Wilsy OS Core Engineering; Python EOS and infrastructure governance.
 # CERTIFICATION OR UPDATE DATE: 2026-11-09
 # CHANGELOG:
+#   v1.0.3-EOS-ECS-PRODUCTION-KMS-DOCUMENTATION-CERTIFICATION includes the
+#   canonical MFA KMS operations guide in the ECS certification trigger and
+#   exact-diff scope so production identity documentation cannot drift without
+#   rerunning the infrastructure and image contract.
 #   v1.0.2-EOS-ECS-IMAGE-AND-TASK-VOLUME-CERTIFICATION adds the actual GHCR
 #   publication Dockerfile and image-publication workflow to trigger/diff scope,
 #   builds the same Python EOS image used for publication, and verifies its
@@ -24,6 +28,7 @@ on:
   pull_request:
     paths:
       - "infra/aws/eos-production-ecs-foundation.yaml"
+      - "infra/aws/README-global-principal-mfa-kms.md"
       - "infra/docker/Dockerfile.eos"
       - "tests/unit/test_eos_production_ecs_foundation.py"
       - "docs/operations/eos-production-ecs-fargate-foundation.md"
@@ -74,6 +79,7 @@ jobs:
           if [ "${GITHUB_EVENT_NAME}" = "pull_request" ]; then
             git diff --check "origin/${GITHUB_BASE_REF}...HEAD" -- \
               infra/aws/eos-production-ecs-foundation.yaml \
+              infra/aws/README-global-principal-mfa-kms.md \
               infra/docker/Dockerfile.eos \
               tests/unit/test_eos_production_ecs_foundation.py \
               docs/operations/eos-production-ecs-fargate-foundation.md \
@@ -90,7 +96,7 @@ jobs:
           fi
 
 # ARTIFACT: .github/workflows/eos-ecs-production-foundation-certification.yml
-# VERSION: v1.0.2-EOS-ECS-IMAGE-AND-TASK-VOLUME-CERTIFICATION
+# VERSION: v1.0.3-EOS-ECS-PRODUCTION-KMS-DOCUMENTATION-CERTIFICATION
 # AUTHORITY BOUNDARY: Source-level lint, test and local image-build certification only; no AWS mutation or image publication.
 # TENANT POSTURE: No tenant, identity, session or database records are accessed or mutated.
 # FAIL-CLOSED POSTURE: CloudFormation lint, static contract tests, image build or whitespace failure fails the job.
