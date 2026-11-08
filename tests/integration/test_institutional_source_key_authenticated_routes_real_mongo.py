@@ -85,9 +85,13 @@ class _VerifiedGovernanceEvidence:
         if self.fail_revocation:
             raise InstitutionalSourceKeyGovernanceEvidenceError("SYNTHETIC_REVOCATION_EVIDENCE_DENIED")
         return VerifiedSourceKeyRevocationApproval(
+            tenant_id=kwargs["tenant_id"],
             source_system_id=kwargs["source_system_id"],
             key_id=kwargs["key_id"],
             public_key_fingerprint_sha256=kwargs["public_key_fingerprint_sha256"],
+            proposer_principal_id=kwargs["proposer_principal_id"],
+            revoker_principal_id=kwargs["revoker_principal_id"],
+            reason_reference=kwargs["reason_reference"],
             governance_decision_reference=kwargs["governance_decision_reference"],
             approval_evidence_reference=kwargs["approval_evidence_reference"],
             approver_principal_id="synthetic-revocation-approver",
@@ -168,6 +172,12 @@ def test_authenticated_propose_approve_revoke_is_atomic_and_maker_checker_enforc
             assert proposed.status_code == 201
             assert proposed.json()["lifecycle_state"] == "PENDING"
             fingerprint = proposed.json()["public_key_fingerprint_sha256"]
+            proposal_event = database[EVENT_COLLECTION].find_one({
+                "source_system_id": "synthetic-http-source",
+                "key_id": "synthetic-http-key-v1",
+                "event_type": "PROPOSED",
+            })
+            assert proposal_event["proposal_evidence_fingerprint_sha256"] == "a" * 64
             proposed_replay = http.post(
                 "/security/institutional-source-keys/proposals",
                 json=body,
@@ -226,6 +236,14 @@ def test_authenticated_propose_approve_revoke_is_atomic_and_maker_checker_enforc
             )
             assert approved.status_code == 200
             assert approved.json()["event_type"] == "APPROVED"
+            assert approved.json()["lifecycle_state"] == "APPROVED"
+            assert approved.json()["approval_evidence_fingerprint_sha256"] == "b" * 64
+            approval_event = database[EVENT_COLLECTION].find_one({
+                "source_system_id": "synthetic-http-source",
+                "key_id": "synthetic-http-key-v1",
+                "event_type": "APPROVED",
+            })
+            assert approval_event["approval_evidence_fingerprint_sha256"] == "b" * 64
             approval_replay = http.post(
                 "/security/institutional-source-keys/synthetic-http-source/synthetic-http-key-v1/approve",
                 json=approval_body, headers={"Idempotency-Key": "http-approve-1"},
