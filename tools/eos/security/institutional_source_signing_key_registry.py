@@ -27,6 +27,7 @@ from pymongo.client_session import ClientSession
 
 KEY_COLLECTION: Final[str] = "eos_institutional_source_signing_keys"
 EVENT_COLLECTION: Final[str] = "eos_institutional_source_signing_key_events"
+AUDIT_HEAD_COLLECTION: Final[str] = "eos_institutional_source_signing_key_audit_heads"
 SCHEMA: Final[str] = "wilsy.eos.institutional_source_signing_key.v1"
 EVENT_SCHEMA: Final[str] = "wilsy.eos.institutional_source_signing_key_event.v1"
 _IDENTIFIER = re.compile(r"[A-Za-z0-9][A-Za-z0-9._:/@+-]{0,255}\Z")
@@ -94,6 +95,7 @@ class InstitutionalSourceSigningKeyLifecycleRegistry:
     def __init__(self, keys: Collection, events: Collection) -> None:
         self._keys = keys
         self._events = events
+        self._heads = events.database[AUDIT_HEAD_COLLECTION]
 
     def _seal_event(self, event: dict[str, Any], session: ClientSession) -> None:
         """Link the next event to the previous hash in this key's chain."""
@@ -119,7 +121,41 @@ class InstitutionalSourceSigningKeyLifecycleRegistry:
             ):
                 raise SourceSigningKeyRegistryConflict("SOURCE_SIGNING_KEY_AUDIT_CHAIN_INVALID")
         event["previous_event_hash_sha256"] = previous_hash
-        event["event_hash_sha256"] = _event_fingerprint(event)
+        event_hash = _event_fingerprint(event)
+        head_filter = {
+            "source_system_id": event["source_system_id"],
+            "key_id": event["key_id"],
+        }
+        head = self._heads.find_one(head_filter, session=session)
+        if head is None:
+            if event["event_sequence"] != 1:
+                raise SourceSigningKeyRegistryConflict("SOURCE_SIGNING_KEY_AUDIT_HEAD_MISSING")
+            self._heads.insert_one({
+                **head_filter,
+                "event_sequence": event["event_sequence"],
+                "event_hash_sha256": event_hash,
+            }, session=session)
+        else:
+            if (
+                head.get("event_sequence") + 1 != event["event_sequence"]
+                or head.get("event_hash_sha256") != previous_hash
+            ):
+                raise SourceSigningKeyRegistryConflict("SOURCE_SIGNING_KEY_AUDIT_HEAD_CONFLICT")
+            result = self._heads.update_one(
+                {
+                    **head_filter,
+                    "event_sequence": head["event_sequence"],
+                    "event_hash_sha256": previous_hash,
+                },
+                {"$set": {
+                    "event_sequence": event["event_sequence"],
+                    "event_hash_sha256": event_hash,
+                }},
+                session=session,
+            )
+            if result.matched_count != 1:
+                raise SourceSigningKeyRegistryConflict("SOURCE_SIGNING_KEY_AUDIT_HEAD_CONFLICT")
+        event["event_hash_sha256"] = event_hash
 
     def _verify_event_chain(
         self, *, source_system_id: str, key_id: str, session: ClientSession,
@@ -141,6 +177,19 @@ class InstitutionalSourceSigningKeyLifecycleRegistry:
                     raise SourceSigningKeyRegistryConflict("SOURCE_SIGNING_KEY_AUDIT_CHAIN_INVALID")
                 expected_previous = event["event_hash_sha256"]
                 expected_sequence += 1
+            head = self._heads.find_one(
+                {"source_system_id": source_system_id, "key_id": key_id},
+                session=session,
+            )
+            if expected_sequence == 1:
+                if head is not None:
+                    raise SourceSigningKeyRegistryConflict("SOURCE_SIGNING_KEY_AUDIT_HEAD_INVALID")
+            elif (
+                head is None
+                or head.get("event_sequence") != expected_sequence - 1
+                or head.get("event_hash_sha256") != expected_previous
+            ):
+                raise SourceSigningKeyRegistryConflict("SOURCE_SIGNING_KEY_AUDIT_HEAD_INVALID")
         except SourceSigningKeyRegistryError:
             raise
         except PyMongoError as error:
@@ -177,6 +226,10 @@ class InstitutionalSourceSigningKeyLifecycleRegistry:
             events.create_index(
                 [("source_system_id", 1), ("key_id", 1), ("event_sequence", 1)],
                 unique=True, name="uq_source_signing_key_event_sequence",
+            )
+            events.database[AUDIT_HEAD_COLLECTION].create_index(
+                [("source_system_id", 1), ("key_id", 1)],
+                unique=True, name="uq_source_signing_key_audit_head",
             )
         except PyMongoError as error:
             raise SourceSigningKeyRegistryError("SOURCE_SIGNING_KEY_INDEX_UNAVAILABLE") from error
@@ -585,7 +638,7 @@ class InstitutionalSourceSigningKeyLifecycleRegistry:
 
 
 __all__ = [
-    "KEY_COLLECTION", "EVENT_COLLECTION", "SourceSigningKeyRegistryError",
+    "KEY_COLLECTION", "EVENT_COLLECTION", "AUDIT_HEAD_COLLECTION", "SourceSigningKeyRegistryError",
     "SourceSigningKeyRegistryConflict", "InstitutionalSourceSigningKeyLifecycleRegistry",
 ]
 
