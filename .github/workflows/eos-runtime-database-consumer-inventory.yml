@@ -4,13 +4,7 @@ on:
   pull_request:
     paths:
       - "tools/eos/**"
-      - "server/server.js"
-      - "server/ecosystem.config.js"
-      - "server/tests/advanced/runtime-database-ownership.test.mjs"
-      - "server/tests/advanced/eos-workspace-identity.test.mjs"
-      - "server/controllers/businessArtifactPdfController.js"
-      - "server/services/eosWorkspaceIdentity.js"
-      - "server/tests/routes/wilsyAiAdvisoryProxy.test.js"
+      - "server/**"
       - "scripts/start-dev-stack.sh"
       - "package.json"
       - "tests/unit/test_eos_runtime_database_consumer_inventory.py"
@@ -22,7 +16,7 @@ permissions:
 
 jobs:
   runtime-database-ownership:
-    name: Runtime database ownership and BFF boundary
+    name: Runtime database ownership and retired backend entrypoints
     runs-on: ubuntu-latest
     timeout-minutes: 10
     steps:
@@ -37,13 +31,5 @@ jobs:
       - name: Install focused test runner
         run: python -m pip install --disable-pip-version-check pytest
 
-      - name: Certify Python EOS runtime database ownership
+      - name: Certify Python EOS runtime database ownership and Node backend retirement
         run: python -m pytest -q tests/unit/test_eos_runtime_database_consumer_inventory.py
-
-      - name: Set up Node
-        uses: actions/setup-node@v4
-        with:
-          node-version: "20"
-
-      - name: Certify Node BFF transport-only database boundary
-        run: node --test server/tests/advanced/runtime-database-ownership.test.mjs server/tests/advanced/eos-workspace-identity.test.mjs
