@@ -1,11 +1,16 @@
 # TITLE: WILSY EOS Production Hosting — ECS Fargate Foundation
-# VERSION: v1.0.2-EOS-PRODUCTION-ECS-FARGATE-FOUNDATION
+# VERSION: v1.0.3-EOS-PRODUCTION-ECS-FARGATE-FOUNDATION
 # AUTHORITY: Wilsy OS Core Governance; operational architecture and deployment-boundary documentation.
 # EPITOME: Records the selected but unprovisioned AWS ECS Fargate hosting foundation for the Python Kennel EOS API and its production MFA KMS workload identity.
 # ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/docs/operations/eos-production-ecs-fargate-foundation.md
 # COLLABORATION / OWNERSHIP: Wilsy OS Core Engineering; Kennel EOS owns application, identity, tenant and business truth.
 # CERTIFICATION OR UPDATE DATE: 2026-11-09
 # CHANGELOG:
+#   v1.0.3-EOS-PRODUCTION-ECS-FARGATE-FOUNDATION documents the exact Python
+#   EOS image build path, task-scoped writable mount points, their ephemeral
+#   (non-durable) lifecycle, and the distinction between root liveness and
+#   application/database readiness. It records controlled task verification
+#   as a remaining gate.
 #   v1.0.2-EOS-PRODUCTION-ECS-FARGATE-FOUNDATION renders the status as ordinary
 #   Markdown rather than a custom tag; the complete governance and whitespace
 #   correction from v1.0.1 remains in force.
@@ -56,9 +61,11 @@ The CloudFormation template defines only:
 - Separate ECS execution role for image pull, secret injection and CloudWatch logs. It has no KMS Encrypt/Decrypt permissions.
 - Dedicated symmetric production KMS key with annual rotation and alias `alias/wilsy/production/global-principal-mfa`. A separately existing key-administrator role is a mandatory input.
 - CloudWatch log group with 90-day retention.
-- Fargate task definition pinned to an immutable GHCR sha256 digest, configured for the Python EOS API on port `9095`, read-only root filesystem, non-root UID `10001`, MongoDB URI secret injection, private GHCR registry credentials and KMS startup configuration.
+- Fargate task definition pinned to an immutable GHCR sha256 digest, configured for the Python EOS API on port `9095`, read-only root filesystem, non-root UID `10001`, MongoDB URI secret injection, private GHCR registry credentials, KMS startup configuration, and task-scoped writable volumes for `/app/data`, `/app/reports`, `/var/log/wilsy-os` and `/tmp`.
 
 It intentionally defines no ECS service, running task, VPC, subnet, security group, NAT gateway, load balancer, certificate, DNS record, Atlas network access entry, Atlas database user or secret value. Registering a task definition does not launch it. No desired count or service scheduler is created.
+
+The task definition's empty volumes are ephemeral task storage, not durable file storage. They are mounted at `/app/data`, `/app/reports`, `/var/log/wilsy-os` and `/tmp`. The published image at `infra/docker/Dockerfile.eos` prepares these paths for UID/GID `10001`; the ECS certification workflow builds that exact image and checks the static mount contract. Actual write access after ECS mounts the volumes still requires a controlled task-level verification. No legal document, evidence object or other durable business record may rely on these task-scoped volumes; durable artifacts must remain with the canonical EOS storage authority. No EFS, S3 bucket or other persistent filesystem is created by this foundation.
 
 ## Required existing inputs and proof
 
@@ -82,10 +89,13 @@ The foundation does not provide ingress or networking. Before defining an ECS se
 - Atlas private connectivity or a fixed egress allow-list. Never use `0.0.0.0/0`.
 - Production Atlas project, cluster, dedicated least-privilege database user, backup policy and restore test.
 - Task security groups, health/readiness behavior, deployment circuit breaker, scaling, alarms, log retention, incident response and rollback.
-- Exact published image digest and its provenance.
+- Exact published image digest and its provenance. The canonical build definition is `infra/docker/Dockerfile.eos`; the ECS foundation workflow builds it without publishing the image.
+- Controlled task verification that UID `10001` can write only to the intended task volumes and that no authoritative or durable artifact depends on their ephemeral lifecycle.
 - A separately reviewed ECS service/ingress change set after those decisions and dependencies are proven.
 
 These items are not silently supplied by the current foundation and must not be invented from example manifests or local-development configuration.
+
+The current container health check calls the Python EOS root route (`/`). That route is a bounded liveness/composition response; it does not certify MongoDB readiness, production data access or complete application readiness. No dedicated production readiness endpoint or load-balancer health policy has been certified by this foundation. A later service design must define and verify readiness separately before receiving production traffic.
 
 ## Production KMS verification sequence
 
@@ -106,7 +116,7 @@ A local probe, administrator CLI call, CloudFormation output or successful task-
 This repository change is source-only. No AWS API mutation, CloudFormation change-set creation or execution, task launch, service deployment, MongoDB mutation, DNS change, merge or production cutover is authorized by this artifact. Those actions require separate verification and explicit approval.
 
 # ARTIFACT: docs/operations/eos-production-ecs-fargate-foundation.md
-# VERSION: v1.0.2-EOS-PRODUCTION-ECS-FARGATE-FOUNDATION
+# VERSION: v1.0.3-EOS-PRODUCTION-ECS-FARGATE-FOUNDATION
 # AUTHORITY BOUNDARY: Operational documentation only; no infrastructure or runtime activation.
 # TENANT POSTURE: No tenant, identity, session or database records are created or mutated.
 # FAIL-CLOSED POSTURE: Unverified hosting, network, database, image and identity dependencies remain explicit blockers.
