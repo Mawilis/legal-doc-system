@@ -404,8 +404,8 @@ class _PrincipalAuthorityReader:
     def __init__(self, collection):
         self.collection = collection
 
-    def get(self, principal_id):
-        return PrincipalAuthorityRepository.get(principal_id, self.collection)
+    def resolve(self, principal_id, *, session=None):
+        return PrincipalAuthorityRepository.get(principal_id, self.collection, session=session)
 
 
 class _TenantMembershipReader:
@@ -420,6 +420,11 @@ class _CurrentRoleReader:
     def __init__(self, authorization_collection, business_collection):
         self.authorization_collection = authorization_collection
         self.business_collection = business_collection
+
+    def resolve_all_business_roles(self, principal_id, tenant_id, *, session=None):
+        return (TenantBusinessRoleRepository.resolve(
+            principal_id, tenant_id, self.business_collection, session=session,
+        ),)
 
     def resolve(self, principal_id, tenant_id, role_id, *, session=None):
         if role_id in TENANT_ROLES:
