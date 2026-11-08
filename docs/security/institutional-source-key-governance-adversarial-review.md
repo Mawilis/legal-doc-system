@@ -97,3 +97,43 @@ The latest exact-head signed-offer workflow on `dcd12a6` completed successfully:
 ### Current disposition
 
 The artifact-contract findings are closed. The remaining audit-integrity, IAM-denial persistence and infrastructure findings remain open. Keep PR #393 draft and unmerged; do not activate production trust.
+
+
+## Resolution update — registry append integrity
+
+**Reviewed and certified head:** `0857d57b5155f25b5d7b2711472a12c9fbd3cf92`
+
+The registry now invokes full `_verify_event_chain` inside `_seal_event` before every lifecycle append. This moves the invariant into the registry boundary and protects direct callers, not only router-mediated calls.
+
+A new real-replica-set regression test corrupts the earlier PROPOSED event, invokes registry approval directly, and verifies:
+- the append fails with `SOURCE_SIGNING_KEY_AUDIT_CHAIN_INVALID`;
+- no APPROVED event is inserted;
+- the audit head remains byte-for-byte unchanged.
+
+Certification evidence:
+- Institutional Signed-Offer Verification: **447 passed, 12 warnings, 0 failed**, on a real MongoDB replica set. The new regression test passed.
+- All **16 applicable workflows succeeded** on this head. One superseded Repository Integrity run was cancelled by concurrency control; the current Repository Integrity run succeeded.
+- PR remains draft and unmerged.
+
+## Additional repository-wide security blocker discovered during AI review
+
+The branch contains legacy MongoDB bootstrap scripts outside the PR's changed-file set that undermine the intended IAM and audit-storage security boundaries:
+
+- `server/fix_tenant_auth.sh` contains a hard-coded service-account password and uses that account to grant itself tenant database access.
+- `server/inject_master_user.sh` contains the same hard-coded credential and directly upserts an active privileged identity into the users collection, bypassing canonical global-principal, membership, capacity and MFA flows.
+- `server/elevate_wilsy_app.sh` grants `userAdmin` to the application service account.
+- `server/force_fix_wilsy.sh` runs an unauthenticated MongoDB role-injection path and grants broad database privileges.
+
+The credential is treated as exposed; its value is intentionally not reproduced in this review record. If it has ever been valid in any environment, rotate/revoke it and inspect authentication logs. These scripts must be disabled or replaced by a governed, externally authenticated provisioning workflow. Do not assume they are active in a live environment without runtime evidence.
+
+This is a **critical repository-wide IAM/security blocker** for production trust activation, even though the scripts are not part of PR #393's current diff. Their remediation should be isolated into separately certified source-file changes or a dedicated security PR so that the source-key governance change does not silently absorb unrelated bootstrap migration risk.
+
+## Remaining source-key governance gates
+
+1. Denial records remain outside the lifecycle hash chain and require protected storage or an independently protected sink.
+2. Denial-audit write failures need durable structured telemetry and reconciliation while preserving the original denial.
+3. Pre-handler IAM denials need canonical durable audit/outbox persistence.
+4. MongoDB roles must demonstrably prevent the application identity from updating/deleting lifecycle events, audit heads and denial evidence.
+5. Retention, independent export, backup/restore verification and integrity alerting remain unproven.
+
+**Disposition:** the registry append-integrity finding is resolved and certified. The denial-audit and protected-storage gates remain open. The legacy bootstrap scripts are a separate critical repository-wide blocker. Keep PR #393 draft and unmerged; do not activate production trust.
