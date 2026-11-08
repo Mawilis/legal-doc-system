@@ -12,10 +12,8 @@ import os
 import signal
 
 from tools.eos.kernel.db import connect_db, disconnect_db, get_client, get_database
-from .compliance_scan_scheduler import run_daily_compliance_scheduler
+from .compliance_scan_scheduler import TENANT_COLLECTION, run_daily_compliance_scheduler
 from .durable_worker_runtime import (
-    CLIENTS_COLLECTION,
-    NOTIFICATION_OUTBOX_COLLECTION,
     TASK_COLLECTION,
     provision_compliance_worker_indexes,
     provision_durable_worker_indexes,
@@ -55,7 +53,7 @@ async def serve() -> None:
         )
         scheduler = asyncio.create_task(
             run_daily_compliance_scheduler(
-                tenants=database[CLIENTS_COLLECTION] if False else database["tenants"],
+                tenants=database[TENANT_COLLECTION],
                 tasks=database[TASK_COLLECTION], stop_event=stop_event,
             )
         )
