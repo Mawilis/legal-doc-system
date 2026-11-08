@@ -70,7 +70,7 @@ The local probe pins `wilsy-eos-global-mfa-local-development`; it is not accepta
 The production verifier must run from inside the actual ECS container and performs all of the following:
 
 1. Requires `ECS_CONTAINER_METADATA_URI_V4` and restricts its endpoint to the ECS link-local metadata host `169.254.170.2`.
-2. Reads the task-scoped metadata endpoint and requires a task ARN in account `121014832643`, region `af-south-1`, with task family and revision metadata.
+2. Reads the task-scoped metadata endpoint and requires a task ARN in account `121014832643`, region `af-south-1`, cluster `wilsy-eos-production`, task family `wilsy-eos-production-api` and a positive task-definition revision.
 3. Requires `AWS_REGION=af-south-1`.
 4. Requires `WILSY_ECS_EXPECTED_TASK_ROLE_ARN` to equal the exact production task-role ARN.
 5. Calls STS through the task's ambient credential chain and requires the actual assumed-role ARN to be `wilsy-eos-production-task-role`. The execution role, local role, IAM user, administrator and any other role are rejected.
@@ -103,7 +103,7 @@ A zero exit status proves the task metadata, exact task role and synthetic KMS c
 
 - The intended AWS account and region are recorded from read-only discovery.
 - The ECS foundation now injects the exact expected task-role ARN into the task environment.
-- The production-only verifier and synthetic unit tests are added to the repository.
+- The production-only verifier and synthetic unit tests are added to the repository; the verifier pins the approved ECS cluster, task family and positive revision.
 - The operations runbook distinguishes the production verifier from the local-development probe.
 - Actual production hosting, key-administrator role, secret ARNs, Atlas target/network, published image digest, VPC/subnets/egress, domain/ACM/ingress, readiness, durable storage and recovery evidence remain open.
 - No AWS resource has been created, no CloudFormation change set has been executed, no ECS task has been launched, no production deployment or DNS change has occurred, no database has been mutated, no PR has been merged, and no MFA factor/enforcement change has been made.
