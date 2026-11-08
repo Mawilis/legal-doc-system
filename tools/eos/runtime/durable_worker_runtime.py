@@ -55,6 +55,7 @@ def provision_compliance_worker_indexes(database: Any = None) -> None:
     if resolved_database is None:
         raise RuntimeError("EOS_KERNEL_DATABASE_NOT_READY")
     provision_compliance_scan_indexes(
+        clients=resolved_database[CLIENTS_COLLECTION],
         findings=resolved_database[COMPLIANCE_FINDINGS_COLLECTION],
         notification_outbox=resolved_database[NOTIFICATION_OUTBOX_COLLECTION],
     )
