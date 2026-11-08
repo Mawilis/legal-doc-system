@@ -10,6 +10,9 @@ import base64
 import binascii
 from datetime import datetime, timezone
 from hashlib import sha256
+import logging
+import re
+import uuid
 
 from fastapi import APIRouter, Depends, Header, HTTPException, Request
 from pydantic import BaseModel, ConfigDict, Field
@@ -31,12 +34,14 @@ from tools.eos.security.institutional_source_key_governance_evidence import (
 from tools.eos.security.institutional_source_signing_key_registry import (
     KEY_COLLECTION,
     EVENT_COLLECTION,
+    DENIAL_COLLECTION,
     InstitutionalSourceSigningKeyLifecycleRegistry,
     SourceSigningKeyRegistryConflict,
     SourceSigningKeyRegistryError,
 )
 
 TENANT_ID = "WILSYTENANT-4CD2FZ4O"
+logger = logging.getLogger("WilsyOS.Security.InstitutionalSourceKeyGovernance")
 router = APIRouter(
     prefix="/security/institutional-source-keys",
     tags=["Institutional Source-Key Governance"],
@@ -104,6 +109,59 @@ def _registry(request: Request):
     ):
         raise HTTPException(status_code=503, detail="INSTITUTIONAL_SOURCE_KEY_GOVERNANCE_VERIFIER_UNAVAILABLE")
     return verifier
+
+
+def _record_denial(
+    context: TenantAuthorizationContext, *, action: str,
+    source_system_id: str, key_id: str, error: HTTPException,
+) -> None:
+    """Persist a bounded denial fact after the failed command transaction aborts.
+
+    Evidence references, public-key bytes, verifier payloads, request bodies,
+    idempotency keys and exception text are deliberately excluded.
+    """
+    detail = error.detail if isinstance(error.detail, str) else ""
+    reason_code = (
+        detail if re.fullmatch(r"[A-Z0-9_]{1,128}", detail)
+        else "INSTITUTIONAL_SOURCE_KEY_GOVERNANCE_DENIED"
+    )
+    record = {
+        "schema": "wilsy.eos.institutional_source_key_denial.v1",
+        "event_type": "DENIED",
+        "correlation_id": uuid.uuid4().hex,
+        "tenant_id": context.tenant_id,
+        "actor_principal_id": context.identity.identity_id,
+        "action": action,
+        "source_system_id": source_system_id,
+        "key_id": key_id,
+        "reason_code": reason_code,
+        "http_status": error.status_code,
+        "occurred_at": datetime.now(timezone.utc),
+    }
+    try:
+        client, database = get_client(), get_database()
+        if client is None or database is None:
+            raise RuntimeError("DENIAL_AUDIT_STORAGE_UNAVAILABLE")
+        with client.start_session() as session:
+            session.with_transaction(
+                lambda tx: database[DENIAL_COLLECTION].insert_one(record, session=tx),
+                read_concern=ReadConcern("snapshot"),
+                write_concern=WriteConcern("majority", j=True),
+                read_preference=ReadPreference.PRIMARY,
+            )
+    except Exception:
+        # Preserve the original denial and emit only a bounded operational code.
+        logger.error("INSTITUTIONAL_SOURCE_KEY_DENIAL_AUDIT_UNAVAILABLE")
+    else:
+        logger.warning(
+            "INSTITUTIONAL_SOURCE_KEY_GOVERNANCE_DENIED",
+            extra={"wilsy_source_key_denial": {
+                "correlation_id": record["correlation_id"],
+                "action": action,
+                "reason_code": reason_code,
+                "http_status": error.status_code,
+            }},
+        )
 
 
 def _public_projection(record: dict) -> dict:
@@ -207,7 +265,14 @@ async def propose_source_signing_key(
         )
         return _public_projection(record)
 
-    return _transaction(persist)
+    try:
+        return _transaction(persist)
+    except HTTPException as error:
+        _record_denial(
+            context, action="PROPOSE", source_system_id=body.source_system_id,
+            key_id=body.key_id, error=error,
+        )
+        raise
 
 
 @router.post("/{source_system_id}/{key_id}/approve")
@@ -282,7 +347,14 @@ async def approve_source_signing_key(
             "occurred_at": event["occurred_at"].isoformat(),
         }
 
-    return _transaction(persist)
+    try:
+        return _transaction(persist)
+    except HTTPException as error:
+        _record_denial(
+            context, action="APPROVE", source_system_id=source_system_id,
+            key_id=key_id, error=error,
+        )
+        raise
 
 
 @router.post("/{source_system_id}/{key_id}/revoke")
@@ -355,7 +427,14 @@ async def revoke_source_signing_key(
             session=session,
         )
 
-    event = _transaction(persist)
+    try:
+        event = _transaction(persist)
+    except HTTPException as error:
+        _record_denial(
+            context, action="REVOKE", source_system_id=source_system_id,
+            key_id=key_id, error=error,
+        )
+        raise
     return {
         "source_system_id": event["source_system_id"],
         "key_id": event["key_id"],
