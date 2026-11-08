@@ -1,9 +1,21 @@
-"""Static safety contract for the isolated local-development MFA KMS stack."""
+# TITLE: WILSY EOS Local Global Principal MFA KMS CloudFormation Contract Test
+# VERSION: v1.0.0-LOCAL-MFA-KMS-CLOUDFORMATION-CONTRACT
+# AUTHORITY: Static infrastructure safety certification only.
+# EPITOME: Verify the isolated local-development KMS stack without undeclared parser dependencies.
+# ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/tests/unit/test_global_principal_mfa_kms_local_development_cloudformation.py
+# COLLABORATION / OWNERSHIP: Wilsy Core Engineering.
+# CERTIFICATION OR UPDATE DATE: 2026-11-08.
+# CHANGELOG: v1.0.0 establishes standard-library-only structural checks for the local-development MFA KMS template.
+# COMPLIANCE: Test evidence only; does not provision AWS resources or grant runtime authority.
+# SECURITY / PRIVACY POSTURE: Reads infrastructure source; uses no credentials, secrets, network, or live AWS resources.
+# TENANT BOUNDARY: No tenant data or tenant authority is created or modified.
+# AUTHORITY BOUNDARY: Static verification only; no IAM, KMS, EOS, or MongoDB authority.
+# FINANCIAL AUTHORITY BOUNDARY: No financial execution authority; Kennel EOS remains exclusive.
+
 from __future__ import annotations
 
+import re
 from pathlib import Path
-
-import yaml
 
 
 TEMPLATE = (
@@ -14,61 +26,115 @@ TEMPLATE = (
 )
 
 
-def _load_template() -> dict:
-    class CfnLoader(yaml.SafeLoader):
-        pass
-
-    def _construct_tag(loader, tag_suffix, node):
-        if isinstance(node, yaml.ScalarNode):
-            value = loader.construct_scalar(node)
-        elif isinstance(node, yaml.SequenceNode):
-            value = loader.construct_sequence(node)
-        else:
-            value = loader.construct_mapping(node)
-        if tag_suffix == "GetAtt" and isinstance(value, str):
-            value = value.split(".", 1)
-        key = "Fn::GetAtt" if tag_suffix == "GetAtt" else tag_suffix
-        return {key: value}
-
-    CfnLoader.add_multi_constructor("!", _construct_tag)
-    return yaml.load(TEMPLATE.read_text(encoding="utf-8"), Loader=CfnLoader)
+def _template_source() -> str:
+    """Read the reviewed local-development CloudFormation source as UTF-8."""
+    return TEMPLATE.read_text(encoding="utf-8")
 
 
-def test_local_stack_creates_only_dedicated_key_alias_and_assumable_role():
-    template = _load_template()
-    resources = template["Resources"]
-    assert set(resources) == {
-        "LocalGlobalPrincipalMfaKey",
-        "LocalGlobalPrincipalMfaKeyAlias",
-        "LocalGlobalPrincipalMfaRole",
-    }
-    assert resources["LocalGlobalPrincipalMfaKey"]["Type"] == "AWS::KMS::Key"
-    assert resources["LocalGlobalPrincipalMfaKeyAlias"]["Type"] == "AWS::KMS::Alias"
-    assert resources["LocalGlobalPrincipalMfaRole"]["Type"] == "AWS::IAM::Role"
+def _resource_block(source: str, logical_id: str) -> str:
+    """Return one top-level CloudFormation resource block without parsing YAML."""
+    lines = source.splitlines()
+    start = next(
+        (
+            index
+            for index, line in enumerate(lines)
+            if line == f"  {logical_id}:"
+        ),
+        None,
+    )
+    assert start is not None, f"Missing CloudFormation resource: {logical_id}"
+
+    end = len(lines)
+    for index in range(start + 1, len(lines)):
+        if re.fullmatch(r"  [A-Za-z][A-Za-z0-9]*:", lines[index]):
+            end = index
+            break
+    return "\n".join(lines[start:end])
 
 
-def test_local_role_trust_and_kms_permissions_are_narrowly_scoped():
-    template = _load_template()
-    role = template["Resources"]["LocalGlobalPrincipalMfaRole"]["Properties"]
-    trust = role["AssumeRolePolicyDocument"]["Statement"]
-    assert trust[0]["Principal"]["AWS"] == {"Ref": "LocalDeveloperPrincipalArn"}
-    assert trust[0]["Action"] == "sts:AssumeRole"
-    statement = role["Policies"][0]["PolicyDocument"]["Statement"][0]
-    assert statement["Action"] == ["kms:Encrypt", "kms:Decrypt"]
-    assert statement["Resource"] == {"Fn::GetAtt": ["LocalGlobalPrincipalMfaKey", "Arn"]}
-    assert statement["Condition"]["StringEquals"] == {
-        "kms:EncryptionContext:purpose": "GLOBAL_PRINCIPAL_TOTP"
+def test_local_stack_declares_only_the_dedicated_key_alias_and_role():
+    source = _template_source()
+    resources = re.findall(
+        r"^  ([A-Za-z][A-Za-z0-9]*):\n    Type: (AWS::[A-Za-z0-9:]+)$",
+        source,
+        flags=re.MULTILINE,
+    )
+    assert dict(resources) == {
+        "LocalGlobalPrincipalMfaKey": "AWS::KMS::Key",
+        "LocalGlobalPrincipalMfaKeyAlias": "AWS::KMS::Alias",
+        "LocalGlobalPrincipalMfaRole": "AWS::IAM::Role",
     }
 
 
-def test_local_stack_does_not_create_static_credentials_or_production_identity():
-    source = TEMPLATE.read_text(encoding="utf-8")
-    template = _load_template()
-    resource_types = {item["Type"] for item in template["Resources"].values()}
-    assert "AWS::IAM::AccessKey" not in resource_types
-    assert "AWS::EKS::Cluster" not in resource_types
-    assert "AWS::IAM::OIDCProvider" not in resource_types
+def test_local_role_trust_is_limited_to_the_exact_developer_principal():
+    role = _resource_block(_template_source(), "LocalGlobalPrincipalMfaRole")
+    assert (
+        "Principal:\n"
+        "              AWS: !Ref LocalDeveloperPrincipalArn"
+    ) in role
+    assert "Action: sts:AssumeRole" in role
+    assert role.count("Action: sts:AssumeRole") == 1
+    assert "sts:AssumeRoleWithWebIdentity" not in role
+
+
+def test_local_role_can_only_encrypt_and_decrypt_with_the_dedicated_key():
+    role = _resource_block(_template_source(), "LocalGlobalPrincipalMfaRole")
+    assert (
+        "Action:\n"
+        "                  - kms:Encrypt\n"
+        "                  - kms:Decrypt\n"
+        "                Resource: !GetAtt LocalGlobalPrincipalMfaKey.Arn\n"
+        "                Condition:\n"
+        "                  StringEquals:\n"
+        "                    kms:EncryptionContext:purpose: GLOBAL_PRINCIPAL_TOTP"
+    ) in role
+    assert "kms:*" not in role
+    assert "kms:GenerateDataKey" not in role
+    assert "kms:CreateGrant" not in role
+
+
+def test_key_has_rotation_and_delayed_deletion_and_exact_local_alias():
+    source = _template_source()
+    key = _resource_block(source, "LocalGlobalPrincipalMfaKey")
+    alias = _resource_block(source, "LocalGlobalPrincipalMfaKeyAlias")
+    assert "EnableKeyRotation: true" in key
+    assert "PendingWindowInDays: 30" in key
+    assert "KeySpec: SYMMETRIC_DEFAULT" in key
+    assert "KeyUsage: ENCRYPT_DECRYPT" in key
+    assert "AliasName: alias/wilsy/local-development/global-principal-mfa" in alias
+    assert "TargetKeyId: !Ref LocalGlobalPrincipalMfaKey" in alias
+
+
+def test_key_administration_is_separate_from_local_runtime_use():
+    source = _template_source()
+    key = _resource_block(source, "LocalGlobalPrincipalMfaKey")
+    assert "AWS: !Ref KeyAdministratorPrincipalArn" in key
+    administration = key.split("Sid: DedicatedLocalKeyAdministration", 1)[1]
+    administration = administration.split("LocalGlobalPrincipalMfaKeyAlias", 1)[0]
+    assert "kms:Encrypt" not in administration
+    assert "kms:Decrypt" not in administration
+    assert "kms:ScheduleKeyDeletion" in administration
+
+
+def test_local_stack_rejects_non_user_principals_and_creates_no_static_credentials():
+    source = _template_source()
+    assert (
+        "AllowedPattern: '^arn:[a-z0-9-]+:iam::[0-9]{12}:user/.+$'"
+        in source
+    )
+    assert "AWS::IAM::AccessKey" not in source
     assert "AccessKeyId" not in source
     assert "SecretAccessKey" not in source
+    assert "AWS::EKS::Cluster" not in source
+    assert "AWS::IAM::OIDCProvider" not in source
     assert "AssumeRoleWithWebIdentity" not in source
     assert "wilsy-eos-global-mfa-runtime" not in source
+
+
+# ARTIFACT: test_global_principal_mfa_kms_local_development_cloudformation.py
+# VERSION: v1.0.0-LOCAL-MFA-KMS-CLOUDFORMATION-CONTRACT
+# AUTHORITY BOUNDARY: static infrastructure safety assertions only
+# TENANT POSTURE: no tenant data or authority is created or modified
+# FAIL-CLOSED POSTURE: missing or broadened infrastructure controls fail tests
+# FINANCIAL EXECUTION AUTHORITY: Kennel EOS remains exclusive
+# END OF WILSY OS SOVEREIGN ARTIFACT
