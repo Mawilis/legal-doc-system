@@ -1,9 +1,17 @@
-"""Independent institutional source-key governance evidence boundary.
-
-No implementation is configured by default. A provider-specific adapter must
-verify source authority and independent approval; references alone are never
-accepted as proof. This contract is intentionally separate from human signer
-certificate enrollment evidence.
+"""TITLE: WILSY EOS Institutional Source-Key Governance Evidence Contract
+VERSION: v1.0.0
+AUTHORITY: WILSY EOS Security Engineering; evidence-verification contract only
+EPITOME: Defines typed provider-verified evidence results for source-key proposal, approval and revocation.
+ABSOLUTE CANONICAL PATH: tools/eos/security/institutional_source_key_governance_evidence.py
+COLLABORATION / OWNERSHIP: WILSY EOS Security Engineering; provider adapters implement this protocol only after formal onboarding.
+CERTIFICATION / UPDATE DATE: 2026-11-08
+CHANGELOG:
+- v1.0.0: Introduce typed, exact-command-bound institutional source-key evidence results and retry-safe verifier protocol.
+COMPLIANCE: Typed immutable results; deterministic evidence fingerprints; read-only and idempotent verification contract.
+SECURITY / PRIVACY POSTURE: Evidence references and fingerprints only; no private signing keys, secrets or provider credentials.
+TENANT BOUNDARY: Every result is explicitly bound to the authenticated canonical tenant.
+AUTHORITY BOUNDARY: Verification results are evidence inputs; this module does not grant IAM permissions, approve lifecycle changes or issue verifier success.
+FINANCIAL AUTHORITY BOUNDARY: No financial execution authority; Kennel EOS remains exclusive.
 """
 from __future__ import annotations
 
@@ -59,6 +67,8 @@ class VerifiedSourceKeyRevocationApproval:
 
 
 class InstitutionalSourceKeyGovernanceEvidenceError(RuntimeError):
+    """Stable, non-sensitive failure code for unavailable or invalid provider evidence."""
+
     def __init__(self, code: str) -> None:
         self.code = code
         super().__init__(code)
@@ -142,3 +152,10 @@ __all__ = [
     "VerifiedSourceKeyRevocationApproval",
     "UnavailableInstitutionalSourceKeyGovernanceEvidenceVerifier",
 ]
+# ARTIFACT: WILSY EOS Institutional Source-Key Governance Evidence Contract
+# VERSION: v1.0.0
+# AUTHORITY BOUNDARY: Typed evidence verification only; no lifecycle or IAM authority.
+# TENANT POSTURE: Results must bind the exact authenticated tenant and command.
+# FAIL-CLOSED POSTURE: Unavailable or unverified evidence cannot authorize a lifecycle mutation.
+# FINANCIAL EXECUTION AUTHORITY: None; Kennel EOS remains exclusive.
+# END OF WILSY OS SOVEREIGN ARTIFACT
