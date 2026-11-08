@@ -60,11 +60,19 @@ def enrollment_store():
             f"wrong certification replica set: expected {expected_replica_set!r}, "
             f"received {actual_replica_set!r}"
         )
-    database = client[f"global_mfa_enrollment_{uuid.uuid4().hex}"]
-    credentials = database[CREDENTIAL_COLLECTION]
-    challenges = database[CHALLENGE_COLLECTION]
-    factors = database[FACTOR_COLLECTION]
-    legacy_factors = database["otp_secrets"]
+    database_name = os.getenv("TEST_GLOBAL_PRINCIPAL_MONGO_DATABASE")
+    if database_name != "wilsy_global_principal_mfa_cert":
+        client.close()
+        pytest.fail(
+            "TEST_GLOBAL_PRINCIPAL_MONGO_DATABASE must be "
+            "'wilsy_global_principal_mfa_cert'"
+        )
+    database = client[database_name]
+    suffix = uuid.uuid4().hex
+    credentials = database[f"{CREDENTIAL_COLLECTION}_cert_{suffix}"]
+    challenges = database[f"{CHALLENGE_COLLECTION}_cert_{suffix}"]
+    factors = database[f"{FACTOR_COLLECTION}_cert_{suffix}"]
+    legacy_factors = database[f"otp_secrets_cert_{suffix}"]
     PrincipalCredentialRepository.ensure_indexes(credentials)
     GlobalPrincipalMfaEnrollmentService.ensure_indexes(challenges)
     GlobalPrincipalTotpVerifier.ensure_indexes(factors)
@@ -90,7 +98,8 @@ def enrollment_store():
     try:
         yield client, credentials, challenges, factors, service
     finally:
-        client.drop_database(database.name)
+        for collection in (credentials, challenges, factors, legacy_factors):
+            collection.drop()
         client.close()
 
 
