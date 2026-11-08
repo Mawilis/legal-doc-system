@@ -188,3 +188,56 @@ def test_invalid_identity_context_is_rejected():
         adapter.encrypt_secret(secret="secret", principal_id=" ", credential_revision=1)
     with pytest.raises(GlobalMfaKeyManagementError, match="GLOBAL_MFA_KMS_CONTEXT_INVALID"):
         adapter.encrypt_secret(secret="secret", principal_id="principal-1", credential_revision=True)
+
+
+def test_kms_access_denied_on_encrypt_fails_closed():
+    client = _KmsClient()
+
+    def denied_encrypt(**kwargs):
+        raise RuntimeError("AccessDeniedException: kms:Encrypt is not authorized")
+
+    client.encrypt = denied_encrypt
+    adapter = AwsKmsGlobalMfaEnvelope(key_id=KEY, region_name="af-south-1", client=client)
+    with pytest.raises(GlobalMfaKeyManagementError, match="GLOBAL_MFA_KMS_ENCRYPT_FAILED"):
+        adapter.encrypt_secret(secret="secret", principal_id="principal-1", credential_revision=1)
+
+
+def test_kms_access_denied_on_decrypt_fails_closed():
+    client = _KmsClient()
+    adapter = AwsKmsGlobalMfaEnvelope(key_id=KEY, region_name="af-south-1", client=client)
+    envelope = adapter.encrypt_secret(
+        secret="secret", principal_id="principal-1", credential_revision=1
+    )
+
+    def denied_decrypt(**kwargs):
+        raise RuntimeError("AccessDeniedException: kms:Decrypt is not authorized")
+
+    client.decrypt = denied_decrypt
+    with pytest.raises(GlobalMfaKeyManagementError, match="GLOBAL_MFA_KMS_DECRYPT_FAILED"):
+        adapter.decrypt_secret(envelope, principal_id="principal-1", credential_revision=1)
+
+
+def test_startup_probe_fails_when_kms_returns_different_plaintext():
+    client = _KmsClient()
+    original_decrypt = client.decrypt
+
+    def altered_decrypt(**kwargs):
+        result = original_decrypt(**kwargs)
+        return {**result, "Plaintext": b"not-the-probe-secret"}
+
+    client.decrypt = altered_decrypt
+    adapter = AwsKmsGlobalMfaEnvelope(key_id=KEY, region_name="af-south-1", client=client)
+    with pytest.raises(GlobalMfaKeyManagementError, match="GLOBAL_MFA_KMS_STARTUP_PROBE_FAILED"):
+        adapter.validate_access()
+
+
+def test_kms_encrypt_rejects_response_from_unexpected_key():
+    client = _KmsClient()
+
+    def wrong_key_encrypt(**kwargs):
+        return {"CiphertextBlob": b"ciphertext", "KeyId": OLD_KEY}
+
+    client.encrypt = wrong_key_encrypt
+    adapter = AwsKmsGlobalMfaEnvelope(key_id=KEY, region_name="af-south-1", client=client)
+    with pytest.raises(GlobalMfaKeyManagementError, match="GLOBAL_MFA_KMS_KEY_ID_MISMATCH"):
+        adapter.encrypt_secret(secret="secret", principal_id="principal-1", credential_revision=1)
