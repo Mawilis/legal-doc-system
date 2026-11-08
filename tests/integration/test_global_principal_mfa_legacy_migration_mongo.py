@@ -1,3 +1,20 @@
+# TITLE: WILSY EOS Global Principal Legacy MFA Migration Real-Mongo Certificate
+# VERSION: v1.0.1-GLOBAL-PRINCIPAL-MFA-LEGACY-MIGRATION-MONGO
+# AUTHORITY: Disposable replica-set integration certification only.
+# EPITOME: Verify proof-based legacy OTP migration, credential revision binding and removal of plaintext legacy secret from the new factor record.
+# ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/tests/integration/test_global_principal_mfa_legacy_migration_mongo.py
+# COLLABORATION / OWNERSHIP: Wilsy OS Core Engineering; Python EOS Global Principal MFA.
+# CERTIFICATION OR UPDATE DATE: 2026-11-09
+# CHANGELOG:
+#   v1.0.1-GLOBAL-PRINCIPAL-MFA-LEGACY-MIGRATION-MONGO adds the mandatory
+#   sovereign artifact contract; migration assertions and fixture behavior remain unchanged.
+#   v1.0.0 established real-replica-set proof-based migration certification.
+# COMPLIANCE: AGENTS.md v1.2.0-SOVEREIGN-LEGAL-OPERATIONS-CONSTITUTION.
+# SECURITY / PRIVACY POSTURE: Synthetic legacy factor fixtures only; no production secrets or database credentials.
+# TENANT BOUNDARY: Test-only principal context; no canonical tenant records are accessed.
+# AUTHORITY BOUNDARY: Integration evidence only; does not authorize production migration or factor issuance.
+# FINANCIAL AUTHORITY BOUNDARY: No financial execution authority; Kennel EOS remains exclusive.
+
 """Real Mongo replica-set certification for proof-based legacy MFA migration."""
 from __future__ import annotations
 
@@ -173,3 +190,11 @@ def test_real_mongo_legacy_factor_migration_is_atomic_and_preserves_source_until
     assert factor["migration_source"] == "LEGACY_OTP_SECRET_PROOF"
     assert "secret" not in factor
     assert legacy.count_documents({"user_id": "principal-legacy-mfa"}) == 1
+
+# ARTIFACT: tests/integration/test_global_principal_mfa_legacy_migration_mongo.py
+# VERSION: v1.0.1-GLOBAL-PRINCIPAL-MFA-LEGACY-MIGRATION-MONGO
+# AUTHORITY BOUNDARY: Disposable MongoDB legacy migration test only.
+# TENANT POSTURE: Synthetic principal fixture only; no production tenant state is changed.
+# FAIL-CLOSED POSTURE: Invalid proof or migration state fails the integration suite.
+# FINANCIAL EXECUTION AUTHORITY: Kennel EOS exclusively.
+# END OF WILSY OS SOVEREIGN ARTIFACT
