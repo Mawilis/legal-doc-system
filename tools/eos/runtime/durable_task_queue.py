@@ -135,6 +135,37 @@ def claim_next_task(
     )
 
 
+
+def renew_task_lease(
+    tasks: Collection,
+    *,
+    tenant_id: str,
+    task_id: str,
+    worker_id: str,
+    lease_token: str,
+    now: datetime,
+    lease_seconds: int = 60,
+    session: Any = None,
+) -> bool:
+    """Extend only a still-live lease held by the exact worker/token pair."""
+    now = _utc(now)
+    if lease_seconds < 1:
+        raise DurableTaskQueueError("TASK_QUEUE_LEASE_DURATION_INVALID")
+    result = tasks.update_one(
+        {
+            "tenant_id": _required(tenant_id, "TASK_QUEUE_TENANT_REQUIRED"),
+            "task_id": _required(task_id, "TASK_QUEUE_TASK_ID_REQUIRED"),
+            "status": "CLAIMED",
+            "claimed_by": _required(worker_id, "TASK_QUEUE_WORKER_REQUIRED"),
+            "lease_token": _required(lease_token, "TASK_QUEUE_LEASE_REQUIRED"),
+            "lease_until": {"$gt": now},
+        },
+        {"$set": {"lease_until": now + timedelta(seconds=lease_seconds), "updated_at": now}},
+        session=session,
+    )
+    return result.modified_count == 1
+
+
 def complete_task(
     tasks: Collection,
     audit: Collection,
@@ -157,6 +188,7 @@ def complete_task(
         "status": "CLAIMED",
         "claimed_by": _required(worker_id, "TASK_QUEUE_WORKER_REQUIRED"),
         "lease_token": _required(lease_token, "TASK_QUEUE_LEASE_REQUIRED"),
+        "lease_until": {"$gt": now},
     }
     updated = tasks.update_one(
         identity,
@@ -196,6 +228,7 @@ def fail_task(
         "status": "CLAIMED",
         "claimed_by": _required(worker_id, "TASK_QUEUE_WORKER_REQUIRED"),
         "lease_token": _required(lease_token, "TASK_QUEUE_LEASE_REQUIRED"),
+        "lease_until": {"$gt": now},
     }
     current = tasks.find_one(identity, {"attempts": 1, "max_attempts": 1}, session=session)
     if current is None:
@@ -242,5 +275,5 @@ def _append_audit(
 
 __all__ = [
     "DurableTaskQueueError", "ensure_task_queue_indexes", "enqueue_task",
-    "claim_next_task", "complete_task", "fail_task",
+    "claim_next_task", "renew_task_lease", "complete_task", "fail_task",
 ]
