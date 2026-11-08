@@ -30,6 +30,7 @@ from pymongo.client_session import ClientSession
 KEY_COLLECTION: Final[str] = "eos_institutional_source_signing_keys"
 EVENT_COLLECTION: Final[str] = "eos_institutional_source_signing_key_events"
 AUDIT_HEAD_COLLECTION: Final[str] = "eos_institutional_source_signing_key_audit_heads"
+DENIAL_COLLECTION: Final[str] = "eos_institutional_source_signing_key_denials"
 SCHEMA: Final[str] = "wilsy.eos.institutional_source_signing_key.v1"
 EVENT_SCHEMA: Final[str] = "wilsy.eos.institutional_source_signing_key_event.v1"
 _IDENTIFIER = re.compile(r"[A-Za-z0-9][A-Za-z0-9._:/@+-]{0,255}\Z")
@@ -232,6 +233,14 @@ class InstitutionalSourceSigningKeyLifecycleRegistry:
             events.database[AUDIT_HEAD_COLLECTION].create_index(
                 [("source_system_id", 1), ("key_id", 1)],
                 unique=True, name="uq_source_signing_key_audit_head",
+            )
+            events.database[DENIAL_COLLECTION].create_index(
+                [("correlation_id", 1)],
+                unique=True, name="uq_source_signing_key_denial_correlation",
+            )
+            events.database[DENIAL_COLLECTION].create_index(
+                [("source_system_id", 1), ("key_id", 1), ("occurred_at", 1)],
+                name="ix_source_signing_key_denial_history",
             )
         except PyMongoError as error:
             raise SourceSigningKeyRegistryError("SOURCE_SIGNING_KEY_INDEX_UNAVAILABLE") from error
@@ -643,7 +652,7 @@ class InstitutionalSourceSigningKeyLifecycleRegistry:
 
 
 __all__ = [
-    "KEY_COLLECTION", "EVENT_COLLECTION", "AUDIT_HEAD_COLLECTION", "SourceSigningKeyRegistryError",
+    "KEY_COLLECTION", "EVENT_COLLECTION", "AUDIT_HEAD_COLLECTION", "DENIAL_COLLECTION", "SourceSigningKeyRegistryError",
     "SourceSigningKeyRegistryConflict", "InstitutionalSourceSigningKeyLifecycleRegistry",
 ]
 
