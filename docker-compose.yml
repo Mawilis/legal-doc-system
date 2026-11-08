@@ -42,6 +42,38 @@ services:
     networks:
       - wilsy-eos
 
+  wilsy-eos-worker:
+    profiles: ["python-workers"]
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: wilsy-os-python:${BUILD_VERSION:-candidate}
+    container_name: wilsy-eos-python-worker
+    command: ["python", "-m", "tools.eos.runtime.worker_process"]
+    restart: unless-stopped
+    init: true
+    environment:
+      ENV: ${ENV:-staging}
+      WILSY_ENV: ${WILSY_ENV:-staging}
+      MONGODB_URI: ${MONGODB_URI:?Set MONGODB_URI for the selected environment}
+      WILSY_EOS_WORKER_ID: ${WILSY_EOS_WORKER_ID:-eos-compliance-worker-1}
+      LOG_LEVEL: ${LOG_LEVEL:-INFO}
+    volumes:
+      - eos_data:/app/data
+      - eos_reports:/app/reports
+      - eos_logs:/var/log/wilsy-os
+    depends_on:
+      wilsy-eos:
+        condition: service_healthy
+    stop_grace_period: 45s
+    security_opt:
+      - no-new-privileges:true
+    read_only: true
+    tmpfs:
+      - /tmp:size=64m,mode=1777
+    networks:
+      - wilsy-eos
+
 networks:
   wilsy-eos:
     driver: bridge
