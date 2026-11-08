@@ -239,8 +239,11 @@ def test_authenticated_propose_approve_revoke_is_atomic_and_maker_checker_enforc
             })
             assert denial["actor_principal_id"] == "synthetic-maker"
             assert denial["tenant_id"] == TENANT_ID
-            assert denial["event_sequence"] == 1
-            assert denial["previous_event_hash_sha256"] == "0" * 64
+            assert denial["event_sequence"] == 2
+            first_denial = database[DENIAL_COLLECTION].find_one({
+                "tenant_id": TENANT_ID, "event_sequence": 1,
+            })
+            assert denial["previous_event_hash_sha256"] == first_denial["event_hash_sha256"]
             assert len(denial["event_hash_sha256"]) == 64
             denial_head = database[DENIAL_HEAD_COLLECTION].find_one({"tenant_id": TENANT_ID})
             assert denial_head["event_sequence"] == denial["event_sequence"]
