@@ -57,3 +57,11 @@ def test_default_compose_exposes_worker_only_behind_explicit_profile():
     assert "wilsy-eos-worker:" in source
     assert 'profiles: ["python-workers"]' in source
     assert "tools.eos.runtime.worker_process" in source
+
+
+
+def test_worker_service_has_no_http_healthcheck():
+    for name in ("docker-compose.yml", "docker-compose.eos.yml"):
+        source = (ROOT / name).read_text(encoding="utf-8")
+        worker = source.split("  wilsy-eos-worker:", 1)[1].split("\nnetworks:", 1)[0]
+        assert "healthcheck:\n      disable: true" in worker
