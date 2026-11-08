@@ -10,6 +10,7 @@ from cryptography.hazmat.primitives import serialization
 from cryptography.hazmat.primitives.asymmetric.ed25519 import Ed25519PrivateKey
 from fastapi import FastAPI, HTTPException
 from fastapi.testclient import TestClient
+from tools.eos.api.errors import register_error_handlers
 from pymongo import MongoClient
 from pymongo.errors import OperationFailure
 
@@ -442,6 +443,7 @@ def test_production_tenant_iam_dependency_chain_gates_source_key_route(monkeypat
     db_name = f"source_key_live_iam_{uuid.uuid4().hex}"
     database = client[db_name]
     app = FastAPI()
+    register_error_handlers(app, debug=False)
     app.include_router(source_key_api.router)
     app.state.institutional_source_key_registry_ready = True
     app.state.institutional_source_key_governance_evidence_verifier = _VerifiedGovernanceEvidence()
