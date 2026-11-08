@@ -1,11 +1,14 @@
 # TITLE: WILSY EOS Production Hosting — ECS Fargate Foundation
-# VERSION: v1.0.3-EOS-PRODUCTION-ECS-FARGATE-FOUNDATION
+# VERSION: v1.0.4-EOS-PRODUCTION-ECS-WORKLOAD-IDENTITY
 # AUTHORITY: Wilsy OS Core Governance; operational architecture and deployment-boundary documentation.
 # EPITOME: Records the selected but unprovisioned AWS ECS Fargate hosting foundation for the Python Kennel EOS API and its production MFA KMS workload identity.
 # ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/docs/operations/eos-production-ecs-fargate-foundation.md
 # COLLABORATION / OWNERSHIP: Wilsy OS Core Engineering; Kennel EOS owns application, identity, tenant and business truth.
 # CERTIFICATION OR UPDATE DATE: 2026-11-09
 # CHANGELOG:
+#   v1.0.4 adds the independently executable production ECS metadata/STS/KMS
+#   identity probe and corrects the production verification command. The local
+#   development probe is explicitly excluded from production identity evidence.
 #   v1.0.3-EOS-PRODUCTION-ECS-FARGATE-FOUNDATION documents the exact Python
 #   EOS image build path, task-scoped writable mount points, their ephemeral
 #   (non-durable) lifecycle, and the distinction between root liveness and
@@ -82,6 +85,8 @@ Secret values are not read by this template. The ECS execution role can read onl
 
 ## Remaining production delivery work
 
+The detailed prerequisite evidence register is maintained in `docs/operations/eos-production-provisioning-prerequisite-register.md`. Unknown values remain blockers; do not invent ARNs, secret references, network identifiers or domain ownership.
+
 The foundation does not provide ingress or networking. Before defining an ECS service, the platform design must establish and independently review:
 
 - VPC, private subnets, route tables, NAT or VPC endpoints, and outbound egress.
@@ -104,21 +109,21 @@ Only after separately approved infrastructure provisioning and a separately appr
 1. Obtain the actual ECS task ARN and registered task-definition revision from the AWS control plane.
 2. Verify the effective STS identity from inside the task. It must be the dedicated production task role, never the execution role, administrator, developer, HR or local-development identity.
 3. Verify the KMS key ARN and region injected into the task match the approved CloudFormation outputs.
-4. Run `python -m tools.eos.auth.global_principal_mfa_kms_probe` from the actual task environment using its ambient task-role credentials.
-5. Confirm EOS startup reports the KMS startup probe passed and global MFA runtime readiness is `READY`.
+4. Run `python -m tools.eos.auth.ecs_production_workload_identity_probe` from inside the actual task. This verifier requires the ECS task metadata v4 endpoint, confirms the task ARN belongs to this account/region, confirms STS reports the exact `wilsy-eos-production-task-role`, and performs the canonical synthetic KMS encrypt/decrypt round trip using ambient task-role credentials.
+5. Separately confirm EOS startup reports the KMS startup probe passed and global MFA runtime readiness is `READY`. The identity verifier does not itself change application readiness or enable MFA.
 6. Confirm negative cases fail closed, including wrong key, wrong region, missing task role and denied Encrypt/Decrypt.
 7. Preserve CloudTrail evidence, exact image digest and task-definition revision.
 
-A local probe, administrator CLI call, CloudFormation output or successful task-definition registration is not a production workload probe. Do not activate login cutover or alter MFA factors as part of infrastructure provisioning.
+The local-only `tools.eos.auth.global_principal_mfa_kms_probe` is pinned to the local-development role and must never be used as production identity evidence. An administrator CLI call, CloudFormation output, static unit test or successful task-definition registration is not a production workload probe. Do not activate login cutover or alter MFA factors as part of infrastructure provisioning.
 
 ## Explicit non-actions and approval boundary
 
 This repository change is source-only. No AWS API mutation, CloudFormation change-set creation or execution, task launch, service deployment, MongoDB mutation, DNS change, merge or production cutover is authorized by this artifact. Those actions require separate verification and explicit approval.
 
 # ARTIFACT: docs/operations/eos-production-ecs-fargate-foundation.md
-# VERSION: v1.0.3-EOS-PRODUCTION-ECS-FARGATE-FOUNDATION
+# VERSION: v1.0.4-EOS-PRODUCTION-ECS-WORKLOAD-IDENTITY
 # AUTHORITY BOUNDARY: Operational documentation only; no infrastructure or runtime activation.
 # TENANT POSTURE: No tenant, identity, session or database records are created or mutated.
-# FAIL-CLOSED POSTURE: Unverified hosting, network, database, image and identity dependencies remain explicit blockers.
+# FAIL-CLOSED POSTURE: Unverified hosting, network, database, image and task-role identity dependencies remain explicit blockers.
 # FINANCIAL EXECUTION AUTHORITY: Kennel EOS exclusively.
 # END OF WILSY OS SOVEREIGN ARTIFACT
