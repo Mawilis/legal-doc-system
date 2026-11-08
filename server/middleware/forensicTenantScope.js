@@ -1,6 +1,6 @@
 /**
  * TITLE: WILSY EOS Authenticated Forensic Tenant Scope
- * VERSION: v1.0.1
+ * VERSION: v1.0.2
  * AUTHORITY: WILSY EOS Security Engineering; request-scope validation only
  * EPITOME: Binds every forensic route to the tenant already established by canonical authentication and tenant middleware.
  * ABSOLUTE PATH: server/middleware/forensicTenantScope.js
@@ -8,6 +8,7 @@
  * CHANGELOG:
  * - v1.0.0: Reject caller-selected tenant scope and expose only authenticated request tenant.
  * - v1.0.1: Add the mandatory sovereign artifact end seal.
+ * - v1.0.2: Return the canonical uppercase tenant identifier for exact database matching.
  * TENANT BOUNDARY: Caller parameters, query, body and headers can never establish tenant authority.
  * SECURITY POSTURE: Missing, inconsistent or mismatched scope fails closed with HTTP 403.
  * AUTHORITY BOUNDARY: This module grants no role or permission; upstream authentication and IAM remain authoritative.
@@ -24,11 +25,11 @@ const readSuppliedTenantScopes = (request) => [
 
 export function resolveForensicTenantScope(request) {
   const authenticatedTenantId =
-    typeof request?.tenantId === 'string' ? request.tenantId.trim() : '';
+    typeof request?.tenantId === 'string' ? request.tenantId.trim().toUpperCase() : '';
   if (!authenticatedTenantId || !request?.user) return null;
 
   const principalTenantId =
-    typeof request.user.tenantId === 'string' ? request.user.tenantId.trim() : '';
+    typeof request.user.tenantId === 'string' ? request.user.tenantId.trim().toUpperCase() : '';
   if (
     principalTenantId &&
     principalTenantId.toUpperCase() !== authenticatedTenantId.toUpperCase()
@@ -36,7 +37,7 @@ export function resolveForensicTenantScope(request) {
     return null;
   }
 
-  const expected = authenticatedTenantId.toUpperCase();
+  const expected = authenticatedTenantId;
   for (const supplied of readSuppliedTenantScopes(request)) {
     if (supplied === undefined || supplied === null || supplied === '') continue;
     if (typeof supplied !== 'string' || supplied.trim().toUpperCase() !== expected) {
@@ -62,7 +63,7 @@ export function requireForensicTenantScope(request, response, next) {
 
 /*
  * ARTIFACT: WILSY EOS Authenticated Forensic Tenant Scope
- * VERSION: v1.0.1
+ * VERSION: v1.0.2
  * AUTHORITY BOUNDARY: Validates scope only; canonical authentication and IAM remain authoritative.
  * TENANT POSTURE: Uses the middleware-established tenant and rejects mismatched path/query/body/header hints.
  * FAIL-CLOSED POSTURE: Missing, inconsistent or caller-selected tenant scope returns HTTP 403.
