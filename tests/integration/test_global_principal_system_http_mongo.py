@@ -1,3 +1,20 @@
+# TITLE: WILSY EOS Global Principal SYSTEM HTTP and MFA Real-Mongo Certificate
+# VERSION: v1.0.1-GLOBAL-PRINCIPAL-SYSTEM-HTTP-MONGO
+# AUTHORITY: Disposable replica-set HTTP integration certification only.
+# EPITOME: Exercise the authenticated SYSTEM login, MFA, session, refresh, replay, logout and tenant-isolation journey against the canonical Python EOS HTTP router and an isolated MongoDB replica set.
+# ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/tests/integration/test_global_principal_system_http_mongo.py
+# COLLABORATION / OWNERSHIP: Wilsy OS Core Engineering; Python EOS Global Principal authentication and SYSTEM session authority.
+# CERTIFICATION OR UPDATE DATE: 2026-11-09
+# CHANGELOG:
+#   v1.0.1-GLOBAL-PRINCIPAL-SYSTEM-HTTP-MONGO adds the mandatory sovereign
+#   artifact contract; HTTP route, MFA and persistence assertions remain unchanged.
+#   v1.0.0 established the disposable replica-set SYSTEM HTTP journey certificate.
+# COMPLIANCE: AGENTS.md v1.2.0-SOVEREIGN-LEGAL-OPERATIONS-CONSTITUTION.
+# SECURITY / PRIVACY POSTURE: Uses synthetic credentials and isolated disposable MongoDB fixtures; no production identity or secrets.
+# TENANT BOUNDARY: Tenant-neutral SYSTEM scope and synthetic test principals only; no canonical tenant data is accessed.
+# AUTHORITY BOUNDARY: Test-only HTTP evidence; does not create production SYSTEM access or MFA authority.
+# FINANCIAL AUTHORITY BOUNDARY: No financial execution authority; Kennel EOS remains exclusive.
+
 """HTTP-to-real-Mongo certificate for the tenant-neutral SYSTEM login journey.
 
 The test mounts the production global-auth router and uses a disposable MongoDB
@@ -546,3 +563,11 @@ def test_real_http_system_verification_failure_rolls_back_factor_and_challenge_w
         payload={"mfa_challenge": challenge["mfa_challenge"], "code": _valid_code()},
     )
     assert recovered.status_code == 200, recovered.text
+
+# ARTIFACT: tests/integration/test_global_principal_system_http_mongo.py
+# VERSION: v1.0.1-GLOBAL-PRINCIPAL-SYSTEM-HTTP-MONGO
+# AUTHORITY BOUNDARY: Disposable replica-set HTTP integration test only.
+# TENANT POSTURE: Synthetic principal/session fixtures only; no production tenant state is changed.
+# FAIL-CLOSED POSTURE: Invalid credentials, MFA replay, stale sessions or cross-tenant access fail the HTTP certificate.
+# FINANCIAL EXECUTION AUTHORITY: Kennel EOS exclusively.
+# END OF WILSY OS SOVEREIGN ARTIFACT
