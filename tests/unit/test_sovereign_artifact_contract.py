@@ -1,7 +1,7 @@
 """WILSY OS sovereign artifact-contract regression tests.
 
 TITLE: Sovereign Artifact Header, Version, Changelog and Seal Guard
-VERSION: v1.0.7-WILSY-SOVEREIGN-ARTIFACT-CONTRACT-GUARD
+VERSION: v1.0.8-WILSY-SOVEREIGN-ARTIFACT-CONTRACT-GUARD
 AUTHORITY: Wilsy OS Core Governance
 EPITOME: Prevents the corrected Kennel EOS runbook and forensic inventory from
          losing their required sovereign header, version agreement, changelog,
@@ -12,8 +12,8 @@ COLLABORATION / OWNERSHIP:
     Python EOS governance tests; artifact owners retain source authority.
 CERTIFICATION / UPDATE DATE: 2026-11-08
 CHANGELOG:
-    v1.0.7-WILSY-SOVEREIGN-ARTIFACT-CONTRACT-GUARD verifies that runtime
-    inventory changes trigger CI across root services, launchers and manifests.
+    v1.0.8-WILSY-SOVEREIGN-ARTIFACT-CONTRACT-GUARD simplifies and hardens
+    the CI path-coverage assertions for legacy runtime surfaces.
     v1.0.6-WILSY-SOVEREIGN-ARTIFACT-CONTRACT-GUARD certified retired launchers.
     v1.0.5-WILSY-SOVEREIGN-ARTIFACT-CONTRACT-GUARD tracked the expanded inventory.
     v1.0.4-WILSY-SOVEREIGN-ARTIFACT-CONTRACT-GUARD audited deployment documentation.
@@ -45,7 +45,7 @@ ROOT = Path(__file__).resolve().parents[2]
 ARTIFACTS = (
     (
         ROOT / "tests/unit/test_sovereign_artifact_contract.py",
-        "v1.0.7-WILSY-SOVEREIGN-ARTIFACT-CONTRACT-GUARD",
+        "v1.0.8-WILSY-SOVEREIGN-ARTIFACT-CONTRACT-GUARD",
     ),
     (
         ROOT / "DEPLOYMENT.md",
@@ -234,18 +234,15 @@ def test_runtime_inventory_workflow_covers_legacy_service_and_deployment_surface
         '      - "infra/nginx/**"',
         '      - "k8s/**"',
         '      - "charts/legal-os/**"',
-        '      - "server/tests/test"',
+        '      - "server/**"',
         "tests/unit/test_sovereign_artifact_contract.py",
     )
     for required in required_paths:
-        if required == '      - "server/tests/test"':
-            assert '      - "server/**"' in content
-        else:
-            assert required in content, f"Runtime inventory workflow omits {required}"
+        assert required in content, f"Runtime inventory workflow omits {required}"
 
 
 # ARTIFACT: test_sovereign_artifact_contract.py
-# VERSION: v1.0.7-WILSY-SOVEREIGN-ARTIFACT-CONTRACT-GUARD
+# VERSION: v1.0.8-WILSY-SOVEREIGN-ARTIFACT-CONTRACT-GUARD
 # AUTHORITY BOUNDARY: structural governance tests only.
 # TENANT POSTURE: no tenant access or authority.
 # FAIL-CLOSED POSTURE: missing, divergent, or unsealed artifact metadata fails.
