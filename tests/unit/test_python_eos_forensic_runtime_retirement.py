@@ -44,18 +44,18 @@ def test_forensic_ui_never_equates_root_presence_with_verified_chain():
     assert "return 'Append-only seal pending'" in source
 
 
-def test_legacy_express_apps_do_not_render_pdf_and_transport_targets_python_eos():
+def test_legacy_express_apps_and_transport_are_not_runtime_entrypoints():
     app_source = (ROOT / "server/app.js").read_text(encoding="utf-8")
-    transport_source = (ROOT / "server/server.js").read_text(encoding="utf-8")
-
     assert "businessArtifactPdfController" not in app_source
     assert "generateSovereignArtifactPdf" not in app_source
     assert "app.post('/api/generate/pdf'" not in app_source
-    assert "app.use(\n    '/api/generate/pdf'" in transport_source
-    assert "targetPrefix: '/api/generate/pdf'" in transport_source
-    assert "generateSovereignArtifactPdf" not in transport_source
-    assert "requireEosWorkspaceIdentity" not in transport_source
 
+    # The Node BFF transport source and all of its supported launch paths are retired.
+    assert not (ROOT / "server/server.js").exists()
+    for path in ("server/pm2.config.js", "server/pm2.config.mjs"):
+        pm2 = (ROOT / path).read_text(encoding="utf-8")
+        assert "apps: []" in pm2
+        assert "script:" not in pm2
 
     legacy_api_source = (ROOT / "server/routes/api.js").read_text(encoding="utf-8")
     assert "businessArtifactPdfController" not in legacy_api_source
