@@ -13,9 +13,13 @@ on:
   pull_request:
     paths:
       - "server/middleware/DNA_PASS_FIX.js"
+      - "server/middleware/forensicTenantScope.js"
+      - "server/routes/forensicRoutes.js"
+      - "server/services/ForensicMerkleAuditor.js"
       - "server/routes/api.js"
       - "server/app.js"
       - "tests/unit/test_forensic_routes_require_iam.py"
+      - "tests/unit/forensic_tenant_scope.test.mjs"
       - ".github/workflows/forensic-route-iam-certification.yml"
   workflow_dispatch:
 
