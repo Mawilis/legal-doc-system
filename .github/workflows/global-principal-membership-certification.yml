@@ -47,8 +47,10 @@ on:
       - "tools/eos/auth/global_principal_totp_verifier.py"
       - "tools/eos/auth/global_principal_mfa_kms_envelope.py"
       - "infra/aws/global-principal-mfa-kms.yaml"
+      - "infra/aws/global-principal-mfa-kms-local-development.yaml"
       - "infra/aws/README-global-principal-mfa-kms.md"
       - "tests/unit/test_global_principal_mfa_kms_cloudformation.py"
+      - "tests/unit/test_global_principal_mfa_kms_local_development_cloudformation.py"
       - "tools/eos/auth/global_principal_mfa_enrollment_service.py"
       - "tools/eos/auth/global_principal_mfa_legacy_migration_service.py"
       - "tools/eos/auth/global_principal_mfa_session_transition.py"
@@ -99,8 +101,10 @@ on:
       - "eos/kennel-eos-production-runtime-20261108"
     paths:
       - "infra/aws/global-principal-mfa-kms.yaml"
+      - "infra/aws/global-principal-mfa-kms-local-development.yaml"
       - "infra/aws/README-global-principal-mfa-kms.md"
       - "tests/unit/test_global_principal_mfa_kms_cloudformation.py"
+      - "tests/unit/test_global_principal_mfa_kms_local_development_cloudformation.py"
       - ".github/workflows/global-principal-membership-certification.yml"
   workflow_dispatch:
 permissions:
@@ -163,6 +167,7 @@ jobs:
         run: |
           cfn-lint --version
           cfn-lint --template infra/aws/global-principal-mfa-kms.yaml
+          cfn-lint --template infra/aws/global-principal-mfa-kms-local-development.yaml
       - name: Compile global principal, membership and challenge contracts
         run: |
           python -m py_compile \
@@ -206,6 +211,8 @@ jobs:
             tests/unit/test_global_principal_totp_verifier.py \
             tests/unit/test_global_principal_mfa_kms_envelope.py \
             tests/unit/test_global_principal_mfa_kms_cloudformation.py \
+            tests/unit/test_global_principal_mfa_kms_local_development_cloudformation.py \
+            tests/unit/test_global_principal_mfa_kms_local_development_cloudformation.py \
             tests/unit/test_global_principal_mfa_enrollment_service.py \
             tests/unit/test_global_principal_mfa_legacy_migration_service.py \
             tests/unit/test_global_principal_mfa_session_transition.py \
@@ -319,8 +326,11 @@ jobs:
             tests/integration/test_principal_authentication_rate_limit_mongo.py \
             tests/integration/test_principal_credential_repository_mongo.py \
             infra/aws/global-principal-mfa-kms.yaml \
+            infra/aws/global-principal-mfa-kms-local-development.yaml \
             infra/aws/README-global-principal-mfa-kms.md \
             tests/unit/test_global_principal_mfa_kms_cloudformation.py \
+            tests/unit/test_global_principal_mfa_kms_local_development_cloudformation.py \
+            tests/unit/test_global_principal_mfa_kms_local_development_cloudformation.py \
             .github/workflows/global-principal-membership-certification.yml
           test -z "$(git status --short)"
       - name: Run focused global principal and membership tests
@@ -339,6 +349,8 @@ jobs:
             tests/unit/test_global_principal_totp_verifier.py \
             tests/unit/test_global_principal_mfa_kms_envelope.py \
             tests/unit/test_global_principal_mfa_kms_cloudformation.py \
+            tests/unit/test_global_principal_mfa_kms_local_development_cloudformation.py \
+            tests/unit/test_global_principal_mfa_kms_local_development_cloudformation.py \
             tests/unit/test_global_principal_mfa_enrollment_service.py \
             tests/unit/test_global_principal_mfa_legacy_migration_service.py \
             tests/unit/test_global_principal_mfa_session_transition.py \
