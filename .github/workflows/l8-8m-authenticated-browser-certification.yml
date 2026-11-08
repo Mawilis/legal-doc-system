@@ -235,34 +235,38 @@ jobs:
         run: python -m py_compile tests/e2e/browser_cert_fixture.py tests/e2e/browser_cert_scope_verify.py
 
       - name: Run focused D21B12 client lifecycle regressions
-        run: >-
-          npm --prefix client run test:run --
-          src/__tests__/components/legalDashboardBrandingPresentation.test.jsx
-          tests/services/tenantBrandingAssetClient.test.js
-          tests/hooks/useAuthenticatedTenantBrandingAsset.test.jsx
-          tests/contexts/authContext.authoritative.test.jsx
-          tests/client/SovereignDashboardController.test.js
+        run: |
+          set -o pipefail
+          npm --prefix client run test:run -- \
+            src/__tests__/components/legalDashboardBrandingPresentation.test.jsx \
+            tests/services/tenantBrandingAssetClient.test.js \
+            tests/hooks/useAuthenticatedTenantBrandingAsset.test.jsx \
+            tests/contexts/authContext.authoritative.test.jsx \
+            tests/client/SovereignDashboardController.test.js \
+            2>&1 | tee certification-diagnostics/logs/client-lifecycle.log
 
       - name: Run exact EOS API transport contract tests
-        run: npm --prefix client run test:run -- src/__tests__/services/api.test.js
+        run: |
+          set -o pipefail
+          npm --prefix client run test:run -- src/__tests__/services/api.test.js \
+            2>&1 | tee certification-diagnostics/logs/eos-api-transport.log
 
       - name: Run D21B10 real-Mongo branding delivery certificate
         env:
           TEST_VENDOR_MONGO_URI: mongodb://127.0.0.1:27018/?replicaSet=wilsyVendorCertRS
         run: |
-          set +e
+          set -o pipefail
           python -m pytest -q -rs \
-            --junitxml=/tmp/d21b13-branding-real-mongo.xml \
-            tests/integration/test_tenant_branding_workspace_asset_delivery_real_mongo.py
-          pytest_status=$?
-          set -e
+            --junitxml=test-results/d21b13-branding-real-mongo.xml \
+            tests/integration/test_tenant_branding_workspace_asset_delivery_real_mongo.py \
+            2>&1 | tee certification-diagnostics/logs/d21b13-real-mongo.log
           if [ "$pytest_status" -ne 0 ]; then
             exit "$pytest_status"
           fi
           python - <<'PY'
           import xml.etree.ElementTree as ET
 
-          root = ET.parse("/tmp/d21b13-branding-real-mongo.xml").getroot()
+          root = ET.parse("test-results/d21b13-branding-real-mongo.xml").getroot()
           skipped = sum(
               int(suite.attrib.get("skipped", "0"))
               for suite in root.iter("testsuite")
@@ -281,14 +285,18 @@ jobs:
       - name: Run critical SYSTEM browser certification
         run: |
           browser_cert_database_suffix="$(python -c 'import uuid; print(uuid.uuid4().hex)')"
+          set -o pipefail
           BROWSER_CERT_MONGO_URI="mongodb://127.0.0.1:27017/wilsy_l8_8m_r3_system_${browser_cert_database_suffix}?replicaSet=wilsyVendorCertRS" \
-            node tests/e2e/run-browser-cert.mjs tests/e2e/system-services-incident.browser.spec.js tests/e2e/system-services-response.browser.spec.js
+            node tests/e2e/run-browser-cert.mjs tests/e2e/system-services-incident.browser.spec.js tests/e2e/system-services-response.browser.spec.js \
+            2>&1 | tee certification-diagnostics/logs/browser-system.log
 
       - name: Run broader authenticated browser certification
         run: |
           browser_cert_database_suffix="$(python -c 'import uuid; print(uuid.uuid4().hex)')"
+          set -o pipefail
           BROWSER_CERT_MONGO_URI="mongodb://127.0.0.1:27017/wilsy_l8_8m_r3_broad_${browser_cert_database_suffix}?replicaSet=wilsyVendorCertRS" \
-            node tests/e2e/run-browser-cert.mjs --grep-invert "certifies SYSTEM incident queue|does not expose responder inbox|certifies initial tenant-neutral SYSTEM credentials|certifies independent request, rejection, approval"
+            node tests/e2e/run-browser-cert.mjs --grep-invert "certifies SYSTEM incident queue|does not expose responder inbox|certifies initial tenant-neutral SYSTEM credentials|certifies independent request, rejection, approval" \
+            2>&1 | tee certification-diagnostics/logs/browser-broad.log
 
       - name: Assemble exact-head certification evidence bundle
         if: always()
@@ -319,6 +327,11 @@ jobs:
             for required in test-results/d21b13-branding-real-mongo.xml test-results/playwright-junit.xml playwright-report/index.html; do
               if [ -s "$required" ]; then echo "PRESENT $required"; else echo "MISSING $required"; fi
             done
+            if find test-results -type f -name trace.zip -size +0c -print -quit | grep -q .; then
+              echo "PRESENT playwright-trace.zip"
+            else
+              echo "MISSING playwright-trace.zip"
+            fi
           } > certification-diagnostics/evidence-validation.txt
 
       - name: Validate required certification evidence
