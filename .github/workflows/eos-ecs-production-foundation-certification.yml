@@ -1,11 +1,13 @@
 # TITLE: WILSY EOS ECS Fargate Production Foundation Certification Workflow
-# VERSION: v1.0.4-EOS-ECS-WORKLOAD-IDENTITY-CERTIFICATION
+# VERSION: v1.0.5-EOS-ECS-PREREQUISITE-DISCOVERY-CERTIFICATION
 # AUTHORITY: Repository CI certification only; no infrastructure provisioning or deployment authority.
 # EPITOME: Lint the ECS CloudFormation, build the canonical Python EOS image, test the task identity and writable-volume contract, validate read-only discovery syntax, and verify exact-diff whitespace.
 # ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/.github/workflows/eos-ecs-production-foundation-certification.yml
 # COLLABORATION / OWNERSHIP: Wilsy OS Core Engineering; Python EOS and infrastructure governance.
 # CERTIFICATION OR UPDATE DATE: 2026-11-09
 # CHANGELOG:
+#   v1.0.5 includes the read-only production discovery script in PR/push
+#   triggers and whitespace validation and runs bash -n before image build.
 #   v1.0.4 adds the production ECS metadata/STS/KMS identity probe and its
 #   unit tests, plus the provisioning evidence register, to PR/push triggers,
 #   focused certification and exact-diff whitespace validation.
@@ -116,7 +118,7 @@ jobs:
           fi
 
 # ARTIFACT: .github/workflows/eos-ecs-production-foundation-certification.yml
-# VERSION: v1.0.4-EOS-ECS-WORKLOAD-IDENTITY-CERTIFICATION
+# VERSION: v1.0.5-EOS-ECS-PREREQUISITE-DISCOVERY-CERTIFICATION
 # AUTHORITY BOUNDARY: Source-level lint, test and local image-build certification only; no AWS mutation or image publication.
 # TENANT POSTURE: No tenant, identity, session or database records are accessed or mutated.
 # FAIL-CLOSED POSTURE: CloudFormation lint, static contract tests, image build or whitespace failure fails the job.
