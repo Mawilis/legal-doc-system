@@ -8,6 +8,7 @@ dnspython==2.8.0
 email-validator==2.3.0
 fastapi==0.141.1
 h11==0.16.0
+httpx==0.28.1
 httpcore2==2.13.0
 httpx2==2.13.0
 idna==3.19
