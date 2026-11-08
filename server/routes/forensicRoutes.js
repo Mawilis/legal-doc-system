@@ -1,7 +1,7 @@
 /* eslint-disable */
 /**
  * TITLE: WILSY EOS Forensic Nucleus Routes
- * VERSION: v54.3.0
+ * VERSION: v54.4.0
  * AUTHORITY: WILSY EOS Security Engineering; authenticated forensic API surface
  * EPITOME: Exposes forensic metrics, audit trails and Merkle operations under canonical tenant scope.
  * ABSOLUTE CANONICAL PATH: server/routes/forensicRoutes.js
@@ -10,6 +10,7 @@
  * CHANGELOG:
  * - v54.2.0: Bind every route to authenticated tenant scope; remove legacy-root alias aggregation and scope local anchors.
  * - v54.3.0: Remove placeholder success claims for asset integrity and vault anchoring; correct route access documentation.
+ * - v54.4.0: Restrict auditor status output to a tenant-bound operational projection; omit local paths and global last-run evidence.
  * COMPLIANCE: Canonical IAM and tenant middleware remain the sole authentication and tenant-authority sources.
  * SECURITY / PRIVACY POSTURE: Caller-supplied tenant identifiers are hints only and must match authenticated scope; mismatches fail closed.
  * TENANT BOUNDARY: Exact request tenant established by authenticated middleware; no GLOBAL_ROOT or legacy alias fallback.
@@ -841,7 +842,20 @@ router.get('/verify-chain', async (req, res) => {
  * @access  Authenticated tenant scope
  */
 router.get('/merkle-auditor/status', async (req, res) => {
-  res.status(200).json(forensicMerkleAuditor.getStatus());
+  const status = forensicMerkleAuditor.getStatus();
+  return res.status(200).json({
+    success: true,
+    tenantId: req.forensicTenantId,
+    running: status.running === true,
+    pollIntervalMs: status.pollIntervalMs,
+    algorithm: status.algorithm,
+    anchorMode: status.anchorMode,
+    anchorProvider: status.anchorProvider,
+    qldbStatus: status.qldbStatus,
+    qldbEndOfSupport: status.qldbEndOfSupport,
+    receiptContractVersion: status.receiptContractVersion,
+    complianceFrameworks: status.complianceFrameworks,
+  });
 });
 
 /**
@@ -1378,7 +1392,7 @@ export default router;
 
 /*
  * ARTIFACT: WILSY EOS Forensic Nucleus Routes
- * VERSION: v54.3.0
+ * VERSION: v54.4.0
  * AUTHORITY BOUNDARY: Authenticated forensic API only; canonical IAM remains authoritative.
  * TENANT POSTURE: Every route is bound to the authenticated request tenant; caller-selected scope is rejected.
  * FAIL-CLOSED POSTURE: Missing or mismatched tenant context returns HTTP 403.
