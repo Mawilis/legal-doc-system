@@ -1,4 +1,24 @@
-"""Adversarial unit tests for global-principal session and refresh authority."""
+"""TITLE: WILSY OS Global Principal Session Authority Certification.
+VERSION: v1.1.0-GLOBAL-PRINCIPAL-HEADQUARTERS-SESSION-TESTS
+AUTHORITY: Adversarial unit verification of global-principal session and refresh authority.
+EPITOME: Verifies exact tenant-aware workspace revalidation, revision-bound session
+         currentness, refresh rotation and fail-closed revocation semantics.
+ABSOLUTE CANONICAL PATH:
+    /Users/wilsonkhanyezi/legal-doc-system/tests/unit/test_global_principal_session_authority.py
+COLLABORATION / OWNERSHIP: WILSY OS Core Engineering.
+CERTIFICATION / UPDATE DATE: 2026-11-08.
+CHANGELOG:
+    2026-11-08 v1.1.0-GLOBAL-PRINCIPAL-HEADQUARTERS-SESSION-TESTS updates workspace-mapping mutation tests to accept and
+    assert tenant-aware workspace resolution arguments.
+COMPLIANCE: POPIA section 19; GDPR Article 32; SOC 2 CC7.2.
+SECURITY / PRIVACY POSTURE: Synthetic identities and in-memory persistence only;
+    no production credentials, sessions or tenant records are accessed.
+TENANT BOUNDARY: Every test preserves exact principal and tenant scope.
+AUTHORITY BOUNDARY: Unit certification only; no session or IAM authority is created.
+TRANSACTION BOUNDARY: In-memory caller-owned transaction markers only.
+FINANCIAL AUTHORITY BOUNDARY: None; Kennel EOS remains exclusive.
+"""
+
 from datetime import datetime, timezone
 from typing import Any, cast
 from types import SimpleNamespace
@@ -193,7 +213,11 @@ def test_access_token_credential_epoch_must_match_persisted_session(monkeypatch)
 def test_workspace_mapping_change_invalidates_existing_global_session(monkeypatch):
     service, _, _, _, selected = setup(monkeypatch)
     receipt = issue(service, selected)
-    monkeypatch.setattr(authority_module, "resolve_workspace_id", lambda _role: "DIFFERENT_WORKSPACE")
+    monkeypatch.setattr(
+        authority_module,
+        "resolve_workspace_id",
+        lambda _role, *, tenant_id=None: "DIFFERENT_WORKSPACE",
+    )
     assert not service.is_session_current(
         principal_id="principal-A",
         tenant_id="tenant-A",
@@ -212,3 +236,11 @@ def test_cross_tenant_session_lookup_and_revocation_are_isolated(monkeypatch):
     assert refresh.rows[0]["revoked_at"] is not None
     assert not service.is_session_current(principal_id="principal-A", tenant_id="tenant-A",
                                           session_reference=receipt.session_reference)
+
+# ARTIFACT: test_global_principal_session_authority.py
+# VERSION: v1.1.0-GLOBAL-PRINCIPAL-HEADQUARTERS-SESSION-TESTS
+# AUTHORITY BOUNDARY: adversarial unit certification of global session lifecycle only
+# TENANT POSTURE: exact principal and tenant scope remain isolated
+# FAIL-CLOSED POSTURE: stale or divergent workspace, revision and session authority rejects
+# FINANCIAL EXECUTION AUTHORITY: Kennel EOS exclusively
+# END OF WILSY OS SOVEREIGN ARTIFACT
