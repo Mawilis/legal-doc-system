@@ -35,7 +35,7 @@ def test_legacy_mongodb_bootstrap_script_is_inert(
     assert "DISABLED:" in source
     assert "END OF WILSY OS SOVEREIGN ARTIFACT" in source
     assert "VERSION: v2.0.0" in source
-    body = source.split("set -euo pipefail\n", 1)[1]
+    body = source[source.index("set -euo pipefail\n"): ]
     assert SAFE_STUB_BODY.fullmatch(body), (
         f"{relative_path} contains a command or shell construct outside the "
         "approved inert printf-and-exit stub"
