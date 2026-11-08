@@ -85,22 +85,38 @@ def system_http_mongo(monkeypatch: pytest.MonkeyPatch):
     if not URI:
         pytest.fail("TEST_GLOBAL_PRINCIPAL_MONGO_URI is required")
     client = MongoClient(URI, serverSelectionTimeoutMS=5000, retryWrites=True, tz_aware=True)
-    if client.admin.command("hello").get("setName") != "wilsyGlobalPrincipalCertRS":
-        pytest.fail("wrong SYSTEM HTTP certification replica set")
-
-    database = client["system_http_" + uuid.uuid4().hex]
+    expected_replica_set = os.getenv(
+        "TEST_GLOBAL_PRINCIPAL_MONGO_REPLICA_SET", "wilsyGlobalPrincipalCertRS"
+    )
+    actual_replica_set = client.admin.command("hello").get("setName")
+    if actual_replica_set != expected_replica_set:
+        client.close()
+        pytest.fail(
+            f"wrong certification replica set: expected {expected_replica_set!r}, "
+            f"received {actual_replica_set!r}"
+        )
+    database_name = os.getenv("TEST_GLOBAL_PRINCIPAL_MONGO_DATABASE")
+    if database_name != "wilsy_global_principal_mfa_cert":
+        client.close()
+        pytest.fail(
+            "TEST_GLOBAL_PRINCIPAL_MONGO_DATABASE must be "
+            "'wilsy_global_principal_mfa_cert'"
+        )
+    database = client[database_name]
+    suffix = uuid.uuid4().hex
     principal_id = "system-http-principal-" + uuid.uuid4().hex
     platform_scope_id = "platform-cert-" + uuid.uuid4().hex
     now = datetime.now(timezone.utc).replace(microsecond=0)
 
-    principals = database["principal_authorities"]
-    credentials = database["principal_credentials"]
-    factors = database[FACTOR_COLLECTION]
-    challenges = database[CHALLENGE_COLLECTION]
-    sessions = database[SESSION_COLLECTION]
-    refresh_tokens = database[REFRESH_COLLECTION]
-    assignments = SystemPermissionAssignmentRegistry(database[ASSIGNMENT_COLLECTION])
-    workforce = database[workforce_registry.COLLECTION_NAME]
+    principals = database[f"principal_authorities_cert_{suffix}"]
+    credentials = database[f"principal_credentials_cert_{suffix}"]
+    factors = database[f"{FACTOR_COLLECTION}_cert_{suffix}"]
+    challenges = database[f"{CHALLENGE_COLLECTION}_cert_{suffix}"]
+    sessions = database[f"{SESSION_COLLECTION}_cert_{suffix}"]
+    refresh_tokens = database[f"{REFRESH_COLLECTION}_cert_{suffix}"]
+    assignments = SystemPermissionAssignmentRegistry(assignment_collection)
+    workforce = database[f"{workforce_registry.COLLECTION_NAME}_cert_{suffix}"]
+    assignment_collection = database[f"{ASSIGNMENT_COLLECTION}_cert_{suffix}"]
 
     PrincipalAuthorityRepository.ensure_indexes(principals)
     PrincipalCredentialRepository.ensure_indexes(credentials)
@@ -131,8 +147,8 @@ def system_http_mongo(monkeypatch: pytest.MonkeyPatch):
     })
 
     case_registry = SupportCaseRegistry(
-        cases=database[CASE_COLLECTION],
-        events=database[EVENT_COLLECTION],
+        cases=database[f"{CASE_COLLECTION}_cert_{suffix}"],
+        events=database[f"{EVENT_COLLECTION}_cert_{suffix}"],
     )
     case_registry.ensure_indexes()
 
@@ -221,7 +237,13 @@ def system_http_mongo(monkeypatch: pytest.MonkeyPatch):
             "sessions": sessions, "refresh_tokens": refresh_tokens,
         }
     finally:
-        client.drop_database(database.name)
+        for collection in (
+            principals, credentials, factors, challenges, sessions, refresh_tokens,
+            assignment_collection, workforce,
+            database[f"{CASE_COLLECTION}_cert_{suffix}"],
+            database[f"{EVENT_COLLECTION}_cert_{suffix}"],
+        ):
+            collection.drop()
         client.close()
 
 
