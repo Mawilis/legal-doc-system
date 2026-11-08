@@ -88,3 +88,20 @@ def test_compliance_indexes_are_explicit_and_unique():
     provision_compliance_scan_indexes(findings=findings, notification_outbox=outbox)
     assert findings.create_index.call_args.kwargs["unique"] is True
     assert outbox.create_index.call_count == 2
+
+
+
+def test_compliance_worker_fails_closed_when_live_task_lease_is_not_owned():
+    import asyncio
+    clients, findings, outbox, tasks, mongo = (MagicMock(), MagicMock(), MagicMock(),
+                                                   MagicMock(), MagicMock())
+    tasks.update_one.return_value.modified_count = 0
+    mongo.start_session.return_value = Session()
+    worker = ComplianceScanWorker(clients=clients, findings=findings,
+                                  notification_outbox=outbox, tasks=tasks,
+                                  mongo_client=mongo)
+    result = asyncio.run(worker.execute("task-a", payload()))
+    assert result.status is WorkerExecutionStatusEnum.FAILED
+    assert result.error_details == "COMPLIANCE_TASK_LEASE_LOST"
+    findings.update_one.assert_not_called()
+    outbox.update_one.assert_not_called()
