@@ -1,7 +1,7 @@
 # TITLE: WILSY EOS ECS Fargate Production Foundation Certification Workflow
 # VERSION: v1.0.4-EOS-ECS-WORKLOAD-IDENTITY-CERTIFICATION
 # AUTHORITY: Repository CI certification only; no infrastructure provisioning or deployment authority.
-# EPITOME: Lint the ECS CloudFormation, build the exact published Python EOS image, test the task identity and writable-volume contract, and verify exact-diff whitespace.
+# EPITOME: Lint the ECS CloudFormation, build the canonical Python EOS image, test the task identity and writable-volume contract, validate read-only discovery syntax, and verify exact-diff whitespace.
 # ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/.github/workflows/eos-ecs-production-foundation-certification.yml
 # COLLABORATION / OWNERSHIP: Wilsy OS Core Engineering; Python EOS and infrastructure governance.
 # CERTIFICATION OR UPDATE DATE: 2026-11-09
@@ -33,6 +33,7 @@ on:
       - "infra/aws/eos-production-ecs-foundation.yaml"
       - "infra/aws/README-global-principal-mfa-kms.md"
       - "infra/docker/Dockerfile.eos"
+      - "scripts/discover-eos-production-runtime.sh"
       - "tools/eos/auth/ecs_production_workload_identity_probe.py"
       - "tests/unit/test_ecs_production_workload_identity_probe.py"
       - "tests/unit/test_eos_production_ecs_foundation.py"
@@ -81,7 +82,9 @@ jobs:
           cfn-lint --template infra/aws/eos-production-ecs-foundation.yaml
       - name: Run ECS production foundation and workload identity contracts
         run: python -m pytest -q tests/unit/test_eos_production_ecs_foundation.py tests/unit/test_ecs_production_workload_identity_probe.py
-      - name: Build the exact Python EOS production image
+      - name: Validate read-only production discovery script syntax
+        run: bash -n scripts/discover-eos-production-runtime.sh
+      - name: Build the canonical Python EOS production image
         run: docker build --file infra/docker/Dockerfile.eos --tag wilsy-eos-production:certification .
       - name: Verify patch whitespace
         run: |
@@ -90,6 +93,7 @@ jobs:
               infra/aws/eos-production-ecs-foundation.yaml \
               infra/aws/README-global-principal-mfa-kms.md \
               infra/docker/Dockerfile.eos \
+              scripts/discover-eos-production-runtime.sh \
               tools/eos/auth/ecs_production_workload_identity_probe.py \
               tests/unit/test_ecs_production_workload_identity_probe.py \
               tests/unit/test_eos_production_ecs_foundation.py \
