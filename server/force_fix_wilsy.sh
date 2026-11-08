@@ -1,37 +1,17 @@
-#!/bin/bash
-# // ============================================================================
-# // Wilsy OS - Billion Dollar Architecture
-# // Script: Final Emergency Role Repair (Maintenance Mode)
-# // Path: /Users/wilsonkhanyezi/legal-doc-system/server/force_fix_wilsy.sh
-# // ============================================================================
-# // Collaboration Note: Executing with --noauth priority. This injects the
-# // required userAdmin and readWrite roles directly into the wilsy_app user.
-# // This resolves the Postman 401/403 errors by ensuring the service account
-# // has legitimate access to the tenant database.
-# // ============================================================================
+#!/usr/bin/env bash
+# TITLE: Retired legacy unauthenticated MongoDB role injection
+# VERSION: v2.0.0
+# AUTHORITY: WILSY EOS Security Engineering
+# PURPOSE: Prevent unauthenticated MongoDB role changes and broad application grants.
+# SECURITY: This legacy script is intentionally non-operational. It contains no
+# credentials and never starts mongosh or changes database authorization.
+# CHANGELOG:
+# - v2.0.0: Retire unauthenticated role injection and broad service-account grants.
+# END OF WILSY OS SOVEREIGN ARTIFACT
 
-mongosh --port 27017 << 'MONGOEOF'
-use wilsy;
+set -euo pipefail
 
-print("--- FORCING ROLE INJECTION ---");
-
-// Update wilsy_app with full authority for the main and tenant databases
-db.updateUser("wilsy_app", {
-  roles: [
-    { role: "userAdmin", db: "wilsy" },
-    { role: "dbAdmin", db: "wilsy" },
-    { role: "readWrite", db: "wilsy" },
-    { role: "readWrite", db: "tenant_69dd419f39c41a1b067fc048" },
-    { role: "dbAdmin", db: "wilsy-os" },
-    { role: "readWrite", db: "wilsy-os" }
-  ]
-});
-
-print("--- WILSY OS FORENSIC VALIDATION ---");
-const user = db.getUser("wilsy_app");
-if (user) {
-    print("User: " + user.user);
-    print("Injected Roles: " + JSON.stringify(user.roles));
-}
-print("✅ Forensic precision achieved: Access gates are OPEN.");
-MONGOEOF
+printf '%s\n' >&2 \
+  "DISABLED: unauthenticated MongoDB role injection is prohibited." \
+  "Restore database access only through approved break-glass governance and audited infrastructure changes."
+exit 1
