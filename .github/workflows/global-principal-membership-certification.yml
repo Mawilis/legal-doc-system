@@ -1,11 +1,11 @@
 # TITLE: WILSY OS Global Principal and Membership Selection Certification
-# VERSION: v1.8.2-LOCAL-MFA-KMS-PROBE-PYRIGHT-CERTIFICATION
+# VERSION: v1.8.3-PRODUCTION-MFA-KMS-PYRIGHT-CERTIFICATION
 # AUTHORITY: CI orchestration for global principal, membership and MFA challenge tests.
 # EPITOME: Compile and execute focused unit and real-Mongo certification suites.
 # ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/.github/workflows/global-principal-membership-certification.yml
 # COLLABORATION / OWNERSHIP: Wilsy Core Engineering.
 # CERTIFICATION / UPDATE DATE: 2026-11-08.
-# CHANGELOG: v1.8.2-LOCAL-MFA-KMS-PROBE-PYRIGHT-CERTIFICATION type-checks the account-pinned local KMS probe and its standard-library contract test, and triggers push certification for probe changes.
+# CHANGELOG: v1.8.3-PRODUCTION-MFA-KMS-PYRIGHT-CERTIFICATION type-checks the production EKS KMS contract test alongside the local probe and local contract test; v1.8.2 type-checks the local probe and contract test and triggers push certification for probe changes.
 #           v1.8.1-EKS-OIDC-ISSUER-CONSTRAINT-CERTIFICATION accepts and tests real alphanumeric EKS OIDC issuer IDs rather than assuming hexadecimal IDs.
 #           v1.8.0-GLOBAL-MFA-KMS-INFRASTRUCTURE-CERTIFICATION lints the dedicated KMS CloudFormation key, least-privilege policies and EKS workload trust on infrastructure changes.
 #           v1.7.1-SYSTEM-HTTP-REAL-MONGO-CERTIFICATION-ENVIRONMENT-CONTRACT supplies the exact database and replica-set environment required by all real-Mongo fixtures.
@@ -266,6 +266,7 @@ jobs:
             tests/unit/test_global_principal_system_session_authority.py \
             tests/unit/test_global_principal_totp_verifier.py \
             tests/unit/test_global_principal_mfa_kms_envelope.py \
+            tests/unit/test_global_principal_mfa_kms_cloudformation.py \
             tests/unit/test_global_principal_mfa_kms_local_development_cloudformation.py \
             tests/unit/test_global_principal_mfa_enrollment_service.py \
             tests/unit/test_global_principal_mfa_legacy_migration_service.py \
@@ -378,7 +379,7 @@ jobs:
         if: always()
         run: docker rm -f wilsy-global-principal-mongo 2>/dev/null || true
 # ARTIFACT: global-principal-membership-certification.yml
-# VERSION: v1.8.2-LOCAL-MFA-KMS-PROBE-PYRIGHT-CERTIFICATION
+# VERSION: v1.8.3-PRODUCTION-MFA-KMS-PYRIGHT-CERTIFICATION
 # AUTHORITY BOUNDARY: focused CI execution only
 # TENANT POSTURE: synthetic principal-scoped and tenant-scoped certification data
 # FAIL-CLOSED POSTURE: compile, unit or replica-set failures fail the job
