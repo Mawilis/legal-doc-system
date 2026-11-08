@@ -43,6 +43,7 @@ services:
       - wilsy-eos
 
   wilsy-eos-worker:
+    profiles: ["python-workers"]
     build:
       context: .
       dockerfile: Dockerfile.eos
