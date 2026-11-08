@@ -7,10 +7,9 @@ messages or changes client compliance status.
 from __future__ import annotations
 
 from datetime import datetime, timezone
+import asyncio
 from hashlib import sha256
 from typing import Any
-
-from pymongo.errors import DuplicateKeyError
 
 from .worker_result import WorkerExecutionStatusEnum, WorkerResultDTO
 
@@ -49,6 +48,10 @@ class ComplianceScanWorker:
         return tenant_id, task_id, timestamp.astimezone(timezone.utc)
 
     async def execute(self, task_id: str, payload: dict[str, Any]) -> WorkerResultDTO:
+        # PyMongo is synchronous; isolate it so the event loop can renew the task lease.
+        return await asyncio.to_thread(self._execute_sync, task_id, payload)
+
+    def _execute_sync(self, task_id: str, payload: dict[str, Any]) -> WorkerResultDTO:
         try:
             tenant_id, context_task_id, observed_at = self._context(payload)
             if context_task_id != task_id:
