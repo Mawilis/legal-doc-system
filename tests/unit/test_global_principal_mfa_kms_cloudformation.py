@@ -46,3 +46,9 @@ def test_eks_oidc_issuer_host_path_rejects_scheme_and_untrusted_suffixes():
         pattern,
         "oidc.eks.af-south-1.amazonaws.com/id/EXAMPLE/attacker",
     )
+
+
+def test_production_eks_stack_has_no_local_development_identity_or_grant():
+    source = TEMPLATE.read_text(encoding="utf-8")
+    assert "LocalDevelopmentPrincipalArn" not in source
+    assert "ApprovedLocalDevelopmentMfaEnvelopeUse" not in source
