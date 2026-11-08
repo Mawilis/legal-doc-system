@@ -81,6 +81,11 @@ class EngineWorkerRegistry:
             raise DuplicateWorkerRegistrationError("DUPLICATE_ENGINE_NAME")
         self._workers[normalized_name] = target_worker
 
+    @property
+    def engine_names(self) -> tuple[str, ...]:
+        """Return immutable routing keys for safe queue claim filtering."""
+        return tuple(sorted(self._workers))
+
     async def dispatch_task(self, engine_name: str, task_id: str, payload: dict[str, Any]) -> WorkerResultDTO:
         """Dispatch one task and return a canonical, identity-checked result."""
         worker = self._workers.get(engine_name)
