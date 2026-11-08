@@ -45,6 +45,11 @@ def test_runner_fails_closed_when_kernel_database_is_unavailable(monkeypatch):
 
 def test_index_provisioning_is_explicit_and_uses_named_collections():
     database = MagicMock()
+    tasks, audit = MagicMock(), MagicMock()
+    database.__getitem__.side_effect = {
+        TASK_COLLECTION: tasks,
+        TASK_AUDIT_COLLECTION: audit,
+    }.get
     provision_durable_worker_indexes(database)
-    assert database[TASK_COLLECTION].create_index.call_count == 4
-    assert database[TASK_AUDIT_COLLECTION].create_index.call_count == 1
+    assert tasks.create_index.call_count == 3
+    assert audit.create_index.call_count == 1
