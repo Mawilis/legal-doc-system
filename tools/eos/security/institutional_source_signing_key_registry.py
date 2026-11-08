@@ -72,6 +72,15 @@ def _record_fingerprint(record: Mapping[str, Any]) -> str:
     return sha256(_canonical(canonical_record)).hexdigest()
 
 
+def _event_fingerprint(event: Mapping[str, Any]) -> str:
+    """Hash an event's canonical content, excluding storage and its own hash."""
+    canonical_event = {
+        key: value for key, value in event.items()
+        if key not in {"_id", "event_hash_sha256"}
+    }
+    return sha256(_canonical(canonical_event)).hexdigest()
+
+
 class InstitutionalSourceSigningKeyLifecycleRegistry:
     """Persist immutable source-key records and append-only lifecycle events.
 
@@ -85,6 +94,57 @@ class InstitutionalSourceSigningKeyLifecycleRegistry:
     def __init__(self, keys: Collection, events: Collection) -> None:
         self._keys = keys
         self._events = events
+
+    def _seal_event(self, event: dict[str, Any], session: ClientSession) -> None:
+        """Link the next event to the previous hash in this key's chain."""
+        previous = self._events.find_one(
+            {
+                "source_system_id": event["source_system_id"],
+                "key_id": event["key_id"],
+            },
+            sort=[("event_sequence", -1)],
+            session=session,
+        )
+        if previous is None:
+            if event["event_sequence"] != 1:
+                raise SourceSigningKeyRegistryConflict("SOURCE_SIGNING_KEY_AUDIT_CHAIN_GAP")
+            previous_hash = "0" * 64
+        else:
+            previous_hash = previous.get("event_hash_sha256")
+            if (
+                type(previous_hash) is not str
+                or _FINGERPRINT.fullmatch(previous_hash) is None
+                or previous["event_sequence"] + 1 != event["event_sequence"]
+                or _event_fingerprint(previous) != previous_hash
+            ):
+                raise SourceSigningKeyRegistryConflict("SOURCE_SIGNING_KEY_AUDIT_CHAIN_INVALID")
+        event["previous_event_hash_sha256"] = previous_hash
+        event["event_hash_sha256"] = _event_fingerprint(event)
+
+    def _verify_event_chain(
+        self, *, source_system_id: str, key_id: str, session: ClientSession,
+    ) -> None:
+        """Reject missing, reordered, edited, or deleted lifecycle events."""
+        expected_previous = "0" * 64
+        expected_sequence = 1
+        try:
+            events = self._events.find(
+                {"source_system_id": source_system_id, "key_id": key_id},
+                session=session,
+            ).sort("event_sequence", 1)
+            for event in events:
+                if (
+                    event.get("event_sequence") != expected_sequence
+                    or event.get("previous_event_hash_sha256") != expected_previous
+                    or event.get("event_hash_sha256") != _event_fingerprint(event)
+                ):
+                    raise SourceSigningKeyRegistryConflict("SOURCE_SIGNING_KEY_AUDIT_CHAIN_INVALID")
+                expected_previous = event["event_hash_sha256"]
+                expected_sequence += 1
+        except SourceSigningKeyRegistryError:
+            raise
+        except PyMongoError as error:
+            raise SourceSigningKeyRegistryError("SOURCE_SIGNING_KEY_AUDIT_CHAIN_UNAVAILABLE") from error
 
     @staticmethod
     def ensure_indexes(keys: Collection, events: Collection) -> None:
@@ -237,6 +297,7 @@ class InstitutionalSourceSigningKeyLifecycleRegistry:
             "command_fingerprint_sha256": command_fingerprint, "event_sequence": 1,
         }
         try:
+            self._seal_event(event, session)
             self._keys.insert_one(record, session=session)
             self._events.insert_one(event, session=session)
         except DuplicateKeyError as error:
@@ -318,6 +379,7 @@ class InstitutionalSourceSigningKeyLifecycleRegistry:
         ) is not None:
             raise SourceSigningKeyRegistryConflict("SOURCE_SIGNING_KEY_ALREADY_APPROVED")
         try:
+            self._seal_event(event, session)
             self._events.insert_one(event, session=session)
         except DuplicateKeyError as error:
             raise SourceSigningKeyRegistryConflict("SOURCE_SIGNING_KEY_APPROVAL_CONFLICT") from error
@@ -339,6 +401,9 @@ class InstitutionalSourceSigningKeyLifecycleRegistry:
             )
             if record is None:
                 raise SourceSigningKeyRegistryConflict("SOURCE_SIGNING_KEY_NOT_FOUND")
+            self._verify_event_chain(
+                source_system_id=source, key_id=key, session=session,
+            )
             # The key document is an immutable proposal snapshot. Derive its
             # current lifecycle projection from append-only governance events.
             revoked = self._events.find_one(
@@ -440,6 +505,7 @@ class InstitutionalSourceSigningKeyLifecycleRegistry:
             "command_fingerprint_sha256": command_fingerprint, "event_sequence": 3,
         }
         try:
+            self._seal_event(event, session)
             self._events.insert_one(event, session=session)
         except DuplicateKeyError as error:
             raise SourceSigningKeyRegistryConflict("SOURCE_SIGNING_KEY_REVOCATION_CONFLICT") from error
