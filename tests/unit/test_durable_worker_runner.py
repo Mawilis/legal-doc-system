@@ -79,3 +79,11 @@ def test_runner_returns_empty_without_starting_transaction():
     tasks.find_one_and_update.return_value = None
     assert asyncio.run(runner.run_once()) == "EMPTY"
     assert audit.insert_one.call_count == 0
+
+
+def test_runner_poll_loop_obeys_shutdown_signal():
+    runner, tasks, audit = runner_for(SuccessfulWorker())
+    stop = asyncio.Event()
+    stop.set()
+    asyncio.run(runner.run_forever(stop_event=stop, idle_poll_seconds=0.1))
+    tasks.find_one_and_update.assert_not_called()
