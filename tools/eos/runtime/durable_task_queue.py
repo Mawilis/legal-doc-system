@@ -50,6 +50,7 @@ def enqueue_task(
     task_id: str,
     task_type: str,
     payload: Mapping[str, Any],
+    engine_name: str | None = None,
     now: datetime,
     priority: int = 10,
     max_attempts: int = 5,
@@ -59,6 +60,7 @@ def enqueue_task(
     tenant_id = _required(tenant_id, "TASK_QUEUE_TENANT_REQUIRED")
     task_id = _required(task_id, "TASK_QUEUE_TASK_ID_REQUIRED")
     task_type = _required(task_type, "TASK_QUEUE_TYPE_REQUIRED")
+    engine_name = _required(engine_name or task_type, "TASK_QUEUE_ENGINE_REQUIRED")
     now = _utc(now)
     if not isinstance(payload, Mapping) or max_attempts < 1 or not isinstance(priority, int):
         raise DurableTaskQueueError("TASK_QUEUE_ENQUEUE_ARGUMENT_INVALID")
@@ -71,6 +73,7 @@ def enqueue_task(
         "tenant_id": tenant_id,
         "task_id": task_id,
         "task_type": task_type,
+        "engine_name": engine_name,
         "payload": json.loads(encoded),
         "payload_sha256": digest,
         "status": "PENDING",
@@ -86,7 +89,7 @@ def enqueue_task(
         return document
     except DuplicateKeyError:
         existing = tasks.find_one({"tenant_id": tenant_id, "task_id": task_id}, session=session)
-        if existing is None or existing.get("payload_sha256") != digest or existing.get("task_type") != task_type:
+        if existing is None or existing.get("payload_sha256") != digest or existing.get("task_type") != task_type or existing.get("engine_name", task_type) != engine_name:
             raise DurableTaskQueueError("TASK_QUEUE_IDEMPOTENCY_CONFLICT")
         return existing
 
