@@ -113,8 +113,6 @@ Resources:
 
   EosProductionMfaKey:
     Type: AWS::KMS::Key
-    DependsOn:
-      - EosProductionTaskRole
     Properties:
       Description: WILSY EOS production Global Principal TOTP envelope encryption
       Enabled: true
@@ -175,9 +173,6 @@ Resources:
   # No ECS::Service or desired count is defined: this stack cannot launch tasks.
   EosProductionTaskDefinition:
     Type: AWS::ECS::TaskDefinition
-    DependsOn:
-      - EosProductionLogGroup
-      - EosProductionMfaKey
     Properties:
       Family: wilsy-eos-production-api
       Cpu: !Ref EosDesiredTaskCpu
