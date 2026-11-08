@@ -241,7 +241,7 @@ No external host action, production deployment, migration, worker activation, or
 
 ## 9. Remaining forensic work and certification state
 
-<badge>PARTIAL — NOT OPERATIONALLY CERTIFIED</badge>
+**Status: PARTIAL — NOT OPERATIONALLY CERTIFIED**
 
 The route mount inventory is established for `server/app.js` and `server/routes/api.js`. The full route/controller/middleware import graph, all nested source directories, model/service database consumers, frontend callers, external integrations and per-capability Python parity remain unverified.
 
@@ -272,7 +272,6 @@ The route mount inventory is established for `server/app.js` and `server/routes/
 
 **END OF INVENTORY — PARITY AND RETIREMENT NOT YET CERTIFIED**
 
-<!--
 ARTIFACT: eos-runtime-database-consumer-inventory.md
 VERSION: v2.1.0-KENNEL-EOS-LEGACY-NODE-FORENSIC-INVENTORY
 AUTHORITY BOUNDARY: forensic inventory only; Kennel EOS owns business authority.
@@ -280,4 +279,3 @@ TENANT POSTURE: no tenant data access or authority granted; legacy isolation rem
 FAIL-CLOSED POSTURE: UNKNOWN parity is not treated as certified or safe to retire.
 FINANCIAL EXECUTION AUTHORITY: Kennel EOS exclusively.
 END OF WILSY OS SOVEREIGN ARTIFACT
--->
