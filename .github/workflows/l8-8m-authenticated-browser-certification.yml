@@ -262,10 +262,12 @@ jobs:
             --junitxml=test-results/d21b13-branding-real-mongo.xml \
             tests/integration/test_tenant_branding_workspace_asset_delivery_real_mongo.py \
             2>&1 | tee certification-diagnostics/logs/d21b13-real-mongo.log
+          mkdir -p certification-diagnostics/reports
+          cp test-results/d21b13-branding-real-mongo.xml certification-diagnostics/reports/d21b13-branding-real-mongo.xml
           python - <<'PY'
           import xml.etree.ElementTree as ET
 
-          root = ET.parse("test-results/d21b13-branding-real-mongo.xml").getroot()
+          root = ET.parse("certification-diagnostics/reports/d21b13-branding-real-mongo.xml").getroot()
           skipped = sum(
               int(suite.attrib.get("skipped", "0"))
               for suite in root.iter("testsuite")
@@ -290,6 +292,9 @@ jobs:
             2>&1 | tee certification-diagnostics/logs/browser-system.log
 
       - name: Run broader authenticated browser certification
+        env:
+          PLAYWRIGHT_HTML_OUTPUT_DIR: ${{ github.workspace }}/playwright-report
+          PLAYWRIGHT_JUNIT_OUTPUT_NAME: ${{ github.workspace }}/test-results/playwright-junit.xml
         run: |
           browser_cert_database_suffix="$(python -c 'import uuid; print(uuid.uuid4().hex)')"
           set -o pipefail
@@ -311,7 +316,7 @@ jobs:
             echo "ref=${GITHUB_REF}"
             echo "run_id=${GITHUB_RUN_ID}"
             echo "run_attempt=${GITHUB_RUN_ATTEMPT}"
-            echo "job_status=${CERTIFICATION_JOB_STATUS}"
+            echo "pre_validation_job_status=${CERTIFICATION_JOB_STATUS}"
             echo "event=${GITHUB_EVENT_NAME}"
             echo "runner_os=${RUNNER_OS}"
             echo "captured_at_utc=$(date -u +%Y-%m-%dT%H:%M:%SZ)"
@@ -323,7 +328,7 @@ jobs:
             for required in logs/client-lifecycle.log logs/eos-api-transport.log logs/d21b13-real-mongo.log logs/browser-system.log logs/browser-broad.log; do
               if [ -s "certification-diagnostics/$required" ]; then echo "PRESENT $required"; else echo "MISSING $required"; fi
             done
-            for required in test-results/d21b13-branding-real-mongo.xml test-results/playwright-junit.xml playwright-report/index.html; do
+            for required in certification-diagnostics/reports/d21b13-branding-real-mongo.xml test-results/playwright-junit.xml playwright-report/index.html; do
               if [ -s "$required" ]; then echo "PRESENT $required"; else echo "MISSING $required"; fi
             done
             if find test-results -type f -name trace.zip -size +0c -print -quit | grep -q .; then
