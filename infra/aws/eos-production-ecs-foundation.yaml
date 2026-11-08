@@ -1,0 +1,266 @@
+# TITLE: WILSY EOS Production ECS Fargate Foundation
+# VERSION: v1.0.0-ECS-PRODUCTION-FOUNDATION
+# AUTHORITY: Production infrastructure definition; provisioning requires separate approval.
+# EPITOME: Define the isolated ECS runtime identity, MFA KMS key, cluster, logs and immutable task definition.
+# SECURITY: No service, task launch, ingress, network, DNS, secret value or database resource is created.
+
+AWSTemplateFormatVersion: '2010-09-09'
+Description: >-
+  WILSY Python EOS production ECS Fargate foundation. Creates IAM roles, a
+  purpose-scoped MFA KMS key, an ECS cluster, log group and immutable-image task
+  definition only. It intentionally creates no ECS service or running task.
+
+Parameters:
+  EosImageUri:
+    Type: String
+    Description: Immutable GHCR image reference including a sha256 digest.
+    AllowedPattern: '^ghcr\.io/[A-Za-z0-9._/-]+@sha256:[a-f0-9]{64}$'
+    ConstraintDescription: Supply a GHCR image URI pinned to a full sha256 digest.
+  GhcrCredentialsSecretArn:
+    Type: String
+    Description: Existing Secrets Manager secret containing ECS registry credentials for the private GHCR package.
+    AllowedPattern: '^arn:[a-z0-9-]+:secretsmanager:[a-z0-9-]+:[0-9]{12}:secret:.+$'
+  MongoDbUriSecretArn:
+    Type: String
+    Description: Existing production-only Secrets Manager secret containing the MONGODB_URI value.
+    AllowedPattern: '^arn:[a-z0-9-]+:secretsmanager:[a-z0-9-]+:[0-9]{12}:secret:.+$'
+  KeyAdministratorRoleArn:
+    Type: String
+    Description: Existing separately governed IAM role permitted to administer the production MFA KMS key.
+    AllowedPattern: '^arn:[a-z0-9-]+:iam::[0-9]{12}:role/.+$'
+  EosDesiredTaskCpu:
+    Type: String
+    Default: '1024'
+    AllowedValues: ['512', '1024', '2048', '4096']
+    Description: Fargate task CPU units; task memory is fixed at 2048 MiB for the initial definition.
+
+Resources:
+  EosProductionCluster:
+    Type: AWS::ECS::Cluster
+    Properties:
+      ClusterName: wilsy-eos-production
+      Tags:
+        - Key: Application
+          Value: WILSY-EOS
+        - Key: Environment
+          Value: production
+        - Key: ManagedBy
+          Value: CloudFormation
+
+  EosProductionLogGroup:
+    Type: AWS::Logs::LogGroup
+    Properties:
+      LogGroupName: /wilsy/eos/production/api
+      RetentionInDays: 90
+      Tags:
+        - Key: Application
+          Value: WILSY-EOS
+        - Key: Environment
+          Value: production
+
+  EosProductionTaskRole:
+    Type: AWS::IAM::Role
+    Properties:
+      RoleName: wilsy-eos-production-task-role
+      Description: Runtime identity for the Python EOS production task; MFA KMS data-plane access only.
+      MaxSessionDuration: 3600
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Sid: EcsTasksOnly
+            Effect: Allow
+            Principal:
+              Service: ecs-tasks.amazonaws.com
+            Action: sts:AssumeRole
+      Policies:
+        - PolicyName: EosProductionMfaKmsUse
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+              - Sid: EncryptDecryptOnlyForGlobalPrincipalMfa
+                Effect: Allow
+                Action:
+                  - kms:Encrypt
+                  - kms:Decrypt
+                Resource: !GetAtt EosProductionMfaKey.Arn
+                Condition:
+                  StringEquals:
+                    kms:EncryptionContext:purpose: GLOBAL_PRINCIPAL_TOTP
+
+  EosProductionExecutionRole:
+    Type: AWS::IAM::Role
+    Properties:
+      RoleName: wilsy-eos-production-execution-role
+      Description: ECS agent identity for private GHCR image pull, Secrets Manager injection and CloudWatch logging.
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Sid: EcsTasksOnly
+            Effect: Allow
+            Principal:
+              Service: ecs-tasks.amazonaws.com
+            Action: sts:AssumeRole
+      ManagedPolicyArns:
+        - !Sub arn:${AWS::Partition}:iam::aws:policy/service-role/AmazonECSTaskExecutionRolePolicy
+      Policies:
+        - PolicyName: ReadOnlyEosStartupSecrets
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+              - Sid: ReadOnlyApprovedSecretValues
+                Effect: Allow
+                Action:
+                  - secretsmanager:GetSecretValue
+                Resource:
+                  - !Ref GhcrCredentialsSecretArn
+                  - !Ref MongoDbUriSecretArn
+
+  EosProductionMfaKey:
+    Type: AWS::KMS::Key
+    DependsOn:
+      - EosProductionTaskRole
+    Properties:
+      Description: WILSY EOS production Global Principal TOTP envelope encryption
+      Enabled: true
+      EnableKeyRotation: true
+      KeySpec: SYMMETRIC_DEFAULT
+      KeyUsage: ENCRYPT_DECRYPT
+      MultiRegion: false
+      PendingWindowInDays: 30
+      Tags:
+        - Key: Application
+          Value: WILSY-EOS
+        - Key: Environment
+          Value: production
+        - Key: Purpose
+          Value: GLOBAL_PRINCIPAL_TOTP
+        - Key: DataClassification
+          Value: AuthenticationSecret
+        - Key: ManagedBy
+          Value: CloudFormation
+      KeyPolicy:
+        Version: '2012-10-17'
+        Statement:
+          - Sid: EnableSeparateKeyAdministrator
+            Effect: Allow
+            Principal:
+              AWS: !Ref KeyAdministratorRoleArn
+            Action:
+              - kms:CancelKeyDeletion
+              - kms:DisableKey
+              - kms:EnableKey
+              - kms:GetKeyPolicy
+              - kms:GetKeyRotationStatus
+              - kms:ListResourceTags
+              - kms:PutKeyPolicy
+              - kms:ScheduleKeyDeletion
+              - kms:TagResource
+              - kms:UntagResource
+              - kms:UpdateKeyDescription
+            Resource: '*'
+          - Sid: AllowOnlyEosProductionTaskDataPlane
+            Effect: Allow
+            Principal:
+              AWS: !GetAtt EosProductionTaskRole.Arn
+            Action:
+              - kms:Encrypt
+              - kms:Decrypt
+            Resource: '*'
+            Condition:
+              StringEquals:
+                kms:EncryptionContext:purpose: GLOBAL_PRINCIPAL_TOTP
+
+  EosProductionMfaKeyAlias:
+    Type: AWS::KMS::Alias
+    Properties:
+      AliasName: alias/wilsy/production/global-principal-mfa
+      TargetKeyId: !Ref EosProductionMfaKey
+
+  EosProductionTaskDefinition:
+    Type: AWS::ECS::TaskDefinition
+    DependsOn:
+      - EosProductionLogGroup
+      - EosProductionMfaKey
+    Properties:
+      Family: wilsy-eos-production-api
+      Cpu: !Ref EosDesiredTaskCpu
+      Memory: '2048'
+      NetworkMode: awsvpc
+      RequiresCompatibilities:
+        - FARGATE
+      RuntimePlatform:
+        OperatingSystemFamily: LINUX
+        CpuArchitecture: X86_64
+      ExecutionRoleArn: !GetAtt EosProductionExecutionRole.Arn
+      TaskRoleArn: !GetAtt EosProductionTaskRole.Arn
+      ContainerDefinitions:
+        - Name: wilsy-eos-api
+          Image: !Ref EosImageUri
+          Essential: true
+          ReadonlyRootFilesystem: true
+          User: '10001'
+          PortMappings:
+            - ContainerPort: 9095
+              Protocol: tcp
+          Environment:
+            - Name: WILSY_ENV
+              Value: production
+            - Name: ENV
+              Value: production
+            - Name: AWS_REGION
+              Value: !Ref AWS::Region
+            - Name: WILSY_GLOBAL_MFA_KMS_PROVIDER
+              Value: AWS_KMS
+            - Name: WILSY_GLOBAL_MFA_KMS_KEY_ID
+              Value: !GetAtt EosProductionMfaKey.Arn
+            - Name: WILSY_GLOBAL_MFA_KMS_REGION
+              Value: !Ref AWS::Region
+            - Name: PORT
+              Value: '9095'
+            - Name: HOST
+              Value: 0.0.0.0
+          Secrets:
+            - Name: MONGODB_URI
+              ValueFrom: !Ref MongoDbUriSecretArn
+          RepositoryCredentials:
+            CredentialsParameter: !Ref GhcrCredentialsSecretArn
+          LogConfiguration:
+            LogDriver: awslogs
+            Options:
+              awslogs-group: !Ref EosProductionLogGroup
+              awslogs-region: !Ref AWS::Region
+              awslogs-stream-prefix: eos-api
+          HealthCheck:
+            Command:
+              - CMD-SHELL
+              - python -c "import urllib.request; urllib.request.urlopen('http://127.0.0.1:9095/', timeout=3).read()" || exit 1
+            Interval: 30
+            Timeout: 5
+            Retries: 3
+            StartPeriod: 45
+          StopTimeout: 30
+      Tags:
+        - Key: Application
+          Value: WILSY-EOS
+        - Key: Environment
+          Value: production
+
+Outputs:
+  EosProductionClusterArn:
+    Description: ECS cluster ARN; no service or task is started by this stack.
+    Value: !GetAtt EosProductionCluster.Arn
+  EosProductionTaskDefinitionArn:
+    Description: Registered task definition pinned to the supplied immutable image digest.
+    Value: !Ref EosProductionTaskDefinition
+  EosProductionTaskRoleArn:
+    Description: Ambient AWS workload identity to verify from an actual ECS task before KMS certification.
+    Value: !GetAtt EosProductionTaskRole.Arn
+  EosProductionExecutionRoleArn:
+    Description: ECS agent role; not the application workload identity.
+    Value: !GetAtt EosProductionExecutionRole.Arn
+  EosProductionMfaKeyArn:
+    Value: !GetAtt EosProductionMfaKey.Arn
+  EosProductionMfaKeyAlias:
+    Value: !Ref EosProductionMfaKeyAlias
+  EosProductionLogGroupName:
+    Value: !Ref EosProductionLogGroup
