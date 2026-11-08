@@ -7,7 +7,10 @@ from tools.eos.api.owner_commercial_workspace_router import (
 )
 
 
-def test_owner_commercial_workspace_routes_are_mounted_once():
+ROOT = Path(__file__).resolve().parents[2]
+
+
+def test_owner_commercial_workspace_routes_are_mounted_once_and_directly():
     routes = {
         (route.path, tuple(sorted(route.methods or ())))
         for route in router.routes
@@ -21,10 +24,10 @@ def test_owner_commercial_workspace_routes_are_mounted_once():
     ) == 1
     assert "from .owner_commercial_workspace_router import router as owner_commercial_workspace_router" in source
 
-    bff = Path("server/server.js").read_text(encoding="utf-8")
-    vite = Path("client/vite.config.js").read_text(encoding="utf-8")
-    assert "app.use(\n    '/api/crm/owner-workspace'" in bff
+    vite = (ROOT / "client/vite.config.js").read_text(encoding="utf-8")
     assert "'/api/crm/owner-workspace': {" in vite
+    assert "http://localhost:9095" in vite
+    assert not (ROOT / "server/server.js").exists()
 
 
 def test_each_owner_workspace_command_has_its_exact_permission_binding():
