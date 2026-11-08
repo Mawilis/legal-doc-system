@@ -1,20 +1,21 @@
 # TITLE: WILSY EOS ECS Fargate Production Foundation Certification Workflow
-# VERSION: v1.0.1-EOS-ECS-PRODUCTION-FOUNDATION-CERTIFICATION
+# VERSION: v1.0.2-EOS-ECS-IMAGE-AND-TASK-VOLUME-CERTIFICATION
 # AUTHORITY: Repository CI certification only; no infrastructure provisioning or deployment authority.
-# EPITOME: Run CloudFormation lint, static ECS foundation safety tests, and exact-diff whitespace validation for the inactive production hosting foundation.
+# EPITOME: Lint the ECS CloudFormation, build the exact published Python EOS image, test the task identity and writable-volume contract, and verify exact-diff whitespace.
 # ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/.github/workflows/eos-ecs-production-foundation-certification.yml
 # COLLABORATION / OWNERSHIP: Wilsy OS Core Engineering; Python EOS and infrastructure governance.
 # CERTIFICATION OR UPDATE DATE: 2026-11-09
 # CHANGELOG:
-#   v1.0.1-EOS-ECS-PRODUCTION-FOUNDATION-CERTIFICATION adds the mandatory
-#   sovereign artifact contract and corrects the test path in the whitespace
-#   gate to the actual underscore-delimited filename. No provisioning or
-#   deployment capability is introduced.
+#   v1.0.2-EOS-ECS-IMAGE-AND-TASK-VOLUME-CERTIFICATION adds the actual GHCR
+#   publication Dockerfile and image-publication workflow to trigger/diff scope,
+#   builds the same Python EOS image used for publication, and verifies its
+#   non-root writable task-volume contract through the focused tests.
+#   v1.0.1 added the sovereign artifact contract and corrected the test path.
 #   v1.0.0 established isolated lint, static test and whitespace checks.
 # COMPLIANCE: AGENTS.md v1.2.0-SOVEREIGN-LEGAL-OPERATIONS-CONSTITUTION.
 # SECURITY / PRIVACY POSTURE: Read-only CI validation; contents permission only; no AWS credentials, secrets or deployment actions.
 # TENANT BOUNDARY: No live tenant, principal, membership, session or database data is accessed or mutated.
-# AUTHORITY BOUNDARY: CI may validate source artifacts only; it cannot create AWS resources, launch tasks or activate MFA.
+# AUTHORITY BOUNDARY: CI may build and validate a local image artifact only; it cannot publish, provision AWS resources, launch tasks or activate MFA.
 # FINANCIAL AUTHORITY BOUNDARY: No financial execution authority; Kennel EOS remains the exclusive financial execution authority.
 
 name: EOS ECS Fargate Production Foundation Certification
@@ -23,16 +24,20 @@ on:
   pull_request:
     paths:
       - "infra/aws/eos-production-ecs-foundation.yaml"
+      - "infra/docker/Dockerfile.eos"
       - "tests/unit/test_eos_production_ecs_foundation.py"
       - "docs/operations/eos-production-ecs-fargate-foundation.md"
+      - ".github/workflows/eos-image-publication.yml"
       - ".github/workflows/eos-ecs-production-foundation-certification.yml"
   push:
     branches:
       - eos/kennel-eos-production-runtime-20261108
     paths:
       - "infra/aws/eos-production-ecs-foundation.yaml"
+      - "infra/docker/Dockerfile.eos"
       - "tests/unit/test_eos_production_ecs_foundation.py"
       - "docs/operations/eos-production-ecs-fargate-foundation.md"
+      - ".github/workflows/eos-image-publication.yml"
       - ".github/workflows/eos-ecs-production-foundation-certification.yml"
   workflow_dispatch:
 
@@ -43,7 +48,7 @@ jobs:
   static-foundation-certification:
     name: Lint and test inactive ECS foundation
     runs-on: ubuntu-latest
-    timeout-minutes: 10
+    timeout-minutes: 15
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -62,26 +67,32 @@ jobs:
           cfn-lint --template infra/aws/eos-production-ecs-foundation.yaml
       - name: Run ECS production foundation safety contract
         run: python -m pytest -q tests/unit/test_eos_production_ecs_foundation.py
+      - name: Build the exact Python EOS production image
+        run: docker build --file infra/docker/Dockerfile.eos --tag wilsy-eos-production:certification .
       - name: Verify patch whitespace
         run: |
           if [ "${GITHUB_EVENT_NAME}" = "pull_request" ]; then
             git diff --check "origin/${GITHUB_BASE_REF}...HEAD" -- \
               infra/aws/eos-production-ecs-foundation.yaml \
+              infra/docker/Dockerfile.eos \
               tests/unit/test_eos_production_ecs_foundation.py \
               docs/operations/eos-production-ecs-fargate-foundation.md \
+              .github/workflows/eos-image-publication.yml \
               .github/workflows/eos-ecs-production-foundation-certification.yml
           else
             git diff --check "${GITHUB_EVENT_BEFORE}...HEAD" -- \
               infra/aws/eos-production-ecs-foundation.yaml \
+              infra/docker/Dockerfile.eos \
               tests/unit/test_eos_production_ecs_foundation.py \
               docs/operations/eos-production-ecs-fargate-foundation.md \
+              .github/workflows/eos-image-publication.yml \
               .github/workflows/eos-ecs-production-foundation-certification.yml
           fi
 
 # ARTIFACT: .github/workflows/eos-ecs-production-foundation-certification.yml
-# VERSION: v1.0.1-EOS-ECS-PRODUCTION-FOUNDATION-CERTIFICATION
-# AUTHORITY BOUNDARY: Source-level CI certification only; no AWS mutation or production activation.
+# VERSION: v1.0.2-EOS-ECS-IMAGE-AND-TASK-VOLUME-CERTIFICATION
+# AUTHORITY BOUNDARY: Source-level lint, test and local image-build certification only; no AWS mutation or image publication.
 # TENANT POSTURE: No tenant, identity, session or database records are accessed or mutated.
-# FAIL-CLOSED POSTURE: Lint, focused test or whitespace failure fails the job.
+# FAIL-CLOSED POSTURE: CloudFormation lint, static contract tests, image build or whitespace failure fails the job.
 # FINANCIAL EXECUTION AUTHORITY: Kennel EOS exclusively.
 # END OF WILSY OS SOVEREIGN ARTIFACT
