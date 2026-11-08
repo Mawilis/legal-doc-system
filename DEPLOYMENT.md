@@ -1,55 +1,106 @@
-# WILSY OS deployment
+# WILSY OS — deployment authority and runtime boundary
 
-## Canonical runtime
+**TITLE:** Kennel EOS Deployment Authority and Production Cutover Boundary  
+**VERSION:** v1.1.0-KENNEL-EOS-DEPLOYMENT-AUTHORITY-BOUNDARY  
+**AUTHORITY:** Wilsy OS Core Governance  
+**EPITOME:** Defines Python Kennel EOS as the supported application/API runtime while explicitly identifying repository deployment and ingress surfaces that remain stale or unverified.  
+**ABSOLUTE CANONICAL PATH:** /Users/wilsonkhanyezi/legal-doc-system/DEPLOYMENT.md  
+**COLLABORATION / OWNERSHIP:** Wilson Khanyezi (Founder); Kennel EOS runtime owners; Codex (AI Engineering).  
+**CERTIFICATION / UPDATE DATE:** 2026-11-08  
+**CHANGELOG:**
+- v1.1.0-KENNEL-EOS-DEPLOYMENT-AUTHORITY-BOUNDARY: Removes the inaccurate claim that all legacy deployment scripts are retired; identifies root Node ignition/deployment automation and stale Nginx/Kubernetes/Helm targets as unresolved no-go gates.
+- v1.0.0: Established Python EOS as the supported deployment candidate and separated production activation from CI.
+**COMPLIANCE:** AGENTS.md v1.2.0; ENGINEERING_CONSTITUTION.md v1.1.0.  
+**SECURITY / PRIVACY POSTURE:** No production credentials, private keys, or host access are included. Repository manifests are not evidence of live infrastructure state.  
+**TENANT BOUNDARY:** No tenant data or tenant authority is established by deployment configuration.  
+**AUTHORITY BOUNDARY:** Kennel EOS is the only supported application/API and business authority. This document does not authorize a deployment or migration.  
+**FINANCIAL AUTHORITY BOUNDARY:** Kennel EOS exclusively owns financial execution and settlement truth.  
+**TRANSACTION BOUNDARY:** No database migration, worker activation, transaction, or cutover is performed.
 
-Kennel EOS is the existing canonical application/API and business authority.
-The supported API runtime is Python:
+WILSY OWNS BUSINESS TRUTH. KENNEL EOS IS THE EXCLUSIVE FINANCIAL EXECUTION AUTHORITY.
+
+---
+
+## Canonical runtime candidate
+
+The supported application/API runtime is Python Kennel EOS:
 
 ```bash
 python -m uvicorn tools.eos.api.server:app --host 0.0.0.0 --port 9095
 ```
 
-The repository-root `Dockerfile`, `Dockerfile.eos`, and
-`docker-compose.prod.yml` define the Python EOS candidate runtime. The durable
-worker is a separate Python process and is opt-in through the
-`python-workers` Compose profile.
+The repository-root `Dockerfile`, `Dockerfile.eos`, and `docker-compose.prod.yml` describe the Python EOS candidate runtime. The durable worker is a separate Python process and is opt-in through the `python-workers` Compose profile.
+
+The Vite development proxy is intended to connect directly to Kennel EOS on port 9095. Node is permitted for frontend build and browser-certification tooling only; it is not the application API, business runtime, database owner, worker, or production deployment authority.
 
 ## Development
 
-Use the repository's supported development stack:
+The supported local development commands are:
 
 ```bash
 npm run dev
 npm run dev:kernel
 ```
 
-Node is used here for frontend build and browser-test tooling only. It is not
-the application API, business runtime, database owner, worker, or deployment
-authority.
+The development stack starts the Python EOS API and frontend tooling. Confirm the current script implementation before using it; do not substitute any server-directory npm script.
 
-## Retired backend paths
+## Legacy paths — not approved for execution
 
-The former Node/Express BFF, PM2 launch definitions, Node worker image,
-Node deployment scripts, and legacy server Kubernetes deployment overlay are
-retired. Do not run `pm2`, `npm start` from `server/`, legacy deployment
-scripts, or manifests under `server/k8s/`. Those entrypoints are disabled or
-fail closed.
+The following checked-in sources remain and must not be treated as retired merely because the old server listener and PM2 launcher were removed:
 
-## Production gate
+- `server/app.js` and the `server/routes/**`, `server/controllers/**`, `server/middleware/**`, `server/models/**`, `server/services/**`, and `server/jobs/**` source trees.
+- `server/package.json`, which still contains Express, Mongoose, Redis, BullMQ, cron and other server-oriented dependencies.
+- `Sovereign_Deployment_Automation.sh`, which runs server-side Node tests and invokes `server/scripts/generateManifest.js`.
+- `Genesis_Ignition.sh`, which invokes the legacy deployment script and runs a Node import/signing sequence against `server/app.js`.
+- `server/scripts/SovereignDeployment.script.js`, which is a legacy Node deployment orchestrator.
+- `server/scripts/generateManifest.js`, which invokes the legacy ForensicService and writes under `server/dist`.
 
-A successful build or CI run is not production authorization. Production
-activation requires the exact reviewed Python EOS artifact, approved secrets
-and workload identity, verified Mongo replica-set connectivity, independent
-security review, and explicit operational approval. Do not activate the
-optional worker or perform database migrations without their separate approval.
+Do not run `pm2`, `npm start` or other server-directory scripts, `server/app.js`, any legacy worker/cron module, `Genesis_Ignition.sh`, `Sovereign_Deployment_Automation.sh`, or the server deployment scripts. The presence of these files is a migration finding, not permission to execute them.
+
+## Unresolved ingress and deployment manifests
+
+The repository currently contains conflicting deployment descriptions:
+
+| File | Observed target | Status |
+|---|---|---|
+| `nginx.conf` | `wilsy-os:3000` for API; separate investor upstream `wilsy-os:9096` | Legacy / unverified |
+| `infra/nginx/fortress-lb.conf` | Multiple regional private IPs on port 3000 | Legacy / unverified |
+| `k8s/predictive-deployment.yaml` | `wilsy-os-core:latest`, port 3000 and Node-named environment field | Runtime provenance unknown |
+| `charts/legal-os/Chart.yaml` and subcharts | Separate gateway, auth, ledger, billing, AI and crypto microservices | Legacy / duplicate architecture; release usage unverified |
+| `charts/legal-os/values.yaml` | Includes `GLOBAL_ROOT` tenant default and independent microservice images | Not an approved canonical tenant/runtime contract |
+| `charts/legal-os/values-production.yaml` | Public ingress host/TLS without demonstrated direct Kennel EOS service binding | Unverified |
+
+The retired `server/k8s/` files are inert stubs. That does not retire the separate root `k8s/predictive-deployment.yaml` or the root Helm/Nginx configuration.
+
+## Production no-go conditions
+
+Production remains NO-GO until all of these are satisfied:
+
+1. Every checked-in deployment, ingress, Nginx, Helm, Kubernetes and ignition path is classified and either retired or proven to target Kennel EOS directly.
+2. The actual external load balancer, DNS, ingress, process supervisor and host process list are inspected by an authorized operator. Repository source alone cannot prove live routing.
+3. No Node BFF, Express listener, PM2 application, Node worker, Node cron, or legacy deployment script can be activated.
+4. Kennel EOS readiness and authenticated route probes pass directly against port 9095.
+5. Approved secrets, workload identity, Mongo replica-set connectivity, audit storage, and independent security review are verified.
+6. Every business capability formerly served by Node has authenticated Python EOS route, permission, tenant-isolation, audit, persistence and client parity tests.
+7. Transaction-sensitive flows pass real Mongo replica-set certification, and no unavailable infrastructure is represented as a passing test.
+8. Explicit operational approval is obtained before production activation.
+
+A successful build or CI run is not production authorization. Do not activate the optional worker, perform database migrations, or cut over ingress without separate approval.
 
 ## Legal-evidence reconciliation
 
-The dedicated internal route is
-`POST /api/legal-operations/evidence-provider/reconciliation`; it is not the
-generic `/runtime/execute` endpoint.
+The dedicated internal route is `POST /api/legal-operations/evidence-provider/reconciliation`; it is not the generic `/runtime/execute` endpoint.
 
-Production remains NO-GO until the actual internal caller is approved and
-wired to this exact path/body contract, the deployment audit fingerprint
-parity is observed, the unified production security audit passes, and
-operational review accepts the end-to-end HTTP/real-Mongo certification.
+That service has its own production security and real-Mongo certification gates. It is not evidence that the legacy QR/offline verification feature has Python EOS parity.
+
+---
+
+**Status: PYTHON EOS IS THE SUPPORTED RUNTIME CANDIDATE; PRODUCTION INGRESS AND LEGACY PARITY REMAIN UNVERIFIED.**
+
+ARTIFACT: DEPLOYMENT.md  
+VERSION: v1.1.0-KENNEL-EOS-DEPLOYMENT-AUTHORITY-BOUNDARY  
+AUTHORITY BOUNDARY: Kennel EOS is the only supported application/API authority; no deployment is authorized.  
+TENANT POSTURE: no tenant authority or data access is granted.  
+FAIL-CLOSED POSTURE: unresolved deployment targets block production cutover.  
+FINANCIAL EXECUTION AUTHORITY: Kennel EOS exclusively.  
+END OF WILSY OS SOVEREIGN ARTIFACT
