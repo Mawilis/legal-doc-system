@@ -1,13 +1,14 @@
 # WILSY OS — deployment authority and runtime boundary
 
 **TITLE:** Kennel EOS Deployment Authority and Production Cutover Boundary  
-**VERSION:** v1.1.0-KENNEL-EOS-DEPLOYMENT-AUTHORITY-BOUNDARY  
+**VERSION:** v1.2.0-KENNEL-EOS-DEPLOYMENT-AUTHORITY-BOUNDARY  
 **AUTHORITY:** Wilsy OS Core Governance  
 **EPITOME:** Defines Python Kennel EOS as the supported application/API runtime while explicitly identifying repository deployment and ingress surfaces that remain stale or unverified.  
 **ABSOLUTE CANONICAL PATH:** /Users/wilsonkhanyezi/legal-doc-system/DEPLOYMENT.md  
 **COLLABORATION / OWNERSHIP:** Wilson Khanyezi (Founder); Kennel EOS runtime owners; Codex (AI Engineering).  
 **CERTIFICATION / UPDATE DATE:** 2026-11-08  
 **CHANGELOG:**
+- v1.2.0-KENNEL-EOS-DEPLOYMENT-AUTHORITY-BOUNDARY: Adds root Node service listeners, launch scripts, 124 non-browser Node test files and unsafe ledger/crypto/AI/standards surfaces to the deployment no-go boundary.
 - v1.1.0-KENNEL-EOS-DEPLOYMENT-AUTHORITY-BOUNDARY: Removes the inaccurate claim that all legacy deployment scripts are retired; identifies root Node ignition/deployment automation and stale Nginx/Kubernetes/Helm targets as unresolved no-go gates.
 - v1.0.0: Established Python EOS as the supported deployment candidate and separated production activation from CI.
 **COMPLIANCE:** AGENTS.md v1.2.0; ENGINEERING_CONSTITUTION.md v1.1.0.  
@@ -54,8 +55,11 @@ The following checked-in sources remain and must not be treated as retired merel
 - `Genesis_Ignition.sh`, which invokes the legacy deployment script and runs a Node import/signing sequence against `server/app.js`.
 - `server/scripts/SovereignDeployment.script.js`, which is a legacy Node deployment orchestrator.
 - `server/scripts/generateManifest.js`, which invokes the legacy ForensicService and writes under `server/dist`.
+- Root `services/ai`, `services/auth`, `services/crypto`, `services/ledger`, and `services/standards` contain separate Node business/service implementations. The AI and crypto modules expose Express listeners; standards has an npm start listener; auth contains a legacy JWT router; ledger repair code can generate a Mongoose-backed global ledger service. `services/billing` is an empty package directory. These are not approved runtimes.
+- `start_all.sh`, `start_wilsy_os.sh`, and `GlobalLaunchSequence.sh` attempt to start Node service processes. `Genesis_Ignition.sh` and `Sovereign_Deployment_Automation.sh` execute legacy Node deployment/manifest paths.
+- `server/tests/**` contains 124 Node test files (136 directory entries); they are not browser tests and must be ported to Python EOS or retired only after capability parity.
 
-Do not run `pm2`, `npm start` or other server-directory scripts, `server/app.js`, any legacy worker/cron module, `Genesis_Ignition.sh`, `Sovereign_Deployment_Automation.sh`, or the server deployment scripts. The presence of these files is a migration finding, not permission to execute them.
+Do not run `pm2`, `npm start` or other server-directory scripts, `server/app.js`, any legacy worker/cron module, root service modules, `start_all.sh`, `start_wilsy_os.sh`, `GlobalLaunchSequence.sh`, `Genesis_Ignition.sh`, `Sovereign_Deployment_Automation.sh`, `deploy-production.sh`, `deploy-prod.sh`, or server deployment scripts. The presence of these files is a migration finding, not permission to execute them.
 
 ## Unresolved ingress and deployment manifests
 
@@ -76,7 +80,7 @@ The retired `server/k8s/` files are inert stubs. That does not retire the separa
 
 Production remains NO-GO until all of these are satisfied:
 
-1. Every checked-in deployment, ingress, Nginx, Helm, Kubernetes and ignition path is classified and either retired or proven to target Kennel EOS directly.
+1. Every checked-in deployment, ingress, Nginx, Helm, Kubernetes, root service, launcher and ignition path is classified and either retired or proven to target Kennel EOS directly.
 2. The actual external load balancer, DNS, ingress, process supervisor and host process list are inspected by an authorized operator. Repository source alone cannot prove live routing.
 3. No Node BFF, Express listener, PM2 application, Node worker, Node cron, or legacy deployment script can be activated.
 4. Kennel EOS readiness and authenticated route probes pass directly against port 9095.
@@ -98,7 +102,7 @@ That service has its own production security and real-Mongo certification gates.
 **Status: PYTHON EOS IS THE SUPPORTED RUNTIME CANDIDATE; PRODUCTION INGRESS AND LEGACY PARITY REMAIN UNVERIFIED.**
 
 ARTIFACT: DEPLOYMENT.md  
-VERSION: v1.1.0-KENNEL-EOS-DEPLOYMENT-AUTHORITY-BOUNDARY  
+VERSION: v1.2.0-KENNEL-EOS-DEPLOYMENT-AUTHORITY-BOUNDARY  
 AUTHORITY BOUNDARY: Kennel EOS is the only supported application/API authority; no deployment is authorized.  
 TENANT POSTURE: no tenant authority or data access is granted.  
 FAIL-CLOSED POSTURE: unresolved deployment targets block production cutover.  
