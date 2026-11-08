@@ -1,14 +1,14 @@
 # WILSY OS — Kennel EOS runtime and legacy Node forensic inventory
 
 **TITLE:** Kennel EOS Runtime and Legacy Node Forensic Inventory  
-**VERSION:** v2.4.0-KENNEL-EOS-LEGACY-NODE-FORENSIC-INVENTORY  
+**VERSION:** v2.5.0-KENNEL-EOS-LEGACY-NODE-FORENSIC-INVENTORY  
 **AUTHORITY:** Wilsy OS Core Governance  
 **EPITOME:** Evidence-based inventory of the supported Python runtime and the remaining Express, route, middleware, worker, scheduler, persistence, and integration surfaces that must be mapped before legacy retirement.  
 **ABSOLUTE CANONICAL PATH:** /Users/wilsonkhanyezi/legal-doc-system/docs/architecture/eos-runtime-database-consumer-inventory.md  
 **COLLABORATION / OWNERSHIP:** Wilson Khanyezi (Founder); Codex (AI Engineering)  
 **CERTIFICATION / UPDATE DATE:** 2026-11-08  
 **CHANGELOG:**
-- v2.4.0-KENNEL-EOS-LEGACY-NODE-FORENSIC-INVENTORY: Adds checked-in Nginx, Helm, Kubernetes and Node deployment-automation findings that prevent direct-Kennel-ingress certification.
+- v2.5.0-KENNEL-EOS-LEGACY-NODE-FORENSIC-INVENTORY: Adds checked-in Nginx, Helm, Kubernetes and Node deployment-automation findings that prevent direct-Kennel-ingress certification.
 - v2.2.0-KENNEL-EOS-LEGACY-NODE-FORENSIC-INVENTORY: Records mounted routes, middleware, callable scheduler activation, queue workers, Mongoose/Redis consumers and explicit parity gaps.
 - v2.1.0-KENNEL-EOS-LEGACY-NODE-FORENSIC-INVENTORY: Establishes the first corrected legacy runtime forensic inventory.
 - v2.0.0-KENNEL-EOS-CANONICAL-RUNTIME: Established the Python EOS deployment and database-owner inventory.
@@ -170,6 +170,24 @@ Python EOS currently has canonical client invoice issuance/read operations in `b
 
 **Migration decision:** treat the legacy QR and offline reconciliation feature as a missing/unverified capability. Before retiring its source or claiming parity, define a Python-owned, tenant-scoped evidence contract; use canonical EOS invoice/statement identities and approved signing/trust material; persist append-only verification evidence with deterministic idempotency and caller-owned transaction/session semantics; add authenticated routes and exact IAM permissions; and certify cross-tenant denial, signature failure, replay, concurrency and real replica-set recovery. No legacy fallback tenant, no-op audit fallback, or scheduler-owned lifecycle authority may be carried forward.
 
+### 3.5 Separate root Node service tree
+
+The repository also contains a second Node service architecture outside `server/`. These services are separate from the Express application and must be included in the retirement graph.
+
+| Service | Observed implementation | Activation / port | Classification | Python EOS parity |
+|---|---|---|---|---|
+| `services/ai/aiService.js` | Express `POST /risk-score`; deterministic rule-based simulation using `area` and `defendantHistory`; `crimeStats` is accepted but not used | Direct Node execution; listens on 6500; package has no start script | LEGACY / MIGRATION SOURCE; simulated model | Candidate AI/legal advisory routers exist, but this risk-score contract has no proven parity; do not present this as a trained model |
+| `services/auth/authService.js` | Express router with `/register`, `/login`, `/refresh`, `/me`; legacy User Mongoose model; default JWT secret fallback; no global-principal MFA/session authority | Package declares `node index.js`, but no `index.js` is present in the enumerated directory; import reachability remains unverified | LEGACY / MIGRATION SOURCE | Python global-principal authentication is the canonical candidate; exact route and migration parity not certified |
+| `services/billing/` | Package manifest only; no service source or start script found | No current service entrypoint found | ORPHANED / UNKNOWN | Python `billing_router.py` is canonical candidate; no Node capability inferred from an empty package |
+| `services/crypto/cryptoService.js` | Express `POST /sign-document`; generates a fresh RSA key pair per request, mixes request hash with a defaultable secret, returns signature without a durable public-key/certificate binding; labels provider as `Wilsy-Vault-v1` | Direct Node execution; listens on 6600; package has no start script | LEGACY / UNSAFE SIMULATION | Institutional PKI/KMS and signer-enrollment services are canonical candidates; the legacy behavior is not cryptographic parity and must never be treated as HSM/KMS evidence |
+| `services/ledger/repair_ledger_service.js` | Writes a new `index.js` containing Express/Mongoose `POST /events`, `GET /events`, and `/health`; global sequence, SHA-256 chain, no tenant scope, no caller-owned transaction or concurrency-safe sequence reservation | Package has no start script; repair script can generate a runnable Node service on port 6000 | LEGACY / UNSAFE FINANCIAL AUTHORITY | Kennel EOS financial and audit registries are canonical; this global ledger is not valid financial/audit truth |
+| `services/standards/standardsService.js` | Express `POST /validate`, `GET /rules`; Mongoose Rule collection; global default seeding; falls back to High Court rules when requested court type is missing; no visible tenant or authenticated permission guard | `npm start`; listens on 6100 | LEGACY / MIGRATION SOURCE | Python legal operations/jurisdiction rules are candidates; exact rule schema, jurisdiction authority, versioning and tenant parity not established |
+| `services/httpSetup.js` | Redux-aware HTTP interceptor importing modules under `client/src` from a root `services/` path | Client-side import candidate; no server listener | CLIENT SURFACE / MISPLACED SOURCE | Frontend transport only; verify actual client import callers before moving or deleting |
+
+The root `services/` directory also contains `AdvancedDocumentGenerationService.js`, `clientOnboardingService.js`, and `ficaScreeningService.js`. Their import callers, persistence consumers and frontend/backend boundaries remain unverified. They are not classified as Python parity merely because related EOS modules exist.
+
+The `services/ledger/repair_ledger_service.js` source is especially dangerous: it can generate an executable ledger server that derives sequence and hash-chain state from a global collection without tenant scope or a transaction-safe sequence reservation. It must not be run or accepted as ledger authority.
+
 ### 3.4 Route, controller and middleware source trees
 
 Repository directory enumeration at this revision found these top-level source counts; nested directories exist in each of several trees and must also be traversed:
@@ -184,6 +202,7 @@ Repository directory enumeration at this revision found these top-level source c
 | `server/jobs` | 7 | LEGACY / MIGRATION SOURCE; includes active-looking worker/job modules and one inert scheduler stub |
 | `server/config` | 30 | LEGACY / MIGRATION SOURCE; database, Redis, queues, cron and integration configuration remain |
 | `server/utils` | 89 | LEGACY / MIGRATION SOURCE; callers and business authority require mapping |
+| `server/tests` | 136 entries, including 124 Node test files and 132 JS/CJS/MJS files | LEGACY TEST SOURCE; not browser tests; migrate test intent to Python EOS or retire only after capability parity |
 
 These are root-directory counts, not totals for nested descendants. The directory contents include duplicates, alternate versions and potentially orphaned modules. A filename alone is not proof of a live route or capability. The next forensic pass must traverse nested directories, follow imports from mounted modules, and search frontend, worker, scripts and deployment references before classifying a file as orphaned.
 
@@ -280,6 +299,18 @@ The following repository files still describe non-Kennel or unverified applicati
 
 | File / surface | Observed configuration | Classification | Required disposition |
 |---|---|---|---|
+| `start_all.sh` | Starts ledger and standards with `npm start`, then starts `server/` with `npm start`; kills ports 3001, 6000 and 6100 | LEGACY / MIGRATION SOURCE | Must be replaced by an EOS-owned launcher; no Node service activation |
+| `start_wilsy_os.sh` | Attempts to start ledger, standards, billing, AI, crypto and server services on ports 6000/6100/6400/6500/6600/3001 | LEGACY / MIGRATION SOURCE | Multiple service packages lack declared start scripts; do not use |
+| `GlobalLaunchSequence.sh` | Runs Node validation suite, starts `server/` with `npm start`, then starts Vite | LEGACY / MIGRATION SOURCE | Replace with a governed Python EOS + frontend development command |
+| `Genesis_Ignition.sh` | Invokes legacy deployment automation, imports `server/app.js` in Node, and calls legacy ForensicService signing | LEGACY / MIGRATION SOURCE | No production ignition authority |
+| `Sovereign_Deployment_Automation.sh` | Runs Node server tests, frontend test, build, and Node manifest generator | LEGACY / MIGRATION SOURCE | Frontend build may remain; server Node tests and Node manifest generation must be migrated or retired |
+| `deploy-production.sh` | Runs Node/npm checks and server Mocha tests; prints `npm start` as deployment command | LEGACY / MIGRATION SOURCE | Not an approved production deployment workflow |
+| `deploy-prod.sh` | Runs `server/` npm tests, builds images, and invokes Compose deployment | LEGACY / MIGRATION SOURCE | Must not be used until server tests and every target image/manifest are reconciled with Python EOS |
+| `setup.sh` | Installs dependencies under `server/` | LEGACY / MIGRATION SOURCE | Do not use; server dependency tree is not frontend tooling |
+| `production-ready.sh` | Checks legacy server test files, Node modules and server production environment | LEGACY / MIGRATION SOURCE | Its green status cannot certify Kennel EOS readiness |
+| `server/scripts/ci/deploy.sh` | Runs Node Mocha tests, `npm ci`, and generates a deployment manifest | LEGACY / MIGRATION SOURCE | Replace with Python EOS certification/deployment workflow |
+| `server/scripts/SovereignDeployment.script.js` | Runs server Node test/audit commands and records legacy PM2/Docker deployment intent | LEGACY / MIGRATION SOURCE | Not approved for deployment |
+| `server/scripts/generateManifest.js` | Signs a legacy manifest through `ForensicService` and writes under `server/dist` | LEGACY / MIGRATION SOURCE | Map manifest semantics to canonical EOS evidence before deletion |
 | `nginx.conf` | API upstream `wilsy-os:3000`; investor upstream `wilsy-os:9096`; API and investor paths proxy to those upstreams | LEGACY / MIGRATION SOURCE | Replace only after service and investor capability mapping; target must be an explicitly named Kennel EOS service on 9095 |
 | `infra/nginx/fortress-lb.conf` | Regional upstreams point to multiple private IPs on port 3000; health probe uses `/api/v1/sys/health` | LEGACY / MIGRATION SOURCE | Infrastructure owner must identify each node and prove it runs Kennel EOS before changing the target |
 | `k8s/predictive-deployment.yaml` | Kubernetes Deployment uses `ghcr.io/wilsonkhanyezi/wilsy-os-core:latest`, container and probes on port 3000, and a `NODE_NAME` environment field | UNKNOWN / REQUIRES FORENSICS | Inspect image provenance and all consumers; do not assume this image is Python EOS |
@@ -336,7 +367,7 @@ The route mount inventory is established for `server/app.js` and `server/routes/
 **END OF INVENTORY — PARITY AND RETIREMENT NOT YET CERTIFIED**
 
 ARTIFACT: eos-runtime-database-consumer-inventory.md
-VERSION: v2.4.0-KENNEL-EOS-LEGACY-NODE-FORENSIC-INVENTORY
+VERSION: v2.5.0-KENNEL-EOS-LEGACY-NODE-FORENSIC-INVENTORY
 AUTHORITY BOUNDARY: forensic inventory only; Kennel EOS owns business authority.
 TENANT POSTURE: no tenant data access or authority granted; legacy isolation remains under review.
 FAIL-CLOSED POSTURE: UNKNOWN parity is not treated as certified or safe to retire.
