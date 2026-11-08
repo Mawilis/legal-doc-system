@@ -4,6 +4,7 @@ import pytest
 
 from tools.eos.runtime.durable_worker_runtime import (
     TASK_AUDIT_COLLECTION,
+    register_compliance_scan_worker,
     TASK_COLLECTION,
     create_durable_worker_runner,
     provision_durable_worker_indexes,
@@ -53,3 +54,25 @@ def test_index_provisioning_is_explicit_and_uses_named_collections():
     provision_durable_worker_indexes(database)
     assert tasks.create_index.call_count == 3
     assert audit.create_index.call_count == 1
+
+
+
+def test_compliance_worker_is_registered_only_on_canonical_database_graph():
+    from unittest.mock import MagicMock
+    client, database = object(), MagicMock()
+    database.client = client
+    registry = EngineWorkerRegistry()
+    worker = register_compliance_scan_worker(
+        registry, database=database, mongo_client=client
+    )
+    assert worker.engine_name == "COMPLIANCE_SCAN"
+    assert registry._workers["COMPLIANCE_SCAN"] is worker
+
+
+def test_compliance_worker_registration_rejects_database_client_mismatch():
+    database = MagicMock()
+    database.client = object()
+    with pytest.raises(RuntimeError, match="EOS_WORKER_DATABASE_CLIENT_MISMATCH"):
+        register_compliance_scan_worker(
+            EngineWorkerRegistry(), database=database, mongo_client=object()
+        )
