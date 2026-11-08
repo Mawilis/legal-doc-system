@@ -1,23 +1,20 @@
 /* eslint-disable */
 /**
- * ╔════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════╗
- * ║ WILSY OS — DNA_PASS PUBLIC ALLOWLIST [V1.2.0-FORENSIC-PROTECTED]                                                                            ║
- * ║ AUTHORITY: WILSY OS CORE GOVERNANCE | TERMINAL WORKFLOW COMPLIANT                                                                    ║
- * ╠════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════╣
- * ║ VERSION: 1.2.0-FORENSIC-PROTECTED | PRODUCTION‑GRADE | TRILLION‑DOLLAR SPEC                                                                 ║
- * ║ EPITOME: Canonical DNA_PASS list for ProductionHardening integrityShield.                                                             ║
- * ║          Paths matching these tokens skip institutional header seals.                                                                 ║
- * ║ ABSOLUTE PATH: /Users/wilsonkhanyezi/legal-doc-system/server/middleware/DNA_PASS_FIX.js                                               ║
- * ╠════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════╣
- * ║ 👥 COLLABORATION & SOVEREIGN SIGN‑OFF:                                                                                                 ║
- * ║ • Wilson Khanyezi (Founder/Architect) – Mandated zero‑loss integrity and institutional hardening for all Wilsy OS routes.              ║
- * ║ • AI Engineering (DeepSeek) – ARCHITECTED: Unified DNA_PASS list for ProductionHardening middleware.                                  ║
- * ╠════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════╣
- * ║ CHANGE LOG:                                                                                                                            ║
- * ║ • 2026‑11‑08 v1.2.0‑FORENSIC‑PROTECTED — Removed broad 'forensics' bypass; forensic APIs require authenticated tenant scope.         ║
- * ║ • 2026‑08‑01 v1.1.0‑PING‑PUBLIC — Added 'ping' and '/api/ping' to allow public ops probes.                                            ║
- * ║ • 2026‑07‑31 v1.0.0‑INSTITUTIONAL — Baseline creation with core public paths.                                                          ║
- * ╚════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════╝
+ * TITLE: WILSY EOS DNA Pass Public Allowlist
+ * VERSION: v1.3.0
+ * AUTHORITY: WILSY EOS Security Engineering; integrity-shield public-path configuration only
+ * EPITOME: Defines URL tokens that bypass the legacy integrity-shield request seal.
+ * ABSOLUTE CANONICAL PATH: server/middleware/DNA_PASS_FIX.js
+ * COLLABORATION / OWNERSHIP: WILSY EOS API Security; consumed by ProductionHardening.middleware.js.
+ * CERTIFICATION / UPDATE DATE: 2026-11-08
+ * CHANGELOG:
+ * - v1.2.0: Remove broad forensic bypass so forensic APIs remain protected.
+ * - v1.3.0: Align runtime version and seal with the certified allowlist artifact.
+ * COMPLIANCE: Public path exceptions are explicit configuration and do not grant identity, tenant or business permissions.
+ * SECURITY / PRIVACY POSTURE: The allowlist is token-based legacy middleware configuration; protected forensic paths are excluded.
+ * TENANT BOUNDARY: No tenant context or authorization is created by this allowlist.
+ * AUTHORITY BOUNDARY: Integrity-shield bypass configuration only; canonical authentication and IAM remain separate.
+ * FINANCIAL AUTHORITY BOUNDARY: No financial execution authority.
  */
 
 /**
@@ -75,13 +72,13 @@ export const isPublicPath = (url) => {
  * @constant DNA_PASS_VERSION
  * @description Semantic version of this DNA_PASS definition.
  */
-export const DNA_PASS_VERSION = '1.1.0-PING-PUBLIC';
+export const DNA_PASS_VERSION = '1.3.0-FORENSIC-PROTECTED';
 
 /**
  * @constant DNA_PASS_SEAL
  * @description Certification seal for audit and provenance.
  */
-export const DNA_PASS_SEAL = 'PRODUCTION_READY_v1.1.0-PING-PUBLIC';
+export const DNA_PASS_SEAL = 'PRODUCTION_READY_v1.3.0-FORENSIC-PROTECTED';
 
 // Default export for convenience.
 export default DNA_PASS;
@@ -90,4 +87,14 @@ export default DNA_PASS;
  * @seal Wilsy OS Institutional Seal – Verified Production Ready | Health Check: PASSED
  *       This DNA_PASS definition is the single source of truth for public allowlist tokens.
  *       Any changes must be reviewed by Core Governance and the version bumped accordingly.
+ */
+
+/*
+ * ARTIFACT: WILSY EOS DNA Pass Public Allowlist
+ * VERSION: v1.3.0
+ * AUTHORITY BOUNDARY: Integrity-shield public-path configuration only.
+ * TENANT POSTURE: No tenant bypass is created by this artifact.
+ * FAIL-CLOSED POSTURE: Forensic paths are not included in the public allowlist.
+ * FINANCIAL EXECUTION AUTHORITY: None.
+ * END OF WILSY OS SOVEREIGN ARTIFACT
  */
