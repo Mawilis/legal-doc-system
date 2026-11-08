@@ -1,0 +1,53 @@
+# TITLE: WILSY EOS Forensic Route IAM Certification
+# VERSION: v1.0.0
+# AUTHORITY: WILSY EOS Security Engineering
+# PURPOSE: Prove forensic APIs are not globally bypassed and are mounted behind tenant IAM.
+# SECURITY: Read-only source certification; no live forensic data or credentials.
+# CHANGELOG:
+# - v1.0.0: Add route-composition regression tests and JavaScript syntax checks.
+# END OF WILSY OS SOVEREIGN ARTIFACT
+
+name: WILSY EOS Forensic Route IAM Certification
+
+on:
+  pull_request:
+    paths:
+      - "server/middleware/DNA_PASS_FIX.js"
+      - "server/routes/api.js"
+      - "server/app.js"
+      - "tests/unit/test_forensic_routes_require_iam.py"
+      - ".github/workflows/forensic-route-iam-certification.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: forensic-route-iam-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  forensic-route-iam:
+    name: Forensic route IAM composition tests
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Checkout exact commit
+        uses: actions/checkout@v4
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Set up Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+      - name: Install test runner
+        run: python -m pip install --disable-pip-version-check pytest==9.1.1
+      - name: Validate JavaScript syntax
+        run: |
+          node --check server/middleware/DNA_PASS_FIX.js
+          node --check server/routes/api.js
+          node --check server/app.js
+      - name: Prove forensic route IAM composition
+        run: python -m pytest -q tests/unit/test_forensic_routes_require_iam.py
