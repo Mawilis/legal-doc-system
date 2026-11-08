@@ -1,22 +1,19 @@
 /* eslint-disable */
 /**
- * ╔════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════╗
- * ║ WILSY OS - MASTER API NEXUS [V48.1.0-FORENSICS-IAM]                                                                                 ║
- * ║ [NEURAL PULSE RELAY | TELEMETRY EXPANSION | AUDIT SEALING | ANOMALY DETECTION | EVIDENCE PACKAGE | SLA TIER SEGMENTATION]             ║
- * ║ [LEDGER VIEW/EXPORT COUNTERS | EMPLOYEE SEARCH SERVICE]                                                                                ║
- * ╠════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════╣
- * ║ VERSION: 48.1.0-FORENSICS-IAM | PRODUCTION READY | TRILLION DOLLAR SPEC                                                             ║
- * ║ EPITOME: BIBLICAL WORTH BILLIONS | NO CHILD'S PLACE | INSTITUTIONAL AUTHORITY                                                         ║
- * ║ ABSOLUTE PATH: /Users/wilsonkhanyezi/legal-doc-system/server/routes/api.js                                                             ║
- * ╠════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════╣
- * ║ 👥 COLLABORATION & SOVEREIGN SIGN-OFF:                                                                                                 ║
- * ║ • Wilson Khanyezi (CEO/Lead Architect) - Mandated full telemetry, audit sealing, anomaly detection, evidence packages. [2026‑08‑17]    ║
- * ║ • AI Engineering – v48.1.0: Move forensic routes behind sovereign authentication and tenant isolation.                              ║
- * ║ • AI Engineering – v48.0.2: Mounted /employees route for employee search (salesperson combobox).                                     ║
- * ║ • AI Engineering – v48.0.1: Added POST /metrics/ledger route for ledger view/export counters.                                       ║
- * ║ • AI Engineering – v48.0.0: Added Nexus-level counters, audit sealing, anomaly detection, evidence packages.                         ║
- * ║ COMPLIANCE: POPIA §19, GDPR §32, SOC2 §CC7.2, ISO 27001                                                                              ║
- * ╚════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════╝
+ * TITLE: WILSY EOS Master API Nexus
+ * VERSION: v48.2.0
+ * AUTHORITY: WILSY EOS API Engineering; route composition and middleware ordering only
+ * EPITOME: Composes API route modules and shared request middleware in a deterministic order.
+ * ABSOLUTE CANONICAL PATH: server/routes/api.js
+ * COLLABORATION / OWNERSHIP: WILSY EOS API Engineering; each route retains its own data and command authority.
+ * CERTIFICATION / UPDATE DATE: 2026-11-08
+ * CHANGELOG:
+ * - v48.2.0: Mount forensic routes after existing Node authentication and tenant middleware; remove the broad forensic bypass.
+ * COMPLIANCE: Preserves existing API route order and protected-zone middleware composition.
+ * SECURITY / PRIVACY POSTURE: This legacy Node authentication stack is not the canonical EOS Global Principal/Membership/Capacity/MFA authority.
+ * TENANT BOUNDARY: Forensic router additionally requires middleware-established tenant scope; caller-supplied tenant hints cannot select data scope.
+ * AUTHORITY BOUNDARY: Composition only; this module grants no forensic operation permission or institutional trust authority.
+ * FINANCIAL AUTHORITY BOUNDARY: No financial execution authority; Kennel EOS remains exclusive.
  */
 
 import express from 'express';
@@ -599,13 +596,12 @@ router.use((err, req, res, next) => {
 
 export default router;
 
-/**
- * ═══════════════════════════════════════════════════════════════════════════════
- * INSTITUTIONAL CERTIFICATION SEAL — api.js v48.1.0-FORENSICS-IAM
- * ═══════════════════════════════════════════════════════════════════════════════
- * Status:     PRODUCTION READY — 10/10 SOVEREIGN GRADE
- * Added:      Forensic routes now require sovereign authentication, tenant guard and tenant isolation.
- * Preserved:  Employee search route and existing protected API composition.
- * Compliance: POPIA §19 · GDPR §32 · SOC2 §CC7.2 · ISO 27001
- * ═══════════════════════════════════════════════════════════════════════════════
+/*
+ * ARTIFACT: WILSY EOS Master API Nexus
+ * VERSION: v48.2.0
+ * AUTHORITY BOUNDARY: Route composition only; routers and canonical EOS own identity and permission decisions.
+ * TENANT POSTURE: Forensic routes are mounted after the existing Node tenant middleware and enforce their own authenticated scope.
+ * FAIL-CLOSED POSTURE: The broad forensic bypass is removed; route-level permission and canonical IAM certification remain separate gates.
+ * FINANCIAL EXECUTION AUTHORITY: None; Kennel EOS remains exclusive.
+ * END OF WILSY OS SOVEREIGN ARTIFACT
  */
