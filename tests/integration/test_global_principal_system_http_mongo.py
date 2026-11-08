@@ -222,10 +222,38 @@ def system_http_mongo(monkeypatch: pytest.MonkeyPatch):
             )
 
     class _PrincipalRepository:
-        def get(self, requested_principal_id, *, session=None):
+        def get(self, requested_principal_id, collection=None, *, session=None):
             return PrincipalAuthorityRepository.get(
                 requested_principal_id, principals, session=session
             )
+
+    class _IsolatedCredentialRepository:
+        @staticmethod
+        def get_by_email(email, collection=None, *, session=None):
+            return PrincipalCredentialRepository.get_by_email(
+                email, credentials, session=session
+            )
+
+        @staticmethod
+        def get_by_principal(requested_principal_id, collection=None, *, session=None):
+            return PrincipalCredentialRepository.get_by_principal(
+                requested_principal_id, credentials, session=session
+            )
+
+    # The verify-MFA route and SYSTEM session revalidation read credentials
+    # independently of the initial password-authentication adapter. Keep both
+    # reads on this fixture's UUID-scoped collections while retaining the real
+    # repository implementation and caller-owned Mongo transaction.
+    monkeypatch.setattr(
+        auth_router, "PrincipalCredentialRepository", _IsolatedCredentialRepository
+    )
+    from tools.eos.auth import global_principal_system_session_authority as system_session_authority
+    monkeypatch.setattr(
+        system_session_authority, "PrincipalCredentialRepository", _IsolatedCredentialRepository
+    )
+    monkeypatch.setattr(
+        system_session_authority, "PrincipalAuthorityRepository", _PrincipalRepository
+    )
 
     def _authenticate_isolated(**kwargs):
         return _authenticate_global_principal(
