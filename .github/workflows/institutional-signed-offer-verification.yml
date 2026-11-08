@@ -5,6 +5,9 @@ on:
       - "tools/eos/api/hiring_lifecycle_router.py"
       - "tools/eos/api/server.py"
       - "tools/eos/api/institutional_signer_router.py"
+      - "tools/eos/api/institutional_source_key_router.py"
+      - "tools/eos/security/institutional_source_signing_key_registry.py"
+      - "tools/eos/security/institutional_source_key_governance_evidence.py"
       - "tools/eos/security/institutional_signature_evidence_registry.py"
       - "tools/eos/security/institutional_signer_enrollment_registry.py"
       - "tools/eos/security/institutional_signer_evidence_verifier.py"
@@ -15,11 +18,12 @@ on:
       - "tools/eos/security/institutional_pki_kms_cli.py"
       - "tools/eos/security/institutional_pki_provisioning.py"
       - "tools/eos/security/institutional_pki_cli.py"
-      - "tools/eos/saas/hr/candidate_evidence_s3_storage_adapter.py"
       - "tools/eos/auth/permission_namespace.py"
       - "tools/eos/auth/roles.py"
       - "tools/eos/auth/tenant_authorization.py"
       - "tools/eos/auth/tenant_authority_policy.py"
+      - "tools/eos/auth/tenant_business_role.py"
+      - "tests/unit/test_institutional_source_key_governance_evidence.py"
       - "tests/unit/test_institutional_pki.py"
       - "tests/unit/test_institutional_pki_kms.py"
       - "tests/unit/test_institutional_signature_evidence_registry.py"
@@ -28,8 +32,14 @@ on:
       - "tests/unit/test_institutional_signer_currentness.py"
       - "tests/unit/test_institutional_signer_source_adapters.py"
       - "tests/unit/test_permission_namespace.py"
+      - "tests/unit/test_roles.py"
+      - "tests/unit/test_tenant_authority_policy.py"
+      - "tests/unit/test_tenant_business_role.py"
+      - "tests/unit/test_tenant_authorization.py"
       - "tests/unit/test_hiring_signed_offer_manifest.py"
       - "tests/integration/test_institutional_signer_registry_real_mongo.py"
+      - "tests/integration/test_institutional_source_signing_key_lifecycle_real_mongo.py"
+      - "tests/integration/test_institutional_source_key_authenticated_routes_real_mongo.py"
       - "tests/integration/test_hiring_lifecycle_authenticated_http.py"
       - ".github/workflows/institutional-signed-offer-verification.yml"
 permissions:
@@ -37,9 +47,10 @@ permissions:
 jobs:
   signed-offer-verification:
     runs-on: ubuntu-latest
-    timeout-minutes: 25
+    timeout-minutes: 30
     env:
       INSTITUTIONAL_PKI_TEST_MONGODB_URI: mongodb://localhost:27017/?replicaSet=rs0&directConnection=true
+      INSTITUTIONAL_SOURCE_KEY_TEST_MONGODB_URI: mongodb://localhost:27017/?replicaSet=rs0&directConnection=true
       HIRING_TEST_MONGODB_URI: mongodb://localhost:27017/?replicaSet=rs0&directConnection=true
     steps:
       - uses: actions/checkout@v4
@@ -66,11 +77,12 @@ jobs:
           done
           echo "MongoDB replica set did not elect a primary" >&2
           exit 1
-      - name: Compile authenticated signing, signer governance and IAM runtime
+      - name: Compile authenticated signing, source-key governance and IAM runtime
         run: |
           python -m py_compile \
             tools/eos/api/hiring_lifecycle_router.py \
             tools/eos/api/institutional_signer_router.py \
+            tools/eos/api/institutional_source_key_router.py \
             tools/eos/security/institutional_pki.py \
             tools/eos/security/institutional_pki_kms.py \
             tools/eos/security/institutional_pki_kms_cli.py \
@@ -81,13 +93,17 @@ jobs:
             tools/eos/security/institutional_signer_evidence_verifier.py \
             tools/eos/security/institutional_signer_currentness.py \
             tools/eos/security/institutional_signer_source_adapters.py \
+            tools/eos/security/institutional_source_signing_key_registry.py \
+            tools/eos/security/institutional_source_key_governance_evidence.py \
             tools/eos/auth/permission_namespace.py \
             tools/eos/auth/roles.py \
             tools/eos/auth/tenant_authorization.py \
             tools/eos/auth/tenant_authority_policy.py \
+            tools/eos/auth/tenant_business_role.py \
             tools/eos/api/server.py \
             tools/eos/saas/hr/candidate_evidence_registry.py \
             tools/eos/saas/hr/candidate_evidence_s3_storage_adapter.py \
+            tests/unit/test_institutional_source_key_governance_evidence.py \
             tests/unit/test_institutional_pki.py \
             tests/unit/test_institutional_pki_kms.py \
             tests/unit/test_institutional_signature_evidence_registry.py \
@@ -96,19 +112,32 @@ jobs:
             tests/unit/test_institutional_signer_currentness.py \
             tests/unit/test_institutional_signer_source_adapters.py \
             tests/unit/test_permission_namespace.py \
+            tests/unit/test_roles.py \
+            tests/unit/test_tenant_authority_policy.py \
+            tests/unit/test_tenant_business_role.py \
+            tests/unit/test_tenant_authorization.py \
             tests/unit/test_hiring_signed_offer_manifest.py \
-            tests/integration/test_institutional_signer_registry_real_mongo.py
-      - name: Run institutional signature, signer governance, PKI and authenticated hiring tests
+            tests/integration/test_institutional_signer_registry_real_mongo.py \
+            tests/integration/test_institutional_source_signing_key_lifecycle_real_mongo.py \
+            tests/integration/test_institutional_source_key_authenticated_routes_real_mongo.py
+      - name: Run institutional signature, signer governance, source-key lifecycle and authenticated HTTP tests
         run: |
           python -m pytest -q \
+            tests/unit/test_institutional_source_key_governance_evidence.py \
             tests/unit/test_institutional_pki.py \
             tests/unit/test_institutional_pki_kms.py \
             tests/unit/test_institutional_signature_evidence_registry.py \
             tests/unit/test_institutional_signer_enrollment_registry.py \
             tests/unit/test_institutional_signer_source_adapters.py \
             tests/unit/test_permission_namespace.py \
+            tests/unit/test_roles.py \
+            tests/unit/test_tenant_authority_policy.py \
+            tests/unit/test_tenant_business_role.py \
+            tests/unit/test_tenant_authorization.py \
             tests/unit/test_hiring_signed_offer_manifest.py \
             tests/integration/test_institutional_signer_registry_real_mongo.py \
+            tests/integration/test_institutional_source_signing_key_lifecycle_real_mongo.py \
+            tests/integration/test_institutional_source_key_authenticated_routes_real_mongo.py \
             tests/unit/test_hiring_lifecycle_domain.py \
             tests/integration/test_hiring_lifecycle_authenticated_http.py \
             tests/integration/test_hiring_lifecycle_authenticated_real_http.py

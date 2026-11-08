@@ -115,14 +115,14 @@ from tools.eos.auth.hr_business_role_catalog import ALL_HR_BUSINESS_ROLES
 import pytest
 
 def test_runtime_version_source_is_canonical() -> None:
-    assert VERSION == "v1.51.0-R59-P9-REASSIGNMENT-IAM-INTEGRATION"
+    assert VERSION == "v1.52.0-INSTITUTIONAL-SOURCE-KEY-ADMIN"
 
 LEGACY = ("AUDITOR", "SOVEREIGN_ARCHITECT", "ENTERPRISE_ADMIN", "FOUNDER", "SUPER_ADMIN", "ADMIN", "admin", "GLOBAL_ROOT", "WILSY_ROOT", "MASTER", "unknown")
 
 def test_matrix_boundaries() -> None:
-    assert TENANT_ROLES == {"tenant_owner", "tenant_admin", "tenant_manager", "tenant_auditor", "tenant_platform_billing_provider_policy_admin", "tenant_inbound_collection_authorization_admin", "tenant_inbound_merchant_configuration_admin", "tenant_inbound_provider_security_admin", "tenant_inbound_provider_policy_admin", "tenant_inbound_provider_policy_activation_admin", "tenant_legal_partner", "tenant_legal_attorney", "tenant_legal_paralegal", "tenant_legal_secretary", "tenant_legal_finance", "tenant_sheriff", "tenant_deputy", "tenant_legal_client"} | ALL_HR_BUSINESS_ROLES | {"tenant_pos_operator"}
+    assert TENANT_ROLES == {"tenant_owner", "tenant_admin", "tenant_manager", "tenant_auditor", "tenant_platform_billing_provider_policy_admin", "tenant_inbound_collection_authorization_admin", "tenant_inbound_merchant_configuration_admin", "tenant_inbound_provider_security_admin", "tenant_inbound_provider_policy_admin", "tenant_inbound_provider_policy_activation_admin", "tenant_institutional_source_key_admin", "tenant_legal_partner", "tenant_legal_attorney", "tenant_legal_paralegal", "tenant_legal_secretary", "tenant_legal_finance", "tenant_sheriff", "tenant_deputy", "tenant_legal_client"} | ALL_HR_BUSINESS_ROLES | {"tenant_pos_operator"}
     assert len(ALL_HR_BUSINESS_ROLES) == 101
-    assert len(TENANT_ROLES) == 120
+    assert len(TENANT_ROLES) == 121
     assert all(tenant_role_operation_eligibility(role, "financial_execution") == DENY for role in TENANT_ROLES)
     assert all(tenant_role_operation_eligibility(role, "cross_tenant") == DENY for role in TENANT_ROLES)
     assert tenant_role_operation_eligibility("tenant_manager", "profile_update") == DENY
@@ -157,6 +157,11 @@ def test_legal_business_role_matrix_is_explicit_and_least_authority() -> None:
         "tenant_sheriff": {"legal_directory_write", "legal_receipt_write", "legal_queue_read", "legal_allocation_read", "legal_allocation_write", "legal_attempt_read", "legal_attempt_write", "legal_attempt_outcome_write", "legal_return_read", "legal_return_write", "wilsy_ai_legal_tool_read", "wilsy_ai_legal_services_execute", "wilsy_ai_legal_advisory_generate", "wilsy_ai_legal_advisory_read"},
         "tenant_deputy": {"legal_deputy_queue_read", "legal_attempt_read", "legal_attempt_write", "legal_attempt_outcome_write", "legal_return_read", "legal_return_write", "wilsy_ai_legal_tool_read", "wilsy_ai_legal_services_execute", "wilsy_ai_legal_advisory_generate", "wilsy_ai_legal_advisory_read"},
         "tenant_legal_client": {"legal_invoice_read", "legal_client_matter_read", "legal_client_acceptance_write"},
+        "tenant_institutional_source_key_admin": {
+            "institutional_source_key_propose",
+            "institutional_source_key_approve",
+            "institutional_source_key_revoke",
+        },
     }
     expected["tenant_legal_partner"].add("legal_notification_recipient_binding_write")
     expected["tenant_legal_attorney"].add("legal_notification_recipient_binding_write")
@@ -914,3 +919,29 @@ def test_legal_evidence_write_eligibility_is_partner_only() -> None:
 # FAIL-CLOSED POSTURE: unknown values deny
 # FINANCIAL EXECUTION AUTHORITY: Kennel EOS remains exclusive.
 # END OF WILSY OS SOVEREIGN ARTIFACT
+
+
+def test_institutional_source_key_admin_is_exact_and_non_authorizing() -> None:
+    expected = {
+        "institutional_source_key_propose": "security:institutional_source_key:propose",
+        "institutional_source_key_approve": "security:institutional_source_key:approve",
+        "institutional_source_key_revoke": "security:institutional_source_key:revoke",
+    }
+    for operation, permission in expected.items():
+        assert operation in OPERATIONS
+        assert tenant_role_operation_eligibility(
+            "tenant_institutional_source_key_admin", operation,
+        ) == ELIGIBLE
+        assert permission_for_business_role_operation(operation) == permission
+    assert all(
+        tenant_role_operation_eligibility(
+            "tenant_owner", operation,
+        ) == DENY
+        for operation in expected
+    )
+    assert all(
+        tenant_role_operation_eligibility(
+            "tenant_institutional_source_key_admin", operation,
+        ) == DENY
+        for operation in ("financial_execution", "cross_tenant", "role_grant")
+    )

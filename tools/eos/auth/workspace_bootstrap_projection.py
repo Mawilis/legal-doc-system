@@ -51,7 +51,7 @@ from tools.eos.auth.hr_business_role_catalog import ALL_HR_BUSINESS_ROLES
 from tools.eos.saas.tenancy.tenant_registry import TenantRegistry
 
 
-VERSION = "v1.1.0-EOS-CANONICAL-WORKSPACE-RESOLUTION"
+VERSION = "v1.2.0-INSTITUTIONAL-SOURCE-KEY-WORKSPACE"
 WORKSPACE_CONTRACT_VERSION = "v1.0.0-WILSY-EOS-WORKSPACE-RESOLUTION"
 
 # Canonical workspace selection is an EOS projection of an already-verified
@@ -68,6 +68,7 @@ _WORKSPACE_BY_BUSINESS_ROLE = MappingProxyType({
     "tenant_inbound_provider_security_admin": "TENANT_OPERATIONS",
     "tenant_inbound_provider_policy_admin": "TENANT_OPERATIONS",
     "tenant_inbound_provider_policy_activation_admin": "TENANT_OPERATIONS",
+    "tenant_institutional_source_key_admin": "TENANT_OPERATIONS",
     "tenant_legal_partner": "LEGAL_PRACTICE",
     "tenant_legal_attorney": "LEGAL_PRACTICE",
     "tenant_legal_paralegal": "LEGAL_PRACTICE",
@@ -356,7 +357,7 @@ __all__ = [
 
 
 # ARTIFACT: workspace_bootstrap_projection.py
-# VERSION: v1.0.0-WILSY-WORKSPACE-BOOTSTRAP-PROJECTION
+# VERSION: v1.2.0-INSTITUTIONAL-SOURCE-KEY-WORKSPACE
 # AUTHORITY BOUNDARY: read-only composition; underlying authorities remain sovereign
 # TENANT POSTURE: JWT tenant is candidate scope until durable workspace revalidation
 # FAIL-CLOSED POSTURE: absent, inactive, malformed, mismatched, or unavailable truth denies

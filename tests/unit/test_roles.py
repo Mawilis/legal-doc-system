@@ -140,7 +140,7 @@ from tools.eos.auth.roles import (
 )
 
 def test_runtime_version_source_is_canonical() -> None:
-    assert POLICY_VERSION == "v1.51.0-TENANT-OWNER-LEGAL-COMMERCIAL-READ"
+    assert POLICY_VERSION == "v1.52.0-INSTITUTIONAL-SOURCE-KEY-ADMIN"
 
 VERSION = "v1.8.0-P47-R94-WORK-ASSIGNMENT-GRANTS-CERT"
 
@@ -352,6 +352,7 @@ def test_legal_role_grants_are_explicit_and_least_authority() -> None:
         "INBOUND_COLLECTION_AUTHORIZATION_ADMIN",
         "INBOUND_MERCHANT_CONFIGURATION_ADMIN",
         "INBOUND_PROVIDER_SECURITY_ADMIN",
+        "INSTITUTIONAL_SOURCE_KEY_ADMIN",
         "INBOUND_PROVIDER_POLICY_ADMIN",
         "INBOUND_PROVIDER_POLICY_ACTIVATION_ADMIN",
     ):
@@ -755,6 +756,19 @@ def test_inbound_collection_role_is_least_privilege() -> None:
     assert "platform_billing:provider_policy:admin" not in ROLE_PERMISSIONS_MAP["INBOUND_COLLECTION_AUTHORIZATION_ADMIN"]
     assert "platform_billing:release" not in ROLE_PERMISSIONS_MAP["INBOUND_COLLECTION_AUTHORIZATION_ADMIN"]
     assert "accounts_payable:provider_policy:admin" not in ROLE_PERMISSIONS_MAP["INBOUND_COLLECTION_AUTHORIZATION_ADMIN"]
+
+
+def test_institutional_source_key_admin_is_a_dedicated_least_privilege_role() -> None:
+    expected = [
+        "security:institutional_source_key:propose",
+        "security:institutional_source_key:approve",
+        "security:institutional_source_key:revoke",
+    ]
+    assert ROLE_PERMISSIONS_MAP["INSTITUTIONAL_SOURCE_KEY_ADMIN"] == expected
+    assert get_permissions_for_roles(["INSTITUTIONAL_SOURCE_KEY_ADMIN"]) == sorted(expected)
+    for permission in expected:
+        assert get_roles_granting_permission(permission) == ("INSTITUTIONAL_SOURCE_KEY_ADMIN",)
+    assert "security:institutional_source_key:approve" not in ROLE_PERMISSIONS_MAP["TENANT_OWNER"]
 
 
 def test_inbound_provider_roles_are_narrow_and_separated() -> None:

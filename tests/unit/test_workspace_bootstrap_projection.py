@@ -341,6 +341,7 @@ def test_workspace_resolution_maps_owner_and_legal_practice_to_distinct_workspac
     assert contract.resolve_workspace_id("tenant_legal_partner") == "LEGAL_PRACTICE"
     assert contract.resolve_workspace_id("tenant_legal_attorney") == "LEGAL_PRACTICE"
     assert contract.resolve_workspace_id("tenant_sheriff") == "PROCESS_SERVICE"
+    assert contract.resolve_workspace_id("tenant_institutional_source_key_admin") == "TENANT_OPERATIONS"
 
 
 def test_every_published_tenant_business_role_has_one_workspace_mapping() -> None:

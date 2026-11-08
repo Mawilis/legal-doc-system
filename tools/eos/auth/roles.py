@@ -1,5 +1,5 @@
 """TITLE: WILSY OS Role Definition Policy.
-VERSION: v1.49.0-R59-P9-REASSIGNMENT-IAM-INTEGRATION
+VERSION: v1.52.0-INSTITUTIONAL-SOURCE-KEY-ADMIN
 AUTHORITY: Canonical Python role identifiers and explicit permission grants.
 EPITOME: Defines current tenant-scoped authorization roles, including
 least-privilege subscription/plan-catalogue grants, read-only WILSY AI
@@ -224,7 +224,7 @@ from __future__ import annotations
 from collections.abc import Iterable
 
 
-VERSION = "v1.51.0-TENANT-OWNER-LEGAL-COMMERCIAL-READ"
+VERSION = "v1.52.0-INSTITUTIONAL-SOURCE-KEY-ADMIN"
 
 
 ROLE_PERMISSIONS_MAP: dict[str, list[str]] = {
@@ -442,6 +442,12 @@ ROLE_PERMISSIONS_MAP: dict[str, list[str]] = {
         "inbound_provider_credential_security:compromise",
         "inbound_provider_credential_security:rotate",
     ],
+    # Separate, explicitly assigned authority for institutional trust anchors.
+    "INSTITUTIONAL_SOURCE_KEY_ADMIN": [
+        "security:institutional_source_key:propose",
+        "security:institutional_source_key:approve",
+        "security:institutional_source_key:revoke",
+    ],
     "INBOUND_PROVIDER_POLICY_ADMIN": [
         "inbound_provider_policy:author",
     ],
@@ -628,7 +634,7 @@ ROLE_PERMISSIONS_MAP["LEGAL_PARTNER"].append(
 )
 
 # ARTIFACT: tools/eos/auth/roles.py
-# VERSION: v1.49.0-R59-P9-REASSIGNMENT-IAM-INTEGRATION
+# VERSION: v1.52.0-INSTITUTIONAL-SOURCE-KEY-ADMIN
 # AUTHORITY BOUNDARY: role identifiers and deterministic permission definitions only; current assignment is separate authority
 # TENANT POSTURE: role definitions never establish tenant membership or role possession; assignment write is Partner/Attorney-only static policy
 # FAIL-CLOSED POSTURE: unknown roles and permissions never manufacture grants
@@ -690,6 +696,7 @@ ROLE_PERMISSIONS_MAP["TENANT_OWNER"].extend((
     "security:institutional_signer:approve",
     "security:institutional_signer:revoke",
 ))
+
 
 
 # The tenant owner may request a signature manifest; cryptographic signature

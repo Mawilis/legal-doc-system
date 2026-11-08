@@ -287,7 +287,7 @@ def test_provider_reconciliation_read_permission_is_system_scoped_and_non_author
 
 
 def test_runtime_version_source_is_canonical() -> None:
-    assert POLICY_VERSION == "v1.59.0-INSTITUTIONAL-OFFER-SIGNATURE-AUTHORITY"
+    assert POLICY_VERSION == "v1.60.0-INSTITUTIONAL-SOURCE-KEY-GOVERNANCE"
 
 
 def test_practitioner_binding_provision_permission_is_exact_and_bounded() -> None:
@@ -409,6 +409,9 @@ def test_permission_canon_properties() -> None:
         "inbound_provider_policy:activate",
         "inbound_provider_policy:deactivate",
         "inbound_provider_policy:emergency_disable",
+        "security:institutional_source_key:propose",
+        "security:institutional_source_key:approve",
+        "security:institutional_source_key:revoke",
     }
 
     assert tenant <= {
@@ -422,9 +425,9 @@ def test_permission_canon_properties() -> None:
             for row in rows
             if row["disposition"] == "CANONICAL"
         ]
-    ) == 179
+    ) == 182
 
-    assert len(rows) == 182
+    assert len(rows) == 185
 
     for permission_id in tenant:
         metadata = permission_metadata(
@@ -1114,3 +1117,45 @@ def test_institutional_offer_signature_manifest_is_owner_only_and_non_authorizin
     assert tenant_role_operation_eligibility("tenant_owner", operation) == ELIGIBLE
     assert tenant_role_operation_eligibility("tenant_hr_manager", operation) != ELIGIBLE
     assert tenant_role_operation_eligibility("tenant_hr_director", operation) != ELIGIBLE
+
+
+def test_institutional_source_key_governance_permissions_are_exact_and_non_self_authorizing() -> None:
+    permissions = (
+        "security:institutional_source_key:propose",
+        "security:institutional_source_key:approve",
+        "security:institutional_source_key:revoke",
+    )
+    for permission in permissions:
+        metadata = permission_metadata(permission)
+        assert metadata.namespace == "TENANT"
+        assert metadata.scope_kind == "TENANT"
+        assert metadata.tenant_membership_required is True
+        assert metadata.cross_tenant_capable is False
+        assert metadata.financial_execution_capable is False
+        assert metadata.authorizes_by_itself is False
+        assert metadata.disposition is PermissionDisposition.CANONICAL
+    for invalid in (
+        "security:institutional_source_key:*",
+        "security:institutional_source_key:rotate",
+        "security:institutional_source_key:approve ",
+    ):
+        with pytest.raises(ValueError, match="UNKNOWN_PERMISSION"):
+            permission_metadata(invalid)
+
+
+
+def test_source_key_commands_require_dedicated_security_admin_role() -> None:
+    from tools.eos.auth.roles import ROLE_PERMISSIONS_MAP
+
+    expected = {
+        "security:institutional_source_key:propose",
+        "security:institutional_source_key:approve",
+        "security:institutional_source_key:revoke",
+    }
+    assert set(ROLE_PERMISSIONS_MAP["INSTITUTIONAL_SOURCE_KEY_ADMIN"]) == expected
+    assert not expected.intersection(ROLE_PERMISSIONS_MAP["TENANT_OWNER"])
+    assert all(
+        not expected.intersection(permissions)
+        for role, permissions in ROLE_PERMISSIONS_MAP.items()
+        if role != "INSTITUTIONAL_SOURCE_KEY_ADMIN"
+    )

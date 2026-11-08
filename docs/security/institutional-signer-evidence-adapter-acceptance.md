@@ -135,3 +135,10 @@ The Ed25519 authenticator is a cryptographic primitive, not proof that a purport
 ## Three-channel authenticated adapter composition
 
 `AuthenticatedInstitutionalSignerSourceAdapterSet` composes three distinct adapter instances and one response authenticator. It rejects reuse of the same adapter instance across identity, mandate and approval channels, checks each adapter's declared evidence kind at construction, and enforces the matching lookup kind at read time. Each read passes through cryptographic response authentication and exact request/response scope equality. This composition returns source evidence envelopes only; it does not create verifier-issued positive results and is not installed into the live enrollment/currentness route.
+
+
+## Source-response signing-key lifecycle
+
+The provider-neutral Ed25519 authenticator now accepts an explicit collection of `InstitutionalSignerSourceTrustKey` records. Each key pin binds one source-system ID and key ID to a 32-byte Ed25519 public key and a finite UTC validity interval. Authentication checks the exact source/key pair, rejects revoked keys immediately, and requires the key to be valid at the lookup evaluation time. Multiple key IDs for the same source may overlap for a governed rotation window; the old key stops authenticating at its configured expiry. Reuse of the same public-key fingerprint across source identities or key IDs is rejected, as are duplicate source/key identities and invalid validity intervals.
+
+This is a trust-store contract, not a live key onboarding mechanism. No DHA, CIPC or WILSY governance key is pinned. Key validity dates, rotation overlap, revocation authority, custody, change approval, emergency rollover and independent fingerprint verification must come from each formally onboarded source owner and WILSY PKI governance. Missing trust entries, expired keys and revoked keys deny the source response. The implementation does not infer a key-discovery URL or fetch trust material dynamically.

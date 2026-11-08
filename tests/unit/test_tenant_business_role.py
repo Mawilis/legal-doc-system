@@ -1,5 +1,5 @@
 """TITLE: WILSY OS Tenant Business-Role Authority Certificate.
-VERSION: v1.1.0-M11-R8-R3B-P8-P3A-CERT
+VERSION: v1.2.0-INSTITUTIONAL-SOURCE-KEY-ADMIN-CERT
 AUTHORITY: Pure value-contract certification only.
 EPITOME: Certifies immutable, explicit, scope-bound business-role evidence.
 ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/tests/unit/test_tenant_business_role.py
@@ -25,7 +25,7 @@ STAMP = datetime(2026, 9, 1, tzinfo=timezone.utc)
 
 
 def test_runtime_version_source_is_canonical() -> None:
-    assert POLICY_VERSION == "v1.1.0-M11-R8-R3B-P8-P3A"
+    assert POLICY_VERSION == "v1.2.0-INSTITUTIONAL-SOURCE-KEY-ADMIN"
 
 
 def make(**overrides: object) -> TenantBusinessRoleAuthority:
@@ -34,7 +34,7 @@ def make(**overrides: object) -> TenantBusinessRoleAuthority:
     return TenantBusinessRoleAuthority(**cast(dict[str, Any], values))
 
 
-@pytest.mark.parametrize("role", ("tenant_owner", "tenant_admin", "tenant_manager", "tenant_auditor", "tenant_inbound_merchant_configuration_admin", "tenant_inbound_provider_security_admin", "tenant_inbound_provider_policy_admin", "tenant_inbound_provider_policy_activation_admin"))
+@pytest.mark.parametrize("role", ("tenant_owner", "tenant_admin", "tenant_manager", "tenant_auditor", "tenant_inbound_merchant_configuration_admin", "tenant_inbound_provider_security_admin", "tenant_inbound_provider_policy_admin", "tenant_inbound_provider_policy_activation_admin", "tenant_institutional_source_key_admin"))
 def test_all_canonical_business_roles_are_retained(role: str) -> None:
     value = make(business_role=role)
     assert (value.principal_id, value.tenant_id, value.business_role, value.status, value.revision, value.effective_at, value.revoked_at) == ("principal-1", "tenant-1", role, TenantBusinessRoleStatus.ACTIVE, 0, STAMP, None)
