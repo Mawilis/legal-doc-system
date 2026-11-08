@@ -1,11 +1,14 @@
 # TITLE: WILSY EOS Global Principal MFA — AWS KMS Operations and Hosting Binding
-# VERSION: v1.0.4-EOS-GLOBAL-PRINCIPAL-MFA-KMS-OPERATIONS
+# VERSION: v1.0.5-EOS-ECS-PRODUCTION-WORKLOAD-IDENTITY
 # AUTHORITY: Wilsy OS Core Governance; cryptographic infrastructure operations guidance.
 # EPITOME: Define the canonical Python EOS MFA KMS contract, distinguish local-development and selected ECS production identities, and preserve fail-closed provisioning and runtime certification gates.
 # ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/infra/aws/README-global-principal-mfa-kms.md
 # COLLABORATION / OWNERSHIP: Wilsy OS Core Engineering; Python EOS owns MFA factor, identity, session and tenant truth.
 # CERTIFICATION OR UPDATE DATE: 2026-11-09
 # CHANGELOG:
+#   v1.0.5 records the separate production ECS metadata/STS/KMS verifier and
+#   the production provisioning prerequisite evidence register; local probe
+#   instructions remain explicitly restricted to local development.
 #   v1.0.4-EOS-GLOBAL-PRINCIPAL-MFA-KMS-OPERATIONS adds the concrete ECS
 #   task image, ephemeral storage and liveness/readiness constraints to the
 #   selected production architecture section.
@@ -94,6 +97,14 @@ The production foundation template is:
 
 `infra/aws/eos-production-ecs-foundation.yaml`
 
+The independently executable production workload verifier is:
+
+`tools/eos/auth/ecs_production_workload_identity_probe.py`
+
+The prerequisite evidence register is:
+
+`docs/operations/eos-production-provisioning-prerequisite-register.md`
+
 It defines:
 
 1. ECS cluster `wilsy-eos-production`.
@@ -132,7 +143,7 @@ Only after separately approved provisioning and controlled task launch:
 1. Identify the actual ECS task ARN, task-definition revision and configured task role.
 2. From inside the task, verify the effective STS identity is exactly the dedicated production task role. The ECS execution role is not the application identity.
 3. Verify the injected full key ARN and region against the approved stack outputs.
-4. Run `python -m tools.eos.auth.global_principal_mfa_kms_probe` from the actual task environment using ambient ECS task-role credentials. The current probe pins the local-development role and therefore must not be used unchanged as a production identity verifier; production probe behavior must be separately designed and certified before task activation.
+4. Run `python -m tools.eos.auth.ecs_production_workload_identity_probe` from inside the actual task. It validates ECS task metadata, exact account/region, the STS assumed-role ARN for `wilsy-eos-production-task-role`, and the canonical synthetic KMS encrypt/decrypt round trip.
 5. Verify EOS startup readiness is `READY` only after the real production KMS synthetic round trip succeeds.
 6. Verify wrong key, wrong region, missing task role and denied KMS permissions fail closed.
 7. Preserve CloudTrail, stack/change-set, image digest and task-definition evidence.
@@ -160,7 +171,7 @@ The earlier EKS proposal assumed the exact subject `system:serviceaccount:<names
 This guide does not provision AWS resources, create change sets, launch tasks, deploy services, modify MongoDB, change DNS, merge PR #398, alter MFA factors or enforce production login cutover. Each remains subject to independent evidence and explicit approval.
 
 # ARTIFACT: infra/aws/README-global-principal-mfa-kms.md
-# VERSION: v1.0.4-EOS-GLOBAL-PRINCIPAL-MFA-KMS-OPERATIONS
+# VERSION: v1.0.5-EOS-ECS-PRODUCTION-WORKLOAD-IDENTITY
 # AUTHORITY BOUNDARY: KMS architecture and operational guidance only; no provisioning or workload activation.
 # TENANT POSTURE: No tenant, principal, membership, session or database records are created or mutated.
 # FAIL-CLOSED POSTURE: Local and production identities remain isolated; unverified hosting and infrastructure dependencies block production certification.
