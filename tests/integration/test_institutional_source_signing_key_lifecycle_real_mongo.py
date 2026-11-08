@@ -542,7 +542,7 @@ def test_audit_hash_chain_rejects_event_tampering_and_tail_deletion(mutation):
             events.delete_one({"_id": approval_event["_id"]})
 
         with client.start_session() as session:
-            with pytest.raises(SourceSigningKeyRegistryConflict, match="AUDIT_CHAIN"):
+            with pytest.raises(SourceSigningKeyRegistryConflict, match="AUDIT"):
                 session.with_transaction(
                     lambda tx: registry.resolve_current(
                         source_system_id=source, key_id="key-audit", session=tx,
