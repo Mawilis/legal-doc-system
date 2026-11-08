@@ -171,7 +171,8 @@ def test_environment_factory_requires_and_uses_explicit_aws_region(monkeypatch):
     monkeypatch.setenv("WILSY_GLOBAL_MFA_KMS_PROVIDER", "AWS_KMS")
     monkeypatch.setenv("WILSY_GLOBAL_MFA_KMS_KEY_ID", KEY)
     monkeypatch.delenv("AWS_REGION", raising=False)
-    monkeypatch.setenv("AWS_DEFAULT_REGION", "af-south-1")
+    monkeypatch.delenv("AWS_DEFAULT_REGION", raising=False)
+    monkeypatch.delenv("WILSY_GLOBAL_MFA_KMS_REGION", raising=False)
     with pytest.raises(GlobalMfaKeyManagementError, match="GLOBAL_MFA_KMS_REGION_REQUIRED"):
         build_global_mfa_kms_envelope_from_environment(client=_KmsClient())
 
