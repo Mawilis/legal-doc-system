@@ -1,26 +1,27 @@
 # TITLE: WILSY EOS ECS Fargate Production Foundation Contract Tests
-# VERSION: v1.0.1-EOS-ECS-PRODUCTION-FOUNDATION-CONTRACT
+# VERSION: v1.0.2-EOS-ECS-WRITABLE-TASK-VOLUMES
 # AUTHORITY: Static infrastructure safety certification; no provisioning authority.
-# EPITOME: Assert the inactive ECS foundation's task/service boundary, immutable image and secret references, role separation, and purpose-scoped production MFA KMS access.
+# EPITOME: Assert the inactive ECS foundation's service boundary, immutable image and secret references, role separation, purpose-scoped MFA KMS access, and non-root writable task-volume contract.
 # ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/tests/unit/test_eos_production_ecs_foundation.py
 # COLLABORATION / OWNERSHIP: Wilsy OS Core Engineering; Python EOS and infrastructure governance.
 # CERTIFICATION OR UPDATE DATE: 2026-11-09
 # CHANGELOG:
-#   v1.0.1-EOS-ECS-PRODUCTION-FOUNDATION-CONTRACT adds the mandatory sovereign
-#   artifact contract and module-level documentation. Assertions are retained;
-#   no runtime or infrastructure behavior is changed.
+#   v1.0.2-EOS-ECS-WRITABLE-TASK-VOLUMES asserts that the published Python EOS
+#   image prepares UID/GID 10001-owned task-volume mount points and that ECS
+#   mounts task-scoped /tmp while retaining a read-only root filesystem.
+#   v1.0.1 added the sovereign artifact contract and module documentation.
 #   v1.0.0 established static safety assertions for the ECS foundation.
 # COMPLIANCE: AGENTS.md v1.2.0-SOVEREIGN-LEGAL-OPERATIONS-CONSTITUTION.
-# SECURITY / PRIVACY POSTURE: Reads repository template text only; no AWS calls, credentials, secrets or live data.
+# SECURITY / PRIVACY POSTURE: Reads repository template and Dockerfile text only; no AWS calls, credentials, secrets or live data.
 # TENANT BOUNDARY: No tenant, principal, membership, session or database record is accessed or mutated.
 # AUTHORITY BOUNDARY: Test-only evidence; cannot provision resources, launch tasks or grant runtime permissions.
 # FINANCIAL AUTHORITY BOUNDARY: No financial execution authority; Kennel EOS remains the exclusive financial execution authority.
 
 """Static contract tests for the deliberately inactive ECS production foundation.
 
-These assertions inspect the checked-in CloudFormation source. They do not
-prove AWS resource existence, successful provisioning, effective IAM policy,
-task startup, database connectivity, or production readiness.
+These assertions inspect checked-in CloudFormation and image-build source. They
+do not prove AWS resource existence, successful provisioning, effective IAM
+policy, task startup, database connectivity, or production readiness.
 """
 
 from pathlib import Path
@@ -28,6 +29,7 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[2]
 TEMPLATE = ROOT / "infra" / "aws" / "eos-production-ecs-foundation.yaml"
+IMAGE_DOCKERFILE = ROOT / "infra" / "docker" / "Dockerfile.eos"
 
 
 def _source() -> str:
@@ -104,6 +106,22 @@ def test_production_task_definition_enforces_python_eos_and_startup_kms_probe():
     assert "NODE_ENV" not in source
 
 
+def test_non_root_image_and_task_volumes_have_writable_owned_mount_points():
+    source = _source()
+    image = IMAGE_DOCKERFILE.read_text(encoding="utf-8")
+    assert "USER 10001:10001" in image
+    assert "mkdir -p /app/data /app/reports /var/log/wilsy-os /tmp" in image
+    assert (
+        "chown -R 10001:10001 /app/data /app/reports /var/log/wilsy-os /tmp"
+        in image
+    )
+    assert "chmod 1777 /tmp" in image
+    assert "- Name: eos-tmp" in source
+    assert "SourceVolume: eos-tmp" in source
+    assert "ContainerPath: /tmp" in source
+    assert "ReadonlyRootFilesystem: true" in source
+
+
 def test_production_stack_does_not_invent_networking_or_ingress():
     source = _source()
     assert "AWS::EC2::VPC" not in source
@@ -116,9 +134,9 @@ def test_production_stack_does_not_invent_networking_or_ingress():
 
 
 # ARTIFACT: tests/unit/test_eos_production_ecs_foundation.py
-# VERSION: v1.0.1-EOS-ECS-PRODUCTION-FOUNDATION-CONTRACT
-# AUTHORITY BOUNDARY: Static template assertions only; no provisioning or task activation.
+# VERSION: v1.0.2-EOS-ECS-WRITABLE-TASK-VOLUMES
+# AUTHORITY BOUNDARY: Static template and image-build assertions only; no provisioning or task activation.
 # TENANT POSTURE: No tenant, identity, session or database records are accessed or mutated.
-# FAIL-CLOSED POSTURE: Missing or weakened infrastructure invariants fail the focused test suite.
+# FAIL-CLOSED POSTURE: Missing or weakened infrastructure and image-volume invariants fail the focused test suite.
 # FINANCIAL EXECUTION AUTHORITY: Kennel EOS exclusively.
 # END OF WILSY OS SOVEREIGN ARTIFACT
