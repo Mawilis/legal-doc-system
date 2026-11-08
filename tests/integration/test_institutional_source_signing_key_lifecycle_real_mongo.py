@@ -487,3 +487,67 @@ def test_concurrent_rotation_revocation_and_idempotent_replay_are_serialized():
     finally:
         client.drop_database(db_name)
         client.close()
+
+
+@pytest.mark.parametrize("mutation", ["edit_event", "delete_tail"])
+def test_audit_hash_chain_rejects_event_tampering_and_tail_deletion(mutation):
+    """The event chain and separately stored head detect edits and tail deletion."""
+    client = MongoClient(URI, serverSelectionTimeoutMS=5000, tz_aware=True)
+    db_name = f"source_key_audit_integrity_{uuid.uuid4().hex}"
+    db = client[db_name]
+    try:
+        hello = client.admin.command("hello")
+        assert hello.get("setName") and hello.get("isWritablePrimary") is True
+        keys, events = db[KEY_COLLECTION], db[EVENT_COLLECTION]
+        InstitutionalSourceSigningKeyLifecycleRegistry.ensure_indexes(keys, events)
+        registry = InstitutionalSourceSigningKeyLifecycleRegistry(keys, events)
+        now = datetime.now(timezone.utc).replace(microsecond=0)
+        source = f"synthetic-audit-{uuid.uuid4().hex}"
+        public = _public_key()
+
+        def seed(session):
+            registry.propose(
+                source_system_id=source, key_id="key-audit", public_key_bytes=public,
+                valid_from=now - timedelta(minutes=2), valid_until=now + timedelta(hours=1),
+                proposed_by_principal_id="audit-maker", proposal_reference="audit-proposal",
+                identity_proofing_evidence_reference="audit-identity",
+                source_authority_evidence_reference="audit-authority",
+                proposed_at=now - timedelta(minutes=1), idempotency_key="audit-propose",
+                proposal_evidence_fingerprint_sha256="a" * 64, session=session,
+            )
+            registry.approve(
+                source_system_id=source, key_id="key-audit",
+                approved_by_principal_id="audit-approver",
+                governance_decision_reference="audit-decision",
+                approval_evidence_reference="audit-approval",
+                approval_evidence_fingerprint_sha256="b" * 64,
+                approved_at=now, idempotency_key="audit-approve", session=session,
+            )
+
+        with client.start_session() as session:
+            session.with_transaction(seed)
+
+        approval_event = events.find_one({
+            "source_system_id": source, "key_id": "key-audit", "event_type": "APPROVED",
+        })
+        assert approval_event["previous_event_hash_sha256"] == events.find_one({
+            "source_system_id": source, "key_id": "key-audit", "event_type": "PROPOSED",
+        })["event_hash_sha256"]
+        if mutation == "edit_event":
+            events.update_one(
+                {"_id": approval_event["_id"]},
+                {"$set": {"approval_evidence_reference": "tampered-evidence"}},
+            )
+        else:
+            events.delete_one({"_id": approval_event["_id"]})
+
+        with client.start_session() as session:
+            with pytest.raises(SourceSigningKeyRegistryConflict, match="AUDIT_CHAIN"):
+                session.with_transaction(
+                    lambda tx: registry.resolve_current(
+                        source_system_id=source, key_id="key-audit", session=tx,
+                    )
+                )
+    finally:
+        client.drop_database(db_name)
+        client.close()
