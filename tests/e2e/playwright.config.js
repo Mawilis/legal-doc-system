@@ -27,7 +27,13 @@ export default defineConfig({
   fullyParallel: false,
   workers: 1,
   retries: 0,
-  reporter: process.env.CI ? [['line']] : [['list']],
+  reporter: process.env.CI
+    ? [
+      ['line'],
+      ['html', { outputFolder: 'playwright-report', open: 'never' }],
+      ['junit', { outputFile: 'test-results/playwright-junit.xml' }],
+    ]
+    : [['list']],
   use: {
     baseURL: process.env.BROWSER_CERT_BASE_URL || 'http://127.0.0.1:5174',
     browserName: 'chromium',
@@ -38,7 +44,7 @@ export default defineConfig({
           : undefined),
     },
     headless: true,
-    trace: 'retain-on-failure',
+    trace: 'on',
     screenshot: 'only-on-failure',
     video: 'off',
     ...devices['Desktop Chrome'],
