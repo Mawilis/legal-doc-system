@@ -23,7 +23,7 @@ Kennel EOS is the existing canonical application/API and business authority. The
 
 The following are deliberately retired and must not be restored as application runtime paths:
 
-- The former `server/ecosystem.config.js`, `server/server.js`, and `server/deploy.sh` entrypoints are absent from the branch.
+- The former `server/ecosystem.config.js`, `server/server.js`, and `server/deploy.sh` entrypoints are absent from the branch. The remaining PM2 config formats are inert (`apps: []`, `deploy: {}`).
 - `server/package.json` has no `start`, `dev`, or `predev` backend scripts and no Node server main entry.
 - `server/Dockerfile` and `server/Dockerfile.worker` are non-buildable retirement stubs based on `scratch`; they cannot produce Node backend images.
 
