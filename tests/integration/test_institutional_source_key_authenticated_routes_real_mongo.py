@@ -14,6 +14,18 @@ from pymongo import MongoClient
 
 from tools.eos.auth.identity import SovereignIdentity
 from tools.eos.auth.principal_status import PrincipalStatus
+from tools.eos.auth.principal_authority import PrincipalAuthority
+from tools.eos.auth.principal_authority_repository import PrincipalAuthorityRepository
+from tools.eos.auth.tenant_membership import TenantMembershipAuthority, TenantMembershipStatus
+from tools.eos.auth.tenant_membership_repository import TenantMembershipRepository
+from tools.eos.auth.tenant_business_role import TenantBusinessRoleAuthority, TenantBusinessRoleStatus
+from tools.eos.auth.tenant_business_role_repository import TenantBusinessRoleRepository
+from tools.eos.auth.role_assignment import RoleAssignmentAuthority, RoleAssignmentStatus
+from tools.eos.auth.role_assignment_repository import RoleAssignmentRepository
+from tools.eos.auth.tenant_authority_policy import TENANT_ROLES
+import tools.eos.api.tenant_authorization_http as authorization_http
+import tools.eos.auth.authentication as authentication
+import tools.eos.auth.tenant_access as tenant_access
 from tools.eos.api.tenant_authorization_http import TenantAuthorizationContext
 from tools.eos.api import institutional_source_key_router as source_key_api
 from tools.eos.security.institutional_source_key_governance_evidence import (
@@ -352,6 +364,149 @@ def test_authenticated_propose_approve_revoke_is_atomic_and_maker_checker_enforc
 
                     session=session,
                 )
+    finally:
+        client.drop_database(db_name)
+        client.close()
+
+
+class _PrincipalAuthorityReader:
+    def __init__(self, collection):
+        self.collection = collection
+
+    def get(self, principal_id):
+        return PrincipalAuthorityRepository.get(principal_id, self.collection)
+
+
+class _TenantMembershipReader:
+    def __init__(self, collection):
+        self.collection = collection
+
+    def resolve(self, principal_id, tenant_id):
+        return TenantMembershipRepository.resolve(principal_id, tenant_id, self.collection)
+
+
+class _CurrentRoleReader:
+    def __init__(self, authorization_collection, business_collection):
+        self.authorization_collection = authorization_collection
+        self.business_collection = business_collection
+
+    def resolve(self, principal_id, tenant_id, role_id, *, session=None):
+        if role_id in TENANT_ROLES:
+            return TenantBusinessRoleRepository.resolve(
+                principal_id, tenant_id, self.business_collection, session=session,
+            )
+        return RoleAssignmentRepository.resolve(
+            principal_id, tenant_id, role_id, self.authorization_collection, session=session,
+        )
+
+
+def test_production_tenant_iam_dependency_chain_gates_source_key_route(monkeypatch):
+    """Only durable source-key-admin IAM facts admit the real route dependency."""
+    client = MongoClient(URI, serverSelectionTimeoutMS=5000, tz_aware=True)
+    db_name = f"source_key_live_iam_{uuid.uuid4().hex}"
+    database = client[db_name]
+    app = FastAPI()
+    app.include_router(source_key_api.router)
+    app.state.institutional_source_key_registry_ready = True
+    app.state.institutional_source_key_governance_evidence_verifier = _VerifiedGovernanceEvidence()
+    monkeypatch.setattr(source_key_api, "get_client", lambda: client)
+    monkeypatch.setattr(source_key_api, "get_database", lambda: database)
+
+    principals = database["principal_authorities"]
+    memberships = database["tenant_memberships"]
+    business_roles = database["tenant_business_roles"]
+    authorization_roles = database["role_assignments"]
+    PrincipalAuthorityRepository.ensure_indexes(principals)
+    TenantMembershipRepository.ensure_indexes(memberships)
+    TenantBusinessRoleRepository.ensure_indexes(business_roles)
+    RoleAssignmentRepository.ensure_indexes(authorization_roles)
+
+    admin_id = f"source-key-admin-{uuid.uuid4().hex}"
+    owner_id = f"ordinary-owner-{uuid.uuid4().hex}"
+    now = datetime.now(timezone.utc)
+
+    for principal_id, business_role in (
+        (admin_id, "tenant_institutional_source_key_admin"),
+        (owner_id, "tenant_owner"),
+    ):
+        PrincipalAuthorityRepository.create(
+            PrincipalAuthority(principal_id, PrincipalStatus.ACTIVE, 0), principals,
+        )
+        TenantMembershipRepository.insert(
+            TenantMembershipAuthority(principal_id, TENANT_ID, TenantMembershipStatus.ACTIVE, 0),
+            memberships,
+        )
+        TenantBusinessRoleRepository.insert(
+            TenantBusinessRoleAuthority(
+                principal_id, TENANT_ID, business_role,
+                TenantBusinessRoleStatus.ACTIVE, 0, now, None,
+            ),
+            business_roles,
+        )
+    RoleAssignmentRepository.insert(
+        RoleAssignmentAuthority(
+            admin_id, TENANT_ID, "INSTITUTIONAL_SOURCE_KEY_ADMIN",
+            RoleAssignmentStatus.ACTIVE, 0,
+        ),
+        authorization_roles,
+    )
+
+    app.dependency_overrides[authorization_http.get_current_identity] = lambda: SovereignIdentity(
+        identity_id=admin_id, tenant_id=TENANT_ID, auth_method="TEST_CERTIFICATION",
+        status=PrincipalStatus.ACTIVE,
+    )
+    app.dependency_overrides[authentication.get_principal_authority_repository] = (
+        lambda: _PrincipalAuthorityReader(principals)
+    )
+    app.dependency_overrides[tenant_access.get_tenant_membership_repository] = (
+        lambda: _TenantMembershipReader(memberships)
+    )
+    app.dependency_overrides[authorization_http.get_role_assignment_repository] = (
+        lambda: _CurrentRoleReader(authorization_roles, business_roles)
+    )
+
+    try:
+        hello = client.admin.command("hello")
+        assert hello.get("setName") and hello.get("isWritablePrimary") is True
+        InstitutionalSourceSigningKeyLifecycleRegistry.ensure_indexes(
+            database[KEY_COLLECTION], database[EVENT_COLLECTION],
+        )
+        private = Ed25519PrivateKey.generate()
+        public = private.public_key().public_bytes(
+            encoding=serialization.Encoding.Raw,
+            format=serialization.PublicFormat.Raw,
+        )
+        now = datetime.now(timezone.utc)
+        body = {
+            "source_system_id": "synthetic-live-iam-source",
+            "key_id": "synthetic-live-iam-key",
+            "public_key_base64": base64.b64encode(public).decode("ascii"),
+            "valid_from": (now - timedelta(minutes=1)).isoformat(),
+            "valid_until": (now + timedelta(hours=1)).isoformat(),
+            "proposal_reference": "synthetic-live-iam-proposal",
+            "identity_proofing_evidence_reference": "synthetic://live-iam/identity",
+            "source_authority_evidence_reference": "synthetic://live-iam/source-authority",
+        }
+        route = "/security/institutional-source-keys/proposals"
+        with TestClient(app) as http:
+            allowed = http.post(
+                route, json=body,
+                headers={"X-Tenant-ID": TENANT_ID, "Idempotency-Key": "live-iam-admin-propose"},
+            )
+            assert allowed.status_code == 201
+
+            app.dependency_overrides[authorization_http.get_current_identity] = lambda: SovereignIdentity(
+                identity_id=owner_id, tenant_id=TENANT_ID, auth_method="TEST_CERTIFICATION",
+                status=PrincipalStatus.ACTIVE,
+            )
+            denied = http.post(
+                route, json={**body, "key_id": "owner-must-not-propose"},
+                headers={"X-Tenant-ID": TENANT_ID, "Idempotency-Key": "live-iam-owner-propose"},
+            )
+            assert denied.status_code == 403
+            assert database[EVENT_COLLECTION].count_documents({
+                "source_system_id": "synthetic-live-iam-source",
+            }) == 1
     finally:
         client.drop_database(db_name)
         client.close()
