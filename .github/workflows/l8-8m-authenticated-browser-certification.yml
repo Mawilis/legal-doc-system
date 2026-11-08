@@ -260,9 +260,6 @@ jobs:
             --junitxml=test-results/d21b13-branding-real-mongo.xml \
             tests/integration/test_tenant_branding_workspace_asset_delivery_real_mongo.py \
             2>&1 | tee certification-diagnostics/logs/d21b13-real-mongo.log
-          if [ "$pytest_status" -ne 0 ]; then
-            exit "$pytest_status"
-          fi
           python - <<'PY'
           import xml.etree.ElementTree as ET
 
