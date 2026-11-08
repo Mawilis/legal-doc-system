@@ -1,5 +1,5 @@
 """TITLE: WILSY EOS Institutional Source Signing-Key Lifecycle Registry
-VERSION: v1.1.0
+VERSION: v1.2.0
 AUTHORITY: WILSY EOS Security Engineering; persistence authority only
 EPITOME: Append-only, source-bound Ed25519 public-key enrollment, revocation and rotation evidence.
 ABSOLUTE CANONICAL PATH: tools/eos/security/institutional_source_signing_key_registry.py
@@ -10,6 +10,8 @@ CHANGELOG:
 - v1.1.0: Persist proposal and approval evidence fingerprints; derive lifecycle
   projections from immutable events; add transactionally anchored per-key audit
   hash chains and an indexed governance-denial evidence collection.
+- v1.2.0: Verify the complete existing event chain and audit head inside the
+  registry append boundary before every lifecycle mutation.
 COMPLIANCE: Caller-owned MongoDB transaction; deterministic fingerprints; unique source/key and public-key identities.
 SECURITY / PRIVACY POSTURE: Public keys only; no private material, secrets, provider credentials or fabricated institutional trust anchors.
 TENANT BOUNDARY: Source trust is source-system scoped, not tenant-issued authority.
@@ -102,7 +104,12 @@ class InstitutionalSourceSigningKeyLifecycleRegistry:
         self._heads = events.database[AUDIT_HEAD_COLLECTION]
 
     def _seal_event(self, event: dict[str, Any], session: ClientSession) -> None:
-        """Link the next event to the previous hash in this key's chain."""
+        """Verify the complete chain, then link the next event to its current head."""
+        self._verify_event_chain(
+            source_system_id=event["source_system_id"],
+            key_id=event["key_id"],
+            session=session,
+        )
         previous = self._events.find_one(
             {
                 "source_system_id": event["source_system_id"],
@@ -658,7 +665,7 @@ __all__ = [
 ]
 
 # ARTIFACT: WILSY OS Institutional Source Signing-Key Lifecycle Registry
-# VERSION: v1.1.0
+# VERSION: v1.2.0
 # AUTHORITY BOUNDARY: Durable public-key lifecycle evidence only; no caller authorization or verifier-result issuance.
 # TENANT POSTURE: Source-system scoped; no tenant-issued trust.
 # FAIL-CLOSED POSTURE: Missing, invalid, expired, revoked, or unavailable trust is denied.
