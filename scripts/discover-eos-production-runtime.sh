@@ -1,12 +1,16 @@
 #!/usr/bin/env bash
 # TITLE: WILSY EOS Production Runtime Read-Only AWS Discovery
-# VERSION: v1.0.0-EOS-PRODUCTION-RUNTIME-DISCOVERY
+# VERSION: v1.0.1-EOS-PRODUCTION-PREREQUISITE-INVENTORY
 # AUTHORITY: Read-only AWS inventory only; no cloud provisioning or deployment authority.
 # EPITOME: Enumerate account identity and available regional AWS hosting, workload identity, compute, ingress and CloudFormation metadata to identify candidate EOS production hosting without inferring that discovered resources serve EOS.
 # ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/scripts/discover-eos-production-runtime.sh
 # COLLABORATION / OWNERSHIP: Wilsy OS Core Engineering; production hosting owner must verify actual service ownership and traffic path.
 # CERTIFICATION OR UPDATE DATE: 2026-11-09
 # CHANGELOG:
+#   v1.0.1 adds read-only metadata discovery for candidate production
+#   Secrets Manager references, KMS aliases, VPC/subnet/security-group/egress,
+#   target groups, ACM certificates and Route 53 hosted zones. Secret values
+#   are never read. No infrastructure mutation is introduced.
 #   v1.0.0-EOS-PRODUCTION-RUNTIME-DISCOVERY establishes a read-only AWS
 #   regional inventory of EKS/OIDC, ECS, Lambda, App Runner, Elastic Beanstalk,
 #   Lightsail, EC2, load balancers and CloudFormation metadata.
@@ -57,6 +61,12 @@ aws_read iam list-roles \
   --output table || echo "IAM_ROLE_INVENTORY=UNAVAILABLE"
 
 echo
+echo "--- ROUTE 53 HOSTED ZONES (NAMES AND IDS ONLY) ---"
+aws_read route53 list-hosted-zones \
+  --query "HostedZones[].{Name:Name,Id:Id,Private:Config.PrivateZone}" \
+  --output table || echo "ROUTE53_INVENTORY=UNAVAILABLE"
+
+echo
 echo "--- ENABLED AWS REGIONS ---"
 REGIONS="$(aws_read ec2 describe-regions --all-regions \
   --filters Name=opt-in-status,Values=opt-in-not-required,opted-in \
@@ -93,6 +103,43 @@ printf '%s\n' "$REGIONS" | tr '\t' '\n' | while IFS= read -r region; do
   aws_read ecs list-clusters --region "$region" \
     --query 'clusterArns' --output table || echo "ECS_INVENTORY=UNAVAILABLE"
 
+  echo "[WILSY/EOS SECRET METADATA ONLY — NEVER SECRET VALUES]"
+  aws_read secretsmanager list-secrets --region "$region" \
+    --filters Key=name,Values=wilsy,eos,ghcr,mongo,atlas \
+    --query 'SecretList[].{Name:Name,Arn:ARN,LastChanged:LastChangedDate,KmsKeyId:KmsKeyId}' \
+    --output table || echo "SECRETS_MANAGER_METADATA_INVENTORY=UNAVAILABLE"
+
+  echo "[WILSY/EOS KMS ALIASES]"
+  aws_read kms list-aliases --region "$region" \
+    --query "Aliases[?contains(AliasName, 'wilsy') || contains(AliasName, 'eos')].[AliasName,TargetKeyId]" \
+    --output table || echo "KMS_ALIAS_INVENTORY=UNAVAILABLE"
+
+  echo "[VPCS]"
+  aws_read ec2 describe-vpcs --region "$region" \
+    --query "Vpcs[].{VpcId:VpcId,Cidr:CidrBlock,State:State,Name:Tags[?Key=='Name']|[0].Value}" \
+    --output table || echo "VPC_INVENTORY=UNAVAILABLE"
+
+  echo "[SUBNETS]"
+  aws_read ec2 describe-subnets --region "$region" \
+    --query 'Subnets[].{SubnetId:SubnetId,VpcId:VpcId,AZ:AvailabilityZone,Cidr:CidrBlock,PublicIp:MapPublicIpOnLaunch}' \
+    --output table || echo "SUBNET_INVENTORY=UNAVAILABLE"
+
+  echo "[SECURITY GROUP METADATA]"
+  aws_read ec2 describe-security-groups --region "$region" \
+    --query 'SecurityGroups[].{GroupId:GroupId,Name:GroupName,VpcId:VpcId,Description:Description}' \
+    --output table || echo "SECURITY_GROUP_INVENTORY=UNAVAILABLE"
+
+  echo "[AVAILABLE OR PENDING NAT GATEWAYS]"
+  aws_read ec2 describe-nat-gateways --region "$region" \
+    --filter Name=state,Values=available,pending \
+    --query 'NatGateways[].{NatGatewayId:NatGatewayId,VpcId:VpcId,SubnetId:SubnetId,State:State}' \
+    --output table || echo "NAT_GATEWAY_INVENTORY=UNAVAILABLE"
+
+  echo "[VPC ENDPOINTS]"
+  aws_read ec2 describe-vpc-endpoints --region "$region" \
+    --query 'VpcEndpoints[].{VpcEndpointId:VpcEndpointId,VpcId:VpcId,ServiceName:ServiceName,State:State,PrivateDns:PrivateDnsEnabled}' \
+    --output table || echo "VPC_ENDPOINT_INVENTORY=UNAVAILABLE"
+
   echo "[LAMBDA FUNCTIONS]"
   aws_read lambda list-functions --region "$region" \
     --query 'Functions[].{Name:FunctionName,Runtime:Runtime,Handler:Handler,Modified:LastModified}' \
@@ -125,6 +172,16 @@ printf '%s\n' "$REGIONS" | tr '\t' '\n' | while IFS= read -r region; do
     --query 'LoadBalancers[].{Name:LoadBalancerName,Type:Type,State:State.Code,DNS:DNSName,Vpc:VpcId}' \
     --output table || echo "LOAD_BALANCER_INVENTORY=UNAVAILABLE"
 
+  echo "[LOAD BALANCER TARGET GROUPS]"
+  aws_read elbv2 describe-target-groups --region "$region" \
+    --query 'TargetGroups[].{Name:TargetGroupName,Arn:TargetGroupArn,Protocol:Protocol,Port:Port,VpcId:VpcId,TargetType:TargetType}' \
+    --output table || echo "TARGET_GROUP_INVENTORY=UNAVAILABLE"
+
+  echo "[ACM CERTIFICATE METADATA]"
+  aws_read acm list-certificates --region "$region" \
+    --query 'CertificateSummaryList[].{Domain:DomainName,Arn:CertificateArn,Status:Status}' \
+    --output table || echo "ACM_INVENTORY=UNAVAILABLE"
+
   echo "[CLOUDFORMATION STACKS]"
   aws_read cloudformation list-stacks --region "$region" \
     --stack-status-filter CREATE_COMPLETE UPDATE_COMPLETE UPDATE_ROLLBACK_COMPLETE IMPORT_COMPLETE \
@@ -138,7 +195,7 @@ echo "This inventory does not prove that any discovered resource serves EOS."
 echo "Confirm the live deployment's repository, image digest, DNS/ingress, runtime identity, and owner before KMS binding."
 
 # ARTIFACT: scripts/discover-eos-production-runtime.sh
-# VERSION: v1.0.0-EOS-PRODUCTION-RUNTIME-DISCOVERY
+# VERSION: v1.0.1-EOS-PRODUCTION-PREREQUISITE-INVENTORY
 # AUTHORITY BOUNDARY: Read-only infrastructure inventory only; no cloud mutation or deployment.
 # TENANT POSTURE: No tenant, principal, session or database records are accessed or mutated.
 # FAIL-CLOSED POSTURE: Unavailable regional APIs remain explicitly unavailable; discovered resources are not presumed to host EOS.
