@@ -38,6 +38,7 @@ from tools.eos.security.institutional_source_key_governance_evidence import (
 from tools.eos.security.institutional_source_signing_key_registry import (
     KEY_COLLECTION,
     EVENT_COLLECTION,
+    DENIAL_COLLECTION,
     InstitutionalSourceSigningKeyLifecycleRegistry,
     SourceSigningKeyRegistryConflict,
 )
@@ -230,6 +231,15 @@ def test_authenticated_propose_approve_revoke_is_atomic_and_maker_checker_enforc
             )
             assert self_approval.status_code == 409
             assert self_approval.json()["detail"] == "SOURCE_SIGNING_KEY_MAKER_CHECKER_VIOLATION"
+            denial = database[DENIAL_COLLECTION].find_one({
+                "action": "APPROVE",
+                "reason_code": "SOURCE_SIGNING_KEY_MAKER_CHECKER_VIOLATION",
+            })
+            assert denial["actor_principal_id"] == "synthetic-maker"
+            assert denial["tenant_id"] == TENANT_ID
+            assert "approval_evidence_reference" not in denial
+            assert "evidence_fingerprint_sha256" not in denial
+            assert "request_body" not in denial
 
             app.dependency_overrides[source_key_api._APPROVE] = lambda: _context("synthetic-reviewer")
             evidence.fail_approval = True
