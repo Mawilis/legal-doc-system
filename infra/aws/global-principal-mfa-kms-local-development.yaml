@@ -1,15 +1,15 @@
 # TITLE: WILSY EOS Local-Development Global Principal MFA KMS Infrastructure
-# VERSION: v1.0.3-LOCAL-GLOBAL-MFA-KMS-ROTATION-ADMINISTRATION
+# VERSION: v1.0.4-LOCAL-GLOBAL-MFA-KMS-ALIAS-ADMINISTRATION
 # AUTHORITY: Dedicated local-development AWS infrastructure only.
 # EPITOME: Provision one isolated MFA KMS key, alias, and narrowly trusted local EOS role.
 # ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/infra/aws/global-principal-mfa-kms-local-development.yaml
 # COLLABORATION / OWNERSHIP: Wilsy Core Engineering.
 # CERTIFICATION OR UPDATE DATE: 2026-11-09.
-# CHANGELOG: v1.0.3 grants the explicitly designated key administrator kms:EnableKeyRotation so CloudFormation can activate mandatory automatic rotation without granting runtime data-plane use; v1.0.2 makes the key depend on the pre-created local role and removes redundant role-side KMS grants; v1.0.1 binds key use to the exact role without account-wide delegation; v1.0.0 establishes the isolated local-development key and role.
+# CHANGELOG: v1.0.4 grants the explicitly designated key administrator kms:CreateAlias and kms:DeleteAlias on this key so CloudFormation can create and remove the dedicated alias; v1.0.3 grants kms:EnableKeyRotation for mandatory automatic rotation; v1.0.2 orders key creation after the local role and removes redundant role-side KMS grants; v1.0.1 binds key use to the exact role without account-wide delegation; v1.0.0 establishes the isolated local-development key and role.
 # COMPLIANCE: CloudFormation definition only; deployment requires a reviewed change set and explicit operator execution.
 # SECURITY / PRIVACY POSTURE: No static credentials, access keys, EKS resources, OIDC providers, or production workload identity.
 # TENANT BOUNDARY: No tenant data, database, or tenant identity resources are created.
-# AUTHORITY BOUNDARY: Local developer role may use only this key for GLOBAL_PRINCIPAL_TOTP; key administration is separately assigned and includes mandatory rotation activation.
+# AUTHORITY BOUNDARY: Local developer role may use only this key for GLOBAL_PRINCIPAL_TOTP; alias and key administration are separately assigned to the designated key administrator.
 # FINANCIAL AUTHORITY BOUNDARY: No financial execution authority; Kennel EOS remains exclusive.
 
 AWSTemplateFormatVersion: '2010-09-09'
@@ -70,6 +70,8 @@ Resources:
               AWS: !Ref KeyAdministratorPrincipalArn
             Action:
               - kms:CancelKeyDeletion
+              - kms:CreateAlias
+              - kms:DeleteAlias
               - kms:DescribeKey
               - kms:DisableKey
               - kms:EnableKey
@@ -117,9 +119,9 @@ Outputs:
     Description: Configure the local AWS profile to assume this role.
     Value: !GetAtt LocalGlobalPrincipalMfaRole.Arn
 # ARTIFACT: global-principal-mfa-kms-local-development.yaml
-# VERSION: v1.0.3-LOCAL-GLOBAL-MFA-KMS-ROTATION-ADMINISTRATION
-# AUTHORITY BOUNDARY: local-development KMS envelope encryption only; rotation administration is explicit
+# VERSION: v1.0.4-LOCAL-GLOBAL-MFA-KMS-ALIAS-ADMINISTRATION
+# AUTHORITY BOUNDARY: local-development KMS envelope encryption only; alias lifecycle and rotation administration are explicit
 # TENANT POSTURE: no tenant or database resources
-# FAIL-CLOSED POSTURE: exact IAM-user trust, purpose-scoped runtime use, and key-admin-only rotation activation
+# FAIL-CLOSED POSTURE: exact IAM-user trust, purpose-scoped runtime use, and separately assigned key administration
 # FINANCIAL EXECUTION AUTHORITY: Kennel EOS remains exclusive
 # END OF WILSY OS SOVEREIGN ARTIFACT
