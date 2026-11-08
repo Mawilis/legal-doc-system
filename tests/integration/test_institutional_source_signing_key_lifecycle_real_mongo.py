@@ -551,3 +551,72 @@ def test_audit_hash_chain_rejects_event_tampering_and_tail_deletion(mutation):
     finally:
         client.drop_database(db_name)
         client.close()
+
+
+def test_registry_append_rejects_corrupt_earlier_event_before_moving_audit_head():
+    """Direct registry mutation must verify every prior event, not only the tail."""
+    from tools.eos.security.institutional_source_signing_key_registry import (
+        AUDIT_HEAD_COLLECTION,
+    )
+
+    client = MongoClient(URI, serverSelectionTimeoutMS=5000, tz_aware=True)
+    db_name = f"source_key_append_integrity_{uuid.uuid4().hex}"
+    db = client[db_name]
+    try:
+        hello = client.admin.command("hello")
+        assert hello.get("setName") and hello.get("isWritablePrimary") is True
+        keys, events = db[KEY_COLLECTION], db[EVENT_COLLECTION]
+        InstitutionalSourceSigningKeyLifecycleRegistry.ensure_indexes(keys, events)
+        registry = InstitutionalSourceSigningKeyLifecycleRegistry(keys, events)
+        now = datetime.now(timezone.utc).replace(microsecond=0)
+        source = f"synthetic-append-integrity-{uuid.uuid4().hex}"
+
+        def seed(session):
+            registry.propose(
+                source_system_id=source, key_id="key-append", public_key_bytes=_public_key(),
+                valid_from=now - timedelta(minutes=2), valid_until=now + timedelta(hours=1),
+                proposed_by_principal_id="append-maker", proposal_reference="append-proposal",
+                identity_proofing_evidence_reference="append-identity",
+                source_authority_evidence_reference="append-authority",
+                proposed_at=now - timedelta(minutes=1), idempotency_key="append-propose",
+                proposal_evidence_fingerprint_sha256="c" * 64, session=session,
+            )
+
+        with client.start_session() as session:
+            session.with_transaction(seed)
+
+        original_head = db[AUDIT_HEAD_COLLECTION].find_one({
+            "source_system_id": source, "key_id": "key-append",
+        })
+        proposal_event = events.find_one({
+            "source_system_id": source, "key_id": "key-append", "event_type": "PROPOSED",
+        })
+        events.update_one(
+            {"_id": proposal_event["_id"]},
+            {"$set": {"proposal_reference": "tampered-proposal-reference"}},
+        )
+
+        def attempt_approval(session):
+            registry.approve(
+                source_system_id=source, key_id="key-append",
+                approved_by_principal_id="append-approver",
+                governance_decision_reference="append-decision",
+                approval_evidence_reference="append-approval",
+                approval_evidence_fingerprint_sha256="d" * 64,
+                approved_at=now, idempotency_key="append-approve", session=session,
+            )
+
+        with client.start_session() as session:
+            with pytest.raises(SourceSigningKeyRegistryConflict, match="AUDIT_CHAIN_INVALID"):
+                session.with_transaction(attempt_approval)
+
+        assert events.count_documents({
+            "source_system_id": source, "key_id": "key-append", "event_type": "APPROVED",
+        }) == 0
+        assert db[AUDIT_HEAD_COLLECTION].find_one({
+            "source_system_id": source, "key_id": "key-append",
+        }) == original_head
+    finally:
+        client.drop_database(db_name)
+        client.close()
+
