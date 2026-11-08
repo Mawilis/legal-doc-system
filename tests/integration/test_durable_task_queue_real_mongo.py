@@ -114,7 +114,7 @@ def test_replica_set_compliance_scan_atomically_persists_finding_and_notificatio
     db = client[f"eos_compliance_scan_{uuid4().hex}"]
     clients, findings, outbox, tasks = (db["clients"], db["findings"],
                                           db["notification_outbox"], db["tasks"])
-    provision_compliance_scan_indexes(findings=findings, notification_outbox=outbox)
+    provision_compliance_scan_indexes(clients=clients, findings=findings, notification_outbox=outbox)
     tasks.insert_one({
         "tenant_id": "tenant-a", "task_id": "compliance-a", "status": "CLAIMED",
         "claimed_by": "worker-a", "lease_token": "lease-a",
