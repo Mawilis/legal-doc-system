@@ -1,11 +1,14 @@
 # TITLE: WILSY EOS Global Principal MFA — AWS KMS Operations and Hosting Binding
-# VERSION: v1.0.2-EOS-GLOBAL-PRINCIPAL-MFA-KMS-OPERATIONS
+# VERSION: v1.0.3-EOS-GLOBAL-PRINCIPAL-MFA-KMS-OPERATIONS
 # AUTHORITY: Wilsy OS Core Governance; cryptographic infrastructure operations guidance.
 # EPITOME: Define the canonical Python EOS MFA KMS contract, distinguish local-development and selected ECS production identities, and preserve fail-closed provisioning and runtime certification gates.
 # ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/infra/aws/README-global-principal-mfa-kms.md
 # COLLABORATION / OWNERSHIP: Wilsy OS Core Engineering; Python EOS owns MFA factor, identity, session and tenant truth.
 # CERTIFICATION OR UPDATE DATE: 2026-11-09
 # CHANGELOG:
+#   v1.0.3-EOS-GLOBAL-PRINCIPAL-MFA-KMS-OPERATIONS records the exact
+#   published Python EOS Dockerfile, ephemeral task-volume boundary and
+#   liveness-versus-readiness distinction for the ECS target.
 #   v1.0.2-EOS-GLOBAL-PRINCIPAL-MFA-KMS-OPERATIONS aligns this guide with the
 #   selected ECS Fargate production target, removes contradictory EKS production
 #   deployment instructions, records AWS inventory limitations, and preserves
@@ -150,7 +153,7 @@ The earlier EKS proposal assumed the exact subject `system:serviceaccount:<names
 This guide does not provision AWS resources, create change sets, launch tasks, deploy services, modify MongoDB, change DNS, merge PR #398, alter MFA factors or enforce production login cutover. Each remains subject to independent evidence and explicit approval.
 
 # ARTIFACT: infra/aws/README-global-principal-mfa-kms.md
-# VERSION: v1.0.2-EOS-GLOBAL-PRINCIPAL-MFA-KMS-OPERATIONS
+# VERSION: v1.0.3-EOS-GLOBAL-PRINCIPAL-MFA-KMS-OPERATIONS
 # AUTHORITY BOUNDARY: KMS architecture and operational guidance only; no provisioning or workload activation.
 # TENANT POSTURE: No tenant, principal, membership, session or database records are created or mutated.
 # FAIL-CLOSED POSTURE: Local and production identities remain isolated; unverified hosting and infrastructure dependencies block production certification.
