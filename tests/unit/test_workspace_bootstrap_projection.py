@@ -21,18 +21,6 @@ AUTHORITY BOUNDARY: Tests read-only presentation projection only; no permissions
 FINANCIAL AUTHORITY BOUNDARY: None; Kennel EOS remains exclusive.
 """
 
-"""Direct certificate for the server-owned WorkspaceBootstrapProjection.
-
-The projection must compose existing sovereign authorities only:
-- authenticated/current ACTIVE principal supplied by get_current_identity;
-- exact ACTIVE TenantMembership authority;
-- exact dedicated ACTIVE TenantBusinessRole authority;
-- exact canonical ACTIVE TenantEntity resolution.
-
-JWT role/permission claims, browser state, directory scans, and RoleAssignment
-compatibility projections are not workspace-bootstrap authority.
-"""
-
 from __future__ import annotations
 
 import importlib
