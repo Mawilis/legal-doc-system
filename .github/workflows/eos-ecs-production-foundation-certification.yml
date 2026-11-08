@@ -1,11 +1,14 @@
 # TITLE: WILSY EOS ECS Fargate Production Foundation Certification Workflow
-# VERSION: v1.0.3-EOS-ECS-PRODUCTION-KMS-DOCUMENTATION-CERTIFICATION
+# VERSION: v1.0.4-EOS-ECS-WORKLOAD-IDENTITY-CERTIFICATION
 # AUTHORITY: Repository CI certification only; no infrastructure provisioning or deployment authority.
 # EPITOME: Lint the ECS CloudFormation, build the exact published Python EOS image, test the task identity and writable-volume contract, and verify exact-diff whitespace.
 # ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/.github/workflows/eos-ecs-production-foundation-certification.yml
 # COLLABORATION / OWNERSHIP: Wilsy OS Core Engineering; Python EOS and infrastructure governance.
 # CERTIFICATION OR UPDATE DATE: 2026-11-09
 # CHANGELOG:
+#   v1.0.4 adds the production ECS metadata/STS/KMS identity probe and its
+#   unit tests, plus the provisioning evidence register, to PR/push triggers,
+#   focused certification and exact-diff whitespace validation.
 #   v1.0.3-EOS-ECS-PRODUCTION-KMS-DOCUMENTATION-CERTIFICATION includes the
 #   canonical MFA KMS operations guide in the ECS certification trigger and
 #   exact-diff scope so production identity documentation cannot drift without
@@ -29,9 +32,21 @@ on:
     paths:
       - "infra/aws/eos-production-ecs-foundation.yaml"
       - "infra/aws/README-global-principal-mfa-kms.md"
+      - "tools/eos/auth/ecs_production_workload_identity_probe.py"
+      - "tests/unit/test_ecs_production_workload_identity_probe.py"
+      - "docs/operations/eos-production-provisioning-prerequisite-register.md"
       - "infra/docker/Dockerfile.eos"
+      - "tools/eos/auth/ecs_production_workload_identity_probe.py"
+      - "tests/unit/test_ecs_production_workload_identity_probe.py"
+      - "docs/operations/eos-production-provisioning-prerequisite-register.md"
       - "tests/unit/test_eos_production_ecs_foundation.py"
+      - "tools/eos/auth/ecs_production_workload_identity_probe.py"
+      - "tests/unit/test_ecs_production_workload_identity_probe.py"
+      - "docs/operations/eos-production-provisioning-prerequisite-register.md"
       - "docs/operations/eos-production-ecs-fargate-foundation.md"
+      - "tools/eos/auth/ecs_production_workload_identity_probe.py"
+      - "tests/unit/test_ecs_production_workload_identity_probe.py"
+      - "docs/operations/eos-production-provisioning-prerequisite-register.md"
       - ".github/workflows/eos-image-publication.yml"
       - ".github/workflows/eos-ecs-production-foundation-certification.yml"
   push:
@@ -39,9 +54,19 @@ on:
       - eos/kennel-eos-production-runtime-20261108
     paths:
       - "infra/aws/eos-production-ecs-foundation.yaml"
+      - "infra/aws/README-global-principal-mfa-kms.md"
       - "infra/docker/Dockerfile.eos"
+      - "tools/eos/auth/ecs_production_workload_identity_probe.py"
+      - "tests/unit/test_ecs_production_workload_identity_probe.py"
+      - "docs/operations/eos-production-provisioning-prerequisite-register.md"
       - "tests/unit/test_eos_production_ecs_foundation.py"
+      - "tools/eos/auth/ecs_production_workload_identity_probe.py"
+      - "tests/unit/test_ecs_production_workload_identity_probe.py"
+      - "docs/operations/eos-production-provisioning-prerequisite-register.md"
       - "docs/operations/eos-production-ecs-fargate-foundation.md"
+      - "tools/eos/auth/ecs_production_workload_identity_probe.py"
+      - "tests/unit/test_ecs_production_workload_identity_probe.py"
+      - "docs/operations/eos-production-provisioning-prerequisite-register.md"
       - ".github/workflows/eos-image-publication.yml"
       - ".github/workflows/eos-ecs-production-foundation-certification.yml"
   workflow_dispatch:
@@ -70,8 +95,8 @@ jobs:
         run: |
           cfn-lint --version
           cfn-lint --template infra/aws/eos-production-ecs-foundation.yaml
-      - name: Run ECS production foundation safety contract
-        run: python -m pytest -q tests/unit/test_eos_production_ecs_foundation.py
+      - name: Run ECS production foundation and workload identity contracts
+        run: python -m pytest -q tests/unit/test_eos_production_ecs_foundation.py tests/unit/test_ecs_production_workload_identity_probe.py
       - name: Build the exact Python EOS production image
         run: docker build --file infra/docker/Dockerfile.eos --tag wilsy-eos-production:certification .
       - name: Verify patch whitespace
@@ -83,6 +108,9 @@ jobs:
               infra/docker/Dockerfile.eos \
               tests/unit/test_eos_production_ecs_foundation.py \
               docs/operations/eos-production-ecs-fargate-foundation.md \
+              docs/operations/eos-production-provisioning-prerequisite-register.md \
+              tools/eos/auth/ecs_production_workload_identity_probe.py \
+              tests/unit/test_ecs_production_workload_identity_probe.py \
               .github/workflows/eos-image-publication.yml \
               .github/workflows/eos-ecs-production-foundation-certification.yml
           else
@@ -96,7 +124,7 @@ jobs:
           fi
 
 # ARTIFACT: .github/workflows/eos-ecs-production-foundation-certification.yml
-# VERSION: v1.0.3-EOS-ECS-PRODUCTION-KMS-DOCUMENTATION-CERTIFICATION
+# VERSION: v1.0.4-EOS-ECS-WORKLOAD-IDENTITY-CERTIFICATION
 # AUTHORITY BOUNDARY: Source-level lint, test and local image-build certification only; no AWS mutation or image publication.
 # TENANT POSTURE: No tenant, identity, session or database records are accessed or mutated.
 # FAIL-CLOSED POSTURE: CloudFormation lint, static contract tests, image build or whitespace failure fails the job.
