@@ -95,6 +95,7 @@ class DurableWorkerRunner:
             lease_token=lease_token,
             now=self._now(),
             lease_seconds=self.lease_seconds,
+            engine_names=self.worker_registry.engine_names,
         )
         if task is None:
             return "EMPTY"
