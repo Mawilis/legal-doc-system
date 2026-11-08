@@ -267,7 +267,12 @@ jobs:
             tests/integration/test_global_principal_system_http_mongo.py
       - name: Verify diff whitespace and clean checkout
         run: |
-          git diff --check "origin/${{ github.base_ref }}...HEAD" -- \
+          if [ "${GITHUB_EVENT_NAME}" = "pull_request" ]; then
+            DIFF_BASE="origin/${GITHUB_BASE_REF}"
+          else
+            DIFF_BASE="${GITHUB_EVENT_BEFORE}"
+          fi
+          git diff --check "${DIFF_BASE}...HEAD" -- \
             tools/eos/auth/membership_selection_challenge.py \
             tools/eos/auth/global_principal_session_authority.py \
             tools/eos/auth/global_principal_system_session_authority.py \
