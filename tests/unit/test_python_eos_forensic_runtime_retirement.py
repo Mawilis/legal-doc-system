@@ -55,3 +55,12 @@ def test_legacy_express_apps_do_not_render_pdf_and_transport_targets_python_eos(
     assert "targetPrefix: '/api/generate/pdf'" in transport_source
     assert "generateSovereignArtifactPdf" not in transport_source
     assert "requireEosWorkspaceIdentity" not in transport_source
+
+
+    legacy_api_source = (ROOT / "server/routes/api.js").read_text(encoding="utf-8")
+    assert "businessArtifactPdfController" not in legacy_api_source
+    assert "generateSovereignArtifactPdf" not in legacy_api_source
+    assert "router.post('/generate/pdf'" not in legacy_api_source
+
+    eos_source = (ROOT / "tools/eos/api/server.py").read_text(encoding="utf-8")
+    assert 'app.include_router(artifact_pdf_router, prefix="/api")' in eos_source
