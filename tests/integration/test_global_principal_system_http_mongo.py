@@ -331,6 +331,13 @@ def system_http_mongo(monkeypatch: pytest.MonkeyPatch):
     )
 
     app = FastAPI()
+    # Protected-request authentication resolves PrincipalAuthority through a
+    # FastAPI dependency, independently of the login/session adapters above.
+    # Keep that durable authority read on this test's UUID-scoped principal
+    # collection while exercising the production get_current_identity path.
+    app.dependency_overrides[authentication.get_principal_authority_repository] = (
+        lambda: _PrincipalRepository()
+    )
     register_error_handlers(app)
     app.include_router(auth_router.router)
     app.state.global_principal_auth_indexes_ready = True
