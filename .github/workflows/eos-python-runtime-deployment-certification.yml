@@ -13,6 +13,7 @@ on:
       - "tools/eos/**"
       - "tests/unit/test_durable_task_queue.py"
       - "tests/unit/test_durable_worker_runner.py"
+      - "tests/unit/test_durable_worker_runtime.py"
       - "tests/integration/test_durable_task_queue_real_mongo.py"
       - "tests/unit/test_python_eos_runtime_deployment.py"
       - ".github/workflows/eos-python-runtime-deployment-certification.yml"
@@ -55,7 +56,7 @@ jobs:
       - name: Run Python runtime deployment tests
         run: python -m pytest -q tests/unit/test_python_eos_runtime_deployment.py
       - name: Test durable EOS task queue contracts
-        run: python -m pytest -q tests/unit/test_durable_task_queue.py tests/unit/test_durable_worker_runner.py tests/integration/test_durable_task_queue_real_mongo.py
+        run: python -m pytest -q tests/unit/test_durable_task_queue.py tests/unit/test_durable_worker_runner.py tests/unit/test_durable_worker_runtime.py tests/integration/test_durable_task_queue_real_mongo.py
       - name: Certify durable worker transactions on a real replica set
         run: |
           docker run --detach --rm --name eos-worker-mongo -p 27017:27017 mongo:7.0 --replSet rs0 --bind_ip_all
@@ -70,6 +71,6 @@ jobs:
           done
           TEST_EOS_WORKER_MONGO_URI="mongodb://127.0.0.1:27017/?replicaSet=rs0" python -m pytest -q tests/integration/test_durable_task_queue_real_mongo.py
       - name: Compile canonical Python EOS application
-        run: python -m py_compile tools/eos/api/server.py tools/eos/runtime/durable_task_queue.py tools/eos/runtime/durable_worker_runner.py
+        run: python -m py_compile tools/eos/api/server.py tools/eos/runtime/durable_task_queue.py tools/eos/runtime/durable_worker_runner.py tools/eos/runtime/durable_worker_runtime.py
       - name: Build Python-only runtime image
         run: docker build --file Dockerfile.eos --tag wilsy-eos-python:certification .
