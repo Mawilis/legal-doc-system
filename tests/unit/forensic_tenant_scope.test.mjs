@@ -92,3 +92,9 @@ test('middleware rejects an invalid scope without continuing', () => {
     code: 'FORENSIC_TENANT_SCOPE_INVALID',
   });
 });
+
+
+test('canonicalizes case-insensitive authenticated tenant IDs before database use', () => {
+  const request = authenticatedRequest({ tenantId: TENANT.toLowerCase() });
+  assert.equal(resolveForensicTenantScope(request), TENANT);
+});
