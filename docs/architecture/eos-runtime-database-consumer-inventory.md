@@ -121,13 +121,12 @@ The direct Lead recovery handler is particularly sensitive: it selects among can
 | `/nodes` | `nodeRoutes.js` | Legacy node/edge operations | UNKNOWN |
 | `/seizure` | `sovereignSeizureRoutes.js` | Legal enforcement | UNKNOWN |
 | `/statements` | `statements.routes.js` | Statements | UNKNOWN |
-| `/wilsy-ai` | `wilsyAiRoutes.js` | AI | UNKNOWN |
 | `/subscriptions` | `subscriptionRoutes.js` | Subscriptions / entitlements | UNKNOWN |
 | `/treasury` | `treasuryRoutes.js` | Treasury | UNKNOWN; Kennel exclusive authority |
 | `/dunning` | `dunningRoutes.js` | Collections / dunning | UNKNOWN; lifecycle authority must remain in EOS |
 | `/qr` | `qrRoutes.js` | Verification evidence | UNKNOWN |
 
-The router also imports an AI ledger-query controller. Exact handler semantics, authorization, persistence, audit and client callers for each mounted module remain to be mapped. No parity is inferred from matching route names.
+The router also imports `wilsyAiRoutes.js` without a corresponding `router.use` mount in the inspected source, and imports an AI ledger-query controller. The AI router is mounted directly by `server/app.js` at `/api/wilsy/ai`. Exact handler semantics, authorization, persistence, audit and client callers for each mounted module remain to be mapped. No parity is inferred from matching route names.
 
 ### 3.3 Route, controller and middleware source trees
 
