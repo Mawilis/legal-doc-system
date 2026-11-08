@@ -6,6 +6,8 @@ on:
       - eos/python-only-runtime-retirement-20261108
     paths:
       - "Dockerfile.eos"
+      - "Dockerfile"
+      - "docker-compose.yml"
       - "docker-compose.eos.yml"
       - "requirements.txt"
       - "tools/eos/**"
