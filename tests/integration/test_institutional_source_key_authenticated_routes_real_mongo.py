@@ -44,6 +44,7 @@ class _VerifiedGovernanceEvidence:
         self.fail_revocation = False
         self.invalid_proposal_result = False
         self.invalid_approval_result = False
+        self.invalid_revocation_result = False
 
     def verify_proposal(self, **kwargs):
         self.proposal_calls.append(kwargs)
@@ -85,7 +86,7 @@ class _VerifiedGovernanceEvidence:
         if self.fail_revocation:
             raise InstitutionalSourceKeyGovernanceEvidenceError("SYNTHETIC_REVOCATION_EVIDENCE_DENIED")
         return VerifiedSourceKeyRevocationApproval(
-            tenant_id=kwargs["tenant_id"],
+            tenant_id=("WILSYTENANT-OTHER" if self.invalid_revocation_result else kwargs["tenant_id"]),
             source_system_id=kwargs["source_system_id"],
             key_id=kwargs["key_id"],
             public_key_fingerprint_sha256=kwargs["public_key_fingerprint_sha256"],
@@ -290,6 +291,21 @@ def test_authenticated_propose_approve_revoke_is_atomic_and_maker_checker_enforc
                 {"source_system_id": "synthetic-http-source"},
             ) == 2
             evidence.fail_revocation = False
+            evidence.invalid_revocation_result = True
+            invalid_revocation_evidence = http.post(
+                "/security/institutional-source-keys/synthetic-http-source/synthetic-http-key-v1/revoke",
+                json={
+                    "reason_reference": "synthetic://compromise/mismatched",
+                    "governance_decision_reference": "synthetic-governance-revocation-mismatched",
+                    "approval_evidence_reference": "synthetic://independent-revocation-mismatched",
+                },
+                headers={"Idempotency-Key": "http-revocation-mismatched"},
+            )
+            assert invalid_revocation_evidence.status_code == 503
+            assert database[EVENT_COLLECTION].count_documents(
+                {"source_system_id": "synthetic-http-source"},
+            ) == 2
+            evidence.invalid_revocation_result = False
             revoked = http.post(
                 "/security/institutional-source-keys/synthetic-http-source/synthetic-http-key-v1/revoke",
                 json={
@@ -315,7 +331,7 @@ def test_authenticated_propose_approve_revoke_is_atomic_and_maker_checker_enforc
 
         assert len(evidence.proposal_calls) == 3
         assert len(evidence.approval_calls) == 4
-        assert len(evidence.revocation_calls) == 3
+        assert len(evidence.revocation_calls) == 4
         assert database[EVENT_COLLECTION].count_documents(
             {"source_system_id": "synthetic-http-source"},
         ) == 3
