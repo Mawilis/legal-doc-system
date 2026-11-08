@@ -1,11 +1,12 @@
 # TITLE: WILSY OS Global Principal and Membership Selection Certification
-# VERSION: v1.7.0-SYSTEM-HTTP-REAL-MONGO-CERTIFICATION
+# VERSION: v1.7.1-SYSTEM-HTTP-REAL-MONGO-CERTIFICATION-ENVIRONMENT-CONTRACT
 # AUTHORITY: CI orchestration for global principal, membership and MFA challenge tests.
 # EPITOME: Compile and execute focused unit and real-Mongo certification suites.
 # ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/.github/workflows/global-principal-membership-certification.yml
 # COLLABORATION / OWNERSHIP: Wilsy Core Engineering.
 # CERTIFICATION / UPDATE DATE: 2026-11-03.
-# CHANGELOG: v1.7.0-SYSTEM-HTTP-REAL-MONGO-CERTIFICATION adds the actual HTTP-to-replica-set SYSTEM login, MFA, session, refresh, replay and logout journey.
+# CHANGELOG: v1.7.1-SYSTEM-HTTP-REAL-MONGO-CERTIFICATION-ENVIRONMENT-CONTRACT supplies the exact database and replica-set environment required by all real-Mongo fixtures.
+#           v1.7.0-SYSTEM-HTTP-REAL-MONGO-CERTIFICATION adds the actual HTTP-to-replica-set SYSTEM login, MFA, session, refresh, replay and logout journey.
 #           v1.4.0-GLOBAL-PRINCIPAL-MEMBERSHIP-CHALLENGE-CI certifies HTTP login throttle integration and adversarial router tests.
 #           v1.3.2-GLOBAL-PRINCIPAL-MEMBERSHIP-CHALLENGE-CI includes the failure-throttle unit test in compile, Pyright and pytest exactly once.
 #           v1.3.1-GLOBAL-PRINCIPAL-MEMBERSHIP-CHALLENGE-CI begins failure-throttle unit certification.
@@ -98,6 +99,8 @@ jobs:
     timeout-minutes: 20
     env:
       TEST_GLOBAL_PRINCIPAL_MONGO_URI: mongodb://localhost:27017/?replicaSet=wilsyGlobalPrincipalCertRS
+      TEST_GLOBAL_PRINCIPAL_MONGO_DATABASE: wilsy_global_principal_mfa_cert
+      TEST_GLOBAL_PRINCIPAL_MONGO_REPLICA_SET: wilsyGlobalPrincipalCertRS
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -329,7 +332,7 @@ jobs:
         if: always()
         run: docker rm -f wilsy-global-principal-mongo 2>/dev/null || true
 # ARTIFACT: global-principal-membership-certification.yml
-# VERSION: v1.5.0-GLOBAL-PRINCIPAL-SESSION-CERTIFICATION-CI
+# VERSION: v1.7.1-SYSTEM-HTTP-REAL-MONGO-CERTIFICATION-ENVIRONMENT-CONTRACT
 # AUTHORITY BOUNDARY: focused CI execution only
 # TENANT POSTURE: synthetic principal-scoped and tenant-scoped certification data
 # FAIL-CLOSED POSTURE: compile, unit or replica-set failures fail the job
