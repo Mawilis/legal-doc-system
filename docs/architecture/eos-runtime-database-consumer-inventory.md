@@ -1,15 +1,16 @@
 # WILSY OS — Kennel EOS runtime and legacy Node forensic inventory
 
 **TITLE:** Kennel EOS Runtime and Legacy Node Forensic Inventory  
-**VERSION:** v2.7.0-KENNEL-EOS-LEGACY-NODE-FORENSIC-INVENTORY  
+**VERSION:** v2.8.0-KENNEL-EOS-LEGACY-NODE-FORENSIC-INVENTORY  
 **AUTHORITY:** Wilsy OS Core Governance  
 **EPITOME:** Evidence-based inventory of the supported Python runtime and the remaining Express, route, middleware, worker, scheduler, persistence, and integration surfaces that must be mapped before legacy retirement.  
 **ABSOLUTE CANONICAL PATH:** /Users/wilsonkhanyezi/legal-doc-system/docs/architecture/eos-runtime-database-consumer-inventory.md  
 **COLLABORATION / OWNERSHIP:** Wilson Khanyezi (Founder); Codex (AI Engineering)  
 **CERTIFICATION / UPDATE DATE:** 2026-11-08  
 **CHANGELOG:**
-- v2.7.0-KENNEL-EOS-LEGACY-NODE-FORENSIC-INVENTORY: Traces root service route reachability and Node process orchestrators; records five launchers as fail-closed retired stubs and four remaining Node orchestrators as unresolved.
-- v2.5.0-KENNEL-EOS-LEGACY-NODE-FORENSIC-INVENTORY: Adds root Node microservices, active-looking launchers, 124 Node test files, and unsafe legacy AI/crypto/ledger/standards implementations.
+- v2.8.0-KENNEL-EOS-LEGACY-NODE-FORENSIC-INVENTORY: Records four unreferenced root Node orchestrator/generator deletions, five fail-closed shell launchers, and the remaining unverified server-side deployment scripts.
+- v2.7.0-KENNEL-EOS-LEGACY-NODE-FORENSIC-INVENTORY: Traces root service route reachability and Node process orchestrators; records the root launcher retirement sequence.
+- v2.6.0-KENNEL-EOS-LEGACY-NODE-FORENSIC-INVENTORY: Corrects the route crosswalk and restores the complete version history after the initial root service and deployment inventory.
 - v2.4.0-KENNEL-EOS-LEGACY-NODE-FORENSIC-INVENTORY: Adds Python candidate crosswalk and identifies QR/offline reconciliation as missing/unverified parity, including tenant, signature, audit and transaction hazards.
 - v2.3.0-KENNEL-EOS-LEGACY-NODE-FORENSIC-INVENTORY: Adds checked-in Nginx, Helm, Kubernetes and Node deployment-automation findings that prevent direct-Kennel-ingress certification.
 - v2.2.0-KENNEL-EOS-LEGACY-NODE-FORENSIC-INVENTORY: Records mounted routes, middleware, callable scheduler activation, queue workers, Mongoose/Redis consumers and explicit parity gaps.
@@ -37,6 +38,7 @@ The following facts are directly observable on branch `eos/kennel-eos-production
 - `server/routes/api.js` still creates an Express router, exposes health/metrics handlers, mounts authentication and tenant middleware, and mounts business route modules.
 - The `server/routes`, `server/controllers`, `server/middleware`, `server/models`, `server/services`, `server/jobs`, `server/config`, and `server/utils` trees remain in the repository.
 - `server/package.json` still declares Express, Mongoose, Redis, BullMQ, Agenda, cron, and other server-oriented dependencies. Its description says retired backend, but the dependency manifest is not a minimal isolated test-tooling manifest.
+- Four unreferenced root Node process orchestrator/generator scripts (`repair_launcher.js`, `build_orchestrator.js`, `update_orchestrator.js`, `bootstrap_wilsy_os.js`) have been deleted; five shell launchers have been converted to fail-closed stubs. This does not retire the separate root service modules or all server deployment scripts.
 - The legacy verification sync job still contains a Mongoose aggregation and a 60-second `setInterval` scheduler. The currently named `server/jobs/scheduler.js` is a separate inert retirement stub; that does not retire every other scheduler.
 - `server/jobs/workerEntry.js` still imports BullMQ, IORedis and Mongoose and contains a Mongo query against the Client model.
 - `server/config/database.js`, `server/config/db.js`, and `server/config/redis.js` retain Mongoose/Redis connection implementations. The Redis module contains connection and reconnect behavior.
@@ -203,10 +205,10 @@ These observations distinguish source presence from route reachability. Unmounte
 
 | File | Observed behavior | Classification | Required disposition |
 |---|---|---|---|
-| `repair_launcher.js` | Kills ports 3001/6000/6100/6400/6500/6600, then starts ledger, standards, billing, AI, crypto and server packages | LEGACY / MIGRATION SOURCE | Retire; no process-kill or Node service authority |
-| `build_orchestrator.js` | Uses Node `child_process.spawn` to orchestrate gateway, billing, AI, crypto, ledger and standards services | LEGACY / MIGRATION SOURCE | Retire; do not use as an EOS process supervisor |
-| `update_orchestrator.js` | Uses Node child processes to orchestrate gateway, auth, billing, AI and ledger services | LEGACY / MIGRATION SOURCE | Retire; do not use as an EOS process supervisor |
-| `bootstrap_wilsy_os.js` | Writes Express service source/package files for billing, AI and crypto, then starts all service packages and the server | LEGACY / MIGRATION SOURCE | Retire; it can recreate removed Node service implementations |
+| `repair_launcher.js` | Deleted from the repository after no in-repository callers were found | REMOVED FROM REPOSITORY | No longer an activation path |
+| `build_orchestrator.js` | Deleted from the repository after no in-repository callers were found | REMOVED FROM REPOSITORY | No longer an activation path |
+| `update_orchestrator.js` | Deleted from the repository after no in-repository callers were found | REMOVED FROM REPOSITORY | No longer an activation path |
+| `bootstrap_wilsy_os.js` | Deleted from the repository after no in-repository callers were found; it could recreate Express billing/AI/crypto services | REMOVED FROM REPOSITORY | No longer a service generator or activation path |
 | `start_all.sh` | Fail-closed stub; exits 78 without process changes | LEGACY / RETIRED STUB | Retired |
 | `start_wilsy_os.sh` | Fail-closed stub; exits 78 without process changes | LEGACY / RETIRED STUB | Retired |
 | `GlobalLaunchSequence.sh` | Fail-closed stub; exits 78 without process changes | LEGACY / RETIRED STUB | Retired |
@@ -333,10 +335,7 @@ The following repository files still describe non-Kennel or unverified applicati
 | `GlobalLaunchSequence.sh` | Fail-closed stub; exits 78 without process changes | LEGACY / RETIRED STUB | Retired |
 | `Genesis_Ignition.sh` | Fail-closed stub; exits 78 without Node import or forensic signing | LEGACY / RETIRED STUB | Retired |
 | `Sovereign_Deployment_Automation.sh` | Fail-closed stub; exits 78 without Node tests or manifest generation | LEGACY / RETIRED STUB | Retired |
-| `repair_launcher.js` | Can kill ports and start all legacy Node packages | LEGACY / MIGRATION SOURCE | Retire before any production process certification |
-| `build_orchestrator.js` | Node child-process supervisor for legacy service tree | LEGACY / MIGRATION SOURCE | Retire |
-| `update_orchestrator.js` | Node child-process supervisor for legacy service tree | LEGACY / MIGRATION SOURCE | Retire |
-| `bootstrap_wilsy_os.js` | Generates legacy Express billing/AI/crypto services and starts them | LEGACY / MIGRATION SOURCE | Retire; source generator can recreate legacy Node code |
+| `repair_launcher.js`, `build_orchestrator.js`, `update_orchestrator.js`, `bootstrap_wilsy_os.js` | Deleted from repository after no in-repository callers were found | REMOVED FROM REPOSITORY | No longer activation/generation paths |
 | `deploy-production.sh` | Runs Node/npm checks and server Mocha tests; prints `npm start` as deployment command | LEGACY / MIGRATION SOURCE | Not an approved production deployment workflow |
 | `deploy-prod.sh` | Runs `server/` npm tests, builds images, and invokes Compose deployment | LEGACY / MIGRATION SOURCE | Must not be used until server tests and every target image/manifest are reconciled with Python EOS |
 | `setup.sh` | Installs dependencies under `server/` | LEGACY / MIGRATION SOURCE | Do not use; server dependency tree is not frontend tooling |
@@ -350,7 +349,6 @@ The following repository files still describe non-Kennel or unverified applicati
 | `charts/legal-os/Chart.yaml` and subcharts | Umbrella chart declares separate gateway, auth, ledger, billing, AI and crypto microservices; billing and AI templates deploy separate containers on ports 6400 and 6500 | LEGACY / DUPLICATE / OVERLAPPING | Determine whether the chart is referenced by any release; replace with a single Kennel EOS application service only after every capability is mapped |
 | `charts/legal-os/values.yaml` | Includes a global `tenantId: GLOBAL_ROOT` and independent service image repositories | LEGACY / MIGRATION SOURCE | Must not be used as canonical tenant authority or production configuration |
 | `charts/legal-os/values-production.yaml` | Enables a public ingress host and TLS but does not establish a direct Kennel EOS service target | UNKNOWN / REQUIRES FORENSICS | Resolve chart templates and release references; no direct EOS ingress claim |
-| `Sovereign_Deployment_Automation.sh` | Runs server-side Node tests and invokes `node scripts/generateManifest.js` from `server/` | LEGACY / MIGRATION SOURCE | Retire or replace with a governed Python EOS deployment workflow; Node is not permitted as deployment/business runtime |
 | `server/scripts/generateManifest.js` | Imports a legacy ForensicService and writes a generated manifest under `server/dist` | LEGACY / MIGRATION SOURCE | Map evidence/signing contract to canonical EOS artifact issuance before removal |
 | `server/scripts/SovereignDeployment.script.js` | Executes Node deployment orchestration and contains a PM2/Docker switch placeholder | LEGACY / MIGRATION SOURCE | Must not be an authorized production deployment path |
 
@@ -400,7 +398,7 @@ The route mount inventory is established for `server/app.js` and `server/routes/
 **END OF INVENTORY — PARITY AND RETIREMENT NOT YET CERTIFIED**
 
 ARTIFACT: eos-runtime-database-consumer-inventory.md
-VERSION: v2.7.0-KENNEL-EOS-LEGACY-NODE-FORENSIC-INVENTORY
+VERSION: v2.8.0-KENNEL-EOS-LEGACY-NODE-FORENSIC-INVENTORY
 AUTHORITY BOUNDARY: forensic inventory only; Kennel EOS owns business authority.
 TENANT POSTURE: no tenant data access or authority granted; legacy isolation remains under review.
 FAIL-CLOSED POSTURE: UNKNOWN parity is not treated as certified or safe to retire.
