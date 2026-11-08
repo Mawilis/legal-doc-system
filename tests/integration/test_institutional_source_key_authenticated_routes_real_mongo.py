@@ -8,7 +8,7 @@ import uuid
 import pytest
 from cryptography.hazmat.primitives import serialization
 from cryptography.hazmat.primitives.asymmetric.ed25519 import Ed25519PrivateKey
-from fastapi import FastAPI
+from fastapi import FastAPI, HTTPException
 from fastapi.testclient import TestClient
 from pymongo import MongoClient
 from pymongo.errors import OperationFailure
@@ -653,3 +653,26 @@ def test_provider_verification_is_retry_safe_inside_mongo_transaction(monkeypatc
     finally:
         client.drop_database(db_name)
         client.close()
+
+
+def test_database_outage_fails_closed_and_denial_audit_failure_does_not_mask_denial(monkeypatch):
+    monkeypatch.setattr(source_key_api, "get_client", lambda: None)
+    monkeypatch.setattr(source_key_api, "get_database", lambda: None)
+
+    with pytest.raises(HTTPException) as unavailable:
+        source_key_api._transaction(lambda _registry, _session: {"unexpected": "success"})
+    assert unavailable.value.status_code == 503
+    assert unavailable.value.detail == "INSTITUTIONAL_SOURCE_KEY_DATABASE_UNAVAILABLE"
+
+    # The original command denial remains authoritative if the separate
+    # denial-audit store is unavailable; only a bounded operational signal is emitted.
+    source_key_api._record_denial(
+        _context("synthetic-outage-actor"),
+        action="APPROVE",
+        source_system_id="synthetic-outage-source",
+        key_id="synthetic-outage-key",
+        error=HTTPException(
+            status_code=409,
+            detail="SOURCE_SIGNING_KEY_MAKER_CHECKER_VIOLATION",
+        ),
+    )
