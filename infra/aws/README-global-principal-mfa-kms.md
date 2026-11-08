@@ -134,6 +134,117 @@ the dedicated key, alias and role described above. The key-administrator role
 must already exist in the same AWS account; CloudFormation does not create it. Capture the output key ARN
 and role ARN as deployment evidence.
 
+## Local-development stack — separate from production
+
+The local-development path is a separate CloudFormation template:
+`infra/aws/global-principal-mfa-kms-local-development.yaml`. It creates
+exactly three resources: a customer-managed symmetric KMS key, its dedicated
+alias, and the `wilsy-eos-global-mfa-local-development` IAM role.
+
+The role trusts only the exact developer IAM user ARN supplied at deployment.
+Its only permissions are `kms:Encrypt` and `kms:Decrypt` on this key, and
+only when the encryption context contains
+`purpose=GLOBAL_PRINCIPAL_TOTP`. It cannot administer the key, access other
+KMS keys, or assume the production EKS role. The administrator user is named
+as key administrator but is not granted application encrypt/decrypt use by
+this template. No access keys, static credentials, EKS resources, OIDC
+providers, production roles, or MongoDB resources are created.
+
+For the currently inspected AWS account, the approved operator profile
+resolves to
+`arn:aws:iam::121014832643:user/wilsy-legal-cert-operator`. Confirm that
+identity immediately before deployment; do not substitute the HR S3
+provisioning role.
+
+Create a reviewed change set (first deployment uses change-set type CREATE):
+
+```bash
+export AWS_PAGER=""
+aws sts get-caller-identity --profile wilsy-legal-cert
+aws cloudformation create-change-set \
+  --stack-name wilsy-eos-global-principal-mfa-local-dev \
+  --change-set-name reviewed-local-mfa-kms \
+  --change-set-type CREATE \
+  --template-body file://infra/aws/global-principal-mfa-kms-local-development.yaml \
+  --parameters \
+    ParameterKey=LocalDeveloperPrincipalArn,ParameterValue=arn:aws:iam::121014832643:user/wilsy-legal-cert-operator \
+    ParameterKey=KeyAdministratorPrincipalArn,ParameterValue=arn:aws:iam::121014832643:user/wilsy-legal-cert-operator \
+  --capabilities CAPABILITY_NAMED_IAM \
+  --region af-south-1 --profile wilsy-legal-cert
+
+aws cloudformation describe-change-set \
+  --stack-name wilsy-eos-global-principal-mfa-local-dev \
+  --change-set-name reviewed-local-mfa-kms \
+  --query '{Status:Status,Changes:Changes[*].ResourceChange.{Action:Action,LogicalResourceId:LogicalResourceId,ResourceType:ResourceType}}' \
+  --output yaml --region af-south-1 --profile wilsy-legal-cert
+```
+
+Review the output. It must contain only the KMS key, KMS alias and dedicated
+local-development IAM role. If anything else appears, do not execute it.
+After review, execute the change set:
+
+```bash
+aws cloudformation execute-change-set \
+  --stack-name wilsy-eos-global-principal-mfa-local-dev \
+  --change-set-name reviewed-local-mfa-kms \
+  --region af-south-1 --profile wilsy-legal-cert
+
+aws cloudformation wait stack-create-complete \
+  --stack-name wilsy-eos-global-principal-mfa-local-dev \
+  --region af-south-1 --profile wilsy-legal-cert
+
+aws cloudformation describe-stacks \
+  --stack-name wilsy-eos-global-principal-mfa-local-dev \
+  --query 'Stacks[0].Outputs' --output table \
+  --region af-south-1 --profile wilsy-legal-cert
+```
+
+Configure a dedicated AWS CLI profile to assume the created role. This stores
+profile configuration only; it does not create or store access keys:
+
+```bash
+aws configure set role_arn arn:aws:iam::121014832643:role/wilsy-eos-global-mfa-local-development --profile wilsy-eos-mfa-local
+aws configure set source_profile wilsy-legal-cert --profile wilsy-eos-mfa-local
+aws configure set role_session_name local-eos-mfa --profile wilsy-eos-mfa-local
+aws configure set region af-south-1 --profile wilsy-eos-mfa-local
+aws sts get-caller-identity --profile wilsy-eos-mfa-local
+```
+
+The returned ARN must contain
+`assumed-role/wilsy-eos-global-mfa-local-development/`. Then set the
+development process environment using the full key ARN from the stack output:
+
+```bash
+export AWS_PROFILE=wilsy-eos-mfa-local
+export AWS_REGION=af-south-1
+export WILSY_GLOBAL_MFA_KMS_PROVIDER=AWS_KMS
+export WILSY_GLOBAL_MFA_KMS_KEY_ID=<full-local-development-key-arn>
+unset WILSY_GLOBAL_MFA_KMS_DECRYPT_KEY_IDS
+python -m tools.eos.auth.global_principal_mfa_kms_probe
+```
+
+The probe rejects any AWS identity other than the dedicated role and performs
+a real synthetic KMS encrypt/decrypt startup round trip. It prints no
+credentials, key material, plaintext, or ciphertext. The Python EOS API
+performs the same KMS `validate_access()` during startup when this provider
+is configured; a failed KMS composition remains unavailable (no local-key
+fallback).
+
+For the real process certification, start Python EOS with the same environment
+and the existing development MongoDB URI (do not print or paste the URI):
+
+```bash
+python -m uvicorn tools.eos.api.server:app --host 127.0.0.1 --port 9095
+```
+
+Confirm the API startup logs show successful database initialization and no
+`GLOBAL_MFA_KMS_*` composition failure. In a second terminal, with the
+approved development replica-set URI exported, run the four real-Mongo suites
+covering HTTP login/MFA/session, session authority, SYSTEM session authority
+and TOTP verification. Report the test summary and the sanitized KMS probe
+output only. Do not paste credentials, enrollment seeds, recovery codes,
+tokens, or database URIs. These development results do not certify production.
+
 ## Bind the actual workload
 
 After the stack succeeds, annotate the actual EOS ServiceAccount with the
