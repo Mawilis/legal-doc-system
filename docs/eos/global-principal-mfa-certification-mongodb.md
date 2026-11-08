@@ -1,3 +1,20 @@
+# TITLE: WILSY EOS Global Principal MFA — Isolated MongoDB Certification Target
+# VERSION: v1.0.0-GLOBAL-PRINCIPAL-MFA-MONGO-CERTIFICATION
+# AUTHORITY: Local integration certification operations only; no production database authority.
+# EPITOME: Establish a dedicated localhost-only MongoDB replica set for Global Principal MFA real-Mongo tests, isolated from the canonical EOS application database.
+# ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/docs/eos/global-principal-mfa-certification-mongodb.md
+# COLLABORATION / OWNERSHIP: Wilsy OS Core Engineering; Python EOS owns application persistence and identity truth.
+# CERTIFICATION OR UPDATE DATE: 2026-11-09
+# CHANGELOG:
+#   v1.0.0-GLOBAL-PRINCIPAL-MFA-MONGO-CERTIFICATION documents the isolated
+#   single-node replica-set service, test-only connection variables, read-only
+#   preflight markers and safe data/volume lifecycle.
+# COMPLIANCE: AGENTS.md v1.2.0-SOVEREIGN-LEGAL-OPERATIONS-CONSTITUTION.
+# SECURITY / PRIVACY POSTURE: Test-only localhost database; never accepts or reuses production application credentials.
+# TENANT BOUNDARY: Synthetic integration fixtures only; no canonical tenant data is targeted.
+# AUTHORITY BOUNDARY: Local certification database only; no application or production persistence authority.
+# FINANCIAL AUTHORITY BOUNDARY: No financial execution authority; Kennel EOS remains the exclusive financial execution authority.
+
 # Global Principal MFA — isolated MongoDB certification target
 
 This MongoDB replica set exists only for the Global Principal MFA real-Mongo integration suites. It is deliberately separate from the EOS application database (`wilsy`) and does not reuse the application's `MONGODB_URI`.
@@ -53,3 +70,11 @@ Only after that verification should the selected Global Principal MFA integratio
 - Do not run `docker compose down -v` unless you intentionally want to erase this certification volume.
 - Do not attach the EOS application runtime to this service.
 - No AWS resources, MFA factor records in the application database, or production configuration are changed by starting this stack.
+
+# ARTIFACT: docs/eos/global-principal-mfa-certification-mongodb.md
+# VERSION: v1.0.0-GLOBAL-PRINCIPAL-MFA-MONGO-CERTIFICATION
+# AUTHORITY BOUNDARY: Local real-Mongo integration testing only; no production data authority.
+# TENANT POSTURE: Test-only isolated database; no canonical tenant records are accessed or mutated.
+# FAIL-CLOSED POSTURE: Integration tests run only after the test-specific replica-set URI and primary are verified.
+# FINANCIAL EXECUTION AUTHORITY: Kennel EOS exclusively.
+# END OF WILSY OS SOVEREIGN ARTIFACT
