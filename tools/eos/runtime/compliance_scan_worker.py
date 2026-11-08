@@ -77,7 +77,7 @@ class ComplianceScanWorker:
                         {"tenant_id": tenant_id, "task_id": task_id, "status": "CLAIMED",
                          "claimed_by": worker_id, "lease_token": lease_token,
                          "lease_until": {"$gt": observed_at}},
-                        {"$set": {"last_side_effect_at": observed_at}},
+                        {"$inc": {"side_effect_fence": 1}, "$set": {"last_side_effect_at": observed_at}},
                         session=active_session,
                     )
                     if fence.modified_count != 1:
