@@ -110,7 +110,7 @@ jobs:
         if: always()
         run: |
           mkdir -p certification-diagnostics/logs test-results playwright-report
-          printf '%s\\n' "Certification evidence workspace initialized." > certification-diagnostics/logs/workflow-setup.log
+          printf '%s\n' "Certification evidence workspace initialized." > certification-diagnostics/logs/workflow-setup.log
 
       - name: Setup Python
         uses: actions/setup-python@v5
