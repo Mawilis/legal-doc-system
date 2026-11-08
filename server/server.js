@@ -33,7 +33,6 @@ import 'dotenv/config';
 import express from 'express';
 import cors from 'cors';
 import helmet from 'helmet';
-import { createServer } from 'node:http';
 import { createProxyServer } from 'httpxy';
 import { fileURLToPath } from 'node:url';
 import { resolve } from 'node:path';
@@ -411,92 +410,7 @@ function createApp() {
   return app;
 }
 
-// ─── RUNTIME BOOTSTRAPPER ─────────────────────────────────────────────────
-
-async function main() {
-  console.log(`[WILSY] 🏛️ Sovereign Runtime Bootstrap (v${BUILD})`);
-
-  const app = createApp();
-  const httpServer = createServer(app);
-
-  // The BFF is transport-only. Python EOS owns the sole business Mongo graph.
-
-  const configuredPort = Number(process.env.PORT) || 4000;
-  let actualPort = configuredPort;
-  let serverStarted = false;
-
-  console.log(`[WILSY] 🔒 Securing TCP Port (starting at ${configuredPort})...`);
-
-  while (!serverStarted) {
-    try {
-      await new Promise((resolve, reject) => {
-        httpServer.once('error', (err) => {
-          if (err.code === 'EADDRINUSE') {
-            console.warn(`[WILSY] ⚠️ Port ${actualPort} is occupied. Trying ${actualPort + 1}...`);
-            actualPort += 1;
-            try {
-              httpServer.close();
-            } catch (_) {
-              /* ignore */
-            }
-            reject(new Error('Port in use'));
-          } else {
-            reject(err);
-          }
-        });
-
-        httpServer.listen(actualPort, () => {
-          serverStarted = true;
-          resolve();
-        });
-      });
-    } catch (err) {
-      if (err.message === 'Port in use') continue;
-      throw err;
-    }
-  }
-
-  const dbStatus = 'NOT_CONNECTED_BY_BFF';
-  console.log(`
-╔══════════════════════════════════════════════════════════════════════════════════╗
-║  ✅ WILSY OS SOVEREIGN RUNTIME                                                  ║
-║  ──────────────────────────────────────────────────────────────────────────────── ║
-║  Build:     ${BUILD}
-║  Database:  ${dbStatus} (authority: PYTHON_EOS)
-║  HTTP:      http://localhost:${actualPort}
-║  Health:    http://localhost:${actualPort}/health
-║  Proxy:     ${KENNEL_TARGET}
-║  Map:       /api/auth|tenants|business/tenants|employees|kernel|plans|subscriptions
-║             /api/billing → /billing (httpxy, ${BILLING_PROXY_TIMEOUT_MS}ms timeout)
-║  Fix:       Proxy middleware order fixed – proxies run BEFORE body parsers.
-║  ──────────────────────────────────────────────────────────────────────────────── ║
-║  🏛️  Governance: POPIA §19 · GDPR §32 · SOC2 §CC7.2 · ISO 27001 · ECT Act §15  ║
-╚══════════════════════════════════════════════════════════════════════════════════╝
-  `);
-
-  const shutdown = async (signal) => {
-    console.log(`\n[WILSY] Received ${signal}. Shutting down gracefully...`);
-    httpServer.close(async () => {
-      console.log('[WILSY] Shutdown complete.');
-      process.exit(0);
-    });
-    setTimeout(() => {
-      console.error('[WILSY] Force exit after timeout.');
-      process.exit(1);
-    }, 10000);
-  };
-
-  process.on('SIGTERM', shutdown);
-  process.on('SIGINT', shutdown);
-
-  process.on('uncaughtException', (err) => {
-    console.error('[WILSY] 💥 Uncaught Exception:', err);
-  });
-  process.on('unhandledRejection', (reason) => {
-    console.error('[WILSY] 💥 Unhandled Rejection:', reason);
-  });
-}
-
+// Direct execution is prohibited; this module is retained only for isolated legacy tests.
 if (process.argv[1] && fileURLToPath(import.meta.url) === resolve(process.argv[1])) {
   console.error(
     '[WILSY] Legacy Node BFF runtime is retired. Start the canonical Python Kennel EOS API instead.'
