@@ -26,6 +26,8 @@ from pymongo.write_concern import WriteConcern
 from tools.eos.security.institutional_source_signing_key_registry import (
     KEY_COLLECTION,
     EVENT_COLLECTION,
+    DENIAL_COLLECTION,
+    DENIAL_HEAD_COLLECTION,
     InstitutionalSourceSigningKeyLifecycleRegistry,
     SourceSigningKeyRegistryConflict,
 )
@@ -616,6 +618,64 @@ def test_registry_append_rejects_corrupt_earlier_event_before_moving_audit_head(
         assert db[AUDIT_HEAD_COLLECTION].find_one({
             "source_system_id": source, "key_id": "key-append",
         }) == original_head
+    finally:
+        client.drop_database(db_name)
+        client.close()
+
+
+def test_governance_denial_audit_chain_rejects_tampering_before_append():
+    """A modified denial fact blocks future writes without advancing its head."""
+    client = MongoClient(URI, serverSelectionTimeoutMS=5000, tz_aware=True)
+    db_name = f"source_key_denial_audit_{uuid.uuid4().hex}"
+    db = client[db_name]
+    try:
+        hello = client.admin.command("hello")
+        assert hello.get("setName") and hello.get("isWritablePrimary") is True
+        keys, events = db[KEY_COLLECTION], db[EVENT_COLLECTION]
+        InstitutionalSourceSigningKeyLifecycleRegistry.ensure_indexes(keys, events)
+        registry = InstitutionalSourceSigningKeyLifecycleRegistry(keys, events)
+        tenant = f"synthetic-denial-tenant-{uuid.uuid4().hex}"
+        now = datetime.now(timezone.utc).replace(microsecond=0)
+
+        def append_denial(correlation_id: str, reason_code: str):
+            record = {
+                "schema": "wilsy.eos.institutional_source_key_denial.v1",
+                "event_type": "DENIED",
+                "correlation_id": correlation_id,
+                "tenant_id": tenant,
+                "actor_principal_id": "synthetic-denial-actor",
+                "action": "PROPOSE",
+                "source_system_id": "synthetic-source",
+                "key_id": "synthetic-key",
+                "reason_code": reason_code,
+                "http_status": 403,
+                "occurred_at": now,
+            }
+            with client.start_session() as session:
+                session.with_transaction(
+                    lambda tx: registry.record_denial(record=record, session=tx),
+                )
+
+        append_denial("denial-001", "NOT_AUTHORIZED")
+        append_denial("denial-002", "MAKER_CHECKER_VIOLATION")
+        original_head = db[DENIAL_HEAD_COLLECTION].find_one({"tenant_id": tenant})
+        first = db[DENIAL_COLLECTION].find_one({
+            "tenant_id": tenant, "event_sequence": 1,
+        })
+        second = db[DENIAL_COLLECTION].find_one({
+            "tenant_id": tenant, "event_sequence": 2,
+        })
+        assert second["previous_event_hash_sha256"] == first["event_hash_sha256"]
+
+        db[DENIAL_COLLECTION].update_one(
+            {"_id": first["_id"]},
+            {"$set": {"reason_code": "TAMPERED_REASON"}},
+        )
+        with pytest.raises(SourceSigningKeyRegistryConflict, match="DENIAL_AUDIT_CHAIN_INVALID"):
+            append_denial("denial-003", "NOT_AUTHORIZED")
+
+        assert db[DENIAL_COLLECTION].count_documents({"tenant_id": tenant}) == 2
+        assert db[DENIAL_HEAD_COLLECTION].find_one({"tenant_id": tenant}) == original_head
     finally:
         client.drop_database(db_name)
         client.close()
