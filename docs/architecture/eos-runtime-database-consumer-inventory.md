@@ -21,12 +21,10 @@ Kennel EOS is the existing canonical application/API and business authority. The
 
 ## Retired Node backend entrypoints
 
-The following are deliberately disabled and must not be restored as application runtime paths:
+The following are deliberately retired and must not be restored as application runtime paths:
 
-- `server/ecosystem.config.js` exports an empty PM2 application list.
+- The former `server/ecosystem.config.js`, `server/server.js`, and `server/deploy.sh` entrypoints are absent from the branch.
 - `server/package.json` has no `start`, `dev`, or `predev` backend scripts and no Node server main entry.
-- `server/server.js` remains temporarily importable for legacy test isolation, but direct execution exits non-zero with a retirement message. It is not an approved proxy or application runtime.
-- `server/deploy.sh` fails closed and cannot install dependencies, run migrations, or reload PM2.
 - `server/Dockerfile` and `server/Dockerfile.worker` are non-buildable retirement stubs based on `scratch`; they cannot produce Node backend images.
 
 Node remains permitted for frontend build, test and browser-certification tooling. This exception does not permit Express, PM2, a Node BFF, a Node worker, or Node-owned business/API execution.
