@@ -37,19 +37,31 @@ async def run_daily_compliance_scheduler(
     *, tenants: Any, tasks: Any, stop_event: asyncio.Event,
     clock: Any = None,
 ) -> None:
-    """Schedule the daily 00:15 SAST compliance pass until graceful shutdown."""
+    """Schedule deterministic daily 00:15 SAST passes, including same-day recovery."""
     from datetime import datetime as DateTime
     now_fn = clock or (lambda: DateTime.now(timezone.utc))
     while not stop_event.is_set():
-        now = now_fn()
-        local_now = now.astimezone(SAST)
-        next_run = datetime.combine(local_now.date(), time(0, 15), tzinfo=SAST)
-        if local_now >= next_run:
-            next_run += timedelta(days=1)
+        local_now = now_fn().astimezone(SAST)
+        scheduled_at = datetime.combine(local_now.date(), time(0, 15), tzinfo=SAST)
+        if local_now < scheduled_at:
+            try:
+                await asyncio.wait_for(
+                    stop_event.wait(), timeout=(scheduled_at - local_now).total_seconds()
+                )
+            except asyncio.TimeoutError:
+                pass
+            if stop_event.is_set():
+                return
+        enqueue_daily_compliance_scans(
+            tenants=tenants, tasks=tasks, observed_at=scheduled_at
+        )
+        next_run = scheduled_at + timedelta(days=1)
         try:
-            await asyncio.wait_for(stop_event.wait(), timeout=(next_run - local_now).total_seconds())
+            await asyncio.wait_for(
+                stop_event.wait(), timeout=(next_run - now_fn().astimezone(SAST)).total_seconds()
+            )
         except asyncio.TimeoutError:
-            enqueue_daily_compliance_scans(tenants=tenants, tasks=tasks, observed_at=now_fn())
+            continue
 
 
 __all__ = ["enqueue_daily_compliance_scans", "run_daily_compliance_scheduler"]
