@@ -58,6 +58,34 @@ existing role parameter and receives administration actions only. The stack
 creates no users, access keys, static credentials, MongoDB resources,
 production sessions, or MFA factor data.
 
+## Repeatable production-runtime discovery
+
+Run the repository's read-only inventory before selecting or creating any production
+KMS or workload-identity resource:
+
+```bash
+bash scripts/discover-eos-production-runtime.sh
+```
+
+The script uses the explicitly selected AWS CLI profile (default:
+`wilsy-legal-cert`) and inventories the caller identity, enabled regions,
+IAM OIDC providers, EOS/WILSY-named IAM roles, EKS clusters and OIDC issuers,
+ECS clusters, Lambda functions, App Runner, Elastic Beanstalk, Lightsail
+container services, running EC2 instances, load balancers, and completed
+CloudFormation stacks. It performs read-only list/describe operations only.
+It does not assume a role, reveal secret values, create infrastructure, or
+change any AWS resource.
+
+A discovered resource is only a candidate. The production owner must correlate
+the actual live EOS deployment to its repository and immutable image digest,
+cluster/service or instance, ingress/DNS, namespace/service account, and
+effective workload identity. Do not infer that relationship from a resource
+name, stale workflow, example manifest, or the existence of an AWS account.
+
+If the actual EOS runtime is hosted outside AWS, identify the provider and the
+live project/service through its authoritative control plane; an empty AWS
+inventory is not proof that no production host exists.
+
 ## Mandatory pre-deployment proof
 
 Do not deploy this stack until all of these values have been obtained from the
