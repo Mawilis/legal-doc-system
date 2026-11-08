@@ -1,7 +1,24 @@
 /* eslint-disable */
 // @vitest-environment node
 /**
- * WILSY OS dashboard contract certificate.
+/**
+ * TITLE: WILSY OS Sovereign Dashboard Controller Certification.
+ * VERSION: v1.1.0-WILSY-HEADQUARTERS-DASHBOARD-CERTIFICATION
+ * AUTHORITY: Unit certification of authenticated EOS workspace presentation routing.
+ * EPITOME: Verifies Headquarters is mounted only from the EOS-issued
+ *          WILSY_HEADQUARTERS workspace identifier.
+ * ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/client/tests/client/SovereignDashboardController.test.js
+ * COLLABORATION / OWNERSHIP: WILSY OS Core Engineering.
+ * CERTIFICATION / UPDATE DATE: 2026-11-08.
+ * CHANGELOG: v1.1.0-WILSY-HEADQUARTERS-DASHBOARD-CERTIFICATION certifies the WILSY Headquarters dashboard mapping
+ *            and mounted component without granting browser-side authority.
+ * SECURITY / PRIVACY POSTURE: Client route selection is presentation only;
+ *                             Python EOS remains the authority.
+ * TENANT BOUNDARY: The server-issued workspace identifier is tenant-scoped.
+ * AUTHORITY BOUNDARY: Test evidence only; no IAM or business permissions.
+ * FINANCIAL AUTHORITY BOUNDARY: Kennel EOS exclusively.
+ */
+/*
  * Dashboard selection consumes the validated EOS workspace identifier. The
  * sole exception is a durable Tenant Owner selecting a commercial-only Legal
  * shell; every commercial read remains server-authorized and practice access stays absent.
@@ -92,6 +109,7 @@ describe('SovereignDashboardController EOS workspace contract', () => {
 
   it('maps every published workspace identifier to an existing presentation shard', () => {
     const cases = [
+      ['WILSY_HEADQUARTERS', DASHBOARD_KEYS.HEADQUARTERS],
       ['TENANT_ADMINISTRATION', DASHBOARD_KEYS.GENERAL],
       ['AUDIT_REPORTING', DASHBOARD_KEYS.GENERAL],
       ['TENANT_OPERATIONS', DASHBOARD_KEYS.GENERAL],
@@ -113,6 +131,7 @@ describe('SovereignDashboardController EOS workspace contract', () => {
   it('mounts all seven tenant products on their real independent module destinations', () => {
     const source = readFileSync(CONTROLLER_SOURCE, 'utf8');
     const mounts = [
+      ['DASHBOARD_KEYS.HEADQUARTERS', '<WilsyHeadquartersWorkspace'],
       ['DASHBOARD_KEYS.LEGAL', '<LegalDashboard'],
       ['DASHBOARD_KEYS.FINANCE', '<BillingHUD'],
       ['DASHBOARD_KEYS.CRM', '<CRMDashboard'],
@@ -125,6 +144,7 @@ describe('SovereignDashboardController EOS workspace contract', () => {
       expect(source).toContain(`dashboardKey === ${key}`);
       expect(source).toContain(component);
     }
+    expect(source).toContain("const WilsyHeadquartersWorkspace = React.lazy(() => import('../workspaces/WilsyHeadquartersWorkspace.jsx'))");
   });
 
   it('routes the new product workspace keys distinctly without changing the legacy Operations alias', () => {
@@ -228,3 +248,13 @@ describe('SovereignDashboardController EOS workspace contract', () => {
     expect(source).not.toContain('ROLE_DASHBOARD_MAP');
   });
 });
+
+/* 
+ * ARTIFACT: SovereignDashboardController.test.js
+ * VERSION: v1.1.0-WILSY-HEADQUARTERS-DASHBOARD-CERTIFICATION
+ * AUTHORITY BOUNDARY: unit certification of client workspace presentation routing
+ * TENANT POSTURE: workspace identity is supplied by EOS; tests distinguish Headquarters and customer workspaces
+ * FAIL-CLOSED POSTURE: no browser role or preference creates workspace authority
+ * FINANCIAL EXECUTION AUTHORITY: Kennel EOS exclusively
+ * END OF WILSY OS SOVEREIGN ARTIFACT
+ */
