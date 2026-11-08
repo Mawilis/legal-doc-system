@@ -173,5 +173,24 @@ class DurableWorkerRunner:
             )
             return state
 
+    async def run_forever(
+        self,
+        *,
+        stop_event: asyncio.Event,
+        idle_poll_seconds: float = 1.0,
+    ) -> None:
+        """Poll durable work until shutdown; operational faults propagate to supervisor."""
+        if idle_poll_seconds <= 0:
+            raise ValueError("TASK_QUEUE_POLL_INTERVAL_INVALID")
+        while not stop_event.is_set():
+            outcome = await self.run_once()
+            if outcome == "EMPTY":
+                try:
+                    await asyncio.wait_for(
+                        stop_event.wait(), timeout=idle_poll_seconds
+                    )
+                except asyncio.TimeoutError:
+                    continue
+
 
 __all__ = ["DurableWorkerRunner"]
