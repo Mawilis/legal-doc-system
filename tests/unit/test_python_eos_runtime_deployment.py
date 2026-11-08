@@ -84,28 +84,20 @@ def test_worker_service_has_no_http_healthcheck():
         assert "healthcheck:\n      disable: true" in worker
 
 
-def test_legacy_node_backend_has_no_supported_runtime_entrypoint():
+def test_node_backend_process_launchers_and_transport_are_absent():
+    for path in (
+        "server/server.js",
+        "server/ecosystem.config.js",
+        "server/deploy.sh",
+        "server/tests/routes/wilsyAiAdvisoryProxy.test.js",
+        "orchestrator.js",
+    ):
+        assert not (ROOT / path).exists(), f"retired Node backend artifact remains: {path}"
+
     import json
 
-    package = json.loads((ROOT / "server/package.json").read_text(encoding="utf-8"))
-    assert "start" not in package["scripts"]
-    assert "dev" not in package["scripts"]
-    assert "predev" not in package["scripts"]
-    assert "main" not in package
-
-    pm2 = (ROOT / "server/ecosystem.config.js").read_text(encoding="utf-8")
-    assert "apps: []" in pm2
-    assert "server.js" not in pm2
-
-    bff = (ROOT / "server/server.js").read_text(encoding="utf-8")
-    assert "Legacy Node BFF runtime is retired" in bff
-    assert "process.exitCode = 1" in bff
-
-    deploy = (ROOT / "server/deploy.sh").read_text(encoding="utf-8")
-    assert "exit 1" in deploy
-    assert "legacy Node deployment path has been retired" in deploy
-
-    for dockerfile in ("server/Dockerfile", "server/Dockerfile.worker"):
-        source = (ROOT / dockerfile).read_text(encoding="utf-8")
-        assert "FROM scratch" in source
-        assert "FROM node:" not in source.lower()
+    package = json.loads((ROOT / "package.json").read_text(encoding="utf-8"))
+    assert "pm2" not in package.get("dependencies", {})
+    assert "pm2" not in package.get("devDependencies", {})
+    assert "server:start" not in package.get("scripts", {})
+    assert "pm2:deploy" not in package.get("scripts", {})
