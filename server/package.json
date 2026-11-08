@@ -2,11 +2,8 @@
   "name": "wilsy-os-server",
   "version": "2.0.0",
   "type": "module",
-  "description": "WILSY OS - Revolutionary Legal Technology Platform",
-  "main": "server.js",
+  "description": "Retired legacy Node backend package; retained only for historical test/tooling dependencies pending test-suite extraction.",
   "scripts": {
-    "start": "node --import ./preload-shield.js server.js",
-    "dev": "nodemon --exec node --import ./preload-shield.js --experimental-specifier-resolution=node --trace-warnings server.js",
     "test": "NODE_ENV=test NODE_OPTIONS=\"--experimental-vm-modules\" mocha --config .mocharc.cjs --file tests/setup.cjs tests/advanced/*.test.cjs --timeout 300000 --exit",
     "test:finance": "NODE_OPTIONS='--experimental-vm-modules' npx mocha --require @babel/register __tests__/finance/**/*.test.js --exit",
     "test:billing": "NODE_OPTIONS='--experimental-vm-modules' npx mocha --require @babel/register __tests__/billing/**/*.test.js --exit",
@@ -21,8 +18,7 @@
     "monitor": "../monitor-production.sh",
     "test:helpers": "NODE_ENV=test mocha --experimental-specifier-resolution=node tests/helpers/testDatabaseHelper.test.js --exit",
     "test:pipeline": "node scripts/testOnboardingPipeline.js",
-    "onboard": "node scripts/onboardTenant.js",
-    "predev": "lsof -ti:4000 | xargs kill -9 2>/dev/null || true"
+    "onboard": "node scripts/onboardTenant.js"
   },
   "dependencies": {
     "@babel/core": "7.29.7",
