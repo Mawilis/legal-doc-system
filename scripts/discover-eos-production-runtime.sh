@@ -1,4 +1,22 @@
 #!/usr/bin/env bash
+# TITLE: WILSY EOS Production Runtime Read-Only AWS Discovery
+# VERSION: v1.0.0-EOS-PRODUCTION-RUNTIME-DISCOVERY
+# AUTHORITY: Read-only AWS inventory only; no cloud provisioning or deployment authority.
+# EPITOME: Enumerate account identity and available regional AWS hosting, workload identity, compute, ingress and CloudFormation metadata to identify candidate EOS production hosting without inferring that discovered resources serve EOS.
+# ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/scripts/discover-eos-production-runtime.sh
+# COLLABORATION / OWNERSHIP: Wilsy OS Core Engineering; production hosting owner must verify actual service ownership and traffic path.
+# CERTIFICATION OR UPDATE DATE: 2026-11-09
+# CHANGELOG:
+#   v1.0.0-EOS-PRODUCTION-RUNTIME-DISCOVERY establishes a read-only AWS
+#   regional inventory of EKS/OIDC, ECS, Lambda, App Runner, Elastic Beanstalk,
+#   Lightsail, EC2, load balancers and CloudFormation metadata.
+# COMPLIANCE: AGENTS.md v1.2.0-SOVEREIGN-LEGAL-OPERATIONS-CONSTITUTION.
+# SECURITY / PRIVACY POSTURE: Emits account identity and infrastructure metadata only; never reads secrets, environment values or application data.
+# TENANT BOUNDARY: Does not connect to MongoDB or inspect tenant/principal records.
+# AUTHORITY BOUNDARY: No assume-role, create, update, delete, change-set, task-launch or deploy operation is performed.
+# FINANCIAL AUTHORITY BOUNDARY: No financial execution authority; Kennel EOS remains the exclusive financial execution authority.
+# FAIL-CLOSED DECLARATION: AWS CLI or identity/region inventory failures are reported explicitly; incomplete provider inventory is not interpreted as proof of absence.
+
 # Read-only inventory to identify the actual AWS-hosted EOS production target.
 # This script never creates, updates, deletes, assumes, or deploys cloud resources.
 set -uo pipefail
@@ -118,3 +136,11 @@ echo
 echo "=== DISCOVERY COMPLETE ==="
 echo "This inventory does not prove that any discovered resource serves EOS."
 echo "Confirm the live deployment's repository, image digest, DNS/ingress, runtime identity, and owner before KMS binding."
+
+# ARTIFACT: scripts/discover-eos-production-runtime.sh
+# VERSION: v1.0.0-EOS-PRODUCTION-RUNTIME-DISCOVERY
+# AUTHORITY BOUNDARY: Read-only infrastructure inventory only; no cloud mutation or deployment.
+# TENANT POSTURE: No tenant, principal, session or database records are accessed or mutated.
+# FAIL-CLOSED POSTURE: Unavailable regional APIs remain explicitly unavailable; discovered resources are not presumed to host EOS.
+# FINANCIAL EXECUTION AUTHORITY: Kennel EOS exclusively.
+# END OF WILSY OS SOVEREIGN ARTIFACT
