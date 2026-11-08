@@ -68,3 +68,32 @@ Reviewed against the mandatory `AGENTS.md` Sovereign Codex Governance Contract a
 These findings supersede any earlier implication that the prior 446-test/16-workflow result closed the complete security review. That result remains evidence for its exact commit only.
 
 **Disposition: remediation continues; do not approve, merge, or activate production trust.**
+
+
+## Resolution update — exact head `dcd12a64906316bfab91b0c41e0b6f09691f4a5e`
+
+The following repository-contract findings are now corrected:
+
+- `tools/eos/api/institutional_source_key_router.py`: versioned sovereign header, changelog, authority/tenant/security boundaries, public request/route documentation and end seal added at `092bc393a28f3a48aa19280bac2c8258449b9b28`.
+- `tools/eos/security/institutional_source_key_governance_evidence.py`: versioned sovereign header, changelog, authority/tenant/security boundaries and end seal added at `68b5d7160e6af1274289e6edca39b5e5e685314b`.
+- `tools/eos/security/institutional_source_signing_key_registry.py`: semantic version advanced to `v1.1.0`, with matching changelog and end-seal version, at `dcd12a64906316bfab91b0c41e0b6f09691f4a5e`.
+
+Both corresponding artifact-contract review threads have been resolved after source inspection and successful certification.
+
+The latest exact-head signed-offer workflow on `dcd12a6` completed successfully: **446 passed, 12 warnings, 0 failed**, using a real MongoDB replica set. All 16 applicable workflows completed successfully, with no failed or pending workflows; one superseded run was cancelled by concurrency control.
+
+### Remaining code findings
+
+5. **Medium — append path does not verify the complete existing chain before mutation.** `_seal_event` validates the last event and audit head, but does not call the full `_verify_event_chain` before adding another event. The router currently calls `get_proposal` first for approval/revocation, which verifies the chain, but the registry's public mutation methods should enforce this invariant themselves. A direct caller could otherwise append to a chain whose earlier link is already corrupt. Require full-chain verification before every non-genesis append and add a real-replica-set regression test.
+
+6. **High — denial audit is not independently protected or tamper-evident.** The denial collection remains outside the lifecycle chain. Its protection must be covered by the same explicit storage-role policy or an independently protected sink, and its integrity must be verified/reconciled.
+
+7. **Medium — denial-audit write failure lacks durable recovery.** The recorder still catches broad exceptions and emits only a fixed log string. The original denial response must remain intact, but the audit-write failure needs structured durable telemetry and a reconciliation path.
+
+8. **High — canonical IAM denial observation is not durable audit persistence.** The current tenant authorization terminal observer emits a structured application log only; the authentication audit helper also logs and returns an in-memory payload. No generic durable IAM-denial outbox was found in the repository search. Pre-handler denials therefore need a governed persistence/outbox path, with a safe fallback when the database is unavailable.
+
+9. **Operational — protected audit infrastructure is not yet proven.** Define and test database roles that prevent ordinary application identities from updating/deleting lifecycle events, audit heads and denial evidence, or use an independently protected audit sink. Add retention, independent export, backup/restore verification and integrity alerts.
+
+### Current disposition
+
+The artifact-contract findings are closed. The remaining audit-integrity, IAM-denial persistence and infrastructure findings remain open. Keep PR #393 draft and unmerged; do not activate production trust.
