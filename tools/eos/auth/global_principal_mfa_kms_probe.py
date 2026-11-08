@@ -28,9 +28,11 @@ def main() -> int:
         if envelope is None:
             raise RuntimeError("GLOBAL_MFA_KMS_PROVIDER_REQUIRED")
         envelope.validate_access()
-    except (GlobalMfaKeyManagementError, RuntimeError, Exception) as error:
-        code = str(error) or type(error).__name__
-        print(f"LOCAL_EOS_MFA_KMS_PROBE=FAILED ({code})", file=sys.stderr)
+    except Exception as error:
+        print(
+            f"LOCAL_EOS_MFA_KMS_PROBE=FAILED ({type(error).__name__})",
+            file=sys.stderr,
+        )
         return 1
 
     print("LOCAL_EOS_MFA_ROLE=VERIFIED")
