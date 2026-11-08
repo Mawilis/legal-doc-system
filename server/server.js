@@ -498,10 +498,10 @@ async function main() {
 }
 
 if (process.argv[1] && fileURLToPath(import.meta.url) === resolve(process.argv[1])) {
-  main().catch((err) => {
-    console.error('[WILSY] ❌ Bootstrap failed:', err);
-    process.exit(1);
-  });
+  console.error(
+    '[WILSY] Legacy Node BFF runtime is retired. Start the canonical Python Kennel EOS API instead.'
+  );
+  process.exitCode = 1;
 }
 
 export default createApp;
