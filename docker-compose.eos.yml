@@ -65,6 +65,8 @@ services:
     depends_on:
       wilsy-eos:
         condition: service_healthy
+    healthcheck:
+      disable: true
     stop_grace_period: 45s
     security_opt:
       - no-new-privileges:true
