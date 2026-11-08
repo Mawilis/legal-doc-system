@@ -1,5 +1,5 @@
 """TITLE: WILSY EOS Institutional Source-Key Governance API
-VERSION: v1.2.0
+VERSION: v1.3.0
 AUTHORITY: WILSY EOS Security Engineering; authenticated command boundary only
 EPITOME: Exposes tenant-authorized proposal, approval and revocation commands for source-bound Ed25519 public keys.
 ABSOLUTE CANONICAL PATH: tools/eos/api/institutional_source_key_router.py
@@ -9,6 +9,7 @@ CHANGELOG:
 - v1.0.0: Introduce authenticated, independently evidenced source-key governance commands.
 - v1.1.0: Persist governance denials through the registry's tenant-partitioned hash chain.
 - v1.2.0: Emit bounded failure class and stable registry code for denial-audit reconciliation.
+- v1.3.0: Include sanitized failure class and code in the operational denial-audit signal.
 COMPLIANCE: Caller-owned MongoDB replica-set transactions; canonical tenant IAM; deterministic idempotency.
 SECURITY / PRIVACY POSTURE: Development control plane; public keys and bounded evidence references only; provider verification fails closed when unavailable.
 TENANT BOUNDARY: WILSY canonical tenant only; tenant identity is resolved by the canonical authorization dependency.
@@ -172,8 +173,13 @@ def _record_denial(
             )
     except Exception as audit_error:
         # Preserve the original denial; expose only bounded reconciliation metadata.
+        failure_code = getattr(audit_error, "code", "UNCLASSIFIED")
+        if not isinstance(failure_code, str) or re.fullmatch(r"[A-Z0-9_]{1,128}", failure_code) is None:
+            failure_code = "UNCLASSIFIED"
         logger.error(
-            "INSTITUTIONAL_SOURCE_KEY_DENIAL_AUDIT_UNAVAILABLE",
+            "INSTITUTIONAL_SOURCE_KEY_DENIAL_AUDIT_UNAVAILABLE failure_class=%s failure_code=%s",
+            type(audit_error).__name__,
+            failure_code,
             extra={"wilsy_source_key_denial_audit_failure": {
                 "correlation_id": record["correlation_id"],
                 "action": action,
@@ -181,7 +187,7 @@ def _record_denial(
                 "http_status": error.status_code,
                 "reconciliation_required": True,
                 "failure_class": type(audit_error).__name__,
-                "failure_code": getattr(audit_error, "code", "UNCLASSIFIED"),
+                "failure_code": failure_code,
             }},
         )
     else:
@@ -483,7 +489,7 @@ async def revoke_source_signing_key(
 
 __all__ = ["router"]
 # ARTIFACT: WILSY EOS Institutional Source-Key Governance API
-# VERSION: v1.2.0
+# VERSION: v1.3.0
 # AUTHORITY BOUNDARY: Authenticated command orchestration only; provider evidence and registry own their respective proofs.
 # TENANT POSTURE: Canonical WILSY tenant authorization is mandatory.
 # FAIL-CLOSED POSTURE: Missing verifier, invalid bindings, transaction failures and unavailable registry are denied.
