@@ -25,10 +25,16 @@
   deployment.
 - A separate Atlas project `legal-doc-test` also exists. Do not use its
   cluster or test database credentials for production EOS.
-- Previously inspected AWS identity `wilsy-legal-cert-operator` has HR S3
-  certification permissions only and is not authorized as the EOS runtime
-  principal or local MFA operator. The AWS-managed `alias/aws/s3` key is
-  likewise not an MFA key.
+- AWS profile `wilsy-legal-cert` resolves to IAM user
+  `arn:aws:iam::121014832643:user/wilsy-legal-cert-operator`; profile
+  `wilsy-legal-s3-cert` resolves to the same user. The user currently has the
+  AWS-managed `AdministratorAccess` policy attached, in addition to
+  `IAMUserChangePassword` and `SignInLocalDevelopmentAccess`. This establishes
+  an administrative provisioning identity, not an approved EOS runtime
+  identity. Do not grant this administrator direct application KMS use.
+- Profile `wilsy-hr-s3-provisioner` resolves to the separate
+  `WilsyHrDocumentBucketProvisioner` role and must not be repurposed for MFA.
+- The AWS-managed `alias/aws/s3` key is not an MFA key.
 
 ## What this stack creates
 
@@ -62,10 +68,23 @@ actual AWS account and target cluster:
 - Proof that this is the actual target runtime cluster and not a stale/example
   manifest.
 
-The repository and Atlas inspection performed for this change did not establish
-an EKS cluster or OIDC provider. No approved runtime role ARN currently exists
-in the inspected repository contract. The stack intentionally requires these
-real inputs instead of guessing them.
+The AWS account inventory performed on 2026-11-08 found no EKS clusters in
+any of the 18 enabled regions, no IAM OIDC providers, and no existing EOS
+runtime IAM role. No CloudFormation stacks were listed in `af-south-1`.
+The current repository deployment authority document identifies Python
+Kennel EOS as the supported API runtime but explicitly marks production
+hosting, ingress and workload identity as unverified. The checked-in Kubernetes
+and Helm files are stale/unverified and are not evidence of a live EKS target.
+The Vercel connector also returned no project connected to this repository.
+
+The administrator profile is sufficient to investigate or provision AWS
+infrastructure, subject to account-level controls, but it does not establish
+the actual production runtime. This EKS-specific stack is therefore not ready
+to deploy. Do not create a speculative EKS cluster, OIDC provider, or service
+account merely to satisfy its parameters. A separate local-development
+provisioning path must use a dedicated least-privilege IAM role assumed by the
+approved operator; do not give the EOS process the administrator profile or
+its broad permissions.
 
 Example discovery commands (run using the approved infrastructure-admin
 profile, not the HR S3 certification identity):
@@ -86,7 +105,10 @@ runtime role as key administrator.
 ## Deploy after discovery
 
 Use a reviewed CloudFormation change set in `af-south-1`. Do not execute an
-unreviewed stack update.
+unreviewed stack update. The EKS stack described here remains blocked until a
+real target cluster and issuer are independently verified. Local-development
+key provisioning must be a separate template/stack and must not create or imply
+production workload identity.
 
 ```bash
 aws cloudformation create-change-set \
