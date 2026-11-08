@@ -108,7 +108,8 @@ aws cloudformation describe-change-set \
 ```
 
 Only execute after independently reviewing that the change set contains exactly
-the dedicated key, alias and role described above. Capture the output key ARN
+the dedicated key, alias and role described above. The key-administrator role
+must already exist in the same AWS account; CloudFormation does not create it. Capture the output key ARN
 and role ARN as deployment evidence.
 
 ## Bind the actual workload
