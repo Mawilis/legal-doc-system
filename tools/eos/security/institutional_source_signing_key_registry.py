@@ -1,5 +1,5 @@
 """TITLE: WILSY EOS Institutional Source Signing-Key Lifecycle Registry
-VERSION: v1.0.0
+VERSION: v1.1.0
 AUTHORITY: WILSY EOS Security Engineering; persistence authority only
 EPITOME: Append-only, source-bound Ed25519 public-key enrollment, revocation and rotation evidence.
 ABSOLUTE CANONICAL PATH: tools/eos/security/institutional_source_signing_key_registry.py
@@ -7,9 +7,9 @@ COLLABORATION / OWNERSHIP: Consumed by institutional signer source-response auth
 CERTIFICATION / UPDATE DATE: 2026-11-08
 CHANGELOG:
 - v1.0.0: Introduce immutable key enrollment, append-only revocation and bounded rotation events.
-- 2026-11-08: Bind proposal/approval evidence fingerprints, derive lifecycle projections
-  from events, add transactionally anchored per-key audit hash chains, and create
-  a separate indexed collection for bounded governance-denial evidence.
+- v1.1.0: Persist proposal and approval evidence fingerprints; derive lifecycle
+  projections from immutable events; add transactionally anchored per-key audit
+  hash chains and an indexed governance-denial evidence collection.
 COMPLIANCE: Caller-owned MongoDB transaction; deterministic fingerprints; unique source/key and public-key identities.
 SECURITY / PRIVACY POSTURE: Public keys only; no private material, secrets, provider credentials or fabricated institutional trust anchors.
 TENANT BOUNDARY: Source trust is source-system scoped, not tenant-issued authority.
@@ -658,7 +658,7 @@ __all__ = [
 ]
 
 # ARTIFACT: WILSY OS Institutional Source Signing-Key Lifecycle Registry
-# VERSION: v1.0.0
+# VERSION: v1.1.0
 # AUTHORITY BOUNDARY: Durable public-key lifecycle evidence only; no caller authorization or verifier-result issuance.
 # TENANT POSTURE: Source-system scoped; no tenant-issued trust.
 # FAIL-CLOSED POSTURE: Missing, invalid, expired, revoked, or unavailable trust is denied.
