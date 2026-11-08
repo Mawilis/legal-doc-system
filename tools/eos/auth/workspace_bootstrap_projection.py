@@ -1,8 +1,15 @@
 """WILSY OS server-owned workspace bootstrap projection.
 
 TITLE: Workspace Bootstrap Projection
-VERSION: v1.0.0-WILSY-WORKSPACE-BOOTSTRAP-PROJECTION
+VERSION: v1.2.0-WILSY-CANONICAL-HEADQUARTERS-WORKSPACE-RESOLUTION
 AUTHORITY: Read-only composition of current workspace authority facts.
+CHANGELOG:
+    2026-11-08 v1.2.0-WILSY-CANONICAL-HEADQUARTERS-WORKSPACE-RESOLUTION scopes tenant_owner presentation to
+    WILSY_HEADQUARTERS only for the exact canonical WILSY company tenant.
+    Customer tenant owners retain EXECUTIVE_COMMAND_CENTRE. No IAM permission,
+    tenant membership, legal practice capacity, or domain authority is granted.
+    v1.0.0-WILSY-WORKSPACE-BOOTSTRAP-PROJECTION established the original
+    server-owned projection contract.
 PURPOSE: Compose one bounded browser-safe workspace projection from existing
          sovereign authorities without treating JWT/browser projections as truth.
 ABSOLUTE CANONICAL PATH:
@@ -51,7 +58,8 @@ from tools.eos.auth.hr_business_role_catalog import ALL_HR_BUSINESS_ROLES
 from tools.eos.saas.tenancy.tenant_registry import TenantRegistry
 
 
-VERSION = "v1.1.0-EOS-CANONICAL-WORKSPACE-RESOLUTION"
+VERSION = "v1.2.0-WILSY-CANONICAL-HEADQUARTERS-WORKSPACE-RESOLUTION"
+WILSY_COMPANY_TENANT_ID = "WILSYTENANT-4CD2FZ4O"
 WORKSPACE_CONTRACT_VERSION = "v1.0.0-WILSY-EOS-WORKSPACE-RESOLUTION"
 
 # Canonical workspace selection is an EOS projection of an already-verified
@@ -80,8 +88,21 @@ _WORKSPACE_BY_BUSINESS_ROLE = MappingProxyType({
 })
 
 
-def resolve_workspace_id(business_role: str) -> str:
-    """Resolve one closed workspace identifier from current durable IAM role."""
+def resolve_workspace_id(
+    business_role: str,
+    *,
+    tenant_id: str | None = None,
+) -> str:
+    """Resolve a presentation workspace from exact tenant and durable capacity.
+
+    The WILSY company Headquarters is selected only for the exact canonical
+    company tenant and its already-persisted tenant_owner business capacity.
+    Customer tenant owners retain the customer Executive Command Centre.
+    This mapping grants no permission or access; each destination independently
+    authorizes the current principal, tenant, capacity and resource.
+    """
+    if business_role == "tenant_owner" and tenant_id == WILSY_COMPANY_TENANT_ID:
+        return "WILSY_HEADQUARTERS"
     workspace_id = _WORKSPACE_BY_BUSINESS_ROLE.get(business_role)
     if workspace_id is not None:
         return workspace_id
@@ -303,7 +324,7 @@ def build_workspace_bootstrap_projection(
         if (
             business_role != selected_business_role
             or business_role_revision != selected_capacity_revision
-            or resolve_workspace_id(business_role) != selected_workspace_id
+            or resolve_workspace_id(business_role, tenant_id=tenant_id) != selected_workspace_id
         ):
             raise WorkspaceBootstrapProjectionError(
                 "WORKSPACE_BOOTSTRAP_SELECTED_CAPACITY_STALE"
@@ -331,7 +352,7 @@ def build_workspace_bootstrap_projection(
     if email is not None and not isinstance(email, str):
         email = None
 
-    workspace_id = resolve_workspace_id(business_role)
+    workspace_id = resolve_workspace_id(business_role, tenant_id=tenant_id)
 
     return WorkspaceBootstrapProjection(
         principal_id=principal_id,
@@ -356,7 +377,7 @@ __all__ = [
 
 
 # ARTIFACT: workspace_bootstrap_projection.py
-# VERSION: v1.0.0-WILSY-WORKSPACE-BOOTSTRAP-PROJECTION
+# VERSION: v1.2.0-WILSY-CANONICAL-HEADQUARTERS-WORKSPACE-RESOLUTION
 # AUTHORITY BOUNDARY: read-only composition; underlying authorities remain sovereign
 # TENANT POSTURE: JWT tenant is candidate scope until durable workspace revalidation
 # FAIL-CLOSED POSTURE: absent, inactive, malformed, mismatched, or unavailable truth denies
