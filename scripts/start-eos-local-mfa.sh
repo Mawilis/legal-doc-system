@@ -1,4 +1,22 @@
 #!/usr/bin/env bash
+# TITLE: WILSY EOS Local-Development Global Principal MFA Launcher
+# VERSION: v1.0.0-LOCAL-EOS-MFA-LAUNCHER
+# AUTHORITY: Local-development runtime startup only; no production authority.
+# EPITOME: Resolve the non-secret local KMS key ARN, assume the dedicated local-development role, verify its identity and KMS round trip, then start the canonical Python EOS API.
+# ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/scripts/start-eos-local-mfa.sh
+# COLLABORATION / OWNERSHIP: Wilsy OS Core Engineering; Python EOS owns authentication and application runtime.
+# CERTIFICATION OR UPDATE DATE: 2026-11-09
+# CHANGELOG:
+#   v1.0.0-LOCAL-EOS-MFA-LAUNCHER establishes a deterministic local-only
+#   launcher using a dedicated AWS CLI assume-role profile, short-lived
+#   credentials, a real KMS startup probe and the Python EOS Uvicorn entrypoint.
+# COMPLIANCE: AGENTS.md v1.2.0-SOVEREIGN-LEGAL-OPERATIONS-CONSTITUTION.
+# SECURITY / PRIVACY POSTURE: Clears static AWS credential environment variables; never creates, stores or accepts static credentials.
+# TENANT BOUNDARY: KMS startup probe uses synthetic principal context only; no tenant or identity records are created.
+# AUTHORITY BOUNDARY: Local-development role only; the launcher rejects any unexpected runtime role and cannot authorize production.
+# FINANCIAL AUTHORITY BOUNDARY: No financial execution authority; Kennel EOS remains the exclusive financial execution authority.
+# FAIL-CLOSED DECLARATION: Missing AWS CLI, Python, KMS key ARN, expected role or KMS probe success prevents API startup.
+
 # Reproducible local EOS launch with the dedicated local-development MFA role.
 # This script reads the non-secret KMS key ARN from CloudFormation and relies
 # on the AWS CLI assume-role profile for short-lived credentials. It never
@@ -59,3 +77,11 @@ esac
 echo "EOS_LOCAL_MFA_AWS_IDENTITY=VERIFIED"
 python -m tools.eos.auth.global_principal_mfa_kms_probe
 exec python -m uvicorn tools.eos.api.server:app --host "$HOST" --port "$PORT"
+
+# ARTIFACT: scripts/start-eos-local-mfa.sh
+# VERSION: v1.0.0-LOCAL-EOS-MFA-LAUNCHER
+# AUTHORITY BOUNDARY: Local-development KMS identity verification and Python EOS startup only.
+# TENANT POSTURE: No tenant, membership, factor or session state is created by the launcher.
+# FAIL-CLOSED POSTURE: The launcher exits before API startup when local AWS identity or KMS validation fails.
+# FINANCIAL EXECUTION AUTHORITY: Kennel EOS exclusively.
+# END OF WILSY OS SOVEREIGN ARTIFACT
