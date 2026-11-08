@@ -61,9 +61,19 @@ def transition_fixture(monkeypatch):
             f"wrong certification replica set: expected {expected_replica_set!r}, "
             f"received {actual_replica_set!r}"
         )
-    db = client[f"global_mfa_transition_{uuid.uuid4().hex}"]
+    database_name = os.getenv("TEST_GLOBAL_PRINCIPAL_MONGO_DATABASE")
+    if database_name != "wilsy_global_principal_mfa_cert":
+        client.close()
+        pytest.fail(
+            "TEST_GLOBAL_PRINCIPAL_MONGO_DATABASE must be "
+            "'wilsy_global_principal_mfa_cert'"
+        )
+    db = client[database_name]
+    suffix = uuid.uuid4().hex
     challenges, sessions, refresh = (
-        db[CHALLENGE_COLLECTION], db[SESSION_COLLECTION], db[REFRESH_COLLECTION]
+        db[f"{CHALLENGE_COLLECTION}_cert_{suffix}"],
+        db[f"{SESSION_COLLECTION}_cert_{suffix}"],
+        db[f"{REFRESH_COLLECTION}_cert_{suffix}"],
     )
     MembershipSelectionChallengeService.ensure_indexes(challenges)
     GlobalPrincipalSessionAuthority.ensure_indexes(sessions, refresh)
@@ -90,7 +100,8 @@ def transition_fixture(monkeypatch):
     try:
         yield client, challenges, sessions, refresh, challenge_service, transition
     finally:
-        client.drop_database(db.name)
+        for collection in (challenges, sessions, refresh):
+            collection.drop()
         client.close()
 
 
