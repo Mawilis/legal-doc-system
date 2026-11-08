@@ -42,6 +42,8 @@ from tools.eos.auth.global_principal_mfa_kms_envelope import (
 EXPECTED_ACCOUNT_ID = "121014832643"
 EXPECTED_REGION = "af-south-1"
 EXPECTED_ROLE_NAME = "wilsy-eos-production-task-role"
+EXPECTED_CLUSTER_NAME = "wilsy-eos-production"
+EXPECTED_TASK_FAMILY = "wilsy-eos-production-api"
 _METADATA_HOST = "169.254.170.2"
 
 
@@ -88,7 +90,14 @@ def _verify_task_metadata(metadata: dict[str, object]) -> None:
     )
     if not isinstance(task_arn, str) or not task_arn.startswith(expected_prefix):
         raise RuntimeError("ECS_PRODUCTION_TASK_ARN_MISMATCH")
-    if not metadata.get("Family") or not metadata.get("Revision"):
+    revision = metadata.get("Revision")
+    if (
+        metadata.get("Cluster") != EXPECTED_CLUSTER_NAME
+        or metadata.get("Family") != EXPECTED_TASK_FAMILY
+        or isinstance(revision, bool)
+        or not (isinstance(revision, int) and revision > 0)
+        and not (isinstance(revision, str) and revision.isdigit() and int(revision) > 0)
+    ):
         raise RuntimeError("ECS_PRODUCTION_TASK_DEFINITION_METADATA_REQUIRED")
 
 
