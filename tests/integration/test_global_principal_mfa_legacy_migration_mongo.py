@@ -55,8 +55,15 @@ def legacy_migration_store():
     if not uri:
         pytest.fail("TEST_GLOBAL_PRINCIPAL_MONGO_URI is required")
     client = MongoClient(uri, serverSelectionTimeoutMS=5000)
-    if client.admin.command("hello").get("setName") != "wilsyGlobalPrincipalCertRS":
-        pytest.fail("wrong global-principal certification replica set")
+    expected_replica_set = os.getenv(
+        "TEST_GLOBAL_PRINCIPAL_MONGO_REPLICA_SET", "wilsyGlobalPrincipalCertRS"
+    )
+    actual_replica_set = client.admin.command("hello").get("setName")
+    if actual_replica_set != expected_replica_set:
+        pytest.fail(
+            f"wrong certification replica set: expected {expected_replica_set!r}, "
+            f"received {actual_replica_set!r}"
+        )
     database = client[f"global_mfa_legacy_migration_{uuid.uuid4().hex}"]
     credentials = database[CREDENTIAL_COLLECTION]
     legacy = database[LEGACY_FACTOR_COLLECTION]
