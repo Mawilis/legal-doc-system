@@ -8,6 +8,7 @@ on:
       - "tools/eos/security/forensic_merkle_registry.py"
       - "tools/eos/api/server.py"
       - "server/server.js"
+      - "server/app.js"
       - "requirements.txt"
       - "tests/unit/test_artifact_pdf_router.py"
       - "server/app.js"
