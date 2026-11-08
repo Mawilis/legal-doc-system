@@ -67,3 +67,13 @@ def test_forensic_routes_do_not_claim_unverified_assets_or_vaults_are_intact() -
     assert "status: 'VAULT_STATUS_UNVERIFIED'" in source
     assert "VAULT_STATUS_SOURCE_UNAVAILABLE" in source
     assert "status: 'VAULT_ANCHORED'" not in source
+
+
+def test_forensic_status_route_omits_global_paths_and_last_run_payloads() -> None:
+    source = (ROOT / "server/routes/forensicRoutes.js").read_text(encoding="utf-8")
+    status_route = source.split("router.get('/merkle-auditor/status'", 1)[1].split("});", 1)[0]
+
+    assert "tenantId: req.forensicTenantId" in status_route
+    assert "localAnchorPath" not in status_route
+    assert "lastRun" not in status_route
+    assert "json(forensicMerkleAuditor.getStatus())" not in status_route
