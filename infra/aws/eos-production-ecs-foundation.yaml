@@ -39,7 +39,7 @@ Parameters:
   EosDesiredTaskCpu:
     Type: String
     Default: '1024'
-    AllowedValues: ['512', '1024', '2048', '4096']
+    AllowedValues: ['512', '1024', '2048']
     Description: Fargate task CPU units; task memory is fixed at 2048 MiB for the initial definition.
 
 Resources:
@@ -185,6 +185,10 @@ Resources:
       NetworkMode: awsvpc
       RequiresCompatibilities:
         - FARGATE
+      Volumes:
+        - Name: eos-data
+        - Name: eos-reports
+        - Name: eos-logs
       RuntimePlatform:
         OperatingSystemFamily: LINUX
         CpuArchitecture: X86_64
@@ -196,6 +200,16 @@ Resources:
           Essential: true
           ReadonlyRootFilesystem: true
           User: '10001'
+          MountPoints:
+            - SourceVolume: eos-data
+              ContainerPath: /app/data
+              ReadOnly: false
+            - SourceVolume: eos-reports
+              ContainerPath: /app/reports
+              ReadOnly: false
+            - SourceVolume: eos-logs
+              ContainerPath: /var/log/wilsy-os
+              ReadOnly: false
           PortMappings:
             - ContainerPort: 9095
               Protocol: tcp
