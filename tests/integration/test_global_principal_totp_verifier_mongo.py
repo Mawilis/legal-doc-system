@@ -24,10 +24,26 @@ def factor_store():
     if not uri:
         pytest.fail("TEST_GLOBAL_PRINCIPAL_MONGO_URI is required")
     client = MongoClient(uri, serverSelectionTimeoutMS=5000)
-    if client.admin.command("hello").get("setName") != "wilsyGlobalPrincipalCertRS":
-        pytest.fail("wrong global-principal certification replica set")
-    database = client[f"global_factor_{uuid.uuid4().hex}"]
-    factors = database["global_principal_mfa_factors"]
+    expected_replica_set = os.getenv(
+        "TEST_GLOBAL_PRINCIPAL_MONGO_REPLICA_SET", "wilsyGlobalPrincipalCertRS"
+    )
+    actual_replica_set = client.admin.command("hello").get("setName")
+    if actual_replica_set != expected_replica_set:
+        client.close()
+        pytest.fail(
+            f"wrong certification replica set: expected {expected_replica_set!r}, "
+            f"received {actual_replica_set!r}"
+        )
+    database_name = os.getenv("TEST_GLOBAL_PRINCIPAL_MONGO_DATABASE")
+    if database_name != "wilsy_global_principal_mfa_cert":
+        client.close()
+        pytest.fail(
+            "TEST_GLOBAL_PRINCIPAL_MONGO_DATABASE must be "
+            "'wilsy_global_principal_mfa_cert'"
+        )
+    database = client[database_name]
+    suffix = uuid.uuid4().hex
+    factors = database[f"global_principal_mfa_factors_cert_{suffix}"]
     GlobalPrincipalTotpVerifier.ensure_indexes(factors)
     factors.insert_one({
         "principal_id": "principal-global",
@@ -48,7 +64,7 @@ def factor_store():
     try:
         yield client, factors, verifier
     finally:
-        client.drop_database(database.name)
+        factors.drop()
         client.close()
 
 
