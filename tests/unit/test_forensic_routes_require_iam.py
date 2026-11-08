@@ -40,3 +40,11 @@ def test_forensic_handlers_use_only_the_authenticated_tenant_scope() -> None:
     assert "$in: aliases" not in source
     assert "GLOBAL_ROOT', 'WILSY_ROOT', 'WILSY_GLOBAL_ROOT" not in source
     assert "listLocalAnchors({\n    tenantId: req.forensicTenantId," in source
+
+
+def test_local_forensic_anchors_are_filtered_by_exact_authenticated_tenant() -> None:
+    source = (ROOT / "server/services/ForensicMerkleAuditor.js").read_text(encoding="utf-8")
+
+    assert "async listLocalAnchors({ tenantId, limit = 20 } = {})" in source
+    assert "FORENSIC_TENANT_SCOPE_REQUIRED" in source
+    assert ".filter((anchor) => anchor.tenantId === authenticatedTenantId)" in source
