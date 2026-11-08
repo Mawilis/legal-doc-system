@@ -104,9 +104,16 @@ class AwsKmsGlobalMfaEnvelope:
             for item in os.getenv("WILSY_GLOBAL_MFA_KMS_DECRYPT_KEY_IDS", "").split(",")
             if item.strip()
         ]
+        region_name = (
+            os.getenv("WILSY_GLOBAL_MFA_KMS_REGION", "").strip()
+            or os.getenv("AWS_REGION", "").strip()
+            or os.getenv("AWS_DEFAULT_REGION", "").strip()
+        )
+        if not region_name:
+            raise GlobalMfaKeyManagementError("GLOBAL_MFA_KMS_REGION_REQUIRED")
         return cls(
             key_id=key_id,
-            region_name=os.getenv("AWS_REGION"),
+            region_name=region_name,
             decrypt_key_ids=decrypt_key_ids,
             client=client,
         )
@@ -192,7 +199,11 @@ class AwsKmsGlobalMfaEnvelope:
 
 
 def build_global_mfa_kms_envelope_from_environment(*, client: Any = None) -> AwsKmsGlobalMfaEnvelope | None:
-    """Return the explicitly configured KMS adapter, or None when unconfigured."""
+    """Return the configured KMS adapter, or None when provider is absent.
+
+    Region resolution is deterministic: EOS-specific region, AWS_REGION,
+    then AWS_DEFAULT_REGION. A configured provider without a region fails closed.
+    """
     return AwsKmsGlobalMfaEnvelope.from_environment(client=client)
 
 
