@@ -48,3 +48,11 @@ def test_local_forensic_anchors_are_filtered_by_exact_authenticated_tenant() -> 
     assert "async listLocalAnchors({ tenantId, limit = 20 } = {})" in source
     assert "FORENSIC_TENANT_SCOPE_REQUIRED" in source
     assert ".filter((anchor) => anchor.tenantId === authenticatedTenantId)" in source
+
+
+def test_forensic_chain_reads_do_not_merge_legacy_root_aliases() -> None:
+    source = (ROOT / "server/services/ForensicMerkleAuditor.js").read_text(encoding="utf-8")
+
+    assert "buildTenantAliases" not in source
+    assert "ForensicLog.find({ tenantId: authenticatedTenantId })" in source
+    assert "$in: aliases" not in source
