@@ -21,15 +21,6 @@ Parameters:
     Type: String
     Description: Existing dedicated IAM role authorized to administer this KMS key; never the EOS runtime role.
     AllowedPattern: '^arn:[a-z0-9-]+:iam::[0-9]{12}:role/.+$'
-  LocalDevelopmentPrincipalArn:
-    Type: String
-    Default: ''
-    Description: Optional separately approved IAM role ARN assumed by a local AWS profile. Leave empty until provisioned.
-    AllowedPattern: '^$|^arn:[a-z0-9-]+:iam::[0-9]{12}:role/.+$'
-
-Conditions:
-  HasLocalDevelopmentPrincipal: !Not [!Equals [!Ref LocalDevelopmentPrincipalArn, '']]
-
 Resources:
   GlobalPrincipalMfaKey:
     Type: AWS::KMS::Key
@@ -79,20 +70,6 @@ Resources:
               - kms:UntagResource
               - kms:UpdateKeyDescription
             Resource: '*'
-          - !If
-            - HasLocalDevelopmentPrincipal
-            - Sid: ApprovedLocalDevelopmentMfaEnvelopeUse
-              Effect: Allow
-              Principal:
-                AWS: !Ref LocalDevelopmentPrincipalArn
-              Action:
-                - kms:Encrypt
-                - kms:Decrypt
-              Resource: '*'
-              Condition:
-                StringEquals:
-                  kms:EncryptionContext:purpose: GLOBAL_PRINCIPAL_TOTP
-            - !Ref AWS::NoValue
 
   GlobalPrincipalMfaKeyAlias:
     Type: AWS::KMS::Alias
