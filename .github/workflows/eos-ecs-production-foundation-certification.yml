@@ -1,3 +1,22 @@
+# TITLE: WILSY EOS ECS Fargate Production Foundation Certification Workflow
+# VERSION: v1.0.1-EOS-ECS-PRODUCTION-FOUNDATION-CERTIFICATION
+# AUTHORITY: Repository CI certification only; no infrastructure provisioning or deployment authority.
+# EPITOME: Run CloudFormation lint, static ECS foundation safety tests, and exact-diff whitespace validation for the inactive production hosting foundation.
+# ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/.github/workflows/eos-ecs-production-foundation-certification.yml
+# COLLABORATION / OWNERSHIP: Wilsy OS Core Engineering; Python EOS and infrastructure governance.
+# CERTIFICATION OR UPDATE DATE: 2026-11-09
+# CHANGELOG:
+#   v1.0.1-EOS-ECS-PRODUCTION-FOUNDATION-CERTIFICATION adds the mandatory
+#   sovereign artifact contract and corrects the test path in the whitespace
+#   gate to the actual underscore-delimited filename. No provisioning or
+#   deployment capability is introduced.
+#   v1.0.0 established isolated lint, static test and whitespace checks.
+# COMPLIANCE: AGENTS.md v1.2.0-SOVEREIGN-LEGAL-OPERATIONS-CONSTITUTION.
+# SECURITY / PRIVACY POSTURE: Read-only CI validation; contents permission only; no AWS credentials, secrets or deployment actions.
+# TENANT BOUNDARY: No live tenant, principal, membership, session or database data is accessed or mutated.
+# AUTHORITY BOUNDARY: CI may validate source artifacts only; it cannot create AWS resources, launch tasks or activate MFA.
+# FINANCIAL AUTHORITY BOUNDARY: No financial execution authority; Kennel EOS remains the exclusive financial execution authority.
+
 name: EOS ECS Fargate Production Foundation Certification
 
 on:
@@ -24,6 +43,7 @@ jobs:
   static-foundation-certification:
     name: Lint and test inactive ECS foundation
     runs-on: ubuntu-latest
+    timeout-minutes: 10
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -47,7 +67,7 @@ jobs:
           if [ "${GITHUB_EVENT_NAME}" = "pull_request" ]; then
             git diff --check "origin/${GITHUB_BASE_REF}...HEAD" -- \
               infra/aws/eos-production-ecs-foundation.yaml \
-              tests/unit/test_eos_production_ecs-foundation.py \
+              tests/unit/test_eos_production_ecs_foundation.py \
               docs/operations/eos-production-ecs-fargate-foundation.md \
               .github/workflows/eos-ecs-production-foundation-certification.yml
           else
@@ -57,3 +77,11 @@ jobs:
               docs/operations/eos-production-ecs-fargate-foundation.md \
               .github/workflows/eos-ecs-production-foundation-certification.yml
           fi
+
+# ARTIFACT: .github/workflows/eos-ecs-production-foundation-certification.yml
+# VERSION: v1.0.1-EOS-ECS-PRODUCTION-FOUNDATION-CERTIFICATION
+# AUTHORITY BOUNDARY: Source-level CI certification only; no AWS mutation or production activation.
+# TENANT POSTURE: No tenant, identity, session or database records are accessed or mutated.
+# FAIL-CLOSED POSTURE: Lint, focused test or whitespace failure fails the job.
+# FINANCIAL EXECUTION AUTHORITY: Kennel EOS exclusively.
+# END OF WILSY OS SOVEREIGN ARTIFACT
