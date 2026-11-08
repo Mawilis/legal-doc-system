@@ -11,6 +11,8 @@ on:
       - "docker-compose.eos.yml"
       - "requirements.txt"
       - "tools/eos/**"
+      - "tests/unit/test_durable_task_queue.py"
+      - "tests/integration/test_durable_task_queue_real_mongo.py"
       - "tests/unit/test_python_eos_runtime_deployment.py"
       - ".github/workflows/eos-python-runtime-deployment-certification.yml"
   pull_request:
@@ -46,7 +48,9 @@ jobs:
           python -m pip install --disable-pip-version-check pytest==9.1.1 httpx
       - name: Run Python runtime deployment tests
         run: python -m pytest -q tests/unit/test_python_eos_runtime_deployment.py
+      - name: Test durable EOS task queue contracts
+        run: python -m pytest -q tests/unit/test_durable_task_queue.py tests/integration/test_durable_task_queue_real_mongo.py
       - name: Compile canonical Python EOS application
-        run: python -m py_compile tools/eos/api/server.py
+        run: python -m py_compile tools/eos/api/server.py tools/eos/runtime/durable_task_queue.py
       - name: Build Python-only runtime image
         run: docker build --file Dockerfile.eos --tag wilsy-eos-python:certification .
