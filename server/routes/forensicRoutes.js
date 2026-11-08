@@ -1,42 +1,30 @@
 /* eslint-disable */
 /**
- * ╔════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════╗
- * ║ WILSY OS - FORENSIC NUCLEUS ROUTES [V54.1.0-PRODUCTION-SEAL-FALLBACK]                                                                           ║
- * ║ [IMMUTABLE AUDIT TRAIL | QUANTUM-RESISTANT INTEGRITY | SHARD FORENSICS | BOARDROOM KPI HYDRATION | EBAT BLOCKCHAIN ANCHORING]           ║
- * ╠════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════╣
- * ║ VERSION: 54.1.0-PRODUCTION-SEAL-FALLBACK | PRODUCTION READY | TRILLION DOLLAR SPECIFICATION                                                                ║
- * ║ EPITOME: BIBLICAL WORTH BILLIONS | NO CHILD'S PLACE | INSTITUTIONAL AUTHORITY | MARS-SPEC ARCHITECTURE                                 ║
- * ║ ABSOLUTE PATH: /Users/wilsonkhanyezi/legal-doc-system/server/routes/forensicRoutes.js                                                  ║
- * ╠════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════╣
- * ║ 👥 COLLABORATION & SOVEREIGN SIGN-OFF:                                                                                                 ║
- * ║ • Wilson Khanyezi (CEO/Lead Architect) - Mandated path alignment with RevenueHUD client-side calls.                                    ║
- * ║ • AI Engineering (Gemini) - RECTIFIED: Aligned path definitions (audit-trail, benchmark) to obliterate 404 fractures.                   ║
- * ╚════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════╝
+ * TITLE: WILSY EOS Forensic Nucleus Routes
+ * VERSION: v54.4.0
+ * AUTHORITY: WILSY EOS Security Engineering; authenticated forensic API surface
+ * EPITOME: Exposes forensic metrics, audit trails and Merkle operations under canonical tenant scope.
+ * ABSOLUTE CANONICAL PATH: server/routes/forensicRoutes.js
+ * COLLABORATION / OWNERSHIP: WILSY EOS API Engineering; mounted only after sovereign authentication and tenant isolation.
+ * CERTIFICATION / UPDATE DATE: 2026-11-08
+ * CHANGELOG:
+ * - v54.2.0: Bind every route to authenticated tenant scope; remove legacy-root alias aggregation and scope local anchors.
+ * - v54.3.0: Remove placeholder success claims for asset integrity and vault anchoring; correct route access documentation.
+ * - v54.4.0: Restrict auditor status output to a tenant-bound operational projection; omit local paths and global last-run evidence.
+ * COMPLIANCE: Canonical IAM and tenant middleware remain the sole authentication and tenant-authority sources.
+ * SECURITY / PRIVACY POSTURE: Caller-supplied tenant identifiers are hints only and must match authenticated scope; mismatches fail closed.
+ * TENANT BOUNDARY: Exact request tenant established by authenticated middleware; no GLOBAL_ROOT or legacy alias fallback.
+ * AUTHORITY BOUNDARY: This router reads forensic evidence and requests bounded audit operations; it grants no IAM or institutional trust authority.
+ * FINANCIAL AUTHORITY BOUNDARY: No financial execution authority.
  */
 
 import express from 'express';
 import crypto from 'node:crypto';
 import ForensicLog from '../models/ForensicLog.js';
 import forensicMerkleAuditor from '../services/ForensicMerkleAuditor.js';
+import { requireForensicTenantScope } from '../middleware/forensicTenantScope.js';
 const router = express.Router();
-
-/**
- * @function normalizeTenantId
- * @description Normalizes system and root aliases into the canonical forensic tenant key.
- * @collaboration Keeps forensic routes, Merkle auditor routes, showroom calls and legacy root aliases aligned without creating fake tenants.
- * @param {string} tenantId - Tenant identifier supplied by the request.
- * @returns {string} Canonical tenant identifier used for forensic ledger queries.
- */
-const normalizeTenantId = (tenantId = 'GLOBAL_ROOT') => {
-  const normalized = String(tenantId || 'GLOBAL_ROOT').trim();
-  if (
-    ['MASTER', 'GLOBAL_ROOT', 'WILSY_GLOBAL_ROOT', 'WILSY_ROOT', 'wilsy-sovereign-root'].includes(
-      normalized
-    )
-  )
-    return 'GLOBAL_ROOT';
-  return normalized;
-};
+router.use(requireForensicTenantScope);
 
 const statusMap = {
   SUCCESS: 'ANCHORED',
@@ -601,15 +589,11 @@ const buildForensicReceiptEnvelope = (result = {}, options = {}) => {
 /**
  * @route   GET /api/forensics/metrics/:tenantId
  * @desc    Hydrates the Boardroom HUD with forensic health metrics.
- * @access  Public/Sovereign Gateway
+ * @access  Authenticated tenant scope
  */
 router.get('/metrics/:tenantId', async (req, res) => {
-  const tenantId = normalizeTenantId(req.params.tenantId);
-  const aliases = [
-    ...new Set([tenantId, req.params.tenantId, 'GLOBAL_ROOT', 'WILSY_ROOT', 'WILSY_GLOBAL_ROOT']),
-  ];
-
-  try {
+  const tenantId = req.forensicTenantId;
+try {
     if (ForensicLog.db?.readyState !== 1 || req.tenantContextStatus === 'DEGRADED_NO_DB') {
       return res.status(200).json({
         success: true,
@@ -626,23 +610,23 @@ router.get('/metrics/:tenantId', async (req, res) => {
     }
 
     const [totalSealedRecords, activeThreats, latestAnchor, brokenEntries] = await Promise.all([
-      ForensicLog.countDocuments({ tenantId: { $in: aliases } }),
+      ForensicLog.countDocuments({ tenantId }),
       ForensicLog.countDocuments({
-        tenantId: { $in: aliases },
+        tenantId,
         $or: [
           { status: { $in: ['FAILURE', 'FRACTURE'] } },
           { riskFlags: { $exists: true, $ne: [] } },
         ],
       }),
       ForensicLog.findOne({
-        tenantId: { $in: aliases },
+        tenantId,
         $or: [{ chainHash: { $exists: true } }, { eventSeal: { $exists: true } }],
       })
         .sort({ timestamp: -1 })
         .select('chainHash eventSeal timestamp')
         .lean(),
       ForensicLog.countDocuments({
-        tenantId: { $in: aliases },
+        tenantId,
         status: { $in: ['FAILURE', 'FRACTURE'] },
       }),
     ]);
@@ -681,10 +665,10 @@ router.get('/metrics/:tenantId', async (req, res) => {
 /**
  * @route   GET /api/forensics/audit-trail
  * @desc    Provides the immutable, cryptographically chained activity stream for the HUD audit view.
- * @access  Private/Sovereign
+ * @access  Authenticated tenant scope
  */
 router.get('/audit-trail', async (req, res) => {
-  const tenantId = normalizeTenantId(req.query.tenantId);
+  const tenantId = req.forensicTenantId;
   try {
     const entries = await ForensicLog.find({ tenantId })
       .sort({ timestamp: -1 })
@@ -710,7 +694,7 @@ router.get('/audit-trail', async (req, res) => {
 /**
  * @route   GET /api/forensics/benchmark
  * @desc    Delivers comparative industry DSO benchmarking data for the HUD.
- * @access  Private/Sovereign
+ * @access  Authenticated tenant scope
  */
 router.get('/benchmark', async (req, res) => {
   res.status(200).json({
@@ -727,17 +711,14 @@ router.get('/benchmark', async (req, res) => {
 /**
  * @route   GET /api/forensics/vault/:tenantId
  * @desc    Returns tenant-scoped, immutable audit events for the Audit Vault UI.
- * @access  Private/Sovereign
+ * @access  Authenticated tenant scope
  */
 router.get('/vault/:tenantId', async (req, res) => {
-  const tenantId = normalizeTenantId(req.params.tenantId);
-  const aliases = [
-    ...new Set([tenantId, req.params.tenantId, 'GLOBAL_ROOT', 'WILSY_ROOT', 'WILSY_GLOBAL_ROOT']),
-  ];
-  const limit = Math.min(Number(req.query.limit) || 120, 500);
+  const tenantId = req.forensicTenantId;
+const limit = Math.min(Number(req.query.limit) || 120, 500);
 
   try {
-    const entries = await ForensicLog.find({ tenantId: { $in: aliases } })
+    const entries = await ForensicLog.find({ tenantId })
       .sort({ timestamp: -1 })
       .limit(limit)
       .lean();
@@ -821,12 +802,10 @@ router.post('/scan-anomalies', async (req, res) => {
 /**
  * @route   GET /api/forensics/verify-chain
  * @desc    Replays the forensic hash chain and returns Merkle auditor posture for HUDs and regulators.
- * @access  Public/Sovereign Gateway
+ * @access  Authenticated tenant scope
  */
 router.get('/verify-chain', async (req, res) => {
-  const tenantId = normalizeTenantId(
-    req.query.tenantId || req.headers['x-tenant-id'] || 'GLOBAL_ROOT'
-  );
+  const tenantId = req.forensicTenantId;
   const limit = Math.min(Number(req.query.limit) || 5000, 20000);
   const anchor = String(req.query.anchor || '').toLowerCase() === 'true';
 
@@ -860,21 +839,32 @@ router.get('/verify-chain', async (req, res) => {
 /**
  * @route   GET /api/forensics/merkle-auditor/status
  * @desc    Returns the current Merkle auditor worker and anchor configuration without forcing a replay.
- * @access  Public/Sovereign Gateway
+ * @access  Authenticated tenant scope
  */
 router.get('/merkle-auditor/status', async (req, res) => {
-  res.status(200).json(forensicMerkleAuditor.getStatus());
+  const status = forensicMerkleAuditor.getStatus();
+  return res.status(200).json({
+    success: true,
+    tenantId: req.forensicTenantId,
+    running: status.running === true,
+    pollIntervalMs: status.pollIntervalMs,
+    algorithm: status.algorithm,
+    anchorMode: status.anchorMode,
+    anchorProvider: status.anchorProvider,
+    qldbStatus: status.qldbStatus,
+    qldbEndOfSupport: status.qldbEndOfSupport,
+    receiptContractVersion: status.receiptContractVersion,
+    complianceFrameworks: status.complianceFrameworks,
+  });
 });
 
 /**
  * @route   POST /api/forensics/merkle-auditor/run
  * @desc    Executes a manual Merkle audit cycle and anchors valid roots when requested.
- * @access  Public/Sovereign Gateway
+ * @access  Authenticated tenant scope
  */
 router.post('/merkle-auditor/run', async (req, res) => {
-  const tenantId = normalizeTenantId(
-    req.body?.tenantId || req.query.tenantId || req.headers['x-tenant-id'] || 'GLOBAL_ROOT'
-  );
+  const tenantId = req.forensicTenantId;
   const anchor = req.body?.anchor !== false;
   const limit = Math.min(Number(req.body?.limit || req.query.limit || 5000), 20000);
 
@@ -907,12 +897,10 @@ router.post('/merkle-auditor/run', async (req, res) => {
 /**
  * @route   GET /api/forensics/merkle-auditor/receipts
  * @desc    Returns route-safe forensic receipts, compliance bindings and audit overlay metadata for showroom/regulator drill-downs.
- * @access  Public/Sovereign Gateway
+ * @access  Authenticated tenant scope
  */
 router.get('/merkle-auditor/receipts', async (req, res) => {
-  const tenantId = normalizeTenantId(
-    req.query.tenantId || req.headers['x-tenant-id'] || 'GLOBAL_ROOT'
-  );
+  const tenantId = req.forensicTenantId;
   const limit = parseForensicReceiptLimit(req.query.limit);
   const replayLimit = parseForensicReplayLimit(req.query.replayLimit);
 
@@ -952,12 +940,10 @@ router.get('/merkle-auditor/receipts', async (req, res) => {
 /**
  * @route   GET /api/forensics/merkle-auditor/receipts/:receiptId
  * @desc    Returns one forensic receipt with bound POPIA, GDPR, SOC2 and WORM clauses.
- * @access  Public/Sovereign Gateway
+ * @access  Authenticated tenant scope
  */
 router.get('/merkle-auditor/receipts/:receiptId', async (req, res) => {
-  const tenantId = normalizeTenantId(
-    req.query.tenantId || req.headers['x-tenant-id'] || 'GLOBAL_ROOT'
-  );
+  const tenantId = req.forensicTenantId;
   const replayLimit = parseForensicReplayLimit(req.query.replayLimit);
 
   try {
@@ -994,12 +980,10 @@ router.get('/merkle-auditor/receipts/:receiptId', async (req, res) => {
 /**
  * @route   POST /api/forensics/merkle-auditor/rechain-receipts
  * @desc    Performs explicit backend-owned local forensic rechain repair before receipt sealing.
- * @access  Public/Sovereign Gateway
+ * @access  Authenticated tenant scope
  */
 router.post('/merkle-auditor/rechain-receipts', async (req, res) => {
-  const tenantId = normalizeTenantId(
-    req.body?.tenantId || req.query.tenantId || req.headers['x-tenant-id'] || 'GLOBAL_ROOT'
-  );
+  const tenantId = req.forensicTenantId;
   const limit = parseForensicSealLimit(req.body?.limit || req.query.limit);
   const actor = normalizeSealActor(
     req.body?.actor ||
@@ -1065,12 +1049,10 @@ router.post('/merkle-auditor/rechain-receipts', async (req, res) => {
 /**
  * @route   POST /api/forensics/merkle-auditor/seal-receipts
  * @desc    Attempts backend-owned receipt sealing for the current safe window.
- * @access  Public/Sovereign Gateway
+ * @access  Authenticated tenant scope
  */
 router.post('/merkle-auditor/seal-receipts', async (req, res) => {
-  const tenantId = normalizeTenantId(
-    req.body?.tenantId || req.query.tenantId || req.headers['x-tenant-id'] || 'GLOBAL_ROOT'
-  );
+  const tenantId = req.forensicTenantId;
   const limit = parseForensicSealLimit(req.body?.limit || req.query.limit);
   const actor = normalizeSealActor(
     req.body?.actor ||
@@ -1171,12 +1153,10 @@ router.post('/merkle-auditor/seal-receipts', async (req, res) => {
 /**
  * @route   POST /api/forensics/merkle-auditor/seal-safe-window
  * @desc    Requests backend-owned seal evaluation for a safe receipt window.
- * @access  Public/Sovereign Gateway
+ * @access  Authenticated tenant scope
  */
 router.post('/merkle-auditor/seal-safe-window', async (req, res) => {
-  const tenantId = normalizeTenantId(
-    req.body?.tenantId || req.query.tenantId || req.headers['x-tenant-id'] || 'GLOBAL_ROOT'
-  );
+  const tenantId = req.forensicTenantId;
   const limit = parseForensicSealLimit(req.body?.limit || req.query.limit);
   const actor = normalizeSealActor(
     req.body?.actor ||
@@ -1267,11 +1247,14 @@ router.post('/merkle-auditor/seal-safe-window', async (req, res) => {
 /**
  * @route   GET /api/forensics/merkle-auditor/anchors
  * @desc    Lists recent local Merkle anchors for audit export and diagnostics.
- * @access  Public/Sovereign Gateway
+ * @access  Authenticated tenant scope
  */
 router.get('/merkle-auditor/anchors', async (req, res) => {
   const limit = Math.min(Number(req.query.limit) || 20, 200);
-  const anchors = await forensicMerkleAuditor.listLocalAnchors(limit);
+  const anchors = await forensicMerkleAuditor.listLocalAnchors({
+    tenantId: req.forensicTenantId,
+    limit,
+  });
   res.status(200).json({
     success: true,
     routeVersion: WILSY_FORENSIC_RECEIPT_ROUTE_VERSION,
@@ -1286,9 +1269,7 @@ router.get('/merkle-auditor/anchors', async (req, res) => {
  * @desc    Provides hash-chain verification status for the vault cockpit.
  */
 router.get('/blockchain-verify', async (req, res) => {
-  const tenantId = normalizeTenantId(
-    req.query.tenantId || req.headers['x-tenant-id'] || 'GLOBAL_ROOT'
-  );
+  const tenantId = req.forensicTenantId;
   try {
     const result = await forensicMerkleAuditor.verifyTenantChain({ tenantId });
     res.status(200).json({
@@ -1314,9 +1295,7 @@ router.get('/blockchain-verify', async (req, res) => {
  * @desc    Manual forensic chain validation endpoint.
  */
 router.post('/validate-chain', async (req, res) => {
-  const tenantId = normalizeTenantId(
-    req.body?.tenantId || req.query.tenantId || req.headers['x-tenant-id'] || 'GLOBAL_ROOT'
-  );
+  const tenantId = req.forensicTenantId;
   try {
     const result = await forensicMerkleAuditor.verifyTenantChain({ tenantId });
     res.status(200).json(
@@ -1349,7 +1328,7 @@ router.post('/validate-chain', async (req, res) => {
  * @desc    Generates a lightweight compliance artifact for vault export.
  */
 router.get('/compliance-report', async (req, res) => {
-  const tenantId = normalizeTenantId(req.query.tenantId);
+  const tenantId = req.forensicTenantId;
   const reportId = `WILSY-COMPLIANCE-${Date.now()}`;
   const body = [
     `%PDF-1.4`,
@@ -1375,25 +1354,26 @@ router.get('/compliance-report', async (req, res) => {
 /**
  * @route   GET /api/forensics/asset/:assetId/integrity
  * @desc    Performs SHA3-512 recursive integrity check for the requested asset.
- * @access  Private/Sovereign
+ * @access  Authenticated tenant scope
  */
 router.get('/asset/:assetId/integrity', async (req, res) => {
-  res.status(200).json({
-    success: true,
-    integrityStatus: 'VERIFIED_INTACT',
-    algorithm: 'SHA3-512',
+  return res.status(503).json({
+    success: false,
+    integrityStatus: 'UNVERIFIED',
+    code: 'ASSET_INTEGRITY_VERIFIER_UNAVAILABLE',
   });
 });
 
 /**
  * @route   GET /api/forensics/vault
  * @desc    Secures the entry point to the high-security immutable vault.
- * @access  Private/Supreme Admin
+ * @access  Authenticated tenant scope; no administrative elevation is implied
  */
 router.get('/vault', (req, res) => {
-  res.status(200).json({
-    success: true,
-    status: 'VAULT_ANCHORED',
+  return res.status(503).json({
+    success: false,
+    status: 'VAULT_STATUS_UNVERIFIED',
+    code: 'VAULT_STATUS_SOURCE_UNAVAILABLE',
   });
 });
 
@@ -1409,3 +1389,13 @@ router.use((err, req, res, next) => {
 });
 
 export default router;
+
+/*
+ * ARTIFACT: WILSY EOS Forensic Nucleus Routes
+ * VERSION: v54.4.0
+ * AUTHORITY BOUNDARY: Authenticated forensic API only; canonical IAM remains authoritative.
+ * TENANT POSTURE: Every route is bound to the authenticated request tenant; caller-selected scope is rejected.
+ * FAIL-CLOSED POSTURE: Missing or mismatched tenant context returns HTTP 403.
+ * FINANCIAL EXECUTION AUTHORITY: None.
+ * END OF WILSY OS SOVEREIGN ARTIFACT
+ */

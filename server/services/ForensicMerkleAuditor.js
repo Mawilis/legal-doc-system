@@ -1,19 +1,21 @@
 /* eslint-disable */
 import mongoose from 'mongoose';
 /**
- * ╔════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════╗
- * ║ WILSY OS - FORENSIC MERKLE AUDITOR [V57.1.0-REVIEW-SAFE-RECEIPTS]                                                                         ║
- * ║ [NIST SHA-3 | HASH-CHAIN REPLAY | MERKLE ROOTS | SEALED RECEIPTS | COMPLIANCE BINDINGS | WORM READY]                               ║
- * ╠════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════╣
- * ║ VERSION: 57.1.0-REVIEW-SAFE-RECEIPTS | PRODUCTION READY | INSTITUTIONAL NON-REPUDIATION                                                  ║
- * ║ ABSOLUTE PATH: /Users/wilsonkhanyezi/legal-doc-system/server/services/ForensicMerkleAuditor.js                                      ║
- * ╠════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════╣
- * ║ COLLABORATION & SOVEREIGN SIGN-OFF:                                                                                                  ║
- * ║ • Wilson Khanyezi (CEO/Lead Architect) - Required continuous cryptographic proof, external immutable anchoring, and production       ║
- * ║   readiness beyond prototype UI features.                                                                                            ║
- * ║ • AI Engineering (Codex) - ARCHITECTED: Replaced retired QLDB assumptions with current WORM-ready anchoring, deterministic replay,   ║
- * ║   and Revenue Ledger compatible status packets.                                                                                      ║
- * ╚════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════╝
+ * TITLE: WILSY EOS Forensic Merkle Auditor
+ * VERSION: v57.3.0
+ * AUTHORITY: WILSY EOS Security Engineering; forensic verification and anchor orchestration only
+ * EPITOME: Replays tenant-bound forensic chains, computes Merkle roots and exposes bounded receipt evidence.
+ * ABSOLUTE CANONICAL PATH: server/services/ForensicMerkleAuditor.js
+ * COLLABORATION / OWNERSHIP: WILSY EOS Forensic Services; called by authenticated forensic routes and governed workers.
+ * CERTIFICATION / UPDATE DATE: 2026-11-08
+ * CHANGELOG:
+ * - v57.2.0: Require tenant scope when listing local anchors and return only exact-tenant records.
+ * - v57.3.0: Remove cross-tenant legacy-root alias aggregation from forensic chain reads.
+ * COMPLIANCE: Tenant-scoped evidence retrieval; deterministic chain replay; explicit anchor-provider posture.
+ * SECURITY / PRIVACY POSTURE: Local JSONL anchors are diagnostic only, not WORM or independently protected storage.
+ * TENANT BOUNDARY: Anchor listing requires an explicit tenant identifier established by authenticated middleware.
+ * AUTHORITY BOUNDARY: This service verifies evidence and records anchor outcomes; it does not authenticate principals or grant IAM authority.
+ * FINANCIAL AUTHORITY BOUNDARY: No financial execution authority.
  */
 
 import crypto from 'node:crypto';
@@ -74,27 +76,6 @@ const normalizeTenantId = (tenantId = 'GLOBAL_ROOT') => {
     return 'GLOBAL_ROOT';
   }
   return String(tenantId || 'GLOBAL_ROOT');
-};
-
-/**
- * @function buildTenantAliases
- * @description Builds the known root aliases used by legacy and sovereign forensic writers.
- * @collaboration Lets the Merkle auditor replay root evidence across current, legacy and showroom tenant identifiers.
- * @param {string} tenantId - Canonical tenant identifier.
- * @returns {Array<string>} Tenant aliases for DB queries.
- */
-const buildTenantAliases = (tenantId) => {
-  const canonical = normalizeTenantId(tenantId);
-  return [
-    ...new Set([
-      canonical,
-      tenantId,
-      'GLOBAL_ROOT',
-      'WILSY_ROOT',
-      'WILSY_GLOBAL_ROOT',
-      'wilsy-sovereign-root',
-    ]),
-  ];
 };
 
 /**
@@ -280,8 +261,8 @@ class ForensicMerkleAuditor {
    */
   async fetchForensicEntries({ tenantId = 'GLOBAL_ROOT', limit = this.defaultLimit } = {}) {
     if (ForensicLog.db?.readyState !== 1) return [];
-    const aliases = buildTenantAliases(tenantId);
-    const rows = await ForensicLog.find({ tenantId: { $in: aliases } })
+    const authenticatedTenantId = normalizeTenantId(tenantId);
+    const rows = await ForensicLog.find({ tenantId: authenticatedTenantId })
       .sort({ timestamp: 1, createdAt: 1, _id: 1 })
       .limit(Math.min(Number(limit) || this.defaultLimit, 20000))
       .lean();
@@ -997,21 +978,30 @@ class ForensicMerkleAuditor {
 
   /**
    * @method listLocalAnchors
-   * @description Reads recent local anchor records for diagnostics and boardroom proof export.
-   * @param {number} limit - Maximum records to return.
-   * @returns {Promise<Array<Object>>} Recent anchor rows.
+   * @description Reads only the authenticated tenant's recent local anchor records.
+   * @param {Object} options - Required tenant scope and bounded result limit.
+   * @param {string} options.tenantId - Tenant established by authenticated middleware.
+   * @param {number} [options.limit=20] - Maximum records to return.
+   * @returns {Promise<Array<Object>>} Recent anchor rows for the exact tenant.
    */
-  async listLocalAnchors(limit = 20) {
+  async listLocalAnchors({ tenantId, limit = 20 } = {}) {
+    const authenticatedTenantId = String(tenantId || '').trim();
+    if (!authenticatedTenantId) {
+      throw new Error('FORENSIC_TENANT_SCOPE_REQUIRED');
+    }
+
     try {
       const raw = await fs.readFile(this.localAnchorPath, 'utf8');
       return raw
         .split('\n')
         .filter(Boolean)
-        .slice(-Math.min(Number(limit) || 20, 200))
         .map((line) => JSON.parse(line))
+        .filter((anchor) => anchor.tenantId === authenticatedTenantId)
+        .slice(-Math.min(Number(limit) || 20, 200))
         .reverse();
-    } catch {
-      return [];
+    } catch (error) {
+      if (error.code === 'ENOENT') return [];
+      throw error;
     }
   }
 
@@ -1291,3 +1281,13 @@ const forensicMerkleAuditor = new ForensicMerkleAuditor();
 
 export { ForensicMerkleAuditor };
 export default forensicMerkleAuditor;
+
+/*
+ * ARTIFACT: WILSY EOS Forensic Merkle Auditor
+ * VERSION: v57.3.0
+ * AUTHORITY BOUNDARY: Evidence verification and anchor orchestration only.
+ * TENANT POSTURE: Local anchor listings require exact tenant scope and exclude unscoped records.
+ * FAIL-CLOSED POSTURE: Missing tenant scope rejects local anchor listing; local append files are never represented as WORM.
+ * FINANCIAL EXECUTION AUTHORITY: None.
+ * END OF WILSY OS SOVEREIGN ARTIFACT
+ */

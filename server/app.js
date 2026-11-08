@@ -1,37 +1,19 @@
 /* eslint-disable */
 /**
- * ╔══════════════════════════════════════════════════════════════════════════════════════════════════════════╗
- * ║ WILSY OS – CORE APPLICATION NUCLEUS [V72.0.9‑OMEGA‑SYNC]                                                 ║
- * ║ [LATENCY SNIPER | CIRCUIT BREAKER | BINARY STRIKE AUDIT | BOARDROOM KPIs | SOVEREIGN MONITORING]         ║
- * ╠══════════════════════════════════════════════════════════════════════════════════════════════════════════╣
- * ║ EPITOME: BIBLICAL WORTH BILLIONS | NO CHILD'S PLACE | INSTITUTIONAL AUTHORITY                            ║
- * ║ Serves as the sovereign Express.js application, mounting all routes and middleware.                      ║
- * ║ Integrates the verification sync job scheduler for automated reconciliation of offline verifications.    ║
- * ║                                                                                                          ║
- * ║ INSTITUTIONAL COMPLIANCE:                                                                                ║
- * ║ • POPIA §19 – Data subject access and correction                                                         ║
- * ║ • GDPR §32 – Security of processing (cryptographic hashing, signing)                                     ║
- * ║ • SOC2 §CC7.2 – Logical access controls (tenant isolation, role‑based access)                            ║
- * ║ • ISO 27001 – Information security management                                                            ║
- * ║ • ECT Act §15 – Electronic communications and transactions                                               ║
- * ║                                                                                                          ║
- * ║ KENNEL EOS AWARENESS: Tenants, shards, and roles are enforced via middleware and routing.                ║
- * ╠══════════════════════════════════════════════════════════════════════════════════════════════════════════╣
- * ║ VERSION: 72.0.9‑OMEGA‑SYNC | PRODUCTION READY | FORTUNE 500 GRADE                                        ║
- * ║ ABSOLUTE PATH: /Users/wilsonkhanyezi/legal-doc-system/server/app.js                                      ║
- * ╠══════════════════════════════════════════════════════════════════════════════════════════════════════════╣
- * ║ 👥 COLLABORATION & SOVEREIGN SIGN-OFF:                                                                   ║
- * ║ • Wilson Khanyezi (CEO/Lead Architect) – Mandated production‑ready middleware stack with zero‑loss       ║
- * ║   preservation. 2026‑08.                                                                                 ║
- * ║ • AI Engineering – v72.0.9: Integrated verification sync job scheduler, added initialization export.     ║
- * ║ • External Reference Document: api.js.pdf (Strictly adhered to for route definitions)                    ║
- * ╠══════════════════════════════════════════════════════════════════════════════════════════════════════════╣
- * ║ 🔧 FIXES APPLIED (v72.0.9):                                                                              ║
- * ║ 1. Repaired fragmented string literals and broken line endings to guarantee syntactical safety.          ║
- * ║ 2. Removed `localCorsPreflight` middleware to prevent early OPTIONS termination.                         ║
- * ║ 3. Consolidated CORS handling into `corsMiddleware`.                                                     ║
- * ║ 4. Integrated `verificationSyncJob` scheduler.                                                           ║
- * ╚══════════════════════════════════════════════════════════════════════════════════════════════════════════╝
+ * TITLE: WILSY EOS Core Express Application
+ * VERSION: v72.2.0
+ * AUTHORITY: WILSY EOS Platform Engineering; application composition only
+ * EPITOME: Composes the Express API, middleware, telemetry and governed background-job lifecycle.
+ * ABSOLUTE CANONICAL PATH: server/app.js
+ * COLLABORATION / OWNERSHIP: WILSY EOS Platform Engineering; route-specific authentication and authorization remain inside mounted middleware and routers.
+ * CERTIFICATION / UPDATE DATE: 2026-11-08
+ * CHANGELOG:
+ * - v72.2.0: Remove direct forensic route mounting; forensic APIs are composed only through the protected API nexus.
+ * COMPLIANCE: Express composition preserves canonical route ordering and the existing middleware boundary.
+ * SECURITY / PRIVACY POSTURE: Application composition creates no authentication, membership, tenant, permission, audit or institutional trust authority.
+ * TENANT BOUNDARY: Tenant scope is established by authenticated middleware inside the API router; this module does not accept tenant authority.
+ * AUTHORITY BOUNDARY: Composition only; no role, permission, legal decision, evidence verification or lifecycle authority.
+ * FINANCIAL AUTHORITY BOUNDARY: No financial execution authority; Kennel EOS remains exclusive.
  */
 
 import express from 'express';
@@ -52,7 +34,6 @@ import { integrityShield } from './middleware/ProductionHardening.middleware.js'
 import { register } from './utils/metricsCollector.js';
 import routes from './routes/api.js'; // Verified against api.js.pdf
 import wilsyAIRoutes from './routes/wilsyAiRoutes.js';
-import forensicRoutes from './routes/forensicRoutes.js';
 import sovereignRoutes from './routes/sovereignRoutes.js';
 import auditLogger from './utils/auditLogger.js';
 import { broadcastTelemetry, getTelemetryState } from './utils/telemetryHelper.js';
@@ -280,7 +261,7 @@ app.get('/api/ping', (req, res) => {
   res.status(200).json({
     status: 'PONG',
     system: 'WILSY OS BFF',
-    version: '72.0.9-OMEGA-SYNC',
+    version: '72.1.0-FORENSIC-IAM',
     timestamp: new Date().toISOString(),
     note: 'Public health probe — institutional headers not required',
   });
@@ -454,20 +435,7 @@ app.get('/api/v1/sovereign-health', async (req, res) => {
   }
 });
 
-const isWilsyPublicForensicGatewayPath = (req = {}) => {
-  const url = String(req.originalUrl || req.url || '').toLowerCase();
-  const method = String(req.method || 'GET').toUpperCase();
-  const publicReadPaths = [
-    '/api/forensics/verify-chain',
-    '/api/forensics/merkle-auditor/status',
-    '/api/forensics/merkle-auditor/anchors',
-  ];
 
-  if (['GET', 'HEAD', 'OPTIONS'].includes(method) && publicReadPaths.some((path) => url.startsWith(path))) {
-    return true;
-  }
-  return method === 'POST' && url.startsWith('/api/forensics/merkle-auditor/run');
-};
 
 // ============================================================================
 // 🔍 FORENSIC DEBUG MIDDLEWARE
@@ -493,8 +461,7 @@ app.use((req, res, next) => {
     ];
 
     if (
-      publicTelemetryPaths.some((path) => req.originalUrl.startsWith(path)) ||
-      isWilsyPublicForensicGatewayPath(req)
+      publicTelemetryPaths.some((path) => req.originalUrl.startsWith(path))
     ) {
       return next();
     }
@@ -518,7 +485,6 @@ app.use('/api/billing', billingRoutes);
 app.use('/api/qr', qrRoutes);
 // Verified against the external spec: api.js.pdf
 app.use('/api', routes);
-app.use('/api/forensics', forensicRoutes);
 app.use('/monitoring', sovereignRoutes);
 
 // ============================================================================
@@ -595,7 +561,11 @@ export default app;
  * Forensic Hash: SHA3‑512 (computed at deployment)
  * Compliance: POPIA §19 · GDPR §32 · SOC2 §CC7.2 · ISO 27001 · ECT Act §15
  * ───────────────────────────────────────────────────────────────────────────────────────────────────────────
- * 🔧 FIXES APPLIED (v72.0.9):
+ * 🔧 FIXES APPLIED (v72.1.0):
+ * 1. Removed direct forensic-router mounting so forensic APIs pass through the protected API nexus.
+ * 2. Removed the public manual Merkle-run gateway classification.
+ *
+ * Previous fixes (v72.0.9):
  * 1. Resolved syntax artifacting.
  * 2. Removed `localCorsPreflight` middleware to prevent early OPTIONS termination.
  * 3. Consolidated CORS handling into `corsMiddleware`.
@@ -610,4 +580,14 @@ export default app;
  * const jobs = initializeSovereignJobs({ syncIntervalMs: 60000 });
  * // On graceful shutdown, call jobs.stop();
  * ═══════════════════════════════════════════════════════════════════════════════════════════════════════════
+ */
+
+/*
+ * ARTIFACT: WILSY EOS Core Express Application
+ * VERSION: v72.2.0
+ * AUTHORITY BOUNDARY: Application composition only; mounted routers retain their own authority contracts.
+ * TENANT POSTURE: No caller-supplied tenant is authorized by application composition.
+ * FAIL-CLOSED POSTURE: Protected route middleware remains responsible for authentication and tenant admission.
+ * FINANCIAL EXECUTION AUTHORITY: None; Kennel EOS remains exclusive.
+ * END OF WILSY OS SOVEREIGN ARTIFACT
  */
