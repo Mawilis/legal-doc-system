@@ -1,7 +1,7 @@
 """WILSY OS sovereign artifact-contract regression tests.
 
 TITLE: Sovereign Artifact Header, Version, Changelog and Seal Guard
-VERSION: v1.0.9-WILSY-SOVEREIGN-ARTIFACT-CONTRACT-GUARD
+VERSION: v1.1.0-WILSY-SOVEREIGN-ARTIFACT-CONTRACT-GUARD
 AUTHORITY: Wilsy OS Core Governance
 EPITOME: Prevents the corrected Kennel EOS runbook and forensic inventory from
          losing their required sovereign header, version agreement, changelog,
@@ -12,6 +12,9 @@ COLLABORATION / OWNERSHIP:
     Python EOS governance tests; artifact owners retain source authority.
 CERTIFICATION / UPDATE DATE: 2026-11-08
 CHANGELOG:
+    2026-11-08 v1.1.0-WILSY-SOVEREIGN-ARTIFACT-CONTRACT-GUARD recognizes version declarations in YAML comment headers
+    as well as Markdown and source-file headers, preserving strict agreement
+    checks across all governed artifacts.
     v1.0.9-WILSY-SOVEREIGN-ARTIFACT-CONTRACT-GUARD asserts deleted Node
     orchestrators stay absent and retired shell launchers stay fail-closed.
     v1.0.6-WILSY-SOVEREIGN-ARTIFACT-CONTRACT-GUARD certified retired launchers.
@@ -45,7 +48,7 @@ ROOT = Path(__file__).resolve().parents[2]
 ARTIFACTS = (
     (
         ROOT / "tests/unit/test_sovereign_artifact_contract.py",
-        "v1.0.9-WILSY-SOVEREIGN-ARTIFACT-CONTRACT-GUARD",
+        "v1.1.0-WILSY-SOVEREIGN-ARTIFACT-CONTRACT-GUARD",
     ),
     (
         ROOT / "DEPLOYMENT.md",
@@ -122,7 +125,7 @@ def test_governed_artifacts_have_complete_header_version_changelog_and_seal() ->
         for marker in REQUIRED_HEADER_MARKERS:
             assert marker in content, f"{path}: missing required header marker {marker}"
         version_matches = re.findall(
-            r"(?m)^\s*(?:\*\*VERSION:\*\*|VERSION:)\s*(\S+)",
+            r"(?m)^\s*(?:#\s*)?(?:\*\*VERSION:\*\*|VERSION:)\s*(\S+)",
             content,
         )
         assert version_matches, f"{path}: no version declaration found"
@@ -261,7 +264,7 @@ def test_deleted_root_node_orchestrators_remain_absent() -> None:
 
 
 # ARTIFACT: test_sovereign_artifact_contract.py
-# VERSION: v1.0.9-WILSY-SOVEREIGN-ARTIFACT-CONTRACT-GUARD
+# VERSION: v1.1.0-WILSY-SOVEREIGN-ARTIFACT-CONTRACT-GUARD
 # AUTHORITY BOUNDARY: structural governance tests only.
 # TENANT POSTURE: no tenant access or authority.
 # FAIL-CLOSED POSTURE: missing, divergent, or unsealed artifact metadata fails.
