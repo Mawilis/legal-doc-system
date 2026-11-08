@@ -56,3 +56,14 @@ def test_forensic_chain_reads_do_not_merge_legacy_root_aliases() -> None:
     assert "buildTenantAliases" not in source
     assert "ForensicLog.find({ tenantId: authenticatedTenantId })" in source
     assert "$in: aliases" not in source
+
+
+def test_forensic_routes_do_not_claim_unverified_assets_or_vaults_are_intact() -> None:
+    source = (ROOT / "server/routes/forensicRoutes.js").read_text(encoding="utf-8")
+
+    assert "integrityStatus: 'UNVERIFIED'" in source
+    assert "ASSET_INTEGRITY_VERIFIER_UNAVAILABLE" in source
+    assert "integrityStatus: 'VERIFIED_INTACT'" not in source
+    assert "status: 'VAULT_STATUS_UNVERIFIED'" in source
+    assert "VAULT_STATUS_SOURCE_UNAVAILABLE" in source
+    assert "status: 'VAULT_ANCHORED'" not in source
