@@ -1,3 +1,20 @@
+# TITLE: WILSY EOS Global Principal Session and Refresh Authority Real-Mongo Certificate
+# VERSION: v1.0.1-GLOBAL-PRINCIPAL-SESSION-AUTHORITY-MONGO
+# AUTHORITY: Disposable replica-set integration certification only.
+# EPITOME: Verify global principal session and refresh-token persistence, revocation, currentness and concurrency invariants against a real MongoDB replica set.
+# ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/tests/integration/test_global_principal_session_authority_mongo.py
+# COLLABORATION / OWNERSHIP: Wilsy OS Core Engineering; Python EOS global session authority.
+# CERTIFICATION OR UPDATE DATE: 2026-11-09
+# CHANGELOG:
+#   v1.0.1-GLOBAL-PRINCIPAL-SESSION-AUTHORITY-MONGO adds the mandatory sovereign
+#   artifact contract; real-Mongo assertions and fixture behavior remain unchanged.
+#   v1.0.0 established disposable replica-set session/refresh authority tests.
+# COMPLIANCE: AGENTS.md v1.2.0-SOVEREIGN-LEGAL-OPERATIONS-CONSTITUTION.
+# SECURITY / PRIVACY POSTURE: Disposable test database and synthetic session tokens only; no production credentials.
+# TENANT BOUNDARY: Synthetic principal and tenant scope only; no canonical tenant records are accessed.
+# AUTHORITY BOUNDARY: Integration evidence only; cannot issue or revoke production sessions.
+# FINANCIAL AUTHORITY BOUNDARY: No financial execution authority; Kennel EOS remains exclusive.
+
 """Disposable replica-set certification for global session/refresh authority."""
 import os
 import uuid
@@ -243,3 +260,11 @@ def test_replica_set_credential_revision_change_blocks_global_refresh(mongo_auth
                 now=datetime(2026, 11, 3, 0, 1, tzinfo=timezone.utc),
             )
         session.abort_transaction()
+
+# ARTIFACT: tests/integration/test_global_principal_session_authority_mongo.py
+# VERSION: v1.0.1-GLOBAL-PRINCIPAL-SESSION-AUTHORITY-MONGO
+# AUTHORITY BOUNDARY: Disposable replica-set session/refresh integration test only.
+# TENANT POSTURE: Synthetic identity scope only; no production tenant state is changed.
+# FAIL-CLOSED POSTURE: Session, refresh, revision and transaction divergences fail the integration suite.
+# FINANCIAL EXECUTION AUTHORITY: Kennel EOS exclusively.
+# END OF WILSY OS SOVEREIGN ARTIFACT
