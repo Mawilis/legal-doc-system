@@ -76,7 +76,7 @@ class ComplianceScanWorker:
                     fence = self.tasks.update_one(
                         {"tenant_id": tenant_id, "task_id": task_id, "status": "CLAIMED",
                          "claimed_by": worker_id, "lease_token": lease_token,
-                         "lease_until": {"$gt": observed_at}},
+                         "lease_until": {"$gt": datetime.now(timezone.utc)}},
                         {"$inc": {"side_effect_fence": 1}, "$set": {"last_side_effect_at": observed_at}},
                         session=active_session,
                     )
