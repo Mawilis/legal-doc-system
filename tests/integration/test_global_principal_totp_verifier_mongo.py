@@ -1,3 +1,20 @@
+# TITLE: WILSY EOS Global Principal TOTP Verifier Real-Mongo Certificate
+# VERSION: v1.0.1-GLOBAL-PRINCIPAL-TOTP-VERIFIER-MONGO
+# AUTHORITY: Disposable replica-set integration certification only.
+# EPITOME: Verify principal-scoped TOTP factor persistence, single-use time-step replay control and transaction rollback against a real MongoDB replica set.
+# ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/tests/integration/test_global_principal_totp_verifier_mongo.py
+# COLLABORATION / OWNERSHIP: Wilsy OS Core Engineering; Python EOS Global Principal MFA verification authority.
+# CERTIFICATION OR UPDATE DATE: 2026-11-09
+# CHANGELOG:
+#   v1.0.1-GLOBAL-PRINCIPAL-TOTP-VERIFIER-MONGO adds the mandatory sovereign
+#   artifact contract; replay and transaction assertions are unchanged.
+#   v1.0.0 established disposable replica-set TOTP verifier certification.
+# COMPLIANCE: AGENTS.md v1.2.0-SOVEREIGN-LEGAL-OPERATIONS-CONSTITUTION.
+# SECURITY / PRIVACY POSTURE: Synthetic TOTP fixtures and disposable MongoDB only; no production factor secrets or credentials.
+# TENANT BOUNDARY: Synthetic principal context only; no canonical tenant records are accessed or mutated.
+# AUTHORITY BOUNDARY: Test-only verification evidence; cannot activate production MFA factors or sessions.
+# FINANCIAL AUTHORITY BOUNDARY: No financial execution authority; Kennel EOS remains exclusive.
+
 """Real replica-set certification for global-principal TOTP replay control."""
 import os
 import uuid
@@ -109,3 +126,11 @@ def test_replica_set_rejects_replayed_totp_step(factor_store):
             )
         session.abort_transaction()
     assert factors.count_documents({"last_accepted_step": {"$exists": True}}) == 1
+
+# ARTIFACT: tests/integration/test_global_principal_totp_verifier_mongo.py
+# VERSION: v1.0.1-GLOBAL-PRINCIPAL-TOTP-VERIFIER-MONGO
+# AUTHORITY BOUNDARY: Disposable replica-set TOTP verification test only.
+# TENANT POSTURE: Synthetic principal fixtures only; no production tenant state is changed.
+# FAIL-CLOSED POSTURE: Replayed, stale or transactionally inconsistent factor use fails the integration suite.
+# FINANCIAL EXECUTION AUTHORITY: Kennel EOS exclusively.
+# END OF WILSY OS SOVEREIGN ARTIFACT
