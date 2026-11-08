@@ -1,7 +1,7 @@
 """WILSY OS sovereign artifact-contract regression tests.
 
 TITLE: Sovereign Artifact Header, Version, Changelog and Seal Guard
-VERSION: v1.0.2-WILSY-SOVEREIGN-ARTIFACT-CONTRACT-GUARD
+VERSION: v1.0.3-WILSY-SOVEREIGN-ARTIFACT-CONTRACT-GUARD
 AUTHORITY: Wilsy OS Core Governance
 EPITOME: Prevents the corrected Kennel EOS runbook and forensic inventory from
          losing their required sovereign header, version agreement, changelog,
@@ -12,6 +12,8 @@ COLLABORATION / OWNERSHIP:
     Python EOS governance tests; artifact owners retain source authority.
 CERTIFICATION / UPDATE DATE: 2026-11-08
 CHANGELOG:
+    v1.0.3-WILSY-SOVEREIGN-ARTIFACT-CONTRACT-GUARD adds self-audit coverage
+    for this test artifact as well as the diagnostic and forensic inventory.
     v1.0.2-WILSY-SOVEREIGN-ARTIFACT-CONTRACT-GUARD avoids embedding forbidden
     source markers while retaining exact target checks.
     v1.0.1-WILSY-SOVEREIGN-ARTIFACT-CONTRACT-GUARD documents test boundaries.
@@ -37,6 +39,10 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[2]
 ARTIFACTS = (
+    (
+        ROOT / "tests/unit/test_sovereign_artifact_contract.py",
+        "v1.0.3-WILSY-SOVEREIGN-ARTIFACT-CONTRACT-GUARD",
+    ),
     (
         ROOT / "runbook_diagnostic.py",
         "v1.0.0-WILSY-KENNEL-EOS-RUNBOOK-DIAGNOSTIC",
@@ -125,7 +131,7 @@ def test_forensic_inventory_does_not_claim_unverified_legacy_parity() -> None:
 
 
 # ARTIFACT: test_sovereign_artifact_contract.py
-# VERSION: v1.0.2-WILSY-SOVEREIGN-ARTIFACT-CONTRACT-GUARD
+# VERSION: v1.0.3-WILSY-SOVEREIGN-ARTIFACT-CONTRACT-GUARD
 # AUTHORITY BOUNDARY: structural governance tests only.
 # TENANT POSTURE: no tenant access or authority.
 # FAIL-CLOSED POSTURE: missing, divergent, or unsealed artifact metadata fails.
