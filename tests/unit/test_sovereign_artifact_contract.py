@@ -1,7 +1,7 @@
 """WILSY OS sovereign artifact-contract regression tests.
 
 TITLE: Sovereign Artifact Header, Version, Changelog and Seal Guard
-VERSION: v1.0.5-WILSY-SOVEREIGN-ARTIFACT-CONTRACT-GUARD
+VERSION: v1.0.6-WILSY-SOVEREIGN-ARTIFACT-CONTRACT-GUARD
 AUTHORITY: Wilsy OS Core Governance
 EPITOME: Prevents the corrected Kennel EOS runbook and forensic inventory from
          losing their required sovereign header, version agreement, changelog,
@@ -12,8 +12,9 @@ COLLABORATION / OWNERSHIP:
     Python EOS governance tests; artifact owners retain source authority.
 CERTIFICATION / UPDATE DATE: 2026-11-08
 CHANGELOG:
-    v1.0.5-WILSY-SOVEREIGN-ARTIFACT-CONTRACT-GUARD tracks the corrected root
-    service and deployment inventory versions and its expanded legacy findings.
+    v1.0.6-WILSY-SOVEREIGN-ARTIFACT-CONTRACT-GUARD certifies the five retired
+    root launchers are fail-closed and includes their artifact seals in self-audit.
+    v1.0.5-WILSY-SOVEREIGN-ARTIFACT-CONTRACT-GUARD tracked the expanded inventory.
     v1.0.4-WILSY-SOVEREIGN-ARTIFACT-CONTRACT-GUARD audited deployment documentation.
     v1.0.3-WILSY-SOVEREIGN-ARTIFACT-CONTRACT-GUARD added self-audit coverage.
     v1.0.2-WILSY-SOVEREIGN-ARTIFACT-CONTRACT-GUARD avoids embedding forbidden
@@ -43,7 +44,7 @@ ROOT = Path(__file__).resolve().parents[2]
 ARTIFACTS = (
     (
         ROOT / "tests/unit/test_sovereign_artifact_contract.py",
-        "v1.0.5-WILSY-SOVEREIGN-ARTIFACT-CONTRACT-GUARD",
+        "v1.0.6-WILSY-SOVEREIGN-ARTIFACT-CONTRACT-GUARD",
     ),
     (
         ROOT / "DEPLOYMENT.md",
@@ -58,12 +59,32 @@ ARTIFACTS = (
         "v1.1.0-EOS-RUNTIME-DATABASE-INVENTORY-CERTIFICATION",
     ),
     (
+        ROOT / "start_all.sh",
+        "v1.0.0-LEGACY-NODE-START-ALL-RETIRED",
+    ),
+    (
+        ROOT / "start_wilsy_os.sh",
+        "v1.0.0-LEGACY-NODE-START-WILSY-OS-RETIRED",
+    ),
+    (
+        ROOT / "GlobalLaunchSequence.sh",
+        "v1.0.0-LEGACY-GLOBAL-LAUNCH-SEQUENCE-RETIRED",
+    ),
+    (
+        ROOT / "Genesis_Ignition.sh",
+        "v1.0.0-LEGACY-GENESIS-IGNITION-RETIRED",
+    ),
+    (
+        ROOT / "Sovereign_Deployment_Automation.sh",
+        "v1.0.0-LEGACY-NODE-DEPLOYMENT-AUTOMATION-RETIRED",
+    ),
+    (
         ROOT / "runbook_diagnostic.py",
         "v1.0.0-WILSY-KENNEL-EOS-RUNBOOK-DIAGNOSTIC",
     ),
     (
         ROOT / "docs/architecture/eos-runtime-database-consumer-inventory.md",
-        "v2.6.0-KENNEL-EOS-LEGACY-NODE-FORENSIC-INVENTORY",
+        "v2.7.0-KENNEL-EOS-LEGACY-NODE-FORENSIC-INVENTORY",
     ),
 )
 REQUIRED_HEADER_MARKERS = (
@@ -155,13 +176,41 @@ def test_forensic_inventory_does_not_claim_unverified_legacy_parity() -> None:
         "services/standards",
         "start_wilsy_os.sh",
         "GlobalLaunchSequence.sh",
+        "repair_launcher.js",
+        "build_orchestrator.js",
+        "update_orchestrator.js",
+        "bootstrap_wilsy_os.js",
+        "route reachability",
     )
     for finding in required_findings:
         assert finding in content, f"Forensic inventory omitted unresolved finding: {finding}"
 
 
+def test_legacy_node_launchers_are_fail_closed() -> None:
+    """Prevent retired root launchers from acquiring process or deployment authority.
+
+    Tenant scope: none. Mutation: none. Idempotency and transaction ownership:
+    not applicable. Fail-closed: every retired launcher must exit before any
+    Node, npm-start, PM2, process-kill, or background-service command. Financial
+    execution authority: none.
+    """
+    launchers = (
+        ("start_all.sh", "LEGACY_NODE_LAUNCHER_RETIRED"),
+        ("start_wilsy_os.sh", "LEGACY_NODE_LAUNCHER_RETIRED"),
+        ("GlobalLaunchSequence.sh", "LEGACY_NODE_LAUNCHER_RETIRED"),
+        ("Genesis_Ignition.sh", "LEGACY_NODE_IGNITION_RETIRED"),
+        ("Sovereign_Deployment_Automation.sh", "LEGACY_NODE_DEPLOYMENT_RETIRED"),
+    )
+    forbidden_commands = ("npm start", "node ", "pm2 ", "lsof -ti", "nohup ")
+    for filename, retirement_marker in launchers:
+        source = (ROOT / filename).read_text(encoding="utf-8")
+        assert retirement_marker in source, f"{filename} lost its retirement marker"
+        for command in forbidden_commands:
+            assert command not in source, f"{filename} can still invoke {command}"
+
+
 # ARTIFACT: test_sovereign_artifact_contract.py
-# VERSION: v1.0.5-WILSY-SOVEREIGN-ARTIFACT-CONTRACT-GUARD
+# VERSION: v1.0.6-WILSY-SOVEREIGN-ARTIFACT-CONTRACT-GUARD
 # AUTHORITY BOUNDARY: structural governance tests only.
 # TENANT POSTURE: no tenant access or authority.
 # FAIL-CLOSED POSTURE: missing, divergent, or unsealed artifact metadata fails.
