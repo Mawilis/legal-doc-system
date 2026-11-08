@@ -1,36 +1,17 @@
-#!/bin/bash
-# // ============================================================================
-# // Wilsy OS - Billion Dollar Architecture
-# // Script: Administrative Elevation & Tenant Binding
-# // Path: /Users/wilsonkhanyezi/legal-doc-system/server/elevate_wilsy_app.sh
-# // ============================================================================
-# // Collaboration Note: Elevating wilsy_app to include 'userAdmin' role.
-# // This is a mechanical necessity because dbAdmin does not permit role
-# // grants. This ensures future-proof, self-sufficient provisioning.
-# // ============================================================================
+#!/usr/bin/env bash
+# TITLE: Retired legacy MongoDB application-account elevation
+# VERSION: v2.0.0
+# AUTHORITY: WILSY EOS Security Engineering
+# PURPOSE: Prevent application identities from managing MongoDB users or roles.
+# SECURITY: This legacy script is intentionally non-operational. It contains no
+# credentials and cannot grant userAdmin or other administrative privileges.
+# CHANGELOG:
+# - v2.0.0: Retire application-account self-elevation and privileged role grants.
+# END OF WILSY OS SOVEREIGN ARTIFACT
 
-# We MUST use the root admin to modify user roles
-mongosh --port 27017 \
-  -u "admin" \
-  -p "ENTER_YOUR_ROOT_ADMIN_PASSWORD_HERE" \
-  --authenticationDatabase "admin" << 'MONGOEOF'
+set -euo pipefail
 
-use wilsy;
-
-print("--- ELEVATING SERVICE ACCOUNT PERMISSIONS ---");
-
-// 1. Give wilsy_app the ability to manage its own roles and tenant roles
-db.grantRolesToUser("wilsy_app", [
-  { role: "userAdmin", db: "wilsy" },
-  { role: "readWrite", db: "tenant_69dd419f39c41a1b067fc048" }
-]);
-
-print("--- WILSY OS FORENSIC VALIDATION ---");
-const user = db.getUser("wilsy_app");
-if (user) {
-    print("User: " + user.user);
-    print("New Roles: " + JSON.stringify(user.roles));
-}
-
-print("✅ Forensic precision achieved: wilsy_app elevated and tenant bound.");
-MONGOEOF
+printf '%s\n' >&2 \
+  "DISABLED: application-account role administration is prohibited." \
+  "Provision least-privilege database roles through the governed infrastructure workflow."
+exit 1

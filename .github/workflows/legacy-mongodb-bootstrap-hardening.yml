@@ -1,0 +1,51 @@
+# TITLE: WILSY EOS Legacy MongoDB Bootstrap Security Certification
+# VERSION: v1.0.0
+# AUTHORITY: WILSY EOS Security Engineering
+# PURPOSE: Prove retired MongoDB bootstrap scripts cannot change database identities or roles.
+# SECURITY: Read-only repository CI; no database credentials or live database access.
+# CHANGELOG:
+# - v1.0.0: Add shell syntax and fail-closed execution certification for retired bootstrap scripts.
+# END OF WILSY OS SOVEREIGN ARTIFACT
+
+name: WILSY EOS Legacy MongoDB Bootstrap Security Certification
+
+on:
+  pull_request:
+    paths:
+      - "server/fix_tenant_auth.sh"
+      - "server/inject_master_user.sh"
+      - "server/elevate_wilsy_app.sh"
+      - "server/force_fix_wilsy.sh"
+      - "tests/unit/test_legacy_mongodb_bootstrap_scripts_are_retired.py"
+      - ".github/workflows/legacy-mongodb-bootstrap-hardening.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: legacy-mongodb-bootstrap-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  retired-bootstrap-security:
+    name: Retired MongoDB bootstrap fail-closed tests
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Checkout exact commit
+        uses: actions/checkout@v4
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Validate shell syntax
+        run: |
+          bash -n server/fix_tenant_auth.sh
+          bash -n server/inject_master_user.sh
+          bash -n server/elevate_wilsy_app.sh
+          bash -n server/force_fix_wilsy.sh
+      - name: Install test runner
+        run: python -m pip install --disable-pip-version-check pytest==9.1.1
+      - name: Prove legacy scripts fail closed
+        run: python -m pytest -q tests/unit/test_legacy_mongodb_bootstrap_scripts_are_retired.py
