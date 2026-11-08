@@ -192,3 +192,32 @@ This is a separate, high-priority forensic-route security remediation. It is not
 At `2fdcaaee2f4914b2ebc099b19e96e1d2afb39624`, source-key governance and denial-chain code passed **448 tests, 12 warnings, 0 failures** on a real replica set; all 16 applicable workflows succeeded. This does not close the independent audit-sink, forensic-route authorization, durable failure recovery, or deployment role/retention gates.
 
 PR #393 remains draft and unmerged. Production trust activation remains prohibited.
+
+
+## Current AI review status — exact head `a31afadf88281890756d463315067b68abdf156e`
+
+### Verified and resolved in code
+
+- Lifecycle event appends now call full-chain verification inside the registry boundary. The real-replica-set test `test_registry_append_rejects_corrupt_earlier_event_before_moving_audit_head` proves a corrupt earlier event blocks a later append and does not advance the audit head.
+- Governance denial events now have a separate tenant-partitioned hash chain with sequence, previous hash and event hash. Every append verifies the full chain and head; head update and denial insert share the caller-owned transaction.
+- Real-replica-set coverage verifies denial-chain tampering is rejected before append.
+- Authenticated route coverage verifies the actual production tenant-IAM dependency chain, provider verification retry-safety, database-outage fail-closed behavior, and that denial-audit failure does not mask the original denial.
+- The provider verifier's transaction-retry contract is exercised by `test_provider_verification_is_retry_safe_inside_mongo_transaction`.
+- The current source artifact versions are router `v1.3.0`, evidence contract `v1.0.0`, and lifecycle registry `v1.4.0`.
+
+### Exact-head certification
+
+On `a31afadf88281890756d463315067b68abdf156e`:
+- Institutional Signed-Offer Verification: **448 passed, 12 warnings, 0 failed**, with a real MongoDB replica set.
+- All **16 applicable workflows succeeded**; one superseded Repository Integrity run was cancelled by concurrency control. No failed or pending runs remain.
+
+### Remaining blockers — not waived by application-level hash chains
+
+1. **Independent audit protection:** the lifecycle and denial hash chains and their heads are still held in the same MongoDB security boundary. A compromised application database identity could rewrite both data and heads. Establish an independently protected audit writer/sink and least-privilege database identities; prove the application identity cannot mutate protected audit history or anchors.
+2. **Durable audit-failure recovery:** the denial route emits bounded structured failure metadata and preserves the original denial, but it has no durable out-of-band queue/reconciliation consumer. The database outage test proves fail-closed behavior, not durable capture while the database is unavailable.
+3. **Pre-handler IAM denial persistence:** the real IAM dependency chain is tested, but its terminal observer remains log-only. Persist pre-handler denials through a governed durable outbox or independently protected telemetry path without changing IAM decisions.
+4. **Operational audit controls:** independent export, retention enforcement, backup/restore verification and integrity alerting remain unimplemented/unproven.
+5. **Separate legacy bootstrap remediation:** PR #394 retires the four self-authorizing MongoDB bootstrap scripts and its dedicated CI workflow passed. Repository changes do not erase exposed credentials from Git history, rotate live database credentials, or prove authentication-log investigation. Those environment-specific actions remain outstanding.
+6. **Forensic Merkle service is not an approved sink:** its local JSONL fallback is not WORM, its external anchor is optional, and its manual route has no demonstrated canonical tenant authorization. Do not reuse it as the protected source-key audit sink. Track its route/tenant isolation remediation separately.
+
+**Disposition:** source-key governance and application-level denial integrity are certified at this exact head. Independent audit protection, durable failure recovery, pre-handler IAM audit persistence and operational controls remain blocking. PR #393 remains draft and unmerged; no production trust activation.
