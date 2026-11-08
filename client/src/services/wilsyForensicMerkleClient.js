@@ -3,11 +3,11 @@
  * WILSY OS - FORENSIC MERKLE CLIENT BRIDGE
  * @file client/src/services/wilsyForensicMerkleClient.js
  * @version R18AD1-ACCOUNT-FORENSIC-BRIDGE-WIRING
- * @description Frontend service bridge for consuming backend ForensicMerkleAuditor receipt, overlay, anchor and verification routes without duplicating Merkle/hash-chain logic in React.
+ * @description Frontend service bridge for consuming Python EOS forensic evidence and chain-verification routes without duplicating Merkle/hash-chain logic in React.
  * @collaboration Connects Wilsy OS chrome, sovereign cockpit, revenue ledger, compliance HUD, forensic HUD, showroom and future executive dashboards to server-side Merkle verification authority.
  * @fileNotes
  * - This file is a client bridge only. It must never implement private-key signing or browser-owned Merkle authority.
- * - Backend services remain the source of forensic truth: server/services/ForensicMerkleAuditor.js and server/routes/forensicRoutes.js.
+ * - Backend services remain the source of forensic truth: tools/eos/security/forensic_merkle_registry.py and tools/eos/api/forensic_merkle_router.py.
  * - Browser code may display auditor status, anchor history, verification posture, receipts, compliance bindings and cockpit snapshots.
  * - Browser code may trigger permitted audit-cycle requests through authenticated tenant-bound API calls.
  * - Browser code must not store secrets, hardcode privileged tokens, or fabricate cryptographic receipts.
@@ -110,7 +110,7 @@ export function getWilsyStoredAuthToken() {
  * @collaboration Keeps the frontend bridge tenant-safe while delegating Merkle authority to backend services.
  */
 export function normalizeWilsyTenantId(tenantId) {
-  return String(tenantId || 'wilsy-sovereign-root').trim() || 'wilsy-sovereign-root';
+  return typeof tenantId === 'string' ? tenantId.trim() : '';
 }
 
 /**
@@ -269,8 +269,6 @@ export function appendWilsyForensicNoCacheParam(path) {
 export function getWilsyForensicApiBaseCandidates(configuredBase = DEFAULT_API_BASE) {
   const rawCandidates = [
     configuredBase,
-    import.meta.env.DEV ? 'http://localhost:5050' : null,
-    import.meta.env.DEV ? 'http://127.0.0.1:5050' : null,
     ''
   ];
 
@@ -508,7 +506,7 @@ export async function requestWilsyForensicJson(path, options = {}) {
 
 /**
  * @function getWilsyMerkleAuditorStatus
- * @description Reads the backend ForensicMerkleAuditor worker and anchor configuration status.
+ * @description Reads the Python EOS tenant-scoped forensic chain projection.
  * @collaboration Powers the cockpit status tile from the existing /api/forensics/merkle-auditor/status endpoint.
  */
 export function getWilsyMerkleAuditorStatus(options = {}) {
@@ -517,8 +515,8 @@ export function getWilsyMerkleAuditorStatus(options = {}) {
 
 /**
  * @function runWilsyMerkleAuditCycle
- * @description Executes a backend Merkle audit cycle for the selected tenant with receipt display pagination separated from replay depth.
- * @collaboration Allows command surfaces to trigger verification without implementing Merkle logic in React.
+ * @description Requests a read-only Python EOS chain replay for the selected tenant.
+ * @collaboration Does not request anchoring, sealing, repair, or browser-owned evidence mutation.
  */
 export function runWilsyMerkleAuditCycle({
   tenantId,
@@ -527,23 +525,20 @@ export function runWilsyMerkleAuditCycle({
   receiptLimit = limit,
   replayLimit = WILSY_FORENSIC_RECEIPT_REPLAY_DEFAULT_LIMIT
 } = {}) {
-  return requestWilsyForensicJson('/api/forensics/merkle-auditor/run', {
+  const params = new URLSearchParams({
+    limit: String(normalizeWilsyPositiveInteger(replayLimit, WILSY_FORENSIC_RECEIPT_REPLAY_DEFAULT_LIMIT))
+  });
+  return requestWilsyForensicJson(`/api/forensics/merkle-auditor/run?${params.toString()}`, {
     method: 'POST',
-    tenantId,
-    body: {
-      tenantId: normalizeWilsyTenantId(tenantId),
-      anchor,
-      limit: normalizeWilsyPositiveInteger(replayLimit, WILSY_FORENSIC_RECEIPT_REPLAY_DEFAULT_LIMIT),
-      receiptLimit: normalizeWilsyPositiveInteger(receiptLimit, WILSY_FORENSIC_RECEIPT_DISPLAY_DEFAULT_LIMIT)
-    }
+    tenantId
   });
 }
 
 
 /**
  * @function sealWilsyMerkleSafeWindow
- * @description Requests a backend-owned production seal decision for the current safe receipt window.
- * @collaboration Connects the showroom seal command to /api/forensics/merkle-auditor/seal-safe-window without allowing browser-side immutable seal claims.
+ * @description Requests the governed safe-window seal endpoint; Python EOS currently fails closed until independent custody is configured.
+ * @collaboration Keeps browser-side UI from claiming that a receipt was sealed or anchored.
  */
 export function sealWilsyMerkleSafeWindow({
   tenantId,
@@ -571,8 +566,8 @@ export function sealWilsyMerkleSafeWindow({
 
 /**
  * @function listWilsyMerkleAnchors
- * @description Lists recent local Merkle anchors from the backend append-only anchor queue.
- * @collaboration Supplies the cockpit proof stream from the existing backend anchor history.
+ * @description Reads the Python EOS anchor-provider posture for the authenticated tenant.
+ * @collaboration An absent independent provider is represented explicitly, never as an empty successful WORM ledger.
  */
 export function listWilsyMerkleAnchors({ tenantId, limit = 12, signal } = {}) {
   const params = new URLSearchParams({
@@ -587,8 +582,8 @@ export function listWilsyMerkleAnchors({ tenantId, limit = 12, signal } = {}) {
 
 /**
  * @function listWilsyMerkleReceipts
- * @description Lists route-safe forensic receipts with receiptContract and receiptOverlay metadata from the backend.
- * @collaboration Feeds the showroom with real receipt hashes, compliance bindings, receipt Merkle roots and review overlays.
+ * @description Lists bounded persisted chain evidence from Python EOS.
+ * @collaboration Exposes chain replay records without fabricating signed receipts, WORM anchors or compliance approvals.
  */
 export function listWilsyMerkleReceipts({
   tenantId,
@@ -618,8 +613,8 @@ export function listWilsyMerkleReceipts({
 
 /**
  * @function getWilsyMerkleReceipt
- * @description Reads one route-safe forensic receipt with bound POPIA, GDPR, SOC2 and WORM clauses.
- * @collaboration Powers regulator-grade receipt drill-down without fabricating receipt evidence in the browser.
+ * @description Reads one persisted forensic event from the Python EOS tenant chain.
+ * @collaboration Preserves tenant-bound evidence lookup without claiming external anchoring or legal admissibility.
  */
 export function getWilsyMerkleReceipt({
   tenantId,
@@ -649,8 +644,8 @@ export function getWilsyMerkleReceipt({
 
 /**
  * @function verifyWilsyForensicChain
- * @description Replays the tenant forensic hash chain and returns backend Merkle verification posture.
- * @collaboration Binds the cockpit proof view to the existing /api/forensics/verify-chain contract while allowing full replay depth.
+ * @description Replays the tenant forensic hash chain through Python EOS.
+ * @collaboration Tenant membership and audit-read permission are verified by canonical EOS IAM.
  */
 export function verifyWilsyForensicChain({
   tenantId,
