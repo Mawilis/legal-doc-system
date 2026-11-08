@@ -1,7 +1,7 @@
 /* eslint-disable */
 /**
  * TITLE: WILSY EOS Forensic Nucleus Routes
- * VERSION: v54.2.0
+ * VERSION: v54.3.0
  * AUTHORITY: WILSY EOS Security Engineering; authenticated forensic API surface
  * EPITOME: Exposes forensic metrics, audit trails and Merkle operations under canonical tenant scope.
  * ABSOLUTE CANONICAL PATH: server/routes/forensicRoutes.js
@@ -9,6 +9,7 @@
  * CERTIFICATION / UPDATE DATE: 2026-11-08
  * CHANGELOG:
  * - v54.2.0: Bind every route to authenticated tenant scope; remove legacy-root alias aggregation and scope local anchors.
+ * - v54.3.0: Remove placeholder success claims for asset integrity and vault anchoring; correct route access documentation.
  * COMPLIANCE: Canonical IAM and tenant middleware remain the sole authentication and tenant-authority sources.
  * SECURITY / PRIVACY POSTURE: Caller-supplied tenant identifiers are hints only and must match authenticated scope; mismatches fail closed.
  * TENANT BOUNDARY: Exact request tenant established by authenticated middleware; no GLOBAL_ROOT or legacy alias fallback.
@@ -587,7 +588,7 @@ const buildForensicReceiptEnvelope = (result = {}, options = {}) => {
 /**
  * @route   GET /api/forensics/metrics/:tenantId
  * @desc    Hydrates the Boardroom HUD with forensic health metrics.
- * @access  Public/Sovereign Gateway
+ * @access  Authenticated tenant scope
  */
 router.get('/metrics/:tenantId', async (req, res) => {
   const tenantId = req.forensicTenantId;
@@ -663,7 +664,7 @@ try {
 /**
  * @route   GET /api/forensics/audit-trail
  * @desc    Provides the immutable, cryptographically chained activity stream for the HUD audit view.
- * @access  Private/Sovereign
+ * @access  Authenticated tenant scope
  */
 router.get('/audit-trail', async (req, res) => {
   const tenantId = req.forensicTenantId;
@@ -692,7 +693,7 @@ router.get('/audit-trail', async (req, res) => {
 /**
  * @route   GET /api/forensics/benchmark
  * @desc    Delivers comparative industry DSO benchmarking data for the HUD.
- * @access  Private/Sovereign
+ * @access  Authenticated tenant scope
  */
 router.get('/benchmark', async (req, res) => {
   res.status(200).json({
@@ -709,7 +710,7 @@ router.get('/benchmark', async (req, res) => {
 /**
  * @route   GET /api/forensics/vault/:tenantId
  * @desc    Returns tenant-scoped, immutable audit events for the Audit Vault UI.
- * @access  Private/Sovereign
+ * @access  Authenticated tenant scope
  */
 router.get('/vault/:tenantId', async (req, res) => {
   const tenantId = req.forensicTenantId;
@@ -800,7 +801,7 @@ router.post('/scan-anomalies', async (req, res) => {
 /**
  * @route   GET /api/forensics/verify-chain
  * @desc    Replays the forensic hash chain and returns Merkle auditor posture for HUDs and regulators.
- * @access  Public/Sovereign Gateway
+ * @access  Authenticated tenant scope
  */
 router.get('/verify-chain', async (req, res) => {
   const tenantId = req.forensicTenantId;
@@ -837,7 +838,7 @@ router.get('/verify-chain', async (req, res) => {
 /**
  * @route   GET /api/forensics/merkle-auditor/status
  * @desc    Returns the current Merkle auditor worker and anchor configuration without forcing a replay.
- * @access  Public/Sovereign Gateway
+ * @access  Authenticated tenant scope
  */
 router.get('/merkle-auditor/status', async (req, res) => {
   res.status(200).json(forensicMerkleAuditor.getStatus());
@@ -846,7 +847,7 @@ router.get('/merkle-auditor/status', async (req, res) => {
 /**
  * @route   POST /api/forensics/merkle-auditor/run
  * @desc    Executes a manual Merkle audit cycle and anchors valid roots when requested.
- * @access  Public/Sovereign Gateway
+ * @access  Authenticated tenant scope
  */
 router.post('/merkle-auditor/run', async (req, res) => {
   const tenantId = req.forensicTenantId;
@@ -882,7 +883,7 @@ router.post('/merkle-auditor/run', async (req, res) => {
 /**
  * @route   GET /api/forensics/merkle-auditor/receipts
  * @desc    Returns route-safe forensic receipts, compliance bindings and audit overlay metadata for showroom/regulator drill-downs.
- * @access  Public/Sovereign Gateway
+ * @access  Authenticated tenant scope
  */
 router.get('/merkle-auditor/receipts', async (req, res) => {
   const tenantId = req.forensicTenantId;
@@ -925,7 +926,7 @@ router.get('/merkle-auditor/receipts', async (req, res) => {
 /**
  * @route   GET /api/forensics/merkle-auditor/receipts/:receiptId
  * @desc    Returns one forensic receipt with bound POPIA, GDPR, SOC2 and WORM clauses.
- * @access  Public/Sovereign Gateway
+ * @access  Authenticated tenant scope
  */
 router.get('/merkle-auditor/receipts/:receiptId', async (req, res) => {
   const tenantId = req.forensicTenantId;
@@ -965,7 +966,7 @@ router.get('/merkle-auditor/receipts/:receiptId', async (req, res) => {
 /**
  * @route   POST /api/forensics/merkle-auditor/rechain-receipts
  * @desc    Performs explicit backend-owned local forensic rechain repair before receipt sealing.
- * @access  Public/Sovereign Gateway
+ * @access  Authenticated tenant scope
  */
 router.post('/merkle-auditor/rechain-receipts', async (req, res) => {
   const tenantId = req.forensicTenantId;
@@ -1034,7 +1035,7 @@ router.post('/merkle-auditor/rechain-receipts', async (req, res) => {
 /**
  * @route   POST /api/forensics/merkle-auditor/seal-receipts
  * @desc    Attempts backend-owned receipt sealing for the current safe window.
- * @access  Public/Sovereign Gateway
+ * @access  Authenticated tenant scope
  */
 router.post('/merkle-auditor/seal-receipts', async (req, res) => {
   const tenantId = req.forensicTenantId;
@@ -1138,7 +1139,7 @@ router.post('/merkle-auditor/seal-receipts', async (req, res) => {
 /**
  * @route   POST /api/forensics/merkle-auditor/seal-safe-window
  * @desc    Requests backend-owned seal evaluation for a safe receipt window.
- * @access  Public/Sovereign Gateway
+ * @access  Authenticated tenant scope
  */
 router.post('/merkle-auditor/seal-safe-window', async (req, res) => {
   const tenantId = req.forensicTenantId;
@@ -1232,7 +1233,7 @@ router.post('/merkle-auditor/seal-safe-window', async (req, res) => {
 /**
  * @route   GET /api/forensics/merkle-auditor/anchors
  * @desc    Lists recent local Merkle anchors for audit export and diagnostics.
- * @access  Public/Sovereign Gateway
+ * @access  Authenticated tenant scope
  */
 router.get('/merkle-auditor/anchors', async (req, res) => {
   const limit = Math.min(Number(req.query.limit) || 20, 200);
@@ -1339,25 +1340,26 @@ router.get('/compliance-report', async (req, res) => {
 /**
  * @route   GET /api/forensics/asset/:assetId/integrity
  * @desc    Performs SHA3-512 recursive integrity check for the requested asset.
- * @access  Private/Sovereign
+ * @access  Authenticated tenant scope
  */
 router.get('/asset/:assetId/integrity', async (req, res) => {
-  res.status(200).json({
-    success: true,
-    integrityStatus: 'VERIFIED_INTACT',
-    algorithm: 'SHA3-512',
+  return res.status(503).json({
+    success: false,
+    integrityStatus: 'UNVERIFIED',
+    code: 'ASSET_INTEGRITY_VERIFIER_UNAVAILABLE',
   });
 });
 
 /**
  * @route   GET /api/forensics/vault
  * @desc    Secures the entry point to the high-security immutable vault.
- * @access  Private/Supreme Admin
+ * @access  Authenticated tenant scope; no administrative elevation is implied
  */
 router.get('/vault', (req, res) => {
-  res.status(200).json({
-    success: true,
-    status: 'VAULT_ANCHORED',
+  return res.status(503).json({
+    success: false,
+    status: 'VAULT_STATUS_UNVERIFIED',
+    code: 'VAULT_STATUS_SOURCE_UNAVAILABLE',
   });
 });
 
@@ -1376,7 +1378,7 @@ export default router;
 
 /*
  * ARTIFACT: WILSY EOS Forensic Nucleus Routes
- * VERSION: v54.2.0
+ * VERSION: v54.3.0
  * AUTHORITY BOUNDARY: Authenticated forensic API only; canonical IAM remains authoritative.
  * TENANT POSTURE: Every route is bound to the authenticated request tenant; caller-selected scope is rejected.
  * FAIL-CLOSED POSTURE: Missing or mismatched tenant context returns HTTP 403.
