@@ -1,0 +1,50 @@
+name: Python EOS Runtime Deployment Certification
+
+on:
+  push:
+    branches:
+      - eos/python-only-runtime-retirement-20261108
+    paths:
+      - "Dockerfile.eos"
+      - "docker-compose.eos.yml"
+      - "requirements.txt"
+      - "tools/eos/**"
+      - "tests/unit/test_python_eos_runtime_deployment.py"
+      - ".github/workflows/eos-python-runtime-deployment-certification.yml"
+  pull_request:
+    paths:
+      - "Dockerfile.eos"
+      - "docker-compose.eos.yml"
+      - "requirements.txt"
+      - "tools/eos/**"
+      - "tests/unit/test_python_eos_runtime_deployment.py"
+      - ".github/workflows/eos-python-runtime-deployment-certification.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: python-eos-runtime-deployment-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  python-eos-image:
+    name: Build and certify Python EOS image
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+      - name: Install Python EOS test dependencies
+        run: |
+          python -m pip install --disable-pip-version-check -r requirements.txt
+          python -m pip install --disable-pip-version-check pytest==9.1.1 httpx
+      - name: Run Python runtime deployment tests
+        run: python -m pytest -q tests/unit/test_python_eos_runtime_deployment.py
+      - name: Compile canonical Python EOS application
+        run: python -m py_compile tools/eos/api/server.py
+      - name: Build Python-only runtime image
+        run: docker build --file Dockerfile.eos --tag wilsy-eos-python:certification .
