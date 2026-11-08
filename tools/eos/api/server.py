@@ -967,6 +967,9 @@ class WilsyAPIServer:
             app.state.global_principal_mfa_factor_indexes_ready = False
             app.state.global_principal_mfa_enrollment_indexes_ready = False
             app.state.global_principal_totp_verifier = None
+            app.state.global_principal_mfa_runtime_ready = False
+            app.state.global_principal_mfa_runtime_status = "NOT_INITIALIZED"
+            app.state.global_principal_mfa_runtime_reason = "APPLICATION_SHUTDOWN"
             app.state.global_principal_mfa_kms_envelope = None
             app.state.system_services_case_indexes_ready = False
             app.state.system_services_authority_ready = False
