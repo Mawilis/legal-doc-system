@@ -18,25 +18,32 @@ class ComplianceScanWorker:
     engine_name = "COMPLIANCE_SCAN"
 
     def __init__(self, *, clients: Any, findings: Any, notification_outbox: Any,
-                 mongo_client: Any) -> None:
+                 tasks: Any, mongo_client: Any) -> None:
         self.clients = clients
+        self.tasks = tasks
         self.findings = findings
         self.notification_outbox = notification_outbox
         self.mongo_client = mongo_client
 
     @staticmethod
-    def _context(payload: dict[str, Any]) -> tuple[str, str, datetime]:
+    def _context(payload: dict[str, Any]) -> tuple[str, str, str, str, datetime]:
         context = payload.get("__eos_task_context")
         data = payload.get("data")
         if not isinstance(context, dict) or not isinstance(data, dict):
             raise ValueError("COMPLIANCE_TASK_CONTEXT_REQUIRED")
         tenant_id = context.get("tenant_id")
         task_id = context.get("task_id")
+        worker_id = context.get("worker_id")
+        lease_token = context.get("lease_token")
         observed = data.get("observed_at")
         if not isinstance(tenant_id, str) or not tenant_id.strip() or tenant_id.casefold() in {"global", "root", "master", "wilsy_root"}:
             raise ValueError("COMPLIANCE_TENANT_SCOPE_REQUIRED")
         if not isinstance(task_id, str) or not task_id.strip():
             raise ValueError("COMPLIANCE_TASK_ID_REQUIRED")
+        if not isinstance(worker_id, str) or not worker_id.strip():
+            raise ValueError("COMPLIANCE_WORKER_REQUIRED")
+        if not isinstance(lease_token, str) or not lease_token.strip():
+            raise ValueError("COMPLIANCE_LEASE_REQUIRED")
         if not isinstance(observed, str):
             raise ValueError("COMPLIANCE_OBSERVED_AT_REQUIRED")
         try:
@@ -45,7 +52,7 @@ class ComplianceScanWorker:
             raise ValueError("COMPLIANCE_OBSERVED_AT_INVALID") from error
         if timestamp.tzinfo is None or timestamp.utcoffset() is None:
             raise ValueError("COMPLIANCE_OBSERVED_AT_INVALID")
-        return tenant_id, task_id, timestamp.astimezone(timezone.utc)
+        return tenant_id, task_id, worker_id, lease_token, timestamp.astimezone(timezone.utc)
 
     async def execute(self, task_id: str, payload: dict[str, Any]) -> WorkerResultDTO:
         # PyMongo is synchronous; isolate it so the event loop can renew the task lease.
@@ -53,7 +60,7 @@ class ComplianceScanWorker:
 
     def _execute_sync(self, task_id: str, payload: dict[str, Any]) -> WorkerResultDTO:
         try:
-            tenant_id, context_task_id, observed_at = self._context(payload)
+            tenant_id, context_task_id, worker_id, lease_token, observed_at = self._context(payload)
             if context_task_id != task_id:
                 raise ValueError("COMPLIANCE_TASK_ID_MISMATCH")
             cursor = self.clients.find(
@@ -65,6 +72,16 @@ class ComplianceScanWorker:
             created = 0
             with self.mongo_client.start_session() as session:
                 def persist(active_session: Any) -> int:
+                    # Fence side effects against the exact live queue lease in this transaction.
+                    fence = self.tasks.update_one(
+                        {"tenant_id": tenant_id, "task_id": task_id, "status": "CLAIMED",
+                         "claimed_by": worker_id, "lease_token": lease_token,
+                         "lease_until": {"$gt": observed_at}},
+                        {"$set": {"last_side_effect_at": observed_at}},
+                        session=active_session,
+                    )
+                    if fence.modified_count != 1:
+                        raise ValueError("COMPLIANCE_TASK_LEASE_LOST")
                     count = 0
                     for record in records:
                         source_id = str(record["_id"])
