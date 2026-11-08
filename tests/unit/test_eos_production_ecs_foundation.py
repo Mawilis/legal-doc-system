@@ -1,7 +1,27 @@
-# TITLE: WILSY EOS ECS Fargate Production Foundation Contract
-# VERSION: v1.0.0-ECS-PRODUCTION-FOUNDATION-CONTRACT
-# AUTHORITY: Static infrastructure safety certification only.
-# SECURITY: Proves least-privilege task identity and deliberately inactive service boundary.
+# TITLE: WILSY EOS ECS Fargate Production Foundation Contract Tests
+# VERSION: v1.0.1-EOS-ECS-PRODUCTION-FOUNDATION-CONTRACT
+# AUTHORITY: Static infrastructure safety certification; no provisioning authority.
+# EPITOME: Assert the inactive ECS foundation's task/service boundary, immutable image and secret references, role separation, and purpose-scoped production MFA KMS access.
+# ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/tests/unit/test_eos_production_ecs_foundation.py
+# COLLABORATION / OWNERSHIP: Wilsy OS Core Engineering; Python EOS and infrastructure governance.
+# CERTIFICATION OR UPDATE DATE: 2026-11-09
+# CHANGELOG:
+#   v1.0.1-EOS-ECS-PRODUCTION-FOUNDATION-CONTRACT adds the mandatory sovereign
+#   artifact contract and module-level documentation. Assertions are retained;
+#   no runtime or infrastructure behavior is changed.
+#   v1.0.0 established static safety assertions for the ECS foundation.
+# COMPLIANCE: AGENTS.md v1.2.0-SOVEREIGN-LEGAL-OPERATIONS-CONSTITUTION.
+# SECURITY / PRIVACY POSTURE: Reads repository template text only; no AWS calls, credentials, secrets or live data.
+# TENANT BOUNDARY: No tenant, principal, membership, session or database record is accessed or mutated.
+# AUTHORITY BOUNDARY: Test-only evidence; cannot provision resources, launch tasks or grant runtime permissions.
+# FINANCIAL AUTHORITY BOUNDARY: No financial execution authority; Kennel EOS remains the exclusive financial execution authority.
+
+"""Static contract tests for the deliberately inactive ECS production foundation.
+
+These assertions inspect the checked-in CloudFormation source. They do not
+prove AWS resource existence, successful provisioning, effective IAM policy,
+task startup, database connectivity, or production readiness.
+"""
 
 from pathlib import Path
 
@@ -11,6 +31,7 @@ TEMPLATE = ROOT / "infra" / "aws" / "eos-production-ecs-foundation.yaml"
 
 
 def _source() -> str:
+    """Read the repository-owned ECS template without contacting AWS."""
     return TEMPLATE.read_text(encoding="utf-8")
 
 
@@ -61,7 +82,9 @@ def test_production_mfa_key_is_separate_and_context_restricted():
     assert "KeyAdministratorRoleArn" in source
     assert "AllowOnlyEosProductionTaskDataPlane" in source
     assert "kms:EncryptionContext:purpose: GLOBAL_PRINCIPAL_TOTP" in source
-    key_policy = source.split("  EosProductionMfaKey:", 1)[1].split("  EosProductionMfaKeyAlias:", 1)[0]
+    key_policy = source.split("  EosProductionMfaKey:", 1)[1].split(
+        "  EosProductionMfaKeyAlias:", 1
+    )[0]
     assert "AWS: !GetAtt EosProductionTaskRole.Arn" in key_policy
     assert "wilsy-eos-global-mfa-local-development" not in source
     assert "AdministratorAccess" not in source
@@ -90,3 +113,12 @@ def test_production_stack_does_not_invent_networking_or_ingress():
     assert "desired count" in source.lower()
     assert "121014832643" in source
     assert "af-south-1" in source
+
+
+# ARTIFACT: tests/unit/test_eos_production_ecs_foundation.py
+# VERSION: v1.0.1-EOS-ECS-PRODUCTION-FOUNDATION-CONTRACT
+# AUTHORITY BOUNDARY: Static template assertions only; no provisioning or task activation.
+# TENANT POSTURE: No tenant, identity, session or database records are accessed or mutated.
+# FAIL-CLOSED POSTURE: Missing or weakened infrastructure invariants fail the focused test suite.
+# FINANCIAL EXECUTION AUTHORITY: Kennel EOS exclusively.
+# END OF WILSY OS SOVEREIGN ARTIFACT
