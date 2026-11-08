@@ -43,7 +43,7 @@ def runner_for(worker):
     tasks, audit, client = Mock(), Mock(), Mock()
     client.start_session.return_value = FakeSession()
     tasks.find_one_and_update.return_value = {
-        "tenant_id": "tenant-a", "task_id": "task-a", "engine_name": "DOCUMENT_VERIFY",
+        "tenant_id": "tenant-a", "task_id": "task-a", "task_type": "DOCUMENT_VERIFY", "engine_name": "DOCUMENT_VERIFY",
         "payload": {"evidence_ref": "opaque"}, "status": "CLAIMED",
     }
     tasks.update_one.return_value.modified_count = 1
