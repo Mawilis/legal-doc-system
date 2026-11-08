@@ -1,3 +1,20 @@
+# TITLE: WILSY EOS Global Principal MFA Enrollment Real-Mongo Integration Certificate
+# VERSION: v1.0.1-GLOBAL-PRINCIPAL-MFA-ENROLLMENT-MONGO
+# AUTHORITY: Disposable replica-set integration certification only.
+# EPITOME: Verify the atomic enrollment challenge, encrypted factor persistence and one-time activation lifecycle against an isolated MongoDB replica set.
+# ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/tests/integration/test_global_principal_mfa_enrollment_mongo.py
+# COLLABORATION / OWNERSHIP: Wilsy OS Core Engineering; Python EOS Global Principal MFA.
+# CERTIFICATION OR UPDATE DATE: 2026-11-09
+# CHANGELOG:
+#   v1.0.1-GLOBAL-PRINCIPAL-MFA-ENROLLMENT-MONGO adds the mandatory sovereign
+#   artifact contract; integration assertions and fixture behavior are unchanged.
+#   v1.0.0 established real-replica-set enrollment certification.
+# COMPLIANCE: AGENTS.md v1.2.0-SOVEREIGN-LEGAL-OPERATIONS-CONSTITUTION.
+# SECURITY / PRIVACY POSTURE: Uses isolated disposable MongoDB fixtures and synthetic factor material; never targets production.
+# TENANT BOUNDARY: Test-only synthetic principal context; no canonical tenant records are accessed.
+# AUTHORITY BOUNDARY: Integration evidence only; cannot enroll production factors or issue sessions.
+# FINANCIAL AUTHORITY BOUNDARY: No financial execution authority; Kennel EOS remains exclusive.
+
 """Real Mongo replica-set certification for global MFA enrollment transactions."""
 from __future__ import annotations
 
@@ -157,3 +174,11 @@ def test_real_mongo_enrollment_is_atomic_and_retries_after_transaction_abort(enr
     assert factor["credential_revision"] == 1
     assert factor["last_accepted_step"] == pyotp.TOTP(receipt.secret, interval=30).timecode(NOW)
     assert challenges.count_documents({"principal_id": "principal-enrollment"}) == 0
+
+# ARTIFACT: tests/integration/test_global_principal_mfa_enrollment_mongo.py
+# VERSION: v1.0.1-GLOBAL-PRINCIPAL-MFA-ENROLLMENT-MONGO
+# AUTHORITY BOUNDARY: Disposable MongoDB enrollment integration test only.
+# TENANT POSTURE: Synthetic principal fixture only; no production tenant state is changed.
+# FAIL-CLOSED POSTURE: Transaction, challenge and factor invariants fail the integration suite on divergence.
+# FINANCIAL EXECUTION AUTHORITY: Kennel EOS exclusively.
+# END OF WILSY OS SOVEREIGN ARTIFACT
