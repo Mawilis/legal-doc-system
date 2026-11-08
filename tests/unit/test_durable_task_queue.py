@@ -123,3 +123,14 @@ def test_lease_renewal_is_fenced_by_live_owner_and_token():
     assert query["lease_token"] == "lease-a"
     assert query["lease_until"] == {"$gt": NOW}
     assert tasks.update_one.call_args.args[1]["$set"]["lease_until"] == NOW + timedelta(seconds=90)
+
+
+
+def test_claim_is_restricted_to_registered_engine_names():
+    tasks = Mock()
+    tasks.find_one_and_update.return_value = None
+    claim_next_task(tasks, worker_id="worker-a", lease_token="lease-a",
+                    now=NOW, engine_names=("COMPLIANCE_SCAN",))
+    assert tasks.find_one_and_update.call_args.args[0]["engine_name"] == {
+        "$in": ["COMPLIANCE_SCAN"]
+    }
