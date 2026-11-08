@@ -997,21 +997,30 @@ class ForensicMerkleAuditor {
 
   /**
    * @method listLocalAnchors
-   * @description Reads recent local anchor records for diagnostics and boardroom proof export.
-   * @param {number} limit - Maximum records to return.
-   * @returns {Promise<Array<Object>>} Recent anchor rows.
+   * @description Reads only the authenticated tenant's recent local anchor records.
+   * @param {Object} options - Required tenant scope and bounded result limit.
+   * @param {string} options.tenantId - Tenant established by authenticated middleware.
+   * @param {number} [options.limit=20] - Maximum records to return.
+   * @returns {Promise<Array<Object>>} Recent anchor rows for the exact tenant.
    */
-  async listLocalAnchors(limit = 20) {
+  async listLocalAnchors({ tenantId, limit = 20 } = {}) {
+    const authenticatedTenantId = String(tenantId || '').trim();
+    if (!authenticatedTenantId) {
+      throw new Error('FORENSIC_TENANT_SCOPE_REQUIRED');
+    }
+
     try {
       const raw = await fs.readFile(this.localAnchorPath, 'utf8');
       return raw
         .split('\n')
         .filter(Boolean)
-        .slice(-Math.min(Number(limit) || 20, 200))
         .map((line) => JSON.parse(line))
+        .filter((anchor) => anchor.tenantId === authenticatedTenantId)
+        .slice(-Math.min(Number(limit) || 20, 200))
         .reverse();
-    } catch {
-      return [];
+    } catch (error) {
+      if (error.code === 'ENOENT') return [];
+      throw error;
     }
   }
 
