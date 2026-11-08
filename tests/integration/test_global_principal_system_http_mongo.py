@@ -196,8 +196,15 @@ def system_http_mongo(monkeypatch: pytest.MonkeyPatch):
         )
         seed_session.commit_transaction()
 
+    class _VerifierCredentialRepository:
+        def get_by_principal(self, requested_principal_id, collection=None, *, session=None):
+            return PrincipalCredentialRepository.get_by_principal(
+                requested_principal_id, credentials, session=session
+            )
+
     verifier = GlobalPrincipalTotpVerifier(
         collection=factors,
+        credential_repository=_VerifierCredentialRepository(),
         decrypt_secret=lambda envelope, *, principal_id, credential_revision, expected_principal_id=principal_id: (
             SECRET if envelope == "test-envelope-only" and principal_id == expected_principal_id
             and credential_revision == 4 else ""
