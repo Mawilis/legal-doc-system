@@ -135,8 +135,10 @@ class ComplianceScanWorker:
             )
 
 
-def provision_compliance_scan_indexes(*, findings: Any, notification_outbox: Any) -> None:
+def provision_compliance_scan_indexes(*, clients: Any, findings: Any, notification_outbox: Any) -> None:
     """Explicit deployment-time indexes; never invoked at import."""
+    clients.create_index([("tenantId", 1), ("complianceStatus", 1), ("idExpiryDate", 1)],
+                         name="ix_compliance_expired_identity_scan")
     findings.create_index([("tenant_id", 1), ("finding_id", 1)], unique=True,
                           name="uq_compliance_finding_identity")
     notification_outbox.create_index([("tenant_id", 1), ("notification_id", 1)], unique=True,
