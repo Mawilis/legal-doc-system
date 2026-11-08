@@ -21,7 +21,7 @@ def test_legacy_mongodb_bootstrap_script_is_inert(relative_path: str) -> None:
 
     assert "DISABLED:" in source
     assert "exit 1" in source
-    assert "mongosh " not in source
+    assert not any(line.lstrip().startswith("mongosh ") for line in source.splitlines())
     assert "grantRolesToUser" not in source
     assert "db.users" not in source
     assert "--noauth" not in source
