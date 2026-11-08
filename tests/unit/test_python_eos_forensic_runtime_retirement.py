@@ -41,3 +41,11 @@ def test_forensic_ui_never_equates_root_presence_with_verified_chain():
     assert "Boolean(merkleRoot || receiptMerkleRoot)" not in source
     assert "No external framework attestation" in source
     assert "'LOCAL_APPEND_ONLY_PENDING_WORM'" not in source
+
+
+def test_node_bff_no_longer_renders_or_authorizes_pdf_locally():
+    source = (ROOT / "server/server.js").read_text(encoding="utf-8")
+    assert "generateSovereignArtifactPdf" not in source
+    assert "requireEosWorkspaceIdentity" not in source
+    assert "app.post('/api/generate/pdf'" not in source
+    assert "targetPrefix: '/api/generate/pdf'" in source
