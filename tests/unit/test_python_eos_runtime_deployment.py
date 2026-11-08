@@ -46,7 +46,7 @@ def test_repository_default_compose_uses_python_eos_service():
     source = (ROOT / "docker-compose.yml").read_text(encoding="utf-8")
     assert "dockerfile: Dockerfile" in source
     assert "wilsy-eos:" in source
-    assert "tools.eos" not in source
+    assert "tools.eos.runtime.worker_process" in source
     assert "node:" not in source.lower()
     assert "server/Dockerfile" not in source
 
