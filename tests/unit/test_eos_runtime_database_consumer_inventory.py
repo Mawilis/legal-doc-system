@@ -163,17 +163,15 @@ def test_business_registry_consumers_use_kernel_or_caller_owned_same_client_grap
 
 
 def test_legacy_node_backend_is_not_a_supported_runtime_entrypoint():
-    bff = (ROOT / "server/server.js").read_text(encoding="utf-8")
-    assert "Legacy Node BFF runtime is retired" in bff
-    assert "process.exitCode = 1" in bff
+    assert not (ROOT / "server/server.js").exists()
+    assert not (ROOT / "server/ecosystem.config.js").exists()
+    assert not (ROOT / "server/deploy.sh").exists()
 
-    pm2 = (ROOT / "server/ecosystem.config.js").read_text(encoding="utf-8")
-    assert "apps: []" in pm2
-    assert "script:" not in pm2
-
-    deploy = (ROOT / "server/deploy.sh").read_text(encoding="utf-8")
-    assert "legacy Node deployment path has been retired" in deploy
-    assert "exit 1" in deploy
+    for pm2_path in ("server/pm2.config.js", "server/pm2.config.mjs"):
+        pm2 = (ROOT / pm2_path).read_text(encoding="utf-8")
+        assert "apps: []" in pm2
+        assert "script:" not in pm2
+        assert "deploy: {}" in pm2
 
     server_package = json.loads((ROOT / "server/package.json").read_text(encoding="utf-8"))
     assert not {"start", "dev", "predev"}.intersection(server_package["scripts"])
