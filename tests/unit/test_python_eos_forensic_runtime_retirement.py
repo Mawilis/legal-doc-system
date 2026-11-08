@@ -40,7 +40,8 @@ def test_forensic_ui_never_equates_root_presence_with_verified_chain():
     assert "chain.verified === true || run.verified === true || status.verified === true" in source
     assert "Boolean(merkleRoot || receiptMerkleRoot)" not in source
     assert "No external framework attestation" in source
-    assert "'LOCAL_APPEND_ONLY_PENDING_WORM'" not in source
+    assert "key.includes('LOCAL_APPEND_ONLY_PENDING_WORM')" in source
+    assert "return 'Append-only seal pending'" in source
 
 
 def test_node_bff_no_longer_renders_or_authorizes_pdf_locally():
