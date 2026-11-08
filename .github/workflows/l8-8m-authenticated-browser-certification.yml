@@ -106,6 +106,12 @@ jobs:
       - name: Checkout exact commit
         uses: actions/checkout@v4
 
+      - name: Initialize certification evidence workspace
+        if: always()
+        run: |
+          mkdir -p certification-diagnostics/logs test-results playwright-report
+          printf '%s\\n' "Certification evidence workspace initialized." > certification-diagnostics/logs/workflow-setup.log
+
       - name: Setup Python
         uses: actions/setup-python@v5
         with:
@@ -284,16 +290,60 @@ jobs:
           BROWSER_CERT_MONGO_URI="mongodb://127.0.0.1:27017/wilsy_l8_8m_r3_broad_${browser_cert_database_suffix}?replicaSet=wilsyVendorCertRS" \
             node tests/e2e/run-browser-cert.mjs --grep-invert "certifies SYSTEM incident queue|does not expose responder inbox|certifies initial tenant-neutral SYSTEM credentials|certifies independent request, rejection, approval"
 
-      - name: Upload authenticated browser traces and diagnostics
+      - name: Assemble exact-head certification evidence bundle
+        if: always()
+        env:
+          CERTIFICATION_JOB_STATUS: ${{ job.status }}
+        run: |
+          set -eu
+          mkdir -p certification-diagnostics/logs test-results playwright-report
+          {
+            echo "workflow=L8-8M Authenticated Browser and D21B13 Branding Certification"
+            echo "repository=${GITHUB_REPOSITORY}"
+            echo "commit_sha=$(git rev-parse HEAD)"
+            echo "ref=${GITHUB_REF}"
+            echo "run_id=${GITHUB_RUN_ID}"
+            echo "run_attempt=${GITHUB_RUN_ATTEMPT}"
+            echo "job_status=${CERTIFICATION_JOB_STATUS}"
+            echo "event=${GITHUB_EVENT_NAME}"
+            echo "runner_os=${RUNNER_OS}"
+            echo "captured_at_utc=$(date -u +%Y-%m-%dT%H:%M:%SZ)"
+          } > certification-diagnostics/manifest.txt
+          git status --short --branch > certification-diagnostics/git-status.txt || true
+          find test-results playwright-report -type f -print | sort > certification-diagnostics/output-files.txt
+          {
+            echo "Required evidence validation:"
+            for required in logs/client-lifecycle.log logs/eos-api-transport.log logs/d21b13-real-mongo.log logs/browser-system.log logs/browser-broad.log; do
+              if [ -s "certification-diagnostics/$required" ]; then echo "PRESENT $required"; else echo "MISSING $required"; fi
+            done
+            for required in test-results/d21b13-branding-real-mongo.xml test-results/playwright-junit.xml playwright-report/index.html; do
+              if [ -s "$required" ]; then echo "PRESENT $required"; else echo "MISSING $required"; fi
+            done
+          } > certification-diagnostics/evidence-validation.txt
+
+      - name: Validate required certification evidence
+        if: always()
+        run: |
+          set -eu
+          test -s certification-diagnostics/manifest.txt
+          test -s certification-diagnostics/evidence-validation.txt
+          if grep -q '^MISSING ' certification-diagnostics/evidence-validation.txt; then
+            cat certification-diagnostics/evidence-validation.txt
+            echo "CERTIFICATION_EVIDENCE_INCOMPLETE"
+            exit 1
+          fi
+
+      - name: Upload authenticated browser traces, reports and certification evidence
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: l8-8m-browser-diagnostics-${{ github.run_id }}
+          name: l8-8m-certification-evidence-${{ github.run_id }}-attempt-${{ github.run_attempt }}-${{ github.sha }}
           path: |
+            certification-diagnostics/
             test-results/
             playwright-report/
-          if-no-files-found: ignore
-          retention-days: 7
+          if-no-files-found: error
+          retention-days: 30
 
       - name: Stop disposable Mongo replica sets
         if: always()
