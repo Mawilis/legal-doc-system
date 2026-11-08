@@ -32,20 +32,11 @@ on:
     paths:
       - "infra/aws/eos-production-ecs-foundation.yaml"
       - "infra/aws/README-global-principal-mfa-kms.md"
-      - "tools/eos/auth/ecs_production_workload_identity_probe.py"
-      - "tests/unit/test_ecs_production_workload_identity_probe.py"
-      - "docs/operations/eos-production-provisioning-prerequisite-register.md"
       - "infra/docker/Dockerfile.eos"
       - "tools/eos/auth/ecs_production_workload_identity_probe.py"
       - "tests/unit/test_ecs_production_workload_identity_probe.py"
-      - "docs/operations/eos-production-provisioning-prerequisite-register.md"
       - "tests/unit/test_eos_production_ecs_foundation.py"
-      - "tools/eos/auth/ecs_production_workload_identity_probe.py"
-      - "tests/unit/test_ecs_production_workload_identity_probe.py"
-      - "docs/operations/eos-production-provisioning-prerequisite-register.md"
       - "docs/operations/eos-production-ecs-fargate-foundation.md"
-      - "tools/eos/auth/ecs_production_workload_identity_probe.py"
-      - "tests/unit/test_ecs_production_workload_identity_probe.py"
       - "docs/operations/eos-production-provisioning-prerequisite-register.md"
       - ".github/workflows/eos-image-publication.yml"
       - ".github/workflows/eos-ecs-production-foundation-certification.yml"
@@ -58,19 +49,12 @@ on:
       - "infra/docker/Dockerfile.eos"
       - "tools/eos/auth/ecs_production_workload_identity_probe.py"
       - "tests/unit/test_ecs_production_workload_identity_probe.py"
-      - "docs/operations/eos-production-provisioning-prerequisite-register.md"
       - "tests/unit/test_eos_production_ecs_foundation.py"
-      - "tools/eos/auth/ecs_production_workload_identity_probe.py"
-      - "tests/unit/test_ecs_production_workload_identity_probe.py"
-      - "docs/operations/eos-production-provisioning-prerequisite-register.md"
       - "docs/operations/eos-production-ecs-fargate-foundation.md"
-      - "tools/eos/auth/ecs_production_workload_identity_probe.py"
-      - "tests/unit/test_ecs_production_workload_identity_probe.py"
       - "docs/operations/eos-production-provisioning-prerequisite-register.md"
       - ".github/workflows/eos-image-publication.yml"
       - ".github/workflows/eos-ecs-production-foundation-certification.yml"
   workflow_dispatch:
-
 permissions:
   contents: read
 
@@ -106,19 +90,23 @@ jobs:
               infra/aws/eos-production-ecs-foundation.yaml \
               infra/aws/README-global-principal-mfa-kms.md \
               infra/docker/Dockerfile.eos \
+              tools/eos/auth/ecs_production_workload_identity_probe.py \
+              tests/unit/test_ecs_production_workload_identity_probe.py \
               tests/unit/test_eos_production_ecs_foundation.py \
               docs/operations/eos-production-ecs-fargate-foundation.md \
               docs/operations/eos-production-provisioning-prerequisite-register.md \
-              tools/eos/auth/ecs_production_workload_identity_probe.py \
-              tests/unit/test_ecs_production_workload_identity_probe.py \
               .github/workflows/eos-image-publication.yml \
               .github/workflows/eos-ecs-production-foundation-certification.yml
           else
             git diff --check "${GITHUB_EVENT_BEFORE}...HEAD" -- \
               infra/aws/eos-production-ecs-foundation.yaml \
+              infra/aws/README-global-principal-mfa-kms.md \
               infra/docker/Dockerfile.eos \
+              tools/eos/auth/ecs_production_workload_identity_probe.py \
+              tests/unit/test_ecs_production_workload_identity_probe.py \
               tests/unit/test_eos_production_ecs_foundation.py \
               docs/operations/eos-production-ecs-fargate-foundation.md \
+              docs/operations/eos-production-provisioning-prerequisite-register.md \
               .github/workflows/eos-image-publication.yml \
               .github/workflows/eos-ecs-production-foundation-certification.yml
           fi
