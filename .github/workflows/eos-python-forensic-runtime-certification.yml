@@ -18,7 +18,8 @@ on:
       - "client/vite.config.js"
       - "tests/unit/test_forensic_merkle_registry.py"
       - "tests/unit/test_forensic_merkle_router.py"
-      - "tests/unit/test_python_eos_forensic_runtime_retirement.py tests/unit/test_artifact_pdf_router.py"
+      - "tests/unit/test_python_eos_forensic_runtime_retirement.py"
+      - "tests/unit/test_artifact_pdf_router.py"
       - ".github/workflows/eos-python-forensic-runtime-certification.yml"
   push:
     branches:
@@ -27,6 +28,11 @@ on:
       - "tools/eos/api/forensic_merkle_router.py"
       - "tools/eos/security/forensic_merkle_registry.py"
       - "tools/eos/api/server.py"
+      - "tools/eos/api/artifact_pdf_router.py"
+      - "server/server.js"
+      - "requirements.txt"
+      - "tests/unit/test_python_eos_forensic_runtime_retirement.py"
+      - "tests/unit/test_artifact_pdf_router.py"
       - "server/app.js"
       - "server/routes/api.js"
       - "server/routes/forensicRoutes.js"
@@ -65,4 +71,4 @@ jobs:
           python -m py_compile tools/eos/security/forensic_merkle_registry.py tools/eos/api/forensic_merkle_router.py tools/eos/api/artifact_pdf_router.py tools/eos/api/server.py
       - name: Run forensic registry and authenticated route tests
         run: |
-          python -m pytest -q tests/unit/test_forensic_merkle_registry.py tests/unit/test_forensic_merkle_router.py tests/unit/test_python_eos_forensic_runtime_retirement.py
+          python -m pytest -q tests/unit/test_forensic_merkle_registry.py tests/unit/test_forensic_merkle_router.py tests/unit/test_python_eos_forensic_runtime_retirement.py tests/unit/test_artifact_pdf_router.py
