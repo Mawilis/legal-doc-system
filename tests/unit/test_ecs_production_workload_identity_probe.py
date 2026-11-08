@@ -1,11 +1,12 @@
 # TITLE: WILSY EOS Production ECS Workload Identity Probe Tests
-# VERSION: v1.0.0-ECS-PRODUCTION-WORKLOAD-IDENTITY-PROBE-TESTS
+# VERSION: v1.0.1-ECS-PRODUCTION-CLUSTER-PIN-TESTS
 # AUTHORITY: Unit certification of production ECS identity-verification logic only.
 # EPITOME: Prove fail-closed metadata endpoint, task ARN, exact STS role and production boundary validation without contacting AWS.
 # ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/tests/unit/test_ecs_production_workload_identity_probe.py
 # COLLABORATION / OWNERSHIP: Wilsy OS Core Engineering; isolated unit certification.
 # CERTIFICATION OR UPDATE DATE: 2026-11-09
 # CHANGELOG:
+#   v1.0.1 verifies exact cluster/task-family binding and positive task revision.
 #   v1.0.0 establishes deterministic unit coverage for the production ECS
 #   workload identity verifier and rejects non-production or alternate roles.
 # COMPLIANCE: AGENTS.md v1.2.0-SOVEREIGN-LEGAL-OPERATIONS-CONSTITUTION.
@@ -194,7 +195,7 @@ def test_sts_identity_rejects_wrong_account(monkeypatch):
 
 
 # ARTIFACT: tests/unit/test_ecs_production_workload_identity_probe.py
-# VERSION: v1.0.0-ECS-PRODUCTION-WORKLOAD-IDENTITY-PROBE-TESTS
+# VERSION: v1.0.1-ECS-PRODUCTION-CLUSTER-PIN-TESTS
 # AUTHORITY BOUNDARY: Synthetic unit tests only; no AWS, task launch or KMS calls.
 # TENANT POSTURE: No tenant, principal, membership, session or database data is accessed or changed.
 # FAIL-CLOSED POSTURE: Unsafe metadata endpoints and non-production task identities must be rejected.
