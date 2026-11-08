@@ -5,7 +5,7 @@ ROOT = Path(__file__).resolve().parents[2]
 
 def test_canonical_container_image_runs_python_eos_without_node_runtime():
     source = (ROOT / "Dockerfile.eos").read_text(encoding="utf-8")
-    assert "FROM python:3.14-slim" in source
+    assert "FROM python:3.12-slim" in source
     assert "tools.eos.api.server:app" in source
     assert 'CMD ["python", "-m", "uvicorn"' in source
     assert "FROM node:" not in source
