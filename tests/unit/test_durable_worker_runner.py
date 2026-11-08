@@ -24,6 +24,9 @@ class SuccessfulWorker:
     engine_name = "DOCUMENT_VERIFY"
 
     async def execute(self, task_id, payload):
+        assert payload["__eos_task_context"]["tenant_id"] == "tenant-a"
+        assert payload["__eos_task_context"]["task_id"] == task_id
+        assert payload["data"] == {"evidence_ref": "opaque"}
         return WorkerResultDTO(task_id=task_id, status=WorkerExecutionStatusEnum.SUCCESS,
                                execution_duration_ms=3.0, output={"verified": True})
 
