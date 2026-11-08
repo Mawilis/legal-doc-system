@@ -590,6 +590,9 @@ class InstitutionalSourceSigningKeyLifecycleRegistry:
         key = _identifier("key_id", key_id)
         at = _instant("evaluated_at", evaluated_at)
         try:
+            self._verify_event_chain(
+                source_system_id=source, key_id=key, session=session,
+            )
             record = self._keys.find_one(
                 {"source_system_id": source, "key_id": key}, session=session
             )
