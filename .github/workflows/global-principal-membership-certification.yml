@@ -46,6 +46,7 @@ on:
       - "tools/eos/auth/global_principal_system_session_authority.py"
       - "tools/eos/auth/global_principal_totp_verifier.py"
       - "tools/eos/auth/global_principal_mfa_kms_envelope.py"
+      - "tools/eos/auth/global_principal_mfa_kms_probe.py"
       - "infra/aws/global-principal-mfa-kms.yaml"
       - "infra/aws/global-principal-mfa-kms-local-development.yaml"
       - "infra/aws/README-global-principal-mfa-kms.md"
