@@ -44,7 +44,6 @@ import os from 'os';
 
 // 🏛 ROUTING CONTROLLERS
 import crmCommandRoutes from './routes/crmCommandRoutes.js';
-import { generateSovereignArtifactPdf } from './controllers/businessArtifactPdfController.js';
 
 // 🏛 SOVEREIGN IMPORTS & MIDDLEWARE
 import { tenantContext } from './middleware/tenantContext.js';
@@ -257,12 +256,6 @@ const corsMiddleware = (req, res, next) => {
 };
 
 app.use(corsMiddleware);
-
-/**
- * @route POST /api/generate/pdf
- * @description Scoped DB‑free branded artifact ingress mounted immediately after CORS.
- */
-app.post('/api/generate/pdf', express.json({ limit: '10mb' }), generateSovereignArtifactPdf);
 
 // ============================================================================
 // 🛡 PUBLIC HEALTH PROBES (BYPASS AUTH & RATE LIMITING)
