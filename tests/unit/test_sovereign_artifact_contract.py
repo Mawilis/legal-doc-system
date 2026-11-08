@@ -1,7 +1,7 @@
 """WILSY OS sovereign artifact-contract regression tests.
 
 TITLE: Sovereign Artifact Header, Version, Changelog and Seal Guard
-VERSION: v1.0.8-WILSY-SOVEREIGN-ARTIFACT-CONTRACT-GUARD
+VERSION: v1.0.9-WILSY-SOVEREIGN-ARTIFACT-CONTRACT-GUARD
 AUTHORITY: Wilsy OS Core Governance
 EPITOME: Prevents the corrected Kennel EOS runbook and forensic inventory from
          losing their required sovereign header, version agreement, changelog,
@@ -12,8 +12,8 @@ COLLABORATION / OWNERSHIP:
     Python EOS governance tests; artifact owners retain source authority.
 CERTIFICATION / UPDATE DATE: 2026-11-08
 CHANGELOG:
-    v1.0.8-WILSY-SOVEREIGN-ARTIFACT-CONTRACT-GUARD simplifies and hardens
-    the CI path-coverage assertions for legacy runtime surfaces.
+    v1.0.9-WILSY-SOVEREIGN-ARTIFACT-CONTRACT-GUARD asserts deleted Node
+    orchestrators stay absent and retired shell launchers stay fail-closed.
     v1.0.6-WILSY-SOVEREIGN-ARTIFACT-CONTRACT-GUARD certified retired launchers.
     v1.0.5-WILSY-SOVEREIGN-ARTIFACT-CONTRACT-GUARD tracked the expanded inventory.
     v1.0.4-WILSY-SOVEREIGN-ARTIFACT-CONTRACT-GUARD audited deployment documentation.
@@ -45,7 +45,7 @@ ROOT = Path(__file__).resolve().parents[2]
 ARTIFACTS = (
     (
         ROOT / "tests/unit/test_sovereign_artifact_contract.py",
-        "v1.0.8-WILSY-SOVEREIGN-ARTIFACT-CONTRACT-GUARD",
+        "v1.0.9-WILSY-SOVEREIGN-ARTIFACT-CONTRACT-GUARD",
     ),
     (
         ROOT / "DEPLOYMENT.md",
@@ -85,7 +85,7 @@ ARTIFACTS = (
     ),
     (
         ROOT / "docs/architecture/eos-runtime-database-consumer-inventory.md",
-        "v2.7.0-KENNEL-EOS-LEGACY-NODE-FORENSIC-INVENTORY",
+        "v2.8.0-KENNEL-EOS-LEGACY-NODE-FORENSIC-INVENTORY",
     ),
 )
 REQUIRED_HEADER_MARKERS = (
@@ -241,8 +241,27 @@ def test_runtime_inventory_workflow_covers_legacy_service_and_deployment_surface
         assert required in content, f"Runtime inventory workflow omits {required}"
 
 
+def test_deleted_root_node_orchestrators_remain_absent() -> None:
+    """Prevent unreferenced Node process generators from returning.
+
+    Tenant scope: none. Mutation and persistence: none. Idempotency and
+    transaction ownership: not applicable. Fail-closed: recreation of any
+    deleted orchestrator fails this test. Financial authority: none.
+    """
+    deleted_paths = (
+        "repair_launcher.js",
+        "build_orchestrator.js",
+        "update_orchestrator.js",
+        "bootstrap_wilsy_os.js",
+    )
+    for relative_path in deleted_paths:
+        assert not (ROOT / relative_path).exists(), (
+            f"Retired Node orchestrator was recreated: {relative_path}"
+        )
+
+
 # ARTIFACT: test_sovereign_artifact_contract.py
-# VERSION: v1.0.8-WILSY-SOVEREIGN-ARTIFACT-CONTRACT-GUARD
+# VERSION: v1.0.9-WILSY-SOVEREIGN-ARTIFACT-CONTRACT-GUARD
 # AUTHORITY BOUNDARY: structural governance tests only.
 # TENANT POSTURE: no tenant access or authority.
 # FAIL-CLOSED POSTURE: missing, divergent, or unsealed artifact metadata fails.
