@@ -1,11 +1,14 @@
 # TITLE: WILSY EOS Global Principal MFA — AWS KMS Operations and Hosting Binding
-# VERSION: v1.0.3-EOS-GLOBAL-PRINCIPAL-MFA-KMS-OPERATIONS
+# VERSION: v1.0.4-EOS-GLOBAL-PRINCIPAL-MFA-KMS-OPERATIONS
 # AUTHORITY: Wilsy OS Core Governance; cryptographic infrastructure operations guidance.
 # EPITOME: Define the canonical Python EOS MFA KMS contract, distinguish local-development and selected ECS production identities, and preserve fail-closed provisioning and runtime certification gates.
 # ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/infra/aws/README-global-principal-mfa-kms.md
 # COLLABORATION / OWNERSHIP: Wilsy OS Core Engineering; Python EOS owns MFA factor, identity, session and tenant truth.
 # CERTIFICATION OR UPDATE DATE: 2026-11-09
 # CHANGELOG:
+#   v1.0.4-EOS-GLOBAL-PRINCIPAL-MFA-KMS-OPERATIONS adds the concrete ECS
+#   task image, ephemeral storage and liveness/readiness constraints to the
+#   selected production architecture section.
 #   v1.0.3-EOS-GLOBAL-PRINCIPAL-MFA-KMS-OPERATIONS records the exact
 #   published Python EOS Dockerfile, ephemeral task-volume boundary and
 #   liveness-versus-readiness distinction for the ECS target.
@@ -102,6 +105,10 @@ It defines:
 
 The template creates no ECS service, running task, VPC, subnet, security group, NAT gateway, load balancer, certificate, DNS record, Atlas network access entry, database user or secret value. It is not a production deployment.
 
+The exact image build definition is `infra/docker/Dockerfile.eos`; the ECS foundation CI builds that image without publishing it. The image prepares UID/GID `10001`-owned mount points for `/app/data`, `/app/reports`, `/var/log/wilsy-os` and `/tmp`. The task definition mounts task-scoped empty volumes at those paths. They are ephemeral scratch space, not durable storage. No legal document, evidence object or other durable business record may rely on these task volumes; durable artifacts remain with canonical EOS storage authorities. Actual mounted-volume write access still requires controlled task-level verification.
+
+The task's container health check calls the EOS root route (`/`). It is a bounded liveness/composition response, not proof of MongoDB readiness, production data access or complete application readiness. A dedicated production readiness contract and load-balancer health policy remain future service-design gates.
+
 The separate existing key-administrator role, private GHCR credential secret and production-only MongoDB URI secret are required inputs. Secret values must never be committed or supplied as plaintext CloudFormation parameters. The production Atlas target, dedicated database user, network path, backups and restore evidence remain independent blockers. Networking, HTTPS ingress, DNS, Atlas connectivity, service activation and actual task launch require separately reviewed infrastructure work and approval.
 
 ### Production provisioning gates
@@ -153,7 +160,7 @@ The earlier EKS proposal assumed the exact subject `system:serviceaccount:<names
 This guide does not provision AWS resources, create change sets, launch tasks, deploy services, modify MongoDB, change DNS, merge PR #398, alter MFA factors or enforce production login cutover. Each remains subject to independent evidence and explicit approval.
 
 # ARTIFACT: infra/aws/README-global-principal-mfa-kms.md
-# VERSION: v1.0.3-EOS-GLOBAL-PRINCIPAL-MFA-KMS-OPERATIONS
+# VERSION: v1.0.4-EOS-GLOBAL-PRINCIPAL-MFA-KMS-OPERATIONS
 # AUTHORITY BOUNDARY: KMS architecture and operational guidance only; no provisioning or workload activation.
 # TENANT POSTURE: No tenant, principal, membership, session or database records are created or mutated.
 # FAIL-CLOSED POSTURE: Local and production identities remain isolated; unverified hosting and infrastructure dependencies block production certification.
