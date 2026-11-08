@@ -26,3 +26,17 @@ def test_application_does_not_mount_forensics_around_the_protected_api_nexus() -
     assert "import forensicRoutes from './routes/forensicRoutes.js';" not in source
     assert "app.use('/api/forensics', forensicRoutes);" not in source
     assert "app.use('/api', routes);" in source
+
+
+def test_forensic_handlers_use_only_the_authenticated_tenant_scope() -> None:
+    source = (ROOT / "server/routes/forensicRoutes.js").read_text(encoding="utf-8")
+
+    assert "router.use(requireForensicTenantScope);" in source
+    assert "req.forensicTenantId" in source
+    assert "normalizeTenantId(" not in source
+    assert "req.query.tenantId ||" not in source
+    assert "req.body?.tenantId ||" not in source
+    assert "req.headers['x-tenant-id'] ||" not in source
+    assert "$in: aliases" not in source
+    assert "GLOBAL_ROOT', 'WILSY_ROOT', 'WILSY_GLOBAL_ROOT" not in source
+    assert "listLocalAnchors({\n    tenantId: req.forensicTenantId," in source
