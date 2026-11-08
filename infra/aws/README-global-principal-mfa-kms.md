@@ -46,13 +46,17 @@
 3. IAM role `wilsy-eos-global-mfa-runtime`, trusting only the supplied EKS
    OIDC provider and exact `system:serviceaccount:<namespace>:wilsy-eos-api`
    subject.
-4. Runtime identity and key-policy grants limited to `kms:Encrypt` and
-   `kms:Decrypt` on this key, with
+4. A direct key-policy grant of `kms:Encrypt` and `kms:Decrypt` to the
+   exact `wilsy-eos-global-mfa-runtime` role ARN, conditioned on
    `kms:EncryptionContext:purpose=GLOBAL_PRINCIPAL_TOTP`.
 
-Key administration is a separate existing role parameter; it is not granted to
-the EOS runtime. The stack creates no users, access keys, static credentials,
-MongoDB resources, production sessions, or MFA factor data.
+The key policy does not enable account-wide IAM delegation. The key resource
+depends on the runtime role so that the exact role principal exists before KMS
+validates the key policy. The runtime role has no duplicate inline KMS policy;
+the key policy is the sole data-plane grant. Key administration is a separate
+existing role parameter and receives administration actions only. The stack
+creates no users, access keys, static credentials, MongoDB resources,
+production sessions, or MFA factor data.
 
 ## Mandatory pre-deployment proof
 
