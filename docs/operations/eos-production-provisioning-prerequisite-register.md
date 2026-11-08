@@ -1,11 +1,14 @@
 # TITLE: WILSY EOS Production Provisioning Prerequisite and Evidence Register
-# VERSION: v1.0.1-EOS-PRODUCTION-ECS-IDENTITY-REGISTER
+# VERSION: v1.0.2-EOS-PRODUCTION-READONLY-DISCOVERY
 # AUTHORITY: Wilsy OS Core Governance; evidence register and provisioning gate definition only.
 # EPITOME: Track verified facts, missing evidence, accountable approvals and exact exit criteria before any production ECS foundation provisioning or workload activation.
 # ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/docs/operations/eos-production-provisioning-prerequisite-register.md
 # COLLABORATION / OWNERSHIP: Wilsy OS Core Engineering; AWS platform, database, security and service owners provide evidence within their authority.
 # CERTIFICATION OR UPDATE DATE: 2026-11-09
 # CHANGELOG:
+#   v1.0.2 records the expanded read-only discovery coverage for secret
+#   metadata, KMS aliases, network primitives, ingress target groups, ACM and
+#   Route 53. Secret values remain excluded from discovery.
 #   v1.0.1 pins the production verifier contract to the exact ECS cluster,
 #   task family and positive task-definition revision.
 #   v1.0.0 establishes a fail-closed evidence register for the selected ECS
@@ -103,7 +106,7 @@ A zero exit status proves the task metadata, exact task role and synthetic KMS c
 
 ## Current milestone outcome
 
-- The intended AWS account and region are recorded from read-only discovery.
+- The intended AWS account and region are recorded from read-only discovery. The read-only inventory script now reports candidate secret metadata, KMS aliases, VPC/subnet/security-group/NAT/VPC endpoint inventory, load-balancer target groups, ACM certificates and Route 53 hosted zones without reading secret values.
 - The ECS foundation now injects the exact expected task-role ARN into the task environment.
 - The production-only verifier and synthetic unit tests are added to the repository; the verifier pins the approved ECS cluster, task family and positive revision.
 - The operations runbook distinguishes the production verifier from the local-development probe.
@@ -111,7 +114,7 @@ A zero exit status proves the task metadata, exact task role and synthetic KMS c
 - No AWS resource has been created, no CloudFormation change set has been executed, no ECS task has been launched, no production deployment or DNS change has occurred, no database has been mutated, no PR has been merged, and no MFA factor/enforcement change has been made.
 
 # ARTIFACT: docs/operations/eos-production-provisioning-prerequisite-register.md
-# VERSION: v1.0.1-EOS-PRODUCTION-ECS-IDENTITY-REGISTER
+# VERSION: v1.0.2-EOS-PRODUCTION-READONLY-DISCOVERY
 # AUTHORITY BOUNDARY: Evidence tracking and release-gate documentation only; no provisioning or production activation.
 # TENANT POSTURE: No tenant, principal, membership, session or database records are created or changed.
 # FAIL-CLOSED POSTURE: Unverified dependencies remain blockers; only independently reviewable evidence closes a prerequisite.
