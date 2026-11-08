@@ -117,6 +117,7 @@ def system_http_mongo(monkeypatch: pytest.MonkeyPatch):
     assignment_collection = database[f"{ASSIGNMENT_COLLECTION}_cert_{suffix}"]
     assignments = SystemPermissionAssignmentRegistry(assignment_collection)
     workforce = database[f"{workforce_registry.COLLECTION_NAME}_cert_{suffix}"]
+    memberships = database[f"tenant_memberships_cert_{suffix}"]
 
     PrincipalAuthorityRepository.ensure_indexes(principals)
     PrincipalCredentialRepository.ensure_indexes(credentials)
@@ -237,6 +238,41 @@ def system_http_mongo(monkeypatch: pytest.MonkeyPatch):
         auth_router, "authenticate_global_principal", _authenticate_isolated
     )
 
+    # The real membership projection must read this fixture's principal and
+    # membership collections. An empty isolated membership set deliberately
+    # exercises the separately-authorized SYSTEM workspace login path.
+    from tools.eos.auth.tenant_membership_repository import (
+        TenantMembershipRepository,
+    )
+    from tools.eos.auth.membership_selection_projection import (
+        build_membership_selection_page as _build_membership_selection_page,
+    )
+
+    class _MembershipRepository:
+        def list_for_principal(
+            self, requested_principal_id, *, after_tenant_id=None, limit=50, session=None
+        ):
+            return TenantMembershipRepository.list_for_principal(
+                requested_principal_id,
+                memberships,
+                after_tenant_id=after_tenant_id,
+                limit=limit,
+                session=session,
+            )
+
+    def _build_membership_selection_page_isolated(**kwargs):
+        return _build_membership_selection_page(
+            **kwargs,
+            principal_repository=_PrincipalRepository(),
+            membership_repository=_MembershipRepository(),
+        )
+
+    monkeypatch.setattr(
+        auth_router,
+        "build_membership_selection_page",
+        _build_membership_selection_page_isolated,
+    )
+
     # Route all MFA and SYSTEM session persistence through this fixture's
     # isolated collections; do not change production collection names.
     monkeypatch.setattr(
@@ -286,7 +322,7 @@ def system_http_mongo(monkeypatch: pytest.MonkeyPatch):
     finally:
         for collection in (
             principals, credentials, factors, challenges, sessions, refresh_tokens,
-            assignment_collection, workforce,
+            assignment_collection, workforce, memberships,
             database[f"{CASE_COLLECTION}_cert_{suffix}"],
             database[f"{EVENT_COLLECTION}_cert_{suffix}"],
         ):
