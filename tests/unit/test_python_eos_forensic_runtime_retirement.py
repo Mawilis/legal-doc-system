@@ -44,9 +44,14 @@ def test_forensic_ui_never_equates_root_presence_with_verified_chain():
     assert "return 'Append-only seal pending'" in source
 
 
-def test_node_bff_no_longer_renders_or_authorizes_pdf_locally():
-    source = (ROOT / "server/server.js").read_text(encoding="utf-8")
-    assert "generateSovereignArtifactPdf" not in source
-    assert "requireEosWorkspaceIdentity" not in source
-    assert "app.post('/api/generate/pdf'" not in source
-    assert "targetPrefix: '/api/generate/pdf'" in source
+def test_legacy_express_apps_do_not_render_pdf_and_transport_targets_python_eos():
+    app_source = (ROOT / "server/app.js").read_text(encoding="utf-8")
+    transport_source = (ROOT / "server/server.js").read_text(encoding="utf-8")
+
+    assert "businessArtifactPdfController" not in app_source
+    assert "generateSovereignArtifactPdf" not in app_source
+    assert "app.post('/api/generate/pdf'" not in app_source
+    assert "app.use(\n    '/api/generate/pdf'" in transport_source
+    assert "targetPrefix: '/api/generate/pdf'" in transport_source
+    assert "generateSovereignArtifactPdf" not in transport_source
+    assert "requireEosWorkspaceIdentity" not in transport_source
