@@ -42,6 +42,7 @@ def register_compliance_scan_worker(
         clients=database[CLIENTS_COLLECTION],
         findings=database[COMPLIANCE_FINDINGS_COLLECTION],
         notification_outbox=database[NOTIFICATION_OUTBOX_COLLECTION],
+        tasks=database[TASK_COLLECTION],
         mongo_client=mongo_client,
     )
     registry.register_worker(worker)
