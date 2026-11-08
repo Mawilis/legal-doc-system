@@ -137,3 +137,38 @@ This is a **critical repository-wide IAM/security blocker** for production trust
 5. Retention, independent export, backup/restore verification and integrity alerting remain unproven.
 
 **Disposition:** the registry append-integrity finding is resolved and certified. The denial-audit and protected-storage gates remain open. The legacy bootstrap scripts are a separate critical repository-wide blocker. Keep PR #393 draft and unmerged; do not activate production trust.
+
+
+## Resolution update — denial audit chain and route integration
+
+**Certified head:** `311807255a07a348db472eae0e4113a16b429eee`
+
+The route-local denial recorder now delegates to the registry's tenant-partitioned denial audit chain rather than inserting unsealed records directly.
+
+Implemented controls:
+- Dedicated denial audit-head collection, unique tenant/head index and unique tenant/sequence index.
+- Each denial record includes a monotonic tenant sequence, previous-event hash and canonical event hash.
+- Every denial append verifies the complete existing tenant chain and current head before writing.
+- Head advancement and denial insertion share the same caller-owned MongoDB transaction.
+- A real-replica-set tampering test changes an earlier denial and proves a subsequent append is rejected without moving the head.
+- The authenticated route test verifies successive route denials are chained and that evidence references/request bodies remain excluded.
+- Denial timestamps are normalized to MongoDB's millisecond precision before hashing. The route integration test exposed and drove this correction; sub-millisecond timestamp precision must not make a newly persisted event fail its next read-time integrity check.
+- Audit-write failure preserves the original authorization/command denial and emits bounded structured failure metadata, including a sanitized stable registry code.
+
+### Exact-head certification
+
+- Institutional Signed-Offer Verification: **448 passed, 12 warnings, 0 failed** on a real MongoDB replica set.
+- New denial-chain tampering test passed.
+- New multi-denial authenticated route-chain assertions passed.
+- All **16 applicable workflows succeeded** on this exact head. One superseded Repository Integrity run was cancelled by concurrency control; the current run succeeded.
+
+## Remaining open controls
+
+1. **Protected storage / independent sink:** hash chains detect accidental or unauthorized edits only while the head is protected. The API runtime still needs a design where its ordinary database identity cannot rewrite both evidence and the integrity anchor. A separate audit writer or independently protected sink is required; do not treat a same-database hash chain as sufficient protection against a compromised application credential.
+2. **Durable audit-write failure recovery:** structured logging is now present, but no durable out-of-band failure queue or reconciliation consumer is established. A database outage must not silently erase the fact that denial audit persistence failed.
+3. **Pre-handler IAM denial persistence:** the canonical authorization terminal observer still emits a bounded application log. No repository-wide durable IAM-denial outbox was found. Add a governed outbox or independently protected telemetry path without changing the IAM verdict or creating a parallel authorization authority.
+4. **Operational role and retention proof:** no deployment-ready custom MongoDB role policy, independent export, retention enforcement, backup/restore verification or integrity alerting has been certified. The application identity must not be able to rewrite audit evidence and its integrity anchor.
+
+The separate legacy bootstrap hardening is tracked in draft PR #394. It disables four self-authorizing/privileged bootstrap scripts and has a dedicated fail-closed test workflow. The exposed historical credential still requires environment-by-environment rotation/revocation and authentication-log investigation; repository edits do not erase Git history or change live database users.
+
+**Disposition:** denial records are now tamper-evident within the application-level chain and fully route-tested. Protected storage, independent recovery and pre-handler IAM audit persistence remain production blockers. PR #393 stays draft and unmerged.
