@@ -46,8 +46,8 @@ def test_runtime_and_execution_roles_have_separate_authorities():
         "  EosProductionMfaKey:", 1
     )[0]
     assert "ecs-tasks.amazonaws.com" in runtime_role
-    assert "kms:Encrypt" in runtime_role
-    assert "kms:Decrypt" in runtime_role
+    assert "kms:Encrypt" not in runtime_role
+    assert "kms:Decrypt" not in runtime_role
     assert "secretsmanager:" not in runtime_role
     assert "AmazonECSTaskExecutionRolePolicy" in execution_role
     assert "secretsmanager:GetSecretValue" in execution_role
@@ -61,6 +61,9 @@ def test_production_mfa_key_is_separate_and_context_restricted():
     assert "KeyAdministratorRoleArn" in source
     assert "AllowOnlyEosProductionTaskDataPlane" in source
     assert "kms:EncryptionContext:purpose: GLOBAL_PRINCIPAL_TOTP" in source
+    key_policy = source.split("  EosProductionMfaKey:", 1)[1].split("  EosProductionMfaKeyAlias:", 1)[0]
+    assert "AWS: !GetAtt EosProductionTaskRole.Arn" in key_policy
+    assert "DependsOn:" in key_policy
     assert "wilsy-eos-global-mfa-local-development" not in source
     assert "AdministratorAccess" not in source
 
@@ -86,3 +89,5 @@ def test_production_stack_does_not_invent_networking_or_ingress():
     assert "AWS::Route53::RecordSet" not in source
     assert "AWS::ECS::Service" not in source
     assert "desired count" in source.lower()
+    assert "121014832643" in source
+    assert "af-south-1" in source
