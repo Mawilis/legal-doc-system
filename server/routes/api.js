@@ -131,7 +131,6 @@ import employeesRoutes from './employees.js';
 // ─── Controllers ──────────────────────────────────────────────────────────────
 
 import { queryLedger } from '../controllers/aiController.js';
-import { generateSovereignArtifactPdf } from '../controllers/businessArtifactPdfController.js';
 
 // ─── Router ──────────────────────────────────────────────────────────────────
 
@@ -552,7 +551,6 @@ router.use('/qr', qrRoutes);
 
 // Legacy AI and PDF generation
 router.post('/ai/query-ledger', queryLedger);
-router.post('/generate/pdf', generateSovereignArtifactPdf);
 
 // ============================================================================
 // 💥 GLOBAL NEXUS FAULT INTERCEPTOR
