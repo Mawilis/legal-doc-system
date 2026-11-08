@@ -40,6 +40,7 @@ from tools.eos.security.institutional_source_signing_key_registry import (
     KEY_COLLECTION,
     EVENT_COLLECTION,
     DENIAL_COLLECTION,
+    DENIAL_HEAD_COLLECTION,
     InstitutionalSourceSigningKeyLifecycleRegistry,
     SourceSigningKeyRegistryConflict,
 )
@@ -238,6 +239,12 @@ def test_authenticated_propose_approve_revoke_is_atomic_and_maker_checker_enforc
             })
             assert denial["actor_principal_id"] == "synthetic-maker"
             assert denial["tenant_id"] == TENANT_ID
+            assert denial["event_sequence"] == 1
+            assert denial["previous_event_hash_sha256"] == "0" * 64
+            assert len(denial["event_hash_sha256"]) == 64
+            denial_head = database[DENIAL_HEAD_COLLECTION].find_one({"tenant_id": TENANT_ID})
+            assert denial_head["event_sequence"] == denial["event_sequence"]
+            assert denial_head["event_hash_sha256"] == denial["event_hash_sha256"]
             assert "approval_evidence_reference" not in denial
             assert "evidence_fingerprint_sha256" not in denial
             assert "request_body" not in denial
