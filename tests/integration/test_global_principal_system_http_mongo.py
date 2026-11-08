@@ -114,9 +114,9 @@ def system_http_mongo(monkeypatch: pytest.MonkeyPatch):
     challenges = database[f"{CHALLENGE_COLLECTION}_cert_{suffix}"]
     sessions = database[f"{SESSION_COLLECTION}_cert_{suffix}"]
     refresh_tokens = database[f"{REFRESH_COLLECTION}_cert_{suffix}"]
+    assignment_collection = database[f"{ASSIGNMENT_COLLECTION}_cert_{suffix}"]
     assignments = SystemPermissionAssignmentRegistry(assignment_collection)
     workforce = database[f"{workforce_registry.COLLECTION_NAME}_cert_{suffix}"]
-    assignment_collection = database[f"{ASSIGNMENT_COLLECTION}_cert_{suffix}"]
 
     PrincipalAuthorityRepository.ensure_indexes(principals)
     PrincipalCredentialRepository.ensure_indexes(credentials)
