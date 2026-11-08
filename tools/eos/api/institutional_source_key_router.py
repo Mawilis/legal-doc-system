@@ -1,5 +1,5 @@
 """TITLE: WILSY EOS Institutional Source-Key Governance API
-VERSION: v1.0.0
+VERSION: v1.1.0
 AUTHORITY: WILSY EOS Security Engineering; authenticated command boundary only
 EPITOME: Exposes tenant-authorized proposal, approval and revocation commands for source-bound Ed25519 public keys.
 ABSOLUTE CANONICAL PATH: tools/eos/api/institutional_source_key_router.py
@@ -7,6 +7,7 @@ COLLABORATION / OWNERSHIP: WILSY EOS Core Engineering; evidence verification is 
 CERTIFICATION / UPDATE DATE: 2026-11-08
 CHANGELOG:
 - v1.0.0: Introduce authenticated, independently evidenced source-key governance commands.
+- v1.1.0: Persist governance denials through the registry's tenant-partitioned hash chain.
 COMPLIANCE: Caller-owned MongoDB replica-set transactions; canonical tenant IAM; deterministic idempotency.
 SECURITY / PRIVACY POSTURE: Development control plane; public keys and bounded evidence references only; provider verification fails closed when unavailable.
 TENANT BOUNDARY: WILSY canonical tenant only; tenant identity is resolved by the canonical authorization dependency.
@@ -43,7 +44,6 @@ from tools.eos.security.institutional_source_key_governance_evidence import (
 from tools.eos.security.institutional_source_signing_key_registry import (
     KEY_COLLECTION,
     EVENT_COLLECTION,
-    DENIAL_COLLECTION,
     InstitutionalSourceSigningKeyLifecycleRegistry,
     SourceSigningKeyRegistryConflict,
     SourceSigningKeyRegistryError,
@@ -159,16 +159,28 @@ def _record_denial(
         client, database = get_client(), get_database()
         if client is None or database is None:
             raise RuntimeError("DENIAL_AUDIT_STORAGE_UNAVAILABLE")
+        registry = InstitutionalSourceSigningKeyLifecycleRegistry(
+            database[KEY_COLLECTION], database[EVENT_COLLECTION],
+        )
         with client.start_session() as session:
             session.with_transaction(
-                lambda tx: database[DENIAL_COLLECTION].insert_one(record, session=tx),
+                lambda tx: registry.record_denial(record=record, session=tx),
                 read_concern=ReadConcern("snapshot"),
                 write_concern=WriteConcern("majority", j=True),
                 read_preference=ReadPreference.PRIMARY,
             )
     except Exception:
-        # Preserve the original denial and emit only a bounded operational code.
-        logger.error("INSTITUTIONAL_SOURCE_KEY_DENIAL_AUDIT_UNAVAILABLE")
+        # Preserve the original denial; expose only bounded reconciliation metadata.
+        logger.error(
+            "INSTITUTIONAL_SOURCE_KEY_DENIAL_AUDIT_UNAVAILABLE",
+            extra={"wilsy_source_key_denial_audit_failure": {
+                "correlation_id": record["correlation_id"],
+                "action": action,
+                "reason_code": reason_code,
+                "http_status": error.status_code,
+                "reconciliation_required": True,
+            }},
+        )
     else:
         logger.warning(
             "INSTITUTIONAL_SOURCE_KEY_GOVERNANCE_DENIED",
@@ -468,7 +480,7 @@ async def revoke_source_signing_key(
 
 __all__ = ["router"]
 # ARTIFACT: WILSY EOS Institutional Source-Key Governance API
-# VERSION: v1.0.0
+# VERSION: v1.1.0
 # AUTHORITY BOUNDARY: Authenticated command orchestration only; provider evidence and registry own their respective proofs.
 # TENANT POSTURE: Canonical WILSY tenant authorization is mandatory.
 # FAIL-CLOSED POSTURE: Missing verifier, invalid bindings, transaction failures and unavailable registry are denied.
