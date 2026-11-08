@@ -197,6 +197,7 @@ async def propose_source_signing_key(
             proposal_reference=body.proposal_reference,
             identity_proofing_evidence_reference=body.identity_proofing_evidence_reference,
             source_authority_evidence_reference=body.source_authority_evidence_reference,
+            proposal_evidence_fingerprint_sha256=verified.evidence_fingerprint_sha256,
             proposed_at=now,
             idempotency_key=idempotency_key,
             session=session,
@@ -267,12 +268,15 @@ async def approve_source_signing_key(
             approval_evidence_reference=body.approval_evidence_reference,
             approved_at=now,
             idempotency_key=idempotency_key,
+            approval_evidence_fingerprint_sha256=verified.evidence_fingerprint_sha256,
             session=session,
         )
         return {
             "source_system_id": source_system_id,
             "key_id": key_id,
             "event_type": event["event_type"],
+            "lifecycle_state": "APPROVED",
+            "approval_evidence_fingerprint_sha256": event["approval_evidence_fingerprint_sha256"],
             "approved_by_principal_id": event["actor_principal_id"],
             "governance_decision_reference": event["governance_decision_reference"],
             "occurred_at": event["occurred_at"].isoformat(),
@@ -320,9 +324,13 @@ async def revoke_source_signing_key(
                 "INSTITUTIONAL_SOURCE_KEY_REVOCATION_APPROVAL_UNVERIFIED"
             )
         if (
-            verified_approval.source_system_id != source_system_id
+            verified_approval.tenant_id != context.tenant_id
+            or verified_approval.source_system_id != source_system_id
             or verified_approval.key_id != key_id
             or verified_approval.public_key_fingerprint_sha256 != record["public_key_fingerprint_sha256"]
+            or verified_approval.proposer_principal_id != record["proposed_by_principal_id"]
+            or verified_approval.revoker_principal_id != context.identity.identity_id
+            or verified_approval.reason_reference != body.reason_reference
             or verified_approval.governance_decision_reference != body.governance_decision_reference
             or verified_approval.approval_evidence_reference != body.approval_evidence_reference
             or verified_approval.approver_principal_id in {
@@ -352,6 +360,7 @@ async def revoke_source_signing_key(
         "source_system_id": event["source_system_id"],
         "key_id": event["key_id"],
         "event_type": event["event_type"],
+        "lifecycle_state": "REVOKED",
         "revoked_by_principal_id": event["actor_principal_id"],
         "governance_decision_reference": event["governance_decision_reference"],
         "occurred_at": event["occurred_at"].isoformat(),
