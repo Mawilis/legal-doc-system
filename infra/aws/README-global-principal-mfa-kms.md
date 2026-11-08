@@ -36,6 +36,31 @@
   `WilsyHrDocumentBucketProvisioner` role and must not be repurposed for MFA.
 - The AWS-managed `alias/aws/s3` key is not an MFA key.
 
+## Production hosting decision — ECS Fargate
+
+**Selected production target:** AWS ECS Fargate in `af-south-1`, account
+`121014832643`. This is the approved architecture for new production hosting
+infrastructure; it is not a claim that an existing live EOS deployment has
+already moved to ECS.
+
+Use `infra/aws/eos-production-ecs-foundation.yaml` and its certification
+workflow as the current production infrastructure path. That stack creates a
+dedicated ECS task role and production MFA KMS key policy, separate execution
+role, cluster, log group and immutable-digest task definition. It deliberately
+creates no ECS service, running task, VPC, ingress, DNS, or secret values.
+
+The older `global-principal-mfa-kms.yaml` is EKS/IRSA-specific. It is retained
+for historical traceability and its static contract tests, but it is
+**superseded for the selected ECS target and must not be deployed**. Do not
+create an EKS cluster or OIDC provider for this production path. ECS task-role
+credentials are the intended ambient workload identity.
+
+The ECS foundation is source-only until separately approved provisioning. The
+production MongoDB URI secret, private GHCR registry credential, and separate
+key-administrator role must already exist and be independently verified before
+a change set can be prepared. Networking, service, load balancer, DNS, Atlas
+connectivity and actual task launch remain later separately reviewed steps.
+
 ## What this stack creates
 
 `global-principal-mfa-kms.yaml` creates in the deploying AWS account:
