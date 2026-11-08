@@ -1,17 +1,19 @@
 /* eslint-disable */
 /**
- * ╔════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════╗
- * ║ WILSY OS - FORENSIC NUCLEUS ROUTES [V54.1.0-PRODUCTION-SEAL-FALLBACK]                                                                           ║
- * ║ [IMMUTABLE AUDIT TRAIL | QUANTUM-RESISTANT INTEGRITY | SHARD FORENSICS | BOARDROOM KPI HYDRATION | EBAT BLOCKCHAIN ANCHORING]           ║
- * ╠════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════╣
- * ║ VERSION: 54.1.0-PRODUCTION-SEAL-FALLBACK | PRODUCTION READY | TRILLION DOLLAR SPECIFICATION                                                                ║
- * ║ EPITOME: BIBLICAL WORTH BILLIONS | NO CHILD'S PLACE | INSTITUTIONAL AUTHORITY | MARS-SPEC ARCHITECTURE                                 ║
- * ║ ABSOLUTE PATH: /Users/wilsonkhanyezi/legal-doc-system/server/routes/forensicRoutes.js                                                  ║
- * ╠════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════╣
- * ║ 👥 COLLABORATION & SOVEREIGN SIGN-OFF:                                                                                                 ║
- * ║ • Wilson Khanyezi (CEO/Lead Architect) - Mandated path alignment with RevenueHUD client-side calls.                                    ║
- * ║ • AI Engineering (Gemini) - RECTIFIED: Aligned path definitions (audit-trail, benchmark) to obliterate 404 fractures.                   ║
- * ╚════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════╝
+ * TITLE: WILSY EOS Forensic Nucleus Routes
+ * VERSION: v54.2.0
+ * AUTHORITY: WILSY EOS Security Engineering; authenticated forensic API surface
+ * EPITOME: Exposes forensic metrics, audit trails and Merkle operations under canonical tenant scope.
+ * ABSOLUTE CANONICAL PATH: server/routes/forensicRoutes.js
+ * COLLABORATION / OWNERSHIP: WILSY EOS API Engineering; mounted only after sovereign authentication and tenant isolation.
+ * CERTIFICATION / UPDATE DATE: 2026-11-08
+ * CHANGELOG:
+ * - v54.2.0: Bind every route to authenticated tenant scope; remove legacy-root alias aggregation and scope local anchors.
+ * COMPLIANCE: Canonical IAM and tenant middleware remain the sole authentication and tenant-authority sources.
+ * SECURITY / PRIVACY POSTURE: Caller-supplied tenant identifiers are hints only and must match authenticated scope; mismatches fail closed.
+ * TENANT BOUNDARY: Exact request tenant established by authenticated middleware; no GLOBAL_ROOT or legacy alias fallback.
+ * AUTHORITY BOUNDARY: This router reads forensic evidence and requests bounded audit operations; it grants no IAM or institutional trust authority.
+ * FINANCIAL AUTHORITY BOUNDARY: No financial execution authority.
  */
 
 import express from 'express';
@@ -1371,3 +1373,13 @@ router.use((err, req, res, next) => {
 });
 
 export default router;
+
+/*
+ * ARTIFACT: WILSY EOS Forensic Nucleus Routes
+ * VERSION: v54.2.0
+ * AUTHORITY BOUNDARY: Authenticated forensic API only; canonical IAM remains authoritative.
+ * TENANT POSTURE: Every route is bound to the authenticated request tenant; caller-selected scope is rejected.
+ * FAIL-CLOSED POSTURE: Missing or mismatched tenant context returns HTTP 403.
+ * FINANCIAL EXECUTION AUTHORITY: None.
+ * END OF WILSY OS SOVEREIGN ARTIFACT
+ */
