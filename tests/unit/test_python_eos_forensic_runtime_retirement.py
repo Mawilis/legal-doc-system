@@ -33,3 +33,11 @@ def test_vite_application_api_proxy_targets_python_eos_only():
     assert "target: 'http://127.0.0.1:9095'" in source
     assert "localhost:4000" not in source
     assert "127.0.0.1:4000" not in source
+
+
+def test_forensic_ui_never_equates_root_presence_with_verified_chain():
+    source = (ROOT / "client/src/components/chrome/WilsyForensicMerkleShowroom.jsx").read_text(encoding="utf-8")
+    assert "chain.verified === true || run.verified === true || status.verified === true" in source
+    assert "Boolean(merkleRoot || receiptMerkleRoot)" not in source
+    assert "No external framework attestation" in source
+    assert "'LOCAL_APPEND_ONLY_PENDING_WORM'" not in source
