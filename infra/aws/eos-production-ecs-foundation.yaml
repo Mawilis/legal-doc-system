@@ -1,11 +1,15 @@
 # TITLE: WILSY EOS Production ECS Fargate Foundation
-# VERSION: v1.0.1-ECS-PRODUCTION-FOUNDATION-GOVERNED
+# VERSION: v1.0.2-ECS-PRODUCTION-WRITABLE-TASK-VOLUMES
 # AUTHORITY: Wilsy OS Core Governance; production infrastructure definition only.
 # EPITOME: Define the isolated ECS runtime identity, purpose-scoped MFA KMS key, cluster, logs and immutable Python EOS task definition without launching a service or task.
 # ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/infra/aws/eos-production-ecs-foundation.yaml
 # COLLABORATION / OWNERSHIP: Wilsy OS Core Engineering; Python EOS owns application, identity, tenant and business truth.
 # CERTIFICATION OR UPDATE DATE: 2026-11-09
 # CHANGELOG:
+#   v1.0.2-ECS-PRODUCTION-WRITABLE-TASK-VOLUMES adds a task-scoped /tmp
+#   volume and documents writable task-volume ownership supplied by the
+#   immutable Python EOS image. The container remains non-root with a
+#   read-only root filesystem; no service or running task is introduced.
 #   v1.0.1-ECS-PRODUCTION-FOUNDATION-GOVERNED adds the mandatory sovereign
 #   artifact contract, explicit authority boundaries and fail-closed posture;
 #   no infrastructure behavior or resource scope is changed.
@@ -31,7 +35,8 @@ AWSTemplateFormatVersion: '2010-09-09'
 Description: >-
   WILSY Python EOS production ECS Fargate foundation. Creates IAM roles, a
   purpose-scoped MFA KMS key, an ECS cluster, log group and immutable-image task
-  definition only. It intentionally creates no ECS service or running task.
+  definition with task-scoped writable storage only. It intentionally creates
+  no ECS service or running task.
 
 Rules:
   ApprovedProductionAccountAndRegion:
@@ -207,6 +212,7 @@ Resources:
         - Name: eos-data
         - Name: eos-reports
         - Name: eos-logs
+        - Name: eos-tmp
       RuntimePlatform:
         OperatingSystemFamily: LINUX
         CpuArchitecture: X86_64
@@ -227,6 +233,9 @@ Resources:
               ReadOnly: false
             - SourceVolume: eos-logs
               ContainerPath: /var/log/wilsy-os
+              ReadOnly: false
+            - SourceVolume: eos-tmp
+              ContainerPath: /tmp
               ReadOnly: false
           PortMappings:
             - ContainerPort: 9095
@@ -295,7 +304,7 @@ Outputs:
     Value: !Ref EosProductionLogGroup
 
 # ARTIFACT: infra/aws/eos-production-ecs-foundation.yaml
-# VERSION: v1.0.1-ECS-PRODUCTION-FOUNDATION-GOVERNED
+# VERSION: v1.0.2-ECS-PRODUCTION-WRITABLE-TASK-VOLUMES
 # AUTHORITY BOUNDARY: Inactive ECS production foundation definition only; no task or service activation.
 # TENANT POSTURE: No tenant, identity, session or database records are created or mutated.
 # FAIL-CLOSED POSTURE: Account/region and immutable-image constraints remain mandatory; provisioning requires separate approval.
