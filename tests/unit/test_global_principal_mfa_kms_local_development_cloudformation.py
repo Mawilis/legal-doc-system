@@ -1,11 +1,11 @@
 # TITLE: WILSY EOS Local Global Principal MFA KMS CloudFormation Contract Test
-# VERSION: v1.0.1-LOCAL-MFA-KMS-CLOUDFORMATION-CONTRACT
+# VERSION: v1.0.2-LOCAL-MFA-KMS-CLOUDFORMATION-CONTRACT
 # AUTHORITY: Static infrastructure safety certification only.
-# EPITOME: Verify the isolated local-development KMS stack without undeclared parser dependencies.
+# EPITOME: Verify the isolated local-development MFA KMS stack without undeclared parser dependencies.
 # ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/tests/unit/test_global_principal_mfa_kms_local_development_cloudformation.py
 # COLLABORATION / OWNERSHIP: Wilsy Core Engineering.
 # CERTIFICATION OR UPDATE DATE: 2026-11-08.
-# CHANGELOG: v1.0.1 scopes resource discovery to the CloudFormation Resources section; v1.0.0 establishes standard-library-only structural checks.
+# CHANGELOG: v1.0.2 limits logical-resource discovery to the Resources section and aligns the artifact seal; v1.0.1 scopes resource discovery; v1.0.0 establishes standard-library-only structural checks.
 # COMPLIANCE: Test evidence only; does not provision AWS resources or grant runtime authority.
 # SECURITY / PRIVACY POSTURE: Reads infrastructure source; uses no credentials, secrets, network, or live AWS resources.
 # TENANT BOUNDARY: No tenant data or tenant authority is created or modified.
@@ -54,9 +54,12 @@ def _resource_block(source: str, logical_id: str) -> str:
 
 def test_local_stack_declares_only_the_dedicated_key_alias_and_role():
     source = _template_source()
+    resources_section = source.split("\nResources:\n", 1)[1].split(
+        "\nOutputs:\n", 1
+    )[0]
     resources = re.findall(
         r"^  ([A-Za-z][A-Za-z0-9]*):\n    Type: (AWS::[A-Za-z0-9:]+)$",
-        source,
+        resources_section,
         flags=re.MULTILINE,
     )
     assert dict(resources) == {
@@ -106,11 +109,9 @@ def test_key_has_rotation_and_delayed_deletion_and_exact_local_alias():
 
 
 def test_key_administration_is_separate_from_local_runtime_use():
-    source = _template_source()
-    key = _resource_block(source, "LocalGlobalPrincipalMfaKey")
+    key = _resource_block(_template_source(), "LocalGlobalPrincipalMfaKey")
     assert "AWS: !Ref KeyAdministratorPrincipalArn" in key
     administration = key.split("Sid: DedicatedLocalKeyAdministration", 1)[1]
-    administration = administration.split("LocalGlobalPrincipalMfaKeyAlias", 1)[0]
     assert "kms:Encrypt" not in administration
     assert "kms:Decrypt" not in administration
     assert "kms:ScheduleKeyDeletion" in administration
@@ -132,7 +133,7 @@ def test_local_stack_rejects_non_user_principals_and_creates_no_static_credentia
 
 
 # ARTIFACT: test_global_principal_mfa_kms_local_development_cloudformation.py
-# VERSION: v1.0.0-LOCAL-MFA-KMS-CLOUDFORMATION-CONTRACT
+# VERSION: v1.0.2-LOCAL-MFA-KMS-CLOUDFORMATION-CONTRACT
 # AUTHORITY BOUNDARY: static infrastructure safety assertions only
 # TENANT POSTURE: no tenant data or authority is created or modified
 # FAIL-CLOSED POSTURE: missing or broadened infrastructure controls fail tests
