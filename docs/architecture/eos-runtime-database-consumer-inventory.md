@@ -135,14 +135,14 @@ Repository directory enumeration at this revision found these top-level source c
 
 | Tree | Top-level files observed | Classification |
 |---|---:|---|
-| `server/routes` | 129 | LEGACY / MIGRATION SOURCE; includes mounted and apparently unmounted route modules |
-| `server/controllers` | 90 | LEGACY / MIGRATION SOURCE; caller and route reachability not yet fully mapped |
-| `server/middleware` | 82 | LEGACY / MIGRATION SOURCE; authentication, tenant, authorization, audit and security semantics require mapping |
-| `server/models` | 112 | LEGACY / MIGRATION SOURCE; persistence schema and writers/readers require mapping |
-| `server/services` | 115 | LEGACY / MIGRATION SOURCE; domain and integration semantics require mapping |
+| `server/routes` | 138 | LEGACY / MIGRATION SOURCE; includes mounted and apparently unmounted route modules |
+| `server/controllers` | 85 | LEGACY / MIGRATION SOURCE; caller and route reachability not yet fully mapped |
+| `server/middleware` | 72 | LEGACY / MIGRATION SOURCE; authentication, tenant, authorization, audit and security semantics require mapping |
+| `server/models` | 138 | LEGACY / MIGRATION SOURCE; persistence schema and writers/readers require mapping |
+| `server/services` | 138 | LEGACY / MIGRATION SOURCE; domain and integration semantics require mapping |
 | `server/jobs` | 7 | LEGACY / MIGRATION SOURCE; includes active-looking worker/job modules and one inert scheduler stub |
-| `server/config` | 25 | LEGACY / MIGRATION SOURCE; database, Redis, queues, cron and integration configuration remain |
-| `server/utils` | 70 | LEGACY / MIGRATION SOURCE; callers and business authority require mapping |
+| `server/config` | 30 | LEGACY / MIGRATION SOURCE; database, Redis, queues, cron and integration configuration remain |
+| `server/utils` | 89 | LEGACY / MIGRATION SOURCE; callers and business authority require mapping |
 
 These are root-directory counts, not totals for nested descendants. The directory contents include duplicates, alternate versions and potentially orphaned modules. A filename alone is not proof of a live route or capability. The next forensic pass must traverse nested directories, follow imports from mounted modules, and search frontend, worker, scripts and deployment references before classifying a file as orphaned.
 
