@@ -21,6 +21,7 @@ def test_python_eos_compose_runs_api_and_durable_worker_as_python_services():
     assert "wilsy-eos:" in source
     assert "wilsy-eos-worker:" in source
     assert "tools.eos.runtime.worker_process" in source
+    assert 'profiles: ["python-workers"]' in source
     assert "node:" not in source.lower()
     assert "server/Dockerfile" not in source
     assert "server/Dockerfile.worker" not in source
@@ -48,3 +49,11 @@ def test_repository_default_compose_uses_python_eos_service():
     assert "tools.eos" not in source
     assert "node:" not in source.lower()
     assert "server/Dockerfile" not in source
+
+
+
+def test_default_compose_exposes_worker_only_behind_explicit_profile():
+    source = (ROOT / "docker-compose.yml").read_text(encoding="utf-8")
+    assert "wilsy-eos-worker:" in source
+    assert 'profiles: ["python-workers"]' in source
+    assert "tools.eos.runtime.worker_process" in source
