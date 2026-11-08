@@ -63,15 +63,8 @@ class ComplianceScanWorker:
             tenant_id, context_task_id, worker_id, lease_token, observed_at = self._context(payload)
             if context_task_id != task_id:
                 raise ValueError("COMPLIANCE_TASK_ID_MISMATCH")
-            cursor = self.clients.find(
-                {"tenantId": tenant_id, "idExpiryDate": {"$lt": observed_at},
-                 "complianceStatus": "VERIFIED"},
-                {"_id": 1, "idExpiryDate": 1},
-            )
-            records = list(cursor)
-            created = 0
             with self.mongo_client.start_session() as session:
-                def persist(active_session: Any) -> int:
+                def persist(active_session: Any) -> tuple[int, int]:
                     # Fence side effects against the exact live queue lease in this transaction.
                     fence = self.tasks.update_one(
                         {"tenant_id": tenant_id, "task_id": task_id, "status": "CLAIMED",
@@ -82,6 +75,12 @@ class ComplianceScanWorker:
                     )
                     if fence.modified_count != 1:
                         raise ValueError("COMPLIANCE_TASK_LEASE_LOST")
+                    records = list(self.clients.find(
+                        {"tenantId": tenant_id, "idExpiryDate": {"$lt": observed_at},
+                         "complianceStatus": "VERIFIED"},
+                        {"_id": 1, "idExpiryDate": 1},
+                        session=active_session,
+                    ))
                     count = 0
                     for record in records:
                         source_id = str(record["_id"])
@@ -120,12 +119,12 @@ class ComplianceScanWorker:
                                 upsert=True, session=active_session,
                             )
                             count += 1
-                    return count
-                created = session.with_transaction(persist)
+                    return count, len(records)
+                created, scanned = session.with_transaction(persist)
             return WorkerResultDTO(
                 task_id=task_id, status=WorkerExecutionStatusEnum.SUCCESS,
                 execution_duration_ms=0.0,
-                output={"tenant_id": tenant_id, "documents_scanned": len(records),
+                output={"tenant_id": tenant_id, "documents_scanned": scanned,
                         "new_findings": created, "notification_intents": created},
             )
         except Exception as error:
