@@ -1,8 +1,31 @@
 # TITLE: WILSY EOS Production ECS Fargate Foundation
-# VERSION: v1.0.0-ECS-PRODUCTION-FOUNDATION
-# AUTHORITY: Production infrastructure definition; provisioning requires separate approval.
-# EPITOME: Define the isolated ECS runtime identity, MFA KMS key, cluster, logs and immutable task definition.
-# SECURITY: No service, task launch, ingress, network, DNS, secret value or database resource is created.
+# VERSION: v1.0.1-ECS-PRODUCTION-FOUNDATION-GOVERNED
+# AUTHORITY: Wilsy OS Core Governance; production infrastructure definition only.
+# EPITOME: Define the isolated ECS runtime identity, purpose-scoped MFA KMS key, cluster, logs and immutable Python EOS task definition without launching a service or task.
+# ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/infra/aws/eos-production-ecs-foundation.yaml
+# COLLABORATION / OWNERSHIP: Wilsy OS Core Engineering; Python EOS owns application, identity, tenant and business truth.
+# CERTIFICATION OR UPDATE DATE: 2026-11-09
+# CHANGELOG:
+#   v1.0.1-ECS-PRODUCTION-FOUNDATION-GOVERNED adds the mandatory sovereign
+#   artifact contract, explicit authority boundaries and fail-closed posture;
+#   no infrastructure behavior or resource scope is changed.
+#   v1.0.0-ECS-PRODUCTION-FOUNDATION established the inactive ECS Fargate
+#   cluster, dedicated task/execution roles, production MFA KMS key, log group
+#   and immutable-image task definition.
+# COMPLIANCE: AGENTS.md v1.2.0-SOVEREIGN-LEGAL-OPERATIONS-CONSTITUTION.
+# SECURITY / PRIVACY POSTURE: No static credentials, local-development identity,
+#   tenant records, secret values, network ingress or production deployment.
+# TENANT BOUNDARY: No tenant, principal, membership, session or database records
+#   are created or mutated by this infrastructure definition.
+# AUTHORITY BOUNDARY: ECS task identity receives only purpose-scoped MFA KMS
+#   Encrypt/Decrypt; ECS execution identity handles image pull, secret injection
+#   and logging. Provisioning and task activation require separate approval.
+# FINANCIAL AUTHORITY BOUNDARY: No financial execution, payment, settlement or
+#   accounting authority; Kennel EOS remains the exclusive financial execution
+#   authority.
+# FAIL-CLOSED DECLARATION: Account/region restrictions, immutable image digest,
+#   existing secret references and separate key-administrator identity are
+#   mandatory; this template creates no ECS service or running task.
 
 AWSTemplateFormatVersion: '2010-09-09'
 Description: >-
@@ -270,3 +293,11 @@ Outputs:
     Value: !Ref EosProductionMfaKeyAlias
   EosProductionLogGroupName:
     Value: !Ref EosProductionLogGroup
+
+# ARTIFACT: infra/aws/eos-production-ecs-foundation.yaml
+# VERSION: v1.0.1-ECS-PRODUCTION-FOUNDATION-GOVERNED
+# AUTHORITY BOUNDARY: Inactive ECS production foundation definition only; no task or service activation.
+# TENANT POSTURE: No tenant, identity, session or database records are created or mutated.
+# FAIL-CLOSED POSTURE: Account/region and immutable-image constraints remain mandatory; provisioning requires separate approval.
+# FINANCIAL EXECUTION AUTHORITY: Kennel EOS exclusively.
+# END OF WILSY OS SOVEREIGN ARTIFACT
