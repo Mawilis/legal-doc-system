@@ -80,5 +80,5 @@ def test_production_compose_runs_only_kennel_eos_python_api_and_worker():
 def test_worker_service_has_no_http_healthcheck():
     for name in ("docker-compose.yml", "docker-compose.eos.yml", "docker-compose.prod.yml"):
         source = (ROOT / name).read_text(encoding="utf-8")
-        worker = source.split("  wilsy-eos-worker:", 1)[1].split("\\nnetworks:", 1)[0]
-        assert "healthcheck:\\n      disable: true" in worker
+        worker = source.split("  wilsy-eos-worker:", 1)[1].split("\nnetworks:", 1)[0]
+        assert "healthcheck:\n      disable: true" in worker
