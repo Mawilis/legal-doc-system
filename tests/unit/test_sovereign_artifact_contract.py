@@ -1,7 +1,7 @@
 """WILSY OS sovereign artifact-contract regression tests.
 
 TITLE: Sovereign Artifact Header, Version, Changelog and Seal Guard
-VERSION: v1.0.3-WILSY-SOVEREIGN-ARTIFACT-CONTRACT-GUARD
+VERSION: v1.0.4-WILSY-SOVEREIGN-ARTIFACT-CONTRACT-GUARD
 AUTHORITY: Wilsy OS Core Governance
 EPITOME: Prevents the corrected Kennel EOS runbook and forensic inventory from
          losing their required sovereign header, version agreement, changelog,
@@ -12,8 +12,9 @@ COLLABORATION / OWNERSHIP:
     Python EOS governance tests; artifact owners retain source authority.
 CERTIFICATION / UPDATE DATE: 2026-11-08
 CHANGELOG:
-    v1.0.3-WILSY-SOVEREIGN-ARTIFACT-CONTRACT-GUARD adds self-audit coverage
-    for this test artifact as well as the diagnostic and forensic inventory.
+    v1.0.4-WILSY-SOVEREIGN-ARTIFACT-CONTRACT-GUARD audits the deployment guide,
+    legacy server boundary and certification workflow in addition to prior artifacts.
+    v1.0.3-WILSY-SOVEREIGN-ARTIFACT-CONTRACT-GUARD added self-audit coverage.
     v1.0.2-WILSY-SOVEREIGN-ARTIFACT-CONTRACT-GUARD avoids embedding forbidden
     source markers while retaining exact target checks.
     v1.0.1-WILSY-SOVEREIGN-ARTIFACT-CONTRACT-GUARD documents test boundaries.
@@ -41,7 +42,19 @@ ROOT = Path(__file__).resolve().parents[2]
 ARTIFACTS = (
     (
         ROOT / "tests/unit/test_sovereign_artifact_contract.py",
-        "v1.0.3-WILSY-SOVEREIGN-ARTIFACT-CONTRACT-GUARD",
+        "v1.0.4-WILSY-SOVEREIGN-ARTIFACT-CONTRACT-GUARD",
+    ),
+    (
+        ROOT / "DEPLOYMENT.md",
+        "v1.1.0-KENNEL-EOS-DEPLOYMENT-AUTHORITY-BOUNDARY",
+    ),
+    (
+        ROOT / "server/README.md",
+        "v1.1.0-LEGACY-NODE-SOURCE-BOUNDARY",
+    ),
+    (
+        ROOT / ".github/workflows/eos-runtime-database-consumer-inventory.yml",
+        "v1.1.0-EOS-RUNTIME-DATABASE-INVENTORY-CERTIFICATION",
     ),
     (
         ROOT / "runbook_diagnostic.py",
@@ -49,7 +62,7 @@ ARTIFACTS = (
     ),
     (
         ROOT / "docs/architecture/eos-runtime-database-consumer-inventory.md",
-        "v2.4.0-KENNEL-EOS-LEGACY-NODE-FORENSIC-INVENTORY",
+        "v2.5.0-KENNEL-EOS-LEGACY-NODE-FORENSIC-INVENTORY",
     ),
 )
 REQUIRED_HEADER_MARKERS = (
@@ -125,13 +138,22 @@ def test_forensic_inventory_does_not_claim_unverified_legacy_parity() -> None:
         "Sovereign_Deployment_Automation.sh",
         "initializeSovereignJobs",
         "verificationSyncJob.js",
+        "services/ai/aiService.js",
+        "services/auth/authService.js",
+        "services/crypto/cryptoService.js",
+        "services/ledger/repair_ledger_service.js",
+        "services/standards/standardsService.js",
+        "start_all.sh",
+        "start_wilsy_os.sh",
+        "GlobalLaunchSequence.sh",
+        "124 Node test files",
     )
     for finding in required_findings:
         assert finding in content, f"Forensic inventory omitted unresolved finding: {finding}"
 
 
 # ARTIFACT: test_sovereign_artifact_contract.py
-# VERSION: v1.0.3-WILSY-SOVEREIGN-ARTIFACT-CONTRACT-GUARD
+# VERSION: v1.0.4-WILSY-SOVEREIGN-ARTIFACT-CONTRACT-GUARD
 # AUTHORITY BOUNDARY: structural governance tests only.
 # TENANT POSTURE: no tenant access or authority.
 # FAIL-CLOSED POSTURE: missing, divergent, or unsealed artifact metadata fails.
