@@ -244,3 +244,8 @@ No database users, roles, clusters, access lists or data were modified by this i
 6. Independently export and restore audit evidence, verify chain continuity after restore, and alert on any integrity mismatch.
 
 **Disposition:** Atlas inventory confirms that protected audit-role separation is not yet demonstrated. Do not create another broad `atlasAdmin` or `readWriteAnyDatabase` identity as a workaround. PR #393 remains draft and unmerged.
+
+
+### External log-export inventory
+
+A read-only Vercel team inventory returned **zero configured drains**. There is therefore no existing Vercel log/trace export configured as an external audit-evidence path in the connected team view. No drain was created or changed. A future drain must target an independently administered destination with enforced retention/object-lock controls; an ordinary S3 destination or a Vercel log export alone is not proof of WORM immutability.
