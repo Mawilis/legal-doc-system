@@ -1,11 +1,11 @@
 # TITLE: WILSY EOS Local-Development Global Principal MFA KMS Infrastructure
-# VERSION: v1.0.0-LOCAL-GLOBAL-MFA-KMS-STACK
+# VERSION: v1.0.1-LOCAL-GLOBAL-MFA-KMS-ROLE-BOUND-KEY-POLICY
 # AUTHORITY: Dedicated local-development AWS infrastructure only.
 # EPITOME: Provision one isolated MFA KMS key, alias, and narrowly trusted local EOS role.
 # ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/infra/aws/global-principal-mfa-kms-local-development.yaml
 # COLLABORATION / OWNERSHIP: Wilsy Core Engineering.
 # CERTIFICATION OR UPDATE DATE: 2026-11-08.
-# CHANGELOG: v1.0.0 establishes a separate local-development KMS key and role with exact IAM-user trust and purpose-scoped encrypt/decrypt permissions.
+# CHANGELOG: v1.0.1 removes account-wide IAM key-use delegation and grants data-plane KMS use only to the exact local EOS role; v1.0.0 establishes the isolated local-development key and role.
 # COMPLIANCE: CloudFormation definition only; deployment requires a reviewed change set and explicit operator execution.
 # SECURITY / PRIVACY POSTURE: No static credentials, access keys, EKS resources, OIDC providers, or production workload identity.
 # TENANT BOUNDARY: No tenant data, database, or tenant identity resources are created.
@@ -52,12 +52,17 @@ Resources:
       KeyPolicy:
         Version: '2012-10-17'
         Statement:
-          - Sid: EnableAccountIamDelegation
+          - Sid: DedicatedLocalRoleMfaEnvelopeUse
             Effect: Allow
             Principal:
-              AWS: !Sub 'arn:${AWS::Partition}:iam::${AWS::AccountId}:root'
-            Action: 'kms:*'
+              AWS: !Sub 'arn:${AWS::Partition}:iam::${AWS::AccountId}:role/wilsy-eos-global-mfa-local-development'
+            Action:
+              - kms:Encrypt
+              - kms:Decrypt
             Resource: '*'
+            Condition:
+              StringEquals:
+                kms:EncryptionContext:purpose: GLOBAL_PRINCIPAL_TOTP
           - Sid: DedicatedLocalKeyAdministration
             Effect: Allow
             Principal:
@@ -124,7 +129,7 @@ Outputs:
     Description: Configure the local AWS profile to assume this role.
     Value: !GetAtt LocalGlobalPrincipalMfaRole.Arn
 # ARTIFACT: global-principal-mfa-kms-local-development.yaml
-# VERSION: v1.0.0-LOCAL-GLOBAL-MFA-KMS-STACK
+# VERSION: v1.0.1-LOCAL-GLOBAL-MFA-KMS-ROLE-BOUND-KEY-POLICY
 # AUTHORITY BOUNDARY: local-development KMS envelope encryption only
 # TENANT POSTURE: no tenant or database resources
 # FAIL-CLOSED POSTURE: exact IAM-user trust and purpose-scoped KMS use
