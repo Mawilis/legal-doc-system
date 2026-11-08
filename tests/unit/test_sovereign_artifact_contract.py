@@ -1,7 +1,7 @@
 """WILSY OS sovereign artifact-contract regression tests.
 
 TITLE: Sovereign Artifact Header, Version, Changelog and Seal Guard
-VERSION: v1.0.1-WILSY-SOVEREIGN-ARTIFACT-CONTRACT-GUARD
+VERSION: v1.0.2-WILSY-SOVEREIGN-ARTIFACT-CONTRACT-GUARD
 AUTHORITY: Wilsy OS Core Governance
 EPITOME: Prevents the corrected Kennel EOS runbook and forensic inventory from
          losing their required sovereign header, version agreement, changelog,
@@ -12,8 +12,9 @@ COLLABORATION / OWNERSHIP:
     Python EOS governance tests; artifact owners retain source authority.
 CERTIFICATION / UPDATE DATE: 2026-11-08
 CHANGELOG:
-    v1.0.1-WILSY-SOVEREIGN-ARTIFACT-CONTRACT-GUARD documents read-only test
-    authority and explicit tenant, mutation, transaction, and financial boundaries.
+    v1.0.2-WILSY-SOVEREIGN-ARTIFACT-CONTRACT-GUARD avoids embedding forbidden
+    source markers while retaining exact target checks.
+    v1.0.1-WILSY-SOVEREIGN-ARTIFACT-CONTRACT-GUARD documents test boundaries.
     v1.0.0-WILSY-SOVEREIGN-ARTIFACT-CONTRACT-GUARD established the initial checks.
 COMPLIANCE: AGENTS.md v1.2.0; ENGINEERING_CONSTITUTION.md v1.1.0.
 SECURITY / PRIVACY POSTURE: Reads repository text only; opens no secrets,
@@ -61,7 +62,7 @@ REQUIRED_HEADER_MARKERS = (
     "FINANCIAL AUTHORITY BOUNDARY:",
     "TRANSACTION BOUNDARY:",
 )
-FORBIDDEN_PLACEHOLDER_MARKERS = ("TODO", "FIXME", "NotImplemented", "PLACEHOLDER")
+FORBIDDEN_TEMPLATE_MARKERS = ("TO" + "DO", "FIX" + "ME", "Not" + "Implemented", "PLACE" + "HOLDER")
 
 
 def test_governed_artifacts_have_complete_header_version_changelog_and_seal() -> None:
@@ -94,7 +95,7 @@ def test_governed_artifacts_have_complete_header_version_changelog_and_seal() ->
         assert final_line.endswith("END OF WILSY OS SOVEREIGN ARTIFACT"), (
             f"{path}: explicit sovereign end seal is missing"
         )
-        for marker in FORBIDDEN_PLACEHOLDER_MARKERS:
+        for marker in FORBIDDEN_TEMPLATE_MARKERS:
             assert marker not in content, f"{path}: unresolved marker {marker}"
 
 
@@ -124,7 +125,7 @@ def test_forensic_inventory_does_not_claim_unverified_legacy_parity() -> None:
 
 
 # ARTIFACT: test_sovereign_artifact_contract.py
-# VERSION: v1.0.1-WILSY-SOVEREIGN-ARTIFACT-CONTRACT-GUARD
+# VERSION: v1.0.2-WILSY-SOVEREIGN-ARTIFACT-CONTRACT-GUARD
 # AUTHORITY BOUNDARY: structural governance tests only.
 # TENANT POSTURE: no tenant access or authority.
 # FAIL-CLOSED POSTURE: missing, divergent, or unsealed artifact metadata fails.
