@@ -142,11 +142,15 @@ alias, and the `wilsy-eos-global-mfa-local-development` IAM role.
 The role trusts only the exact developer IAM user ARN supplied at deployment.
 Its only permissions are `kms:Encrypt` and `kms:Decrypt` on this key, and
 only when the encryption context contains
-`purpose=GLOBAL_PRINCIPAL_TOTP`. It cannot administer the key, access other
-KMS keys, or assume the production EKS role. The administrator user is named
-as key administrator but is not granted application encrypt/decrypt use by
-this template. No access keys, static credentials, EKS resources, OIDC
-providers, production roles, or MongoDB resources are created.
+`purpose=GLOBAL_PRINCIPAL_TOTP`. The key policy names the exact local role
+ARN for those data-plane operations; it does not enable account-wide IAM key
+delegation. The role cannot administer the key, access other KMS keys, or
+assume the production EKS role. The administrator user is named only for key
+administration and is not granted application encrypt/decrypt use by this
+policy. As key administrator, that principal can change the key policy; this
+is privileged infrastructure authority and must remain separately governed.
+No access keys, static credentials, EKS resources, OIDC providers, production
+roles, or MongoDB resources are created.
 
 For the currently inspected AWS account, the approved operator profile
 resolves to
