@@ -101,3 +101,6 @@ def test_node_backend_process_launchers_and_transport_are_absent():
     assert "pm2" not in package.get("devDependencies", {})
     assert "server:start" not in package.get("scripts", {})
     assert "pm2:deploy" not in package.get("scripts", {})
+    lock = json.loads((ROOT / "package-lock.json").read_text(encoding="utf-8"))
+    assert "pm2" not in lock["packages"][""].get("devDependencies", {})
+    assert "pm2" not in lock["packages"][""].get("dependencies", {})
