@@ -1,9 +1,9 @@
 /* eslint-disable */
 /**
  * ╔════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════╗
- * ║ 🏛️ WILSY OS – SOVEREIGN RUNTIME BOOTSTRAPPER [v5.6.0-P0-C4E5-EOS-PDF-IDENTITY]                                                                    ║
- * ║ TITLE: EOS workspace-authorized PDF renderer and browser-to-Python BFF transport                                                                  ║
- * ║ AUTHORITY: Node transport/PDF rendering only; Python EOS owns identity and business data                                                                           ║
+ * ║ 🏛️ WILSY OS – LEGACY BFF TRANSPORT [v5.7.0-PYTHON-EOS-PDF-PROXY]                                                                    ║
+ * ║ TITLE: Transitional Node transport proxy; Python EOS owns all PDF rendering and identity                                                                  ║
+ * ║ AUTHORITY: Transitional HTTP transport only; Python EOS owns identity, evidence and PDF rendering                                                                           ║
  * ║ TENANT BOUNDARY: Forward authenticated tenant scope without deriving membership                                                   ║
  * ║ AUTHORITY BOUNDARY: No C1C/C1E/legal/financial authority is interpreted or created                                                ║
  * ║ FINANCIAL AUTHORITY BOUNDARY: Kennel EOS exclusively owns financial execution                                                      ║
@@ -12,11 +12,11 @@
  * ║          Raw request streams are forwarded; PDF identity is verified by EOS workspace-bootstrap.                                                            ║
  * ║ COMPLIANCE: POPIA §19 · GDPR §32 · SOC2 §CC7.2 · ISO 27001 · ECT Act §15                                                           ║
  * ╠════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════╣
- * ║ VERSION: v5.6.0-P0-C4E5-EOS-PDF-IDENTITY | PRODUCTION READY                                                                                        ║
+ * ║ VERSION: v5.7.0-PYTHON-EOS-PDF-PROXY | PRODUCTION READY                                                                                        ║
  * ║ ABSOLUTE PATH: /Users/wilsonkhanyezi/legal-doc-system/server/server.js                                                               ║
  * ╠════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════╣
  * ║ 🔧 CHANGE LOG (v5.6.0-P0-C4E5-EOS-PDF-IDENTITY):                                                                                                     ║
- * ║   2026-11-05 – PDF rendering accepts only identity returned by EOS workspace-bootstrap; Mongoose profile lookup is removed.           ║
+ * ║   2026-11-08 – PDF requests stream to the authenticated Python EOS PDF route; Node rendering and workspace identity middleware are retired.           ║
  * ║   2026-11-05 – Removed the BFF Mongo connection; Python EOS owns the business database graph.                                      ║
  * ║   2026-10-03 – Replaced http-proxy-middleware runtime transport with direct httpxy while preserving the certified proxy contract.     ║
  * ║   2026-10-03 – Redacted raw upstream connection exceptions from the public proxy-unavailable response.                             ║
@@ -33,10 +33,7 @@ import 'dotenv/config';
 import express from 'express';
 import cors from 'cors';
 import helmet from 'helmet';
-import fileUpload from 'express-fileupload';
 import { createServer } from 'node:http';
-import { generateSovereignArtifactPdf } from './controllers/businessArtifactPdfController.js';
-import { resolveEosWorkspaceIdentity, resolveEosWorkspaceTenantScope } from './services/eosWorkspaceIdentity.js';
 import { createProxyServer } from 'httpxy';
 import { fileURLToPath } from 'node:url';
 import { resolve } from 'node:path';
@@ -48,7 +45,7 @@ const KENNEL_TARGET = (
   'http://127.0.0.1:9095'
 ).replace(/\/$/, '');
 const PROXY_LOG_LEVEL = process.env.WILSY_PROXY_DEBUG === '1' ? 'debug' : 'info';
-const VERSION = 'v5.6.0-P0-C4E5-EOS-PDF-IDENTITY';
+const VERSION = 'v5.7.0-PYTHON-EOS-PDF-PROXY';
 const BUILD = VERSION;
 const BILLING_PROXY_TIMEOUT_MS = Number(process.env.KENNEL_BILLING_TIMEOUT_MS || 60000);
 const DEFAULT_PROXY_TIMEOUT_MS = Number(process.env.KENNEL_PROXY_TIMEOUT_MS || 30000);
@@ -187,53 +184,6 @@ function buildSelectiveLegalProxy({ mountPrefix, targetPrefix, allowed }) {
     if (!allowed(req.method, req.url || '/')) return next();
     return proxy(req, res, next);
   };
-}
-
-/**
- * Resolve the PDF renderer's user identity through EOS. The BFF never decodes
- * bearer claims or queries a Mongoose model to establish a person or tenant.
- */
-async function requireEosWorkspaceIdentity(req, res, next) {
-  const tenantId =
-    req.headers['x-tenant-id'] ||
-    req.headers['x-wilsy-tenant'] ||
-    req.headers['x-tenant'] ||
-    req.headers['x-wilsy-tenant-id'] ||
-    '';
-  let result;
-  try {
-    result = await resolveEosWorkspaceIdentity({
-      baseUrl: KENNEL_TARGET,
-      authorization: req.headers.authorization || '',
-      tenantId,
-    });
-  } catch {
-    return res.status(503).json({ success: false, error: 'AUTHORITY_UNAVAILABLE' });
-  }
-
-  if (!result?.ok) {
-    return res.status(result?.status || 503).json({
-      success: false,
-      error: result?.code || 'AUTHORITY_UNAVAILABLE',
-    });
-  }
-
-  const tenantScope = resolveEosWorkspaceTenantScope({
-    requestedTenantId: tenantId,
-    workspace: result.workspace,
-  });
-  if (!tenantScope.ok) {
-    return res.status(tenantScope.status).json({
-      success: false,
-      error: tenantScope.code,
-    });
-  }
-
-  req.user = result.user;
-  req.tenantId = tenantScope.tenantId;
-  req.eosAuthenticatedIdentity = true;
-  req.eosWorkspace = result.workspace;
-  return next();
 }
 
 // ─── EXPRESS APP FACTORY ──────────────────────────────────────────────────
@@ -426,18 +376,15 @@ function createApp() {
     })
   );
 
-  // ─── BODY PARSERS – AFTER PROXIES ──────────────────────────────────────
-  // These will parse bodies for any local routes that need them (currently none).
-  app.use(express.json({ limit: '50mb' }));
-  app.use(express.urlencoded({ extended: true, limit: '50mb' }));
-  app.use(fileUpload({ limits: { fileSize: 50 * 1024 * 1024 }, useTempFiles: false }));
-
-  /**
-   * @route POST /api/generate/pdf
-   * @description Preserves the tenant-branded, sealed Node PDF renderer while the money surface is proxied to Kennel EOS.
-   * @collaboration Keeps binary artifact ownership in the BFF and billing lifecycle ownership in Kennel without routing conflicts.
-   */
-  app.post('/api/generate/pdf', requireEosWorkspaceIdentity, generateSovereignArtifactPdf);
+  // PDF presentation is owned by Python EOS. Preserve the raw request stream and
+  // let the canonical FastAPI identity dependency authorize the export.
+  app.use(
+    '/api/generate/pdf',
+    buildKennelProxy({
+      mountPrefix: '/api/generate/pdf',
+      targetPrefix: '/api/generate/pdf',
+    })
+  );
 
   // ─── CATCH‑ALL FOR UNPROXIED /api ROUTES ──────────────────────────────
   app.use('/api', (req, res) => {
@@ -563,7 +510,7 @@ export default createApp;
  * ═══════════════════════════════════════════════════════════════════════════════
  * 🏛️ INSTITUTIONAL CERTIFICATION SEAL — WILSY OS RUNTIME BOOTSTRAPPER
  * ═══════════════════════════════════════════════════════════════════════════════
- * Status:          CERTIFIED PRODUCTION ARTIFACT
+ * Status:          TRANSITIONAL TRANSPORT; PYTHON EOS OWNS PDF PRESENTATION
  * Version:         v5.5.0-P0-C4E4
  * Fix:             Correct middleware order – proxies before body parsers.
  *                  Added selective legal-acceptance and C1C/C1E browser-to-Python transport only.
