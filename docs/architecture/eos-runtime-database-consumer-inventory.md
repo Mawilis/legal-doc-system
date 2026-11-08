@@ -1,55 +1,48 @@
 # EOS runtime database-consumer inventory
 
-**Version:** v1.0.0-EOS-RUNTIME-DB-CONSUMER-INVENTORY  
-**Scope:** repository-defined active development and production entrypoints on PR #342  
+**Version:** v2.0.0-KENNEL-EOS-CANONICAL-RUNTIME  
+**Scope:** repository-defined application and worker entrypoints.  
 **Boundary:** inventory evidence only; this document does not authorize deployment or production database changes.
+
+## Canonical application and business authority
+
+Kennel EOS is the existing canonical application/API and business authority. The Python EOS API is launched through `tools.eos.api.server:app` on port 9095. Business registries and API routes resolve the kernel-owned database/client or receive a caller-owned `client + database + session` graph and enforce the same-client transaction boundary.
+
+## Supported runtime entrypoints
+
+| Entrypoint | Runtime role | Status |
+|---|---|---|
+| `npm run dev` → `scripts/start-dev-stack.sh` | Python EOS + Vite development stack | Supported; Node is frontend tooling only |
+| `npm run dev:kernel` | Python EOS API | Supported |
+| `npm run prod:kernel` | Python EOS API | Supported |
+| Root `Dockerfile` / `Dockerfile.eos` | Python Kennel EOS API | Supported |
+| `docker-compose.prod.yml` | Python Kennel EOS API; opt-in Python durable worker | Supported candidate; deployment still requires approval |
+| `tools/eos/runtime/worker_process.py` | Durable EOS worker | Supported only through explicit `python-workers` profile |
+
+## Retired Node backend entrypoints
+
+The following are deliberately disabled and must not be restored as application runtime paths:
+
+- `server/ecosystem.config.js` exports an empty PM2 application list.
+- `server/package.json` has no `start`, `dev`, or `predev` backend scripts and no Node server main entry.
+- `server/server.js` remains temporarily importable for legacy test isolation, but direct execution exits non-zero with a retirement message. It is not an approved proxy or application runtime.
+- `server/deploy.sh` fails closed and cannot install dependencies, run migrations, or reload PM2.
+- `server/Dockerfile` and `server/Dockerfile.worker` are non-buildable retirement stubs based on `scratch`; they cannot produce Node backend images.
+
+Node remains permitted for frontend build, test and browser-certification tooling. This exception does not permit Express, PM2, a Node BFF, a Node worker, or Node-owned business/API execution.
 
 ## Canonical business database owner
 
-The Python EOS kernel owns the business MongoDB client/database lifecycle through `tools/eos/kernel/db.py`. Business registries and API routes either resolve that kernel-owned database/client or receive a caller-owned `client + database + session` graph and enforce the same-client transaction boundary.
-
-## Active entrypoints
-
-| Entrypoint | Runtime role | Database posture |
-|---|---|---|
-| `npm run dev` → `scripts/start-dev-stack.sh` | Python EOS + Vite development stack | Starts `uvicorn tools.eos.api.server:app`; no Node business database process |
-| `npm run dev:kernel` | Python EOS API | Kernel-owned Mongo lifecycle |
-| `npm run prod:kernel` | Python EOS API | Kernel-owned Mongo lifecycle |
-| `server/ecosystem.config.js` and `server/package.json` → `server/server.js` | Production Node BFF + local PDF renderer | HTTP proxy and artifact rendering only; no Mongo client or Mongoose connection; PDF identity is verified by EOS workspace-bootstrap |
-
-The active Node BFF health response now states `database: NOT_CONNECTED_BY_BFF` and `databaseAuthority: PYTHON_EOS`. It no longer opens a duplicate connection merely to report Mongoose connection state. Its local PDF renderer obtains the current user/profile from `GET /api/auth/workspace-bootstrap` using the caller's bearer token and tenant header; Python EOS validates the session, tenant membership and role. The BFF binds `req.tenantId` to the returned canonical `workspace.tenantId`, and the PDF controller rejects conflicting tenant IDs supplied in the body, metadata or payload. The controller accepts only this EOS-verified request identity and contains no Mongoose model lookup or JWT-claim decoding.
-
-## Business registry and API consumers reviewed
-
-- Tenant, plan, subscription, employee and principal repositories resolve `get_database()` through the kernel database module.
-- Owner commercial workspace, billing and PayShap HTTP routes obtain the kernel client/database and pass the caller-owned transaction session to their registries.
-- PayShap evidence persistence resolves the kernel database when no explicit collection is supplied.
-- Password reset and recovery-contact completion use the kernel-owned client/session transaction boundary.
-- Order-number service accepts a client only when it is exactly `get_database().client`.
-- Financial approval aggregation defaults to the kernel database and rejects a mixed client/database graph.
-- Platform billing release authorization obtains `get_client()` and `get_database()` from the kernel.
-- Financial execution-request issuance and PRDCA application composition are dependency-injected: the caller supplies the client/database/session; the code does not create a second Mongo client and validates graph identity where applicable.
+The Python EOS kernel owns the business MongoDB client/database lifecycle through `tools/eos/kernel/db.py`. Tenant, plan, subscription, employee, principal, billing and owner-workspace registries use this canonical database or a caller-owned same-client transaction graph.
 
 ## Explicit non-business exception
 
-`tools/eos/legal_operations/service/legal_evidence_provider_readonly_reconciliation_runtime.py` creates a separate Mongo client only for its dedicated reconciliation audit sink. It requires `WILSY_LEGAL_EVIDENCE_RECONCILIATION_AUDIT_MONGODB_URI`, compares that target with the canonical `MONGODB_URI`, requires TLS, and rejects an audit database whose client is the business database client. This is an isolated audit sink, not a business-registry connection or a fallback business database.
+`tools/eos/legal_operations/service/legal_evidence_provider_readonly_reconciliation_runtime.py` creates a separate Mongo client only for its dedicated reconciliation audit sink. It requires `WILSY_LEGAL_EVIDENCE_RECONCILIATION_AUDIT_MONGODB_URI`, compares that target with the canonical `MONGODB_URI`, requires TLS, and rejects an audit database whose client is the business database client. This is an isolated audit sink, not a business-registry connection or fallback business database.
 
-## Dormant legacy/operator surfaces
+## External operational boundary
 
-- `server/app.js`, `server/config/database.js` and `server/jobs/scheduler.js` retain legacy Mongoose-era code. They are not referenced by the repository's active PM2 BFF process definition or the current development stack. In particular, the scheduler's direct-start block is not part of the active PM2 app list.
-- `server/deploy.sh` is an explicit deployment operator script, not a runtime entrypoint: it sources `.env.production`, pulls `origin/main`, installs production dependencies, runs tests/build/migrations when available, reloads PM2, and performs health checks. It was not executed during this work and remains outside the PR's authorized development-only boundary.
-- The `server/package.json` `onboard`, `test:pipeline`, `investor-report`, `monitor`, and helper scripts are explicit task/maintenance commands; they are not started by the active PM2 app definition or `npm run dev`.
-- `tools/eos/reliability/high_availability/heartbeat.py` is a syntax-invalid legacy stub with an unfinished method signature; it is not importable as an active runtime module and is explicitly excluded from the AST database-consumer scan. It remains technical debt, not a certified failover service.
-- `tools/eos/mongodb/read_only_index_verifier.py` is an explicitly invoked, non-production-only read-only CLI. It requires an environment-injected URI and independently supplied target fingerprint, performs `hello`/`list_indexes` reads only, reports `mutations_performed: 0`, and closes its short-lived client. It is not part of request handling or application startup.
-- `tools/eos/scripts/update_platform_tenant.py`, `tools/eos/scripts/update_platform_tenant_direct.py`, and `tools/eos/tenancy/retire_legacy_root_aliases.py` are explicit operator/migration commands, not imported API runtime modules. Their direct connection behavior is excluded from the runtime-client scan and should remain manually invoked under separately approved operational controls.
-- `tools/eos/legal_operations/service/legal_evidence_provider_readonly_reconciliation_audit_provisioner.py` is a deployment-only, explicitly invoked index-provisioning command. It opens a short-lived client only to the distinct TLS-protected audit target, provisions and verifies audit indexes, then closes that client. It is not called by request handling or application startup and is classified as an operator-only connection, not a business-registry bypass. No provisioning command was executed during this certification.
+Repository changes cannot prove or stop a PM2 process already running on an external host, nor can they alter an out-of-repository load balancer, DNS record, ingress, or process supervisor. Before any production traffic cutover, the authorized operator must inspect the actual host process list and ingress target, verify the direct Kennel EOS endpoint and health/readiness, then remove any externally managed stale PM2 process and proxy route. No such host action is claimed by this repository change.
 
-**Operational caveat:** this is a repository-defined entrypoint inventory. It cannot prove that an external PM2, cron, shell, or container configuration outside the repository is not manually launching a dormant legacy process. Deployment operations must reconcile the actual host process list before any production cutover.
+## Certification
 
-## Automated guard
-
-`tests/unit/test_eos_runtime_database_consumer_inventory.py` checks that:
-1. direct Mongo client construction in runtime `tools/eos` code is confined to the canonical kernel connector and the explicit isolated audit sink;
-2. active BFF and development entrypoints do not load the dormant Mongoose app/scheduler;
-3. the BFF source contains no Mongoose connection lifecycle; and
-4. representative business registry consumers retain the kernel-owned or caller-owned same-client boundary.
+`tests/unit/test_python_eos_runtime_deployment.py` asserts that the supported production containers are Python EOS and that the retired Node backend has no supported PM2, package-script, direct-execution, deployment-script, or Docker-image entrypoint.
