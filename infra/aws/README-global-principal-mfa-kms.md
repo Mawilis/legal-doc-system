@@ -313,3 +313,57 @@ production provisioning.
   Keep prior key ARNs in the adapter decrypt keyring only for the approved
   migration window.
 - Preserve CloudTrail and CloudFormation change-set/stack evidence.
+
+## Reproducible local EOS runtime launch
+
+The committed launcher `scripts/start-eos-local-mfa.sh` replaces repeated
+interactive environment exports for the certified local-development stack.
+From the repository root, run:
+
+```bash
+bash scripts/start-eos-local-mfa.sh
+```
+
+The launcher:
+- reads the key ARN from the `wilsy-eos-global-principal-mfa-local-dev-v3`
+  CloudFormation stack using the infrastructure-admin profile (read-only);
+- configures the process to use the separate `wilsy-eos-mfa-local` assume-role
+  profile, clears static AWS credential environment variables, and verifies
+  the expected local-development assumed-role identity;
+- sets the explicit `WILSY_GLOBAL_MFA_KMS_REGION` contract and runs the same
+  canonical EOS synthetic KMS round-trip probe before starting Uvicorn;
+- exits before starting EOS if the stack output, AWS CLI, role identity, or
+  KMS probe is unavailable or incorrect.
+
+The launcher creates no AWS resources, changes no IAM policy, and reads no MFA
+factor records. It does not use the administrator identity for application KMS
+operations. Optional non-secret overrides are
+`WILSY_EOS_AWS_ADMIN_PROFILE`, `WILSY_EOS_AWS_RUNTIME_PROFILE`,
+`WILSY_EOS_MFA_LOCAL_STACK_NAME`, `WILSY_GLOBAL_MFA_KMS_REGION`,
+`EOS_HOST`, and `EOS_PORT`.
+
+## Runtime readiness contract
+
+The API composition root exposes the following internal application state for
+health/readiness integration and tests:
+
+- `global_principal_mfa_runtime_ready`: true only after a decryptor is
+  composed and (for AWS KMS) its real synthetic encrypt/decrypt startup probe
+  succeeds.
+- `global_principal_mfa_runtime_status`: `NOT_INITIALIZED`,
+  `NOT_CONFIGURED`, `UNAVAILABLE`, or `READY`.
+- `global_principal_mfa_runtime_reason`: stable configuration/probe reason
+  code; it contains no key material or credential data.
+
+A missing provider is explicitly `NOT_CONFIGURED` with
+`GLOBAL_MFA_KMS_PROVIDER_REQUIRED`; a configured but invalid or inaccessible
+provider is `UNAVAILABLE` with its safe adapter reason code. In either case
+the TOTP verifier remains absent and the existing `/auth/global/verify-mfa`
+route continues to return its existing fail-closed unavailable response.
+No existing factor, enrollment, challenge, session, or route policy is changed.
+
+Production remains separate: use deployment-managed KMS key ARN and region
+configuration with the hosting platform's short-lived workload identity.
+Do not configure the local-development AWS profile or local stack in
+production. The actual production hosting target and workload identity must be
+verified before any production role trust or deployment binding is authored.
