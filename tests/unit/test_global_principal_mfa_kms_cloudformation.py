@@ -1,11 +1,11 @@
 # TITLE: WILSY EOS Production Global Principal MFA KMS CloudFormation Contract Test
-# VERSION: v1.0.1-PRODUCTION-MFA-KMS-CLOUDFORMATION-CONTRACT
+# VERSION: v1.0.2-PRODUCTION-MFA-KMS-CLOUDFORMATION-CONTRACT
 # AUTHORITY: Static production infrastructure safety certification only.
 # EPITOME: Verify EKS OIDC trust and exact-role MFA KMS data-plane authority.
 # ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/tests/unit/test_global_principal_mfa_kms_cloudformation.py
 # COLLABORATION / OWNERSHIP: Wilsy Core Engineering.
 # CERTIFICATION OR UPDATE DATE: 2026-11-08.
-# CHANGELOG: v1.0.1 corrects literal newline and regex matching in the static assertions; v1.0.0 certifies exact EKS OIDC constraints, role-first key creation, and direct KMS policy grants.
+# CHANGELOG: v1.0.2 corrects the OIDC pattern assertion's regex literal; v1.0.1 corrects newline source matching; v1.0.0 certifies exact EKS OIDC constraints, role-first key creation, and direct KMS policy grants.
 # COMPLIANCE: Static test evidence only; does not provision AWS or certify a production hosting target.
 # SECURITY / PRIVACY POSTURE: Reads infrastructure source only; no credentials, network, or live AWS resources.
 # TENANT BOUNDARY: No tenant data or identity is created or modified.
@@ -37,7 +37,7 @@ def _oidc_issuer_host_path_pattern() -> str:
     parameter = source.split("  EosEksOidcIssuerHostPath:", 1)[1].split(
         "  EosServiceAccountSubject:", 1
     )[0]
-    match = re.search(r"AllowedPattern:\s*'([^']+)', parameter)
+    match = re.search(r"AllowedPattern:\s*'([^']+)'", parameter)
     assert match is not None, "EKS OIDC issuer host/path must have an explicit constraint"
     return match.group(1)
 
@@ -106,7 +106,7 @@ def test_production_eks_stack_has_no_local_development_identity_or_grant():
 
 
 # ARTIFACT: test_global_principal_mfa_kms_cloudformation.py
-# VERSION: v1.0.1-PRODUCTION-MFA-KMS-CLOUDFORMATION-CONTRACT
+# VERSION: v1.0.2-PRODUCTION-MFA-KMS-CLOUDFORMATION-CONTRACT
 # AUTHORITY BOUNDARY: static production KMS infrastructure assertions only
 # TENANT POSTURE: no tenant data or identity is created or modified
 # FAIL-CLOSED POSTURE: broadened OIDC or KMS authority fails tests
