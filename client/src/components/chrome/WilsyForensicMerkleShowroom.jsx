@@ -274,9 +274,16 @@ function formatWilsyFrameworkList(snapshot) {
     }
   });
 
+  const declared = snapshot?.status?.complianceFrameworks
+    || snapshot?.chain?.complianceFrameworks
+    || snapshot?.receipts?.complianceFrameworks;
+  if (Array.isArray(declared)) {
+    declared.forEach(value => frameworks.add(String(value).toUpperCase()));
+  }
+
   return Array.from(frameworks).length > 0
     ? Array.from(frameworks).join(' · ')
-    : 'POPIA · GDPR · SOC2 · WORM';
+    : 'No external framework attestation';
 }
 
 /**
@@ -288,12 +295,12 @@ function buildWilsyReceiptSummary(snapshot) {
   const receiptRows = normalizeWilsyReceiptRows(snapshot);
   const contract = normalizeWilsyReceiptContract(snapshot);
   const overlay = normalizeWilsyReceiptOverlay(snapshot);
-  const receiptCount = Number(contract.receiptCount ?? overlay.receiptCount ?? receiptRows.length ?? 0);
+  const receiptCount = Number(contract.receiptCount ?? overlay.receiptCount ?? snapshot?.receipts?.receiptCount ?? receiptRows.length ?? 0);
   const sampleReceiptCount = Number(overlay.sampleReceiptCount ?? receiptRows.length ?? 0);
-  const reviewReceiptCount = Number(contract.reviewReceiptCount ?? overlay.reviewReceiptCount ?? 0);
+  const reviewReceiptCount = Number(contract.reviewReceiptCount ?? overlay.reviewReceiptCount ?? snapshot?.receipts?.driftCount ?? snapshot?.chain?.driftCount ?? 0);
   const sealedReceiptCount = Number(contract.sealedReceiptCount ?? overlay.sealedReceiptCount ?? 0);
   const clausesAnchored = Number(contract.clausesAnchored ?? overlay.clausesAnchored ?? 0);
-  const posture = String(overlay.posture || contract.status || receiptRows[0]?.status || 'REVIEW_REQUIRED').toUpperCase();
+  const posture = String(overlay.posture || contract.status || snapshot?.receipts?.status || snapshot?.receipts?.sourceStatus || snapshot?.chain?.status || receiptRows[0]?.status || 'SOURCE_PENDING').toUpperCase();
   const frameworkList = formatWilsyFrameworkList(snapshot);
 
   return {
@@ -535,9 +542,9 @@ function normalizeWilsyChainStatus(snapshot) {
   const anchorProvider = receiptContract.anchorProvider || status.anchorProvider || run.anchorProvider || chain.anchorProvider || 'NONE';
   const qldbStatus = receiptContract.qldbStatus || chain.qldbStatus || run.qldbStatus || status.qldbStatus || 'RETIRED_NOT_USED';
   const qldbEndOfSupport = receiptContract.qldbEndOfSupport || chain.qldbEndOfSupport || run.qldbEndOfSupport || status.qldbEndOfSupport || '2025-07-31';
-  const chainLength = Number(receiptSummary.receiptCount || chain.chainLength || chain.leafCount || chain.totalLeaves || chain.recordsVerified || chain.result?.leafCount || run.chainLength || 0);
+  const chainLength = Number(chain.evidenceCount ?? chain.chainLength ?? chain.leafCount ?? chain.totalLeaves ?? chain.recordsVerified ?? chain.result?.leafCount ?? run.evidenceCount ?? run.chainLength ?? receiptSummary.receiptCount ?? 0);
   const driftCount = Number(chain.driftCount ?? chain.invalidCount ?? chain.result?.driftCount ?? run.driftCount ?? 0);
-  const contractsVerified = Number(receiptSummary.receiptCount || status.contractsVerified || chain.contractsVerified || chain.recordsVerified || telemetry.contractsVerified || chainLength || 0);
+  const contractsVerified = verified ? Number(chain.evidenceCount ?? chain.chainLength ?? status.contractsVerified ?? chain.contractsVerified ?? chain.recordsVerified ?? telemetry.contractsVerified ?? 0) : 0;
   const activeSessions = Number(status.activeSessions ?? chain.activeSessions ?? run.activeSessions ?? telemetry.activeSessions ?? 0);
   const receiptsLogged = Number(receiptSummary.receiptCount || status.receiptsLogged || chain.receiptsLogged || run.receiptsLogged || telemetry.receiptsLogged || receiptRows.length || anchors.length || 0);
   const clausesAnchored = Number(receiptSummary.clausesAnchored || status.clausesAnchored || chain.clausesAnchored || run.clausesAnchored || telemetry.clausesAnchored || 0);
