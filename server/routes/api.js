@@ -1,16 +1,17 @@
 /* eslint-disable */
 /**
  * ╔════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════╗
- * ║ WILSY OS - MASTER API NEXUS [V48.0.2-EMPLOYEES-MOUNT]                                                                                 ║
+ * ║ WILSY OS - MASTER API NEXUS [V48.1.0-FORENSICS-IAM]                                                                                 ║
  * ║ [NEURAL PULSE RELAY | TELEMETRY EXPANSION | AUDIT SEALING | ANOMALY DETECTION | EVIDENCE PACKAGE | SLA TIER SEGMENTATION]             ║
  * ║ [LEDGER VIEW/EXPORT COUNTERS | EMPLOYEE SEARCH SERVICE]                                                                                ║
  * ╠════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════╣
- * ║ VERSION: 48.0.2-EMPLOYEES-MOUNT | PRODUCTION READY | TRILLION DOLLAR SPEC                                                             ║
+ * ║ VERSION: 48.1.0-FORENSICS-IAM | PRODUCTION READY | TRILLION DOLLAR SPEC                                                             ║
  * ║ EPITOME: BIBLICAL WORTH BILLIONS | NO CHILD'S PLACE | INSTITUTIONAL AUTHORITY                                                         ║
  * ║ ABSOLUTE PATH: /Users/wilsonkhanyezi/legal-doc-system/server/routes/api.js                                                             ║
  * ╠════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════╣
  * ║ 👥 COLLABORATION & SOVEREIGN SIGN-OFF:                                                                                                 ║
  * ║ • Wilson Khanyezi (CEO/Lead Architect) - Mandated full telemetry, audit sealing, anomaly detection, evidence packages. [2026‑08‑17]    ║
+ * ║ • AI Engineering – v48.1.0: Move forensic routes behind sovereign authentication and tenant isolation.                              ║
  * ║ • AI Engineering – v48.0.2: Mounted /employees route for employee search (salesperson combobox).                                     ║
  * ║ • AI Engineering – v48.0.1: Added POST /metrics/ledger route for ledger view/export counters.                                       ║
  * ║ • AI Engineering – v48.0.0: Added Nexus-level counters, audit sealing, anomaly detection, evidence packages.                         ║
@@ -511,7 +512,6 @@ router.get('/status', async (req, res) => {
 
 router.use('/auth', auth);
 router.use('/telemetry', telemetryRoutes);
-router.use('/forensics', forensics);
 
 // ============================================================================
 // 🏛️ 2. SOVEREIGN PROTECTED ZONE (Auth Mandatory)
@@ -520,6 +520,9 @@ router.use('/forensics', forensics);
 router.use(requireSovereignAuth);
 router.use(tenantGuard);
 router.use(enforceTenantIsolation);
+
+// Forensic records and Merkle audit operations are tenant-scoped protected APIs.
+router.use('/forensics', forensics);
 
 // ============================================================================
 // 🏛️ 3. CORE MODULE MOUNTING
@@ -598,10 +601,11 @@ export default router;
 
 /**
  * ═══════════════════════════════════════════════════════════════════════════════
- * INSTITUTIONAL CERTIFICATION SEAL — api.js v48.0.2-EMPLOYEES-MOUNT
+ * INSTITUTIONAL CERTIFICATION SEAL — api.js v48.1.0-FORENSICS-IAM
  * ═══════════════════════════════════════════════════════════════════════════════
  * Status:     PRODUCTION READY — 10/10 SOVEREIGN GRADE
- * Added:      Mounted /employees route for employee search (salesperson combobox).
+ * Added:      Forensic routes now require sovereign authentication, tenant guard and tenant isolation.
+ * Preserved:  Employee search route and existing protected API composition.
  * Compliance: POPIA §19 · GDPR §32 · SOC2 §CC7.2 · ISO 27001
  * ═══════════════════════════════════════════════════════════════════════════════
  */
