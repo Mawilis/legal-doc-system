@@ -9,6 +9,7 @@ from tools.eos.runtime.durable_task_queue import (
     complete_task,
     enqueue_task,
     fail_task,
+    renew_task_lease,
 )
 
 NOW = datetime(2026, 11, 8, 12, tzinfo=timezone.utc)
@@ -110,3 +111,15 @@ def test_failure_rejects_untrusted_error_text_and_lost_lease():
         fail_task(tasks, Mock(), tenant_id="tenant-a", task_id="task-a",
                   worker_id="worker-a", lease_token="lease-a", now=NOW,
                   error_code="WORKER_FAILED", session=object())
+
+
+def test_lease_renewal_is_fenced_by_live_owner_and_token():
+    tasks = Mock()
+    tasks.update_one.return_value.modified_count = 1
+    assert renew_task_lease(tasks, tenant_id="tenant-a", task_id="task-a",
+                            worker_id="worker-a", lease_token="lease-a",
+                            now=NOW, lease_seconds=90)
+    query = tasks.update_one.call_args.args[0]
+    assert query["lease_token"] == "lease-a"
+    assert query["lease_until"] == {"$gt": NOW}
+    assert tasks.update_one.call_args.args[1]["$set"]["lease_until"] == NOW + timedelta(seconds=90)
