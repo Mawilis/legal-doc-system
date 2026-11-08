@@ -37,8 +37,25 @@ def test_system_mfa_challenge_and_session_issue_revoke_and_rollback_are_atomic(m
     if not URI:
         raise RuntimeError("TEST_GLOBAL_PRINCIPAL_MONGO_URI_REQUIRED")
     client = MongoClient(URI, serverSelectionTimeoutMS=5_000, retryWrites=True, tz_aware=True)
-    database_name = "global_system_session_" + uuid.uuid4().hex
+    expected_replica_set = os.getenv(
+        "TEST_GLOBAL_PRINCIPAL_MONGO_REPLICA_SET", "wilsyGlobalPrincipalCertRS"
+    )
+    actual_replica_set = client.admin.command("hello").get("setName")
+    if actual_replica_set != expected_replica_set:
+        client.close()
+        pytest.fail(
+            f"wrong certification replica set: expected {expected_replica_set!r}, "
+            f"received {actual_replica_set!r}"
+        )
+    database_name = os.getenv("TEST_GLOBAL_PRINCIPAL_MONGO_DATABASE")
+    if database_name != "wilsy_global_principal_mfa_cert":
+        client.close()
+        pytest.fail(
+            "TEST_GLOBAL_PRINCIPAL_MONGO_DATABASE must be "
+            "'wilsy_global_principal_mfa_cert'"
+        )
     database = client[database_name]
+    suffix = uuid.uuid4().hex
     monkeypatch.setattr(
         "tools.eos.auth.global_principal_system_session_authority.create_access_token",
         lambda _claims, **_kwargs: "synthetic-signed-system-token",
@@ -47,11 +64,11 @@ def test_system_mfa_challenge_and_session_issue_revoke_and_rollback_are_atomic(m
     email = principal_id + "@example.test"
     now = datetime.now(timezone.utc).replace(microsecond=0)
     try:
-        principals = database["principal_authorities"]
-        credentials = database["principal_credentials"]
-        challenges = database[CHALLENGE_COLLECTION]
-        sessions = database[SESSION_COLLECTION]
-        refresh_tokens = database[REFRESH_COLLECTION]
+        principals = database[f"principal_authorities_cert_{suffix}"]
+        credentials = database[f"principal_credentials_cert_{suffix}"]
+        challenges = database[f"{CHALLENGE_COLLECTION}_cert_{suffix}"]
+        sessions = database[f"{SESSION_COLLECTION}_cert_{suffix}"]
+        refresh_tokens = database[f"{REFRESH_COLLECTION}_cert_{suffix}"]
         PrincipalAuthorityRepository.ensure_indexes(principals)
         PrincipalCredentialRepository.ensure_indexes(credentials)
         GlobalPrincipalSystemMfaChallengeService.ensure_indexes(challenges)
@@ -227,5 +244,6 @@ def test_system_mfa_challenge_and_session_issue_revoke_and_rollback_are_atomic(m
                 challenge_service.get_factor_context(token, session=session, now=now)
             session.abort_transaction()
     finally:
-        client.drop_database(database_name)
+        for collection in (principals, credentials, challenges, sessions, refresh_tokens):
+            collection.drop()
         client.close()
