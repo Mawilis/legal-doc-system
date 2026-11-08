@@ -51,6 +51,7 @@ def test_claim_rejects_nonpositive_lease():
 
 def test_completion_requires_caller_transaction_and_fences_lease_owner():
     tasks, audit = Mock(), Mock()
+    audit.count_documents.return_value = 0
     with pytest.raises(DurableTaskQueueError, match="TASK_QUEUE_AUDIT_TRANSACTION_REQUIRED"):
         complete_task(tasks, audit, tenant_id="tenant-a", task_id="task-a",
                       worker_id="worker-a", lease_token="lease-a", now=NOW)
@@ -74,6 +75,7 @@ def test_stale_worker_cannot_complete_or_append_audit():
 
 def test_failure_retries_with_exponential_backoff_and_redacted_code():
     tasks, audit = Mock(), Mock()
+    audit.count_documents.return_value = 0
     tasks.find_one.return_value = {"attempts": 2, "max_attempts": 5}
     tasks.update_one.return_value.modified_count = 1
     session = object()
@@ -89,6 +91,7 @@ def test_failure_retries_with_exponential_backoff_and_redacted_code():
 
 def test_failure_dead_letters_after_attempt_limit():
     tasks, audit = Mock(), Mock()
+    audit.count_documents.return_value = 0
     tasks.find_one.return_value = {"attempts": 5, "max_attempts": 5}
     tasks.update_one.return_value.modified_count = 1
     assert fail_task(tasks, audit, tenant_id="tenant-a", task_id="task-a",
