@@ -17,7 +17,7 @@ def test_python_eos_compose_is_a_single_python_application_runtime():
     source = (ROOT / "docker-compose.eos.yml").read_text(encoding="utf-8")
     assert "dockerfile: Dockerfile.eos" in source
     assert "MONGODB_URI:" in source
-    assert "9095:9095" in source
+    assert '"${EOS_PORT:-9095}:9095"' in source
     assert "wilsy-eos:" in source
     assert "node:" not in source.lower()
     assert "server/Dockerfile" not in source
