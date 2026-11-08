@@ -1,4 +1,4 @@
-from unittest.mock import Mock
+from unittest.mock import MagicMock
 
 import pytest
 
@@ -12,7 +12,7 @@ from tools.eos.runtime.worker_registry import EngineWorkerRegistry
 
 
 def test_runner_uses_only_the_injected_canonical_database_graph():
-    client, database = object(), Mock()
+    client, database = object(), MagicMock()
     database.client = client
     registry = EngineWorkerRegistry()
     runner = create_durable_worker_runner(
@@ -25,7 +25,7 @@ def test_runner_uses_only_the_injected_canonical_database_graph():
 
 
 def test_runner_rejects_mixed_database_and_client_graphs():
-    database = Mock()
+    database = MagicMock()
     database.client = object()
     with pytest.raises(RuntimeError, match="EOS_WORKER_DATABASE_CLIENT_MISMATCH"):
         create_durable_worker_runner(
@@ -44,7 +44,7 @@ def test_runner_fails_closed_when_kernel_database_is_unavailable(monkeypatch):
 
 
 def test_index_provisioning_is_explicit_and_uses_named_collections():
-    database = Mock()
+    database = MagicMock()
     provision_durable_worker_indexes(database)
     assert database[TASK_COLLECTION].create_index.call_count == 3
     assert database[TASK_AUDIT_COLLECTION].create_index.call_count == 1
