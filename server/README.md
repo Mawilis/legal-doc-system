@@ -1,13 +1,14 @@
 # WILSY OS — legacy Node server source boundary
 
 **TITLE:** Legacy Node Server Source and Retirement Boundary  
-**VERSION:** v1.1.0-LEGACY-NODE-SOURCE-BOUNDARY  
+**VERSION:** v1.2.0-LEGACY-NODE-SOURCE-BOUNDARY  
 **AUTHORITY:** Wilsy OS Core Governance  
 **EPITOME:** Identifies the server directory as an unsupported legacy migration source while explicitly disclosing that Express routes, Mongoose models, Redis, BullMQ, cron jobs and callable scheduler modules remain present and are not yet safe to delete.  
 **ABSOLUTE CANONICAL PATH:** /Users/wilsonkhanyezi/legal-doc-system/server/README.md  
 **COLLABORATION / OWNERSHIP:** Wilson Khanyezi (Founder); Kennel EOS runtime owners; Codex (AI Engineering).  
 **CERTIFICATION / UPDATE DATE:** 2026-11-08  
 **CHANGELOG:**
+- v1.2.0-LEGACY-NODE-SOURCE-BOUNDARY: Adds the separate root Node service tree, root launch scripts and 124 non-browser Node test files to the legacy retirement boundary.
 - v1.1.0-LEGACY-NODE-SOURCE-BOUNDARY: Corrects the previous description that remaining server files were isolated test/lint tooling; records active-looking legacy source and prohibits runtime activation pending Python EOS parity.
 - v1.0.0: Established the initial unsupported Node backend notice.
 **COMPLIANCE:** AGENTS.md v1.2.0; ENGINEERING_CONSTITUTION.md v1.1.0.  
@@ -43,6 +44,9 @@ This directory is not yet a clean historical test-only package. The current bran
 - `server/package.json`: a large Node dependency manifest that still includes Express, Mongoose, Redis, BullMQ, Agenda, cron, and server-oriented packages. Its test/lint scripts do not make the dependency tree frontend-only.
 - `server/tests/**`: historical Node tests. These are not browser tests and are not an approved application runtime.
 - `server/scripts/**`: legacy Node deployment and manifest-generation scripts.
+- Root `services/ai`, `services/auth`, `services/billing`, `services/crypto`, `services/ledger`, and `services/standards`: separate Node service modules, including Express listeners, Mongoose consumers, JWT auth, simulated AI scoring, unsafe ephemeral-key signing and a global ledger repair generator.
+- Root launchers `start_all.sh`, `start_wilsy_os.sh`, `GlobalLaunchSequence.sh`, `Genesis_Ignition.sh`, and `Sovereign_Deployment_Automation.sh`: legacy process/deployment activators. They are not approved EOS launch paths.
+- `server/tests/**`: 136 entries including 124 Node test files; these are not browser tests and must be mapped to Python EOS tests or retired only after parity.
 
 The absence of `server/server.js`, PM2 launchers, or the former Node Dockerfiles prevents those specific launch paths; it does not prove that the remaining modules, workers, or scripts are harmless or unreachable. The legacy app exports a callable scheduler initializer, and other repository scripts still reference old deployment tooling.
 
@@ -56,7 +60,7 @@ Do not execute:
 - `server/scripts/**` deployment or manifest generators.
 - PM2 or a legacy server Kubernetes manifest.
 
-The root `Sovereign_Deployment_Automation.sh` and `Genesis_Ignition.sh` still reference legacy Node deployment/test behavior and are not approved deployment paths. Root `nginx.conf`, `infra/nginx/fortress-lb.conf`, `k8s/predictive-deployment.yaml`, and the legacy Helm chart also remain unresolved. See the repository's forensic inventory for the exact route and ingress findings.
+The root `services/**` Node services and `start_all.sh` / `start_wilsy_os.sh` / `GlobalLaunchSequence.sh` can activate additional non-EOS processes. The root `Sovereign_Deployment_Automation.sh` and `Genesis_Ignition.sh` still reference legacy Node deployment/test behavior and are not approved deployment paths. Root `nginx.conf`, `infra/nginx/fortress-lb.conf`, `k8s/predictive-deployment.yaml`, and the legacy Helm chart also remain unresolved. See the repository's forensic inventory for the exact route and ingress findings.
 
 ## Retirement condition
 
@@ -69,7 +73,7 @@ This README does not certify route parity, production ingress, host process stat
 **Status: LEGACY / MIGRATION SOURCE — NOT A SUPPORTED RUNTIME; RETIREMENT NOT YET CERTIFIED.**
 
 ARTIFACT: server/README.md  
-VERSION: v1.1.0-LEGACY-NODE-SOURCE-BOUNDARY  
+VERSION: v1.2.0-LEGACY-NODE-SOURCE-BOUNDARY  
 AUTHORITY BOUNDARY: no Node runtime, API, worker, scheduler, or deployment authority.  
 TENANT POSTURE: no tenant access or fallback authority.  
 FAIL-CLOSED POSTURE: legacy modules remain disabled pending mapped and certified Python EOS replacements.  
