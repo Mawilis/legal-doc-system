@@ -100,6 +100,7 @@ on:
     paths:
       - "infra/aws/global-principal-mfa-kms.yaml"
       - "infra/aws/README-global-principal-mfa-kms.md"
+      - "tests/unit/test_global_principal_mfa_kms_cloudformation.py"
       - ".github/workflows/global-principal-membership-certification.yml"
   workflow_dispatch:
 permissions:
@@ -203,8 +204,7 @@ jobs:
             tests/unit/test_eos_runtime_database_consumer_inventory.py \
             tests/unit/test_global_principal_system_session_authority.py \
             tests/unit/test_global_principal_totp_verifier.py \
-            tests/unit/test_global_principal_mfa_kms_envelope.py \\
-            tests/unit/test_global_principal_mfa_kms_cloudformation.py \\
+            tests/unit/test_global_principal_mfa_kms_envelope.py \
             tests/unit/test_global_principal_mfa_kms_cloudformation.py \
             tests/unit/test_global_principal_mfa_enrollment_service.py \
             tests/unit/test_global_principal_mfa_legacy_migration_service.py \
@@ -315,6 +315,7 @@ jobs:
             tests/integration/test_principal_credential_repository_mongo.py \
             infra/aws/global-principal-mfa-kms.yaml \
             infra/aws/README-global-principal-mfa-kms.md \
+            tests/unit/test_global_principal_mfa_kms_cloudformation.py \
             .github/workflows/global-principal-membership-certification.yml
           test -z "$(git status --short)"
       - name: Run focused global principal and membership tests
@@ -332,6 +333,7 @@ jobs:
             tests/unit/test_global_principal_system_session_authority.py \
             tests/unit/test_global_principal_totp_verifier.py \
             tests/unit/test_global_principal_mfa_kms_envelope.py \
+            tests/unit/test_global_principal_mfa_kms_cloudformation.py \
             tests/unit/test_global_principal_mfa_enrollment_service.py \
             tests/unit/test_global_principal_mfa_legacy_migration_service.py \
             tests/unit/test_global_principal_mfa_session_transition.py \
