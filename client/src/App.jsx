@@ -1,7 +1,7 @@
 /* eslint-disable */
 /**
  * TITLE: WILSY OS Sovereign Application Root
- * VERSION: v20.2.3-GLOBAL-SEARCH-PLATFORM-HINT
+ * VERSION: v20.2.4-DAILY-ATTENTION-CENTRE
  * AUTHORITY: Wilsy OS Core Governance
  * EPITOME: Composes authenticated routing, exact tenant projection, legal
  *          admission release, and protected workspace presentation without
@@ -13,6 +13,9 @@
  *                            legal-acceptance truth.
  * CERTIFICATION / UPDATE DATE: 2026-11-09
  * CHANGELOG:
+ *   v20.2.4-DAILY-ATTENTION-CENTRE — Replaces inert bell panel with
+ *     an interactive, tenant-scoped EOS My Work triage surface. Work totals
+ *     are never represented as notification unread receipts.
  *   v20.2.3-GLOBAL-SEARCH-PLATFORM-HINT — Displays both macOS and Windows
  *     keyboard hints while preserving the shared Meta/Ctrl+K command shortcut.
  *   v20.2.2-GLOBAL-CHROME-TRANSPORT-TRUST — Uses a neutral security-chip
@@ -23,8 +26,8 @@
  *     global top bar for protected routes, consuming the revalidated auth
  *     projection, EOS My Work summary and bounded kernel status/version.
  *     Search opens a global command surface with safe navigation shortcuts;
- *     notification state remains explicitly unavailable until an authorised
- *     EOS notification projection exists. No browser-derived authority is made.
+ *     the attention centre reads authorised EOS My Work data without claiming
+ *     unread notification state. No browser-derived authority is made.
  *   v20.1.1-ALL-PROTECTED-ROUTES-LOGOUT-PROPAGATION — Promotes the legal boundary
  *     from REQUIRED to COMPLETE only when LegalAcceptanceGate reports the
  *     server-confirmed COMPLETE state, so the protected runtime mounts in the
@@ -72,6 +75,7 @@ import MyWorkWorkspace from './components/workspaces/MyWorkWorkspace.jsx';
 import WilsyHeadquartersWorkspace from './components/workspaces/WilsyHeadquartersWorkspace.jsx';
 import api from './services/api';
 import WilsyOSIntelligenceDockRuntime from './components/intelligence/WilsyOSIntelligenceDockRuntime.jsx';
+import WilsyDailyAttentionCentre from './components/chrome/WilsyDailyAttentionCentre.jsx';
 
 import { SovereignOrchestrator, useSovereignMesh } from './components/sovereign/SovereignOrchestrator.jsx';
 import { DataOrchestratorProvider, useSovereignData } from './components/sovereign/DataOrchestrator.jsx';
@@ -266,15 +270,15 @@ const AuthenticatedGlobalChrome = ({ user, onLogout, children }) => {
           <div title={isSecureChannel ? 'Authenticated session over HTTPS' : 'Authenticated session; transport is not HTTPS'} className={`flex items-center gap-2 rounded-full border px-2 py-2 text-[11px] font-medium sm:px-3 ${isSecureChannel ? 'border-emerald-400/20 bg-emerald-400/10 text-emerald-200' : 'border-white/10 bg-white/[0.04] text-slate-300'}`}>
             <ShieldCheck size={15}/><span className="hidden sm:inline">{isSecureChannel ? 'Secure · Authenticated' : 'Authenticated'}</span>
           </div>
-          <div className="relative">
-            <button type="button" aria-label="Notifications" aria-expanded={notificationsOpen} onClick={() => { setNotificationsOpen((value) => !value); setUserMenuOpen(false); }} className="relative grid h-10 w-10 place-items-center rounded-full text-slate-300 transition hover:bg-white/10"><Bell size={18}/></button>
-            {notificationsOpen && (
-              <div role="dialog" aria-label="Notifications" className="absolute right-0 top-12 z-50 w-[min(340px,calc(100vw-2rem))] rounded-2xl border border-white/10 bg-[#101d32] p-4 shadow-2xl">
-                <div className="flex items-center justify-between"><h2 className="font-semibold text-white">Notifications</h2><button type="button" aria-label="Close notifications" onClick={() => setNotificationsOpen(false)}><X size={16}/></button></div>
-                <p className="mt-3 text-sm leading-6 text-slate-300">The EOS notification projection is not connected to this workspace yet. Unread count and read actions are therefore unavailable.</p>
-              </div>
-            )}
-          </div>
+          <WilsyDailyAttentionCentre
+            tenantId={user?.tenantId}
+            systemServicesWorkspace={Boolean(user?.systemServicesWorkspace)}
+            activeCount={workCount}
+            open={notificationsOpen}
+            onToggle={() => { setNotificationsOpen((value) => !value); setUserMenuOpen(false); }}
+            onClose={() => setNotificationsOpen(false)}
+            onOpenWork={() => { setNotificationsOpen(false); navigate('/my-work'); }}
+          />
           <div className="relative">
             <button type="button" aria-label="Open user menu" aria-expanded={userMenuOpen} onClick={() => { setUserMenuOpen((value) => !value); setNotificationsOpen(false); }} className="flex items-center gap-2 rounded-full py-1 pl-1 pr-2 transition hover:bg-white/10">
               <span className="grid h-8 w-8 place-items-center rounded-full border border-amber-300/30 bg-amber-300/15 text-xs font-bold text-amber-200">{initials}</span>
