@@ -1,7 +1,7 @@
 """WILSY OS platform agreement and selected-capacity certificate.
 
 TITLE: Platform Agreement Applicability Certificate
-VERSION: v1.0.0-PLATFORM-ADMISSION-SELECTED-CAPACITY
+VERSION: v1.1.0-SESSION-BOUND-PLATFORM-ADMISSION
 AUTHORITY: Wilsy OS Core Governance.
 EPITOME: Distinguish mandatory platform agreements from product/practice IAM and
 prove that a selected GLOBAL capacity is re-read rather than merged.
@@ -9,7 +9,10 @@ ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/tests/unit/test_
 COLLABORATION / OWNERSHIP: LegalAcceptanceService, current membership/capacity
 repositories and immutable document/acceptance registries.
 UPDATE DATE: 2026-11-09.
-CHANGELOG: v1.0.0-PLATFORM-ADMISSION-SELECTED-CAPACITY establishes exact revision,
+CHANGELOG: v1.1.0-SESSION-BOUND-PLATFORM-ADMISSION uses an authenticated-session GLOBAL fixture
+           while preserving exact role, revision, platform scope and missing
+           document assertions. A missing session reference is not authorized.
+           v1.0.0-PLATFORM-ADMISSION-SELECTED-CAPACITY establishes exact revision,
 platform scope, missing-document and caller-session regression evidence.
 COMPLIANCE: POPIA section 19; GDPR Article 32; SOC 2 CC7.2.
 SECURITY / PRIVACY: Synthetic identities only; no production credentials.
@@ -74,7 +77,7 @@ def authority_service(monkeypatch: pytest.MonkeyPatch) -> tuple[LegalAcceptanceS
 
 def selected_identity(role: str = "tenant_owner", **changes: Any) -> SovereignIdentity:
     """Construct a synthetic already-authenticated GLOBAL selected-capacity view."""
-    values: dict[str, Any] = dict(identity_id="principal-platform-cert", tenant_id="tenant-platform-cert", roles=[role], auth_method="JWT", status=PrincipalStatus.ACTIVE, principal_scope="GLOBAL", membership_revision=5, capacity_revision=7, workspace_id=resolve_workspace_id(role, tenant_id="tenant-platform-cert"))
+    values: dict[str, Any] = dict(identity_id="principal-platform-cert", tenant_id="tenant-platform-cert", roles=[role], auth_method="JWT", status=PrincipalStatus.ACTIVE, principal_scope="GLOBAL", session_reference="synthetic-current-global-session", membership_revision=5, capacity_revision=7, workspace_id=resolve_workspace_id(role, tenant_id="tenant-platform-cert"))
     values.update(changes)
     return SovereignIdentity(**values)
 
@@ -111,7 +114,7 @@ def test_stale_or_ambiguous_selected_capacity_never_releases_platform(authority_
 
 
 # ARTIFACT: test_legal_acceptance_platform_admission.py
-# VERSION: v1.0.0-PLATFORM-ADMISSION-SELECTED-CAPACITY
+# VERSION: v1.1.0-SESSION-BOUND-PLATFORM-ADMISSION
 # AUTHORITY BOUNDARY: Synthetic currentness and applicability evidence only.
 # TENANT POSTURE: Exact tenant/principal/capacity, no persistence mutation.
 # FAIL-CLOSED POSTURE: Missing documents and stale authority never release entry.
