@@ -1,7 +1,7 @@
 /* eslint-disable */
 /**
  * ╔════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════╗
- * ║ WILSY OS – AI CONVERSATION HISTORY ENGINE [v5.4.2-SESSION-BOUND-LEGAL-HISTORY-CACHE-INTEGRITY]                                              ║
+ * ║ WILSY OS – AI CONVERSATION HISTORY ENGINE [v5.5.0-SESSION-SCOPE-CURRENTNESS-GUARD]                                              ║
  * ║ [MIGRATED TO NATIVE WEB CRYPTO API]                                                                                                 ║
  * ╠════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════╣
  * ║ EPITOME: Session-bound WILSY AI conversation history for authenticated workspace use.                                               ║
@@ -16,8 +16,11 @@
  * ║ • AI Engineering – Migrated to Web Crypto, made hash functions async, updated all callers.                                          ║
  * ║ • REFINED (2026-08-05) – Removed `crypto-js` CDN, hardened error handling, compliance flags.                                         ║
  * ║ • REFINED (2026-09-24) – v5.4.1-SESSION-BOUND-LEGAL-HISTORY-EXPORT-INTEGRITY: retired stale status export; aligned documentation with session-only history. ║
- * ║ • REFINED (2026-09-24) – v5.4.2-SESSION-BOUND-LEGAL-HISTORY-CACHE-INTEGRITY: restored the module-local empty session cache required by all session-history operations. ║
+ * ║ • REFINED (2026-09-24) – v5.4.2-SESSION-BOUND-LEGAL-HISTORY-CACHE-INTEGRITY: restored the module-local empty session cache. ║
  * ╠════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════╣
+ * ║ CHANGELOG: 2026-11-09 v5.5.0-SESSION-SCOPE-CURRENTNESS-GUARD introduces explicit scope-revocation
+ * ║           and generation-currentness guards for pending memory-only writes.
+ * ║           No prompt, response, or client scope becomes durable EOS truth.
  * ║ COMPLIANCE:                                                                                                                          ║
  * ║   • POPIA §19 (Accountability)                                                                                                      ║
  * ║   • GDPR §32 (Security of Processing)                                                                                               ║
@@ -34,6 +37,40 @@
 // deliberately session-memory only so legal prompts are never silently persisted
 // through a legacy or caller-scoped store.
 let conversationCache = [];
+let conversationGeneration = 0;
+
+
+/**
+ * @function resetWilsyAIConversationSession
+ * @description Revokes all in-memory history and increments its generation.
+ * An already-running async proof calculation is not allowed to repopulate the
+ * cache after logout, tenant switch, capacity switch, or component unmount.
+ * @returns {Array} An empty, non-persistent conversation projection.
+ * @tenant The caller must bind this reset to its EOS-validated session scope.
+ * @mutation Only transient browser memory is cleared, never durable records.
+ * @idempotency Repeated resets are safe and independently invalidate old writes.
+ * @financial No payment, banking or settlement authority.
+ */
+export function resetWilsyAIConversationSession() {
+  conversationGeneration += 1;
+  conversationCache = [];
+  return [];
+}
+
+/**
+ * @function requireCurrentConversationGeneration
+ * @description Reject writing a conversation turn after a scope was revoked.
+ * @param {number} generation Captured in-memory generation before async work.
+ * @returns {void}
+ * @tenant The current UI must still own the exact authenticated session.
+ * @mutation No changes when a stale generation is detected.
+ * @financial No execution authority.
+ */
+const requireCurrentConversationGeneration = (generation) => {
+  if (conversationGeneration !== generation) {
+    throw new Error('WILSY_AI_CONVERSATION_SESSION_SUPERSEDED');
+  }
+};
 
 // ──────────────────────────────────────────────────────────────────────────────
 // UTILITY FUNCTIONS
@@ -232,6 +269,7 @@ export async function loadWilsyAIConversationThreads(_options = {}) {
  * Create one same-session thread. No prompt or response is durably persisted.
  */
 export async function createWilsyAIConversationThread(payload = {}) {
+  const generation = conversationGeneration;
   const normalized = normalizeThreadPayload(payload);
   const workspace = resolveWilsyAIConversationWorkspace(normalized);
   const tenantId = getTenantId();
@@ -250,6 +288,7 @@ export async function createWilsyAIConversationThread(payload = {}) {
     storagePosture: 'SESSION_ONLY',
   });
 
+  requireCurrentConversationGeneration(generation);
   conversationCache = [
     thread,
     ...conversationCache.filter((item) => item.id !== thread.id),
@@ -262,6 +301,7 @@ export async function createWilsyAIConversationThread(payload = {}) {
  * accepted while the canonical shape is { threadId, message }.
  */
 export async function persistWilsyAIConversationTurn(payload = {}, legacyMessage = null) {
+  const generation = conversationGeneration;
   const normalized = (
     typeof payload === 'string'
       ? { threadId: payload, message: legacyMessage }
@@ -272,6 +312,7 @@ export async function persistWilsyAIConversationTurn(payload = {}, legacyMessage
   if (!threadId) {
     const created = await createWilsyAIConversationThread(normalized);
     threadId = created.id;
+    requireCurrentConversationGeneration(generation);
   }
 
   const existing = conversationCache.find((item) => item.id === threadId);
@@ -312,6 +353,7 @@ export async function persistWilsyAIConversationTurn(payload = {}, legacyMessage
     storagePosture: 'SESSION_ONLY',
   });
 
+  requireCurrentConversationGeneration(generation);
   conversationCache = conversationCache.map((item) => (
     item.id === threadId ? updated : item
   ));
@@ -322,8 +364,7 @@ export async function persistWilsyAIConversationTurn(payload = {}, legacyMessage
  * Clear same-session conversation history only.
  */
 export async function clearWilsyAIConversationThreads(_options = {}) {
-  conversationCache = [];
-  return [];
+  return resetWilsyAIConversationSession();
 }
 
 // ──────────────────────────────────────────────────────────────────────────────
@@ -339,6 +380,7 @@ export async function clearWilsyAIConversationThreads(_options = {}) {
  * @institutional Maintains API compatibility without introducing durable storage.
  */
 export function saveWilsyAIConversationThreads(threads = []) {
+  conversationGeneration += 1;
   conversationCache = Array.isArray(threads) ? [...threads] : [];
   return [...conversationCache];
 }
@@ -376,6 +418,7 @@ export default {
   createWilsyAIConversationThread,
   persistWilsyAIConversationTurn,
   clearWilsyAIConversationThreads,
+  resetWilsyAIConversationSession,
   saveWilsyAIConversationThreads,
   getCachedThreads,
   syncThreads,
@@ -384,7 +427,7 @@ export default {
 
 /**
  * ARTIFACT: client/src/components/intelligence/wilsyAIConversationHistoryEngine.js
- * VERSION: v5.4.2-SESSION-BOUND-LEGAL-HISTORY-CACHE-INTEGRITY
+ * VERSION: v5.5.0-SESSION-SCOPE-CURRENTNESS-GUARD
  * AUTHORITY BOUNDARY: transient browser presentation only; no AI, legal, tenant or durable-history authority
  * TENANT POSTURE: tenant identifier is display/cache partition metadata only and never grants workspace access
  * FAIL-CLOSED POSTURE: no uncertified remote conversation persistence route is called; refresh clears session history

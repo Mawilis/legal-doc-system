@@ -1,0 +1,45 @@
+name: EOS Intelligence Session Currentness Certification
+
+on:
+  pull_request:
+    paths:
+      - "client/src/components/intelligence/WilsyOSIntelligenceDock.jsx"
+      - "client/src/components/intelligence/wilsyAIConversationHistoryEngine.js"
+      - "client/tests/components/intelligence/WilsyOSIntelligenceDock.test.jsx"
+      - "client/tests/client/wilsyAIConversationHistoryEngine.test.js"
+      - "client/tests/client/wilsyAIConversationCurrentness.test.js"
+      - "client/src/__tests__/components/wilsyOSIntelligenceDockDeadlineIntelligence.test.jsx"
+      - ".github/workflows/eos-intelligence-session-currentness-certification.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  optional-intelligence:
+    name: Verify optional Dock, scope isolation and in-flight session-memory revocation
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    defaults:
+      run:
+        working-directory: client
+    steps:
+      - name: Checkout reviewed WILSY EOS source
+        uses: actions/checkout@v4
+      - name: Prepare isolated client certification
+        uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: npm
+          cache-dependency-path: client/package-lock.json
+      - name: Install locked client dependencies on GitHub only
+        run: npm ci --include=dev --no-audit --no-fund --progress=false
+      - name: Certify Dock and transient history source contracts
+        run: >-
+          npx vitest run --config vitest.config.js
+          tests/components/intelligence/WilsyOSIntelligenceDock.test.jsx
+          tests/client/wilsyAIConversationHistoryEngine.test.js
+          tests/client/wilsyAIConversationCurrentness.test.js
+          src/__tests__/components/wilsyOSIntelligenceDockDeadlineIntelligence.test.jsx
+      - name: Build canonical frontend bundle
+        run: npm run build

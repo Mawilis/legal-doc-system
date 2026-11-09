@@ -1,0 +1,38 @@
+name: EOS Platform Admission and Selected Capacity Certification
+
+on:
+  pull_request:
+    paths:
+      - "tools/eos/legal_operations/service/legal_acceptance_service.py"
+      - "tools/eos/api/legal_acceptance_router.py"
+      - "tests/unit/test_legal_acceptance.py"
+      - "tests/unit/test_legal_acceptance_selected_capacity.py"
+      - ".github/workflows/eos-admission-capacity-certification.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  selected-capacity:
+    name: Platform-use acceptance, selected capacity and revision currentness
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - name: Checkout approved development source
+        uses: actions/checkout@v4
+      - name: Setup isolated EOS Python runner
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+      - name: Install locked development dependencies on GitHub only
+        run: |
+          python -m pip install --disable-pip-version-check -r requirements.txt
+          python -m pip install --disable-pip-version-check pytest==9.1.1 httpx
+      - name: Verify Python source and test syntax
+        run: |
+          python -m py_compile tools/eos/legal_operations/service/legal_acceptance_service.py tests/unit/test_legal_acceptance.py tests/unit/test_legal_acceptance_selected_capacity.py
+      - name: Certify selected role and original platform-use agreement requirements
+        run: |
+          python -m pytest -q tests/unit/test_legal_acceptance.py tests/unit/test_legal_acceptance_selected_capacity.py

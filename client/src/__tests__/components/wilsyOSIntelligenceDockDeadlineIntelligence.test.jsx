@@ -44,6 +44,7 @@ vi.mock('../../components/intelligence/wilsyAIDynamicSuggestionEngine.js', () =>
   recordWilsyAISuggestionUsage: vi.fn(),
 }));
 vi.mock('../../components/intelligence/wilsyAIConversationHistoryEngine.js', () => ({
+  resetWilsyAIConversationSession: vi.fn(),
   clearWilsyAIConversationThreads: vi.fn(),
   createWilsyAIConversationThread: vi.fn(async () => ({ id: 'thread-1', messages: [] })),
   loadWilsyAIConversationThreads: vi.fn(async () => [{ id: 'thread-1', messages: [] }]),
