@@ -62,7 +62,7 @@ describe('Headquarters daily execution', () => {
     const section = screen.getByRole('region', { name: 'Headquarters daily execution' });
     expect(await within(section).findByText('Clear dispatch backlog')).toBeTruthy();
     expect(within(section).getByText('Follow up on renewal')).toBeTruthy();
-    expect(within(section).getByText('2 authorised sources')).toBeTruthy();
+    expect(within(section).getByText(/2 authorised sources/)).toBeTruthy();
     expect(api.get).toHaveBeenCalledWith('/my-work', { forceNetworkRetry: true });
     fireEvent.click(within(section).getByRole('button', { name: 'Open authorised work action for Clear dispatch backlog' }));
     expect(onOpenWork).toHaveBeenCalledTimes(1);
