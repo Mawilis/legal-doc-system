@@ -1,13 +1,15 @@
 /**
  * TITLE: WILSY OS Authenticated Session Restoration Currentness Certificate
- * VERSION: v1.0.0-STRICT-RESTORE-LOGOUT-OWNERSHIP
+ * VERSION: v1.1.0-CURRENT-ABORTABLE-RESTORE-OWNERSHIP
  * AUTHORITY: Wilsy OS Core Governance
  * EPITOME: Demonstrates one current EOS workspace bootstrap during Strict Mode
  *          and rejects stale responses after logout or a superseding session.
  * ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/client/tests/contexts/authContext.sessionCurrentness.test.jsx
  * COLLABORATION / OWNERSHIP: AuthProvider and Python EOS workspace bootstrap.
  * CERTIFICATION / UPDATE DATE: 2026-11-09
- * CHANGELOG: v1.0.0-STRICT-RESTORE-LOGOUT-OWNERSHIP validates exact bearer
+ * CHANGELOG: v1.1.0-CURRENT-ABORTABLE-RESTORE-OWNERSHIP verifies one explicit candidate bearer,
+ *            abortable bootstrap and skipAuthRedirect session ownership.
+ *            v1.0.0-STRICT-RESTORE-LOGOUT-OWNERSHIP validates exact bearer
  *            pending GET coalescing, immediate logout invalidation, and
  *            late post-logout workspace-refresh denial without bypassing MFA.
  * COMPLIANCE: POPIA section 19; GDPR Article 32; SOC 2 CC7.2.
@@ -114,6 +116,8 @@ describe('authoritative session restoration currentness', () => {
     expect(screen.getByTestId('principal')).toHaveTextContent(id);
     expect(api.get).toHaveBeenCalledWith('/auth/workspace-bootstrap', {
       headers: { Authorization: 'Bearer ' + bearer },
+      skipAuthRedirect: true,
+      signal: expect.any(AbortSignal),
     });
   });
 
@@ -151,7 +155,7 @@ describe('authoritative session restoration currentness', () => {
 
 /*
  * ARTIFACT: client/tests/contexts/authContext.sessionCurrentness.test.jsx
- * VERSION: v1.0.0-STRICT-RESTORE-LOGOUT-OWNERSHIP
+ * VERSION: v1.1.0-CURRENT-ABORTABLE-RESTORE-OWNERSHIP
  * AUTHORITY BOUNDARY: Synthetic client integration evidence only.
  * TENANT POSTURE: Exact EOS-like projection and no cross-tenant state.
  * FAIL-CLOSED POSTURE: Stale requests cannot promote a former identity.
