@@ -1,6 +1,6 @@
 /**
  * TITLE: WILSY OS Authorised My Work Completion Workspace
- * VERSION: v1.4.0-VERIFIED-PROJECTION-FOCUS-HANDOFF
+ * VERSION: v1.5.0-EXPLICIT-FOCUS-RESET
  * AUTHORITY: Wilsy OS Core Governance
  * EPITOME: Executes source-owned evidenced work completion and focuses the
  *          item selected from Daily Attention or Headquarters.
@@ -8,7 +8,10 @@
  * COLLABORATION / OWNERSHIP: Python EOS /api/my-work owns visibility and
  *                            source services own completion and audit.
  * CERTIFICATION / UPDATE DATE: 2026-11-09
- * CHANGELOG: v1.4.0-VERIFIED-PROJECTION-FOCUS-HANDOFF validates every My Work
+ * CHANGELOG: v1.5.0-EXPLICIT-FOCUS-RESET lets an explicit parent null clear
+ *            route focus while preserving route-only deep links for callers
+ *            that omit the parent focus prop.
+ *            v1.4.0-VERIFIED-PROJECTION-FOCUS-HANDOFF validates every My Work
  *            read with the shared tenant/principal/source coverage contract
  *            and accepts an exact source-key focus handoff from Headquarters.
  *            v1.3.0-SESSION-GENERATION-CURRENTNESS binds projection, command
@@ -68,12 +71,14 @@ const formatDue = (value) => {
  * projection contract verifies schema, row identity, source coverage and exact
  * scope. Tenant, principal, capacity and permissions remain EOS-owned; source
  * services own transactions, completion evidence and durable command replay.
- * @param {{focusWorkItem?: string|null}} [props] Optional exact source key from
- *   the Headquarters read-only brief; a match is still required in EOS results.
+ * @param {{focusWorkItem?: string|null}} [props] Exact source key from the
+ *   Headquarters read-only brief; explicit null clears route focus. A matching
+ *   item is still required in the fresh EOS projection.
  * @returns {JSX.Element} Current source queue, loading or bounded unavailable state.
  * No client state establishes legal, financial, MFA or notification authority.
  */
-export default function MyWorkWorkspace({ focusWorkItem: handoffFocusWorkItem = null } = {}) {
+export default function MyWorkWorkspace(props = {}) {
+  const { focusWorkItem: handoffFocusWorkItem = null } = props;
   const navigate = useNavigate();
   const location = useLocation();
   const auth = useContext(AuthContext);
@@ -95,8 +100,9 @@ export default function MyWorkWorkspace({ focusWorkItem: handoffFocusWorkItem = 
   const focusRef = useRef(null);
   const routeFocus = typeof location.state?.focusWorkItem === 'string'
     ? location.state.focusWorkItem : null;
-  const focusKey = typeof handoffFocusWorkItem === 'string'
-    ? handoffFocusWorkItem
+  const hasParentFocus = Object.prototype.hasOwnProperty.call(props, 'focusWorkItem');
+  const focusKey = hasParentFocus
+    ? (typeof handoffFocusWorkItem === 'string' ? handoffFocusWorkItem : null)
     : routeFocus;
   const [sourceProjection, setProjection] = useState(null);
   const [projectionScope, setProjectionScope] = useState(null);
@@ -390,7 +396,7 @@ function Metric({ label, value }) {
 
 /*
  * ARTIFACT: MyWorkWorkspace.jsx
- * VERSION: v1.4.0-VERIFIED-PROJECTION-FOCUS-HANDOFF
+ * VERSION: v1.5.0-EXPLICIT-FOCUS-RESET
  * AUTHORITY BOUNDARY: EOS source-owned work completion only.
  * TENANT POSTURE: Current principal, membership and business-role scope only.
  * FAIL-CLOSED POSTURE: Shared contract rejects invalid work and coverage.
