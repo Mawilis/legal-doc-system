@@ -1,7 +1,7 @@
 /* eslint-disable */
 /**
  * TITLE: WILSY OS Sovereign Application Root
- * VERSION: v20.2.7-HEADQUARTERS-PRINCIPAL-SCOPE
+ * VERSION: v20.2.8-AUTHORITATIVE-CAPACITY-CURRENTNESS
  * AUTHORITY: Wilsy OS Core Governance
  * EPITOME: Composes authenticated routing, exact tenant projection, legal
  *          admission release, and protected workspace presentation without
@@ -13,6 +13,9 @@
  *                            legal-acceptance truth.
  * CERTIFICATION / UPDATE DATE: 2026-11-09
  * CHANGELOG:
+ *   v20.2.8-AUTHORITATIVE-CAPACITY-CURRENTNESS — Invalidates attention and
+ *     Headquarters work projections across business-role, capacity and
+ *     workspace changes as well as principal/tenant changes.
  *   v20.2.7-HEADQUARTERS-PRINCIPAL-SCOPE — Remounts Headquarters when
  *     the authenticated tenant/principal changes, preventing prior-session
  *     work projection display even within the same tenant.
@@ -67,7 +70,7 @@ import { BrowserRouter as Router, Routes, Route, Navigate, useNavigate, useLocat
 import { AUTH_STATES, AuthProvider, useAuth } from './contexts/authContext.jsx';
 import { TenantProvider, useTenants } from './contexts/tenantContext';  // ✅ NEW IMPORT
 import ErrorBoundary from './components/ErrorBoundary.jsx';
-import { Bell, CheckCircle2, ChevronDown, Home, Loader2, LogOut, Search, ShieldCheck, X } from 'lucide-react';
+import { CheckCircle2, ChevronDown, Home, Loader2, LogOut, Search, ShieldCheck, X } from 'lucide-react';
 import { broadcastTelemetry } from './utils/telemetryHelper.js';
 
 import SovereignLogin from './components/auth/SovereignLogin.jsx';
@@ -154,6 +157,8 @@ const AuthenticatedGlobalChrome = ({ user, onLogout, children }) => {
   const isSecureChannel = typeof window !== 'undefined'
     && window.location.protocol === 'https:';
   const isMyWork = location.pathname === '/my-work';
+  const currentWorkScope = [user?.tenantId, user?.id, user?.role, user?.workspaceId, user?.businessRole]
+    .map((part) => String(part || '')).join(':');
 
   useEffect(() => {
     let active = true;
@@ -208,7 +213,7 @@ const AuthenticatedGlobalChrome = ({ user, onLogout, children }) => {
           || payload.summary.active_count < 0
         ) throw new Error('MY_WORK_SUMMARY_PROJECTION_INVALID');
         if (active) {
-          setWorkCountScope(user.tenantId + ':' + String(user?.id || ''));
+          setWorkCountScope(currentWorkScope);
           setWorkCount(payload.summary.active_count);
         }
       } catch {
@@ -224,7 +229,7 @@ const AuthenticatedGlobalChrome = ({ user, onLogout, children }) => {
       active = false;
       window.clearInterval(interval);
     };
-  }, [user?.tenantId, user?.id, user?.systemServicesWorkspace]);
+  }, [user?.tenantId, user?.id, user?.role, user?.workspaceId, user?.businessRole, user?.systemServicesWorkspace]);
 
   useEffect(() => {
     const handleShortcut = (event) => {
@@ -288,10 +293,10 @@ const AuthenticatedGlobalChrome = ({ user, onLogout, children }) => {
             <ShieldCheck size={15}/><span className="hidden sm:inline">{isSecureChannel ? 'Secure · Authenticated' : 'Authenticated'}</span>
           </div>
           <WilsyDailyAttentionCentre
-            key={String(user?.tenantId || '') + ':' + String(user?.id || '')}
+            key={currentWorkScope}
             tenantId={user?.tenantId}
             systemServicesWorkspace={Boolean(user?.systemServicesWorkspace)}
-            activeCount={workCountScope === (user?.tenantId + ':' + String(user?.id || '')) ? workCount : null}
+            activeCount={workCountScope === currentWorkScope ? workCount : null}
             open={notificationsOpen}
             onToggle={() => { setNotificationsOpen((value) => !value); setUserMenuOpen(false); }}
             onClose={() => setNotificationsOpen(false)}
@@ -326,7 +331,7 @@ const AuthenticatedGlobalChrome = ({ user, onLogout, children }) => {
           <span aria-hidden="true">●</span> {kernel.state === 'RESPONDING' ? 'EOS kernel API responding' : kernel.state === 'CHECKING' ? 'Checking EOS kernel…' : 'EOS kernel API unavailable'}
         </span>
         <span>·</span><span>{kernel.version ? 'Kernel v' + kernel.version : 'Version unavailable'}</span>
-        {isMyWork && workCountScope === (user?.tenantId + ':' + String(user?.id || '')) && workCount !== null && <span className="ml-2 rounded-full bg-amber-300 px-2 py-1 font-semibold text-[#081326]">{workCount} open</span>}
+        {isMyWork && workCountScope === currentWorkScope && workCount !== null && <span className="ml-2 rounded-full bg-amber-300 px-2 py-1 font-semibold text-[#081326]">{workCount} open</span>}
         {isMyWork && workCount === null && <span className="ml-2 text-amber-200">Task count unavailable</span>}
       </div>
 
@@ -528,7 +533,7 @@ const SovereignRouter = () => {
       <Route path="/covenant" element={<LegalAcceptanceGate onComplete={() => navigate('/', { replace: true })} />} />
       <Route path="/headquarters" element={
         isAuthenticated && user && !systemServicesSession
-          ? <ErrorBoundary><WilsyHeadquartersWorkspace key={String(user.id) + ':' + user.tenantId} tenantId={user.tenantId} /></ErrorBoundary>
+          ? <ErrorBoundary><WilsyHeadquartersWorkspace key={[user.id, user.tenantId, user.role, user.workspaceId, user.businessRole].map((part) => String(part || '')).join(':')} tenantId={user.tenantId} /></ErrorBoundary>
           : <Navigate to="/" replace />
       } />
       <Route path="/my-work" element={
@@ -746,7 +751,7 @@ export default App;
 
 /**
  * ARTIFACT: client/src/App.jsx
- * VERSION: v20.2.7-HEADQUARTERS-PRINCIPAL-SCOPE
+ * VERSION: v20.2.8-AUTHORITATIVE-CAPACITY-CURRENTNESS
  * AUTHORITY BOUNDARY: client route and protected-runtime composition only; Python EOS remains authentication, tenant and legal-acceptance authority
  * TENANT POSTURE: discovered tenant may choose login routing but cannot establish authenticated or protected scope
  * FAIL-CLOSED POSTURE: auth revalidation waits; unresolved legal status remains sealed; only server-confirmed legal COMPLETE mounts protected runtime
