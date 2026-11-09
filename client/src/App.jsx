@@ -122,7 +122,7 @@ const ProtectedTmsRoute = ({ user, children }) => {
  *          work visibility, notifications, and runtime health. This component
  *          renders only server-revalidated projections and never grants access.
  */
-const AuthenticatedGlobalChrome = ({ user, onLogout, children }) => {
+export const AuthenticatedGlobalChrome = ({ user, onLogout, children }) => {
   const navigate = useNavigate();
   const location = useLocation();
   const { isAuthenticated, authStage, loading: authLoading } = useAuth();
