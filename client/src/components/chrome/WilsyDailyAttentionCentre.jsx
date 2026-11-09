@@ -1,6 +1,6 @@
 /**
  * TITLE: WILSY OS Authenticated Daily Attention Centre
- * VERSION: v1.0.0-EOS-AUTHORISED-DAILY-ATTENTION
+ * VERSION: v1.0.1-STRICT-PROJECTION-DATE-VALIDATION
  * AUTHORITY: Wilsy OS Core Governance
  * EPITOME: Interactive notification-bell entry to exact-tenant, authorised
  *          EOS My Work triage, with actionable navigation to source-owned
@@ -9,7 +9,9 @@
  * COLLABORATION / OWNERSHIP: Python EOS /api/my-work owns work visibility;
  *                            App.jsx owns authenticated chrome and navigation.
  * CERTIFICATION / UPDATE DATE: 2026-11-09
- * CHANGELOG: v1.0.0-EOS-AUTHORISED-DAILY-ATTENTION implements on-demand work
+ * CHANGELOG: v1.0.1-STRICT-PROJECTION-DATE-VALIDATION also rejects
+ *            malformed EOS snapshot timestamps before UI date formatting.
+ *            v1.0.0-EOS-AUTHORISED-DAILY-ATTENTION implements on-demand work
  *            fetching, scoped validation, due/priority/source triage, search,
  *            keyboard/outside dismissal, safe refresh, detail expansion and
  *            source-owned action navigation.
@@ -68,6 +70,8 @@ const dueLabel = (value) => {
 export function assertAttentionProjection(payload, tenantId) {
   if (
     !payload || payload.schema !== SCHEMA || payload.tenant_id !== tenantId
+    || typeof payload.as_of !== 'string'
+    || Number.isNaN(new Date(payload.as_of).getTime())
     || !Array.isArray(payload.items) || !payload.summary
     || !validCount(payload.summary.active_count)
     || !validCount(payload.summary.overdue_count)
@@ -413,7 +417,7 @@ function Stat({ label, value, urgent = false }) {
 
 /*
  * ARTIFACT: WilsyDailyAttentionCentre.jsx
- * VERSION: v1.0.0-EOS-AUTHORISED-DAILY-ATTENTION
+ * VERSION: v1.0.1-STRICT-PROJECTION-DATE-VALIDATION
  * AUTHORITY BOUNDARY: Authenticated read-only EOS work triage.
  * TENANT POSTURE: Exact tenant, fail-closed, no browser persistence.
  * FAIL-CLOSED POSTURE: Invalid, denied or unavailable sources show no fabricated items.
