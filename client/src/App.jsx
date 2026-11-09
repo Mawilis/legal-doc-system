@@ -1,7 +1,7 @@
 /* eslint-disable */
 /**
  * TITLE: WILSY OS Sovereign Application Root
- * VERSION: v20.4.0-CHECKPOINT-DAILY-ATTENTION-MERGED
+ * VERSION: v20.4.1-ACTIONABLE-FLOATING-CHROME
  * AUTHORITY: Wilsy OS Core Governance
  * EPITOME: Composes authenticated routing, exact tenant projection, legal
  *          admission release, and protected workspace presentation without
@@ -13,6 +13,8 @@
  *                            legal-acceptance truth.
  * CERTIFICATION / UPDATE DATE: 2026-11-09
  * CHANGELOG:
+ *   v20.4.1-ACTIONABLE-FLOATING-CHROME — Routes selected EOS work items to source-owned completion
+ *     and opens existing HR workspaces directly from the floating bell.
  *   v20.4.0-CHECKPOINT-DAILY-ATTENTION-MERGED — Integrates EOS-authorised Daily Attention into the preserved
  *     official brand, search, session title, avatar and security chrome.
  *     Active work is distinct from unread notifications.
@@ -263,7 +265,14 @@ export const AuthenticatedGlobalChrome = ({ user, onLogout, children }) => {
             open={notificationsOpen}
             onToggle={() => { setNotificationsOpen((value) => !value); setUserMenuOpen(false); }}
             onClose={() => setNotificationsOpen(false)}
-            onOpenWork={() => { setNotificationsOpen(false); navigate('/my-work'); }}
+            onOpenWork={(item) => {
+              setNotificationsOpen(false);
+              navigate('/my-work', { state: item?.source_key ? { focusWorkItem: item.source_key } : null });
+            }}
+            onOpenWorkforce={() => {
+              setNotificationsOpen(false);
+              navigate('/headquarters?section=hr-workspace');
+            }}
           />
           <div className="relative">
             <button type="button" aria-label="Open user menu" aria-expanded={userMenuOpen} onClick={() => { setUserMenuOpen((value) => !value); setNotificationsOpen(false); }} className="flex items-center gap-2 rounded-full py-1 pl-1 pr-2 transition hover:bg-white/10">
@@ -706,7 +715,7 @@ export default App;
 
 /**
  * ARTIFACT: client/src/App.jsx
- * VERSION: v20.4.0-CHECKPOINT-DAILY-ATTENTION-MERGED
+ * VERSION: v20.4.1-ACTIONABLE-FLOATING-CHROME
  * AUTHORITY BOUNDARY: client route and protected-runtime composition only; Python EOS remains authentication, tenant and legal-acceptance authority
  * TENANT POSTURE: discovered tenant may choose login routing but cannot establish authenticated or protected scope
  * FAIL-CLOSED POSTURE: auth revalidation waits; unresolved legal status remains sealed; only server-confirmed legal COMPLETE mounts protected runtime
