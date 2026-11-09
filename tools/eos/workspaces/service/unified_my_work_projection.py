@@ -1,15 +1,36 @@
-"""Unified My Work read projection over independently owned EOS work registries.
-
-This module accepts only payloads already admitted by each source service's
-normal authorization and visibility checks. It does not query persistence,
-grant visibility, create assignments, or own completion/approval commands.
+"""TITLE: WILSY OS Unified My Work Read Projection
+VERSION: v1.0.1-SOURCE-IDENTITY-TYPE-NARROWING
+AUTHORITY: Wilsy OS Core Governance.
+EPITOME: Deterministically compose independently admitted EOS source work while
+         preserving source identity, tenant scope and visibility provenance.
+ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/tools/eos/workspaces/service/unified_my_work_projection.py
+COLLABORATION / OWNERSHIP: unified_my_work_router admits Legal, Operations,
+                           Intelligence and CRM through their own authorities.
+CERTIFICATION / UPDATE DATE: 2026-11-09.
+CHANGELOG: v1.0.1-SOURCE-IDENTITY-TYPE-NARROWING makes the existing identity
+           validation explicit so static analysis proves source-key types;
+           adds the complete sovereign header, API contract and end seal.
+           v1.0.0-UNIFIED-MY-WORK-PROJECTION established source-owned aggregation.
+COMPLIANCE: POPIA section 19; GDPR Article 32; SOC 2 CC7.2.
+SECURITY / PRIVACY POSTURE: In-memory projection only; no logging, storage,
+                          secrets, network calls or cross-tenant lookup.
+TENANT BOUNDARY: Every included envelope and explicit row tenant must match
+                 the authenticated caller's tenant. No directory is enumerated.
+AUTHORITY BOUNDARY: Only pre-admitted source payloads are consumed. This module
+                    creates no visibility, assignment, command or IAM authority.
+TRANSACTION / IDEMPOTENCY BOUNDARY: Source adapters own independent reads and
+                    transactions. Sorting and deduplication are deterministic;
+                    this module owns no persistence or durable command replay.
+FINANCIAL AUTHORITY BOUNDARY: No financial execution or settlement authority;
+                              Kennel EOS remains exclusive.
+FAIL-CLOSED POSTURE: Malformed, foreign or divergent source evidence rejects.
 """
 from __future__ import annotations
 
 from datetime import datetime, timezone
 from typing import Any, Iterable, Mapping
 
-VERSION = "v1.0.0-UNIFIED-MY-WORK-PROJECTION"
+VERSION = "v1.0.1-SOURCE-IDENTITY-TYPE-NARROWING"
 SCHEMA = "WILSY-OS-UNIFIED-MY-WORK/V1"
 
 _SOURCE_ORDER = ("LEGAL", "OPERATIONS", "INTELLIGENCE", "CRM")
@@ -18,9 +39,14 @@ _TERMINAL = frozenset({"COMPLETED", "CANCELLED"})
 
 
 class UnifiedMyWorkProjectionError(ValueError):
-    """Stable fail-closed error for malformed or divergent source projections."""
+    """Structured pure-projection rejection; grants no authority or mutation.
+
+    The stable code identifies malformed, foreign or divergent source evidence
+    without disclosing another tenant\'s existence or any persisted record.
+    """
 
     def __init__(self, code: str) -> None:
+        """Bind the stable source-validation code without logging source data."""
         self.code = code
         super().__init__(code)
 
@@ -84,6 +110,15 @@ def build_unified_my_work(
     A source may be omitted only when its caller intentionally did not request
     that source. An included source must identify the exact authenticated tenant.
     Work identity is namespaced by source so unrelated registries cannot collide.
+
+    Collaboration: unified_my_work_router supplies current, independently
+    authorized source payloads. Tenant/principal identities scope this read
+    projection and do not establish membership or permissions. Source-owned
+    transactions remain independent; no global atomic snapshot is implied.
+    The function neither starts nor changes transactions, writes audit/outbox
+    evidence, executes commands nor promises durable idempotency. It preserves
+    source provenance, rejects invalid evidence with UnifiedMyWorkProjectionError,
+    and returns only a presentation snapshot. Financial execution remains EOS.
     """
     if not isinstance(tenant_id, str) or not tenant_id.strip():
         raise UnifiedMyWorkProjectionError("TENANT_ID_INVALID")
@@ -119,7 +154,12 @@ def build_unified_my_work(
             title = raw.get("title")
             status = raw.get("status")
             priority = raw.get("priority", "NORMAL")
-            if not all(isinstance(value, str) and value.strip() for value in (item_id, title, status, priority)):
+            if (
+                not isinstance(item_id, str) or not item_id.strip()
+                or not isinstance(title, str) or not title.strip()
+                or not isinstance(status, str) or not status.strip()
+                or not isinstance(priority, str) or not priority.strip()
+            ):
                 raise UnifiedMyWorkProjectionError("SOURCE_ITEM_IDENTITY_INVALID")
             if status in _TERMINAL:
                 continue
@@ -201,3 +241,11 @@ def build_unified_my_work(
 
 
 __all__ = ["SCHEMA", "VERSION", "UnifiedMyWorkProjectionError", "build_unified_my_work"]
+
+# ARTIFACT: unified_my_work_projection.py
+# VERSION: v1.0.1-SOURCE-IDENTITY-TYPE-NARROWING
+# AUTHORITY BOUNDARY: Read projection of independently admitted source work only.
+# TENANT POSTURE: Exact envelope and explicit item tenant binding; no cross-tenant lookup.
+# FAIL-CLOSED POSTURE: Malformed, foreign and divergent source evidence rejects.
+# FINANCIAL EXECUTION AUTHORITY: Kennel EOS exclusively.
+# END OF WILSY OS SOVEREIGN ARTIFACT
