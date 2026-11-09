@@ -1,4 +1,21 @@
 /**
+ * TITLE: WILSY OS Institutional HTTP Transport Regression Certificate
+ * VERSION: v1.1.0-MFA-BOOTSTRAP-503-CURRENTNESS
+ * AUTHORITY: Wilsy OS Core Governance
+ * EPITOME: Existing HTTP contracts and critical post-MFA bootstrap requests
+ *          cannot be misclassified as degraded dashboard source reads.
+ * ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/client/src/__tests__/services/api.test.js
+ * COLLABORATION / OWNERSHIP: api.js transport, server-owned EOS session truth.
+ * CERTIFICATION / UPDATE DATE: 2026-11-09
+ * CHANGELOG: v1.1.0 verifies post-MFA session bootstrap, SYSTEM bootstrap,
+ *            covenant status, normal dashboard backoff and 403 separation.
+ * COMPLIANCE: POPIA section 19; GDPR Article 32; SOC 2 CC7.2.
+ * SECURITY / PRIVACY POSTURE: Synthetic bearer only; no live secrets or users.
+ * TENANT BOUNDARY: Test cannot establish or elevate tenant authority.
+ * AUTHORITY BOUNDARY: Only EOS accepts or rejects session credentials.
+ * FINANCIAL AUTHORITY BOUNDARY: Kennel EOS exclusively.
+ */
+/**
  * ═══════════════════════════════════════════════════════════════════════════════
  * WILSY OS — SOVEREIGN API UNIT TESTS (HOISTED FINAL)
  * ═══════════════════════════════════════════════════════════════════════════════
@@ -30,11 +47,13 @@ const {
   mockAxiosInstance,
   localStorageMock,
   requestInterceptorCapture,
+  responseInterceptorCapture,
 } = vi.hoisted(() => {
   const requestInterceptorCapture = {
     fulfilled: null,
     rejected: null,
   };
+  const responseInterceptorCapture = { fulfilled: null, rejected: null };
 
   const mockAxiosInstance = {
     get: vi.fn(),
@@ -46,7 +65,10 @@ const {
           requestInterceptorCapture.rejected = rejected;
         }),
       },
-      response: { use: vi.fn() },
+      response: { use: vi.fn((fulfilled, rejected) => {
+        responseInterceptorCapture.fulfilled = fulfilled;
+        responseInterceptorCapture.rejected = rejected;
+      }) },
     },
   };
 
@@ -64,6 +86,7 @@ const {
     mockAxiosInstance,
     localStorageMock,
     requestInterceptorCapture,
+    responseInterceptorCapture,
   };
 });
 
@@ -416,6 +439,71 @@ describe('api.js – Sovereign HTTP Client', () => {
       expect(mockAxiosInstance.post).toHaveBeenCalledWith('/statements/stmt1/verify');
     });
   });
+
+  describe('identity continuity excludes local 503 backoff', () => {
+    const seedServer503 = async (path) => {
+      const failed = {
+        config: { url: path, method: 'get', headers: {} },
+        response: { status: 503, data: { detail: 'SERVICE_UNAVAILABLE' } },
+        message: 'Real EOS server unavailable',
+      };
+      await expect(responseInterceptorCapture.rejected(failed)).rejects.toBe(failed);
+    };
+
+    it.each([
+      '/auth/workspace-bootstrap',
+      '/auth/global/session',
+      '/system-services/workspace-bootstrap',
+      '/legal-acceptance/status',
+      '/api/auth/workspace-bootstrap',
+    ])('always sends %s for fresh EOS verification even after 503', async (path) => {
+      expect(responseInterceptorCapture.rejected).toEqual(expect.any(Function));
+      await seedServer503(path);
+
+      const config = {
+        url: path, method: 'get',
+        headers: { Authorization: 'Bearer candidate-mfa-token' },
+      };
+      const result = await requestInterceptorCapture.fulfilled(config);
+      expect(result).toMatchObject({
+        url: path.replace(/^\/?api\//, '/'),
+        headers: { Authorization: 'Bearer candidate-mfa-token' },
+      });
+    });
+
+    it('retains protective backoff for degraded, ordinary dashboard GETs', async () => {
+      const path = '/metrics/test-auth-backoff-20261109';
+      await seedServer503(path);
+      await expect(requestInterceptorCapture.fulfilled({
+        url: path, method: 'get', headers: {},
+      })).rejects.toMatchObject({
+        isSourceBackoff: true,
+        response: { status: 503, data: { code: 'SOURCE_BACKOFF_ACTIVE' } },
+      });
+    });
+
+    it('respects deliberate forceNetworkRetry for diagnostic dashboard reads', async () => {
+      const path = '/metrics/test-auth-force-20261109';
+      await seedServer503(path);
+      const result = await requestInterceptorCapture.fulfilled({
+        url: path, method: 'get', headers: {}, forceNetworkRetry: true,
+      });
+      expect(result.url).toBe(path);
+    });
+
+    it('never treats a 403 permission denial as source degradation', async () => {
+      const path = '/billing/dunning/state';
+      const denied = {
+        config: { url: path, method: 'get', headers: {} },
+        response: { status: 403 }, message: 'Forbidden',
+      };
+      await expect(responseInterceptorCapture.rejected(denied)).rejects.toBe(denied);
+      const result = await requestInterceptorCapture.fulfilled({
+        url: path, method: 'get', headers: {},
+      });
+      expect(result.url).toBe(path);
+    });
+  });
 });
 
 /**
@@ -426,4 +514,14 @@ describe('api.js – Sovereign HTTP Client', () => {
  * The sovereign bridge is now verified by CI.
  * Phase 5 next: integration tests and performance benchmarks.
  * ═══════════════════════════════════════════════════════════════════════════════
+ */
+
+/*
+ * ARTIFACT: client/src/__tests__/services/api.test.js
+ * VERSION: v1.1.0-MFA-BOOTSTRAP-503-CURRENTNESS
+ * AUTHORITY BOUNDARY: Tests only, never creates browser authorization.
+ * TENANT POSTURE: Synthetic credentials and endpoint identities.
+ * FAIL-CLOSED POSTURE: Actual EOS errors remain errors; no invented success.
+ * FINANCIAL EXECUTION AUTHORITY: Kennel EOS exclusively.
+ * END OF WILSY OS SOVEREIGN ARTIFACT
  */
