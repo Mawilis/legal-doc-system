@@ -1,13 +1,15 @@
 /**
  * TITLE: WILSY OS Headquarters workspace presentation certificate
- * VERSION: v1.4.0-ATTENTION-HR-DEEP-LINK
+ * VERSION: v1.5.0-MY-WORK-ITEM-HANDOFF
  * AUTHORITY: WILSY EOS frontend regression evidence
  * EPITOME: Verifies Headquarters renders only the source-backed My Work, Team,
  *          and HR requisition projections without manufacturing operational truth.
  * ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/client/src/__tests__/components/WilsyHeadquartersWorkspace.test.jsx
  * COLLABORATION / OWNERSHIP: Exercises WilsyHeadquartersWorkspace and its API adapter seam.
  * CERTIFICATION / UPDATE DATE: 2026-11-09
- * CHANGELOG: v1.4.0-ATTENTION-HR-DEEP-LINK confirms the floating attention bell can
+ * CHANGELOG: v1.5.0-MY-WORK-ITEM-HANDOFF certifies selected daily work focus handoff
+ *            and reset through the canonical My Work navigation entry.
+ *            v1.4.0-ATTENTION-HR-DEEP-LINK confirms the floating attention bell can
  *            open the existing authorised HR suite by an explicit URL.
  *            v1.3.0 covers handoff from Headquarters to the canonical HR operating workspace.
  *            v1.2.0 covers explicit server refresh controls for My Work and HR requisitions.
@@ -23,7 +25,19 @@ import { MemoryRouter } from 'react-router-dom';
 import WilsyHeadquartersWorkspace from '../../components/workspaces/WilsyHeadquartersWorkspace.jsx';
 
 vi.mock('../../components/workspaces/MyWorkWorkspace.jsx', () => ({
-  default: () => <section><h2>My Work certified task centre</h2></section>,
+  default: ({ focusWorkItem }) => (
+    <section>
+      <h2>My Work certified task centre</h2>
+      <output data-testid="my-work-focus">{focusWorkItem || ''}</output>
+    </section>
+  ),
+}));
+vi.mock('../../components/workspaces/WilsyHeadquartersDailyBrief.jsx', () => ({
+  default: ({ onOpenWork }) => (
+    <button onClick={() => onOpenWork({ source_key: 'OPERATIONS:OPS-FOCUS-1' })}>
+      Open selected daily item
+    </button>
+  ),
 }));
 vi.mock('../../components/hr/HrDashboard.jsx', () => ({
   default: () => <section><h2>Canonical HR operating workspace</h2></section>,
@@ -98,6 +112,16 @@ describe('WILSY Headquarters authenticated shell', () => {
     expect(screen.getByText('Project source not yet certified')).toBeTruthy();
     expect(screen.getByText('Approval source not yet certified')).toBeTruthy();
     expect(screen.getByText('Authorized HR directory total')).toBeTruthy();
+  });
+
+  it('hands a daily item source key into My Work and clears focus for general navigation', () => {
+    renderHeadquarters();
+    fireEvent.click(screen.getByRole('button', { name: 'Open selected daily item' }));
+    expect(screen.getByTestId('my-work-focus').textContent).toBe('OPERATIONS:OPS-FOCUS-1');
+
+    const navigation = screen.getByRole('navigation', { name: 'Headquarters navigation' });
+    fireEvent.click(within(navigation).getByRole('button', { name: /My Work/ }));
+    expect(screen.getByTestId('my-work-focus').textContent).toBe('');
   });
 
   it('mounts the existing My Work workspace rather than a duplicate task projection', () => {
@@ -184,7 +208,7 @@ describe('WILSY Headquarters authenticated shell', () => {
 });
 
 /* ARTIFACT: WILSY OS Headquarters workspace presentation certificate
- * VERSION: v1.4.0-ATTENTION-HR-DEEP-LINK
+ * VERSION: v1.5.0-MY-WORK-ITEM-HANDOFF
  * AUTHORITY BOUNDARY: Regression evidence only; tests do not grant permissions.
  * TENANT POSTURE: Fixtures represent server-scoped projections and supply no browser tenant input.
  * FAIL-CLOSED POSTURE: Source contracts are asserted before presentation claims are made.
