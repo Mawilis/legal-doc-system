@@ -1,13 +1,17 @@
 /**
  * TITLE: WILSY OS Headquarters workspace presentation certificate
- * VERSION: v1.5.0-MY-WORK-ITEM-HANDOFF
+ * VERSION: v1.6.0-AUTHENTICATED-OVERVIEW-SOURCE-SYNC
  * AUTHORITY: WILSY EOS frontend regression evidence
  * EPITOME: Verifies Headquarters renders only the source-backed My Work, Team,
  *          and HR requisition projections without manufacturing operational truth.
  * ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/client/src/__tests__/components/WilsyHeadquartersWorkspace.test.jsx
  * COLLABORATION / OWNERSHIP: Exercises WilsyHeadquartersWorkspace and its API adapter seam.
  * CERTIFICATION / UPDATE DATE: 2026-11-09
- * CHANGELOG: v1.5.0-MY-WORK-ITEM-HANDOFF certifies selected daily work focus handoff
+ * CHANGELOG: v1.6.0-AUTHENTICATED-OVERVIEW-SOURCE-SYNC uses an exact
+ *            authenticated tenant/principal fixture for Headquarters, full
+ *            source-owned My Work coverage, and confirms the executive
+ *            snapshot revalidates after source-confirmed invalidation.
+ *            v1.5.0-MY-WORK-ITEM-HANDOFF certifies selected daily work focus handoff
  *            and reset through the canonical My Work navigation entry.
  *            v1.4.0-ATTENTION-HR-DEEP-LINK confirms the floating attention bell can
  *            open the existing authorised HR suite by an explicit URL.
@@ -19,8 +23,13 @@
  */
 import React from 'react';
 import { describe, expect, it, vi } from 'vitest';
-import { fireEvent, render, screen, waitFor, within } from '@testing-library/react';
+import { act, fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 import api from '../../services/api.js';
+import AuthContext from '../../contexts/authContext.jsx';
+import {
+  currentUnifiedMyWorkScope,
+  invalidateUnifiedMyWork,
+} from '../../services/unifiedMyWorkSync.js';
 import { MemoryRouter } from 'react-router-dom';
 import WilsyHeadquartersWorkspace from '../../components/workspaces/WilsyHeadquartersWorkspace.jsx';
 
@@ -42,14 +51,40 @@ vi.mock('../../components/workspaces/WilsyHeadquartersDailyBrief.jsx', () => ({
 vi.mock('../../components/hr/HrDashboard.jsx', () => ({
   default: () => <section><h2>Canonical HR operating workspace</h2></section>,
 }));
+const exactTenant = 'TENANT-HQ-SOURCE-CERT';
+const exactPrincipal = 'PRINCIPAL-HQ-SOURCE-CERT';
+const auth = {
+  isAuthenticated: true,
+  authStage: 'AUTHENTICATED',
+  token: 'synthetic-EOS-session-only',
+  sessionGeneration: 20,
+  user: {
+    id: exactPrincipal, tenantId: exactTenant,
+    role: 'tenant_owner', businessRole: 'tenant_owner',
+    workspaceId: 'EXECUTIVE_COMMAND_CENTRE',
+    membershipRevision: 7, businessRoleRevision: 9,
+  },
+};
+const workProjection = () => ({
+  schema: 'WILSY-OS-UNIFIED-MY-WORK/V1',
+  tenant_id: exactTenant,
+  principal_id: exactPrincipal,
+  as_of: '2026-11-09T01:00:00+00:00',
+  items: [
+    { source: 'OPERATIONS', source_key: 'OPERATIONS:HQ-1', work_item_id: 'HQ-1', title: 'Repair source workflow', status: 'OPEN', priority: 'HIGH', due_at: '2026-11-08T01:00:00+00:00', is_overdue: true },
+    { source: 'OPERATIONS', source_key: 'OPERATIONS:HQ-2', work_item_id: 'HQ-2', title: 'Ship work release', status: 'OPEN', priority: 'NORMAL', due_at: null, is_overdue: false },
+    { source: 'CRM', source_key: 'CRM:HQ-3', work_item_id: 'HQ-3', title: 'Review customer request', status: 'OPEN', priority: 'NORMAL', due_at: null, is_overdue: false },
+  ],
+  summary: { active_count: 3, overdue_count: 1, source_counts: { OPERATIONS: 2, CRM: 1 } },
+  sources_included: ['OPERATIONS', 'CRM'],
+  authority: { commands_owned_by: 'SOURCE_SERVICES', permits_completion: false },
+});
+
 vi.mock('../../services/api.js', () => ({
   default: {
     get: vi.fn((path) => {
       if (path === '/my-work') return Promise.resolve({
-        data: {
-          as_of: '2026-11-09T01:00:00+00:00',
-          summary: { active_count: 3, overdue_count: 1, source_counts: { OPERATIONS: 2, CRM: 1 } },
-        },
+        data: workProjection(),
       });
       if (path === '/hr/headcount-requisitions') return Promise.resolve({
         data: {
@@ -88,7 +123,11 @@ vi.mock('../../services/api.js', () => ({
 }));
 
 const renderHeadquarters = (initialEntries = ['/']) => render(
-  <MemoryRouter initialEntries={initialEntries}><WilsyHeadquartersWorkspace /></MemoryRouter>,
+  <AuthContext.Provider value={auth}>
+    <MemoryRouter initialEntries={initialEntries}>
+      <WilsyHeadquartersWorkspace tenantId={exactTenant}/>
+    </MemoryRouter>
+  </AuthContext.Provider>,
 );
 
 describe('WILSY Headquarters authenticated shell', () => {
@@ -188,6 +227,37 @@ describe('WILSY Headquarters authenticated shell', () => {
     expect(api.get).toHaveBeenCalledWith('/hr/headcount-requisitions', { forceNetworkRetry: true });
   });
 
+  it('reconciles the executive summary after current EOS source invalidation', async () => {
+    const originalGet = api.get.getMockImplementation();
+    let reads = 0;
+    api.get.mockImplementation((path, ...args) => {
+      if (path !== '/my-work') return originalGet(path, ...args);
+      reads += 1;
+      if (reads === 1) return Promise.resolve({ data: workProjection() });
+      const empty = workProjection();
+      empty.items = [];
+      empty.summary = {
+        active_count: 0, overdue_count: 0,
+        source_counts: { OPERATIONS: 0, CRM: 0 },
+      };
+      return Promise.resolve({ data: empty });
+    });
+    try {
+      renderHeadquarters();
+      await screen.findByText('OPERATIONS: 2');
+      await act(async () => {
+        expect(invalidateUnifiedMyWork(currentUnifiedMyWorkScope(auth, exactTenant))).toBe(true);
+      });
+      expect(await screen.findByText(
+        'No active work was returned by the authorized sources at the recorded time.',
+      )).toBeTruthy();
+      expect(screen.getByText('OPERATIONS: 0')).toBeTruthy();
+      expect(reads).toBe(2);
+    } finally {
+      api.get.mockImplementation(originalGet);
+    }
+  });
+
   it('refreshes source projections through the API instead of local browser state', async () => {
     renderHeadquarters();
     await screen.findByRole('heading', { name: 'My Work — attention snapshot' });
@@ -208,7 +278,7 @@ describe('WILSY Headquarters authenticated shell', () => {
 });
 
 /* ARTIFACT: WILSY OS Headquarters workspace presentation certificate
- * VERSION: v1.5.0-MY-WORK-ITEM-HANDOFF
+ * VERSION: v1.6.0-AUTHENTICATED-OVERVIEW-SOURCE-SYNC
  * AUTHORITY BOUNDARY: Regression evidence only; tests do not grant permissions.
  * TENANT POSTURE: Fixtures represent server-scoped projections and supply no browser tenant input.
  * FAIL-CLOSED POSTURE: Source contracts are asserted before presentation claims are made.
