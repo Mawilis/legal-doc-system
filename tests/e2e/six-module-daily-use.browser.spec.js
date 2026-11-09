@@ -1,14 +1,25 @@
 /**
- * TITLE: WILSY OS authenticated seven-module daily-use browser certificate
- * AUTHORITY: Disposable authenticated browser evidence only.
- * EPITOME: Prove all six server-entitled module destinations, CRM/Operations/
- *          Intelligence task lifecycle, refresh/re-entry, People and Billing
- *          work surfaces, Legal commercial boundary, and deny-only specialist
- *          access to owner Operations/Intelligence queues.
- * TENANT BOUNDARY: One UUID-isolated synthetic tenant and a foreign unjoined tenant.
- * AUTHORITY BOUNDARY: EOS authorizes every request; browser navigation is presentation only.
- * CHANGELOG: 2026-11-09 adds authenticated Headquarters landing, source-read,
- *             and Operations handoff coverage after Executive Dashboard retirement.
+ * TITLE: WILSY OS Authenticated Seven-Module Daily Use Browser Certificate
+ * VERSION: v1.1.0-HEADQUARTERS-HR-AUTHORITY-BOUNDARY
+ * AUTHORITY: Repository-governed disposable browser fixture only.
+ * EPITOME: Verify source-owned module work, authenticated Headquarters entry,
+ *          owner commercial separation, HR denial and tenant isolation.
+ * ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/tests/e2e/six-module-daily-use.browser.spec.js
+ * COLLABORATION / OWNERSHIP: browser_cert_fixture.py, EOS source services,
+ * existing tenant module navigation, Headquarters and My Work.
+ * CERTIFICATION / UPDATE DATE: 2026-11-09.
+ * CHANGELOG: v1.1.0-HEADQUARTERS-HR-AUTHORITY-BOUNDARY scopes completion to
+ * the exact created task and verifies the unprivileged fixture Owner receives
+ * HR directory denial instead of inferring HR authority from commercial capacity.
+ * Existing seven-module, source completion and cross-tenant assertions remain.
+ * COMPLIANCE: POPIA section 19; GDPR Article 32; SOC 2 CC7.2.
+ * SECURITY / PRIVACY POSTURE: Existing synthetic actors and disposable records
+ * only; preissued fixture sessions are not proof of human-completed MFA.
+ * TENANT BOUNDARY: One fixture tenant plus a foreign unjoined fixture tenant.
+ * AUTHORITY BOUNDARY: EOS independently authorizes every command. Commercial
+ * ownership and product navigation cannot grant HR or Legal practice authority.
+ * FINANCIAL AUTHORITY BOUNDARY: Kennel EOS exclusively.
+ * FAIL-CLOSED POSTURE: Missing source evidence, incorrect scope or IAM fails.
  */
 
 import fs from 'node:fs';
@@ -123,7 +134,7 @@ async function createAndComplete(page, moduleId, title) {
     new URL(response.url()).pathname === completePath
     && response.request().method() === 'POST'
   ));
-  await page.getByRole('button', { name: 'Complete', exact: true }).click();
+  await page.getByRole('listitem').filter({hasText: title}).getByRole('button', { name: 'Complete', exact: true }).click();
   const completed = await completeResponsePromise;
   expect(completed.status()).toBe(200);
   expect((await completed.json()).status).toBe('COMPLETED');
@@ -443,8 +454,12 @@ test('Tenant Owner Headquarters is the authenticated daily workspace entry', asy
       && response.request().method() === 'GET'
     ));
     await page.getByRole('button', { name: 'Organisation & People' }).click();
-    expect((await workforceResponse).status()).toBe(200);
+    // The approved fixture's TENANT_OWNER role has no HR directory grant.
+    // Commercial capacity must not be promoted into confidential workforce access.
+    expect((await workforceResponse).status()).toBe(403);
     await expect(page.getByRole('heading', { name: 'Organisation and workforce' })).toBeVisible();
+    await expect(page.getByRole('heading', {name: 'Workforce directory unavailable'})).toBeVisible();
+    await expect(page.getByRole('heading', {name: 'Authorised workforce directory'})).toHaveCount(0);
 
     const operationsResponse = page.waitForResponse(response => (
       new URL(response.url()).pathname === '/api/tenant-modules/operations/workspace'
@@ -458,3 +473,11 @@ test('Tenant Owner Headquarters is the authenticated daily workspace entry', asy
     await context.close();
   }
 });
+
+// ARTIFACT: six-module-daily-use.browser.spec.js
+// VERSION: v1.1.0-HEADQUARTERS-HR-AUTHORITY-BOUNDARY
+// AUTHORITY BOUNDARY: Synthetic source commands and independent permission checks.
+// TENANT POSTURE: Exact fixture scope; foreign selectors remain denied.
+// FAIL-CLOSED POSTURE: Owner pricing and product admission cannot grant HR authority.
+// FINANCIAL EXECUTION AUTHORITY: Kennel EOS exclusively.
+// END OF WILSY OS SOVEREIGN ARTIFACT

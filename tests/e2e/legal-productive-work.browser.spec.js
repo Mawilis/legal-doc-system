@@ -1,16 +1,25 @@
 /**
- * TITLE: WILSY OS authenticated Legal productive-work browser certificate
- * VERSION: v1.2.0-R67-DAILY-QUEUE-AND-OWNER-COMMERCIAL-CERT
- * AUTHORITY: Browser certification evidence only.
- * EPITOME: Prove the Tenant Owner commercial-only Legal entry, authenticated operator
- *          workspace bootstrap, R67 daily-work response adaptation, own-principal scope,
- *          specialist workflow projection, and responsive rendering without browser authority.
- * TENANT BOUNDARY: Exact disposable fixture tenant only.
- * AUTHORITY BOUNDARY: Browser observation only; server IAM remains authoritative.
- * FINANCIAL AUTHORITY BOUNDARY: None; Kennel EOS remains exclusive.
- * FAIL-CLOSED DECLARATION: Missing authentication, request, authorization,
- *                          productive-work rendering, scope narrowing, responsive
- *                          presentation, or bounded denial fails certification.
+ * TITLE: WILSY OS Authenticated Legal Productive Work Browser Certificate
+ * VERSION: v1.3.0-HEADQUARTERS-OWNER-COMMERCIAL-BOUNDARY
+ * AUTHORITY: Disposable fixture browser and HTTP observation only.
+ * EPITOME: Prove Headquarters owner entry, separate Legal commercial visibility,
+ *          practice denial and principal-scoped specialist productive work.
+ * ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/tests/e2e/legal-productive-work.browser.spec.js
+ * COLLABORATION / OWNERSHIP: Existing approved fixture, EOS workspace bootstrap,
+ * dashboard controller, Legal commercial context and productive-work source.
+ * CERTIFICATION / UPDATE DATE: 2026-11-09.
+ * CHANGELOG: v1.3.0-HEADQUARTERS-OWNER-COMMERCIAL-BOUNDARY replaces obsolete
+ * Executive workbench selectors with the canonical Headquarters landing;
+ * preserves source commercial, tenant, role and practice-denial assertions
+ * and verifies owner reload returns to the server-selected landing.
+ * v1.2.0-R67-DAILY-QUEUE-AND-OWNER-COMMERCIAL-CERT introduced daily queue checks.
+ * COMPLIANCE: POPIA section 19; GDPR Article 32; SOC 2 CC7.2.
+ * SECURITY / PRIVACY POSTURE: Synthetic fixture sessions only; no user MFA
+ * material, credentials or production records are used or disclosed.
+ * TENANT BOUNDARY: Exact disposable fixture tenant and principal.
+ * AUTHORITY BOUNDARY: Preissued synthetic sessions are not proof of real MFA.
+ * FINANCIAL AUTHORITY BOUNDARY: Kennel EOS exclusively.
+ * FAIL-CLOSED POSTURE: Commercial reads must not confer Legal practice rights.
  */
 
 import fs from 'node:fs';
@@ -137,115 +146,61 @@ async function openProductiveWork(page) {
 test(
   'certifies Tenant Owner Legal commercial workspace without practice access',
   async ({ browser }) => {
-    const {
-      context,
-      page,
-      observedRequests,
-      bootstrapPayload,
-      browserErrors,
-    } = await openAuthenticatedLegalWorkspace(browser, 'tenant_owner');
+    const {context, page, observedRequests, bootstrapPayload} =
+      await openAuthenticatedLegalWorkspace(browser, 'tenant_owner');
+    try {
+      expect(String(bootstrapPayload.workspace?.businessRole || '').toUpperCase()).toBe('TENANT_OWNER');
+      expect(bootstrapPayload.workspace?.workspaceId).toBe('EXECUTIVE_COMMAND_CENTRE');
+      await expect(page.getByRole('heading', {name: 'WILSY Headquarters', exact: true})).toBeVisible();
+      await expect(page.getByRole('navigation', {name: 'Available WILSY OS products'})).toBeVisible();
 
-    expect(String(bootstrapPayload.workspace?.businessRole || '').toUpperCase()).toBe('TENANT_OWNER');
-    expect(bootstrapPayload.workspace?.workspaceId).toBe('EXECUTIVE_COMMAND_CENTRE');
+      const moduleManifest = page.waitForResponse(response => (
+        new URL(response.url()).pathname === '/api/auth/module-manifest'
+        && response.request().method() === 'GET'
+      ));
+      const commercial = page.waitForResponse(response => (
+        new URL(response.url()).pathname === '/api/legal-operations/commercial-context'
+        && response.request().method() === 'GET'
+      ));
+      await page.locator('[data-wilsy-module-entry="LEGAL_OS"]:visible').first().click();
+      const manifestResponse = await moduleManifest;
+      expect(manifestResponse.status()).toBe(200);
+      const manifest = await manifestResponse.json();
+      expect(manifest.workspace?.tenantId).toBe(state.tenant_id);
+      expect(manifest.workspace?.modules?.some(module => module.moduleId === 'LEGAL_OS')).toBe(true);
+      const commercialResponse = await commercial;
+      expect(commercialResponse.status()).toBe(200);
+      expect(await commercialResponse.json()).toMatchObject({
+        tenant_id: state.tenant_id,
+        visibility: 'LEGAL_COMMERCIAL_CONTEXT_SUBSCRIPTION_READ',
+        product: {product_id: 'LEGAL_OPERATIONS', available: true, access_basis: 'LEGAL_PLAN_FEATURE'},
+        subscription: {status: 'active'},
+      });
+      await expect(page.getByRole('heading', {name: 'Legal Product Command'})).toBeVisible();
+      await expect(page.getByText('Tenant owner · commercial authority only')).toBeVisible();
+      await expect(page.getByText('ROLE-GATED')).toBeVisible();
+      expect(observedRequests).not.toContain('/api/legal-operations/workspace');
+      expect(observedRequests).not.toContain('/api/legal-operations/productive-work');
+      expect(observedRequests).not.toContain('/api/legal-operations/conflict-screenings');
 
-    const accessProbe = page.locator('[data-executive-access-state]');
-    const workbenchProbe = page.locator('[data-active-workspace="workbench"]');
-    // Wait for the UI to settle without throwing before evidence is captured.
-    await accessProbe.or(workbenchProbe).first().waitFor({
-      state: 'visible',
-      timeout: 10000,
-    }).catch(() => undefined);
-    const executiveAccess = await accessProbe.count()
-      ? await accessProbe.first().evaluate((element) => ({
-        state: element.dataset.executiveAccessState,
-        isLoading: element.dataset.executiveAccessLoading,
-        allowed: element.dataset.executiveAccessAllowed,
-        reason: element.dataset.executiveAccessReason || null,
-        role: element.dataset.executiveAccessRole,
-        principalTenantId: element.dataset.executiveAccessPrincipalTenant,
-        activeTenantId: element.dataset.executiveAccessActiveTenant,
-        tenantMatch: element.dataset.executiveAccessTenantMatch,
-      }))
-      : { state: 'executive-shell-not-mounted' };
-    const renderedSurface = await page.locator('body').innerText().catch(() => '');
-    const documentState = await page.evaluate(() => ({
-      readyState: document.readyState,
-      title: document.title,
-      rootChildren: Array.from(document.body?.children || []).map((node) => ({
-        tag: node.tagName,
-        id: node.id || null,
-        className: typeof node.className === 'string' ? node.className : null,
-        text: (node.innerText || '').slice(0, 500),
-      })),
-    })).catch((error) => ({ evaluationError: error.message }));
-    const diagnostic = JSON.stringify({
-      url: page.url(),
-      workspaceId: bootstrapPayload.workspace?.workspaceId,
-      businessRole: bootstrapPayload.workspace?.businessRole,
-      executiveAccess,
-      documentState,
-      renderedSurface: renderedSurface.slice(0, 5000),
-      observedRequests: observedRequests.slice(-80),
-      browserErrors: browserErrors.slice(0, 50),
-    }, null, 2);
-    await expect(
-      workbenchProbe,
-      `Tenant Owner Executive workspace diagnostics:\n${diagnostic}`,
-    ).toBeVisible();
-    await expect(page.getByRole('region', { name: 'Executive operational workbench' })).toBeVisible();
-    await expect(page.getByRole('heading', { name: 'Open work' })).toBeVisible();
-    await expect(page.getByRole('button', { name: 'LEGAL OS', exact: true })).toBeVisible();
-
-    const moduleManifestPromise = page.waitForResponse((response) => (
-      new URL(response.url()).pathname === '/api/auth/module-manifest'
-      && response.request().method() === 'GET'
-    ));
-    const commercialResponsePromise = page.waitForResponse((response) => (
-      new URL(response.url()).pathname === '/api/legal-operations/commercial-context'
-      && response.request().method() === 'GET'
-    ));
-    await page.getByRole('button', { name: 'LEGAL OS', exact: true }).click();
-
-    const moduleManifestResponse = await moduleManifestPromise;
-    expect(moduleManifestResponse.status()).toBe(200);
-    const moduleManifestPayload = await moduleManifestResponse.json();
-    expect(moduleManifestPayload.workspace?.tenantId).toBe(state.tenant_id);
-    expect(moduleManifestPayload.workspace?.modules?.some((module) => module.moduleId === 'LEGAL_OS')).toBe(true);
-
-    const commercialResponse = await commercialResponsePromise;
-    expect(commercialResponse.status()).toBe(200);
-    const payload = await commercialResponse.json();
-    expect(payload).toMatchObject({
-      tenant_id: state.tenant_id,
-      visibility: 'LEGAL_COMMERCIAL_CONTEXT_SUBSCRIPTION_READ',
-      product: {
-        product_id: 'LEGAL_OPERATIONS',
-        available: true,
-        access_basis: 'LEGAL_PLAN_FEATURE',
-      },
-      subscription: { status: 'active' },
-    });
-
-    await expect(
-      page.getByRole('heading', { name: 'Legal Product Command' }),
-    ).toBeVisible();
-    await expect(page.getByText('Tenant owner · commercial authority only')).toBeVisible();
-    await expect(page.getByText('ROLE-GATED')).toBeVisible();
-
-    expect(observedRequests).not.toContain('/api/legal-operations/workspace');
-    expect(observedRequests).not.toContain('/api/legal-operations/productive-work');
-    expect(observedRequests).not.toContain('/api/legal-operations/conflict-screenings');
-
-    await page.reload();
-    await expect(
-      page.getByRole('heading', { name: 'Legal Product Command' }),
-    ).toBeVisible();
-    await expect(page.getByText('ROLE-GATED')).toBeVisible();
-    expect(observedRequests).not.toContain('/api/legal-operations/workspace');
-    expect(observedRequests).not.toContain('/api/legal-operations/productive-work');
-    expect(observedRequests).not.toContain('/api/legal-operations/conflict-screenings');
-
-    await context.close();
+      // The checkpoint deliberately ignores persisted owner dashboard hints.
+      // A fresh login/reload returns to the server-selected Headquarters.
+      await page.reload();
+      await expect(page.getByRole('heading', {name: 'WILSY Headquarters', exact: true})).toBeVisible();
+      await page.locator('[data-wilsy-module-entry="LEGAL_OS"]:visible').first().click();
+      await expect(page.getByRole('heading', {name: 'Legal Product Command'})).toBeVisible();
+      await expect(page.getByText('ROLE-GATED')).toBeVisible();
+      const practiceDenied = await context.request.get('/api/legal-operations/productive-work', {
+        headers: {Authorization: 'Bearer ' + state.actors.tenant_owner.access_token,
+          'X-Tenant-ID': state.tenant_id},
+      });
+      expect(practiceDenied.status()).toBe(403);
+      expect(observedRequests).not.toContain('/api/legal-operations/workspace');
+      expect(observedRequests).not.toContain('/api/legal-operations/productive-work');
+      expect(observedRequests).not.toContain('/api/legal-operations/conflict-screenings');
+    } finally {
+      await context.close();
+    }
   },
 );
 
@@ -387,10 +342,11 @@ test(
   },
 );
 
+
 // ARTIFACT: legal-productive-work.browser.spec.js
-// VERSION: v1.0.0-PW-P11C-AUTHENTICATED-PRODUCTIVE-WORK-BROWSER-CERT
-// AUTHORITY BOUNDARY: authenticated real-browser assertions only
-// TENANT POSTURE: exact disposable tenant and durable IAM actor
-// FAIL-CLOSED POSTURE: missing live evidence or scope narrowing fails
-// FINANCIAL EXECUTION AUTHORITY: none; Kennel EOS remains exclusive
+// VERSION: v1.3.0-HEADQUARTERS-OWNER-COMMERCIAL-BOUNDARY
+// AUTHORITY BOUNDARY: Synthetic authenticated browser evidence only.
+// TENANT POSTURE: Exact fixture tenant, principal and source-authorized work.
+// FAIL-CLOSED POSTURE: Owner commercial visibility never grants Legal practice.
+// FINANCIAL EXECUTION AUTHORITY: Kennel EOS exclusively.
 // END OF WILSY OS SOVEREIGN ARTIFACT

@@ -1,6 +1,6 @@
 /**
  * TITLE: WILSY OS Authorised My Work Completion Workspace
- * VERSION: v1.1.0-ATTENTION-DEEP-LINK-FOCUS
+ * VERSION: v1.2.0-SCOPED-NAVIGATION-SOURCE-REFRESH
  * AUTHORITY: Wilsy OS Core Governance
  * EPITOME: Executes source-owned evidenced work completion and focuses the
  *          item selected from the authenticated Daily Attention Centre.
@@ -8,7 +8,11 @@
  * COLLABORATION / OWNERSHIP: Python EOS /my-work owns visibility and
  *                            source services own completion and audit.
  * CERTIFICATION / UPDATE DATE: 2026-11-09
- * CHANGELOG: v1.1.0-ATTENTION-DEEP-LINK-FOCUS adds visual and accessible
+ * CHANGELOG: v1.2.0-SCOPED-NAVIGATION-SOURCE-REFRESH revalidates work on
+ *            same-route navigation and authenticated scope changes, rejects
+ *            late source responses, clears prior-scope drafts and focuses only
+ *            newly read source work. No source command authority is changed.
+ *            v1.1.0-ATTENTION-DEEP-LINK-FOCUS added visual and accessible
  *            focus to selected work without treating route state as authority.
  * COMPLIANCE: POPIA section 19; GDPR Article 32; SOC 2 CC7.2.
  * SECURITY / PRIVACY POSTURE: Only authenticated EOS work is rendered.
@@ -16,10 +20,11 @@
  * AUTHORITY BOUNDARY: Completion commands remain source-owned.
  * FINANCIAL AUTHORITY BOUNDARY: Kennel EOS only.
  */
-import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import React, { useCallback, useContext, useEffect, useMemo, useRef, useState } from 'react';
 import { AlertTriangle, CheckCircle2, Circle, Clock3, Loader2, RefreshCw, ShieldCheck } from 'lucide-react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import api from '../../services/api.js';
+import AuthContext from '../../contexts/authContext.jsx';
 import { completeLegalWorkItem } from '../../services/legalOperationsService.js';
 
 const SOURCE_LABELS = Object.freeze({
@@ -46,12 +51,30 @@ const formatDue = (value) => {
     : date.toLocaleString(undefined, { dateStyle: 'medium', timeStyle: 'short' });
 };
 
+/**
+ * @description Read current assigned work and hand completion to its owning EOS service.
+ * @collaboration Authenticated routes, Headquarters and Daily Attention calendar handoff.
+ * @institutional Route state selects focus only. Tenant, principal, capacity and
+ * permissions remain EOS-owned; source services own transactions, completion
+ * evidence and durable command replay. Late reads cannot restore a former scope.
+ * @returns {JSX.Element} Current source queue, loading or bounded unavailable state.
+ * No client state establishes legal, financial, MFA or notification authority.
+ */
 export default function MyWorkWorkspace() {
   const navigate = useNavigate();
   const location = useLocation();
+  const auth = useContext(AuthContext);
+  const authUser = auth?.user;
+  const scopeKey = [authUser?.id, authUser?.tenantId, authUser?.role,
+    authUser?.workspaceId, authUser?.businessRole].map(value => String(value || '')).join(':');
+  const scopeRef = useRef(scopeKey);
+  scopeRef.current = scopeKey;
+  const requestRef = useRef(0);
   const focusRef = useRef(null);
   const focusKey = typeof location.state?.focusWorkItem === 'string' ? location.state.focusWorkItem : null;
-  const [projection, setProjection] = useState(null);
+  const [sourceProjection, setProjection] = useState(null);
+  const [projectionScope, setProjectionScope] = useState(null);
+  const projection = projectionScope === scopeKey ? sourceProjection : null;
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [error, setError] = useState('');
@@ -61,24 +84,45 @@ export default function MyWorkWorkspace() {
   const [actionError, setActionError] = useState('');
 
   const load = useCallback(async ({ quiet = false } = {}) => {
+    const request = ++requestRef.current;
     if (quiet) setRefreshing(true);
     else setLoading(true);
     setError('');
     try {
       const response = await api.get('/my-work', { forceNetworkRetry: true });
+      if (request !== requestRef.current || scopeRef.current !== scopeKey) return;
+      if ((authUser?.tenantId && response.data?.tenant_id !== authUser.tenantId)
+        || (authUser?.id && response.data?.principal_id !== authUser.id)) {
+        throw new Error('MY_WORK_SCOPE_MISMATCH');
+      }
       setProjection(response.data);
+      setProjectionScope(scopeKey);
     } catch (requestError) {
+      if (request !== requestRef.current || scopeRef.current !== scopeKey) return;
       setProjection(null);
-      setError(requestError?.response?.data?.detail || 'MY_WORK_UNAVAILABLE');
+      setProjectionScope(null);
+      setError(requestError?.response?.data?.detail || requestError?.message || 'MY_WORK_UNAVAILABLE');
     } finally {
-      setLoading(false);
-      setRefreshing(false);
+      if (request === requestRef.current && scopeRef.current === scopeKey) {
+        setLoading(false);
+        setRefreshing(false);
+      }
     }
-  }, []);
+  }, [scopeKey]);
 
   useEffect(() => {
-    load();
-  }, [load]);
+    // A same-path calendar handoff creates a new navigation key. Re-read EOS
+    // before highlighting work that may have arrived since the previous visit.
+    void load();
+    return () => { requestRef.current += 1; };
+  }, [load, location.key]);
+
+  useEffect(() => {
+    setNotes({});
+    setLegalEvidence({});
+    setCompleting('');
+    setActionError('');
+  }, [scopeKey]);
 
   const items = useMemo(() => projection?.items || [], [projection]);
   useEffect(() => {
@@ -88,6 +132,7 @@ export default function MyWorkWorkspace() {
   }, [items, focusKey]);
 
   const complete = async (item) => {
+    const commandScope = scopeKey;
     const path = completionPath(item);
     const note = String(notes[item.source_key] || '').trim();
     const evidence = legalEvidence[item.source_key] || {};
@@ -99,16 +144,19 @@ export default function MyWorkWorkspace() {
     try {
       if (item.source === 'LEGAL') {
         await completeLegalWorkItem({ workItemId: item.work_item_id, completionEvidenceReference: String(evidence.reference).trim(), completionEvidenceFingerprint: String(evidence.fingerprint).trim() });
+        if (scopeRef.current !== commandScope) return;
         setLegalEvidence((current) => ({ ...current, [item.source_key]: { reference: '', fingerprint: '' } }));
       } else {
         await api.post(path, { completion_note: note });
+        if (scopeRef.current !== commandScope) return;
         setNotes((current) => ({ ...current, [item.source_key]: '' }));
       }
       await load({ quiet: true });
     } catch (requestError) {
+      if (scopeRef.current !== commandScope) return;
       setActionError(requestError?.response?.data?.detail || 'WORK_ITEM_COMPLETION_UNAVAILABLE');
     } finally {
-      setCompleting('');
+      if (scopeRef.current === commandScope) setCompleting('');
     }
   };
 
@@ -294,7 +342,7 @@ function Metric({ label, value }) {
 
 /*
  * ARTIFACT: MyWorkWorkspace.jsx
- * VERSION: v1.1.0-ATTENTION-DEEP-LINK-FOCUS
+ * VERSION: v1.2.0-SCOPED-NAVIGATION-SOURCE-REFRESH
  * AUTHORITY BOUNDARY: EOS source-owned work completion only.
  * TENANT POSTURE: Only verified EOS-visible items may receive focus.
  * FAIL-CLOSED POSTURE: A forged focus key creates no work or permission.

@@ -1,16 +1,14 @@
 {
   "name": "svc-auth",
-  "version": "1.0.0",
-  "main": "index.js",
-  "scripts": {
-    "start": "node index.js"
-  },
+  "version": "1.0.1",
+  "private": true,
+  "description": "Retired Node authentication runtime; Python EOS owns authentication. Updated 2026-11-09: removed missing entrypoint and start script.",
   "dependencies": {
     "cookie-parser": "^1.4.7",
     "cors": "^2.8.5",
     "dotenv": "^17.2.3",
     "express": "^5.2.1",
-    "jsonwebtoken": "^9.0.2",
+    "jsonwebtoken": "9.0.2",
     "qs": "6.16.0"
   }
 }
