@@ -228,7 +228,7 @@ export const AuthenticatedGlobalChrome = ({ user, onLogout, children }) => {
 
         <div className="flex min-w-[285px] shrink-0 items-center justify-end gap-2 sm:gap-3">
           {hasAuthenticatedSession && !authLoading && (
-            <div role="status" aria-label={isSecureChannel ? 'Secure and authenticated' : 'Authenticated; secure transport not confirmed'} className={`flex items-center gap-2 rounded-full border px-2 py-2 text-[11px] font-medium sm:px-3 ${isSecureChannel ? 'border-emerald-400/20 bg-emerald-400/10 text-emerald-200' : 'border-white/10 bg-white/[0.04] text-slate-300'}`}>
+            <div role="status" aria-label={isSecureChannel ? 'Secure and authenticated' : 'Authenticated; secure transport not confirmed'} className={`flex items-center gap-2 rounded-full border px-2 py-2 text-[11px] font-medium sm:px-3 ${isSecureChannel ? 'border-emerald-400/20 bg-emerald-400/10 text-emerald-200' : 'border-emerald-400/25 bg-emerald-500/20 text-emerald-100'}`}>
               <ShieldCheck size={15}/>
               <span className="hidden sm:inline">{isSecureChannel ? 'Secure · Authenticated' : 'Authenticated'}</span>
             </div>
