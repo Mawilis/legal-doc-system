@@ -1,6 +1,6 @@
 /**
  * TITLE: WILSY OS Sovereign Application Root
- * VERSION: v20.4.3-SINGLE-COMMAND-SEARCH-OWNER
+ * VERSION: v20.5.0-SESSION-SCOPED-PLATFORM-ADMISSION
  * AUTHORITY: Wilsy OS Core Governance
  * EPITOME: Composes authenticated routing, exact tenant projection, legal
  *          admission release, and protected workspace presentation without
@@ -12,6 +12,12 @@
  *                            legal-acceptance truth.
  * CERTIFICATION / UPDATE DATE: 2026-11-09
  * CHANGELOG:
+ *   v20.5.0-SESSION-SCOPED-PLATFORM-ADMISSION — Gives the authenticated tenant one platform-use
+ *     admission boundary. A completed session at /covenant redirects to the
+ *     company runtime rather than mounting a second Legal Control shell.
+ *     Explicit workspace principal, tenant, selected business capacity and
+ *     revision keys prevent stale admission state across role changes; source
+ *     401/403 remain distinct from 503 while EOS retains acceptance authority.
  *   v20.4.3-SINGLE-COMMAND-SEARCH-OWNER — Delegates shared search controls to
  *     the mounted workspace search and honors claimed keyboard events so a
  *     single shortcut cannot leave two modal backdrops open.
@@ -512,7 +518,9 @@ const SovereignRouter = () => {
             ? <div role="status" data-testid="mfa-transition">Preparing secure MFA challenge…</div>
             : <Navigate to="/login" replace />)
       } />
-      <Route path="/covenant" element={<LegalAcceptanceGate onComplete={() => navigate('/', { replace: true })} />} />
+      {/* Platform-use acceptance is mounted exclusively by LegalAcceptanceBoundary
+          while REQUIRED; after COMPLETE, this legacy URL cannot mount another gate. */}
+      <Route path="/covenant" element={<Navigate to={isAuthenticated ? '/' : unauthenticatedEntryPath} replace />} />
       <Route path="/headquarters" element={
         isAuthenticated && user && !systemServicesSession
           ? <ErrorBoundary><WilsyHeadquartersWorkspace key={[user.id, user.tenantId, user.role, user.workspaceId, user.businessRole].map((part) => String(part || '')).join(':')} tenantId={user.tenantId} /></ErrorBoundary>
@@ -586,7 +594,7 @@ const WorkspaceBootstrapError = ({ message }) => (
  * @param {{runtime?: React.ReactNode}} props Optional runtime seam for deterministic certificates.
  * @returns {JSX.Element} Loading, bounded legal, unavailable, or protected runtime surface.
  */
-export const LegalAcceptanceBoundary = ({ runtime = <RuntimeComposition /> }) => {
+export const LegalAcceptanceBoundary = ({ runtime = <RuntimeComposition />, expectedTenantId = null }) => {
   const navigate = useNavigate();
   const [phase, setPhase] = useState('LOADING');
   const [plan, setPlan] = useState(null);
@@ -597,15 +605,28 @@ export const LegalAcceptanceBoundary = ({ runtime = <RuntimeComposition /> }) =>
     api.get('/legal-acceptance/status').then((response) => {
       if (!active) return;
       const nextPlan = response.data;
+      if (expectedTenantId && nextPlan?.tenantId !== expectedTenantId) {
+        setError('LEGAL_ACCEPTANCE_TENANT_MISMATCH');
+        setPhase('UNAVAILABLE');
+        return;
+      }
       setPlan(nextPlan);
       setPhase(nextPlan?.status === 'COMPLETE' ? 'COMPLETE' : 'REQUIRED');
     }).catch((requestError) => {
       if (!active) return;
-      setError(requestError?.response?.data?.detail || 'LEGAL_ACCEPTANCE_STATUS_UNAVAILABLE');
+      const status = Number(requestError?.response?.status || 0);
+      const detail = requestError?.response?.data?.detail;
+      setError(status === 401
+        ? 'AUTHENTICATED_SESSION_REVALIDATION_REQUIRED'
+        : status === 403
+          ? 'LEGAL_ACCEPTANCE_ACCESS_DENIED'
+          : typeof detail === 'string' && detail.length <= 160
+            ? detail
+            : 'LEGAL_ACCEPTANCE_STATUS_UNAVAILABLE');
       setPhase('UNAVAILABLE');
     });
     return () => { active = false; };
-  }, []);
+  }, [expectedTenantId]);
 
   if (phase === 'LOADING') return <WorkspaceBootstrapSurface />;
   if (phase === 'UNAVAILABLE') return <WorkspaceBootstrapError message={error} />;
@@ -699,13 +720,26 @@ export const AuthenticatedTenantBoundary = ({ runtime }) => {
 };
 
 const AuthenticatedBootstrapBoundary = ({ runtime }) => {
+  const { isAuthenticated, user, token } = useAuth();
   const { activeTenant, bootstrapReady, loading, error, authorityMismatch } = useTenants();
-  if (!bootstrapReady || loading) return <WorkspaceBootstrapSurface />;
+  // Source-validated principal, tenant, selected capacity and revisions are
+  // rendering identity only, never browser-created legal acceptance authority.
+  const admissionScope = [
+    user?.id, user?.tenantId, user?.businessRole, user?.workspaceId,
+    user?.membershipRevision, user?.businessRoleRevision,
+  ].map((value) => String(value ?? '')).join(':');
+  if (!isAuthenticated || !token || !user?.id || !user?.tenantId || !bootstrapReady || loading) {
+    return <WorkspaceBootstrapSurface />;
+  }
   if (authorityMismatch || error || !activeTenant) {
     return <WorkspaceBootstrapError message={authorityMismatch ? 'AUTHENTICATED_WORKSPACE_AUTHORITY_MISMATCH' : (error || 'AUTHENTICATED_WORKSPACE_UNRESOLVED')} />;
   }
   return (
-    <LegalAcceptanceBoundary runtime={runtime || <AuthenticatedRuntimeComposition />} />
+    <LegalAcceptanceBoundary
+      key={admissionScope}
+      expectedTenantId={user.tenantId}
+      runtime={runtime || <AuthenticatedRuntimeComposition />}
+    />
   );
 };
 
@@ -743,7 +777,7 @@ export default App;
 
 /**
  * ARTIFACT: client/src/App.jsx
- * VERSION: v20.4.3-SINGLE-COMMAND-SEARCH-OWNER
+ * VERSION: v20.5.0-SESSION-SCOPED-PLATFORM-ADMISSION
  * AUTHORITY BOUNDARY: client route and protected-runtime composition only; Python EOS remains authentication, tenant and legal-acceptance authority
  * TENANT POSTURE: discovered tenant may choose login routing but cannot establish authenticated or protected scope
  * FAIL-CLOSED POSTURE: auth revalidation waits; unresolved legal status remains sealed; only server-confirmed legal COMPLETE mounts protected runtime
