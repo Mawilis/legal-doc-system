@@ -74,6 +74,9 @@ def test_global_auth_index_readiness_defaults_and_shutdown_fail_closed():
     assert "global_principal_auth_indexes_ready = False" in shutdown
     assert "global_principal_mfa_factor_indexes_ready = False" in startup
     assert "global_principal_mfa_factor_indexes_ready = False" in shutdown
+    assert "global_principal_mfa_runtime_ready = False" in shutdown
+    assert 'global_principal_mfa_runtime_status = "NOT_INITIALIZED"' in shutdown
+    assert 'global_principal_mfa_runtime_reason = "APPLICATION_SHUTDOWN"' in shutdown
     assert "global_principal_system_session_indexes_ready = False" in startup
     assert "global_principal_system_session_indexes_ready = False" in shutdown
     assert "global_principal_mfa_enrollment_indexes_ready = False" in startup

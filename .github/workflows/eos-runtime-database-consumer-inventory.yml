@@ -1,19 +1,57 @@
+# WILSY OS — sovereign runtime/database inventory certification workflow
+# TITLE: Kennel EOS Runtime Database Ownership and Legacy Runtime Guard
+# VERSION: v1.2.0-EOS-RUNTIME-DATABASE-INVENTORY-CERTIFICATION
+# AUTHORITY: Wilsy OS Core Governance
+# EPITOME: Certifies canonical Python EOS database ownership and runs the
+#          sovereign artifact-contract regression guard on relevant pull requests.
+# ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/.github/workflows/eos-runtime-database-consumer-inventory.yml
+# COLLABORATION / OWNERSHIP: Repository governance; Python EOS runtime owners.
+# CERTIFICATION / UPDATE DATE: 2026-11-08
+# CHANGELOG:
+#   v1.2.0-EOS-RUNTIME-DATABASE-INVENTORY-CERTIFICATION adds root services,
+#   launchers, orchestrators, deployment manifests, documentation and server
+#   test trees to the trigger scope.
+#   v1.1.0 adds runbook compilation and sovereign artifact-contract tests.
+#   v1.0.0 established the Python EOS database-owner certification.
+# COMPLIANCE: AGENTS.md v1.2.0; ENGINEERING_CONSTITUTION.md v1.1.0.
+# SECURITY / PRIVACY POSTURE: Read-only CI checks; no production credentials or deployment.
+# TENANT BOUNDARY: No live tenant data is read or mutated.
+# AUTHORITY BOUNDARY: CI certification only; no application or deployment authority.
+# FINANCIAL AUTHORITY BOUNDARY: No financial execution or settlement authority.
+# TRANSACTION BOUNDARY: Unit/static tests only; no production transaction.
+# FAIL-CLOSED DECLARATION: Any compile or test failure fails this workflow.
+#
+# WILSY OWNS BUSINESS TRUTH. KENNEL EOS IS THE EXCLUSIVE FINANCIAL EXECUTION AUTHORITY.
+
 name: EOS Runtime Database Consumer Inventory Certification
 
 on:
   pull_request:
     paths:
       - "tools/eos/**"
-      - "server/server.js"
-      - "server/ecosystem.config.js"
-      - "server/tests/advanced/runtime-database-ownership.test.mjs"
-      - "server/tests/advanced/eos-workspace-identity.test.mjs"
-      - "server/controllers/businessArtifactPdfController.js"
-      - "server/services/eosWorkspaceIdentity.js"
-      - "server/tests/routes/wilsyAiAdvisoryProxy.test.js"
+      - "server/**"
+      - "services/**"
       - "scripts/start-dev-stack.sh"
+      - "start_all.sh"
+      - "start_wilsy_os.sh"
+      - "GlobalLaunchSequence.sh"
+      - "Genesis_Ignition.sh"
+      - "Sovereign_Deployment_Automation.sh"
+      - "repair_launcher.js"
+      - "build_orchestrator.js"
+      - "update_orchestrator.js"
+      - "bootstrap_wilsy_os.js"
+      - "nginx.conf"
+      - "infra/nginx/**"
+      - "k8s/**"
+      - "charts/legal-os/**"
+      - "DEPLOYMENT.md"
+      - "server/README.md"
+      - "package-lock.json"
       - "package.json"
+      - "runbook_diagnostic.py"
       - "tests/unit/test_eos_runtime_database_consumer_inventory.py"
+      - "tests/unit/test_sovereign_artifact_contract.py"
       - "docs/architecture/eos-runtime-database-consumer-inventory.md"
       - ".github/workflows/eos-runtime-database-consumer-inventory.yml"
 
@@ -22,7 +60,7 @@ permissions:
 
 jobs:
   runtime-database-ownership:
-    name: Runtime database ownership and BFF boundary
+    name: Runtime database ownership and retired backend entrypoints
     runs-on: ubuntu-latest
     timeout-minutes: 10
     steps:
@@ -37,13 +75,23 @@ jobs:
       - name: Install focused test runner
         run: python -m pip install --disable-pip-version-check pytest
 
-      - name: Certify Python EOS runtime database ownership
-        run: python -m pytest -q tests/unit/test_eos_runtime_database_consumer_inventory.py
+      - name: Compile governed Python artifacts
+        run: |
+          python -m py_compile \
+            runbook_diagnostic.py \
+            tests/unit/test_eos_runtime_database_consumer_inventory.py \
+            tests/unit/test_sovereign_artifact_contract.py
 
-      - name: Set up Node
-        uses: actions/setup-node@v4
-        with:
-          node-version: "20"
+      - name: Certify Python EOS runtime database ownership and sovereign artifacts
+        run: |
+          python -m pytest -q \
+            tests/unit/test_eos_runtime_database_consumer_inventory.py \
+            tests/unit/test_sovereign_artifact_contract.py
 
-      - name: Certify Node BFF transport-only database boundary
-        run: node --test server/tests/advanced/runtime-database-ownership.test.mjs server/tests/advanced/eos-workspace-identity.test.mjs
+# ARTIFACT: eos-runtime-database-consumer-inventory.yml
+# VERSION: v1.2.0-EOS-RUNTIME-DATABASE-INVENTORY-CERTIFICATION
+# AUTHORITY BOUNDARY: CI certification only.
+# TENANT POSTURE: no tenant data access or mutation.
+# FAIL-CLOSED POSTURE: compilation and test failures fail the workflow.
+# FINANCIAL EXECUTION AUTHORITY: Kennel EOS exclusively.
+# END OF WILSY OS SOVEREIGN ARTIFACT

@@ -1,44 +1,37 @@
-/**
- * Copyright (c) 2026 Wilsy Pty Ltd [Reg: 2024/617944/07].
- * All Rights Reserved.
- * * This software is the confidential and proprietary information of Wilsy Pty Ltd.
- * Unauthorized copying of this file, via any medium is strictly prohibited.
- * Proprietary and confidential.
- */
+#!/usr/bin/env bash
+# WILSY OS — retired legacy multi-service launcher
+# TITLE: Legacy WILSY OS Node Service Launcher Retirement
+# VERSION: v1.0.0-LEGACY-NODE-START-WILSY-OS-RETIRED
+# AUTHORITY: Wilsy OS Core Governance
+# EPITOME: Prevents activation of legacy Node ledger, standards, billing, AI, crypto and Express gateway processes.
+# ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/start_wilsy_os.sh
+# COLLABORATION / OWNERSHIP: Wilson Khanyezi (Founder); Kennel EOS runtime owners.
+# CERTIFICATION / UPDATE DATE: 2026-11-08
+# CHANGELOG:
+#   v1.0.0-LEGACY-NODE-START-WILSY-OS-RETIRED retires the legacy launcher
+#   after discovery of its multi-process Node service activation sequence.
+# COMPLIANCE: AGENTS.md v1.2.0; ENGINEERING_CONSTITUTION.md v1.1.0.
+# SECURITY / PRIVACY POSTURE: Performs no process discovery, process killing, network access, or secret access.
+# TENANT BOUNDARY: No tenant context or data is accessed.
+# AUTHORITY BOUNDARY: No application, API, worker, scheduler, or deployment authority.
+# FINANCIAL AUTHORITY BOUNDARY: No ledger, payment, settlement, or financial execution authority.
+# TRANSACTION BOUNDARY: No database or operating-system process mutation is performed.
+# FAIL-CLOSED DECLARATION: Exit 78 prevents accidental legacy activation.
+#
+# WILSY OWNS BUSINESS TRUTH. KENNEL EOS IS THE EXCLUSIVE FINANCIAL EXECUTION AUTHORITY.
 
-#!/bin/bash
-# Copyright (c) 2026 Wilsy Pty Ltd
-echo "🚀 LAUNCHING WILSY PTY LTD ENTERPRISE OS..."
+set -Eeuo pipefail
 
-# Kill ports to ensure clean start (3001=Gateway, 6000=Ledger, 6100=Standards, 6400=Billing, 6500=AI, 6600=Crypto)
-lsof -ti:3001,6000,6100,6400,6500,6600 | xargs kill -9 2>/dev/null
+printf '%s\n' \
+  'LEGACY_NODE_LAUNCHER_RETIRED: start_wilsy_os.sh previously attempted to start legacy Node service packages.' \
+  'Do not use this script to start any service or deploy production.'
 
-echo "--- CORE SERVICES ---"
-# Ledger
-cd services/ledger && nohup npm start > ../../ledger.log 2>&1 &
-echo "✅ Ledger (Port 6000)"
+exit 78
 
-# Standards
-cd ../standards && nohup npm start > ../../standards.log 2>&1 &
-echo "✅ Standards (Port 6100)"
-
-# Billing
-cd ../billing && nohup npm start > ../../billing.log 2>&1 &
-echo "✅ Billing (Port 6400)"
-
-# AI
-cd ../ai && nohup npm start > ../../ai.log 2>&1 &
-echo "✅ AI Engine (Port 6500)"
-
-# Crypto
-cd ../crypto && nohup npm start > ../../crypto.log 2>&1 &
-echo "✅ Crypto Vault (Port 6600)"
-
-echo "--- GATEWAY ---"
-# Main Server
-cd ../../server && npm start &
-PID_SERVER=$!
-
-echo "✨ SYSTEM LIVE. Press CTRL+C to stop."
-trap "kill 0" SIGINT
-wait
+# ARTIFACT: start_wilsy_os.sh
+# VERSION: v1.0.0-LEGACY-NODE-START-WILSY-OS-RETIRED
+# AUTHORITY BOUNDARY: no Node service or deployment authority.
+# TENANT POSTURE: no tenant access or mutation.
+# FAIL-CLOSED POSTURE: exits 78 without starting or killing processes.
+# FINANCIAL EXECUTION AUTHORITY: Kennel EOS exclusively.
+# END OF WILSY OS SOVEREIGN ARTIFACT

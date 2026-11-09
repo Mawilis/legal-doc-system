@@ -1,9 +1,29 @@
-"""Global-principal selected-membership session and refresh authority.
-
-This authority is deliberately separate from the legacy tenant-bound AuthRegistry.
-It persists only server-derived selected-membership sessions and opaque refresh
-credentials. Every mutation participates in an already-active caller transaction;
-this module never starts, commits, aborts, or retries one.
+"""TITLE: WILSY OS Global Principal Session and Refresh Authority.
+VERSION: v1.1.0-GLOBAL-PRINCIPAL-HEADQUARTERS-SESSION
+AUTHORITY: Server-owned selected-membership session issuance, refresh and revocation.
+EPITOME: Revalidates principal, credential, exact tenant membership, selected
+         business capacity, canonical tenant and tenant-aware workspace binding.
+ABSOLUTE CANONICAL PATH:
+    /Users/wilsonkhanyezi/legal-doc-system/tools/eos/auth/global_principal_session_authority.py
+COLLABORATION / OWNERSHIP: WILSY OS Core Engineering.
+CERTIFICATION / UPDATE DATE: 2026-11-08.
+CHANGELOG:
+    2026-11-08 v1.1.0-GLOBAL-PRINCIPAL-HEADQUARTERS-SESSION revalidates the selected workspace against the exact
+    tenant identifier. Only the canonical WILSY company tenant's tenant_owner
+    capacity selects WILSY_HEADQUARTERS; customer tenant owners retain the
+    Executive Command Centre. Existing transaction ownership and session
+    revision checks remain unchanged.
+    v1.0.0-GLOBAL-PRINCIPAL-SESSION-AUTHORITY introduced revision-bound selected-membership session and refresh authority.
+COMPLIANCE: POPIA section 19; GDPR Article 32; SOC 2 CC7.2.
+SECURITY / PRIVACY POSTURE: Opaque session and refresh credentials; exact
+    principal, credential, membership and capacity revision revalidation.
+TENANT BOUNDARY: Every session is bound to one exact principal and canonical
+    tenant; browser and JWT projections do not establish workspace authority.
+AUTHORITY BOUNDARY: Owns global session and refresh lifecycle only; it does
+    not create memberships, business capacities, permissions or HR authority.
+TRANSACTION BOUNDARY: Mutations require an active caller-owned Mongo transaction;
+    this module never starts, commits, aborts or retries transactions.
+FINANCIAL AUTHORITY BOUNDARY: None; Kennel EOS remains exclusive.
 """
 from __future__ import annotations
 
@@ -42,7 +62,7 @@ from tools.eos.auth.workspace_bootstrap_projection import (
 )
 from tools.eos.saas.tenancy.tenant_registry import TenantRegistry, TenantRegistryError
 
-VERSION = "v1.0.0-GLOBAL-PRINCIPAL-SESSION-AUTHORITY"
+VERSION = "v1.1.0-GLOBAL-PRINCIPAL-HEADQUARTERS-SESSION"
 SESSION_COLLECTION = "global_principal_sessions"
 REFRESH_COLLECTION = "global_principal_refresh_tokens"
 ACCESS_TTL_SECONDS = 900
@@ -198,7 +218,10 @@ class GlobalPrincipalSessionAuthority:
         if getattr(tenant, "tenant_id", None) != selected.tenant_id:
             raise GlobalPrincipalSessionRejected("GLOBAL_SESSION_TENANT_INVALID")
         try:
-            canonical_workspace_id = resolve_workspace_id(selected.business_role)
+            canonical_workspace_id = resolve_workspace_id(
+                selected.business_role,
+                tenant_id=selected.tenant_id,
+            )
         except WorkspaceBootstrapProjectionError as error:
             raise GlobalPrincipalSessionRejected("GLOBAL_SESSION_WORKSPACE_INVALID") from error
         if canonical_workspace_id != selected.workspace_id:
@@ -437,3 +460,11 @@ __all__ = [
     "GlobalPrincipalSessionRejected", "GlobalPrincipalSessionUnavailable",
     "GlobalPrincipalSessionReceipt",
 ]
+
+# ARTIFACT: global_principal_session_authority.py
+# VERSION: v1.1.0-GLOBAL-PRINCIPAL-HEADQUARTERS-SESSION
+# AUTHORITY BOUNDARY: global selected-membership session and refresh lifecycle only
+# TENANT POSTURE: exact principal, canonical tenant, membership and capacity revisions
+# FAIL-CLOSED POSTURE: stale, revoked, malformed, mismatched or unavailable authority rejects
+# FINANCIAL EXECUTION AUTHORITY: Kennel EOS exclusively
+# END OF WILSY OS SOVEREIGN ARTIFACT

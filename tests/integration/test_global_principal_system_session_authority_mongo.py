@@ -1,3 +1,20 @@
+# TITLE: WILSY EOS Global Principal SYSTEM Session Authority Real-Mongo Certificate
+# VERSION: v1.0.1-GLOBAL-PRINCIPAL-SYSTEM-SESSION-MONGO
+# AUTHORITY: Disposable replica-set integration certification only.
+# EPITOME: Verify tenant-neutral SYSTEM MFA challenge, session issuance, refresh rotation, revocation and transaction atomicity against a real MongoDB replica set.
+# ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/tests/integration/test_global_principal_system_session_authority_mongo.py
+# COLLABORATION / OWNERSHIP: Wilsy OS Core Engineering; Python EOS SYSTEM authentication and session authority.
+# CERTIFICATION OR UPDATE DATE: 2026-11-09
+# CHANGELOG:
+#   v1.0.1-GLOBAL-PRINCIPAL-SYSTEM-SESSION-MONGO adds the mandatory sovereign
+#   artifact contract; integration assertions and fixture behavior are unchanged.
+#   v1.0.0 established real-replica-set SYSTEM session certification.
+# COMPLIANCE: AGENTS.md v1.2.0-SOVEREIGN-LEGAL-OPERATIONS-CONSTITUTION.
+# SECURITY / PRIVACY POSTURE: Synthetic SYSTEM principals and disposable MongoDB fixtures only; no production secrets.
+# TENANT BOUNDARY: Tenant-neutral SYSTEM scope; no canonical tenant records are accessed or mutated.
+# AUTHORITY BOUNDARY: Integration evidence only; cannot issue production SYSTEM sessions or MFA factors.
+# FINANCIAL AUTHORITY BOUNDARY: No financial execution authority; Kennel EOS remains exclusive.
+
 """Real replica-set certificate for tenant-neutral SYSTEM MFA/session atomicity."""
 from __future__ import annotations
 
@@ -37,8 +54,25 @@ def test_system_mfa_challenge_and_session_issue_revoke_and_rollback_are_atomic(m
     if not URI:
         raise RuntimeError("TEST_GLOBAL_PRINCIPAL_MONGO_URI_REQUIRED")
     client = MongoClient(URI, serverSelectionTimeoutMS=5_000, retryWrites=True, tz_aware=True)
-    database_name = "global_system_session_" + uuid.uuid4().hex
+    expected_replica_set = os.getenv(
+        "TEST_GLOBAL_PRINCIPAL_MONGO_REPLICA_SET", "wilsyGlobalPrincipalCertRS"
+    )
+    actual_replica_set = client.admin.command("hello").get("setName")
+    if actual_replica_set != expected_replica_set:
+        client.close()
+        pytest.fail(
+            f"wrong certification replica set: expected {expected_replica_set!r}, "
+            f"received {actual_replica_set!r}"
+        )
+    database_name = os.getenv("TEST_GLOBAL_PRINCIPAL_MONGO_DATABASE")
+    if database_name != "wilsy_global_principal_mfa_cert":
+        client.close()
+        pytest.fail(
+            "TEST_GLOBAL_PRINCIPAL_MONGO_DATABASE must be "
+            "'wilsy_global_principal_mfa_cert'"
+        )
     database = client[database_name]
+    suffix = uuid.uuid4().hex
     monkeypatch.setattr(
         "tools.eos.auth.global_principal_system_session_authority.create_access_token",
         lambda _claims, **_kwargs: "synthetic-signed-system-token",
@@ -47,11 +81,11 @@ def test_system_mfa_challenge_and_session_issue_revoke_and_rollback_are_atomic(m
     email = principal_id + "@example.test"
     now = datetime.now(timezone.utc).replace(microsecond=0)
     try:
-        principals = database["principal_authorities"]
-        credentials = database["principal_credentials"]
-        challenges = database[CHALLENGE_COLLECTION]
-        sessions = database[SESSION_COLLECTION]
-        refresh_tokens = database[REFRESH_COLLECTION]
+        principals = database[f"principal_authorities_cert_{suffix}"]
+        credentials = database[f"principal_credentials_cert_{suffix}"]
+        challenges = database[f"{CHALLENGE_COLLECTION}_cert_{suffix}"]
+        sessions = database[f"{SESSION_COLLECTION}_cert_{suffix}"]
+        refresh_tokens = database[f"{REFRESH_COLLECTION}_cert_{suffix}"]
         PrincipalAuthorityRepository.ensure_indexes(principals)
         PrincipalCredentialRepository.ensure_indexes(credentials)
         GlobalPrincipalSystemMfaChallengeService.ensure_indexes(challenges)
@@ -227,5 +261,14 @@ def test_system_mfa_challenge_and_session_issue_revoke_and_rollback_are_atomic(m
                 challenge_service.get_factor_context(token, session=session, now=now)
             session.abort_transaction()
     finally:
-        client.drop_database(database_name)
+        for collection in (principals, credentials, challenges, sessions, refresh_tokens):
+            collection.drop()
         client.close()
+
+# ARTIFACT: tests/integration/test_global_principal_system_session_authority_mongo.py
+# VERSION: v1.0.1-GLOBAL-PRINCIPAL-SYSTEM-SESSION-MONGO
+# AUTHORITY BOUNDARY: Disposable SYSTEM session/refresh integration test only.
+# TENANT POSTURE: Synthetic tenant-neutral SYSTEM identity only; no production state is changed.
+# FAIL-CLOSED POSTURE: Transaction, currentness, replay and revocation divergences fail the integration suite.
+# FINANCIAL EXECUTION AUTHORITY: Kennel EOS exclusively.
+# END OF WILSY OS SOVEREIGN ARTIFACT

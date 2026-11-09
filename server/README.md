@@ -1,84 +1,81 @@
-# 🏛️ WILSY OS - GEN 10 FOUNDATION
+# WILSY OS — legacy Node server source boundary
 
-Wilsy OS is a multi-tenant, AI-driven legal operating system engineered for the South African judicial ecosystem. It combines predictive neural engines, cryptographic document generation, and forensic-grade compliance trails natively running on a modern ECMAScript Module (ESM) architecture.
+**TITLE:** Legacy Node Server Source and Retirement Boundary  
+**VERSION:** v1.2.0-LEGACY-NODE-SOURCE-BOUNDARY  
+**AUTHORITY:** Wilsy OS Core Governance  
+**EPITOME:** Identifies the server directory as an unsupported legacy migration source while explicitly disclosing that Express routes, Mongoose models, Redis, BullMQ, cron jobs and callable scheduler modules remain present and are not yet safe to delete.  
+**ABSOLUTE CANONICAL PATH:** /Users/wilsonkhanyezi/legal-doc-system/server/README.md  
+**COLLABORATION / OWNERSHIP:** Wilson Khanyezi (Founder); Kennel EOS runtime owners; Codex (AI Engineering).  
+**CERTIFICATION / UPDATE DATE:** 2026-11-08  
+**CHANGELOG:**
+- v1.2.0-LEGACY-NODE-SOURCE-BOUNDARY: Adds the separate root Node service tree, root launch scripts and 124 non-browser Node test files to the legacy retirement boundary.
+- v1.1.0-LEGACY-NODE-SOURCE-BOUNDARY: Corrects the previous description that remaining server files were isolated test/lint tooling; records active-looking legacy source and prohibits runtime activation pending Python EOS parity.
+- v1.0.0: Established the initial unsupported Node backend notice.
+**COMPLIANCE:** AGENTS.md v1.2.0; ENGINEERING_CONSTITUTION.md v1.1.0.  
+**SECURITY / PRIVACY POSTURE:** Do not start or expose legacy server modules. The source tree contains historical trust, authentication, tenant and persistence code that is not certified for production use.  
+**TENANT BOUNDARY:** No legacy tenant fallback, bypass, or Mongoose access is authorized by this document.  
+**AUTHORITY BOUNDARY:** Kennel EOS is the sole supported application/API and business authority. This directory is LEGACY / MIGRATION SOURCE, not a supported runtime.  
+**FINANCIAL AUTHORITY BOUNDARY:** Kennel EOS exclusively owns financial execution and settlement truth.  
+**TRANSACTION BOUNDARY:** No migration, scheduler activation, data mutation, or deployment is authorized here.
 
-## 💰 Investor Metrics & Value Proposition
-
-- **Neural Predictive Engine:** R22.5M/year in litigation risk avoidance.
-- **Quantum Court Engine:** R25.0M/year in automated legal precedent analysis.
-- **Document Generation Pipeline:** R18.5M/year in automated, zero-latency drafting.
-- **Forensic Blockchain Anchor:** 100% tamper detection compliant with ECT Act §15.
+WILSY OWNS BUSINESS TRUTH. KENNEL EOS IS THE EXCLUSIVE FINANCIAL EXECUTION AUTHORITY.
 
 ---
 
-## 🛠️ Technical Architecture
+## Supported application runtime
 
-Wilsy OS operates on a highly strict, hyper-optimized V8 Engine configuration. We have successfully migrated the entire legacy monolith to **100% Native ES Modules (ESM)**.
-
-- **Runtime:** Node.js v20+ (Strict ESM Mode)
-- **Database:** MongoDB Atlas (Multi-tenant isolated)
-- **Cache/Queues:** Redis & BullMQ v3+
-- **AI Toolchain:** TensorFlow.js, Brain.js, GPU.js, Natural
-- **Cryptography:** AES-256-GCM & SHA-256 Forensic Hashing
-
----
-
-## 🚀 Developer Onboarding & Setup
-
-Due to the deep native modules and AI toolchains (TensorFlow, GPU.js), setting up the environment requires specific bindings.
-
-### 1. Prerequisites
-
-Ensure you have the following installed on your machine:
-
-- **Node.js:** v20.x or higher
-- **Python:** v3.x (Crucial for `node-gyp` native compilation)
-- **Make/GCC:** standard build tools (Xcode Command Line Tools on macOS)
-
-### 2. Environment Variable Configuration
-
-**CRITICAL:** Modern npm (v7+) no longer accepts `python` via `npm config`. You _must_ export the Python path to your environment before installing packages, or the AI native modules will fail to compile.
-
-Run this in your terminal before installing:
+The supported application/API is the Python Kennel EOS FastAPI application:
 
 ```bash
-export PYTHON=/usr/bin/python3
-export npm_config_python=/usr/bin/python3
-3. Installation
-Once Python is mapped, install the dependencies. We use --ignore-scripts selectively to prevent legacy package scripts from breaking the modern ESM tree.
+python -m uvicorn tools.eos.api.server:app --host 0.0.0.0 --port 9095
+```
 
-Bash
-npm install
-4. Running the Test Suites
-Because the entire architecture is built on native ES Modules, standard execution commands will fail. You must pass the --experimental-vm-modules flag to Node.js so it understands the modern import/export structure.
+Node may be used only for approved frontend build and browser-certification tooling. It must not provide an Express API, BFF, business command, database consumer, scheduler, worker, or deployment authority.
 
-Run All Core Tests:
+## Actual contents of this directory
 
-Bash
-NODE_ENV=test NODE_OPTIONS="--experimental-vm-modules" npx mocha --config .mocharc.cjs --file tests/setup.cjs tests/**/*.test.js --timeout 30000 --exit
-🧬 Architectural Notes for Future Developers
-No require(): The system is strictly "type": "module". Legacy module.exports and require() have been eradicated globally using proxy injection and ESM polyfills. Do not introduce new CommonJS code.
+This directory is not yet a clean historical test-only package. The current branch still contains:
 
-Logger Unwrapping: If you import the system logger, ensure you unwrap the default object: import loggerRaw from './logger.js'; const logger = loggerRaw.default || loggerRaw;
+- `server/app.js`: an Express application module with route imports, middleware, direct handlers, and an exported `initializeSovereignJobs(options)` activation function.
+- `server/routes/**`, `server/controllers/**`, and `server/middleware/**`: legacy route, controller and security implementations, including authentication and tenant handling.
+- `server/models/**` and `server/services/**`: Mongoose schemas, persistence consumers, reconciliation and integration code.
+- `server/jobs/**`: legacy BullMQ workers, queues, cron jobs, and verification reconciliation.
+- `server/config/**`: Mongoose, Redis, queue, and cron configuration.
+- `server/package.json`: a large Node dependency manifest that still includes Express, Mongoose, Redis, BullMQ, Agenda, cron, and server-oriented packages. Its test/lint scripts do not make the dependency tree frontend-only.
+- `server/tests/**`: historical Node tests. These are not browser tests and are not an approved application runtime.
+- `server/scripts/**`: legacy Node deployment and manifest-generation scripts.
+- Root `services/ai`, `services/auth`, `services/billing`, `services/crypto`, `services/ledger`, and `services/standards`: separate Node service modules, including Express listeners, Mongoose consumers, JWT auth, simulated AI scoring, unsafe ephemeral-key signing and a global ledger repair generator.
+- Root launchers `start_all.sh`, `start_wilsy_os.sh`, `GlobalLaunchSequence.sh`, `Genesis_Ignition.sh`, and `Sovereign_Deployment_Automation.sh`: legacy process/deployment activators. They are not approved EOS launch paths.
+- `server/tests/**`: 136 entries including 124 Node test files; these are not browser tests and must be mapped to Python EOS tests or retired only after parity.
 
-Mongoose Indexes: Do not declare index: true inside schemas. Use the explicit schema.index() declaration at the bottom of model files to prevent duplicate index CPU thrashing.
+The absence of `server/server.js`, PM2 launchers, or the former Node Dockerfiles prevents those specific launch paths; it does not prove that the remaining modules, workers, or scripts are harmless or unreachable. The legacy app exports a callable scheduler initializer, and other repository scripts still reference old deployment tooling.
 
-Wilsy OS: Engineering the Future of Law.
+## Runtime prohibition
+
+Do not execute:
+
+- `npm start`, `npm run dev`, or server test/lint scripts from this directory.
+- `server/app.js` as an Express application.
+- Any module under `server/jobs/**` that starts a worker, queue consumer, cron schedule, or interval.
+- `server/scripts/**` deployment or manifest generators.
+- PM2 or a legacy server Kubernetes manifest.
+
+The root `services/**` Node services and `start_all.sh` / `start_wilsy_os.sh` / `GlobalLaunchSequence.sh` can activate additional non-EOS processes. The root `Sovereign_Deployment_Automation.sh` and `Genesis_Ignition.sh` still reference legacy Node deployment/test behavior and are not approved deployment paths. Root `nginx.conf`, `infra/nginx/fortress-lb.conf`, `k8s/predictive-deployment.yaml`, and the legacy Helm chart also remain unresolved. See the repository's forensic inventory for the exact route and ingress findings.
+
+## Retirement condition
+
+A legacy capability may be removed only after its callers, routes, controllers, middleware, models, database consumers, workers, schedulers, external integrations, data contracts, client callers, and Python EOS replacement have been mapped and certified. The required evidence includes authenticated route tests, tenant-isolation tests, caller-owned transaction/session tests, real Mongo replica-set tests where applicable, and exact-head CI.
+
+This README does not certify route parity, production ingress, host process state, or safe deletion of the remaining server tree.
 
 ---
 
-## 🛡️ Wilsy OS v3.0 | Forensic Compliance Badges
-| Category | Badge | Status | Verification |
-| :--- | :--- | :--- | :--- |
-| **Integrity** | ![Forensic Seal](https://img.shields.io/badge/Forensic_Seal-SHA--256_Verified-green?style=for-the-badge) | **SECURE** | Pipe-Delimited Sealing |
-| **Accuracy** | ![AI Accuracy](https://img.shields.io/badge/AI_Accuracy-94.7%25-blueviolet?style=for-the-badge) | **ELITE** | Neural Engine v3 |
-| **Compliance** | ![Legal](https://img.shields.io/badge/Compliance-ECT_Act_%26_POPIA-blue?style=for-the-badge) | **CERTIFIED** | Statutory Alignment |
-| **Value** | ![Economic Impact](https://img.shields.io/badge/Economic_Impact-R71.3B-gold?style=for-the-badge) | **SCALABLE** | Per-Transaction Audit |
+**Status: LEGACY / MIGRATION SOURCE — NOT A SUPPORTED RUNTIME; RETIREMENT NOT YET CERTIFIED.**
 
-## 📝 Release Notes: v3.0.0-PROD
-- **Core Architecture:** Full migration to Native ESM (ECMAScript Modules).
-- **Forensic Engine:** Implemented Atomic Guard hashing to prevent DB hydration mismatches.
-- **Performance:** Achieved <1ms document generation latency.
-- **Validation:** 13/13 Production Tests Passed.
-
-```
+ARTIFACT: server/README.md  
+VERSION: v1.2.0-LEGACY-NODE-SOURCE-BOUNDARY  
+AUTHORITY BOUNDARY: no Node runtime, API, worker, scheduler, or deployment authority.  
+TENANT POSTURE: no tenant access or fallback authority.  
+FAIL-CLOSED POSTURE: legacy modules remain disabled pending mapped and certified Python EOS replacements.  
+FINANCIAL EXECUTION AUTHORITY: Kennel EOS exclusively.  
+END OF WILSY OS SOVEREIGN ARTIFACT

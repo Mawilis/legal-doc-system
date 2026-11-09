@@ -1,13 +1,24 @@
-"""Direct certificate for the server-owned WorkspaceBootstrapProjection.
-
-The projection must compose existing sovereign authorities only:
-- authenticated/current ACTIVE principal supplied by get_current_identity;
-- exact ACTIVE TenantMembership authority;
-- exact dedicated ACTIVE TenantBusinessRole authority;
-- exact canonical ACTIVE TenantEntity resolution.
-
-JWT role/permission claims, browser state, directory scans, and RoleAssignment
-compatibility projections are not workspace-bootstrap authority.
+"""TITLE: WILSY OS Workspace Bootstrap Projection Certification.
+VERSION: v1.1.0-WILSY-HEADQUARTERS-WORKSPACE-RESOLUTION-TESTS
+AUTHORITY: Unit-level verification of read-only EOS workspace projection.
+EPITOME: Certifies tenant-aware WILSY Headquarters selection, ordinary customer
+         tenant owner routing, current membership/capacity validation and
+         fail-closed canonical tenant resolution.
+ABSOLUTE CANONICAL PATH:
+    /Users/wilsonkhanyezi/legal-doc-system/tests/unit/test_workspace_bootstrap_projection.py
+COLLABORATION / OWNERSHIP: WILSY OS Core Engineering.
+CERTIFICATION / UPDATE DATE: 2026-11-08.
+CHANGELOG:
+    2026-11-08 v1.1.0-WILSY-HEADQUARTERS-WORKSPACE-RESOLUTION-TESTS certifies exact canonical WILSY tenant routing to
+    WILSY_HEADQUARTERS without changing customer tenant owner routing.
+COMPLIANCE: POPIA section 19; GDPR Article 32; SOC 2 CC7.2.
+SECURITY / PRIVACY POSTURE: Exercises forged transport claims and exact durable
+    principal, membership, business-capacity and tenant authority boundaries.
+TENANT BOUNDARY: WILSY Headquarters selection requires exact canonical company
+    tenant scope; ordinary tenant owners retain their own customer workspace.
+AUTHORITY BOUNDARY: Tests read-only presentation projection only; no permissions
+    or domain authority are created.
+FINANCIAL AUTHORITY BOUNDARY: None; Kennel EOS remains exclusive.
 """
 
 from __future__ import annotations
@@ -356,6 +367,24 @@ def test_every_published_tenant_business_role_has_one_workspace_mapping() -> Non
     assert all(isinstance(workspace_id, str) and workspace_id for workspace_id in resolved.values())
 
 
+def test_wilsy_company_owner_resolves_to_headquarters_only_for_canonical_tenant() -> None:
+    contract = _contract()
+
+    assert contract.resolve_workspace_id(
+        "tenant_owner",
+        tenant_id="WILSYTENANT-4CD2FZ4O",
+    ) == "WILSY_HEADQUARTERS"
+    assert contract.resolve_workspace_id(
+        "tenant_owner",
+        tenant_id="CUSTOMER-TENANT-1",
+    ) == "EXECUTIVE_COMMAND_CENTRE"
+    assert contract.resolve_workspace_id("tenant_owner") == "EXECUTIVE_COMMAND_CENTRE"
+    assert contract.resolve_workspace_id(
+        "tenant_legal_partner",
+        tenant_id="WILSYTENANT-4CD2FZ4O",
+    ) == "LEGAL_PRACTICE"
+
+
 def test_unknown_workspace_role_fails_closed() -> None:
     contract = _contract()
 
@@ -443,3 +472,11 @@ def test_global_workspace_bootstrap_does_not_fall_back_to_another_active_capacit
             business_role=_business_role(business_role="tenant_owner"),
         )
     assert _error_code(raised.value) == "WORKSPACE_BOOTSTRAP_BUSINESS_ROLE_REQUIRED"
+
+# ARTIFACT: test_workspace_bootstrap_projection.py
+# VERSION: v1.1.0-WILSY-HEADQUARTERS-WORKSPACE-RESOLUTION-TESTS
+# AUTHORITY BOUNDARY: unit certification of read-only workspace projection only
+# TENANT POSTURE: canonical WILSY company tenant and customer tenant cases are isolated
+# FAIL-CLOSED POSTURE: malformed, stale, inactive, mismatched and unknown authority rejects
+# FINANCIAL EXECUTION AUTHORITY: Kennel EOS exclusively
+# END OF WILSY OS SOVEREIGN ARTIFACT

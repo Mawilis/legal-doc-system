@@ -1,7 +1,7 @@
 """WILSY OS global-principal membership selection and revision-bound MFA challenges.
 
 TITLE: WILSY OS Membership Selection Challenge Authority
-VERSION: v1.0.0-GLOBAL-MEMBERSHIP-SELECTION-CHALLENGE
+VERSION: v1.1.0-GLOBAL-MEMBERSHIP-HEADQUARTERS-SELECTION
 AUTHORITY: One-time challenge lifecycle and selected-membership snapshot composition only.
 EPITOME: Converts a password-verified global principal into one explicit, current
          tenant/business-capacity selection and a one-time MFA challenge.
@@ -12,7 +12,7 @@ COLLABORATION / OWNERSHIP:
     Engineering collaborator: WILSY OS Core Systems Engineering.
 CERTIFICATION / UPDATE DATE: 2026-11-03.
 CHANGELOG:
-    v1.0.0-GLOBAL-MEMBERSHIP-SELECTION-CHALLENGE introduces hashed,
+    v1.1.0-GLOBAL-MEMBERSHIP-HEADQUARTERS-SELECTION introduces hashed,
     one-time, expiring membership-selection and MFA challenge records.
     Both transitions re-read global principal, credential revision, exact
     tenant membership, canonical tenant and selected business capacity inside
@@ -88,7 +88,7 @@ from tools.eos.auth.workspace_bootstrap_projection import (
 from tools.eos.saas.tenancy.tenant_registry import TenantRegistry, TenantRegistryError
 
 
-VERSION = "v1.0.0-GLOBAL-MEMBERSHIP-SELECTION-CHALLENGE"
+VERSION = "v1.1.0-GLOBAL-MEMBERSHIP-HEADQUARTERS-SELECTION"
 COLLECTION = "eos_authentication_challenges"
 DEFAULT_CHALLENGE_TTL_SECONDS = 300
 MIN_CHALLENGE_TTL_SECONDS = 30
@@ -376,7 +376,7 @@ def _resolve_selected_authority(
     )
 
     try:
-        workspace_id = resolve_workspace_id(business_role)
+        workspace_id = resolve_workspace_id(business_role, tenant_id=tenant_id)
     except WorkspaceBootstrapProjectionError as error:
         raise MembershipSelectionChallengeRejected("AUTH_CHALLENGE_WORKSPACE_UNMAPPED") from error
 
@@ -737,7 +737,7 @@ __all__ = [
 ]
 
 # ARTIFACT: membership_selection_challenge.py
-# VERSION: v1.0.0-GLOBAL-MEMBERSHIP-SELECTION-CHALLENGE
+# VERSION: v1.1.0-GLOBAL-MEMBERSHIP-HEADQUARTERS-SELECTION
 # AUTHORITY BOUNDARY: one-time challenge lifecycle and revision-bound selection only
 # TENANT POSTURE: tenant-neutral selection token; selected MFA challenge binds exact principal/tenant/capacity
 # FAIL-CLOSED POSTURE: expired, reused, stale, malformed, inactive, ambiguous, and unavailable authority rejects

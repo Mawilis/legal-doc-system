@@ -1,3 +1,27 @@
+# TITLE: WILSY EOS Global Principal MFA KMS Envelope Contract Tests
+# VERSION: v1.0.1-GLOBAL-MFA-KMS-ENVELOPE-CONTRACT
+# AUTHORITY: Static cryptographic adapter certification only; no live KMS or identity authority.
+# EPITOME: Verify principal/revision-bound AWS KMS envelopes, synthetic startup access validation, key rotation constraints, explicit region selection and fail-closed error behavior.
+# ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/tests/unit/test_global_principal_mfa_kms_envelope.py
+# COLLABORATION / OWNERSHIP: Wilsy OS Core Engineering; Python EOS Global Principal MFA.
+# CERTIFICATION OR UPDATE DATE: 2026-11-09
+# CHANGELOG:
+#   v1.0.1-GLOBAL-MFA-KMS-ENVELOPE-CONTRACT adds the mandatory sovereign
+#   artifact header, module documentation and end seal. Test assertions and
+#   runtime behavior are unchanged.
+#   v1.0.0 established the KMS envelope, context, region, rotation and denial tests.
+# COMPLIANCE: AGENTS.md v1.2.0-SOVEREIGN-LEGAL-OPERATIONS-CONSTITUTION.
+# SECURITY / PRIVACY POSTURE: Uses synthetic in-memory KMS client fixtures only; no real factor secrets, AWS credentials or KMS calls.
+# TENANT BOUNDARY: Synthetic principal identifiers only; no tenant or membership records are created or mutated.
+# AUTHORITY BOUNDARY: Test-only evidence; cannot enroll factors, issue sessions or grant KMS permissions.
+# FINANCIAL AUTHORITY BOUNDARY: No financial execution authority; Kennel EOS remains the exclusive financial execution authority.
+
+"""Contract tests for the Python EOS Global Principal MFA KMS envelope adapter.
+
+All cryptographic calls are handled by a deterministic in-memory client. These
+tests do not contact AWS or certify a production workload identity.
+"""
+
 from __future__ import annotations
 
 import base64
@@ -171,7 +195,8 @@ def test_environment_factory_requires_and_uses_explicit_aws_region(monkeypatch):
     monkeypatch.setenv("WILSY_GLOBAL_MFA_KMS_PROVIDER", "AWS_KMS")
     monkeypatch.setenv("WILSY_GLOBAL_MFA_KMS_KEY_ID", KEY)
     monkeypatch.delenv("AWS_REGION", raising=False)
-    monkeypatch.setenv("AWS_DEFAULT_REGION", "af-south-1")
+    monkeypatch.delenv("AWS_DEFAULT_REGION", raising=False)
+    monkeypatch.delenv("WILSY_GLOBAL_MFA_KMS_REGION", raising=False)
     with pytest.raises(GlobalMfaKeyManagementError, match="GLOBAL_MFA_KMS_REGION_REQUIRED"):
         build_global_mfa_kms_envelope_from_environment(client=_KmsClient())
 
@@ -188,3 +213,95 @@ def test_invalid_identity_context_is_rejected():
         adapter.encrypt_secret(secret="secret", principal_id=" ", credential_revision=1)
     with pytest.raises(GlobalMfaKeyManagementError, match="GLOBAL_MFA_KMS_CONTEXT_INVALID"):
         adapter.encrypt_secret(secret="secret", principal_id="principal-1", credential_revision=True)
+
+
+def test_kms_access_denied_on_encrypt_fails_closed():
+    client = _KmsClient()
+
+    def denied_encrypt(**kwargs):
+        raise RuntimeError("AccessDeniedException: kms:Encrypt is not authorized")
+
+    client.encrypt = denied_encrypt
+    adapter = AwsKmsGlobalMfaEnvelope(key_id=KEY, region_name="af-south-1", client=client)
+    with pytest.raises(GlobalMfaKeyManagementError, match="GLOBAL_MFA_KMS_ENCRYPT_FAILED"):
+        adapter.encrypt_secret(secret="secret", principal_id="principal-1", credential_revision=1)
+
+
+def test_kms_access_denied_on_decrypt_fails_closed():
+    client = _KmsClient()
+    adapter = AwsKmsGlobalMfaEnvelope(key_id=KEY, region_name="af-south-1", client=client)
+    envelope = adapter.encrypt_secret(
+        secret="secret", principal_id="principal-1", credential_revision=1
+    )
+
+    def denied_decrypt(**kwargs):
+        raise RuntimeError("AccessDeniedException: kms:Decrypt is not authorized")
+
+    client.decrypt = denied_decrypt
+    with pytest.raises(GlobalMfaKeyManagementError, match="GLOBAL_MFA_KMS_DECRYPT_FAILED"):
+        adapter.decrypt_secret(envelope, principal_id="principal-1", credential_revision=1)
+
+
+def test_startup_probe_fails_when_kms_returns_different_plaintext():
+    client = _KmsClient()
+    original_decrypt = client.decrypt
+
+    def altered_decrypt(**kwargs):
+        result = original_decrypt(**kwargs)
+        return {**result, "Plaintext": b"not-the-probe-secret"}
+
+    client.decrypt = altered_decrypt
+    adapter = AwsKmsGlobalMfaEnvelope(key_id=KEY, region_name="af-south-1", client=client)
+    with pytest.raises(GlobalMfaKeyManagementError, match="GLOBAL_MFA_KMS_STARTUP_PROBE_FAILED"):
+        adapter.validate_access()
+
+
+def test_kms_encrypt_rejects_response_from_unexpected_key():
+    client = _KmsClient()
+
+    def wrong_key_encrypt(**kwargs):
+        return {"CiphertextBlob": b"ciphertext", "KeyId": OLD_KEY}
+
+    client.encrypt = wrong_key_encrypt
+    adapter = AwsKmsGlobalMfaEnvelope(key_id=KEY, region_name="af-south-1", client=client)
+    with pytest.raises(GlobalMfaKeyManagementError, match="GLOBAL_MFA_KMS_KEY_ID_MISMATCH"):
+        adapter.encrypt_secret(secret="secret", principal_id="principal-1", credential_revision=1)
+
+
+def test_environment_factory_prefers_explicit_eos_region(monkeypatch):
+    monkeypatch.setenv("WILSY_GLOBAL_MFA_KMS_PROVIDER", "AWS_KMS")
+    monkeypatch.setenv("WILSY_GLOBAL_MFA_KMS_KEY_ID", KEY)
+    monkeypatch.setenv("WILSY_GLOBAL_MFA_KMS_REGION", "af-south-1")
+    monkeypatch.setenv("AWS_REGION", "eu-west-1")
+    monkeypatch.setenv("AWS_DEFAULT_REGION", "us-east-1")
+    adapter = build_global_mfa_kms_envelope_from_environment(client=_KmsClient())
+    assert adapter is not None
+    assert adapter.region_name == "af-south-1"
+
+
+def test_environment_factory_falls_back_to_aws_default_region(monkeypatch):
+    monkeypatch.setenv("WILSY_GLOBAL_MFA_KMS_PROVIDER", "AWS_KMS")
+    monkeypatch.setenv("WILSY_GLOBAL_MFA_KMS_KEY_ID", KEY)
+    monkeypatch.delenv("WILSY_GLOBAL_MFA_KMS_REGION", raising=False)
+    monkeypatch.delenv("AWS_REGION", raising=False)
+    monkeypatch.setenv("AWS_DEFAULT_REGION", "af-south-1")
+    adapter = build_global_mfa_kms_envelope_from_environment(client=_KmsClient())
+    assert adapter is not None
+    assert adapter.region_name == "af-south-1"
+
+
+def test_environment_factory_rejects_region_mismatch_before_kms_client_use(monkeypatch):
+    monkeypatch.setenv("WILSY_GLOBAL_MFA_KMS_PROVIDER", "AWS_KMS")
+    monkeypatch.setenv("WILSY_GLOBAL_MFA_KMS_KEY_ID", KEY)
+    monkeypatch.setenv("WILSY_GLOBAL_MFA_KMS_REGION", "eu-west-1")
+    with pytest.raises(GlobalMfaKeyManagementError, match="GLOBAL_MFA_KMS_REGION_KEY_MISMATCH"):
+        build_global_mfa_kms_envelope_from_environment(client=_KmsClient())
+
+
+# ARTIFACT: tests/unit/test_global_principal_mfa_kms_envelope.py
+# VERSION: v1.0.1-GLOBAL-MFA-KMS-ENVELOPE-CONTRACT
+# AUTHORITY BOUNDARY: Static adapter contract tests only; no live KMS or factor authority.
+# TENANT POSTURE: Synthetic principal context only; no tenant or membership state is changed.
+# FAIL-CLOSED POSTURE: Key, region, context, envelope and provider regressions fail the focused suite.
+# FINANCIAL EXECUTION AUTHORITY: Kennel EOS exclusively.
+# END OF WILSY OS SOVEREIGN ARTIFACT

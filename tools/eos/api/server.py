@@ -355,6 +355,9 @@ class WilsyAPIServer:
         app.state.global_principal_mfa_factor_indexes_ready = False
         app.state.global_principal_mfa_enrollment_indexes_ready = False
         app.state.global_principal_totp_verifier = None
+        app.state.global_principal_mfa_runtime_ready = False
+        app.state.global_principal_mfa_runtime_status = "NOT_INITIALIZED"
+        app.state.global_principal_mfa_runtime_reason = "STARTUP_NOT_COMPLETED"
         app.state.global_principal_mfa_decrypt_secret = self.global_principal_mfa_decrypt_secret
         app.state.global_principal_mfa_kms_envelope = None
         # Case storage readiness is separate from IAM authorization readiness.
@@ -543,6 +546,9 @@ class WilsyAPIServer:
             app.state.global_principal_mfa_factor_indexes_ready = False
             app.state.global_principal_mfa_enrollment_indexes_ready = False
             app.state.global_principal_totp_verifier = None
+            app.state.global_principal_mfa_runtime_ready = False
+            app.state.global_principal_mfa_runtime_status = "NOT_INITIALIZED"
+            app.state.global_principal_mfa_runtime_reason = "STARTUP_NOT_COMPLETED"
             app.state.global_principal_mfa_kms_envelope = None
             app.state.system_services_case_indexes_ready = False
             app.state.system_services_authority_ready = False
@@ -792,15 +798,29 @@ class WilsyAPIServer:
                     Callable[..., str] | None,
                     getattr(app.state, "global_principal_mfa_decrypt_secret", None),
                 )
-                if not callable(decrypt_global_mfa_secret):
+                app.state.global_principal_mfa_runtime_ready = False
+                app.state.global_principal_mfa_runtime_status = "NOT_CONFIGURED"
+                app.state.global_principal_mfa_runtime_reason = (
+                    "GLOBAL_MFA_KMS_PROVIDER_REQUIRED"
+                )
+                if callable(decrypt_global_mfa_secret):
+                    app.state.global_principal_mfa_runtime_status = "READY"
+                    app.state.global_principal_mfa_runtime_reason = "INJECTED_DECRYPTOR"
+                else:
                     try:
                         kms_envelope = build_global_mfa_kms_envelope_from_environment()
                         if kms_envelope is not None:
                             kms_envelope.validate_access()
                             app.state.global_principal_mfa_kms_envelope = kms_envelope
                             decrypt_global_mfa_secret = kms_envelope.decrypt_secret
+                            app.state.global_principal_mfa_runtime_status = "READY"
+                            app.state.global_principal_mfa_runtime_reason = (
+                                "KMS_STARTUP_PROBE_PASSED"
+                            )
                     except GlobalMfaKeyManagementError as error:
                         app.state.global_principal_mfa_kms_envelope = None
+                        app.state.global_principal_mfa_runtime_status = "UNAVAILABLE"
+                        app.state.global_principal_mfa_runtime_reason = str(error)
                         logger.warning(
                             "[GLOBAL_PRINCIPAL_MFA] KMS composition unavailable: %s",
                             str(error),
@@ -810,6 +830,7 @@ class WilsyAPIServer:
                         collection=database[GLOBAL_PRINCIPAL_MFA_FACTOR_COLLECTION],
                         decrypt_secret=decrypt_global_mfa_secret,
                     )
+                    app.state.global_principal_mfa_runtime_ready = True
                 PrincipalAuthenticationRateLimit(
                     database[PRINCIPAL_AUTH_RATE_LIMIT_COLLECTION]
                 ).ensure_indexes()
@@ -946,6 +967,9 @@ class WilsyAPIServer:
             app.state.global_principal_mfa_factor_indexes_ready = False
             app.state.global_principal_mfa_enrollment_indexes_ready = False
             app.state.global_principal_totp_verifier = None
+            app.state.global_principal_mfa_runtime_ready = False
+            app.state.global_principal_mfa_runtime_status = "NOT_INITIALIZED"
+            app.state.global_principal_mfa_runtime_reason = "APPLICATION_SHUTDOWN"
             app.state.global_principal_mfa_kms_envelope = None
             app.state.system_services_case_indexes_ready = False
             app.state.system_services_authority_ready = False

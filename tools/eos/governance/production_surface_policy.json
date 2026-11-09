@@ -288,10 +288,6 @@
     },
     {
       "class": "RETAIN",
-      "pattern": "server/server.js"
-    },
-    {
-      "class": "RETAIN",
       "pattern": "server/controllers/businessArtifactPdfController.js"
     },
     {

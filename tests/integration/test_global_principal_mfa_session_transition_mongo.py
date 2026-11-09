@@ -1,3 +1,20 @@
+# TITLE: WILSY EOS Global Principal MFA Session Transition Atomicity Certificate
+# VERSION: v1.0.1-GLOBAL-PRINCIPAL-MFA-SESSION-TRANSITION-MONGO
+# AUTHORITY: Disposable replica-set integration certification only.
+# EPITOME: Verify MFA challenge consumption and authenticated session/refresh issuance commit or abort together in a real MongoDB transaction.
+# ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/tests/integration/test_global_principal_mfa_session_transition_mongo.py
+# COLLABORATION / OWNERSHIP: Wilsy OS Core Engineering; Python EOS Global Principal MFA and session authority.
+# CERTIFICATION OR UPDATE DATE: 2026-11-09
+# CHANGELOG:
+#   v1.0.1-GLOBAL-PRINCIPAL-MFA-SESSION-TRANSITION-MONGO adds the mandatory
+#   sovereign artifact contract; transaction assertions and fixtures are unchanged.
+#   v1.0.0 established real-replica-set MFA/session transition certification.
+# COMPLIANCE: AGENTS.md v1.2.0-SOVEREIGN-LEGAL-OPERATIONS-CONSTITUTION.
+# SECURITY / PRIVACY POSTURE: Disposable MongoDB and synthetic challenge/session values only; no production credentials.
+# TENANT BOUNDARY: Synthetic principal and tenant scope only; no canonical tenant data is accessed.
+# AUTHORITY BOUNDARY: Integration evidence only; does not issue production sessions or authorize MFA.
+# FINANCIAL AUTHORITY BOUNDARY: No financial execution authority; Kennel EOS remains exclusive.
+
 """Replica-set proof that MFA consumption and session issuance commit/abort together."""
 import os
 import uuid
@@ -52,11 +69,28 @@ def transition_fixture(monkeypatch):
     if not uri:
         pytest.fail("TEST_GLOBAL_PRINCIPAL_MONGO_URI is required")
     client = MongoClient(uri, serverSelectionTimeoutMS=5000)
-    if client.admin.command("hello").get("setName") != "wilsyGlobalPrincipalCertRS":
-        pytest.fail("wrong certification replica set")
-    db = client[f"global_mfa_transition_{uuid.uuid4().hex}"]
+    expected_replica_set = os.getenv(
+        "TEST_GLOBAL_PRINCIPAL_MONGO_REPLICA_SET", "wilsyGlobalPrincipalCertRS"
+    )
+    actual_replica_set = client.admin.command("hello").get("setName")
+    if actual_replica_set != expected_replica_set:
+        pytest.fail(
+            f"wrong certification replica set: expected {expected_replica_set!r}, "
+            f"received {actual_replica_set!r}"
+        )
+    database_name = os.getenv("TEST_GLOBAL_PRINCIPAL_MONGO_DATABASE")
+    if database_name != "wilsy_global_principal_mfa_cert":
+        client.close()
+        pytest.fail(
+            "TEST_GLOBAL_PRINCIPAL_MONGO_DATABASE must be "
+            "'wilsy_global_principal_mfa_cert'"
+        )
+    db = client[database_name]
+    suffix = uuid.uuid4().hex
     challenges, sessions, refresh = (
-        db[CHALLENGE_COLLECTION], db[SESSION_COLLECTION], db[REFRESH_COLLECTION]
+        db[f"{CHALLENGE_COLLECTION}_cert_{suffix}"],
+        db[f"{SESSION_COLLECTION}_cert_{suffix}"],
+        db[f"{REFRESH_COLLECTION}_cert_{suffix}"],
     )
     MembershipSelectionChallengeService.ensure_indexes(challenges)
     GlobalPrincipalSessionAuthority.ensure_indexes(sessions, refresh)
@@ -83,7 +117,8 @@ def transition_fixture(monkeypatch):
     try:
         yield client, challenges, sessions, refresh, challenge_service, transition
     finally:
-        client.drop_database(db.name)
+        for collection in (challenges, sessions, refresh):
+            collection.drop()
         client.close()
 
 
@@ -156,3 +191,11 @@ def test_revision_change_between_mfa_challenge_and_session_issue_aborts_both(tra
     assert challenges.count_documents({"purpose": "SELECTED_MEMBERSHIP_MFA", "consumed_at": None}) == 1
     assert sessions.count_documents({}) == 0
     assert refresh.count_documents({}) == 0
+
+# ARTIFACT: tests/integration/test_global_principal_mfa_session_transition_mongo.py
+# VERSION: v1.0.1-GLOBAL-PRINCIPAL-MFA-SESSION-TRANSITION-MONGO
+# AUTHORITY BOUNDARY: Disposable replica-set transaction test only.
+# TENANT POSTURE: Synthetic identity context only; no production tenant state is changed.
+# FAIL-CLOSED POSTURE: Partial challenge consumption or session issuance fails the integration suite.
+# FINANCIAL EXECUTION AUTHORITY: Kennel EOS exclusively.
+# END OF WILSY OS SOVEREIGN ARTIFACT

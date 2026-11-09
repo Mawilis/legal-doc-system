@@ -2,11 +2,8 @@
   "name": "wilsy-os-server",
   "version": "2.0.0",
   "type": "module",
-  "description": "WILSY OS - Revolutionary Legal Technology Platform",
-  "main": "server.js",
+  "description": "Retired Node backend; remaining scripts are isolated legacy test and lint tooling only.",
   "scripts": {
-    "start": "node --import ./preload-shield.js server.js",
-    "dev": "nodemon --exec node --import ./preload-shield.js --experimental-specifier-resolution=node --trace-warnings server.js",
     "test": "NODE_ENV=test NODE_OPTIONS=\"--experimental-vm-modules\" mocha --config .mocharc.cjs --file tests/setup.cjs tests/advanced/*.test.cjs --timeout 300000 --exit",
     "test:finance": "NODE_OPTIONS='--experimental-vm-modules' npx mocha --require @babel/register __tests__/finance/**/*.test.js --exit",
     "test:billing": "NODE_OPTIONS='--experimental-vm-modules' npx mocha --require @babel/register __tests__/billing/**/*.test.js --exit",
@@ -17,12 +14,7 @@
     "test:unit": "NODE_ENV=test NODE_OPTIONS=\"--experimental-vm-modules\" mocha --config .mocharc.cjs tests/unit/ --timeout 10000 --exit",
     "test:integration": "NODE_ENV=test NODE_OPTIONS=\"--experimental-vm-modules\" mocha --config .mocharc.cjs tests/integration/ --timeout 30000 --exit",
     "test:advanced": "NODE_ENV=test NODE_OPTIONS=\"--experimental-vm-modules\" mocha --config .mocharc.cjs --file tests/setup.cjs tests/advanced/AdvancedDocumentGeneration.test.cjs --timeout 300000 --exit",
-    "investor-report": "node scripts/investor-report.js",
-    "monitor": "../monitor-production.sh",
-    "test:helpers": "NODE_ENV=test mocha --experimental-specifier-resolution=node tests/helpers/testDatabaseHelper.test.js --exit",
-    "test:pipeline": "node scripts/testOnboardingPipeline.js",
-    "onboard": "node scripts/onboardTenant.js",
-    "predev": "lsof -ti:4000 | xargs kill -9 2>/dev/null || true"
+    "test:helpers": "NODE_ENV=test mocha --experimental-specifier-resolution=node tests/helpers/testDatabaseHelper.test.js --exit"
   },
   "dependencies": {
     "@babel/core": "7.29.7",

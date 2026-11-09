@@ -1,3 +1,20 @@
+# TITLE: WILSY EOS Global Principal SYSTEM HTTP and MFA Real-Mongo Certificate
+# VERSION: v1.0.1-GLOBAL-PRINCIPAL-SYSTEM-HTTP-MONGO
+# AUTHORITY: Disposable replica-set HTTP integration certification only.
+# EPITOME: Exercise the authenticated SYSTEM login, MFA, session, refresh, replay, logout and tenant-isolation journey against the canonical Python EOS HTTP router and an isolated MongoDB replica set.
+# ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/tests/integration/test_global_principal_system_http_mongo.py
+# COLLABORATION / OWNERSHIP: Wilsy OS Core Engineering; Python EOS Global Principal authentication and SYSTEM session authority.
+# CERTIFICATION OR UPDATE DATE: 2026-11-09
+# CHANGELOG:
+#   v1.0.1-GLOBAL-PRINCIPAL-SYSTEM-HTTP-MONGO adds the mandatory sovereign
+#   artifact contract; HTTP route, MFA and persistence assertions remain unchanged.
+#   v1.0.0 established the disposable replica-set SYSTEM HTTP journey certificate.
+# COMPLIANCE: AGENTS.md v1.2.0-SOVEREIGN-LEGAL-OPERATIONS-CONSTITUTION.
+# SECURITY / PRIVACY POSTURE: Uses synthetic credentials and isolated disposable MongoDB fixtures; no production identity or secrets.
+# TENANT BOUNDARY: Tenant-neutral SYSTEM scope and synthetic test principals only; no canonical tenant data is accessed.
+# AUTHORITY BOUNDARY: Test-only HTTP evidence; does not create production SYSTEM access or MFA authority.
+# FINANCIAL AUTHORITY BOUNDARY: No financial execution authority; Kennel EOS remains exclusive.
+
 """HTTP-to-real-Mongo certificate for the tenant-neutral SYSTEM login journey.
 
 The test mounts the production global-auth router and uses a disposable MongoDB
@@ -85,22 +102,39 @@ def system_http_mongo(monkeypatch: pytest.MonkeyPatch):
     if not URI:
         pytest.fail("TEST_GLOBAL_PRINCIPAL_MONGO_URI is required")
     client = MongoClient(URI, serverSelectionTimeoutMS=5000, retryWrites=True, tz_aware=True)
-    if client.admin.command("hello").get("setName") != "wilsyGlobalPrincipalCertRS":
-        pytest.fail("wrong SYSTEM HTTP certification replica set")
-
-    database = client["system_http_" + uuid.uuid4().hex]
+    expected_replica_set = os.getenv(
+        "TEST_GLOBAL_PRINCIPAL_MONGO_REPLICA_SET", "wilsyGlobalPrincipalCertRS"
+    )
+    actual_replica_set = client.admin.command("hello").get("setName")
+    if actual_replica_set != expected_replica_set:
+        client.close()
+        pytest.fail(
+            f"wrong certification replica set: expected {expected_replica_set!r}, "
+            f"received {actual_replica_set!r}"
+        )
+    database_name = os.getenv("TEST_GLOBAL_PRINCIPAL_MONGO_DATABASE")
+    if database_name != "wilsy_global_principal_mfa_cert":
+        client.close()
+        pytest.fail(
+            "TEST_GLOBAL_PRINCIPAL_MONGO_DATABASE must be "
+            "'wilsy_global_principal_mfa_cert'"
+        )
+    database = client[database_name]
+    suffix = uuid.uuid4().hex
     principal_id = "system-http-principal-" + uuid.uuid4().hex
     platform_scope_id = "platform-cert-" + uuid.uuid4().hex
     now = datetime.now(timezone.utc).replace(microsecond=0)
 
-    principals = database["principal_authorities"]
-    credentials = database["principal_credentials"]
-    factors = database[FACTOR_COLLECTION]
-    challenges = database[CHALLENGE_COLLECTION]
-    sessions = database[SESSION_COLLECTION]
-    refresh_tokens = database[REFRESH_COLLECTION]
-    assignments = SystemPermissionAssignmentRegistry(database[ASSIGNMENT_COLLECTION])
-    workforce = database[workforce_registry.COLLECTION_NAME]
+    principals = database[f"principal_authorities_cert_{suffix}"]
+    credentials = database[f"principal_credentials_cert_{suffix}"]
+    factors = database[f"{FACTOR_COLLECTION}_cert_{suffix}"]
+    challenges = database[f"{CHALLENGE_COLLECTION}_cert_{suffix}"]
+    sessions = database[f"{SESSION_COLLECTION}_cert_{suffix}"]
+    refresh_tokens = database[f"{REFRESH_COLLECTION}_cert_{suffix}"]
+    assignment_collection = database[f"{ASSIGNMENT_COLLECTION}_cert_{suffix}"]
+    assignments = SystemPermissionAssignmentRegistry(assignment_collection)
+    workforce = database[f"{workforce_registry.COLLECTION_NAME}_cert_{suffix}"]
+    memberships = database[f"tenant_memberships_cert_{suffix}"]
 
     PrincipalAuthorityRepository.ensure_indexes(principals)
     PrincipalCredentialRepository.ensure_indexes(credentials)
@@ -131,8 +165,8 @@ def system_http_mongo(monkeypatch: pytest.MonkeyPatch):
     })
 
     case_registry = SupportCaseRegistry(
-        cases=database[CASE_COLLECTION],
-        events=database[EVENT_COLLECTION],
+        cases=database[f"{CASE_COLLECTION}_cert_{suffix}"],
+        events=database[f"{EVENT_COLLECTION}_cert_{suffix}"],
     )
     case_registry.ensure_indexes()
 
@@ -179,8 +213,15 @@ def system_http_mongo(monkeypatch: pytest.MonkeyPatch):
         )
         seed_session.commit_transaction()
 
+    class _VerifierCredentialRepository:
+        def get_by_principal(self, requested_principal_id, collection=None, *, session=None):
+            return PrincipalCredentialRepository.get_by_principal(
+                requested_principal_id, credentials, session=session
+            )
+
     verifier = GlobalPrincipalTotpVerifier(
         collection=factors,
+        credential_repository=_VerifierCredentialRepository(),
         decrypt_secret=lambda envelope, *, principal_id, credential_revision, expected_principal_id=principal_id: (
             SECRET if envelope == "test-envelope-only" and principal_id == expected_principal_id
             and credential_revision == 4 else ""
@@ -192,11 +233,128 @@ def system_http_mongo(monkeypatch: pytest.MonkeyPatch):
     monkeypatch.setattr(auth_router, "get_client", lambda: client)
     monkeypatch.setattr(auth_router, "get_database", lambda: database)
 
+    # Keep HTTP certification isolated to this fixture's UUID-suffixed
+    # principal and credential collections while exercising real auth logic.
+    from tools.eos.auth.principal_credential_authentication import (
+        authenticate_global_principal as _authenticate_global_principal,
+    )
+
+    class _CredentialRepository:
+        def get_by_email(self, email, *, session=None):
+            return PrincipalCredentialRepository.get_by_email(
+                email, credentials, session=session
+            )
+
+    class _PrincipalRepository:
+        def get(self, requested_principal_id, collection=None, *, session=None):
+            return PrincipalAuthorityRepository.get(
+                requested_principal_id, principals, session=session
+            )
+
+    class _IsolatedCredentialRepository:
+        @staticmethod
+        def get_by_email(email, collection=None, *, session=None):
+            return PrincipalCredentialRepository.get_by_email(
+                email, credentials, session=session
+            )
+
+        @staticmethod
+        def get_by_principal(requested_principal_id, collection=None, *, session=None):
+            return PrincipalCredentialRepository.get_by_principal(
+                requested_principal_id, credentials, session=session
+            )
+
+    # The verify-MFA route and SYSTEM session revalidation read credentials
+    # independently of the initial password-authentication adapter. Keep both
+    # reads on this fixture's UUID-scoped collections while retaining the real
+    # repository implementation and caller-owned Mongo transaction.
+    monkeypatch.setattr(
+        auth_router, "PrincipalCredentialRepository", _IsolatedCredentialRepository
+    )
+    from tools.eos.auth import global_principal_system_session_authority as system_session_authority
+    monkeypatch.setattr(
+        system_session_authority, "PrincipalCredentialRepository", _IsolatedCredentialRepository
+    )
+    monkeypatch.setattr(
+        system_session_authority, "PrincipalAuthorityRepository", _PrincipalRepository
+    )
+
+    def _authenticate_isolated(**kwargs):
+        return _authenticate_global_principal(
+            **kwargs,
+            credential_repository=_CredentialRepository(),
+            principal_repository=_PrincipalRepository(),
+        )
+
+    monkeypatch.setattr(
+        auth_router, "authenticate_global_principal", _authenticate_isolated
+    )
+
+    # The real membership projection must read this fixture's principal and
+    # membership collections. An empty isolated membership set deliberately
+    # exercises the separately-authorized SYSTEM workspace login path.
+    from tools.eos.auth.tenant_membership_repository import (
+        TenantMembershipRepository,
+    )
+    from tools.eos.auth.membership_selection_projection import (
+        build_membership_selection_page as _build_membership_selection_page,
+    )
+
+    class _MembershipRepository:
+        def list_for_principal(
+            self, requested_principal_id, *, after_tenant_id=None, limit=50, session=None
+        ):
+            return TenantMembershipRepository.list_for_principal(
+                requested_principal_id,
+                memberships,
+                after_tenant_id=after_tenant_id,
+                limit=limit,
+                session=session,
+            )
+
+    def _build_membership_selection_page_isolated(**kwargs):
+        return _build_membership_selection_page(
+            **kwargs,
+            principal_repository=_PrincipalRepository(),
+            membership_repository=_MembershipRepository(),
+        )
+
+    monkeypatch.setattr(
+        auth_router,
+        "build_membership_selection_page",
+        _build_membership_selection_page_isolated,
+    )
+
+    # Route all MFA and SYSTEM session persistence through this fixture's
+    # isolated collections; do not change production collection names.
+    monkeypatch.setattr(
+        auth_router, "GLOBAL_PRINCIPAL_MFA_FACTOR_COLLECTION", factors.name
+    )
+    monkeypatch.setattr(
+        auth_router, "SYSTEM_MFA_CHALLENGE_COLLECTION", challenges.name
+    )
+    monkeypatch.setattr(
+        auth_router, "SYSTEM_SESSION_COLLECTION", sessions.name
+    )
+    monkeypatch.setattr(
+        auth_router, "SYSTEM_REFRESH_COLLECTION", refresh_tokens.name
+    )
+
     from tools.eos.auth import authentication
     monkeypatch.setattr(authentication, "get_client", lambda: client)
     monkeypatch.setattr(authentication, "get_database", lambda: database)
+    monkeypatch.setattr(
+        authentication, "SYSTEM_SESSION_COLLECTION", sessions.name
+    )
 
     app = FastAPI()
+    # Protected-request authentication resolves PrincipalAuthority through a
+    # FastAPI dependency, independently of the login/session adapters above.
+    # Keep that durable authority read on this test's UUID-scoped principal
+    # collection while exercising the production get_current_identity path.
+    app.dependency_overrides[authentication.get_principal_authority_repository] = (
+        lambda: _PrincipalRepository()
+    )
     register_error_handlers(app)
     app.include_router(auth_router.router)
     app.state.global_principal_auth_indexes_ready = True
@@ -221,7 +379,13 @@ def system_http_mongo(monkeypatch: pytest.MonkeyPatch):
             "sessions": sessions, "refresh_tokens": refresh_tokens,
         }
     finally:
-        client.drop_database(database.name)
+        for collection in (
+            principals, credentials, factors, challenges, sessions, refresh_tokens,
+            assignment_collection, workforce, memberships,
+            database[f"{CASE_COLLECTION}_cert_{suffix}"],
+            database[f"{EVENT_COLLECTION}_cert_{suffix}"],
+        ):
+            collection.drop()
         client.close()
 
 
@@ -399,3 +563,11 @@ def test_real_http_system_verification_failure_rolls_back_factor_and_challenge_w
         payload={"mfa_challenge": challenge["mfa_challenge"], "code": _valid_code()},
     )
     assert recovered.status_code == 200, recovered.text
+
+# ARTIFACT: tests/integration/test_global_principal_system_http_mongo.py
+# VERSION: v1.0.1-GLOBAL-PRINCIPAL-SYSTEM-HTTP-MONGO
+# AUTHORITY BOUNDARY: Disposable replica-set HTTP integration test only.
+# TENANT POSTURE: Synthetic principal/session fixtures only; no production tenant state is changed.
+# FAIL-CLOSED POSTURE: Invalid credentials, MFA replay, stale sessions or cross-tenant access fail the HTTP certificate.
+# FINANCIAL EXECUTION AUTHORITY: Kennel EOS exclusively.
+# END OF WILSY OS SOVEREIGN ARTIFACT

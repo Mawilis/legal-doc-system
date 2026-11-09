@@ -1,0 +1,145 @@
+# TITLE: WILSY EOS Historical EKS Global Principal MFA KMS Proposal
+# STATUS: HISTORICAL / SUPERSEDED BY infra/aws/eos-production-ecs-foundation.yaml — DO NOT DEPLOY FOR THE SELECTED PRODUCTION PATH.
+# VERSION: v1.0.2-EKS-MFA-KMS-SUPERSEDED-BY-ECS
+# AUTHORITY: Historical EKS/IRSA proposal only; superseded for the selected ECS production path.
+# EPITOME: Preserve the historical EKS OIDC role and purpose-scoped MFA KMS design for traceability; do not deploy for the selected ECS production target.
+# ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/infra/aws/global-principal-mfa-kms.yaml
+# COLLABORATION / OWNERSHIP: Wilsy Core Engineering.
+# CERTIFICATION OR UPDATE DATE: 2026-11-09.
+# CHANGELOG:
+#   v1.0.2-EKS-MFA-KMS-SUPERSEDED-BY-ECS marks this historical EKS/IRSA
+#   template as superseded by infra/aws/eos-production-ecs-foundation.yaml;
+#   no EKS resources or production behavior are changed.
+#   v1.0.1 removed account-wide IAM delegation and bound KMS data-plane access
+#   directly to the exact EKS role; v1.0.0 isolated trust to the supplied OIDC provider.
+# COMPLIANCE: Historical infrastructure definition only; the selected ECS production path is documented in infra/aws/README-global-principal-mfa-kms.md.
+# SECURITY / PRIVACY POSTURE: No static credentials, local-development principal, or account-wide IAM key delegation; only the exact EKS role receives purpose-scoped Encrypt/Decrypt.
+# TENANT BOUNDARY: No tenant, principal, session, or database records are created.
+# AUTHORITY BOUNDARY: EKS workload identity only; key administration is assigned to a separate approved IAM role.
+# FINANCIAL AUTHORITY BOUNDARY: No financial execution authority; Kennel EOS remains exclusive.
+
+AWSTemplateFormatVersion: '2010-09-09'
+Description: >-
+  HISTORICAL AND SUPERSEDED: EKS/IRSA Global Principal MFA KMS proposal. Do not
+  deploy for the selected ECS Fargate production path. Retained for traceability
+  and static contract tests only; no static AWS credentials are created.
+
+Parameters:
+  EosEksOidcProviderArn:
+    Type: String
+    Description: Exact IAM OIDC provider ARN registered for the approved EOS EKS cluster.
+    AllowedPattern: '^arn:[a-z0-9-]+:iam::[0-9]{12}:oidc-provider/.+$'
+  EosEksOidcIssuerHostPath:
+    Type: String
+    Description: Exact EKS OIDC issuer host/path without https://, copied from describe-cluster.
+    AllowedPattern: '^[A-Za-z0-9.-]+/id/[A-Za-z0-9-]+$'
+  EosServiceAccountSubject:
+    Type: String
+    Description: Exact Kubernetes subject, system:serviceaccount:<namespace>:wilsy-eos-api.
+    AllowedPattern: '^system:serviceaccount:[a-z0-9-]+:wilsy-eos-api$'
+  KeyAdministratorRoleArn:
+    Type: String
+    Description: Existing dedicated IAM role authorized to administer this KMS key; never the EOS runtime role.
+    AllowedPattern: '^arn:[a-z0-9-]+:iam::[0-9]{12}:role/.+$'
+Resources:
+  GlobalPrincipalMfaKey:
+    Type: AWS::KMS::Key
+    DependsOn: EosGlobalMfaRuntimeRole
+    Properties:
+      Description: WILSY EOS Global Principal TOTP envelope encryption
+      Enabled: true
+      EnableKeyRotation: true
+      KeySpec: SYMMETRIC_DEFAULT
+      KeyUsage: ENCRYPT_DECRYPT
+      MultiRegion: false
+      PendingWindowInDays: 30
+      Tags:
+        - Key: Application
+          Value: WILSY-EOS
+        - Key: Purpose
+          Value: GLOBAL_PRINCIPAL_TOTP
+        - Key: DataClassification
+          Value: AuthenticationSecret
+        - Key: ManagedBy
+          Value: CloudFormation
+      KeyPolicy:
+        Version: '2012-10-17'
+        Statement:
+          - Sid: DedicatedEosRuntimeMfaEnvelopeUse
+            Effect: Allow
+            Principal:
+              AWS: !Sub 'arn:${AWS::Partition}:iam::${AWS::AccountId}:role/wilsy-eos-global-mfa-runtime'
+            Action:
+              - kms:Encrypt
+              - kms:Decrypt
+            Resource: '*'
+            Condition:
+              StringEquals:
+                kms:EncryptionContext:purpose: GLOBAL_PRINCIPAL_TOTP
+          - Sid: DedicatedKeyAdministration
+            Effect: Allow
+            Principal:
+              AWS: !Ref KeyAdministratorRoleArn
+            Action:
+              - kms:CancelKeyDeletion
+              - kms:DisableKey
+              - kms:EnableKey
+              - kms:GetKeyPolicy
+              - kms:GetKeyRotationStatus
+              - kms:ListResourceTags
+              - kms:PutKeyPolicy
+              - kms:ScheduleKeyDeletion
+              - kms:TagResource
+              - kms:UntagResource
+              - kms:UpdateKeyDescription
+            Resource: '*'
+
+  GlobalPrincipalMfaKeyAlias:
+    Type: AWS::KMS::Alias
+    Properties:
+      AliasName: alias/wilsy/global-principal-mfa
+      TargetKeyId: !Ref GlobalPrincipalMfaKey
+
+  EosGlobalMfaRuntimeRole:
+    Type: AWS::IAM::Role
+    Properties:
+      RoleName: wilsy-eos-global-mfa-runtime
+      Description: Dedicated IRSA role for Python EOS Global Principal MFA KMS use only.
+      MaxSessionDuration: 3600
+      AssumeRolePolicyDocument: !Sub
+        - |
+          {
+            "Version": "2012-10-17",
+            "Statement": [{
+              "Sid": "ExactEosServiceAccountWebIdentity",
+              "Effect": "Allow",
+              "Principal": {"Federated": "${OidcProviderArn}"},
+              "Action": "sts:AssumeRoleWithWebIdentity",
+              "Condition": {"StringEquals": {
+                "${OidcIssuerHostPath}:aud": "sts.amazonaws.com",
+                "${OidcIssuerHostPath}:sub": "${ServiceAccountSubject}"
+              }}
+            }]
+          }
+        - OidcProviderArn: !Ref EosEksOidcProviderArn
+          OidcIssuerHostPath: !Ref EosEksOidcIssuerHostPath
+          ServiceAccountSubject: !Ref EosServiceAccountSubject
+
+Outputs:
+  GlobalPrincipalMfaKeyArn:
+    Description: Full KMS key ARN for WILSY_GLOBAL_MFA_KMS_KEY_ID.
+    Value: !GetAtt GlobalPrincipalMfaKey.Arn
+  GlobalPrincipalMfaKeyId:
+    Value: !Ref GlobalPrincipalMfaKey
+  GlobalPrincipalMfaKeyAlias:
+    Value: !Ref GlobalPrincipalMfaKeyAlias
+  EosGlobalMfaRuntimeRoleArn:
+    Description: Bind this role to the wilsy-eos-api ServiceAccount using the verified EKS IRSA annotation.
+    Value: !GetAtt EosGlobalMfaRuntimeRole.Arn
+# ARTIFACT: infra/aws/global-principal-mfa-kms.yaml
+# VERSION: v1.0.2-EKS-MFA-KMS-SUPERSEDED-BY-ECS
+# AUTHORITY BOUNDARY: verified production EOS EKS MFA KMS capability only
+# TENANT POSTURE: no tenant or database resources
+# FAIL-CLOSED POSTURE: exact OIDC provider and ServiceAccount trust; no local identity grants
+# FINANCIAL EXECUTION AUTHORITY: Kennel EOS remains exclusive
+# END OF WILSY OS SOVEREIGN ARTIFACT

@@ -1,10 +1,10 @@
 /* eslint-disable */
 /**
  * ╔════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════╗
- * ║ WILSY OS - SOVEREIGN CLIENT INTERCEPTOR [V73.1.0-API-PREFIX-GUARD]                                                                    ║
+ * ║ WILSY OS - SOVEREIGN CLIENT INTERCEPTOR [V73.3.0-TELEMETRY-EVENT-CONTRACT]                                                                    ║
  * ║ [UNIFIED TOKEN ACCESS | JWT INJECTION | TENANT HYDRATION | ZERO-TRUST COMPLIANCE | 429 EXPONENTIAL BACKOFF | /api PREFIX GUARD]     ║
  * ╠════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════╣
- * ║ VERSION: 73.1.0-API-PREFIX-GUARD | PRODUCTION READY | TRILLION DOLLAR SPEC                                                            ║
+ * ║ VERSION: 73.3.0-TELEMETRY-EVENT-CONTRACT                                                                                               ║
  * ║ EPITOME: ABSOLUTE SECURITY FOR OUTBOUND COMMUNICATION. IF THE TOKEN IS MISSING, THE REQUEST IS TERMINATED CLIENT-SIDE.                 ║
  * ║          Strips accidental /api prefix so baseURL+'/api/tenants' never becomes /api/api/tenants.                                      ║
  * ║ ABSOLUTE PATH: /Users/wilsonkhanyezi/legal-doc-system/client/src/utils/sovereignClient.js                                              ║
@@ -22,7 +22,7 @@
  * ╠════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════╣
  * ║ 🔧 FEATURES:                                                                                                                           ║
  * ║   1. Automatic JWT token injection (unified key resolution).                                                                          ║
- * ║   2. Tenant isolation via X-Tenant-ID header.                                                                                        ║
+ * ║   2. Tenant scope from authenticated TenantProvider projection only; legacy/root fallbacks are rejected.                              ║
  * ║   3. Cryptographic request sealing (SHA3-512) for integrity.                                                                         ║
  * ║   4. Telemetry batching with flush on page unload.                                                                                   ║
  * ║   5. Exponential backoff with jitter for 429 rate limiting.                                                                          ║
@@ -31,6 +31,14 @@
  * ║   8. Forensic headers: X-Trace-ID, X-Request-ID, X-Forensic-Timestamp, X-Cryptographic-Nonce, X-Request-Seal.                       ║
  * ║   9. Development debug logging.                                                                                                      ║
  * ║  10. URL prefix guard: /api/tenants → /tenants when baseURL is /api (prevents /api/api/tenants).                                    ║
+ * ║ AUTHORITY: Browser transport only; Python EOS remains the authentication and authorization authority.                               ║
+ * ║ TENANT BOUNDARY: Only wilsy_active_tenant from authenticated workspace projection may supply X-Tenant-ID.                            ║
+ * ║ SECURITY: Missing, malformed, stale-key-only, and reserved root scopes fail closed by omitting tenant-scoped requests.              ║
+ * ║ FINANCIAL AUTHORITY: No financial authority; Kennel EOS exclusively owns execution and settlement.                                  ║
+ * ║ CHANGELOG: 73.3.0 sends the strict SYSTEM_EVENT envelope accepted by the EOS telemetry ingestion contract.                           ║
+ * ║ COLLABORATION / OWNERSHIP: Wilsy Core Engineering; API consumers supply request intent, Python EOS validates authority.              ║
+ * ║ CERTIFICATION / UPDATE DATE: 2026-11-09                                                                                               ║
+ * ║ TENANT SECURITY: Retains authenticated active-tenant projection only; no legacy or root tenant fallback.                              ║
  * ╚════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════╝
  */
 
@@ -95,16 +103,40 @@ const getIdentityToken = () => {
 
 /**
  * @function getTenantId
- * @description Retrieves the tenant identifier from localStorage.
- * @returns {string} The active tenant ID (defaults to 'WILSY_SOVEREIGN_ROOT').
+ * @description Reads only the tenant projection persisted by the authenticated
+ *              TenantProvider after Python EOS workspace-bootstrap validation.
+ *              Legacy tenant selectors and environment defaults are never
+ *              promoted into an authenticated request scope.
+ * @returns {string|null} Canonical authenticated tenant selector, or null.
+ * @authority Request scope only; Python EOS independently revalidates membership and IAM.
+ * @tenant Exact active workspace only; reserved root aliases are rejected.
  */
 const getTenantId = () => {
-  return (
-    localStorage.getItem('tenantId') ||
-    localStorage.getItem('wilsy_tenant_id') ||
-    import.meta.env.VITE_DEFAULT_TENANT_ID ||
-    'WILSY_SOVEREIGN_ROOT'
-  );
+  try {
+    const serialized = localStorage.getItem('wilsy_active_tenant');
+    if (!serialized) return null;
+    const activeTenant = JSON.parse(serialized);
+    const candidate = String(
+      activeTenant?.tenantId
+      || activeTenant?.tenant_id
+      || activeTenant?.id
+      || activeTenant?._id
+      || ''
+    ).trim();
+    const reserved = new Set([
+      'DEFAULT', 'GLOBAL', 'GLOBAL_ROOT', 'MASTER', 'ROOT',
+      'SOVEREIGN_ROOT', 'WILSY', 'WILSY_GLOBAL_ROOT',
+      'WILSY_SOVEREIGN_ROOT',
+    ]);
+    if (
+      !candidate
+      || reserved.has(candidate.toUpperCase())
+      || !/^[A-Za-z0-9][A-Za-z0-9._:-]{0,199}$/.test(candidate)
+    ) return null;
+    return candidate;
+  } catch {
+    return null;
+  }
 };
 
 /**
@@ -208,7 +240,16 @@ const flushTelemetryBatch = () => {
 
   const token = getIdentityToken();
   const tenantId = getTenantId();
+  if (!tenantId) return;
 
+  // The EOS ingestion contract accepts one allow-listed event envelope,
+  // not the former { batch: [...] } wrapper. Preserve the batch as bounded
+  // SYSTEM_EVENT metadata so the server can validate and durably append it.
+  const payload = {
+    eventType: 'SYSTEM_EVENT',
+    metadata: { events: batch },
+    timestamp: new Date().toISOString(),
+  };
   fetch(`${import.meta.env.VITE_API_URL || '/api'}/telemetry/event`, {
     method: 'POST',
     headers: {
@@ -216,7 +257,7 @@ const flushTelemetryBatch = () => {
       ...(token && { 'Authorization': `Bearer ${token}` }),
       'X-Tenant-ID': tenantId,
     },
-    body: JSON.stringify({ batch, timestamp: new Date().toISOString() }),
+    body: JSON.stringify(payload),
   }).catch(() => { });
 };
 
@@ -265,7 +306,12 @@ sovereignClient.interceptors.request.use(
       console.warn('[SOVEREIGN_CLIENT] No auth token found in storage – request may be rejected by backend.');
     }
 
-    config.headers['X-Tenant-ID'] = tenantId;
+    if (tenantId) {
+      config.headers['X-Tenant-ID'] = tenantId;
+    } else {
+      delete config.headers['X-Tenant-ID'];
+      delete config.headers['x-tenant-id'];
+    }
 
     const traceId = `FE-${Date.now()}-${Math.random().toString(36).substring(2, 10)}`;
     config.headers['X-Trace-ID'] = traceId;
@@ -384,11 +430,16 @@ export default sovereignClient;
 
 /**
  * ═══════════════════════════════════════════════════════════════════════════════
- * 🏛️ INSTITUTIONAL CERTIFICATION SEAL — sovereignClient v73.1.0-API-PREFIX-GUARD
+ * 🏛️ INSTITUTIONAL CERTIFICATION SEAL — sovereignClient v73.3.0-TELEMETRY-EVENT-CONTRACT
  * ═══════════════════════════════════════════════════════════════════════════════
- * Status:          CERTIFIED PRODUCTION ARTIFACT
- * Version:         73.1.0-API-PREFIX-GUARD
- * Fix:             normalizeRelativeUrl strips accidental /api so baseURL+'/api/x' ≠ /api/api/x
- * Compliance:      POPIA §19 / GDPR §32 / SOC2 §CC7.2 / ISO 27001
- * ═══════════════════════════════════════════════════════════════════════════════
+ * ARTIFACT: sovereignClient browser transport
+ * VERSION: 73.3.0-TELEMETRY-EVENT-CONTRACT
+ * CHANGE: Sends eventType=SYSTEM_EVENT with bounded metadata.events instead of the rejected {batch,timestamp} shape
+ * AUTHORITY BOUNDARY: transport only; Python EOS authenticates and authorizes every protected request
+ * TENANT POSTURE: only the authenticated active-workspace projection supplies a tenant selector; EOS validates exact tenant membership
+ * FAIL-CLOSED POSTURE: missing, malformed, and reserved root tenant scopes are omitted; no fallback tenant is synthesized
+ * FINANCIAL EXECUTION AUTHORITY: none; Kennel EOS remains exclusive
+ * CERTIFICATION STATUS: repository change committed; runtime certification remains pending
+ * COMPLIANCE: POPIA §19 / GDPR §32 / SOC2 §CC7.2 / ISO 27001
+ * END OF WILSY OS SOVEREIGN ARTIFACT
  */

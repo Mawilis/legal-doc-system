@@ -1,3 +1,20 @@
+# TITLE: WILSY EOS Global Principal TOTP Verifier Real-Mongo Certificate
+# VERSION: v1.0.1-GLOBAL-PRINCIPAL-TOTP-VERIFIER-MONGO
+# AUTHORITY: Disposable replica-set integration certification only.
+# EPITOME: Verify principal-scoped TOTP factor persistence, single-use time-step replay control and transaction rollback against a real MongoDB replica set.
+# ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/tests/integration/test_global_principal_totp_verifier_mongo.py
+# COLLABORATION / OWNERSHIP: Wilsy OS Core Engineering; Python EOS Global Principal MFA verification authority.
+# CERTIFICATION OR UPDATE DATE: 2026-11-09
+# CHANGELOG:
+#   v1.0.1-GLOBAL-PRINCIPAL-TOTP-VERIFIER-MONGO adds the mandatory sovereign
+#   artifact contract; replay and transaction assertions are unchanged.
+#   v1.0.0 established disposable replica-set TOTP verifier certification.
+# COMPLIANCE: AGENTS.md v1.2.0-SOVEREIGN-LEGAL-OPERATIONS-CONSTITUTION.
+# SECURITY / PRIVACY POSTURE: Synthetic TOTP fixtures and disposable MongoDB only; no production factor secrets or credentials.
+# TENANT BOUNDARY: Synthetic principal context only; no canonical tenant records are accessed or mutated.
+# AUTHORITY BOUNDARY: Test-only verification evidence; cannot activate production MFA factors or sessions.
+# FINANCIAL AUTHORITY BOUNDARY: No financial execution authority; Kennel EOS remains exclusive.
+
 """Real replica-set certification for global-principal TOTP replay control."""
 import os
 import uuid
@@ -24,10 +41,26 @@ def factor_store():
     if not uri:
         pytest.fail("TEST_GLOBAL_PRINCIPAL_MONGO_URI is required")
     client = MongoClient(uri, serverSelectionTimeoutMS=5000)
-    if client.admin.command("hello").get("setName") != "wilsyGlobalPrincipalCertRS":
-        pytest.fail("wrong global-principal certification replica set")
-    database = client[f"global_factor_{uuid.uuid4().hex}"]
-    factors = database["global_principal_mfa_factors"]
+    expected_replica_set = os.getenv(
+        "TEST_GLOBAL_PRINCIPAL_MONGO_REPLICA_SET", "wilsyGlobalPrincipalCertRS"
+    )
+    actual_replica_set = client.admin.command("hello").get("setName")
+    if actual_replica_set != expected_replica_set:
+        client.close()
+        pytest.fail(
+            f"wrong certification replica set: expected {expected_replica_set!r}, "
+            f"received {actual_replica_set!r}"
+        )
+    database_name = os.getenv("TEST_GLOBAL_PRINCIPAL_MONGO_DATABASE")
+    if database_name != "wilsy_global_principal_mfa_cert":
+        client.close()
+        pytest.fail(
+            "TEST_GLOBAL_PRINCIPAL_MONGO_DATABASE must be "
+            "'wilsy_global_principal_mfa_cert'"
+        )
+    database = client[database_name]
+    suffix = uuid.uuid4().hex
+    factors = database[f"global_principal_mfa_factors_cert_{suffix}"]
     GlobalPrincipalTotpVerifier.ensure_indexes(factors)
     factors.insert_one({
         "principal_id": "principal-global",
@@ -48,7 +81,7 @@ def factor_store():
     try:
         yield client, factors, verifier
     finally:
-        client.drop_database(database.name)
+        factors.drop()
         client.close()
 
 
@@ -93,3 +126,11 @@ def test_replica_set_rejects_replayed_totp_step(factor_store):
             )
         session.abort_transaction()
     assert factors.count_documents({"last_accepted_step": {"$exists": True}}) == 1
+
+# ARTIFACT: tests/integration/test_global_principal_totp_verifier_mongo.py
+# VERSION: v1.0.1-GLOBAL-PRINCIPAL-TOTP-VERIFIER-MONGO
+# AUTHORITY BOUNDARY: Disposable replica-set TOTP verification test only.
+# TENANT POSTURE: Synthetic principal fixtures only; no production tenant state is changed.
+# FAIL-CLOSED POSTURE: Replayed, stale or transactionally inconsistent factor use fails the integration suite.
+# FINANCIAL EXECUTION AUTHORITY: Kennel EOS exclusively.
+# END OF WILSY OS SOVEREIGN ARTIFACT

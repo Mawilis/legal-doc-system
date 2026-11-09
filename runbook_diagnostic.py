@@ -1,100 +1,87 @@
-"""
-===============================================================================
-WILSY OS RUNBOOK: KERNEL & PIPELINE INTEGRATION TEST (FG145)
-===============================================================================
-Epitome:
-    The production pre-flight checklist and end-to-end integration test for 
-    Wilsy OS. Verifies all seven subsystems and executes the unified 
-    orchestration pipeline deterministically.
+"""WILSY OS — local Kennel EOS bootstrap diagnostic.
 
-Biblical Scale & Architecture:
-    The heartbeat of Wilsy OS validation. Ensures absolute immutability, 
-    strict dependency chaining, and error-free pipeline execution before 
-    any release to production.
+TITLE: Kennel EOS Local Runbook Diagnostic
+VERSION: v1.0.0-WILSY-KENNEL-EOS-RUNBOOK-DIAGNOSTIC
+AUTHORITY: Wilsy OS Core Governance
+EPITOME: Executes one synthetic, development-only bootstrap through the canonical public EngineeringKernel API and fails closed unless the runner returns a successful session.
+ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/runbook_diagnostic.py
+COLLABORATION / OWNERSHIP: Wilson Khanyezi (Founder); Codex (AI Engineering)
+CERTIFICATION / UPDATE DATE: 2026-11-08
+CHANGELOG:
+- v1.0.0-WILSY-KENNEL-EOS-RUNBOOK-DIAGNOSTIC: Establishes the canonical public-API local smoke diagnostic with explicit synthetic tenant/principal/request references and non-zero failure exit.
+COMPLIANCE: WILSY OS Sovereign Codex Governance Contract v1.2.0; development-only diagnostic.
+SECURITY / PRIVACY POSTURE: Uses synthetic references only; emits no credentials, tokens, personal data, or production configuration.
+TENANT BOUNDARY: The request is scoped to the explicit synthetic diagnostic tenant; no real tenant is impersonated or accessed.
+AUTHORITY BOUNDARY: Exercises bootstrap orchestration only; it does not authenticate a user, grant membership/capacity, authorize business actions, or mutate canonical business records.
+FINANCIAL AUTHORITY BOUNDARY: No payment, provider, financial execution, settlement, invoice, or ledger authority.
+TRANSACTION BOUNDARY: No database connection or transaction is opened by this diagnostic.
 
-Collaboration & Maintenance:
-    - [Test Isolation]: Utilizes pure execution contexts without mutating disk.
-    - [Validation]: Enforces the FG145E Unified Engineering Report schema.
-    - Maintained by Wilson Khanyezi & Core Engineering.
-===============================================================================
+WILSY OWNS BUSINESS TRUTH. KENNEL EOS IS THE EXCLUSIVE FINANCIAL EXECUTION AUTHORITY.
+EOS ALL THE WAY.
 """
+
+from __future__ import annotations
 
 import sys
-import os
 
-# Add current directory to path
-sys.path.append(os.getcwd())
-
-from tools.eos.kernel.engine import EngineeringKernel
-from tools.eos.runtime.context import ExecutionContext
-from tools.eos.kernel.report import WilsyEngineeringReport
+from tools.eos.kernel.api import EngineeringKernel
+from tools.eos.kernel.domain.kernel_bootstrap_request import KernelBootstrapRequest
+from tools.eos.kernel.runner import EngineeringKernelSession
 
 
-class MockSentinel:
-    """Mock interface for the system Sentinel."""
-    pass
+def run_diagnostic() -> None:
+    """Run the isolated development bootstrap smoke test.
 
+    Authority: invokes only the public EngineeringKernel bootstrap façade.
+    Tenant scope: uses a synthetic diagnostic tenant and principal, never a
+    production identity or caller-supplied tenant.
+    Mutation and transaction semantics: this diagnostic creates no business
+    records, performs no persistence operation, and owns no transaction.
+    Idempotency: each invocation is a fresh diagnostic request; no durable
+    idempotency or replay guarantee is asserted.
+    Fail-closed behavior: unexpected session types, unsuccessful results, and
+    bootstrap exceptions cause a non-zero process exit at the CLI boundary.
+    Financial boundary: this diagnostic has no payment, provider, settlement,
+    invoice, ledger, or other financial execution authority.
+    """
+    print("--- [LOCAL SMOKE TEST] WILSY Engineering Kernel ---")
+    request = KernelBootstrapRequest(
+        tenant_id="diagnostic-tenant",
+        principal_id="diagnostic-principal",
+        request_id="diagnostic-runbook",
+    )
+    session = EngineeringKernel().execute(
+        request=request,
+        deployment_environment="development",
+    )
 
-class MockKnowledgeGraph:
-    """Mock interface for the system KnowledgeGraph."""
-    pass
-
-
-class MockRepository:
-    """Mock interface for the system Repository."""
-    repository_root = "/Users/wilsonkhanyezi/legal-doc-system"
-
-
-def run_diagnostic():
-    print("--- [PRODUCTION TEST] Initiating Wilsy OS Integration Suite ---")
-    
-    try:
-        # 1. Initialize Context
-        # [COLLABORATION: Instantiating the frozen dataclass directly to preserve immutability]
-        ctx = ExecutionContext(
-            metadata={"version": "1.0.0", "env": "prod", "execution_id": "EXEC-TEST-001"},
-            repository=MockRepository(),
-            sentinel=MockSentinel(),
-            knowledge_graph=MockKnowledgeGraph()
+    if not isinstance(session, EngineeringKernelSession):
+        raise TypeError(
+            "EngineeringKernel.execute() returned an unexpected session type"
         )
-        print("[PASS] ExecutionContext initialized successfully.")
-        
-        # 2. Boot Kernel
-        kernel = EngineeringKernel(ctx)
-        print("[PASS] EngineeringKernel instantiated.")
-        
-        # 3. Spin up Session
-        session = kernel.initialize_session()
-        
-        # Safely extract execution ID based on dictionary or object-based metadata
-        metadata = session.metadata
-        exec_id = metadata.get('execution_id') if isinstance(metadata, dict) else getattr(metadata, 'execution_id', 'UNKNOWN')
-        print(f"[PASS] EngineeringKernelSession established for ID: {exec_id}")
-        
-        # 4. Verify Subsystem Bindings (All 7 Engines)
-        required_engines = ["ai", "quality", "review", "patch", "release", "installer", "forensic"]
-        for engine_name in required_engines:
-            engine_obj = getattr(kernel, engine_name, None)
-            assert engine_obj is not None, f"Engine '{engine_name}' failed to bind."
-            print(f"[SUCCESS] Subsystem '{engine_name.upper()}' is bound and active.")
-        
-        # 5. Execute Unified Orchestration Pipeline (FG145)
-        test_execution_id = "EXEC-TEST-001"
-        report = kernel.run_pipeline(test_execution_id)
-        
-        # 6. Validate Unified Report Output against the new FG145E schema
-        assert isinstance(report, WilsyEngineeringReport), f"Pipeline returned {type(report)}, expected WilsyEngineeringReport."
-        assert hasattr(report, "execution_summary"), "Report is missing the required execution_summary domain."
-        
-        print(f"[SUCCESS] Unified Engineering Report matrix generated successfully.")
-        print("--- [PRODUCTION TEST] All System Checks Passed Successfully ---")
-        
-    except Exception as e:
-        import traceback
-        traceback.print_exc()
-        print(f"[CRITICAL FAILURE] Pipeline execution failed: {str(e)}")
-        sys.exit(1)
+    if not session.success or session.result.get("status") != "SUCCESS":
+        raise RuntimeError(
+            "Engineering Kernel diagnostic failed: "
+            f"{session.result.get('error', 'unknown error')}"
+        )
+
+    print(f"[PASS] EngineeringKernel session: {session.execution_id}")
+    print("[PASS] Canonical bootstrap pipeline completed successfully.")
+    print("--- [LOCAL SMOKE TEST] All checks passed ---")
 
 
 if __name__ == "__main__":
-    run_diagnostic()
+    try:
+        run_diagnostic()
+    except Exception as error:
+        print(f"[CRITICAL FAILURE] {error}", file=sys.stderr)
+        sys.exit(1)
+
+
+# ARTIFACT: runbook_diagnostic.py
+# VERSION: v1.0.0-WILSY-KENNEL-EOS-RUNBOOK-DIAGNOSTIC
+# AUTHORITY BOUNDARY: synthetic development bootstrap diagnostic only.
+# TENANT POSTURE: explicit synthetic tenant/principal references; no production tenant access.
+# FAIL-CLOSED POSTURE: unexpected session or failed bootstrap exits non-zero.
+# FINANCIAL EXECUTION AUTHORITY: none; Kennel EOS remains exclusive.
+# END OF WILSY OS SOVEREIGN ARTIFACT
