@@ -1,7 +1,7 @@
 /* eslint-disable */
 /**
  * TITLE: WILSY OS Sovereign Application Root
- * VERSION: v20.2.5-ATTENTION-SCOPE-CURRENTNESS
+ * VERSION: v20.2.6-AUTHORISED-HEADQUARTERS-DAILY-EXECUTION
  * AUTHORITY: Wilsy OS Core Governance
  * EPITOME: Composes authenticated routing, exact tenant projection, legal
  *          admission release, and protected workspace presentation without
@@ -13,6 +13,9 @@
  *                            legal-acceptance truth.
  * CERTIFICATION / UPDATE DATE: 2026-11-09
  * CHANGELOG:
+ *   v20.2.6-AUTHORISED-HEADQUARTERS-DAILY-EXECUTION — Passes only the
+ *     current authenticated tenant to the source-backed Headquarters brief;
+ *     no browser-derived business or financial authority is introduced.
  *   v20.2.5-ATTENTION-SCOPE-CURRENTNESS — Scopes the work count to the
  *     current authenticated tenant/principal and remounts attention state
  *     across identity changes to avoid stale cross-session display.
@@ -522,7 +525,7 @@ const SovereignRouter = () => {
       <Route path="/covenant" element={<LegalAcceptanceGate onComplete={() => navigate('/', { replace: true })} />} />
       <Route path="/headquarters" element={
         isAuthenticated && user && !systemServicesSession
-          ? <ErrorBoundary><WilsyHeadquartersWorkspace /></ErrorBoundary>
+          ? <ErrorBoundary><WilsyHeadquartersWorkspace tenantId={user.tenantId} /></ErrorBoundary>
           : <Navigate to="/" replace />
       } />
       <Route path="/my-work" element={
@@ -740,7 +743,7 @@ export default App;
 
 /**
  * ARTIFACT: client/src/App.jsx
- * VERSION: v20.2.5-ATTENTION-SCOPE-CURRENTNESS
+ * VERSION: v20.2.6-AUTHORISED-HEADQUARTERS-DAILY-EXECUTION
  * AUTHORITY BOUNDARY: client route and protected-runtime composition only; Python EOS remains authentication, tenant and legal-acceptance authority
  * TENANT POSTURE: discovered tenant may choose login routing but cannot establish authenticated or protected scope
  * FAIL-CLOSED POSTURE: auth revalidation waits; unresolved legal status remains sealed; only server-confirmed legal COMPLETE mounts protected runtime
