@@ -1,13 +1,15 @@
 /**
  * TITLE: WILSY OS Daily Attention Centre Client Contract Tests
- * VERSION: v1.0.0-DAILY-ATTENTION-CONTRACT
+ * VERSION: v1.1.0-FLOATING-CALENDAR-ACTION-CONTRACT
  * AUTHORITY: WILSY OS Core Governance
  * EPITOME: Exercises tenant-bound source rendering, interactive work triage,
  *          source-owned navigation and fail-closed missing/invalid projections.
  * ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/client/src/__tests__/components/WilsyDailyAttentionCentre.test.jsx
  * COLLABORATION / OWNERSHIP: WilsyDailyAttentionCentre.jsx and EOS /my-work schema.
  * CERTIFICATION / UPDATE DATE: 2026-11-09
- * CHANGELOG: v1.0.0-DAILY-ATTENTION-CONTRACT covers authoritative rendering,
+ * CHANGELOG: v1.1.0-FLOATING-CALENDAR-ACTION-CONTRACT verifies floating,
+ *            accessible keyboard movement, calendar, and HR work entry.
+ *            v1.0.0-DAILY-ATTENTION-CONTRACT covers authoritative rendering,
  *            overdue/search/source filters, expanded work, retry and denied scope.
  * COMPLIANCE: POPIA section 19; GDPR Article 32; SOC 2 CC7.2.
  * SECURITY / PRIVACY POSTURE: Synthetic tenant and work data; no real identities.
@@ -151,6 +153,43 @@ describe('WILSY daily attention centre', () => {
     await waitFor(() => expect(api.get).toHaveBeenCalledTimes(2));
   });
 
+
+  it('floats and docks the panel with accessible keyboard repositioning', async () => {
+    renderCentre();
+    await screen.findByText('Review governed contract');
+    fireEvent.click(screen.getByRole('button', { name: 'Float daily attention panel' }));
+    const panel = screen.getByRole('dialog', { name: 'Daily attention centre' });
+    expect(panel.getAttribute('data-floating')).toBe('true');
+    const before = Number.parseFloat(panel.style.left);
+    fireEvent.keyDown(screen.getByRole('button', {
+      name: 'Move daily attention panel with pointer or arrow keys',
+    }), { key: 'ArrowRight' });
+    expect(Number.parseFloat(panel.style.left)).toBeGreaterThanOrEqual(before);
+    fireEvent.click(screen.getByRole('button', { name: 'Dock daily attention panel' }));
+    expect(panel.getAttribute('data-floating')).toBe('false');
+  });
+
+  it('turns the footer calendar into an actionable EOS deadline view', async () => {
+    renderCentre();
+    await screen.findByText('Review governed contract');
+    fireEvent.click(screen.getByRole('button', { name: 'Open work deadline calendar' }));
+    expect(screen.getByRole('group', { name: 'Choose work deadline date' })).toBeTruthy();
+    expect(screen.getByRole('tab', { name: 'Calendar' }).getAttribute('aria-selected')).toBe('true');
+    fireEvent.click(screen.getByRole('tab', { name: 'Work list' }));
+    expect(screen.getByText('Follow up with customer')).toBeTruthy();
+  });
+
+  it('opens the existing HR workflow from a genuine empty queue', async () => {
+    api.get.mockResolvedValueOnce({ data: {
+      ...projection(), items: [], summary: { active_count: 0, overdue_count: 0 },
+    } });
+    const onOpenWorkforce = vi.fn();
+    renderCentre({ onOpenWorkforce });
+    await screen.findByText('No active work in authorised sources');
+    fireEvent.click(screen.getByRole('button', { name: 'Open HR & workforce duties' }));
+    expect(onOpenWorkforce).toHaveBeenCalledTimes(1);
+  });
+
   it('never requests a tenant work queue for a system services workspace', async () => {
     renderCentre({ systemServicesWorkspace: true });
     expect(await screen.findByRole('alert')).toBeTruthy();
@@ -160,7 +199,7 @@ describe('WILSY daily attention centre', () => {
 
 /*
  * ARTIFACT: WilsyDailyAttentionCentre.test.jsx
- * VERSION: v1.0.0-DAILY-ATTENTION-CONTRACT
+ * VERSION: v1.1.0-FLOATING-CALENDAR-ACTION-CONTRACT
  * AUTHORITY BOUNDARY: Deterministic component test only.
  * TENANT POSTURE: Synthetic exact-tenant and foreign-tenant cases.
  * FAIL-CLOSED POSTURE: No simulated approvals or silent fallback.
