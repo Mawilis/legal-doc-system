@@ -1,6 +1,6 @@
 /**
  * TITLE: WILSY OS Authenticated Daily Attention Centre
- * VERSION: v1.6.0-OPERATIONAL-ATTENTION-HANDOFF
+ * VERSION: v1.7.0-EXECUTIVE-TRIAGE-INTENT
  * AUTHORITY: Wilsy OS Core Governance
  * EPITOME: Interactive notification-bell entry to exact-tenant, authorised
  *          EOS My Work triage, with actionable navigation to source-owned
@@ -9,7 +9,11 @@
  * COLLABORATION / OWNERSHIP: Python EOS /api/my-work owns work visibility;
  *                            App.jsx owns authenticated chrome and navigation.
  * CERTIFICATION / UPDATE DATE: 2026-11-09
- * CHANGELOG: v1.6.0-OPERATIONAL-ATTENTION-HANDOFF gives zero-work
+ * CHANGELOG: v1.7.0-EXECUTIVE-TRIAGE-INTENT turns the four
+ *            EOS-backed filter controls into an explained triage decision:
+ *            per-filter verified counts, an explicit source-safe next action,
+ *            and an empty-state recovery path without fabricated work.
+ *            v1.6.0-OPERATIONAL-ATTENTION-HANDOFF gives zero-work
  *            Operations sessions a real source-owned create/manage entry,
  *            provides one-click work-item handoff without hidden expansion,
  *            labels source selection as filtering (not an executable command),
@@ -71,11 +75,23 @@ import {
 import WilsyWorkDeadlineCalendar from './WilsyWorkDeadlineCalendar.jsx';
 
 const FILTERS = Object.freeze([
-  { id: 'ALL', label: 'All work' },
-  { id: 'OVERDUE', label: 'Overdue' },
-  { id: 'TODAY', label: 'Due today' },
-  { id: 'HIGH', label: 'High priority' },
+  { id: 'ALL', label: 'All work', purpose: 'Review every active item currently included by EOS.' },
+  { id: 'OVERDUE', label: 'Overdue', purpose: 'Address missed deadlines in the authorised queue.' },
+  { id: 'TODAY', label: 'Due today', purpose: 'Act on commitments due before the working day ends.' },
+  { id: 'HIGH', label: 'High priority', purpose: 'Review critical and high-priority work first.' },
 ]);
+
+const urgencyOrder = (item) => item.is_overdue ? 0
+  : ['CRITICAL', 'HIGH'].includes(item.priority) ? 1 : 2;
+const nextWorkItem = (items) => [...items].sort((a, b) => {
+  const urgency = urgencyOrder(a) - urgencyOrder(b);
+  if (urgency) return urgency;
+  const first = a.due_at ? Date.parse(a.due_at) : Number.POSITIVE_INFINITY;
+  const second = b.due_at ? Date.parse(b.due_at) : Number.POSITIVE_INFINITY;
+  const due = (Number.isFinite(first) ? first : Number.POSITIVE_INFINITY)
+    - (Number.isFinite(second) ? second : Number.POSITIVE_INFINITY);
+  return Number.isNaN(due) ? 0 : due;
+})[0] || null;
 
 const validCount = (value) => Number.isSafeInteger(value) && value >= 0;
 
@@ -256,6 +272,8 @@ export default function WilsyDailyAttentionCentre({
   const badgeCount = validCount(verifiedCount) && verifiedCount > 0 ? verifiedCount : null;
   const dueTodayCount = items.filter((item) => dueToday(item.due_at)).length;
   const highCount = items.filter((item) => ['CRITICAL', 'HIGH'].includes(item.priority)).length;
+  const overdueCount = items.filter((item) => item.is_overdue).length;
+  const filterCounts = { ALL: items.length, OVERDUE: overdueCount, TODAY: dueTodayCount, HIGH: highCount };
 
   useEffect(() => {
     if (projection && source !== 'ALL' && !projection.sources_included.includes(source)) {
@@ -278,6 +296,14 @@ export default function WilsyDailyAttentionCentre({
         && value.toLocaleLowerCase().includes(phrase));
     });
   }, [items, filter, source, query]);
+  const selectedFilter = FILTERS.find(({ id }) => id === filter) || FILTERS[0];
+  const nextItem = nextWorkItem(filteredItems);
+  const triageResult = nextItem
+    ? 'Next: ' + nextItem.title + '. Source: ' + unifiedMyWorkSourceLabel(nextItem.source)
+      + '. Due: ' + dueLabel(nextItem.due_at) + '.'
+    : items.length === 0
+      ? 'EOS has no active work in the admitted sources. This does not certify every business function is clear.'
+      : 'No matching work in the current selection. Clear filters to review other authorised items.';
 
   // Render the movable surface outside header backdrop-filter/stacking contexts.
   useEffect(() => {
@@ -489,12 +515,13 @@ export default function WilsyDailyAttentionCentre({
                   <div role="group" aria-label="Filter daily attention" className="mt-3 flex flex-wrap gap-1.5">
                     {FILTERS.map(({ id, label }) => (
                       <button key={id} type="button" aria-pressed={filter === id}
-                        onClick={() => setFilter(id)}
+                        title={FILTERS.find((choice) => choice.id === id)?.purpose}
+                        onClick={() => { setFilter(id); setExpanded(null); }}
                         className={'rounded-full border px-2.5 py-1.5 text-[11px] font-medium transition ' +
                           (filter === id
                             ? 'border-amber-300/40 bg-amber-300/15 text-amber-100'
                             : 'border-white/10 text-slate-300 hover:bg-white/10')}
-                      >{label}</button>
+                      >{label}<span aria-hidden="true" className="ml-1.5 tabular-nums opacity-70">{filterCounts[id]}</span></button>
                     ))}
                   </div>
                   <div className="mt-3 flex gap-2">
@@ -518,7 +545,26 @@ export default function WilsyDailyAttentionCentre({
                       <ChevronDown size={12} className="pointer-events-none absolute right-2 text-slate-400"/>
                     </label>
                   </div>
-                  <p className="mt-2 text-[11px] text-slate-400" role="status">Showing {filteredItems.length} work item{filteredItems.length === 1 ? '' : 's'} from {chosenSourceLabel}. Source selection filters work; it does not create or complete tasks.</p>
+                  <section aria-label="Daily attention next decision" className="mt-3 rounded-xl border border-amber-300/20 bg-amber-300/[0.055] px-3 py-3">
+                    <div className="flex flex-wrap items-start justify-between gap-2">
+                      <div className="min-w-0 flex-1">
+                        <h3 className="text-xs font-semibold text-amber-100">{selectedFilter.label}: {filteredItems.length} to review</h3>
+                        <p className="mt-1 text-[11px] leading-5 text-slate-300">{selectedFilter.purpose}</p>
+                        <p className="mt-1 text-[11px] leading-5 text-slate-400" role="status">
+                          {triageResult} Showing {chosenSourceLabel}.
+                        </p>
+                      </div>
+                      {nextItem && (
+                        <button type="button" onClick={() => onOpenWork(nextItem)}
+                          aria-label={'Work next: ' + nextItem.title}
+                          className="inline-flex shrink-0 items-center gap-1.5 rounded-lg bg-amber-300 px-3 py-2 text-xs font-semibold text-[#081326] hover:bg-amber-200">
+                          Work next <ArrowRight size={13}/>
+                        </button>
+                      )}
+
+                    </div>
+                  </section>
+                  <p className="mt-2 text-[10px] text-slate-500">The source menu filters existing work. EOS owns creation, assignment and completion.</p>
                 </>)}
               </div>
 
@@ -654,7 +700,7 @@ function Stat({ label, value, urgent = false }) {
 
 /*
  * ARTIFACT: WilsyDailyAttentionCentre.jsx
- * VERSION: v1.6.0-OPERATIONAL-ATTENTION-HANDOFF
+ * VERSION: v1.7.0-EXECUTIVE-TRIAGE-INTENT
  * AUTHORITY BOUNDARY: Authenticated read-only EOS work triage.
  * TENANT POSTURE: Exact tenant; only EOS-included source coverage is rendered.
  * FAIL-CLOSED POSTURE: Invalid, denied or unavailable sources show no fabricated items.
