@@ -1,22 +1,26 @@
 /**
  * TITLE: WILSY OS Headquarters Daily Execution Brief
- * VERSION: v1.0.0-SOURCE-VERIFIED-DAILY-BRIEF
+ * VERSION: v1.0.1-AUTHORISED-SOURCE-COVERAGE
  * AUTHORITY: Wilsy OS Core Governance
- * EPITOME: Source-verified, searchable, actionable daily operating overview
- *          for an authenticated tenant, never synthetic company performance.
+ * EPITOME: Source-verified daily operating overview for the current authenticated
+ *          tenant, with projection coverage derived from EOS source metadata.
  * ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/client/src/components/workspaces/WilsyHeadquartersDailyBrief.jsx
- * COLLABORATION / OWNERSHIP: EOS /api/my-work owns visibility and priority;
- *                            MyWorkWorkspace owns source-command invocation.
+ * COLLABORATION / OWNERSHIP: EOS /api/my-work owns source admission and item
+ *                            visibility; MyWorkWorkspace owns source commands.
  * CERTIFICATION / UPDATE DATE: 2026-11-09
- * CHANGELOG: v1.0.0-SOURCE-VERIFIED-DAILY-BRIEF connects the Headquarters
- *            landing page to exact-tenant work counts, urgency and action
- *            navigation with retry, filtering and explicit unavailable state.
+ * CHANGELOG: v1.0.1-AUTHORISED-SOURCE-COVERAGE derives source filters from
+ *            EOS sources_included, checks source counts against projected rows,
+ *            distinguishes no included source from a verified empty queue, and
+ *            clears filters when the tenant changes.
+ *            v1.0.0-SOURCE-VERIFIED-DAILY-BRIEF connects Headquarters to exact-
+ *            tenant work counts, urgency, navigation, retry and unavailable state.
  * COMPLIANCE: POPIA section 19; GDPR Article 32; SOC 2 CC7.2.
- * SECURITY / PRIVACY POSTURE: Authenticated in-memory projections only;
- *                            no invented headcount, sales, SLA or KPI data.
- * TENANT BOUNDARY: Fails closed for missing tenant, malformed EOS response,
- *                  foreign tenant and stale in-flight session fetches.
- * AUTHORITY BOUNDARY: Read-only workspace; actions are source-owned.
+ * SECURITY / PRIVACY POSTURE: Authenticated in-memory projections only; no
+ *                            invented company performance or source coverage.
+ * TENANT BOUNDARY: Rejects missing/mismatched tenant, malformed source coverage,
+ *                  and stale in-flight tenant reads.
+ * AUTHORITY BOUNDARY: Read-only projection; source-owned services authorize
+ *                     every command.
  * FINANCIAL AUTHORITY BOUNDARY: Kennel EOS exclusively executes funds.
  */
 
@@ -44,8 +48,89 @@ const formatDeadline = (value) => value
   : 'No due date';
 
 /**
- * The page can only present data already authorised by the EOS unified work
- * authority. Any completion/approval remains delegated to MyWorkWorkspace.
+ * Validate the source-coverage portion of the already tenant-validated EOS
+ * projection. Metadata is presentation scope, never command authority.
+ *
+ * @description Confirms included source IDs and per-source counts match rows.
+ * @collaboration Consumed only by WilsyHeadquartersDailyBrief after
+ *   assertAttentionProjection validates the tenant and item contract.
+ * @institutional Prevents a source filter or empty state from implying access
+ *   to a source EOS did not include, and prevents zero counts being invented.
+ * @param {Object} payload Tenant-bound WILSY-OS-UNIFIED-MY-WORK/V1 payload.
+ * @returns {string[]} Source IDs included in this response, in EOS order.
+ * @throws {Error} ATTENTION_SOURCE_COVERAGE_INVALID for incomplete or divergent metadata.
+ */
+function assertSourceCoverage(payload) {
+  const included = payload?.sources_included;
+  const counts = payload?.summary?.source_counts;
+  if (
+    !Array.isArray(included)
+    || !counts
+    || typeof counts !== 'object'
+    || Array.isArray(counts)
+  ) {
+    throw new Error('ATTENTION_SOURCE_COVERAGE_INVALID');
+  }
+
+  const includedSet = new Set();
+  for (const source of included) {
+    if (
+      typeof source !== 'string'
+      || !Object.hasOwn(SOURCES, source)
+      || includedSet.has(source)
+    ) {
+      throw new Error('ATTENTION_SOURCE_COVERAGE_INVALID');
+    }
+    includedSet.add(source);
+  }
+
+  const countSources = Object.keys(counts);
+  if (
+    countSources.length !== includedSet.size
+    || countSources.some((source) => !includedSet.has(source))
+  ) {
+    throw new Error('ATTENTION_SOURCE_COVERAGE_INVALID');
+  }
+
+  const observedCounts = new Map();
+  for (const item of payload.items) {
+    if (!includedSet.has(item.source)) {
+      throw new Error('ATTENTION_SOURCE_COVERAGE_INVALID');
+    }
+    observedCounts.set(item.source, (observedCounts.get(item.source) || 0) + 1);
+  }
+
+  let total = 0;
+  for (const source of included) {
+    const count = counts[source];
+    if (
+      !Number.isSafeInteger(count)
+      || count < 0
+      || count !== (observedCounts.get(source) || 0)
+    ) {
+      throw new Error('ATTENTION_SOURCE_COVERAGE_INVALID');
+    }
+    total += count;
+  }
+  if (total !== payload.summary.active_count) {
+    throw new Error('ATTENTION_SOURCE_COVERAGE_INVALID');
+  }
+  return included;
+}
+
+/**
+ * Render the authenticated Headquarters daily work projection without creating
+ * work, assigning authority, or executing source commands.
+ *
+ * @description Displays current EOS work counts, admitted-source coverage,
+ *   bounded search/filter controls, and a source-owned My Work handoff.
+ * @collaboration WilsyHeadquartersWorkspace supplies the authenticated tenant
+ *   and navigation callback; EOS /api/my-work supplies the authorized read.
+ * @institutional Exact-tenant projection and source metadata keep a verified
+ *   zero distinct from omitted source coverage. The callback only navigates.
+ * @param {{tenantId: string|null, onOpenWork: Function}} props Current tenant
+ *   and navigation callback supplied by the authenticated workspace.
+ * @returns {JSX.Element} Daily work brief with loading, unavailable, or ready state.
  */
 export default function WilsyHeadquartersDailyBrief({ tenantId, onOpenWork }) {
   const [projection, setProjection] = useState(null);
@@ -56,6 +141,12 @@ export default function WilsyHeadquartersDailyBrief({ tenantId, onOpenWork }) {
   const [filter, setFilter] = useState('ALL');
   const [query, setQuery] = useState('');
   const [source, setSource] = useState('ALL');
+
+  useEffect(() => {
+    setFilter('ALL');
+    setQuery('');
+    setSource('ALL');
+  }, [tenantId]);
 
   useEffect(() => {
     if (!tenantId) {
@@ -73,6 +164,7 @@ export default function WilsyHeadquartersDailyBrief({ tenantId, onOpenWork }) {
     api.get('/my-work', { forceNetworkRetry: true })
       .then((response) => {
         const verified = assertAttentionProjection(response?.data, tenantId);
+        assertSourceCoverage(verified);
         if (active) {
           setProjection(verified);
           setScope(tenantId);
@@ -92,8 +184,17 @@ export default function WilsyHeadquartersDailyBrief({ tenantId, onOpenWork }) {
 
   const data = scope === tenantId ? projection : null;
   const items = data?.items || [];
+  const sourceIds = data?.sources_included || [];
+  const sourceOptions = sourceIds.map((id) => [id, SOURCES[id]]);
+  const sourceLabels = sourceOptions.map(([, label]) => label);
   const todayCount = items.filter((item) => isToday(item.due_at)).length;
   const urgentCount = items.filter((item) => ['CRITICAL', 'HIGH'].includes(item.priority)).length;
+
+  useEffect(() => {
+    if (data && source !== 'ALL' && !data.sources_included.includes(source)) {
+      setSource('ALL');
+    }
+  }, [data, source]);
 
   const filtered = useMemo(() => {
     const phrase = query.trim().toLocaleLowerCase();
@@ -182,7 +283,7 @@ export default function WilsyHeadquartersDailyBrief({ tenantId, onOpenWork }) {
               ))}
             </div>
             <p className="flex items-center gap-1.5 text-[11px] text-emerald-200">
-              <ShieldCheck size={13}/> EOS-authorised source
+              <ShieldCheck size={13}/> EOS-authorised source projection
             </p>
           </div>
 
@@ -196,9 +297,9 @@ export default function WilsyHeadquartersDailyBrief({ tenantId, onOpenWork }) {
             </label>
             <select aria-label="Filter headquarters by source" value={source}
               onChange={(event) => setSource(event.target.value)}
-              className="h-10 rounded-lg border border-white/15 bg-[#0a1423] px-3 text-xs text-slate-200">
-              <option value="ALL">All authorised sources</option>
-              {Object.entries(SOURCES).map(([id, label]) =>
+              className="h-10 max-w-full rounded-lg border border-white/15 bg-[#0a1423] px-3 text-xs text-slate-200 sm:w-auto">
+              <option value="ALL">All included sources</option>
+              {sourceOptions.map(([id, label]) =>
                 <option key={id} value={id}>{label}</option>)}
             </select>
           </div>
@@ -208,10 +309,18 @@ export default function WilsyHeadquartersDailyBrief({ tenantId, onOpenWork }) {
               <div className="rounded-xl border border-white/10 bg-white/[0.03] px-5 py-8 text-center">
                 <CheckCircle2 size={26} className="mx-auto text-emerald-300"/>
                 <p className="mt-3 text-sm font-semibold text-white">
-                  {items.length === 0 ? 'No active work in the authorised sources' : 'No work matches these filters'}
+                  {items.length === 0
+                    ? (sourceIds.length === 0
+                      ? 'No work source was included in this session'
+                      : 'No active work in the included sources')
+                    : 'No work matches these filters'}
                 </p>
                 <p className="mt-1 text-xs text-slate-400">
-                  {items.length === 0 ? 'Your source-owned work queue is currently clear.' : 'Adjust the search or filter to see other work.'}
+                  {items.length === 0
+                    ? (sourceIds.length === 0
+                      ? 'EOS returned no source projection. This is not evidence that every business queue is empty.'
+                      : `EOS returned no active work from ${sourceLabels.join(', ')}.`)
+                    : 'Adjust the search or filter to see other work.'}
                 </p>
               </div>
             )}
@@ -244,8 +353,8 @@ export default function WilsyHeadquartersDailyBrief({ tenantId, onOpenWork }) {
 
           <footer className="flex flex-wrap items-center justify-between gap-3 border-t border-white/10 bg-[#111e32] px-5 py-4">
             <p className="text-[11px] text-slate-400">
-              Updated {new Date(data.as_of).toLocaleTimeString([], {hour:'2-digit',minute:'2-digit'})}
-              {' · '}{data.sources_included?.length ?? Object.keys(data.summary.source_counts || {}).length} authorised sources
+              Projection assembled {new Date(data.as_of).toLocaleTimeString([], {hour:'2-digit',minute:'2-digit'})}
+              {' · Included: '}{sourceLabels.length ? sourceLabels.join(', ') : 'no source projection'}
             </p>
             <button type="button" onClick={onOpenWork}
               className="inline-flex items-center gap-2 rounded-lg bg-amber-300 px-4 py-2.5 text-sm font-semibold text-[#091426] hover:bg-amber-200">
@@ -271,10 +380,10 @@ function Metric({ label, value, urgent = false }) {
 
 /*
  * ARTIFACT: WilsyHeadquartersDailyBrief.jsx
- * VERSION: v1.0.0-SOURCE-VERIFIED-DAILY-BRIEF
+ * VERSION: v1.0.1-AUTHORISED-SOURCE-COVERAGE
  * AUTHORITY BOUNDARY: Read-only EOS work projection; source commands only.
- * TENANT POSTURE: Current exact tenant only; stale/foreign data suppressed.
- * FAIL-CLOSED POSTURE: No fabricated or cached business truth.
+ * TENANT POSTURE: Current exact tenant; stale and foreign data suppressed.
+ * FAIL-CLOSED POSTURE: Source IDs, counts and rows must agree; no fake coverage.
  * FINANCIAL EXECUTION AUTHORITY: Kennel EOS only.
  * END OF WILSY OS SOVEREIGN ARTIFACT
  */
