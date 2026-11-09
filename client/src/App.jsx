@@ -70,6 +70,7 @@ import Sovereign_TenantManager from './components/sovereign/Sovereign_TenantMana
 import LedgerExplorer from './components/billing/LedgerExplorer.jsx';
 import MyWorkWorkspace from './components/workspaces/MyWorkWorkspace.jsx';
 import WilsyHeadquartersWorkspace from './components/workspaces/WilsyHeadquartersWorkspace.jsx';
+import SystemStatusPage from './components/system/SystemStatusPage.jsx';
 import api from './services/api';
 import WilsyOSIntelligenceDockRuntime from './components/intelligence/WilsyOSIntelligenceDockRuntime.jsx';
 
@@ -463,6 +464,7 @@ const SovereignRouter = () => {
             : <Navigate to="/login" replace />)
       } />
       <Route path="/covenant" element={<LegalAcceptanceGate onComplete={() => navigate('/', { replace: true })} />} />
+      <Route path="/system-status" element={<ErrorBoundary><SystemStatusPage /></ErrorBoundary>} />
       <Route path="/headquarters" element={
         isAuthenticated && user && !systemServicesSession
           ? <ErrorBoundary><WilsyHeadquartersWorkspace /></ErrorBoundary>
