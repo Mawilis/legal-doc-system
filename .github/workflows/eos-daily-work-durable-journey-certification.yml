@@ -1,0 +1,180 @@
+# TITLE: WILSY OS Real Mongo and Authenticated Daily Work Certification
+# VERSION: v1.0.0-DURABLE-DAILY-SOURCE-BROWSER-CERT
+# AUTHORITY: Disposable GitHub test runtime, not production IAM or commerce.
+# EPITOME: Certify current EOS source-owned create/read/complete transactions
+#          through a real replica set and desktop/mobile authenticated browser.
+# ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/.github/workflows/eos-daily-work-durable-journey-certification.yml
+# COLLABORATION / OWNERSHIP: Python EOS /api/my-work, Operations source,
+#                           run-browser-cert.mjs, Playwright and Mongo fixtures.
+# CERTIFICATION / UPDATE DATE: 2026-11-09
+# CHANGELOG: v1.0.0 tests exact reviewed SHA on isolated loopback Mongo, rejects
+#            silent test skipping and requires source-owned durable readback.
+# COMPLIANCE: POPIA section 19, GDPR Article 32, SOC 2 CC7.2.
+# SECURITY / PRIVACY POSTURE: Synthetic users only, no external DB credentials.
+# TENANT BOUNDARY: UUID-owned temporary database and foreign-scope denial.
+# AUTHORITY BOUNDARY: Synthetic fixture is not real-user MFA certification.
+# FINANCIAL AUTHORITY BOUNDARY: Kennel EOS only; no financial command.
+
+name: EOS Daily Work Durable Journey Certification
+
+on:
+  pull_request:
+    paths:
+      - "client/src/services/unifiedMyWorkProjection.js"
+      - "client/src/components/chrome/WilsyDailyAttentionCentre.jsx"
+      - "client/src/components/workspaces/MyWorkWorkspace.jsx"
+      - "client/src/components/workspaces/WilsyHeadquartersDailyBrief.jsx"
+      - "client/src/components/workspaces/WilsyHeadquartersWorkspace.jsx"
+      - "tests/e2e/daily-attention-calendar.browser.spec.js"
+      - "tests/e2e/browser_cert_fixture.py"
+      - "tests/e2e/run-browser-cert.mjs"
+      - "tests/integration/test_unified_my_work_real_mongo.py"
+      - "tools/eos/api/unified_my_work_router.py"
+      - "tools/eos/workspaces/service/unified_my_work_projection.py"
+      - ".github/workflows/eos-daily-work-durable-journey-certification.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  durable-source-workflow:
+    name: Source work and EOS browser Create Open Complete Verify
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    env:
+      PIP_DISABLE_PIP_VERSION_CHECK: "1"
+      TEST_VENDOR_MONGO_URI: mongodb://127.0.0.1:27017/?replicaSet=wilsyVendorCertRS
+    steps:
+      - name: Checkout exact reviewed commit
+        uses: actions/checkout@v4
+
+      - name: Prepare isolated Python environment
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+
+      - name: Prepare isolated browser runtime
+        uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: npm
+          cache-dependency-path: package-lock.json
+
+      - name: Install EOS dependencies on CI only
+        run: |
+          python -m pip install -r requirements.txt
+          python -m pip install pyotp==2.9.0 pytest==9.1.1 httpx
+
+      - name: Install locked browser and frontend dependencies on CI only
+        run: |
+          npm ci --legacy-peer-deps --no-audit --no-fund --progress=false
+          npm --prefix client ci --no-audit --no-fund --progress=false
+
+      - name: Install test-only Chromium
+        run: npx playwright install --with-deps chromium
+
+      - name: Start isolated transactional MongoDB
+        run: |
+          docker run --detach --name wilsy-daily-eos-cert-mongo \
+            --publish 127.0.0.1:27017:27017 \
+            mongo:7.0.37 mongod --replSet wilsyVendorCertRS --bind_ip_all
+
+      - name: Verify disposable writable primary and transactions
+        run: |
+          python - <<'PY'
+          import time
+          from pymongo import MongoClient
+          client = MongoClient(
+              "mongodb://127.0.0.1:27017",
+              directConnection=True,
+              serverSelectionTimeoutMS=2000,
+          )
+          deadline = time.monotonic() + 75
+          initiated = False
+          while time.monotonic() < deadline:
+              try:
+                  hello = client.admin.command("hello")
+                  if not initiated and not hello.get("setName"):
+                      client.admin.command({"replSetInitiate": {
+                          "_id": "wilsyVendorCertRS",
+                          "members": [{"_id": 0, "host": "127.0.0.1:27017"}],
+                      }})
+                      initiated = True
+                  hello = client.admin.command("hello")
+                  if (hello.get("setName") == "wilsyVendorCertRS"
+                          and hello.get("isWritablePrimary") is True
+                          and hello.get("logicalSessionTimeoutMinutes") is not None):
+                      print("DAILY_EOS_DISPOSABLE_REPLICA_SET=VERIFIED")
+                      break
+              except Exception:
+                  pass
+              time.sleep(1)
+          else:
+              raise SystemExit("DAILY_EOS_DISPOSABLE_REPLICA_SET_UNAVAILABLE")
+          client.close()
+          PY
+
+      - name: Certify real Mongo EOS My Work and source-owned aggregation
+        run: |
+          mkdir -p test-results
+          python -m pytest -q -rs \
+            --junitxml=test-results/daily-work-real-mongo.xml \
+            tests/integration/test_unified_my_work_real_mongo.py
+
+      - name: Reject empty or skipped replica-set tests
+        run: |
+          python - <<'PY'
+          import xml.etree.ElementTree as ET
+          root = ET.parse("test-results/daily-work-real-mongo.xml").getroot()
+          suites = list(root.iter("testsuite"))
+          count = sum(int(s.get("tests", 0)) for s in suites)
+          skipped = sum(int(s.get("skipped", 0)) for s in suites)
+          broken = sum(int(s.get("failures", 0)) + int(s.get("errors", 0)) for s in suites)
+          if count == 0 or skipped or broken:
+              raise SystemExit(f"DAILY_EOS_MONGO_CERT_INVALID count={count} skipped={skipped} broken={broken}")
+          print(f"DAILY_EOS_MONGO_CERT=PASSED tests={count} skipped=0")
+          PY
+
+      - name: Certify authenticated source workflow on desktop and mobile
+        env:
+          PLAYWRIGHT_HTML_OUTPUT_DIR: playwright-report
+          PLAYWRIGHT_JUNIT_OUTPUT_NAME: test-results/daily-work-browser.xml
+        run: |
+          mkdir -p test-results playwright-report
+          suffix="$(python -c 'import uuid; print(uuid.uuid4().hex)')"
+          export BROWSER_CERT_MONGO_URI="mongodb://127.0.0.1:27017/wilsy_l8_8m_r3_daily_$suffix?replicaSet=wilsyVendorCertRS"
+          node tests/e2e/run-browser-cert.mjs tests/e2e/daily-attention-calendar.browser.spec.js
+
+      - name: Require both screen sizes with no skipped browser journeys
+        run: |
+          python - <<'PY'
+          import xml.etree.ElementTree as ET
+          root = ET.parse("test-results/daily-work-browser.xml").getroot()
+          cases = list(root.iter("testcase"))
+          labels = [c.get("name", "") for c in cases]
+          failed = [c for c in cases if any(c.find(tag) is not None for tag in ("failure", "error", "skipped"))]
+          if len(cases) < 2 or failed or not any("1440px" in s for s in labels) or not any("390px" in s for s in labels):
+              raise SystemExit(f"DAILY_EOS_BROWSER_CERT_INVALID tests={len(cases)} failed_or_skipped={len(failed)}")
+          print(f"DAILY_EOS_BROWSER_SOURCE_LIFECYCLE=PASSED cases={len(cases)}")
+          PY
+
+      - name: Upload only disposable certification evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: eos-daily-work-durable-journey
+          path: |
+            test-results/
+            playwright-report/
+          if-no-files-found: ignore
+          retention-days: 7
+
+# ARTIFACT: eos-daily-work-durable-journey-certification.yml
+# VERSION: v1.0.0-DURABLE-DAILY-SOURCE-BROWSER-CERT
+# AUTHORITY BOUNDARY: GitHub disposable synthetic browser + EOS only.
+# TENANT POSTURE: UUID test database, never production or other tenants.
+# FAIL-CLOSED POSTURE: Absent, skipped or failed tests do not certify.
+# FINANCIAL EXECUTION AUTHORITY: Kennel EOS only.
+# END OF WILSY OS SOVEREIGN ARTIFACT
