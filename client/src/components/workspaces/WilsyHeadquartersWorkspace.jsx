@@ -1,13 +1,15 @@
 /**
  * TITLE: WILSY OS Headquarters authenticated executive workspace
- * VERSION: v2.0.0-HEADQUARTERS-ACTIONABLE-DAILY-BRIEF
+ * VERSION: v2.1.0-URL-ROUTED-WORKFORCE-DUTIES
  * AUTHORITY: WILSY EOS client projection; Python EOS remains the business authority
  * EPITOME: Presents the authenticated company operating plane and a source-backed
  *          My Work snapshot without inventing enterprise metrics or commands.
  * ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/client/src/components/workspaces/WilsyHeadquartersWorkspace.jsx
  * COLLABORATION / OWNERSHIP: WILSY EOS frontend projection consuming /api/my-work
  * CERTIFICATION / UPDATE DATE: 2026-11-09
- * CHANGELOG: v2.0.0-HEADQUARTERS-ACTIONABLE-DAILY-BRIEF adds authorised interactive daily work
+ * CHANGELOG: v2.1.0-URL-ROUTED-WORKFORCE-DUTIES supports the validated HR entry URL from
+ *            global daily attention without inferring any new permissions.
+ *            v2.0.0-HEADQUARTERS-ACTIONABLE-DAILY-BRIEF adds authorised interactive daily work
  *            without removing source-backed KPI, HR requisitions, workforce,
  *            operations, authenticated tenant identity or runtime monitoring.
  *            v1.9.0 projects the server-certified active tenant label into
@@ -30,6 +32,7 @@
  * FINANCIAL AUTHORITY BOUNDARY: No financial, settlement, or release authority.
  */
 import React, { lazy, Suspense, useContext, useEffect, useState } from 'react';
+import { useLocation } from 'react-router-dom';
 import AuthContext from '../../contexts/authContext.jsx';
 import api from '../../services/api.js';
 import { useKennelHealth } from '../../hooks/useKennelHealth.js';
@@ -75,10 +78,21 @@ function SourceBoundary({ title, description }) {
 }
 
 export default function WilsyHeadquartersWorkspace({ tenantId = null }) {
+  const location = useLocation();
   const auth = useContext(AuthContext) || {};
     const authUser = auth.user || {};
-  const [section, setSection] = useState('overview');
+  const [section, setSection] = useState(() =>
+    new URLSearchParams(location.search).get('section') === 'hr-workspace' ? 'hr-workspace' : 'overview');
   const [showMyWork, setShowMyWork] = useState(false);
+  useEffect(() => {
+    const requested = new URLSearchParams(location.search).get('section');
+    if (requested === 'hr-workspace') {
+      setSection('hr-workspace');
+      setShowMyWork(false);
+    } else if (!requested) {
+      setSection((current) => current === 'hr-workspace' ? 'overview' : current);
+    }
+  }, [location.search]);
   const [workforce, setWorkforce] = useState(null);
   const [workforceLoading, setWorkforceLoading] = useState(false);
   const [workforceError, setWorkforceError] = useState('');
@@ -503,7 +517,7 @@ function RuntimeHealthFooter({ health }) {
 
 /*
  * ARTIFACT: WILSY OS Headquarters authenticated executive workspace
- * VERSION: v2.0.0-HEADQUARTERS-ACTIONABLE-DAILY-BRIEF
+ * VERSION: v2.1.0-URL-ROUTED-WORKFORCE-DUTIES
  * AUTHORITY BOUNDARY: Read-only client projection; Python EOS owns business truth.
  * TENANT POSTURE: Authenticated tenant and principal scope are preserved.
  * FAIL-CLOSED POSTURE: Invalid or unavailable source data is disclosed, never zeroed.
