@@ -1,6 +1,6 @@
 /**
  * TITLE: WILSY OS Headquarters Daily Execution Brief
- * VERSION: v1.0.2-SHARED-PROJECTION-CONTRACT
+ * VERSION: v1.1.0-EXACT-SESSION-BRIEF-REVALIDATION
  * AUTHORITY: Wilsy OS Core Governance
  * EPITOME: Source-verified daily operating overview for the current authenticated
  *          tenant, with projection coverage derived from EOS source metadata.
@@ -8,7 +8,12 @@
  * COLLABORATION / OWNERSHIP: EOS /api/my-work owns source admission and item
  *                            visibility; MyWorkWorkspace owns source commands.
  * CERTIFICATION / UPDATE DATE: 2026-11-09
- * CHANGELOG: v1.0.2-SHARED-PROJECTION-CONTRACT delegates tenant, item and source
+ * CHANGELOG: v1.1.0-EXACT-SESSION-BRIEF-REVALIDATION requires current
+ *            AuthProvider tenant/principal/capacity and reuses the same EOS
+ *            My Work coordinator as the global badge and Daily Attention.
+ *            Source-confirmed invalidation refreshes this brief without
+ *            browser-owned completion, synthetic metrics or stale fallback.
+ *            v1.0.2-SHARED-PROJECTION-CONTRACT delegates tenant, item and source
  *            coverage validation to the canonical shared validator and passes
  *            selected item context through the My Work navigation callback.
  *            v1.0.1-AUTHORISED-SOURCE-COVERAGE derives source filters from
@@ -27,16 +32,18 @@
  * FINANCIAL AUTHORITY BOUNDARY: Kennel EOS exclusively executes funds.
  */
 
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useContext, useEffect, useMemo, useState } from 'react';
 import {
   AlertTriangle, ArrowRight, CheckCircle2, Clock3, RefreshCw,
   Search, ShieldCheck, Target,
 } from 'lucide-react';
-import api from '../../services/api.js';
+import AuthContext from '../../contexts/authContext.jsx';
+import { unifiedMyWorkSourceLabel } from '../../services/unifiedMyWorkProjection.js';
 import {
-  assertUnifiedMyWorkProjection,
-  unifiedMyWorkSourceLabel,
-} from '../../services/unifiedMyWorkProjection.js';
+  currentUnifiedMyWorkScope,
+  readUnifiedMyWork,
+  subscribeUnifiedMyWork,
+} from '../../services/unifiedMyWorkSync.js';
 
 const isToday = (value) => Boolean(value)
   && !Number.isNaN(new Date(value).getTime())
@@ -62,6 +69,8 @@ const formatDeadline = (value) => value
  * @returns {JSX.Element} Daily work brief with loading, unavailable, or ready state.
  */
 export default function WilsyHeadquartersDailyBrief({ tenantId, onOpenWork }) {
+  const auth = useContext(AuthContext);
+  const workScope = currentUnifiedMyWorkScope(auth, tenantId);
   const [projection, setProjection] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(false);
@@ -78,7 +87,7 @@ export default function WilsyHeadquartersDailyBrief({ tenantId, onOpenWork }) {
   }, [tenantId]);
 
   useEffect(() => {
-    if (!tenantId) {
+    if (!tenantId || !workScope) {
       setProjection(null);
       setScope(null);
       setError(true);
@@ -86,31 +95,45 @@ export default function WilsyHeadquartersDailyBrief({ tenantId, onOpenWork }) {
       return undefined;
     }
     let active = true;
+    const controller = new AbortController();
     setProjection(null);
     setScope(null);
     setLoading(true);
     setError(false);
-    api.get('/my-work', { forceNetworkRetry: true })
-      .then((response) => {
-        const verified = assertUnifiedMyWorkProjection(response?.data, { tenantId });
+    readUnifiedMyWork(
+      workScope,
+      { tenantId, principalId: auth.user.id },
+      { signal: controller.signal, force: true },
+    )
+      .then((verified) => {
         if (active) {
           setProjection(verified);
-          setScope(tenantId);
+          setScope(workScope);
           setLoading(false);
         }
       })
-      .catch(() => {
-        if (active) {
+      .catch((error) => {
+        if (active && error?.name !== 'AbortError') {
           setProjection(null);
           setScope(null);
           setError(true);
           setLoading(false);
         }
       });
-    return () => { active = false; };
-  }, [tenantId, refreshId]);
+    return () => {
+      active = false;
+      controller.abort();
+    };
+  }, [tenantId, workScope, refreshId]);
 
-  const data = scope === tenantId ? projection : null;
+  useEffect(() => {
+    if (!workScope) return undefined;
+    return subscribeUnifiedMyWork(workScope, () => {
+      setRefreshId((value) => value + 1);
+    });
+  }, [workScope]);
+
+  const data = scope === workScope ? projection : null;
   const items = data?.items || [];
   const sourceIds = data?.sources_included || [];
   const sourceOptions = sourceIds.map((id) => [id, unifiedMyWorkSourceLabel(id)]);
@@ -309,7 +332,7 @@ function Metric({ label, value, urgent = false }) {
 
 /*
  * ARTIFACT: WilsyHeadquartersDailyBrief.jsx
- * VERSION: v1.0.2-SHARED-PROJECTION-CONTRACT
+ * VERSION: v1.1.0-EXACT-SESSION-BRIEF-REVALIDATION
  * AUTHORITY BOUNDARY: Read-only EOS work projection; source commands only.
  * TENANT POSTURE: Current exact tenant; stale and foreign data suppressed.
  * FAIL-CLOSED POSTURE: Shared contract rejects malformed rows and source coverage.
