@@ -1,7 +1,7 @@
 /* eslint-disable */
 /**
  * TITLE: WILSY OS Sovereign Application Root
- * VERSION: v20.2.1-GLOBAL-CHROME-HEALTH-SEMANTICS
+ * VERSION: v20.2.2-GLOBAL-CHROME-TRANSPORT-TRUST
  * AUTHORITY: Wilsy OS Core Governance
  * EPITOME: Composes authenticated routing, exact tenant projection, legal
  *          admission release, and protected workspace presentation without
@@ -13,6 +13,9 @@
  *                            legal-acceptance truth.
  * CERTIFICATION / UPDATE DATE: 2026-11-09
  * CHANGELOG:
+ *   v20.2.2-GLOBAL-CHROME-TRANSPORT-TRUST — Uses a neutral security-chip
+ *     treatment when the authenticated browser transport is not HTTPS; an
+ *     authenticated session is not mislabelled as a secure channel.
  *   v20.2.1-GLOBAL-CHROME-HEALTH-SEMANTICS — Refines status copy to distinguish an EOS kernel API response from whole-platform health; records the current update date.
  *   v20.2.0-GLOBAL-AUTHENTICATED-CHROME — Adds a route-stable authenticated
  *     global top bar for protected routes, consuming the revalidated auth
@@ -258,7 +261,7 @@ const AuthenticatedGlobalChrome = ({ user, onLogout, children }) => {
         <button type="button" onClick={() => setSearchOpen(true)} aria-label="Open global search" className="grid h-9 w-9 place-items-center rounded-full border border-white/10 text-slate-300 md:hidden"><Search size={17}/></button>
 
         <div className="flex shrink-0 items-center gap-2 sm:gap-3">
-          <div title={isSecureChannel ? 'Authenticated session over HTTPS' : 'Authenticated session; transport is not HTTPS'} className="flex items-center gap-2 rounded-full border border-emerald-400/20 bg-emerald-400/10 px-2 py-2 text-[11px] font-medium text-emerald-200 sm:px-3">
+          <div title={isSecureChannel ? 'Authenticated session over HTTPS' : 'Authenticated session; transport is not HTTPS'} className={`flex items-center gap-2 rounded-full border px-2 py-2 text-[11px] font-medium sm:px-3 ${isSecureChannel ? 'border-emerald-400/20 bg-emerald-400/10 text-emerald-200' : 'border-white/10 bg-white/[0.04] text-slate-300'}`}>
             <ShieldCheck size={15}/><span className="hidden sm:inline">{isSecureChannel ? 'Secure · Authenticated' : 'Authenticated'}</span>
           </div>
           <div className="relative">
@@ -719,7 +722,7 @@ export default App;
 
 /**
  * ARTIFACT: client/src/App.jsx
- * VERSION: v20.2.1-GLOBAL-CHROME-HEALTH-SEMANTICS
+ * VERSION: v20.2.2-GLOBAL-CHROME-TRANSPORT-TRUST
  * AUTHORITY BOUNDARY: client route and protected-runtime composition only; Python EOS remains authentication, tenant and legal-acceptance authority
  * TENANT POSTURE: discovered tenant may choose login routing but cannot establish authenticated or protected scope
  * FAIL-CLOSED POSTURE: auth revalidation waits; unresolved legal status remains sealed; only server-confirmed legal COMPLETE mounts protected runtime
