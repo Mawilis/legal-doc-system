@@ -1,6 +1,6 @@
 /**
  * TITLE: WILSY OS Authenticated My Work Workspace Tests
- * VERSION: v1.2.0-SHARED-PROJECTION-CONTRACT
+ * VERSION: v1.3.0-EXPLICIT-FOCUS-RESET
  * AUTHORITY: Wilsy OS Core Governance
  * EPITOME: Certifies server-projected My Work rendering and source-owned
  *          completion commands against the shared EOS projection contract.
@@ -8,7 +8,9 @@
  * COLLABORATION / OWNERSHIP: MyWorkWorkspace.jsx, the shared client projection
  *                            contract, and canonical source completion services.
  * CERTIFICATION / UPDATE DATE: 2026-11-09
- * CHANGELOG: v1.2.0-SHARED-PROJECTION-CONTRACT supplies complete EOS projection
+ * CHANGELOG: v1.3.0-EXPLICIT-FOCUS-RESET proves parent null clears stale
+ *            router focus while route-only focus remains covered separately.
+ *            v1.2.0-SHARED-PROJECTION-CONTRACT supplies complete EOS projection
  *            metadata, requires the cancellable read signal, and rejects
  *            divergent source counts before rendering or enabling commands.
  *            v1.1.0-ABORTABLE-MY-WORK-READS requires My Work projections to
@@ -104,6 +106,19 @@ describe('authenticated My Work workspace', () => {
     expect(request.signal).toBeTruthy();
     expect(typeof request.signal.addEventListener).toBe('function');
     expect(request.signal.aborted).toBe(false);
+  });
+
+  it('clears older route focus when the parent explicitly supplies null', async () => {
+    render(
+      <MemoryRouter initialEntries={[{
+        pathname: '/my-work',
+        state: { focusWorkItem: 'OPERATIONS:ops-1' },
+      }]}>
+        <MyWorkWorkspace focusWorkItem={null} />
+      </MemoryRouter>,
+    );
+    const heading = await screen.findByText('Prepare daily operations report');
+    expect(heading.closest('article').className).not.toContain('ring-2');
   });
 
   it('rejects inconsistent source counts before rendering any source work', async () => {
@@ -211,7 +226,7 @@ describe.each([
 
 /*
  * ARTIFACT: MyWorkWorkspace.test.jsx
- * VERSION: v1.2.0-SHARED-PROJECTION-CONTRACT
+ * VERSION: v1.3.0-EXPLICIT-FOCUS-RESET
  * AUTHORITY BOUNDARY: Deterministic client contract evidence only.
  * TENANT POSTURE: Synthetic exact-tenant work projections.
  * FAIL-CLOSED POSTURE: Unavailable reads and invalid source metadata render no stale work.
