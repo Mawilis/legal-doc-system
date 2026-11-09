@@ -1,13 +1,15 @@
 /**
  * TITLE: WILSY OS Headquarters workspace presentation certificate
- * VERSION: v1.3.0-HEADQUARTERS-HR-HANDOFF
+ * VERSION: v1.4.0-ATTENTION-HR-DEEP-LINK
  * AUTHORITY: WILSY EOS frontend regression evidence
  * EPITOME: Verifies Headquarters renders only the source-backed My Work, Team,
  *          and HR requisition projections without manufacturing operational truth.
  * ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/client/src/__tests__/components/WilsyHeadquartersWorkspace.test.jsx
  * COLLABORATION / OWNERSHIP: Exercises WilsyHeadquartersWorkspace and its API adapter seam.
  * CERTIFICATION / UPDATE DATE: 2026-11-09
- * CHANGELOG: v1.3.0 covers handoff from Headquarters to the canonical HR operating workspace.
+ * CHANGELOG: v1.4.0-ATTENTION-HR-DEEP-LINK confirms the floating attention bell can
+ *            open the existing authorised HR suite by an explicit URL.
+ *            v1.3.0 covers handoff from Headquarters to the canonical HR operating workspace.
  *            v1.2.0 covers explicit server refresh controls for My Work and HR requisitions.
  *            v1.1.0 covers P0 KPI source states and tenant-scoped HR requisition read presentation.
  * COMPLIANCE: POPIA section 19, GDPR Article 32, SOC 2 CC7.2
@@ -71,11 +73,16 @@ vi.mock('../../services/api.js', () => ({
   },
 }));
 
-const renderHeadquarters = () => render(
-  <MemoryRouter><WilsyHeadquartersWorkspace /></MemoryRouter>,
+const renderHeadquarters = (initialEntries = ['/']) => render(
+  <MemoryRouter initialEntries={initialEntries}><WilsyHeadquartersWorkspace /></MemoryRouter>,
 );
 
 describe('WILSY Headquarters authenticated shell', () => {
+  it('opens the canonical governed HR workflow through attention centre URL', async () => {
+    renderHeadquarters(['/headquarters?section=hr-workspace']);
+    expect(await screen.findByRole('heading', { name: 'Canonical HR operating workspace' })).toBeTruthy();
+  });
+
   it('presents the company operating environment and daily task centre entry', () => {
     renderHeadquarters();
     expect(screen.getByRole('heading', { name: 'WILSY Headquarters' })).toBeTruthy();
@@ -177,7 +184,7 @@ describe('WILSY Headquarters authenticated shell', () => {
 });
 
 /* ARTIFACT: WILSY OS Headquarters workspace presentation certificate
- * VERSION: v1.3.0-HEADQUARTERS-HR-HANDOFF
+ * VERSION: v1.4.0-ATTENTION-HR-DEEP-LINK
  * AUTHORITY BOUNDARY: Regression evidence only; tests do not grant permissions.
  * TENANT POSTURE: Fixtures represent server-scoped projections and supply no browser tenant input.
  * FAIL-CLOSED POSTURE: Source contracts are asserted before presentation claims are made.
