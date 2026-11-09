@@ -1,6 +1,6 @@
 /**
  * TITLE: WILSY OS Authenticated Daily Attention Centre
- * VERSION: v1.5.1-VERIFIED-ZERO-VS-UNAVAILABLE
+ * VERSION: v1.6.0-OPERATIONAL-ATTENTION-HANDOFF
  * AUTHORITY: Wilsy OS Core Governance
  * EPITOME: Interactive notification-bell entry to exact-tenant, authorised
  *          EOS My Work triage, with actionable navigation to source-owned
@@ -9,7 +9,12 @@
  * COLLABORATION / OWNERSHIP: Python EOS /api/my-work owns work visibility;
  *                            App.jsx owns authenticated chrome and navigation.
  * CERTIFICATION / UPDATE DATE: 2026-11-09
- * CHANGELOG: v1.5.1-VERIFIED-ZERO-VS-UNAVAILABLE distinguishes
+ * CHANGELOG: v1.6.0-OPERATIONAL-ATTENTION-HANDOFF gives zero-work
+ *            Operations sessions a real source-owned create/manage entry,
+ *            provides one-click work-item handoff without hidden expansion,
+ *            labels source selection as filtering (not an executable command),
+ *            and removes the unrelated HR shortcut from non-HR coverage.
+ *            v1.5.1-VERIFIED-ZERO-VS-UNAVAILABLE distinguishes
  *            EOS-verified zero active work from a truly unavailable work
  *            count in the accessible bell label; a zero count never draws
  *            a decorative unread badge or invents notifications.
@@ -118,6 +123,7 @@ export function assertAttentionProjection(payload, tenantId) {
  * @param {Function} props.onClose Dismisses the panel.
  * @param {Function} props.onOpenWork Navigates to canonical My Work commands.
  * @param {Function} props.onOpenWorkforce Navigates into governed HR workspace.
+ * @param {Function} props.onOpenOperations Navigates to source-owned Operations work management.
  * @returns {JSX.Element} Accessible daily attention projection.
  */
 export default function WilsyDailyAttentionCentre({
@@ -129,6 +135,7 @@ export default function WilsyDailyAttentionCentre({
   onClose,
   onOpenWork,
   onOpenWorkforce,
+  onOpenOperations,
 }) {
   const auth = useContext(AuthContext);
   const workScope = currentUnifiedMyWorkScope(auth, tenantId);
@@ -239,6 +246,8 @@ export default function WilsyDailyAttentionCentre({
   const sourceIds = projection?.sources_included || [];
   const sourceOptions = sourceIds.map((id) => [id, unifiedMyWorkSourceLabel(id)]);
   const sourceLabels = sourceOptions.map(([, label]) => label);
+  const operationsAdmitted = sourceIds.includes('OPERATIONS');
+  const chosenSourceLabel = source === 'ALL' ? 'all admitted sources' : unifiedMyWorkSourceLabel(source);
   // A previously opened panel's read cannot outrank current EOS source
   // evidence received by the persistent global chrome.
   const verifiedCount = validCount(activeCount)
@@ -496,7 +505,7 @@ export default function WilsyDailyAttentionCentre({
                         placeholder="Search your work"
                         className="h-9 w-full min-w-0 bg-transparent text-xs text-white outline-none placeholder:text-slate-500"/>
                     </label>
-                    <label className="relative flex min-w-0 items-center rounded-lg border border-white/15 bg-[#0b1729]">
+                    <label className="relative flex min-w-0 items-center rounded-lg border border-white/15 bg-[#0b1729]" title="Filter existing EOS work; use an authorised work action to create or complete work">
                       <span className="sr-only">Work source</span>
                       <select aria-label="Filter work by source" value={source}
                         onChange={(event) => setSource(event.target.value)}
@@ -509,6 +518,7 @@ export default function WilsyDailyAttentionCentre({
                       <ChevronDown size={12} className="pointer-events-none absolute right-2 text-slate-400"/>
                     </label>
                   </div>
+                  <p className="mt-2 text-[11px] text-slate-400" role="status">Showing {filteredItems.length} work item{filteredItems.length === 1 ? '' : 's'} from {chosenSourceLabel}. Source selection filters work; it does not create or complete tasks.</p>
                 </>)}
               </div>
 
@@ -533,6 +543,18 @@ export default function WilsyDailyAttentionCentre({
                           ? 'EOS returned no active work from ' + sourceLabels.join(', ') + '.'
                           : 'EOS returned no source projection. This is not evidence that every business queue is empty.'}
                     </p>
+                    {(filter !== 'ALL' || source !== 'ALL' || query.trim()) && (
+                      <button type="button" onClick={() => { setFilter('ALL'); setSource('ALL'); setQuery(''); }}
+                        className="mt-4 rounded-lg border border-white/20 px-3 py-2 text-xs text-white hover:bg-white/10">
+                        Clear filters
+                      </button>
+                    )}
+                    {operationsAdmitted && onOpenOperations && (items.length === 0 || source === 'OPERATIONS' || (items.length > 0 && filteredItems.length === 0)) && (
+                      <button type="button" onClick={onOpenOperations}
+                        className="mt-4 inline-flex items-center gap-2 rounded-lg bg-amber-300 px-4 py-2.5 text-xs font-semibold text-[#081326] hover:bg-amber-200">
+                        Create or manage Operations work <ArrowRight size={14}/>
+                      </button>
+                    )}
                   </div>
                 ) : filteredItems.map((item) => (
                   <article key={item.source_key} className="mb-2 rounded-xl border border-white/10 bg-white/[0.035] p-3">
@@ -553,6 +575,11 @@ export default function WilsyDailyAttentionCentre({
                       <span className="inline-flex items-center gap-1"><Clock3 size={12}/>{dueLabel(item.due_at)}</span>
                       <span>{item.status}</span>
                     </div>
+                    <button type="button" onClick={() => onOpenWork(item)}
+                      aria-label={'Act on ' + item.title + ' in My Work'}
+                      className="mt-3 inline-flex items-center gap-2 rounded-lg border border-amber-300/50 px-3 py-2 text-xs font-semibold text-amber-100 hover:bg-amber-300/10">
+                      Act in My Work <ArrowRight size={13}/>
+                    </button>
                     {expanded === item.source_key && (
                       <div className="mt-3 border-t border-white/10 pt-3">
                         {item.description && (
@@ -594,10 +621,10 @@ export default function WilsyDailyAttentionCentre({
                   </button>
                 </div>
                 <div className="mt-2 flex gap-2">
-                  {onOpenWorkforce && (
-                    <button type="button" onClick={onOpenWorkforce}
+                  {operationsAdmitted && onOpenOperations && (
+                    <button type="button" onClick={onOpenOperations}
                       className="min-w-0 flex-1 rounded-lg border border-amber-300/40 px-3 py-2.5 text-xs font-semibold text-amber-100 hover:bg-white/10">
-                      HR & workforce
+                      Manage Operations
                     </button>
                   )}
                   <button type="button" onClick={() => onOpenWork(null)}
@@ -627,7 +654,7 @@ function Stat({ label, value, urgent = false }) {
 
 /*
  * ARTIFACT: WilsyDailyAttentionCentre.jsx
- * VERSION: v1.5.1-VERIFIED-ZERO-VS-UNAVAILABLE
+ * VERSION: v1.6.0-OPERATIONAL-ATTENTION-HANDOFF
  * AUTHORITY BOUNDARY: Authenticated read-only EOS work triage.
  * TENANT POSTURE: Exact tenant; only EOS-included source coverage is rendered.
  * FAIL-CLOSED POSTURE: Invalid, denied or unavailable sources show no fabricated items.
