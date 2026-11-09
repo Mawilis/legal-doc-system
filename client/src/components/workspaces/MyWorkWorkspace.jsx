@@ -1,6 +1,6 @@
 /**
  * TITLE: WILSY OS Authorised My Work Completion Workspace
- * VERSION: v1.2.0-SCOPED-NAVIGATION-SOURCE-REFRESH
+ * VERSION: v1.3.0-SESSION-GENERATION-CURRENTNESS
  * AUTHORITY: Wilsy OS Core Governance
  * EPITOME: Executes source-owned evidenced work completion and focuses the
  *          item selected from the authenticated Daily Attention Centre.
@@ -8,14 +8,19 @@
  * COLLABORATION / OWNERSHIP: Python EOS /my-work owns visibility and
  *                            source services own completion and audit.
  * CERTIFICATION / UPDATE DATE: 2026-11-09
- * CHANGELOG: v1.2.0-SCOPED-NAVIGATION-SOURCE-REFRESH revalidates work on
+ * CHANGELOG: v1.3.0-SESSION-GENERATION-CURRENTNESS binds projection, command
+ *            freshness, and transient drafts to auth session generation,
+ *            membership revision, and selected business-role revision; stale
+ *            source reads are cancelled and late results remain suppressed.
+ *            v1.2.0-SCOPED-NAVIGATION-SOURCE-REFRESH revalidates work on
  *            same-route navigation and authenticated scope changes, rejects
  *            late source responses, clears prior-scope drafts and focuses only
  *            newly read source work. No source command authority is changed.
  *            v1.1.0-ATTENTION-DEEP-LINK-FOCUS added visual and accessible
  *            focus to selected work without treating route state as authority.
  * COMPLIANCE: POPIA section 19; GDPR Article 32; SOC 2 CC7.2.
- * SECURITY / PRIVACY POSTURE: Only authenticated EOS work is rendered.
+ * SECURITY / PRIVACY POSTURE: Only current authenticated EOS work is rendered;
+ *                             stale reads and work drafts are discarded.
  * TENANT BOUNDARY: Selected keys only match the EOS-authorised item list.
  * AUTHORITY BOUNDARY: Completion commands remain source-owned.
  * FINANCIAL AUTHORITY BOUNDARY: Kennel EOS only.
@@ -37,9 +42,10 @@ const SOURCE_LABELS = Object.freeze({
 const completionPath = (item) => {
   const id = encodeURIComponent(item.work_item_id);
   if (item.source === 'OPERATIONS' || item.source === 'INTELLIGENCE') {
-    return `/tenant-modules/${item.source.toLowerCase()}/workspace/work-items/${id}/complete`;
+    return '/tenant-modules/' + item.source.toLowerCase()
+      + '/workspace/work-items/' + id + '/complete';
   }
-  if (item.source === 'CRM') return `/crm/owner-workspace/work-items/${id}/complete`;
+  if (item.source === 'CRM') return '/crm/owner-workspace/work-items/' + id + '/complete';
   return null;
 };
 
@@ -56,7 +62,8 @@ const formatDue = (value) => {
  * @collaboration Authenticated routes, Headquarters and Daily Attention calendar handoff.
  * @institutional Route state selects focus only. Tenant, principal, capacity and
  * permissions remain EOS-owned; source services own transactions, completion
- * evidence and durable command replay. Late reads cannot restore a former scope.
+ * evidence and durable command replay. Session generation and membership
+ * revisions invalidate stale reads and drafts but grant no authority.
  * @returns {JSX.Element} Current source queue, loading or bounded unavailable state.
  * No client state establishes legal, financial, MFA or notification authority.
  */
@@ -65,11 +72,20 @@ export default function MyWorkWorkspace() {
   const location = useLocation();
   const auth = useContext(AuthContext);
   const authUser = auth?.user;
-  const scopeKey = [authUser?.id, authUser?.tenantId, authUser?.role,
-    authUser?.workspaceId, authUser?.businessRole].map(value => String(value || '')).join(':');
+  const scopeKey = JSON.stringify([
+    auth?.sessionGeneration,
+    authUser?.id,
+    authUser?.tenantId,
+    authUser?.role,
+    authUser?.workspaceId,
+    authUser?.businessRole,
+    authUser?.membershipRevision,
+    authUser?.businessRoleRevision,
+  ].map((value) => value === null || value === undefined ? '' : String(value)));
   const scopeRef = useRef(scopeKey);
   scopeRef.current = scopeKey;
   const requestRef = useRef(0);
+  const requestControllerRef = useRef(null);
   const focusRef = useRef(null);
   const focusKey = typeof location.state?.focusWorkItem === 'string' ? location.state.focusWorkItem : null;
   const [sourceProjection, setProjection] = useState(null);
@@ -85,11 +101,17 @@ export default function MyWorkWorkspace() {
 
   const load = useCallback(async ({ quiet = false } = {}) => {
     const request = ++requestRef.current;
+    requestControllerRef.current?.abort();
+    const controller = new AbortController();
+    requestControllerRef.current = controller;
     if (quiet) setRefreshing(true);
     else setLoading(true);
     setError('');
     try {
-      const response = await api.get('/my-work', { forceNetworkRetry: true });
+      const response = await api.get('/my-work', {
+        forceNetworkRetry: true,
+        signal: controller.signal,
+      });
       if (request !== requestRef.current || scopeRef.current !== scopeKey) return;
       if ((authUser?.tenantId && response.data?.tenant_id !== authUser.tenantId)
         || (authUser?.id && response.data?.principal_id !== authUser.id)) {
@@ -104,6 +126,7 @@ export default function MyWorkWorkspace() {
       setError(requestError?.response?.data?.detail || requestError?.message || 'MY_WORK_UNAVAILABLE');
     } finally {
       if (request === requestRef.current && scopeRef.current === scopeKey) {
+        if (requestControllerRef.current === controller) requestControllerRef.current = null;
         setLoading(false);
         setRefreshing(false);
       }
@@ -114,7 +137,11 @@ export default function MyWorkWorkspace() {
     // A same-path calendar handoff creates a new navigation key. Re-read EOS
     // before highlighting work that may have arrived since the previous visit.
     void load();
-    return () => { requestRef.current += 1; };
+    return () => {
+      requestRef.current += 1;
+      requestControllerRef.current?.abort();
+      requestControllerRef.current = null;
+    };
   }, [load, location.key]);
 
   useEffect(() => {
@@ -342,10 +369,10 @@ function Metric({ label, value }) {
 
 /*
  * ARTIFACT: MyWorkWorkspace.jsx
- * VERSION: v1.2.0-SCOPED-NAVIGATION-SOURCE-REFRESH
+ * VERSION: v1.3.0-SESSION-GENERATION-CURRENTNESS
  * AUTHORITY BOUNDARY: EOS source-owned work completion only.
- * TENANT POSTURE: Only verified EOS-visible items may receive focus.
- * FAIL-CLOSED POSTURE: A forged focus key creates no work or permission.
+ * TENANT POSTURE: Current principal, membership and business-role scope only.
+ * FAIL-CLOSED POSTURE: Aborted and late prior-scope reads never restore work.
  * FINANCIAL EXECUTION AUTHORITY: Kennel EOS exclusively.
  * END OF WILSY OS SOVEREIGN ARTIFACT
  */
