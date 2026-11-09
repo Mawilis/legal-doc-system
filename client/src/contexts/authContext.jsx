@@ -1,6 +1,6 @@
 /**
  * TITLE: WILSY OS Authoritative Browser Authentication Context
- * VERSION: v58.0.0-WILSY-HEADQUARTERS-WORKSPACE-PROJECTION
+ * VERSION: v58.1.0-SESSION-RESTORE-CURRENTNESS-LOCK
  * AUTHORITY: Wilsy OS Core Governance
  * EPITOME: Represents server-issued authentication and MFA challenge state
  *          without fabricating tenant, role, permission, or enrollment truth.
@@ -8,7 +8,12 @@
  * COLLABORATION / OWNERSHIP: Python EOS auth_router owns credential/MFA truth;
  *                            this context owns browser projection and navigation state.
  * CERTIFICATION / UPDATE DATE: 2026-10-16
- * CHANGELOG: 2026-11-08 v58.0.0-WILSY-HEADQUARTERS-WORKSPACE-PROJECTION admits WILSY_HEADQUARTERS as a server-issued
+ * CHANGELOG: 2026-11-09 v58.1.0-SESSION-RESTORE-CURRENTNESS-LOCK deduplicates simultaneous
+ *            restoration of the same persisted bearer, holds restoration to
+ *            a session-generation guard, revokes local authority synchronously
+ *            at logout, and rejects superseded refresh/restore. React Strict
+ *            Mode and late responses never reauthorize a closed session.
+ *            2026-11-08 v58.0.0-WILSY-HEADQUARTERS-WORKSPACE-PROJECTION admits WILSY_HEADQUARTERS as a server-issued
  *            workspace identifier. It remains a presentation projection and
  *            requires the exact READY EOS workspace bootstrap contract.
  *            v57.0.0-LEGAL-CONFLICT-REVIEW-PRESENTATION-PROJECTION accepted the canonical conflict-review write permission
@@ -52,7 +57,7 @@
  * FINANCIAL AUTHORITY BOUNDARY: None; Kennel EOS exclusively owns financial execution.
  */
 
-import React, { createContext, useCallback, useContext, useEffect, useMemo, useState } from 'react';
+import React, { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState } from 'react';
 import api, { setActiveTenantTransportId } from '@/services/api';
 
 const WORKSPACE_CONTRACT_VERSION = 'v1.0.0-WILSY-EOS-WORKSPACE-RESOLUTION';
@@ -660,8 +665,41 @@ const authenticatedSystemServicesUser = (projection, principalId, email) => {
   };
 };
 
+
+/**
+ * @function revalidatePersistedWorkspaceOnce
+ * @description Coalesces concurrent restoration of one untrusted persisted
+ * bearer during React effect replay. This owns only an in-flight request:
+ * completed responses are never cached and EOS revalidates session authority.
+ * @param {string} candidateToken Candidate bearer, not browser authority.
+ * @returns {Promise<Object>} Shared in-flight EOS bootstrap response.
+ * @tenant Python EOS validates principal, capacity, and exact tenant.
+ * @mutation No database writes or browser-generated authentication rights.
+ * @idempotency Coalesces only overlapping GET requests for the same candidate.
+ * @financial No execution, entitlement, or settlement authority.
+ */
+const pendingWorkspaceRestorations = new Map();
+const revalidatePersistedWorkspaceOnce = (candidateToken) => {
+  let pending = pendingWorkspaceRestorations.get(candidateToken);
+  if (pending) return pending;
+
+  pending = api.get('/auth/workspace-bootstrap', {
+    headers: { Authorization: `Bearer ${candidateToken}` },
+  });
+  pendingWorkspaceRestorations.set(candidateToken, pending);
+  // Release both completion outcomes without unhandled promise rejection.
+  const release = () => {
+    if (pendingWorkspaceRestorations.get(candidateToken) === pending) {
+      pendingWorkspaceRestorations.delete(candidateToken);
+    }
+  };
+  void pending.then(release, release);
+  return pending;
+};
+
 export const AuthProvider = ({ children }) => {
   const [user, setUser] = useState(null);
+  const sessionGenerationRef = useRef(0);
   // Persisted bearer material is only a candidate. It remains unanchored until
   // Python EOS revalidates it through workspace-bootstrap.
   const [token, setToken] = useState(null);
@@ -681,7 +719,13 @@ export const AuthProvider = ({ children }) => {
 
   useEffect(() => {
     let active = true;
+    const restorationGeneration = sessionGenerationRef.current;
     const candidateToken = readPersistedAccessTokenCandidate();
+    const restorationIsCurrent = () => (
+      active
+      && sessionGenerationRef.current === restorationGeneration
+      && readPersistedAccessTokenCandidate() === candidateToken
+    );
 
     if (!candidateToken) {
       anchorCanonicalBearer(null);
@@ -695,12 +739,8 @@ export const AuthProvider = ({ children }) => {
       setError(null);
 
       try {
-        const response = await api.get('/auth/workspace-bootstrap', {
-          headers: {
-            Authorization: `Bearer ${candidateToken}`,
-          },
-        });
-        if (!active) return;
+        const response = await revalidatePersistedWorkspaceOnce(candidateToken);
+        if (!restorationIsCurrent()) return;
 
         const persistedUser = readPersistedUserProjection();
         const authoritative = boundedWorkspaceProjection(
@@ -747,7 +787,7 @@ export const AuthProvider = ({ children }) => {
         setAuthStage(AUTH_STATES.AUTHENTICATED);
         emitAuthState(AUTH_STATES.AUTHENTICATED);
       } catch {
-        if (!active) return;
+        if (!restorationIsCurrent()) return;
 
         // A tenant workspace denial may be a platform SYSTEM principal. It is
         // never promoted from a role label: EOS must independently authorize
@@ -762,7 +802,7 @@ export const AuthProvider = ({ children }) => {
             const response = await api.get('/system-services/workspace-bootstrap', {
               headers: { Authorization: `Bearer ${candidateToken}` },
             });
-            if (!active) return;
+            if (!restorationIsCurrent()) return;
             systemWorkspace = boundedSystemServicesWorkspaceProjection(
               response?.data || {},
               persistedPrincipalId,
@@ -802,7 +842,7 @@ export const AuthProvider = ({ children }) => {
           emitAuthState(AUTH_STATES.IDLE);
         }
       } finally {
-        if (active) setLoading(false);
+        if (restorationIsCurrent()) setLoading(false);
       }
     };
 
@@ -852,6 +892,7 @@ export const AuthProvider = ({ children }) => {
   }, []);
 
   const persistSession = useCallback(async (session, fallbackEmail = '') => {
+    const sessionGeneration = ++sessionGenerationRef.current;
     const candidateToken = String(session?.token || '').trim();
     const candidatePrincipalId = String(session?.user?.id || '').trim();
 
@@ -866,6 +907,9 @@ export const AuthProvider = ({ children }) => {
         Authorization: `Bearer ${candidateToken}`,
       },
     });
+    if (sessionGenerationRef.current !== sessionGeneration) {
+      throw new Error('AUTHENTICATED_SESSION_SUPERSEDED');
+    }
 
     const authoritative = boundedWorkspaceProjection(
       response?.data || {},
@@ -920,9 +964,16 @@ export const AuthProvider = ({ children }) => {
 
   const refreshWorkspace = useCallback(async () => {
     if (!token) throw new Error('AUTHENTICATED_WORKSPACE_REFRESH_REQUIRES_SESSION');
+    const refreshGeneration = sessionGenerationRef.current;
     const response = await api.get('/auth/workspace-bootstrap', {
       headers: { Authorization: `Bearer ${token}` },
     });
+    if (
+      sessionGenerationRef.current !== refreshGeneration
+      || readPersistedAccessTokenCandidate() !== token
+    ) {
+      throw new Error('AUTHENTICATED_WORKSPACE_SESSION_SUPERSEDED');
+    }
     const authoritative = boundedWorkspaceProjection(
       response?.data || {},
       user?.email || '',
@@ -1165,28 +1216,42 @@ export const AuthProvider = ({ children }) => {
   }, [user]);
 
   const logout = useCallback(async () => {
-    try {
-      if (token) await api.post(user?.systemServicesWorkspace ? '/auth/global/logout' : '/auth/logout');
-    } catch {
-      // Local purge is still required; server logout is best-effort.
-    } finally {
-      anchorCanonicalBearer(null);
-      setActiveTenantTransportId(null);
-      setToken(null);
-      setUser(null);
-      setTenant(null);
-      setAuthStage(AUTH_STATES.IDLE);
-      setPendingEmail('');
-      setQrCodeData(null);
-      setMfaTempToken(null);
-      setGlobalMfaChallenge(null);
-      localStorage.removeItem('wilsy_auth_token');
-      localStorage.removeItem('token');
-      localStorage.removeItem('wilsy_sovereign_user');
-      localStorage.removeItem('wilsy_refresh_token');
-      localStorage.removeItem('discoveredTenant');
-      localStorage.removeItem('wilsy_active_tenant');
-      emitAuthState(AUTH_STATES.IDLE);
+    // Invalidate pending restore/refresh BEFORE awaiting remote logout.
+    ++sessionGenerationRef.current;
+    const previousToken = token;
+    const logoutRoute = user?.systemServicesWorkspace
+      ? '/auth/global/logout'
+      : '/auth/logout';
+
+    anchorCanonicalBearer(null);
+    setActiveTenantTransportId(null);
+    setToken(null);
+    setUser(null);
+    setTenant(null);
+    setAuthStage(AUTH_STATES.IDLE);
+    setPendingEmail('');
+    setQrCodeData(null);
+    setMfaTempToken(null);
+    setGlobalMfaChallenge(null);
+    setLoading(false);
+    localStorage.removeItem('wilsy_auth_token');
+    localStorage.removeItem('token');
+    localStorage.removeItem('wilsy_sovereign_user');
+    localStorage.removeItem('wilsy_refresh_token');
+    localStorage.removeItem('discoveredTenant');
+    localStorage.removeItem('wilsy_active_tenant');
+    emitAuthState(AUTH_STATES.IDLE);
+
+    if (previousToken) {
+      try {
+        // Captured bearer permits best-effort server revocation after local purge.
+        await api.post(logoutRoute, null, {
+          headers: { Authorization: `Bearer ${previousToken}` },
+          skipAuthRedirect: true,
+        });
+      } catch {
+        // Local sign-out remains complete even if server revocation fails.
+      }
     }
   }, [token, user]);
 
@@ -1229,7 +1294,7 @@ export default AuthContext;
 
 /**
  * ARTIFACT: client/src/contexts/authContext.jsx
- * VERSION: v58.0.0-WILSY-HEADQUARTERS-WORKSPACE-PROJECTION
+ * VERSION: v58.1.0-SESSION-RESTORE-CURRENTNESS-LOCK
  * AUTHORITY BOUNDARY: browser projection only; workspace branding is exact D21B7 presentation provenance, workspace firstName/lastName are descriptive authenticated-person projection, and workspace legalPermissions are presentation provenance from Python EOS; none is browser authorization authority and Python EOS owns authentication/authorization/branding truth
  * TENANT POSTURE: authenticated tenant must match the discovered server-issued tenant and any non-null D21B7 branding tenant must match that exact workspace tenant
  * FAIL-CLOSED POSTURE: unrecognized/incomplete workspace responses, absent/malformed/foreign branding, malformed principal names, and malformed/duplicate/unknown legalPermissions fail closed; explicit branding null is authoritative no-branding, legacy branding aliases are removed, optional names are never inferred, and absent legalPermissions retains legacy role-baseline presentation only
