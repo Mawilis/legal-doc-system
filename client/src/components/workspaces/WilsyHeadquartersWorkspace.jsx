@@ -1,13 +1,17 @@
 /**
  * TITLE: WILSY OS Headquarters authenticated executive workspace
- * VERSION: v2.4.0-CURRENT-SOURCE-HEADQUARTERS-KPI
+ * VERSION: v2.4.1-EXACT-SESSION-KPI-PRESENTATION
  * AUTHORITY: WILSY EOS client projection; Python EOS remains the business authority
  * EPITOME: Presents the authenticated company operating plane and a source-backed
  *          My Work snapshot without inventing enterprise metrics or commands.
  * ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/client/src/components/workspaces/WilsyHeadquartersWorkspace.jsx
  * COLLABORATION / OWNERSHIP: WILSY EOS frontend projection consuming /api/my-work
  * CERTIFICATION / UPDATE DATE: 2026-11-09
- * CHANGELOG: v2.4.0-CURRENT-SOURCE-HEADQUARTERS-KPI partitions the
+ * CHANGELOG: v2.4.1-EXACT-SESSION-KPI-PRESENTATION applies the same
+ *            exact-session guard to the executive KPI strip and provides
+ *            the authenticated current tenant to Daily Brief; no stale
+ *            prior-capacity counts may appear during scope transitions.
+ *            v2.4.0-CURRENT-SOURCE-HEADQUARTERS-KPI partitions the
  *            Headquarters My Work summary by authenticated EOS identity and
  *            source coverage. It deduplicates overview/brief reads and listens
  *            for confirmed source-command invalidation; stale tenant results
@@ -286,9 +290,9 @@ export default function WilsyHeadquartersWorkspace({ tenantId = null }) {
                 </div>
               </section>
 
-              <ExecutiveKpiStrip myWorkSnapshot={myWorkSnapshot} workforce={section === 'overview' ? workforce : null}/>
+              <ExecutiveKpiStrip myWorkSnapshot={myWorkSnapshotScope === workScope ? myWorkSnapshot : null} workforce={section === 'overview' ? workforce : null}/>
 
-              <WilsyHeadquartersDailyBrief tenantId={tenantId} onOpenWork={(item) => openMyWork(item)} />
+              <WilsyHeadquartersDailyBrief tenantId={workTenantId} onOpenWork={(item) => openMyWork(item)} />
 
               <div className="mt-6 grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
                 <ActionCard title="Daily execution" detail="Authorised tasks and source-owned completion" onClick={() => openMyWork()} icon={CheckCircle2}/>
@@ -565,7 +569,7 @@ function RuntimeHealthFooter({ health }) {
 
 /*
  * ARTIFACT: WILSY OS Headquarters authenticated executive workspace
- * VERSION: v2.4.0-CURRENT-SOURCE-HEADQUARTERS-KPI
+ * VERSION: v2.4.1-EXACT-SESSION-KPI-PRESENTATION
  * AUTHORITY BOUNDARY: Read-only client projection; Python EOS owns business truth.
  * TENANT POSTURE: Authenticated tenant and principal scope are preserved.
  * FAIL-CLOSED POSTURE: Invalid or unavailable source data is disclosed, never zeroed.
