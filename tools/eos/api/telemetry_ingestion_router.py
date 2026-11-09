@@ -1,8 +1,22 @@
 """TITLE: WILSY OS Authenticated Telemetry Ingestion
-VERSION: v1.0.0-TELEMETRY-EVENT-IAM-DURABLE-WRITE
-AUTHORITY: Canonical tenant authorization plus durable telemetry persistence only.
-TENANT POSTURE: Tenant scope comes exclusively from TenantAuthorizationContext.
-FAIL-CLOSED POSTURE: No success response before the unique-indexed insert completes.
+VERSION: v1.1.0-DUAL-TRACE-INDEX-COMPATIBILITY
+AUTHORITY: Wilsy OS Core Governance.
+EPITOME: Durable authenticated telemetry with server-generated trace IDs,
+         preserving both the canonical EOS and preexisting Atlas unique indexes.
+ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/tools/eos/api/telemetry_ingestion_router.py
+COLLABORATION / OWNERSHIP: EOS tenant authorization owns write access;
+                           MongoDB Atlas owns unique-index enforcement.
+CERTIFICATION / UPDATE DATE: 2026-11-09
+CHANGELOG: v1.1.0-DUAL-TRACE-INDEX-COMPATIBILITY writes the same server-owned
+           trace identifier into trace_id and legacy traceId. This prevents
+           duplicate-null collisions against Atlas's existing unique traceId_1
+           index without modifying indexes, identities, or stored records.
+           v1.0.0-TELEMETRY-EVENT-IAM-DURABLE-WRITE established durable append.
+COMPLIANCE: POPIA section 19; GDPR Article 32; SOC 2 CC7.2.
+SECURITY / PRIVACY POSTURE: Never trust a client trace as a unique authority.
+TENANT BOUNDARY: Tenant/principal derive only from verified EOS authorization.
+AUTHORITY BOUNDARY: Successful append occurs only after indexed durable insert.
+FINANCIAL AUTHORITY BOUNDARY: No financial execution or settlement authority.
 """
 from __future__ import annotations
 
@@ -81,6 +95,9 @@ def _persist_telemetry_event(
     server_trace_id = trace_id or str(uuid4())
     collection.insert_one({
         "trace_id": server_trace_id,
+        # Atlas retains unique traceId_1 alongside EOS uq_telemetry_trace_id.
+        # The same server-created value prevents a duplicate missing-key insert.
+        "traceId": server_trace_id,
         "tenant_id": tenant_id,
         "principal_id": principal_id,
         "event_type": event.event_type,
@@ -123,4 +140,10 @@ async def ingest_telemetry_event(
 
 
 __all__ = ["router", "TelemetryEventRequest", "_persist_telemetry_event"]
+# ARTIFACT: telemetry_ingestion_router.py
+# VERSION: v1.1.0-DUAL-TRACE-INDEX-COMPATIBILITY
+# AUTHORITY BOUNDARY: Indexed write by EOS tenant-scoped permission only.
+# TENANT POSTURE: No client-selected tenant or principal is trusted.
+# FAIL-CLOSED POSTURE: DuplicateKeyError remains HTTP 409; no fabricated success.
+# FINANCIAL EXECUTION AUTHORITY: Kennel EOS exclusively.
 # END OF WILSY OS SOVEREIGN ARTIFACT
