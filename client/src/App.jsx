@@ -1,7 +1,7 @@
 /* eslint-disable */
 /**
  * TITLE: WILSY OS Sovereign Application Root
- * VERSION: v20.2.4-DAILY-ATTENTION-CENTRE
+ * VERSION: v20.2.5-ATTENTION-SCOPE-CURRENTNESS
  * AUTHORITY: Wilsy OS Core Governance
  * EPITOME: Composes authenticated routing, exact tenant projection, legal
  *          admission release, and protected workspace presentation without
@@ -13,6 +13,9 @@
  *                            legal-acceptance truth.
  * CERTIFICATION / UPDATE DATE: 2026-11-09
  * CHANGELOG:
+ *   v20.2.5-ATTENTION-SCOPE-CURRENTNESS — Scopes the work count to the
+ *     current authenticated tenant/principal and remounts attention state
+ *     across identity changes to avoid stale cross-session display.
  *   v20.2.4-DAILY-ATTENTION-CENTRE — Replaces inert bell panel with
  *     an interactive, tenant-scoped EOS My Work triage surface. Work totals
  *     are never represented as notification unread receipts.
@@ -132,6 +135,7 @@ const AuthenticatedGlobalChrome = ({ user, onLogout, children }) => {
   const [userMenuOpen, setUserMenuOpen] = useState(false);
   const [notificationsOpen, setNotificationsOpen] = useState(false);
   const [workCount, setWorkCount] = useState(null);
+  const [workCountScope, setWorkCountScope] = useState(null);
   const [kernel, setKernel] = useState({ state: 'CHECKING', version: null });
 
   const displayName = [user?.firstName, user?.lastName].filter(Boolean).join(' ')
@@ -181,6 +185,7 @@ const AuthenticatedGlobalChrome = ({ user, onLogout, children }) => {
 
   useEffect(() => {
     if (!user?.tenantId || user?.systemServicesWorkspace) {
+      setWorkCountScope(null);
       setWorkCount(null);
       return undefined;
     }
@@ -196,9 +201,15 @@ const AuthenticatedGlobalChrome = ({ user, onLogout, children }) => {
           || !Number.isInteger(payload.summary.active_count)
           || payload.summary.active_count < 0
         ) throw new Error('MY_WORK_SUMMARY_PROJECTION_INVALID');
-        if (active) setWorkCount(payload.summary.active_count);
+        if (active) {
+          setWorkCountScope(user.tenantId + ':' + String(user?.id || ''));
+          setWorkCount(payload.summary.active_count);
+        }
       } catch {
-        if (active) setWorkCount(null);
+        if (active) {
+          setWorkCountScope(null);
+          setWorkCount(null);
+        }
       }
     };
     void refresh();
@@ -271,9 +282,10 @@ const AuthenticatedGlobalChrome = ({ user, onLogout, children }) => {
             <ShieldCheck size={15}/><span className="hidden sm:inline">{isSecureChannel ? 'Secure · Authenticated' : 'Authenticated'}</span>
           </div>
           <WilsyDailyAttentionCentre
+            key={String(user?.tenantId || '') + ':' + String(user?.id || '')}
             tenantId={user?.tenantId}
             systemServicesWorkspace={Boolean(user?.systemServicesWorkspace)}
-            activeCount={workCount}
+            activeCount={workCountScope === (user?.tenantId + ':' + String(user?.id || '')) ? workCount : null}
             open={notificationsOpen}
             onToggle={() => { setNotificationsOpen((value) => !value); setUserMenuOpen(false); }}
             onClose={() => setNotificationsOpen(false)}
@@ -308,7 +320,7 @@ const AuthenticatedGlobalChrome = ({ user, onLogout, children }) => {
           <span aria-hidden="true">●</span> {kernel.state === 'RESPONDING' ? 'EOS kernel API responding' : kernel.state === 'CHECKING' ? 'Checking EOS kernel…' : 'EOS kernel API unavailable'}
         </span>
         <span>·</span><span>{kernel.version ? 'Kernel v' + kernel.version : 'Version unavailable'}</span>
-        {isMyWork && workCount !== null && <span className="ml-2 rounded-full bg-amber-300 px-2 py-1 font-semibold text-[#081326]">{workCount} open</span>}
+        {isMyWork && workCountScope === (user?.tenantId + ':' + String(user?.id || '')) && workCount !== null && <span className="ml-2 rounded-full bg-amber-300 px-2 py-1 font-semibold text-[#081326]">{workCount} open</span>}
         {isMyWork && workCount === null && <span className="ml-2 text-amber-200">Task count unavailable</span>}
       </div>
 
@@ -728,7 +740,7 @@ export default App;
 
 /**
  * ARTIFACT: client/src/App.jsx
- * VERSION: v20.2.3-GLOBAL-SEARCH-PLATFORM-HINT
+ * VERSION: v20.2.5-ATTENTION-SCOPE-CURRENTNESS
  * AUTHORITY BOUNDARY: client route and protected-runtime composition only; Python EOS remains authentication, tenant and legal-acceptance authority
  * TENANT POSTURE: discovered tenant may choose login routing but cannot establish authenticated or protected scope
  * FAIL-CLOSED POSTURE: auth revalidation waits; unresolved legal status remains sealed; only server-confirmed legal COMPLETE mounts protected runtime
