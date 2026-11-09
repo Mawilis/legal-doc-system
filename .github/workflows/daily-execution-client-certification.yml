@@ -1,4 +1,6 @@
 name: WILSY Daily Execution Client Certification
+# 2026-11-09: Include shared EOS source-coverage validator and My Work
+# currentness test suites in exact-head CI without altering EOS authority.
 
 on:
   pull_request:
@@ -9,9 +11,12 @@ on:
       - "client/src/components/workspaces/MyWorkWorkspace.jsx"
       - "client/src/components/workspaces/WilsyHeadquartersDailyBrief.jsx"
       - "client/src/components/workspaces/WilsyHeadquartersWorkspace.jsx"
+      - "client/src/services/unifiedMyWorkProjection.js"
       - "client/src/__tests__/components/WilsyDailyAttentionCentre.test.jsx"
       - "client/src/__tests__/components/WilsyWorkDeadlineCalendar.test.jsx"
       - "client/src/__tests__/components/MyWorkWorkspaceAttention.test.jsx"
+      - "client/src/__tests__/components/MyWorkWorkspace.test.jsx"
+      - "client/src/__tests__/services/unifiedMyWorkProjection.test.js"
       - "client/src/__tests__/components/WilsyHeadquartersDailyBrief.test.jsx"
       - "client/src/__tests__/components/WilsyHeadquartersWorkspace.test.jsx"
       - "client/package-lock.json"
@@ -50,6 +55,8 @@ jobs:
           src/__tests__/components/WilsyDailyAttentionCentre.test.jsx
           src/__tests__/components/WilsyWorkDeadlineCalendar.test.jsx
           src/__tests__/components/MyWorkWorkspaceAttention.test.jsx
+          src/__tests__/components/MyWorkWorkspace.test.jsx
+          src/__tests__/services/unifiedMyWorkProjection.test.js
           src/__tests__/components/WilsyHeadquartersDailyBrief.test.jsx
           src/__tests__/components/WilsyHeadquartersWorkspace.test.jsx
       - name: Build production client bundle
