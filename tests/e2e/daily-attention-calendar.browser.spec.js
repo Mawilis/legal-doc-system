@@ -58,9 +58,16 @@ for (const viewport of [{width: 1440, height: 1000}, {width: 390, height: 844}])
         new URL(response.url()).pathname === '/api/auth/workspace-bootstrap'
         && response.request().method() === 'GET'
       ));
-      await page.goto('/my-work');
+      await page.goto('/headquarters');
       expect((await bootstrap).status()).toBe(200);
-      await expect(page.getByRole('heading', {name: 'My Work', exact: true})).toBeVisible();
+      // The first productive action begins at the authenticated global bell,
+      // including when EOS has not yet returned an active Operations item.
+      const entryBell = page.getByRole('button', {name: /^Open daily attention/});
+      await expect(entryBell).toBeVisible();
+      await entryBell.click();
+      const entryPanel = page.getByRole('dialog', {name: 'Daily attention centre'});
+      await expect(entryPanel).toBeVisible();
+      await expect(entryPanel.getByRole('button', {name: 'Manage Operations'})).toBeVisible();
 
       const title = `Calendar source work calendar-browser-${randomUUID()}`;
       const due = await page.evaluate(() => {
@@ -77,7 +84,8 @@ for (const viewport of [{width: 1440, height: 1000}, {width: 390, height: 844}])
       // Real workforce-facing creation UI. The click routes into the existing
       // canonical Operations source, whose own IAM and entitlement gate owns
       // the command and its durable Mongo transaction.
-      await page.getByRole('button', {name: 'Open Operations work management'}).click();
+      await entryPanel.getByRole('button', {name: 'Manage Operations'}).click();
+      await expect(entryPanel).toHaveCount(0);
       const operations = page.getByRole('main', {name: 'Operations OS'});
       await expect(operations).toBeVisible();
       await operations.getByRole('textbox', {name: 'Action title'}).fill(title);
