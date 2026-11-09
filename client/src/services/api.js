@@ -2,7 +2,7 @@
 /**
  * WILSY OS — INSTITUTIONAL HTTP CLIENT
  * TITLE: Wilsy OS Diplomatic Bridge and Institutional HTTP Client
- * VERSION: V74.7.0-L10-P2C9-FAIL-CLOSED-SESSION-HEADERS
+ * VERSION: V74.8.0-MFA-BOOTSTRAP-BACKOFF-EXEMPT
  * AUTHORITY: Wilsy OS Core Governance
  * EPITOME: Provides the governed browser HTTP transport seam while preserving
  *          server-owned authentication, recovery, tenant, credential, and
@@ -12,7 +12,12 @@
  *                            Python EOS owns auth/recovery business truth and
  *                            server contracts; external HTTP is transport only.
  * CERTIFICATION / UPDATE DATE: 2026-10-28
- * CHANGELOG: V74.7.0-L10-P2C9-FAIL-CLOSED-SESSION-HEADERS — Rejects empty or malformed bearer headers as credentials, preserves valid explicit MFA candidate bearers, and removes fabricated tenant fallbacks while leaving authorization to Python EOS.
+ * CHANGELOG: V74.8.0-MFA-BOOTSTRAP-BACKOFF-EXEMPT — Excludes security-critical
+ *            auth, system-services workspace-bootstrap and legal-acceptance
+ *            status GETs from synthetic 503 source backoff. Such reads must
+ *            reach EOS to obtain fresh authority or an authentic server error;
+ *            routine dashboard reads retain the bounded backoff guard.
+ *            V74.7.0-L10-P2C9-FAIL-CLOSED-SESSION-HEADERS — Rejects empty or malformed bearer headers as credentials, preserves valid explicit MFA candidate bearers, and removes fabricated tenant fallbacks while leaving authorization to Python EOS.
  *            V74.6.0-L10-P2C8-EXPLICIT-BEARER-PRESERVATION — Preserves an explicitly supplied Authorization header so the server revalidates the exact post-MFA candidate token rather than silently substituting stale browser storage.
  *            V74.5.0-L10-P2C7-MULTIPART-PRESERVATION — Preserves multipart
  *            upload bodies from JSON forensic-body mutation while retaining
@@ -110,17 +115,42 @@ const getSourceBackoffKey = (config = {}) => {
 
 /**
  * @function isSourceBackoffEligible
- * @description Determines whether a request can be locally suppressed during a 503 source backoff window.
+ * @description Determines whether a routine dashboard read may be suppressed.
+ * Security-critical authentication and admission reads never enter this cache.
  * @param {Object} config - Axios request config.
  * @returns {boolean} True when the request is a safe source‑read GET.
  * @collaboration AI Engineering (2026-08-14) — Degradation detection.
  * @epitome Allows the cockpit to remain responsive even when upstream services are unreachable.
  * @institutional Critical for SOC2 §CC7.2 availability controls.
  */
+/**
+ * @function isIdentityContinuityRead
+ * @description Security-critical reads are never replaced by a locally
+ * fabricated 503. A fresh EOS response is required for session restoration,
+ * MFA-to-session promotion, SYSTEM bootstrap and covenant admission.
+ * @param {Object} config - HTTP request transport configuration.
+ * @returns {boolean} True for the narrow fail-closed authority-read routes.
+ * @authority Client routing only; server authorization always applies.
+ * @tenant Exact current session context is still revalidated by Python EOS.
+ * @idempotency GET only, never mutates server state.
+ * @financial No execution or settlement authority.
+ */
+const isIdentityContinuityRead = (config = {}) => {
+  const path = String(config.url || '')
+    .split(/[?#]/, 1)[0]
+    .replace(/^\/?(?:api\/)?/, '/');
+  return (
+    /^\/auth(?:\/|$)/i.test(path)
+    || /^\/system-services\/workspace-bootstrap(?:\/|$)/i.test(path)
+    || /^\/legal-acceptance\/status(?:\/|$)/i.test(path)
+  );
+};
+
 const isSourceBackoffEligible = (config = {}) => (
   String(config.method || 'get').toLowerCase() === 'get'
   && !config.forceNetworkRetry
   && !config.disableSourceBackoff
+  && !isIdentityContinuityRead(config)
 );
 
 /**
@@ -749,7 +779,7 @@ export {
 
 /**
  * ARTIFACT: client/src/services/api.js
- * VERSION: V74.7.0-L10-P2C9-FAIL-CLOSED-SESSION-HEADERS
+ * VERSION: V74.8.0-MFA-BOOTSTRAP-BACKOFF-EXEMPT
  * AUTHORITY BOUNDARY: browser HTTP transport and transport evidence only
  * TENANT POSTURE: client tenant values remain selectors/projections; server truth is sovereign
  * FAIL-CLOSED POSTURE: strict public recovery/reset bodies are never mutated by forensic metadata
