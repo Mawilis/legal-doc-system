@@ -1,7 +1,6 @@
-/* eslint-disable */
 /**
  * TITLE: WILSY OS Sovereign Application Root
- * VERSION: v20.4.1-ACTIONABLE-FLOATING-CHROME
+ * VERSION: v20.4.3-SINGLE-COMMAND-SEARCH-OWNER
  * AUTHORITY: Wilsy OS Core Governance
  * EPITOME: Composes authenticated routing, exact tenant projection, legal
  *          admission release, and protected workspace presentation without
@@ -13,6 +12,13 @@
  *                            legal-acceptance truth.
  * CERTIFICATION / UPDATE DATE: 2026-11-09
  * CHANGELOG:
+ *   v20.4.3-SINGLE-COMMAND-SEARCH-OWNER — Delegates shared search controls to
+ *     the mounted workspace search and honors claimed keyboard events so a
+ *     single shortcut cannot leave two modal backdrops open.
+ *   v20.4.2-RESPONSIVE-AUTHENTICATED-CHROME — Removes fixed mobile header
+ *     minimum widths while preserving the official emblem, search, session,
+ *     attention and account controls. Debug output is opt-in and omits raw
+ *     tenant data; lifecycle errors remain visible in every environment.
  *   v20.4.1-ACTIONABLE-FLOATING-CHROME — Routes selected EOS work items to source-owned completion
  *     and opens existing HR workspaces directly from the floating bell.
  *   v20.4.0-CHECKPOINT-DAILY-ATTENTION-MERGED — Integrates EOS-authorised Daily Attention into the preserved
@@ -55,6 +61,7 @@
  *                               execution and settlement authority.
  */
 
+/* eslint-disable */
 import React, { Suspense, useEffect, useState, useMemo } from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate, useNavigate, useLocation } from 'react-router-dom';
 import { AUTH_STATES, AuthProvider, useAuth } from './contexts/authContext.jsx';
@@ -85,6 +92,7 @@ import { DataOrchestratorProvider, useSovereignData } from './components/soverei
 
 // 🛡️ Global development telemetry suppression flag.
 const IS_DEV_MODE = import.meta.env.DEV;
+const MODEL_DEBUG = import.meta.env.VITE_WILSY_MODEL_DEBUG === '1';
 
 /**
  * @description Permission guard for the Tenant Management System (TMS) cockpit.
@@ -119,6 +127,8 @@ const ProtectedTmsRoute = ({ user, children }) => {
 
 /**
  * @component AuthenticatedGlobalChrome
+ * @collaboration Shared authenticated workspaces, source-owned My Work and EOS
+ * workspace bootstrap. Header layout and navigation are presentation only.
  * @description Persistent authenticated top-bar frame shared by protected routes.
  * @param {{user: Object, onLogout: Function, children: React.ReactNode}} props
  * @returns {JSX.Element} Stable brand, global search, bounded system trust,
@@ -191,11 +201,21 @@ export const AuthenticatedGlobalChrome = ({ user, onLogout, children }) => {
     };
   }, [user?.tenantId, user?.id, user?.role, user?.workspaceId, user?.businessRole, user?.systemServicesWorkspace]);
 
+  const openGlobalSearch = () => {
+    const request = new CustomEvent('wilsy:open-command-search', { cancelable: true });
+    const unclaimed = window.dispatchEvent(request);
+    setSearchOpen(unclaimed);
+    setUserMenuOpen(false);
+    setNotificationsOpen(false);
+  };
+
   useEffect(() => {
     const handleShortcut = (event) => {
+      if (event.defaultPrevented) return;
       if ((event.metaKey || event.ctrlKey) && event.key.toLowerCase() === 'k') {
         event.preventDefault();
-        setSearchOpen(true);
+        const request = new CustomEvent('wilsy:open-command-search', { cancelable: true });
+        setSearchOpen(window.dispatchEvent(request));
         setUserMenuOpen(false);
         setNotificationsOpen(false);
       }
@@ -232,10 +252,10 @@ export const AuthenticatedGlobalChrome = ({ user, onLogout, children }) => {
 
   return (
     <div className="min-h-screen bg-[#080f1d] text-slate-100">
-      <header className="sticky top-0 z-40 flex h-16 w-full items-center gap-4 border-b border-white/10 bg-[#0b1830]/95 px-4 shadow-lg shadow-black/10 backdrop-blur-xl sm:px-6">
-        <button type="button" aria-label="WILSY home" onClick={() => navigate('/headquarters')} className="flex w-[240px] shrink-0 items-center gap-2 text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#d7ad43] focus-visible:ring-offset-2 focus-visible:ring-offset-[#0b1830]">
+      <header className="sticky top-0 z-40 flex h-16 w-full min-w-0 items-center gap-2 border-b border-white/10 bg-[#0b1830]/95 px-3 shadow-lg shadow-black/10 backdrop-blur-xl sm:gap-4 sm:px-6">
+        <button type="button" aria-label="WILSY home" onClick={() => navigate('/headquarters')} className="flex min-w-0 shrink-0 items-center gap-2 text-left md:w-[200px] xl:w-[240px] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#d7ad43] focus-visible:ring-offset-2 focus-visible:ring-offset-[#0b1830]">
           <img src="/brand/wilsy-gold-emblem.png" alt="WILSY gold emblem" className="h-12 w-12 shrink-0 object-contain" />
-          <span className="min-w-0 leading-tight">
+          <span className="hidden min-w-0 leading-tight min-[360px]:block">
 
 
             <span className="block text-lg font-semibold tracking-[0.025em] text-white">WILSY</span>
@@ -243,14 +263,14 @@ export const AuthenticatedGlobalChrome = ({ user, onLogout, children }) => {
           </span>
         </button>
 
-        <button type="button" onClick={() => { setSearchOpen(true); setUserMenuOpen(false); setNotificationsOpen(false); }} aria-label="Open global search" className="mx-auto hidden h-10 min-w-0 max-w-[690px] flex-1 items-center gap-3 rounded-full border border-white/15 bg-white px-4 text-left text-sm text-[#435575] transition hover:border-[#d7ad43] hover:bg-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#d7ad43] focus-visible:ring-offset-2 focus-visible:ring-offset-[#0b1830] md:flex">
+        <button type="button" onClick={openGlobalSearch} aria-label="Open global search" className="mx-auto hidden h-10 min-w-0 max-w-[690px] flex-1 items-center gap-3 rounded-full border border-white/15 bg-white px-4 text-left text-sm text-[#435575] transition hover:border-[#d7ad43] hover:bg-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#d7ad43] focus-visible:ring-offset-2 focus-visible:ring-offset-[#0b1830] md:flex">
           <Search size={16} className="text-[#435575]"/>
           <span className="flex-1">Search people, projects, tasks, or anything…</span>
           <kbd className="rounded-md border border-slate-200 bg-slate-100 px-2 py-1 text-[10px] text-slate-500">⌘ K / Ctrl K</kbd>
         </button>
-        <button type="button" onClick={() => setSearchOpen(true)} aria-label="Open global search" className="grid h-9 w-9 place-items-center rounded-full border border-white/10 text-slate-300 md:hidden"><Search size={17}/></button>
+        <button type="button" onClick={openGlobalSearch} aria-label="Open global search" className="grid h-9 w-9 shrink-0 place-items-center rounded-full border border-white/10 text-slate-300 md:hidden"><Search size={17}/></button>
 
-        <div className="flex min-w-[285px] shrink-0 items-center justify-end gap-2 sm:gap-3">
+        <div className="ml-auto flex min-w-0 shrink-0 items-center justify-end gap-1 sm:gap-3">
           {hasAuthenticatedSession && !authLoading && (
             <div role="status" aria-label={isSecureChannel ? 'Secure and authenticated' : 'Authenticated; secure transport not confirmed'} className={`flex items-center gap-2 rounded-full border px-2 py-2 text-[11px] font-medium sm:px-3 ${isSecureChannel ? 'border-emerald-400/20 bg-emerald-400/10 text-emerald-200' : 'border-emerald-400/25 bg-emerald-500/20 text-emerald-100'}`}>
               <ShieldCheck size={15}/>
@@ -368,12 +388,12 @@ const SovereignRouter = () => {
     try {
       if (IS_DEV_MODE) return;
 
-      console.log('[ORCHESTRATOR-TRACE]', {
+      if (MODEL_DEBUG) console.info('[ORCHESTRATOR-TRACE]', {
         isAuthenticated,
         userRole: user?.role,
         hasCovenant: user?.hasSignedCovenant,
         mfaRegistered: user?.mfaRegistered,
-        currentTenant,
+        tenantContextPresent: Boolean(currentTenant),
         meshHealth: mesh?.meshHealth,
         dataVersion: dataStream?.version,
         path: location.pathname
@@ -386,9 +406,7 @@ const SovereignRouter = () => {
         meshStatus: mesh?.meshHealth
       });
     } catch (err) {
-      if (!IS_DEV_MODE) {
-        console.error('[ORCHESTRATOR-ERROR] Failed in lifecycle telemetry audit:', err);
-      }
+      console.error('[ORCHESTRATOR-ERROR]', { error: 'LIFECYCLE_TELEMETRY_FAILED' });
     }
   }, [isAuthenticated, currentTenant, user, location.pathname, mesh?.meshHealth, dataStream?.version]);
 
@@ -539,18 +557,10 @@ const SovereignRouter = () => {
 };
 
 /**
- * @function App
- * @memberof WILSY_OS_CORE
- * @description Root application component. Wraps the app with all sovereign providers:
- *              - SovereignOrchestrator (mesh)
- *              - DataOrchestratorProvider (data stream)
- *              - AuthProvider (authentication)
- *              - Router
- * @returns {JSX.Element} The application root.
- * @institutional This is the institutional contract root; all providers are layered
- *                to ensure cryptographic, authentication, and tenant isolation.
- * @collaboration Wilson Khanyezi & AI Engineering (2026-08-19)
- * @epitome "Institutional Finality"
+ * @description Render the loading surface while EOS workspace authority resolves.
+ * @collaboration Authenticated bootstrap and legal-acceptance boundaries.
+ * @institutional Loading presentation grants no admission or financial authority.
+ * @returns {JSX.Element} A bounded loading message; no provider or session is created.
  */
 const WorkspaceBootstrapSurface = () => (
   <div data-testid="workspace-bootstrap" className="flex min-h-screen flex-col items-center justify-center bg-black text-center">
@@ -654,6 +664,15 @@ const AuthenticatedRuntimeComposition = () => {
   );
 };
 
+/**
+ * @description Bind authenticated tenant presentation to exact EOS bootstrap truth.
+ * @collaboration AuthProvider, TenantProvider and AuthenticatedBootstrapBoundary.
+ * @institutional SYSTEM admission remains separately server-owned; tenant and
+ * business capacities are never merged. Browser state cannot create membership,
+ * legal acceptance or financial authority. No mutation or transaction is owned.
+ * @param {{runtime?: React.ReactNode}} props Optional test-owned render seam.
+ * @returns {JSX.Element} Independently gated SYSTEM, tenant or unauthenticated UI.
+ */
 export const AuthenticatedTenantBoundary = ({ runtime }) => {
   const { isAuthenticated, tenant, user } = useAuth();
   if (!isAuthenticated) return <RuntimeComposition />;
@@ -690,6 +709,15 @@ const AuthenticatedBootstrapBoundary = ({ runtime }) => {
   );
 };
 
+/**
+ * @function App
+ * @description Compose the single browser root and server-authorized tenant boundary.
+ * @collaboration ErrorBoundary, AuthProvider, Router and AuthenticatedTenantBoundary.
+ * @institutional Browser composition cannot issue identity, membership, MFA,
+ * permission, legal-acceptance, payment or settlement authority. No persistence
+ * or transaction is owned here; protected requests revalidate current EOS truth.
+ * @returns {JSX.Element} Application root with bounded loading and denial states.
+ */
 function App() {
   return (
     <ErrorBoundary>
@@ -715,7 +743,7 @@ export default App;
 
 /**
  * ARTIFACT: client/src/App.jsx
- * VERSION: v20.4.1-ACTIONABLE-FLOATING-CHROME
+ * VERSION: v20.4.3-SINGLE-COMMAND-SEARCH-OWNER
  * AUTHORITY BOUNDARY: client route and protected-runtime composition only; Python EOS remains authentication, tenant and legal-acceptance authority
  * TENANT POSTURE: discovered tenant may choose login routing but cannot establish authenticated or protected scope
  * FAIL-CLOSED POSTURE: auth revalidation waits; unresolved legal status remains sealed; only server-confirmed legal COMPLETE mounts protected runtime

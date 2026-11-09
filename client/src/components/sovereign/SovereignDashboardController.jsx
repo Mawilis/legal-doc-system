@@ -1,7 +1,6 @@
-/* eslint-disable */
 /**
  * TITLE: WILSY OS Sovereign Dashboard Controller
- * VERSION: v19.0.0-HEADQUARTERS-EXECUTIVE-ROUTING-RETIREMENT
+ * VERSION: v19.0.2-SINGLE-COMMAND-SEARCH-OWNER
  * AUTHORITY: Authenticated client dashboard routing and presentation composition.
  * EPITOME: Resolves authenticated WILSY company owners into the EOS-selected
  *          Headquarters workspace while preserving customer tenant routing.
@@ -14,8 +13,15 @@
  *                            TenantContext owns selected tenant projection;
  *                            Python EOS owns authorization and Legal Operations
  *                            truth; dashboard components own presentation only.
- * CERTIFICATION / UPDATE DATE: 2026-09-23
- * CHANGELOG: 2026-11-09 v19.0.0-HEADQUARTERS-EXECUTIVE-ROUTING-RETIREMENT retires
+ * CERTIFICATION / UPDATE DATE: 2026-11-09
+ * CHANGELOG: 2026-11-09 v19.0.2-SINGLE-COMMAND-SEARCH-OWNER claims the global
+ *            search shortcut before shared chrome opens a second dialog.
+ *            Shared search controls reuse the same cancelable event contract.
+ *            2026-11-09 v19.0.1-HEADQUARTERS-PRODUCT-NAVIGATION restores the existing
+ *            exact-tenant EOS product rail on the Headquarters landing, with
+ *            no falsely active POS entry. Debug output is explicitly opt-in;
+ *            public helper contracts and artifact versions are aligned.
+ *            2026-11-09 v19.0.0-HEADQUARTERS-EXECUTIVE-ROUTING-RETIREMENT retires
  *            the legacy Executive Dashboard as an authenticated landing surface.
  *            Executive aliases and persisted requests resolve to Headquarters;
  *            the old component is no longer lazy-mounted.
@@ -30,7 +36,7 @@
  *            their TENANT_* business-role aliases to the canonical Legal OS
  *            shard. Existing SHERIFF/DEPUTY mappings remain unchanged. Browser
  *            routing still grants no permission or business authority.
-2026-09-23 v18.2.1-L8-6C-LEGAL-ROLE-ROUTING removes the superseded decorative pre-sovereign
+ *            2026-09-23 v18.2.1-L8-6C-LEGAL-ROLE-ROUTING removes the superseded decorative pre-sovereign
  *            controller header after the L8-6C migration; runtime routing is
  *            unchanged.
  *            2026-09-23 v18.2.0-L8-6C-LEGAL-ROLE-ROUTING adds LEGAL_DASHBOARD as an existing-controller
@@ -52,6 +58,7 @@
  */
 
 
+/* eslint-disable */
 import React, { Suspense, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Navigate, useNavigate } from 'react-router-dom';
 import { ArrowLeft, Crown, Loader2, ShieldAlert } from 'lucide-react';
@@ -84,6 +91,11 @@ const SystemServicesDashboard = React.lazy(() => import('../system-services/Syst
 const POSDashboard = React.lazy(() => import('../pos/POSWorkspace.jsx'));
 
 
+/**
+ * @description Closed client presentation keys; not a role or permission catalogue.
+ * @collaboration EOS workspace bootstrap and the existing dashboard consumers.
+ * @institutional Constant metadata cannot grant tenant, product or financial rights.
+ */
 export const DASHBOARD_KEYS = Object.freeze({
   FOUNDER: 'FOUNDER_DASHBOARD',
   GENERAL: 'GENERAL_DASHBOARD',
@@ -123,6 +135,15 @@ const TENANT_MODULE_DASHBOARD_ADMISSION = Object.freeze({
   }),
 });
 
+/**
+ * @description Match a validated EOS manifest entry to the closed product presentation map.
+ * @collaboration SovereignDashboardController, EOS workspace/module projections
+ * and their focused routing certificates.
+ * @institutional Client presentation only. Tenant/principal admission, current
+ * permissions and source commands remain server-owned. This helper owns no
+ * business persistence, transaction, durable idempotency or financial execution.
+ * @returns {boolean} Whether the validated projection includes the exact product entry.
+ */
 export const hasTenantModuleManifestAdmission = (modules, dashboardKey) => {
   const expected = TENANT_MODULE_DASHBOARD_ADMISSION[dashboardKey];
   if (!expected || !Array.isArray(modules)) return false;
@@ -259,7 +280,8 @@ const WILSY_OPERATING_SKINS = Object.freeze({
 });
 
 const KERNEL_PROBE_INTERVAL_MS = 60_000;
-const CONTROLLER_VERSION = 'v18.8.0-WILSY-HEADQUARTERS-LANDING';
+const CONTROLLER_VERSION = 'v19.0.2-SINGLE-COMMAND-SEARCH-OWNER';
+const MODEL_DEBUG = import.meta.env.VITE_WILSY_MODEL_DEBUG === '1';
 
 // ─── Theme helpers ───────────────────────────────────────────────────────────
 
@@ -372,6 +394,15 @@ const applyWilsyThemeRuntime = () => {
  * @function normalizeDashboardToken
  * @description Converts role / permission / dashboard strings into comparable uppercase keys.
  */
+/**
+ * @description Normalize a presentation token without assigning role or permission authority.
+ * @collaboration SovereignDashboardController, EOS workspace/module projections
+ * and their focused routing certificates.
+ * @institutional Client presentation only. Tenant/principal admission, current
+ * permissions and source commands remain server-owned. This helper owns no
+ * business persistence, transaction, durable idempotency or financial execution.
+ * @returns {string} Normalized presentation token.
+ */
 export const normalizeDashboardToken = (value = '') => (
   String(value || '')
     .trim()
@@ -385,6 +416,15 @@ export const normalizeDashboardToken = (value = '') => (
  * @function mapDashboardAlias
  * @description Resolves historical module names and slugs into canonical dashboard keys.
  */
+/**
+ * @description Resolve historical presentation aliases while preserving the canonical workspace keys.
+ * @collaboration SovereignDashboardController, EOS workspace/module projections
+ * and their focused routing certificates.
+ * @institutional Client presentation only. Tenant/principal admission, current
+ * permissions and source commands remain server-owned. This helper owns no
+ * business persistence, transaction, durable idempotency or financial execution.
+ * @returns {string} Canonical presentation key, or empty for unknown input.
+ */
 export const mapDashboardAlias = (value = '') => {
   const token = normalizeDashboardToken(value);
   if (!token) return '';
@@ -396,6 +436,15 @@ export const mapDashboardAlias = (value = '') => {
 /**
  * @function isValidDashboardUser
  * @description Verifies identity has enough shape for a routing decision.
+ */
+/**
+ * @description Validate routing shape only; this result is never evidence of authentication.
+ * @collaboration SovereignDashboardController, EOS workspace/module projections
+ * and their focused routing certificates.
+ * @institutional Client presentation only. Tenant/principal admission, current
+ * permissions and source commands remain server-owned. This helper owns no
+ * business persistence, transaction, durable idempotency or financial execution.
+ * @returns {boolean} Whether the supplied routing projection has the required shape.
  */
 export const isValidDashboardUser = (obj = null) => (
   Boolean(
@@ -410,6 +459,15 @@ export const isValidDashboardUser = (obj = null) => (
 /**
  * @function collectDashboardSignals
  * @description Gathers explicit dashboard preferences from user, tenant and login metadata.
+ */
+/**
+ * @description Collect non-authoritative presentation preferences without granting a destination.
+ * @collaboration SovereignDashboardController, EOS workspace/module projections
+ * and their focused routing certificates.
+ * @institutional Client presentation only. Tenant/principal admission, current
+ * permissions and source commands remain server-owned. This helper owns no
+ * business persistence, transaction, durable idempotency or financial execution.
+ * @returns {Array<*>} Non-empty presentation preferences in existing precedence order.
  */
 export const collectDashboardSignals = ({ user = {}, activeTenant = {}, dashboardIntent = '' } = {}) => [
   dashboardIntent,
@@ -427,6 +485,15 @@ export const collectDashboardSignals = ({ user = {}, activeTenant = {}, dashboar
 /**
  * @function hasFounderReturnAuthority
  * @description True when the identity may return from a standalone shard to the Founder Dashboard.
+ */
+/**
+ * @description Decide whether to display a return control; server APIs independently authorize.
+ * @collaboration SovereignDashboardController, EOS workspace/module projections
+ * and their focused routing certificates.
+ * @institutional Client presentation only. Tenant/principal admission, current
+ * permissions and source commands remain server-owned. This helper owns no
+ * business persistence, transaction, durable idempotency or financial execution.
+ * @returns {boolean} Whether to display a return control; this is not an IAM decision.
  */
 export const hasFounderReturnAuthority = ({ user = {}, role = '' } = {}) => {
   const roleToken = normalizeDashboardToken(role || user.role || user.accountRole || user.tenantRole);
@@ -475,6 +542,15 @@ const WORKSPACE_DASHBOARD_MAP = Object.freeze({
  * Legal commercial-only shell; that branch never mounts practice authority and
  * the commercial endpoint independently revalidates subscription:read.
  */
+/**
+ * @description Resolve the server-projected workspace and narrowly permitted presentation selection.
+ * @collaboration SovereignDashboardController, EOS workspace/module projections
+ * and their focused routing certificates.
+ * @institutional Client presentation only. Tenant/principal admission, current
+ * permissions and source commands remain server-owned. This helper owns no
+ * business persistence, transaction, durable idempotency or financial execution.
+ * @returns {string} Server-selected presentation key, or empty when unresolved.
+ */
 export const resolveDashboardKey = ({ user = {}, manualDashboardKey = '' } = {}) => {
   const requestedDashboard = mapDashboardAlias(manualDashboardKey);
   const systemWorkspace = user.systemServicesWorkspace;
@@ -518,6 +594,15 @@ export const resolveDashboardKey = ({ user = {}, manualDashboardKey = '' } = {})
  * @function resolveDashboardRequestSignal
  * @description Extracts a canonical dashboard key from route events and payloads.
  */
+/**
+ * @description Read a presentation navigation request without converting it to IAM authority.
+ * @collaboration SovereignDashboardController, EOS workspace/module projections
+ * and their focused routing certificates.
+ * @institutional Client presentation only. Tenant/principal admission, current
+ * permissions and source commands remain server-owned. This helper owns no
+ * business persistence, transaction, durable idempotency or financial execution.
+ * @returns {string} Canonical requested presentation key, or empty for unknown input.
+ */
 export const resolveDashboardRequestSignal = (request = '') => {
   if (!request) return '';
   if (typeof request === 'string') return mapDashboardAlias(request);
@@ -537,6 +622,15 @@ export const resolveDashboardRequestSignal = (request = '') => {
 /**
  * @function readRequestedDashboardFromStorage
  */
+/**
+ * @description Read an optional device preference; storage is not a membership or entitlement.
+ * @collaboration SovereignDashboardController, EOS workspace/module projections
+ * and their focused routing certificates.
+ * @institutional Client presentation only. Tenant/principal admission, current
+ * permissions and source commands remain server-owned. This helper owns no
+ * business persistence, transaction, durable idempotency or financial execution.
+ * @returns {string} Optional requested presentation key, never server authority.
+ */
 export const readRequestedDashboardFromStorage = () => {
   if (typeof window === 'undefined') return '';
   const raw = window.localStorage.getItem('wilsy:requested-dashboard');
@@ -548,6 +642,15 @@ export const readRequestedDashboardFromStorage = () => {
   }
 };
 
+/**
+ * @description Resolve descriptive text for an existing presentation key.
+ * @collaboration SovereignDashboardController, EOS workspace/module projections
+ * and their focused routing certificates.
+ * @institutional Client presentation only. Tenant/principal admission, current
+ * permissions and source commands remain server-owned. This helper owns no
+ * business persistence, transaction, durable idempotency or financial execution.
+ * @returns {string} Descriptive display label for the supplied presentation key.
+ */
 export const getDashboardDisplayName = (dashboardKey = DASHBOARD_KEYS.GENERAL) => (
   DASHBOARD_LABELS[dashboardKey] || DASHBOARD_LABELS[DASHBOARD_KEYS.GENERAL]
 );
@@ -559,6 +662,15 @@ export const getDashboardDisplayName = (dashboardKey = DASHBOARD_KEYS.GENERAL) =
  * @description Lightweight public probe of GET /api/kernel (Kennel Integration Contract).
  *              Never throws; returns structured health for telemetry panels.
  * @returns {Promise<{status:string, latencyMs:number, payload:object|null, error:string|null}>}
+ */
+/**
+ * @description Read bounded EOS kernel transport health; failure is explicit and grants no authority.
+ * @collaboration SovereignDashboardController, EOS workspace/module projections
+ * and their focused routing certificates.
+ * @institutional Client presentation only. Tenant/principal admission, current
+ * permissions and source commands remain server-owned. This helper owns no
+ * business persistence, transaction, durable idempotency or financial execution.
+ * @returns {Promise<Object>} Transport observation with status, latency, payload and bounded error.
  */
 export const probeKernelBridge = async () => {
   const started = performance.now();
@@ -677,6 +789,12 @@ const FounderReturnFrame = ({ dashboardLabel, onReturn, children }) => {
 
 /**
  * @function SovereignDashboardController
+ * @collaboration AuthProvider, TenantProvider, EOS module manifest and canonical
+ * product workspaces. Every destination independently enforces source IAM.
+ * @institutional Presentation and optional device preferences only. No identity,
+ * tenant membership, legal-practice, entitlement or financial authority is issued;
+ * source services own transactions, commands, audit and durable replay.
+ * @returns {JSX.Element} The server-selected workspace or explicit denial.
  * @description Evaluates forensic identity and mounts the correct Command Center shard.
  *              Probes Kennel bridge health on mount for institutional telemetry.
  * @param {Object} props
@@ -711,7 +829,7 @@ const SovereignDashboardController = ({ user: propUser, onLogout }) => {
         if (isValidDashboardUser(parsed)) return parsed;
         console.error('[SOVEREIGN-CONTROLLER] Vault schema validation failed.');
       } catch (error) {
-        console.error('[SOVEREIGN-CONTROLLER] Vault data corruption detected.', error);
+        console.error('[SOVEREIGN-CONTROLLER] PRESENTATION_CACHE_INVALID');
       }
     }
     return null;
@@ -822,7 +940,7 @@ const SovereignDashboardController = ({ user: propUser, onLogout }) => {
   const handleManualDashboardSwitch = useCallback((request = '') => {
     const resolvedDashboardKey = resolveDashboardRequestSignal(request);
     if (!resolvedDashboardKey) {
-      console.warn('[SOVEREIGN-CONTROLLER] Dashboard switch ignored — unrecognized request.', request);
+      if (MODEL_DEBUG) console.info('[SOVEREIGN-CONTROLLER] DASHBOARD_REQUEST_UNRECOGNIZED');
       return;
     }
     setManualDashboardKey(resolvedDashboardKey);
@@ -851,7 +969,10 @@ const SovereignDashboardController = ({ user: propUser, onLogout }) => {
             ...result,
             probedAt: new Date().toISOString()
           }));
-        } catch { /* ignore quota */ }
+        } catch {
+          // Optional layout/health cache: live EOS readback above remains the
+          // only displayed source. Storage failure cannot grant business rights.
+        }
       }
     };
 
@@ -923,10 +1044,10 @@ const SovereignDashboardController = ({ user: propUser, onLogout }) => {
       setIsGlobalCommandSearchOpen(true);
     };
 
-    window.addEventListener('keydown', handleGlobalCommandSearchKeyDown);
+    window.addEventListener('keydown', handleGlobalCommandSearchKeyDown, true);
     window.addEventListener('wilsy:open-command-search', handleGlobalCommandSearchKeyDown);
     return () => {
-      window.removeEventListener('keydown', handleGlobalCommandSearchKeyDown);
+      window.removeEventListener('keydown', handleGlobalCommandSearchKeyDown, true);
       window.removeEventListener('wilsy:open-command-search', handleGlobalCommandSearchKeyDown);
     };
   }, []);
@@ -955,7 +1076,7 @@ const SovereignDashboardController = ({ user: propUser, onLogout }) => {
       }
     );
 
-    if (import.meta.env.DEV) {
+    if (MODEL_DEBUG) {
       console.info(
         `[SOVEREIGN-CONTROLLER] Shard Mounted: ${dashboardKey} | Role: ${role} | Trace: ${traceId}`
       );
@@ -963,9 +1084,7 @@ const SovereignDashboardController = ({ user: propUser, onLogout }) => {
   }, [dashboardKey, dashboardLabel, role, traceId, user]); // intentionally omit kernelHealth — polls must not re-log
 
   if (!user) {
-    if (import.meta.env.DEV) {
-      console.warn('[SOVEREIGN-CONTROLLER] No identity shard discovered. Reverting to Gateway.', { traceId });
-    }
+    if (MODEL_DEBUG) console.info('[SOVEREIGN-CONTROLLER] AUTHENTICATED_IDENTITY_REQUIRED');
     return <Navigate to="/login" replace />;
   }
 
@@ -1087,7 +1206,7 @@ const SovereignDashboardController = ({ user: propUser, onLogout }) => {
       window.dispatchEvent(new CustomEvent('wilsy:global-search-activate', {
         detail: {
           ...result,
-          tenantId: activeTenant?.tenantId || activeTenant?._id || user?.tenantId || 'MASTER'
+          tenantId: activeTenant?.tenantId || activeTenant?._id || user?.tenantId || null
         }
       }));
       window.localStorage.setItem('wilsy:last-global-search-result', JSON.stringify({
@@ -1145,6 +1264,7 @@ const SovereignDashboardController = ({ user: propUser, onLogout }) => {
   // EOS tenant module manifest; clicking an entry requests presentation routing
   // and does not create workspace or API authority.
   const needsControllerProductNavigation = [
+    DASHBOARD_KEYS.HEADQUARTERS,
     DASHBOARD_KEYS.CRM,
     DASHBOARD_KEYS.OPERATIONS,
     DASHBOARD_KEYS.INTELLIGENCE,
@@ -1172,7 +1292,7 @@ const SovereignDashboardController = ({ user: propUser, onLogout }) => {
         YOUR PRODUCTS
       </span>
       {moduleManifest.modules.map((module) => {
-        const isActive = module.workspaceKey === (
+        const isActive = dashboardKey !== DASHBOARD_KEYS.HEADQUARTERS && module.workspaceKey === (
           dashboardKey === DASHBOARD_KEYS.CRM ? 'CRM_DASHBOARD'
             : dashboardKey === DASHBOARD_KEYS.OPERATIONS ? 'OPERATIONS_DASHBOARD'
               : dashboardKey === DASHBOARD_KEYS.INTELLIGENCE ? 'INTELLIGENCE_DASHBOARD'
@@ -1297,7 +1417,7 @@ export default SovereignDashboardController;
 
 /**
  * ARTIFACT: SovereignDashboardController.jsx
- * VERSION: v19.0.0-HEADQUARTERS-EXECUTIVE-ROUTING-RETIREMENT
+ * VERSION: v19.0.2-SINGLE-COMMAND-SEARCH-OWNER
  * AUTHORITY BOUNDARY: authenticated client dashboard routing and presentation composition only
  * TENANT POSTURE: EOS workspace projection selects Headquarters only for the canonical WILSY company tenant; APIs independently enforce tenant IAM
  * FAIL-CLOSED POSTURE: unknown workspaces do not manufacture access or cross-role fallback
