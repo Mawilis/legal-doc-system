@@ -1,6 +1,24 @@
-import React, { useCallback, useEffect, useMemo, useState } from 'react';
+/**
+ * TITLE: WILSY OS Authorised My Work Completion Workspace
+ * VERSION: v1.1.0-ATTENTION-DEEP-LINK-FOCUS
+ * AUTHORITY: Wilsy OS Core Governance
+ * EPITOME: Executes source-owned evidenced work completion and focuses the
+ *          item selected from the authenticated Daily Attention Centre.
+ * ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/client/src/components/workspaces/MyWorkWorkspace.jsx
+ * COLLABORATION / OWNERSHIP: Python EOS /my-work owns visibility and
+ *                            source services own completion and audit.
+ * CERTIFICATION / UPDATE DATE: 2026-11-09
+ * CHANGELOG: v1.1.0-ATTENTION-DEEP-LINK-FOCUS adds visual and accessible
+ *            focus to selected work without treating route state as authority.
+ * COMPLIANCE: POPIA section 19; GDPR Article 32; SOC 2 CC7.2.
+ * SECURITY / PRIVACY POSTURE: Only authenticated EOS work is rendered.
+ * TENANT BOUNDARY: Selected keys only match the EOS-authorised item list.
+ * AUTHORITY BOUNDARY: Completion commands remain source-owned.
+ * FINANCIAL AUTHORITY BOUNDARY: Kennel EOS only.
+ */
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { AlertTriangle, CheckCircle2, Circle, Clock3, Loader2, RefreshCw, ShieldCheck } from 'lucide-react';
-import { useNavigate } from 'react-router-dom';
+import { useLocation, useNavigate } from 'react-router-dom';
 import api from '../../services/api.js';
 import { completeLegalWorkItem } from '../../services/legalOperationsService.js';
 
@@ -30,6 +48,9 @@ const formatDue = (value) => {
 
 export default function MyWorkWorkspace() {
   const navigate = useNavigate();
+  const location = useLocation();
+  const focusRef = useRef(null);
+  const focusKey = typeof location.state?.focusWorkItem === 'string' ? location.state.focusWorkItem : null;
   const [projection, setProjection] = useState(null);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
@@ -60,6 +81,11 @@ export default function MyWorkWorkspace() {
   }, [load]);
 
   const items = useMemo(() => projection?.items || [], [projection]);
+  useEffect(() => {
+    if (!focusKey || !items.some((item) => item.source_key === focusKey)) return;
+    focusRef.current?.focus();
+    focusRef.current?.scrollIntoView?.({ behavior: 'smooth', block: 'center' });
+  }, [items, focusKey]);
 
   const complete = async (item) => {
     const path = completionPath(item);
@@ -144,7 +170,13 @@ export default function MyWorkWorkspace() {
             {items.map((item) => {
               const path = completionPath(item);
               return (
-                <article key={item.source_key} className="rounded-2xl border border-white/10 bg-[#111720] p-4 sm:p-5">
+                <article key={item.source_key}
+                  ref={item.source_key === focusKey ? focusRef : undefined}
+                  tabIndex={-1}
+                  className={'rounded-2xl border bg-[#111720] p-4 sm:p-5 outline-none ' +
+                    (item.source_key === focusKey
+                      ? 'border-amber-300/70 ring-2 ring-amber-300/40'
+                      : 'border-white/10')}>
                   <div className="flex flex-wrap items-start justify-between gap-3">
                     <div className="min-w-0 flex-1">
                       <div className="flex flex-wrap items-center gap-2">
@@ -259,3 +291,13 @@ function Metric({ label, value }) {
     </div>
   );
 }
+
+/*
+ * ARTIFACT: MyWorkWorkspace.jsx
+ * VERSION: v1.1.0-ATTENTION-DEEP-LINK-FOCUS
+ * AUTHORITY BOUNDARY: EOS source-owned work completion only.
+ * TENANT POSTURE: Only verified EOS-visible items may receive focus.
+ * FAIL-CLOSED POSTURE: A forged focus key creates no work or permission.
+ * FINANCIAL EXECUTION AUTHORITY: Kennel EOS exclusively.
+ * END OF WILSY OS SOVEREIGN ARTIFACT
+ */
