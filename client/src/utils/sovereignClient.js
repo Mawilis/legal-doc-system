@@ -36,6 +36,15 @@
  * ║ SECURITY: Missing, malformed, stale-key-only, and reserved root scopes fail closed by omitting tenant-scoped requests.              ║
  * ║ FINANCIAL AUTHORITY: No financial authority; Kennel EOS exclusively owns execution and settlement.                                  ║
  * ║ CHANGELOG: 73.2.0-AUTHENTICATED-TENANT-ONLY rejects WILSY_SOVEREIGN_ROOT and all legacy/default tenant fallbacks.                    ║
+ * ║ TITLE: WILSY OS Sovereign Browser Transport                                                                                           ║
+ * ║ AUTHORITY: Browser transport only; Python EOS owns authentication and authorization.                                                  ║
+ * ║ EPITOME: Sends tenant-scoped requests only with the authenticated active workspace projection.                                       ║
+ * ║ ABSOLUTE CANONICAL PATH: client/src/utils/sovereignClient.js                                                                           ║
+ * ║ COLLABORATION / OWNERSHIP: Wilsy Core Engineering; API consumers supply request intent, Python EOS validates authority.              ║
+ * ║ CERTIFICATION / UPDATE DATE: 2026-11-09                                                                                               ║
+ * ║ TENANT BOUNDARY: Persisted active workspace is a selector only; EOS independently checks membership and tenant isolation.            ║
+ * ║ FAIL-CLOSED POSTURE: Missing, malformed, or reserved tenant identifiers omit tenant scope; no root/default fallback is permitted.   ║
+ * ║ FINANCIAL AUTHORITY BOUNDARY: No financial execution authority; Kennel EOS exclusively owns execution and settlement.                 ║
  * ╚════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════╝
  */
 
@@ -421,10 +430,13 @@ export default sovereignClient;
  * ═══════════════════════════════════════════════════════════════════════════════
  * 🏛️ INSTITUTIONAL CERTIFICATION SEAL — sovereignClient v73.2.0-AUTHENTICATED-TENANT-ONLY
  * ═══════════════════════════════════════════════════════════════════════════════
- * Status:          CERTIFIED PRODUCTION ARTIFACT
- * Version:         73.2.0-AUTHENTICATED-TENANT-ONLY
- * Fix:             Uses only the authenticated active-tenant projection; removes WILSY_SOVEREIGN_ROOT and legacy/default fallbacks.
- * Tenant posture:  Missing or malformed active tenant omits X-Tenant-ID and suppresses tenant-scoped telemetry.
- * Compliance:      POPIA §19 / GDPR §32 / SOC2 §CC7.2 / ISO 27001
- * ═══════════════════════════════════════════════════════════════════════════════
+ * ARTIFACT: sovereignClient browser transport
+ * VERSION: 73.2.0-AUTHENTICATED-TENANT-ONLY
+ * AUTHORITY BOUNDARY: transport only; Python EOS authenticates and authorizes every protected request
+ * TENANT POSTURE: only the authenticated active-workspace projection supplies a tenant selector; EOS validates exact tenant membership
+ * FAIL-CLOSED POSTURE: missing, malformed, and reserved root tenant scopes are omitted; no fallback tenant is synthesized
+ * FINANCIAL EXECUTION AUTHORITY: none; Kennel EOS remains exclusive
+ * CERTIFICATION STATUS: repository change committed; runtime certification remains pending
+ * COMPLIANCE: POPIA §19 / GDPR §32 / SOC2 §CC7.2 / ISO 27001
+ * END OF WILSY OS SOVEREIGN ARTIFACT
  */
