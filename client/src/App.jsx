@@ -71,7 +71,7 @@ import LedgerExplorer from './components/billing/LedgerExplorer.jsx';
 import MyWorkWorkspace from './components/workspaces/MyWorkWorkspace.jsx';
 import WilsyHeadquartersWorkspace from './components/workspaces/WilsyHeadquartersWorkspace.jsx';
 import SystemStatusPage from './components/system/SystemStatusPage.jsx';
-import wilsyBrandAsset from './assets/logo/wilsy-icon.svg';
+import wilsyHeaderEmblem from './assets/logo/wilsy-header-emblem.svg';
 import api from './services/api';
 import WilsyOSIntelligenceDockRuntime from './components/intelligence/WilsyOSIntelligenceDockRuntime.jsx';
 
@@ -212,9 +212,9 @@ export const AuthenticatedGlobalChrome = ({ user, onLogout, children }) => {
     <div className="min-h-screen bg-[#080f1d] text-slate-100">
       <header className="sticky top-0 z-40 flex h-16 w-full items-center gap-4 border-b border-white/10 bg-[#0b1830]/95 px-4 shadow-lg shadow-black/10 backdrop-blur-xl sm:px-6">
         <button type="button" aria-label="WILSY home" onClick={() => navigate('/headquarters')} className="flex w-[240px] shrink-0 items-center gap-2 text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#d7ad43] focus-visible:ring-offset-2 focus-visible:ring-offset-[#0b1830]">
-          <img src={wilsyBrandAsset} alt="WILSY OS platform mark" className="h-11 w-11 shrink-0 object-contain" />
+          <img src={wilsyHeaderEmblem} alt="WILSY gold emblem" className="h-10 w-12 shrink-0 object-contain" />
           <span className="min-w-0 leading-tight">
-            <span className="block text-xl font-extrabold tracking-[0.04em] text-white">WILSY</span>
+            <span className="block text-lg font-semibold tracking-[0.025em] text-white">WILSY</span>
             <span className="block whitespace-nowrap text-[10px] font-medium text-[#f0dca5]">Build. Operate. Grow.</span>
           </span>
         </button>
