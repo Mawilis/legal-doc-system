@@ -451,6 +451,12 @@ export default function WilsyDailyAttentionCentre({
                         ? 'Your authorised work sources returned an empty active queue.'
                         : 'Try another filter or search term.'}
                     </p>
+                    {items.length === 0 && onOpenWorkforce && (
+                      <button type="button" onClick={onOpenWorkforce}
+                        className="mt-4 inline-flex items-center gap-1.5 rounded-lg border border-amber-300/40 px-3 py-2 text-xs font-semibold text-amber-100 hover:bg-white/10">
+                        Open HR & workforce duties <ArrowRight size={13}/>
+                      </button>
+                    )}
                   </div>
                 ) : filteredItems.map((item) => (
                   <article key={item.source_key} className="mb-2 rounded-xl border border-white/10 bg-white/[0.035] p-3">
@@ -481,7 +487,7 @@ export default function WilsyDailyAttentionCentre({
                         <p className="text-[11px] leading-5 text-slate-400">
                           Work actions are verified and recorded by the owning EOS service.
                         </p>
-                        <button type="button" onClick={onOpenWork}
+                        <button type="button" onClick={() => onOpenWork(item)}
                           className="mt-3 inline-flex items-center gap-2 rounded-lg bg-amber-300 px-3 py-2 text-xs font-semibold text-[#081326] hover:bg-amber-200">
                           Open in My Work <ArrowRight size={14}/>
                         </button>
@@ -494,16 +500,27 @@ export default function WilsyDailyAttentionCentre({
               <div className="shrink-0 border-t border-white/10 bg-[#14243d] px-4 py-3">
                 <div className="mb-2 flex items-center justify-between gap-2 text-[10px] text-slate-400">
                   <span>{filteredItems.length} of {items.length} authorised items</span>
-                  <span className="inline-flex items-center gap-1">
-                    <CalendarDays size={12}/> {new Date(projection.as_of).toLocaleTimeString([], {
+                  <button type="button" aria-label="Open work deadline calendar"
+                    onClick={() => setView('CALENDAR')}
+                    className="inline-flex items-center gap-1 rounded-lg px-2 py-1 text-amber-200 hover:bg-white/10">
+                    <CalendarDays size={14}/>
+                    <span>Calendar · {new Date(projection.as_of).toLocaleTimeString([], {
                       hour: '2-digit', minute: '2-digit',
-                    })}
-                  </span>
+                    })}</span>
+                  </button>
                 </div>
-                <button type="button" onClick={onOpenWork}
-                  className="flex w-full items-center justify-center gap-2 rounded-lg bg-amber-300 px-4 py-2.5 text-sm font-semibold text-[#091426] hover:bg-amber-200">
-                  Open full My Work workspace <ArrowRight size={15}/>
-                </button>
+                <div className="flex gap-2">
+                  {onOpenWorkforce && (
+                    <button type="button" onClick={onOpenWorkforce}
+                      className="min-w-0 flex-1 rounded-lg border border-amber-300/40 px-3 py-2.5 text-xs font-semibold text-amber-100 hover:bg-white/10">
+                      HR & workforce
+                    </button>
+                  )}
+                  <button type="button" onClick={() => onOpenWork(null)}
+                    className="flex min-w-0 flex-[2] items-center justify-center gap-2 rounded-lg bg-amber-300 px-3 py-2.5 text-xs font-semibold text-[#091426] hover:bg-amber-200">
+                    Open My Work <ArrowRight size={14}/>
+                  </button>
+                </div>
               </div>
             </>
           )}
