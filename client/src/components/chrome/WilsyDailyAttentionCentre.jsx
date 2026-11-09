@@ -1,6 +1,6 @@
 /**
  * TITLE: WILSY OS Authenticated Daily Attention Centre
- * VERSION: v1.0.1-STRICT-PROJECTION-DATE-VALIDATION
+ * VERSION: v1.1.0-FLOATING-WORK-CALENDAR
  * AUTHORITY: Wilsy OS Core Governance
  * EPITOME: Interactive notification-bell entry to exact-tenant, authorised
  *          EOS My Work triage, with actionable navigation to source-owned
@@ -9,7 +9,10 @@
  * COLLABORATION / OWNERSHIP: Python EOS /api/my-work owns work visibility;
  *                            App.jsx owns authenticated chrome and navigation.
  * CERTIFICATION / UPDATE DATE: 2026-11-09
- * CHANGELOG: v1.0.1-STRICT-PROJECTION-DATE-VALIDATION also rejects
+ * CHANGELOG: v1.1.0-FLOATING-WORK-CALENDAR adds an accessible movable/dockable work panel,
+ *            a real EOS work deadline calendar, and action handoffs to
+ *            source-authorised My Work and HR workflows.
+ *            v1.0.1-STRICT-PROJECTION-DATE-VALIDATION also rejects
  *            malformed EOS snapshot timestamps before UI date formatting.
  *            v1.0.0-EOS-AUTHORISED-DAILY-ATTENTION implements on-demand work
  *            fetching, scoped validation, due/priority/source triage, search,
@@ -28,9 +31,10 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import {
   AlertTriangle, ArrowRight, Bell, CalendarDays, CheckCircle2,
-  ChevronDown, Clock3, RefreshCw, Search, X,
+  ChevronDown, Clock3, Grip, Pin, RefreshCw, Search, X,
 } from 'lucide-react';
 import api from '../../services/api.js';
+import WilsyWorkDeadlineCalendar from './WilsyWorkDeadlineCalendar.jsx';
 
 const SCHEMA = 'WILSY-OS-UNIFIED-MY-WORK/V1';
 const SOURCES = Object.freeze({
@@ -117,6 +121,7 @@ export function assertAttentionProjection(payload, tenantId) {
  * @param {Function} props.onToggle Toggles the panel.
  * @param {Function} props.onClose Dismisses the panel.
  * @param {Function} props.onOpenWork Navigates to canonical My Work commands.
+ * @param {Function} props.onOpenWorkforce Navigates into governed HR workspace.
  */
 export default function WilsyDailyAttentionCentre({
   tenantId,
@@ -126,8 +131,11 @@ export default function WilsyDailyAttentionCentre({
   onToggle,
   onClose,
   onOpenWork,
+  onOpenWorkforce,
 }) {
   const rootRef = useRef(null);
+  const panelRef = useRef(null);
+  const dragRef = useRef(null);
   const [projection, setProjection] = useState(null);
   const [status, setStatus] = useState('IDLE');
   const [refreshId, setRefreshId] = useState(0);
@@ -135,6 +143,8 @@ export default function WilsyDailyAttentionCentre({
   const [source, setSource] = useState('ALL');
   const [query, setQuery] = useState('');
   const [expanded, setExpanded] = useState(null);
+  const [view, setView] = useState('WORK');
+  const [floating, setFloating] = useState(null);
 
   useEffect(() => {
     setProjection(null);
@@ -143,6 +153,8 @@ export default function WilsyDailyAttentionCentre({
     setSource('ALL');
     setQuery('');
     setExpanded(null);
+    setView('WORK');
+    setFloating(null);
   }, [tenantId, systemServicesWorkspace]);
 
   useEffect(() => {
@@ -210,6 +222,70 @@ export default function WilsyDailyAttentionCentre({
     });
   }, [items, filter, source, query]);
 
+
+  // Floating position is a transient layout preference, not business state.
+  const panelBounds = () => {
+    const rect = panelRef.current?.getBoundingClientRect();
+    return {
+      x: rect?.left || 16, y: rect?.top || 72,
+      width: rect?.width || Math.min(460, window.innerWidth - 32),
+      height: rect?.height || Math.min(780, window.innerHeight - 80),
+    };
+  };
+  const clamp = (x, y, w, h) => ({
+    x: Math.max(8, Math.min(x, Math.max(8, window.innerWidth - w - 8))),
+    y: Math.max(8, Math.min(y, Math.max(8, window.innerHeight - h - 8))),
+  });
+  const floatAtPanel = () => {
+    const box = panelBounds();
+    const pos = clamp(box.x, box.y, box.width, box.height);
+    setFloating(pos);
+    return pos;
+  };
+  const handlePointerDown = (event) => {
+    if (event.pointerType === 'mouse' && event.button !== 0) return;
+    const rect = panelBounds();
+    dragRef.current = {
+      id: event.pointerId, origin: floating || floatAtPanel(),
+      x: event.clientX, y: event.clientY, w: rect.width, h: rect.height,
+    };
+    event.currentTarget.setPointerCapture?.(event.pointerId);
+  };
+  const handlePointerMove = (event) => {
+    const drag = dragRef.current;
+    if (!drag || drag.id !== event.pointerId) return;
+    setFloating(clamp(drag.origin.x + event.clientX - drag.x,
+      drag.origin.y + event.clientY - drag.y, drag.w, drag.h));
+  };
+  const handlePointerEnd = (event) => {
+    if (dragRef.current?.id !== event.pointerId) return;
+    dragRef.current = null;
+    if (event.currentTarget.hasPointerCapture?.(event.pointerId)) {
+      event.currentTarget.releasePointerCapture(event.pointerId);
+    }
+  };
+  const handleDragKey = (event) => {
+    const directions = { ArrowLeft: [-1, 0], ArrowRight: [1, 0],
+      ArrowUp: [0, -1], ArrowDown: [0, 1] };
+    const d = directions[event.key];
+    if (!d) return;
+    event.preventDefault();
+    const bounds = panelBounds();
+    const current = floating || floatAtPanel();
+    const amount = event.shiftKey ? 40 : 16;
+    setFloating(clamp(current.x + d[0] * amount,
+      current.y + d[1] * amount, bounds.width, bounds.height));
+  };
+  useEffect(() => {
+    if (!open || !floating) return undefined;
+    const onResize = () => {
+      const box = panelBounds();
+      setFloating((before) => before && clamp(before.x, before.y, box.width, box.height));
+    };
+    window.addEventListener('resize', onResize);
+    return () => window.removeEventListener('resize', onResize);
+  }, [open, Boolean(floating)]);
+
   return (
     <div className="relative" ref={rootRef} data-wilsy-attention-centre="true">
       <button
@@ -235,9 +311,12 @@ export default function WilsyDailyAttentionCentre({
 
       {open && (
         <section
+          ref={panelRef}
           role="dialog"
           aria-label="Daily attention centre"
-          className="absolute right-0 top-12 z-50 flex w-[min(460px,calc(100vw-2rem))] max-h-[min(780px,calc(100vh-5rem))] flex-col overflow-hidden rounded-2xl border border-white/15 bg-[#101d32] text-slate-100 shadow-2xl shadow-black/60"
+          data-floating={floating ? 'true' : 'false'}
+          style={floating ? { position: 'fixed', left: floating.x, top: floating.y, right: 'auto' } : undefined}
+          className={(floating ? 'fixed z-[90]' : 'absolute right-0 top-12 z-50') + ' flex w-[min(460px,calc(100vw-2rem))] max-h-[min(780px,calc(100vh-5rem))] flex-col overflow-hidden rounded-2xl border border-white/15 bg-[#101d32] text-slate-100 shadow-2xl shadow-black/60'}
         >
           <div className="flex shrink-0 items-start justify-between gap-3 border-b border-white/10 bg-[#14243d] px-5 py-4">
             <div>
@@ -249,12 +328,23 @@ export default function WilsyDailyAttentionCentre({
                 Your authorised EOS work across business functions.
               </p>
             </div>
-            <button
-              type="button"
-              aria-label="Close daily attention"
-              onClick={onClose}
-              className="rounded-lg p-1.5 text-slate-300 hover:bg-white/10"
-            ><X size={17}/></button>
+            <div className="flex items-center gap-1">
+              <button type="button" aria-label="Move daily attention panel with pointer or arrow keys"
+                title="Drag to move; arrow keys to reposition"
+                onPointerDown={handlePointerDown} onPointerMove={handlePointerMove}
+                onPointerUp={handlePointerEnd} onPointerCancel={handlePointerEnd}
+                onKeyDown={handleDragKey} style={{ touchAction: 'none' }}
+                className="cursor-grab rounded-lg p-2 text-slate-300 hover:bg-white/10 active:cursor-grabbing focus-visible:outline focus-visible:outline-2 focus-visible:outline-amber-300">
+                <Grip size={18}/>
+              </button>
+              <button type="button" aria-label={floating ? 'Dock daily attention panel' : 'Float daily attention panel'}
+                onClick={() => { dragRef.current = null; floating ? setFloating(null) : floatAtPanel(); }}
+                className="rounded-lg p-2 text-slate-300 hover:bg-white/10">
+                <Pin size={17} className={floating ? 'text-amber-300' : ''}/>
+              </button>
+              <button type="button" aria-label="Close daily attention" onClick={onClose}
+                className="rounded-lg p-2 text-slate-300 hover:bg-white/10"><X size={17}/></button>
+            </div>
           </div>
 
           {status === 'LOADING' && (
@@ -417,7 +507,7 @@ function Stat({ label, value, urgent = false }) {
 
 /*
  * ARTIFACT: WilsyDailyAttentionCentre.jsx
- * VERSION: v1.0.1-STRICT-PROJECTION-DATE-VALIDATION
+ * VERSION: v1.1.0-FLOATING-WORK-CALENDAR
  * AUTHORITY BOUNDARY: Authenticated read-only EOS work triage.
  * TENANT POSTURE: Exact tenant, fail-closed, no browser persistence.
  * FAIL-CLOSED POSTURE: Invalid, denied or unavailable sources show no fabricated items.
