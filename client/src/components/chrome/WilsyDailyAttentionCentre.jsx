@@ -374,6 +374,20 @@ export default function WilsyDailyAttentionCentre({
           {status === 'READY' && (
             <>
               <div className="shrink-0 border-b border-white/10 px-4 pb-3 pt-4">
+                <div role="tablist" aria-label="Daily attention views" className="mb-3 flex items-center gap-2">
+                  <button type="button" role="tab" aria-selected={view === 'WORK'}
+                    onClick={() => setView('WORK')}
+                    className={'rounded-lg px-3 py-2 text-xs font-semibold ' +
+                      (view === 'WORK' ? 'bg-amber-300 text-[#081326]' : 'text-slate-300 hover:bg-white/10')}>
+                    Work list
+                  </button>
+                  <button type="button" role="tab" aria-selected={view === 'CALENDAR'}
+                    onClick={() => setView('CALENDAR')}
+                    className={'inline-flex items-center gap-1.5 rounded-lg px-3 py-2 text-xs font-semibold ' +
+                      (view === 'CALENDAR' ? 'bg-amber-300 text-[#081326]' : 'text-slate-300 hover:bg-white/10')}>
+                    <CalendarDays size={14}/> Calendar
+                  </button>
+                </div>
                 <div className="grid grid-cols-3 gap-2">
                   <Stat label="Active" value={items.length} />
                   <Stat label="Overdue" value={projection.summary.overdue_count} urgent={projection.summary.overdue_count > 0}/>
@@ -386,6 +400,7 @@ export default function WilsyDailyAttentionCentre({
                     <RefreshCw size={13}/> Refresh
                   </button>
                 </div>
+                {view === 'WORK' && (<>
                 <div role="group" aria-label="Filter daily attention" className="mt-3 flex flex-wrap gap-1.5">
                   {FILTERS.map(({ id, label }) => (
                     <button key={id} type="button" aria-pressed={filter === id}
@@ -418,10 +433,14 @@ export default function WilsyDailyAttentionCentre({
                     <ChevronDown size={12} className="pointer-events-none absolute right-2 text-slate-400"/>
                   </label>
                 </div>
+                </>)}
               </div>
 
               <div className="min-h-0 flex-1 overflow-y-auto px-3 py-2" aria-live="polite">
-                {filteredItems.length === 0 ? (
+                {view === 'CALENDAR' ? (
+                  <WilsyWorkDeadlineCalendar items={items}
+                    onOpenWork={onOpenWork} onOpenWorkforce={onOpenWorkforce}/>
+                ) : filteredItems.length === 0 ? (
                   <div className="py-9 text-center">
                     <CheckCircle2 size={26} className="mx-auto text-emerald-300"/>
                     <p className="mt-3 text-sm font-medium text-white">
