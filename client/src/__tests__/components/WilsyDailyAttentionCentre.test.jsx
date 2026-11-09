@@ -1,13 +1,17 @@
 /**
  * TITLE: WILSY OS Daily Attention Centre Client Contract Tests
- * VERSION: v1.3.0-EOS-SOURCE-COVERAGE
+ * VERSION: v1.4.0-VERIFIED-ZERO-ATTENTION-ACCESSIBILITY
  * AUTHORITY: WILSY OS Core Governance
  * EPITOME: Exercises tenant-bound source rendering, EOS-reported coverage,
  *          interactive work triage, source-owned navigation and honest empty states.
  * ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/client/src/__tests__/components/WilsyDailyAttentionCentre.test.jsx
  * COLLABORATION / OWNERSHIP: WilsyDailyAttentionCentre.jsx and EOS /api/my-work schema.
  * CERTIFICATION / UPDATE DATE: 2026-11-09
- * CHANGELOG: v1.3.0-EOS-SOURCE-COVERAGE verifies filters use only included
+ * CHANGELOG: v1.4.0-VERIFIED-ZERO-ATTENTION-ACCESSIBILITY certifies
+ *            explicit EOS-verified zero work versus unavailable work count
+ *            in the accessible bell label; zero never generates an unread
+ *            badge. The projection remains source-owned and read-only.
+ *            v1.3.0-EOS-SOURCE-COVERAGE verifies filters use only included
  *            sources and distinguishes admitted-empty from no-source coverage.
  *            v1.2.0-EXPLICIT-CALENDAR-CLOSE-CONTRACT asserts visible Close calendar action
  *            and two-stage Escape: calendar first and entire panel second.
@@ -103,6 +107,29 @@ describe('WILSY daily attention centre', () => {
     expect(api.get).toHaveBeenCalledWith('/my-work', { forceNetworkRetry: true });
     expect(screen.getByLabelText(/active work items, not unread notifications/)).toBeTruthy();
     expect(screen.queryByText(/3 unread/)).toBeNull();
+  });
+
+  it('announces verified zero work distinctly from an unavailable count', async () => {
+    const empty = projection();
+    empty.items = [];
+    empty.summary = {
+      active_count: 0, overdue_count: 0,
+      source_counts: { LEGAL: 0, CRM: 0 },
+    };
+    api.get.mockResolvedValueOnce({ data: empty });
+    renderCentre({ activeCount: 0 });
+    const bell = screen.getByRole('button', { name: 'Open daily attention: 0 active work items' });
+    expect(bell).toBeInTheDocument();
+    expect(screen.queryByLabelText('0 active work items, not unread notifications')).toBeNull();
+    expect(await screen.findByText('No active work in the included sources')).toBeInTheDocument();
+    expect(bell).toHaveAttribute('aria-label', 'Open daily attention: 0 active work items');
+  });
+
+  it('does not invent a verified zero when no count has been read', () => {
+    renderCentre({ open: false, activeCount: null });
+    expect(screen.getByRole('button', { name: 'Open daily attention' }))
+      .toHaveAttribute('aria-label', 'Open daily attention');
+    expect(api.get).not.toHaveBeenCalled();
   });
 
   it('offers source filters only for sources included by EOS', async () => {
@@ -246,7 +273,7 @@ describe('WILSY daily attention centre', () => {
 
 /*
  * ARTIFACT: WilsyDailyAttentionCentre.test.jsx
- * VERSION: v1.3.0-EOS-SOURCE-COVERAGE
+ * VERSION: v1.4.0-VERIFIED-ZERO-ATTENTION-ACCESSIBILITY
  * AUTHORITY BOUNDARY: Deterministic component test only.
  * TENANT POSTURE: Synthetic exact-tenant and foreign-tenant cases.
  * FAIL-CLOSED POSTURE: No simulated approvals or silent fallback.
