@@ -1,7 +1,7 @@
 /* eslint-disable */
 /**
  * TITLE: WILSY OS Sovereign Dashboard Controller
- * VERSION: v18.8.0-WILSY-HEADQUARTERS-LANDING
+ * VERSION: v18.9.0-OWNER-HEADQUARTERS-SESSION-ROUTING
  * AUTHORITY: Authenticated client dashboard routing and presentation composition.
  * EPITOME: Resolves authenticated WILSY company owners into the EOS-selected
  *          Headquarters workspace while preserving customer tenant routing.
@@ -15,7 +15,13 @@
  *                            Python EOS owns authorization and Legal Operations
  *                            truth; dashboard components own presentation only.
  * CERTIFICATION / UPDATE DATE: 2026-09-23
- * CHANGELOG: 2026-09-23 v18.8.0-WILSY-HEADQUARTERS-LANDING maps LEGAL_PARTNER, LEGAL_ATTORNEY,
+ * CHANGELOG: 2026-11-09 v18.9.0-OWNER-HEADQUARTERS-SESSION-ROUTING prevents a stale browser-persisted dashboard
+ *            request from overriding the authenticated Tenant Owner's
+ *            EOS-selected Headquarters landing after login or refresh. An
+ *            explicit in-session navigation event remains presentation-only;
+ *            non-owner route restoration and all server authorization remain
+ *            unchanged.
+ *            2026-09-23 v18.8.0-WILSY-HEADQUARTERS-LANDING maps LEGAL_PARTNER, LEGAL_ATTORNEY,
  *            LEGAL_PARALEGAL, LEGAL_SECRETARY, LEGAL_FINANCE, LEGAL_CLIENT and
  *            their TENANT_* business-role aliases to the canonical Legal OS
  *            shard. Existing SHERIFF/DEPUTY mappings remain unchanged. Browser
@@ -715,6 +721,7 @@ const SovereignDashboardController = ({ user: propUser, onLogout }) => {
   }, [propUser]);
 
     const role = normalizeDashboardToken(user?.role || user?.accountRole || user?.tenantRole);
+  const isTenantOwner = ['TENANT_OWNER', 'OWNER'].includes(role);
 
   const moduleManifestTenantId = activeTenant?.tenantId || activeTenant?._id || user?.tenantId || '';
   const [moduleManifest, setModuleManifest] = useState({ status: 'idle', tenantId: '', modules: [] });
@@ -863,6 +870,11 @@ const SovereignDashboardController = ({ user: propUser, onLogout }) => {
   useEffect(() => {
     const handleDashboardRouteRequest = (event = {}) => {
       if (event.type === 'storage' && event.key && event.key !== 'wilsy:requested-dashboard') return;
+      // A persisted browser preference is not a durable workspace assignment.
+      // In particular, a stale Legal commercial-shell selection must not
+      // replace the current EOS-issued Headquarters landing after owner login.
+      // Explicit in-session navigation events remain available to the owner.
+      if (isTenantOwner && event.type === 'storage') return;
       const storageTarget = event.type === 'storage' ? readRequestedDashboardFromStorage() : '';
       const eventTarget = event.type === 'storage'
         ? storageTarget
@@ -872,7 +884,9 @@ const SovereignDashboardController = ({ user: propUser, onLogout }) => {
       setManualDashboardKey(targetDashboardKey);
     };
 
-    const initialRequestedDashboard = readRequestedDashboardFromStorage();
+    const initialRequestedDashboard = isTenantOwner
+      ? ''
+      : readRequestedDashboardFromStorage();
     if (initialRequestedDashboard) setManualDashboardKey(initialRequestedDashboard);
 
     window.addEventListener('wilsy:navigate-dashboard', handleDashboardRouteRequest);
@@ -1294,7 +1308,7 @@ export default SovereignDashboardController;
 
 /**
  * ARTIFACT: SovereignDashboardController.jsx
- * VERSION: v18.8.0-WILSY-HEADQUARTERS-LANDING
+ * VERSION: v18.9.0-OWNER-HEADQUARTERS-SESSION-ROUTING
  * AUTHORITY BOUNDARY: authenticated client dashboard routing and presentation composition only
  * TENANT POSTURE: EOS workspace projection selects Headquarters only for the canonical WILSY company tenant; APIs independently enforce tenant IAM
  * FAIL-CLOSED POSTURE: unknown workspaces do not manufacture access or cross-role fallback
