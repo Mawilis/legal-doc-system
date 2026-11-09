@@ -1,6 +1,6 @@
 /**
  * TITLE: WILSY OS Authenticated Daily Attention Calendar Browser Certificate
- * VERSION: v1.2.0-REAL-UI-SOURCE-ENTRY-BADGE-RECONCILIATION
+ * VERSION: v1.3.0-DAILY-ATTENTION-FIRST-DURABLE-WORK
  * AUTHORITY: Repository-governed disposable browser fixture only.
  * EPITOME: Verify real EOS work creation, replay, tenant denial, calendar
  * navigation, window bounds, dismissal and persisted source-owned completion.
@@ -8,7 +8,10 @@
  * COLLABORATION / OWNERSHIP: browser_cert_fixture.py, run-browser-cert.mjs,
  * App.jsx, WilsyDailyAttentionCentre, WilsyWorkDeadlineCalendar and My Work.
  * CERTIFICATION / UPDATE DATE: 2026-11-09.
- * CHANGELOG: v1.2.0-REAL-UI-SOURCE-ENTRY-BADGE-RECONCILIATION creates source work using
+ * CHANGELOG: v1.3.0-DAILY-ATTENTION-FIRST-DURABLE-WORK begins at the
+ *          global authenticated bell and exercises Operations handoff
+ *          before source-created durable work, calendar and EOS completion.
+ *          v1.2.0-REAL-UI-SOURCE-ENTRY-BADGE-RECONCILIATION creates source work using
  *          the live Operations action form reached from My Work, then certifies
  *          browser idempotent replay, calendar selection, EOS-owned completion,
  *          durable registry rehydrate, aggregate counts and current global
