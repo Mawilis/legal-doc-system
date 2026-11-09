@@ -1,13 +1,15 @@
 /**
  * TITLE: WILSY OS Daily Attention Centre Client Contract Tests
- * VERSION: v1.1.0-FLOATING-CALENDAR-ACTION-CONTRACT
+ * VERSION: v1.2.0-EXPLICIT-CALENDAR-CLOSE-CONTRACT
  * AUTHORITY: WILSY OS Core Governance
  * EPITOME: Exercises tenant-bound source rendering, interactive work triage,
  *          source-owned navigation and fail-closed missing/invalid projections.
  * ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/client/src/__tests__/components/WilsyDailyAttentionCentre.test.jsx
  * COLLABORATION / OWNERSHIP: WilsyDailyAttentionCentre.jsx and EOS /my-work schema.
  * CERTIFICATION / UPDATE DATE: 2026-11-09
- * CHANGELOG: v1.1.0-FLOATING-CALENDAR-ACTION-CONTRACT verifies floating,
+ * CHANGELOG: v1.2.0-EXPLICIT-CALENDAR-CLOSE-CONTRACT asserts visible Close calendar action
+ *            and two-stage Escape: calendar first and entire panel second.
+ *            v1.1.0-FLOATING-CALENDAR-ACTION-CONTRACT verifies floating,
  *            accessible keyboard movement, calendar, and HR work entry.
  *            v1.0.0-DAILY-ATTENTION-CONTRACT covers authoritative rendering,
  *            overdue/search/source filters, expanded work, retry and denied scope.
@@ -175,8 +177,22 @@ describe('WILSY daily attention centre', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Open work deadline calendar' }));
     expect(screen.getByRole('group', { name: 'Choose work deadline date' })).toBeTruthy();
     expect(screen.getByRole('tab', { name: 'Calendar' }).getAttribute('aria-selected')).toBe('true');
-    fireEvent.click(screen.getByRole('tab', { name: 'Work list' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Close calendar and return to work list' }));
+    expect(screen.queryByRole('group', { name: 'Choose work deadline date' })).toBeNull();
     expect(screen.getByText('Follow up with customer')).toBeTruthy();
+    expect(screen.queryByRole('button', { name: 'Close calendar and return to work list' })).toBeNull();
+  });
+
+  it('Escape dismisses the calendar before the entire attention panel', async () => {
+    const { onClose } = renderCentre();
+    await screen.findByText('Review governed contract');
+    fireEvent.click(screen.getByRole('button', { name: 'Open work deadline calendar' }));
+    expect(screen.getByRole('button', { name: 'Close calendar and return to work list' })).toBeTruthy();
+    fireEvent.keyDown(document, { key: 'Escape' });
+    expect(screen.getByRole('tab', { name: 'Work list' }).getAttribute('aria-selected')).toBe('true');
+    expect(onClose).not.toHaveBeenCalled();
+    fireEvent.keyDown(document, { key: 'Escape' });
+    expect(onClose).toHaveBeenCalledTimes(1);
   });
 
   it('opens the existing HR workflow from a genuine empty queue', async () => {
@@ -199,7 +215,7 @@ describe('WILSY daily attention centre', () => {
 
 /*
  * ARTIFACT: WilsyDailyAttentionCentre.test.jsx
- * VERSION: v1.1.0-FLOATING-CALENDAR-ACTION-CONTRACT
+ * VERSION: v1.2.0-EXPLICIT-CALENDAR-CLOSE-CONTRACT
  * AUTHORITY BOUNDARY: Deterministic component test only.
  * TENANT POSTURE: Synthetic exact-tenant and foreign-tenant cases.
  * FAIL-CLOSED POSTURE: No simulated approvals or silent fallback.
