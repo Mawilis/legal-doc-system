@@ -1,6 +1,6 @@
 /**
  * TITLE: WILSY OS Authorised My Work Completion Workspace
- * VERSION: v1.6.0-SOURCE-COMMAND-COORDINATED-REFRESH
+ * VERSION: v1.7.0-AUTHORIZED-WORK-CREATION-HANDOFF
  * AUTHORITY: Wilsy OS Core Governance
  * EPITOME: Executes source-owned evidenced work completion and focuses the
  *          item selected from Daily Attention or Headquarters.
@@ -8,7 +8,12 @@
  * COLLABORATION / OWNERSHIP: Python EOS /api/my-work owns visibility and
  *                            source services own completion and audit.
  * CERTIFICATION / UPDATE DATE: 2026-11-09
- * CHANGELOG: v1.6.0-SOURCE-COMMAND-COORDINATED-REFRESH notifies current-session
+ * CHANGELOG: v1.7.0-AUTHORIZED-WORK-CREATION-HANDOFF exposes the existing
+ *            source-owned Operations create/manage workflow from My Work,
+ *            including a useful zero-queue action. The link is shown only
+ *            when the current EOS projection admitted the Operations source;
+ *            separate create permission and entitlement remain server-owned.
+ *            v1.6.0-SOURCE-COMMAND-COORDINATED-REFRESH notifies current-session
  *            queue subscribers only after a source-owned completion succeeds.
  *            Invalidating the EOS read projection refreshes the global badge
  *            without optimistic local completion or a parallel command route.
@@ -249,9 +254,18 @@ export default function MyWorkWorkspace(props = {}) {
             <h1 className="mt-2 text-3xl font-semibold tracking-tight sm:text-4xl">My Work</h1>
             <p className="mt-2 max-w-2xl text-sm text-slate-400">One operational queue, assembled only from work your current authenticated business capacity is authorized to see.</p>
           </div>
-          <button onClick={() => load({ quiet: true })} disabled={refreshing} className="inline-flex items-center gap-2 rounded-xl border border-white/15 bg-white/5 px-4 py-2.5 text-sm hover:bg-white/10 disabled:opacity-50">
-            <RefreshCw size={15} className={refreshing ? 'animate-spin' : ''} /> Refresh
-          </button>
+          <div className="flex flex-wrap items-center gap-2">
+            {projection.sources_included.includes('OPERATIONS') && (
+              <button type="button"
+                onClick={() => navigate('/headquarters?section=operations')}
+                className="inline-flex items-center gap-2 rounded-xl border border-amber-400/50 bg-amber-400/10 px-4 py-2.5 text-sm font-medium text-amber-100 hover:bg-amber-400/20">
+                Open Operations work management
+              </button>
+            )}
+            <button onClick={() => load({ quiet: true })} disabled={refreshing} className="inline-flex items-center gap-2 rounded-xl border border-white/15 bg-white/5 px-4 py-2.5 text-sm hover:bg-white/10 disabled:opacity-50">
+              <RefreshCw size={15} className={refreshing ? 'animate-spin' : ''} /> Refresh
+            </button>
+          </div>
         </header>
 
         <section className="grid grid-cols-2 gap-3 py-6 sm:grid-cols-4">
@@ -276,6 +290,13 @@ export default function MyWorkWorkspace(props = {}) {
                 ? 'EOS returned no source projection. This is not evidence that every business queue is empty.'
                 : 'There is no active work in the sources currently authorized for this session.'}
             </p>
+            {projection.sources_included.includes('OPERATIONS') && (
+              <button type="button"
+                onClick={() => navigate('/headquarters?section=operations')}
+                className="mt-6 rounded-xl border border-amber-400/50 bg-amber-400/10 px-5 py-2.5 text-sm font-medium text-amber-100 hover:bg-amber-400/20">
+                Open Operations to create or manage work
+              </button>
+            )}
           </section>
         ) : (
           <section aria-label="Authorized work queue" className="space-y-3">
@@ -410,7 +431,7 @@ function Metric({ label, value }) {
 
 /*
  * ARTIFACT: MyWorkWorkspace.jsx
- * VERSION: v1.6.0-SOURCE-COMMAND-COORDINATED-REFRESH
+ * VERSION: v1.7.0-AUTHORIZED-WORK-CREATION-HANDOFF
  * AUTHORITY BOUNDARY: EOS source-owned work completion only.
  * TENANT POSTURE: Current principal, membership and business-role scope only.
  * FAIL-CLOSED POSTURE: Shared contract rejects invalid work and coverage.
