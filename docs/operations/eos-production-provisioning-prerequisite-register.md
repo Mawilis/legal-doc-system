@@ -1,5 +1,5 @@
 # TITLE: WILSY EOS Production Provisioning Prerequisite and Evidence Register
-# VERSION: v1.0.3-EOS-AF-SOUTH-1-DISCOVERY-RECORDED
+# VERSION: v1.0.4-EOS-ECS-TASK-ARN-IDENTITY-BINDING
 # AUTHORITY: Wilsy OS Core Governance; evidence register and provisioning gate definition only.
 # EPITOME: Track verified facts, missing evidence, accountable approvals and exact exit criteria before any production ECS foundation provisioning or workload activation.
 # ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/docs/operations/eos-production-provisioning-prerequisite-register.md
@@ -84,9 +84,10 @@ The production verifier must run from inside the actual ECS container and perfor
 4. Requires `WILSY_ECS_EXPECTED_TASK_ROLE_ARN` to equal the exact production task-role ARN.
 5. Calls STS through the task's ambient credential chain and requires the actual assumed-role ARN to be `wilsy-eos-production-task-role`. The execution role, local role, IAM user, administrator and any other role are rejected.
 6. Builds the canonical EOS KMS adapter from environment, requires the production account/region key ARN, and performs a synthetic encrypt/decrypt round trip with the canonical purpose/principal/revision encryption context.
-7. Emits sanitized pass/fail markers only; it never prints credentials, secret values, ciphertext, plaintext or TOTP material.
+7. Requires the task ARN resource path itself to be `task/wilsy-eos-production/<32-character-task-id>`; metadata cannot claim the approved cluster while supplying an ARN for another cluster or a malformed/short task ID.
+8. Emits sanitized pass/fail markers only; it never prints credentials, secret values, ciphertext, plaintext or TOTP material.
 
-The foundation injects the expected task-role ARN from `!GetAtt EosProductionTaskRole.Arn`. This is an expectation, not proof. Only the STS response observed from the actual task can prove the effective runtime identity. A static test, local execution, administrator CLI session, CloudFormation output or task-definition registration cannot close P-14.
+The foundation injects the expected task-role ARN from `!GetAtt EosProductionTaskRole.Arn`. This is an expectation, not proof. The verifier also binds the metadata TaskARN resource path to the exact approved cluster name and a 32-character task ID, independently of the metadata Cluster field. Only the STS response observed from the actual task can prove the effective runtime identity. A static test, local execution, administrator CLI session, CloudFormation output or task-definition registration cannot close P-14.
 
 Run the verifier only after an explicitly approved task launch:
 
@@ -112,13 +113,13 @@ A zero exit status proves the task metadata, exact task role and synthetic KMS c
 
 - The intended AWS account and region are recorded from read-only discovery. The completed `af-south-1` inventory reported no ECS/EKS production cluster, production secrets, production KMS alias, NAT, VPC endpoint, load balancer/target group, ACM certificate or Route 53 zone. The sole VPC is default-only and explicitly rejected as a production network foundation. The only KMS alias and CloudFormation stack are local-development resources. App Runner and Lightsail inventory was unavailable, so the discovery is not a global proof that no production host exists. The inventory script reports candidate secret metadata, KMS aliases, VPC/subnet/security-group/NAT/VPC endpoint inventory, load-balancer target groups, ACM certificates and Route 53 hosted zones without reading secret values.
 - The ECS foundation now injects the exact expected task-role ARN into the task environment.
-- The production-only verifier and synthetic unit tests are added to the repository; the verifier pins the approved ECS cluster, task family and positive revision.
+- The production-only verifier and synthetic unit tests are added to the repository; the verifier pins the approved ECS cluster, task family and positive revision, and validates that the TaskARN resource path independently names that cluster and a 32-character task ID. These tests remain source-level checks, not runtime identity evidence.
 - The operations runbook distinguishes the production verifier from the local-development probe.
 - Actual production hosting, key-administrator role, secret ARNs, Atlas target/network, published image digest, VPC/subnets/egress, domain/ACM/ingress, readiness, durable storage and recovery evidence remain open.
 - No AWS resource has been created, no CloudFormation change set has been executed, no ECS task has been launched, no production deployment or DNS change has occurred, no database has been mutated, no PR has been merged, and no MFA factor/enforcement change has been made.
 
 # ARTIFACT: docs/operations/eos-production-provisioning-prerequisite-register.md
-# VERSION: v1.0.3-EOS-AF-SOUTH-1-DISCOVERY-RECORDED
+# VERSION: v1.0.4-EOS-ECS-TASK-ARN-IDENTITY-BINDING
 # AUTHORITY BOUNDARY: Evidence tracking and release-gate documentation only; no provisioning or production activation.
 # TENANT POSTURE: No tenant, principal, membership, session or database records are created or changed.
 # FAIL-CLOSED POSTURE: Unverified dependencies remain blockers; only independently reviewable evidence closes a prerequisite.
