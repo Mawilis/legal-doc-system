@@ -1,13 +1,15 @@
 /**
  * TITLE: WILSY OS Daily Attention Centre Client Contract Tests
- * VERSION: v1.2.0-EXPLICIT-CALENDAR-CLOSE-CONTRACT
+ * VERSION: v1.3.0-EOS-SOURCE-COVERAGE
  * AUTHORITY: WILSY OS Core Governance
- * EPITOME: Exercises tenant-bound source rendering, interactive work triage,
- *          source-owned navigation and fail-closed missing/invalid projections.
+ * EPITOME: Exercises tenant-bound source rendering, EOS-reported coverage,
+ *          interactive work triage, source-owned navigation and honest empty states.
  * ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/client/src/__tests__/components/WilsyDailyAttentionCentre.test.jsx
- * COLLABORATION / OWNERSHIP: WilsyDailyAttentionCentre.jsx and EOS /my-work schema.
+ * COLLABORATION / OWNERSHIP: WilsyDailyAttentionCentre.jsx and EOS /api/my-work schema.
  * CERTIFICATION / UPDATE DATE: 2026-11-09
- * CHANGELOG: v1.2.0-EXPLICIT-CALENDAR-CLOSE-CONTRACT asserts visible Close calendar action
+ * CHANGELOG: v1.3.0-EOS-SOURCE-COVERAGE verifies filters use only included
+ *            sources and distinguishes admitted-empty from no-source coverage.
+ *            v1.2.0-EXPLICIT-CALENDAR-CLOSE-CONTRACT asserts visible Close calendar action
  *            and two-stage Escape: calendar first and entire panel second.
  *            v1.1.0-FLOATING-CALENDAR-ACTION-CONTRACT verifies floating,
  *            accessible keyboard movement, calendar, and HR work entry.
@@ -63,7 +65,12 @@ const projection = () => ({
       is_overdue: false,
     },
   ],
-  summary: { active_count: 2, overdue_count: 1 },
+  summary: {
+    active_count: 2,
+    overdue_count: 1,
+    source_counts: { LEGAL: 1, CRM: 1 },
+  },
+  sources_included: ['LEGAL', 'CRM'],
   authority: { commands_owned_by: 'SOURCE_SERVICES', permits_completion: false },
 });
 
@@ -89,7 +96,7 @@ beforeEach(() => {
 });
 
 describe('WILSY daily attention centre', () => {
-  it('displays authorised business work, not fabricated unread notifications', async () => {
+  it('displays EOS-authorised work, not fabricated unread notifications', async () => {
     renderCentre();
     expect(await screen.findByText('Review governed contract')).toBeTruthy();
     expect(screen.getByText('Follow up with customer')).toBeTruthy();
@@ -98,7 +105,17 @@ describe('WILSY daily attention centre', () => {
     expect(screen.queryByText(/3 unread/)).toBeNull();
   });
 
-  it('filters actionable work by overdue, priority, source and search', async () => {
+  it('offers source filters only for sources included by EOS', async () => {
+    renderCentre();
+    await screen.findByText('Follow up with customer');
+    const filter = screen.getByRole('combobox', { name: 'Filter work by source' });
+    expect(Array.from(filter.options).map((option) => option.value))
+      .toEqual(['ALL', 'LEGAL', 'CRM']);
+    expect(within(filter).queryByRole('option', { name: 'Operations' })).toBeNull();
+    expect(within(filter).queryByRole('option', { name: 'Intelligence' })).toBeNull();
+  });
+
+  it('filters actionable work by overdue, priority, included source and search', async () => {
     renderCentre();
     await screen.findByText('Follow up with customer');
     fireEvent.click(screen.getByRole('button', { name: 'Overdue' }));
@@ -133,9 +150,9 @@ describe('WILSY daily attention centre', () => {
   it('rejects foreign tenant, corrupt summary and fabricated permission authority', () => {
     expect(() => assertAttentionProjection({
       ...projection(), tenant_id: 'OTHER-TENANT',
-    }, TENANT)).toThrow('ATTENTION_PROJECTION_INVALID');
+    }, TENANT)).toThrow('MY_WORK_SCOPE_MISMATCH');
     expect(() => assertAttentionProjection({
-      ...projection(), summary: { active_count: 100, overdue_count: 1 },
+      ...projection(), summary: { ...projection().summary, active_count: 100 },
     }, TENANT)).toThrow('ATTENTION_PROJECTION_INVALID');
     expect(() => assertAttentionProjection({
       ...projection(), authority: { commands_owned_by: 'SOURCE_SERVICES', permits_completion: true },
@@ -154,7 +171,6 @@ describe('WILSY daily attention centre', () => {
     expect(await screen.findByText('Review governed contract')).toBeTruthy();
     await waitFor(() => expect(api.get).toHaveBeenCalledTimes(2));
   });
-
 
   it('floats and docks the panel with accessible keyboard repositioning', async () => {
     renderCentre();
@@ -195,15 +211,30 @@ describe('WILSY daily attention centre', () => {
     expect(onClose).toHaveBeenCalledTimes(1);
   });
 
-  it('opens the existing HR workflow from a genuine empty queue', async () => {
+  it('distinguishes an admitted empty queue from no source projection', async () => {
     api.get.mockResolvedValueOnce({ data: {
-      ...projection(), items: [], summary: { active_count: 0, overdue_count: 0 },
+      ...projection(),
+      items: [],
+      summary: { active_count: 0, overdue_count: 0, source_counts: { LEGAL: 0, CRM: 0 } },
     } });
     const onOpenWorkforce = vi.fn();
     renderCentre({ onOpenWorkforce });
-    await screen.findByText('No active work in authorised sources');
-    fireEvent.click(screen.getByRole('button', { name: 'Open HR & workforce duties' }));
-    expect(onOpenWorkforce).toHaveBeenCalledTimes(1);
+    expect(await screen.findByText('No active work in the included sources')).toBeTruthy();
+    expect(screen.getByText('EOS returned no active work from Legal, CRM.')).toBeTruthy();
+    expect(screen.queryByRole('button', { name: 'Open HR & workforce duties' })).toBeNull();
+    expect(onOpenWorkforce).not.toHaveBeenCalled();
+  });
+
+  it('does not claim an empty queue when EOS included no work source', async () => {
+    api.get.mockResolvedValueOnce({ data: {
+      ...projection(),
+      items: [],
+      summary: { active_count: 0, overdue_count: 0, source_counts: {} },
+      sources_included: [],
+    } });
+    renderCentre();
+    expect(await screen.findByText('No work source was included in this session')).toBeTruthy();
+    expect(screen.getByText(/not evidence that every business queue is empty/)).toBeTruthy();
   });
 
   it('never requests a tenant work queue for a system services workspace', async () => {
@@ -215,7 +246,7 @@ describe('WILSY daily attention centre', () => {
 
 /*
  * ARTIFACT: WilsyDailyAttentionCentre.test.jsx
- * VERSION: v1.2.0-EXPLICIT-CALENDAR-CLOSE-CONTRACT
+ * VERSION: v1.3.0-EOS-SOURCE-COVERAGE
  * AUTHORITY BOUNDARY: Deterministic component test only.
  * TENANT POSTURE: Synthetic exact-tenant and foreign-tenant cases.
  * FAIL-CLOSED POSTURE: No simulated approvals or silent fallback.

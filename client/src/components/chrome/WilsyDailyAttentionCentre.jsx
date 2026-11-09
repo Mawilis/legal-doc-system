@@ -1,6 +1,6 @@
 /**
  * TITLE: WILSY OS Authenticated Daily Attention Centre
- * VERSION: v1.3.0-CALENDAR-EXPLICIT-DISMISSAL
+ * VERSION: v1.4.0-EOS-SOURCE-COVERAGE
  * AUTHORITY: Wilsy OS Core Governance
  * EPITOME: Interactive notification-bell entry to exact-tenant, authorised
  *          EOS My Work triage, with actionable navigation to source-owned
@@ -9,7 +9,10 @@
  * COLLABORATION / OWNERSHIP: Python EOS /api/my-work owns work visibility;
  *                            App.jsx owns authenticated chrome and navigation.
  * CERTIFICATION / UPDATE DATE: 2026-11-09
- * CHANGELOG: v1.3.0-CALENDAR-EXPLICIT-DISMISSAL makes the date view explicitly dismissible
+ * CHANGELOG: v1.4.0-EOS-SOURCE-COVERAGE uses the canonical projection contract
+ *            to derive source options and empty-state wording from EOS coverage;
+ *            no empty queue is routed automatically into HR.
+ *            v1.3.0-CALENDAR-EXPLICIT-DISMISSAL makes the date view explicitly dismissible
  *            with a prominent Close calendar action and layered Escape
  *            contract: calendar first, panel second. Work state is retained.
  *            v1.2.0-PORTALLED-VIEWPORT-FLOATING portals the floating panel beyond the
@@ -41,22 +44,18 @@ import {
   ChevronDown, Clock3, Grip, Pin, RefreshCw, Search, X,
 } from 'lucide-react';
 import api from '../../services/api.js';
+import {
+  assertUnifiedMyWorkProjection,
+  unifiedMyWorkSourceLabel,
+} from '../../services/unifiedMyWorkProjection.js';
 import WilsyWorkDeadlineCalendar from './WilsyWorkDeadlineCalendar.jsx';
 
-const SCHEMA = 'WILSY-OS-UNIFIED-MY-WORK/V1';
-const SOURCES = Object.freeze({
-  LEGAL: 'Legal',
-  OPERATIONS: 'Operations',
-  INTELLIGENCE: 'Intelligence',
-  CRM: 'CRM',
-});
 const FILTERS = Object.freeze([
   { id: 'ALL', label: 'All work' },
   { id: 'OVERDUE', label: 'Overdue' },
   { id: 'TODAY', label: 'Due today' },
   { id: 'HIGH', label: 'High priority' },
 ]);
-const VALID_PRIORITIES = new Set(['CRITICAL', 'HIGH', 'NORMAL', 'LOW']);
 
 const validCount = (value) => Number.isSafeInteger(value) && value >= 0;
 
@@ -75,51 +74,26 @@ const dueLabel = (value) => {
 };
 
 /**
- * Validate an EOS-signed-in-session projection, never trusting HTTP success
- * alone as tenant or source authority. This function creates no new rights.
+ * Preserve the established component export while delegating validation to the
+ * shared read-only projection contract.
+ *
+ * @description Validates one EOS work snapshot and exact requested tenant.
+ * @collaboration Headquarters Daily Brief and Daily Attention contract tests.
+ * @institutional Compatibility export only; it grants no permission.
+ * @param {Object} payload EOS unified My Work response body.
+ * @param {string} tenantId Exact authenticated tenant.
+ * @returns {Object} The same validated projection.
+ * @throws {Error} Stable contract code when the projection is invalid.
  */
 export function assertAttentionProjection(payload, tenantId) {
-  if (
-    !payload || payload.schema !== SCHEMA || payload.tenant_id !== tenantId
-    || typeof payload.as_of !== 'string'
-    || Number.isNaN(new Date(payload.as_of).getTime())
-    || !Array.isArray(payload.items) || !payload.summary
-    || !validCount(payload.summary.active_count)
-    || !validCount(payload.summary.overdue_count)
-    || payload.summary.active_count !== payload.items.length
-    || payload.authority?.commands_owned_by !== 'SOURCE_SERVICES'
-    || payload.authority?.permits_completion !== false
-  ) {
-    throw new Error('ATTENTION_PROJECTION_INVALID');
-  }
-  const seen = new Set();
-  let overdue = 0;
-  for (const item of payload.items) {
-    if (
-      !item || !Object.hasOwn(SOURCES, item.source)
-      || typeof item.work_item_id !== 'string' || !item.work_item_id.trim()
-      || item.source_key !== item.source + ':' + item.work_item_id
-      || seen.has(item.source_key)
-      || typeof item.title !== 'string' || !item.title.trim()
-      || !VALID_PRIORITIES.has(item.priority)
-      || typeof item.is_overdue !== 'boolean'
-      || (item.due_at !== null && item.due_at !== undefined
-        && (typeof item.due_at !== 'string'
-          || Number.isNaN(new Date(item.due_at).getTime())))
-      || (Object.hasOwn(item, 'tenant_id') && item.tenant_id !== tenantId)
-    ) {
-      throw new Error('ATTENTION_ITEM_INVALID');
-    }
-    seen.add(item.source_key);
-    if (item.is_overdue) overdue += 1;
-  }
-  if (payload.summary.overdue_count !== overdue) {
-    throw new Error('ATTENTION_SUMMARY_INVALID');
-  }
-  return payload;
+  return assertUnifiedMyWorkProjection(payload, { tenantId });
 }
 
 /**
+ * @description Render authenticated EOS work and hand commands to source owners.
+ * @collaboration App.jsx supplies exact tenant and source navigation callbacks.
+ * @institutional The panel is a read-only projection; source metadata is
+ * presentation scope, and source services retain all command authority.
  * @param {Object} props Authenticated chrome-only projection and callbacks.
  * @param {string|undefined} props.tenantId Exact current tenant from auth.
  * @param {boolean} props.systemServicesWorkspace System workspace exclusion.
@@ -129,6 +103,7 @@ export function assertAttentionProjection(payload, tenantId) {
  * @param {Function} props.onClose Dismisses the panel.
  * @param {Function} props.onOpenWork Navigates to canonical My Work commands.
  * @param {Function} props.onOpenWorkforce Navigates into governed HR workspace.
+ * @returns {JSX.Element} Accessible daily attention projection.
  */
 export default function WilsyDailyAttentionCentre({
   tenantId,
@@ -216,10 +191,19 @@ export default function WilsyDailyAttentionCentre({
   }, [open, onClose, view]);
 
   const items = projection?.items || [];
+  const sourceIds = projection?.sources_included || [];
+  const sourceOptions = sourceIds.map((id) => [id, unifiedMyWorkSourceLabel(id)]);
+  const sourceLabels = sourceOptions.map(([, label]) => label);
   const verifiedCount = status === 'READY' ? projection.summary.active_count : activeCount;
   const badgeCount = validCount(verifiedCount) && verifiedCount > 0 ? verifiedCount : null;
   const dueTodayCount = items.filter((item) => dueToday(item.due_at)).length;
   const highCount = items.filter((item) => ['CRITICAL', 'HIGH'].includes(item.priority)).length;
+
+  useEffect(() => {
+    if (projection && source !== 'ALL' && !projection.sources_included.includes(source)) {
+      setSource('ALL');
+    }
+  }, [projection, source]);
 
   const filteredItems = useMemo(() => {
     const phrase = query.trim().toLocaleLowerCase();
@@ -231,13 +215,11 @@ export default function WilsyDailyAttentionCentre({
       if (!phrase) return true;
       return [
         item.title, item.description, item.status, item.priority,
-        SOURCES[item.source], item.work_item_id,
+        unifiedMyWorkSourceLabel(item.source), item.work_item_id,
       ].some((value) => typeof value === 'string'
         && value.toLocaleLowerCase().includes(phrase));
     });
   }, [items, filter, source, query]);
-
-
 
   // Render the movable surface outside header backdrop-filter/stacking contexts.
   useEffect(() => {
@@ -412,18 +394,18 @@ export default function WilsyDailyAttentionCentre({
               <div className="shrink-0 border-b border-white/10 px-4 pb-3 pt-4">
                 <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
                   <div role="tablist" aria-label="Daily attention views" className="flex items-center gap-2">
-                  <button type="button" role="tab" aria-selected={view === 'WORK'}
-                    onClick={() => setView('WORK')}
-                    className={'rounded-lg px-3 py-2 text-xs font-semibold ' +
-                      (view === 'WORK' ? 'bg-amber-300 text-[#081326]' : 'text-slate-300 hover:bg-white/10')}>
-                    Work list
-                  </button>
-                  <button type="button" role="tab" aria-selected={view === 'CALENDAR'}
-                    onClick={() => setView('CALENDAR')}
-                    className={'inline-flex items-center gap-1.5 rounded-lg px-3 py-2 text-xs font-semibold ' +
-                      (view === 'CALENDAR' ? 'bg-amber-300 text-[#081326]' : 'text-slate-300 hover:bg-white/10')}>
-                    <CalendarDays size={14}/> Calendar
-                  </button>
+                    <button type="button" role="tab" aria-selected={view === 'WORK'}
+                      onClick={() => setView('WORK')}
+                      className={'rounded-lg px-3 py-2 text-xs font-semibold ' +
+                        (view === 'WORK' ? 'bg-amber-300 text-[#081326]' : 'text-slate-300 hover:bg-white/10')}>
+                      Work list
+                    </button>
+                    <button type="button" role="tab" aria-selected={view === 'CALENDAR'}
+                      onClick={() => setView('CALENDAR')}
+                      className={'inline-flex items-center gap-1.5 rounded-lg px-3 py-2 text-xs font-semibold ' +
+                        (view === 'CALENDAR' ? 'bg-amber-300 text-[#081326]' : 'text-slate-300 hover:bg-white/10')}>
+                      <CalendarDays size={14}/> Calendar
+                    </button>
                   </div>
                   {view === 'CALENDAR' && (
                     <button type="button" aria-label="Close calendar and return to work list"
@@ -446,38 +428,38 @@ export default function WilsyDailyAttentionCentre({
                   </button>
                 </div>
                 {view === 'WORK' && (<>
-                <div role="group" aria-label="Filter daily attention" className="mt-3 flex flex-wrap gap-1.5">
-                  {FILTERS.map(({ id, label }) => (
-                    <button key={id} type="button" aria-pressed={filter === id}
-                      onClick={() => setFilter(id)}
-                      className={'rounded-full border px-2.5 py-1.5 text-[11px] font-medium transition ' +
-                        (filter === id
-                          ? 'border-amber-300/40 bg-amber-300/15 text-amber-100'
-                          : 'border-white/10 text-slate-300 hover:bg-white/10')}
-                    >{label}</button>
-                  ))}
-                </div>
-                <div className="mt-3 flex gap-2">
-                  <label className="flex min-w-0 flex-1 items-center gap-2 rounded-lg border border-white/15 bg-[#0b1729] px-2.5">
-                    <Search size={15} className="shrink-0 text-slate-500"/>
-                    <input type="search" aria-label="Search authorised work" value={query}
-                      onChange={(event) => setQuery(event.target.value)}
-                      placeholder="Search your work"
-                      className="h-9 w-full min-w-0 bg-transparent text-xs text-white outline-none placeholder:text-slate-500"/>
-                  </label>
-                  <label className="relative flex items-center rounded-lg border border-white/15 bg-[#0b1729]">
-                    <span className="sr-only">Work source</span>
-                    <select aria-label="Filter work by source" value={source}
-                      onChange={(event) => setSource(event.target.value)}
-                      className="h-9 max-w-[120px] appearance-none bg-transparent pl-2.5 pr-6 text-xs text-white outline-none">
-                      <option className="bg-[#101d32]" value="ALL">All sources</option>
-                      {Object.entries(SOURCES).map(([id, label]) => (
-                        <option className="bg-[#101d32]" key={id} value={id}>{label}</option>
-                      ))}
-                    </select>
-                    <ChevronDown size={12} className="pointer-events-none absolute right-2 text-slate-400"/>
-                  </label>
-                </div>
+                  <div role="group" aria-label="Filter daily attention" className="mt-3 flex flex-wrap gap-1.5">
+                    {FILTERS.map(({ id, label }) => (
+                      <button key={id} type="button" aria-pressed={filter === id}
+                        onClick={() => setFilter(id)}
+                        className={'rounded-full border px-2.5 py-1.5 text-[11px] font-medium transition ' +
+                          (filter === id
+                            ? 'border-amber-300/40 bg-amber-300/15 text-amber-100'
+                            : 'border-white/10 text-slate-300 hover:bg-white/10')}
+                      >{label}</button>
+                    ))}
+                  </div>
+                  <div className="mt-3 flex gap-2">
+                    <label className="flex min-w-0 flex-1 items-center gap-2 rounded-lg border border-white/15 bg-[#0b1729] px-2.5">
+                      <Search size={15} className="shrink-0 text-slate-500"/>
+                      <input type="search" aria-label="Search authorised work" value={query}
+                        onChange={(event) => setQuery(event.target.value)}
+                        placeholder="Search your work"
+                        className="h-9 w-full min-w-0 bg-transparent text-xs text-white outline-none placeholder:text-slate-500"/>
+                    </label>
+                    <label className="relative flex min-w-0 items-center rounded-lg border border-white/15 bg-[#0b1729]">
+                      <span className="sr-only">Work source</span>
+                      <select aria-label="Filter work by source" value={source}
+                        onChange={(event) => setSource(event.target.value)}
+                        className="h-9 max-w-[45vw] appearance-none bg-transparent pl-2.5 pr-6 text-xs text-white outline-none sm:max-w-[160px]">
+                        <option className="bg-[#101d32]" value="ALL">All included sources</option>
+                        {sourceOptions.map(([id, label]) => (
+                          <option className="bg-[#101d32]" key={id} value={id}>{label}</option>
+                        ))}
+                      </select>
+                      <ChevronDown size={12} className="pointer-events-none absolute right-2 text-slate-400"/>
+                    </label>
+                  </div>
                 </>)}
               </div>
 
@@ -489,24 +471,24 @@ export default function WilsyDailyAttentionCentre({
                   <div className="py-9 text-center">
                     <CheckCircle2 size={26} className="mx-auto text-emerald-300"/>
                     <p className="mt-3 text-sm font-medium text-white">
-                      {items.length === 0 ? 'No active work in authorised sources' : 'No work matches these filters'}
+                      {items.length > 0
+                        ? 'No work matches these filters'
+                        : sourceIds.length > 0
+                          ? 'No active work in the included sources'
+                          : 'No work source was included in this session'}
                     </p>
                     <p className="mt-1 text-xs text-slate-400">
-                      {items.length === 0
-                        ? 'Your authorised work sources returned an empty active queue.'
-                        : 'Try another filter or search term.'}
+                      {items.length > 0
+                        ? 'Try another filter or search term.'
+                        : sourceIds.length > 0
+                          ? 'EOS returned no active work from ' + sourceLabels.join(', ') + '.'
+                          : 'EOS returned no source projection. This is not evidence that every business queue is empty.'}
                     </p>
-                    {items.length === 0 && onOpenWorkforce && (
-                      <button type="button" onClick={onOpenWorkforce}
-                        className="mt-4 inline-flex items-center gap-1.5 rounded-lg border border-amber-300/40 px-3 py-2 text-xs font-semibold text-amber-100 hover:bg-white/10">
-                        Open HR & workforce duties <ArrowRight size={13}/>
-                      </button>
-                    )}
                   </div>
                 ) : filteredItems.map((item) => (
                   <article key={item.source_key} className="mb-2 rounded-xl border border-white/10 bg-white/[0.035] p-3">
                     <div className="flex items-center justify-between gap-2 text-[10px] uppercase tracking-[0.08em]">
-                      <span className="font-semibold text-amber-200">{SOURCES[item.source]}</span>
+                      <span className="font-semibold text-amber-200">{unifiedMyWorkSourceLabel(item.source)}</span>
                       <span className={item.is_overdue ? 'font-semibold text-rose-300' : 'text-slate-400'}>
                         {item.is_overdue ? 'Overdue' : item.priority + ' priority'}
                       </span>
@@ -543,8 +525,16 @@ export default function WilsyDailyAttentionCentre({
               </div>
 
               <div className="shrink-0 border-t border-white/10 bg-[#14243d] px-4 py-3">
-                <div className="mb-2 flex items-center justify-between gap-2 text-[10px] text-slate-400">
+                <div className="mb-2 flex flex-wrap items-center justify-between gap-2 text-[10px] text-slate-400">
                   <span>{filteredItems.length} of {items.length} authorised items</span>
+                  <span>Included: {sourceLabels.length ? sourceLabels.join(', ') : 'no source projection'}</span>
+                </div>
+                <div className="flex flex-wrap items-center justify-between gap-2">
+                  <span className="min-w-0 text-[10px] text-slate-500">
+                    Updated {new Date(projection.as_of).toLocaleTimeString([], {
+                      hour: '2-digit', minute: '2-digit',
+                    })}
+                  </span>
                   <button type="button" aria-label="Open work deadline calendar"
                     onClick={() => setView('CALENDAR')}
                     className="inline-flex items-center gap-1 rounded-lg px-2 py-1 text-amber-200 hover:bg-white/10">
@@ -554,7 +544,7 @@ export default function WilsyDailyAttentionCentre({
                     })}</span>
                   </button>
                 </div>
-                <div className="flex gap-2">
+                <div className="mt-2 flex gap-2">
                   {onOpenWorkforce && (
                     <button type="button" onClick={onOpenWorkforce}
                       className="min-w-0 flex-1 rounded-lg border border-amber-300/40 px-3 py-2.5 text-xs font-semibold text-amber-100 hover:bg-white/10">
@@ -588,10 +578,10 @@ function Stat({ label, value, urgent = false }) {
 
 /*
  * ARTIFACT: WilsyDailyAttentionCentre.jsx
- * VERSION: v1.3.0-CALENDAR-EXPLICIT-DISMISSAL
+ * VERSION: v1.4.0-EOS-SOURCE-COVERAGE
  * AUTHORITY BOUNDARY: Authenticated read-only EOS work triage.
- * TENANT POSTURE: Exact tenant, fail-closed, no browser persistence.
+ * TENANT POSTURE: Exact tenant; only EOS-included source coverage is rendered.
  * FAIL-CLOSED POSTURE: Invalid, denied or unavailable sources show no fabricated items.
- * FINANCIAL EXECUTION AUTHORITY: Kennel EOS only.
+ * FINANCIAL EXECUTION AUTHORITY: Kennel EOS exclusively.
  * END OF WILSY OS SOVEREIGN ARTIFACT
  */
