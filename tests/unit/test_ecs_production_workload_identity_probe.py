@@ -1,11 +1,13 @@
 # TITLE: WILSY EOS Production ECS Workload Identity Probe Tests
-# VERSION: v1.0.2-ECS-PRODUCTION-MISSING-METADATA-TEST
+# VERSION: v1.0.3-ECS-PRODUCTION-CLUSTER-ARN-BINDING
 # AUTHORITY: Unit certification of production ECS identity-verification logic only.
 # EPITOME: Prove fail-closed metadata endpoint, task ARN, exact STS role and production boundary validation without contacting AWS.
 # ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/tests/unit/test_ecs_production_workload_identity_probe.py
 # COLLABORATION / OWNERSHIP: Wilsy OS Core Engineering; isolated unit certification.
 # CERTIFICATION OR UPDATE DATE: 2026-11-09
 # CHANGELOG:
+#   v1.0.3 verifies that the TaskARN resource path itself names the approved
+#   ECS cluster and contains a 32-character task identifier.
 #   v1.0.2 corrects the missing-task-metadata negative fixture so it omits
 #   the required cluster, family and revision fields.
 #   v1.0.1 verifies exact cluster/task-family binding and positive task revision.
@@ -60,7 +62,7 @@ def test_task_metadata_requires_expected_account_region_and_revision():
     metadata = {
         "TaskARN": (
             "arn:aws:ecs:af-south-1:121014832643:"
-            "task/wilsy-eos-production/0123456789abcdef"
+            "task/wilsy-eos-production/0123456789abcdef0123456789abcdef"
         ),
         "Cluster": "wilsy-eos-production",
         "Family": "wilsy-eos-production-api",
@@ -77,7 +79,7 @@ def test_task_metadata_rejects_unapproved_cluster_family_or_revision(field, valu
     metadata = {
         "TaskARN": (
             "arn:aws:ecs:af-south-1:121014832643:"
-            "task/wilsy-eos-production/0123456789abcdef"
+            "task/wilsy-eos-production/0123456789abcdef0123456789abcdef"
         ),
         "Cluster": "wilsy-eos-production",
         "Family": "wilsy-eos-production-api",
@@ -96,6 +98,8 @@ def test_task_metadata_rejects_unapproved_cluster_family_or_revision(field, valu
         "arn:aws:ecs:us-east-1:121014832643:task/cluster/task-id",
         "arn:aws:ecs:af-south-1:999999999999:task/cluster/task-id",
         "arn:aws:ecs:af-south-1:121014832643:service/cluster/service",
+        "arn:aws:ecs:af-south-1:121014832643:task/another-cluster/0123456789abcdef0123456789abcdef",
+        "arn:aws:ecs:af-south-1:121014832643:task/wilsy-eos-production/0123456789abcdef",
         "",
     ],
 )
@@ -130,7 +134,7 @@ def test_sts_identity_requires_exact_production_task_role(monkeypatch):
             "Account": "121014832643",
             "Arn": (
                 "arn:aws:sts::121014832643:assumed-role/"
-                "wilsy-eos-production-task-role/0123456789abcdef"
+                "wilsy-eos-production-task-role/0123456789abcdef0123456789abcdef"
             ),
         }
     )
@@ -194,9 +198,9 @@ def test_sts_identity_rejects_wrong_account(monkeypatch):
 
 
 # ARTIFACT: tests/unit/test_ecs_production_workload_identity_probe.py
-# VERSION: v1.0.2-ECS-PRODUCTION-MISSING-METADATA-TEST
+# VERSION: v1.0.3-ECS-PRODUCTION-CLUSTER-ARN-BINDING
 # AUTHORITY BOUNDARY: Synthetic unit tests only; no AWS, task launch or KMS calls.
 # TENANT POSTURE: No tenant, principal, membership, session or database data is accessed or changed.
-# FAIL-CLOSED POSTURE: Unsafe metadata endpoints and non-production task identities must be rejected.
+# FAIL-CLOSED POSTURE: Unsafe metadata endpoints, mismatched cluster-bound task ARNs and non-production task identities must be rejected.
 # FINANCIAL EXECUTION AUTHORITY: Kennel EOS exclusively.
 # END OF WILSY OS SOVEREIGN ARTIFACT
