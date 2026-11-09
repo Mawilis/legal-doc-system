@@ -1,6 +1,6 @@
 /**
  * TITLE: WILSY OS Authenticated Daily Attention Centre
- * VERSION: v1.5.0-EXACT-SESSION-ATTENTION-COUNT-CURRENTNESS
+ * VERSION: v1.5.1-VERIFIED-ZERO-VS-UNAVAILABLE
  * AUTHORITY: Wilsy OS Core Governance
  * EPITOME: Interactive notification-bell entry to exact-tenant, authorised
  *          EOS My Work triage, with actionable navigation to source-owned
@@ -9,7 +9,11 @@
  * COLLABORATION / OWNERSHIP: Python EOS /api/my-work owns work visibility;
  *                            App.jsx owns authenticated chrome and navigation.
  * CERTIFICATION / UPDATE DATE: 2026-11-09
- * CHANGELOG: v1.5.0-EXACT-SESSION-ATTENTION-COUNT-CURRENTNESS gives the
+ * CHANGELOG: v1.5.1-VERIFIED-ZERO-VS-UNAVAILABLE distinguishes
+ *            EOS-verified zero active work from a truly unavailable work
+ *            count in the accessible bell label; a zero count never draws
+ *            a decorative unread badge or invents notifications.
+ *            v1.5.0-EXACT-SESSION-ATTENTION-COUNT-CURRENTNESS gives the
  *            independently source-confirmed current global count precedence
  *            over a formerly open panel's stale snapshot, clears stale closed
  *            projections and revalidates open panels on source invalidation
@@ -351,9 +355,9 @@ export default function WilsyDailyAttentionCentre({
     <div className="relative" ref={rootRef} data-wilsy-attention-centre="true">
       <button
         type="button"
-        aria-label={badgeCount === null
-          ? 'Open daily attention'
-          : 'Open daily attention: ' + badgeCount + ' active work items'}
+        aria-label={validCount(verifiedCount)
+          ? 'Open daily attention: ' + verifiedCount + ' active work items'
+          : 'Open daily attention'}
         aria-haspopup="dialog"
         aria-expanded={Boolean(open)}
         onClick={onToggle}
@@ -623,7 +627,7 @@ function Stat({ label, value, urgent = false }) {
 
 /*
  * ARTIFACT: WilsyDailyAttentionCentre.jsx
- * VERSION: v1.5.0-EXACT-SESSION-ATTENTION-COUNT-CURRENTNESS
+ * VERSION: v1.5.1-VERIFIED-ZERO-VS-UNAVAILABLE
  * AUTHORITY BOUNDARY: Authenticated read-only EOS work triage.
  * TENANT POSTURE: Exact tenant; only EOS-included source coverage is rendered.
  * FAIL-CLOSED POSTURE: Invalid, denied or unavailable sources show no fabricated items.
