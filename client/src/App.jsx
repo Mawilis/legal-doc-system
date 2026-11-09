@@ -71,7 +71,7 @@ import LedgerExplorer from './components/billing/LedgerExplorer.jsx';
 import MyWorkWorkspace from './components/workspaces/MyWorkWorkspace.jsx';
 import WilsyHeadquartersWorkspace from './components/workspaces/WilsyHeadquartersWorkspace.jsx';
 import SystemStatusPage from './components/system/SystemStatusPage.jsx';
-import wilsyBrandAsset from './assets/logo/wilsy.jpeg';
+import wilsyBrandAsset from './assets/logo/wilsy-icon.svg';
 import api from './services/api';
 import WilsyOSIntelligenceDockRuntime from './components/intelligence/WilsyOSIntelligenceDockRuntime.jsx';
 
