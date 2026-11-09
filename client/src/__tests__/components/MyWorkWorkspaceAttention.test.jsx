@@ -1,6 +1,6 @@
 /**
  * TITLE: WILSY OS Source-owned My Work Attention Handoff Contract
- * VERSION: v1.0.1-EFFECT-FLUSH-FOCUS-CERT
+ * VERSION: v1.1.0-NAVIGATION-SCOPE-CURRENTNESS-CERT
  * AUTHORITY: Wilsy OS Core Governance
  * EPITOME: Checks source-verified task focus and real canonical completion
  *          command invocation after a daily attention work-item selection.
@@ -8,7 +8,9 @@
  * COLLABORATION / OWNERSHIP: MyWorkWorkspace.jsx, EOS /my-work and
  *                            source-owned module completion commands.
  * CERTIFICATION / UPDATE DATE: 2026-11-09
- * CHANGELOG: v1.0.1-EFFECT-FLUSH-FOCUS-CERT waits for React's
+ * CHANGELOG: v1.1.0-NAVIGATION-SCOPE-CURRENTNESS-CERT adds same-route source
+ *            refresh, late-response rejection and authenticated-scope isolation.
+ *            v1.0.1-EFFECT-FLUSH-FOCUS-CERT waited for React's
  *            async item-focus effect before asserting real keyboard focus.
  *            v1.0.0-ATTENTION-SELECTED-COMPLETION-CERT covers selected
  *            work item navigation, actual server command and forged focus denial.
@@ -20,8 +22,9 @@
  */
 import React from 'react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { fireEvent, render, screen, waitFor } from '@testing-library/react';
-import { MemoryRouter } from 'react-router-dom';
+import { act, fireEvent, render, screen, waitFor } from '@testing-library/react';
+import { MemoryRouter, useNavigate } from 'react-router-dom';
+import AuthContext from '../../contexts/authContext.jsx';
 import api from '../../services/api.js';
 import MyWorkWorkspace from '../../components/workspaces/MyWorkWorkspace.jsx';
 
@@ -52,6 +55,13 @@ const renderWithFocus = (focusWorkItem) => render(
     <MyWorkWorkspace />
   </MemoryRouter>,
 );
+
+function NavigationHarness() {
+  const navigate = useNavigate();
+  return <><button onClick={() => navigate('/my-work', {state: {focusWorkItem: item.source_key}})}>
+    Open attention item
+  </button><MyWorkWorkspace /></>;
+}
 
 beforeEach(() => {
   vi.clearAllMocks();
@@ -84,11 +94,67 @@ describe('Daily attention selected My Work action', () => {
     expect(screen.queryByText('NOT-AUTHORISED')).toBeNull();
     expect(api.post).not.toHaveBeenCalled();
   });
+
+  it('re-reads EOS when attention selects newly arrived work on the same route', async () => {
+    api.get.mockResolvedValueOnce({data: {...payload, items: [], summary: {active_count: 0, overdue_count: 0}}})
+      .mockResolvedValueOnce({data: payload});
+    render(<MemoryRouter initialEntries={['/my-work']}><NavigationHarness /></MemoryRouter>);
+    await screen.findByText('You’re clear');
+    fireEvent.click(screen.getByRole('button', {name: 'Open attention item'}));
+    const card = (await screen.findByText(item.title)).closest('article');
+    await waitFor(() => expect(document.activeElement).toBe(card));
+    expect(api.get).toHaveBeenCalledTimes(2);
+    expect(api.post).not.toHaveBeenCalled();
+  });
+
+  it('rejects a late previous navigation read after the current source readback', async () => {
+    let resolveOld;
+    api.get.mockImplementationOnce(() => new Promise(resolve => {resolveOld = resolve;}))
+      .mockResolvedValueOnce({data: payload});
+    render(<MemoryRouter initialEntries={['/my-work']}><NavigationHarness /></MemoryRouter>);
+    await waitFor(() => expect(api.get).toHaveBeenCalledTimes(1));
+    fireEvent.click(screen.getByRole('button', {name: 'Open attention item'}));
+    await screen.findByText(item.title);
+    await act(async () => resolveOld({data: {...payload, items: [{...item, title: 'Obsolete source snapshot'}]}}));
+    expect(screen.queryByText('Obsolete source snapshot')).toBeNull();
+    expect(screen.getByText(item.title)).toBeTruthy();
+  });
+
+  it('clears prior-scope work and drafts on authenticated tenant and capacity changes', async () => {
+    const userA = {id: 'principal-a', tenantId: 'tenant-a', role: 'TENANT_OWNER', businessRole: 'tenant_owner'};
+    const userB = {id: 'principal-b', tenantId: 'tenant-b', role: 'TENANT_OWNER', businessRole: 'tenant_partner'};
+    const other = {...item, title: 'Second tenant task'};
+    api.get.mockResolvedValueOnce({data: {...payload, tenant_id: userA.tenantId, principal_id: userA.id}})
+      .mockResolvedValueOnce({data: {...payload, tenant_id: userB.tenantId, principal_id: userB.id, items: [other]}});
+    const harness = user => <AuthContext.Provider value={{user}}>
+      <MemoryRouter><MyWorkWorkspace /></MemoryRouter>
+    </AuthContext.Provider>;
+    const {rerender} = render(harness(userA));
+    await screen.findByText(item.title);
+    fireEvent.change(screen.getByRole('textbox', {name: 'Completion note for ' + item.title}), {
+      target: {value: 'Prior-scope private draft'},
+    });
+    rerender(harness(userB));
+    expect(screen.queryByText(item.title)).toBeNull();
+    await screen.findByText(other.title);
+    expect(screen.getByRole('textbox', {name: 'Completion note for ' + other.title}).value).toBe('');
+    expect(api.post).not.toHaveBeenCalled();
+  });
+
+  it('fails closed when a source returns a foreign tenant or principal', async () => {
+    const user = {id: 'principal-a', tenantId: 'tenant-a'};
+    api.get.mockResolvedValueOnce({data: {...payload, tenant_id: 'tenant-b', principal_id: user.id}});
+    render(<AuthContext.Provider value={{user}}><MemoryRouter><MyWorkWorkspace /></MemoryRouter></AuthContext.Provider>);
+    await screen.findByRole('alert');
+    expect(screen.getByText('MY_WORK_SCOPE_MISMATCH')).toBeTruthy();
+    expect(screen.queryByText(item.title)).toBeNull();
+    expect(api.post).not.toHaveBeenCalled();
+  });
 });
 
 /*
  * ARTIFACT: MyWorkWorkspaceAttention.test.jsx
- * VERSION: v1.0.1-EFFECT-FLUSH-FOCUS-CERT
+ * VERSION: v1.1.0-NAVIGATION-SCOPE-CURRENTNESS-CERT
  * AUTHORITY BOUNDARY: Source-owned completion route only.
  * TENANT POSTURE: Only EOS-provided work list may be highlighted.
  * FAIL-CLOSED POSTURE: Forged state cannot add an action item.
