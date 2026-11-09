@@ -13,7 +13,7 @@
  *                            legal-acceptance truth.
  * CERTIFICATION / UPDATE DATE: 2026-11-09
  * CHANGELOG:
- *   v20.3.1-OFFICIAL-BRAND-ASSET — Uses the existing approved WILSY logo asset in the authenticated global brand block; preserves the WILSY wordmark and tagline.\n *   v20.3.0-GLOBAL-COMMAND-BAR — Replaces the two-row system-health header with a one-row human command bar, API-backed unread-count badge, and role-neutral account identity presentation.\n *   v20.2.3-GLOBAL-SEARCH-PLATFORM-HINT — Displays both macOS and Windows
+ *   v20.3.1-OFFICIAL-BRAND-ASSET — Uses the existing approved WILSY logo asset in the authenticated global brand block; preserves the WILSY wordmark and tagline.\n *   v20.3.0-GLOBAL-COMMAND-BAR — Replaces the two-row system-health header with a one-row human command bar, fail-closed unread-count projection handling, and role-neutral account identity presentation.\n *   v20.2.3-GLOBAL-SEARCH-PLATFORM-HINT — Displays both macOS and Windows
  *     keyboard hints while preserving the shared Meta/Ctrl+K command shortcut.
  *   v20.2.2-GLOBAL-CHROME-TRANSPORT-TRUST — Uses a neutral security-chip
  *     treatment when the authenticated browser transport is not HTTPS; an
