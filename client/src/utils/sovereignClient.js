@@ -1,10 +1,10 @@
 /* eslint-disable */
 /**
  * ╔════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════╗
- * ║ WILSY OS - SOVEREIGN CLIENT INTERCEPTOR [V73.2.0-AUTHENTICATED-TENANT-ONLY]                                                                    ║
+ * ║ WILSY OS - SOVEREIGN CLIENT INTERCEPTOR [V73.3.0-TELEMETRY-EVENT-CONTRACT]                                                                    ║
  * ║ [UNIFIED TOKEN ACCESS | JWT INJECTION | TENANT HYDRATION | ZERO-TRUST COMPLIANCE | 429 EXPONENTIAL BACKOFF | /api PREFIX GUARD]     ║
  * ╠════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════╣
- * ║ VERSION: 73.2.0-AUTHENTICATED-TENANT-ONLY                                                                                               ║
+ * ║ VERSION: 73.3.0-TELEMETRY-EVENT-CONTRACT                                                                                               ║
  * ║ EPITOME: ABSOLUTE SECURITY FOR OUTBOUND COMMUNICATION. IF THE TOKEN IS MISSING, THE REQUEST IS TERMINATED CLIENT-SIDE.                 ║
  * ║          Strips accidental /api prefix so baseURL+'/api/tenants' never becomes /api/api/tenants.                                      ║
  * ║ ABSOLUTE PATH: /Users/wilsonkhanyezi/legal-doc-system/client/src/utils/sovereignClient.js                                              ║
@@ -35,9 +35,10 @@
  * ║ TENANT BOUNDARY: Only wilsy_active_tenant from authenticated workspace projection may supply X-Tenant-ID.                            ║
  * ║ SECURITY: Missing, malformed, stale-key-only, and reserved root scopes fail closed by omitting tenant-scoped requests.              ║
  * ║ FINANCIAL AUTHORITY: No financial authority; Kennel EOS exclusively owns execution and settlement.                                  ║
- * ║ CHANGELOG: 73.2.0-AUTHENTICATED-TENANT-ONLY rejects WILSY_SOVEREIGN_ROOT and all legacy/default tenant fallbacks.                    ║
+ * ║ CHANGELOG: 73.3.0 sends the strict SYSTEM_EVENT envelope accepted by the EOS telemetry ingestion contract.                           ║
  * ║ COLLABORATION / OWNERSHIP: Wilsy Core Engineering; API consumers supply request intent, Python EOS validates authority.              ║
  * ║ CERTIFICATION / UPDATE DATE: 2026-11-09                                                                                               ║
+ * ║ TENANT SECURITY: Retains authenticated active-tenant projection only; no legacy or root tenant fallback.                              ║
  * ╚════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════╝
  */
 
@@ -241,6 +242,14 @@ const flushTelemetryBatch = () => {
   const tenantId = getTenantId();
   if (!tenantId) return;
 
+  // The EOS ingestion contract accepts one allow-listed event envelope,
+  // not the former { batch: [...] } wrapper. Preserve the batch as bounded
+  // SYSTEM_EVENT metadata so the server can validate and durably append it.
+  const payload = {
+    eventType: 'SYSTEM_EVENT',
+    metadata: { events: batch },
+    timestamp: new Date().toISOString(),
+  };
   fetch(`${import.meta.env.VITE_API_URL || '/api'}/telemetry/event`, {
     method: 'POST',
     headers: {
@@ -248,7 +257,7 @@ const flushTelemetryBatch = () => {
       ...(token && { 'Authorization': `Bearer ${token}` }),
       'X-Tenant-ID': tenantId,
     },
-    body: JSON.stringify({ batch, timestamp: new Date().toISOString() }),
+    body: JSON.stringify(payload),
   }).catch(() => { });
 };
 
@@ -421,10 +430,11 @@ export default sovereignClient;
 
 /**
  * ═══════════════════════════════════════════════════════════════════════════════
- * 🏛️ INSTITUTIONAL CERTIFICATION SEAL — sovereignClient v73.2.0-AUTHENTICATED-TENANT-ONLY
+ * 🏛️ INSTITUTIONAL CERTIFICATION SEAL — sovereignClient v73.3.0-TELEMETRY-EVENT-CONTRACT
  * ═══════════════════════════════════════════════════════════════════════════════
  * ARTIFACT: sovereignClient browser transport
- * VERSION: 73.2.0-AUTHENTICATED-TENANT-ONLY
+ * VERSION: 73.3.0-TELEMETRY-EVENT-CONTRACT
+ * CHANGE: Sends eventType=SYSTEM_EVENT with bounded metadata.events instead of the rejected {batch,timestamp} shape
  * AUTHORITY BOUNDARY: transport only; Python EOS authenticates and authorizes every protected request
  * TENANT POSTURE: only the authenticated active-workspace projection supplies a tenant selector; EOS validates exact tenant membership
  * FAIL-CLOSED POSTURE: missing, malformed, and reserved root tenant scopes are omitted; no fallback tenant is synthesized
