@@ -1,7 +1,7 @@
 /* eslint-disable */
 /**
  * TITLE: WILSY OS Sovereign Application Root
- * VERSION: v20.2.2-GLOBAL-CHROME-TRANSPORT-TRUST
+ * VERSION: v20.2.3-GLOBAL-SEARCH-PLATFORM-HINT
  * AUTHORITY: Wilsy OS Core Governance
  * EPITOME: Composes authenticated routing, exact tenant projection, legal
  *          admission release, and protected workspace presentation without
@@ -13,6 +13,8 @@
  *                            legal-acceptance truth.
  * CERTIFICATION / UPDATE DATE: 2026-11-09
  * CHANGELOG:
+ *   v20.2.3-GLOBAL-SEARCH-PLATFORM-HINT — Displays both macOS and Windows
+ *     keyboard hints while preserving the shared Meta/Ctrl+K command shortcut.
  *   v20.2.2-GLOBAL-CHROME-TRANSPORT-TRUST — Uses a neutral security-chip
  *     treatment when the authenticated browser transport is not HTTPS; an
  *     authenticated session is not mislabelled as a secure channel.
@@ -256,7 +258,7 @@ const AuthenticatedGlobalChrome = ({ user, onLogout, children }) => {
         <button type="button" onClick={() => { setSearchOpen(true); setUserMenuOpen(false); setNotificationsOpen(false); }} aria-label="Open global search" className="hidden h-10 w-full max-w-[540px] items-center gap-3 rounded-full border border-white/10 bg-white/[0.055] px-4 text-left text-sm text-slate-400 transition hover:border-amber-300/40 hover:bg-white/[0.08] md:flex">
           <Search size={16}/>
           <span className="flex-1">Search people, projects, tasks, or anything…</span>
-          <kbd className="rounded-md border border-white/10 bg-black/20 px-2 py-1 text-[10px] text-slate-400">⌘ K</kbd>
+          <kbd className="rounded-md border border-white/10 bg-black/20 px-2 py-1 text-[10px] text-slate-400">⌘ K / Ctrl K</kbd>
         </button>
         <button type="button" onClick={() => setSearchOpen(true)} aria-label="Open global search" className="grid h-9 w-9 place-items-center rounded-full border border-white/10 text-slate-300 md:hidden"><Search size={17}/></button>
 
@@ -722,7 +724,7 @@ export default App;
 
 /**
  * ARTIFACT: client/src/App.jsx
- * VERSION: v20.2.2-GLOBAL-CHROME-TRANSPORT-TRUST
+ * VERSION: v20.2.3-GLOBAL-SEARCH-PLATFORM-HINT
  * AUTHORITY BOUNDARY: client route and protected-runtime composition only; Python EOS remains authentication, tenant and legal-acceptance authority
  * TENANT POSTURE: discovered tenant may choose login routing but cannot establish authenticated or protected scope
  * FAIL-CLOSED POSTURE: auth revalidation waits; unresolved legal status remains sealed; only server-confirmed legal COMPLETE mounts protected runtime
