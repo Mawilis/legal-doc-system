@@ -1,6 +1,6 @@
 /**
  * TITLE: WILSY OS Sovereign Application Root
- * VERSION: v20.6.0-SESSION-SCOPED-ATTENTION-BADGE
+ * VERSION: v20.6.1-ATTENTION-OPERATIONS-AUTHORISED-HANDOFF
  * AUTHORITY: Wilsy OS Core Governance
  * EPITOME: Composes authenticated routing, exact tenant projection, legal
  *          admission release, and protected workspace presentation without
@@ -12,6 +12,9 @@
  *                            legal-acceptance truth.
  * CERTIFICATION / UPDATE DATE: 2026-11-09
  * CHANGELOG:
+ *   v20.6.1-ATTENTION-OPERATIONS-AUTHORISED-HANDOFF — Routes existing authenticated
+ *     Daily Attention Operations entry to the source-owned Headquarters
+ *     Operations workspace, with no browser-owned business command.
  *   v20.6.0-SESSION-SCOPED-ATTENTION-BADGE — Coordinates authenticated global work count
  *     with current EOS My Work reads. The badge no longer runs an unrelated
  *     weakly scoped query; exact-session source invalidation revalidates the
@@ -901,7 +904,7 @@ export default App;
 
 /**
  * ARTIFACT: client/src/App.jsx
- * VERSION: v20.6.0-SESSION-SCOPED-ATTENTION-BADGE
+ * VERSION: v20.6.1-ATTENTION-OPERATIONS-AUTHORISED-HANDOFF
  * AUTHORITY BOUNDARY: client route and protected-runtime composition only; Python EOS remains authentication, tenant and legal-acceptance authority
  * TENANT POSTURE: discovered tenant may choose login routing but cannot establish authenticated or protected scope
  * FAIL-CLOSED POSTURE: auth revalidation waits; unresolved legal status remains sealed; only server-confirmed legal COMPLETE mounts protected runtime
