@@ -1,7 +1,7 @@
 /* eslint-disable */
 /**
  * TITLE: WILSY OS Sovereign Application Root
- * VERSION: v20.3.0-GLOBAL-COMMAND-BAR
+ * VERSION: v20.3.1-OFFICIAL-BRAND-ASSET
  * AUTHORITY: Wilsy OS Core Governance
  * EPITOME: Composes authenticated routing, exact tenant projection, legal
  *          admission release, and protected workspace presentation without
@@ -13,7 +13,7 @@
  *                            legal-acceptance truth.
  * CERTIFICATION / UPDATE DATE: 2026-11-09
  * CHANGELOG:
- *   v20.3.0-GLOBAL-COMMAND-BAR — Replaces the two-row system-health header with a one-row human command bar, API-backed unread-count badge, and role-neutral account identity presentation.\n *   v20.2.3-GLOBAL-SEARCH-PLATFORM-HINT — Displays both macOS and Windows
+ *   v20.3.1-OFFICIAL-BRAND-ASSET — Uses the existing approved WILSY logo asset in the authenticated global brand block; preserves the WILSY wordmark and tagline.\n *   v20.3.0-GLOBAL-COMMAND-BAR — Replaces the two-row system-health header with a one-row human command bar, API-backed unread-count badge, and role-neutral account identity presentation.\n *   v20.2.3-GLOBAL-SEARCH-PLATFORM-HINT — Displays both macOS and Windows
  *     keyboard hints while preserving the shared Meta/Ctrl+K command shortcut.
  *   v20.2.2-GLOBAL-CHROME-TRANSPORT-TRUST — Uses a neutral security-chip
  *     treatment when the authenticated browser transport is not HTTPS; an
@@ -71,6 +71,7 @@ import LedgerExplorer from './components/billing/LedgerExplorer.jsx';
 import MyWorkWorkspace from './components/workspaces/MyWorkWorkspace.jsx';
 import WilsyHeadquartersWorkspace from './components/workspaces/WilsyHeadquartersWorkspace.jsx';
 import SystemStatusPage from './components/system/SystemStatusPage.jsx';
+import wilsyBrandAsset from './assets/logo/wilsy.jpeg';
 import api from './services/api';
 import WilsyOSIntelligenceDockRuntime from './components/intelligence/WilsyOSIntelligenceDockRuntime.jsx';
 
@@ -210,7 +211,7 @@ const AuthenticatedGlobalChrome = ({ user, onLogout, children }) => {
     <div className="min-h-screen bg-[#080f1d] text-slate-100">
       <header className="sticky top-0 z-40 grid h-16 w-full grid-cols-[minmax(150px,1fr)_minmax(0,540px)_minmax(220px,1fr)] items-center gap-3 border-b border-white/10 bg-[#0b1830]/95 px-4 shadow-lg shadow-black/10 backdrop-blur-xl sm:px-6">
         <button type="button" aria-label="WILSY home" onClick={() => navigate('/headquarters')} className="flex min-w-0 shrink-0 items-center gap-3 text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#d7ad43] focus-visible:ring-offset-2 focus-visible:ring-offset-[#0b1830]">
-          <span aria-hidden="true" className="text-3xl font-black leading-none text-[#d7ad43]">W</span>
+          <img src={wilsyBrandAsset} alt="WILSY logo" className="h-10 w-10 shrink-0 object-contain" />
           <span className="leading-tight">
             <span className="block text-sm font-extrabold tracking-[0.2em] text-white">WILSY</span>
             <span className="hidden text-[10px] tracking-wide text-slate-400 min-[1200px]:block">Build. Operate. Grow.</span>
