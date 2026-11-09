@@ -1,13 +1,17 @@
 /**
  * TITLE: WILSY OS Headquarters authenticated executive workspace
- * VERSION: v2.2.0-MY-WORK-ITEM-HANDOFF
+ * VERSION: v2.3.0-SOURCE-OWNED-OPERATIONS-DEEP-LINK
  * AUTHORITY: WILSY EOS client projection; Python EOS remains the business authority
  * EPITOME: Presents the authenticated company operating plane and a source-backed
  *          My Work snapshot without inventing enterprise metrics or commands.
  * ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/client/src/components/workspaces/WilsyHeadquartersWorkspace.jsx
  * COLLABORATION / OWNERSHIP: WILSY EOS frontend projection consuming /api/my-work
  * CERTIFICATION / UPDATE DATE: 2026-11-09
- * CHANGELOG: v2.2.0-MY-WORK-ITEM-HANDOFF carries a selected daily source key into
+ * CHANGELOG: v2.3.0-SOURCE-OWNED-OPERATIONS-DEEP-LINK routes an authenticated
+ *            operations-source work handoff to the existing EOS-backed create
+ *            and manage workspace instead of a dead-end overview. Only the
+ *            owning module's permission and entitlement checks admit commands.
+ *            v2.2.0-MY-WORK-ITEM-HANDOFF carries a selected daily source key into
  *            canonical My Work, where a fresh authorized read validates it.
  *            v2.1.0-URL-ROUTED-WORKFORCE-DUTIES supports the validated HR entry URL from
  *            global daily attention without inferring any new permissions.
@@ -90,17 +94,21 @@ export default function WilsyHeadquartersWorkspace({ tenantId = null }) {
   const location = useLocation();
   const auth = useContext(AuthContext) || {};
     const authUser = auth.user || {};
+  // A deep-link selects a pre-existing workspace view, not IAM or module
+  // admission authority. The Operations form and API enforce their own grants.
+  const sectionFromUrl = new URLSearchParams(location.search).get('section');
   const [section, setSection] = useState(() =>
-    new URLSearchParams(location.search).get('section') === 'hr-workspace' ? 'hr-workspace' : 'overview');
+    ['hr-workspace', 'operations'].includes(sectionFromUrl) ? sectionFromUrl : 'overview');
   const [showMyWork, setShowMyWork] = useState(false);
   const [myWorkFocusItem, setMyWorkFocusItem] = useState(null);
   useEffect(() => {
     const requested = new URLSearchParams(location.search).get('section');
-    if (requested === 'hr-workspace') {
-      setSection('hr-workspace');
+    if (requested === 'hr-workspace' || requested === 'operations') {
+      setSection(requested);
       setShowMyWork(false);
     } else if (!requested) {
-      setSection((current) => current === 'hr-workspace' ? 'overview' : current);
+      setSection((current) =>
+        current === 'hr-workspace' || current === 'operations' ? 'overview' : current);
     }
   }, [location.search]);
   const [workforce, setWorkforce] = useState(null);
@@ -534,7 +542,7 @@ function RuntimeHealthFooter({ health }) {
 
 /*
  * ARTIFACT: WILSY OS Headquarters authenticated executive workspace
- * VERSION: v2.2.0-MY-WORK-ITEM-HANDOFF
+ * VERSION: v2.3.0-SOURCE-OWNED-OPERATIONS-DEEP-LINK
  * AUTHORITY BOUNDARY: Read-only client projection; Python EOS owns business truth.
  * TENANT POSTURE: Authenticated tenant and principal scope are preserved.
  * FAIL-CLOSED POSTURE: Invalid or unavailable source data is disclosed, never zeroed.
