@@ -259,6 +259,7 @@ const AuthenticatedGlobalChrome = ({ user, onLogout, children }) => {
                   <p className="mt-1 break-all text-xs text-slate-400">{user?.email || 'Email not provided by session'}</p>
                   <p className="mt-2 text-xs text-amber-200">{operatingTitle}</p>
                 </div>
+                <button type="button" role="menuitem" onClick={() => { setUserMenuOpen(false); navigate("/system-status"); }} className="w-full rounded-lg px-2 py-2 text-left text-sm text-slate-200 hover:bg-white/5">System status</button>
                 <button type="button" role="menuitem" disabled className="w-full cursor-not-allowed rounded-lg px-2 py-2 text-left text-sm text-slate-500" title="Profile route is not yet connected">Profile <span className="float-right text-[10px]">Unavailable</span></button>
                 <button type="button" role="menuitem" disabled className="w-full cursor-not-allowed rounded-lg px-2 py-2 text-left text-sm text-slate-500" title="Preferences route is not yet connected">Preferences <span className="float-right text-[10px]">Unavailable</span></button>
                 <button type="button" role="menuitem" onClick={() => { setUserMenuOpen(false); void onLogout(); }} className="mt-2 flex w-full items-center gap-2 rounded-lg border-t border-white/10 px-2 py-3 text-left text-sm text-red-200 hover:bg-red-400/10"><LogOut size={15}/> Sign out</button>
@@ -407,7 +408,7 @@ const SovereignRouter = () => {
     // Versioned legal acceptance is server-derived; the gate owns its own
     // status read and remains reachable at the compatibility /covenant path.
     if (location.pathname === '/covenant') return null;
-    return ['/', '/dashboard', '/my-work', '/headquarters'].includes(location.pathname) ? null : '/';
+    return ['/', '/dashboard', '/my-work', '/headquarters', '/system-status'].includes(location.pathname) ? null : '/';
   }, [
     location.pathname,
     isAuthenticated,
