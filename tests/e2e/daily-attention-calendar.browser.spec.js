@@ -67,7 +67,7 @@ for (const viewport of [{width: 1440, height: 1000}, {width: 390, height: 844}])
       await entryBell.click();
       const entryPanel = page.getByRole('dialog', {name: 'Daily attention centre'});
       await expect(entryPanel).toBeVisible();
-      await expect(entryPanel.getByRole('button', {name: 'Manage Operations'})).toBeVisible();
+      await expect(entryPanel.getByRole('button', {name: 'Manage Operations', exact: true})).toBeVisible();
 
       const title = `Calendar source work calendar-browser-${randomUUID()}`;
       const due = await page.evaluate(() => {
@@ -84,7 +84,7 @@ for (const viewport of [{width: 1440, height: 1000}, {width: 390, height: 844}])
       // Real workforce-facing creation UI. The click routes into the existing
       // canonical Operations source, whose own IAM and entitlement gate owns
       // the command and its durable Mongo transaction.
-      await entryPanel.getByRole('button', {name: 'Manage Operations'}).click();
+      await entryPanel.getByRole('button', {name: 'Manage Operations', exact: true}).click();
       await expect(entryPanel).toHaveCount(0);
       const operations = page.getByRole('main', {name: 'Operations OS'});
       await expect(operations).toBeVisible();
