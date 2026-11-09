@@ -1,15 +1,19 @@
 /**
  * TITLE: WILSY OS browser-certificate runner
- * VERSION: v1.8.0-G68-INDEPENDENT-WORKSPACE-GATE
+ * VERSION: v1.9.0-EOS-ONLY-BROWSER-CERT-RUNTIME
  * AUTHORITY: Test process lifecycle only.
- * EPITOME: Own the synthetic fixture, disposable EOS, isolated Node BFF, Vite,
+ * EPITOME: Own the synthetic fixture, disposable Python EOS, frontend Vite,
  *          browser suite, bounded diagnostics, and ordered cleanup.
  * ABSOLUTE CANONICAL PATH:
  *   /Users/wilsonkhanyezi/legal-doc-system/tests/e2e/run-browser-cert.mjs
  * COLLABORATION / OWNERSHIP: L8-8M browser certification; EOS retains tenant,
  *                            Legal, and authorization authority.
- * CERTIFICATION / UPDATE DATE: 2026-10-24
- * CHANGELOG: v1.5.1 requires an explicit loopback disposable replica-set URI on port 27017; v1.5.0 sends the fixture's explicit tenant scope with authenticated
+ * CERTIFICATION / UPDATE DATE: 2026-11-09
+ * CHANGELOG: v1.9.0-EOS-ONLY-BROWSER-CERT-RUNTIME removes all legacy Node API
+ *            startup and dependency paths. A legacy API proxy now fails closed;
+ *            browser traffic must reach the isolated Python EOS runtime.
+ *            Session-signing test entropy uses the platform crypto generator.
+ *            v1.5.1 requires an explicit loopback disposable replica-set URI on port 27017; v1.5.0 sends the fixture's explicit tenant scope with authenticated
  *            EOS preflights so canonical tenant authorization evaluates the
  *            synthetic principal's durable authority instead of rejecting a
  *            missing X-Tenant-ID request context.
@@ -35,6 +39,7 @@
  */
 
 import { spawn } from 'node:child_process';
+import { randomBytes } from 'node:crypto';
 import { createConnection, createServer } from 'node:net';
 import { createInterface } from 'node:readline';
 import { mkdtemp, readFile, rm, writeFile } from 'node:fs/promises';
@@ -51,7 +56,6 @@ const python = process.env.BROWSER_CERT_PYTHON
 const fixture = join(repo, 'tests/e2e/browser_cert_fixture.py');
 const scopeVerifier = join(repo, 'tests/e2e/browser_cert_scope_verify.py');
 const playwright = join(repo, 'node_modules/.bin/playwright');
-const serverDirectory = join(repo, 'server');
 const clientDirectory = join(repo, 'client');
 const chrome = process.env.WILSY_BROWSER_EXECUTABLE
   || (process.platform === 'darwin'
@@ -69,7 +73,6 @@ if (!Number.isSafeInteger(eosPort) || eosPort < 1024 || eosPort > 65535) {
   throw new Error('BROWSER_CERT_EOS_PORT_INVALID');
 }
 
-const databaseName = 'wilsy_l8_8m_r3_' + Date.now().toString(36);
 const mongoUri = (process.env.BROWSER_CERT_MONGO_URI || '').trim();
 if (!mongoUri) {
   throw new Error('BROWSER_CERT_MONGO_URI_REQUIRED_DISPOSABLE_REPLICA_SET');
@@ -97,7 +100,7 @@ if (
 ) {
   throw new Error('BROWSER_CERT_DISPOSABLE_MONGO_TARGET_REQUIRED');
 }
-const secret = 'browser-cert-' + Date.now() + '-' + Math.random().toString(36);
+const secret = randomBytes(32).toString('hex');
 const environment = {
   ...process.env,
   BROWSER_CERT_MONGO_URI: mongoUri,
@@ -168,16 +171,6 @@ function classifyStartupLine(label, line) {
     if (/^ERROR:/.test(text)) return 'STARTUP_ERROR';
     return null;
   }
-  if (label === 'BFF') {
-    if (text.includes('Sovereign Runtime Bootstrap')) return 'PROCESS_STARTED';
-    if (text.includes('MongoDB connection established.')) return 'DATABASE_CONNECTED';
-    if (text.includes('MongoDB connection failed')) return 'DATABASE_CONNECTION_FAILED';
-    if (text.includes('No MongoDB URI provided')) return 'DATABASE_URI_MISSING';
-    if (text.includes('Securing TCP Port')) return 'LISTENER_STARTING';
-    if (/HTTP:\s+http:\/\/localhost:\d+/.test(text)) return 'LISTENING';
-    if (/^(Error|TypeError|ReferenceError|SyntaxError):/.test(text)) return 'STARTUP_ERROR';
-    return null;
-  }
   if (label === 'VITE') {
     if (/Local:\s+http:\/\/127\.0\.0\.1:\d+/.test(text)) return 'LISTENING';
     if (text.includes('ready in')) return 'READY';
@@ -205,13 +198,6 @@ function attachSafeDiagnostics(record) {
             `error_type=${diagnostic[1]} error_code=${diagnostic[2]} cause_type=${diagnostic[3]} cause_code=${diagnostic[4]} attribute_name=${diagnostic[5]} object_type=${diagnostic[6]} location=${diagnostic[7]}`,
           );
         }
-      }
-      if (record.label === 'BFF') {
-        const match = line.match(/HTTP:\s+http:\/\/localhost:(\d+)/);
-        if (match) record.listeningPort = Number(match[1]);
-      } else if (record.label === 'VITE') {
-        const match = line.match(/Local:\s+http:\/\/(?:127\.0\.0\.1|localhost):(\d+)/);
-        if (match) record.listeningPort = Number(match[1]);
       }
       const event = classifyStartupLine(record.label, line);
       if (event) {
@@ -258,7 +244,7 @@ function spawnOwned(command, args, options = {}, label = basename(command).toUpp
     }
   });
   ownedProcesses.push(record);
-  if (label === 'EOS' || label === 'BFF' || label === 'VITE' || label.startsWith('FIXTURE_')) {
+  if (label === 'EOS' || label === 'VITE' || label.startsWith('FIXTURE_')) {
     attachSafeDiagnostics(record);
   }
   return record;
@@ -314,16 +300,6 @@ async function waitFor(url, service, timeoutMs = 45_000) {
     await delay(250);
   }
   throw new Error('BROWSER_CERT_SERVICE_TIMEOUT:' + service + ':' + lastStatus);
-}
-
-async function waitForOwnedPort(record, timeoutMs = 45_000) {
-  const deadline = Date.now() + timeoutMs;
-  while (Date.now() < deadline) {
-    if (record.closed) throw new Error('BROWSER_CERT_' + record.label + '_PROCESS_EXITED_BEFORE_LISTEN');
-    if (Number.isInteger(record.listeningPort)) return record.listeningPort;
-    await delay(100);
-  }
-  throw new Error('BROWSER_CERT_' + record.label + '_LISTEN_EVENT_TIMEOUT');
 }
 
 async function assertPortAvailable(port, service) {
@@ -530,28 +506,6 @@ async function preflightSystemServices(eosBaseUrl) {
 }
 
 
-function missingBffDependencies() {
-  const required = ['cors', 'dotenv', 'express', 'express-fileupload', 'helmet', 'httpxy', 'mongoose'];
-  return required.filter(
-    (name) => !existsSync(join(serverDirectory, 'node_modules', name, 'package.json')),
-  );
-}
-
-async function verifyBffHealth(response) {
-  const payload = await readBoundedJson(response);
-  const acceptedStates = new Set([
-    'CONNECTED', 'CONNECTING', 'DEGRADED', 'DISCONNECTED', 'DISCONNECTING', 'UNKNOWN',
-  ]);
-  const databaseState = acceptedStates.has(payload?.database) ? payload.database : 'UNKNOWN';
-  console.info(
-    '[BROWSER-CERT-PREFLIGHT] service=BFF method=GET path=/health'
-      + ' status=' + response.status + ' database=' + databaseState,
-  );
-  if (response.status !== 200 || databaseState !== 'CONNECTED') {
-    throw new Error('BROWSER_CERT_BFF_HEALTH_FAILED:' + response.status + ':' + databaseState);
-  }
-}
-
 function failureEvidence(error, errorPhase, errorSubphase) {
   const evidence = {
     phase: safeText(error?.phase || errorPhase),
@@ -600,15 +554,12 @@ async function stopOwned() {
 
 let failed = false;
 let ownedServicesStopped = true;
-let bffPort = null;
 let vitePort = null;
 
 try {
   const eosBaseUrl = 'http://127.0.0.1:' + eosPort;
   await assertPortAvailable(eosPort, 'EOS');
-  bffPort = await availablePort();
   vitePort = await availablePort();
-  while (vitePort === bffPort) vitePort = await availablePort();
 
   setPhase('mongo_connectivity', 'disposable_replica_set_hello_in_fixture_seed');
   fixtureSeedStarted = true;
@@ -653,37 +604,11 @@ try {
     throw new Error('BROWSER_CERT_VITE_EOS_PROXY_TARGET_NOT_FOUND');
   }
   if (usesBffProxy) {
-    setPhase('startup', 'bff_dependency_check_and_launch');
-    const missingDependencies = missingBffDependencies();
-    if (missingDependencies.length > 0) {
-      throw new Error('BROWSER_CERT_BFF_DEPENDENCIES_MISSING:' + missingDependencies.join(','));
-    }
-    const bffEnvironment = {
-      ...environment,
-      PORT: String(bffPort),
-      MONGODB_URI: mongoUri,
-      MONGO_URI: mongoUri,
-      KENNEL_URL: eosBaseUrl,
-    };
-    console.info('[BROWSER-CERT-STARTUP] service=BFF action=starting port=' + bffPort);
-    const bffProcess = spawnOwned(
-      process.execPath,
-      ['--import', './preload-shield.js', 'server.js'],
-      { cwd: serverDirectory, env: bffEnvironment, stdio: ['ignore', 'pipe', 'pipe'] },
-      'BFF',
-    );
-    bffPort = await waitForOwnedPort(bffProcess);
-    const bffHealthResponse = await waitFor('http://127.0.0.1:' + bffPort + '/health', 'BFF');
-    if (bffProcess.closed) throw new Error('BROWSER_CERT_BFF_EXITED_DURING_STARTUP');
-    await verifyBffHealth(bffHealthResponse);
-  } else {
-    console.info('[BROWSER-CERT-STARTUP] service=BFF action=skipped reason=EOS_OWNS_ALL_API_PROXY_ROUTES');
+    throw new Error('BROWSER_CERT_LEGACY_API_PROXY_FORBIDDEN');
   }
   const configuredVite = baseViteConfig
     .replaceAll('http://localhost:9095', eosBaseUrl)
-    .replaceAll('http://127.0.0.1:9095', eosBaseUrl)
-    .replaceAll('http://localhost:4000', 'http://127.0.0.1:' + bffPort)
-    .replaceAll('http://127.0.0.1:4000', 'http://127.0.0.1:' + bffPort);
+    .replaceAll('http://127.0.0.1:9095', eosBaseUrl);
   await writeFile(viteConfigPath, configuredVite, { encoding: 'utf-8', mode: 0o600 });
 
   setPhase('startup', 'vite_startup');
@@ -794,7 +719,7 @@ try {
 if (failed) process.exitCode = 1;
 
 // ARTIFACT: run-browser-cert.mjs
-// VERSION: v1.5.1-L8-8M-EXPLICIT-DISPOSABLE-MONGO-TARGET
+// VERSION: v1.9.0-EOS-ONLY-BROWSER-CERT-RUNTIME
 // AUTHORITY BOUNDARY: runner-owned disposable certification services only
 // TENANT POSTURE: UUID-isolated fixture database; external tenants are untouched
 // FAIL-CLOSED POSTURE: phase, health, preflight, browser, or cleanup failure returns non-zero
