@@ -1,13 +1,16 @@
 /**
  * TITLE: WILSY OS Headquarters authenticated executive workspace
- * VERSION: v1.9.0-HEADQUARTERS-TENANT-IDENTITY
+ * VERSION: v2.0.0-HEADQUARTERS-ACTIONABLE-DAILY-BRIEF
  * AUTHORITY: WILSY EOS client projection; Python EOS remains the business authority
  * EPITOME: Presents the authenticated company operating plane and a source-backed
  *          My Work snapshot without inventing enterprise metrics or commands.
  * ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/client/src/components/workspaces/WilsyHeadquartersWorkspace.jsx
  * COLLABORATION / OWNERSHIP: WILSY EOS frontend projection consuming /api/my-work
  * CERTIFICATION / UPDATE DATE: 2026-11-09
- * CHANGELOG: v1.9.0 projects the server-certified active tenant label into
+ * CHANGELOG: v2.0.0-HEADQUARTERS-ACTIONABLE-DAILY-BRIEF adds authorised interactive daily work
+ *            without removing source-backed KPI, HR requisitions, workforce,
+ *            operations, authenticated tenant identity or runtime monitoring.
+ *            v1.9.0 projects the server-certified active tenant label into
  *            Headquarters chrome with an explicit neutral fallback when the
  *            authenticated tenant projection is unavailable.
  *            v1.8.0 adds an authenticated handoff into the canonical HR
@@ -36,6 +39,7 @@ import {
   Users, Wallet,
 } from 'lucide-react';
 import MyWorkWorkspace from './MyWorkWorkspace.jsx';
+import WilsyHeadquartersDailyBrief from './WilsyHeadquartersDailyBrief.jsx';
 import TenantModuleWorkspace from '../os/TenantModuleWorkspace.jsx';
 
 const HRDashboard = lazy(() => import('../hr/HrDashboard.jsx'));
@@ -70,7 +74,7 @@ function SourceBoundary({ title, description }) {
   );
 }
 
-export default function WilsyHeadquartersWorkspace() {
+export default function WilsyHeadquartersWorkspace({ tenantId = null }) {
   const auth = useContext(AuthContext) || {};
     const authUser = auth.user || {};
   const [section, setSection] = useState('overview');
@@ -221,6 +225,8 @@ export default function WilsyHeadquartersWorkspace() {
               </section>
 
               <ExecutiveKpiStrip myWorkSnapshot={myWorkSnapshot} workforce={section === 'overview' ? workforce : null}/>
+
+              <WilsyHeadquartersDailyBrief tenantId={tenantId} onOpenWork={() => setShowMyWork(true)} />
 
               <div className="mt-6 grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
                 <ActionCard title="Daily execution" detail="Authorised tasks and source-owned completion" onClick={() => setShowMyWork(true)} icon={CheckCircle2}/>
@@ -497,7 +503,7 @@ function RuntimeHealthFooter({ health }) {
 
 /*
  * ARTIFACT: WILSY OS Headquarters authenticated executive workspace
- * VERSION: v1.9.0-HEADQUARTERS-TENANT-IDENTITY
+ * VERSION: v2.0.0-HEADQUARTERS-ACTIONABLE-DAILY-BRIEF
  * AUTHORITY BOUNDARY: Read-only client projection; Python EOS owns business truth.
  * TENANT POSTURE: Authenticated tenant and principal scope are preserved.
  * FAIL-CLOSED POSTURE: Invalid or unavailable source data is disclosed, never zeroed.
