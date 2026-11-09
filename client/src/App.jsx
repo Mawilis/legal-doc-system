@@ -1,6 +1,6 @@
 /**
  * TITLE: WILSY OS Sovereign Application Root
- * VERSION: v20.5.0-PLATFORM-ADMISSION-SESSION-CURRENTNESS
+ * VERSION: v20.6.0-SESSION-SCOPED-ATTENTION-BADGE
  * AUTHORITY: Wilsy OS Core Governance
  * EPITOME: Composes authenticated routing, exact tenant projection, legal
  *          admission release, and protected workspace presentation without
@@ -12,6 +12,10 @@
  *                            legal-acceptance truth.
  * CERTIFICATION / UPDATE DATE: 2026-11-09
  * CHANGELOG:
+ *   v20.6.0-SESSION-SCOPED-ATTENTION-BADGE — Coordinates authenticated global work count
+ *     with current EOS My Work reads. The badge no longer runs an unrelated
+ *     weakly scoped query; exact-session source invalidation revalidates the
+ *     count, and logout or role revision cancels the former response.
  *   v20.5.0-PLATFORM-ADMISSION-SESSION-CURRENTNESS — Owns one explicitly
  *     authenticated, scope-current platform-agreement read. Completed covenant
  *     URLs redirect to the authorized workspace; required agreements use the
@@ -88,6 +92,11 @@ import LedgerExplorer from './components/billing/LedgerExplorer.jsx';
 import MyWorkWorkspace from './components/workspaces/MyWorkWorkspace.jsx';
 import WilsyHeadquartersWorkspace from './components/workspaces/WilsyHeadquartersWorkspace.jsx';
 import api from './services/api';
+import {
+  currentUnifiedMyWorkScope,
+  readUnifiedMyWork,
+  subscribeUnifiedMyWork,
+} from './services/unifiedMyWorkSync.js';
 import WilsyOSIntelligenceDockRuntime from './components/intelligence/WilsyOSIntelligenceDockRuntime.jsx';
 import WilsyDailyAttentionCentre from './components/chrome/WilsyDailyAttentionCentre.jsx';
 
@@ -144,7 +153,8 @@ const ProtectedTmsRoute = ({ user, children }) => {
 export const AuthenticatedGlobalChrome = ({ user, onLogout, children, workspaceReleased = true }) => {
   const navigate = useNavigate();
   const location = useLocation();
-  const { isAuthenticated, authStage, loading: authLoading } = useAuth();
+  const auth = useAuth();
+  const { isAuthenticated, authStage, loading: authLoading } = auth;
   const [searchOpen, setSearchOpen] = useState(false);
   const [searchValue, setSearchValue] = useState('');
   const [userMenuOpen, setUserMenuOpen] = useState(false);
@@ -165,45 +175,48 @@ export const AuthenticatedGlobalChrome = ({ user, onLogout, children, workspaceR
     && window.location.protocol === 'https:';
   const hasAuthenticatedSession = isAuthenticated && authStage === AUTH_STATES.AUTHENTICATED;
 
-  const currentWorkScope = [user?.tenantId, user?.id, user?.role, user?.workspaceId, user?.businessRole]
-    .map((part) => String(part || '')).join(':');
+  // The exact AuthProvider session generation, selected capacity and both role
+  // revisions partition this optional badge. It is active-work evidence, never
+  // an unread-notification count or browser permission authority.
+  const currentWorkScope = currentUnifiedMyWorkScope(auth, user?.tenantId);
 
   useEffect(() => {
-    if (!workspaceReleased || !hasAuthenticatedSession || authLoading || !user?.tenantId || user?.systemServicesWorkspace) {
+    if (!workspaceReleased || !hasAuthenticatedSession || authLoading || !currentWorkScope) {
       setWorkCountScope(null);
       setWorkCount(null);
       return undefined;
     }
     let active = true;
+    const controller = new AbortController();
+    const expectedScope = { tenantId: user.tenantId, principalId: user.id };
     const refresh = async () => {
       try {
-        const response = await api.get('/my-work');
-        const payload = response?.data;
-        if (
-          !payload
-          || payload.tenant_id !== user.tenantId
-          || !payload.summary
-          || !Number.isInteger(payload.summary.active_count)
-          || payload.summary.active_count < 0
-        ) throw new Error('MY_WORK_SUMMARY_PROJECTION_INVALID');
+        const payload = await readUnifiedMyWork(
+          currentWorkScope, expectedScope, { signal: controller.signal, force: true },
+        );
         if (active) {
           setWorkCountScope(currentWorkScope);
           setWorkCount(payload.summary.active_count);
         }
-      } catch {
-        if (active) {
+      } catch (error) {
+        if (active && error?.name !== 'AbortError') {
           setWorkCountScope(null);
           setWorkCount(null);
         }
       }
     };
+    const unsubscribe = subscribeUnifiedMyWork(currentWorkScope, () => {
+      void refresh();
+    });
     void refresh();
     const interval = window.setInterval(refresh, 60000);
     return () => {
       active = false;
+      controller.abort();
       window.clearInterval(interval);
+      unsubscribe();
     };
-  }, [workspaceReleased, hasAuthenticatedSession, authLoading, user?.tenantId, user?.id, user?.role, user?.workspaceId, user?.businessRole, user?.systemServicesWorkspace]);
+  }, [workspaceReleased, hasAuthenticatedSession, authLoading, currentWorkScope]);
 
   const openGlobalSearch = () => {
     const request = new CustomEvent('wilsy:open-command-search', { cancelable: true });
@@ -884,7 +897,7 @@ export default App;
 
 /**
  * ARTIFACT: client/src/App.jsx
- * VERSION: v20.5.0-PLATFORM-ADMISSION-SESSION-CURRENTNESS
+ * VERSION: v20.6.0-SESSION-SCOPED-ATTENTION-BADGE
  * AUTHORITY BOUNDARY: client route and protected-runtime composition only; Python EOS remains authentication, tenant and legal-acceptance authority
  * TENANT POSTURE: discovered tenant may choose login routing but cannot establish authenticated or protected scope
  * FAIL-CLOSED POSTURE: auth revalidation waits; unresolved legal status remains sealed; only server-confirmed legal COMPLETE mounts protected runtime
