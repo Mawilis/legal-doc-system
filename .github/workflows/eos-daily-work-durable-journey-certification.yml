@@ -1,5 +1,5 @@
 # TITLE: WILSY OS Real Mongo and Authenticated Daily Work Certification
-# VERSION: v1.1.0-CONTINUOUS-BROWSER-OPERATIONS-CERT
+# VERSION: v1.1.1-COMPLETE-CERTIFICATION-PATH-TRIGGERS
 # AUTHORITY: Disposable GitHub test runtime, not production IAM or commerce.
 # EPITOME: Certify current EOS source-owned create/read/complete transactions
 #          through a real replica set and desktop/mobile authenticated browser.
@@ -27,6 +27,9 @@ on:
       - "client/src/services/unifiedMyWorkProjection.js"
       - "client/src/services/unifiedMyWorkSync.js"
       - "client/src/__tests__/services/unifiedMyWorkSync.test.js"
+      - "client/src/__tests__/components/WilsyHeadquartersWorkspace.test.jsx"
+      - "client/src/__tests__/components/WilsyHeadquartersDailyBrief.test.jsx"
+      - "client/src/__tests__/components/WilsyDailyAttentionCentre.test.jsx"
       - "client/src/App.jsx"
       - "client/src/components/chrome/WilsyDailyAttentionCentre.jsx"
       - "client/src/components/workspaces/MyWorkWorkspace.jsx"
@@ -34,8 +37,10 @@ on:
       - "client/src/components/workspaces/WilsyHeadquartersWorkspace.jsx"
       - "tests/e2e/daily-attention-calendar.browser.spec.js"
       - "tests/e2e/browser_cert_fixture.py"
+      - "tests/e2e/browser_cert_scope_verify.py"
       - "tests/e2e/run-browser-cert.mjs"
       - "tests/integration/test_unified_my_work_real_mongo.py"
+      - "client/src/__tests__/services/unifiedMyWorkProjection.test.js"
       - "tools/eos/api/unified_my_work_router.py"
       - "tools/eos/workspaces/service/unified_my_work_projection.py"
       - ".github/workflows/eos-daily-work-durable-journey-certification.yml"
