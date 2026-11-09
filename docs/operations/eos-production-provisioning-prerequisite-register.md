@@ -1,14 +1,18 @@
 # TITLE: WILSY EOS Production Provisioning Prerequisite and Evidence Register
-# VERSION: v1.0.2-EOS-PRODUCTION-READONLY-DISCOVERY
+# VERSION: v1.0.3-EOS-AF-SOUTH-1-DISCOVERY-RECORDED
 # AUTHORITY: Wilsy OS Core Governance; evidence register and provisioning gate definition only.
 # EPITOME: Track verified facts, missing evidence, accountable approvals and exact exit criteria before any production ECS foundation provisioning or workload activation.
 # ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/docs/operations/eos-production-provisioning-prerequisite-register.md
 # COLLABORATION / OWNERSHIP: Wilsy OS Core Engineering; AWS platform, database, security and service owners provide evidence within their authority.
 # CERTIFICATION OR UPDATE DATE: 2026-11-09
 # CHANGELOG:
-#   v1.0.2 records the expanded read-only discovery coverage for secret
-#   metadata, KMS aliases, network primitives, ingress target groups, ACM and
-#   Route 53. Secret values remain excluded from discovery.
+#   v1.0.3 records the completed af-south-1 discovery: no ECS/EKS cluster,
+#   production runtime stack, production secret metadata, production KMS alias,
+#   NAT, VPC endpoint, ingress, ACM certificate or Route 53 zone was reported;
+#   the only KMS alias and stack are local-development resources. The sole VPC
+#   is default-only and is not approved as the production network.
+#   v1.0.2 records expanded read-only discovery coverage for secret metadata,
+#   KMS aliases, network primitives, ingress target groups, ACM and Route 53.
 #   v1.0.1 pins the production verifier contract to the exact ECS cluster,
 #   task family and positive task-definition revision.
 #   v1.0.0 establishes a fail-closed evidence register for the selected ECS
@@ -37,21 +41,21 @@
 | Current task state | NO TASK LAUNCHED / WORKLOAD IDENTITY NOT VERIFIED |
 | Production activation | BLOCKED |
 
-The 2026-11-09 read-only discovery established the AWS account identity under the `wilsy-legal-cert` operator profile and did not find a known ECS or EKS production cluster or production runtime stack in the inspected AWS inventory. Some provider inventories were unavailable or incomplete. This does not establish that no production runtime exists outside the inspected AWS surfaces. The actual current production host and ingress target remain unverified.
+The 2026-11-09 read-only discovery established the AWS account identity under the `wilsy-legal-cert` operator profile. In `af-south-1`, it reported no ECS or EKS clusters, no WILSY/EOS production secret metadata, no production KMS alias, no NAT gateway, no VPC endpoint, no Lambda function, no Elastic Beanstalk environment, no running EC2 instance, no load balancer or target group, no ACM certificate and no Route 53 hosted zone. The only reported KMS alias was `alias/wilsy/local-development/global-principal-mfa`; the only CloudFormation stack was `wilsy-eos-global-principal-mfa-local-dev-v3` in `CREATE_COMPLETE`. The only reported VPC (`vpc-05a3c2c855c4dde26`) has the default `172.31.0.0/16` network, three public-IP-assigned subnets and only its default security group. It is not an approved production network and must not be selected for EOS production without a separately reviewed network design. App Runner and Lightsail inventories were unavailable due subscription or endpoint errors; other AWS provider inventories also had unavailable regions. This evidence establishes no known production runtime in the successfully inspected AWS surfaces, not the absence of hosting outside those surfaces or outside AWS. The actual current production host and ingress target remain unverified.
 
 ## Evidence register
 
 | ID | Prerequisite | Current status | Evidence required to close |
 |---|---|---|---|
 | P-01 | Production account and region | **Verified for target selection** | Repeat read-only STS caller identity immediately before any future change-set review; confirm account `121014832643` and `af-south-1`. The earlier operator identity is not the ECS workload identity. |
-| P-02 | Existing live production host and traffic path | **Unverified** | Identify current hosting provider, production API hostname, ingress/load-balancer target and current process/runtime owner. Read-only AWS discovery is incomplete for some services and does not rule out non-AWS hosting. |
-| P-03 | Key-administrator role | **Missing evidence** | Supply exact existing IAM role ARN, trust/ownership evidence and approved key-administration scope. Confirm it is separate from task, execution and developer identities. Never substitute the operator user or local-development role. |
-| P-04 | Private GHCR credential secret | **Missing evidence** | Exact existing Secrets Manager secret ARN and proof it contains valid ECS `repositoryCredentials` JSON for the selected private package. Do not disclose or commit its value. If encrypted with a customer-managed key, separately prove execution-role decrypt permission and key-policy authorization. |
-| P-05 | Production MongoDB URI secret | **Missing evidence** | Exact production-only secret ARN, secret KMS-key access proof where applicable, and owner-approved backing Atlas project, cluster, database, least-privilege database user and connection policy. It must not reference the disposable local certification replica set or an unverified cluster. |
+| P-02 | Existing live production host and traffic path | **Unverified — no AWS host found in inspected surfaces** | Identify current hosting provider, production API hostname, ingress/load-balancer target and current process/runtime owner. `af-south-1` reported no ECS/EKS cluster, EC2 instance, load balancer, target group or application stack; App Runner and Lightsail inventory was unavailable. Read-only AWS discovery does not rule out non-AWS hosting. |
+| P-03 | Key-administrator role | **Missing evidence — only local-development role found** | Supply exact existing IAM role ARN, trust/ownership evidence and approved key-administration scope. Confirm it is separate from task, execution and developer identities. Never substitute the operator user or local-development role. |
+| P-04 | Private GHCR credential secret | **Missing evidence — no matching production secret metadata reported** | Exact existing Secrets Manager secret ARN and proof it contains valid ECS `repositoryCredentials` JSON for the selected private package. Do not disclose or commit its value. If encrypted with a customer-managed key, separately prove execution-role decrypt permission and key-policy authorization. |
+| P-05 | Production MongoDB URI secret | **Missing evidence — no matching production secret metadata reported** | Exact production-only secret ARN, secret KMS-key access proof where applicable, and owner-approved backing Atlas project, cluster, database, least-privilege database user and connection policy. It must not reference the disposable local certification replica set or an unverified cluster. |
 | P-06 | Atlas connectivity and database recovery | **Missing evidence** | Approved network route, source egress identity/IP or private connectivity, Atlas access configuration, backup policy, recent successful restore evidence, monitoring and database owner sign-off. No `0.0.0.0/0` allow-list. |
 | P-07 | Published immutable application image | **Missing evidence** | Exact `ghcr.io/...@sha256:<digest>` reference for the release, package pull proof, provenance/attestation, SBOM and image vulnerability review. A local Docker build or CI build without publication is not a published image. |
-| P-08 | Network architecture | **Not designed** | Approved VPC, private subnet IDs, route tables, egress path or VPC endpoints, security groups, DNS resolver dependencies and availability-zone coverage. These are intentionally absent from the foundation template. |
-| P-09 | HTTPS ingress and domain | **Unverified** | Domain registration/control proof, approved hostname, ACM certificate ARN in the correct region, ALB/listener/WAF decision, DNS ownership and cutover/rollback plan. No domain purchase or ownership is assumed. |
+| P-08 | Network architecture | **Not designed — default VPC rejected as production foundation** | `af-south-1` reports only default VPC `vpc-05a3c2c855c4dde26` (`172.31.0.0/16`), three public subnets and the default security group; no NAT gateway or VPC endpoint was reported. Design and approve a dedicated production VPC, private subnet IDs, route tables, egress path or VPC endpoints, security groups, DNS resolver dependencies and availability-zone coverage. Do not reuse the default VPC as-is. |
+| P-09 | HTTPS ingress and domain | **Unverified — no Route 53 zone, ACM certificate or load balancer reported in af-south-1** | Domain registration/control proof, approved hostname, ACM certificate ARN in the correct region, ALB/listener/WAF decision, DNS ownership and cutover/rollback plan. No domain purchase or ownership is assumed. |
 | P-10 | Readiness and traffic admission | **Missing implementation evidence** | Dedicated readiness contract that verifies required database and KMS dependencies, plus ALB health-check path/thresholds and startup behavior. The current root route is liveness only and must not be treated as database readiness. |
 | P-11 | Durable artifact storage | **Architecture decision required** | Identify canonical durable EOS document/evidence storage, access policy, encryption, retention, backup, restore and audit contracts. ECS task volumes are ephemeral scratch only; they cannot hold authoritative legal/evidence records. |
 | P-12 | Operations and recovery | **Missing evidence** | Approved alarms, dashboards, log retention, incident ownership, on-call/escalation, deployment circuit breaker, rollback, capacity/scaling limits, vulnerability response and disaster-recovery objectives. |
@@ -106,7 +110,7 @@ A zero exit status proves the task metadata, exact task role and synthetic KMS c
 
 ## Current milestone outcome
 
-- The intended AWS account and region are recorded from read-only discovery. The read-only inventory script now reports candidate secret metadata, KMS aliases, VPC/subnet/security-group/NAT/VPC endpoint inventory, load-balancer target groups, ACM certificates and Route 53 hosted zones without reading secret values.
+- The intended AWS account and region are recorded from read-only discovery. The completed `af-south-1` inventory reported no ECS/EKS production cluster, production secrets, production KMS alias, NAT, VPC endpoint, load balancer/target group, ACM certificate or Route 53 zone. The sole VPC is default-only and explicitly rejected as a production network foundation. The only KMS alias and CloudFormation stack are local-development resources. App Runner and Lightsail inventory was unavailable, so the discovery is not a global proof that no production host exists. The inventory script reports candidate secret metadata, KMS aliases, VPC/subnet/security-group/NAT/VPC endpoint inventory, load-balancer target groups, ACM certificates and Route 53 hosted zones without reading secret values.
 - The ECS foundation now injects the exact expected task-role ARN into the task environment.
 - The production-only verifier and synthetic unit tests are added to the repository; the verifier pins the approved ECS cluster, task family and positive revision.
 - The operations runbook distinguishes the production verifier from the local-development probe.
@@ -114,7 +118,7 @@ A zero exit status proves the task metadata, exact task role and synthetic KMS c
 - No AWS resource has been created, no CloudFormation change set has been executed, no ECS task has been launched, no production deployment or DNS change has occurred, no database has been mutated, no PR has been merged, and no MFA factor/enforcement change has been made.
 
 # ARTIFACT: docs/operations/eos-production-provisioning-prerequisite-register.md
-# VERSION: v1.0.2-EOS-PRODUCTION-READONLY-DISCOVERY
+# VERSION: v1.0.3-EOS-AF-SOUTH-1-DISCOVERY-RECORDED
 # AUTHORITY BOUNDARY: Evidence tracking and release-gate documentation only; no provisioning or production activation.
 # TENANT POSTURE: No tenant, principal, membership, session or database records are created or changed.
 # FAIL-CLOSED POSTURE: Unverified dependencies remain blockers; only independently reviewable evidence closes a prerequisite.
