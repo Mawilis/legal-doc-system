@@ -1,11 +1,15 @@
 # TITLE: WILSY EOS Production ECS Workload Identity Probe
-# VERSION: v1.0.1-ECS-PRODUCTION-CLUSTER-PIN
+# VERSION: v1.0.2-ECS-PRODUCTION-TASK-ARN-BINDING
 # AUTHORITY: Python EOS infrastructure verification; no IAM, factor or session authority.
 # EPITOME: Independently verify the actual ECS task metadata identity, STS task-role identity, production account/region and task-local MFA KMS encrypt/decrypt capability.
 # ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/tools/eos/auth/ecs_production_workload_identity_probe.py
 # COLLABORATION / OWNERSHIP: Wilsy OS Core Engineering; production platform identity remains AWS ECS.
 # CERTIFICATION OR UPDATE DATE: 2026-11-09
 # CHANGELOG:
+#   v1.0.2 additionally binds the ECS TaskARN resource path to the exact
+#   approved cluster name and a 32-character task identifier; metadata fields
+#   cannot independently claim an approved cluster while presenting a task ARN
+#   from another cluster.
 #   v1.0.1 pins metadata verification to the approved ECS cluster and task
 #   family and requires a positive task-definition revision.
 #   v1.0.0 establishes a fail-closed ECS metadata, STS role and production KMS
@@ -90,15 +94,22 @@ def _verify_task_metadata(metadata: dict[str, object]) -> None:
     expected_prefix = (
         f"arn:aws:ecs:{EXPECTED_REGION}:{EXPECTED_ACCOUNT_ID}:task/"
     )
-    if not isinstance(task_arn, str) or not task_arn.startswith(expected_prefix):
+    task_arn_pattern = re.compile(
+        rf"{re.escape(expected_prefix)}"
+        rf"{re.escape(EXPECTED_CLUSTER_NAME)}/[0-9a-f]{{32}}"
+    )
+    if not isinstance(task_arn, str) or task_arn_pattern.fullmatch(task_arn) is None:
         raise RuntimeError("ECS_PRODUCTION_TASK_ARN_MISMATCH")
     revision = metadata.get("Revision")
+    revision_is_positive = (
+        isinstance(revision, int) and not isinstance(revision, bool) and revision > 0
+    ) or (
+        isinstance(revision, str) and revision.isdigit() and int(revision) > 0
+    )
     if (
         metadata.get("Cluster") != EXPECTED_CLUSTER_NAME
         or metadata.get("Family") != EXPECTED_TASK_FAMILY
-        or isinstance(revision, bool)
-        or not (isinstance(revision, int) and revision > 0)
-        and not (isinstance(revision, str) and revision.isdigit() and int(revision) > 0)
+        or not revision_is_positive
     ):
         raise RuntimeError("ECS_PRODUCTION_TASK_DEFINITION_METADATA_REQUIRED")
 
@@ -169,6 +180,6 @@ if __name__ == "__main__":
 # VERSION: v1.0.1-ECS-PRODUCTION-CLUSTER-PIN
 # AUTHORITY BOUNDARY: Verifies existing ECS task metadata, STS role and KMS capability only.
 # TENANT POSTURE: Synthetic KMS probe only; no tenant, principal, membership or session records are changed.
-# FAIL-CLOSED POSTURE: Missing or mismatched task metadata, account, region, task role or KMS capability exits nonzero.
+# FAIL-CLOSED POSTURE: Missing or mismatched task metadata, cluster-bound task ARN, account, region, task role or KMS capability exits nonzero.
 # FINANCIAL EXECUTION AUTHORITY: Kennel EOS exclusively.
 # END OF WILSY OS SOVEREIGN ARTIFACT
