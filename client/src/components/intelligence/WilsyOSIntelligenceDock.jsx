@@ -3,7 +3,7 @@
  * Wilsy OS — Sovereign Intelligence Dock (Kennel Phase 4 – Backend Operator)
  * ═══════════════════════════════════════════════════════════════════════════════
  * File:           client/src/components/intelligence/WilsyOSIntelligenceDock.jsx
- * Version:        v4.5.0-LEGAL-DEADLINE-INTELLIGENCE-PROJECTION
+ * Version:        v4.6.0-SESSION-OWNED-OPTIONAL-INTELLIGENCE
  * Authority:      Wilsy OS Core Governance
  * Epitome:        Authority-aware operator dock. Kernel posture comes only from
  *                 the canonical /kernel transport. Legal workspace Ask requests
@@ -29,6 +29,10 @@
  *   - AI Engineering – Phase 4: replace local engine with backend call.
  *
  * Change Log:
+ *   2026-11-09 v4.6.0-SESSION-OWNED-OPTIONAL-INTELLIGENCE cancels superseded EOS health probes,
+ *   never presents a fabricated LIVE_EMPTY result as verified runtime health,
+ *   and revokes transient conversation scope on logout, remount, tenant or
+ *   capacity changes. Intelligence availability never gates Headquarters.
  *   2026-10-11 v4.5.0-LEGAL-DEADLINE-INTELLIGENCE-PROJECTION — Added an
  *     explicit-matter, explicit-time Core Legal deadline observation tab backed
  *     by D6B, with no AI, recommendation, reminder, mutation, or finance authority.
@@ -98,6 +102,7 @@ import {
 } from './wilsyAIDynamicSuggestionEngine.js';
 import {
   clearWilsyAIConversationThreads,
+  resetWilsyAIConversationSession,
   createWilsyAIConversationThread,
   loadWilsyAIConversationThreads,
   persistWilsyAIConversationTurn,
@@ -321,6 +326,32 @@ export function WilsyOSIntelligenceDock({
   const [deadlineLoading, setDeadlineLoading] = useState(false);
   const [deadlineError, setDeadlineError] = useState('');
   const messagesEndRef = useRef(null);
+  const healthAbortRef = useRef(null);
+  const healthGenerationRef = useRef(0);
+  const dockScope = [
+    authUser?.id, authUser?.tenantId,
+    activeTenant?.tenantId || activeTenant?._id, authUser?.workspaceId,
+    authUser?.businessRole || authUser?.role,
+    authUser?.membershipRevision, authUser?.businessRoleRevision,
+  ].map((part) => String(part ?? '')).join(':');
+  const dockScopeRef = useRef(dockScope);
+
+  // This module-level session history belongs to the current authenticated
+  // capacity only. Changing identity, tenant or capacity revokes old turns and
+  // aborts obsolete health probes before they can repaint the next workspace.
+  useEffect(() => {
+    dockScopeRef.current = dockScope;
+    resetWilsyAIConversationSession();
+    setConversationThreads([]);
+    setActiveThreadId(null);
+    setDockContext(null);
+    setKennelPosture('STANDBY');
+    return () => {
+      healthAbortRef.current?.abort();
+      healthGenerationRef.current += 1;
+      resetWilsyAIConversationSession();
+    };
+  }, [dockScope]);
 
   /**
    * @function hydrateDockContext
@@ -328,15 +359,15 @@ export function WilsyOSIntelligenceDock({
    * @collaboration Invoked on mount and during manual refresh.
    */
   const hydrateDockContext = useCallback(async () => {
-    const fallback = buildWilsyAIProductivityCopy({
-      result: 'LIVE_EMPTY',
-      workspace: {
-        operatingRole: authUser?.role || 'UNRESOLVED',
-        focus: 'Authority graph',
-        tenantId: activeTenant?.tenantId || activeTenant?._id || authUser?.tenantId || '',
-      },
-    });
-
+    healthAbortRef.current?.abort();
+    const controller = new AbortController();
+    healthAbortRef.current = controller;
+    const generation = ++healthGenerationRef.current;
+    const isCurrent = () => (
+      !controller.signal.aborted
+      && healthGenerationRef.current === generation
+      && dockScopeRef.current === dockScope
+    );
     let billingIntelligenceEvidence;
     if (canProbeBillingIntelligence(authUser?.role)) {
       try {
@@ -344,7 +375,9 @@ export function WilsyOSIntelligenceDock({
         const billingRes = await api.get('/billing/intelligence/evidence', {
           params: { as_of: asOf },
           timeout: 8000,
+          signal: controller.signal,
         });
+        if (!isCurrent()) return;
         if (
           billingRes?.status === 200
           && billingRes?.data
@@ -358,8 +391,12 @@ export function WilsyOSIntelligenceDock({
     }
 
     try {
-      // Kennel source of truth – public health probe on BFF
-      const kernelRes = await api.get('/kernel', { timeout: 8000 });
+      // Optional EOS health reads never authorize or block Headquarters.
+      const kernelRes = await api.get('/kernel', {
+        timeout: 8000,
+        signal: controller.signal,
+      });
+      if (!isCurrent()) return;
       const kernel = kernelRes?.data || {};
       const live = String(kernel.status || '').toUpperCase() === 'OPERATIONAL';
       setKennelPosture(live ? 'OPERATIONAL' : 'DEGRADED');
@@ -376,21 +413,18 @@ export function WilsyOSIntelligenceDock({
       if (billingIntelligenceEvidence) {
         normalizedDockContext.billingIntelligenceEvidence = billingIntelligenceEvidence;
       }
+      if (!isCurrent()) return;
       setDockContext(normalizedDockContext);
     } catch (err) {
-      // Fallback when kernel is unreachable
-      setDockContext(
-        billingIntelligenceEvidence
-          ? { ...fallback, billingIntelligenceEvidence }
-          : fallback
-      );
+      if (!isCurrent()) return;
+      // Absence of verified EOS health is not successful advisory context.
+      setDockContext(null);
       setKennelPosture('SOURCE_SILENT');
-      // Log silently in production; in dev we can show a warning
       if (import.meta.env.DEV) {
-        console.warn('[IntelligenceDock] Kennel unreachable, using fallback context.', err);
+        console.warn('[IntelligenceDock] EOS health unavailable; verified context withheld.', err);
       }
     }
-  }, [authUser?.role, activeTenant?.tenantId, activeTenant?._id]);
+  }, [dockScope, authUser?.role, activeTenant?.tenantId, activeTenant?._id]);
 
   /**
    * @function handleNewThread
@@ -398,15 +432,19 @@ export function WilsyOSIntelligenceDock({
    * @institutional Allows operators to compartmentalize conversations by topic.
    */
   const handleNewThread = useCallback(async () => {
+    const scopeAtStart = dockScopeRef.current;
     try {
       const fresh = await createWilsyAIConversationThread({
         title: 'New Sovereign Session',
         workspace: 'WILSY OS',
       });
+      if (scopeAtStart !== dockScopeRef.current) return;
       setConversationThreads((prev) => [fresh, ...prev.filter((item) => item.id !== fresh.id)]);
       setActiveThreadId(fresh.id);
     } catch (err) {
-      setErrorMessage(err?.message || 'Failed to create a new thread.');
+      if (scopeAtStart === dockScopeRef.current) {
+        setErrorMessage(err?.message || 'Failed to create a new thread.');
+      }
     }
   }, []);
 
@@ -416,16 +454,20 @@ export function WilsyOSIntelligenceDock({
    * @institutional Prevents stale data from persisting after external updates.
    */
   const handleRefresh = useCallback(async () => {
+    const scopeAtStart = dockScopeRef.current;
     setErrorMessage('');
     try {
       const refreshed = await loadWilsyAIConversationThreads();
+      if (scopeAtStart !== dockScopeRef.current) return;
       setConversationThreads(refreshed);
       if (!refreshed.find(t => t.id === activeThreadId)) {
         setActiveThreadId(refreshed[0]?.id || null);
       }
       await hydrateDockContext(); // Also refresh kennel context
     } catch (err) {
-      setErrorMessage('Failed to refresh threads.');
+      if (scopeAtStart === dockScopeRef.current) {
+        setErrorMessage('Failed to refresh threads.');
+      }
     }
   }, [activeThreadId, hydrateDockContext]);
 
@@ -451,10 +493,14 @@ export function WilsyOSIntelligenceDock({
           setActiveThreadId(null);
         }
       }
-      await hydrateDockContext();
+      if (active) await hydrateDockContext();
     };
     void hydrate();
-    return () => { active = false; };
+    return () => {
+      active = false;
+      healthAbortRef.current?.abort();
+      healthGenerationRef.current += 1;
+    };
   }, [hydrateDockContext]);
 
   useEffect(() => {
@@ -1229,7 +1275,7 @@ export default WilsyOSIntelligenceDock;
  * Durable conversation history remains unmounted until a separately certified Python-EOS authority exists; current history is session-memory only.
  * ═══════════════════════════════════════════════════════════════════════════════
  * ARTIFACT: WilsyOSIntelligenceDock.jsx
- * VERSION: v4.5.0-LEGAL-DEADLINE-INTELLIGENCE-PROJECTION
+ * VERSION: v4.6.0-SESSION-OWNED-OPTIONAL-INTELLIGENCE
  * AUTHORITY BOUNDARY: client projection only; Python EOS owns C1C/C1E truth
  * TENANT POSTURE: authenticated api.js context; C1E state is React memory only
  * FAIL-CLOSED POSTURE: transport errors render bounded status and never fabricate
