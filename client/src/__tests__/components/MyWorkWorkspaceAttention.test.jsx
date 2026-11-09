@@ -1,6 +1,6 @@
 /**
  * TITLE: WILSY OS Source-owned My Work Attention Handoff Contract
- * VERSION: v1.0.0-ATTENTION-SELECTED-COMPLETION-CERT
+ * VERSION: v1.0.1-EFFECT-FLUSH-FOCUS-CERT
  * AUTHORITY: Wilsy OS Core Governance
  * EPITOME: Checks source-verified task focus and real canonical completion
  *          command invocation after a daily attention work-item selection.
@@ -8,7 +8,9 @@
  * COLLABORATION / OWNERSHIP: MyWorkWorkspace.jsx, EOS /my-work and
  *                            source-owned module completion commands.
  * CERTIFICATION / UPDATE DATE: 2026-11-09
- * CHANGELOG: v1.0.0-ATTENTION-SELECTED-COMPLETION-CERT covers selected
+ * CHANGELOG: v1.0.1-EFFECT-FLUSH-FOCUS-CERT waits for React's
+ *            async item-focus effect before asserting real keyboard focus.
+ *            v1.0.0-ATTENTION-SELECTED-COMPLETION-CERT covers selected
  *            work item navigation, actual server command and forged focus denial.
  * COMPLIANCE: POPIA section 19; GDPR Article 32; SOC 2 CC7.2.
  * SECURITY / PRIVACY POSTURE: Synthetic records and stubbed API, no credentials.
@@ -64,7 +66,7 @@ describe('Daily attention selected My Work action', () => {
     const card = heading.closest('article');
     expect(card).not.toBeNull();
     expect(card.className).toContain('ring-2');
-    expect(document.activeElement).toBe(card);
+    await waitFor(() => expect(document.activeElement).toBe(card));
     fireEvent.change(screen.getByRole('textbox', {name: 'Completion note for Confirm dispatch evidence'}), {
       target: {value: 'Verified authorised dispatch evidence'},
     });
@@ -86,7 +88,7 @@ describe('Daily attention selected My Work action', () => {
 
 /*
  * ARTIFACT: MyWorkWorkspaceAttention.test.jsx
- * VERSION: v1.0.0-ATTENTION-SELECTED-COMPLETION-CERT
+ * VERSION: v1.0.1-EFFECT-FLUSH-FOCUS-CERT
  * AUTHORITY BOUNDARY: Source-owned completion route only.
  * TENANT POSTURE: Only EOS-provided work list may be highlighted.
  * FAIL-CLOSED POSTURE: Forged state cannot add an action item.
