@@ -310,6 +310,10 @@ export const AuthenticatedGlobalChrome = ({ user, onLogout, children, workspaceR
               setNotificationsOpen(false);
               navigate('/headquarters?section=hr-workspace');
             }}
+            onOpenOperations={() => {
+              setNotificationsOpen(false);
+              navigate('/headquarters?section=operations');
+            }}
           />}
           <div className="relative">
             <button type="button" aria-label="Open user menu" aria-expanded={userMenuOpen} onClick={() => { setUserMenuOpen((value) => !value); setNotificationsOpen(false); }} className="flex items-center gap-2 rounded-full py-1 pl-1 pr-2 transition hover:bg-white/10">
