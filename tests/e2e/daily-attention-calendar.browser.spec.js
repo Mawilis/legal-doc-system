@@ -1,6 +1,6 @@
 /**
  * TITLE: WILSY OS Authenticated Daily Attention Calendar Browser Certificate
- * VERSION: v1.0.0-DISPOSABLE-CALENDAR-SOURCE-COMMAND-CERT
+ * VERSION: v1.1.0-DURABLE-AGGREGATE-COUNT-RECONCILIATION
  * AUTHORITY: Repository-governed disposable browser fixture only.
  * EPITOME: Verify real EOS work creation, replay, tenant denial, calendar
  * navigation, window bounds, dismissal and persisted source-owned completion.
@@ -8,7 +8,11 @@
  * COLLABORATION / OWNERSHIP: browser_cert_fixture.py, run-browser-cert.mjs,
  * App.jsx, WilsyDailyAttentionCentre, WilsyWorkDeadlineCalendar and My Work.
  * CERTIFICATION / UPDATE DATE: 2026-11-09.
- * CHANGELOG: v1.0.0-DISPOSABLE-CALENDAR-SOURCE-COMMAND-CERT adds desktop and
+ * CHANGELOG: v1.1.0-DURABLE-AGGREGATE-COUNT-RECONCILIATION requires the just-created
+ *          Operations item in the exact tenant/principal aggregate snapshot,
+ *          then demands current EOS active and source counts each decrement by
+ *          exactly one after source-owned completion and durable rehydration.
+ *          v1.0.0-DISPOSABLE-CALENDAR-SOURCE-COMMAND-CERT adds desktop and
  * narrow-view acceptance using the existing synthetic Tenant Owner actor.
  * COMPLIANCE: POPIA section 19; GDPR Article 32; SOC 2 CC7.2.
  * SECURITY / PRIVACY POSTURE: Synthetic fixture sessions only. No real MFA,
@@ -81,6 +85,21 @@ for (const viewport of [{width: 1440, height: 1000}, {width: 390, height: 844}])
       });
       expect(foreign.status()).toBe(403);
       expect(await foreign.text()).not.toContain(title);
+
+      // Current EOS aggregate must independently prove that source creation is
+      // visible to this authenticated exact tenant and selected capacity.
+      const beforeAggregateResponse = await context.request.get('/api/my-work', {headers});
+      expect(beforeAggregateResponse.status()).toBe(200);
+      const beforeAggregate = await beforeAggregateResponse.json();
+      expect(beforeAggregate.schema).toBe('WILSY-OS-UNIFIED-MY-WORK/V1');
+      expect(beforeAggregate.tenant_id).toBe(state.tenant_id);
+      expect(beforeAggregate.principal_id).toBe(actor.principal_id);
+      expect(beforeAggregate.sources_included).toContain('OPERATIONS');
+      expect(beforeAggregate.items.filter(item => (
+        item.source_key === 'OPERATIONS:' + work.work_item_id
+        && item.title === title
+      ))).toHaveLength(1);
+      expect(beforeAggregate.summary.source_counts.OPERATIONS).toBeGreaterThanOrEqual(1);
 
       const bell = page.getByRole('button', {name: /^Open daily attention/});
       await bell.click();
@@ -174,6 +193,24 @@ for (const viewport of [{width: 1440, height: 1000}, {width: 390, height: 844}])
         throw new Error('CALENDAR_SOURCE_COMPLETION_READBACK_FAILED');
       }
       expect(durableEvidence.trim()).toBe('CALENDAR_SOURCE_COMPLETION_REHYDRATED');
+
+      // Re-read EOS rather than believing optimistic browser removal; a
+      // successful source command must reconcile both global and source counts.
+      const afterAggregateResponse = await context.request.get('/api/my-work', {headers});
+      expect(afterAggregateResponse.status()).toBe(200);
+      const afterAggregate = await afterAggregateResponse.json();
+      expect(afterAggregate.tenant_id).toBe(state.tenant_id);
+      expect(afterAggregate.principal_id).toBe(actor.principal_id);
+      expect(afterAggregate.sources_included).toContain('OPERATIONS');
+      expect(afterAggregate.items.some(item => (
+        item.source_key === 'OPERATIONS:' + work.work_item_id
+      ))).toBe(false);
+      expect(afterAggregate.summary.active_count).toBe(
+        beforeAggregate.summary.active_count - 1
+      );
+      expect(afterAggregate.summary.source_counts.OPERATIONS).toBe(
+        beforeAggregate.summary.source_counts.OPERATIONS - 1
+      );
       await bell.click();
       await panel.getByRole('tab', {name: 'Calendar', exact: true}).click();
       await expect(agendaItem).toHaveCount(0);
@@ -186,7 +223,7 @@ for (const viewport of [{width: 1440, height: 1000}, {width: 390, height: 844}])
 }
 
 // ARTIFACT: daily-attention-calendar.browser.spec.js
-// VERSION: v1.0.0-DISPOSABLE-CALENDAR-SOURCE-COMMAND-CERT
+// VERSION: v1.1.0-DURABLE-AGGREGATE-COUNT-RECONCILIATION
 // AUTHORITY BOUNDARY: Synthetic authenticated browser and source-command evidence only.
 // TENANT POSTURE: Existing approved fixture actor in a disposable loopback database.
 // FAIL-CLOSED POSTURE: Missing source, replay conflict, wrong scope or browser error fails.

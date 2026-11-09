@@ -1,8 +1,30 @@
+"""WILSY OS Suite-scoped durable browser certification verifier.
+
+TITLE: WILSY OS Suite-Scoped Durable Browser Certificate
+VERSION: v1.0.0-DAILY-SOURCE-PERSISTENCE-SCOPE
+AUTHORITY: Disposable certification verifier; Python EOS owns business truth.
+EPITOME: Verify the durable consequences of independently selected test suites.
+ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/tests/e2e/browser_cert_scope_verify.py
+COLLABORATION / OWNERSHIP: browser_cert_fixture.py, run-browser-cert.mjs,
+                            existing Legal and SYSTEM certification suites.
+CERTIFICATION / UPDATE DATE: 2026-11-09
+CHANGELOG: v1.0.0 adds strict daily-work source-owned durable cardinality,
+           idempotency keys, tenant/principal binding, and completed-record
+           rehydration without weakening Legal or SYSTEM verification.
+COMPLIANCE: POPIA section 19; GDPR Article 32; SOC 2 CC7.2.
+SECURITY / PRIVACY POSTURE: Test-only UUID database; never logs row content.
+TENANT BOUNDARY: Exact synthetic tenant and principal checked on every record.
+AUTHORITY BOUNDARY: Verifier cannot issue, complete or grant any work command.
+TRANSACTION BOUNDARY: Read-only snapshot, no mutations to owner registry.
+FINANCIAL AUTHORITY BOUNDARY: Kennel EOS exclusively.
+"""
+
 import argparse
 import json
 from hashlib import sha3_256
 from pathlib import Path
 from pymongo import MongoClient
+from tools.eos.workspaces.persistence.tenant_module_work_registry import TenantModuleWorkRegistry
 from browser_cert_fixture import (
     _owned_database,
     _uri,
@@ -101,6 +123,70 @@ def verify_broad(database, state):
     )
     if screening_count != 1 or review_count != 1:
         raise RuntimeError("BROWSER_CERT_DURABLE_REVIEW_CARDINALITY_INVALID")
+
+def verify_daily(database, state):
+    """Require exactly two independently completed desktop/mobile Operations tasks.
+
+    The browser suite proves authenticated command routing and tenant denial.
+    This read-only companion certifies that each result actually persisted
+    under the owning Operations registry, with the expected exact principal,
+    idempotency key and completion evidence. It never runs Legal review or
+    SYSTEM responder assertions that were not exercised by the selected suite.
+    """
+    tenant_id = state["tenant_id"]
+    principal_id = state["actors"]["tenant_owner"]["principal_id"]
+    collection = database["tenant_operations_work_items"]
+    rows = list(collection.find({
+        "tenant_id": tenant_id,
+        "description": "Disposable calendar acceptance",
+        "title": {"$regex": "^Calendar source work calendar-browser-"},
+    }))
+    if len(rows) != 2:
+        raise RuntimeError("BROWSER_CERT_DAILY_WORK_CARDINALITY_INVALID")
+
+    work_ids = {row.get("work_item_id") for row in rows}
+    request_keys = {row.get("idempotency_key") for row in rows}
+    if (
+        len(work_ids) != 2
+        or not all(isinstance(value, str) and value for value in work_ids)
+        or len(request_keys) != 2
+        or not all(isinstance(value, str) and value.startswith("calendar-browser-") for value in request_keys)
+    ):
+        raise RuntimeError("BROWSER_CERT_DAILY_WORK_IDENTITY_INVALID")
+
+    reader = TenantModuleWorkRegistry(collection)
+    with database.client.start_session() as session:
+        session.start_transaction()
+        try:
+            for row in rows:
+                if (
+                    row.get("created_by_principal_id") != principal_id
+                    or row.get("tenant_id") != tenant_id
+                    or row.get("idempotency_key") != row.get("title", "").removeprefix("Calendar source work ")
+                ):
+                    raise RuntimeError("BROWSER_CERT_DAILY_WORK_OWNER_BINDING_INVALID")
+                current = reader.get(
+                    tenant_id=tenant_id,
+                    work_item_id=row["work_item_id"],
+                    session=session,
+                )
+                if (
+                    current.status.value != "COMPLETED"
+                    or current.completion_note != "Source-owned calendar completion evidence"
+                    or current.completed_at is None
+                    or current.created_by_principal_id != principal_id
+                    or current.tenant_id != tenant_id
+                ):
+                    raise RuntimeError("BROWSER_CERT_DAILY_WORK_COMPLETION_INVALID")
+        finally:
+            session.abort_transaction()
+
+    if collection.count_documents({
+        "tenant_id": {"$ne": tenant_id},
+        "work_item_id": {"$in": sorted(work_ids)},
+    }):
+        raise RuntimeError("BROWSER_CERT_DAILY_WORK_FOREIGN_COPY_INVALID")
+
 
 def verify_system(database, state):
     system_actors = state["system_actors"]
@@ -246,7 +332,7 @@ def verify_system(database, state):
 def main():
     parser = argparse.ArgumentParser(description="Suite-scoped durable browser certificate verifier")
     parser.add_argument("--state", type=Path, required=True)
-    parser.add_argument("--scope", choices=("system", "broad", "combined"), default="combined")
+    parser.add_argument("--scope", choices=("system", "broad", "combined", "daily"), default="combined")
     args = parser.parse_args()
     state = json.loads(args.state.read_text(encoding="utf-8"))
     client = MongoClient(_uri(), serverSelectionTimeoutMS=5000)
@@ -256,9 +342,19 @@ def main():
             verify_broad(database, state)
         if args.scope in ("system", "combined"):
             verify_system(database, state)
+        if args.scope == "daily":
+            verify_daily(database, state)
     finally:
         client.close()
     print("BROWSER_CERT_DURABLE_VERIFICATION_PASSED:" + args.scope)
 
 if __name__ == "__main__":
     main()
+
+# ARTIFACT: tests/e2e/browser_cert_scope_verify.py
+# VERSION: v1.0.0-DAILY-SOURCE-PERSISTENCE-SCOPE
+# AUTHORITY BOUNDARY: Disposable read-only source verification only.
+# TENANT POSTURE: Exact tenant, principal, two durable source work records.
+# FAIL-CLOSED POSTURE: Missing/partial/foreign work never passes certification.
+# FINANCIAL EXECUTION AUTHORITY: Kennel EOS exclusively.
+# END OF WILSY OS SOVEREIGN ARTIFACT

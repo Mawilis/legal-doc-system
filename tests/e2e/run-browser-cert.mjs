@@ -1,6 +1,6 @@
 /**
  * TITLE: WILSY OS browser-certificate runner
- * VERSION: v1.9.0-EOS-ONLY-BROWSER-CERT-RUNTIME
+ * VERSION: v1.10.0-DAILY-SOURCE-SCOPE-VERIFICATION
  * AUTHORITY: Test process lifecycle only.
  * EPITOME: Own the synthetic fixture, disposable Python EOS, frontend Vite,
  *          browser suite, bounded diagnostics, and ordered cleanup.
@@ -9,7 +9,11 @@
  * COLLABORATION / OWNERSHIP: L8-8M browser certification; EOS retains tenant,
  *                            Legal, and authorization authority.
  * CERTIFICATION / UPDATE DATE: 2026-11-09
- * CHANGELOG: v1.9.0-EOS-ONLY-BROWSER-CERT-RUNTIME removes all legacy Node API
+ * CHANGELOG: v1.10.0-DAILY-SOURCE-SCOPE-VERIFICATION selects exact daily browser
+ *            lifecycle evidence when and only when the one-file Daily Attention
+ *            calendar suite is run; preserves all existing broader Legal and
+ *            SYSTEM durable verification and disposable cleanup contracts.
+ *            v1.9.0-EOS-ONLY-BROWSER-CERT-RUNTIME removes all legacy Node API
  *            startup and dependency paths. A legacy API proxy now fails closed;
  *            browser traffic must reach the isolated Python EOS runtime.
  *            Session-signing test entropy uses the platform crypto generator.
@@ -652,7 +656,13 @@ try {
     && browserTestArguments.includes('tests/e2e/system-services-incident.browser.spec.js')
     && browserTestArguments.includes('tests/e2e/system-services-response.browser.spec.js');
   const broadSuite = browserTestArguments.includes('--grep-invert');
-  const verificationScope = systemSuite ? 'system' : broadSuite ? 'broad' : 'combined';
+  // A selected daily-only suite must be certified against its own durable
+  // Operations effects, not the Legal reviews created by different browser
+  // specs. Any unexpected argument combination stays in strict combined mode.
+  const dailySuite = browserTestArguments.length === 1
+    && browserTestArguments[0] === 'tests/e2e/daily-attention-calendar.browser.spec.js';
+  const verificationScope = dailySuite ? 'daily'
+    : systemSuite ? 'system' : broadSuite ? 'broad' : 'combined';
   await runAndWait(
     python,
     [scopeVerifier, '--state', statePath, '--scope', verificationScope],
@@ -719,7 +729,7 @@ try {
 if (failed) process.exitCode = 1;
 
 // ARTIFACT: run-browser-cert.mjs
-// VERSION: v1.9.0-EOS-ONLY-BROWSER-CERT-RUNTIME
+// VERSION: v1.10.0-DAILY-SOURCE-SCOPE-VERIFICATION
 // AUTHORITY BOUNDARY: runner-owned disposable certification services only
 // TENANT POSTURE: UUID-isolated fixture database; external tenants are untouched
 // FAIL-CLOSED POSTURE: phase, health, preflight, browser, or cleanup failure returns non-zero
