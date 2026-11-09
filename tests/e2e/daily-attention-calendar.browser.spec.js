@@ -1,6 +1,6 @@
 /**
  * TITLE: WILSY OS Authenticated Daily Attention Calendar Browser Certificate
- * VERSION: v1.1.0-DURABLE-AGGREGATE-COUNT-RECONCILIATION
+ * VERSION: v1.2.0-REAL-UI-SOURCE-ENTRY-BADGE-RECONCILIATION
  * AUTHORITY: Repository-governed disposable browser fixture only.
  * EPITOME: Verify real EOS work creation, replay, tenant denial, calendar
  * navigation, window bounds, dismissal and persisted source-owned completion.
@@ -8,7 +8,12 @@
  * COLLABORATION / OWNERSHIP: browser_cert_fixture.py, run-browser-cert.mjs,
  * App.jsx, WilsyDailyAttentionCentre, WilsyWorkDeadlineCalendar and My Work.
  * CERTIFICATION / UPDATE DATE: 2026-11-09.
- * CHANGELOG: v1.1.0-DURABLE-AGGREGATE-COUNT-RECONCILIATION requires the just-created
+ * CHANGELOG: v1.2.0-REAL-UI-SOURCE-ENTRY-BADGE-RECONCILIATION creates source work using
+ *          the live Operations action form reached from My Work, then certifies
+ *          browser idempotent replay, calendar selection, EOS-owned completion,
+ *          durable registry rehydrate, aggregate counts and current global
+ *          badge refresh. No dummy UI action or API-only creation substitutes.
+ *          v1.1.0-DURABLE-AGGREGATE-COUNT-RECONCILIATION requires the just-created
  *          Operations item in the exact tenant/principal aggregate snapshot,
  *          then demands current EOS active and source counts each decrement by
  *          exactly one after source-owned completion and durable rehydration.
@@ -57,20 +62,43 @@ for (const viewport of [{width: 1440, height: 1000}, {width: 390, height: 844}])
       expect((await bootstrap).status()).toBe(200);
       await expect(page.getByRole('heading', {name: 'My Work', exact: true})).toBeVisible();
 
-      const key = `calendar-browser-${randomUUID()}`;
-      const title = `Calendar source work ${key}`;
-      const dueAt = await page.evaluate(() => {
+      const title = `Calendar source work calendar-browser-${randomUUID()}`;
+      const due = await page.evaluate(() => {
         const today = new Date();
         today.setHours(12, 0, 0, 0);
-        return today.toISOString();
+        const pad = value => String(value).padStart(2, '0');
+        return {
+          iso: today.toISOString(),
+          local: `${today.getFullYear()}-${pad(today.getMonth() + 1)}-${pad(today.getDate())}T${pad(today.getHours())}:${pad(today.getMinutes())}`,
+        };
       });
       const path = '/api/tenant-modules/operations/workspace/work-items';
-      const command = {title, description: 'Disposable calendar acceptance', kind: 'TASK', priority: 'HIGH', due_at: dueAt};
-      const created = await context.request.post(path, {
-        headers: {...headers, 'Idempotency-Key': key}, data: command,
-      });
+
+      // Real workforce-facing creation UI. The click routes into the existing
+      // canonical Operations source, whose own IAM and entitlement gate owns
+      // the command and its durable Mongo transaction.
+      await page.getByRole('button', {name: 'Open Operations work management'}).click();
+      const operations = page.getByRole('main', {name: 'Operations OS'});
+      await expect(operations).toBeVisible();
+      await operations.getByRole('textbox', {name: 'Action title'}).fill(title);
+      await operations.getByRole('combobox', {name: 'Priority'}).selectOption('HIGH');
+      await operations.getByLabel('Due date and time').fill(due.local);
+      const [created] = await Promise.all([
+        page.waitForResponse(response => (
+          new URL(response.url()).pathname === path
+          && response.request().method() === 'POST'
+        )),
+        operations.getByRole('button', {name: 'Create action'}).click(),
+      ]);
       expect(created.status()).toBe(201);
+      const command = created.request().postDataJSON();
+      expect(command).toEqual({
+        title, description: '', kind: 'TASK', priority: 'HIGH', due_at: due.iso,
+      });
+      const key = (await created.request().allHeaders())['idempotency-key'];
+      expect(key).toMatch(/^[0-9a-f]{8}-[0-9a-f-]{27,}$/i);
       const work = await created.json();
+      await expect(operations.getByText(title, {exact: true})).toBeVisible();
       const replay = await context.request.post(path, {
         headers: {...headers, 'Idempotency-Key': key}, data: command,
       });
@@ -101,7 +129,9 @@ for (const viewport of [{width: 1440, height: 1000}, {width: 390, height: 844}])
       ))).toHaveLength(1);
       expect(beforeAggregate.summary.source_counts.OPERATIONS).toBeGreaterThanOrEqual(1);
 
+      await page.goto('/headquarters');
       const bell = page.getByRole('button', {name: /^Open daily attention/});
+      await expect(bell).toBeVisible();
       await bell.click();
       const panel = page.getByRole('dialog', {name: 'Daily attention centre'});
       await expect(panel).toBeVisible();
@@ -211,6 +241,13 @@ for (const viewport of [{width: 1440, height: 1000}, {width: 390, height: 844}])
       expect(afterAggregate.summary.source_counts.OPERATIONS).toBe(
         beforeAggregate.summary.source_counts.OPERATIONS - 1
       );
+
+      // A verified source completion must refresh global chrome in the same
+      // authenticated browser session, not wait for the old periodic poll.
+      await expect(bell).toHaveAttribute(
+        'aria-label',
+        `Open daily attention: ${afterAggregate.summary.active_count} active work items`,
+      );
       await bell.click();
       await panel.getByRole('tab', {name: 'Calendar', exact: true}).click();
       await expect(agendaItem).toHaveCount(0);
@@ -223,7 +260,7 @@ for (const viewport of [{width: 1440, height: 1000}, {width: 390, height: 844}])
 }
 
 // ARTIFACT: daily-attention-calendar.browser.spec.js
-// VERSION: v1.1.0-DURABLE-AGGREGATE-COUNT-RECONCILIATION
+// VERSION: v1.2.0-REAL-UI-SOURCE-ENTRY-BADGE-RECONCILIATION
 // AUTHORITY BOUNDARY: Synthetic authenticated browser and source-command evidence only.
 // TENANT POSTURE: Existing approved fixture actor in a disposable loopback database.
 // FAIL-CLOSED POSTURE: Missing source, replay conflict, wrong scope or browser error fails.
