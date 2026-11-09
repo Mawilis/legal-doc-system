@@ -1,14 +1,17 @@
 /**
  * TITLE: WILSY OS Authorised My Work Completion Workspace
- * VERSION: v1.3.0-SESSION-GENERATION-CURRENTNESS
+ * VERSION: v1.4.0-VERIFIED-PROJECTION-FOCUS-HANDOFF
  * AUTHORITY: Wilsy OS Core Governance
  * EPITOME: Executes source-owned evidenced work completion and focuses the
- *          item selected from the authenticated Daily Attention Centre.
+ *          item selected from Daily Attention or Headquarters.
  * ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/client/src/components/workspaces/MyWorkWorkspace.jsx
- * COLLABORATION / OWNERSHIP: Python EOS /my-work owns visibility and
+ * COLLABORATION / OWNERSHIP: Python EOS /api/my-work owns visibility and
  *                            source services own completion and audit.
  * CERTIFICATION / UPDATE DATE: 2026-11-09
- * CHANGELOG: v1.3.0-SESSION-GENERATION-CURRENTNESS binds projection, command
+ * CHANGELOG: v1.4.0-VERIFIED-PROJECTION-FOCUS-HANDOFF validates every My Work
+ *            read with the shared tenant/principal/source coverage contract
+ *            and accepts an exact source-key focus handoff from Headquarters.
+ *            v1.3.0-SESSION-GENERATION-CURRENTNESS binds projection, command
  *            freshness, and transient drafts to auth session generation,
  *            membership revision, and selected business-role revision; stale
  *            source reads are cancelled and late results remain suppressed.
@@ -31,6 +34,7 @@ import { useLocation, useNavigate } from 'react-router-dom';
 import api from '../../services/api.js';
 import AuthContext from '../../contexts/authContext.jsx';
 import { completeLegalWorkItem } from '../../services/legalOperationsService.js';
+import { assertUnifiedMyWorkProjection } from '../../services/unifiedMyWorkProjection.js';
 
 const SOURCE_LABELS = Object.freeze({
   LEGAL: 'Legal',
@@ -60,14 +64,16 @@ const formatDue = (value) => {
 /**
  * @description Read current assigned work and hand completion to its owning EOS service.
  * @collaboration Authenticated routes, Headquarters and Daily Attention calendar handoff.
- * @institutional Route state selects focus only. Tenant, principal, capacity and
- * permissions remain EOS-owned; source services own transactions, completion
- * evidence and durable command replay. Session generation and membership
- * revisions invalidate stale reads and drafts but grant no authority.
+ * @institutional Route or parent handoff state selects focus only. The shared
+ * projection contract verifies schema, row identity, source coverage and exact
+ * scope. Tenant, principal, capacity and permissions remain EOS-owned; source
+ * services own transactions, completion evidence and durable command replay.
+ * @param {{focusWorkItem?: string|null}} [props] Optional exact source key from
+ *   the Headquarters read-only brief; a match is still required in EOS results.
  * @returns {JSX.Element} Current source queue, loading or bounded unavailable state.
  * No client state establishes legal, financial, MFA or notification authority.
  */
-export default function MyWorkWorkspace() {
+export default function MyWorkWorkspace({ focusWorkItem: handoffFocusWorkItem = null } = {}) {
   const navigate = useNavigate();
   const location = useLocation();
   const auth = useContext(AuthContext);
@@ -87,7 +93,11 @@ export default function MyWorkWorkspace() {
   const requestRef = useRef(0);
   const requestControllerRef = useRef(null);
   const focusRef = useRef(null);
-  const focusKey = typeof location.state?.focusWorkItem === 'string' ? location.state.focusWorkItem : null;
+  const routeFocus = typeof location.state?.focusWorkItem === 'string'
+    ? location.state.focusWorkItem : null;
+  const focusKey = typeof handoffFocusWorkItem === 'string'
+    ? handoffFocusWorkItem
+    : routeFocus;
   const [sourceProjection, setProjection] = useState(null);
   const [projectionScope, setProjectionScope] = useState(null);
   const projection = projectionScope === scopeKey ? sourceProjection : null;
@@ -113,11 +123,11 @@ export default function MyWorkWorkspace() {
         signal: controller.signal,
       });
       if (request !== requestRef.current || scopeRef.current !== scopeKey) return;
-      if ((authUser?.tenantId && response.data?.tenant_id !== authUser.tenantId)
-        || (authUser?.id && response.data?.principal_id !== authUser.id)) {
-        throw new Error('MY_WORK_SCOPE_MISMATCH');
-      }
-      setProjection(response.data);
+      const verified = assertUnifiedMyWorkProjection(response?.data, {
+        tenantId: authUser?.tenantId,
+        principalId: authUser?.id,
+      });
+      setProjection(verified);
       setProjectionScope(scopeKey);
     } catch (requestError) {
       if (request !== requestRef.current || scopeRef.current !== scopeKey) return;
@@ -134,15 +144,14 @@ export default function MyWorkWorkspace() {
   }, [scopeKey]);
 
   useEffect(() => {
-    // A same-path calendar handoff creates a new navigation key. Re-read EOS
-    // before highlighting work that may have arrived since the previous visit.
+    // Same-path attention handoffs re-read EOS before focusing current work.
     void load();
     return () => {
       requestRef.current += 1;
       requestControllerRef.current?.abort();
       requestControllerRef.current = null;
     };
-  }, [load, location.key]);
+  }, [load, location.key, focusKey]);
 
   useEffect(() => {
     setNotes({});
@@ -226,9 +235,9 @@ export default function MyWorkWorkspace() {
         </header>
 
         <section className="grid grid-cols-2 gap-3 py-6 sm:grid-cols-4">
-          <Metric label="Active work" value={projection.summary?.active_count ?? items.length} />
-          <Metric label="Overdue" value={projection.summary?.overdue_count ?? 0} />
-          <Metric label="Sources admitted" value={projection.sources_included?.length ?? 0} />
+          <Metric label="Active work" value={projection.summary.active_count} />
+          <Metric label="Overdue" value={projection.summary.overdue_count} />
+          <Metric label="Sources admitted" value={projection.sources_included.length} />
           <Metric label="Last refreshed" value={new Date(projection.as_of).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })} />
         </section>
 
@@ -237,8 +246,16 @@ export default function MyWorkWorkspace() {
         {items.length === 0 ? (
           <section className="rounded-2xl border border-white/10 bg-[#111720] px-6 py-14 text-center">
             <CheckCircle2 className="mx-auto text-emerald-300" size={32} />
-            <h2 className="mt-4 text-lg font-medium">You’re clear</h2>
-            <p className="mt-2 text-sm text-slate-400">There is no active work in the sources currently authorized for this session.</p>
+            <h2 className="mt-4 text-lg font-medium">
+              {projection.sources_included.length === 0
+                ? 'No work source was included in this session'
+                : 'You’re clear'}
+            </h2>
+            <p className="mt-2 text-sm text-slate-400">
+              {projection.sources_included.length === 0
+                ? 'EOS returned no source projection. This is not evidence that every business queue is empty.'
+                : 'There is no active work in the sources currently authorized for this session.'}
+            </p>
           </section>
         ) : (
           <section aria-label="Authorized work queue" className="space-y-3">
@@ -350,7 +367,11 @@ export default function MyWorkWorkspace() {
         )}
 
         <footer className="mt-8 flex flex-wrap items-center justify-between gap-3 border-t border-white/10 pt-4 text-[11px] text-slate-500">
-          <span>Authenticated source projection · {projection.sources_included?.length || 0} sources admitted</span>
+          <span>
+            Included: {projection.sources_included.length
+              ? projection.sources_included.map((source) => SOURCE_LABELS[source]).join(', ')
+              : 'no source projection'}
+          </span>
           <span>Commands remain owned by each source service.</span>
         </footer>
       </div>
@@ -369,10 +390,10 @@ function Metric({ label, value }) {
 
 /*
  * ARTIFACT: MyWorkWorkspace.jsx
- * VERSION: v1.3.0-SESSION-GENERATION-CURRENTNESS
+ * VERSION: v1.4.0-VERIFIED-PROJECTION-FOCUS-HANDOFF
  * AUTHORITY BOUNDARY: EOS source-owned work completion only.
  * TENANT POSTURE: Current principal, membership and business-role scope only.
- * FAIL-CLOSED POSTURE: Aborted and late prior-scope reads never restore work.
+ * FAIL-CLOSED POSTURE: Shared contract rejects invalid work and coverage.
  * FINANCIAL EXECUTION AUTHORITY: Kennel EOS exclusively.
  * END OF WILSY OS SOVEREIGN ARTIFACT
  */
