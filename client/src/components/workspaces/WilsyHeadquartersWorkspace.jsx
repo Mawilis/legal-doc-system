@@ -1,13 +1,15 @@
 /**
  * TITLE: WILSY OS Headquarters authenticated executive workspace
- * VERSION: v2.1.0-URL-ROUTED-WORKFORCE-DUTIES
+ * VERSION: v2.2.0-MY-WORK-ITEM-HANDOFF
  * AUTHORITY: WILSY EOS client projection; Python EOS remains the business authority
  * EPITOME: Presents the authenticated company operating plane and a source-backed
  *          My Work snapshot without inventing enterprise metrics or commands.
  * ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/client/src/components/workspaces/WilsyHeadquartersWorkspace.jsx
  * COLLABORATION / OWNERSHIP: WILSY EOS frontend projection consuming /api/my-work
  * CERTIFICATION / UPDATE DATE: 2026-11-09
- * CHANGELOG: v2.1.0-URL-ROUTED-WORKFORCE-DUTIES supports the validated HR entry URL from
+ * CHANGELOG: v2.2.0-MY-WORK-ITEM-HANDOFF carries a selected daily source key into
+ *            canonical My Work, where a fresh authorized read validates it.
+ *            v2.1.0-URL-ROUTED-WORKFORCE-DUTIES supports the validated HR entry URL from
  *            global daily attention without inferring any new permissions.
  *            v2.0.0-HEADQUARTERS-ACTIONABLE-DAILY-BRIEF adds authorised interactive daily work
  *            without removing source-backed KPI, HR requisitions, workforce,
@@ -77,6 +79,13 @@ function SourceBoundary({ title, description }) {
   );
 }
 
+/**
+ * @description Renders the authenticated headquarters operating workspace.
+ * @collaboration Composes the daily brief, canonical My Work projection, HR reads, and tenant modules.
+ * @institutional Keeps selected work navigation in presentation state while EOS revalidates access.
+ * @param {{tenantId?: string|null}} props Authenticated tenant identifier supplied by the parent.
+ * @returns {JSX.Element}
+ */
 export default function WilsyHeadquartersWorkspace({ tenantId = null }) {
   const location = useLocation();
   const auth = useContext(AuthContext) || {};
@@ -84,6 +93,7 @@ export default function WilsyHeadquartersWorkspace({ tenantId = null }) {
   const [section, setSection] = useState(() =>
     new URLSearchParams(location.search).get('section') === 'hr-workspace' ? 'hr-workspace' : 'overview');
   const [showMyWork, setShowMyWork] = useState(false);
+  const [myWorkFocusItem, setMyWorkFocusItem] = useState(null);
   useEffect(() => {
     const requested = new URLSearchParams(location.search).get('section');
     if (requested === 'hr-workspace') {
@@ -197,6 +207,13 @@ export default function WilsyHeadquartersWorkspace({ tenantId = null }) {
     return () => { current = false; };
   }, [section, requisitionsRefresh]);
   const selectedDepartment = departments.find((item) => item.id === section);
+  const openMyWork = (item = null) => {
+    const sourceKey = typeof item?.source_key === 'string' && item.source_key.trim()
+      ? item.source_key
+      : null;
+    setMyWorkFocusItem(sourceKey);
+    setShowMyWork(true);
+  };
 
   return (
     <main className="min-h-screen bg-[#080f1d] text-slate-100">
@@ -205,7 +222,7 @@ export default function WilsyHeadquartersWorkspace({ tenantId = null }) {
           <p className="px-3 pb-3 pt-2 text-[10px] font-semibold uppercase tracking-[0.2em] text-slate-500">Company operating plane</p>
           <nav className="space-y-1" aria-label="Headquarters navigation">
             <button onClick={() => { setSection('overview'); setShowMyWork(false); }} className={navClass(section === 'overview' && !showMyWork)}><Building2 size={17}/> Headquarters</button>
-            <button onClick={() => { setShowMyWork(true); }} className={navClass(showMyWork)}><CheckCircle2 size={17}/> My Work</button>
+            <button onClick={() => openMyWork()} className={navClass(showMyWork)}><CheckCircle2 size={17}/> My Work</button>
             <button onClick={() => { setSection('people'); setShowMyWork(false); }} className={navClass(section === 'people')}><Users size={17}/> Organisation & People</button>
             {departments.map(({id,label,icon:Icon}) => <button key={id} onClick={() => { setSection(id); setShowMyWork(false); }} className={navClass(section === id)}><Icon size={17}/>{label}</button>)}
             <div className="my-4 border-t border-white/10"/>
@@ -222,7 +239,7 @@ export default function WilsyHeadquartersWorkspace({ tenantId = null }) {
 
         <div className="min-w-0 p-4 sm:p-6 lg:p-9">
           {showMyWork ? (
-            <MyWorkWorkspace />
+            <MyWorkWorkspace focusWorkItem={myWorkFocusItem} />
           ) : section === 'overview' ? (
             <>
               <section className="relative overflow-hidden rounded-3xl border border-amber-300/20 bg-gradient-to-br from-[#132b50] via-[#10213b] to-[#091426] p-7 sm:p-10">
@@ -232,7 +249,7 @@ export default function WilsyHeadquartersWorkspace({ tenantId = null }) {
                   <h1 className="mt-4 text-3xl font-semibold tracking-tight sm:text-5xl">WILSY Headquarters</h1>
                   <p className="mt-4 max-w-2xl text-sm leading-7 text-slate-300 sm:text-base">The place where Wilsy (Pty) Ltd coordinates its people, products, customers and daily execution.</p>
                   <div className="mt-7 flex flex-wrap gap-3">
-                    <button onClick={() => setShowMyWork(true)} className="inline-flex items-center gap-2 rounded-xl bg-amber-300 px-5 py-3 text-sm font-semibold text-[#091426]">Open My Work <ArrowUpRight size={16}/></button>
+                    <button onClick={() => openMyWork()} className="inline-flex items-center gap-2 rounded-xl bg-amber-300 px-5 py-3 text-sm font-semibold text-[#091426]">Open My Work <ArrowUpRight size={16}/></button>
                     <button onClick={() => setSection('people')} className="rounded-xl border border-white/20 px-5 py-3 text-sm font-medium text-white">Organisation & workforce</button>
                   </div>
                 </div>
@@ -240,16 +257,16 @@ export default function WilsyHeadquartersWorkspace({ tenantId = null }) {
 
               <ExecutiveKpiStrip myWorkSnapshot={myWorkSnapshot} workforce={section === 'overview' ? workforce : null}/>
 
-              <WilsyHeadquartersDailyBrief tenantId={tenantId} onOpenWork={() => setShowMyWork(true)} />
+              <WilsyHeadquartersDailyBrief tenantId={tenantId} onOpenWork={(item) => openMyWork(item)} />
 
               <div className="mt-6 grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
-                <ActionCard title="Daily execution" detail="Authorised tasks and source-owned completion" onClick={() => setShowMyWork(true)} icon={CheckCircle2}/>
+                <ActionCard title="Daily execution" detail="Authorised tasks and source-owned completion" onClick={() => openMyWork()} icon={CheckCircle2}/>
                 <ActionCard title="People & workforce" detail="Employee records, hiring and onboarding" onClick={() => setSection('people')} icon={Users}/>
                 <ActionCard title="Product delivery" detail="Repositories, releases and CI evidence" onClick={() => setSection('engineering')} icon={Code2}/>
                 <ActionCard title="Business portfolio" detail="Separate customer businesses and workspaces" onClick={() => setSection('products')} icon={Globe2}/>
               </div>
 
-              <MyWorkSnapshot loading={myWorkLoading} error={myWorkError} snapshot={myWorkSnapshot} onOpen={() => setShowMyWork(true)} onRefresh={() => setMyWorkRefresh((value) => value + 1)}/>
+              <MyWorkSnapshot loading={myWorkLoading} error={myWorkError} snapshot={myWorkSnapshot} onOpen={() => openMyWork()} onRefresh={() => setMyWorkRefresh((value) => value + 1)}/>
 
               <div className="mt-8 grid gap-5 xl:grid-cols-[1.15fr_0.85fr]">
                 <section className="rounded-2xl border border-white/10 bg-[#101a2a] p-5">
@@ -517,7 +534,7 @@ function RuntimeHealthFooter({ health }) {
 
 /*
  * ARTIFACT: WILSY OS Headquarters authenticated executive workspace
- * VERSION: v2.1.0-URL-ROUTED-WORKFORCE-DUTIES
+ * VERSION: v2.2.0-MY-WORK-ITEM-HANDOFF
  * AUTHORITY BOUNDARY: Read-only client projection; Python EOS owns business truth.
  * TENANT POSTURE: Authenticated tenant and principal scope are preserved.
  * FAIL-CLOSED POSTURE: Invalid or unavailable source data is disclosed, never zeroed.
