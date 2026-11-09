@@ -321,7 +321,7 @@ describe('WILSY daily attention centre', () => {
     fireEvent.change(screen.getByRole('combobox', { name: 'Filter work by source' }), {
       target: { value: 'OPERATIONS' },
     });
-    expect(screen.getByText(/Showing 0 work items from Operations/)).toBeTruthy();
+    expect(screen.getByText(/EOS has no active work in the admitted sources.*Showing Operations/)).toBeTruthy();
     fireEvent.click(screen.getByRole('button', {
       name: /Create or manage Operations work/,
     }));
