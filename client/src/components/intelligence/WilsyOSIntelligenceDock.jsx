@@ -3,7 +3,7 @@
  * Wilsy OS — Sovereign Intelligence Dock (Kennel Phase 4 – Backend Operator)
  * ═══════════════════════════════════════════════════════════════════════════════
  * File:           client/src/components/intelligence/WilsyOSIntelligenceDock.jsx
- * Version:        v4.6.0-SESSION-OWNED-OPTIONAL-INTELLIGENCE
+ * Version:        v4.6.1-STALE-OPERATOR-TURN-RENDER-GUARD
  * Authority:      Wilsy OS Core Governance
  * Epitome:        Authority-aware operator dock. Kernel posture comes only from
  *                 the canonical /kernel transport. Legal workspace Ask requests
@@ -29,6 +29,9 @@
  *   - AI Engineering – Phase 4: replace local engine with backend call.
  *
  * Change Log:
+ *   2026-11-09 v4.6.1-STALE-OPERATOR-TURN-RENDER-GUARD discards responses, errors,
+ *   replies and in-flight UI mutations from a superseded tenant, principal
+ *   or business-capacity scope without inventing advisory authority.
  *   2026-11-09 v4.6.0-SESSION-OWNED-OPTIONAL-INTELLIGENCE cancels superseded EOS health probes,
  *   never presents a fabricated LIVE_EMPTY result as verified runtime health,
  *   and revokes transient conversation scope on logout, remount, tenant or
@@ -536,6 +539,8 @@ export function WilsyOSIntelligenceDock({
     async (rawText) => {
       const text = String(rawText || prompt).trim();
       if (!text || isSubmitting) return;
+      const scopeAtStart = dockScopeRef.current;
+      const requestIsCurrent = () => dockScopeRef.current === scopeAtStart;
 
       setIsSubmitting(true);
       setErrorMessage('');
@@ -555,6 +560,7 @@ export function WilsyOSIntelligenceDock({
             promptText: text,
             workspace: 'WILSY OS',
           });
+          if (!requestIsCurrent()) return;
           threadId = fresh.id;
           setActiveThreadId(threadId);
           setConversationThreads((prev) => [fresh, ...prev.filter((t) => t.id !== fresh.id)]);
@@ -563,13 +569,16 @@ export function WilsyOSIntelligenceDock({
           threadId,
           message: userTurn,
         });
+        if (!requestIsCurrent()) return;
         setConversationThreads((prev) => [
           afterUser,
           ...prev.filter((item) => item.id !== afterUser.id),
         ]);
       } catch (err) {
-        setErrorMessage(err?.message || 'Failed to record operator turn.');
-        setIsSubmitting(false);
+        if (requestIsCurrent()) {
+          setErrorMessage(err?.message || 'Failed to record operator turn.');
+          setIsSubmitting(false);
+        }
         return;
       }
 
@@ -615,6 +624,8 @@ export function WilsyOSIntelligenceDock({
           if (!result) throw new Error('Backend returned empty intelligence.');
         }
 
+        if (!requestIsCurrent()) return;
+
         const content =
           result?.reply ||
           result?.content ||
@@ -641,13 +652,13 @@ export function WilsyOSIntelligenceDock({
           threadId,
           message: assistantTurn,
         });
+        if (!requestIsCurrent()) return;
         setConversationThreads((prev) => [
           afterAssistant,
           ...prev.filter((item) => item.id !== afterAssistant.id),
         ]);
       } catch (err) {
-        // Fallback: use local engine only if backend fails (but Phase 4 removes local engine)
-        // We can either show an error or use a simple fallback message.
+        if (!requestIsCurrent()) return;
         setErrorMessage(err?.message || 'Backend intelligence failed. Please try again.');
         const failTurn = {
           role: 'assistant',
@@ -661,6 +672,7 @@ export function WilsyOSIntelligenceDock({
             threadId,
             message: failTurn,
           });
+          if (!requestIsCurrent()) return;
           setConversationThreads((prev) => [
             afterFail,
             ...prev.filter((item) => item.id !== afterFail.id),
@@ -669,7 +681,7 @@ export function WilsyOSIntelligenceDock({
           /* ignore */
         }
       } finally {
-        setIsSubmitting(false);
+        if (requestIsCurrent()) setIsSubmitting(false);
       }
     },
     [
@@ -1275,7 +1287,7 @@ export default WilsyOSIntelligenceDock;
  * Durable conversation history remains unmounted until a separately certified Python-EOS authority exists; current history is session-memory only.
  * ═══════════════════════════════════════════════════════════════════════════════
  * ARTIFACT: WilsyOSIntelligenceDock.jsx
- * VERSION: v4.6.0-SESSION-OWNED-OPTIONAL-INTELLIGENCE
+ * VERSION: v4.6.1-STALE-OPERATOR-TURN-RENDER-GUARD
  * AUTHORITY BOUNDARY: client projection only; Python EOS owns C1C/C1E truth
  * TENANT POSTURE: authenticated api.js context; C1E state is React memory only
  * FAIL-CLOSED POSTURE: transport errors render bounded status and never fabricate
