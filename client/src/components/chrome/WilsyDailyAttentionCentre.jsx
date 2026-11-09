@@ -1,6 +1,6 @@
 /**
  * TITLE: WILSY OS Authenticated Daily Attention Centre
- * VERSION: v1.2.0-PORTALLED-VIEWPORT-FLOATING
+ * VERSION: v1.3.0-CALENDAR-EXPLICIT-DISMISSAL
  * AUTHORITY: Wilsy OS Core Governance
  * EPITOME: Interactive notification-bell entry to exact-tenant, authorised
  *          EOS My Work triage, with actionable navigation to source-owned
@@ -9,7 +9,10 @@
  * COLLABORATION / OWNERSHIP: Python EOS /api/my-work owns work visibility;
  *                            App.jsx owns authenticated chrome and navigation.
  * CERTIFICATION / UPDATE DATE: 2026-11-09
- * CHANGELOG: v1.2.0-PORTALLED-VIEWPORT-FLOATING portals the floating panel beyond the
+ * CHANGELOG: v1.3.0-CALENDAR-EXPLICIT-DISMISSAL makes the date view explicitly dismissible
+ *            with a prominent Close calendar action and layered Escape
+ *            contract: calendar first, panel second. Work state is retained.
+ *            v1.2.0-PORTALLED-VIEWPORT-FLOATING portals the floating panel beyond the
  *            backdrop-filtered app header, anchors dock position to the bell
  *            and keeps outside dismissal correct for portalled UI.
  *            v1.1.0-FLOATING-WORK-CALENDAR adds an accessible movable/dockable work panel,
@@ -192,7 +195,14 @@ export default function WilsyDailyAttentionCentre({
   useEffect(() => {
     if (!open) return undefined;
     const handleKey = (event) => {
-      if (event.key === 'Escape') onClose();
+      if (event.key !== 'Escape') return;
+      if (view === 'CALENDAR') {
+        event.preventDefault();
+        event.stopPropagation();
+        setView('WORK');
+        return;
+      }
+      onClose();
     };
     const handlePointer = (event) => {
       if (!rootRef.current?.contains(event.target) && !panelRef.current?.contains(event.target)) onClose();
@@ -203,7 +213,7 @@ export default function WilsyDailyAttentionCentre({
       document.removeEventListener('keydown', handleKey);
       document.removeEventListener('pointerdown', handlePointer);
     };
-  }, [open, onClose]);
+  }, [open, onClose, view]);
 
   const items = projection?.items || [];
   const verifiedCount = status === 'READY' ? projection.summary.active_count : activeCount;
@@ -400,7 +410,8 @@ export default function WilsyDailyAttentionCentre({
           {status === 'READY' && (
             <>
               <div className="shrink-0 border-b border-white/10 px-4 pb-3 pt-4">
-                <div role="tablist" aria-label="Daily attention views" className="mb-3 flex items-center gap-2">
+                <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
+                  <div role="tablist" aria-label="Daily attention views" className="flex items-center gap-2">
                   <button type="button" role="tab" aria-selected={view === 'WORK'}
                     onClick={() => setView('WORK')}
                     className={'rounded-lg px-3 py-2 text-xs font-semibold ' +
@@ -413,6 +424,14 @@ export default function WilsyDailyAttentionCentre({
                       (view === 'CALENDAR' ? 'bg-amber-300 text-[#081326]' : 'text-slate-300 hover:bg-white/10')}>
                     <CalendarDays size={14}/> Calendar
                   </button>
+                  </div>
+                  {view === 'CALENDAR' && (
+                    <button type="button" aria-label="Close calendar and return to work list"
+                      onClick={() => setView('WORK')}
+                      className="inline-flex min-h-10 items-center gap-1.5 rounded-lg border border-amber-300/40 px-3 py-2 text-xs font-semibold text-amber-100 hover:bg-amber-300/10 focus-visible:outline focus-visible:outline-2 focus-visible:outline-amber-300">
+                      <X size={15}/> Close calendar
+                    </button>
+                  )}
                 </div>
                 <div className="grid grid-cols-3 gap-2">
                   <Stat label="Active" value={items.length} />
@@ -569,7 +588,7 @@ function Stat({ label, value, urgent = false }) {
 
 /*
  * ARTIFACT: WilsyDailyAttentionCentre.jsx
- * VERSION: v1.2.0-PORTALLED-VIEWPORT-FLOATING
+ * VERSION: v1.3.0-CALENDAR-EXPLICIT-DISMISSAL
  * AUTHORITY BOUNDARY: Authenticated read-only EOS work triage.
  * TENANT POSTURE: Exact tenant, fail-closed, no browser persistence.
  * FAIL-CLOSED POSTURE: Invalid, denied or unavailable sources show no fabricated items.
