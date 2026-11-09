@@ -1,7 +1,7 @@
 /* eslint-disable */
 /**
  * TITLE: WILSY OS Sovereign Application Root
- * VERSION: v20.2.6-AUTHORISED-HEADQUARTERS-DAILY-EXECUTION
+ * VERSION: v20.2.7-HEADQUARTERS-PRINCIPAL-SCOPE
  * AUTHORITY: Wilsy OS Core Governance
  * EPITOME: Composes authenticated routing, exact tenant projection, legal
  *          admission release, and protected workspace presentation without
@@ -13,6 +13,9 @@
  *                            legal-acceptance truth.
  * CERTIFICATION / UPDATE DATE: 2026-11-09
  * CHANGELOG:
+ *   v20.2.7-HEADQUARTERS-PRINCIPAL-SCOPE — Remounts Headquarters when
+ *     the authenticated tenant/principal changes, preventing prior-session
+ *     work projection display even within the same tenant.
  *   v20.2.6-AUTHORISED-HEADQUARTERS-DAILY-EXECUTION — Passes only the
  *     current authenticated tenant to the source-backed Headquarters brief;
  *     no browser-derived business or financial authority is introduced.
@@ -525,7 +528,7 @@ const SovereignRouter = () => {
       <Route path="/covenant" element={<LegalAcceptanceGate onComplete={() => navigate('/', { replace: true })} />} />
       <Route path="/headquarters" element={
         isAuthenticated && user && !systemServicesSession
-          ? <ErrorBoundary><WilsyHeadquartersWorkspace tenantId={user.tenantId} /></ErrorBoundary>
+          ? <ErrorBoundary><WilsyHeadquartersWorkspace key={String(user.id) + ':' + user.tenantId} tenantId={user.tenantId} /></ErrorBoundary>
           : <Navigate to="/" replace />
       } />
       <Route path="/my-work" element={
@@ -743,7 +746,7 @@ export default App;
 
 /**
  * ARTIFACT: client/src/App.jsx
- * VERSION: v20.2.6-AUTHORISED-HEADQUARTERS-DAILY-EXECUTION
+ * VERSION: v20.2.7-HEADQUARTERS-PRINCIPAL-SCOPE
  * AUTHORITY BOUNDARY: client route and protected-runtime composition only; Python EOS remains authentication, tenant and legal-acceptance authority
  * TENANT POSTURE: discovered tenant may choose login routing but cannot establish authenticated or protected scope
  * FAIL-CLOSED POSTURE: auth revalidation waits; unresolved legal status remains sealed; only server-confirmed legal COMPLETE mounts protected runtime
