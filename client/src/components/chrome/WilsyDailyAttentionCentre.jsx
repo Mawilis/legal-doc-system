@@ -342,7 +342,7 @@ export default function WilsyDailyAttentionCentre({
           style={floating
             ? { position: 'fixed', left: floating.x, top: floating.y, right: 'auto' }
             : { position: 'fixed', right: docked.right, top: docked.top, left: 'auto' }}
-          className="fixed z-[90] flex w-[min(460px,calc(100vw-2rem))] max-h-[min(780px,calc(100vh-5rem))] flex-col overflow-hidden rounded-2xl border border-white/15 bg-[#101d32] text-slate-100 shadow-2xl shadow-black/60"}
+          className="fixed z-[90] flex w-[min(460px,calc(100vw-2rem))] max-h-[min(780px,calc(100vh-5rem))] flex-col overflow-hidden rounded-2xl border border-white/15 bg-[#101d32] text-slate-100 shadow-2xl shadow-black/60"
         >
           <div className="flex shrink-0 items-start justify-between gap-3 border-b border-white/10 bg-[#14243d] px-5 py-4">
             <div>
