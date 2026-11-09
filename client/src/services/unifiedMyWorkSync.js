@@ -182,6 +182,8 @@ export function subscribeUnifiedMyWork(scopeKey, callback) {
     if (entry.listeners.size === 0) {
       entry.version += 1;
       entry.controller?.abort();
+      entry.pending = null;
+      entry.controller = null;
       entry.payload = null;
       entry.expiresAt = 0;
       discardIfUnused(scopeKey, entry);
@@ -201,6 +203,8 @@ export function invalidateUnifiedMyWork(scopeKey) {
   if (!entry) return false;
   entry.version += 1;
   entry.controller?.abort();
+  entry.pending = null;
+  entry.controller = null;
   entry.payload = null;
   entry.expiresAt = 0;
   for (const notify of Array.from(entry.listeners)) notify();
@@ -217,6 +221,8 @@ export function releaseUnifiedMyWork(scopeKey) {
   if (!entry) return;
   entry.version += 1;
   entry.controller?.abort();
+  entry.pending = null;
+  entry.controller = null;
   entry.payload = null;
   entry.expiresAt = 0;
   if (entry.listeners.size === 0) discardIfUnused(scopeKey, entry);
