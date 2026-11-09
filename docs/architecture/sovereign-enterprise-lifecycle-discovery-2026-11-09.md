@@ -1,15 +1,25 @@
 # WILSY OS — Enterprise Lifecycle Discovery and Runtime Retirement
 
-TITLE: Enterprise lifecycle discovery, bounded implementation and acceptance record  
-VERSION: v1.0.0-EOS-RUNTIME-AND-DAILY-WORK-CERT  
-AUTHORITY: Wilsy OS Core Governance; user-authorized Python EOS runtime retirement  
-EPITOME: Record verified authority, existing capability, delivered changes and unresolved lifecycle gates without promoting synthetic evidence into live certification.  
-ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/docs/architecture/sovereign-enterprise-lifecycle-discovery-2026-11-09.md  
-COLLABORATION / OWNERSHIP: EOS domain owners, authenticated client maintainers, runtime operations and certification CI.  
-UPDATE DATE: 2026-11-09  
-CHANGELOG: v1.0.0-EOS-RUNTIME-AND-DAILY-WORK-CERT establishes the discovery, retirement, dependency, acceptance and residual-work record for draft PR #403.  
-COMPLIANCE: POPIA section 19; GDPR Article 32; SOC 2 CC7.2.  
-TENANT / AUTHORITY BOUNDARY: Read-only discovery and disposable fixture evidence; no identity, membership, IAM or commercial authority is granted by this record.  
+TITLE: Enterprise lifecycle discovery, bounded implementation and acceptance record
+
+VERSION: v1.0.1-EOS-RUNTIME-AND-DAILY-WORK-CERT
+
+AUTHORITY: Wilsy OS Core Governance; user-authorized Python EOS runtime retirement
+
+EPITOME: Record verified authority, existing capability, delivered changes and unresolved lifecycle gates without promoting synthetic evidence into live certification.
+
+ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/docs/architecture/sovereign-enterprise-lifecycle-discovery-2026-11-09.md
+
+COLLABORATION / OWNERSHIP: EOS domain owners, authenticated client maintainers, runtime operations and certification CI.
+
+UPDATE DATE: 2026-11-09
+
+CHANGELOG: v1.0.1-EOS-RUNTIME-AND-DAILY-WORK-CERT replaces trailing-space Markdown breaks with paragraphs for clean committed-diff verification. Initial v1.0.0 established the discovery, retirement, dependency, acceptance and residual-work record for draft PR #403.
+
+COMPLIANCE: POPIA section 19; GDPR Article 32; SOC 2 CC7.2.
+
+TENANT / AUTHORITY BOUNDARY: Read-only discovery and disposable fixture evidence; no identity, membership, IAM or commercial authority is granted by this record.
+
 FINANCIAL AUTHORITY: Kennel EOS exclusively. Approval, release, execution and settlement remain distinct.
 
 ## Delivery boundary
@@ -131,7 +141,7 @@ Official product documentation was used for requirements, not copied implementat
 
 Target order: finish discovery and lifecycle/session contracts; wire existing canonical registries and permission-filtered clients; implement proven missing capabilities; decommission historical consumers; certify exact-head CI plus disposable integration; then obtain interactive sign-in evidence. Intelligence and observability must grow with each domain, without becoming authorities.
 
-## POST-UPDATE TODO — after enterprise lifecycle artifacts v1.0.0-EOS-RUNTIME-AND-DAILY-WORK-CERT
+## POST-UPDATE TODO — after enterprise lifecycle artifacts v1.0.1-EOS-RUNTIME-AND-DAILY-WORK-CERT
 
 All relative paths below resolve under `/Users/wilsonkhanyezi/legal-doc-system`. Rows group directly related artifact consumers; no unchecked item is implied complete.
 
@@ -183,10 +193,16 @@ SHA3-512 below covers each complete raw file, including comments, encoded exactl
 
 ## Sovereign artifact seal
 
-ARTIFACT: Enterprise Lifecycle Discovery and Runtime Retirement  
-VERSION: v1.0.0-EOS-RUNTIME-AND-DAILY-WORK-CERT  
-AUTHORITY BOUNDARY: Architecture and bounded verification record; no execution authority.  
-TENANT POSTURE: Exact-source projections and disposable synthetic fixtures.  
-FAIL-CLOSED POSTURE: Unverified and failed gates remain explicit.  
-FINANCIAL EXECUTION AUTHORITY: Kennel EOS exclusively.  
+ARTIFACT: Enterprise Lifecycle Discovery and Runtime Retirement
+
+VERSION: v1.0.1-EOS-RUNTIME-AND-DAILY-WORK-CERT
+
+AUTHORITY BOUNDARY: Architecture and bounded verification record; no execution authority.
+
+TENANT POSTURE: Exact-source projections and disposable synthetic fixtures.
+
+FAIL-CLOSED POSTURE: Unverified and failed gates remain explicit.
+
+FINANCIAL EXECUTION AUTHORITY: Kennel EOS exclusively.
+
 END OF WILSY OS SOVEREIGN ARTIFACT
