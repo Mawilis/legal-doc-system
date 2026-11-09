@@ -1,13 +1,17 @@
 /**
  * TITLE: WILSY OS Headquarters Daily Brief Client Contract Tests
- * VERSION: v1.1.0-AUTHORISED-SOURCE-COVERAGE
+ * VERSION: v1.2.0-SHARED-PROJECTION-CONTRACT
  * AUTHORITY: Wilsy OS Core Governance
- * EPITOME: Certifies source-metadata-bound Headquarters filters, exact tenant
- *          projection, truthful empty states, and read-only action navigation.
+ * EPITOME: Certifies shared source-metadata validation, exact tenant projection,
+ *          truthful empty states, and item-specific read-only navigation.
  * ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/client/src/__tests__/components/WilsyHeadquartersDailyBrief.test.jsx
- * COLLABORATION / OWNERSHIP: WilsyHeadquartersDailyBrief.jsx and EOS /api/my-work.
+ * COLLABORATION / OWNERSHIP: WilsyHeadquartersDailyBrief.jsx, the shared client
+ *                            projection contract, and EOS /api/my-work.
  * CERTIFICATION / UPDATE DATE: 2026-11-09
- * CHANGELOG: v1.1.0-AUTHORISED-SOURCE-COVERAGE verifies that source options
+ * CHANGELOG: v1.2.0-SHARED-PROJECTION-CONTRACT verifies selected item context
+ *            reaches the callback and Headquarters uses the canonical EOS source
+ *            coverage validator.
+ *            v1.1.0-AUTHORISED-SOURCE-COVERAGE verifies that source options
  *            follow the exact EOS source set, source counts reconcile to rows,
  *            and no included source is distinct from a verified empty queue.
  *            v1.0.0-DAILY-BRIEF-CLIENT-CERTIFICATE covered source projection,
@@ -85,6 +89,11 @@ describe('Headquarters daily execution', () => {
       name: 'Open authorised work action for Clear dispatch backlog',
     }));
     expect(onOpenWork).toHaveBeenCalledTimes(1);
+    expect(onOpenWork).toHaveBeenCalledWith(expect.objectContaining({
+      source: 'OPERATIONS',
+      source_key: 'OPERATIONS:SHIP-1',
+      work_item_id: 'SHIP-1',
+    }));
   });
 
   it('filters overdue work and searches within included sources', async () => {
@@ -163,10 +172,10 @@ describe('Headquarters daily execution', () => {
 
 /*
  * ARTIFACT: WilsyHeadquartersDailyBrief.test.jsx
- * VERSION: v1.1.0-AUTHORISED-SOURCE-COVERAGE
+ * VERSION: v1.2.0-SHARED-PROJECTION-CONTRACT
  * AUTHORITY BOUNDARY: Deterministic client test evidence only.
  * TENANT POSTURE: Synthetic exact-scope and foreign-scope checks.
  * FAIL-CLOSED POSTURE: Divergent source metadata cannot render a queue.
- * FINANCIAL EXECUTION AUTHORITY: Kennel EOS only.
+ * FINANCIAL EXECUTION AUTHORITY: Kennel EOS exclusively.
  * END OF WILSY OS SOVEREIGN ARTIFACT
  */
