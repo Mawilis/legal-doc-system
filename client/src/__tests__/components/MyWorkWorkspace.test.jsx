@@ -1,14 +1,17 @@
 /**
  * TITLE: WILSY OS Authenticated My Work Workspace Tests
- * VERSION: v1.1.0-ABORTABLE-MY-WORK-READS
+ * VERSION: v1.2.0-SHARED-PROJECTION-CONTRACT
  * AUTHORITY: Wilsy OS Core Governance
  * EPITOME: Certifies server-projected My Work rendering and source-owned
- *          completion commands with cancellable current-scope reads.
+ *          completion commands against the shared EOS projection contract.
  * ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/client/src/__tests__/components/MyWorkWorkspace.test.jsx
- * COLLABORATION / OWNERSHIP: MyWorkWorkspace.jsx, EOS /api/my-work and
- *                            canonical source completion services.
+ * COLLABORATION / OWNERSHIP: MyWorkWorkspace.jsx, the shared client projection
+ *                            contract, and canonical source completion services.
  * CERTIFICATION / UPDATE DATE: 2026-11-09
- * CHANGELOG: v1.1.0-ABORTABLE-MY-WORK-READS requires My Work projections to
+ * CHANGELOG: v1.2.0-SHARED-PROJECTION-CONTRACT supplies complete EOS projection
+ *            metadata, requires the cancellable read signal, and rejects
+ *            divergent source counts before rendering or enabling commands.
+ *            v1.1.0-ABORTABLE-MY-WORK-READS requires My Work projections to
  *            use an abortable authenticated GET while preserving source-owned
  *            Legal, Operations, CRM and Intelligence completion routes.
  *            v1.0.0-SOURCE-OWNED-MY-WORK-COMMANDS covered queue projection
@@ -36,11 +39,17 @@ vi.mock('../../services/api.js', () => ({
 }));
 
 const payload = {
+  schema: 'WILSY-OS-UNIFIED-MY-WORK/V1',
   tenant_id: 'tenant-a',
   principal_id: 'principal-a',
   as_of: '2026-11-06T10:00:00+00:00',
-  summary: { active_count: 2, overdue_count: 1 },
+  summary: {
+    active_count: 2,
+    overdue_count: 1,
+    source_counts: { OPERATIONS: 1, LEGAL: 1 },
+  },
   sources_included: ['OPERATIONS', 'LEGAL'],
+  authority: { commands_owned_by: 'SOURCE_SERVICES', permits_completion: false },
   items: [
     {
       source: 'OPERATIONS',
@@ -97,10 +106,38 @@ describe('authenticated My Work workspace', () => {
     expect(request.signal.aborted).toBe(false);
   });
 
+  it('rejects inconsistent source counts before rendering any source work', async () => {
+    api.get.mockResolvedValueOnce({
+      data: {
+        ...payload,
+        summary: {
+          ...payload.summary,
+          source_counts: { OPERATIONS: 2, LEGAL: 0 },
+        },
+      },
+    });
+    renderWorkspace();
+    expect(await screen.findByRole('alert')).toBeTruthy();
+    expect(screen.getByText('ATTENTION_SOURCE_COVERAGE_INVALID')).toBeTruthy();
+    expect(screen.queryByText('Prepare daily operations report')).toBeNull();
+    expect(screen.queryByText('Review matter evidence')).toBeNull();
+    expect(api.post).not.toHaveBeenCalled();
+  });
+
   it('routes completion to the owning module command and refreshes the projection', async () => {
     api.get
       .mockResolvedValueOnce({ data: payload })
-      .mockResolvedValueOnce({ data: { ...payload, items: [payload.items[1]], summary: { active_count: 1, overdue_count: 0 } } });
+      .mockResolvedValueOnce({
+        data: {
+          ...payload,
+          items: [payload.items[1]],
+          summary: {
+            active_count: 1,
+            overdue_count: 0,
+            source_counts: { OPERATIONS: 0, LEGAL: 1 },
+          },
+        },
+      });
     renderWorkspace();
     const note = await screen.findByLabelText('Completion note for Prepare daily operations report');
     fireEvent.change(note, { target: { value: 'Report checked against the approved daily figures.' } });
@@ -154,7 +191,12 @@ describe.each([
       is_overdue: false,
     };
     api.get.mockResolvedValue({
-      data: { ...payload, items: [item], summary: { active_count: 1, overdue_count: 0 } },
+      data: {
+        ...payload,
+        items: [item],
+        summary: { active_count: 1, overdue_count: 0, source_counts: { [source]: 1 } },
+        sources_included: [source],
+      },
     });
     renderWorkspace();
     const note = await screen.findByLabelText('Completion note for ' + item.title);
@@ -169,10 +211,10 @@ describe.each([
 
 /*
  * ARTIFACT: MyWorkWorkspace.test.jsx
- * VERSION: v1.1.0-ABORTABLE-MY-WORK-READS
+ * VERSION: v1.2.0-SHARED-PROJECTION-CONTRACT
  * AUTHORITY BOUNDARY: Deterministic client contract evidence only.
  * TENANT POSTURE: Synthetic exact-tenant work projections.
- * FAIL-CLOSED POSTURE: Unavailable reads render no stale work.
+ * FAIL-CLOSED POSTURE: Unavailable reads and invalid source metadata render no stale work.
  * FINANCIAL EXECUTION AUTHORITY: Kennel EOS exclusively.
  * END OF WILSY OS SOVEREIGN ARTIFACT
  */
