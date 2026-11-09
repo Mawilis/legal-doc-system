@@ -207,8 +207,8 @@ const AuthenticatedGlobalChrome = ({ user, onLogout, children }) => {
 
   return (
     <div className="min-h-screen bg-[#080f1d] text-slate-100">
-      <header className="sticky top-0 z-40 flex h-16 w-full items-center justify-between gap-3 border-b border-white/10 bg-[#0b1830]/95 px-4 shadow-lg shadow-black/10 backdrop-blur-xl sm:px-6">
-        <button type="button" aria-label="WILSY home" onClick={() => navigate('/headquarters')} className="flex min-w-[150px] shrink-0 items-center gap-3 text-left">
+      <header className="sticky top-0 z-40 grid h-16 w-full grid-cols-[minmax(150px,1fr)_minmax(0,540px)_minmax(220px,1fr)] items-center gap-3 border-b border-white/10 bg-[#0b1830]/95 px-4 shadow-lg shadow-black/10 backdrop-blur-xl sm:px-6">
+        <button type="button" aria-label="WILSY home" onClick={() => navigate('/headquarters')} className="flex min-w-0 shrink-0 items-center gap-3 text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#d7ad43] focus-visible:ring-offset-2 focus-visible:ring-offset-[#0b1830]">
           <span aria-hidden="true" className="text-3xl font-black leading-none text-[#d7ad43]">W</span>
           <span className="leading-tight">
             <span className="block text-sm font-extrabold tracking-[0.2em] text-white">WILSY</span>
@@ -216,14 +216,14 @@ const AuthenticatedGlobalChrome = ({ user, onLogout, children }) => {
           </span>
         </button>
 
-        <button type="button" onClick={() => { setSearchOpen(true); setUserMenuOpen(false); setNotificationsOpen(false); }} aria-label="Open global search" className="hidden h-10 w-full max-w-[540px] items-center gap-3 rounded-full border border-white/10 bg-white/[0.055] px-4 text-left text-sm text-slate-400 transition hover:border-amber-300/40 hover:bg-white/[0.08] md:flex">
+        <button type="button" onClick={() => { setSearchOpen(true); setUserMenuOpen(false); setNotificationsOpen(false); }} aria-label="Open global search" className="mx-auto hidden h-10 w-full max-w-[540px] min-w-0 items-center gap-3 rounded-full border border-white/10 bg-white/[0.035] px-4 text-left text-sm text-slate-400 transition hover:border-amber-300/40 hover:bg-white/[0.07] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#d7ad43] focus-visible:ring-offset-2 focus-visible:ring-offset-[#0b1830] md:flex">
           <Search size={16}/>
           <span className="flex-1">Search people, projects, tasks, or anything…</span>
           <kbd className="rounded-md border border-white/10 bg-black/20 px-2 py-1 text-[10px] text-slate-400">⌘ K / Ctrl K</kbd>
         </button>
         <button type="button" onClick={() => setSearchOpen(true)} aria-label="Open global search" className="grid h-9 w-9 place-items-center rounded-full border border-white/10 text-slate-300 md:hidden"><Search size={17}/></button>
 
-        <div className="flex shrink-0 items-center gap-2 sm:gap-3">
+        <div className="flex min-w-0 shrink-0 items-center justify-self-end gap-2 sm:gap-3">
           {hasAuthenticatedSession && !authLoading && (
             <div role="status" aria-label={isSecureChannel ? 'Secure and authenticated' : 'Authenticated; secure transport not confirmed'} className={`flex items-center gap-2 rounded-full border px-2 py-2 text-[11px] font-medium sm:px-3 ${isSecureChannel ? 'border-emerald-400/20 bg-emerald-400/10 text-emerald-200' : 'border-white/10 bg-white/[0.04] text-slate-300'}`}>
               <ShieldCheck size={15}/>
@@ -233,7 +233,7 @@ const AuthenticatedGlobalChrome = ({ user, onLogout, children }) => {
           <div className="relative">
             <button type="button" aria-label={unreadCount === null ? 'Notifications; unread count unavailable' : `Notifications; ${unreadCount} unread`} aria-expanded={notificationsOpen} onClick={() => { setNotificationsOpen((value) => !value); setUserMenuOpen(false); }} className="relative grid h-10 w-10 place-items-center rounded-full text-slate-300 transition hover:bg-white/10">
               <Bell size={18}/>
-              {unreadCount !== null && unreadCount > 0 && <span aria-label={`${unreadCount} unread notifications`} className="absolute right-0 top-0 grid min-h-4 min-w-4 place-items-center rounded-full bg-amber-400 px-1 text-[9px] font-bold leading-4 text-[#081326]">{unreadCount > 99 ? '99+' : unreadCount}</span>}
+              {unreadCount !== null && unreadCount > 0 && <span aria-label={`${unreadCount} unread notifications`} className="absolute -right-0.5 -top-0.5 grid min-h-4 min-w-4 place-items-center rounded-full border border-[#0b1830] bg-red-500 px-1 text-[9px] font-bold leading-4 text-white shadow-sm">{unreadCount > 99 ? '99+' : unreadCount}</span>}
             </button>
             {notificationsOpen && (
               <div role="dialog" aria-label="Notifications" className="absolute right-0 top-12 z-50 w-[min(340px,calc(100vw-2rem))] rounded-2xl border border-white/10 bg-[#101d32] p-4 shadow-2xl">
@@ -273,9 +273,9 @@ const AuthenticatedGlobalChrome = ({ user, onLogout, children }) => {
         <div className="fixed inset-0 z-[100] flex items-start justify-center bg-black/65 px-4 pt-[12vh] backdrop-blur-sm" onMouseDown={(event) => { if (event.target === event.currentTarget) setSearchOpen(false); }}>
           <section role="dialog" aria-modal="true" aria-labelledby="wilsy-global-search-title" className="w-full max-w-2xl overflow-hidden rounded-2xl border border-white/10 bg-[#101d32] shadow-2xl">
             <h2 id="wilsy-global-search-title" className="sr-only">Global search</h2>
-            <form onSubmit={submitSearch} className="flex items-center gap-3 border-b border-white/10 px-5 py-4">
+            <form onSubmit={submitSearch} className="flex items-center gap-3 border-b border-white/10 px-5 py-4 focus-within:ring-2 focus-within:ring-inset focus-within:ring-[#d7ad43]">
               <Search size={19} className="text-amber-300"/>
-              <input id="wilsy-global-search-input" value={searchValue} onChange={(event) => setSearchValue(event.target.value)} placeholder="Search people, projects, tasks, or anything…" className="min-w-0 flex-1 bg-transparent text-sm text-white outline-none placeholder:text-slate-500"/>
+              <input id="wilsy-global-search-input" value={searchValue} onChange={(event) => setSearchValue(event.target.value)} placeholder="Search people, projects, tasks, or anything…" className="min-w-0 flex-1 bg-transparent text-sm text-white outline-none placeholder:text-slate-500 focus-visible:outline-none"/>
               <kbd className="rounded border border-white/10 px-2 py-1 text-[10px] text-slate-400">ESC</kbd>
               <button type="button" aria-label="Close search" onClick={() => setSearchOpen(false)}><X size={17}/></button>
             </form>
