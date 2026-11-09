@@ -1,6 +1,6 @@
 /**
  * TITLE: WILSY OS Current-Session Unified My Work Read Coordinator
- * VERSION: v1.1.0-GOVERNED-SESSION-SCOPED-READS
+ * VERSION: v1.1.1-EXACT-CREDENTIAL-READ-OWNERSHIP
  * AUTHORITY: WILSY OS Core Governance; EOS remains business and IAM authority.
  * EPITOME: Deduplicate concurrent authenticated My Work reads and revalidate
  *          exactly scoped subscribers after a server-confirmed source command.
@@ -9,7 +9,10 @@
  *                            unifiedMyWorkProjection validates EOS responses,
  *                            source services own all writes and durable audit.
  * CERTIFICATION / UPDATE DATE: 2026-11-09
- * CHANGELOG: v1.1.0-GOVERNED-SESSION-SCOPED-READS enforces authenticated principal, tenant and
+ * CHANGELOG: v1.1.1-EXACT-CREDENTIAL-READ-OWNERSHIP requires a current bearer and excludes SYSTEM
+ *            workspaces from tenant My Work reuse; isolates aborted consumers
+ *            without leaking a rejected cleanup promise.
+ *            v1.1.0-GOVERNED-SESSION-SCOPED-READS enforces authenticated principal, tenant and
  *            integer session generation in every read partition, validates
  *            requested read scope against the current-session key, documents
  *            exported API authority, transaction and failure boundaries, and
@@ -92,6 +95,8 @@ export function currentUnifiedMyWorkScope(auth, tenantId = null) {
   if (
     auth?.isAuthenticated !== true
     || auth?.authStage !== 'AUTHENTICATED'
+    || typeof auth?.token !== 'string' || !auth.token.trim()
+    || user?.systemServicesWorkspace === true
     || typeof user?.tenantId !== 'string' || !user.tenantId
     || typeof user?.id !== 'string' || !user.id
     || typeof tenant !== 'string'
@@ -130,9 +135,16 @@ function callerAbort(pending, signal) {
   return new Promise((resolve, reject) => {
     const onAbort = () => reject(abortError());
     signal.addEventListener('abort', onAbort, { once: true });
-    pending.then(resolve, reject).finally(() => {
-      signal.removeEventListener('abort', onAbort);
-    });
+    pending.then(
+      (value) => {
+        signal.removeEventListener('abort', onAbort);
+        resolve(value);
+      },
+      (error) => {
+        signal.removeEventListener('abort', onAbort);
+        reject(error);
+      },
+    );
   });
 }
 
@@ -300,7 +312,7 @@ export function releaseUnifiedMyWork(scopeKey) {
 }
 
 // ARTIFACT: client/src/services/unifiedMyWorkSync.js
-// VERSION: v1.1.0-GOVERNED-SESSION-SCOPED-READS
+// VERSION: v1.1.1-EXACT-CREDENTIAL-READ-OWNERSHIP
 // AUTHORITY BOUNDARY: EOS-only reads; no browser command authorization.
 // TENANT POSTURE: Exact session/capacity partition, no persistent cache.
 // FAIL-CLOSED POSTURE: Superseded reads and invalid/foreign results reject.
