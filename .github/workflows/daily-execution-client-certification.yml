@@ -5,9 +5,12 @@ on:
     paths:
       - "client/src/App.jsx"
       - "client/src/components/chrome/WilsyDailyAttentionCentre.jsx"
+      - "client/src/components/chrome/WilsyWorkDeadlineCalendar.jsx"
+      - "client/src/components/workspaces/MyWorkWorkspace.jsx"
       - "client/src/components/workspaces/WilsyHeadquartersDailyBrief.jsx"
       - "client/src/components/workspaces/WilsyHeadquartersWorkspace.jsx"
       - "client/src/__tests__/components/WilsyDailyAttentionCentre.test.jsx"
+      - "client/src/__tests__/components/WilsyWorkDeadlineCalendar.test.jsx"
       - "client/src/__tests__/components/WilsyHeadquartersDailyBrief.test.jsx"
       - "client/src/__tests__/components/WilsyHeadquartersWorkspace.test.jsx"
       - "client/package-lock.json"
@@ -44,6 +47,7 @@ jobs:
         run: >-
           npx vitest run --config vitest.config.js
           src/__tests__/components/WilsyDailyAttentionCentre.test.jsx
+          src/__tests__/components/WilsyWorkDeadlineCalendar.test.jsx
           src/__tests__/components/WilsyHeadquartersDailyBrief.test.jsx
           src/__tests__/components/WilsyHeadquartersWorkspace.test.jsx
       - name: Build production client bundle
