@@ -1,7 +1,7 @@
 /* eslint-disable */
 /**
  * TITLE: WILSY OS Sovereign Application Root
- * VERSION: v20.1.1-ALL-PROTECTED-ROUTES-LOGOUT-PROPAGATION
+ * VERSION: v20.2.0-GLOBAL-AUTHENTICATED-CHROME
  * AUTHORITY: Wilsy OS Core Governance
  * EPITOME: Composes authenticated routing, exact tenant projection, legal
  *          admission release, and protected workspace presentation without
@@ -13,6 +13,12 @@
  *                            legal-acceptance truth.
  * CERTIFICATION / UPDATE DATE: 2026-09-24
  * CHANGELOG:
+ *   v20.2.0-GLOBAL-AUTHENTICATED-CHROME — Adds a route-stable authenticated
+ *     global top bar for protected routes, consuming the revalidated auth
+ *     projection, EOS My Work summary and bounded kernel status/version.
+ *     Search opens a global command surface with safe navigation shortcuts;
+ *     notification state remains explicitly unavailable until an authorised
+ *     EOS notification projection exists. No browser-derived authority is made.
  *   v20.1.1-ALL-PROTECTED-ROUTES-LOGOUT-PROPAGATION — Promotes the legal boundary
  *     from REQUIRED to COMPLETE only when LegalAcceptanceGate reports the
  *     server-confirmed COMPLETE state, so the protected runtime mounts in the
@@ -43,7 +49,7 @@ import { BrowserRouter as Router, Routes, Route, Navigate, useNavigate, useLocat
 import { AUTH_STATES, AuthProvider, useAuth } from './contexts/authContext.jsx';
 import { TenantProvider, useTenants } from './contexts/tenantContext';  // ✅ NEW IMPORT
 import ErrorBoundary from './components/ErrorBoundary.jsx';
-import { Loader2 } from 'lucide-react';
+import { Bell, CheckCircle2, ChevronDown, Home, Loader2, LogOut, Search, ShieldCheck, X } from 'lucide-react';
 import { broadcastTelemetry } from './utils/telemetryHelper.js';
 
 import SovereignLogin from './components/auth/SovereignLogin.jsx';
@@ -96,6 +102,233 @@ const ProtectedTmsRoute = ({ user, children }) => {
 
   return <>{children}</>;
 };
+
+
+/**
+ * @component AuthenticatedGlobalChrome
+ * @description Persistent authenticated top-bar frame shared by protected routes.
+ * @param {{user: Object, onLogout: Function, children: React.ReactNode}} props
+ * @returns {JSX.Element} Stable brand, global search, bounded system trust,
+ *          notification availability, identity menu, and the active route outlet.
+ * @institutional Python EOS remains the authority for identity, tenant, role,
+ *          work visibility, notifications, and runtime health. This component
+ *          renders only server-revalidated projections and never grants access.
+ */
+const AuthenticatedGlobalChrome = ({ user, onLogout, children }) => {
+  const navigate = useNavigate();
+  const location = useLocation();
+  const [searchOpen, setSearchOpen] = useState(false);
+  const [searchValue, setSearchValue] = useState('');
+  const [userMenuOpen, setUserMenuOpen] = useState(false);
+  const [notificationsOpen, setNotificationsOpen] = useState(false);
+  const [workCount, setWorkCount] = useState(null);
+  const [kernel, setKernel] = useState({ state: 'CHECKING', version: null });
+
+  const displayName = [user?.firstName, user?.lastName].filter(Boolean).join(' ')
+    || user?.email
+    || 'Authenticated user';
+  const roleLabel = String(user?.role || user?.systemServicesWorkspace?.role || 'Authorised role')
+    .replace(/[_-]+/g, ' ');
+  const initials = (user?.firstName || user?.email || 'W').slice(0, 1).toUpperCase()
+    + (user?.lastName || '').slice(0, 1).toUpperCase();
+  const isSecureChannel = typeof window !== 'undefined'
+    && window.location.protocol === 'https:';
+  const isMyWork = location.pathname === '/my-work';
+
+  useEffect(() => {
+    let active = true;
+    const refresh = async () => {
+      try {
+        const [healthResponse, statusResponse] = await Promise.all([
+          api.get('/kernel'),
+          api.get('/kernel/status'),
+        ]);
+        if (!active) return;
+        const health = healthResponse?.data || {};
+        const status = statusResponse?.data || {};
+        const components = status.components;
+        const componentStatesValid = components && typeof components === 'object'
+          && !Array.isArray(components)
+          && Object.values(components).every((value) => typeof value === 'string');
+        setKernel({
+          state: health.status === 'OPERATIONAL' && status.status === 'OPERATIONAL'
+            ? 'RESPONDING'
+            : 'DEGRADED',
+          version: typeof health.version === 'string' ? health.version : null,
+          components: componentStatesValid ? components : null,
+        });
+      } catch {
+        if (active) setKernel({ state: 'UNAVAILABLE', version: null });
+      }
+    };
+    void refresh();
+    const interval = window.setInterval(refresh, 60000);
+    return () => {
+      active = false;
+      window.clearInterval(interval);
+    };
+  }, []);
+
+  useEffect(() => {
+    if (!user?.tenantId || user?.systemServicesWorkspace) {
+      setWorkCount(null);
+      return undefined;
+    }
+    let active = true;
+    const refresh = async () => {
+      try {
+        const response = await api.get('/my-work');
+        const payload = response?.data;
+        if (
+          !payload
+          || payload.tenant_id !== user.tenantId
+          || !payload.summary
+          || !Number.isInteger(payload.summary.active_count)
+          || payload.summary.active_count < 0
+        ) throw new Error('MY_WORK_SUMMARY_PROJECTION_INVALID');
+        if (active) setWorkCount(payload.summary.active_count);
+      } catch {
+        if (active) setWorkCount(null);
+      }
+    };
+    void refresh();
+    const interval = window.setInterval(refresh, 60000);
+    return () => {
+      active = false;
+      window.clearInterval(interval);
+    };
+  }, [user?.tenantId, user?.id, user?.systemServicesWorkspace]);
+
+  useEffect(() => {
+    const handleShortcut = (event) => {
+      if ((event.metaKey || event.ctrlKey) && event.key.toLowerCase() === 'k') {
+        event.preventDefault();
+        setSearchOpen(true);
+        setUserMenuOpen(false);
+        setNotificationsOpen(false);
+      }
+      if (event.key === 'Escape') {
+        setSearchOpen(false);
+        setUserMenuOpen(false);
+        setNotificationsOpen(false);
+      }
+    };
+    window.addEventListener('keydown', handleShortcut);
+    return () => window.removeEventListener('keydown', handleShortcut);
+  }, []);
+
+  useEffect(() => {
+    if (searchOpen) {
+      const input = document.getElementById('wilsy-global-search-input');
+      input?.focus();
+    }
+  }, [searchOpen]);
+
+  const submitSearch = (event) => {
+    event.preventDefault();
+    const query = searchValue.trim().toLowerCase();
+    if (query === 'headquarters' || query === 'home') {
+      navigate('/headquarters');
+      setSearchOpen(false);
+      setSearchValue('');
+    } else if (query === 'my work' || query === 'tasks') {
+      navigate('/my-work');
+      setSearchOpen(false);
+      setSearchValue('');
+    }
+  };
+
+  return (
+    <div className="min-h-screen bg-[#080f1d] text-slate-100">
+      <header className="sticky top-0 z-40 flex h-16 w-full items-center justify-between gap-3 border-b border-white/10 bg-[#0b1830]/95 px-4 shadow-lg shadow-black/10 backdrop-blur-xl sm:px-6">
+        <button type="button" aria-label="WILSY home" onClick={() => navigate('/headquarters')} className="flex min-w-[190px] items-center gap-3 text-left">
+          <span className="grid h-9 w-9 shrink-0 place-items-center rounded-lg bg-[#d7ad43] text-xl font-black text-[#081326]">W</span>
+          <span className="leading-tight">
+            <span className="block text-sm font-extrabold tracking-[0.2em] text-white">WILSY</span>
+            <span className="block text-[10px] tracking-wide text-slate-400">Build. Operate. Grow.</span>
+          </span>
+        </button>
+
+        <button type="button" onClick={() => { setSearchOpen(true); setUserMenuOpen(false); setNotificationsOpen(false); }} aria-label="Open global search" className="hidden h-10 w-full max-w-[540px] items-center gap-3 rounded-full border border-white/10 bg-white/[0.055] px-4 text-left text-sm text-slate-400 transition hover:border-amber-300/40 hover:bg-white/[0.08] md:flex">
+          <Search size={16}/>
+          <span className="flex-1">Search people, projects, tasks, or anything…</span>
+          <kbd className="rounded-md border border-white/10 bg-black/20 px-2 py-1 text-[10px] text-slate-400">⌘ K</kbd>
+        </button>
+        <button type="button" onClick={() => setSearchOpen(true)} aria-label="Open global search" className="grid h-9 w-9 place-items-center rounded-full border border-white/10 text-slate-300 md:hidden"><Search size={17}/></button>
+
+        <div className="flex shrink-0 items-center gap-2 sm:gap-3">
+          <div title={isSecureChannel ? 'Authenticated session over HTTPS' : 'Authenticated session; transport is not HTTPS'} className="flex items-center gap-2 rounded-full border border-emerald-400/20 bg-emerald-400/10 px-2 py-2 text-[11px] font-medium text-emerald-200 sm:px-3">
+            <ShieldCheck size={15}/><span className="hidden sm:inline">{isSecureChannel ? 'Secure · Authenticated' : 'Authenticated'}</span>
+          </div>
+          <div className="relative">
+            <button type="button" aria-label="Notifications" aria-expanded={notificationsOpen} onClick={() => { setNotificationsOpen((value) => !value); setUserMenuOpen(false); }} className="relative grid h-10 w-10 place-items-center rounded-full text-slate-300 transition hover:bg-white/10"><Bell size={18}/></button>
+            {notificationsOpen && (
+              <div role="dialog" aria-label="Notifications" className="absolute right-0 top-12 z-50 w-[min(340px,calc(100vw-2rem))] rounded-2xl border border-white/10 bg-[#101d32] p-4 shadow-2xl">
+                <div className="flex items-center justify-between"><h2 className="font-semibold text-white">Notifications</h2><button type="button" aria-label="Close notifications" onClick={() => setNotificationsOpen(false)}><X size={16}/></button></div>
+                <p className="mt-3 text-sm leading-6 text-slate-300">The EOS notification projection is not connected to this workspace yet. Unread count and read actions are therefore unavailable.</p>
+              </div>
+            )}
+          </div>
+          <div className="relative">
+            <button type="button" aria-label="Open user menu" aria-expanded={userMenuOpen} onClick={() => { setUserMenuOpen((value) => !value); setNotificationsOpen(false); }} className="flex items-center gap-2 rounded-full py-1 pl-1 pr-2 transition hover:bg-white/10">
+              <span className="grid h-8 w-8 place-items-center rounded-full border border-amber-300/30 bg-amber-300/15 text-xs font-bold text-amber-200">{initials}</span>
+              <span className="hidden max-w-[150px] text-left leading-tight xl:block">
+                <span className="block truncate text-xs font-semibold text-white">{displayName}</span>
+                <span className="block truncate text-[10px] capitalize text-slate-400">{roleLabel}</span>
+              </span>
+              <ChevronDown size={14} className="hidden text-slate-400 xl:block"/>
+            </button>
+            {userMenuOpen && (
+              <div role="menu" aria-label="User account" className="absolute right-0 top-12 z-50 w-64 rounded-2xl border border-white/10 bg-[#101d32] p-3 shadow-2xl">
+                <div className="border-b border-white/10 px-2 pb-3">
+                  <p className="font-semibold text-white">{displayName}</p>
+                  <p className="mt-1 break-all text-xs text-slate-400">{user?.email || 'Email not provided by session'}</p>
+                  <p className="mt-2 text-xs capitalize text-amber-200">{roleLabel}</p>
+                </div>
+                <p className="px-2 py-3 text-xs leading-5 text-slate-400">Profile and preferences are managed by the authenticated account workspace; a dedicated route is not yet connected here.</p>
+                <button type="button" role="menuitem" onClick={() => { setUserMenuOpen(false); void onLogout(); }} className="flex w-full items-center gap-2 rounded-lg px-2 py-2 text-left text-sm text-red-200 hover:bg-red-400/10"><LogOut size={15}/> Sign out</button>
+              </div>
+            )}
+          </div>
+        </div>
+      </header>
+
+      <div className="flex items-center justify-end gap-2 border-b border-white/5 bg-[#0b1628] px-4 py-2 text-[10px] text-slate-500 sm:px-6">
+        <span className={kernel.state === 'RESPONDING' ? 'text-emerald-300' : kernel.state === 'CHECKING' ? 'text-amber-200' : 'text-rose-300'}>
+          <span aria-hidden="true">●</span> {kernel.state === 'RESPONDING' ? 'EOS kernel responding' : kernel.state === 'CHECKING' ? 'Checking EOS kernel…' : 'EOS kernel unavailable'}
+        </span>
+        <span>·</span><span>{kernel.version ? 'Kernel v' + kernel.version : 'Version unavailable'}</span>
+        {isMyWork && workCount !== null && <span className="ml-2 rounded-full bg-amber-300 px-2 py-1 font-semibold text-[#081326]">{workCount} open</span>}
+        {isMyWork && workCount === null && <span className="ml-2 text-amber-200">Task count unavailable</span>}
+      </div>
+
+      <div>{children}</div>
+
+      {searchOpen && (
+        <div className="fixed inset-0 z-[100] flex items-start justify-center bg-black/65 px-4 pt-[12vh] backdrop-blur-sm" onMouseDown={(event) => { if (event.target === event.currentTarget) setSearchOpen(false); }}>
+          <section role="dialog" aria-modal="true" aria-labelledby="wilsy-global-search-title" className="w-full max-w-2xl overflow-hidden rounded-2xl border border-white/10 bg-[#101d32] shadow-2xl">
+            <h2 id="wilsy-global-search-title" className="sr-only">Global search</h2>
+            <form onSubmit={submitSearch} className="flex items-center gap-3 border-b border-white/10 px-5 py-4">
+              <Search size={19} className="text-amber-300"/>
+              <input id="wilsy-global-search-input" value={searchValue} onChange={(event) => setSearchValue(event.target.value)} placeholder="Search people, projects, tasks, or anything…" className="min-w-0 flex-1 bg-transparent text-sm text-white outline-none placeholder:text-slate-500"/>
+              <kbd className="rounded border border-white/10 px-2 py-1 text-[10px] text-slate-400">ESC</kbd>
+              <button type="button" aria-label="Close search" onClick={() => setSearchOpen(false)}><X size={17}/></button>
+            </form>
+            <div className="p-5">
+              <p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-slate-500">Quick navigation</p>
+              <div className="mt-3 grid gap-2 sm:grid-cols-2">
+                <button type="button" onClick={() => { navigate('/headquarters'); setSearchOpen(false); }} className="flex items-center gap-3 rounded-xl border border-white/10 p-3 text-left text-sm hover:border-amber-300/40"><Home size={17} className="text-amber-300"/> Headquarters</button>
+                <button type="button" onClick={() => { navigate('/my-work'); setSearchOpen(false); }} className="flex items-center gap-3 rounded-xl border border-white/10 p-3 text-left text-sm hover:border-amber-300/40"><CheckCircle2 size={17} className="text-amber-300"/> My Work</button>
+              </div>
+              <p className="mt-4 text-xs leading-5 text-slate-400">Search across people, projects, tasks, departments and documents will appear here when the permission-filtered EOS search service is connected. No unfiltered or synthetic results are shown.</p>
+            </div>
+          </section>
+        </div>
+      )}
+    </div>
+  );
+};
+
 
 /**
  * @function SovereignRouter
@@ -243,7 +476,7 @@ const SovereignRouter = () => {
     return <WorkspaceBootstrapError message={authorityMismatch ? 'AUTHENTICATED_WORKSPACE_AUTHORITY_MISMATCH' : (tenantError || 'AUTHENTICATED_WORKSPACE_UNRESOLVED')} />;
   }
 
-  return (
+  const protectedRoutes = (
     <Routes>
       <Route path="/discovery" element={<TenantDiscovery />} />
       <Route path="/login" element={<SovereignLogin />} />
@@ -302,6 +535,10 @@ const SovereignRouter = () => {
       <Route path="/*" element={<Navigate to="/" replace />} />
     </Routes>
   );
+
+  return isAuthenticated
+    ? <AuthenticatedGlobalChrome user={user} onLogout={logout}>{protectedRoutes}</AuthenticatedGlobalChrome>
+    : protectedRoutes;
 };
 
 /**
@@ -481,7 +718,7 @@ export default App;
 
 /**
  * ARTIFACT: client/src/App.jsx
- * VERSION: v20.1.1-ALL-PROTECTED-ROUTES-LOGOUT-PROPAGATION
+ * VERSION: v20.2.0-GLOBAL-AUTHENTICATED-CHROME
  * AUTHORITY BOUNDARY: client route and protected-runtime composition only; Python EOS remains authentication, tenant and legal-acceptance authority
  * TENANT POSTURE: discovered tenant may choose login routing but cannot establish authenticated or protected scope
  * FAIL-CLOSED POSTURE: auth revalidation waits; unresolved legal status remains sealed; only server-confirmed legal COMPLETE mounts protected runtime
