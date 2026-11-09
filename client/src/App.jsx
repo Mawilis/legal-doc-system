@@ -212,9 +212,10 @@ export const AuthenticatedGlobalChrome = ({ user, onLogout, children }) => {
     <div className="min-h-screen bg-[#080f1d] text-slate-100">
       <header className="sticky top-0 z-40 flex h-16 w-full items-center gap-4 border-b border-white/10 bg-[#0b1830]/95 px-4 shadow-lg shadow-black/10 backdrop-blur-xl sm:px-6">
         <button type="button" aria-label="WILSY home" onClick={() => navigate('/headquarters')} className="flex w-[240px] shrink-0 items-center gap-2 text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#d7ad43] focus-visible:ring-offset-2 focus-visible:ring-offset-[#0b1830]">
-          <img src="/brand/wilsy-os-master.png" alt="WILSY OS official logo" className="h-12 w-12 shrink-0 object-contain" />
+          <img src="/brand/wilsy-gold-emblem.png" alt="WILSY gold emblem" className="h-12 w-12 shrink-0 object-contain" />
           <span className="min-w-0 leading-tight">
             
+            <span className="block text-lg font-semibold tracking-[0.025em] text-white">WILSY</span>
             <span className="block whitespace-nowrap text-[10px] font-medium text-[#f0dca5]">Build. Operate. Grow.</span>
           </span>
         </button>
