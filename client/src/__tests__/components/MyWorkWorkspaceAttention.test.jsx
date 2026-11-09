@@ -1,6 +1,6 @@
 /**
  * TITLE: WILSY OS Source-owned My Work Attention Handoff Contract
- * VERSION: v1.1.0-NAVIGATION-SCOPE-CURRENTNESS-CERT
+ * VERSION: v1.2.0-SESSION-GENERATION-CURRENTNESS
  * AUTHORITY: Wilsy OS Core Governance
  * EPITOME: Checks source-verified task focus and real canonical completion
  *          command invocation after a daily attention work-item selection.
@@ -8,7 +8,11 @@
  * COLLABORATION / OWNERSHIP: MyWorkWorkspace.jsx, EOS /my-work and
  *                            source-owned module completion commands.
  * CERTIFICATION / UPDATE DATE: 2026-11-09
- * CHANGELOG: v1.1.0-NAVIGATION-SCOPE-CURRENTNESS-CERT adds same-route source
+ * CHANGELOG: v1.2.0-SESSION-GENERATION-CURRENTNESS proves reads are aborted
+ *            and late work suppressed after session-generation changes, while
+ *            same-identity business-role revision changes clear drafts and
+ *            reload the source projection.
+ *            v1.1.0-NAVIGATION-SCOPE-CURRENTNESS-CERT adds same-route source
  *            refresh, late-response rejection and authenticated-scope isolation.
  *            v1.0.1-EFFECT-FLUSH-FOCUS-CERT waited for React's
  *            async item-focus effect before asserting real keyboard focus.
@@ -120,6 +124,88 @@ describe('Daily attention selected My Work action', () => {
     expect(screen.getByText(item.title)).toBeTruthy();
   });
 
+  it('aborts and suppresses a source read after session generation changes', async () => {
+    const user = {
+      id: 'principal-a',
+      tenantId: 'tenant-a',
+      role: 'TENANT_OWNER',
+      businessRole: 'tenant_owner',
+      membershipRevision: 4,
+      businessRoleRevision: 9,
+    };
+    let oldRequestConfig;
+    let resolveOld;
+    api.get.mockImplementationOnce((_path, config) => {
+      oldRequestConfig = config;
+      return new Promise(resolve => { resolveOld = resolve; });
+    }).mockResolvedValueOnce({
+      data: {
+        ...payload,
+        tenant_id: user.tenantId,
+        principal_id: user.id,
+        items: [{...item, title: 'Current session work'}],
+      },
+    });
+    const harness = sessionGeneration => (
+      <AuthContext.Provider value={{user, sessionGeneration}}>
+        <MemoryRouter><MyWorkWorkspace /></MemoryRouter>
+      </AuthContext.Provider>
+    );
+    const {rerender} = render(harness(12));
+    await waitFor(() => expect(api.get).toHaveBeenCalledTimes(1));
+    rerender(harness(13));
+    await screen.findByText('Current session work');
+    expect(oldRequestConfig.signal.aborted).toBe(true);
+    await act(async () => resolveOld({
+      data: {
+        ...payload,
+        tenant_id: user.tenantId,
+        principal_id: user.id,
+        items: [{...item, title: 'Obsolete session work'}],
+      },
+    }));
+    expect(screen.queryByText('Obsolete session work')).toBeNull();
+    expect(screen.getByText('Current session work')).toBeTruthy();
+  });
+
+  it('clears drafts and rereads when the same principal capacity revision changes', async () => {
+    const userA = {
+      id: 'principal-a',
+      tenantId: 'tenant-a',
+      role: 'TENANT_OWNER',
+      businessRole: 'tenant_owner',
+      membershipRevision: 4,
+      businessRoleRevision: 9,
+    };
+    const userB = {...userA, businessRole: 'tenant_partner', businessRoleRevision: 10};
+    api.get.mockResolvedValueOnce({
+      data: {...payload, tenant_id: userA.tenantId, principal_id: userA.id},
+    }).mockResolvedValueOnce({
+      data: {
+        ...payload,
+        tenant_id: userB.tenantId,
+        principal_id: userB.id,
+        items: [{...item, title: 'Revised capacity task'}],
+      },
+    });
+    const harness = user => (
+      <AuthContext.Provider value={{user, sessionGeneration: 20}}>
+        <MemoryRouter><MyWorkWorkspace /></MemoryRouter>
+      </AuthContext.Provider>
+    );
+    const {rerender} = render(harness(userA));
+    await screen.findByText(item.title);
+    fireEvent.change(screen.getByRole('textbox', {name: 'Completion note for ' + item.title}), {
+      target: {value: 'Private draft from the former capacity'},
+    });
+    rerender(harness(userB));
+    expect(screen.queryByText(item.title)).toBeNull();
+    await screen.findByText('Revised capacity task');
+    expect(screen.getByRole('textbox', {name: 'Completion note for Revised capacity task'}).value).toBe('');
+    expect(api.get).toHaveBeenCalledTimes(2);
+    expect(api.post).not.toHaveBeenCalled();
+  });
+
   it('clears prior-scope work and drafts on authenticated tenant and capacity changes', async () => {
     const userA = {id: 'principal-a', tenantId: 'tenant-a', role: 'TENANT_OWNER', businessRole: 'tenant_owner'};
     const userB = {id: 'principal-b', tenantId: 'tenant-b', role: 'TENANT_OWNER', businessRole: 'tenant_partner'};
@@ -154,7 +240,7 @@ describe('Daily attention selected My Work action', () => {
 
 /*
  * ARTIFACT: MyWorkWorkspaceAttention.test.jsx
- * VERSION: v1.1.0-NAVIGATION-SCOPE-CURRENTNESS-CERT
+ * VERSION: v1.2.0-SESSION-GENERATION-CURRENTNESS
  * AUTHORITY BOUNDARY: Source-owned completion route only.
  * TENANT POSTURE: Only EOS-provided work list may be highlighted.
  * FAIL-CLOSED POSTURE: Forged state cannot add an action item.
