@@ -1,6 +1,6 @@
 /**
  * TITLE: WILSY OS Current-Session Unified My Work Read Coordinator
- * VERSION: v1.0.0-SOURCE-CONFIRMED-INVALIDATION
+ * VERSION: v1.1.0-GOVERNED-SESSION-SCOPED-READS
  * AUTHORITY: WILSY OS Core Governance; EOS remains business and IAM authority.
  * EPITOME: Deduplicate concurrent authenticated My Work reads and revalidate
  *          exactly scoped subscribers after a server-confirmed source command.
@@ -9,10 +9,13 @@
  *                            unifiedMyWorkProjection validates EOS responses,
  *                            source services own all writes and durable audit.
  * CERTIFICATION / UPDATE DATE: 2026-11-09
- * CHANGELOG: v1.0.0 introduces a bounded in-memory, exact-session read
- *            coordinator. No persistent cache, synthetic permissions, or
- *            optimistic completion is permitted. Subscriptions are removed and
- *            pending reads aborted when their last consumer unmounts.
+ * CHANGELOG: v1.1.0-GOVERNED-SESSION-SCOPED-READS enforces authenticated principal, tenant and
+ *            integer session generation in every read partition, validates
+ *            requested read scope against the current-session key, documents
+ *            exported API authority, transaction and failure boundaries, and
+ *            severs superseded in-flight requests before revalidation.
+ *            v1.0.0-SOURCE-CONFIRMED-INVALIDATION established the in-memory
+ *            request coordinator, scoped subscriptions and no write authority.
  * COMPLIANCE: POPIA section 19; GDPR Article 32; SOC 2 CC7.2.
  * SECURITY / PRIVACY POSTURE: No tokens, bodies or personal data in diagnostics;
  *                            held only while an authorized component is mounted.
@@ -41,10 +44,23 @@ const abortError = () => {
  * @institutional A scope key partitions client traffic; it is never proof of
  * tenant membership, permission, entitlement or a previously completed MFA.
  * @param {Object} scope Authenticated provider projection, not route parameters.
- * @returns {string|null} Exact partition; null if tenant context is absent.
+ * @returns {string|null} Exact tenant/principal/session partition; null if
+ *                    any essential authenticated identity field is absent.
+ * @throws {Error} None; incomplete identity fails closed to null.
+ * @tenant Exact server-projected tenant and principal mandatory.
+ * @mutation None. Key calculation never changes EOS or business records.
+ * @idempotency Deterministic for one immutable authenticated session state.
+ * @transaction Not a persistence participant; EOS owns all DB sessions.
+ * @financial No release, execution or settlement authority.
  */
 export function unifiedMyWorkScopeKey(scope = {}) {
-  if (!scope || typeof scope.tenantId !== 'string' || !scope.tenantId) return null;
+  if (
+    !scope
+    || typeof scope.tenantId !== 'string' || !scope.tenantId
+    || typeof scope.principalId !== 'string' || !scope.principalId
+    || !Number.isSafeInteger(scope.sessionGeneration)
+    || scope.sessionGeneration < 0
+  ) return null;
   return JSON.stringify([
     RESOURCE_PREFIX,
     exact(scope.sessionGeneration),
@@ -62,12 +78,25 @@ export function unifiedMyWorkScopeKey(scope = {}) {
  * @description Build a read-only partition from the current AuthProvider user.
  * @param {Object|null} auth Current provider values.
  * @param {string|null} tenantId Optional explicitly matched workspace tenant.
- * @returns {string|null} Versioned current-session partition.
+ * @returns {string|null} Versioned current-session partition or null.
+ * @tenant Requires AuthProvider-authenticated identity with matching exact tenant.
+ * @authority Does not infer identity from browser location, routes or cache.
+ * @mutation None; read-only scope derivation.
+ * @idempotency Deterministic for one current session.
+ * @transaction No browser-owned DB session or command boundary.
+ * @financial Kennel EOS retains sole financial execution authority.
  */
 export function currentUnifiedMyWorkScope(auth, tenantId = null) {
   const user = auth?.user || {};
   const tenant = tenantId || user.tenantId;
-  if (!tenant || (user.tenantId && user.tenantId !== tenant)) return null;
+  if (
+    auth?.isAuthenticated !== true
+    || auth?.authStage !== 'AUTHENTICATED'
+    || typeof user?.tenantId !== 'string' || !user.tenantId
+    || typeof user?.id !== 'string' || !user.id
+    || typeof tenant !== 'string'
+    || user.tenantId !== tenant
+  ) return null;
   return unifiedMyWorkScopeKey({
     sessionGeneration: auth?.sessionGeneration,
     tenantId: tenant,
@@ -114,11 +143,38 @@ function callerAbort(pending, signal) {
  * @param {string} scopeKey Exact current-auth partition.
  * @param {{tenantId?: string, principalId?: string}} expectedScope EOS subject.
  * @param {{signal?: AbortSignal, force?: boolean}} options Local read controls.
- * @returns {Promise<Object>} Server-validated source-owned work projection.
+ * @returns {Promise<Object>} Server-validated EOS work projection.
+ * @throws {Error} Missing/foreign scope, malformed source projection or aborted
+ *                 session read fails closed; no partial source data emitted.
+ * @tenant Exact tenant and principal must match both scope partition and EOS.
+ * @mutation Transient in-memory validated read only; never a source command.
+ * @idempotency Shares overlapping GETs; short-lived snapshot is not authority.
+ * @transaction EOS owns every authoritative read and persistence session.
+ * @financial No ability to approve, pay, execute or settle.
  */
 export function readUnifiedMyWork(scopeKey, expectedScope = {}, options = {}) {
   if (!scopeKey || typeof scopeKey !== 'string') {
     return Promise.reject(new Error('MY_WORK_AUTHENTICATED_SCOPE_REQUIRED'));
+  }
+  let partition;
+  try {
+    partition = JSON.parse(scopeKey);
+  } catch {
+    return Promise.reject(new Error('MY_WORK_AUTHENTICATED_SCOPE_INVALID'));
+  }
+  if (
+    !Array.isArray(partition)
+    || partition.length !== 9
+    || partition[0] !== RESOURCE_PREFIX
+    || !Number.isSafeInteger(Number(partition[1]))
+    || !partition[2] || !partition[3]
+    || typeof expectedScope.tenantId !== 'string'
+    || typeof expectedScope.principalId !== 'string'
+    || !expectedScope.tenantId || !expectedScope.principalId
+    || partition[2] !== expectedScope.tenantId
+    || partition[3] !== expectedScope.principalId
+  ) {
+    return Promise.reject(new Error('MY_WORK_AUTHENTICATED_SCOPE_INVALID'));
   }
   const entry = entryFor(scopeKey);
   if (entry.pending) {
@@ -168,7 +224,12 @@ export function readUnifiedMyWork(scopeKey, expectedScope = {}, options = {}) {
  * @description Register an active view for scoped, source-confirmed refresh.
  * @param {string|null} scopeKey Exact authenticated scope.
  * @param {Function} callback Synchronous notification to re-read EOS.
- * @returns {Function} Idempotent cleanup that discards unused private state.
+ * @returns {Function} Idempotent subscription cleanup.
+ * @tenant Only exact current-session scope subscribers receive notifications.
+ * @mutation Callback registration only; no server or registry mutation.
+ * @idempotency Cleanup may execute repeatedly without leaking subscriptions.
+ * @transaction No MongoDB transaction; source registries own all writes.
+ * @financial No payment or settlement authority.
  */
 export function subscribeUnifiedMyWork(scopeKey, callback) {
   if (!scopeKey || typeof callback !== 'function') return () => {};
@@ -196,7 +257,12 @@ export function subscribeUnifiedMyWork(scopeKey, callback) {
  * @institutional Call after a confirmed source-owned mutation, never on mere
  * UI clicks, network uncertainty, or an unverified optimistic transition.
  * @param {string|null} scopeKey Current source-command session partition.
- * @returns {boolean} Whether a mounted current-scope view was notified.
+ * @returns {boolean} Whether current-scope subscribers were notified.
+ * @tenant One exact authenticated tenant/principal/capacity partition only.
+ * @mutation Invalidates temporary browser projection; no source record write.
+ * @idempotency Repeated invalidation never creates or completes business work.
+ * @transaction Call only after independently confirmed source command effect.
+ * @financial No release, execution, settlement or banking authority.
  */
 export function invalidateUnifiedMyWork(scopeKey) {
   const entry = scopeKey ? entries.get(scopeKey) : null;
@@ -215,6 +281,11 @@ export function invalidateUnifiedMyWork(scopeKey) {
 /**
  * @description Discard a scope without prompting any prior principal to refetch.
  * @param {string|null} scopeKey Former authenticated scope.
+ * @tenant Removes only that scope's private transient projection.
+ * @mutation Clears cached browser projection, not EOS records.
+ * @idempotency Repeated release is harmless.
+ * @transaction No database transaction ownership.
+ * @financial No payment execution or settlement authority.
  */
 export function releaseUnifiedMyWork(scopeKey) {
   const entry = scopeKey ? entries.get(scopeKey) : null;
@@ -229,7 +300,7 @@ export function releaseUnifiedMyWork(scopeKey) {
 }
 
 // ARTIFACT: client/src/services/unifiedMyWorkSync.js
-// VERSION: v1.0.0-SOURCE-CONFIRMED-INVALIDATION
+// VERSION: v1.1.0-GOVERNED-SESSION-SCOPED-READS
 // AUTHORITY BOUNDARY: EOS-only reads; no browser command authorization.
 // TENANT POSTURE: Exact session/capacity partition, no persistent cache.
 // FAIL-CLOSED POSTURE: Superseded reads and invalid/foreign results reject.
