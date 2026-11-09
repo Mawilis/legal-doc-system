@@ -1,7 +1,7 @@
 /* eslint-disable */
 /**
  * TITLE: WILSY OS Sovereign Application Root
- * VERSION: v20.2.8-AUTHORITATIVE-CAPACITY-CURRENTNESS
+ * VERSION: v20.2.9-SINGLE-AUTHENTICATED-APP-BAR
  * AUTHORITY: Wilsy OS Core Governance
  * EPITOME: Composes authenticated routing, exact tenant projection, legal
  *          admission release, and protected workspace presentation without
@@ -13,6 +13,10 @@
  *                            legal-acceptance truth.
  * CERTIFICATION / UPDATE DATE: 2026-11-09
  * CHANGELOG:
+ *   v20.2.9-SINGLE-AUTHENTICATED-APP-BAR — Removes the redundant
+ *     app-wide status strip and redundant per-session kernel polling.
+ *     Work attention and HTTPS trust remain in the single authenticated bar;
+ *     system-wide health is not inferred from one kernel endpoint.
  *   v20.2.8-AUTHORITATIVE-CAPACITY-CURRENTNESS — Invalidates attention and
  *     Headquarters work projections across business-role, capacity and
  *     workspace changes as well as principal/tenant changes.
@@ -145,7 +149,6 @@ const AuthenticatedGlobalChrome = ({ user, onLogout, children }) => {
   const [notificationsOpen, setNotificationsOpen] = useState(false);
   const [workCount, setWorkCount] = useState(null);
   const [workCountScope, setWorkCountScope] = useState(null);
-  const [kernel, setKernel] = useState({ state: 'CHECKING', version: null });
 
   const displayName = [user?.firstName, user?.lastName].filter(Boolean).join(' ')
     || user?.email
@@ -156,43 +159,8 @@ const AuthenticatedGlobalChrome = ({ user, onLogout, children }) => {
     + (user?.lastName || '').slice(0, 1).toUpperCase();
   const isSecureChannel = typeof window !== 'undefined'
     && window.location.protocol === 'https:';
-  const isMyWork = location.pathname === '/my-work';
   const currentWorkScope = [user?.tenantId, user?.id, user?.role, user?.workspaceId, user?.businessRole]
     .map((part) => String(part || '')).join(':');
-
-  useEffect(() => {
-    let active = true;
-    const refresh = async () => {
-      try {
-        const [healthResponse, statusResponse] = await Promise.all([
-          api.get('/kernel'),
-          api.get('/kernel/status'),
-        ]);
-        if (!active) return;
-        const health = healthResponse?.data || {};
-        const status = statusResponse?.data || {};
-        const components = status.components;
-        const componentStatesValid = components && typeof components === 'object'
-          && !Array.isArray(components)
-          && Object.values(components).every((value) => typeof value === 'string');
-        setKernel({
-          state: health.status === 'OPERATIONAL' && status.status === 'OPERATIONAL'
-            ? 'RESPONDING'
-            : 'DEGRADED',
-          version: typeof health.version === 'string' ? health.version : null,
-          components: componentStatesValid ? components : null,
-        });
-      } catch {
-        if (active) setKernel({ state: 'UNAVAILABLE', version: null });
-      }
-    };
-    void refresh();
-    const interval = window.setInterval(refresh, 60000);
-    return () => {
-      active = false;
-      window.clearInterval(interval);
-    };
-  }, []);
 
   useEffect(() => {
     if (!user?.tenantId || user?.systemServicesWorkspace) {
@@ -325,15 +293,6 @@ const AuthenticatedGlobalChrome = ({ user, onLogout, children }) => {
           </div>
         </div>
       </header>
-
-      <div className="flex items-center justify-end gap-2 border-b border-white/5 bg-[#0b1628] px-4 py-2 text-[10px] text-slate-500 sm:px-6">
-        <span className={kernel.state === 'RESPONDING' ? 'text-emerald-300' : kernel.state === 'CHECKING' ? 'text-amber-200' : 'text-rose-300'}>
-          <span aria-hidden="true">●</span> {kernel.state === 'RESPONDING' ? 'EOS kernel API responding' : kernel.state === 'CHECKING' ? 'Checking EOS kernel…' : 'EOS kernel API unavailable'}
-        </span>
-        <span>·</span><span>{kernel.version ? 'Kernel v' + kernel.version : 'Version unavailable'}</span>
-        {isMyWork && workCountScope === currentWorkScope && workCount !== null && <span className="ml-2 rounded-full bg-amber-300 px-2 py-1 font-semibold text-[#081326]">{workCount} open</span>}
-        {isMyWork && workCount === null && <span className="ml-2 text-amber-200">Task count unavailable</span>}
-      </div>
 
       <div>{children}</div>
 
@@ -751,7 +710,7 @@ export default App;
 
 /**
  * ARTIFACT: client/src/App.jsx
- * VERSION: v20.2.8-AUTHORITATIVE-CAPACITY-CURRENTNESS
+ * VERSION: v20.2.9-SINGLE-AUTHENTICATED-APP-BAR
  * AUTHORITY BOUNDARY: client route and protected-runtime composition only; Python EOS remains authentication, tenant and legal-acceptance authority
  * TENANT POSTURE: discovered tenant may choose login routing but cannot establish authenticated or protected scope
  * FAIL-CLOSED POSTURE: auth revalidation waits; unresolved legal status remains sealed; only server-confirmed legal COMPLETE mounts protected runtime
