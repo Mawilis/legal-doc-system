@@ -1,8 +1,7 @@
-
 /* eslint-disable */
 /**
  * TITLE: WILSY OS Sovereign Application Root
- * VERSION: v20.3.1-OFFICIAL-BRAND-ASSET
+ * VERSION: v20.4.1-ACTIONABLE-FLOATING-CHROME
  * AUTHORITY: Wilsy OS Core Governance
  * EPITOME: Composes authenticated routing, exact tenant projection, legal
  *          admission release, and protected workspace presentation without
@@ -14,6 +13,11 @@
  *                            legal-acceptance truth.
  * CERTIFICATION / UPDATE DATE: 2026-11-09
  * CHANGELOG:
+ *   v20.4.1-ACTIONABLE-FLOATING-CHROME — Routes selected EOS work items to source-owned completion
+ *     and opens existing HR workspaces directly from the floating bell.
+ *   v20.4.0-CHECKPOINT-DAILY-ATTENTION-MERGED — Integrates EOS-authorised Daily Attention into the preserved
+ *     official brand, search, session title, avatar and security chrome.
+ *     Active work is distinct from unread notifications.
  *   v20.2.3-GLOBAL-SEARCH-PLATFORM-HINT — Displays both macOS and Windows
  *     keyboard hints while preserving the shared Meta/Ctrl+K command shortcut.
  *   v20.2.2-GLOBAL-CHROME-TRANSPORT-TRUST — Uses a neutral security-chip
@@ -24,8 +28,8 @@
  *     global top bar for protected routes, consuming the revalidated auth
  *     projection, EOS My Work summary and bounded kernel status/version.
  *     Search opens a global command surface with safe navigation shortcuts;
- *     notification state remains explicitly unavailable until an authorised
- *     EOS notification projection exists. No browser-derived authority is made.
+ *     attention is now sourced from authorised EOS My Work; genuine unread
+ *     notification counts remain a separate future authority.
  *   v20.1.1-ALL-PROTECTED-ROUTES-LOGOUT-PROPAGATION — Promotes the legal boundary
  *     from REQUIRED to COMPLETE only when LegalAcceptanceGate reports the
  *     server-confirmed COMPLETE state, so the protected runtime mounts in the
@@ -56,7 +60,7 @@ import { BrowserRouter as Router, Routes, Route, Navigate, useNavigate, useLocat
 import { AUTH_STATES, AuthProvider, useAuth } from './contexts/authContext.jsx';
 import { TenantProvider, useTenants } from './contexts/tenantContext';  // ✅ NEW IMPORT
 import ErrorBoundary from './components/ErrorBoundary.jsx';
-import { Bell, CheckCircle2, ChevronDown, Home, Loader2, LogOut, Search, ShieldCheck, X } from 'lucide-react';
+import { CheckCircle2, ChevronDown, Home, Loader2, LogOut, Search, ShieldCheck, X } from 'lucide-react';
 import { broadcastTelemetry } from './utils/telemetryHelper.js';
 
 
@@ -74,6 +78,7 @@ import MyWorkWorkspace from './components/workspaces/MyWorkWorkspace.jsx';
 import WilsyHeadquartersWorkspace from './components/workspaces/WilsyHeadquartersWorkspace.jsx';
 import api from './services/api';
 import WilsyOSIntelligenceDockRuntime from './components/intelligence/WilsyOSIntelligenceDockRuntime.jsx';
+import WilsyDailyAttentionCentre from './components/chrome/WilsyDailyAttentionCentre.jsx';
 
 import { SovereignOrchestrator, useSovereignMesh } from './components/sovereign/SovereignOrchestrator.jsx';
 import { DataOrchestratorProvider, useSovereignData } from './components/sovereign/DataOrchestrator.jsx';
@@ -130,7 +135,8 @@ export const AuthenticatedGlobalChrome = ({ user, onLogout, children }) => {
   const [searchValue, setSearchValue] = useState('');
   const [userMenuOpen, setUserMenuOpen] = useState(false);
   const [notificationsOpen, setNotificationsOpen] = useState(false);
-  const [unreadCount, setUnreadCount] = useState(null);
+  const [workCount, setWorkCount] = useState(null);
+  const [workCountScope, setWorkCountScope] = useState(null);
 
   const displayName = [user?.firstName, user?.lastName].filter(Boolean).join(' ')
     || user?.email
@@ -145,29 +151,45 @@ export const AuthenticatedGlobalChrome = ({ user, onLogout, children }) => {
     && window.location.protocol === 'https:';
   const hasAuthenticatedSession = isAuthenticated && authStage === AUTH_STATES.AUTHENTICATED;
 
+  const currentWorkScope = [user?.tenantId, user?.id, user?.role, user?.workspaceId, user?.businessRole]
+    .map((part) => String(part || '')).join(':');
+
   useEffect(() => {
+    if (!user?.tenantId || user?.systemServicesWorkspace) {
+      setWorkCountScope(null);
+      setWorkCount(null);
+      return undefined;
+    }
     let active = true;
-    const refreshUnreadCount = async () => {
+    const refresh = async () => {
       try {
-        const response = await api.get('/notifications/unread-count');
+        const response = await api.get('/my-work');
         const payload = response?.data;
-        const count = payload?.unread_count;
-        if (!Number.isInteger(count) || count < 0) {
-          throw new Error('NOTIFICATION_UNREAD_COUNT_PROJECTION_INVALID');
+        if (
+          !payload
+          || payload.tenant_id !== user.tenantId
+          || !payload.summary
+          || !Number.isInteger(payload.summary.active_count)
+          || payload.summary.active_count < 0
+        ) throw new Error('MY_WORK_SUMMARY_PROJECTION_INVALID');
+        if (active) {
+          setWorkCountScope(currentWorkScope);
+          setWorkCount(payload.summary.active_count);
         }
-        if (active) setUnreadCount(count);
       } catch {
-        // An unavailable or malformed projection is unknown, never zero.
-        if (active) setUnreadCount(null);
+        if (active) {
+          setWorkCountScope(null);
+          setWorkCount(null);
+        }
       }
     };
-    void refreshUnreadCount();
-    const interval = window.setInterval(refreshUnreadCount, 60000);
+    void refresh();
+    const interval = window.setInterval(refresh, 60000);
     return () => {
       active = false;
       window.clearInterval(interval);
     };
-  }, []);
+  }, [user?.tenantId, user?.id, user?.role, user?.workspaceId, user?.businessRole, user?.systemServicesWorkspace]);
 
   useEffect(() => {
     const handleShortcut = (event) => {
@@ -235,18 +257,23 @@ export const AuthenticatedGlobalChrome = ({ user, onLogout, children }) => {
               <span className="hidden sm:inline">{isSecureChannel ? 'Secure · Authenticated' : 'Authenticated'}</span>
             </div>
           )}
-          <div className="relative">
-            <button type="button" aria-label={unreadCount === null ? 'Notifications; unread count unavailable' : `Notifications; ${unreadCount} unread`} aria-expanded={notificationsOpen} onClick={() => { setNotificationsOpen((value) => !value); setUserMenuOpen(false); }} className="relative grid h-10 w-10 place-items-center rounded-full text-slate-300 transition hover:bg-white/10">
-              <Bell size={18}/>
-              {unreadCount !== null && unreadCount > 0 && <span aria-label={`${unreadCount} unread notifications`} className="absolute -right-0.5 -top-0.5 grid min-h-4 min-w-4 place-items-center rounded-full border border-[#0b1830] bg-red-500 px-1 text-[9px] font-bold leading-4 text-white shadow-sm">{unreadCount > 99 ? '99+' : unreadCount}</span>}
-            </button>
-            {notificationsOpen && (
-              <div role="dialog" aria-label="Notifications" className="absolute right-0 top-12 z-50 w-[min(340px,calc(100vw-2rem))] rounded-2xl border border-white/10 bg-[#101d32] p-4 shadow-2xl">
-                <div className="flex items-center justify-between"><h2 className="font-semibold text-white">Notifications</h2><button type="button" aria-label="Close notifications" onClick={() => setNotificationsOpen(false)}><X size={16}/></button></div>
-                <p className="mt-3 text-sm leading-6 text-slate-300">{unreadCount === null ? 'Unread notification count is unavailable. No synthetic count is displayed.' : unreadCount === 0 ? 'You are all caught up.' : `${unreadCount} unread notification${unreadCount === 1 ? '' : 's'}.`} Notification details and read actions will appear when the authorised notification feed is connected.</p>
-              </div>
-            )}
-          </div>
+          <WilsyDailyAttentionCentre
+            key={currentWorkScope}
+            tenantId={user?.tenantId}
+            systemServicesWorkspace={Boolean(user?.systemServicesWorkspace)}
+            activeCount={workCountScope === currentWorkScope ? workCount : null}
+            open={notificationsOpen}
+            onToggle={() => { setNotificationsOpen((value) => !value); setUserMenuOpen(false); }}
+            onClose={() => setNotificationsOpen(false)}
+            onOpenWork={(item) => {
+              setNotificationsOpen(false);
+              navigate('/my-work', { state: item?.source_key ? { focusWorkItem: item.source_key } : null });
+            }}
+            onOpenWorkforce={() => {
+              setNotificationsOpen(false);
+              navigate('/headquarters?section=hr-workspace');
+            }}
+          />
           <div className="relative">
             <button type="button" aria-label="Open user menu" aria-expanded={userMenuOpen} onClick={() => { setUserMenuOpen((value) => !value); setNotificationsOpen(false); }} className="flex items-center gap-2 rounded-full py-1 pl-1 pr-2 transition hover:bg-white/10">
               {avatarUrl ? <img src={avatarUrl} alt="" className="h-9 w-9 rounded-full border border-amber-300/30 object-cover" referrerPolicy="no-referrer" /> : <span className="grid h-9 w-9 place-items-center rounded-full border border-amber-300/30 bg-amber-300/15 text-xs font-bold text-amber-200">{initials}</span>}
@@ -470,7 +497,7 @@ const SovereignRouter = () => {
       <Route path="/covenant" element={<LegalAcceptanceGate onComplete={() => navigate('/', { replace: true })} />} />
       <Route path="/headquarters" element={
         isAuthenticated && user && !systemServicesSession
-          ? <ErrorBoundary><WilsyHeadquartersWorkspace /></ErrorBoundary>
+          ? <ErrorBoundary><WilsyHeadquartersWorkspace key={[user.id, user.tenantId, user.role, user.workspaceId, user.businessRole].map((part) => String(part || '')).join(':')} tenantId={user.tenantId} /></ErrorBoundary>
           : <Navigate to="/" replace />
       } />
       <Route path="/my-work" element={
@@ -688,7 +715,7 @@ export default App;
 
 /**
  * ARTIFACT: client/src/App.jsx
- * VERSION: v20.2.3-GLOBAL-SEARCH-PLATFORM-HINT
+ * VERSION: v20.4.1-ACTIONABLE-FLOATING-CHROME
  * AUTHORITY BOUNDARY: client route and protected-runtime composition only; Python EOS remains authentication, tenant and legal-acceptance authority
  * TENANT POSTURE: discovered tenant may choose login routing but cannot establish authenticated or protected scope
  * FAIL-CLOSED POSTURE: auth revalidation waits; unresolved legal status remains sealed; only server-confirmed legal COMPLETE mounts protected runtime

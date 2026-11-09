@@ -1,0 +1,56 @@
+name: WILSY Daily Execution Client Certification
+
+on:
+  pull_request:
+    paths:
+      - "client/src/App.jsx"
+      - "client/src/components/chrome/WilsyDailyAttentionCentre.jsx"
+      - "client/src/components/chrome/WilsyWorkDeadlineCalendar.jsx"
+      - "client/src/components/workspaces/MyWorkWorkspace.jsx"
+      - "client/src/components/workspaces/WilsyHeadquartersDailyBrief.jsx"
+      - "client/src/components/workspaces/WilsyHeadquartersWorkspace.jsx"
+      - "client/src/__tests__/components/WilsyDailyAttentionCentre.test.jsx"
+      - "client/src/__tests__/components/WilsyWorkDeadlineCalendar.test.jsx"
+      - "client/src/__tests__/components/MyWorkWorkspaceAttention.test.jsx"
+      - "client/src/__tests__/components/WilsyHeadquartersDailyBrief.test.jsx"
+      - "client/src/__tests__/components/WilsyHeadquartersWorkspace.test.jsx"
+      - "client/package-lock.json"
+      - ".github/workflows/daily-execution-client-certification.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: daily-execution-client-${{ github.event.pull_request.head.ref || github.ref_name }}
+  cancel-in-progress: true
+
+jobs:
+  daily-execution-client:
+    name: Tenant-bound daily work, interactive triage and production build
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    defaults:
+      run:
+        working-directory: client
+    steps:
+      - name: Checkout reviewed GitHub source
+        uses: actions/checkout@v4
+      - name: Prepare isolated test runner
+        uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: npm
+          cache-dependency-path: client/package-lock.json
+      - name: Restore locked client dependencies on CI only
+        run: npm ci --include=dev --no-audit --no-fund --progress=false
+      - name: Certify authorised daily work interactions
+        run: >-
+          npx vitest run --config vitest.config.js
+          src/__tests__/components/WilsyDailyAttentionCentre.test.jsx
+          src/__tests__/components/WilsyWorkDeadlineCalendar.test.jsx
+          src/__tests__/components/MyWorkWorkspaceAttention.test.jsx
+          src/__tests__/components/WilsyHeadquartersDailyBrief.test.jsx
+          src/__tests__/components/WilsyHeadquartersWorkspace.test.jsx
+      - name: Build production client bundle
+        run: npm run build

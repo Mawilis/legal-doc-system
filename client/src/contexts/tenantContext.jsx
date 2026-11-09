@@ -1,6 +1,6 @@
 /**
  * TITLE: WILSY OS Sovereign Tenant Context
- * VERSION: v6.3.0-AUTHENTICATED-WORKSPACE-PROJECTION-HANDOFF
+ * VERSION: v6.4.0-SUBSCRIPTION-LIFECYCLE-AUTHORITY-BOUNDARY
  * AUTHORITY: Wilsy OS Core Governance
  * EPITOME: Projects the exact server-certified authenticated workspace tenant
  *          into browser context without demanding a second, independently
@@ -11,6 +11,11 @@
  *                            owns bounded client hydration and same-tenant UI state.
  * CERTIFICATION / UPDATE DATE: 2026-09-24
  * CHANGELOG:
+ *   v6.4.0-SUBSCRIPTION-LIFECYCLE-AUTHORITY-BOUNDARY — Stops loading restricted billing dunning
+ *     projections in global post-MFA tenant hydration. Dunning evidence is
+ *     not subscription lifecycle or entitlement truth. Until a separately
+ *     authorised SubscriptionRegistry lifecycle projection exists, posture
+ *     remains explicitly UNKNOWN; server-side command gates are unchanged.
  *   v6.3.0-AUTHENTICATED-WORKSPACE-PROJECTION-HANDOFF — Treats the current
  *     AuthProvider initialTenant as the only authenticated bootstrap candidate,
  *     requires its canonical identifier to equal authenticatedTenantId, and
@@ -44,7 +49,7 @@
 import React, { createContext, useContext, useState, useEffect, useMemo, useCallback } from 'react';
 import PropTypes from 'prop-types';
 import tenantApi from '../services/api/tenantApi'; // ✅ Corrected path
-import sovereignClient from '../utils/sovereignClient';
+// Subscription lifecycle authority is not inferred from a dunning projection.
 
 // ─── Context Definition ──────────────────────────────────────────────────────
 export const TenantContext = createContext({
@@ -87,40 +92,28 @@ export const TenantProvider = ({ children, initialTenant = null, authenticatedTe
 
   /**
    * @function refreshAccessPosture
-   * @description Loads the authoritative Kennel dunning posture used to restrict mutating tenant actions.
-   * @param {Object|null} tenant - Tenant whose platform subscription posture must be evaluated.
-   * @returns {Promise<Object>} Resolved posture, retaining a non-blocking unknown state on transport failure.
-   * @collaboration Makes read-only suspension explicit in the UI without fabricating a financial enforcement result.
+   * @description Retain UNKNOWN until EOS supplies an independently authorised
+   *              SubscriptionRegistry lifecycle projection. Billing dunning is
+   *              collection evidence and must never be used as access authority.
+   * @param {Object|null} tenant - Current authenticated tenant projection.
+   * @returns {Promise<Object>} Explicitly unresolved, non-authoritative posture.
+   * @collaboration EOS IAM retains all command permissions and EOS subscription
+   *                lifecycle authority must furnish future access decisions.
+   * @tenant Only a canonical authenticated tenant ID can scope a projection.
+   * @mutation None: no billing or subscription state changes.
+   * @financial No payment, entitlement, suspension or settlement authority.
    */
   const refreshAccessPosture = useCallback(async (tenant = activeTenant) => {
     const tenantId = tenantIdentifier(tenant);
-    if (!tenantId) {
-      const unresolved = { state: 'UNKNOWN', source: 'SUBSCRIPTION_LIFECYCLE_NOT_PROVIDED', updatedAt: null };
-      setAccessPosture(unresolved);
-      return unresolved;
-    }
-    try {
-      const response = await sovereignClient.get('/billing/dunning/state', {
-        headers: { 'X-Tenant-ID': tenantId },
-      });
-      const payload = response?.data?.data || response?.data || {};
-      // Dunning projections are collection evidence only. They cannot grant
-      // or remove subscription access; that decision must come from the
-      // canonical SubscriptionRegistry lifecycle authority.
-      const lifecycle = payload.subscription_lifecycle || {};
-      const resolved = {
-        state: lifecycle.state ? String(lifecycle.state).toUpperCase() : 'UNKNOWN',
-        source: lifecycle.source || 'SUBSCRIPTION_LIFECYCLE_NOT_PROVIDED',
-        updatedAt: lifecycle.updated_at || null,
-        subscriptionId: lifecycle.subscription_id || null,
-      };
-      setAccessPosture(resolved);
-      return resolved;
-    } catch (requestError) {
-      const unavailable = { state: 'UNKNOWN', source: 'SUBSCRIPTION_LIFECYCLE_UNAVAILABLE', updatedAt: null, error: requestError.message };
-      setAccessPosture(unavailable);
-      return unavailable;
-    }
+    const unresolved = {
+      state: 'UNKNOWN',
+      source: tenantId
+        ? 'SUBSCRIPTION_REGISTRY_LIFECYCLE_NOT_PROJECTED'
+        : 'AUTHENTICATED_TENANT_NOT_VERIFIED',
+      updatedAt: null,
+    };
+    setAccessPosture(unresolved);
+    return unresolved;
   }, [activeTenant, tenantIdentifier]);
 
   // ─── Project the server-certified authenticated workspace tenant exactly ───
@@ -298,7 +291,7 @@ export default TenantContext;
 
 /**
  * ARTIFACT: client/src/contexts/tenantContext.jsx
- * VERSION: v6.3.0-AUTHENTICATED-WORKSPACE-PROJECTION-HANDOFF
+ * VERSION: v6.4.0-SUBSCRIPTION-LIFECYCLE-AUTHORITY-BOUNDARY
  * AUTHORITY BOUNDARY: browser tenant projection only; Python EOS workspace-bootstrap remains authoritative
  * TENANT POSTURE: authenticated initialTenant must exactly match authenticatedTenantId; persisted browser state cannot establish authenticated scope
  * FAIL-CLOSED POSTURE: missing or mismatched authenticated projection exposes no active tenant and performs no compensating privileged tenant-profile request

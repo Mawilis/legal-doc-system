@@ -1,4 +1,18 @@
-"""Regression tests for canonical telemetry ingestion policy and durable-write contract."""
+"""TITLE: WILSY OS Telemetry Tenant-Scoped Persistence Certification
+VERSION: v1.1.0-DUAL-TRACE-INDEX-REGRESSION
+AUTHORITY: Wilsy OS Core Governance.
+EPITOME: Enforce server-owned legacy and canonical unique trace field parity.
+ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/tests/unit/test_telemetry_ingestion_router.py
+COLLABORATION / OWNERSHIP: EOS telemetry_ingestion_router and Atlas unique indexes.
+CERTIFICATION / UPDATE DATE: 2026-11-09
+CHANGELOG: v1.1.0-DUAL-TRACE-INDEX-REGRESSION verifies both trace fields match
+           and rejects the caller-supplied client trace as authority.
+COMPLIANCE: POPIA section 19; GDPR Article 32; SOC 2 CC7.2.
+SECURITY / PRIVACY POSTURE: Synthetic tenants and mock database only.
+TENANT BOUNDARY: Exact server-supplied tenant is independently asserted.
+AUTHORITY BOUNDARY: Tests do not mutate production EOS telemetry.
+FINANCIAL AUTHORITY BOUNDARY: No financial execution authority.
+"""
 from __future__ import annotations
 
 from pathlib import Path
@@ -73,6 +87,8 @@ def test_success_follows_insert_and_uses_server_trace() -> None:
     assert result["accepted"] is True
     assert result["trace_id"]
     assert db.collection.records[0]["trace_id"] == result["trace_id"]
+    # The collection still has the historic unique traceId_1 index.
+    assert db.collection.records[0]["traceId"] == result["trace_id"]
 
 
 def test_duplicate_trace_is_not_acknowledged() -> None:
@@ -128,6 +144,8 @@ def test_http_success_persists_under_authorized_tenant_with_server_trace(monkeyp
     assert response.json()["trace_id"] != "TRC-client-123"
     assert db.collection.records[0]["tenant_id"] == "tenant-authorized"
     assert db.collection.records[0]["client_trace_id"] == "TRC-client-123"
+    assert db.collection.records[0]["traceId"] == response.json()["trace_id"]
+    assert db.collection.records[0]["traceId"] != "TRC-client-123"
 
 
 def test_http_rejects_forged_tenant_and_oversized_raw_body(monkeypatch):
@@ -194,3 +212,11 @@ def test_isolated_mongo_persistence_and_unique_trace_index(monkeypatch):
     finally:
         client.drop_database(database_name)
         client.close()
+
+# ARTIFACT: test_telemetry_ingestion_router.py
+# VERSION: v1.1.0-DUAL-TRACE-INDEX-REGRESSION
+# AUTHORITY BOUNDARY: Deterministic ingestion regression tests only.
+# TENANT POSTURE: Synthetic principal and exact tenant.
+# FAIL-CLOSED POSTURE: Duplicate traces never receive success acknowledgement.
+# FINANCIAL EXECUTION AUTHORITY: Kennel EOS exclusively.
+# END OF WILSY OS SOVEREIGN ARTIFACT

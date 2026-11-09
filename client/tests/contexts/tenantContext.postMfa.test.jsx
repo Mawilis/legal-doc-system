@@ -1,6 +1,6 @@
 /**
  * TITLE: Authenticated Workspace Tenant Projection Handoff Certificate
- * VERSION: v1.1.0-AUTHENTICATED-WORKSPACE-PROJECTION-HANDOFF-CERT
+ * VERSION: v1.2.0-NO-UNAUTHORIZED-DUNNING-BOOTSTRAP
  * AUTHORITY: Wilsy OS Core Governance
  * EPITOME: Proves TenantProvider consumes only the exact AuthProvider
  *          server-certified workspace tenant during authenticated bootstrap,
@@ -12,6 +12,9 @@
  *                            projection, Kennel tenantApi client.
  * CERTIFICATION / UPDATE DATE: 2026-09-24
  * CHANGELOG:
+ *   v1.2.0-NO-UNAUTHORIZED-DUNNING-BOOTSTRAP — Confirms no restricted dunning
+ *     projection is fetched automatically during workspace hydration; posture
+ *     remains UNKNOWN pending an actual SubscriptionRegistry lifecycle source.
  *   v1.1.0-AUTHENTICATED-WORKSPACE-PROJECTION-HANDOFF-CERT — Replaces the
  *     superseded expectation of a second GET /api/tenants/{tenant_id} after
  *     MFA with the v6.3.0 contract: authenticated initialTenant must exactly
@@ -62,6 +65,8 @@ function Harness() {
     error,
     switchTenant,
     refreshTenants,
+    accessPosture,
+    refreshAccessPosture,
   } = useTenants();
 
   return (
@@ -71,6 +76,9 @@ function Harness() {
       <span data-testid="tenant-name">{activeTenant?.name || ''}</span>
       <span data-testid="mismatch">{String(authorityMismatch)}</span>
       <span data-testid="error">{error || ''}</span>
+      <span data-testid="posture">{accessPosture.state}</span>
+      <span data-testid="posture-source">{accessPosture.source}</span>
+      <button type="button" onClick={() => refreshAccessPosture()}>refresh posture</button>
       <span data-testid="switch-error">{switchError}</span>
       <button type="button" onClick={() => switchTenant('TENANT-A')}>same</button>
       <button type="button" onClick={() => { void switchTenant('TENANT-B').catch((reason) => setSwitchError(reason.message)); }}>cross-tenant</button>
@@ -117,6 +125,23 @@ describe('authenticated workspace tenant projection handoff', () => {
     expect(screen.getByTestId('error')).toHaveTextContent('');
     expect(tenantApi.getTenant).not.toHaveBeenCalled();
     expect(tenantApi.getTenants).not.toHaveBeenCalled();
+    expect(sovereignClient.get).not.toHaveBeenCalled();
+  });
+
+  it('does not use restricted dunning evidence as global subscription access authority', async () => {
+    renderProvider({
+      initialTenant: authenticatedTenant,
+      authenticatedTenantId: 'TENANT-A',
+    });
+    await waitFor(() => expect(screen.getByTestId('ready')).toHaveTextContent('true'));
+    expect(screen.getByTestId('posture')).toHaveTextContent('UNKNOWN');
+    expect(screen.getByTestId('posture-source')).toHaveTextContent(
+      'SUBSCRIPTION_REGISTRY_LIFECYCLE_NOT_PROJECTED',
+    );
+    expect(sovereignClient.get).not.toHaveBeenCalled();
+    fireEvent.click(screen.getByRole('button', { name: 'refresh posture' }));
+    expect(sovereignClient.get).not.toHaveBeenCalled();
+    expect(screen.getByTestId('posture')).toHaveTextContent('UNKNOWN');
   });
 
   it('ignores persisted browser tenant state during authenticated bootstrap', async () => {
@@ -220,7 +245,7 @@ describe('authenticated workspace tenant projection handoff', () => {
 
 /**
  * ARTIFACT: client/tests/contexts/tenantContext.postMfa.test.jsx
- * VERSION: v1.1.0-AUTHENTICATED-WORKSPACE-PROJECTION-HANDOFF-CERT
+ * VERSION: v1.2.0-NO-UNAUTHORIZED-DUNNING-BOOTSTRAP
  * AUTHORITY BOUNDARY: browser tenant projection certificate only; Python EOS workspace-bootstrap remains authoritative
  * TENANT POSTURE: exact authenticated initialTenant/authenticatedTenantId match required; persisted state cannot establish authenticated scope
  * FAIL-CLOSED POSTURE: missing or mismatched authenticated projection exposes no active tenant and performs no compensating privileged tenant-profile read
