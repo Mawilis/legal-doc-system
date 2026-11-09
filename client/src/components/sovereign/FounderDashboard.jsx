@@ -249,7 +249,7 @@ const RevenueHUD = React.lazy(() => import('../RevenueHUD'));
 const ComplianceHUD = React.lazy(() => import('../ComplianceHUD'));
 const ForensicsHUD = React.lazy(() => import('../ForensicsHUD'));
 const SingularityDashboard = React.lazy(() => import('../SingularityDashboard'));
-const ExecutiveDashboard = React.lazy(() => import('../executive/ExecutiveDashboard'));
+const WilsyHeadquartersWorkspace = React.lazy(() => import('../workspaces/WilsyHeadquartersWorkspace.jsx'));
 const AnalyticsDashboard = React.lazy(() => import('../analytics/AnalyticsDashboard'));
 const SovereignNodeDashboard = React.lazy(() => import('./SovereignNodeDashboard'));
 const SovereignNodeRegistry = React.lazy(() => import('./Sovereign_Node_Registry'));
@@ -390,7 +390,7 @@ const standaloneDashboardRoutes = {
   AUDIT_VAULT: { dashboardKey: 'AUDIT', route: '/audit' },
   NODE_REGISTRY: { dashboardKey: 'NODE_REGISTRY', route: '/node-registry' },
   GLOBAL_ORCHESTRATOR: { dashboardKey: 'GLOBAL_ORCHESTRATOR', route: '/global-orchestrator' },
-  EXECUTIVE_OVERSIGHT: { dashboardKey: 'EXECUTIVE', route: '/executive' },
+  EXECUTIVE_OVERSIGHT: { dashboardKey: 'WILSY_HEADQUARTERS_DASHBOARD', route: '/headquarters' },
   INVOICE_SENTINEL: { dashboardKey: 'INVOICE_SENTINEL', route: '/invoice-sentinel' },
   CLOUD_UPLINK: { dashboardKey: 'CLOUD_UPLINK', route: '/cloud-uplink' },
   IDENTITY_HUB: { dashboardKey: 'IDENTITY_HUB', route: '/identity-hub' },
@@ -400,7 +400,7 @@ const standaloneDashboardRoutes = {
   NUCLEUS_MONITOR: { dashboardKey: 'NUCLEUS_MONITOR', route: '/nucleus-monitor' },
   TENANT_MANAGER: { dashboardKey: 'TENANT_MANAGER', route: '/tenant-manager' },
   STATEMENT_ENGINE: { dashboardKey: 'STATEMENT_ENGINE', route: '/statement-engine' },
-  CEO_DASHBOARD: { dashboardKey: 'EXECUTIVE', route: '/executive' },
+  CEO_DASHBOARD: { dashboardKey: 'WILSY_HEADQUARTERS_DASHBOARD', route: '/headquarters' },
   COO_DASHBOARD: { dashboardKey: 'COO', route: '/coo' },
   EXECUTIVE_CONTROL_ROOM: { dashboardKey: 'CONTROL_ROOM', route: '/control-room' },
   HR_DASHBOARD: { dashboardKey: 'HR', route: '/hr' },

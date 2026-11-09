@@ -497,7 +497,7 @@ export const buildPriorityActions = ({
       lane: row.lane,
       title: row.actionLabel,
       status: row.status,
-      route: '/executive'
+      route: '/headquarters'
     }));
   const connectorMoves = integrationRows
     .filter(row => row.status !== 'CONNECTED')
@@ -527,7 +527,7 @@ export const buildPriorityActions = ({
       lane: 'COMPETITION',
       title: row.nextAction,
       status: row.status,
-      route: '/executive'
+      route: '/headquarters'
     }));
 
   return [

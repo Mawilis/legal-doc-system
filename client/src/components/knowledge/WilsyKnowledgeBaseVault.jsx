@@ -53,7 +53,7 @@ const WILSY_COMMAND_K_ORIGIN_KEY = 'wilsy:command-k-origin';
 const WILSY_KNOWLEDGE_BASE_ORIGIN_TTL_MS = 1000 * 60 * 60 * 6;
 const WILSY_KNOWLEDGE_BASE_ROUTE_LABELS = Object.freeze([
   { signal: '/founder', label: 'Founder Command' },
-  { signal: '/executive', label: 'Executive Dashboard' },
+  { signal: '/headquarters', label: 'WILSY Headquarters' },
   { signal: '/crm', label: 'CRM' },
   { signal: '/sales', label: 'Sales Dashboard' },
   { signal: '/finance', label: 'Finance Dashboard' },
@@ -68,7 +68,7 @@ const WILSY_KNOWLEDGE_BASE_ROUTE_LABELS = Object.freeze([
 ]);
 const WILSY_KNOWLEDGE_BASE_DASHBOARD_LABELS = Object.freeze({
   FOUNDER_DASHBOARD: 'Founder Command',
-  EXECUTIVE_DASHBOARD: 'Executive Dashboard',
+  EXECUTIVE_DASHBOARD: 'WILSY Headquarters',
   CRM_DASHBOARD: 'CRM',
   SALES_DASHBOARD: 'Sales Dashboard',
   FINANCE_DASHBOARD: 'Finance Dashboard',

@@ -3,14 +3,17 @@
 /**
 /**
  * TITLE: WILSY OS Sovereign Dashboard Controller Certification.
- * VERSION: v1.1.0-WILSY-HEADQUARTERS-DASHBOARD-CERTIFICATION
+ * VERSION: v1.2.0-EXECUTIVE-ROUTING-RETIREMENT
  * AUTHORITY: Unit certification of authenticated EOS workspace presentation routing.
  * EPITOME: Verifies Headquarters is mounted only from the EOS-issued
  *          WILSY_HEADQUARTERS workspace identifier.
  * ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/client/tests/client/SovereignDashboardController.test.js
  * COLLABORATION / OWNERSHIP: WILSY OS Core Engineering.
  * CERTIFICATION / UPDATE DATE: 2026-11-08.
- * CHANGELOG: v1.1.0-WILSY-HEADQUARTERS-DASHBOARD-CERTIFICATION certifies the WILSY Headquarters dashboard mapping
+ * CHANGELOG: v1.2.0-EXECUTIVE-ROUTING-RETIREMENT updates owner, Legal-boundary,
+ *            system-fallback and historical-alias expectations after the
+ *            legacy Executive Dashboard retirement.
+ *            v1.1.0-WILSY-HEADQUARTERS-DASHBOARD-CERTIFICATION certifies the WILSY Headquarters dashboard mapping
  *            and mounted component without granting browser-side authority.
  * SECURITY / PRIVACY POSTURE: Client route selection is presentation only;
  *                             Python EOS remains the authority.
@@ -28,7 +31,6 @@ import { resolve } from 'node:path';
 import { describe, expect, it } from 'vitest';
 import {
   DASHBOARD_KEYS,
-  getExecutiveRoleLabel,
   hasFounderReturnAuthority,
   hasTenantModuleManifestAdmission,
   resolveDashboardRequestSignal,
@@ -51,8 +53,7 @@ describe('SovereignDashboardController EOS workspace contract', () => {
       },
       manualDashboardKey: 'CRM_DASHBOARD',
       dashboardIntent: 'LEGAL_DASHBOARD',
-    })).toBe(DASHBOARD_KEYS.EXECUTIVE);
-    expect(getExecutiveRoleLabel({ role: 'TENANT_OWNER' })).toBe('OWNER');
+    })).toBe(DASHBOARD_KEYS.HEADQUARTERS);
   });
 
   it('does not infer a dashboard from a role, founder permission or browser preference', () => {
@@ -83,7 +84,7 @@ describe('SovereignDashboardController EOS workspace contract', () => {
       .toBe(DASHBOARD_KEYS.LEGAL);
     for (const request of ['CRM_DASHBOARD', 'BILLING_HUB', 'HR_DASHBOARD', 'OPERATIONS_DASHBOARD', 'INTELLIGENCE_DASHBOARD', 'POS_DASHBOARD', 'FOUNDER_DASHBOARD']) {
       expect(resolveDashboardKey({ user, manualDashboardKey: request }))
-        .toBe(DASHBOARD_KEYS.EXECUTIVE);
+        .toBe(DASHBOARD_KEYS.HEADQUARTERS);
     }
   });
 
@@ -92,7 +93,7 @@ describe('SovereignDashboardController EOS workspace contract', () => {
       expect(resolveDashboardKey({
         user: { id: `principal-${role}`, role, workspaceId: 'EXECUTIVE_COMMAND_CENTRE' },
         manualDashboardKey: 'LEGAL_DASHBOARD',
-      })).toBe(DASHBOARD_KEYS.EXECUTIVE);
+      })).toBe(DASHBOARD_KEYS.HEADQUARTERS);
     }
   });
 
@@ -197,7 +198,7 @@ describe('SovereignDashboardController EOS workspace contract', () => {
     expect(resolveDashboardKey({
       user: { id: 'staff-2', role: 'SYSTEM_ADMIN', workspaceId: 'EXECUTIVE_COMMAND_CENTRE' },
       manualDashboardKey: 'SYSTEM_SERVICES_DASHBOARD',
-    })).toBe(DASHBOARD_KEYS.EXECUTIVE);
+    })).toBe(DASHBOARD_KEYS.HEADQUARTERS);
   });
 
   it('rejects a malformed or capability-free System Services workspace projection', () => {
@@ -211,7 +212,7 @@ describe('SovereignDashboardController EOS workspace contract', () => {
       expect(resolveDashboardKey({
         user: { id: 'staff-1', role: 'SYSTEM_ADMIN', workspaceId: 'EXECUTIVE_COMMAND_CENTRE', systemServicesWorkspace },
         manualDashboardKey: 'SYSTEM_SERVICES_DASHBOARD',
-      })).toBe(DASHBOARD_KEYS.EXECUTIVE);
+      })).toBe(DASHBOARD_KEYS.HEADQUARTERS);
     }
   });
 
@@ -227,11 +228,11 @@ describe('SovereignDashboardController EOS workspace contract', () => {
         workspaceId: 'EXECUTIVE_COMMAND_CENTRE',
       },
       manualDashboardKey: 'FOUNDER_DASHBOARD',
-    })).toBe(DASHBOARD_KEYS.EXECUTIVE);
+      })).toBe(DASHBOARD_KEYS.HEADQUARTERS);
   });
 
   it('keeps historical module aliases as labels, not workspace authority', () => {
-    expect(mapDashboardAlias('CEO_DASHBOARD')).toBe(DASHBOARD_KEYS.EXECUTIVE);
+    expect(mapDashboardAlias('CEO_DASHBOARD')).toBe(DASHBOARD_KEYS.HEADQUARTERS);
     expect(mapDashboardAlias('REVENUE_LEDGER')).toBe(DASHBOARD_KEYS.FINANCE);
     expect(mapDashboardAlias('SINGULARITY_MATRIX')).toBe(DASHBOARD_KEYS.FOUNDER);
     expect(mapDashboardAlias('LEGAL')).toBe(DASHBOARD_KEYS.LEGAL);
@@ -251,7 +252,7 @@ describe('SovereignDashboardController EOS workspace contract', () => {
 
 /* 
  * ARTIFACT: SovereignDashboardController.test.js
- * VERSION: v1.1.0-WILSY-HEADQUARTERS-DASHBOARD-CERTIFICATION
+ * VERSION: v1.2.0-EXECUTIVE-ROUTING-RETIREMENT
  * AUTHORITY BOUNDARY: unit certification of client workspace presentation routing
  * TENANT POSTURE: workspace identity is supplied by EOS; tests distinguish Headquarters and customer workspaces
  * FAIL-CLOSED POSTURE: no browser role or preference creates workspace authority

@@ -76,7 +76,7 @@ export default function SovereignMfaPortal({ onVerificationSuccess }) {
   return (
     <main style={pageStyle}>
       <section style={cardStyle} aria-labelledby="mfa-title">
-        <div style={brandRow}><ShieldCheck size={22} color="#d5b04f" /><span>WILSY OS</span></div>
+        <div style={brandRow}><img src="/brand/wilsy-os-master.png" alt="WILSY OS" style={{ width: 30, height: 30, objectFit: "contain", borderRadius: 6, background: "#fff" }} /><span>WILSY OS</span></div>
         <h1 id="mfa-title" style={titleStyle}>{setup ? 'Set up authenticator' : 'Verify your identity'}</h1>
         <p style={copyStyle}>{setup ? 'Scan this code with your authenticator app, then enter the six-digit confirmation code.' : 'Enter the 6-digit code from your authenticator app.'}</p>
         {tenant && <div style={tenantStyle}><span>{tenant.name}</span></div>}

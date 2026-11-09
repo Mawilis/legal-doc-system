@@ -1,7 +1,7 @@
 /* eslint-disable */
 /**
  * TITLE: WILSY OS Sovereign Dashboard Controller
- * VERSION: v18.9.0-OWNER-HEADQUARTERS-SESSION-ROUTING
+ * VERSION: v19.0.0-HEADQUARTERS-EXECUTIVE-ROUTING-RETIREMENT
  * AUTHORITY: Authenticated client dashboard routing and presentation composition.
  * EPITOME: Resolves authenticated WILSY company owners into the EOS-selected
  *          Headquarters workspace while preserving customer tenant routing.
@@ -15,7 +15,11 @@
  *                            Python EOS owns authorization and Legal Operations
  *                            truth; dashboard components own presentation only.
  * CERTIFICATION / UPDATE DATE: 2026-09-23
- * CHANGELOG: 2026-11-09 v18.9.0-OWNER-HEADQUARTERS-SESSION-ROUTING prevents a stale browser-persisted dashboard
+ * CHANGELOG: 2026-11-09 v19.0.0-HEADQUARTERS-EXECUTIVE-ROUTING-RETIREMENT retires
+ *            the legacy Executive Dashboard as an authenticated landing surface.
+ *            Executive aliases and persisted requests resolve to Headquarters;
+ *            the old component is no longer lazy-mounted.
+ *            2026-11-09 v18.9.0-OWNER-HEADQUARTERS-SESSION-ROUTING prevents a stale browser-persisted dashboard
  *            request from overriding the authenticated Tenant Owner's
  *            EOS-selected Headquarters landing after login or refresh. An
  *            explicit in-session navigation event remains presentation-only;
@@ -65,7 +69,6 @@ import WilsyGlobalCommandSearch from './WilsyGlobalCommandSearch';
  */
 const FounderDashboard = React.lazy(() => import('./FounderDashboard'));
 const GeneralDashboard = React.lazy(() => import('./GeneralDashboard'));
-const ExecutiveDashboard = React.lazy(() => import('../executive/ExecutiveDashboard'));
 const WilsyHeadquartersWorkspace = React.lazy(() => import('../workspaces/WilsyHeadquartersWorkspace.jsx'));
 const COODashboard = React.lazy(() => import('../coo/COODashboard'));
 const CRMDashboard = React.lazy(() => import('../crm/CRMDashboard'));
@@ -133,7 +136,7 @@ export const hasTenantModuleManifestAdmission = (modules, dashboardKey) => {
 const DASHBOARD_LABELS = Object.freeze({
   [DASHBOARD_KEYS.FOUNDER]: 'Founder Dashboard',
   [DASHBOARD_KEYS.GENERAL]: 'Tenant Command Center',
-  [DASHBOARD_KEYS.EXECUTIVE]: 'Executive Dashboard',
+  [DASHBOARD_KEYS.EXECUTIVE]: 'WILSY Headquarters',
   [DASHBOARD_KEYS.HEADQUARTERS]: 'WILSY Headquarters',
   [DASHBOARD_KEYS.COO]: 'COO Operations Dashboard',
   [DASHBOARD_KEYS.CRM]: 'CRM Command Center',
@@ -149,11 +152,11 @@ const DASHBOARD_LABELS = Object.freeze({
 });
 
 const DASHBOARD_ALIASES = Object.freeze({
-  BOARDROOM_HUD: DASHBOARD_KEYS.EXECUTIVE,
-  CEO_DASHBOARD: DASHBOARD_KEYS.EXECUTIVE,
-  EXECUTIVE: DASHBOARD_KEYS.EXECUTIVE,
-  EXECUTIVE_DASHBOARD: DASHBOARD_KEYS.EXECUTIVE,
-  EXECUTIVE_OVERSIGHT: DASHBOARD_KEYS.EXECUTIVE,
+  BOARDROOM_HUD: DASHBOARD_KEYS.HEADQUARTERS,
+  CEO_DASHBOARD: DASHBOARD_KEYS.HEADQUARTERS,
+  EXECUTIVE: DASHBOARD_KEYS.HEADQUARTERS,
+  EXECUTIVE_DASHBOARD: DASHBOARD_KEYS.HEADQUARTERS,
+  EXECUTIVE_OVERSIGHT: DASHBOARD_KEYS.HEADQUARTERS,
   FOUNDER: DASHBOARD_KEYS.FOUNDER,
   FOUNDER_DASHBOARD: DASHBOARD_KEYS.FOUNDER,
   HOME: DASHBOARD_KEYS.FOUNDER,
@@ -385,6 +388,7 @@ export const normalizeDashboardToken = (value = '') => (
 export const mapDashboardAlias = (value = '') => {
   const token = normalizeDashboardToken(value);
   if (!token) return '';
+  if (token === DASHBOARD_KEYS.EXECUTIVE) return DASHBOARD_KEYS.HEADQUARTERS;
   if (Object.values(DASHBOARD_KEYS).includes(token)) return token;
   return DASHBOARD_ALIASES[token] || '';
 };
@@ -450,7 +454,7 @@ export const hasFounderReturnAuthority = ({ user = {}, role = '' } = {}) => {
  * @description Resolves canonical dashboard key from override, intent, role and tenant.
  */
 const WORKSPACE_DASHBOARD_MAP = Object.freeze({
-  EXECUTIVE_COMMAND_CENTRE: DASHBOARD_KEYS.EXECUTIVE,
+  EXECUTIVE_COMMAND_CENTRE: DASHBOARD_KEYS.HEADQUARTERS,
   WILSY_HEADQUARTERS: DASHBOARD_KEYS.HEADQUARTERS,
   TENANT_ADMINISTRATION: DASHBOARD_KEYS.GENERAL,
   AUDIT_REPORTING: DASHBOARD_KEYS.GENERAL,
@@ -547,13 +551,6 @@ export const readRequestedDashboardFromStorage = () => {
 export const getDashboardDisplayName = (dashboardKey = DASHBOARD_KEYS.GENERAL) => (
   DASHBOARD_LABELS[dashboardKey] || DASHBOARD_LABELS[DASHBOARD_KEYS.GENERAL]
 );
-
-export const getExecutiveRoleLabel = (user = {}) => {
-  const roleToken = normalizeDashboardToken(user.role || user.accountRole || user.tenantRole);
-  if (['CEO', 'FOUNDER', 'OMEGA', 'SUPER_ADMIN', 'SUPERADMIN', 'FOUNDER_ARCHITECT'].includes(roleToken)) return 'CEO';
-  if (roleToken === 'TENANT_OWNER' || roleToken === 'OWNER') return 'OWNER';
-  return roleToken || 'EXECUTIVE';
-};
 
 // ─── Kennel bridge health probe ──────────────────────────────────────────────
 
@@ -993,14 +990,6 @@ const SovereignDashboardController = ({ user: propUser, onLogout }) => {
     dashboardShard = <WilsyHeadquartersWorkspace />;
   } else if (dashboardKey === DASHBOARD_KEYS.FOUNDER) {
     dashboardShard = <FounderDashboard user={user} onSwitchDashboard={handleManualDashboardSwitch} />;
-  } else if (dashboardKey === DASHBOARD_KEYS.EXECUTIVE) {
-    dashboardShard = (
-      <ExecutiveDashboard
-        role={getExecutiveRoleLabel(user)}
-        user={user}
-        onSwitchDashboard={handleManualDashboardSwitch}
-      />
-    );
   } else if (dashboardKey === DASHBOARD_KEYS.COO) {
     dashboardShard = <COODashboard user={user} />;
   } else if (dashboardKey === DASHBOARD_KEYS.CRM) {
@@ -1308,7 +1297,7 @@ export default SovereignDashboardController;
 
 /**
  * ARTIFACT: SovereignDashboardController.jsx
- * VERSION: v18.9.0-OWNER-HEADQUARTERS-SESSION-ROUTING
+ * VERSION: v19.0.0-HEADQUARTERS-EXECUTIVE-ROUTING-RETIREMENT
  * AUTHORITY BOUNDARY: authenticated client dashboard routing and presentation composition only
  * TENANT POSTURE: EOS workspace projection selects Headquarters only for the canonical WILSY company tenant; APIs independently enforce tenant IAM
  * FAIL-CLOSED POSTURE: unknown workspaces do not manufacture access or cross-role fallback

@@ -1,7 +1,8 @@
+
 /* eslint-disable */
 /**
  * TITLE: WILSY OS Sovereign Application Root
- * VERSION: v20.2.3-GLOBAL-SEARCH-PLATFORM-HINT
+ * VERSION: v20.3.1-OFFICIAL-BRAND-ASSET
  * AUTHORITY: Wilsy OS Core Governance
  * EPITOME: Composes authenticated routing, exact tenant projection, legal
  *          admission release, and protected workspace presentation without
@@ -57,6 +58,7 @@ import { TenantProvider, useTenants } from './contexts/tenantContext';  // ✅ N
 import ErrorBoundary from './components/ErrorBoundary.jsx';
 import { Bell, CheckCircle2, ChevronDown, Home, Loader2, LogOut, Search, ShieldCheck, X } from 'lucide-react';
 import { broadcastTelemetry } from './utils/telemetryHelper.js';
+
 
 import SovereignLogin from './components/auth/SovereignLogin.jsx';
 import PasswordRecoveryRequestPortal from './components/auth/PasswordRecoveryRequestPortal.jsx';
@@ -120,90 +122,52 @@ const ProtectedTmsRoute = ({ user, children }) => {
  *          work visibility, notifications, and runtime health. This component
  *          renders only server-revalidated projections and never grants access.
  */
-const AuthenticatedGlobalChrome = ({ user, onLogout, children }) => {
+export const AuthenticatedGlobalChrome = ({ user, onLogout, children }) => {
   const navigate = useNavigate();
   const location = useLocation();
+  const { isAuthenticated, authStage, loading: authLoading } = useAuth();
   const [searchOpen, setSearchOpen] = useState(false);
   const [searchValue, setSearchValue] = useState('');
   const [userMenuOpen, setUserMenuOpen] = useState(false);
   const [notificationsOpen, setNotificationsOpen] = useState(false);
-  const [workCount, setWorkCount] = useState(null);
-  const [kernel, setKernel] = useState({ state: 'CHECKING', version: null });
+  const [unreadCount, setUnreadCount] = useState(null);
 
   const displayName = [user?.firstName, user?.lastName].filter(Boolean).join(' ')
     || user?.email
     || 'Authenticated user';
-  const roleLabel = String(user?.role || user?.systemServicesWorkspace?.role || 'Authorised role')
-    .replace(/[_-]+/g, ' ');
+  // Operating titles are presentation-only and must come from the authenticated
+  // session projection; never substitute an ACL role such as TENANT_OWNER.
+  const operatingTitle = user?.operatingTitle || user?.jobTitle || user?.displayTitle || 'Account';
+  const avatarUrl = user?.avatarUrl || user?.avatar_url || user?.profileImageUrl || null;
   const initials = (user?.firstName || user?.email || 'W').slice(0, 1).toUpperCase()
     + (user?.lastName || '').slice(0, 1).toUpperCase();
   const isSecureChannel = typeof window !== 'undefined'
     && window.location.protocol === 'https:';
-  const isMyWork = location.pathname === '/my-work';
+  const hasAuthenticatedSession = isAuthenticated && authStage === AUTH_STATES.AUTHENTICATED;
 
   useEffect(() => {
     let active = true;
-    const refresh = async () => {
+    const refreshUnreadCount = async () => {
       try {
-        const [healthResponse, statusResponse] = await Promise.all([
-          api.get('/kernel'),
-          api.get('/kernel/status'),
-        ]);
-        if (!active) return;
-        const health = healthResponse?.data || {};
-        const status = statusResponse?.data || {};
-        const components = status.components;
-        const componentStatesValid = components && typeof components === 'object'
-          && !Array.isArray(components)
-          && Object.values(components).every((value) => typeof value === 'string');
-        setKernel({
-          state: health.status === 'OPERATIONAL' && status.status === 'OPERATIONAL'
-            ? 'RESPONDING'
-            : 'DEGRADED',
-          version: typeof health.version === 'string' ? health.version : null,
-          components: componentStatesValid ? components : null,
-        });
+        const response = await api.get('/notifications/unread-count');
+        const payload = response?.data;
+        const count = payload?.unread_count;
+        if (!Number.isInteger(count) || count < 0) {
+          throw new Error('NOTIFICATION_UNREAD_COUNT_PROJECTION_INVALID');
+        }
+        if (active) setUnreadCount(count);
       } catch {
-        if (active) setKernel({ state: 'UNAVAILABLE', version: null });
+        // An unavailable or malformed projection is unknown, never zero.
+        if (active) setUnreadCount(null);
       }
     };
-    void refresh();
-    const interval = window.setInterval(refresh, 60000);
+    void refreshUnreadCount();
+    const interval = window.setInterval(refreshUnreadCount, 60000);
     return () => {
       active = false;
       window.clearInterval(interval);
     };
   }, []);
-
-  useEffect(() => {
-    if (!user?.tenantId || user?.systemServicesWorkspace) {
-      setWorkCount(null);
-      return undefined;
-    }
-    let active = true;
-    const refresh = async () => {
-      try {
-        const response = await api.get('/my-work');
-        const payload = response?.data;
-        if (
-          !payload
-          || payload.tenant_id !== user.tenantId
-          || !payload.summary
-          || !Number.isInteger(payload.summary.active_count)
-          || payload.summary.active_count < 0
-        ) throw new Error('MY_WORK_SUMMARY_PROJECTION_INVALID');
-        if (active) setWorkCount(payload.summary.active_count);
-      } catch {
-        if (active) setWorkCount(null);
-      }
-    };
-    void refresh();
-    const interval = window.setInterval(refresh, 60000);
-    return () => {
-      active = false;
-      window.clearInterval(interval);
-    };
-  }, [user?.tenantId, user?.id, user?.systemServicesWorkspace]);
 
   useEffect(() => {
     const handleShortcut = (event) => {
@@ -246,41 +210,49 @@ const AuthenticatedGlobalChrome = ({ user, onLogout, children }) => {
 
   return (
     <div className="min-h-screen bg-[#080f1d] text-slate-100">
-      <header className="sticky top-0 z-40 flex h-16 w-full items-center justify-between gap-3 border-b border-white/10 bg-[#0b1830]/95 px-4 shadow-lg shadow-black/10 backdrop-blur-xl sm:px-6">
-        <button type="button" aria-label="WILSY home" onClick={() => navigate('/headquarters')} className="flex min-w-[190px] items-center gap-3 text-left">
-          <span className="grid h-9 w-9 shrink-0 place-items-center rounded-lg bg-[#d7ad43] text-xl font-black text-[#081326]">W</span>
-          <span className="leading-tight">
-            <span className="block text-sm font-extrabold tracking-[0.2em] text-white">WILSY</span>
-            <span className="block text-[10px] tracking-wide text-slate-400">Build. Operate. Grow.</span>
+      <header className="sticky top-0 z-40 flex h-16 w-full items-center gap-4 border-b border-white/10 bg-[#0b1830]/95 px-4 shadow-lg shadow-black/10 backdrop-blur-xl sm:px-6">
+        <button type="button" aria-label="WILSY home" onClick={() => navigate('/headquarters')} className="flex w-[240px] shrink-0 items-center gap-2 text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#d7ad43] focus-visible:ring-offset-2 focus-visible:ring-offset-[#0b1830]">
+          <img src="/brand/wilsy-gold-emblem.png" alt="WILSY gold emblem" className="h-12 w-12 shrink-0 object-contain" />
+          <span className="min-w-0 leading-tight">
+
+
+            <span className="block text-lg font-semibold tracking-[0.025em] text-white">WILSY</span>
+            <span className="block whitespace-nowrap text-[10px] font-medium text-[#f0dca5]">Build. Operate. Grow.</span>
           </span>
         </button>
 
-        <button type="button" onClick={() => { setSearchOpen(true); setUserMenuOpen(false); setNotificationsOpen(false); }} aria-label="Open global search" className="hidden h-10 w-full max-w-[540px] items-center gap-3 rounded-full border border-white/10 bg-white/[0.055] px-4 text-left text-sm text-slate-400 transition hover:border-amber-300/40 hover:bg-white/[0.08] md:flex">
-          <Search size={16}/>
+        <button type="button" onClick={() => { setSearchOpen(true); setUserMenuOpen(false); setNotificationsOpen(false); }} aria-label="Open global search" className="mx-auto hidden h-10 min-w-0 max-w-[690px] flex-1 items-center gap-3 rounded-full border border-white/15 bg-white px-4 text-left text-sm text-[#435575] transition hover:border-[#d7ad43] hover:bg-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#d7ad43] focus-visible:ring-offset-2 focus-visible:ring-offset-[#0b1830] md:flex">
+          <Search size={16} className="text-[#435575]"/>
           <span className="flex-1">Search people, projects, tasks, or anything…</span>
-          <kbd className="rounded-md border border-white/10 bg-black/20 px-2 py-1 text-[10px] text-slate-400">⌘ K / Ctrl K</kbd>
+          <kbd className="rounded-md border border-slate-200 bg-slate-100 px-2 py-1 text-[10px] text-slate-500">⌘ K / Ctrl K</kbd>
         </button>
         <button type="button" onClick={() => setSearchOpen(true)} aria-label="Open global search" className="grid h-9 w-9 place-items-center rounded-full border border-white/10 text-slate-300 md:hidden"><Search size={17}/></button>
 
-        <div className="flex shrink-0 items-center gap-2 sm:gap-3">
-          <div title={isSecureChannel ? 'Authenticated session over HTTPS' : 'Authenticated session; transport is not HTTPS'} className={`flex items-center gap-2 rounded-full border px-2 py-2 text-[11px] font-medium sm:px-3 ${isSecureChannel ? 'border-emerald-400/20 bg-emerald-400/10 text-emerald-200' : 'border-white/10 bg-white/[0.04] text-slate-300'}`}>
-            <ShieldCheck size={15}/><span className="hidden sm:inline">{isSecureChannel ? 'Secure · Authenticated' : 'Authenticated'}</span>
-          </div>
+        <div className="flex min-w-[285px] shrink-0 items-center justify-end gap-2 sm:gap-3">
+          {hasAuthenticatedSession && !authLoading && (
+            <div role="status" aria-label={isSecureChannel ? 'Secure and authenticated' : 'Authenticated; secure transport not confirmed'} className={`flex items-center gap-2 rounded-full border px-2 py-2 text-[11px] font-medium sm:px-3 ${isSecureChannel ? 'border-emerald-400/20 bg-emerald-400/10 text-emerald-200' : 'border-emerald-400/25 bg-emerald-500/20 text-emerald-100'}`}>
+              <ShieldCheck size={15}/>
+              <span className="hidden sm:inline">{isSecureChannel ? 'Secure · Authenticated' : 'Authenticated'}</span>
+            </div>
+          )}
           <div className="relative">
-            <button type="button" aria-label="Notifications" aria-expanded={notificationsOpen} onClick={() => { setNotificationsOpen((value) => !value); setUserMenuOpen(false); }} className="relative grid h-10 w-10 place-items-center rounded-full text-slate-300 transition hover:bg-white/10"><Bell size={18}/></button>
+            <button type="button" aria-label={unreadCount === null ? 'Notifications; unread count unavailable' : `Notifications; ${unreadCount} unread`} aria-expanded={notificationsOpen} onClick={() => { setNotificationsOpen((value) => !value); setUserMenuOpen(false); }} className="relative grid h-10 w-10 place-items-center rounded-full text-slate-300 transition hover:bg-white/10">
+              <Bell size={18}/>
+              {unreadCount !== null && unreadCount > 0 && <span aria-label={`${unreadCount} unread notifications`} className="absolute -right-0.5 -top-0.5 grid min-h-4 min-w-4 place-items-center rounded-full border border-[#0b1830] bg-red-500 px-1 text-[9px] font-bold leading-4 text-white shadow-sm">{unreadCount > 99 ? '99+' : unreadCount}</span>}
+            </button>
             {notificationsOpen && (
               <div role="dialog" aria-label="Notifications" className="absolute right-0 top-12 z-50 w-[min(340px,calc(100vw-2rem))] rounded-2xl border border-white/10 bg-[#101d32] p-4 shadow-2xl">
                 <div className="flex items-center justify-between"><h2 className="font-semibold text-white">Notifications</h2><button type="button" aria-label="Close notifications" onClick={() => setNotificationsOpen(false)}><X size={16}/></button></div>
-                <p className="mt-3 text-sm leading-6 text-slate-300">The EOS notification projection is not connected to this workspace yet. Unread count and read actions are therefore unavailable.</p>
+                <p className="mt-3 text-sm leading-6 text-slate-300">{unreadCount === null ? 'Unread notification count is unavailable. No synthetic count is displayed.' : unreadCount === 0 ? 'You are all caught up.' : `${unreadCount} unread notification${unreadCount === 1 ? '' : 's'}.`} Notification details and read actions will appear when the authorised notification feed is connected.</p>
               </div>
             )}
           </div>
           <div className="relative">
             <button type="button" aria-label="Open user menu" aria-expanded={userMenuOpen} onClick={() => { setUserMenuOpen((value) => !value); setNotificationsOpen(false); }} className="flex items-center gap-2 rounded-full py-1 pl-1 pr-2 transition hover:bg-white/10">
-              <span className="grid h-8 w-8 place-items-center rounded-full border border-amber-300/30 bg-amber-300/15 text-xs font-bold text-amber-200">{initials}</span>
+              {avatarUrl ? <img src={avatarUrl} alt="" className="h-9 w-9 rounded-full border border-amber-300/30 object-cover" referrerPolicy="no-referrer" /> : <span className="grid h-9 w-9 place-items-center rounded-full border border-amber-300/30 bg-amber-300/15 text-xs font-bold text-amber-200">{initials}</span>}
               <span className="hidden max-w-[150px] text-left leading-tight xl:block">
                 <span className="block truncate text-xs font-semibold text-white">{displayName}</span>
-                <span className="block truncate text-[10px] capitalize text-slate-400">{roleLabel}</span>
+                <span className="block truncate text-[10px] text-slate-400">{operatingTitle}</span>
               </span>
               <ChevronDown size={14} className="hidden text-slate-400 xl:block"/>
             </button>
@@ -289,24 +261,17 @@ const AuthenticatedGlobalChrome = ({ user, onLogout, children }) => {
                 <div className="border-b border-white/10 px-2 pb-3">
                   <p className="font-semibold text-white">{displayName}</p>
                   <p className="mt-1 break-all text-xs text-slate-400">{user?.email || 'Email not provided by session'}</p>
-                  <p className="mt-2 text-xs capitalize text-amber-200">{roleLabel}</p>
+                  <p className="mt-2 text-xs text-amber-200">{operatingTitle}</p>
                 </div>
-                <p className="px-2 py-3 text-xs leading-5 text-slate-400">Profile and preferences are managed by the authenticated account workspace; a dedicated route is not yet connected here.</p>
-                <button type="button" role="menuitem" onClick={() => { setUserMenuOpen(false); void onLogout(); }} className="flex w-full items-center gap-2 rounded-lg px-2 py-2 text-left text-sm text-red-200 hover:bg-red-400/10"><LogOut size={15}/> Sign out</button>
+                <button type="button" role="menuitem" onClick={() => { setUserMenuOpen(false); navigate("/system-status"); }} className="w-full rounded-lg px-2 py-2 text-left text-sm text-slate-200 hover:bg-white/5">System status</button>
+                <button type="button" role="menuitem" disabled className="w-full cursor-not-allowed rounded-lg px-2 py-2 text-left text-sm text-slate-500" title="Profile route is not yet connected">Profile <span className="float-right text-[10px]">Unavailable</span></button>
+                <button type="button" role="menuitem" disabled className="w-full cursor-not-allowed rounded-lg px-2 py-2 text-left text-sm text-slate-500" title="Preferences route is not yet connected">Preferences <span className="float-right text-[10px]">Unavailable</span></button>
+                <button type="button" role="menuitem" onClick={() => { setUserMenuOpen(false); void onLogout(); }} className="mt-2 flex w-full items-center gap-2 rounded-lg border-t border-white/10 px-2 py-3 text-left text-sm text-red-200 hover:bg-red-400/10"><LogOut size={15}/> Sign out</button>
               </div>
             )}
           </div>
         </div>
       </header>
-
-      <div className="flex items-center justify-end gap-2 border-b border-white/5 bg-[#0b1628] px-4 py-2 text-[10px] text-slate-500 sm:px-6">
-        <span className={kernel.state === 'RESPONDING' ? 'text-emerald-300' : kernel.state === 'CHECKING' ? 'text-amber-200' : 'text-rose-300'}>
-          <span aria-hidden="true">●</span> {kernel.state === 'RESPONDING' ? 'EOS kernel API responding' : kernel.state === 'CHECKING' ? 'Checking EOS kernel…' : 'EOS kernel API unavailable'}
-        </span>
-        <span>·</span><span>{kernel.version ? 'Kernel v' + kernel.version : 'Version unavailable'}</span>
-        {isMyWork && workCount !== null && <span className="ml-2 rounded-full bg-amber-300 px-2 py-1 font-semibold text-[#081326]">{workCount} open</span>}
-        {isMyWork && workCount === null && <span className="ml-2 text-amber-200">Task count unavailable</span>}
-      </div>
 
       <div>{children}</div>
 
@@ -314,9 +279,9 @@ const AuthenticatedGlobalChrome = ({ user, onLogout, children }) => {
         <div className="fixed inset-0 z-[100] flex items-start justify-center bg-black/65 px-4 pt-[12vh] backdrop-blur-sm" onMouseDown={(event) => { if (event.target === event.currentTarget) setSearchOpen(false); }}>
           <section role="dialog" aria-modal="true" aria-labelledby="wilsy-global-search-title" className="w-full max-w-2xl overflow-hidden rounded-2xl border border-white/10 bg-[#101d32] shadow-2xl">
             <h2 id="wilsy-global-search-title" className="sr-only">Global search</h2>
-            <form onSubmit={submitSearch} className="flex items-center gap-3 border-b border-white/10 px-5 py-4">
+            <form onSubmit={submitSearch} className="flex items-center gap-3 border-b border-white/10 px-5 py-4 focus-within:ring-2 focus-within:ring-inset focus-within:ring-[#d7ad43]">
               <Search size={19} className="text-amber-300"/>
-              <input id="wilsy-global-search-input" value={searchValue} onChange={(event) => setSearchValue(event.target.value)} placeholder="Search people, projects, tasks, or anything…" className="min-w-0 flex-1 bg-transparent text-sm text-white outline-none placeholder:text-slate-500"/>
+              <input id="wilsy-global-search-input" value={searchValue} onChange={(event) => setSearchValue(event.target.value)} placeholder="Search people, projects, tasks, or anything…" className="min-w-0 flex-1 bg-transparent text-sm text-white outline-none placeholder:text-slate-500 focus-visible:outline-none"/>
               <kbd className="rounded border border-white/10 px-2 py-1 text-[10px] text-slate-400">ESC</kbd>
               <button type="button" aria-label="Close search" onClick={() => setSearchOpen(false)}><X size={17}/></button>
             </form>
@@ -334,7 +299,6 @@ const AuthenticatedGlobalChrome = ({ user, onLogout, children }) => {
     </div>
   );
 };
-
 
 /**
  * @function SovereignRouter

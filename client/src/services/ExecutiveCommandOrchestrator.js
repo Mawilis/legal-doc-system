@@ -20,7 +20,7 @@ const DEFAULT_BRAND_SECONDARY = '#56D69B';
 const DEFAULT_BRAND_SURFACE = '#030504';
 
 export const EXECUTIVE_FUNCTION_ROUTES = Object.freeze({
-  executive_dashboard: { route: '/executive', command: 'EXEC_OPEN_EXECUTIVE_OS', channel: 'Executive' },
+  executive_dashboard: { route: '/headquarters', command: 'EXEC_OPEN_HEADQUARTERS_WORKSPACE', channel: 'Workspace' },
   finance: { route: '/finance', command: 'EXEC_OPEN_FINANCE', channel: 'Finance' },
   billing: { route: '/billing', command: 'EXEC_OPEN_BILLING', channel: 'Finance' },
   hr: { route: '/hr', command: 'EXEC_OPEN_HR', channel: 'People' },

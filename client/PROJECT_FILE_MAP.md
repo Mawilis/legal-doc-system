@@ -359,9 +359,6 @@ Generated on: Sat Jul 25 08:22:57 UTC 2026
 │   │   │   └── DataDashboard.jsx
 │   │   ├── engineering
 │   │   │   └── EngineeringDashboard.jsx
-│   │   ├── executive
-│   │   │   ├── ExecutiveDashboard.jsx
-│   │   │   └── ExecutiveDashboard.module.css
 │   │   ├── finance
 │   │   │   └── FinanceDashboard.jsx
 │   │   ├── forms
@@ -885,7 +882,6 @@ Generated on: Sat Jul 25 08:22:57 UTC 2026
 | `./src/components/customer_success/CustomerSuccessDashboard.jsx` | CustomerSuccessDashboard.jsx | Production Ready |
 | `./src/components/data/DataDashboard.jsx` | DataDashboard.jsx | Production Ready |
 | `./src/components/engineering/EngineeringDashboard.jsx` | EngineeringDashboard.jsx | Production Ready |
-| `./src/components/executive/ExecutiveDashboard.jsx` | ExecutiveDashboard.jsx | Production Ready |
 | `./src/components/finance/FinanceDashboard.jsx` | FinanceDashboard.jsx | Production Ready |
 | `./src/components/forms/TenantOnboarding.jsx` | TenantOnboarding.jsx | Production Ready |
 | `./src/components/hr/HrDashboard.jsx` | HrDashboard.jsx | Production Ready |

@@ -7,6 +7,8 @@
  *          access to owner Operations/Intelligence queues.
  * TENANT BOUNDARY: One UUID-isolated synthetic tenant and a foreign unjoined tenant.
  * AUTHORITY BOUNDARY: EOS authorizes every request; browser navigation is presentation only.
+ * CHANGELOG: 2026-11-09 adds authenticated Headquarters landing, source-read,
+ *             and Operations handoff coverage after Executive Dashboard retirement.
  */
 
 import fs from 'node:fs';
@@ -418,6 +420,40 @@ test('My Work remains usable on a narrow authenticated viewport', async ({ brows
       document: document.documentElement.scrollWidth,
     }));
     expect(dimensions.document).toBeLessThanOrEqual(dimensions.viewport + 1);
+  } finally {
+    await context.close();
+  }
+});
+
+test('Tenant Owner Headquarters is the authenticated daily workspace entry', async ({ browser }) => {
+  const { context, page, browserErrors } = await openAuthenticated(browser, 'tenant_owner');
+  try {
+    const myWorkResponse = page.waitForResponse(response => (
+      new URL(response.url()).pathname === '/api/my-work'
+      && response.request().method() === 'GET'
+    ));
+    await page.goto('/headquarters');
+    expect((await myWorkResponse).status()).toBe(200);
+    await expect(page.getByRole('heading', { name: 'WILSY Headquarters' })).toBeVisible();
+    await expect(page.getByRole('heading', { name: 'My Work — attention snapshot' })).toBeVisible();
+    await expect(page.getByText('This landing page does not invent headcount, revenue, customer totals, uptime or project progress.')).toBeVisible();
+
+    const workforceResponse = page.waitForResponse(response => (
+      new URL(response.url()).pathname === '/api/hr/workforce'
+      && response.request().method() === 'GET'
+    ));
+    await page.getByRole('button', { name: 'Organisation & People' }).click();
+    expect((await workforceResponse).status()).toBe(200);
+    await expect(page.getByRole('heading', { name: 'Organisation and workforce' })).toBeVisible();
+
+    const operationsResponse = page.waitForResponse(response => (
+      new URL(response.url()).pathname === '/api/tenant-modules/operations/workspace'
+      && response.request().method() === 'GET'
+    ));
+    await page.getByRole('button', { name: 'Operations', exact: true }).first().click();
+    expect((await operationsResponse).status()).toBe(200);
+    await expect(page.getByRole('main', { name: 'Operations OS' }).getByRole('heading', { name: 'Operations OS' })).toBeVisible();
+    expect(browserErrors, browserErrors.join('\n')).toEqual([]);
   } finally {
     await context.close();
   }

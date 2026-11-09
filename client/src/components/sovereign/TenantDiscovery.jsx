@@ -28,7 +28,6 @@ import { AlertCircle, ArrowRight, Loader2 } from 'lucide-react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { useAuth } from '../../contexts/authContext.jsx';
 import TenantIdentityCard from '../auth/TenantIdentityCard.jsx';
-import wilsyBrandAsset from '../../assets/logo/wilsy-icon.svg';
 
 export default function TenantDiscovery({ savedTenant }) {
   const navigate = useNavigate();
@@ -64,7 +63,7 @@ export default function TenantDiscovery({ savedTenant }) {
     <main style={pageStyle}>
       <section style={cardStyle} aria-labelledby="discovery-title">
         <div style={platformBrandStyle}>
-          <img src={wilsyBrandAsset} alt="WILSY OS platform mark" style={platformMarkStyle} />
+          <img src="/brand/wilsy-os-master.png" alt="WILSY OS platform mark" style={platformMarkStyle} />
           <div style={brandCopyStyle}><strong>WILSY OS</strong><span>Institutional access</span></div>
         </div>
         <h1 id="discovery-title" style={titleStyle}>Secure Workspace Access</h1>

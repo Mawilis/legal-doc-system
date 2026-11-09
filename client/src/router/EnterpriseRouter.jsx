@@ -8,7 +8,7 @@
  * BIBLICAL WORTH BILLIONS COMPLIANCE:
  * "Let all things be done decently and in order." (1 Corinthians 14:40)
  * This router orchestrates every application surface (CRM, Legal, Knowledge,
- * Meetings, Repository, Projects, Client Onboarding, Executive Dashboard) 
+ * Meetings, Repository, Projects, Client Onboarding, WILSY Headquarters)
  * under a single Enterprise Runtime. Zero duplicate UI, zero local state fragmentation.
  * ============================================================================
  * COLLABORATION & AUDIT SIGN-OFF:
@@ -41,7 +41,7 @@ export const useEnterpriseRouter = () => {
  * @description Manages view transitions and surface mounting across the billion-dollar Wilsy OS ecosystem.
  * Ensures zero duplicate components and runtime-driven state synchronization.
  */
-export const EnterpriseRouter = ({ initialView = 'executive_dashboard' }) => {
+export const EnterpriseRouter = ({ initialView = 'headquarters' }) => {
   const [activeView, setActiveView] = useState(initialView);
   const [surfaceTelemetry, setSurfaceTelemetry] = useState({
     connectedSurfaces: 8,
@@ -93,8 +93,8 @@ export const EnterpriseRouter = ({ initialView = 'executive_dashboard' }) => {
                 Executive Surfaces
               </div>
               <NavItem 
-                id="executive_dashboard" 
-                label="Executive Dashboard" 
+                id="headquarters"
+                label="WILSY Headquarters"
                 active={activeView} 
                 onClick={navigate} 
               />

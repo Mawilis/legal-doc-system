@@ -131,10 +131,10 @@ const industryLoaders = {
 
 const roleLoaders = {
   // Executive & Management
-  executive: () => lazy(() => import('../components/executive/ExecutiveDashboard')),
-  ceo: () => lazy(() => import('../components/executive/ExecutiveDashboard')),
-  cto: () => lazy(() => import('../components/executive/ExecutiveDashboard')),
-  coo: () => lazy(() => import('../components/executive/ExecutiveDashboard')),
+  executive: () => lazy(() => import('../components/workspaces/WilsyHeadquartersWorkspace.jsx')),
+  ceo: () => lazy(() => import('../components/workspaces/WilsyHeadquartersWorkspace.jsx')),
+  cto: () => lazy(() => import('../components/workspaces/WilsyHeadquartersWorkspace.jsx')),
+  coo: () => lazy(() => import('../components/workspaces/WilsyHeadquartersWorkspace.jsx')),
   // Finance
   finance_manager: () => lazy(() => import('../components/finance/FinanceDashboard')),
   cfo: () => lazy(() => import('../components/finance/FinanceDashboard')),

@@ -1,11 +1,44 @@
-import React, { useEffect, useState } from 'react';
+/**
+ * TITLE: WILSY OS Headquarters authenticated executive workspace
+ * VERSION: v1.9.0-HEADQUARTERS-TENANT-IDENTITY
+ * AUTHORITY: WILSY EOS client projection; Python EOS remains the business authority
+ * EPITOME: Presents the authenticated company operating plane and a source-backed
+ *          My Work snapshot without inventing enterprise metrics or commands.
+ * ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/client/src/components/workspaces/WilsyHeadquartersWorkspace.jsx
+ * COLLABORATION / OWNERSHIP: WILSY EOS frontend projection consuming /api/my-work
+ * CERTIFICATION / UPDATE DATE: 2026-11-09
+ * CHANGELOG: v1.9.0 projects the server-certified active tenant label into
+ *            Headquarters chrome with an explicit neutral fallback when the
+ *            authenticated tenant projection is unavailable.
+ *            v1.8.0 adds an authenticated handoff into the canonical HR
+ *            operating suite so hiring and workforce commands remain owned by
+ *            the existing HR surface and its EOS authorization boundaries.
+ *            v1.7.0 adds explicit refresh controls for the My Work and HR
+ *            requisition projections so daily users can request a fresh
+ *            server read without inventing local state or commands.
+ *            v1.6.0 projects the authenticated server-validated operator name
+ *            and business role into the Headquarters chrome without treating
+ *            browser presentation as authorization.
+ * COMPLIANCE: POPIA section 19, GDPR Article 32, SOC 2 CC7.2
+ * SECURITY / PRIVACY POSTURE: Uses the authenticated API client and renders only
+ *                             the caller's independently authorized work summary.
+ * TENANT BOUNDARY: Inherited from the authenticated workspace and /api/my-work.
+ * AUTHORITY BOUNDARY: Read-only projection; source services own all commands.
+ * FINANCIAL AUTHORITY BOUNDARY: No financial, settlement, or release authority.
+ */
+import React, { lazy, Suspense, useContext, useEffect, useState } from 'react';
+import AuthContext from '../../contexts/authContext.jsx';
 import api from '../../services/api.js';
+import { useKennelHealth } from '../../hooks/useKennelHealth.js';
 import {
   ArrowUpRight, BriefcaseBusiness, Building2, CheckCircle2, ChevronRight,
   CircleAlert, Code2, FileText, Globe2, Headphones, LockKeyhole, RefreshCw,
-  ShieldCheck, Users, Wallet,
+  Users, Wallet,
 } from 'lucide-react';
 import MyWorkWorkspace from './MyWorkWorkspace.jsx';
+import TenantModuleWorkspace from '../os/TenantModuleWorkspace.jsx';
+
+const HRDashboard = lazy(() => import('../hr/HrDashboard.jsx'));
 
 const departments = [
   { id: 'engineering', label: 'Engineering', icon: Code2, description: 'Product delivery, repository activity, releases and CI evidence.' },
@@ -38,6 +71,8 @@ function SourceBoundary({ title, description }) {
 }
 
 export default function WilsyHeadquartersWorkspace() {
+  const auth = useContext(AuthContext) || {};
+    const authUser = auth.user || {};
   const [section, setSection] = useState('overview');
   const [showMyWork, setShowMyWork] = useState(false);
   const [workforce, setWorkforce] = useState(null);
@@ -46,17 +81,62 @@ export default function WilsyHeadquartersWorkspace() {
   const [workforceSearch, setWorkforceSearch] = useState('');
   const [workforceOffset, setWorkforceOffset] = useState(0);
   const [workforceRefresh, setWorkforceRefresh] = useState(0);
+  const [requisitions, setRequisitions] = useState(null);
+  const [requisitionsLoading, setRequisitionsLoading] = useState(false);
+  const [requisitionsError, setRequisitionsError] = useState('');
+  const [requisitionsRefresh, setRequisitionsRefresh] = useState(0);
+  const kennelHealth = useKennelHealth({ pollInterval: 60000 });
+  const [myWorkSnapshot, setMyWorkSnapshot] = useState(null);
+  const [myWorkLoading, setMyWorkLoading] = useState(false);
+  const [myWorkError, setMyWorkError] = useState('');
+  const [myWorkRefresh, setMyWorkRefresh] = useState(0);
   useEffect(() => {
-    if (section !== 'people') return undefined;
+    if (section !== 'overview' || showMyWork) return undefined;
+    let current = true;
+    setMyWorkLoading(true);
+    setMyWorkError('');
+    api.get('/my-work', { forceNetworkRetry: true })
+      .then((response) => {
+        const payload = response?.data;
+        const summary = payload?.summary;
+        const asOf = payload?.as_of ? new Date(payload.as_of) : null;
+        if (
+          !payload
+          || !summary
+          || typeof summary !== 'object'
+          || !Number.isInteger(summary.active_count)
+          || !Number.isInteger(summary.overdue_count)
+          || !summary.source_counts
+          || typeof summary.source_counts !== 'object'
+          || !asOf
+          || Number.isNaN(asOf.getTime())
+        ) {
+          throw new Error('MY_WORK_SUMMARY_INVALID');
+        }
+        if (current) setMyWorkSnapshot(payload);
+      })
+      .catch((error) => {
+        if (current) {
+          setMyWorkSnapshot(null);
+          setMyWorkError(error?.response?.data?.detail || error?.message || 'MY_WORK_UNAVAILABLE');
+        }
+      })
+      .finally(() => {
+        if (current) setMyWorkLoading(false);
+      });
+    return () => { current = false; };
+  }, [section, showMyWork, myWorkRefresh]);
+  useEffect(() => {
+    if (section !== 'people' && section !== 'overview') return undefined;
     let current = true;
     setWorkforceLoading(true);
     setWorkforceError('');
     const query = workforceSearch.trim();
     api.get('/hr/workforce', {
       params: {
-        limit: 50,
-        offset: workforceOffset,
-        ...(query.length >= 2 ? { q: query } : {}),
+        limit: section === 'overview' ? 1 : 50,
+        offset: section === 'overview' ? 0 : workforceOffset,
+        ...(section === 'people' && query.length >= 2 ? { q: query } : {}),
       },
       forceNetworkRetry: true,
     })
@@ -74,20 +154,34 @@ export default function WilsyHeadquartersWorkspace() {
       });
     return () => { current = false; };
   }, [section, workforceSearch, workforceOffset, workforceRefresh]);
+  useEffect(() => {
+    if (section !== 'hiring') return undefined;
+    let current = true;
+    setRequisitionsLoading(true);
+    setRequisitionsError('');
+    api.get('/hr/headcount-requisitions', { forceNetworkRetry: true })
+      .then((response) => {
+        const payload = response?.data;
+        if (!payload || !Array.isArray(payload.items) || !payload.generated_at) {
+          throw new Error('HEADCOUNT_REQUISITIONS_INVALID');
+        }
+        if (current) setRequisitions(payload);
+      })
+      .catch((error) => {
+        if (current) {
+          setRequisitions(null);
+          setRequisitionsError(error?.response?.data?.detail || error?.message || 'HEADCOUNT_REQUISITIONS_UNAVAILABLE');
+        }
+      })
+      .finally(() => {
+        if (current) setRequisitionsLoading(false);
+      });
+    return () => { current = false; };
+  }, [section, requisitionsRefresh]);
   const selectedDepartment = departments.find((item) => item.id === section);
 
   return (
     <main className="min-h-screen bg-[#080f1d] text-slate-100">
-      <header className="sticky top-0 z-20 flex flex-wrap items-center justify-between gap-4 border-b border-white/10 bg-[#0b1830]/95 px-5 py-4 backdrop-blur">
-        <button onClick={() => { setSection('overview'); setShowMyWork(false); }} className="flex items-center gap-3 text-left">
-          <span className="grid h-10 w-10 place-items-center rounded-xl bg-amber-400 text-xl font-black text-[#081326]">W</span>
-          <span><span className="block text-sm font-bold tracking-[0.18em]">WILSY</span><span className="block text-[10px] uppercase tracking-[0.18em] text-slate-400">Headquarters</span></span>
-        </button>
-        <div className="flex items-center gap-2 rounded-full border border-emerald-400/20 bg-emerald-400/10 px-3 py-2 text-xs text-emerald-200">
-          <ShieldCheck size={15} /> Authenticated workspace
-        </div>
-      </header>
-
       <div className="mx-auto grid max-w-[1600px] lg:grid-cols-[250px_minmax(0,1fr)]">
         <aside className="border-b border-white/10 p-4 lg:min-h-[calc(100vh-73px)] lg:border-b-0 lg:border-r">
           <p className="px-3 pb-3 pt-2 text-[10px] font-semibold uppercase tracking-[0.2em] text-slate-500">Company operating plane</p>
@@ -105,6 +199,7 @@ export default function WilsyHeadquartersWorkspace() {
             <div className="mb-1 flex items-center gap-2 text-slate-200"><LockKeyhole size={14}/> Authority boundary</div>
             WILSY company records and each customer business remain separately authorised and tenant-isolated.
           </div>
+          <RuntimeHealthFooter health={kennelHealth}/>
         </aside>
 
         <div className="min-w-0 p-4 sm:p-6 lg:p-9">
@@ -125,12 +220,16 @@ export default function WilsyHeadquartersWorkspace() {
                 </div>
               </section>
 
+              <ExecutiveKpiStrip myWorkSnapshot={myWorkSnapshot} workforce={section === 'overview' ? workforce : null}/>
+
               <div className="mt-6 grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
                 <ActionCard title="Daily execution" detail="Authorised tasks and source-owned completion" onClick={() => setShowMyWork(true)} icon={CheckCircle2}/>
                 <ActionCard title="People & workforce" detail="Employee records, hiring and onboarding" onClick={() => setSection('people')} icon={Users}/>
                 <ActionCard title="Product delivery" detail="Repositories, releases and CI evidence" onClick={() => setSection('engineering')} icon={Code2}/>
                 <ActionCard title="Business portfolio" detail="Separate customer businesses and workspaces" onClick={() => setSection('products')} icon={Globe2}/>
               </div>
+
+              <MyWorkSnapshot loading={myWorkLoading} error={myWorkError} snapshot={myWorkSnapshot} onOpen={() => setShowMyWork(true)} onRefresh={() => setMyWorkRefresh((value) => value + 1)}/>
 
               <div className="mt-8 grid gap-5 xl:grid-cols-[1.15fr_0.85fr]">
                 <section className="rounded-2xl border border-white/10 bg-[#101a2a] p-5">
@@ -212,13 +311,21 @@ export default function WilsyHeadquartersWorkspace() {
                   )}
                 </section>
               )}
-              <div className="mt-5 grid gap-3 sm:grid-cols-2"><ActionCard title="Hiring" detail="Approved headcount and requisitions" onClick={() => setSection('hiring')} icon={BriefcaseBusiness}/><ActionCard title="Employee onboarding" detail="Employment record, then separately governed identity and access admission" onClick={() => setSection('onboarding')} icon={Users}/></div>
+              <div className="mt-5 grid gap-3 sm:grid-cols-2 xl:grid-cols-3"><ActionCard title="Hiring" detail="Approved headcount and requisitions" onClick={() => setSection('hiring')} icon={BriefcaseBusiness}/><ActionCard title="Employee onboarding" detail="Employment record, then separately governed identity and access admission" onClick={() => setSection('onboarding')} icon={Users}/><ActionCard title="Open HR workspace" detail="Use the canonical governed workforce and hiring workflows" onClick={() => setSection('hr-workspace')} icon={ArrowUpRight}/></div>
             </>
-          ) : section === 'hiring' || section === 'onboarding' ? (
+          ) : section === 'hr-workspace' ? (
+            <Suspense fallback={<section role="status" className="rounded-2xl border border-white/10 bg-[#101a2a] p-6 text-sm text-amber-200">Loading the canonical HR workspace…</section>}>
+              <HRDashboard user={authUser}/>
+            </Suspense>
+          ) : section === 'hiring' ? (
+            <HeadcountRequisitionWorkspace loading={requisitionsLoading} error={requisitionsError} payload={requisitions} onRefresh={() => setRequisitionsRefresh((value) => value + 1)}/>
+          ) : section === 'onboarding' ? (
             <>
-              <PageHeading eyebrow="People lifecycle" title={section === 'hiring' ? 'Hiring & requisitions' : 'Employee onboarding'} subtitle="Hiring approval, employment records and identity admission are separate governed stages."/>
-              <SourceBoundary title={section === 'hiring' ? 'Hiring workflow not yet connected' : 'Employee onboarding workflow not yet connected'} description="No candidate, employee, payroll, account or access record is fabricated here. The workflow will be connected only after the HR command authority, approval chain, identity provisioning boundary and atomic audit evidence are certified."/>
+              <PageHeading eyebrow="People lifecycle" title="Employee onboarding" subtitle="Employment record, then separately governed identity and access admission."/>
+              <SourceBoundary title="Employee onboarding workflow not yet connected" description="No candidate, employee, payroll, account or access record is fabricated here. The workflow will be connected only after the HR command authority, approval chain, identity provisioning boundary and atomic audit evidence are certified."/>
             </>
+          ) : section === 'operations' ? (
+            <TenantModuleWorkspace moduleId="OPERATIONS" />
           ) : selectedDepartment ? (
             <>
               <PageHeading eyebrow="Department workspace" title={selectedDepartment.label} subtitle={selectedDepartment.description}/>
@@ -254,3 +361,146 @@ function ActionCard({title,detail,onClick,icon:Icon}) {
 function StatusLine({label,state,good=false}) {
   return <div className="flex items-start justify-between gap-3 border-b border-white/5 pb-3"><span className="text-slate-300">{label}</span><span className={'text-right text-xs ' + (good ? 'text-emerald-300' : 'text-amber-200')}>{state}</span></div>;
 }
+
+/**
+ * @description Renders the authenticated My Work read projection on Headquarters.
+ * @collaboration Consumes the existing /api/my-work response; source services own
+ *                assignment, completion, approval and confidential-record access.
+ * @institutional Prevents executive UI from presenting fabricated work or zeroes
+ *                when the authorized source is empty, stale, or unavailable.
+ * @param {{loading: boolean, error: string, snapshot: object|null, onOpen: Function, onRefresh: Function}} props
+ * @returns {JSX.Element}
+ */
+function MyWorkSnapshot({ loading, error, snapshot, onOpen, onRefresh }) {
+  const summary = snapshot?.summary;
+  const sourceCounts = summary?.source_counts || {};
+  const sourceCount = Object.keys(sourceCounts).length;
+  const freshness = snapshot?.as_of ? new Date(snapshot.as_of).toLocaleString() : null;
+  return (
+    <section className="mt-8 rounded-2xl border border-white/10 bg-[#101a2a] p-5" aria-labelledby="my-work-snapshot-heading">
+      <div className="flex flex-wrap items-start justify-between gap-3">
+        <div>
+          <p className="text-[10px] font-semibold uppercase tracking-[0.2em] text-amber-300">Authenticated read projection</p>
+          <h2 id="my-work-snapshot-heading" className="mt-1 text-lg font-semibold">My Work — attention snapshot</h2>
+          <p className="mt-1 text-sm text-slate-400">Only independently authorized source records are included. Commands remain with their owning services.</p>
+        </div>
+        <div className="flex flex-wrap gap-2">
+          <button onClick={onRefresh} className="inline-flex items-center gap-1 rounded-lg border border-white/15 px-3 py-2 text-xs text-slate-200">Refresh snapshot <RefreshCw size={13}/></button>
+          <button onClick={onOpen} className="inline-flex items-center gap-1 rounded-lg border border-white/15 px-3 py-2 text-xs text-amber-200">Open My Work <ArrowUpRight size={14}/></button>
+        </div>
+      </div>
+      {loading ? (
+        <p role="status" className="mt-5 rounded-xl border border-white/10 p-4 text-sm text-amber-200">Loading the authorized My Work projection…</p>
+      ) : error ? (
+        <div role="alert" className="mt-5 rounded-xl border border-red-400/20 bg-red-400/5 p-4">
+          <p className="font-medium text-red-200">My Work snapshot unavailable</p>
+          <p className="mt-1 text-sm text-slate-300">The source did not provide a valid projection. No zero-valued summary is substituted.</p>
+          <p className="mt-2 font-mono text-xs text-slate-500">{error}</p>
+        </div>
+      ) : snapshot ? (
+        <>
+          <div className="mt-5 grid gap-3 sm:grid-cols-3">
+            <MetricCard label="Active work" value={summary.active_count} detail="Authorized, non-terminal items" />
+            <MetricCard label="Overdue" value={summary.overdue_count} detail="Based on source due dates" />
+            <MetricCard label="Sources included" value={sourceCount} detail="Omitted sources are not treated as empty" />
+          </div>
+          <div className="mt-4 flex flex-wrap items-center gap-x-4 gap-y-2 text-xs text-slate-500">
+            {Object.entries(sourceCounts).map(([source, count]) => <span key={source}>{source}: {count}</span>)}
+            <span className="ml-auto">As of {freshness}</span>
+          </div>
+          {summary.active_count === 0 && <p className="mt-4 rounded-xl border border-white/10 p-4 text-sm text-slate-300">No active work was returned by the authorized sources at the recorded time.</p>}
+        </>
+      ) : (
+        <p className="mt-5 rounded-xl border border-amber-300/20 p-4 text-sm text-amber-100">The My Work source has not returned a certified snapshot.</p>
+      )}
+    </section>
+  );
+}
+
+function MetricCard({ label, value, detail }) {
+  return <div className="rounded-xl border border-white/10 bg-white/[0.025] p-4"><p className="text-xs text-slate-400">{label}</p><p className="mt-2 text-2xl font-semibold text-white">{value}</p><p className="mt-1 text-xs text-slate-500">{detail}</p></div>;
+}
+
+function ExecutiveKpiStrip({ myWorkSnapshot, workforce }) {
+  const myWorkSummary = myWorkSnapshot?.summary;
+  return (
+    <section className="mt-6 grid gap-3 sm:grid-cols-2 xl:grid-cols-4" aria-label="Executive KPI summary">
+      <MetricCard
+        label="My Work"
+        value={Number.isInteger(myWorkSummary?.active_count) ? myWorkSummary.active_count : 'Unavailable'}
+        detail={Number.isInteger(myWorkSummary?.overdue_count) ? `${myWorkSummary.overdue_count} overdue · source-backed` : 'Authorized source pending'}
+      />
+      <MetricCard label="Projects" value="Unavailable" detail="Project source not yet certified" />
+      <MetricCard label="Approvals" value="Unavailable" detail="Approval source not yet certified" />
+      <MetricCard
+        label="Team"
+        value={Number.isInteger(workforce?.total) ? workforce.total : 'Unavailable'}
+        detail={Number.isInteger(workforce?.total) ? 'Authorized HR directory total' : 'Authorized HR source pending'}
+      />
+    </section>
+  );
+}
+
+/**
+ * @description Presents tenant-scoped HR headcount requisitions from Python EOS.
+ * @collaboration Consumes GET /api/hr/headcount-requisitions; submit and decision
+ *                commands remain owned by the HR router and its IAM bindings.
+ * @institutional Makes the existing hiring planning authority useful from
+ *                Headquarters without implying employment, identity, or payroll truth.
+ * @param {{loading: boolean, error: string, payload: object|null, onRefresh: Function}} props
+ * @returns {JSX.Element}
+ */
+function HeadcountRequisitionWorkspace({ loading, error, payload, onRefresh }) {
+  return (
+    <>
+      <PageHeading eyebrow="People lifecycle" title="Hiring & requisitions" subtitle="Tenant-scoped headcount planning from the authorized HR registry. A requisition is not an employee, login, membership, capacity, payroll or IAM grant."/>
+      {loading ? (
+        <section role="status" className="rounded-2xl border border-white/10 bg-[#101a2a] p-6 text-sm text-amber-200">Loading authorized headcount requisitions…</section>
+      ) : error ? (
+        <section role="alert" className="rounded-2xl border border-red-400/20 bg-[#101a2a] p-6">
+          <h2 className="font-semibold text-red-200">Hiring source unavailable</h2>
+          <p className="mt-2 text-sm text-slate-300">The HR requisition registry did not return a valid projection. No empty list is substituted.</p>
+          <p className="mt-3 font-mono text-xs text-slate-500">{error}</p>
+        </section>
+      ) : (
+        <section className="rounded-2xl border border-white/10 bg-[#101a2a] p-5">
+          <div className="flex flex-wrap items-center justify-between gap-3">
+            <div><h2 className="text-lg font-semibold">Authorized headcount requisitions</h2><p className="mt-1 text-xs text-slate-400">Read-only projection; lifecycle commands remain with the HR service.</p></div>
+            <div className="flex items-center gap-3"><button onClick={onRefresh} className="inline-flex items-center gap-1 rounded-lg border border-white/15 px-3 py-2 text-xs text-slate-200">Refresh <RefreshCw size={13}/></button><span className="text-xs text-slate-400">{payload?.items?.length ?? 0} records</span></div>
+          </div>
+          {(payload?.items || []).length === 0 ? (
+            <p className="mt-5 rounded-xl border border-white/10 p-5 text-sm text-slate-300">No headcount requisitions were returned for the authorized tenant.</p>
+          ) : (
+            <div className="mt-4 divide-y divide-white/10">
+              {payload.items.map((item) => (
+                <article key={item.requisition_id} className="flex flex-wrap items-start justify-between gap-4 py-4">
+                  <div><h3 className="font-medium text-white">{item.position_title}</h3><p className="mt-1 text-sm text-slate-400">{item.department_id} · {item.employment_type} · {item.work_location}</p><p className="mt-1 text-xs text-slate-500">Requested headcount: {item.headcount} · Revision {item.revision}</p></div>
+                  <span className="rounded-full border border-amber-300/20 px-3 py-1 text-xs text-amber-200">{item.status}</span>
+                </article>
+              ))}
+            </div>
+          )}
+          {payload?.generated_at && <p className="mt-4 border-t border-white/10 pt-3 text-xs text-slate-500">Source generated at {new Date(payload.generated_at).toLocaleString()}</p>}
+        </section>
+      )}
+    </>
+  );
+}
+
+
+function RuntimeHealthFooter({ health }) {
+  const status = String(health?.status || 'UNKNOWN').toUpperCase();
+  const version = health?.version || 'Version unavailable';
+  const checked = health?.lastChecked ? new Date(health.lastChecked).toLocaleString() : 'Not checked yet';
+  return <div className="mt-4 border-t border-white/10 pt-4 text-xs text-slate-500"><div className="flex items-center justify-between gap-3"><span>WILSY OS runtime</span><span className={status === 'ONLINE' ? 'text-emerald-300' : 'text-amber-200'}>{status.toLowerCase()}</span></div><p className="mt-1">{version} · checked {checked}</p></div>;
+}
+
+/*
+ * ARTIFACT: WILSY OS Headquarters authenticated executive workspace
+ * VERSION: v1.9.0-HEADQUARTERS-TENANT-IDENTITY
+ * AUTHORITY BOUNDARY: Read-only client projection; Python EOS owns business truth.
+ * TENANT POSTURE: Authenticated tenant and principal scope are preserved.
+ * FAIL-CLOSED POSTURE: Invalid or unavailable source data is disclosed, never zeroed.
+ * FINANCIAL EXECUTION AUTHORITY: Kennel EOS exclusively; no financial command is exposed.
+ * END OF WILSY OS SOVEREIGN ARTIFACT
+ */

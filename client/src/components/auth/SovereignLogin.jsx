@@ -70,7 +70,6 @@ import { AlertCircle, ArrowLeft, Eye, EyeOff, Loader2 } from 'lucide-react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { AUTH_STATES, useAuth } from '../../contexts/authContext.jsx';
 import TenantIdentityCard from './TenantIdentityCard.jsx';
-import wilsyBrandAsset from '../../assets/logo/wilsy-icon.svg';
 
 export default function SovereignLogin({ onLoginSuccess }) {
   const navigate = useNavigate();
@@ -105,7 +104,7 @@ export default function SovereignLogin({ onLoginSuccess }) {
     <main style={pageStyle}>
       <section style={panelStyle} aria-labelledby="login-title" data-testid="login-panel" data-auth-stage={authStage}>
         <header style={brandRow}>
-          <img src={wilsyBrandAsset} alt="WILSY OS platform mark" style={platformMarkStyle} />
+          <img src="/brand/wilsy-os-master.png" alt="WILSY OS platform mark" style={platformMarkStyle} />
           <div style={brandCopyStyle}><strong>WILSY OS</strong><span>Institutional access</span></div>
         </header>
         <div style={headingStyle} data-testid="login-page-heading">

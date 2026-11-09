@@ -24,7 +24,7 @@ const WILSY_GLOBAL_KNOWLEDGE_BASE_ROUTE = '/knowledge-base/vault';
 const WILSY_COMMAND_K_ORIGIN_KEY = 'wilsy:command-k-origin';
 const WILSY_COMMAND_DASHBOARD_ORIGIN_LABELS = Object.freeze({
   FOUNDER_DASHBOARD: 'Founder Command',
-  EXECUTIVE_DASHBOARD: 'Executive Dashboard',
+  EXECUTIVE_DASHBOARD: 'WILSY Headquarters',
   CRM_DASHBOARD: 'CRM',
   SALES_DASHBOARD: 'Sales Dashboard',
   FINANCE_DASHBOARD: 'Finance Dashboard',
@@ -34,7 +34,7 @@ const WILSY_COMMAND_DASHBOARD_ORIGIN_LABELS = Object.freeze({
 });
 const WILSY_COMMAND_DASHBOARD_ORIGIN_ROUTES = Object.freeze({
   FOUNDER_DASHBOARD: '/founder',
-  EXECUTIVE_DASHBOARD: '/executive',
+  EXECUTIVE_DASHBOARD: '/headquarters',
   CRM_DASHBOARD: '/crm',
   SALES_DASHBOARD: '/sales',
   FINANCE_DASHBOARD: '/finance',
@@ -44,7 +44,7 @@ const WILSY_COMMAND_DASHBOARD_ORIGIN_ROUTES = Object.freeze({
 });
 const WILSY_COMMAND_ROUTE_ORIGIN_LABELS = Object.freeze([
   { signal: '/founder', label: 'Founder Command' },
-  { signal: '/executive', label: 'Executive Dashboard' },
+  { signal: '/headquarters', label: 'WILSY Headquarters' },
   { signal: '/crm', label: 'CRM' },
   { signal: '/sales', label: 'Sales Dashboard' },
   { signal: '/finance', label: 'Finance Dashboard' },
@@ -153,7 +153,7 @@ function openWilsyGlobalCommandRoute(command = {}, originContext = {}) {
 
 const WILSY_SEARCH_REGISTRY = Object.freeze([
   { id: 'founder', label: 'Founder Dashboard', type: 'Dashboard', dashboardKey: 'FOUNDER_DASHBOARD', route: '/founder', keywords: 'founder root omega sovereign admin command center', icon: Crown },
-  { id: 'executive', label: 'Executive Dashboard', type: 'Dashboard', dashboardKey: 'EXECUTIVE_DASHBOARD', route: '/executive', keywords: 'ceo executive boardroom arr kpi decision command', icon: LayoutDashboard },
+  { id: 'headquarters', label: 'WILSY Headquarters', type: 'Workspace', dashboardKey: 'WILSY_HEADQUARTERS_DASHBOARD', route: '/headquarters', keywords: 'ceo executive boardroom arr kpi decision command headquarters workspace', icon: LayoutDashboard },
   { id: 'hr', label: 'People and HR', type: 'Vertical System', dashboardKey: 'HR_DASHBOARD', route: '/hr', keywords: 'employees people payroll benefits performance time off recruitment', icon: Users },
   { id: 'crm', label: 'CRM and Customers', type: 'Vertical System', dashboardKey: 'CRM_DASHBOARD', route: '/crm', keywords: 'clients customers leads accounts deals contacts pipeline', icon: Building2 },
   { id: 'crm-operating-controls', label: 'CRM Operating Controls', type: 'Command', command: 'OPEN_CRM_OPERATING_CONTROLS', route: '/crm/setup', keywords: 'crm setup operating controls admin authority permissions roles profiles fields workflows automation audit evidence command plane', icon: Terminal },
