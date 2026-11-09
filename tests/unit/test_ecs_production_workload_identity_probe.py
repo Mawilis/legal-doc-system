@@ -1,11 +1,13 @@
 # TITLE: WILSY EOS Production ECS Workload Identity Probe Tests
-# VERSION: v1.0.3-ECS-PRODUCTION-CLUSTER-ARN-BINDING
+# VERSION: v1.0.4-ECS-PRODUCTION-TASK-METADATA-FIXTURE
 # AUTHORITY: Unit certification of production ECS identity-verification logic only.
 # EPITOME: Prove fail-closed metadata endpoint, task ARN, exact STS role and production boundary validation without contacting AWS.
 # ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/tests/unit/test_ecs_production_workload_identity_probe.py
 # COLLABORATION / OWNERSHIP: Wilsy OS Core Engineering; isolated unit certification.
 # CERTIFICATION OR UPDATE DATE: 2026-11-09
 # CHANGELOG:
+#   v1.0.4 supplies a valid cluster-bound task ARN in the missing-definition
+#   fixture so the assertion reaches the intended missing metadata guard.
 #   v1.0.3 verifies that the TaskARN resource path itself names the approved
 #   ECS cluster and contains a 32-character task identifier.
 #   v1.0.2 corrects the missing-task-metadata negative fixture so it omits
@@ -118,7 +120,7 @@ def test_task_metadata_requires_task_definition_identity():
             {
                 "TaskARN": (
                     "arn:aws:ecs:af-south-1:121014832643:"
-                    "task/cluster/task-id"
+                    "task/wilsy-eos-production/0123456789abcdef0123456789abcdef"
                 ),
             }
         )
