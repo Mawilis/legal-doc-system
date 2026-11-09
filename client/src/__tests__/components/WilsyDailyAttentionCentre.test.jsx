@@ -169,7 +169,7 @@ describe('WILSY daily attention centre', () => {
 
   it('expands governed work detail and delegates all commands to My Work', async () => {
     const { onOpenWork } = renderCentre();
-    fireEvent.click(await screen.findByRole('button', { name: /Review governed contract/ }));
+    fireEvent.click(await screen.findByRole('button', { name: 'Review governed contract', exact: true }));
     const dialog = screen.getByRole('dialog', { name: 'Daily attention centre' });
     expect(within(dialog).getByText(/Verify source evidence/)).toBeTruthy();
     fireEvent.click(within(dialog).getByRole('button', { name: 'Open in My Work' }));
