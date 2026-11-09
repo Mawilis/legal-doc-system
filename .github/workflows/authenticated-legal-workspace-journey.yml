@@ -26,6 +26,7 @@ on:
       - "client/tests/client/SovereignDashboardController.test.js"
       - "client/tests/client/App.legalAcceptanceBarrier.test.jsx"
       - "client/tests/contexts/authContext.authoritative.test.jsx"
+      - "client/tests/contexts/tenantContext.postMfa.test.jsx"
       - "client/tests/components/auth/TenantIdentityPremium.test.jsx"
       - ".github/workflows/authenticated-legal-workspace-journey.yml"
   workflow_dispatch:
@@ -65,6 +66,7 @@ jobs:
           tests/client/SovereignDashboardController.test.js
           tests/client/App.legalAcceptanceBarrier.test.jsx
           tests/contexts/authContext.authoritative.test.jsx
+          tests/contexts/tenantContext.postMfa.test.jsx
           src/__tests__/services/api.test.js
           tests/components/auth/TenantIdentityPremium.test.jsx
 
