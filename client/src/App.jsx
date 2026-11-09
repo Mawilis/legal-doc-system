@@ -1,7 +1,7 @@
 /* eslint-disable */
 /**
  * TITLE: WILSY OS Sovereign Application Root
- * VERSION: v20.2.3-GLOBAL-SEARCH-PLATFORM-HINT
+ * VERSION: v20.2.9-SINGLE-AUTHENTICATED-APP-BAR
  * AUTHORITY: Wilsy OS Core Governance
  * EPITOME: Composes authenticated routing, exact tenant projection, legal
  *          admission release, and protected workspace presentation without
@@ -13,6 +13,25 @@
  *                            legal-acceptance truth.
  * CERTIFICATION / UPDATE DATE: 2026-11-09
  * CHANGELOG:
+ *   v20.2.9-SINGLE-AUTHENTICATED-APP-BAR — Removes the redundant
+ *     app-wide status strip and redundant per-session kernel polling.
+ *     Work attention and HTTPS trust remain in the single authenticated bar;
+ *     system-wide health is not inferred from one kernel endpoint.
+ *   v20.2.8-AUTHORITATIVE-CAPACITY-CURRENTNESS — Invalidates attention and
+ *     Headquarters work projections across business-role, capacity and
+ *     workspace changes as well as principal/tenant changes.
+ *   v20.2.7-HEADQUARTERS-PRINCIPAL-SCOPE — Remounts Headquarters when
+ *     the authenticated tenant/principal changes, preventing prior-session
+ *     work projection display even within the same tenant.
+ *   v20.2.6-AUTHORISED-HEADQUARTERS-DAILY-EXECUTION — Passes only the
+ *     current authenticated tenant to the source-backed Headquarters brief;
+ *     no browser-derived business or financial authority is introduced.
+ *   v20.2.5-ATTENTION-SCOPE-CURRENTNESS — Scopes the work count to the
+ *     current authenticated tenant/principal and remounts attention state
+ *     across identity changes to avoid stale cross-session display.
+ *   v20.2.4-DAILY-ATTENTION-CENTRE — Replaces inert bell panel with
+ *     an interactive, tenant-scoped EOS My Work triage surface. Work totals
+ *     are never represented as notification unread receipts.
  *   v20.2.3-GLOBAL-SEARCH-PLATFORM-HINT — Displays both macOS and Windows
  *     keyboard hints while preserving the shared Meta/Ctrl+K command shortcut.
  *   v20.2.2-GLOBAL-CHROME-TRANSPORT-TRUST — Uses a neutral security-chip
@@ -23,8 +42,8 @@
  *     global top bar for protected routes, consuming the revalidated auth
  *     projection, EOS My Work summary and bounded kernel status/version.
  *     Search opens a global command surface with safe navigation shortcuts;
- *     notification state remains explicitly unavailable until an authorised
- *     EOS notification projection exists. No browser-derived authority is made.
+ *     the attention centre reads authorised EOS My Work data without claiming
+ *     unread notification state. No browser-derived authority is made.
  *   v20.1.1-ALL-PROTECTED-ROUTES-LOGOUT-PROPAGATION — Promotes the legal boundary
  *     from REQUIRED to COMPLETE only when LegalAcceptanceGate reports the
  *     server-confirmed COMPLETE state, so the protected runtime mounts in the
@@ -55,7 +74,7 @@ import { BrowserRouter as Router, Routes, Route, Navigate, useNavigate, useLocat
 import { AUTH_STATES, AuthProvider, useAuth } from './contexts/authContext.jsx';
 import { TenantProvider, useTenants } from './contexts/tenantContext';  // ✅ NEW IMPORT
 import ErrorBoundary from './components/ErrorBoundary.jsx';
-import { Bell, CheckCircle2, ChevronDown, Home, Loader2, LogOut, Search, ShieldCheck, X } from 'lucide-react';
+import { CheckCircle2, ChevronDown, Home, Loader2, LogOut, Search, ShieldCheck, X } from 'lucide-react';
 import { broadcastTelemetry } from './utils/telemetryHelper.js';
 
 import SovereignLogin from './components/auth/SovereignLogin.jsx';
@@ -72,6 +91,7 @@ import MyWorkWorkspace from './components/workspaces/MyWorkWorkspace.jsx';
 import WilsyHeadquartersWorkspace from './components/workspaces/WilsyHeadquartersWorkspace.jsx';
 import api from './services/api';
 import WilsyOSIntelligenceDockRuntime from './components/intelligence/WilsyOSIntelligenceDockRuntime.jsx';
+import WilsyDailyAttentionCentre from './components/chrome/WilsyDailyAttentionCentre.jsx';
 
 import { SovereignOrchestrator, useSovereignMesh } from './components/sovereign/SovereignOrchestrator.jsx';
 import { DataOrchestratorProvider, useSovereignData } from './components/sovereign/DataOrchestrator.jsx';
@@ -128,7 +148,7 @@ const AuthenticatedGlobalChrome = ({ user, onLogout, children }) => {
   const [userMenuOpen, setUserMenuOpen] = useState(false);
   const [notificationsOpen, setNotificationsOpen] = useState(false);
   const [workCount, setWorkCount] = useState(null);
-  const [kernel, setKernel] = useState({ state: 'CHECKING', version: null });
+  const [workCountScope, setWorkCountScope] = useState(null);
 
   const displayName = [user?.firstName, user?.lastName].filter(Boolean).join(' ')
     || user?.email
@@ -139,44 +159,12 @@ const AuthenticatedGlobalChrome = ({ user, onLogout, children }) => {
     + (user?.lastName || '').slice(0, 1).toUpperCase();
   const isSecureChannel = typeof window !== 'undefined'
     && window.location.protocol === 'https:';
-  const isMyWork = location.pathname === '/my-work';
-
-  useEffect(() => {
-    let active = true;
-    const refresh = async () => {
-      try {
-        const [healthResponse, statusResponse] = await Promise.all([
-          api.get('/kernel'),
-          api.get('/kernel/status'),
-        ]);
-        if (!active) return;
-        const health = healthResponse?.data || {};
-        const status = statusResponse?.data || {};
-        const components = status.components;
-        const componentStatesValid = components && typeof components === 'object'
-          && !Array.isArray(components)
-          && Object.values(components).every((value) => typeof value === 'string');
-        setKernel({
-          state: health.status === 'OPERATIONAL' && status.status === 'OPERATIONAL'
-            ? 'RESPONDING'
-            : 'DEGRADED',
-          version: typeof health.version === 'string' ? health.version : null,
-          components: componentStatesValid ? components : null,
-        });
-      } catch {
-        if (active) setKernel({ state: 'UNAVAILABLE', version: null });
-      }
-    };
-    void refresh();
-    const interval = window.setInterval(refresh, 60000);
-    return () => {
-      active = false;
-      window.clearInterval(interval);
-    };
-  }, []);
+  const currentWorkScope = [user?.tenantId, user?.id, user?.role, user?.workspaceId, user?.businessRole]
+    .map((part) => String(part || '')).join(':');
 
   useEffect(() => {
     if (!user?.tenantId || user?.systemServicesWorkspace) {
+      setWorkCountScope(null);
       setWorkCount(null);
       return undefined;
     }
@@ -192,9 +180,15 @@ const AuthenticatedGlobalChrome = ({ user, onLogout, children }) => {
           || !Number.isInteger(payload.summary.active_count)
           || payload.summary.active_count < 0
         ) throw new Error('MY_WORK_SUMMARY_PROJECTION_INVALID');
-        if (active) setWorkCount(payload.summary.active_count);
+        if (active) {
+          setWorkCountScope(currentWorkScope);
+          setWorkCount(payload.summary.active_count);
+        }
       } catch {
-        if (active) setWorkCount(null);
+        if (active) {
+          setWorkCountScope(null);
+          setWorkCount(null);
+        }
       }
     };
     void refresh();
@@ -203,7 +197,7 @@ const AuthenticatedGlobalChrome = ({ user, onLogout, children }) => {
       active = false;
       window.clearInterval(interval);
     };
-  }, [user?.tenantId, user?.id, user?.systemServicesWorkspace]);
+  }, [user?.tenantId, user?.id, user?.role, user?.workspaceId, user?.businessRole, user?.systemServicesWorkspace]);
 
   useEffect(() => {
     const handleShortcut = (event) => {
@@ -266,15 +260,16 @@ const AuthenticatedGlobalChrome = ({ user, onLogout, children }) => {
           <div title={isSecureChannel ? 'Authenticated session over HTTPS' : 'Authenticated session; transport is not HTTPS'} className={`flex items-center gap-2 rounded-full border px-2 py-2 text-[11px] font-medium sm:px-3 ${isSecureChannel ? 'border-emerald-400/20 bg-emerald-400/10 text-emerald-200' : 'border-white/10 bg-white/[0.04] text-slate-300'}`}>
             <ShieldCheck size={15}/><span className="hidden sm:inline">{isSecureChannel ? 'Secure · Authenticated' : 'Authenticated'}</span>
           </div>
-          <div className="relative">
-            <button type="button" aria-label="Notifications" aria-expanded={notificationsOpen} onClick={() => { setNotificationsOpen((value) => !value); setUserMenuOpen(false); }} className="relative grid h-10 w-10 place-items-center rounded-full text-slate-300 transition hover:bg-white/10"><Bell size={18}/></button>
-            {notificationsOpen && (
-              <div role="dialog" aria-label="Notifications" className="absolute right-0 top-12 z-50 w-[min(340px,calc(100vw-2rem))] rounded-2xl border border-white/10 bg-[#101d32] p-4 shadow-2xl">
-                <div className="flex items-center justify-between"><h2 className="font-semibold text-white">Notifications</h2><button type="button" aria-label="Close notifications" onClick={() => setNotificationsOpen(false)}><X size={16}/></button></div>
-                <p className="mt-3 text-sm leading-6 text-slate-300">The EOS notification projection is not connected to this workspace yet. Unread count and read actions are therefore unavailable.</p>
-              </div>
-            )}
-          </div>
+          <WilsyDailyAttentionCentre
+            key={currentWorkScope}
+            tenantId={user?.tenantId}
+            systemServicesWorkspace={Boolean(user?.systemServicesWorkspace)}
+            activeCount={workCountScope === currentWorkScope ? workCount : null}
+            open={notificationsOpen}
+            onToggle={() => { setNotificationsOpen((value) => !value); setUserMenuOpen(false); }}
+            onClose={() => setNotificationsOpen(false)}
+            onOpenWork={() => { setNotificationsOpen(false); navigate('/my-work'); }}
+          />
           <div className="relative">
             <button type="button" aria-label="Open user menu" aria-expanded={userMenuOpen} onClick={() => { setUserMenuOpen((value) => !value); setNotificationsOpen(false); }} className="flex items-center gap-2 rounded-full py-1 pl-1 pr-2 transition hover:bg-white/10">
               <span className="grid h-8 w-8 place-items-center rounded-full border border-amber-300/30 bg-amber-300/15 text-xs font-bold text-amber-200">{initials}</span>
@@ -298,15 +293,6 @@ const AuthenticatedGlobalChrome = ({ user, onLogout, children }) => {
           </div>
         </div>
       </header>
-
-      <div className="flex items-center justify-end gap-2 border-b border-white/5 bg-[#0b1628] px-4 py-2 text-[10px] text-slate-500 sm:px-6">
-        <span className={kernel.state === 'RESPONDING' ? 'text-emerald-300' : kernel.state === 'CHECKING' ? 'text-amber-200' : 'text-rose-300'}>
-          <span aria-hidden="true">●</span> {kernel.state === 'RESPONDING' ? 'EOS kernel API responding' : kernel.state === 'CHECKING' ? 'Checking EOS kernel…' : 'EOS kernel API unavailable'}
-        </span>
-        <span>·</span><span>{kernel.version ? 'Kernel v' + kernel.version : 'Version unavailable'}</span>
-        {isMyWork && workCount !== null && <span className="ml-2 rounded-full bg-amber-300 px-2 py-1 font-semibold text-[#081326]">{workCount} open</span>}
-        {isMyWork && workCount === null && <span className="ml-2 text-amber-200">Task count unavailable</span>}
-      </div>
 
       <div>{children}</div>
 
@@ -506,7 +492,7 @@ const SovereignRouter = () => {
       <Route path="/covenant" element={<LegalAcceptanceGate onComplete={() => navigate('/', { replace: true })} />} />
       <Route path="/headquarters" element={
         isAuthenticated && user && !systemServicesSession
-          ? <ErrorBoundary><WilsyHeadquartersWorkspace /></ErrorBoundary>
+          ? <ErrorBoundary><WilsyHeadquartersWorkspace key={[user.id, user.tenantId, user.role, user.workspaceId, user.businessRole].map((part) => String(part || '')).join(':')} tenantId={user.tenantId} /></ErrorBoundary>
           : <Navigate to="/" replace />
       } />
       <Route path="/my-work" element={
@@ -724,7 +710,7 @@ export default App;
 
 /**
  * ARTIFACT: client/src/App.jsx
- * VERSION: v20.2.3-GLOBAL-SEARCH-PLATFORM-HINT
+ * VERSION: v20.2.9-SINGLE-AUTHENTICATED-APP-BAR
  * AUTHORITY BOUNDARY: client route and protected-runtime composition only; Python EOS remains authentication, tenant and legal-acceptance authority
  * TENANT POSTURE: discovered tenant may choose login routing but cannot establish authenticated or protected scope
  * FAIL-CLOSED POSTURE: auth revalidation waits; unresolved legal status remains sealed; only server-confirmed legal COMPLETE mounts protected runtime
