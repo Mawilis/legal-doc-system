@@ -1,6 +1,6 @@
 /**
  * TITLE: WILSY OS Authenticated Daily Attention Centre
- * VERSION: v1.4.0-EOS-SOURCE-COVERAGE
+ * VERSION: v1.5.0-EXACT-SESSION-ATTENTION-COUNT-CURRENTNESS
  * AUTHORITY: Wilsy OS Core Governance
  * EPITOME: Interactive notification-bell entry to exact-tenant, authorised
  *          EOS My Work triage, with actionable navigation to source-owned
@@ -9,7 +9,12 @@
  * COLLABORATION / OWNERSHIP: Python EOS /api/my-work owns work visibility;
  *                            App.jsx owns authenticated chrome and navigation.
  * CERTIFICATION / UPDATE DATE: 2026-11-09
- * CHANGELOG: v1.4.0-EOS-SOURCE-COVERAGE uses the canonical projection contract
+ * CHANGELOG: v1.5.0-EXACT-SESSION-ATTENTION-COUNT-CURRENTNESS gives the
+ *            independently source-confirmed current global count precedence
+ *            over a formerly open panel's stale snapshot, clears stale closed
+ *            projections and revalidates open panels on source invalidation
+ *            via the same authenticated EOS work-read coordinator.
+ *            v1.4.0-EOS-SOURCE-COVERAGE uses the canonical projection contract
  *            to derive source options and empty-state wording from EOS coverage;
  *            no empty queue is routed automatically into HR.
  *            v1.3.0-CALENDAR-EXPLICIT-DISMISSAL makes the date view explicitly dismissible
@@ -37,13 +42,19 @@
  * FINANCIAL AUTHORITY BOUNDARY: Kennel EOS exclusively owns execution.
  */
 
-import React, { useEffect, useMemo, useRef, useState } from 'react';
+import React, { useContext, useEffect, useMemo, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 import {
   AlertTriangle, ArrowRight, Bell, CalendarDays, CheckCircle2,
   ChevronDown, Clock3, Grip, Pin, RefreshCw, Search, X,
 } from 'lucide-react';
 import api from '../../services/api.js';
+import AuthContext from '../../contexts/authContext.jsx';
+import {
+  currentUnifiedMyWorkScope,
+  readUnifiedMyWork,
+  subscribeUnifiedMyWork,
+} from '../../services/unifiedMyWorkSync.js';
 import {
   assertUnifiedMyWorkProjection,
   unifiedMyWorkSourceLabel,
@@ -115,6 +126,8 @@ export default function WilsyDailyAttentionCentre({
   onOpenWork,
   onOpenWorkforce,
 }) {
+  const auth = useContext(AuthContext);
+  const workScope = currentUnifiedMyWorkScope(auth, tenantId);
   const rootRef = useRef(null);
   const panelRef = useRef(null);
   const dragRef = useRef(null);
@@ -141,18 +154,36 @@ export default function WilsyDailyAttentionCentre({
   }, [tenantId, systemServicesWorkspace]);
 
   useEffect(() => {
-    if (!open) return undefined;
-    if (!tenantId || systemServicesWorkspace) {
+    if (!open) {
+      // A closed panel must not override a freshly verified global work count
+      // with its previous, potentially stale list or summary.
+      setProjection(null);
+      setStatus('IDLE');
+      return undefined;
+    }
+    if (!tenantId || systemServicesWorkspace || (auth && !workScope)) {
       setProjection(null);
       setStatus('UNAVAILABLE');
       return undefined;
     }
     let active = true;
+    const controller = new AbortController();
     setProjection(null);
     setStatus('LOADING');
-    api.get('/my-work', { forceNetworkRetry: true })
-      .then((response) => {
-        const verified = assertAttentionProjection(response?.data, tenantId);
+
+    // Authenticated production reads share the exact current session and
+    // source validator with global chrome. Isolated presentational fixtures
+    // without an AuthProvider retain their existing mocked read seam.
+    const request = workScope
+      ? readUnifiedMyWork(
+          workScope,
+          { tenantId, principalId: auth.user.id },
+          { signal: controller.signal, force: true },
+        )
+      : api.get('/my-work', { forceNetworkRetry: true })
+          .then((response) => assertAttentionProjection(response?.data, tenantId));
+    request
+      .then((verified) => {
         if (active) {
           setProjection(verified);
           setStatus('READY');
@@ -164,8 +195,18 @@ export default function WilsyDailyAttentionCentre({
           setStatus('UNAVAILABLE');
         }
       });
-    return () => { active = false; };
-  }, [open, tenantId, systemServicesWorkspace, refreshId]);
+    return () => {
+      active = false;
+      controller.abort();
+    };
+  }, [open, tenantId, systemServicesWorkspace, refreshId, workScope]);
+
+  useEffect(() => {
+    if (!open || !workScope) return undefined;
+    return subscribeUnifiedMyWork(workScope, () => {
+      setRefreshId((id) => id + 1);
+    });
+  }, [open, workScope]);
 
   useEffect(() => {
     if (!open) return undefined;
@@ -194,7 +235,11 @@ export default function WilsyDailyAttentionCentre({
   const sourceIds = projection?.sources_included || [];
   const sourceOptions = sourceIds.map((id) => [id, unifiedMyWorkSourceLabel(id)]);
   const sourceLabels = sourceOptions.map(([, label]) => label);
-  const verifiedCount = status === 'READY' ? projection.summary.active_count : activeCount;
+  // A previously opened panel's read cannot outrank current EOS source
+  // evidence received by the persistent global chrome.
+  const verifiedCount = validCount(activeCount)
+    ? activeCount
+    : open && status === 'READY' ? projection.summary.active_count : null;
   const badgeCount = validCount(verifiedCount) && verifiedCount > 0 ? verifiedCount : null;
   const dueTodayCount = items.filter((item) => dueToday(item.due_at)).length;
   const highCount = items.filter((item) => ['CRITICAL', 'HIGH'].includes(item.priority)).length;
@@ -578,7 +623,7 @@ function Stat({ label, value, urgent = false }) {
 
 /*
  * ARTIFACT: WilsyDailyAttentionCentre.jsx
- * VERSION: v1.4.0-EOS-SOURCE-COVERAGE
+ * VERSION: v1.5.0-EXACT-SESSION-ATTENTION-COUNT-CURRENTNESS
  * AUTHORITY BOUNDARY: Authenticated read-only EOS work triage.
  * TENANT POSTURE: Exact tenant; only EOS-included source coverage is rendered.
  * FAIL-CLOSED POSTURE: Invalid, denied or unavailable sources show no fabricated items.
