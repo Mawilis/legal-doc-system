@@ -1,14 +1,18 @@
 """WILSY OS selected-capacity platform-use acceptance authority certificate.
 
 TITLE: WILSY OS Selected-Capacity Legal Acceptance Forensic Certificate
-VERSION: v1.0.1-GLOBAL-ROLE-REVISION-LOCK
+VERSION: v1.1.0-AUTHENTICATED-WORKSPACE-ROLE-LOCK
 AUTHORITY: Wilsy OS Core Governance
 EPITOME: Selected Owner/Partner business-role currentness and exact principal
          scope are re-read from durable registries before legal obligations.
 ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/tests/unit/test_legal_acceptance_selected_capacity.py
 COLLABORATION / OWNERSHIP: LegalAcceptanceService, IAM identity and role registry.
 CERTIFICATION / UPDATE DATE: 2026-11-09
-CHANGELOG: v1.0.1-GLOBAL-ROLE-REVISION-LOCK uses an explicitly uncollected test fixture
+CHANGELOG: v1.1.0-AUTHENTICATED-WORKSPACE-ROLE-LOCK derives the selected workspace from the
+           canonical server projection instead of assuming the Founder owner
+           workspace for a synthetic customer tenant. Adds mismatch denial
+           and preserves exact signed session, role and revision assertions.
+           v1.0.1-GLOBAL-ROLE-REVISION-LOCK uses an explicitly uncollected test fixture
            constructor while certifying selected GLOBAL role currentness.
            v1.0.0-GLOBAL-ROLE-REVISION-LOCK verifies GLOBAL selected-capacity
            currentness, ownership obligations, revocations and legacy isolation.
@@ -26,6 +30,7 @@ import pytest
 
 from tools.eos.auth.identity import SovereignIdentity
 from tools.eos.auth.principal_status import PrincipalStatus
+from tools.eos.auth.workspace_bootstrap_projection import resolve_workspace_id
 from tools.eos.auth.tenant_business_role import TenantBusinessRoleStatus
 from tools.eos.auth.tenant_membership import TenantMembershipStatus
 from tools.eos.legal_operations.domain.legal_acceptance import LegalAgreementType
@@ -107,7 +112,7 @@ def identity(role: str, *, membership_revision: int = 6, capacity_revision: int 
         status=PrincipalStatus.ACTIVE,
         principal_scope="GLOBAL",
         session_reference="verified-global-session-reference",
-        workspace_id="WILSY_HEADQUARTERS" if role == "tenant_owner" else "LEGAL_PRACTICE",
+        workspace_id=resolve_workspace_id(role, tenant_id=TENANT),
         membership_revision=membership_revision,
         capacity_revision=capacity_revision,
     )
@@ -153,6 +158,15 @@ def test_stale_global_session_revisions_fail_closed(membership_revision, capacit
         )
 
 
+def test_selected_workspace_must_match_live_business_capacity():
+    service, _, capacities = build_service()
+    wrong = identity("tenant_owner")
+    wrong.workspace_id = "LEGAL_PRACTICE"
+    with pytest.raises(LegalAcceptanceServiceError, match="LEGAL_ACCEPTANCE_SELECTED_CAPACITY_STALE"):
+        service._resolve_business_role(principal(), identity=wrong)
+    assert capacities.selected_calls[0][2] == "tenant_owner"
+
+
 def test_revoked_exact_selected_capacity_cannot_reuse_active_other_capacity():
     service, _, capacities = build_service()
     capacities.current["tenant_owner"].status = TenantBusinessRoleStatus.REVOKED
@@ -195,7 +209,7 @@ def test_legacy_signed_admin_claim_does_not_expand_durable_tenant_role():
 
 
 # ARTIFACT: test_legal_acceptance_selected_capacity.py
-# VERSION: v1.0.1-GLOBAL-ROLE-REVISION-LOCK
+# VERSION: v1.1.0-AUTHENTICATED-WORKSPACE-ROLE-LOCK
 # AUTHORITY BOUNDARY: Synthetic currentness verification only.
 # TENANT POSTURE: Exact tenant scope and current revisions required.
 # FAIL-CLOSED POSTURE: Revoked, stale or ambiguous capacities never pass.
