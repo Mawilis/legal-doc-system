@@ -1,3 +1,24 @@
+/**
+ * TITLE: WILSY OS Authenticated My Work Workspace Tests
+ * VERSION: v1.1.0-ABORTABLE-MY-WORK-READS
+ * AUTHORITY: Wilsy OS Core Governance
+ * EPITOME: Certifies server-projected My Work rendering and source-owned
+ *          completion commands with cancellable current-scope reads.
+ * ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/client/src/__tests__/components/MyWorkWorkspace.test.jsx
+ * COLLABORATION / OWNERSHIP: MyWorkWorkspace.jsx, EOS /api/my-work and
+ *                            canonical source completion services.
+ * CERTIFICATION / UPDATE DATE: 2026-11-09
+ * CHANGELOG: v1.1.0-ABORTABLE-MY-WORK-READS requires My Work projections to
+ *            use an abortable authenticated GET while preserving source-owned
+ *            Legal, Operations, CRM and Intelligence completion routes.
+ *            v1.0.0-SOURCE-OWNED-MY-WORK-COMMANDS covered queue projection
+ *            and source command dispatch.
+ * COMPLIANCE: POPIA section 19; GDPR Article 32; SOC 2 CC7.2.
+ * SECURITY / PRIVACY POSTURE: Synthetic records and mocked transport only.
+ * TENANT BOUNDARY: Server-projected tenant and principal records only.
+ * AUTHORITY BOUNDARY: Only owning EOS source services may complete work.
+ * FINANCIAL AUTHORITY BOUNDARY: Kennel EOS exclusively.
+ */
 import React from 'react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { fireEvent, render, screen, waitFor } from '@testing-library/react';
@@ -61,13 +82,19 @@ describe('authenticated My Work workspace', () => {
     completeLegalWorkItem.mockResolvedValue({ work_item_id: 'legal-1', status: 'COMPLETED' });
   });
 
-  it('loads and presents only the server-projected authorized queue', async () => {
+  it('loads an abortable server projection and presents only its authorized queue', async () => {
     renderWorkspace();
     expect(await screen.findByRole('heading', { name: 'My Work' })).toBeTruthy();
     expect(screen.getByText('Prepare daily operations report')).toBeTruthy();
     expect(screen.getByText('Review matter evidence')).toBeTruthy();
     expect(screen.getAllByText('Overdue').length).toBeGreaterThan(0);
-    expect(api.get).toHaveBeenCalledWith('/my-work', { forceNetworkRetry: true });
+    expect(api.get).toHaveBeenCalledTimes(1);
+    const [path, request] = api.get.mock.calls[0];
+    expect(path).toBe('/my-work');
+    expect(request.forceNetworkRetry).toBe(true);
+    expect(request.signal).toBeTruthy();
+    expect(typeof request.signal.addEventListener).toBe('function');
+    expect(request.signal.aborted).toBe(false);
   });
 
   it('routes completion to the owning module command and refreshes the projection', async () => {
@@ -113,8 +140,6 @@ describe('authenticated My Work workspace', () => {
   });
 });
 
-
-
 describe.each([
   ['CRM', 'crm-1', '/crm/owner-workspace/work-items/crm-1/complete'],
   ['INTELLIGENCE', 'intel-1', '/tenant-modules/intelligence/workspace/work-items/intel-1/complete'],
@@ -123,19 +148,31 @@ describe.each([
     const item = {
       ...payload.items[0],
       source,
-      source_key: `${source}:${workItemId}`,
+      source_key: source + ':' + workItemId,
       work_item_id: workItemId,
-      title: `${source} action`,
+      title: source + ' action',
       is_overdue: false,
     };
-    api.get.mockResolvedValue({ data: { ...payload, items: [item], summary: { active_count: 1, overdue_count: 0 } } });
+    api.get.mockResolvedValue({
+      data: { ...payload, items: [item], summary: { active_count: 1, overdue_count: 0 } },
+    });
     renderWorkspace();
-    const note = await screen.findByLabelText(`Completion note for ${item.title}`);
-    fireEvent.change(note, { target: { value: `Verified ${source} completion.` } });
+    const note = await screen.findByLabelText('Completion note for ' + item.title);
+    fireEvent.change(note, { target: { value: 'Verified ' + source + ' completion.' } });
     fireEvent.click(screen.getByRole('button', { name: 'Complete' }));
     await waitFor(() => expect(api.post).toHaveBeenCalledWith(
       expectedPath,
-      { completion_note: `Verified ${source} completion.` },
+      { completion_note: 'Verified ' + source + ' completion.' },
     ));
   });
 });
+
+/*
+ * ARTIFACT: MyWorkWorkspace.test.jsx
+ * VERSION: v1.1.0-ABORTABLE-MY-WORK-READS
+ * AUTHORITY BOUNDARY: Deterministic client contract evidence only.
+ * TENANT POSTURE: Synthetic exact-tenant work projections.
+ * FAIL-CLOSED POSTURE: Unavailable reads render no stale work.
+ * FINANCIAL EXECUTION AUTHORITY: Kennel EOS exclusively.
+ * END OF WILSY OS SOVEREIGN ARTIFACT
+ */
