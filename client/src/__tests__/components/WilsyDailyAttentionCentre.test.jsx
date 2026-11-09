@@ -1,13 +1,15 @@
 /**
  * TITLE: WILSY OS Daily Attention Centre Client Contract Tests
- * VERSION: v1.5.0-OPERATIONAL-ATTENTION-COMMAND-HANDOFF
+ * VERSION: v1.6.0-EXECUTIVE-TRIAGE-INTENT-CERT
  * AUTHORITY: WILSY OS Core Governance
  * EPITOME: Exercises tenant-bound source rendering, EOS-reported coverage,
  *          interactive work triage, source-owned navigation and honest empty states.
  * ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/client/src/__tests__/components/WilsyDailyAttentionCentre.test.jsx
  * COLLABORATION / OWNERSHIP: WilsyDailyAttentionCentre.jsx and EOS /api/my-work schema.
  * CERTIFICATION / UPDATE DATE: 2026-11-09
- * CHANGELOG: v1.5.0-OPERATIONAL-ATTENTION-COMMAND-HANDOFF proves
+ * CHANGELOG: v1.6.0-EXECUTIVE-TRIAGE-INTENT-CERT proves counts and
+ *            source-verified next-action handoff in selected urgency queues.
+ *            v1.5.0-OPERATIONAL-ATTENTION-COMMAND-HANDOFF proves
  *            source-filter feedback, visible one-click source-owned commands,
  *            and Operations management from a genuinely empty EOS queue.
  *            v1.4.0-VERIFIED-ZERO-ATTENTION-ACCESSIBILITY certifies
@@ -167,6 +169,32 @@ describe('WILSY daily attention centre', () => {
     expect(screen.queryByText('Follow up with customer')).toBeNull();
   });
 
+  it('explains executive triage and opens the next EOS-owned action', async () => {
+    const { onOpenWork } = renderCentre();
+    await screen.findByText('Follow up with customer');
+    expect(screen.getByRole('group', {name: 'Filter daily attention'})).toBeTruthy();
+    expect(screen.getByText('All work: 2 to review')).toBeTruthy();
+    expect(screen.getByText(/Next: Review governed contract/)).toBeTruthy();
+    fireEvent.click(screen.getByRole('button', {name: 'Overdue'}));
+    expect(screen.getByText('Overdue: 1 to review')).toBeTruthy();
+    expect(screen.getByText(/Address missed deadlines/)).toBeTruthy();
+    fireEvent.click(screen.getByRole('button', {name: 'Work next: Review governed contract'}));
+    expect(onOpenWork).toHaveBeenCalledWith(expect.objectContaining({
+      source_key: 'LEGAL:LEGAL-1',
+    }));
+  });
+
+  it('shows an actionable recovery intent when no work matches priority', async () => {
+    renderCentre();
+    await screen.findByText('Follow up with customer');
+    fireEvent.click(screen.getByRole('button', {name: 'Due today'}));
+    expect(screen.getByText('Due today: 0 to review')).toBeTruthy();
+    expect(screen.getByText(/No matching work in the current selection/)).toBeTruthy();
+    expect(screen.queryByRole('button', {name: /^Work next:/})).toBeNull();
+    fireEvent.click(screen.getByRole('button', {name: 'Clear filters'}));
+    expect(screen.getByText('All work: 2 to review')).toBeTruthy();
+  });
+
   it('expands governed work detail and delegates all commands to My Work', async () => {
     const { onOpenWork } = renderCentre();
     fireEvent.click(await screen.findByRole('button', { name: 'Review governed contract', exact: true }));
@@ -318,7 +346,7 @@ describe('WILSY daily attention centre', () => {
 
 /*
  * ARTIFACT: WilsyDailyAttentionCentre.test.jsx
- * VERSION: v1.5.0-OPERATIONAL-ATTENTION-COMMAND-HANDOFF
+ * VERSION: v1.6.0-EXECUTIVE-TRIAGE-INTENT-CERT
  * AUTHORITY BOUNDARY: Deterministic component test only.
  * TENANT POSTURE: Synthetic exact-tenant and foreign-tenant cases.
  * FAIL-CLOSED POSTURE: No simulated approvals or silent fallback.
