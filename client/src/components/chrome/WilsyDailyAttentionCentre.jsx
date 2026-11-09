@@ -1,6 +1,6 @@
 /**
  * TITLE: WILSY OS Authenticated Daily Attention Centre
- * VERSION: v1.1.0-FLOATING-WORK-CALENDAR
+ * VERSION: v1.2.0-PORTALLED-VIEWPORT-FLOATING
  * AUTHORITY: Wilsy OS Core Governance
  * EPITOME: Interactive notification-bell entry to exact-tenant, authorised
  *          EOS My Work triage, with actionable navigation to source-owned
@@ -9,7 +9,10 @@
  * COLLABORATION / OWNERSHIP: Python EOS /api/my-work owns work visibility;
  *                            App.jsx owns authenticated chrome and navigation.
  * CERTIFICATION / UPDATE DATE: 2026-11-09
- * CHANGELOG: v1.1.0-FLOATING-WORK-CALENDAR adds an accessible movable/dockable work panel,
+ * CHANGELOG: v1.2.0-PORTALLED-VIEWPORT-FLOATING portals the floating panel beyond the
+ *            backdrop-filtered app header, anchors dock position to the bell
+ *            and keeps outside dismissal correct for portalled UI.
+ *            v1.1.0-FLOATING-WORK-CALENDAR adds an accessible movable/dockable work panel,
  *            a real EOS work deadline calendar, and action handoffs to
  *            source-authorised My Work and HR workflows.
  *            v1.0.1-STRICT-PROJECTION-DATE-VALIDATION also rejects
@@ -29,6 +32,7 @@
  */
 
 import React, { useEffect, useMemo, useRef, useState } from 'react';
+import { createPortal } from 'react-dom';
 import {
   AlertTriangle, ArrowRight, Bell, CalendarDays, CheckCircle2,
   ChevronDown, Clock3, Grip, Pin, RefreshCw, Search, X,
@@ -145,6 +149,7 @@ export default function WilsyDailyAttentionCentre({
   const [expanded, setExpanded] = useState(null);
   const [view, setView] = useState('WORK');
   const [floating, setFloating] = useState(null);
+  const [docked, setDocked] = useState({ right: 16, top: 72 });
 
   useEffect(() => {
     setProjection(null);
@@ -190,7 +195,7 @@ export default function WilsyDailyAttentionCentre({
       if (event.key === 'Escape') onClose();
     };
     const handlePointer = (event) => {
-      if (rootRef.current && !rootRef.current.contains(event.target)) onClose();
+      if (!rootRef.current?.contains(event.target) && !panelRef.current?.contains(event.target)) onClose();
     };
     document.addEventListener('keydown', handleKey);
     document.addEventListener('pointerdown', handlePointer);
@@ -222,6 +227,25 @@ export default function WilsyDailyAttentionCentre({
     });
   }, [items, filter, source, query]);
 
+
+
+  // Render the movable surface outside header backdrop-filter/stacking contexts.
+  useEffect(() => {
+    if (!open) return undefined;
+    const updateAnchor = () => {
+      const anchor = rootRef.current?.getBoundingClientRect();
+      if (!anchor) return;
+      const width = Math.min(460, window.innerWidth - 32);
+      setDocked({
+        right: Math.max(8, Math.min(window.innerWidth - anchor.right,
+          Math.max(8, window.innerWidth - width - 8))),
+        top: Math.max(8, Math.min(anchor.bottom + 8, window.innerHeight - 88)),
+      });
+    };
+    updateAnchor();
+    window.addEventListener('resize', updateAnchor);
+    return () => window.removeEventListener('resize', updateAnchor);
+  }, [open]);
 
   // Floating position is a transient layout preference, not business state.
   const panelBounds = () => {
@@ -309,14 +333,16 @@ export default function WilsyDailyAttentionCentre({
         )}
       </button>
 
-      {open && (
+      {open && createPortal(
         <section
           ref={panelRef}
           role="dialog"
           aria-label="Daily attention centre"
           data-floating={floating ? 'true' : 'false'}
-          style={floating ? { position: 'fixed', left: floating.x, top: floating.y, right: 'auto' } : undefined}
-          className={(floating ? 'fixed z-[90]' : 'absolute right-0 top-12 z-50') + ' flex w-[min(460px,calc(100vw-2rem))] max-h-[min(780px,calc(100vh-5rem))] flex-col overflow-hidden rounded-2xl border border-white/15 bg-[#101d32] text-slate-100 shadow-2xl shadow-black/60'}
+          style={floating
+            ? { position: 'fixed', left: floating.x, top: floating.y, right: 'auto' }
+            : { position: 'fixed', right: docked.right, top: docked.top, left: 'auto' }}
+          className="fixed z-[90] flex w-[min(460px,calc(100vw-2rem))] max-h-[min(780px,calc(100vh-5rem))] flex-col overflow-hidden rounded-2xl border border-white/15 bg-[#101d32] text-slate-100 shadow-2xl shadow-black/60"}
         >
           <div className="flex shrink-0 items-start justify-between gap-3 border-b border-white/10 bg-[#14243d] px-5 py-4">
             <div>
@@ -524,7 +550,7 @@ export default function WilsyDailyAttentionCentre({
               </div>
             </>
           )}
-        </section>
+        </section>, document.body
       )}
     </div>
   );
@@ -543,7 +569,7 @@ function Stat({ label, value, urgent = false }) {
 
 /*
  * ARTIFACT: WilsyDailyAttentionCentre.jsx
- * VERSION: v1.1.0-FLOATING-WORK-CALENDAR
+ * VERSION: v1.2.0-PORTALLED-VIEWPORT-FLOATING
  * AUTHORITY BOUNDARY: Authenticated read-only EOS work triage.
  * TENANT POSTURE: Exact tenant, fail-closed, no browser persistence.
  * FAIL-CLOSED POSTURE: Invalid, denied or unavailable sources show no fabricated items.
