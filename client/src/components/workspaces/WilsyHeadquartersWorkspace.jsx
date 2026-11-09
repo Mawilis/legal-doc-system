@@ -1,11 +1,32 @@
+/**
+ * TITLE: WILSY OS Headquarters Authenticated Operating Workspace
+ * VERSION: v1.2.0-DAILY-SOURCE-VERIFIED-HQ
+ * AUTHORITY: Wilsy OS Core Governance
+ * EPITOME: Authenticated tenant headquarters with live daily execution,
+ *          source-owned work actions and separately bounded company services.
+ * ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/client/src/components/workspaces/WilsyHeadquartersWorkspace.jsx
+ * COLLABORATION / OWNERSHIP: Python EOS owns My Work and HR truth;
+ *                            global App chrome owns the sole app navigation bar.
+ * CERTIFICATION / UPDATE DATE: 2026-11-09
+ * CHANGELOG: v1.2.0-DAILY-SOURCE-VERIFIED-HQ replaces duplicate inner header
+ *            with shared global chrome and mounts the real authorised daily
+ *            execution brief above department discovery and quick actions.
+ * COMPLIANCE: POPIA section 19; GDPR Article 32; SOC 2 CC7.2.
+ * SECURITY / PRIVACY POSTURE: No invented KPI, workforce, financial or role data.
+ * TENANT BOUNDARY: Exact authenticated scope passed by the protected router.
+ * AUTHORITY BOUNDARY: Presentation/read only; commands delegated to sources.
+ * FINANCIAL AUTHORITY BOUNDARY: Kennel EOS exclusively executes funds.
+ */
+
 import React, { useEffect, useState } from 'react';
 import api from '../../services/api.js';
 import {
   ArrowUpRight, BriefcaseBusiness, Building2, CheckCircle2, ChevronRight,
   CircleAlert, Code2, FileText, Globe2, Headphones, LockKeyhole, RefreshCw,
-  ShieldCheck, Users, Wallet,
+  Users, Wallet,
 } from 'lucide-react';
 import MyWorkWorkspace from './MyWorkWorkspace.jsx';
+import WilsyHeadquartersDailyBrief from './WilsyHeadquartersDailyBrief.jsx';
 
 const departments = [
   { id: 'engineering', label: 'Engineering', icon: Code2, description: 'Product delivery, repository activity, releases and CI evidence.' },
@@ -37,7 +58,7 @@ function SourceBoundary({ title, description }) {
   );
 }
 
-export default function WilsyHeadquartersWorkspace() {
+export default function WilsyHeadquartersWorkspace({ tenantId = null }) {
   const [section, setSection] = useState('overview');
   const [showMyWork, setShowMyWork] = useState(false);
   const [workforce, setWorkforce] = useState(null);
@@ -78,16 +99,6 @@ export default function WilsyHeadquartersWorkspace() {
 
   return (
     <main className="min-h-screen bg-[#080f1d] text-slate-100">
-      <header className="sticky top-0 z-20 flex flex-wrap items-center justify-between gap-4 border-b border-white/10 bg-[#0b1830]/95 px-5 py-4 backdrop-blur">
-        <button onClick={() => { setSection('overview'); setShowMyWork(false); }} className="flex items-center gap-3 text-left">
-          <span className="grid h-10 w-10 place-items-center rounded-xl bg-amber-400 text-xl font-black text-[#081326]">W</span>
-          <span><span className="block text-sm font-bold tracking-[0.18em]">WILSY</span><span className="block text-[10px] uppercase tracking-[0.18em] text-slate-400">Headquarters</span></span>
-        </button>
-        <div className="flex items-center gap-2 rounded-full border border-emerald-400/20 bg-emerald-400/10 px-3 py-2 text-xs text-emerald-200">
-          <ShieldCheck size={15} /> Authenticated workspace
-        </div>
-      </header>
-
       <div className="mx-auto grid max-w-[1600px] lg:grid-cols-[250px_minmax(0,1fr)]">
         <aside className="border-b border-white/10 p-4 lg:min-h-[calc(100vh-73px)] lg:border-b-0 lg:border-r">
           <p className="px-3 pb-3 pt-2 text-[10px] font-semibold uppercase tracking-[0.2em] text-slate-500">Company operating plane</p>
@@ -124,6 +135,11 @@ export default function WilsyHeadquartersWorkspace() {
                   </div>
                 </div>
               </section>
+
+              <WilsyHeadquartersDailyBrief
+                tenantId={tenantId}
+                onOpenWork={() => setShowMyWork(true)}
+              />
 
               <div className="mt-6 grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
                 <ActionCard title="Daily execution" detail="Authorised tasks and source-owned completion" onClick={() => setShowMyWork(true)} icon={CheckCircle2}/>
@@ -254,3 +270,13 @@ function ActionCard({title,detail,onClick,icon:Icon}) {
 function StatusLine({label,state,good=false}) {
   return <div className="flex items-start justify-between gap-3 border-b border-white/5 pb-3"><span className="text-slate-300">{label}</span><span className={'text-right text-xs ' + (good ? 'text-emerald-300' : 'text-amber-200')}>{state}</span></div>;
 }
+
+/*
+ * ARTIFACT: WilsyHeadquartersWorkspace.jsx
+ * VERSION: v1.2.0-DAILY-SOURCE-VERIFIED-HQ
+ * AUTHORITY BOUNDARY: Authenticated workspace composition only.
+ * TENANT POSTURE: EOS tenant-scoped projections; no browser-derived rights.
+ * FAIL-CLOSED POSTURE: Unavailable sources do not become invented metrics.
+ * FINANCIAL EXECUTION AUTHORITY: Kennel EOS only.
+ * END OF WILSY OS SOVEREIGN ARTIFACT
+ */
