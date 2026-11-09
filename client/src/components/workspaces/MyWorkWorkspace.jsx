@@ -1,6 +1,6 @@
 /**
  * TITLE: WILSY OS Authorised My Work Completion Workspace
- * VERSION: v1.5.0-EXPLICIT-FOCUS-RESET
+ * VERSION: v1.6.0-SOURCE-COMMAND-COORDINATED-REFRESH
  * AUTHORITY: Wilsy OS Core Governance
  * EPITOME: Executes source-owned evidenced work completion and focuses the
  *          item selected from Daily Attention or Headquarters.
@@ -8,7 +8,11 @@
  * COLLABORATION / OWNERSHIP: Python EOS /api/my-work owns visibility and
  *                            source services own completion and audit.
  * CERTIFICATION / UPDATE DATE: 2026-11-09
- * CHANGELOG: v1.5.0-EXPLICIT-FOCUS-RESET lets an explicit parent null clear
+ * CHANGELOG: v1.6.0-SOURCE-COMMAND-COORDINATED-REFRESH notifies current-session
+ *            queue subscribers only after a source-owned completion succeeds.
+ *            Invalidating the EOS read projection refreshes the global badge
+ *            without optimistic local completion or a parallel command route.
+ *            v1.5.0-EXPLICIT-FOCUS-RESET lets an explicit parent null clear
  *            route focus while preserving route-only deep links for callers
  *            that omit the parent focus prop.
  *            v1.4.0-VERIFIED-PROJECTION-FOCUS-HANDOFF validates every My Work
@@ -38,6 +42,10 @@ import api from '../../services/api.js';
 import AuthContext from '../../contexts/authContext.jsx';
 import { completeLegalWorkItem } from '../../services/legalOperationsService.js';
 import { assertUnifiedMyWorkProjection } from '../../services/unifiedMyWorkProjection.js';
+import {
+  currentUnifiedMyWorkScope,
+  invalidateUnifiedMyWork,
+} from '../../services/unifiedMyWorkSync.js';
 
 const SOURCE_LABELS = Object.freeze({
   LEGAL: 'Legal',
@@ -193,6 +201,12 @@ export default function MyWorkWorkspace(props = {}) {
         if (scopeRef.current !== commandScope) return;
         setNotes((current) => ({ ...current, [item.source_key]: '' }));
       }
+      if (scopeRef.current !== commandScope) return;
+      // The owning EOS source returned successfully. Other mounted views must
+      // re-read current EOS truth, not infer completion from this UI command.
+      invalidateUnifiedMyWork(
+        currentUnifiedMyWorkScope(auth, authUser?.tenantId),
+      );
       await load({ quiet: true });
     } catch (requestError) {
       if (scopeRef.current !== commandScope) return;
@@ -396,7 +410,7 @@ function Metric({ label, value }) {
 
 /*
  * ARTIFACT: MyWorkWorkspace.jsx
- * VERSION: v1.5.0-EXPLICIT-FOCUS-RESET
+ * VERSION: v1.6.0-SOURCE-COMMAND-COORDINATED-REFRESH
  * AUTHORITY BOUNDARY: EOS source-owned work completion only.
  * TENANT POSTURE: Current principal, membership and business-role scope only.
  * FAIL-CLOSED POSTURE: Shared contract rejects invalid work and coverage.
