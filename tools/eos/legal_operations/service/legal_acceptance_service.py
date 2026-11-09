@@ -1,7 +1,7 @@
 """Server-owned legal acceptance policy and orchestration.
 
 TITLE: WILSY OS Legal Acceptance Service
-VERSION: v1.1.0-PLATFORM-SCOPE-SELECTED-CAPACITY
+VERSION: v1.2.0-PLATFORM-EXACT-ROLE-CURRENTNESS
 AUTHORITY: Wilsy OS Core Governance
 EPITOME: Derives a deterministic acceptance plan from canonical documents and
          authenticated identity, then appends immutable evidence.
@@ -9,7 +9,12 @@ ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/tools/eos/legal_
 COLLABORATION / OWNERSHIP: HTTP router is transport-only; document and
                             acceptance registries own durable truth.
 CERTIFICATION / UPDATE DATE: 2026-11-09
-CHANGELOG: v1.1.0-PLATFORM-SCOPE-SELECTED-CAPACITY explicitly identifies these
+CHANGELOG: v1.2.0-PLATFORM-EXACT-ROLE-CURRENTNESS preserves mandatory PLATFORM_WORKSPACE
+           admission while independently classifying malformed global roles,
+           stale membership and capacity revisions, and selected workspace
+           mismatch. Exact signed principal/tenant/session context is required;
+           no failed authority is silently accepted.
+           v1.1.0-PLATFORM-SCOPE-SELECTED-CAPACITY explicitly identifies these
            mandatory agreements as PLATFORM_WORKSPACE admission and resolves a
            GLOBAL session's exact selected capacity with current revisions.
            No agreement, acceptance evidence, commercial truth or IAM is bypassed.
@@ -69,7 +74,7 @@ from tools.eos.auth.workspace_bootstrap_projection import (
 )
 
 
-VERSION: Final[str] = "v1.1.0-PLATFORM-SCOPE-SELECTED-CAPACITY"
+VERSION: Final[str] = "v1.2.0-PLATFORM-EXACT-ROLE-CURRENTNESS"
 PLATFORM_ADMISSION_SCOPE: Final[str] = "PLATFORM_WORKSPACE"
 # These are platform-use obligations, not a Legal Operations product grant.
 ORDINARY_REQUIRED: Final[tuple[LegalAgreementType, ...]] = (
@@ -216,17 +221,31 @@ class LegalAcceptanceService:
             # reject the Owner/Partner distinction after a successful bootstrap.
             roles = identity.roles
             if (
-                len(roles) != 1
+                identity.identity_id != principal.principal_id
+                or identity.tenant_id != principal.tenant_id
+                or not isinstance(roles, list)
+                or len(roles) != 1
+                or not isinstance(roles[0], str)
                 or roles[0] not in TENANT_ROLES
                 or roles[0] != roles[0].strip()
+                or not isinstance(identity.session_reference, str)
+                or not identity.session_reference.strip()
+                or not isinstance(identity.workspace_id, str)
+                or not identity.workspace_id.strip()
                 or not isinstance(identity.membership_revision, int)
                 or isinstance(identity.membership_revision, bool)
+                or identity.membership_revision < 0
                 or not isinstance(identity.capacity_revision, int)
                 or isinstance(identity.capacity_revision, bool)
                 or identity.capacity_revision < 0
-                or identity.membership_revision != getattr(membership, "revision", None)
             ):
-                raise LegalAcceptanceServiceError("LEGAL_ACCEPTANCE_SELECTED_CAPACITY_STALE")
+                raise LegalAcceptanceServiceError(
+                    "LEGAL_ACCEPTANCE_SELECTED_CAPACITY_INVALID"
+                )
+            if identity.membership_revision != getattr(membership, "revision", None):
+                raise LegalAcceptanceServiceError(
+                    "LEGAL_ACCEPTANCE_MEMBERSHIP_REVISION_MISMATCH"
+                )
             selected_role = roles[0]
 
         try:
@@ -278,12 +297,18 @@ class LegalAcceptanceService:
                 raise LegalAcceptanceServiceError(
                     "LEGAL_ACCEPTANCE_SELECTED_CAPACITY_INVALID"
                 ) from error
-            if (
-                role != selected_role
-                or getattr(business_role, "revision", None) != identity.capacity_revision
-                or expected_workspace != identity.workspace_id
-            ):
-                raise LegalAcceptanceServiceError("LEGAL_ACCEPTANCE_SELECTED_CAPACITY_STALE")
+            if role != selected_role:
+                raise LegalAcceptanceServiceError(
+                    "LEGAL_ACCEPTANCE_BUSINESS_ROLE_AUTHORITY_INVALID"
+                )
+            if getattr(business_role, "revision", None) != identity.capacity_revision:
+                raise LegalAcceptanceServiceError(
+                    "LEGAL_ACCEPTANCE_CAPACITY_REVISION_MISMATCH"
+                )
+            if expected_workspace != identity.workspace_id:
+                raise LegalAcceptanceServiceError(
+                    "LEGAL_ACCEPTANCE_SELECTED_CAPACITY_STALE"
+                )
         return role
 
     def _required_types(self, business_role: str) -> tuple[LegalAgreementType, ...]:
@@ -395,7 +420,7 @@ __all__ = [
 ]
 
 # ARTIFACT: legal_acceptance_service.py
-# VERSION: v1.1.0-PLATFORM-SCOPE-SELECTED-CAPACITY
+# VERSION: v1.2.0-PLATFORM-EXACT-ROLE-CURRENTNESS
 # AUTHORITY BOUNDARY: server-derived acceptance planning and evidence composition only
 # TENANT POSTURE: canonical tenant is resolved before every read/write
 # FAIL-CLOSED POSTURE: absent/unapproved/divergent documents and invalid authority deny
