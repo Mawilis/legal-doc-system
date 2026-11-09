@@ -1,14 +1,16 @@
 """WILSY OS selected-capacity platform-use acceptance authority certificate.
 
 TITLE: WILSY OS Selected-Capacity Legal Acceptance Forensic Certificate
-VERSION: v1.0.0-GLOBAL-ROLE-REVISION-LOCK
+VERSION: v1.0.1-GLOBAL-ROLE-REVISION-LOCK
 AUTHORITY: Wilsy OS Core Governance
 EPITOME: Selected Owner/Partner business-role currentness and exact principal
          scope are re-read from durable registries before legal obligations.
 ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/tests/unit/test_legal_acceptance_selected_capacity.py
 COLLABORATION / OWNERSHIP: LegalAcceptanceService, IAM identity and role registry.
 CERTIFICATION / UPDATE DATE: 2026-11-09
-CHANGELOG: v1.0.0-GLOBAL-ROLE-REVISION-LOCK verifies GLOBAL selected-capacity
+CHANGELOG: v1.0.1-GLOBAL-ROLE-REVISION-LOCK uses an explicitly uncollected test fixture
+           constructor while certifying selected GLOBAL role currentness.
+           v1.0.0-GLOBAL-ROLE-REVISION-LOCK verifies GLOBAL selected-capacity
            currentness, ownership obligations, revocations and legacy isolation.
 COMPLIANCE: POPIA section 19; GDPR Article 32; SOC 2 CC7.2.
 SECURITY / PRIVACY POSTURE: Fully synthetic principal, no live tenant data.
@@ -82,7 +84,7 @@ class CapacityRepository:
         return BusinessRole("tenant_auditor")
 
 
-def test_service(repositories=None):
+def build_service():
     membership = MembershipRepository()
     capacities = CapacityRepository()
     service = LegalAcceptanceService(
@@ -116,7 +118,7 @@ def principal():
 
 
 def test_selected_owner_and_legal_partner_are_independent_durable_capacities():
-    service, membership, capacities = test_service()
+    service, membership, capacities = build_service()
     owner = service._resolve_business_role(principal(), identity=identity("tenant_owner"))
     partner = service._resolve_business_role(principal(), identity=identity("tenant_legal_partner"))
     assert owner == "tenant_owner"
@@ -139,7 +141,7 @@ def test_selected_owner_and_legal_partner_are_independent_durable_capacities():
     ],
 )
 def test_stale_global_session_revisions_fail_closed(membership_revision, capacity_revision, expected):
-    service, _, _ = test_service()
+    service, _, _ = build_service()
     with pytest.raises(LegalAcceptanceServiceError, match=expected):
         service._resolve_business_role(
             principal(),
@@ -152,7 +154,7 @@ def test_stale_global_session_revisions_fail_closed(membership_revision, capacit
 
 
 def test_revoked_exact_selected_capacity_cannot_reuse_active_other_capacity():
-    service, _, capacities = test_service()
+    service, _, capacities = build_service()
     capacities.current["tenant_owner"].status = TenantBusinessRoleStatus.REVOKED
     with pytest.raises(LegalAcceptanceServiceError, match="LEGAL_ACCEPTANCE_BUSINESS_ROLE_INACTIVE"):
         service._resolve_business_role(principal(), identity=identity("tenant_owner"))
@@ -161,14 +163,14 @@ def test_revoked_exact_selected_capacity_cannot_reuse_active_other_capacity():
 
 
 def test_wrong_tenant_or_principal_fails_even_on_selected_role_read():
-    service, _, capacities = test_service()
+    service, _, capacities = build_service()
     capacities.current["tenant_owner"].tenant_id = "OTHER-TENANT"
     with pytest.raises(LegalAcceptanceServiceError, match="LEGAL_ACCEPTANCE_BUSINESS_ROLE_AUTHORITY_INVALID"):
         service._resolve_business_role(principal(), identity=identity("tenant_owner"))
 
 
 def test_multiple_signed_roles_are_not_a_valid_selected_global_capacity():
-    service, _, capacities = test_service()
+    service, _, capacities = build_service()
     selected = identity("tenant_owner")
     selected.roles = ["tenant_owner", "tenant_legal_partner"]
     with pytest.raises(LegalAcceptanceServiceError, match="LEGAL_ACCEPTANCE_SELECTED_CAPACITY_INVALID"):
@@ -177,7 +179,7 @@ def test_multiple_signed_roles_are_not_a_valid_selected_global_capacity():
 
 
 def test_legacy_signed_admin_claim_does_not_expand_durable_tenant_role():
-    service, _, capacities = test_service()
+    service, _, capacities = build_service()
     legacy = SovereignIdentity(
         identity_id=PRINCIPAL,
         tenant_id=TENANT,
@@ -193,7 +195,7 @@ def test_legacy_signed_admin_claim_does_not_expand_durable_tenant_role():
 
 
 # ARTIFACT: test_legal_acceptance_selected_capacity.py
-# VERSION: v1.0.0-GLOBAL-ROLE-REVISION-LOCK
+# VERSION: v1.0.1-GLOBAL-ROLE-REVISION-LOCK
 # AUTHORITY BOUNDARY: Synthetic currentness verification only.
 # TENANT POSTURE: Exact tenant scope and current revisions required.
 # FAIL-CLOSED POSTURE: Revoked, stale or ambiguous capacities never pass.
