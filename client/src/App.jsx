@@ -1,7 +1,7 @@
 /* eslint-disable */
 /**
  * TITLE: WILSY OS Sovereign Application Root
- * VERSION: v20.2.0-GLOBAL-AUTHENTICATED-CHROME
+ * VERSION: v20.2.1-GLOBAL-CHROME-HEALTH-SEMANTICS
  * AUTHORITY: Wilsy OS Core Governance
  * EPITOME: Composes authenticated routing, exact tenant projection, legal
  *          admission release, and protected workspace presentation without
@@ -11,8 +11,9 @@
  *                            TenantProvider owns bounded tenant projection;
  *                            Python EOS owns authentication, workspace and
  *                            legal-acceptance truth.
- * CERTIFICATION / UPDATE DATE: 2026-09-24
+ * CERTIFICATION / UPDATE DATE: 2026-11-09
  * CHANGELOG:
+ *   v20.2.1-GLOBAL-CHROME-HEALTH-SEMANTICS — Refines status copy to distinguish an EOS kernel API response from whole-platform health; records the current update date.
  *   v20.2.0-GLOBAL-AUTHENTICATED-CHROME — Adds a route-stable authenticated
  *     global top bar for protected routes, consuming the revalidated auth
  *     projection, EOS My Work summary and bounded kernel status/version.
@@ -295,7 +296,7 @@ const AuthenticatedGlobalChrome = ({ user, onLogout, children }) => {
 
       <div className="flex items-center justify-end gap-2 border-b border-white/5 bg-[#0b1628] px-4 py-2 text-[10px] text-slate-500 sm:px-6">
         <span className={kernel.state === 'RESPONDING' ? 'text-emerald-300' : kernel.state === 'CHECKING' ? 'text-amber-200' : 'text-rose-300'}>
-          <span aria-hidden="true">●</span> {kernel.state === 'RESPONDING' ? 'EOS kernel responding' : kernel.state === 'CHECKING' ? 'Checking EOS kernel…' : 'EOS kernel unavailable'}
+          <span aria-hidden="true">●</span> {kernel.state === 'RESPONDING' ? 'EOS kernel API responding' : kernel.state === 'CHECKING' ? 'Checking EOS kernel…' : 'EOS kernel API unavailable'}
         </span>
         <span>·</span><span>{kernel.version ? 'Kernel v' + kernel.version : 'Version unavailable'}</span>
         {isMyWork && workCount !== null && <span className="ml-2 rounded-full bg-amber-300 px-2 py-1 font-semibold text-[#081326]">{workCount} open</span>}
@@ -718,7 +719,7 @@ export default App;
 
 /**
  * ARTIFACT: client/src/App.jsx
- * VERSION: v20.2.0-GLOBAL-AUTHENTICATED-CHROME
+ * VERSION: v20.2.1-GLOBAL-CHROME-HEALTH-SEMANTICS
  * AUTHORITY BOUNDARY: client route and protected-runtime composition only; Python EOS remains authentication, tenant and legal-acceptance authority
  * TENANT POSTURE: discovered tenant may choose login routing but cannot establish authenticated or protected scope
  * FAIL-CLOSED POSTURE: auth revalidation waits; unresolved legal status remains sealed; only server-confirmed legal COMPLETE mounts protected runtime
