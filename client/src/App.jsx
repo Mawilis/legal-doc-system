@@ -71,7 +71,7 @@ import LedgerExplorer from './components/billing/LedgerExplorer.jsx';
 import MyWorkWorkspace from './components/workspaces/MyWorkWorkspace.jsx';
 import WilsyHeadquartersWorkspace from './components/workspaces/WilsyHeadquartersWorkspace.jsx';
 import SystemStatusPage from './components/system/SystemStatusPage.jsx';
-import wilsyBrandAsset from './assets/logo/wilsy-icon.svg';
+
 import api from './services/api';
 import WilsyOSIntelligenceDockRuntime from './components/intelligence/WilsyOSIntelligenceDockRuntime.jsx';
 
@@ -138,6 +138,7 @@ export const AuthenticatedGlobalChrome = ({ user, onLogout, children }) => {
   // Operating titles are presentation-only and must come from the authenticated
   // session projection; never substitute an ACL role such as TENANT_OWNER.
   const operatingTitle = user?.operatingTitle || user?.jobTitle || user?.displayTitle || 'Account';
+  const avatarUrl = user?.avatarUrl || user?.avatar_url || user?.profileImageUrl || null;
   const initials = (user?.firstName || user?.email || 'W').slice(0, 1).toUpperCase()
     + (user?.lastName || '').slice(0, 1).toUpperCase();
   const isSecureChannel = typeof window !== 'undefined'
@@ -209,25 +210,26 @@ export const AuthenticatedGlobalChrome = ({ user, onLogout, children }) => {
 
   return (
     <div className="min-h-screen bg-[#080f1d] text-slate-100">
-      <header className="sticky top-0 z-40 grid h-16 w-full grid-cols-[minmax(150px,1fr)_minmax(0,540px)_minmax(220px,1fr)] items-center gap-3 border-b border-white/10 bg-[#0b1830]/95 px-4 shadow-lg shadow-black/10 backdrop-blur-xl sm:px-6">
-        <button type="button" aria-label="WILSY home" onClick={() => navigate('/headquarters')} className="flex min-w-0 shrink-0 items-center gap-3 text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#d7ad43] focus-visible:ring-offset-2 focus-visible:ring-offset-[#0b1830]">
-          <img src={wilsyBrandAsset} alt="WILSY logo" className="h-10 w-10 shrink-0 object-contain" />
-          <span className="leading-tight">
-            <span className="block text-sm font-extrabold tracking-[0.2em] text-white">WILSY</span>
-            <span className="hidden text-[10px] tracking-wide text-slate-400 min-[1200px]:block">Build. Operate. Grow.</span>
+      <header className="sticky top-0 z-40 flex h-16 w-full items-center gap-4 border-b border-white/10 bg-[#0b1830]/95 px-4 shadow-lg shadow-black/10 backdrop-blur-xl sm:px-6">
+        <button type="button" aria-label="WILSY home" onClick={() => navigate('/headquarters')} className="flex w-[240px] shrink-0 items-center gap-2 text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#d7ad43] focus-visible:ring-offset-2 focus-visible:ring-offset-[#0b1830]">
+          <img src="/brand/wilsy-gold-emblem.png" alt="WILSY gold emblem" className="h-12 w-12 shrink-0 object-contain" />
+          <span className="min-w-0 leading-tight">
+            
+            <span className="block text-lg font-semibold tracking-[0.025em] text-white">WILSY</span>
+            <span className="block whitespace-nowrap text-[10px] font-medium text-[#f0dca5]">Build. Operate. Grow.</span>
           </span>
         </button>
 
-        <button type="button" onClick={() => { setSearchOpen(true); setUserMenuOpen(false); setNotificationsOpen(false); }} aria-label="Open global search" className="mx-auto hidden h-10 w-full max-w-[540px] min-w-0 items-center gap-3 rounded-full border border-white/10 bg-white/[0.035] px-4 text-left text-sm text-slate-400 transition hover:border-amber-300/40 hover:bg-white/[0.07] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#d7ad43] focus-visible:ring-offset-2 focus-visible:ring-offset-[#0b1830] md:flex">
-          <Search size={16}/>
+        <button type="button" onClick={() => { setSearchOpen(true); setUserMenuOpen(false); setNotificationsOpen(false); }} aria-label="Open global search" className="mx-auto hidden h-10 min-w-0 max-w-[690px] flex-1 items-center gap-3 rounded-full border border-white/15 bg-white px-4 text-left text-sm text-[#435575] transition hover:border-[#d7ad43] hover:bg-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#d7ad43] focus-visible:ring-offset-2 focus-visible:ring-offset-[#0b1830] md:flex">
+          <Search size={16} className="text-[#435575]"/>
           <span className="flex-1">Search people, projects, tasks, or anything…</span>
-          <kbd className="rounded-md border border-white/10 bg-black/20 px-2 py-1 text-[10px] text-slate-400">⌘ K / Ctrl K</kbd>
+          <kbd className="rounded-md border border-slate-200 bg-slate-100 px-2 py-1 text-[10px] text-slate-500">⌘ K / Ctrl K</kbd>
         </button>
         <button type="button" onClick={() => setSearchOpen(true)} aria-label="Open global search" className="grid h-9 w-9 place-items-center rounded-full border border-white/10 text-slate-300 md:hidden"><Search size={17}/></button>
 
-        <div className="flex min-w-0 shrink-0 items-center justify-self-end gap-2 sm:gap-3">
+        <div className="flex min-w-[285px] shrink-0 items-center justify-end gap-2 sm:gap-3">
           {hasAuthenticatedSession && !authLoading && (
-            <div role="status" aria-label={isSecureChannel ? 'Secure and authenticated' : 'Authenticated; secure transport not confirmed'} className={`flex items-center gap-2 rounded-full border px-2 py-2 text-[11px] font-medium sm:px-3 ${isSecureChannel ? 'border-emerald-400/20 bg-emerald-400/10 text-emerald-200' : 'border-white/10 bg-white/[0.04] text-slate-300'}`}>
+            <div role="status" aria-label={isSecureChannel ? 'Secure and authenticated' : 'Authenticated; secure transport not confirmed'} className={`flex items-center gap-2 rounded-full border px-2 py-2 text-[11px] font-medium sm:px-3 ${isSecureChannel ? 'border-emerald-400/20 bg-emerald-400/10 text-emerald-200' : 'border-emerald-400/25 bg-emerald-500/20 text-emerald-100'}`}>
               <ShieldCheck size={15}/>
               <span className="hidden sm:inline">{isSecureChannel ? 'Secure · Authenticated' : 'Authenticated'}</span>
             </div>
@@ -246,7 +248,7 @@ export const AuthenticatedGlobalChrome = ({ user, onLogout, children }) => {
           </div>
           <div className="relative">
             <button type="button" aria-label="Open user menu" aria-expanded={userMenuOpen} onClick={() => { setUserMenuOpen((value) => !value); setNotificationsOpen(false); }} className="flex items-center gap-2 rounded-full py-1 pl-1 pr-2 transition hover:bg-white/10">
-              <span className="grid h-8 w-8 place-items-center rounded-full border border-amber-300/30 bg-amber-300/15 text-xs font-bold text-amber-200">{initials}</span>
+              {avatarUrl ? <img src={avatarUrl} alt="" className="h-9 w-9 rounded-full border border-amber-300/30 object-cover" referrerPolicy="no-referrer" /> : <span className="grid h-9 w-9 place-items-center rounded-full border border-amber-300/30 bg-amber-300/15 text-xs font-bold text-amber-200">{initials}</span>}
               <span className="hidden max-w-[150px] text-left leading-tight xl:block">
                 <span className="block truncate text-xs font-semibold text-white">{displayName}</span>
                 <span className="block truncate text-[10px] text-slate-400">{operatingTitle}</span>
